@@ -111,4 +111,14 @@ export function createASTScript(options: ASTScriptOptions): SvelteAST.Script {
   };
 }
 
+/**
+ * Create ESTree compliant AST node for {@link ESTreeAST.Identifier}.
+ */
+export function createASTIdentifier(name: string): ESTreeAST.Identifier {
+  return {
+    type: 'Identifier',
+    name,
+  };
+}
+
 export type { ESTreeAST, SvelteAST };

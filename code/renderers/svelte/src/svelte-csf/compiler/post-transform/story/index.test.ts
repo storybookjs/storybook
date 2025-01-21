@@ -7,12 +7,12 @@ import MagicString from 'magic-string';
 import { parseAst } from 'rollup/parseAst';
 import { describe, it } from 'vitest';
 
-import { transformStory } from '.';
+import { transformStory } from './index.js';
 
-import { getSvelteAST } from '#parser/ast';
-import { extractSvelteASTNodes } from '#parser/extract/svelte/nodes';
-import { extractCompiledASTNodes } from '#parser/extract/compiled/nodes';
-import { extractStoriesNodesFromExportDefaultFn } from '#parser/extract/compiled/stories';
+import { getSvelteAST } from '$lib/parser/ast.js';
+import { extractSvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
+import { extractCompiledASTNodes } from '$lib/parser/extract/compiled/nodes.js';
+import { extractStoriesNodesFromExportDefaultFn } from '$lib/parser/extract/compiled/stories.js';
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 

@@ -1,11 +1,11 @@
-import type { SvelteAST } from '#parser/ast';
-import type { SvelteASTNodes } from '#parser/extract/svelte/nodes';
-import { extractStoryAttributesNodes } from '#parser/extract/svelte/story/attributes';
+import type { SvelteAST } from '$lib/parser/ast.js';
+import type { SvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
+import { extractStoryAttributesNodes } from '$lib/parser/extract/svelte/story/attributes.js';
 
 import {
   InvalidSetTemplateFirstArgumentError,
   InvalidStoryTemplateAttributeError,
-} from '#utils/error/parser/extract/svelte';
+} from '$lib/utils/error/parser/extract/svelte.js';
 
 /**
  * For example:

@@ -1,10 +1,10 @@
 import { print } from 'svelte-ast-print';
 import { describe, it } from 'vitest';
 
-import { transformLegacyStory } from './legacy-story';
+import { transformLegacyStory } from './legacy-story.js';
 
-import type { SvelteAST } from '#parser/ast';
-import { parseAndExtractSvelteNode } from '#tests/extractor';
+import type { SvelteAST } from '$lib/parser/ast.js';
+import { parseAndExtractSvelteNode } from '../../../../tests/extractor.js';
 
 describe(transformLegacyStory.name, () => {
   it("it moves 'autodocs' prop to 'tags' correctly", async ({ expect }) => {
@@ -166,7 +166,7 @@ describe(transformLegacyStory.name, () => {
     );
   });
 
-  it("transforms 'template' prop to 'children' and text expression becomes expression tag with identifier to snippet", async ({
+  it("transforms 'template' id prop to 'template' reference prop and text expression becomes expression tag with identifier to snippet", async ({
     expect,
   }) => {
     const code = `
@@ -188,7 +188,29 @@ describe(transformLegacyStory.name, () => {
     ).toMatchInlineSnapshot(`"<Story name="Default" template={someTemplate} />"`);
   });
 
-  it("when directive 'let:args' is used then it wraps Story fragment with 'children' snippet block", async ({
+  it("transforms 'template' id prop to 'template' reference prop and text expression becomes expression tag with identifier to snippet (case with invalid identifier)", async ({
+    expect,
+  }) => {
+    const code = `
+      <script context="module">
+        import { Story } from "@storybook/addon-svelte-csf";
+      </script>
+
+      <Story name="Default" template="some template with non valid identifier" />
+    `;
+    const component = await parseAndExtractSvelteNode<SvelteAST.Component>(code, 'Component');
+
+    expect(
+      print(
+        transformLegacyStory({
+          component,
+          state: { componentIdentifierName: {} },
+        })
+      )
+    ).toMatchInlineSnapshot(`"<Story name="Default" template={template_c0gseq} />"`);
+  });
+
+  it("when directive 'let:args' is used then it wraps Story fragment with 'template' snippet block", async ({
     expect,
   }) => {
     const code = `
@@ -211,14 +233,14 @@ describe(transformLegacyStory.name, () => {
       )
     ).toMatchInlineSnapshot(`
 			"<Story name="Default">
-				{#snippet children(args)}
+				{#snippet template(args)}
 					<Button {...args} />
 				{/snippet}
 			</Story>"
 		`);
   });
 
-  it("when directive 'let:context' is used then it wraps Story fragment with 'children' snippet block", async ({
+  it("when directive 'let:context' is used then it wraps Story fragment with 'template' snippet block", async ({
     expect,
   }) => {
     const code = `
@@ -241,14 +263,14 @@ describe(transformLegacyStory.name, () => {
       )
     ).toMatchInlineSnapshot(`
 			"<Story name="Default">
-				{#snippet children(_args, context)}
+				{#snippet template(_args, context)}
 					<p>{context.id}</p>
 				{/snippet}
 			</Story>"
 		`);
   });
 
-  it("when both directives 'let:args' and 'let:context' is used then it wraps Story fragment with 'children' snippet block", async ({
+  it("when both directives 'let:args' and 'let:context' is used then it wraps Story fragment with 'template' snippet block", async ({
     expect,
   }) => {
     const code = `
@@ -272,7 +294,7 @@ describe(transformLegacyStory.name, () => {
       )
     ).toMatchInlineSnapshot(`
       "<Story name="Default">
-      	{#snippet children(args, context)}
+      	{#snippet template(args, context)}
       		<h1>{args.title}</h1>
       		<p>{context.id}</p>
       	{/snippet}
@@ -327,6 +349,41 @@ describe(transformLegacyStory.name, () => {
       			updated: true
       		}
       	}
+      }}>
+      	<h1>{"Test"}</h1>
+      </Story>"
+    `);
+  });
+
+  it('legacy `source` prop with template literal value is supported _(moved to parameters)_', async ({
+    expect,
+  }) => {
+    const code = `
+      <script context="module">
+        import { Story } from "@storybook/addon-svelte-csf";
+      </script>
+
+      <Story
+        name="Default"
+        source={\`
+          <Foo bar />
+        \`}
+      >
+        <h1>{"Test"}</h1>
+      </Story>
+    `;
+    const component = await parseAndExtractSvelteNode<SvelteAST.Component>(code, 'Component');
+
+    expect(
+      print(
+        transformLegacyStory({
+          component,
+          state: { componentIdentifierName: {} },
+        })
+      )
+    ).toMatchInlineSnapshot(`
+      "<Story name="Default" parameters={{
+      	docs: { source: { code: "\\n    <Foo bar />\\n  " } }
       }}>
       	<h1>{"Test"}</h1>
       </Story>"

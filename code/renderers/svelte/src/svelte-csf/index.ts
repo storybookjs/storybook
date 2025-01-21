@@ -12,12 +12,11 @@ import type {
   StoryContext as BaseStoryContext,
   StoryAnnotations,
   Cmp,
-} from './types';
+} from './types.js';
 
-export function defineMeta<const TCmp extends Cmp>(meta: MetaType<TCmp>) {
+export function defineMeta<const TCmp extends Cmp>(_meta: MetaType<TCmp>) {
   return {
     Story: StoryComponent as typeof StoryComponent<TCmp>,
-    meta,
   };
 }
 
@@ -80,4 +79,4 @@ export {
 };
 
 // TODO: Remove in next major release
-export * from './legacy-types.d';
+export type * from './legacy-types.d.ts';

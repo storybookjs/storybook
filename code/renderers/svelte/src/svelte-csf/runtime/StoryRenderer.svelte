@@ -2,9 +2,9 @@
   import type { Component } from 'svelte';
 
   import { useStoryRenderer } from './contexts/renderer.svelte';
-  import { emitCode } from './emit-code';
+  import { emitCode } from './emit-code.js';
 
-  import type { Cmp, StoryAnnotations, StoryContext } from '../types';
+  import type { Cmp, StoryAnnotations, StoryContext } from '../types.js';
 
   type Props = {
     Stories: Component;

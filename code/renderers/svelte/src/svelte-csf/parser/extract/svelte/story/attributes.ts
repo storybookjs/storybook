@@ -1,8 +1,8 @@
 import type { ComponentProps } from 'svelte';
 
-import type { SvelteAST } from '#parser/ast';
-import type { Cmp } from '#types';
-import type Story from '#runtime/Story.svelte';
+import type { SvelteAST } from '$lib/parser/ast.js';
+import type { Cmp } from '$lib/types.js';
+import type Story from '$lib/runtime/Story.svelte';
 
 type StoryAttributes = Array<keyof ComponentProps<typeof Story<Cmp>>>;
 

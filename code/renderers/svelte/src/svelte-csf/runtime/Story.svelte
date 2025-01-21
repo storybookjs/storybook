@@ -10,12 +10,12 @@
 >
   import type { Snippet } from 'svelte';
 
-  import { useStoriesExtractor } from './contexts/extractor.svelte';
-  import { useStoryRenderer, type StoryRendererContext } from './contexts/renderer.svelte';
-  import { useStoriesTemplate } from './contexts/template.svelte';
+  import { useStoriesExtractor } from './contexts/extractor.svelte.js';
+  import { useStoryRenderer, type StoryRendererContext } from './contexts/renderer.svelte.js';
+  import { useStoriesTemplate } from './contexts/template.svelte.js';
 
-  import { storyNameToExportName } from '../utils/identifier-utils';
-  import type { Cmp, StoryAnnotations } from '../types';
+  import { storyNameToExportName } from '../utils/identifier-utils.js';
+  import type { Cmp, StoryAnnotations } from '../types.js';
 
   type Props = Partial<StoryAnnotations<TCmp>> & {
     /**

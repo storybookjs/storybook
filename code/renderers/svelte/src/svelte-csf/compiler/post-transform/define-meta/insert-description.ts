@@ -1,5 +1,3 @@
-import { logger } from '@storybook/node-logger';
-
 import {
   findASTPropertyIndex,
   findPropertyDescriptionIndex,
@@ -8,11 +6,11 @@ import {
   getDescriptionPropertyValue,
   getDocsPropertyValue,
   getParametersPropertyValue,
-} from '#compiler/post-transform/shared/description';
-import { createASTObjectExpression, createASTProperty, type ESTreeAST } from '#parser/ast';
-import type { SvelteASTNodes } from '#parser/extract/svelte/nodes';
-import type { CompiledASTNodes } from '#parser/extract/compiled/nodes';
-import { getDefineMetaFirstArgumentObjectExpression } from '#parser/extract/svelte/define-meta';
+} from '$lib/compiler/post-transform/shared/description.js';
+import { createASTObjectExpression, createASTProperty, type ESTreeAST } from '$lib/parser/ast.js';
+import type { SvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
+import type { CompiledASTNodes } from '$lib/parser/extract/compiled/nodes.js';
+import { getDefineMetaFirstArgumentObjectExpression } from '$lib/parser/extract/svelte/define-meta.js';
 
 interface Params {
   nodes: {
@@ -103,7 +101,7 @@ export function insertDefineMetaJSDocCommentAsDescription(params: Params): void 
       }),
     }) !== -1
   ) {
-    logger.warn(
+    console.warn(
       `Svelte CSF:
         Description was already set in parameters.docs.description.component,
         ignoring JSDoc comment above defineMeta() in:

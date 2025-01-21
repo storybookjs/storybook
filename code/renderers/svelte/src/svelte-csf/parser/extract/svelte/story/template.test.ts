@@ -1,9 +1,9 @@
 import { describe, it } from 'vitest';
 
-import { extractStoryTemplateSnippetBlock } from './template';
+import { extractStoryTemplateSnippetBlock } from './template.js';
 
-import { getSvelteAST } from '#parser/ast';
-import { extractSvelteASTNodes } from '#parser/extract/svelte/nodes';
+import { getSvelteAST } from '$lib/parser/ast.js';
+import { extractSvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
 
 describe(extractStoryTemplateSnippetBlock.name, () => {
   it('returns correctly AST node, when a `<Story>` compponent has a snippet block `template` inside', async ({

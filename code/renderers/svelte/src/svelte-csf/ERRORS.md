@@ -218,16 +218,6 @@ You most likely forgot to destructure the return value.
 
 ### `SB_SVELTE_CSF_PARSER_ANALYSE_DEFINE_META_0003`
 
-The addon automatically adds a `meta` identifier to the return value of `defineMeta()` during compilation.
-But for some reason, this couldn't be found in the compiled output.
-
-If you see this error, please open a [bug report](https://github.com/storybookjs/addon-svelte-csf/issues/new).
-
-While you create an issue, please provide original code of the stories file that caused this error.
-It will help us investigate the occurred issue better.
-
-### `SB_SVELTE_CSF_PARSER_ANALYSE_DEFINE_META_0004`
-
 When analysing the object passed to `defineMeta({ ... })`, invalid properties were found. The following properties must be **static string literals**, but got something else:
 
 - `title`
@@ -235,13 +225,13 @@ When analysing the object passed to `defineMeta({ ... })`, invalid properties we
 
 Dynamically generating these properties with functions or with template strings is not supported.
 
-### `SB_SVELTE_CSF_PARSER_ANALYSE_DEFINE_META_0005`
+### `SB_SVELTE_CSF_PARSER_ANALYSE_DEFINE_META_0004`
 
 When analysing the object passed to `defineMeta({ ... })`, invalid properties were found. The `tags` property must be a **static array of static string literals**, but got something else
 
 Dynamically generating the array or the entries with functions or with template strings is not supported.
 
-### `SB_SVELTE_CSF_PARSER_ANALYSE_DEFINE_META_0006`
+### `SB_SVELTE_CSF_PARSER_ANALYSE_DEFINE_META_0005`
 
 When analysing the object passed to `defineMeta({ ... })`, invalid properties were found. The `tags` property must be a **static array of static string literals**, but got something else
 

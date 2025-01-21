@@ -3,9 +3,9 @@ import dedent from 'dedent';
 import { print } from 'svelte-ast-print';
 import { describe, it } from 'vitest';
 
-import { codemodLegacyNodes } from './index';
+import { codemodLegacyNodes } from './index.js';
 
-import { getSvelteAST } from '#parser/ast';
+import { getSvelteAST } from '$lib/parser/ast.js';
 
 describe(codemodLegacyNodes.name, () => {
   it("replaces 'export const meta' with 'defineMeta'", async ({ expect }) => {

@@ -4,25 +4,25 @@ import pkg from '@storybook/addon-svelte-csf/package.json' with { type: 'json' }
 import { preprocess } from 'svelte/compiler';
 import type { IndexInput } from '@storybook/types';
 
-import { getSvelteAST, type ESTreeAST, type SvelteAST } from '#parser/ast';
-import { extractStoryAttributesNodes } from '#parser/extract/svelte/story/attributes';
-import { getStoryIdentifiers } from '#parser/analyse/story/attributes/identifiers';
+import { getSvelteAST, type ESTreeAST, type SvelteAST } from '$lib/parser/ast.js';
+import { extractStoryAttributesNodes } from '$lib/parser/extract/svelte/story/attributes.js';
+import { getStoryIdentifiers } from '$lib/parser/analyse/story/attributes/identifiers.js';
 import {
   getArrayOfStringsValueFromAttribute,
   getStringValueFromAttribute,
-} from '#parser/analyse/story/attributes';
+} from '$lib/parser/analyse/story/attributes.js';
 import {
   getPropertyArrayOfStringsValue,
   getPropertyStringValue,
-} from '#parser/analyse/define-meta/properties';
-import type { StorybookAddonSvelteCsFOptions } from '#preset';
+} from '$lib/parser/analyse/define-meta/properties.js';
+import type { StorybookAddonSvelteCsFOptions } from '$lib/preset.js';
 import {
   DefaultOrNamespaceImportUsedError,
   GetDefineMetaFirstArgumentError,
   MissingModuleTagError,
   NoStoryComponentDestructuredError,
-} from '#utils/error/parser/extract/svelte';
-import { NoDestructuredDefineMetaCallError } from '#utils/error/parser/analyse/define-meta';
+} from '$lib/utils/error/parser/extract/svelte.js';
+import { NoDestructuredDefineMetaCallError } from '$lib/utils/error/parser/analyse/define-meta.js';
 
 interface Results {
   meta: Pick<IndexInput, 'title' | 'tags'>;

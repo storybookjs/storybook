@@ -1,16 +1,15 @@
 import { print } from 'esrap';
 import MagicString from 'magic-string';
 
-import { createExportDefaultMeta } from './appendix/create-export-default';
-import { createExportOrderVariable } from './appendix/create-export-order';
-import { createRuntimeStoriesImport } from './appendix/create-import';
-import { createVariableFromRuntimeStoriesCall } from './appendix/create-variable-from-runtime-stories-call';
-import { createNamedExportStory } from './appendix/create-named-export-story';
+import { createExportOrderVariable } from './appendix/create-export-order.js';
+import { createRuntimeStoriesImport } from './appendix/create-import.js';
+import { createVariableFromRuntimeStoriesCall } from './appendix/create-variable-from-runtime-stories-call.js';
+import { createNamedExportStory } from './appendix/create-named-export-story.js';
 
-import { getMetaIdentifier } from '#parser/analyse/define-meta/meta-identifier';
-import type { CompiledASTNodes } from '#parser/extract/compiled/nodes';
-import type { SvelteASTNodes } from '#parser/extract/svelte/nodes';
-import { getStoriesIdentifiers } from '#parser/analyse/story/attributes/identifiers';
+import { createASTIdentifier, type ESTreeAST } from '$lib/parser/ast.js';
+import { getStoriesIdentifiers } from '$lib/parser/analyse/story/attributes/identifiers.js';
+import type { CompiledASTNodes } from '$lib/parser/extract/compiled/nodes.js';
+import type { SvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
 
 interface Params {
   code: MagicString;
@@ -24,19 +23,14 @@ interface Params {
 export async function createAppendix(params: Params) {
   const { code, nodes, filename } = params;
   const { compiled, svelte } = nodes;
-  const { defineMetaVariableDeclaration, storiesFunctionDeclaration } = compiled;
+  const { storiesFunctionDeclaration } = compiled;
 
   const storyIdentifiers = getStoriesIdentifiers({
     nodes: svelte,
     filename,
   });
-  const metaIdentifier = getMetaIdentifier({
-    node: defineMetaVariableDeclaration,
-    filename,
-  });
   const variableFromRuntimeStoriesCall = createVariableFromRuntimeStoriesCall({
     storiesFunctionDeclaration,
-    metaIdentifier,
     filename,
   });
   const storiesExports = storyIdentifiers.map(({ exportName }) =>
@@ -53,11 +47,18 @@ export async function createAppendix(params: Params) {
     body: [
       createRuntimeStoriesImport(),
       variableFromRuntimeStoriesCall,
-      createExportDefaultMeta({ metaIdentifier, filename }),
+      createExportDefaultMeta(),
       createExportOrderVariable({ storyIdentifiers, filename }),
       ...storiesExports,
     ],
   });
 
   code.append('\n' + appendix.code);
+}
+
+function createExportDefaultMeta(): ESTreeAST.ExportDefaultDeclaration {
+  return {
+    type: 'ExportDefaultDeclaration',
+    declaration: createASTIdentifier('meta'),
+  };
 }

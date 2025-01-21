@@ -1,16 +1,14 @@
-import type { getMetaIdentifier } from '#parser/analyse/define-meta/meta-identifier';
-import type { ESTreeAST } from '#parser/ast';
+import { createASTIdentifier, type ESTreeAST } from '$lib/parser/ast.js';
 
 interface Params {
   storiesFunctionDeclaration: ESTreeAST.FunctionDeclaration;
-  metaIdentifier: ReturnType<typeof getMetaIdentifier>;
   filename?: string;
 }
 
 export function createVariableFromRuntimeStoriesCall(
   params: Params
 ): ESTreeAST.VariableDeclaration {
-  const { storiesFunctionDeclaration, metaIdentifier } = params;
+  const { storiesFunctionDeclaration } = params;
 
   return {
     type: 'VariableDeclaration',
@@ -36,7 +34,7 @@ export function createVariableFromRuntimeStoriesCall(
               type: 'Identifier',
               name: storiesFunctionDeclaration.id.name,
             },
-            metaIdentifier,
+            createASTIdentifier('meta'),
           ],
         },
       },

@@ -14,11 +14,11 @@ import MagicString from 'magic-string';
 import { preprocess } from 'svelte/compiler';
 import type { Plugin } from 'vite';
 
-import { codemodLegacyNodes } from '#compiler/pre-transform/index';
-import { transformStoriesCode } from '#compiler/post-transform/index';
-import { getSvelteAST } from '#parser/ast';
-import { extractCompiledASTNodes } from '#parser/extract/compiled/nodes';
-import { extractSvelteASTNodes } from '#parser/extract/svelte/nodes';
+import { codemodLegacyNodes } from '$lib/compiler/pre-transform/index.js';
+import { transformStoriesCode } from '$lib/compiler/post-transform/index.js';
+import { getSvelteAST } from '$lib/parser/ast.js';
+import { extractCompiledASTNodes } from '$lib/parser/extract/compiled/nodes.js';
+import { extractSvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
 
 export async function preTransformPlugin(): Promise<Plugin> {
   const [{ createFilter }, { print }] = await Promise.all([
@@ -31,33 +31,36 @@ export async function preTransformPlugin(): Promise<Plugin> {
   return {
     name: 'storybook:addon-svelte-csf-legacy-api-support',
     enforce: 'pre',
-    async transform(code, id) {
-      if (!filter(id)) return undefined;
+    transform: {
+      order: 'pre',
+      async handler(code, id) {
+        if (!filter(id)) return undefined;
 
-      const svelteAST = getSvelteAST({ code, filename: id });
-      const transformedSvelteAST = await codemodLegacyNodes({
-        ast: svelteAST,
-        filename: id,
-      });
+        const svelteAST = getSvelteAST({ code, filename: id });
+        const transformedSvelteAST = await codemodLegacyNodes({
+          ast: svelteAST,
+          filename: id,
+        });
 
-      let magicCode = new MagicString(code);
+        let magicCode = new MagicString(code);
 
-      magicCode.overwrite(0, code.length - 1, print(transformedSvelteAST));
+        magicCode.overwrite(0, code.length - 1, print(transformedSvelteAST));
 
-      const stringifiedMagicCode = magicCode.toString();
+        const stringifiedMagicCode = magicCode.toString();
 
-      return {
-        code: stringifiedMagicCode,
-        map: magicCode.generateMap({ hires: true, source: id }),
-        meta: {
-          _storybook_csf_pre_transform: stringifiedMagicCode,
-        },
-      };
+        return {
+          code: stringifiedMagicCode,
+          map: magicCode.generateMap({ hires: true, source: id }),
+          meta: {
+            _storybook_csf_pre_transform: stringifiedMagicCode,
+          },
+        };
+      },
     },
   };
 }
 
-export async function postTransformPlugin(): Promise<Plugin> {
+export async function transformPlugin(): Promise<Plugin> {
   const [{ createFilter }, { loadSvelteConfig }] = await Promise.all([
     import('vite'),
     import('@sveltejs/vite-plugin-svelte'),
@@ -68,8 +71,14 @@ export async function postTransformPlugin(): Promise<Plugin> {
   const filter = createFilter(include);
 
   return {
-    name: 'storybook:addon-svelte-csf-plugin-post',
-    enforce: 'post',
+    name: 'storybook:addon-svelte-csf',
+    config() {
+      return {
+        optimizeDeps: {
+          include: ['@storybook/addon-svelte-csf/internal/create-runtime-stories'],
+        },
+      };
+    },
     async transform(compiledCode, id) {
       if (!filter(id)) return undefined;
 

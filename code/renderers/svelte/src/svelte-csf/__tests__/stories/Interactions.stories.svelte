@@ -51,6 +51,7 @@
     await tick();
     expect(p.textContent).toEqual('0');
   }}
+  asChild
 >
   <p data-testid="count">{i}</p>
 </Story>

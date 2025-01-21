@@ -7,11 +7,11 @@ import MagicString from 'magic-string';
 import { parseAst } from 'rollup/parseAst';
 import { describe, it } from 'vitest';
 
-import { transformDefineMeta } from '.';
+import { transformDefineMeta } from './index.js';
 
-import { getSvelteAST } from '#parser/ast';
-import { extractSvelteASTNodes } from '#parser/extract/svelte/nodes';
-import { extractCompiledASTNodes } from '#parser/extract/compiled/nodes';
+import { getSvelteAST } from '$lib/parser/ast.js';
+import { extractSvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
+import { extractCompiledASTNodes } from '$lib/parser/extract/compiled/nodes.js';
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 
@@ -51,24 +51,8 @@ describe(transformDefineMeta.name, () => {
       ast: parseAst(code.toString()),
     });
 
-    expect(print(defineMetaVariableDeclaration).code).toMatchInlineSnapshot(`
-			"const { Story, meta } = defineMeta({
-				title: 'Example',
-				component: Example,
-				tags: ['autodocs'],
-				args: {
-					onclick: action('onclick'),
-					onmouseenter: action('onmouseenter'),
-					onmouseleave: action('onmouseleave')
-				},
-				parameters: {
-					docs: {
-						description: {
-							component: "Description set explicitly in the comment above \`defineMeta\`.\\n\\nMultiline supported. And also Markdown syntax:\\n\\n* **Bold**,\\n* _Italic_,\\n* \`Code\`."
-						}
-					}
-				}
-			});"
-		`);
+    expect(print(defineMetaVariableDeclaration).code).toMatchInlineSnapshot(
+      `"const { Story } = defineMeta(meta);"`
+    );
   });
 });

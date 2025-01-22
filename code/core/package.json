@@ -1,6 +1,6 @@
 {
   "name": "@storybook/core",
-  "version": "8.6.0-alpha.0",
+  "version": "8.6.0-alpha.1",
   "description": "Storybook framework-agnostic API",
   "keywords": [
     "storybook"
@@ -275,6 +275,7 @@
   },
   "dependencies": {
     "@storybook/csf": "0.1.12",
+    "@storybook/theming": "workspace:*",
     "better-opn": "^3.0.2",
     "browser-assert": "^1.2.1",
     "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0",

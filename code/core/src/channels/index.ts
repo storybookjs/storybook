@@ -13,7 +13,7 @@ export * from './main';
 export default Channel;
 
 export { PostMessageTransport } from './postmessage';
-export { WebsocketTransport } from './websocket';
+export { WebsocketTransport, HEARTBEAT_INTERVAL, HEARTBEAT_MAX_LATENCY } from './websocket';
 
 type Options = Config & {
   extraTransports?: ChannelTransport[];

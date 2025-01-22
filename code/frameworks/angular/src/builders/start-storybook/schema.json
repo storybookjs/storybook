@@ -157,6 +157,11 @@
       "type": ["boolean", "object"],
       "description": "Configure sourcemaps. See: https://angular.io/guide/workspace-config#source-map-configuration",
       "default": false
+    },
+    "experimentalZoneless": {
+      "type": "boolean",
+      "description": "Experimental: Use zoneless change detection.",
+      "default": false
     }
   },
   "additionalProperties": false,

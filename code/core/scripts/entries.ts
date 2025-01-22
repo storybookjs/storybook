@@ -66,6 +66,6 @@ export const getFinals = (cwd: string) => {
 
   return [
     //
-    define('src/manager/runtime.ts', ['browser'], false),
+    define('src/manager/runtime.tsx', ['browser'], false),
   ];
 };

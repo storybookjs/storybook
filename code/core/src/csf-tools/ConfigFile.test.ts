@@ -1146,6 +1146,24 @@ describe('ConfigFile', () => {
         export default config;
       `);
     });
+
+    it(`supports setting a namespaced import`, () => {
+      const config = loadConfig('').parse();
+      config.setImport({ namespace: 'path' }, 'path');
+
+      const parsed = babelPrint(config._ast);
+
+      expect(parsed).toMatchInlineSnapshot(`import * as path from 'path';`);
+    });
+
+    it(`supports setting import without specifier`, () => {
+      const config = loadConfig('').parse();
+      config.setImport(null, 'path');
+
+      const parsed = babelPrint(config._ast);
+
+      expect(parsed).toMatchInlineSnapshot(`import 'path';`);
+    });
   });
 
   describe('setRequireImport', () => {

@@ -801,16 +801,21 @@ export class ConfigFile {
    *
    * // import foo from 'bar';
    * setImport('foo', 'bar');
+   *
+   * // import * as foo from 'bar';
+   * setImport({ namespace: 'foo' }, 'bar');
+   *
+   * // import 'bar';
+   * setImport(null, 'bar');
    * ```
    *
    * @param importSpecifiers - The import specifiers to set. If a string is passed in, a default
    *   import will be set. Otherwise, an array of named imports will be set
    * @param fromImport - The module to import from
    */
-  setImport(importSpecifier: string[] | string, fromImport: string) {
+  setImport(importSpecifier: string[] | string | { namespace: string } | null, fromImport: string) {
     const getNewImportSpecifier = (specifier: string) =>
       t.importSpecifier(t.identifier(specifier), t.identifier(specifier));
-
     /**
      * Returns true, when the given import declaration has the given import specifier
      *
@@ -839,26 +844,41 @@ export class ConfigFile {
      * hasImportSpecifier(declaration, 'foo');
      * ```
      */
+    const hasNamespaceImportSpecifier = (declaration: t.ImportDeclaration, name: string) =>
+      declaration.specifiers.find(
+        (specifier) =>
+          t.isImportNamespaceSpecifier(specifier) &&
+          t.isIdentifier(specifier.local) &&
+          specifier.local.name === name
+      );
+
+    /** Returns true when the given import declaration has a default import specifier */
     const hasDefaultImportSpecifier = (declaration: t.ImportDeclaration, name: string) =>
-      declaration.specifiers.find((specifier) => t.isImportDefaultSpecifier(specifier));
+      declaration.specifiers.find(
+        (specifier) =>
+          t.isImportDefaultSpecifier(specifier) &&
+          t.isIdentifier(specifier.local) &&
+          specifier.local.name === name
+      );
 
     const importDeclaration = this._ast.program.body.find(
       (node) => t.isImportDeclaration(node) && node.source.value === fromImport
     ) as t.ImportDeclaration | undefined;
 
-    // if the import specifier is a string, we're dealing with default imports
-    if (typeof importSpecifier === 'string') {
-      // If the import declaration with the given source exists
+    // Handle side-effect imports (e.g., import 'foo')
+    if (importSpecifier === null) {
+      if (!importDeclaration) {
+        this._ast.program.body.unshift(t.importDeclaration([], t.stringLiteral(fromImport)));
+      }
+      // Handle default imports e.g. import foo from 'bar'
+    } else if (typeof importSpecifier === 'string') {
       if (importDeclaration) {
         if (!hasDefaultImportSpecifier(importDeclaration, importSpecifier)) {
-          // If the import declaration hasn'types a default specifier, we add it
           importDeclaration.specifiers.push(
             t.importDefaultSpecifier(t.identifier(importSpecifier))
           );
         }
-        // If the import declaration with the given source doesn'types exist
       } else {
-        // Add the import declaration to the top of the file
         this._ast.program.body.unshift(
           t.importDeclaration(
             [t.importDefaultSpecifier(t.identifier(importSpecifier))],
@@ -866,22 +886,38 @@ export class ConfigFile {
           )
         );
       }
-      // if the import specifier is an array, we're dealing with named imports
-    } else if (importDeclaration) {
-      importSpecifier.forEach((specifier) => {
-        if (!hasImportSpecifier(importDeclaration, specifier)) {
-          importDeclaration.specifiers.push(getNewImportSpecifier(specifier));
+      // Handle named imports e.g. import { foo } from 'bar'
+    } else if (Array.isArray(importSpecifier)) {
+      if (importDeclaration) {
+        importSpecifier.forEach((specifier) => {
+          if (!hasImportSpecifier(importDeclaration, specifier)) {
+            importDeclaration.specifiers.push(getNewImportSpecifier(specifier));
+          }
+        });
+      } else {
+        this._ast.program.body.unshift(
+          t.importDeclaration(
+            importSpecifier.map(getNewImportSpecifier),
+            t.stringLiteral(fromImport)
+          )
+        );
+      }
+      // Handle namespace imports e.g. import * as foo from 'bar'
+    } else if (importSpecifier.namespace) {
+      if (importDeclaration) {
+        if (!hasNamespaceImportSpecifier(importDeclaration, importSpecifier.namespace)) {
+          importDeclaration.specifiers.push(
+            t.importNamespaceSpecifier(t.identifier(importSpecifier.namespace))
+          );
         }
-      });
-    } else {
-      this._ast.program.body.unshift(
-        t.importDeclaration(
-          importSpecifier.map((specifier) =>
-            t.importSpecifier(t.identifier(specifier), t.identifier(specifier))
-          ),
-          t.stringLiteral(fromImport)
-        )
-      );
+      } else {
+        this._ast.program.body.unshift(
+          t.importDeclaration(
+            [t.importNamespaceSpecifier(t.identifier(importSpecifier.namespace))],
+            t.stringLiteral(fromImport)
+          )
+        );
+      }
     }
   }
 }

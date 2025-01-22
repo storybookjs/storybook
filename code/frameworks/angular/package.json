@@ -1,6 +1,6 @@
 {
   "name": "@storybook/angular",
-  "version": "8.6.0-alpha.0",
+  "version": "8.6.0-alpha.1",
   "description": "Storybook for Angular: Develop Angular components in isolation with hot reloading.",
   "keywords": [
     "storybook",
@@ -33,7 +33,7 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "node ../../../scripts/node_modules/.bin/tsc",
+    "check": "yarn run -T tsc",
     "prep": "rimraf dist && jiti ../../../scripts/prepare/tsc.ts"
   },
   "dependencies": {
@@ -58,27 +58,28 @@
     "webpack": "5"
   },
   "devDependencies": {
-    "@analogjs/vite-plugin-angular": "^0.2.24",
-    "@angular-devkit/architect": "^0.1703.0",
-    "@angular-devkit/build-angular": "^17.3.0",
-    "@angular-devkit/core": "^17.3.0",
-    "@angular/animations": "^17.3.0",
-    "@angular/cli": "^17.3.0",
-    "@angular/common": "^17.3.0",
-    "@angular/compiler": "^17.3.0",
-    "@angular/compiler-cli": "^17.3.0",
-    "@angular/core": "^17.3.0",
-    "@angular/forms": "^17.3.0",
-    "@angular/platform-browser": "^17.3.0",
-    "@angular/platform-browser-dynamic": "^17.3.0",
+    "@analogjs/vite-plugin-angular": "^1.12.1",
+    "@angular-devkit/architect": "^0.1901.1",
+    "@angular-devkit/build-angular": "^19.1.1",
+    "@angular-devkit/core": "^19.1.1",
+    "@angular/animations": "^19.1.1",
+    "@angular/cli": "^19.1.1",
+    "@angular/common": "^19.1.1",
+    "@angular/compiler": "^19.1.1",
+    "@angular/compiler-cli": "^19.1.1",
+    "@angular/core": "^19.1.1",
+    "@angular/forms": "^19.1.1",
+    "@angular/platform-browser": "^19.1.1",
+    "@angular/platform-browser-dynamic": "^19.1.1",
     "@types/cross-spawn": "^6.0.2",
     "@types/node": "^22.0.0",
     "@types/tmp": "^0.2.3",
     "cross-spawn": "^7.0.3",
+    "rimraf": "^6.0.1",
     "tmp": "^0.2.1",
     "typescript": "^5.3.2",
     "webpack": "5",
-    "zone.js": "^0.14.2"
+    "zone.js": "^0.15.0"
   },
   "peerDependencies": {
     "@angular-devkit/architect": ">=0.1500.0 < 0.2000.0",
@@ -99,6 +100,9 @@
   },
   "peerDependenciesMeta": {
     "@angular/cli": {
+      "optional": true
+    },
+    "zone.js": {
       "optional": true
     }
   },

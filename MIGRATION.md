@@ -1,7 +1,7 @@
 <h1>Migration</h1>
 
-- [From version 8.4.x to 8.5.x](#from-version-84x-to-85x)
-  - [Introducing features.developmentModeForBuild](#introducing-featuresdevelopmentmodeforbuild)
+- [From version 8.5.x to 8.6.x](#from-version-85x-to-86x)
+  - [Angular: Support experimental zoneless support](#angular-support-experimental-zoneless-support)
   - [Added source code panel to docs](#added-source-code-panel-to-docs)
   - [Addon-a11y: Component test integration](#addon-a11y-component-test-integration)
   - [Addon-a11y: Changing the default element selector](#addon-a11y-changing-the-default-element-selector)
@@ -427,6 +427,37 @@
   - [Packages renaming](#packages-renaming)
   - [Deprecated embedded addons](#deprecated-embedded-addons)
 
+## From version 8.5.x to 8.6.x
+
+### Angular: Support experimental zoneless support
+
+Storybook now supports [Angular's experimental zoneless mode](https://angular.dev/guide/experimental/zoneless). This mode is intended to improve performance by removing Angular's zone.js dependency. To enable zoneless mode in your Angular Storybook, set the `experimentalZoneless` config in your `angular.json` file:
+
+````diff
+{
+  "projects": {
+    "your-project": {
+      "architect": {
+        "storybook": {
+          ...
+          "options": {
+            ...
++           "experimentalZoneless": true
+          }
+        }
+        "build-storybook": {
+          ...
+          "options": {
+            ...
++           "experimentalZoneless": true
+          }
+        }
+      }
+    }
+  }
+}
+```
+
 ## From version 8.4.x to 8.5.x
 
 ### Introducing features.developmentModeForBuild
@@ -442,7 +473,7 @@ export default {
     developmentModeForBuild: true,
   },
 };
-```
+````
 
 ### Added source code panel to docs
 

@@ -105,4 +105,6 @@ export const ChangeArgs = {
     await within(canvasElement).findByText(/New Text/);
     await expect(button).toHaveFocus();
   },
+  // this story can't be reliably tested because the args changes results in renderPhases disrupting test runs
+  tags: ['!vitest', '!test'],
 };

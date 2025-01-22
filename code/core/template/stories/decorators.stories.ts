@@ -67,5 +67,6 @@ export const Hooks = {
     });
     await new Promise((resolve) => channel.once(STORY_ARGS_UPDATED, resolve));
   },
-  tags: ['!vitest'],
+  // this story can't be reliably tested because the args changes results in renderPhases disrupting test runs
+  tags: ['!vitest', '!test'],
 };

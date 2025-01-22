@@ -210,7 +210,6 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
             : {}),
 
           browser: {
-            ...inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED.test?.browser,
             commands: {
               getInitialGlobals: () => {
                 const envConfig = JSON.parse(process.env.VITEST_STORYBOOK_CONFIG ?? '{}');

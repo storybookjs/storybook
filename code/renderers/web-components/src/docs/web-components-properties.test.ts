@@ -33,36 +33,35 @@ const runWebComponentsAnalyzer = (inputPath: string) => {
   return output;
 };
 
-describe('web-components component properties', () => {
+vi.mock('lit', () => ({ default: {} }));
+vi.mock('lit/directive-helpers.js', () => ({ default: {} }));
+
+describe('web-components component properties', { timeout: 15000 }, () => {
   // we need to mock lit and dynamically require custom-elements
   // because lit is distributed as ESM not CJS
   // https://github.com/Polymer/lit-html/issues/516
-  vi.mock('lit', () => ({ default: {} }));
-  vi.mock('lit/directive-helpers.js', () => ({ default: {} }));
 
   const fixturesDir = join(__dirname, '__testfixtures__');
-  readdirSync(fixturesDir, { withFileTypes: true }).forEach((testEntry) => {
+  const testEntries = readdirSync(fixturesDir, { withFileTypes: true });
+
+  it.each(testEntries)('$name', async (testEntry) => {
     if (testEntry.isDirectory()) {
       const testDir = join(fixturesDir, testEntry.name);
       const testFile = readdirSync(testDir).find((fileName) => inputRegExp.test(fileName));
       if (testFile) {
-        it(`${testEntry.name}`, async () => {
-          const inputPath = join(testDir, testFile);
+        const inputPath = join(testDir, testFile);
 
-          // snapshot the output of wca
-          const customElementsJson = runWebComponentsAnalyzer(inputPath);
-          const customElements = JSON.parse(customElementsJson);
-          customElements.tags.forEach((tag: any) => {
-            tag.path = 'dummy-path-to-component';
-          });
-          await expect(customElements).toMatchFileSnapshot(
-            join(testDir, 'custom-elements.snapshot')
-          );
-
-          // snapshot the properties
-          const properties = extractArgTypesFromElements('input', customElements);
-          await expect(properties).toMatchFileSnapshot(join(testDir, 'properties.snapshot'));
+        // snapshot the output of wca
+        const customElementsJson = runWebComponentsAnalyzer(inputPath);
+        const customElements = JSON.parse(customElementsJson);
+        customElements.tags.forEach((tag: any) => {
+          tag.path = 'dummy-path-to-component';
         });
+        await expect(customElements).toMatchFileSnapshot(join(testDir, 'custom-elements.snapshot'));
+
+        // snapshot the properties
+        const properties = extractArgTypesFromElements('input', customElements);
+        await expect(properties).toMatchFileSnapshot(join(testDir, 'properties.snapshot'));
       }
     }
   });

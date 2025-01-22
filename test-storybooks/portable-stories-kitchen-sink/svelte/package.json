@@ -99,6 +99,6 @@
     "tslib": "^2.6.2",
     "typescript": "^5.2.2",
     "vite": "^5.1.4",
-    "vitest": "^3.0.0-beta.4"
+    "vitest": "^3.0.2"
   }
 }

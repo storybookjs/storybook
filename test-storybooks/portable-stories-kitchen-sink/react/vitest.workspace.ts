@@ -23,9 +23,11 @@ export default defineWorkspace([
       },
       browser: {
         enabled: true,
-        name: "chromium",
         provider: "playwright",
-        headless: true
+        headless: true,
+        instances: [{
+          browser: 'chromium'
+        }]
       },
       setupFiles: ["./.storybook/vitest.setup.ts"],
       environment: "happy-dom",

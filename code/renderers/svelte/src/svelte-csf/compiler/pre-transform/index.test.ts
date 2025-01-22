@@ -133,7 +133,7 @@ describe(codemodLegacyNodes.name, () => {
       {/snippet} <Story name="Default" template={sample} tags={["autodocs"]} parameters={{
       	docs: { source: { code: "<Button {...args} />" } }
       }}>
-      	{#snippet children(args, context)}
+      	{#snippet template(args, context)}
       		<p>{context.id}</p>
       		<Button {...args} />
        

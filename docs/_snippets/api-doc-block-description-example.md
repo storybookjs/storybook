@@ -8,11 +8,11 @@ import { Button } from './button.component';
  * These stories showcase the button
  */
 const meta: Meta<Button> = {
-  component: Button
+  component: Button,
   parameters: {
     docs: {
       description: {
-        component: 'Another description, overriding the comments'
+        component: 'Another description, overriding the comments',
       },
     },
   },
@@ -29,7 +29,7 @@ export const Primary: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Another description on the story, overriding the comments'
+        story: 'Another description on the story, overriding the comments',
       },
     },
   },
@@ -44,15 +44,15 @@ import { Button } from './Button';
  * These stories showcase the button
  */
 export default {
-  component: Button
+  component: Button,
   parameters: {
     docs: {
       description: {
-        component: 'Another description, overriding the comments'
-      }
-    }
-  }
-}
+        component: 'Another description, overriding the comments',
+      },
+    },
+  },
+};
 
 /**
  * Primary Button
@@ -62,11 +62,11 @@ export const Primary = {
   parameters: {
     docs: {
       description: {
-        story: 'Another description on the story, overriding the comments'
-      }
-    }
-  }
-}
+        story: 'Another description on the story, overriding the comments',
+      },
+    },
+  },
+};
 ```
 
 ```ts filename="Button.stories.ts|tsx" renderer="common" language="ts-4-9"
@@ -80,18 +80,18 @@ import { Button } from './Button';
  * These stories showcase the button
  */
 const meta = {
-  component: Button
+  component: Button,
   parameters: {
     docs: {
       description: {
-        component: 'Another description, overriding the comments'
-      }
-    }
-  }
+        component: 'Another description, overriding the comments',
+      },
+    },
+  },
 } satisfies Meta<typeof Button>;
 
 export default meta;
-type Story = StoryObj<typeof meta>
+type Story = StoryObj<typeof meta>;
 
 /**
  * Primary Button
@@ -101,11 +101,11 @@ export const Primary: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Another description on the story, overriding the comments'
-      }
-    }
-  }
-}
+        story: 'Another description on the story, overriding the comments',
+      },
+    },
+  },
+};
 ```
 
 ```ts filename="Button.stories.ts|tsx" renderer="common" language="ts"
@@ -119,11 +119,11 @@ import { Button } from './Button';
  * These stories showcase the button
  */
 const meta: Meta<typeof Button> = {
-  component: Button
+  component: Button,
   parameters: {
     docs: {
       description: {
-        component: 'Another description, overriding the comments'
+        component: 'Another description, overriding the comments',
       },
     },
   },
@@ -140,7 +140,7 @@ export const Primary: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Another description on the story, overriding the comments'
+        story: 'Another description on the story, overriding the comments',
       },
     },
   },

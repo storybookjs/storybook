@@ -102,7 +102,7 @@ export async function runSnippetCodemod({
 
             const allSnippets = [targetSnippet, ...counterpartSnippets];
             const previousTabTitle = 'CSF 3';
-            const newTabTitle = 'CSF 4 (experimental)';
+            const newTabTitle = 'CSF Factory 🧪';
 
             let lastModifiedSnippet = null;
             // clone the snippets and apply codemod, then append them to the bottom
@@ -244,7 +244,7 @@ const codemods: Record<string, Codemod> = {
         !snippetInfo.attributes.filename.includes('CSF 2') &&
         !filePath.split('/')?.pop().startsWith('csf-3') &&
         snippetInfo.attributes.highlightSyntax !== 'mdx' &&
-        snippetInfo.attributes.tabTitle !== 'CSF 4 (experimental)'
+        snippetInfo.attributes.tabTitle !== 'CSF Factory 🧪'
       );
     },
     getTargetSnippet: (snippetInfo: SnippetInfo) => {
@@ -259,7 +259,7 @@ const codemods: Record<string, Codemod> = {
   'csf-factory-config': {
     check: (snippetInfo: SnippetInfo) => {
       return (
-        snippetInfo.attributes.tabTitle !== 'CSF 4 (experimental)' &&
+        snippetInfo.attributes.tabTitle !== 'CSF Factory 🧪' &&
         (snippetInfo.path.includes('/preview.') || snippetInfo.path.includes('/main.'))
       );
     },

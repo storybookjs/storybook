@@ -119,7 +119,8 @@ export const ExperimentalFeatureStory: Story = {
 };
 ```
 
-```ts filename="Button.stories.js|ts" renderer="react" language="ts" tabTitle="CSF 4 (experimental)"
+```ts filename="Button.stories.js|ts" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Learn how to set up subpath imports: TK
 import config from '#.storybook/preview.ts';
 
 import { Button } from './Button';
@@ -151,7 +152,8 @@ export const ExperimentalFeatureStory = meta.story({
 
 <!-- js & ts-4-9 (when applicable) still needed while providing both CSF 3 & 4 -->
 
-```js filename="Button.stories.js|ts" renderer="react" language="js" tabTitle="CSF 4 (experimental)"
+```js filename="Button.stories.js|ts" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Learn how to set up subpath imports: TK
 import config from '#.storybook/preview.ts';
 
 import { Button } from './Button';
@@ -181,7 +183,8 @@ export const ExperimentalFeatureStory = meta.story({
 });
 ```
 
-```ts filename="Button.stories.js|ts" renderer="react" language="ts-4-9" tabTitle="CSF 4 (experimental)"
+```ts filename="Button.stories.js|ts" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+// Learn how to set up subpath imports: TK
 import config from '#.storybook/preview.ts';
 
 import { Button } from './Button';

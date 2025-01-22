@@ -289,7 +289,7 @@ function transformFragment(params: TransformFragmentParams): SvelteAST.Fragment 
     body: fragment,
     expression: {
       type: 'Identifier',
-      name: 'children',
+      name: 'template',
     },
     parameters,
   } satisfies SvelteAST.SnippetBlock;

@@ -30,18 +30,21 @@ type SnippetInfo = {
 };
 
 type Codemod = {
-  check: (snippetInfo: SnippetInfo) => boolean;
+  getTargetSnippet: (snippetInfo: SnippetInfo) => boolean;
+  check: (snippetInfo: SnippetInfo, filePath: string) => boolean;
   transform: (snippetInfo: SnippetInfo) => string | Promise<string>;
 };
 
 export async function runSnippetCodemod({
   glob,
   check,
+  getTargetSnippet,
   transform,
   dryRun = false,
 }: {
   glob: string;
   check: Codemod['check'];
+  getTargetSnippet: Codemod['getTargetSnippet'];
   transform: Codemod['transform'];
   dryRun?: boolean;
 }) {
@@ -72,16 +75,17 @@ export async function runSnippetCodemod({
         limit(async () => {
           try {
             let source = await fs.readFile(file, 'utf-8');
-            const snippets = extractSnippets(source);
+            const originalSource = source;
+            const snippets = extractSnippets(source).filter((snip) => check(snip, file));
             if (snippets.length === 0) {
               unmodifiedCount++;
               return;
             }
 
-            const targetSnippet = snippets.find(check);
+            const targetSnippet = snippets.find(getTargetSnippet);
             if (!targetSnippet) {
               skippedCount++;
-              logger.log('Skipping file', file);
+              // logger.log('Skipping file', file);
               return;
             }
 
@@ -99,28 +103,33 @@ export async function runSnippetCodemod({
             const allSnippets = [targetSnippet, ...counterpartSnippets];
             const previousTabTitle = 'CSF 3';
             const newTabTitle = 'CSF 4 (experimental)';
-            if (!dryRun) {
-              // replace attributes of the original snippets with CSF 3
-              await allSnippets.forEach(async (snippet) => {
-                source = source.replace(
-                  formatAttributes(snippet.attributes),
-                  formatAttributes({ ...snippet.attributes, tabTitle: previousTabTitle })
-                );
-                await fs.writeFile(file, source, 'utf-8');
-              });
-            }
 
+            let lastModifiedSnippet = null;
             // clone the snippets and apply codemod, then append them to the bottom
             try {
               let appendedContent = '';
+
+              if (!dryRun) {
+                // replace attributes of the original snippets with CSF 3
+                await allSnippets.forEach(async (snippet) => {
+                  // warn us if there is already a tab title
+                  source = source.replace(
+                    formatAttributes(snippet.attributes),
+                    formatAttributes({ ...snippet.attributes, tabTitle: previousTabTitle })
+                  );
+                  await fs.writeFile(file, source, 'utf-8');
+                });
+              }
+
               for (const snippet of allSnippets) {
+                // warn us if there is already a tab title
                 if (snippet !== targetSnippet) {
                   appendedContent +=
                     '\n<!-- js & ts-4-9 (when applicable) still needed while providing both CSF 3 & 4 -->\n';
                 }
 
                 const newSnippet = { ...snippet };
-
+                lastModifiedSnippet = formatAttributes(newSnippet.attributes);
                 let transformedSource = getSource({
                   ...newSnippet,
                   attributes: {
@@ -157,8 +166,15 @@ export async function runSnippetCodemod({
 
               modifiedCount++;
             } catch (transformError) {
-              logger.error(`Error transforming snippet in file ${file}:`, transformError);
+              logger.error(
+                `\nError transforming snippet in file ${picocolors.yellow(file)}:`,
+                '\n',
+                picocolors.green(lastModifiedSnippet),
+                '\n',
+                picocolors.red((transformError as any).message)
+              );
               errorCount++;
+              await fs.writeFile(file, originalSource, 'utf-8');
             }
           } catch (fileError) {
             logger.error(`Error processing file ${file}:`, fileError);
@@ -222,10 +238,17 @@ function formatAttributes(attributes: Record<string, string>): string {
 
 const codemods: Record<string, Codemod> = {
   'csf-factory-story': {
-    check: (snippetInfo: SnippetInfo) => {
+    check: (snippetInfo: SnippetInfo, filePath: string) => {
       return (
         snippetInfo.path.includes('.stories') &&
-        snippetInfo.attributes.tabTitle !== 'CSF 4 (experimental)' &&
+        !snippetInfo.attributes.filename.includes('CSF 2') &&
+        !filePath.split('/')?.pop().startsWith('csf-3') &&
+        snippetInfo.attributes.highlightSyntax !== 'mdx' &&
+        snippetInfo.attributes.tabTitle !== 'CSF 4 (experimental)'
+      );
+    },
+    getTargetSnippet: (snippetInfo: SnippetInfo) => {
+      return (
         snippetInfo.attributes.language === 'ts' &&
         (snippetInfo.attributes.renderer === 'react' ||
           snippetInfo.attributes.renderer === 'common')
@@ -237,7 +260,14 @@ const codemods: Record<string, Codemod> = {
     check: (snippetInfo: SnippetInfo) => {
       return (
         snippetInfo.attributes.tabTitle !== 'CSF 4 (experimental)' &&
-        (snippetInfo.path.includes('preview') || snippetInfo.path.includes('main'))
+        (snippetInfo.path.includes('/preview.') || snippetInfo.path.includes('/main.'))
+      );
+    },
+    getTargetSnippet: (snippetInfo: SnippetInfo) => {
+      return (
+        snippetInfo.attributes.language === 'ts' &&
+        (snippetInfo.attributes.renderer === 'react' ||
+          snippetInfo.attributes.renderer === 'common')
       );
     },
     transform: (snippetInfo: SnippetInfo) => {

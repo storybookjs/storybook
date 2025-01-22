@@ -29,8 +29,8 @@ const preview: Preview = {
 export default preview;
 ```
 
-```ts filename=".storybook/preview.js|ts" renderer="react" language="ts" tabTitle="CSF 4 (experimental)"
-import { definePreview } from '@storybook/react-vite/browser';
+```ts filename=".storybook/preview.js|ts" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+import { definePreview } from '@storybook/react-vite/preview';
 
 const config definePreview({
   // ...rest of preview
@@ -48,8 +48,8 @@ export default config;
 
 <!-- js & ts-4-9 (when applicable) still needed while providing both CSF 3 & 4 -->
 
-```js filename=".storybook/preview.js|ts" renderer="react" language="js" tabTitle="CSF 4 (experimental)"
-import { definePreview } from '@storybook/react-vite/browser';
+```js filename=".storybook/preview.js|ts" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+import { definePreview } from '@storybook/react-vite/preview';
 
 const config definePreview({
   // ...rest of preview

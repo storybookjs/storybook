@@ -23,11 +23,11 @@ type SnippetInfo = {
   path: string;
   source: string;
   attributes: {
-    filename?: string;
-    language?: string;
-    renderer?: string;
-    tabTitle?: string;
-    highlightSyntax?: string;
+    filename: string;
+    language: string;
+    renderer: string;
+    tabTitle: string;
+    highlightSyntax: string;
     [key: string]: string;
   };
 };
@@ -37,6 +37,9 @@ type Codemod = {
   check: (snippetInfo: SnippetInfo, filePath: string) => boolean;
   transform: (snippetInfo: SnippetInfo) => string | Promise<string>;
 };
+
+const previousTabTitle = 'CSF 3';
+const newTabTitle = 'CSF Factory 🧪';
 
 export async function runSnippetCodemod({
   glob,
@@ -116,6 +119,8 @@ export async function runSnippetCodemod({
           const counterpartSnippets = snippets.filter((snippet) => {
             return (
               snippet !== targetSnippet &&
+              snippet.attributes.tabTitle !== previousTabTitle &&
+              snippet.attributes.tabTitle !== newTabTitle &&
               snippet.attributes.renderer === targetSnippet.attributes.renderer &&
               snippet.attributes.language !== targetSnippet.attributes.language
             );
@@ -124,11 +129,17 @@ export async function runSnippetCodemod({
           const getSource = (snippet: SnippetInfo) =>
             `\n\`\`\`${formatAttributes(snippet.attributes)}\n${snippet.source}\n\`\`\`\n`;
 
-          const allSnippets = [targetSnippet, ...counterpartSnippets];
-          const previousTabTitle = 'CSF 3';
-          const newTabTitle = 'CSF Factory 🧪';
+          const updateTabTitle = (snippet: SnippetInfo, newTitle: string) => {
+            return snippet.attributes.tabTitle === newTitle
+              ? newTitle
+              : snippet.attributes.tabTitle
+                ? `${snippet.attributes.tabTitle} (${newTitle})`
+                : newTitle;
+          };
 
-          let lastModifiedSnippet = null;
+          const allSnippets = [targetSnippet, ...counterpartSnippets];
+
+          let lastModifiedSnippet = '';
           // clone the snippets and apply codemod, then append them to the bottom
           try {
             let appendedContent = '';
@@ -139,7 +150,10 @@ export async function runSnippetCodemod({
                 // warn us if there is already a tab title
                 source = source.replace(
                   formatAttributes(snippet.attributes),
-                  formatAttributes({ ...snippet.attributes, tabTitle: previousTabTitle })
+                  formatAttributes({
+                    ...snippet.attributes,
+                    tabTitle: updateTabTitle(snippet, previousTabTitle),
+                  })
                 );
                 await fs.writeFile(file, source, 'utf-8');
               });
@@ -159,7 +173,7 @@ export async function runSnippetCodemod({
                 attributes: {
                   ...newSnippet.attributes,
                   renderer: 'react',
-                  tabTitle: newTabTitle,
+                  tabTitle: updateTabTitle(newSnippet, newTabTitle),
                 },
                 source: await transform(newSnippet),
               });
@@ -239,7 +253,7 @@ export function extractSnippets(source: string): SnippetInfo[] {
   return snippets;
 }
 
-export function parseAttributes(attributes: string): Record<string, string> {
+export function parseAttributes(attributes: string) {
   const attributeRegex = /([a-zA-Z0-9.-]+)="([^"]+)"/g;
   const result: Record<string, string> = {};
   let match;
@@ -248,7 +262,7 @@ export function parseAttributes(attributes: string): Record<string, string> {
     result[match[1]] = match[2];
   }
 
-  return result;
+  return result as SnippetInfo['attributes'];
 }
 
 function formatAttributes(attributes: Record<string, string>): string {
@@ -264,15 +278,18 @@ const codemods: Record<string, Codemod> = {
     check: (snippetInfo: SnippetInfo, filePath: string) => {
       return (
         snippetInfo.path.includes('.stories') &&
-        !snippetInfo.attributes.filename.includes('CSF 2') &&
-        !filePath.split('/')?.pop().startsWith('csf-3') &&
+        !snippetInfo.attributes?.filename?.includes('CSF 2') &&
+        !filePath.split('/')?.pop()?.startsWith('csf-3') &&
         snippetInfo.attributes.highlightSyntax !== 'mdx' &&
-        snippetInfo.attributes.tabTitle !== 'CSF Factory 🧪'
+        snippetInfo.attributes.tabTitle !== previousTabTitle &&
+        snippetInfo.attributes.tabTitle !== newTabTitle
       );
     },
     getTargetSnippet: (snippetInfo: SnippetInfo) => {
       return (
         snippetInfo.attributes.language === 'ts' &&
+        snippetInfo.attributes.tabTitle !== previousTabTitle &&
+        snippetInfo.attributes.tabTitle !== newTabTitle &&
         (snippetInfo.attributes.renderer === 'react' ||
           snippetInfo.attributes.renderer === 'common')
       );
@@ -282,13 +299,16 @@ const codemods: Record<string, Codemod> = {
   'csf-factory-config': {
     check: (snippetInfo: SnippetInfo) => {
       return (
-        snippetInfo.attributes.tabTitle !== 'CSF Factory 🧪' &&
+        snippetInfo.attributes.tabTitle !== previousTabTitle &&
+        snippetInfo.attributes.tabTitle !== newTabTitle &&
         (snippetInfo.path.includes('/preview.') || snippetInfo.path.includes('/main.'))
       );
     },
     getTargetSnippet: (snippetInfo: SnippetInfo) => {
       return (
         snippetInfo.attributes.language === 'ts' &&
+        snippetInfo.attributes.tabTitle !== previousTabTitle &&
+        snippetInfo.attributes.tabTitle !== newTabTitle &&
         (snippetInfo.attributes.renderer === 'react' ||
           snippetInfo.attributes.renderer === 'common')
       );

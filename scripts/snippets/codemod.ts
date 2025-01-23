@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-loop-func */
+
 /* eslint-disable @typescript-eslint/default-param-last */
 import os from 'node:os';
 import { join } from 'node:path';
@@ -6,6 +8,7 @@ import { program } from 'commander';
 import { promises as fs } from 'fs';
 import pLimit from 'p-limit';
 import picocolors from 'picocolors';
+import prompts from 'prompts';
 import slash from 'slash';
 
 import { configToCsfFactory } from '../../code/lib/cli-storybook/src/codemod/helpers/config-to-csf-factory';
@@ -41,12 +44,14 @@ export async function runSnippetCodemod({
   getTargetSnippet,
   transform,
   dryRun = false,
+  promptUser = false,
 }: {
   glob: string;
   check: Codemod['check'];
   getTargetSnippet: Codemod['getTargetSnippet'];
   transform: Codemod['transform'];
   dryRun?: boolean;
+  promptUser?: boolean;
 }) {
   let modifiedCount = 0;
   let unmodifiedCount = 0;
@@ -70,119 +75,137 @@ export async function runSnippetCodemod({
 
     const limit = pLimit(10);
 
-    await Promise.all(
-      files.map((file) =>
-        limit(async () => {
-          try {
-            let source = await fs.readFile(file, 'utf-8');
-            const originalSource = source;
-            const snippets = extractSnippets(source).filter((snip) => check(snip, file));
-            if (snippets.length === 0) {
-              unmodifiedCount++;
-              return;
-            }
+    for (const file of files) {
+      await limit(async () => {
+        try {
+          let source = await fs.readFile(file, 'utf-8');
+          const originalSource = source;
+          const snippets = extractSnippets(source).filter((snip) => check(snip, file));
 
-            const targetSnippet = snippets.find(getTargetSnippet);
-            if (!targetSnippet) {
+          if (snippets.length === 0) {
+            unmodifiedCount++;
+            return;
+          }
+
+          const targetSnippet = snippets.find(getTargetSnippet);
+          if (!targetSnippet) {
+            skippedCount++;
+            return;
+          }
+
+          if (promptUser) {
+            logger.log(`\nFile: ${picocolors.yellow(file)}`);
+            const response = await prompts(
+              {
+                type: 'confirm',
+                name: 'apply',
+                message: `Apply codemod?`,
+                initial: true,
+              },
+              {
+                onCancel: () => process.exit(0),
+              }
+            );
+
+            if (!response.apply) {
               skippedCount++;
-              // logger.log('Skipping file', file);
               return;
             }
+          }
 
-            const counterpartSnippets = snippets.filter((snippet) => {
-              return (
-                snippet !== targetSnippet &&
-                snippet.attributes.renderer === targetSnippet.attributes.renderer &&
-                snippet.attributes.language !== targetSnippet.attributes.language
-              );
-            });
+          const counterpartSnippets = snippets.filter((snippet) => {
+            return (
+              snippet !== targetSnippet &&
+              snippet.attributes.renderer === targetSnippet.attributes.renderer &&
+              snippet.attributes.language !== targetSnippet.attributes.language
+            );
+          });
 
-            const getSource = (snippet: SnippetInfo) =>
-              `\n\`\`\`${formatAttributes(snippet.attributes)}\n${snippet.source}\n\`\`\`\n`;
+          const getSource = (snippet: SnippetInfo) =>
+            `\n\`\`\`${formatAttributes(snippet.attributes)}\n${snippet.source}\n\`\`\`\n`;
 
-            const allSnippets = [targetSnippet, ...counterpartSnippets];
-            const previousTabTitle = 'CSF 3';
-            const newTabTitle = 'CSF Factory 🧪';
+          const allSnippets = [targetSnippet, ...counterpartSnippets];
+          const previousTabTitle = 'CSF 3';
+          const newTabTitle = 'CSF Factory 🧪';
 
-            let lastModifiedSnippet = null;
-            // clone the snippets and apply codemod, then append them to the bottom
-            try {
-              let appendedContent = '';
+          let lastModifiedSnippet = null;
+          // clone the snippets and apply codemod, then append them to the bottom
+          try {
+            let appendedContent = '';
 
-              if (!dryRun) {
-                // replace attributes of the original snippets with CSF 3
-                await allSnippets.forEach(async (snippet) => {
-                  // warn us if there is already a tab title
-                  source = source.replace(
-                    formatAttributes(snippet.attributes),
-                    formatAttributes({ ...snippet.attributes, tabTitle: previousTabTitle })
-                  );
-                  await fs.writeFile(file, source, 'utf-8');
-                });
-              }
-
-              for (const snippet of allSnippets) {
+            if (!dryRun) {
+              // replace attributes of the original snippets with CSF 3
+              await allSnippets.forEach(async (snippet) => {
                 // warn us if there is already a tab title
-                if (snippet !== targetSnippet) {
-                  appendedContent +=
-                    '\n<!-- js & ts-4-9 (when applicable) still needed while providing both CSF 3 & 4 -->\n';
-                }
+                source = source.replace(
+                  formatAttributes(snippet.attributes),
+                  formatAttributes({ ...snippet.attributes, tabTitle: previousTabTitle })
+                );
+                await fs.writeFile(file, source, 'utf-8');
+              });
+            }
 
-                const newSnippet = { ...snippet };
-                lastModifiedSnippet = formatAttributes(newSnippet.attributes);
-                let transformedSource = getSource({
-                  ...newSnippet,
-                  attributes: {
-                    ...newSnippet.attributes,
-                    renderer: 'react',
-                    tabTitle: newTabTitle,
-                  },
-                  source: await transform(newSnippet),
-                });
-
-                if (newSnippet.path.includes('.stories')) {
-                  transformedSource = transformedSource
-                    .replace(/\/\/ Replace your-renderer with .*\n/, '')
-                    .replace(/\/\/ Replace your-framework with .*\n/, '');
-                } else {
-                  transformedSource = transformedSource.replace(
-                    /Replace your-framework with .*\n/,
-                    'Replace your-framework with the framework you are using (e.g., react-vite, nextjs, experimental-nextjs-vite)\n'
-                  );
-                }
-                appendedContent += transformedSource;
+            for (const snippet of allSnippets) {
+              // warn us if there is already a tab title
+              if (snippet !== targetSnippet) {
+                appendedContent +=
+                  '\n<!-- js & ts-4-9 (when applicable) still needed while providing both CSF 3 & 4 -->\n';
               }
 
-              const updatedSource = source + appendedContent;
+              const newSnippet = { ...snippet };
+              lastModifiedSnippet = formatAttributes(newSnippet.attributes);
+              let transformedSource = getSource({
+                ...newSnippet,
+                attributes: {
+                  ...newSnippet.attributes,
+                  renderer: 'react',
+                  tabTitle: newTabTitle,
+                },
+                source: await transform(newSnippet),
+              });
 
-              if (!dryRun) {
-                await fs.writeFile(file, updatedSource, 'utf-8');
+              if (newSnippet.path.includes('.stories')) {
+                transformedSource = transformedSource
+                  .replace(/\/\/ Replace your-renderer with .*\n/, '')
+                  .replace(/\/\/ Replace your-framework with .*\n/, '');
               } else {
-                logger.log(
-                  `Dry run: would have modified ${picocolors.yellow(file)} with new snippets \n` +
-                    picocolors.green(appendedContent)
+                transformedSource = transformedSource.replace(
+                  /Replace your-framework with .*\n/,
+                  'Replace your-framework with the framework you are using (e.g., react-vite, nextjs, experimental-nextjs-vite)\n'
                 );
               }
-
-              modifiedCount++;
-            } catch (transformError) {
-              logger.error(
-                `\nError transforming snippet in file ${picocolors.yellow(file)}:`,
-                '\n',
-                picocolors.green(lastModifiedSnippet),
-                '\n',
-                picocolors.red((transformError as any).message)
-              );
-              errorCount++;
-              await fs.writeFile(file, originalSource, 'utf-8');
+              appendedContent += transformedSource;
             }
-          } catch (fileError) {
-            logger.error(`Error processing file ${file}:`, fileError);
+
+            const updatedSource = source + appendedContent;
+
+            if (!dryRun) {
+              await fs.writeFile(file, updatedSource, 'utf-8');
+            } else {
+              logger.log(
+                `Dry run: would have modified ${picocolors.yellow(file)} with new snippets \n` +
+                  picocolors.green(appendedContent)
+              );
+            }
+
+            modifiedCount++;
+          } catch (transformError) {
+            logger.error(
+              `\nError transforming snippet in file ${picocolors.yellow(file)}:`,
+              '\n',
+              picocolors.green(lastModifiedSnippet),
+              '\n',
+              picocolors.red((transformError as any).message)
+            );
             errorCount++;
+            await fs.writeFile(file, originalSource, 'utf-8');
           }
-        })
-      )
-    );
+        } catch (fileError) {
+          logger.error(`Error processing file ${file}:`, fileError);
+          errorCount++;
+        }
+      });
+    }
   } catch (error) {
     logger.error('Error applying snippet transform:', error);
     errorCount++;
@@ -286,7 +309,8 @@ program
   .argument('<id>', 'ID to process')
   .requiredOption('--glob <pattern>', 'Glob pattern to match')
   .option('--dry-run', 'Run without making actual changes', false)
-  .action(async (id, { glob, dryRun }) => {
+  .option('--prompt', 'Prompt before applying changes', false)
+  .action(async (id, { glob, dryRun, prompt }) => {
     const codemod = codemods[id as keyof typeof codemods];
     if (!codemod) {
       logger.error(`Unknown codemod "${id}"`);
@@ -301,6 +325,7 @@ program
     await runSnippetCodemod({
       glob: join(SNIPPETS_DIRECTORY, glob),
       dryRun,
+      promptUser: prompt,
       ...codemod,
     });
   });

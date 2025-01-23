@@ -10,8 +10,8 @@ const meta: Meta<MyComponent> = {
    */
   title: 'Path/To/MyComponent',
   component: MyComponent,
-  decorators: [ ... ],
-  parameters: { ... },
+  decorators: [/* ... */],
+  parameters: {/* ... */},
 };
 
 export default meta;
@@ -22,13 +22,13 @@ import { MyComponent } from './MyComponent';
 
 export default {
   /* 👇 The title prop is optional.
-  * See https://storybook.js.org/docs/configure/#configure-story-loading
-  * to learn how to generate automatic titles
-  */
+   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * to learn how to generate automatic titles
+   */
   title: 'Path/To/MyComponent',
   component: MyComponent,
-  decorators: [ ... ],
-  parameters: { ... },
+  decorators: [/* ... */],
+  parameters: {/* ... */},
 };
 ```
 
@@ -45,8 +45,8 @@ const meta = {
    */
   title: 'Path/To/MyComponent',
   component: MyComponent,
-  decorators: [ ... ],
-  parameters: { ... },
+  decorators: [/* ... */],
+  parameters: {/* ... */},
 } satisfies Meta<typeof MyComponent>;
 
 export default meta;
@@ -65,8 +65,8 @@ const meta: Meta<typeof MyComponent> = {
    */
   title: 'Path/To/MyComponent',
   component: MyComponent,
-  decorators: [ ... ],
-  parameters: { ... },
+  decorators: [/* ... */],
+  parameters: {/* ... */},
 };
 
 export default meta;
@@ -76,8 +76,8 @@ export default meta;
 export default {
   title: 'Path/To/MyComponent',
   component: 'my-component',
-  decorators: [ ... ],
-  parameters: { ... },
+  decorators: [/* ... */],
+  parameters: {/* ... */},
 };
 ```
 
@@ -87,8 +87,8 @@ import type { Meta } from '@storybook/web-components';
 const meta: Meta = {
   title: 'Path/To/MyComponent',
   component: 'my-component',
-  decorators: [ ... ],
-  parameters: { ... },
+  decorators: [/* ... */],
+  parameters: {/* ... */},
 };
 
 export default meta;

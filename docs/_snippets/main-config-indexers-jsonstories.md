@@ -8,11 +8,11 @@ const jsonStoriesIndexer = {
 
     const stories = generateStoryIndexesFromJson(content);
 
-    return stories.map((story) => {
+    return stories.map((story) => ({
       type: 'story',
       importPath: `virtual:jsonstories--${fileName}--${story.componentName}`,
-      exportName: story.name
-    });
+      exportName: story.name,
+    }));
   },
 };
 
@@ -24,7 +24,7 @@ const config = {
     // 👇 Make sure files to index are included in `stories`
     '../src/**/*.stories.json',
   ],
-  experimental_indexers: async (existingIndexers) => [...existingIndexers, jsonStoriesIndexer];
+  experimental_indexers: async (existingIndexers) => [...existingIndexers, jsonStoriesIndexer],
 };
 
 export default config;
@@ -44,11 +44,11 @@ const jsonStoriesIndexer: Indexer = {
 
     const stories = generateStoryIndexesFromJson(content);
 
-    return stories.map((story) => {
+    return stories.map((story) => ({
       type: 'story',
       importPath: `virtual:jsonstories--${fileName}--${story.componentName}`,
-      exportName: story.name
-    });
+      exportName: story.name,
+    }));
   },
 };
 
@@ -60,7 +60,7 @@ const config: StorybookConfig = {
     // 👇 Make sure files to index are included in `stories`
     '../src/**/*.stories.json',
   ],
-  experimental_indexers: async (existingIndexers) => [...existingIndexers, jsonStoriesIndexer];
+  experimental_indexers: async (existingIndexers) => [...existingIndexers, jsonStoriesIndexer],
 };
 
 export default config;
@@ -80,11 +80,11 @@ const jsonStoriesIndexer: Indexer = {
 
     const stories = generateStoryIndexesFromJson(content);
 
-    return stories.map((story) => {
+    return stories.map((story) => ({
       type: 'story',
       importPath: `virtual:jsonstories--${fileName}--${story.componentName}`,
-      exportName: story.name
-    });
+      exportName: story.name,
+    }));
   },
 };
 
@@ -96,7 +96,7 @@ const config: StorybookConfig = {
     // 👇 Make sure files to index are included in `stories`
     '../src/**/*.stories.json',
   ],
-  experimental_indexers: async (existingIndexers) => [...existingIndexers, jsonStoriesIndexer];
+  experimental_indexers: async (existingIndexers) => [...existingIndexers, jsonStoriesIndexer],
 };
 
 export default config;

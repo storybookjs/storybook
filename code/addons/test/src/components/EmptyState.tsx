@@ -46,10 +46,10 @@ export const Empty = () => {
 
   return (
     <EmptyTabContent
-      title="Interaction testing"
+      title="Component testing"
       description={
         <>
-          Interaction tests allow you to verify the functional aspects of UIs. Write a play function
+          Component tests allow you to verify the functional aspects of UIs. Write a play function
           for your story and you&apos;ll see it run here.
         </>
       }

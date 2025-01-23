@@ -4,6 +4,7 @@ import { esbuildFlowPlugin, flowPlugin } from '@bunchtogether/vite-plugin-flow';
 import react from '@vitejs/plugin-react';
 import type { InlineConfig, PluginOption } from 'vite';
 import babel from 'vite-plugin-babel';
+import commonjs from 'vite-plugin-commonjs';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
 import type { FrameworkOptions, StorybookConfig } from './types';
@@ -129,6 +130,7 @@ export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) =
       }),
       ...plugins,
       reactNativeWeb(),
+      commonjs(),
     ],
     optimizeDeps: {
       esbuildOptions: {

@@ -77,10 +77,14 @@
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
     "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
     "storybook": "workspace:^",
+    "typescript": ">= 4.2.x",
     "vite": "^4.0.0 || ^5.0.0 || ^6.0.0"
   },
   "peerDependenciesMeta": {
     "@storybook/test": {
+      "optional": true
+    },
+    "typescript": {
       "optional": true
     }
   },

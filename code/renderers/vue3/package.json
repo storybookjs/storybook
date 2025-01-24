@@ -63,8 +63,6 @@
   "dependencies": {
     "@storybook/components": "workspace:*",
     "@storybook/global": "^5.0.0",
-    "@storybook/manager-api": "workspace:*",
-    "@storybook/preview-api": "workspace:*",
     "@vue/compiler-core": "^3.0.0",
     "ts-dedent": "^2.0.0",
     "type-fest": "~2.19",

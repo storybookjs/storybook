@@ -411,8 +411,7 @@
     "watchpack": "^2.2.0"
   },
   "peerDependencies": {
-    "prettier": "^2 || ^3",
-    "storybook": "workspace:^"
+    "prettier": "^2 || ^3"
   },
   "peerDependenciesMeta": {
     "prettier": {

@@ -48,8 +48,6 @@
     "@storybook/components": "workspace:*",
     "@storybook/csf": "0.1.12",
     "@storybook/global": "^5.0.0",
-    "@storybook/manager-api": "workspace:*",
-    "@storybook/preview-api": "workspace:*",
     "ts-dedent": "^2.0.0",
     "yaml": "^2.3.1"
   },

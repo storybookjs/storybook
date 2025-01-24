@@ -54,6 +54,7 @@
   },
   "devDependencies": {
     "chai": "^5.1.1",
+    "storybook": "workspace:*",
     "tinyspy": "^3.0.0",
     "ts-dedent": "^2.2.0",
     "type-fest": "~2.19",

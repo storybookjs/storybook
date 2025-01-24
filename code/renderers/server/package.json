@@ -50,7 +50,6 @@
     "@storybook/global": "^5.0.0",
     "@storybook/manager-api": "workspace:*",
     "@storybook/preview-api": "workspace:*",
-    "@storybook/theming": "workspace:*",
     "ts-dedent": "^2.0.0",
     "yaml": "^2.3.1"
   },

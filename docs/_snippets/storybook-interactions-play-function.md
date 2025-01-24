@@ -8,8 +8,8 @@ import { Form } from './Form.component';
 const meta: Meta<Form> = {
   component: MyComponent,
   args: {
-    // 👇 Use `fn` to spy on the onSubmit arg
-    onSubmit: fn(),
+    // 👇 Use `fn` to spy on the submit output
+    submit: fn(),
   },
 };
 

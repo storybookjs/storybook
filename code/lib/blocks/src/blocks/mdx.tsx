@@ -1,5 +1,5 @@
 import type { FC, MouseEvent, PropsWithChildren, SyntheticEvent } from 'react';
-import React, { useContext } from 'react';
+import React, { useContext, useRef } from 'react';
 
 import type { SupportedLanguage } from 'storybook/internal/components';
 import { Code, components, nameSpaceClassNames } from 'storybook/internal/components';
@@ -47,7 +47,6 @@ export const CodeOrSourceMdx: FC<PropsWithChildren<CodeOrSourceMdxProps>> = ({
   ) {
     return <Code>{children}</Code>;
   }
-  // className: "lang-jsx"
   const language = className && className.split('-');
   return (
     <Source
@@ -71,19 +70,18 @@ interface AnchorInPageProps {
 
 const AnchorInPage: FC<PropsWithChildren<AnchorInPageProps>> = ({ hash, children }) => {
   const context = useContext(DocsContext);
+  const elementRef = useRef<HTMLAnchorElement | null>(null);
+
+  const handleClick = (event: SyntheticEvent) => {
+    const id = hash.substring(1);
+    const element = document.getElementById(id);
+    if (element) {
+      navigate(context, hash);
+    }
+  };
 
   return (
-    <A
-      href={hash}
-      target="_self"
-      onClick={(event: SyntheticEvent) => {
-        const id = hash.substring(1);
-        const element = document.getElementById(id);
-        if (element) {
-          navigate(context, hash);
-        }
-      }}
-    >
+    <A href={hash} target="_self" ref={elementRef} onClick={handleClick}>
       {children}
     </A>
   );
@@ -98,40 +96,31 @@ export const AnchorMdx: FC<PropsWithChildren<AnchorMdxProps>> = (props) => {
   const { href, target, children, ...rest } = props;
   const context = useContext(DocsContext);
 
-  // links to external locations don't need any modifications.
   if (!href || target === '_blank' || /^https?:\/\//.test(href)) {
     return <A {...props} />;
   }
 
-  // Enable scrolling for in-page anchors.
   if (href.startsWith('#')) {
     return <AnchorInPage hash={href}>{children}</AnchorInPage>;
   }
 
-  // Links to other pages of SB should use the base URL of the top level iframe instead of the base URL of the preview iframe.
-  return (
-    <A
-      href={href}
-      onClick={(event: MouseEvent<HTMLAnchorElement>) => {
-        // Cmd/Ctrl/Shift/Alt + Click should trigger default browser behaviour. Same applies to non-left clicks
-        const LEFT_BUTTON = 0;
-        const isLeftClick =
-          event.button === LEFT_BUTTON &&
-          !event.altKey &&
-          !event.ctrlKey &&
-          !event.metaKey &&
-          !event.shiftKey;
+  const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    const LEFT_BUTTON = 0;
+    const isLeftClick =
+      event.button === LEFT_BUTTON &&
+      !event.altKey &&
+      !event.ctrlKey &&
+      !event.metaKey &&
+      !event.shiftKey;
 
-        if (isLeftClick) {
-          event.preventDefault();
-          // use the A element's href, which has been modified for
-          // local paths without a `?path=` query param prefix
-          navigate(context, event.currentTarget.getAttribute('href'));
-        }
-      }}
-      target={target}
-      {...rest}
-    >
+    if (isLeftClick) {
+      event.preventDefault();
+      navigate(context, event.currentTarget.getAttribute('href') || '');
+    }
+  };
+
+  return (
+    <A href={href} onClick={handleClick} target={target} {...rest}>
       {children}
     </A>
   );
@@ -161,7 +150,6 @@ const OcticonAnchor = styled.a(() => ({
   lineHeight: 'inherit',
   paddingRight: '10px',
   marginLeft: '-24px',
-  // Allow the theme's text color to override the default link color.
   color: 'inherit',
 }));
 
@@ -177,10 +165,16 @@ const HeaderWithOcticonAnchor: FC<PropsWithChildren<HeaderWithOcticonAnchorProps
   ...rest
 }) => {
   const context = useContext(DocsContext);
-
-  // @ts-expect-error (Converted from ts-ignore)
   const OcticonHeader = OcticonHeaders[as];
   const hash = `#${id}`;
+  const elementRef = useRef<HTMLAnchorElement | null>(null);
+
+  const handleClick = (event: SyntheticEvent) => {
+    const element = document.getElementById(id);
+    if (element) {
+      navigate(context, hash);
+    }
+  };
 
   return (
     <OcticonHeader id={id} {...rest}>
@@ -189,12 +183,7 @@ const HeaderWithOcticonAnchor: FC<PropsWithChildren<HeaderWithOcticonAnchorProps
         href={hash}
         tabIndex={-1}
         target="_self"
-        onClick={(event: SyntheticEvent) => {
-          const element = document.getElementById(id);
-          if (element) {
-            navigate(context, hash);
-          }
-        }}
+        onClick={handleClick}
       >
         <LinkIcon />
       </OcticonAnchor>
@@ -211,7 +200,6 @@ interface HeaderMdxProps {
 export const HeaderMdx: FC<PropsWithChildren<HeaderMdxProps>> = (props) => {
   const { as, id, children, ...rest } = props;
 
-  // An id should have been added on every header by the "remark-slug" plugin.
   if (id) {
     return (
       <HeaderWithOcticonAnchor as={as} id={id} {...rest}>
@@ -219,7 +207,7 @@ export const HeaderMdx: FC<PropsWithChildren<HeaderMdxProps>> = (props) => {
       </HeaderWithOcticonAnchor>
     );
   }
-  // Make sure it still work if "remark-slug" plugin is not present.
+
   const Component = as as React.ElementType;
   const { as: omittedAs, ...withoutAs } = props;
   return <Component {...nameSpaceClassNames(withoutAs, as)} />;
@@ -228,7 +216,6 @@ export const HeaderMdx: FC<PropsWithChildren<HeaderMdxProps>> = (props) => {
 export const HeadersMdx = SUPPORTED_MDX_HEADERS.reduce(
   (acc, headerType) => ({
     ...acc,
-    // @ts-expect-error (Converted from ts-ignore)
     [headerType]: (props: object) => <HeaderMdx as={headerType} {...props} />,
   }),
   {}

@@ -1,18 +1,14 @@
-import type { FC, PropsWithChildren } from 'react';
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 
-import type { ThemeVars } from 'storybook/internal/theming';
 import { ThemeProvider, ensure as ensureTheme } from 'storybook/internal/theming';
-import type { Renderer } from 'storybook/internal/types';
 
 import { DocsPageWrapper } from '../components';
 import { TableOfContents } from '../components/TableOfContents';
-import type { DocsContextProps } from './DocsContext';
 import { DocsContext } from './DocsContext';
 import { SourceContainer } from './SourceContainer';
 import { scrollToElement } from './utils';
 
-const { document, window: globalWindow } = globalThis;
+const { window: globalWindow } = globalThis;
 
 export interface DocsContainerProps<TFramework extends Renderer = Renderer> {
   context: DocsContextProps<TFramework>;
@@ -24,13 +20,13 @@ export const DocsContainer: FC<PropsWithChildren<DocsContainerProps>> = ({
   theme,
   children,
 }) => {
-  let toc;
+  const tocRef = useRef<HTMLDivElement | null>(null);
 
+  let toc;
   try {
     const meta = context.resolveOf('meta', ['meta']);
     toc = meta.preparedMeta.parameters?.docs?.toc;
   } catch (err) {
-    // No meta, falling back to project annotations
     toc = context?.projectAnnotations?.parameters?.docs?.toc;
   }
 
@@ -40,17 +36,14 @@ export const DocsContainer: FC<PropsWithChildren<DocsContainerProps>> = ({
       url = new URL(globalWindow.parent.location.toString());
       if (url.hash) {
         const element = document.getElementById(decodeURIComponent(url.hash.substring(1)));
-        if (element) {
-          // Introducing a delay to ensure scrolling works when it's a full refresh.
-          setTimeout(() => {
-            scrollToElement(element);
-          }, 200);
+        if (element && tocRef.current) {
+          scrollToElement(element);
         }
       }
     } catch (err) {
       // pass
     }
-  });
+  }, [context]);
 
   return (
     <DocsContext.Provider value={context}>

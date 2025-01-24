@@ -6,41 +6,37 @@ import { addons } from '@storybook/core/manager-api';
 
 import Provider from './provider';
 
-export class FakeProvider extends Provider {
-  constructor() {
-    super();
-
-    // @ts-expect-error (Converted from ts-ignore)
-    this.addons = addons;
-    // @ts-expect-error (Converted from ts-ignore)
-    this.channel = {
-      on: () => {},
-      once: () => {},
-      off: () => {},
-      emit: () => {},
-      addListener: () => {},
-      removeListener: () => {},
-    };
-  }
+export const FakeProvider = () => {
+  // @ts-expect-error (Converted from ts-ignore)
+  const addonsInstance = addons;
+  // @ts-expect-error (Converted from ts-ignore)
+  const channel = {
+    on: () => {},
+    once: () => {},
+    off: () => {},
+    emit: () => {},
+    addListener: () => {},
+    removeListener: () => {},
+  };
 
   // @ts-expect-error (Converted from ts-ignore)
-  getElements(type) {
-    return addons.getElements(type);
-  }
+  const getElements = (type: string) => addonsInstance.getElements(type);
 
-  renderPreview() {
-    return <div>This is from a 'renderPreview' call from FakeProvider</div>;
-  }
+  const renderPreview = () => <div>This is from a 'renderPreview' call from FakeProvider</div>;
 
-  // @ts-expect-error (Converted from ts-ignore)
-  handleAPI(api) {
-    addons.loadAddons(api);
-  }
+  const handleAPI = (api: any) => addonsInstance.loadAddons(api);
 
-  getConfig() {
-    return {};
-  }
-}
+  const getConfig = () => ({});
+
+  return (
+    <Provider
+      renderPreview={renderPreview}
+      getElements={getElements}
+      handleAPI={handleAPI}
+      getConfig={getConfig}
+    />
+  );
+};
 
 export const Centered = styled.div({
   width: '100vw',
@@ -51,15 +47,13 @@ export const Centered = styled.div({
   flexDirection: 'column',
 });
 
-export class PrettyFakeProvider extends FakeProvider {
-  renderPreview(...args: any[]) {
-    return (
-      <Centered>
-        This is from a 'renderPreview' call from FakeProvider
-        <hr />
-        'renderPreview' was called with:
-        <pre>{JSON.stringify(args, null, 2)}</pre>
-      </Centered>
-    );
-  }
-}
+export const PrettyFakeProvider = (props: any) => {
+  return (
+    <Centered>
+      This is from a 'renderPreview' call from FakeProvider
+      <hr />
+      'renderPreview' was called with:
+      <pre>{JSON.stringify(props, null, 2)}</pre>
+    </Centered>
+  );
+};

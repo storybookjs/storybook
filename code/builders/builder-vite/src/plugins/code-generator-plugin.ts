@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 
+import type { StoryIndexGenerator } from 'storybook/internal/core-server';
 import type { Options } from 'storybook/internal/types';
 
 import type { Plugin } from 'vite';
@@ -10,7 +11,7 @@ import { generateAddonSetupCode } from '../codegen-set-addon-channel';
 import { transformIframeHtml } from '../transform-iframe-html';
 import { SB_VIRTUAL_FILES, getResolvedVirtualModuleId } from '../virtual-file-names';
 
-export function codeGeneratorPlugin(options: Options): Plugin {
+export async function codeGeneratorPlugin(options: Options, storyIndexGenerator): Plugin {
   const iframePath = require.resolve('@storybook/builder-vite/input/iframe.html');
   let iframeId: string;
   let projectRoot: string;
@@ -19,16 +20,10 @@ export function codeGeneratorPlugin(options: Options): Plugin {
   return {
     name: 'storybook:code-generator-plugin',
     enforce: 'pre',
-    configureServer(server) {
-      // invalidate the whole vite-app.js script on every file change.
-      // (this might be a little too aggressive?)
-      server.watcher.on('change', () => {
-        const appModule = server.moduleGraph.getModuleById(
-          getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_APP_FILE)
-        );
-        if (appModule) {
-          server.moduleGraph.invalidateModule(appModule);
-        }
+    async configureServer(server) {
+      const generator = (await storyIndexGenerator) as StoryIndexGenerator;
+      generator.onInvalidated(() => {
+        console.log('LOG: invalidated!');
         const storiesModule = server.moduleGraph.getModuleById(
           getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE)
         );
@@ -36,16 +31,37 @@ export function codeGeneratorPlugin(options: Options): Plugin {
           server.moduleGraph.invalidateModule(storiesModule);
         }
       });
+      // invalidate the whole vite-app.js script on every file change.
+      // (this might be a little too aggressive?)
+      server.watcher.on('change', (path) => {
+        console.log('LOG: server.watcher.on(change)', path);
+        // const appModule = server.moduleGraph.getModuleById(
+        //   getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_APP_FILE)
+        // );
+        // if (appModule) {
+        //   server.moduleGraph.invalidateModule(appModule);
+        // }
+        // const storiesModule = server.moduleGraph.getModuleById(
+        //   getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE)
+        // );
+        // if (storiesModule) {
+        //   server.moduleGraph.invalidateModule(storiesModule);
+        // }
+      });
 
       // Adding new story files is not covered by the change event above. So we need to detect this and trigger
       // HMR to update the importFn.
 
+      // on generator.invalidate emit,
+      // run server.watcher.emit('change', SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE);
+
       server.watcher.on('add', (path) => {
+        console.log('LOG: server.watcher.on(add)', path);
         // TODO maybe use the stories declaration in main
-        if (/\.stories\.([tj])sx?$/.test(path) || /\.mdx$/.test(path)) {
-          // We need to emit a change event to trigger HMR
-          server.watcher.emit('change', SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE);
-        }
+        // if (/\.stories\.([tj])sx?$/.test(path) || /\.mdx$/.test(path)) {
+        //   // We need to emit a change event to trigger HMR
+        //   server.watcher.emit('change', SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE);
+        // }
       });
     },
     config(config, { command }) {
@@ -88,7 +104,7 @@ export function codeGeneratorPlugin(options: Options): Plugin {
     },
     async load(id, config) {
       if (id === getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE)) {
-        return generateImportFnScriptCode(options);
+        return generateImportFnScriptCode(options, storyIndexGenerator);
       }
 
       if (id === getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_ADDON_SETUP_FILE)) {

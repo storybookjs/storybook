@@ -89,6 +89,9 @@ export async function storybookDevServer(options: Options) {
         startTime: process.hrtime(),
         options,
         router: app,
+        // TODO: add to options instead of passing it directly
+        // TODO: alternatively use presets
+        storyIndexGenerator: initializedStoryIndexGenerator,
         server,
         channel: serverChannel,
       })

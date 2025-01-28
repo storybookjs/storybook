@@ -1,7 +1,8 @@
+import type { StoryIndexGenerator } from 'storybook/internal/core-server';
 import type { Options } from 'storybook/internal/types';
 
 import { genDynamicImport, genImport, genObjectFromRawEntries } from 'knitwork';
-import { normalize, relative } from 'pathe';
+import { join, normalize, relative } from 'pathe';
 import { dedent } from 'ts-dedent';
 
 import { listStories } from './list-stories';
@@ -45,9 +46,20 @@ export async function toImportFn(stories: string[]) {
   `;
 }
 
-export async function generateImportFnScriptCode(options: Options): Promise<string> {
+export async function generateImportFnScriptCode(
+  options: Options,
+  storyIndexGenerator
+): Promise<string> {
   // First we need to get an array of stories and their absolute paths.
-  const stories = await listStories(options);
+  // const stories = await listStories(options);
+  const generator = (await storyIndexGenerator) as StoryIndexGenerator;
+  const index = await generator.getIndex();
+  const stories = Object.values(index.entries).map((entry) =>
+    join(process.cwd(), entry.importPath)
+  );
+
+  // console.log('original stories', stories[0]);
+  console.log('new stories', stories[0]);
 
   // We can then call toImportFn to create a function that can be used to load each story dynamically.
   // eslint-disable-next-line @typescript-eslint/return-await

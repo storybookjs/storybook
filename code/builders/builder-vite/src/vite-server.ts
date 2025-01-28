@@ -7,10 +7,10 @@ import { sanitizeEnvVars } from './envs';
 import { getOptimizeDeps } from './optimizeDeps';
 import { commonConfig } from './vite-config';
 
-export async function createViteServer(options: Options, devServer: Server) {
+export async function createViteServer(options: Options, devServer: Server, storyIndexGenerator) {
   const { presets } = options;
 
-  const commonCfg = await commonConfig(options, 'development');
+  const commonCfg = await commonConfig(options, 'development', storyIndexGenerator);
 
   const config = {
     ...commonCfg,

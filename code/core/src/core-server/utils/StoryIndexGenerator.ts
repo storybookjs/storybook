@@ -706,6 +706,7 @@ export class StoryIndexGenerator {
     });
     this.lastIndex = null;
     this.lastError = null;
+    this.invalidateCallback?.();
   }
 
   invalidate(specifier: NormalizedStoriesSpecifier, importPath: Path, removed: boolean) {
@@ -750,6 +751,13 @@ export class StoryIndexGenerator {
     }
     this.lastIndex = null;
     this.lastError = null;
+    this.invalidateCallback?.();
+  }
+
+  onInvalidated(callback: () => void) {
+    // TODO add an instance field with a set of callbacks
+    // TODO: return a function to remove the callback
+    this.invalidateCallback = callback;
   }
 
   async getPreviewCode() {

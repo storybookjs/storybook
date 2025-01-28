@@ -44,7 +44,8 @@ const configEnvBuild: ConfigEnv = {
 // Vite config that is common to development and production mode
 export async function commonConfig(
   options: Options,
-  _type: PluginConfigType
+  _type: PluginConfigType,
+  storyIndexGenerator
 ): Promise<ViteInlineConfig> {
   const configEnv = _type === 'development' ? configEnvServe : configEnvBuild;
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -67,7 +68,7 @@ export async function commonConfig(
     root: projectRoot,
     // Allow storybook deployed as subfolder.  See https://github.com/storybookjs/builder-vite/issues/238
     base: './',
-    plugins: await pluginConfig(options),
+    plugins: await pluginConfig(options, storyIndexGenerator),
     resolve: {
       conditions: ['storybook', 'stories', 'test', ...defaultClientConditions],
       preserveSymlinks: isPreservingSymlinks(),
@@ -89,7 +90,7 @@ export async function commonConfig(
   return config;
 }
 
-export async function pluginConfig(options: Options) {
+export async function pluginConfig(options: Options, storyIndexGenerator) {
   const frameworkName = await getFrameworkName(options);
   const build = await options.presets.apply('build');
 
@@ -100,7 +101,7 @@ export async function pluginConfig(options: Options) {
   }
 
   const plugins = [
-    codeGeneratorPlugin(options),
+    codeGeneratorPlugin(options, storyIndexGenerator),
     await csfPlugin(options),
     await injectExportOrderPlugin(),
     await stripStoryHMRBoundary(),

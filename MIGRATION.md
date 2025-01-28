@@ -721,8 +721,8 @@ It has been replaced with a tags-based system which is more flexible than before
 
 `docs.autodocs` takes three values:
 
-- `true`: generate autodocs for every component
-- `false`: don't generate autodocs at all
+- `true`: generate autodocs for every component.
+- `false`: don't generate autodocs at all.
 - `tag`: generate autodocs for components that have been tagged `'autodocs'`.
 
 Starting in 8.1, to generate autodocs for every component (`docs.autodocs = true`), add the following code to `.storybook/preview.js`:

@@ -37,7 +37,6 @@ export type {
   SupportedLanguage,
 } from './components/syntaxhighlighter/syntaxhighlighter-types';
 export { SyntaxHighlighter } from './components/syntaxhighlighter/lazy-syntaxhighlighter';
-export { createCopyToClipboardFunction } from './components/syntaxhighlighter/syntaxhighlighter';
 
 // UI
 export { ActionBar } from './components/ActionBar/ActionBar';
@@ -85,6 +84,7 @@ export { ProgressSpinner } from './components/ProgressSpinner/ProgressSpinner';
 
 // Utils
 export { getStoryHref } from './components/utils/getStoryHref';
+export { createCopyToClipboardFunction } from './components/utils/createCopyToClipboardFunction';
 
 export * from './components/typography/DocumentFormatting';
 export * from './components/typography/ResetWrapper';

@@ -323,7 +323,15 @@ export class StoryStore<TRenderer extends Renderer> {
             }
             return Object.assign(storyAcc, { [key]: value });
           },
-          { args: story.initialArgs }
+          {
+            //
+            args: story.initialArgs,
+            globals: {
+              ...this.userGlobals.initialGlobals,
+              ...this.userGlobals.globals,
+              ...story.storyGlobals,
+            },
+          }
         );
         return acc;
       },

@@ -2,7 +2,12 @@ import type { FC, MouseEvent, PropsWithChildren, SyntheticEvent } from 'react';
 import React, { useContext } from 'react';
 
 import type { SupportedLanguage } from 'storybook/internal/components';
-import { Code, components, nameSpaceClassNames } from 'storybook/internal/components';
+import {
+  Code,
+  components,
+  createCopyToClipboardFunction,
+  nameSpaceClassNames,
+} from 'storybook/internal/components';
 import { NAVIGATE_URL } from 'storybook/internal/core-events';
 import { styled } from 'storybook/internal/theming';
 
@@ -168,6 +173,8 @@ const OcticonAnchor = styled.a(
     }) as const
 );
 
+const copyToClipboard = createCopyToClipboardFunction();
+
 interface HeaderWithOcticonAnchorProps {
   as: string;
   id: string;
@@ -185,6 +192,9 @@ const HeaderWithOcticonAnchor: FC<PropsWithChildren<HeaderWithOcticonAnchorProps
   const OcticonHeader = OcticonHeaders[as];
   const hash = `#${id}`;
 
+  const copyUrl = new URL(window.parent.location.href);
+  copyUrl.hash = hash;
+
   return (
     <OcticonHeader id={id} {...rest}>
       <OcticonAnchor
@@ -193,6 +203,8 @@ const HeaderWithOcticonAnchor: FC<PropsWithChildren<HeaderWithOcticonAnchorProps
         tabIndex={-1}
         target="_self"
         onClick={(event: SyntheticEvent) => {
+          copyToClipboard(copyUrl.href);
+
           const element = document.getElementById(id);
           if (element) {
             navigate(context, hash);

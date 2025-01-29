@@ -433,7 +433,7 @@
 
 Storybook now supports [Angular's experimental zoneless mode](https://angular.dev/guide/experimental/zoneless). This mode is intended to improve performance by removing Angular's zone.js dependency. To enable zoneless mode in your Angular Storybook, set the `experimentalZoneless` config in your `angular.json` file:
 
-````diff
+```diff
 {
   "projects": {
     "your-project": {

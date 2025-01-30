@@ -102,11 +102,13 @@ Determines if the snippet is rendered in dark mode.
   Determines if [decorators](../../writing-stories/decorators.mdx) are rendered in the source code snippet.
 </IfRenderer>
 
-### `format`
+### `format` (deprecated - will be removed in Storybook 9)
 
 Type: `boolean | 'dedent' | BuiltInParserName`
 
 Default: `parameters.docs.source.format` or `true`
+
+Deprecated: Will be removed in Storybook 9. Please use `docs.source.transform` instead and use your own formatter
 
 Specifies the formatting used on source code. Both `true` and `'dedent'` have the same effect of removing any extraneous indentation. Supports all valid [prettier parser names](https://prettier.io/docs/en/configuration.html#setting-the-parserdocsenoptionshtmlparser-option).
 
@@ -138,7 +140,7 @@ Type: `(code: string, storyContext: StoryContext) => string`
 
 Default: `parameters.docs.source.transform`
 
-A function to dynamically transform the source before being rendered, based on the original source and any story context necessary. The returned string is displayed as-is.
+An async function to dynamically transform the source before being rendered, based on the original source and any story context necessary. The returned string is displayed as-is.
 If both [`code`](#code) and `transform` are specified, `transform` will be ignored.
 
 ### `type`

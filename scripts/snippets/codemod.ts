@@ -181,7 +181,11 @@ export async function runSnippetCodemod({
               if (newSnippet.path.includes('.stories')) {
                 transformedSource = transformedSource
                   .replace(/\/\/ Replace your-renderer with .*\n/, '')
-                  .replace(/\/\/ Replace your-framework with .*\n/, '');
+                  .replace(/\/\/ Replace your-framework with .*\n/, '')
+                  .replace(
+                    /(import preview from \"#\.storybook\/preview\";)/g,
+                    '// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports\n$1'
+                  );
               } else {
                 transformedSource = transformedSource.replace(
                   /Replace your-framework with .*\n/,

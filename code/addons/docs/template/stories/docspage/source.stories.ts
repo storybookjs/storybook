@@ -55,15 +55,14 @@ export const AsyncTransform = {
     docs: {
       source: {
         async transform(src: string, storyContext: StoryContext) {
-          await Promise.resolve<any>((res) =>
+          return new Promise<string>((res) =>
             setTimeout(() => {
-              res();
+              res(dedent`// We transformed this asynchronously!
+                // The current args are: ${JSON.stringify(storyContext.args)}
+                const example = (${src});
+                `);
             }, 500)
           );
-          return dedent`// We transformed this asynchronously!
-          // The current args are: ${JSON.stringify(storyContext.args)}
-          const example = (${src});
-          `;
         },
       },
     },

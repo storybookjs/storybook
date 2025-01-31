@@ -136,7 +136,7 @@ Specifies which story's source is rendered.
 
 ### `transform`
 
-Type: `(code: string, storyContext: StoryContext) => string`
+Type: `(code: string, storyContext: StoryContext) => string | Promise<string>`
 
 Default: `parameters.docs.source.transform`
 

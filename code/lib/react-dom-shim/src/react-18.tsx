@@ -96,18 +96,21 @@ const renderElementExperimentalRSC = async (
   rootOptions?: RootOptions
 ): Promise<ReactRoot> => {
   let root = nodes.get(el);
-  if (!root) {
-    const stream = await ReactDOMServer.renderToReadableStream(node, {
-      // @ts-expect-error onCaughtError in hydrationRoot and createRoot (React 19 only)
-      onError: rootOptions?.onCaughtError,
-    });
-    await stream.allReady;
 
-    el.innerHTML = await new Response(stream).text();
-
-    root = ReactDOM.hydrateRoot(el, node, rootOptions);
-    nodes.set(el, root);
+  if (root) {
+    root.unmount();
   }
+
+  const stream = await ReactDOMServer.renderToReadableStream(node, {
+    // @ts-expect-error onCaughtError in hydrationRoot and createRoot (React 19 only)
+    onError: rootOptions?.onCaughtError,
+  });
+  await stream.allReady;
+
+  el.innerHTML = await new Response(stream).text();
+
+  root = ReactDOM.hydrateRoot(el, node, rootOptions);
+  nodes.set(el, root);
 
   return root;
 };

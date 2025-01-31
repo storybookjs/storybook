@@ -97,7 +97,6 @@ const config: StorybookConfig = {
   addons: [
     '@storybook/addon-themes',
     '@storybook/addon-essentials',
-    '@storybook/addon-storysource',
     '@storybook/addon-designs',
     '@storybook/experimental-addon-test',
     '@storybook/addon-a11y',

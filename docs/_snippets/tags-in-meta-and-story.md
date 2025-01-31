@@ -119,9 +119,9 @@ export const ExperimentalFeatureStory: Story = {
 };
 ```
 
-```ts filename="Button.stories.js|ts" renderer="react" language="ts" tabTitle="CSF Factories 🧪"
-// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-importsd
-import config from '#.storybook/preview';
+```ts filename="Button.stories.js|ts" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Learn how to set up subpath imports: TK
+import config from '#.storybook/preview.ts';
 
 import { Button } from './Button';
 
@@ -135,6 +135,8 @@ const meta = config.meta({
    */
   tags: ['autodocs'],
 });
+
+export default meta;
 
 export const ExperimentalFeatureStory = meta.story({
   /*
@@ -150,9 +152,9 @@ export const ExperimentalFeatureStory = meta.story({
 
 <!-- js & ts-4-9 (when applicable) still needed while providing both CSF 3 & 4 -->
 
-```js filename="Button.stories.js|ts" renderer="react" language="js" tabTitle="CSF Factories 🧪"
-// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-importsd
-import config from '#.storybook/preview';
+```js filename="Button.stories.js|ts" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Learn how to set up subpath imports: TK
+import config from '#.storybook/preview.ts';
 
 import { Button } from './Button';
 
@@ -166,6 +168,8 @@ const meta = config.meta({
    */
   tags: ['autodocs'],
 });
+
+export default meta;
 
 export const ExperimentalFeatureStory = meta.story({
   /*
@@ -179,9 +183,9 @@ export const ExperimentalFeatureStory = meta.story({
 });
 ```
 
-```ts filename="Button.stories.js|ts" renderer="react" language="ts-4-9" tabTitle="CSF Factories 🧪"
-// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-importsd
-import config from '#.storybook/preview';
+```ts filename="Button.stories.js|ts" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+// Learn how to set up subpath imports: TK
+import config from '#.storybook/preview.ts';
 
 import { Button } from './Button';
 
@@ -195,6 +199,8 @@ const meta = config.meta({
    */
   tags: ['autodocs'],
 });
+
+export default meta;
 
 export const ExperimentalFeatureStory = meta.story({
   /*

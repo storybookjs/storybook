@@ -29,11 +29,11 @@ const preview: Preview = {
 export default preview;
 ```
 
-```ts filename=".storybook/preview.js|ts" renderer="react" language="ts" tabTitle="CSF Factories 🧪"
+```ts filename=".storybook/preview.js|ts" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, experimental-nextjs-vite)
-import { definePreview } from '@storybook/your-framework';
+import { definePreview } from '@storybook/your-framework/preview';
 
-export default definePreview({
+const config definePreview({
   // ...rest of preview
   /*
    * All stories in your project will have these tags applied:
@@ -43,15 +43,17 @@ export default definePreview({
    */
   tags: ['autodocs'],
 });
+
+export default config;
 ```
 
 <!-- js & ts-4-9 (when applicable) still needed while providing both CSF 3 & 4 -->
 
-```js filename=".storybook/preview.js|ts" renderer="react" language="js" tabTitle="CSF Factories 🧪"
+```js filename=".storybook/preview.js|ts" renderer="react" language="js" tabTitle="CSF Factory 🧪"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, experimental-nextjs-vite)
-import { definePreview } from '@storybook/your-framework';
+import { definePreview } from '@storybook/your-framework/preview';
 
-export default definePreview({
+const config definePreview({
   // ...rest of preview
   /*
    * All stories in your project will have these tags applied:
@@ -61,4 +63,6 @@ export default definePreview({
    */
   tags: ['autodocs'],
 });
+
+export default config;
 ```

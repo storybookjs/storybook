@@ -102,7 +102,12 @@ export async function renderToCanvas(
     actQueue.push(async () => {
       try {
         await act(async () => {
-          await renderElement(element, canvasElement, storyContext?.parameters?.react?.rootOptions);
+          await renderElement(
+            element,
+            canvasElement,
+            storyContext?.parameters?.react?.rootOptions,
+            storyContext?.parameters?.react?.rsc
+          );
         });
         resolve();
       } catch (e) {

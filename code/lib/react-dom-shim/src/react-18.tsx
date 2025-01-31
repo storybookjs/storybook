@@ -3,6 +3,7 @@ import type { ReactElement } from 'react';
 import * as React from 'react';
 import type { Root as ReactRoot, RootOptions } from 'react-dom/client';
 import * as ReactDOM from 'react-dom/client';
+import * as ReactDOMServer from 'react-dom/server';
 
 // A map of all rendered React 18 nodes
 const nodes = new Map<Element, ReactRoot>();
@@ -45,7 +46,17 @@ if (typeof Promise.withResolvers === 'undefined') {
   };
 }
 
-export const renderElement = async (node: ReactElement, el: Element, rootOptions?: RootOptions) => {
+export const renderElement = async (
+  node: ReactElement,
+  el: Element,
+  rootOptions?: RootOptions,
+  experimentalRSCRenderer?: boolean
+) => {
+  if (experimentalRSCRenderer) {
+    await renderElementExperimentalRSC(node, el, rootOptions);
+    return;
+  }
+
   // Create Root Element conditionally for new React 18 Root Api
   const root = await getReactRoot(el, rootOptions);
 
@@ -73,6 +84,28 @@ const getReactRoot = async (el: Element, rootOptions?: RootOptions): Promise<Rea
 
   if (!root) {
     root = ReactDOM.createRoot(el, rootOptions);
+    nodes.set(el, root);
+  }
+
+  return root;
+};
+
+const renderElementExperimentalRSC = async (
+  node: ReactElement,
+  el: Element,
+  rootOptions?: RootOptions
+): Promise<ReactRoot> => {
+  let root = nodes.get(el);
+  if (!root) {
+    const stream = await ReactDOMServer.renderToReadableStream(node, {
+      // @ts-expect-error onCaughtError in hydrationRoot and createRoot (React 19 only)
+      onError: rootOptions?.onCaughtError,
+    });
+    await stream.allReady;
+
+    el.innerHTML = await new Response(stream).text();
+
+    root = ReactDOM.hydrateRoot(el, node, rootOptions);
     nodes.set(el, root);
   }
 

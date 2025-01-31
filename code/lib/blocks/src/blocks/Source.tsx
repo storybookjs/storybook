@@ -71,7 +71,7 @@ const useCode = ({
 }): string => {
   const parameters = storyContext.parameters ?? {};
   const { __isArgsStory: isArgsStory } = parameters;
-  const [transformedCode, setTransformedCode] = useState('Loading...');
+  const [transformedCode, setTransformedCode] = useState('Transforming...');
   const sourceParameters = (parameters.docs?.source || {}) as SourceParameters;
 
   const type = typeFromProps || sourceParameters.type || SourceType.AUTO;
@@ -103,7 +103,6 @@ const useCode = ({
   }
 
   if (typeof transformed === 'object' && typeof transformed.then === 'function') {
-    console.log({ transformedCode });
     return transformedCode;
   }
 
@@ -156,6 +155,12 @@ export const useSourceProps = (
 
   const sourceParameters = (story?.parameters?.docs?.source || {}) as SourceParameters;
   let format = props.format ?? sourceParameters.format;
+
+  if (format) {
+    console.warn(
+      'The `parameters.docs.source.format` prop is deprecated. Use `parameters.docs.source.transform` instead to define your own transformer.'
+    );
+  }
   const language = props.language ?? sourceParameters.language ?? 'jsx';
   const dark = props.dark ?? sourceParameters.dark ?? false;
 

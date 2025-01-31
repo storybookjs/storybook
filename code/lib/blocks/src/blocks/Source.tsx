@@ -69,9 +69,10 @@ const useCode = ({
   typeFromProps: SourceType;
   transformFromProps?: SourceProps['transform'];
 }): string => {
-  const { __isArgsStory: isArgsStory } = storyContext.parameters;
+  const parameters = storyContext.parameters ?? {};
+  const { __isArgsStory: isArgsStory } = parameters;
   const [transformedCode, setTransformedCode] = useState('Loading...');
-  const sourceParameters = (storyContext.parameters.docs?.source || {}) as SourceParameters;
+  const sourceParameters = (parameters.docs?.source || {}) as SourceParameters;
 
   const type = typeFromProps || sourceParameters.type || SourceType.AUTO;
 
@@ -133,7 +134,7 @@ export const useSourceProps = (
     }
   }, [docsContext, of]);
 
-  const storyContext = docsContext.getStoryContext(story);
+  const storyContext = story ? docsContext.getStoryContext(story) : {};
 
   // eslint-disable-next-line no-underscore-dangle
   const argsForSource = props.__forceInitialArgs

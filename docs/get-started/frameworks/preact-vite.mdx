@@ -1,23 +1,28 @@
 ---
-title: Storybook for Web components & Vite
+title: Storybook for Preact & Vite
 sidebar:
-  order: 12
-  title: Web components & Vite
+  order: 3
+  title: Preact & Vite
 ---
 
-Storybook for Web components & Vite is a [framework](../../contribute/framework.mdx) that makes it easy to develop and test UI components in isolation for applications using [Web components](https://www.webcomponents.org/introduction) built with [Vite](https://vitejs.dev/).
+Storybook for Preact & Vite is a [framework](../../contribute/framework.mdx) that makes it easy to develop and test UI components in isolation for [Preact](https://preactjs.com/) applications built with [Vite](https://vitejs.dev/). It includes:
 
-<If notRenderer="web-components">
+* 🏎️ Pre-bundled for performance
+* 🪄 Zero config
+* 💫 and more!
+
+<If notRenderer="preact">
   <Callout variant="info">
-    Storybook for Web components & Vite is only supported in [Web components](?renderer=web-components) projects.
+    Storybook for Preact & Vite is only supported in [Preact](?renderer=preact) projects.
   </Callout>
 
   {/* End non-supported renderers */}
 </If>
 
-<If renderer="web-components">
+<If renderer="preact">
   ## Requirements
 
+  * Preact 8.x || 10.x
   * Vite ≥ 4.0
   * Storybook ≥ 8.0
 
@@ -25,7 +30,7 @@ Storybook for Web components & Vite is a [framework](../../contribute/framework.
 
   ### In a project without Storybook
 
-  Follow the prompts after running this command in your Web components project's root directory:
+  Follow the prompts after running this command in your Preact project's root directory:
 
   {/* prettier-ignore-start */}
 
@@ -47,7 +52,7 @@ Storybook for Web components & Vite is a [framework](../../contribute/framework.
 
   #### Automatic migration
 
-  When running the `upgrade` command above, you should get a prompt asking you to migrate to `@storybook/web-components-vite`, which should handle everything for you. In case that auto-migration does not work for your project, refer to the manual migration below.
+  When running the `upgrade` command above, you should get a prompt asking you to migrate to `@storybook/preact-vite`, which should handle everything for you. In case that auto-migration does not work for your project, refer to the manual migration below.
 
   #### Manual migration
 
@@ -55,7 +60,7 @@ Storybook for Web components & Vite is a [framework](../../contribute/framework.
 
   {/* prettier-ignore-start */}
 
-  <CodeSnippets path="web-components-vite-install.md" />
+  <CodeSnippets path="preact-vite-install.md" />
 
   {/* prettier-ignore-end */}
 
@@ -63,7 +68,7 @@ Storybook for Web components & Vite is a [framework](../../contribute/framework.
 
   {/* prettier-ignore-start */}
 
-  <CodeSnippets path="web-components-vite-add-framework.md" />
+  <CodeSnippets path="preact-vite-add-framework.md" />
 
   {/* prettier-ignore-end */}
 
@@ -75,17 +80,15 @@ Storybook for Web components & Vite is a [framework](../../contribute/framework.
 
   {/* prettier-ignore-start */}
 
-  <CodeSnippets path="web-components-vite-framework-options.md" />
+  <CodeSnippets path="preact-vite-framework-options.md" />
 
-  {/* prettier-ignore-end */}  
-
-  The available options are:
+  {/* prettier-ignore-end */}
 
   #### `builder`
 
   Type: `Record<string, any>`
 
   Configure options for the [framework's builder](../../api/main-config/main-config-framework.mdx#optionsbuilder). For this framework, available options can be found in the [Vite builder docs](../../builders/vite.mdx).
-
+  
   {/* End supported renderers */}
 </If>

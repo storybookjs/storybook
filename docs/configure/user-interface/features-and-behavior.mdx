@@ -15,19 +15,20 @@ To control the layout of Storybook’s UI you can use `addons.setConfig` in your
 
 The following table details how to use the API values:
 
-| Name                  | Type            | Description                                             | Example Value                           |
-| --------------------- | --------------- | ------------------------------------------------------- | --------------------------------------- |
-| **navSize**           | Number (pixels) | The size of the sidebar that shows a list of stories    | `300`                                   |
-| **bottomPanelHeight** | Number (pixels) | The size of the addon panel when in the bottom position | `200`                                   |
-| **rightPanelWidth**   | Number (pixels) | The size of the addon panel when in the right position  | `200`                                   |
-| **panelPosition**     | String          | Where to show the addon panel                           | `'bottom'` or `'right'`                 |
-| **enableShortcuts**   | Boolean         | Enable/disable shortcuts                                | `true`                                  |
-| **showToolbar**       | Boolean         | Show/hide tool bar                                      | `true`                                  |
-| **theme**             | Object          | Storybook Theme, see next section                       | `undefined`                             |
-| **selectedPanel**     | String          | Id to select an addon panel                             | `'storybook/actions/panel'`             |
-| **initialActive**     | String          | Select the default active tab on Mobile                 | `'sidebar'` or `'canvas'` or `'addons'` |
-| **sidebar**           | Object          | Sidebar options, see below                              | `{ showRoots: false }`                  |
-| **toolbar**           | Object          | Modify the tools in the toolbar using the addon id      | `{ fullscreen: { hidden: false } } `    |
+| Name                     | Type            | Description                                             | Example Value                                                                                  |
+| ------------------------ | --------------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| **navSize**              | Number (pixels) | The size of the sidebar that shows a list of stories    | `300`                                                                                          |
+| **bottomPanelHeight**    | Number (pixels) | The size of the addon panel when in the bottom position | `200`                                                                                          |
+| **rightPanelWidth**      | Number (pixels) | The size of the addon panel when in the right position  | `200`                                                                                          |
+| **panelPosition**        | String          | Where to show the addon panel                           | `'bottom'` or `'right'`                                                                        |
+| **enableShortcuts**      | Boolean         | Enable/disable shortcuts                                | `true`                                                                                         |
+| **showToolbar**          | Boolean         | Show/hide tool bar                                      | `true`                                                                                         |
+| **theme**                | Object          | Storybook Theme, see next section                       | `undefined`                                                                                    |
+| **selectedPanel**        | String          | Id to select an addon panel                             | `'storybook/actions/panel'`                                                                    |
+| **initialActive**        | String          | Select the default active tab on Mobile                 | `'sidebar'` or `'canvas'` or `'addons'`                                                        |
+| **layoutCustomisations** | Object          | Layout customisation options, see below                 | `{ showSidebar: ({ viewMode }, defaultValue) => viewMode === 'docs' ? false : defaultValue` }` |
+| **sidebar**              | Object          | Sidebar options, see below                              | `{ showRoots: false }`                                                                         |
+| **toolbar**              | Object          | Modify the tools in the toolbar using the addon id      | `{ fullscreen: { hidden: false } } `                                                           |
 
 The following options are configurable under the `sidebar` namespace:
 
@@ -48,7 +49,7 @@ The following options are configurable under the `layoutCustomisations` namespac
 | Name            | Type     | Description                       | Example Value                                                                 |
 | --------------- | -------- | --------------------------------- | ----------------------------------------------------------------------------- |
 | **showSidebar** | Function | Toggle visibility for the sidebar | `({ storyId }, defaultValue) => storyId === 'landing' ? false : defaultValue` |
-| **showToolbar** | Function | Toggle visibility for the toolbar | `({ viewMode }, defaultValue) => viewMode === 'docs' ? false : defaultValue` |
+| **showToolbar** | Function | Toggle visibility for the toolbar | `({ viewMode }, defaultValue) => viewMode === 'docs' ? false : defaultValue`  |
 
 <Callout variant="warning">
   The `showSidebar` and `showToolbar` functions let you hide parts of the UI that are essential to Storybook's functionality. If misused, they can make navigation impossible. When hiding the sidebar, ensure the displayed page provides an alternative means of navigation.
@@ -58,9 +59,9 @@ The following options are configurable under the `layoutCustomisations` namespac
 
 Storybook's UI is highly customizable. Its API and configuration options, available via the `showSidebar` and `showToolbar` functions, allow you to control how the sidebar and toolbar elements are displayed. Both functions will enable you to include some default behavior and can be overridden to customize the UI to your needs.
 
-### Overriding the sidebar
+### Override sidebar visibility
 
-If you need to configure the sidebar's default behavior, you can use the `showSidebar` function. This function enables you to configure its visibility and other properties to customize the sidebar's behavior. Below are the available options and an overview of how to use them.
+The sidebar, present on the left of the screen, contains the search function and navigation menu. Users may show or hide it with a keyboard shortcut. If you want to force the sidebar to be visible or hidden in certain places, you can define a `showSidebar` function in `layoutCustomisations`. Below are the available parameters passed to this function and an overview of how to use them.
 
 | Name                     | Type     | Description                                                    | Example Value                         |
 | ------------------------ | -------- | -------------------------------------------------------------- | ------------------------------------- |
@@ -83,7 +84,7 @@ If you need to configure the sidebar's default behavior, you can use the `showSi
 
 <Callout variant="warning">
 
-  If you're using the `showSidebar` function to hide the sidebar, ensure the displayed page provides an alternative means of navigation.
+  If you're hiding the sidebar through `showSidebar`, ensure the displayed page provides an alternative means of navigation.
 
 </Callout>
 

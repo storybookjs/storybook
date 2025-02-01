@@ -1,3 +1,8 @@
+## 8.5.3
+
+- Preview: Add `globals` to `extract()` - [#30415](https://github.com/storybookjs/storybook/pull/30415), thanks @ndelangen!
+- Vite: Fix add component UI invalidation - [#30438](https://github.com/storybookjs/storybook/pull/30438), thanks @shilman!
+
 ## 8.5.2
 
 - Addon Test: Support Vitest 3 browser.test.instances field - [#30309](https://github.com/storybookjs/storybook/pull/30309), thanks @valentinpalkovic!

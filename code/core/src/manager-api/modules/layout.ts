@@ -369,7 +369,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
       const state = store.getState();
 
       if (isFunction(state.layoutCustomisations.showToolbar)) {
-        return state.layoutCustomisations.showToolbar(state, showToolbar);
+        return state.layoutCustomisations.showToolbar(state, showToolbar) ?? showToolbar;
       }
 
       return showToolbar;

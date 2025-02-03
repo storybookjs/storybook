@@ -92,6 +92,7 @@ export const LeafNodeStyleWrapper = styled.div(({ theme }) => ({
       theme.base === 'dark'
         ? darken(0.35, theme.color.secondary)
         : lighten(0.45, theme.color.secondary),
+    color: theme.color.lightest,
     background: 'var(--tree-node-background-hover)',
     outline: 'none',
   },

@@ -88,7 +88,8 @@
     "playwright": "1.48.1",
     "playwright-core": "1.48.1",
     "serialize-javascript": "^3.1.0",
-    "type-fest": "~2.19"
+    "type-fest": "~2.19",
+    "typescript": "^5.7.3"
   },
   "dependencies": {
     "@chromatic-com/storybook": "^3.2.2",
@@ -203,7 +204,7 @@
     "husky": "^4.3.7",
     "lint-staged": "^13.2.2",
     "mock-require": "^3.0.3",
-    "nx": "20.2.2",
+    "nx": "^20.4.0",
     "prettier": "^3.1.1",
     "prettier-plugin-brace-style": "^0.6.2",
     "prettier-plugin-css-order": "^2.1.2",
@@ -259,6 +260,7 @@
     "type": "opencollective",
     "url": "https://opencollective.com/storybook"
   },
+  "deferredNextVersion": "8.5.4",
   "nx": {
     "name": "root",
     "includedScripts": []
@@ -297,6 +299,5 @@
         "Dependency Upgrades"
       ]
     ]
-  },
-  "deferredNextVersion": "8.5.4"
+  }
 }

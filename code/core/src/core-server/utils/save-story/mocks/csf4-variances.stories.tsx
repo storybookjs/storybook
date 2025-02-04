@@ -1,7 +1,7 @@
 // @ts-expect-error this is just a mock file
-import { config } from '#.storybook/preview';
+import preview from '#.storybook/preview';
 
-const meta = config.meta({
+const meta = preview.meta({
   title: 'MyComponent',
   args: {
     initial: 'foo',

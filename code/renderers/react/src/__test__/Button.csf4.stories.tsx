@@ -8,9 +8,9 @@ import { action } from '@storybook/addon-actions';
 import { definePreview } from '../preview';
 import { Button } from './Button';
 
-const config = definePreview({});
+const preview = definePreview({});
 
-const meta = config.meta({
+const meta = preview.meta({
   id: 'button-component',
   title: 'Example/CSF4/Button',
   component: Button,

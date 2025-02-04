@@ -3,10 +3,10 @@ import React from 'react';
 
 import { FaceHappyIcon } from '@storybook/icons';
 
-import { config } from '../../../../../.storybook/preview';
+import preview from '../../../../../.storybook/preview';
 import { Button } from './Button';
 
-const meta = config.meta({
+const meta = preview.meta({
   id: 'button-component',
   title: 'Button',
   component: Button,

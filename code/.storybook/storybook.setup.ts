@@ -3,12 +3,12 @@ import { beforeAll, vi, expect as vitestExpect } from 'vitest';
 import { setProjectAnnotations } from '@storybook/react';
 import { userEvent as storybookEvent, expect as storybookExpect } from '@storybook/test';
 
-import { config } from './preview';
+import previw from './preview';
 
 vi.spyOn(console, 'warn').mockImplementation((...args) => console.log(...args));
 
 const annotations = setProjectAnnotations([
-  config.input,
+  previw.input,
   {
     // experiment with injecting Vitest's interactivity API over our userEvent while tests run in browser mode
     // https://vitest.dev/guide/browser/interactivity-api.html

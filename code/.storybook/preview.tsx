@@ -321,10 +321,6 @@ const decorators = [
 ] satisfies Decorator[];
 
 const parameters = {
-  options: {
-    storySort: (a, b) =>
-      a.title === b.title ? 0 : a.id.localeCompare(b.id, undefined, { numeric: true }),
-  },
   docs: {
     theme: themes.light,
     toc: {},
@@ -373,7 +369,7 @@ const parameters = {
   },
 };
 
-export const config = definePreview({
+export default definePreview({
   addons: [
     addonThemes(),
     addonEssentials(),
@@ -382,8 +378,8 @@ export const config = definePreview({
     addonsPreview,
     templatePreview,
   ],
-  parameters,
   decorators,
   loaders,
   tags: ['test', 'vitest'],
+  parameters,
 });

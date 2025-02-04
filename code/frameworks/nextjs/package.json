@@ -1,6 +1,6 @@
 {
   "name": "@storybook/nextjs",
-  "version": "8.6.0-alpha.1",
+  "version": "8.6.0-alpha.2",
   "description": "Storybook for Next.js",
   "keywords": [
     "storybook",
@@ -120,6 +120,9 @@
       ],
       "navigation.mock": [
         "dist/export-mocks/navigation/index.d.ts"
+      ],
+      "node": [
+        "dist/node/index.d.ts"
       ]
     }
   },

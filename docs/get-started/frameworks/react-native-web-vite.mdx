@@ -30,6 +30,7 @@ Storybook for React Native Web is a [framework](../../contribute/framework.mdx) 
   * React-Native ≥ 0.72
   * React-Native-Web ≥ 0.19
   * Storybook ≥ 8.5
+  * Vite ≥ 5.0
 
   ## Getting started
 
@@ -133,12 +134,81 @@ Storybook for React Native Web is a [framework](../../contribute/framework.mdx) 
     framework: {
       name: '@storybook/react-native-web-vite',
       options: {
-        // ...
+        // You should apply babel plugins and presets here for your project that you want to apply to your code
+        // for example put the reanimated preset here if you are using reanimated 
+        // or the nativewind jsxImportSource for example
+        pluginReactOptions: {
+          jsxRuntime: 'automatic' | 'classic', // default: 'automatic'
+          jsxImportSource: string, // default: 'react'
+          babel:{
+            plugins: Array<string | [string, any]>,
+            presets: Array<string | [string, any]>,
+            // ... other compatible babel options
+          }
+          include: Array<string|RegExp>,
+          exclude: Array<string|RegExp>,
+          // ... other compatible @vitejs/plugin-react options
+        }
+
+        // these options are used to configure transpilation of node_modules via babel
+        // in most cases, you don't need to configure these options, but they are available if you need them
+        pluginBabelOptions: {
+          include: Array<string|RegExp> // default: [/node_modules\/(react-native|@react-native)/],
+          exclude: Array<string|RegExp> // default: undefined
+          presets: Array<string|[string, any]>,
+          plugins: Array<string|[string, any]>,
+          presetReact?: {
+            runtime?: 'automatic' | 'classic'; // default: 'automatic'
+            importSource?: string; // default: 'react'
+          };
+          // ... other compatible vite-plugin-babel options
+        }
       },
     },
   };
 
   export default config;
+  ```
+  #### Example configuration for reanimated
+
+  ```ts title=".storybook/main.ts"
+  const main: StorybookConfig = {
+    // ... rest of config
+
+    framework: {
+      name: "@storybook/react-native-web-vite",
+      options: {
+        pluginReactOptions: {
+          babel: {
+            plugins: [
+              "@babel/plugin-proposal-export-namespace-from",
+              "react-native-reanimated/plugin",
+            ],
+          },
+        },
+      },
+    };
+
+    // ... rest of config
+  }
+  ```
+
+  #### Example configuration for nativewind
+
+  ```ts title=".storybook/main.ts"
+
+  const main: StorybookConfig = {
+    // ... rest of config
+
+    framework: {
+      name: "@storybook/react-native-web-vite",
+      options: {
+        pluginReactOptions: {
+          jsxImportSource: "nativewind",
+        },
+      },
+    },
+  }
   ```
 
   #### `builder`

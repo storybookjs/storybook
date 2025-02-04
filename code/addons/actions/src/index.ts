@@ -7,3 +7,5 @@ export * from './models';
 export * from './runtime';
 
 export default () => definePreview(addonAnnotations);
+
+export type { ActionsParameters } from './types';

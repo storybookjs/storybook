@@ -17,15 +17,7 @@ export class ServerChannelTransport {
 
   private handler?: ChannelHandler;
 
-  isAlive = false;
-
-  private heartbeat() {
-    this.isAlive = true;
-  }
-
   constructor(server: Server) {
-    this.heartbeat = this.heartbeat.bind(this);
-
     this.socket = new WebSocketServer({ noServer: true });
 
     server.on('upgrade', (request, socket, head) => {
@@ -36,7 +28,6 @@ export class ServerChannelTransport {
       }
     });
     this.socket.on('connection', (wss) => {
-      this.isAlive = true;
       wss.on('message', (raw) => {
         const data = raw.toString();
         const event =
@@ -44,21 +35,11 @@ export class ServerChannelTransport {
             ? parse(data, { allowFunction: false, allowClass: false })
             : data;
         this.handler?.(event);
-        if (event.type === 'pong') {
-          this.heartbeat();
-        }
       });
     });
 
     const interval = setInterval(() => {
-      this.socket.clients.forEach((ws) => {
-        if (this.isAlive === false) {
-          return ws.terminate();
-        }
-
-        this.isAlive = false;
-        this.send({ type: 'ping' });
-      });
+      this.send({ type: 'ping' });
     }, HEARTBEAT_INTERVAL);
 
     this.socket.on('close', function close() {

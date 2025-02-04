@@ -1,6 +1,6 @@
 {
   "name": "@storybook/root",
-  "version": "8.6.0-alpha.1",
+  "version": "8.6.0-alpha.2",
   "private": true,
   "description": "Storybook root",
   "homepage": "https://storybook.js.org/",
@@ -42,8 +42,9 @@
     "lint:js": "yarn lint:js:cmd .  --quiet",
     "lint:js:cmd": "cross-env NODE_ENV=production eslint --cache --cache-location=../.cache/eslint --ext .js,.jsx,.json,.html,.ts,.tsx,.mjs --report-unused-disable-directives",
     "lint:md": "../scripts/node_modules/.bin/remark -q .",
-    "lint:other": "prettier --write '**/*.{css,html,json,md,yml}'",
-    "lint:package": "sort-package-json",
+    "lint:other": "yarn lint:prettier '**/*.{css,html,json,md,yml}'",
+    "lint:package": "yarn --cwd ../scripts lint:package",
+    "lint:prettier": "prettier --write",
     "local-registry": "yarn --cwd ../scripts local-registry",
     "publish-sandboxes": "yarn --cwd ../scripts publish",
     "storybook:ui": "NODE_OPTIONS=\"--preserve-symlinks --preserve-symlinks-main\" ./lib/cli/bin/index.cjs dev --port 6006 --config-dir ./.storybook",
@@ -64,14 +65,14 @@
     "*.{html,js,json,jsx,mjs,ts,tsx}": [
       "yarn lint:js:cmd --fix"
     ],
-    "package.json": [
-      "yarn lint:package"
-    ],
     "*.ejs": [
       "../scripts/node_modules/.bin/ejslint"
     ],
     "*.{css,html,json,md,yml}": [
-      "../scripts/node_modules/.bin/prettier --write"
+      "yarn lint:prettier"
+    ],
+    "package.json": [
+      "yarn lint:package"
     ]
   },
   "browserslist": [
@@ -90,7 +91,7 @@
     "type-fest": "~2.19"
   },
   "dependencies": {
-    "@chromatic-com/storybook": "^3.2.2",
+    "@chromatic-com/storybook": "^3.2.4",
     "@happy-dom/global-registrator": "^14.12.0",
     "@nx/eslint": "20.2.2",
     "@nx/vite": "20.2.2",
@@ -216,6 +217,7 @@
     "semver": "^7.3.7",
     "serve-static": "^1.14.1",
     "slash": "^5.0.0",
+    "sort-package-json": "^2.14.0",
     "storybook": "workspace:^",
     "svelte": "^5.0.0-next.268",
     "ts-dedent": "^2.0.0",
@@ -250,6 +252,7 @@
       "built": false
     }
   },
+  "packageManager": "yarn@4.6.0",
   "engines": {
     "node": ">=18.0.0"
   },

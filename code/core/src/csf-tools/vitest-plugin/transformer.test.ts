@@ -794,6 +794,42 @@ describe('transformer', () => {
         _describe.skip("No valid tests found");
       `);
       });
+
+      it('should support test annotation', async () => {
+        const code = `
+        import { config } from '#.storybook/preview';
+        const meta = config.meta({ component: Button });
+        export const A = meta.story({});
+        A.test("foo", () => {}, { args: { primary: true }});
+        A.test("bar", () => {});
+      `;
+
+        const result = await transform({ code });
+
+        expect(result.code).toMatchInlineSnapshot(`
+          import { test as _test, expect as _expect, describe as _describe } from "vitest";
+          import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+          import { config } from '#.storybook/preview';
+          const meta = config.meta({
+            component: Button,
+            title: "automatic/calculated/title"
+          });
+          export const A = meta.story({});
+          A.test("foo", () => {}, {
+            args: {
+              primary: true
+            }
+          });
+          A.test("bar", () => {});
+          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          if (_isRunningFromThisFile) {
+            describe("A", () => {
+              test("foo", _testStory("A", A, meta, [], "foo"));
+              test("bar", _testStory("A", A, meta, [], "bar"));
+            });
+          }
+        `);
+      });
     });
 
     describe('tags filtering mechanism', () => {

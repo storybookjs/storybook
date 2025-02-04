@@ -237,6 +237,7 @@ export interface StaticStory extends Pick<StoryAnnotations, 'name' | 'parameters
   id: string;
   localName?: string;
   __stats: IndexInputStats;
+  tests?: string[];
 }
 
 export class CsfFile {
@@ -277,6 +278,15 @@ export class CsfFile {
   _namedExportsOrder?: string[];
 
   imports: string[];
+
+  _storyTests: Record<
+    string,
+    Array<{
+      function: t.FunctionExpression | t.ArrowFunctionExpression;
+      name: string;
+      options: any;
+    }>
+  > = {};
 
   /** @deprecated Use `_options.fileName` instead */
   get _fileName() {
@@ -673,6 +683,36 @@ export class CsfFile {
               }
               story.name = storyName;
             }
+          }
+
+          // B.test('foo', () => {}, options)
+          if (
+            t.isCallExpression(expression) &&
+            t.isMemberExpression(expression.callee) &&
+            t.isIdentifier(expression.callee.object) &&
+            t.isIdentifier(expression.callee.property) &&
+            expression.callee.property.name === 'test' &&
+            expression.arguments.length >= 2 &&
+            t.isStringLiteral(expression.arguments[0]) &&
+            (t.isFunctionExpression(expression.arguments[1]) ||
+              t.isArrowFunctionExpression(expression.arguments[1]))
+          ) {
+            const exportName = expression.callee.object.name;
+            const testName = expression.arguments[0].value;
+            const testFunction = expression.arguments[1];
+            const testOptions = expression.arguments[2] || null;
+
+            if (!self._storyTests[exportName]) {
+              self._storyTests[exportName] = [];
+            }
+
+            self._storyTests[exportName].push({
+              function: testFunction,
+              name: testName,
+              options: testOptions,
+            });
+
+            self._stories[exportName].__stats.tests = true;
           }
         },
       },

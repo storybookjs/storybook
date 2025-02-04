@@ -38,6 +38,22 @@ describe('CsfFile', () => {
       expect(Object.keys(parsed._stories)).toEqual(['validStory']);
     });
 
+    it('maps story tests', () => {
+      const code = `
+        import preview from '#.storybook/preview';
+        const meta = preview.meta({ title: 'foo/bar' });
+        export const A = meta.story({});
+        A.test('foo', async() => {});
+        A.test('bar', () => {}, { args: { primary: true }});
+        export const B = meta.story({});
+      `;
+      const parsed = loadCsf(code, { makeTitle }).parse();
+      expect(parsed._storyTests['A']).toHaveLength(2);
+      expect(parsed._storyTests['A'][0].name).toEqual('foo');
+      expect(parsed._storyTests['A'][1].name).toEqual('bar');
+      expect(parsed._storyTests['B']).toBeUndefined();
+    });
+
     it('filters out non-story exports', () => {
       const code = `
         export default { title: 'foo/bar', excludeStories: ['invalidStory'] };
@@ -2130,7 +2146,7 @@ describe('CsfFile', () => {
         expect(
           parse(
             dedent`
-              import { config } from '#.storybook/preview'
+              import preview from '#.storybook/preview';
               const meta = config.meta({ component: 'foo' });
               export const A = meta.story({})
               export const B = meta.story({})
@@ -2201,7 +2217,7 @@ describe('CsfFile', () => {
         expect(
           parse(
             dedent`
-              import { config } from '#.storybook/preview'
+              import preview from '#.storybook/preview';
               const meta = config.meta({ component: 'foo' });
               export default meta;
               export const A = meta.story({})
@@ -2244,7 +2260,7 @@ describe('CsfFile', () => {
         expect(
           parse(
             dedent`
-              import { config } from '#.storybook/preview'
+              import preview from '#.storybook/preview';
               const meta = config.meta({ component: 'foo' });
               export const A = meta.story({ name: 'bar'})
             `
@@ -2273,7 +2289,7 @@ describe('CsfFile', () => {
         expect(
           parse(
             dedent`
-              import { config } from '#.storybook/preview'
+              import preview from '#.storybook/preview';
               const meta = config.meta({ title: 'foo/bar' });
               export const A = meta.story({
                 render: () => {}
@@ -2307,7 +2323,7 @@ describe('CsfFile', () => {
         expect(
           parse(
             dedent`
-            import { config } from '#.storybook/preview'
+            import preview from '#.storybook/preview';
             const meta = config.meta({ title: 'foo/bar' });
             export const A = meta.story({
               render: (args) => {}
@@ -2336,13 +2352,48 @@ describe('CsfFile', () => {
                 moduleMock: false
         `);
       });
+
+      it.only('Story tests', () => {
+        expect(
+          parse(
+            dedent`
+            import preview from '#.storybook/preview';
+            const meta = preview.meta({ title: 'foo/bar' });
+            export const A = meta.story({});
+            A.test('foo', async() => {});
+            A.test('bar', () => {});
+          `,
+            true
+          )
+        ).toMatchInlineSnapshot(`
+          meta:
+            title: foo/bar
+          stories:
+            - id: foo-bar--a
+              name: A
+              parameters:
+                __isArgsStory: true
+                __id: foo-bar--a
+              __stats:
+                factory: true
+                tests: true
+                play: false
+                render: false
+                loaders: false
+                beforeEach: false
+                globals: false
+                storyFn: false
+                mount: false
+                moduleMock: false
+        `);
+      });
     });
     describe('errors', () => {
       it('multiple meta variables', () => {
         expect(() =>
           parse(
             dedent`
-            import { config } from '#.storybook/preview'
+            import preview from '#.storybook/preview';
             const foo = config.meta({ component: 'foo' });
             export const A = foo.story({})
             const bar = config.meta({ component: 'bar' });
@@ -2360,7 +2411,7 @@ describe('CsfFile', () => {
         expect(() =>
           parse(
             dedent`
-            import { config } from '#.storybook/preview'
+            import preview from '#.storybook/preview';
             export default { title: 'atoms/foo' };
             const meta = config.meta({ component: 'foo' });
             export const A = meta.story({})
@@ -2378,7 +2429,7 @@ describe('CsfFile', () => {
         expect(() =>
           parse(
             dedent`
-            import { config } from '#.storybook/preview'
+            import preview from '#.storybook/preview';
             const meta = config.meta({ component: 'foo' });
             export default { title: 'atoms/foo' };
             export const A = meta.story({})
@@ -2429,7 +2480,7 @@ describe('CsfFile', () => {
         expect(() =>
           parse(
             dedent`
-            import { config } from '#.storybook/preview'
+            import preview from '#.storybook/preview';
             const meta = config.meta({ component: 'foo' });
             export const A = meta.story({})
             export const B = {}

@@ -83,6 +83,17 @@ export const CSF3Primary = meta.story({
   },
 });
 
+export const WithTests = meta.story({
+  ...CSF3Primary.input,
+});
+WithTests.test('should pass', async ({ canvas }) => {
+  const btn = await canvas.findByRole('button');
+  await expect(btn).toBeInTheDocument();
+});
+WithTests.test('should fail', async () => {
+  throw new Error('problems!');
+});
+
 export const CSF3Button = meta.story({
   args: { children: 'foo' },
 });

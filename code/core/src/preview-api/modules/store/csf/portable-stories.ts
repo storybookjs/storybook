@@ -214,7 +214,7 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
     return story.playFunction!(context);
   };
 
-  const run = (extraContext?: Partial<StoryContext<TRenderer, Partial<TArgs>>>) => {
+  const run = async (extraContext?: Partial<StoryContext<TRenderer, Partial<TArgs>>>) => {
     const context = initializeContext();
     Object.assign(context, extraContext);
     return runStory(story, context);
@@ -259,9 +259,22 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
       parameters: story.parameters as Parameters,
       argTypes: story.argTypes as StrictArgTypes<TArgs>,
       play: playFunction!,
-      run,
+      run: async () => {
+        const context = await run();
+        await story.applyAfterEach(context);
+      },
       reporting,
       tags: story.tags,
+      runTest: async function (name: string) {
+        const test = storyAnnotations.tests?.get(name);
+        if (!test) {
+          // eslint-disable-next-line local-rules/no-uncategorized-errors
+          throw new Error(`Test with name "${name}" not found.`);
+        }
+        const storyContext = await run();
+        await test.fn(storyContext);
+        await story.applyAfterEach(storyContext);
+      },
     }
   );
 
@@ -391,7 +404,7 @@ async function runStory<TRenderer extends Renderer>(
   context.loaded = await story.applyLoaders(context);
 
   if (context.abortSignal.aborted) {
-    return;
+    return context;
   }
 
   cleanups.push(...(await story.applyBeforeEach(context)).filter(Boolean));
@@ -405,7 +418,7 @@ async function runStory<TRenderer extends Renderer>(
   }
 
   if (context.abortSignal.aborted) {
-    return;
+    return context;
   }
 
   if (playFunction) {
@@ -417,5 +430,5 @@ async function runStory<TRenderer extends Renderer>(
     await playFunction(context);
   }
 
-  await story.applyAfterEach(context);
+  return context;
 }

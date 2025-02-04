@@ -9,6 +9,7 @@ import type {
   ProjectAnnotations,
   Renderer,
   StoryAnnotations,
+  StoryContext,
 } from 'storybook/internal/types';
 
 import type { SetOptional } from 'type-fest';
@@ -64,11 +65,27 @@ class Meta<TRenderer extends Renderer, TArgs extends Args, TRequiredArgs extends
 }
 
 class Story<TRenderer extends Renderer, TArgs extends Args, TRequiredArgs extends Args> {
+  readonly isCSFFactory = true;
+
   constructor(
     public input: StoryAnnotations<TRenderer, TArgs>,
     public meta: Meta<TRenderer, TArgs, TRequiredArgs>,
     public config: PreviewConfig<TRenderer>
-  ) {}
+  ) {
+    this.input.tests = new Map<string, { fn: () => void | Promise<void>; options: any }>();
+  }
 
-  readonly isCSFFactory = true;
+  test(name: string, fn: (context: StoryContext) => void | Promise<void>, options?: any) {
+    this.input.tests?.set(name, { fn, options });
+  }
+
+  async runTest(name: string) {
+    const test = this.input.tests?.get(name);
+    if (!test) {
+      throw new Error(`Test with name "${name}" not found.`);
+    }
+    // TODO: Figure out how to pass the correct context with canvasElement etc.
+    // like it's done in portable stories
+    await test.fn(this.input);
+  }
 }

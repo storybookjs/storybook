@@ -91,7 +91,7 @@ export function setProjectAnnotations<TRenderer extends Renderer = Renderer>(
 const cleanups: CleanupCallback[] = [];
 
 export function composeStory<TRenderer extends Renderer = Renderer, TArgs extends Args = Args>(
-  storyAnnotations: LegacyStoryAnnotationsOrFn<TRenderer>,
+  storyAnnotations: LegacyStoryAnnotationsOrFn<TRenderer> & { tests?: Map<string, any> },
   componentAnnotations: ComponentAnnotations<TRenderer, TArgs>,
   projectAnnotations?: ProjectAnnotations<TRenderer>,
   defaultConfig?: ProjectAnnotations<TRenderer>,

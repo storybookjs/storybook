@@ -2353,7 +2353,7 @@ describe('CsfFile', () => {
         `);
       });
 
-      it.only('Story tests', () => {
+      it('Story tests', () => {
         expect(
           parse(
             dedent`

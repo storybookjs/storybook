@@ -824,8 +824,9 @@ describe('transformer', () => {
           const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
             describe("A", () => {
-              test("foo", _testStory("A", A, meta, [], "foo"));
-              test("bar", _testStory("A", A, meta, [], "bar"));
+              _test("render test", _testStory("A", A, meta, []));
+              _test("foo", _testStory("A", A, meta, [], "foo"));
+              _test("bar", _testStory("A", A, meta, [], "bar"));
             });
           }
         `);

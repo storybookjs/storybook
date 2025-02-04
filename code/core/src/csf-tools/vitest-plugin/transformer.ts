@@ -237,12 +237,7 @@ export async function vitestTransform({
     return testStoryCall;
   };
 
-  const getDescribeStatementForStory = ({
-    localName,
-    exportName,
-    tests,
-    node,
-  }: {
+  const getDescribeStatementForStory = (options: {
     localName: string;
     exportName: string;
     tests: Array<{
@@ -252,16 +247,18 @@ export async function vitestTransform({
     }>;
     node: t.Node;
   }): t.ExpressionStatement => {
+    const { localName, exportName, tests, node } = options;
     const describeBlock = t.callExpression(t.identifier('describe'), [
       t.stringLiteral(exportName),
       t.arrowFunctionExpression(
         [],
-        t.blockStatement(
-          tests.map(({ name: testName }) =>
+        t.blockStatement([
+          getTestStatementForStory({ ...options, testTitle: 'render test' }),
+          ...tests.map(({ name: testName }) =>
             t.expressionStatement(
-              t.callExpression(t.identifier('test'), [
+              t.callExpression(vitestTestId, [
                 t.stringLiteral(testName),
-                t.callExpression(t.identifier('_testStory'), [
+                t.callExpression(testStoryId, [
                   t.stringLiteral(exportName),
                   t.identifier(localName),
                   t.identifier(metaExportName),
@@ -270,8 +267,8 @@ export async function vitestTransform({
                 ]),
               ])
             )
-          )
-        )
+          ),
+        ])
       ),
     ]);
 

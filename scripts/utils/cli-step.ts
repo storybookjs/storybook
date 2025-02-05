@@ -40,6 +40,7 @@ export const steps = {
       yes: { type: 'boolean' },
       type: { type: 'string' },
       debug: { type: 'boolean' },
+      'skip-install': { type: 'boolean' },
     }),
   },
   add: {

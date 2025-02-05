@@ -298,7 +298,12 @@ const codemods: Record<string, Codemod> = {
           snippetInfo.attributes.renderer === 'common')
       );
     },
-    transform: storyToCsfFactory,
+    transform: (snippetInfo: SnippetInfo) => {
+      return storyToCsfFactory(snippetInfo, {
+        previewConfigPath: undefined,
+        useSubPathImports: true,
+      });
+    },
   },
   'csf-factory-config': {
     check: (snippetInfo: SnippetInfo) => {

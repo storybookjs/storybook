@@ -1,3 +1,12 @@
+/**
+ * DISCLAIMER:
+ *
+ * This file exists with the sole purpose of assisting the documentation snippets during
+ * introduction of new features. This will probably used only once or twice, but it's REALLY useful
+ * to test codemods as it helps detect many bugs very quickly. It also will be used once we decide
+ * to add extra snippets to more renderers.
+ */
+
 /* eslint-disable @typescript-eslint/no-loop-func */
 
 /* eslint-disable @typescript-eslint/default-param-last */

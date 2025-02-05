@@ -1,7 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { formatFileContent } from '@storybook/core/common';
 
+import path from 'path';
 import { dedent } from 'ts-dedent';
 
 import { storyToCsfFactory } from './story-to-csf-factory';
@@ -15,7 +16,10 @@ describe('stories codemod', () => {
   const transform = async (source: string) =>
     formatFileContent(
       'Component.stories.tsx',
-      await storyToCsfFactory({ source, path: 'Component.stories.tsx' })
+      await storyToCsfFactory(
+        { source, path: 'Component.stories.tsx' },
+        { previewConfigPath: '#.storybook/preview', useSubPathImports: true }
+      )
     );
   describe('javascript', () => {
     it('should wrap const declared meta', async () => {
@@ -253,6 +257,54 @@ describe('stories codemod', () => {
       // @TODO: when we support these, uncomment these lines
       // expect(transformed).toContain('B = meta.story');
       // expect(transformed).toContain('C = meta.story');
+    });
+
+    it('converts the preview import path based on useSubPathImports flag', async () => {
+      const relativeMock = vi.spyOn(path, 'relative').mockReturnValue('../../preview.ts');
+
+      try {
+        await expect(
+          formatFileContent(
+            'Component.stories.tsx',
+            await storyToCsfFactory(
+              {
+                source: dedent`
+                  import preview, { extra } from '../../../.storybook/preview';
+                  export default {};
+                `,
+                path: 'Component.stories.tsx',
+              },
+              { previewConfigPath: '#.storybook/preview', useSubPathImports: true }
+            )
+          )
+        ).resolves.toMatchInlineSnapshot(`
+          import preview, { extra } from '#.storybook/preview';
+
+          const meta = preview.meta({});
+        `);
+
+        await expect(
+          formatFileContent(
+            'Component.stories.tsx',
+            await storyToCsfFactory(
+              {
+                source: dedent`
+                  import preview, { extra } from '#.storybook/preview';
+                  export default {};
+                `,
+                path: 'Component.stories.tsx',
+              },
+              { previewConfigPath: '#.storybook/preview', useSubPathImports: false }
+            )
+          )
+        ).resolves.toMatchInlineSnapshot(`
+          import preview, { extra } from '../../preview';
+
+          const meta = preview.meta({});
+        `);
+      } finally {
+        relativeMock.mockRestore();
+      }
     });
 
     it('converts CSF1 into CSF4 with render', async () => {

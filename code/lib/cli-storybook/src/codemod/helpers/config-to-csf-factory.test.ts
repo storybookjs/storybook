@@ -119,6 +119,16 @@ describe('main/preview codemod: general parsing functionality', () => {
     ).toHaveLength(1);
   });
 
+  it('should leave already transformed code as is', async () => {
+    const original = dedent`
+      import { defineMain } from '@storybook/react-vite/node';
+
+      export default defineMain({});
+    `;
+    const transformed = await transform(original);
+    expect(transformed).toEqual(original);
+  });
+
   it('should remove legacy main config type imports', async () => {
     await expect(
       transform(dedent`

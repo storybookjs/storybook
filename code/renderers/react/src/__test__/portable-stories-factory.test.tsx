@@ -138,7 +138,7 @@ describe('projectAnnotations', () => {
       addonActionsPreview as ProjectAnnotations<ReactRenderer>
     );
 
-    // @ts-expect-error TODO: add a way to provide custom args/argTypes
+    // TODO: add a way to provide custom args/argTypes, right now it's type any
     expect(Story.args.someActionArg).toHaveProperty('isAction', true);
   });
 });

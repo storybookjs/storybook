@@ -1,7 +1,7 @@
 /* eslint-disable no-underscore-dangle */
 import { deprecate } from 'storybook/internal/client-logger';
 import { SNIPPET_RENDERED, SourceType } from 'storybook/internal/docs-tools';
-import { addons, useEffect } from 'storybook/internal/preview-api';
+import { addons, useEffect, useState, useTransformCode } from 'storybook/internal/preview-api';
 import type {
   ArgTypes,
   Args,
@@ -180,15 +180,20 @@ export const sourceDecorator: DecoratorFunction<SvelteRenderer> = (storyFn, cont
   const channel = addons.getChannel();
   const skip = skipSourceRender(context);
   const story = storyFn();
+  const [source, setSource] = useState<undefined | string>(undefined);
 
-  let source: string;
+  const transformedCode = useTransformCode(source, context);
 
   useEffect(() => {
     if (!skip && source) {
       const { id, unmappedArgs } = context;
-      channel.emit(SNIPPET_RENDERED, { id, args: unmappedArgs, source });
+      channel.emit(SNIPPET_RENDERED, {
+        id,
+        args: unmappedArgs,
+        source: transformedCode,
+      });
     }
-  });
+  }, [channel, context, skip, source, transformedCode]);
 
   if (skip) {
     return story;
@@ -212,8 +217,8 @@ export const sourceDecorator: DecoratorFunction<SvelteRenderer> = (storyFn, cont
   }
 
   const generated = generateSvelteSource(component, args, context?.argTypes, slotProperty);
-  if (generated) {
-    source = generated;
+  if (generated && source !== generated) {
+    setSource(generated);
   }
 
   return story;

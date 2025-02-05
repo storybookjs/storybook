@@ -61,5 +61,12 @@ export type { PropDescriptor } from './store';
 
 /** STORIES API */
 export { StoryStore, type Report, ReporterAPI } from './store';
-export { Preview, PreviewWeb, PreviewWithSelection, UrlStore, WebView } from './preview-web';
+export {
+  Preview,
+  PreviewWeb,
+  PreviewWithSelection,
+  UrlStore,
+  WebView,
+  useTransformCode,
+} from './preview-web';
 export type { SelectionStore, View } from './preview-web';

@@ -1,6 +1,6 @@
 /* eslint-disable no-underscore-dangle */
 import { SNIPPET_RENDERED, SourceType } from 'storybook/internal/docs-tools';
-import { addons, useEffect } from 'storybook/internal/preview-api';
+import { addons, useEffect, useState, useTransformCode } from 'storybook/internal/preview-api';
 import type { DecoratorFunction } from 'storybook/internal/types';
 
 import type { StoryFn } from '../public-types';
@@ -26,21 +26,29 @@ export const sourceDecorator: DecoratorFunction<HtmlRenderer> = (storyFn, contex
     ? (context.originalStoryFn as StoryFn)(context.args, context)
     : story;
 
-  let source: string | undefined;
-  if (!skipSourceRender(context)) {
-    if (typeof renderedForSource === 'string') {
-      source = renderedForSource;
-    } else if (renderedForSource instanceof Element) {
-      source = renderedForSource.outerHTML;
-    }
-  }
+  const [source, setSource] = useState<string | undefined>(undefined);
+
+  const transformedCode = useTransformCode(source, context);
+
   useEffect(() => {
     const { id, unmappedArgs } = context;
 
     if (source) {
-      addons.getChannel().emit(SNIPPET_RENDERED, { id, args: unmappedArgs, source });
+      addons.getChannel().emit(SNIPPET_RENDERED, {
+        id,
+        args: unmappedArgs,
+        source: transformedCode,
+      });
     }
-  });
+  }, [context, source, transformedCode]);
+
+  if (!skipSourceRender(context)) {
+    if (typeof renderedForSource === 'string' && source !== renderedForSource) {
+      setSource(renderedForSource);
+    } else if (renderedForSource instanceof Element && source !== renderedForSource.outerHTML) {
+      setSource(renderedForSource.outerHTML);
+    }
+  }
 
   return story;
 };

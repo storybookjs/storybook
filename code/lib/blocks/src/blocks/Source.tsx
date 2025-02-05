@@ -1,5 +1,5 @@
 import type { ComponentProps, FC } from 'react';
-import React, { useContext, useEffect, useMemo, useState } from 'react';
+import React, { useContext, useMemo } from 'react';
 
 import { SourceType } from 'storybook/internal/docs-tools';
 import type { Args, ModuleExport, StoryId } from 'storybook/internal/types';
@@ -10,6 +10,7 @@ import type { DocsContextProps } from './DocsContext';
 import { DocsContext } from './DocsContext';
 import type { SourceContextProps, SourceItem } from './SourceContainer';
 import { SourceContext, UNKNOWN_ARGS_HASH, argsHash } from './SourceContainer';
+import { useTransformCode } from './useTransformCode';
 
 type SourceParameters = SourceCodeProps & {
   /** Where to read the source code from, see `SourceType` */
@@ -71,7 +72,6 @@ const useCode = ({
 }): string => {
   const parameters = storyContext.parameters ?? {};
   const { __isArgsStory: isArgsStory } = parameters;
-  const [transformedCode, setTransformedCode] = useState('Transforming...');
   const sourceParameters = (parameters.docs?.source || {}) as SourceParameters;
 
   const type = typeFromProps || sourceParameters.type || SourceType.AUTO;
@@ -83,30 +83,15 @@ const useCode = ({
     (type === SourceType.AUTO && snippet && isArgsStory);
 
   const code = useSnippet ? snippet : sourceParameters.originalSource || '';
-
   const transformer = transformFromProps ?? sourceParameters.transform;
-  const transformed = useMemo(
-    () => (transformer ? transformer?.(code, storyContext) : code),
-    [code, storyContext, transformer]
-  );
 
-  useEffect(() => {
-    async function getTransformedCode() {
-      setTransformedCode(await transformed);
-    }
-
-    getTransformedCode();
-  }, [transformed]);
+  const transformedCode = useTransformCode(code, transformer, storyContext);
 
   if (sourceParameters.code !== undefined) {
     return sourceParameters.code;
   }
 
-  if (typeof transformed === 'object' && typeof transformed.then === 'function') {
-    return transformedCode;
-  }
-
-  return transformed as string;
+  return transformedCode;
 };
 
 // state is used by the Canvas block, which also calls useSourceProps

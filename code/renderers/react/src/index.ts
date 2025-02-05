@@ -5,7 +5,9 @@ export * from './public-types';
 
 export * from './portable-stories';
 
-export { definePreview } from './preview';
+export * from './preview';
+
+export type { ReactParameters } from './types';
 
 // optimization: stop HMR propagation in webpack
 

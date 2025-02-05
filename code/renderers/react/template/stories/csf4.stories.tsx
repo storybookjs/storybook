@@ -1,7 +1,7 @@
 // @ts-expect-error this will be part of the package.json of the sandbox
-import config from '#.storybook/preview';
+import preview from '#.storybook/preview';
 
-const meta = config.meta({
+const meta = preview.meta({
   component: globalThis.Components.Button,
   args: {
     label: 'Hello world!',

@@ -1,74 +1,72 @@
-import type { ComponentProps, ComponentType } from 'react';
+import type { ComponentType } from 'react';
 
-import { composeConfigs } from 'storybook/internal/preview-api';
-import { normalizeProjectAnnotations } from 'storybook/internal/preview-api';
+import { definePreview as definePreviewBase } from 'storybook/internal/csf';
+import type { Meta, Preview, Story } from 'storybook/internal/csf';
 import type {
   Args,
+  ArgsStoryFn,
   ComponentAnnotations,
-  NormalizedProjectAnnotations,
-  ProjectAnnotations,
+  DecoratorFunction,
   Renderer,
   StoryAnnotations,
 } from 'storybook/internal/types';
 
-import type { SetOptional } from 'type-fest';
+import type { AddMocks } from 'src/public-types';
+import type { RemoveIndexSignature, SetOptional, Simplify, UnionToIntersection } from 'type-fest';
 
 import * as reactAnnotations from './entry-preview';
 import * as reactDocsAnnotations from './entry-preview-docs';
 import type { ReactRenderer } from './types';
 
-export function definePreview(config: PreviewConfigData<ReactRenderer>) {
-  return new PreviewConfig({
-    ...config,
-    addons: [reactAnnotations, reactDocsAnnotations, ...(config.addons ?? [])],
-  });
+export function definePreview(preview: ReactPreview['input']) {
+  return definePreviewBase({
+    ...preview,
+    addons: [reactAnnotations, reactDocsAnnotations, ...(preview.addons ?? [])],
+  }) as ReactPreview;
 }
 
-interface PreviewConfigData<TRenderer extends Renderer> extends ProjectAnnotations<TRenderer> {
-  addons?: ProjectAnnotations<TRenderer>[];
-}
-
-class PreviewConfig<TRenderer extends Renderer> {
-  readonly input: NormalizedProjectAnnotations<TRenderer>;
-
-  constructor(data: PreviewConfigData<TRenderer>) {
-    const { addons, ...rest } = data;
-    this.input = normalizeProjectAnnotations(composeConfigs([...(addons ?? []), rest]));
-  }
-
-  readonly meta = <
-    TComponent extends ComponentType<any>,
-    TMetaArgs extends Partial<ComponentProps<TComponent>>,
+export interface ReactPreview extends Preview<ReactRenderer> {
+  meta<
+    TArgs extends Args,
+    Decorators extends DecoratorFunction<ReactRenderer, any>,
+    // Try to make Exact<Partial<TArgs>, TMetaArgs> work
+    TMetaArgs extends Partial<TArgs>,
   >(
-    meta: ComponentAnnotations<TRenderer, any> & { component: TComponent; args: TMetaArgs }
-  ) => {
-    return new Meta<TRenderer, ComponentProps<TComponent>, TMetaArgs>(meta, this);
-  };
-
-  readonly isCSFFactoryPreview = true;
+    meta: {
+      render?: ArgsStoryFn<ReactRenderer, TArgs>;
+      component?: ComponentType<TArgs>;
+      decorators?: Decorators | Decorators[];
+      args?: TMetaArgs;
+    } & Omit<ComponentAnnotations<ReactRenderer, TArgs>, 'decorators'>
+  ): ReactMeta<
+    {
+      args: Simplify<
+        TArgs & Simplify<RemoveIndexSignature<DecoratorsArgs<ReactRenderer, Decorators>>>
+      >;
+    },
+    { args: Partial<TArgs> extends TMetaArgs ? {} : TMetaArgs }
+  >;
 }
 
-class Meta<TRenderer extends Renderer, TArgs extends Args, TRequiredArgs extends Args> {
-  readonly input: ComponentAnnotations<TRenderer, TArgs>;
-
-  readonly config: PreviewConfig<TRenderer>;
-
-  constructor(annotations: ComponentAnnotations<TRenderer, any>, config: PreviewConfig<TRenderer>) {
-    this.input = annotations;
-    this.config = config;
-  }
-
-  readonly story = (
-    story: StoryAnnotations<TRenderer, TArgs, SetOptional<TArgs, keyof TArgs & keyof TRequiredArgs>>
-  ) => new Story(story as any, this, this.config);
+type DecoratorsArgs<TRenderer extends Renderer, Decorators> = UnionToIntersection<
+  Decorators extends DecoratorFunction<TRenderer, infer TArgs> ? TArgs : unknown
+>;
+interface ReactMeta<
+  Context extends { args: Args },
+  MetaInput extends ComponentAnnotations<ReactRenderer>,
+> extends Meta<ReactRenderer, Context['args']> {
+  story<
+    const TInput extends Simplify<
+      StoryAnnotations<
+        ReactRenderer,
+        // TODO: infer mocks from story itself as well
+        AddMocks<Context['args'], MetaInput['args']>,
+        SetOptional<Context['args'], keyof Context['args'] & keyof MetaInput['args']>
+      >
+    >,
+  >(
+    story: TInput
+  ): ReactStory;
 }
 
-class Story<TRenderer extends Renderer, TArgs extends Args, TRequiredArgs extends Args> {
-  constructor(
-    public input: StoryAnnotations<TRenderer, TArgs>,
-    public meta: Meta<TRenderer, TArgs, TRequiredArgs>,
-    public config: PreviewConfig<TRenderer>
-  ) {}
-
-  readonly isCSFFactory = true;
-}
+interface ReactStory extends Story<ReactRenderer> {}

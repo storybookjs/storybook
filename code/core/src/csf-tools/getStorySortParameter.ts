@@ -131,7 +131,10 @@ export const getStorySortParameter = (previewCode: string) => {
           defaultObj = findVarInitialization(defaultObj.name, ast.program);
         }
         defaultObj = stripTSModifiers(defaultObj);
-        if (t.isObjectExpression(defaultObj)) {
+        // parse the call arg when using definePreview({ ... })
+        if (t.isCallExpression(defaultObj) && t.isObjectExpression(defaultObj.arguments?.[0])) {
+          storySort = parseDefault(defaultObj.arguments[0], ast.program);
+        } else if (t.isObjectExpression(defaultObj)) {
           storySort = parseDefault(defaultObj, ast.program);
         } else {
           unsupported('default', false);

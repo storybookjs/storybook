@@ -34,7 +34,7 @@ export async function storyToCsfFactory(info: FileInfo) {
   /**
    * Add the preview import if it doesn't exist yet:
    *
-   * `import { config } from '#.storybook/preview'`;
+   * `import preview from '#.storybook/preview'`;
    */
   const programNode = csf._ast.program;
   let foundConfigImport = false;
@@ -196,7 +196,7 @@ export async function storyToCsfFactory(info: FileInfo) {
        *
        * Into a meta call:
        *
-       * `const meta = config.meta({ title: 'A' });`
+       * `const meta = preview.meta({ title: 'A' });`
        */
       const binding = csf._metaPath.scope.getBinding(declaration.name);
       if (binding && binding.path.isVariableDeclarator()) {

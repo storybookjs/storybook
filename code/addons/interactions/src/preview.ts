@@ -5,6 +5,8 @@ import { instrument } from '@storybook/instrumenter';
 // For 9.0 we want to merge storybook/test and addon-interactions into one addon.
 import '@storybook/test';
 
+import type { InteractionsParameters } from './types';
+
 export const runStep = instrument(
   {
     // It seems like the label is unused, but the instrumenter has access to it
@@ -18,6 +20,6 @@ export const runStep = instrument(
   // perhaps csf types need to be updated? StepRunner expects Promise<void> and not Promise<void> | void
 ).step as StepRunner;
 
-export const parameters = {
+export const parameters: InteractionsParameters['test'] = {
   throwPlayFunctionExceptions: false,
 };

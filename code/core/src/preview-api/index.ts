@@ -30,6 +30,9 @@ export { addons, mockChannel } from './addons';
 /** ADDON ANNOTATIONS TYPE HELPER */
 export { definePreview } from './addons';
 
+export { UniversalStore as experimental_UniversalStore } from '../shared/universal-store';
+export { useUniversalStore as experimental_useUniversalStore } from '../shared/universal-store/use-universal-store-preview';
+
 /** DOCS API */
 export { DocsContext } from './preview-web';
 
@@ -60,12 +63,7 @@ export {
 } from './store';
 
 /** CSF API */
-export {
-  createPlaywrightTest,
-  getCsfFactoryPreview,
-  getCsfFactoryAnnotations,
-  isCsfFactory,
-} from './modules/store/csf';
+export { createPlaywrightTest, getCsfFactoryAnnotations } from './modules/store/csf';
 
 export type { PropDescriptor } from './store';
 

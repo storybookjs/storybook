@@ -100,7 +100,7 @@ export const defaultLayoutState: SubState = {
     panelPosition: 'bottom',
     showTabs: true,
   },
-  selectedPanel: 'chromaui/addon-visual-tests/panel',
+  selectedPanel: undefined,
   theme: create(),
 };
 

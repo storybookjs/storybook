@@ -40,12 +40,7 @@ function getTSDiagnostics(program: ts.Program, cwd: string, host: ts.CompilerHos
 function getTSProgramAndHost(fileNames: string[], options: ts.CompilerOptions) {
   const program = ts.createProgram({
     rootNames: fileNames,
-    options: {
-      module: ts.ModuleKind.CommonJS,
-      ...options,
-      declaration: false,
-      noEmit: true,
-    },
+    options,
   });
 
   const host = ts.createCompilerHost(program.getCompilerOptions());
@@ -66,7 +61,7 @@ function getTSFilesAndConfig(tsconfigPath: string) {
     {
       noEmit: true,
       outDir: join(process.cwd(), 'types'),
-      target: ts.ScriptTarget.ES2022,
+      target: ts.ScriptTarget.ESNext,
       declaration: false,
     }
   );

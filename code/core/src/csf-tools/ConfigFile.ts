@@ -970,3 +970,20 @@ export const writeConfig = async (config: ConfigFile, fileName?: string) => {
   }
   await writeFile(fname, formatConfig(config));
 };
+
+export const isCsfFactoryPreview = (previewConfig: ConfigFile) => {
+  const program = previewConfig._ast.program;
+  return !!program.body.find((node) => {
+    return (
+      t.isImportDeclaration(node) &&
+      node.source.value.includes('@storybook') &&
+      node.specifiers.some((specifier) => {
+        return (
+          t.isImportSpecifier(specifier) &&
+          t.isIdentifier(specifier.imported) &&
+          specifier.imported.name === 'definePreview'
+        );
+      })
+    );
+  });
+};

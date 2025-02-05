@@ -1,4 +1,5 @@
 import type { Channel } from '@storybook/core/channels';
+import { isStory } from '@storybook/core/csf';
 import type {
   CSFFile,
   ModuleExport,
@@ -13,7 +14,7 @@ import type {
 
 import { dedent } from 'ts-dedent';
 
-import { type StoryStore, isCsfFactory } from '../../store';
+import { type StoryStore } from '../../store';
 import type { DocsContextProps } from './DocsContextProps';
 
 export class DocsContext<TRenderer extends Renderer> implements DocsContextProps<TRenderer> {
@@ -163,8 +164,7 @@ export class DocsContext<TRenderer extends Renderer> implements DocsContextProps
     }
 
     const story = this.exportToStory.get(
-      // TODO: @kasperpeulen will fix this once csf factory types are defined
-      isCsfFactory(moduleExportOrType) ? (moduleExportOrType as any).input : moduleExportOrType
+      isStory(moduleExportOrType) ? moduleExportOrType.input : moduleExportOrType
     );
 
     if (story) {

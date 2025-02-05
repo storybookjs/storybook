@@ -4,8 +4,10 @@ import type { StoryContext } from 'storybook/internal/types';
 
 import dedent from 'ts-dedent';
 
-import type { ThemeParameters } from '../constants';
 import { DEFAULT_THEME_PARAMETERS, GLOBAL_KEY, PARAM_KEY, THEMING_EVENTS } from '../constants';
+import type { ThemesParameters as Parameters } from '../types';
+
+type ThemesParameters = Parameters['themes'];
 
 /**
  * @param StoryContext
@@ -15,7 +17,7 @@ export function pluckThemeFromContext({ globals }: StoryContext): string {
   return globals[GLOBAL_KEY] || '';
 }
 
-export function useThemeParameters(context?: StoryContext): ThemeParameters {
+export function useThemeParameters(context?: StoryContext): ThemesParameters {
   deprecate(
     dedent`The useThemeParameters function is deprecated. Please access parameters via the context directly instead e.g.
     - const { themeOverride } = context.parameters.themes ?? {};
@@ -23,7 +25,7 @@ export function useThemeParameters(context?: StoryContext): ThemeParameters {
   );
 
   if (!context) {
-    return useParameter<ThemeParameters>(PARAM_KEY, DEFAULT_THEME_PARAMETERS) as ThemeParameters;
+    return useParameter<ThemesParameters>(PARAM_KEY, DEFAULT_THEME_PARAMETERS) as ThemesParameters;
   }
 
   return context.parameters[PARAM_KEY] ?? DEFAULT_THEME_PARAMETERS;

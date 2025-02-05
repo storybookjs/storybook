@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { logger } from 'storybook/internal/node-logger';
 import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 
-import { findUp } from 'find-up';
+import * as walk from 'empathic/walk';
 import sort from 'semver/functions/sort.js';
 import { dedent } from 'ts-dedent';
 
@@ -89,12 +89,13 @@ export class BUNProxy extends JsPackageManager {
     packageName: string,
     basePath = this.cwd
   ): Promise<PackageJson | null> {
-    const packageJsonPath = await findUp(
-      (dir) => {
+    const dirs = walk.up(basePath ?? '.');
+    const packageJsonPath = dirs.reduce(
+      (accum, dir) => {
         const possiblePath = join(dir, 'node_modules', packageName, 'package.json');
-        return existsSync(possiblePath) ? possiblePath : undefined;
+        return existsSync(possiblePath) ? possiblePath : accum;
       },
-      { cwd: basePath }
+      undefined as string | undefined
     );
 
     if (!packageJsonPath) {

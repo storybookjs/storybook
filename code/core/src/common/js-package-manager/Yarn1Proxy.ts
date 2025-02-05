@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 
-import { findUp } from 'find-up';
+import * as walk from 'empathic/walk';
 import { dedent } from 'ts-dedent';
 
 import { createLogStream } from '../utils/cli';
@@ -74,12 +74,13 @@ export class Yarn1Proxy extends JsPackageManager {
     packageName: string,
     basePath = this.cwd
   ): Promise<PackageJson | null> {
-    const packageJsonPath = await findUp(
-      (dir) => {
+    const dirs = walk.up(basePath ?? '.');
+    const packageJsonPath = dirs.reduce(
+      (accum, dir) => {
         const possiblePath = join(dir, 'node_modules', packageName, 'package.json');
-        return existsSync(possiblePath) ? possiblePath : undefined;
+        return existsSync(possiblePath) ? possiblePath : accum;
       },
-      { cwd: basePath }
+      undefined as string | undefined
     );
 
     if (!packageJsonPath) {

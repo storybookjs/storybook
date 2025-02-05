@@ -18,9 +18,9 @@ import {
 import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
 import { colors, logger } from 'storybook/internal/node-logger';
 
+import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import { execa } from 'execa';
-import { findUp } from 'find-up';
 import { dirname, extname, join, relative, resolve } from 'pathe';
 import picocolors from 'picocolors';
 import prompts from 'prompts';
@@ -38,8 +38,8 @@ const EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.cts', '.mts', '.cjs', '.mjs'
 
 const addonA11yName = '@storybook/addon-a11y';
 
-const findFile = async (basename: string, extensions = EXTENSIONS) =>
-  findUp(extensions.map((ext) => basename + ext));
+const findFile = (basename: string, extensions = EXTENSIONS) =>
+  find.any(extensions.map((ext) => basename + ext));
 
 export default async function postInstall(options: PostinstallOptions) {
   printSuccess(
@@ -279,7 +279,7 @@ export default async function postInstall(options: PostinstallOptions) {
   });
 
   const fileExtension =
-    allDeps.typescript || (await findFile('tsconfig', [...EXTENSIONS, '.json'])) ? 'ts' : 'js';
+    allDeps.typescript || findFile('tsconfig', [...EXTENSIONS, '.json']) ? 'ts' : 'js';
 
   const vitestSetupFile = resolve(options.configDir, `vitest.setup.${fileExtension}`);
   if (existsSync(vitestSetupFile)) {
@@ -330,10 +330,10 @@ export default async function postInstall(options: PostinstallOptions) {
     `
   );
 
-  const vitestWorkspaceFile = await findFile('vitest.workspace', ['.ts', '.js', '.json']);
-  const viteConfigFile = await findFile('vite.config');
-  const vitestConfigFile = await findFile('vitest.config');
-  const vitestShimFile = await findFile('vitest.shims.d');
+  const vitestWorkspaceFile = findFile('vitest.workspace', ['.ts', '.js', '.json']);
+  const viteConfigFile = findFile('vite.config');
+  const vitestConfigFile = findFile('vitest.config');
+  const vitestShimFile = findFile('vitest.shims.d');
   const rootConfig = vitestConfigFile || viteConfigFile;
 
   const browserConfig = `{

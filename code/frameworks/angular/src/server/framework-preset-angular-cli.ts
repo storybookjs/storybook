@@ -4,7 +4,7 @@ import { WebpackDefinePlugin, WebpackIgnorePlugin } from '@storybook/builder-web
 
 import { BuilderContext, targetFromTargetString } from '@angular-devkit/architect';
 import { JsonObject, logging } from '@angular-devkit/core';
-import { sync as findUpSync } from 'find-up';
+import * as find from 'empathic/find';
 import webpack from 'webpack';
 
 import { getWebpackConfig as getCustomWebpackConfig } from './angular-cli-webpack';
@@ -88,7 +88,7 @@ async function getBuilderOptions(options: PresetOptions, builderContext: Builder
     ...options.angularBuilderOptions,
     tsConfig:
       options.tsConfig ??
-      findUpSync('tsconfig.json', { cwd: options.configDir }) ??
+      find.up('tsconfig.json', { cwd: options.configDir }) ??
       browserTargetOptions.tsConfig,
   };
   logger.info(`=> Using angular project with "tsConfig:${builderOptions.tsConfig}"`);

@@ -1,6 +1,6 @@
 import { join, resolve, sep } from 'node:path';
 
-import { findUpSync } from 'find-up';
+import * as find from 'empathic/find';
 
 export const getProjectRoot = () => {
   let result;
@@ -10,7 +10,7 @@ export const getProjectRoot = () => {
   }
 
   try {
-    const found = findUpSync('.git', { type: 'directory' });
+    const found = find.up('.git');
     if (found) {
       result = join(found, '..');
     }
@@ -18,7 +18,7 @@ export const getProjectRoot = () => {
     //
   }
   try {
-    const found = findUpSync('.svn', { type: 'directory' });
+    const found = find.up('.svn');
     if (found) {
       result = result || join(found, '..');
     }
@@ -26,7 +26,7 @@ export const getProjectRoot = () => {
     //
   }
   try {
-    const found = findUpSync('.hg', { type: 'directory' });
+    const found = find.up('.hg');
     if (found) {
       result = result || join(found, '..');
     }
@@ -42,7 +42,7 @@ export const getProjectRoot = () => {
   }
 
   try {
-    const found = findUpSync('.yarn', { type: 'directory' });
+    const found = find.up('.yarn');
     if (found) {
       result = result || join(found, '..');
     }
@@ -60,6 +60,7 @@ export const nodePathsToArray = (nodePath: string) =>
     .map((p) => resolve('./', p));
 
 const relativePattern = /^\.{1,2}([/\\]|$)/;
+
 /** Ensures that a path starts with `./` or `../`, or is entirely `.` or `..` */
 export function normalizeStoryPath(filename: string) {
   if (relativePattern.test(filename)) {

@@ -1,6 +1,6 @@
 import { logger } from 'storybook/internal/node-logger';
 
-import findUp from 'find-up';
+import * as find from 'empathic/find';
 import MagicString from 'magic-string';
 import {
   ERROR_CODES,
@@ -69,7 +69,7 @@ const handlers = [...defaultHandlers, actualNameHandler];
 let tsconfigPathsInitialized = false;
 let matchPath: TsconfigPaths.MatchPath | undefined;
 
-export default async function reactDocgenLoader(
+export default function reactDocgenLoader(
   this: LoaderContext<{ debug: boolean }>,
   source: string,
   map: any
@@ -80,7 +80,7 @@ export default async function reactDocgenLoader(
   const { debug = false } = options;
 
   if (!tsconfigPathsInitialized) {
-    const tsconfigPath = await findUp('tsconfig.json', { cwd: process.cwd() });
+    const tsconfigPath = find.up('tsconfig.json', { cwd: process.cwd() });
     const tsconfig = TsconfigPaths.loadConfig(tsconfigPath);
 
     if (tsconfig.resultType === 'success') {

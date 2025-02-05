@@ -5,7 +5,7 @@ import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
 
 import commentJson from 'comment-json';
 import detectIndent from 'detect-indent';
-import { findUp } from 'find-up';
+import * as find from 'empathic/find';
 import picocolors from 'picocolors';
 import prompts from 'prompts';
 import { dedent } from 'ts-dedent';
@@ -19,13 +19,13 @@ type JsPackageManager = any;
 export const SUPPORTED_ESLINT_EXTENSIONS = ['ts', 'mts', 'cts', 'mjs', 'js', 'cjs', 'json'];
 const UNSUPPORTED_ESLINT_EXTENSIONS = ['yaml', 'yml'];
 
-export const findEslintFile = async () => {
+export const findEslintFile = () => {
   const filePrefixes = ['eslint.config', '.eslintrc'];
 
   // Check for unsupported files
   for (const prefix of filePrefixes) {
     for (const ext of UNSUPPORTED_ESLINT_EXTENSIONS) {
-      const file = await findUp(`${prefix}.${ext}`);
+      const file = find.up(`${prefix}.${ext}`);
       if (file) {
         throw new Error(`Unsupported ESLint config extension: .${ext}`);
       }
@@ -35,7 +35,7 @@ export const findEslintFile = async () => {
   // Find supported ESLint config files
   for (const prefix of filePrefixes) {
     for (const ext of SUPPORTED_ESLINT_EXTENSIONS) {
-      const file = await findUp(`${prefix}.${ext}`);
+      const file = find.up(`${prefix}.${ext}`);
       if (file) {
         return file;
       }
@@ -161,7 +161,7 @@ export async function extractEslintInfo(packageManager: JsPackageManager): Promi
   let eslintConfigFile: string | undefined = undefined;
 
   try {
-    eslintConfigFile = await findEslintFile();
+    eslintConfigFile = findEslintFile();
   } catch (err) {
     if (err instanceof Error && err.message.includes('Unsupported ESLint')) {
       unsupportedExtension = String(err);

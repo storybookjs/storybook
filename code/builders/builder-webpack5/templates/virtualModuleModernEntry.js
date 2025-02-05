@@ -1,4 +1,5 @@
 import { createBrowserChannel } from 'storybook/internal/channels';
+import { isPreview } from 'storybook/internal/csf';
 import { PreviewWeb, addons, composeConfigs } from 'storybook/internal/preview-api';
 
 import { global } from '@storybook/global';
@@ -8,14 +9,10 @@ import { importFn } from '{{storiesFilename}}';
 const getProjectAnnotations = () => {
   const previewAnnotations = ['{{previewAnnotations_requires}}'];
   // the last one in this array is the user preview
-  const preview = previewAnnotations[previewAnnotations.length - 1];
+  const userPreview = previewAnnotations[previewAnnotations.length - 1]?.default;
 
-  const csfFactoryPreview = Object.values(preview).find((module) => {
-    return 'isCSFFactoryPreview' in module;
-  });
-
-  if (csfFactoryPreview) {
-    return csfFactoryPreview.annotations;
+  if (isPreview(userPreview)) {
+    return userPreview.composed;
   }
 
   return composeConfigs(previewAnnotations);

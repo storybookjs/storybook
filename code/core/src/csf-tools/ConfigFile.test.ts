@@ -247,7 +247,7 @@ describe('ConfigFile', () => {
     describe('factory config', () => {
       it('parses correctly', () => {
         const source = dedent`
-          import { definePreview } from '@storybook/react-vite/preview';
+          import { definePreview } from '@storybook/react-vite';
 
           const config = definePreview({
             framework: 'foo',
@@ -262,7 +262,7 @@ describe('ConfigFile', () => {
           getField(
             ['core', 'builder'],
             dedent`
-            import { definePreview } from '@storybook/react-vite/preview';
+            import { definePreview } from '@storybook/react-vite';
             export const foo = definePreview({ core: { builder: 'webpack5' } });
             `
           )
@@ -273,7 +273,7 @@ describe('ConfigFile', () => {
           getField(
             ['tags'],
             dedent`
-              import { definePreview } from '@storybook/react-vite/preview';
+              import { definePreview } from '@storybook/react-vite';
               const parameters = {};
               export const config = definePreview({
                 parameters,
@@ -528,14 +528,14 @@ describe('ConfigFile', () => {
             ['core', 'builder'],
             'webpack5',
             dedent`
-              import { definePreview } from '@storybook/react-vite/preview';
+              import { definePreview } from '@storybook/react-vite';
               export const foo = definePreview({
                 addons: [],
               });
             `
           )
         ).toMatchInlineSnapshot(`
-          import { definePreview } from '@storybook/react-vite/preview';
+          import { definePreview } from '@storybook/react-vite';
           export const foo = definePreview({
             addons: [],
 
@@ -551,14 +551,14 @@ describe('ConfigFile', () => {
             ['core', 'builder'],
             'webpack5',
             dedent`
-              import { definePreview } from '@storybook/react-vite/preview';
+              import { definePreview } from '@storybook/react-vite';
               export const foo = definePreview({
                 core: { foo: 'bar' },
               });
             `
           )
         ).toMatchInlineSnapshot(`
-          import { definePreview } from '@storybook/react-vite/preview';
+          import { definePreview } from '@storybook/react-vite';
           export const foo = definePreview({
             core: {
               foo: 'bar',
@@ -573,14 +573,14 @@ describe('ConfigFile', () => {
             ['core', 'builder'],
             'webpack5',
             dedent`
-              import { definePreview } from '@storybook/react-vite/preview';
+              import { definePreview } from '@storybook/react-vite';
               export const foo = definePreview({
                 core: { builder: 'webpack4' },
               });
             `
           )
         ).toMatchInlineSnapshot(`
-          import { definePreview } from '@storybook/react-vite/preview';
+          import { definePreview } from '@storybook/react-vite';
           export const foo = definePreview({
             core: { builder: 'webpack5' },
           });

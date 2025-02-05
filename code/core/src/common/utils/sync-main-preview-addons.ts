@@ -2,7 +2,12 @@
 import { types as t } from '@storybook/core/babel';
 import type { StorybookConfig } from '@storybook/types';
 
-import { type ConfigFile, readConfig, writeConfig } from '@storybook/core/csf-tools';
+import {
+  type ConfigFile,
+  isCsfFactoryPreview,
+  readConfig,
+  writeConfig,
+} from '@storybook/core/csf-tools';
 
 import picocolors from 'picocolors';
 
@@ -22,22 +27,9 @@ export async function getSyncedStorybookAddons(
   mainConfig: StorybookConfig,
   previewConfig: ConfigFile
 ): Promise<ConfigFile> {
-  const program = previewConfig._ast.program;
-  const isCsfFactoryPreview = !!program.body.find((node) => {
-    return (
-      t.isImportDeclaration(node) &&
-      node.source.value.includes('@storybook') &&
-      node.specifiers.some((specifier) => {
-        return (
-          t.isImportSpecifier(specifier) &&
-          t.isIdentifier(specifier.imported) &&
-          specifier.imported.name === 'definePreview'
-        );
-      })
-    );
-  });
+  const isCsfFactory = isCsfFactoryPreview(previewConfig);
 
-  if (!isCsfFactoryPreview) {
+  if (!isCsfFactory) {
     return previewConfig;
   }
 

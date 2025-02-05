@@ -429,7 +429,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
       import projectAnnotations from './preview'
 
       // setProjectAnnotations still kept to support non-CSF4 story tests
-      const annotations = setProjectAnnotations(projectAnnotations.input)
+      const annotations = setProjectAnnotations(projectAnnotations.composed)
       beforeAll(annotations.beforeAll)
       `
     );
@@ -815,10 +815,7 @@ export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
   logger.log('📝 Extending preview.js');
   const previewConfig = await readConfig({ cwd: sandboxDir, fileName: 'preview' });
 
-  if (
-    template.expected.framework === '@storybook/react-vite' &&
-    !template.skipTasks.includes('vitest-integration')
-  ) {
+  if (template.modifications?.useCsfFactory) {
     previewConfig.setImport(null, '../src/stories/components');
     previewConfig.setImport({ namespace: 'coreAnnotations' }, '../template-stories/core/preview');
     previewConfig.setImport(
@@ -837,10 +834,7 @@ export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
 };
 
 export const runMigrations: Task['run'] = async ({ sandboxDir, template }, { dryRun, debug }) => {
-  if (
-    template.expected.framework === '@storybook/react-vite' &&
-    !template.skipTasks.includes('vitest-integration')
-  ) {
+  if (template.modifications?.useCsfFactory) {
     await executeCLIStep(steps.automigrate, {
       cwd: sandboxDir,
       argument: 'csf-factories',
@@ -890,7 +884,7 @@ async function prepareAngularSandbox(cwd: string, templateName: string) {
 
   packageJson.scripts = {
     ...packageJson.scripts,
-    'docs:json': 'DIR=$PWD; cd ../../scripts; jiti combine-compodoc $DIR',
+    'docs:json': 'DIR=$PWD; yarn --cwd ../../scripts jiti combine-compodoc $DIR',
     storybook: `yarn docs:json && ${packageJson.scripts.storybook}`,
     'build-storybook': `yarn docs:json && ${packageJson.scripts['build-storybook']}`,
   };

@@ -93,6 +93,7 @@ module.exports = {
         '**/__tests__/**',
         '**/__testfixtures__/**',
         '**/*.test.*',
+        '**/*.test-d.*',
         '**/*.stories.*',
         '**/*.mockdata.*',
         '**/template/**/*',

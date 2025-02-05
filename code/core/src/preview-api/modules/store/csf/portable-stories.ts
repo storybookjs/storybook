@@ -91,7 +91,7 @@ export function setProjectAnnotations<TRenderer extends Renderer = Renderer>(
 const cleanups: CleanupCallback[] = [];
 
 export function composeStory<TRenderer extends Renderer = Renderer, TArgs extends Args = Args>(
-  storyAnnotations: LegacyStoryAnnotationsOrFn<TRenderer> & { tests?: Map<string, any> },
+  storyAnnotations: LegacyStoryAnnotationsOrFn<TRenderer> & { _tests?: Map<string, any> },
   componentAnnotations: ComponentAnnotations<TRenderer, TArgs>,
   projectAnnotations?: ProjectAnnotations<TRenderer>,
   defaultConfig?: ProjectAnnotations<TRenderer>,
@@ -266,7 +266,7 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
       reporting,
       tags: story.tags,
       runTest: async function (name: string) {
-        const test = storyAnnotations.tests?.get(name);
+        const test = storyAnnotations._tests?.get(name);
         if (!test) {
           // eslint-disable-next-line local-rules/no-uncategorized-errors
           throw new Error(`Test with name "${name}" not found.`);

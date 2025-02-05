@@ -27,13 +27,6 @@ export async function configToCsfFactory(
   }
 
   const methodName = configType === 'main' ? 'defineMain' : 'definePreview';
-  // TODO: remove this later, it's just a quick workaround for preview imports
-  // while it is part of @storybook/react and not @storybook/react-vite
-  frameworkPackage =
-    configType === 'preview' && frameworkPackage === '@storybook/react-vite'
-      ? '@storybook/react'
-      : frameworkPackage;
-
   const programNode = config._ast.program;
   const hasNamedExports = Object.keys(config._exportDecls).length > 0;
 

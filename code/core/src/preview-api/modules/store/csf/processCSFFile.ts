@@ -1,3 +1,4 @@
+import { isStory } from '@storybook/core/csf';
 import type { ComponentTitle, Parameters, Path, Renderer } from '@storybook/core/types';
 import type { CSFFile, ModuleExports, NormalizedComponentAnnotations } from '@storybook/core/types';
 import { isExportStory } from '@storybook/csf';
@@ -46,10 +47,8 @@ export function processCSFFile<TRenderer extends Renderer>(
   // eslint-disable-next-line @typescript-eslint/naming-convention
   const { default: defaultExport, __namedExportsOrder, ...namedExports } = moduleExports;
 
-  const firstStory: any = Object.values(namedExports)[0];
-  // CSF4
-  // TODO: @kasperpeulen will fix this once csf factory types are defined
-  if (!defaultExport && 'isCSFFactory' in firstStory) {
+  const firstStory = Object.values(namedExports)[0];
+  if (isStory<TRenderer>(firstStory)) {
     const meta: NormalizedComponentAnnotations<TRenderer> =
       normalizeComponentAnnotations<TRenderer>(firstStory.meta.input, title, importPath);
     checkDisallowedParameters(meta.parameters);
@@ -65,7 +64,7 @@ export function processCSFFile<TRenderer extends Renderer>(
       }
     });
 
-    csfFile.projectAnnotations = firstStory.config.input;
+    csfFile.projectAnnotations = firstStory.meta.preview.composed;
 
     return csfFile;
   }

@@ -147,6 +147,12 @@ export const sandbox: Task = {
 
     await setImportMap(details.sandboxDir);
 
+    const { JsPackageManagerFactory } = await import('../../code/core/src/common');
+
+    const packageManager = JsPackageManagerFactory.getPackageManager({}, details.sandboxDir);
+
+    await packageManager.installDependencies();
+
     logger.info(`✅ Storybook sandbox created at ${details.sandboxDir}`);
   },
 };

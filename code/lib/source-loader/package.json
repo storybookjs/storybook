@@ -1,6 +1,6 @@
 {
   "name": "@storybook/source-loader",
-  "version": "8.6.0-alpha.3",
+  "version": "8.6.0-alpha.4",
   "description": "Source loader",
   "keywords": [
     "lib",
@@ -50,7 +50,7 @@
     "prettier": "^3.1.1"
   },
   "devDependencies": {
-    "typescript": "^5.3.2"
+    "typescript": "^5.7.3"
   },
   "peerDependencies": {
     "storybook": "workspace:^"

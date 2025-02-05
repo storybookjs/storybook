@@ -1,3 +1,9 @@
+## 8.6.0-alpha.4
+
+- Addon A11y: Make Vitest Axe optional - [#30442](https://github.com/storybookjs/storybook/pull/30442), thanks @valentinpalkovic!
+- Builder-Vite: Fix allowedHosts handling for custom hosts - [#30432](https://github.com/storybookjs/storybook/pull/30432), thanks @JSMike!
+- Vite: Fix add component UI invalidation - [#30438](https://github.com/storybookjs/storybook/pull/30438), thanks @shilman!
+
 ## 8.6.0-alpha.3
 
 - Core: Fix invalid Websocket termination - [#30408](https://github.com/storybookjs/storybook/pull/30408), thanks @valentinpalkovic!

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/root",
-  "version": "8.6.0-alpha.3",
+  "version": "8.6.0-alpha.4",
   "private": true,
   "description": "Storybook root",
   "homepage": "https://storybook.js.org/",
@@ -88,7 +88,8 @@
     "playwright": "1.48.1",
     "playwright-core": "1.48.1",
     "serialize-javascript": "^3.1.0",
-    "type-fest": "~2.19"
+    "type-fest": "~2.19",
+    "typescript": "^5.7.3"
   },
   "dependencies": {
     "@chromatic-com/storybook": "^3.2.4",
@@ -203,7 +204,7 @@
     "husky": "^4.3.7",
     "lint-staged": "^13.2.2",
     "mock-require": "^3.0.3",
-    "nx": "20.2.2",
+    "nx": "^20.4.0",
     "prettier": "^3.1.1",
     "prettier-plugin-brace-style": "^0.6.2",
     "prettier-plugin-css-order": "^2.1.2",
@@ -221,7 +222,7 @@
     "storybook": "workspace:^",
     "svelte": "^5.0.0-next.268",
     "ts-dedent": "^2.0.0",
-    "typescript": "5.4.3",
+    "typescript": "^5.7.3",
     "util": "^0.12.4",
     "vite": "^4.0.0",
     "vite-plugin-inspect": "^0.8.5",

@@ -1,6 +1,6 @@
 {
   "name": "create-storybook",
-  "version": "8.6.0-alpha.3",
+  "version": "8.6.0-alpha.4",
   "description": "Initialize Storybook into your project",
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/lib/create-storybook",
   "bugs": {
@@ -73,7 +73,7 @@
     "@types/util-deprecate": "^1.0.0",
     "boxen": "^7.1.1",
     "picocolors": "^1.1.0",
-    "typescript": "^5.3.2"
+    "typescript": "^5.7.3"
   },
   "publishConfig": {
     "access": "public"

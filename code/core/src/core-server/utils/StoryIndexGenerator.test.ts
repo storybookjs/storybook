@@ -1368,6 +1368,21 @@ describe('StoryIndexGenerator', () => {
                 "title": "NoTitle",
                 "type": "docs",
               },
+              "tags--docs": {
+                "id": "tags--docs",
+                "importPath": "./src/docs2/Tags.mdx",
+                "name": "docs",
+                "storiesImports": [],
+                "tags": [
+                  "dev",
+                  "test",
+                  "foo",
+                  "bar",
+                  "unattached-mdx",
+                ],
+                "title": "Tags",
+                "type": "docs",
+              },
             },
             "v": 5,
           }
@@ -1397,6 +1412,7 @@ describe('StoryIndexGenerator', () => {
               "A",
               "titlePrefix/NoTitle",
               "A",
+              "titlePrefix/Tags",
               "titlePrefix/docs2/Yabbadabbadooo",
             ]
           `);
@@ -1501,6 +1517,21 @@ describe('StoryIndexGenerator', () => {
                   "unattached-mdx",
                 ],
                 "title": "NoTitle",
+                "type": "docs",
+              },
+              "tags--info": {
+                "id": "tags--info",
+                "importPath": "./src/docs2/Tags.mdx",
+                "name": "Info",
+                "storiesImports": [],
+                "tags": [
+                  "dev",
+                  "test",
+                  "foo",
+                  "bar",
+                  "unattached-mdx",
+                ],
+                "title": "Tags",
                 "type": "docs",
               },
             },
@@ -1738,6 +1769,7 @@ describe('StoryIndexGenerator', () => {
             "a--metaof",
             "notitle--docs",
             "a--second-docs",
+            "tags--docs",
             "docs2-yabbadabbadooo--docs",
           ]
         `);
@@ -1791,6 +1823,7 @@ describe('StoryIndexGenerator', () => {
           "second-nested-g--story-one",
           "componentreference--docs",
           "notitle--docs",
+          "tags--docs",
           "h--story-one",
           "componentpath-extension--story-one",
           "componentpath-noextension--story-one",
@@ -1840,7 +1873,7 @@ describe('StoryIndexGenerator', () => {
         const generator = new StoryIndexGenerator([storiesSpecifier, docsSpecifier], options);
         await generator.initialize();
         await generator.getIndex();
-        expect(toId).toHaveBeenCalledTimes(6);
+        expect(toId).toHaveBeenCalledTimes(7);
 
         toIdMock.mockClear();
         await generator.getIndex();
@@ -1899,7 +1932,7 @@ describe('StoryIndexGenerator', () => {
         const generator = new StoryIndexGenerator([storiesSpecifier, docsSpecifier], options);
         await generator.initialize();
         await generator.getIndex();
-        expect(toId).toHaveBeenCalledTimes(6);
+        expect(toId).toHaveBeenCalledTimes(7);
 
         generator.invalidate(docsSpecifier, './src/docs2/Title.mdx', false);
 
@@ -1921,7 +1954,7 @@ describe('StoryIndexGenerator', () => {
         const generator = new StoryIndexGenerator([storiesSpecifier, docsSpecifier], options);
         await generator.initialize();
         await generator.getIndex();
-        expect(toId).toHaveBeenCalledTimes(6);
+        expect(toId).toHaveBeenCalledTimes(7);
 
         generator.invalidate(storiesSpecifier, './src/A.stories.js', false);
 
@@ -2021,7 +2054,7 @@ describe('StoryIndexGenerator', () => {
         const generator = new StoryIndexGenerator([docsSpecifier, storiesSpecifier], options);
         await generator.initialize();
         await generator.getIndex();
-        expect(toId).toHaveBeenCalledTimes(6);
+        expect(toId).toHaveBeenCalledTimes(7);
 
         expect(Object.keys((await generator.getIndex()).entries)).toContain('notitle--docs');
 
@@ -2043,7 +2076,7 @@ describe('StoryIndexGenerator', () => {
         const generator = new StoryIndexGenerator([docsSpecifier, storiesSpecifier], options);
         await generator.initialize();
         await generator.getIndex();
-        expect(toId).toHaveBeenCalledTimes(6);
+        expect(toId).toHaveBeenCalledTimes(7);
 
         expect(Object.keys((await generator.getIndex()).entries)).toContain('a--metaof');
 

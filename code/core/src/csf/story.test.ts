@@ -1,9 +1,9 @@
-/* eslint-disable eslint-comments/disable-enable-pair */
-/* eslint-disable import/no-extraneous-dependencies */
 /* global HTMLElement */
+import { test } from 'vitest';
+
 import { expectTypeOf } from 'expect-type';
-import {
-  Renderer,
+
+import type {
   Args,
   ArgsFromMeta,
   ArgsStoryFn,
@@ -11,9 +11,10 @@ import {
   DecoratorFunction,
   LoaderFunction,
   ProjectAnnotations,
+  Renderer,
   StoryAnnotationsOrFn,
   StrictArgs,
-} from './story.js';
+} from './story';
 
 // NOTE Example of internal type definition for @storybook/<X> (where X is a renderer)
 interface XRenderer extends Renderer {

@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest';
+
 import { includeConditionalArg, testValue } from './includeConditionalArg.js';
 import type { Conditional } from './story.js';
 

@@ -1,8 +1,7 @@
-/* eslint-disable eslint-comments/disable-enable-pair */
-/* eslint-disable import/no-extraneous-dependencies */
 /* @ts-expect-error (has no typings) */
 import { isEqual } from '@ngard/tiny-isequal';
-import { Args, Globals, InputType, Conditional } from './story.js';
+
+import type { Args, Conditional, Globals, InputType } from './story';
 
 const count = (vals: any[]) => vals.map((v) => typeof v !== 'undefined').filter(Boolean).length;
 
@@ -26,11 +25,13 @@ export const testValue = (cond: Omit<Conditional, 'arg' | 'global'>, value: any)
 };
 
 /**
- * Helper function to include/exclude an arg based on the value of other other args
- * aka "conditional args"
+ * Helper function to include/exclude an arg based on the value of other other args aka "conditional
+ * args"
  */
 export const includeConditionalArg = (argType: InputType, args: Args, globals: Globals) => {
-  if (!argType.if) return true;
+  if (!argType.if) {
+    return true;
+  }
 
   const { arg, global } = argType.if as any;
   if (count([arg, global]) !== 1) {
@@ -38,6 +39,6 @@ export const includeConditionalArg = (argType: InputType, args: Args, globals: G
   }
 
   const value = arg ? args[arg] : globals[global];
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
   return testValue(argType.if!, value);
 };

@@ -1,6 +1,5 @@
-/* eslint-disable eslint-comments/disable-enable-pair */
-/* eslint-disable import/no-extraneous-dependencies */
-import startCase from 'lodash/startCase';
+import { expect, test } from 'vitest';
+
 import { toStartCaseStr } from './toStartCaseStr';
 
 test.each([
@@ -23,11 +22,5 @@ test.each([
   ['ZIndex', 'Z Index'],
 ])('%s', (str, expected) => {
   const outcome = toStartCaseStr(str);
-  const fromLodash = startCase(str);
-
-  expect({ outcome, fromLodash }).toEqual({
-    outcome: expected,
-    fromLodash,
-  });
-  expect(outcome).toEqual(fromLodash);
+  expect(outcome).toEqual(expected);
 });

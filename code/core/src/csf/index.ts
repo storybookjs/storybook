@@ -6,15 +6,12 @@ import { toStartCaseStr } from './toStartCaseStr';
  * See https://gist.github.com/davidjrice/9d2af51100e41c6c4b4a
  */
 export const sanitize = (string: string) => {
-  return (
-    string
-      .toLowerCase()
-      // eslint-disable-next-line no-useless-escape
-      .replace(/[ ’–—―′¿'`~!@#$%^&*()_|+\-=?;:'",.<>\{\}\[\]\\\/]/gi, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-+/, '')
-      .replace(/-+$/, '')
-  );
+  return string
+    .toLowerCase()
+    .replace(/[ ’–—―′¿'`~!@#$%^&*()_|+\-=?;:'",.<>\{\}\[\]\\\/]/gi, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+/, '')
+    .replace(/-+$/, '');
 };
 
 const sanitizeSafe = (string: string, part: string) => {
@@ -25,15 +22,11 @@ const sanitizeSafe = (string: string, part: string) => {
   return sanitized;
 };
 
-/**
- * Generate a storybook ID from a component/kind and story name.
- */
+/** Generate a storybook ID from a component/kind and story name. */
 export const toId = (kind: string, name?: string) =>
   `${sanitizeSafe(kind, 'kind')}${name ? `--${sanitizeSafe(name, 'name')}` : ''}`;
 
-/**
- * Transform a CSF named export into a readable story name
- */
+/** Transform a CSF named export into a readable story name */
 export const storyNameFromExport = (key: string) => toStartCaseStr(key);
 
 type StoryDescriptor = string[] | RegExp;
@@ -49,9 +42,7 @@ function matches(storyKey: string, arrayOrRegex: StoryDescriptor) {
   return storyKey.match(arrayOrRegex);
 }
 
-/**
- * Does a named export match CSF inclusion/exclusion options?
- */
+/** Does a named export match CSF inclusion/exclusion options? */
 export function isExportStory(
   key: string,
   { includeStories, excludeStories }: IncludeExcludeOptions
@@ -69,9 +60,7 @@ export interface SeparatorOptions {
   groupSeparator: string | RegExp;
 }
 
-/**
- * Parse out the component/kind name from a path, using the given separator config.
- */
+/** Parse out the component/kind name from a path, using the given separator config. */
 export const parseKind = (kind: string, { rootSeparator, groupSeparator }: SeparatorOptions) => {
   const [root, remainder] = kind.split(rootSeparator, 2);
   const groups = (remainder || kind).split(groupSeparator).filter((i) => !!i);
@@ -83,9 +72,7 @@ export const parseKind = (kind: string, { rootSeparator, groupSeparator }: Separ
   };
 };
 
-/**
- * Combine a set of project / meta / story tags, removing duplicates and handling negations.
- */
+/** Combine a set of project / meta / story tags, removing duplicates and handling negations. */
 export const combineTags = (...tags: string[]): string[] => {
   const result = tags.reduce((acc, tag) => {
     if (tag.startsWith('!')) {
@@ -100,3 +87,4 @@ export const combineTags = (...tags: string[]): string[] => {
 
 export { includeConditionalArg } from './includeConditionalArg';
 export * from './story';
+export * from './csf-factories';

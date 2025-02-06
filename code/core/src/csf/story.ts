@@ -1,7 +1,8 @@
 import type { RemoveIndexSignature, Simplify, UnionToIntersection } from 'type-fest';
+
 import type { SBScalarType, SBType } from './SBType';
 
-export * from './SBType.js';
+export * from './SBType';
 export type StoryId = string;
 export type ComponentId = string;
 export type ComponentTitle = string;
@@ -56,9 +57,7 @@ export type Conditional = ConditionalValue & ConditionalTest;
 
 interface ControlBase {
   [key: string]: any;
-  /**
-   * @see https://storybook.js.org/docs/api/arg-types#controltype
-   */
+  /** @see https://storybook.js.org/docs/api/arg-types#controltype */
   type?: ControlType;
   disable?: boolean;
 }
@@ -83,101 +82,62 @@ type Control =
         | ControlBase
         | {
             type: 'color';
-            /**
-             * @see https://storybook.js.org/docs/api/arg-types#controlpresetcolors
-             */
+            /** @see https://storybook.js.org/docs/api/arg-types#controlpresetcolors */
             presetColors?: string[];
           }
         | {
             type: 'file';
-            /**
-             * @see https://storybook.js.org/docs/api/arg-types#controlaccept
-             */
+            /** @see https://storybook.js.org/docs/api/arg-types#controlaccept */
             accept?: string;
           }
         | {
             type: 'inline-check' | 'radio' | 'inline-radio' | 'select' | 'multi-select';
-            /**
-             * @see https://storybook.js.org/docs/api/arg-types#controllabels
-             */
+            /** @see https://storybook.js.org/docs/api/arg-types#controllabels */
             labels?: { [options: string]: string };
           }
         | {
             type: 'number' | 'range';
-            /**
-             * @see https://storybook.js.org/docs/api/arg-types#controlmax
-             */
+            /** @see https://storybook.js.org/docs/api/arg-types#controlmax */
             max?: number;
-            /**
-             * @see https://storybook.js.org/docs/api/arg-types#controlmin
-             */
+            /** @see https://storybook.js.org/docs/api/arg-types#controlmin */
             min?: number;
-            /**
-             * @see https://storybook.js.org/docs/api/arg-types#controlstep
-             */
+            /** @see https://storybook.js.org/docs/api/arg-types#controlstep */
             step?: number;
           }
       ));
 
 export interface InputType {
-  /**
-   * @see https://storybook.js.org/docs/api/arg-types#control
-   */
+  /** @see https://storybook.js.org/docs/api/arg-types#control */
   control?: Control;
-  /**
-   * @see https://storybook.js.org/docs/api/arg-types#description
-   */
+  /** @see https://storybook.js.org/docs/api/arg-types#description */
   description?: string;
-  /**
-   * @see https://storybook.js.org/docs/api/arg-types#if
-   */
+  /** @see https://storybook.js.org/docs/api/arg-types#if */
   if?: Conditional;
-  /**
-   * @see https://storybook.js.org/docs/api/arg-types#mapping
-   */
+  /** @see https://storybook.js.org/docs/api/arg-types#mapping */
   mapping?: { [key: string]: any };
-  /**
-   * @see https://storybook.js.org/docs/api/arg-types#name
-   */
+  /** @see https://storybook.js.org/docs/api/arg-types#name */
   name?: string;
-  /**
-   * @see https://storybook.js.org/docs/api/arg-types#options
-   */
+  /** @see https://storybook.js.org/docs/api/arg-types#options */
   options?: readonly any[];
-  /**
-   * @see https://storybook.js.org/docs/api/arg-types#table
-   */
+  /** @see https://storybook.js.org/docs/api/arg-types#table */
   table?: {
     [key: string]: unknown;
-    /**
-     * @see https://storybook.js.org/docs/api/arg-types#tablecategory
-     */
+    /** @see https://storybook.js.org/docs/api/arg-types#tablecategory */
     category?: string;
-    /**
-     * @see https://storybook.js.org/docs/api/arg-types#tabledefaultvalue
-     */
+    /** @see https://storybook.js.org/docs/api/arg-types#tabledefaultvalue */
     defaultValue?: { summary?: string; detail?: string };
-    /**
-     * @see https://storybook.js.org/docs/api/arg-types#tabledisable
-     */
+    /** @see https://storybook.js.org/docs/api/arg-types#tabledisable */
     disable?: boolean;
-    /**
-     * @see https://storybook.js.org/docs/api/arg-types#tablesubcategory
-     */
+    /** @see https://storybook.js.org/docs/api/arg-types#tablesubcategory */
     subcategory?: string;
-    /**
-     * @see https://storybook.js.org/docs/api/arg-types#tabletype
-     */
+    /** @see https://storybook.js.org/docs/api/arg-types#tabletype */
     type?: { summary?: string; detail?: string };
   };
-  /**
-   * @see https://storybook.js.org/docs/api/arg-types#type
-   */
+  /** @see https://storybook.js.org/docs/api/arg-types#type */
   type?: SBType | SBScalarType['name'];
   /**
-   * @see https://storybook.js.org/docs/api/arg-types#defaultvalue
-   *
    * @deprecated Use `table.defaultValue.summary` instead.
+   * @see https://storybook.js.org/docs/api/arg-types#defaultvalue
    */
   defaultValue?: any;
   [key: string]: any;
@@ -196,9 +156,7 @@ export interface StrictArgs {
   [name: string]: unknown;
 }
 
-/**
- * @see https://storybook.js.org/docs/api/arg-types#argtypes
- */
+/** @see https://storybook.js.org/docs/api/arg-types#argtypes */
 export type ArgTypes<TArgs = Args> = { [name in keyof TArgs]: InputType };
 export type StrictArgTypes<TArgs = Args> = { [name in keyof TArgs]: StrictInputType };
 
@@ -231,7 +189,7 @@ export interface Renderer {
   T?: unknown;
 }
 
-/** @deprecated - use `Renderer` */
+/** @deprecated - Use `Renderer` */
 export type AnyFramework = Renderer;
 
 export interface StoryContextForEnhancers<TRenderer extends Renderer = Renderer, TArgs = Args>
@@ -358,6 +316,7 @@ export interface BaseAnnotations<TRenderer extends Renderer = Renderer, TArgs = 
    * Wrapper components or Storybook decorators that wrap a story.
    *
    * Decorators defined in Meta will be applied to every story variation.
+   *
    * @see [Decorators](https://storybook.js.org/docs/writing-stories/decorators)
    */
   decorators?:
@@ -366,24 +325,29 @@ export interface BaseAnnotations<TRenderer extends Renderer = Renderer, TArgs = 
 
   /**
    * Custom metadata for a story.
+   *
    * @see [Parameters](https://storybook.js.org/docs/writing-stories/parameters)
    */
   parameters?: Parameters;
 
   /**
    * Dynamic data that are provided (and possibly updated by) Storybook and its addons.
+   *
    * @see [Args](https://storybook.js.org/docs/writing-stories/args)
    */
   args?: Partial<TArgs>;
 
   /**
-   * ArgTypes encode basic metadata for args, such as `name`, `description`, `defaultValue` for an arg. These get automatically filled in by Storybook Docs.
+   * ArgTypes encode basic metadata for args, such as `name`, `description`, `defaultValue` for an
+   * arg. These get automatically filled in by Storybook Docs.
+   *
    * @see [ArgTypes](https://storybook.js.org/docs/api/arg-types)
    */
   argTypes?: Partial<ArgTypes<TArgs>>;
 
   /**
    * Asynchronous functions which provide data for a story.
+   *
    * @see [Loaders](https://storybook.js.org/docs/writing-stories/loaders)
    */
   loaders?: LoaderFunction<TRenderer, TArgs>[] | LoaderFunction<TRenderer, TArgs>;
@@ -391,32 +355,30 @@ export interface BaseAnnotations<TRenderer extends Renderer = Renderer, TArgs = 
   /**
    * Function to be called before each story. When the function is async, it will be awaited.
    *
-   * `beforeEach` can be added to preview, the default export and to a specific story.
-   * They are run (and awaited) in the order: preview, default export, story
+   * `beforeEach` can be added to preview, the default export and to a specific story. They are run
+   * (and awaited) in the order: preview, default export, story
    *
    * A cleanup function can be returned.
    */
   beforeEach?: BeforeEach<TRenderer, TArgs>[] | BeforeEach<TRenderer, TArgs>;
 
   /**
-   * Function to be called after each play function for post-test assertions.
-   * Don't use this function for cleaning up state.
-   * You can use the return callback of `beforeEach` for that, which is run when switching stories.
-   * When the function is async, it will be awaited.
+   * Function to be called after each play function for post-test assertions. Don't use this
+   * function for cleaning up state. You can use the return callback of `beforeEach` for that, which
+   * is run when switching stories. When the function is async, it will be awaited.
    *
-   * `afterEach` can be added to preview, the default export and to a specific story.
-   * They are run (and awaited) reverse order: preview, default export, story
+   * `afterEach` can be added to preview, the default export and to a specific story. They are run
+   * (and awaited) reverse order: preview, default export, story
    */
   experimental_afterEach?: AfterEach<TRenderer, TArgs>[] | AfterEach<TRenderer, TArgs>;
 
   /**
-   * Define a custom render function for the story(ies). If not passed, a default render function by the renderer will be used.
+   * Define a custom render function for the story(ies). If not passed, a default render function by
+   * the renderer will be used.
    */
   render?: ArgsStoryFn<TRenderer, TArgs>;
 
-  /**
-   * Named tags for a story, used to filter stories in different contexts.
-   */
+  /** Named tags for a story, used to filter stories in different contexts. */
   tags?: Tag[];
 
   mount?: (context: StoryContext<TRenderer, TArgs>) => TRenderer['mount'];
@@ -428,21 +390,22 @@ export interface ProjectAnnotations<TRenderer extends Renderer = Renderer, TArgs
   argTypesEnhancers?: ArgTypesEnhancer<TRenderer, Args>[];
 
   /**
-   * Lifecycle hook which runs once, before any loaders, decorators or stories, and may rerun when configuration changes or when reinitializing (e.g. between test runs).
-   * The function may be synchronous or asynchronous, and may return a cleanup function which may also be synchronous or asynchronous.
-   * The cleanup function is not guaranteed to run (e.g. when the browser closes), but runs when configuration changes or when reinitializing.
-   * This hook may only be defined globally (i.e. not on component or story level).
-   * When multiple hooks are specified, they are to be executed sequentially (and awaited) in the following order:
+   * Lifecycle hook which runs once, before any loaders, decorators or stories, and may rerun when
+   * configuration changes or when reinitializing (e.g. between test runs). The function may be
+   * synchronous or asynchronous, and may return a cleanup function which may also be synchronous or
+   * asynchronous. The cleanup function is not guaranteed to run (e.g. when the browser closes), but
+   * runs when configuration changes or when reinitializing. This hook may only be defined globally
+   * (i.e. not on component or story level). When multiple hooks are specified, they are to be
+   * executed sequentially (and awaited) in the following order:
+   *
    * - Addon hooks (in order of addons array in e.g. .storybook/main.js)
    * - Annotation hooks (in order of previewAnnotations array in e.g. .storybook/main.js)
-   * - Preview hook (via e.g. .storybook/preview.js)
-   * Cleanup functions are executed sequentially in reverse order of initialization.
+   * - Preview hook (via e.g. .storybook/preview.js) Cleanup functions are executed sequentially in
+   *   reverse order of initialization.
    */
   beforeAll?: BeforeAll;
 
-  /**
-   * @deprecated Project `globals` renamed to `initiaGlobals`
-   */
+  /** @deprecated Project `globals` renamed to `initiaGlobals` */
   globals?: Globals;
   initialGlobals?: Globals;
   globalTypes?: GlobalTypes;
@@ -460,11 +423,7 @@ export interface ComponentAnnotations<TRenderer extends Renderer = Renderer, TAr
    *
    * Since CSF 3.0 this property is optional -- it can be inferred from the filesystem path
    *
-   * @example
-   * export default {
-   *   ...
-   *   title: 'Design System/Atoms/Button'
-   * }
+   * @example Export default { ... title: 'Design System/Atoms/Button' }
    *
    * @see [Story Hierarchy](https://storybook.js.org/docs/writing-stories/naming-components-and-hierarchy#structure-and-hierarchy)
    */
@@ -480,20 +439,20 @@ export interface ComponentAnnotations<TRenderer extends Renderer = Renderer, TAr
   id?: ComponentId;
 
   /**
-   * Used to only include certain named exports as stories. Useful when you want to have non-story exports such as mock data or ignore a few stories.
-   * @example
-   * includeStories: ['SimpleStory', 'ComplexStory']
-   * includeStories: /.*Story$/
+   * Used to only include certain named exports as stories. Useful when you want to have non-story
+   * exports such as mock data or ignore a few stories.
+   *
+   * @example IncludeStories: ['SimpleStory', 'ComplexStory'] includeStories: /.*Story$/
    *
    * @see [Non-story exports](https://storybook.js.org/docs/api/csf#non-story-exports)
    */
   includeStories?: StoryDescriptor;
 
   /**
-   * Used to exclude certain named exports. Useful when you want to have non-story exports such as mock data or ignore a few stories.
-   * @example
-   * excludeStories: ['simpleData', 'complexData']
-   * excludeStories: /.*Data$/
+   * Used to exclude certain named exports. Useful when you want to have non-story exports such as
+   * mock data or ignore a few stories.
+   *
+   * @example ExcludeStories: ['simpleData', 'complexData'] excludeStories: /.*Data$/
    *
    * @see [Non-story exports](https://storybook.js.org/docs/api/csf#non-story-exports)
    */
@@ -528,52 +487,36 @@ export interface ComponentAnnotations<TRenderer extends Renderer = Renderer, TAr
    *
    * Used by addons for automatic prop table generation and display of other component metadata.
    *
-   * @example
-   * import { Button, ButtonGroup } from './components';
+   * @example Import { Button, ButtonGroup } from './components';
    *
-   * export default {
-   *   ...
-   *   subcomponents: { Button, ButtonGroup }
-   * }
+   * Export default { ... subcomponents: { Button, ButtonGroup } }
    *
    * By defining them each component will have its tab in the args table.
    */
   subcomponents?: Record<string, TRenderer['component']>;
 
-  /**
-   * Function that is executed after the story is rendered.
-   */
+  /** Function that is executed after the story is rendered. */
   play?: PlayFunction<TRenderer, TArgs>;
 
-  /**
-   * Override the globals values for all stories in this component
-   */
+  /** Override the globals values for all stories in this component */
   globals?: Globals;
 }
 
 export type StoryAnnotations<
   TRenderer extends Renderer = Renderer,
   TArgs = Args,
-  TRequiredArgs = Partial<TArgs>
+  TRequiredArgs = Partial<TArgs>,
 > = BaseAnnotations<TRenderer, TArgs> & {
-  /**
-   * Override the display name in the UI (CSF v3)
-   */
+  /** Override the display name in the UI (CSF v3) */
   name?: StoryName;
 
-  /**
-   * Override the display name in the UI (CSF v2)
-   */
+  /** Override the display name in the UI (CSF v2) */
   storyName?: StoryName;
 
-  /**
-   * Function that is executed after the story is rendered.
-   */
+  /** Function that is executed after the story is rendered. */
   play?: PlayFunction<TRenderer, TArgs>;
 
-  /**
-   * Override the globals values for this story
-   */
+  /** Override the globals values for this story */
   globals?: Globals;
 
   /** @deprecated */

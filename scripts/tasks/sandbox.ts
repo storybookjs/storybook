@@ -1,3 +1,5 @@
+import path from 'node:path';
+
 import dirSize from 'fast-folder-size';
 // eslint-disable-next-line depend/ban-dependencies
 import { pathExists, remove } from 'fs-extra';
@@ -49,7 +51,8 @@ export const sandbox: Task = {
 
       options.link = false;
     }
-    if (await this.ready(details, options)) {
+
+    if (!(await this.ready(details, options))) {
       logger.info('🗑  Removing old sandbox dir');
       await remove(details.sandboxDir);
     }
@@ -151,6 +154,7 @@ export const sandbox: Task = {
 
     const packageManager = JsPackageManagerFactory.getPackageManager({}, details.sandboxDir);
 
+    await remove(path.join(details.sandboxDir, 'node_modules'));
     await packageManager.installDependencies();
 
     logger.info(`✅ Storybook sandbox created at ${details.sandboxDir}`);

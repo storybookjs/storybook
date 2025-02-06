@@ -86,10 +86,6 @@ export const link = async ({ target, local, start }: LinkOptions) => {
     reproDir = join(reprosDir, reproName);
   }
 
-  const reproPackageJson = JSON.parse(
-    await readFile(join(reproDir, 'package.json'), { encoding: 'utf8' })
-  );
-
   const version = spawnSync('yarn', ['--version'], {
     cwd: reproDir,
     stdio: 'pipe',
@@ -108,6 +104,10 @@ export const link = async ({ target, local, start }: LinkOptions) => {
   await exec(`yarn link --all --relative ${storybookDir}`, { cwd: reproDir });
 
   logger.info(`Installing ${reproName}`);
+
+  const reproPackageJson = JSON.parse(
+    await readFile(join(reproDir, 'package.json'), { encoding: 'utf8' })
+  );
 
   if (!reproPackageJson.devDependencies?.vite) {
     reproPackageJson.devDependencies = {

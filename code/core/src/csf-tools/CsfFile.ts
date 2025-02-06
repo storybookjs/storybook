@@ -282,6 +282,7 @@ export class CsfFile {
   _storyTests: Record<
     string,
     Array<{
+      node: t.Node;
       function: t.FunctionExpression | t.ArrowFunctionExpression;
       name: string;
       options: any;
@@ -710,6 +711,7 @@ export class CsfFile {
               function: testFunction,
               name: testName,
               options: testOptions,
+              node: expression,
             });
 
             self._stories[exportName].__stats.tests = true;

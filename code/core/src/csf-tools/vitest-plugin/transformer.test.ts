@@ -823,7 +823,7 @@ describe('transformer', () => {
           A.test("bar", () => {});
           const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            describe("A", () => {
+            _describe("A", () => {
               _test("render test", _testStory("A", A, meta, []));
               _test("foo", _testStory("A", A, meta, [], "foo"));
               _test("bar", _testStory("A", A, meta, [], "bar"));
@@ -979,6 +979,89 @@ describe('transformer', () => {
         // The original locations of the transformed code should match with the ones of the original code
         expect(originalPosition.line, 'original line location').toBe(originalPrimaryLine);
         expect(originalPosition.column, 'original column location').toBe(originalPrimaryColumn);
+      });
+
+      it('should remap the location of story tests', async () => {
+        const originalCode = `
+        import { config } from '#.storybook/preview';
+        const meta = config.meta({});
+        export const Primary = meta.story({});
+        Primary.test("foo", () => {});
+      `;
+
+        const { code: transformedCode, map } = await transform({
+          code: originalCode,
+        });
+
+        expect(transformedCode).toMatchInlineSnapshot(`
+          import { test as _test, expect as _expect, describe as _describe } from "vitest";
+          import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+          import { config } from '#.storybook/preview';
+          const meta = config.meta({
+            title: "automatic/calculated/title"
+          });
+          export const Primary = meta.story({});
+          Primary.test("foo", () => {});
+          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          if (_isRunningFromThisFile) {
+            _describe("Primary", () => {
+              _test("render test", _testStory("Primary", Primary, meta, []));
+              _test("foo", _testStory("Primary", Primary, meta, [], "foo"));
+            });
+          }
+        `);
+
+        const consumer = await new SourceMapConsumer(map as unknown as RawSourceMap);
+
+        // Locate `_test("render test"...` in the transformed code
+        const testPrimaryLine =
+          transformedCode.split('\n').findIndex((line) => line.includes('_test("render test"')) + 1;
+        const testPrimaryColumn = transformedCode
+          .split('\n')
+          [testPrimaryLine - 1].indexOf('_test("render test"');
+
+        // Get the original position from the source map for `_test("render test"...`
+        const originalPosition = consumer.originalPositionFor({
+          line: testPrimaryLine,
+          column: testPrimaryColumn,
+        });
+
+        // Locate `export const Primary` in the original code
+        const originalPrimaryLine =
+          originalCode.split('\n').findIndex((line) => line.includes('export const Primary')) + 1;
+        const originalPrimaryColumn = originalCode
+          .split('\n')
+          [originalPrimaryLine - 1].indexOf('export const Primary');
+
+        // The original locations of the transformed code should match with the ones of the original code
+        expect(originalPosition.line, 'original line location').toBe(originalPrimaryLine);
+        expect(originalPosition.column, 'original column location').toBe(originalPrimaryColumn);
+
+        // Locate `_test("foo"...` in the transformed code
+        const storyTestLine =
+          transformedCode.split('\n').findIndex((line) => line.includes('_test("foo"')) + 1;
+        const storyTestColumn = transformedCode
+          .split('\n')
+          [storyTestLine - 1].indexOf('_test("foo"');
+
+        // Get the original position from the source map for `_test("foo"...`
+        const originalTestPosition = consumer.originalPositionFor({
+          line: storyTestLine,
+          column: storyTestColumn,
+        });
+
+        // Locate `Primary.test("foo"'` in the original code
+        const originalStoryTestLine =
+          originalCode.split('\n').findIndex((line) => line.includes('Primary.test("foo"')) + 1;
+        const originalStoryTestColumn = originalCode
+          .split('\n')
+          [originalStoryTestLine - 1].indexOf('Primary.test("foo"');
+
+        // The original locations of the transformed code should match with the ones of the original code
+        expect(originalTestPosition.line, 'original line location').toBe(originalStoryTestLine);
+        expect(originalTestPosition.column, 'original column location').toBe(
+          originalStoryTestColumn
+        );
       });
     });
   });

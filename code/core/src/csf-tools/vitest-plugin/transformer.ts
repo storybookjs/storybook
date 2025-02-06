@@ -211,11 +211,13 @@ export async function vitestTransform({
     exportName,
     testTitle,
     node,
+    overrideSourcemap = true,
   }: {
     localName: string;
     exportName: string;
     testTitle: string;
     node: t.Node;
+    overrideSourcemap?: boolean;
   }): t.ExpressionStatement => {
     // Create the _test expression directly using the exportName identifier
     const testStoryCall = t.expressionStatement(
@@ -230,8 +232,10 @@ export async function vitestTransform({
       ])
     );
 
-    // Preserve sourcemaps location
-    testStoryCall.loc = node.loc;
+    if (overrideSourcemap) {
+      // Preserve sourcemaps location
+      testStoryCall.loc = node.loc;
+    }
 
     // Return just the testStoryCall as composeStoryCall is not needed
     return testStoryCall;
@@ -240,22 +244,22 @@ export async function vitestTransform({
   const getDescribeStatementForStory = (options: {
     localName: string;
     exportName: string;
-    tests: Array<{
-      function: t.FunctionExpression | t.ArrowFunctionExpression;
-      name: string;
-      options: any;
-    }>;
+    tests: (typeof parsed._storyTests)[string];
     node: t.Node;
   }): t.ExpressionStatement => {
     const { localName, exportName, tests, node } = options;
-    const describeBlock = t.callExpression(t.identifier('describe'), [
+    const describeBlock = t.callExpression(vitestDescribeId, [
       t.stringLiteral(exportName),
       t.arrowFunctionExpression(
         [],
         t.blockStatement([
-          getTestStatementForStory({ ...options, testTitle: 'render test' }),
-          ...tests.map(({ name: testName }) =>
-            t.expressionStatement(
+          getTestStatementForStory({
+            ...options,
+            testTitle: 'render test',
+            overrideSourcemap: false,
+          }),
+          ...tests.map(({ name: testName, node: testNode }) => {
+            const testStatement = t.expressionStatement(
               t.callExpression(vitestTestId, [
                 t.stringLiteral(testName),
                 t.callExpression(testStoryId, [
@@ -266,8 +270,10 @@ export async function vitestTransform({
                   t.stringLiteral(testName),
                 ]),
               ])
-            )
-          ),
+            );
+            testStatement.loc = testNode.loc;
+            return testStatement;
+          }),
         ])
       ),
     ]);

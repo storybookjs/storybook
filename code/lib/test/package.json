@@ -1,6 +1,6 @@
 {
   "name": "@storybook/test",
-  "version": "8.6.0-alpha.2",
+  "version": "8.6.0-alpha.4",
   "description": "",
   "keywords": [
     "storybook"
@@ -57,7 +57,7 @@
     "tinyspy": "^3.0.0",
     "ts-dedent": "^2.2.0",
     "type-fest": "~2.19",
-    "typescript": "^5.3.2"
+    "typescript": "^5.7.3"
   },
   "peerDependencies": {
     "storybook": "workspace:^"

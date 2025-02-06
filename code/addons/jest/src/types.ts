@@ -4,5 +4,5 @@ export interface JestParameters {
    *
    * @see https://github.com/storybookjs/storybook/blob/next/code/addons/jest/README.md#usage
    */
-  jest?: string | string[] | { jest: { disabled: true } };
+  jest?: string | string[] | { disabled: true };
 }

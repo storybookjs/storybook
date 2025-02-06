@@ -1,14 +1,18 @@
-import { composeConfigs, normalizeProjectAnnotations } from '@storybook/core/preview-api';
-
-import type { Args, ComponentAnnotations, Renderer, StoryAnnotations } from './csf';
+/* eslint-disable no-underscore-dangle */
 import type {
+  Args,
+  ComponentAnnotations,
   NormalizedComponentAnnotations,
   NormalizedProjectAnnotations,
   NormalizedStoryAnnotations,
   ProjectAnnotations,
-} from './story';
+  Renderer,
+  StoryAnnotations,
+} from '@storybook/core/types';
 
-export interface Preview<TRenderer extends Renderer> {
+import { composeConfigs, normalizeProjectAnnotations } from '@storybook/core/preview-api';
+
+export interface Preview<TRenderer extends Renderer = Renderer> {
   readonly _tag: 'Preview';
   input: ProjectAnnotations<TRenderer>;
   composed: NormalizedProjectAnnotations<TRenderer>;
@@ -32,7 +36,7 @@ export function definePreview<TRenderer extends Renderer>(
   };
 }
 
-function isPreview(input: unknown): input is Preview<Renderer> {
+export function isPreview(input: unknown): input is Preview<Renderer> {
   return input != null && typeof input === 'object' && '_tag' in input && input?._tag === 'Preview';
 }
 
@@ -45,7 +49,7 @@ export interface Meta<TRenderer extends Renderer, TArgs extends Args = Args> {
   story(input: ComponentAnnotations<TRenderer, TArgs>): Story<TRenderer, TArgs>;
 }
 
-function isMeta(input: unknown): input is Meta<Renderer> {
+export function isMeta(input: unknown): input is Meta<Renderer> {
   return input != null && typeof input === 'object' && '_tag' in input && input?._tag === 'Meta';
 }
 
@@ -87,6 +91,6 @@ function defineStory<TRenderer extends Renderer>(
   };
 }
 
-function isStory(input: unknown): input is Meta<Renderer> {
+export function isStory<TRenderer extends Renderer>(input: unknown): input is Story<TRenderer> {
   return input != null && typeof input === 'object' && '_tag' in input && input?._tag === 'Story';
 }

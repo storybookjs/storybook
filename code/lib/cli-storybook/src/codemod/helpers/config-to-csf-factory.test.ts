@@ -119,6 +119,16 @@ describe('main/preview codemod: general parsing functionality', () => {
     ).toHaveLength(1);
   });
 
+  it('should leave already transformed code as is', async () => {
+    const original = dedent`
+      import { defineMain } from '@storybook/react-vite/node';
+
+      export default defineMain({});
+    `;
+    const transformed = await transform(original);
+    expect(transformed).toEqual(original);
+  });
+
   it('should remove legacy main config type imports', async () => {
     await expect(
       transform(dedent`
@@ -156,7 +166,7 @@ describe('preview specific functionality', () => {
         };
       `)
     ).resolves.toMatchInlineSnapshot(`
-      import { definePreview } from '@storybook/react';
+      import { definePreview } from '@storybook/react-vite';
 
       export default definePreview({
         tags: ['test'],
@@ -167,7 +177,7 @@ describe('preview specific functionality', () => {
   it('should remove legacy preview type imports', async () => {
     await expect(
       transform(dedent`
-        import type { Preview } from '@storybook/react'
+        import type { Preview } from '@storybook/react-vite'
 
         const preview: Preview = {
           tags: []
@@ -175,7 +185,7 @@ describe('preview specific functionality', () => {
         export default preview;
       `)
     ).resolves.toMatchInlineSnapshot(`
-      import { definePreview } from '@storybook/react';
+      import { definePreview } from '@storybook/react-vite';
 
       export default definePreview({
         tags: [],

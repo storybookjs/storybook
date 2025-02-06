@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import { basename, isAbsolute, posix, resolve, sep, win32 } from 'node:path';
 
 import { getDirectoryFromWorkingDir } from '@storybook/core/common';
@@ -26,9 +26,25 @@ export async function useStatics(app: Polka.Polka, options: Options): Promise<vo
         );
       }
 
+      if (existsSync(staticPath) && statSync(staticPath).isFile()) {
+        // sirv doesn't support serving single files, so we need to pass the file's directory to sirv instead
+        const staticPathDir = resolve(staticPath, '..');
+        const staticPathFile = basename(staticPath);
+        app.use(targetEndpoint, (req, res, next) => {
+          // Rewrite the URL to match the file's name, ensuring that we only ever serve the file
+          // even when sirv is passed the full directory
+          req.url = `/${staticPathFile}`;
+          sirvWorkaround(staticPathDir, {
+            dev: true,
+            etag: true,
+            extensions: [],
+          })(req, res, next);
+        });
+        return;
+      }
       app.use(
         targetEndpoint,
-        sirv(staticPath, {
+        sirvWorkaround(staticPath, {
           dev: true,
           etag: true,
           extensions: [],
@@ -43,13 +59,37 @@ export async function useStatics(app: Polka.Polka, options: Options): Promise<vo
 
   app.get(
     `/${basename(faviconPath)}`,
-    sirv(faviconPath, {
+    sirvWorkaround(faviconPath, {
       dev: true,
       etag: true,
       extensions: [],
     })
   );
 }
+
+/**
+ * This is a workaround for sirv breaking when serving multiple directories on the same endpoint.
+ *
+ * @see https://github.com/lukeed/polka/issues/218
+ */
+const sirvWorkaround: typeof sirv =
+  (...sirvArgs) =>
+  (req, res, next) => {
+    // polka+sirv will modify the request URL, so we need to restore it after sirv is done
+    // req._parsedUrl is an internal construct used by both polka and sirv
+    // eslint-disable-next-line no-underscore-dangle
+    const originalParsedUrl = (req as any)._parsedUrl;
+
+    const maybeNext = next
+      ? () => {
+          // eslint-disable-next-line no-underscore-dangle
+          (req as any)._parsedUrl = originalParsedUrl;
+          next();
+        }
+      : undefined;
+
+    sirv(...sirvArgs)(req, res, maybeNext);
+  };
 
 export const parseStaticDir = (arg: string) => {
   // Split on last index of ':', for Windows compatibility (e.g. 'C:\some\dir:\foo')

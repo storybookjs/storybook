@@ -15,7 +15,6 @@ module.exports = {
       'error',
       { devDependencies: true, peerDependencies: true },
     ],
-    'no-underscore-dangle': 'off',
     'import/no-unresolved': 'off', // covered by typescript
     'eslint-comments/disable-enable-pair': ['error', { allowWholeFile: true }],
     'eslint-comments/no-unused-disable': 'error',
@@ -94,6 +93,7 @@ module.exports = {
         '**/__tests__/**',
         '**/__testfixtures__/**',
         '**/*.test.*',
+        '**/*.test-d.*',
         '**/*.stories.*',
         '**/*.mockdata.*',
         '**/template/**/*',

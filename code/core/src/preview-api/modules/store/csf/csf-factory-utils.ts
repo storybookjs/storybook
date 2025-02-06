@@ -1,27 +1,11 @@
-/* eslint-disable @typescript-eslint/naming-convention */
-
-/* eslint-disable no-underscore-dangle */
+import { isStory } from '@storybook/core/csf';
 import type {
   Args,
   ComponentAnnotations,
   LegacyStoryAnnotationsOrFn,
-  ModuleExports,
   ProjectAnnotations,
   Renderer,
-  StoryAnnotations,
-} from '@storybook/types';
-
-export function getCsfFactoryPreview(preview: ModuleExports): ProjectAnnotations<any> | null {
-  return Object.values(preview).find(isCsfFactory) ?? null;
-}
-
-export function isCsfFactory(target: StoryAnnotations | ProjectAnnotations<any>) {
-  return (
-    target != null &&
-    typeof target === 'object' &&
-    ('isCSFFactory' in target || 'isCSFFactoryPreview' in target)
-  );
-}
+} from '@storybook/core/types';
 
 export function getCsfFactoryAnnotations<
   TRenderer extends Renderer = Renderer,
@@ -31,12 +15,11 @@ export function getCsfFactoryAnnotations<
   meta?: ComponentAnnotations<TRenderer, TArgs>,
   projectAnnotations?: ProjectAnnotations<TRenderer>
 ) {
-  const _isCsfFactory = isCsfFactory(story);
-
-  return {
-    // TODO: @kasperpeulen will fix this once csf factory types are defined
-    story: _isCsfFactory ? (story as any)?.input : story,
-    meta: _isCsfFactory ? (story as any)?.meta?.input : meta,
-    preview: _isCsfFactory ? (story as any)?.config?.input : projectAnnotations,
-  };
+  return isStory(story)
+    ? {
+        story: story.input,
+        meta: story.meta.input,
+        preview: story.meta.preview.composed,
+      }
+    : { story, meta, preview: projectAnnotations };
 }

@@ -33,7 +33,7 @@ export const testStory = (
     const annotations = getCsfFactoryAnnotations(story, meta);
     const composedStory = composeStory(
       annotations.story,
-      annotations.meta,
+      annotations.meta!,
       { initialGlobals: (await getInitialGlobals?.()) ?? {}, tags: await getTags?.() },
       annotations.preview,
       exportName

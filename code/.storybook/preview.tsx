@@ -17,12 +17,12 @@ import {
 import { DocsContext } from '@storybook/blocks';
 import { global } from '@storybook/global';
 import type { Decorator, Loader, ReactRenderer } from '@storybook/react';
-import { definePreview } from '@storybook/react';
 
 // TODO add empty preview
 // import * as storysource from '@storybook/addon-storysource';
 // import * as designs from '@storybook/addon-designs/preview';
 import addonTest from '@storybook/experimental-addon-test';
+import { definePreview } from '@storybook/react-vite';
 
 import addonA11y from '@storybook/addon-a11y';
 import addonEssentials from '@storybook/addon-essentials';

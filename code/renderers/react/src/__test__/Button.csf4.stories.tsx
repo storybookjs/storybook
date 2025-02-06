@@ -88,7 +88,7 @@ export const CSF3Button = meta.story({
 });
 
 export const CSF3ButtonWithRender = meta.story({
-  ...CSF3Button,
+  ...CSF3Button.input,
   render: (args) => (
     <div>
       <p data-testid="custom-render">I am a custom render function</p>

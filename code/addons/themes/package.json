@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-themes",
-  "version": "8.6.0-alpha.2",
+  "version": "8.6.0-alpha.4",
   "description": "Switch between multiple themes for you components in Storybook",
   "keywords": [
     "css",
@@ -70,7 +70,7 @@
   },
   "devDependencies": {
     "@storybook/icons": "^1.2.12",
-    "typescript": "^5.3.2"
+    "typescript": "^5.7.3"
   },
   "peerDependencies": {
     "storybook": "workspace:^"

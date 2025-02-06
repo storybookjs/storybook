@@ -5,7 +5,7 @@ import { logger } from 'storybook/internal/node-logger';
 import type { Options, Ref } from 'storybook/internal/types';
 
 import * as pkg from 'empathic/package';
-import resolveFrom from 'resolve-from';
+import * as resolve from 'empathic/resolve';
 
 export const getAutoRefs = async (options: Options): Promise<Record<string, Ref>> => {
   const location = pkg.up({ cwd: options.configDir });
@@ -21,7 +21,7 @@ export const getAutoRefs = async (options: Options): Promise<Record<string, Ref>
   const list = await Promise.all(
     deps.map(async (d) => {
       try {
-        const l = resolveFrom(directory, join(d, 'package.json'));
+        const l = resolve.from(directory, join(d, 'package.json'));
 
         const { storybook, name, version } =
           JSON.parse(await readFile(l, { encoding: 'utf8' })) || {};

@@ -14,11 +14,11 @@ import type {
   StorybookConfigRaw,
 } from 'storybook/internal/types';
 
+import * as resolve from 'empathic/resolve';
 import { dedent } from 'ts-dedent';
 
 import { interopRequireDefault } from './utils/interpret-require';
 import { loadCustomPresets } from './utils/load-custom-presets';
-import { safeResolve, safeResolveFrom } from './utils/safeResolve';
 import { stripAbsNodeModulesPath } from './utils/strip-abs-node-modules-path';
 
 type InterPresetOptions = Omit<
@@ -42,7 +42,7 @@ export function filterPresetsConfig(presetsConfig: PresetConfig[]): PresetConfig
 function resolvePathToMjs(filePath: string): string {
   const { dir, name } = parse(filePath);
   const mjsPath = join(dir, `${name}.mjs`);
-  if (safeResolve(mjsPath)) {
+  if (resolve.cwd(mjsPath, true)) {
     return mjsPath;
   }
   return filePath;
@@ -79,8 +79,11 @@ export const resolveAddonName = (
   name: string,
   options: any
 ): CoreCommon_ResolvedAddonPreset | CoreCommon_ResolvedAddonVirtual | undefined => {
-  const resolve = name.startsWith('/') ? safeResolve : safeResolveFrom.bind(null, configDir);
-  const resolved = resolve(name);
+  const resolveFn = name.startsWith('/')
+    ? (input: string) => resolve.cwd(input, true)
+    : (input: string) => resolve.from(configDir, input, true);
+  // safeResolveFrom.bind(null, configDir);
+  const resolved = resolveFn(name);
 
   if (resolved) {
     const { dir: fdir, name: fname } = parse(resolved);
@@ -104,7 +107,7 @@ export const resolveAddonName = (
   }
 
   const checkExists = (exportName: string) => {
-    if (resolve(`${name}${exportName}`)) {
+    if (resolveFn(`${name}${exportName}`)) {
       return `${name}${exportName}`;
     }
     return undefined;
@@ -118,7 +121,7 @@ export const resolveAddonName = (
    * from the bare import, breaking in pnp/pnpm.
    */
   const absolutizeExport = (exportName: string, preferMJS: boolean) => {
-    const found = resolve(`${name}${exportName}`);
+    const found = resolveFn(`${name}${exportName}`);
 
     if (found) {
       return preferMJS ? resolvePathToMjs(found) : found;

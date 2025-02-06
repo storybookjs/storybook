@@ -735,7 +735,6 @@
     "react-textarea-autosize": "^8.3.0",
     "react-transition-group": "^4.4.5",
     "require-from-string": "^2.0.2",
-    "resolve-from": "^5.0.0",
     "sirv": "^2.0.4",
     "slash": "^5.0.0",
     "source-map": "^0.7.4",

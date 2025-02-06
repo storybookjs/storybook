@@ -8,6 +8,7 @@ import type {
   ProjectAnnotations,
   Renderer,
   StoryAnnotations,
+  StoryContext,
 } from '@storybook/core/types';
 
 import { composeConfigs, normalizeProjectAnnotations } from '@storybook/core/preview-api';
@@ -70,11 +71,17 @@ function defineMeta<TRenderer extends Renderer>(
   };
 }
 
+type StoryTestFn = (context: StoryContext) => void | Promise<void>;
+
 export interface Story<TRenderer extends Renderer, TArgs extends Args = Args> {
   readonly _tag: 'Story';
-  input: StoryAnnotations<TRenderer, TArgs>;
+  input: StoryAnnotations<TRenderer, TArgs> & {
+    _tests: Map<string, { fn: StoryTestFn; options: any }>;
+  };
   composed: NormalizedStoryAnnotations<TRenderer>;
   meta: Meta<TRenderer, TArgs>;
+  test: (name: string, fn: StoryTestFn, options?: any) => void;
+  runTest(name: string): Promise<void>;
 }
 
 function defineStory<TRenderer extends Renderer>(
@@ -83,10 +90,25 @@ function defineStory<TRenderer extends Renderer>(
 ): Story<TRenderer> {
   return {
     _tag: 'Story',
-    input,
+    input: {
+      ...input,
+      _tests: new Map(),
+    },
     meta,
     get composed(): never {
       throw new Error('Not implemented');
+    },
+    test: function (name: string, fn: StoryTestFn, options?: any) {
+      this.input._tests.set(name, { fn, options });
+    },
+    runTest: async function (name: string) {
+      const test = this.input._tests.get(name);
+      if (!test) {
+        throw new Error(`Test with name "${name}" not found.`);
+      }
+      // @ts-expect-error TODO: Figure out how to pass the correct context with canvasElement etc.
+      // like it's done in portable stories
+      await test.fn(this.input);
     },
   };
 }

@@ -30,7 +30,7 @@ const projectAnnotations = setProjectAnnotations([]);
 // example with composeStories, returns an object with all stories composed with args/decorators
 // @ts-expect-error TODO: add a way to provide custom args/argTypes
 // eslint-disable-next-line prettier/prettier
-const { CSF3Primary, LoaderStory, MountInPlayFunction, MountInPlayFunctionThrow } = composeStories(ButtonStories);
+const { CSF3Primary, LoaderStory, MountInPlayFunction, MountInPlayFunctionThrow, WithTests } = composeStories(ButtonStories);
 const { ThrowsError } = composeStories(ComponentWithErrorStories);
 
 beforeAll(async () => {
@@ -47,7 +47,7 @@ const Secondary = composeStory(
   ButtonStories.CSF3Primary.meta.input
 );
 describe('renders', () => {
-  it('renders primary button', () => {
+  it('renders primary button', async () => {
     render(<CSF3Primary>Hello world</CSF3Primary>);
     const buttonElement = screen.getByText(/Hello world/i);
     expect(buttonElement).not.toBeNull();
@@ -95,6 +95,11 @@ describe('renders', () => {
     expect(getByTestId('loaded-data').textContent).toEqual('loaded data');
     // spy assertions happen in the play function and should work
     await LoaderStory.run!();
+  });
+
+  it('should run story tests', async () => {
+    await WithTests.runTest('should pass');
+    await expect(WithTests.runTest('should fail')).rejects.toThrowError('problems!');
   });
 });
 

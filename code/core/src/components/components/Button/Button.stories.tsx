@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import React from 'react';
 
 import { FaceHappyIcon } from '@storybook/icons';
+import { expect } from '@storybook/test';
 
 import preview from '../../../../../.storybook/preview';
 import { Button } from './Button';
@@ -22,6 +23,10 @@ const Row = ({ children }: { children: ReactNode }) => (
 );
 
 export const Base = meta.story({});
+Base.test('button should exist', async ({ canvas }) => {
+  const btn = await canvas.findByRole('button');
+  await expect(btn).toBeInTheDocument();
+});
 
 export const Variants = meta.story({
   render: (args) => (

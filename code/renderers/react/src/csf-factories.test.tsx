@@ -1,7 +1,6 @@
 // @vitest-environment happy-dom
 // this file tests Typescript types that's why there are no assertions
-import { describe, it } from 'vitest';
-import { expect, test } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import type { KeyboardEventHandler, ReactElement, ReactNode } from 'react';
 import React from 'react';
@@ -22,22 +21,23 @@ const Button: (props: ButtonProps) => ReactElement = () => <></>;
 
 const preview = definePreview({});
 
-test('csf factories', () => {
-  const config = definePreview({
-    addons: [
-      {
-        decorators: [],
-      },
-    ],
+it('story test function', async () => {
+  const meta = preview.meta({
+    component: Button,
+    args: { label: 'good', disabled: false },
   });
-
-  const meta = config.meta({ component: Button, args: { disabled: true } });
 
   const MyStory = meta.story({
     args: {
       label: 'Hello world',
     },
   });
+  const spyFn = vi.fn(() => {});
+  MyStory.test('foo', spyFn);
+
+  await MyStory.runTest('foo');
+
+  expect(spyFn).toHaveBeenCalled();
 
   expect(MyStory.input.args?.label).toBe('Hello world');
 });

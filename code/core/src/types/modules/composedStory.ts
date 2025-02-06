@@ -46,6 +46,7 @@ export type ComposedStoryFn<
   id: StoryId;
   play?: (context?: Partial<StoryContext<TRenderer, Partial<TArgs>>>) => Promise<void>;
   run: (context?: Partial<StoryContext<TRenderer, Partial<TArgs>>>) => Promise<void>;
+  runTest: (name: string) => Promise<void>;
   load: () => Promise<void>;
   storyName: string;
   parameters: Parameters;

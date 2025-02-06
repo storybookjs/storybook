@@ -183,3 +183,16 @@ exports[`Renders WithActionArgType story 1`] = `
   </div>
 </body>
 `;
+
+exports[`Renders WithTests story 1`] = `
+<body>
+  <div>
+    <button
+      class="storybook-button storybook-button--large storybook-button--primary"
+      type="button"
+    >
+      foo
+    </button>
+  </div>
+</body>
+`;

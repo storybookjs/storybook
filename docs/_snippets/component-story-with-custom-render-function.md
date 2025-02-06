@@ -67,7 +67,7 @@ export const Example = {
 };
 ```
 
-```js filename="MyComponent.stories.js|jsx" renderer="react" language="js"
+```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { Layout } from './Layout';
 
 import { MyComponent } from './MyComponent';
@@ -91,7 +91,34 @@ export const Example = {
 };
 ```
 
-```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts-4-9"
+```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Layout } from './Layout';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+// This story uses a render function to fully control how the component renders.
+export const Example = meta.story({
+  render: () => (
+    <Layout>
+      <header>
+        <h1>Example</h1>
+      </header>
+      <article>
+        <MyComponent />
+      </article>
+    </Layout>
+  ),
+});
+```
+
+```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/react';
 
 import { Layout } from './Layout';
@@ -120,7 +147,34 @@ export const Example: Story = {
 };
 ```
 
-```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts"
+```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Layout } from './Layout';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+// This story uses a render function to fully control how the component renders.
+export const Example = meta.story({
+  render: () => (
+    <Layout>
+      <header>
+        <h1>Example</h1>
+      </header>
+      <article>
+        <MyComponent />
+      </article>
+    </Layout>
+  ),
+});
+```
+
+```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/react';
 
 import { Layout } from './Layout';
@@ -147,6 +201,33 @@ export const Example: Story = {
     </Layout>
   ),
 };
+```
+
+```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Layout } from './Layout';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+// This story uses a render function to fully control how the component renders.
+export const Example = meta.story({
+  render: () => (
+    <Layout>
+      <header>
+        <h1>Example</h1>
+      </header>
+      <article>
+        <MyComponent />
+      </article>
+    </Layout>
+  ),
+});
 ```
 
 ```js filename="MyComponent.stories.js|jsx" renderer="solid" language="js"

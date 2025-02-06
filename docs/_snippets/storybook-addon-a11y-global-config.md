@@ -1,3 +1,5 @@
+<!-- TODO: Vet this example for addon usage in CSF Factories -->
+
 ```js filename=".storybook/preview.js" renderer="common" language="js"
 export default {
   parameters: {

@@ -11,11 +11,13 @@ export default meta;
 type Story = StoryObj<Button>;
 
 export const Text: Story = {
-  args: {},
+  args: {
+    /* ... */
+  },
 };
 ```
 
-```js filename="Button.stories.js|jsx" renderer="react" language="js"
+```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { Button } from './Button';
 
 export default {
@@ -23,11 +25,30 @@ export default {
 };
 
 export const Text = {
-  args: {/* ... */},
+  args: {
+    /* ... */
+  },
 };
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="react" language="ts-4-9"
+```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Text = meta.story({
+  args: {
+    /* ... */
+  },
+});
+```
+
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/react';
 
 import { Button } from './Button';
@@ -40,11 +61,30 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Text: Story = {
-  args: {},
+  args: {
+    /* ... */
+  },
 };
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="react" language="ts"
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Text = meta.story({
+  args: {
+    /* ... */
+  },
+});
+```
+
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/react';
 
 import { Button } from './Button';
@@ -57,8 +97,27 @@ export default meta;
 type Story = StoryObj<typeof Button>;
 
 export const Text: Story = {
-  args: {},
+  args: {
+    /* ... */
+  },
 };
+```
+
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Text = meta.story({
+  args: {
+    /* ... */
+  },
+});
 ```
 
 ```js filename="Button.stories.js|jsx" renderer="solid" language="js"
@@ -69,7 +128,9 @@ export default {
 };
 
 export const Text = {
-  args: {/* ... */},
+  args: {
+    /* ... */
+  },
 };
 ```
 
@@ -86,7 +147,9 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Text: Story = {
-  args: {},
+  args: {
+    /* ... */
+  },
 };
 ```
 
@@ -103,7 +166,9 @@ export default meta;
 type Story = StoryObj<typeof Button>;
 
 export const Text: Story = {
-  args: {},
+  args: {
+    /* ... */
+  },
 };
 ```
 
@@ -115,7 +180,9 @@ export default {
 };
 
 export const Text = {
-  args: {/* ... */},
+  args: {
+    /* ... */
+  },
 };
 ```
 
@@ -132,7 +199,9 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Text: Story = {
-  args: {/* ... */},
+  args: {
+    /* ... */
+  },
 };
 ```
 
@@ -149,7 +218,9 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Text: Story = {
-  args: {/* ... */},
+  args: {
+    /* ... */
+  },
 };
 ```
 
@@ -164,7 +235,9 @@ export default {
 };
 
 export const Text = {
-  args: {},
+  args: {
+    /* ... */
+  },
 };
 ```
 
@@ -185,7 +258,9 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Text: Story = {
-  args: {},
+  args: {
+    /* ... */
+  },
 };
 ```
 
@@ -206,7 +281,9 @@ export default meta;
 type Story = StoryObj<typeof Button>;
 
 export const Text: Story = {
-  args: {},
+  args: {
+    /* ... */
+  },
 };
 ```
 
@@ -219,7 +296,9 @@ export default {
 };
 
 export const Text = {
-  args: {/* ... */},
+  args: {
+    /* ... */
+  },
 };
 ```
 
@@ -237,6 +316,8 @@ export default meta;
 type Story = StoryObj;
 
 export const Text: Story = {
-  args: {},
+  args: {
+    /* ... */
+  },
 };
 ```

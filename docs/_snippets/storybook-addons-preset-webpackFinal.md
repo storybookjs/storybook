@@ -1,3 +1,5 @@
+<!-- TODO: Needs vetting for Webpack-based and future framework support -->
+
 ```js filename="example-addon/src/webpack/webpackFinal.js" renderer="common" language="js"
 export function webpackFinal(config, options = {}) {
   const rules = [

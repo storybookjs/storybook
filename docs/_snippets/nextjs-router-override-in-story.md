@@ -1,4 +1,4 @@
-```js filename="RouterBasedComponent.stories.js" renderer="react" language="js"
+```js filename="RouterBasedComponent.stories.js" renderer="react" language="js" tabTitle="CSF 3"
 import RouterBasedComponent from './RouterBasedComponent';
 
 export default {
@@ -22,16 +22,43 @@ export const Example = {
 };
 ```
 
-```ts filename="RouterBasedComponent.stories.ts" renderer="react" language="ts-4-9"
-import { Meta, StoryObj } from '@storybook/react';
+```js filename="RouterBasedComponent.stories.js" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import RouterBasedComponent from './RouterBasedComponent';
+
+const meta = preview.meta({
+  component: RouterBasedComponent,
+});
+
+// If you have the actions addon,
+// you can interact with the links and see the route change events there
+export const Example = meta.story({
+  parameters: {
+    nextjs: {
+      router: {
+        pathname: '/profile/[id]',
+        asPath: '/profile/1',
+        query: {
+          id: '1',
+        },
+      },
+    },
+  },
+});
+```
+
+```ts filename="RouterBasedComponent.stories.ts" renderer="react" language="ts-4-9" tabTitle="CSF 3"
+import type { Meta, StoryObj } from '@storybook/react';
 
 import RouterBasedComponent from './RouterBasedComponent';
 
 const meta = {
   component: RouterBasedComponent,
 } satisfies Meta<typeof RouterBasedComponent>;
-export default meta;
 
+export default meta;
 type Story = StoryObj<typeof meta>;
 
 // If you have the actions addon,
@@ -51,8 +78,35 @@ export const Example: Story = {
 };
 ```
 
-```ts filename="RouterBasedComponent.stories.ts" renderer="react" language="ts"
-import { Meta, StoryObj } from '@storybook/react';
+```ts filename="RouterBasedComponent.stories.ts" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import RouterBasedComponent from './RouterBasedComponent';
+
+const meta = preview.meta({
+  component: RouterBasedComponent,
+});
+
+// If you have the actions addon,
+// you can interact with the links and see the route change events there
+export const Example = meta.story({
+  parameters: {
+    nextjs: {
+      router: {
+        pathname: '/profile/[id]',
+        asPath: '/profile/1',
+        query: {
+          id: '1',
+        },
+      },
+    },
+  },
+});
+```
+
+```ts filename="RouterBasedComponent.stories.ts" renderer="react" language="ts" tabTitle="CSF 3"
+import type { Meta, StoryObj } from '@storybook/react';
 
 import RouterBasedComponent from './RouterBasedComponent';
 
@@ -78,4 +132,31 @@ export const Example: Story = {
     },
   },
 };
+```
+
+```ts filename="RouterBasedComponent.stories.ts" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import RouterBasedComponent from './RouterBasedComponent';
+
+const meta = preview.meta({
+  component: RouterBasedComponent,
+});
+
+// If you have the actions addon,
+// you can interact with the links and see the route change events there
+export const Example = meta.story({
+  parameters: {
+    nextjs: {
+      router: {
+        pathname: '/profile/[id]',
+        asPath: '/profile/1',
+        query: {
+          id: '1',
+        },
+      },
+    },
+  },
+});
 ```

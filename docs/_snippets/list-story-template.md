@@ -1,3 +1,5 @@
+<!--TODO: Vet his example for CSF Factories (template usage) -->
+
 ```ts filename="List.stories.ts" renderer="angular" language="ts"
 import type { Meta, StoryObj } from '@storybook/angular';
 
@@ -60,7 +62,7 @@ export const OneItem: Story = {
 };
 ```
 
-```js filename="List.stories.js|jsx" renderer="react" language="js"
+```js filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { List } from './List';
 import { ListItem } from './ListItem';
 
@@ -108,7 +110,59 @@ export const OneItem = {
 };
 ```
 
-```tsx filename="List.stories.ts|tsx" renderer="react" language="ts-4-9"
+```js filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { List } from './List';
+import { ListItem } from './ListItem';
+
+//👇 Imports a specific story from ListItem stories
+import { Unchecked } from './ListItem.stories';
+
+const meta = preview.meta({
+  /* 👇 The title prop is optional.
+   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * to learn how to generate automatic titles
+   */
+  title: 'List',
+
+  component: List,
+});
+
+//👇 The ListTemplate construct will be spread to the existing stories.
+const ListTemplate = {
+  render: ({ items, ...args }) => {
+    return (
+      <List>
+        {items.map((item) => (
+          <ListItem {...item} />
+        ))}
+      </List>
+    );
+  },
+};
+
+export const Empty = meta.story({
+  ...ListTemplate,
+  args: {
+    items: [],
+  },
+});
+
+export const OneItem = meta.story({
+  ...ListTemplate,
+  args: {
+    items: [
+      {
+        ...Unchecked.args,
+      },
+    ],
+  },
+});
+```
+
+```tsx filename="List.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/react';
 
 import { List } from './List';
@@ -119,7 +173,7 @@ import { Unchecked } from './ListItem.stories';
 
 const meta = {
   /* 👇 The title prop is optional.
-   * Seehttps://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/configure/#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'List',
@@ -157,7 +211,54 @@ export const OneItem = {
 };
 ```
 
-```ts filename="List.stories.ts|tsx" renderer="react" language="ts"
+```tsx filename="List.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { List } from './List';
+import { ListItem } from './ListItem';
+
+//👇 Imports a specific story from ListItem stories
+import { Unchecked } from './ListItem.stories';
+
+const meta = preview.meta({
+  /* 👇 The title prop is optional.
+   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * to learn how to generate automatic titles
+   */
+  title: 'List',
+  component: List,
+});
+
+//👇 The ListTemplate construct will be spread to the existing stories.
+const ListTemplate: Story = {
+  render: ({ items, ...args }) => {
+    return (
+      <List>
+        {items.map((item) => (
+          <ListItem {...item} />
+        ))}
+      </List>
+    );
+  },
+};
+
+export const Empty = meta.story({
+  ...ListTemplate,
+  args: {
+    items: [],
+  },
+});
+
+export const OneItem = meta.story({
+  ...ListTemplate,
+  args: {
+    items: [{ ...Unchecked.args }],
+  },
+});
+```
+
+```ts filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/react';
 
 import { List } from './List';
@@ -168,7 +269,7 @@ import { Unchecked } from './ListItem.stories';
 
 const meta: Meta<typeof List> = {
   /* 👇 The title prop is optional.
-   * Seehttps://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/configure/#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'List',
@@ -204,6 +305,53 @@ export const OneItem = {
     items: [{ ...Unchecked.args }],
   },
 };
+```
+
+```ts filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { List } from './List';
+import { ListItem } from './ListItem';
+
+//👇 Imports a specific story from ListItem stories
+import { Unchecked } from './ListItem.stories';
+
+const meta = preview.meta({
+  /* 👇 The title prop is optional.
+   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * to learn how to generate automatic titles
+   */
+  title: 'List',
+  component: List,
+});
+
+//👇 The ListTemplate construct will be spread to the existing stories.
+const ListTemplate: Story = {
+  render: ({ items, ...args }) => {
+    return (
+      <List>
+        {items.map((item) => (
+          <ListItem {...item} />
+        ))}
+      </List>
+    );
+  },
+};
+
+export const Empty = meta.story({
+  ...ListTemplate,
+  args: {
+    items: [],
+  },
+});
+
+export const OneItem = meta.story({
+  ...ListTemplate,
+  args: {
+    items: [{ ...Unchecked.args }],
+  },
+});
 ```
 
 ```js filename="List.stories.js|jsx" renderer="solid" language="js"
@@ -265,7 +413,7 @@ import { Unchecked } from './ListItem.stories';
 
 const meta = {
   /* 👇 The title prop is optional.
-   * Seehttps://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/configure/#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'List',
@@ -314,7 +462,7 @@ import { Unchecked } from './ListItem.stories';
 
 const meta: Meta<typeof List> = {
   /* 👇 The title prop is optional.
-   * Seehttps://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/configure/#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'List',

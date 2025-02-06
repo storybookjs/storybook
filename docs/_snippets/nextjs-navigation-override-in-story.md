@@ -1,4 +1,4 @@
-```js filename="NavigationBasedComponent.stories.js" renderer="react" language="js"
+```js filename="NavigationBasedComponent.stories.js" renderer="react" language="js" tabTitle="CSF 3"
 import NavigationBasedComponent from './NavigationBasedComponent';
 
 export default {
@@ -26,8 +26,39 @@ export const Example = {
 };
 ```
 
-```ts filename="NavigationBasedComponent.stories.ts" renderer="react" language="ts-4-9"
-import { Meta, StoryObj } from '@storybook/react';
+```js filename="NavigationBasedComponent.stories.js" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import NavigationBasedComponent from './NavigationBasedComponent';
+
+const meta = preview.meta({
+  component: NavigationBasedComponent,
+  parameters: {
+    nextjs: {
+      appDirectory: true,
+    },
+  },
+});
+
+// If you have the actions addon,
+// you can interact with the links and see the route change events there
+export const Example = meta.story({
+  parameters: {
+    nextjs: {
+      navigation: {
+        pathname: '/profile',
+        query: {
+          user: '1',
+        },
+      },
+    },
+  },
+});
+```
+
+```ts filename="NavigationBasedComponent.stories.ts" renderer="react" language="ts-4-9" tabTitle="CSF 3"
+import type { Meta, StoryObj } from '@storybook/react';
 
 import NavigationBasedComponent from './NavigationBasedComponent';
 
@@ -59,8 +90,39 @@ export const Example: Story = {
 };
 ```
 
-```ts filename="NavigationBasedComponent.stories.ts" renderer="react" language="ts"
-import { Meta, StoryObj } from '@storybook/react';
+```ts filename="NavigationBasedComponent.stories.ts" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import NavigationBasedComponent from './NavigationBasedComponent';
+
+const meta = preview.meta({
+  component: NavigationBasedComponent,
+  parameters: {
+    nextjs: {
+      appDirectory: true,
+    },
+  },
+});
+
+// If you have the actions addon,
+// you can interact with the links and see the route change events there
+export const Example = meta.story({
+  parameters: {
+    nextjs: {
+      navigation: {
+        pathname: '/profile',
+        query: {
+          user: '1',
+        },
+      },
+    },
+  },
+});
+```
+
+```ts filename="NavigationBasedComponent.stories.ts" renderer="react" language="ts" tabTitle="CSF 3"
+import type { Meta, StoryObj } from '@storybook/react';
 
 import NavigationBasedComponent from './NavigationBasedComponent';
 
@@ -90,4 +152,35 @@ export const Example: Story = {
     },
   },
 };
+```
+
+```ts filename="NavigationBasedComponent.stories.ts" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import NavigationBasedComponent from './NavigationBasedComponent';
+
+const meta = preview.meta({
+  component: NavigationBasedComponent,
+  parameters: {
+    nextjs: {
+      appDirectory: true,
+    },
+  },
+});
+
+// If you have the actions addon,
+// you can interact with the links and see the route change events there
+export const Example = meta.story({
+  parameters: {
+    nextjs: {
+      navigation: {
+        pathname: '/profile',
+        query: {
+          user: '1',
+        },
+      },
+    },
+  },
+});
 ```

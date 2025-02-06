@@ -171,7 +171,7 @@ export default {
 };
 ```
 
-```js filename="Gizmo.stories.js|jsx" renderer="common" language="js"
+```js filename="Gizmo.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
 import { Gizmo } from './Gizmo';
 
 export default {
@@ -224,6 +224,64 @@ export default {
     },
   },
 };
+```
+
+```js filename="Gizmo.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Gizmo } from './Gizmo';
+
+const meta = preview.meta({
+  component: Gizmo,
+  argTypes: {
+    canRotate: {
+      control: 'boolean',
+    },
+    width: {
+      control: { type: 'number', min: 400, max: 1200, step: 50 },
+    },
+    height: {
+      control: { type: 'range', min: 200, max: 1500, step: 50 },
+    },
+    rawData: {
+      control: 'object',
+    },
+    coordinates: {
+      control: 'object',
+    },
+    texture: {
+      control: {
+        type: 'file',
+        accept: '.png',
+      },
+    },
+    position: {
+      control: 'radio',
+      options: ['left', 'right', 'center'],
+    },
+    rotationAxis: {
+      control: 'check',
+      options: ['x', 'y', 'z'],
+    },
+    scaling: {
+      control: 'select',
+      options: [10, 50, 75, 100, 200],
+    },
+    label: {
+      control: 'text',
+    },
+    meshColors: {
+      control: {
+        type: 'color',
+        presetColors: ['#ff0000', '#00ff00', '#0000ff'],
+      },
+    },
+    revisionDate: {
+      control: 'date',
+    },
+  },
+});
 ```
 
 ```svelte filename="Gizmo.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
@@ -344,7 +402,7 @@ const meta = {
 export default meta;
 ```
 
-```ts filename="Gizmo.stories.ts|tsx" renderer="common" language="ts-4-9"
+```ts filename="Gizmo.stories.ts|tsx" renderer="common" language="ts-4-9" tabTitle="CSF 3"
 // Replace your-framework with the name of your framework
 import type { Meta } from '@storybook/your-framework';
 
@@ -402,6 +460,64 @@ const meta = {
 } satisfies Meta<typeof Gizmo>;
 
 export default meta;
+```
+
+```ts filename="Gizmo.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Gizmo } from './Gizmo';
+
+const meta = preview.meta({
+  component: Gizmo,
+  argTypes: {
+    canRotate: {
+      control: 'boolean',
+    },
+    width: {
+      control: { type: 'number', min: 400, max: 1200, step: 50 },
+    },
+    height: {
+      control: { type: 'range', min: 200, max: 1500, step: 50 },
+    },
+    rawData: {
+      control: 'object',
+    },
+    coordinates: {
+      control: 'object',
+    },
+    texture: {
+      control: {
+        type: 'file',
+        accept: '.png',
+      },
+    },
+    position: {
+      control: 'radio',
+      options: ['left', 'right', 'center'],
+    },
+    rotationAxis: {
+      control: 'check',
+      options: ['x', 'y', 'z'],
+    },
+    scaling: {
+      control: 'select',
+      options: [10, 50, 75, 100, 200],
+    },
+    label: {
+      control: 'text',
+    },
+    meshColors: {
+      control: {
+        type: 'color',
+        presetColors: ['#ff0000', '#00ff00', '#0000ff'],
+      },
+    },
+    revisionDate: {
+      control: 'date',
+    },
+  },
+});
 ```
 
 ```svelte filename="Gizmo.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
@@ -522,7 +638,7 @@ const meta: Meta<typeof Gizmo> = {
 export default meta;
 ```
 
-```ts filename="Gizmo.stories.ts|tsx" renderer="common" language="ts"
+```ts filename="Gizmo.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the name of your framework
 import type { Meta } from '@storybook/your-framework';
 
@@ -580,6 +696,64 @@ const meta: Meta<typeof Gizmo> = {
 };
 
 export default meta;
+```
+
+```ts filename="Gizmo.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Gizmo } from './Gizmo';
+
+const meta = preview.meta({
+  component: Gizmo,
+  argTypes: {
+    canRotate: {
+      control: 'boolean',
+    },
+    width: {
+      control: { type: 'number', min: 400, max: 1200, step: 50 },
+    },
+    height: {
+      control: { type: 'range', min: 200, max: 1500, step: 50 },
+    },
+    rawData: {
+      control: 'object',
+    },
+    coordinates: {
+      control: 'object',
+    },
+    texture: {
+      control: {
+        type: 'file',
+        accept: '.png',
+      },
+    },
+    position: {
+      control: 'radio',
+      options: ['left', 'right', 'center'],
+    },
+    rotationAxis: {
+      control: 'check',
+      options: ['x', 'y', 'z'],
+    },
+    scaling: {
+      control: 'select',
+      options: [10, 50, 75, 100, 200],
+    },
+    label: {
+      control: 'text',
+    },
+    meshColors: {
+      control: {
+        type: 'color',
+        presetColors: ['#ff0000', '#00ff00', '#0000ff'],
+      },
+    },
+    revisionDate: {
+      control: 'date',
+    },
+  },
+});
 ```
 
 ```js filename="Gizmo.stories.js" renderer="web-components" language="js"

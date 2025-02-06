@@ -1,4 +1,6 @@
-```js filename="MyServerComponent.stories.js" renderer="react" language="js"
+<!-- TODO: Vet this example for CSF Factory support -->
+
+```js filename="MyServerComponent.stories.js" renderer="react" language="js" tabTitle="CSF 3"
 import MyServerComponent from './MyServerComponent';
 
 export default {
@@ -9,8 +11,22 @@ export default {
 };
 ```
 
-```ts filename="MyServerComponent.stories.ts" renderer="react" language="ts-4-9"
-import { Meta, StoryObj } from '@storybook/react';
+```js filename="MyServerComponent.stories.js" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import MyServerComponent from './MyServerComponent';
+
+const meta = preview.meta({
+  component: MyServerComponent,
+  parameters: {
+    react: { rsc: false },
+  },
+});
+```
+
+```ts filename="MyServerComponent.stories.ts" renderer="react" language="ts-4-9" tabTitle="CSF 3"
+import type { Meta, StoryObj } from '@storybook/react';
 
 import MyServerComponent from './MyServerComponent';
 
@@ -23,8 +39,22 @@ const meta = {
 export default meta;
 ```
 
-```ts filename="MyServerComponent.stories.ts" renderer="react" language="ts"
-import { Meta, StoryObj } from '@storybook/react';
+```ts filename="MyServerComponent.stories.ts" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import MyServerComponent from './MyServerComponent';
+
+const meta = preview.meta({
+  component: MyServerComponent,
+  parameters: {
+    react: { rsc: false },
+  },
+});
+```
+
+```ts filename="MyServerComponent.stories.ts" renderer="react" language="ts" tabTitle="CSF 3"
+import type { Meta, StoryObj } from '@storybook/react';
 
 import MyServerComponent from './MyServerComponent';
 
@@ -35,4 +65,18 @@ const meta: Meta<typeof MyServerComponent> = {
   },
 };
 export default meta;
+```
+
+```ts filename="MyServerComponent.stories.ts" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import MyServerComponent from './MyServerComponent';
+
+const meta = preview.meta({
+  component: MyServerComponent,
+  parameters: {
+    react: { rsc: false },
+  },
+});
 ```

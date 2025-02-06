@@ -68,7 +68,7 @@ export const Empty: Story = {
 };
 ```
 
-```js filename="List.stories.js|jsx" renderer="react" language="js"
+```js filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { List } from './List';
 
 export default {
@@ -79,7 +79,21 @@ export default {
 export const Empty = {};
 ```
 
-```ts filename="List.stories.ts|tsx" renderer="react" language="ts-4-9"
+```js filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { List } from './List';
+
+const meta = preview.meta({
+  component: List,
+});
+
+// Always an empty list, not super interesting
+export const Empty = meta.story({});
+```
+
+```ts filename="List.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/react';
 
 import { List } from './List';
@@ -95,7 +109,21 @@ type Story = StoryObj<typeof meta>;
 export const Empty: Story = {};
 ```
 
-```ts filename="List.stories.ts|tsx" renderer="react" language="ts"
+```ts filename="List.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { List } from './List';
+
+const meta = preview.meta({
+  component: List,
+});
+
+// Always an empty list, not super interesting
+export const Empty = meta.story({});
+```
+
+```ts filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/react';
 
 import { List } from './List';
@@ -109,6 +137,20 @@ type Story = StoryObj<typeof List>;
 
 // Always an empty list, not super interesting
 export const Empty: Story = {};
+```
+
+```ts filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { List } from './List';
+
+const meta = preview.meta({
+  component: List,
+});
+
+// Always an empty list, not super interesting
+export const Empty = meta.story({});
 ```
 
 ```js filename="List.stories.js|jsx" renderer="solid" language="js"

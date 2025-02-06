@@ -1,5 +1,6 @@
 ```ts filename="MyComponent.stories.ts" renderer="angular" language="ts"
 import type { Meta, StoryObj } from '@storybook/angular';
+
 import { componentWrapperDecorator } from '@storybook/angular';
 import { useChannel } from '@storybook/preview-api';
 import { HIGHLIGHT, RESET_HIGHLIGHT } from '@storybook/addon-highlight';
@@ -27,7 +28,7 @@ export const ResetHighlight: Story = {
 };
 ```
 
-```js filename="MyComponent.stories.js|jsx" renderer="react" language="js"
+```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { useChannel } from '@storybook/preview-api';
 import { HIGHLIGHT, RESET_HIGHLIGHT } from '@storybook/addon-highlight';
 
@@ -51,8 +52,36 @@ export const ResetHighlight = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts-4-9"
+```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { useChannel } from '@storybook/preview-api';
+import { HIGHLIGHT, RESET_HIGHLIGHT } from '@storybook/addon-highlight';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const ResetHighlight = meta.story({
+  decorators: [
+    (storyFn) => {
+      const emit = useChannel({});
+      emit(RESET_HIGHLIGHT); //👈 Remove previously highlighted elements
+      emit(HIGHLIGHT, {
+        elements: ['header', 'section', 'footer'],
+      });
+      return storyFn();
+    },
+  ],
+});
+```
+
+```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/react';
+
 import { useChannel } from '@storybook/preview-api';
 import { HIGHLIGHT, RESET_HIGHLIGHT } from '@storybook/addon-highlight';
 
@@ -79,8 +108,36 @@ export const ResetHighlight: Story = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts"
+```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { useChannel } from '@storybook/preview-api';
+import { HIGHLIGHT, RESET_HIGHLIGHT } from '@storybook/addon-highlight';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const ResetHighlight = meta.story({
+  decorators: [
+    (storyFn) => {
+      const emit = useChannel({});
+      emit(RESET_HIGHLIGHT); //👈 Remove previously highlighted elements
+      emit(HIGHLIGHT, {
+        elements: ['header', 'section', 'footer'],
+      });
+      return storyFn();
+    },
+  ],
+});
+```
+
+```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/react';
+
 import { useChannel } from '@storybook/preview-api';
 import { HIGHLIGHT, RESET_HIGHLIGHT } from '@storybook/addon-highlight';
 
@@ -105,6 +162,33 @@ export const ResetHighlight: Story = {
     },
   ],
 };
+```
+
+```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { useChannel } from '@storybook/preview-api';
+import { HIGHLIGHT, RESET_HIGHLIGHT } from '@storybook/addon-highlight';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const ResetHighlight = meta.story({
+  decorators: [
+    (storyFn) => {
+      const emit = useChannel({});
+      emit(RESET_HIGHLIGHT); //👈 Remove previously highlighted elements
+      emit(HIGHLIGHT, {
+        elements: ['header', 'section', 'footer'],
+      });
+      return storyFn();
+    },
+  ],
+});
 ```
 
 ```js filename="MyComponent.stories.js" renderer="vue" language="js"
@@ -135,6 +219,7 @@ export const ResetHighlight = {
 
 ```ts filename="MyComponent.stories.ts" renderer="vue" language="ts-4-9"
 import type { Meta, StoryObj } from '@storybook/vue3';
+
 import { useChannel } from '@storybook/preview-api';
 import { HIGHLIGHT, RESET_HIGHLIGHT } from '@storybook/addon-highlight';
 
@@ -165,6 +250,7 @@ export const ResetHighlight: Story = {
 
 ```ts filename="MyComponent.stories.ts" renderer="vue" language="ts"
 import type { Meta, StoryObj } from '@storybook/vue3';
+
 import { useChannel } from '@storybook/preview-api';
 import { HIGHLIGHT, RESET_HIGHLIGHT } from '@storybook/addon-highlight';
 
@@ -217,6 +303,7 @@ export const ResetHighlight = {
 
 ```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts"
 import type { Meta, StoryObj } from '@storybook/web-components';
+
 import { useChannel } from '@storybook/preview-api';
 import { HIGHLIGHT, RESET_HIGHLIGHT } from '@storybook/addon-highlight';
 

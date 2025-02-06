@@ -53,7 +53,7 @@ const meta: Meta = {
 export default meta;
 ```
 
-```js filename="Button.stories.js|jsx" renderer="react" language="js"
+```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { Button } from './Button';
 
 export default {
@@ -70,7 +70,27 @@ export default {
 };
 ```
 
-```ts filename="Button.stories.tsx" renderer="react" language="ts"
+```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  parameters: {
+    backgrounds: {
+      default: 'Light',
+      values: [
+        // 👇 Add a new value
+        { name: 'Gray', value: '#CCC' },
+      ],
+    },
+  },
+});
+```
+
+```ts filename="Button.stories.tsx" renderer="react" language="ts" tabTitle="CSF 3"
 import type { Meta } from '@storybook/react';
 
 import { Button } from './Button';
@@ -91,7 +111,27 @@ const meta: Meta<typeof Button> = {
 export default meta;
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="react" language="ts-4-9"
+```ts filename="Button.stories.tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  parameters: {
+    backgrounds: {
+      default: 'Light',
+      values: [
+        // 👇 Add a new value
+        { name: 'Gray', value: '#CCC' },
+      ],
+    },
+  },
+});
+```
+
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF 3"
 import type { Meta } from '@storybook/react';
 
 import { Button } from './Button';
@@ -110,6 +150,26 @@ const meta = {
 } satisfies Meta<typeof Button>;
 
 export default meta;
+```
+
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  parameters: {
+    backgrounds: {
+      default: 'Light',
+      values: [
+        // 👇 Add a new value
+        { name: 'Gray', value: '#CCC' },
+      ],
+    },
+  },
+});
 ```
 
 ```js filename="Button.stories.js" renderer="vue" language="js"

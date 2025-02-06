@@ -1,5 +1,6 @@
 ```ts filename=".storybook/preview.ts" renderer="angular" language="ts"
 import type { Preview } from '@storybook/angular';
+
 import { componentWrapperDecorator } from '@storybook/angular';
 
 const preview: Preview = {
@@ -25,7 +26,7 @@ const preview: Preview = {
 export default preview;
 ```
 
-```js filename=".storybook/preview.jsx" renderer="react" language="js"
+```js filename=".storybook/preview.jsx" renderer="react" language="js" tabTitle="CSF 3"
 import React from 'react';
 
 export default {
@@ -57,7 +58,42 @@ export default {
 };
 ```
 
-```tsx filename=".storybook/preview.tsx" renderer="react" language="ts"
+```js filename=".storybook/preview.jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+import React from 'react';
+
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, experimental-nextjs-vite)
+import { definePreview } from '@storybook/your-framework';
+
+export default definePreview({
+  decorators: [
+    // 👇 Defining the decorator in the preview file applies it to all stories
+    (Story, { parameters }) => {
+      // 👇 Make it configurable by reading from parameters
+      const { pageLayout } = parameters;
+      switch (pageLayout) {
+        case 'page':
+          return (
+            // Your page layout is probably a little more complex than this ;)
+            <div className="page-layout">
+              <Story />
+            </div>
+          );
+        case 'page-mobile':
+          return (
+            <div className="page-mobile-layout">
+              <Story />
+            </div>
+          );
+        default:
+          // In the default case, don't apply a layout
+          return <Story />;
+      }
+    },
+  ],
+});
+```
+
+```tsx filename=".storybook/preview.tsx" renderer="react" language="ts" tabTitle="CSF 3"
 import React from 'react';
 
 import type { Preview } from '@storybook/react';
@@ -91,6 +127,41 @@ const preview: Preview = {
 };
 
 export default preview;
+```
+
+```tsx filename=".storybook/preview.tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+import React from 'react';
+
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, experimental-nextjs-vite)
+import { definePreview } from '@storybook/your-framework';
+
+export default definePreview({
+  decorators: [
+    // 👇 Defining the decorator in the preview file applies it to all stories
+    (Story, { parameters }) => {
+      // 👇 Make it configurable by reading from parameters
+      const { pageLayout } = parameters;
+      switch (pageLayout) {
+        case 'page':
+          return (
+            // Your page layout is probably a little more complex than this ;)
+            <div className="page-layout">
+              <Story />
+            </div>
+          );
+        case 'page-mobile':
+          return (
+            <div className="page-mobile-layout">
+              <Story />
+            </div>
+          );
+        default:
+          // In the default case, don't apply a layout
+          return <Story />;
+      }
+    },
+  ],
+});
 ```
 
 ```jsx filename=".storybook/preview.jsx" renderer="solid" language="js"

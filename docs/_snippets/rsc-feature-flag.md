@@ -1,4 +1,6 @@
-```js filename=".storybook/main.js" renderer="react" language="js"
+<!-- TODO: Vet this example for CSF Factory support -->
+
+```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF 3"
 export default {
   // ...
   features: {
@@ -7,8 +9,21 @@ export default {
 };
 ```
 
-```ts filename=".storybook/main.ts" renderer="react" language="ts"
-import { StorybookConfig } from '@storybook/nextjs';
+```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Replace your-framework with the framework you are using (e.g., nextjs, experimental-nextjs-vite)
+import { defineMain } from '@storybook/your-framework/node';
+
+export default defineMain({
+  // ...
+  features: {
+    experimentalRSC: true,
+  },
+});
+```
+
+```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF 3"
+// Replace your-framework with the framework you are using (e.g., nextjs, experimental-nextjs-vite)
+import { StorybookConfig } from '@storybook/your-framework';
 
 const config: StorybookConfig = {
   // ...
@@ -18,4 +33,16 @@ const config: StorybookConfig = {
 };
 
 export default config;
+```
+
+```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Replace your-framework with the framework you are using (e.g., nextjs, experimental-nextjs-vite)
+import { defineMain } from '@storybook/your-framework/node';
+
+export default defineMain({
+  // ...
+  features: {
+    experimentalRSC: true,
+  },
+});
 ```

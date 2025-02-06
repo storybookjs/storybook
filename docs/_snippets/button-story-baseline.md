@@ -18,7 +18,7 @@ export const Primary: Story = {
 };
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="common" language="ts"
+```ts filename="Button.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the name of your framework
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -37,6 +37,24 @@ export const Primary: Story = {
     primary: true,
   },
 };
+```
+
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+//👇 Throws a type error if the args don't match the component props
+export const Primary = meta.story({
+  args: {
+    primary: true,
+  },
+});
 ```
 
 ```ts filename="Button.stories.ts" renderer="web-components" language="ts"

@@ -50,7 +50,7 @@ export const Unchecked = {
 };
 ```
 
-```js filename="Checkbox.stories.js|jsx" renderer="common" language="js"
+```js filename="Checkbox.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
 import { Checkbox } from './Checkbox';
 
 export default {
@@ -62,6 +62,23 @@ export const Unchecked = {
     label: 'Unchecked',
   },
 };
+```
+
+```js filename="Checkbox.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Checkbox } from './Checkbox';
+
+const meta = preview.meta({
+  component: Checkbox,
+});
+
+export const Unchecked = meta.story({
+  args: {
+    label: 'Unchecked',
+  },
+});
 ```
 
 ```svelte filename="Checkbox.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
@@ -102,7 +119,7 @@ export const Unchecked: Story = {
 };
 ```
 
-```ts filename="Checkbox.stories.ts|tsx" renderer="common" language="ts-4-9"
+```ts filename="Checkbox.stories.ts|tsx" renderer="common" language="ts-4-9" tabTitle="CSF 3"
 // Replace your-framework with the name of your framework
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -120,6 +137,23 @@ export const Unchecked: Story = {
     label: 'Unchecked',
   },
 };
+```
+
+```ts filename="Checkbox.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Checkbox } from './Checkbox';
+
+const meta = preview.meta({
+  component: Checkbox,
+});
+
+export const Unchecked = meta.story({
+  args: {
+    label: 'Unchecked',
+  },
+});
 ```
 
 ```svelte filename="Checkbox.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
@@ -160,7 +194,7 @@ export const Unchecked: Story = {
 };
 ```
 
-```ts filename="Checkbox.stories.ts|tsx" renderer="common" language="ts"
+```ts filename="Checkbox.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the name of your framework
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -178,6 +212,23 @@ export const Unchecked: Story = {
     label: 'Unchecked',
   },
 };
+```
+
+```ts filename="Checkbox.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Checkbox } from './Checkbox';
+
+const meta = preview.meta({
+  component: Checkbox,
+});
+
+export const Unchecked = meta.story({
+  args: {
+    label: 'Unchecked',
+  },
+});
 ```
 
 ```js filename="Checkbox.stories.js" renderer="web-components" language="js"

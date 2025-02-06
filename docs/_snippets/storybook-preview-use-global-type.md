@@ -8,7 +8,7 @@ const preview: Preview = {
       (story) => `<div [class]="myTheme">${story}</div>`,
       ({ globals }) => {
         return { myTheme: globals['theme'] };
-      }
+      },
     ),
   ],
 };
@@ -20,26 +20,6 @@ export default preview;
 import { MyThemes } from '../my-theme-folder/my-theme-file';
 
 const preview = {
-  decorators: [
-    (story, context) => {
-      const selectedTheme = context.globals.theme || 'light';
-      const theme = MyThemes[selectedTheme];
-      // Your theme provider and other context providers goes in the return statement
-      return;
-    },
-  ],
-};
-
-export default preview;
-```
-
-```ts filename=".storybook/preview.ts" renderer="common" language="ts-4-9"
-// Replace your-framework with the framework you are using (e.g., solid, qwik)
-import { Preview } from '@storybook/your-framework';
-
-import { MyThemes } from '../my-theme-folder/my-theme-file';
-
-const preview: Preview = {
   decorators: [
     (story, context) => {
       const selectedTheme = context.globals.theme || 'light';
@@ -73,7 +53,7 @@ const preview: Preview = {
 export default preview;
 ```
 
-```jsx filename=".storybook/preview.js|jsx" renderer="react" language="js"
+```jsx filename=".storybook/preview.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { ThemeProvider } from 'styled-components';
 
 import { MyThemes } from '../my-theme-folder/my-theme-file';
@@ -94,7 +74,25 @@ const preview = {
 export default preview;
 ```
 
-```tsx filename=".storybook/preview.ts|tsx" renderer="react" language="ts-4-9"
+```js filename=".storybook/preview.js" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, experimental-nextjs-vite)
+import { definePreview } from '@storybook/your-framework';
+
+import { MyThemes } from '../my-theme-folder/my-theme-file';
+
+export default definePreview({
+  decorators: [
+    (story, context) => {
+      const selectedTheme = context.globals.theme || 'light';
+      const theme = MyThemes[selectedTheme];
+      // Your theme provider and other context providers goes in the return statement
+      return;
+    },
+  ],
+});
+```
+
+```tsx filename=".storybook/preview.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF 3"
 import type { Preview } from '@storybook/react';
 
 import { ThemeProvider } from 'styled-components';
@@ -117,7 +115,25 @@ const preview: Preview = {
 export default preview;
 ```
 
-```tsx filename=".storybook/preview.ts|tsx" renderer="react" language="ts"
+```ts filename=".storybook/preview.ts" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, experimental-nextjs-vite)
+import { definePreview } from '@storybook/your-framework';
+
+import { MyThemes } from '../my-theme-folder/my-theme-file';
+
+export default definePreview({
+  decorators: [
+    (story, context) => {
+      const selectedTheme = context.globals.theme || 'light';
+      const theme = MyThemes[selectedTheme];
+      // Your theme provider and other context providers goes in the return statement
+      return;
+    },
+  ],
+});
+```
+
+```tsx filename=".storybook/preview.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
 import type { Preview } from '@storybook/react';
 
 import { ThemeProvider } from 'styled-components';
@@ -138,6 +154,24 @@ const preview: Preview = {
 };
 
 export default preview;
+```
+
+```ts filename=".storybook/preview.ts" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, experimental-nextjs-vite)
+import { definePreview } from '@storybook/your-framework';
+
+import { MyThemes } from '../my-theme-folder/my-theme-file';
+
+export default definePreview({
+  decorators: [
+    (story, context) => {
+      const selectedTheme = context.globals.theme || 'light';
+      const theme = MyThemes[selectedTheme];
+      // Your theme provider and other context providers goes in the return statement
+      return;
+    },
+  ],
+});
 ```
 
 ```js filename=".storybook/preview.js" renderer="vue" language="js"

@@ -1,5 +1,8 @@
+<!-- TODO: Vet this example for CSF Factories composition -->
+
 ```ts filename="Page.stories.ts" renderer="angular" language="ts"
 import type { Meta, StoryObj } from '@storybook/angular';
+
 import { argsToTemplate } from '@storybook/angular';
 
 import { Page } from './page.component';
@@ -27,7 +30,7 @@ export const CustomFooter: Story = {
 };
 ```
 
-```js filename="Page.stories.js|jsx" renderer="react" language="js"
+```js filename="Page.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { Page } from './Page';
 
 export default {
@@ -46,7 +49,29 @@ export const CustomFooter = {
 };
 ```
 
-```tsx filename="Page.stories.ts|tsx" renderer="react" language="ts-4-9"
+```js filename="Page.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Page } from './Page';
+
+const meta = preview.meta({
+  component: Page,
+  render: ({ footer, ...args }) => (
+    <Page {...args}>
+      <footer>{footer}</footer>
+    </Page>
+  ),
+});
+
+export const CustomFooter = meta.story({
+  args: {
+    footer: 'Built with Storybook',
+  },
+});
+```
+
+```tsx filename="Page.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/react';
 
 import { Page } from './Page';
@@ -72,7 +97,29 @@ export const CustomFooter = {
 } satisfies Story;
 ```
 
-```tsx filename="Page.stories.ts|tsx" renderer="react" language="ts"
+```tsx filename="Page.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Page } from './Page';
+
+const meta = preview.meta({
+  component: Page,
+  render: ({ footer, ...args }) => (
+    <Page {...args}>
+      <footer>{footer}</footer>
+    </Page>
+  ),
+});
+
+export const CustomFooter = meta.story({
+  args: {
+    footer: 'Built with Storybook',
+  },
+});
+```
+
+```tsx filename="Page.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/react';
 
 import { Page } from './Page';
@@ -96,6 +143,28 @@ export const CustomFooter: Story = {
     footer: 'Built with Storybook',
   },
 };
+```
+
+```tsx filename="Page.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Page } from './Page';
+
+const meta = preview.meta({
+  component: Page,
+  render: ({ footer, ...args }) => (
+    <Page {...args}>
+      <footer>{footer}</footer>
+    </Page>
+  ),
+});
+
+export const CustomFooter = meta.story({
+  args: {
+    footer: 'Built with Storybook',
+  },
+});
 ```
 
 ```js filename="Page.stories.js|jsx" renderer="solid" language="js"

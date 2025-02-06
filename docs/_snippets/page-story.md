@@ -1,3 +1,5 @@
+<!-- TODO: Vet this example for CSF Factory composition-->
+
 ```ts filename="Page.stories.ts" renderer="angular" language="ts"
 import { moduleMetadata } from '@storybook/angular';
 
@@ -32,7 +34,7 @@ export const LoggedIn: Story = {
 };
 ```
 
-```js filename="Page.stories.js|jsx" renderer="react" language="js"
+```js filename="Page.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { Page } from './Page';
 
 //👇 Imports all Header stories
@@ -49,7 +51,27 @@ export const LoggedIn = {
 };
 ```
 
-```ts filename="Page.stories.ts|tsx" renderer="react" language="ts-4-9"
+```js filename="Page.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Page } from './Page';
+
+//👇 Imports all Header stories
+import * as HeaderStories from './Header.stories';
+
+const meta = preview.meta({
+  component: Page,
+});
+
+export const LoggedIn = meta.story({
+  args: {
+    ...HeaderStories.LoggedIn.input.args,
+  },
+});
+```
+
+```ts filename="Page.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/react';
 
 import { Page } from './Page';
@@ -71,7 +93,27 @@ export const LoggedIn: Story = {
 };
 ```
 
-```ts filename="Page.stories.ts|tsx" renderer="react" language="ts"
+```ts filename="Page.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Page } from './Page';
+
+//👇 Imports all Header stories
+import * as HeaderStories from './Header.stories';
+
+const meta = preview.meta({
+  component: Page,
+});
+
+export const LoggedIn = meta.story({
+  args: {
+    ...HeaderStories.LoggedIn.input.args,
+  },
+});
+```
+
+```ts filename="Page.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/react';
 
 import { Page } from './Page';
@@ -91,6 +133,26 @@ export const LoggedIn: Story = {
     ...HeaderStories.LoggedIn.args,
   },
 };
+```
+
+```ts filename="Page.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Page } from './Page';
+
+//👇 Imports all Header stories
+import * as HeaderStories from './Header.stories';
+
+const meta = preview.meta({
+  component: Page,
+});
+
+export const LoggedIn = meta.story({
+  args: {
+    ...HeaderStories.LoggedIn.input.args,
+  },
+});
 ```
 
 ```js filename="Page.stories.js|jsx" renderer="solid" language="js"

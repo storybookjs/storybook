@@ -105,7 +105,7 @@ export const Default = {
 };
 ```
 
-```js filename="Histogram.stories.js|jsx" renderer="react" language="js"
+```js filename="Histogram.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { Histogram } from './Histogram';
 
 export default {
@@ -122,7 +122,27 @@ export const Default = {
 };
 ```
 
-```ts filename="Histogram.stories.ts|tsx" renderer="react" language="ts-4-9"
+```js filename="Histogram.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Histogram } from './Histogram';
+
+const meta = preview.meta({
+  component: Histogram,
+});
+
+export const Default = meta.story({
+  args: {
+    dataType: 'latency',
+    showHistogramLabels: true,
+    histogramAccentColor: '#1EA7FD',
+    label: 'Latency distribution',
+  },
+});
+```
+
+```ts filename="Histogram.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/react';
 
 import { Histogram } from './Histogram';
@@ -144,7 +164,27 @@ export const Default: Story = {
 };
 ```
 
-```ts filename="Histogram.stories.ts|tsx" renderer="react" language="ts"
+```ts filename="Histogram.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Histogram } from './Histogram';
+
+const meta = preview.meta({
+  component: Histogram,
+});
+
+export const Default = meta.story({
+  args: {
+    dataType: 'latency',
+    showHistogramLabels: true,
+    histogramAccentColor: '#1EA7FD',
+    label: 'Latency distribution',
+  },
+});
+```
+
+```ts filename="Histogram.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/react';
 
 import { Histogram } from './Histogram';
@@ -164,6 +204,26 @@ export const Default: Story = {
     label: 'Latency distribution',
   },
 };
+```
+
+```ts filename="Histogram.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Histogram } from './Histogram';
+
+const meta = preview.meta({
+  component: Histogram,
+});
+
+export const Default = meta.story({
+  args: {
+    dataType: 'latency',
+    showHistogramLabels: true,
+    histogramAccentColor: '#1EA7FD',
+    label: 'Latency distribution',
+  },
+});
 ```
 
 ```js filename="Histogram.stories.js|jsx" renderer="solid" language="js"

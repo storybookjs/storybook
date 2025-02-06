@@ -1,3 +1,5 @@
+<!-- TODO: Vet this example for CSF Factory composition -->
+
 ```ts filename="YourPage.stories.ts" renderer="angular" language="ts"
 import type { Meta, StoryObj } from '@storybook/angular';
 
@@ -24,7 +26,7 @@ export const Simple: Story = {
 };
 ```
 
-```js filename="YourPage.stories.js|jsx" renderer="common" language="js"
+```js filename="YourPage.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
 import { DocumentScreen } from './YourPage';
 
 // 👇 Imports the required stories
@@ -45,7 +47,31 @@ export const Simple = {
 };
 ```
 
-```ts filename="YourPage.stories.ts|tsx" renderer="common" language="ts-4-9"
+```js filename="YourPage.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { DocumentScreen } from './YourPage';
+
+// 👇 Imports the required stories
+import * as PageLayout from './PageLayout.stories';
+import * as DocumentHeader from './DocumentHeader.stories';
+import * as DocumentList from './DocumentList.stories';
+
+const meta = preview.meta({
+  component: DocumentScreen,
+});
+
+export const Simple = meta.story({
+  args: {
+    user: PageLayout.Simple.input.args.user,
+    document: DocumentHeader.Simple.input.args.document,
+    subdocuments: DocumentList.Simple.input.args.documents,
+  },
+});
+```
+
+```ts filename="YourPage.stories.ts|tsx" renderer="common" language="ts-4-9" tabTitle="CSF 3"
 // Replace your-framework with the name of your framework
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -72,7 +98,31 @@ export const Simple: Story = {
 };
 ```
 
-```ts filename="YourPage.stories.ts|tsx" renderer="common" language="ts"
+```ts filename="YourPage.stories.ts|tsx" renderer="common" language="ts-4-9" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { DocumentScreen } from './YourPage';
+
+// 👇 Imports the required stories
+import * as PageLayout from './PageLayout.stories';
+import * as DocumentHeader from './DocumentHeader.stories';
+import * as DocumentList from './DocumentList.stories';
+
+const meta = preview.meta({
+  component: DocumentScreen,
+});
+
+export const Simple = meta.story({
+  args: {
+    user: PageLayout.Simple.input.args.user,
+    document: DocumentHeader.Simple.input.args.document,
+    subdocuments: DocumentList.Simple.input.args.documents,
+  },
+});
+```
+
+```ts filename="YourPage.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the name of your framework
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -97,6 +147,30 @@ export const Simple: Story = {
     subdocuments: DocumentList.Simple.args.documents,
   },
 };
+```
+
+```ts filename="YourPage.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { DocumentScreen } from './YourPage';
+
+// 👇 Imports the required stories
+import * as PageLayout from './PageLayout.stories';
+import * as DocumentHeader from './DocumentHeader.stories';
+import * as DocumentList from './DocumentList.stories';
+
+const meta = preview.meta({
+  component: DocumentScreen,
+});
+
+export const Simple = meta.story({
+  args: {
+    user: PageLayout.Simple.input.args.user,
+    document: DocumentHeader.Simple.input.args.document,
+    subdocuments: DocumentList.Simple.input.args.documents,
+  },
+});
 ```
 
 ```js filename="YourPage.stories.js" renderer="web-components" language="js"

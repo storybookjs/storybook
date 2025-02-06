@@ -129,7 +129,7 @@ export const FilledForm = {
 };
 ```
 
-```js filename="RegistrationForm.stories.js|jsx" renderer="common" language="js"
+```js filename="RegistrationForm.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
 import { userEvent, within } from '@storybook/test';
 
 import { RegistrationForm } from './RegistrationForm';
@@ -167,6 +167,49 @@ export const FilledForm = {
     await userEvent.click(submitButton);
   },
 };
+```
+
+```js filename="RegistrationForm.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { userEvent, within } from '@storybook/test';
+
+import { RegistrationForm } from './RegistrationForm';
+
+const meta = preview.meta({
+  component: RegistrationForm,
+});
+
+/*
+ * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * to learn more about using the canvasElement to query the DOM
+ */
+export const FilledForm = meta.story({
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    const emailInput = canvas.getByLabelText('email', {
+      selector: 'input',
+    });
+
+    await userEvent.type(emailInput, 'example-email@email.com', {
+      delay: 100,
+    });
+
+    const passwordInput = canvas.getByLabelText('password', {
+      selector: 'input',
+    });
+
+    await userEvent.type(passwordInput, 'ExamplePassword', {
+      delay: 100,
+    });
+    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    const submitButton = canvas.getByRole('button');
+
+    await userEvent.click(submitButton);
+  },
+});
 ```
 
 ```svelte filename="RegistrationForm.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
@@ -260,7 +303,7 @@ export const FilledForm: Story = {
 };
 ```
 
-```ts filename="RegistrationForm.stories.ts|tsx" renderer="common" language="ts-4-9"
+```ts filename="RegistrationForm.stories.ts|tsx" renderer="common" language="ts-4-9" tabTitle="CSF 3"
 // Replace your-framework with the name of your framework
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -304,6 +347,49 @@ export const FilledForm: Story = {
     await userEvent.click(submitButton);
   },
 };
+```
+
+```ts filename="RegistrationForm.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { userEvent, within } from '@storybook/test';
+
+import { RegistrationForm } from './RegistrationForm';
+
+const meta = preview.meta({
+  component: RegistrationForm,
+});
+
+/*
+ * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * to learn more about using the canvasElement to query the DOM
+ */
+export const FilledForm = meta.story({
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    const emailInput = canvas.getByLabelText('email', {
+      selector: 'input',
+    });
+
+    await userEvent.type(emailInput, 'example-email@email.com', {
+      delay: 100,
+    });
+
+    const passwordInput = canvas.getByLabelText('password', {
+      selector: 'input',
+    });
+
+    await userEvent.type(passwordInput, 'ExamplePassword', {
+      delay: 100,
+    });
+    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    const submitButton = canvas.getByRole('button');
+
+    await userEvent.click(submitButton);
+  },
+});
 ```
 
 ```svelte filename="RegistrationForm.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
@@ -397,7 +483,7 @@ export const FilledForm: Story = {
 };
 ```
 
-```ts filename="RegistrationForm.stories.ts|tsx" renderer="common" language="ts"
+```ts filename="RegistrationForm.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the name of your framework
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -441,6 +527,49 @@ export const FilledForm: Story = {
     await userEvent.click(submitButton);
   },
 };
+```
+
+```ts filename="RegistrationForm.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { userEvent, within } from '@storybook/test';
+
+import { RegistrationForm } from './RegistrationForm';
+
+const meta = preview.meta({
+  component: RegistrationForm,
+});
+
+/*
+ * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * to learn more about using the canvasElement to query the DOM
+ */
+export const FilledForm = meta.story({
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    const emailInput = canvas.getByLabelText('email', {
+      selector: 'input',
+    });
+
+    await userEvent.type(emailInput, 'example-email@email.com', {
+      delay: 100,
+    });
+
+    const passwordInput = canvas.getByLabelText('password', {
+      selector: 'input',
+    });
+
+    await userEvent.type(passwordInput, 'ExamplePassword', {
+      delay: 100,
+    });
+    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    const submitButton = canvas.getByRole('button');
+
+    await userEvent.click(submitButton);
+  },
+});
 ```
 
 ```js filename="RegistrationForm.stories.js" renderer="web-components" language="js"

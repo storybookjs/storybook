@@ -65,7 +65,7 @@ export const MockedError: Story = {
 };
 ```
 
-```js filename="YourPage.stories.js|jsx" renderer="common" language="js"
+```js filename="YourPage.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
 import { http, HttpResponse, delay } from 'msw';
 
 import { DocumentScreen } from './YourPage';
@@ -127,7 +127,72 @@ export const MockedError = {
 };
 ```
 
-```ts filename="YourPage.stories.ts|tsx" renderer="common" language="ts-4-9"
+```js filename="YourPage.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { http, HttpResponse, delay } from 'msw';
+
+import { DocumentScreen } from './YourPage';
+
+const meta = preview.meta({
+  component: DocumentScreen,
+});
+
+// 👇 The mocked data that will be used in the story
+const TestData = {
+  user: {
+    userID: 1,
+    name: 'Someone',
+  },
+  document: {
+    id: 1,
+    userID: 1,
+    title: 'Something',
+    brief: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    status: 'approved',
+  },
+  subdocuments: [
+    {
+      id: 1,
+      userID: 1,
+      title: 'Something',
+      content:
+        'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+      status: 'approved',
+    },
+  ],
+};
+
+export const MockedSuccess = meta.story({
+  parameters: {
+    msw: {
+      handlers: [
+        http.get('https://your-restful-endpoint/', () => {
+          return HttpResponse.json(TestData);
+        }),
+      ],
+    },
+  },
+});
+
+export const MockedError = meta.story({
+  parameters: {
+    msw: {
+      handlers: [
+        http.get('https://your-restful-endpoint', async () => {
+          await delay(800);
+          return new HttpResponse(null, {
+            status: 403,
+          });
+        }),
+      ],
+    },
+  },
+});
+```
+
+```ts filename="YourPage.stories.ts|tsx" renderer="common" language="ts-4-9" tabTitle="CSF 3"
 // Replace your-framework with the name of your framework (e.g. nextjs, vue3-vite)
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -195,7 +260,72 @@ export const MockedError: Story = {
 };
 ```
 
-```ts filename="YourPage.stories.ts|tsx" renderer="common" language="ts"
+```ts filename="YourPage.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { http, HttpResponse, delay } from 'msw';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: DocumentScreen,
+});
+
+// 👇 The mocked data that will be used in the story
+const TestData = {
+  user: {
+    userID: 1,
+    name: 'Someone',
+  },
+  document: {
+    id: 1,
+    userID: 1,
+    title: 'Something',
+    brief: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    status: 'approved',
+  },
+  subdocuments: [
+    {
+      id: 1,
+      userID: 1,
+      title: 'Something',
+      content:
+        'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+      status: 'approved',
+    },
+  ],
+};
+
+export const MockedSuccess = meta.story({
+  parameters: {
+    msw: {
+      handlers: [
+        http.get('https://your-restful-endpoint/', () => {
+          return HttpResponse.json(TestData);
+        }),
+      ],
+    },
+  },
+});
+
+export const MockedError = meta.story({
+  parameters: {
+    msw: {
+      handlers: [
+        http.get('https://your-restful-endpoint', async () => {
+          await delay(800);
+          return new HttpResponse(null, {
+            status: 403,
+          });
+        }),
+      ],
+    },
+  },
+});
+```
+
+```ts filename="YourPage.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the name of your framework (e.g. nextjs, vue3-vite)
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -261,6 +391,71 @@ export const MockedError: Story = {
     },
   },
 };
+```
+
+```ts filename="YourPage.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { http, HttpResponse, delay } from 'msw';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: DocumentScreen,
+});
+
+// 👇 The mocked data that will be used in the story
+const TestData = {
+  user: {
+    userID: 1,
+    name: 'Someone',
+  },
+  document: {
+    id: 1,
+    userID: 1,
+    title: 'Something',
+    brief: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    status: 'approved',
+  },
+  subdocuments: [
+    {
+      id: 1,
+      userID: 1,
+      title: 'Something',
+      content:
+        'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+      status: 'approved',
+    },
+  ],
+};
+
+export const MockedSuccess = meta.story({
+  parameters: {
+    msw: {
+      handlers: [
+        http.get('https://your-restful-endpoint/', () => {
+          return HttpResponse.json(TestData);
+        }),
+      ],
+    },
+  },
+});
+
+export const MockedError = meta.story({
+  parameters: {
+    msw: {
+      handlers: [
+        http.get('https://your-restful-endpoint', async () => {
+          await delay(800);
+          return new HttpResponse(null, {
+            status: 403,
+          });
+        }),
+      ],
+    },
+  },
+});
 ```
 
 ```js filename="YourPage.stories.js" renderer="web-components" language="js"

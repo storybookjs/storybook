@@ -28,7 +28,7 @@ export const WithAnImage: Story = {
 };
 ```
 
-```js filename="MyComponent.stories.js|jsx" renderer="react" language="js"
+```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { MyComponent } from './MyComponent';
 
 import imageFile from './static/image.png';
@@ -47,7 +47,29 @@ export const WithAnImage = {
 };
 ```
 
-```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts-4-9"
+```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+import imageFile from './static/image.png';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+const image = {
+  src: imageFile,
+  alt: 'my image',
+};
+
+export const WithAnImage = meta.story({
+  render: () => <img src={image.src} alt={image.alt} />,
+});
+```
+
+```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/react';
 
 import imageFile from './static/image.png';
@@ -71,7 +93,29 @@ export const WithAnImage: Story = {
 };
 ```
 
-```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts"
+```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+import imageFile from './static/image.png';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+const image = {
+  src: imageFile,
+  alt: 'my image',
+};
+
+export const WithAnImage = meta.story({
+  render: () => <img src={image.src} alt={image.alt} />,
+});
+```
+
+```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/react';
 
 import imageFile from './static/image.png';
@@ -93,6 +137,28 @@ const image = {
 export const WithAnImage: Story = {
   render: () => <img src={image.src} alt={image.alt} />,
 };
+```
+
+```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+import imageFile from './static/image.png';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+const image = {
+  src: imageFile,
+  alt: 'my image',
+};
+
+export const WithAnImage = meta.story({
+  render: () => <img src={image.src} alt={image.alt} />,
+});
 ```
 
 ```js filename="MyComponent.stories.js|jsx" renderer="solid" language="js"

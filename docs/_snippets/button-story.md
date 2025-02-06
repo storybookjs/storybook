@@ -1,3 +1,5 @@
+<!-- TODO: Vet this example for CSF Factories -->
+
 ```ts filename="Button.stories.ts" renderer="angular" language="ts"
 import type { Meta, StoryObj } from '@storybook/angular';
 
@@ -109,68 +111,7 @@ export const Primary = {
 };
 ```
 
-```js filename="Button.stories.js|jsx" renderer="react" language="js"
-import { Button } from './Button';
-
-export default {
-  component: Button,
-};
-
-/*
- *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
- * to learn how to use render functions.
- */
-export const Primary = {
-  render: () => <Button primary label="Button" />,
-};
-```
-
-```ts filename="Button.stories.ts|tsx" renderer="react" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/react';
-
-import { Button } from './Button';
-
-const meta = {
-  component: Button,
-} satisfies Meta<typeof Button>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-/*
- *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
- * to learn how to use render functions.
- */
-export const Primary: Story = {
-  render: () => <Button primary label="Button" />,
-};
-```
-
-```ts filename="Button.stories.ts|tsx" renderer="react" language="ts"
-import type { Meta, StoryObj } from '@storybook/react';
-
-import { Button } from './Button';
-
-const meta: Meta<typeof Button> = {
-  component: Button,
-};
-
-export default meta;
-type Story = StoryObj<typeof Button>;
-
-/*
- *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
- * to learn how to use render functions.
- */
-export const Primary: Story = {
-  render: () => <Button primary label="Button" />,
-};
-```
-
-```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="with-hooks"
+```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import React, { useState } from 'react';
 
 import { Button } from './Button';
@@ -203,7 +144,43 @@ export const Primary = {
 };
 ```
 
-```tsx filename="Button.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="with-hooks"
+```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+import React, { useState } from 'react';
+
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+/*
+ * Example Button story with React Hooks.
+ * See note below related to this example.
+ */
+const ButtonWithHooks = () => {
+  // Sets the hooks for both the label and primary props
+  const [value, setValue] = useState('Secondary');
+  const [isPrimary, setIsPrimary] = useState(false);
+
+  // Sets a click handler to change the label's value
+  const handleOnChange = () => {
+    if (!isPrimary) {
+      setIsPrimary(true);
+      setValue('Primary');
+    }
+  };
+  return <Button primary={isPrimary} onClick={handleOnChange} label={value} />;
+};
+
+export const Primary = meta.story({
+  render: () => <ButtonWithHooks />,
+});
+```
+
+```tsx filename="Button.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF 3"
 import React, { useState } from 'react';
 
 import { Meta, StoryObj } from '@storybook/react';
@@ -241,7 +218,43 @@ export const Primary = {
 } satisfies Story;
 ```
 
-```tsx filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="with-hooks"
+```tsx filename="Button.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+import React, { useState } from 'react';
+
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+/*
+ * Example Button story with React Hooks.
+ * See note below related to this example.
+ */
+const ButtonWithHooks = () => {
+  // Sets the hooks for both the label and primary props
+  const [value, setValue] = useState('Secondary');
+  const [isPrimary, setIsPrimary] = useState(false);
+
+  // Sets a click handler to change the label's value
+  const handleOnChange = () => {
+    if (!isPrimary) {
+      setIsPrimary(true);
+      setValue('Primary');
+    }
+  };
+  return <Button primary={isPrimary} onClick={handleOnChange} label={value} />;
+};
+
+export const Primary = meta.story({
+  render: () => <ButtonWithHooks />,
+});
+```
+
+```tsx filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
 import React, { useState } from 'react';
 
 import { Meta, StoryObj } from '@storybook/react';
@@ -277,6 +290,42 @@ const ButtonWithHooks = () => {
 export const Primary: Story = {
   render: () => <ButtonWithHooks />,
 };
+```
+
+```tsx filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+import React, { useState } from 'react';
+
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+/*
+ * Example Button story with React Hooks.
+ * See note below related to this example.
+ */
+const ButtonWithHooks = () => {
+  // Sets the hooks for both the label and primary props
+  const [value, setValue] = useState('Secondary');
+  const [isPrimary, setIsPrimary] = useState(false);
+
+  // Sets a click handler to change the label's value
+  const handleOnChange = () => {
+    if (!isPrimary) {
+      setIsPrimary(true);
+      setValue('Primary');
+    }
+  };
+  return <Button primary={isPrimary} onClick={handleOnChange} label={value} />;
+};
+
+export const Primary = meta.story({
+  render: () => <ButtonWithHooks />,
+});
 ```
 
 ```js filename="Button.stories.js|jsx" renderer="solid" language="js"
@@ -340,7 +389,7 @@ export const Primary: Story = {
 };
 ```
 
-```js filename="Button.stories.js|jsx" renderer="solid" language="js" tabTitle="with-hooks"
+```js filename="Button.stories.js|jsx" renderer="solid" language="js" tabTitle="With Hooks"
 import { createSignal } from 'solid-js';
 
 import { Button } from './Button';
@@ -373,7 +422,7 @@ export const Primary = {
 };
 ```
 
-```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts-4-9" tabTitle="with-hooks"
+```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts-4-9" tabTitle="With Hooks"
 import type { Meta, StoryObj } from 'storybook-solidjs';
 
 import { createSignal } from 'solid-js';
@@ -411,7 +460,7 @@ export const Primary = {
 } satisfies Story;
 ```
 
-```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts" tabTitle="with-hooks"
+```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts" tabTitle="With Hooks"
 import type { Meta, StoryObj } from 'storybook-solidjs';
 
 import { createSignal } from 'solid-js';

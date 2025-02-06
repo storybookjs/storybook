@@ -1,3 +1,5 @@
+<!-- TODO: Vet this example for CSF Factory support -->
+
 ```ts filename="List.stories.ts" renderer="angular" language="ts"
 import type { Meta, StoryObj } from '@storybook/angular';
 
@@ -18,8 +20,8 @@ const meta: Meta<List> = {
     }),
   ],
 };
-export default meta;
 
+export default meta;
 type Story = StoryObj<List>;
 
 export const Empty: Story = {};
@@ -37,7 +39,7 @@ export const OneItem: Story = {
 };
 ```
 
-```jsx filename="List.stories.js|jsx" renderer="react" language="js"
+```jsx filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import React from 'react';
 
 import { List } from './List';
@@ -59,8 +61,33 @@ export const OneItem = {
 };
 ```
 
-```tsx filename="List.stories.ts|tsx" renderer="react" language="ts-4-9"
+```jsx filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
 import React from 'react';
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { List } from './List';
+import { ListItem } from './ListItem';
+
+const meta = preview.meta({
+  component: List,
+  subcomponents: { ListItem }, //👈 Adds the ListItem component as a subcomponent
+});
+
+export const Empty = meta.story({});
+
+export const OneItem = meta.story({
+  render: (args) => (
+    <List {...args}>
+      <ListItem />
+    </List>
+  ),
+});
+```
+
+```tsx filename="List.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF 3"
+import React from 'react';
+
 import type { Meta, StoryObj } from '@storybook/react';
 
 import { List } from './List';
@@ -70,8 +97,8 @@ const meta = {
   component: List,
   subcomponents: { ListItem }, //👈 Adds the ListItem component as a subcomponent
 } satisfies Meta<typeof List>;
-export default meta;
 
+export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Empty: Story = {};
@@ -85,8 +112,33 @@ export const OneItem: Story = {
 };
 ```
 
-```tsx filename="List.stories.ts|tsx" renderer="react" language="ts"
+```tsx filename="List.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
 import React from 'react';
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { List } from './List';
+import { ListItem } from './ListItem';
+
+const meta = preview.meta({
+  component: List,
+  subcomponents: { ListItem }, //👈 Adds the ListItem component as a subcomponent
+});
+
+export const Empty = meta.story({});
+
+export const OneItem = meta.story({
+  render: (args) => (
+    <List {...args}>
+      <ListItem />
+    </List>
+  ),
+});
+```
+
+```tsx filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+import React from 'react';
+
 import type { Meta, StoryObj } from '@storybook/react';
 
 import { List } from './List';
@@ -96,8 +148,8 @@ const meta: Meta<typeof List> = {
   component: List,
   subcomponents: { ListItem }, //👈 Adds the ListItem component as a subcomponent
 };
-export default meta;
 
+export default meta;
 type Story = StoryObj<typeof List>;
 
 export const Empty: Story = {};
@@ -109,6 +161,30 @@ export const OneItem: Story = {
     </List>
   ),
 };
+```
+
+```tsx filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+import React from 'react';
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { List } from './List';
+import { ListItem } from './ListItem';
+
+const meta = preview.meta({
+  component: List,
+  subcomponents: { ListItem }, //👈 Adds the ListItem component as a subcomponent
+});
+
+export const Empty = meta.story({});
+
+export const OneItem = meta.story({
+  render: (args) => (
+    <List {...args}>
+      <ListItem />
+    </List>
+  ),
+});
 ```
 
 ```js filename="List.stories.js|jsx" renderer="solid" language="js"
@@ -149,8 +225,7 @@ const meta = {
    */
   title: 'List',
   component: List,
-  //👈 Adds the ListItem component as a subcomponent
-  subcomponents: { ListItem },
+  subcomponents: { ListItem }, //👈 Adds the ListItem component as a subcomponent
 } satisfies Meta<typeof List>;
 
 export default meta;
@@ -227,8 +302,8 @@ const meta: Meta = {
   component: 'demo-list',
   subcomponents: { ListItem: 'demo-list-item' }, // 👈 Adds the ListItem component as a subcomponent
 };
-export default meta;
 
+export default meta;
 type Story = StoryObj;
 
 export const Empty: Story = {};
@@ -279,8 +354,8 @@ const meta = {
   component: List,
   subcomponents: { ListItem }, //👈 Adds the ListItem component as a subcomponent
 } satisfies Meta<typeof List>;
-export default meta;
 
+export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Empty: Story = {
@@ -311,8 +386,8 @@ const meta: Meta<typeof List> = {
   component: List,
   subcomponents: { ListItem }, //👈 Adds the ListItem component as a subcomponent
 };
-export default meta;
 
+export default meta;
 type Story = StoryObj<typeof List>;
 
 export const Empty: Story = {

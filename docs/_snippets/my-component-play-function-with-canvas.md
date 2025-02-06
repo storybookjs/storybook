@@ -19,7 +19,7 @@ export const ExampleStory: Story = {
 
     // Starts querying from the component's root element
     await userEvent.type(canvas.getByTestId('example-element'), 'something');
-    await userEvent.click(canvas.getByRole('another-element'));
+    await userEvent.click(canvas.getByRole('button'));
   },
 };
 ```
@@ -49,7 +49,7 @@ export const ExampleStory: Story = {
 
     // Starts querying from the component's root element
     await userEvent.type(canvas.getByTestId('example-element'), 'something');
-    await userEvent.click(canvas.getByRole('another-element'));
+    await userEvent.click(canvas.getByRole('button'));
   }} />
 ```
 
@@ -69,12 +69,12 @@ export const ExampleStory = {
 
     // Starts querying from the component's root element
     await userEvent.type(canvas.getByTestId('example-element'), 'something');
-    await userEvent.click(canvas.getByRole('another-element'));
+    await userEvent.click(canvas.getByRole('button'));
   },
 };
 ```
 
-```js filename="MyComponent.stories.js|jsx" renderer="common" language="js"
+```js filename="MyComponent.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
 import { userEvent, within } from '@storybook/test';
 
 import { MyComponent } from './MyComponent';
@@ -90,9 +90,33 @@ export const ExampleStory = {
 
     // Starts querying from the component's root element
     await userEvent.type(canvas.getByTestId('example-element'), 'something');
-    await userEvent.click(canvas.getByRole('another-element'));
+    await userEvent.click(canvas.getByRole('button'));
   },
 };
+```
+
+```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { userEvent, within } from '@storybook/test';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const ExampleStory = meta.story({
+  play: async ({ canvasElement }) => {
+    // Assigns canvas to the component root element
+    const canvas = within(canvasElement);
+
+    // Starts querying from the component's root element
+    await userEvent.type(canvas.getByTestId('example-element'), 'something');
+    await userEvent.click(canvas.getByRole('button'));
+  },
+});
 ```
 
 ```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
@@ -116,7 +140,7 @@ export const ExampleStory = {
 
     // Starts querying from the component's root element
     await userEvent.type(canvas.getByTestId('example-element'), 'something');
-    await userEvent.click(canvas.getByRole('another-element'));
+    await userEvent.click(canvas.getByRole('button'));
   }} />
 ```
 
@@ -141,12 +165,12 @@ export const ExampleStory: Story = {
 
     // Starts querying from the component's root element
     await userEvent.type(canvas.getByTestId('example-element'), 'something');
-    await userEvent.click(canvas.getByRole('another-element'));
+    await userEvent.click(canvas.getByRole('button'));
   },
 };
 ```
 
-```ts filename="MyComponent.stories.ts|tsx" renderer="common" language="ts-4-9"
+```ts filename="MyComponent.stories.ts|tsx" renderer="common" language="ts-4-9" tabTitle="CSF 3"
 // Replace your-framework with the name of your framework
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -168,14 +192,39 @@ export const ExampleStory: Story = {
 
     // Starts querying from the component's root element
     await userEvent.type(canvas.getByTestId('example-element'), 'something');
-    await userEvent.click(canvas.getByRole('another-element'));
+    await userEvent.click(canvas.getByRole('button'));
   },
 };
+```
+
+```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { userEvent, within } from '@storybook/test';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const ExampleStory = meta.story({
+  play: async ({ canvasElement }) => {
+    // Assigns canvas to the component root element
+    const canvas = within(canvasElement);
+
+    // Starts querying from the component's root element
+    await userEvent.type(canvas.getByTestId('example-element'), 'something');
+    await userEvent.click(canvas.getByRole('button'));
+  },
+});
 ```
 
 ```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
+
   import { userEvent, within } from '@storybook/test';
 
   import MyComponent from './MyComponent.svelte';
@@ -193,7 +242,7 @@ export const ExampleStory: Story = {
 
     // Starts querying from the component's root element
     await userEvent.type(canvas.getByTestId('example-element'), 'something');
-    await userEvent.click(canvas.getByRole('another-element'));
+    await userEvent.click(canvas.getByRole('button'));
   }} />
 ```
 
@@ -218,12 +267,12 @@ export const ExampleStory: Story = {
 
     // Starts querying from the component's root element
     await userEvent.type(canvas.getByTestId('example-element'), 'something');
-    await userEvent.click(canvas.getByRole('another-element'));
+    await userEvent.click(canvas.getByRole('button'));
   },
 };
 ```
 
-```ts filename="MyComponent.stories.ts|tsx" renderer="common" language="ts"
+```ts filename="MyComponent.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the name of your framework
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -245,9 +294,33 @@ export const ExampleStory: Story = {
 
     // Starts querying from the component's root element
     await userEvent.type(canvas.getByTestId('example-element'), 'something');
-    await userEvent.click(canvas.getByRole('another-element'));
+    await userEvent.click(canvas.getByRole('button'));
   },
 };
+```
+
+```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { userEvent, within } from '@storybook/test';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const ExampleStory = meta.story({
+  play: async ({ canvasElement }) => {
+    // Assigns canvas to the component root element
+    const canvas = within(canvasElement);
+
+    // Starts querying from the component's root element
+    await userEvent.type(canvas.getByTestId('example-element'), 'something');
+    await userEvent.click(canvas.getByRole('button'));
+  },
+});
 ```
 
 ```js filename="MyComponent.stories.js" renderer="web-components" language="js"
@@ -264,13 +337,14 @@ export const ExampleStory = {
 
     // Starts querying from the component's root element
     await userEvent.type(canvas.getByTestId('example-element'), 'something');
-    await userEvent.click(canvas.getByRole('another-element'));
+    await userEvent.click(canvas.getByRole('button'));
   },
 };
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts"
 import type { Meta, StoryObj } from '@storybook/web-components';
+
 import { userEvent, within } from '@storybook/test';
 
 const meta: Meta = {
@@ -287,7 +361,7 @@ export const ExampleStory: Story = {
 
     // Starts querying from the component's root element
     await userEvent.type(canvas.getByTestId('example-element'), 'something');
-    await userEvent.click(canvas.getByRole('another-element'));
+    await userEvent.click(canvas.getByRole('button'));
   },
 };
 ```

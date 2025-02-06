@@ -1,4 +1,4 @@
-```js filename="Button.stories.js" renderer="react" language="js"
+```js filename="Button.stories.js" renderer="react" language="js" tabTitle="CSF 3"
 import { Button } from './Button';
 
 export default {
@@ -16,7 +16,28 @@ export const Dark = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="react" language="ts-4-9"
+```js filename="Button.stories.js" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+// Wrapped in light theme
+export const Default = meta.story({});
+
+// Wrapped in dark theme
+export const Dark = meta.story({
+  parameters: {
+    theme: 'dark',
+  },
+});
+```
+
+```ts filename="Button.stories.ts" renderer="react" language="ts-4-9" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/react';
 
 import { Button } from './Button';
@@ -39,7 +60,28 @@ export const Dark: Story = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="react" language="ts"
+```ts filename="Button.stories.ts" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+// Wrapped in light theme
+export const Default = meta.story({});
+
+// Wrapped in dark theme
+export const Dark = meta.story({
+  parameters: {
+    theme: 'dark',
+  },
+});
+```
+
+```ts filename="Button.stories.ts" renderer="react" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/react';
 
 import { Button } from './Button';
@@ -60,4 +102,25 @@ export const Dark: Story = {
     theme: 'dark',
   },
 };
+```
+
+```ts filename="Button.stories.ts" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+// Wrapped in light theme
+export const Default = meta.story({});
+
+// Wrapped in dark theme
+export const Dark = meta.story({
+  parameters: {
+    theme: 'dark',
+  },
+});
 ```

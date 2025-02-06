@@ -114,7 +114,7 @@ export const ExampleAsyncStory = {
 };
 ```
 
-```js filename="MyComponent.stories.js|jsx" renderer="common" language="js"
+```js filename="MyComponent.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
 import { userEvent, waitFor, within } from '@storybook/test';
 
 import { MyComponent } from './MyComponent';
@@ -147,6 +147,44 @@ export const ExampleAsyncStory = {
     });
   },
 };
+```
+
+```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { userEvent, waitFor, within } from '@storybook/test';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+/* See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * to learn more about using the canvasElement to query the DOM
+ */
+export const ExampleAsyncStory = meta.story({
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    const Input = canvas.getByLabelText('Username', {
+      selector: 'input',
+    });
+
+    await userEvent.type(Input, 'WrongInput', {
+      delay: 100,
+    });
+
+    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    const Submit = canvas.getByRole('button');
+    await userEvent.click(Submit);
+
+    await waitFor(async () => {
+      await userEvent.hover(canvas.getByTestId('error'));
+    });
+  },
+});
 ```
 
 ```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
@@ -229,7 +267,7 @@ export const ExampleAsyncStory: Story = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts|tsx" renderer="common" language="ts-4-9"
+```ts filename="MyComponent.stories.ts|tsx" renderer="common" language="ts-4-9" tabTitle="CSF 3"
 // Replace your-framework with the name of your framework
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -268,6 +306,44 @@ export const ExampleAsyncStory: Story = {
     });
   },
 };
+```
+
+```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { userEvent, waitFor, within } from '@storybook/test';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+/* See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * to learn more about using the canvasElement to query the DOM
+ */
+export const ExampleAsyncStory = meta.story({
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    const Input = canvas.getByLabelText('Username', {
+      selector: 'input',
+    });
+
+    await userEvent.type(Input, 'WrongInput', {
+      delay: 100,
+    });
+
+    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    const Submit = canvas.getByRole('button');
+    await userEvent.click(Submit);
+
+    await waitFor(async () => {
+      await userEvent.hover(canvas.getByTestId('error'));
+    });
+  },
+});
 ```
 
 ```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
@@ -350,7 +426,7 @@ export const ExampleAsyncStory: Story = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts|tsx" renderer="common" language="ts"
+```ts filename="MyComponent.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the name of your framework
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -389,6 +465,44 @@ export const ExampleAsyncStory: Story = {
     });
   },
 };
+```
+
+```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { userEvent, waitFor, within } from '@storybook/test';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+/* See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * to learn more about using the canvasElement to query the DOM
+ */
+export const ExampleAsyncStory = meta.story({
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    const Input = canvas.getByLabelText('Username', {
+      selector: 'input',
+    });
+
+    await userEvent.type(Input, 'WrongInput', {
+      delay: 100,
+    });
+
+    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    const Submit = canvas.getByRole('button');
+    await userEvent.click(Submit);
+
+    await waitFor(async () => {
+      await userEvent.hover(canvas.getByTestId('error'));
+    });
+  },
+});
 ```
 
 ```js filename="MyComponent.stories.js" renderer="web-components" language="js"

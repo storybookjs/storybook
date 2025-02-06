@@ -36,7 +36,7 @@ export const Primary: Story = {
 };
 ```
 
-```js filename="Button.stories.js|jsx" renderer="common" language="js"
+```js filename="Button.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
 import { Button } from './Button';
 
 /**
@@ -69,7 +69,44 @@ export const Primary = {
 };
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="common" language="ts-4-9"
+```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Button } from './Button';
+
+/**
+ * Button stories
+ * These stories showcase the button
+ */
+const meta = preview.meta({
+  component: Button,
+
+  parameters: {
+    docs: {
+      description: {
+        component: 'Another description, overriding the comments',
+      },
+    },
+  },
+});
+
+/**
+ * Primary Button
+ * This is the primary button
+ */
+export const Primary = meta.story({
+  parameters: {
+    docs: {
+      description: {
+        story: 'Another description on the story, overriding the comments',
+      },
+    },
+  },
+});
+```
+
+```ts filename="Button.stories.ts|tsx" renderer="common" language="ts-4-9" tabTitle="CSF 3"
 // Replace your-framework with the name of your framework
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -108,7 +145,43 @@ export const Primary: Story = {
 };
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="common" language="ts"
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Button } from './Button';
+
+/**
+ * Button stories
+ * These stories showcase the button
+ */
+const meta = preview.meta({
+  component: Button,
+  parameters: {
+    docs: {
+      description: {
+        component: 'Another description, overriding the comments',
+      },
+    },
+  },
+});
+
+/**
+ * Primary Button
+ * This is the primary button
+ */
+export const Primary = meta.story({
+  parameters: {
+    docs: {
+      description: {
+        story: 'Another description on the story, overriding the comments',
+      },
+    },
+  },
+});
+```
+
+```ts filename="Button.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the name of your framework
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -145,6 +218,42 @@ export const Primary: Story = {
     },
   },
 };
+```
+
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Button } from './Button';
+
+/**
+ * Button stories
+ * These stories showcase the button
+ */
+const meta = preview.meta({
+  component: Button,
+  parameters: {
+    docs: {
+      description: {
+        component: 'Another description, overriding the comments',
+      },
+    },
+  },
+});
+
+/**
+ * Primary Button
+ * This is the primary button
+ */
+export const Primary = meta.story({
+  parameters: {
+    docs: {
+      description: {
+        story: 'Another description on the story, overriding the comments',
+      },
+    },
+  },
+});
 ```
 
 ```js filename="Button.stories.js" renderer="web-components" language="js"

@@ -54,7 +54,7 @@ export default {
 };
 ```
 
-```js filename="YourComponent.stories.js|jsx" renderer="common" language="js"
+```js filename="YourComponent.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
 import { YourComponent } from './YourComponent';
 
 export default {
@@ -68,6 +68,25 @@ export default {
     },
   },
 };
+```
+
+```js filename="YourComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { YourComponent } from './YourComponent';
+
+const meta = preview.meta({
+  component: YourComponent,
+  argTypes: {
+    // foo is the property we want to remove from the UI
+    foo: {
+      table: {
+        disable: true,
+      },
+    },
+  },
+});
 ```
 
 ```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
@@ -110,7 +129,7 @@ const meta = {
 export default meta;
 ```
 
-```ts filename="YourComponent.stories.ts|tsx" renderer="common" language="ts-4-9"
+```ts filename="YourComponent.stories.ts|tsx" renderer="common" language="ts-4-9" tabTitle="CSF 3"
 // Replace your-framework with the name of your framework
 import type { Meta } from '@storybook/your-framework';
 
@@ -129,6 +148,25 @@ const meta = {
 } satisfies Meta<typeof YourComponent>;
 
 export default meta;
+```
+
+```ts filename="YourComponent.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { YourComponent } from './YourComponent';
+
+const meta = preview.meta({
+  component: YourComponent,
+  argTypes: {
+    // foo is the property we want to remove from the UI
+    foo: {
+      table: {
+        disable: true,
+      },
+    },
+  },
+});
 ```
 
 ```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
@@ -171,7 +209,7 @@ const meta: Meta<typeof YourComponent> = {
 export default meta;
 ```
 
-```ts filename="YourComponent.stories.ts|tsx" renderer="common" language="ts"
+```ts filename="YourComponent.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the name of your framework
 import type { Meta } from '@storybook/your-framework';
 
@@ -190,6 +228,25 @@ const meta: Meta<typeof YourComponent> = {
 };
 
 export default meta;
+```
+
+```ts filename="YourComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { YourComponent } from './YourComponent';
+
+const meta = preview.meta({
+  component: YourComponent,
+  argTypes: {
+    // foo is the property we want to remove from the UI
+    foo: {
+      table: {
+        disable: true,
+      },
+    },
+  },
+});
 ```
 
 ```js filename="YourComponent.stories.js" renderer="web-components" language="js"

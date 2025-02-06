@@ -21,7 +21,7 @@ export const FirstStory: Story = {
 ```js filename="YourComponent.stories.js" renderer="html" language="js"
 import { createYourComponent } from './YourComponent';
 
-// 👇 This default export determines where your story goes in the story list
+//👇 This default export determines where your story goes in the story list
 export default {
   /* 👇 The title prop is optional.
    * See https://storybook.js.org/docs/configure/#configure-story-loading
@@ -97,7 +97,7 @@ export const FirstStory = {
 };
 ```
 
-```js filename="YourComponent.stories.js|jsx" renderer="react" language="js"
+```js filename="YourComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { YourComponent } from './YourComponent';
 
 //👇 This default export determines where your story goes in the story list
@@ -112,7 +112,25 @@ export const FirstStory = {
 };
 ```
 
-```ts filename="YourComponent.stories.ts|tsx" renderer="react" language="ts-4-9"
+```js filename="YourComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { YourComponent } from './YourComponent';
+
+//👇 This export determines where your story goes in the story list
+const meta = preview.meta({
+  component: YourComponent,
+});
+
+export const FirstStory = meta.story({
+  args: {
+    //👇 The args you need here will depend on your component
+  },
+});
+```
+
+```ts filename="YourComponent.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/react';
 
 import { YourComponent } from './YourComponent';
@@ -132,7 +150,25 @@ export const FirstStory: Story = {
 };
 ```
 
-```ts filename="YourComponent.stories.ts|tsx" renderer="react" language="ts"
+```ts filename="YourComponent.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { YourComponent } from './YourComponent';
+
+//👇 This export determines where your story goes in the story list
+const meta = preview.meta({
+  component: YourComponent,
+});
+
+export const FirstStory = meta.story({
+  args: {
+    //👇 The args you need here will depend on your component
+  },
+});
+```
+
+```ts filename="YourComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/react';
 
 import { YourComponent } from './YourComponent';
@@ -150,6 +186,24 @@ export const FirstStory: Story = {
     //👇 The args you need here will depend on your component
   },
 };
+```
+
+```ts filename="YourComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { YourComponent } from './YourComponent';
+
+//👇 This export determines where your story goes in the story list
+const meta = preview.meta({
+  component: YourComponent,
+});
+
+export const FirstStory = meta.story({
+  args: {
+    //👇 The args you need here will depend on your component
+  },
+});
 ```
 
 ```js filename="YourComponent.stories.js|jsx" renderer="solid" language="js"
@@ -412,7 +466,7 @@ export const Primary: Story = {
 ```
 
 ```js filename="YourComponent.stories.js" renderer="web-components" language="js"
-// This default export determines where your story goes in the story list
+//👇 This default export determines where your story goes in the story list
 export default {
   component: 'demo-your-component',
 };
@@ -427,7 +481,7 @@ export const FirstStory = {
 ```ts filename="YourComponent.stories.ts" renderer="web-components" language="ts"
 import type { Meta, StoryObj } from '@storybook/web-components';
 
-// This default export determines where your story goes in the story list
+//👇 This default export determines where your story goes in the story list
 const meta: Meta = {
   component: 'demo-your-component',
 };

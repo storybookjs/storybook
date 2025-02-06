@@ -1,3 +1,5 @@
+<!-- Vet this example  for CSF Factory pattern-->
+
 ```ts filename="List.stories.ts" renderer="angular" language="ts"
 import type { Meta, StoryObj } from '@storybook/angular';
 
@@ -91,7 +93,7 @@ export const ManyItems: Story = {
 };
 ```
 
-```js filename="List.stories.js|jsx" renderer="react" language="js"
+```js filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import React from 'react';
 
 import { List } from './List';
@@ -115,7 +117,32 @@ export const ManyItems = {
 };
 ```
 
-```tsx filename="List.stories.ts|tsx" renderer="react" language="ts-4-9"
+```js filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { List } from './List';
+import { ListItem } from './ListItem';
+
+//👇 We're importing the necessary stories from ListItem
+import { Selected, Unselected } from './ListItem.stories';
+
+const meta = preview.meta({
+  component: List,
+});
+
+export const ManyItems = meta.story({
+  render: (args) => (
+    <List {...args}>
+      <ListItem {...Selected.input.args} />
+      <ListItem {...Unselected.input.args} />
+      <ListItem {...Selected.input.args} />
+    </List>
+  ),
+});
+```
+
+```tsx filename="List.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/react';
 
 import { List } from './List';
@@ -142,7 +169,32 @@ export const ManyItems: Story = {
 };
 ```
 
-```tsx filename="List.stories.ts|tsx" renderer="react" language="ts"
+```tsx filename="List.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { List } from './List';
+import { ListItem } from './ListItem';
+
+//👇 We're importing the necessary stories from ListItem
+import { Selected, Unselected } from './ListItem.stories';
+
+const meta = preview.meta({
+  component: List,
+});
+
+export const ManyItems = meta.story({
+  render: (args) => (
+    <List {...args}>
+      <ListItem {...Selected.input.args} />
+      <ListItem {...Unselected.input.args} />
+      <ListItem {...Selected.input.args} />
+    </List>
+  ),
+});
+```
+
+```tsx filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/react';
 
 import { List } from './List';
@@ -167,6 +219,31 @@ export const ManyItems: Story = {
     </List>
   ),
 };
+```
+
+```tsx filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { List } from './List';
+import { ListItem } from './ListItem';
+
+//👇 We're importing the necessary stories from ListItem
+import { Selected, Unselected } from './ListItem.stories';
+
+const meta = preview.meta({
+  component: List,
+});
+
+export const ManyItems = meta.story({
+  render: (args) => (
+    <List {...args}>
+      <ListItem {...Selected.input.args} />
+      <ListItem {...Unselected.input.args} />
+      <ListItem {...Selected.input.args} />
+    </List>
+  ),
+});
 ```
 
 ```js filename="List.stories.js|jsx" renderer="solid" language="js"

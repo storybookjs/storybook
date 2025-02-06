@@ -1,3 +1,5 @@
+<!-- TODO: Needs vetting for Webpack-based and future framework support -->
+
 ```js filename=".storybook/main.js" renderer="common" language="js"
 export async function webpack(baseConfig, options) {
   // Modify or replace config.

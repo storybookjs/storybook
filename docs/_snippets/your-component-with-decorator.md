@@ -13,7 +13,7 @@ const meta: Meta<YourComponent> = {
 export default meta;
 ```
 
-```js filename="YourComponent.stories.js|jsx" renderer="react" language="js"
+```js filename="YourComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { YourComponent } from './YourComponent';
 
 export default {
@@ -29,7 +29,26 @@ export default {
 };
 ```
 
-```ts filename="YourComponent.stories.ts|tsx" renderer="react" language="ts-4-9"
+```js filename="YourComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { YourComponent } from './YourComponent';
+
+const meta = preview.meta({
+  component: YourComponent,
+  decorators: [
+    (Story) => (
+      <div style={{ margin: '3em' }}>
+        {/* 👇 Decorators in Storybook also accept a function. Replace <Story/> with Story() to enable it  */}
+        <Story />
+      </div>
+    ),
+  ],
+});
+```
+
+```ts filename="YourComponent.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF 3"
 import type { Meta } from '@storybook/react';
 
 import { YourComponent } from './YourComponent';
@@ -49,7 +68,26 @@ const meta = {
 export default meta;
 ```
 
-```ts filename="YourComponent.stories.ts|tsx" renderer="react" language="ts"
+```ts filename="YourComponent.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { YourComponent } from './YourComponent';
+
+const meta = preview.meta({
+  component: YourComponent,
+  decorators: [
+    (Story) => (
+      <div style={{ margin: '3em' }}>
+        {/* 👇 Decorators in Storybook also accept a function. Replace <Story/> with Story() to enable it  */}
+        <Story />
+      </div>
+    ),
+  ],
+});
+```
+
+```ts filename="YourComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
 import type { Meta } from '@storybook/react';
 
 import { YourComponent } from './YourComponent';
@@ -67,6 +105,25 @@ const meta: Meta<typeof YourComponent> = {
 };
 
 export default meta;
+```
+
+```ts filename="YourComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { YourComponent } from './YourComponent';
+
+const meta = preview.meta({
+  component: YourComponent,
+  decorators: [
+    (Story) => (
+      <div style={{ margin: '3em' }}>
+        {/* 👇 Decorators in Storybook also accept a function. Replace <Story/> with Story() to enable it  */}
+        <Story />
+      </div>
+    ),
+  ],
+});
 ```
 
 ```js filename="YourComponent.stories.js|jsx" renderer="solid" language="js"

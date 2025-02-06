@@ -114,7 +114,7 @@ export const Primary = {
 };
 ```
 
-```js filename="Button.stories.js|jsx" renderer="react" language="js"
+```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { Button } from './Button';
 
 export default {
@@ -123,13 +123,31 @@ export default {
 
 export const Primary = {
   args: {
-    label: 'Button',
     primary: true,
+    label: 'Button',
   },
 };
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="react" language="ts-4-9"
+```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Primary = meta.story({
+  args: {
+    primary: true,
+    label: 'Button',
+  },
+});
+```
+
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/react';
 
 import { Button } from './Button';
@@ -149,7 +167,25 @@ export const Primary: Story = {
 };
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="react" language="ts"
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Primary = meta.story({
+  args: {
+    primary: true,
+    label: 'Button',
+  },
+});
+```
+
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/react';
 
 import { Button } from './Button';
@@ -169,6 +205,24 @@ export const Primary: Story = {
 };
 ```
 
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Primary = meta.story({
+  args: {
+    primary: true,
+    label: 'Button',
+  },
+});
+```
+
 ```js filename="Button.stories.js|jsx" renderer="solid" language="js"
 import { Button } from './Button';
 
@@ -178,8 +232,8 @@ export default {
 
 export const Primary = {
   args: {
-    label: 'Button',
     primary: true,
+    label: 'Button',
   },
 };
 ```

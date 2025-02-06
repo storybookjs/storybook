@@ -1,4 +1,6 @@
-```js filename=".storybook/preview.js" renderer="react" language="js"
+<!-- TODO: Vet this example for CSF Factory -->
+
+```js filename=".storybook/preview.js" renderer="react" language="js" tabTitle="CSF 3"
 import React from 'react';
 
 import { normal as NavigationNormal } from '../components/Navigation.stories';
@@ -18,7 +20,30 @@ const AppDecorator = (storyFn) => {
 export default { decorators: [AppDecorator] };
 ```
 
-```ts filename=".storybook/preview.ts" renderer="react" language="ts"
+```js filename=".storybook/preview.js" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+import React from 'react';
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, experimental-nextjs-vite)
+import { definePreview } from '@storybook/your-framework';
+
+import { normal as NavigationNormal } from '../components/Navigation.stories';
+import GlobalContainerContext from '../components/lib/GlobalContainerContext';
+
+const context = {
+  NavigationContainer: NavigationNormal,
+};
+
+const AppDecorator = (storyFn) => {
+  return (
+    <GlobalContainerContext.Provider value={context}>{storyFn()}</GlobalContainerContext.Provider>
+  );
+};
+
+export default definePreview({
+  decorators: [AppDecorator],
+});
+```
+
+```ts filename=".storybook/preview.ts" renderer="react" language="ts" tabTitle="CSF 3"
 import React from 'react';
 
 // Replace your-framework with the framework you are using (e.g., react, vue3)
@@ -43,6 +68,30 @@ const preview: Preview = {
 };
 
 export default preview;
+```
+
+```ts filename=".storybook/preview.ts" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+import React from 'react';
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, experimental-nextjs-vite)
+import { definePreview } from '@storybook/your-framework';
+
+import { normal as NavigationNormal } from '../components/Navigation.stories';
+
+import GlobalContainerContext from '../components/lib/GlobalContainerContext';
+
+const context = {
+  NavigationContainer: NavigationNormal,
+};
+
+const AppDecorator = (storyFn) => {
+  return (
+    <GlobalContainerContext.Provider value={context}>{storyFn()}</GlobalContainerContext.Provider>
+  );
+};
+
+export default definePreview({
+  decorators: [AppDecorator],
+});
 ```
 
 ```js filename=".storybook/preview.js" renderer="solid" language="js"

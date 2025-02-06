@@ -40,7 +40,7 @@ export const Primary: Story = {
 };
 ```
 
-```js filename="TodoItem.stories.js|jsx" renderer="react" language="js"
+```js filename="TodoItem.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { TodoItem } from './TodoItem';
 
 /*
@@ -62,7 +62,32 @@ export const Primary = {
 };
 ```
 
-```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts-4-9"
+```js filename="TodoItem.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { TodoItem } from './TodoItem';
+
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/api/csf
+ * to learn how to use render functions.
+ */
+const meta = preview.meta({
+  component: TodoItem,
+  render: (args, { loaded: { todo } }) => <TodoItem {...args} {...todo} />,
+});
+
+export const Primary = meta.story({
+  loaders: [
+    async () => ({
+      todo: await (await fetch('https://jsonplaceholder.typicode.com/todos/1')).json(),
+    }),
+  ],
+});
+```
+
+```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/react';
 
 import { TodoItem } from './TodoItem';
@@ -89,7 +114,32 @@ export const Primary: Story = {
 };
 ```
 
-```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts"
+```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { TodoItem } from './TodoItem';
+
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/api/csf
+ * to learn how to use render functions.
+ */
+const meta = preview.meta({
+  component: TodoItem,
+  render: (args, { loaded: { todo } }) => <TodoItem {...args} {...todo} />,
+});
+
+export const Primary = meta.story({
+  loaders: [
+    async () => ({
+      todo: await (await fetch('https://jsonplaceholder.typicode.com/todos/1')).json(),
+    }),
+  ],
+});
+```
+
+```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/react';
 
 import { TodoItem } from './TodoItem';
@@ -114,6 +164,31 @@ export const Primary: Story = {
     }),
   ],
 };
+```
+
+```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { TodoItem } from './TodoItem';
+
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/api/csf
+ * to learn how to use render functions.
+ */
+const meta = preview.meta({
+  component: TodoItem,
+  render: (args, { loaded: { todo } }) => <TodoItem {...args} {...todo} />,
+});
+
+export const Primary = meta.story({
+  loaders: [
+    async () => ({
+      todo: await (await fetch('https://jsonplaceholder.typicode.com/todos/1')).json(),
+    }),
+  ],
+});
 ```
 
 ```js filename="TodoItem.stories.js|jsx" renderer="solid" language="js"

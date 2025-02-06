@@ -1,3 +1,5 @@
+<!-- TODO: Vet this example for CSF Factory compatibility -->
+
 ```js filename=".storybook/main.js" renderer="vue" language="js"
 export default {
   framework: {

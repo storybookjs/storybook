@@ -21,7 +21,7 @@ export const Example: Story = {
 };
 ```
 
-```js filename="MyComponent.stories.js|jsx" renderer="react" language="js"
+```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { MyComponent } from './MyComponent';
 
 // More on default export: https://storybook.js.org/docs/writing-stories/#default-export
@@ -39,7 +39,27 @@ export const Example = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts-4-9"
+```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const Example = meta.story({
+  parameters: {
+    design: {
+      type: 'figma',
+      url: 'https://www.figma.com/file/Sample-File',
+    },
+  },
+});
+```
+
+```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/react';
 
 import { MyComponent } from './MyComponent';
@@ -62,7 +82,27 @@ export const Example: Story = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts"
+```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const Example = meta.story({
+  parameters: {
+    design: {
+      type: 'figma',
+      url: 'https://www.figma.com/file/Sample-File',
+    },
+  },
+});
+```
+
+```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/react';
 
 import { MyComponent } from './MyComponent';
@@ -85,9 +125,30 @@ export const Example: Story = {
 };
 ```
 
+```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const Example = meta.story({
+  parameters: {
+    design: {
+      type: 'figma',
+      url: 'https://www.figma.com/file/Sample-File',
+    },
+  },
+});
+```
+
 ```js filename="MyComponent.stories.js|jsx" renderer="solid" language="js"
 import { MyComponent } from './MyComponent';
 
+// More on default export: https://storybook.js.org/docs/writing-stories/#default-export
 export default {
   component: MyComponent,
 };
@@ -107,6 +168,7 @@ import type { Meta, StoryObj } from 'storybook-solidjs';
 
 import { MyComponent } from './MyComponent';
 
+// More on default export: https://storybook.js.org/docs/writing-stories/#default-export
 const meta = {
   component: MyComponent,
 } satisfies Meta<typeof MyComponent>;
@@ -129,6 +191,7 @@ import type { Meta, StoryObj } from 'storybook-solidjs';
 
 import { MyComponent } from './MyComponent';
 
+// More on default export: https://storybook.js.org/docs/writing-stories/#default-export
 const meta: Meta<typeof MyComponent> = {
   component: MyComponent,
 };
@@ -275,6 +338,7 @@ export const Example: Story = {
 ```
 
 ```js filename="MyComponent.stories.js" renderer="web-components" language="js"
+// More on default export: https://storybook.js.org/docs/writing-stories/#default-export
 export default {
   component: 'my-component',
 };
@@ -292,6 +356,7 @@ export const Example = {
 ```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts"
 import type { Meta, StoryObj } from '@storybook/web-components';
 
+// More on default export: https://storybook.js.org/docs/writing-stories/#default-export
 const meta: Meta = {
   component: 'my-component',
 };

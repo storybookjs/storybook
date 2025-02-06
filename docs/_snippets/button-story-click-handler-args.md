@@ -1,5 +1,6 @@
 ```ts filename="Button.stories.ts" renderer="angular" language="ts"
 import type { Meta, StoryObj } from '@storybook/angular';
+
 import { argsToTemplate } from '@storybook/angular';
 
 import { action } from '@storybook/addon-actions';
@@ -31,7 +32,7 @@ export const Text: Story = {
 };
 ```
 
-```js filename="Button.stories.js|jsx" renderer="react" language="js"
+```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { action } from '@storybook/addon-actions';
 
 import { Button } from './Button';
@@ -49,7 +50,28 @@ export const Text = {
 };
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="react" language="ts-4-9"
+```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { action } from '@storybook/addon-actions';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Text = meta.story({
+  args: {
+    label: 'Hello',
+    onClick: action('clicked'),
+  },
+  render: ({ label, onClick }) => <Button label={label} onClick={onClick} />,
+});
+```
+
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/react';
 
 import { action } from '@storybook/addon-actions';
@@ -72,7 +94,28 @@ export const Text = {
 };
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="react" language="ts"
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { action } from '@storybook/addon-actions';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Text = meta.story({
+  args: {
+    label: 'Hello',
+    onClick: action('clicked'),
+  },
+  render: ({ label, onClick }) => <Button label={label} onClick={onClick} />,
+});
+```
+
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/react';
 
 import { action } from '@storybook/addon-actions';
@@ -93,6 +136,27 @@ export const Text = {
   },
   render: ({ label, onClick }) => <Button label={label} onClick={onClick} />,
 };
+```
+
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { action } from '@storybook/addon-actions';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Text = meta.story({
+  args: {
+    label: 'Hello',
+    onClick: action('clicked'),
+  },
+  render: ({ label, onClick }) => <Button label={label} onClick={onClick} />,
+});
 ```
 
 ```js filename="Button.stories.js|jsx" renderer="solid" language="js"

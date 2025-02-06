@@ -1,4 +1,6 @@
-```js filename="Button.stories.js|jsx" renderer="common" language="js" tabTitle="Without globals API"
+<!-- TODO: THis example needs adjustment to avoid rendering issues  and vetted for addons -->
+
+```js filename="Button.stories.js|jsx" renderer="common" language="js" tabTitle="Without globals API (CSF 3)"
 import { Button } from './Button';
 
 export default {
@@ -12,7 +14,24 @@ export const Large = {
 };
 ```
 
-```js filename="Button.stories.js|jsx" renderer="common" language="js" tabTitle="With globals API"
+```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="Without globals API (CSF Factory 🧪)"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Large = meta.story({
+  parameters: {
+    backgrounds: { disable: true },
+  },
+});
+```
+
+```js filename="Button.stories.js|jsx" renderer="common" language="js" tabTitle="With globals API (CSF 3)"
 import { Button } from './Button';
 
 export default {
@@ -26,7 +45,24 @@ export const Large = {
 };
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="common" language="ts-4-9" tabTitle="Without globals API"
+```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="With globals API (CSF Factory 🧪)"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Large = meta.story({
+  parameters: {
+    backgrounds: { disabled: true },
+  },
+});
+```
+
+```ts filename="Button.stories.ts|tsx" renderer="common" language="ts-4-9" tabTitle="Without globals API (CSF 3)"
 // Replace your-renderer with the renderer you are using (e.g., react, vue3, angular, etc.)
 import { Meta, StoryObj } from '@storybook/your-renderer';
 
@@ -46,7 +82,24 @@ export const Large: Story = {
 };
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="common" language="ts-4-9" tabTitle="With globals API"
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="Without globals API (CSF Factory 🧪)"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Large = meta.story({
+  parameters: {
+    backgrounds: { disable: true },
+  },
+});
+```
+
+```ts filename="Button.stories.ts|tsx" renderer="common" language="ts-4-9" tabTitle="With globals API (CSF 3)"
 // Replace your-renderer with the renderer you are using (e.g., react, vue3, angular, etc.)
 import { Meta, StoryObj } from '@storybook/your-renderer';
 
@@ -66,7 +119,24 @@ export const Large: Story = {
 };
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="common" language="ts" tabTitle="Without globals API"
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="With globals API (CSF Factory 🧪)"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Large = meta.story({
+  parameters: {
+    backgrounds: { disabled: true },
+  },
+});
+```
+
+```ts filename="Button.stories.ts|tsx" renderer="common" language="ts" tabTitle="Without globals API (CSF 3)"
 // Replace your-renderer with the renderer you are using (e.g., react, vue3, angular, etc.)
 import { Meta, StoryObj } from '@storybook/your-renderer';
 
@@ -86,7 +156,24 @@ export const Large: Story = {
 };
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="common" language="ts" tabTitle="With globals API"
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="Without globals API (CSF Factory 🧪)"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Large = meta.story({
+  parameters: {
+    backgrounds: { disable: true },
+  },
+});
+```
+
+```ts filename="Button.stories.ts|tsx" renderer="common" language="ts" tabTitle="With globals API (CSF 3)"
 // Replace your-renderer with the renderer you are using (e.g., react, vue3, angular, etc.)
 import { Meta, StoryObj } from '@storybook/your-renderer';
 
@@ -104,4 +191,21 @@ export const Large: Story = {
     backgrounds: { disabled: true },
   },
 };
+```
+
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="With globals API (CSF Factory 🧪)"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Large = meta.story({
+  parameters: {
+    backgrounds: { disabled: true },
+  },
+});
 ```

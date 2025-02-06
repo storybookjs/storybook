@@ -22,7 +22,7 @@ export const Basic: Story = {
 };
 ```
 
-```js filename="Button.stories.js|jsx" renderer="common" language="js"
+```js filename="Button.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
 import { Button } from './Button';
 
 export default {
@@ -40,7 +40,28 @@ export const Basic = {
 };
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="common" language="ts-4-9"
+```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Basic = meta.story({
+  argTypes: {
+    // 👇 This story expects a label arg
+    label: {
+      control: 'text',
+      description: 'Overwritten description',
+    },
+  },
+});
+```
+
+```ts filename="Button.stories.ts|tsx" renderer="common" language="ts-4-9" tabTitle="CSF 3"
 // Replace your-renderer with the renderer you are using (e.g., react, vue3, angular, etc.)
 import type { Meta } from '@storybook/your-renderer';
 
@@ -54,7 +75,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Basic = {
+export const Basic: Story = {
   argTypes: {
     // 👇 This story expects a label arg
     label: {
@@ -65,7 +86,28 @@ export const Basic = {
 } satisfies Story;
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="common" language="ts"
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Basic = meta.story({
+  argTypes: {
+    // 👇 This story expects a label arg
+    label: {
+      control: 'text',
+      description: 'Overwritten description',
+    },
+  },
+});
+```
+
+```ts filename="Button.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
 // Replace your-renderer with the renderer you are using (e.g., react, vue3, angular, etc.)
 import type { Meta, StoryObj } from '@storybook/your-renderer';
 
@@ -88,6 +130,27 @@ export const Basic: Story = {
     },
   },
 };
+```
+
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Basic = meta.story({
+  argTypes: {
+    // 👇 This story expects a label arg
+    label: {
+      control: 'text',
+      description: 'Overwritten description',
+    },
+  },
+});
 ```
 
 ```js filename="Button.stories.js" renderer="web-components" language="js"

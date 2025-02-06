@@ -1,3 +1,5 @@
+<!-- TODO: Vet this example for CSF factory -->
+
 ```js filename="your-addon-register-file.js" renderer="common" language="js"
 import React from 'react';
 

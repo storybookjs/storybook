@@ -111,7 +111,7 @@ export const ExampleChangeEvent = {
 };
 ```
 
-```js filename="MyComponent.stories.js|jsx" renderer="common" language="js"
+```js filename="MyComponent.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
 import { userEvent, within } from '@storybook/test';
 
 import { MyComponent } from './MyComponent';
@@ -143,6 +143,43 @@ export const ExampleChangeEvent = {
     await userEvent.selectOptions(select, ['Yet another item']);
   },
 };
+```
+
+```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { userEvent, within } from '@storybook/test';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+// Function to emulate pausing between interactions
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/* See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * to learn more about using the canvasElement to query the DOM
+ */
+export const ExampleChangeEvent = meta.story({
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    const select = canvas.getByRole('listbox');
+
+    await userEvent.selectOptions(select, ['One Item']);
+    await sleep(2000);
+
+    await userEvent.selectOptions(select, ['Another Item']);
+    await sleep(2000);
+
+    await userEvent.selectOptions(select, ['Yet another item']);
+  },
+});
 ```
 
 ```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
@@ -223,7 +260,7 @@ export const ExampleChangeEvent: Story = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts|tsx" renderer="common" language="ts-4-9"
+```ts filename="MyComponent.stories.ts|tsx" renderer="common" language="ts-4-9" tabTitle="CSF 3"
 // Replace your-framework with the name of your framework
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -261,6 +298,43 @@ export const ExampleChangeEvent: Story = {
     await userEvent.selectOptions(select, ['Yet another item']);
   },
 };
+```
+
+```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { userEvent, within } from '@storybook/test';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+// Function to emulate pausing between interactions
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/* See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * to learn more about using the canvasElement to query the DOM
+ */
+export const ExampleChangeEvent = meta.story({
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    const select = canvas.getByRole('listbox');
+
+    await userEvent.selectOptions(select, ['One Item']);
+    await sleep(2000);
+
+    await userEvent.selectOptions(select, ['Another Item']);
+    await sleep(2000);
+
+    await userEvent.selectOptions(select, ['Yet another item']);
+  },
+});
 ```
 
 ```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
@@ -342,7 +416,7 @@ export const ExampleChangeEvent: Story = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts|tsx" renderer="common" language="ts"
+```ts filename="MyComponent.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the name of your framework
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -380,6 +454,43 @@ export const ExampleChangeEvent: Story = {
     await userEvent.selectOptions(select, ['Yet another item']);
   },
 };
+```
+
+```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { userEvent, within } from '@storybook/test';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+// Function to emulate pausing between interactions
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/* See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * to learn more about using the canvasElement to query the DOM
+ */
+export const ExampleChangeEvent = meta.story({
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    const select = canvas.getByRole('listbox');
+
+    await userEvent.selectOptions(select, ['One Item']);
+    await sleep(2000);
+
+    await userEvent.selectOptions(select, ['Another Item']);
+    await sleep(2000);
+
+    await userEvent.selectOptions(select, ['Yet another item']);
+  },
+});
 ```
 
 ```js filename="MyComponent.stories.js" renderer="web-components" language="js"

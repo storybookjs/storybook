@@ -35,7 +35,7 @@ export default {
 };
 ```
 
-```js filename="Page.stories.js" renderer="common" language="js"
+```js filename="Page.stories.js" renderer="common" language="js" tabTitle="CSF 3"
 import { Page } from './Page';
 
 export default {
@@ -43,6 +43,19 @@ export default {
   // 👇 Disable auto-generated documentation for this component
   tags: ['!autodocs'],
 };
+```
+
+```js filename="Page.stories.js" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Page } from './Page';
+
+const meta = preview.meta({
+  component: Page,
+  // 👇 Disable auto-generated documentation for this component
+  tags: ['!autodocs'],
+});
 ```
 
 ```svelte filename="Page.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
@@ -72,7 +85,7 @@ const meta = {
 export default meta;
 ```
 
-```ts filename="Page.stories.ts" renderer="common" language="ts-4-9"
+```ts filename="Page.stories.ts" renderer="common" language="ts-4-9" tabTitle="CSF 3"
 // Replace your-framework with the framework you are using (e.g., nextjs, vue3-vite)
 import type { Meta } from '@storybook/your-framework';
 
@@ -84,6 +97,19 @@ const meta = {
   tags: ['!autodocs'],
 } satisfies Meta<typeof Page>;
 export default meta;
+```
+
+```ts filename="Page.stories.ts" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Page } from './Page';
+
+const meta = preview.meta({
+  component: Page,
+  // 👇 Disable auto-generated documentation for this component
+  tags: ['!autodocs'],
+});
 ```
 
 ```svelte filename="Page.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
@@ -113,7 +139,7 @@ const meta: Meta<typeof Page> = {
 export default meta;
 ```
 
-```ts filename="Page.stories.ts" renderer="common" language="ts"
+```ts filename="Page.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the framework you are using (e.g., nextjs, vue3-vite)
 import type { Meta } from '@storybook/your-framework';
 
@@ -125,6 +151,19 @@ const meta: Meta<typeof Page> = {
   tags: ['!autodocs'],
 };
 export default meta;
+```
+
+```ts filename="Page.stories.ts" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Page } from './Page';
+
+const meta = preview.meta({
+  component: Page,
+  // 👇 Disable auto-generated documentation for this component
+  tags: ['!autodocs'],
+});
 ```
 
 ```js filename="Page.stories.js" renderer="web-components" language="js"

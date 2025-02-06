@@ -35,7 +35,7 @@ export default {
 };
 ```
 
-```js filename="Button.stories.js" renderer="common" language="js"
+```js filename="Button.stories.js" renderer="common" language="js" tabTitle="CSF 3"
 import { Button } from './Button';
 
 export default {
@@ -43,6 +43,19 @@ export default {
   //👇 Enables auto-generated documentation for this component and includes all stories in this file
   tags: ['autodocs'],
 };
+```
+
+```js filename="Button.stories.js" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  //👇 Enables auto-generated documentation for this component and includes all stories in this file
+  tags: ['autodocs'],
+});
 ```
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
@@ -72,7 +85,7 @@ const meta = {
 export default meta;
 ```
 
-```ts filename="Button.stories.ts" renderer="common" language="ts-4-9"
+```ts filename="Button.stories.ts" renderer="common" language="ts-4-9" tabTitle="CSF 3"
 // Replace your-framework with the framework you are using (e.g., nextjs, vue3-vite)
 import type { Meta } from '@storybook/your-framework';
 
@@ -84,6 +97,19 @@ const meta = {
   tags: ['autodocs'],
 } satisfies Meta<typeof Button>;
 export default meta;
+```
+
+```ts filename="Button.stories.ts" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  //👇 Enables auto-generated documentation for this component and includes all stories in this file
+  tags: ['autodocs'],
+});
 ```
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
@@ -113,7 +139,7 @@ const meta: Meta<typeof Button> = {
 export default meta;
 ```
 
-```ts filename="Button.stories.ts" renderer="common" language="ts"
+```ts filename="Button.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the framework you are using (e.g., nextjs, vue3-vite)
 import type { Meta } from '@storybook/your-framework';
 
@@ -125,6 +151,19 @@ const meta: Meta<typeof Button> = {
   tags: ['autodocs'],
 };
 export default meta;
+```
+
+```ts filename="Button.stories.ts" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  //👇 Enables auto-generated documentation for this component and includes all stories in this file
+  tags: ['autodocs'],
+});
 ```
 
 ```js filename="Button.stories.js" renderer="web-components" language="js"

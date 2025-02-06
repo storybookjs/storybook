@@ -191,48 +191,17 @@ When specifying parameters, they are merged together in order of increasing spec
 
 In other words, the following specifications of parameters:
 
-```js title=".storybook/preview.js|ts"
-const preview = {
-  // 👇 Project-level parameters
-  parameters: {
-    layout: 'centered',
-    demo: {
-      demoProperty: 'a',
-      demoArray: [1, 2],
-    },
-  },
-  // ...
-};
-export default preview;
-```
+{/* prettier-ignore-start */}
 
-```js title="Dialog.stories.js|ts"
-const meta = {
-  component: Dialog,
-  // 👇 Meta-level parameters
-  parameters: {
-    layout: 'fullscreen',
-    demo: {
-      demoProperty: 'b',
-      anotherDemoProperty: 'b',
-    },
-  },
-};
-export default meta;
+<CodeSnippets path="custom-project-level-parameters.md" />
 
-// (no additional parameters specified)
-export const Basic = {};
+{ /* prettier-ignore-end */}
 
-export const LargeScreen = {
-  // 👇 Story-level parameters
-  parameters: {
-    layout: 'padded',
-    demo: {
-      demoArray: [3, 4],
-    },
-  },
-};
-```
+{ /* prettier-ignore-start */}
+
+<CodeSnippets path="custom-story-level-parameters.md" />
+
+{/* prettier-ignore-end */}
 
 Will result in the following parameter values applied to each story:
 

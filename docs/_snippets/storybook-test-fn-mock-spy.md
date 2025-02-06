@@ -1,7 +1,7 @@
 ```ts filename="NoteUI.stories.ts" renderer="angular" language="ts"
 import type { Meta, StoryObj } from '@storybook/angular';
-import { expect, userEvent, within } from '@storybook/test';
 
+import { expect, userEvent, within } from '@storybook/test';
 // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
 import { saveNote } from '#app/actions.mock';
 import { createNotes } from '#mocks/notes';
@@ -24,7 +24,7 @@ export const SaveFlow: Story = {
     isEditing: true,
     note: notes[0],
   },
-  play: async ({ canvasElement, step }) => {
+  play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
     const saveButton = canvas.getByRole('menuitem', { name: /done/i });
@@ -35,9 +35,9 @@ export const SaveFlow: Story = {
 };
 ```
 
-```js filename="NoteUI.stories.js" renderer="common" language="js"
+```js filename="NoteUI.stories.js" renderer="common" language="js" tabTitle="CSF 3"
 import { expect, userEvent, within } from '@storybook/test';
-
+// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
 import { saveNote } from '#app/actions.mock';
 import { createNotes } from '#mocks/notes';
 
@@ -56,7 +56,7 @@ export const SaveFlow = {
     isEditing: true,
     note: notes[0],
   },
-  play: async ({ canvasElement, step }) => {
+  play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
     const saveButton = canvas.getByRole('menuitem', { name: /done/i });
@@ -67,11 +67,46 @@ export const SaveFlow = {
 };
 ```
 
-```ts filename="NoteUI.stories.ts" renderer="common" language="ts-4-9"
+```js filename="NoteUI.stories.js" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { expect, userEvent, within } from '@storybook/test';
+// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
+import { saveNote } from '#app/actions.mock';
+import { createNotes } from '#mocks/notes';
+
+import NoteUI from './note-ui';
+
+const meta = preview.meta({
+  title: 'Mocked/NoteUI',
+  component: NoteUI,
+});
+
+const notes = createNotes();
+
+export const SaveFlow = meta.story({
+  name: 'Save Flow ▶',
+  args: {
+    isEditing: true,
+    note: notes[0],
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    const saveButton = canvas.getByRole('menuitem', { name: /done/i });
+    await userEvent.click(saveButton);
+    // 👇 This is the mock function, so you can assert its behavior
+    await expect(saveNote).toHaveBeenCalled();
+  },
+});
+```
+
+```ts filename="NoteUI.stories.ts" renderer="common" language="ts-4-9" tabTitle="CSF 3"
 // Replace your-renderer with the name of your renderer (e.g. react, vue3)
 import type { Meta, StoryObj } from '@storybook/your-renderer';
-import { expect, userEvent, within } from '@storybook/test';
 
+import { expect, userEvent, within } from '@storybook/test';
 // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
 import { saveNote } from '#app/actions.mock';
 import { createNotes } from '#mocks/notes';
@@ -82,8 +117,8 @@ const meta = {
   title: 'Mocked/NoteUI',
   component: NoteUI,
 } satisfies Meta<typeof NoteUI>;
-export default meta;
 
+export default meta;
 type Story = StoryObj<typeof meta>;
 
 const notes = createNotes();
@@ -94,7 +129,7 @@ export const SaveFlow: Story = {
     isEditing: true,
     note: notes[0],
   },
-  play: async ({ canvasElement, step }) => {
+  play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
     const saveButton = canvas.getByRole('menuitem', { name: /done/i });
@@ -105,22 +140,58 @@ export const SaveFlow: Story = {
 };
 ```
 
-```ts filename="NoteUI.stories.ts" renderer="common" language="ts"
-// Replace your-renderer with the name of your renderer (e.g. react, vue3)
-import type { Meta, StoryObj } from '@storybook/your-renderer';
-import { expect, userEvent, within } from '@storybook/test';
+```ts filename="NoteUI.stories.ts" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
 
+import { expect, userEvent, within } from '@storybook/test';
 // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
 import { saveNote } from '#app/actions.mock';
 import { createNotes } from '#mocks/notes';
+
+import NoteUI from './note-ui';
+
+const meta = preview.meta({
+  title: 'Mocked/NoteUI',
+  component: NoteUI,
+});
+
+const notes = createNotes();
+
+export const SaveFlow = meta.story({
+  name: 'Save Flow ▶',
+  args: {
+    isEditing: true,
+    note: notes[0],
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    const saveButton = canvas.getByRole('menuitem', { name: /done/i });
+    await userEvent.click(saveButton);
+    // 👇 This is the mock function, so you can assert its behavior
+    await expect(saveNote).toHaveBeenCalled();
+  },
+});
+```
+
+```ts filename="NoteUI.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"
+// Replace your-renderer with the name of your renderer (e.g. react, vue3)
+import type { Meta, StoryObj } from '@storybook/your-renderer';
+
+import { expect, userEvent, within } from '@storybook/test';
+// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
+import { saveNote } from '#app/actions.mock';
+import { createNotes } from '#mocks/notes';
+
 import NoteUI from './note-ui';
 
 const meta: Meta<typeof NoteUI> = {
   title: 'Mocked/NoteUI',
   component: NoteUI,
 };
-export default meta;
 
+export default meta;
 type Story = StoryObj<typeof NoteUI>;
 
 const notes = createNotes();
@@ -131,7 +202,7 @@ export const SaveFlow: Story = {
     isEditing: true,
     note: notes[0],
   },
-  play: async ({ canvasElement, step }) => {
+  play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
     const saveButton = canvas.getByRole('menuitem', { name: /done/i });
@@ -140,6 +211,41 @@ export const SaveFlow: Story = {
     await expect(saveNote).toHaveBeenCalled();
   },
 };
+```
+
+```ts filename="NoteUI.stories.ts" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { expect, userEvent, within } from '@storybook/test';
+// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
+import { saveNote } from '#app/actions.mock';
+import { createNotes } from '#mocks/notes';
+
+import NoteUI from './note-ui';
+
+const meta = preview.meta({
+  title: 'Mocked/NoteUI',
+  component: NoteUI,
+});
+
+const notes = createNotes();
+
+export const SaveFlow = meta.story({
+  name: 'Save Flow ▶',
+  args: {
+    isEditing: true,
+    note: notes[0],
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    const saveButton = canvas.getByRole('menuitem', { name: /done/i });
+    await userEvent.click(saveButton);
+    // 👇 This is the mock function, so you can assert its behavior
+    await expect(saveNote).toHaveBeenCalled();
+  },
+});
 ```
 
 ```js filename="NoteUI.stories.js" renderer="web-components" language="js"
@@ -161,7 +267,7 @@ export const SaveFlow = {
     isEditing: true,
     note: notes[0],
   },
-  play: async ({ canvasElement, step }) => {
+  play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
     const saveButton = canvas.getByRole('menuitem', { name: /done/i });
@@ -174,6 +280,7 @@ export const SaveFlow = {
 
 ```ts filename="NoteUI.stories.ts" renderer="web-components" language="ts"
 import type { Meta, StoryObj } from '@storybook/react';
+
 import { expect, userEvent, within } from '@storybook/test';
 
 // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
@@ -184,8 +291,8 @@ const meta: Meta = {
   title: 'Mocked/NoteUI',
   component: 'note-ui',
 };
-export default meta;
 
+export default meta;
 type Story = StoryObj;
 
 const notes = createNotes();
@@ -196,7 +303,7 @@ export const SaveFlow: Story = {
     isEditing: true,
     note: notes[0],
   },
-  play: async ({ canvasElement, step }) => {
+  play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
     const saveButton = canvas.getByRole('menuitem', { name: /done/i });

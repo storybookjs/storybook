@@ -9,8 +9,8 @@ import { Page } from './Page';
 const meta: Meta<Page> = {
   component: Page,
 };
-export default meta;
 
+export default meta;
 type Story = StoryObj<Page>;
 
 export const Default: Story = {
@@ -21,7 +21,8 @@ export const Default: Story = {
 };
 ```
 
-```js filename="Page.stories.js" renderer="common" language="js"
+```js filename="Page.stories.js" renderer="common" language="js" tabTitle="CSF 3"
+// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
 import { getUserFromSession } from '#api/session.mock';
 
 import { Page } from './Page';
@@ -38,7 +39,28 @@ export const Default = {
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="common" language="ts-4-9"
+```js filename="Page.stories.js" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
+import { getUserFromSession } from '#api/session.mock';
+
+import { Page } from './Page';
+
+const meta = preview.meta({
+  component: Page,
+});
+
+export const Default = meta.story({
+  async beforeEach() {
+    // 👇 Set the return value for the getUserFromSession function
+    getUserFromSession.mockReturnValue({ id: '1', name: 'Alice' });
+  },
+});
+```
+
+```ts filename="Page.stories.ts" renderer="common" language="ts-4-9" tabTitle="CSF 3"
 // Replace your-renderer with the name of your renderer (e.g. react, vue3)
 import type { Meta, StoryObj } from '@storybook/your-renderer';
 
@@ -52,7 +74,6 @@ const meta = {
 } satisfies Meta<typeof Page>;
 
 export default meta;
-
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
@@ -63,7 +84,28 @@ export const Default: Story = {
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="common" language="ts"
+```ts filename="Page.stories.ts" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
+import { getUserFromSession } from '#api/session.mock';
+
+import { Page } from './Page';
+
+const meta = preview.meta({
+  component: Page,
+});
+
+export const Default = meta.story({
+  async beforeEach() {
+    // 👇 Set the return value for the getUserFromSession function
+    getUserFromSession.mockReturnValue({ id: '1', name: 'Alice' });
+  },
+});
+```
+
+```ts filename="Page.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"
 // Replace your-renderer with the name of your renderer (e.g. react, vue3)
 import type { Meta, StoryObj } from '@storybook/your-renderer';
 
@@ -75,8 +117,8 @@ import { Page } from './Page';
 const meta: Meta<typeof Page> = {
   component: Page,
 };
-export default meta;
 
+export default meta;
 type Story = StoryObj<typeof Page>;
 
 export const Default: Story = {
@@ -87,7 +129,29 @@ export const Default: Story = {
 };
 ```
 
+```ts filename="Page.stories.ts" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
+import { getUserFromSession } from '#api/session.mock';
+
+import { Page } from './Page';
+
+const meta = preview.meta({
+  component: Page,
+});
+
+export const Default = meta.story({
+  async beforeEach() {
+    // 👇 Set the return value for the getUserFromSession function
+    getUserFromSession.mockReturnValue({ id: '1', name: 'Alice' });
+  },
+});
+```
+
 ```js filename="Page.stories.js" renderer="web-components" language="js"
+// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
 import { getUserFromSession } from '#api/session.mock';
 
 export default {
@@ -111,8 +175,8 @@ import { getUserFromSession } from '#api/session.mock';
 const meta: Meta = {
   component: 'my-page',
 };
-export default meta;
 
+export default meta;
 type Story = StoryObj;
 
 export const Default: Story = {

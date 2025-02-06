@@ -1,4 +1,6 @@
-```js filename=".storybook/main.js" renderer="common" language="js"
+<!-- TODO: Vet this example for CSF Factories-->
+
+```js filename=".storybook/main.js" renderer="common" language="js" tabTitle="CSF 3"
 import path from 'path';
 
 const getAbsolutePath = (packageName) =>
@@ -18,7 +20,31 @@ export default {
 };
 ```
 
-```ts filename=".storybook/main.ts" renderer="common" language="ts"
+```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, experimental-nextjs-vite)
+import { defineMain } from '@storybook/your-framework/node';
+
+import path from 'path';
+
+const getAbsolutePath = (packageName) =>
+  path.dirname(require.resolve(path.join(packageName, 'package.json')));
+
+export default defineMain({
+  framework: {
+    // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, experimental-nextjs-vite)
+    name: getAbsolutePath('@storybook/your-framework'),
+    options: {},
+  },
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+
+  addons: [
+    //👇 Use getAbsolutePath when referencing Storybook's addons and frameworks
+    getAbsolutePath('@storybook/addon-essentials'),
+  ],
+});
+```
+
+```ts filename=".storybook/main.ts" renderer="common" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the framework you are using (e.g., react-webpack5, vue3-vite)
 import type { StorybookConfig } from '@storybook/your-framework';
 
@@ -41,4 +67,27 @@ const config: StorybookConfig = {
 };
 
 export default config;
+```
+
+```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, experimental-nextjs-vite)
+import { defineMain } from '@storybook/your-framework/node';
+
+import path from 'path';
+
+const getAbsolutePath = (packageName: string): any =>
+  path.dirname(require.resolve(path.join(packageName, 'package.json')));
+
+export default defineMain({
+  framework: {
+    // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, experimental-nextjs-vite)
+    name: getAbsolutePath('@storybook/your-framework'),
+    options: {},
+  },
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  addons: [
+    //👇 Use getAbsolutePath when referencing Storybook's addons and frameworks
+    getAbsolutePath('@storybook/addon-essentials'),
+  ],
+});
 ```

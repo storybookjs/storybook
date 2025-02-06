@@ -2,7 +2,7 @@
 {
   "imports": {
     "#api": {
-      // storybook condition applies to Storybook
+      // Storybook condition applies to Storybook
       "storybook": "./api.mock.ts",
       "default": "./api.ts",
     },

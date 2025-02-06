@@ -1,4 +1,4 @@
-```js filename="NavigationBasedComponent.stories.js" renderer="react" language="js"
+```js filename="NavigationBasedComponent.stories.js" renderer="react" language="js" tabTitle="CSF 3"
 import NavigationBasedComponent from './NavigationBasedComponent';
 
 export default {
@@ -17,8 +17,30 @@ export default {
 };
 ```
 
-```ts filename="NavigationBasedComponent.stories.ts" renderer="react" language="ts-4-9"
-import { Meta, StoryObj } from '@storybook/react';
+```js filename="NavigationBasedComponent.stories.js" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import NavigationBasedComponent from './NavigationBasedComponent';
+
+const meta = preview.meta({
+  component: NavigationBasedComponent,
+  parameters: {
+    nextjs: {
+      appDirectory: true,
+      navigation: {
+        segments: [
+          ['slug', 'hello'],
+          ['framework', 'nextjs'],
+        ],
+      },
+    },
+  },
+});
+```
+
+```ts filename="NavigationBasedComponent.stories.ts" renderer="react" language="ts-4-9" tabTitle="CSF 3"
+import type { Meta, StoryObj } from '@storybook/react';
 
 import NavigationBasedComponent from './NavigationBasedComponent';
 
@@ -39,8 +61,30 @@ const meta = {
 export default meta;
 ```
 
-```ts filename="NavigationBasedComponent.stories.ts" renderer="react" language="ts"
-import { Meta, StoryObj } from '@storybook/react';
+```ts filename="NavigationBasedComponent.stories.ts" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import NavigationBasedComponent from './NavigationBasedComponent';
+
+const meta = preview.meta({
+  component: NavigationBasedComponent,
+  parameters: {
+    nextjs: {
+      appDirectory: true,
+      navigation: {
+        segments: [
+          ['slug', 'hello'],
+          ['framework', 'nextjs'],
+        ],
+      },
+    },
+  },
+});
+```
+
+```ts filename="NavigationBasedComponent.stories.ts" renderer="react" language="ts" tabTitle="CSF 3"
+import type { Meta, StoryObj } from '@storybook/react';
 
 import NavigationBasedComponent from './NavigationBasedComponent';
 
@@ -59,4 +103,26 @@ const meta: Meta<typeof NavigationBasedComponent> = {
   },
 };
 export default meta;
+```
+
+```ts filename="NavigationBasedComponent.stories.ts" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import NavigationBasedComponent from './NavigationBasedComponent';
+
+const meta = preview.meta({
+  component: NavigationBasedComponent,
+  parameters: {
+    nextjs: {
+      appDirectory: true,
+      navigation: {
+        segments: [
+          ['slug', 'hello'],
+          ['framework', 'nextjs'],
+        ],
+      },
+    },
+  },
+});
 ```

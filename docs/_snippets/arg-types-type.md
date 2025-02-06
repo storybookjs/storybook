@@ -13,7 +13,7 @@ const meta: Meta<Example> = {
 export default meta;
 ```
 
-```js filename="Example.stories.js|jsx" renderer="common" language="js"
+```js filename="Example.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
 import { Example } from './Example';
 
 export default {
@@ -24,7 +24,21 @@ export default {
 };
 ```
 
-```ts filename="Example.stories.ts|tsx" renderer="common" language="ts-4-9"
+```js filename="Example.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Example } from './Example';
+
+const meta = preview.meta({
+  component: Example,
+  argTypes: {
+    value: { type: 'number' },
+  },
+});
+```
+
+```ts filename="Example.stories.ts|tsx" renderer="common" language="ts-4-9" tabTitle="CSF 3"
 // Replace your-renderer with the renderer you are using (e.g., react, vue3, angular, etc.)
 import type { Meta } from '@storybook/your-renderer';
 
@@ -40,7 +54,21 @@ const meta = {
 export default meta;
 ```
 
-```ts filename="Example.stories.ts|tsx" renderer="common" language="ts"
+```ts filename="Example.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Example } from './Example';
+
+const meta = preview.meta({
+  component: Example,
+  argTypes: {
+    value: { type: 'number' },
+  },
+});
+```
+
+```ts filename="Example.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
 // Replace your-renderer with the renderer you are using (e.g., react, vue3, angular, etc.)
 import type { Meta } from '@storybook/your-renderer';
 
@@ -54,6 +82,20 @@ const meta: Meta<typeof Example> = {
 };
 
 export default meta;
+```
+
+```ts filename="Example.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Example } from './Example';
+
+const meta = preview.meta({
+  component: Example,
+  argTypes: {
+    value: { type: 'number' },
+  },
+});
 ```
 
 ```js filename="Example.stories.js" renderer="web-components" language="js"

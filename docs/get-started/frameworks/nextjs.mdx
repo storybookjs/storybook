@@ -136,8 +136,7 @@ Storybook for Next.js is a [framework](../../contribute/framework.mdx) that make
 
   [Local images](https://nextjs.org/docs/pages/building-your-application/optimizing/images#local-images) are supported.
 
-  ```jsx
-  // index.jsx
+  ```jsx title="index.jsx"
   import Image from 'next/image';
   import profilePic from '../public/me.png';
 
@@ -163,8 +162,7 @@ Storybook for Next.js is a [framework](../../contribute/framework.mdx) that make
 
   [Remote images](https://nextjs.org/docs/pages/building-your-application/optimizing/images#remote-images) are also supported.
 
-  ```jsx
-  // index.jsx
+  ```jsx title="index.jsx"
   import Image from 'next/image';
 
   export default function Home() {
@@ -193,8 +191,7 @@ Storybook for Next.js is a [framework](../../contribute/framework.mdx) that make
 
   If the following component defines your localFont like this:
 
-  ```js
-  // src/components/MyComponent.js
+  ```js title="src/components/MyComponent.js|jsx|ts|tsx"
   import localFont from 'next/font/local';
 
   const localRubikStorm = localFont({ src: './fonts/RubikStorm-Regular.ttf' });
@@ -230,9 +227,8 @@ Storybook for Next.js is a [framework](../../contribute/framework.mdx) that make
 
   For example, using [GitHub Actions](https://www.chromatic.com/docs/github-actions):
 
-  ```yaml
-  # .github/workflows/ci.yml
-  - uses: chromaui/action@v1
+  ```yaml title=".github/workflows/ci.yml"
+  - uses: chromaui/action@latest
     env:
       #👇 the location of mocked fonts to use
       NEXT_FONT_GOOGLE_MOCKED_RESPONSES: ${{ github.workspace }}/mocked-google-fonts.js
@@ -243,8 +239,7 @@ Storybook for Next.js is a [framework](../../contribute/framework.mdx) that make
 
   Your mocked fonts will look something like this:
 
-  ```js
-  // mocked-google-fonts.js
+  ```js title="mocked-google-fonts.js"
   //👇 Mocked responses of google fonts with the URL as the key
   module.exports = {
     'https://fonts.googleapis.com/css?family=Inter:wght@400;500;600;800&display=block': `
@@ -274,7 +269,7 @@ Storybook for Next.js is a [framework](../../contribute/framework.mdx) that make
 
   [Next.js's router](https://nextjs.org/docs/pages/building-your-application/routing) is automatically stubbed for you so that when the router is interacted with, all of its interactions are automatically logged to the Actions panel if you have the [Storybook actions addon](../../essentials/actions.mdx).
 
-  <Callout>
+  <Callout variant="info">
     You should only use `next/router` in the `pages` directory. In the `app` directory, it is necessary to use `next/navigation`.
   </Callout>
 
@@ -288,7 +283,7 @@ Storybook for Next.js is a [framework](../../contribute/framework.mdx) that make
 
   {/* prettier-ignore-end */}
 
-  <Callout>
+  <Callout variant="info">
     These overrides can also be applied to [all stories for a component](../../api/parameters.mdx#meta-parameters) or [all stories in your project](../../api/parameters.mdx#project-parameters). Standard [parameter inheritance](../../api/parameters.mdx#parameter-inheritance) rules apply.
   </Callout>
 
@@ -296,8 +291,7 @@ Storybook for Next.js is a [framework](../../contribute/framework.mdx) that make
 
   The default values on the stubbed router are as follows (see [globals](../../essentials/toolbars-and-globals.mdx#globals) for more details on how globals work).
 
-  ```ts
-  // Default router
+  ```ts title="mocks/router.mock.js|ts"
   const defaultRouter = {
     // The locale should be configured globally: https://storybook.js.org/docs/essentials/toolbars-and-globals#globals
     locale: globals?.locale,
@@ -317,33 +311,15 @@ Storybook for Next.js is a [framework](../../contribute/framework.mdx) that make
 
   To override these defaults, you can use [parameters](../../writing-stories/parameters.mdx) and [`beforeEach`](../../writing-stories/mocking-data-and-modules/mocking-modules.mdx#setting-up-and-cleaning-up):
 
-  ```ts
-  // .storybook/preview.ts
-  import { Preview } from '@storybook/react';
-  // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-  import { getRouter } from '@storybook/nextjs/router.mock';
+  {/* prettier-ignore-start */}
 
-  const preview: Preview = {
-    parameters: {
-      nextjs: {
-        // 👇 Override the default router properties
-        router: {
-          basePath: '/app/',
-        },
-      },
-    },
-    async beforeEach() {
-      // 👇 Manipulate the default router method mocks
-      getRouter().push.mockImplementation(() => {
-        /* ... */
-      });
-    },
-  };
-  ```
+  <CodeSnippets path="nextjs-router-router-override.md" />
+
+  {/* prettier-ignore-end */}
 
   ## Next.js navigation
 
-  <Callout>
+  <Callout variant="info">
     Please note that [`next/navigation`](https://nextjs.org/docs/app/building-your-application/routing) can only be used in components/pages in the `app` directory.
   </Callout>
 
@@ -389,8 +365,7 @@ Storybook for Next.js is a [framework](../../contribute/framework.mdx) that make
 
   With the above configuration, the component rendered in the stories would receive the following values from the hooks:
 
-  ```js
-  // NavigationBasedComponent.js
+  ```js title="NavigationBasedComponent.js|jsx|ts|tsx"
   import { useSelectedLayoutSegment, useSelectedLayoutSegments, useParams } from 'next/navigation';
 
   export default function NavigationBasedComponent() {
@@ -413,8 +388,7 @@ Storybook for Next.js is a [framework](../../contribute/framework.mdx) that make
 
   With the above configuration, the component rendered in the stories would receive the following values from the hooks:
 
-  ```js
-  // ParamsBasedComponent.js
+  ```js title="NavigationBasedComponent.js|jsx|ts|tsx"
   import { useSelectedLayoutSegment, useSelectedLayoutSegments, useParams } from 'next/navigation';
 
   export default function ParamsBasedComponent() {
@@ -435,8 +409,7 @@ Storybook for Next.js is a [framework](../../contribute/framework.mdx) that make
 
   The default values on the stubbed navigation context are as follows:
 
-  ```ts
-  // Default navigation context
+  ```ts title="mocks/navigation.mock.js|ts"
   const defaultNavigationContext = {
     pathname: '/',
     query: {},
@@ -447,29 +420,11 @@ Storybook for Next.js is a [framework](../../contribute/framework.mdx) that make
 
   To override these defaults, you can use [parameters](../../writing-stories/parameters.mdx) and [`beforeEach`](../../writing-stories/mocking-data-and-modules/mocking-modules.mdx#setting-up-and-cleaning-up):
 
-  ```ts
-  // .storybook/preview.ts
-  import { Preview } from '@storybook/react';
-  // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-  import { getRouter } from '@storybook/nextjs/navigation.mock';
+  {/* prettier-ignore-start */}
 
-  const preview: Preview = {
-    parameters: {
-      nextjs: {
-        // 👇 Override the default navigation properties
-        navigation: {
-          pathname: '/app/',
-        },
-      },
-    },
-    async beforeEach() {
-      // 👇 Manipulate the default navigation method mocks
-      getRouter().push.mockImplementation(() => {
-        /* ... */
-      });
-    },
-  };
-  ```
+  <CodeSnippets path="nextjs-navigation-override.md" />
+
+  {/* prettier-ignore-end */}
 
   ## Next.js Head
 
@@ -479,15 +434,13 @@ Storybook for Next.js is a [framework](../../contribute/framework.mdx) that make
 
   [Global Sass/Scss stylesheets](https://nextjs.org/docs/pages/building-your-application/styling/sass) are supported without any additional configuration as well. Just import them into [`.storybook/preview.js|ts`](../../configure/index.mdx#configure-story-rendering)
 
-  ```js
-  // .storybook/preview.js|ts
+  ```js title=".storybook/preview.js|ts"
   import '../styles/globals.scss';
   ```
 
   This will automatically include any of your [custom Sass configurations](https://nextjs.org/docs/pages/building-your-application/styling/sass#customizing-sass-options) in your `next.config.js` file.
 
-  ```js
-  // next.config.js
+  ```js title="next.config.js|ts"
   import * as path from 'path';
 
   export default {
@@ -502,8 +455,7 @@ Storybook for Next.js is a [framework](../../contribute/framework.mdx) that make
 
   [CSS modules](https://nextjs.org/docs/pages/building-your-application/styling/css-modules) work as expected.
 
-  ```jsx
-  // src/components/Button.jsx
+  ```jsx title="src/components/Button.jsx|tsx"
   // This import will work in Storybook
   import styles from './Button.module.css';
   // Sass/Scss is also supported
@@ -523,8 +475,7 @@ Storybook for Next.js is a [framework](../../contribute/framework.mdx) that make
 
   The built in CSS-in-JS solution for Next.js is [styled-jsx](https://nextjs.org/docs/pages/building-your-application/styling/css-in-js), and this framework supports that out of the box too, zero config.
 
-  ```jsx
-  // src/components/HelloWorld.jsx
+  ```jsx title="src/components/HelloWorld.jsx|tsx"
   // This will work in Storybook
   function HelloWorld() {
     return (
@@ -578,14 +529,13 @@ Storybook for Next.js is a [framework](../../contribute/framework.mdx) that make
 
   Next.js lets you [customize PostCSS config](https://nextjs.org/docs/pages/building-your-application/configuring/post-css). Thus this framework will automatically handle your PostCSS config for you.
 
-  This allows for cool things like zero-config Tailwind! (See [Next.js' example](https://github.com/vercel/next.js/tree/canary/examples/with-tailwindcss))
+  This allows for cool things like zero-config Tailwind! (See [Next.js' example](https://github.com/vercel/next.js/tree/canary/packages/create-next-app/templates/default-tw))
 
   ## Absolute imports
 
   [Absolute imports](https://nextjs.org/docs/pages/building-your-application/configuring/absolute-imports-and-module-aliases#absolute-imports) from the root directory are supported.
 
-  ```jsx
-  // index.jsx
+  ```jsx title="index.jsx"
   // All good!
   import Button from 'components/button';
   // Also good!
@@ -603,11 +553,8 @@ Storybook for Next.js is a [framework](../../contribute/framework.mdx) that make
 
   Also OK for global styles in `.storybook/preview.js|ts`!
 
-  ```js
-  // .storybook/preview.js|ts
-
+  ```js title=".storybook/preview.js|ts"
   import 'styles/globals.scss';
-
   // ...
   ```
 
@@ -619,8 +566,7 @@ Storybook for Next.js is a [framework](../../contribute/framework.mdx) that make
 
   [Module aliases](https://nextjs.org/docs/app/building-your-application/configuring/absolute-imports-and-module-aliases#module-aliases) are also supported.
 
-  ```jsx
-  // index.jsx
+  ```jsx title="index.jsx"
   // All good!
   import Button from '@/components/button';
   // Also good!
@@ -642,8 +588,7 @@ Storybook for Next.js is a [framework](../../contribute/framework.mdx) that make
 
   To configure subpath imports, you define the `imports` property in your project's `package.json` file. This property maps the subpath to the actual file path. The example below configures subpath imports for all modules in the project:
 
-  ```jsonc
-  // package.json
+  ```json title="package.json"
   {
     "imports": {
       "#*": ["./*", "./*.ts", "./*.tsx"]
@@ -657,8 +602,7 @@ Storybook for Next.js is a [framework](../../contribute/framework.mdx) that make
 
   Which can then be used like this:
 
-  ```jsx
-  // index.jsx
+  ```jsx title="index.jsx|tsx"
   import Button from '#components/button';
   import styles from '#styles/HomePage.module.css';
 
@@ -731,8 +675,7 @@ Storybook for Next.js is a [framework](../../contribute/framework.mdx) that make
 
   For example, consider the following Next.js config:
 
-  ```js
-  // next.config.js
+  ```js title="next.config.js"
   module.exports = {
     serverRuntimeConfig: {
       mySecret: 'secret',
@@ -781,8 +724,7 @@ Storybook for Next.js is a [framework](../../contribute/framework.mdx) that make
 
   Storybook handles most [Typescript](https://www.typescriptlang.org/) configurations, but this framework adds additional support for Next.js's support for [Absolute Imports and Module path aliases](https://nextjs.org/docs/pages/building-your-application/configuring/absolute-imports-and-module-aliases). In short, it takes into account your `tsconfig.json`'s [baseUrl](https://www.typescriptlang.org/tsconfig#baseUrl) and [paths](https://www.typescriptlang.org/tsconfig#paths). Thus, a `tsconfig.json` like the one below would work out of the box.
 
-  ```jsonc
-  // tsconfig.json
+  ```jsonc title="tsconfig.json"
   {
     "compilerOptions": {
       "baseUrl": ".",
@@ -848,8 +790,7 @@ Storybook for Next.js is a [framework](../../contribute/framework.mdx) that make
 
   **Before**
 
-  ```jsx
-  // app/my-page/index.jsx
+  ```jsx title="app/my-page/index.jsx"
   async function getData() {
     const res = await fetch(...);
     // ...
@@ -865,9 +806,7 @@ Storybook for Next.js is a [framework](../../contribute/framework.mdx) that make
 
   **After**
 
-  ```jsx
-  // app/my-page/index.jsx
-
+  ```jsx title="app/my-page/index.jsx"
   // Use this component in your stories
   import MyPage from './components/MyPage';
 
@@ -915,17 +854,11 @@ Storybook for Next.js is a [framework](../../contribute/framework.mdx) that make
 
   `sharp` is a dependency of Next.js's image optimization feature. If you see this error, you need to install `sharp` in your project.
 
-  ```bash
-  npm install sharp
-  ```
+  {/* prettier-ignore-start */}
 
-  ```bash
-  yarn add sharp
-  ```
+  <CodeSnippets path="nextjs-sharp-install.md" />
 
-  ```bash
-  pnpm add sharp
-  ```
+  {/* prettier-ignore-end */}
 
   You can refer to the [Install `sharp` to Use Built-In Image Optimization](https://nextjs.org/docs/messages/install-sharp) in the Next.js documentation for more information.
 
@@ -941,8 +874,7 @@ Storybook for Next.js is a [framework](../../contribute/framework.mdx) that make
 
   `getPackageAliases` is a helper for generating the aliases needed to set up [portable stories](#portable-stories).
 
-  ```ts
-  // jest.config.ts
+  ```ts title="jest.config.ts"
   import type { Config } from 'jest';
   import nextJest from 'next/jest.js';
   // 👇 Import the utility function
@@ -1026,23 +958,11 @@ Storybook for Next.js is a [framework](../../contribute/framework.mdx) that make
 
   You can pass an options object for additional configuration if needed:
 
-  ```js
-  // .storybook/main.js
-  import * as path from 'path';
+  {/* prettier-ignore-start */}
 
-  export default {
-    // ...
-    framework: {
-      name: '@storybook/nextjs',
-      options: {
-        image: {
-          loading: 'eager',
-        },
-        nextConfigPath: path.resolve(__dirname, '../next.config.js'),
-      },
-    },
-  };
-  ```
+  <CodeSnippets path="nextjs-additional-options.md" />
+
+  {/* prettier-ignore-end */}
 
   The available options are:
 

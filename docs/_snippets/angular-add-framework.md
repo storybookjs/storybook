@@ -1,3 +1,5 @@
+<!-- TODO: Vet this example for CSF Factory support -->
+
 ```js filename=".storybook/main.js" renderer="angular" language="js"
 export default {
   // ...

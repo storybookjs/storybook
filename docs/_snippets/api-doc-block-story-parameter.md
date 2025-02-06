@@ -19,11 +19,12 @@ export const Basic: Story = {
 };
 ```
 
-```js filename="Button.stories.js|jsx" renderer="common" language="js"
-const meta = {
+```js filename="Button.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
+import { Button } from './Button';
+
+export default {
   component: Button,
 };
-export default meta;
 
 export const Basic = {
   parameters: {
@@ -34,7 +35,26 @@ export const Basic = {
 };
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="common" language="ts-4-9"
+```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Basic = meta.story({
+  parameters: {
+    docs: {
+      story: { autoplay: true },
+    },
+  },
+});
+```
+
+```ts filename="Button.stories.ts|tsx" renderer="common" language="ts-4-9" tabTitle="CSF 3"
 // Replace your-framework with the name of your framework
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -56,7 +76,26 @@ export const Basic: Story = {
 };
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="common" language="ts"
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Basic = meta.story({
+  parameters: {
+    docs: {
+      story: { autoplay: true },
+    },
+  },
+});
+```
+
+```ts filename="Button.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the name of your framework
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -76,6 +115,25 @@ export const Basic: Story = {
     },
   },
 };
+```
+
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Basic = meta.story({
+  parameters: {
+    docs: {
+      story: { autoplay: true },
+    },
+  },
+});
 ```
 
 ```js filename="Button.stories.js" renderer="web-components" language="js"

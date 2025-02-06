@@ -1,4 +1,4 @@
-```js filename=".storybook/main.js" renderer="react" language="js"
+```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF 3"
 export default {
   framework: {
     name: '@storybook/react-vite',
@@ -9,7 +9,20 @@ export default {
 };
 ```
 
-```ts filename=".storybook/main.ts" renderer="react" language="ts"
+```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+import { defineMain } from '@storybook/react-vite/node';
+
+export default defineMain({
+  framework: {
+    name: '@storybook/react-vite',
+    options: {
+      // ...
+    },
+  },
+});
+```
+
+```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF 3"
 import type { StorybookConfig } from '@storybook/react-vite';
 
 const config: StorybookConfig = {
@@ -22,4 +35,17 @@ const config: StorybookConfig = {
 };
 
 export default config;
+```
+
+```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+import { defineMain } from '@storybook/react-vite/node';
+
+export default defineMain({
+  framework: {
+    name: '@storybook/react-vite',
+    options: {
+      // ...
+    },
+  },
+});
 ```

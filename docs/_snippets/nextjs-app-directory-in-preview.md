@@ -1,4 +1,6 @@
-```js filename=".storybook/preview.js" renderer="react" language="js"
+<!-- Vet this example for package naming -->
+
+```js filename=".storybook/preview.js" renderer="react" language="js" tabTitle="CSF 3"
 export default {
   // ...
   parameters: {
@@ -10,8 +12,23 @@ export default {
 };
 ```
 
-```ts filename=".storybook/preview.ts" renderer="react" language="ts"
-import { Preview } from '@storybook/react';
+```js filename=".storybook/preview.js" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Replace your-framework with the framework you are using (e.g., nextjs, experimental-nextjs-vite)
+import { definePreview } from '@storybook/your-framework';
+
+export default definePreview({
+  // ...
+  parameters: {
+    // ...
+    nextjs: {
+      appDirectory: true,
+    },
+  },
+});
+```
+
+```ts filename=".storybook/preview.ts" renderer="react" language="ts" tabTitle="CSF 3"
+import type { Preview } from '@storybook/react';
 
 const preview: Preview = {
   // ...
@@ -24,4 +41,19 @@ const preview: Preview = {
 };
 
 export default preview;
+```
+
+```ts filename=".storybook/preview.ts" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Replace your-framework with the framework you are using (e.g., nextjs, experimental-nextjs-vite)
+import { definePreview } from '@storybook/your-framework';
+
+export default definePreview({
+  // ...
+  parameters: {
+    // ...
+    nextjs: {
+      appDirectory: true,
+    },
+  },
+});
 ```

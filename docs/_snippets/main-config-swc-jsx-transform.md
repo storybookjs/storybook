@@ -1,4 +1,6 @@
-```js filename=".storybook/main.js" renderer="common" language="js"
+<!-- TODO: Needs vetting for Webpack-based and future framework support -->
+
+```js filename=".storybook/main.js" renderer="common" language="js" tabTitle="CSF 3"
 export default {
   framework: {
     name: '@storybook/your-framework',
@@ -16,7 +18,28 @@ export default {
 };
 ```
 
-```ts filename=".storybook/main.ts" renderer="common" language="ts"
+```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, experimental-nextjs-vite)
+import { defineMain } from '@storybook/your-framework/node';
+
+export default defineMain({
+  framework: {
+    name: '@storybook/your-framework',
+    options: {},
+  },
+  swc: (config, options) => ({
+    jsc: {
+      transform: {
+        react: {
+          runtime: 'automatic',
+        },
+      },
+    },
+  }),
+});
+```
+
+```ts filename=".storybook/main.ts" renderer="common" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the webpack-based framework you are using (e.g., react-webpack5)
 import type { StorybookConfig } from '@storybook/your-framework';
 
@@ -37,4 +60,25 @@ const config: StorybookConfig = {
 };
 
 export default config;
+```
+
+```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, experimental-nextjs-vite)
+import { defineMain } from '@storybook/your-framework/node';
+
+export default defineMain({
+  framework: {
+    name: '@storybook/your-framework',
+    options: {},
+  },
+  swc: (config, options) => ({
+    jsc: {
+      transform: {
+        react: {
+          runtime: 'automatic',
+        },
+      },
+    },
+  }),
+});
 ```

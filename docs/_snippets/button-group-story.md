@@ -1,3 +1,5 @@
+<!-- TODO: Vet this example for CSF Factories composition -->
+
 ```ts filename="ButtonGroup.stories.ts" renderer="angular" language="ts"
 import type { Meta, StoryObj } from '@storybook/angular';
 
@@ -32,7 +34,7 @@ export const Pair: Story = {
 };
 ```
 
-```js filename="ButtonGroup.stories.js|jsx" renderer="react" language="js"
+```js filename="ButtonGroup.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { ButtonGroup } from '../ButtonGroup';
 
 //👇 Imports the Button stories
@@ -50,7 +52,28 @@ export const Pair = {
 };
 ```
 
-```ts filename="ButtonGroup.stories.ts|tsx" renderer="react" language="ts-4-9"
+```js filename="ButtonGroup.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { ButtonGroup } from '../ButtonGroup';
+
+//👇 Imports the Button stories
+import * as ButtonStories from './Button.stories';
+
+const meta = preview.meta({
+  component: ButtonGroup,
+});
+
+export const Pair = meta.story({
+  args: {
+    buttons: [{ ...ButtonStories.Primary.input.args }, { ...ButtonStories.Secondary.input.args }],
+    orientation: 'horizontal',
+  },
+});
+```
+
+```ts filename="ButtonGroup.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/react';
 
 import { ButtonGroup } from '../ButtonGroup';
@@ -73,7 +96,28 @@ export const Pair: Story = {
 };
 ```
 
-```ts filename="ButtonGroup.stories.ts|tsx" renderer="react" language="ts"
+```ts filename="ButtonGroup.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { ButtonGroup } from '../ButtonGroup';
+
+//👇 Imports the Button stories
+import * as ButtonStories from './Button.stories';
+
+const meta = preview.meta({
+  component: ButtonGroup,
+});
+
+export const Pair = meta.story({
+  args: {
+    buttons: [{ ...ButtonStories.Primary.input.args }, { ...ButtonStories.Secondary.input.args }],
+    orientation: 'horizontal',
+  },
+});
+```
+
+```ts filename="ButtonGroup.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/react';
 
 import { ButtonGroup } from '../ButtonGroup';
@@ -94,6 +138,27 @@ export const Pair: Story = {
     orientation: 'horizontal',
   },
 };
+```
+
+```ts filename="ButtonGroup.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { ButtonGroup } from '../ButtonGroup';
+
+//👇 Imports the Button stories
+import * as ButtonStories from './Button.stories';
+
+const meta = preview.meta({
+  component: ButtonGroup,
+});
+
+export const Pair = meta.story({
+  args: {
+    buttons: [{ ...ButtonStories.Primary.input.args }, { ...ButtonStories.Secondary.input.args }],
+    orientation: 'horizontal',
+  },
+});
 ```
 
 ```js filename="ButtonGroup.stories.js|jsx" renderer="solid" language="js"

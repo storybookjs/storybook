@@ -1,9 +1,11 @@
 ```ts filename="YourPage.stories.ts" renderer="angular" language="ts" tabTitle="story"
 import type { Meta, StoryObj } from '@storybook/angular';
+
 import { moduleMetadata } from '@storybook/angular';
 
 import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
+
 import { graphql, HttpResponse, delay } from 'msw';
 
 import { DocumentHeader } from './DocumentHeader.component';
@@ -128,8 +130,9 @@ export function createApollo(httpLink: HttpLink): ApolloClientOptions<any> {
 export class MockGraphQLModule {}
 ```
 
-```js filename="YourPage.stories.js|jsx" renderer="react" language="js"
+```js filename="YourPage.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { ApolloClient, ApolloProvider, InMemoryCache } from '@apollo/client';
+
 import { graphql, HttpResponse, delay } from 'msw';
 
 import { DocumentScreen } from './YourPage';
@@ -223,10 +226,111 @@ export const MockedError = {
 };
 ```
 
-```ts filename="YourPage.stories.ts|tsx" renderer="react" language="ts-4-9"
+```js filename="YourPage.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { ApolloClient, ApolloProvider, InMemoryCache } from '@apollo/client';
+
+import { graphql, HttpResponse, delay } from 'msw';
+
+import { DocumentScreen } from './YourPage';
+
+const mockedClient = new ApolloClient({
+  uri: 'https://your-graphql-endpoint',
+  cache: new InMemoryCache(),
+  defaultOptions: {
+    watchQuery: {
+      fetchPolicy: 'no-cache',
+      errorPolicy: 'all',
+    },
+    query: {
+      fetchPolicy: 'no-cache',
+      errorPolicy: 'all',
+    },
+  },
+});
+
+//👇The mocked data that will be used in the story
+const TestData = {
+  user: {
+    userID: 1,
+    name: 'Someone',
+  },
+  document: {
+    id: 1,
+    userID: 1,
+    title: 'Something',
+    brief: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    status: 'approved',
+  },
+  subdocuments: [
+    {
+      id: 1,
+      userID: 1,
+      title: 'Something',
+      content:
+        'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+      status: 'approved',
+    },
+  ],
+};
+
+const meta = preview.meta({
+  component: DocumentScreen,
+
+  decorators: [
+    (Story) => (
+      <ApolloProvider client={mockedClient}>
+        <Story />
+      </ApolloProvider>
+    ),
+  ],
+});
+
+export const MockedSuccess = meta.story({
+  parameters: {
+    msw: {
+      handlers: [
+        graphql.query('AllInfoQuery', () => {
+          return HttpResponse.json({
+            data: {
+              allInfo: {
+                ...TestData,
+              },
+            },
+          });
+        }),
+      ],
+    },
+  },
+});
+
+export const MockedError = meta.story({
+  parameters: {
+    msw: {
+      handlers: [
+        graphql.query('AllInfoQuery', async () => {
+          await delay(800);
+          return HttpResponse.json({
+            errors: [
+              {
+                message: 'Access denied',
+              },
+            ],
+          });
+        }),
+      ],
+    },
+  },
+});
+```
+
+```ts filename="YourPage.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/react';
 
 import { ApolloClient, ApolloProvider, InMemoryCache } from '@apollo/client';
+
 import { graphql, HttpResponse, delay } from 'msw';
 
 import { DocumentScreen } from './YourPage';
@@ -322,10 +426,109 @@ export const MockedError: Story = {
 };
 ```
 
-```ts filename="YourPage.stories.ts|tsx" renderer="react" language="ts"
+```ts filename="YourPage.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { ApolloClient, ApolloProvider, InMemoryCache } from '@apollo/client';
+
+import { graphql, HttpResponse, delay } from 'msw';
+
+import { DocumentScreen } from './YourPage';
+
+const mockedClient = new ApolloClient({
+  uri: 'https://your-graphql-endpoint',
+  cache: new InMemoryCache(),
+  defaultOptions: {
+    watchQuery: {
+      fetchPolicy: 'no-cache',
+      errorPolicy: 'all',
+    },
+    query: {
+      fetchPolicy: 'no-cache',
+      errorPolicy: 'all',
+    },
+  },
+});
+
+//👇The mocked data that will be used in the story
+const TestData = {
+  user: {
+    userID: 1,
+    name: 'Someone',
+  },
+  document: {
+    id: 1,
+    userID: 1,
+    title: 'Something',
+    brief: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    status: 'approved',
+  },
+  subdocuments: [
+    {
+      id: 1,
+      userID: 1,
+      title: 'Something',
+      content:
+        'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+      status: 'approved',
+    },
+  ],
+};
+const meta = preview.meta({
+  component: DocumentScreen,
+  decorators: [
+    (Story) => (
+      <ApolloProvider client={mockedClient}>
+        <Story />
+      </ApolloProvider>
+    ),
+  ],
+});
+
+export const MockedSuccess = meta.story({
+  parameters: {
+    msw: {
+      handlers: [
+        graphql.query('AllInfoQuery', () => {
+          return HttpResponse.json({
+            data: {
+              allInfo: {
+                ...TestData,
+              },
+            },
+          });
+        }),
+      ],
+    },
+  },
+});
+
+export const MockedError = meta.story({
+  parameters: {
+    msw: {
+      handlers: [
+        graphql.query('AllInfoQuery', async () => {
+          await delay(800);
+          return HttpResponse.json({
+            errors: [
+              {
+                message: 'Access denied',
+              },
+            ],
+          });
+        }),
+      ],
+    },
+  },
+});
+```
+
+```ts filename="YourPage.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/react';
 
 import { ApolloClient, ApolloProvider, InMemoryCache } from '@apollo/client';
+
 import { graphql, HttpResponse, delay } from 'msw';
 
 import { DocumentScreen } from './YourPage';
@@ -419,6 +622,104 @@ export const MockedError: Story = {
     },
   },
 };
+```
+
+```ts filename="YourPage.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { ApolloClient, ApolloProvider, InMemoryCache } from '@apollo/client';
+
+import { graphql, HttpResponse, delay } from 'msw';
+
+import { DocumentScreen } from './YourPage';
+
+const mockedClient = new ApolloClient({
+  uri: 'https://your-graphql-endpoint',
+  cache: new InMemoryCache(),
+  defaultOptions: {
+    watchQuery: {
+      fetchPolicy: 'no-cache',
+      errorPolicy: 'all',
+    },
+    query: {
+      fetchPolicy: 'no-cache',
+      errorPolicy: 'all',
+    },
+  },
+});
+
+//👇The mocked data that will be used in the story
+const TestData = {
+  user: {
+    userID: 1,
+    name: 'Someone',
+  },
+  document: {
+    id: 1,
+    userID: 1,
+    title: 'Something',
+    brief: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    status: 'approved',
+  },
+  subdocuments: [
+    {
+      id: 1,
+      userID: 1,
+      title: 'Something',
+      content:
+        'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+      status: 'approved',
+    },
+  ],
+};
+const meta = preview.meta({
+  component: DocumentScreen,
+  decorators: [
+    (Story) => (
+      <ApolloProvider client={mockedClient}>
+        <Story />
+      </ApolloProvider>
+    ),
+  ],
+});
+
+export const MockedSuccess = meta.story({
+  parameters: {
+    msw: {
+      handlers: [
+        graphql.query('AllInfoQuery', () => {
+          return HttpResponse.json({
+            data: {
+              allInfo: {
+                ...TestData,
+              },
+            },
+          });
+        }),
+      ],
+    },
+  },
+});
+
+export const MockedError = meta.story({
+  parameters: {
+    msw: {
+      handlers: [
+        graphql.query('AllInfoQuery', async () => {
+          await delay(800);
+          return HttpResponse.json({
+            errors: [
+              {
+                message: 'Access denied',
+              },
+            ],
+          });
+        }),
+      ],
+    },
+  },
+});
 ```
 
 ```js filename="YourPage.stories.js" renderer="svelte" language="js" tabTitle="story"

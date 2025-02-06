@@ -1,3 +1,5 @@
+<!-- TODO: Vet this example for CSF factory args composition (since this is using input for composing story args)-->
+
 ```ts filename="Button.stories.ts" renderer="angular" language="ts"
 import type { Meta, StoryObj } from '@storybook/angular';
 
@@ -118,7 +120,7 @@ export const Tertiary: Story = {
 };
 ```
 
-```js filename="Button.stories.js|jsx" renderer="react" language="js"
+```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { Button } from './Button';
 
 export default {
@@ -147,7 +149,39 @@ export const Tertiary = {
 };
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="react" language="ts-4-9"
+```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Primary = meta.story({
+  args: {
+    backgroundColor: '#ff0',
+    label: 'Button',
+  },
+});
+
+export const Secondary = meta.story({
+  args: {
+    ...Primary.input.args,
+    label: '😄👍😍💯',
+  },
+});
+
+export const Tertiary = meta.story({
+  args: {
+    ...Primary.input.args,
+    label: '📚📕📈🤓',
+  },
+});
+```
+
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/react';
 
 import { Button } from './Button';
@@ -181,7 +215,39 @@ export const Tertiary: Story = {
 };
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="react" language="ts"
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Primary = meta.story({
+  args: {
+    backgroundColor: '#ff0',
+    label: 'Button',
+  },
+});
+
+export const Secondary = meta.story({
+  args: {
+    ...Primary.input.args,
+    label: '😄👍😍💯',
+  },
+});
+
+export const Tertiary = meta.story({
+  args: {
+    ...Primary.input.args,
+    label: '📚📕📈🤓',
+  },
+});
+```
+
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/react';
 
 import { Button } from './Button';
@@ -213,6 +279,38 @@ export const Tertiary: Story = {
     label: '📚📕📈🤓',
   },
 };
+```
+
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Primary = meta.story({
+  args: {
+    backgroundColor: '#ff0',
+    label: 'Button',
+  },
+});
+
+export const Secondary = meta.story({
+  args: {
+    ...Primary.input.args,
+    label: '😄👍😍💯',
+  },
+});
+
+export const Tertiary = meta.story({
+  args: {
+    ...Primary.input.args,
+    label: '📚📕📈🤓',
+  },
+});
 ```
 
 ```js filename="Button.stories.js|jsx" renderer="solid" language="js"

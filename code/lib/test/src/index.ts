@@ -15,6 +15,7 @@ import {
   resetAllMocks,
   restoreAllMocks,
 } from './spy';
+import type { userEvent } from './testing-library';
 import { type queries, within } from './testing-library';
 
 export * from './spy';
@@ -24,8 +25,7 @@ type Queries = BoundFunctions<typeof queries>;
 declare module '@storybook/csf' {
   interface Canvas extends Queries {}
   interface StoryContext {
-    // TODO enable this in a later PR, once we have time to QA this properly
-    //   userEvent: ReturnType<typeof userEvent.setup>;
+    userEvent: ReturnType<typeof userEvent.setup>;
   }
 }
 

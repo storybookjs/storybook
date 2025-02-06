@@ -3,7 +3,7 @@ import {
   expect,
   fireEvent,
   fn,
-  userEvent,
+  userEvent as storybookUserEvent,
   waitFor,
   waitForElementToBeRemoved,
   within,
@@ -31,7 +31,7 @@ export const Validation = {
 };
 
 export const Type = {
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement, userEvent }) => {
     const canvas = within(canvasElement);
     await userEvent.type(canvas.getByTestId('value'), 'foobar');
   },
@@ -44,7 +44,7 @@ export const Step = {
 };
 
 export const TypeAndClear = {
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement, userEvent }) => {
     const canvas = within(canvasElement);
     await userEvent.type(canvas.getByTestId('value'), 'initial value');
     await userEvent.clear(canvas.getByTestId('value'));
@@ -102,7 +102,7 @@ export const WithLoaders = {
 
 const UserEventSetup = {
   play: async (context) => {
-    const { args, canvasElement, step } = context;
+    const { args, canvasElement, step, userEvent } = context;
     const user = userEvent.setup();
     const canvas = within(canvasElement);
     await step('Select and type on input using user-event v14 setup', async () => {
@@ -111,7 +111,8 @@ const UserEventSetup = {
       await user.type(input, 'Typing ...');
     });
     await step('Tab and press enter on submit button', async () => {
-      await user.pointer([
+      // Ugly hack! pointer does not exist in Vitest interactivity API
+      await storybookUserEvent.pointer([
         { keys: '[TouchA>]', target: canvas.getByRole('textbox') },
         { keys: '[/TouchA]' },
       ]);

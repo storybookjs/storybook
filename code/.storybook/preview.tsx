@@ -358,6 +358,9 @@ export const parameters = {
       opacity: 0.4,
     },
   },
+  test: {
+    dangerouslyUseInteractivityApi: true,
+  },
 };
 
 export const tags = ['test', 'vitest'];

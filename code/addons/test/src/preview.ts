@@ -1,9 +1,14 @@
-import type { PlayFunction, StepLabel, StoryContext } from 'storybook/internal/types';
+import type {
+  LoaderFunction,
+  PlayFunction,
+  StepLabel,
+  StoryContext,
+} from 'storybook/internal/types';
 
 import { instrument } from '@storybook/instrumenter';
 // This makes sure that storybook test loaders are always loaded when addon-interactions is used
 // For 9.0 we want to merge storybook/test and addon-interactions into one addon.
-import '@storybook/test';
+import { userEvent } from '@storybook/test';
 
 export const { step: runStep } = instrument(
   {
@@ -19,4 +24,18 @@ export const { step: runStep } = instrument(
 
 export const parameters = {
   throwPlayFunctionExceptions: false,
+};
+
+export const loaders: LoaderFunction = async (context) => {
+  if (context.parameters.test?.dangerouslyUseInteractivityApi) {
+    // eslint-disable-next-line no-underscore-dangle
+    if (globalThis.__vitest_browser__) {
+      const vitest = await import('@vitest/browser/context');
+      const { userEvent: browserEvent } = vitest;
+      // @ts-expect-error fix later
+      context.userEvent = browserEvent.setup();
+    } else {
+      context.userEvent = userEvent.setup();
+    }
+  }
 };

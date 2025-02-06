@@ -6203,10 +6203,9 @@ __metadata:
   resolution: "@storybook/builder-vite@workspace:builders/builder-vite"
   dependencies:
     "@storybook/csf-plugin": "workspace:*"
-    "@types/find-cache-dir": "npm:^3.2.1"
     "@types/node": "npm:^22.0.0"
+    empathic: "npm:^1.1.0"
     es-module-lexer: "npm:^1.5.0"
-    find-cache-dir: "npm:^3.0.0"
     glob: "npm:^10.0.0"
     knitwork: "npm:^1.1.0"
     magic-string: "npm:^0.30.0"
@@ -7617,22 +7616,6 @@ __metadata:
     "@types/qs": "npm:*"
     "@types/serve-static": "npm:*"
   checksum: 10c0/12e562c4571da50c7d239e117e688dc434db1bac8be55613294762f84fd77fbd0658ccd553c7d3ab02408f385bc93980992369dd30e2ecd2c68c358e6af8fabf
-  languageName: node
-  linkType: hard
-
-"@types/find-cache-dir@npm:^3.2.1":
-  version: 3.2.1
-  resolution: "@types/find-cache-dir@npm:3.2.1"
-  checksum: 10c0/68059aec88ef776a689c1711a881fd91a9ce1b03dd5898ea1d2ac5d77d7b0235f21fdf210f380c13deca8b45e4499841a63aaf31fd2123af687f2c6b472f41ce
-  languageName: node
-  linkType: hard
-
-"@types/find-cache-dir@npm:^5.0.0":
-  version: 5.0.2
-  resolution: "@types/find-cache-dir@npm:5.0.2"
-  dependencies:
-    find-cache-dir: "npm:*"
-  checksum: 10c0/684efb5961dcc5c8813a5ab14645c692ce036bebbc0258443dc4a154c63f9c87c0287ef32ca792110b82c2b96d590dfdf7d1bf59b61717a8109ee619e489f3b5
   languageName: node
   linkType: hard
 
@@ -14750,16 +14733,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"find-cache-dir@npm:*, find-cache-dir@npm:^5.0.0":
-  version: 5.0.0
-  resolution: "find-cache-dir@npm:5.0.0"
-  dependencies:
-    common-path-prefix: "npm:^3.0.0"
-    pkg-dir: "npm:^7.0.0"
-  checksum: 10c0/e6403b35aaf862898aefadbe3ee27246583a69adcef21cd79b9262be407d1ac85b21a7e1c1d41712eae39c6d8a8ac297fd78123b5b7aea13f0f046744aa02453
-  languageName: node
-  linkType: hard
-
 "find-cache-dir@npm:^2.0.0":
   version: 2.1.0
   resolution: "find-cache-dir@npm:2.1.0"
@@ -14771,7 +14744,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"find-cache-dir@npm:^3.0.0, find-cache-dir@npm:^3.3.1":
+"find-cache-dir@npm:^3.3.1":
   version: 3.3.2
   resolution: "find-cache-dir@npm:3.3.2"
   dependencies:
@@ -23007,6 +22980,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"resolve-from@npm:^5.0.0":
+  version: 5.0.0
+  resolution: "resolve-from@npm:5.0.0"
+  checksum: 10c0/b21cb7f1fb746de8107b9febab60095187781137fd803e6a59a76d421444b1531b641bba5857f5dc011974d8a5c635d61cec49e6bd3b7fc20e01f0fafc4efbf2
+  languageName: node
+  linkType: hard
+
 "resolve-package-path@npm:^1.0.11":
   version: 1.2.7
   resolution: "resolve-package-path@npm:1.2.7"
@@ -24449,7 +24429,6 @@ __metadata:
     "@types/detect-port": "npm:^1.3.0"
     "@types/diff": "npm:^5.0.9"
     "@types/ejs": "npm:^3.1.1"
-    "@types/find-cache-dir": "npm:^5.0.0"
     "@types/js-yaml": "npm:^4.0.5"
     "@types/node": "npm:^22.0.0"
     "@types/npmlog": "npm:^7.0.0"
@@ -24494,7 +24473,6 @@ __metadata:
     exsolve: "npm:^1.0.7"
     fd-package-json: "npm:^1.2.0"
     fetch-retry: "npm:^6.0.0"
-    find-cache-dir: "npm:^5.0.0"
     flush-promises: "npm:^1.0.2"
     fuse.js: "npm:^3.6.1"
     get-npm-tarball-url: "npm:^2.0.3"

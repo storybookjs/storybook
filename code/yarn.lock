@@ -5680,7 +5680,7 @@ __metadata:
     "@storybook/blocks": "workspace:*"
     "@storybook/csf-plugin": "workspace:*"
     "@storybook/react-dom-shim": "workspace:*"
-    "@types/react": "npm:^16.8.0 || ^17.0.0 || ^18.0.0"
+    "@types/react": "npm:^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0"
     react: "npm:^18.2.0"
     react-dom: "npm:^18.2.0"
     rehype-external-links: "npm:^3.0.0"
@@ -6010,8 +6010,8 @@ __metadata:
     tocbot: "npm:^4.20.1"
     ts-dedent: "npm:^2.0.0"
   peerDependencies:
-    react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
-    react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
+    react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+    react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
   peerDependenciesMeta:
     react:
@@ -8483,7 +8483,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react@npm:*, @types/react@npm:^16.8.0 || ^17.0.0 || ^18.0.0, @types/react@npm:^18.0.37":
+"@types/react@npm:*, @types/react@npm:^18.0.37":
   version: 18.2.55
   resolution: "@types/react@npm:18.2.55"
   dependencies:
@@ -8491,6 +8491,15 @@ __metadata:
     "@types/scheduler": "npm:*"
     csstype: "npm:^3.0.2"
   checksum: 10c0/6b1c73beafbbc582dc54ffd92b3779f6d850e8f6b5ce5d04b31e9498a3d77bfc416bb08f0d8d63ab4f4649ccd6639996472416871c01c74a528b16a55faeaf38
+  languageName: node
+  linkType: hard
+
+"@types/react@npm:^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0":
+  version: 19.0.8
+  resolution: "@types/react@npm:19.0.8"
+  dependencies:
+    csstype: "npm:^3.0.2"
+  checksum: 10c0/5fa7236356b1476de03519c66ef65d4fd904826956105619e2ad60cb0b55ae7b251dd5fff02234076225b5e15333d0d936bf9dbe1d461406f8a2ba01c197ddcd
   languageName: node
   linkType: hard
 

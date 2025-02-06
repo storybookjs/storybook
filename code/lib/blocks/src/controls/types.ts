@@ -1,10 +1,10 @@
-import type { ArgType } from '../components/ArgsTable';
+import type { InputType } from '@storybook/csf';
 
 export interface ControlProps<T> {
   name: string;
   value?: T;
   defaultValue?: T;
-  argType?: ArgType;
+  argType?: InputType;
   onChange: (value?: T) => T | void;
   onFocus?: (evt: any) => void;
   onBlur?: (evt: any) => void;
@@ -88,3 +88,6 @@ export type Control =
   | OptionsConfig
   | RangeConfig
   | TextConfig;
+
+export const isControlObject = (control: Control): control is Control & object =>
+  typeof control === 'object' && control !== null && control !== undefined;

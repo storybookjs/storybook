@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { StoryContext } from '@storybook/csf';
+import type { StoryContext } from 'storybook/internal/csf';
 
 import { run } from './a11yRunner';
 import { A11Y_TEST_TAG } from './constants';

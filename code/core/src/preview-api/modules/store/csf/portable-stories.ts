@@ -1,6 +1,7 @@
 /* eslint-disable no-underscore-dangle */
 
 /* eslint-disable @typescript-eslint/naming-convention */
+import { type CleanupCallback, isExportStory } from '@storybook/core/csf';
 import type {
   Args,
   Canvas,
@@ -19,7 +20,6 @@ import type {
   StoryContext,
   StrictArgTypes,
 } from '@storybook/core/types';
-import { type CleanupCallback, isExportStory } from '@storybook/csf';
 
 import { MountMustBeDestructuredError } from '@storybook/core/preview-errors';
 

@@ -1,6 +1,6 @@
+import { isExportStory } from '@storybook/core/csf';
 import type { ComponentTitle, Parameters, Path, Renderer } from '@storybook/core/types';
 import type { CSFFile, ModuleExports, NormalizedComponentAnnotations } from '@storybook/core/types';
-import { isExportStory } from '@storybook/csf';
 
 import { logger } from '@storybook/core/client-logger';
 

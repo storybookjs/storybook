@@ -1,4 +1,4 @@
-import { storyNameFromExport } from '@storybook/csf';
+import { storyNameFromExport } from 'storybook/internal/csf';
 
 import { logger } from '@storybook/core/node-logger';
 

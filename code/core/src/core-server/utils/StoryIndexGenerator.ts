@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { dirname, extname, join, normalize, relative, resolve, sep } from 'node:path';
 
 import { commonGlobOptions, normalizeStoryPath } from '@storybook/core/common';
+import { combineTags, storyNameFromExport, toId } from '@storybook/core/csf';
 import type {
   DocsIndexEntry,
   DocsOptions,
@@ -17,7 +18,6 @@ import type {
   StorybookConfigRaw,
   Tag,
 } from '@storybook/core/types';
-import { combineTags, storyNameFromExport, toId } from '@storybook/csf';
 
 import { getStorySortParameter, loadConfig } from '@storybook/core/csf-tools';
 import { logger, once } from '@storybook/core/node-logger';

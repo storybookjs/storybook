@@ -13,6 +13,7 @@ import {
   writeFile,
   writeJson,
 } from 'fs-extra';
+import { readFile } from 'fs/promises';
 import JSON5 from 'json5';
 import { createRequire } from 'module';
 import { join, relative, resolve, sep } from 'path';
@@ -144,7 +145,7 @@ export const init: Task['run'] = async (
 
   await executeCLIStep(steps.init, {
     cwd,
-    optionValues: { debug, yes: true, ...extra },
+    optionValues: { debug, yes: true, 'skip-install': true, ...extra },
     dryRun,
     debug,
   });
@@ -538,17 +539,24 @@ export async function addExtraDependencies({
     return;
   }
 
+  const packageJson = JSON.parse(await readFile(join(cwd, 'package.json'), { encoding: 'utf8' }));
+
   const packageManager = JsPackageManagerFactory.getPackageManager({}, cwd);
-  await packageManager.addDependencies({ installAsDevDependencies: true }, extraDevDeps);
+  await packageManager.addDependencies(
+    { installAsDevDependencies: true, skipInstall: true, packageJson },
+    extraDevDeps
+  );
 
   if (extraDeps) {
     const versionedExtraDeps = await packageManager.getVersionedPackages(extraDeps);
     if (debug) {
       logger.log('\uD83C\uDF81 Adding extra deps', versionedExtraDeps);
     }
-    await packageManager.addDependencies({ installAsDevDependencies: true }, versionedExtraDeps);
+    await packageManager.addDependencies(
+      { installAsDevDependencies: true, skipInstall: true, packageJson },
+      versionedExtraDeps
+    );
   }
-  await packageManager.installDependencies();
 }
 
 export const addStories: Task['run'] = async (
@@ -845,7 +853,7 @@ async function prepareAngularSandbox(cwd: string, templateName: string) {
 
   packageJson.scripts = {
     ...packageJson.scripts,
-    'docs:json': 'DIR=$PWD; cd ../../scripts; jiti combine-compodoc $DIR',
+    'docs:json': 'DIR=$PWD; yarn --cwd ../../scripts jiti combine-compodoc $DIR',
     storybook: `yarn docs:json && ${packageJson.scripts.storybook}`,
     'build-storybook': `yarn docs:json && ${packageJson.scripts['build-storybook']}`,
   };

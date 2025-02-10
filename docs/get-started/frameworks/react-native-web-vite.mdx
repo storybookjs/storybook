@@ -1,7 +1,7 @@
 ---
 title: Storybook for React Native Web
 sidebar:
-  order: 5
+  order: 6
   title: React Native Web
 ---
 
@@ -153,8 +153,8 @@ Storybook for React Native Web is a [framework](../../contribute/framework.mdx) 
         // these options are used to configure transpilation of node_modules via babel
         // in most cases, you don't need to configure these options, but they are available if you need them
         pluginBabelOptions: {
-          include: Array<string|RegExp> // default: [/node_modules\/(react-native|@react-native)/],
-          exclude: Array<string|RegExp> // default: undefined
+          include: Array<string|RegExp>, // default: [/node_modules\/(react-native|@react-native)/]
+          exclude: Array<string|RegExp>, // default: undefined
           presets: Array<string|[string, any]>,
           plugins: Array<string|[string, any]>,
           presetReact?: {
@@ -187,7 +187,7 @@ Storybook for React Native Web is a [framework](../../contribute/framework.mdx) 
           },
         },
       },
-    };
+    },
 
     // ... rest of config
   }

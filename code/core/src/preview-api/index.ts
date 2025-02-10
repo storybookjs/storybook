@@ -27,6 +27,9 @@ export { makeDecorator } from './addons';
  */
 export { addons, mockChannel } from './addons';
 
+export { UniversalStore as experimental_UniversalStore } from '../shared/universal-store';
+export { useUniversalStore as experimental_useUniversalStore } from '../shared/universal-store/use-universal-store-preview';
+
 /** DOCS API */
 export { DocsContext } from './preview-web';
 

@@ -11,6 +11,7 @@ import {
   types as t,
   traverse,
 } from '@storybook/core/babel';
+import { isExportStory, storyNameFromExport, toId } from '@storybook/core/csf';
 import type {
   ComponentAnnotations,
   IndexInput,
@@ -19,7 +20,6 @@ import type {
   StoryAnnotations,
   Tag,
 } from '@storybook/core/types';
-import { isExportStory, storyNameFromExport, toId } from '@storybook/csf';
 
 import { dedent } from 'ts-dedent';
 

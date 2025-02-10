@@ -6,7 +6,7 @@
     "build": "next build",
     "cypress": "echo 'No cypress setup yet'",
     "dev": "next dev",
-    "jest": "jest",
+    "jest": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "lint": "next lint",
     "playwright-ct": "echo 'No playwright setup yet'",
     "start": "next start",

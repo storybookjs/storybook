@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "8.6.0-alpha.2",
+  "version": "8.6.0-alpha.4",
   "description": "Storybook's CLI - install, dev, build, upgrade, and more",
   "keywords": [
     "cli",
@@ -193,6 +193,11 @@
     },
     "./internal/preview/runtime": {
       "import": "./core/preview/runtime.js"
+    },
+    "./internal/csf": {
+      "types": "./core/csf/index.d.ts",
+      "import": "./core/csf/index.js",
+      "require": "./core/csf/index.cjs"
     }
   },
   "main": "dist/index.cjs",
@@ -232,6 +237,9 @@
       ],
       "internal/core-server": [
         "./core/core-server/index.d.ts"
+      ],
+      "internal/csf": [
+        "./core/csf/index.d.ts"
       ],
       "internal/csf-tools": [
         "./core/csf-tools/index.d.ts"
@@ -318,7 +326,7 @@
     "@storybook/core": "workspace:*"
   },
   "devDependencies": {
-    "typescript": "^5.3.2"
+    "typescript": "^5.7.3"
   },
   "peerDependencies": {
     "prettier": "^2 || ^3"

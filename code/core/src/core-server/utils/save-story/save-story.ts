@@ -4,9 +4,9 @@ import { basename, join } from 'node:path';
 
 import type { Channel } from '@storybook/core/channels';
 import { formatFileContent } from '@storybook/core/common';
+import { storyNameFromExport, toId } from '@storybook/core/csf';
 import { isExampleStoryId, telemetry } from '@storybook/core/telemetry';
 import type { CoreConfig, Options } from '@storybook/core/types';
-import { storyNameFromExport, toId } from '@storybook/csf';
 
 import type {
   RequestData,

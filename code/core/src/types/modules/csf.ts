@@ -1,4 +1,4 @@
-import type { ViewMode as ViewModeBase } from '@storybook/csf';
+import type { ViewMode as ViewModeBase } from '@storybook/core/csf';
 
 import type { Addon_OptionsParameter } from './addons';
 
@@ -12,8 +12,10 @@ export type {
   ArgTypes,
   ArgTypesEnhancer,
   BaseAnnotations,
+  BeforeAll,
   BeforeEach,
   Canvas,
+  CleanupCallback,
   ComponentAnnotations,
   ComponentId,
   ComponentTitle,
@@ -32,6 +34,7 @@ export type {
   PartialStoryFn,
   PlayFunction,
   PlayFunctionContext,
+  ProjectAnnotations as BaseProjectAnnotations,
   Renderer,
   SBArrayType,
   SBEnumType,
@@ -61,7 +64,7 @@ export type {
   StrictGlobalTypes,
   StrictInputType,
   Tag,
-} from '@storybook/csf';
+} from '@storybook/core/csf';
 
 type OrString<T extends string> = T | (string & {});
 

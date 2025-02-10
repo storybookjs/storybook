@@ -1,3 +1,4 @@
+import type { Canvas, CleanupCallback } from '@storybook/core/csf';
 import type {
   ComponentTitle,
   Parameters,
@@ -23,7 +24,6 @@ import type {
   StoryIndexV3,
   V3CompatIndexEntry,
 } from '@storybook/core/types';
-import type { Canvas, CleanupCallback } from '@storybook/csf';
 
 import { deprecate } from '@storybook/core/client-logger';
 import {
@@ -323,7 +323,15 @@ export class StoryStore<TRenderer extends Renderer> {
             }
             return Object.assign(storyAcc, { [key]: value });
           },
-          { args: story.initialArgs }
+          {
+            //
+            args: story.initialArgs,
+            globals: {
+              ...this.userGlobals.initialGlobals,
+              ...this.userGlobals.globals,
+              ...story.storyGlobals,
+            },
+          }
         );
         return acc;
       },

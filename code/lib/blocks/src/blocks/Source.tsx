@@ -141,7 +141,7 @@ export const useSourceProps = (
   const sourceParameters = (story?.parameters?.docs?.source || {}) as SourceParameters;
   let format = props.format ?? sourceParameters.format;
 
-  if (format) {
+  if (sourceParameters.format !== undefined) {
     console.warn(
       'The `parameters.docs.source.format` prop is deprecated. Use `parameters.docs.source.transform` instead to define your own transformer.'
     );
@@ -162,7 +162,7 @@ export const useSourceProps = (
     };
   }
 
-  format = source.format ?? story.parameters.docs?.source?.format ?? false;
+  format = source.format ?? story.parameters.docs?.source?.format ?? true;
 
   return {
     code: transformedCode,

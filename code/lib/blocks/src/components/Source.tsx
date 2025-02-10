@@ -89,7 +89,7 @@ const Source: FunctionComponent<SourceProps> = ({
   language,
   code,
   dark,
-  format = false,
+  format = true,
   ...rest
 }) => {
   const { typography } = useTheme();

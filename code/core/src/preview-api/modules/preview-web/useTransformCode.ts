@@ -1,6 +1,6 @@
 import type { Args, StoryContext } from '@storybook/csf';
 
-import { useEffect, useMemo, useState } from '../addons';
+import { useEffect, useState } from '../addons';
 
 type ReducedStoryContext = Omit<
   StoryContext<any, Args>,
@@ -21,7 +21,6 @@ export function useTransformCode(source: string | undefined, context: ReducedSto
     async function getTransformedCode() {
       const result = transformed ? await transformed : undefined;
       if (result != transformedCode) {
-        console.log({ result, transformedCode });
         setTransformedCode(result);
       }
     }

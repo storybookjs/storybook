@@ -315,6 +315,18 @@ export const parameters = {
   docs: {
     theme: themes.light,
     codePanel: true,
+    source: {
+      transform: async (source) => {
+        const prettier = await import('prettier/standalone');
+        const prettierPluginBabel = await import('prettier/plugins/babel');
+        const prettierPluginEstree = (await import('prettier/plugins/estree')).default;
+
+        return await prettier.format(source, {
+          parser: 'babel',
+          plugins: [prettierPluginBabel, prettierPluginEstree],
+        });
+      },
+    },
     toc: {},
   },
   controls: {

@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 import { AddonPanel, type SyntaxHighlighterFormatTypes } from 'storybook/internal/components';
 import { ADDON_ID, PANEL_ID, PARAM_KEY, SNIPPET_RENDERED } from 'storybook/internal/docs-tools';
-import { addons, types, useAddonState, useChannel } from 'storybook/internal/manager-api';
+import { addons, types, useChannel } from 'storybook/internal/manager-api';
 
 import { Source } from '@storybook/blocks';
 
@@ -27,17 +27,21 @@ addons.register(ADDON_ID, (api) => {
     disabled: (parameters) => !parameters?.docs?.codePanel,
     match: ({ viewMode }) => viewMode === 'story',
     render: ({ active }) => {
-      const [codeSnippet, setSourceCode] = useAddonState<{
+      const channel = api.getChannel();
+
+      const lastEvent = channel?.last(SNIPPET_RENDERED)?.[0];
+
+      const [codeSnippet, setSourceCode] = useState<{
         source: string;
         format: SyntaxHighlighterFormatTypes;
-      }>(ADDON_ID, {
-        source: '',
-        format: 'html',
+      }>({
+        source: lastEvent?.source ?? '',
+        format: lastEvent?.format ?? undefined,
       });
 
       useChannel({
         [SNIPPET_RENDERED]: ({ source, format }) => {
-          setSourceCode({ source, format });
+          setSourceCode({ source, format: format ?? undefined });
         },
       });
 

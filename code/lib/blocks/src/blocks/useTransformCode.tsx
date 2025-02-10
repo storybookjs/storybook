@@ -20,12 +20,9 @@ export function useTransformCode(
     async function getTransformedCode() {
       const transformResult = await transformed;
       if (transformResult !== transformedCode) {
-        console.log('setTransformedCode');
         setTransformedCode(transformResult);
       }
     }
-
-    console.log('useEffect of transformCode');
 
     getTransformedCode();
   });

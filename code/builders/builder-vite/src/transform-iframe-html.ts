@@ -1,6 +1,8 @@
 import { normalizeStories } from 'storybook/internal/common';
 import type { DocsOptions, Options, TagsOptions } from 'storybook/internal/types';
 
+import { SB_VIRTUAL_FILES } from './virtual-file-names';
+
 export type PreviewHtml = string | undefined;
 
 export async function transformIframeHtml(html: string, options: Options) {
@@ -26,7 +28,7 @@ export async function transformIframeHtml(html: string, options: Options) {
     ...(build?.test?.disableBlocks ? { __STORYBOOK_BLOCKS_EMPTY_MODULE__: {} } : {}),
   };
 
-  return html
+  const transformedHtml = html
     .replace('[CONFIG_TYPE HERE]', configType || '')
     .replace('[LOGLEVEL HERE]', logLevel || '')
     .replace(`'[FRAMEWORK_OPTIONS HERE]'`, JSON.stringify(frameworkOptions))
@@ -46,4 +48,13 @@ export async function transformIframeHtml(html: string, options: Options) {
     .replace(`'[TAGS_OPTIONS HERE]'`, JSON.stringify(tagsOptions || {}))
     .replace('<!-- [HEAD HTML SNIPPET HERE] -->', headHtmlSnippet || '')
     .replace('<!-- [BODY HTML SNIPPET HERE] -->', bodyHtmlSnippet || '');
+
+  if (configType === 'DEVELOPMENT') {
+    return transformedHtml.replace(
+      'virtual:@storybook/builder-vite/vite-app.js',
+      `/@id/__x00__${SB_VIRTUAL_FILES.VIRTUAL_APP_FILE}`
+    );
+  }
+
+  return transformedHtml;
 }

@@ -40,11 +40,11 @@ svelteDocParserOptions.getAstDefaultOptions = () => ({
  *
  * In Svelte prior to `v4` component is a class. From `v5` is a function.
  */
-function getComponentName(ast: ReturnType<import('rollup').PluginContext['parse']>): string {
+function getComponentName(ast: AST.Program): string {
   // NOTE: Assertion, because rollup returns a type `AcornNode` for some reason, which doesn't overlap with `Program` from estree
-  const exportDefaultDeclaration = (ast as unknown as AST.Program).body.find(
-    (n) => n.type === 'ExportDefaultDeclaration'
-  ) as AST.ExportDefaultDeclaration | undefined;
+  const exportDefaultDeclaration = ast.body.find((n) => n.type === 'ExportDefaultDeclaration') as
+    | AST.ExportDefaultDeclaration
+    | undefined;
 
   if (!exportDefaultDeclaration) {
     throw new Error('Unreachable - no default export found');
@@ -227,7 +227,7 @@ export async function svelteDocgen(svelteOptions: Record<string, any> = {}): Pro
 
       const s = new MagicString(src);
       const outputAst = this.parse(src);
-      const componentName = getComponentName(outputAst);
+      const componentName = getComponentName(outputAst as unknown as AST.Program);
       s.append(`\n;${componentName}.__docgen = ${JSON.stringify(componentDoc)}`);
 
       return {

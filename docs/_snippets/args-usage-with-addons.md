@@ -1,3 +1,5 @@
+<!-- TODO: Vet this example with CSF Next -->
+
 ```js filename="my-addon/src/manager.js|ts" renderer="common" language="js"
 import { useArgs } from '@storybook/manager-api';
 

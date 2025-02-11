@@ -1,3 +1,5 @@
+<!-- TODO: Vet this example for CSF Next (usage with addons) -->
+
 ```js filename="addons/backgrounds/src/preset/addParameter.tsx" renderer="common" language="js"
 export default {
   parameters: {

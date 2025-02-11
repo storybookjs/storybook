@@ -1,3 +1,5 @@
+<!-- TODO: Vet this example for the correct construct for component tests -->
+
 ```ts filename="LoginForm.stories.ts" renderer="angular" language="ts"
 import type { Meta, StoryObj } from '@storybook/angular';
 
@@ -33,14 +35,14 @@ export const FilledForm: Story = {
     // 👇 Assert DOM structure
     await expect(
       canvas.getByText(
-        'Everything is perfect. Your account is ready and we should probably get you started!',
-      ),
+        'Everything is perfect. Your account is ready and we should probably get you started!'
+      )
     ).toBeInTheDocument();
   },
 };
 ```
 
-```js filename="LoginForm.stories.js|jsx" renderer="react" language="js"
+```js filename="LoginForm.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { userEvent, within, expect } from '@storybook/test';
 
 import { LoginForm } from './LoginForm';
@@ -70,14 +72,54 @@ export const FilledForm = {
     // 👇 Assert DOM structure
     await expect(
       canvas.getByText(
-        'Everything is perfect. Your account is ready and we should probably get you started!',
-      ),
+        'Everything is perfect. Your account is ready and we should probably get you started!'
+      )
     ).toBeInTheDocument();
   },
 };
 ```
 
-```ts filename="LoginForm.stories.ts|tsx" renderer="react" language="ts-4-9"
+```js filename="LoginForm.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { userEvent, within, expect } from '@storybook/test';
+
+import { LoginForm } from './LoginForm';
+
+const meta = preview.meta({
+  component: LoginForm,
+});
+
+export const EmptyForm = meta.story({});
+
+/*
+ * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * to learn more about using the canvasElement to query the DOM
+ */
+export const FilledForm = meta.story({
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // 👇 Simulate interactions with the component
+    await userEvent.type(canvas.getByTestId('email'), 'email@provider.com');
+
+    await userEvent.type(canvas.getByTestId('password'), 'a-random-password');
+
+    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    await userEvent.click(canvas.getByRole('button'));
+
+    // 👇 Assert DOM structure
+    await expect(
+      canvas.getByText(
+        'Everything is perfect. Your account is ready and we should probably get you started!'
+      )
+    ).toBeInTheDocument();
+  },
+});
+```
+
+```ts filename="LoginForm.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/react';
 
 import { userEvent, within, expect } from '@storybook/test';
@@ -112,14 +154,54 @@ export const FilledForm: Story = {
     // 👇 Assert DOM structure
     await expect(
       canvas.getByText(
-        'Everything is perfect. Your account is ready and we should probably get you started!',
-      ),
+        'Everything is perfect. Your account is ready and we should probably get you started!'
+      )
     ).toBeInTheDocument();
   },
 };
 ```
 
-```ts filename="LoginForm.stories.ts|tsx" renderer="react" language="ts"
+```ts filename="LoginForm.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Next 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { userEvent, within, expect } from '@storybook/test';
+
+import { LoginForm } from './LoginForm';
+
+const meta = preview.meta({
+  component: LoginForm,
+});
+
+export const EmptyForm = meta.story({});
+
+/*
+ * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * to learn more about using the canvasElement to query the DOM
+ */
+export const FilledForm = meta.story({
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // 👇 Simulate interactions with the component
+    await userEvent.type(canvas.getByTestId('email'), 'email@provider.com');
+
+    await userEvent.type(canvas.getByTestId('password'), 'a-random-password');
+
+    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    await userEvent.click(canvas.getByRole('button'));
+
+    // 👇 Assert DOM structure
+    await expect(
+      canvas.getByText(
+        'Everything is perfect. Your account is ready and we should probably get you started!'
+      )
+    ).toBeInTheDocument();
+  },
+});
+```
+
+```ts filename="LoginForm.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/react';
 
 import { userEvent, within, expect } from '@storybook/test';
@@ -154,11 +236,51 @@ export const FilledForm: Story = {
     // 👇 Assert DOM structure
     await expect(
       canvas.getByText(
-        'Everything is perfect. Your account is ready and we should probably get you started!',
-      ),
+        'Everything is perfect. Your account is ready and we should probably get you started!'
+      )
     ).toBeInTheDocument();
   },
 };
+```
+
+```ts filename="LoginForm.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
+import preview from '#.storybook/preview';
+
+import { userEvent, within, expect } from '@storybook/test';
+
+import { LoginForm } from './LoginForm';
+
+const meta = preview.meta({
+  component: LoginForm,
+});
+
+export const EmptyForm = meta.story({});
+
+/*
+ * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * to learn more about using the canvasElement to query the DOM
+ */
+export const FilledForm = meta.story({
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // 👇 Simulate interactions with the component
+    await userEvent.type(canvas.getByTestId('email'), 'email@provider.com');
+
+    await userEvent.type(canvas.getByTestId('password'), 'a-random-password');
+
+    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    await userEvent.click(canvas.getByRole('button'));
+
+    // 👇 Assert DOM structure
+    await expect(
+      canvas.getByText(
+        'Everything is perfect. Your account is ready and we should probably get you started!'
+      )
+    ).toBeInTheDocument();
+  },
+});
 ```
 
 ```js filename="LoginForm.stories.js|jsx" renderer="solid" language="js"
@@ -191,8 +313,8 @@ export const FilledForm = {
     // 👇 Assert DOM structure
     await expect(
       canvas.getByText(
-        'Everything is perfect. Your account is ready and we should probably get you started!',
-      ),
+        'Everything is perfect. Your account is ready and we should probably get you started!'
+      )
     ).toBeInTheDocument();
   },
 };
@@ -235,8 +357,8 @@ export const FilledForm: Story = {
     // 👇 Assert DOM structure
     await expect(
       canvas.getByText(
-        'Everything is perfect. Your account is ready and we should probably get you started!',
-      ),
+        'Everything is perfect. Your account is ready and we should probably get you started!'
+      )
     ).toBeInTheDocument();
   },
 };
@@ -279,8 +401,8 @@ export const FilledForm: Story = {
     // 👇 Assert DOM structure
     await expect(
       canvas.getByText(
-        'Everything is perfect. Your account is ready and we should probably get you started!',
-      ),
+        'Everything is perfect. Your account is ready and we should probably get you started!'
+      )
     ).toBeInTheDocument();
   },
 };
@@ -357,8 +479,8 @@ export const FilledForm = {
     // 👇 Assert DOM structure
     await expect(
       canvas.getByText(
-        'Everything is perfect. Your account is ready and we should probably get you started!',
-      ),
+        'Everything is perfect. Your account is ready and we should probably get you started!'
+      )
     ).toBeInTheDocument();
   },
 };
@@ -367,6 +489,7 @@ export const FilledForm = {
 ```svelte filename="LoginForm.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
+
   import { expect, userEvent, within } from '@storybook/test';
 
   import LoginForm from './LoginForm.svelte';
@@ -407,6 +530,7 @@ export const FilledForm = {
 
 ```ts filename="LoginForm.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="CSF"
 import type { Meta, StoryObj } from '@storybook/svelte';
+
 import { expect, userEvent, within } from '@storybook/test';
 
 import LoginForm from './LoginForm.svelte';
@@ -439,8 +563,8 @@ export const FilledForm: Story = {
     // 👇 Assert DOM structure
     await expect(
       canvas.getByText(
-        'Everything is perfect. Your account is ready and we should probably get you started!',
-      ),
+        'Everything is perfect. Your account is ready and we should probably get you started!'
+      )
     ).toBeInTheDocument();
   },
 };
@@ -449,6 +573,7 @@ export const FilledForm: Story = {
 ```svelte filename="LoginForm.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
+
   import { expect, userEvent, within } from '@storybook/test';
 
   import LoginForm from './LoginForm.svelte';
@@ -490,6 +615,7 @@ export const FilledForm: Story = {
 
 ```ts filename="LoginForm.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
 import type { Meta, StoryObj } from '@storybook/svelte';
+
 import { expect, userEvent, within } from '@storybook/test';
 
 import LoginForm from './LoginForm.svelte';
@@ -522,8 +648,8 @@ export const FilledForm: Story = {
     // 👇 Assert DOM structure
     await expect(
       canvas.getByText(
-        'Everything is perfect. Your account is ready and we should probably get you started!',
-      ),
+        'Everything is perfect. Your account is ready and we should probably get you started!'
+      )
     ).toBeInTheDocument();
   },
 };
@@ -568,8 +694,8 @@ export const FilledForm = {
     // 👇 Assert DOM structure
     await expect(
       canvas.getByText(
-        'Everything is perfect. Your account is ready and we should probably get you started!',
-      ),
+        'Everything is perfect. Your account is ready and we should probably get you started!'
+      )
     ).toBeInTheDocument();
   },
 };
@@ -619,8 +745,8 @@ export const FilledForm: Story = {
     // 👇 Assert DOM structure
     await expect(
       canvas.getByText(
-        'Everything is perfect. Your account is ready and we should probably get you started!',
-      ),
+        'Everything is perfect. Your account is ready and we should probably get you started!'
+      )
     ).toBeInTheDocument();
   },
 };
@@ -670,8 +796,8 @@ export const FilledForm: Story = {
     // 👇 Assert DOM structure
     await expect(
       canvas.getByText(
-        'Everything is perfect. Your account is ready and we should probably get you started!',
-      ),
+        'Everything is perfect. Your account is ready and we should probably get you started!'
+      )
     ).toBeInTheDocument();
   },
 };
@@ -705,8 +831,8 @@ export const FilledForm = {
     // 👇 Assert DOM structure
     await expect(
       canvas.getByText(
-        'Everything is perfect. Your account is ready and we should probably get you started!',
-      ),
+        'Everything is perfect. Your account is ready and we should probably get you started!'
+      )
     ).toBeInTheDocument();
   },
 };
@@ -714,6 +840,7 @@ export const FilledForm = {
 
 ```ts filename="LoginForm.stories.ts" renderer="web-components" language="ts"
 import type { Meta, StoryObj } from '@storybook/web-components';
+
 import { userEvent, within, expect } from '@storybook/test';
 
 const meta: Meta = {
@@ -744,8 +871,8 @@ export const FilledForm: Story = {
     // 👇 Assert DOM structure
     await expect(
       canvas.getByText(
-        'Everything is perfect. Your account is ready and we should probably get you started!',
-      ),
+        'Everything is perfect. Your account is ready and we should probably get you started!'
+      )
     ).toBeInTheDocument();
   },
 };

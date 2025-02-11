@@ -1,3 +1,5 @@
+<!-- TODO: Needs vetting for Webpack-based and future framework support -->
+
 ```js filename="example-addon/src/preset.js" renderer="common" language="js"
 import { webpackFinal as webpack } from './webpack/webpackFinal';
 import { viteFinal as vite } from './vite/viteFinal';

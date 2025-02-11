@@ -6,6 +6,8 @@ Writing your stories in [TypeScript](https://www.typescriptlang.org/) makes you 
 
 Storybook has built-in TypeScript support, so you can get started with zero configuration required.
 
+{/* TODO: Make this section more agnostic for CSF Factories pattern */}
+
 ## Typing stories with `Meta` and `StoryObj`
 
 When writing stories, there are two aspects that are helpful to type. The first is the [component meta](./index.mdx#default-export), which describes and configures the component and its stories. In a [CSF file](../api/csf.mdx), this is the default export. The second is the [stories themselves](./index.mdx#defining-stories).
@@ -63,7 +65,7 @@ Sometimes stories need to define args that aren’t included in the component's 
 
   Vue has excellent support for TypeScript, and we have done our utmost to take advantage of that in the stories files. For example, consider the following strongly typed Vue 3 single file component (SFC):
 
-  ```html
+  ```html title="Counter.vue"
   <script setup lang="ts">
     defineProps<{ count: number; disabled: boolean }>();
 
@@ -92,7 +94,7 @@ Sometimes stories need to define args that aren’t included in the component's 
 
   Svelte offers excellent TypeScript support for .svelte files. For example, consider the following component. You can run type checks using svelte-check and add VSCode editor support with the [Svelte for VSCode extension](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode).
 
-  ```html
+  ```svelte title="Counter.svelte"
   <script lang="ts">
     import { createEventDispatcher } from 'svelte';
 

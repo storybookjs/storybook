@@ -51,6 +51,11 @@ It is possible to manually set the story's id, which is helpful if you want to r
 
 Storybook will prioritize the `id` over the title for ID generation if provided and prioritize the `story.name` over the export key for display.
 
+
+{/* 
+ TODO: Adjust this section to be more generic about auto-titles 
+*/}
+
 ## CSF 3.0 auto-titles
 
 Storybook 6.4 introduced [CSF 3.0](https://storybook.js.org/blog/component-story-format-3-0/) as an experimental feature, allowing you to write stories more compactly. Suppose you're already using this format to write your stories. In that case, you can omit the `title` element from the default export and allow Storybook automatically infer it based on the file's physical location. For example, given the following configuration and story:
@@ -67,7 +72,7 @@ Auto-titles work with explicit titling options like the component's `title` and 
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="csf-3-example-title.md" />
+<CodeSnippets path="component-story-with-title.md" />
 
 {/* prettier-ignore-end */}
 

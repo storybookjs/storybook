@@ -8,7 +8,7 @@ const preview: Preview = {
   decorators: [
     moduleMetadata({ declarations: [ThemeProvider] }),
     componentWrapperDecorator(
-      (story) => `<theme-provider class="default">${story}</theme-provider>`,
+      (story) => `<theme-provider class="default">${story}</theme-provider>`
     ),
   ],
 };
@@ -20,14 +20,14 @@ const preview: Preview = {
     moduleMetadata({ declarations: [ThemeProvider] }),
     componentWrapperDecorator(
       (story) => `<theme-provider [class]="theme">${story}</theme-provider>`,
-      ({ globals }) => ({ theme: globals.theme }),
+      ({ globals }) => ({ theme: globals.theme })
     ),
   ],
 };
 export default preview;
 ```
 
-```jsx filename=".storybook/preview.js" renderer="react" language="js"
+```jsx filename=".storybook/preview.jsx" renderer="react" language="js" tabTitle="CSF 3"
 import React from 'react';
 
 import { ThemeProvider } from 'styled-components';
@@ -44,7 +44,27 @@ export default {
 };
 ```
 
-```tsx filename=".storybook/preview.tsx" renderer="react" language="ts"
+```jsx filename=".storybook/preview.jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import React from 'react';
+
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, experimental-nextjs-vite)
+import { definePreview } from '@storybook/your-framework';
+
+import { ThemeProvider } from 'styled-components';
+
+export default definePreview({
+  decorators: [
+    (Story) => (
+      <ThemeProvider theme="default">
+        {/* 👇 Decorators in Storybook also accept a function. Replace <Story/> with Story() to enable it  */}
+        <Story />
+      </ThemeProvider>
+    ),
+  ],
+});
+```
+
+```tsx filename=".storybook/preview.tsx" renderer="react" language="ts" tabTitle="CSF 3"
 import React from 'react';
 
 import { Preview } from '@storybook/react';
@@ -65,7 +85,27 @@ const preview: Preview = {
 export default preview;
 ```
 
-```js filename=".storybook/preview.js" renderer="solid" language="js"
+```tsx filename=".storybook/preview.tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import React from 'react';
+
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, experimental-nextjs-vite)
+import { definePreview } from '@storybook/your-framework';
+
+import { ThemeProvider } from 'styled-components';
+
+export default definePreview({
+  decorators: [
+    (Story) => (
+      <ThemeProvider theme="default">
+        {/* 👇 Decorators in Storybook also accept a function. Replace <Story/> with Story() to enable it  */}
+        <Story />
+      </ThemeProvider>
+    ),
+  ],
+});
+```
+
+```js filename=".storybook/preview.jsx" renderer="solid" language="js"
 import { ThemeProvider } from 'solid-styled-components';
 
 const theme = {

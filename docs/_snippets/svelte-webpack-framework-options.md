@@ -1,3 +1,5 @@
+<!-- TODO: Vet this example for CSF Next compatibility -->
+
 ```js filename=".storybook/main.js" renderer="svelte" language="js"
 export default {
   // ...

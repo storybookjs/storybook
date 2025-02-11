@@ -11,7 +11,18 @@ In Storybook, your stories render in a particular “preview” iframe (also cal
 
 Code executed in the preview file (`.storybook/preview.js|ts`) runs for every story in your Storybook. This is useful for setting up global styles, initializing libraries, or anything else required to render your components.
 
-<If notRenderer={['angular', 'vue']}>
+
+<If renderer="react">
+  Here's an example of how you might use the preview file to initialize a library that must run before your components render:
+
+  {/* prettier-ignore-start */}
+
+  <CodeSnippets path="storybook-preview-custom-library.md" />
+
+  {/* prettier-ignore-end */}
+</If>
+
+<If notRenderer={['angular', 'vue', 'react']}>
   Here's an example of how you might use the preview file to initialize a library that must run before your components render:
 
   ```ts title=".storybook/preview.ts"

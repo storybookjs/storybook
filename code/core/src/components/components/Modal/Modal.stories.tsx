@@ -42,7 +42,7 @@ export const Default: Story = {
       <>
         <Modal {...props} open={isOpen}>
           <div style={{ padding: 15 }}>
-            <div>Hello world!</div>
+            <Modal.Title>Hello world!</Modal.Title>
             <Modal.Dialog.Close onClick={() => setOpen(false)}>Close</Modal.Dialog.Close>
           </div>
         </Modal>
@@ -70,7 +70,7 @@ export const FixedWidth: Story = {
       <>
         <Modal {...props} open={isOpen}>
           <div style={{ padding: 15 }}>
-            <div>Hello world!</div>
+            <Modal.Title>Hello world!</Modal.Title>
             <Modal.Dialog.Close onClick={() => setOpen(false)}>Close</Modal.Dialog.Close>
           </div>
         </Modal>
@@ -98,7 +98,7 @@ export const FixedHeight: Story = {
       <>
         <Modal {...props} open={isOpen}>
           <div style={{ padding: 15 }}>
-            <div>Hello world!</div>
+            <Modal.Title>Hello world!</Modal.Title>
             <Modal.Dialog.Close onClick={() => setOpen(false)}>Close</Modal.Dialog.Close>
           </div>
         </Modal>
@@ -127,7 +127,7 @@ export const FixedWidthAndHeight: Story = {
       <>
         <Modal {...props} open={isOpen}>
           <div style={{ padding: 15 }}>
-            <div>Hello world!</div>
+            <Modal.Title>Hello world!</Modal.Title>
             <Modal.Dialog.Close onClick={() => setOpen(false)}>Close</Modal.Dialog.Close>
           </div>
         </Modal>

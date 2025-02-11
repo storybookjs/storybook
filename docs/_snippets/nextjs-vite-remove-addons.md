@@ -10,7 +10,7 @@ export default {
 };
 ```
 
-```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import { defineMain } from '@storybook/experimental-nextjs-vite/node';
 
 export default defineMain({
@@ -40,7 +40,7 @@ const config: StorybookConfig = {
 export default config;
 ```
 
-```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
 import { defineMain } from '@storybook/experimental-nextjs-vite/node';
 
 export default defineMain({

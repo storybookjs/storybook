@@ -67,7 +67,7 @@ export const Combo = {
 };
 ```
 
-```jsx filename="Button.stories.jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+```jsx filename="Button.stories.jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 import preview from '#.storybook/preview';
 
@@ -137,7 +137,7 @@ export const Combo: Story = {
 };
 ```
 
-```tsx filename="Button.stories.tsx" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+```tsx filename="Button.stories.tsx" renderer="react" language="ts-4-9" tabTitle="CSF Next 🧪"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 import preview from '#.storybook/preview';
 
@@ -207,7 +207,7 @@ export const Combo: Story = {
 };
 ```
 
-```tsx filename="Button.stories.tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+```tsx filename="Button.stories.tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 import preview from '#.storybook/preview';
 

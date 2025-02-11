@@ -1,4 +1,4 @@
-<!-- TODO: Vet this example for CSF Factories composition -->
+<!-- TODO: Vet this example for CSF Next composition -->
 
 ```ts filename="ButtonGroup.stories.ts" renderer="angular" language="ts"
 import type { Meta, StoryObj } from '@storybook/angular';
@@ -52,7 +52,7 @@ export const Pair = {
 };
 ```
 
-```js filename="ButtonGroup.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+```js filename="ButtonGroup.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 import preview from '#.storybook/preview';
 
@@ -96,7 +96,7 @@ export const Pair: Story = {
 };
 ```
 
-```ts filename="ButtonGroup.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+```ts filename="ButtonGroup.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Next 🧪"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 import preview from '#.storybook/preview';
 
@@ -140,7 +140,7 @@ export const Pair: Story = {
 };
 ```
 
-```ts filename="ButtonGroup.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+```ts filename="ButtonGroup.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 import preview from '#.storybook/preview';
 

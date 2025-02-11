@@ -1,4 +1,4 @@
-<!-- TODO: Vet this example for CSF factory -->
+<!-- TODO: Vet this example for CSF Next -->
 
 ```js filename="your-addon-register-file.js" renderer="common" language="js"
 import React, { useCallback } from 'react';

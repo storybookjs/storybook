@@ -1,4 +1,4 @@
-<!-- TODO: Vet this example for addon usage in CSF Factories -->
+<!-- TODO: Vet this example for addon usage in CSF Next -->
 
 ```js filename=".storybook/preview.js" renderer="common" language="js" tabTitle="CSF 3"
 import { initialize, mswLoader } from 'msw-storybook-addon';
@@ -16,7 +16,7 @@ export default {
 };
 ```
 
-```js filename=".storybook/preview.js" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+```js filename=".storybook/preview.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
 // Replace your-framework with the name of your framework (e.g., react, nextjs, experimental-nextjs)
 import { definePreview } from '@storybook/your-framework';
 
@@ -56,7 +56,7 @@ const preview: Preview = {
 export default preview;
 ```
 
-```ts filename=".storybook/preview.ts" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+```ts filename=".storybook/preview.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
 // Replace your-framework with the name of your framework (e.g., react, nextjs, experimental-nextjs)
 import { definePreview } from '@storybook/your-framework';
 

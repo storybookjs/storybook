@@ -32,7 +32,7 @@ export default {
 };
 ```
 
-```js filename=".storybook/preview.js" renderer="react" language="js" tabTitle="Without globals API (CSF Factory 🧪)"
+```js filename=".storybook/preview.js" renderer="react" language="js" tabTitle="Without globals API (CSF Next 🧪)"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, experimental-nextjs-vite)
 import { definePreview } from '@storybook/your-framework';
 
@@ -104,7 +104,7 @@ const preview: Preview = {
 export default preview;
 ```
 
-```ts filename=".storybook/preview.ts" renderer="react" language="ts" tabTitle="Without globals API (CSF Factory 🧪)"
+```ts filename=".storybook/preview.ts" renderer="react" language="ts" tabTitle="Without globals API (CSF Next 🧪)"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, experimental-nextjs-vite)
 import { definePreview } from '@storybook/your-framework';
 
@@ -171,7 +171,7 @@ export default {
 };
 ```
 
-```js filename=".storybook/preview.js" renderer="react" language="js" tabTitle="With globals API (CSF Factory 🧪)"
+```js filename=".storybook/preview.js" renderer="react" language="js" tabTitle="With globals API (CSF Next 🧪)"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, experimental-nextjs-vite)
 import { definePreview } from '@storybook/your-framework';
 
@@ -243,7 +243,7 @@ const preview: Preview = {
 export default preview;
 ```
 
-```ts filename=".storybook/preview.ts" renderer="react" language="ts" tabTitle="With globals API (CSF Factory 🧪)"
+```ts filename=".storybook/preview.ts" renderer="react" language="ts" tabTitle="With globals API (CSF Next 🧪)"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, experimental-nextjs-vite)
 import { definePreview } from '@storybook/your-framework';
 

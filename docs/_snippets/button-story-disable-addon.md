@@ -93,7 +93,7 @@ const meta: Meta = {
 export default meta;
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
 import preview from '#.storybook/preview';
 
 import { Button } from './Button';
@@ -111,7 +111,7 @@ const meta = preview.meta({
 });
 ```
 
-```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '#.storybook/preview';
 
 import { Button } from './Button';
@@ -129,7 +129,7 @@ const meta = preview.meta({
 });
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Next 🧪"
 import preview from '#.storybook/preview';
 
 import { Button } from './Button';

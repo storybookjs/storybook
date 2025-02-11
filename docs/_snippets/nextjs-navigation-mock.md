@@ -36,7 +36,7 @@ export const GoBack = {
 };
 ```
 
-```js filename="MyForm.stories.js" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+```js filename="MyForm.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 import preview from '#.storybook/preview';
 
@@ -116,7 +116,7 @@ export const GoBack: Story = {
 };
 ```
 
-```ts filename="MyForm.stories.ts" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+```ts filename="MyForm.stories.ts" renderer="react" language="ts-4-9" tabTitle="CSF Next 🧪"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 import preview from '#.storybook/preview';
 
@@ -196,7 +196,7 @@ export const GoBack: Story = {
 };
 ```
 
-```ts filename="MyForm.stories.ts" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+```ts filename="MyForm.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 import preview from '#.storybook/preview';
 

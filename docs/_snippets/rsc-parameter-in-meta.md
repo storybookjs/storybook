@@ -1,4 +1,4 @@
-<!-- TODO: Vet this example for CSF Factory support -->
+<!-- TODO: Vet this example for CSF Next support -->
 
 ```js filename="MyServerComponent.stories.js" renderer="react" language="js" tabTitle="CSF 3"
 import MyServerComponent from './MyServerComponent';
@@ -11,7 +11,7 @@ export default {
 };
 ```
 
-```js filename="MyServerComponent.stories.js" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+```js filename="MyServerComponent.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 import preview from '#.storybook/preview';
 
@@ -39,7 +39,7 @@ const meta = {
 export default meta;
 ```
 
-```ts filename="MyServerComponent.stories.ts" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+```ts filename="MyServerComponent.stories.ts" renderer="react" language="ts-4-9" tabTitle="CSF Next 🧪"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 import preview from '#.storybook/preview';
 
@@ -67,7 +67,7 @@ const meta: Meta<typeof MyServerComponent> = {
 export default meta;
 ```
 
-```ts filename="MyServerComponent.stories.ts" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+```ts filename="MyServerComponent.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 import preview from '#.storybook/preview';
 

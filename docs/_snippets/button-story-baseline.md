@@ -39,7 +39,7 @@ export const Primary: Story = {
 };
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 import preview from '#.storybook/preview';
 

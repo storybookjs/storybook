@@ -1,4 +1,4 @@
-<!-- TODO: Vet this example for CSF Factories composition -->
+<!-- TODO: Vet this example for CSF Next composition -->
 
 ```ts filename="Page.stories.ts" renderer="angular" language="ts"
 import type { Meta, StoryObj } from '@storybook/angular';
@@ -49,7 +49,7 @@ export const CustomFooter = {
 };
 ```
 
-```js filename="Page.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+```js filename="Page.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 import preview from '#.storybook/preview';
 
@@ -97,7 +97,7 @@ export const CustomFooter = {
 } satisfies Story;
 ```
 
-```tsx filename="Page.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+```tsx filename="Page.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Next 🧪"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 import preview from '#.storybook/preview';
 
@@ -145,7 +145,7 @@ export const CustomFooter: Story = {
 };
 ```
 
-```tsx filename="Page.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+```tsx filename="Page.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 import preview from '#.storybook/preview';
 

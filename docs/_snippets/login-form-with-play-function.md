@@ -35,8 +35,8 @@ export const FilledForm: Story = {
     // 👇 Assert DOM structure
     await expect(
       canvas.getByText(
-        'Everything is perfect. Your account is ready and we should probably get you started!',
-      ),
+        'Everything is perfect. Your account is ready and we should probably get you started!'
+      )
     ).toBeInTheDocument();
   },
 };
@@ -72,14 +72,14 @@ export const FilledForm = {
     // 👇 Assert DOM structure
     await expect(
       canvas.getByText(
-        'Everything is perfect. Your account is ready and we should probably get you started!',
-      ),
+        'Everything is perfect. Your account is ready and we should probably get you started!'
+      )
     ).toBeInTheDocument();
   },
 };
 ```
 
-```js filename="LoginForm.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+```js filename="LoginForm.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 import preview from '#.storybook/preview';
 
@@ -112,8 +112,8 @@ export const FilledForm = meta.story({
     // 👇 Assert DOM structure
     await expect(
       canvas.getByText(
-        'Everything is perfect. Your account is ready and we should probably get you started!',
-      ),
+        'Everything is perfect. Your account is ready and we should probably get you started!'
+      )
     ).toBeInTheDocument();
   },
 });
@@ -154,14 +154,14 @@ export const FilledForm: Story = {
     // 👇 Assert DOM structure
     await expect(
       canvas.getByText(
-        'Everything is perfect. Your account is ready and we should probably get you started!',
-      ),
+        'Everything is perfect. Your account is ready and we should probably get you started!'
+      )
     ).toBeInTheDocument();
   },
 };
 ```
 
-```ts filename="LoginForm.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+```ts filename="LoginForm.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Next 🧪"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 import preview from '#.storybook/preview';
 
@@ -194,8 +194,8 @@ export const FilledForm = meta.story({
     // 👇 Assert DOM structure
     await expect(
       canvas.getByText(
-        'Everything is perfect. Your account is ready and we should probably get you started!',
-      ),
+        'Everything is perfect. Your account is ready and we should probably get you started!'
+      )
     ).toBeInTheDocument();
   },
 });
@@ -236,14 +236,14 @@ export const FilledForm: Story = {
     // 👇 Assert DOM structure
     await expect(
       canvas.getByText(
-        'Everything is perfect. Your account is ready and we should probably get you started!',
-      ),
+        'Everything is perfect. Your account is ready and we should probably get you started!'
+      )
     ).toBeInTheDocument();
   },
 };
 ```
 
-```ts filename="LoginForm.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+```ts filename="LoginForm.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 import preview from '#.storybook/preview';
 
@@ -276,8 +276,8 @@ export const FilledForm = meta.story({
     // 👇 Assert DOM structure
     await expect(
       canvas.getByText(
-        'Everything is perfect. Your account is ready and we should probably get you started!',
-      ),
+        'Everything is perfect. Your account is ready and we should probably get you started!'
+      )
     ).toBeInTheDocument();
   },
 });
@@ -313,8 +313,8 @@ export const FilledForm = {
     // 👇 Assert DOM structure
     await expect(
       canvas.getByText(
-        'Everything is perfect. Your account is ready and we should probably get you started!',
-      ),
+        'Everything is perfect. Your account is ready and we should probably get you started!'
+      )
     ).toBeInTheDocument();
   },
 };
@@ -357,8 +357,8 @@ export const FilledForm: Story = {
     // 👇 Assert DOM structure
     await expect(
       canvas.getByText(
-        'Everything is perfect. Your account is ready and we should probably get you started!',
-      ),
+        'Everything is perfect. Your account is ready and we should probably get you started!'
+      )
     ).toBeInTheDocument();
   },
 };
@@ -401,8 +401,8 @@ export const FilledForm: Story = {
     // 👇 Assert DOM structure
     await expect(
       canvas.getByText(
-        'Everything is perfect. Your account is ready and we should probably get you started!',
-      ),
+        'Everything is perfect. Your account is ready and we should probably get you started!'
+      )
     ).toBeInTheDocument();
   },
 };
@@ -479,8 +479,8 @@ export const FilledForm = {
     // 👇 Assert DOM structure
     await expect(
       canvas.getByText(
-        'Everything is perfect. Your account is ready and we should probably get you started!',
-      ),
+        'Everything is perfect. Your account is ready and we should probably get you started!'
+      )
     ).toBeInTheDocument();
   },
 };
@@ -563,8 +563,8 @@ export const FilledForm: Story = {
     // 👇 Assert DOM structure
     await expect(
       canvas.getByText(
-        'Everything is perfect. Your account is ready and we should probably get you started!',
-      ),
+        'Everything is perfect. Your account is ready and we should probably get you started!'
+      )
     ).toBeInTheDocument();
   },
 };
@@ -648,8 +648,8 @@ export const FilledForm: Story = {
     // 👇 Assert DOM structure
     await expect(
       canvas.getByText(
-        'Everything is perfect. Your account is ready and we should probably get you started!',
-      ),
+        'Everything is perfect. Your account is ready and we should probably get you started!'
+      )
     ).toBeInTheDocument();
   },
 };
@@ -694,8 +694,8 @@ export const FilledForm = {
     // 👇 Assert DOM structure
     await expect(
       canvas.getByText(
-        'Everything is perfect. Your account is ready and we should probably get you started!',
-      ),
+        'Everything is perfect. Your account is ready and we should probably get you started!'
+      )
     ).toBeInTheDocument();
   },
 };
@@ -745,8 +745,8 @@ export const FilledForm: Story = {
     // 👇 Assert DOM structure
     await expect(
       canvas.getByText(
-        'Everything is perfect. Your account is ready and we should probably get you started!',
-      ),
+        'Everything is perfect. Your account is ready and we should probably get you started!'
+      )
     ).toBeInTheDocument();
   },
 };
@@ -796,8 +796,8 @@ export const FilledForm: Story = {
     // 👇 Assert DOM structure
     await expect(
       canvas.getByText(
-        'Everything is perfect. Your account is ready and we should probably get you started!',
-      ),
+        'Everything is perfect. Your account is ready and we should probably get you started!'
+      )
     ).toBeInTheDocument();
   },
 };
@@ -831,8 +831,8 @@ export const FilledForm = {
     // 👇 Assert DOM structure
     await expect(
       canvas.getByText(
-        'Everything is perfect. Your account is ready and we should probably get you started!',
-      ),
+        'Everything is perfect. Your account is ready and we should probably get you started!'
+      )
     ).toBeInTheDocument();
   },
 };
@@ -871,8 +871,8 @@ export const FilledForm: Story = {
     // 👇 Assert DOM structure
     await expect(
       canvas.getByText(
-        'Everything is perfect. Your account is ready and we should probably get you started!',
-      ),
+        'Everything is perfect. Your account is ready and we should probably get you started!'
+      )
     ).toBeInTheDocument();
   },
 };

@@ -1,4 +1,4 @@
-<!-- TODO: Vet this example for CSF Factory -->
+<!-- TODO: Vet this example for CSF Next -->
 
 ```js filename=".storybook/preview.js" renderer="react" language="js" tabTitle="CSF 3"
 import React from 'react';
@@ -20,7 +20,7 @@ const AppDecorator = (storyFn) => {
 export default { decorators: [AppDecorator] };
 ```
 
-```js filename=".storybook/preview.js" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+```js filename=".storybook/preview.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import React from 'react';
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, experimental-nextjs-vite)
 import { definePreview } from '@storybook/your-framework';
@@ -70,7 +70,7 @@ const preview: Preview = {
 export default preview;
 ```
 
-```ts filename=".storybook/preview.ts" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+```ts filename=".storybook/preview.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
 import React from 'react';
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, experimental-nextjs-vite)
 import { definePreview } from '@storybook/your-framework';

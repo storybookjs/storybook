@@ -14,7 +14,7 @@ const preview = {
 export default preview;
 ```
 
-```js filename="example-addon/src/preview.js" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+```js filename="example-addon/src/preview.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, experimental-nextjs-vite)
 import { definePreview } from '@storybook/your-framework';
 
@@ -45,7 +45,7 @@ const preview: ProjectAnnotations<Renderer> = {
 export default preview;
 ```
 
-```ts filename="example-addon/src/preview.ts" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+```ts filename="example-addon/src/preview.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
 import type { ProjectAnnotations, Renderer } from '@storybook/types';
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, experimental-nextjs-vite)
 import { definePreview } from '@storybook/your-framework';

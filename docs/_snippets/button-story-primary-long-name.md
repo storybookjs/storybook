@@ -1,4 +1,4 @@
-<!-- TODO: Vet this example for CSF factory support (specifically the args composition) -->
+<!-- TODO: Vet this example for CSF Next support (specifically the args composition) -->
 
 ```ts filename="Button.stories.ts" renderer="angular" language="ts"
 import type { Meta, StoryObj } from '@storybook/angular';
@@ -96,7 +96,7 @@ export const PrimaryLongName = {
 };
 ```
 
-```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 import preview from '#.storybook/preview';
 
@@ -201,7 +201,7 @@ export const PrimaryLongName: Story = {
 };
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Next 🧪"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 import preview from '#.storybook/preview';
 
@@ -306,7 +306,7 @@ export const PrimaryLongName: Story = {
 };
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 import preview from '#.storybook/preview';
 

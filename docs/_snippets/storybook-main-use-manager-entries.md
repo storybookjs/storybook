@@ -1,4 +1,4 @@
-<!-- TODO: Vet this example for CSF Factories (usage with addons) -->
+<!-- TODO: Vet this example for CSF Next (usage with addons) -->
 
 ```js filename=".storybook/main.js" renderer="common" language="js"
 export default {

@@ -1,4 +1,4 @@
-<!-- TODO: Vet this example for CSF Factory compatibility -->
+<!-- TODO: Vet this example for CSF Next compatibility -->
 
 ```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF 3"
 export default {
@@ -7,7 +7,7 @@ export default {
 };
 ```
 
-```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import { defineMain } from '@storybook/react-webpack5/node';
 
 export default defineMain({
@@ -27,7 +27,7 @@ const config: StorybookConfig = {
 export default config;
 ```
 
-```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
 import { defineMain } from '@storybook/react-webpack5/node';
 
 export default defineMain({

@@ -1,4 +1,4 @@
-<!-- TODO: Vet this example for CSF factory support-->
+<!-- TODO: Vet this example for CSF Next support-->
 
 ```js filename=".storybook/main.js" renderer="common" language="js" tabTitle="Vite (CSF 3)"
 export default {
@@ -23,7 +23,7 @@ export default {
 };
 ```
 
-```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="Vite (CSF Factory 🧪)"
+```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="Vite (CSF Next 🧪)"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, experimental-nextjs-vite)
 import { defineMain } from '@storybook/your-framework/node';
 
@@ -75,7 +75,7 @@ const config: StorybookConfig = {
 export default config;
 ```
 
-```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="Vite (CSF Factory 🧪)"
+```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="Vite (CSF Next 🧪)"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, experimental-nextjs-vite)
 import { defineMain } from '@storybook/your-framework/node';
 
@@ -123,7 +123,7 @@ export default {
 };
 ```
 
-```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="Webpack (CSF Factory 🧪)"
+```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="Webpack (CSF Next 🧪)"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, experimental-nextjs-vite)
 import { defineMain } from '@storybook/your-framework/node';
 
@@ -176,7 +176,7 @@ const config: StorybookConfig = {
 export default config;
 ```
 
-```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="Webpack (CSF Factory 🧪)"
+```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="Webpack (CSF Next 🧪)"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, experimental-nextjs-vite)
 import { defineMain } from '@storybook/your-framework/node';
 

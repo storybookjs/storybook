@@ -8,7 +8,7 @@ const preview: Preview = {
       (story) => `<div [class]="myTheme">${story}</div>`,
       ({ globals }) => {
         return { myTheme: globals['theme'] };
-      },
+      }
     ),
   ],
 };
@@ -74,7 +74,7 @@ const preview = {
 export default preview;
 ```
 
-```js filename=".storybook/preview.js" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+```js filename=".storybook/preview.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, experimental-nextjs-vite)
 import { definePreview } from '@storybook/your-framework';
 
@@ -115,7 +115,7 @@ const preview: Preview = {
 export default preview;
 ```
 
-```ts filename=".storybook/preview.ts" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+```ts filename=".storybook/preview.ts" renderer="react" language="ts-4-9" tabTitle="CSF Next 🧪"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, experimental-nextjs-vite)
 import { definePreview } from '@storybook/your-framework';
 
@@ -156,7 +156,7 @@ const preview: Preview = {
 export default preview;
 ```
 
-```ts filename=".storybook/preview.ts" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+```ts filename=".storybook/preview.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, experimental-nextjs-vite)
 import { definePreview } from '@storybook/your-framework';
 

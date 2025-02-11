@@ -14,7 +14,7 @@ export const Large = {
 };
 ```
 
-```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="Without globals API (CSF Factory 🧪)"
+```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="Without globals API (CSF Next 🧪)"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 import preview from '#.storybook/preview';
 
@@ -45,7 +45,7 @@ export const Large = {
 };
 ```
 
-```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="With globals API (CSF Factory 🧪)"
+```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="With globals API (CSF Next 🧪)"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 import preview from '#.storybook/preview';
 
@@ -82,7 +82,7 @@ export const Large: Story = {
 };
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="Without globals API (CSF Factory 🧪)"
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="Without globals API (CSF Next 🧪)"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 import preview from '#.storybook/preview';
 
@@ -119,7 +119,7 @@ export const Large: Story = {
 };
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="With globals API (CSF Factory 🧪)"
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="With globals API (CSF Next 🧪)"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 import preview from '#.storybook/preview';
 
@@ -156,7 +156,7 @@ export const Large: Story = {
 };
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="Without globals API (CSF Factory 🧪)"
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="Without globals API (CSF Next 🧪)"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 import preview from '#.storybook/preview';
 
@@ -193,7 +193,7 @@ export const Large: Story = {
 };
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="With globals API (CSF Factory 🧪)"
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="With globals API (CSF Next 🧪)"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 import preview from '#.storybook/preview';
 

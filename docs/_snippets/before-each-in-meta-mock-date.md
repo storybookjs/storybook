@@ -1,4 +1,4 @@
-<!-- Vet this example for async pattern and CSF Factory compatibility -->
+<!-- Vet this example for async pattern and CSF Next compatibility -->
 
 ```ts filename="Page.stories.ts" renderer="angular" language="ts"
 import type { Meta, StoryObj } from '@storybook/angular';
@@ -59,7 +59,7 @@ export const Default = {
 };
 ```
 
-```js filename="Page.stories.js" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+```js filename="Page.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 import preview from '#.storybook/preview';
 
@@ -122,7 +122,7 @@ export const Default: Story = {
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+```ts filename="Page.stories.ts" renderer="react" language="ts-4-9" tabTitle="CSF Next 🧪"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 import preview from '#.storybook/preview';
 
@@ -185,7 +185,7 @@ export const Default: Story = {
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+```ts filename="Page.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 import preview from '#.storybook/preview';
 

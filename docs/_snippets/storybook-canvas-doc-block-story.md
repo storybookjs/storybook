@@ -163,7 +163,7 @@ export const Colors: Story = {
 };
 ```
 
-```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 import preview from '#.storybook/preview';
 
@@ -217,7 +217,7 @@ export const Colors = meta.story({
 });
 ```
 
-```jsx filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+```jsx filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 import preview from '#.storybook/preview';
 
@@ -271,7 +271,7 @@ export const Colors = meta.story({
 });
 ```
 
-```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Next 🧪"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 import preview from '#.storybook/preview';
 

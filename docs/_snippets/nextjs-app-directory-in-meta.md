@@ -11,7 +11,7 @@ export default {
 };
 ```
 
-```js filename="NavigationBasedComponent.stories.js" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+```js filename="NavigationBasedComponent.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 import preview from '#.storybook/preview';
 
@@ -43,7 +43,7 @@ const meta = {
 export default meta;
 ```
 
-```ts filename="NavigationBasedComponent.stories.ts" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+```ts filename="NavigationBasedComponent.stories.ts" renderer="react" language="ts-4-9" tabTitle="CSF Next 🧪"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 import preview from '#.storybook/preview';
 
@@ -75,7 +75,7 @@ const meta: Meta<typeof NavigationBasedComponent> = {
 export default meta;
 ```
 
-```ts filename="NavigationBasedComponent.stories.ts" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+```ts filename="NavigationBasedComponent.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 import preview from '#.storybook/preview';
 

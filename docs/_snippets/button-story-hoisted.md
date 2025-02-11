@@ -35,7 +35,7 @@ export default {
 export const Button = {};
 ```
 
-```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 import preview from '#.storybook/preview';
 
@@ -76,7 +76,7 @@ type Story = StoryObj<typeof meta>;
 export const Button: Story = {};
 ```
 
-```ts filename="Button.stories.js|jsx" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+```ts filename="Button.stories.js|jsx" renderer="react" language="ts-4-9" tabTitle="CSF Next 🧪"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 import preview from '#.storybook/preview';
 
@@ -117,7 +117,7 @@ type Story = StoryObj<typeof ButtonComponent>;
 export const Button: Story = {};
 ```
 
-```ts filename="Button.stories.js|jsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+```ts filename="Button.stories.js|jsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 import preview from '#.storybook/preview';
 

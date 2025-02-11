@@ -1,4 +1,4 @@
-<!-- TODO: Vet this example for addon usage in CSF Factories -->
+<!-- TODO: Vet this example for addon usage in CSF Next -->
 
 ```js filename=".storybook/preview.js" renderer="common" language="js" tabTitle="without-globals"
 export default {

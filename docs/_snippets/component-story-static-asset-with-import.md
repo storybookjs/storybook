@@ -47,7 +47,7 @@ export const WithAnImage = {
 };
 ```
 
-```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 import preview from '#.storybook/preview';
 
@@ -93,7 +93,7 @@ export const WithAnImage: Story = {
 };
 ```
 
-```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Next 🧪"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 import preview from '#.storybook/preview';
 
@@ -139,7 +139,7 @@ export const WithAnImage: Story = {
 };
 ```
 
-```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 import preview from '#.storybook/preview';
 

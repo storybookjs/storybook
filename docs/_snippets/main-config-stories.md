@@ -6,7 +6,7 @@ export default {
 };
 ```
 
-```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, experimental-nextjs-vite)
 import { defineMain } from '@storybook/your-framework/node';
 
@@ -28,7 +28,7 @@ const config: StorybookConfig = {
 export default config;
 ```
 
-```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, experimental-nextjs-vite)
 import { defineMain } from '@storybook/your-framework/node';
 

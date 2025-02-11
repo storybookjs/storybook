@@ -1,4 +1,4 @@
-<!-- TODO: Vet this example for CSF Factories (usage with addons & Webpack) -->
+<!-- TODO: Vet this example for CSF Next (usage with addons & Webpack) -->
 
 ```js filename=".storybook/my-preset.js" renderer="common" language="js"
 export default {

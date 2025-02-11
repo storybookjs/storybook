@@ -34,7 +34,7 @@ const Primary = {
 };
 ```
 
-```js filename="src/components/Button/Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+```js filename="src/components/Button/Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 import preview from '#.storybook/preview';
 
@@ -83,7 +83,7 @@ const Primary: Story = {
 };
 ```
 
-```ts filename="src/components/Button/Button.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+```ts filename="src/components/Button/Button.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Next 🧪"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 import preview from '#.storybook/preview';
 
@@ -132,7 +132,7 @@ const Primary: Story = {
 };
 ```
 
-```ts filename="src/components/Button/Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+```ts filename="src/components/Button/Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 import preview from '#.storybook/preview';
 

@@ -22,7 +22,7 @@ export default {
 };
 ```
 
-```js filename=".storybook/preview.js" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+```js filename=".storybook/preview.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
 // Replace your-framework with the framework you are using (e.g., nextjs, experimental-nextjs-vite)
 import { definePreview } from '@storybook/your-framework';
 // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
@@ -70,7 +70,7 @@ const preview: Preview = {
 };
 ```
 
-```ts filename=".storybook/preview.ts" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+```ts filename=".storybook/preview.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
 // Replace your-framework with the framework you are using (e.g., nextjs, experimental-nextjs-vite)
 import { definePreview } from '@storybook/your-framework';
 // 👇 Must include the `.mock` portion of filename to have mocks typed correctly

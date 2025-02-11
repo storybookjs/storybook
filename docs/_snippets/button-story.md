@@ -1,4 +1,4 @@
-<!-- TODO: Vet this example for CSF Factories -->
+<!-- TODO: Vet this example for CSF Next -->
 
 ```ts filename="Button.stories.ts" renderer="angular" language="ts"
 import type { Meta, StoryObj } from '@storybook/angular';
@@ -144,7 +144,7 @@ export const Primary = {
 };
 ```
 
-```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import React, { useState } from 'react';
 
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
@@ -218,7 +218,7 @@ export const Primary = {
 } satisfies Story;
 ```
 
-```tsx filename="Button.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Factory 🧪"
+```tsx filename="Button.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="CSF Next 🧪"
 import React, { useState } from 'react';
 
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
@@ -292,7 +292,7 @@ export const Primary: Story = {
 };
 ```
 
-```tsx filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+```tsx filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
 import React, { useState } from 'react';
 
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports

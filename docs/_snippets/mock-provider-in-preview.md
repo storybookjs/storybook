@@ -22,7 +22,7 @@ export default {
 };
 ```
 
-```jsx filename=".storybook/preview.jsx" renderer="react" language="js" tabTitle="CSF Factory 🧪"
+```jsx filename=".storybook/preview.jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import React from 'react';
 
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, experimental-nextjs-vite)
@@ -77,7 +77,7 @@ const preview: Preview = {
 export default preview;
 ```
 
-```tsx filename=".storybook/preview.tsx" renderer="react" language="ts" tabTitle="CSF Factory 🧪"
+```tsx filename=".storybook/preview.tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
 import React from 'react';
 
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, experimental-nextjs-vite)

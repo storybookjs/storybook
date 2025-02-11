@@ -161,13 +161,10 @@ export class PNPMProxy extends JsPackageManager {
     }
 
     const dirs = walk.up(basePath ?? '.');
-    const packageJsonPath = dirs.reduce(
-      (accum, dir) => {
-        const possiblePath = join(dir, 'node_modules', packageName, 'package.json');
-        return existsSync(possiblePath) ? possiblePath : accum;
-      },
-      undefined as string | undefined
-    );
+    const packageJsonPath = dirs.find((dir) => {
+      const possiblePath = join(dir, 'node_modules', packageName, 'package.json');
+      return existsSync(possiblePath);
+    });
 
     if (!packageJsonPath) {
       return null;

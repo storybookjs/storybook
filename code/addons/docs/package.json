@@ -106,14 +106,14 @@
     "@storybook/blocks": "workspace:*",
     "@storybook/csf-plugin": "workspace:*",
     "@storybook/react-dom-shim": "workspace:*",
-    "react": "^16.8.0 || ^17.0.0 || ^18.0.0",
-    "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0",
+    "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
+    "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
     "ts-dedent": "^2.0.0"
   },
   "devDependencies": {
     "@mdx-js/mdx": "^3.0.0",
     "@rollup/pluginutils": "^5.0.2",
-    "@types/react": "^16.8.0 || ^17.0.0 || ^18.0.0",
+    "@types/react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "rehype-external-links": "^3.0.0",

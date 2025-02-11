@@ -21,7 +21,7 @@ const ModalActionBar = styled.div({
   alignItems: 'center',
 });
 
-const ModalTitle = styled.div(({ theme: { typography } }) => ({
+const ModalTitle = styled(Modal.Title)(({ theme: { typography } }) => ({
   fontSize: typography.size.s2,
   fontWeight: typography.weight.bold,
 }));

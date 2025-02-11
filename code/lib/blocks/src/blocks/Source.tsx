@@ -162,7 +162,7 @@ export const useSourceProps = (
  * Story source doc block renders source code if provided, or the source for a story if `storyId` is
  * provided, or the source for the current story if nothing is provided.
  */
-export const Source: FC<SourceProps> = (props) => {
+export const Source = (props: SourceProps) => {
   const sourceContext = useContext(SourceContext);
   const docsContext = useContext(DocsContext);
   const sourceProps = useSourceProps(props, docsContext, sourceContext);

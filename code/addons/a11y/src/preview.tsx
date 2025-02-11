@@ -1,6 +1,3 @@
-// Source: https://github.com/chaance/vitest-axe/blob/main/src/to-have-no-violations.ts
-import * as matchers from 'vitest-axe/matchers';
-
 import type { AfterEach } from 'storybook/internal/types';
 
 import { expect } from '@storybook/test';
@@ -10,7 +7,7 @@ import { A11Y_TEST_TAG } from './constants';
 import type { A11yParameters } from './params';
 import { getIsVitestRunning, getIsVitestStandaloneRun } from './utils';
 
-expect.extend(matchers);
+let vitestMatchersExtended = false;
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export const experimental_afterEach: AfterEach<any> = async ({
@@ -54,6 +51,12 @@ export const experimental_afterEach: AfterEach<any> = async ({
          */
         if (getIsVitestStandaloneRun()) {
           if (hasViolations) {
+            if (!vitestMatchersExtended) {
+              const { toHaveNoViolations } = await import('vitest-axe/matchers');
+              expect.extend({ toHaveNoViolations });
+              vitestMatchersExtended = true;
+            }
+
             // @ts-expect-error - todo - fix type extension of expect from @storybook/test
             expect(result).toHaveNoViolations();
           }

@@ -63,15 +63,23 @@ export function pluginWebpackStats({ workingDir }: WebpackStatsPluginOptions): W
   /** Convert an absolute path name to a path relative to the vite root, with a starting `./` */
   function normalize(filename: string) {
     // Do not try to resolve virtual files
-    if (filename.startsWith('/virtual:')) {
-      return filename;
+    if (filename.startsWith('virtual:')) {
+      // We have to append a forward slash because otherwise we break turbosnap.
+      // As soon as the chromatic-cli supports `virtual:` id's without a starting forward slash,
+      // we can remove adding the forward slash here
+      // Reference: https://github.com/chromaui/chromatic-cli/blob/v11.25.2/node-src/lib/getDependentStoryFiles.ts#L53
+      return `/${filename}`;
     }
     // ! Maintain backwards compatibility with the old virtual file names
     // ! to ensure that the stats file doesn't change between the versions
     // ! Turbosnap is also only compatible with the old virtual file names
     // ! the old virtual file names did not start with the obligatory \0 character
     if (Object.values(SB_VIRTUAL_FILES).includes(getOriginalVirtualModuleId(filename))) {
-      return getOriginalVirtualModuleId(filename);
+      // We have to append a forward slash because otherwise we break turbosnap.
+      // As soon as the chromatic-cli supports `virtual:` id's without a starting forward slash,
+      // we can remove adding the forward slash here
+      // Reference: https://github.com/chromaui/chromatic-cli/blob/v11.25.2/node-src/lib/getDependentStoryFiles.ts#L53
+      return `/${getOriginalVirtualModuleId(filename)}`;
     }
 
     // Otherwise, we need them in the format `./path/to/file.js`.

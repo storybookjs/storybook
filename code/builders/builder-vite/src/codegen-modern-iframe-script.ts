@@ -45,7 +45,7 @@ export async function generateModernIframeScriptCode(options: Options, projectRo
 
     return `
     if (import.meta.hot) {
-      import.meta.hot.accept('${getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE)}', (newModule) => {
+      import.meta.hot.accept('${SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE}', (newModule) => {
       // importFn has changed so we need to patch the new one in
       window.__STORYBOOK_PREVIEW__.onStoriesChanged({ importFn: newModule.importFn });
       });

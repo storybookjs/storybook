@@ -51,7 +51,7 @@ export async function transformIframeHtml(html: string, options: Options) {
 
   if (configType === 'DEVELOPMENT') {
     return transformedHtml.replace(
-      'virtual:@storybook/builder-vite/vite-app.js',
+      'virtual:/@storybook/builder-vite/vite-app.js',
       `/@id/__x00__${SB_VIRTUAL_FILES.VIRTUAL_APP_FILE}`
     );
   }

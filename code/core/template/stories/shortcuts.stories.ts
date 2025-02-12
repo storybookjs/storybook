@@ -1,4 +1,4 @@
-import type { PlayFunctionContext } from '@storybook/csf';
+import type { PlayFunctionContext } from '@storybook/core/csf';
 import { global as globalThis } from '@storybook/global';
 import { expect, fn, userEvent, within } from '@storybook/test';
 

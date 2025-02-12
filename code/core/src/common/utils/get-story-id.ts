@@ -1,8 +1,8 @@
 import { relative } from 'node:path';
 
 import { normalizeStories, normalizeStoryPath } from '@storybook/core/common';
+import { sanitize, storyNameFromExport, toId } from '@storybook/core/csf';
 import type { Options, StoriesEntry } from '@storybook/core/types';
-import { sanitize, storyNameFromExport, toId } from '@storybook/csf';
 
 import { userOrAutoTitleFromSpecifier } from '@storybook/core/preview-api';
 

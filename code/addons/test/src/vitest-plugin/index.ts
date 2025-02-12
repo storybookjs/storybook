@@ -224,15 +224,6 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
                   },
                 };
               },
-              getTags: () => {
-                const envConfig = JSON.parse(process.env.VITEST_STORYBOOK_CONFIG ?? '{}');
-
-                const shouldSetTag = process.env.VITEST_STORYBOOK
-                  ? (envConfig.a11y ?? false)
-                  : false;
-
-                return shouldSetTag ? ['a11y-test'] : [];
-              },
             },
             // if there is a test.browser config AND test.browser.screenshotFailures is not explicitly set, we set it to false
             ...(inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED.test?.browser &&

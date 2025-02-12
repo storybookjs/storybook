@@ -1,4 +1,5 @@
 import type { Channel } from '@storybook/core/channels';
+import { isStory } from '@storybook/core/csf';
 import type {
   CSFFile,
   ModuleExport,
@@ -13,7 +14,7 @@ import type {
 
 import { dedent } from 'ts-dedent';
 
-import type { StoryStore } from '../../store';
+import { type StoryStore } from '../../store';
 import type { DocsContextProps } from './DocsContextProps';
 
 export class DocsContext<TRenderer extends Renderer> implements DocsContextProps<TRenderer> {
@@ -162,7 +163,9 @@ export class DocsContext<TRenderer extends Renderer> implements DocsContextProps
       return { type: 'meta', csfFile } as TResolvedExport;
     }
 
-    const story = this.exportToStory.get(moduleExportOrType);
+    const story = this.exportToStory.get(
+      isStory(moduleExportOrType) ? moduleExportOrType.input : moduleExportOrType
+    );
 
     if (story) {
       return { type: 'story', story } as TResolvedExport;

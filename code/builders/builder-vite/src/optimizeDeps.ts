@@ -17,6 +17,7 @@ const INCLUDE_CANDIDATES = [
   '@storybook/addon-backgrounds/preview',
   '@storybook/addon-designs/blocks',
   '@storybook/addon-docs/preview',
+  '@storybook/addon-essentials/preview',
   '@storybook/addon-essentials/actions/preview',
   '@storybook/addon-essentials/actions/preview',
   '@storybook/addon-essentials/backgrounds/preview',

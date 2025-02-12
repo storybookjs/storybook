@@ -514,6 +514,10 @@ export function useArgTypes(): ArgTypes {
   return (current?.type === 'story' && current.argTypes) || {};
 }
 
+export { UniversalStore as experimental_UniversalStore } from '../shared/universal-store';
+export { useUniversalStore as experimental_useUniversalStore } from '../shared/universal-store/use-universal-store-manager';
+export { MockUniversalStore as experimental_MockUniversalStore } from '../shared/universal-store/mock';
+
 export { addons } from './lib/addons';
 
 // We need to rename this so it's not compiled to a straight re-export

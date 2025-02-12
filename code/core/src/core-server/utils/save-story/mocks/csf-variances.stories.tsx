@@ -49,7 +49,7 @@ export const RenderExistingArgs = {
   render: (args) => <MyComponent {...args} />,
 } satisfies Story;
 
-// The order of both the properties of the story and the order or args should be preserved
+// The order of both the properties of the story and the order of args should be preserved
 export const OrderedArgs = {
   args: {
     bordered: true,
@@ -59,7 +59,7 @@ export const OrderedArgs = {
   render: (args) => <MyComponent {...args} />,
 } satisfies Story;
 
-// The order of both the properties of the story and the order or args should be preserved
+// The order of both the properties of the story and the order of args should be preserved
 export const HasPlayFunction = {
   args: {
     bordered: true,

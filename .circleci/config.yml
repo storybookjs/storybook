@@ -195,7 +195,7 @@ jobs:
       - cancel-workflow-on-failure
   knip:
     executor:
-      class: medium
+      class: large
       name: sb_node_22_classic
     steps:
       - git-shallow-clone/checkout_advanced:
@@ -621,7 +621,32 @@ jobs:
           command: yarn upload-bench $(yarn get-template --cadence << pipeline.parameters.workflow >> --task bench) << pipeline.parameters.ghPrNumber >> << pipeline.parameters.ghBaseBranch >>
       - report-workflow-on-failure:
           template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task bench)
-  test-empty-init:
+  test-init-features:
+    executor:
+      class: small
+      name: sb_node_22_browsers
+    steps:
+      - git-shallow-clone/checkout_advanced:
+          clone_options: "--depth 1 --verbose"
+      - attach_workspace:
+          at: .
+      - run:
+          name: Storybook init for features
+          command: |
+            cd code
+            yarn local-registry --open &
+            cd ../../
+            mkdir features-1
+            cd features-1
+            npm set registry http://localhost:6001
+            npx create-storybook --yes --package-manager npm --features dev docs test
+            npx vitest
+          environment:
+            IN_STORYBOOK_SANDBOX: true
+            STORYBOOK_INIT_EMPTY_TYPE: react-vite-ts
+            STORYBOOK_DISABLE_TELEMETRY: true
+
+  test-init-empty:
     executor:
       class: small
       name: sb_node_22_browsers
@@ -846,7 +871,7 @@ workflows:
           requires:
             - create-sandboxes
       - test-runner-production:
-          parallelism: 9
+          parallelism: 8
           requires:
             - create-sandboxes
       - vitest-integration:
@@ -858,6 +883,9 @@ workflows:
           requires:
             - create-sandboxes
       - test-ui-testing-module:
+          requires:
+            - build
+      - test-init-features:
           requires:
             - build
       - test-portable-stories:
@@ -918,7 +946,7 @@ workflows:
           requires:
             - create-sandboxes
       - test-runner-production:
-          parallelism: 15
+          parallelism: 14
           requires:
             - create-sandboxes
       - vitest-integration:
@@ -932,6 +960,9 @@ workflows:
             parameters:
               directory: ["react", "vue3", "nextjs", "svelte"]
       - test-ui-testing-module:
+          requires:
+            - build
+      - test-init-features:
           requires:
             - build
       - bench-sandboxes:
@@ -991,7 +1022,7 @@ workflows:
           requires:
             - create-sandboxes
       - test-runner-production:
-          parallelism: 32
+          parallelism: 30
           requires:
             - create-sandboxes
       - vitest-integration:
@@ -1007,7 +1038,10 @@ workflows:
       - test-ui-testing-module:
           requires:
             - build
-      - test-empty-init:
+      - test-init-features:
+          requires:
+            - build
+      - test-init-empty:
           requires:
             - build
           matrix:

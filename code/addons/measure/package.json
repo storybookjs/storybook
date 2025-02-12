@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-measure",
-  "version": "8.6.0-alpha.2",
+  "version": "8.6.0-alpha.5",
   "description": "Inspect layouts by visualizing the box model",
   "keywords": [
     "storybook-addons",
@@ -74,7 +74,7 @@
     "@storybook/icons": "^1.2.12",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "typescript": "^5.3.2"
+    "typescript": "^5.7.3"
   },
   "peerDependencies": {
     "storybook": "workspace:^"

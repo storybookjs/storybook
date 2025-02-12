@@ -15,6 +15,7 @@ const makeTitle = (userTitle: string) => userTitle;
 
 const FILES = {
   csfVariances: join(__dirname, 'mocks/csf-variances.stories.tsx'),
+  csf4Variances: join(__dirname, 'mocks/csf4-variances.stories.tsx'),
   unsupportedCsfVariances: join(__dirname, 'mocks/unsupported-csf-variances.stories.tsx'),
   typescriptConstructs: join(__dirname, 'mocks/typescript-constructs.stories.tsx'),
 };
@@ -74,6 +75,38 @@ describe('success', () => {
       +     canvasElement.style.backgroundColor = "red";
       +   },
       + } satisfies Story;
+      + "
+    `);
+  });
+  test('CSF4 Variances', async () => {
+    const before = await format(await readFile(FILES.csf4Variances, 'utf-8'), {
+      parser: 'typescript',
+    });
+    const CSF = await readCsf(FILES.csf4Variances, { makeTitle });
+
+    const parsed = CSF.parse();
+    const names = Object.keys(parsed._stories);
+
+    names.forEach((name) => {
+      duplicateStoryWithNewName(parsed, name, name + 'Duplicated');
+    });
+
+    const after = await format(printCsf(parsed).code, {
+      parser: 'typescript',
+    });
+
+    // check if the code was updated at all
+    expect(after).not.toBe(before);
+
+    // check if the code was updated correctly
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
+      "  ...
+            foo: "bar",
+          },
+        });
+        
+      + export const EmptyDuplicated = meta.story({});
+      + export const WithArgsDuplicated = meta.story({});
       + "
     `);
   });

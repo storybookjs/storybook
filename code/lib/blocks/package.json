@@ -1,6 +1,6 @@
 {
   "name": "@storybook/blocks",
-  "version": "8.6.0-alpha.2",
+  "version": "8.6.0-alpha.5",
   "description": "Storybook Doc Blocks",
   "keywords": [
     "storybook"
@@ -43,7 +43,6 @@
     "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@storybook/csf": "0.1.12",
     "@storybook/icons": "^1.2.12",
     "ts-dedent": "^2.0.0"
   },
@@ -54,6 +53,7 @@
     "@types/color-convert": "^2.0.0",
     "color-convert": "^2.0.1",
     "es-toolkit": "^1.22.0",
+    "github-slugger": "^2.0.0",
     "markdown-to-jsx": "^7.7.2",
     "memoizerific": "^1.11.3",
     "polished": "^4.2.2",
@@ -62,8 +62,8 @@
     "tocbot": "^4.20.1"
   },
   "peerDependencies": {
-    "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
-    "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
+    "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
+    "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
     "storybook": "workspace:^"
   },
   "peerDependenciesMeta": {

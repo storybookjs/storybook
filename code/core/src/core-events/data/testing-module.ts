@@ -4,21 +4,16 @@ type DateNow = number;
 
 export type TestProviderId = Addon_TestProviderType['id'];
 export type TestProviderConfig = Addon_TestProviderType;
-export type TestProviderState<
-  Details extends { [key: string]: any } = NonNullable<unknown>,
-  Config extends { [key: string]: any } = NonNullable<unknown>,
-> = Addon_TestProviderState<Details, Config>;
+export type TestProviderState<Details extends { [key: string]: any } = NonNullable<unknown>> =
+  Addon_TestProviderState<Details>;
 
 export type TestProviders = Record<TestProviderId, TestProviderConfig & TestProviderState>;
 
-export type TestingModuleRunRequestPayload<
-  Config extends { [key: string]: any } = NonNullable<unknown>,
-> = {
+export type TestingModuleRunRequestPayload = {
   providerId: TestProviderId;
   // TODO: Avoid needing to do a fetch request server-side to retrieve the index
   indexUrl: string; // e.g. http://localhost:6006/index.json
   storyIds?: string[]; // ['button--primary', 'button--secondary']
-  config?: Config;
 };
 
 export type TestingModuleProgressReportPayload =
@@ -76,18 +71,3 @@ export type TestingModuleCancelTestRunResponsePayload =
       status: 'failed';
       message: string;
     };
-
-export type TestingModuleWatchModeRequestPayload<
-  Config extends { [key: string]: any } = NonNullable<unknown>,
-> = {
-  providerId: TestProviderId;
-  watchMode: boolean;
-  config?: Config;
-};
-
-export type TestingModuleConfigChangePayload<
-  Config extends { [key: string]: any } = NonNullable<unknown>,
-> = {
-  providerId: TestProviderId;
-  config: Config;
-};

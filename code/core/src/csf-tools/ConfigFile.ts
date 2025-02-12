@@ -25,18 +25,8 @@ const getCsfParsingErrorMessage = ({
   foundType: string | undefined;
   node: any | undefined;
 }) => {
-  let nodeInfo = '';
-  if (node) {
-    try {
-      nodeInfo = JSON.stringify(node);
-    } catch (e) {
-      //
-    }
-  }
-
   return dedent`
       CSF Parsing error: Expected '${expectedType}' but found '${foundType}' instead in '${node?.type}'.
-      ${nodeInfo}
     `;
 };
 
@@ -171,7 +161,7 @@ export class ConfigFile {
   // FIXME: this is a hack. this is only used in the case where the user is
   // modifying a named export that's a scalar. The _exports map is not suitable
   // for that. But rather than refactor the whole thing, we just use this as a stopgap.
-  _exportDecls: Record<string, t.VariableDeclarator> = {};
+  _exportDecls: Record<string, t.VariableDeclarator | t.FunctionDeclaration> = {};
 
   _exportsObject: t.ObjectExpression | undefined;
 
@@ -185,6 +175,20 @@ export class ConfigFile {
     this._ast = ast;
     this._code = code;
     this.fileName = fileName;
+  }
+
+  _parseExportsObject(exportsObject: t.ObjectExpression) {
+    this._exportsObject = exportsObject;
+    (exportsObject.properties as t.ObjectProperty[]).forEach((p) => {
+      const exportName = propKey(p);
+      if (exportName) {
+        let exportVal = p.value;
+        if (t.isIdentifier(exportVal)) {
+          exportVal = _findVarInitialization(exportVal.name, this._ast.program) as any;
+        }
+        this._exports[exportName] = exportVal as t.Expression;
+      }
+    });
   }
 
   parse() {
@@ -201,18 +205,13 @@ export class ConfigFile {
 
           decl = unwrap(decl);
 
+          // csf factory
+          if (t.isCallExpression(decl) && t.isObjectExpression(decl.arguments[0])) {
+            decl = decl.arguments[0];
+          }
+
           if (t.isObjectExpression(decl)) {
-            self._exportsObject = decl;
-            (decl.properties as t.ObjectProperty[]).forEach((p) => {
-              const exportName = propKey(p);
-              if (exportName) {
-                let exportVal = p.value;
-                if (t.isIdentifier(exportVal)) {
-                  exportVal = _findVarInitialization(exportVal.name, parent as t.Program) as any;
-                }
-                self._exports[exportName] = exportVal as t.Expression;
-              }
-            });
+            self._parseExportsObject(decl);
           } else {
             logger.warn(
               getCsfParsingErrorMessage({
@@ -239,6 +238,13 @@ export class ConfigFile {
                 self._exportDecls[exportName] = decl;
               }
             });
+          } else if (t.isFunctionDeclaration(node.declaration)) {
+            // export function X() {...};
+            const decl = node.declaration;
+            if (t.isIdentifier(decl.id)) {
+              const { name: exportName } = decl.id;
+              self._exportDecls[exportName] = decl;
+            }
           } else if (node.specifiers) {
             // export { X };
             node.specifiers.forEach((spec) => {
@@ -315,6 +321,18 @@ export class ConfigFile {
           }
         },
       },
+      CallExpression: {
+        enter: ({ node }) => {
+          if (
+            t.isIdentifier(node.callee) &&
+            node.callee.name === 'definePreview' &&
+            node.arguments.length === 1 &&
+            t.isObjectExpression(node.arguments[0])
+          ) {
+            self._parseExportsObject(node.arguments[0]);
+          }
+        },
+      },
     });
     return self;
   }
@@ -369,7 +387,9 @@ export class ConfigFile {
       _updateExportNode(rest, expr, exportNode);
     } else if (exportNode && rest.length === 0 && this._exportDecls[path[0]]) {
       const decl = this._exportDecls[path[0]];
-      decl.init = _makeObjectExpression([], expr);
+      if (t.isVariableDeclarator(decl)) {
+        decl.init = _makeObjectExpression([], expr);
+      }
     } else if (this.hasDefaultExport) {
       // This means the main.js of the user has a default export that is not an object expression, therefore we can'types change the AST.
       throw new Error(
@@ -483,6 +503,8 @@ export class ConfigFile {
           value = prop.value.value;
         }
       });
+    } else if (t.isCallExpression(node)) {
+      value = this._getPnpWrappedValue(node);
     }
 
     if (!value) {
@@ -947,4 +969,21 @@ export const writeConfig = async (config: ConfigFile, fileName?: string) => {
     throw new Error('Please specify a fileName for writeConfig');
   }
   await writeFile(fname, formatConfig(config));
+};
+
+export const isCsfFactoryPreview = (previewConfig: ConfigFile) => {
+  const program = previewConfig._ast.program;
+  return !!program.body.find((node) => {
+    return (
+      t.isImportDeclaration(node) &&
+      node.source.value.includes('@storybook') &&
+      node.specifiers.some((specifier) => {
+        return (
+          t.isImportSpecifier(specifier) &&
+          t.isIdentifier(specifier.imported) &&
+          specifier.imported.name === 'definePreview'
+        );
+      })
+    );
+  });
 };

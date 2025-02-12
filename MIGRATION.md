@@ -2,6 +2,9 @@
 
 - [From version 8.5.x to 8.6.x](#from-version-85x-to-86x)
   - [Angular: Support experimental zoneless support](#angular-support-experimental-zoneless-support)
+- [From version 8.4.x to 8.5.x](#from-version-84x-to-85x)
+  - [React Vite: react-docgen-typescript is updated](#react-vite-react-docgen-typescript-is-updated)
+  - [Introducing features.developmentModeForBuild](#introducing-featuresdevelopmentmodeforbuild)
   - [Added source code panel to docs](#added-source-code-panel-to-docs)
   - [Addon-a11y: Component test integration](#addon-a11y-component-test-integration)
   - [Addon-a11y: Changing the default element selector](#addon-a11y-changing-the-default-element-selector)
@@ -460,6 +463,26 @@ Storybook now supports [Angular's experimental zoneless mode](https://angular.de
 
 ## From version 8.4.x to 8.5.x
 
+### React Vite: react-docgen-typescript is updated
+
+Storybook now uses [react-docgen-typescript](https://github.com/joshwooding/vite-plugin-react-docgen-typescript) v0.5.0 which updates its internal logic on how it parses files, available under an experimental feature flag `EXPERIMENTAL_useWatchProgram`, which is disabled by default.
+
+Previously, once you made changes to a component's props, the controls and args table would not update unless you restarted Storybook. With the `EXPERIMENTAL_useWatchProgram` flag, you do not need to restart Storybook anymore, however you do need to refresh the browser page. Keep in mind that this flag is experimental and also does not support the `references` field in tsconfig.json files. Depending on how big your codebase is, it might have performance issues.
+
+```ts
+// .storybook/main.ts
+const config = {
+  // ...
+  typescript: {
+    reactDocgen: "react-docgen-typescript",
+    reactDocgenTypescriptOptions: {
+      EXPERIMENTAL_useWatchProgram: true,
+    },
+  },
+};
+export default config;
+```
+
 ### Introducing features.developmentModeForBuild
 
 As part of our ongoing efforts to improve the testability and debuggability of Storybook, we are introducing a new feature flag: `developmentModeForBuild`. This feature flag allows you to set `process.env.NODE_ENV` to `development` in built Storybooks, enabling development-related optimizations that are typically disabled in production builds.
@@ -473,7 +496,7 @@ export default {
     developmentModeForBuild: true,
   },
 };
-````
+```
 
 ### Added source code panel to docs
 

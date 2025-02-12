@@ -14,7 +14,7 @@ export async function generateModernIframeScriptCode(options: Options, projectRo
     [],
     options
   );
-  const previewAnnotationURLs = [...previewAnnotations, previewOrConfigFile]
+  const [previewFileUrl, ...previewAnnotationURLs] = [previewOrConfigFile, ...previewAnnotations]
     .filter(Boolean)
     .map((path) => processPreviewAnnotation(path, projectRoot));
 
@@ -23,6 +23,12 @@ export async function generateModernIframeScriptCode(options: Options, projectRo
   // modules are provided, the rest are null.  We can just re-import everything again in that case.
   const getPreviewAnnotationsFunction = `
   const getProjectAnnotations = async (hmrPreviewAnnotationModules = []) => {
+    const preview = await import('${previewFileUrl}');
+ 
+    if (isPreview(preview.default)) {
+      return preview.default.composed;
+    }
+   
     const configs = await Promise.all([${previewAnnotationURLs
       .map(
         (previewAnnotation, index) =>
@@ -30,7 +36,7 @@ export async function generateModernIframeScriptCode(options: Options, projectRo
           `hmrPreviewAnnotationModules[${index}] ?? import('${previewAnnotation}')`
       )
       .join(',\n')}])
-    return composeConfigs(configs);
+    return composeConfigs([...configs, preview]);
   }`;
 
   // eslint-disable-next-line @typescript-eslint/no-shadow
@@ -45,7 +51,7 @@ export async function generateModernIframeScriptCode(options: Options, projectRo
 
     return `
     if (import.meta.hot) {
-      import.meta.hot.accept('${getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE)}', (newModule) => {
+      import.meta.hot.accept('${SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE}', (newModule) => {
       // importFn has changed so we need to patch the new one in
       window.__STORYBOOK_PREVIEW__.onStoriesChanged({ importFn: newModule.importFn });
       });
@@ -73,6 +79,7 @@ export async function generateModernIframeScriptCode(options: Options, projectRo
   setup();
  
   import { composeConfigs, PreviewWeb, ClientApi } from 'storybook/internal/preview-api';
+  import { isPreview } from 'storybook/internal/csf';
   import { importFn } from '${SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE}';
   
   

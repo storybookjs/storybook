@@ -1,6 +1,6 @@
 {
   "name": "@storybook/preset-preact-webpack",
-  "version": "8.6.0-alpha.2",
+  "version": "8.6.0-alpha.5",
   "description": "Storybook for Preact: Develop Preact Component in isolation.",
   "keywords": [
     "storybook"
@@ -54,7 +54,7 @@
   "devDependencies": {
     "@types/node": "^22.0.0",
     "preact": "^10.5.13",
-    "typescript": "^5.3.2"
+    "typescript": "^5.7.3"
   },
   "peerDependencies": {
     "preact": "^8.0.0||^10.0.0",

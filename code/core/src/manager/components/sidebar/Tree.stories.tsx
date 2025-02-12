@@ -26,7 +26,6 @@ const managerContext: any = {
         render: () => 'Component tests',
         sidebarContextMenu: () => <div>TEST_PROVIDER_CONTEXT_CONTENT</div>,
         runnable: true,
-        watchable: true,
       },
       'visual-tests': {
         type: 'experimental_TEST_PROVIDER',
@@ -48,7 +47,6 @@ const managerContext: any = {
         render: () => 'Component tests',
         sidebarContextMenu: () => <div>TEST_PROVIDER_CONTEXT_CONTENT</div>,
         runnable: true,
-        watchable: true,
       },
       'visual-tests': {
         type: 'experimental_TEST_PROVIDER',

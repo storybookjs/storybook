@@ -9,6 +9,7 @@ import { listCodemods, runCodemod } from '@storybook/codemod';
 
 import { runFixes } from './automigrate';
 import { mdxToCSF } from './automigrate/fixes/mdx-to-csf';
+import { getStorybookData } from './automigrate/helpers/mainConfigFile';
 
 const logger = console;
 
@@ -33,15 +34,11 @@ export async function migrate(
     if (migration === 'mdx-to-csf' && !dryRun) {
       const packageManager = JsPackageManagerFactory.getPackageManager();
 
-      const [packageJson, storybookVersion] = await Promise.all([
-        packageManager.retrievePackageJson(),
-        getCoercedStorybookVersion(packageManager),
-      ]);
-      const { configDir: inferredConfigDir, mainConfig: mainConfigPath } = getStorybookInfo(
-        packageJson,
-        userSpecifiedConfigDir
-      );
-      const configDir = userSpecifiedConfigDir || inferredConfigDir || '.storybook';
+      const { configDir, mainConfig, mainConfigPath, storybookVersion, packageJson } =
+        await getStorybookData({
+          packageManager,
+          configDir: userSpecifiedConfigDir,
+        });
 
       // GUARDS
       if (!storybookVersion) {
@@ -57,6 +54,8 @@ export async function migrate(
         configDir,
         mainConfigPath,
         packageManager,
+        mainConfig,
+        packageJson,
         storybookVersion,
         beforeVersion: storybookVersion,
         isUpgrade: false,

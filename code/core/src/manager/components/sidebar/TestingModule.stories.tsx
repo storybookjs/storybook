@@ -6,7 +6,7 @@ import { Addon_TypesEnum } from '@storybook/core/types';
 import type { Meta, StoryObj } from '@storybook/react';
 import { fireEvent, fn } from '@storybook/test';
 
-import { TESTING_MODULE_CONFIG_CHANGE, type TestProviders } from '@storybook/core/core-events';
+import { type TestProviders } from '@storybook/core/core-events';
 import { ManagerContext, mockChannel } from '@storybook/core/manager-api';
 
 import { TestingModule } from './TestingModule';
@@ -21,7 +21,6 @@ const baseState = {
   cancellable: false,
   cancelling: false,
   running: false,
-  watching: false,
   failed: false,
   crashed: false,
 };
@@ -34,7 +33,6 @@ const testProviders: TestProviders[keyof TestProviders][] = [
     title: () => 'Component tests',
     description: () => 'Ran 2 seconds ago',
     runnable: true,
-    watchable: true,
     ...baseState,
   },
   {
@@ -52,25 +50,19 @@ const testProviders: TestProviders[keyof TestProviders][] = [
     name: 'Linting',
     render: () => <TestProvider>Custom render function</TestProvider>,
     ...baseState,
-    watching: true,
   },
 ];
 
-let triggerUpdate: () => void;
 const channel = mockChannel();
 const managerContext: any = {
   api: {
     on: (eventName: string, listener: Listener) => {
-      if (eventName === TESTING_MODULE_CONFIG_CHANGE) {
-        triggerUpdate = listener;
-      }
       return channel.on(eventName, listener);
     },
     off: (eventName: string, listener: Listener) => channel.off(eventName, listener),
     runTestProvider: fn().mockName('api::runTestProvider'),
     cancelTestProvider: fn().mockName('api::cancelTestProvider'),
     updateTestProviderState: fn().mockName('api::updateTestProviderState'),
-    setTestProviderWatchMode: fn().mockName('api::setTestProviderWatchMode'),
   },
 };
 
@@ -187,13 +179,6 @@ export const Cancelling: Story = {
   play: Expanded.play,
 };
 
-export const Watching: Story = {
-  args: {
-    testProviders: [{ ...testProviders[0], watching: true }, ...testProviders.slice(1)],
-  },
-  play: Expanded.play,
-};
-
 export const Failing: Story = {
   args: {
     testProviders: [
@@ -229,14 +214,6 @@ export const Crashed: Story = {
     ],
   },
   play: Expanded.play,
-};
-
-export const Updated: Story = {
-  args: {},
-  play: async (context) => {
-    await Expanded.play!(context);
-    triggerUpdate?.();
-  },
 };
 
 export const NoTestProvider: Story = {

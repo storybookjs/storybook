@@ -1,6 +1,6 @@
 {
   "name": "@storybook/instrumenter",
-  "version": "8.6.0-alpha.2",
+  "version": "8.6.0-alpha.5",
   "description": "",
   "keywords": [
     "storybook"
@@ -47,7 +47,7 @@
     "@vitest/utils": "^2.1.1"
   },
   "devDependencies": {
-    "typescript": "^5.3.2"
+    "typescript": "^5.7.3"
   },
   "peerDependencies": {
     "storybook": "workspace:^"

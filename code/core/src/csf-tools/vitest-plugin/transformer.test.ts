@@ -58,166 +58,140 @@ describe('transformer', () => {
     });
   });
 
-  describe('default exports (meta)', () => {
-    it('should add title to inline default export if not present', async () => {
-      const code = `
-        export default {
-          component: Button,
-        };
-        export const Story = {};
-      `;
-
-      const result = await transform({ code });
-
-      expect(getStoryTitle).toHaveBeenCalled();
-
-      expect(result.code).toMatchInlineSnapshot(`
-        import { test as _test, expect as _expect } from "vitest";
-        import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
-        const _meta = {
-          component: Button,
-          title: "automatic/calculated/title"
-        };
-        export default _meta;
-        export const Story = {};
-        const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
-        if (_isRunningFromThisFile) {
-          _test("Story", _testStory("Story", Story, _meta, []));
-        }
-      `);
-    });
-
-    it('should overwrite title to inline default export if already present', async () => {
-      const code = `
-        export default {
-          title: 'Button',
-          component: Button,
-        };
-        export const Story = {};
-      `;
-
-      const result = await transform({ code });
-
-      expect(getStoryTitle).toHaveBeenCalled();
-
-      expect(result.code).toMatchInlineSnapshot(`
-        import { test as _test, expect as _expect } from "vitest";
-        import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
-        const _meta = {
-          title: "automatic/calculated/title",
-          component: Button
-        };
-        export default _meta;
-        export const Story = {};
-        const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
-        if (_isRunningFromThisFile) {
-          _test("Story", _testStory("Story", Story, _meta, []));
-        }
-      `);
-    });
-
-    it('should add title to const declared default export if not present', async () => {
-      const code = `
-        const meta = {
-          component: Button,
-        };
-        export default meta;
-
-        export const Story = {};
-      `;
-
-      const result = await transform({ code });
-
-      expect(getStoryTitle).toHaveBeenCalled();
-
-      expect(result.code).toMatchInlineSnapshot(`
-        import { test as _test, expect as _expect } from "vitest";
-        import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
-        const meta = {
-          component: Button,
-          title: "automatic/calculated/title"
-        };
-        export default meta;
-        export const Story = {};
-        const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
-        if (_isRunningFromThisFile) {
-          _test("Story", _testStory("Story", Story, meta, []));
-        }
-      `);
-    });
-
-    it('should overwrite title to const declared default export if already present', async () => {
-      const code = `
-        const meta = {
-          title: 'Button',
-          component: Button,
-        };  
-        export default meta;
-
-        export const Story = {};
-      `;
-
-      const result = await transform({ code });
-
-      expect(getStoryTitle).toHaveBeenCalled();
-
-      expect(result.code).toMatchInlineSnapshot(`
-        import { test as _test, expect as _expect } from "vitest";
-        import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
-        const meta = {
-          title: "automatic/calculated/title",
-          component: Button
-        };
-        export default meta;
-        export const Story = {};
-        const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
-        if (_isRunningFromThisFile) {
-          _test("Story", _testStory("Story", Story, meta, []));
-        }
-      `);
-    });
-  });
-
-  describe('named exports (stories)', () => {
-    it('should add test statement to inline exported stories', async () => {
-      const code = `
-        export default {
-          component: Button,
-        }
-        export const Primary = {
-          args: {
-            label: 'Primary Button',
-          },
-        };
-      `;
-
-      const result = await transform({ code });
-
-      expect(result.code).toMatchInlineSnapshot(`
-        import { test as _test, expect as _expect } from "vitest";
-        import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
-        const _meta = {
-          component: Button,
-          title: "automatic/calculated/title"
-        };
-        export default _meta;
-        export const Primary = {
-          args: {
-            label: 'Primary Button'
-          }
-        };
-        const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
-        if (_isRunningFromThisFile) {
-          _test("Primary", _testStory("Primary", Primary, _meta, []));
-        }
-      `);
-    });
-
-    describe("use the story's name as test title", () => {
-      it('should support CSF v3 via name property', async () => {
+  describe('CSF v1/v2/v3', () => {
+    describe('default exports (meta)', () => {
+      it('should add title to inline default export if not present', async () => {
         const code = `
-        export default { component: Button }
-        export const Primary = { name: "custom name" };`;
+          export default {
+            component: Button,
+          };
+          export const Story = {};
+        `;
+
+        const result = await transform({ code });
+
+        expect(getStoryTitle).toHaveBeenCalled();
+
+        expect(result.code).toMatchInlineSnapshot(`
+          import { test as _test, expect as _expect } from "vitest";
+          import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+          const _meta = {
+            component: Button,
+            title: "automatic/calculated/title"
+          };
+          export default _meta;
+          export const Story = {};
+          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          if (_isRunningFromThisFile) {
+            _test("Story", _testStory("Story", Story, _meta, []));
+          }
+        `);
+      });
+
+      it('should overwrite title to inline default export if already present', async () => {
+        const code = `
+          export default {
+            title: 'Button',
+            component: Button,
+          };
+          export const Story = {};
+        `;
+
+        const result = await transform({ code });
+
+        expect(getStoryTitle).toHaveBeenCalled();
+
+        expect(result.code).toMatchInlineSnapshot(`
+          import { test as _test, expect as _expect } from "vitest";
+          import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+          const _meta = {
+            title: "automatic/calculated/title",
+            component: Button
+          };
+          export default _meta;
+          export const Story = {};
+          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          if (_isRunningFromThisFile) {
+            _test("Story", _testStory("Story", Story, _meta, []));
+          }
+        `);
+      });
+
+      it('should add title to const declared default export if not present', async () => {
+        const code = `
+          const meta = {
+            component: Button,
+          };
+          export default meta;
+  
+          export const Story = {};
+        `;
+
+        const result = await transform({ code });
+
+        expect(getStoryTitle).toHaveBeenCalled();
+
+        expect(result.code).toMatchInlineSnapshot(`
+          import { test as _test, expect as _expect } from "vitest";
+          import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+          const meta = {
+            component: Button,
+            title: "automatic/calculated/title"
+          };
+          export default meta;
+          export const Story = {};
+          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          if (_isRunningFromThisFile) {
+            _test("Story", _testStory("Story", Story, meta, []));
+          }
+        `);
+      });
+
+      it('should overwrite title to const declared default export if already present', async () => {
+        const code = `
+          const meta = {
+            title: 'Button',
+            component: Button,
+          };  
+          export default meta;
+  
+          export const Story = {};
+        `;
+
+        const result = await transform({ code });
+
+        expect(getStoryTitle).toHaveBeenCalled();
+
+        expect(result.code).toMatchInlineSnapshot(`
+          import { test as _test, expect as _expect } from "vitest";
+          import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+          const meta = {
+            title: "automatic/calculated/title",
+            component: Button
+          };
+          export default meta;
+          export const Story = {};
+          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          if (_isRunningFromThisFile) {
+            _test("Story", _testStory("Story", Story, meta, []));
+          }
+        `);
+      });
+    });
+
+    describe('named exports (stories)', () => {
+      it('should add test statement to inline exported stories', async () => {
+        const code = `
+          export default {
+            component: Button,
+          }
+          export const Primary = {
+            args: {
+              label: 'Primary Button',
+            },
+          };
+        `;
+
         const result = await transform({ code });
 
         expect(result.code).toMatchInlineSnapshot(`
@@ -229,109 +203,508 @@ describe('transformer', () => {
           };
           export default _meta;
           export const Primary = {
-            name: "custom name"
+            args: {
+              label: 'Primary Button'
+            }
           };
           const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("custom name", _testStory("Primary", Primary, _meta, []));
+            _test("Primary", _testStory("Primary", Primary, _meta, []));
           }
         `);
       });
 
-      it('should support CSF v1/v2 via storyName property', async () => {
+      describe("use the story's name as test title", () => {
+        it('should support CSF v3 via name property', async () => {
+          const code = `
+          export default { component: Button }
+          export const Primary = { name: "custom name" };`;
+          const result = await transform({ code });
+
+          expect(result.code).toMatchInlineSnapshot(`
+            import { test as _test, expect as _expect } from "vitest";
+            import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+            const _meta = {
+              component: Button,
+              title: "automatic/calculated/title"
+            };
+            export default _meta;
+            export const Primary = {
+              name: "custom name"
+            };
+            const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+            if (_isRunningFromThisFile) {
+              _test("custom name", _testStory("Primary", Primary, _meta, []));
+            }
+          `);
+        });
+
+        it('should support CSF v1/v2 via storyName property', async () => {
+          const code = `
+          export default { component: Button }
+          export const Story = () => {}
+          Story.storyName = 'custom name';`;
+          const result = await transform({ code: code });
+          expect(result.code).toMatchInlineSnapshot(`
+            import { test as _test, expect as _expect } from "vitest";
+            import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+            const _meta = {
+              component: Button,
+              title: "automatic/calculated/title"
+            };
+            export default _meta;
+            export const Story = () => {};
+            Story.storyName = 'custom name';
+            const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+            if (_isRunningFromThisFile) {
+              _test("custom name", _testStory("Story", Story, _meta, []));
+            }
+          `);
+        });
+      });
+
+      it('should add test statement to const declared exported stories', async () => {
         const code = `
-        export default { component: Button }
-        export const Story = () => {}
-        Story.storyName = 'custom name';`;
-        const result = await transform({ code: code });
+          export default {};
+          const Primary = {
+            args: {
+              label: 'Primary Button',
+            },
+          };
+  
+          export { Primary };
+        `;
+
+        const result = await transform({ code });
+
         expect(result.code).toMatchInlineSnapshot(`
           import { test as _test, expect as _expect } from "vitest";
           import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
           const _meta = {
-            component: Button,
             title: "automatic/calculated/title"
           };
           export default _meta;
-          export const Story = () => {};
-          Story.storyName = 'custom name';
+          const Primary = {
+            args: {
+              label: 'Primary Button'
+            }
+          };
+          export { Primary };
           const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("custom name", _testStory("Story", Story, _meta, []));
+            _test("Primary", _testStory("Primary", Primary, _meta, []));
+          }
+        `);
+      });
+
+      it('should add test statement to const declared renamed exported stories', async () => {
+        const code = `
+          export default {};
+          const Primary = {
+            args: {
+              label: 'Primary Button',
+            },
+          };
+  
+          export { Primary as PrimaryStory };
+        `;
+
+        const result = await transform({ code });
+
+        expect(result.code).toMatchInlineSnapshot(`
+          import { test as _test, expect as _expect } from "vitest";
+          import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+          const _meta = {
+            title: "automatic/calculated/title"
+          };
+          export default _meta;
+          const Primary = {
+            args: {
+              label: 'Primary Button'
+            }
+          };
+          export { Primary as PrimaryStory };
+          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          if (_isRunningFromThisFile) {
+            _test("PrimaryStory", _testStory("PrimaryStory", Primary, _meta, []));
+          }
+        `);
+      });
+
+      it('should add tests for multiple stories', async () => {
+        const code = `
+          export default {};
+          const Primary = {
+            args: {
+              label: 'Primary Button',
+            },
+          };
+  
+          export const Secondary = {}
+  
+          export { Primary };
+        `;
+
+        const result = await transform({ code });
+        expect(result.code).toMatchInlineSnapshot(`
+          import { test as _test, expect as _expect } from "vitest";
+          import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+          const _meta = {
+            title: "automatic/calculated/title"
+          };
+          export default _meta;
+          const Primary = {
+            args: {
+              label: 'Primary Button'
+            }
+          };
+          export const Secondary = {};
+          export { Primary };
+          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          if (_isRunningFromThisFile) {
+            _test("Secondary", _testStory("Secondary", Secondary, _meta, []));
+            _test("Primary", _testStory("Primary", Primary, _meta, []));
+          }
+        `);
+      });
+
+      it('should exclude exports via excludeStories', async () => {
+        const code = `
+          export default {
+            title: 'Button',
+            component: Button,
+            excludeStories: ['nonStory'],
+          }
+          export const Story = {};
+          export const nonStory = 123
+        `;
+
+        const result = await transform({ code });
+
+        expect(result.code).toMatchInlineSnapshot(`
+          import { test as _test, expect as _expect } from "vitest";
+          import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+          const _meta = {
+            title: "automatic/calculated/title",
+            component: Button,
+            excludeStories: ['nonStory']
+          };
+          export default _meta;
+          export const Story = {};
+          export const nonStory = 123;
+          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          if (_isRunningFromThisFile) {
+            _test("Story", _testStory("Story", Story, _meta, []));
+          }
+        `);
+      });
+
+      it('should return a describe with skip if there are no valid stories', async () => {
+        const code = `
+          export default {
+            title: 'Button',
+            component: Button,
+            tags: ['!test']
+          }
+          export const Story = {}
+        `;
+        const result = await transform({ code });
+
+        expect(result.code).toMatchInlineSnapshot(`
+          import { test as _test, describe as _describe } from "vitest";
+          const _meta = {
+            title: "automatic/calculated/title",
+            component: Button,
+            tags: ['!test']
+          };
+          export default _meta;
+          export const Story = {};
+          _describe.skip("No valid tests found");
+        `);
+      });
+    });
+
+    describe('tags filtering mechanism', () => {
+      it('should only include stories from tags.include', async () => {
+        const code = `
+          export default {};
+          export const Included = { tags: ['include-me'] };
+  
+          export const NotIncluded = {}
+        `;
+
+        const result = await transform({
+          code,
+          tagsFilter: { include: ['include-me'], exclude: [], skip: [] },
+        });
+
+        expect(result.code).toMatchInlineSnapshot(`
+          import { test as _test, expect as _expect } from "vitest";
+          import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+          const _meta = {
+            title: "automatic/calculated/title"
+          };
+          export default _meta;
+          export const Included = {
+            tags: ['include-me']
+          };
+          export const NotIncluded = {};
+          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          if (_isRunningFromThisFile) {
+            _test("Included", _testStory("Included", Included, _meta, []));
+          }
+        `);
+      });
+
+      it('should exclude stories from tags.exclude', async () => {
+        const code = `
+          export default {};
+          export const Included = {};
+  
+          export const NotIncluded = { tags: ['exclude-me'] }
+        `;
+
+        const result = await transform({
+          code,
+          tagsFilter: { include: ['test'], exclude: ['exclude-me'], skip: [] },
+        });
+
+        expect(result.code).toMatchInlineSnapshot(`
+          import { test as _test, expect as _expect } from "vitest";
+          import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+          const _meta = {
+            title: "automatic/calculated/title"
+          };
+          export default _meta;
+          export const Included = {};
+          export const NotIncluded = {
+            tags: ['exclude-me']
+          };
+          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          if (_isRunningFromThisFile) {
+            _test("Included", _testStory("Included", Included, _meta, []));
+          }
+        `);
+      });
+
+      it('should pass skip tags to testStory call using tags.skip', async () => {
+        const code = `
+          export default {};
+          export const Skipped = { tags: ['skip-me'] };
+        `;
+
+        const result = await transform({
+          code,
+          tagsFilter: { include: ['test'], exclude: [], skip: ['skip-me'] },
+        });
+
+        expect(result.code).toMatchInlineSnapshot(`
+          import { test as _test, expect as _expect } from "vitest";
+          import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+          const _meta = {
+            title: "automatic/calculated/title"
+          };
+          export default _meta;
+          export const Skipped = {
+            tags: ['skip-me']
+          };
+          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          if (_isRunningFromThisFile) {
+            _test("Skipped", _testStory("Skipped", Skipped, _meta, ["skip-me"]));
           }
         `);
       });
     });
 
-    it('should add test statement to const declared exported stories', async () => {
-      const code = `
-        export default {};
-        const Primary = {
+    describe('source map calculation', () => {
+      it('should remap the location of an inline named export to its relative testStory function', async () => {
+        const originalCode = `
+          const meta = {
+            title: 'Button',
+            component: Button,
+          }
+          export default meta;
+          export const Primary = {};
+        `;
+
+        const { code: transformedCode, map } = await transform({
+          code: originalCode,
+        });
+
+        expect(transformedCode).toMatchInlineSnapshot(`
+          import { test as _test, expect as _expect } from "vitest";
+          import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+          const meta = {
+            title: "automatic/calculated/title",
+            component: Button
+          };
+          export default meta;
+          export const Primary = {};
+          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          if (_isRunningFromThisFile) {
+            _test("Primary", _testStory("Primary", Primary, meta, []));
+          }
+        `);
+
+        const consumer = await new SourceMapConsumer(map as unknown as RawSourceMap);
+
+        // Locate `__test("Primary"...` in the transformed code
+        const testPrimaryLine =
+          transformedCode.split('\n').findIndex((line) => line.includes('_test("Primary"')) + 1;
+        const testPrimaryColumn = transformedCode
+          .split('\n')
+          [testPrimaryLine - 1].indexOf('_test("Primary"');
+
+        // Get the original position from the source map for `__test("Primary"...`
+        const originalPosition = consumer.originalPositionFor({
+          line: testPrimaryLine,
+          column: testPrimaryColumn,
+        });
+
+        // Locate `export const Primary` in the original code
+        const originalPrimaryLine =
+          originalCode.split('\n').findIndex((line) => line.includes('export const Primary')) + 1;
+        const originalPrimaryColumn = originalCode
+          .split('\n')
+          [originalPrimaryLine - 1].indexOf('export const Primary');
+
+        // The original locations of the transformed code should match with the ones of the original code
+        expect(originalPosition.line, 'original line location').toBe(originalPrimaryLine);
+        expect(originalPosition.column, 'original column location').toBe(originalPrimaryColumn);
+      });
+    });
+  });
+
+  describe('CSF Factories', () => {
+    describe('default exports (meta)', () => {
+      it('should add title to inline default export if not present', async () => {
+        const code = `
+        import { config } from '#.storybook/preview';
+        const meta = config.meta({ component: Button });
+        export const Story = meta.story({});
+      `;
+
+        const result = await transform({ code });
+
+        expect(getStoryTitle).toHaveBeenCalled();
+
+        expect(result.code).toMatchInlineSnapshot(`
+          import { test as _test, expect as _expect } from "vitest";
+          import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+          import { config } from '#.storybook/preview';
+          const meta = config.meta({
+            component: Button,
+            title: "automatic/calculated/title"
+          });
+          export const Story = meta.story({});
+          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          if (_isRunningFromThisFile) {
+            _test("Story", _testStory("Story", Story, meta, []));
+          }
+        `);
+      });
+    });
+
+    describe('named exports (stories)', () => {
+      it("should use the story's name as test title", async () => {
+        const code = `
+        import { config } from '#.storybook/preview';
+        const meta = config.meta({ component: Button });
+        export const Primary = meta.story({ name: "custom name" });`;
+        const result = await transform({ code });
+
+        expect(result.code).toMatchInlineSnapshot(`
+          import { test as _test, expect as _expect } from "vitest";
+          import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+          import { config } from '#.storybook/preview';
+          const meta = config.meta({
+            component: Button,
+            title: "automatic/calculated/title"
+          });
+          export const Primary = meta.story({
+            name: "custom name"
+          });
+          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          if (_isRunningFromThisFile) {
+            _test("custom name", _testStory("Primary", Primary, meta, []));
+          }
+        `);
+      });
+
+      it('should add test statement to const declared exported stories', async () => {
+        const code = `
+        import { config } from '#.storybook/preview';
+        const meta = config.meta({ component: Button });
+        const Primary = meta.story({ 
           args: {
             label: 'Primary Button',
-          },
-        };
+          }
+        });
 
         export { Primary };
       `;
 
-      const result = await transform({ code });
+        const result = await transform({ code });
 
-      expect(result.code).toMatchInlineSnapshot(`
-        import { test as _test, expect as _expect } from "vitest";
-        import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
-        const _meta = {
-          title: "automatic/calculated/title"
-        };
-        export default _meta;
-        const Primary = {
-          args: {
-            label: 'Primary Button'
+        expect(result.code).toMatchInlineSnapshot(`
+          import { test as _test, expect as _expect } from "vitest";
+          import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+          import { config } from '#.storybook/preview';
+          const meta = config.meta({
+            component: Button,
+            title: "automatic/calculated/title"
+          });
+          const Primary = meta.story({
+            args: {
+              label: 'Primary Button'
+            }
+          });
+          export { Primary };
+          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          if (_isRunningFromThisFile) {
+            _test("Primary", _testStory("Primary", Primary, meta, []));
           }
-        };
-        export { Primary };
-        const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
-        if (_isRunningFromThisFile) {
-          _test("Primary", _testStory("Primary", Primary, _meta, []));
-        }
-      `);
-    });
+        `);
+      });
 
-    it('should add test statement to const declared renamed exported stories', async () => {
-      const code = `
-        export default {};
-        const Primary = {
+      it('should add test statement to const declared renamed exported stories', async () => {
+        const code = `
+        import { config } from '#.storybook/preview';
+        const meta = config.meta({ component: Button });
+        const Primary = meta.story({ 
           args: {
             label: 'Primary Button',
-          },
-        };
+          }
+        });
 
         export { Primary as PrimaryStory };
       `;
 
-      const result = await transform({ code });
+        const result = await transform({ code });
 
-      expect(result.code).toMatchInlineSnapshot(`
-        import { test as _test, expect as _expect } from "vitest";
-        import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
-        const _meta = {
-          title: "automatic/calculated/title"
-        };
-        export default _meta;
-        const Primary = {
-          args: {
-            label: 'Primary Button'
+        expect(result.code).toMatchInlineSnapshot(`
+          import { test as _test, expect as _expect } from "vitest";
+          import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+          import { config } from '#.storybook/preview';
+          const meta = config.meta({
+            component: Button,
+            title: "automatic/calculated/title"
+          });
+          const Primary = meta.story({
+            args: {
+              label: 'Primary Button'
+            }
+          });
+          export { Primary as PrimaryStory };
+          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          if (_isRunningFromThisFile) {
+            _test("PrimaryStory", _testStory("PrimaryStory", Primary, meta, []));
           }
-        };
-        export { Primary as PrimaryStory };
-        const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
-        if (_isRunningFromThisFile) {
-          _test("PrimaryStory", _testStory("PrimaryStory", Primary, _meta, []));
-        }
-      `);
-    });
+        `);
+      });
 
-    it('should add tests for multiple stories', async () => {
-      const code = `
+      it('should add tests for multiple stories', async () => {
+        const code = `
         export default {};
         const Primary = {
           args: {
@@ -344,8 +717,8 @@ describe('transformer', () => {
         export { Primary };
       `;
 
-      const result = await transform({ code });
-      expect(result.code).toMatchInlineSnapshot(`
+        const result = await transform({ code });
+        expect(result.code).toMatchInlineSnapshot(`
         import { test as _test, expect as _expect } from "vitest";
         import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
         const _meta = {
@@ -365,10 +738,10 @@ describe('transformer', () => {
           _test("Primary", _testStory("Primary", Primary, _meta, []));
         }
       `);
-    });
+      });
 
-    it('should exclude exports via excludeStories', async () => {
-      const code = `
+      it('should exclude exports via excludeStories', async () => {
+        const code = `
         export default {
           title: 'Button',
           component: Button,
@@ -378,9 +751,9 @@ describe('transformer', () => {
         export const nonStory = 123
       `;
 
-      const result = await transform({ code });
+        const result = await transform({ code });
 
-      expect(result.code).toMatchInlineSnapshot(`
+        expect(result.code).toMatchInlineSnapshot(`
         import { test as _test, expect as _expect } from "vitest";
         import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
         const _meta = {
@@ -396,10 +769,10 @@ describe('transformer', () => {
           _test("Story", _testStory("Story", Story, _meta, []));
         }
       `);
-    });
+      });
 
-    it('should return a describe with skip if there are no valid stories', async () => {
-      const code = `
+      it('should return a describe with skip if there are no valid stories', async () => {
+        const code = `
         export default {
           title: 'Button',
           component: Button,
@@ -407,9 +780,9 @@ describe('transformer', () => {
         }
         export const Story = {}
       `;
-      const result = await transform({ code });
+        const result = await transform({ code });
 
-      expect(result.code).toMatchInlineSnapshot(`
+        expect(result.code).toMatchInlineSnapshot(`
         import { test as _test, describe as _describe } from "vitest";
         const _meta = {
           title: "automatic/calculated/title",
@@ -420,156 +793,156 @@ describe('transformer', () => {
         export const Story = {};
         _describe.skip("No valid tests found");
       `);
-    });
-  });
-
-  describe('tags filtering mechanism', () => {
-    it('should only include stories from tags.include', async () => {
-      const code = `
-        export default {};
-        export const Included = { tags: ['include-me'] };
-
-        export const NotIncluded = {}
-      `;
-
-      const result = await transform({
-        code,
-        tagsFilter: { include: ['include-me'], exclude: [], skip: [] },
       });
-
-      expect(result.code).toMatchInlineSnapshot(`
-        import { test as _test, expect as _expect } from "vitest";
-        import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
-        const _meta = {
-          title: "automatic/calculated/title"
-        };
-        export default _meta;
-        export const Included = {
-          tags: ['include-me']
-        };
-        export const NotIncluded = {};
-        const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
-        if (_isRunningFromThisFile) {
-          _test("Included", _testStory("Included", Included, _meta, []));
-        }
-      `);
     });
 
-    it('should exclude stories from tags.exclude', async () => {
-      const code = `
-        export default {};
-        export const Included = {};
+    describe('tags filtering mechanism', () => {
+      it('should only include stories from tags.include', async () => {
+        const code = `
+        import { config } from '#.storybook/preview';
+        const meta = config.meta({});
+        export const Included = meta.story({ tags: ['include-me'] });
 
-        export const NotIncluded = { tags: ['exclude-me'] }
+        export const NotIncluded = meta.story({});
       `;
 
-      const result = await transform({
-        code,
-        tagsFilter: { include: ['test'], exclude: ['exclude-me'], skip: [] },
+        const result = await transform({
+          code,
+          tagsFilter: { include: ['include-me'], exclude: [], skip: [] },
+        });
+
+        expect(result.code).toMatchInlineSnapshot(`
+          import { test as _test, expect as _expect } from "vitest";
+          import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+          import { config } from '#.storybook/preview';
+          const meta = config.meta({
+            title: "automatic/calculated/title"
+          });
+          export const Included = meta.story({
+            tags: ['include-me']
+          });
+          export const NotIncluded = meta.story({});
+          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          if (_isRunningFromThisFile) {
+            _test("Included", _testStory("Included", Included, meta, []));
+          }
+        `);
       });
 
-      expect(result.code).toMatchInlineSnapshot(`
-        import { test as _test, expect as _expect } from "vitest";
-        import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
-        const _meta = {
-          title: "automatic/calculated/title"
-        };
-        export default _meta;
-        export const Included = {};
-        export const NotIncluded = {
-          tags: ['exclude-me']
-        };
-        const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
-        if (_isRunningFromThisFile) {
-          _test("Included", _testStory("Included", Included, _meta, []));
-        }
-      `);
+      it('should exclude stories from tags.exclude', async () => {
+        const code = `
+          import { config } from '#.storybook/preview';
+          const meta = config.meta({});
+          export const Included = meta.story({});
+
+          export const NotIncluded = meta.story({ tags: ['exclude-me'] });
+        `;
+
+        const result = await transform({
+          code,
+          tagsFilter: { include: ['test'], exclude: ['exclude-me'], skip: [] },
+        });
+
+        expect(result.code).toMatchInlineSnapshot(`
+          import { test as _test, expect as _expect } from "vitest";
+          import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+          import { config } from '#.storybook/preview';
+          const meta = config.meta({
+            title: "automatic/calculated/title"
+          });
+          export const Included = meta.story({});
+          export const NotIncluded = meta.story({
+            tags: ['exclude-me']
+          });
+          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          if (_isRunningFromThisFile) {
+            _test("Included", _testStory("Included", Included, meta, []));
+          }
+        `);
+      });
+
+      it('should pass skip tags to testStory call using tags.skip', async () => {
+        const code = `
+        import { config } from '#.storybook/preview';
+        const meta = config.meta({});
+        export const Skipped = meta.story({ tags: ['skip-me'] });
+      `;
+
+        const result = await transform({
+          code,
+          tagsFilter: { include: ['test'], exclude: [], skip: ['skip-me'] },
+        });
+
+        expect(result.code).toMatchInlineSnapshot(`
+          import { test as _test, expect as _expect } from "vitest";
+          import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+          import { config } from '#.storybook/preview';
+          const meta = config.meta({
+            title: "automatic/calculated/title"
+          });
+          export const Skipped = meta.story({
+            tags: ['skip-me']
+          });
+          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          if (_isRunningFromThisFile) {
+            _test("Skipped", _testStory("Skipped", Skipped, meta, ["skip-me"]));
+          }
+        `);
+      });
     });
 
-    it('should pass skip tags to testStory call using tags.skip', async () => {
-      const code = `
-        export default {};
-        export const Skipped = { tags: ['skip-me'] };
+    describe('source map calculation', () => {
+      it('should remap the location of an inline named export to its relative testStory function', async () => {
+        const originalCode = `
+        import { config } from '#.storybook/preview';
+        const meta = config.meta({});
+        export const Primary = meta.story({});
       `;
 
-      const result = await transform({
-        code,
-        tagsFilter: { include: ['test'], exclude: [], skip: ['skip-me'] },
+        const { code: transformedCode, map } = await transform({
+          code: originalCode,
+        });
+
+        expect(transformedCode).toMatchInlineSnapshot(`
+          import { test as _test, expect as _expect } from "vitest";
+          import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+          import { config } from '#.storybook/preview';
+          const meta = config.meta({
+            title: "automatic/calculated/title"
+          });
+          export const Primary = meta.story({});
+          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          if (_isRunningFromThisFile) {
+            _test("Primary", _testStory("Primary", Primary, meta, []));
+          }
+        `);
+
+        const consumer = await new SourceMapConsumer(map as unknown as RawSourceMap);
+
+        // Locate `__test("Primary"...` in the transformed code
+        const testPrimaryLine =
+          transformedCode.split('\n').findIndex((line) => line.includes('_test("Primary"')) + 1;
+        const testPrimaryColumn = transformedCode
+          .split('\n')
+          [testPrimaryLine - 1].indexOf('_test("Primary"');
+
+        // Get the original position from the source map for `__test("Primary"...`
+        const originalPosition = consumer.originalPositionFor({
+          line: testPrimaryLine,
+          column: testPrimaryColumn,
+        });
+
+        // Locate `export const Primary` in the original code
+        const originalPrimaryLine =
+          originalCode.split('\n').findIndex((line) => line.includes('export const Primary')) + 1;
+        const originalPrimaryColumn = originalCode
+          .split('\n')
+          [originalPrimaryLine - 1].indexOf('export const Primary');
+
+        // The original locations of the transformed code should match with the ones of the original code
+        expect(originalPosition.line, 'original line location').toBe(originalPrimaryLine);
+        expect(originalPosition.column, 'original column location').toBe(originalPrimaryColumn);
       });
-
-      expect(result.code).toMatchInlineSnapshot(`
-        import { test as _test, expect as _expect } from "vitest";
-        import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
-        const _meta = {
-          title: "automatic/calculated/title"
-        };
-        export default _meta;
-        export const Skipped = {
-          tags: ['skip-me']
-        };
-        const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
-        if (_isRunningFromThisFile) {
-          _test("Skipped", _testStory("Skipped", Skipped, _meta, ["skip-me"]));
-        }
-      `);
-    });
-  });
-
-  describe('source map calculation', () => {
-    it('should remap the location of an inline named export to its relative testStory function', async () => {
-      const originalCode = `
-        const meta = {
-          title: 'Button',
-          component: Button,
-        }
-        export default meta;
-        export const Primary = {};
-      `;
-
-      const { code: transformedCode, map } = await transform({
-        code: originalCode,
-      });
-
-      expect(transformedCode).toMatchInlineSnapshot(`
-        import { test as _test, expect as _expect } from "vitest";
-        import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
-        const meta = {
-          title: "automatic/calculated/title",
-          component: Button
-        };
-        export default meta;
-        export const Primary = {};
-        const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
-        if (_isRunningFromThisFile) {
-          _test("Primary", _testStory("Primary", Primary, meta, []));
-        }
-      `);
-
-      const consumer = await new SourceMapConsumer(map as unknown as RawSourceMap);
-
-      // Locate `__test("Primary"...` in the transformed code
-      const testPrimaryLine =
-        transformedCode.split('\n').findIndex((line) => line.includes('_test("Primary"')) + 1;
-      const testPrimaryColumn = transformedCode
-        .split('\n')
-        [testPrimaryLine - 1].indexOf('_test("Primary"');
-
-      // Get the original position from the source map for `__test("Primary"...`
-      const originalPosition = consumer.originalPositionFor({
-        line: testPrimaryLine,
-        column: testPrimaryColumn,
-      });
-
-      // Locate `export const Primary` in the original code
-      const originalPrimaryLine =
-        originalCode.split('\n').findIndex((line) => line.includes('export const Primary')) + 1;
-      const originalPrimaryColumn = originalCode
-        .split('\n')
-        [originalPrimaryLine - 1].indexOf('export const Primary');
-
-      // The original locations of the transformed code should match with the ones of the original code
-      expect(originalPosition.line, 'original line location').toBe(originalPrimaryLine);
-      expect(originalPosition.column, 'original column location').toBe(originalPrimaryColumn);
     });
   });
 

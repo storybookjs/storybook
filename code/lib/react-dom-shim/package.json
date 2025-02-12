@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react-dom-shim",
-  "version": "8.6.0-alpha.2",
+  "version": "8.6.0-alpha.5",
   "description": "",
   "keywords": [
     "storybook"
@@ -54,7 +54,7 @@
     "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "devDependencies": {
-    "typescript": "^5.3.2"
+    "typescript": "^5.7.3"
   },
   "peerDependencies": {
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",

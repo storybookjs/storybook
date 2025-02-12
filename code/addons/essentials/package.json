@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-essentials",
-  "version": "8.6.0-alpha.2",
+  "version": "8.6.0-alpha.5",
   "description": "Curated addons to bring out the best of Storybook",
   "keywords": [
     "addon",
@@ -26,6 +26,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
+    },
+    "./preview": {
+      "types": "./dist/preview.d.ts",
+      "import": "./dist/preview.mjs",
+      "require": "./dist/preview.js"
     },
     "./actions/preview": {
       "types": "./dist/actions/preview.d.ts",
@@ -72,11 +77,22 @@
       "import": "./dist/viewport/preview.mjs",
       "require": "./dist/viewport/preview.js"
     },
+    "./preset": "./dist/preset.js",
     "./package.json": "./package.json"
   },
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "*": [
+        "dist/index.d.ts"
+      ],
+      "preview": [
+        "dist/preview.d.ts"
+      ]
+    }
+  },
   "files": [
     "dist/**/*",
     "README.md",
@@ -101,7 +117,7 @@
     "ts-dedent": "^2.0.0"
   },
   "devDependencies": {
-    "typescript": "^5.3.2"
+    "typescript": "^5.7.3"
   },
   "peerDependencies": {
     "storybook": "workspace:^"
@@ -111,9 +127,12 @@
   },
   "bundler": {
     "nodeEntries": [
-      "./src/index.ts",
+      "./src/preset.ts",
       "./src/docs/preset.ts",
       "./src/docs/mdx-react-shim.ts"
+    ],
+    "exportEntries": [
+      "./src/index.ts"
     ],
     "entries": [
       "./src/docs/manager.ts"
@@ -129,6 +148,7 @@
       "./src/viewport/manager.ts"
     ],
     "previewEntries": [
+      "./src/preview.ts",
       "./src/actions/preview.ts",
       "./src/backgrounds/preview.ts",
       "./src/docs/preview.ts",

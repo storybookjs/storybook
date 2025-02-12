@@ -1,28 +1,32 @@
-import { appendFile, readFile } from 'node:fs/promises';
-
-import type { Builder, NpmOptions } from 'storybook/internal/cli';
-import { ProjectType, installableProjectTypes } from 'storybook/internal/cli';
-import { detect, detectLanguage, detectPnp, isStorybookInstantiated } from 'storybook/internal/cli';
-import {
-  HandledError,
-  JsPackageManagerFactory,
-  commandLog,
-  getProjectRoot,
-  paddedLog,
-  versions,
-} from 'storybook/internal/common';
-import type { JsPackageManager } from 'storybook/internal/common';
-import { withTelemetry } from 'storybook/internal/core-server';
-import { NxProjectDetectedError } from 'storybook/internal/server-errors';
-import { telemetry } from 'storybook/internal/telemetry';
+import { execSync } from 'node:child_process';
+import fs from 'node:fs/promises';
 
 import boxen from 'boxen';
-import findUp from 'find-up';
+import { findUp } from 'find-up';
 import picocolors from 'picocolors';
 import prompts from 'prompts';
 import { lt, prerelease } from 'semver';
 import { dedent } from 'ts-dedent';
 
+import * as babel from '../../../core/src/babel';
+import type { NpmOptions } from '../../../core/src/cli/NpmOptions';
+import {
+  detect,
+  detectLanguage,
+  detectPnp,
+  isStorybookInstantiated,
+} from '../../../core/src/cli/detect';
+import type { Builder } from '../../../core/src/cli/project_types';
+import { ProjectType, installableProjectTypes } from '../../../core/src/cli/project_types';
+import type { JsPackageManager } from '../../../core/src/common/js-package-manager/JsPackageManager';
+import { JsPackageManagerFactory } from '../../../core/src/common/js-package-manager/JsPackageManagerFactory';
+import { HandledError } from '../../../core/src/common/utils/HandledError';
+import { commandLog, paddedLog } from '../../../core/src/common/utils/log';
+import { getProjectRoot } from '../../../core/src/common/utils/paths';
+import versions from '../../../core/src/common/versions';
+import { withTelemetry } from '../../../core/src/core-server/withTelemetry';
+import { NxProjectDetectedError } from '../../../core/src/server-errors';
+import { telemetry } from '../../../core/src/telemetry';
 import angularGenerator from './generators/ANGULAR';
 import emberGenerator from './generators/EMBER';
 import htmlGenerator from './generators/HTML';
@@ -42,6 +46,8 @@ import vue3Generator from './generators/VUE3';
 import webComponentsGenerator from './generators/WEB-COMPONENTS';
 import webpackReactGenerator from './generators/WEBPACK_REACT';
 import type { CommandOptions, GeneratorOptions } from './generators/types';
+import { packageVersions } from './ink/steps/checks/packageVersions';
+import { vitestConfigFiles } from './ink/steps/checks/vitestConfigFiles';
 import { currentDirectoryIsEmpty, scaffoldNewProject } from './scaffold-new-project';
 
 const logger = console;
@@ -56,7 +62,7 @@ const installStorybook = async <Project extends ProjectType>(
     skipInstall: options.skipInstall,
   };
 
-  const language = await detectLanguage(packageManager);
+  const language = await detectLanguage(packageManager as any);
   const pnp = await detectPnp();
 
   const generatorOptions: GeneratorOptions = {
@@ -66,6 +72,7 @@ const installStorybook = async <Project extends ProjectType>(
     pnp: pnp || (options.usePnp as boolean),
     yes: options.yes as boolean,
     projectType,
+    features: options.features || [],
   };
 
   const runGenerator: () => Promise<any> = async () => {
@@ -81,7 +88,7 @@ const installStorybook = async <Project extends ProjectType>(
         );
 
       case ProjectType.REACT_NATIVE: {
-        return reactNativeGenerator(packageManager, npmOptions).then(
+        return reactNativeGenerator(packageManager, npmOptions, generatorOptions).then(
           commandLog('Adding Storybook support to your "React Native" app')
         );
       }
@@ -215,6 +222,7 @@ const projectTypeInquirer = async (
           type: 'confirm',
           name: 'manual',
           message: 'Do you want to manually choose a Storybook project type to install?',
+          initial: true,
         },
       ]);
 
@@ -268,7 +276,7 @@ export async function doInitiate(options: CommandOptions): Promise<
       This version is behind the latest release, which is: ${picocolors.bold(latestVersion)}!
       You likely ran the init command through npx, which can use a locally cached version, to get the latest please run:
       ${picocolors.bold('npx storybook@latest init')}
-      
+
       You may want to CTRL+C to stop, and run with the latest version instead.
     `),
     prelease: picocolors.yellow('This is a pre-release version.'),
@@ -283,6 +291,30 @@ export async function doInitiate(options: CommandOptions): Promise<
       { borderStyle: 'round', padding: 1, borderColor }
     )
   );
+
+  const isInteractive = process.stdout.isTTY && !process.env.CI;
+
+  let features = options.features || isInteractive ? ['dev', 'docs', 'test'] : ['dev', 'docs'];
+
+  if (isInteractive && !options.features) {
+    const out = await prompts({
+      type: 'multiselect',
+      name: 'features',
+      message: `What are you using Storybook for?`,
+      choices: [
+        { title: 'Development', value: 'dev', selected: true, disabled: true },
+        { title: 'Documentation', value: 'docs', selected: true },
+        { title: 'Testing', value: 'test', selected: true },
+      ],
+    });
+    features = out.features;
+  }
+
+  if (!features.includes('dev')) {
+    features.push('dev');
+  }
+
+  const telemetryFeatures = [...features];
 
   // Check if the current directory is empty.
   if (options.force !== true && currentDirectoryIsEmpty(packageManager.type)) {
@@ -316,7 +348,7 @@ export async function doInitiate(options: CommandOptions): Promise<
     }
   } else {
     try {
-      projectType = (await detect(packageManager, options)) as ProjectType;
+      projectType = (await detect(packageManager as any, options)) as ProjectType;
     } catch (err) {
       done(String(err));
       throw new HandledError(err);
@@ -345,9 +377,61 @@ export async function doInitiate(options: CommandOptions): Promise<
     }
   }
 
+  if (features.includes('test')) {
+    const packageVersionsData = await packageVersions.condition({ packageManager }, {} as any);
+    if (packageVersionsData.type === 'incompatible') {
+      const { ignorePackageVersions } = isInteractive
+        ? await prompts([
+            {
+              type: 'confirm',
+              name: 'ignorePackageVersions',
+              message: dedent`
+                ${packageVersionsData.reasons.join('\n')}
+                Do you want to continue without Storybook's testing features?
+              `,
+            },
+          ])
+        : { ignorePackageVersions: true };
+      if (ignorePackageVersions) {
+        features.splice(features.indexOf('test'), 1);
+      } else {
+        process.exit(0);
+      }
+    }
+  }
+
+  if (features.includes('test')) {
+    const vitestConfigFilesData = await vitestConfigFiles.condition(
+      { babel, findUp, fs } as any,
+      { directory: process.cwd() } as any
+    );
+    if (vitestConfigFilesData.type === 'incompatible') {
+      const { ignoreVitestConfigFiles } = isInteractive
+        ? await prompts([
+            {
+              type: 'confirm',
+              name: 'ignoreVitestConfigFiles',
+              message: dedent`
+                ${vitestConfigFilesData.reasons.join('\n')}
+                Do you want to continue without Storybook's testing features?
+              `,
+            },
+          ])
+        : { ignoreVitestConfigFiles: true };
+      if (ignoreVitestConfigFiles) {
+        features.splice(features.indexOf('test'), 1);
+      } else {
+        process.exit(0);
+      }
+    }
+  }
+
   if (!options.skipInstall) {
     await packageManager.installDependencies();
   }
+
+  // update the mutated value
+  options.features = features;
 
   const installResult = await installStorybook(projectType as ProjectType, packageManager, options);
 
@@ -356,7 +440,7 @@ export async function doInitiate(options: CommandOptions): Promise<
   }
 
   if (!options.disableTelemetry) {
-    await telemetry('init', { projectType });
+    await telemetry('init', { projectType, features: telemetryFeatures });
   }
 
   if (projectType === ProjectType.REACT_NATIVE) {
@@ -366,17 +450,17 @@ export async function doInitiate(options: CommandOptions): Promise<
       To run Storybook, you will need to:
 
       1. Replace the contents of your app entry with the following
-      
+
       ${picocolors.inverse(' ' + "export {default} from './.storybook';" + ' ')}
-      
-      2. Wrap your metro config with the withStorybook enhancer function like this: 
-      
+
+      2. Wrap your metro config with the withStorybook enhancer function like this:
+
       ${picocolors.inverse(' ' + "const withStorybook = require('@storybook/react-native/metro/withStorybook');" + ' ')}
       ${picocolors.inverse(' ' + 'module.exports = withStorybook(defaultConfig);' + ' ')}
 
       For more details go to:
       ${picocolors.cyan('https://github.com/storybookjs/react-native#getting-started')}
-      
+
       Then to run your Storybook, type:
 
       ${picocolors.inverse(' ' + packageManager.getRunCommand('start') + ' ')}
@@ -389,9 +473,9 @@ export async function doInitiate(options: CommandOptions): Promise<
   const foundGitIgnoreFile = await findUp('.gitignore');
   const rootDirectory = getProjectRoot();
   if (foundGitIgnoreFile && foundGitIgnoreFile.includes(rootDirectory)) {
-    const contents = await readFile(foundGitIgnoreFile, 'utf-8');
+    const contents = await fs.readFile(foundGitIgnoreFile, 'utf-8');
     if (!contents.includes('*storybook.log')) {
-      await appendFile(foundGitIgnoreFile, '\n*storybook.log\n');
+      await fs.appendFile(foundGitIgnoreFile, '\n*storybook.log\n');
     }
   }
 
@@ -400,6 +484,16 @@ export async function doInitiate(options: CommandOptions): Promise<
       ? `ng run ${installResult.projectName}:storybook`
       : packageManager.getRunStorybookCommand();
 
+  if (features.includes('test')) {
+    logger.log(
+      `> npx storybook@${versions.storybook} add @storybook/experimental-addon-test@${versions['@storybook/experimental-addon-test']}`
+    );
+    execSync(
+      `npx storybook@${versions.storybook} add @storybook/experimental-addon-test@${versions['@storybook/experimental-addon-test']}`,
+      { cwd: process.cwd(), stdio: 'inherit' }
+    );
+  }
+
   logger.log(
     boxen(
       dedent`
@@ -407,7 +501,7 @@ export async function doInitiate(options: CommandOptions): Promise<
           To run Storybook manually, run ${picocolors.yellow(
             picocolors.bold(storybookCommand)
           )}. CTRL+C to stop.
-          
+
           Wanna know more about Storybook? Check out ${picocolors.cyan('https://storybook.js.org/')}
           Having trouble or want to chat? Join us at ${picocolors.cyan(
             'https://discord.gg/storybook/'

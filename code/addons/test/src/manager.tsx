@@ -10,11 +10,13 @@ import {
   Addon_TypesEnum,
 } from 'storybook/internal/types';
 
+import { store } from '#manager-store';
+
 import { GlobalErrorContext, GlobalErrorModal } from './components/GlobalErrorModal';
 import { Panel } from './components/Panel';
 import { PanelTitle } from './components/PanelTitle';
 import { TestProviderRender } from './components/TestProviderRender';
-import { ADDON_ID, type Config, type Details, PANEL_ID, TEST_PROVIDER_ID } from './constants';
+import { ADDON_ID, type Details, PANEL_ID, TEST_PROVIDER_ID } from './constants';
 import type { TestStatus } from './node/reporter';
 
 const statusMap: Record<TestStatus, API_StatusValue> = {
@@ -36,7 +38,6 @@ addons.register(ADDON_ID, (api) => {
     addons.add(TEST_PROVIDER_ID, {
       type: Addon_TypesEnum.experimental_TEST_PROVIDER,
       runnable: true,
-      watchable: true,
       name: 'Component tests',
       // @ts-expect-error: TODO: Fix types
       render: (state) => {
@@ -82,7 +83,7 @@ addons.register(ADDON_ID, (api) => {
           details: { ...state.details, ...update.details },
         };
 
-        if ((!state.running && update.running) || (!state.watching && update.watching)) {
+        if ((!state.running && update.running) || store.getState().watching) {
           // Clear coverage data when starting test run or enabling watch mode
           delete updated.details.coverageSummary;
         }
@@ -148,7 +149,7 @@ addons.register(ADDON_ID, (api) => {
 
         return updated;
       },
-    } satisfies Omit<Addon_TestProviderType<Details, Config>, 'id'>);
+    } satisfies Omit<Addon_TestProviderType<Details>, 'id'>);
   }
 
   const filter = ({ state }: Combo) => {

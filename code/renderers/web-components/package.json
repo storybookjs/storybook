@@ -1,6 +1,6 @@
 {
   "name": "@storybook/web-components",
-  "version": "8.6.0-alpha.2",
+  "version": "8.6.0-alpha.5",
   "description": "Storybook web-components renderer",
   "keywords": [
     "lit",
@@ -62,7 +62,7 @@
     "@types/node": "^22.0.0",
     "cross-spawn": "^7.0.3",
     "lit": "2.3.1",
-    "typescript": "^5.3.2",
+    "typescript": "^5.7.3",
     "web-component-analyzer": "^1.1.6"
   },
   "peerDependencies": {

@@ -182,7 +182,6 @@ export class StorybookReporter implements Reporter {
       } as TestingModuleProgressReportProgress,
       details: {
         testResults,
-        config: this.testManager.config,
       },
     };
   }

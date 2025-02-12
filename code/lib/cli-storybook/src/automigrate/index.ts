@@ -2,13 +2,13 @@ import { createWriteStream } from 'node:fs';
 import { rename, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 
+import type { PackageJson } from 'storybook/internal/common';
 import {
   type JsPackageManager,
   JsPackageManagerFactory,
-  getCoercedStorybookVersion,
-  getStorybookInfo,
   temporaryFile,
 } from 'storybook/internal/common';
+import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import boxen from 'boxen';
 import picocolors from 'picocolors';
@@ -27,7 +27,7 @@ import type {
   PreCheckFailure,
   Prompt,
 } from './fixes';
-import { FixStatus, allFixes } from './fixes';
+import { FixStatus, allFixes, commandFixes } from './fixes';
 import { upgradeStorybookRelatedDependencies } from './fixes/upgrade-storybook-related-dependencies';
 import { cleanLog } from './helpers/cleanLog';
 import { getMigrationSummary } from './helpers/getMigrationSummary';
@@ -60,7 +60,7 @@ const cleanup = () => {
 };
 
 const logAvailableMigrations = () => {
-  const availableFixes = allFixes
+  const availableFixes = [...allFixes, ...commandFixes]
     .map((f) => picocolors.yellow(f.id))
     .map((x) => `- ${x}`)
     .join('\n');
@@ -77,16 +77,17 @@ export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
     force: options.packageManager,
   });
 
-  const [packageJson, storybookVersion] = await Promise.all([
-    packageManager.retrievePackageJson(),
-    getCoercedStorybookVersion(packageManager),
-  ]);
-
-  const { configDir: inferredConfigDir, mainConfig: mainConfigPath } = getStorybookInfo(
+  const {
+    mainConfig,
+    mainConfigPath,
+    previewConfigPath,
+    storybookVersion,
+    configDir,
     packageJson,
-    options.configDir
-  );
-  const configDir = options.configDir || inferredConfigDir || '.storybook';
+  } = await getStorybookData({
+    configDir: options.configDir,
+    packageManager,
+  });
 
   if (!storybookVersion) {
     throw new Error('Could not determine Storybook version');
@@ -98,10 +99,13 @@ export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
 
   const outcome = await automigrate({
     ...options,
+    packageJson,
     packageManager,
     storybookVersion,
     beforeVersion: storybookVersion,
     mainConfigPath,
+    mainConfig,
+    previewConfigPath,
     configDir,
     isUpgrade: false,
     isLatest: false,
@@ -118,9 +122,12 @@ export const automigrate = async ({
   dryRun,
   yes,
   packageManager,
+  packageJson,
   list,
   configDir,
+  mainConfig,
   mainConfigPath,
+  previewConfigPath,
   storybookVersion,
   beforeVersion,
   renderer: rendererPackage,
@@ -134,6 +141,24 @@ export const automigrate = async ({
 } | null> => {
   if (list) {
     logAvailableMigrations();
+    return null;
+  }
+
+  // if an on-command migration is triggered, run it and bail
+  const commandFix = commandFixes.find((f) => f.id === fixId);
+  if (commandFix) {
+    logger.info(`🔎 Running migration ${picocolors.magenta(fixId)}..`);
+
+    await commandFix.run({
+      mainConfigPath,
+      previewConfigPath,
+      packageManager,
+      packageJson,
+      dryRun,
+      mainConfig,
+      result: null,
+    });
+
     return null;
   }
 
@@ -166,9 +191,12 @@ export const automigrate = async ({
   const { fixResults, fixSummary, preCheckFailure } = await runFixes({
     fixes,
     packageManager,
+    packageJson,
     rendererPackage,
     skipInstall,
     configDir,
+    previewConfigPath,
+    mainConfig,
     mainConfigPath,
     storybookVersion,
     beforeVersion,
@@ -214,7 +242,10 @@ export async function runFixes({
   skipInstall,
   configDir,
   packageManager,
+  packageJson,
+  mainConfig,
   mainConfigPath,
+  previewConfigPath,
   storybookVersion,
   beforeVersion,
   isUpgrade,
@@ -226,7 +257,10 @@ export async function runFixes({
   skipInstall?: boolean;
   configDir: string;
   packageManager: JsPackageManager;
+  packageJson: PackageJson;
   mainConfigPath: string;
+  previewConfigPath?: string;
+  mainConfig: StorybookConfigRaw;
   storybookVersion: string;
   beforeVersion: string;
   isUpgrade?: boolean;
@@ -243,11 +277,6 @@ export async function runFixes({
     let result;
 
     try {
-      const { mainConfig, previewConfigPath } = await getStorybookData({
-        configDir,
-        packageManager,
-      });
-
       if (
         (isUpgrade &&
           semver.satisfies(beforeVersion, f.versionRange[0], { includePrerelease: true }) &&
@@ -383,6 +412,9 @@ export async function runFixes({
               packageManager,
               dryRun,
               mainConfigPath,
+              previewConfigPath,
+              packageJson,
+              mainConfig,
               skipInstall,
             });
             logger.info(`✅ ran ${picocolors.cyan(f.id)} migration`);

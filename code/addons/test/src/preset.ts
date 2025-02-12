@@ -9,18 +9,27 @@ import {
   serverRequire,
 } from 'storybook/internal/common';
 import {
-  TESTING_MODULE_CONFIG_CHANGE,
+  TESTING_MODULE_CRASH_REPORT,
+  TESTING_MODULE_PROGRESS_REPORT,
   TESTING_MODULE_RUN_REQUEST,
-  TESTING_MODULE_WATCH_MODE_REQUEST,
+  type TestingModuleCrashReportPayload,
+  type TestingModuleProgressReportPayload,
 } from 'storybook/internal/core-events';
-import { oneWayHash, telemetry } from 'storybook/internal/telemetry';
+import { experimental_UniversalStore } from 'storybook/internal/core-server';
+import { cleanPaths, oneWayHash, sanitizeError, telemetry } from 'storybook/internal/telemetry';
 import type { Options, PresetProperty, PresetPropertyFn, StoryId } from 'storybook/internal/types';
 
 import { isAbsolute, join } from 'pathe';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
-import { COVERAGE_DIRECTORY, STORYBOOK_ADDON_TEST_CHANNEL, TEST_PROVIDER_ID } from './constants';
+import {
+  COVERAGE_DIRECTORY,
+  STORYBOOK_ADDON_TEST_CHANNEL,
+  type StoreState,
+  TEST_PROVIDER_ID,
+  storeOptions,
+} from './constants';
 import { log } from './logger';
 import { runTestRunner } from './node/boot-test-runner';
 
@@ -56,6 +65,11 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
   const builderName = typeof core?.builder === 'string' ? core.builder : core?.builder?.name;
   const framework = await getFrameworkName(options);
 
+  const store = experimental_UniversalStore.create<StoreState>({
+    ...storeOptions,
+    leader: true,
+  });
+
   // Only boot the test runner if the builder is vite, else just provide interactions functionality
   if (!builderName?.includes('vite')) {
     if (framework.includes('nextjs')) {
@@ -77,13 +91,12 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
     };
 
   channel.on(TESTING_MODULE_RUN_REQUEST, execute(TESTING_MODULE_RUN_REQUEST));
-  channel.on(TESTING_MODULE_WATCH_MODE_REQUEST, (payload) => {
-    if (payload.watchMode) {
-      execute(TESTING_MODULE_WATCH_MODE_REQUEST)(payload);
+
+  store.onStateChange((state) => {
+    if (state.watching) {
+      runTestRunner(channel);
     }
   });
-  channel.on(TESTING_MODULE_CONFIG_CHANGE, execute(TESTING_MODULE_CONFIG_CHANGE));
-
   if (!core.disableTelemetry) {
     const packageJsonPath = require.resolve('@storybook/experimental-addon-test/package.json');
 
@@ -100,6 +113,65 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
           storyId: oneWayHash(event.payload.storyId),
         },
         addonVersion,
+      });
+    });
+
+    store.onStateChange(async (state, previous) => {
+      if (state.watching && !previous.watching) {
+        await telemetry('testing-module-watch-mode', {
+          provider: TEST_PROVIDER_ID,
+          watchMode: state.watching,
+        });
+      }
+    });
+
+    channel.on(
+      TESTING_MODULE_PROGRESS_REPORT,
+      async (payload: TestingModuleProgressReportPayload) => {
+        if (payload.providerId !== TEST_PROVIDER_ID) {
+          return;
+        }
+        const status = 'status' in payload ? payload.status : undefined;
+        const progress = 'progress' in payload ? payload.progress : undefined;
+        const error = 'error' in payload ? payload.error : undefined;
+
+        const config = store.getState().config;
+
+        if ((status === 'success' || status === 'cancelled') && progress?.finishedAt) {
+          await telemetry('testing-module-completed-report', {
+            provider: TEST_PROVIDER_ID,
+            status,
+            config,
+            duration: progress?.finishedAt - progress?.startedAt,
+            numTotalTests: progress?.numTotalTests,
+            numFailedTests: progress?.numFailedTests,
+            numPassedTests: progress?.numPassedTests,
+          });
+        }
+
+        if (status === 'failed') {
+          await telemetry('testing-module-completed-report', {
+            provider: TEST_PROVIDER_ID,
+            status,
+            config,
+            ...(options.enableCrashReports && {
+              error: error && sanitizeError(error),
+            }),
+          });
+        }
+      }
+    );
+
+    channel.on(TESTING_MODULE_CRASH_REPORT, async (payload: TestingModuleCrashReportPayload) => {
+      if (payload.providerId !== TEST_PROVIDER_ID) {
+        return;
+      }
+      await telemetry('testing-module-crash-report', {
+        provider: payload.providerId,
+
+        ...(options.enableCrashReports && {
+          error: cleanPaths(payload.error.message),
+        }),
       });
     });
   }

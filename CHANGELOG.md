@@ -1,6 +1,6 @@
 ## 8.5.5
 
-- Builder-Vite: Fix turbosnap - [#30522](https://github.com/storybookjs/storybook/pull/30522), thanks @valentinpalkovic!
+- Builder-Vite: Fix Turbosnap - [#30522](https://github.com/storybookjs/storybook/pull/30522), thanks @valentinpalkovic!
 
 ## 8.5.4
 

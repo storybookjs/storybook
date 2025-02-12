@@ -1,8 +1,9 @@
-import { definePreview } from 'storybook/internal/preview-api';
+import { definePreviewAddon } from 'storybook/internal/csf';
 
 import './preview';
+import type { HighLightTypes } from './types';
 
 export { HIGHLIGHT, RESET_HIGHLIGHT } from './constants';
-export type { HighlightParameters } from './types';
+export type { HighLightTypes };
 
-export default () => definePreview({});
+export default () => definePreviewAddon<HighLightTypes>({});

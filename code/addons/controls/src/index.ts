@@ -1,7 +1,9 @@
-import { definePreview } from 'storybook/internal/preview-api';
+import { definePreviewAddon } from 'storybook/internal/csf';
+
+import type { ControlsTypes } from './types';
 
 export { PARAM_KEY } from './constants';
 
-export default () => definePreview({});
+export default () => definePreviewAddon<ControlsTypes>({});
 
-export type { ControlsParameters } from './types';
+export type { ControlsTypes };

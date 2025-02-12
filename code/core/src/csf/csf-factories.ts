@@ -12,28 +12,45 @@ import type {
 
 import { composeConfigs, normalizeProjectAnnotations } from '@storybook/core/preview-api';
 
+import type { Types } from './story';
+
 export interface Preview<TRenderer extends Renderer = Renderer> {
   readonly _tag: 'Preview';
-  input: ProjectAnnotations<TRenderer>;
+  input: ProjectAnnotations<TRenderer> & { addons?: PreviewAddon<never>[] };
   composed: NormalizedProjectAnnotations<TRenderer>;
 
   meta(input: ComponentAnnotations<TRenderer>): Meta<TRenderer>;
 }
 
-export function definePreview<TRenderer extends Renderer>(
-  preview: Preview<TRenderer>['input']
-): Preview<TRenderer> {
+export type InferTypes<T extends PreviewAddon<never>[]> = T extends PreviewAddon<infer C>[]
+  ? C
+  : never;
+
+export function definePreview<TRenderer extends Renderer, Addons extends PreviewAddon<never>[]>(
+  preview: ProjectAnnotations<TRenderer> & { addons?: Addons }
+): Preview<TRenderer & InferTypes<Addons>> {
   return {
     _tag: 'Preview',
     input: preview,
     get composed() {
       const { addons, ...rest } = preview;
-      return normalizeProjectAnnotations<TRenderer>(composeConfigs([...(addons ?? []), rest]));
+      return normalizeProjectAnnotations<TRenderer & InferTypes<Addons>>(
+        composeConfigs([...(addons ?? []), rest])
+      );
     },
-    meta(meta: ComponentAnnotations<TRenderer>) {
+    meta(meta: ComponentAnnotations<TRenderer & InferTypes<Addons>>) {
       return defineMeta(meta, this);
     },
-  };
+  } as Preview<TRenderer & InferTypes<Addons>>;
+}
+
+export interface PreviewAddon<in TExtraContext extends Types = Types>
+  extends ProjectAnnotations<Renderer> {}
+
+export function definePreviewAddon<TExtraContext extends Types = Types>(
+  preview: ProjectAnnotations<Renderer>
+): PreviewAddon<TExtraContext> {
+  return preview;
 }
 
 export function isPreview(input: unknown): input is Preview<Renderer> {

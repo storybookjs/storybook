@@ -4,7 +4,7 @@ export interface ControlsParameters {
    *
    * @see https://storybook.js.org/docs/essentials/controls#parameters-1
    */
-  controls: {
+  controls?: {
     /** Remove the addon panel and disable the addon's behavior */
     disable?: boolean;
 
@@ -34,4 +34,8 @@ export interface ControlsParameters {
     /** Controls sorting order */
     sort?: 'none' | 'alpha' | 'requiredFirst';
   };
+}
+
+export interface ControlsTypes {
+  parameters: ControlsParameters;
 }

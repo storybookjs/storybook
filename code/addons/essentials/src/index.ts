@@ -1,5 +1,8 @@
-import { definePreview } from 'storybook/internal/preview-api';
+import { definePreviewAddon } from 'storybook/internal/csf';
 
 import addonAnnotations from './preview';
+import type { EssentialsTypes } from './types';
 
-export default () => definePreview(addonAnnotations);
+export type { EssentialsTypes };
+
+export default () => definePreviewAddon<EssentialsTypes>(addonAnnotations);

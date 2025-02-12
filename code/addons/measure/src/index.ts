@@ -1,7 +1,8 @@
-import { definePreview } from 'storybook/internal/preview-api';
+import { definePreviewAddon } from 'storybook/internal/csf';
 
 import * as addonAnnotations from './preview';
+import type { MeasureTypes } from './types';
 
-export type { MeasureParameters } from './types';
+export type { MeasureTypes };
 
-export default () => definePreview(addonAnnotations);
+export default () => definePreviewAddon<MeasureTypes>(addonAnnotations);

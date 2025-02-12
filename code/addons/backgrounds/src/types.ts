@@ -28,7 +28,7 @@ export interface BackgroundsParameters {
    *
    * @see https://storybook.js.org/docs/essentials/backgrounds#parameters
    */
-  backgrounds: {
+  backgrounds?: {
     /** Default background color */
     default?: string;
 
@@ -50,4 +50,9 @@ export interface BackgroundsGlobals {
    * @see https://storybook.js.org/docs/essentials/backgrounds#globals
    */
   backgrounds: GlobalState;
+}
+
+export interface BackgroundTypes {
+  parameters: BackgroundsParameters;
+  globals: BackgroundsGlobals;
 }

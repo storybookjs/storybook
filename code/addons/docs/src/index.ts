@@ -1,9 +1,10 @@
-import { definePreview } from 'storybook/internal/preview-api';
+import { definePreviewAddon } from 'storybook/internal/csf';
 
 import * as addonAnnotations from './preview';
+import type { DocsTypes } from './types';
 
 export * from '@storybook/blocks';
 export { DocsRenderer } from './DocsRenderer';
-export type { DocsParameters } from './types';
+export type { DocsTypes };
 
-export default () => definePreview(addonAnnotations);
+export default () => definePreviewAddon<DocsTypes>(addonAnnotations);

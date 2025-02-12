@@ -47,3 +47,8 @@ export interface A11yGlobals {
     manual?: boolean;
   };
 }
+
+export interface A11yTypes {
+  parameters: A11yParameters;
+  globals: A11yGlobals;
+}

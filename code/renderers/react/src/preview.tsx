@@ -1,12 +1,14 @@
 import type { ComponentType } from 'react';
 
 import { definePreview as definePreviewBase } from 'storybook/internal/csf';
-import type { Meta, Preview, Story } from 'storybook/internal/csf';
+import type { InferTypes, Meta, Preview, Story, Types } from 'storybook/internal/csf';
+import type { PreviewAddon } from 'storybook/internal/csf';
 import type {
   Args,
   ArgsStoryFn,
   ComponentAnnotations,
   DecoratorFunction,
+  ProjectAnnotations,
   Renderer,
   StoryAnnotations,
 } from 'storybook/internal/types';
@@ -18,30 +20,33 @@ import * as reactAnnotations from './entry-preview';
 import * as reactDocsAnnotations from './entry-preview-docs';
 import type { ReactRenderer } from './types';
 
-export function definePreview(preview: ReactPreview['input']) {
+export function definePreview<Addons extends PreviewAddon<never>[]>(
+  preview: ProjectAnnotations<ReactRenderer> & { addons?: Addons }
+): ReactPreview<InferTypes<Addons>> {
   return definePreviewBase({
     ...preview,
     addons: [reactAnnotations, reactDocsAnnotations, ...(preview.addons ?? [])],
-  }) as ReactPreview;
+  }) as unknown as ReactPreview<InferTypes<Addons>>;
 }
 
-export interface ReactPreview extends Preview<ReactRenderer> {
+// @ts-expect-error hard
+export interface ReactPreview<T extends Types> extends Preview<ReactRenderer & T> {
   meta<
     TArgs extends Args,
-    Decorators extends DecoratorFunction<ReactRenderer, any>,
+    Decorators extends DecoratorFunction<ReactRenderer & T, any>,
     // Try to make Exact<Partial<TArgs>, TMetaArgs> work
     TMetaArgs extends Partial<TArgs>,
   >(
     meta: {
-      render?: ArgsStoryFn<ReactRenderer, TArgs>;
+      render?: ArgsStoryFn<ReactRenderer & T, TArgs>;
       component?: ComponentType<TArgs>;
       decorators?: Decorators | Decorators[];
       args?: TMetaArgs;
-    } & Omit<ComponentAnnotations<ReactRenderer, TArgs>, 'decorators'>
+    } & Omit<ComponentAnnotations<ReactRenderer & T, TArgs>, 'decorators'>
   ): ReactMeta<
     {
       args: Simplify<
-        TArgs & Simplify<RemoveIndexSignature<DecoratorsArgs<ReactRenderer, Decorators>>>
+        TArgs & Simplify<RemoveIndexSignature<DecoratorsArgs<ReactRenderer & T, Decorators>>>
       >;
     },
     { args: Partial<TArgs> extends TMetaArgs ? {} : TMetaArgs }

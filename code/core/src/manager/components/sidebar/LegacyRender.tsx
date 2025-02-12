@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Button, ProgressSpinner } from '@storybook/core/components';
+import { Button, ProgressSpinner, TooltipNote, WithTooltip } from '@storybook/core/components';
 import { styled } from '@storybook/core/theming';
 import { EyeIcon, PlayHollowIcon, StopAltIcon } from '@storybook/icons';
 
@@ -61,46 +61,68 @@ export const LegacyRender = ({ ...state }: TestProviders[keyof TestProviders]) =
 
       <Actions>
         {state.watchable && (
-          <Button
-            aria-label={`${state.watching ? 'Disable' : 'Enable'} watch mode for ${name}`}
-            variant="ghost"
-            padding="small"
-            active={state.watching}
-            onClick={() => api.setTestProviderWatchMode(state.id, !state.watching)}
-            disabled={state.crashed || state.running}
+          <WithTooltip
+            hasChrome={false}
+            trigger="hover"
+            tooltip={
+              <TooltipNote
+                note={`${state.watching ? 'Disable' : 'Enable'} watch mode for ${state.name}`}
+              />
+            }
           >
-            <EyeIcon />
-          </Button>
+            <Button
+              aria-label={`${state.watching ? 'Disable' : 'Enable'} watch mode for ${state.name}`}
+              variant="ghost"
+              padding="small"
+              active={state.watching}
+              onClick={() => api.setTestProviderWatchMode(state.id, !state.watching)}
+              disabled={state.crashed || state.running}
+            >
+              <EyeIcon />
+            </Button>
+          </WithTooltip>
         )}
         {state.runnable && (
           <>
             {state.running && state.cancellable ? (
-              <Button
-                aria-label={`Stop ${name}`}
-                variant="ghost"
-                padding="none"
-                onClick={() => api.cancelTestProvider(state.id)}
-                disabled={state.cancelling}
+              <WithTooltip
+                hasChrome={false}
+                trigger="hover"
+                tooltip={<TooltipNote note={`Stop ${state.name}`} />}
               >
-                <Progress
-                  percentage={
-                    state.progress?.percentageCompleted ??
-                    (state.details as any)?.buildProgressPercentage
-                  }
+                <Button
+                  aria-label={`Stop ${state.name}`}
+                  variant="ghost"
+                  padding="none"
+                  onClick={() => api.cancelTestProvider(state.id)}
+                  disabled={state.cancelling}
                 >
-                  <StopIcon />
-                </Progress>
-              </Button>
+                  <Progress
+                    percentage={
+                      state.progress?.percentageCompleted ??
+                      (state.details as any)?.buildProgressPercentage
+                    }
+                  >
+                    <StopIcon />
+                  </Progress>
+                </Button>
+              </WithTooltip>
             ) : (
-              <Button
-                aria-label={`Start ${state.name}`}
-                variant="ghost"
-                padding="small"
-                onClick={() => api.runTestProvider(state.id)}
-                disabled={state.crashed || state.running}
+              <WithTooltip
+                hasChrome={false}
+                trigger="hover"
+                tooltip={<TooltipNote note={`Start ${state.name}`} />}
               >
-                <PlayHollowIcon />
-              </Button>
+                <Button
+                  aria-label={`Start ${state.name}`}
+                  variant="ghost"
+                  padding="small"
+                  onClick={() => api.runTestProvider(state.id)}
+                  disabled={state.crashed || state.running}
+                >
+                  <PlayHollowIcon />
+                </Button>
+              </WithTooltip>
             )}
           </>
         )}

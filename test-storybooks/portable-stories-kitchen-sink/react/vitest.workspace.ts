@@ -25,7 +25,7 @@ export default defineWorkspace([
         enabled: true,
         name: "chromium",
         provider: "playwright",
-        headless: true,
+        headless: true
       },
       setupFiles: ["./.storybook/vitest.setup.ts"],
       environment: "happy-dom",

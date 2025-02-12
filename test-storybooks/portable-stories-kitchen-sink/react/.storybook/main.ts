@@ -6,7 +6,7 @@ const config: StorybookConfig = {
   addons: [
     "@storybook/addon-controls",
     "@storybook/experimental-addon-test",
-    //"@storybook/addon-a11y",
+    "@storybook/addon-a11y",
   ],
   framework: {
     name: "@storybook/react-vite",
@@ -15,18 +15,6 @@ const config: StorybookConfig = {
   core: {
     disableWhatsNewNotifications: true,
   },
-  viteFinal: (config) => ({
-    ...config,
-    optimizeDeps: {
-      ...config.optimizeDeps,
-      include: [
-        ...(config.optimizeDeps?.include || []),
-        "react-dom/test-utils",
-        "@storybook/react/**",
-        "@storybook/experimental-addon-test/preview",
-      ],
-    },
-  }),
   previewHead: (head = "") => `${head}
   <style>
     body {
@@ -37,6 +25,12 @@ const config: StorybookConfig = {
   viteFinal: (config) => {
     return {
       ...config,
+      optimizeDeps: {
+        ...config.optimizeDeps,
+        include: [
+          ...(config.optimizeDeps?.include || []),
+        ],
+      },
       resolve: {
         ...config.resolve,
         alias: {

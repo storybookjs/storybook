@@ -8,7 +8,7 @@ const meta: Meta<MyComponent> = {
   parameters: {
     a11y: {
       // Optional selector to inspect
-      element: '#storybook-root',
+      element: 'body',
       config: {
         rules: [
           {
@@ -23,6 +23,11 @@ const meta: Meta<MyComponent> = {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
     },
   },
@@ -47,7 +52,7 @@ export default meta;
     parameters: {
       a11y: {
         // Optional selector to inspect
-        element: '#storybook-root',
+        element: 'body',
         config: {
           rules: [
             {
@@ -62,6 +67,11 @@ export default meta;
             },
           ],
         },
+        /*
+         * Axe's options parameter
+         * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+         * to learn more about the available options.
+        */
         options: {}
       },
     },
@@ -82,7 +92,7 @@ export default {
   parameters: {
     a11y: {
       // Optional selector to inspect
-      element: '#storybook-root',
+      element: 'body',
       config: {
         rules: [
           {
@@ -97,6 +107,11 @@ export default {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
     },
   },
@@ -116,7 +131,7 @@ export default {
   parameters: {
     a11y: {
       // Optional selector to inspect
-      element: '#storybook-root',
+      element: 'body',
       config: {
         rules: [
           {
@@ -131,6 +146,11 @@ export default {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
     },
   },
@@ -153,7 +173,7 @@ export default {
     parameters: {
       a11y: {
         // Optional selector to inspect
-        element: '#storybook-root',
+        element: 'body',
         config: {
           rules: [
             {
@@ -168,6 +188,11 @@ export default {
             },
           ],
         },
+        /*
+         * Axe's options parameter
+         * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+         * to learn more about the available options.
+        */
         options: {},
       },
     },
@@ -190,7 +215,7 @@ const meta = {
   parameters: {
     a11y: {
       // Optional selector to inspect
-      element: '#storybook-root',
+      element: 'body',
       config: {
         rules: [
           {
@@ -205,6 +230,11 @@ const meta = {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
     },
   },
@@ -229,7 +259,7 @@ const meta = {
   parameters: {
     a11y: {
       // Optional selector to inspect
-      element: '#storybook-root',
+      element: 'body',
       config: {
         rules: [
           {
@@ -244,6 +274,11 @@ const meta = {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
     },
   },
@@ -268,7 +303,7 @@ export default meta;
     parameters: {
       a11y: {
         // Optional selector to inspect
-        element: '#storybook-root',
+        element: 'body',
         config: {
           rules: [
             {
@@ -283,6 +318,11 @@ export default meta;
             },
           ],
         },
+        /*
+         * Axe's options parameter
+         * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+         * to learn more about the available options.
+        */
         options: {},
       },
     },
@@ -305,7 +345,7 @@ const meta: Meta<typeof MyComponent> = {
   parameters: {
     a11y: {
       // Optional selector to inspect
-      element: '#storybook-root',
+      element: 'body',
       config: {
         rules: [
           {
@@ -320,6 +360,11 @@ const meta: Meta<typeof MyComponent> = {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
     },
   },
@@ -344,7 +389,7 @@ const meta: Meta<typeof MyComponent> = {
   parameters: {
     a11y: {
       // Optional selector to inspect
-      element: '#storybook-root',
+      element: 'body',
       config: {
         rules: [
           {
@@ -359,6 +404,11 @@ const meta: Meta<typeof MyComponent> = {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
     },
   },
@@ -378,7 +428,7 @@ export default {
   parameters: {
     a11y: {
       // Optional selector to inspect
-      element: '#storybook-root',
+      element: 'body',
       config: {
         rules: [
           {
@@ -393,6 +443,11 @@ export default {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
     },
   },
@@ -412,7 +467,7 @@ const meta: Meta = {
   parameters: {
     a11y: {
       // Optional selector to inspect
-      element: '#storybook-root',
+      element: 'body',
       config: {
         rules: [
           {
@@ -427,6 +482,11 @@ const meta: Meta = {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
     },
   },

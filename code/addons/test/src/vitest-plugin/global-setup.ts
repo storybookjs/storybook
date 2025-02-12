@@ -1,7 +1,7 @@
 /* eslint-disable no-underscore-dangle */
 import { type ChildProcess, spawn } from 'node:child_process';
 
-import type { GlobalSetupContext } from 'vitest/node';
+import type { TestProject } from 'vitest/node';
 
 import { logger } from 'storybook/internal/node-logger';
 
@@ -61,7 +61,7 @@ const startStorybookIfNotRunning = async () => {
   }
 };
 
-export const setup = async ({ config }: GlobalSetupContext) => {
+export const setup = async ({ config }: TestProject) => {
   if (config.watch && isVitestStandaloneRun) {
     await startStorybookIfNotRunning();
   }

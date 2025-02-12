@@ -111,17 +111,19 @@ export async function add(
 
   let shouldAddToMain = true;
   if (checkInstalled(addonName, requireMain(configDir))) {
-    const { shouldForceInstall } = await prompts({
-      type: 'confirm',
-      name: 'shouldForceInstall',
-      message: `The Storybook addon "${addonName}" is already present in ${mainConfig}. Do you wish to install it again?`,
-    });
-
-    if (!shouldForceInstall) {
-      return;
-    }
-
     shouldAddToMain = false;
+    if (!yes) {
+      logger.log(`The Storybook addon "${addonName}" is already present in ${mainConfig}.`);
+      const { shouldForceInstall } = await prompts({
+        type: 'confirm',
+        name: 'shouldForceInstall',
+        message: `Do you wish to install it again?`,
+      });
+
+      if (!shouldForceInstall) {
+        return;
+      }
+    }
   }
 
   const main = await readConfig(mainConfig);

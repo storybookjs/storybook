@@ -67,7 +67,7 @@ describe('renders', () => {
   });
 
   it('should throw error when rendering a component with a render error', async () => {
-    await expect(() => ThrowsError.run()).rejects.toThrowError('Error in render');
+    await expect(ThrowsError.run()).rejects.toThrowError('Error in render');
   });
 
   it('should render component mounted in play function', async () => {
@@ -77,8 +77,8 @@ describe('renders', () => {
     expect(screen.getByTestId('loaded-data').textContent).toEqual('loaded data');
   });
 
-  it('should throw an error in play function', () => {
-    expect(() => MountInPlayFunctionThrow.run()).rejects.toThrowError('Error thrown in play');
+  it('should throw an error in play function', async () => {
+    await expect(MountInPlayFunctionThrow.run()).rejects.toThrowError('Error thrown in play');
   });
 
   it('should call and compose loaders data', async () => {

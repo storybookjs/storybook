@@ -46,7 +46,7 @@ describe('web-components component properties', () => {
       const testDir = join(fixturesDir, testEntry.name);
       const testFile = readdirSync(testDir).find((fileName) => inputRegExp.test(fileName));
       if (testFile) {
-        it(`${testEntry.name}`, () => {
+        it(`${testEntry.name}`, async () => {
           const inputPath = join(testDir, testFile);
 
           // snapshot the output of wca
@@ -55,11 +55,13 @@ describe('web-components component properties', () => {
           customElements.tags.forEach((tag: any) => {
             tag.path = 'dummy-path-to-component';
           });
-          expect(customElements).toMatchFileSnapshot(join(testDir, 'custom-elements.snapshot'));
+          await expect(customElements).toMatchFileSnapshot(
+            join(testDir, 'custom-elements.snapshot')
+          );
 
           // snapshot the properties
           const properties = extractArgTypesFromElements('input', customElements);
-          expect(properties).toMatchFileSnapshot(join(testDir, 'properties.snapshot'));
+          await expect(properties).toMatchFileSnapshot(join(testDir, 'properties.snapshot'));
         });
       }
     }

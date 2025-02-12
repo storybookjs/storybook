@@ -233,7 +233,7 @@ export const Editing: Story = {
   play: async ({ canvasElement }) => {
     const screen = within(canvasElement);
 
-    screen.getByLabelText(/Open settings/).click();
+    screen.getByLabelText(/Show settings/).click();
   },
 };
 

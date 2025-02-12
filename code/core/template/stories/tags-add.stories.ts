@@ -19,9 +19,9 @@ export const Inheritance = {
   tags: ['story-one', '!vitest'],
   play: async ({ canvasElement, tags }: PlayFunctionContext<any>) => {
     const canvas = within(canvasElement);
-    if (tags.includes('a11ytest')) {
+    if (tags.includes('a11y-test')) {
       await expect(JSON.parse(canvas.getByTestId('pre').innerText)).toEqual({
-        tags: ['a11ytest', 'story-one'],
+        tags: ['a11y-test', 'story-one'],
       });
     } else {
       await expect(JSON.parse(canvas.getByTestId('pre').innerText)).toEqual({

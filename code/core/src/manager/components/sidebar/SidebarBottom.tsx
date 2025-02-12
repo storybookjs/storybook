@@ -56,12 +56,14 @@ const Content = styled.div(({ theme }) => ({
   bottom: 0,
   left: 0,
   right: 0,
-  padding: 12,
+  padding: '12px 0',
+  margin: '0 12px',
   display: 'flex',
   flexDirection: 'column',
   gap: 12,
   color: theme.color.defaultText,
   fontSize: theme.typography.size.s1,
+  overflow: 'hidden',
 
   '&:empty': {
     display: 'none',

@@ -298,5 +298,6 @@
         "Dependency Upgrades"
       ]
     ]
-  }
+  },
+  "deferredNextVersion": "8.5.5"
 }

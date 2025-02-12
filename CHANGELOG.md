@@ -1,3 +1,7 @@
+## 8.5.5
+
+- Builder-Vite: Fix Turbosnap - [#30522](https://github.com/storybookjs/storybook/pull/30522), thanks @valentinpalkovic!
+
 ## 8.5.4
 
 - Addon A11y: Make Vitest Axe optional - [#30442](https://github.com/storybookjs/storybook/pull/30442), thanks @valentinpalkovic!

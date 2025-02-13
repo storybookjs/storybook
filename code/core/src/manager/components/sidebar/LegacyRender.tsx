@@ -60,28 +60,6 @@ export const LegacyRender = ({ ...state }: TestProviders[keyof TestProviders]) =
       </Info>
 
       <Actions>
-        {state.watchable && (
-          <WithTooltip
-            hasChrome={false}
-            trigger="hover"
-            tooltip={
-              <TooltipNote
-                note={`${state.watching ? 'Disable' : 'Enable'} watch mode for ${state.name}`}
-              />
-            }
-          >
-            <Button
-              aria-label={`${state.watching ? 'Disable' : 'Enable'} watch mode for ${state.name}`}
-              variant="ghost"
-              padding="small"
-              active={state.watching}
-              onClick={() => api.setTestProviderWatchMode(state.id, !state.watching)}
-              disabled={state.crashed || state.running}
-            >
-              <EyeIcon />
-            </Button>
-          </WithTooltip>
-        )}
         {state.runnable && (
           <>
             {state.running && state.cancellable ? (

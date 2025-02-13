@@ -1,7 +1,9 @@
+import { getAddonNames } from 'storybook/internal/common';
+
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
-import { getAddonNames, updateMainConfig } from '../helpers/mainConfigFile';
+import { updateMainConfig } from '../helpers/mainConfigFile';
 import type { Fix } from '../types';
 
 const logger = console;

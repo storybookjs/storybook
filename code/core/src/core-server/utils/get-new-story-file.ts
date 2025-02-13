@@ -1,8 +1,10 @@
 import { existsSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import { basename, dirname, extname, join } from 'node:path';
 
 import {
   extractProperRendererNameFromFramework,
+  findConfigFile,
   getFrameworkName,
   getProjectRoot,
   rendererPackages,
@@ -10,7 +12,10 @@ import {
 import type { Options } from '@storybook/core/types';
 
 import type { CreateNewStoryRequestPayload } from '@storybook/core/core-events';
+import { isCsfFactoryPreview } from '@storybook/core/csf-tools';
 
+import { loadConfig } from '../../csf-tools';
+import { getCsfFactoryTemplateForNewStoryFile } from './new-story-templates/csf-factory-template';
 import { getJavaScriptTemplateForNewStoryFile } from './new-story-templates/javascript';
 import { getTypeScriptTemplateForNewStoryFile } from './new-story-templates/typescript';
 
@@ -42,21 +47,42 @@ export async function getNewStoryFile(
 
   const exportedStoryName = 'Default';
 
-  const storyFileContent =
-    isTypescript && rendererPackage
-      ? await getTypeScriptTemplateForNewStoryFile({
-          basenameWithoutExtension,
-          componentExportName,
-          componentIsDefaultExport,
-          rendererPackage,
-          exportedStoryName,
-        })
-      : await getJavaScriptTemplateForNewStoryFile({
-          basenameWithoutExtension,
-          componentExportName,
-          componentIsDefaultExport,
-          exportedStoryName,
-        });
+  let useCsfFactory = false;
+  try {
+    const previewConfig = findConfigFile('preview', options.configDir);
+    if (previewConfig) {
+      const previewContent = await readFile(previewConfig, 'utf-8');
+      useCsfFactory = isCsfFactoryPreview(loadConfig(previewContent));
+    }
+  } catch (err) {
+    // TODO: improve this later on, for now while CSF factories are experimental, just fallback to CSF3
+  }
+
+  let storyFileContent = '';
+  if (useCsfFactory) {
+    storyFileContent = await getCsfFactoryTemplateForNewStoryFile({
+      basenameWithoutExtension,
+      componentExportName,
+      componentIsDefaultExport,
+      exportedStoryName,
+    });
+  } else {
+    storyFileContent =
+      isTypescript && rendererPackage
+        ? await getTypeScriptTemplateForNewStoryFile({
+            basenameWithoutExtension,
+            componentExportName,
+            componentIsDefaultExport,
+            rendererPackage,
+            exportedStoryName,
+          })
+        : await getJavaScriptTemplateForNewStoryFile({
+            basenameWithoutExtension,
+            componentExportName,
+            componentIsDefaultExport,
+            exportedStoryName,
+          });
+  }
 
   const storyFilePath =
     doesStoryFileExist(join(cwd, dir), storyFileName) && componentExportCount > 1

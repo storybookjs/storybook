@@ -1,5 +1,5 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
-import { toId } from '@storybook/csf';
+import { toId } from 'storybook/internal/csf';
 
 import type { Expect, Page } from '@playwright/test';
 
@@ -87,6 +87,9 @@ export class SbPage {
 
   async waitForStoryLoaded() {
     try {
+      // wait for the story to be visited
+      await this.page.waitForURL((url) => url.search.includes(`path`));
+
       const root = this.previewRoot();
       // Wait until there is at least one child (a story element) in the preview iframe
       await root.locator(':scope > *').first().waitFor({

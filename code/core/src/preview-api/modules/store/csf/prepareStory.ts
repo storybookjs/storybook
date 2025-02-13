@@ -1,4 +1,5 @@
 /* eslint-disable no-underscore-dangle */
+import { type CleanupCallback, combineTags, includeConditionalArg } from '@storybook/core/csf';
 import type {
   Args,
   ArgsStoryFn,
@@ -18,7 +19,6 @@ import type {
   NormalizedProjectAnnotations,
   NormalizedStoryAnnotations,
 } from '@storybook/core/types';
-import { type CleanupCallback, combineTags, includeConditionalArg } from '@storybook/csf';
 import { global } from '@storybook/global';
 import { global as globalThis } from '@storybook/global';
 

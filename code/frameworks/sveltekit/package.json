@@ -1,6 +1,6 @@
 {
   "name": "@storybook/sveltekit",
-  "version": "8.6.0-alpha.3",
+  "version": "8.6.0-alpha.5",
   "description": "Storybook for SvelteKit",
   "keywords": [
     "storybook",
@@ -40,6 +40,12 @@
       "types": "./dist/vite-plugin.d.ts",
       "require": "./dist/vite-plugin.js",
       "import": "./dist/vite-plugin.mjs"
+    },
+    "./node": {
+      "types": "./dist/node/index.d.ts",
+      "node": "./dist/node/index.js",
+      "import": "./dist/node/index.mjs",
+      "require": "./dist/node/index.js"
     },
     "./package.json": "./package.json"
   },
@@ -84,7 +90,8 @@
       "./src/index.ts",
       "./src/preview.ts",
       "./src/preset.ts",
-      "./src/vite-plugin.ts"
+      "./src/vite-plugin.ts",
+      "./src/node/index.ts"
     ],
     "platform": "node"
   },

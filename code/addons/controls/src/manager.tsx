@@ -7,6 +7,7 @@ import type {
   SaveStoryResponsePayload,
 } from 'storybook/internal/core-events';
 import { SAVE_STORY_REQUEST, SAVE_STORY_RESPONSE } from 'storybook/internal/core-events';
+import type { Args } from 'storybook/internal/csf';
 import {
   addons,
   experimental_requestResponse,
@@ -14,8 +15,6 @@ import {
   useArgTypes,
 } from 'storybook/internal/manager-api';
 import { color } from 'storybook/internal/theming';
-
-import type { Args } from '@storybook/csf';
 
 import { dequal as deepEqual } from 'dequal';
 

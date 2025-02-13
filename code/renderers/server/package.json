@@ -1,6 +1,6 @@
 {
   "name": "@storybook/server",
-  "version": "8.6.0-alpha.3",
+  "version": "8.6.0-alpha.5",
   "description": "Storybook Server renderer",
   "keywords": [
     "storybook"
@@ -46,7 +46,6 @@
   },
   "dependencies": {
     "@storybook/components": "workspace:*",
-    "@storybook/csf": "0.1.12",
     "@storybook/global": "^5.0.0",
     "@storybook/manager-api": "workspace:*",
     "@storybook/preview-api": "workspace:*",

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/source-loader",
-  "version": "8.6.0-alpha.3",
+  "version": "8.6.0-alpha.5",
   "description": "Source loader",
   "keywords": [
     "lib",
@@ -44,7 +44,6 @@
     "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@storybook/csf": "0.1.12",
     "es-toolkit": "^1.22.0",
     "estraverse": "^5.2.0",
     "prettier": "^3.1.1"

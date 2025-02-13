@@ -1,4 +1,8 @@
-export { HIGHLIGHT, RESET_HIGHLIGHT } from './constants';
+import { definePreview } from 'storybook/internal/preview-api';
 
-// make it work with --isolatedModules
-export default {};
+import './preview';
+
+export { HIGHLIGHT, RESET_HIGHLIGHT } from './constants';
+export type { HighlightParameters } from './types';
+
+export default () => definePreview({});

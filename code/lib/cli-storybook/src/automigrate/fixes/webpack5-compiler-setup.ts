@@ -5,7 +5,7 @@ import {
   builderNameToCoreBuilder,
   compilerNameToCoreCompiler,
 } from 'storybook/internal/cli';
-import { frameworkPackages } from 'storybook/internal/common';
+import { frameworkPackages, getAddonNames } from 'storybook/internal/common';
 import type { SupportedFrameworks } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
@@ -14,7 +14,6 @@ import { dedent } from 'ts-dedent';
 
 import { add } from '../../add';
 import {
-  getAddonNames,
   getBuilderPackageName,
   getFrameworkOptions,
   getFrameworkPackageName,

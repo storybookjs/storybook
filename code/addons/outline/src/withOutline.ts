@@ -1,15 +1,11 @@
 import { useEffect, useMemo } from 'storybook/internal/preview-api';
-import type {
-  Renderer,
-  StoryContext,
-  PartialStoryFn as StoryFunction,
-} from 'storybook/internal/types';
+import type { DecoratorFunction } from 'storybook/internal/types';
 
 import { PARAM_KEY } from './constants';
 import { addOutlineStyles, clearStyles } from './helpers';
 import outlineCSS from './outlineCSS';
 
-export const withOutline = (StoryFn: StoryFunction<Renderer>, context: StoryContext<Renderer>) => {
+export const withOutline: DecoratorFunction = (StoryFn, context) => {
   const { globals } = context;
   const isActive = [true, 'true'].includes(globals[PARAM_KEY]);
   const isInDocs = context.viewMode === 'docs';

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/experimental-nextjs-vite",
-  "version": "8.6.0-alpha.3",
+  "version": "8.6.0-alpha.5",
   "description": "Storybook for Next.js and Vite",
   "keywords": [
     "storybook",
@@ -58,6 +58,12 @@
       "import": "./dist/vite-plugin/index.mjs",
       "require": "./dist/vite-plugin/index.js"
     },
+    "./node": {
+      "types": "./dist/node/index.d.ts",
+      "node": "./dist/node/index.js",
+      "import": "./dist/node/index.mjs",
+      "require": "./dist/node/index.js"
+    },
     "./package.json": "./package.json"
   },
   "main": "dist/index.js",
@@ -79,6 +85,9 @@
       ],
       "navigation.mock": [
         "dist/export-mocks/navigation/index.d.ts"
+      ],
+      "node": [
+        "dist/node/index.d.ts"
       ]
     }
   },
@@ -134,6 +143,7 @@
       "./src/index.ts",
       "./src/vite-plugin/index.ts",
       "./src/preset.ts",
+      "./src/node/index.ts",
       "./src/preview.tsx",
       "./src/export-mocks/cache/index.ts",
       "./src/export-mocks/headers/index.ts",

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/test",
-  "version": "8.6.0-alpha.3",
+  "version": "8.6.0-alpha.5",
   "description": "",
   "keywords": [
     "storybook"
@@ -43,7 +43,6 @@
     "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@storybook/csf": "0.1.12",
     "@storybook/global": "^5.0.0",
     "@storybook/instrumenter": "workspace:*",
     "@testing-library/dom": "10.4.0",

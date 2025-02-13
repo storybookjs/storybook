@@ -1,10 +1,6 @@
 /* eslint-env browser */
 import { useEffect } from 'storybook/internal/preview-api';
-import type {
-  Renderer,
-  StoryContext,
-  PartialStoryFn as StoryFunction,
-} from 'storybook/internal/types';
+import type { DecoratorFunction } from 'storybook/internal/types';
 
 import { destroy, init, rescale } from './box-model/canvas';
 import { drawSelectedElement } from './box-model/visualizer';
@@ -18,7 +14,7 @@ function findAndDrawElement(x: number, y: number) {
   drawSelectedElement(nodeAtPointerRef);
 }
 
-export const withMeasure = (StoryFn: StoryFunction<Renderer>, context: StoryContext<Renderer>) => {
+export const withMeasure: DecoratorFunction = (StoryFn, context) => {
   const { measureEnabled } = context.globals;
 
   useEffect(() => {

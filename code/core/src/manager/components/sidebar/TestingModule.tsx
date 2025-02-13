@@ -5,7 +5,7 @@ import { WithTooltip } from '@storybook/core/components';
 import { keyframes, styled } from '@storybook/core/theming';
 import { ChevronSmallUpIcon, PlayAllHollowIcon } from '@storybook/icons';
 
-import { TESTING_MODULE_CONFIG_CHANGE, type TestProviders } from '@storybook/core/core-events';
+import { type TestProviders } from '@storybook/core/core-events';
 import { useStorybookApi } from '@storybook/core/manager-api';
 
 import { LegacyRender } from './LegacyRender';
@@ -26,8 +26,7 @@ const Outline = styled.div<{
   crashed: boolean;
   failed: boolean;
   running: boolean;
-  updated: boolean;
-}>(({ crashed, failed, running, theme, updated }) => ({
+}>(({ crashed, failed, running, theme }) => ({
   position: 'relative',
   lineHeight: '20px',
   width: '100%',
@@ -36,7 +35,7 @@ const Outline = styled.div<{
   backgroundColor: `var(--sb-sidebar-bottom-card-background, ${theme.background.content})`,
   borderRadius:
     `var(--sb-sidebar-bottom-card-border-radius, ${theme.appBorderRadius + 1}px)` as any,
-  boxShadow: `inset 0 0 0 1px ${crashed && !running ? theme.color.negative : updated ? theme.color.positive : theme.appBorderColor}, var(--sb-sidebar-bottom-card-box-shadow, 0 1px 2px 0 rgba(0, 0, 0, 0.05), 0px -5px 20px 10px ${theme.background.app})`,
+  boxShadow: `inset 0 0 0 1px ${crashed && !running ? theme.color.negative : theme.appBorderColor}, var(--sb-sidebar-bottom-card-box-shadow, 0 1px 2px 0 rgba(0, 0, 0, 0.05), 0px -5px 20px 10px ${theme.background.app})`,
   transition: 'box-shadow 1s',
 
   '&:after': {
@@ -168,7 +167,6 @@ export const TestingModule = ({
   const timeoutRef = useRef<null | ReturnType<typeof setTimeout>>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const [maxHeight, setMaxHeight] = useState(DEFAULT_HEIGHT);
-  const [isUpdated, setUpdated] = useState(false);
   const [isCollapsed, setCollapsed] = useState(true);
   const [isChangingCollapse, setChangingCollapse] = useState(false);
 
@@ -189,19 +187,6 @@ export const TestingModule = ({
       return () => resizeObserver.disconnect();
     }
   }, [isCollapsed]);
-
-  useEffect(() => {
-    let timeout: ReturnType<typeof setTimeout>;
-    const handler = () => {
-      setUpdated(true);
-      timeout = setTimeout(setUpdated, 1000, false);
-    };
-    api.on(TESTING_MODULE_CONFIG_CHANGE, handler);
-    return () => {
-      api.off(TESTING_MODULE_CONFIG_CHANGE, handler);
-      clearTimeout(timeout);
-    };
-  }, [api]);
 
   const toggleCollapsed = useCallback((event: SyntheticEvent) => {
     event.stopPropagation();
@@ -230,7 +215,6 @@ export const TestingModule = ({
       running={isRunning}
       crashed={isCrashed}
       failed={isFailed || errorCount > 0}
-      updated={isUpdated}
     >
       <Card>
         {hasTestProviders && (

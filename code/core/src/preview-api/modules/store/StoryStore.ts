@@ -1,3 +1,4 @@
+import type { Canvas, CleanupCallback } from '@storybook/core/csf';
 import type {
   ComponentTitle,
   Parameters,
@@ -23,7 +24,6 @@ import type {
   StoryIndexV3,
   V3CompatIndexEntry,
 } from '@storybook/core/types';
-import type { Canvas, CleanupCallback } from '@storybook/csf';
 
 import { deprecate } from '@storybook/core/client-logger';
 import {
@@ -215,7 +215,7 @@ export class StoryStore<TRenderer extends Renderer> {
     const story = this.prepareStoryWithCache(
       storyAnnotations,
       componentAnnotations,
-      this.projectAnnotations
+      csfFile.projectAnnotations ?? this.projectAnnotations
     );
     this.args.setInitial(story);
     this.hooks[story.id] = this.hooks[story.id] || new HooksContext();

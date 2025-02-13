@@ -1,6 +1,7 @@
 /* eslint-disable no-underscore-dangle */
 
 /* eslint-disable @typescript-eslint/naming-convention */
+import { type CleanupCallback, isExportStory } from '@storybook/core/csf';
 import type {
   Args,
   Canvas,
@@ -19,7 +20,6 @@ import type {
   StoryContext,
   StrictArgTypes,
 } from '@storybook/core/types';
-import { type CleanupCallback, isExportStory } from '@storybook/csf';
 
 import { MountMustBeDestructuredError } from '@storybook/core/preview-errors';
 
@@ -28,6 +28,7 @@ import { dedent } from 'ts-dedent';
 import { HooksContext } from '../../../addons';
 import { ReporterAPI } from '../reporter-api';
 import { composeConfigs } from './composeConfigs';
+import { getCsfFactoryAnnotations } from './csf-factory-utils';
 import { getValuesFromArgTypes } from './getValuesFromArgTypes';
 import { normalizeComponentAnnotations } from './normalizeComponentAnnotations';
 import { normalizeProjectAnnotations } from './normalizeProjectAnnotations';
@@ -275,22 +276,27 @@ export function composeStories<TModule extends Store_CSFExports>(
   globalConfig: ProjectAnnotations<Renderer>,
   composeStoryFn: ComposeStoryFn = defaultComposeStory
 ) {
-  const { default: meta, __esModule, __namedExportsOrder, ...stories } = storiesImport;
-  const composedStories = Object.entries(stories).reduce((storiesMap, [exportsName, story]) => {
-    if (!isExportStory(exportsName, meta)) {
-      return storiesMap;
-    }
+  const { default: metaExport, __esModule, __namedExportsOrder, ...stories } = storiesImport;
+  let meta = metaExport;
 
-    const result = Object.assign(storiesMap, {
-      [exportsName]: composeStoryFn(
-        story as LegacyStoryAnnotationsOrFn,
-        meta,
-        globalConfig,
-        exportsName
-      ),
-    });
-    return result;
-  }, {});
+  const composedStories = Object.entries(stories).reduce(
+    (storiesMap, [exportsName, story]: [string, any]) => {
+      const { story: storyAnnotations, meta: componentAnnotations } =
+        getCsfFactoryAnnotations(story);
+      if (!meta && componentAnnotations) {
+        meta = componentAnnotations;
+      }
+
+      if (!isExportStory(exportsName, meta)) {
+        return storiesMap;
+      }
+      const result = Object.assign(storiesMap, {
+        [exportsName]: composeStoryFn(storyAnnotations, meta, globalConfig, exportsName),
+      });
+      return result;
+    },
+    {}
+  );
 
   return composedStories;
 }

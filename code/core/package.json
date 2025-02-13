@@ -1,6 +1,6 @@
 {
   "name": "@storybook/core",
-  "version": "8.6.0-alpha.3",
+  "version": "8.6.0-alpha.5",
   "description": "Storybook framework-agnostic API",
   "keywords": [
     "storybook"
@@ -96,6 +96,11 @@
       "types": "./dist/csf-tools/index.d.ts",
       "import": "./dist/csf-tools/index.js",
       "require": "./dist/csf-tools/index.cjs"
+    },
+    "./csf": {
+      "types": "./dist/csf/index.d.ts",
+      "import": "./dist/csf/index.js",
+      "require": "./dist/csf/index.cjs"
     },
     "./common": {
       "types": "./dist/common/index.d.ts",
@@ -219,6 +224,9 @@
       "csf-tools": [
         "./dist/csf-tools/index.d.ts"
       ],
+      "csf": [
+        "./dist/csf/index.d.ts"
+      ],
       "common": [
         "./dist/common/index.d.ts"
       ],
@@ -274,7 +282,6 @@
     "prep": "jiti ./scripts/prep.ts"
   },
   "dependencies": {
-    "@storybook/csf": "0.1.12",
     "@storybook/theming": "workspace:*",
     "better-opn": "^3.0.2",
     "browser-assert": "^1.2.1",
@@ -303,6 +310,7 @@
     "@emotion/use-insertion-effect-with-fallbacks": "^1.2.0",
     "@fal-works/esbuild-plugin-global-externals": "^2.1.2",
     "@ndelangen/get-tarball": "^3.0.7",
+    "@ngard/tiny-isequal": "^1.1.0",
     "@polka/compression": "^1.0.0-next.28",
     "@popperjs/core": "^2.6.0",
     "@radix-ui/react-dialog": "^1.1.2",

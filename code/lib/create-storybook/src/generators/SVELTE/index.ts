@@ -1,13 +1,12 @@
-import { getVersionSafe } from 'storybook/internal/cli';
-import type { JsPackageManager } from 'storybook/internal/common';
-
 import { major } from 'semver';
 
+import { getVersionSafe } from '../../../../../core/src/cli/helpers';
+import type { JsPackageManager } from '../../../../../core/src/common/js-package-manager/JsPackageManager';
 import { baseGenerator } from '../baseGenerator';
 import type { Generator } from '../types';
 
 export const getAddonSvelteCsfVersion = async (packageManager: JsPackageManager) => {
-  const svelteVersion = await getVersionSafe(packageManager, 'svelte');
+  const svelteVersion = await getVersionSafe(packageManager as any, 'svelte');
   try {
     const svelteMajor = major(svelteVersion ?? '');
     if (svelteMajor === 4) {

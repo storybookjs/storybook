@@ -18,13 +18,17 @@ module.exports = {
         const fileName = context.getPhysicalFilename();
         const isInCLI = !!fileName.includes(path.join('code', 'lib', 'cli') + path.sep);
         const isInCodemod = !!fileName.includes(path.join('code', 'lib', 'codemod'));
+        const isInCreateStorybook = !!fileName.includes(
+          path.join('code', 'lib', 'create-storybook')
+        );
         const isInCore = !!fileName.includes(path.join('code', 'core'));
 
         if (
           node.source.value.startsWith('@storybook/core/') &&
           !isInCLI &&
           !isInCore &&
-          !isInCodemod
+          !isInCodemod &&
+          !isInCreateStorybook
         ) {
           const newPath = node.source.value
             .replace('@storybook/core', 'storybook/internal')
@@ -38,7 +42,7 @@ module.exports = {
           });
         }
 
-        if (node.source.value.startsWith('storybook/internal/') && isInCore) {
+        if (node.source.value.startsWith('storybook/internal/') && (isInCore || isInCLI || isInCodemod || isInCreateStorybook)) {
           const newPath = node.source.value
             .replace('storybook/internal', '@storybook/core')
             .replace('/src', '');

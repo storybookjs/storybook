@@ -2,12 +2,11 @@
 import type { FC } from 'react';
 import React, { useContext } from 'react';
 
+import type { Parameters, Renderer, StrictArgTypes } from 'storybook/internal/csf';
 import type { ArgTypesExtractor } from 'storybook/internal/docs-tools';
 import { filterArgTypes } from 'storybook/internal/preview-api';
 import type { PropDescriptor } from 'storybook/internal/preview-api';
 import type { ModuleExports } from 'storybook/internal/types';
-
-import type { Parameters, Renderer, StrictArgTypes } from '@storybook/csf';
 
 import type { SortType } from '../components';
 import { ArgsTableError, ArgsTable as PureArgsTable, TabbedArgsTable } from '../components';

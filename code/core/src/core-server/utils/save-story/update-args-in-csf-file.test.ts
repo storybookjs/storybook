@@ -16,6 +16,7 @@ const makeTitle = (userTitle: string) => userTitle;
 const FILES = {
   typescriptConstructs: join(__dirname, 'mocks/typescript-constructs.stories.tsx'),
   csfVariances: join(__dirname, 'mocks/csf-variances.stories.tsx'),
+  csf4Variances: join(__dirname, 'mocks/csf4-variances.stories.tsx'),
   unsupportedCsfVariances: join(__dirname, 'mocks/unsupported-csf-variances.stories.tsx'),
   exportVariances: join(__dirname, 'mocks/export-variances.stories.tsx'),
   dataVariances: join(__dirname, 'mocks/data-variances.stories.tsx'),
@@ -204,7 +205,7 @@ describe('success', () => {
           render: (args) => <MyComponent {...args} />,
         } satisfies Story;
         
-        // The order of both the properties of the story and the order or args should be preserved
+        // The order of both the properties of the story and the order of args should be preserved
         export const OrderedArgs = {
           args: {
             bordered: true,
@@ -231,6 +232,58 @@ describe('success', () => {
           play: async ({ canvasElement }) => {
             console.log("play");
         ..."
+    `);
+  });
+  test('CSF4 Variances', async () => {
+    const newArgs = { bordered: true, initial: 'test1' };
+
+    const before = await format(await readFile(FILES.csf4Variances, 'utf-8'), {
+      parser: 'typescript',
+    });
+    const CSF = await readCsf(FILES.csf4Variances, { makeTitle });
+
+    const parsed = CSF.parse();
+    const names = Object.keys(parsed._stories);
+    const nodes = names.map((name) => CSF.getStoryExport(name));
+
+    nodes.forEach((node) => {
+      updateArgsInCsfFile(node, newArgs);
+    });
+
+    const after = await format(printCsf(parsed).code, {
+      parser: 'typescript',
+    });
+
+    // check if the code was updated at all
+    expect(after).not.toBe(before);
+
+    // check if the code was updated correctly
+    // TODO, the comment is not preserved!!!
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
+      "  ...
+            initial: "foo",
+          },
+        });
+        
+      - export const Empty = meta.story({});
+      - 
+      + export const Empty = meta.story({
+      +   args: {
+      +     bordered: true,
+      +     initial: "test1",
+      +   },
+      + });
+      + 
+        export const WithArgs = meta.story({
+          args: {
+            foo: "bar",
+        
+      +     bordered: true,
+      +     initial: "test1",
+      + 
+          },
+        });
+        "
     `);
   });
   test('Export Variances', async () => {

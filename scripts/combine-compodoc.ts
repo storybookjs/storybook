@@ -42,7 +42,7 @@ async function run(cwd: string) {
       const outputDir = await temporaryDirectory();
       const resolvedDir = await realpath(dir);
       await execaCommand(
-        `yarn compodoc ${resolvedDir} -p ./tsconfig.json -e json -d ${outputDir}`,
+        `yarn --cwd ${cwd} compodoc ${resolvedDir} -p ./tsconfig.json -e json -d ${outputDir}`,
         { cwd }
       );
       const contents = await readFile(join(outputDir, 'documentation.json'), 'utf8');

@@ -12,6 +12,12 @@ import { init as initURL } from '../modules/url';
 
 vi.mock('@storybook/core/client-logger');
 
+const storyState = (storyId) => ({
+  path: `/story/${storyId}`,
+  storyId,
+  viewMode: 'story',
+});
+
 describe('initial state', () => {
   const viewMode = 'story';
 
@@ -20,9 +26,22 @@ describe('initial state', () => {
       const navigate = vi.fn();
       const location = { search: '?' + new URLSearchParams({ full: '1' }).toString() };
 
+      const store = {
+        state: { ...storyState('test--story'), location },
+        getState() {
+          return this.state;
+        },
+        setState(value) {
+          this.state = { ...this.state, ...value };
+        },
+      };
+
       const {
         state: { layout },
-      } = initURL({ navigate, state: { location }, provider: { channel: new EventEmitter() } });
+      } = initURL(
+        { navigate, state: { location }, provider: { channel: new EventEmitter() } },
+        store
+      );
 
       expect(layout).toMatchObject({
         bottomPanelHeight: 0,
@@ -130,11 +149,6 @@ describe('initModule', () => {
       this.state = { ...this.state, ...value };
     },
   };
-  const storyState = (storyId) => ({
-    path: `/story/${storyId}`,
-    storyId,
-    viewMode: 'story',
-  });
 
   const fullAPI = {
     showReleaseNotesOnLaunch: vi.fn(),
@@ -146,14 +160,15 @@ describe('initModule', () => {
   });
 
   it('updates args param on SET_CURRENT_STORY', async () => {
-    store.setState(storyState('test--story'));
+    const location = {};
+    store.setState({ ...storyState('test--story'), location });
 
     const navigate = vi.fn();
     const channel = new EventEmitter();
     initURL({
       store,
       provider: { channel },
-      state: { location: {} },
+      state: { location },
       navigate,
       fullAPI: Object.assign(fullAPI, {
         getCurrentStoryData: () => ({
@@ -172,11 +187,12 @@ describe('initModule', () => {
   });
 
   it('updates globals param on GLOBALS_UPDATED', async () => {
-    store.setState(storyState('test--story'));
+    const location = {};
+    store.setState({ ...storyState('test--story'), location });
 
     const navigate = vi.fn();
     const channel = new EventEmitter();
-    initURL({ store, provider: { channel }, state: { location: {} }, navigate, fullAPI });
+    initURL({ store, provider: { channel }, state: { location }, navigate, fullAPI });
 
     channel.emit(GLOBALS_UPDATED, {
       userGlobals: { a: 2 },
@@ -192,13 +208,14 @@ describe('initModule', () => {
   });
 
   it('adds url params alphabetically', async () => {
-    store.setState({ ...storyState('test--story'), customQueryParams: { full: 1 } });
+    const location = {};
+    store.setState({ ...storyState('test--story'), customQueryParams: { full: 1 }, location });
     const navigate = vi.fn();
     const channel = new EventEmitter();
     const { api } = initURL({
       store,
       provider: { channel },
-      state: { location: {} },
+      state: { location },
       navigate,
       fullAPI: Object.assign(fullAPI, {
         getCurrentStoryData: () => ({ type: 'story', args: { a: 1 } }),

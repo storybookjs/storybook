@@ -5,7 +5,7 @@ import type { API_Layout, API_ViewMode } from 'storybook/internal/types';
 
 import { styled } from 'storybook/theming';
 
-import type { API } from '@storybook/core/manager-api';
+import { type API, useStorybookApi } from '@storybook/core/manager-api';
 
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
 import { Notifications } from '../../container/Notifications';
@@ -25,7 +25,6 @@ interface ManagerLayoutState
 export type LayoutState = InternalLayoutState & ManagerLayoutState;
 
 interface Props {
-  api: API;
   managerLayoutState: ManagerLayoutState;
   setManagerLayoutState: (state: Partial<Omit<ManagerLayoutState, 'viewMode'>>) => void;
   slotMain?: React.ReactNode;
@@ -129,14 +128,9 @@ const useLayoutSyncingState = ({
   };
 };
 
-export const Layout = ({
-  api,
-  managerLayoutState,
-  setManagerLayoutState,
-  hasTab,
-  ...slots
-}: Props) => {
+export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...slots }: Props) => {
   const { isDesktop, isMobile } = useLayout();
+  const api = useStorybookApi();
 
   const {
     navSize,

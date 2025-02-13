@@ -5,8 +5,6 @@ import type { Addon_PageType } from 'storybook/internal/types';
 
 import { Global, createGlobal } from 'storybook/theming';
 
-import type { API } from '@storybook/core/manager-api';
-
 import { Layout } from './components/layout/Layout';
 import { useLayout } from './components/layout/LayoutProvider';
 import Panel from './container/Panel';
@@ -14,21 +12,19 @@ import Preview from './container/Preview';
 import Sidebar from './container/Sidebar';
 
 type Props = {
-  api: API;
   managerLayoutState: ComponentProps<typeof Layout>['managerLayoutState'];
   setManagerLayoutState: ComponentProps<typeof Layout>['setManagerLayoutState'];
   pages: Addon_PageType[];
   hasTab: boolean;
 };
 
-export const App = ({ api, managerLayoutState, setManagerLayoutState, pages, hasTab }: Props) => {
+export const App = ({ managerLayoutState, setManagerLayoutState, pages, hasTab }: Props) => {
   const { setMobileAboutOpen } = useLayout();
 
   return (
     <>
       <Global styles={createGlobal} />
       <Layout
-        api={api}
         hasTab={hasTab}
         managerLayoutState={managerLayoutState}
         setManagerLayoutState={setManagerLayoutState}

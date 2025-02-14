@@ -103,6 +103,9 @@ export const TagsFilter = ({
     return null;
   }
 
+  const tags = Array.from(allTags);
+  tags.sort();
+
   return (
     <WithTooltip
       placement="bottom"
@@ -111,7 +114,7 @@ export const TagsFilter = ({
       tooltip={() => (
         <TagsFilterPanel
           api={api}
-          allTags={Array.from(allTags).toSorted()}
+          allTags={tags}
           selectedTags={selectedTags}
           toggleTag={toggleTag}
           isDevelopment={isDevelopment}

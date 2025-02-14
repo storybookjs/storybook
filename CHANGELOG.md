@@ -1,3 +1,8 @@
+## 8.5.6
+
+- Builder-Vite: Fix defaulting to allowing all hosts - [#30523](https://github.com/storybookjs/storybook/pull/30523), thanks @JReinhold!
+- UI: Fix tags sort for browser back-compat - [#30547](https://github.com/storybookjs/storybook/pull/30547), thanks @shilman!
+
 ## 8.5.5
 
 - Builder-Vite: Fix Turbosnap - [#30522](https://github.com/storybookjs/storybook/pull/30522), thanks @valentinpalkovic!

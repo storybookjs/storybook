@@ -2,7 +2,6 @@
 import { logger } from 'storybook/internal/client-logger';
 import { ArgTypes, InputType, SBType } from 'storybook/internal/types';
 
-import global from 'global';
 import { global } from '@storybook/global';
 
 import {

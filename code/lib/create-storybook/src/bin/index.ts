@@ -1,19 +1,23 @@
-import { versions } from 'storybook/internal/common';
-import { addToGlobalContext } from 'storybook/internal/telemetry';
-
 import { program } from 'commander';
-import { findPackageSync } from 'fd-package-json';
-import invariant from 'tiny-invariant';
 
+import { addToGlobalContext } from '../../../../core/src/telemetry';
+import { version } from '../../package.json';
 import type { CommandOptions } from '../generators/types';
 import { initiate } from '../initiate';
 
-addToGlobalContext('cliVersion', versions.storybook);
+const IS_NON_CI = process.env.CI !== 'true';
+const IS_NON_STORYBOOK_SANDBOX = process.env.IN_STORYBOOK_SANDBOX !== 'true';
 
-const pkg = findPackageSync(__dirname);
-invariant(pkg, 'Failed to find the closest package.json file.');
+addToGlobalContext('cliVersion', version);
 
-program
+/**
+ * Create a commander application with flags for both legacy and modern. We then check the options
+ * given by commander with zod. If zod validates the options, we run the modern version of the app.
+ * If zod fails to validate the options, we check why, and if it's because of a legacy flag, we run
+ * the legacy version of the app.
+ */
+
+const createStorybookProgram = program
   .name('Initialize Storybook into your project.')
   .option(
     '--disable-telemetry',
@@ -21,7 +25,8 @@ program
     // default value is false, but if the user sets STORYBOOK_DISABLE_TELEMETRY, it can be true
     process.env.STORYBOOK_DISABLE_TELEMETRY && process.env.STORYBOOK_DISABLE_TELEMETRY !== 'false'
   )
-  .option('--debug', 'Get more logs in debug mode', false)
+  .option('--features <...list>', 'What features of storybook are you interested in?')
+  .option('--debug', 'Get more logs in debug mode')
   .option('--enable-crash-reports', 'Enable sending crash reports to telemetry data')
   .option('-f --force', 'Force add Storybook')
   .option('-s --skip-install', 'Skip installing deps')
@@ -39,15 +44,19 @@ program
   // alongside `--no-dev` even if we are unlikely to directly use `--dev`. https://github.com/tj/commander.js/issues/2068#issuecomment-1804524585
   .option(
     '--dev',
-    'Launch the development server after completing initialization. Enabled by default',
-    process.env.CI !== 'true' && process.env.IN_STORYBOOK_SANDBOX !== 'true'
+    'Launch the development server after completing initialization. Enabled by default'
   )
   .option(
     '--no-dev',
     'Complete the initialization of Storybook without launching the Storybook development server'
-  )
-  .action((options: CommandOptions) => {
-    initiate(options).catch(() => process.exit(1));
+  );
+
+createStorybookProgram
+  .action(async (options) => {
+    options.debug = options.debug ?? false;
+    options.dev = options.dev ?? (IS_NON_CI && IS_NON_STORYBOOK_SANDBOX);
+
+    await initiate(options as CommandOptions).catch(() => process.exit(1));
   })
-  .version(String(pkg.version))
+  .version(String(version))
   .parse(process.argv);

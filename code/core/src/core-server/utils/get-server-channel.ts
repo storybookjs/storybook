@@ -4,6 +4,8 @@ import { Channel, HEARTBEAT_INTERVAL } from '@storybook/core/channels';
 import { isJSON, parse, stringify } from 'telejson';
 import WebSocket, { WebSocketServer } from 'ws';
 
+import { UniversalStore } from '../../shared/universal-store';
+
 type Server = NonNullable<NonNullable<ConstructorParameters<typeof WebSocketServer>[0]>['server']>;
 
 /**
@@ -17,15 +19,7 @@ export class ServerChannelTransport {
 
   private handler?: ChannelHandler;
 
-  isAlive = false;
-
-  private heartbeat() {
-    this.isAlive = true;
-  }
-
   constructor(server: Server) {
-    this.heartbeat = this.heartbeat.bind(this);
-
     this.socket = new WebSocketServer({ noServer: true });
 
     server.on('upgrade', (request, socket, head) => {
@@ -36,7 +30,6 @@ export class ServerChannelTransport {
       }
     });
     this.socket.on('connection', (wss) => {
-      this.isAlive = true;
       wss.on('message', (raw) => {
         const data = raw.toString();
         const event =
@@ -44,21 +37,11 @@ export class ServerChannelTransport {
             ? parse(data, { allowFunction: false, allowClass: false })
             : data;
         this.handler?.(event);
-        if (event.type === 'pong') {
-          this.heartbeat();
-        }
       });
     });
 
     const interval = setInterval(() => {
-      this.socket.clients.forEach((ws) => {
-        if (this.isAlive === false) {
-          return ws.terminate();
-        }
-
-        this.isAlive = false;
-        this.send({ type: 'ping' });
-      });
+      this.send({ type: 'ping' });
     }, HEARTBEAT_INTERVAL);
 
     this.socket.on('close', function close() {
@@ -91,7 +74,12 @@ export class ServerChannelTransport {
 export function getServerChannel(server: Server) {
   const transports = [new ServerChannelTransport(server)];
 
-  return new Channel({ transports, async: true });
+  const channel = new Channel({ transports, async: true });
+
+  // eslint-disable-next-line no-underscore-dangle
+  UniversalStore.__prepare(channel, UniversalStore.Environment.SERVER);
+
+  return channel;
 }
 
 // for backwards compatibility

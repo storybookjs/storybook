@@ -11,8 +11,14 @@ export const updateArgsInCsfFile = async (node: t.Node, input: Record<string, an
     })
   );
 
+  const isCsf4Story =
+    t.isCallExpression(node) &&
+    t.isMemberExpression(node.callee) &&
+    t.isIdentifier(node.callee.property) &&
+    node.callee.property.name === 'story';
+
   // detect CSF2 and throw
-  if (t.isArrowFunctionExpression(node) || t.isCallExpression(node)) {
+  if (!isCsf4Story && (t.isArrowFunctionExpression(node) || t.isCallExpression(node))) {
     throw new SaveStoryError(`Updating a CSF2 story is not supported`);
   }
 

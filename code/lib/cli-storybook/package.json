@@ -1,6 +1,6 @@
 {
   "name": "@storybook/cli",
-  "version": "8.6.0-alpha.2",
+  "version": "8.6.0-beta.0",
   "description": "Storybook CLI",
   "keywords": [
     "storybook"
@@ -22,10 +22,11 @@
   "author": "Storybook Team",
   "type": "module",
   "exports": {
-    "./bin/index.cjs": {
-      "node": "./bin/index.cjs",
-      "require": "./bin/index.cjs"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     },
+    "./bin/index.cjs": "./bin/index.cjs",
     "./package.json": "./package.json"
   },
   "bin": "./bin/index.cjs",
@@ -55,6 +56,7 @@
     "globby": "^14.0.1",
     "jscodeshift": "^0.15.1",
     "leven": "^3.1.0",
+    "p-limit": "^6.2.0",
     "prompts": "^2.4.0",
     "semver": "^7.3.7",
     "storybook": "workspace:*",
@@ -68,7 +70,7 @@
     "picocolors": "^1.1.0",
     "slash": "^5.0.0",
     "strip-ansi": "^7.1.0",
-    "typescript": "^5.3.2"
+    "typescript": "^5.7.3"
   },
   "publishConfig": {
     "access": "public"
@@ -77,6 +79,9 @@
     "entries": [
       "./src/index.ts",
       "./src/bin/index.ts"
+    ],
+    "formats": [
+      "cjs"
     ],
     "platform": "node"
   },

@@ -4,6 +4,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import {
   BabelFileClass,
   type GeneratorOptions,
+  type NodePath,
   type RecastOptions,
   babelParse,
   generate,
@@ -11,6 +12,7 @@ import {
   types as t,
   traverse,
 } from '@storybook/core/babel';
+import { isExportStory, storyNameFromExport, toId } from '@storybook/core/csf';
 import type {
   ComponentAnnotations,
   IndexInput,
@@ -19,7 +21,6 @@ import type {
   StoryAnnotations,
   Tag,
 } from '@storybook/core/types';
-import { isExportStory, storyNameFromExport, toId } from '@storybook/csf';
 
 import { dedent } from 'ts-dedent';
 
@@ -39,6 +40,9 @@ interface BabelFile {
   inputMap: object | null;
   code: string;
 }
+
+const PREVIEW_FILE_REGEX = /\/preview(.(js|jsx|mjs|ts|tsx))?$/;
+export const isValidPreviewPath = (filepath: string) => PREVIEW_FILE_REGEX.test(filepath);
 
 function parseIncludeExclude(prop: t.Node) {
   if (t.isArrayExpression(prop)) {
@@ -75,8 +79,12 @@ function parseTags(prop: t.Node) {
 }
 
 const formatLocation = (node: t.Node, fileName?: string) => {
-  const { line, column } = node.loc?.start || {};
-  return `${fileName || ''} (line ${line}, col ${column})`.trim();
+  let loc = '';
+  if (node.loc) {
+    const { line, column } = node.loc?.start || {};
+    loc = `(line ${line}, col ${column})`;
+  }
+  return `${fileName || ''} ${loc}`.trim();
 };
 
 export const isModuleMock = (importPath: string) => MODULE_MOCK_REGEX.test(importPath);
@@ -171,9 +179,46 @@ export interface CsfOptions {
 
 export class NoMetaError extends Error {
   constructor(message: string, ast: t.Node, fileName?: string) {
+    const msg = ``.trim();
     super(dedent`
       CSF: ${message} ${formatLocation(ast, fileName)}
+      
+      More info: https://storybook.js.org/docs/writing-stories#default-export
+    `);
+    this.name = this.constructor.name;
+  }
+}
 
+export class MultipleMetaError extends Error {
+  constructor(message: string, ast: t.Node, fileName?: string) {
+    const msg = `${message} ${formatLocation(ast, fileName)}`.trim();
+    super(dedent`
+      CSF: ${message} ${formatLocation(ast, fileName)}
+      
+      More info: https://storybook.js.org/docs/writing-stories#default-export
+    `);
+    this.name = this.constructor.name;
+  }
+}
+
+export class MixedFactoryError extends Error {
+  constructor(message: string, ast: t.Node, fileName?: string) {
+    const msg = `${message} ${formatLocation(ast, fileName)}`.trim();
+    super(dedent`
+      CSF: ${message} ${formatLocation(ast, fileName)}
+      
+      More info: https://storybook.js.org/docs/writing-stories#default-export
+    `);
+    this.name = this.constructor.name;
+  }
+}
+
+export class BadMetaError extends Error {
+  constructor(message: string, ast: t.Node, fileName?: string) {
+    const msg = ``.trim();
+    super(dedent`
+      CSF: ${message} ${formatLocation(ast, fileName)}
+      
       More info: https://storybook.js.org/docs/writing-stories#default-export
     `);
     this.name = this.constructor.name;
@@ -211,11 +256,17 @@ export class CsfFile {
 
   _storyExports: Record<string, t.VariableDeclarator | t.FunctionDeclaration> = {};
 
+  _storyPaths: Record<string, NodePath<t.ExportNamedDeclaration>> = {};
+
   _metaStatement: t.Statement | undefined;
 
   _metaNode: t.Expression | undefined;
 
+  _metaPath: NodePath<t.ExportDefaultDeclaration> | undefined;
+
   _metaVariableName: string | undefined;
+
+  _metaIsFactory: boolean | undefined;
 
   _storyStatements: Record<string, t.ExportNamedDeclaration | t.Expression> = {};
 
@@ -263,6 +314,10 @@ export class CsfFile {
   }
 
   _parseMeta(declaration: t.ObjectExpression, program: t.Program) {
+    if (this._metaNode) {
+      throw new MultipleMetaError('multiple meta objects', declaration, this._options.fileName);
+    }
+    this._metaNode = declaration;
     const meta: StaticMeta = {};
     (declaration.properties as t.ObjectProperty[]).forEach((p) => {
       if (t.isIdentifier(p.key)) {
@@ -339,6 +394,17 @@ export class CsfFile {
           const { node, parent } = path;
           const isVariableReference = t.isIdentifier(node.declaration) && t.isProgram(parent);
 
+          /**
+           * Transform inline default exports into a constant declaration as it is needed for the
+           * Vitest plugin to compose stories using CSF1 through CSF3 should not be needed at all
+           * once we move to CSF4 entirely
+           *
+           * `export default {};`
+           *
+           * Becomes
+           *
+           * `const _meta = {}; export default _meta;`
+           */
           if (
             self._options.transformInlineMeta &&
             !isVariableReference &&
@@ -354,6 +420,10 @@ export class CsfFile {
             // Preserve sourcemaps location
             nodes.forEach((_node: t.Node) => (_node.loc = path.node.loc));
             path.replaceWithMultiple(nodes);
+
+            // This is a bit brittle because it assumes that we will hit the inserted default export
+            // as the traversal continues.
+            return;
           }
 
           let metaNode: t.ObjectExpression | undefined;
@@ -390,8 +460,7 @@ export class CsfFile {
             metaNode = decl.expression;
           }
 
-          if (!self._meta && metaNode && t.isProgram(parent)) {
-            self._metaNode = metaNode;
+          if (metaNode && t.isProgram(parent)) {
             self._parseMeta(metaNode, parent);
           }
 
@@ -402,10 +471,13 @@ export class CsfFile {
               self._options.fileName
             );
           }
+
+          self._metaPath = path;
         },
       },
       ExportNamedDeclaration: {
-        enter({ node, parent }) {
+        enter(path) {
+          const { node, parent } = path;
           let declarations;
           if (t.isVariableDeclaration(node.declaration)) {
             declarations = node.declaration.declarations.filter((d) => t.isVariableDeclarator(d));
@@ -416,12 +488,14 @@ export class CsfFile {
             // export const X = ...;
             declarations.forEach((decl: t.VariableDeclarator | t.FunctionDeclaration) => {
               if (t.isIdentifier(decl.id)) {
+                let storyIsFactory = false;
                 const { name: exportName } = decl.id;
                 if (exportName === '__namedExportsOrder' && t.isVariableDeclarator(decl)) {
                   self._namedExportsOrder = parseExportsOrder(decl.init as t.Expression);
                   return;
                 }
                 self._storyExports[exportName] = decl;
+                self._storyPaths[exportName] = path;
                 self._storyStatements[exportName] = node;
                 let name = storyNameFromExport(exportName);
                 if (self._storyAnnotations[exportName]) {
@@ -439,6 +513,36 @@ export class CsfFile {
                       : decl.init;
                 } else {
                   storyNode = decl;
+                }
+                if (
+                  t.isCallExpression(storyNode) &&
+                  t.isMemberExpression(storyNode.callee) &&
+                  t.isIdentifier(storyNode.callee.property) &&
+                  storyNode.callee.property.name === 'story'
+                ) {
+                  storyIsFactory = true;
+                  storyNode = storyNode.arguments[0];
+                }
+                if (self._metaIsFactory && !storyIsFactory) {
+                  throw new MixedFactoryError(
+                    'expected factory story',
+                    storyNode as t.Node,
+                    self._options.fileName
+                  );
+                } else if (!self._metaIsFactory && storyIsFactory) {
+                  if (self._metaNode) {
+                    throw new MixedFactoryError(
+                      'expected non-factory story',
+                      storyNode as t.Node,
+                      self._options.fileName
+                    );
+                  } else {
+                    throw new BadMetaError(
+                      'meta() factory must be imported from .storybook/preview configuration',
+                      storyNode as t.Node,
+                      self._options.fileName
+                    );
+                  }
                 }
                 const parameters: { [key: string]: any } = {};
                 if (t.isObjectExpression(storyNode)) {
@@ -480,7 +584,9 @@ export class CsfFile {
                   id: 'FIXME',
                   name,
                   parameters,
-                  __stats: {},
+                  __stats: {
+                    factory: storyIsFactory,
+                  },
                 };
               }
             });
@@ -508,12 +614,13 @@ export class CsfFile {
                     metaNode = decl.expression;
                   }
 
-                  if (!self._meta && metaNode && t.isProgram(parent)) {
+                  if (metaNode && t.isProgram(parent)) {
                     self._parseMeta(metaNode, parent);
                   }
                 } else {
                   self._storyAnnotations[exportName] = {};
                   self._storyStatements[exportName] = decl;
+                  self._storyPaths[exportName] = path;
                   self._stories[exportName] = {
                     id: 'FIXME',
                     name: exportName,
@@ -570,7 +677,8 @@ export class CsfFile {
         },
       },
       CallExpression: {
-        enter({ node }) {
+        enter(path) {
+          const { node } = path;
           const { callee } = node;
           if (t.isIdentifier(callee) && callee.name === 'storiesOf') {
             throw new Error(dedent`
@@ -578,6 +686,30 @@ export class CsfFile {
 
               SB8 does not support \`storiesOf\`. 
             `);
+          }
+          if (
+            t.isMemberExpression(callee) &&
+            t.isIdentifier(callee.property) &&
+            callee.property.name === 'meta' &&
+            t.isIdentifier(callee.object) &&
+            node.arguments.length > 0
+          ) {
+            const configCandidate = path.scope.getBinding(callee.object.name);
+            const configParent = configCandidate?.path?.parentPath?.node;
+            if (t.isImportDeclaration(configParent)) {
+              if (isValidPreviewPath(configParent.source.value)) {
+                const metaNode = node.arguments[0] as t.ObjectExpression;
+                self._metaVariableName = callee.property.name;
+                self._metaIsFactory = true;
+                self._parseMeta(metaNode, self._ast.program);
+              } else {
+                throw new BadMetaError(
+                  'meta() factory must be imported from .storybook/preview configuration',
+                  configParent,
+                  self._options.fileName
+                );
+              }
+            }
           }
         },
       },

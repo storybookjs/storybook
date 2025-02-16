@@ -1,4 +1,4 @@
-import { isExportStory } from '@storybook/csf';
+import { isExportStory } from 'storybook/internal/csf';
 
 import estraverse from 'estraverse';
 

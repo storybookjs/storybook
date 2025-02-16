@@ -66,7 +66,7 @@ export type StoryObj<TMetaOrCmpOrArgs = Args> = [TMetaOrCmpOrArgs] extends [
     : StoryAnnotations<ReactRenderer, TMetaOrCmpOrArgs>;
 
 // This performs a downcast to function types that are mocks, when a mock fn is given to meta args.
-type AddMocks<TArgs, DefaultArgs> = Simplify<{
+export type AddMocks<TArgs, DefaultArgs> = Simplify<{
   [T in keyof TArgs]: T extends keyof DefaultArgs
     ? // eslint-disable-next-line @typescript-eslint/ban-types
       DefaultArgs[T] extends (...args: any) => any & { mock: {} } // allow any function with a mock object

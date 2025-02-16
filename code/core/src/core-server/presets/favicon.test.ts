@@ -53,7 +53,7 @@ it('with no staticDirs favicon should return default', async () => {
 
 it('with staticDirs containing a single favicon.ico should return the found favicon', async () => {
   const location = 'static';
-  existsSyncMock.mockImplementation((p: string | Buffer | URL) => {
+  existsSyncMock.mockImplementation((p) => {
     if (p === createPath(location)) {
       return true;
     }
@@ -69,7 +69,7 @@ it('with staticDirs containing a single favicon.ico should return the found favi
 
 it('with staticDirs containing a single favicon.svg should return the found favicon', async () => {
   const location = 'static';
-  existsSyncMock.mockImplementation((p: string | Buffer | URL) => {
+  existsSyncMock.mockImplementation((p) => {
     if (p === createPath(location)) {
       return true;
     }
@@ -85,7 +85,7 @@ it('with staticDirs containing a single favicon.svg should return the found favi
 
 it('with staticDirs containing a multiple favicons should return the first favicon and warn', async () => {
   const location = 'static';
-  existsSyncMock.mockImplementation((p: string | Buffer | URL) => {
+  existsSyncMock.mockImplementation((p) => {
     if (p === createPath(location)) {
       return true;
     }
@@ -107,7 +107,7 @@ it('with staticDirs containing a multiple favicons should return the first favic
 it('with multiple staticDirs containing a multiple favicons should return the first favicon and warn', async () => {
   const locationA = 'static-a';
   const locationB = 'static-b';
-  existsSyncMock.mockImplementation((p: string | Buffer | URL) => {
+  existsSyncMock.mockImplementation((p) => {
     if (p === createPath(locationA)) {
       return true;
     }

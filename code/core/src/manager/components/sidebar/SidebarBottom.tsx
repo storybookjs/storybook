@@ -128,7 +128,6 @@ export const SidebarBottomBase = ({
         error: { name: 'Crashed!', message: details.error.message },
         running: false,
         crashed: true,
-        watching: false,
       });
     };
 

@@ -40,7 +40,8 @@ function printError(error: any) {
 }
 
 export const dev = async (cliOptions: CLIOptions) => {
-  process.env.NODE_ENV = process.env.NODE_ENV || 'development';
+  const { env } = process;
+  env.NODE_ENV = env.NODE_ENV || 'development';
 
   const packageJson = await findPackage(__dirname);
   invariant(packageJson, 'Failed to find the closest package.json file.');

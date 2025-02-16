@@ -1,10 +1,10 @@
 import { stat, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
-import { SupportedLanguage, externalFrameworks } from 'storybook/internal/cli';
-import { logger } from 'storybook/internal/node-logger';
-
 import { dedent } from 'ts-dedent';
+
+import { SupportedLanguage, externalFrameworks } from '../../../../core/src/cli/project_types';
+import { logger } from '../../../../core/src/node-logger';
 
 interface ConfigureMainOptions {
   addons: string[];
@@ -102,23 +102,14 @@ export async function configureMain({
     finalPrefixes.push(`/** @type { import('${frameworkPackage}').StorybookConfig } */`);
   }
 
-  let mainJsContents = mainConfigTemplate
+  let mainJsContents = '';
+  mainJsContents = mainConfigTemplate
     .replace('<<import>>', `${imports.join('\n\n')}\n\n`)
     .replace('<<prefix>>', finalPrefixes.length > 0 ? `${finalPrefixes.join('\n\n')}\n` : '')
     .replace('<<type>>', isTypescript ? ': StorybookConfig' : '')
     .replace('<<mainContents>>', mainContents);
 
   const mainPath = `./${storybookConfigFolder}/main.${isTypescript ? 'ts' : 'js'}`;
-
-  try {
-    const prettier = (await import('prettier')).default;
-    mainJsContents = await prettier.format(dedent(mainJsContents), {
-      ...(await prettier.resolveConfig(mainPath)),
-      filepath: mainPath,
-    });
-  } catch {
-    logger.verbose(`Failed to prettify ${mainPath}`);
-  }
 
   await writeFile(mainPath, mainJsContents, { encoding: 'utf8' });
 }
@@ -151,7 +142,8 @@ export async function configurePreview(options: ConfigurePreviewOptions) {
     .filter(Boolean)
     .join('\n');
 
-  let preview = dedent`
+  let preview = '';
+  preview = dedent`
     ${prefix}${prefix.length > 0 ? '\n' : ''}
     ${
       !isTypescript && rendererPackage
@@ -172,16 +164,6 @@ export async function configurePreview(options: ConfigurePreviewOptions) {
     `
     .replace('  \n', '')
     .trim();
-
-  try {
-    const prettier = (await import('prettier')).default;
-    preview = await prettier.format(preview, {
-      ...(await prettier.resolveConfig(previewPath)),
-      filepath: previewPath,
-    });
-  } catch {
-    logger.verbose(`Failed to prettify ${previewPath}`);
-  }
 
   await writeFile(previewPath, preview, { encoding: 'utf8' });
 }

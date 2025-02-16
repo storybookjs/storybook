@@ -74,7 +74,7 @@ export function action(name: string, options: ActionOptions = {}): HandlerFuncti
       );
 
       if (storyRenderer) {
-        const deprecated = !window?.FEATURES?.disallowImplicitActionsInRenderV8;
+        const deprecated = !globalThis?.FEATURES?.disallowImplicitActionsInRenderV8;
         const error = new ImplicitActionsDuringRendering({
           phase: storyRenderer.phase!,
           name,

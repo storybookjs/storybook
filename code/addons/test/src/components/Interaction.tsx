@@ -14,12 +14,12 @@ import { MatcherResult } from './MatcherResult';
 import { MethodCall } from './MethodCall';
 import { StatusIcon } from './StatusIcon';
 
-const MethodCallWrapper = styled.div(() => ({
+const MethodCallWrapper = styled.div({
   fontFamily: typography.fonts.mono,
   fontSize: typography.size.s1,
   overflowWrap: 'break-word',
   inlineSize: 'calc( 100% - 40px )',
-}));
+});
 
 const RowContainer = styled('div', {
   shouldForwardProp: (prop) => !['call', 'pausedAt'].includes(prop.toString()),

@@ -19,16 +19,32 @@ export const SUPPORTED_FRAMEWORKS = [
 ];
 
 export const SUPPORTED_RENDERERS = ['@storybook/react', '@storybook/svelte', '@storybook/vue3'];
-export interface Config {
-  coverage: boolean;
-  a11y: boolean;
-}
 
 export type Details = {
   testResults: TestResult[];
-  config: Config;
   coverageSummary?: {
     status: 'positive' | 'warning' | 'negative' | 'unknown';
     percentage: number;
   };
 };
+
+export type StoreState = {
+  config: {
+    coverage: boolean;
+    a11y: boolean;
+  };
+  watching: boolean;
+};
+
+export const storeOptions = {
+  id: ADDON_ID,
+  initialState: {
+    config: {
+      coverage: false,
+      a11y: false,
+    },
+    watching: false,
+  },
+};
+
+export const STORE_CHANNEL_EVENT_NAME = `UNIVERSAL_STORE:${storeOptions.id}`;

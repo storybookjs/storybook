@@ -18,7 +18,7 @@ test('renders primary button with default args', async () => {
 });
 
 test('renders primary button with overridden props', async () => {
-  // You can override props by passing them in the context argument of the play function
+  // You can override props by passing them in the context argument of the run function
   await Primary.run({ args: { ...Primary.args, children: 'Hello world' } });
   const buttonElement = screen.getByText(/Hello world/i);
   expect(buttonElement).not.toBeNull();
@@ -44,7 +44,7 @@ test('renders primary button with default args', async () => {
 });
 
 test('renders primary button with overridden props', async () => {
-  // You can override props by passing them in the context argument of the play function
+  // You can override props by passing them in the context argument of the run function
   await Primary.run({ args: { ...Primary.args, children: 'Hello world' } });
   const buttonElement = screen.getByText(/Hello world/i);
   expect(buttonElement).not.toBeNull();
@@ -70,7 +70,7 @@ test('renders primary button with default args', async () => {
 });
 
 test('renders primary button with overridden props', async () => {
-  // You can override props by passing them in the context argument of the play function
+  // You can override props by passing them in the context argument of the run function
   await Primary.run({ args: { ...Primary.args, children: 'Hello world' } });
   const buttonElement = screen.getByText(/Hello world/i);
   expect(buttonElement).not.toBeNull();

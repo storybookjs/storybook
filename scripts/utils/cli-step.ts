@@ -40,6 +40,7 @@ export const steps = {
       yes: { type: 'boolean' },
       type: { type: 'string' },
       debug: { type: 'boolean' },
+      'skip-install': { type: 'boolean' },
     }),
   },
   add: {
@@ -71,6 +72,22 @@ export const steps = {
     command: 'dev',
     description: 'Starting Storybook',
     icon: '🖥 ',
+    options: createOptions({}),
+  },
+  migrate: {
+    command: 'migrate',
+    hasArgument: true,
+    description: 'Run codemods',
+    icon: '🚀',
+    options: createOptions({
+      glob: { type: 'string' },
+    }),
+  },
+  automigrate: {
+    command: 'automigrate',
+    hasArgument: true,
+    description: 'Run automigrations',
+    icon: '🤖',
     options: createOptions({}),
   },
 };

@@ -42,7 +42,7 @@ const isVersionPublished = async ({
       `Unexpected status code when checking the current version on npm: ${response.status}`
     );
   }
-  const data = await response.json();
+  const data: any = await response.json();
   if (verbose) {
     console.log(`Response from npm:`);
     console.log(data);

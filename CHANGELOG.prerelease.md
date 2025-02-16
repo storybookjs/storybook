@@ -1,3 +1,33 @@
+## 8.6.0-beta.0
+
+- Addon A11y: Introduce parameters.a11y.test - [#30516](https://github.com/storybookjs/storybook/pull/30516), thanks @valentinpalkovic!
+- Addon-Docs: Change URL hash when TOC item is clicked, and fix TOC loading bugs - [#30130](https://github.com/storybookjs/storybook/pull/30130), thanks @Sidnioulz!
+- Addon-Test: Fix config and watch mode inconsistencies - [#30491](https://github.com/storybookjs/storybook/pull/30491), thanks @JReinhold!
+- Addon-docs: Consider custom code snippet in story code panel and update styles - [#30179](https://github.com/storybookjs/storybook/pull/30179), thanks @larsrickert!
+- Builder-Vite: Fix Turbosnap - [#30522](https://github.com/storybookjs/storybook/pull/30522), thanks @valentinpalkovic!
+- CSF: Add support for CSF factories - [#30197](https://github.com/storybookjs/storybook/pull/30197), thanks @kasperpeulen!
+- Cleanup: Remove unused constants in viewport addon - [#30479](https://github.com/storybookjs/storybook/pull/30479), thanks @Guria!
+- Svelte: Fix conflicting variable names and support for `+page.svelte` files - [#30369](https://github.com/storybookjs/storybook/pull/30369), thanks @xeho91!
+
+## 8.6.0-alpha.5
+
+- Core: Add `UniversalStore` API to sync state/events between multiple environments - [#30445](https://github.com/storybookjs/storybook/pull/30445), thanks @JReinhold!
+- Core: Fix statically serving single files and multiple dirs on the same endpoint - [#30467](https://github.com/storybookjs/storybook/pull/30467), thanks @JReinhold!
+- Core: Move CSF to monorepo - [#30488](https://github.com/storybookjs/storybook/pull/30488), thanks @kasperpeulen!
+- React: Update react-docgen-typescript to fix CI hanging issues - [#30422](https://github.com/storybookjs/storybook/pull/30422), thanks @yannbf!
+
+## 8.6.0-alpha.4
+
+- Addon A11y: Make Vitest Axe optional - [#30442](https://github.com/storybookjs/storybook/pull/30442), thanks @valentinpalkovic!
+- Builder-Vite: Fix allowedHosts handling for custom hosts - [#30432](https://github.com/storybookjs/storybook/pull/30432), thanks @JSMike!
+- Vite: Fix add component UI invalidation - [#30438](https://github.com/storybookjs/storybook/pull/30438), thanks @shilman!
+
+## 8.6.0-alpha.3
+
+- Core: Fix invalid Websocket termination - [#30408](https://github.com/storybookjs/storybook/pull/30408), thanks @valentinpalkovic!
+- Core: Improve type compatibility with React 19 - [#30031](https://github.com/storybookjs/storybook/pull/30031), thanks @mrginglymus!
+- Preview: Add `globals` to `extract()` - [#30415](https://github.com/storybookjs/storybook/pull/30415), thanks @ndelangen!
+
 ## 8.6.0-alpha.2
 
 - Addon Test: Support Vitest 3 browser.test.instances field - [#30309](https://github.com/storybookjs/storybook/pull/30309), thanks @valentinpalkovic!

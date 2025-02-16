@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { dirname, extname, join, normalize, relative, resolve, sep } from 'node:path';
 
 import { commonGlobOptions, normalizeStoryPath } from '@storybook/core/common';
+import { combineTags, storyNameFromExport, toId } from '@storybook/core/csf';
 import type {
   DocsIndexEntry,
   DocsOptions,
@@ -17,7 +18,6 @@ import type {
   StorybookConfigRaw,
   Tag,
 } from '@storybook/core/types';
-import { combineTags, storyNameFromExport, toId } from '@storybook/csf';
 
 import { getStorySortParameter, loadConfig } from '@storybook/core/csf-tools';
 import { logger, once } from '@storybook/core/node-logger';
@@ -397,7 +397,7 @@ export class StoryIndexGenerator {
     //  a) autodocs is globally enabled
     //  b) we have autodocs enabled for this file
     const hasAutodocsTag = entries.some((entry) => entry.tags.includes(AUTODOCS_TAG));
-    const createDocEntry = hasAutodocsTag && this.options.docs.autodocs !== false;
+    const createDocEntry = hasAutodocsTag && !!this.options.docs.autodocs;
 
     if (createDocEntry && this.options.build?.test?.disableAutoDocs !== true) {
       const name = this.options.docs.defaultName ?? 'Docs';
@@ -480,12 +480,14 @@ export class StoryIndexGenerator {
 
         invariant(
           csfEntry,
-          dedent`Could not find or load CSF file at path "${result.of}" referenced by \`of={}\` in docs file "${relativePath}".
-            
-        - Does that file exist?
-        - If so, is it a CSF file (\`.stories.*\`)?
-        - If so, is it matched by the \`stories\` glob in \`main.js\`?
-        - If so, has the file successfully loaded in Storybook and are its stories visible?`
+          dedent`
+            Could not find or load CSF file at path "${result.of}" referenced by \`of={}\` in docs file "${relativePath}".
+
+            - Does that file exist?
+            - If so, is it a CSF file (\`.stories.*\`)?
+            - If so, is it matched by the \`stories\` glob in \`main.js\`?
+            - If so, has the file successfully loaded in Storybook and are its stories visible?
+          `
         );
       }
 
@@ -771,15 +773,15 @@ export class StoryIndexGenerator {
       } catch (err) {
         once.warn(dedent`
           Unable to parse tags from project configuration. If defined, tags should be specified inline, e.g.
-      
+
           export default {
             tags: ['foo'],
           }
-      
+
           ---
-      
+
           Received:
-      
+
           ${previewCode}
         `);
       }

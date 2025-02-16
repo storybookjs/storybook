@@ -89,6 +89,8 @@ const runFixWrapper = async ({
     fixes,
     dryRun,
     yes,
+    packageJson: {},
+    mainConfig: { stories: [] },
     rendererPackage,
     skipInstall,
     configDir,
@@ -134,15 +136,17 @@ describe('runFixes', () => {
     expect(fixResults).toEqual({
       'fix-1': 'succeeded',
     });
-    expect(run1).toHaveBeenCalledWith({
-      dryRun,
-      mainConfigPath,
-      packageManager,
-      result: {
-        some: 'result',
-      },
-      skipInstall,
-    });
+    expect(run1).toHaveBeenCalledWith(
+      expect.objectContaining({
+        dryRun,
+        mainConfigPath,
+        packageManager,
+        result: {
+          some: 'result',
+        },
+        skipInstall,
+      })
+    );
   });
 
   it('should fail if an error is thrown', async () => {

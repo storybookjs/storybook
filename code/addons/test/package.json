@@ -1,6 +1,6 @@
 {
   "name": "@storybook/experimental-addon-test",
-  "version": "8.6.0-alpha.2",
+  "version": "8.6.0-beta.0",
   "description": "Integrate Vitest with Storybook",
   "keywords": [
     "storybook-addons",
@@ -23,6 +23,12 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
+  "imports": {
+    "#manager-store": {
+      "storybook": "./src/manager-store.mock.ts",
+      "default": "./src/manager-store.ts"
+    }
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -66,8 +72,19 @@
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "*": [
+        "dist/index.d.ts"
+      ],
+      "preview": [
+        "dist/preview.d.ts"
+      ]
+    }
+  },
   "files": [
     "dist/**/*",
+    "templates/**/*",
     "!dist/dummy.*",
     "README.md",
     "*.mjs",
@@ -81,7 +98,6 @@
     "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
   },
   "dependencies": {
-    "@storybook/csf": "0.1.12",
     "@storybook/global": "^5.0.0",
     "@storybook/icons": "^1.2.12",
     "@storybook/instrumenter": "workspace:*",
@@ -115,7 +131,7 @@
     "tinyglobby": "^0.2.10",
     "tree-kill": "^1.2.2",
     "ts-dedent": "^2.2.0",
-    "typescript": "^5.3.2",
+    "typescript": "^5.7.3",
     "vitest": "^3.0.2"
   },
   "peerDependencies": {

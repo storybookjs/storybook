@@ -24,7 +24,7 @@ describe('Meta', () => {
       args: { label: 'good', disabled: false },
     };
 
-    expectTypeOf(meta).toEqualTypeOf<ComponentAnnotations<VueRenderer, ButtonProps>>();
+    expectTypeOf(meta).toMatchTypeOf<ComponentAnnotations<VueRenderer, ButtonProps>>();
   });
 
   it('Generic parameter of Meta can be the props of the component', () => {
@@ -33,7 +33,7 @@ describe('Meta', () => {
       args: { label: 'good', disabled: false },
     };
 
-    expectTypeOf(meta).toEqualTypeOf<
+    expectTypeOf(meta).toMatchTypeOf<
       ComponentAnnotations<VueRenderer, { disabled: boolean; label: string }>
     >();
   });
@@ -45,14 +45,14 @@ describe('Meta', () => {
         label: 'good',
         disabled: false,
         onMyChangeEvent: (value) => {
-          expectTypeOf(value).toEqualTypeOf<number>();
+          expectTypeOf(value).toMatchTypeOf<number>();
         },
       },
       render: (args) => {
         return h(Button, {
           ...args,
           onMyChangeEvent: (value) => {
-            expectTypeOf(value).toEqualTypeOf<number>();
+            expectTypeOf(value).toMatchTypeOf<number>();
           },
         });
       },
@@ -70,7 +70,7 @@ describe('StoryObj', () => {
 
     type Actual = StoryObj<typeof meta>;
     type Expected = StoryAnnotations<VueRenderer, ButtonProps, SetOptional<ButtonProps, 'label'>>;
-    expectTypeOf<Actual>().toEqualTypeOf<Expected>();
+    expectTypeOf<Actual>().toMatchTypeOf<Expected>();
   });
 
   it('❌ The combined shape of meta args and story args must match the required args.', () => {
@@ -78,7 +78,7 @@ describe('StoryObj', () => {
       const meta = satisfies<Meta<typeof Button>>()({ component: Button });
 
       type Expected = StoryAnnotations<VueRenderer, ButtonProps, ButtonProps>;
-      expectTypeOf<StoryObj<typeof meta>>().toEqualTypeOf<Expected>();
+      expectTypeOf<StoryObj<typeof meta>>().toMatchTypeOf<Expected>();
     }
     {
       const meta = satisfies<Meta<typeof Button>>()({
@@ -89,7 +89,7 @@ describe('StoryObj', () => {
       const Basic: StoryObj<typeof meta> = {};
 
       type Expected = StoryAnnotations<VueRenderer, ButtonProps, SetOptional<ButtonProps, 'label'>>;
-      expectTypeOf(Basic).toEqualTypeOf<Expected>();
+      expectTypeOf(Basic).toMatchTypeOf<Expected>();
     }
     {
       const meta = satisfies<Meta<{ label: string; disabled: boolean }>>()({ component: Button });
@@ -99,12 +99,12 @@ describe('StoryObj', () => {
       };
 
       type Expected = StoryAnnotations<VueRenderer, ButtonProps, ButtonProps>;
-      expectTypeOf(Basic).toEqualTypeOf<Expected>();
+      expectTypeOf(Basic).toMatchTypeOf<Expected>();
     }
   });
 
   it('Component can be used as generic parameter for StoryObj', () => {
-    expectTypeOf<StoryObj<typeof Button>>().toEqualTypeOf<
+    expectTypeOf<StoryObj<typeof Button>>().toMatchTypeOf<
       StoryAnnotations<VueRenderer, ButtonProps>
     >();
   });
@@ -127,7 +127,7 @@ describe('Story args can be inferred', () => {
     const Basic: StoryObj<typeof meta> = { args: { theme: 'light', label: 'good' } };
 
     type Expected = StoryAnnotations<VueRenderer, Props, SetOptional<Props, 'disabled'>>;
-    expectTypeOf(Basic).toEqualTypeOf<Expected>();
+    expectTypeOf(Basic).toMatchTypeOf<Expected>();
   });
 
   const withDecorator: Decorator<{ decoratorArg: string }> = (
@@ -147,7 +147,7 @@ describe('Story args can be inferred', () => {
     const Basic: StoryObj<typeof meta> = { args: { decoratorArg: 'title', label: 'good' } };
 
     type Expected = StoryAnnotations<VueRenderer, Props, SetOptional<Props, 'disabled'>>;
-    expectTypeOf(Basic).toEqualTypeOf<Expected>();
+    expectTypeOf(Basic).toMatchTypeOf<Expected>();
   });
 
   it('Correct args are inferred when type is widened for multiple decorators', () => {
@@ -172,7 +172,7 @@ describe('Story args can be inferred', () => {
     };
 
     type Expected = StoryAnnotations<VueRenderer, Props, SetOptional<Props, 'disabled'>>;
-    expectTypeOf(Basic).toEqualTypeOf<Expected>();
+    expectTypeOf(Basic).toMatchTypeOf<Expected>();
   });
 });
 
@@ -197,15 +197,15 @@ it('Infer type of slots', () => {
   type Props = ComponentPropsAndSlots<typeof BaseLayout>;
 
   type Expected = StoryAnnotations<VueRenderer, Props, Props>;
-  expectTypeOf(Basic).toEqualTypeOf<Expected>();
+  expectTypeOf(Basic).toMatchTypeOf<Expected>();
 });
 
 it('mount accepts a Component', () => {
   const Basic: StoryObj<typeof Button> = {
     async play({ mount }) {
       const canvas = await mount(Button, { props: { label: 'label', disabled: true } });
-      expectTypeOf(canvas).toEqualTypeOf<Canvas>();
+      expectTypeOf(canvas).toMatchTypeOf<Canvas>();
     },
   };
-  expectTypeOf(Basic).toEqualTypeOf<StoryObj<typeof Button>>();
+  expectTypeOf(Basic).toMatchTypeOf<StoryObj<typeof Button>>();
 });

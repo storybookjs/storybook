@@ -69,7 +69,6 @@ There are some noteworthy items here:
 
 <details>
   <summary><h3 id="troubleshooting">Troubleshooting</h3></summary>
-
   #### Run Storybook with other package managers
 
   The Storybook CLI includes support for the industry's popular package managers (e.g., [Yarn](https://yarnpkg.com/), [npm](https://www.npmjs.com/), and [pnpm](https://pnpm.io/)) automatically detecting the one you are using when you initialize Storybook. However, if you want to use a specific package manager as the default, add the `--package-manager` flag to the installation command. For example:
@@ -82,7 +81,7 @@ There are some noteworthy items here:
 
   #### The CLI doesn't detect my framework
 
-  If you're working with a custom environment set up or need set up Storybook manually, you can use the `--type` flag to specify the framework you need to use. Listed below are the supported frameworks and examples of how to use them:
+  If you're working with a custom environment setup or need to set up Storybook manually, you can use the `--type` flag to specify the framework you need to use. Listed below are the supported frameworks and examples of how to use them:
 
   | Framework      | Type             |
   | -------------- | ---------------- |
@@ -195,7 +194,7 @@ There are some noteworthy items here:
   If you're still running into some issues during the installation process, we encourage you to check out the following resources:
 
   <IfRenderer renderer="angular">
-    * [Storybook's Angular README](https://github.com/storybookjs/storybook/tree/next/code/frameworks/angular) for more information on how to set up Storybook in your Angular project.
+    * Storybook's Angular [framework documentation](./frameworks/angular.mdx) for more information on how to set up Storybook in your Angular project.
     * [Storybook's help documentation](https://storybook.js.org/community#support) to contact the community and ask for help.
   </IfRenderer>
 
@@ -205,14 +204,14 @@ There are some noteworthy items here:
   </IfRenderer>
 
   <IfRenderer renderer="html">
-    * [Storybook's HTML Webpack README](https://github.com/storybookjs/storybook/tree/next/code/frameworks/html-webpack5) for more information on how to set up Storybook in your HTML project with Webpack 5.
     * [Storybook's HTML Vite README](https://github.com/storybookjs/storybook/tree/next/code/frameworks/html-vite) for more information on how to set up Storybook in your HTML project with Vite.
+    * [Storybook's HTML Webpack README](https://github.com/storybookjs/storybook/tree/next/code/frameworks/html-webpack5) for more information on how to set up Storybook in your HTML project with Webpack 5.
     * [Storybook's help documentation](https://storybook.js.org/community#support) to contact the community and ask for help.
   </IfRenderer>
 
   <IfRenderer renderer="preact">
+    * Storybook's Preact Vite [framework documentation](./frameworks/preact-vite.mdx) for more information on how to set up Storybook in your Preact project with Vite.
     * [Storybook's Preact Webpack README](https://github.com/storybookjs/storybook/tree/next/code/frameworks/preact-webpack5) for more information on how to set up Storybook in your Preact project with Webpack 5.
-    * [Storybook's Preact Vite README](https://github.com/storybookjs/storybook/tree/next/code/frameworks/preact-vite) for more information on how to set up Storybook in your Preact project with Vite.
     * [Storybook's help documentation](https://storybook.js.org/community#support) to contact the community and ask for help.
   </IfRenderer>
 
@@ -222,8 +221,8 @@ There are some noteworthy items here:
   </IfRenderer>
 
   <IfRenderer renderer="react">
-    * [Storybook's React Webpack README](https://github.com/storybookjs/storybook/tree/next/code/frameworks/react-webpack5) for more information on how to set up Storybook in your React project with Webpack 5.
-    * [Storybook's React Vite README](https://github.com/storybookjs/storybook/tree/next/code/frameworks/react-vite) for more information on how to set up Storybook in your React project with Vite.
+    * Storybook's React Vite [framework documentation](./frameworks/react-vite.mdx) for more information on how to set up Storybook in your React project with Vite.
+    * Storybook's React Webpack [framework documentation](./frameworks/react-webpack5.mdx) for more information on how to set up Storybook in your React project with Webpack 5.
     * [Storybook's help documentation](https://storybook.js.org/community#support) to contact the community and ask for help.
   </IfRenderer>
 
@@ -233,20 +232,21 @@ There are some noteworthy items here:
   </IfRenderer>
 
   <IfRenderer renderer="svelte">
-    * [Storybook's SvelteKit README](https://github.com/storybookjs/storybook/tree/next/code/frameworks/sveltekit) for more information on how to set up Storybook in your SvelteKit project.
-    * [Storybook's Svelte Webpack README](https://github.com/storybookjs/storybook/tree/next/code/frameworks/svelte-webpack5) for more information on how to set up Storybook in your Svelte project with Webpack 5.
+    * Storybook's SvelteKit [framework documentation](./frameworks/sveltekit.mdx) for more information on how to set up Storybook in your SvelteKit project.
+    * Storybook's Svelte Vite [framework documentation](./frameworks/svelte-vite.mdx) for more information on how to set up Storybook in your Svelte project with Vite.
+    * Storybook's Svelte Webpack [framework documentation](./frameworks/svelte-webpack5.mdx) for more information on how to set up Storybook in your Svelte project with Webpack 5.
     * [Storybook's help documentation](https://storybook.js.org/community#support) to contact the community and ask for help.
   </IfRenderer>
 
   <IfRenderer renderer="vue">
-    * [Storybook's Vue 3 Webpack README](https://github.com/storybookjs/storybook/tree/next/code/frameworks/vue3-webpack5) for more information on how to set up Storybook in your Vue 3 project with Webpack 5.
-    * [Storybook's Vue 3 Vite README](https://github.com/storybookjs/storybook/tree/next/code/frameworks/vue3-vite) for more information on how to set up Storybook in your Vue 3 project with Vite.
+    * Storybook's Vue 3 Vite [framework documentation](./frameworks/vue3-vite.mdx) for more information on how to set up Storybook in your Vue 3 project with Vite.
+    * Storybook's Vue 3 Webpack [framework documentation](./frameworks/vue3-webpack5.mdx) for more information on how to set up Storybook in your Vue 3 project with Webpack 5.
     * [Storybook's help documentation](https://storybook.js.org/community#support) to contact the community and ask for help.
   </IfRenderer>
 
   <IfRenderer renderer="web-components">
-    * [Storybook's Web Components Webpack README](https://github.com/storybookjs/storybook/tree/next/code/frameworks/web-components-webpack5) for more information on how to set up Storybook in your Web Components project with Webpack 5.
-    * [Storybook's Web Components Vite README](https://github.com/storybookjs/storybook/tree/next/code/frameworks/web-components-vite) for more information on how to set up Storybook in your Web Components project with Vite.
+    * Storybook's Web Components Vite [framework documentation](./frameworks/web-components-vite.mdx) for more information on how to set up Storybook in your Web Components project with Vite.
+    * Storybook's Web Components Webpack [framework documentation](./frameworks/web-components-webpack5.mdx) for more information on how to set up Storybook in your Web Components project with Webpack 5.
     * [Storybook's help documentation](https://storybook.js.org/community#support) to contact the community and ask for help.
   </IfRenderer>
 </details>

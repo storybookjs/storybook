@@ -35,8 +35,7 @@ function iframeMiddleware(options: Options, server: ViteDevServer): Middleware {
     const indexHtml = await readFile(require.resolve('@storybook/builder-vite/input/iframe.html'), {
       encoding: 'utf8',
     });
-    const generated = await transformIframeHtml(indexHtml, options);
-    const transformed = await server.transformIndexHtml('/iframe.html', generated);
+    const transformed = await server.transformIndexHtml('/iframe.html', indexHtml);
     res.setHeader('Content-Type', 'text/html');
     res.statusCode = 200;
     res.write(transformed);

@@ -102,6 +102,7 @@ describe('StoryIndexGenerator', () => {
             "play": 0,
             "render": 0,
             "storyFn": 0,
+            "tags": 1,
           }
         `);
       });
@@ -470,6 +471,7 @@ describe('StoryIndexGenerator', () => {
             "play": 2,
             "render": 1,
             "storyFn": 1,
+            "tags": 5,
           }
         `);
       });
@@ -735,6 +737,7 @@ describe('StoryIndexGenerator', () => {
             "play": 2,
             "render": 1,
             "storyFn": 1,
+            "tags": 5,
           }
         `);
       });

@@ -344,6 +344,19 @@ describe('StoryIndexGenerator', () => {
                 "title": "D",
                 "type": "story",
               },
+              "example-button--story-one": {
+                "componentPath": undefined,
+                "id": "example-button--story-one",
+                "importPath": "./src/Button.stories.ts",
+                "name": "Story One",
+                "tags": [
+                  "dev",
+                  "test",
+                  "foobar",
+                ],
+                "title": "Example/Button",
+                "type": "story",
+              },
               "first-nested-deeply-f--story-one": {
                 "componentPath": undefined,
                 "id": "first-nested-deeply-f--story-one",
@@ -597,6 +610,19 @@ describe('StoryIndexGenerator', () => {
                 "title": "D",
                 "type": "story",
               },
+              "example-button--story-one": {
+                "componentPath": undefined,
+                "id": "example-button--story-one",
+                "importPath": "./src/Button.stories.ts",
+                "name": "Story One",
+                "tags": [
+                  "dev",
+                  "test",
+                  "foobar",
+                ],
+                "title": "Example/Button",
+                "type": "story",
+              },
               "first-nested-deeply-f--story-one": {
                 "componentPath": undefined,
                 "id": "first-nested-deeply-f--story-one",
@@ -764,6 +790,8 @@ describe('StoryIndexGenerator', () => {
             "a--story-one",
             "b--docs",
             "b--story-one",
+            "example-button--docs",
+            "example-button--story-one",
             "d--docs",
             "d--story-one",
             "h--docs",
@@ -806,6 +834,8 @@ describe('StoryIndexGenerator', () => {
             "a--story-one",
             "b--docs",
             "b--story-one",
+            "example-button--docs",
+            "example-button--story-one",
             "d--docs",
             "d--story-one",
             "h--docs",
@@ -1794,6 +1824,7 @@ describe('StoryIndexGenerator', () => {
           "second-nested-g--story-one",
           "componentreference--docs",
           "notitle--docs",
+          "example-button--story-one",
           "h--story-one",
           "componentpath-extension--story-one",
           "componentpath-noextension--story-one",
@@ -1822,7 +1853,7 @@ describe('StoryIndexGenerator', () => {
         const generator = new StoryIndexGenerator([specifier], options);
         await generator.initialize();
         await generator.getIndex();
-        expect(readCsfMock).toHaveBeenCalledTimes(11);
+        expect(readCsfMock).toHaveBeenCalledTimes(12);
 
         readCsfMock.mockClear();
         await generator.getIndex();
@@ -1880,7 +1911,7 @@ describe('StoryIndexGenerator', () => {
         const generator = new StoryIndexGenerator([specifier], options);
         await generator.initialize();
         await generator.getIndex();
-        expect(readCsfMock).toHaveBeenCalledTimes(11);
+        expect(readCsfMock).toHaveBeenCalledTimes(12);
 
         generator.invalidate(specifier, './src/B.stories.ts', false);
 
@@ -1965,7 +1996,7 @@ describe('StoryIndexGenerator', () => {
         const generator = new StoryIndexGenerator([specifier], options);
         await generator.initialize();
         await generator.getIndex();
-        expect(readCsfMock).toHaveBeenCalledTimes(11);
+        expect(readCsfMock).toHaveBeenCalledTimes(12);
 
         generator.invalidate(specifier, './src/B.stories.ts', true);
 
@@ -2004,7 +2035,7 @@ describe('StoryIndexGenerator', () => {
         const generator = new StoryIndexGenerator([specifier], options);
         await generator.initialize();
         await generator.getIndex();
-        expect(readCsfMock).toHaveBeenCalledTimes(11);
+        expect(readCsfMock).toHaveBeenCalledTimes(12);
 
         generator.invalidate(specifier, './src/B.stories.ts', true);
 

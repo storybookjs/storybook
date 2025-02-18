@@ -255,6 +255,18 @@ describe('useStoriesJson', () => {
               "title": "docs2/Yabbadabbadooo",
               "type": "docs",
             },
+            "example-button--story-one": {
+              "id": "example-button--story-one",
+              "importPath": "./src/Button.stories.ts",
+              "name": "Story One",
+              "tags": [
+                "dev",
+                "test",
+                "foobar",
+              ],
+              "title": "Example/Button",
+              "type": "story",
+            },
             "first-nested-deeply-f--story-one": {
               "id": "first-nested-deeply-f--story-one",
               "importPath": "./src/first-nested/deeply/F.stories.js",

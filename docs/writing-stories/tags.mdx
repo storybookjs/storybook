@@ -11,11 +11,11 @@ Tags allow you to control which stories are included in your Storybook, enabling
 
 The following tags are available in every Storybook project:
 
-| Tag        | Applied by default?           | Description                                                                                                                                                                                                               |
-| ---------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `autodocs` | No                            | Stories tagged with `autodocs` will be included in the [docs page](../writing-docs/autodocs.mdx). If a CSF file does not contain at least one story tagged with `autodocs`, that component will not generate a docs page. |
-| `dev`      | Yes                           | Stories tagged with `dev` are rendered in Storybook's sidebar.                                                                                                                                                            |
-| `test`     | Yes                           | Stories tagged with `test` do not currently affect Storybook's UI, but can be used to filter the [test runner](../writing-tests/test-runner.mdx#run-tests-for-a-subset-of-stories).                                       |
+| Tag        | Applied by default? | Description                                                                                                                                                                                                              |
+| ---------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `autodocs` | No                  | Stories tagged with `autodocs` are included in the [docs page](../writing-docs/autodocs.mdx). If a CSF file does not contain at least one story tagged with `autodocs`, that component will not generate a docs page.    |
+| `dev`      | Yes                 | Stories tagged with `dev` are rendered in Storybook's sidebar.                                                                                                                                                           |
+| `test`     | Yes                 | Stories tagged with `test` are included in [test runner](../writing-tests/test-runner.mdx#run-tests-for-a-subset-of-stories) or [test addon](../writing-tests/test-addon.mdx#including-excluding-or-skipping-tests) runs. |
 
 The `dev` and `test` tags are automatically, implicitly applied to every story in your Storybook project.
 
@@ -56,6 +56,7 @@ Tags can be removed for all stories in your project (in `.storybook/preview.js|t
 Custom tags enable a flexible layer of categorization on top of Storybook's sidebar hierarchy. In the example above, we created an `experimental` tag to indicate that a story is not yet stable.
 
 You can create custom tags for any purpose. Sample uses might include:
+
 - Status, such as `experimental`, `new`, `stable`, or `deprecated`
 - User persona, such as `admin`, `user`, or `developer`
 - Component/code ownership

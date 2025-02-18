@@ -24,8 +24,16 @@ jobs:
         with:
           node-version-file: ".nvmrc"
 
-      - name: install and compile
-        run: yarn task --task compile --start-from=auto
+      - name: install scripts
+        run: | 
+          cd scripts && yarn install
+
+      - name: install code
+        run: | 
+          cd code && yarn install
+
+      - name: compile
+        run: yarn task --task compile --start-from=compile
 
       - name: Install Playwright Dependencies
         run: cd code && yarn exec playwright install chromium --with-deps

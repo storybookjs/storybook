@@ -55,7 +55,7 @@
     "ts-dedent": "^2.0.0"
   },
   "devDependencies": {
-    "@types/babel__preset-env": "^7",
+    "@types/babel__preset-env": "^7.10.0",
     "ember-source": "~3.28.1",
     "typescript": "^5.7.3"
   },

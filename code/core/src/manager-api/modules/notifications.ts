@@ -1,4 +1,4 @@
-import type { API_Notification } from '@storybook/core/types';
+import type { API_Notification } from 'storybook/internal/types';
 
 import { partition } from 'es-toolkit';
 

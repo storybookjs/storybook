@@ -1,13 +1,12 @@
 import type { ReactElement } from 'react';
 
+import type { API, LeafEntry, State } from 'storybook/internal/manager-api';
 import type {
   API_ViewMode,
   Addon_BaseType,
   Addon_WrapperType,
   StoryId,
-} from '@storybook/core/types';
-
-import type { API, LeafEntry, State } from '@storybook/core/manager-api';
+} from 'storybook/internal/types';
 
 export interface PreviewProps {
   api: API;

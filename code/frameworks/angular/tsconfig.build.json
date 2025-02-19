@@ -3,7 +3,6 @@
   "compileOnSave": false,
   "compilerOptions": {
     "target": "ES2020",
-    "module": "CommonJS",
     "noEmit": false,
     "lib": ["es2020", "dom", "dom.iterable"],
     "experimentalDecorators": true,
@@ -19,6 +18,7 @@
     "listEmittedFiles": false,
     "noUnusedLocals": false,
     "baseUrl": ".",
+    "rootDir": "./src",
     "paths": {
       "storybook/internal/*": ["../../lib/cli/core/*"]
     }

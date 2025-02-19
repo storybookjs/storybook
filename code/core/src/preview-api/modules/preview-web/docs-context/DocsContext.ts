@@ -1,5 +1,5 @@
-import type { Channel } from '@storybook/core/channels';
-import { isStory } from '@storybook/core/csf';
+import type { Channel } from 'storybook/internal/channels';
+import { isStory } from 'storybook/internal/csf';
 import type {
   CSFFile,
   ModuleExport,
@@ -10,7 +10,7 @@ import type {
   ResolvedModuleExportType,
   StoryId,
   StoryName,
-} from '@storybook/core/types';
+} from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 

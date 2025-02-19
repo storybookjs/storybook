@@ -1,4 +1,4 @@
-import type { Path } from '@storybook/core/types';
+import type { Path } from 'storybook/internal/types';
 
 import Watchpack from 'watchpack';
 

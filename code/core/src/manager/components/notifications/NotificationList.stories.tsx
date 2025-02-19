@@ -1,6 +1,7 @@
 import React from 'react';
 
-import { LocationProvider } from '@storybook/core/router';
+import { LocationProvider } from 'storybook/internal/router';
+
 import type { Meta, StoryObj } from '@storybook/react';
 
 import * as itemStories from './NotificationItem.stories';

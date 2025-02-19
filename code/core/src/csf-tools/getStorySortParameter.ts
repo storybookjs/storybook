@@ -1,4 +1,4 @@
-import { babelParse, generate, types as t, traverse } from '@storybook/core/babel';
+import { babelParse, generate, types as t, traverse } from 'storybook/internal/babel';
 
 import { dedent } from 'ts-dedent';
 

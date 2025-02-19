@@ -1,7 +1,7 @@
 import { normalize } from 'node:path';
 
-import { frameworkPackages } from '@storybook/core/common';
-import type { PackageJson, StorybookConfig } from '@storybook/core/types';
+import { frameworkPackages } from 'storybook/internal/common';
+import type { PackageJson, StorybookConfig } from 'storybook/internal/types';
 
 import { getActualPackageJson } from './package-json';
 import { cleanPaths } from './sanitize';

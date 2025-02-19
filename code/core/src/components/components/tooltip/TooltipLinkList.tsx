@@ -1,7 +1,7 @@
 import type { ComponentProps, ReactNode, SyntheticEvent } from 'react';
 import React, { Fragment, useCallback } from 'react';
 
-import { styled } from '@storybook/core/theming';
+import { styled } from 'storybook/internal/theming';
 
 import type { LinkWrapperType, ListItemProps } from './ListItem';
 import ListItem from './ListItem';

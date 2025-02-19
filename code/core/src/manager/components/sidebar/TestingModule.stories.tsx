@@ -1,13 +1,13 @@
 import React from 'react';
 
-import type { Listener } from '@storybook/core/channels';
-import { styled } from '@storybook/core/theming';
-import { Addon_TypesEnum } from '@storybook/core/types';
+import type { Listener } from 'storybook/internal/channels';
+import { type TestProviders } from 'storybook/internal/core-events';
+import { ManagerContext, mockChannel } from 'storybook/internal/manager-api';
+import { styled } from 'storybook/internal/theming';
+import { Addon_TypesEnum } from 'storybook/internal/types';
+
 import type { Meta, StoryObj } from '@storybook/react';
 import { fireEvent, fn } from '@storybook/test';
-
-import { type TestProviders } from '@storybook/core/core-events';
-import { ManagerContext, mockChannel } from '@storybook/core/manager-api';
 
 import { TestingModule } from './TestingModule';
 

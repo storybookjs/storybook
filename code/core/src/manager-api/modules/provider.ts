@@ -1,4 +1,4 @@
-import type { API_IframeRenderer } from '@storybook/core/types';
+import type { API_IframeRenderer } from 'storybook/internal/types';
 
 import type { ModuleFn } from '../lib/types';
 

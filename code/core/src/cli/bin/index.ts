@@ -1,7 +1,6 @@
-import { getEnvConfig, parseList, versions } from '@storybook/core/common';
-import { addToGlobalContext } from '@storybook/core/telemetry';
-
-import { logger } from '@storybook/core/node-logger';
+import { getEnvConfig, parseList, versions } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
+import { addToGlobalContext } from 'storybook/internal/telemetry';
 
 import { program } from 'commander';
 import { findPackage } from 'fd-package-json';

@@ -1,19 +1,21 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { ChannelTransport } from '@storybook/core/channels';
-import { Channel } from '@storybook/core/channels';
+import { Channel } from 'storybook/internal/channels';
+import type { ChannelTransport } from 'storybook/internal/channels';
 import {
   extractProperRendererNameFromFramework,
   getFrameworkName,
   getProjectRoot,
-} from '@storybook/core/common';
-
-import type { FileComponentSearchRequestPayload, RequestData } from '@storybook/core/core-events';
+} from 'storybook/internal/common';
+import type {
+  FileComponentSearchRequestPayload,
+  RequestData,
+} from 'storybook/internal/core-events';
 import {
   FILE_COMPONENT_SEARCH_REQUEST,
   FILE_COMPONENT_SEARCH_RESPONSE,
-} from '@storybook/core/core-events';
+} from 'storybook/internal/core-events';
 
 import { searchFiles } from '../utils/search-files';
 import { initFileSearchChannel } from './file-search-channel';
@@ -22,7 +24,7 @@ vi.mock(import('../utils/search-files'), async (importOriginal) => ({
   searchFiles: vi.fn((await importOriginal()).searchFiles),
 }));
 
-vi.mock('@storybook/core/common');
+vi.mock('storybook/internal/common');
 
 beforeEach(() => {
   vi.restoreAllMocks();

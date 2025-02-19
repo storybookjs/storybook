@@ -1,7 +1,7 @@
 import type { ComponentProps } from 'react';
 import React from 'react';
 
-import { css, styled } from '@storybook/core/theming';
+import { css, styled } from 'storybook/internal/theming';
 
 import type { IconType } from './icon';
 import { Icons, icons } from './icon';

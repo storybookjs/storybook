@@ -2,8 +2,8 @@ import { existsSync, readFileSync } from 'node:fs';
 import { platform } from 'node:os';
 import { join } from 'node:path';
 
-import { logger } from '@storybook/core/node-logger';
-import { FindPackageVersionsError } from '@storybook/core/server-errors';
+import { logger } from 'storybook/internal/node-logger';
+import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 
 import { findUp } from 'find-up';
 import sort from 'semver/functions/sort.js';

@@ -1,5 +1,5 @@
-import type { ViewMode as ViewModeBase } from '@storybook/core/csf';
-import type { Renderer as CSFRenderer } from '@storybook/core/csf';
+import type { ViewMode as ViewModeBase } from 'storybook/internal/csf';
+import type { Renderer as CSFRenderer } from 'storybook/internal/csf';
 
 import type { Addon_OptionsParameter } from './addons';
 
@@ -68,7 +68,7 @@ export type {
   StrictGlobalTypes,
   StrictInputType,
   Tag,
-} from '@storybook/core/csf';
+} from 'storybook/internal/csf';
 
 type OrString<T extends string> = T | (string & {});
 

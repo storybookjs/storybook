@@ -1,7 +1,7 @@
 import { basename } from 'node:path';
 
-import { getRefs } from '@storybook/core/common';
-import type { Options } from '@storybook/core/types';
+import { getRefs } from 'storybook/internal/common';
+import type { Options } from 'storybook/internal/types';
 
 import { executor, getConfig } from '../index';
 import { readTemplate } from './template';

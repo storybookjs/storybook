@@ -1,4 +1,4 @@
-import type { PresetProperty, TestBuildFlags } from '@storybook/core/types';
+import type { PresetProperty, TestBuildFlags } from 'storybook/internal/types';
 
 import { removeMDXEntries } from '../utils/remove-mdx-entries';
 

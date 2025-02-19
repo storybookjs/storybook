@@ -1,9 +1,9 @@
 import React from 'react';
 
+import { ManagerContext } from 'storybook/internal/manager-api';
+
 import type { Meta, StoryObj } from '@storybook/react';
 import { within } from '@storybook/test';
-
-import { ManagerContext } from '@storybook/core/manager-api';
 
 import { startCase } from 'es-toolkit';
 

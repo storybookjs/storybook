@@ -414,7 +414,7 @@ export interface Addon_PageType {
    * @example
    *
    * ```jsx
-   * import { Route } from '@storybook/core/router';
+   * import { Route } from 'storybook/internal/router';
    *
    * Render: () => {
    *   return (

@@ -1,6 +1,7 @@
 import React from 'react';
 
-import { keyframes, styled } from '@storybook/core/theming';
+import { keyframes, styled } from 'storybook/internal/theming';
+
 import { LightningOffIcon } from '@storybook/icons';
 
 import { transparentize } from 'polished';

@@ -4,13 +4,13 @@ import {
   GLOBALS_UPDATED,
   SET_CURRENT_STORY,
   UPDATE_QUERY_PARAMS,
-} from '@storybook/core/core-events';
+} from 'storybook/internal/core-events';
 
 import EventEmitter from 'events';
 
 import { init as initURL } from '../modules/url';
 
-vi.mock('@storybook/core/client-logger');
+vi.mock('storybook/internal/client-logger');
 
 const storyState = (storyId) => ({
   path: `/story/${storyId}`,

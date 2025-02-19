@@ -1,8 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import type { SBType } from '@storybook/core/types';
-
-import { once } from '@storybook/core/client-logger';
+import { once } from 'storybook/internal/client-logger';
+import type { SBType } from 'storybook/internal/types';
 
 import {
   UNTARGETED,
@@ -20,7 +19,7 @@ const functionType: SBType = { name: 'function' };
 const numArrayType: SBType = { name: 'array', value: numberType };
 const boolObjectType: SBType = { name: 'object', value: { bool: booleanType } };
 
-vi.mock('@storybook/core/client-logger');
+vi.mock('storybook/internal/client-logger');
 
 enum ArgsMapTestEnumWithoutInitializer {
   EnumValue,

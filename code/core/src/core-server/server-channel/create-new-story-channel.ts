@@ -2,22 +2,21 @@ import { existsSync } from 'node:fs';
 import { writeFile } from 'node:fs/promises';
 import { relative } from 'node:path';
 
-import type { Channel } from '@storybook/core/channels';
-import { getStoryId } from '@storybook/core/common';
-import { telemetry } from '@storybook/core/telemetry';
-import type { CoreConfig, Options } from '@storybook/core/types';
-
+import type { Channel } from 'storybook/internal/channels';
+import { getStoryId } from 'storybook/internal/common';
 import type {
   CreateNewStoryErrorPayload,
   CreateNewStoryRequestPayload,
   CreateNewStoryResponsePayload,
   RequestData,
   ResponseData,
-} from '@storybook/core/core-events';
+} from 'storybook/internal/core-events';
 import {
   CREATE_NEW_STORYFILE_REQUEST,
   CREATE_NEW_STORYFILE_RESPONSE,
-} from '@storybook/core/core-events';
+} from 'storybook/internal/core-events';
+import { telemetry } from 'storybook/internal/telemetry';
+import type { CoreConfig, Options } from 'storybook/internal/types';
 
 import { getNewStoryFile } from '../utils/get-new-story-file';
 

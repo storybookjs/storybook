@@ -1,9 +1,8 @@
-import { cache, loadAllPresets } from '@storybook/core/common';
-import { getPrecedingUpgrade, oneWayHash, telemetry } from '@storybook/core/telemetry';
-import type { EventType } from '@storybook/core/telemetry';
-import type { CLIOptions } from '@storybook/core/types';
-
-import { logger } from '@storybook/core/node-logger';
+import { cache, loadAllPresets } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
+import { getPrecedingUpgrade, oneWayHash, telemetry } from 'storybook/internal/telemetry';
+import type { EventType } from 'storybook/internal/telemetry';
+import type { CLIOptions } from 'storybook/internal/types';
 
 import prompts from 'prompts';
 

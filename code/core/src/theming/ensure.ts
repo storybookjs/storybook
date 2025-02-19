@@ -1,4 +1,4 @@
-import { logger } from '@storybook/core/client-logger';
+import { logger } from 'storybook/internal/client-logger';
 
 import { deletedDiff } from 'deep-object-diff';
 import { dedent } from 'ts-dedent';

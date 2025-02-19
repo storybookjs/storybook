@@ -58,6 +58,7 @@ export const experimental_afterEach: AfterEach<any> = async ({
         if (getIsVitestStandaloneRun()) {
           if (hasViolations && getMode() === 'failed') {
             if (!vitestMatchersExtended) {
+              // @ts-expect-error (unknown why vitest-axe is not typed correctly)
               const { toHaveNoViolations } = await import('vitest-axe/matchers');
               expect.extend({ toHaveNoViolations });
               vitestMatchersExtended = true;

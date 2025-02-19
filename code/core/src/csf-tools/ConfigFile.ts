@@ -8,7 +8,7 @@ import {
   recast,
   types as t,
   traverse,
-} from '@storybook/core/babel';
+} from 'storybook/internal/babel';
 
 import { dedent } from 'ts-dedent';
 

@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import type { Renderer, StoryAnnotationsOrFn } from '@storybook/core/types';
+import type { Renderer, StoryAnnotationsOrFn } from 'storybook/internal/types';
 
 import { normalizeStory } from './normalizeStory';
 
-vi.mock('@storybook/core/client-logger');
+vi.mock('storybook/internal/client-logger');
 
 describe('normalizeStory', () => {
   describe('id generation', () => {

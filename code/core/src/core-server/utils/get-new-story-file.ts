@@ -8,11 +8,10 @@ import {
   getFrameworkName,
   getProjectRoot,
   rendererPackages,
-} from '@storybook/core/common';
-import type { Options } from '@storybook/core/types';
-
-import type { CreateNewStoryRequestPayload } from '@storybook/core/core-events';
-import { isCsfFactoryPreview } from '@storybook/core/csf-tools';
+} from 'storybook/internal/common';
+import type { CreateNewStoryRequestPayload } from 'storybook/internal/core-events';
+import { isCsfFactoryPreview } from 'storybook/internal/csf-tools';
+import type { Options } from 'storybook/internal/types';
 
 import { loadConfig } from '../../csf-tools';
 import { getCsfFactoryTemplateForNewStoryFile } from './new-story-templates/csf-factory-template';

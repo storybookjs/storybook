@@ -4,5 +4,5 @@
     "noEmit": true,
     "strict": false
   },
-  "include": ["src/**/*", "src/**/*.json", "template/**/*"]
+  "include": ["src/**/*", "src/**/*.json"]
 }

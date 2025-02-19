@@ -1,6 +1,6 @@
 import os from 'node:os';
 
-import { logger } from '@storybook/core/node-logger';
+import { logger } from 'storybook/internal/node-logger';
 
 import detectFreePort from 'detect-port';
 

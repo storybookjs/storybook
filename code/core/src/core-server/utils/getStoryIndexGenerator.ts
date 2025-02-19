@@ -1,5 +1,5 @@
-import { normalizeStories } from '@storybook/core/common';
-import type { DocsOptions, Options } from '@storybook/core/types';
+import { normalizeStories } from 'storybook/internal/common';
+import type { DocsOptions, Options } from 'storybook/internal/types';
 
 import type { Polka } from 'polka';
 

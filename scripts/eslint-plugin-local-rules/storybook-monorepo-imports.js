@@ -42,13 +42,16 @@ module.exports = {
           });
         }
 
-        if (node.source.value.startsWith('storybook/internal/') && (isInCore || isInCLI || isInCodemod || isInCreateStorybook)) {
+        if (
+          node.source.value.startsWith('@storybook/core/') &&
+          (isInCore || isInCLI || isInCodemod || isInCreateStorybook)
+        ) {
           const newPath = node.source.value
-            .replace('storybook/internal', '@storybook/core')
+            .replace('@storybook/core', 'storybook/internal')
             .replace('/src', '');
           context.report({
             node: node,
-            message: `Cannot import from storybook/internal in this package. Use @storybook/core instead.`,
+            message: `Cannot import from @storybook/core in this package. Use storybook/internal instead.`,
             fix: (fixer) => {
               return fixer.replaceText(node.source, `'${newPath}'`);
             },

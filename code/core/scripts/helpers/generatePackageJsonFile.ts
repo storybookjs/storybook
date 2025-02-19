@@ -40,7 +40,7 @@ export async function generatePackageJsonFile(entries: ReturnType<typeof getEntr
       main
         .replace(/\/index\.tsx?/, '')
         .replace(/\.tsx?/, '')
-        .replace('dist/', '')
+        .replace('dist/', 'internal/')
     ] = content;
     return acc;
   }, {});
@@ -73,7 +73,7 @@ export async function generatePackageJsonFile(entries: ReturnType<typeof getEntr
         }
 
         const content = ['./' + main.replace(/\.tsx?/, '.d.ts')];
-        acc[key.replace('dist/', '')] = content;
+        acc[key.replace('dist/', 'internal/')] = content;
         return acc;
       }, {}),
     },

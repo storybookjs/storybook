@@ -1,12 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { Channel, type ChannelTransport } from '@storybook/core/channels';
-
+import { Channel, type ChannelTransport } from 'storybook/internal/channels';
 import {
   TESTING_MODULE_CANCEL_TEST_RUN_REQUEST,
   TESTING_MODULE_PROGRESS_REPORT,
   TESTING_MODULE_RUN_REQUEST,
-} from '@storybook/core/core-events';
+} from 'storybook/internal/core-events';
 
 // eslint-disable-next-line depend/ban-dependencies
 import { execaNode } from 'execa';

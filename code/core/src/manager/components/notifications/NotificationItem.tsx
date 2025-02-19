@@ -1,13 +1,13 @@
 import type { FC, SyntheticEvent } from 'react';
 import React, { useCallback, useEffect, useRef } from 'react';
 
-import type { IconsProps } from '@storybook/core/components';
-import { IconButton, Icons } from '@storybook/core/components';
-import { Link } from '@storybook/core/router';
-import { keyframes, styled, useTheme } from '@storybook/core/theming';
-import { CloseAltIcon } from '@storybook/icons';
+import type { IconsProps } from 'storybook/internal/components';
+import { IconButton, Icons } from 'storybook/internal/components';
+import { type State } from 'storybook/internal/manager-api';
+import { Link } from 'storybook/internal/router';
+import { keyframes, styled, useTheme } from 'storybook/internal/theming';
 
-import { type State } from '@storybook/core/manager-api';
+import { CloseAltIcon } from '@storybook/icons';
 
 import { transparentize } from 'polished';
 

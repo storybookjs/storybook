@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { JsPackageManager, PackageJsonWithDepsAndDevDeps } from '@storybook/core/common';
+import type { JsPackageManager, PackageJsonWithDepsAndDevDeps } from 'storybook/internal/common';
 
 import { runFixes } from './index';
 import type { Fix } from './types';

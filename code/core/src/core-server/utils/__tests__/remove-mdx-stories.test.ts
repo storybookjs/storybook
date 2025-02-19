@@ -2,8 +2,8 @@ import { join } from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';
 
-import { normalizeStoriesEntry } from '@storybook/core/common';
-import { type StoriesEntry } from '@storybook/core/types';
+import { normalizeStoriesEntry } from 'storybook/internal/common';
+import { type StoriesEntry } from 'storybook/internal/types';
 
 // eslint-disable-next-line depend/ban-dependencies
 import { glob as globOriginal } from 'glob';

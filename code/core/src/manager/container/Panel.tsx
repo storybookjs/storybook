@@ -1,10 +1,9 @@
 import type { FC } from 'react';
 import React from 'react';
 
-import { type API_LeafEntry, Addon_TypesEnum } from '@storybook/core/types';
-
-import { Consumer } from '@storybook/core/manager-api';
-import type { API, Combo } from '@storybook/core/manager-api';
+import { Consumer } from 'storybook/internal/manager-api';
+import type { API, Combo } from 'storybook/internal/manager-api';
+import { type API_LeafEntry, Addon_TypesEnum } from 'storybook/internal/types';
 
 import memoize from 'memoizerific';
 

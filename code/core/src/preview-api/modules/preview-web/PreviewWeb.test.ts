@@ -1,10 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { ModuleImportFn, ProjectAnnotations, Renderer } from '@storybook/core/types';
-import { global } from '@storybook/global';
-
-import { logger } from '@storybook/core/client-logger';
+import { logger } from 'storybook/internal/client-logger';
 import {
   CONFIG_ERROR,
   CURRENT_STORY_WAS_SET,
@@ -29,7 +26,10 @@ import {
   STORY_UNCHANGED,
   UPDATE_GLOBALS,
   UPDATE_STORY_ARGS,
-} from '@storybook/core/core-events';
+} from 'storybook/internal/core-events';
+import type { ModuleImportFn, ProjectAnnotations, Renderer } from 'storybook/internal/types';
+
+import { global } from '@storybook/global';
 
 import { merge, toMerged } from 'es-toolkit';
 
@@ -74,7 +74,7 @@ vi.mock('@storybook/global', async (importOriginal) => ({
   },
 }));
 
-vi.mock('@storybook/core/client-logger');
+vi.mock('storybook/internal/client-logger');
 vi.mock('react-dom');
 vi.mock('./WebView');
 

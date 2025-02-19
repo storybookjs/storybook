@@ -18,7 +18,7 @@ const BASE_HTML_CONTENTS = '<script>console.log("base script!");</script>';
 const BASE_BODY_HTML_CONTENTS = '<div>story contents</div>';
 const BODY_HTML_CONTENTS = '<div>custom body contents</div>';
 
-const base = dirname(require.resolve('@storybook/core/package.json'));
+const base = dirname(require.resolve('storybook/package.json'));
 
 describe('server.getPreviewHeadHtml', () => {
   afterEach(() => {

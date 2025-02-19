@@ -1,11 +1,10 @@
+import { logger } from 'storybook/internal/client-logger';
 import type {
   ArgTypesEnhancer,
   Renderer,
   SBEnumType,
   StrictInputType,
-} from '@storybook/core/types';
-
-import { logger } from '@storybook/core/client-logger';
+} from 'storybook/internal/types';
 
 import { mapValues } from 'es-toolkit';
 

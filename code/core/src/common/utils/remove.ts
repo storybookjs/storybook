@@ -1,4 +1,4 @@
-import { readConfig, writeConfig } from '@storybook/core/csf-tools';
+import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
 
 import { dedent } from 'ts-dedent';
 

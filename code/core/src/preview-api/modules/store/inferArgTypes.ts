@@ -1,6 +1,5 @@
-import type { ArgTypesEnhancer, Renderer, SBType } from '@storybook/core/types';
-
-import { logger } from '@storybook/core/client-logger';
+import { logger } from 'storybook/internal/client-logger';
+import type { ArgTypesEnhancer, Renderer, SBType } from 'storybook/internal/types';
 
 import { mapValues } from 'es-toolkit';
 import { dedent } from 'ts-dedent';

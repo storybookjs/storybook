@@ -1,9 +1,8 @@
 import { cp } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 
-import { getDirectoryFromWorkingDir } from '@storybook/core/common';
-
-import { logger } from '@storybook/core/node-logger';
+import { getDirectoryFromWorkingDir } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
 

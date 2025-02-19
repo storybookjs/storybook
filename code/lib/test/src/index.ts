@@ -22,7 +22,7 @@ export * from './spy';
 
 type Queries = BoundFunctions<typeof queries>;
 
-declare module '@storybook/core/csf' {
+declare module 'storybook/internal/csf' {
   interface Canvas extends Queries {}
   interface StoryContext {
     // TODO enable this in a later PR, once we have time to QA this properly

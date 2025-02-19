@@ -3,12 +3,12 @@ import { dirname, join } from 'node:path';
 
 import { expect, it, vi } from 'vitest';
 
-import { logger } from '@storybook/core/node-logger';
+import { logger } from 'storybook/internal/node-logger';
 
 import * as m from './common-preset';
 
 const defaultFavicon = join(
-  dirname(require.resolve('@storybook/core/package.json')),
+  dirname(require.resolve('storybook/package.json')),
   '/assets/browser/favicon.svg'
 );
 
@@ -29,7 +29,7 @@ const createOptions = (locations: string[]): Parameters<typeof m.favicon>[1] => 
   },
 });
 
-vi.mock('@storybook/core/node-logger', () => {
+vi.mock('storybook/internal/node-logger', () => {
   return {
     logger: {
       warn: vi.fn(() => {}),

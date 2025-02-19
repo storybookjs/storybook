@@ -1,4 +1,4 @@
-import type { ArgTypes, SBType } from '@storybook/core/csf';
+import type { ArgTypes, SBType } from 'storybook/internal/csf';
 
 export function extractSeededRequiredArgs(argTypes: ArgTypes) {
   const extractedArgTypes = Object.keys(argTypes).reduce(

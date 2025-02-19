@@ -1,37 +1,32 @@
-import type { Canvas, CleanupCallback } from '@storybook/core/csf';
+import { deprecate } from 'storybook/internal/client-logger';
+import type { Canvas, CleanupCallback } from 'storybook/internal/csf';
+import {
+  CalledExtractOnStoreError,
+  MissingStoryFromCsfFileError,
+} from 'storybook/internal/preview-errors';
 import type {
+  BoundStory,
+  CSFFile,
   ComponentTitle,
+  IndexEntry,
+  ModuleExports,
+  ModuleImportFn,
+  NormalizedProjectAnnotations,
   Parameters,
   Path,
+  PreparedMeta,
+  PreparedStory,
+  ProjectAnnotations,
   Renderer,
   StoryContext,
   StoryContextForEnhancers,
   StoryId,
-} from '@storybook/core/types';
-import type {
-  BoundStory,
-  CSFFile,
-  ModuleExports,
-  ModuleImportFn,
-  NormalizedProjectAnnotations,
-  PreparedMeta,
-  PreparedStory,
-  ProjectAnnotations,
-} from '@storybook/core/types';
-import type {
-  IndexEntry,
   StoryIndex,
   StoryIndexV3,
   V3CompatIndexEntry,
-} from '@storybook/core/types';
+} from 'storybook/internal/types';
 
-import { deprecate } from '@storybook/core/client-logger';
-import {
-  CalledExtractOnStoreError,
-  MissingStoryFromCsfFileError,
-} from '@storybook/core/preview-errors';
-
-import { mapValues, omitBy, pick, toMerged } from 'es-toolkit';
+import { mapValues, omitBy, pick } from 'es-toolkit';
 import memoize from 'memoizerific';
 
 import { HooksContext } from '../addons';

@@ -1,4 +1,4 @@
-import { logger } from '@storybook/core/client-logger';
+import { logger } from 'storybook/internal/client-logger';
 
 import { isEqual, mergeWith, omitBy, pick } from 'es-toolkit';
 

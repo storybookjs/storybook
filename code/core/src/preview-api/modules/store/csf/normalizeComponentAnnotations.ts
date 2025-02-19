@@ -1,6 +1,6 @@
-import { sanitize } from '@storybook/core/csf';
-import type { ModuleExports, NormalizedComponentAnnotations } from '@storybook/core/types';
-import type { Renderer } from '@storybook/core/types';
+import { sanitize } from 'storybook/internal/csf';
+import type { ModuleExports, NormalizedComponentAnnotations } from 'storybook/internal/types';
+import type { Renderer } from 'storybook/internal/types';
 
 import { normalizeInputTypes } from './normalizeInputTypes';
 

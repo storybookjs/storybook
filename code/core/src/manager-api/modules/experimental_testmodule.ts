@@ -1,5 +1,3 @@
-import { Addon_TypesEnum, type StoryId } from '@storybook/core/types';
-
 import {
   TESTING_MODULE_CANCEL_TEST_RUN_REQUEST,
   TESTING_MODULE_RUN_ALL_REQUEST,
@@ -8,7 +6,8 @@ import {
   type TestProviderState,
   type TestProviders,
   type TestingModuleRunRequestPayload,
-} from '@storybook/core/core-events';
+} from 'storybook/internal/core-events';
+import { Addon_TypesEnum, type StoryId } from 'storybook/internal/types';
 
 import invariant from 'tiny-invariant';
 

@@ -1,13 +1,12 @@
 /* eslint-disable no-underscore-dangle */
-import { types as t } from '@storybook/core/babel';
-import type { StorybookConfig } from '@storybook/types';
-
+import { types as t } from 'storybook/internal/babel';
 import {
   type ConfigFile,
   isCsfFactoryPreview,
   readConfig,
   writeConfig,
-} from '@storybook/core/csf-tools';
+} from 'storybook/internal/csf-tools';
+import type { StorybookConfig } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
 

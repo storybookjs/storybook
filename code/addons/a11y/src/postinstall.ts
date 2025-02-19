@@ -1,7 +1,7 @@
-import type { PostinstallOptions } from '@storybook/cli/src/add';
-
 // eslint-disable-next-line depend/ban-dependencies
 import { execa } from 'execa';
+
+import type { PostinstallOptions } from '../../../lib/cli-storybook/src/add';
 
 const $ = execa({
   preferLocal: true,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { ArgTypes } from '@storybook/core/csf';
+import type { ArgTypes } from 'storybook/internal/csf';
 
 import { extractSeededRequiredArgs } from './FileSearchModal.utils';
 

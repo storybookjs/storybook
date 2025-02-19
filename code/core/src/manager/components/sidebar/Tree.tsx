@@ -1,9 +1,20 @@
 import type { ComponentProps, FC, MutableRefObject } from 'react';
 import React, { useCallback, useMemo, useRef } from 'react';
 
-import { Button, IconButton, ListItem } from '@storybook/core/components';
-import { styled, useTheme } from '@storybook/core/theming';
-import { type API_HashEntry, type API_StatusValue, type StoryId } from '@storybook/core/types';
+import { Button, IconButton, ListItem } from 'storybook/internal/components';
+import { PRELOAD_ENTRIES } from 'storybook/internal/core-events';
+import { useStorybookApi } from 'storybook/internal/manager-api';
+import type {
+  API,
+  ComponentEntry,
+  GroupEntry,
+  State,
+  StoriesHash,
+  StoryEntry,
+} from 'storybook/internal/manager-api';
+import { styled, useTheme } from 'storybook/internal/theming';
+import { type API_HashEntry, type API_StatusValue, type StoryId } from 'storybook/internal/types';
+
 import {
   CollapseIcon as CollapseIconSvg,
   ExpandAltIcon,
@@ -12,17 +23,6 @@ import {
   StatusWarnIcon,
   SyncIcon,
 } from '@storybook/icons';
-
-import { PRELOAD_ENTRIES } from '@storybook/core/core-events';
-import { useStorybookApi } from '@storybook/core/manager-api';
-import type {
-  API,
-  ComponentEntry,
-  GroupEntry,
-  State,
-  StoriesHash,
-  StoryEntry,
-} from '@storybook/core/manager-api';
 
 import { darken, lighten } from 'polished';
 

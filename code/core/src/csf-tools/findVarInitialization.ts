@@ -1,4 +1,4 @@
-import { types as t } from '@storybook/core/babel';
+import { types as t } from 'storybook/internal/babel';
 
 export const findVarInitialization = (identifier: string, program: t.Program): t.Expression => {
   let init: t.Expression = null as any;

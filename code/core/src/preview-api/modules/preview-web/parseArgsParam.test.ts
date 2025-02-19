@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { parseArgsParam } from './parseArgsParam';
 
-vi.mock('@storybook/core/client-logger', () => ({
+vi.mock('storybook/internal/client-logger', () => ({
   once: { warn: vi.fn() },
 }));
 

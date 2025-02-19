@@ -2,7 +2,8 @@ import type { ComponentProps, ReactNode } from 'react';
 import React, { useCallback, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 
-import { styled } from '@storybook/core/theming';
+import { styled } from 'storybook/internal/theming';
+
 import { global } from '@storybook/global';
 
 import type { PopperOptions, Config as ReactPopperTooltipConfig } from 'react-popper-tooltip';

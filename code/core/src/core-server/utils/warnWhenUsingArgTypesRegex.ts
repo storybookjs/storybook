@@ -1,9 +1,8 @@
 import { readFile } from 'node:fs/promises';
 
-import { type BabelFile, core } from '@storybook/core/babel';
-import type { StorybookConfig } from '@storybook/core/types';
-
-import { babelParse } from '@storybook/core/csf-tools';
+import { type BabelFile, core } from 'storybook/internal/babel';
+import { babelParse } from 'storybook/internal/csf-tools';
+import type { StorybookConfig } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';

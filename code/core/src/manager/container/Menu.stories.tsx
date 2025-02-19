@@ -1,6 +1,7 @@
 import React from 'react';
 
-import { TooltipLinkList, WithTooltip } from '@storybook/core/components';
+import { TooltipLinkList, WithTooltip } from 'storybook/internal/components';
+
 import type { Meta, StoryObj } from '@storybook/react';
 
 import { action } from '@storybook/addon-actions';

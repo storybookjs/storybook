@@ -42,7 +42,7 @@ export default mergeConfig(
         '**/Zoom.stories.tsx', // expected to fail in Vitest because of fetching /iframe.html to cause ECONNREFUSED
         '**/lib/blocks/src/**', // won't work because of https://github.com/storybookjs/storybook/issues/29783
       ],
-      // TODO: bring this back once portable stories support @storybook/core/preview-api hooks
+      // TODO: bring this back once portable stories support storybook/internal/preview-api hooks
       // @ts-expect-error this type does not exist but the property does!
       testNamePattern: /^(?!.*(UseState)).*$/,
       browser: {

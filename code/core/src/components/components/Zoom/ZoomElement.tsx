@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
-import { styled } from '@storybook/core/theming';
+import { styled } from 'storybook/internal/theming';
 
 import type { ResizeHandler } from 'use-resize-observer';
 import useResizeObserver from 'use-resize-observer';

@@ -1,3 +1,7 @@
+## 8.5.8
+
+- Core: Support `esbuild@^0.25` - [#30574](https://github.com/storybookjs/storybook/pull/30574), thanks @JReinhold!
+
 ## 8.5.7
 
 - Tags: Add story/meta usage telemetry - [#30555](https://github.com/storybookjs/storybook/pull/30555), thanks @shilman!

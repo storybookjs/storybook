@@ -1,7 +1,6 @@
-import type { StoryIndexGenerator } from 'storybook/internal/core-server';
-import type { Options } from 'storybook/internal/types';
+import type { StoryIndex } from 'storybook/internal/types';
 
-import { genDynamicImport, genImport, genObjectFromRawEntries } from 'knitwork';
+import { genDynamicImport, genObjectFromRawEntries } from 'knitwork';
 import { join, normalize, relative } from 'pathe';
 import { dedent } from 'ts-dedent';
 
@@ -27,14 +26,24 @@ function toImportPath(relativePath: string) {
  * function to delay loading and to allow Vite to split the code into smaller chunks. It then
  * creates a function, `importFn(path)`, which resolves a path to an import function and this is
  * called by Storybook to fetch a story dynamically when needed.
- *
- * @param stories An array of absolute story paths.
  */
-export async function toImportFn(stories: string[]) {
-  const objectEntries = stories.map((file) => {
-    const relativePath = relative(process.cwd(), file);
+export async function generateImportFnScriptCode(index: StoryIndex): Promise<string> {
+  const objectEntries: [string, string][] = Object.values(index.entries).map((entry) => {
+    if (entry.importPath.startsWith('virtual:')) {
+      console.log('LOG: virtual entry', entry.importPath);
+      return [entry.importPath, entry.importPath];
+    }
 
-    return [toImportPath(relativePath), genDynamicImport(normalize(file))] as [string, string];
+    const absolutePath = join(process.cwd(), entry.importPath);
+    const relativePath = relative(process.cwd(), absolutePath);
+    console.log('LOG: paths', {
+      importPath: entry.importPath,
+      absolutePath,
+      relativePath,
+      toImportPathed: toImportPath(relativePath),
+      cwd: process.cwd(),
+    });
+    return [relativePath, genDynamicImport(normalize(absolutePath))];
   });
 
   return dedent`
@@ -44,24 +53,4 @@ export async function toImportFn(stories: string[]) {
       return await importers[path]();
     }
   `;
-}
-
-export async function generateImportFnScriptCode(
-  options: Options,
-  storyIndexGenerator
-): Promise<string> {
-  // First we need to get an array of stories and their absolute paths.
-  // const stories = await listStories(options);
-  const generator = (await storyIndexGenerator) as StoryIndexGenerator;
-  const index = await generator.getIndex();
-  const stories = Object.values(index.entries).map((entry) =>
-    join(process.cwd(), entry.importPath)
-  );
-
-  // console.log('original stories', stories[0]);
-  console.log('new stories', stories[0]);
-
-  // We can then call toImportFn to create a function that can be used to load each story dynamically.
-  // eslint-disable-next-line @typescript-eslint/return-await
-  return await toImportFn(stories);
 }

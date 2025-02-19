@@ -11,18 +11,20 @@ import { generateAddonSetupCode } from '../codegen-set-addon-channel';
 import { transformIframeHtml } from '../transform-iframe-html';
 import { SB_VIRTUAL_FILES, getResolvedVirtualModuleId } from '../virtual-file-names';
 
-export async function codeGeneratorPlugin(options: Options, storyIndexGenerator): Plugin {
+export function codeGeneratorPlugin(options: Options): Plugin {
   const iframePath = require.resolve('@storybook/builder-vite/input/iframe.html');
   let iframeId: string;
   let projectRoot: string;
+  let storyIndexGenerator: StoryIndexGenerator | undefined;
 
-  // noinspection JSUnusedGlobalSymbols
   return {
     name: 'storybook:code-generator-plugin',
     enforce: 'pre',
+    async buildStart() {
+      storyIndexGenerator = await options?.getStoryIndexGenerator?.();
+    },
     async configureServer(server) {
-      const generator = (await storyIndexGenerator) as StoryIndexGenerator;
-      generator.onInvalidated(() => {
+      storyIndexGenerator?.onInvalidated(() => {
         console.log('LOG: invalidated!');
         const storiesModule = server.moduleGraph.getModuleById(
           getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE)
@@ -30,38 +32,6 @@ export async function codeGeneratorPlugin(options: Options, storyIndexGenerator)
         if (storiesModule) {
           server.moduleGraph.invalidateModule(storiesModule);
         }
-      });
-      // invalidate the whole vite-app.js script on every file change.
-      // (this might be a little too aggressive?)
-      server.watcher.on('change', (path) => {
-        console.log('LOG: server.watcher.on(change)', path);
-        // const appModule = server.moduleGraph.getModuleById(
-        //   getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_APP_FILE)
-        // );
-        // if (appModule) {
-        //   server.moduleGraph.invalidateModule(appModule);
-        // }
-        // const storiesModule = server.moduleGraph.getModuleById(
-        //   getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE)
-        // );
-        // if (storiesModule) {
-        //   server.moduleGraph.invalidateModule(storiesModule);
-        // }
-      });
-
-      // Adding new story files is not covered by the change event above. So we need to detect this and trigger
-      // HMR to update the importFn.
-
-      // on generator.invalidate emit,
-      // run server.watcher.emit('change', SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE);
-
-      server.watcher.on('add', (path) => {
-        console.log('LOG: server.watcher.on(add)', path);
-        // TODO maybe use the stories declaration in main
-        // if (/\.stories\.([tj])sx?$/.test(path) || /\.mdx$/.test(path)) {
-        //   // We need to emit a change event to trigger HMR
-        //   server.watcher.emit('change', SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE);
-        // }
       });
     },
     config(config, { command }) {
@@ -84,42 +54,33 @@ export async function codeGeneratorPlugin(options: Options, storyIndexGenerator)
       iframeId = `${config.root}/iframe.html`;
     },
     resolveId(source) {
-      if (source === SB_VIRTUAL_FILES.VIRTUAL_APP_FILE) {
-        return getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_APP_FILE);
+      if (Object.values(SB_VIRTUAL_FILES).includes(source)) {
+        return getResolvedVirtualModuleId(source);
       }
       if (source === iframePath) {
         return iframeId;
       }
-      if (source === SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE) {
-        return getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE);
-      }
-      if (source === SB_VIRTUAL_FILES.VIRTUAL_PREVIEW_FILE) {
-        return getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_PREVIEW_FILE);
-      }
-      if (source === SB_VIRTUAL_FILES.VIRTUAL_ADDON_SETUP_FILE) {
-        return getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_ADDON_SETUP_FILE);
-      }
 
       return undefined;
     },
-    async load(id, config) {
-      if (id === getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE)) {
-        return generateImportFnScriptCode(options, storyIndexGenerator);
+    async load(id) {
+      switch (id) {
+        case getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_PREVIEW_FILE):
+          return generateImportFnScriptCode(
+            (await storyIndexGenerator?.getIndex()) ?? { v: 5, entries: {} }
+          );
+        case getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_ADDON_SETUP_FILE):
+          return generateAddonSetupCode();
+        case getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_APP_FILE):
+          return generateModernIframeScriptCode(options, projectRoot);
+        case iframeId:
+          return readFileSync(
+            require.resolve('@storybook/builder-vite/input/iframe.html'),
+            'utf-8'
+          );
+        default:
+          return undefined;
       }
-
-      if (id === getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_ADDON_SETUP_FILE)) {
-        return generateAddonSetupCode();
-      }
-
-      if (id === getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_APP_FILE)) {
-        return generateModernIframeScriptCode(options, projectRoot);
-      }
-
-      if (id === iframeId) {
-        return readFileSync(require.resolve('@storybook/builder-vite/input/iframe.html'), 'utf-8');
-      }
-
-      return undefined;
     },
     async transformIndexHtml(html, ctx) {
       if (ctx.path !== '/iframe.html') {

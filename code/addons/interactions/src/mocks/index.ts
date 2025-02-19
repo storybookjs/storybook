@@ -141,7 +141,7 @@ export const getInteractions = (finalStatus: CallStates) =>
     .filter((call) => call.interceptable)
     .map((call) => ({
       ...call,
-      childCallIds: [],
+      childCallIds: [] as any[],
       isCollapsed: false,
       isHidden: false,
       toggleCollapsed: () => {},

@@ -195,7 +195,6 @@ export interface BuilderOptions {
   ignorePreview?: boolean;
   cache?: FileSystemCache;
   configDir: string;
-  projectRoot?: string;
   docsMode?: boolean;
   features?: StorybookConfigRaw['features'];
   versionCheck?: VersionCheck;
@@ -380,6 +379,8 @@ export interface StorybookConfigRaw {
     viewportStoryGlobals?: boolean;
     /** Use globals & globalTypes for configuring the backgrounds addon */
     backgroundsStoryGlobals?: boolean;
+    /** Set NODE_ENV to development in built Storybooks for better testability and debuggability */
+    developmentModeForBuild?: boolean;
   };
 
   build?: TestBuildConfig;

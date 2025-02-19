@@ -15,7 +15,7 @@ export default {
 };
 
 export const Unauthenticated = {
-  async play() => {
+  async play() {
     // 👇 Assert that your component called redirect()
     await expect(redirect).toHaveBeenCalledWith('/login', 'replace');
   },
@@ -56,7 +56,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Unauthenticated: Story = {
-  async play() => {
+  async play() {
     // 👇 Assert that your component called redirect()
     await expect(redirect).toHaveBeenCalledWith('/login', 'replace');
   },
@@ -97,7 +97,7 @@ export default meta;
 type Story = StoryObj<typeof MyForm>;
 
 export const Unauthenticated: Story = {
-  async play() => {
+  async play() {
     // 👇 Assert that your component called redirect()
     await expect(redirect).toHaveBeenCalledWith('/login', 'replace');
   },

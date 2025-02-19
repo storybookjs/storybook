@@ -5,14 +5,15 @@ export default defineWorkspace([
   {
     extends: "vite.config.ts",
     plugins: [
-      storybookTest(),
+      storybookTest(process.env.SKIP_FAIL_ON_PURPOSE ? {
+        tags: {
+          exclude: ["fail-on-purpose"],
+        }
+      } : undefined),
     ],
     test: {
       name: "storybook",
       pool: "threads",
-      include: [
-        "stories/AddonTest.stories.?(c|m)[jt]s?(x)",
-      ],
       deps: {
         optimizer: {
           web: { 
@@ -22,9 +23,11 @@ export default defineWorkspace([
       },
       browser: {
         enabled: true,
-        name: "chromium",
         provider: "playwright",
         headless: true,
+        instances: [{
+          browser: 'chromium'
+        }]
       },
       setupFiles: ["./.storybook/vitest.setup.ts"],
       environment: "happy-dom",

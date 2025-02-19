@@ -1,11 +1,12 @@
 import { join } from 'node:path';
 
-import type { StorybookConfig } from '../frameworks/react-vite';
+import { defineMain } from '../frameworks/react-vite/src/node';
 
 const componentsPath = join(__dirname, '../core/src/components');
 const managerApiPath = join(__dirname, '../core/src/manager-api');
+const imageContextPath = join(__dirname, '../frameworks/nextjs/src/image-context.ts');
 
-const config: StorybookConfig = {
+const config = defineMain({
   stories: [
     './*.stories.@(js|jsx|ts|tsx)',
     {
@@ -132,6 +133,7 @@ const config: StorybookConfig = {
   features: {
     viewportStoryGlobals: true,
     backgroundsStoryGlobals: true,
+    developmentModeForBuild: true,
   },
   viteFinal: async (viteConfig, { configType }) => {
     const { mergeConfig } = await import('vite');
@@ -145,6 +147,7 @@ const config: StorybookConfig = {
                 'storybook/internal/components': componentsPath,
                 '@storybook/manager-api': managerApiPath,
                 'storybook/internal/manager-api': managerApiPath,
+                'sb-original/image-context': imageContextPath,
               }
             : {}),
         },
@@ -156,10 +159,17 @@ const config: StorybookConfig = {
       build: {
         // disable sourcemaps in CI to not run out of memory
         sourcemap: process.env.CI !== 'true',
+        target: ['chrome100'],
+      },
+      server: {
+        watch: {
+          // Something odd happens with tsconfig and nx which causes Storybook to keep reloading, so we ignore them
+          ignored: ['**/.nx/cache/**', '**/tsconfig.json'],
+        },
       },
     } satisfies typeof viteConfig);
   },
   // logLevel: 'debug',
-};
+});
 
 export default config;

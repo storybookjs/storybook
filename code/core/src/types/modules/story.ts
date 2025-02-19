@@ -1,22 +1,19 @@
 import type {
+  BaseProjectAnnotations,
   BeforeAll,
   Canvas,
   CleanupCallback,
-  ProjectAnnotations as CsfProjectAnnotations,
-  DecoratorFunction,
-  Globals,
-  LoaderFunction,
-  Renderer,
-  StepRunner,
-} from '@storybook/csf';
-
-import type {
   ComponentAnnotations,
   ComponentId,
   ComponentTitle,
+  DecoratorFunction,
+  Globals,
   LegacyStoryFn,
+  LoaderFunction,
   PartialStoryFn,
   Path,
+  Renderer,
+  StepRunner,
   StoryAnnotations,
   StoryContext,
   StoryContextForEnhancers,
@@ -45,7 +42,8 @@ export type RenderToCanvas<TRenderer extends Renderer> = (
 ) => MaybePromise<void | TeardownRenderToCanvas>;
 
 export interface ProjectAnnotations<TRenderer extends Renderer>
-  extends CsfProjectAnnotations<TRenderer> {
+  extends BaseProjectAnnotations<TRenderer> {
+  addons?: ProjectAnnotations<TRenderer>[];
   testingLibraryRender?: (...args: never[]) => { unmount: () => void };
   renderToCanvas?: RenderToCanvas<TRenderer>;
   /* @deprecated use renderToCanvas */
@@ -98,6 +96,7 @@ export type NormalizedStoryAnnotations<TRenderer extends Renderer = Renderer> = 
 export type CSFFile<TRenderer extends Renderer = Renderer> = {
   meta: NormalizedComponentAnnotations<TRenderer>;
   stories: Record<StoryId, NormalizedStoryAnnotations<TRenderer>>;
+  projectAnnotations?: NormalizedProjectAnnotations<TRenderer>;
   moduleExports: ModuleExports;
 };
 
@@ -109,6 +108,7 @@ export type PreparedStory<TRenderer extends Renderer = Renderer> =
     unboundStoryFn: LegacyStoryFn<TRenderer>;
     applyLoaders: (context: StoryContext<TRenderer>) => Promise<StoryContext<TRenderer>['loaded']>;
     applyBeforeEach: (context: StoryContext<TRenderer>) => Promise<CleanupCallback[]>;
+    applyAfterEach: (context: StoryContext<TRenderer>) => Promise<void>;
     playFunction?: (context: StoryContext<TRenderer>) => Promise<void> | void;
     runStep: StepRunner<TRenderer>;
     mount: (context: StoryContext<TRenderer>) => () => Promise<Canvas>;

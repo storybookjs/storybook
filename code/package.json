@@ -1,6 +1,6 @@
 {
   "name": "@storybook/root",
-  "version": "8.5.0-alpha.18",
+  "version": "8.6.0-beta.4",
   "private": true,
   "description": "Storybook root",
   "homepage": "https://storybook.js.org/",
@@ -42,8 +42,9 @@
     "lint:js": "yarn lint:js:cmd .  --quiet",
     "lint:js:cmd": "cross-env NODE_ENV=production eslint --cache --cache-location=../.cache/eslint --ext .js,.jsx,.json,.html,.ts,.tsx,.mjs --report-unused-disable-directives",
     "lint:md": "../scripts/node_modules/.bin/remark -q .",
-    "lint:other": "prettier --write '**/*.{css,html,json,md,yml}'",
-    "lint:package": "sort-package-json",
+    "lint:other": "yarn lint:prettier '**/*.{css,html,json,md,yml}'",
+    "lint:package": "yarn --cwd ../scripts lint:package",
+    "lint:prettier": "prettier --write",
     "local-registry": "yarn --cwd ../scripts local-registry",
     "publish-sandboxes": "yarn --cwd ../scripts publish",
     "storybook:ui": "NODE_OPTIONS=\"--preserve-symlinks --preserve-symlinks-main\" ./lib/cli/bin/index.cjs dev --port 6006 --config-dir ./.storybook",
@@ -64,14 +65,14 @@
     "*.{html,js,json,jsx,mjs,ts,tsx}": [
       "yarn lint:js:cmd --fix"
     ],
-    "package.json": [
-      "yarn lint:package"
-    ],
     "*.ejs": [
       "../scripts/node_modules/.bin/ejslint"
     ],
     "*.{css,html,json,md,yml}": [
-      "../scripts/node_modules/.bin/prettier --write"
+      "yarn lint:prettier"
+    ],
+    "package.json": [
+      "yarn lint:package"
     ]
   },
   "browserslist": [
@@ -82,19 +83,22 @@
     "@types/babel__traverse@npm:*": "patch:@types/babel__traverse@npm%3A7.20.6#~/.yarn/patches/@types-babel__traverse-npm-7.20.6-fac4243243.patch",
     "@types/babel__traverse@npm:^7.18.0": "patch:@types/babel__traverse@npm%3A7.20.6#~/.yarn/patches/@types-babel__traverse-npm-7.20.6-fac4243243.patch",
     "@types/node": "^22.0.0",
+    "@types/react": "^18.0.0",
     "@vitest/expect@npm:2.0.5": "patch:@vitest/expect@npm%3A2.0.5#~/.yarn/patches/@vitest-expect-npm-2.0.5-8933466cce.patch",
-    "esbuild": "^0.24.0",
+    "esbuild": "^0.25.0",
     "playwright": "1.48.1",
     "playwright-core": "1.48.1",
+    "react": "^18.2.0",
     "serialize-javascript": "^3.1.0",
-    "type-fest": "~2.19"
+    "type-fest": "~2.19",
+    "typescript": "^5.7.3"
   },
   "dependencies": {
-    "@chromatic-com/storybook": "^3.2.0",
+    "@chromatic-com/storybook": "^3.2.4",
     "@happy-dom/global-registrator": "^14.12.0",
-    "@nx/eslint": "18.0.6",
-    "@nx/vite": "18.0.6",
-    "@nx/workspace": "18.0.6",
+    "@nx/eslint": "20.2.2",
+    "@nx/vite": "20.2.2",
+    "@nx/workspace": "20.2.2",
     "@playwright/test": "1.48.1",
     "@storybook/addon-a11y": "workspace:*",
     "@storybook/addon-actions": "workspace:*",
@@ -123,7 +127,6 @@
     "@storybook/codemod": "workspace:*",
     "@storybook/core": "workspace:*",
     "@storybook/core-webpack": "workspace:*",
-    "@storybook/csf": "0.1.11",
     "@storybook/csf-plugin": "workspace:*",
     "@storybook/ember": "workspace:*",
     "@storybook/eslint-config-storybook": "^4.0.0",
@@ -174,34 +177,37 @@
     "@types/react-dom": "^18.0.11",
     "@types/semver": "^7.3.4",
     "@types/serve-static": "^1.13.8",
-    "@typescript-eslint/experimental-utils": "^5.62.0",
-    "@typescript-eslint/parser": "^6.18.1",
+    "@typescript-eslint/eslint-plugin": "7.18.0",
+    "@typescript-eslint/parser": "7.18.0",
     "@vitejs/plugin-react": "^4.3.2",
     "@vitejs/plugin-vue": "^4.4.0",
-    "@vitest/browser": "^2.1.3",
-    "@vitest/coverage-istanbul": "^2.1.3",
-    "@vitest/coverage-v8": "^2.1.3",
+    "@vitest/browser": "^3.0.2",
+    "@vitest/coverage-istanbul": "^3.0.2",
+    "@vitest/coverage-v8": "^3.0.2",
     "create-storybook": "workspace:*",
     "cross-env": "^7.0.3",
     "danger": "^12.3.3",
     "es-toolkit": "^1.22.0",
-    "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0",
+    "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0",
     "esbuild-loader": "^4.2.0",
     "esbuild-plugin-alias": "^0.2.1",
-    "eslint": "^8.56.0",
+    "eslint": "8.57.1",
     "eslint-import-resolver-typescript": "^3.6.1",
     "eslint-plugin-depend": "^0.11.0",
+    "eslint-plugin-import": "^2.29.1",
     "eslint-plugin-local-rules": "portal:../scripts/eslint-plugin-local-rules",
     "eslint-plugin-playwright": "^1.6.2",
-    "eslint-plugin-storybook": "^0.8.0",
+    "eslint-plugin-storybook": "0.11.3--canary.187.1af857a.0",
     "github-release-from-changelog": "^2.1.1",
     "glob": "^10.0.0",
     "happy-dom": "^14.12.0",
     "http-server": "^14.1.1",
     "husky": "^4.3.7",
+    "intl-segmenter-polyfill-rs": "^0.1.7",
+    "jiti": "^1.21.6",
     "lint-staged": "^13.2.2",
     "mock-require": "^3.0.3",
-    "nx": "18.0.6",
+    "nx": "^20.4.0",
     "prettier": "^3.1.1",
     "prettier-plugin-brace-style": "^0.6.2",
     "prettier-plugin-css-order": "^2.1.2",
@@ -211,17 +217,20 @@
     "process": "^0.11.10",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "rimraf": "^6.0.1",
     "semver": "^7.3.7",
     "serve-static": "^1.14.1",
     "slash": "^5.0.0",
+    "sort-package-json": "^2.14.0",
     "storybook": "workspace:^",
+    "stream-browserify": "^3.0.0",
     "svelte": "^5.0.0-next.268",
     "ts-dedent": "^2.0.0",
-    "typescript": "^5.4.3",
+    "typescript": "^5.7.3",
     "util": "^0.12.4",
     "vite": "^4.0.0",
     "vite-plugin-inspect": "^0.8.5",
-    "vitest": "^2.1.3",
+    "vitest": "^3.0.2",
     "wait-on": "^7.0.1"
   },
   "dependenciesMeta": {
@@ -248,6 +257,7 @@
       "built": false
     }
   },
+  "packageManager": "yarn@4.6.0",
   "engines": {
     "node": ">=18.0.0"
   },

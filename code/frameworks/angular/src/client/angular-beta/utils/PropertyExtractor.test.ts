@@ -16,15 +16,13 @@ import { PropertyExtractor } from './PropertyExtractor';
 const TEST_TOKEN = new InjectionToken('testToken');
 const TestTokenProvider = { provide: TEST_TOKEN, useValue: 123 };
 const TestService = Injectable()(class {});
-const TestComponent1 = Component({})(class {});
-const TestComponent2 = Component({})(class {});
-const StandaloneTestComponent = Component({ standalone: true })(class {});
-const StandaloneTestDirective = Directive({ standalone: true })(class {});
-const MixedTestComponent1 = Component({ standalone: true })(
-  class extends StandaloneTestComponent {}
-);
-const MixedTestComponent2 = Component({})(class extends MixedTestComponent1 {});
-const MixedTestComponent3 = Component({ standalone: true })(class extends MixedTestComponent2 {});
+const TestComponent1 = Component({ standalone: false })(class {});
+const TestComponent2 = Component({ standalone: false })(class {});
+const StandaloneTestComponent = Component({})(class {});
+const StandaloneTestDirective = Directive({})(class {});
+const MixedTestComponent1 = Component({})(class extends StandaloneTestComponent {});
+const MixedTestComponent2 = Component({ standalone: false })(class extends MixedTestComponent1 {});
+const MixedTestComponent3 = Component({})(class extends MixedTestComponent2 {});
 const TestModuleWithDeclarations = NgModule({ declarations: [TestComponent1] })(class {});
 const TestModuleWithImportsAndProviders = NgModule({
   imports: [TestModuleWithDeclarations],

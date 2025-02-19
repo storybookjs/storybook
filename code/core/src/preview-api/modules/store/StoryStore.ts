@@ -1,3 +1,4 @@
+import type { Canvas, CleanupCallback } from '@storybook/core/csf';
 import type {
   ComponentTitle,
   Parameters,
@@ -23,7 +24,6 @@ import type {
   StoryIndexV3,
   V3CompatIndexEntry,
 } from '@storybook/core/types';
-import type { Canvas, CleanupCallback } from '@storybook/csf';
 
 import { deprecate } from '@storybook/core/client-logger';
 import {
@@ -45,6 +45,7 @@ import {
   prepareStory,
   processCSFFile,
 } from './csf';
+import { ReporterAPI } from './reporter-api';
 
 export function picky<T extends Record<string, any>, K extends keyof T>(
   obj: T,
@@ -214,7 +215,7 @@ export class StoryStore<TRenderer extends Renderer> {
     const story = this.prepareStoryWithCache(
       storyAnnotations,
       componentAnnotations,
-      this.projectAnnotations
+      csfFile.projectAnnotations ?? this.projectAnnotations
     );
     this.args.setInitial(story);
     this.hooks[story.id] = this.hooks[story.id] || new HooksContext();
@@ -253,12 +254,14 @@ export class StoryStore<TRenderer extends Renderer> {
   getStoryContext(story: PreparedStory<TRenderer>, { forceInitialArgs = false } = {}) {
     const userGlobals = this.userGlobals.get();
     const { initialGlobals } = this.userGlobals;
+    const reporting = new ReporterAPI();
     return prepareContext({
       ...story,
       args: forceInitialArgs ? story.initialArgs : this.args.get(story.id),
       initialGlobals,
       globalTypes: this.projectAnnotations.globalTypes,
       userGlobals,
+      reporting,
       globals: {
         ...userGlobals,
         ...story.storyGlobals,
@@ -320,7 +323,15 @@ export class StoryStore<TRenderer extends Renderer> {
             }
             return Object.assign(storyAcc, { [key]: value });
           },
-          { args: story.initialArgs }
+          {
+            //
+            args: story.initialArgs,
+            globals: {
+              ...this.userGlobals.initialGlobals,
+              ...this.userGlobals.globals,
+              ...story.storyGlobals,
+            },
+          }
         );
         return acc;
       },

@@ -7,7 +7,7 @@ import { normalizeStoriesEntry } from '@storybook/core/common';
 import { STORY_INDEX_INVALIDATED } from '@storybook/core/core-events';
 
 import { debounce } from 'es-toolkit/compat';
-import type Polka from 'polka';
+import type { Polka, Request, Response } from 'polka';
 import Watchpack from 'watchpack';
 
 import { csfIndexer } from '../presets/common-preset';
@@ -58,10 +58,10 @@ const getInitializedStoryIndexGenerator = async (
 
 describe('useStoriesJson', () => {
   const use = vi.fn();
-  const app: Polka.Polka = { use } as any;
+  const app: Polka = { use } as any;
   const end = vi.fn();
   const write = vi.fn();
-  const response: Polka.Response = {
+  const response: Response = {
     header: vi.fn(),
     send: vi.fn(),
     status: vi.fn(),
@@ -81,7 +81,7 @@ describe('useStoriesJson', () => {
     Watchpack.mockClear();
   });
 
-  const request: Polka.Request = {
+  const request: Request = {
     headers: { accept: 'application/json' },
   } as any;
 
@@ -254,6 +254,18 @@ describe('useStoriesJson', () => {
               ],
               "title": "docs2/Yabbadabbadooo",
               "type": "docs",
+            },
+            "example-button--story-one": {
+              "id": "example-button--story-one",
+              "importPath": "./src/Button.stories.ts",
+              "name": "Story One",
+              "tags": [
+                "dev",
+                "test",
+                "foobar",
+              ],
+              "title": "Example/Button",
+              "type": "story",
             },
             "first-nested-deeply-f--story-one": {
               "id": "first-nested-deeply-f--story-one",

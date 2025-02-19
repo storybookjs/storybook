@@ -7,8 +7,9 @@ import type {
   StoryId,
   StrictArgTypes,
   Tag,
-} from '@storybook/csf';
+} from '@storybook/core/csf';
 
+import type { ReporterAPI } from '../../preview-api';
 import type {
   AnnotatedStoryFn,
   Args,
@@ -49,6 +50,7 @@ export type ComposedStoryFn<
   storyName: string;
   parameters: Parameters;
   argTypes: StrictArgTypes<TArgs>;
+  reporting: ReporterAPI;
   tags: Tag[];
   globals: Globals;
 };

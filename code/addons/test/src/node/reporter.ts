@@ -1,21 +1,19 @@
 import type { TaskState } from 'vitest';
 import type { Vitest } from 'vitest/node';
+import * as vitestNode from 'vitest/node';
 import { type Reporter } from 'vitest/reporters';
 
 import type {
   TestingModuleProgressReportPayload,
   TestingModuleProgressReportProgress,
 } from 'storybook/internal/core-events';
+import type { Report } from 'storybook/internal/preview-api';
 
 import type { API_StatusUpdate } from '@storybook/types';
 
 import type { Suite } from '@vitest/runner';
-// TODO
-// We can theoretically avoid the `@vitest/runner` dependency by copying over the necessary
-// functions from the `@vitest/runner` package. It is not complex and does not have
-// any significant dependencies.
-import { getTests } from '@vitest/runner/utils';
 import { throttle } from 'es-toolkit';
+import { satisfies } from 'semver';
 
 import { TEST_PROVIDER_ID } from '../constants';
 import type { TestManager } from './test-manager';
@@ -28,20 +26,22 @@ export type TestResultResult =
       storyId: string;
       testRunId: string;
       duration: number;
+      reports: Report[];
     }
   | {
-      status: Extract<TestStatus, 'failed'>;
+      status: Extract<TestStatus, 'failed' | 'warning'>;
       storyId: string;
       duration: number;
       testRunId: string;
       failureMessages: string[];
+      reports: Report[];
     };
 
 export type TestResult = {
   results: TestResultResult[];
   startTime: number;
   endTime: number;
-  status: Extract<TestStatus, 'passed' | 'failed'>;
+  status: Extract<TestStatus, 'passed' | 'failed' | 'warning'>;
   message?: string;
 };
 
@@ -52,7 +52,14 @@ const statusMap: Record<TaskState, TestStatus> = {
   run: 'pending',
   skip: 'skipped',
   todo: 'skipped',
+  queued: 'pending',
 };
+
+const vitestVersion = vitestNode.version;
+
+const isVitest3OrLater = vitestVersion
+  ? satisfies(vitestVersion, '>=3.0.0-beta.3', { includePrerelease: true })
+  : false;
 
 export class StorybookReporter implements Reporter {
   testStatusData: API_StatusUpdate = {};
@@ -72,7 +79,13 @@ export class StorybookReporter implements Reporter {
     this.start = Date.now();
   }
 
-  getProgressReport(finishedAt?: number) {
+  async getProgressReport(finishedAt?: number) {
+    // TODO
+    // We can theoretically avoid the `@vitest/runner` dependency by copying over the necessary
+    // functions from the `@vitest/runner` package. It is not complex and does not have
+    // any significant dependencies.
+    const { getTests } = await import('@vitest/runner/utils');
+
     const files = this.ctx.state.getFiles();
     const fileTests = getTests(files).filter((t) => t.mode === 'run' || t.mode === 'only');
 
@@ -113,16 +126,30 @@ export class StorybookReporter implements Reporter {
 
         const status = statusMap[t.result?.state || t.mode] || 'skipped';
         const storyId = (t.meta as any).storyId as string;
+        const reports =
+          ((t.meta as any).reports as Report[])?.map((report) => ({
+            status: report.status,
+            type: report.type,
+          })) ?? [];
         const duration = t.result?.duration || 0;
         const testRunId = this.start.toString();
 
         switch (status) {
           case 'passed':
           case 'pending':
-            return [{ status, storyId, duration, testRunId } as TestResultResult];
+            return [{ status, storyId, duration, testRunId, reports } as TestResultResult];
           case 'failed':
             const failureMessages = t.result?.errors?.map((e) => e.stack || e.message) || [];
-            return [{ status, storyId, duration, failureMessages, testRunId } as TestResultResult];
+            return [
+              {
+                status,
+                storyId,
+                duration,
+                failureMessages,
+                testRunId,
+                reports,
+              } as TestResultResult,
+            ];
           default:
             return [];
         }
@@ -147,6 +174,11 @@ export class StorybookReporter implements Reporter {
         numTotalTests,
         startedAt: this.start,
         finishedAt,
+        percentageCompleted: finishedAt
+          ? 100
+          : numTotalTests
+            ? ((numPassedTests + numFailedTests) / numTotalTests) * 100
+            : 0,
       } as TestingModuleProgressReportProgress,
       details: {
         testResults,
@@ -159,7 +191,7 @@ export class StorybookReporter implements Reporter {
       this.sendReport({
         providerId: TEST_PROVIDER_ID,
         status: 'pending',
-        ...this.getProgressReport(),
+        ...(await this.getProgressReport()),
       });
     } catch (e) {
       this.sendReport({
@@ -189,14 +221,17 @@ export class StorybookReporter implements Reporter {
   async onFinished() {
     const unhandledErrors = this.ctx.state.getUnhandledErrors();
 
-    const isCancelled = this.ctx.isCancelling;
-    const report = this.getProgressReport(Date.now());
+    const isCancelled = isVitest3OrLater
+      ? this.testManager.vitestManager.isCancelling
+      : // @ts-expect-error isCancelling is private in Vitest 3.
+        this.ctx.isCancelling;
+    const report = await this.getProgressReport(Date.now());
 
     const testSuiteFailures = report.details.testResults.filter(
       (t) => t.status === 'failed' && t.results.length === 0
     );
 
-    const reducedTestSuiteFailures = new Set<string>();
+    const reducedTestSuiteFailures = new Set<string | undefined>();
 
     testSuiteFailures.forEach((t) => {
       reducedTestSuiteFailures.add(t.message);
@@ -216,7 +251,7 @@ export class StorybookReporter implements Reporter {
               message: Array.from(reducedTestSuiteFailures).reduce(
                 (acc, curr) => `${acc}\n${curr}`,
                 ''
-              ),
+              )!,
             }
           : {
               name: `${unhandledErrors.length} unhandled error${unhandledErrors?.length > 1 ? 's' : ''}`,

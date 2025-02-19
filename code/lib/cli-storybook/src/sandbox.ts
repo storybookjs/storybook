@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import { readdir } from 'node:fs/promises';
+import { readdir, rm } from 'node:fs/promises';
 import { isAbsolute, join } from 'node:path';
 
 import type { PackageManagerName } from 'storybook/internal/common';
@@ -7,7 +7,6 @@ import { JsPackageManagerFactory } from 'storybook/internal/common';
 import { versions } from 'storybook/internal/common';
 
 import boxen from 'boxen';
-import { initiate } from 'create-storybook';
 import { downloadTemplate } from 'giget';
 import picocolors from 'picocolors';
 import prompts from 'prompts';
@@ -167,6 +166,7 @@ export const sandbox = async ({
   const outputDirectoryName = outputDirectory || templateId;
   if (selectedDirectory && existsSync(`${selectedDirectory}`)) {
     logger.info(`⚠️  ${selectedDirectory} already exists! Overwriting...`);
+    await rm(selectedDirectory, { recursive: true, force: true });
   }
 
   if (!selectedDirectory) {
@@ -225,6 +225,8 @@ export const sandbox = async ({
         const before = process.cwd();
         process.chdir(templateDestination);
         // we run doInitiate, instead of initiate, to avoid sending this init event to telemetry, because it's not a real world project
+        // @ts-expect-error (no types for this)
+        const { initiate } = await import('create-storybook');
         await initiate({
           dev: process.env.CI !== 'true' && process.env.IN_STORYBOOK_SANBOX !== 'true',
           ...options,

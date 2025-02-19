@@ -16,12 +16,14 @@ import prettyTime from 'pretty-hrtime';
 import sirv from 'sirv';
 import { corePath } from 'storybook/core-path';
 import type { Configuration, Stats, StatsOptions } from 'webpack';
-import webpack, { ProgressPlugin } from 'webpack';
+import webpackDep, { DefinePlugin, ProgressPlugin } from 'webpack';
 import webpackDevMiddleware from 'webpack-dev-middleware';
 import webpackHotMiddleware from 'webpack-hot-middleware';
 
 export * from './types';
 export * from './preview/virtual-module-mapping';
+
+export const WebpackDefinePlugin = DefinePlugin;
 
 export const printDuration = (startTime: [number, number]) =>
   prettyTime(process.hrtime(startTime))
@@ -51,8 +53,8 @@ export const executor = {
   get: async (options: Options) => {
     const version = ((await options.presets.apply('webpackVersion')) || '5') as string;
     const webpackInstance =
-      (await options.presets.apply<{ default: typeof webpack }>('webpackInstance'))?.default ||
-      webpack;
+      (await options.presets.apply<{ default: typeof webpackDep }>('webpackInstance'))?.default ||
+      webpackDep;
     checkWebpackVersion({ version }, '5', 'builder-webpack5');
     return webpackInstance;
   },

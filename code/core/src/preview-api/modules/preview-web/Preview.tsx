@@ -1,4 +1,5 @@
 import type { Channel } from '@storybook/core/channels';
+import type { CleanupCallback } from '@storybook/core/csf';
 import type {
   Args,
   Globals,
@@ -14,7 +15,6 @@ import type {
   StoryIndex,
   StoryRenderOptions,
 } from '@storybook/core/types';
-import type { CleanupCallback } from '@storybook/csf';
 import { global } from '@storybook/global';
 
 import { deprecate, logger } from '@storybook/core/client-logger';
@@ -385,11 +385,6 @@ export class Preview<TRenderer extends Renderer> {
     if (!this.storyStoreValue) {
       throw new CalledPreviewMethodBeforeInitializationError({ methodName: 'onResetArgs' });
     }
-
-    // NOTE: we have to be careful here and avoid await-ing when updating a rendered's args.
-    // That's because below in `renderStoryToElement` we have also bound to this event and will
-    // render the story in the same tick.
-    // However, we can do that safely as the current story is available in `this.storyRenders`
 
     // NOTE: we have to be careful here and avoid await-ing when updating a rendered's args.
     // That's because below in `renderStoryToElement` we have also bound to this event and will

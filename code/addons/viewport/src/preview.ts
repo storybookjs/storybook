@@ -1,5 +1,4 @@
 import { PARAM_KEY as KEY } from './constants';
-import { MINIMAL_VIEWPORTS } from './defaults';
 import type { GlobalState } from './types';
 
 const modern: Record<string, GlobalState> = {
@@ -9,4 +8,4 @@ const modern: Record<string, GlobalState> = {
 // TODO: remove in 9.0
 const legacy = { viewport: 'reset', viewportRotated: false };
 
-export const initialGlobals = FEATURES?.viewportStoryGlobals ? modern : legacy;
+export const initialGlobals = globalThis.FEATURES?.viewportStoryGlobals ? modern : legacy;

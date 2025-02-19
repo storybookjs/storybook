@@ -16,8 +16,8 @@ export default {
   parameters: {
     backgrounds: {
       options: {
-        { name: 'twitter', value: '#00aced' },
-        { name: 'facebook', value: '#3b5998' },
+        twitter: { name: 'twitter', value: '#00aced' },
+        facebook: { name: 'facebook', value: '#3b5998' },
       },
     },
   },
@@ -50,8 +50,8 @@ const preview: Preview = {
   parameters: {
     backgrounds: {
       options: {
-        { name: 'twitter', value: '#00aced' },
-        { name: 'facebook', value: '#3b5998' },
+        twitter: { name: 'twitter', value: '#00aced' },
+        facebook: { name: 'facebook', value: '#3b5998' },
       },
     },
   },

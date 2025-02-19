@@ -1,4 +1,5 @@
 /* eslint-disable no-underscore-dangle */
+import { type CleanupCallback, combineTags, includeConditionalArg } from '@storybook/core/csf';
 import type {
   Args,
   ArgsStoryFn,
@@ -18,7 +19,6 @@ import type {
   NormalizedProjectAnnotations,
   NormalizedStoryAnnotations,
 } from '@storybook/core/types';
-import { type CleanupCallback, combineTags, includeConditionalArg } from '@storybook/csf';
 import { global } from '@storybook/global';
 import { global as globalThis } from '@storybook/global';
 
@@ -92,6 +92,20 @@ export function prepareStory<TRenderer extends Renderer>(
     return cleanupCallbacks;
   };
 
+  const applyAfterEach = async (context: StoryContext<TRenderer>): Promise<void> => {
+    const reversedFinalizers = [
+      ...normalizeArrays(projectAnnotations.experimental_afterEach),
+      ...normalizeArrays(componentAnnotations.experimental_afterEach),
+      ...normalizeArrays(storyAnnotations.experimental_afterEach),
+    ].reverse();
+    for (const finalizer of reversedFinalizers) {
+      if (context.abortSignal.aborted) {
+        return;
+      }
+      await finalizer(context);
+    }
+  };
+
   const undecoratedStoryFn = (context: StoryContext<TRenderer>) =>
     (context.originalStoryFn as ArgsStoryFn<TRenderer>)(context.args, context);
 
@@ -150,6 +164,7 @@ export function prepareStory<TRenderer extends Renderer>(
     unboundStoryFn,
     applyLoaders,
     applyBeforeEach,
+    applyAfterEach,
     playFunction,
     runStep,
     mount,

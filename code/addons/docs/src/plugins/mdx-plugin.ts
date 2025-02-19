@@ -3,8 +3,6 @@ import { dirname, join } from 'node:path';
 import type { Options } from 'storybook/internal/types';
 
 import { createFilter } from '@rollup/pluginutils';
-import rehypeExternalLinks from 'rehype-external-links';
-import rehypeSlug from 'rehype-slug';
 import type { Plugin } from 'vite';
 
 import type { CompileOptions } from '../compiler';
@@ -23,6 +21,9 @@ export async function mdxPlugin(options: Options): Promise<Plugin> {
   const { presets } = options;
   const presetOptions = await presets.apply<Record<string, any>>('options', {});
   const mdxPluginOptions = presetOptions?.mdxPluginOptions as CompileOptions;
+
+  const rehypeSlug = (await import('rehype-slug')).default;
+  const rehypeExternalLinks = (await import('rehype-external-links')).default;
 
   return {
     name: 'storybook:mdx-plugin',

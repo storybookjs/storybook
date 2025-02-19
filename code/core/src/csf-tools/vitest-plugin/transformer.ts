@@ -3,8 +3,8 @@
 /* eslint-disable no-underscore-dangle */
 import { types as t } from '@storybook/core/babel';
 import { getStoryTitle } from '@storybook/core/common';
+import { combineTags } from '@storybook/core/csf';
 import type { StoriesEntry, Tag } from '@storybook/core/types';
-import { combineTags } from '@storybook/csf';
 
 import { dedent } from 'ts-dedent';
 

@@ -4,6 +4,7 @@
     "ci-tests": "cd code; yarn ci-tests",
     "get-report-message": "cd scripts; yarn get-report-message",
     "get-template": "cd scripts; yarn get-template",
+    "get-sandbox-dir": "cd scripts; yarn get-sandbox-dir",
     "i": "yarn --cwd scripts && yarn --cwd code",
     "knip": "cd code; yarn knip",
     "lint": "cd code; yarn lint",
@@ -17,5 +18,5 @@
     "vite-ecosystem-ci:build": "yarn task --task sandbox --template react-vite/default-ts --start-from=install",
     "vite-ecosystem-ci:test": "yarn task --task test-runner-dev --template react-vite/default-ts --start-from=dev && yarn task --task test-runner --template react-vite/default-ts --start-from=build"
   },
-  "packageManager": "yarn@4.4.0+sha512.91d93b445d9284e7ed52931369bc89a663414e5582d00eea45c67ddc459a2582919eece27c412d6ffd1bd0793ff35399381cb229326b961798ce4f4cc60ddfdb"
+  "packageManager": "yarn@4.6.0"
 }

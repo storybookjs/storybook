@@ -1,3 +1,4 @@
+import { storyNameFromExport, toId } from '@storybook/core/csf';
 import type {
   ArgTypes,
   LegacyStoryAnnotationsOrFn,
@@ -10,7 +11,6 @@ import type {
   NormalizedComponentAnnotations,
   NormalizedStoryAnnotations,
 } from '@storybook/core/types';
-import { storyNameFromExport, toId } from '@storybook/csf';
 
 import { deprecate, logger } from '@storybook/core/client-logger';
 
@@ -60,6 +60,11 @@ export function normalizeStory<TRenderer extends Renderer>(
     ...normalizeArrays(storyObject.beforeEach),
     ...normalizeArrays(story?.beforeEach),
   ];
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  const experimental_afterEach = [
+    ...normalizeArrays(storyObject.experimental_afterEach),
+    ...normalizeArrays(story?.experimental_afterEach),
+  ];
   const { render, play, tags = [], globals = {} } = storyObject;
 
   // eslint-disable-next-line no-underscore-dangle
@@ -75,6 +80,7 @@ export function normalizeStory<TRenderer extends Renderer>(
     argTypes: normalizeInputTypes(argTypes),
     loaders,
     beforeEach,
+    experimental_afterEach,
     globals,
     ...(render && { render }),
     ...(userStoryFn && { userStoryFn }),

@@ -13,7 +13,7 @@ type Story = StoryObj<MyComponent>;
 export const ExampleStory: Story = {
   parameters: {
     a11y: {
-      element: '#storybook-root',
+      element: 'body',
       config: {
         rules: [
           {
@@ -28,7 +28,17 @@ export const ExampleStory: Story = {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
+      // Optional flag to prevent the automatic check
       manual: true,
     },
   },
@@ -45,7 +55,7 @@ export default {
 export const ExampleStory = {
   parameters: {
     a11y: {
-      element: '#storybook-root',
+      element: 'body',
       config: {
         rules: [
           {
@@ -60,7 +70,17 @@ export const ExampleStory = {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
+      // Optional flag to prevent the automatic check
       manual: true,
     },
   },
@@ -82,7 +102,7 @@ type Story = StoryObj<typeof meta>;
 export const ExampleStory: Story = {
   parameters: {
     a11y: {
-      element: '#storybook-root',
+      element: 'body',
       config: {
         rules: [
           {
@@ -97,7 +117,17 @@ export const ExampleStory: Story = {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
+      // Optional flag to prevent the automatic check
       manual: true,
     },
   },
@@ -119,7 +149,7 @@ type Story = StoryObj<typeof MyComponent>;
 export const ExampleStory: Story = {
   parameters: {
     a11y: {
-      element: '#storybook-root',
+      element: 'body',
       config: {
         rules: [
           {
@@ -134,7 +164,17 @@ export const ExampleStory: Story = {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
+      // Optional flag to prevent the automatic check
       manual: true,
     },
   },
@@ -156,7 +196,7 @@ export const ExampleStory: Story = {
   name="ExampleStory"
   parameters={{
     a11y: {
-      element: '#storybook-root',
+      element: 'body',
       config: {
         rules: [
           {
@@ -171,7 +211,17 @@ export const ExampleStory: Story = {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+      */
       options: {},
+    },
+  }}
+  globals={{
+    a11y: {
+      // Optional flag to prevent the automatic check
       manual: true,
     },
   }}
@@ -188,7 +238,7 @@ export default {
 export const ExampleStory = {
   parameters: {
     a11y: {
-      element: '#storybook-root',
+      element: 'body',
       config: {
         rules: [
           {
@@ -203,7 +253,17 @@ export const ExampleStory = {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
+      // Optional flag to prevent the automatic check
       manual: true,
     },
   },
@@ -225,7 +285,7 @@ export const ExampleStory = {
   name="ExampleStory"
   parameters={{
     a11y: {
-      element: '#storybook-root',
+      element: 'body',
       config: {
         rules: [
           {
@@ -240,7 +300,17 @@ export const ExampleStory = {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+      */
       options: {},
+    },
+  }}
+  globals={{
+    a11y: {
+      // Optional flag to prevent the automatic check
       manual: true,
     },
   }}
@@ -262,7 +332,7 @@ type Story = StoryObj<typeof meta>;
 export const ExampleStory: Story = {
   parameters: {
     a11y: {
-      element: '#storybook-root',
+      element: 'body',
       config: {
         rules: [
           {
@@ -277,7 +347,17 @@ export const ExampleStory: Story = {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
+      // Optional flag to prevent the automatic check
       manual: true,
     },
   },
@@ -299,7 +379,7 @@ export const ExampleStory: Story = {
   name="ExampleStory"
   parameters={{
     a11y: {
-      element: '#storybook-root',
+      element: 'body',
       config: {
         rules: [
           {
@@ -314,7 +394,17 @@ export const ExampleStory: Story = {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+      */
       options: {},
+    },
+  }}
+  globals={{
+    a11y: {
+      // Optional flag to prevent the automatic check
       manual: true,
     },
   }}
@@ -336,7 +426,7 @@ type Story = StoryObj<typeof meta>;
 export const ExampleStory: Story = {
   parameters: {
     a11y: {
-      element: '#storybook-root',
+      element: 'body',
       config: {
         rules: [
           {
@@ -351,7 +441,17 @@ export const ExampleStory: Story = {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
+      // Optional flag to prevent the automatic check
       manual: true,
     },
   },
@@ -368,7 +468,7 @@ export default {
 export const ExampleStory = {
   parameters: {
     a11y: {
-      element: '#storybook-root',
+      element: 'body',
       config: {
         rules: [
           {
@@ -383,7 +483,17 @@ export const ExampleStory = {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
+      // Optional flag to prevent the automatic check
       manual: true,
     },
   },
@@ -405,7 +515,7 @@ type Story = StoryObj<typeof meta>;
 export const ExampleStory = {
   parameters: {
     a11y: {
-      element: '#storybook-root',
+      element: 'body',
       config: {
         rules: [
           {
@@ -420,7 +530,17 @@ export const ExampleStory = {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
+      // Optional flag to prevent the automatic check
       manual: true,
     },
   },
@@ -442,7 +562,7 @@ type Story = StoryObj<typeof MyComponent>;
 export const ExampleStory = {
   parameters: {
     a11y: {
-      element: '#storybook-root',
+      element: 'body',
       config: {
         rules: [
           {
@@ -457,7 +577,17 @@ export const ExampleStory = {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
+      // Optional flag to prevent the automatic check
       manual: true,
     },
   },
@@ -472,7 +602,7 @@ export default {
 export const ExampleStory = {
   parameters: {
     a11y: {
-      element: '#storybook-root',
+      element: 'body',
       config: {
         rules: [
           {
@@ -487,7 +617,17 @@ export const ExampleStory = {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
+      // Optional flag to prevent the automatic check
       manual: true,
     },
   },
@@ -507,7 +647,7 @@ type Story = StoryObj;
 export const ExampleStory: Story = {
   parameters: {
     a11y: {
-      element: '#storybook-root',
+      element: 'body',
       config: {
         rules: [
           {
@@ -522,7 +662,17 @@ export const ExampleStory: Story = {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
+      // Optional flag to prevent the automatic check
       manual: true,
     },
   },

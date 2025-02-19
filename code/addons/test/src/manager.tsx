@@ -10,11 +10,13 @@ import {
   Addon_TypesEnum,
 } from 'storybook/internal/types';
 
+import { store } from '#manager-store';
+
 import { GlobalErrorContext, GlobalErrorModal } from './components/GlobalErrorModal';
 import { Panel } from './components/Panel';
 import { PanelTitle } from './components/PanelTitle';
 import { TestProviderRender } from './components/TestProviderRender';
-import { ADDON_ID, type Config, type Details, PANEL_ID, TEST_PROVIDER_ID } from './constants';
+import { ADDON_ID, type Details, PANEL_ID, TEST_PROVIDER_ID } from './constants';
 import type { TestStatus } from './node/reporter';
 
 const statusMap: Record<TestStatus, API_StatusValue> = {
@@ -28,7 +30,7 @@ const statusMap: Record<TestStatus, API_StatusValue> = {
 addons.register(ADDON_ID, (api) => {
   const storybookBuilder = (globalThis as any).STORYBOOK_BUILDER || '';
   if (storybookBuilder.includes('vite')) {
-    const openAddonPanel = () => {
+    const openTestsPanel = () => {
       api.setSelectedPanel(PANEL_ID);
       api.togglePanel(true);
     };
@@ -36,8 +38,8 @@ addons.register(ADDON_ID, (api) => {
     addons.add(TEST_PROVIDER_ID, {
       type: Addon_TypesEnum.experimental_TEST_PROVIDER,
       runnable: true,
-      watchable: true,
       name: 'Component tests',
+      // @ts-expect-error: TODO: Fix types
       render: (state) => {
         const [isModalOpen, setModalOpen] = useState(false);
         return (
@@ -55,6 +57,7 @@ addons.register(ADDON_ID, (api) => {
         );
       },
 
+      // @ts-expect-error: TODO: Fix types
       sidebarContextMenu: ({ context, state }) => {
         if (context.type === 'docs') {
           return null;
@@ -72,36 +75,81 @@ addons.register(ADDON_ID, (api) => {
         );
       },
 
+      // @ts-expect-error: TODO: Fix types
       stateUpdater: (state, update) => {
-        if (!update.details?.testResults) {
-          return;
+        const updated = {
+          ...state,
+          ...update,
+          details: { ...state.details, ...update.details },
+        };
+
+        if ((!state.running && update.running) || store.getState().watching) {
+          // Clear coverage data when starting test run or enabling watch mode
+          delete updated.details.coverageSummary;
         }
 
-        api.experimental_updateStatus(
-          TEST_PROVIDER_ID,
-          Object.fromEntries(
-            update.details.testResults.flatMap((testResult) =>
-              testResult.results
-                .filter(({ storyId }) => storyId)
-                .map(({ storyId, status, testRunId, ...rest }) => [
-                  storyId,
-                  {
-                    title: 'Component tests',
-                    status: statusMap[status],
-                    description:
-                      'failureMessages' in rest && rest.failureMessages
-                        ? rest.failureMessages.join('\n')
-                        : '',
-                    data: { testRunId },
-                    onClick: openAddonPanel,
-                    sidebarContextMenu: false,
-                  } as API_StatusObject,
-                ])
-            )
-          )
-        );
+        if (update.details?.testResults) {
+          (async () => {
+            await api.experimental_updateStatus(
+              TEST_PROVIDER_ID,
+              Object.fromEntries(
+                // @ts-expect-error: TODO: Fix types
+                update.details.testResults.flatMap((testResult) =>
+                  testResult.results
+                    .filter(({ storyId }) => storyId)
+                    .map(({ storyId, status, testRunId, ...rest }) => [
+                      storyId,
+                      {
+                        title: 'Component tests',
+                        status: statusMap[status],
+                        description:
+                          'failureMessages' in rest && rest.failureMessages
+                            ? rest.failureMessages.join('\n')
+                            : '',
+                        data: { testRunId },
+                        onClick: openTestsPanel,
+                        sidebarContextMenu: false,
+                      } satisfies API_StatusObject,
+                    ])
+                )
+              )
+            );
+
+            await api.experimental_updateStatus(
+              'storybook/addon-a11y/test-provider',
+              Object.fromEntries(
+                // @ts-expect-error: TODO: Fix types
+                update.details.testResults.flatMap((testResult) =>
+                  testResult.results
+                    .filter(({ storyId }) => storyId)
+                    .map(({ storyId, testRunId, reports }) => {
+                      const a11yReport = reports.find((r: any) => r.type === 'a11y');
+                      return [
+                        storyId,
+                        a11yReport
+                          ? ({
+                              title: 'Accessibility tests',
+                              description: '',
+                              status: statusMap[a11yReport.status],
+                              data: { testRunId },
+                              onClick: () => {
+                                api.setSelectedPanel('storybook/a11y/panel');
+                                api.togglePanel(true);
+                              },
+                              sidebarContextMenu: false,
+                            } satisfies API_StatusObject)
+                          : null,
+                      ];
+                    })
+                )
+              )
+            );
+          })();
+        }
+
+        return updated;
       },
-    } as Addon_TestProviderType<Details, Config>);
+    } satisfies Omit<Addon_TestProviderType<Details>, 'id'>);
   }
 
   const filter = ({ state }: Combo) => {
@@ -116,7 +164,7 @@ addons.register(ADDON_ID, (api) => {
     match: ({ viewMode }) => viewMode === 'story',
     render: ({ active }) => {
       return (
-        <AddonPanel active={active}>
+        <AddonPanel active={!!active}>
           <Consumer filter={filter}>{({ storyId }) => <Panel storyId={storyId} />}</Consumer>
         </AddonPanel>
       );

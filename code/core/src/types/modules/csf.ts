@@ -1,8 +1,14 @@
-import type { ViewMode as ViewModeBase } from '@storybook/csf';
+import type { ViewMode as ViewModeBase } from '@storybook/core/csf';
+import type { Renderer as CSFRenderer } from '@storybook/core/csf';
 
 import type { Addon_OptionsParameter } from './addons';
 
+// Fix https://github.com/storybookjs/storybook/issues/30540
+// Can be removed once @storybook/core and storybook are merged in 9.0
+export interface Renderer extends CSFRenderer {}
+
 export type {
+  AfterEach,
   AnnotatedStoryFn,
   Args,
   ArgsEnhancer,
@@ -11,7 +17,10 @@ export type {
   ArgTypes,
   ArgTypesEnhancer,
   BaseAnnotations,
+  BeforeAll,
+  BeforeEach,
   Canvas,
+  CleanupCallback,
   ComponentAnnotations,
   ComponentId,
   ComponentTitle,
@@ -30,7 +39,7 @@ export type {
   PartialStoryFn,
   PlayFunction,
   PlayFunctionContext,
-  Renderer,
+  ProjectAnnotations as BaseProjectAnnotations,
   SBArrayType,
   SBEnumType,
   SBIntersectionType,
@@ -59,7 +68,7 @@ export type {
   StrictGlobalTypes,
   StrictInputType,
   Tag,
-} from '@storybook/csf';
+} from '@storybook/core/csf';
 
 type OrString<T extends string> = T | (string & {});
 

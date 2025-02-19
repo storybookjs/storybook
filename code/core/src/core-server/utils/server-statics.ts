@@ -1,61 +1,65 @@
-import { existsSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import { basename, isAbsolute, posix, resolve, sep, win32 } from 'node:path';
 
 import { getDirectoryFromWorkingDir } from '@storybook/core/common';
-import type { Options } from '@storybook/core/types';
+import type { Options, StorybookConfigRaw } from '@storybook/core/types';
 
 import { logger } from '@storybook/core/node-logger';
 
 import picocolors from 'picocolors';
-import type Polka from 'polka';
+import type { Polka } from 'polka';
 import sirv from 'sirv';
 import { dedent } from 'ts-dedent';
 
-export async function useStatics(app: Polka.Polka, options: Options): Promise<void> {
+export async function useStatics(app: Polka, options: Options): Promise<void> {
   const staticDirs = (await options.presets.apply('staticDirs')) ?? [];
   const faviconPath = await options.presets.apply<string>('favicon');
 
-  await Promise.all(
-    staticDirs
-      .map((dir) => (typeof dir === 'string' ? dir : `${dir.from}:${dir.to}`))
-      .map(async (dir) => {
-        try {
-          const normalizedDir =
-            staticDirs && !isAbsolute(dir)
-              ? getDirectoryFromWorkingDir({
-                  configDir: options.configDir,
-                  workingDir: process.cwd(),
-                  directory: dir,
-                })
-              : dir;
-          const { staticDir, staticPath, targetEndpoint } = await parseStaticDir(normalizedDir);
+  staticDirs.map((dir) => {
+    try {
+      const { staticDir, staticPath, targetEndpoint } = mapStaticDir(dir, options.configDir);
 
-          // Don't log for the internal static dir
-          if (!targetEndpoint.startsWith('/sb-')) {
-            logger.info(
-              `=> Serving static files from ${picocolors.cyan(staticDir)} at ${picocolors.cyan(targetEndpoint)}`
-            );
-          }
+      // Don't log for the internal static dir
+      if (!targetEndpoint.startsWith('/sb-')) {
+        logger.info(
+          `=> Serving static files from ${picocolors.cyan(staticDir)} at ${picocolors.cyan(targetEndpoint)}`
+        );
+      }
 
-          app.use(
-            targetEndpoint,
-            sirv(staticPath, {
-              dev: true,
-              etag: true,
-              extensions: [],
-            })
-          );
-        } catch (e) {
-          if (e instanceof Error) {
-            logger.warn(e.message);
-          }
-        }
-      })
-  );
+      if (existsSync(staticPath) && statSync(staticPath).isFile()) {
+        // sirv doesn't support serving single files, so we need to pass the file's directory to sirv instead
+        const staticPathDir = resolve(staticPath, '..');
+        const staticPathFile = basename(staticPath);
+        app.use(targetEndpoint, (req, res, next) => {
+          // Rewrite the URL to match the file's name, ensuring that we only ever serve the file
+          // even when sirv is passed the full directory
+          req.url = `/${staticPathFile}`;
+          sirvWorkaround(staticPathDir, {
+            dev: true,
+            etag: true,
+            extensions: [],
+          })(req, res, next);
+        });
+        return;
+      }
+      app.use(
+        targetEndpoint,
+        sirvWorkaround(staticPath, {
+          dev: true,
+          etag: true,
+          extensions: [],
+        })
+      );
+    } catch (e) {
+      if (e instanceof Error) {
+        logger.warn(e.message);
+      }
+    }
+  });
 
   app.get(
     `/${basename(faviconPath)}`,
-    sirv(faviconPath, {
+    sirvWorkaround(faviconPath, {
       dev: true,
       etag: true,
       extensions: [],
@@ -63,7 +67,31 @@ export async function useStatics(app: Polka.Polka, options: Options): Promise<vo
   );
 }
 
-export const parseStaticDir = async (arg: string) => {
+/**
+ * This is a workaround for sirv breaking when serving multiple directories on the same endpoint.
+ *
+ * @see https://github.com/lukeed/polka/issues/218
+ */
+const sirvWorkaround: typeof sirv =
+  (...sirvArgs) =>
+  (req, res, next) => {
+    // polka+sirv will modify the request URL, so we need to restore it after sirv is done
+    // req._parsedUrl is an internal construct used by both polka and sirv
+    // eslint-disable-next-line no-underscore-dangle
+    const originalParsedUrl = (req as any)._parsedUrl;
+
+    const maybeNext = next
+      ? () => {
+          // eslint-disable-next-line no-underscore-dangle
+          (req as any)._parsedUrl = originalParsedUrl;
+          next();
+        }
+      : undefined;
+
+    sirv(...sirvArgs)(req, res, maybeNext);
+  };
+
+export const parseStaticDir = (arg: string) => {
   // Split on last index of ':', for Windows compatibility (e.g. 'C:\some\dir:\foo')
   const lastColonIndex = arg.lastIndexOf(':');
   const isWindowsAbsolute = win32.isAbsolute(arg);
@@ -89,4 +117,16 @@ export const parseStaticDir = async (arg: string) => {
   }
 
   return { staticDir, staticPath, targetDir, targetEndpoint };
+};
+
+export const mapStaticDir = (
+  staticDir: NonNullable<StorybookConfigRaw['staticDirs']>[number],
+  configDir: string
+) => {
+  const specifier = typeof staticDir === 'string' ? staticDir : `${staticDir.from}:${staticDir.to}`;
+  const normalizedDir = isAbsolute(specifier)
+    ? specifier
+    : getDirectoryFromWorkingDir({ configDir, workingDir: process.cwd(), directory: specifier });
+
+  return parseStaticDir(normalizedDir);
 };

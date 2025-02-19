@@ -40,7 +40,7 @@ import ButtonGroup from './ButtonGroup.vue';
 import * as ButtonStories from './Button.stories';
 
 const meta: Meta<typeof ButtonGroup> = {
- component: ButtonGroup,
+  component: ButtonGroup,
 };
 
 export default meta;
@@ -48,15 +48,15 @@ type Story = StoryObj<typeof ButtonGroup>;
 
 export const Pair: Story = {
   render: (args) => ({
- components: { ButtonGroup },
+    components: { ButtonGroup },
     setup() {
- return { args };
+      return { args };
     },
- template: '<ButtonGroup v-bind="args" />',
+    template: '<ButtonGroup v-bind="args" />',
   }),
- args: {
- buttons: [{ ...ButtonStories.Primary.args }, { ...ButtonStories.Secondary.args }],
- orientation: 'horizontal',
+  args: {
+    buttons: [{ ...ButtonStories.Primary.args }, { ...ButtonStories.Secondary.args }],
+    orientation: 'horizontal',
   },
 };
 ``` 
@@ -191,7 +191,7 @@ import { YourComponent } from './YourComponent';
 
 //👇 This default export determines where your story goes in the story list
 const meta = {
- component: YourComponent,
+  component: YourComponent,
 } satisfies Meta<YourComponentProps>;
 
 export default meta;

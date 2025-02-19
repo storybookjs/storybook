@@ -13,7 +13,8 @@ import { Yarn2Proxy } from './Yarn2Proxy';
 const NPM_LOCKFILE = 'package-lock.json';
 const PNPM_LOCKFILE = 'pnpm-lock.yaml';
 const YARN_LOCKFILE = 'yarn.lock';
-const BUN_LOCKFILE = 'bun.lockb';
+const BUN_LOCKFILE = 'bun.lock';
+const BUN_LOCKFILE_BINARY = 'bun.lockb';
 
 type PackageManagerProxy =
   | typeof NPMProxy
@@ -37,6 +38,7 @@ export class JsPackageManagerFactory {
       findUpSync(PNPM_LOCKFILE, { cwd }),
       findUpSync(NPM_LOCKFILE, { cwd }),
       findUpSync(BUN_LOCKFILE, { cwd }),
+      findUpSync(BUN_LOCKFILE_BINARY, { cwd }),
     ]
       .filter(Boolean)
       .sort((a, b) => {
@@ -78,7 +80,10 @@ export class JsPackageManagerFactory {
       return new NPMProxy({ cwd });
     }
 
-    if (hasBunCommand && closestLockfile === BUN_LOCKFILE) {
+    if (
+      hasBunCommand &&
+      (closestLockfile === BUN_LOCKFILE || closestLockfile === BUN_LOCKFILE_BINARY)
+    ) {
       return new BUNProxy({ cwd });
     }
 

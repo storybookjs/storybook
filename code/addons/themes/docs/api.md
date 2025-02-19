@@ -109,6 +109,9 @@ export const myCustomDecorator =
 
 ### `useThemeParameters`
 
+(⛔️ **Deprecated**)
+_Do not use this hook anymore. Access the theme directly via the context instead e.g. `context.parameters.themes`_
+
 Returns the theme parameters for this addon.
 
 ```js
@@ -152,14 +155,14 @@ Let's use Vuetify as an example. Vuetify uses it's own global state to know whic
 import { DecoratorHelpers } from '@storybook/addon-themes';
 import { useTheme } from 'vuetify';
 
-const { initializeThemeState, pluckThemeFromContext, useThemeParameters } = DecoratorHelpers;
+const { initializeThemeState, pluckThemeFromContext } = DecoratorHelpers;
 
 export const withVuetifyTheme = ({ themes, defaultTheme }) => {
   initializeThemeState(Object.keys(themes), defaultTheme);
 
   return (story, context) => {
     const selectedTheme = pluckThemeFromContext(context);
-    const { themeOverride } = useThemeParameters();
+    const { themeOverride } = context.parameters.themes ?? {};
 
     const selected = themeOverride || selectedTheme || defaultTheme;
 

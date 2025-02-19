@@ -344,8 +344,9 @@ export const ElementNode = ({
   );
 };
 
-export const DateNode = ({ value }: { value: string }) => {
-  const [date, time, ms] = value.split(/[T.Z]/);
+export const DateNode = ({ value }: { value: string | Date }) => {
+  const string = value instanceof Date ? value.toISOString() : value;
+  const [date, time, ms] = string.split(/[T.Z]/);
   const colors = useThemeColors();
   return (
     <span style={{ whiteSpace: 'nowrap', color: colors.date }}>
@@ -429,7 +430,7 @@ export const MethodCall = ({
     return <StepNode label={call.args[0]} />;
   }
 
-  const path = call.path.flatMap((elem, index) => {
+  const path = call.path?.flatMap((elem, index) => {
     // eslint-disable-next-line no-underscore-dangle
     const callId = (elem as CallRef).__callId__;
     return [
@@ -443,7 +444,7 @@ export const MethodCall = ({
     ];
   });
 
-  const args = call.args.flatMap((arg, index, array) => {
+  const args = call.args?.flatMap((arg, index, array) => {
     const node = <Node key={`node${index}`} value={arg} callsById={callsById} />;
     return index < array.length - 1
       ? [node, <span key={`comma${index}`}>,&nbsp;</span>, <wbr key={`wbr${index}`} />]

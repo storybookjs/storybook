@@ -1,9 +1,5 @@
 import { useEffect } from 'storybook/internal/preview-api';
-import type {
-  Renderer,
-  StoryContext,
-  PartialStoryFn as StoryFunction,
-} from 'storybook/internal/types';
+import type { DecoratorFunction } from 'storybook/internal/types';
 
 import { PARAM_KEY as KEY } from './constants';
 import { DEFAULT_BACKGROUNDS } from './defaults';
@@ -21,10 +17,7 @@ const GRID_SELECTOR_BASE = 'addon-backgrounds-grid';
 
 const transitionStyle = isReduceMotionEnabled() ? '' : 'transition: background-color 0.3s;';
 
-export const withBackgroundAndGrid = (
-  StoryFn: StoryFunction<Renderer>,
-  context: StoryContext<Renderer>
-) => {
+export const withBackgroundAndGrid: DecoratorFunction = (StoryFn, context) => {
   const { globals, parameters, viewMode, id } = context;
   const {
     options = DEFAULT_BACKGROUNDS,

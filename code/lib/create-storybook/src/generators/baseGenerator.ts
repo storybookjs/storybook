@@ -1,21 +1,28 @@
 import { mkdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
-import type { NpmOptions } from 'storybook/internal/cli';
-import type { Builder, SupportedRenderers } from 'storybook/internal/cli';
-import { SupportedLanguage, externalFrameworks } from 'storybook/internal/cli';
-import { copyTemplateFiles } from 'storybook/internal/cli';
-import { configureEslintPlugin, extractEslintInfo } from 'storybook/internal/cli';
-import { detectBuilder } from 'storybook/internal/cli';
-import type { JsPackageManager } from 'storybook/internal/common';
-import { getPackageDetails, versions as packageVersions } from 'storybook/internal/common';
-import type { SupportedFrameworks } from 'storybook/internal/types';
-
 // eslint-disable-next-line depend/ban-dependencies
 import ora from 'ora';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 
+import type { NpmOptions } from '../../../../core/src/cli/NpmOptions';
+import { detectBuilder } from '../../../../core/src/cli/detect';
+import { configureEslintPlugin, extractEslintInfo } from '../../../../core/src/cli/eslintPlugin';
+import { copyTemplateFiles } from '../../../../core/src/cli/helpers';
+import {
+  type Builder,
+  ProjectType,
+  SupportedLanguage,
+  externalFrameworks,
+} from '../../../../core/src/cli/project_types';
+import {
+  type JsPackageManager,
+  getPackageDetails,
+} from '../../../../core/src/common/js-package-manager/JsPackageManager';
+import versions from '../../../../core/src/common/versions';
+import type { SupportedFrameworks } from '../../../../core/src/types/modules/frameworks';
+import type { SupportedRenderers } from '../../../../core/src/types/modules/renderers';
 import { configureMain, configurePreview } from './configure';
 import type { FrameworkOptions, GeneratorOptions } from './types';
 
@@ -27,6 +34,7 @@ const defaultOptions: FrameworkOptions = {
   staticDir: undefined,
   addScripts: true,
   addMainFile: true,
+  addPreviewFile: true,
   addComponents: true,
   webpackCompiler: () => undefined,
   extraMain: undefined,
@@ -34,10 +42,11 @@ const defaultOptions: FrameworkOptions = {
   extensions: undefined,
   componentsDestinationPath: undefined,
   storybookConfigFolder: '.storybook',
+  installFrameworkPackages: true,
 };
 
 const getBuilderDetails = (builder: string) => {
-  const map = packageVersions as Record<string, string>;
+  const map = versions as Record<string, string>;
 
   if (map[builder]) {
     return builder;
@@ -70,7 +79,7 @@ const getFrameworkPackage = (framework: string | undefined, renderer: string, bu
       ? `@storybook/${storybookFramework}`
       : `@storybook/${renderer}-${storybookBuilder}`;
 
-    if (packageVersions[frameworkPackage as keyof typeof packageVersions]) {
+    if (versions[frameworkPackage as keyof typeof versions]) {
       return frameworkPackage;
     }
 
@@ -82,13 +91,10 @@ const getFrameworkPackage = (framework: string | undefined, renderer: string, bu
     );
   }
 
-  if (externalFramework.frameworks !== undefined) {
-    return externalFramework.frameworks.find((item) =>
-      item.match(new RegExp(`-${storybookBuilder}`))
-    );
-  }
-
-  return externalFramework.packageName;
+  return (
+    externalFramework.frameworks?.find((item) => item.match(new RegExp(`-${storybookBuilder}`))) ??
+    externalFramework.packageName
+  );
 };
 
 const getRendererPackage = (framework: string | undefined, renderer: string) => {
@@ -102,6 +108,15 @@ const getRendererPackage = (framework: string | undefined, renderer: string) => 
 };
 
 const applyRequireWrapper = (packageName: string) => `%%getAbsolutePath('${packageName}')%%`;
+
+const applyAddonRequireWrapper = (pkg: string | { name: string }) => {
+  if (typeof pkg === 'string') {
+    return applyRequireWrapper(pkg);
+  }
+  const obj = { ...pkg } as { name: string };
+  obj.name = applyRequireWrapper(pkg.name);
+  return obj;
+};
 
 const getFrameworkDetails = (
   renderer: SupportedRenderers,
@@ -117,6 +132,7 @@ const getFrameworkDetails = (
   framework?: string;
   renderer?: string;
   rendererId: SupportedRenderers;
+  frameworkPackage?: string;
 } => {
   const frameworkPackage = getFrameworkPackage(framework, renderer, builder);
   invariant(frameworkPackage, 'Missing framework package.');
@@ -137,13 +153,14 @@ const getFrameworkDetails = (
 
   const isExternalFramework = !!getExternalFramework(frameworkPackage);
   const isKnownFramework =
-    isExternalFramework || !!(packageVersions as Record<string, string>)[frameworkPackage];
-  const isKnownRenderer = !!(packageVersions as Record<string, string>)[rendererPackage];
+    isExternalFramework || !!(versions as Record<string, string>)[frameworkPackage];
+  const isKnownRenderer = !!(versions as Record<string, string>)[rendererPackage];
 
   if (isKnownFramework) {
     return {
       packages: [rendererPackage, frameworkPackage],
       framework: frameworkPackagePath,
+      frameworkPackage,
       rendererId: renderer,
       type: 'framework',
     };
@@ -169,13 +186,23 @@ const stripVersions = (addons: string[]) => addons.map((addon) => getPackageDeta
 const hasInteractiveStories = (rendererId: SupportedRenderers) =>
   ['react', 'angular', 'preact', 'svelte', 'vue3', 'html', 'solid', 'qwik'].includes(rendererId);
 
-const hasFrameworkTemplates = (framework?: SupportedFrameworks) =>
-  framework ? ['angular', 'nextjs', 'react-native-web-vite'].includes(framework) : false;
+const hasFrameworkTemplates = (framework?: SupportedFrameworks) => {
+  if (!framework) {
+    return false;
+  }
+  // Nuxt has framework templates, but for sandboxes we create them from the Vue3 renderer
+  // As the Nuxt framework templates are not compatible with the stories we need for CI.
+  // See: https://github.com/storybookjs/storybook/pull/28607#issuecomment-2467903327
+  if (framework === 'nuxt') {
+    return process.env.IN_STORYBOOK_SANDBOX !== 'true';
+  }
+  return ['angular', 'nextjs', 'react-native-web-vite'].includes(framework);
+};
 
 export async function baseGenerator(
   packageManager: JsPackageManager,
   npmOptions: NpmOptions,
-  { language, builder, pnp, frameworkPreviewParts, projectType }: GeneratorOptions,
+  { language, builder, pnp, frameworkPreviewParts, projectType, features }: GeneratorOptions,
   renderer: SupportedRenderers,
   options: FrameworkOptions = defaultOptions,
   framework?: SupportedFrameworks
@@ -184,7 +211,26 @@ export async function baseGenerator(
   const shouldApplyRequireWrapperOnPackageNames = isStorybookInMonorepository || pnp;
 
   if (!builder) {
-    builder = await detectBuilder(packageManager, projectType);
+    builder = await detectBuilder(packageManager as any, projectType);
+  }
+
+  if (features.includes('test')) {
+    const supportedFrameworks: ProjectType[] = [
+      ProjectType.REACT,
+      ProjectType.VUE3,
+      ProjectType.NEXTJS,
+      ProjectType.NUXT,
+      ProjectType.PREACT,
+      ProjectType.SVELTE,
+      ProjectType.SVELTEKIT,
+      ProjectType.WEB_COMPONENTS,
+    ];
+    const supportsTestAddon =
+      projectType === ProjectType.NEXTJS ||
+      (builder !== 'webpack5' && supportedFrameworks.includes(projectType));
+    if (!supportsTestAddon) {
+      features.splice(features.indexOf('test'), 1);
+    }
   }
 
   const {
@@ -193,6 +239,7 @@ export async function baseGenerator(
     rendererId,
     framework: frameworkInclude,
     builder: builderInclude,
+    frameworkPackage,
   } = getFrameworkDetails(
     renderer,
     builder,
@@ -208,18 +255,24 @@ export async function baseGenerator(
     staticDir,
     addScripts,
     addMainFile,
+    addPreviewFile,
     addComponents,
     extraMain,
     extensions,
     storybookConfigFolder,
     componentsDestinationPath,
     webpackCompiler,
+    installFrameworkPackages,
   } = {
     ...defaultOptions,
     ...options,
   };
 
   const compiler = webpackCompiler ? webpackCompiler({ builder }) : undefined;
+
+  const essentials = features.includes('docs')
+    ? '@storybook/addon-essentials'
+    : { name: '@storybook/addon-essentials', options: { docs: false } };
 
   const extraAddonsToInstall =
     typeof extraAddonPackages === 'function'
@@ -229,24 +282,25 @@ export async function baseGenerator(
         })
       : extraAddonPackages;
 
-  extraAddonsToInstall.push('@storybook/addon-essentials', '@chromatic-com/storybook@^3');
+  extraAddonsToInstall.push('@chromatic-com/storybook@^3');
 
   // added to main.js
   const addons = [
     ...(compiler ? [`@storybook/addon-webpack5-compiler-${compiler}`] : []),
+    essentials,
     ...stripVersions(extraAddonsToInstall),
   ].filter(Boolean);
 
   // added to package.json
   const addonPackages = [
+    '@storybook/addon-essentials',
     '@storybook/blocks',
+    '@storybook/test',
     ...(compiler ? [`@storybook/addon-webpack5-compiler-${compiler}`] : []),
     ...extraAddonsToInstall,
   ].filter(Boolean);
 
-  addonPackages.push('@storybook/test');
-
-  if (hasInteractiveStories(rendererId)) {
+  if (hasInteractiveStories(rendererId) && !features.includes('test')) {
     addons.push('@storybook/addon-interactions');
     addonPackages.push('@storybook/addon-interactions');
   }
@@ -278,7 +332,7 @@ export async function baseGenerator(
   const allPackages = [
     'storybook',
     getExternalFramework(rendererId) ? undefined : `@storybook/${rendererId}`,
-    ...frameworkPackages,
+    ...(installFrameworkPackages ? frameworkPackages : []),
     ...addonPackages,
     ...(extraPackagesToInstall || []),
   ].filter(Boolean);
@@ -298,12 +352,13 @@ export async function baseGenerator(
 
   try {
     if (process.env.CI !== 'true') {
-      const { hasEslint, isStorybookPluginInstalled, eslintConfigFile } =
-        await extractEslintInfo(packageManager);
+      const { hasEslint, isStorybookPluginInstalled, eslintConfigFile } = await extractEslintInfo(
+        packageManager as any
+      );
 
       if (hasEslint && !isStorybookPluginInstalled) {
         versionedPackages.push('eslint-plugin-storybook');
-        await configureEslintPlugin(eslintConfigFile ?? undefined, packageManager);
+        await configureEslintPlugin(eslintConfigFile ?? undefined, packageManager as any);
       }
     }
   } catch (err) {
@@ -320,9 +375,9 @@ export async function baseGenerator(
     addDependenciesSpinner.succeed();
   }
 
-  // Passing `recursive: true` ensures that the method doesn't throw when
-  // the directory already exists.
-  await mkdir(`./${storybookConfigFolder}`, { recursive: true });
+  if (addMainFile || addPreviewFile) {
+    await mkdir(`./${storybookConfigFolder}`, { recursive: true });
+  }
 
   if (addMainFile) {
     const prefixes = shouldApplyRequireWrapperOnPackageNames
@@ -351,10 +406,11 @@ export async function baseGenerator(
         name: frameworkInclude,
         options: options.framework || {},
       },
+      frameworkPackage,
       prefixes,
       storybookConfigFolder,
       addons: shouldApplyRequireWrapperOnPackageNames
-        ? addons.map((addon) => applyRequireWrapper(addon))
+        ? addons.map((addon) => applyAddonRequireWrapper(addon))
         : addons,
       extensions,
       language,
@@ -370,12 +426,14 @@ export async function baseGenerator(
     });
   }
 
-  await configurePreview({
-    frameworkPreviewParts,
-    storybookConfigFolder: storybookConfigFolder as string,
-    language,
-    rendererId,
-  });
+  if (addPreviewFile) {
+    await configurePreview({
+      frameworkPreviewParts,
+      storybookConfigFolder: storybookConfigFolder as string,
+      language,
+      rendererId,
+    });
+  }
 
   if (addScripts) {
     await packageManager.addStorybookCommandInScripts({
@@ -390,10 +448,11 @@ export async function baseGenerator(
     }
     await copyTemplateFiles({
       renderer: templateLocation,
-      packageManager,
+      packageManager: packageManager as any,
       language,
       destination: componentsDestinationPath,
       commonAssetsDir: join(getCliDir(), 'rendererAssets', 'common'),
+      features,
     });
   }
 }

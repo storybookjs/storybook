@@ -75,6 +75,7 @@ export type Template = {
     disableDocs?: boolean;
     extraDependencies?: string[];
     editAddons?: (addons: string[]) => string[];
+    useCsfFactory?: boolean;
   };
   /**
    * Flag to indicate that this template is a secondary template, which is used mainly to test
@@ -90,7 +91,7 @@ type BaseTemplates = Template & {
     | 'TypeScript'})`;
 };
 
-const baseTemplates = {
+export const baseTemplates = {
   'cra/default-js': {
     name: 'Create React App Latest (Webpack | JavaScript)',
     script: `
@@ -106,6 +107,7 @@ const baseTemplates = {
 
     skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
     modifications: {
+      useCsfFactory: true,
       extraDependencies: ['prop-types'],
       mainConfig: (config) => {
         const stories = config.getFieldValue<Array<StoriesEntry>>(['stories']);
@@ -136,21 +138,33 @@ const baseTemplates = {
       builder: '@storybook/builder-webpack5',
     },
     modifications: {
+      useCsfFactory: true,
       extraDependencies: ['prop-types'],
     },
   },
   'nextjs/13-ts': {
     name: 'Next.js v13.5 (Webpack | TypeScript)',
     script:
-      'yarn create next-app {{beforeDir}} -e https://github.com/vercel/next.js/tree/next-13/examples/hello-world && cd {{beforeDir}} && npm pkg set "dependencies.next"="^13.5.6" && yarn && git add . && git commit --amend --no-edit && cd ..',
+      'yarn create next-app {{beforeDir}} -e https://github.com/vercel/next.js/tree/next-13/examples/hello-world ' +
+      '&& cd {{beforeDir}} ' +
+      'jq \'.compilerOptions.moduleResolution = "bundler"\' tsconfig.json > tmp.json && mv tmp.json tsconfig.json ' +
+      '&& npm pkg set "dependencies.next"="^13.5.6" ' +
+      '&& yarn ' +
+      '&& git add . ' +
+      '&& git commit --amend --no-edit ' +
+      '&& cd ..',
     expected: {
       framework: '@storybook/nextjs',
       renderer: '@storybook/react',
       builder: '@storybook/builder-webpack5',
     },
     modifications: {
+      useCsfFactory: true,
       mainConfig: {
-        features: { experimentalRSC: true },
+        features: {
+          experimentalRSC: true,
+          developmentModeForBuild: true,
+        },
       },
       extraDependencies: ['server-only', 'prop-types'],
     },
@@ -166,13 +180,16 @@ const baseTemplates = {
       builder: '@storybook/builder-webpack5',
     },
     modifications: {
+      useCsfFactory: true,
       mainConfig: {
-        features: { experimentalRSC: true },
+        features: {
+          experimentalRSC: true,
+          developmentModeForBuild: true,
+        },
       },
       extraDependencies: ['server-only', 'prop-types'],
     },
     skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
-    inDevelopment: true,
   },
   'nextjs/default-ts': {
     name: 'Next.js Latest (Webpack | TypeScript)',
@@ -184,8 +201,12 @@ const baseTemplates = {
       builder: '@storybook/builder-webpack5',
     },
     modifications: {
+      useCsfFactory: true,
       mainConfig: {
-        features: { experimentalRSC: true },
+        features: {
+          experimentalRSC: true,
+          developmentModeForBuild: true,
+        },
       },
       extraDependencies: ['server-only', 'prop-types'],
     },
@@ -201,10 +222,14 @@ const baseTemplates = {
       builder: '@storybook/builder-webpack5',
     },
     modifications: {
-      extraDependencies: ['server-only', 'prop-types'],
+      useCsfFactory: true,
       mainConfig: {
-        features: { experimentalRSC: true },
+        features: {
+          experimentalRSC: true,
+          developmentModeForBuild: true,
+        },
       },
+      extraDependencies: ['server-only', 'prop-types'],
     },
     skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },
@@ -218,9 +243,13 @@ const baseTemplates = {
       builder: '@storybook/builder-vite',
     },
     modifications: {
+      useCsfFactory: true,
       mainConfig: {
         framework: '@storybook/experimental-nextjs-vite',
-        features: { experimentalRSC: true },
+        features: {
+          experimentalRSC: true,
+          developmentModeForBuild: true,
+        },
       },
       extraDependencies: [
         'server-only',
@@ -229,7 +258,6 @@ const baseTemplates = {
         'prop-types',
       ],
     },
-    inDevelopment: true,
     skipTasks: ['e2e-tests-dev', 'bench'],
   },
   'experimental-nextjs-vite/default-ts': {
@@ -242,9 +270,13 @@ const baseTemplates = {
       builder: '@storybook/builder-vite',
     },
     modifications: {
+      useCsfFactory: true,
       mainConfig: {
         framework: '@storybook/experimental-nextjs-vite',
-        features: { experimentalRSC: true },
+        features: {
+          experimentalRSC: true,
+          developmentModeForBuild: true,
+        },
       },
       extraDependencies: [
         'server-only',
@@ -264,7 +296,13 @@ const baseTemplates = {
       builder: '@storybook/builder-vite',
     },
     modifications: {
+      useCsfFactory: true,
       extraDependencies: ['prop-types'],
+      mainConfig: {
+        features: {
+          developmentModeForBuild: true,
+        },
+      },
     },
     skipTasks: ['e2e-tests-dev', 'bench'],
   },
@@ -277,7 +315,13 @@ const baseTemplates = {
       builder: '@storybook/builder-vite',
     },
     modifications: {
+      useCsfFactory: true,
       extraDependencies: ['prop-types'],
+      mainConfig: {
+        features: {
+          developmentModeForBuild: true,
+        },
+      },
     },
     skipTasks: ['bench'],
   },
@@ -303,7 +347,13 @@ const baseTemplates = {
       builder: '@storybook/builder-vite',
     },
     modifications: {
+      useCsfFactory: true,
       extraDependencies: ['prop-types'],
+      mainConfig: {
+        features: {
+          developmentModeForBuild: true,
+        },
+      },
     },
     skipTasks: ['e2e-tests-dev', 'bench'],
   },
@@ -316,6 +366,7 @@ const baseTemplates = {
       builder: '@storybook/builder-webpack5',
     },
     modifications: {
+      useCsfFactory: true,
       extraDependencies: ['prop-types'],
     },
     skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
@@ -330,6 +381,7 @@ const baseTemplates = {
       builder: '@storybook/builder-webpack5',
     },
     modifications: {
+      useCsfFactory: true,
       extraDependencies: ['prop-types'],
     },
     skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
@@ -354,6 +406,7 @@ const baseTemplates = {
       builder: '@storybook/builder-webpack5',
     },
     modifications: {
+      useCsfFactory: true,
       extraDependencies: ['prop-types'],
     },
     skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
@@ -401,6 +454,16 @@ const baseTemplates = {
       builder: '@storybook/builder-vite',
     },
     skipTasks: ['e2e-tests-dev', 'bench'],
+  },
+  'nuxt-vite/default-ts': {
+    name: 'Nuxt v3 (Vite | TypeScript)',
+    script: 'npx nuxi init --packageManager yarn --gitInit false {{beforeDir}}',
+    expected: {
+      framework: '@storybook-vue/nuxt',
+      renderer: '@storybook/vue3',
+      builder: '@storybook/builder-vite',
+    },
+    skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },
   'html-webpack/default': {
     name: 'HTML Latest (Webpack | JavaScript)',
@@ -497,7 +560,7 @@ const baseTemplates = {
       renderer: '@storybook/svelte',
       builder: '@storybook/builder-vite',
     },
-    skipTasks: ['e2e-tests-dev', 'bench'],
+    skipTasks: ['e2e-tests-dev', 'bench', 'test-runner'],
   },
   'svelte-kit/skeleton-ts': {
     name: 'SvelteKit Latest (Vite | TypeScript)',
@@ -508,7 +571,7 @@ const baseTemplates = {
       renderer: '@storybook/svelte',
       builder: '@storybook/builder-vite',
     },
-    skipTasks: ['e2e-tests-dev', 'bench'],
+    skipTasks: ['e2e-tests-dev', 'bench', 'test-runner'],
   },
   'svelte-kit/prerelease-ts': {
     name: 'SvelteKit Prerelease (Vite | TypeScript)',
@@ -633,6 +696,9 @@ const baseTemplates = {
       renderer: '@storybook/react',
       builder: '@storybook/builder-vite',
     },
+    modifications: {
+      useCsfFactory: true,
+    },
     skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },
   'react-native-web-vite/rn-cli-ts': {
@@ -671,6 +737,7 @@ const internalTemplates = {
       builder: '@storybook/builder-webpack5',
     },
     modifications: {
+      useCsfFactory: true,
       extraDependencies: ['@storybook/addon-webpack5-compiler-babel', 'prop-types'],
       editAddons: (addons) =>
         [...addons, '@storybook/addon-webpack5-compiler-babel'].filter(
@@ -690,6 +757,7 @@ const internalTemplates = {
       builder: '@storybook/builder-webpack5',
     },
     modifications: {
+      useCsfFactory: true,
       extraDependencies: ['prop-types'],
     },
     skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
@@ -806,10 +874,12 @@ export const allTemplates: Record<TemplateKey, Template> = {
 };
 
 export const normal: TemplateKey[] = [
-  'cra/default-ts',
+  // TODO: Add this back once we resolve the React 19 issues
+  // 'cra/default-ts',
   'react-vite/default-ts',
   'angular-cli/default-ts',
   'vue3-vite/default-ts',
+  'nuxt-vite/default-ts',
   'lit-vite/default-ts',
   'svelte-vite/default-ts',
   'svelte-kit/skeleton-ts',
@@ -836,7 +906,8 @@ export const merged: TemplateKey[] = [
 export const daily: TemplateKey[] = [
   ...merged,
   'angular-cli/prerelease',
-  'cra/default-js',
+  // TODO: Add this back once we resolve the React 19 issues
+  // 'cra/default-js',
   'react-vite/default-js',
   'react-vite/prerelease-ts',
   'react-webpack/prerelease-ts',

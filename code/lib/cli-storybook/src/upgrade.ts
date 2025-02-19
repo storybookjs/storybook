@@ -24,6 +24,7 @@ import semver, { clean, eq, lt, prerelease } from 'semver';
 import { dedent } from 'ts-dedent';
 
 import { autoblock } from './autoblock/index';
+import { getStorybookData } from './automigrate/helpers/mainConfigFile';
 import { automigrate } from './automigrate/index';
 
 type Package = {
@@ -157,10 +158,7 @@ export const doUpgrade = async ({
     logger.warn(new UpgradeStorybookToSameVersionError({ beforeVersion }).message);
   }
 
-  const [latestCLIVersionOnNPM, packageJson] = await Promise.all([
-    packageManager.latestVersion('storybook'),
-    packageManager.retrievePackageJson(),
-  ]);
+  const latestCLIVersionOnNPM = await packageManager.latestVersion('storybook');
 
   const isCLIOutdated = lt(currentCLIVersion, latestCLIVersionOnNPM);
   const isCLIExactLatest = currentCLIVersion === latestCLIVersionOnNPM;
@@ -198,13 +196,11 @@ export const doUpgrade = async ({
 
   let results;
 
-  const { configDir: inferredConfigDir, mainConfig: mainConfigPath } = getStorybookInfo(
-    packageJson,
-    userSpecifiedConfigDir
-  );
-  const configDir = userSpecifiedConfigDir || inferredConfigDir || '.storybook';
-
-  const mainConfig = await loadMainConfig({ configDir });
+  const { configDir, mainConfig, mainConfigPath, previewConfigPath, packageJson } =
+    await getStorybookData({
+      packageManager,
+      configDir: userSpecifiedConfigDir,
+    });
 
   // GUARDS
   if (!beforeVersion) {
@@ -277,7 +273,10 @@ export const doUpgrade = async ({
       dryRun,
       yes,
       packageManager,
+      packageJson,
+      mainConfig,
       configDir,
+      previewConfigPath,
       mainConfigPath,
       beforeVersion,
       storybookVersion: currentCLIVersion,

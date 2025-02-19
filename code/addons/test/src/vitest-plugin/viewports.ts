@@ -1,7 +1,6 @@
 /* eslint-disable no-underscore-dangle */
+import type { Globals, Parameters } from 'storybook/internal/csf';
 import { UnsupportedViewportDimensionError } from 'storybook/internal/preview-errors';
-
-import type { Globals, Parameters } from '@storybook/csf';
 
 import { MINIMAL_VIEWPORTS } from '../../../viewport/src/defaults';
 import type { ViewportMap, ViewportStyles } from '../../../viewport/src/types';
@@ -85,7 +84,7 @@ export const setViewport = async (parameters: Parameters = {}, globals: Globals 
   let viewportWidth = DEFAULT_VIEWPORT_DIMENSIONS.width;
   let viewportHeight = DEFAULT_VIEWPORT_DIMENSIONS.height;
 
-  if (defaultViewport in viewports) {
+  if (defaultViewport && defaultViewport in viewports) {
     const styles = viewports[defaultViewport].styles as ViewportStyles;
     if (styles?.width && styles?.height) {
       const { width, height } = styles;

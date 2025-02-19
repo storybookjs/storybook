@@ -16,6 +16,7 @@ test-results
 .verdaccio-cache
 .next
 /.npmrc
+tsconfig.vitest-temp.json
 
 # Yarn stuff
 /**/.yarn/*
@@ -55,8 +56,10 @@ code/bench-results/
 
 /packs
 code/.nx/cache
+code/.nx/workspace-data
 code/.vite-inspect
 .nx/cache
+.nx/workspace-data
 !**/fixtures/**/yarn.lock
 code/core/report
 

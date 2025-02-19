@@ -174,12 +174,13 @@ jobs:
           git commit -m "Update CHANGELOG.md for v${{ steps.version.outputs.current-version }} [skip ci]" || true
           git push origin next
 
-      # TODO: remove this step - @JReinhold
+      # Sync the next.json version file to the main branch so it gets deployed to the docs site
+      # but only if this is a prerelease, because in minor/major releases we're already force pushing next-release onto main, so it's already there
       - name: Sync version JSONs from `next-release` to `main`
-        if: github.ref_name == 'next-release'
+        if: github.ref_name == 'next-release' && steps.is-prerelease.outputs.prerelease == 'true'
         working-directory: .
         run: |
-          VERSION_FILE="./docs/versions/${{ steps.is-prerelease.outputs.prerelease == 'true' && 'next' || 'latest' }}.json"
+          VERSION_FILE="./docs/versions/next.json"
           git fetch origin main
           git checkout main
           git pull

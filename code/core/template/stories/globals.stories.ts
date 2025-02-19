@@ -44,7 +44,8 @@ export const Events = {
     await channel.emit('updateGlobals', { globals: { foo: 'fooValue' } });
     await within(canvasElement).findByText('fooValue');
   },
-  tags: ['!vitest'],
+  // this story can't be reliably tested because the globals changes results in renderPhases disrupting test runs
+  tags: ['!vitest', '!test'],
 };
 
 export const Overrides1 = {

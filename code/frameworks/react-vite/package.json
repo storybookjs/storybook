@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react-vite",
-  "version": "8.5.0-alpha.18",
+  "version": "8.6.0-beta.4",
   "description": "Storybook for React and Vite: Develop React components in isolation with Hot Reloading.",
   "keywords": [
     "storybook"
@@ -30,11 +30,30 @@
       "types": "./dist/preset.d.ts",
       "require": "./dist/preset.js"
     },
+    "./node": {
+      "types": "./dist/node/index.d.ts",
+      "node": "./dist/node/index.js",
+      "import": "./dist/node/index.mjs",
+      "require": "./dist/node/index.js"
+    },
     "./package.json": "./package.json"
   },
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "*": [
+        "dist/index.d.ts"
+      ],
+      "preset": [
+        "dist/preset.d.ts"
+      ],
+      "node": [
+        "dist/node/index.d.ts"
+      ]
+    }
+  },
   "files": [
     "dist/**/*",
     "README.md",
@@ -47,7 +66,7 @@
     "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@joshwooding/vite-plugin-react-docgen-typescript": "0.4.2",
+    "@joshwooding/vite-plugin-react-docgen-typescript": "0.5.0",
     "@rollup/pluginutils": "^5.0.2",
     "@storybook/builder-vite": "workspace:*",
     "@storybook/react": "workspace:*",
@@ -59,7 +78,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "typescript": "^5.3.2",
+    "typescript": "^5.7.3",
     "vite": "^4.0.0"
   },
   "peerDependencies": {
@@ -83,7 +102,8 @@
   "bundler": {
     "entries": [
       "./src/index.ts",
-      "./src/preset.ts"
+      "./src/preset.ts",
+      "./src/node/index.ts"
     ],
     "platform": "node"
   },

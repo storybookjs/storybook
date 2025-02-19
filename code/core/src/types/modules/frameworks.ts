@@ -21,5 +21,6 @@ export type SupportedFrameworks =
   | 'web-components-webpack5'
   | 'qwik'
   | 'solid'
+  | 'nuxt'
   | 'react-rsbuild'
   | 'vue3-rsbuild';

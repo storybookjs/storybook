@@ -301,6 +301,9 @@ describe('StoryStore', () => {
             },
             "component": undefined,
             "componentId": "component-one",
+            "globals": {
+              "a": "b",
+            },
             "id": "component-one--a",
             "initialArgs": {
               "foo": "a",
@@ -471,6 +474,9 @@ describe('StoryStore', () => {
             },
             "component": undefined,
             "componentId": "component-one",
+            "globals": {
+              "a": "b",
+            },
             "id": "component-one--a",
             "initialArgs": {
               "foo": "a",
@@ -514,6 +520,9 @@ describe('StoryStore', () => {
             },
             "component": undefined,
             "componentId": "component-one",
+            "globals": {
+              "a": "b",
+            },
             "id": "component-one--b",
             "initialArgs": {
               "foo": "b",
@@ -557,6 +566,9 @@ describe('StoryStore', () => {
             },
             "component": undefined,
             "componentId": "component-two",
+            "globals": {
+              "a": "b",
+            },
             "id": "component-two--c",
             "initialArgs": {
               "foo": "c",
@@ -645,6 +657,7 @@ describe('StoryStore', () => {
       expect(store.raw()).toMatchInlineSnapshot(`
         [
           {
+            "applyAfterEach": [Function],
             "applyBeforeEach": [Function],
             "applyLoaders": [Function],
             "argTypes": {
@@ -698,6 +711,7 @@ describe('StoryStore', () => {
             "usesMount": false,
           },
           {
+            "applyAfterEach": [Function],
             "applyBeforeEach": [Function],
             "applyLoaders": [Function],
             "argTypes": {
@@ -751,6 +765,7 @@ describe('StoryStore', () => {
             "usesMount": false,
           },
           {
+            "applyAfterEach": [Function],
             "applyBeforeEach": [Function],
             "applyLoaders": [Function],
             "argTypes": {
@@ -844,6 +859,9 @@ describe('StoryStore', () => {
               },
               "component": undefined,
               "componentId": "component-one",
+              "globals": {
+                "a": "b",
+              },
               "id": "component-one--a",
               "initialArgs": {
                 "foo": "a",
@@ -887,6 +905,9 @@ describe('StoryStore', () => {
               },
               "component": undefined,
               "componentId": "component-one",
+              "globals": {
+                "a": "b",
+              },
               "id": "component-one--b",
               "initialArgs": {
                 "foo": "b",
@@ -930,6 +951,9 @@ describe('StoryStore', () => {
               },
               "component": undefined,
               "componentId": "component-two",
+              "globals": {
+                "a": "b",
+              },
               "id": "component-two--c",
               "initialArgs": {
                 "foo": "c",

@@ -25,18 +25,8 @@ const getCsfParsingErrorMessage = ({
   foundType: string | undefined;
   node: any | undefined;
 }) => {
-  let nodeInfo = '';
-  if (node) {
-    try {
-      nodeInfo = JSON.stringify(node);
-    } catch (e) {
-      //
-    }
-  }
-
   return dedent`
       CSF Parsing error: Expected '${expectedType}' but found '${foundType}' instead in '${node?.type}'.
-      ${nodeInfo}
     `;
 };
 
@@ -171,7 +161,7 @@ export class ConfigFile {
   // FIXME: this is a hack. this is only used in the case where the user is
   // modifying a named export that's a scalar. The _exports map is not suitable
   // for that. But rather than refactor the whole thing, we just use this as a stopgap.
-  _exportDecls: Record<string, t.VariableDeclarator> = {};
+  _exportDecls: Record<string, t.VariableDeclarator | t.FunctionDeclaration> = {};
 
   _exportsObject: t.ObjectExpression | undefined;
 
@@ -185,6 +175,20 @@ export class ConfigFile {
     this._ast = ast;
     this._code = code;
     this.fileName = fileName;
+  }
+
+  _parseExportsObject(exportsObject: t.ObjectExpression) {
+    this._exportsObject = exportsObject;
+    (exportsObject.properties as t.ObjectProperty[]).forEach((p) => {
+      const exportName = propKey(p);
+      if (exportName) {
+        let exportVal = p.value;
+        if (t.isIdentifier(exportVal)) {
+          exportVal = _findVarInitialization(exportVal.name, this._ast.program) as any;
+        }
+        this._exports[exportName] = exportVal as t.Expression;
+      }
+    });
   }
 
   parse() {
@@ -201,18 +205,13 @@ export class ConfigFile {
 
           decl = unwrap(decl);
 
+          // csf factory
+          if (t.isCallExpression(decl) && t.isObjectExpression(decl.arguments[0])) {
+            decl = decl.arguments[0];
+          }
+
           if (t.isObjectExpression(decl)) {
-            self._exportsObject = decl;
-            (decl.properties as t.ObjectProperty[]).forEach((p) => {
-              const exportName = propKey(p);
-              if (exportName) {
-                let exportVal = p.value;
-                if (t.isIdentifier(exportVal)) {
-                  exportVal = _findVarInitialization(exportVal.name, parent as t.Program) as any;
-                }
-                self._exports[exportName] = exportVal as t.Expression;
-              }
-            });
+            self._parseExportsObject(decl);
           } else {
             logger.warn(
               getCsfParsingErrorMessage({
@@ -239,6 +238,13 @@ export class ConfigFile {
                 self._exportDecls[exportName] = decl;
               }
             });
+          } else if (t.isFunctionDeclaration(node.declaration)) {
+            // export function X() {...};
+            const decl = node.declaration;
+            if (t.isIdentifier(decl.id)) {
+              const { name: exportName } = decl.id;
+              self._exportDecls[exportName] = decl;
+            }
           } else if (node.specifiers) {
             // export { X };
             node.specifiers.forEach((spec) => {
@@ -315,6 +321,18 @@ export class ConfigFile {
           }
         },
       },
+      CallExpression: {
+        enter: ({ node }) => {
+          if (
+            t.isIdentifier(node.callee) &&
+            node.callee.name === 'definePreview' &&
+            node.arguments.length === 1 &&
+            t.isObjectExpression(node.arguments[0])
+          ) {
+            self._parseExportsObject(node.arguments[0]);
+          }
+        },
+      },
     });
     return self;
   }
@@ -369,7 +387,9 @@ export class ConfigFile {
       _updateExportNode(rest, expr, exportNode);
     } else if (exportNode && rest.length === 0 && this._exportDecls[path[0]]) {
       const decl = this._exportDecls[path[0]];
-      decl.init = _makeObjectExpression([], expr);
+      if (t.isVariableDeclarator(decl)) {
+        decl.init = _makeObjectExpression([], expr);
+      }
     } else if (this.hasDefaultExport) {
       // This means the main.js of the user has a default export that is not an object expression, therefore we can'types change the AST.
       throw new Error(
@@ -483,6 +503,8 @@ export class ConfigFile {
           value = prop.value.value;
         }
       });
+    } else if (t.isCallExpression(node)) {
+      value = this._getPnpWrappedValue(node);
     }
 
     if (!value) {
@@ -801,16 +823,21 @@ export class ConfigFile {
    *
    * // import foo from 'bar';
    * setImport('foo', 'bar');
+   *
+   * // import * as foo from 'bar';
+   * setImport({ namespace: 'foo' }, 'bar');
+   *
+   * // import 'bar';
+   * setImport(null, 'bar');
    * ```
    *
    * @param importSpecifiers - The import specifiers to set. If a string is passed in, a default
    *   import will be set. Otherwise, an array of named imports will be set
    * @param fromImport - The module to import from
    */
-  setImport(importSpecifier: string[] | string, fromImport: string) {
+  setImport(importSpecifier: string[] | string | { namespace: string } | null, fromImport: string) {
     const getNewImportSpecifier = (specifier: string) =>
       t.importSpecifier(t.identifier(specifier), t.identifier(specifier));
-
     /**
      * Returns true, when the given import declaration has the given import specifier
      *
@@ -839,26 +866,41 @@ export class ConfigFile {
      * hasImportSpecifier(declaration, 'foo');
      * ```
      */
+    const hasNamespaceImportSpecifier = (declaration: t.ImportDeclaration, name: string) =>
+      declaration.specifiers.find(
+        (specifier) =>
+          t.isImportNamespaceSpecifier(specifier) &&
+          t.isIdentifier(specifier.local) &&
+          specifier.local.name === name
+      );
+
+    /** Returns true when the given import declaration has a default import specifier */
     const hasDefaultImportSpecifier = (declaration: t.ImportDeclaration, name: string) =>
-      declaration.specifiers.find((specifier) => t.isImportDefaultSpecifier(specifier));
+      declaration.specifiers.find(
+        (specifier) =>
+          t.isImportDefaultSpecifier(specifier) &&
+          t.isIdentifier(specifier.local) &&
+          specifier.local.name === name
+      );
 
     const importDeclaration = this._ast.program.body.find(
       (node) => t.isImportDeclaration(node) && node.source.value === fromImport
     ) as t.ImportDeclaration | undefined;
 
-    // if the import specifier is a string, we're dealing with default imports
-    if (typeof importSpecifier === 'string') {
-      // If the import declaration with the given source exists
+    // Handle side-effect imports (e.g., import 'foo')
+    if (importSpecifier === null) {
+      if (!importDeclaration) {
+        this._ast.program.body.unshift(t.importDeclaration([], t.stringLiteral(fromImport)));
+      }
+      // Handle default imports e.g. import foo from 'bar'
+    } else if (typeof importSpecifier === 'string') {
       if (importDeclaration) {
         if (!hasDefaultImportSpecifier(importDeclaration, importSpecifier)) {
-          // If the import declaration hasn'types a default specifier, we add it
           importDeclaration.specifiers.push(
             t.importDefaultSpecifier(t.identifier(importSpecifier))
           );
         }
-        // If the import declaration with the given source doesn'types exist
       } else {
-        // Add the import declaration to the top of the file
         this._ast.program.body.unshift(
           t.importDeclaration(
             [t.importDefaultSpecifier(t.identifier(importSpecifier))],
@@ -866,22 +908,38 @@ export class ConfigFile {
           )
         );
       }
-      // if the import specifier is an array, we're dealing with named imports
-    } else if (importDeclaration) {
-      importSpecifier.forEach((specifier) => {
-        if (!hasImportSpecifier(importDeclaration, specifier)) {
-          importDeclaration.specifiers.push(getNewImportSpecifier(specifier));
+      // Handle named imports e.g. import { foo } from 'bar'
+    } else if (Array.isArray(importSpecifier)) {
+      if (importDeclaration) {
+        importSpecifier.forEach((specifier) => {
+          if (!hasImportSpecifier(importDeclaration, specifier)) {
+            importDeclaration.specifiers.push(getNewImportSpecifier(specifier));
+          }
+        });
+      } else {
+        this._ast.program.body.unshift(
+          t.importDeclaration(
+            importSpecifier.map(getNewImportSpecifier),
+            t.stringLiteral(fromImport)
+          )
+        );
+      }
+      // Handle namespace imports e.g. import * as foo from 'bar'
+    } else if (importSpecifier.namespace) {
+      if (importDeclaration) {
+        if (!hasNamespaceImportSpecifier(importDeclaration, importSpecifier.namespace)) {
+          importDeclaration.specifiers.push(
+            t.importNamespaceSpecifier(t.identifier(importSpecifier.namespace))
+          );
         }
-      });
-    } else {
-      this._ast.program.body.unshift(
-        t.importDeclaration(
-          importSpecifier.map((specifier) =>
-            t.importSpecifier(t.identifier(specifier), t.identifier(specifier))
-          ),
-          t.stringLiteral(fromImport)
-        )
-      );
+      } else {
+        this._ast.program.body.unshift(
+          t.importDeclaration(
+            [t.importNamespaceSpecifier(t.identifier(importSpecifier.namespace))],
+            t.stringLiteral(fromImport)
+          )
+        );
+      }
     }
   }
 }
@@ -911,4 +969,21 @@ export const writeConfig = async (config: ConfigFile, fileName?: string) => {
     throw new Error('Please specify a fileName for writeConfig');
   }
   await writeFile(fname, formatConfig(config));
+};
+
+export const isCsfFactoryPreview = (previewConfig: ConfigFile) => {
+  const program = previewConfig._ast.program;
+  return !!program.body.find((node) => {
+    return (
+      t.isImportDeclaration(node) &&
+      node.source.value.includes('@storybook') &&
+      node.specifiers.some((specifier) => {
+        return (
+          t.isImportSpecifier(specifier) &&
+          t.isIdentifier(specifier.imported) &&
+          specifier.imported.name === 'definePreview'
+        );
+      })
+    );
+  });
 };

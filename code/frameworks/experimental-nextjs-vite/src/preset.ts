@@ -4,6 +4,7 @@ import path from 'node:path';
 import type { PresetProperty } from 'storybook/internal/types';
 
 import type { StorybookConfigVite } from '@storybook/builder-vite';
+import { viteFinal as reactViteFinal } from '@storybook/react-vite/preset';
 
 import { dirname, join } from 'path';
 import vitePluginStorybookNextjs from 'vite-plugin-storybook-nextjs';
@@ -34,11 +35,14 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entry =
 };
 
 export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, options) => {
-  config.plugins = config.plugins || [];
+  const reactConfig = await reactViteFinal(config, options);
+
   const { nextConfigPath } = await options.presets.apply<FrameworkOptions>('frameworkOptions');
 
   const nextDir = nextConfigPath ? path.dirname(nextConfigPath) : undefined;
-  config.plugins.push(vitePluginStorybookNextjs({ dir: nextDir }));
 
-  return config;
+  return {
+    ...reactConfig,
+    plugins: [...(reactConfig?.plugins ?? []), vitePluginStorybookNextjs({ dir: nextDir })],
+  };
 };

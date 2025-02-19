@@ -67,6 +67,8 @@ export const CSF3Primary: CSF3Story<ButtonProps> = {
     size: 'large',
     primary: true,
   },
+  // Accessibility is failing for the Button
+  tags: ['fail-on-purpose'],
 };
 
 export const CSF3Button: CSF3Story<ButtonProps> = {

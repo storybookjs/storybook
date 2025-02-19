@@ -5,7 +5,7 @@ import { runCodemod } from '@storybook/codemod';
 // eslint-disable-next-line depend/ban-dependencies
 import { glob } from 'glob';
 import picocolors from 'picocolors';
-import { prompt } from 'prompts';
+import prompts from 'prompts';
 import { dedent } from 'ts-dedent';
 
 import { updateMainConfig } from '../helpers/mainConfigFile';
@@ -121,7 +121,7 @@ export const mdxToCSF: Fix<BareMdxStoriesGlobRunOptions> = {
       ${JSON.stringify(nextStoriesEntries, null, 2)}`);
 
     if (!dryRun) {
-      const { glob: globString } = await prompt({
+      const { glob: globString } = await prompts.prompt({
         type: 'text',
         name: 'glob',
         message: 'Please enter the glob for your MDX stories',

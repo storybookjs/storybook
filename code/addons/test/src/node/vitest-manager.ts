@@ -21,7 +21,7 @@ import path, { dirname, join, normalize } from 'pathe';
 import { satisfies } from 'semver';
 import slash from 'slash';
 
-import { COVERAGE_DIRECTORY, type Config } from '../constants';
+import { COVERAGE_DIRECTORY } from '../constants';
 import { log } from '../logger';
 import type { StorybookCoverageReporterOptions } from './coverage-reporter';
 import { StorybookReporter } from './reporter';
@@ -227,7 +227,7 @@ export class VitestManager {
     this.runningPromise = null;
   }
 
-  async runTests(requestPayload: TestingModuleRunRequestPayload<Config>) {
+  async runTests(requestPayload: TestingModuleRunRequestPayload) {
     if (!this.vitest) {
       await this.startVitest();
     } else {
@@ -253,7 +253,7 @@ export class VitestManager {
           this.filterStories(story, spec.moduleId, { include, exclude, skip })
         );
         if (matches.length) {
-          if (!this.testManager.config.watchMode) {
+          if (!this.testManager.store.getState().watching) {
             // Clear the file cache if watch mode is not enabled
             this.updateLastChanged(spec.moduleId);
           }
@@ -387,7 +387,7 @@ export class VitestManager {
 
     // when watch mode is disabled, don't trigger any tests (below)
     // but still invalidate the cache for the changed file, which is handled above
-    if (!this.testManager.config.watchMode) {
+    if (!this.testManager.store.getState().watching) {
       return;
     }
 

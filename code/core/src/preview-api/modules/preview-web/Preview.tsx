@@ -1,4 +1,5 @@
 import type { Channel } from '@storybook/core/channels';
+import type { CleanupCallback } from '@storybook/core/csf';
 import type {
   Args,
   Globals,
@@ -14,7 +15,6 @@ import type {
   StoryIndex,
   StoryRenderOptions,
 } from '@storybook/core/types';
-import type { CleanupCallback } from '@storybook/csf';
 import { global } from '@storybook/global';
 
 import { deprecate, logger } from '@storybook/core/client-logger';

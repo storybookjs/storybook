@@ -1,4 +1,4 @@
-import { type BeforeAll, type CleanupCallback } from '@storybook/csf';
+import { type BeforeAll, type CleanupCallback } from '@storybook/core/csf';
 
 // Execute all the hooks in sequence, and return a function that will execute cleanups in reverse order
 export const composeBeforeAllHooks = (hooks: BeforeAll[]): BeforeAll => {

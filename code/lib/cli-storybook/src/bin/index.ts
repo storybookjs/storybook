@@ -9,11 +9,10 @@ import { addToGlobalContext, telemetry } from 'storybook/internal/telemetry';
 
 import { program } from 'commander';
 import envinfo from 'envinfo';
-import { findPackageSync } from 'fd-package-json';
 import leven from 'leven';
 import picocolors from 'picocolors';
-import invariant from 'tiny-invariant';
 
+import { version } from '../../package.json';
 import { add } from '../add';
 import { doAutomigrate } from '../automigrate';
 import { doctor } from '../doctor';
@@ -24,8 +23,6 @@ import { type UpgradeOptions, upgrade } from '../upgrade';
 
 addToGlobalContext('cliVersion', versions.storybook);
 
-const pkg = findPackageSync(__dirname);
-invariant(pkg, 'Failed to find the closest package.json file.');
 const consoleLogger = console;
 
 const command = (name: string) =>
@@ -217,4 +214,4 @@ program.on('command:*', ([invalidCmd]) => {
   process.exit(1);
 });
 
-program.usage('<command> [options]').version(String(pkg.version)).parse(process.argv);
+program.usage('<command> [options]').version(String(version)).parse(process.argv);

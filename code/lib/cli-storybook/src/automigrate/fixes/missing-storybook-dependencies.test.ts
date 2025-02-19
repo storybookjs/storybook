@@ -109,6 +109,8 @@ describe('missingStorybookDependencies', () => {
       await missingStorybookDependencies.run!({
         result: { packageUsage },
         dryRun,
+        packageJson: {},
+        mainConfig: { stories: [] },
         packageManager: mockPackageManager as JsPackageManager,
         mainConfigPath: 'path/to/main-config.js',
       });

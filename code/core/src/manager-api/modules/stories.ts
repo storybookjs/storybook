@@ -1,3 +1,4 @@
+import { sanitize, toId } from '@storybook/core/csf';
 import type {
   API_ComposedRef,
   API_DocsEntry,
@@ -22,7 +23,6 @@ import type {
   StoryName,
   StoryPreparedPayload,
 } from '@storybook/core/types';
-import { sanitize, toId } from '@storybook/csf';
 import { global } from '@storybook/global';
 
 import { logger } from '@storybook/core/client-logger';
@@ -345,8 +345,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         return undefined;
       }
       if (refId) {
-        // @ts-expect-error (possibly undefined)
-        return refs[refId].index ? refs[refId].index[storyId] : undefined;
+        return refs?.[refId]?.index?.[storyId] ?? undefined;
       }
       return index ? index[storyId] : undefined;
     },

@@ -159,6 +159,11 @@ export const options = createOptions({
     description: "Don't execute commands, just list them (dry run)?",
     promptType: false,
   },
+  skipCache: {
+    type: 'boolean',
+    description: 'Skip NX remote cache?',
+    promptType: false,
+  },
   debug: {
     type: 'boolean',
     description: 'Print all the logs to the console',

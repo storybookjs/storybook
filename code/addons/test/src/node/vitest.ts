@@ -1,7 +1,10 @@
 import process from 'node:process';
 
 import { Channel } from 'storybook/internal/channels';
+import { experimental_UniversalStore } from 'storybook/internal/core-server';
 
+import type { StoreState } from '../constants';
+import { storeOptions } from '../constants';
 import { TestManager } from './test-manager';
 
 process.env.TEST = 'true';
@@ -20,7 +23,13 @@ const channel: Channel = new Channel({
   },
 });
 
-new TestManager(channel, {
+// eslint-disable-next-line no-underscore-dangle
+(experimental_UniversalStore as any).__prepare(
+  channel,
+  experimental_UniversalStore.Environment.SERVER
+);
+
+new TestManager(channel, experimental_UniversalStore.create<StoreState>(storeOptions), {
   onError: (message, error) => {
     process.send?.({ type: 'error', message, error: error.stack ?? error });
   },

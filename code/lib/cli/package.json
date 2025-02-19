@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "8.6.0-alpha.2",
+  "version": "8.6.0-beta.4",
   "description": "Storybook's CLI - install, dev, build, upgrade, and more",
   "keywords": [
     "cli",
@@ -32,13 +32,9 @@
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
-    "./bin/index.cjs": {
-      "node": "./bin/index.cjs",
-      "require": "./bin/index.cjs"
-    },
+    "./bin/index.cjs": "./bin/index.cjs",
     "./core-path": {
       "types": "./dist/core-path.d.ts",
-      "node": "./dist/core-path.cjs",
       "import": "./dist/core-path.js",
       "require": "./dist/core-path.cjs"
     },
@@ -102,6 +98,11 @@
       "types": "./core/types/index.d.ts",
       "import": "./core/types/index.js",
       "require": "./core/types/index.cjs"
+    },
+    "./internal/csf": {
+      "types": "./core/csf/index.d.ts",
+      "import": "./core/csf/index.js",
+      "require": "./core/csf/index.cjs"
     },
     "./internal/csf-tools": {
       "types": "./core/csf-tools/index.d.ts",
@@ -233,6 +234,9 @@
       "internal/core-server": [
         "./core/core-server/index.d.ts"
       ],
+      "internal/csf": [
+        "./core/csf/index.d.ts"
+      ],
       "internal/csf-tools": [
         "./core/csf-tools/index.d.ts"
       ],
@@ -318,7 +322,7 @@
     "@storybook/core": "workspace:*"
   },
   "devDependencies": {
-    "typescript": "^5.3.2"
+    "typescript": "^5.7.3"
   },
   "peerDependencies": {
     "prettier": "^2 || ^3"
@@ -338,7 +342,10 @@
       "./src/core-path.ts",
       "./src/index.ts"
     ],
-    "platform": "node"
+    "formats": [
+      "cjs",
+      "node-esm"
+    ]
   },
   "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
 }

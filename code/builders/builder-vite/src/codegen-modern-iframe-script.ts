@@ -1,6 +1,8 @@
 import { getFrameworkName, loadPreviewOrConfigFile } from 'storybook/internal/common';
 import type { Options, PreviewAnnotation } from 'storybook/internal/types';
 
+import { dedent } from 'ts-dedent';
+
 import { processPreviewAnnotation } from './utils/process-preview-annotation';
 import { SB_VIRTUAL_FILES, getResolvedVirtualModuleId } from './virtual-file-names';
 
@@ -14,15 +16,21 @@ export async function generateModernIframeScriptCode(options: Options, projectRo
     [],
     options
   );
-  const previewAnnotationURLs = [...previewAnnotations, previewOrConfigFile]
+  const [previewFileUrl, ...previewAnnotationURLs] = [previewOrConfigFile, ...previewAnnotations]
     .filter(Boolean)
     .map((path) => processPreviewAnnotation(path, projectRoot));
 
   // This is pulled out to a variable because it is reused in both the initial page load
   // and the HMR handler.  We don't use the hot.accept callback params because only the changed
   // modules are provided, the rest are null.  We can just re-import everything again in that case.
-  const getPreviewAnnotationsFunction = `
+  const getPreviewAnnotationsFunction = dedent`
   const getProjectAnnotations = async (hmrPreviewAnnotationModules = []) => {
+    const preview = await import('${previewFileUrl}');
+ 
+    if (isPreview(preview.default)) {
+      return preview.default.composed;
+    }
+   
     const configs = await Promise.all([${previewAnnotationURLs
       .map(
         (previewAnnotation, index) =>
@@ -30,32 +38,32 @@ export async function generateModernIframeScriptCode(options: Options, projectRo
           `hmrPreviewAnnotationModules[${index}] ?? import('${previewAnnotation}')`
       )
       .join(',\n')}])
-    return composeConfigs(configs);
+    return composeConfigs([...configs, preview]);
   }`;
 
   // eslint-disable-next-line @typescript-eslint/no-shadow
   const generateHMRHandler = (frameworkName: string): string => {
     // Web components are not compatible with HMR, so disable HMR, reload page instead.
     if (frameworkName === '@storybook/web-components-vite') {
-      return `
+      return dedent`
       if (import.meta.hot) {
         import.meta.hot.decline();
       }`.trim();
     }
 
-    return `
+    return dedent`
     if (import.meta.hot) {
-      import.meta.hot.accept('${getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE)}', (newModule) => {
-      // importFn has changed so we need to patch the new one in
-      window.__STORYBOOK_PREVIEW__.onStoriesChanged({ importFn: newModule.importFn });
+      import.meta.hot.accept('${SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE}', (newModule) => {
+        // importFn has changed so we need to patch the new one in
+        window.__STORYBOOK_PREVIEW__.onStoriesChanged({ importFn: newModule.importFn });
       });
 
-    import.meta.hot.accept(${JSON.stringify(previewAnnotationURLs)}, (previewAnnotationModules) => {
-      ${getPreviewAnnotationsFunction}
-      // getProjectAnnotations has changed so we need to patch the new one in
-      window.__STORYBOOK_PREVIEW__.onGetProjectAnnotationsChanged({ getProjectAnnotations: () => getProjectAnnotations(previewAnnotationModules) });
-    });
-  }`.trim();
+      import.meta.hot.accept(${JSON.stringify(previewAnnotationURLs)}, (previewAnnotationModules) => {
+        ${getPreviewAnnotationsFunction}
+        // getProjectAnnotations has changed so we need to patch the new one in
+        window.__STORYBOOK_PREVIEW__.onGetProjectAnnotationsChanged({ getProjectAnnotations: () => getProjectAnnotations(previewAnnotationModules) });
+      });
+    }`.trim();
   };
 
   /**
@@ -66,23 +74,22 @@ export async function generateModernIframeScriptCode(options: Options, projectRo
    *
    * @todo Inline variable and remove `noinspection`
    */
-  const code = `
+  const code = dedent`
   import { setup } from 'storybook/internal/preview/runtime';
   import '${SB_VIRTUAL_FILES.VIRTUAL_ADDON_SETUP_FILE}';
 
   setup();
  
-  import { composeConfigs, PreviewWeb, ClientApi } from 'storybook/internal/preview-api';
+  import { composeConfigs, PreviewWeb } from 'storybook/internal/preview-api';
+  import { isPreview } from 'storybook/internal/csf';
   import { importFn } from '${SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE}';
   
-  
-    ${getPreviewAnnotationsFunction}
+  ${getPreviewAnnotationsFunction}
 
-    window.__STORYBOOK_PREVIEW__ = window.__STORYBOOK_PREVIEW__ || new PreviewWeb(importFn, getProjectAnnotations);
+  window.__STORYBOOK_PREVIEW__ = window.__STORYBOOK_PREVIEW__ || new PreviewWeb(importFn, getProjectAnnotations);
+  
+  window.__STORYBOOK_STORY_STORE__ = window.__STORYBOOK_STORY_STORE__ || window.__STORYBOOK_PREVIEW__.storyStore;
     
-    window.__STORYBOOK_STORY_STORE__ = window.__STORYBOOK_STORY_STORE__ || window.__STORYBOOK_PREVIEW__.storyStore;
-    
-    ${generateHMRHandler(frameworkName)};
-    `.trim();
+  ${generateHMRHandler(frameworkName)};`.trim();
   return code;
 }

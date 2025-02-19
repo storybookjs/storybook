@@ -1,7 +1,13 @@
-import type { NpmOptions } from 'storybook/internal/cli';
-import type { Builder, ProjectType, SupportedLanguage } from 'storybook/internal/cli';
-import type { JsPackageManager, PackageManagerName } from 'storybook/internal/common';
-
+import type { NpmOptions } from '../../../../core/src/cli/NpmOptions';
+import type {
+  Builder,
+  ProjectType,
+  SupportedLanguage,
+} from '../../../../core/src/cli/project_types';
+import type {
+  JsPackageManager,
+  PackageManagerName,
+} from '../../../../core/src/common/js-package-manager/JsPackageManager';
 import type { FrameworkPreviewParts } from './configure';
 
 export type GeneratorOptions = {
@@ -13,6 +19,7 @@ export type GeneratorOptions = {
   frameworkPreviewParts?: FrameworkPreviewParts;
   // skip prompting the user
   yes: boolean;
+  features: string[];
 };
 
 export interface FrameworkOptions {
@@ -41,9 +48,12 @@ export type Generator<T = void> = (
   commandOptions?: CommandOptions
 ) => Promise<T>;
 
+export type GeneratorFeature = 'docs' | 'test';
+
 export type CommandOptions = {
   packageManager: PackageManagerName;
   usePnp?: boolean;
+  features: GeneratorFeature[];
   type?: ProjectType;
   force?: any;
   html?: boolean;

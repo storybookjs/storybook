@@ -48,7 +48,6 @@ const managerContext: any = {
         title: () => 'Component tests',
         description: () => 'Ran 2 seconds ago',
         runnable: true,
-        watchable: true,
       },
       'visual-tests': {
         type: Addon_TypesEnum.experimental_TEST_PROVIDER,

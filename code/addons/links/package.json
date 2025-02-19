@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-links",
-  "version": "8.6.0-alpha.2",
+  "version": "8.6.0-beta.4",
   "description": "Link stories together to build demos and prototypes with your UI components",
   "keywords": [
     "storybook-addons",
@@ -48,6 +48,9 @@
       "*": [
         "dist/index.d.ts"
       ],
+      "preview": [
+        "dist/preview.d.ts"
+      ],
       "react": [
         "dist/react/index.d.ts"
       ]
@@ -65,12 +68,11 @@
     "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
   },
   "dependencies": {
-    "@storybook/csf": "0.1.12",
     "@storybook/global": "^5.0.0",
     "ts-dedent": "^2.0.0"
   },
   "devDependencies": {
-    "typescript": "^5.3.2"
+    "typescript": "^5.7.3"
   },
   "peerDependencies": {
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",

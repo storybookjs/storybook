@@ -243,6 +243,47 @@ describe('ConfigFile', () => {
         ).toEqual('bar');
       });
     });
+
+    describe('factory config', () => {
+      it('parses correctly', () => {
+        const source = dedent`
+          import { definePreview } from '@storybook/react-vite';
+
+          const config = definePreview({
+            framework: 'foo',
+          });
+          export default config;
+        `;
+        const config = loadConfig(source).parse();
+        expect(config.getNameFromPath(['framework'])).toEqual('foo');
+      });
+      it('found scalar', () => {
+        expect(
+          getField(
+            ['core', 'builder'],
+            dedent`
+            import { definePreview } from '@storybook/react-vite';
+            export const foo = definePreview({ core: { builder: 'webpack5' } });
+            `
+          )
+        ).toEqual('webpack5');
+      });
+      it('tags', () => {
+        expect(
+          getField(
+            ['tags'],
+            dedent`
+              import { definePreview } from '@storybook/react-vite';
+              const parameters = {};
+              export const config = definePreview({
+                parameters,
+                tags: ['test', 'vitest', '!a11ytest'],
+              });
+            `
+          )
+        ).toEqual(['test', 'vitest', '!a11ytest']);
+      });
+    });
   });
 
   describe('setField', () => {
@@ -476,6 +517,73 @@ describe('ConfigFile', () => {
         ).toMatchInlineSnapshot(`
           const core = { builder: 'webpack5' };
           export { core };
+        `);
+      });
+    });
+
+    describe('factory config', () => {
+      it('missing export', () => {
+        expect(
+          setField(
+            ['core', 'builder'],
+            'webpack5',
+            dedent`
+              import { definePreview } from '@storybook/react-vite';
+              export const foo = definePreview({
+                addons: [],
+              });
+            `
+          )
+        ).toMatchInlineSnapshot(`
+          import { definePreview } from '@storybook/react-vite';
+          export const foo = definePreview({
+            addons: [],
+
+            core: {
+              builder: 'webpack5'
+            }
+          });
+        `);
+      });
+      it('missing field', () => {
+        expect(
+          setField(
+            ['core', 'builder'],
+            'webpack5',
+            dedent`
+              import { definePreview } from '@storybook/react-vite';
+              export const foo = definePreview({
+                core: { foo: 'bar' },
+              });
+            `
+          )
+        ).toMatchInlineSnapshot(`
+          import { definePreview } from '@storybook/react-vite';
+          export const foo = definePreview({
+            core: {
+              foo: 'bar',
+              builder: 'webpack5'
+            },
+          });
+        `);
+      });
+      it('found scalar', () => {
+        expect(
+          setField(
+            ['core', 'builder'],
+            'webpack5',
+            dedent`
+              import { definePreview } from '@storybook/react-vite';
+              export const foo = definePreview({
+                core: { builder: 'webpack4' },
+              });
+            `
+          )
+        ).toMatchInlineSnapshot(`
+          import { definePreview } from '@storybook/react-vite';
+          export const foo = definePreview({
+            core: { builder: 'webpack5' },
+          });
         `);
       });
     });
@@ -921,6 +1029,19 @@ describe('ConfigFile', () => {
         expect(config.getNameFromPath(['otherField'])).toEqual('foo');
       });
 
+      it(`supports pnp wrapped names`, () => {
+        const source = dedent`
+          import type { StorybookConfig } from '@storybook/react-webpack5';
+
+          const config: StorybookConfig = {
+            framework: getAbsolutePath('foo'),
+          }
+          export default config;
+        `;
+        const config = loadConfig(source).parse();
+        expect(config.getNameFromPath(['framework'])).toEqual('foo');
+      });
+
       it(`returns undefined when accessing a field that does not exist`, () => {
         const source = dedent`
           import type { StorybookConfig } from '@storybook/react-webpack5';
@@ -1344,6 +1465,17 @@ describe('ConfigFile', () => {
 
       expect(config._exportDecls['path']).toBe(undefined);
       expect(config._exports['path']).toBe(undefined);
+    });
+
+    it('detects const and function export declarations', () => {
+      const source = dedent`
+        export function normalFunction() { };
+        export const value = ['@storybook/addon-essentials'];
+        export async function asyncFunction() { };
+        `;
+      const config = loadConfig(source).parse();
+
+      expect(Object.keys(config._exportDecls)).toHaveLength(3);
     });
   });
 });

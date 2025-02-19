@@ -27,6 +27,13 @@ export { makeDecorator } from './addons';
  */
 export { addons, mockChannel } from './addons';
 
+/** ADDON ANNOTATIONS TYPE HELPER */
+export { definePreview } from './addons';
+
+export { UniversalStore as experimental_UniversalStore } from '../shared/universal-store';
+export { useUniversalStore as experimental_useUniversalStore } from '../shared/universal-store/use-universal-store-preview';
+export { MockUniversalStore as experimental_MockUniversalStore } from '../shared/universal-store/mock';
+
 /** DOCS API */
 export { DocsContext } from './preview-web';
 
@@ -53,9 +60,11 @@ export {
   userOrAutoTitleFromSpecifier,
   userOrAutoTitle,
   sortStoriesV7,
+  normalizeProjectAnnotations,
 } from './store';
 
-export { createPlaywrightTest } from './modules/store/csf/portable-stories';
+/** CSF API */
+export { createPlaywrightTest, getCsfFactoryAnnotations } from './modules/store/csf';
 
 export type { PropDescriptor } from './store';
 

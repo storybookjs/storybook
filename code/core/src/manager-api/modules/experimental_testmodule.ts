@@ -4,12 +4,10 @@ import {
   TESTING_MODULE_CANCEL_TEST_RUN_REQUEST,
   TESTING_MODULE_RUN_ALL_REQUEST,
   TESTING_MODULE_RUN_REQUEST,
-  TESTING_MODULE_WATCH_MODE_REQUEST,
   type TestProviderId,
   type TestProviderState,
   type TestProviders,
   type TestingModuleRunRequestPayload,
-  type TestingModuleWatchModeRequestPayload,
 } from '@storybook/core/core-events';
 
 import invariant from 'tiny-invariant';
@@ -25,7 +23,6 @@ const initialTestProviderState: TestProviderState = {
   cancellable: false,
   cancelling: false,
   running: false,
-  watching: false,
   failed: false,
   crashed: false,
 };
@@ -39,7 +36,6 @@ export type SubAPI = {
   updateTestProviderState(id: TestProviderId, update: Partial<TestProviderState>): void;
   clearTestProviderState(id: TestProviderId): void;
   runTestProvider(id: TestProviderId, options?: RunOptions): () => void;
-  setTestProviderWatchMode(id: TestProviderId, watchMode: boolean): void;
   cancelTestProvider(id: TestProviderId): void;
 };
 
@@ -93,15 +89,12 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, fullAPI }) => {
         progress: undefined,
       });
 
-      const provider = store.getState().testProviders[id];
-
       const indexUrl = new URL('index.json', window.location.href).toString();
 
       if (!options?.entryId) {
         const payload: TestingModuleRunRequestPayload = {
           providerId: id,
           indexUrl,
-          config: provider.config,
         };
 
         fullAPI.emit(TESTING_MODULE_RUN_REQUEST, payload);
@@ -129,19 +122,9 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, fullAPI }) => {
         providerId: id,
         indexUrl,
         storyIds: findStories(options.entryId),
-        config: provider.config,
       };
       fullAPI.emit(TESTING_MODULE_RUN_REQUEST, payload);
       return () => api.cancelTestProvider(id);
-    },
-    setTestProviderWatchMode(id, watchMode) {
-      api.updateTestProviderState(id, { watching: watchMode });
-      const config = store.getState().testProviders[id].config;
-      fullAPI.emit(TESTING_MODULE_WATCH_MODE_REQUEST, {
-        providerId: id,
-        watchMode,
-        config,
-      } as TestingModuleWatchModeRequestPayload);
     },
     cancelTestProvider(id) {
       api.updateTestProviderState(id, { cancelling: true });

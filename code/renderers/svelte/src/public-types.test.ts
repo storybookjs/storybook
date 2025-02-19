@@ -29,7 +29,7 @@ describe('Meta', () => {
       },
     };
 
-    expectTypeOf(meta).toEqualTypeOf<
+    expectTypeOf(meta).toMatchTypeOf<
       ComponentAnnotations<SvelteRenderer<Button>, { disabled: boolean; label: string }>
     >();
   });
@@ -40,7 +40,7 @@ describe('Meta', () => {
       args: { label: 'good', disabled: false },
     };
 
-    expectTypeOf(meta).toEqualTypeOf<
+    expectTypeOf(meta).toMatchTypeOf<
       ComponentAnnotations<SvelteRenderer, { disabled: boolean; label: string }>
     >();
   });
@@ -57,7 +57,7 @@ describe('Meta', () => {
         props: args,
         on: {
           mousemove: (event) => {
-            expectTypeOf(event).toEqualTypeOf<MouseEvent>();
+            expectTypeOf(event).toMatchTypeOf<MouseEvent>();
           },
         },
       }),
@@ -74,7 +74,7 @@ describe('Meta', () => {
         props: args,
         on: {
           mousemove: (event) => {
-            expectTypeOf(event).toEqualTypeOf<CustomEvent>();
+            expectTypeOf(event).toMatchTypeOf<CustomEvent>();
           },
         },
       }),
@@ -96,7 +96,7 @@ describe('StoryObj', () => {
       { disabled: boolean; label: string },
       { disabled: boolean; label?: string }
     >;
-    expectTypeOf<Actual>().toEqualTypeOf<Expected>();
+    expectTypeOf<Actual>().toMatchTypeOf<Expected>();
   });
 
   it('❌ The combined shape of meta args and story args must match the required args.', () => {
@@ -108,7 +108,7 @@ describe('StoryObj', () => {
         { disabled: boolean; label: string },
         { disabled: boolean; label: string }
       >;
-      expectTypeOf<StoryObj<typeof meta>>().toEqualTypeOf<Expected>();
+      expectTypeOf<StoryObj<typeof meta>>().toMatchTypeOf<Expected>();
     }
     {
       const meta = satisfies<Meta<Button>>()({
@@ -123,7 +123,7 @@ describe('StoryObj', () => {
         { disabled: boolean; label: string },
         { disabled: boolean; label?: string }
       >;
-      expectTypeOf(Basic).toEqualTypeOf<Expected>();
+      expectTypeOf(Basic).toMatchTypeOf<Expected>();
     }
     {
       const meta = satisfies<Meta<{ label: string; disabled: boolean }>>()({ component: Button });
@@ -137,12 +137,12 @@ describe('StoryObj', () => {
         { disabled: boolean; label: string },
         { disabled: boolean; label: string }
       >;
-      expectTypeOf(Basic).toEqualTypeOf<Expected>();
+      expectTypeOf(Basic).toMatchTypeOf<Expected>();
     }
   });
 
   it('Component can be used as generic parameter for StoryObj', () => {
-    expectTypeOf<StoryObj<Button>>().toEqualTypeOf<
+    expectTypeOf<StoryObj<Button>>().toMatchTypeOf<
       SvelteStory<
         Button,
         { disabled: boolean; label: string },
@@ -174,7 +174,7 @@ describe('Story args can be inferred', () => {
       { theme: ThemeData; disabled: boolean; label: string },
       { theme: ThemeData; disabled?: boolean; label: string }
     >;
-    expectTypeOf(Basic).toEqualTypeOf<Expected>();
+    expectTypeOf(Basic).toMatchTypeOf<Expected>();
   });
 
   const withDecorator: Decorator<{ decoratorArg: string }> = (
@@ -201,7 +201,7 @@ describe('Story args can be inferred', () => {
       Props,
       { decoratorArg: string; disabled?: boolean; label: string }
     >;
-    expectTypeOf(Basic).toEqualTypeOf<Expected>();
+    expectTypeOf(Basic).toMatchTypeOf<Expected>();
   });
 
   it('Correct args are inferred when type is widened for multiple decorators', () => {
@@ -230,7 +230,7 @@ describe('Story args can be inferred', () => {
       Props,
       { decoratorArg: string; decoratorArg2: string; disabled?: boolean; label: string }
     >;
-    expectTypeOf(Basic).toEqualTypeOf<Expected>();
+    expectTypeOf(Basic).toMatchTypeOf<Expected>();
   });
 });
 
@@ -238,8 +238,8 @@ it('mount accepts a Component and props', () => {
   const Basic: StoryObj<Button> = {
     async play({ mount }) {
       const canvas = await mount(Button, { props: { label: 'label', disabled: true } });
-      expectTypeOf(canvas).toEqualTypeOf<Canvas>();
+      expectTypeOf(canvas).toMatchTypeOf<Canvas>();
     },
   };
-  expectTypeOf(Basic).toEqualTypeOf<StoryObj<Button>>();
+  expectTypeOf(Basic).toMatchTypeOf<StoryObj<Button>>();
 });

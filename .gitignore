@@ -16,6 +16,7 @@ test-results
 .verdaccio-cache
 .next
 /.npmrc
+tsconfig.vitest-temp.json
 
 # Yarn stuff
 /**/.yarn/*

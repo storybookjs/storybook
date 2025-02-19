@@ -1,6 +1,6 @@
 {
   "name": "@storybook/angular",
-  "version": "8.6.0-alpha.2",
+  "version": "8.6.0-beta.4",
   "description": "Storybook for Angular: Develop Angular components in isolation with hot reloading.",
   "keywords": [
     "storybook",
@@ -20,6 +20,22 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "node": "./dist/index.js",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./preset": "./preset.js",
+    "./node": {
+      "types": "./dist/node/index.d.ts",
+      "node": "./dist/node/index.js",
+      "import": "./dist/node/index.js",
+      "require": "./dist/node/index.js"
+    },
+    "./package.json": "./package.json"
+  },
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -77,7 +93,7 @@
     "cross-spawn": "^7.0.3",
     "rimraf": "^6.0.1",
     "tmp": "^0.2.1",
-    "typescript": "^5.3.2",
+    "typescript": "^5.7.3",
     "webpack": "5",
     "zone.js": "^0.15.0"
   },

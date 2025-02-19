@@ -19,7 +19,7 @@ export const ExampleStory: Story = {
 
     // Starts querying from the component's root element
     await userEvent.type(canvas.getByTestId('example-element'), 'something');
-    await userEvent.click(canvas.getByRole('another-element'));
+    await userEvent.click(canvas.getByRole('button'));
   },
 };
 ```
@@ -49,7 +49,7 @@ export const ExampleStory: Story = {
 
     // Starts querying from the component's root element
     await userEvent.type(canvas.getByTestId('example-element'), 'something');
-    await userEvent.click(canvas.getByRole('another-element'));
+    await userEvent.click(canvas.getByRole('button'));
   }} />
 ```
 
@@ -69,7 +69,7 @@ export const ExampleStory = {
 
     // Starts querying from the component's root element
     await userEvent.type(canvas.getByTestId('example-element'), 'something');
-    await userEvent.click(canvas.getByRole('another-element'));
+    await userEvent.click(canvas.getByRole('button'));
   },
 };
 ```
@@ -90,7 +90,7 @@ export const ExampleStory = {
 
     // Starts querying from the component's root element
     await userEvent.type(canvas.getByTestId('example-element'), 'something');
-    await userEvent.click(canvas.getByRole('another-element'));
+    await userEvent.click(canvas.getByRole('button'));
   },
 };
 ```
@@ -116,7 +116,7 @@ export const ExampleStory = {
 
     // Starts querying from the component's root element
     await userEvent.type(canvas.getByTestId('example-element'), 'something');
-    await userEvent.click(canvas.getByRole('another-element'));
+    await userEvent.click(canvas.getByRole('button'));
   }} />
 ```
 
@@ -141,7 +141,7 @@ export const ExampleStory: Story = {
 
     // Starts querying from the component's root element
     await userEvent.type(canvas.getByTestId('example-element'), 'something');
-    await userEvent.click(canvas.getByRole('another-element'));
+    await userEvent.click(canvas.getByRole('button'));
   },
 };
 ```
@@ -168,7 +168,7 @@ export const ExampleStory: Story = {
 
     // Starts querying from the component's root element
     await userEvent.type(canvas.getByTestId('example-element'), 'something');
-    await userEvent.click(canvas.getByRole('another-element'));
+    await userEvent.click(canvas.getByRole('button'));
   },
 };
 ```
@@ -193,7 +193,7 @@ export const ExampleStory: Story = {
 
     // Starts querying from the component's root element
     await userEvent.type(canvas.getByTestId('example-element'), 'something');
-    await userEvent.click(canvas.getByRole('another-element'));
+    await userEvent.click(canvas.getByRole('button'));
   }} />
 ```
 
@@ -218,7 +218,7 @@ export const ExampleStory: Story = {
 
     // Starts querying from the component's root element
     await userEvent.type(canvas.getByTestId('example-element'), 'something');
-    await userEvent.click(canvas.getByRole('another-element'));
+    await userEvent.click(canvas.getByRole('button'));
   },
 };
 ```
@@ -245,7 +245,7 @@ export const ExampleStory: Story = {
 
     // Starts querying from the component's root element
     await userEvent.type(canvas.getByTestId('example-element'), 'something');
-    await userEvent.click(canvas.getByRole('another-element'));
+    await userEvent.click(canvas.getByRole('button'));
   },
 };
 ```
@@ -264,7 +264,7 @@ export const ExampleStory = {
 
     // Starts querying from the component's root element
     await userEvent.type(canvas.getByTestId('example-element'), 'something');
-    await userEvent.click(canvas.getByRole('another-element'));
+    await userEvent.click(canvas.getByRole('button'));
   },
 };
 ```
@@ -287,7 +287,7 @@ export const ExampleStory: Story = {
 
     // Starts querying from the component's root element
     await userEvent.type(canvas.getByTestId('example-element'), 'something');
-    await userEvent.click(canvas.getByRole('another-element'));
+    await userEvent.click(canvas.getByRole('button'));
   },
 };
 ```

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/nextjs",
-  "version": "8.6.0-alpha.2",
+  "version": "8.6.0-beta.4",
   "description": "Storybook for Next.js",
   "keywords": [
     "storybook",
@@ -87,6 +87,12 @@
       "import": "./dist/export-mocks/router/index.mjs",
       "require": "./dist/export-mocks/router/index.js"
     },
+    "./node": {
+      "types": "./dist/node/index.d.ts",
+      "node": "./dist/node/index.js",
+      "import": "./dist/node/index.mjs",
+      "require": "./dist/node/index.js"
+    },
     "./package.json": "./package.json"
   },
   "main": "dist/index.js",
@@ -114,6 +120,9 @@
       ],
       "navigation.mock": [
         "dist/export-mocks/navigation/index.d.ts"
+      ],
+      "node": [
+        "dist/node/index.d.ts"
       ]
     }
   },
@@ -177,7 +186,7 @@
     "@types/node": "^22.0.0",
     "@types/react-refresh": "^0",
     "next": "^15.0.3",
-    "typescript": "^5.3.2",
+    "typescript": "^5.7.3",
     "webpack": "^5.65.0"
   },
   "peerDependencies": {
@@ -209,6 +218,7 @@
       "./src/image-context.ts",
       "./src/index.ts",
       "./src/preset.ts",
+      "./src/node/index.ts",
       "./src/preview.tsx",
       "./src/export-mocks/index.ts",
       "./src/export-mocks/cache/index.ts",

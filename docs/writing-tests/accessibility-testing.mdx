@@ -120,7 +120,7 @@ Customize the a11y ruleset at the story level by updating your story to include 
 
 ## Test addon integration
 
-The accessibility addon provides seamless integration with the [Test addon](./test-addon.mdx), enabling you to run automated accessibility checks for all your tests in the background while you run component tests. If there are any violations, the test will fail, and you will see the results in the sidebar without any additional setup.
+The accessibility addon provides seamless integration with the [Test addon](./test-addon.mdx), enabling you to run automated accessibility tests for all your tests in the background while you run component tests. If there are any violations, the test will fail, and you will see the results in the sidebar without any additional setup.
 
 ![Screenshot of the accessibility test results in the Storybook UI](../_assets/writing-tests/addon-a11y-with-addon-test.png)
 
@@ -129,6 +129,58 @@ The accessibility addon provides seamless integration with the [Test addon](./te
 If you enabled the addon and you're manually upgrading to Storybook 8.5 or later, you'll need to adjust your existing configuration (i.e., `.storybook/vitest.setup.ts`) to enable the integration as follows:
 
 <CodeSnippets path="storybook-addon-a11y-test-setup.md" />
+
+### Configure accessibility tests with the test addon
+
+You can configure accessibility tests with the `parameters.a11y.test` [parameter](../writing-stories/parameters.mdx), which determines the behavior of accessibility tests for a story and accepts the following values:
+
+| Value     | Description                                                                                             |
+| --------- | ------------------------------------------------------------------------------------------------------- |
+| `'off'`   | Do not run accessibility tests (you can still manually verify via the addon panel)                     |
+| `'todo'`  | Run accessibility tests; violations return a warning in the Storybook UI and a summary count in CLI/CI |
+| `'error'` | Run accessibility tests; violations return a failing test in the Storybook UI and CLI/CI               |
+
+Like other parameters, you can define it at the project level in `.storybook/preview.js|ts`, the component level in the default export of the story file, or the individual story level. For example, to fail on accessibility tests for all stories in a file except one:
+
+{/* prettier-ignore-start */}
+<CodeSnippets path="addon-a11y-parameter-example.md" />
+{/* prettier-ignore-end */}
+
+<Callout variant="info" icon="💡">
+
+Why is the value called "todo" instead of "warn"? This value is intended to serve as a literal `TODO` in your codebase. It can be used to mark stories that you know have accessibility issues but are not ready to fix yet. This way, you can keep track of them and address them later.
+
+The `'off'` value should only be used for stories that do not need to be tested for accessibility, such as one used to demonstrate an antipattern in a component's usage.
+
+You can also [disable individual rules](#configure) when they are not applicable to your use case.
+
+</Callout>
+
+### Recommended workflow
+
+You can use configuration to progressively work toward a more accessible UI by combining multiple test behaviors. For example, you can start with `'error'` to fail on accessibility violations, then switch to `'todo'` to mark components that need fixing, and finally remove the todos once all stories pass accessibility tests:
+
+1. Update your project configuration to fail on accessibility violations by setting `parameters.a11y.test` to `'error'`. This ensures that all new stories are tested to meet accessibility standards.
+   
+   {/* prettier-ignore-start */}
+   <CodeSnippets path="addon-a11y-parameter-error-in-preview.md" />
+   {/* prettier-ignore-end */}
+
+1. You will likely find that many components have accessibility failures (and maybe feel a bit overwhelmed!).
+
+1. Take note of the components with accessibility issues and temporarily reduce their failures to warnings by applying the `'todo'` parameter value. This keeps accessibility issues visible while not blocking development. This is also a good time to commit your work as a baseline for future improvements.
+
+   {/* prettier-ignore-start */}
+   <CodeSnippets path="addon-a11y-parameter-todo-in-meta.md" />
+   {/* prettier-ignore-end */}
+
+1. Pick a good starting point from the components you just marked `'todo'` (we recommend something like Button, for its simplicity and likelihood of being used within other components). Fix the issues in that component using the suggestions in the addon panel to ensure it passes accessibility tests, then remove the parameter.
+
+   {/* prettier-ignore-start */}
+   <CodeSnippets path="addon-a11y-parameter-remove.md" />
+   {/* prettier-ignore-end */}
+
+1. Pick another component and repeat the process until you've covered all your components and you're an accessibility hero!
 
 </If>
 

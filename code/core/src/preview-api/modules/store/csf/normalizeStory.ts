@@ -1,3 +1,4 @@
+import { storyNameFromExport, toId } from '@storybook/core/csf';
 import type {
   ArgTypes,
   LegacyStoryAnnotationsOrFn,
@@ -10,7 +11,6 @@ import type {
   NormalizedComponentAnnotations,
   NormalizedStoryAnnotations,
 } from '@storybook/core/types';
-import { storyNameFromExport, toId } from '@storybook/csf';
 
 import { deprecate, logger } from '@storybook/core/client-logger';
 

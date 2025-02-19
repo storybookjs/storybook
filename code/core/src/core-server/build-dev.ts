@@ -9,6 +9,7 @@ import {
   resolveAddonName,
   resolvePathInStorybookCache,
   serverResolve,
+  syncStorybookAddons,
   validateFrameworkName,
   versions,
 } from '@storybook/core/common';
@@ -112,6 +113,10 @@ export async function buildDevStandalone(
   } catch (e) {
     console.warn('Storybook failed to check addon compatibility', e);
   }
+
+  try {
+    await syncStorybookAddons(config, previewConfigPath!);
+  } catch (e) {}
 
   try {
     await warnWhenUsingArgTypesRegex(previewConfigPath, config);

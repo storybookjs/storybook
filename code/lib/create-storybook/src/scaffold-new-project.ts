@@ -1,11 +1,6 @@
 import { readdirSync } from 'node:fs';
 import { rm } from 'node:fs/promises';
 
-import type { PackageManagerName } from 'storybook/internal/common';
-import { logger } from 'storybook/internal/node-logger';
-import { GenerateNewProjectOnInitError } from 'storybook/internal/server-errors';
-import { telemetry } from 'storybook/internal/telemetry';
-
 import boxen from 'boxen';
 // eslint-disable-next-line depend/ban-dependencies
 import execa from 'execa';
@@ -13,6 +8,10 @@ import picocolors from 'picocolors';
 import prompts from 'prompts';
 import { dedent } from 'ts-dedent';
 
+import type { PackageManagerName } from '../../../core/src/common/js-package-manager/JsPackageManager';
+import { logger } from '../../../core/src/node-logger';
+import { GenerateNewProjectOnInitError } from '../../../core/src/server-errors';
+import { telemetry } from '../../../core/src/telemetry';
 import type { CommandOptions } from './generators/types';
 
 type CoercedPackageManagerName = 'npm' | 'yarn' | 'pnpm';

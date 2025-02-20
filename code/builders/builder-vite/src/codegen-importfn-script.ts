@@ -1,24 +1,8 @@
 import type { StoryIndex } from 'storybook/internal/types';
 
 import { genDynamicImport, genObjectFromRawEntries } from 'knitwork';
-import { join, normalize, relative } from 'pathe';
+import { join, normalize } from 'pathe';
 import { dedent } from 'ts-dedent';
-
-import { listStories } from './list-stories';
-
-/**
- * This file is largely based on
- * https://github.com/storybookjs/storybook/blob/d1195cbd0c61687f1720fefdb772e2f490a46584/lib/core-common/src/utils/to-importFn.ts
- */
-
-/**
- * Paths get passed either with no leading './' - e.g. `src/Foo.stories.js`, or with a leading `../`
- * (etc), e.g. `../src/Foo.stories.js`. We want to deal in importPaths relative to the working dir,
- * so we normalize
- */
-function toImportPath(relativePath: string) {
-  return relativePath.startsWith('../') ? relativePath : `./${relativePath}`;
-}
 
 /**
  * This function takes an array of stories and creates a mapping between the stories' relative paths
@@ -28,22 +12,18 @@ function toImportPath(relativePath: string) {
  * called by Storybook to fetch a story dynamically when needed.
  */
 export async function generateImportFnScriptCode(index: StoryIndex): Promise<string> {
-  const objectEntries: [string, string][] = Object.values(index.entries).map((entry) => {
-    if (entry.importPath.startsWith('virtual:')) {
-      console.log('LOG: virtual entry', entry.importPath);
-      return [entry.importPath, entry.importPath];
+  const uniqueImportPaths = [
+    ...new Set(Object.values(index.entries).map((entry) => entry.importPath)),
+  ];
+
+  const objectEntries: [string, string][] = uniqueImportPaths.map((importPath) => {
+    if (importPath.startsWith('virtual:')) {
+      console.log('LOG: virtual entry', importPath);
+      return [importPath, importPath];
     }
 
-    const absolutePath = join(process.cwd(), entry.importPath);
-    const relativePath = relative(process.cwd(), absolutePath);
-    console.log('LOG: paths', {
-      importPath: entry.importPath,
-      absolutePath,
-      relativePath,
-      toImportPathed: toImportPath(relativePath),
-      cwd: process.cwd(),
-    });
-    return [relativePath, genDynamicImport(normalize(absolutePath))];
+    const absolutePath = join(process.cwd(), importPath);
+    return [importPath, genDynamicImport(normalize(absolutePath))];
   });
 
   return dedent`

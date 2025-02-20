@@ -20,18 +20,13 @@ export function codeGeneratorPlugin(options: Options): Plugin {
   return {
     name: 'storybook:code-generator-plugin',
     enforce: 'pre',
-    async buildStart() {
-      storyIndexGenerator = await options?.getStoryIndexGenerator?.();
-    },
     async configureServer(server) {
+      storyIndexGenerator = await options?.getStoryIndexGenerator?.();
       storyIndexGenerator?.onInvalidated(() => {
-        console.log('LOG: invalidated!');
-        const storiesModule = server.moduleGraph.getModuleById(
+        server.watcher.emit(
+          'change',
           getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE)
         );
-        if (storiesModule) {
-          server.moduleGraph.invalidateModule(storiesModule);
-        }
       });
     },
     config(config, { command }) {
@@ -65,21 +60,22 @@ export function codeGeneratorPlugin(options: Options): Plugin {
     },
     async load(id) {
       switch (id) {
-        case getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_PREVIEW_FILE):
+        case getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE):
           return generateImportFnScriptCode(
             (await storyIndexGenerator?.getIndex()) ?? { v: 5, entries: {} }
           );
+
         case getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_ADDON_SETUP_FILE):
           return generateAddonSetupCode();
+
         case getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_APP_FILE):
           return generateModernIframeScriptCode(options, projectRoot);
+
         case iframeId:
           return readFileSync(
             require.resolve('@storybook/builder-vite/input/iframe.html'),
             'utf-8'
           );
-        default:
-          return undefined;
       }
     },
     async transformIndexHtml(html, ctx) {

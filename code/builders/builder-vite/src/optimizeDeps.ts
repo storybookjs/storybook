@@ -1,10 +1,6 @@
-import { relative } from 'node:path';
-
 import type { Options } from 'storybook/internal/types';
 
 import type { UserConfig, InlineConfig as ViteInlineConfig } from 'vite';
-
-import { listStories } from './list-stories';
 
 // It ensures that vite converts cjs deps into esm without vite having to find them during startup and then having to log a message about them and restart
 // TODO: Many of the deps might be prebundled now though, so probably worth trying to remove and see what happens
@@ -169,10 +165,14 @@ const asyncFilter = async (arr: string[], predicate: (val: string) => Promise<bo
 export async function getOptimizeDeps(config: ViteInlineConfig, options: Options) {
   const extraOptimizeDeps = await options.presets.apply('optimizeViteDeps', []);
 
-  const { root = process.cwd() } = config;
-  const { normalizePath, resolveConfig } = await import('vite');
-  const absoluteStories = await listStories(options);
-  const stories = absoluteStories.map((storyPath) => normalizePath(relative(root, storyPath)));
+  const index = (await (await options.getStoryIndexGenerator?.())?.getIndex()) ?? {
+    v: 5,
+    entries: {},
+  };
+
+  const stories = Object.values(index.entries).map((entry) => entry.importPath);
+
+  const { resolveConfig } = await import('vite');
   // TODO: check if resolveConfig takes a lot of time, possible optimizations here
   const resolvedConfig = await resolveConfig(config, 'serve', 'development');
 
@@ -186,7 +186,6 @@ export async function getOptimizeDeps(config: ViteInlineConfig, options: Options
 
   const optimizeDeps: UserConfig['optimizeDeps'] = {
     ...config.optimizeDeps,
-    // We don't need to resolve the glob since vite supports globs for entries.
     entries: stories,
     // We need Vite to precompile these dependencies, because they contain non-ESM code that would break
     // if we served it directly to the browser.

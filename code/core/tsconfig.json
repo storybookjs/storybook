@@ -2,6 +2,7 @@
   "extends": "../tsconfig.json",
   "compilerOptions": {
     "resolveJsonModule": true,
+    "moduleResolution": "bundler",
     "module": "ES2022",
     "stripInternal": true
   },

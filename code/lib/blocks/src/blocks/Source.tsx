@@ -11,7 +11,7 @@ import { DocsContext } from './DocsContext';
 import type { SourceContextProps, SourceItem } from './SourceContainer';
 import { SourceContext, UNKNOWN_ARGS_HASH, argsHash } from './SourceContainer';
 
-type SourceParameters = SourceCodeProps & {
+export type SourceParameters = SourceCodeProps & {
   /** Where to read the source code from, see `SourceType` */
   type?: SourceType;
   /** Transform the detected source for display */

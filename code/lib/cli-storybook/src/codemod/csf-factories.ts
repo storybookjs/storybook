@@ -21,7 +21,7 @@ async function runStoriesCodemod(options: {
 }) {
   const { dryRun, packageManager, ...codemodOptions } = options;
   try {
-    let globString = 'src/**/*.stories.*';
+    let globString = '{stories,src}/**/*.stories.*';
     if (!process.env.IN_STORYBOOK_SANDBOX) {
       logger.log('Please enter the glob for your stories to migrate');
       globString = (
@@ -30,7 +30,7 @@ async function runStoriesCodemod(options: {
             type: 'text',
             name: 'glob',
             message: 'glob',
-            initial: globString,
+            initial: 'src/**/*.stories.*',
           },
           {
             onCancel: () => process.exit(0),

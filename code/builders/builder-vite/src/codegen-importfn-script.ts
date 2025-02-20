@@ -1,6 +1,6 @@
 import type { Options } from 'storybook/internal/types';
 
-import { genDynamicImport, genImport, genObjectFromRawEntries } from 'knitwork';
+import { genDynamicImport, genObjectFromRawEntries } from 'knitwork';
 import { normalize, relative } from 'pathe';
 import { dedent } from 'ts-dedent';
 

@@ -78,13 +78,14 @@ export async function storybookDevServer(options: Options) {
     channel: serverChannel,
   });
 
-  let previewStarted: Promise<any> = Promise.resolve();
+  let previewResult: Awaited<ReturnType<(typeof previewBuilder)['start']>> =
+    await Promise.resolve();
 
   if (!options.ignorePreview) {
     if (!options.quiet) {
       logger.info('=> Starting preview..');
     }
-    previewStarted = previewBuilder
+    previewResult = await previewBuilder
       .start({
         startTime: process.hrtime(),
         options,
@@ -108,14 +109,6 @@ export async function storybookDevServer(options: Options) {
       });
   }
 
-  // this is a preview route, the builder has to be started before we can serve it
-  // this handler keeps request to that route pending until the builder is ready to serve it, preventing a 404
-  app.use('/iframe.html', (req, res, next) => {
-    // We need to catch here or node will treat any errors thrown by `previewStarted` as
-    // unhandled and exit (even though they are very much handled below)
-    previewStarted.catch(() => {}).then(() => next());
-  });
-
   const listening = new Promise<void>((resolve, reject) => {
     server.once('error', reject);
     app.listen({ port, host }, resolve);
@@ -131,8 +124,6 @@ export async function storybookDevServer(options: Options) {
     await previewBuilder?.bail().catch();
     throw indexError;
   }
-
-  const previewResult = await previewStarted;
 
   // Now the preview has successfully started, we can count this as a 'dev' event.
   doTelemetry(app, core, initializedStoryIndexGenerator, options);

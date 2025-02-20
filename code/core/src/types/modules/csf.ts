@@ -1,6 +1,11 @@
 import type { ViewMode as ViewModeBase } from '@storybook/core/csf';
+import type { Renderer as CSFRenderer } from '@storybook/core/csf';
 
 import type { Addon_OptionsParameter } from './addons';
+
+// Fix https://github.com/storybookjs/storybook/issues/30540
+// Can be removed once @storybook/core and storybook are merged in 9.0
+export interface Renderer extends CSFRenderer {}
 
 export type {
   AfterEach,
@@ -35,7 +40,6 @@ export type {
   PlayFunction,
   PlayFunctionContext,
   ProjectAnnotations as BaseProjectAnnotations,
-  Renderer,
   SBArrayType,
   SBEnumType,
   SBIntersectionType,

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/cli",
-  "version": "8.6.0-alpha.4",
+  "version": "8.6.0-beta.4",
   "description": "Storybook CLI",
   "keywords": [
     "storybook"
@@ -22,10 +22,11 @@
   "author": "Storybook Team",
   "type": "module",
   "exports": {
-    "./bin/index.cjs": {
-      "node": "./bin/index.cjs",
-      "require": "./bin/index.cjs"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     },
+    "./bin/index.cjs": "./bin/index.cjs",
     "./package.json": "./package.json"
   },
   "bin": "./bin/index.cjs",
@@ -78,6 +79,9 @@
     "entries": [
       "./src/index.ts",
       "./src/bin/index.ts"
+    ],
+    "formats": [
+      "cjs"
     ],
     "platform": "node"
   },

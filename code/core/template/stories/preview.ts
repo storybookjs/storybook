@@ -1,6 +1,6 @@
 /* eslint-disable no-underscore-dangle */
 import type { PartialStoryFn, StoryContext } from '@storybook/core/types';
-import type { ReactRenderer } from '@storybook/react/src';
+import type { ReactRenderer } from '@storybook/react';
 
 declare global {
   interface Window {

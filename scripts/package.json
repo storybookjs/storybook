@@ -55,7 +55,7 @@
     ]
   },
   "resolutions": {
-    "esbuild": "^0.24.0",
+    "esbuild": "^0.25.0",
     "serialize-javascript": "^3.1.0",
     "type-fest": "~2.19",
     "typescript": "^5.7.3"
@@ -110,7 +110,7 @@
     "ejs": "^3.1.10",
     "ejs-lint": "^2.0.0",
     "es-toolkit": "^1.22.0",
-    "esbuild": "^0.24.0",
+    "esbuild": "^0.25.0",
     "esbuild-plugin-alias": "^0.2.1",
     "eslint": "^8.57.0",
     "eslint-config-airbnb-typescript": "^18.0.0",
@@ -138,7 +138,7 @@
     "jiti": "^1.21.6",
     "json5": "^2.2.3",
     "junit-xml": "^1.2.0",
-    "knip": "^5.30.1",
+    "knip": "^5.43.6",
     "lint-staged": "^15.2.7",
     "memoizerific": "^1.11.3",
     "minimatch": "^10.0.1",

@@ -1,7 +1,7 @@
 /* eslint-disable no-underscore-dangle */
 
 /* eslint-disable @typescript-eslint/naming-convention */
-import { type CleanupCallback, isExportStory } from '@storybook/core/csf';
+import { type CleanupCallback, type Preview, isExportStory } from '@storybook/core/csf';
 import type {
   Args,
   Canvas,
@@ -73,7 +73,10 @@ export function setProjectAnnotations<TRenderer extends Renderer = Renderer>(
     | NamedOrDefaultProjectAnnotations<TRenderer>[]
 ): NormalizedProjectAnnotations<TRenderer> {
   const annotations = Array.isArray(projectAnnotations) ? projectAnnotations : [projectAnnotations];
-  globalThis.globalProjectAnnotations = composeConfigs(annotations.map(extractAnnotation));
+  globalThis.globalProjectAnnotations = composeConfigs([
+    globalThis.defaultProjectAnnotations ?? {},
+    composeConfigs(annotations.map(extractAnnotation)),
+  ]);
 
   /*
     We must return the composition of default and global annotations here
@@ -82,10 +85,7 @@ export function setProjectAnnotations<TRenderer extends Renderer = Renderer>(
     const projectAnnotations = setProjectAnnotations(...);
     beforeAll(projectAnnotations.beforeAll)
   */
-  return composeConfigs([
-    globalThis.defaultProjectAnnotations ?? {},
-    globalThis.globalProjectAnnotations ?? {},
-  ]);
+  return globalThis.globalProjectAnnotations ?? {};
 }
 
 const cleanups: CleanupCallback[] = [];
@@ -123,10 +123,7 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
 
   const normalizedProjectAnnotations = normalizeProjectAnnotations<TRenderer>(
     composeConfigs([
-      defaultConfig && Object.keys(defaultConfig).length > 0
-        ? defaultConfig
-        : (globalThis.defaultProjectAnnotations ?? {}),
-      globalThis.globalProjectAnnotations ?? {},
+      defaultConfig ?? globalThis.globalProjectAnnotations ?? {},
       projectAnnotations ?? {},
     ])
   );
@@ -164,6 +161,8 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
       context: null!,
       mount: null!,
     });
+
+    context.parameters.__isPortableStory = true;
 
     context.context = context;
 

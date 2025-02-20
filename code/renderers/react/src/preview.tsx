@@ -13,11 +13,11 @@ import type {
   StoryAnnotations,
 } from 'storybook/internal/types';
 
-import type { AddMocks } from 'src/public-types';
 import type { RemoveIndexSignature, SetOptional, Simplify, UnionToIntersection } from 'type-fest';
 
 import * as reactAnnotations from './entry-preview';
 import * as reactDocsAnnotations from './entry-preview-docs';
+import type { AddMocks } from './public-types';
 import type { ReactRenderer } from './types';
 
 export function definePreview<Addons extends PreviewAddon<never>[]>(
@@ -60,6 +60,14 @@ interface ReactMeta<
   Context extends { args: Args },
   MetaInput extends ComponentAnnotations<ReactRenderer>,
 > extends Meta<ReactRenderer, Context['args']> {
+  story<
+    TInput extends StoryAnnotations<ReactRenderer, Context['args']> & {
+      render: () => ReactRenderer['storyResult'];
+    },
+  >(
+    story: TInput
+  ): ReactStory;
+
   story<
     const TInput extends Simplify<
       StoryAnnotations<

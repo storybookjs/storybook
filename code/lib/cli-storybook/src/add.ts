@@ -145,9 +145,10 @@ export async function add(
     );
   }
 
-  const addonWithVersion = isValidVersion(version)
-    ? `${addonName}@^${version}`
-    : `${addonName}@${version}`;
+  const addonWithVersion =
+    isValidVersion(version) && !version.includes('-pr-')
+      ? `${addonName}@^${version}`
+      : `${addonName}@${version}`;
 
   logger.log(`Installing ${addonWithVersion}`);
   await packageManager.addDependencies({ installAsDevDependencies: true }, [addonWithVersion]);

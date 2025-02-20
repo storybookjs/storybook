@@ -58,7 +58,16 @@ module.exports = {
       },
     },
     {
-      files: ['*.js', '*.jsx', '*.json', '*.html', '**/.storybook/*.ts', '**/.storybook/*.tsx'],
+      files: [
+        '*.js',
+        '*.jsx',
+        '*.json',
+        '*.html',
+        '**/.storybook/*.ts',
+        '**/.storybook/*.tsx',
+        '**/.storybook/**/*.ts',
+        '**/.storybook/**/*.tsx',
+      ],
       parserOptions: {
         project: null,
       },

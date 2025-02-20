@@ -1,6 +1,6 @@
 {
   "name": "@storybook/blocks",
-  "version": "8.6.0-alpha.4",
+  "version": "8.6.0-beta.4",
   "description": "Storybook Doc Blocks",
   "keywords": [
     "storybook"
@@ -53,6 +53,7 @@
     "@types/color-convert": "^2.0.0",
     "color-convert": "^2.0.1",
     "es-toolkit": "^1.22.0",
+    "github-slugger": "^2.0.0",
     "markdown-to-jsx": "^7.7.2",
     "memoizerific": "^1.11.3",
     "polished": "^4.2.2",

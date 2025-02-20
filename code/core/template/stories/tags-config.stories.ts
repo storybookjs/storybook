@@ -17,25 +17,11 @@ export default {
 
 export const Inheritance = {
   tags: ['story-one', '!vitest'],
-  play: async ({ canvasElement, tags }: PlayFunctionContext<any>) => {
+  play: async ({ canvasElement }: PlayFunctionContext<any>) => {
     const canvas = within(canvasElement);
-    if (tags.includes('a11y-test')) {
-      await expect(JSON.parse(canvas.getByTestId('pre').innerText)).toEqual({
-        tags: [
-          'dev',
-          'test',
-          'a11y-test',
-          'component-one',
-          'component-two',
-          'autodocs',
-          'story-one',
-        ],
-      });
-    } else {
-      await expect(JSON.parse(canvas.getByTestId('pre').innerText)).toEqual({
-        tags: ['dev', 'test', 'component-one', 'component-two', 'autodocs', 'story-one'],
-      });
-    }
+    await expect(JSON.parse(canvas.getByTestId('pre').innerText)).toEqual({
+      tags: ['dev', 'test', 'component-one', 'component-two', 'autodocs', 'story-one'],
+    });
   },
   parameters: { chromatic: { disable: false } },
 };

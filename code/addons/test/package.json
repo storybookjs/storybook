@@ -1,6 +1,6 @@
 {
   "name": "@storybook/experimental-addon-test",
-  "version": "8.6.0-alpha.4",
+  "version": "8.6.0-beta.4",
   "description": "Integrate Vitest with Storybook",
   "keywords": [
     "storybook-addons",
@@ -23,6 +23,12 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
+  "imports": {
+    "#manager-store": {
+      "storybook": "./src/manager-store.mock.ts",
+      "default": "./src/manager-store.ts"
+    }
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -78,6 +84,7 @@
   },
   "files": [
     "dist/**/*",
+    "templates/**/*",
     "!dist/dummy.*",
     "README.md",
     "*.mjs",

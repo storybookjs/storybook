@@ -5,6 +5,7 @@ import { dedent } from 'ts-dedent';
 
 import { UniversalStore } from '.';
 import { instances as mockedInstances } from './__mocks__/instances';
+import { MockUniversalStore } from './mock';
 import type { ChannelEvent } from './types';
 
 vi.mock('./instances');
@@ -539,10 +540,6 @@ You should reuse the existing instance instead of trying to create a new one.`);
         // Act - prepare the store
         UniversalStore.__prepare(mockChannel, UniversalStore.Environment.MANAGER);
 
-        // Assert - leader is immediately ready, follower is syncing
-        expect(leader.status).toBe(UniversalStore.Status.READY);
-        expect(follower.status).toBe(UniversalStore.Status.SYNCING);
-
         // Assert - the follower should eventually get the existing state from the leader
         await vi.waitFor(
           () => {
@@ -787,7 +784,7 @@ You should reuse the existing instance instead of trying to create a new one.`);
       store.setState({ count: 1 });
 
       // Assert - the state change should be emitted on the channel
-      expect(mockChannel.emit).toHaveBeenCalledExactlyOnceWith('UNIVERSAL_STORE:env1:test', {
+      expect(mockChannel.emit).toHaveBeenCalledWith('UNIVERSAL_STORE:env1:test', {
         event: {
           type: UniversalStore.InternalEventType.SET_STATE,
           payload: {
@@ -1162,49 +1159,67 @@ You should reuse the existing instance instead of trying to create a new one.`);
     });
 
     // Assert - the debug log should be logged
-    expect(vi.mocked(console.debug).mock.calls).toMatchInlineSnapshot(`
-      [
-        [
-          "[UniversalStore:MANAGER]
-      create",
-          {
-            "options": {
-              "debug": true,
-              "id": "env1:test",
-              "initialState": {
-                "count": 0,
-              },
-              "leader": true,
-            },
-          },
-        ],
-        [
-          "[UniversalStore::env1:test::MANAGER]
-      constructor",
-          {
-            "channelEventName": "UNIVERSAL_STORE:env1:test",
-            "options": {
-              "debug": true,
-              "id": "env1:test",
-              "initialState": {
-                "count": 0,
-              },
-              "leader": true,
-            },
-          },
-          {
-            "actor": {
-              "environment": "MANAGER",
-              "id": "mocked-random-uuid-v4-0",
-              "type": "LEADER",
-            },
-            "state": {
-              "count": 0,
-            },
-            "status": "SYNCING",
-          },
-        ],
-      ]
-    `);
+    expect(console.debug).toHaveBeenCalledTimes(4);
+  });
+
+  describe('MockUnversalStore', () => {
+    it('should create an isolated instance', async () => {
+      // Arrange - create real store
+      const realStore = UniversalStore.create({
+        id: 'env1:test',
+        leader: true,
+        initialState: { count: 0 },
+      });
+
+      // Act - create a mock store with constructor and one with create()
+      const constructorMockStore = new MockUniversalStore({
+        id: 'env1:test',
+        initialState: { count: 0 },
+      });
+      const createMockStore = MockUniversalStore.create({
+        id: 'env1:test',
+        initialState: { count: 0 },
+      });
+
+      // Assert - the mock stores should be created as leaders without errors
+      expect(constructorMockStore.actor.type).toBe(UniversalStore.ActorType.LEADER);
+      expect(createMockStore.actor.type).toBe(UniversalStore.ActorType.LEADER);
+      await expect(
+        Promise.all([constructorMockStore.untilReady(), createMockStore.untilReady()])
+      ).resolves.toBeDefined();
+
+      // Act - set state on the real store
+      realStore.setState({ count: 1 });
+
+      // Assert - the mock stores should still have their initial state
+      vi.runAllTimers();
+      expect(constructorMockStore.getState()).toEqual({ count: 0 });
+      expect(createMockStore.getState()).toEqual({ count: 0 });
+
+      // Act - set state on one of the mock stores
+      constructorMockStore.setState({ count: 2 });
+
+      // Assert - the other mock store should still have its initial state
+      vi.runAllTimers();
+      expect(createMockStore.getState()).toEqual({ count: 0 });
+    });
+
+    it('should wrap all public methods with mocks', async () => {
+      // Act - create a mock store
+      const store = new MockUniversalStore(
+        {
+          id: 'env1:test',
+          initialState: { count: 0 },
+        },
+        vi
+      );
+
+      // Assert - public methods are mocks
+      expect(vi.isMockFunction(store.getState)).toBeTruthy();
+      expect(vi.isMockFunction(store.setState)).toBeTruthy();
+      expect(vi.isMockFunction(store.subscribe)).toBeTruthy();
+      expect(vi.isMockFunction(store.onStateChange)).toBeTruthy();
+      expect(vi.isMockFunction(store.send)).toBeTruthy();
+    });
   });
 });

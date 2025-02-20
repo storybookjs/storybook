@@ -1,6 +1,6 @@
 {
   "name": "@storybook/core",
-  "version": "8.6.0-alpha.4",
+  "version": "8.6.0-beta.4",
   "description": "Storybook framework-agnostic API",
   "keywords": [
     "storybook"
@@ -285,7 +285,7 @@
     "@storybook/theming": "workspace:*",
     "better-opn": "^3.0.2",
     "browser-assert": "^1.2.1",
-    "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0",
+    "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0",
     "esbuild-register": "^3.5.0",
     "jsdoc-type-pratt-parser": "^4.0.0",
     "process": "^0.11.10",
@@ -361,7 +361,7 @@
     "downshift": "^9.0.4",
     "ejs": "^3.1.10",
     "es-toolkit": "^1.22.0",
-    "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0",
+    "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0",
     "esbuild-plugin-alias": "^0.2.1",
     "execa": "^8.0.1",
     "fd-package-json": "^1.2.0",

@@ -83,6 +83,7 @@ export interface Options {
   configDir?: string;
   enableCrashReports?: boolean;
   stripMetadata?: boolean;
+  notify?: boolean;
 }
 
 export interface TelemetryData {

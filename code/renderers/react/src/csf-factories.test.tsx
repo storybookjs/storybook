@@ -65,8 +65,8 @@ describe('Args can be provided in multiple ways', () => {
   it('❌ The combined shape of meta args and story args must match the required args.', () => {
     {
       const meta = preview.meta({ component: Button });
+      // @ts-expect-error disabled not provided ❌
       const Basic = meta.story({
-        // @ts-expect-error disabled not provided ❌
         args: { label: 'good' },
       });
     }
@@ -80,11 +80,36 @@ describe('Args can be provided in multiple ways', () => {
     }
     {
       const meta = preview.meta({ component: Button });
+      // @ts-expect-error disabled not provided ❌
       const Basic = meta.story({
-        // @ts-expect-error disabled not provided ❌
         args: { label: 'good' },
       });
     }
+  });
+
+  it("✅ Required args don't need to be provided when the user uses an empty render", () => {
+    const meta = preview.meta({
+      component: Button,
+      args: { label: 'good' },
+    });
+    const Basic = meta.story({
+      args: {},
+      render: () => <div>Hello world</div>,
+    });
+  });
+
+  it('❌ Required args need to be provided when the user uses a non-empty render', () => {
+    const meta = preview.meta({
+      component: Button,
+      args: { label: 'good' },
+    });
+    // @ts-expect-error disabled not provided ❌
+    const Basic = meta.story({
+      args: {
+        label: 'good',
+      },
+      render: (args) => <div>Hello world</div>,
+    });
   });
 });
 

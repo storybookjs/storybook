@@ -91,7 +91,7 @@ type BaseTemplates = Template & {
     | 'TypeScript'})`;
 };
 
-const baseTemplates = {
+export const baseTemplates = {
   'cra/default-js': {
     name: 'Create React App Latest (Webpack | JavaScript)',
     script: `
@@ -145,7 +145,14 @@ const baseTemplates = {
   'nextjs/13-ts': {
     name: 'Next.js v13.5 (Webpack | TypeScript)',
     script:
-      'yarn create next-app {{beforeDir}} -e https://github.com/vercel/next.js/tree/next-13/examples/hello-world && cd {{beforeDir}} && npm pkg set "dependencies.next"="^13.5.6" && yarn && git add . && git commit --amend --no-edit && cd ..',
+      'yarn create next-app {{beforeDir}} -e https://github.com/vercel/next.js/tree/next-13/examples/hello-world ' +
+      '&& cd {{beforeDir}} ' +
+      'jq \'.compilerOptions.moduleResolution = "bundler"\' tsconfig.json > tmp.json && mv tmp.json tsconfig.json ' +
+      '&& npm pkg set "dependencies.next"="^13.5.6" ' +
+      '&& yarn ' +
+      '&& git add . ' +
+      '&& git commit --amend --no-edit ' +
+      '&& cd ..',
     expected: {
       framework: '@storybook/nextjs',
       renderer: '@storybook/react',
@@ -689,6 +696,9 @@ const baseTemplates = {
       renderer: '@storybook/react',
       builder: '@storybook/builder-vite',
     },
+    modifications: {
+      useCsfFactory: true,
+    },
     skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },
   'react-native-web-vite/rn-cli-ts': {
@@ -727,6 +737,7 @@ const internalTemplates = {
       builder: '@storybook/builder-webpack5',
     },
     modifications: {
+      useCsfFactory: true,
       extraDependencies: ['@storybook/addon-webpack5-compiler-babel', 'prop-types'],
       editAddons: (addons) =>
         [...addons, '@storybook/addon-webpack5-compiler-babel'].filter(
@@ -746,6 +757,7 @@ const internalTemplates = {
       builder: '@storybook/builder-webpack5',
     },
     modifications: {
+      useCsfFactory: true,
       extraDependencies: ['prop-types'],
     },
     skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],

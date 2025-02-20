@@ -144,6 +144,7 @@ export interface SubAPI {
   getUrlState: () => {
     queryParams: QueryParams;
     path: string;
+    hash: string;
     viewMode?: string;
     storyId?: string;
     url: string;
@@ -187,8 +188,15 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
       return customQueryParams ? customQueryParams[key] : undefined;
     },
     getUrlState() {
-      const { path, customQueryParams, storyId, url, viewMode } = store.getState();
-      return { path, queryParams: customQueryParams, storyId, url, viewMode };
+      const { location, path, customQueryParams, storyId, url, viewMode } = store.getState();
+      return {
+        path,
+        hash: location.hash ?? '',
+        queryParams: customQueryParams,
+        storyId,
+        url,
+        viewMode,
+      };
     },
     setQueryParams(input) {
       const { customQueryParams } = store.getState();
@@ -208,9 +216,9 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
       }
     },
     applyQueryParams(input, options) {
-      const { path, queryParams } = api.getUrlState();
+      const { path, hash = '', queryParams } = api.getUrlState();
 
-      navigateTo(path, { ...queryParams, ...input } as any, options);
+      navigateTo(`${path}${hash}`, { ...queryParams, ...input } as any, options);
       api.setQueryParams(input);
     },
     navigateUrl(url, options) {
@@ -223,7 +231,7 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
    * unserialized safely.
    */
   const updateArgsParam = () => {
-    const { path, queryParams, viewMode } = api.getUrlState();
+    const { path, hash = '', queryParams, viewMode } = api.getUrlState();
 
     if (viewMode !== 'story') {
       return;
@@ -237,7 +245,7 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
 
     const { args, initialArgs } = currentStory;
     const argsString = buildArgsParam(initialArgs, args as Args);
-    navigateTo(path, { ...queryParams, args: argsString }, { replace: true });
+    navigateTo(`${path}${hash}`, { ...queryParams, args: argsString }, { replace: true });
     api.setQueryParams({ args: argsString });
   };
 
@@ -259,9 +267,9 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
   });
 
   provider.channel?.on(GLOBALS_UPDATED, ({ userGlobals, initialGlobals }: any) => {
-    const { path, queryParams } = api.getUrlState();
+    const { path, hash = '', queryParams } = api.getUrlState();
     const globalsString = buildArgsParam(initialGlobals, userGlobals);
-    navigateTo(path, { ...queryParams, globals: globalsString }, { replace: true });
+    navigateTo(`${path}${hash}`, { ...queryParams, globals: globalsString }, { replace: true });
     api.setQueryParams({ globals: globalsString });
   });
 

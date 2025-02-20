@@ -6,9 +6,10 @@ import { styled } from 'storybook/internal/theming';
 import { Addon_TypesEnum } from 'storybook/internal/types';
 
 import type { Meta, StoryObj } from '@storybook/react';
-import { fn, within } from '@storybook/test';
+import { expect, fn } from '@storybook/test';
 
-import type { Config, Details } from '../constants';
+import { type Details, storeOptions } from '../constants';
+import { store as mockStore } from '../manager-store.mock';
 import { TestProviderRender } from './TestProviderRender';
 
 type Story = StoryObj<typeof TestProviderRender>;
@@ -36,26 +37,16 @@ const config: TestProviderConfig = {
   name: 'Test Provider',
   type: Addon_TypesEnum.experimental_TEST_PROVIDER,
   runnable: true,
-  watchable: true,
 };
 
-const baseState: TestProviderState<Details, Config> = {
+const baseState: TestProviderState<Details> = {
   cancellable: true,
   cancelling: false,
   crashed: false,
   error: undefined,
   failed: false,
   running: false,
-  watching: false,
-  config: {
-    a11y: false,
-    coverage: false,
-  },
   details: {
-    config: {
-      a11y: false,
-      coverage: false,
-    },
     testResults: [
       {
         endTime: 0,
@@ -108,6 +99,11 @@ export default {
   parameters: {
     layout: 'fullscreen',
   },
+  beforeEach: async () => {
+    return () => {
+      mockStore.setState(storeOptions.initialState);
+    };
+  },
 } as Meta<typeof TestProviderRender>;
 
 export const Default: Story = {
@@ -134,8 +130,10 @@ export const Watching: Story = {
     state: {
       ...config,
       ...baseState,
-      watching: true,
     },
+  },
+  beforeEach: async () => {
+    mockStore.setState((s) => ({ ...s, watching: true }));
   },
 };
 
@@ -145,19 +143,11 @@ export const WithCoverageNegative: Story = {
       ...config,
       ...baseState,
       details: {
-        config: {
-          a11y: false,
-          coverage: true,
-        },
         testResults: [],
         coverageSummary: {
           percentage: 20,
           status: 'negative',
         },
-      },
-      config: {
-        a11y: false,
-        coverage: true,
       },
     },
   },
@@ -170,18 +160,10 @@ export const WithCoverageWarning: Story = {
       ...baseState,
       details: {
         testResults: [],
-        config: {
-          a11y: false,
-          coverage: true,
-        },
         coverageSummary: {
           percentage: 50,
           status: 'warning',
         },
-      },
-      config: {
-        a11y: false,
-        coverage: true,
       },
     },
   },
@@ -194,18 +176,10 @@ export const WithCoveragePositive: Story = {
       ...baseState,
       details: {
         testResults: [],
-        config: {
-          a11y: false,
-          coverage: true,
-        },
         coverageSummary: {
           percentage: 80,
           status: 'positive',
         },
-      },
-      config: {
-        a11y: false,
-        coverage: true,
       },
     },
   },
@@ -216,24 +190,14 @@ export const Editing: Story = {
     state: {
       ...config,
       ...baseState,
-      config: {
-        a11y: false,
-        coverage: false,
-      },
       details: {
         testResults: [],
-        config: {
-          a11y: false,
-          coverage: false,
-        },
       },
     },
   },
 
-  play: async ({ canvasElement }) => {
-    const screen = within(canvasElement);
-
-    screen.getByLabelText(/Show settings/).click();
+  play: async ({ canvas }) => {
+    (await canvas.findByLabelText('Show settings')).click();
   },
 };
 
@@ -242,19 +206,43 @@ export const EditingAndWatching: Story = {
     state: {
       ...config,
       ...baseState,
-      watching: true,
-      config: {
-        a11y: true,
-        coverage: true, // should be automatically disabled in the UI
-      },
       details: {
         testResults: [],
-        config: {
-          a11y: true,
-          coverage: true, // should be automatically disabled in the UI
-        },
       },
     },
   },
+  beforeEach: Watching.beforeEach,
   play: Editing.play,
+};
+
+export const TogglingSettings: Story = {
+  args: {
+    state: {
+      ...config,
+      ...baseState,
+      details: {
+        testResults: [],
+      },
+    },
+  },
+  play: async ({ canvas, step }) => {
+    await step('Enable coverage', async () => {
+      (await canvas.findByLabelText('Show settings')).click();
+
+      (await canvas.findByLabelText('Coverage')).click();
+      await expect(mockStore.setState).toHaveBeenCalledOnce();
+      mockStore.setState.mockClear();
+    });
+
+    (await canvas.findByLabelText('Hide settings')).click();
+
+    await step('Enable watch mode', async () => {
+      (await canvas.findByLabelText('Enable watch mode')).click();
+      await expect(mockStore.setState).toHaveBeenCalledOnce();
+
+      (await canvas.findByLabelText('Show settings')).click();
+
+      await expect(await canvas.findByLabelText('Coverage')).toBeDisabled();
+    });
+  },
 };

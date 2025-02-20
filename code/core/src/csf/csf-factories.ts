@@ -27,21 +27,26 @@ export type InferTypes<T extends PreviewAddon<never>[]> = T extends PreviewAddon
   : never;
 
 export function definePreview<TRenderer extends Renderer, Addons extends PreviewAddon<never>[]>(
-  preview: ProjectAnnotations<TRenderer> & { addons?: Addons }
+  input: Preview<TRenderer>['input']
 ): Preview<TRenderer & InferTypes<Addons>> {
-  return {
+  let composed: NormalizedProjectAnnotations<TRenderer>;
+  const preview: Preview<TRenderer> = {
     _tag: 'Preview',
-    input: preview,
+    input,
     get composed() {
-      const { addons, ...rest } = preview;
-      return normalizeProjectAnnotations<TRenderer & InferTypes<Addons>>(
-        composeConfigs([...(addons ?? []), rest])
-      );
+      if (composed) {
+        return composed;
+      }
+      const { addons, ...rest } = input;
+      composed = normalizeProjectAnnotations<TRenderer>(composeConfigs([...(addons ?? []), rest]));
+      return composed;
     },
-    meta(meta: ComponentAnnotations<TRenderer & InferTypes<Addons>>) {
+    meta(meta: ComponentAnnotations<TRenderer>) {
       return defineMeta(meta, this);
     },
-  } as Preview<TRenderer & InferTypes<Addons>>;
+  };
+  globalThis.globalProjectAnnotations = preview.composed;
+  return preview;
 }
 
 export interface PreviewAddon<in TExtraContext extends Types = Types>
@@ -63,7 +68,7 @@ export interface Meta<TRenderer extends Renderer, TArgs extends Args = Args> {
   composed: NormalizedComponentAnnotations<TRenderer>;
   preview: Preview<TRenderer>;
 
-  story(input: ComponentAnnotations<TRenderer, TArgs>): Story<TRenderer, TArgs>;
+  story(input: StoryAnnotations<TRenderer, TArgs>): Story<TRenderer, TArgs>;
 }
 
 export function isMeta(input: unknown): input is Meta<Renderer> {

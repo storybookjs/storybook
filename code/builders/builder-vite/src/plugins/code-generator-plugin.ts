@@ -29,6 +29,11 @@ export function codeGeneratorPlugin(options: Options): Plugin {
         );
       });
     },
+    async buildStart() {
+      // configureServer is not called in build mode, so we need to initialize the storyIndexGenerator here
+      // in dev mode it will have been set in configureServer already
+      storyIndexGenerator ??= await options?.getStoryIndexGenerator?.();
+    },
     config(config, { command }) {
       // If we are building the static distribution, add iframe.html as an entry.
       // In development mode, it's not an entry - instead, we use a middleware

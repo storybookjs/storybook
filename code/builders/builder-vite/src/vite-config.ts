@@ -90,7 +90,6 @@ export async function commonConfig(
 }
 
 export async function pluginConfig(options: Options) {
-  const frameworkName = await getFrameworkName(options);
   const build = await options.presets.apply('build');
 
   const externals: Record<string, string> = globalsNameReferenceMap;

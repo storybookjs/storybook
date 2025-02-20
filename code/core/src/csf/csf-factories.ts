@@ -29,22 +29,24 @@ export type InferTypes<T extends PreviewAddon<never>[]> = T extends PreviewAddon
 export function definePreview<TRenderer extends Renderer, Addons extends PreviewAddon<never>[]>(
   input: Preview<TRenderer>['input']
 ): Preview<TRenderer & InferTypes<Addons>> {
-  let composed: NormalizedProjectAnnotations<TRenderer>;
-  const preview: Preview<TRenderer> = {
+  let composed: NormalizedProjectAnnotations<TRenderer & InferTypes<Addons>>;
+  const preview = {
     _tag: 'Preview',
-    input,
+    input: input,
     get composed() {
       if (composed) {
         return composed;
       }
       const { addons, ...rest } = input;
-      composed = normalizeProjectAnnotations<TRenderer>(composeConfigs([...(addons ?? []), rest]));
+      composed = normalizeProjectAnnotations<TRenderer & InferTypes<Addons>>(
+        composeConfigs([...(addons ?? []), rest])
+      );
       return composed;
     },
-    meta(meta: ComponentAnnotations<TRenderer>) {
+    meta(meta: ComponentAnnotations<TRenderer & InferTypes<Addons>>) {
       return defineMeta(meta, this);
     },
-  };
+  } as Preview<TRenderer & InferTypes<Addons>>;
   globalThis.globalProjectAnnotations = preview.composed;
   return preview;
 }

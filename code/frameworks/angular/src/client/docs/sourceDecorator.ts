@@ -1,5 +1,5 @@
 import { SNIPPET_RENDERED, SourceType } from 'storybook/internal/docs-tools';
-import { addons, useEffect } from 'storybook/internal/preview-api';
+import { addons, useEffect, useState, useTransformCode } from 'storybook/internal/preview-api';
 import { ArgsStoryFn, PartialStoryFn } from 'storybook/internal/types';
 
 import { computesTemplateSourceFromComponent } from '../../renderer';
@@ -39,6 +39,9 @@ export const sourceDecorator = (
     : story.template;
 
   let toEmit: string;
+  const [source, setSource] = useState<undefined | string>(undefined);
+
+  const transformedCode = useTransformCode(source, context);
 
   useEffect(() => {
     if (toEmit) {
@@ -47,21 +50,23 @@ export const sourceDecorator = (
       channel.emit(SNIPPET_RENDERED, {
         id,
         args: unmappedArgs,
-        source: toEmit,
+        source: transformedCode,
         format: format === true ? 'angular' : format,
       });
     }
-  });
+  }, [channel, context, parameters?.docs?.source?.format, toEmit, transformedCode]);
 
   if (component && !userDefinedTemplate) {
-    const source = computesTemplateSourceFromComponent(component, props, argTypes);
+    const sourceFromComponent = computesTemplateSourceFromComponent(component, props, argTypes);
 
     // We might have a story with a Directive or Service defined as the component
     // In these cases there might exist a template, even if we aren't able to create source from component
-    if (source || template) {
-      toEmit = source || template;
+    const newSource = sourceFromComponent || template;
+
+    if (newSource && newSource !== source) {
+      setSource(newSource);
     }
-  } else if (template) {
+  } else if (template && template !== source) {
     toEmit = template;
   }
 

@@ -4,7 +4,7 @@ import React, { createElement, isValidElement } from 'react';
 
 import { logger } from 'storybook/internal/client-logger';
 import { SNIPPET_RENDERED, SourceType, getDocgenSection } from 'storybook/internal/docs-tools';
-import { addons, useEffect } from 'storybook/internal/preview-api';
+import { addons, useEffect, useState, useTransformCode } from 'storybook/internal/preview-api';
 import type { ArgsStoryFn, PartialStoryFn, StoryContext } from 'storybook/internal/types';
 
 import type { Options } from 'react-element-to-jsx-string';
@@ -238,19 +238,20 @@ export const jsxDecorator = (
 ) => {
   const channel = addons.getChannel();
   const skip = skipJsxRender(context);
+  const [jsx, setJsx] = useState<undefined | string>(undefined);
 
-  let jsx = '';
+  const transformedCode = useTransformCode(jsx, context);
 
   useEffect(() => {
     if (!skip) {
       const { id, unmappedArgs } = context;
       channel.emit(SNIPPET_RENDERED, {
         id,
-        source: jsx,
+        source: transformedCode,
         args: unmappedArgs,
       });
     }
-  });
+  }, [transformedCode, channel, context, skip]);
 
   const story = storyFn();
   // We only need to render JSX if the source block is actually going to
@@ -272,8 +273,8 @@ export const jsxDecorator = (
   const sourceJsx = mdxToJsx(storyJsx);
 
   const rendered = renderJsx(sourceJsx, options);
-  if (rendered) {
-    jsx = rendered;
+  if (rendered && jsx !== rendered) {
+    setJsx(rendered);
   }
 
   return story;

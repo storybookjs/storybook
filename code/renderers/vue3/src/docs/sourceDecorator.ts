@@ -1,6 +1,6 @@
 /* eslint-disable no-underscore-dangle */
 import { SNIPPET_RENDERED, SourceType } from 'storybook/internal/docs-tools';
-import { addons } from 'storybook/internal/preview-api';
+import { addons, useTransformCode } from 'storybook/internal/preview-api';
 
 import type { VNode } from 'vue';
 import { isVNode, watch } from 'vue';
@@ -44,6 +44,9 @@ const isProxy = (obj: unknown): obj is TrackingProxy =>
 export const sourceDecorator: Decorator = (storyFn, ctx) => {
   const story = storyFn();
 
+  const sourceCode = generateSourceCode(ctx);
+  const transformedCode = useTransformCode(sourceCode, ctx);
+
   if (shouldSkipSourceCodeGeneration(ctx)) {
     return story;
   }
@@ -51,14 +54,12 @@ export const sourceDecorator: Decorator = (storyFn, ctx) => {
   const channel = addons.getChannel();
 
   watch(
-    () => ctx.args,
+    () => [ctx.args, transformedCode],
     () => {
-      const sourceCode = generateSourceCode(ctx);
-
       channel.emit(SNIPPET_RENDERED, {
         id: ctx.id,
         args: ctx.args,
-        source: sourceCode,
+        source: transformedCode,
         format: 'vue',
       });
     },

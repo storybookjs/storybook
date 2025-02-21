@@ -1,3 +1,13 @@
+## 8.6.0-beta.5
+
+- Addon-Test: Make sure that only one global portable story config is ever loaded - [#30582](https://github.com/storybookjs/storybook/pull/30582), thanks @kasperpeulen!
+- Angular: Support v19.2 when @angular/animations is not installed - [#30611](https://github.com/storybookjs/storybook/pull/30611), thanks @valentinpalkovic!
+- Builder-Vite: Fix runtime and iframe 404 on first load - [#30567](https://github.com/storybookjs/storybook/pull/30567), thanks @valentinpalkovic!
+- CLI: Don't initially select Documentation and Testing features - [#30599](https://github.com/storybookjs/storybook/pull/30599), thanks @ghengeveld!
+- CLI: Make telemetry data an object - [#30581](https://github.com/storybookjs/storybook/pull/30581), thanks @ndelangen!
+- Core: Support `esbuild@^0.25` - [#30574](https://github.com/storybookjs/storybook/pull/30574), thanks @JReinhold!
+- Test addon: Only update `vitest.config.ts` with workspaces, otherwise create `vitest.workspace.ts` - [#30583](https://github.com/storybookjs/storybook/pull/30583), thanks @ghengeveld!
+
 ## 8.6.0-beta.4
 
 - Addon-Test: Add telemetry data for Focused Tests - [#30568](https://github.com/storybookjs/storybook/pull/30568), thanks @JReinhold!

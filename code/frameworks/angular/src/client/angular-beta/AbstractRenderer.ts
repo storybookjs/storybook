@@ -101,6 +101,7 @@ export abstract class AbstractRenderer {
     this.initAngularRootElement(targetDOMNode, targetSelector);
 
     const analyzedMetadata = new PropertyExtractor(storyFnAngular.moduleMetadata, component);
+    await analyzedMetadata.init();
 
     const storyUid = this.generateStoryUIdFromRawStoryUid(
       targetDOMNode.getAttribute(STORY_UID_ATTRIBUTE)

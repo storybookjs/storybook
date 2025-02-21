@@ -4,7 +4,7 @@ import type { Options, PreviewAnnotation } from 'storybook/internal/types';
 import { dedent } from 'ts-dedent';
 
 import { processPreviewAnnotation } from './utils/process-preview-annotation';
-import { SB_VIRTUAL_FILES, getResolvedVirtualModuleId } from './virtual-file-names';
+import { SB_VIRTUAL_FILES } from './virtual-file-names';
 
 export async function generateModernIframeScriptCode(options: Options, projectRoot: string) {
   const { presets, configDir } = options;

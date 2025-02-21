@@ -14,12 +14,6 @@ import {
   VERSION,
 } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
-import {
-  BrowserAnimationsModule,
-  NoopAnimationsModule,
-  provideAnimations,
-  provideNoopAnimations,
-} from '@angular/platform-browser/animations';
 import { dedent } from 'ts-dedent';
 
 import { NgModuleMetadata } from '../../types';
@@ -45,9 +39,7 @@ export class PropertyExtractor implements NgModuleMetadata {
   constructor(
     private metadata: NgModuleMetadata,
     private component?: any
-  ) {
-    this.init();
-  }
+  ) {}
 
   // With the new way of mounting standalone components to the DOM via bootstrapApplication API,
   // we should now pass ModuleWithProviders to the providers array of the bootstrapApplication function.
@@ -71,8 +63,8 @@ export class PropertyExtractor implements NgModuleMetadata {
     }
   }
 
-  private init() {
-    const analyzed = this.analyzeMetadata(this.metadata);
+  public async init() {
+    const analyzed = await this.analyzeMetadata(this.metadata);
     this.imports = uniqueArray([CommonModule, analyzed.imports]);
     this.providers = uniqueArray(analyzed.providers);
     this.applicationProviders = uniqueArray(analyzed.applicationProviders);
@@ -101,28 +93,28 @@ export class PropertyExtractor implements NgModuleMetadata {
    * - Extracts providers from ModuleWithProviders
    * - Returns a new NgModuleMetadata object
    */
-  private analyzeMetadata = (metadata: NgModuleMetadata) => {
+  private analyzeMetadata = async (metadata: NgModuleMetadata) => {
     const declarations = [...(metadata?.declarations || [])];
     const providers = [...(metadata?.providers || [])];
     const applicationProviders: Provider[] = [];
-    const imports = [...(metadata?.imports || [])].reduce((acc, imported) => {
-      // remove ngModule and use only its providers if it is restricted
-      // (e.g. BrowserModule, BrowserAnimationsModule, NoopAnimationsModule, ...etc)
-      const [isRestricted, restrictedProviders] = PropertyExtractor.analyzeRestricted(imported);
-      if (isRestricted) {
-        applicationProviders.unshift(restrictedProviders || []);
-        return acc;
-      }
-
-      acc.push(imported);
-
-      return acc;
-    }, []);
+    const imports = await Promise.all(
+      [...(metadata?.imports || [])].map(async (imported) => {
+        const [isRestricted, restrictedProviders] =
+          await PropertyExtractor.analyzeRestricted(imported);
+        if (isRestricted) {
+          applicationProviders.unshift(restrictedProviders || []);
+          return null;
+        }
+        return imported;
+      })
+    ).then((results) => results.filter(Boolean));
 
     return { ...metadata, imports, providers, applicationProviders, declarations };
   };
 
-  static analyzeRestricted = (ngModule: NgModule): [boolean] | [boolean, Provider] => {
+  static analyzeRestricted = async (
+    ngModule: NgModule
+  ): Promise<[boolean] | [boolean, Provider]> => {
     if (ngModule === BrowserModule) {
       console.warn(
         dedent`
@@ -136,32 +128,38 @@ export class PropertyExtractor implements NgModuleMetadata {
       return [true];
     }
 
-    if (ngModule === BrowserAnimationsModule) {
-      console.warn(
-        dedent`
-          Storybook Warning:
-          You have added the "BrowserAnimationsModule" to the list of "imports" in your moduleMetadata definition of your Story.
-          In Storybook 7.0 we use Angular's new 'bootstrapApplication' API to mount the component to the DOM, which accepts a list of providers to set up application-wide providers.
-          Use the 'applicationConfig' decorator from '@storybook/angular' and add the "provideAnimations" function to the list of "providers".
-          If your Angular version does not support "provide-like" functions, use the helper function importProvidersFrom instead to set up animations. For this case, please add "importProvidersFrom(BrowserAnimationsModule)" to the list of providers of your applicationConfig definition.
-          Please visit https://angular.io/guide/standalone-components#configuring-dependency-injection for more information.
-        `
-      );
-      return [true, provideAnimations()];
-    }
+    try {
+      const animations = await import('@angular/platform-browser/animations');
 
-    if (ngModule === NoopAnimationsModule) {
-      console.warn(
-        dedent`
-          Storybook Warning:
-          You have added the "NoopAnimationsModule" to the list of "imports" in your moduleMetadata definition of your Story.
-          In Storybook v7.0 we are using Angular's new bootstrapApplication API to mount an Angular application to the DOM, which accepts a list of providers to set up application-wide providers.
-          Use the 'applicationConfig' decorator from '@storybook/angular' and add the "provideNoopAnimations" function to the list of "providers".
-          If your Angular version does not support "provide-like" functions, use the helper function importProvidersFrom instead to set up noop animations and to extract all necessary providers from NoopAnimationsModule. For this case, please add "importProvidersFrom(NoopAnimationsModule)" to the list of providers of your applicationConfig definition.
-          Please visit https://angular.io/guide/standalone-components#configuring-dependency-injection for more information.
-        `
-      );
-      return [true, provideNoopAnimations()];
+      if (ngModule === animations.BrowserAnimationsModule) {
+        console.warn(
+          dedent`
+            Storybook Warning:
+            You have added the "BrowserAnimationsModule" to the list of "imports" in your moduleMetadata definition of your Story.
+            In Storybook 7.0 we use Angular's new 'bootstrapApplication' API to mount the component to the DOM, which accepts a list of providers to set up application-wide providers.
+            Use the 'applicationConfig' decorator from '@storybook/angular' and add the "provideAnimations" function to the list of "providers".
+            If your Angular version does not support "provide-like" functions, use the helper function importProvidersFrom instead to set up animations. For this case, please add "importProvidersFrom(BrowserAnimationsModule)" to the list of providers of your applicationConfig definition.
+            Please visit https://angular.io/guide/standalone-components#configuring-dependency-injection for more information.
+          `
+        );
+        return [true, animations.provideAnimations()];
+      }
+
+      if (ngModule === animations.NoopAnimationsModule) {
+        console.warn(
+          dedent`
+            Storybook Warning:
+            You have added the "NoopAnimationsModule" to the list of "imports" in your moduleMetadata definition of your Story.
+            In Storybook v7.0 we are using Angular's new bootstrapApplication API to mount an Angular application to the DOM, which accepts a list of providers to set up application-wide providers.
+            Use the 'applicationConfig' decorator from '@storybook/angular' and add the "provideNoopAnimations" function to the list of "providers".
+            If your Angular version does not support "provide-like" functions, use the helper function importProvidersFrom instead to set up noop animations and to extract all necessary providers from NoopAnimationsModule. For this case, please add "importProvidersFrom(NoopAnimationsModule)" to the list of providers of your applicationConfig definition.
+            Please visit https://angular.io/guide/standalone-components#configuring-dependency-injection for more information.
+          `
+        );
+        return [true, animations.provideNoopAnimations()];
+      }
+    } catch (e) {
+      return [false];
     }
 
     return [false];

@@ -9,18 +9,36 @@ Use the Storybook CLI to install it in a single command. Run this inside your pr
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="init-command.md" />
+<CodeSnippets path="create-command.md" />
 
 {/* prettier-ignore-end */}
 
 <details id="custom-storybook-version">
   <summary>Install a specific version</summary>
 
-  The `init` command will use whichever version you specify. For example:
+  For installing Storybook 8.3 or newer, you can use the `create` command with a specific version:
+
+  {/* prettier-ignore-start */}
+
+  <CodeSnippets path="create-command-custom-version.md" />
+
+  {/* prettier-ignore-end */}
+
+  To install a Storybook version prior to 8.3, you must use the `init` command:
+
+  {/* prettier-ignore-start */}
+
+  <CodeSnippets path="init-command-custom-version.md" />
+
+  {/* prettier-ignore-end */}
+
+  For either command, you can specify either an npm tag such as `latest` or `next`, or a (partial) version number. For example:
 
   * `storybook@latest init` will initialize the latest version
   * `storybook@7.6.10 init` will initialize `7.6.10`
   * `storybook@7 init` will initialize the newest `7.x.x` version
+
+  
 </details>
 
 Storybook will look into your project's dependencies during its install process and provide you with the best configuration available.
@@ -75,7 +93,7 @@ There are some noteworthy items here:
 
   {/* prettier-ignore-start */}
 
-  <CodeSnippets path="init-command-custom-package-manager.md" />
+  <CodeSnippets path="create-command-custom-package-manager.md" />
 
   {/* prettier-ignore-end */}
 
@@ -100,7 +118,7 @@ There are some noteworthy items here:
 
   {/* prettier-ignore-start */}
 
-  <CodeSnippets path="init-command-manual-framework.md" />
+  <CodeSnippets path="create-command-manual-framework.md" />
 
   {/* prettier-ignore-end */}
 
@@ -123,9 +141,9 @@ There are some noteworthy items here:
     #### Storybook doesn't work with an empty directory
 
     By default, Storybook is configured to detect whether you're initializing it on an empty directory or an existing project. However, if you attempt to initialize Storybook, select a Vite-based framework (e.g., [React](./frameworks/react-vite.mdx)) in a directory that only contains a `package.json` file, you may run into issues with [Yarn Modern](https://yarnpkg.com/getting-started). This is due to how Yarn handles peer dependencies and how Storybook is set up to work with Vite-based frameworks, as it requires the [Vite](https://vitejs.dev/) package to be installed. To solve this issue, you must install Vite manually and initialize Storybook.
-    
+
   </If>
-  
+
   <IfRenderer renderer="angular">
     #### Storybook doesn't work with my Angular project using the Angular CLI
 
@@ -173,11 +191,11 @@ There are some noteworthy items here:
     <Callout variant="info">
 
       The CLI's [`add`](../api/cli-options.mdx#add) command automates the addon's installation and setup. To install it manually, see our [documentation](../addons/install-addons.mdx#manual-installation) on how to install addons.
-    
+
     </Callout>
 
     Update your Storybook configuration file (i.e., `.storybook/main.js|ts`) to enable support for this format.
-  
+
     {/* prettier-ignore-start */}
 
     <CodeSnippets path="main-config-svelte-csf-register.md" />

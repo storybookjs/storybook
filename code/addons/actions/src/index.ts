@@ -1,11 +1,12 @@
-import { definePreview } from 'storybook/internal/preview-api';
+import { definePreviewAddon } from 'storybook/internal/csf';
 
 import * as addonAnnotations from './preview';
+import type { ActionsTypes } from './types';
 
 export * from './constants';
 export * from './models';
 export * from './runtime';
 
-export default () => definePreview(addonAnnotations);
+export default () => definePreviewAddon<ActionsTypes>(addonAnnotations);
 
-export type { ActionsParameters } from './types';
+export type { ActionsTypes };

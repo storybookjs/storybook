@@ -4,7 +4,7 @@ export interface ActionsParameters {
    *
    * @see https://storybook.js.org/docs/essentials/actions#parameters
    */
-  actions: {
+  actions?: {
     /**
      * Create actions for each arg that matches the regex. (**NOT recommended, see below**)
      *
@@ -35,4 +35,8 @@ export interface ActionsParameters {
      */
     handles?: string[];
   };
+}
+
+export interface ActionsTypes {
+  parameters: ActionsParameters;
 }

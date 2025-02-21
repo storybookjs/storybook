@@ -9,7 +9,7 @@ export interface ThemesParameters {
    *
    * @see https://github.com/storybookjs/storybook/blob/next/code/addons/themes/README.md
    */
-  themes: {
+  themes?: {
     /** Remove the addon panel and disable the addon's behavior */
     disable?: boolean;
     /** Which theme to override for the story */
@@ -20,4 +20,9 @@ export interface ThemesParameters {
 export interface ThemesGlobals {
   /** Which theme to override for the story */
   theme?: string;
+}
+
+export interface ThemesTypes {
+  parameters: ThemesParameters;
+  globals: ThemesGlobals;
 }

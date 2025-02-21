@@ -1,7 +1,9 @@
+import { definePreviewAddon } from 'storybook/internal/csf';
 import { definePreview } from 'storybook/internal/preview-api';
 
 import * as addonAnnotations from './preview';
+import type { OutlineTypes } from './types';
 
-export type { OutlineParameters } from './types';
+export type { OutlineTypes };
 
-export default () => definePreview(addonAnnotations);
+export default () => definePreviewAddon<OutlineTypes>(addonAnnotations);

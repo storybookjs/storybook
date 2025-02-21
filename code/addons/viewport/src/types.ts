@@ -45,7 +45,7 @@ export interface ViewportParameters {
    *
    * @see https://storybook.js.org/docs/essentials/viewport#parameters
    */
-  viewport: {
+  viewport?: {
     /**
      * Specifies the default orientation used when viewing a story. Only available if you haven't
      * enabled the globals API.
@@ -80,7 +80,12 @@ export interface ViewportGlobals {
    *
    * @see https://storybook.js.org/docs/essentials/viewport#globals
    */
-  viewport: {
+  viewport?: {
     [key: string]: GlobalState;
   };
+}
+
+export interface ViewportTypes {
+  parameters: ViewportParameters;
+  globals: ViewportGlobals;
 }

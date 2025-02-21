@@ -2,13 +2,15 @@ import React, { type ReactNode, useCallback, useRef, useState } from 'react';
 
 import { IconButton } from '@storybook/core/components';
 import { styled } from '@storybook/core/theming';
-import { global } from '@storybook/global';
 import { CloseIcon, SearchIcon } from '@storybook/icons';
 
 import { shortcutToHumanString, useStorybookApi } from '@storybook/core/manager-api';
 
-import type { DownshiftState, StateChangeOptions } from 'downshift';
-import Downshift from 'downshift';
+import Downshift, {
+  type ControllerStateAndHelpers,
+  type DownshiftState,
+  type StateChangeOptions,
+} from 'downshift';
 import type { FuseOptions } from 'fuse.js';
 import Fuse from 'fuse.js';
 
@@ -26,9 +28,11 @@ import type {
 } from './types';
 import { isExpandType, isSearchResult } from './types';
 
-const { document } = global;
+const { document } = globalThis;
 
 const DEFAULT_MAX_SEARCH_RESULTS = 50;
+
+export const FILTER_KEY: string = 'search';
 
 const options = {
   shouldSort: true,
@@ -256,9 +260,16 @@ export const Search = React.memo<{
     [api]
   );
 
-  const onInputValueChange = useCallback((inputValue: string, stateAndHelpers: any) => {
-    showAllComponents(false);
-  }, []);
+  const onInputValueChange = useCallback(
+    (inputValue: string, stateAndHelpers: ControllerStateAndHelpers<DownshiftItem>) => {
+      showAllComponents(false);
+      const isBrowsing = !stateAndHelpers.isOpen && document.activeElement !== inputRef.current;
+      api.applyQueryParams({
+        [FILTER_KEY]: isBrowsing ? undefined : inputValue,
+      });
+    },
+    []
+  );
 
   const stateReducer = useCallback(
     (state: DownshiftState<DownshiftItem>, changes: StateChangeOptions<DownshiftItem>) => {
@@ -314,6 +325,7 @@ export const Search = React.memo<{
     <Downshift<DownshiftItem>
       initialInputValue={initialQuery}
       stateReducer={stateReducer}
+      initialIsOpen={initialQuery !== ''}
       // @ts-expect-error (Converted from ts-ignore)
       itemToString={(result) => result?.item?.name || ''}
       scrollIntoView={(e) => scrollIntoView(e)}
@@ -335,6 +347,8 @@ export const Search = React.memo<{
       }) => {
         const input = inputValue ? inputValue.trim() : '';
         let results: DownshiftItem[] = input ? getResults(input) : [];
+
+        const isBrowsing = !isOpen && document.activeElement !== inputRef.current;
 
         const lastViewed = !input && getLastViewed();
         if (lastViewed && lastViewed.length) {
@@ -407,7 +421,7 @@ export const Search = React.memo<{
                 )}
                 <Actions>
                   {isOpen && (
-                    <IconButton onClick={() => clearSelection()}>
+                    <IconButton onClick={() => clearSelection()} title="Clear search">
                       <CloseIcon />
                     </IconButton>
                   )}
@@ -420,7 +434,7 @@ export const Search = React.memo<{
               {children({
                 query: input,
                 results,
-                isBrowsing: !isOpen && document.activeElement !== inputRef.current,
+                isBrowsing,
                 closeMenu,
                 getMenuProps,
                 getItemProps,

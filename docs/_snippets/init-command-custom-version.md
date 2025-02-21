@@ -1,11 +1,11 @@
 ```shell renderer="common" language="js" packageManager="npm"
-npx storybook@latest init --package-manager=npm
+npx storybook@8.2 init
 ```
 
 ```shell renderer="common" language="js" packageManager="pnpm"
-pnpm dlx storybook@latest init --package-manager=npm
+pnpm dlx storybook@8.2 init
 ```
 
 ```shell renderer="common" language="js" packageManager="yarn"
-yarn dlx storybook@latest init --package-manager=npm
+yarn dlx storybook@8.2 init
 ```

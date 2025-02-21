@@ -1,11 +1,11 @@
 ```shell renderer="common" language="js" packageManager="npm"
-npx storybook automigrate csf-factories
+npm create storybook@latest --package-manager=npm
 ```
 
 ```shell renderer="common" language="js" packageManager="pnpm"
-pnpm exec storybook automigrate csf-factories
+pnpm create storybook@latest --package-manager=npm
 ```
 
 ```shell renderer="common" language="js" packageManager="yarn"
-yarn exec storybook automigrate csf-factories
+yarn create storybook@latest --package-manager=npm
 ```

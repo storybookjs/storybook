@@ -96,7 +96,7 @@ export function composeStory<TArgs extends Args = Args>(
     story as StoryAnnotationsOrFn<ReactRenderer, Args>,
     componentAnnotations,
     projectAnnotations,
-    INTERNAL_DEFAULT_PROJECT_ANNOTATIONS,
+    globalThis.globalProjectAnnotations ?? INTERNAL_DEFAULT_PROJECT_ANNOTATIONS,
     exportsName
   );
 }

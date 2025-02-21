@@ -40,7 +40,7 @@ Storybook for React Native Web is a [framework](../../contribute/framework.mdx) 
 
   {/* prettier-ignore-start */}
 
-  <CodeSnippets path="init-command.md" />
+  <CodeSnippets path="create-command.md" />
 
   {/* prettier-ignore-end */}
 
@@ -49,9 +49,9 @@ Storybook for React Native Web is a [framework](../../contribute/framework.mdx) 
   ### In a project with Storybook `addon-react-native-web`
 
   The [React Native Web addon](https://github.com/storybookjs/addon-react-native-web) was a Webpack-based precursor to the React Native Web Vite framework (i.e., `@storybook/react-native-web-vite`). If you're using the addon, you should migrate to the framework, which is faster, more stable, maintained, and better documented. To do so, follow the steps below.
-  
+
   Run the following command to upgrade Storybook to the latest version:
-  
+
   {/* prettier-ignore-start */}
 
   <CodeSnippets path="storybook-upgrade.md" />
@@ -81,7 +81,7 @@ Storybook for React Native Web is a [framework](../../contribute/framework.mdx) 
   Finally, remove the addon and similar packages (i.e., `@storybook/react-webpack5` and `@storybook/addon-react-native-web`) from your project.
 
   ### In a project with Storybook `react-native`
-  
+
   [Storybook for React Native](https://github.com/storybookjs/react-native) is a framework that runs in a simulator or on your mobile device. It's possible to run React Native Web alongside React Native, but we are still working on a seamless integration. In the meantime, we recommend running one or the other. If you need help figuring out what's right for you, read our [comparison](#react-native-vs-react-native-web).
 
   ## Run the Setup Wizard
@@ -102,7 +102,7 @@ Storybook for React Native Web is a [framework](../../contribute/framework.mdx) 
   - **Web** - Displays your React Native components in the browser. It’s based on Storybook for Web, which is feature-rich and mature.
 
   {/* TODO: Don't forget about this image, otherwise remove it */}
-  
+
   {/* [Image: native + web] */}
 
   So, which option is right for you?
@@ -135,7 +135,7 @@ Storybook for React Native Web is a [framework](../../contribute/framework.mdx) 
       name: '@storybook/react-native-web-vite',
       options: {
         // You should apply babel plugins and presets here for your project that you want to apply to your code
-        // for example put the reanimated preset here if you are using reanimated 
+        // for example put the reanimated preset here if you are using reanimated
         // or the nativewind jsxImportSource for example
         pluginReactOptions: {
           jsxRuntime: 'automatic' | 'classic', // default: 'automatic'
@@ -217,7 +217,6 @@ Storybook for React Native Web is a [framework](../../contribute/framework.mdx) 
 
   Configure options for the [framework's builder](../../api/main-config/main-config-framework.mdx#optionsbuilder). For this framework, available options can be found in the [Vite builder docs](../../builders/vite.mdx).
 
-  
+
   {/* End supported renderers */}
 </If>
-

@@ -5,6 +5,7 @@ import { type RunnerTask, type TaskMeta, type TestContext } from 'vitest';
 
 import {
   type Report,
+  composeConfigs,
   composeStory,
   getCsfFactoryAnnotations,
 } from 'storybook/internal/preview-api';
@@ -34,7 +35,7 @@ export const testStory = (
       annotations.story,
       annotations.meta!,
       { initialGlobals: (await getInitialGlobals?.()) ?? {} },
-      annotations.preview,
+      annotations.preview ?? globalThis.globalProjectAnnotations,
       exportName
     );
 

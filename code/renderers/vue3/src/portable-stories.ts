@@ -62,6 +62,7 @@ export function setProjectAnnotations(
 // This will not be necessary once we have auto preset loading
 export const vueProjectAnnotations: ProjectAnnotations<VueRenderer> = {
   ...defaultProjectAnnotations,
+  /** @deprecated */
   renderToCanvas: (renderContext, canvasElement) => {
     if (renderContext.storyContext.testingLibraryRender == null) {
       return defaultProjectAnnotations.renderToCanvas(renderContext, canvasElement);
@@ -113,7 +114,7 @@ export function composeStory<TArgs extends Args = Args>(
     story as StoryAnnotationsOrFn<VueRenderer, Args>,
     componentAnnotations,
     projectAnnotations,
-    vueProjectAnnotations,
+    globalThis.globalProjectAnnotations ?? vueProjectAnnotations,
     exportsName
   );
 

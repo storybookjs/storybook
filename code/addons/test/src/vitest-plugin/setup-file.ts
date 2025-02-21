@@ -35,4 +35,11 @@ export const modifyErrorMessage = ({ task }: { task: Task }) => {
   }
 };
 
+// Enable this in 9.0
+// beforeAll(() => {
+//   if (globalThis.globalProjectAnnotations) {
+//     return globalThis.globalProjectAnnotations.beforeAll();
+//   }
+// });
+
 afterEach(modifyErrorMessage);

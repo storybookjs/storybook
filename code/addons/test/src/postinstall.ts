@@ -405,9 +405,9 @@ export default async function postInstall(options: PostinstallOptions) {
     );
   }
 
+  // If there's an existing workspace file, we update that file to include the Storybook test plugin.
+  // We assume the existing workspaces include the Vite(st) config, so we won't add it.
   if (vitestWorkspaceFile) {
-    // If there's an existing workspace file, we update that file to include the Storybook test plugin.
-    // We assume the existing workspaces include the Vite(st) config, so we won't add it.
     const workspaceTemplate = await loadTemplate('vitest.workspace.template.ts', {
       EXTENDS_WORKSPACE: viteConfigFile
         ? relative(dirname(vitestWorkspaceFile), viteConfigFile)
@@ -445,21 +445,26 @@ export default async function postInstall(options: PostinstallOptions) {
       logger.line(1);
       return;
     }
-  } else if (rootConfig) {
-    // If there's an existing Vite/Vitest config, we update it to include the Storybook test plugin.
+  }
+  // If there's an existing Vite/Vitest config with workspaces, we update it to include the Storybook test plugin.
+  else if (rootConfig) {
     let target, updated;
-    // For Vitest 3+, we extend the config file, otherwise we fall back to creating a workspace file.
-    if (isVitest3OrLater) {
+    const configFile = await fs.readFile(rootConfig, 'utf8');
+    const hasWorkspaceConfig = configFile.includes('workspace:');
+
+    // For Vitest 3+ with an existing workspace option in the config file, we extend the workspace array,
+    // otherwise we fall back to creating a workspace file.
+    if (isVitest3OrLater && hasWorkspaceConfig) {
       const configTemplate = await loadTemplate('vitest.config.template.ts', {
         CONFIG_DIR: options.configDir,
         BROWSER_CONFIG: browserConfig,
         SETUP_FILE: relative(dirname(rootConfig), vitestSetupFile),
       });
-      const configFile = await fs.readFile(rootConfig, 'utf8');
       const source = babelParse(configTemplate);
       target = babelParse(configFile);
       updated = updateConfigFile(source, target);
     }
+
     if (target && updated) {
       logger.line(1);
       logger.plain(`${step} Updating your ${vitestConfigFile ? 'Vitest' : 'Vite'} config file:`);
@@ -502,8 +507,9 @@ export default async function postInstall(options: PostinstallOptions) {
       const formattedContent = await formatFileContent(newWorkspaceFile, workspaceTemplate);
       await writeFile(newWorkspaceFile, formattedContent);
     }
-  } else {
-    // If there's no existing Vitest/Vite config, we create a new Vitest config file.
+  }
+  // If there's no existing Vitest/Vite config, we create a new Vitest config file.
+  else {
     const newConfigFile = resolve(`vitest.config.${fileExtension}`);
     const configTemplate = await loadTemplate('vitest.config.template.ts', {
       CONFIG_DIR: options.configDir,

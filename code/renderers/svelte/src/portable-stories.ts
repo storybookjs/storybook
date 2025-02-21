@@ -72,6 +72,7 @@ export function setProjectAnnotations(
 // This will not be necessary once we have auto preset loading
 export const INTERNAL_DEFAULT_PROJECT_ANNOTATIONS: ProjectAnnotations<SvelteRenderer> = {
   ...svelteProjectAnnotations,
+  /** @deprecated */
   renderToCanvas: (renderContext, canvasElement) => {
     if (renderContext.storyContext.testingLibraryRender == null) {
       return svelteProjectAnnotations.renderToCanvas(renderContext, canvasElement);
@@ -125,7 +126,7 @@ export function composeStory<TArgs extends Args = Args>(
     // @ts-expect-error Fix this later: Type 'Partial<{ [x: string]: any; }>' is not assignable to type 'Partial<Simplify<TArgs, {}>>'
     componentAnnotations,
     projectAnnotations,
-    INTERNAL_DEFAULT_PROJECT_ANNOTATIONS,
+    globalThis.globalProjectAnnotations ?? INTERNAL_DEFAULT_PROJECT_ANNOTATIONS,
     exportsName
   );
 

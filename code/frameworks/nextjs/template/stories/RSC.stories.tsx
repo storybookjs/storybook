@@ -3,7 +3,7 @@ import React from 'react';
 
 import type { Meta, StoryObj } from '@storybook/react';
 
-import { Nested, RSC } from './RSC';
+import { Nested, RSC, WithAsyncFunction } from './RSC';
 
 export default {
   component: RSC,
@@ -42,5 +42,13 @@ export const NestedRSC: Story = {
     <Nested>
       <RSC {...args} />
     </Nested>
+  ),
+};
+
+export const WithAsyncFunctionRSC: Story = {
+  render: (args) => (
+    <WithAsyncFunction>
+      <RSC {...args} />
+    </WithAsyncFunction>
   ),
 };

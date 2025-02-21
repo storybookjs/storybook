@@ -8,7 +8,7 @@ import React from 'react';
 
 import type { Meta } from '@storybook/react';
 
-import { addons } from '@storybook/preview-api';
+import { addons } from '@storybook/core/preview-api';
 
 import * as addonActionsPreview from '@storybook/addon-actions/preview';
 

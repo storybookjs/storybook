@@ -373,6 +373,16 @@ export class StoryIndexGenerator {
       ]);
     }
 
+    const toImportPath = (path: string | undefined) => {
+      if (!path) {
+        return importPath;
+      }
+      if (path.startsWith('virtual:')) {
+        return path;
+      }
+      return slash(normalizeStoryPath(relative(this.options.workingDir, path)));
+    };
+
     const entries: ((StoryIndexEntryWithExtra | DocsCacheEntry) & { tags: Tag[] })[] =
       indexInputs.map((input) => {
         const name = input.name ?? storyNameFromExport(input.exportName);
@@ -393,7 +403,7 @@ export class StoryIndexGenerator {
           },
           name,
           title,
-          importPath,
+          importPath: toImportPath(input.importPath),
           componentPath,
           tags,
         };
@@ -408,15 +418,15 @@ export class StoryIndexGenerator {
     if (createDocEntry && this.options.build?.test?.disableAutoDocs !== true) {
       const name = this.options.docs.defaultName ?? 'Docs';
       const { metaId } = indexInputs[0];
-      const { title } = entries[0];
-      const id = toId(metaId ?? title, name);
+      const entry = entries[0];
+      const id = toId(metaId ?? entry.title, name);
       const tags = combineTags(...projectTags, ...(indexInputs[0].tags ?? []));
 
       entries.unshift({
         id,
-        title,
+        title: entry.title,
         name,
-        importPath,
+        importPath: entry.importPath,
         type: 'docs',
         tags,
         storiesImports: [],

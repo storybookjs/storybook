@@ -21,6 +21,7 @@ import { interopRequireDefault } from './utils/interpret-require';
 import { loadCustomPresets } from './utils/load-custom-presets';
 import { safeResolve, safeResolveFrom } from './utils/safeResolve';
 import { stripAbsNodeModulesPath } from './utils/strip-abs-node-modules-path';
+import { isFunction, isObject } from './utils/type-guards';
 
 type InterPresetOptions = Omit<
   CLIOptions &
@@ -28,10 +29,6 @@ type InterPresetOptions = Omit<
     BuilderOptions & { isCritical?: boolean; build?: StorybookConfigRaw['build'] },
   'frameworkPresets'
 >;
-
-const isObject = (val: unknown): val is Record<string, any> =>
-  val != null && typeof val === 'object' && Array.isArray(val) === false;
-const isFunction = (val: unknown): val is Function => typeof val === 'function';
 
 export function filterPresetsConfig(presetsConfig: PresetConfig[]): PresetConfig[] {
   return presetsConfig.filter((preset) => {
@@ -50,7 +47,7 @@ function resolvePathToMjs(filePath: string): string {
 }
 
 function resolvePresetFunction<T = any>(
-  input: T[] | Function,
+  input: T[] | CallableFunction,
   presetOptions: any,
   storybookOptions: InterPresetOptions
 ): T[] {
@@ -189,8 +186,8 @@ export const resolveAddonName = (
 const map =
   ({ configDir }: InterPresetOptions) =>
   (item: any) => {
-    const options = isObject(item) ? item['options'] || undefined : undefined;
-    const name = isObject(item) ? item['name'] : item;
+    const options = isObject(item) ? item.options || undefined : undefined;
+    const name = isObject(item) ? item.name : item;
 
     let resolved;
 

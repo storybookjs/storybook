@@ -6,6 +6,7 @@ import type { Options as TelejsonOptions } from 'telejson';
 import type { PackageJson as PackageJsonFromTypeFest } from 'type-fest';
 
 import type { FileSystemCache } from '../../common/utils/file-cache';
+import type { StoryIndexGenerator } from '../../core-server';
 import type { Indexer, StoriesEntry } from './indexer';
 
 /** ⚠️ This file contains internal WIP types they MUST NOT be exported outside this package for now! */
@@ -200,6 +201,7 @@ export interface BuilderOptions {
   versionCheck?: VersionCheck;
   disableWebpackDefaults?: boolean;
   serverChannelUrl?: string;
+  getStoryIndexGenerator?: () => Promise<StoryIndexGenerator | undefined>;
 }
 
 export interface StorybookConfigOptions {

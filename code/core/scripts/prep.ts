@@ -16,6 +16,7 @@ import {
   prettyTime,
   process,
 } from '../../../scripts/prepare/tools';
+import { replaceSrcWithDist } from '../../../scripts/utils/paths';
 import pkg from '../package.json';
 import { globalsModuleInfoMap } from '../src/manager/globals-module-info';
 import { getBundles, getEntries, getFinals } from './entries';
@@ -191,7 +192,7 @@ async function run() {
         results.push(
           esbuild.context(
             merge<EsbuildContextOptions>(browserEsbuildOptions, {
-              outdir: dirname(entry.file).replace('src', 'dist'),
+              outdir: replaceSrcWithDist(dirname(entry.file)),
               entryPoints: [entry.file],
               outExtension: { '.js': '.js' },
               alias: {
@@ -235,7 +236,7 @@ async function run() {
               },
               entryPoints: [entry.file],
               external: [],
-              outdir: dirname(entry.file).replace('src', 'dist'),
+              outdir: replaceSrcWithDist(dirname(entry.file)),
               outExtension: {
                 '.js': '.js',
               },
@@ -261,7 +262,7 @@ async function run() {
                     ...entry.externals,
                   ].filter((e) => !entry.internals.includes(e)),
                   format: 'cjs',
-                  outdir: dirname(entry.file).replace('src', 'dist'),
+                  outdir: replaceSrcWithDist(dirname(entry.file)),
                   outExtension: {
                     '.js': '.cjs',
                   },
@@ -279,7 +280,7 @@ async function run() {
                     ...esbuildDefaultOptions.external,
                     ...entry.externals,
                   ].filter((e) => !entry.internals.includes(e)),
-                  outdir: dirname(entry.file).replace('src', 'dist'),
+                  outdir: replaceSrcWithDist(dirname(entry.file)),
                   outExtension: {
                     '.js': '.js',
                   },
@@ -297,7 +298,7 @@ async function run() {
                     ...entry.externals,
                   ].filter((e) => !entry.internals.includes(e)),
                   format: 'esm',
-                  outdir: dirname(entry.file).replace('src', 'dist'),
+                  outdir: replaceSrcWithDist(dirname(entry.file)),
                   outExtension: {
                     '.js': '.js',
                   },

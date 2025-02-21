@@ -4,6 +4,7 @@ import { join, relative } from 'node:path';
 import slash from 'slash';
 
 import { sortPackageJson } from '../../../../scripts/prepare/tools';
+import { replaceSrcWithDist } from '../../../../scripts/utils/paths';
 import type { getEntries } from '../entries';
 
 const cwd = process.cwd();
@@ -18,7 +19,7 @@ export async function generatePackageJsonFile(entries: ReturnType<typeof getEntr
    * correct path.
    */
   pkgJson.exports = entries.reduce<Record<string, Record<string, string>>>((acc, entry) => {
-    let main = './' + slash(relative(cwd, entry.file).replace('src', 'dist'));
+    let main = './' + slash(replaceSrcWithDist(relative(cwd, entry.file)));
 
     const content: Record<string, string> = {};
     if (entry.dts) {
@@ -62,7 +63,7 @@ export async function generatePackageJsonFile(entries: ReturnType<typeof getEntr
           return acc;
         }
 
-        let main = slash(relative(cwd, entry.file).replace('src', 'dist'));
+        let main = slash(replaceSrcWithDist(relative(cwd, entry.file)));
         if (main === './dist/index.ts' || main === './dist/index.tsx') {
           main = '.';
         }

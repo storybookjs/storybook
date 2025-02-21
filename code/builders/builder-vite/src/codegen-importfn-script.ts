@@ -18,7 +18,6 @@ export async function generateImportFnScriptCode(index: StoryIndex): Promise<str
 
   const objectEntries: [string, string][] = uniqueImportPaths.map((importPath) => {
     if (importPath.startsWith('virtual:')) {
-      console.log('LOG: virtual entry', importPath);
       return [importPath, genDynamicImport(importPath)];
     }
 

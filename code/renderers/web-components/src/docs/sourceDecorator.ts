@@ -1,6 +1,6 @@
 /* eslint-disable no-underscore-dangle */
 import { SNIPPET_RENDERED, SourceType } from 'storybook/internal/docs-tools';
-import { addons, useEffect } from 'storybook/internal/preview-api';
+import { addons, useEffect, useState, useTransformCode } from 'storybook/internal/preview-api';
 import type { ArgsStoryFn, PartialStoryFn, StoryContext } from 'storybook/internal/types';
 
 import { render } from 'lit';
@@ -33,15 +33,22 @@ export function sourceDecorator(
     ? (context.originalStoryFn as ArgsStoryFn<WebComponentsRenderer>)(context.args, context)
     : story;
 
-  let source: string;
+  const [source, setSource] = useState<undefined | string>(undefined);
+
+  const transformedCode = useTransformCode(source, context);
 
   useEffect(() => {
     const { id, unmappedArgs } = context;
 
     if (source) {
-      addons.getChannel().emit(SNIPPET_RENDERED, { id, source, args: unmappedArgs });
+      addons.getChannel().emit(SNIPPET_RENDERED, {
+        id,
+        source: transformedCode,
+        args: unmappedArgs,
+      });
     }
   });
+
   if (!skipSourceRender(context)) {
     const container = window.document.createElement('div');
     if (renderedForSource instanceof DocumentFragment) {
@@ -49,7 +56,11 @@ export function sourceDecorator(
     } else {
       render(renderedForSource, container);
     }
-    source = container.innerHTML.replace(LIT_EXPRESSION_COMMENTS, '');
+    const newSource = container.innerHTML.replace(LIT_EXPRESSION_COMMENTS, '');
+
+    if (newSource != source) {
+      setSource(newSource);
+    }
   }
 
   return story;

@@ -260,7 +260,7 @@ Example.parameters = {
 };
 ```
 
-Alternatively, you can provide a function in the `docs.source.transform` parameter. For example, the following snippet in `.storybook/preview.js` globally removes the arrow at the beginning of a function that returns a string:
+Alternatively, you can provide a function or an async function in the `docs.source.transform` parameter. For example, the following snippet in `.storybook/preview.js` globally removes the arrow at the beginning of a function that returns a string:
 
 ```js
 const SOURCE_REGEX = /^\(\) => `(.*)`$/;

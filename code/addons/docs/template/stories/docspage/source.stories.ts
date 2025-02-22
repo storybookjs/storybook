@@ -49,3 +49,22 @@ export const Transform = {
     },
   },
 };
+
+export const AsyncTransform = {
+  parameters: {
+    docs: {
+      source: {
+        async transform(src: string, storyContext: StoryContext) {
+          return new Promise<string>((res) =>
+            setTimeout(() => {
+              res(dedent`// We transformed this asynchronously!
+                // The current args are: ${JSON.stringify(storyContext.args)}
+                const example = (${src});
+                `);
+            }, 500)
+          );
+        },
+      },
+    },
+  },
+};

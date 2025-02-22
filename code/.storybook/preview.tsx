@@ -323,6 +323,7 @@ const decorators = [
 const parameters = {
   docs: {
     theme: themes.light,
+    codePanel: true,
     toc: {},
   },
   controls: {

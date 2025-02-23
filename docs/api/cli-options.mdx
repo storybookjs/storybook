@@ -9,7 +9,9 @@ sidebar:
 The Storybook command line interface (CLI) is the main tool you use to build and develop Storybook.
 
 <Callout variant="info">
-  Storybook collects completely anonymous data to help us improve user experience. Participation is optional, and you may [opt-out](../configure/telemetry.mdx#how-to-opt-out) if you'd not like to share any information.
+  Storybook collects completely anonymous data to help us improve user experience. Participation is
+  optional, and you may [opt-out](../configure/telemetry.mdx#how-to-opt-out) if you'd not like to
+  share any information.
 </Callout>
 
 ## CLI commands
@@ -17,7 +19,9 @@ The Storybook command line interface (CLI) is the main tool you use to build and
 All of the following documentation is available in the CLI by running `storybook --help`.
 
 <Callout variant="info" icon="💡">
-  Passing options to these commands works slightly differently if you're using npm instead of Yarn. You must prefix all of your options with `--`. For example, `npm run storybook build -- -o ./path/to/build --quiet`.
+  Passing options to these commands works slightly differently if you're using npm instead of Yarn.
+  You must prefix all of your options with `--`. For example, `npm run storybook build -- -o
+  ./path/to/build --quiet`.
 </Callout>
 
 ### `dev`
@@ -59,7 +63,9 @@ Options include:
 | `--enable-crash-reports`        | Enables sending crash reports to Storybook's telemetry. Learn more about it [here](../configure/telemetry.mdx#crash-reports-disabled-by-default).<br />`storybook dev --enable-crash-reports`             |
 
 <Callout variant="warning" id="static-dir-deprecation">
-  With the release of Storybook 8, the `-s` CLI flag was removed. We recommend using the [static directory](../configure/integration/images-and-assets.mdx#serving-static-files-via-storybook) instead if you need to serve static files.
+  With the release of Storybook 8, the `-s` CLI flag was removed. We recommend using the [static
+  directory](../configure/integration/images-and-assets.mdx#serving-static-files-via-storybook)
+  instead if you need to serve static files.
 </Callout>
 
 ### `build`
@@ -93,7 +99,8 @@ Options include:
 ### `init`
 
 <Callout variant="info">
-  We recommend [`create-storybook`](#create-storybook) for new projects. The `init` command will remain available for backwards compatibility.
+  We recommend [`create-storybook`](#create-storybook) for new projects. The `init` command will
+  remain available for backwards compatibility.
 </Callout>
 
 Installs and initializes the specified version (e.g., `@latest`, `@8`, `@next`) of Storybook into your project. If no version is specified, the latest version is installed. Read more in the [installation guide](../get-started/install.mdx).
@@ -193,7 +200,9 @@ storybook[@version] migrate [codemod] [options]
 ```
 
 <Callout variant="info">
-  The command requires the codemod name (e.g., `csf-2-to-3`) as an argument to apply the necessary changes to your project. You can find the list of available codemods by running `storybook migrate --list`.
+  The command requires the codemod name (e.g., `csf-2-to-3`) as an argument to apply the necessary
+  changes to your project. You can find the list of available codemods by running `storybook migrate
+  --list`.
 </Callout>
 
 For example, `storybook@latest migrate csf-2-to-3 --dry-run`, checks your project to verify if the codemod can be applied without making any changes, providing you with a report of which files would be affected.
@@ -290,6 +299,23 @@ Storybook Environment Info:
     chromatic: ^10.2.0 => 10.2.0
 ```
 
+### `index`
+
+Build an `index.json` that lists all stories and docs entries in your Storybook.
+
+```shell
+storybook index [options]
+```
+
+Options include:
+
+| Option                            | Description                                           |
+| --------------------------------- | ----------------------------------------------------- |
+| `-o`, `--output-file <file-name>` | JSON file to output index                             |
+| `-c`, `--config-dir <dir-name>`   | Directory where to load Storybook configurations from |
+| `--quiet`                         | Suppress verbose build output                         |
+| `--loglevel <level>`              | Control level of logging during build                 |
+
 ### `sandbox`
 
 Generates a local sandbox project using the specified version (e.g., `@latest`, `@8`, `@next`) for testing Storybook features based on the list of supported [frameworks](../configure/integration/frameworks.mdx). Useful for reproducing bugs when opening an issue or a discussion.
@@ -314,7 +340,8 @@ Options include:
 | `--enable-crash-reports`    | Enables sending crash reports to Storybook's telemetry. Learn more about it [here](../configure/telemetry.mdx#crash-reports-disabled-by-default).<br />`storybook sandbox --enable-crash-reports` |
 
 <Callout variant="info">
-  If you're looking for a hosted version of the available sandboxes, see [storybook.new](https://storybook.new).
+  If you're looking for a hosted version of the available sandboxes, see
+  [storybook.new](https://storybook.new).
 </Callout>
 
 ## `create-storybook`

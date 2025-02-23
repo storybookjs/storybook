@@ -67,5 +67,5 @@ export const buildIndex = async (options: BuildIndexOptions) => {
 export const buildIndexStandalone = async (options: BuildIndexOptions) => {
   const index = await buildIndex(options);
   console.log(`Writing index to ${options.outputFile}`);
-  await writeFile(options.outputFile, JSON.stringify(index, null, 2));
+  await writeFile(options.outputFile, JSON.stringify(index));
 };

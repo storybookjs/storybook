@@ -141,7 +141,12 @@ command('index')
   .option('--quiet', 'Suppress verbose build output')
   .option('--loglevel <level>', 'Control level of logging during build')
   .action(async (options) => {
-    process.env.NODE_ENV = process.env.NODE_ENV || 'production';
+    const { env } = process;
+    env.NODE_ENV = env.NODE_ENV || 'production';
+
+    const pkg = await findPackage(__dirname);
+    invariant(pkg, 'Failed to find the closest package.json file.');
+
     logger.setLevel(options.loglevel);
     consoleLogger.log(picocolors.bold(`${pkg.name} v${pkg.version}\n`));
 

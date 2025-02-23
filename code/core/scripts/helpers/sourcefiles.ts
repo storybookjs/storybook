@@ -2,6 +2,7 @@ import { readdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { GlobalRegistrator } from '@happy-dom/global-registrator';
+import { isNotNil } from 'es-toolkit';
 
 import { dedent, esbuild, getWorkspace, prettier } from '../../../../scripts/prepare/tools';
 import { temporaryFile } from '../../src/common/utils/cli';
@@ -26,7 +27,7 @@ export const generateSourceFiles = async () => {
 async function generateVersionsFile(prettierConfig: prettier.Options | null): Promise<void> {
   const location = join(__dirname, '..', '..', 'src', 'common', 'versions.ts');
 
-  const workspace = await getWorkspace();
+  const workspace = (await getWorkspace()).filter(isNotNil);
 
   const versions = JSON.stringify(
     workspace
@@ -55,7 +56,7 @@ async function generateVersionsFile(prettierConfig: prettier.Options | null): Pr
 }
 
 async function generateFrameworksFile(prettierConfig: prettier.Options | null): Promise<void> {
-  const thirdPartyFrameworks = ['qwik', 'solid', 'react-rsbuild', 'vue3-rsbuild'];
+  const thirdPartyFrameworks = ['qwik', 'solid', 'nuxt', 'react-rsbuild', 'vue3-rsbuild'];
   const location = join(__dirname, '..', '..', 'src', 'types', 'modules', 'frameworks.ts');
   const frameworksDirectory = join(__dirname, '..', '..', '..', 'frameworks');
 

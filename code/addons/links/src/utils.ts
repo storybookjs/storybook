@@ -1,8 +1,8 @@
 import { SELECT_STORY, STORY_CHANGED } from 'storybook/internal/core-events';
+import { toId } from 'storybook/internal/csf';
 import { addons, makeDecorator } from 'storybook/internal/preview-api';
 import type { ComponentTitle, StoryId, StoryKind, StoryName } from 'storybook/internal/types';
 
-import { toId } from '@storybook/csf';
 import { global } from '@storybook/global';
 
 import { PARAM_KEY } from './constants';

@@ -1,0 +1,94 @@
+---
+title: Storybook for Preact & Vite
+sidebar:
+  order: 3
+  title: Preact & Vite
+---
+
+Storybook for Preact & Vite is a [framework](../../contribute/framework.mdx) that makes it easy to develop and test UI components in isolation for [Preact](https://preactjs.com/) applications built with [Vite](https://vitejs.dev/). It includes:
+
+* 🏎️ Pre-bundled for performance
+* 🪄 Zero config
+* 💫 and more!
+
+<If notRenderer="preact">
+  <Callout variant="info">
+    Storybook for Preact & Vite is only supported in [Preact](?renderer=preact) projects.
+  </Callout>
+
+  {/* End non-supported renderers */}
+</If>
+
+<If renderer="preact">
+  ## Requirements
+
+  * Preact 8.x || 10.x
+  * Vite ≥ 4.0
+  * Storybook ≥ 8.0
+
+  ## Getting started
+
+  ### In a project without Storybook
+
+  Follow the prompts after running this command in your Preact project's root directory:
+
+  {/* prettier-ignore-start */}
+
+  <CodeSnippets path="create-command.md" />
+
+  {/* prettier-ignore-end */}
+
+  [More on getting started with Storybook.](../install.mdx)
+
+  ### In a project with Storybook
+
+  This framework is designed to work with Storybook 7+. If you’re not already using v7, upgrade with this command:
+
+  {/* prettier-ignore-start */}
+
+  <CodeSnippets path="storybook-upgrade.md" />
+
+  {/* prettier-ignore-end */}
+
+  #### Automatic migration
+
+  When running the `upgrade` command above, you should get a prompt asking you to migrate to `@storybook/preact-vite`, which should handle everything for you. In case that auto-migration does not work for your project, refer to the manual migration below.
+
+  #### Manual migration
+
+  First, install the framework:
+
+  {/* prettier-ignore-start */}
+
+  <CodeSnippets path="preact-vite-install.md" />
+
+  {/* prettier-ignore-end */}
+
+  Then, update your `.storybook/main.js|ts` to change the framework property:
+
+  {/* prettier-ignore-start */}
+
+  <CodeSnippets path="preact-vite-add-framework.md" />
+
+  {/* prettier-ignore-end */}
+
+  ## API
+
+  ### Options
+
+  You can pass an options object for additional configuration if needed:
+
+  {/* prettier-ignore-start */}
+
+  <CodeSnippets path="preact-vite-framework-options.md" />
+
+  {/* prettier-ignore-end */}
+
+  #### `builder`
+
+  Type: `Record<string, any>`
+
+  Configure options for the [framework's builder](../../api/main-config/main-config-framework.mdx#optionsbuilder). For this framework, available options can be found in the [Vite builder docs](../../builders/vite.mdx).
+
+  {/* End supported renderers */}
+</If>

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/codemod",
-  "version": "8.5.0-alpha.22",
+  "version": "8.6.0-beta.7",
   "description": "A collection of codemod scripts written with JSCodeshift",
   "keywords": [
     "storybook"
@@ -58,7 +58,6 @@
     "@babel/preset-env": "^7.24.4",
     "@babel/types": "^7.24.0",
     "@storybook/core": "workspace:*",
-    "@storybook/csf": "0.1.12",
     "@types/cross-spawn": "^6.0.2",
     "cross-spawn": "^7.0.3",
     "es-toolkit": "^1.22.0",
@@ -77,7 +76,7 @@
     "remark": "^15.0.1",
     "remark-mdx": "^3.0.0",
     "ts-dedent": "^2.2.0",
-    "typescript": "^5.3.2",
+    "typescript": "^5.7.3",
     "unist-util-is": "^6.0.0",
     "unist-util-select": "^5.1.0",
     "unist-util-visit": "^5.0.0",
@@ -90,14 +89,14 @@
   "bundler": {
     "entries": [
       "./src/index.ts",
-      "./src/transforms/add-component-parameters.js",
+      "./src/transforms/storiesof-to-csf.js",
+      "./src/transforms/mdx-to-csf.ts",
       "./src/transforms/csf-2-to-3.ts",
       "./src/transforms/csf-hoist-story-annotations.js",
       "./src/transforms/find-implicit-spies.ts",
-      "./src/transforms/mdx-to-csf.ts",
+      "./src/transforms/add-component-parameters.js",
       "./src/transforms/migrate-to-test-package.ts",
       "./src/transforms/move-builtin-addons.js",
-      "./src/transforms/storiesof-to-csf.js",
       "./src/transforms/update-addon-info.js",
       "./src/transforms/update-organisation-name.js",
       "./src/transforms/upgrade-deprecated-types.ts",

@@ -1,4 +1,4 @@
-import parseJs from 'prettier/plugins/babel';
+import * as parseJs from 'prettier/plugins/babel';
 
 function parse(source) {
   try {

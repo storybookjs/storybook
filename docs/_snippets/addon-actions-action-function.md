@@ -4,7 +4,7 @@ import { action } from '@storybook/addon-actions';
 
 import Button from './button.component';
 
-const meta: Meta<Button> {
+const meta: Meta<Button> = {
   component: Button,
   args: {
     // 👇 Create an action that appears when the onClick event is fired
@@ -36,7 +36,7 @@ import { action } from '@storybook/addon-actions';
 
 import Button from './Button';
 
-const meta {
+const meta = {
   component: Button,
   args: {
     // 👇 Create an action that appears when the onClick event is fired
@@ -54,7 +54,7 @@ import { action } from '@storybook/addon-actions';
 
 import Button from './Button';
 
-const meta: Meta<typeof Button> {
+const meta: Meta<typeof Button> = {
   component: Button,
   args: {
     // 👇 Create an action that appears when the onClick event is fired
@@ -81,7 +81,7 @@ export default {
 import type { Meta } from '@storybook/angular';
 import { action } from '@storybook/addon-actions';
 
-const meta: Meta {
+const meta: Meta = {
   component: 'demo-button',
   args: {
     // 👇 Create an action that appears when the onClick event is fired

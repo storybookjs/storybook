@@ -1,18 +1,11 @@
 import { useEffect, useMemo } from 'storybook/internal/preview-api';
-import type {
-  Renderer,
-  StoryContext,
-  PartialStoryFn as StoryFunction,
-} from 'storybook/internal/types';
+import type { DecoratorFunction } from 'storybook/internal/types';
 
 import { PARAM_KEY as BACKGROUNDS_PARAM_KEY } from '../constants';
 import { addBackgroundStyle, clearStyles, isReduceMotionEnabled } from '../utils';
 import { getBackgroundColorByName } from './getBackgroundColorByName';
 
-export const withBackground = (
-  StoryFn: StoryFunction<Renderer>,
-  context: StoryContext<Renderer>
-) => {
+export const withBackground: DecoratorFunction = (StoryFn, context) => {
   const { globals, parameters } = context;
   const globalsBackgroundColor = globals[BACKGROUNDS_PARAM_KEY]?.value;
   const backgroundsConfig = parameters[BACKGROUNDS_PARAM_KEY];

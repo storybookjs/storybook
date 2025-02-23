@@ -11,9 +11,8 @@ export default meta;
 type Story = StoryObj<MyComponent>;
 
 export const Simple: Story = {
-  decorators: [],
   name: 'So simple!',
-  parameters: {},
+  // ...
 };
 ```
 
@@ -25,10 +24,9 @@ export default {
 };
 
 export const Simple = {
-  decorators: [...],
   name: 'So simple!',
-  parameters: {...},
-}
+  // ...
+};
 ```
 
 ```ts filename="MyComponent.stories.ts|tsx" renderer="common" language="ts-4-9"
@@ -45,9 +43,8 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Simple: Story = {
-  decorators: [],
   name: 'So simple!',
-  parameters: {},
+  // ...
 };
 ```
 
@@ -65,9 +62,8 @@ export default meta;
 type Story = StoryObj<typeof MyComponent>;
 
 export const Simple: Story = {
-  decorators: [],
   name: 'So simple!',
-  parameters: {},
+  // ...
 };
 ```
 
@@ -77,9 +73,8 @@ export default {
 };
 
 export const Simple = {
-  decorators: [],
   name: 'So simple!',
-  parameters: {},
+  // ...
 };
 ```
 
@@ -94,8 +89,7 @@ export default meta;
 type Story = StoryObj;
 
 export const Simple: Story = {
-  decorators: [],
   name: 'So simple!',
-  parameters: {},
+  // ...
 };
 ```

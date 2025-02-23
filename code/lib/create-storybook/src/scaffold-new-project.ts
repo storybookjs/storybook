@@ -1,11 +1,6 @@
 import { readdirSync } from 'node:fs';
 import { rm } from 'node:fs/promises';
 
-import type { PackageManagerName } from 'storybook/internal/common';
-import { logger } from 'storybook/internal/node-logger';
-import { GenerateNewProjectOnInitError } from 'storybook/internal/server-errors';
-import { telemetry } from 'storybook/internal/telemetry';
-
 import boxen from 'boxen';
 // eslint-disable-next-line depend/ban-dependencies
 import execa from 'execa';
@@ -13,6 +8,10 @@ import picocolors from 'picocolors';
 import prompts from 'prompts';
 import { dedent } from 'ts-dedent';
 
+import type { PackageManagerName } from '../../../core/src/common/js-package-manager/JsPackageManager';
+import { logger } from '../../../core/src/node-logger';
+import { GenerateNewProjectOnInitError } from '../../../core/src/server-errors';
+import { telemetry } from '../../../core/src/telemetry';
 import type { CommandOptions } from './generators/types';
 
 type CoercedPackageManagerName = 'npm' | 'yarn' | 'pnpm';
@@ -49,7 +48,7 @@ const SUPPORTED_PROJECTS: Record<string, SupportedProject> = {
       npm: 'npm create next-app@^14 . -- --typescript --use-npm --eslint --tailwind --no-app --import-alias="@/*" --src-dir',
       // yarn doesn't support version ranges, so we have to use npx
       yarn: 'npx create-next-app@^14 . --typescript --use-yarn --eslint --tailwind --no-app --import-alias="@/*" --src-dir',
-      pnpm: 'pnpm create next-app^14 . --typescript --use-pnpm --eslint --tailwind --no-app --import-alias="@/*" --src-dir',
+      pnpm: 'pnpm create next-app@^14 . --typescript --use-pnpm --eslint --tailwind --no-app --import-alias="@/*" --src-dir',
     },
   },
   'vue-vite-ts': {

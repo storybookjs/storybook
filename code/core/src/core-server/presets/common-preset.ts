@@ -25,13 +25,12 @@ import { logger } from '@storybook/core/node-logger';
 
 import { dedent } from 'ts-dedent';
 
+import { TEST_PROVIDER_ID as ADDON_TEST_PROVIDER_ID } from '../../../../addons/test/src/constants';
 import {
   TESTING_MODULE_CRASH_REPORT,
   TESTING_MODULE_PROGRESS_REPORT,
-  TESTING_MODULE_WATCH_MODE_REQUEST,
   type TestingModuleCrashReportPayload,
   type TestingModuleProgressReportPayload,
-  type TestingModuleWatchModeRequestPayload,
 } from '../../core-events';
 import { cleanPaths, sanitizeError } from '../../telemetry/sanitize';
 import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel';
@@ -289,18 +288,12 @@ export const experimental_serverChannel = async (
 
   if (!options.disableTelemetry) {
     channel.on(
-      TESTING_MODULE_WATCH_MODE_REQUEST,
-      async (request: TestingModuleWatchModeRequestPayload) => {
-        await telemetry('testing-module-watch-mode', {
-          provider: request.providerId,
-          watchMode: request.watchMode,
-        });
-      }
-    );
-
-    channel.on(
       TESTING_MODULE_PROGRESS_REPORT,
       async (payload: TestingModuleProgressReportPayload) => {
+        if (payload.providerId === ADDON_TEST_PROVIDER_ID) {
+          // addon-test does its own telemetry
+          return;
+        }
         const status = 'status' in payload ? payload.status : undefined;
         const progress = 'progress' in payload ? payload.progress : undefined;
         const error = 'error' in payload ? payload.error : undefined;
@@ -329,6 +322,10 @@ export const experimental_serverChannel = async (
     );
 
     channel.on(TESTING_MODULE_CRASH_REPORT, async (payload: TestingModuleCrashReportPayload) => {
+      if (payload.providerId === ADDON_TEST_PROVIDER_ID) {
+        // addon-test does its own telemetry
+        return;
+      }
       await telemetry('testing-module-crash-report', {
         provider: payload.providerId,
         ...(options.enableCrashReports && {

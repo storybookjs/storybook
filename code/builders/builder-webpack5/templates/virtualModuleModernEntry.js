@@ -1,11 +1,22 @@
 import { createBrowserChannel } from 'storybook/internal/channels';
+import { isPreview } from 'storybook/internal/csf';
 import { PreviewWeb, addons, composeConfigs } from 'storybook/internal/preview-api';
 
 import { global } from '@storybook/global';
 
 import { importFn } from '{{storiesFilename}}';
 
-const getProjectAnnotations = () => composeConfigs(['{{previewAnnotations_requires}}']);
+const getProjectAnnotations = () => {
+  const previewAnnotations = ['{{previewAnnotations_requires}}'];
+  // the last one in this array is the user preview
+  const userPreview = previewAnnotations[previewAnnotations.length - 1]?.default;
+
+  if (isPreview(userPreview)) {
+    return userPreview.composed;
+  }
+
+  return composeConfigs(previewAnnotations);
+};
 
 const channel = createBrowserChannel({ page: 'preview' });
 addons.setChannel(channel);

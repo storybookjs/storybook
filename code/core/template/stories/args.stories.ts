@@ -92,5 +92,6 @@ export const Events = {
     await new Promise((resolve) => channel.once(STORY_ARGS_UPDATED, resolve));
     await within(canvasElement).findByText(/updated/);
   },
-  tags: ['!vitest'],
+  // this story can't be reliably tested because the args changes results in renderPhases disrupting test runs
+  tags: ['!vitest', '!test'],
 };

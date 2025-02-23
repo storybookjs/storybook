@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-outline",
-  "version": "8.5.0-alpha.22",
+  "version": "8.6.0-beta.7",
   "description": "Outline all elements with CSS to help with layout placement and alignment",
   "keywords": [
     "storybook-addons",
@@ -45,6 +45,16 @@
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "*": [
+        "dist/index.d.ts"
+      ],
+      "preview": [
+        "dist/preview.d.ts"
+      ]
+    }
+  },
   "files": [
     "dist/**/*",
     "README.md",
@@ -64,7 +74,7 @@
     "@storybook/icons": "^1.2.12",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "typescript": "^5.3.2"
+    "typescript": "^5.7.3"
   },
   "peerDependencies": {
     "storybook": "workspace:^"
@@ -80,7 +90,7 @@
       "./src/manager.tsx"
     ],
     "previewEntries": [
-      "./src/preview.tsx"
+      "./src/preview.ts"
     ]
   },
   "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16",

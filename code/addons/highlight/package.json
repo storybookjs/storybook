@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-highlight",
-  "version": "8.5.0-alpha.22",
+  "version": "8.6.0-beta.7",
   "description": "Highlight DOM nodes within your stories",
   "keywords": [
     "storybook-addons",
@@ -39,6 +39,16 @@
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "*": [
+        "dist/index.d.ts"
+      ],
+      "preview": [
+        "dist/preview.d.ts"
+      ]
+    }
+  },
   "files": [
     "dist/**/*",
     "README.md",
@@ -55,7 +65,7 @@
   },
   "devDependencies": {
     "@types/webpack-env": "^1.16.0",
-    "typescript": "^5.3.2"
+    "typescript": "^5.7.3"
   },
   "peerDependencies": {
     "storybook": "workspace:^"

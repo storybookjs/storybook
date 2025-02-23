@@ -36,7 +36,7 @@ Storybook for Next.js is a [framework](../../contribute/framework.mdx) that make
 
   {/* prettier-ignore-start */}
 
-  <CodeSnippets path="init-command.md" />
+  <CodeSnippets path="create-command.md" />
 
   {/* prettier-ignore-end */}
 
@@ -108,6 +108,8 @@ Storybook for Next.js is a [framework](../../contribute/framework.mdx) that make
 
   <Callout variant="info">
     If your Storybook configuration contains custom Webpack operations in [`webpackFinal`](../../api/main-config/main-config-webpack-final.mdx), you will likely need to create equivalents in [`viteFinal`](../../api/main-config/main-config-vite-final.mdx).
+
+    For more information, see the [Vite builder documentation](../../builders/vite.mdx#migrating-from-webpack).
   </Callout>
 
   Finally, if you were using Storybook plugins to integrate with Next.js, those are no longer necessary when using this framework and can be removed:
@@ -576,7 +578,7 @@ Storybook for Next.js is a [framework](../../contribute/framework.mdx) that make
 
   Next.js lets you [customize PostCSS config](https://nextjs.org/docs/pages/building-your-application/configuring/post-css). Thus this framework will automatically handle your PostCSS config for you.
 
-  This allows for cool things like zero-config Tailwind! (See [Next.js' example](https://github.com/vercel/next.js/tree/canary/examples/with-tailwindcss))
+  This allows for cool things like zero-config Tailwind! (See [Next.js' example](https://github.com/vercel/next.js/tree/canary/packages/create-next-app/templates/default-tw))
 
   ## Absolute imports
 

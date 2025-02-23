@@ -109,7 +109,7 @@ const RerunButton = styled(StyledIconButton)<
 >(({ theme, animating, disabled }) => ({
   opacity: disabled ? 0.5 : 1,
   svg: {
-    animation: animating && `${theme.animation.rotate360} 200ms ease-out`,
+    animation: animating ? `${theme.animation.rotate360} 200ms ease-out` : undefined,
   },
 }));
 

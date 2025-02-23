@@ -1,7 +1,8 @@
 import { useEffect } from 'storybook/internal/preview-api';
 import type { DecoratorFunction, Renderer } from 'storybook/internal/types';
 
-import { initializeThemeState, pluckThemeFromContext, useThemeParameters } from './helpers';
+import { PARAM_KEY } from '../constants';
+import { initializeThemeState, pluckThemeFromContext } from './helpers';
 
 export interface DataAttributeStrategyConfiguration {
   themes: Record<string, string>;
@@ -22,7 +23,7 @@ export const withThemeByDataAttribute = <TRenderer extends Renderer = any>({
 }: DataAttributeStrategyConfiguration): DecoratorFunction<TRenderer> => {
   initializeThemeState(Object.keys(themes), defaultTheme);
   return (storyFn, context) => {
-    const { themeOverride } = useThemeParameters(context);
+    const { themeOverride } = context.parameters[PARAM_KEY] ?? {};
     const selected = pluckThemeFromContext(context);
 
     useEffect(() => {

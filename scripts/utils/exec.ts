@@ -32,6 +32,7 @@ export const exec = async (
     shell: true,
     stdout: debug ? 'inherit' : 'pipe',
     stderr: debug ? 'inherit' : 'pipe',
+    stdin: 'inherit',
     signal,
   };
   let currentChild: ExecaChildProcess<string>;

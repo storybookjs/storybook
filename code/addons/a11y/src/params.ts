@@ -1,12 +1,12 @@
-import type { ElementContext, ImpactValue, RunOptions, Spec } from 'axe-core';
+import type { ElementContext, RunOptions, Spec } from 'axe-core';
+
+type A11yTest = 'off' | 'todo' | 'error';
 
 export interface Setup {
   element?: ElementContext;
   config: Spec;
   options: RunOptions;
 }
-
-type Impact = NonNullable<ImpactValue>;
 
 export interface A11yParameters {
   element?: ElementContext;
@@ -15,5 +15,5 @@ export interface A11yParameters {
   /** @deprecated Use globals.a11y.manual instead */
   manual?: boolean;
   disable?: boolean;
-  warnings?: Impact[];
+  test?: A11yTest;
 }

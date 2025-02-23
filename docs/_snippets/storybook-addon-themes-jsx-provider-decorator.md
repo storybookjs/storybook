@@ -16,12 +16,12 @@ const preview = {
       themes: {
         light: lightTheme,
         dark: darkTheme,
-      }
+      },
       defaultTheme: 'light',
       Provider: ThemeProvider,
       GlobalStyles,
-    })
-  ]
+    }),
+  ],
 };
 
 export default preview;
@@ -47,12 +47,12 @@ const preview: Preview = {
       themes: {
         light: lightTheme,
         dark: darkTheme,
-      }
+      },
       defaultTheme: 'light',
       Provider: ThemeProvider,
       GlobalStyles,
     }),
-  ]
+  ],
 };
 
 export default preview;
@@ -74,15 +74,16 @@ const GlobalStyles = createGlobalStyle`
 
 const preview: Preview = {
   decorators: [
-  withThemeFromJSXProvider<Renderer>({
-  themes: {
-    light: lightTheme,
-    dark: darkTheme,
-  }
-  defaultTheme: 'light',
-  Provider: ThemeProvider,
-  GlobalStyles,
-})]
+    withThemeFromJSXProvider<Renderer>({
+      themes: {
+        light: lightTheme,
+        dark: darkTheme,
+      },
+      defaultTheme: 'light',
+      Provider: ThemeProvider,
+      GlobalStyles,
+    }),
+  ],
 };
 
 export default preview;

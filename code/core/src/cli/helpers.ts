@@ -139,6 +139,7 @@ type CopyTemplateFilesOptions = {
   language: SupportedLanguage;
   commonAssetsDir?: string;
   destination?: string;
+  features: string[];
 };
 
 /** @deprecated Please use `frameworkToRenderer` from `@storybook/core-common` instead */
@@ -153,6 +154,7 @@ export const frameworkToDefaultBuilder: Record<
   'html-vite': CoreBuilder.Vite,
   'html-webpack5': CoreBuilder.Webpack5,
   nextjs: CoreBuilder.Webpack5,
+  nuxt: CoreBuilder.Vite,
   'experimental-nextjs-vite': CoreBuilder.Vite,
   'preact-vite': CoreBuilder.Vite,
   'preact-webpack5': CoreBuilder.Webpack5,
@@ -207,6 +209,7 @@ export async function copyTemplateFiles({
   language,
   destination,
   commonAssetsDir,
+  features,
 }: CopyTemplateFilesOptions) {
   let languageFolderMapping: Record<SupportedLanguage | 'typescript', string> = {
     // keeping this for backwards compatibility in case community packages are using it
@@ -261,14 +264,13 @@ export async function copyTemplateFiles({
   };
 
   const destinationPath = destination ?? (await cliStoriesTargetPath());
+  const filter = (file: string) => features.includes('docs') || !file.endsWith('.mdx');
   if (commonAssetsDir) {
-    await cp(commonAssetsDir, destinationPath, {
-      recursive: true,
-    });
+    await cp(commonAssetsDir, destinationPath, { recursive: true, filter });
   }
-  await cp(await templatePath(), destinationPath, { recursive: true });
+  await cp(await templatePath(), destinationPath, { recursive: true, filter });
 
-  if (commonAssetsDir) {
+  if (commonAssetsDir && features.includes('docs')) {
     let rendererType = frameworkToRenderer[renderer] || 'react';
 
     // This is only used for docs links and the docs site uses `vue` for both `vue` & `vue3` renderers

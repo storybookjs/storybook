@@ -60,6 +60,7 @@ export type StorybookMetadata = {
     version: string;
   };
   testPackages?: Record<string, string | undefined>;
+  hasRouterPackage?: boolean;
   hasStorybookEslint?: boolean;
   hasStaticDirs?: boolean;
   hasCustomWebpack?: boolean;
@@ -70,6 +71,7 @@ export type StorybookMetadata = {
     usesGlobals?: boolean;
   };
   portableStoriesFileCount?: number;
+  applicationFileCount?: number;
 };
 
 export interface Payload {
@@ -82,6 +84,7 @@ export interface Options {
   configDir?: string;
   enableCrashReports?: boolean;
   stripMetadata?: boolean;
+  notify?: boolean;
 }
 
 export interface TelemetryData {

@@ -1,11 +1,10 @@
-import React, { type FC, Fragment, useEffect, useState } from 'react';
+import React, { type FC, useEffect, useState } from 'react';
 
 import { Addon_TypesEnum } from '@storybook/core/types';
 import type { Meta, StoryObj } from '@storybook/react';
-import { expect, fn, waitFor, within } from '@storybook/test';
+import { expect, fireEvent, fn, waitFor, within } from '@storybook/test';
 
 import { type API, ManagerContext } from '@storybook/core/manager-api';
-import { userEvent } from '@storybook/testing-library';
 
 import { SidebarBottomBase } from './SidebarBottom';
 
@@ -49,7 +48,6 @@ const managerContext: any = {
         title: () => 'Component tests',
         description: () => 'Ran 2 seconds ago',
         runnable: true,
-        watchable: true,
       },
       'visual-tests': {
         type: Addon_TypesEnum.experimental_TEST_PROVIDER,
@@ -156,18 +154,18 @@ export const DynamicHeight: StoryObj = {
     const screen = await within(canvasElement);
 
     const toggleButton = await screen.getByLabelText(/Expand/);
-    await userEvent.click(toggleButton);
+    await fireEvent.click(toggleButton);
 
     const content = await screen.findByText('CUSTOM CONTENT WITH DYNAMIC HEIGHT');
     const collapse = await screen.getByTestId('collapse');
 
     await expect(content).toBeVisible();
 
-    await userEvent.click(toggleButton);
+    await fireEvent.click(toggleButton);
 
     await waitFor(() => expect(collapse.getBoundingClientRect()).toHaveProperty('height', 0));
 
-    await userEvent.click(toggleButton);
+    await fireEvent.click(toggleButton);
 
     await waitFor(() => expect(collapse.getBoundingClientRect()).not.toHaveProperty('height', 0));
   },

@@ -139,7 +139,7 @@ export const Node = ({
     case Object.prototype.hasOwnProperty.call(value, '__class__'):
       return <ClassNode {...props} {...value.__class__} />;
     case Object.prototype.hasOwnProperty.call(value, '__callId__'):
-      return <MethodCall call={callsById.get(value.__callId__)} callsById={callsById} />;
+      return <MethodCall call={callsById?.get(value.__callId__)} callsById={callsById} />;
     /* eslint-enable no-underscore-dangle */
 
     case Object.prototype.toString.call(value) === '[object Object]':
@@ -344,8 +344,9 @@ export const ElementNode = ({
   );
 };
 
-export const DateNode = ({ value }: { value: string }) => {
-  const [date, time, ms] = value.split(/[T.Z]/);
+export const DateNode = ({ value }: { value: string | Date }) => {
+  const string = value instanceof Date ? value.toISOString() : value;
+  const [date, time, ms] = string.split(/[T.Z]/);
   const colors = useThemeColors();
   return (
     <span style={{ whiteSpace: 'nowrap', color: colors.date }}>
@@ -418,7 +419,7 @@ export const MethodCall = ({
   callsById,
 }: {
   call?: Call;
-  callsById: Map<Call['id'], Call>;
+  callsById?: Map<Call['id'], Call>;
 }) => {
   // Call might be undefined during initial render, can be safely ignored.
   if (!call) {
@@ -434,7 +435,7 @@ export const MethodCall = ({
     const callId = (elem as CallRef).__callId__;
     return [
       callId ? (
-        <MethodCall key={`elem${index}`} call={callsById.get(callId)} callsById={callsById} />
+        <MethodCall key={`elem${index}`} call={callsById?.get(callId)} callsById={callsById} />
       ) : (
         <span key={`elem${index}`}>{elem as any}</span>
       ),

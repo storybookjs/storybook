@@ -12,10 +12,13 @@ export const DOCUMENTATION_FATAL_ERROR_LINK = `${DOCUMENTATION_LINK}#what-happen
 
 export const COVERAGE_DIRECTORY = 'coverage';
 
-export interface Config {
-  coverage: boolean;
-  a11y: boolean;
-}
+export const SUPPORTED_FRAMEWORKS = [
+  '@storybook/nextjs',
+  '@storybook/experimental-nextjs-vite',
+  '@storybook/sveltekit',
+];
+
+export const SUPPORTED_RENDERERS = ['@storybook/react', '@storybook/svelte', '@storybook/vue3'];
 
 export type Details = {
   testResults: TestResult[];
@@ -24,3 +27,24 @@ export type Details = {
     percentage: number;
   };
 };
+
+export type StoreState = {
+  config: {
+    coverage: boolean;
+    a11y: boolean;
+  };
+  watching: boolean;
+};
+
+export const storeOptions = {
+  id: ADDON_ID,
+  initialState: {
+    config: {
+      coverage: false,
+      a11y: false,
+    },
+    watching: false,
+  },
+};
+
+export const STORE_CHANNEL_EVENT_NAME = `UNIVERSAL_STORE:${storeOptions.id}`;

@@ -1,7 +1,8 @@
+import { getAddonNames } from 'storybook/internal/common';
+
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
-import { getAddonNames } from '../helpers/mainConfigFile';
 import type { Fix } from '../types';
 
 interface AddonPostcssRunOptions {

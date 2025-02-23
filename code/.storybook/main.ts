@@ -1,5 +1,7 @@
 import { join } from 'node:path';
 
+import dedent from 'ts-dedent';
+
 import { defineMain } from '../frameworks/react-vite/src/node';
 
 const componentsPath = join(__dirname, '../core/src/components');
@@ -134,6 +136,14 @@ const config = defineMain({
     viewportStoryGlobals: true,
     backgroundsStoryGlobals: true,
     developmentModeForBuild: true,
+    experimentalLlmsTxt: true,
+  },
+  llms: {
+    title: 'Storybook UI',
+    description: dedent`
+      Storybook's UI components, its test cases, and addon examples, all in one place.
+    `,
+    includeDocs: true,
   },
   viteFinal: async (viteConfig, { configType }) => {
     const { mergeConfig } = await import('vite');

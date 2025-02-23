@@ -22,6 +22,7 @@ import { StoryIndexGenerator } from './utils/StoryIndexGenerator';
 import { buildOrThrow } from './utils/build-or-throw';
 import { copyAllStaticFilesRelativeToMain } from './utils/copy-all-static-files';
 import { getBuilders } from './utils/get-builders';
+import { extractLlmsTxt } from './utils/llms';
 import { extractStorybookMetadata } from './utils/metadata';
 import { outputStats } from './utils/output-stats';
 import { extractStoriesJson } from './utils/stories-json';
@@ -161,6 +162,24 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   if (!core?.disableProjectJson) {
     effects.push(
       extractStorybookMetadata(join(options.outputDir, 'project.json'), options.configDir)
+    );
+  }
+
+  if (features.experimentalLlmsTxt) {
+    const llmsTxtFile = join(options.outputDir, 'llms.txt');
+    effects.push(
+      presets.apply('llms').then(async (llms) => {
+        if (!llms) {
+          return;
+        }
+        const includeDocs = typeof llms === 'string' ? false : llms.includeDocs;
+        let indexJson = undefined;
+        if (includeDocs) {
+          const storyIndexGenerator = await initializedStoryIndexGenerator;
+          indexJson = await storyIndexGenerator?.getIndex();
+        }
+        extractLlmsTxt(llmsTxtFile, llms, indexJson);
+      })
     );
   }
 

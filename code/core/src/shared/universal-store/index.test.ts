@@ -1144,6 +1144,50 @@ You should reuse the existing instance instead of trying to create a new one.`);
         }]
       `);
     });
+
+    it('should resolve untilEvent when resolve event is sent', async () => {
+      // Arrange - create a store and listen for an event
+      const store = UniversalStore.create({
+        id: 'env1:test',
+        leader: true,
+        initialState: { count: 0 },
+      });
+      const untilEventPromise = store.untilEvent('CUSTOM_EVENT_TYPE');
+
+      // Act - send the event
+      store.send({ type: 'CUSTOM_EVENT_TYPE', payload: { foo: 'bar' } });
+
+      // Assert - the promise should resolve with the sent event
+      await expect(untilEventPromise).resolves.toEqual({
+        event: {
+          type: 'CUSTOM_EVENT_TYPE',
+          payload: { foo: 'bar' },
+        },
+        eventInfo: { actor: store.actor },
+      });
+    });
+  });
+
+  it('should reject untilEvent when reject event is sent', async () => {
+    // Arrange - create a store and listen for an event
+    const store = UniversalStore.create({
+      id: 'env1:test',
+      leader: true,
+      initialState: { count: 0 },
+    });
+    const untilEventPromise = store.untilEvent('CUSTOM_EVENT_TYPE', 'OTHER_CUSTOM_EVENT_TYPE');
+
+    // Act - send the event
+    store.send({ type: 'OTHER_CUSTOM_EVENT_TYPE', payload: { foo: 'bar' } });
+
+    // Assert - the promise should resolve with the sent event
+    await expect(untilEventPromise).rejects.toEqual({
+      event: {
+        type: 'OTHER_CUSTOM_EVENT_TYPE',
+        payload: { foo: 'bar' },
+      },
+      eventInfo: { actor: store.actor },
+    });
   });
 
   it('logs debug logs when debug is set to true', () => {

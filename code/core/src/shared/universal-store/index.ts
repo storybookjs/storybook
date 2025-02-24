@@ -184,6 +184,19 @@ export class UniversalStore<
   /**
    * The current state of the store, that signals both if the store is prepared by Storybook and
    * also - in the case of a follower - if the state has been synced with the leader's state.
+   *
+   * @example
+   *
+   * ```typescript
+   * const myStore = UniversalStore.create({
+   *   id: 'my-store',
+   *   leader: true,
+   * });
+   *
+   * if (myStore.status === UniversalStore.Status.READY) {
+   *   myStore.setState({ count: 1 });
+   * }
+   * ```
    */
   public get status(): StatusType {
     if (!this.channel || !this.environment) {
@@ -209,6 +222,19 @@ export class UniversalStore<
    *
    * A follower will be ready when the state has been synced with the leader's state, within a few
    * hundred milliseconds.
+   *
+   * @example
+   *
+   * ```typescript
+   * const myStore = UniversalStore.create({
+   *   id: 'my-store',
+   *   leader: false,
+   * });
+   *
+   * await myStore.untilReady();
+   *
+   * myStore.setState({ count: 1 });
+   * ```
    */
   public untilReady() {
     return Promise.all([UniversalStore.preparation.promise, this.syncing?.promise]);
@@ -333,7 +359,19 @@ export class UniversalStore<
     }
   }
 
-  /** Creates a new instance of UniversalStore */
+  /**
+   * Creates a new instance of UniversalStore
+   *
+   * @example
+   *
+   * ```typescript
+   * const myStore = UniversalStore.create({
+   *   id: 'my-store',
+   *   leader: true,
+   *   initialState: { count: 0 },
+   * });
+   * ```
+   */
   static create<
     State = any,
     CustomEvent extends { type: string; payload?: any } = { type: string; payload?: any },
@@ -374,7 +412,15 @@ export class UniversalStore<
     UniversalStore.preparation.resolve({ channel, environment });
   }
 
-  /** Gets the current state */
+  /**
+   * Gets the current state
+   *
+   * @example
+   *
+   * ```typescript
+   * const currentState = store.getState();
+   * ```
+   */
   public getState = (): State => {
     this.debug('getState', { state: this.state });
     return this.state;
@@ -384,6 +430,13 @@ export class UniversalStore<
    * Updates the store's state
    *
    * Either a new state or a state updater function can be passed to the method.
+   *
+   * @example
+   *
+   * ```typescript
+   * store.setState({ count: 1 });
+   * store.setState((s) => ({ count: s.count + 1 }));
+   * ```
    */
   public setState(updater: State | StateUpdater<State>) {
     const previousState = this.state;
@@ -424,9 +477,17 @@ export class UniversalStore<
   /**
    * Subscribes to store events
    *
+   * @example
+   *
+   * ```typescript
+   * const unsubscribe = store.subscribe((event, eventInfo) => {
+   *   console.log('Event received', event, eventInfo);
+   * });
+   * unsubscribe();
+   * ```
+   *
    * @returns A function to unsubscribe
    */
-
   public subscribe: {
     (listener: Listener<Event<State, CustomEvent>>): () => void;
     <EventType extends Event<State, CustomEvent>['type']>(
@@ -468,7 +529,51 @@ export class UniversalStore<
   };
 
   /**
+   * Wait for a specific event to be sent _once_.
+   *
+   * This is useful if you only want to wait for an event to be sent once, and not continuously.
+   * Optionally supply a second event, that will reject the promise if that is sent first.
+   *
+   * @example
+   *
+   * ```typescript
+   * try {
+   *   const { event, eventInfo } = await store.untilEvent('TASK_COMPLETED', 'TASK_FAILED');
+   *   console.log('Task completed', event, eventInfo);
+   * } catch ({ event, eventInfo }) {
+   *   console.error('Task failed', event, eventInfo);
+   * }
+   * ```
+   */
+  public untilEvent<TEvent extends Event<State, CustomEvent>>(
+    resolveEventType: TEvent['type'],
+    rejectEventType?: TEvent['type']
+  ): Promise<{ event: TEvent; eventInfo: EventInfo }> {
+    return new Promise<{ event: TEvent; eventInfo: EventInfo }>((resolve, reject) => {
+      const unsubscribeResolve = this.subscribe(resolveEventType as any, (event, eventInfo) => {
+        unsubscribeResolve();
+        resolve({ event, eventInfo } as any);
+      });
+      if (rejectEventType) {
+        const unsubscribeReject = this.subscribe(rejectEventType as any, (event, eventInfo) => {
+          unsubscribeReject();
+          reject({ event, eventInfo } as any);
+        });
+      }
+    });
+  }
+
+  /**
    * Subscribes to state changes
+   *
+   * @example
+   *
+   * ```typescript
+   * const unsubscribe = store.onStateChange((state, previousState, eventInfo) => {
+   *   console.log('State changed', state, previousState, eventInfo);
+   * });
+   * unsubscribe();
+   * ```
    *
    * @returns Unsubscribe function
    */
@@ -484,7 +589,20 @@ export class UniversalStore<
     );
   }
 
-  /** Sends a custom event to the other stores */
+  /**
+   * Sends a custom event to the other stores
+   *
+   * @example
+   *
+   * ```typescript
+   * store.send({
+   *   type: 'INCREMENT',
+   *   payload: {
+   *     amount: 1,
+   *   },
+   * });
+   * ```
+   */
   public send = (event: CustomEvent) => {
     this.debug('send', { event });
     if (this.status !== UniversalStore.Status.READY) {

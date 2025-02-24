@@ -625,6 +625,49 @@ export class UniversalStore<
     this.emitToChannel(event, { actor: this.actor });
   };
 
+  /**
+   * Convert a UniversalStore event to an event that can be emitted directly on the Storybook
+   * Channel. Emitting the converted event on the channel is almost the same as using store.send(),
+   * the difference being that the event's actor will be 'manual' and not match any of the
+   * instantiated stores in the system.
+   *
+   * This is useful when you need to interface with the Storybook's channel directly and don't have
+   * access to the store instance.
+   *
+   * @remarks
+   * Remember to spread the returned event when emitting it on the channel.
+   * @example
+   *
+   * ```typescript
+   * const channelEvent = store.toChannelEvent({
+   *   type: 'INCREMENT',
+   *   payload: {
+   *     amount: 1,
+   *   },
+   * });
+   *
+   * channel.emit(...channelEvent);
+   * ```
+   */
+  public toChannelEvent(
+    event: Event<State, CustomEvent>
+  ): [name: string, arg: ChannelEvent<State, CustomEvent>] {
+    this.debug('toChannelEvent', { event });
+    return [
+      this.channelEventName,
+      {
+        event,
+        eventInfo: {
+          actor: {
+            id: 'manual',
+            type: this.actor.type,
+            environment: UniversalStore.Environment.UNKNOWN,
+          },
+        },
+      },
+    ];
+  }
+
   private emitToChannel(event: any, eventInfo: EventInfo) {
     this.debug('emitToChannel', { event, eventInfo, channel: this.channel });
     this.channel?.emit(this.channelEventName, {
@@ -680,8 +723,7 @@ export class UniversalStore<
     this.debug('emitToListeners', {
       event,
       eventInfo,
-      eventTypeListeners,
-      everythingListeners,
+      listenerEventTypes: [...this.listeners.keys()],
     });
 
     [...(eventTypeListeners ?? []), ...(everythingListeners ?? [])].forEach(

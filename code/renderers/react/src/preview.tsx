@@ -48,7 +48,7 @@ export interface ReactPreview<T extends Types> extends Preview<ReactRenderer & T
       args: Simplify<
         TArgs & Simplify<RemoveIndexSignature<DecoratorsArgs<ReactRenderer & T, Decorators>>>
       >;
-    },
+    } & T,
     { args: Partial<TArgs> extends TMetaArgs ? {} : TMetaArgs }
   >;
 }
@@ -56,30 +56,32 @@ export interface ReactPreview<T extends Types> extends Preview<ReactRenderer & T
 type DecoratorsArgs<TRenderer extends Renderer, Decorators> = UnionToIntersection<
   Decorators extends DecoratorFunction<TRenderer, infer TArgs> ? TArgs : unknown
 >;
+
+// @ts-expect-error hard
 interface ReactMeta<
-  Context extends { args: Args },
+  T extends Types & { args: Args },
   MetaInput extends ComponentAnnotations<ReactRenderer>,
-> extends Meta<ReactRenderer, Context['args']> {
+> extends Meta<ReactRenderer, T['args']> {
   story<
-    TInput extends StoryAnnotations<ReactRenderer, Context['args']> & {
+    TInput extends StoryAnnotations<ReactRenderer & T, T['args']> & {
       render: () => ReactRenderer['storyResult'];
     },
   >(
     story: TInput
-  ): ReactStory;
+  ): ReactStory<T>;
 
   story<
     const TInput extends Simplify<
       StoryAnnotations<
-        ReactRenderer,
+        ReactRenderer & T,
         // TODO: infer mocks from story itself as well
-        AddMocks<Context['args'], MetaInput['args']>,
-        SetOptional<Context['args'], keyof Context['args'] & keyof MetaInput['args']>
+        AddMocks<T['args'], MetaInput['args']>,
+        SetOptional<T['args'], keyof T['args'] & keyof MetaInput['args']>
       >
     >,
   >(
     story: TInput
-  ): ReactStory;
+  ): ReactStory<T>;
 }
 
-interface ReactStory extends Story<ReactRenderer> {}
+interface ReactStory<T extends Types> extends Story<ReactRenderer & T> {}

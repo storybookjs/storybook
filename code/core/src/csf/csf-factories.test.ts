@@ -1,65 +1,38 @@
-import { definePreview, definePreview2, definePreviewAddon, type PreviewAddon } from './csf-factories';
-import type { Types } from './story';
+import { expectTypeOf, test } from 'vitest';
 
-const addon = definePreviewAddon<{ parameters: { foo: { value: string } } }>({
-  parameters: {
-    foo: {
-      value: 'foo',
+import type { Story } from './csf-factories';
+import { definePreview, definePreviewAddon } from './csf-factories';
+import type { Renderer } from './story';
+
+interface Addon1Types {
+  parameters: { foo?: { value: string } };
+}
+
+const addon = definePreviewAddon<Addon1Types>({});
+
+interface Addon2Types {
+  parameters: { bar?: { value: string } };
+}
+
+const addon2 = definePreviewAddon<Addon2Types>({});
+
+const preview = definePreview({ addons: [addon, addon2] });
+
+const meta = preview.meta({});
+
+test('addon parameters are inferred', () => {
+  const MyStory = meta.story({
+    parameters: {
+      foo: {
+        // @ts-expect-error It should be a string
+        value: 1,
+      },
+      bar: {
+        // @ts-expect-error It should be a string
+        value: 1,
+      },
     },
-  },
+  });
+
+  expectTypeOf(MyStory).toEqualTypeOf<Story<Renderer & Addon1Types & Addon2Types>>();
 });
-
-const addon2 = definePreviewAddon<{ parameters: { bar: { value: string } } }>({
-  parameters: {
-    bar: {
-      value: 'bar',
-    },
-  },
-});
-
-const newVar = [{ foo: { value: 'foo' } }];
-const newVar1 = { bar: { value: 'bar' } };
-
-const preview2 = definePreview({ addons: [addon, addon2] });
-
-preview2.parameters?.bar;
-
-type A = { parameters?: { bar?: { value: string } } };
-type B = { parameters?: { foo?: { value: string } } };
-
-const a: A = {};
-const b: B = {};
-
-interface Addon {
-  parameters?: {};
-}
-
-export const defineSometing = <T extends Addon>(addons: T[]): T => {};
-
-const preview = defineSometing([a, b]);
-
-interface Animal {
-  animalStuff: any;
-}
-interface Dog extends Types {
-  dogStuff: any;
-}
-
-interface Bla extends Types {
-  blaStuff: any;
-}
-
-
-
-interface Animal { animalStuff: any; }
-interface Dog extends Animal { dogStuff: any; }
-interface Dog2 extends Animal { dog2Stuff: any; }
-
-type Type<out T> = (value: T) => void; // Contravariant in T
-
-const handleAnimal: Type<Dog2> = (a: Animal) => console.log(a.dog2stuff);
-const handleDog: Type<Dog> = (d: Dog) => console.log(d.dogStuff);
-
-const c = [handleAnimal, handleDog];
-
-type A = typeof c extends Type<infer T>[] ? T: never;

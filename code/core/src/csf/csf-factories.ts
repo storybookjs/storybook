@@ -27,7 +27,7 @@ export type InferTypes<T extends PreviewAddon<never>[]> = T extends PreviewAddon
   : never;
 
 export function definePreview<TRenderer extends Renderer, Addons extends PreviewAddon<never>[]>(
-  input: Preview<TRenderer>['input']
+  input: ProjectAnnotations<TRenderer> & { addons?: Addons }
 ): Preview<TRenderer & InferTypes<Addons>> {
   let composed: NormalizedProjectAnnotations<TRenderer & InferTypes<Addons>>;
   const preview = {

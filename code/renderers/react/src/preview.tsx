@@ -21,7 +21,7 @@ import type { AddMocks } from './public-types';
 import type { ReactRenderer } from './types';
 
 export function definePreview<Addons extends PreviewAddon<never>[]>(
-  preview: ProjectAnnotations<ReactRenderer> & { addons?: Addons }
+  preview: ProjectAnnotations<ReactRenderer> & { addons: Addons }
 ): ReactPreview<InferTypes<Addons>> {
   return definePreviewBase({
     ...preview,

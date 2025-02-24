@@ -2,15 +2,22 @@
 import type {
   Args,
   ComponentAnnotations,
+  ComposedStoryFn,
   NormalizedComponentAnnotations,
   NormalizedProjectAnnotations,
   NormalizedStoryAnnotations,
+  PlayFunction,
   ProjectAnnotations,
   Renderer,
   StoryAnnotations,
+  StoryContext,
 } from '@storybook/core/types';
 
-import { composeConfigs, normalizeProjectAnnotations } from '@storybook/core/preview-api';
+import {
+  composeConfigs,
+  composeStory,
+  normalizeProjectAnnotations,
+} from '@storybook/core/preview-api';
 
 export interface Preview<TRenderer extends Renderer = Renderer> {
   readonly _tag: 'Preview';
@@ -82,18 +89,35 @@ export interface Story<TRenderer extends Renderer, TArgs extends Args = Args> {
   input: StoryAnnotations<TRenderer, TArgs>;
   composed: NormalizedStoryAnnotations<TRenderer>;
   meta: Meta<TRenderer, TArgs>;
+  play: PlayFunction<TRenderer, TArgs>;
+  run: (context?: Partial<StoryContext<TRenderer, Partial<TArgs>>>) => Promise<void>;
 }
 
 function defineStory<TRenderer extends Renderer>(
   input: ComponentAnnotations<TRenderer>,
   meta: Meta<TRenderer>
 ): Story<TRenderer> {
+  let composed: ComposedStoryFn<TRenderer>;
+
+  const compose = () => {
+    if (!composed) {
+      composed = composeStory(input, meta.input, meta.preview.composed);
+    }
+    return composed;
+  };
+
   return {
     _tag: 'Story',
     input,
     meta,
     get composed(): never {
       throw new Error('Not implemented');
+    },
+    get play() {
+      return input.play ?? meta.input?.play ?? (async () => {});
+    },
+    get run() {
+      return compose().run || (async () => {});
     },
   };
 }

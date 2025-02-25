@@ -1,3 +1,10 @@
+## 8.5.9
+
+- Angular: Fix @angular/platform-browser/animations never available - [#30618](https://github.com/storybookjs/storybook/pull/30618), thanks @valentinpalkovic!
+- Angular: Fix @angular/platform-browser/animations never available - [#30619](https://github.com/storybookjs/storybook/pull/30619), thanks @valentinpalkovic!
+- Angular: Support v19.2 when @angular/animations is not installed - [#30611](https://github.com/storybookjs/storybook/pull/30611), thanks @valentinpalkovic!
+- Core: Always place cache dir inside `node_modules` - [#30643](https://github.com/storybookjs/storybook/pull/30643), thanks @ndelangen!
+
 ## 8.5.8
 
 - Core: Support `esbuild@^0.25` - [#30574](https://github.com/storybookjs/storybook/pull/30574), thanks @JReinhold!

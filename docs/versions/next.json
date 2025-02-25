@@ -1,1 +1,1 @@
-{"version":"8.6.0-beta.10","info":{"plain":"- Codemod: Always get real path of files - [#30650](https://github.com/storybookjs/storybook/pull/30650), thanks @yannbf!\n- Core: Don't set process.env.NODE_ENV and process.env.DEV - [#30651](https://github.com/storybookjs/storybook/pull/30651), thanks @valentinpalkovic!"}}
+{"version":"8.7.0-alpha.0","info":{"plain":""}}

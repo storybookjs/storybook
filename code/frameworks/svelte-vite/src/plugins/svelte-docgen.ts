@@ -146,7 +146,7 @@ export async function svelteDocgen(svelteOptions: Record<string, any> = {}): Pro
   return {
     name: 'storybook:svelte-docgen-plugin',
     async transform(src: string, id: string) {
-      if (!filter(id)) {
+      if (id.startsWith('\0') || !filter(id)) {
         return undefined;
       }
 

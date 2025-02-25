@@ -177,7 +177,18 @@ export const scaffoldNewProject = async (
     // If target directory has a .cache folder, remove it
     // so that it does not block the creation of the new project
     await rm(`${targetDir}/.cache`, { recursive: true, force: true });
+  } catch (e) {
+    //
+  }
+  try {
+    // If target directory has a node_modules folder, remove it
+    // so that it does not block the creation of the new project
+    await rm(`${targetDir}/node_modules`, { recursive: true, force: true });
+  } catch (e) {
+    //
+  }
 
+  try {
     // Create new project in temp directory
     await execa.command(createScript, {
       stdio: 'pipe',
@@ -220,7 +231,7 @@ export const scaffoldNewProject = async (
   logger.line(1);
 };
 
-const BASE_IGNORED_FILES = ['.git', '.gitignore', '.DS_Store', '.cache'];
+const BASE_IGNORED_FILES = ['.git', '.gitignore', '.DS_Store', '.cache', 'node_modules'];
 
 const IGNORED_FILES_BY_PACKAGE_MANAGER: Record<CoercedPackageManagerName, string[]> = {
   npm: [...BASE_IGNORED_FILES],

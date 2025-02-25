@@ -9,7 +9,7 @@ import { logger } from '../csf-factories';
 import { cleanupTypeImports } from './csf-factories-utils';
 
 // Name of properties that should not be renamed to `Story.input.xyz`
-const reuseDisallowList = ['play', 'run', 'extends'];
+const reuseDisallowList = ['play', 'run', 'extends', 'story'];
 
 // Name of types that should be removed from the import list
 const typesDisallowList = [
@@ -36,7 +36,7 @@ export async function storyToCsfFactory(
     return info.source;
   }
 
-  const metaVariableName = 'meta';
+  const metaVariableName = csf._metaVariableName ?? 'meta';
 
   /**
    * Add the preview import if it doesn't exist yet:
@@ -143,12 +143,17 @@ export async function storyToCsfFactory(
 
   // For each story, replace any reference of story reuse e.g.
   // Story.args -> Story.input.args
+  // meta.args -> meta.input.args
   traverse(csf._ast, {
     Identifier(nodePath) {
-      const binding = nodePath.scope.getBinding(nodePath.node.name);
+      const identifierName = nodePath.node.name;
+      const binding = nodePath.scope.getBinding(identifierName);
 
-      // Check if the identifier corresponds to a story export
-      if (binding && storyExportDecls.has(binding.identifier.name)) {
+      // Check if the identifier corresponds to a story export or the meta variable
+      const isStoryExport = binding && storyExportDecls.has(binding.identifier.name);
+      const isMetaVariable = identifierName === metaVariableName;
+
+      if (isStoryExport || isMetaVariable) {
         const parent = nodePath.parent;
 
         // Skip declarations (e.g., `const Story = {};`)
@@ -162,14 +167,15 @@ export async function storyToCsfFactory(
         }
 
         // Skip export statements e.g.`export const Story` or `export { Story }`
-        if (t.isExportSpecifier(parent)) {
+        if (t.isExportSpecifier(parent) || t.isExportDefaultDeclaration(parent)) {
           return;
         }
 
-        // Skip if it's already `Story.input`
+        // Skip if it's already `Story.input` or `meta.input`
         if (t.isMemberExpression(parent) && t.isIdentifier(parent.property, { name: 'input' })) {
           return;
         }
+
         // Check if the property name is in the disallow list
         if (
           t.isMemberExpression(parent) &&
@@ -180,9 +186,9 @@ export async function storyToCsfFactory(
         }
 
         try {
-          // Replace the identifier with `Story.input`
+          // Replace the identifier with `Story.input` or `meta.input`
           nodePath.replaceWith(
-            t.memberExpression(t.identifier(nodePath.node.name), t.identifier('input'))
+            t.memberExpression(t.identifier(identifierName), t.identifier('input'))
           );
         } catch (err: any) {
           // This is a tough one to support, we just skip for now.

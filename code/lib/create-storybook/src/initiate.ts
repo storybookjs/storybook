@@ -299,13 +299,12 @@ export async function doInitiate(options: CommandOptions): Promise<
     test: { name: 'Testing', description: 'Fast browser-based component tests, watch mode' },
   };
 
+  const printFeatures = (features: Set<GeneratorFeature>) =>
+    Array.from(features)
+      .map((f) => selectableFeatures[f].name)
+      .join(', ') || 'none';
+
   let selectedFeatures = new Set<GeneratorFeature>();
-  selectedFeatures.toString = () =>
-    selectedFeatures.size === 0
-      ? 'none'
-      : Array.from(selectedFeatures)
-          .map((f) => selectableFeatures[f].name)
-          .join(', ');
 
   if (options.features?.length > 0) {
     if (options.features.includes('docs')) {
@@ -314,7 +313,7 @@ export async function doInitiate(options: CommandOptions): Promise<
     if (options.features.includes('test')) {
       selectedFeatures.add('test');
     }
-    logger.log(`Selected features: ${selectedFeatures}`);
+    logger.log(`Selected features: ${printFeatures(selectedFeatures)}`);
   } else if (options.yes || !isInteractive) {
     selectedFeatures.add('docs');
 
@@ -322,7 +321,7 @@ export async function doInitiate(options: CommandOptions): Promise<
       // Don't automatically add test feature in CI
       selectedFeatures.add('test');
     }
-    logger.log(`Selected features: ${selectedFeatures}`);
+    logger.log(`Selected features: ${printFeatures(selectedFeatures)}`);
   } else {
     const out = await prompts({
       type: 'multiselect',
@@ -375,6 +374,25 @@ export async function doInitiate(options: CommandOptions): Promise<
   } else {
     try {
       projectType = (await detect(packageManager as any, options)) as ProjectType;
+
+      if (projectType === ProjectType.REACT_NATIVE && !options.yes) {
+        const { manualType } = await prompts({
+          type: 'select',
+          name: 'manualType',
+          message: "We've detected a React Native project. Install:",
+          choices: [
+            {
+              title: `${picocolors.bold('React Native')}: Storybook on your device/simulator`,
+              value: ProjectType.REACT_NATIVE,
+            },
+            {
+              title: `${picocolors.bold('React Native Web')}: Storybook on web for docs, test, and sharing`,
+              value: ProjectType.REACT_NATIVE_WEB,
+            },
+          ],
+        });
+        projectType = manualType;
+      }
     } catch (err) {
       done(String(err));
       throw new HandledError(err);
@@ -527,7 +545,7 @@ export async function doInitiate(options: CommandOptions): Promise<
     boxen(
       dedent`
           Storybook was successfully installed in your project! 🎉
-          Additional features: ${selectedFeatures}
+          Additional features: ${printFeatures(selectedFeatures)}
 
           To run Storybook manually, run ${picocolors.yellow(
             picocolors.bold(storybookCommand)

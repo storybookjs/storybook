@@ -635,6 +635,7 @@ jobs:
           command: |
             cd code
             yarn local-registry --open &
+            yarn wait-on tcp:127.0.0.1:6001
             cd ../../
             mkdir features-1
             cd features-1

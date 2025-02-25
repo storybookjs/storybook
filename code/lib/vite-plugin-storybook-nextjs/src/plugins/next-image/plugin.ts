@@ -1,9 +1,8 @@
 import fs from "node:fs";
 import { createRequire } from "node:module";
-import { cpus } from "node:os";
 import path from "node:path";
 import { decode } from "node:querystring";
-import imageSizeOf from "image-size";
+import { imageSize } from "image-size";
 import type { NextConfigComplete } from "next/dist/server/config-shared.js";
 import { dedent } from "ts-dedent";
 import type { Plugin } from "vite";
@@ -17,22 +16,7 @@ const virtualImage = "virtual:next-image";
 const virtualNextImage = "virtual:next/image";
 const virtualNextLegacyImage = "virtual:next/legacy/image";
 
-let sharp: typeof import("sharp") | undefined;
-
 const require = createRequire(import.meta.url);
-
-try {
-  sharp = require("sharp");
-  if (sharp && sharp.concurrency() > 1) {
-    // Reducing concurrency reduces the memory usage too.
-    const divisor = process.env.NODE_ENV === "development" ? 4 : 2;
-    sharp.concurrency(Math.floor(Math.max(cpus().length / divisor, 1)));
-  }
-} catch (e) {
-  console.warn(
-    "You have to install sharp in order to use image optimization features in Next.js. AVIF support is also disabled.",
-  );
-}
 
 export function vitePluginNextImage(
   nextConfigResolver: PromiseWithResolvers<NextConfigComplete>,
@@ -110,7 +94,6 @@ export function vitePluginNextImage(
         const imagePath = decode(query).imagePath as string;
 
         const nextConfig = await nextConfigResolver.promise;
-        const extension = path.extname(imagePath);
 
         try {
           if (nextConfig.images?.disableStaticImages) {
@@ -122,19 +105,7 @@ export function vitePluginNextImage(
 
           const imageData = await fs.promises.readFile(imagePath);
 
-          let width: number | undefined;
-          let height: number | undefined;
-
-          if (extension === ".avif" && sharp) {
-            const transformer = sharp(Buffer.from(imageData));
-            const result = await transformer.metadata();
-            width = result.width;
-            height = result.height;
-          } else {
-            const result = imageSizeOf(imageData);
-            width = result.width;
-            height = result.height;
-          }
+          const { width, height } = imageSize(imageData);
 
           return dedent`
 						import src from "${imagePath}?ignore";

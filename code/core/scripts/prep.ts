@@ -124,10 +124,6 @@ async function run() {
       platform: 'neutral',
       mainFields: ['main', 'module', 'node'],
       conditions: ['node', 'module', 'import', 'require'],
-      define: {
-        'process.env.NODE_ENV': '"production"',
-        'process.env.DEV': '"false"',
-      },
     } satisfies EsbuildContextOptions;
 
     const browserAliases = {

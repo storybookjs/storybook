@@ -63,7 +63,8 @@ export async function getSyncedStorybookAddons(
           ))
       ) {
         syncedAddons.push(addon);
-        if (annotations.isCoreAddon) {
+        // addon-essentials is a special use case that won't have /preview entrypoint but rather /entry-preview
+        if (annotations.isCoreAddon && addon !== '@storybook/addon-essentials') {
           // import addonName from 'addon'; + addonName()
           previewConfig.setImport(annotations.importName, annotations.importPath);
           previewConfig.appendNodeToArray(

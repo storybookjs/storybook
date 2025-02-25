@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "8.6.0-beta.8",
+  "version": "9.0.0-alpha.0",
   "description": "Storybook's CLI - install, dev, build, upgrade, and more",
   "keywords": [
     "cli",

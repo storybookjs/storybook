@@ -8,6 +8,8 @@ import { AlertIcon as AlertIconSvg, EyeCloseIcon, EyeIcon, HeartIcon } from '@st
 
 import { useStorybookApi, useStorybookState } from '@storybook/core/manager-api';
 
+import { createCopyToClipboardFunction } from '../../components';
+
 const Centered = styled.div({
   top: '50%',
   position: 'absolute',
@@ -164,6 +166,8 @@ const PureWhatsNewScreen: FC<WhatsNewProps> = ({
   </Fragment>
 );
 
+const copyToClipboard = createCopyToClipboardFunction();
+
 const MAX_WAIT_TIME = 10000; // 10 seconds
 
 const WhatsNewScreen: FC = () => {
@@ -195,7 +199,7 @@ const WhatsNewScreen: FC = () => {
       url={whatsNewData.url}
       isNotificationsEnabled={isNotificationsEnabled}
       onCopyLink={() => {
-        navigator.clipboard?.writeText(whatsNewData.blogUrl ?? whatsNewData.url);
+        copyToClipboard(whatsNewData.blogUrl ?? whatsNewData.url);
       }}
       onToggleNotifications={() => {
         if (isNotificationsEnabled) {

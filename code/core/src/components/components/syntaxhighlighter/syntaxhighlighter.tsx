@@ -26,6 +26,7 @@ import ReactSyntaxHighlighter from 'react-syntax-highlighter/dist/esm/prism-ligh
 import { ActionBar } from '../ActionBar/ActionBar';
 import type { ScrollAreaProps } from '../ScrollArea/ScrollArea';
 import { ScrollArea } from '../ScrollArea/ScrollArea';
+import { createCopyToClipboardFunction } from '../utils/createCopyToClipboardFunction';
 import type {
   SyntaxHighlighterProps,
   SyntaxHighlighterRenderer,
@@ -56,25 +57,7 @@ const themedSyntax = memoize(2)((theme) =>
   Object.entries(theme.code || {}).reduce((acc, [key, val]) => ({ ...acc, [`* .${key}`]: val }), {})
 );
 
-const copyToClipboard: (text: string) => Promise<void> = createCopyToClipboardFunction();
-
-export function createCopyToClipboardFunction() {
-  if (navigator?.clipboard) {
-    return (text: string) => navigator.clipboard.writeText(text);
-  }
-  return async (text: string) => {
-    const tmp = document.createElement('TEXTAREA') as HTMLTextAreaElement;
-    const focus = document.activeElement as HTMLTextAreaElement;
-
-    tmp.value = text;
-
-    document.body.appendChild(tmp);
-    tmp.select();
-    document.execCommand('copy');
-    document.body.removeChild(tmp);
-    focus.focus();
-  };
-}
+const copyToClipboard = createCopyToClipboardFunction();
 
 export interface WrapperProps {
   bordered?: boolean;

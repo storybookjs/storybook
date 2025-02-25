@@ -189,7 +189,13 @@ export async function svelteDocgen(svelteOptions: Record<string, any> = {}): Pro
 
         let docOptions;
         if (docPreprocessOptions) {
-          const rawSource = readFileSync(resource).toString();
+          let rawSource;
+          try {
+            rawSource = readFileSync(resource).toString();
+          } catch (_) {
+            // ignore/skip modules that can't be loaded, possibly virtual module
+            return undefined;
+          }
           const { code: fileContent } = await preprocess(rawSource, docPreprocessOptions, {
             filename: resource,
           });

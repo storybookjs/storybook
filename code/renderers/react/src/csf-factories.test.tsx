@@ -277,3 +277,53 @@ it('Infer mock function given to args in meta.', () => {
     },
   });
 });
+
+describe('Composed getters', () => {
+  const TestButton = () => <></>;
+
+  const meta = preview.meta({
+    component: TestButton,
+    args: { label: 'label', onClick: fn(), onRender: () => <>some jsx</> },
+  });
+
+  it('Composes the play function', async () => {
+    const spy = fn();
+    const Basic = meta.story({
+      play: async ({ args }) => {
+        spy(args);
+      },
+    });
+
+    await Basic.play(meta.input as any);
+
+    expect(spy).toHaveBeenCalledWith({
+      label: 'label',
+      onClick: expect.any(Function),
+      onRender: expect.any(Function),
+    });
+  });
+
+  it('Composes the run function', async () => {
+    const playSpy = fn();
+    const renderSpy = fn();
+    const Basic = meta.story({
+      play: async ({ args }) => {
+        playSpy(args);
+      },
+      render: () => {
+        renderSpy();
+        return <></>;
+      },
+    });
+
+    await Basic.run();
+
+    expect(playSpy).toHaveBeenCalledWith({
+      label: 'label',
+      onClick: expect.any(Function),
+      onRender: expect.any(Function),
+    });
+
+    expect(renderSpy).toHaveBeenCalled();
+  });
+});

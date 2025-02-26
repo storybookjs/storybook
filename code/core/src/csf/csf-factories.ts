@@ -12,34 +12,51 @@ import type {
 
 import { composeConfigs, normalizeProjectAnnotations } from '@storybook/core/preview-api';
 
+import type { Types } from './story';
+
 export interface Preview<TRenderer extends Renderer = Renderer> {
   readonly _tag: 'Preview';
-  input: ProjectAnnotations<TRenderer>;
+  input: ProjectAnnotations<TRenderer> & { addons?: PreviewAddon<never>[] };
   composed: NormalizedProjectAnnotations<TRenderer>;
 
   meta(input: ComponentAnnotations<TRenderer>): Meta<TRenderer>;
 }
 
-export function definePreview<TRenderer extends Renderer>(
-  input: Preview<TRenderer>['input']
-): Preview<TRenderer> {
-  let composed: NormalizedProjectAnnotations<TRenderer>;
-  const preview: Preview<TRenderer> = {
+export type InferTypes<T extends PreviewAddon<never>[]> = T extends PreviewAddon<infer C>[]
+  ? C
+  : never;
+
+export function definePreview<TRenderer extends Renderer, Addons extends PreviewAddon<never>[]>(
+  input: ProjectAnnotations<TRenderer> & { addons?: Addons }
+): Preview<TRenderer & InferTypes<Addons>> {
+  let composed: NormalizedProjectAnnotations<TRenderer & InferTypes<Addons>>;
+  const preview = {
     _tag: 'Preview',
-    input,
+    input: input,
     get composed() {
       if (composed) {
         return composed;
       }
       const { addons, ...rest } = input;
-      composed = normalizeProjectAnnotations<TRenderer>(composeConfigs([...(addons ?? []), rest]));
+      composed = normalizeProjectAnnotations<TRenderer & InferTypes<Addons>>(
+        composeConfigs([...(addons ?? []), rest])
+      );
       return composed;
     },
-    meta(meta: ComponentAnnotations<TRenderer>) {
+    meta(meta: ComponentAnnotations<TRenderer & InferTypes<Addons>>) {
       return defineMeta(meta, this);
     },
-  };
+  } as Preview<TRenderer & InferTypes<Addons>>;
   globalThis.globalProjectAnnotations = preview.composed;
+  return preview;
+}
+
+export interface PreviewAddon<in TExtraContext extends Types = Types>
+  extends ProjectAnnotations<Renderer> {}
+
+export function definePreviewAddon<TExtraContext extends Types = Types>(
+  preview: ProjectAnnotations<Renderer>
+): PreviewAddon<TExtraContext> {
   return preview;
 }
 

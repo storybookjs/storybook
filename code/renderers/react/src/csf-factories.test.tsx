@@ -14,16 +14,16 @@ import { fn } from '@storybook/test';
 
 import { expectTypeOf } from 'expect-type';
 
-import { definePreview } from './preview';
+import { __definePreview } from './preview';
 import type { Decorator } from './public-types';
 
 type ButtonProps = { label: string; disabled: boolean };
 const Button: (props: ButtonProps) => ReactElement = () => <></>;
 
-const preview = definePreview({});
+const preview = __definePreview({});
 
 test('csf factories', () => {
-  const config = definePreview({
+  const config = __definePreview({
     addons: [
       {
         decorators: [],

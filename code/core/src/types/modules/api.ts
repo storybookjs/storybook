@@ -2,6 +2,7 @@
 import type { ReactElement } from 'react';
 
 import type { Channel } from '../../channels';
+import type { State } from '../../manager-api';
 import type { RenderData } from '../../router/types';
 import type { ThemeVars } from '../../theming/types';
 import type { Addon_RenderOptions } from './addons';
@@ -90,6 +91,11 @@ export interface API_Layout {
   showToolbar: boolean;
   /** @deprecated, will be removed in 8.0 - this API no longer works */
   isToolshown?: boolean;
+}
+
+export interface API_LayoutCustomisations {
+  showSidebar?: (state: State, defaultValue: boolean) => boolean | undefined;
+  showToolbar?: (state: State, defaultValue: boolean) => boolean | undefined;
 }
 
 export interface API_UI {

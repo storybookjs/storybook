@@ -88,7 +88,7 @@ export async function storybookDevServer(options: Options) {
     previewResult = await previewBuilder
       .start({
         startTime: process.hrtime(),
-        options,
+        options: { ...options, getStoryIndexGenerator: () => initializedStoryIndexGenerator },
         router: app,
         server,
         channel: serverChannel,

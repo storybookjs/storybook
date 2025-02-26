@@ -42,7 +42,10 @@ module.exports = {
           });
         }
 
-        if (node.source.value.startsWith('storybook/internal/') && (isInCore || isInCLI || isInCodemod || isInCreateStorybook)) {
+        if (
+          node.source.value.startsWith('storybook/internal/') &&
+          (isInCore || isInCLI || isInCodemod || isInCreateStorybook)
+        ) {
           const newPath = node.source.value
             .replace('storybook/internal', '@storybook/core')
             .replace('/src', '');

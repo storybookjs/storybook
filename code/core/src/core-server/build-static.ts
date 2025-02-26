@@ -182,7 +182,10 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
           previewBuilder
             .build({
               startTime,
-              options: fullOptions,
+              options: {
+                ...fullOptions,
+                getStoryIndexGenerator: () => initializedStoryIndexGenerator,
+              },
             })
             .then(async (previewStats) => {
               logger.trace({ message: '=> Preview built', time: process.hrtime(startTime) });

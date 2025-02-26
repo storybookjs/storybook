@@ -1,6 +1,7 @@
 import { dirname } from 'node:path';
 
 import { buildDevStandalone } from './build-dev';
+import { buildIndexStandalone } from './build-index';
 import { buildStaticStandalone } from './build-static';
 
 async function build(options: any = {}, frameworkOptions: any = {}) {
@@ -26,7 +27,11 @@ async function build(options: any = {}, frameworkOptions: any = {}) {
     return buildStaticStandalone(commonOptions);
   }
 
-  throw new Error(`'mode' parameter should be either 'dev' or 'static'`);
+  if (mode === 'index') {
+    return buildIndexStandalone(commonOptions);
+  }
+
+  throw new Error(`'mode' parameter should be either 'dev', 'static', or 'index'`);
 }
 
 export default build;

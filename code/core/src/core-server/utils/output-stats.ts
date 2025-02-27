@@ -27,7 +27,7 @@ export const writeStats = async (directory: string, name: string, stats: Stats) 
       .on('error', reject)
       .pipe(createWriteStream(filePath))
       .on('error', reject)
-      .on('finish', resolve);
+      .on('finish', resolve as any);
   });
   return filePath;
 };

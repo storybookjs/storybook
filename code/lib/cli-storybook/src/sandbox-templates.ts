@@ -142,34 +142,6 @@ export const baseTemplates = {
       extraDependencies: ['prop-types'],
     },
   },
-  'nextjs/13-ts': {
-    name: 'Next.js v13.5 (Webpack | TypeScript)',
-    script:
-      'yarn create next-app {{beforeDir}} -e https://github.com/vercel/next.js/tree/next-13/examples/hello-world ' +
-      '&& cd {{beforeDir}} ' +
-      'jq \'.compilerOptions.moduleResolution = "bundler"\' tsconfig.json > tmp.json && mv tmp.json tsconfig.json ' +
-      '&& npm pkg set "dependencies.next"="^13.5.6" ' +
-      '&& yarn ' +
-      '&& git add . ' +
-      '&& git commit --amend --no-edit ' +
-      '&& cd ..',
-    expected: {
-      framework: '@storybook/nextjs',
-      renderer: '@storybook/react',
-      builder: '@storybook/builder-webpack5',
-    },
-    modifications: {
-      useCsfFactory: true,
-      mainConfig: {
-        features: {
-          experimentalRSC: true,
-          developmentModeForBuild: true,
-        },
-      },
-      extraDependencies: ['server-only', 'prop-types'],
-    },
-    skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
-  },
   'nextjs/14-ts': {
     name: 'Next.js v14.2 (Webpack | TypeScript)',
     script:
@@ -551,28 +523,28 @@ export const baseTemplates = {
     },
     skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },
-  'svelte-kit/skeleton-js': {
-    name: 'SvelteKit Latest (Vite | JavaScript)',
-    script:
-      'yarn create svelte-with-args --name=svelte-kit/skeleton-js --directory={{beforeDir}} --template=skeleton --types=null --no-prettier --no-eslint --no-playwright --no-vitest --no-svelte5',
-    expected: {
-      framework: '@storybook/sveltekit',
-      renderer: '@storybook/svelte',
-      builder: '@storybook/builder-vite',
-    },
-    skipTasks: ['e2e-tests-dev', 'bench', 'test-runner'],
-  },
-  'svelte-kit/skeleton-ts': {
-    name: 'SvelteKit Latest (Vite | TypeScript)',
-    script:
-      'yarn create svelte-with-args --name=svelte-kit/skeleton-ts --directory={{beforeDir}} --template=skeleton --types=typescript --no-prettier --no-eslint --no-playwright --no-vitest --no-svelte5',
-    expected: {
-      framework: '@storybook/sveltekit',
-      renderer: '@storybook/svelte',
-      builder: '@storybook/builder-vite',
-    },
-    skipTasks: ['e2e-tests-dev', 'bench', 'test-runner'],
-  },
+  // 'svelte-kit/skeleton-js': {
+  //   name: 'SvelteKit Latest (Vite | JavaScript)',
+  //   script:
+  //     'yarn create svelte-with-args --name=svelte-kit/skeleton-js --directory={{beforeDir}} --template=skeleton --types=null --no-prettier --no-eslint --no-playwright --no-vitest --no-svelte5',
+  //   expected: {
+  //     framework: '@storybook/sveltekit',
+  //     renderer: '@storybook/svelte',
+  //     builder: '@storybook/builder-vite',
+  //   },
+  //   skipTasks: ['e2e-tests-dev', 'bench', 'test-runner'],
+  // },
+  // 'svelte-kit/skeleton-ts': {
+  //   name: 'SvelteKit Latest (Vite | TypeScript)',
+  //   script:
+  //     'yarn create svelte-with-args --name=svelte-kit/skeleton-ts --directory={{beforeDir}} --template=skeleton --types=typescript --no-prettier --no-eslint --no-playwright --no-vitest --no-svelte5',
+  //   expected: {
+  //     framework: '@storybook/sveltekit',
+  //     renderer: '@storybook/svelte',
+  //     builder: '@storybook/builder-vite',
+  //   },
+  //   skipTasks: ['e2e-tests-dev', 'bench', 'test-runner'],
+  // },
   'svelte-kit/prerelease-ts': {
     name: 'SvelteKit Prerelease (Vite | TypeScript)',
     script:
@@ -882,7 +854,7 @@ export const normal: TemplateKey[] = [
   'nuxt-vite/default-ts',
   'lit-vite/default-ts',
   'svelte-vite/default-ts',
-  'svelte-kit/skeleton-ts',
+  // 'svelte-kit/skeleton-ts',
   'nextjs/default-ts',
   'experimental-nextjs-vite/default-ts',
   'bench/react-vite-default-ts',
@@ -914,10 +886,9 @@ export const daily: TemplateKey[] = [
   'vue3-vite/default-js',
   'vue-cli/default-js',
   'lit-vite/default-js',
-  'svelte-kit/skeleton-js',
+  // 'svelte-kit/skeleton-js',
   'svelte-kit/prerelease-ts',
   'svelte-vite/default-js',
-  'nextjs/13-ts',
   'nextjs/prerelease',
   'qwik-vite/default-ts',
   'preact-vite/default-js',

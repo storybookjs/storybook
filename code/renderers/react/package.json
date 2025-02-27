@@ -79,7 +79,7 @@
   },
   "devDependencies": {
     "@storybook/test": "workspace:*",
-    "@types/babel-plugin-react-docgen": "^4",
+    "@types/babel-plugin-react-docgen": "^4.2.3",
     "@types/escodegen": "^0.0.6",
     "@types/estree": "^0.0.51",
     "@types/node": "^22.0.0",

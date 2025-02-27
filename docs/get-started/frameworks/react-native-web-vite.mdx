@@ -1,5 +1,6 @@
 ---
 title: Storybook for React Native Web
+hideRendererSelector: true
 sidebar:
   order: 6
   title: React Native Web
@@ -12,211 +13,198 @@ Storybook for React Native Web is a [framework](../../contribute/framework.mdx) 
 * 🪄 Zero config
 * 💫 and more!
 
-<If notRenderer="react-native-web">
-  <Callout variant="info">
-    Storybook for React Native Web is only supported in [React Native](?renderer=react-native-web) projects.
-  </Callout>
+<Callout variant="info">
+  In addition to React Native Web, Storybook supports on-device [React Native](https://github.com/storybookjs/react-native) development. If you're unsure what's right for you, read our [comparison](#react-native-vs-react-native-web).
+</Callout>
 
-  {/* End non-supported renderers */}
-</If>
+## Requirements
 
-<If renderer="react-native-web">
-  <Callout variant="info">
-    In addition to React Native Web, Storybook supports on-device [React Native](https://github.com/storybookjs/react-native) development. If you're unsure what's right for you, read our [comparison](#react-native-vs-react-native-web).
-  </Callout>
+* React-Native ≥ 0.72
+* React-Native-Web ≥ 0.19
+* Storybook ≥ 8.5
+* Vite ≥ 5.0
 
-  ## Requirements
+## Getting started
 
-  * React-Native ≥ 0.72
-  * React-Native-Web ≥ 0.19
-  * Storybook ≥ 8.5
-  * Vite ≥ 5.0
+### In a project without Storybook
 
-  ## Getting started
+Follow the prompts after running this command in your React Native project's root directory:
 
-  ### In a project without Storybook
+{/* prettier-ignore-start */}
 
-  Follow the prompts after running this command in your React Native project's root directory:
+<CodeSnippets path="create-command.md" />
 
-  {/* prettier-ignore-start */}
+{/* prettier-ignore-end */}
 
-  <CodeSnippets path="create-command.md" />
+[More on getting started with Storybook.](../install.mdx)
 
-  {/* prettier-ignore-end */}
+### In a project with Storybook `addon-react-native-web`
 
-  [More on getting started with Storybook.](../install.mdx)
+The [React Native Web addon](https://github.com/storybookjs/addon-react-native-web) was a Webpack-based precursor to the React Native Web Vite framework (i.e., `@storybook/react-native-web-vite`). If you're using the addon, you should migrate to the framework, which is faster, more stable, maintained, and better documented. To do so, follow the steps below.
 
-  ### In a project with Storybook `addon-react-native-web`
+Run the following command to upgrade Storybook to the latest version:
 
-  The [React Native Web addon](https://github.com/storybookjs/addon-react-native-web) was a Webpack-based precursor to the React Native Web Vite framework (i.e., `@storybook/react-native-web-vite`). If you're using the addon, you should migrate to the framework, which is faster, more stable, maintained, and better documented. To do so, follow the steps below.
+{/* prettier-ignore-start */}
 
-  Run the following command to upgrade Storybook to the latest version:
+<CodeSnippets path="storybook-upgrade.md" />
 
-  {/* prettier-ignore-start */}
+{/* prettier-ignore-end */}
 
-  <CodeSnippets path="storybook-upgrade.md" />
+<Callout variant="info">
+  This framework is designed to work with Storybook 8.5 and above for the best experience. We won't be able to provide support if you're using an older Storybook version.
+</Callout>
 
-  {/* prettier-ignore-end */}
+Install the framework and its peer dependencies:
 
-  <Callout variant="info">
-    This framework is designed to work with Storybook 8.5 and above for the best experience. We won't be able to provide support if you're using an older Storybook version.
-  </Callout>
+{/* prettier-ignore-start */}
 
-  Install the framework and its peer dependencies:
+<CodeSnippets path="react-native-web-vite-install.md" />
 
-  {/* prettier-ignore-start */}
+{/* prettier-ignore-end */}
 
-  <CodeSnippets path="react-native-web-vite-install.md" />
+Update your `.storybook/main.js|ts` to change the framework property and remove the `@storybook/addon-react-native-web` addon:
 
-  {/* prettier-ignore-end */}
+{/* prettier-ignore-start */}
 
-  Update your `.storybook/main.js|ts` to change the framework property and remove the `@storybook/addon-react-native-web` addon:
+<CodeSnippets path="react-native-web-vite-add-framework.md" />
 
-  {/* prettier-ignore-start */}
+{/* prettier-ignore-end */}
 
-  <CodeSnippets path="react-native-web-vite-add-framework.md" />
+Finally, remove the addon and similar packages (i.e., `@storybook/react-webpack5` and `@storybook/addon-react-native-web`) from your project.
 
-  {/* prettier-ignore-end */}
+### In a project with Storybook `react-native`
 
-  Finally, remove the addon and similar packages (i.e., `@storybook/react-webpack5` and `@storybook/addon-react-native-web`) from your project.
+[Storybook for React Native](https://github.com/storybookjs/react-native) is a framework that runs in a simulator or on your mobile device. It's possible to run React Native Web alongside React Native, but we are still working on a seamless integration. In the meantime, we recommend running one or the other. If you need help figuring out what's right for you, read our [comparison](#react-native-vs-react-native-web).
 
-  ### In a project with Storybook `react-native`
+## Run the Setup Wizard
 
-  [Storybook for React Native](https://github.com/storybookjs/react-native) is a framework that runs in a simulator or on your mobile device. It's possible to run React Native Web alongside React Native, but we are still working on a seamless integration. In the meantime, we recommend running one or the other. If you need help figuring out what's right for you, read our [comparison](#react-native-vs-react-native-web).
+If all goes well, you should see a setup wizard that will help you get started with Storybook. The wizard will introduce you to the main concepts and features, including how the UI is organized, how to write your first story, and how to test your components' response to various inputs utilizing [controls](../../essentials/controls.mdx).
 
-  ## Run the Setup Wizard
+![Storybook onboarding](../../_assets/get-started/example-onboarding-wizard.png)
 
-  If all goes well, you should see a setup wizard that will help you get started with Storybook. The wizard will introduce you to the main concepts and features, including how the UI is organized, how to write your first story, and how to test your components' response to various inputs utilizing [controls](../../essentials/controls.mdx).
+If you skipped the wizard, you can always run it again by adding the `?path=/onboarding` query parameter to the URL of your Storybook instance, provided that the example stories are still available.
 
-  ![Storybook onboarding](../../_assets/get-started/example-onboarding-wizard.png)
+## React Native vs React Native Web
 
-  If you skipped the wizard, you can always run it again by adding the `?path=/onboarding` query parameter to the URL of your Storybook instance, provided that the example stories are still available.
+If you’re building React Native (RN) components, Storybook has two options: Native and Web.
 
-  ## React Native vs React Native Web
+Both options provide a catalog of your stories that hot refreshes as you edit the code in your favorite editor. However, their implementations are quite different:
 
-  If you’re building React Native (RN) components, Storybook has two options: Native and Web.
+- **Native** - Runs inside your React Native application. It’s high-fidelity but has a limited feature set.
+- **Web** - Displays your React Native components in the browser. It’s based on Storybook for Web, which is feature-rich and mature.
 
-  Both options provide a catalog of your stories that hot refreshes as you edit the code in your favorite editor. However, their implementations are quite different:
+{/* TODO: Don't forget about this image, otherwise remove it */}
 
-  - **Native** - Runs inside your React Native application. It’s high-fidelity but has a limited feature set.
-  - **Web** - Displays your React Native components in the browser. It’s based on Storybook for Web, which is feature-rich and mature.
+{/* [Image: native + web] */}
 
-  {/* TODO: Don't forget about this image, otherwise remove it */}
+So, which option is right for you?
 
-  {/* [Image: native + web] */}
+**Native.** You should choose this option if you want:
 
-  So, which option is right for you?
+- **Native features** - Your components rely on device-specific features like native modules. It runs in your actual application, in-simulator, or on-device and provides full fidelity. The web version uses `react-native-web`, which works for most components but has [limitations](https://necolas.github.io/react-native-web/docs/react-native-compatibility/).
+- **Mobile publication** - You want to share your Storybook on-device as part of a test build or embedded inside your application.
 
-  **Native.** You should choose this option if you want:
+**Web.** You should choose this option if you want:
 
-  - **Native features** - Your components rely on device-specific features like native modules. It runs in your actual application, in-simulator, or on-device and provides full fidelity. The web version uses `react-native-web`, which works for most components but has [limitations](https://necolas.github.io/react-native-web/docs/react-native-compatibility/).
-  - **Mobile publication** - You want to share your Storybook on-device as part of a test build or embedded inside your application.
+- [**Sharing**](../../sharing/publish-storybook.mdx) - Publish to the web and share with your team or publicly.
+- [**Documentation**](../../writing-docs/index.mdx) - Auto-generated component docs or rich markdown docs in MDX.
+- [**Testing**](../../writing-tests/index.mdx) - Component, visual, and a11y tests for your components.
+- [**Addons**](https://storybook.js.org/addons) - 500+ addons that improve development, documentation, testing, and integration with other tools.
 
-  **Web.** You should choose this option if you want:
+**Both.** It’s also possible to use both options together. However, this increases Storybook’s install footprint and requires more work to configure. Therefore, we recommend choosing one option to start and extending it once you have something working.
 
-  - [**Sharing**](../../sharing/publish-storybook.mdx) - Publish to the web and share with your team or publicly.
-  - [**Documentation**](../../writing-docs/index.mdx) - Auto-generated component docs or rich markdown docs in MDX.
-  - [**Testing**](../../writing-tests/index.mdx) - Component, visual, and a11y tests for your components.
-  - [**Addons**](https://storybook.js.org/addons) - 500+ addons that improve development, documentation, testing, and integration with other tools.
+## API
 
-  **Both.** It’s also possible to use both options together. However, this increases Storybook’s install footprint and requires more work to configure. Therefore, we recommend choosing one option to start and extending it once you have something working.
+### Options
 
-  ## API
+You can pass an options object for additional configuration if needed:
 
-  ### Options
+```ts title=".storybook/main.ts"
+import type { StorybookConfig } from '@storybook/react-native-web-vite';
 
-  You can pass an options object for additional configuration if needed:
-
-  ```ts title=".storybook/main.ts"
-  import type { StorybookConfig } from '@storybook/react-native-web-vite';
-
-  const config: StorybookConfig = {
-    framework: {
-      name: '@storybook/react-native-web-vite',
-      options: {
-        // You should apply babel plugins and presets here for your project that you want to apply to your code
-        // for example put the reanimated preset here if you are using reanimated
-        // or the nativewind jsxImportSource for example
-        pluginReactOptions: {
-          jsxRuntime: 'automatic' | 'classic', // default: 'automatic'
-          jsxImportSource: string, // default: 'react'
-          babel:{
-            plugins: Array<string | [string, any]>,
-            presets: Array<string | [string, any]>,
-            // ... other compatible babel options
-          }
-          include: Array<string|RegExp>,
-          exclude: Array<string|RegExp>,
-          // ... other compatible @vitejs/plugin-react options
+const config: StorybookConfig = {
+  framework: {
+    name: '@storybook/react-native-web-vite',
+    options: {
+      // You should apply babel plugins and presets here for your project that you want to apply to your code
+      // for example put the reanimated preset here if you are using reanimated
+      // or the nativewind jsxImportSource for example
+      pluginReactOptions: {
+        jsxRuntime: 'automatic' | 'classic', // default: 'automatic'
+        jsxImportSource: string, // default: 'react'
+        babel:{
+          plugins: Array<string | [string, any]>,
+          presets: Array<string | [string, any]>,
+          // ... other compatible babel options
         }
+        include: Array<string|RegExp>,
+        exclude: Array<string|RegExp>,
+        // ... other compatible @vitejs/plugin-react options
+      }
 
-        // these options are used to configure transpilation of node_modules via babel
-        // in most cases, you don't need to configure these options, but they are available if you need them
-        pluginBabelOptions: {
-          include: Array<string|RegExp>, // default: [/node_modules\/(react-native|@react-native)/]
-          exclude: Array<string|RegExp>, // default: undefined
-          presets: Array<string|[string, any]>,
-          plugins: Array<string|[string, any]>,
-          presetReact?: {
-            runtime?: 'automatic' | 'classic'; // default: 'automatic'
-            importSource?: string; // default: 'react'
-          };
-          // ... other compatible vite-plugin-babel options
-        }
-      },
+      // these options are used to configure transpilation of node_modules via babel
+      // in most cases, you don't need to configure these options, but they are available if you need them
+      pluginBabelOptions: {
+        include: Array<string|RegExp>, // default: [/node_modules\/(react-native|@react-native)/]
+        exclude: Array<string|RegExp>, // default: undefined
+        presets: Array<string|[string, any]>,
+        plugins: Array<string|[string, any]>,
+        presetReact?: {
+          runtime?: 'automatic' | 'classic'; // default: 'automatic'
+          importSource?: string; // default: 'react'
+        };
+        // ... other compatible vite-plugin-babel options
+      }
     },
-  };
+  },
+};
 
-  export default config;
-  ```
-  #### Example configuration for reanimated
+export default config;
+```
+#### Example configuration for reanimated
 
-  ```ts title=".storybook/main.ts"
-  const main: StorybookConfig = {
-    // ... rest of config
+```ts title=".storybook/main.ts"
+const main: StorybookConfig = {
+  // ... rest of config
 
-    framework: {
-      name: "@storybook/react-native-web-vite",
-      options: {
-        pluginReactOptions: {
-          babel: {
-            plugins: [
-              "@babel/plugin-proposal-export-namespace-from",
-              "react-native-reanimated/plugin",
-            ],
-          },
+  framework: {
+    name: "@storybook/react-native-web-vite",
+    options: {
+      pluginReactOptions: {
+        babel: {
+          plugins: [
+            "@babel/plugin-proposal-export-namespace-from",
+            "react-native-reanimated/plugin",
+          ],
         },
       },
     },
+  },
 
-    // ... rest of config
-  }
-  ```
+  // ... rest of config
+}
+```
 
-  #### Example configuration for nativewind
+#### Example configuration for nativewind
 
-  ```ts title=".storybook/main.ts"
+```ts title=".storybook/main.ts"
 
-  const main: StorybookConfig = {
-    // ... rest of config
+const main: StorybookConfig = {
+  // ... rest of config
 
-    framework: {
-      name: "@storybook/react-native-web-vite",
-      options: {
-        pluginReactOptions: {
-          jsxImportSource: "nativewind",
-        },
+  framework: {
+    name: "@storybook/react-native-web-vite",
+    options: {
+      pluginReactOptions: {
+        jsxImportSource: "nativewind",
       },
     },
-  }
-  ```
+  },
+}
+```
 
-  #### `builder`
+#### `builder`
 
-  Type: `Record<string, any>`
+Type: `Record<string, any>`
 
-  Configure options for the [framework's builder](../../api/main-config/main-config-framework.mdx#optionsbuilder). For this framework, available options can be found in the [Vite builder docs](../../builders/vite.mdx).
-
-
-  {/* End supported renderers */}
-</If>
+Configure options for the [framework's builder](../../api/main-config/main-config-framework.mdx#optionsbuilder). For this framework, available options can be found in the [Vite builder docs](../../builders/vite.mdx).

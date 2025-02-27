@@ -25,7 +25,7 @@ import addonTest from '@storybook/experimental-addon-test';
 import { definePreview } from '@storybook/react-vite';
 
 import addonA11y from '@storybook/addon-a11y';
-import addonEssentials from '@storybook/addon-essentials';
+import * as addonEssentials from '@storybook/addon-essentials/entry-preview';
 import addonThemes from '@storybook/addon-themes';
 
 import * as addonsPreview from '../addons/toolbars/template/stories/preview';
@@ -371,8 +371,8 @@ const parameters = {
 
 export default definePreview({
   addons: [
+    addonEssentials,
     addonThemes(),
-    addonEssentials(),
     addonA11y(),
     addonTest(),
     addonsPreview,

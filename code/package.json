@@ -104,7 +104,7 @@
     "@storybook/addon-actions": "workspace:*",
     "@storybook/addon-backgrounds": "workspace:*",
     "@storybook/addon-controls": "workspace:*",
-    "@storybook/addon-designs": "^7.0.4",
+    "@storybook/addon-designs": "^8.2.0",
     "@storybook/addon-docs": "workspace:*",
     "@storybook/addon-essentials": "workspace:*",
     "@storybook/addon-highlight": "workspace:*",

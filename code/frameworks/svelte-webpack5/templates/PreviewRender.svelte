@@ -30,4 +30,5 @@
   decorator={Wrapper}
   decoratorProps={WrapperData}
   component={Component}
-  props={{...componentProps, ...on}} />
+  props={componentProps}
+  {on} />

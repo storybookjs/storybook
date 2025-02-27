@@ -29,7 +29,7 @@
     backgroundColor = undefined,
     size = 'medium',
     label = '',
-    onclick
+    ...props
   }: Props = $props();
 
   let mode = $derived(primary ? 'storybook-button--primary' : 'storybook-button--secondary');
@@ -40,8 +40,8 @@
   type="button"
   class={['storybook-button', `storybook-button--${size}`, mode].join(' ')}
   {style}
-  {onclick}
+  {...props}
 >
   {label}
-  {@render children()}
+  Hallo welt
 </button>

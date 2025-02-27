@@ -1,3 +1,3 @@
 <div style="margin: 3em;">
-  <slot/>
+  {@render children()}
 </div>

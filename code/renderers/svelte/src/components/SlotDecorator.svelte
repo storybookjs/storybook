@@ -3,7 +3,7 @@
     decorator: Decorator, 
     decoratorProps = {}, 
     component: Component, 
-    props = {} 
+    props = {}
   } = $props();
 
   let instance = $state();

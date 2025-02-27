@@ -43,5 +43,5 @@
   {...props}
 >
   {label}
-  Hallo welt
+  <slot/>
 </button>

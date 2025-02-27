@@ -44,7 +44,8 @@ export const vta: Fix<Options> = {
       const packageJson = await packageManager.retrievePackageJson();
       await packageManager.addDependencies(
         { installAsDevDependencies: true, skipInstall, packageJson },
-        [`@chromatic-com/storybook@^3`]
+        // TODO: change the semver range to '^4' when VTA 4 and SB 9 is released
+        [`@chromatic-com/storybook@^4.0.0-0`]
       );
 
       await updateMainConfig({ mainConfigPath, dryRun: !!dryRun }, async (main) => {

@@ -1,7 +1,7 @@
-import type { PreparedStory } from '@storybook/core/types';
-import { global } from '@storybook/global';
+import { logger } from 'storybook/internal/client-logger';
+import type { PreparedStory } from 'storybook/internal/types';
 
-import { logger } from '@storybook/core/client-logger';
+import { global } from '@storybook/global';
 
 import AnsiToHtml from 'ansi-to-html';
 import { parse } from 'picoquery';

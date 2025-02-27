@@ -1,5 +1,5 @@
-import type { Listener } from '@storybook/core/channels';
-import type { API_Provider } from '@storybook/core/types';
+import type { Listener } from 'storybook/internal/channels';
+import type { API_Provider } from 'storybook/internal/types';
 
 import type { ModuleFn } from '../lib/types';
 import type { API } from '../root';

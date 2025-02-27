@@ -1,4 +1,4 @@
-import type { CSSObject, FunctionInterpolation } from '@storybook/core/theming';
+import type { CSSObject, FunctionInterpolation } from 'storybook/internal/theming';
 
 import { transparentize } from 'polished';
 

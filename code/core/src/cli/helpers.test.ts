@@ -3,7 +3,7 @@ import fsp from 'node:fs/promises';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { JsPackageManager } from '@storybook/core/common';
+import type { JsPackageManager } from 'storybook/internal/common';
 
 import { sep } from 'path';
 

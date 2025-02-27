@@ -1,8 +1,7 @@
-import { logConfig } from '@storybook/core/common';
-import type { Options } from '@storybook/core/types';
-
-import { logger } from '@storybook/core/node-logger';
-import { MissingBuilderError } from '@storybook/core/server-errors';
+import { logConfig } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
+import { MissingBuilderError } from 'storybook/internal/server-errors';
+import type { Options } from 'storybook/internal/types';
 
 import compression from '@polka/compression';
 import polka from 'polka';

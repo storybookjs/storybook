@@ -1,9 +1,8 @@
 import type { Mock } from 'vitest';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { StorybookConfigRaw } from '@storybook/types';
-
-import { loadConfig, printConfig } from '@storybook/core/csf-tools';
+import { loadConfig, printConfig } from 'storybook/internal/csf-tools';
+import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 

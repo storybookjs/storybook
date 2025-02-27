@@ -1,7 +1,7 @@
 /* eslint-disable no-underscore-dangle */
 import { describe, expect, it } from 'vitest';
 
-import { babelPrint } from '@storybook/core/babel';
+import { babelPrint } from 'storybook/internal/babel';
 
 import { dedent } from 'ts-dedent';
 

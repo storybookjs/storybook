@@ -5,10 +5,10 @@ import { expect, fn, mocked, userEvent, within } from '@storybook/test';
 
 import { action } from '@storybook/addon-actions';
 
-import { definePreview } from '../preview';
+import { __definePreview } from '../preview';
 import { Button } from './Button';
 
-const preview = definePreview({});
+const preview = __definePreview({});
 
 const meta = preview.meta({
   id: 'button-component',

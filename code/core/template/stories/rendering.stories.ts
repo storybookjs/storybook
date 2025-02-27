@@ -1,13 +1,13 @@
-import type { PlayFunctionContext } from '@storybook/core/types';
-import { global as globalThis } from '@storybook/global';
-import { expect, waitFor, within } from '@storybook/test';
-
 import {
   FORCE_REMOUNT,
   RESET_STORY_ARGS,
   STORY_ARGS_UPDATED,
   UPDATE_STORY_ARGS,
-} from '@storybook/core/core-events';
+} from 'storybook/internal/core-events';
+import type { PlayFunctionContext } from 'storybook/internal/types';
+
+import { global as globalThis } from '@storybook/global';
+import { expect, waitFor, within } from '@storybook/test';
 
 export default {
   component: globalThis.Components.Button,

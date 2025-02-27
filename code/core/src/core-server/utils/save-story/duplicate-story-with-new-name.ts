@@ -1,7 +1,6 @@
 /* eslint-disable no-underscore-dangle */
-import { types as t, traverse } from '@storybook/core/babel';
-
-import type { CsfFile } from '@storybook/core/csf-tools';
+import { types as t, traverse } from 'storybook/internal/babel';
+import type { CsfFile } from 'storybook/internal/csf-tools';
 
 import { SaveStoryError } from './utils';
 

@@ -1,14 +1,14 @@
 import type { ComponentProps, FC, SyntheticEvent } from 'react';
 import React, { useMemo, useState } from 'react';
 
-import { TooltipLinkList, WithTooltip } from '@storybook/core/components';
-import { styled } from '@storybook/core/theming';
-import { type API_HashEntry, Addon_TypesEnum } from '@storybook/core/types';
-import { EllipsisIcon } from '@storybook/icons';
+import { TooltipLinkList, WithTooltip } from 'storybook/internal/components';
+import { type TestProviders } from 'storybook/internal/core-events';
+import { useStorybookState } from 'storybook/internal/manager-api';
+import type { API } from 'storybook/internal/manager-api';
+import { styled } from 'storybook/internal/theming';
+import { type API_HashEntry, Addon_TypesEnum } from 'storybook/internal/types';
 
-import { type TestProviders } from '@storybook/core/core-events';
-import { useStorybookState } from '@storybook/core/manager-api';
-import type { API } from '@storybook/core/manager-api';
+import { EllipsisIcon } from '@storybook/icons';
 
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList';
 import { StatusButton } from './StatusButton';

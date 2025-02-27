@@ -9,7 +9,8 @@ import type {
   Renderer,
   SBScalarType,
   StoryContext,
-} from '@storybook/core/types';
+} from 'storybook/internal/types';
+
 import { global } from '@storybook/global';
 
 import { HooksContext, addons } from '../../addons';

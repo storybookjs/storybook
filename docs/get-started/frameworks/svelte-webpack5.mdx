@@ -1,5 +1,6 @@
 ---
 title: Storybook for Svelte & Webpack
+hideRendererSelector: true
 sidebar:
   order: 9
   title: Svelte & Webpack
@@ -7,110 +8,98 @@ sidebar:
 
 Storybook for Svelte & Webpack is a [framework](../../contribute/framework.mdx) that makes it easy to develop and test UI components in isolation for applications using [Svelte](https://svelte.dev/) built with [Webpack](https://webpack.js.org/).
 
-<If notRenderer="svelte">
-  <Callout variant="info">
-    Storybook for Svelte & Webpack is only supported in [Svelte](?renderer=svelte) projects.
-  </Callout>
+## Requirements
 
-  {/* End non-supported renderers */}
-</If>
+* Svelte ≥ 4.0
+* Webpack ≥ 5.0
+* Storybook ≥ 8.0
 
-<If renderer="svelte">
-  ## Requirements
+## Getting started
 
-  * Svelte ≥ 4.0
-  * Webpack ≥ 5.0
-  * Storybook ≥ 8.0
+### In a project without Storybook
 
-  ## Getting started
+Follow the prompts after running this command in your Svelte project's root directory:
 
-  ### In a project without Storybook
+{/* prettier-ignore-start */}
 
-  Follow the prompts after running this command in your Svelte project's root directory:
+<CodeSnippets path="create-command.md" />
 
-  {/* prettier-ignore-start */}
+{/* prettier-ignore-end */}
 
-  <CodeSnippets path="create-command.md" />
+[More on getting started with Storybook.](../install.mdx)
 
-  {/* prettier-ignore-end */}
+### In a project with Storybook
 
-  [More on getting started with Storybook.](../install.mdx)
+This framework is designed to work with Storybook 7+. If you’re not already using v7, upgrade with this command:
 
-  ### In a project with Storybook
+{/* prettier-ignore-start */}
 
-  This framework is designed to work with Storybook 7+. If you’re not already using v7, upgrade with this command:
+<CodeSnippets path="storybook-upgrade.md" />
 
-  {/* prettier-ignore-start */}
+{/* prettier-ignore-end */}
 
-  <CodeSnippets path="storybook-upgrade.md" />
+#### Automatic migration
 
-  {/* prettier-ignore-end */}
+When running the `upgrade` command above, you should get a prompt asking you to migrate to `@storybook/svelte-webpack5`, which should handle everything for you. In case that auto-migration does not work for your project, refer to the manual migration below.
 
-  #### Automatic migration
+#### Manual migration
 
-  When running the `upgrade` command above, you should get a prompt asking you to migrate to `@storybook/svelte-webpack5`, which should handle everything for you. In case that auto-migration does not work for your project, refer to the manual migration below.
+First, install the framework:
 
-  #### Manual migration
+{/* prettier-ignore-start */}
 
-  First, install the framework:
+<CodeSnippets path="svelte-webpack5-install.md" />
 
-  {/* prettier-ignore-start */}
+{/* prettier-ignore-end */}
 
-  <CodeSnippets path="svelte-webpack5-install.md" />
+Next, install and register your appropriate compiler addon, depending on whether you're using SWC (recommended) or Babel:
 
-  {/* prettier-ignore-end */}
+{/* prettier-ignore-start */}
 
-  Next, install and register your appropriate compiler addon, depending on whether you're using SWC (recommended) or Babel:
+<CodeSnippets path="storybook-addon-compiler-swc-auto-install.md" />
 
-  {/* prettier-ignore-start */}
+{/* prettier-ignore-end */}
 
-  <CodeSnippets path="storybook-addon-compiler-swc-auto-install.md" />
+or
 
-  {/* prettier-ignore-end */}
+{/* prettier-ignore-start */}
 
-  or
+<CodeSnippets path="storybook-addon-compiler-babel-auto-install.md" />
 
-  {/* prettier-ignore-start */}
+{/* prettier-ignore-end */}
 
-  <CodeSnippets path="storybook-addon-compiler-babel-auto-install.md" />
+More details can be found in the [Webpack builder docs](../../builders/webpack.mdx#compiler-support).
 
-  {/* prettier-ignore-end */}
+Finally, update your `.storybook/main.js|ts` to change the framework property:
 
-  More details can be found in the [Webpack builder docs](../../builders/webpack.mdx#compiler-support).
+{/* prettier-ignore-start */}
 
-  Finally, update your `.storybook/main.js|ts` to change the framework property:
+<CodeSnippets path="svelte-webpack5-add-framework.md" />
 
-  {/* prettier-ignore-start */}
+{/* prettier-ignore-end */}
 
-  <CodeSnippets path="svelte-webpack5-add-framework.md" />
+## API
 
-  {/* prettier-ignore-end */}
+### Options
 
-  ## API
+You can pass an options object for additional configuration if needed:
 
-  ### Options
+  {/* prettier-ignore-start */ }
 
-  You can pass an options object for additional configuration if needed:
+<CodeSnippets path="svelte-webpack-framework-options.md" />
 
-    {/* prettier-ignore-start */ }
+{/* prettier-ignore-end */}
 
-  <CodeSnippets path="svelte-webpack-framework-options.md" />
+The available options are:
 
-  {/* prettier-ignore-end */}
+#### `builder`
 
-  The available options are:
+Type: `Record<string, any>`
 
-  #### `builder`
+Configure options for the [framework's builder](../../api/main-config/main-config-framework.mdx#optionsbuilder). For this framework, available options can be found in the [Webpack builder docs](../../builders/webpack.mdx).
 
-  Type: `Record<string, any>`
+## Troubleshooting
 
-  Configure options for the [framework's builder](../../api/main-config/main-config-framework.mdx#optionsbuilder). For this framework, available options can be found in the [Webpack builder docs](../../builders/webpack.mdx).
+### Svelte CSF addon compatibility
 
-  ## Troubleshooting
-
-  ### Svelte CSF addon compatibility
-
-  In version 5 of the Svelte CSF [addon](https://storybook.js.org/addons/@storybook/addon-svelte-csf), support for Webpack was removed to align with Svelte's ecosystem. If you're using this framework and you want to write stories using Svelte's native templating syntax with the Svelte CSF addon, we encourage you to downgrade to version 4 of the addon.
-
-  {/* End supported renderers */}
-</If>
+In version 5 of the Svelte CSF [addon](https://storybook.js.org/addons/@storybook/addon-svelte-csf), support for Webpack was removed to align with Svelte's ecosystem. If you're using this framework and you want to write stories using Svelte's native templating syntax with the Svelte CSF addon, we encourage you to downgrade to version 4 of the addon.

@@ -61,6 +61,8 @@ export class MockUniversalStore<
     this.subscribe = testUtils.fn(this.subscribe);
     this.onStateChange = testUtils.fn(this.onStateChange);
     this.send = testUtils.fn(this.send);
+    this.untilEvent = testUtils.fn(this.untilEvent);
+    this.toChannelEvent = testUtils.fn(this.toChannelEvent);
   }
 
   /** Create a mock universal store. This is just an alias for the constructor */

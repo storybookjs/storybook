@@ -14,18 +14,6 @@ import { createSvelte5Props } from '@storybook/svelte/internal/createSvelte5Prop
 import * as svelte from 'svelte';
 
 import type { SvelteRenderer } from './types';
-import { IS_SVELTE_V4 } from './utils';
-
-export function renderToCanvas(
-  renderContext: RenderContext<SvelteRenderer>,
-  canvasElement: SvelteRenderer['canvasElement']
-) {
-  if (IS_SVELTE_V4) {
-    return renderToCanvasV4(renderContext, canvasElement);
-  } else {
-    return renderToCanvasV5(renderContext, canvasElement);
-  }
-}
 
 /**
  * This is a workaround for the issue that when resetting args, the story needs to be remounted
@@ -37,80 +25,17 @@ export function renderToCanvas(
  * the renderToCanvas function to force remount the story
  */
 const storyIdsToRemountFromResetArgsEvent = new Set<string>();
+
 addons.getChannel().on(RESET_STORY_ARGS, ({ storyId }) => {
   storyIdsToRemountFromResetArgsEvent.add(storyId);
 });
-
-const componentsByDomElementV4 = new Map<SvelteRenderer['canvasElement'], svelte.SvelteComponent>();
-
-function renderToCanvasV4(
-  {
-    storyFn,
-    title,
-    name,
-    showMain,
-    showError,
-    storyContext,
-    forceRemount,
-  }: RenderContext<SvelteRenderer>,
-  canvasElement: SvelteRenderer['canvasElement']
-) {
-  function unmount(canvasElementToUnmount: SvelteRenderer['canvasElement']) {
-    if (!componentsByDomElementV4.has(canvasElementToUnmount)) {
-      return;
-    }
-    componentsByDomElementV4.get(canvasElementToUnmount)!.$destroy();
-    componentsByDomElementV4.delete(canvasElementToUnmount);
-    canvasElementToUnmount.innerHTML = '';
-  }
-  const existingComponent = componentsByDomElementV4.get(canvasElement);
-
-  let remount = forceRemount;
-  if (storyIdsToRemountFromResetArgsEvent.has(storyContext.id)) {
-    remount = true;
-    storyIdsToRemountFromResetArgsEvent.delete(storyContext.id);
-  }
-
-  if (remount) {
-    unmount(canvasElement);
-  }
-
-  if (!existingComponent || remount) {
-    const mountedComponent = new PreviewRender({
-      target: canvasElement,
-      props: {
-        storyFn,
-        storyContext,
-        name,
-        title,
-        showError,
-      },
-    });
-    componentsByDomElementV4.set(canvasElement, mountedComponent);
-  } else {
-    existingComponent.$set({
-      storyFn,
-      storyContext,
-      name,
-      title,
-      showError,
-    });
-  }
-
-  showMain();
-
-  // unmount the component when the story changes
-  return () => {
-    unmount(canvasElement);
-  };
-}
 
 const componentsByDomElementV5 = new Map<
   SvelteRenderer['canvasElement'],
   { mountedComponent: ReturnType<(typeof svelte)['mount']>; props: RenderContext }
 >();
 
-function renderToCanvasV5(
+export function renderToCanvas(
   {
     storyFn,
     title,

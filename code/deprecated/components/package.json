@@ -1,6 +1,6 @@
 {
   "name": "@storybook/components",
-  "version": "9.0.0-alpha.0",
+  "version": "9.0.0-alpha.1",
   "description": "Core Storybook Components",
   "keywords": [
     "storybook"

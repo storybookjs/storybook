@@ -1,9 +1,9 @@
-import type { ThemeVars } from '@storybook/core/theming';
-import { create } from '@storybook/core/theming/create';
-import type { API_Layout, API_PanelPositions, API_UI } from '@storybook/core/types';
-import { global } from '@storybook/global';
+import { SET_CONFIG } from 'storybook/internal/core-events';
+import type { ThemeVars } from 'storybook/internal/theming';
+import { create } from 'storybook/internal/theming/create';
+import type { API_Layout, API_PanelPositions, API_UI } from 'storybook/internal/types';
 
-import { SET_CONFIG } from '@storybook/core/core-events';
+import { global } from '@storybook/global';
 
 import { isEqual as deepEqual, pick, toMerged } from 'es-toolkit';
 

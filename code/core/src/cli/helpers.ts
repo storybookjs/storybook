@@ -7,9 +7,9 @@ import {
   type JsPackageManager,
   type PackageJson,
   type PackageJsonWithDepsAndDevDeps,
-} from '@storybook/core/common';
-import { versions as storybookMonorepoPackages } from '@storybook/core/common';
-import type { SupportedFrameworks, SupportedRenderers } from '@storybook/core/types';
+} from 'storybook/internal/common';
+import { versions as storybookMonorepoPackages } from 'storybook/internal/common';
+import type { SupportedFrameworks, SupportedRenderers } from 'storybook/internal/types';
 
 import { findUpSync } from 'find-up';
 import picocolors from 'picocolors';

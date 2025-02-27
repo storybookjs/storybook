@@ -69,9 +69,7 @@ export async function runCodemod(
           try {
             let filePath = file;
             try {
-              if ((await fs.lstat(file)).isSymbolicLink()) {
-                filePath = await fs.realpath(file);
-              }
+              filePath = await fs.realpath(file);
             } catch (err) {
               // if anything goes wrong when resolving the file, fallback to original path as is set above
             }

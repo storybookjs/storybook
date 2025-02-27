@@ -1,15 +1,15 @@
-import type { NavigateOptions } from '@storybook/core/router';
-import { buildArgsParam, queryFromLocation } from '@storybook/core/router';
-import type { API_Layout, API_UI, Args } from '@storybook/core/types';
-import { global } from '@storybook/global';
-
 import {
   GLOBALS_UPDATED,
   NAVIGATE_URL,
   SET_CURRENT_STORY,
   STORY_ARGS_UPDATED,
   UPDATE_QUERY_PARAMS,
-} from '@storybook/core/core-events';
+} from 'storybook/internal/core-events';
+import { buildArgsParam, queryFromLocation } from 'storybook/internal/router';
+import type { NavigateOptions } from 'storybook/internal/router';
+import type { API_Layout, API_UI, Args } from 'storybook/internal/types';
+
+import { global } from '@storybook/global';
 
 import { dequal as deepEqual } from 'dequal';
 

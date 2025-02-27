@@ -557,7 +557,7 @@ async function getStorybookInfo({ configDir, packageManager: pkgMgr }: Postinsta
   const presets = await loadAllPresets({
     corePresets: [join(frameworkName, 'preset')],
     overridePresets: [
-      require.resolve('@storybook/core/core-server/presets/common-override-preset'),
+      require.resolve('storybook/internal/core-server/presets/common-override-preset'),
     ],
     configDir,
     packageJson,

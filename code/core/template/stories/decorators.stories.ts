@@ -1,18 +1,18 @@
+import {
+  RESET_STORY_ARGS,
+  STORY_ARGS_UPDATED,
+  UPDATE_STORY_ARGS,
+} from 'storybook/internal/core-events';
+import { useEffect } from 'storybook/internal/preview-api';
 import type {
   ArgsStoryFn,
   PartialStoryFn,
   PlayFunctionContext,
   StoryContext,
-} from '@storybook/core/types';
+} from 'storybook/internal/types';
+
 import { global as globalThis } from '@storybook/global';
 import { expect, within } from '@storybook/test';
-
-import {
-  RESET_STORY_ARGS,
-  STORY_ARGS_UPDATED,
-  UPDATE_STORY_ARGS,
-} from '@storybook/core/core-events';
-import { useEffect } from '@storybook/core/preview-api';
 
 export default {
   component: globalThis.Components.Pre,

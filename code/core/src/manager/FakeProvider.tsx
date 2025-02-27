@@ -1,8 +1,7 @@
 import React from 'react';
 
-import { styled } from '@storybook/core/theming';
-
-import { addons } from '@storybook/core/manager-api';
+import { addons } from 'storybook/internal/manager-api';
+import { styled } from 'storybook/internal/theming';
 
 import Provider from './provider';
 

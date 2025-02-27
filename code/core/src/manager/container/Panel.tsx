@@ -1,9 +1,8 @@
 import type { FC } from 'react';
 import React, { useMemo, useState } from 'react';
 
-import { Addon_TypesEnum } from '@storybook/core/types';
-
-import { useChannel, useStorybookApi, useStorybookState } from '@storybook/core/manager-api';
+import { useChannel, useStorybookApi, useStorybookState } from 'storybook/internal/manager-api';
+import { Addon_TypesEnum } from 'storybook/internal/types';
 
 import { STORY_PREPARED } from '../../core-events';
 import { AddonPanel } from '../components/panel/Panel';

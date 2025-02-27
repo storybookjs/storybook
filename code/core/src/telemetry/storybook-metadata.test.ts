@@ -3,7 +3,7 @@ import path from 'node:path';
 import type { MockInstance } from 'vitest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { PackageJson, StorybookConfig } from '@storybook/core/types';
+import type { PackageJson, StorybookConfig } from 'storybook/internal/types';
 
 import { computeStorybookMetadata, metaFrameworks, sanitizeAddonName } from './storybook-metadata';
 
@@ -53,9 +53,9 @@ vi.mock('detect-package-manager', () => ({
   getNpmVersion: () => '3.1.1',
 }));
 
-vi.mock('@storybook/core/common', async (importOriginal) => {
+vi.mock('storybook/internal/common', async (importOriginal) => {
   return {
-    ...(await importOriginal<typeof import('@storybook/core/common')>()),
+    ...(await importOriginal<typeof import('storybook/internal/common')>()),
     getProjectRoot: () => process.cwd(),
   };
 });

@@ -3,7 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import React from 'react';
 
-import type { RenderContext } from '@storybook/core/types';
+import type { RenderContext } from 'storybook/internal/types';
+
 import { global } from '@storybook/global';
 
 import { addons } from '../addons';
@@ -24,9 +25,9 @@ import { WebView } from './WebView';
 //   - ie. from`renderToCanvas()` (stories) or`ReactDOM.render()` (docs) in.
 // This file lets them rip.
 
-vi.mock('@storybook/core/channels', async (importOriginal) => {
+vi.mock('storybook/internal/channels', async (importOriginal) => {
   return {
-    ...(await importOriginal<typeof import('@storybook/core/channels')>()),
+    ...(await importOriginal<typeof import('storybook/internal/channels')>()),
     createBrowserChannel: () => mockChannel,
   };
 });
@@ -39,24 +40,24 @@ vi.mock('@storybook/blocks', async () => {
     HeadersMdx: vi.fn(() => 'HeadersMdx'),
   };
 });
-vi.mock('@storybook/core/client-logger');
-vi.mock('@storybook/core/components');
+vi.mock('storybook/internal/client-logger');
+vi.mock('storybook/internal/components');
 
-vi.mock('@storybook/core/channels', async (importOriginal) => {
+vi.mock('storybook/internal/channels', async (importOriginal) => {
   return {
-    ...(await importOriginal<typeof import('@storybook/core/channels')>()),
+    ...(await importOriginal<typeof import('storybook/internal/channels')>()),
     createBrowserChannel: () => mockChannel,
   };
 });
-vi.mock('@storybook/core/client-logger', async (importOriginal) => {
+vi.mock('storybook/internal/client-logger', async (importOriginal) => {
   return {
-    ...(await importOriginal<typeof import('@storybook/core/client-logger')>()),
+    ...(await importOriginal<typeof import('storybook/internal/client-logger')>()),
     createBrowserChannel: () => mockChannel,
   };
 });
-vi.mock('@storybook/core/components', async (importOriginal) => {
+vi.mock('storybook/internal/components', async (importOriginal) => {
   return {
-    ...(await importOriginal<typeof import('@storybook/core/components')>()),
+    ...(await importOriginal<typeof import('storybook/internal/components')>()),
     createBrowserChannel: () => mockChannel,
   };
 });

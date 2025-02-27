@@ -1,7 +1,7 @@
 import { isAbsolute, join, relative } from 'node:path';
 
-import { commonGlobOptions, normalizeStories } from '@storybook/core/common';
-import type { Options, StoriesEntry } from '@storybook/core/types';
+import { commonGlobOptions, normalizeStories } from 'storybook/internal/common';
+import type { Options, StoriesEntry } from 'storybook/internal/types';
 
 // eslint-disable-next-line depend/ban-dependencies
 import { glob } from 'glob';

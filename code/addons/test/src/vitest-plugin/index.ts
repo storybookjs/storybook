@@ -295,7 +295,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
 
             The values you passed to "test.include" will be ignored, please remove them from your Vitest configuration where the Storybook plugin is applied.
             
-            More info: https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#indexing-behavior-of-storybookexperimental-addon-test-is-changed
+            More info: https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#addon-test-indexing-behavior-of-storybookexperimental-addon-test-is-changed
           `)
         );
       }

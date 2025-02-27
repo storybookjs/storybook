@@ -1,19 +1,15 @@
 <script>
-  const { 
-    decorator: Decorator, 
-    decoratorProps = {}, 
-    component: Component, 
-    props = {}
-  } = $props();
-
-  let instance = $state();
-  let decoratorInstance = $state();
+  export let decorator;
+  export let decoratorProps = {};
+  export let component;
+  export let props = {};
+  let instance;
+  let decoratorInstance;
 </script>
-
-{#if Decorator}
-  <Decorator {...decoratorProps} bind:this={decoratorInstance}>
-    <Component {...props} bind:this={instance}/>
-  </Decorator>
+{#if decorator}
+  <svelte:component this={decorator} {...decoratorProps} bind:this={decoratorInstance}>
+    <svelte:component this={component} {...props} bind:this={instance}/>
+  </svelte:component>
 {:else}
-  <Component {...props} bind:this={instance}/>
+  <svelte:component this={component} {...props} bind:this={instance}/>
 {/if}

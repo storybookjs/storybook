@@ -1214,8 +1214,8 @@ You should reuse the existing instance instead of trying to create a new one.`);
             {
               actor: {
                 id: 'manual',
-                type: 'LEADER',
-                environment: 'UNKNOWN',
+                type: UniversalStore.ActorType.LEADER,
+                environment: UniversalStore.Environment.UNKNOWN,
               },
             }
           );
@@ -1299,6 +1299,8 @@ You should reuse the existing instance instead of trying to create a new one.`);
       expect(vi.isMockFunction(store.subscribe)).toBeTruthy();
       expect(vi.isMockFunction(store.onStateChange)).toBeTruthy();
       expect(vi.isMockFunction(store.send)).toBeTruthy();
+      expect(vi.isMockFunction(store.untilEvent)).toBeTruthy();
+      expect(vi.isMockFunction(store.toChannelEvent)).toBeTruthy();
     });
   });
 });

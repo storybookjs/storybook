@@ -76,7 +76,7 @@
   },
   "peerDependencies": {
     "storybook": "workspace:^",
-    "svelte": "^4.0.0 || ^5.0.0"
+    "svelte": "^5.0.0"
   },
   "engines": {
     "node": ">=18.0.0"

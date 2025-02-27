@@ -2,21 +2,18 @@
   import SlotDecorator from './SlotDecorator.svelte';
   import { dedent } from 'ts-dedent';
 
-  export let name;
-  export let kind;
-  export let storyFn;
-  export let showError;
+  const { name, kind, storyFn, showError } = $props();
 
   const {
     /** @type {SvelteComponent} */
     Component,
     /** @type {any} */
-    props = {},
-    /** @type {{[string]: () => {}}} Attach svelte event handlers */
+    props: componentProps = {},
+    /** @type {{[string]: () => {}}} Svelte event handlers are now properties */
     on,
     Wrapper,
     WrapperData = {},
-  } = storyFn(); 
+  } = storyFn();
 
   if (!Component) {
     showError({
@@ -33,5 +30,4 @@
   decorator={Wrapper}
   decoratorProps={WrapperData}
   component={Component}
-  props={props}
-  {on}/>
+  props={{...componentProps, ...on}} />

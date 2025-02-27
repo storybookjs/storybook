@@ -550,16 +550,15 @@ export class UniversalStore<
     rejectEventType?: TEvent['type']
   ): Promise<{ event: TEvent; eventInfo: EventInfo }> {
     return new Promise<{ event: TEvent; eventInfo: EventInfo }>((resolve, reject) => {
-      const unsubscribeResolve = this.subscribe(resolveEventType as any, (event, eventInfo) => {
-        unsubscribeResolve();
-        resolve({ event, eventInfo } as any);
-      });
-      if (rejectEventType) {
-        const unsubscribeReject = this.subscribe(rejectEventType as any, (event, eventInfo) => {
-          unsubscribeReject();
+      const unsubscribe = this.subscribe((event, eventInfo) => {
+        if (event.type === resolveEventType) {
+          unsubscribe();
+          resolve({ event, eventInfo } as any);
+        } else if (rejectEventType && event.type === rejectEventType) {
+          unsubscribe();
           reject({ event, eventInfo } as any);
-        });
-      }
+        }
+      });
     });
   }
 

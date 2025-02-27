@@ -1179,7 +1179,7 @@ You should reuse the existing instance instead of trying to create a new one.`);
       // Act - send the event
       store.send({ type: 'OTHER_CUSTOM_EVENT_TYPE', payload: { foo: 'bar' } });
 
-      // Assert - the promise should resolve with the sent event
+      // Assert - the promise should reject with the sent event
       await expect(untilEventPromise).rejects.toEqual({
         event: {
           type: 'OTHER_CUSTOM_EVENT_TYPE',

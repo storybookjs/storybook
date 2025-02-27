@@ -5,6 +5,9 @@
     component: Component, 
     props = {} 
   } = $props();
+
+  let instance = $state();
+  let decoratorInstance = $state();
 </script>
 
 {#if Decorator}

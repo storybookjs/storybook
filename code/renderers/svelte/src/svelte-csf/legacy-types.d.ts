@@ -6,7 +6,7 @@ import type {
   Addon_BaseAnnotations as BaseAnnotations,
   StoryContext,
   WebRenderer,
-} from '@storybook/types';
+} from 'storybook/internal/types';
 
 type DecoratorReturnType =
   | void

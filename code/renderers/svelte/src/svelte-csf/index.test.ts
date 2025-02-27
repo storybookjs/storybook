@@ -1,4 +1,4 @@
-import type { StoryContext as StorybookStoryContext } from '@storybook/types';
+import type { StoryContext as StorybookStoryContext } from 'storybook/internal/types';
 import { createRawSnippet, type ComponentProps, type Snippet } from 'svelte';
 import type { Primitive } from 'type-fest';
 import { describe, expectTypeOf, it } from 'vitest';

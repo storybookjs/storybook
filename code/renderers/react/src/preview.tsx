@@ -1,6 +1,7 @@
+/* eslint-disable no-underscore-dangle,@typescript-eslint/naming-convention */
 import type { ComponentType } from 'react';
 
-import { definePreview as definePreviewBase } from 'storybook/internal/csf';
+import { __definePreview as definePreviewBase } from 'storybook/internal/csf';
 import type { Meta, Preview, Story } from 'storybook/internal/csf';
 import type {
   Args,
@@ -18,7 +19,8 @@ import * as reactDocsAnnotations from './entry-preview-docs';
 import type { AddMocks } from './public-types';
 import type { ReactRenderer } from './types';
 
-export function definePreview(preview: ReactPreview['input']) {
+/** Do not use, use the definePreview exported from the framework instead */
+export function __definePreview(preview: ReactPreview['input']) {
   return definePreviewBase({
     ...preview,
     addons: [reactAnnotations, reactDocsAnnotations, ...(preview.addons ?? [])],

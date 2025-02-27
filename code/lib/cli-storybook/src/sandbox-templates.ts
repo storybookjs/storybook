@@ -142,34 +142,6 @@ export const baseTemplates = {
       extraDependencies: ['prop-types'],
     },
   },
-  'nextjs/13-ts': {
-    name: 'Next.js v13.5 (Webpack | TypeScript)',
-    script:
-      'yarn create next-app {{beforeDir}} -e https://github.com/vercel/next.js/tree/next-13/examples/hello-world ' +
-      '&& cd {{beforeDir}} ' +
-      'jq \'.compilerOptions.moduleResolution = "bundler"\' tsconfig.json > tmp.json && mv tmp.json tsconfig.json ' +
-      '&& npm pkg set "dependencies.next"="^13.5.6" ' +
-      '&& yarn ' +
-      '&& git add . ' +
-      '&& git commit --amend --no-edit ' +
-      '&& cd ..',
-    expected: {
-      framework: '@storybook/nextjs',
-      renderer: '@storybook/react',
-      builder: '@storybook/builder-webpack5',
-    },
-    modifications: {
-      useCsfFactory: true,
-      mainConfig: {
-        features: {
-          experimentalRSC: true,
-          developmentModeForBuild: true,
-        },
-      },
-      extraDependencies: ['server-only', 'prop-types'],
-    },
-    skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
-  },
   'nextjs/14-ts': {
     name: 'Next.js v14.2 (Webpack | TypeScript)',
     script:
@@ -917,7 +889,6 @@ export const daily: TemplateKey[] = [
   'svelte-kit/skeleton-js',
   'svelte-kit/prerelease-ts',
   'svelte-vite/default-js',
-  'nextjs/13-ts',
   'nextjs/prerelease',
   'qwik-vite/default-ts',
   'preact-vite/default-js',

@@ -1,5 +1,7 @@
 <h1>Migration</h1>
 
+- [From version 8.x to 9.0.0](#from-version-8x-to-900)
+  - [Test addon renamed from experimental to stable](#test-addon-renamed-from-experimental-to-stable)
 - [From version 8.5.x to 8.6.x](#from-version-85x-to-86x)
   - [Angular: Support experimental zoneless support](#angular-support-experimental-zoneless-support)
   - [Addon-a11y: Replaced experimental `ally-test` tag behavior with `parameters.a11y.test`](#addon-a11y-replaced-experimental-ally-test-tag-behavior-with-parametersa11ytest)
@@ -430,6 +432,37 @@
   - [Webpack upgrade](#webpack-upgrade)
   - [Packages renaming](#packages-renaming)
   - [Deprecated embedded addons](#deprecated-embedded-addons)
+
+## From version 8.x to 9.0.0
+
+### Test addon renamed from experimental to stable
+
+In Storybook 9.0, we've officially stabilized the Test addon. The package has been renamed from `@storybook/experimental-addon-test` to `@storybook/addon-test`, reflecting its production-ready status. If you were using the experimental addon, you'll need to update your dependencies and imports:
+
+```diff
+- npm install --save-dev @storybook/experimental-addon-test
++ npm install --save-dev @storybook/addon-test
+```
+
+Update your imports in any custom configuration or test files:
+
+```diff
+- import { ... } from '@storybook/experimental-addon-test';
++ import { ... } from '@storybook/addon-test';
+```
+
+If you're using the addon in your Storybook configuration, update your `.storybook/main.js` or `.storybook/main.ts`:
+
+```diff
+export default {
+  addons: [
+-   '@storybook/experimental-addon-test',
++   '@storybook/addon-test',
+  ],
+};
+```
+
+The public API remains the same, so no additional changes should be needed in your test files or configuration.
 
 ## From version 8.5.x to 8.6.x
 

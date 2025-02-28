@@ -25,7 +25,7 @@ import type { ProjectAnnotations } from 'storybook/internal/types';
 import type { SvelteRenderer } from '@storybook/svelte';
 import { setProjectAnnotations } from '@storybook/svelte';
 import sbAnnotations from '../../.storybook/preview';
-import * as addonInteractions from '@storybook/addon-interactions/preview';
+import * as addonTest from '@storybook/addon-test/preview';
 import * as addonActions from '@storybook/addon-essentials/actions/preview';
 
 // Augment the Cypress namespace to include type definitions for
@@ -53,6 +53,6 @@ process.env = {};
 
 setProjectAnnotations([
   sbAnnotations,
-  addonInteractions as ProjectAnnotations<SvelteRenderer>, // instruments actions as spies
+  addonTest as ProjectAnnotations<SvelteRenderer>, // instruments actions as spies
   addonActions as ProjectAnnotations<SvelteRenderer>, // creates actions from argTypes
 ]);

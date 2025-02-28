@@ -1,6 +1,6 @@
 ```ts filename="vitest.config.ts" renderer="react"
 import { defineConfig, mergeConfig } from 'vitest/config';
-import { storybookTest } from '@storybook/experimental-addon-test/vitest-plugin';
+import { storybookTest } from '@storybook/addon-test/vitest-plugin';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -38,7 +38,7 @@ export default mergeConfig(
 
 ```ts filename="vitest.config.ts" renderer="vue"
 import { defineConfig, mergeConfig } from 'vitest/config';
-import { storybookTest } from '@storybook/experimental-addon-test/vitest-plugin';
+import { storybookTest } from '@storybook/addon-test/vitest-plugin';
 import { storybookVuePlugin } from '@storybook/vue3-vite/vite-plugin';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -78,7 +78,7 @@ export default mergeConfig(
 
 ```ts filename="vitest.config.ts" renderer="svelte"
 import { defineConfig, mergeConfig } from 'vitest/config';
-import { storybookTest } from '@storybook/experimental-addon-test/vitest-plugin';
+import { storybookTest } from '@storybook/addon-test/vitest-plugin';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 

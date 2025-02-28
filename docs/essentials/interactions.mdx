@@ -5,7 +5,7 @@ sidebar:
   title: Interactions
 ---
 
-The [`play`](../writing-stories/play-function.mdx) function in Storybook allows you to simulate user interactions to run after a story renders. With the [Interactions](https://storybook.js.org/addons/@storybook/addon-interactions/) addon, you have a way to visualize and debug these interactions.
+The [`play`](../writing-stories/play-function.mdx) function in Storybook allows you to simulate user interactions to run after a story renders. With the [Test](https://storybook.js.org/addons/@storybook/addon-test/) addon, you have a way to visualize and debug these interactions.
 
 ## Play function for interactions
 
@@ -19,7 +19,7 @@ The interactions are written using a package called `@storybook/test`. It provid
 
 ## Set up the interactions addon
 
-By default, the [`@storybook/addon-interactions`](https://storybook.js.org/addons/@storybook/addon-interactions/) is already installed and configured if you're adding Storybook for new projects. If you're migrating from a previous version of Storybook, you'll need to install it manually.
+By default, the [`@storybook/addon-test`](https://storybook.js.org/addons/@storybook/addon-test/) is already installed and configured if you're adding Storybook for new projects. If you're migrating from a previous version of Storybook, you'll need to install it manually.
 
 Run the following command to install the interactions addon and related dependencies.
 
@@ -39,7 +39,7 @@ Next, update [`.storybook/main.js|ts`](../configure/index.mdx#configure-story-re
 
 <Callout variant="info" icon="💡">
 
-  Make sure to list `@storybook/addon-interactions` **after** the [`@storybook/addon-essentials`](./index.mdx) addon (or the [`@storybook/addon-actions`](./actions.mdx) if you've installed it individually).
+  Make sure to list `@storybook/addon-test` **after** the [`@storybook/addon-essentials`](./index.mdx) addon.
   
 </Callout>
 

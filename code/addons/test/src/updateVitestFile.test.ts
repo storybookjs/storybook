@@ -40,7 +40,7 @@ describe('updateConfigFile', () => {
       // https://vite.dev/config/
       import path from 'node:path';
       import { fileURLToPath } from 'node:url';
-      import { storybookTest } from '@storybook/experimental-addon-test/vitest-plugin';
+      import { storybookTest } from '@storybook/addon-test/vitest-plugin';
       const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
 
       // More info at: https://storybook.js.org/docs/writing-tests/test-addon
@@ -103,7 +103,7 @@ describe('updateConfigFile', () => {
       import path from 'node:path';
       import { fileURLToPath } from 'node:url';
       import { defineConfig } from 'vitest/config';
-      import { storybookTest } from '@storybook/experimental-addon-test/vitest-plugin';
+      import { storybookTest } from '@storybook/addon-test/vitest-plugin';
       const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
 
       // More info at: https://storybook.js.org/docs/writing-tests/test-addon
@@ -192,7 +192,7 @@ describe('updateConfigFile', () => {
       // https://vite.dev/config/
       import path from 'node:path';
       import { fileURLToPath } from 'node:url';
-      import { storybookTest } from '@storybook/experimental-addon-test/vitest-plugin';
+      import { storybookTest } from '@storybook/addon-test/vitest-plugin';
       const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
 
       // More info at: https://storybook.js.org/docs/writing-tests/test-addon
@@ -252,7 +252,7 @@ describe('updateConfigFile', () => {
       // https://vite.dev/config/
       import path from 'node:path';
       import { fileURLToPath } from 'node:url';
-      import { storybookTest } from '@storybook/experimental-addon-test/vitest-plugin';
+      import { storybookTest } from '@storybook/addon-test/vitest-plugin';
       const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
 
       // More info at: https://storybook.js.org/docs/writing-tests/test-addon
@@ -303,7 +303,7 @@ describe('updateWorkspaceFile', () => {
       "import path from 'node:path';
       import { fileURLToPath } from 'node:url';
       import { defineWorkspace } from 'vitest/config';
-      import { storybookTest } from '@storybook/experimental-addon-test/vitest-plugin';
+      import { storybookTest } from '@storybook/addon-test/vitest-plugin';
       const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
 
       // More info at: https://storybook.js.org/docs/writing-tests/test-addon
@@ -349,7 +349,7 @@ describe('updateWorkspaceFile', () => {
       "import { defineWorkspace } from 'vitest/config';
       import path from 'node:path';
       import { fileURLToPath } from 'node:url';
-      import { storybookTest } from '@storybook/experimental-addon-test/vitest-plugin';
+      import { storybookTest } from '@storybook/addon-test/vitest-plugin';
       const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
 
       // More info at: https://storybook.js.org/docs/writing-tests/test-addon

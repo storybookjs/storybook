@@ -208,15 +208,6 @@ describe('Yarn 1 Proxy', () => {
                     "children": []
                   }
                 ]
-              },
-              {
-                "name": "@storybook/addon-interactions@7.0.0-beta.19",
-                "children": [
-                  {
-                    "name": "@storybook/instrumenter@7.0.0-beta.19",
-                    "children": []
-                  }
-                ]
               }
             ]
           }
@@ -229,12 +220,6 @@ describe('Yarn 1 Proxy', () => {
         {
           "dedupeCommand": "yarn dedupe",
           "dependencies": {
-            "@storybook/addon-interactions": [
-              {
-                "location": "",
-                "version": "7.0.0-beta.19",
-              },
-            ],
             "@storybook/instrumenter": [
               {
                 "location": "",

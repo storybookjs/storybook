@@ -78,14 +78,6 @@ const config = defineMain({
       titlePrefix: 'addons/onboarding',
     },
     {
-      directory: '../addons/interactions/src',
-      titlePrefix: 'addons/interactions',
-    },
-    {
-      directory: '../addons/interactions/template/stories',
-      titlePrefix: 'addons/interactions/tests',
-    },
-    {
       directory: '../addons/test/src/components',
       titlePrefix: 'addons/test',
     },
@@ -99,7 +91,7 @@ const config = defineMain({
     '@storybook/addon-essentials',
     '@storybook/addon-storysource',
     '@storybook/addon-designs',
-    '@storybook/experimental-addon-test',
+    '@storybook/addon-test',
     '@storybook/addon-a11y',
     '@chromatic-com/storybook',
   ],

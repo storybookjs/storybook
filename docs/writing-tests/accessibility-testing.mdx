@@ -39,7 +39,7 @@ Start your Storybook, and you will see some noticeable differences in the UI. A 
 
 ### How it works
 
-Storybook's a11y addon runs [Axe](https://github.com/dequelabs/axe-core) on the selected story. Allowing you to catch and fix accessibility issues during development. For example, if you’re working on a button component and included the following set of stories:
+Storybook's a11y addon runs [Axe](https://github.com/dequelabs/axe-core) on the selected story. Allowing you to catch and fix accessibility issues during development. For example, if you're working on a button component and included the following set of stories:
 
 {/* prettier-ignore-start */}
 
@@ -105,7 +105,7 @@ Customize the a11y ruleset at the story level by updating your story to include 
 
 <If notRenderer={['svelte']}>
 
-  Disable automated accessibility testing for stories or components by adding the following globals to your story’s export or component’s default export:
+  Disable automated accessibility testing for stories or components by adding the following globals to your story's export or component's default export:
 
 </If>
 
@@ -242,7 +242,7 @@ Additionally, if you have already [disabled accessibility](#turn-off-automated-a
 
 ***
 
-#### What’s the difference between browser-based and linter-based accessibility tests?
+#### What's the difference between browser-based and linter-based accessibility tests?
 
 Browser-based accessibility tests, like those found in Storybook, evaluate the rendered DOM because that gives you the highest accuracy. Auditing code that hasn't been compiled yet is one step removed from the real thing, so you won't catch everything the user might experience.
 
@@ -252,7 +252,7 @@ Browser-based accessibility tests, like those found in Storybook, evaluate the r
 
 ### Why are my tests failing in different environments?
 
-If you enabled the experimental test addon (i.e.,`@storybook/experimental-addon-test`), your tests run in Vitest using your project's configuration with Playwright's Chromium browser. This can lead to inconsistent test results reported in the Storybook UI or CLI. The inconsistency can be due to `axe-core` reporting different results in different environments, such as browser versions or configurations. If you encounter this issue, we recommend reaching out using the default communication channels (e.g., [GitHub discussions](https://github.com/storybookjs/storybook/discussions/new?category=help), [Github issues](https://github.com/storybookjs/storybook/issues/new?template=bug_report.yml)).
+If you enabled the test addon (i.e.,`@storybook/addon-test`), your tests run in Vitest using your project's configuration with Playwright's Chromium browser. This can lead to inconsistent test results reported in the Storybook UI versus the test report. The inconsistency can be due to `axe-core` reporting different results in different environments, such as browser versions or configurations. If you encounter this issue, we recommend reaching out using the default communication channels (e.g., [GitHub discussions](https://github.com/storybookjs/storybook/discussions/new?category=help), [Github issues](https://github.com/storybookjs/storybook/issues/new?template=bug_report.yml)).
 
 </If>
 
@@ -260,9 +260,9 @@ If you enabled the experimental test addon (i.e.,`@storybook/experimental-addon-
 
 ### The addon panel does not show expected violations
 
-Modern React components often use asynchronous techniques like [Suspense](https://react.dev/reference/react/Suspense) or [React Server Components (RSC)](https://react.dev/reference/rsc/server-components) to handle complex data fetching and rendering. These components don’t immediately render their final UI state. Storybook doesn’t inherently know when an async component has fully rendered. As a result, the a11y checks sometimes run too early, before the component finishes rendering, leading to false negatives (no reported violations even if they exist).
+Modern React components often use asynchronous techniques like [Suspense](https://react.dev/reference/react/Suspense) or [React Server Components (RSC)](https://react.dev/reference/rsc/server-components) to handle complex data fetching and rendering. These components don't immediately render their final UI state. Storybook doesn't inherently know when an async component has fully rendered. As a result, the a11y checks sometimes run too early, before the component finishes rendering, leading to false negatives (no reported violations even if they exist).
 
-To address this issue, we have introduced a feature flag: `developmentModeForBuild`. This feature flag allows you to set `process.env.NODE_ENV` to `'development'` in built Storybooks, enabling development-related optimizations that are typically disabled in production builds. One of those development optimizations is React’s [`act` utility](https://react.dev/reference/react/act), which helps ensure that all updates related to a test are processed and applied before making assertions, like a11y checks.
+To address this issue, we have introduced a feature flag: `developmentModeForBuild`. This feature flag allows you to set `process.env.NODE_ENV` to `'development'` in built Storybooks, enabling development-related optimizations that are typically disabled in production builds. One of those development optimizations is React's [`act` utility](https://react.dev/reference/react/act), which helps ensure that all updates related to a test are processed and applied before making assertions, like a11y checks.
 
 To enable this feature flag, add the following configuration to your `.storybook/main.js|ts` file:
 

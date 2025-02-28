@@ -534,10 +534,10 @@ export async function doInitiate(options: CommandOptions): Promise<
 
   if (selectedFeatures.has('test')) {
     logger.log(
-      `> npx storybook@${versions.storybook} add @storybook/experimental-addon-test@${versions['@storybook/experimental-addon-test']}`
+      `> npx storybook@${versions.storybook} add @storybook/addon-test@${versions['@storybook/addon-test']}`
     );
     execSync(
-      `npx storybook@${versions.storybook} add @storybook/experimental-addon-test@${versions['@storybook/experimental-addon-test']}`,
+      `npx storybook@${versions.storybook} add @storybook/addon-test@${versions['@storybook/addon-test']}`,
       { cwd: process.cwd(), stdio: 'inherit' }
     );
   }

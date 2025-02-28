@@ -31,10 +31,9 @@ import { printError, printInfo, printSuccess, printWarning, step } from './posti
 import { loadTemplate, updateConfigFile, updateWorkspaceFile } from './updateVitestFile';
 import { getAddonNames } from './utils';
 
-const ADDON_NAME = '@storybook/experimental-addon-test' as const;
+const ADDON_NAME = '@storybook/addon-test' as const;
 const EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.cts', '.mts', '.cjs', '.mjs'];
 
-const addonInteractionsName = '@storybook/addon-interactions';
 const addonA11yName = '@storybook/addon-a11y';
 
 const findFile = async (basename: string, extensions = EXTENSIONS) =>
@@ -210,38 +209,6 @@ export default async function postInstall(options: PostinstallOptions) {
     return;
   }
 
-  if (info.hasAddonInteractions) {
-    let shouldUninstall = options.yes;
-    if (!options.yes) {
-      printInfo(
-        '⚠️ Attention',
-        dedent`
-          We have detected that you're using ${addonInteractionsName}.
-          The Storybook test addon is a replacement for the interactions addon, so you must uninstall and unregister it in order to use the test addon correctly. This can be done automatically.
-
-          More info: ${picocolors.cyan('https://storybook.js.org/docs/writing-tests/test-addon')}
-        `
-      );
-
-      const response = isInteractive
-        ? await prompts({
-            type: 'confirm',
-            name: 'shouldUninstall',
-            message: `Would you like me to remove and unregister ${addonInteractionsName}? Press N to abort the entire installation.`,
-            initial: true,
-          })
-        : { shouldUninstall: true };
-
-      shouldUninstall = response.shouldUninstall;
-    }
-
-    if (shouldUninstall) {
-      await $({
-        stdio: 'inherit',
-      })`storybook remove ${addonInteractionsName} --package-manager ${options.packageManager} --config-dir ${options.configDir}`;
-    }
-  }
-
   if (info.frameworkPackageName === '@storybook/nextjs') {
     printInfo(
       '🍿 Just so you know...',
@@ -359,7 +326,7 @@ export default async function postInstall(options: PostinstallOptions) {
 
   if (a11yAddon) {
     try {
-      logger.plain(`${step} Setting up ${addonA11yName} for @storybook/experimental-addon-test:`);
+      logger.plain(`${step} Setting up ${addonA11yName} for @storybook/addon-test:`);
       await $({
         stdio: 'inherit',
       })`storybook automigrate addonA11yAddonTest ${options.yes ? '--yes' : ''}`;
@@ -367,7 +334,7 @@ export default async function postInstall(options: PostinstallOptions) {
       printError(
         '🚨 Oh no!',
         dedent`
-        We have detected that you have ${addonA11yName} installed but could not automatically set it up for @storybook/experimental-addon-test.
+        We have detected that you have ${addonA11yName} installed but could not automatically set it up for @storybook/addon-test.
 
         Please refer to the documentation to complete the setup manually:
         ${picocolors.cyan(`https://storybook.js.org/docs/writing-tests/accessibility-testing#test-addon-integration`)}

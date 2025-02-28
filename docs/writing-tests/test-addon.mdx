@@ -17,12 +17,6 @@ sidebar:
 
 <If renderer={['react', 'vue', 'svelte']}>
 
-(⚠️ **Experimental**)
-
-<Callout variant="warning" icon="🧪">
-  While this addon is experimental, it is published as the `@storybook/experimental-addon-test` package and the API may change in future releases. We welcome feedback and contributions to help improve this feature.
-</Callout>
-
 Storybook's Test addon allows you to test your components directly inside Storybook. On its own, it transforms your [stories](../writing-stories/index.mdx) into [component tests](./component-testing.mdx), which test the rendering and behavior of your components in a real browser environment. It can also calculate project [coverage](./test-coverage.mdx) provided by your stories.
 
 If your project is using other testing addons, such as the [Visual tests addon](./visual-testing.mdx) or the [Accessibility addon](./accessibility-testing.mdx), you can run those tests alongside your component tests.
@@ -68,7 +62,7 @@ For some project setups, the `add` command may be unable to automate the addon a
 
 1. Make sure Vite and Vitest are configured in your project.
 1. Configure Vitest to use [browser mode](https://vitest.dev/guide/browser/).
-1. Install the addon, `@storybook/experimental-addon-test`, in your project and [register it in your Storybook configuration](http://storybook.js.org/docs/addons/install-addons#manual-installation).
+1. Install the addon, `@storybook/addon-test`, in your project and [register it in your Storybook configuration](http://storybook.js.org/docs/addons/install-addons#manual-installation).
 1. Create a test setup file, `.storybook/vitest.setup.ts`. You can use the [example setup file](#example-vitest-setup) as a guide.
 1. Adjust your Vitest configuration to include the plugin and reference the setup file. You can use the [example configuration files](#example-configuration-files) as a guide.
 
@@ -403,7 +397,7 @@ export default defineConfig({
 This addon has the following exports:
 
 ```js
-import { storybookTest } from '@storybook/experimental-addon-test/vitest-plugin'
+import { storybookTest } from '@storybook/addon-test/vitest-plugin'
 ```
 
 #### `storybookTest`

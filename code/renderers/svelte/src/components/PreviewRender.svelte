@@ -18,7 +18,6 @@
     /** @type {any} whether this level of the decorator chain is the last, ie. the actual story */
     argTypes,
   } = storyFn();
-
   let firstTime = true;
 
   // the first time we don't want to call storyFn two times so we just return the values
@@ -36,7 +35,6 @@
     }
     return storyFn();
   }
-
   // reactive, re-render on storyFn change
   $: ({ Component, props = {}, on, argTypes } = getStoryFnValue(storyFn));
 
@@ -53,4 +51,4 @@
   }
 </script>
 
-<SlotDecorator {Component} {props} {on} {argTypes} />
+<SlotDecorator {Component} props={props} {on} {argTypes} />

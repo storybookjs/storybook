@@ -1,11 +1,6 @@
 <script>
-  import Button from './Button.svelte';
-  
-  export let locale;
-  export let label;
+  const { label, locale } = $props();
 </script>
 
-<div>
-  <p>locale: {locale}</p>
-  <Button label={label} />
-</div>
+<p>The current locale is: {locale}</p>
+<div>{label}</div>

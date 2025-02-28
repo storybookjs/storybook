@@ -22,7 +22,6 @@ import { createSvelte5Props } from '@storybook/svelte/internal/createSvelte5Prop
 import * as svelteProjectAnnotations from './entry-preview';
 import type { Meta } from './public-types';
 import type { SvelteRenderer } from './types';
-import { IS_SVELTE_V4 } from './utils';
 
 type ComposedStory<TArgs extends Args = any> = ComposedStoryFn<SvelteRenderer, TArgs> & {
   Component: typeof PreviewRender;
@@ -130,18 +129,14 @@ export function composeStory<TArgs extends Args = Args>(
     exportsName
   );
 
-  let props = {
+  const props = createSvelte5Props({
     storyFn: composedStory,
     storyContext: { ...composedStory },
     name: composedStory.storyName,
     title: composedStory.id,
     showError: () => {},
-  };
+  });
 
-  // In Svelte >= 5, we make the props reactive
-  if (!IS_SVELTE_V4) {
-    props = createSvelte5Props(props);
-  }
   /**
    * TODO: figure out the situation here. Currently, we construct props to render the PreviewRender,
    * a "story wrapper" that allows to render the story and its decorators correctly. However, the

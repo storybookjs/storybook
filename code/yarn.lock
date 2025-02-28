@@ -7496,7 +7496,7 @@ __metadata:
   peerDependencies:
     "@sveltejs/vite-plugin-svelte": ^2.0.0 || ^3.0.0 || ^4.0.0 || ^5.0.0
     storybook: "workspace:^"
-    svelte: ^4.0.0 || ^5.0.0
+    svelte: ^5.0.0
     vite: ^4.0.0 || ^5.0.0 || ^6.0.0
   languageName: unknown
   linkType: soft
@@ -7513,7 +7513,7 @@ __metadata:
     typescript: "npm:^5.7.3"
   peerDependencies:
     storybook: "workspace:^"
-    svelte: ^4.0.0 || ^5.0.0
+    svelte: ^5.0.0
     svelte-loader: "*"
   languageName: unknown
   linkType: soft
@@ -7536,7 +7536,7 @@ __metadata:
     vite: "npm:^6.0.11"
   peerDependencies:
     storybook: "workspace:^"
-    svelte: ^4.0.0 || ^5.0.0
+    svelte: ^5.0.0
   languageName: unknown
   linkType: soft
 
@@ -7553,7 +7553,7 @@ __metadata:
     vite: "npm:^4.0.0"
   peerDependencies:
     storybook: "workspace:^"
-    svelte: ^4.0.0 || ^5.0.0
+    svelte: ^5.0.0
     vite: ^4.0.0 || ^5.0.0 || ^6.0.0
   languageName: unknown
   linkType: soft

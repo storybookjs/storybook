@@ -1,5 +1,5 @@
-import { SourceType, SNIPPET_RENDERED } from 'storybook/internal/docs-tools';
-import { addons } from 'storybook/internal/preview-api';
+import { SourceType, SNIPPET_RENDERED } from '@storybook/docs-tools';
+import { addons } from '@storybook/preview-api';
 import type { StoryObj } from '@storybook/svelte';
 import { get } from 'es-toolkit/compat';
 import type { ComponentProps } from 'svelte';

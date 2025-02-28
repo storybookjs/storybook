@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 
 import pkg from '@storybook/addon-svelte-csf/package.json' with { type: 'json' };
 import { preprocess } from 'svelte/compiler';
-import type { IndexInput } from 'storybook/internal/types';
+import type { IndexInput } from '@storybook/types';
 
 import { getSvelteAST, type ESTreeAST, type SvelteAST } from '$lib/parser/ast.js';
 import { extractStoryAttributesNodes } from '$lib/parser/extract/svelte/story/attributes.js';

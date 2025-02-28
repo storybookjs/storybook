@@ -22,7 +22,7 @@ import { mount } from 'cypress/vue'
 import type { ProjectAnnotations } from 'storybook/internal/types';
 import { VueRenderer, setProjectAnnotations } from '@storybook/vue3';
 import sbAnnotations from '../../.storybook/preview';
-import * as addonInteractions from '@storybook/addon-interactions/preview';
+import * as addonTest from '@storybook/addon-test/preview';
 import * as addonActions from '@storybook/addon-essentials/actions/preview';
 
 
@@ -48,6 +48,6 @@ process.env = {};
 
 setProjectAnnotations([
   sbAnnotations,
-  addonInteractions as ProjectAnnotations<VueRenderer>, // instruments actions as spies
+  addonTest as ProjectAnnotations<VueRenderer>, // instruments actions as spies
   addonActions as ProjectAnnotations<VueRenderer>, // creates actions from argTypes
 ]);

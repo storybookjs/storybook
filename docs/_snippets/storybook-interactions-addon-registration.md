@@ -5,7 +5,7 @@ export default {
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   addons: [
     // Other Storybook addons
-    '@storybook/addon-interactions', // 👈 Register the addon
+    '@storybook/addon-test', // 👈 Register the addon
   ],
 };
 ```
@@ -19,7 +19,7 @@ const config: StorybookConfig = {
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   addons: [
     // Other Storybook addons
-    '@storybook/addon-interactions', // 👈 Register the addon
+    '@storybook/addon-test', // 👈 Register the addon
   ],
 };
 

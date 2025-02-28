@@ -78,14 +78,6 @@ const config = defineMain({
       titlePrefix: 'addons/onboarding',
     },
     {
-      directory: '../addons/interactions/src',
-      titlePrefix: 'addons/interactions',
-    },
-    {
-      directory: '../addons/interactions/template/stories',
-      titlePrefix: 'addons/interactions/tests',
-    },
-    {
       directory: '../addons/test/src/components',
       titlePrefix: 'addons/test',
     },

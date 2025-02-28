@@ -39,7 +39,6 @@ vi.mock('./utils/safeResolve', () => {
     '@storybook/addon-docs',
     '@storybook/addon-cool',
     '@storybook/addon-docs/preset',
-    '@storybook/addon-interactions/preset',
     '@storybook/addon-essentials',
     '@storybook/addon-knobs/manager',
     '@storybook/addon-knobs/register',
@@ -456,10 +455,8 @@ describe('loadPreset', () => {
     mockPreset('@storybook/addon-actions/register.js', {});
     mockPreset('addon-foo/register.js', {});
     mockPreset('@storybook/addon-cool', {});
-    mockPreset('@storybook/addon-interactions/preset', {});
     mockPreset('addon-bar', {
       addons: ['@storybook/addon-cool'],
-      presets: ['@storybook/addon-interactions/preset'],
     });
     mockPreset('addon-baz/register.js', {});
     mockPreset('@storybook/addon-notes/register-panel', {});
@@ -558,11 +555,6 @@ describe('loadPreset', () => {
         preset: {
           managerEntries: [normalize('addon-foo/register')],
         },
-      },
-      {
-        name: '@storybook/addon-interactions/preset',
-        options: {},
-        preset: {},
       },
       {
         name: '@storybook/addon-cool',
@@ -683,11 +675,6 @@ describe('loadPreset', () => {
       [
         {
           "name": "@storybook/preset-typescript",
-          "options": {},
-          "preset": {},
-        },
-        {
-          "name": "@storybook/addon-interactions/preset",
           "options": {},
           "preset": {},
         },

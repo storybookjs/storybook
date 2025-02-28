@@ -14,7 +14,7 @@ export const getAddonSvelteCsfVersion = async (packageManager: JsPackageManager)
     }
     // TODO: update when addon-svelte-csf v5 is released
     if (svelteMajor === 5) {
-      return '5.0.0-next.25';
+      return '4.2.1--canary.16f8a20.1';
     }
   } catch {
     // fallback to latest version

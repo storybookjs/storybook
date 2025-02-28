@@ -3,6 +3,10 @@ import { definePreview } from 'storybook/internal/preview-api';
 import * as addonAnnotations from './preview';
 import type { storybookTest as storybookTestImport } from './vitest-plugin';
 
+// Re-export actions functionality
+export * from './actions';
+export type { ActionsParameters } from './actions';
+
 export default () => definePreview(addonAnnotations);
 
 export type { TestParameters } from './types';

@@ -18,7 +18,6 @@
   "resolutions": {
     "@playwright/test": "1.48.1",
     "@storybook/addon-a11y": "file:../../../code/addons/a11y",
-    "@storybook/addon-actions": "file:../../../code/addons/actions",
     "@storybook/addon-backgrounds": "file:../../../code/addons/backgrounds",
     "@storybook/addon-controls": "file:../../../code/addons/controls",
     "@storybook/addon-docs": "file:../../../code/addons/docs",
@@ -89,7 +88,6 @@
     "@playwright/experimental-ct-react": "1.48.1",
     "@playwright/test": "1.48.1",
     "@storybook/addon-a11y": "^9.0.0",
-    "@storybook/addon-actions": "^9.0.0",
     "@storybook/addon-controls": "^9.0.0",
     "@storybook/addon-essentials": "^9.0.0",
     "@storybook/addon-test": "^9.0.0",

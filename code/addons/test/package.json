@@ -1,13 +1,15 @@
 {
   "name": "@storybook/addon-test",
   "version": "9.0.0-alpha.0",
-  "description": "Storybook addon for testing components",
+  "description": "Storybook addon for testing components with Vitest and capturing UI interactions",
   "keywords": [
     "storybook-addons",
     "addon-test",
     "vitest",
     "testing",
-    "test"
+    "test",
+    "actions",
+    "events"
   ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/addons/test",
   "bugs": {
@@ -34,6 +36,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
+    },
+    "./decorator": {
+      "types": "./dist/decorator.d.ts",
+      "import": "./dist/decorator.mjs",
+      "require": "./dist/decorator.js"
     },
     "./vitest-plugin": {
       "types": "./dist/vitest-plugin/index.d.ts",
@@ -102,12 +109,16 @@
     "@storybook/icons": "^1.2.12",
     "@storybook/instrumenter": "workspace:*",
     "@storybook/test": "workspace:*",
+    "@types/uuid": "^9.0.1",
+    "dequal": "^2.0.2",
     "polished": "^4.2.2",
     "prompts": "^2.4.0",
-    "ts-dedent": "^2.2.0"
+    "ts-dedent": "^2.2.0",
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
     "@devtools-ds/object-inspector": "^1.1.2",
+    "@storybook/test": "workspace:*",
     "@types/istanbul-lib-report": "^3.0.3",
     "@types/node": "^22.0.0",
     "@types/semver": "^7",
@@ -124,10 +135,12 @@
     "picocolors": "^1.1.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-inspector": "^6.0.0",
     "semver": "^7.6.3",
     "sirv": "^2.0.4",
     "slash": "^5.0.0",
     "strip-ansi": "^7.1.0",
+    "telejson": "^7.2.0",
     "tinyglobby": "^0.2.10",
     "tree-kill": "^1.2.2",
     "ts-dedent": "^2.2.0",
@@ -157,6 +170,7 @@
   "bundler": {
     "exportEntries": [
       "./src/index.ts",
+      "./src/decorator.ts",
       "./src/vitest-plugin/test-utils.ts",
       "./src/vitest-plugin/setup-file.ts"
     ],

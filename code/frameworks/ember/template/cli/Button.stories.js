@@ -1,7 +1,7 @@
 import { fn } from '@storybook/test';
 
-import { action } from '@storybook/addon-actions';
 import { linkTo } from '@storybook/addon-links';
+import { action } from '@storybook/addon-test';
 
 import { hbs } from 'ember-cli-htmlbars';
 

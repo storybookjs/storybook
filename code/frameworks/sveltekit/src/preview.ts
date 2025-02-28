@@ -1,6 +1,6 @@
 import type { Decorator } from '@storybook/svelte';
 
-import { action } from '@storybook/addon-actions';
+import { action } from '@storybook/addon-test';
 
 import { onMount } from 'svelte';
 

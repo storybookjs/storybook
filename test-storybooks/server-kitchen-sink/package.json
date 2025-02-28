@@ -15,7 +15,6 @@
   },
   "resolutions": {
     "@storybook/addon-a11y": "file:../../code/addons/a11y",
-    "@storybook/addon-actions": "file:../../code/addons/actions",
     "@storybook/addon-backgrounds": "file:../../code/addons/backgrounds",
     "@storybook/addon-controls": "file:../../code/addons/controls",
     "@storybook/addon-docs": "file:../../code/addons/docs",
@@ -81,7 +80,6 @@
   },
   "devDependencies": {
     "@storybook/addon-a11y": "*",
-    "@storybook/addon-actions": "*",
     "@storybook/addon-backgrounds": "*",
     "@storybook/addon-controls": "*",
     "@storybook/addon-highlight": "*",

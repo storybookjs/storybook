@@ -2,7 +2,7 @@ import React from 'react';
 
 import type { Decorator } from '@storybook/react';
 
-import { actions as makeActions } from '@storybook/addon-actions';
+import { actions as makeActions } from '@storybook/addon-test';
 
 import { defaultShortcuts } from './defaultShortcuts';
 import { ShortcutsScreen } from './shortcuts';

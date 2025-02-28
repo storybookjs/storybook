@@ -3,7 +3,7 @@ import type { PartialStoryFn, Renderer } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
-import { PARAM_KEY } from './constants';
+import { ACTIONS_PARAM_KEY } from './constants';
 import { actions } from './runtime/actions';
 
 const { document, Element } = global;
@@ -60,7 +60,7 @@ const applyEventHandlers = (actionsFn: any, ...handles: any[]) => {
 export const withActions: <T extends Renderer>(storyFn: PartialStoryFn<T>) => T['storyResult'] =
   makeDecorator({
     name: 'withActions',
-    parameterName: PARAM_KEY,
+    parameterName: ACTIONS_PARAM_KEY,
     skipIfNoParametersOrOptions: true,
     wrapper: (getStory, context, { parameters }) => {
       if (parameters?.handles) {

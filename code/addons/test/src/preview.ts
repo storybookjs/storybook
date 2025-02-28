@@ -5,6 +5,8 @@ import { instrument } from '@storybook/instrumenter';
 // For 9.0 we want to merge storybook/test and addon-interactions into one addon.
 import '@storybook/test';
 
+import * as addonActionsPreview from './actions/preview';
+
 export const { step: runStep } = instrument(
   {
     // It seems like the label is unused, but the instrumenter has access to it
@@ -19,4 +21,7 @@ export const { step: runStep } = instrument(
 
 export const parameters = {
   throwPlayFunctionExceptions: false,
+  ...addonActionsPreview.parameters,
 };
+
+export const withActions = addonActionsPreview.withActions;

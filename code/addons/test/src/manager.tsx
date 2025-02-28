@@ -12,6 +12,8 @@ import {
 
 import { store } from '#manager-store';
 
+import { ACTIONS_PANEL_ID } from './actions';
+import { ActionPanel } from './actions/manager';
 import { GlobalErrorContext, GlobalErrorModal } from './components/GlobalErrorModal';
 import { Panel } from './components/Panel';
 import { PanelTitle } from './components/PanelTitle';
@@ -157,6 +159,13 @@ addons.register(ADDON_ID, (api) => {
       storyId: state.storyId,
     };
   };
+
+  addons.add(ACTIONS_PANEL_ID, {
+    type: types.PANEL,
+    title: 'Actions',
+    match: ({ viewMode }) => viewMode === 'story',
+    render: () => <ActionPanel />,
+  });
 
   addons.add(PANEL_ID, {
     type: types.PANEL,

@@ -11,7 +11,7 @@ import { addons } from 'storybook/internal/preview-api';
 
 import type { Meta, ReactRenderer } from '@storybook/react';
 
-import * as addonActionsPreview from '@storybook/addon-actions/preview';
+import * as addonTestPreview from '@storybook/addon-test/preview';
 
 import { expectTypeOf } from 'expect-type';
 
@@ -135,7 +135,7 @@ describe('projectAnnotations', () => {
     const Story = composeStory(
       ButtonStories.WithActionArgType.input,
       ButtonStories.CSF3Primary.meta.input,
-      addonActionsPreview as ProjectAnnotations<ReactRenderer>
+      addonTestPreview as ProjectAnnotations<ReactRenderer>
     );
 
     // TODO: add a way to provide custom args/argTypes, right now it's type any

@@ -6,7 +6,7 @@ import type { API } from 'storybook/internal/manager-api';
 import { dequal as deepEqual } from 'dequal';
 
 import { ActionLogger as ActionLoggerComponent } from '../../components/ActionLogger';
-import { CLEAR_ID, EVENT_ID } from '../../constants';
+import { ACTIONS_CLEAR_ID, ACTIONS_EVENT_ID } from '../../constants';
 import type { ActionDisplay } from '../../models';
 
 interface ActionLoggerProps {
@@ -41,7 +41,7 @@ export default class ActionLogger extends Component<ActionLoggerProps, ActionLog
     this.mounted = true;
     const { api } = this.props;
 
-    api.on(EVENT_ID, this.addAction);
+    api.on(ACTIONS_EVENT_ID, this.addAction);
     api.on(STORY_CHANGED, this.handleStoryChange);
   }
 
@@ -50,7 +50,7 @@ export default class ActionLogger extends Component<ActionLoggerProps, ActionLog
     const { api } = this.props;
 
     api.off(STORY_CHANGED, this.handleStoryChange);
-    api.off(EVENT_ID, this.addAction);
+    api.off(ACTIONS_EVENT_ID, this.addAction);
   }
 
   handleStoryChange = () => {
@@ -78,7 +78,7 @@ export default class ActionLogger extends Component<ActionLoggerProps, ActionLog
     const { api } = this.props;
 
     // clear number of actions
-    api.emit(CLEAR_ID);
+    api.emit(ACTIONS_CLEAR_ID);
     this.setState({ actions: [] });
   };
 

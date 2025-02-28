@@ -220,7 +220,7 @@ export abstract class JsPackageManager {
    * ```ts
    * addDependencies(options, [
    *   `@storybook/react@${storybookVersion}`,
-   *   `@storybook/addon-actions@${actionsVersion}`,
+   *   `@storybook/addon-test@${actionsVersion}`,
    *   `@storybook/addon-links@${linksVersion}`,
    *   `@storybook/preview-api@${addonsVersion}`,
    * ]);
@@ -278,7 +278,7 @@ export abstract class JsPackageManager {
    * @example
    *
    * ```ts
-   * removeDependencies(options, [`@storybook/react`, `@storybook/addon-actions`]);
+   * removeDependencies(options, [`@storybook/react`, `@storybook/addon-test`]);
    * ```
    *
    * @param {Object} options Contains `skipInstall`, `packageJson` and `installAsDevDependencies`

@@ -11,7 +11,7 @@ import { addons } from 'storybook/internal/preview-api';
 
 import type { Meta, ReactRenderer } from '@storybook/react';
 
-import * as addonActionsPreview from '@storybook/addon-actions/preview';
+import * as addonTestPreview from '@storybook/addon-test/preview';
 
 import { expectTypeOf } from 'expect-type';
 
@@ -125,7 +125,7 @@ describe('projectAnnotations', () => {
     const Story = composeStory(
       ButtonStories.WithActionArgType,
       ButtonStories.default,
-      addonActionsPreview as ProjectAnnotations<ReactRenderer>
+      addonTestPreview as ProjectAnnotations<ReactRenderer>
     );
     expect(Story.args.someActionArg).toHaveProperty('isAction', true);
   });

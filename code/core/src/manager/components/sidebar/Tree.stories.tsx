@@ -10,7 +10,7 @@ import {
 import type { Meta, StoryObj } from '@storybook/react';
 import { expect, fn, userEvent, within } from '@storybook/test';
 
-import { action } from '@storybook/addon-actions';
+import { action } from '@storybook/addon-test';
 
 import { DEFAULT_REF_ID } from './Sidebar';
 import { Tree } from './Tree';

@@ -2,11 +2,9 @@ import '@testing-library/jest-dom';
 import type { ProjectAnnotations } from 'storybook/internal/types';
 import { ReactRenderer, setProjectAnnotations } from '@storybook/react';
 import sbAnnotations from './.storybook/preview';
-import * as addonInteractions from '@storybook/addon-test/preview';
-import * as addonActions from '@storybook/addon-essentials/actions/preview';
+import * as addonTest from '@storybook/addon-test/preview';
 
 setProjectAnnotations([
   sbAnnotations,
-  addonInteractions as ProjectAnnotations<ReactRenderer>, // instruments actions as spies
-  addonActions as ProjectAnnotations<ReactRenderer>, // creates actions from argTypes
+  addonTest as ProjectAnnotations<ReactRenderer>, // instruments actions as spies
 ]);

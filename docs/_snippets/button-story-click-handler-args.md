@@ -2,7 +2,7 @@
 import type { Meta, StoryObj } from '@storybook/angular';
 import { argsToTemplate } from '@storybook/angular';
 
-import { action } from '@storybook/addon-actions';
+import { action } from '@storybook/addon-test';
 
 import { Button } from './button.component';
 
@@ -32,7 +32,7 @@ export const Text: Story = {
 ```
 
 ```js filename="Button.stories.js|jsx" renderer="react" language="js"
-import { action } from '@storybook/addon-actions';
+import { action } from '@storybook/addon-test';
 
 import { Button } from './Button';
 
@@ -52,7 +52,7 @@ export const Text = {
 ```ts filename="Button.stories.ts|tsx" renderer="react" language="ts-4-9"
 import type { Meta, StoryObj } from '@storybook/react';
 
-import { action } from '@storybook/addon-actions';
+import { action } from '@storybook/addon-test';
 
 import { Button } from './Button';
 
@@ -75,7 +75,7 @@ export const Text = {
 ```ts filename="Button.stories.ts|tsx" renderer="react" language="ts"
 import type { Meta, StoryObj } from '@storybook/react';
 
-import { action } from '@storybook/addon-actions';
+import { action } from '@storybook/addon-test';
 
 import { Button } from './Button';
 
@@ -96,7 +96,7 @@ export const Text = {
 ```
 
 ```js filename="Button.stories.js|jsx" renderer="solid" language="js"
-import { action } from '@storybook/addon-actions';
+import { action } from '@storybook/addon-test';
 
 import { Button } from './Button';
 
@@ -116,7 +116,7 @@ export const Text = {
 ```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts-4-9"
 import type { Meta, StoryObj } from 'storybook-solidjs';
 
-import { action } from '@storybook/addon-actions';
+import { action } from '@storybook/addon-test';
 
 import { Button } from './Button';
 
@@ -139,7 +139,7 @@ export const Text = {
 ```ts filename="Button.stories.ts|tsx" renderer="solid" language="ts"
 import type { Meta, StoryObj } from 'storybook-solidjs';
 
-import { action } from '@storybook/addon-actions';
+import { action } from '@storybook/addon-test';
 
 import { Button } from './Button';
 
@@ -162,7 +162,7 @@ export const Text = {
 ```js filename="Button.stories.js" renderer="svelte" language="js"
 import Button from './Button.svelte';
 
-import { action } from '@storybook/addon-actions';
+import { action } from '@storybook/addon-test';
 
 export default {
   component: Button,
@@ -187,7 +187,7 @@ export const Text = {
 
 ```ts filename="Button.stories.ts" renderer="svelte" language="ts-4-9"
 import type { Meta, StoryObj } from '@storybook/svelte';
-import { action } from '@storybook/addon-actions';
+import { action } from '@storybook/addon-test';
 
 import Button from './Button.svelte';
 
@@ -217,7 +217,7 @@ export const Primary: Story = {
 
 ```ts filename="Button.stories.ts" renderer="svelte" language="ts"
 import type { Meta, StoryObj } from '@storybook/svelte';
-import { action } from '@storybook/addon-actions';
+import { action } from '@storybook/addon-test';
 
 import Button from './Button.svelte';
 
@@ -248,7 +248,7 @@ export const Text: Story = {
 ```js filename="Button.stories.js" renderer="vue" language="js"
 import Button from './Button.vue';
 
-import { action } from '@storybook/addon-actions';
+import { action } from '@storybook/addon-test';
 
 export default {
   component: Button,
@@ -276,7 +276,7 @@ import type { Meta, StoryObj } from '@storybook/vue3';
 
 import Button from './Button.vue';
 
-import { action } from '@storybook/addon-actions';
+import { action } from '@storybook/addon-test';
 
 const meta = {
   component: Button,
@@ -307,7 +307,7 @@ import type { Meta, StoryObj } from '@storybook/vue3';
 
 import Button from './Button.vue';
 
-import { action } from '@storybook/addon-actions';
+import { action } from '@storybook/addon-test';
 
 const meta: Meta<typeof Button> = {
   component: Button,
@@ -336,7 +336,7 @@ export const Primary: Story = {
 ```js filename="Button.stories.js" renderer="web-components" language="js"
 import { html } from 'lit';
 
-import { action } from '@storybook/addon-actions';
+import { action } from '@storybook/addon-test';
 
 export default {
   component: 'custom-button',
@@ -354,7 +354,7 @@ export const Text = {
 
 ```ts filename="Button.stories.ts" renderer="web-components" language="ts"
 import type { Meta, StoryObj } from '@storybook/web-components';
-import { action } from '@storybook/addon-actions';
+import { action } from '@storybook/addon-test';
 
 import { html } from 'lit';
 

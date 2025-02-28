@@ -7,7 +7,7 @@ import { global } from '@storybook/global';
 
 import { v4 as uuidv4 } from 'uuid';
 
-import { EVENT_ID } from '../constants';
+import { ACTIONS_EVENT_ID, CYCLIC_KEY } from '../constants';
 import type { ActionDisplay, ActionOptions, HandlerFunction } from '../models';
 import { config } from './configureActions';
 
@@ -105,7 +105,7 @@ export function action(name: string, options: ActionOptions = {}): HandlerFuncti
         allowFunction: actionOptions.allowFunction || false,
       },
     };
-    channel.emit(EVENT_ID, actionDisplayToEmit);
+    channel.emit(ACTIONS_EVENT_ID, actionDisplayToEmit);
   };
   handler.isAction = true;
   handler.implicit = options.implicit;

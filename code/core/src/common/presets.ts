@@ -68,7 +68,7 @@ function resolvePresetFunction<T = any>(
  *
  * Valid inputs:
  *
- * - `'@storybook/addon-actions/manager' => { type: 'virtual', item }`
+ * - `'@storybook/addon-test/manager' => { type: 'virtual', item }`
  * - `'@storybook/addon-docs/preset' => { type: 'presets', item }`
  * - `'@storybook/addon-docs' => { type: 'presets', item: '@storybook/addon-docs/preset' }`
  * - `{ name: '@storybook/addon-docs(/preset)?', options: { } } => { type: 'presets', item: { name:

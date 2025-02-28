@@ -6,19 +6,19 @@ describe('getAddonNames', () => {
   it('should extract addon names from simple strings', () => {
     const config = {
       stories: [],
-      addons: ['@storybook/addon-actions', '@storybook/addon-outline'],
+      addons: ['@storybook/addon-test', '@storybook/addon-outline'],
     };
     const result = getAddonNames(config);
-    expect(result).toEqual(['@storybook/addon-actions', '@storybook/addon-outline']);
+    expect(result).toEqual(['@storybook/addon-test', '@storybook/addon-outline']);
   });
 
   it('should extract addon names from object notation', () => {
     const config = {
       stories: [],
-      addons: [{ name: '@storybook/addon-actions' }, { name: '@storybook/addon-outline' }],
+      addons: [{ name: '@storybook/addon-test' }, { name: '@storybook/addon-outline' }],
     };
     const result = getAddonNames(config);
-    expect(result).toEqual(['@storybook/addon-actions', '@storybook/addon-outline']);
+    expect(result).toEqual(['@storybook/addon-test', '@storybook/addon-outline']);
   });
 
   it('should filter out relative paths for local addons', () => {
@@ -34,12 +34,12 @@ describe('getAddonNames', () => {
     const config = {
       stories: [],
       addons: [
-        '/sandbox/react-vite-default-ts/node_modules/@storybook/addon-actions',
+        '/sandbox/react-vite-default-ts/node_modules/@storybook/addon-test',
         '/sandbox/react-vite-default-ts/node_modules/@storybook/addon-outline',
       ],
     };
     const result = getAddonNames(config);
-    expect(result).toEqual(['@storybook/addon-actions', '@storybook/addon-outline']);
+    expect(result).toEqual(['@storybook/addon-test', '@storybook/addon-outline']);
   });
 
   it('should extract addon names from pnpm paths', () => {
@@ -68,7 +68,7 @@ describe('getAddonNames', () => {
     const config = {
       stories: [],
       addons: [
-        '@storybook/addon-actions',
+        '@storybook/addon-test',
         { name: '@storybook/addon-outline' },
         './local-addon',
         '/sandbox/react-vite-default-ts/node_modules/@storybook/addon-controls',
@@ -76,7 +76,7 @@ describe('getAddonNames', () => {
     };
     const result = getAddonNames(config);
     expect(result).toEqual([
-      '@storybook/addon-actions',
+      '@storybook/addon-test',
       '@storybook/addon-outline',
       '@storybook/addon-controls',
     ]);

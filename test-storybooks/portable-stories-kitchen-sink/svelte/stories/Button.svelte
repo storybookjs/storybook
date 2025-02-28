@@ -22,6 +22,10 @@
      * Optional click handler
      */
     onclick?: (event: MouseEvent) => void;
+    /**
+     * Button contents
+     */
+    children?: any;
   };
 
   const { 
@@ -29,6 +33,7 @@
     backgroundColor = undefined,
     size = 'medium',
     label = '',
+    children,
     ...props
   }: Props = $props();
 
@@ -43,5 +48,5 @@
   {...props}
 >
   {label}
-  <slot/>
+  {@render children?.()}
 </button>

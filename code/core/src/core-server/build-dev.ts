@@ -114,9 +114,11 @@ export async function buildDevStandalone(
     console.warn('Storybook failed to check addon compatibility', e);
   }
 
-  try {
-    await syncStorybookAddons(config, previewConfigPath!);
-  } catch (e) {}
+  // TODO: Bring back in 9.x when we officialy launch CSF4
+  // We need to consider more scenarios in this function, such as removing addons from main.ts
+  // try {
+  //   await syncStorybookAddons(config, previewConfigPath!);
+  // } catch (e) {}
 
   try {
     await warnWhenUsingArgTypesRegex(previewConfigPath, config);

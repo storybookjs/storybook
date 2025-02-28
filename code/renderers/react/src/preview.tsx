@@ -36,10 +36,10 @@ export interface ReactPreview extends Preview<ReactRenderer> {
   >(
     meta: {
       render?: ArgsStoryFn<ReactRenderer, TArgs>;
-      component?: ComponentType<TArgs>;
+      component?: ComponentType<TArgs> | React.FC<TArgs>;
       decorators?: Decorators | Decorators[];
       args?: TMetaArgs;
-    } & Omit<ComponentAnnotations<ReactRenderer, TArgs>, 'decorators'>
+    } & Omit<ComponentAnnotations<ReactRenderer, TArgs>, 'decorators' | 'component'>
   ): ReactMeta<
     {
       args: Simplify<

@@ -3,7 +3,7 @@ import type {
   StoryAnnotations as BaseStoryAnnotations,
   StoryContext as BaseStoryContext,
   WebRenderer,
-} from 'storybook/internal/types';
+} from '@storybook/types';
 import type { Component, ComponentProps } from 'svelte';
 import type { SetOptional, Simplify } from 'type-fest';
 

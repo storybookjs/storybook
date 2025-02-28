@@ -6,7 +6,7 @@ import type { SvelteAST } from '$lib/parser/ast.js';
 
 /**
  * Adopted from: {@link https://github.com/storybookjs/storybook/blob/next/code/lib/core-events/src/errors/storybook-error.ts}
- * Copied because is not exposed in the `storybook/internal/core-events` package,
+ * Copied because is not exposed in the `@storybook/core-events` package,
  * and modified for this addon needs.
  */
 export abstract class StorybookSvelteCSFError extends Error {

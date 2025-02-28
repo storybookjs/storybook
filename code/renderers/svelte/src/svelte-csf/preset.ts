@@ -1,5 +1,5 @@
 import type { StorybookConfig } from '@storybook/svelte-vite';
-import type { Options } from 'storybook/internal/types';
+import type { Options } from '@storybook/types';
 
 import { transformPlugin, preTransformPlugin } from '$lib/compiler/plugins.js';
 import { createIndexer } from '$lib/indexer/index.js';

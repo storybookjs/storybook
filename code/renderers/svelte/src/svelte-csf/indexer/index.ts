@@ -1,4 +1,4 @@
-import type { IndexInput, Indexer } from 'storybook/internal/types';
+import type { IndexInput, Indexer } from '@storybook/types';
 
 import { parseForIndexer } from '$lib/indexer/parser.js';
 import {

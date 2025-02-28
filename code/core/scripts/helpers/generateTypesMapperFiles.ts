@@ -3,6 +3,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join, relative, sep } from 'node:path';
 
 import { dedent } from '../../../../scripts/prepare/tools';
+import { replaceSrcWithDist } from '../../../../scripts/utils/paths';
 import type { getEntries } from '../entries';
 
 const cwd = process.cwd();
@@ -32,7 +33,7 @@ export async function generateTypesMapperFiles(entries: ReturnType<typeof getEnt
 
   await Promise.all(
     all.map(async (filePath) => {
-      const location = filePath.replace('src', 'dist').replace(/\.tsx?/, '.d.ts');
+      const location = replaceSrcWithDist(filePath).replace(/\.tsx?/, '.d.ts');
       if (!existsSync(location)) {
         const directory = dirname(location);
         await mkdir(directory, { recursive: true });

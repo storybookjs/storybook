@@ -24,15 +24,16 @@ import typescript from 'typescript';
 import ts from 'typescript';
 
 import { CODE_DIRECTORY } from '../utils/constants';
+import { replaceSrcWithDist } from '../utils/paths';
 
 export { globalExternals };
 
 export const dts = async (entry: string, externals: string[], tsconfig: string) => {
-  const dir = dirname(entry).replace('src', 'dist');
+  const dir = replaceSrcWithDist(dirname(entry));
   const out = await rollup.rollup({
     input: entry,
     external: [...externals, 'ast-types'].map((dep) => new RegExp(`^${dep}($|\\/|\\\\)`)),
-    output: { file: entry.replace('src', 'dist').replace('.ts', '.d.ts'), format: 'es' },
+    output: { file: replaceSrcWithDist(entry).replace('.ts', '.d.ts'), format: 'es' },
     plugins: [
       rpd.dts({
         respectExternal: true,
@@ -55,8 +56,8 @@ export const dts = async (entry: string, externals: string[], tsconfig: string) 
   });
   const { output } = await out.generate({
     format: 'es',
-    // dir: dirname(entry).replace('src', 'dist'),
-    file: entry.replace('src', 'dist').replace('.ts', '.d.ts'),
+    // dir: replaceSrcWithDist(dirname(entry)),
+    file: replaceSrcWithDist(entry).replace('.ts', '.d.ts'),
   });
 
   await Promise.all(

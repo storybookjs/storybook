@@ -33,7 +33,6 @@ export async function getAddonAnnotations(addon: string) {
     };
 
     if (addon === '@storybook/addon-essentials') {
-      data.importPath = '@storybook/addon-essentials/entry-preview';
       return data;
     } else if (!data.isCoreAddon) {
       // for backwards compatibility, if it's not a core addon we use /preview entrypoint

@@ -8,7 +8,6 @@ const config: StorybookConfig = {
     '../../core/src/manager/**/*.stories.@(ts|tsx|js|jsx|mdx)',
     '../../core/src/components/**/*.stories.@(ts|tsx|js|jsx|mdx)',
     './../../addons/docs/**/*.stories.@(ts|tsx|js|jsx|mdx)',
-    './../../addons/interactions/**/*.stories.@(ts|tsx|js|jsx|mdx)',
   ],
   addons: [
     {
@@ -18,7 +17,6 @@ const config: StorybookConfig = {
       },
     },
     '@storybook/addon-essentials',
-    '@storybook/addon-interactions',
     '@storybook/addon-storysource',
     '@storybook/addon-jest',
     '@storybook/addon-a11y',

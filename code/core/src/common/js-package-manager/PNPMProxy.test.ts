@@ -246,18 +246,6 @@ describe('PNPM Proxy', () => {
               }
             },
             "dependencies": {
-              "@storybook/addon-interactions": {
-                "from": "@storybook/addon-interactions",
-                "version": "7.0.0-beta.13",
-                "resolved": "https://registry.npmjs.org/@storybook/addon-interactions/-/addon-interactions-7.0.0-beta.13.tgz",
-                "dependencies": {
-                  "@storybook/instrumenter": {
-                    "from": "@storybook/instrumenter",
-                    "version": "7.0.0-beta.13",
-                    "resolved": "https://registry.npmjs.org/@storybook/instrumenter/-/instrumenter-7.0.0-beta.13.tgz"
-                  }
-                }
-              }
             },
             "devDependencies": {
               "@storybook/jest": {
@@ -314,12 +302,6 @@ describe('PNPM Proxy', () => {
         {
           "dedupeCommand": "pnpm dedupe",
           "dependencies": {
-            "@storybook/addon-interactions": [
-              {
-                "location": "",
-                "version": "7.0.0-beta.13",
-              },
-            ],
             "@storybook/addons": [
               {
                 "location": "",

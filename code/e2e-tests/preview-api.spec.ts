@@ -18,7 +18,7 @@ test.describe('preview-api', () => {
   test('should pass over shortcuts, but not from play functions, story', async ({ page }) => {
     test.skip(
       /^(lit)/i.test(`${templateName}`),
-      `Skipping ${templateName}, which does not support addon-interactions`
+      `Skipping ${templateName}, which does not support addon-test`
     );
 
     const sbPage = new SbPage(page, expect);
@@ -26,7 +26,7 @@ test.describe('preview-api', () => {
     await expect(sbPage.page.locator('.sidebar-container')).toBeVisible();
 
     // wait for the play function to complete
-    await sbPage.viewAddonPanel(hasVitestIntegration ? 'Component tests' : 'Interactions');
+    await sbPage.viewAddonPanel('Component tests');
     const interactionsTab = page.locator(
       hasVitestIntegration
         ? '#tabbutton-storybook-test-panel'
@@ -46,7 +46,7 @@ test.describe('preview-api', () => {
   test('should pass over shortcuts, but not from play functions, docs', async ({ page }) => {
     test.skip(
       /^(lit)/i.test(`${templateName}`),
-      `Skipping ${templateName}, which does not support addon-interactions`
+      `Skipping ${templateName}, which does not support addon-test`
     );
 
     const sbPage = new SbPage(page, expect);

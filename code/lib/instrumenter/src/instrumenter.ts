@@ -443,7 +443,7 @@ export class Instrumenter {
 
     // TODO This function should not needed anymore, as the channel already serializes values with telejson
     // Possibly we need to add HTMLElement support to telejson though
-    // Keeping this function here, as removing it means we need to refactor the deserializing that happens in addon-interactions
+    // Keeping this function here, as removing it means we need to refactor the deserializing that happens in addon-test
     const maximumDepth = 25; // mimicks the max depth of telejson
     const serializeValues = (value: any, depth: number, seen: unknown[]): any => {
       if (seen.includes(value)) {

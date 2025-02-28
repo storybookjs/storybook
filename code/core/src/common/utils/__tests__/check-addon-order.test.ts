@@ -52,7 +52,7 @@ describe.each([
     'interactions',
     [
       'foo\\node_modules\\@storybook\\addon-essentials',
-      'foo\\node_modules\\@storybook\\addon-interactions',
+      'foo\\node_modules\\@storybook\\addon-test',
     ],
   ],
   [
@@ -60,7 +60,7 @@ describe.each([
     'interactions',
     [
       'foo\\\\node_modules\\\\@storybook\\\\addon-essentials',
-      'foo\\\\node_modules\\\\@storybook\\\\addon-interactions',
+      'foo\\\\node_modules\\\\@storybook\\\\addon-test',
     ],
   ],
   ['docs', 'controls', [{ name: '@storybook/addon-docs' }, 'controls']],

@@ -170,7 +170,6 @@ jobs:
             - code/bench
             - code/examples
             - code/frameworks
-            - code/deprecated
             - code/lib
             - code/core
             - code/builders

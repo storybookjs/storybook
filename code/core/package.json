@@ -287,7 +287,6 @@
     "prep": "jiti ./scripts/prep.ts"
   },
   "dependencies": {
-    "@storybook/theming": "workspace:*",
     "better-opn": "^3.0.2",
     "browser-assert": "^1.2.1",
     "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0",

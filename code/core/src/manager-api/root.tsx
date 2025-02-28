@@ -130,7 +130,7 @@ export type ManagerProviderProps = RouterData &
     children: ReactNode | FC<Combo>;
   };
 
-// This is duplicated from @storybook/preview-api for the reasons mentioned in lib-addons/types.js
+// This is duplicated from storybook/internal/preview-api for the reasons mentioned in lib-addons/types.js
 export const combineParameters = (...parameterSets: Parameters[]) =>
   noArrayMerge({}, ...parameterSets);
 

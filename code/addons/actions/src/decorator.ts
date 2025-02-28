@@ -53,7 +53,7 @@ const applyEventHandlers = (actionsFn: any, ...handles: any[]) => {
   }, [root, actionsFn, handles]);
 };
 
-// This type is basically the same as DecoratorFunction from @storybook/types.
+// This type is basically the same as DecoratorFunction from storybook/internal/types.
 // We can not use DecoratorFunction though as the type has to be generic.
 // Hard to explain, but you will understand when you try to solve this issue:
 // https://github.com/storybookjs/storybook/issues/22384

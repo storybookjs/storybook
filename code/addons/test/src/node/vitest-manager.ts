@@ -13,8 +13,7 @@ import * as vitestNode from 'vitest/node';
 
 import { resolvePathInStorybookCache } from 'storybook/internal/common';
 import type { TestingModuleRunRequestPayload } from 'storybook/internal/core-events';
-
-import type { DocsIndexEntry, StoryIndex, StoryIndexEntry } from '@storybook/types';
+import type { DocsIndexEntry, StoryIndex, StoryIndexEntry } from 'storybook/internal/types';
 
 import { findUp } from 'find-up';
 import path, { dirname, join, normalize } from 'pathe';

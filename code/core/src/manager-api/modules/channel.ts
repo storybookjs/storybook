@@ -16,7 +16,7 @@ export interface SubAPI {
    * to remove the listener.
    *
    * @param type - The event type to listen for. If using a core event, import it from
-   *   `@storybook/core-events`.
+   *   `storybook/internal/core-events`.
    * @param handler - The callback function to be called when the event is emitted.
    * @returns A function that can be called to remove the listener.
    */
@@ -25,7 +25,7 @@ export interface SubAPI {
    * Removes a listener from the channel for the given event type.
    *
    * @param type - The event type to remove the listener from. If using a core event, import it from
-   *   `@storybook/core-events`.
+   *   `storybook/internal/core-events`.
    * @param handler - The callback function to be removed.
    */
   off: (type: string, handler: Listener) => void;
@@ -33,7 +33,7 @@ export interface SubAPI {
    * Emits an event on the channel for the given event type.
    *
    * @param type - The event type to emit. If using a core event, import it from
-   *   `@storybook/core-events`.
+   *   `storybook/internal/core-events`.
    * @param args - The arguments to pass to the event listener.
    */
   emit: (type: string, ...args: any[]) => void;
@@ -41,7 +41,7 @@ export interface SubAPI {
    * Adds a one-time listener to the channel for the given event type.
    *
    * @param type - The event type to listen for. If using a core event, import it from
-   *   `@storybook/core-events`.
+   *   `storybook/internal/core-events`.
    * @param handler - The callback function to be called when the event is emitted.
    */
   once: (type: string, handler: Listener) => void;

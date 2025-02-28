@@ -222,7 +222,6 @@ export abstract class JsPackageManager {
    *   `@storybook/react@${storybookVersion}`,
    *   `@storybook/addon-actions@${actionsVersion}`,
    *   `@storybook/addon-links@${linksVersion}`,
-   *   `@storybook/preview-api@${addonsVersion}`,
    * ]);
    * ```
    *

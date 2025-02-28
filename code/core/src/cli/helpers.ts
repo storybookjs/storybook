@@ -142,7 +142,7 @@ type CopyTemplateFilesOptions = {
   features: string[];
 };
 
-/** @deprecated Please use `frameworkToRenderer` from `@storybook/core-common` instead */
+/** @deprecated Please use `frameworkToRenderer` from `storybook/internal/common` instead */
 export const frameworkToRenderer = CoreFrameworkToRenderer;
 
 export const frameworkToDefaultBuilder: Record<

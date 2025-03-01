@@ -152,15 +152,13 @@ command('index')
     // The key is the field created in `options` variable for
     // each command line argument. Value is the env variable.
     getEnvConfig(options, {
-      staticDir: 'SBCONFIG_STATIC_DIR',
-      outputDir: 'SBCONFIG_OUTPUT_DIR',
       configDir: 'SBCONFIG_CONFIG_DIR',
+      outputFile: 'SBCONFIG_OUTPUT_FILE',
     });
 
     await index({
       ...options,
       packageJson: pkg,
-      test: !!options.test || process.env.SB_TESTBUILD === 'true',
     }).catch(() => process.exit(1));
   });
 

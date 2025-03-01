@@ -1,23 +1,28 @@
-import { cache } from '@storybook/core/common';
+import { cache } from 'storybook/internal/common';
+import { buildIndexStandalone, withTelemetry } from 'storybook/internal/core-server';
+import type { BuilderOptions, CLIBaseOptions } from 'storybook/internal/types';
 
-import { buildIndexStandalone, withTelemetry } from '@storybook/core/core-server';
+export interface CLIIndexOptions extends CLIBaseOptions {
+  configDir?: string;
+  outputFile?: string;
+}
 
-import { findPackage } from 'fd-package-json';
-import invariant from 'tiny-invariant';
-
-export const buildIndex = async (cliOptions: any) => {
-  const packageJson = await findPackage(__dirname);
-  invariant(packageJson, 'Failed to find the closest package.json file.');
+export const buildIndex = async (
+  cliOptions: CLIIndexOptions & { packageJson?: Record<string, any> }
+) => {
   const options = {
     ...cliOptions,
-    configDir: cliOptions.configDir || './.storybook',
-    outputFile: cliOptions.outputFile || './index.json',
+    configDir: cliOptions.configDir || '.storybook',
+    outputFile: cliOptions.outputFile || 'index.json',
     ignorePreview: true,
-    configType: 'PRODUCTION',
+    configType: 'PRODUCTION' as BuilderOptions['configType'],
     cache,
-    packageJson,
+    packageJson: cliOptions.packageJson,
   };
-  await withTelemetry('index', { cliOptions, presetOptions: options }, () =>
-    buildIndexStandalone(options)
-  );
+  const presetOptions = {
+    ...options,
+    corePresets: [],
+    overridePresets: [],
+  };
+  await withTelemetry('index', { cliOptions, presetOptions }, () => buildIndexStandalone(options));
 };

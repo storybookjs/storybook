@@ -41,7 +41,7 @@ Options include:
 | `-p`, `--port [number]`         | Port to run Storybook.<br />`storybook dev -p 9009`                                                                                                                                                       |
 | `--exact-port [number]`         | Attempts to run Storybook on the exact port number specified.<br />If the port is already in use, Storybook will exit with an error message.<br />`storybook dev --exact-port 9009`                       |
 | `-h`, `--host [string]`         | Host to run Storybook.<br />`storybook dev -h my-host.com`                                                                                                                                                |
-| `-c`, `--config-dir [dir-name]` | Directory where to load Storybook configurations from.<br />`storybook dev -c .storybook`                                                                                                                 |
+| `-c`, `--config-dir [dir-name]` | Storybook configuration directory.<br />`storybook dev -c .storybook`                                                                                                                 |
 | `--loglevel [level]`            | Controls level of logging during build.<br />Available options: `silly`, `verbose`, `info` (default), `warn`, `error`, `silent`<br />`storybook dev --loglevel warn`                                      |
 | `--https`                       | Serve Storybook over HTTPS. Note: You must provide your own certificate information.<br />`storybook dev --https`                                                                                         |
 | `--ssl-ca`                      | Provide an SSL certificate authority. (Optional with --https, required if using a self-signed certificate)<br />`storybook dev --ssl-ca my-certificate`                                                   |
@@ -83,7 +83,7 @@ Options include:
 | `-h`, `--help`                  | Output usage information.<br />`storybook build --help`                                                                                                                                                             |
 | `-V`, `--version`               | Output the version number.<br />`storybook build -V`                                                                                                                                                                |
 | `-o`, `--output-dir [dir-name]` | Directory where to store built files.<br />`storybook build -o /my-deployed-storybook`                                                                                                                              |
-| `-c`, `--config-dir [dir-name]` | Directory where to load Storybook configurations from.<br />`storybook build -c .storybook`                                                                                                                         |
+| `-c`, `--config-dir [dir-name]` | Storybook configuration directory.<br />`storybook build -c .storybook`                                                                                                                         |
 | `--loglevel [level]`            | Controls level of logging during build.<br />Available options: `silly`, `verbose`, `info` (default), `warn`, `error`, `silent`.<br />`storybook build --loglevel warn`                                             |
 | `--quiet`                       | Suppress verbose build output.<br />`storybook build --quiet`                                                                                                                                                       |
 | `--debug`                       | Outputs more logs in the CLI to assist debugging.<br />`storybook build --debug`                                                                                                                                    |
@@ -143,7 +143,7 @@ Options include:
 | Option                     | Description                                                                                                                                                                       |
 | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `-h`, `--help`             | Output usage information.<br />`storybook add --help`                                                                                                                             |
-| `-c`, `--config-dir`       | Directory where to load Storybook configurations from.<br />`storybook migrate --config-dir .storybook`                                                                           |
+| `-c`, `--config-dir`       | Storybook configuration directory.<br />`storybook migrate --config-dir .storybook`                                                                           |
 | `--package-manager`        | Sets the package manager to use when installing the addon.<br />Available package managers include `npm`, `yarn`, and `pnpm`.<br />`storybook add [addon] --package-manager pnpm` |
 | `-s`, `--skip-postinstall` | Skips post-install configuration. Used only when you need to configure the addon yourself.<br />`storybook add [addon] --skip-postinstall`                                        |
 | `--debug`                  | Outputs more logs in the CLI to assist debugging.<br />`storybook add --debug`                                                                                                    |
@@ -181,7 +181,7 @@ Options include:
 | Option                   | Description                                                                                                                                                                                       |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `-h`, `--help`           | Output usage information.<br />`storybook upgrade --help`                                                                                                                                         |
-| `-c`, `--config-dir`     | Directory where to load Storybook configurations from.<br />`storybook upgrade --config-dir .storybook`                                                                                           |
+| `-c`, `--config-dir`     | Storybook configuration directory.<br />`storybook upgrade --config-dir .storybook`                                                                                           |
 | `-n`, `--dry-run`        | Checks for version upgrades without installing them.<br />`storybook upgrade --dry-run`                                                                                                           |
 | `-s`, `--skip-check`     | Skips the migration check step during the upgrade process.<br />`storybook upgrade --skip-check`                                                                                                  |
 | `-y`, `--yes`            | Skips interactive prompts and automatically upgrades Storybook to the latest version.<br />`storybook upgrade --yes`                                                                              |
@@ -212,7 +212,7 @@ Options include:
 | Option                     | Description                                                                                                                                                                                      |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `-h`, `--help`             | Output usage information.<br />`storybook migrate --help`                                                                                                                                        |
-| `-c`, `--config-dir`       | Directory where to load Storybook configurations from.<br />`storybook migrate --config-dir .storybook`                                                                                          |
+| `-c`, `--config-dir`       | Storybook configuration directory.<br />`storybook migrate --config-dir .storybook`                                                                                          |
 | `-n`, `--dry-run`          | Verify the migration exists and show the files to which it will be applied.<br />`storybook migrate --dry-run`                                                                                   |
 | `-l`, `--list`             | Shows a list of available codemods.<br />`storybook migrate --list`                                                                                                                              |
 | `-g`, `--glob`             | Glob for files upon which to apply the codemods.<br />`storybook migrate --glob src/**/*.stories.tsx`                                                                                            |
@@ -235,7 +235,7 @@ Options include:
 | Option                   | Description                                                                                                                                                                                                               |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `-h`, `--help`           | Output usage information.<br />`storybook automigrate --help`                                                                                                                                                             |
-| `-c`, `--config-dir`     | Directory where to load Storybook configurations from.<br />`storybook automigrate --config-dir .storybook`                                                                                                               |
+| `-c`, `--config-dir`     | Storybook configuration directory.<br />`storybook automigrate --config-dir .storybook`                                                                                                               |
 | `-n`, `--dry-run`        | Checks for available migrations without applying them.<br />`storybook automigrate --dry-run`                                                                                                                             |
 | `-s`, `--skip-install`   | Skip installing dependencies whenever applicable.<br />`storybook automigrate --skip-install`                                                                                                                             |
 | `-y`, `--yes`            | Applies available migrations automatically without prompting for confirmation.<br />`storybook automigrate --yes`                                                                                                         |
@@ -259,7 +259,7 @@ Options include:
 | Option               | Description                                                                                                                                                                      |
 | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `-h`, `--help`       | Output usage information.<br />`storybook doctor --help`                                                                                                                         |
-| `-c`, `--config-dir` | Directory where to load Storybook configurations from.<br />`storybook doctor --config-dir .storybook`                                                                           |
+| `-c`, `--config-dir` | Storybook configuration directory.<br />`storybook doctor --config-dir .storybook`                                                                           |
 | `--package-manager`  | Sets the package manager to use when running the health check.<br />Available package managers include `npm`, `yarn`, and `pnpm`.<br />`storybook doctor --package-manager pnpm` |
 | `--debug`            | Outputs more logs in the CLI to assist debugging.<br />`storybook doctor --debug`                                                                                                |
 
@@ -309,12 +309,15 @@ storybook index [options]
 
 Options include:
 
-| Option                            | Description                                           |
-| --------------------------------- | ----------------------------------------------------- |
-| `-o`, `--output-file <file-name>` | JSON file to output index                             |
-| `-c`, `--config-dir <dir-name>`   | Directory where to load Storybook configurations from |
-| `--quiet`                         | Suppress verbose build output                         |
-| `--loglevel <level>`              | Control level of logging during build                 |
+| Option                            | Description                                            |
+| --------------------------------- | ------------------------------------------------------ |
+| `-o`, `--output-file <file-name>` | JSON file to output index                              |
+| `-c`, `--config-dir <dir-name>`   | Storybook configuration directory  |
+| `--quiet`                         | Suppress verbose build output                          |
+| `--loglevel <level>`              | Control level of logging during build                  |
+| `--disable-telemetry`             | Disables Storybook's telemetry                         |
+| `--debug`                         | Outputs more logs in the CLI to assist debugging.      |
+| `--enable-crash-reports`          | Enables sending crash reports to Storybook's telemetry |
 
 ### `sandbox`
 

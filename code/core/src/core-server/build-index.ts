@@ -1,51 +1,23 @@
 import { writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
-import { resolve } from 'node:path';
 
-import { loadAllPresets, loadMainConfig, normalizeStories } from '@storybook/core/common';
-import type { BuilderOptions, CLIOptions, LoadOptions } from '@storybook/core/types';
+import { normalizeStories } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
+import type { BuilderOptions, CLIOptions, LoadOptions } from 'storybook/internal/types';
 
-import { logger } from '@storybook/core/node-logger';
-
+import { loadStorybook } from './load';
 import { StoryIndexGenerator } from './utils/StoryIndexGenerator';
 
-type BuildIndexOptions = CLIOptions & LoadOptions & BuilderOptions & { outputFile: string };
+export type BuildIndexOptions = CLIOptions & LoadOptions & BuilderOptions;
 
 export const buildIndex = async (options: BuildIndexOptions) => {
-  const configDir = resolve(options.configDir ?? '.storybook');
-  const config = await loadMainConfig({
-    configDir,
-    noCache: true,
-  });
-
-  const { framework } = config;
-  const corePresets = [];
-
-  const frameworkName = typeof framework === 'string' ? framework : framework?.name;
-  if (frameworkName) {
-    corePresets.push(join(frameworkName, 'preset'));
-  } else if (!options.ignorePreview) {
-    logger.warn(`you have not specified a framework in your ${options.configDir}/main.js`);
-  }
-
-  const presets = await loadAllPresets({
-    corePresets: [
-      require.resolve('@storybook/core/core-server/presets/common-preset'),
-      ...corePresets,
-    ],
-    overridePresets: [
-      require.resolve('@storybook/core/core-server/presets/common-override-preset'),
-    ],
-    isCritical: true,
-    ...options,
-  });
+  const { presets } = await loadStorybook(options);
   const [indexers, stories, docsOptions] = await Promise.all([
-    // presets.apply('features'),
     presets.apply('experimental_indexers', []),
     presets.apply('stories', []),
     presets.apply('docs', {}),
   ]);
 
+  const { configDir } = options;
   const workingDir = process.cwd();
   const directories = {
     configDir,
@@ -60,12 +32,11 @@ export const buildIndex = async (options: BuildIndexOptions) => {
   });
 
   await generator.initialize();
-  const index = await generator.getIndex();
-  return index;
+  return generator.getIndex();
 };
 
-export const buildIndexStandalone = async (options: BuildIndexOptions) => {
+export const buildIndexStandalone = async (options: BuildIndexOptions & { outputFile: string }) => {
   const index = await buildIndex(options);
-  console.log(`Writing index to ${options.outputFile}`);
+  logger.info(`Writing index to ${options.outputFile}`);
   await writeFile(options.outputFile, JSON.stringify(index));
 };

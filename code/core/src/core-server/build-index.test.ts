@@ -6,7 +6,6 @@ describe('buildIndex', () => {
   it('should build index', async () => {
     const index = await buildIndex({
       configDir: `${__dirname}/utils/__mockdata__`,
-      outputFile: 'test',
     });
     expect(index).toMatchInlineSnapshot(`
       {

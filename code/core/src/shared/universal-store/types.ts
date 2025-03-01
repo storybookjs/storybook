@@ -1,4 +1,4 @@
-import type { Channel } from '@storybook/core/channels';
+import type { Channel } from 'storybook/internal/channels';
 
 import type { UniversalStore } from '.';
 

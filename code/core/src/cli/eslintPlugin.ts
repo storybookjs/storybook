@@ -1,10 +1,9 @@
 import { existsSync } from 'node:fs';
 import { readFile, writeFile } from 'node:fs/promises';
 
-import type { JsPackageManager } from '@storybook/core/common';
-import { paddedLog } from '@storybook/core/common';
-
-import { readConfig, writeConfig } from '@storybook/core/csf-tools';
+import type { JsPackageManager } from 'storybook/internal/common';
+import { paddedLog } from 'storybook/internal/common';
+import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
 
 import detectIndent from 'detect-indent';
 import picocolors from 'picocolors';

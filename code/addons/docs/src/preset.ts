@@ -73,11 +73,11 @@ async function webpack(
    * In the future the `@storybook/theming` and `@storybook/components` can be removed, as they
    * should be singletons in the future due to the peerDependency on `storybook` package.
    */
-  const cliPath = dirname(require.resolve('storybook/package.json'));
-  const themingPath = join(cliPath, 'core', 'theming', 'index.js');
-  const themingCreatePath = join(cliPath, 'core', 'theming', 'create.js');
+  const corePath = dirname(require.resolve('storybook/package.json'));
+  const themingPath = join(corePath, 'dist', 'theming', 'index.js');
+  const themingCreatePath = join(corePath, 'dist', 'theming', 'create.js');
 
-  const componentsPath = join(cliPath, 'core', 'components', 'index.js');
+  const componentsPath = join(corePath, 'dist', 'components', 'index.js');
   const blocksPath = dirname(require.resolve('@storybook/blocks/package.json'));
   if (Array.isArray(webpackConfig.resolve?.alias)) {
     alias = [...webpackConfig.resolve?.alias];
@@ -181,10 +181,10 @@ export const viteFinal = async (config: any, options: Options) => {
   // Use the resolvedReact preset to alias react and react-dom to either the users version or the version shipped with addon-docs
   const { react, reactDom, mdx } = await getResolvedReact(options);
 
-  const cliPath = dirname(require.resolve('storybook/package.json'));
-  const themingPath = join(cliPath, 'core', 'theming', 'index.js');
-  const themingCreatePath = join(cliPath, 'core', 'theming', 'create.js');
-  const componentsPath = join(cliPath, 'core', 'components', 'index.js');
+  const corePath = dirname(require.resolve('storybook/package.json'));
+  const themingPath = join(corePath, 'dist', 'theming', 'index.js');
+  const themingCreatePath = join(corePath, 'dist', 'theming', 'create.js');
+  const componentsPath = join(corePath, 'dist', 'components', 'index.js');
   const blocksPath = dirname(require.resolve('@storybook/blocks/package.json'));
 
   const packageDeduplicationPlugin = {

@@ -168,7 +168,10 @@ export async function add(
     await writeConfig(main);
   }
 
-  await syncStorybookAddons(mainConfig, previewConfigPath!);
+  // TODO: remove try/catch once CSF factories is shipped, for now gracefully handle any error
+  try {
+    await syncStorybookAddons(mainConfig, previewConfigPath!);
+  } catch (e) {}
 
   if (!skipPostinstall && isCoreAddon(addonName)) {
     await postinstallAddon(addonName, { packageManager: packageManager.type, configDir, yes });

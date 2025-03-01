@@ -330,6 +330,7 @@ export async function doInitiate(options: CommandOptions): Promise<
       choices: Object.entries(selectableFeatures).map(([value, { name, description }]) => ({
         title: `${name}: ${description}`,
         value,
+        selected: true,
       })),
     });
     selectedFeatures = new Set(out.features);
@@ -374,6 +375,25 @@ export async function doInitiate(options: CommandOptions): Promise<
   } else {
     try {
       projectType = (await detect(packageManager as any, options)) as ProjectType;
+
+      if (projectType === ProjectType.REACT_NATIVE && !options.yes) {
+        const { manualType } = await prompts({
+          type: 'select',
+          name: 'manualType',
+          message: "We've detected a React Native project. Install:",
+          choices: [
+            {
+              title: `${picocolors.bold('React Native')}: Storybook on your device/simulator`,
+              value: ProjectType.REACT_NATIVE,
+            },
+            {
+              title: `${picocolors.bold('React Native Web')}: Storybook on web for docs, test, and sharing`,
+              value: ProjectType.REACT_NATIVE_WEB,
+            },
+          ],
+        });
+        projectType = manualType;
+      }
     } catch (err) {
       done(String(err));
       throw new HandledError(err);

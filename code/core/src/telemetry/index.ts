@@ -1,4 +1,4 @@
-import { logger } from '@storybook/core/node-logger';
+import { logger } from 'storybook/internal/node-logger';
 
 import { notify } from './notify';
 import { sanitizeError } from './sanitize';

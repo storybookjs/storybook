@@ -13,7 +13,7 @@ import findCacheDirectory from 'find-cache-dir';
  */
 export function resolvePathInStorybookCache(fileOrDirectoryName: string, sub = 'default'): string {
   let cacheDirectory = findCacheDirectory({ name: 'storybook' });
-  cacheDirectory ||= join(process.cwd(), '.cache', 'storybook');
+  cacheDirectory ||= join(process.cwd(), 'node_modules', '.cache', 'storybook');
 
   return join(cacheDirectory, sub, fileOrDirectoryName);
 }

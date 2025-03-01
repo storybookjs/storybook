@@ -1,5 +1,6 @@
-import { IconButton } from '@storybook/core/components';
-import { styled } from '@storybook/core/theming';
+import { IconButton } from 'storybook/internal/components';
+import { styled } from 'storybook/internal/theming';
+
 import type { API_StatusValue } from '@storybook/types';
 
 import type { Theme } from '@emotion/react';

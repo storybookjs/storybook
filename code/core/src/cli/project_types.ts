@@ -1,7 +1,7 @@
 import type {
   SupportedRenderers as CoreSupportedRenderers,
   SupportedFrameworks,
-} from '@storybook/core/types';
+} from 'storybook/internal/types';
 
 import { minVersion, validRange } from 'semver';
 

@@ -23,4 +23,4 @@ process.once('uncaughtException', (error) => {
   throw error;
 });
 
-require('../dist/proxy.cjs');
+require('../dist/bin/index.cjs');

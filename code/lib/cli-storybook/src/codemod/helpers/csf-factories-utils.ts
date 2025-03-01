@@ -1,6 +1,23 @@
-import { types as t } from 'storybook/internal/babel';
+import { types as t, traverse } from 'storybook/internal/babel';
 
 export function cleanupTypeImports(programNode: t.Program, disallowList: string[]) {
+  const usedIdentifiers = new Set<string>();
+
+  try {
+    // Collect all identifiers used in the program
+    traverse(programNode, {
+      Identifier(path) {
+        // Ensure we're not counting identifiers within import declarations
+        if (!path.findParent((p) => p.isImportDeclaration())) {
+          usedIdentifiers.add(path.node.name);
+        }
+      },
+    });
+  } catch (err) {
+    // traversing could fail if the code isn't supported by
+    // our babel parse plugins, so we ignore
+  }
+
   return programNode.body.filter((node) => {
     if (t.isImportDeclaration(node)) {
       const { source, specifiers } = node;
@@ -8,19 +25,19 @@ export function cleanupTypeImports(programNode: t.Program, disallowList: string[
       if (source.value.startsWith('@storybook/')) {
         const allowedSpecifiers = specifiers.filter((specifier) => {
           if (t.isImportSpecifier(specifier) && t.isIdentifier(specifier.imported)) {
-            return !disallowList.includes(specifier.imported.name);
+            const name = specifier.imported.name;
+            // Only remove if disallowed AND unused
+            return !disallowList.includes(name) || usedIdentifiers.has(name);
           }
-          // Retain non-specifier imports (e.g., namespace imports)
+          // Retain namespace imports and non-specifiers
           return true;
         });
 
-        // Remove the entire import if no specifiers are left
+        // Remove the entire import if no valid specifiers remain
         if (allowedSpecifiers.length > 0) {
           node.specifiers = allowedSpecifiers;
           return true;
         }
-
-        // Remove the import if no specifiers remain
         return false;
       }
     }

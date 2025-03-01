@@ -8,12 +8,12 @@ import {
   logConfig,
   normalizeStories,
   resolveAddonName,
-} from '@storybook/core/common';
-import { getPrecedingUpgrade, telemetry } from '@storybook/core/telemetry';
-import type { BuilderOptions, CLIOptions, LoadOptions, Options } from '@storybook/core/types';
-import { global } from '@storybook/global';
+} from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
+import { getPrecedingUpgrade, telemetry } from 'storybook/internal/telemetry';
+import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
 
-import { logger } from '@storybook/core/node-logger';
+import { global } from '@storybook/global';
 
 import picocolors from 'picocolors';
 
@@ -63,11 +63,11 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   logger.info('=> Loading presets');
   let presets = await loadAllPresets({
     corePresets: [
-      require.resolve('@storybook/core/core-server/presets/common-preset'),
+      require.resolve('storybook/internal/core-server/presets/common-preset'),
       ...corePresets,
     ],
     overridePresets: [
-      require.resolve('@storybook/core/core-server/presets/common-override-preset'),
+      require.resolve('storybook/internal/core-server/presets/common-override-preset'),
     ],
     isCritical: true,
     ...options,
@@ -82,7 +82,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     : undefined;
   presets = await loadAllPresets({
     corePresets: [
-      require.resolve('@storybook/core/core-server/presets/common-preset'),
+      require.resolve('storybook/internal/core-server/presets/common-preset'),
       ...(managerBuilder.corePresets || []),
       ...(previewBuilder.corePresets || []),
       ...(resolvedRenderer ? [resolvedRenderer] : []),
@@ -90,7 +90,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     ],
     overridePresets: [
       ...(previewBuilder.overridePresets || []),
-      require.resolve('@storybook/core/core-server/presets/common-override-preset'),
+      require.resolve('storybook/internal/core-server/presets/common-override-preset'),
     ],
     ...options,
     build,
@@ -127,7 +127,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   }
 
   const coreServerPublicDir = join(
-    dirname(require.resolve('@storybook/core/package.json')),
+    dirname(require.resolve('storybook/package.json')),
     'assets/browser'
   );
   effects.push(cp(coreServerPublicDir, options.outputDir, { recursive: true }));

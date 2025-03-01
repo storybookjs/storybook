@@ -94,7 +94,7 @@ async function run() {
       assetNames: 'assets/[name]-[hash]',
       bundle: true,
       chunkNames: 'chunks/[name]-[hash]',
-      external: ['@storybook/core', ...external],
+      external: ['storybook', ...external],
       keepNames: true,
       legalComments: 'none',
       lineLimit: 140,
@@ -124,10 +124,6 @@ async function run() {
       platform: 'neutral',
       mainFields: ['main', 'module', 'node'],
       conditions: ['node', 'module', 'import', 'require'],
-      define: {
-        'process.env.NODE_ENV': '"production"',
-        'process.env.DEV': '"false"',
-      },
     } satisfies EsbuildContextOptions;
 
     const browserAliases = {
@@ -196,7 +192,7 @@ async function run() {
               outExtension: { '.js': '.js' },
               alias: {
                 ...browserAliases,
-                '@storybook/core': join(cwd, 'src'),
+                'storybook/internal': join(cwd, 'src'),
                 react: dirname(require.resolve('react/package.json')),
                 'react-dom': dirname(require.resolve('react-dom/package.json')),
                 'react-dom/client': join(
@@ -221,7 +217,7 @@ async function run() {
           esbuild.context(
             merge<EsbuildContextOptions>(browserEsbuildOptions, {
               alias: {
-                '@storybook/core': join(cwd, 'src'),
+                'storybook/internal': join(cwd, 'src'),
                 react: dirname(require.resolve('react/package.json')),
                 'react-dom': dirname(require.resolve('react-dom/package.json')),
                 'react-dom/client': join(

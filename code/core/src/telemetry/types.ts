@@ -1,4 +1,4 @@
-import type { StorybookConfig, TypescriptOptions } from '@storybook/core/types';
+import type { StorybookConfig, TypescriptOptions } from 'storybook/internal/types';
 
 import type { PM } from 'detect-package-manager';
 

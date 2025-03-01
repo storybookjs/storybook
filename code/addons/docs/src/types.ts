@@ -1,4 +1,4 @@
-import type { ModuleExport, ModuleExports } from '@storybook/types';
+import type { ModuleExport, ModuleExports } from 'storybook/internal/types';
 
 type StoryBlockParameters = {
   /** Whether a story's play function runs when shown in docs page */

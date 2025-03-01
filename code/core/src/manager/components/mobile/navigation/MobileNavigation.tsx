@@ -4,9 +4,9 @@ import React from 'react';
 import { IconButton } from 'storybook/internal/components';
 import { useStorybookApi, useStorybookState } from 'storybook/internal/manager-api';
 import { styled } from 'storybook/internal/theming';
+import type { API_IndexHash, API_Refs } from 'storybook/internal/types';
 
 import { BottomBarToggleIcon, MenuIcon } from '@storybook/icons';
-import type { API_IndexHash, API_Refs } from '@storybook/types';
 
 import { useLayout } from '../../layout/LayoutProvider';
 import { MobileAddonsDrawer } from './MobileAddonsDrawer';

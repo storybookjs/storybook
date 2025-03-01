@@ -25,32 +25,23 @@ export const globalsNameValueMap: Required<Record<keyof typeof globalsNameRefere
   '@storybook/icons': ICONS,
 
   'storybook/internal/components': COMPONENTS,
-  '@storybook/components': COMPONENTS,
 
   'storybook/internal/manager-api': MANAGER_API,
-  '@storybook/manager-api': MANAGER_API,
 
   'storybook/internal/router': ROUTER,
   '@storybook/router': ROUTER,
 
   'storybook/internal/theming': THEMING,
-  '@storybook/theming': THEMING,
   'storybook/internal/theming/create': THEMINGCREATE,
-  '@storybook/theming/create': THEMINGCREATE,
 
   'storybook/internal/channels': CHANNELS,
-  '@storybook/channels': CHANNELS,
 
   'storybook/internal/core-errors': EVENTS,
-  '@storybook/core-events': EVENTS,
   'storybook/internal/core-events': EVENTS,
 
   'storybook/internal/types': TYPES,
-  '@storybook/types': TYPES,
 
   'storybook/internal/manager-errors': EVENTS_MANAGER_ERRORS,
-  '@storybook/core-events/manager-errors': EVENTS_MANAGER_ERRORS,
 
   'storybook/internal/client-logger': CLIENT_LOGGER,
-  '@storybook/client-logger': CLIENT_LOGGER,
 };

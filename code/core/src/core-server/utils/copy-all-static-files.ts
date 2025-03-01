@@ -16,7 +16,7 @@ export async function copyAllStaticFiles(staticDirs: any[] | undefined, outputDi
           const { staticDir, staticPath, targetDir } = parseStaticDir(dir);
           const targetPath = join(outputDir, targetDir);
 
-          // we copy prebuild static files from node_modules/@storybook/manager & preview
+          // we copy prebuild static files from node_modules/storybook/internal/manager & preview
           if (!staticDir.includes('node_modules')) {
             const from = picocolors.cyan(print(staticDir));
             const to = picocolors.cyan(print(targetDir));

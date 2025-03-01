@@ -5,7 +5,6 @@ import { isCorePackage } from './cli';
 describe('UTILS', () => {
   describe.each([
     ['@storybook/react', true],
-    ['@storybook/node-logger', true],
     ['storybook', true],
     ['@storybook/linter-config', false],
     ['@storybook/design-system', false],

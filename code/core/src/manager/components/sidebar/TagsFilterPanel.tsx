@@ -3,9 +3,9 @@ import React from 'react';
 import { TooltipLinkList } from 'storybook/internal/components';
 import type { API } from 'storybook/internal/manager-api';
 import { styled, useTheme } from 'storybook/internal/theming';
+import type { Tag } from 'storybook/internal/types';
 
 import { ShareAltIcon } from '@storybook/icons';
-import type { Tag } from '@storybook/types';
 
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList';
 

@@ -14,20 +14,14 @@ export const globalsNameValueMap: Required<Record<keyof typeof globalsNameRefere
   '@storybook/global': GLOBAL,
 
   'storybook/internal/channels': CHANNELS,
-  '@storybook/channels': CHANNELS,
 
   'storybook/internal/client-logger': CLIENT_LOGGER,
-  '@storybook/client-logger': CLIENT_LOGGER,
 
   'storybook/internal/core-events': CORE_EVENTS,
-  '@storybook/core-events': CORE_EVENTS,
 
   'storybook/internal/preview-errors': CORE_EVENTS_PREVIEW_ERRORS,
-  '@storybook/core-events/preview-errors': CORE_EVENTS_PREVIEW_ERRORS,
 
   'storybook/internal/preview-api': PREVIEW_API,
-  '@storybook/preview-api': PREVIEW_API,
 
   'storybook/internal/types': TYPES,
-  '@storybook/types': TYPES,
 };

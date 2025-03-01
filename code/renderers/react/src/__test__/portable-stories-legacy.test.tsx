@@ -6,9 +6,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import React from 'react';
 
-import type { Meta } from '@storybook/react';
+import { addons } from 'storybook/internal/preview-api';
 
-import { addons } from '@storybook/preview-api';
+import type { Meta } from '@storybook/react';
 
 import * as addonActionsPreview from '@storybook/addon-actions/preview';
 

@@ -7491,7 +7491,7 @@ __metadata:
     "@sveltejs/vite-plugin-svelte": "npm:^5.0.3"
     "@testing-library/svelte": "npm:^5.2.4"
     expect-type: "npm:^1.1.0"
-    svelte: "npm:^5.19.2"
+    svelte: "npm:^5.20.5"
     svelte-check: "npm:^4.1.4"
     sveltedoc-parser: "npm:^4.2.1"
     ts-dedent: "npm:^2.0.0"
@@ -28388,7 +28388,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"svelte@npm:^5.0.0-next.268, svelte@npm:^5.0.5, svelte@npm:^5.19.2":
+"svelte@npm:^5.0.0-next.268, svelte@npm:^5.0.5":
   version: 5.19.2
   resolution: "svelte@npm:5.19.2"
   dependencies:
@@ -28407,6 +28407,28 @@ __metadata:
     magic-string: "npm:^0.30.11"
     zimmerframe: "npm:^1.1.2"
   checksum: 10c0/9931d2b3a6a5ec22a433529c7a7a29e2bbe32257348db3f368163f844e784bc0091cce3e8b1cd22b0be6a167aeb9109c46d2cd7c68222dcb97b362c01a322bd1
+  languageName: node
+  linkType: hard
+
+"svelte@npm:^5.20.5":
+  version: 5.20.5
+  resolution: "svelte@npm:5.20.5"
+  dependencies:
+    "@ampproject/remapping": "npm:^2.3.0"
+    "@jridgewell/sourcemap-codec": "npm:^1.5.0"
+    "@types/estree": "npm:^1.0.5"
+    acorn: "npm:^8.12.1"
+    acorn-typescript: "npm:^1.4.13"
+    aria-query: "npm:^5.3.1"
+    axobject-query: "npm:^4.1.0"
+    clsx: "npm:^2.1.1"
+    esm-env: "npm:^1.2.1"
+    esrap: "npm:^1.4.3"
+    is-reference: "npm:^3.0.3"
+    locate-character: "npm:^3.0.0"
+    magic-string: "npm:^0.30.11"
+    zimmerframe: "npm:^1.1.2"
+  checksum: 10c0/20c1e083c0d87a1fa0d667dbfccc994f326f7fe5e90fc91f0ad5153351f27f993ff0f5b6d62cab936cf7c06afe0a748680d2d55bea1c317e8d17c364e6e9965a
   languageName: node
   linkType: hard
 

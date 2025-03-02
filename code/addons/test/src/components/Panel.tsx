@@ -14,10 +14,10 @@ import {
   useParameter,
   useStorybookState,
 } from 'storybook/internal/manager-api';
+import type { API_StatusValue } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 import { type Call, CallStates, EVENTS, type LogItem } from '@storybook/instrumenter';
-import type { API_StatusValue } from '@storybook/types';
 
 import { ADDON_ID, STORYBOOK_ADDON_TEST_CHANNEL, TEST_PROVIDER_ID } from '../constants';
 import { InteractionsPanel } from './InteractionsPanel';

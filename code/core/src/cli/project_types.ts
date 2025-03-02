@@ -32,7 +32,7 @@ export const externalFrameworks: ExternalFramework[] = [
   },
 ];
 
-/** @deprecated Please use `SupportedRenderers` from `@storybook/types` instead */
+/** @deprecated Please use `SupportedRenderers` from `storybook/internal/types` instead */
 export type SupportedRenderers = CoreSupportedRenderers;
 
 export const SUPPORTED_RENDERERS: SupportedRenderers[] = [

@@ -62,5 +62,6 @@ code/.vite-inspect
 .nx/workspace-data
 !**/fixtures/**/yarn.lock
 code/core/report
+node_modules/.svelte2tsx-language-server-files
 
 *storybook.log

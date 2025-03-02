@@ -111,3 +111,39 @@ test('multiple fails', async () => {
 
   expect(result).toBe('alwaysFail');
 });
+
+test('detects svelte-webpack5 usage', async () => {
+  // This test checks if the blocker correctly identifies the @storybook/svelte-webpack5 package
+  const result = await autoblock(
+    {
+      ...baseOptions,
+      packageJson: {
+        dependencies: {
+          '@storybook/svelte-webpack5': '^8.0.0',
+        },
+        devDependencies: {},
+      },
+    },
+    [import('./block-svelte-webpack5')]
+  );
+
+  expect(result).toBe('svelteWebpack5Removal');
+});
+
+test('allows non-svelte-webpack5 projects', async () => {
+  // This test verifies the blocker doesn't trigger for projects not using @storybook/svelte-webpack5
+  const result = await autoblock(
+    {
+      ...baseOptions,
+      packageJson: {
+        dependencies: {
+          '@storybook/svelte-vite': '^8.0.0',
+        },
+        devDependencies: {},
+      },
+    },
+    [import('./block-svelte-webpack5')]
+  );
+
+  expect(result).toBeNull();
+});

@@ -165,7 +165,6 @@ export const frameworkToDefaultBuilder: Record<
   'server-webpack5': CoreBuilder.Webpack5,
   solid: CoreBuilder.Vite,
   'svelte-vite': CoreBuilder.Vite,
-  'svelte-webpack5': CoreBuilder.Webpack5,
   sveltekit: CoreBuilder.Vite,
   'vue3-vite': CoreBuilder.Vite,
   'vue3-webpack5': CoreBuilder.Webpack5,
@@ -211,26 +210,13 @@ export async function copyTemplateFiles({
   commonAssetsDir,
   features,
 }: CopyTemplateFilesOptions) {
-  let languageFolderMapping: Record<SupportedLanguage | 'typescript', string> = {
+  const languageFolderMapping: Record<SupportedLanguage | 'typescript', string> = {
     // keeping this for backwards compatibility in case community packages are using it
     typescript: 'ts',
     [SupportedLanguage.JAVASCRIPT]: 'js',
     [SupportedLanguage.TYPESCRIPT_3_8]: 'ts-3-8',
     [SupportedLanguage.TYPESCRIPT_4_9]: 'ts-4-9',
   };
-  // FIXME: remove after 9.0
-  if (renderer === 'svelte') {
-    const svelteVersion = await getVersionSafe(packageManager, 'svelte');
-    if (svelteVersion && major(svelteVersion) >= 5) {
-      languageFolderMapping = {
-        // keeping this for backwards compatibility in case community packages are using it
-        typescript: 'ts',
-        [SupportedLanguage.JAVASCRIPT]: 'svelte-5-js',
-        [SupportedLanguage.TYPESCRIPT_3_8]: 'svelte-5-ts-3-8',
-        [SupportedLanguage.TYPESCRIPT_4_9]: 'svelte-5-ts-4-9',
-      };
-    }
-  }
   const templatePath = async () => {
     const baseDir = await getRendererDir(packageManager, renderer);
     const assetsDir = join(baseDir, 'template', 'cli');

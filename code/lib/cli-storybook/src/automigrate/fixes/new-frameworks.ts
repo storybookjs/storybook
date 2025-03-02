@@ -378,39 +378,19 @@ export const newFrameworks: Fix<NewFrameworkRunOptions> = {
     }
 
     if (metaFramework === 'sveltekit') {
-      if (frameworkPackage === '@storybook/svelte-webpack5') {
-        disclaimer = dedent`\n\n
-          ${picocolors.bold(
-            'Important'
-          )}: We've detected you are using Storybook in a SvelteKit project.
-  
-          This migration is set to update your project to use the ${picocolors.magenta(
-            '@storybook/svelte-webpack5'
-          )} framework, but Storybook provides a framework package specifically for SvelteKit projects: ${picocolors.magenta(
-            '@storybook/sveltekit'
-          )}.
-  
-          This package provides a better experience for SvelteKit users, however it is only compatible with the Vite builder, so we can't automigrate for you, as you are using the Webpack builder.
-          
-          If you are interested in using this package, see: ${picocolors.yellow(
-            'https://github.com/storybookjs/storybook/blob/next/code/frameworks/sveltekit/README.md'
-          )}
-        `;
-      } else {
-        migrationSteps += `- Remove the ${picocolors.yellow(
-          `${renderer}Options`
-        )} field from ${picocolors.blue(mainConfigPath)}.
+      migrationSteps += `- Remove the ${picocolors.yellow(
+        `${renderer}Options`
+      )} field from ${picocolors.blue(mainConfigPath)}.
         More info: ${picocolors.yellow(
           'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vite-builder-uses-vite-config-automatically'
         )}\n`;
-        disclaimer = dedent`\n\n
+      disclaimer = dedent`\n\n
         The ${picocolors.magenta(
           '@storybook/sveltekit'
         )} package provides great user experience for SvelteKit users, and we highly recommend you to read more about it at ${picocolors.yellow(
           'https://github.com/storybookjs/storybook/blob/next/code/frameworks/sveltekit/README.md'
         )}
         `;
-      }
     }
 
     return dedent`

@@ -1,5 +1,5 @@
 {
-  "name": "svelte-kit/prerelease-ts",
+  "name": "svelte-kit/default-ts",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
   "implicitDependencies": [

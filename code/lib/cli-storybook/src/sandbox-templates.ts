@@ -523,7 +523,7 @@ export const baseTemplates = {
     },
     skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },
-  'svelte-kit/default-ts': {
+  'svelte-kit/skeleton-ts': {
     name: 'SvelteKit Latest (Vite | TypeScript)',
     script:
       'npx sv@latest create --template minimal --types ts --no-add-ons --no-install {{beforeDir}}',
@@ -832,7 +832,7 @@ export const normal: TemplateKey[] = [
   'nuxt-vite/default-ts',
   'lit-vite/default-ts',
   'svelte-vite/default-ts',
-  'svelte-kit/default-ts',
+  'svelte-kit/skeleton-ts',
   'nextjs/default-ts',
   'experimental-nextjs-vite/default-ts',
   'bench/react-vite-default-ts',

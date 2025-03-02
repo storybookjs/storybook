@@ -9,8 +9,6 @@
     Component,
     /** @type {any} */
     props: componentProps = {},
-    /** @type {{[string]: () => {}}} Svelte event handlers are now properties */
-    on,
     Wrapper,
     WrapperData = {},
   } = storyFn();
@@ -30,5 +28,4 @@
   decorator={Wrapper}
   decoratorProps={WrapperData}
   component={Component}
-  props={componentProps}
-  {on} />
+  props={componentProps} />

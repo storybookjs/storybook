@@ -1,12 +1,10 @@
 <script>
-  import { VERSION } from 'svelte/compiler';
   export let decorator = undefined;
   export let Component;
   export let props = {};
 
   let instance;
   let decoratorInstance;
-  const svelteVersion = VERSION[0];
   
   /*
     Svelte Docgen will create argTypes for events with the name 'event_eventName'

@@ -13,8 +13,6 @@
     Component,
     /** @type {any} */
     props = {},
-    /** @type {{[string]: () => {}}} Attach svelte event handlers */
-    on,
     /** @type {any} whether this level of the decorator chain is the last, ie. the actual story */
     argTypes,
   } = storyFn();
@@ -51,4 +49,4 @@
   }
 </script>
 
-<SlotDecorator {Component} props={props} {on} {argTypes} />
+<SlotDecorator {Component} {props} {argTypes} />

@@ -211,6 +211,7 @@ const starter: StarterFunction = async function* starterGeneratorFn({
   router.use('/', ({ url }, res, next) => {
     if (url && isRootPath.test(url)) {
       res.statusCode = 200;
+      res.setHeader('Content-Type', 'text/html');
       res.write(html);
       res.end();
     } else {
@@ -219,6 +220,7 @@ const starter: StarterFunction = async function* starterGeneratorFn({
   });
   router.use(`/index.html`, (req, res) => {
     res.statusCode = 200;
+    res.setHeader('Content-Type', 'text/html');
     res.write(html);
     res.end();
   });

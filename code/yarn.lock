@@ -7097,23 +7097,6 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/preset-svelte-webpack@workspace:*, @storybook/preset-svelte-webpack@workspace:presets/svelte-webpack":
-  version: 0.0.0-use.local
-  resolution: "@storybook/preset-svelte-webpack@workspace:presets/svelte-webpack"
-  dependencies:
-    "@storybook/core-webpack": "workspace:*"
-    svelte: "npm:^5.0.0"
-    svelte-loader: "npm:^3.2.4"
-    sveltedoc-parser: "npm:^4.2.1"
-    ts-dedent: "npm:^2.0.0"
-    typescript: "npm:^5.7.3"
-  peerDependencies:
-    storybook: "workspace:^"
-    svelte: ^4.0.0 || ^5.0.0
-    svelte-loader: "*"
-  languageName: unknown
-  linkType: soft
-
 "@storybook/preset-vue3-webpack@workspace:*, @storybook/preset-vue3-webpack@workspace:presets/vue3-webpack":
   version: 0.0.0-use.local
   resolution: "@storybook/preset-vue3-webpack@workspace:presets/vue3-webpack"
@@ -7334,7 +7317,6 @@ __metadata:
     "@storybook/preset-preact-webpack": "workspace:*"
     "@storybook/preset-react-webpack": "workspace:*"
     "@storybook/preset-server-webpack": "workspace:*"
-    "@storybook/preset-svelte-webpack": "workspace:*"
     "@storybook/preset-vue3-webpack": "workspace:*"
     "@storybook/react": "workspace:*"
     "@storybook/react-vite": "workspace:*"
@@ -28347,35 +28329,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"svelte-dev-helper@npm:^1.1.9":
-  version: 1.1.9
-  resolution: "svelte-dev-helper@npm:1.1.9"
-  checksum: 10c0/6a154829c88f4e92de59755d3e36db468a90dbbbbfc5f3e7d10fef3d3552454e11d4145cc9fe9892105bfe66433aea60c5e087e759266edb8e8d9ec4400606ae
-  languageName: node
-  linkType: hard
-
-"svelte-hmr@npm:^0.14.2":
-  version: 0.14.12
-  resolution: "svelte-hmr@npm:0.14.12"
-  peerDependencies:
-    svelte: ">=3.19.0"
-  checksum: 10c0/7e9d9980770ff5f61b3578950e142ac4093edfb1c7c64c6a20b3858c75fbc77a13a33db6f994223f1f23cf813507c4e777de1e601d9fe887bcd448805f98fce7
-  languageName: node
-  linkType: hard
-
-"svelte-loader@npm:^3.2.4":
-  version: 3.2.4
-  resolution: "svelte-loader@npm:3.2.4"
-  dependencies:
-    loader-utils: "npm:^2.0.4"
-    svelte-dev-helper: "npm:^1.1.9"
-    svelte-hmr: "npm:^0.14.2"
-  peerDependencies:
-    svelte: ^3.0.0 || ^4.0.0-next.0 || ^5.0.0-next.1
-  checksum: 10c0/837f8e3c81f92c584f97f617ebf969249e0170509697ade502e65b5674b0623810b24d0058456115dd417247cd81df8fbedcb421ce9314f01f0cc8b66b2afef6
-  languageName: node
-  linkType: hard
-
 "svelte-preprocess@npm:^5.1.1":
   version: 5.1.1
   resolution: "svelte-preprocess@npm:5.1.1"
@@ -28435,7 +28388,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"svelte@npm:^5.0.0, svelte@npm:^5.0.0-next.268, svelte@npm:^5.0.5, svelte@npm:^5.19.2":
+"svelte@npm:^5.0.0-next.268, svelte@npm:^5.0.5, svelte@npm:^5.19.2":
   version: 5.19.2
   resolution: "svelte@npm:5.19.2"
   dependencies:

@@ -49,7 +49,6 @@
     "@storybook/preset-preact-webpack": "file:../../code/presets/preact-webpack",
     "@storybook/preset-react-webpack": "file:../../code/presets/react-webpack",
     "@storybook/preset-server-webpack": "file:../../code/presets/server-webpack",
-    "@storybook/preset-svelte-webpack": "file:../../code/presets/svelte-webpack",
     "@storybook/preset-vue3-webpack": "file:../../code/presets/vue3-webpack",
     "@storybook/react": "file:../../code/renderers/react",
     "@storybook/react-dom-shim": "file:../../code/lib/react-dom-shim",

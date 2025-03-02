@@ -53,7 +53,6 @@
     "@storybook/preset-preact-webpack": "portal:../../../code/presets/preact-webpack",
     "@storybook/preset-react-webpack": "portal:../../../code/presets/react-webpack",
     "@storybook/preset-server-webpack": "portal:../../../code/presets/server-webpack",
-    "@storybook/preset-svelte-webpack": "portal:../../../code/presets/svelte-webpack",
     "@storybook/preset-vue3-webpack": "portal:../../../code/presets/vue3-webpack",
     "@storybook/react": "portal:../../../code/renderers/react",
     "@storybook/react-dom-shim": "portal:../../../code/lib/react-dom-shim",

@@ -56,7 +56,6 @@ export default {
   '@storybook/preset-preact-webpack': '9.0.0-alpha.0',
   '@storybook/preset-react-webpack': '9.0.0-alpha.0',
   '@storybook/preset-server-webpack': '9.0.0-alpha.0',
-  '@storybook/preset-svelte-webpack': '9.0.0-alpha.0',
   '@storybook/preset-vue3-webpack': '9.0.0-alpha.0',
   '@storybook/html': '9.0.0-alpha.0',
   '@storybook/preact': '9.0.0-alpha.0',

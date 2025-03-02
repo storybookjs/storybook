@@ -144,7 +144,6 @@
     "@storybook/preset-preact-webpack": "workspace:*",
     "@storybook/preset-react-webpack": "workspace:*",
     "@storybook/preset-server-webpack": "workspace:*",
-    "@storybook/preset-svelte-webpack": "workspace:*",
     "@storybook/preset-vue3-webpack": "workspace:*",
     "@storybook/react": "workspace:*",
     "@storybook/react-vite": "workspace:*",

@@ -67,7 +67,6 @@
     "@storybook/source-loader": "portal:../../../code/lib/source-loader",
     "@storybook/svelte": "portal:../../../code/renderers/svelte",
     "@storybook/svelte-vite": "portal:../../../code/frameworks/svelte-vite",
-    "@storybook/svelte-webpack5": "portal:../../../code/frameworks/svelte-webpack5",
     "@storybook/sveltekit": "portal:../../../code/frameworks/sveltekit",
     "@storybook/test": "portal:../../../code/lib/test",
     "@storybook/theming": "file:../../../code/deprecated/theming",

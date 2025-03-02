@@ -154,7 +154,6 @@
     "@storybook/server-webpack5": "workspace:*",
     "@storybook/source-loader": "workspace:*",
     "@storybook/svelte": "workspace:*",
-    "@storybook/svelte-webpack5": "workspace:*",
     "@storybook/test": "workspace:*",
     "@storybook/testing-library": "next",
     "@storybook/theming": "workspace:*",

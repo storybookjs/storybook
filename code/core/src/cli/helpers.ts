@@ -165,7 +165,6 @@ export const frameworkToDefaultBuilder: Record<
   'server-webpack5': CoreBuilder.Webpack5,
   solid: CoreBuilder.Vite,
   'svelte-vite': CoreBuilder.Vite,
-  'svelte-webpack5': CoreBuilder.Webpack5,
   sveltekit: CoreBuilder.Vite,
   'vue3-vite': CoreBuilder.Vite,
   'vue3-webpack5': CoreBuilder.Webpack5,

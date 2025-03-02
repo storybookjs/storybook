@@ -53,7 +53,6 @@ export default {
   '@storybook/react-webpack5': '9.0.0-alpha.0',
   '@storybook/server-webpack5': '9.0.0-alpha.0',
   '@storybook/svelte-vite': '9.0.0-alpha.0',
-  '@storybook/svelte-webpack5': '9.0.0-alpha.0',
   '@storybook/sveltekit': '9.0.0-alpha.0',
   '@storybook/vue3-vite': '9.0.0-alpha.0',
   '@storybook/vue3-webpack5': '9.0.0-alpha.0',

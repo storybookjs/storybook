@@ -685,31 +685,5 @@ describe('new-frameworks fix', () => {
         })
       );
     });
-
-    it('should migrate to @storybook/svelte-webpack5 in SvelteKit project that uses Webpack5 builder', async () => {
-      const packageManager = getPackageManager({
-        '@storybook/svelte': '7.0.0-alpha.0',
-        '@storybook/builder-webpack5': '7.0.0-alpha.0',
-        '@sveltejs/kit': '1.0.0',
-      });
-
-      await expect(
-        checkNewFrameworks({
-          packageManager,
-          main: {
-            core: {
-              builder: '@storybook/builder-webpack5',
-            },
-          },
-        })
-      ).resolves.toEqual(
-        expect.objectContaining({
-          addonsToRemove: [],
-          dependenciesToAdd: ['@storybook/svelte-webpack5'],
-          dependenciesToRemove: ['@storybook/builder-webpack5'],
-          frameworkPackage: '@storybook/svelte-webpack5',
-        })
-      );
-    });
   });
 });

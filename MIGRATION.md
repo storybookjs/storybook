@@ -2156,7 +2156,6 @@ The current list of frameworks include:
 - `@storybook/nextjs`
 - `@storybook/server-webpack5`
 - `@storybook/svelte-vite`
-- `@storybook/svelte-webpack5`
 - `@storybook/sveltekit`
 - `@storybook/vue-vite`
 - `@storybook/vue-webpack5`

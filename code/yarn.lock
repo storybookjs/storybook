@@ -7474,7 +7474,6 @@ __metadata:
     "@storybook/server-webpack5": "workspace:*"
     "@storybook/source-loader": "workspace:*"
     "@storybook/svelte": "workspace:*"
-    "@storybook/svelte-webpack5": "workspace:*"
     "@storybook/test": "workspace:*"
     "@storybook/testing-library": "npm:next"
     "@storybook/theming": "workspace:*"
@@ -7643,23 +7642,6 @@ __metadata:
     storybook: "workspace:^"
     svelte: ^5.0.0
     vite: ^4.0.0 || ^5.0.0 || ^6.0.0
-  languageName: unknown
-  linkType: soft
-
-"@storybook/svelte-webpack5@workspace:*, @storybook/svelte-webpack5@workspace:frameworks/svelte-webpack5":
-  version: 0.0.0-use.local
-  resolution: "@storybook/svelte-webpack5@workspace:frameworks/svelte-webpack5"
-  dependencies:
-    "@storybook/builder-webpack5": "workspace:*"
-    "@storybook/preset-svelte-webpack": "workspace:*"
-    "@storybook/svelte": "workspace:*"
-    svelte: "npm:^5.0.5"
-    svelte-loader: "npm:^3.2.4"
-    typescript: "npm:^5.7.3"
-  peerDependencies:
-    storybook: "workspace:^"
-    svelte: ^5.0.0
-    svelte-loader: "*"
   languageName: unknown
   linkType: soft
 

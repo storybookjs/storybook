@@ -31,7 +31,6 @@ export const packagesMap: Record<string, { webpack5?: string; vite?: string }> =
     vite: '@storybook/vue3-vite',
   },
   '@storybook/svelte': {
-    webpack5: '@storybook/svelte-webpack5',
     vite: '@storybook/svelte-vite',
   },
   '@storybook/web-components': {

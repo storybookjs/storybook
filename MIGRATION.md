@@ -2,6 +2,7 @@
 
 - [From version 8.x to 9.0.0](#from-version-8x-to-900)
   - [Framework changes](#framework-changes)
+    - [Svelte: Dropped support for Svelte 4](#svelte-dropped-support-for-svelte-4)
     - [Svelte: Dropped support for @storybook/svelte-webpack5](#svelte-dropped-support-for-storybooksvelte-webpack5)
 - [From version 8.5.x to 8.6.x](#from-version-85x-to-86x)
   - [Angular: Support experimental zoneless support](#angular-support-experimental-zoneless-support)
@@ -437,6 +438,10 @@
 ## From version 8.x to 9.0.0
 
 ### Framework changes
+
+#### Svelte: Dropped support for Svelte 4
+
+In Storybook 9.0, we've dropped support for Svelte 4. If you're currently using Svelte 4, you need to upgrade to Svelte 5.
 
 #### Svelte: Dropped support for @storybook/svelte-webpack5
 

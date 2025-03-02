@@ -9,7 +9,7 @@ const minimalVersionsMap = {
   'react-scripts': '5.0.0',
   next: '13.5.0',
   preact: '10.0.0',
-  svelte: '4.0.0',
+  svelte: '5.0.0',
   vue: '3.0.0',
   vite: '4.0.0',
 };

@@ -330,6 +330,7 @@ export async function doInitiate(options: CommandOptions): Promise<
       choices: Object.entries(selectableFeatures).map(([value, { name, description }]) => ({
         title: `${name}: ${description}`,
         value,
+        selected: true,
       })),
     });
     selectedFeatures = new Set(out.features);

@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { styled } from '@storybook/core/theming';
+import { styled } from 'storybook/internal/theming';
 
 import { action } from '@storybook/addon-actions';
 

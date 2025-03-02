@@ -41,7 +41,7 @@ describe('checkPackageCompatibility', () => {
       name: packageName,
       version: '1.0.0',
       dependencies: {
-        '@storybook/core-common': '7.0.0',
+        storybook: '7.0.0',
       },
     });
     const result = await checkPackageCompatibility(packageName, {
@@ -86,7 +86,7 @@ describe('checkPackageCompatibility', () => {
       name: packageName,
       version: '7.0.0',
       dependencies: {
-        '@storybook/core-common': '7.0.0',
+        storybook: '7.0.0',
       },
     });
 
@@ -112,7 +112,7 @@ describe('getIncompatibleStorybookPackages', () => {
       name: '@storybook/addon-essentials',
       version: '7.0.0',
       dependencies: {
-        '@storybook/core-common': '7.0.0',
+        storybook: '7.0.0',
       },
     });
 

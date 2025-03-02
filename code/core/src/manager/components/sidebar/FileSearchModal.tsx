@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useTransition } from 'react';
 
-import { Form, Modal } from '@storybook/core/components';
-import { styled } from '@storybook/core/theming';
+import { Form, Modal } from 'storybook/internal/components';
+import { styled } from 'storybook/internal/theming';
+
 import { CloseAltIcon, SearchIcon, SyncIcon } from '@storybook/icons';
 
 import { useMeasure } from '../../hooks/useMeasure';

@@ -49,7 +49,7 @@ export default {
                 subEntry !== 'metafile' ? `${pkgName} - ${subEntry}` : pkgName,
               ];
             })
-            .concat([['core - core', '@storybook/core - core - TOO BIG PLEASE UPLOAD MANUALLY']])
+            .concat([['core - core', 'core - TOO BIG PLEASE UPLOAD MANUALLY']])
         ),
       },
     },

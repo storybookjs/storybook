@@ -19,7 +19,7 @@ export type SourceParameters = SourceCodeProps & {
     code: string,
     storyContext: ReturnType<DocsContextProps['getStoryContext']>
   ) => string;
-  /** Internal: set by our CSF loader (`enrichCsf` in `@storybook/csf-tools`). */
+  /** Internal: set by our CSF loader (`enrichCsf` in `storybook/internal/csf-tools`). */
   originalSource?: string;
 };
 

@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 
 import { describe, expect, it } from 'vitest';
 
-import { transformSync } from '@storybook/core/babel';
+import { transformSync } from 'storybook/internal/babel';
 
 import { mapValues } from 'es-toolkit';
 import requireFromString from 'require-from-string';

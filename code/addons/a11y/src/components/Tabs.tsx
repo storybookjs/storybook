@@ -9,7 +9,7 @@ import type { RuleType } from './A11YPanel';
 import { useA11yContext } from './A11yContext';
 import HighlightToggle from './Report/HighlightToggle';
 
-// TODO: reuse the Tabs component from @storybook/theming instead of re-building identical functionality
+// TODO: reuse the Tabs component from storybook/internal/theming instead of re-building identical functionality
 
 const Container = styled.div({
   width: '100%',

@@ -1,7 +1,8 @@
 /* eslint-disable no-underscore-dangle */
 
 /* eslint-disable @typescript-eslint/naming-convention */
-import { type CleanupCallback, type Preview, isExportStory } from '@storybook/core/csf';
+import { type CleanupCallback, type Preview, isExportStory } from 'storybook/internal/csf';
+import { MountMustBeDestructuredError } from 'storybook/internal/preview-errors';
 import type {
   Args,
   Canvas,
@@ -19,9 +20,7 @@ import type {
   Store_CSFExports,
   StoryContext,
   StrictArgTypes,
-} from '@storybook/core/types';
-
-import { MountMustBeDestructuredError } from '@storybook/core/preview-errors';
+} from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 

@@ -1,8 +1,8 @@
 import React, { useEffect, useLayoutEffect, useState } from 'react';
 
-import { Match } from '@storybook/core/router';
-import { styled } from '@storybook/core/theming';
-import type { API_Layout, API_ViewMode } from '@storybook/core/types';
+import { Match } from 'storybook/internal/router';
+import { styled } from 'storybook/internal/theming';
+import type { API_Layout, API_ViewMode } from 'storybook/internal/types';
 
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
 import { Notifications } from '../../container/Notifications';

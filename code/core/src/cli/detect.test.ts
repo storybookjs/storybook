@@ -2,9 +2,8 @@ import { existsSync } from 'node:fs';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import type { JsPackageManager, PackageJsonWithMaybeDeps } from '@storybook/core/common';
-
-import { logger } from '@storybook/core/node-logger';
+import type { JsPackageManager, PackageJsonWithMaybeDeps } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 
 import { detect, detectFrameworkPreset, detectLanguage } from './detect';
 import { ProjectType, SupportedLanguage } from './project_types';
@@ -27,7 +26,7 @@ vi.mock('fs', () => ({
   mkdirSync: vi.fn(),
 }));
 
-vi.mock('@storybook/core/node-logger');
+vi.mock('storybook/internal/node-logger');
 
 const MOCK_FRAMEWORK_FILES: {
   name: string;

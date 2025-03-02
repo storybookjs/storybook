@@ -1,14 +1,6 @@
 import type { Mock, Mocked } from 'vitest';
 import { vi } from 'vitest';
 
-import type {
-  ModuleImportFn,
-  ProjectAnnotations,
-  Renderer,
-  StoryIndex,
-  TeardownRenderToCanvas,
-} from '@storybook/core/types';
-
 import {
   DOCS_RENDERED,
   STORY_ERRORED,
@@ -16,7 +8,14 @@ import {
   STORY_MISSING,
   STORY_RENDER_PHASE_CHANGED,
   STORY_THREW_EXCEPTION,
-} from '@storybook/core/core-events';
+} from 'storybook/internal/core-events';
+import type {
+  ModuleImportFn,
+  ProjectAnnotations,
+  Renderer,
+  StoryIndex,
+  TeardownRenderToCanvas,
+} from 'storybook/internal/types';
 
 import { EventEmitter } from 'events';
 

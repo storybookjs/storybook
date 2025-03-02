@@ -1,5 +1,8 @@
 <h1>Migration</h1>
 
+- [From version 8.x to 9.0.0](#from-version-8x-to-900)
+  - [Framework changes](#framework-changes)
+    - [Svelte: Dropped support for @storybook/svelte-webpack5](#svelte-dropped-support-for-storybooksvelte-webpack5)
 - [From version 8.5.x to 8.6.x](#from-version-85x-to-86x)
   - [Angular: Support experimental zoneless support](#angular-support-experimental-zoneless-support)
   - [Addon-a11y: Replaced experimental `ally-test` tag behavior with `parameters.a11y.test`](#addon-a11y-replaced-experimental-ally-test-tag-behavior-with-parametersa11ytest)
@@ -430,6 +433,46 @@
   - [Webpack upgrade](#webpack-upgrade)
   - [Packages renaming](#packages-renaming)
   - [Deprecated embedded addons](#deprecated-embedded-addons)
+
+## From version 8.x to 9.0.0
+
+### Framework changes
+
+#### Svelte: Dropped support for @storybook/svelte-webpack5
+
+In Storybook 9.0, we've dropped support for `@storybook/svelte-webpack5`. If you're currently using it, you need to migrate to `@storybook/svelte-vite` instead.
+
+Follow these steps to migrate:
+
+1. Remove the webpack5 framework package:
+
+```bash
+npm uninstall @storybook/svelte-webpack5
+# or
+yarn remove @storybook/svelte-webpack5
+```
+
+2. Install the Vite framework package:
+
+```bash
+npm install -D @storybook/svelte-vite
+# or
+yarn add -D @storybook/svelte-vite
+```
+
+3. Update your Storybook configuration in `.storybook/main.js` or `.storybook/main.ts`:
+
+```diff
+export default {
+  framework: {
+-    name: '@storybook/svelte-vite',
++    name: '@storybook/svelte-webpack5'
+  },
+  // ...other configuration
+};
+```
+
+For more details, please refer to the [Svelte & Vite documentation](https://storybook.js.org/docs/get-started/frameworks/svelte-vite).
 
 ## From version 8.5.x to 8.6.x
 

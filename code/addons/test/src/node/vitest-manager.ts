@@ -79,6 +79,16 @@ export class VitestManager {
             reportOnFailure: true,
             reporter: [['html', {}], storybookCoverageReporter],
             reportsDirectory: resolvePathInStorybookCache(COVERAGE_DIRECTORY),
+            exclude: [
+              '**/*.config.*',
+              '**/*.workspace.*',
+              '**/.storybook/**',
+              '**/.yarn/**',
+              '**/src/*',
+              '**/src/**/*.stories.*',
+              '**/test/**/*.stories.*',
+              '**/storybook-static/**',
+            ],
           }
         : { enabled: false }
     ) as CoverageOptions;

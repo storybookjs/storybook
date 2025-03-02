@@ -30,7 +30,7 @@ addons.getChannel().on(RESET_STORY_ARGS, ({ storyId }) => {
   storyIdsToRemountFromResetArgsEvent.add(storyId);
 });
 
-const componentsByDomElementV5 = new Map<
+const componentsByDomElement = new Map<
   SvelteRenderer['canvasElement'],
   { mountedComponent: ReturnType<(typeof svelte)['mount']>; props: RenderContext }
 >();
@@ -48,15 +48,15 @@ export function renderToCanvas(
   canvasElement: SvelteRenderer['canvasElement']
 ) {
   function unmount(canvasElementToUnmount: SvelteRenderer['canvasElement']) {
-    const { mountedComponent } = componentsByDomElementV5.get(canvasElementToUnmount) ?? {};
+    const { mountedComponent } = componentsByDomElement.get(canvasElementToUnmount) ?? {};
     if (!mountedComponent) {
       return;
     }
     svelte.unmount(mountedComponent);
-    componentsByDomElementV5.delete(canvasElementToUnmount);
+    componentsByDomElement.delete(canvasElementToUnmount);
   }
 
-  const existingComponent = componentsByDomElementV5.get(canvasElement);
+  const existingComponent = componentsByDomElement.get(canvasElement);
 
   let remount = forceRemount;
   if (storyIdsToRemountFromResetArgsEvent.has(storyContext.id)) {
@@ -80,7 +80,7 @@ export function renderToCanvas(
       target: canvasElement,
       props,
     });
-    componentsByDomElementV5.set(canvasElement, { mountedComponent, props });
+    componentsByDomElement.set(canvasElement, { mountedComponent, props });
   } else {
     // We need to mutate the existing props for Svelte reactivity to work, we can't just re-assign them
     Object.assign(existingComponent.props, {

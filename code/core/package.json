@@ -181,6 +181,11 @@
       "import": "./dist/test/index.js",
       "require": "./dist/test/index.cjs"
     },
+    "./internal/instrumenter": {
+      "types": "./dist/instrumenter/index.d.ts",
+      "import": "./dist/instrumenter/index.js",
+      "require": "./dist/instrumenter/index.cjs"
+    },
     "./internal/preview/runtime": {
       "import": "./dist/preview/runtime.js"
     },
@@ -280,6 +285,9 @@
       ],
       "internal/test": [
         "./dist/test/index.d.ts"
+      ],
+      "internal/instrumenter": [
+        "./dist/instrumenter/index.d.ts"
       ]
     }
   },

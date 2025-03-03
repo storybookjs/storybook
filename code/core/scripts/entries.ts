@@ -51,6 +51,7 @@ export const getEntries = (cwd: string) => {
 
     // Internal test package
     define('src/test/index.ts', ['browser', 'node'], true),
+    define('src/instrumenter/index.ts', ['browser', 'node'], true),
   ];
 };
 

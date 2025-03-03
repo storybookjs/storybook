@@ -332,16 +332,6 @@ describe('PNPM Proxy', () => {
                 "version": "7.0.0-beta.13",
               },
             ],
-            "@storybook/package": [
-              {
-                "location": "",
-                "version": "7.0.0-rc.7",
-              },
-              {
-                "location": "",
-                "version": "7.0.0-beta.13",
-              },
-            ],
             "@storybook/jest": [
               {
                 "location": "",
@@ -349,6 +339,16 @@ describe('PNPM Proxy', () => {
               },
             ],
             "@storybook/nextjs": [
+              {
+                "location": "",
+                "version": "7.0.0-beta.13",
+              },
+            ],
+            "@storybook/package": [
+              {
+                "location": "",
+                "version": "7.0.0-rc.7",
+              },
               {
                 "location": "",
                 "version": "7.0.0-beta.13",

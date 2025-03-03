@@ -381,6 +381,12 @@ describe('NPM Proxy', () => {
                 "version": "7.0.0-rc.7",
               },
             ],
+            "@storybook/jest": [
+              {
+                "location": "",
+                "version": "0.0.11-next.1",
+              },
+            ],
             "@storybook/package": [
               {
                 "location": "",
@@ -397,12 +403,6 @@ describe('NPM Proxy', () => {
               {
                 "location": "",
                 "version": "5.4.2-alpha.0",
-              },
-            ],
-            "@storybook/jest": [
-              {
-                "location": "",
-                "version": "0.0.11-next.1",
               },
             ],
             "@storybook/testing-library": [

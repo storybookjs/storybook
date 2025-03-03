@@ -6,8 +6,9 @@ import {
 } from 'storybook/internal/core-events';
 
 import { global as globalThis } from '@storybook/global';
-import { expect, within } from '@storybook/test';
 import type { Meta, StoryObj } from '@storybook/vue3';
+
+import { expect, within } from 'storybook/test';
 
 import MySlotComponent from './MySlotComponent.vue';
 

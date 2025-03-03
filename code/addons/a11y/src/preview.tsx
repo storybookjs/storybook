@@ -64,7 +64,7 @@ export const experimental_afterEach: AfterEach<any> = async ({
               vitestMatchersExtended = true;
             }
 
-            // @ts-expect-error - todo - fix type extension of expect from @storybook/test
+            // @ts-expect-error - todo - fix type extension of expect from storybook/test
             expect(result).toHaveNoViolations();
           }
         }

@@ -321,9 +321,9 @@ describe('NPM Proxy', () => {
               "resolved": "https://registry.npmjs.org/@storybook/addon-interactions/-/addon-interactions-7.0.0-rc.7.tgz",
               "overridden": false,
               "dependencies": {
-                "@storybook/instrumenter": {
+                "@storybook/package": {
                   "version": "6.0.0",
-                  "resolved": "https://registry.npmjs.org/@storybook/instrumenter/-/instrumenter-7.0.0-rc.7.tgz",
+                  "resolved": "https://registry.npmjs.org/@storybook/package/-/core-7.0.0-rc.7.tgz",
                   "overridden": false,
                   "dependencies": {
                     "@storybook/channels": {
@@ -333,9 +333,9 @@ describe('NPM Proxy', () => {
                 }
               }
             },
-            "@storybook/instrumenter": {
+            "@storybook/package": {
               "version": "7.0.0-beta.11",
-              "resolved": "https://registry.npmjs.org/@storybook/instrumenter/-/instrumenter-7.0.0-beta.11.tgz",
+              "resolved": "https://registry.npmjs.org/@storybook/package/-/core-7.0.0-beta.11.tgz",
               "overridden": false,
               "dependencies": {}
             },
@@ -344,7 +344,7 @@ describe('NPM Proxy', () => {
               "resolved": "https://registry.npmjs.org/@storybook/jest/-/jest-0.0.11-next.1.tgz",
               "overridden": false,
               "dependencies": {
-                "@storybook/instrumenter": {
+                "@storybook/package": {
                   "version": "7.0.0-alpha.21"
                 }
               }
@@ -354,7 +354,7 @@ describe('NPM Proxy', () => {
               "resolved": "https://registry.npmjs.org/@storybook/testing-library/-/testing-library-0.0.14-next.1.tgz",
               "overridden": false,
               "dependencies": {
-                "@storybook/instrumenter": {
+                "@storybook/package": {
                   "version": "5.4.2-alpha.0"
                 }
               }
@@ -381,7 +381,7 @@ describe('NPM Proxy', () => {
                 "version": "7.0.0-rc.7",
               },
             ],
-            "@storybook/instrumenter": [
+            "@storybook/package": [
               {
                 "location": "",
                 "version": "6.0.0",
@@ -413,7 +413,7 @@ describe('NPM Proxy', () => {
             ],
           },
           "duplicatedDependencies": {
-            "@storybook/instrumenter": [
+            "@storybook/package": [
               "5.4.2-alpha.0",
               "6.0.0",
               "7.0.0-alpha.21",

@@ -194,8 +194,8 @@ describe('Yarn 2 Proxy', () => {
       vi.spyOn(yarn2Proxy, 'executeCommand').mockResolvedValueOnce(`
       "unrelated-and-should-be-filtered@npm:1.0.0"
       "@storybook/global@npm:5.0.0"
-      "@storybook/instrumenter@npm:7.0.0-beta.12"
-      "@storybook/instrumenter@npm:7.0.0-beta.19"
+      "@storybook/package@npm:7.0.0-beta.12"
+      "@storybook/package@npm:7.0.0-beta.19"
       "@storybook/jest@npm:0.0.11-next.0"
       "@storybook/manager-api@npm:7.0.0-beta.19"
       "@storybook/manager@npm:7.0.0-beta.19"
@@ -214,7 +214,7 @@ describe('Yarn 2 Proxy', () => {
                 "version": "5.0.0",
               },
             ],
-            "@storybook/instrumenter": [
+            "@storybook/package": [
               {
                 "location": "",
                 "version": "7.0.0-beta.12",
@@ -250,7 +250,7 @@ describe('Yarn 2 Proxy', () => {
             ],
           },
           "duplicatedDependencies": {
-            "@storybook/instrumenter": [
+            "@storybook/package": [
               "7.0.0-beta.12",
               "7.0.0-beta.19",
             ],

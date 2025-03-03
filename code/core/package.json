@@ -37,11 +37,6 @@
       "import": "./dist/client-logger/index.js",
       "require": "./dist/client-logger/index.cjs"
     },
-    "./internal/instumenter": {
-      "types": "./dist/instumenter/index.d.ts",
-      "import": "./dist/instumenter/index.js",
-      "require": "./dist/instumenter/index.cjs"
-    },
     "./internal/theming": {
       "types": "./dist/theming/index.d.ts",
       "import": "./dist/theming/index.js",
@@ -181,6 +176,11 @@
       "import": "./dist/bin/index.js",
       "require": "./dist/bin/index.cjs"
     },
+    "./internal/instrumenter": {
+      "types": "./dist/instrumenter/index.d.ts",
+      "import": "./dist/instrumenter/index.js",
+      "require": "./dist/instrumenter/index.cjs"
+    },
     "./internal/preview/runtime": {
       "import": "./dist/preview/runtime.js"
     },
@@ -202,9 +202,6 @@
       ],
       "internal/client-logger": [
         "./dist/client-logger/index.d.ts"
-      ],
-      "internal/instumenter": [
-        "./dist/instumenter/index.d.ts"
       ],
       "internal/theming": [
         "./dist/theming/index.d.ts"
@@ -280,6 +277,9 @@
       ],
       "internal/cli/bin": [
         "./dist/cli/bin/index.d.ts"
+      ],
+      "internal/instrumenter": [
+        "./dist/instrumenter/index.d.ts"
       ]
     }
   },

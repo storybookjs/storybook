@@ -214,16 +214,6 @@ describe('Yarn 2 Proxy', () => {
                 "version": "5.0.0",
               },
             ],
-            "@storybook/package": [
-              {
-                "location": "",
-                "version": "7.0.0-beta.12",
-              },
-              {
-                "location": "",
-                "version": "7.0.0-beta.19",
-              },
-            ],
             "@storybook/jest": [
               {
                 "location": "",
@@ -246,6 +236,16 @@ describe('Yarn 2 Proxy', () => {
               {
                 "location": "",
                 "version": "0.1.0-next.5",
+              },
+            ],
+            "@storybook/package": [
+              {
+                "location": "",
+                "version": "7.0.0-beta.12",
+              },
+              {
+                "location": "",
+                "version": "7.0.0-beta.19",
               },
             ],
           },

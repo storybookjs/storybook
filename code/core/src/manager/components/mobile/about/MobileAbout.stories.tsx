@@ -3,7 +3,8 @@ import React, { useEffect } from 'react';
 import { ManagerContext } from 'storybook/internal/manager-api';
 
 import type { Meta, StoryObj } from '@storybook/react';
-import { within } from '@storybook/test';
+
+import { within } from 'storybook/test';
 
 import { LayoutProvider, useLayout } from '../../layout/LayoutProvider';
 import { MobileAbout } from './MobileAbout';

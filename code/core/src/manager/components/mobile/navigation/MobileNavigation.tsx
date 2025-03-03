@@ -1,12 +1,12 @@
 import type { FC } from 'react';
 import React from 'react';
 
-import { IconButton } from '@storybook/core/components';
-import { styled } from '@storybook/core/theming';
-import { BottomBarToggleIcon, MenuIcon } from '@storybook/icons';
-import type { API_IndexHash, API_Refs } from '@storybook/types';
+import { IconButton } from 'storybook/internal/components';
+import { useStorybookApi, useStorybookState } from 'storybook/internal/manager-api';
+import { styled } from 'storybook/internal/theming';
+import type { API_IndexHash, API_Refs } from 'storybook/internal/types';
 
-import { useStorybookApi, useStorybookState } from '@storybook/core/manager-api';
+import { BottomBarToggleIcon, MenuIcon } from '@storybook/icons';
 
 import { useLayout } from '../../layout/LayoutProvider';
 import { MobileAddonsDrawer } from './MobileAddonsDrawer';

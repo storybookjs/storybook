@@ -1,4 +1,5 @@
-import type { PlayFunctionContext } from '@storybook/core/types';
+import type { PlayFunctionContext } from 'storybook/internal/types';
+
 import { global as globalThis } from '@storybook/global';
 import { expect } from '@storybook/test';
 

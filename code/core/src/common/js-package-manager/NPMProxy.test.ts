@@ -101,33 +101,33 @@ describe('NPM Proxy', () => {
 
   describe('addDependencies', () => {
     describe('npm6', () => {
-      it('with devDep it should run `npm install -D @storybook/core`', async () => {
+      it('with devDep it should run `npm install -D storybook`', async () => {
         const executeCommandSpy = vi
           .spyOn(npmProxy, 'executeCommand')
           .mockResolvedValueOnce('6.0.0');
 
-        await npmProxy.addDependencies({ installAsDevDependencies: true }, ['@storybook/core']);
+        await npmProxy.addDependencies({ installAsDevDependencies: true }, ['storybook']);
 
         expect(executeCommandSpy).toHaveBeenLastCalledWith(
           expect.objectContaining({
             command: 'npm',
-            args: ['install', '-D', '@storybook/core'],
+            args: ['install', '-D', 'storybook'],
           })
         );
       });
     });
     describe('npm7', () => {
-      it('with devDep it should run `npm install -D @storybook/core`', async () => {
+      it('with devDep it should run `npm install -D storybook`', async () => {
         const executeCommandSpy = vi
           .spyOn(npmProxy, 'executeCommand')
           .mockResolvedValueOnce('7.0.0');
 
-        await npmProxy.addDependencies({ installAsDevDependencies: true }, ['@storybook/core']);
+        await npmProxy.addDependencies({ installAsDevDependencies: true }, ['storybook']);
 
         expect(executeCommandSpy).toHaveBeenLastCalledWith(
           expect.objectContaining({
             command: 'npm',
-            args: ['install', '-D', '@storybook/core'],
+            args: ['install', '-D', 'storybook'],
           })
         );
       });
@@ -136,33 +136,33 @@ describe('NPM Proxy', () => {
 
   describe('removeDependencies', () => {
     describe('npm6', () => {
-      it('with devDep it should run `npm uninstall @storybook/core`', async () => {
+      it('with devDep it should run `npm uninstall storybook`', async () => {
         const executeCommandSpy = vi
           .spyOn(npmProxy, 'executeCommand')
           .mockResolvedValueOnce('6.0.0');
 
-        npmProxy.removeDependencies({}, ['@storybook/core']);
+        npmProxy.removeDependencies({}, ['storybook']);
 
         expect(executeCommandSpy).toHaveBeenLastCalledWith(
           expect.objectContaining({
             command: 'npm',
-            args: ['uninstall', '@storybook/core'],
+            args: ['uninstall', 'storybook'],
           })
         );
       });
     });
     describe('npm7', () => {
-      it('with devDep it should run `npm uninstall @storybook/core`', async () => {
+      it('with devDep it should run `npm uninstall storybook`', async () => {
         const executeCommandSpy = vi
           .spyOn(npmProxy, 'executeCommand')
           .mockResolvedValueOnce('7.0.0');
 
-        await npmProxy.removeDependencies({}, ['@storybook/core']);
+        await npmProxy.removeDependencies({}, ['storybook']);
 
         expect(executeCommandSpy).toHaveBeenLastCalledWith(
           expect.objectContaining({
             command: 'npm',
-            args: ['uninstall', '@storybook/core'],
+            args: ['uninstall', 'storybook'],
           })
         );
       });
@@ -205,12 +205,12 @@ describe('NPM Proxy', () => {
         .spyOn(npmProxy, 'executeCommand')
         .mockResolvedValueOnce('"5.3.19"');
 
-      const version = await npmProxy.latestVersion('@storybook/core');
+      const version = await npmProxy.latestVersion('storybook');
 
       expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           command: 'npm',
-          args: ['info', '@storybook/core', 'version', '--json'],
+          args: ['info', 'storybook', 'version', '--json'],
         })
       );
       expect(version).toEqual('5.3.19');
@@ -221,12 +221,12 @@ describe('NPM Proxy', () => {
         .spyOn(npmProxy, 'executeCommand')
         .mockResolvedValueOnce('["4.25.3","5.3.19","6.0.0-beta.23"]');
 
-      const version = await npmProxy.latestVersion('@storybook/core', '5.X');
+      const version = await npmProxy.latestVersion('storybook', '5.X');
 
       expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           command: 'npm',
-          args: ['info', '@storybook/core', 'versions', '--json'],
+          args: ['info', 'storybook', 'versions', '--json'],
         })
       );
       expect(version).toEqual('5.3.19');
@@ -235,7 +235,7 @@ describe('NPM Proxy', () => {
     it('throws an error if command output is not a valid JSON', async () => {
       vi.spyOn(npmProxy, 'executeCommand').mockResolvedValueOnce('NOT A JSON');
 
-      await expect(npmProxy.latestVersion('@storybook/core')).rejects.toThrow();
+      await expect(npmProxy.latestVersion('storybook')).rejects.toThrow();
     });
   });
 

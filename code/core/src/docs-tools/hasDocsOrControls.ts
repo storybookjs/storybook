@@ -1,4 +1,4 @@
-import type { Options } from '@storybook/core/types';
+import type { Options } from 'storybook/internal/types';
 
 // `addons/x` is for the monorepo, `addon-x` is for normal usage
 const packageRe = /(addons\/|addon-|addon-essentials\/)(docs|controls)/;

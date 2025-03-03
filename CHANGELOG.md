@@ -1,3 +1,18 @@
+## 8.6.3
+
+- CSF Factories: Align addon-essentials import with other addons - [#30716](https://github.com/storybookjs/storybook/pull/30716), thanks @kasperpeulen!
+- Next: Support Next 15.2 - [#30702](https://github.com/storybookjs/storybook/pull/30702), thanks @kasperpeulen!
+
+## 8.6.2
+
+- Core: Support TS3.8+ again - [#30700](https://github.com/storybookjs/storybook/pull/30700), thanks @kasperpeulen!
+- Revert "CLI: Don't initially select Documentation and Testing features" - [#30694](https://github.com/storybookjs/storybook/pull/30694), thanks @shilman!
+
+## 8.6.1
+
+- CSF: Only export definePreview from the framework - [#30676](https://github.com/storybookjs/storybook/pull/30676), thanks @kasperpeulen!
+- Codemod: Only remove types when they are unused - [#30644](https://github.com/storybookjs/storybook/pull/30644), thanks @yannbf!
+
 ## 8.6.0
 
 The 8.6 release focuses on [Storybook Test](https://storybook.js.org/blog/storybook-test-sneak-peek/), which brings realtime component, accessibility, and visual UI tests to your favorite component workshop.

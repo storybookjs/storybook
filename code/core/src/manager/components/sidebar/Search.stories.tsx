@@ -1,9 +1,9 @@
 import React from 'react';
 
-import type { Meta, StoryFn } from '@storybook/react';
+import type { API } from 'storybook/internal/manager-api';
+import { ManagerContext } from 'storybook/internal/manager-api';
 
-import type { API } from '@storybook/core/manager-api';
-import { ManagerContext } from '@storybook/core/manager-api';
+import type { Meta, StoryFn } from '@storybook/react';
 
 import { action } from '@storybook/addon-actions';
 

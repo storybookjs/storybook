@@ -9,7 +9,7 @@ import {
   babelParseExpression,
   recast,
   types as t,
-} from '@storybook/core/babel';
+} from 'storybook/internal/babel';
 
 import { camelCase } from 'es-toolkit';
 import type { FileInfo } from 'jscodeshift';

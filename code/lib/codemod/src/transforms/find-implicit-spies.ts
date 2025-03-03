@@ -1,5 +1,5 @@
 /* eslint-disable no-underscore-dangle */
-import { loadCsf } from '@storybook/core/csf-tools';
+import { loadCsf } from 'storybook/internal/csf-tools';
 
 import type { BabelFile } from '@babel/core';
 import * as babel from '@babel/core';

@@ -1,5 +1,5 @@
-import { isExampleStoryId } from '@storybook/core/telemetry';
-import type { IndexEntry, StoryIndex } from '@storybook/core/types';
+import { isExampleStoryId } from 'storybook/internal/telemetry';
+import type { IndexEntry, StoryIndex } from 'storybook/internal/types';
 
 import { AUTODOCS_TAG, PLAY_FN_TAG, isMdxEntry } from './StoryIndexGenerator';
 

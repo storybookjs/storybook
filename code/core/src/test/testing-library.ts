@@ -4,8 +4,7 @@ import type { FireFunction, FireObject } from '@testing-library/dom/types/events
 import _userEvent from '@testing-library/user-event';
 
 import { once } from 'storybook/internal/client-logger';
-
-import { instrument } from '@storybook/instrumenter';
+import { instrument } from 'storybook/internal/instrumenter';
 
 import dedent from 'ts-dedent';
 import type { Writable } from 'type-fest';

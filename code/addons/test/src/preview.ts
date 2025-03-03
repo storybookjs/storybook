@@ -1,9 +1,8 @@
 // This makes sure that storybook test loaders are always loaded when addon-interactions is used
 // For 9.0 we want to merge storybook/test and addon-interactions into one addon.
+import { instrument } from 'storybook/internal/instrumenter';
 import 'storybook/internal/test';
 import type { PlayFunction, StepLabel, StoryContext } from 'storybook/internal/types';
-
-import { instrument } from '@storybook/instrumenter';
 
 export const { step: runStep } = instrument(
   {

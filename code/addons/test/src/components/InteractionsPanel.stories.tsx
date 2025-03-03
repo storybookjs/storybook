@@ -1,10 +1,10 @@
 import React from 'react';
 
+import { CallStates } from 'storybook/internal/instrumenter';
 import { ManagerContext } from 'storybook/internal/manager-api';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/internal/test';
 import { styled } from 'storybook/internal/theming';
 
-import { CallStates } from '@storybook/instrumenter';
 import type { Meta, StoryObj } from '@storybook/react';
 
 import { isChromatic } from '../../../../.storybook/isChromatic';

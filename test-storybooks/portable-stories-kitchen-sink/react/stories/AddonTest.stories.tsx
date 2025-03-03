@@ -1,6 +1,6 @@
 import { expect } from '@storybook/test';
 import { Meta, type StoryObj } from '@storybook/react'
-import { instrument } from '@storybook/instrumenter'
+import { instrument } from 'storybook/internal/instrumenter'
 
 declare global {
   // eslint-disable-next-line no-var

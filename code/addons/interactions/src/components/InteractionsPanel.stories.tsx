@@ -1,8 +1,8 @@
 import React from 'react';
 
+import { CallStates } from 'storybook/internal/instrumenter';
 import { styled } from 'storybook/internal/theming';
 
-import { CallStates } from '@storybook/instrumenter';
 import type { Meta, StoryObj } from '@storybook/react';
 import { expect, userEvent, waitFor, within } from '@storybook/test';
 

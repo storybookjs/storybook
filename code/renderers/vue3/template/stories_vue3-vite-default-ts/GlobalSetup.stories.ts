@@ -1,6 +1,6 @@
-import { expect, within } from '@storybook/test';
-import type { Meta, StoryObj } from '@storybook/vue3';
+import type { Meta, StoryObj } fstorybook/test/vue3';
 
+import { expect, within } from 'storybook/test';
 import { inject } from 'vue';
 
 import GlobalSetup from './GlobalSetup.vue';

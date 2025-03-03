@@ -3,7 +3,7 @@ import type { PlayFunction, StepLabel, StepRunner, StoryContext } from 'storyboo
 
 // This makes sure that storybook test loaders are always loaded when addon-interactions is used
 // For 9.0 we want to merge storybook/test and addon-interactions into one addon.
-import '@storybook/test';
+import 'storybook/test';
 
 import type { InteractionsParameters } from './types';
 

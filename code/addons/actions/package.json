@@ -74,7 +74,6 @@
     "uuid": "^9.0.0"
   },
   "devDependencies": {
-    "@storybook/test": "workspace:*",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-inspector": "^6.0.0",

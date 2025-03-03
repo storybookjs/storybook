@@ -50,6 +50,7 @@ export const getEntries = (cwd: string) => {
     define('src/bin/index.ts', ['node'], false),
 
     define('src/instrumenter/index.ts', ['browser', 'node'], true),
+    define('src/test/index.ts', ['browser'], true),
   ];
 };
 

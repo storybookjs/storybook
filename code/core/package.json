@@ -176,6 +176,11 @@
       "import": "./dist/bin/index.js",
       "require": "./dist/bin/index.cjs"
     },
+    "./internal/test": {
+      "types": "./dist/test/index.d.ts",
+      "import": "./dist/test/index.js",
+      "require": "./dist/test/index.cjs"
+    },
     "./internal/preview/runtime": {
       "import": "./dist/preview/runtime.js"
     },
@@ -272,6 +277,9 @@
       ],
       "internal/cli/bin": [
         "./dist/cli/bin/index.d.ts"
+      ],
+      "internal/test": [
+        "./dist/test/index.d.ts"
       ]
     }
   },

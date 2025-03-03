@@ -8,6 +8,7 @@ import { angularBuildersMultiproject } from './angular-builders-multiproject';
 import { autodocsTags } from './autodocs-tags';
 import { autodocsTrue } from './autodocs-true';
 import { builderVite } from './builder-vite';
+import { consolidatedImports } from './consolidated-imports';
 import { cra5 } from './cra5';
 import { eslintPlugin } from './eslint-plugin';
 import { initialGlobals } from './initial-globals';
@@ -68,6 +69,7 @@ export const allFixes: Fix[] = [
   autodocsTags,
   initialGlobals,
   addonA11yAddonTest,
+  consolidatedImports,
 ];
 
 export const initFixes: Fix[] = [eslintPlugin];

@@ -1,3 +1,15 @@
+# v1.1.2 (Mon Mar 03 2025)
+
+#### 🐛 Bug Fix
+
+- Upgrade image-size to 2.0 [#32](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/32) ([@netroy](https://github.com/netroy))
+
+#### Authors: 1
+
+- कारतोफ्फेलस्क्रिप्ट™ ([@netroy](https://github.com/netroy))
+
+---
+
 # v1.1.1 (Fri Dec 13 2024)
 
 #### 🐛 Bug Fix

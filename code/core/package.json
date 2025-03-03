@@ -37,6 +37,11 @@
       "import": "./dist/client-logger/index.js",
       "require": "./dist/client-logger/index.cjs"
     },
+    "./internal/instumenter": {
+      "types": "./dist/instumenter/index.d.ts",
+      "import": "./dist/instumenter/index.js",
+      "require": "./dist/instumenter/index.cjs"
+    },
     "./internal/theming": {
       "types": "./dist/theming/index.d.ts",
       "import": "./dist/theming/index.js",
@@ -198,6 +203,9 @@
       "internal/client-logger": [
         "./dist/client-logger/index.d.ts"
       ],
+      "internal/instumenter": [
+        "./dist/instumenter/index.d.ts"
+      ],
       "internal/theming": [
         "./dist/theming/index.d.ts"
       ],
@@ -287,6 +295,7 @@
     "prep": "jiti ./scripts/prep.ts"
   },
   "dependencies": {
+    "@vitest/utils": "^2.1.1",
     "better-opn": "^3.0.2",
     "browser-assert": "^1.2.1",
     "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0",

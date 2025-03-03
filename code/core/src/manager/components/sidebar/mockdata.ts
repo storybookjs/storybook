@@ -1,4 +1,4 @@
-import type { API_HashEntry } from '@storybook/core/types';
+import type { API_HashEntry } from 'storybook/internal/types';
 
 export type MockDataSet = Record<string, Record<string, Partial<API_HashEntry>>>;
 

@@ -2,8 +2,8 @@ import { join } from 'node:path';
 
 import { defineMain } from '../frameworks/react-vite/src/node';
 
-const componentsPath = join(__dirname, '../core/src/components');
-const managerApiPath = join(__dirname, '../core/src/manager-api');
+const componentsPath = join(__dirname, '../core/src/components/index.ts');
+const managerApiPath = join(__dirname, '../core/src/manager-api/index.ts');
 const imageContextPath = join(__dirname, '../frameworks/nextjs/src/image-context.ts');
 
 const config = defineMain({
@@ -99,7 +99,7 @@ const config = defineMain({
     '@storybook/addon-essentials',
     '@storybook/addon-storysource',
     '@storybook/addon-designs',
-    '@storybook/experimental-addon-test',
+    '@storybook/addon-test',
     '@storybook/addon-a11y',
     '@chromatic-com/storybook',
   ],
@@ -143,9 +143,7 @@ const config = defineMain({
         alias: {
           ...(configType === 'DEVELOPMENT'
             ? {
-                '@storybook/components': componentsPath,
                 'storybook/internal/components': componentsPath,
-                '@storybook/manager-api': managerApiPath,
                 'storybook/internal/manager-api': managerApiPath,
                 'sb-original/image-context': imageContextPath,
               }

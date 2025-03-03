@@ -129,7 +129,7 @@ describe('main/preview codemod: general parsing functionality', () => {
     expect(transformed).toEqual(original);
   });
 
-  it('should remove legacy main config type imports', async () => {
+  it('should remove legacy main config type imports if unused', async () => {
     await expect(
       transform(dedent`
         import { type StorybookConfig } from '@storybook/react-vite'
@@ -141,6 +141,35 @@ describe('main/preview codemod: general parsing functionality', () => {
       `)
     ).resolves.toMatchInlineSnapshot(`
       import { defineMain } from '@storybook/react-vite/node';
+
+      export default defineMain({
+        stories: [],
+      });
+    `);
+  });
+
+  it('should not remove legacy main config type imports if used', async () => {
+    await expect(
+      transform(dedent`
+        import { type StorybookConfig } from '@storybook/react-vite'
+
+        const config: StorybookConfig = {
+          stories: []
+        };
+
+        const features: StorybookConfig['features'] = {
+          foo: true,
+        };
+
+        export default config;
+      `)
+    ).resolves.toMatchInlineSnapshot(`
+      import { type StorybookConfig } from '@storybook/react-vite';
+      import { defineMain } from '@storybook/react-vite/node';
+
+      const features: StorybookConfig['features'] = {
+        foo: true,
+      };
 
       export default defineMain({
         stories: [],

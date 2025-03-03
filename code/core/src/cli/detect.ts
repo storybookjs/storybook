@@ -1,10 +1,9 @@
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import type { JsPackageManager, PackageJsonWithMaybeDeps } from '@storybook/core/common';
-import { HandledError, commandLog } from '@storybook/core/common';
-
-import { logger } from '@storybook/core/node-logger';
+import type { JsPackageManager, PackageJsonWithMaybeDeps } from 'storybook/internal/common';
+import { HandledError, commandLog } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 
 import { findUpSync } from 'find-up';
 import prompts from 'prompts';

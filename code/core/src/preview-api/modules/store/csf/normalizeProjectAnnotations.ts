@@ -1,11 +1,10 @@
+import { deprecate } from 'storybook/internal/client-logger';
 import type {
   ArgTypes,
   NormalizedProjectAnnotations,
   ProjectAnnotations,
   Renderer,
-} from '@storybook/core/types';
-
-import { deprecate } from '@storybook/core/client-logger';
+} from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 

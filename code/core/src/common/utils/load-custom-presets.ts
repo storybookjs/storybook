@@ -1,6 +1,6 @@
 import { resolve } from 'node:path';
 
-import type { PresetConfig } from '@storybook/core/types';
+import type { PresetConfig } from 'storybook/internal/types';
 
 import { serverRequire, serverResolve } from './interpret-require';
 import { validateConfigurationFiles } from './validate-configuration-files';

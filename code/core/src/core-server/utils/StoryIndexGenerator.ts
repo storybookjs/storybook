@@ -3,9 +3,12 @@ import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { dirname, extname, join, normalize, relative, resolve, sep } from 'node:path';
 
-import { commonGlobOptions, normalizeStoryPath } from '@storybook/core/common';
-import { combineTags, storyNameFromExport, toId } from '@storybook/core/csf';
-import { isExampleStoryId } from '@storybook/core/telemetry';
+import { commonGlobOptions, normalizeStoryPath } from 'storybook/internal/common';
+import { combineTags, storyNameFromExport, toId } from 'storybook/internal/csf';
+import { getStorySortParameter, loadConfig } from 'storybook/internal/csf-tools';
+import { logger, once } from 'storybook/internal/node-logger';
+import { sortStoriesV7, userOrAutoTitleFromSpecifier } from 'storybook/internal/preview-api';
+import { isExampleStoryId } from 'storybook/internal/telemetry';
 import type {
   DocsIndexEntry,
   DocsOptions,
@@ -18,11 +21,7 @@ import type {
   StoryIndexEntry,
   StorybookConfigRaw,
   Tag,
-} from '@storybook/core/types';
-
-import { getStorySortParameter, loadConfig } from '@storybook/core/csf-tools';
-import { logger, once } from '@storybook/core/node-logger';
-import { sortStoriesV7, userOrAutoTitleFromSpecifier } from '@storybook/core/preview-api';
+} from 'storybook/internal/types';
 
 import { findUp } from 'find-up';
 import picocolors from 'picocolors';

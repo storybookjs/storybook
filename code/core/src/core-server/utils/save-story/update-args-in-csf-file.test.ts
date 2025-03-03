@@ -4,7 +4,7 @@ import { join } from 'node:path';
 
 import { describe, expect, test } from 'vitest';
 
-import { printCsf, readCsf } from '@storybook/core/csf-tools';
+import { printCsf, readCsf } from 'storybook/internal/csf-tools';
 
 import { format } from 'prettier';
 

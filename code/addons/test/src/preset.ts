@@ -33,22 +33,6 @@ import {
 import { log } from './logger';
 import { runTestRunner } from './node/boot-test-runner';
 
-export const checkActionsLoaded = (configDir: string) => {
-  checkAddonOrder({
-    before: {
-      name: '@storybook/addon-actions',
-      inEssentials: true,
-    },
-    after: {
-      name: '@storybook/experimental-addon-test',
-      inEssentials: false,
-    },
-    configFile: isAbsolute(configDir)
-      ? join(configDir, 'main')
-      : join(process.cwd(), configDir, 'main'),
-    getConfig: (configFile) => serverRequire(configFile),
-  });
-};
 type Event = {
   type: 'test-discrepancy';
   payload: {
@@ -57,6 +41,23 @@ type Event = {
     cliStatus: 'FAIL' | 'PASS';
     message: string;
   };
+};
+
+export const checkActionsLoaded = (configDir: string) => {
+  checkAddonOrder({
+    before: {
+      name: '@storybook/addon-actions',
+      inEssentials: true,
+    },
+    after: {
+      name: '@storybook/addon-test',
+      inEssentials: false,
+    },
+    configFile: isAbsolute(configDir)
+      ? join(configDir, 'main')
+      : join(process.cwd(), configDir, 'main'),
+    getConfig: (configFile) => serverRequire(configFile),
+  });
 };
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -98,7 +99,7 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
     }
   });
   if (!core.disableTelemetry) {
-    const packageJsonPath = require.resolve('@storybook/experimental-addon-test/package.json');
+    const packageJsonPath = require.resolve('@storybook/addon-test/package.json');
 
     const { version: addonVersion } = JSON.parse(
       readFileSync(packageJsonPath, { encoding: 'utf-8' })
@@ -181,6 +182,22 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
   return channel;
 };
 
+export const staticDirs: PresetPropertyFn<'staticDirs'> = async (values = [], options) => {
+  if (options.configType === 'PRODUCTION') {
+    return values;
+  }
+
+  const coverageDirectory = resolvePathInStorybookCache(COVERAGE_DIRECTORY);
+  await mkdir(coverageDirectory, { recursive: true });
+  return [
+    {
+      from: coverageDirectory,
+      to: '/coverage',
+    },
+    ...values,
+  ];
+};
+
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
   entry = [],
   options
@@ -198,8 +215,7 @@ export const managerEntries: PresetProperty<'managerEntries'> = async (entry = [
     // eslint-disable-next-line local-rules/no-uncategorized-errors
     const error = new Error(
       dedent`
-        You have both "@storybook/addon-interactions" and "@storybook/experimental-addon-test" listed as addons in your Storybook config. This is not allowed, as @storybook/experimental-addon-test is a replacement for @storybook/addon-interactions.
-
+        You have both "@storybook/addon-interactions" and "@storybook/addon-test" listed as addons in your Storybook config. This is not allowed, as @storybook/addon-test is a replacement for @storybook/addon-interactions.
         Please remove "@storybook/addon-interactions" from the addons array in your main Storybook config at ${options.configDir} and remove the dependency from your package.json file.
       `
     );
@@ -209,20 +225,4 @@ export const managerEntries: PresetProperty<'managerEntries'> = async (entry = [
 
   // for whatever reason seems like the return type of managerEntries is not correct (it expects never instead of string[])
   return entry as never;
-};
-
-export const staticDirs: PresetPropertyFn<'staticDirs'> = async (values = [], options) => {
-  if (options.configType === 'PRODUCTION') {
-    return values;
-  }
-
-  const coverageDirectory = resolvePathInStorybookCache(COVERAGE_DIRECTORY);
-  await mkdir(coverageDirectory, { recursive: true });
-  return [
-    {
-      from: coverageDirectory,
-      to: '/coverage',
-    },
-    ...values,
-  ];
 };

@@ -1,8 +1,9 @@
 import type { FC, PropsWithChildren } from 'react';
 import React, { useState } from 'react';
 
-import { LocationProvider } from '@storybook/core/router';
-import { styled } from '@storybook/core/theming';
+import { LocationProvider } from 'storybook/internal/router';
+import { styled } from 'storybook/internal/theming';
+
 import type { Meta, StoryObj } from '@storybook/react';
 import { fn } from '@storybook/test';
 

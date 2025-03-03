@@ -99,7 +99,7 @@ const config = defineMain({
     '@storybook/addon-essentials',
     '@storybook/addon-storysource',
     '@storybook/addon-designs',
-    '@storybook/experimental-addon-test',
+    '@storybook/addon-test',
     '@storybook/addon-a11y',
     '@chromatic-com/storybook',
   ],

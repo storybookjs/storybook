@@ -15,7 +15,7 @@ export default {
   '@storybook/addon-onboarding': '9.0.0-alpha.0',
   '@storybook/addon-outline': '9.0.0-alpha.0',
   '@storybook/addon-storysource': '9.0.0-alpha.0',
-  '@storybook/experimental-addon-test': '9.0.0-alpha.0',
+  '@storybook/addon-test': '9.0.0-alpha.0',
   '@storybook/addon-themes': '9.0.0-alpha.0',
   '@storybook/addon-toolbars': '9.0.0-alpha.0',
   '@storybook/addon-viewport': '9.0.0-alpha.0',

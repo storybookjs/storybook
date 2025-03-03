@@ -1,4 +1,4 @@
-import { expect, within } from '@storybook/test';
+import { expect, within } from 'storybook/internal/test';
 
 export default {
   component: globalThis.Components.Pre,

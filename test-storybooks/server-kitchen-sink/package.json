@@ -65,7 +65,6 @@
     "@storybook/svelte-vite": "file:../../code/frameworks/svelte-vite",
     "@storybook/svelte-webpack5": "file:../../code/frameworks/svelte-webpack5",
     "@storybook/sveltekit": "file:../../code/frameworks/sveltekit",
-    "@storybook/test": "file:../../code/lib/test",
     "@storybook/vue3": "file:../../code/renderers/vue3",
     "@storybook/vue3-vite": "file:../../code/frameworks/vue3-vite",
     "@storybook/vue3-webpack5": "file:../../code/frameworks/vue3-webpack5",

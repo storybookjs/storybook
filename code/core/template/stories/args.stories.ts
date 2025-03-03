@@ -3,10 +3,10 @@ import {
   STORY_ARGS_UPDATED,
   UPDATE_STORY_ARGS,
 } from 'storybook/internal/core-events';
+import { expect, within } from 'storybook/internal/test';
 import type { PartialStoryFn, PlayFunctionContext, StoryContext } from 'storybook/internal/types';
 
 import { global as globalThis } from '@storybook/global';
-import { expect, within } from '@storybook/test';
 
 function pick(obj, keys) {
   const result = {};

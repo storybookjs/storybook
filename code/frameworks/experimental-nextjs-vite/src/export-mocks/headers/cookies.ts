@@ -1,7 +1,7 @@
 // We need this import to be a singleton, and because it's used in multiple entrypoints
 // both in ESM and CJS, importing it via the package name instead of having a local import
 // is the only way to achieve it actually being a singleton
-import { fn } from '@storybook/test';
+import { fn } from 'storybook/internal/test';
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore we must ignore types here as during compilation they are not generated yet

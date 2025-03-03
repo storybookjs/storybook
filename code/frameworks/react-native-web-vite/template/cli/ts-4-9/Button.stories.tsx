@@ -1,5 +1,6 @@
+import { fn } from 'storybook/internal/test';
+
 import type { Meta, StoryObj } from '@storybook/react';
-import { fn } from '@storybook/test';
 
 import { View } from 'react-native';
 

@@ -7,10 +7,9 @@ import type { KeyboardEventHandler, ReactElement, ReactNode } from 'react';
 import React from 'react';
 
 import type { Canvas } from 'storybook/internal/csf';
+import type { Mock } from 'storybook/internal/test';
+import { fn } from 'storybook/internal/test';
 import type { Args, StrictArgs } from 'storybook/internal/types';
-
-import type { Mock } from '@storybook/test';
-import { fn } from '@storybook/test';
 
 import { expectTypeOf } from 'expect-type';
 

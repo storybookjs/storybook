@@ -1,7 +1,6 @@
 import { NextjsRouterMocksNotAvailable } from 'storybook/internal/preview-errors';
-
-import type { Mock } from '@storybook/test';
-import { fn } from '@storybook/test';
+import type { Mock } from 'storybook/internal/test';
+import { fn } from 'storybook/internal/test';
 
 import * as actual from 'next/dist/client/components/navigation';
 import { getRedirectError } from 'next/dist/client/components/redirect';

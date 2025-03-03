@@ -30,7 +30,7 @@ export const removeJestTestingLibrary: Fix<{ incompatiblePackages: string[] }> =
 
       ${incompatiblePackages.map((name) => `- ${picocolors.cyan(`${name}`)}`).join('\n')}
       
-      We will uninstall them for you and install ${picocolors.cyan('@storybook/test')} instead.
+      We will uninstall them for you and install ${picocolors.cyan('storybook/internal/test')} instead.
 
       Also, we can help you migrate your stories to use the new package.
     `;

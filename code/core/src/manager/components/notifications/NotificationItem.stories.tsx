@@ -1,6 +1,7 @@
 import React from 'react';
 
 import { LocationProvider } from 'storybook/internal/router';
+import { expect, fn, userEvent, waitFor, within } from 'storybook/internal/test';
 
 import {
   AccessibilityIcon as AccessibilityIconIcon,
@@ -8,7 +9,6 @@ import {
   FaceHappyIcon,
 } from '@storybook/icons';
 import type { Meta, StoryObj } from '@storybook/react';
-import { expect, fn, userEvent, waitFor, within } from '@storybook/test';
 
 import { action } from '@storybook/addon-actions';
 

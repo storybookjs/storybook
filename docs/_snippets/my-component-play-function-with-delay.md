@@ -1,7 +1,7 @@
 ```ts filename="MyComponent.stories.ts" renderer="angular" language="ts"
 import type { Meta, StoryObj } from '@storybook/angular';
 
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/internal/test';
 
 import { MyComponent } from './MyComponent.component';
 
@@ -39,7 +39,7 @@ export const DelayedStory: Story = {
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
-  import { userEvent, within } from '@storybook/test';
+  import { userEvent, within } from 'storybook/internal/test';
 
   import MyComponent from './MyComponent.svelte';
 
@@ -73,7 +73,7 @@ export const DelayedStory: Story = {
 ```
 
 ```js filename="MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF"
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/internal/test';
 
 import MyComponent from './MyComponent.svelte';
 
@@ -104,7 +104,7 @@ export const DelayedStory = {
 ```
 
 ```js filename="MyComponent.stories.js|jsx" renderer="common" language="js"
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/internal/test';
 
 import { MyComponent } from './MyComponent';
 
@@ -138,7 +138,7 @@ export const DelayedStory = {
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
-  import { userEvent, within } from '@storybook/test';
+  import { userEvent, within } from 'storybook/internal/test';
 
   import MyComponent from './MyComponent.svelte';
 
@@ -174,7 +174,7 @@ export const DelayedStory = {
 ```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="CSF"
 import type { Meta, StoryObj } from '@storybook/svelte';
 
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/internal/test';
 
 import MyComponent from './MyComponent.svelte';
 
@@ -211,7 +211,7 @@ export const DelayedStory: Story = {
 // Replace your-framework with the name of your framework
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/internal/test';
 
 import { MyComponent } from './MyComponent';
 
@@ -248,7 +248,7 @@ export const DelayedStory: Story = {
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
-  import { userEvent, within } from '@storybook/test';
+  import { userEvent, within } from 'storybook/internal/test';
 
   import MyComponent from './MyComponent.svelte';
 
@@ -284,7 +284,7 @@ export const DelayedStory: Story = {
 ```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
 import type { Meta, StoryObj } from '@storybook/svelte';
 
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/internal/test';
 
 import MyComponent from './MyComponent.svelte';
 
@@ -321,7 +321,7 @@ export const DelayedStory: Story = {
 // Replace your-framework with the name of your framework
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/internal/test';
 
 import { MyComponent } from './MyComponent';
 
@@ -355,7 +355,7 @@ export const DelayedStory: Story = {
 ```
 
 ```js filename="MyComponent.stories.js" renderer="web-components" language="js"
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/internal/test';
 
 export default {
   component: 'demo-my-component',
@@ -385,7 +385,7 @@ export const DelayedStory = {
 
 ```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts"
 import type { Meta, StoryObj } from '@storybook/web-components';
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/internal/test';
 
 const meta: Meta = {
   component: 'demo-my-component',

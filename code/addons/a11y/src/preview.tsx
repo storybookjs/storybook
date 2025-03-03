@@ -1,6 +1,5 @@
+import { expect } from 'storybook/internal/test';
 import type { AfterEach } from 'storybook/internal/types';
-
-import { expect } from '@storybook/test';
 
 import { run } from './a11yRunner';
 import type { A11yParameters } from './params';

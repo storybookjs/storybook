@@ -1,4 +1,4 @@
-import { fn } from '@storybook/test';
+import { fn } from 'storybook/internal/test';
 
 import { View } from 'react-native';
 

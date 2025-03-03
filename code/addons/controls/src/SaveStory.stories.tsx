@@ -1,7 +1,8 @@
 import React from 'react';
 
+import { expect, fireEvent, fn, userEvent, within } from 'storybook/internal/test';
+
 import type { Meta, StoryObj } from '@storybook/react';
-import { expect, fireEvent, fn, userEvent, within } from '@storybook/test';
 
 import { action } from '@storybook/addon-actions';
 

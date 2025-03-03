@@ -1,5 +1,5 @@
 ```ts filename="lib/session.mock.ts" renderer="common" language="ts"
-import { fn } from '@storybook/test';
+import { fn } from 'storybook/internal/test';
 import * as actual from './session';
 
 export * from './session';

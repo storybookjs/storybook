@@ -1,9 +1,10 @@
 import React from 'react';
 
+import { expect } from 'storybook/internal/test';
+import { findByText, fireEvent, screen, userEvent, waitFor, within } from 'storybook/internal/test';
+
 import { BottomBarIcon, CloseIcon } from '@storybook/icons';
 import type { Meta, StoryObj } from '@storybook/react';
-import { expect } from '@storybook/test';
-import { findByText, fireEvent, screen, userEvent, waitFor, within } from '@storybook/test';
 
 import { action } from '@storybook/addon-actions';
 

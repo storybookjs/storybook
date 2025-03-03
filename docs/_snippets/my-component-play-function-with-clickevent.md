@@ -1,7 +1,7 @@
 ```ts filename="MyComponent.stories.ts" renderer="angular" language="ts"
 import type { Meta, StoryObj } from '@storybook/angular';
 
-import { fireEvent, userEvent, within } from '@storybook/test';
+import { fireEvent, userEvent, within } from 'storybook/internal/test';
 
 import { MyComponent } from './MyComponent.component';
 
@@ -39,7 +39,7 @@ export const FireEventExample: Story = {
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
-  import { fireEvent, userEvent, within } from '@storybook/test';
+  import { fireEvent, userEvent, within } from 'storybook/internal/test';
 
   import MyComponent from './MyComponent.svelte';
 
@@ -74,7 +74,7 @@ export const FireEventExample: Story = {
 ```
 
 ```js filename="MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF"
-import { fireEvent, userEvent, within } from '@storybook/test';
+import { fireEvent, userEvent, within } from 'storybook/internal/test';
 
 import MyComponent from './MyComponent.svelte';
 
@@ -105,7 +105,7 @@ export const FireEventExample = {
 ```
 
 ```js filename="MyComponent.stories.js|jsx" renderer="common" language="js"
-import { fireEvent, userEvent, within } from '@storybook/test';
+import { fireEvent, userEvent, within } from 'storybook/internal/test';
 
 import { MyComponent } from './MyComponent';
 
@@ -139,7 +139,7 @@ export const FireEventExample = {
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
-  import { fireEvent, userEvent, within } from '@storybook/test';
+  import { fireEvent, userEvent, within } from 'storybook/internal/test';
 
   import MyComponent from './MyComponent.svelte';
 
@@ -176,7 +176,7 @@ export const FireEventExample = {
 ```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="CSF"
 import type { Meta, StoryObj } from '@storybook/svelte';
 
-import { fireEvent, userEvent, within } from '@storybook/test';
+import { fireEvent, userEvent, within } from 'storybook/internal/test';
 
 import MyComponent from './MyComponent.svelte';
 
@@ -213,7 +213,7 @@ export const FireEventExample: Story = {
 // Replace your-framework with the name of your framework
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
-import { fireEvent, userEvent, within } from '@storybook/test';
+import { fireEvent, userEvent, within } from 'storybook/internal/test';
 
 import { MyComponent } from './MyComponent';
 
@@ -250,7 +250,7 @@ export const FireEventExample: Story = {
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
-  import { fireEvent, userEvent, within } from '@storybook/test';
+  import { fireEvent, userEvent, within } from 'storybook/internal/test';
 
   import MyComponent from './MyComponent.svelte';
 
@@ -287,7 +287,7 @@ export const FireEventExample: Story = {
 ```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
 import type { Meta, StoryObj } from '@storybook/svelte';
 
-import { fireEvent, userEvent, within } from '@storybook/test';
+import { fireEvent, userEvent, within } from 'storybook/internal/test';
 
 import MyComponent from './MyComponent.svelte';
 
@@ -324,7 +324,7 @@ export const FireEventExample: Story = {
 // Replace your-framework with the name of your framework
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
-import { fireEvent, userEvent, within } from '@storybook/test';
+import { fireEvent, userEvent, within } from 'storybook/internal/test';
 
 import { MyComponent } from './MyComponent';
 
@@ -358,7 +358,7 @@ export const FireEventExample: Story = {
 ```
 
 ```js filename="MyComponent.stories.js" renderer="web-components" language="js"
-import { fireEvent, userEvent, within } from '@storybook/test';
+import { fireEvent, userEvent, within } from 'storybook/internal/test';
 
 export default {
   component: 'demo-my-component',
@@ -388,7 +388,7 @@ export const FireEventExample = {
 
 ```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts"
 import type { Meta, StoryObj } from '@storybook/web-components';
-import { fireEvent, userEvent, within } from '@storybook/test';
+import { fireEvent, userEvent, within } from 'storybook/internal/test';
 
 const meta: Meta = {
   component: 'demo-my-component',

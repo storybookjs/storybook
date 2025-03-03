@@ -33,14 +33,14 @@ export default async function transform(info: FileInfo) {
                 path.insertAfter(
                   t.importDeclaration(
                     [t.importNamespaceSpecifier(t.identifier('test'))],
-                    t.stringLiteral('@storybook/test')
+                    t.stringLiteral('storybook/internal/test')
                   )
                 );
               }
             }
           });
         }
-        path.get('source').replaceWith(t.stringLiteral('@storybook/test'));
+        path.get('source').replaceWith(t.stringLiteral('storybook/internal/test'));
       }
     },
     Identifier: (path) => {

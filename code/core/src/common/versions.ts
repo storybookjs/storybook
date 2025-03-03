@@ -51,7 +51,6 @@ export default {
   '@storybook/instrumenter': '9.0.0-alpha.0',
   '@storybook/react-dom-shim': '9.0.0-alpha.0',
   '@storybook/source-loader': '9.0.0-alpha.0',
-  '@storybook/test': '9.0.0-alpha.0',
   '@storybook/preset-create-react-app': '9.0.0-alpha.0',
   '@storybook/preset-html-webpack': '9.0.0-alpha.0',
   '@storybook/preset-preact-webpack': '9.0.0-alpha.0',

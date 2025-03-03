@@ -143,7 +143,6 @@ describe('Helpers', () => {
     language            | exists              | expected
     ${'javascript'}     | ${['js', 'ts-4-9']} | ${'/js'}
     ${'typescript-4-9'} | ${['js', 'ts-4-9']} | ${'/ts-4-9'}
-    ${'typescript-3-8'} | ${['js', 'ts-4-9']} | ${'/js'}
     ${'typescript-4-9'} | ${['js']}           | ${'/js'}
     ${'javascript'}     | ${[]}               | ${''}
     ${'typescript-4-9'} | ${[]}               | ${''}

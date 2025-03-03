@@ -353,7 +353,7 @@ describe('Detect', () => {
     ).resolves.toBe(SupportedLanguage.TYPESCRIPT_4_9);
   });
 
-  it(`should return language typescript if the dependency is =TS4.9beta`, async () => {
+  it(`should return language JavaScript if the dependency is =TS4.9beta`, async () => {
     await expect(
       detectLanguage({
         retrievePackageJson: () =>

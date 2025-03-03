@@ -5,8 +5,9 @@ import {
 } from 'storybook/internal/core-events';
 
 import { global as globalThis } from '@storybook/global';
-import { expect, userEvent, within } from '@storybook/test';
-import type { Meta, StoryFn, StoryObj } from '@storybook/vue3';
+import type { Meta, StoryFn, StoryObj } frostorybook/testue3';
+
+import { expect, userEvent, within } from 'storybook/test';
 
 import ReactiveArgs from './ReactiveArgs.vue';
 

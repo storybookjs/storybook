@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-import { expect, fn, mocked, userEvent, within } from '@storybook/test';
-
 import { action } from '@storybook/addon-actions';
+
+import { expect, fn, mocked, userEvent, within } from 'storybook/test';
 
 import { __definePreview } from '../preview';
 import { Button } from './Button';
+
+storybook / test;
 
 const preview = __definePreview({});
 

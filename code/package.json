@@ -153,7 +153,6 @@
     "@storybook/source-loader": "workspace:*",
     "@storybook/svelte": "workspace:*",
     "@storybook/svelte-webpack5": "workspace:*",
-    "@storybook/test": "workspace:*",
     "@storybook/testing-library": "next",
     "@storybook/vue3": "workspace:*",
     "@storybook/vue3-vite": "workspace:*",

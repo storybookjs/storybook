@@ -5,9 +5,10 @@ import { LocationProvider } from 'storybook/internal/router';
 import { styled } from 'storybook/internal/theming';
 
 import type { Meta, StoryObj } from '@storybook/react';
-import { fn } from '@storybook/test';
 
 import { action } from '@storybook/addon-actions';
+
+import { fn } from 'storybook/test';
 
 import MobileNavigationStoriesMeta from '../mobile/navigation/MobileNavigation.stories';
 import { Layout } from './Layout';

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 
 import type { Meta, StoryObj } from '@storybook/react';
-import { expect, findByText, fireEvent, fn } from '@storybook/test';
+
+import { expect, findByText, fireEvent, fn } from 'storybook/test';
 
 import { WithResults } from './FileSearchList.stories';
 import { FileSearchModal } from './FileSearchModal';

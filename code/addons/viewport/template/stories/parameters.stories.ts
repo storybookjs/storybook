@@ -1,5 +1,5 @@
 import { global as globalThis } from '@storybook/global';
-import { expect } from '@storybook/test';
+import { expect } from 'storybook/test';
 
 import { MINIMAL_VIEWPORTS } from '@storybook/addon-viewport';
 

@@ -4,9 +4,9 @@ import { ManagerContext } from 'storybook/internal/manager-api';
 import { ThemeProvider, convert, themes } from 'storybook/internal/theming';
 
 import type { Meta, StoryObj } from '@storybook/react';
-import { fn } from '@storybook/test';
 
 import type axe from 'axe-core';
+import { fn } from 'storybook/test';
 
 import { A11YPanel } from './A11YPanel';
 import { A11yContext } from './A11yContext';

@@ -1,4 +1,4 @@
-import { expect, fn } from '@storybook/test';
+import { expect, fn } from 'storybook/test';
 
 const meta = { component: globalThis.Components.Button };
 

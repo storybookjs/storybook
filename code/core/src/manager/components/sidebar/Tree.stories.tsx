@@ -6,9 +6,9 @@ import {
   type IndexHash,
   ManagerContext,
 } from 'storybook/internal/manager-api';
+import { expect, fn, userEvent, within } from 'storybook/internal/test';
 
 import type { Meta, StoryObj } from '@storybook/react';
-import { expect, fn, userEvent, within } from '@storybook/test';
 
 import { action } from '@storybook/addon-actions';
 

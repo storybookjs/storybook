@@ -1,7 +1,7 @@
 ```ts filename="Form.stories.ts" renderer="angular" language="ts"
 import type { Meta, StoryObj } from '@storybook/angular';
 
-import { userEvent, waitFor, within, expect, fn } from '@storybook/test';
+import { userEvent, waitFor, within, expect, fn } from 'storybook/internal/test';
 
 import { Form } from './Form.component';
 
@@ -40,7 +40,7 @@ export const Submitted: Story = {
 ```
 
 ```js filename="Form.stories.js|jsx" renderer="common" language="js"
-import { userEvent, waitFor, within, expect, fn } from '@storybook/test';
+import { userEvent, waitFor, within, expect, fn } from 'storybook/internal/test';
 
 import { Form } from './Form';
 
@@ -80,7 +80,7 @@ export const Submitted = {
 // Replace your-framework with the name of your framework
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
-import { userEvent, waitFor, within, expect, fn } from '@storybook/test';
+import { userEvent, waitFor, within, expect, fn } from 'storybook/internal/test';
 
 import { Form } from './Form';
 
@@ -122,7 +122,7 @@ export const Submitted: Story = {
 // Replace your-framework with the name of your framework
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
-import { userEvent, waitFor, within, expect, fn } from '@storybook/test';
+import { userEvent, waitFor, within, expect, fn } from 'storybook/internal/test';
 
 import { Form } from './Form';
 
@@ -161,7 +161,7 @@ export const Submitted: Story = {
 ```
 
 ```js filename="Form.stories.js" renderer="web-components" language="js"
-import { userEvent, waitFor, within, expect, fn } from '@storybook/test';
+import { userEvent, waitFor, within, expect, fn } from 'storybook/internal/test';
 
 export default {
   component: 'my-form-element',
@@ -197,7 +197,7 @@ export const Submitted = {
 ```ts filename="Form.stories.ts" renderer="web-components" language="ts"
 import type { Meta, StoryObj } from '@storybook/web-components';
 
-import { userEvent, waitFor, within, expect, fn } from '@storybook/test';
+import { userEvent, waitFor, within, expect, fn } from 'storybook/internal/test';
 
 const meta: Meta = {
   component: 'my-form-element',

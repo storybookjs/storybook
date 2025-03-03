@@ -2,11 +2,11 @@ import React from 'react';
 
 import { TooltipLinkList } from 'storybook/internal/components';
 import type { State } from 'storybook/internal/manager-api';
+import { expect, screen, userEvent, within } from 'storybook/internal/test';
 import { styled } from 'storybook/internal/theming';
 
 import { LinkIcon } from '@storybook/icons';
 import type { Meta, StoryObj } from '@storybook/react';
-import { expect, screen, userEvent, within } from '@storybook/test';
 
 import { useMenu } from '../../container/Menu';
 import { LayoutProvider } from '../layout/LayoutProvider';

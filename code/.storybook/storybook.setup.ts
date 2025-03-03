@@ -1,7 +1,8 @@
 import { beforeAll, vi, expect as vitestExpect } from 'vitest';
 
+import { userEvent as storybookEvent, expect as storybookExpect } from 'storybook/internal/test';
+
 import { setProjectAnnotations } from '@storybook/react';
-import { userEvent as storybookEvent, expect as storybookExpect } from '@storybook/test';
 
 import preview from './preview';
 

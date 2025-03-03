@@ -4,10 +4,10 @@ import {
   STORY_ARGS_UPDATED,
   UPDATE_STORY_ARGS,
 } from 'storybook/internal/core-events';
+import { expect, waitFor, within } from 'storybook/internal/test';
 import type { PlayFunctionContext } from 'storybook/internal/types';
 
 import { global as globalThis } from '@storybook/global';
-import { expect, waitFor, within } from '@storybook/test';
 
 export default {
   component: globalThis.Components.Button,

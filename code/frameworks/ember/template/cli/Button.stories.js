@@ -1,4 +1,4 @@
-import { fn } from '@storybook/test';
+import { fn } from 'storybook/internal/test';
 
 import { action } from '@storybook/addon-actions';
 import { linkTo } from '@storybook/addon-links';

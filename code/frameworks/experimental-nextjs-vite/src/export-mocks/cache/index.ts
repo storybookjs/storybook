@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import { fn } from '@storybook/test';
+import { fn } from 'storybook/internal/test';
 
 // biome-ignore lint/suspicious/noExplicitAny: <explanation>
 type Callback = (...args: any[]) => Promise<any>;

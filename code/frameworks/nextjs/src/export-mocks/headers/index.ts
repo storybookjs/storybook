@@ -1,4 +1,4 @@
-import { fn } from '@storybook/test';
+import { fn } from 'storybook/internal/test';
 
 import { draftMode as originalDraftMode } from 'next/dist/server/request/draft-mode';
 import * as headers from 'next/dist/server/request/headers';

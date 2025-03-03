@@ -1,6 +1,6 @@
 import Head from 'next/head';
 import React from 'react';
-import { expect, waitFor } from '@storybook/test';
+import { expect, waitFor } from 'storybook/internal/test';
 import { StoryObj } from '@storybook/react';
 
 function Component() {

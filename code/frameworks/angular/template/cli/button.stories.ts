@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/angular';
-import { fn } from '@storybook/test';
+import { fn } from 'storybook/internal/test';
 
 import { ButtonComponent } from './button.component';
 

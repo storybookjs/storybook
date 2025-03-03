@@ -1,7 +1,7 @@
 ```ts filename="RegistrationForm.stories.ts" renderer="angular" language="ts"
 import type { Meta, StoryObj } from '@storybook/angular';
 
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/internal/test';
 
 import { RegistrationForm } from './RegistrationForm.component';
 
@@ -47,7 +47,7 @@ export const FilledForm: Story = {
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
-  import { userEvent, within } from '@storybook/test';
+  import { userEvent, within } from 'storybook/internal/test';
 
   import RegistrationForm from './RegistrationForm.svelte';
 
@@ -90,7 +90,7 @@ export const FilledForm: Story = {
 ```
 
 ```js filename="RegistrationForm.stories.js" renderer="svelte" language="js" tabTitle="CSF"
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/internal/test';
 
 import RegistrationForm from './RegistrationForm.svelte';
 
@@ -130,7 +130,7 @@ export const FilledForm = {
 ```
 
 ```js filename="RegistrationForm.stories.js|jsx" renderer="common" language="js"
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/internal/test';
 
 import { RegistrationForm } from './RegistrationForm';
 
@@ -173,7 +173,7 @@ export const FilledForm = {
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
-  import { userEvent, within } from '@storybook/test';
+  import { userEvent, within } from 'storybook/internal/test';
 
   import RegistrationForm from './RegistrationForm.svelte';
 
@@ -218,7 +218,7 @@ export const FilledForm = {
 ```ts filename="RegistrationForm.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="CSF"
 import type { Meta, StoryObj } from '@storybook/svelte';
 
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/internal/test';
 
 import RegistrationForm from './RegistrationForm.svelte';
 
@@ -264,7 +264,7 @@ export const FilledForm: Story = {
 // Replace your-framework with the name of your framework
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/internal/test';
 
 import { RegistrationForm } from './RegistrationForm';
 
@@ -310,7 +310,7 @@ export const FilledForm: Story = {
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
-  import { userEvent, within } from '@storybook/test';
+  import { userEvent, within } from 'storybook/internal/test';
 
   import RegistrationForm from './RegistrationForm.svelte';
 
@@ -355,7 +355,7 @@ export const FilledForm: Story = {
 ```ts filename="RegistrationForm.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
 import type { Meta, StoryObj } from '@storybook/svelte';
 
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/internal/test';
 
 import RegistrationForm from './RegistrationForm.svelte';
 
@@ -401,7 +401,7 @@ export const FilledForm: Story = {
 // Replace your-framework with the name of your framework
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/internal/test';
 
 import { RegistrationForm } from './RegistrationForm';
 
@@ -444,7 +444,7 @@ export const FilledForm: Story = {
 ```
 
 ```js filename="RegistrationForm.stories.js" renderer="web-components" language="js"
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/internal/test';
 
 export default {
   component: 'demo-registration-form',
@@ -484,7 +484,7 @@ export const FilledForm = {
 ```ts filename="RegistrationForm.stories.ts" renderer="web-components" language="ts"
 import type { Meta, StoryObj } from '@storybook/web-components';
 
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/internal/test';
 
 const meta: Meta = {
   component: 'demo-registration-form',

@@ -1,4 +1,3 @@
-import { global as globalThis } from '@storybook/global';
 import {
   expect,
   fireEvent,
@@ -7,7 +6,9 @@ import {
   waitFor,
   waitForElementToBeRemoved,
   within,
-} from '@storybook/test';
+} from 'storybook/internal/test';
+
+import { global as globalThis } from '@storybook/global';
 
 export default {
   component: globalThis.Components.Form,

@@ -101,6 +101,9 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
   const nonPresetEntries = allEntries.filter((f) => !parse(f).name.includes('preset'));
 
   const noExternal = [...extraNoExternal];
+  if (tsConfigExists) {
+    await Promise.all(entries.map(generateDTSMapperFile));
+  }
 
   if (formats.includes('esm')) {
     tasks.push(
@@ -210,10 +213,6 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
         },
       })
     );
-  }
-
-  if (tsConfigExists && !optimized) {
-    tasks.push(...entries.map(generateDTSMapperFile));
   }
 
   await Promise.all(tasks);

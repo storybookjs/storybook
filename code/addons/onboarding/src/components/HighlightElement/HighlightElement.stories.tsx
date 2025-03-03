@@ -1,7 +1,8 @@
 import React from 'react';
 
+import { expect, waitFor, within } from 'storybook/internal/test';
+
 import type { Meta, StoryObj } from '@storybook/react';
-import { expect, waitFor, within } from '@storybook/test';
 
 import { HighlightElement } from './HighlightElement';
 

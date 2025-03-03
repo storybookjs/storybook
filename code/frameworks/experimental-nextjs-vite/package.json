@@ -107,7 +107,6 @@
     "@storybook/builder-vite": "workspace:*",
     "@storybook/react": "workspace:*",
     "@storybook/react-vite": "workspace:*",
-    "@storybook/test": "workspace:*",
     "styled-jsx": "5.1.6",
     "vite-plugin-storybook-nextjs": "^1.1.0"
   },
@@ -117,7 +116,6 @@
     "typescript": "^5.7.3"
   },
   "peerDependencies": {
-    "@storybook/test": "workspace:*",
     "next": "^14.1.0 || ^15.0.0",
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
     "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",

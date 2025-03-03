@@ -3,11 +3,11 @@ import React from 'react';
 import type { Listener } from 'storybook/internal/channels';
 import { type TestProviders } from 'storybook/internal/core-events';
 import { ManagerContext, mockChannel } from 'storybook/internal/manager-api';
+import { fireEvent, fn } from 'storybook/internal/test';
 import { styled } from 'storybook/internal/theming';
 import { Addon_TypesEnum } from 'storybook/internal/types';
 
 import type { Meta, StoryObj } from '@storybook/react';
-import { fireEvent, fn } from '@storybook/test';
 
 import { TestingModule } from './TestingModule';
 

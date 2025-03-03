@@ -1,9 +1,9 @@
 import React from 'react';
 
 import type { PlayFunctionContext } from 'storybook/internal/csf';
+import { within } from 'storybook/internal/test';
 
 import type { Meta, StoryObj } from '@storybook/react';
-import { within } from '@storybook/test';
 
 import * as ExampleStories from '../examples/ArgTypesParameters.stories';
 import * as SubcomponentsExampleStories from '../examples/ArgTypesWithSubcomponentsParameters.stories';

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-import { expect, fn, mocked, userEvent, within } from '@storybook/test';
+import { expect, fn, mocked, userEvent, within } from 'storybook/internal/test';
 
 import type { HandlerFunction } from '@storybook/addon-actions';
 import { action } from '@storybook/addon-actions';

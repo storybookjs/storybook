@@ -1,4 +1,4 @@
-import { fn } from '@storybook/test';
+import { fn } from 'storybook/internal/test';
 
 export default {
   component: globalThis.Components.Button,

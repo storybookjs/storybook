@@ -1,4 +1,4 @@
-import { expect, fn, within } from '@storybook/test';
+import { expect, fn, within } from 'storybook/internal/test';
 
 import Hrefs from './Hrefs.svelte';
 

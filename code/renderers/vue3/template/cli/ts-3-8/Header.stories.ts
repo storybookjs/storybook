@@ -1,4 +1,5 @@
-import { fn } from '@storybook/test';
+import { fn } from 'storybook/internal/test';
+
 import type { Meta, StoryObj } from '@storybook/vue3';
 
 import MyHeader from './Header.vue';

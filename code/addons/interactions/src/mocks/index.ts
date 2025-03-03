@@ -1,4 +1,4 @@
-import { type Call, CallStates } from '@storybook/instrumenter';
+import { type Call, CallStates } from 'storybook/internal/instrumenter';
 
 export const getCalls = (finalStatus: CallStates) => {
   const calls: Call[] = [

@@ -7,10 +7,9 @@ import React from 'react';
 
 import { satisfies } from 'storybook/internal/common';
 import type { Canvas } from 'storybook/internal/csf';
+import type { Mock } from 'storybook/internal/test';
+import { fn } from 'storybook/internal/test';
 import type { Args, StoryAnnotations, StrictArgs } from 'storybook/internal/types';
-
-import type { Mock } from '@storybook/test';
-import { fn } from '@storybook/test';
 
 import { expectTypeOf } from 'expect-type';
 import type { SetOptional } from 'type-fest';

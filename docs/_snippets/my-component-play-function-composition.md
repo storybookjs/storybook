@@ -1,7 +1,7 @@
 ```ts filename="MyComponent.stories.ts" renderer="angular" language="ts"
 import type { Meta, StoryObj } from '@storybook/angular';
 
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/test';
 
 import { MyComponent } from './MyComponent.component';
 
@@ -45,7 +45,7 @@ export const CombinedStories: Story = {
 ```
 
 ```js filename="MyComponent.stories.js|jsx" renderer="common" language="js"
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/test';
 
 import { MyComponent } from './MyComponent';
 
@@ -89,7 +89,7 @@ export const CombinedStories = {
 // Replace your-framework with the name of your framework
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/test';
 
 import { MyComponent } from './MyComponent';
 
@@ -136,7 +136,7 @@ export const CombinedStories: Story = {
 // Replace your-framework with the name of your framework
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/test';
 
 import { MyComponent } from './MyComponent';
 
@@ -180,7 +180,7 @@ export const CombinedStories: Story = {
 ```
 
 ```js filename="MyComponent.stories.js" renderer="web-components" language="js"
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/test';
 
 export default {
   component: 'demo-my-component',
@@ -220,7 +220,7 @@ export const CombinedStories = {
 
 ```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts"
 import type { Meta, StoryObj } from '@storybook/web-components';
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/test';
 
 const meta: Meta = {
   component: 'demo-my-component',

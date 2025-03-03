@@ -6,7 +6,8 @@ import { styled } from 'storybook/internal/theming';
 
 import { LinkIcon } from '@storybook/icons';
 import type { Meta, StoryObj } from '@storybook/react';
-import { expect, screen, userEvent, within } from '@storybook/test';
+
+import { expect, screen, userEvent, within } from 'storybook/test';
 
 import { useMenu } from '../../container/Menu';
 import { LayoutProvider } from '../layout/LayoutProvider';

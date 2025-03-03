@@ -60,7 +60,7 @@ export class ImplicitActionsDuringRendering extends StorybookError {
         We detected that you use an implicit action arg while ${data.phase} of your story.  
         ${data.deprecated ? `\nThis is deprecated and won't work in Storybook 8 anymore.\n` : ``}
         Please provide an explicit spy to your args like this:
-          import { fn } from '@storybook/test';
+          import { fn } from 'storybook/test';
           ... 
           args: {
            ${data.name}: fn()

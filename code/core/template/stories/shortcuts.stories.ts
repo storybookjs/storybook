@@ -2,7 +2,7 @@ import { PREVIEW_KEYDOWN } from 'storybook/internal/core-events';
 import type { PlayFunctionContext } from 'storybook/internal/csf';
 
 import { global as globalThis } from '@storybook/global';
-import { expect, fn, userEvent, within } from '@storybook/test';
+import { expect, fn, userEvent, within } from 'storybook/test';
 
 export default {
   component: globalThis.Components.Form,

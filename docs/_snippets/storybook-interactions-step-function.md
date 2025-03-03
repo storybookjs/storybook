@@ -1,7 +1,7 @@
 ```ts filename="MyComponent.stories.ts" renderer="angular" language="ts"
 import type { Meta, StoryObj } from '@storybook/angular';
 
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/test';
 
 import { MyComponent } from './MyComponent.component';
 
@@ -33,7 +33,7 @@ export const Submitted: Story = {
 ```
 
 ```js filename="MyComponent.stories.js|jsx" renderer="common" language="js"
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/test';
 
 import { MyComponent } from './MyComponent';
 
@@ -65,7 +65,7 @@ export const Submitted = {
 // Replace your-framework with the name of your framework
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/test';
 
 import { MyComponent } from './MyComponent';
 
@@ -100,7 +100,7 @@ export const Submitted: Story = {
 // Replace your-framework with the name of your framework
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/test';
 
 import { MyComponent } from './MyComponent';
 
@@ -132,7 +132,7 @@ export const Submitted: Story = {
 ```
 
 ```js filename="MyComponent.stories.js" renderer="web-components" language="js"
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/test';
 
 export default = {
   component: 'my-component',
@@ -161,7 +161,7 @@ export const Submitted = {
 ```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts"
 import type { Meta, StoryObj } from '@storybook/web-components';
 
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/test';
 
 const meta: Meta = {
   title: 'MyComponent',

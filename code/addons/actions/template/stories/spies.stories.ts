@@ -1,5 +1,5 @@
 import { global as globalThis } from '@storybook/global';
-import { spyOn } from '@storybook/test';
+import { spyOn } from 'storybook/test';
 
 const meta = {
   component: globalThis.Components.Button,

@@ -1,9 +1,9 @@
 import React from 'react';
 
+import { type Call, CallStates } from 'storybook/internal/instrumenter';
 import { styled, useTheme } from 'storybook/internal/theming';
 
 import { CheckIcon, CircleIcon, PlayIcon, StopAltIcon } from '@storybook/icons';
-import { type Call, CallStates } from '@storybook/instrumenter';
 
 import { transparentize } from 'polished';
 

@@ -1,4 +1,5 @@
-import { CallStates } from '@storybook/instrumenter';
+import { CallStates } from 'storybook/internal/instrumenter';
+
 import type { Meta, StoryObj } from '@storybook/react';
 import { expect, userEvent, within } from '@storybook/test';
 

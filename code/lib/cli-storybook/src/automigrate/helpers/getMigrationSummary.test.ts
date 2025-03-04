@@ -27,8 +27,6 @@ describe('getMigrationSummary', () => {
 
   const installationMetadata: InstallationMetadata = {
     duplicatedDependencies: {
-      '@storybook/instrumenter': ['6.0.0', '7.1.0'],
-      'storybook/internal/common': ['6.0.0', '7.1.0'],
       '@storybook/addon-essentials': ['7.0.0', '7.1.0'],
     },
     dependencies: {},

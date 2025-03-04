@@ -1,8 +1,7 @@
 import * as React from 'react';
 
+import { type Call, CallStates, type ControlStates } from 'storybook/internal/instrumenter';
 import { styled } from 'storybook/internal/theming';
-
-import { type Call, CallStates, type ControlStates } from '@storybook/instrumenter';
 
 import { transparentize } from 'polished';
 

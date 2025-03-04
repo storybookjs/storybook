@@ -8,8 +8,6 @@ import { expect, fn, mocked, userEvent, within } from 'storybook/test';
 import { __definePreview } from '../preview';
 import { Button } from './Button';
 
-storybook / test;
-
 const preview = __definePreview({});
 
 const meta = preview.meta({

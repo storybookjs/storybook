@@ -44,25 +44,26 @@ const Item = styled.button<{ active?: boolean }>(
     textDecoration: 'none',
     padding: '10px 15px',
     cursor: 'pointer',
+    color: theme.textMutedColor,
     fontWeight: theme.typography.weight.bold,
     fontSize: theme.typography.size.s2 - 1,
     lineHeight: 1,
     height: 40,
     border: 'none',
-    borderTop: '3px solid transparent',
     borderBottom: '3px solid transparent',
     background: 'transparent',
 
     '&:focus': {
       outline: '0 none',
-      borderBottom: `3px solid ${theme.color.secondary}`,
+      borderColor: theme.color.secondary,
     },
   }),
   ({ active, theme }) =>
     active
       ? {
           opacity: 1,
-          borderBottom: `3px solid ${theme.color.secondary}`,
+          color: theme.color.secondary,
+          borderColor: theme.color.secondary,
         }
       : {}
 );

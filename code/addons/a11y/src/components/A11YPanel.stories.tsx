@@ -31,6 +31,9 @@ const meta: Meta = {
       </ManagerContext.Provider>
     ),
   ],
+  parameters: {
+    layout: 'fullscreen',
+  },
 } satisfies Meta<typeof A11YPanel>;
 
 export default meta;

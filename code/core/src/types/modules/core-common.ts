@@ -160,17 +160,22 @@ export interface LoadOptions {
   extendServer?: (server: HttpServer) => void;
 }
 
-export interface CLIOptions {
+export interface CLIBaseOptions {
+  disableTelemetry?: boolean;
+  enableCrashReports?: boolean;
+  configDir?: string;
+  loglevel?: string;
+  quiet?: boolean;
+}
+
+export interface CLIOptions extends CLIBaseOptions {
   port?: number;
   ignorePreview?: boolean;
   previewUrl?: string;
   forceBuildPreview?: boolean;
-  disableTelemetry?: boolean;
-  enableCrashReports?: boolean;
   host?: string;
   initialPath?: string;
   exactPort?: boolean;
-  configDir?: string;
   https?: boolean;
   sslCa?: string[];
   sslCert?: string;
@@ -179,8 +184,6 @@ export interface CLIOptions {
   managerCache?: boolean;
   open?: boolean;
   ci?: boolean;
-  loglevel?: string;
-  quiet?: boolean;
   versionUpdates?: boolean;
   docs?: boolean;
   test?: boolean;

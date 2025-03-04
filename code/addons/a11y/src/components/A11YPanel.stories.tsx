@@ -1,7 +1,7 @@
 import React from 'react';
 
 import { ManagerContext } from 'storybook/internal/manager-api';
-import { ThemeProvider, convert, themes } from 'storybook/internal/theming';
+import { styled } from 'storybook/internal/theming';
 
 import type { Meta, StoryObj } from '@storybook/react';
 import { fn } from '@storybook/test';
@@ -11,6 +11,19 @@ import type axe from 'axe-core';
 import { A11YPanel } from './A11YPanel';
 import { A11yContext } from './A11yContext';
 import type { A11yContextStore } from './A11yContext';
+
+const StyledWrapper = styled.div(({ theme }) => ({
+  backgroundColor: theme.background.content,
+  fontSize: theme.typography.size.s2 - 1,
+  color: theme.color.defaultText,
+  display: 'block',
+  height: '100%',
+  position: 'absolute',
+  left: 0,
+  right: 0,
+  bottom: 0,
+  overflow: 'auto',
+}));
 
 const managerContext: any = {
   state: {},
@@ -25,9 +38,9 @@ const meta: Meta = {
   decorators: [
     (Story) => (
       <ManagerContext.Provider value={managerContext}>
-        <ThemeProvider theme={convert(themes.light)}>
+        <StyledWrapper id="panel-tab-content">
           <Story />
-        </ThemeProvider>
+        </StyledWrapper>
       </ManagerContext.Provider>
     ),
   ],

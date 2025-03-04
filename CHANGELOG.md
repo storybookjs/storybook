@@ -1,3 +1,7 @@
+## 8.6.4
+
+- Manager: Add Content-Type to prevent reliance on content type sniffing, fixing Cloud IDEs - [#30606](https://github.com/storybookjs/storybook/pull/30606), thanks @GCHQDeveloper548!
+
 ## 8.6.3
 
 - CSF Factories: Align addon-essentials import with other addons - [#30716](https://github.com/storybookjs/storybook/pull/30716), thanks @kasperpeulen!

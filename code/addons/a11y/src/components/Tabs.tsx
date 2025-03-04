@@ -1,13 +1,15 @@
 import * as React from 'react';
 
+import { IconButton, TooltipNote, WithTooltip } from 'storybook/internal/components';
 import { styled } from 'storybook/internal/theming';
 
-import type { NodeResult, Result } from 'axe-core';
+import { EyeCloseIcon, EyeIcon, SyncIcon } from '@storybook/icons';
+
+import type { Result } from 'axe-core';
 import { useResizeDetector } from 'react-resize-detector';
 
 import type { RuleType } from './A11YPanel';
 import { useA11yContext } from './A11yContext';
-import HighlightToggle from './Report/HighlightToggle';
 
 // TODO: reuse the Tabs component from storybook/internal/theming instead of re-building identical functionality
 
@@ -16,12 +18,6 @@ const Container = styled.div({
   position: 'relative',
   minHeight: '100%',
 });
-
-const HighlightToggleLabel = styled.label(({ theme }) => ({
-  cursor: 'pointer',
-  userSelect: 'none',
-  color: theme.color.dark,
-}));
 
 const GlobalToggle = styled.div(() => ({
   alignItems: 'center',
@@ -69,14 +65,17 @@ const Item = styled.button<{ active?: boolean }>(
 );
 
 const TabsWrapper = styled.div({});
+const ActionsWrapper = styled.div({ display: 'flex', gap: 6 });
 
 const List = styled.div(({ theme }) => ({
   boxShadow: `${theme.appBorderColor} 0 -1px 0 0 inset`,
   background: theme.background.app,
   display: 'flex',
   flexWrap: 'wrap',
+  alignItems: 'center',
   justifyContent: 'space-between',
   whiteSpace: 'nowrap',
+  paddingRight: 10,
 }));
 
 interface TabsProps {
@@ -88,17 +87,13 @@ interface TabsProps {
   }[];
 }
 
-function retrieveAllNodesFromResults(items: Result[]): NodeResult[] {
-  return items.reduce((acc, item) => acc.concat(item.nodes), [] as NodeResult[]);
-}
-
 export const Tabs: React.FC<TabsProps> = ({ tabs }) => {
-  const { ref, width } = useResizeDetector({
+  const { ref } = useResizeDetector({
     refreshMode: 'debounce',
     handleHeight: false,
     handleWidth: true,
   });
-  const { tab: activeTab, setTab } = useA11yContext();
+  const { tab: activeTab, setTab, toggleHighlight, highlighted, handleManual } = useA11yContext();
 
   const handleToggle = React.useCallback(
     (event: React.SyntheticEvent) => {
@@ -107,8 +102,6 @@ export const Tabs: React.FC<TabsProps> = ({ tabs }) => {
     [setTab]
   );
 
-  const highlightToggleId = `${tabs[activeTab].type}-global-checkbox`;
-  const highlightLabel = `Highlight results`;
   return (
     <Container ref={ref}>
       <List>
@@ -124,17 +117,31 @@ export const Tabs: React.FC<TabsProps> = ({ tabs }) => {
             </Item>
           ))}
         </TabsWrapper>
-        {tabs[activeTab].items.length > 0 ? (
-          <GlobalToggle>
-            <HighlightToggleLabel htmlFor={highlightToggleId}>
-              {highlightLabel}
-            </HighlightToggleLabel>
-            <HighlightToggle
-              toggleId={highlightToggleId}
-              elementsToHighlight={retrieveAllNodesFromResults(tabs[activeTab].items)}
-            />
-          </GlobalToggle>
-        ) : null}
+        <ActionsWrapper>
+          <WithTooltip
+            as="div"
+            hasChrome={false}
+            placement="top"
+            tooltip={<TooltipNote note="Highlight elements with accessibility violations" />}
+            trigger="hover"
+          >
+            <IconButton onClick={toggleHighlight} active={highlighted}>
+              {highlighted ? <EyeCloseIcon /> : <EyeIcon />}
+              {highlighted ? 'Hide highlights' : 'Show highlights'}
+            </IconButton>
+          </WithTooltip>
+          <WithTooltip
+            as="div"
+            hasChrome={false}
+            placement="top"
+            tooltip={<TooltipNote note="Rerun the accessibility scan" />}
+            trigger="hover"
+          >
+            <IconButton onClick={handleManual} aria-label="Rerun accessibility scan">
+              <SyncIcon />
+            </IconButton>
+          </WithTooltip>
+        </ActionsWrapper>
       </List>
       {tabs[activeTab].panel}
     </Container>

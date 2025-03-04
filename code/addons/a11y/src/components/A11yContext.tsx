@@ -34,9 +34,8 @@ export interface Results {
 
 export interface A11yContextStore {
   results: Results;
-  highlighted: string[];
-  toggleHighlight: (target: string[], highlight: boolean) => void;
-  clearHighlights: () => void;
+  highlighted: boolean;
+  toggleHighlight: () => void;
   tab: number;
   setTab: (index: number) => void;
   status: Status;
@@ -58,9 +57,8 @@ export const A11yContext = createContext<A11yContextStore>({
     incomplete: [],
     violations: [],
   },
-  highlighted: [],
+  highlighted: false,
   toggleHighlight: () => {},
-  clearHighlights: () => {},
   tab: 0,
   setTab: () => {},
   setStatus: () => {},
@@ -97,27 +95,14 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
   const [tab, setTab] = useState(0);
   const [error, setError] = React.useState<unknown>(undefined);
   const [status, setStatus] = useState<Status>(getInitialStatus(manual));
-  const [highlighted, setHighlighted] = useState<string[]>([]);
+  const [highlighted, setHighlighted] = useState(false);
 
   const { storyId } = useStorybookState();
   const storyStatus = api.getCurrentStoryStatus();
 
-  const handleToggleHighlight = useCallback((target: string[], highlight: boolean) => {
-    setHighlighted((prevHighlighted) =>
-      highlight
-        ? [...prevHighlighted, ...target]
-        : prevHighlighted.filter((t) => !target.includes(t))
-    );
-  }, []);
-
-  const handleClearHighlights = useCallback(() => setHighlighted([]), []);
-
-  const handleSetTab = useCallback(
-    (index: number) => {
-      handleClearHighlights();
-      setTab(index);
-    },
-    [handleClearHighlights]
+  const handleToggleHighlight = useCallback(
+    () => setHighlighted((prevHighlighted) => !prevHighlighted),
+    []
   );
 
   const handleError = useCallback((err: unknown) => {
@@ -190,8 +175,11 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
   }, [getInitialStatus, manual]);
 
   useEffect(() => {
-    emit(HIGHLIGHT, { elements: highlighted, color: colorsByType[tab] });
-  }, [emit, highlighted, tab]);
+    const elements = highlighted
+      ? results.violations.flatMap((v) => v.nodes.map((n) => n.target))
+      : [];
+    emit(HIGHLIGHT, { elements, color: colorsByType[tab] });
+  }, [emit, highlighted, results, tab]);
 
   const discrepancy: TestDiscrepancy = useMemo(() => {
     const storyStatusA11y = storyStatus?.[TEST_PROVIDER_ID]?.status;
@@ -221,9 +209,8 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
         results,
         highlighted,
         toggleHighlight: handleToggleHighlight,
-        clearHighlights: handleClearHighlights,
         tab,
-        setTab: handleSetTab,
+        setTab,
         status,
         setStatus,
         error,

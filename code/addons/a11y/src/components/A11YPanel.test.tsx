@@ -79,7 +79,7 @@ describe('A11YPanel', () => {
       status: 'ready',
       tab: 0,
       handleManual,
-      highlighted: [],
+      highlighted: false,
       error: null,
     } as Partial<A11yContextStore> as any);
 

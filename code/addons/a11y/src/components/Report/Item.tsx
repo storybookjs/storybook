@@ -8,7 +8,6 @@ import type { Result } from 'axe-core';
 
 import type { RuleType } from '../A11YPanel';
 import { Elements } from './Elements';
-import HighlightToggle from './HighlightToggle';
 import { Info } from './Info';
 import { Tags } from './Tags';
 
@@ -44,17 +43,6 @@ const HeaderBar = styled.div(({ theme }) => ({
   },
 }));
 
-const HighlightToggleElement = styled.span({
-  fontWeight: 'normal',
-  float: 'right',
-  marginRight: 15,
-  alignSelf: 'center',
-  input: {
-    margin: 0,
-    display: 'block',
-  },
-});
-
 interface ItemProps {
   item: Result;
   type: RuleType;
@@ -65,7 +53,6 @@ export const Item = (props: ItemProps) => {
   const [open, onToggle] = useState(false);
 
   const { item, type } = props;
-  const highlightToggleId = `${type}-${item.id}`;
 
   return (
     <Fragment>
@@ -78,9 +65,6 @@ export const Item = (props: ItemProps) => {
           />
           {item.help}
         </HeaderBar>
-        <HighlightToggleElement>
-          <HighlightToggle toggleId={highlightToggleId} elementsToHighlight={item.nodes} />
-        </HighlightToggleElement>
       </Wrapper>
       {open ? (
         <Fragment>

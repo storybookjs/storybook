@@ -112,9 +112,8 @@ const Template = (args: Pick<A11yContextStore, 'results' | 'error' | 'status' | 
   <A11yContext.Provider
     value={{
       handleManual: fn(),
-      highlighted: [],
+      highlighted: false,
       toggleHighlight: fn(),
-      clearHighlights: fn(),
       tab: 0,
       setTab: fn(),
       setStatus: fn(),

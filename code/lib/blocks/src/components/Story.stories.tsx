@@ -11,7 +11,8 @@ import type { PreviewWeb } from 'storybook/internal/preview-api';
 import type { ModuleExport, WebRenderer } from 'storybook/internal/types';
 
 import type { Meta, ReactRenderer, StoryObj } from '@storybook/react';
-import { within } from '@storybook/test';
+
+import { within } from 'storybook/test';
 
 import type { DocsContextProps } from '../blocks';
 import * as ButtonStories from '../examples/Button.stories';

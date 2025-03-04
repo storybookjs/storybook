@@ -5,7 +5,7 @@ import { instrument } from 'storybook/internal/instrumenter';
 
 import { global } from '@storybook/global';
 
-import * as chai from 'chai';
+import { Assertion } from 'chai';
 
 import { expect as rawExpect } from './expect';
 import {
@@ -35,7 +35,7 @@ export const { expect } = instrument(
   {
     getKeys: (obj: Record<string, unknown>, depth) => {
       const privateApi = ['assert', '__methods', '__flags', '_obj'];
-      if (obj.constructor === chai.Assertion) {
+      if (obj.constructor === Assertion) {
         const keys = Object.keys(Object.getPrototypeOf(obj)).filter(
           (it) => !privateApi.includes(it)
         );

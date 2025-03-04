@@ -15,7 +15,7 @@ For example, clicking a button to open/close a dialog box, dragging a list item 
 
 ### Powered by Testing Library and Vitest
 
-The interactions are written using a package called `@storybook/test`. It provides Storybook-instrumented versions of [Testing Library](https://testing-library.com/) and [Vitest](https://vitest.dev). That gives you a familiar developer-friendly syntax to interact with the DOM and make assertions, but with extra telemetry to help with debugging.
+The interactions are written using a package called `storybook/test`. It provides Storybook-instrumented versions of [Testing Library](https://testing-library.com/) and [Vitest](https://vitest.dev). That gives you a familiar developer-friendly syntax to interact with the DOM and make assertions, but with extra telemetry to help with debugging.
 
 ## Set up the interactions addon
 
@@ -51,7 +51,7 @@ Now when you run Storybook, the Interactions addon will be enabled.
 
 Interactions run as part of the `play` function of your stories. We rely on Testing Library to do the heavy lifting.
 
-Make sure to import the Storybook wrappers for Vitest and Testing Library via `@storybook/test` rather than importing the original packages directly.
+Make sure to import the Storybook wrappers for Vitest and Testing Library via `storybook/test` rather than importing the original packages directly.
 
 {/* prettier-ignore-start */}
 
@@ -66,5 +66,5 @@ While you can refer to the [Testing Library documentation](https://testing-libra
 Any `args` that have been marked as an Action, either using the [argTypes annotation](./actions.mdx#action-argtype-annotation) or the [argTypesRegex](./actions.mdx#automatically-matching-args), will be automatically converted to a [Jest mock function](https://jestjs.io/docs/mock-function-api) (spy). This allows you to make assertions about calls to these functions.
 
 <Callout variant="info">
-  To mock functions in your Storybook stories for reliable and isolated component testing, use the named `fn` import from `@storybook/test`.
+  To mock functions in your Storybook stories for reliable and isolated component testing, use the named `fn` import from `storybook/test`.
 </Callout>

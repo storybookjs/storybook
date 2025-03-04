@@ -7,7 +7,8 @@ import { styled } from 'storybook/internal/theming';
 import { Addon_TypesEnum } from 'storybook/internal/types';
 
 import type { Meta, StoryObj } from '@storybook/react';
-import { fireEvent, fn } from '@storybook/test';
+
+import { fireEvent, fn } from 'storybook/test';
 
 import { TestingModule } from './TestingModule';
 

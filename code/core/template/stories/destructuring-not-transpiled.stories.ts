@@ -1,5 +1,6 @@
 import { global as globalThis } from '@storybook/global';
-import { expect } from '@storybook/test';
+
+import { expect } from 'storybook/test';
 
 export default {
   component: globalThis.Components.Button,

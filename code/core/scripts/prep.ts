@@ -25,6 +25,7 @@ import { generateTypesMapperFiles } from './helpers/generateTypesMapperFiles';
 import { isBrowser, isNode, noExternals } from './helpers/isEntryType';
 import { modifyThemeTypes } from './helpers/modifyThemeTypes';
 import { generateSourceFiles } from './helpers/sourcefiles';
+import { externalPlugin } from './no-externals-plugin';
 
 async function run() {
   const flags = process.argv.slice(2);
@@ -256,6 +257,11 @@ async function run() {
                     ...esbuildDefaultOptions.external,
                     ...entry.externals,
                   ].filter((e) => !entry.internals.includes(e)),
+                  plugins: [
+                    externalPlugin({
+                      noExternal: entry.noExternal,
+                    }),
+                  ],
                   format: 'cjs',
                   outdir: dirname(entry.file).replace('src', 'dist'),
                   outExtension: {
@@ -276,6 +282,11 @@ async function run() {
                     ...entry.externals,
                   ].filter((e) => !entry.internals.includes(e)),
                   outdir: dirname(entry.file).replace('src', 'dist'),
+                  plugins: [
+                    externalPlugin({
+                      noExternal: entry.noExternal,
+                    }),
+                  ],
                   outExtension: {
                     '.js': '.js',
                   },
@@ -292,6 +303,11 @@ async function run() {
                     ...esbuildDefaultOptions.external,
                     ...entry.externals,
                   ].filter((e) => !entry.internals.includes(e)),
+                  plugins: [
+                    externalPlugin({
+                      noExternal: entry.noExternal,
+                    }),
+                  ],
                   format: 'esm',
                   outdir: dirname(entry.file).replace('src', 'dist'),
                   outExtension: {

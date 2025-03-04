@@ -105,6 +105,11 @@ export interface Presets {
     config?: StorybookConfigRaw['staticDirs'],
     args?: any
   ): Promise<StorybookConfigRaw['staticDirs']>;
+  apply(
+    extension: 'llms',
+    config?: StorybookConfigRaw['llms'],
+    args?: any
+  ): Promise<StorybookConfigRaw['llms']>;
   apply<T>(extension: string, config?: T, args?: unknown): Promise<T>;
 }
 
@@ -307,6 +312,25 @@ export type DocsOptions = {
   docsMode?: boolean;
 };
 
+export interface LlmsLink {
+  title: string;
+  href: string;
+  description?: string;
+}
+
+export interface LlmsSection {
+  title: string;
+  links?: LlmsLink[];
+}
+
+export interface LlmsOptions {
+  title: string;
+  description?: string;
+  details?: string;
+  sections?: LlmsSection[];
+  includeDocs?: boolean;
+}
+
 export interface TestBuildFlags {
   /**
    * The package @storybook/blocks will be excluded from the bundle, even when imported in e.g. the
@@ -384,6 +408,9 @@ export interface StorybookConfigRaw {
     backgroundsStoryGlobals?: boolean;
     /** Set NODE_ENV to development in built Storybooks for better testability and debuggability */
     developmentModeForBuild?: boolean;
+
+    /** Enable experimental llms.txt support */
+    experimentalLlmsTxt?: boolean;
   };
 
   build?: TestBuildConfig;
@@ -421,6 +448,8 @@ export interface StorybookConfigRaw {
   managerHead?: string;
 
   tags?: TagsOptions;
+
+  llms?: LlmsOptions | string;
 }
 
 /**
@@ -526,6 +555,9 @@ export interface StorybookConfig {
 
   /** Configure non-standard tag behaviors */
   tags?: PresetValue<StorybookConfigRaw['tags']>;
+
+  /** Configure llms.txt metadata */
+  llms?: PresetValue<StorybookConfigRaw['llms']>;
 }
 
 export type PresetValue<T> = T | ((config: T, options: Options) => T | Promise<T>);

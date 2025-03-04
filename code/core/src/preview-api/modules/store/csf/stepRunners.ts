@@ -11,8 +11,8 @@ import type { Renderer, StepRunner } from 'storybook/internal/types';
  * step('label', () => {});
  * ```
  *
- * ...and runs it. The prototypical example is from `@storybook/addon-interactions` where the step
- * runner will decorate all instrumented code inside the step with information about the label.
+ * ...and runs it. The prototypical example is from `@storybook/addon-test` where the step runner
+ * will decorate all instrumented code inside the step with information about the label.
  *
  * In theory it is possible to have more than one addon that wants to run steps; they can be
  * composed together in a similar fashion to decorators. In some ways step runners are like

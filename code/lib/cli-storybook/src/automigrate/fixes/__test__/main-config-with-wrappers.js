@@ -7,7 +7,7 @@ const config = {
   addons: [
     wrapForPnp('@storybook/addon-links'),
     wrapForPnp('@storybook/addon-essentials'),
-    wrapForPnp('@storybook/addon-interactions'),
+    wrapForPnp('@storybook/addon-test'),
   ],
   framework: {
     name: wrapForPnp('@storybook/angular'),

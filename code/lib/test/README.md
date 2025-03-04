@@ -17,7 +17,7 @@ Note that this package is not an addon, so you don't have to add it to your `mai
 ## Usage
 
 The test package exports instrumented versions of [@vitest/spy](https://vitest.dev/api/mock.html), [@vitest/expect](https://vitest.dev/api/expect.html) (based on [chai](https://www.chaijs.com/)), [@testing-library/dom](https://testing-library.com/docs/dom-testing-library/intro) and [@testing-library/user-event](https://testing-library.com/docs/user-event/intro).
-The instrumentation makes sure you can debug those methods in the [addon-interactions](https://storybook.js.org/addons/@storybook/addon-interactions) panel.
+The instrumentation makes sure you can debug those methods in the [addon-test](https://storybook.js.org/addons/@storybook/addon-test) panel.
 
 ```ts
 // Button.stories.ts

@@ -50,15 +50,7 @@ npx storybook@latest init --builder vite && npm run storybook
 5. Remove Storybook Webpack cache (`rm -rf node_modules/.cache`)
 6. Update your `/public/index.html` file for Vite (be sure there are no `%PUBLIC_URL%` inside it, which is a CRA variable)
 7. Be sure that any files containing JSX syntax use a `.jsx` or `.tsx` file extension, which [Vite requires](https://vitejs.dev/guide/features.html#jsx). This includes `.storybook/preview.jsx` if it contains JSX syntax.
-8. If you are using `@storybook/addon-interactions`, for now you'll need to add a [workaround](https://github.com/storybookjs/storybook/issues/18399) for jest-mock relying on the node `global` variable by creating a `.storybook/preview-head.html` file containing the following:
-
-```html
-<script>
-  window.global = window;
-</script>
-```
-
-9.  Start up your Storybook using the same `yarn storybook` or `npm run storybook` commands you are used to.
+8. Start up your Storybook using the same `yarn storybook` or `npm run storybook` commands you are used to.
 
 For other details about the differences between Vite and Webpack projects, be sure to read through the [Vite documentation](https://vitejs.dev/).
 

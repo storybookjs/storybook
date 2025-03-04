@@ -5,7 +5,7 @@ import {
 } from 'storybook/internal/core-events';
 
 import { global as globalThis } from '@storybook/global';
-import type { Meta, StoryObj } fstorybook/test/vue3';
+import type { Meta, StoryObj } from '@storybook/vue3';
 
 import { expect, within } from 'storybook/test';
 import { h } from 'vue';

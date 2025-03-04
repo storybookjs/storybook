@@ -1,4 +1,5 @@
 import { global as globalThis } from '@storybook/global';
+
 import { userEvent, within } from 'storybook/test';
 
 export default {

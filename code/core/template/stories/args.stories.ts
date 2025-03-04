@@ -6,6 +6,7 @@ import {
 import type { PartialStoryFn, PlayFunctionContext, StoryContext } from 'storybook/internal/types';
 
 import { global as globalThis } from '@storybook/global';
+
 import { expect, within } from 'storybook/test';
 
 function pick(obj, keys) {

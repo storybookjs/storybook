@@ -183,7 +183,8 @@
     },
     "./test": {
       "types": "./dist/test/index.d.ts",
-      "import": "./dist/test/index.js"
+      "import": "./dist/test/index.js",
+      "require": "./dist/test/index.cjs"
     },
     "./internal/preview/runtime": {
       "import": "./dist/preview/runtime.js"
@@ -305,6 +306,8 @@
     "@testing-library/dom": "10.4.0",
     "@testing-library/jest-dom": "6.5.0",
     "@testing-library/user-event": "14.5.2",
+    "@vitest/expect": "2.0.5",
+    "@vitest/spy": "2.0.5",
     "better-opn": "^3.0.2",
     "browser-assert": "^1.2.1",
     "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0",
@@ -359,7 +362,6 @@
     "@types/react-transition-group": "^4",
     "@types/semver": "^7.5.8",
     "@types/ws": "^8",
-    "@vitest/spy": "^2.0.5",
     "@vitest/utils": "^2.1.1",
     "@yarnpkg/esbuild-plugin-pnp": "^3.0.0-rc.10",
     "@yarnpkg/fslib": "2.10.3",
@@ -369,6 +371,7 @@
     "babel-plugin-react-docgen": "4.2.1",
     "boxen": "^7.1.1",
     "browser-dtector": "^3.4.0",
+    "bundle-require": "^5.1.0",
     "camelcase": "^8.0.0",
     "chai": "^5.1.1",
     "cli-table3": "^0.6.1",

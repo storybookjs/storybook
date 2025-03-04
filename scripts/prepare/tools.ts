@@ -79,7 +79,8 @@ export const defineEntry =
     targets: ('node' | 'browser')[],
     generateDTS: boolean = true,
     externals: string[] = [],
-    internals: string[] = []
+    internals: string[] = [],
+    noExternal: string[] = []
   ) => ({
     file: slash(join(cwd, entry)),
     node: targets.includes('node'),
@@ -87,6 +88,7 @@ export const defineEntry =
     dts: generateDTS,
     externals,
     internals,
+    noExternal,
   });
 
 export const merge = <T extends Record<string, any>>(...objects: T[]): T =>

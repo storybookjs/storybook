@@ -191,7 +191,7 @@
     "eslint-plugin-import": "^2.29.1",
     "eslint-plugin-local-rules": "portal:../scripts/eslint-plugin-local-rules",
     "eslint-plugin-playwright": "^1.6.2",
-    "eslint-plugin-storybook": "0.11.3--canary.187.1af857a.0",
+    "eslint-plugin-storybook": "0.11.4--canary.194.79b9b44.0",
     "github-release-from-changelog": "^2.1.1",
     "glob": "^10.0.0",
     "happy-dom": "^14.12.0",

@@ -47,4 +47,4 @@ export * from './js-package-manager';
 
 export { versions };
 
-export { createFileSystemCache } from './utils/file-cache';
+export { createFileSystemCache, FileSystemCache } from './utils/file-cache';

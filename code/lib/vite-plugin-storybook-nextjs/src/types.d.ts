@@ -30,3 +30,15 @@ declare module "next/dist/compiled/react" {
     defaultValue: T,
   ): Context<T>;
 }
+
+// TODO: Should be removed once storybook/test is available
+declare module "storybook/test" {
+  import type { Mock } from "vitest";
+  export type { Mock };
+  // biome-ignore lint/suspicious/noExplicitAny: will be removed
+  export function fn<A = any, B = any>(...args: any[]): Mock;
+  // biome-ignore lint/suspicious/noExplicitAny: will be removed
+  export function fn<A = any, B = any>(
+    implementation: (...args: A[]) => B,
+  ): Mock;
+}

@@ -1,6 +1,6 @@
-import { fn } from "@storybook/test";
 import { draftMode as originalDraftMode } from "next/dist/server/request/draft-mode";
 import * as headers from "next/dist/server/request/headers";
+import { fn } from "storybook/test";
 import type { Mock } from "vitest";
 
 // mock utilities/overrides (as of Next v14.2.0)

@@ -46,7 +46,7 @@
     "@storybook/global": "^5.0.0",
     "@testing-library/dom": "10.4.0",
     "@testing-library/jest-dom": "6.5.0",
-    "@testing-library/user-event": "14.5.2",
+    "@testing-library/user-event": "14.6.1",
     "@vitest/expect": "2.0.5",
     "@vitest/spy": "2.0.5"
   },

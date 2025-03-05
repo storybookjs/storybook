@@ -93,7 +93,7 @@ export const addWorkaroundResolutions = async ({
     ...additionalReact19Resolutions,
     '@testing-library/dom': '^9.3.4',
     '@testing-library/jest-dom': '^6.5.0',
-    '@testing-library/user-event': '^14.5.2',
+    '@testing-library/user-event': '^14.6.1',
     typescript: '~5.7.3',
   };
 

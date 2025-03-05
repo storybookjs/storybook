@@ -1,6 +1,6 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
-import { type NodePath, generate, parser, types as t, traverse } from 'storybook/internal/babel';
+import { type NodePath, parser, recast, types as t, traverse } from 'storybook/internal/babel';
 import { commonGlobOptions } from 'storybook/internal/common';
 
 import pLimit from 'p-limit';
@@ -37,7 +37,16 @@ export interface ConsolidatedImportsOptions {
 }
 
 function transformImports(source: string) {
-  const ast = parser.parse(source);
+  const ast = recast.parse(source, {
+    parser: {
+      parse(code: string) {
+        return parser.parse(code, {
+          sourceType: 'unambiguous',
+          plugins: ['typescript', 'jsx'],
+        });
+      },
+    },
+  });
   let hasChanges = false;
 
   traverse(ast, {
@@ -67,7 +76,7 @@ function transformImports(source: string) {
     },
   });
 
-  return hasChanges ? generate(ast).code : null;
+  return hasChanges ? recast.print(ast).code : null;
 }
 
 export const consolidatedImports: Fix<ConsolidatedImportsOptions> = {
@@ -75,7 +84,7 @@ export const consolidatedImports: Fix<ConsolidatedImportsOptions> = {
   versionRange: ['<8.0.0', '>=8.0.0'],
   promptType: 'auto',
 
-  async check({ packageManager }): Promise<ConsolidatedImportsOptions | null> {
+  async check(): Promise<ConsolidatedImportsOptions | null> {
     // eslint-disable-next-line depend/ban-dependencies
     const { globby } = await import('globby');
 

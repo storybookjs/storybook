@@ -1,12 +1,11 @@
 import { readFile, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
 
 import { commonGlobOptions, getProjectRoot } from 'storybook/internal/common';
 
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
-import { type ConsolidatedPackage, consolidatedPackages } from '../helpers/consolidated-packages';
+import { consolidatedPackages } from '../helpers/consolidated-packages';
 import type { Fix } from '../types';
 
 export interface ConsolidatedPackageJsonOptions {
@@ -51,7 +50,7 @@ function transformPackageJson(content: string): string | null {
 
 export const consolidatedPackageJson: Fix<ConsolidatedPackageJsonOptions> = {
   id: 'consolidated-package-json',
-  versionRange: ['<8.0.0', '>=8.0.0'],
+  versionRange: ['<9.0.0', '>=9.0.0'],
   promptType: 'auto',
 
   async check(): Promise<ConsolidatedPackageJsonOptions | null> {

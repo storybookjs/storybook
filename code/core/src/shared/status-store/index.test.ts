@@ -6,6 +6,7 @@ import { MockUniversalStore } from '../universal-store/mock';
 import { useUniversalStore } from '../universal-store/use-universal-store-manager';
 import {
   type Status,
+  type StatusStoreEvent,
   StatusValue,
   type StatusesByStoryIdAndTypeId,
   createStatusStore,
@@ -128,7 +129,10 @@ describe('statusStore', () => {
       it('should update existing statuses and add new ones in a single operation', () => {
         // Arrange - create a status store with initial statuses
         const { fullStatusStore } = createStatusStore({
-          universalStatusStore: new MockUniversalStore<StatusesByStoryIdAndTypeId>({
+          universalStatusStore: new MockUniversalStore<
+            StatusesByStoryIdAndTypeId,
+            StatusStoreEvent
+          >({
             ...UNIVERSAL_STATUS_STORE_OPTIONS,
             initialState: {
               'story-1': {
@@ -189,7 +193,10 @@ describe('statusStore', () => {
         // Arrange - set up the store and a mock subscriber
         const mockSubscriber = vi.fn();
         const { fullStatusStore } = createStatusStore({
-          universalStatusStore: new MockUniversalStore<StatusesByStoryIdAndTypeId>({
+          universalStatusStore: new MockUniversalStore<
+            StatusesByStoryIdAndTypeId,
+            StatusStoreEvent
+          >({
             ...UNIVERSAL_STATUS_STORE_OPTIONS,
             initialState: {
               'story-1': {
@@ -220,7 +227,10 @@ describe('statusStore', () => {
         // Arrange - set up the store and a mock subscriber
         const mockSubscriber = vi.fn();
         const { fullStatusStore } = createStatusStore({
-          universalStatusStore: new MockUniversalStore<StatusesByStoryIdAndTypeId>({
+          universalStatusStore: new MockUniversalStore<
+            StatusesByStoryIdAndTypeId,
+            StatusStoreEvent
+          >({
             ...UNIVERSAL_STATUS_STORE_OPTIONS,
             initialState: {
               'story-1': {

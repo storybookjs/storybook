@@ -14,6 +14,8 @@ export const StatusValue = {
 
 export type StatusTypeId = string;
 export type StatusValueType = (typeof StatusValue)[keyof typeof StatusValue];
+type StatusByTypeId = Record<StatusTypeId, Status>;
+export type StatusesByStoryIdAndTypeId = Record<StoryId, StatusByTypeId>;
 
 export interface Status {
   value: StatusValueType;
@@ -31,16 +33,20 @@ export interface Status {
 //   item: API_PreparedIndexEntry & { status: Record<string, Status | null> }
 // ) => boolean;
 
-type StatusByTypeId = Record<StatusTypeId, Status>;
-export type StatusesByStoryIdAndTypeId = Record<StoryId, StatusByTypeId>;
-
-type UseStatusStore = (selector?: (statuses: StatusesByStoryIdAndTypeId) => any) => any;
-
 export const UNIVERSAL_STATUS_STORE_OPTIONS: StoreOptions<StatusesByStoryIdAndTypeId> = {
   id: 'storybook/status',
   leader: true,
   initialState: {},
 } as const;
+
+const StatusStoreEventType = {
+  SELECT: 'select',
+} as const;
+
+export type StatusStoreEvent = {
+  type: typeof StatusStoreEventType.SELECT;
+  payload: Status[];
+};
 
 type StatusStore = {
   get: () => StatusesByStoryIdAndTypeId;
@@ -51,37 +57,46 @@ type StatusStore = {
       previousStatuses: StatusesByStoryIdAndTypeId
     ) => void
   ) => () => void;
+  onSelect: (listener: (selectedStatuses: Status[]) => void) => () => void;
   unset: (storyIds?: StoryId[]) => void;
-  typeId: StatusTypeId | undefined;
+};
+type FullStatusStore = StatusStore & {
+  selectStatuses: (statuses: Status[]) => void;
+  typeId: undefined;
+};
+type StatusStoreByTypeId = StatusStore & {
+  typeId: StatusTypeId;
 };
 
+type UseStatusStore = (selector?: (statuses: StatusesByStoryIdAndTypeId) => any) => any;
+
 export function createStatusStore(params: {
-  universalStatusStore: UniversalStore<StatusesByStoryIdAndTypeId>;
+  universalStatusStore: UniversalStore<StatusesByStoryIdAndTypeId, StatusStoreEvent>;
   useUniversalStore?: never;
 }): {
-  getStatusStoreByTypeId: (typeId: StatusTypeId) => StatusStore;
-  fullStatusStore: StatusStore;
+  getStatusStoreByTypeId: (typeId: StatusTypeId) => StatusStoreByTypeId;
+  fullStatusStore: FullStatusStore;
 };
 export function createStatusStore(params: {
-  universalStatusStore: UniversalStore<StatusesByStoryIdAndTypeId>;
+  universalStatusStore: UniversalStore<StatusesByStoryIdAndTypeId, StatusStoreEvent>;
   useUniversalStore: typeof managerUseUniversalStore;
 }): {
-  getStatusStoreByTypeId: (typeId: StatusTypeId) => StatusStore;
-  fullStatusStore: StatusStore;
+  getStatusStoreByTypeId: (typeId: StatusTypeId) => StatusStoreByTypeId;
+  fullStatusStore: FullStatusStore;
   useStatusStore: UseStatusStore;
 };
 export function createStatusStore({
   universalStatusStore,
   useUniversalStore,
 }: {
-  universalStatusStore: UniversalStore<StatusesByStoryIdAndTypeId>;
+  universalStatusStore: UniversalStore<StatusesByStoryIdAndTypeId, StatusStoreEvent>;
   useUniversalStore?: typeof managerUseUniversalStore;
 }): {
-  getStatusStoreByTypeId: (typeId: StatusTypeId) => StatusStore;
-  fullStatusStore: StatusStore;
+  getStatusStoreByTypeId: (typeId: StatusTypeId) => StatusStoreByTypeId;
+  fullStatusStore: FullStatusStore;
   useStatusStore?: UseStatusStore;
 } {
-  const fullStatusStore: StatusStore = {
+  const fullStatusStore: FullStatusStore = {
     get() {
       return universalStatusStore.getState();
     },
@@ -109,6 +124,14 @@ export function createStatusStore({
         listener(state, prevState);
       });
     },
+    onSelect(listener) {
+      return universalStatusStore.subscribe(StatusStoreEventType.SELECT, (event) => {
+        listener(event.payload);
+      });
+    },
+    selectStatuses: (statuses: Status[]) => {
+      universalStatusStore.send({ type: StatusStoreEventType.SELECT, payload: statuses });
+    },
     unset(storyIds?: StoryId[]): void {
       // If no storyIds are provided, remove all statuses
       if (!storyIds) {
@@ -129,7 +152,7 @@ export function createStatusStore({
     typeId: undefined,
   };
 
-  const getStatusStoreByTypeId = (typeId: StatusTypeId): StatusStore => ({
+  const getStatusStoreByTypeId = (typeId: StatusTypeId): StatusStoreByTypeId => ({
     get: fullStatusStore.get,
     set(statuses): void {
       universalStatusStore.setState((state) => {
@@ -156,6 +179,13 @@ export function createStatusStore({
       });
     },
     onStatusChange: fullStatusStore.onStatusChange,
+    onSelect(listener) {
+      return universalStatusStore.subscribe(StatusStoreEventType.SELECT, (event) => {
+        if (event.payload.some((status) => status.typeId === typeId)) {
+          listener(event.payload);
+        }
+      });
+    },
     unset(storyIds?: StoryId[]): void {
       universalStatusStore.setState((state) => {
         const newState = { ...state };

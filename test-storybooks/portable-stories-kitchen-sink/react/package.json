@@ -93,7 +93,7 @@
     "@storybook/react-vite": "^8.0.0",
     "@swc/core": "^1.4.2",
     "@swc/jest": "^0.2.36",
-    "@testing-library/jest-dom": "6.6.3",
+    "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
     "@types/identity-obj-proxy": "^3",
     "@types/react": "^19.0.8",

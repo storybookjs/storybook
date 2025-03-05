@@ -34,8 +34,8 @@ export const addonsAPI: Fix<AddonsAPIRunOptions> = {
       - ${picocolors.cyan(`@storybook/addons`)}
       
       This package has been deprecated and replaced with ${picocolors.cyan(
-        `@storybook/preview-api`
-      )} and ${picocolors.cyan(`@storybook/manager-api`)}.
+        `storybook/internal/preview-api`
+      )} and ${picocolors.cyan(`storybook/internal/manager-api`)}.
 
       You can find more information about the new addons API in the migration guide:
       ${picocolors.yellow(

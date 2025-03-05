@@ -176,6 +176,11 @@
       "import": "./dist/bin/index.js",
       "require": "./dist/bin/index.cjs"
     },
+    "./internal/instrumenter": {
+      "types": "./dist/instrumenter/index.d.ts",
+      "import": "./dist/instrumenter/index.js",
+      "require": "./dist/instrumenter/index.cjs"
+    },
     "./internal/preview/runtime": {
       "import": "./dist/preview/runtime.js"
     },
@@ -272,6 +277,9 @@
       ],
       "internal/cli/bin": [
         "./dist/cli/bin/index.d.ts"
+      ],
+      "internal/instrumenter": [
+        "./dist/instrumenter/index.d.ts"
       ]
     }
   },
@@ -287,7 +295,6 @@
     "prep": "jiti ./scripts/prep.ts"
   },
   "dependencies": {
-    "@storybook/theming": "workspace:*",
     "better-opn": "^3.0.2",
     "browser-assert": "^1.2.1",
     "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0",
@@ -342,6 +349,7 @@
     "@types/react-transition-group": "^4",
     "@types/semver": "^7.5.8",
     "@types/ws": "^8",
+    "@vitest/utils": "^2.1.1",
     "@yarnpkg/esbuild-plugin-pnp": "^3.0.0-rc.10",
     "@yarnpkg/fslib": "2.10.3",
     "@yarnpkg/libzip": "2.3.0",

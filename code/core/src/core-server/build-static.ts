@@ -1,5 +1,4 @@
-import { existsSync } from 'node:fs';
-import { cp, mkdir, readdir } from 'node:fs/promises';
+import { cp, mkdir } from 'node:fs/promises';
 import { rm } from 'node:fs/promises';
 import { dirname, join, relative, resolve } from 'node:path';
 

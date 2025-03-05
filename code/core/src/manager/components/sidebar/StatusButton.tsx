@@ -1,7 +1,6 @@
 import { IconButton } from 'storybook/internal/components';
 import { styled } from 'storybook/internal/theming';
-
-import type { API_StatusValue } from '@storybook/types';
+import type { API_StatusValue } from 'storybook/internal/types';
 
 import type { Theme } from '@emotion/react';
 import { darken, lighten, transparentize } from 'polished';

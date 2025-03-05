@@ -99,7 +99,7 @@ const config = defineMain({
     '@storybook/addon-essentials',
     '@storybook/addon-storysource',
     '@storybook/addon-designs',
-    '@storybook/experimental-addon-test',
+    '@storybook/addon-test',
     '@storybook/addon-a11y',
     '@chromatic-com/storybook',
   ],
@@ -143,9 +143,7 @@ const config = defineMain({
         alias: {
           ...(configType === 'DEVELOPMENT'
             ? {
-                '@storybook/components': componentsPath,
                 'storybook/internal/components': componentsPath,
-                '@storybook/manager-api': managerApiPath,
                 'storybook/internal/manager-api': managerApiPath,
                 'sb-original/image-context': imageContextPath,
               }

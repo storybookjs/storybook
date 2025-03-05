@@ -1,8 +1,7 @@
 import React from 'react';
 
+import type { Call } from 'storybook/internal/instrumenter';
 import { styled, typography } from 'storybook/internal/theming';
-
-import type { Call } from '@storybook/instrumenter';
 
 import { MethodCall, Node } from './MethodCall';
 

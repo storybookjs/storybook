@@ -121,7 +121,7 @@ export const consolidatedImports: Fix<ConsolidatedImportsOptions> = {
   },
 
   async run({ dryRun, result: { files } }) {
-    const pLimit = await import('p-limit');
+    const { default: pLimit } = await import('p-limit');
     const limit = pLimit(10);
     const errors: { file: string; error: Error }[] = [];
 

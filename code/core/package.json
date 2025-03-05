@@ -21,6 +21,12 @@
   "license": "MIT",
   "sideEffects": false,
   "type": "module",
+  "imports": {
+    "#utils": {
+      "storybook": "./template/stories/utils.mock.ts",
+      "default": "./template/stories/utils.ts"
+    }
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

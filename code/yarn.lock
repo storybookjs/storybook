@@ -7351,7 +7351,7 @@ __metadata:
     eslint-plugin-import: "npm:^2.29.1"
     eslint-plugin-local-rules: "portal:../scripts/eslint-plugin-local-rules"
     eslint-plugin-playwright: "npm:^1.6.2"
-    eslint-plugin-storybook: "npm:0.11.4--canary.194.79b9b44.0"
+    eslint-plugin-storybook: "npm:0.11.4"
     github-release-from-changelog: "npm:^2.1.1"
     glob: "npm:^10.0.0"
     happy-dom: "npm:^14.12.0"
@@ -15234,9 +15234,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-plugin-storybook@npm:0.11.4--canary.194.79b9b44.0":
-  version: 0.11.4--canary.194.79b9b44.0
-  resolution: "eslint-plugin-storybook@npm:0.11.4--canary.194.79b9b44.0"
+"eslint-plugin-storybook@npm:0.11.4":
+  version: 0.11.4
+  resolution: "eslint-plugin-storybook@npm:0.11.4"
   dependencies:
     "@storybook/csf": "npm:^0.1.11"
     "@typescript-eslint/utils": "npm:^8.8.1"
@@ -15244,7 +15244,7 @@ __metadata:
   peerDependencies:
     eslint: ">=8"
     typescript: ">=4.8.4 <5.8.0"
-  checksum: 10c0/f785b8acee68971a63d8a8d66426d1930964fcb0ffdb8e4c1a6d32389bb5f62a289b5cb1283aa831862ca70b086cd92d8ab9599b24648adcfed22c093113bce3
+  checksum: 10c0/98c7818f617725a5cee8b5598c0d9ad28f228f20bc1bd32dde523baa646fd2617121d4ca92138306d07829e181bcaf35505694d100f9bb04384955a1ed4ced4d
   languageName: node
   linkType: hard
 

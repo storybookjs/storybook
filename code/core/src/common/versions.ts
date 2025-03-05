@@ -48,7 +48,6 @@ export default {
   '@storybook/core-webpack': '9.0.0-alpha.0',
   'create-storybook': '9.0.0-alpha.0',
   '@storybook/csf-plugin': '9.0.0-alpha.0',
-  '@storybook/instrumenter': '9.0.0-alpha.0',
   '@storybook/react-dom-shim': '9.0.0-alpha.0',
   '@storybook/source-loader': '9.0.0-alpha.0',
   '@storybook/test': '9.0.0-alpha.0',

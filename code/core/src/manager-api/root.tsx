@@ -527,3 +527,8 @@ export { typesX as types };
 
 /* deprecated */
 export { mockChannel, type Addon, type AddonStore } from './lib/addons';
+
+export {
+  getStatusStoreByTypeId as experimental_getStatusStore,
+  useStatusStore as experimental_useStatusStore,
+} from './stores/status';

@@ -13,3 +13,4 @@ export { loadStorybook as experimental_loadStorybook } from './load';
 
 export { UniversalStore as experimental_UniversalStore } from '../shared/universal-store';
 export { MockUniversalStore as experimental_MockUniversalStore } from '../shared/universal-store/mock';
+export { getStatusStoreByTypeId as experimental_getStatusStore } from './stores/status';

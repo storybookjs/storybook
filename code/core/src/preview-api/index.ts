@@ -33,6 +33,10 @@ export { definePreview } from './addons';
 export { UniversalStore as experimental_UniversalStore } from '../shared/universal-store';
 export { useUniversalStore as experimental_useUniversalStore } from '../shared/universal-store/use-universal-store-preview';
 export { MockUniversalStore as experimental_MockUniversalStore } from '../shared/universal-store/mock';
+export {
+  getStatusStoreByTypeId as experimental_getStatusStore,
+  useStatusStore as experimental_useStatusStore,
+} from './stores/status';
 
 /** DOCS API */
 export { DocsContext } from './preview-web';

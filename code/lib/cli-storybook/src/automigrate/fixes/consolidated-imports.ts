@@ -3,7 +3,6 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { type NodePath, parser, recast, types as t, traverse } from 'storybook/internal/babel';
 import { commonGlobOptions } from 'storybook/internal/common';
 
-import pLimit from 'p-limit';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
@@ -122,6 +121,7 @@ export const consolidatedImports: Fix<ConsolidatedImportsOptions> = {
   },
 
   async run({ dryRun, result: { files } }) {
+    const pLimit = await import('p-limit');
     const limit = pLimit(10);
     const errors: { file: string; error: Error }[] = [];
 

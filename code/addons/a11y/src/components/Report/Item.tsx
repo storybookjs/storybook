@@ -1,5 +1,6 @@
 import React, { Fragment, useState } from 'react';
 
+import { IconButton } from 'storybook/internal/components';
 import { styled } from 'storybook/internal/theming';
 
 import { ChevronSmallDownIcon } from '@storybook/icons';
@@ -13,33 +14,29 @@ import { Tags } from './Tags';
 
 const Wrapper = styled.div(({ theme }) => ({
   display: 'flex',
+  flexDirection: 'column',
   width: '100%',
   borderBottom: `1px solid ${theme.appBorderColor}`,
-  '&:hover': {
-    background: theme.background.hoverable,
-  },
 }));
 
 const Icon = styled(ChevronSmallDownIcon)({
-  marginRight: 10,
   transition: 'transform 0.1s ease-in-out',
-  verticalAlign: 'inherit',
 });
 
 const HeaderBar = styled.div(({ theme }) => ({
-  padding: theme.layoutMargin,
-  paddingLeft: theme.layoutMargin - 3,
-  lineHeight: '20px',
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  padding: 5,
+  paddingLeft: 15,
+  minHeight: 40,
   background: 'none',
   color: 'inherit',
   textAlign: 'left',
   cursor: 'pointer',
-  borderLeft: '3px solid transparent',
   width: '100%',
-
-  '&:focus': {
-    outline: '0 none',
-    borderLeft: `3px solid ${theme.color.secondary}`,
+  '&:hover': {
+    color: theme.color.secondary,
   },
 }));
 
@@ -55,17 +52,13 @@ export const Item = (props: ItemProps) => {
   const { item, type } = props;
 
   return (
-    <Fragment>
-      <Wrapper>
-        <HeaderBar onClick={() => onToggle(!open)} role="button">
-          <Icon
-            style={{
-              transform: `rotate(${open ? 0 : -90}deg)`,
-            }}
-          />
-          {item.help}
-        </HeaderBar>
-      </Wrapper>
+    <Wrapper>
+      <HeaderBar onClick={() => onToggle(!open)} role="button">
+        <strong>{item.help}</strong>
+        <IconButton onClick={() => onToggle(!open)}>
+          <Icon style={{ transform: `rotate(${open ? -180 : 0}deg)` }} />
+        </IconButton>
+      </HeaderBar>
       {open ? (
         <Fragment>
           <Info item={item} key="info" />
@@ -73,6 +66,6 @@ export const Item = (props: ItemProps) => {
           <Tags tags={item.tags} key="tags" />
         </Fragment>
       ) : null}
-    </Fragment>
+    </Wrapper>
   );
 };

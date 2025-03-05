@@ -1,9 +1,8 @@
 import { lstatSync } from 'node:fs';
 import { basename, dirname, relative, resolve } from 'node:path';
 
-import type { NormalizedStoriesSpecifier, StoriesEntry } from '@storybook/core/types';
-
-import { InvalidStoriesEntryError } from '@storybook/core/server-errors';
+import { InvalidStoriesEntryError } from 'storybook/internal/server-errors';
+import type { NormalizedStoriesSpecifier, StoriesEntry } from 'storybook/internal/types';
 
 import * as pico from 'picomatch';
 import slash from 'slash';

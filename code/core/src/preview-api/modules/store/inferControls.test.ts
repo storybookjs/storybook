@@ -1,9 +1,8 @@
 import type { MockInstance } from 'vitest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { StoryContextForEnhancers } from '@storybook/core/types';
-
-import { logger } from '@storybook/core/client-logger';
+import { logger } from 'storybook/internal/client-logger';
+import type { StoryContextForEnhancers } from 'storybook/internal/types';
 
 import { argTypesEnhancers } from './inferControls';
 

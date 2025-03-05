@@ -1,12 +1,12 @@
 import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
-import type { DocsOptions, Options, Ref, TagsOptions } from '@storybook/core/types';
+import type { DocsOptions, Options, Ref, TagsOptions } from 'storybook/internal/types';
 
 import { render } from 'ejs';
 
 export const getTemplatePath = async (template: string) => {
-  return join(dirname(require.resolve('@storybook/core/package.json')), 'assets/server', template);
+  return join(dirname(require.resolve('storybook/package.json')), 'assets/server', template);
 };
 
 export const readTemplate = async (template: string) => {

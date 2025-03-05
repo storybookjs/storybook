@@ -2,15 +2,17 @@ import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { dirname, isAbsolute, join } from 'node:path';
 
-import type { Channel } from '@storybook/core/channels';
+import type { Channel } from 'storybook/internal/channels';
 import {
   getDirectoryFromWorkingDir,
   getPreviewBodyTemplate,
   getPreviewHeadTemplate,
   loadEnvs,
   removeAddon as removeAddonBase,
-} from '@storybook/core/common';
-import { telemetry } from '@storybook/core/telemetry';
+} from 'storybook/internal/common';
+import { readCsf } from 'storybook/internal/csf-tools';
+import { logger } from 'storybook/internal/node-logger';
+import { telemetry } from 'storybook/internal/telemetry';
 import type {
   CLIOptions,
   CoreConfig,
@@ -18,10 +20,7 @@ import type {
   Options,
   PresetProperty,
   PresetPropertyFn,
-} from '@storybook/core/types';
-
-import { readCsf } from '@storybook/core/csf-tools';
-import { logger } from '@storybook/core/node-logger';
+} from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 
@@ -44,7 +43,7 @@ const interpolate = (string: string, data: Record<string, string> = {}) =>
   Object.entries(data).reduce((acc, [k, v]) => acc.replace(new RegExp(`%${k}%`, 'g'), v), string);
 
 const defaultFavicon = join(
-  dirname(require.resolve('@storybook/core/package.json')),
+  dirname(require.resolve('storybook/package.json')),
   '/assets/browser/favicon.svg'
 );
 
@@ -369,7 +368,7 @@ export const tags = async (existing: any) => {
 export const managerEntries = async (existing: any, options: Options) => {
   return [
     join(
-      dirname(require.resolve('@storybook/core/package.json')),
+      dirname(require.resolve('storybook/package.json')),
       'dist/core-server/presets/common-manager.js'
     ),
     ...(existing || []),

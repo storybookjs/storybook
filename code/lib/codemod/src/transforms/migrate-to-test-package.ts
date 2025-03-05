@@ -1,7 +1,6 @@
 /* eslint-disable no-underscore-dangle */
-import { type BabelFile, core as babel, types as t } from '@storybook/core/babel';
-
-import { loadCsf, printCsf } from '@storybook/core/csf-tools';
+import { type BabelFile, core as babel, types as t } from 'storybook/internal/babel';
+import { loadCsf, printCsf } from 'storybook/internal/csf-tools';
 
 import type { FileInfo } from 'jscodeshift';
 import prettier from 'prettier';

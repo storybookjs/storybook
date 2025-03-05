@@ -69,7 +69,7 @@ export const run = async (args: unknown[], options: unknown) => {
 
   const isAlreadyPublished = await isVersionPublished({
     version,
-    packageName: '@storybook/core',
+    packageName: 'storybook',
     verbose,
   });
 

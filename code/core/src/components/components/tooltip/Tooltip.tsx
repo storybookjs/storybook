@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { type Color, lighten, styled } from '@storybook/core/theming';
+import { type Color, lighten, styled } from 'storybook/internal/theming';
 
 import memoize from 'memoizerific';
 

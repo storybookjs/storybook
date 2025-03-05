@@ -1,8 +1,8 @@
 import { dirname, join } from 'node:path';
 
-import type { JsPackageManager } from '@storybook/core/common';
-import { temporaryDirectory, versions } from '@storybook/core/common';
-import type { SupportedFrameworks } from '@storybook/core/types';
+import { temporaryDirectory, versions } from 'storybook/internal/common';
+import type { JsPackageManager } from 'storybook/internal/common';
+import type { SupportedFrameworks } from 'storybook/internal/types';
 
 import downloadTarballDefault from '@ndelangen/get-tarball';
 import getNpmTarballUrlDefault from 'get-npm-tarball-url';

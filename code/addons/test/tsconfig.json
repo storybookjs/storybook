@@ -2,8 +2,6 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "rootDir": "../../../",
-    "module": "Preserve",
-    "moduleResolution": "Bundler",
     "types": ["vitest"],
     "strict": true
   },

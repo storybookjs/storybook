@@ -1,4 +1,4 @@
-import { useEffect, useState } from '@storybook/core/preview-api';
+import { useEffect, useState } from 'storybook/internal/preview-api';
 
 import { isEqual } from 'es-toolkit';
 

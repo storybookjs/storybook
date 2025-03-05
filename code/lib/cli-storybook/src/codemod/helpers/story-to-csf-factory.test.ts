@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { formatFileContent } from '@storybook/core/common';
+import { formatFileContent } from 'storybook/internal/common';
 
 import path from 'path';
 import { dedent } from 'ts-dedent';

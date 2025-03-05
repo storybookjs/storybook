@@ -1,7 +1,15 @@
 import React, { useCallback, useDeferredValue, useEffect, useRef, useState } from 'react';
 
-import { CheckIcon } from '@storybook/icons';
-
+import {
+  ARGTYPES_INFO_REQUEST,
+  ARGTYPES_INFO_RESPONSE,
+  CREATE_NEW_STORYFILE_REQUEST,
+  CREATE_NEW_STORYFILE_RESPONSE,
+  FILE_COMPONENT_SEARCH_REQUEST,
+  FILE_COMPONENT_SEARCH_RESPONSE,
+  SAVE_STORY_REQUEST,
+  SAVE_STORY_RESPONSE,
+} from 'storybook/internal/core-events';
 import type {
   ArgTypesRequestPayload,
   ArgTypesResponsePayload,
@@ -14,19 +22,15 @@ import type {
   ResponseData,
   SaveStoryRequestPayload,
   SaveStoryResponsePayload,
-} from '@storybook/core/core-events';
+} from 'storybook/internal/core-events';
+import type { RequestResponseError } from 'storybook/internal/manager-api';
 import {
-  ARGTYPES_INFO_REQUEST,
-  ARGTYPES_INFO_RESPONSE,
-  CREATE_NEW_STORYFILE_REQUEST,
-  CREATE_NEW_STORYFILE_RESPONSE,
-  FILE_COMPONENT_SEARCH_REQUEST,
-  FILE_COMPONENT_SEARCH_RESPONSE,
-  SAVE_STORY_REQUEST,
-  SAVE_STORY_RESPONSE,
-} from '@storybook/core/core-events';
-import type { RequestResponseError } from '@storybook/core/manager-api';
-import { addons, experimental_requestResponse, useStorybookApi } from '@storybook/core/manager-api';
+  addons,
+  experimental_requestResponse,
+  useStorybookApi,
+} from 'storybook/internal/manager-api';
+
+import { CheckIcon } from '@storybook/icons';
 
 import { useDebounce } from '../../hooks/useDebounce';
 import type { NewStoryPayload, SearchResult } from './FileSearchList';

@@ -1,10 +1,9 @@
 import type { FC } from 'react';
 import React, { useState } from 'react';
 
-import { Link } from '@storybook/core/components';
-import { styled } from '@storybook/core/theming';
-
-import { useStorybookApi } from '@storybook/core/manager-api';
+import { Link } from 'storybook/internal/components';
+import { useStorybookApi } from 'storybook/internal/manager-api';
+import { styled } from 'storybook/internal/theming';
 
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
 

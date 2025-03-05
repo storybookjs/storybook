@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-import type { JsPackageManager } from '@storybook/core/common';
+import type { JsPackageManager } from 'storybook/internal/common';
 
 import stripAnsi from 'strip-ansi';
 
@@ -54,7 +54,7 @@ describe('missingStorybookDependencies', () => {
     }),
     retrievePackageJson: vi.fn().mockResolvedValue({
       dependencies: {
-        '@storybook/core': '8.1.0',
+        storybook: '8.1.0',
       },
     }),
     addDependencies: vi.fn().mockResolvedValue(undefined),

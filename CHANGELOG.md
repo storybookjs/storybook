@@ -1,3 +1,8 @@
+## 8.6.4
+
+- Manager: Add Content-Type to fix Cloud IDEs - [#30606](https://github.com/storybookjs/storybook/pull/30606), thanks @GCHQDeveloper548!
+- Vite: Include `node_modules` in stats file - [#30711](https://github.com/storybookjs/storybook/pull/30711), thanks @JReinhold!
+
 ## 8.6.3
 
 - CSF Factories: Align addon-essentials import with other addons - [#30716](https://github.com/storybookjs/storybook/pull/30716), thanks @kasperpeulen!
@@ -37,7 +42,6 @@ Here’s what’s new:
 - Addon-Test: Add telemetry data for Focused Tests - [#30568](https://github.com/storybookjs/storybook/pull/30568), thanks @JReinhold!
 - Addon-Test: Fix config and watch mode inconsistencies - [#30491](https://github.com/storybookjs/storybook/pull/30491), thanks @JReinhold!
 - Addon-Test: Fix console error in build mode - [#30625](https://github.com/storybookjs/storybook/pull/30625), thanks @JReinhold!
-- Addon Test: Fix printing Date object in MethodCall for test/interactions log - [#30507](https://github.com/storybookjs/storybook/pull/30507), thanks @ghengeveld!
 - Addon-Test: Make sure that only one global portable story config is ever loaded - [#30582](https://github.com/storybookjs/storybook/pull/30582), thanks @kasperpeulen!
 - Angular: Fix accent character issue - [#30276](https://github.com/storybookjs/storybook/pull/30276), thanks @valentinpalkovic!
 - Angular: Support experimental zoneless mode - [#28657](https://github.com/storybookjs/storybook/pull/28657), thanks @anedomansky!
@@ -46,7 +50,6 @@ Here’s what’s new:
 - Builder-Vite: Fix runtime and iframe 404 on first load - [#30567](https://github.com/storybookjs/storybook/pull/30567), thanks @valentinpalkovic!
 - Bun: Add support for text lock file - [#30160](https://github.com/storybookjs/storybook/pull/30160), thanks @Arctomachine!
 - Cleanup: Remove unused constants in viewport addon - [#30479](https://github.com/storybookjs/storybook/pull/30479), thanks @Guria!
-- CLI: Add "features" question & auto-install test addon & improve test-addon compatibility - [#30202](https://github.com/storybookjs/storybook/pull/30202), thanks @ndelangen!
 - CLI: Don't initially select Documentation and Testing features - [#30599](https://github.com/storybookjs/storybook/pull/30599), thanks @ghengeveld!
 - CLI: Fix peer dep issues for npm users during upgrade - [#30616](https://github.com/storybookjs/storybook/pull/30616), thanks @valentinpalkovic!
 - CLI: Fix printing of selected features - [#30605](https://github.com/storybookjs/storybook/pull/30605), thanks @ghengeveld!

@@ -134,7 +134,7 @@ export const Submitted: Story = {
 ```js filename="MyComponent.stories.js" renderer="web-components" language="js"
 import { userEvent, within } from 'storybook/test';
 
-export default = {
+export default {
   component: 'my-component',
 };
 

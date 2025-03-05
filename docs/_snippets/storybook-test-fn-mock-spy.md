@@ -173,7 +173,7 @@ export const SaveFlow = {
 ```
 
 ```ts filename="NoteUI.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/web-components';
 import { expect, userEvent, within } from 'storybook/test';
 
 // 👇 Must include the `.mock` portion of filename to have mocks typed correctly

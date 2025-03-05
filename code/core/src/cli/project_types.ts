@@ -101,7 +101,6 @@ export type Builder = CoreBuilder | (string & {});
 
 export enum SupportedLanguage {
   JAVASCRIPT = 'javascript',
-  TYPESCRIPT_3_8 = 'typescript-3-8',
   TYPESCRIPT_4_9 = 'typescript-4-9',
 }
 

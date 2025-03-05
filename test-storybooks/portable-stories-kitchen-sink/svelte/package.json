@@ -43,7 +43,6 @@
     "@storybook/ember": "portal:../../../code/frameworks/ember",
     "@storybook/html": "portal:../../../code/renderers/html",
     "@storybook/html-webpack5": "portal:../../../code/frameworks/html-webpack5",
-    "@storybook/instrumenter": "portal:../../../code/lib/instrumenter",
     "@storybook/nextjs": "portal:../../../code/frameworks/nextjs",
     "@storybook/preact": "portal:../../../code/renderers/preact",
     "@storybook/preact-vite": "portal:../../../code/frameworks/preact-vite",

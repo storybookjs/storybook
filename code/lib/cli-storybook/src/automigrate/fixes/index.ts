@@ -1,6 +1,7 @@
 import { csfFactories } from '../../codemod/csf-factories';
 import type { CommandFix, Fix } from '../types';
 import { addonA11yAddonTest } from './addon-a11y-addon-test';
+import { addonExperimentalTest } from './addon-experimental-test';
 import { addonPostCSS } from './addon-postcss';
 import { addonsAPI } from './addons-api';
 import { angularBuilders } from './angular-builders';
@@ -70,6 +71,7 @@ export const allFixes: Fix[] = [
   initialGlobals,
   addonA11yAddonTest,
   consolidatedImports,
+  addonExperimentalTest,
 ];
 
 export const initFixes: Fix[] = [eslintPlugin];

@@ -254,7 +254,7 @@ async function run() {
                   entryPoints: [entry.file],
                   external: [
                     ...nodeInternals,
-                    ...esbuildDefaultOptions.external,
+                    ...esbuildDefaultOptions.external.filter((e) => !entry.noExternal.includes(e)),
                     ...entry.externals,
                   ].filter((e) => !entry.internals.includes(e)),
                   plugins: [
@@ -278,7 +278,7 @@ async function run() {
                   entryPoints: [entry.file],
                   external: [
                     ...nodeInternals,
-                    ...esbuildDefaultOptions.external,
+                    ...esbuildDefaultOptions.external.filter((e) => !entry.noExternal.includes(e)),
                     ...entry.externals,
                   ].filter((e) => !entry.internals.includes(e)),
                   outdir: dirname(entry.file).replace('src', 'dist'),
@@ -300,7 +300,7 @@ async function run() {
                   entryPoints: [entry.file],
                   external: [
                     ...nodeInternals,
-                    ...esbuildDefaultOptions.external,
+                    ...esbuildDefaultOptions.external.filter((e) => !entry.noExternal.includes(e)),
                     ...entry.externals,
                   ].filter((e) => !entry.internals.includes(e)),
                   plugins: [

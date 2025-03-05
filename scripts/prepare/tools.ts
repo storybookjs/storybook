@@ -80,7 +80,8 @@ export const defineEntry =
     generateDTS: boolean = true,
     externals: string[] = [],
     internals: string[] = [],
-    noExternal: string[] = []
+    noExternal: string[] = [],
+    isPublic: boolean = false
   ) => ({
     file: slash(join(cwd, entry)),
     node: targets.includes('node'),
@@ -89,6 +90,7 @@ export const defineEntry =
     externals,
     internals,
     noExternal,
+    isPublic,
   });
 
 export const merge = <T extends Record<string, any>>(...objects: T[]): T =>

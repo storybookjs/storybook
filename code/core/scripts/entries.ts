@@ -64,7 +64,8 @@ export const getEntries = (cwd: string) => {
         '@vitest/expect',
         '@vitest/spy',
         '@vitest/utils',
-      ]
+      ],
+      true
     ),
   ];
 };

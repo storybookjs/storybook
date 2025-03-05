@@ -3,6 +3,7 @@
 This is a Vite plugin that allows you to use Next.js features in Vite. It is the basis for `@storybook/experimental-nextjs-vite` and should be used when running portable stories in Vitest.
 
 ## Features
+
 - **Next.js Integration**: Seamlessly integrate Next.js features into your Vite project.
 - **Storybook Compatibility**: Acts as the foundation for [the `@storybook/experimental-nextjs-vite` framework](https://storybook.js.org/docs/get-started/frameworks/nextjs#with-vite), enabling you to use Storybook with Next.js in a Vite environment.
 - **Portable Stories**: Ideal for running portable stories in Vitest, ensuring your components are tested in an environment that closely mirrors production.
@@ -77,9 +78,7 @@ This plugin is necessary to run portable stories in Vitest, as it provides the n
 
 ## Automatic story transformation
 
-(⚠️ **Experimental**)
-
-The experimental `@storybook/experimental-addon-test` can be used to automatically transform your stories at Vitest runtime to in-memory test files. This allows you to run your stories in a Vitest environment without needing to manually transform your stories. Please visit https://storybook.js.org/docs/8.3/writing-tests/test-runner-with-vitest for more information.
+The addon `@storybook/addon-test` can be used to automatically transform your stories at Vitest runtime to in-memory test files. This allows you to run your stories in a Vitest environment without needing to manually transform your stories. Please visit https://storybook.js.org/docs/8.3/writing-tests/test-runner-with-vitest for more information.
 
 ## Limitations and differences to the Webpack5-based integration of Next.js in Storybook
 

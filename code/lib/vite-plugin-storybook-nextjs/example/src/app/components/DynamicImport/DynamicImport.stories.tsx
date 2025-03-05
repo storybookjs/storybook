@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { expect, waitFor } from "@storybook/test";
 import dynamic from "next/dynamic";
+import { expect, waitFor } from "storybook/test";
 
 const DynamicComponent = dynamic(() => import("./DynamicImport"));
 const DynamicComponentNoSSR = dynamic(() => import("./DynamicImport"), {

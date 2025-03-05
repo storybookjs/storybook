@@ -1,8 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import type { JsPackageManager } from '@storybook/core/common';
+import type { JsPackageManager } from 'storybook/internal/common';
 
-// eslint-disable-next-line depend/ban-dependencies
 import stripAnsi from 'strip-ansi';
 
 import { missingStorybookDependencies } from './missing-storybook-dependencies';
@@ -55,7 +54,7 @@ describe('missingStorybookDependencies', () => {
     }),
     retrievePackageJson: vi.fn().mockResolvedValue({
       dependencies: {
-        '@storybook/core': '8.1.0',
+        storybook: '8.1.0',
       },
     }),
     addDependencies: vi.fn().mockResolvedValue(undefined),

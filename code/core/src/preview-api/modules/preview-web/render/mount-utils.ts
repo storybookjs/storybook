@@ -1,7 +1,7 @@
 // Inspired by Vitest fixture implementation:
 // https://github.com/vitest-dev/vitest/blob/200a4349a2f85686bc7005dce686d9d1b48b84d2/packages/runner/src/fixture.ts
-import type { PlayFunction } from '@storybook/core/csf';
-import { type PreparedStory, type Renderer } from '@storybook/core/types';
+import type { PlayFunction } from 'storybook/internal/csf';
+import { type Renderer } from 'storybook/internal/types';
 
 export function mountDestructured<TRenderer extends Renderer>(
   playFunction?: PlayFunction<TRenderer>

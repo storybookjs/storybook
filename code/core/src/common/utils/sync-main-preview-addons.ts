@@ -1,13 +1,12 @@
 /* eslint-disable no-underscore-dangle */
-import { types as t } from '@storybook/core/babel';
-import type { StorybookConfig } from '@storybook/types';
-
+import { types as t } from 'storybook/internal/babel';
 import {
   type ConfigFile,
   isCsfFactoryPreview,
   readConfig,
   writeConfig,
-} from '@storybook/core/csf-tools';
+} from 'storybook/internal/csf-tools';
+import type { StorybookConfig } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
 
@@ -44,7 +43,7 @@ export async function getSyncedStorybookAddons(
    * This goes through all mainConfig.addons, read their package.json and check whether they have an
    * exports map called preview, if so add to the array
    */
-  await addons.forEach(async (addon) => {
+  for (const addon of addons) {
     const annotations = await getAddonAnnotations(addon);
     if (annotations) {
       const hasAlreadyImportedAddonAnnotations = previewConfig._ast.program.body.find(
@@ -52,7 +51,7 @@ export async function getSyncedStorybookAddons(
       );
 
       if (!!hasAlreadyImportedAddonAnnotations) {
-        return;
+        continue;
       }
 
       if (
@@ -64,7 +63,7 @@ export async function getSyncedStorybookAddons(
       ) {
         syncedAddons.push(addon);
         // addon-essentials is a special use case that won't have /preview entrypoint but rather /entry-preview
-        if (annotations.isCoreAddon && addon !== '@storybook/addon-essentials') {
+        if (annotations.isCoreAddon) {
           // import addonName from 'addon'; + addonName()
           previewConfig.setImport(annotations.importName, annotations.importPath);
           previewConfig.appendNodeToArray(
@@ -78,7 +77,7 @@ export async function getSyncedStorybookAddons(
         }
       }
     }
-  });
+  }
 
   if (syncedAddons.length > 0) {
     logger.info(

@@ -9,7 +9,6 @@ import { expectTypeOf } from 'expect-type';
 import type { Meta } from '../..';
 import { composeStories, composeStory, setProjectAnnotations } from '../../portable-stories';
 import * as stories from './Button.stories';
-// import type Button from './Button.svelte';
 import type Button from './Button.svelte';
 
 setProjectAnnotations([]);
@@ -53,7 +52,6 @@ describe('renders', () => {
   it.skip('onclick handler is called', async () => {
     const onClickSpy = vi.fn();
     const { component } = render(Secondary.Component, { ...Secondary.props, onClick: onClickSpy });
-    // @ts-expect-error (deprecated: This method only exists when using one of the legacy compatibility helpers)
     component.$on('click', onClickSpy);
     const buttonElement = screen.getByRole('button');
     buttonElement.click();
@@ -154,13 +152,9 @@ describe('ComposeStories types', () => {
 
     expectTypeOf({
       ...stories,
-
-      /**
-       * Types of property 'argTypes' are incompatible. Type '{ backgroundColor: { control: string;
-       * }; size: { control: { type: string; }; options: string[]; }; }' has no properties in common
-       * with type 'Partial<ArgTypes<ComponentType>>'.
-       */
-      // @ts-expect-error fix this later
+      // TODO: @JReinhold maybe you can figure this error out?
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore-error (Type 'IsomorphicComponent<PropsWithChildren<{ primary?: boolean | undefined; backgroundColor?: string | undefined; size?: "small" | "medium" | "large" | undefined; label?: string | undefined; }, { default: {}; }>, { ...; } & { ...; }, { ...; }, {}, string>' has no properties in common with type 'PropsWithChildren<{ primary?: boolean | undefined; backgroundColor?: string | undefined; size?: "small" | "medium" | "large" | undefined; label?: string | undefined; }, { default: {}; }>'. )
       default: stories.default satisfies Meta<typeof Button>,
     }).toMatchTypeOf<ComposeStoriesParam>();
   });

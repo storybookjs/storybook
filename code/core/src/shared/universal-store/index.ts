@@ -508,7 +508,7 @@ export class UniversalStore<
   };
 
   private emitToChannel(event: any, eventInfo: EventInfo) {
-    this.debug('emitToChannel', { event, eventInfo, channel: this.channel });
+    this.debug('emitToChannel', { event, eventInfo, channel: !!this.channel });
     this.channel?.emit(this.channelEventName, {
       event,
       eventInfo,
@@ -525,7 +525,7 @@ export class UniversalStore<
     this.channel = channel;
     this.environment = environment;
 
-    this.debug('prepared', { channel, environment });
+    this.debug('prepared', { channel: !!channel, environment });
     this.channel.on(this.channelEventName, this.handleChannelEvents);
 
     if (this.actor.type === UniversalStore.ActorType.LEADER) {

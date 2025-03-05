@@ -1,8 +1,8 @@
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { themes } from '@storybook/core/theming';
-import type { API_Provider } from '@storybook/core/types';
+import { themes } from 'storybook/internal/theming';
+import type { API_Provider } from 'storybook/internal/types';
 
 import EventEmitter from 'events';
 
@@ -25,7 +25,7 @@ describe('layout API', () => {
   beforeEach(() => {
     currentState = {
       ...defaultLayoutState,
-      selectedPanel: '@storybook/core/actions/panel',
+      selectedPanel: 'storybook/internal/action/panel',
       theme: themes.light,
       singleStory: false,
     };

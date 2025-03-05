@@ -1,9 +1,10 @@
 /// <reference path="./typings.d.ts" />
 
-export { getPreviewHeadTemplate, getPreviewBodyTemplate } from '@storybook/core/common';
+export { getPreviewHeadTemplate, getPreviewBodyTemplate } from 'storybook/internal/common';
 
 export * from './build-static';
 export * from './build-dev';
+export * from './build-index';
 export * from './withTelemetry';
 export { default as build } from './standalone';
 export { mapStaticDir } from './utils/server-statics';

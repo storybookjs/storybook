@@ -66,7 +66,7 @@ interface ReactMeta<
   ): ReactStory;
 
   story<
-    const TInput extends Simplify<
+    TInput extends Simplify<
       StoryAnnotations<
         ReactRenderer,
         // TODO: infer mocks from story itself as well
@@ -79,4 +79,4 @@ interface ReactMeta<
   ): ReactStory;
 }
 
-interface ReactStory extends Story<ReactRenderer> {}
+export interface ReactStory extends Story<ReactRenderer> {}

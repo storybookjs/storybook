@@ -1,5 +1,5 @@
 import { cp } from 'node:fs/promises';
-import { join, parse } from 'node:path';
+import { dirname, join, parse } from 'node:path';
 
 import { PREVIEW_BUILDER_PROGRESS } from 'storybook/internal/core-events';
 import { logger } from 'storybook/internal/node-logger';
@@ -14,7 +14,6 @@ import { checkWebpackVersion } from '@storybook/core-webpack';
 
 import prettyTime from 'pretty-hrtime';
 import sirv from 'sirv';
-import { corePath } from 'storybook/core-path';
 import type { Configuration, Stats, StatsOptions } from 'webpack';
 import webpackDep, { DefinePlugin, IgnorePlugin, ProgressPlugin } from 'webpack';
 import webpackDevMiddleware from 'webpack-dev-middleware';
@@ -31,6 +30,8 @@ export const printDuration = (startTime: [number, number]) =>
     .replace(' ms', ' milliseconds')
     .replace(' s', ' seconds')
     .replace(' m', ' minutes');
+
+const corePath = dirname(require.resolve('storybook/package.json'));
 
 let compilation: ReturnType<typeof webpackDevMiddleware> | undefined;
 let reject: (reason?: any) => void;

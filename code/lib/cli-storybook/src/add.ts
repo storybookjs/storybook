@@ -8,8 +8,7 @@ import {
   versions,
 } from 'storybook/internal/common';
 import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
-
-import type { StorybookConfigRaw } from '@storybook/types';
+import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import prompts from 'prompts';
 import SemVer from 'semver';

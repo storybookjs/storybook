@@ -1,8 +1,8 @@
 import React from 'react';
 
-import { fn } from '@storybook/test';
+import { ManagerContext } from 'storybook/internal/manager-api';
 
-import { ManagerContext } from '@storybook/core/manager-api';
+import { fn } from '@storybook/test';
 
 import { standardData as standardHeaderData } from './Heading.stories';
 import { IconSymbols } from './IconSymbols';

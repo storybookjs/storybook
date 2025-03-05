@@ -2,19 +2,18 @@ import { join } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { ChannelTransport } from '@storybook/core/channels';
-import { Channel } from '@storybook/core/channels';
-
-import type { CreateNewStoryRequestPayload, RequestData } from '@storybook/core/core-events';
+import type { ChannelTransport } from 'storybook/internal/channels';
+import { Channel } from 'storybook/internal/channels';
+import type { CreateNewStoryRequestPayload, RequestData } from 'storybook/internal/core-events';
 import {
   CREATE_NEW_STORYFILE_REQUEST,
   CREATE_NEW_STORYFILE_RESPONSE,
-} from '@storybook/core/core-events';
+} from 'storybook/internal/core-events';
 
 import { initCreateNewStoryChannel } from './create-new-story-channel';
 
-vi.mock('@storybook/core/common', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@storybook/core/common')>();
+vi.mock('storybook/internal/common', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('storybook/internal/common')>();
   return {
     ...actual,
     getProjectRoot: vi.fn().mockReturnValue(process.cwd()),

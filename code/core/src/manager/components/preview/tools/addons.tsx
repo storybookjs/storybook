@@ -1,11 +1,11 @@
 import React from 'react';
 
-import { IconButton } from '@storybook/core/components';
-import type { Addon_BaseType } from '@storybook/core/types';
-import { BottomBarIcon, SidebarAltIcon } from '@storybook/icons';
+import { IconButton } from 'storybook/internal/components';
+import { Consumer, types } from 'storybook/internal/manager-api';
+import type { Combo } from 'storybook/internal/manager-api';
+import type { Addon_BaseType } from 'storybook/internal/types';
 
-import { Consumer, types } from '@storybook/core/manager-api';
-import type { Combo } from '@storybook/core/manager-api';
+import { BottomBarIcon, SidebarAltIcon } from '@storybook/icons';
 
 const menuMapper = ({ api, state }: Combo) => ({
   isVisible: api.getIsPanelShown(),

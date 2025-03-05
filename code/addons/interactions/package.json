@@ -63,7 +63,6 @@
   },
   "dependencies": {
     "@storybook/global": "^5.0.0",
-    "@storybook/instrumenter": "workspace:*",
     "@storybook/test": "workspace:*",
     "polished": "^4.2.2",
     "ts-dedent": "^2.2.0"

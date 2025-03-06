@@ -75,6 +75,7 @@
       "require": "./dist/actions/index.cjs"
     },
     "./actions/preview": {
+      "types": "./dist/actions/preview.d.ts",
       "import": "./dist/actions/preview.js"
     },
     "./actions/manager": {
@@ -240,6 +241,9 @@
       ],
       "actions": [
         "./dist/actions/index.d.ts"
+      ],
+      "actions/preview": [
+        "./dist/actions/preview.d.ts"
       ],
       "actions/decorator": [
         "./dist/actions/decorator.d.ts"

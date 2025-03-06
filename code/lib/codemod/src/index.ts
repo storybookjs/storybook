@@ -7,8 +7,6 @@ import { sync as spawnSync } from 'cross-spawn';
 
 import { jscodeshiftToPrettierParser } from './lib/utils';
 
-export { default as updateAddonInfo } from './transforms/update-addon-info';
-
 const TRANSFORM_DIR = `${__dirname}/transforms`;
 
 export function listCodemods() {

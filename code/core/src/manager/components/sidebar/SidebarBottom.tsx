@@ -9,12 +9,13 @@ import {
 import {
   type API,
   type State,
-  experimental_useStatusStore,
   useStorybookApi,
   useStorybookState,
 } from 'storybook/internal/manager-api';
 import { styled } from 'storybook/internal/theming';
 import { type API_FilterFunction, StatusValue } from 'storybook/internal/types';
+
+import { experimental_useStatusStore } from '#manager-status-store';
 
 import { NotificationList } from '../notifications/NotificationList';
 import { TestingModule } from './TestingModule';

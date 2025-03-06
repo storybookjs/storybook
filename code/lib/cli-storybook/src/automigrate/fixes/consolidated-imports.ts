@@ -149,6 +149,7 @@ export const consolidatedImports: Fix<ConsolidatedOptions> = {
       ...commonGlobOptions(''),
       ignore: ['**/node_modules/**'],
       cwd: projectRoot,
+      gitignore: true,
     });
 
     // check if any of the package.json files have consolidated packages

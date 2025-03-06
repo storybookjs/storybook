@@ -10,7 +10,6 @@ import { autodocsTags } from './autodocs-tags';
 import { autodocsTrue } from './autodocs-true';
 import { builderVite } from './builder-vite';
 import { consolidatedImports } from './consolidated-imports';
-import { consolidatedPackageJson } from './consolidated-package-json';
 import { cra5 } from './cra5';
 import { eslintPlugin } from './eslint-plugin';
 import { initialGlobals } from './initial-globals';
@@ -71,7 +70,6 @@ export const allFixes: Fix[] = [
   autodocsTags,
   initialGlobals,
   addonA11yAddonTest,
-  consolidatedPackageJson,
   consolidatedImports,
   addonExperimentalTest,
 ];

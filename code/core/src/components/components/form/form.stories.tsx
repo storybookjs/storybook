@@ -2,7 +2,7 @@ import React from 'react';
 
 import { styled } from 'storybook/internal/theming';
 
-import { action } from '@storybook/addon-actions';
+import { action } from 'core/src/actions/dist';
 
 import { Field as FieldComponent } from './field/field';
 import * as InputComponents from './input/input';

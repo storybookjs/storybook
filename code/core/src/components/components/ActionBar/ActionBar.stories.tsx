@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import React from 'react';
 
-import { action } from '@storybook/addon-actions';
+import { action } from 'core/src/actions/dist';
 
 import { ActionBar } from './ActionBar';
 

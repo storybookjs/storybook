@@ -5,7 +5,7 @@ import { ManagerContext } from 'storybook/internal/manager-api';
 
 import type { Meta, StoryFn } from '@storybook/react';
 
-import { action } from '@storybook/addon-actions';
+import { action } from 'core/src/actions/dist';
 
 import { IconSymbols } from './IconSymbols';
 import { Search } from './Search';

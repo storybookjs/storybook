@@ -64,7 +64,6 @@
     "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@storybook/addon-actions": "workspace:*",
     "@storybook/builder-vite": "workspace:*",
     "@storybook/svelte": "workspace:*",
     "@storybook/svelte-vite": "workspace:*"

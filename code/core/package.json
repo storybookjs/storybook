@@ -69,6 +69,21 @@
       "import": "./dist/core-server/presets/common-override-preset.js",
       "require": "./dist/core-server/presets/common-override-preset.cjs"
     },
+    "./actions": {
+      "types": "./dist/actions/index.d.ts",
+      "import": "./dist/actions/index.js",
+      "require": "./dist/actions/index.cjs"
+    },
+    "./actions/preview": {
+      "import": "./dist/actions/preview.js"
+    },
+    "./actions/manager": {
+      "import": "./dist/actions/manager.js"
+    },
+    "./actions/decorator": {
+      "types": "./dist/actions/decorator.d.ts",
+      "import": "./dist/actions/decorator.js"
+    },
     "./internal/core-events": {
       "types": "./dist/core-events/index.d.ts",
       "import": "./dist/core-events/index.js",
@@ -223,6 +238,12 @@
       "internal/core-server": [
         "./dist/core-server/index.d.ts"
       ],
+      "actions": [
+        "./dist/actions/index.d.ts"
+      ],
+      "actions/decorator": [
+        "./dist/actions/decorator.d.ts"
+      ],
       "internal/core-events": [
         "./dist/core-events/index.d.ts"
       ],
@@ -309,20 +330,25 @@
     "prep": "jiti ./scripts/prep.ts"
   },
   "dependencies": {
+    "@storybook/global": "^5.0.0",
     "@testing-library/dom": "10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/user-event": "14.5.2",
+    "@types/uuid": "^9.0.1",
     "@vitest/expect": "2.0.5",
     "@vitest/spy": "2.0.5",
     "better-opn": "^3.0.2",
     "browser-assert": "^1.2.1",
+    "dequal": "^2.0.2",
     "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0",
     "esbuild-register": "^3.5.0",
     "jsdoc-type-pratt-parser": "^4.0.0",
+    "polished": "^4.2.2",
     "process": "^0.11.10",
     "recast": "^0.23.5",
     "semver": "^7.6.2",
     "util": "^0.12.5",
+    "uuid": "^9.0.0",
     "ws": "^8.18.0"
   },
   "devDependencies": {
@@ -429,6 +455,7 @@
     "react-dom": "^18.2.0",
     "react-draggable": "^4.4.5",
     "react-helmet-async": "^1.3.0",
+    "react-inspector": "^6.0.0",
     "react-popper-tooltip": "^4.4.2",
     "react-resize-detector": "^7.1.2",
     "react-router-dom": "6.0.2",

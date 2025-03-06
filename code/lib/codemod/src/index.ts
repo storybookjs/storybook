@@ -7,11 +7,6 @@ import { sync as spawnSync } from 'cross-spawn';
 
 import { jscodeshiftToPrettierParser } from './lib/utils';
 
-export {
-  default as updateOrganisationName,
-  packageNames,
-} from './transforms/update-organisation-name';
-
 export { default as updateAddonInfo } from './transforms/update-addon-info';
 
 const TRANSFORM_DIR = `${__dirname}/transforms`;

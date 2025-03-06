@@ -13,12 +13,12 @@ import { getDescendantIds } from '../../utils/tree';
 
 export const StatusContext = createContext<{
   data?: StoriesHash;
-  statuses?: StatusesByStoryIdAndTypeId;
+  allStatuses?: StatusesByStoryIdAndTypeId;
   groupStatus?: Record<StoryId, StatusValueType>;
 }>({});
 
 export const useStatusSummary = (item: Item) => {
-  const { data, statuses, groupStatus } = useContext(StatusContext);
+  const { data, allStatuses, groupStatus } = useContext(StatusContext);
   const summary: {
     counts: Record<StatusValueType, number>;
     statusesByValue: Record<StatusValueType, Record<StoryId, Status[]>>;
@@ -29,12 +29,12 @@ export const useStatusSummary = (item: Item) => {
 
   if (
     data &&
-    statuses &&
+    allStatuses &&
     groupStatus &&
     ['pending', 'warn', 'error'].includes(groupStatus[item.id])
   ) {
     for (const storyId of getDescendantIds(data, item.id, false)) {
-      for (const status of Object.values(statuses[storyId] ?? {})) {
+      for (const status of Object.values(allStatuses[storyId] ?? {})) {
         summary.counts[status.value]++;
         summary.statusesByValue[status.value][storyId] ??= [];
         summary.statusesByValue[status.value][storyId].push(status);

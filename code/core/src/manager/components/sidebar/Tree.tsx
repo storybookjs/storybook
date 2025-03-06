@@ -229,7 +229,7 @@ const Node = React.memo<NodeProps>(function Node({
 
   const statusLinks = useMemo<Link[]>(() => {
     if (item.type === 'story' || item.type === 'docs') {
-      return Object.entries(statuses || {})
+      return Object.entries(statuses)
         .filter(([, status]) => status.sidebarContextMenu !== false)
         .sort((a, b) => statusOrder.indexOf(a[1].value) - statusOrder.indexOf(b[1].value))
         .map(([typeId, status]) => ({
@@ -467,7 +467,7 @@ const Root = React.memo<NodeProps & { expandableDescendants: string[] }>(functio
 export const Tree = React.memo<{
   isBrowsing: boolean;
   isMain: boolean;
-  statuses?: StatusesByStoryIdAndTypeId;
+  allStatuses?: StatusesByStoryIdAndTypeId;
   refId: string;
   data: StoriesHash;
   docsMode: boolean;
@@ -480,7 +480,7 @@ export const Tree = React.memo<{
   isMain,
   refId,
   data,
-  statuses = {},
+  allStatuses,
   docsMode,
   highlightedRef,
   setHighlightedItemId,
@@ -610,8 +610,8 @@ export const Tree = React.memo<{
   });
 
   const groupStatus = useMemo(
-    () => getGroupStatus(collapsedData, statuses),
-    [collapsedData, statuses]
+    () => getGroupStatus(collapsedData, allStatuses),
+    [collapsedData, allStatuses]
   );
 
   const treeItems = useMemo(() => {
@@ -654,7 +654,7 @@ export const Tree = React.memo<{
           collapsedData={collapsedData}
           key={id}
           item={item}
-          statuses={statuses?.[itemId]}
+          statuses={allStatuses?.[itemId] ?? {}}
           groupStatus={groupStatus}
           refId={refId}
           docsMode={docsMode}
@@ -681,10 +681,10 @@ export const Tree = React.memo<{
     refId,
     selectedStoryId,
     setExpanded,
-    statuses,
+    allStatuses,
   ]);
   return (
-    <StatusContext.Provider value={{ data, statuses, groupStatus }}>
+    <StatusContext.Provider value={{ data, allStatuses, groupStatus }}>
       <Container ref={containerRef} hasOrphans={isMain && orphanIds.length > 0}>
         <IconSymbols />
         {treeItems}

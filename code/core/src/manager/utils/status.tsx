@@ -69,7 +69,7 @@ export function getGroupStatus(
   collapsedData: {
     [x: string]: Partial<API_HashEntry>;
   },
-  statuses: StatusesByStoryIdAndTypeId
+  allStatuses?: StatusesByStoryIdAndTypeId
 ): Record<string, StatusValueType> {
   return Object.values(collapsedData).reduce<Record<string, StatusValueType>>((acc, item) => {
     if (item.type === 'group' || item.type === 'component') {
@@ -80,7 +80,7 @@ export function getGroupStatus(
 
       const combinedStatus = getHighestStatus(
         // @ts-expect-error (non strict)
-        leafs.flatMap((story) => Object.values(statuses?.[story.id] || {})).map((s) => s.value)
+        leafs.flatMap((story) => Object.values(allStatuses?.[story.id] || {})).map((s) => s.value)
       );
 
       if (combinedStatus) {

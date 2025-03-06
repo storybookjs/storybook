@@ -5,7 +5,7 @@ import { UniversalStore } from '../../shared/universal-store';
 const statusStore = createStatusStore({
   universalStatusStore: UniversalStore.create({
     ...UNIVERSAL_STATUS_STORE_OPTIONS,
-    leader: true,
+    leader: process.env.VITEST !== 'true',
   }),
 });
 

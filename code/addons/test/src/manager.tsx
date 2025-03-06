@@ -2,29 +2,36 @@ import React, { useState } from 'react';
 
 import { AddonPanel } from 'storybook/internal/components';
 import type { Combo } from 'storybook/internal/manager-api';
-import { Consumer, addons, types } from 'storybook/internal/manager-api';
+import { Consumer, StatusValue, addons, types } from 'storybook/internal/manager-api';
 import {
   type API_StatusObject,
-  type API_StatusValue,
   type Addon_TestProviderType,
   Addon_TypesEnum,
 } from 'storybook/internal/types';
 
-import { store } from '#manager-store';
+import { a11yStatusStore, componentTestStatusStore, store } from '#manager-store';
 
+import type { StatusValueType } from '../../../core/src/shared/status-store';
 import { GlobalErrorContext, GlobalErrorModal } from './components/GlobalErrorModal';
 import { Panel } from './components/Panel';
 import { PanelTitle } from './components/PanelTitle';
 import { TestProviderRender } from './components/TestProviderRender';
-import { ADDON_ID, type Details, PANEL_ID, TEST_PROVIDER_ID } from './constants';
+import {
+  ADDON_ID,
+  type Details,
+  PANEL_ID,
+  STATUS_TYPE_ID_A11Y,
+  STATUS_TYPE_ID_COMPONENT_TEST,
+  TEST_PROVIDER_ID,
+} from './constants';
 import type { TestStatus } from './node/reporter';
 
-const statusMap: Record<TestStatus, API_StatusValue> = {
-  failed: 'error',
-  passed: 'success',
-  pending: 'pending',
-  warning: 'warn',
-  skipped: 'unknown',
+const statusMap: Record<TestStatus, StatusValueType> = {
+  pending: StatusValue.PENDING,
+  passed: StatusValue.SUCCESS,
+  warning: StatusValue.WARN,
+  failed: StatusValue.ERROR,
+  skipped: StatusValue.UNKNOWN,
 };
 
 addons.register(ADDON_ID, (api) => {
@@ -89,62 +96,51 @@ addons.register(ADDON_ID, (api) => {
         }
 
         if (update.details?.testResults) {
-          (async () => {
-            await api.experimental_updateStatus(
-              TEST_PROVIDER_ID,
-              Object.fromEntries(
-                // @ts-expect-error: TODO: Fix types
-                update.details.testResults.flatMap((testResult) =>
-                  testResult.results
-                    .filter(({ storyId }) => storyId)
-                    .map(({ storyId, status, testRunId, ...rest }) => [
-                      storyId,
-                      {
-                        title: 'Component tests',
-                        status: statusMap[status],
-                        description:
-                          'failureMessages' in rest && rest.failureMessages
-                            ? rest.failureMessages.join('\n')
-                            : '',
-                        data: { testRunId },
-                        onClick: openTestsPanel,
-                        sidebarContextMenu: false,
-                      } satisfies API_StatusObject,
-                    ])
-                )
-              )
-            );
-
-            await api.experimental_updateStatus(
-              'storybook/addon-a11y/test-provider',
-              Object.fromEntries(
-                // @ts-expect-error: TODO: Fix types
-                update.details.testResults.flatMap((testResult) =>
-                  testResult.results
-                    .filter(({ storyId }) => storyId)
-                    .map(({ storyId, testRunId, reports }) => {
-                      const a11yReport = reports.find((r: any) => r.type === 'a11y');
-                      return [
-                        storyId,
-                        a11yReport
-                          ? ({
-                              title: 'Accessibility tests',
-                              description: '',
-                              status: statusMap[a11yReport.status],
-                              data: { testRunId },
-                              onClick: () => {
-                                api.setSelectedPanel('storybook/a11y/panel');
-                                api.togglePanel(true);
-                              },
-                              sidebarContextMenu: false,
-                            } satisfies API_StatusObject)
-                          : null,
-                      ];
-                    })
-                )
-              )
-            );
-          })();
+          componentTestStatusStore.set(
+            update.details.testResults.flatMap((testResult) =>
+              testResult.results
+                .filter(({ storyId }) => storyId)
+                .map(({ storyId, status, testRunId, ...rest }) => {
+                  return {
+                    storyId,
+                    typeId: STATUS_TYPE_ID_COMPONENT_TEST,
+                    value: statusMap[status],
+                    title: 'Component tests',
+                    description:
+                      'failureMessages' in rest && rest.failureMessages
+                        ? rest.failureMessages.join('\n')
+                        : '',
+                    data: { testRunId },
+                    sidebarContextMenu: false,
+                  };
+                })
+            )
+          );
+          a11yStatusStore.set(
+            update.details.testResults.flatMap((testResult) =>
+              testResult.results
+                .filter(({ storyId, reports }) => {
+                  const a11yReport = reports.find((r: any) => r.type === 'a11y');
+                  return storyId && a11yReport;
+                })
+                .map(({ storyId, testRunId, reports }) => {
+                  const a11yReport = reports.find((r: any) => r.type === 'a11y')!;
+                  return {
+                    storyId,
+                    typeId: STATUS_TYPE_ID_A11Y,
+                    value: statusMap[a11yReport.status],
+                    title: 'Accessibility tests',
+                    description: '',
+                    data: { testRunId },
+                    // onClick: () => {
+                    //   api.setSelectedPanel('storybook/a11y/panel');
+                    //   api.togglePanel(true);
+                    // },
+                    sidebarContextMenu: false,
+                  };
+                })
+            )
+          );
         }
 
         return updated;

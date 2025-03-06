@@ -39,15 +39,6 @@ function transformPackageJson(content: string): string | null {
     }
   }
 
-  // Ensure storybook is in devDependencies
-  if (!packageJson.devDependencies) {
-    packageJson.devDependencies = {};
-  }
-  if (!packageJson.devDependencies.storybook) {
-    packageJson.devDependencies.storybook = '^8.0.0';
-    hasChanges = true;
-  }
-
   return hasChanges ? JSON.stringify(packageJson, null, 2) : null;
 }
 

@@ -1,6 +1,7 @@
 /* eslint-disable no-underscore-dangle */
-import type { Renderer } from '@storybook/core/types';
-import type { ModuleImportFn, ProjectAnnotations } from '@storybook/core/types';
+import type { ModuleImportFn, ProjectAnnotations } from 'storybook/internal/types';
+import type { Renderer } from 'storybook/internal/types';
+
 import { global } from '@storybook/global';
 
 import type { MaybePromise } from './Preview';

@@ -1,4 +1,4 @@
-import { CallStates } from '@storybook/instrumenter';
+import { CallStates } from 'storybook/internal/instrumenter';
 
 import { StatusBadge } from './StatusBadge';
 

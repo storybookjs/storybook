@@ -1,2 +1,2 @@
 export * from './types';
-export { definePreview } from '@storybook/react';
+export { __definePreview as definePreview } from '@storybook/react';

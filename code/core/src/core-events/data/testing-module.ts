@@ -1,4 +1,4 @@
-import type { Addon_TestProviderState, Addon_TestProviderType } from '@storybook/core/types';
+import type { Addon_TestProviderState, Addon_TestProviderType } from 'storybook/internal/types';
 
 type DateNow = number;
 

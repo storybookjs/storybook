@@ -1,7 +1,7 @@
 import type { FC, PropsWithChildren } from 'react';
 import React, { Component, useCallback } from 'react';
 
-import { type API, useStorybookApi, useStorybookState } from '@storybook/core/manager-api';
+import { type API, useStorybookApi, useStorybookState } from 'storybook/internal/manager-api';
 
 import { AboutScreen } from './About';
 

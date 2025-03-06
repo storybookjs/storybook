@@ -1,3 +1,7 @@
+/**
+ * Consolidated packages are packages that have been merged into the main storybook package. This
+ * object maps the old package name to the new package name.
+ */
 export const consolidatedPackages = {
   '@storybook/channels': 'storybook/internal/channels',
   '@storybook/client-logger': 'storybook/internal/client-logger',

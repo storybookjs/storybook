@@ -9,10 +9,7 @@ import measureAddon from '@storybook/addon-measure';
 import outlineAddon from '@storybook/addon-outline';
 import viewportAddon from '@storybook/addon-viewport';
 
-import actionsAddon from 'core/src/actions/dist';
-
 export default composeConfigs([
-  actionsAddon(),
   // TODO: we can't use this as function because of the --test flag
   docsAddon,
   backgroundsAddon(),

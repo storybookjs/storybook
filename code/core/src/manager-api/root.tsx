@@ -531,5 +531,7 @@ export { mockChannel, type Addon, type AddonStore } from './lib/addons';
 export {
   getStatusStoreByTypeId as experimental_getStatusStore,
   useStatusStore as experimental_useStatusStore,
+  /** @internal */
+  fullStatusStore as internal_fullStatusStore,
 } from './stores/status';
 export { StatusValue } from '../shared/status-store';

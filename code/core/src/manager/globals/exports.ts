@@ -392,6 +392,7 @@ export default {
     'experimental_requestResponse',
     'experimental_useStatusStore',
     'experimental_useUniversalStore',
+    'internal_fullStatusStore',
     'isMacLike',
     'isShortcutTaken',
     'keyToSymbol',

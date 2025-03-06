@@ -3,7 +3,10 @@ import React, { useCallback, useMemo, useRef } from 'react';
 
 import { Button, IconButton, ListItem } from 'storybook/internal/components';
 import { PRELOAD_ENTRIES } from 'storybook/internal/core-events';
-import { useStorybookApi, internal_fullStatusStore as fullStatusStore } from 'storybook/internal/manager-api';
+import {
+  internal_fullStatusStore as fullStatusStore,
+  useStorybookApi,
+} from 'storybook/internal/manager-api';
 import type {
   API,
   ComponentEntry,

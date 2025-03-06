@@ -1,6 +1,5 @@
 import { sanitize } from 'storybook/internal/csf';
 import type {
-  API_BaseEntry,
   API_ComponentEntry,
   API_DocsEntry,
   API_GroupEntry,

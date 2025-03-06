@@ -36,6 +36,7 @@ export { MockUniversalStore as experimental_MockUniversalStore } from '../shared
 export {
   getStatusStoreByTypeId as experimental_getStatusStore,
   useStatusStore as experimental_useStatusStore,
+  fullStatusStore as internal_fullStatusStore,
 } from './stores/status';
 
 /** DOCS API */

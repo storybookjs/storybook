@@ -1,14 +1,12 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
-import { type NodePath, parser, recast, types as t, traverse } from 'storybook/internal/babel';
 import { commonGlobOptions, getProjectRoot } from 'storybook/internal/common';
 
-// eslint-disable-next-line depend/ban-dependencies
-import { globby } from 'globby';
 import pLimit from 'p-limit';
+import prompts from 'prompts';
 import { dedent } from 'ts-dedent';
 
-import { type ConsolidatedPackage, consolidatedPackages } from '../helpers/consolidated-packages';
+import { consolidatedPackages } from '../helpers/consolidated-packages';
 import type { Fix, RunOptions } from '../types';
 
 export interface ConsolidatedOptions {
@@ -109,6 +107,9 @@ export const consolidatedImports: Fix<ConsolidatedOptions> = {
   versionRange: ['^8.0.0', '^9.0.0'],
   check: async () => {
     const projectRoot = getProjectRoot();
+    // eslint-disable-next-line depend/ban-dependencies
+    const globby = (await import('globby')).globby;
+
     const packageJsonFiles = await globby(['**/package.json'], {
       ...commonGlobOptions(''),
       ignore: ['**/node_modules/**'],
@@ -160,7 +161,20 @@ export const consolidatedImports: Fix<ConsolidatedOptions> = {
     errors.push(...packageJsonErrors);
 
     const projectRoot = getProjectRoot();
-    const sourceFiles = await globby(['**/*.{mjs,cjs,js,jsx,ts,tsx}'], {
+
+    const defaultGlob = '**/*.{mjs,cjs,js,jsx,ts,tsx}';
+    // Find all files matching the glob pattern
+    const { glob } = await prompts({
+      type: 'text',
+      name: 'glob',
+      message: 'Enter a custom glob pattern to scan (or press enter to use default):',
+      initial: defaultGlob,
+    });
+
+    // eslint-disable-next-line depend/ban-dependencies
+    const globby = (await import('globby')).globby;
+
+    const sourceFiles = await globby([glob], {
       ...commonGlobOptions(''),
       ignore: ['**/node_modules/**'],
       cwd: projectRoot,

@@ -7,10 +7,6 @@ import type { StoreState } from '../constants';
 import { storeOptions } from '../constants';
 import { TestManager } from './test-manager';
 
-process.env.TEST = 'true';
-process.env.VITEST = 'true';
-process.env.NODE_ENV ??= 'test';
-
 const channel: Channel = new Channel({
   async: true,
   transport: {

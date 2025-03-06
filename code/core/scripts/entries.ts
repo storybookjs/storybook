@@ -18,10 +18,10 @@ export const getEntries = (cwd: string) => {
     define('src/core-server/presets/common-override-preset.ts', ['node'], false),
 
     // Actions addon
-    define('src/actions/index.ts', ['browser', 'node'], true, [], [], [], true),
-    define('src/actions/preview.ts', ['browser'], true, [], [], [], true),
-    define('src/actions/manager.tsx', ['browser'], false, [], [], [], true),
-    define('src/actions/decorator.ts', ['browser'], true, [], [], [], true),
+    define('src/actions/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
+    define('src/actions/preview.ts', ['browser'], true, ['react'], [], [], true),
+    define('src/actions/manager.tsx', ['browser'], false, ['react'], [], [], true),
+    define('src/actions/decorator.ts', ['browser'], true, ['react'], [], [], true),
 
     define('src/core-events/index.ts', ['browser', 'node'], true),
     define('src/manager-errors.ts', ['browser'], true),

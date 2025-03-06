@@ -343,7 +343,6 @@
     "@vitest/spy": "2.0.5",
     "better-opn": "^3.0.2",
     "browser-assert": "^1.2.1",
-    "dequal": "^2.0.2",
     "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0",
     "esbuild-register": "^3.5.0",
     "jsdoc-type-pratt-parser": "^4.0.0",

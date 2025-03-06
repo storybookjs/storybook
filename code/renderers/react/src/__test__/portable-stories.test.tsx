@@ -10,7 +10,6 @@ import { addons } from 'storybook/internal/preview-api';
 import type { Meta, ReactRenderer } from '@storybook/react';
 
 import { expectTypeOf } from 'expect-type';
-import * as addonActionsPreview from 'storybook/actions/preview';
 
 import { composeStories, composeStory, setProjectAnnotations } from '..';
 import type { Button } from './Button';
@@ -119,11 +118,7 @@ describe('projectAnnotations', () => {
   });
 
   it('has action arg from argTypes when addon-actions annotations are added', () => {
-    const Story = composeStory(
-      ButtonStories.WithActionArgType,
-      ButtonStories.default,
-      addonActionsPreview as ProjectAnnotations<ReactRenderer>
-    );
+    const Story = composeStory(ButtonStories.WithActionArgType, ButtonStories.default);
     expect(Story.args.someActionArg).toHaveProperty('isAction', true);
   });
 });

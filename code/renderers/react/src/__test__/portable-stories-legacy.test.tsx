@@ -9,7 +9,6 @@ import { addons } from 'storybook/internal/preview-api';
 import type { Meta } from '@storybook/react';
 
 import { expectTypeOf } from 'expect-type';
-import * as addonActionsPreview from 'storybook/actions/preview';
 
 import { composeStories, composeStory, setProjectAnnotations } from '..';
 import type { Button } from './Button';
@@ -108,7 +107,7 @@ describe('Legacy Portable Stories API', () => {
     });
 
     it('has action arg from argTypes when addon-actions annotations are added', () => {
-      const Story = composeStory(stories.WithActionArgType, stories.default, addonActionsPreview);
+      const Story = composeStory(stories.WithActionArgType, stories.default);
       expect(Story.args.someActionArg).toHaveProperty('isAction', true);
     });
   });

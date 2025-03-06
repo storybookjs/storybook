@@ -662,45 +662,6 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       return allStatuses[storyId as StoryId];
     },
 
-    /* EXPERIMENTAL APIs */
-    experimental_updateStatus: async (id, input) => {
-      const { status, internal_index: index } = store.getState();
-      const newStatus = { ...status };
-
-      const update = typeof input === 'function' ? input(status) : input;
-
-      if (!id || Object.keys(update).length === 0) {
-        return;
-      }
-
-      Object.entries(update).forEach(([storyId, value]) => {
-        if (!storyId || typeof value !== 'object') {
-          return;
-        }
-        newStatus[storyId] = { ...(newStatus[storyId] || {}) };
-        if (value === null) {
-          delete newStatus[storyId][id];
-        } else {
-          newStatus[storyId][id] = value;
-        }
-
-        if (Object.keys(newStatus[storyId]).length === 0) {
-          delete newStatus[storyId];
-        }
-      });
-
-      await store.setState({ status: newStatus }, { persistence: 'session' });
-
-      if (index) {
-        // We need to re-prepare the index
-        await api.setIndex(index);
-
-        const refs = await fullAPI.getRefs();
-        Object.entries(refs).forEach(([refId, { internal_index, ...ref }]) => {
-          fullAPI.setRef(refId, { ...ref, storyIndex: internal_index }, true);
-        });
-      }
-    },
     experimental_setFilter: async (id, filterFunction) => {
       await store.setState({ filters: { ...store.getState().filters, [id]: filterFunction } });
 

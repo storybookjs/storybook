@@ -379,7 +379,6 @@ export default {
     'ManagerContext',
     'Provider',
     'RequestResponseError',
-    'StatusValue',
     'addons',
     'combineParameters',
     'controlOrMetaKey',
@@ -609,7 +608,7 @@ export default {
     'UPDATE_QUERY_PARAMS',
     'UPDATE_STORY_ARGS',
   ],
-  'storybook/internal/types': ['Addon_TypesEnum'],
+  'storybook/internal/types': ['Addon_TypesEnum', 'StatusValue'],
   'storybook/internal/manager-errors': [
     'Category',
     'ProviderDoesNotExtendBaseProviderError',

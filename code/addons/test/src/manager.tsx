@@ -2,16 +2,16 @@ import React, { useState } from 'react';
 
 import { AddonPanel } from 'storybook/internal/components';
 import type { Combo } from 'storybook/internal/manager-api';
-import { Consumer, StatusValue, addons, types } from 'storybook/internal/manager-api';
+import { Consumer, addons, types } from 'storybook/internal/manager-api';
 import {
-  type API_StatusObject,
   type Addon_TestProviderType,
   Addon_TypesEnum,
+  StatusValue,
 } from 'storybook/internal/types';
+import type { StatusValueType } from 'storybook/internal/types';
 
 import { a11yStatusStore, componentTestStatusStore, store } from '#manager-store';
 
-import type { StatusValueType } from '../../../core/src/shared/status-store';
 import { GlobalErrorContext, GlobalErrorModal } from './components/GlobalErrorModal';
 import { Panel } from './components/Panel';
 import { PanelTitle } from './components/PanelTitle';

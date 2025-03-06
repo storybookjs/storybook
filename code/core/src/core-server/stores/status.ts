@@ -2,8 +2,6 @@ import { createStatusStore } from '../../shared/status-store';
 import { UNIVERSAL_STATUS_STORE_OPTIONS } from '../../shared/status-store';
 import { UniversalStore } from '../../shared/universal-store';
 
-console.trace('creatng server status store', process.env.VITEST);
-
 const statusStore = createStatusStore({
   universalStatusStore:
     process.env.VITEST !== 'true'

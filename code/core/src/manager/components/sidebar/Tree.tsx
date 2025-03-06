@@ -15,7 +15,12 @@ import type {
   StoryEntry,
 } from 'storybook/internal/manager-api';
 import { styled, useTheme } from 'storybook/internal/theming';
-import { type API_HashEntry, type API_StatusValue, type StoryId } from 'storybook/internal/types';
+import { type API_HashEntry, StatusValue, type StoryId } from 'storybook/internal/types';
+import type {
+  StatusByTypeId,
+  StatusValueType,
+  StatusesByStoryIdAndTypeId,
+} from 'storybook/internal/types';
 
 import {
   CollapseIcon as CollapseIconSvg,
@@ -29,7 +34,6 @@ import {
 import { darken, lighten } from 'polished';
 
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList';
-import type { StatusByTypeId, StatusesByStoryIdAndTypeId } from '../../../shared/status-store';
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
 import { getGroupStatus, getHighestStatus, statusMapping } from '../../utils/status';
 import {
@@ -165,7 +169,7 @@ interface NodeProps {
   setFullyExpanded?: () => void;
   onSelectStoryId: (itemId: string) => void;
   statuses: StatusByTypeId;
-  groupStatus: Record<StoryId, API_StatusValue>;
+  groupStatus: Record<StoryId, StatusValueType>;
   api: API;
   collapsedData: Record<string, API_HashEntry>;
 }
@@ -202,7 +206,13 @@ export const ContextMenu = {
   ListItem,
 };
 
-const statusOrder: API_StatusValue[] = ['success', 'error', 'warn', 'pending', 'unknown'];
+const statusOrder: StatusValueType[] = [
+  StatusValue.SUCCESS,
+  StatusValue.ERROR,
+  StatusValue.WARN,
+  StatusValue.PENDING,
+  StatusValue.UNKNOWN,
+];
 
 const Node = React.memo<NodeProps>(function Node({
   item,

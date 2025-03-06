@@ -10,11 +10,11 @@ import {
 import { type State, useStorybookApi } from 'storybook/internal/manager-api';
 import { styled } from 'storybook/internal/theming';
 import type { API_LoadedRefData, Addon_SidebarTopType, StoryIndex } from 'storybook/internal/types';
+import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 import { PlusIcon } from '@storybook/icons';
 
-import type { StatusesByStoryIdAndTypeId } from '../../../shared/status-store';
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
 import { useLayout } from '../layout/LayoutProvider';
 import { CreateNewStoryFileModal } from './CreateNewStoryFileModal';

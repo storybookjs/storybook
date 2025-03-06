@@ -19,12 +19,12 @@ import type {
   StoryIndexV3,
   Tag,
 } from 'storybook/internal/types';
+import { StatusValue } from 'storybook/internal/types';
 
 import { countBy, mapValues } from 'es-toolkit';
 import memoize from 'memoizerific';
 import { dedent } from 'ts-dedent';
 
-import { StatusValue } from '../../shared/status-store';
 import { type API, type State, combineParameters } from '../root';
 import { fullStatusStore } from '../stores/status';
 import intersect from './intersect';
@@ -189,16 +189,16 @@ export const transformStoryIndexToStoriesHash = (
     let result = true;
 
     // All stories with a failing status should always show up, regardless of the applied filters
-    const storyStatuses = allStatuses[entry.id];
-    if (Object.values(storyStatuses ?? {}).some(({ value }) => value === StatusValue.ERROR)) {
+    const storyStatuses = allStatuses[entry.id] ?? {};
+    if (Object.values(storyStatuses).some(({ value }) => value === StatusValue.ERROR)) {
       return result;
     }
 
-    Object.values(filters).forEach((filter: any) => {
+    Object.values(filters).forEach((filter) => {
       if (result === false) {
         return;
       }
-      result = filter({ ...entry, status: storyStatuses });
+      result = filter({ ...entry, statuses: storyStatuses });
     });
 
     return result;

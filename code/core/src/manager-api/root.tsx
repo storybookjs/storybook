@@ -533,5 +533,3 @@ export {
   useStatusStore as experimental_useStatusStore,
   fullStatusStore as internal_fullStatusStore,
 } from './stores/status';
-
-export { StatusValue } from '../shared/status-store';

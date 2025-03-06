@@ -29,9 +29,6 @@ import type {
   API_LeafEntry,
   API_LoadedRefData,
   API_PreparedStoryIndex,
-  API_StatusObject,
-  API_StatusState,
-  API_StatusUpdate,
   API_StoryEntry,
   API_ViewMode,
   Args,
@@ -44,10 +41,10 @@ import type {
   StoryName,
   StoryPreparedPayload,
 } from 'storybook/internal/types';
+import type { StatusByTypeId } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
-import type { StatusByTypeId } from '../../shared/status-store';
 import { getEventMetadata } from '../lib/events';
 import {
   addPreparedStories,
@@ -76,7 +73,6 @@ export interface SubState extends API_LoadedRefData {
   storyId: StoryId;
   internal_index?: API_PreparedStoryIndex;
   viewMode: API_ViewMode;
-  status: API_StatusState;
   filters: Record<string, API_FilterFunction>;
 }
 
@@ -657,9 +653,9 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     },
 
     getCurrentStoryStatus: () => {
-      const { status, storyId } = store.getState();
+      const { storyId } = store.getState();
       const allStatuses = fullStatusStore.get();
-      return allStatuses[storyId as StoryId];
+      return allStatuses[storyId];
     },
 
     experimental_setFilter: async (id, filterFunction) => {
@@ -896,7 +892,6 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       viewMode: initialViewMode,
       hasCalledSetOptions: false,
       previewInitialized: false,
-      status: {},
       filters: config?.sidebar?.filters || {},
     },
     init: async () => {

@@ -14,7 +14,7 @@ import {
   useStorybookState,
 } from 'storybook/internal/manager-api';
 import { styled } from 'storybook/internal/theming';
-import { type API_FilterFunction } from 'storybook/internal/types';
+import { type API_FilterFunction, StatusValue } from 'storybook/internal/types';
 
 import { NotificationList } from '../notifications/NotificationList';
 import { TestingModule } from './TestingModule';
@@ -25,12 +25,14 @@ const SIDEBAR_BOTTOM_SPACER_ID = 'sidebar-bottom-spacer';
 const SIDEBAR_BOTTOM_WRAPPER_ID = 'sidebar-bottom-wrapper';
 
 const filterNone: API_FilterFunction = () => true;
-const filterWarn: API_FilterFunction = ({ status = {} }) =>
-  Object.values(status).some((value) => value?.status === 'warn');
-const filterError: API_FilterFunction = ({ status = {} }) =>
-  Object.values(status).some((value) => value?.status === 'error');
-const filterBoth: API_FilterFunction = ({ status = {} }) =>
-  Object.values(status).some((value) => value?.status === 'warn' || value?.status === 'error');
+const filterWarn: API_FilterFunction = ({ statuses = {} }) =>
+  Object.values(statuses).some(({ value }) => value === StatusValue.WARN);
+const filterError: API_FilterFunction = ({ statuses = {} }) =>
+  Object.values(statuses).some(({ value }) => value === StatusValue.ERROR);
+const filterBoth: API_FilterFunction = ({ statuses = {} }) =>
+  Object.values(statuses).some(({ value }) =>
+    [StatusValue.WARN, StatusValue.ERROR].includes(value as any)
+  );
 
 const getFilter = (warningsActive = false, errorsActive = false) => {
   if (warningsActive && errorsActive) {
@@ -181,11 +183,11 @@ export const SidebarBottom = ({ isDevelopment }: { isDevelopment?: boolean }) =>
     return Object.values(statuses).reduce(
       (counts, storyStatuses) => {
         Object.values(storyStatuses).forEach((status) => {
-          if (status.value === 'error') {
+          if (status.value === StatusValue.ERROR) {
             counts.errorCount += 1;
           }
 
-          if (status.value === 'warn') {
+          if (status.value === StatusValue.WARN) {
             counts.warningCount += 1;
           }
         });

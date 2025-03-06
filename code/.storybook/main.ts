@@ -101,7 +101,7 @@ const config = defineMain({
     '@storybook/addon-designs',
     '@storybook/addon-test',
     '@storybook/addon-a11y',
-    '@chromatic-com/storybook',
+    // '@chromatic-com/storybook',
   ],
   previewAnnotations: [
     './core/template/stories/preview.ts',

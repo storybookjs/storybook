@@ -3,10 +3,10 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { useStorybookApi, useStorybookState } from 'storybook/internal/manager-api';
 import { styled } from 'storybook/internal/theming';
+import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
 
 import { transparentize } from 'polished';
 
-import type { StatusesByStoryIdAndTypeId } from '../../../shared/status-store';
 import { getStateType } from '../../utils/tree';
 import { AuthBlock, EmptyBlock, ErrorBlock, LoaderBlock } from './RefBlocks';
 import { RefIndicator } from './RefIndicator';

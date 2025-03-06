@@ -27,12 +27,6 @@ export interface Status {
   sidebarContextMenu?: boolean;
 }
 
-// export type API_StatusUpdate = Record<StoryId, Status | null>;
-
-// export type API_FilterFunction = (
-//   item: API_PreparedIndexEntry & { status: Record<string, Status | null> }
-// ) => boolean;
-
 export const UNIVERSAL_STATUS_STORE_OPTIONS: StoreOptions<StatusesByStoryIdAndTypeId> = {
   id: 'storybook/status',
   leader: true,
@@ -48,7 +42,7 @@ export type StatusStoreEvent = {
   payload: Status[];
 };
 
-type StatusStore = {
+export type StatusStore = {
   get: () => StatusesByStoryIdAndTypeId;
   set: (statuses: Status[]) => void;
   onStatusChange: (
@@ -64,11 +58,11 @@ type FullStatusStore = StatusStore & {
   selectStatuses: (statuses: Status[]) => void;
   typeId: undefined;
 };
-type StatusStoreByTypeId = StatusStore & {
+export type StatusStoreByTypeId = StatusStore & {
   typeId: StatusTypeId;
 };
 
-type UseStatusStore = (selector?: (statuses: StatusesByStoryIdAndTypeId) => any) => any;
+export type UseStatusStore = (selector?: (statuses: StatusesByStoryIdAndTypeId) => any) => any;
 
 export function createStatusStore(params: {
   universalStatusStore: UniversalStore<StatusesByStoryIdAndTypeId, StatusStoreEvent>;

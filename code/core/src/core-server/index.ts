@@ -4,6 +4,7 @@ export { getPreviewHeadTemplate, getPreviewBodyTemplate } from 'storybook/intern
 
 export * from './build-static';
 export * from './build-dev';
+export * from './build-index';
 export * from './withTelemetry';
 export { default as build } from './standalone';
 export { mapStaticDir } from './utils/server-statics';

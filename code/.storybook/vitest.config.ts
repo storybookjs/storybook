@@ -22,7 +22,7 @@ export default mergeConfig(
   // @ts-expect-error added this because of testNamePattern below
   defineProject({
     plugins: [
-      import('@storybook/experimental-addon-test/vitest-plugin').then(({ storybookTest }) =>
+      import('@storybook/addon-test/vitest-plugin').then(({ storybookTest }) =>
         storybookTest({
           configDir: __dirname,
           tags: {

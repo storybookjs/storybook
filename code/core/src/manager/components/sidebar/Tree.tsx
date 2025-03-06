@@ -3,7 +3,7 @@ import React, { useCallback, useMemo, useRef } from 'react';
 
 import { Button, IconButton, ListItem } from 'storybook/internal/components';
 import { PRELOAD_ENTRIES } from 'storybook/internal/core-events';
-import { useStorybookApi } from 'storybook/internal/manager-api';
+import { useStorybookApi, internal_fullStatusStore as fullStatusStore } from 'storybook/internal/manager-api';
 import type {
   API,
   ComponentEntry,
@@ -26,7 +26,6 @@ import {
 import { darken, lighten } from 'polished';
 
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList';
-import { fullStatusStore } from '../../../manager-api/stores/status';
 import type { StatusByTypeId, StatusesByStoryIdAndTypeId } from '../../../shared/status-store';
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
 import { getGroupStatus, getHighestStatus, statusMapping } from '../../utils/status';

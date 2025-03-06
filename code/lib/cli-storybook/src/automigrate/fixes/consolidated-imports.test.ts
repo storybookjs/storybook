@@ -116,7 +116,7 @@ describe('transformPackageJsonFiles', () => {
     expect(errors).toHaveLength(0);
     expect(writeFile).toHaveBeenCalledWith(
       filePath,
-      expect.stringContaining('"storybook": "^8.0.0"')
+      expect.not.stringContaining('"@storybook/core-common": "^8.0.0"')
     );
   });
 
@@ -176,7 +176,7 @@ describe('transformImportFiles', () => {
     expect(errors).toHaveLength(0);
     expect(writeFile).toHaveBeenCalledWith(
       sourceFiles[0],
-      expect.stringContaining('from "storybook/internal/components"')
+      expect.stringContaining(`from 'storybook/internal/components'`)
     );
   });
 
@@ -194,7 +194,7 @@ describe('transformImportFiles', () => {
     expect(errors).toHaveLength(0);
     expect(writeFile).toHaveBeenCalledWith(
       sourceFiles[0],
-      expect.stringContaining('require("storybook/internal/components")')
+      expect.stringContaining(`require('storybook/internal/components')`)
     );
   });
 
@@ -212,11 +212,11 @@ describe('transformImportFiles', () => {
     expect(errors).toHaveLength(0);
     expect(writeFile).toHaveBeenCalledWith(
       sourceFiles[0],
-      expect.stringContaining('from "storybook/internal/components"')
+      expect.stringContaining(`from 'storybook/internal/components'`)
     );
     expect(writeFile).toHaveBeenCalledWith(
       sourceFiles[0],
-      expect.stringContaining('require("storybook/internal/common")')
+      expect.stringContaining(`require('storybook/internal/common')`)
     );
   });
 

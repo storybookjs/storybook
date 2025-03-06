@@ -43,46 +43,19 @@ function transformPackageJson(content: string): string | null {
 }
 
 function transformImports(source: string) {
-  const ast = recast.parse(source, {
-    parser: {
-      parse(code: string) {
-        return parser.parse(code, {
-          sourceType: 'unambiguous',
-          plugins: ['typescript', 'jsx'],
-        });
-      },
-    },
-  });
   let hasChanges = false;
+  let transformed = source;
 
-  traverse(ast, {
-    ImportDeclaration(path: NodePath<t.ImportDeclaration>) {
-      const importSource = path.node.source.value;
-      if (typeof importSource === 'string' && importSource in consolidatedPackages) {
-        path.node.source = t.stringLiteral(
-          consolidatedPackages[importSource as ConsolidatedPackage]
-        );
-        hasChanges = true;
-      }
-    },
-    CallExpression(path: NodePath<t.CallExpression>) {
-      if (
-        t.isIdentifier(path.node.callee, { name: 'require' }) &&
-        path.node.arguments.length > 0 &&
-        t.isStringLiteral(path.node.arguments[0])
-      ) {
-        const arg = path.node.arguments[0];
-        if (arg.value in consolidatedPackages) {
-          path.node.arguments[0] = t.stringLiteral(
-            consolidatedPackages[arg.value as ConsolidatedPackage]
-          );
-          hasChanges = true;
-        }
-      }
-    },
-  });
+  for (const [from, to] of Object.entries(consolidatedPackages)) {
+    // Match the package name when it's inside either single or double quotes
+    const regex = new RegExp(`(['"])${from}\\1`, 'g');
+    if (regex.test(transformed)) {
+      transformed = transformed.replace(regex, `$1${to}$1`);
+      hasChanges = true;
+    }
+  }
 
-  return hasChanges ? recast.print(ast).code : null;
+  return hasChanges ? transformed : null;
 }
 
 export const transformPackageJsonFiles = async (files: string[], dryRun: boolean) => {

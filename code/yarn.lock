@@ -6774,7 +6774,6 @@ __metadata:
     "@storybook/test": "workspace:*"
     "@types/node": "npm:^22.0.0"
     next: "npm:^15.0.3"
-    sharp: "npm:^0.33.3"
     styled-jsx: "npm:5.1.6"
     typescript: "npm:^5.7.3"
     vite-plugin-storybook-nextjs: "npm:^1.1.2"
@@ -6785,9 +6784,6 @@ __metadata:
     react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
     storybook: "workspace:^"
     vite: ^5.0.0 || ^6.0.0
-  dependenciesMeta:
-    sharp:
-      optional: true
   peerDependenciesMeta:
     typescript:
       optional: true
@@ -27067,7 +27063,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"sharp@npm:^0.33.3, sharp@npm:^0.33.5":
+"sharp@npm:^0.33.5":
   version: 0.33.5
   resolution: "sharp@npm:0.33.5"
   dependencies:

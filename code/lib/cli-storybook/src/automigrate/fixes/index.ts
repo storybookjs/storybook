@@ -24,6 +24,7 @@ import { removedGlobalClientAPIs } from './remove-global-client-apis';
 import { removeLegacyMDX1 } from './remove-legacymdx1';
 import { sbBinary } from './sb-binary';
 import { sbScripts } from './sb-scripts';
+import { storybookTestMigration } from './storybook-test-migration';
 import { storyshotsMigration } from './storyshots-migration';
 import { upgradeStorybookRelatedDependencies } from './upgrade-storybook-related-dependencies';
 import { viteConfigFile } from './vite-config-file';
@@ -68,6 +69,7 @@ export const allFixes: Fix[] = [
   initialGlobals,
   addonA11yAddonTest,
   addonExperimentalTest,
+  storybookTestMigration,
 ];
 
 export const initFixes: Fix[] = [eslintPlugin];

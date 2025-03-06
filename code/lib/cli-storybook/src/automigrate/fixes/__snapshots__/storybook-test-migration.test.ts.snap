@@ -1,0 +1,18 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`storybook-test-migration > should show the correct prompt message 1`] = `
+"We detected that you're using @storybook/test in your project. This package has been merged into storybook/test.
+
+We'll help you migrate by:
+1. Removing @storybook/test from your dependencies
+2. Updating all imports from @storybook/test to storybook/test
+
+We'll scan the following files:
+- All files in .storybook directory
+- All *.stories.* files
+- All *.test.* files
+
+The default glob pattern we'll use is: {.storybook/**/*,**/*.{stories.*,test.*}}
+
+In the next step, you can provide a custom glob pattern to fine-tune the files we'll scan."
+`;

@@ -76,7 +76,8 @@
     },
     "./actions/preview": {
       "types": "./dist/actions/preview.d.ts",
-      "import": "./dist/actions/preview.js"
+      "import": "./dist/actions/preview.js",
+      "require": "./dist/actions/preview.cjs"
     },
     "./actions/manager": {
       "import": "./dist/actions/manager.js"

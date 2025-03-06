@@ -57,6 +57,7 @@ const applyEventHandlers = (actionsFn: any, ...handles: any[]) => {
 // We can not use DecoratorFunction though as the type has to be generic.
 // Hard to explain, but you will understand when you try to solve this issue:
 // https://github.com/storybookjs/storybook/issues/22384
+/** @deprecated Will be removed in Storybook v10 */
 export const withActions: <T extends Renderer>(storyFn: PartialStoryFn<T>) => T['storyResult'] =
   makeDecorator({
     name: 'withActions',

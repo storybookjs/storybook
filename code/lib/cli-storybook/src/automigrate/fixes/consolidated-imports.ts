@@ -2,7 +2,6 @@ import { readFile, writeFile } from 'node:fs/promises';
 
 import { commonGlobOptions, getProjectRoot } from 'storybook/internal/common';
 
-import pLimit from 'p-limit';
 import prompts from 'prompts';
 import { dedent } from 'ts-dedent';
 
@@ -58,6 +57,9 @@ function transformImports(source: string) {
 
 export const transformPackageJsonFiles = async (files: string[], dryRun: boolean) => {
   const errors: Array<{ file: string; error: Error }> = [];
+
+  const { default: pLimit } = await import('p-limit');
+
   const limit = pLimit(10);
 
   await Promise.all(
@@ -81,6 +83,7 @@ export const transformPackageJsonFiles = async (files: string[], dryRun: boolean
 
 export const transformImportFiles = async (files: string[], dryRun: boolean) => {
   const errors: Array<{ file: string; error: Error }> = [];
+  const { default: pLimit } = await import('p-limit');
   const limit = pLimit(10);
 
   await Promise.all(

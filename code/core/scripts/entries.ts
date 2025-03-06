@@ -19,7 +19,7 @@ export const getEntries = (cwd: string) => {
 
     // Actions addon
     define('src/actions/index.ts', ['browser', 'node'], true, [], [], [], true),
-    define('src/actions/preview.ts', ['browser'], false, [], [], [], true),
+    define('src/actions/preview.ts', ['browser'], true, [], [], [], true),
     define('src/actions/manager.tsx', ['browser'], false, [], [], [], true),
     define('src/actions/decorator.ts', ['browser'], true, [], [], [], true),
 

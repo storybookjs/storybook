@@ -1,6 +1,4 @@
 // @vitest-environment happy-dom
-
-/* eslint-disable import/namespace */
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -10,9 +8,8 @@ import { addons } from 'storybook/internal/preview-api';
 
 import type { Meta } from '@storybook/react';
 
-import * as addonActionsPreview from '@storybook/addon-actions/preview';
-
 import { expectTypeOf } from 'expect-type';
+import * as addonActionsPreview from 'storybook/actions/preview';
 
 import { composeStories, composeStory, setProjectAnnotations } from '..';
 import type { Button } from './Button';

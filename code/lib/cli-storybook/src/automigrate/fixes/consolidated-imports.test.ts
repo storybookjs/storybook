@@ -5,8 +5,11 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { dedent } from 'ts-dedent';
 
-import type { Fix, RunOptions } from '../types';
-import { type ConsolidatedImportsOptions, consolidatedImports } from './consolidated-imports';
+import {
+  consolidatedImports,
+  transformImportFiles,
+  transformPackageJsonFiles,
+} from './consolidated-imports';
 
 vi.mock('node:fs/promises');
 vi.mock('globby', () => ({
@@ -14,8 +17,16 @@ vi.mock('globby', () => ({
 }));
 
 const mockPackageJson = {
-  dependencies: {},
-  devDependencies: {},
+  dependencies: {
+    '@storybook/react': '^7.0.0',
+    '@storybook/core-common': '^7.0.0',
+    react: '^18.0.0',
+  },
+  devDependencies: {
+    '@storybook/addon-essentials': '^7.0.0',
+    '@storybook/manager-api': '^7.0.0',
+    typescript: '^5.0.0',
+  },
 };
 
 const mockRunOptions = {
@@ -30,12 +41,18 @@ const mockRunOptions = {
 const setupGlobby = async (files: string[]) => {
   // eslint-disable-next-line depend/ban-dependencies
   const { globby } = await import('globby');
-  vi.mocked(globby).mockResolvedValue(files);
+  vi.mocked(globby).mockResolvedValueOnce(files);
 };
 
-const setupCheck = async (contents: string, files: string[]) => {
-  vi.mocked(readFile).mockResolvedValue(contents);
-  await setupGlobby(files);
+const setupCheck = async (packageJsonContents: string, packageJsonFiles: string[]) => {
+  vi.mocked(readFile).mockImplementation(async (path: any) => {
+    const filePath = path.toString();
+    if (filePath.endsWith('package.json')) {
+      return packageJsonContents;
+    }
+    return '';
+  });
+  await setupGlobby(packageJsonFiles);
 
   return consolidatedImports.check({
     ...mockRunOptions,
@@ -43,191 +60,222 @@ const setupCheck = async (contents: string, files: string[]) => {
   });
 };
 
-const runWithError = async (result: ConsolidatedImportsOptions) => {
-  return (
-    consolidatedImports as Fix<ConsolidatedImportsOptions> & {
-      run: (options: RunOptions<ConsolidatedImportsOptions>) => Promise<void>;
-    }
-  ).run({
-    result,
-    dryRun: false,
-    ...mockRunOptions,
-  });
-};
-
 describe('check', () => {
-  it('should call globby with correct patterns', async () => {
-    const filePath = join('src', 'test.ts');
-    const contents = `import { something } from '@storybook/components';`;
+  it('should call globby with correct patterns for package.json files', async () => {
+    const filePath = 'test/package.json';
+    const contents = JSON.stringify(mockPackageJson);
 
     await setupCheck(contents, [filePath]);
 
     // eslint-disable-next-line depend/ban-dependencies
     const { globby } = await import('globby');
     expect(globby).toHaveBeenCalledWith(
-      ['**/*.{js,jsx,ts,tsx}'],
+      ['**/package.json'],
       expect.objectContaining({
-        ignore: ['**/node_modules/**', '**/dist/**', '**/build/**'],
+        ignore: ['**/node_modules/**'],
       })
     );
   });
 
-  it('should detect consolidated package imports', async () => {
-    const contents = `
-      import { something } from '@storybook/components';
-      import { other } from '@storybook/core-common';
-    `;
-    const filePath = join('src', 'test.ts');
+  it('should detect consolidated packages in package.json', async () => {
+    const contents = JSON.stringify(mockPackageJson);
+    const filePath = 'test/package.json';
 
     const result = await setupCheck(contents, [filePath]);
     expect(result).toMatchObject({
-      files: [filePath],
+      packageJsonFiles: [filePath],
     });
   });
 
-  it('should not detect non-consolidated package imports', async () => {
-    const contents = `
-      import { something } from '@storybook/other-package';
-      import { other } from 'some-other-package';
-    `;
-    const filePath = join('src', 'test.ts');
+  it('should not detect non-consolidated packages in package.json', async () => {
+    const packageJsonWithoutConsolidated = {
+      dependencies: {
+        react: '^18.0.0',
+      },
+      devDependencies: {
+        typescript: '^5.0.0',
+      },
+    };
+    const contents = JSON.stringify(packageJsonWithoutConsolidated);
+    const filePath = 'test/package.json';
 
     const result = await setupCheck(contents, [filePath]);
     expect(result).toBeNull();
   });
 });
 
-describe('run-with-success', () => {
-  const run = async ({ contents, filePath }: { contents: string; filePath: string }) => {
-    vi.mocked(readFile).mockResolvedValue(contents);
-    await setupGlobby([filePath]);
+describe('transformPackageJsonFiles', () => {
+  it('should transform package.json files', async () => {
+    const contents = JSON.stringify(mockPackageJson);
+    const filePath = 'test/package.json';
 
-    const result = await consolidatedImports.check({
-      ...mockRunOptions,
-      storybookVersion: '8.0.0',
-    });
+    vi.mocked(readFile).mockResolvedValueOnce(contents);
 
-    if (!result) {
-      throw new Error('No result from check');
-    }
+    const errors = await transformPackageJsonFiles([filePath], false);
 
-    await (
-      consolidatedImports as Fix<ConsolidatedImportsOptions> & {
-        run: (options: RunOptions<ConsolidatedImportsOptions>) => Promise<void>;
-      }
-    ).run({
-      result,
-      dryRun: false,
-      ...mockRunOptions,
-    });
-
-    const writeFileMock = vi.mocked(writeFile);
-    if (!writeFileMock.mock.calls.length) {
-      throw new Error('writeFile was not called');
-    }
-    return writeFileMock.mock.calls[0][1];
-  };
-
-  it('should transform import declarations', async () => {
-    const contents = dedent`
-      import { something } from '@storybook/components';
-      import { other } from '@storybook/core-common';
-    `;
-    const filePath = join('src', 'test.ts');
-
-    const transformed = await run({ contents, filePath });
-    expect(transformed).toMatchInlineSnapshot(`
-      "import { something } from "storybook/internal/components";
-      import { other } from "storybook/internal/common";"
-    `);
-  });
-
-  it('should transform require calls', async () => {
-    const contents = dedent`
-      const something = require('@storybook/components');
-      const other = require('@storybook/core-common');
-    `;
-    const filePath = join('src', 'test.ts');
-
-    const transformed = await run({ contents, filePath });
-    expect(transformed).toMatchInlineSnapshot(`
-      "const something = require("storybook/internal/components");
-      const other = require("storybook/internal/common");"
-    `);
-  });
-
-  it('should handle mixed import styles', async () => {
-    const contents = dedent`
-      import { something } from '@storybook/components';
-      const other = require('@storybook/core-common');
-    `;
-    const filePath = join('src', 'test.ts');
-
-    const transformed = await run({ contents, filePath });
-    expect(transformed).toMatchInlineSnapshot(`
-      "import { something } from "storybook/internal/components";
-      const other = require("storybook/internal/common");"
-    `);
-  });
-
-  it('should not transform non-consolidated package imports', async () => {
-    const contents = `
-      import { something } from '@storybook/other-package';
-      const other = require('some-other-package');
-    `;
-    const filePath = join('src', 'test.ts');
-
-    const result = await setupCheck(contents, [filePath]);
-    expect(result).toBeNull();
-  });
-});
-
-describe('run-with-failure', () => {
-  it('should handle file read errors', async () => {
-    const filePath = join('src', 'test.ts');
-    const contents = `import { something } from '@storybook/components';`;
-
-    const result = await setupCheck(contents, [filePath]);
-    if (!result) {
-      throw new Error('No result from check');
-    }
-
-    vi.mocked(readFile).mockRejectedValue(new Error('Failed to read file'));
-
-    await expect(runWithError(result)).rejects.toThrow(
-      `Failed to process 1 files:\n- ${filePath}: Failed to read file`
+    expect(errors).toHaveLength(0);
+    expect(writeFile).toHaveBeenCalledWith(
+      filePath,
+      expect.stringContaining('"storybook": "^8.0.0"')
     );
+  });
+
+  it('should not write files in dry run mode', async () => {
+    const contents = JSON.stringify(mockPackageJson);
+    const filePath = 'test/package.json';
+
+    vi.mocked(readFile).mockResolvedValueOnce(contents);
+
+    const errors = await transformPackageJsonFiles([filePath], true);
+
+    expect(errors).toHaveLength(0);
+    expect(writeFile).not.toHaveBeenCalled();
+  });
+
+  it('should handle file read errors', async () => {
+    const filePath = 'test/package.json';
+    vi.mocked(readFile).mockRejectedValueOnce(new Error('Failed to read file'));
+
+    const errors = await transformPackageJsonFiles([filePath], false);
+
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toMatchObject({
+      file: filePath,
+      error: expect.any(Error),
+    });
   });
 
   it('should handle file write errors', async () => {
-    const contents = `import { something } from '@storybook/components';`;
-    const filePath = join('src', 'test.ts');
+    const contents = JSON.stringify(mockPackageJson);
+    const filePath = 'test/package.json';
+    vi.mocked(readFile).mockResolvedValueOnce(contents);
     vi.mocked(writeFile).mockRejectedValueOnce(new Error('Failed to write file'));
 
-    const result = await setupCheck(contents, [filePath]);
-    if (!result) {
-      throw new Error('No result from check');
-    }
+    const errors = await transformPackageJsonFiles([filePath], false);
 
-    await expect(runWithError(result)).rejects.toThrow(
-      `Failed to process 1 files:\n- ${filePath}: Failed to write file`
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toMatchObject({
+      file: filePath,
+      error: expect.any(Error),
+    });
+  });
+});
+
+describe('transformImportFiles', () => {
+  it('should transform import declarations', async () => {
+    const sourceContents = dedent`
+      import { something } from '@storybook/components';
+      import { other } from '@storybook/core-common';
+    `;
+    const sourceFiles = [join('src', 'test.ts')];
+
+    vi.mocked(readFile).mockResolvedValueOnce(sourceContents);
+
+    const errors = await transformImportFiles(sourceFiles, false);
+
+    expect(errors).toHaveLength(0);
+    expect(writeFile).toHaveBeenCalledWith(
+      sourceFiles[0],
+      expect.stringContaining('from "storybook/internal/components"')
     );
   });
 
-  it('should handle multiple file errors', async () => {
-    const file1 = join('src', 'test1.ts');
-    const file2 = join('src', 'test2.ts');
-    const contents = `import { something } from '@storybook/components';`;
+  it('should transform require calls', async () => {
+    const sourceContents = dedent`
+      const something = require('@storybook/components');
+      const other = require('@storybook/core-common');
+    `;
+    const sourceFiles = [join('src', 'test.ts')];
 
-    const result = await setupCheck(contents, [file1, file2]);
-    if (!result) {
-      throw new Error('No result from check');
-    }
+    vi.mocked(readFile).mockResolvedValueOnce(sourceContents);
 
-    vi.mocked(readFile).mockRejectedValue(new Error('Failed to read file'));
+    const errors = await transformImportFiles(sourceFiles, false);
 
-    await expect(runWithError(result)).rejects.toThrow(
-      `Failed to process 2 files:\n- ${file1}: Failed to read file\n- ${file2}: Failed to read file`
+    expect(errors).toHaveLength(0);
+    expect(writeFile).toHaveBeenCalledWith(
+      sourceFiles[0],
+      expect.stringContaining('require("storybook/internal/components")')
     );
+  });
+
+  it('should handle mixed import styles', async () => {
+    const sourceContents = dedent`
+      import { something } from '@storybook/components';
+      const other = require('@storybook/core-common');
+    `;
+    const sourceFiles = [join('src', 'test.ts')];
+
+    vi.mocked(readFile).mockResolvedValueOnce(sourceContents);
+
+    const errors = await transformImportFiles(sourceFiles, false);
+
+    expect(errors).toHaveLength(0);
+    expect(writeFile).toHaveBeenCalledWith(
+      sourceFiles[0],
+      expect.stringContaining('from "storybook/internal/components"')
+    );
+    expect(writeFile).toHaveBeenCalledWith(
+      sourceFiles[0],
+      expect.stringContaining('require("storybook/internal/common")')
+    );
+  });
+
+  it('should not transform non-consolidated package imports', async () => {
+    const sourceContents = `
+      import { something } from '@storybook/other-package';
+      const other = require('some-other-package');
+    `;
+    const sourceFiles = [join('src', 'test.ts')];
+
+    vi.mocked(readFile).mockResolvedValueOnce(sourceContents);
+
+    const errors = await transformImportFiles(sourceFiles, false);
+
+    expect(errors).toHaveLength(0);
+    expect(writeFile).not.toHaveBeenCalledWith(sourceFiles[0], expect.any(String));
+  });
+
+  it('should not write files in dry run mode', async () => {
+    const sourceContents = dedent`
+      import { something } from '@storybook/components';
+    `;
+    const sourceFiles = [join('src', 'test.ts')];
+
+    vi.mocked(readFile).mockResolvedValueOnce(sourceContents);
+
+    const errors = await transformImportFiles(sourceFiles, true);
+
+    expect(errors).toHaveLength(0);
+    expect(writeFile).not.toHaveBeenCalled();
+  });
+
+  it('should handle file read errors', async () => {
+    const sourceFiles = [join('src', 'test.ts')];
+    vi.mocked(readFile).mockRejectedValueOnce(new Error('Failed to read file'));
+
+    const errors = await transformImportFiles(sourceFiles, false);
+
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toMatchObject({
+      file: sourceFiles[0],
+      error: expect.any(Error),
+    });
+  });
+
+  it('should handle file write errors', async () => {
+    const sourceContents = dedent`
+      import { something } from '@storybook/components';
+    `;
+    const sourceFiles = [join('src', 'test.ts')];
+    vi.mocked(readFile).mockResolvedValueOnce(sourceContents);
+    vi.mocked(writeFile).mockRejectedValueOnce(new Error('Failed to write file'));
+
+    const errors = await transformImportFiles(sourceFiles, false);
+
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toMatchObject({
+      file: sourceFiles[0],
+      error: expect.any(Error),
+    });
   });
 });

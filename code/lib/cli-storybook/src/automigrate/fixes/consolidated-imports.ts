@@ -1,16 +1,54 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
 import { type NodePath, parser, recast, types as t, traverse } from 'storybook/internal/babel';
-import { commonGlobOptions } from 'storybook/internal/common';
+import { commonGlobOptions, getProjectRoot } from 'storybook/internal/common';
 
-import picocolors from 'picocolors';
+// eslint-disable-next-line depend/ban-dependencies
+import { globby } from 'globby';
+import pLimit from 'p-limit';
 import { dedent } from 'ts-dedent';
 
 import { type ConsolidatedPackage, consolidatedPackages } from '../helpers/consolidated-packages';
-import type { Fix } from '../types';
+import type { Fix, RunOptions } from '../types';
 
-export interface ConsolidatedImportsOptions {
-  files: string[];
+export interface ConsolidatedOptions {
+  packageJsonFiles: string[];
+}
+
+function transformPackageJson(content: string): string | null {
+  const packageJson = JSON.parse(content);
+  let hasChanges = false;
+
+  // Check dependencies
+  if (packageJson.dependencies) {
+    for (const [dep, version] of Object.entries(packageJson.dependencies)) {
+      if (dep in consolidatedPackages) {
+        delete packageJson.dependencies[dep];
+        hasChanges = true;
+      }
+    }
+  }
+
+  // Check devDependencies
+  if (packageJson.devDependencies) {
+    for (const [dep, version] of Object.entries(packageJson.devDependencies)) {
+      if (dep in consolidatedPackages) {
+        delete packageJson.devDependencies[dep];
+        hasChanges = true;
+      }
+    }
+  }
+
+  // Ensure storybook is in devDependencies
+  if (!packageJson.devDependencies) {
+    packageJson.devDependencies = {};
+  }
+  if (!packageJson.devDependencies.storybook) {
+    packageJson.devDependencies.storybook = '^8.0.0';
+    hasChanges = true;
+  }
+
+  return hasChanges ? JSON.stringify(packageJson, null, 2) : null;
 }
 
 function transformImports(source: string) {
@@ -56,73 +94,117 @@ function transformImports(source: string) {
   return hasChanges ? recast.print(ast).code : null;
 }
 
-export const consolidatedImports: Fix<ConsolidatedImportsOptions> = {
+export const transformPackageJsonFiles = async (files: string[], dryRun: boolean) => {
+  const errors: Array<{ file: string; error: Error }> = [];
+  const limit = pLimit(10);
+
+  await Promise.all(
+    files.map((file) =>
+      limit(async () => {
+        try {
+          const contents = await readFile(file, 'utf-8');
+          const transformed = transformPackageJson(contents);
+          if (!dryRun && transformed) {
+            await writeFile(file, transformed);
+          }
+        } catch (error) {
+          errors.push({ file, error: error as Error });
+        }
+      })
+    )
+  );
+
+  return errors;
+};
+
+export const transformImportFiles = async (files: string[], dryRun: boolean) => {
+  const errors: Array<{ file: string; error: Error }> = [];
+  const limit = pLimit(10);
+
+  await Promise.all(
+    files.map((file) =>
+      limit(async () => {
+        try {
+          const contents = await readFile(file, 'utf-8');
+          const transformed = transformImports(contents);
+          if (!dryRun && transformed) {
+            await writeFile(file, transformed);
+          }
+        } catch (error) {
+          errors.push({ file, error: error as Error });
+        }
+      })
+    )
+  );
+
+  return errors;
+};
+
+export const consolidatedImports: Fix<ConsolidatedOptions> = {
   id: 'consolidated-imports',
-  versionRange: ['<8.0.0', '>=8.0.0'],
-  promptType: 'auto',
-
-  async check(): Promise<ConsolidatedImportsOptions | null> {
-    // eslint-disable-next-line depend/ban-dependencies
-    const { globby } = await import('globby');
-
-    const patterns = ['**/*.{js,jsx,ts,tsx}'];
-    const files = (await globby(patterns, {
+  versionRange: ['^8.0.0', '^9.0.0'],
+  check: async () => {
+    const projectRoot = getProjectRoot();
+    const packageJsonFiles = await globby(['**/package.json'], {
       ...commonGlobOptions(''),
-      ignore: ['**/node_modules/**', '**/dist/**', '**/build/**'],
-    })) as string[];
+      ignore: ['**/node_modules/**'],
+      cwd: projectRoot,
+    });
 
-    // Check if any files contain imports from consolidated packages
-    const filesWithConsolidatedImports: string[] = [];
+    // check if any of the package.json files have consolidated packages
+    const hasConsolidatedDependencies = await Promise.all(
+      packageJsonFiles.map(async (file) => {
+        const contents = await readFile(file, 'utf-8');
+        const packageJson = JSON.parse(contents);
+        return (
+          Object.keys(packageJson.dependencies || {}).some((dep) => dep in consolidatedPackages) ||
+          Object.keys(packageJson.devDependencies || {}).some((dep) => dep in consolidatedPackages)
+        );
+      })
+    ).then((results) => results.some(Boolean));
 
-    for (const file of files) {
-      const content = await readFile(file, 'utf-8');
-      const hasConsolidatedImport = Object.keys(consolidatedPackages).some((pkg) =>
-        content.includes(pkg)
-      );
-
-      if (hasConsolidatedImport) {
-        filesWithConsolidatedImports.push(file);
-      }
+    if (!hasConsolidatedDependencies) {
+      return null;
     }
-
-    return filesWithConsolidatedImports.length > 0 ? { files: filesWithConsolidatedImports } : null;
+    return {
+      packageJsonFiles,
+    };
   },
-
-  prompt({ files }) {
+  prompt: (result: ConsolidatedOptions) => {
     return dedent`
-      Found usage of consolidated Storybook packages that need to be updated to use internal paths:
-      ${files.map((file) => `- ${picocolors.cyan(file)}`).join('\n')}
+      Found package.json files that contain consolidated Storybook packages that need to be updated:
+      ${result.packageJsonFiles.map((file) => `- ${file}`).join('\n')}
 
-      These packages have been consolidated into internal modules and should be imported from their new paths.
-      Would you like to update these imports automatically?
+      These packages have been consolidated into the main storybook package and should be removed.
+      The main storybook package will be added to devDependencies if not already present.
+      
+      Would you like to:
+      1. Update these package.json files
+      2. Scan your codebase and update any imports from these consolidated packages
+      
+      This will ensure your project is properly updated to use the new consolidated package structure.
     `;
   },
+  run: async (options: RunOptions<ConsolidatedOptions>) => {
+    const { result, dryRun = false } = options;
+    const { packageJsonFiles } = result;
 
-  async run({ dryRun, result: { files } }) {
-    const { default: pLimit } = await import('p-limit');
-    const limit = pLimit(10);
-    const errors: { file: string; error: Error }[] = [];
+    const errors: Array<{ file: string; error: Error }> = [];
 
-    await Promise.all(
-      files.map((file) =>
-        limit(async () => {
-          try {
-            const content = await readFile(file, 'utf-8');
-            const transformed = transformImports(content);
+    const packageJsonErrors = await transformPackageJsonFiles(packageJsonFiles, dryRun);
+    errors.push(...packageJsonErrors);
 
-            if (transformed && !dryRun) {
-              await writeFile(file, transformed);
-            }
-          } catch (error) {
-            // eslint-disable-next-line local-rules/no-uncategorized-errors
-            errors.push({ file, error: error instanceof Error ? error : new Error(String(error)) });
-          }
-        })
-      )
-    );
+    const projectRoot = getProjectRoot();
+    const sourceFiles = await globby(['**/*.{mjs,cjs,js,jsx,ts,tsx}'], {
+      ...commonGlobOptions(''),
+      ignore: ['**/node_modules/**'],
+      cwd: projectRoot,
+    });
+
+    const importErrors = await transformImportFiles(sourceFiles, dryRun);
+    errors.push(...importErrors);
 
     if (errors.length > 0) {
-      // eslint-disable-next-line local-rules/no-uncategorized-errors
       throw new Error(
         `Failed to process ${errors.length} files:\n${errors
           .map(({ file, error }) => `- ${file}: ${error.message}`)

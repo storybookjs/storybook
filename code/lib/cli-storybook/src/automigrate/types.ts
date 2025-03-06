@@ -44,6 +44,8 @@ type BaseFix<ResultType = any> = {
   check: (options: CheckOptions) => Promise<ResultType | null>;
   prompt: (result: ResultType) => string;
   promptDefaultValue?: boolean;
+  /** List of fix IDs that this fix depends on. These fixes will be run before this one. */
+  dependencies?: string[];
 };
 
 type PromptType<ResultType = any, T = Prompt> =

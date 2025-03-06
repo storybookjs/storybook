@@ -267,7 +267,7 @@ export async function vitestTransform({
       ),
       t.importDeclaration(
         [t.importSpecifier(testStoryId, t.identifier('testStory'))],
-        t.stringLiteral('@storybook/experimental-addon-test/internal/test-utils')
+        t.stringLiteral('@storybook/addon-test/internal/test-utils')
       ),
     ];
 

@@ -184,11 +184,16 @@ export const consolidatedImports: Fix<ConsolidatedOptions> = {
     errors.push(...importErrors);
 
     if (errors.length > 0) {
+      // eslint-disable-next-line local-rules/no-uncategorized-errors
       throw new Error(
         `Failed to process ${errors.length} files:\n${errors
           .map(({ file, error }) => `- ${file}: ${error.message}`)
           .join('\n')}`
       );
+    }
+
+    if (!dryRun && result.packageJsonFiles.length > 0) {
+      await options.packageManager.installDependencies();
     }
   },
 };

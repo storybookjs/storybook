@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 
 import { defineConfig } from 'vitest/config';
 
-import { storybookTest } from '@storybook/experimental-addon-test/vitest-plugin';
+import { storybookTest } from '@storybook/addon-test/vitest-plugin';
 
 const dirname =
   typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));

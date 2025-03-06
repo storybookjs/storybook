@@ -37,7 +37,7 @@ interface AddonA11yAddonTestOptions {
 }
 
 /**
- * If addon-a11y and experimental-addon-test are already installed, we need to update
+ * If addon-a11y and addon-test are already installed, we need to update
  *
  * - `.storybook/vitest.setup.<ts|js>` to set up project annotations from addon-a11y.
  * - `.storybook/preview.<ts|js>` to set up tags.
@@ -62,9 +62,7 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
     const rendererPackageName = getRendererName(mainConfig);
 
     const hasA11yAddon = !!addons.find((addon) => addon.includes('@storybook/addon-a11y'));
-    const hasTestAddon = !!addons.find((addon) =>
-      addon.includes('@storybook/experimental-addon-test')
-    );
+    const hasTestAddon = !!addons.find((addon) => addon.includes('@storybook/addon-test'));
 
     if (
       !SUPPORTED_FRAMEWORKS.find((framework) => frameworkPackageName?.includes(framework)) &&
@@ -149,9 +147,9 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
     skipVitestSetupTransformation,
   }) {
     const introduction = dedent`
-      We have detected that you have ${picocolors.magenta(`@storybook/addon-a11y`)} and ${picocolors.magenta(`@storybook/experimental-addon-test`)} installed.
+      We have detected that you have ${picocolors.magenta(`@storybook/addon-a11y`)} and ${picocolors.magenta(`@storybook/addon-test`)} installed.
 
-      ${picocolors.magenta(`@storybook/addon-a11y`)} now integrates with ${picocolors.magenta(`@storybook/experimental-addon-test`)} to provide automatic accessibility checks for your stories, powered by Axe and Vitest.
+      ${picocolors.magenta(`@storybook/addon-a11y`)} now integrates with ${picocolors.magenta(`@storybook/addon-test`)} to provide automatic accessibility checks for your stories, powered by Axe and Vitest.
     `;
 
     const prompt = [introduction];

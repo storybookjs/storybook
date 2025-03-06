@@ -6,9 +6,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import React from 'react';
 
-import type { Meta } from '@storybook/react';
+import { addons } from 'storybook/internal/preview-api';
 
-import { addons } from '@storybook/preview-api';
+import type { Meta } from '@storybook/react';
 
 import * as addonActionsPreview from '@storybook/addon-actions/preview';
 
@@ -111,7 +111,6 @@ describe('Legacy Portable Stories API', () => {
     });
 
     it('has action arg from argTypes when addon-actions annotations are added', () => {
-      //@ts-expect-error our tsconfig.jsn#moduleResulution is set to 'node', which doesn't support this import
       const Story = composeStory(stories.WithActionArgType, stories.default, addonActionsPreview);
       expect(Story.args.someActionArg).toHaveProperty('isAction', true);
     });

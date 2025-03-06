@@ -1,12 +1,12 @@
 import React, { type SyntheticEvent, useCallback, useEffect, useRef, useState } from 'react';
 
-import { Button, TooltipNote } from '@storybook/core/components';
-import { WithTooltip } from '@storybook/core/components';
-import { keyframes, styled } from '@storybook/core/theming';
-import { ChevronSmallUpIcon, PlayAllHollowIcon } from '@storybook/icons';
+import { Button, TooltipNote } from 'storybook/internal/components';
+import { WithTooltip } from 'storybook/internal/components';
+import { type TestProviders } from 'storybook/internal/core-events';
+import { useStorybookApi } from 'storybook/internal/manager-api';
+import { keyframes, styled } from 'storybook/internal/theming';
 
-import { type TestProviders } from '@storybook/core/core-events';
-import { useStorybookApi } from '@storybook/core/manager-api';
+import { ChevronSmallUpIcon, PlayAllHollowIcon } from '@storybook/icons';
 
 import { LegacyRender } from './LegacyRender';
 

@@ -1,4 +1,4 @@
-import type { VersionCheck } from '@storybook/core/types';
+import type { VersionCheck } from 'storybook/internal/types';
 
 export const versionStatus = (versionCheck: VersionCheck) => {
   if (versionCheck.error) {

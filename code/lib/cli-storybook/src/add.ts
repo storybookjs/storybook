@@ -8,8 +8,7 @@ import {
   versions,
 } from 'storybook/internal/common';
 import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
-
-import type { StorybookConfigRaw } from '@storybook/types';
+import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import prompts from 'prompts';
 import SemVer from 'semver';
@@ -168,7 +167,10 @@ export async function add(
     await writeConfig(main);
   }
 
-  await syncStorybookAddons(mainConfig, previewConfigPath!);
+  // TODO: remove try/catch once CSF factories is shipped, for now gracefully handle any error
+  try {
+    await syncStorybookAddons(mainConfig, previewConfigPath!);
+  } catch (e) {}
 
   if (!skipPostinstall && isCoreAddon(addonName)) {
     await postinstallAddon(addonName, { packageManager: packageManager.type, configDir, yes });

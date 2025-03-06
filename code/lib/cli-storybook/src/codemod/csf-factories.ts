@@ -21,7 +21,7 @@ async function runStoriesCodemod(options: {
 }) {
   const { dryRun, packageManager, ...codemodOptions } = options;
   try {
-    let globString = '{stories,src}/**/*.stories.*';
+    let globString = '{stories,src}/**/{Button,Header,Page}.stories.*';
     if (!process.env.IN_STORYBOOK_SANDBOX) {
       logger.log('Please enter the glob for your stories to migrate');
       globString = (
@@ -39,7 +39,7 @@ async function runStoriesCodemod(options: {
       ).glob;
     }
 
-    logger.log('\n🛠️ Applying codemod on your stories, this might take some time...');
+    logger.log('\n🛠️  Applying codemod on your stories, this might take some time...');
 
     // TODO: Move the csf-2-to-3 codemod into automigrations
     await packageManager.executeCommand({
@@ -125,14 +125,14 @@ export const csfFactories: CommandFix = {
       previewConfigPath: previewConfigPath!,
     });
 
-    logger.log('\n🛠️ Applying codemod on your main config...');
+    logger.log('\n🛠️  Applying codemod on your main config...');
     const frameworkPackage =
       getFrameworkPackageName(mainConfig) || '@storybook/your-framework-here';
     await runCodemod(mainConfigPath, (fileInfo) =>
       configToCsfFactory(fileInfo, { configType: 'main', frameworkPackage }, { dryRun })
     );
 
-    logger.log('\n🛠️ Applying codemod on your preview config...');
+    logger.log('\n🛠️  Applying codemod on your preview config...');
     await runCodemod(previewConfigPath, (fileInfo) =>
       configToCsfFactory(fileInfo, { configType: 'preview', frameworkPackage }, { dryRun })
     );

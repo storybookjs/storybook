@@ -7,11 +7,7 @@ import { dirname, join } from 'pathe';
 
 export const loadTemplate = async (name: string, replacements: Record<string, string>) => {
   let template = await fs.readFile(
-    join(
-      dirname(require.resolve('@storybook/experimental-addon-test/package.json')),
-      'templates',
-      name
-    ),
+    join(dirname(require.resolve('@storybook/addon-test/package.json')), 'templates', name),
     'utf8'
   );
   Object.entries(replacements).forEach(([key, value]) => (template = template.replace(key, value)));

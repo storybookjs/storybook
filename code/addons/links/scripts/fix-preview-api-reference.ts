@@ -8,7 +8,7 @@ const run = async () => {
   const content = await readFile('./dist/index.d.ts', 'utf-8');
 
   const regexp = /'lib\/preview-api/;
-  const replaced = content.replace(regexp, "'@storybook/preview-api");
+  const replaced = content.replace(regexp, "'storybook/internal/preview-api");
 
   await writeFile('./dist/index.d.ts', replaced);
 };

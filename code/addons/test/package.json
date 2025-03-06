@@ -1,7 +1,7 @@
 {
-  "name": "@storybook/experimental-addon-test",
-  "version": "8.6.0-beta.4",
-  "description": "Integrate Vitest with Storybook",
+  "name": "@storybook/addon-test",
+  "version": "9.0.0-alpha.2",
+  "description": "Storybook addon for testing components",
   "keywords": [
     "storybook-addons",
     "addon-test",
@@ -100,7 +100,6 @@
   "dependencies": {
     "@storybook/global": "^5.0.0",
     "@storybook/icons": "^1.2.12",
-    "@storybook/instrumenter": "workspace:*",
     "@storybook/test": "workspace:*",
     "polished": "^4.2.2",
     "prompts": "^2.4.0",

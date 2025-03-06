@@ -1,3 +1,71 @@
+## 9.0.0-alpha.2
+
+- AutoBlocker: Add major version upgrade blocker - [#30714](https://github.com/storybookjs/storybook/pull/30714), thanks @ndelangen!
+- CLI: Add index command / API - [#30071](https://github.com/storybookjs/storybook/pull/30071), thanks @shilman!
+- CSF Factories: Align addon-essentials import with other addons - [#30716](https://github.com/storybookjs/storybook/pull/30716), thanks @kasperpeulen!
+- Core: Move @storybook/instrumenter into core - [#30740](https://github.com/storybookjs/storybook/pull/30740), thanks @valentinpalkovic!
+- Core: Support TS3.8+ again - [#30700](https://github.com/storybookjs/storybook/pull/30700), thanks @kasperpeulen!
+- Maintenance: Merge `@storybook/core` with `storybook` - [#30168](https://github.com/storybookjs/storybook/pull/30168), thanks @ndelangen!
+- Maintenance: Remove deprecated packages - [#30690](https://github.com/storybookjs/storybook/pull/30690), thanks @ndelangen!
+- Manager: Add Content-Type to prevent reliance on content type sniffing, fixing Cloud IDEs - [#30606](https://github.com/storybookjs/storybook/pull/30606), thanks @GCHQDeveloper548!
+- Next: Support Next 15.2 - [#30702](https://github.com/storybookjs/storybook/pull/30702), thanks @kasperpeulen!
+- React: Export returntype of ReactMeta#story - [#30580](https://github.com/storybookjs/storybook/pull/30580), thanks @mrginglymus!
+- Revert "CLI: Don't initially select Documentation and Testing features" - [#30694](https://github.com/storybookjs/storybook/pull/30694), thanks @shilman!
+- Test Addon: Stabilize and remove experimental status - [#30727](https://github.com/storybookjs/storybook/pull/30727), thanks @valentinpalkovic!
+- Typescript: Drop Typescript < 4.9 support - [#30736](https://github.com/storybookjs/storybook/pull/30736), thanks @valentinpalkovic!
+- Vite: Improve handling of preview annotations - [#28798](https://github.com/storybookjs/storybook/pull/28798), thanks @tobiasdiez!
+- Vite: Include `node_modules` in stats file - [#30711](https://github.com/storybookjs/storybook/pull/30711), thanks @JReinhold!
+
+## 9.0.0-alpha.1
+
+- CLI: Install prereleases of `@chromatic-com/storybook` - [#30662](https://github.com/storybookjs/storybook/pull/30662), thanks @JReinhold!
+- CSF: Only export definePreview from the framework - [#30676](https://github.com/storybookjs/storybook/pull/30676), thanks @kasperpeulen!
+- Codemod: Only remove types when they are unused - [#30644](https://github.com/storybookjs/storybook/pull/30644), thanks @yannbf!
+- Dependencies: Upgrades - [#30515](https://github.com/storybookjs/storybook/pull/30515), thanks @ndelangen!
+
+## 9.0.0-alpha.0
+
+## 8.6.0-beta.10
+
+- Codemod: Always get real path of files - [#30650](https://github.com/storybookjs/storybook/pull/30650), thanks @yannbf!
+- Core: Don't set process.env.NODE_ENV and process.env.DEV - [#30651](https://github.com/storybookjs/storybook/pull/30651), thanks @valentinpalkovic!
+
+## 8.6.0-beta.9
+
+- CLI: Prompt users for RN vs RNW on init - [#30635](https://github.com/storybookjs/storybook/pull/30635), thanks @shilman!
+- Codemod: Handle addon essentials differently in csf factories - [#30649](https://github.com/storybookjs/storybook/pull/30649), thanks @yannbf!
+- Codemod: Migrate meta.args to meta.input.args in csf factories - [#30641](https://github.com/storybookjs/storybook/pull/30641), thanks @yannbf!
+- Codemod: Use real path from symbolic links - [#30642](https://github.com/storybookjs/storybook/pull/30642), thanks @yannbf!
+- Core: Always place cache dir inside `node_modules` - [#30643](https://github.com/storybookjs/storybook/pull/30643), thanks @ndelangen!
+- Core: Fix addon essentials preview preset - [#30647](https://github.com/storybookjs/storybook/pull/30647), thanks @yannbf!
+- Core: Fix extracting import path when it's not a core addon - [#30640](https://github.com/storybookjs/storybook/pull/30640), thanks @yannbf!
+
+## 8.6.0-beta.8
+
+- Addon-Test: Fix console error in build mode - [#30625](https://github.com/storybookjs/storybook/pull/30625), thanks @JReinhold!
+- Manager: Fix panel reactivity - [#30638](https://github.com/storybookjs/storybook/pull/30638), thanks @valentinpalkovic!
+
+## 8.6.0-beta.7
+
+- Angular: Fix @angular/platform-browser/animations never available - [#30618](https://github.com/storybookjs/storybook/pull/30618), thanks @valentinpalkovic!
+- Angular: Fix @angular/platform-browser/animations never available - [#30619](https://github.com/storybookjs/storybook/pull/30619), thanks @valentinpalkovic!
+- CLI: Fix peer dep issues for npm users during upgrade - [#30616](https://github.com/storybookjs/storybook/pull/30616), thanks @valentinpalkovic!
+
+## 8.6.0-beta.6
+
+- CLI: Fix printing of selected features - [#30605](https://github.com/storybookjs/storybook/pull/30605), thanks @ghengeveld!
+- CLI: Remove Storybook dependencies before adding re-adding them - [#30600](https://github.com/storybookjs/storybook/pull/30600), thanks @valentinpalkovic!
+
+## 8.6.0-beta.5
+
+- Addon-Test: Make sure that only one global portable story config is ever loaded - [#30582](https://github.com/storybookjs/storybook/pull/30582), thanks @kasperpeulen!
+- Angular: Support v19.2 when @angular/animations is not installed - [#30611](https://github.com/storybookjs/storybook/pull/30611), thanks @valentinpalkovic!
+- Builder-Vite: Fix runtime and iframe 404 on first load - [#30567](https://github.com/storybookjs/storybook/pull/30567), thanks @valentinpalkovic!
+- CLI: Don't initially select Documentation and Testing features - [#30599](https://github.com/storybookjs/storybook/pull/30599), thanks @ghengeveld!
+- CLI: Make telemetry data an object - [#30581](https://github.com/storybookjs/storybook/pull/30581), thanks @ndelangen!
+- Core: Support `esbuild@^0.25` - [#30574](https://github.com/storybookjs/storybook/pull/30574), thanks @JReinhold!
+- Test addon: Only update `vitest.config.ts` with workspaces, otherwise create `vitest.workspace.ts` - [#30583](https://github.com/storybookjs/storybook/pull/30583), thanks @ghengeveld!
+
 ## 8.6.0-beta.4
 
 - Addon-Test: Add telemetry data for Focused Tests - [#30568](https://github.com/storybookjs/storybook/pull/30568), thanks @JReinhold!
@@ -24,11 +92,14 @@
 
 ## 8.6.0-beta.0
 
+- Addon Test: Fix printing Date object in MethodCall for test/interactions log - [#30507](https://github.com/storybookjs/storybook/pull/30507), thanks @ghengeveld!
 - Addon A11y: Introduce parameters.a11y.test - [#30516](https://github.com/storybookjs/storybook/pull/30516), thanks @valentinpalkovic!
 - Addon-Docs: Change URL hash when TOC item is clicked, and fix TOC loading bugs - [#30130](https://github.com/storybookjs/storybook/pull/30130), thanks @Sidnioulz!
 - Addon-Test: Fix config and watch mode inconsistencies - [#30491](https://github.com/storybookjs/storybook/pull/30491), thanks @JReinhold!
 - Addon-docs: Consider custom code snippet in story code panel and update styles - [#30179](https://github.com/storybookjs/storybook/pull/30179), thanks @larsrickert!
+- Builder-Vite: Fix resolve id warning - [#30511](https://github.com/storybookjs/storybook/pull/30511), thanks @valentinpalkovic!
 - Builder-Vite: Fix Turbosnap - [#30522](https://github.com/storybookjs/storybook/pull/30522), thanks @valentinpalkovic!
+- CLI: Add "features" question & auto-install test addon & improve test-addon compatibility - [#30202](https://github.com/storybookjs/storybook/pull/30202), thanks @ndelangen!
 - CSF: Add support for CSF factories - [#30197](https://github.com/storybookjs/storybook/pull/30197), thanks @kasperpeulen!
 - Cleanup: Remove unused constants in viewport addon - [#30479](https://github.com/storybookjs/storybook/pull/30479), thanks @Guria!
 - Svelte: Fix conflicting variable names and support for `+page.svelte` files - [#30369](https://github.com/storybookjs/storybook/pull/30369), thanks @xeho91!

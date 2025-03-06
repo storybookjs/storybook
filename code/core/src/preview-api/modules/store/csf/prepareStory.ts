@@ -1,9 +1,14 @@
 /* eslint-disable no-underscore-dangle */
-import { type CleanupCallback, combineTags, includeConditionalArg } from '@storybook/core/csf';
+import { type CleanupCallback, combineTags, includeConditionalArg } from 'storybook/internal/csf';
+import { NoRenderFunctionError } from 'storybook/internal/preview-errors';
 import type {
   Args,
   ArgsStoryFn,
   Globals,
+  ModuleExport,
+  NormalizedComponentAnnotations,
+  NormalizedProjectAnnotations,
+  NormalizedStoryAnnotations,
   Parameters,
   PreparedMeta,
   PreparedStory,
@@ -12,17 +17,10 @@ import type {
   StoryContextForEnhancers,
   StoryContextForLoaders,
   StrictArgTypes,
-} from '@storybook/core/types';
-import type {
-  ModuleExport,
-  NormalizedComponentAnnotations,
-  NormalizedProjectAnnotations,
-  NormalizedStoryAnnotations,
-} from '@storybook/core/types';
+} from 'storybook/internal/types';
+
 import { global } from '@storybook/global';
 import { global as globalThis } from '@storybook/global';
-
-import { NoRenderFunctionError } from '@storybook/core/preview-errors';
 
 import { applyHooks } from '../../addons';
 import { mountDestructured } from '../../preview-web/render/mount-utils';

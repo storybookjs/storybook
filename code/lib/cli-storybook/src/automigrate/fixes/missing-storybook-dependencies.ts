@@ -128,6 +128,7 @@ export const missingStorybookDependencies: Fix<MissingStorybookDependenciesOptio
       `✅ Installing the following packages as devDependencies: ${Object.keys(packageUsage)}`
     );
     if (!dryRun) {
+      console.log(packageManager.retrievePackageJson());
       const dependenciesToInstall = Object.keys(packageUsage);
       const versionToInstall = getStorybookVersionSpecifier(
         await packageManager.retrievePackageJson()

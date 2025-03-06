@@ -1,9 +1,9 @@
 import type { BoundFunctions } from '@testing-library/dom';
 
 import type { LoaderFunction } from 'storybook/internal/csf';
+import { instrument } from 'storybook/internal/instrumenter';
 
 import { global } from '@storybook/global';
-import { instrument } from '@storybook/instrumenter';
 
 import * as chai from 'chai';
 
@@ -22,7 +22,7 @@ export * from './spy';
 
 type Queries = BoundFunctions<typeof queries>;
 
-declare module '@storybook/core/csf' {
+declare module 'storybook/internal/csf' {
   interface Canvas extends Queries {}
   interface StoryContext {
     // TODO enable this in a later PR, once we have time to QA this properly

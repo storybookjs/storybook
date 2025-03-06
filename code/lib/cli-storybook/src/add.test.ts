@@ -61,6 +61,7 @@ vi.mock('storybook/internal/common', () => {
     versions: {
       '@storybook/addon-docs': '^8.0.0',
     },
+    frameworkToRenderer: vi.fn(),
   };
 });
 

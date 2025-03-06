@@ -1,11 +1,11 @@
 import React from 'react';
 
-import { Button, ProgressSpinner, TooltipNote, WithTooltip } from '@storybook/core/components';
-import { styled } from '@storybook/core/theming';
-import { EyeIcon, PlayHollowIcon, StopAltIcon } from '@storybook/icons';
+import { Button, ProgressSpinner, TooltipNote, WithTooltip } from 'storybook/internal/components';
+import type { TestProviders } from 'storybook/internal/core-events';
+import { useStorybookApi } from 'storybook/internal/manager-api';
+import { styled } from 'storybook/internal/theming';
 
-import type { TestProviders } from '@storybook/core/core-events';
-import { useStorybookApi } from '@storybook/core/manager-api';
+import { EyeIcon, PlayHollowIcon, StopAltIcon } from '@storybook/icons';
 
 const Container = styled.div({
   display: 'flex',

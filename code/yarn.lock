@@ -6202,7 +6202,6 @@ __metadata:
     "@devtools-ds/object-inspector": "npm:^1.1.2"
     "@storybook/global": "npm:^5.0.0"
     "@storybook/icons": "npm:^1.2.5"
-    "@storybook/instrumenter": "workspace:*"
     "@storybook/test": "workspace:*"
     "@types/node": "npm:^22.0.0"
     ansi-to-html: "npm:^0.7.2"
@@ -6337,7 +6336,6 @@ __metadata:
     "@devtools-ds/object-inspector": "npm:^1.1.2"
     "@storybook/global": "npm:^5.0.0"
     "@storybook/icons": "npm:^1.2.12"
-    "@storybook/instrumenter": "workspace:*"
     "@storybook/test": "workspace:*"
     "@types/istanbul-lib-report": "npm:^3.0.3"
     "@types/node": "npm:^22.0.0"
@@ -6475,7 +6473,7 @@ __metadata:
     "@angular/platform-browser-dynamic": ">=15.0.0 < 20.0.0"
     rxjs: ^6.0.0 || ^7.4.0
     storybook: "workspace:^"
-    typescript: ^4.0.0 || ^5.0.0
+    typescript: ^4.9.0 || ^5.0.0
     zone.js: ">= 0.11.1 < 1.0.0"
   peerDependenciesMeta:
     "@angular/animations":
@@ -6854,18 +6852,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@storybook/instrumenter@workspace:*, @storybook/instrumenter@workspace:lib/instrumenter":
-  version: 0.0.0-use.local
-  resolution: "@storybook/instrumenter@workspace:lib/instrumenter"
-  dependencies:
-    "@storybook/global": "npm:^5.0.0"
-    "@vitest/utils": "npm:^2.1.1"
-    typescript: "npm:^5.7.3"
-  peerDependencies:
-    storybook: "workspace:^"
-  languageName: unknown
-  linkType: soft
-
 "@storybook/linter-config@npm:4.0.0, @storybook/linter-config@npm:^4.0.0":
   version: 4.0.0
   resolution: "@storybook/linter-config@npm:4.0.0"
@@ -7228,7 +7214,7 @@ __metadata:
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
     react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
     storybook: "workspace:^"
-    typescript: ">= 4.2.x"
+    typescript: ">= 4.9.x"
   peerDependenciesMeta:
     typescript:
       optional: true
@@ -7266,7 +7252,7 @@ __metadata:
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
     react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
     storybook: "workspace:^"
-    typescript: ">= 4.2.x"
+    typescript: ">= 4.9.x"
   peerDependenciesMeta:
     "@storybook/test":
       optional: true
@@ -7319,7 +7305,6 @@ __metadata:
     "@storybook/html": "workspace:*"
     "@storybook/html-vite": "workspace:*"
     "@storybook/html-webpack5": "workspace:*"
-    "@storybook/instrumenter": "workspace:*"
     "@storybook/linter-config": "npm:^4.0.0"
     "@storybook/nextjs": "workspace:*"
     "@storybook/preact": "workspace:*"
@@ -7559,7 +7544,6 @@ __metadata:
   resolution: "@storybook/test@workspace:lib/test"
   dependencies:
     "@storybook/global": "npm:^5.0.0"
-    "@storybook/instrumenter": "workspace:*"
     "@testing-library/dom": "npm:10.4.0"
     "@testing-library/jest-dom": "npm:6.5.0"
     "@testing-library/user-event": "npm:14.5.2"
@@ -27839,6 +27823,7 @@ __metadata:
     "@types/react-transition-group": "npm:^4"
     "@types/semver": "npm:^7.5.8"
     "@types/ws": "npm:^8"
+    "@vitest/utils": "npm:^2.1.1"
     "@yarnpkg/esbuild-plugin-pnp": "npm:^3.0.0-rc.10"
     "@yarnpkg/fslib": "npm:2.10.3"
     "@yarnpkg/libzip": "npm:2.3.0"

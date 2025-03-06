@@ -1,6 +1,6 @@
 {
   "name": "@storybook/root",
-  "version": "9.0.0-alpha.0",
+  "version": "9.0.0-alpha.2",
   "private": true,
   "description": "Storybook root",
   "homepage": "https://storybook.js.org/",
@@ -133,7 +133,6 @@
     "@storybook/html": "workspace:*",
     "@storybook/html-vite": "workspace:*",
     "@storybook/html-webpack5": "workspace:*",
-    "@storybook/instrumenter": "workspace:*",
     "@storybook/linter-config": "^4.0.0",
     "@storybook/nextjs": "workspace:*",
     "@storybook/preact": "workspace:*",

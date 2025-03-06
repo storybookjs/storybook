@@ -48,3 +48,6 @@ export const storeOptions = {
 };
 
 export const STORE_CHANNEL_EVENT_NAME = `UNIVERSAL_STORE:${storeOptions.id}`;
+
+export const STATUS_TYPE_ID_COMPONENT_TEST = 'storybook/component-test';
+export const STATUS_TYPE_ID_A11Y = 'storybook/a11y';

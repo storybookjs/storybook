@@ -10,16 +10,21 @@ import {
 } from 'storybook/internal/core-events';
 import { type Call, CallStates, EVENTS, type LogItem } from 'storybook/internal/instrumenter';
 import {
+  experimental_useStatusStore,
   useAddonState,
   useChannel,
   useParameter,
   useStorybookState,
 } from 'storybook/internal/manager-api';
-import type { API_StatusValue } from 'storybook/internal/types';
+import { StatusValue, type StatusValueType } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
-import { ADDON_ID, STORYBOOK_ADDON_TEST_CHANNEL, TEST_PROVIDER_ID } from '../constants';
+import {
+  ADDON_ID,
+  STATUS_TYPE_ID_COMPONENT_TEST,
+  STORYBOOK_ADDON_TEST_CHANNEL,
+} from '../constants';
 import { InteractionsPanel } from './InteractionsPanel';
 
 const INITIAL_CONTROL_STATES = {
@@ -30,11 +35,11 @@ const INITIAL_CONTROL_STATES = {
   end: false,
 };
 
-const statusMap: Record<CallStates, API_StatusValue> = {
-  [CallStates.DONE]: 'success',
-  [CallStates.ERROR]: 'error',
-  [CallStates.ACTIVE]: 'pending',
-  [CallStates.WAITING]: 'pending',
+const statusMap: Record<CallStates, StatusValueType> = {
+  [CallStates.DONE]: StatusValue.SUCCESS,
+  [CallStates.ERROR]: StatusValue.ERROR,
+  [CallStates.ACTIVE]: StatusValue.PENDING,
+  [CallStates.WAITING]: StatusValue.PENDING,
 };
 
 export const getInteractions = ({
@@ -89,7 +94,13 @@ export const getInteractions = ({
 };
 
 export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId }) {
-  const { status: storyStatuses } = useStorybookState();
+  const { statusValue, testRunId } = experimental_useStatusStore((state) => {
+    const storyStatus = state[storyId]?.[STATUS_TYPE_ID_COMPONENT_TEST];
+    return {
+      statusValue: storyStatus?.value,
+      testRunId: storyStatus?.data?.testRunId,
+    };
+  });
 
   // shared state
   const [addonState, set] = useAddonState(ADDON_ID, {
@@ -248,9 +259,6 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
     // @ts-expect-error TODO
     interactions.some((v) => v.status === CallStates.ERROR);
 
-  const storyStatus = storyStatuses[storyId]?.[TEST_PROVIDER_ID];
-  const storyTestStatus = storyStatus?.status;
-
   const browserTestStatus = useMemo<CallStates | undefined>(() => {
     if (!isPlaying && (interactions.length > 0 || hasException)) {
       return hasException ? CallStates.ERROR : CallStates.DONE;
@@ -258,14 +266,12 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
     return isPlaying ? CallStates.ACTIVE : undefined;
   }, [isPlaying, interactions, hasException]);
 
-  const { testRunId } = storyStatus?.data || {};
-
   useEffect(() => {
     const isMismatch =
       browserTestStatus &&
-      storyTestStatus &&
-      storyTestStatus !== 'pending' &&
-      storyTestStatus !== statusMap[browserTestStatus];
+      statusValue &&
+      statusValue !== StatusValue.PENDING &&
+      statusValue !== statusMap[browserTestStatus];
 
     if (isMismatch) {
       const timeout = setTimeout(
@@ -290,7 +296,7 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
     } else {
       setResultMismatch(false);
     }
-  }, [emit, browserTestStatus, storyTestStatus, storyId, testRunId]);
+  }, [emit, browserTestStatus, statusValue, storyId, testRunId]);
 
   if (isErrored) {
     return <Fragment key="component-tests" />;

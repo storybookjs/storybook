@@ -2,10 +2,15 @@ import type { ReactElement } from 'react';
 import React from 'react';
 
 import { styled } from 'storybook/internal/theming';
-import type { API_HashEntry, API_StatusState, API_StatusValue } from 'storybook/internal/types';
+import type { API_HashEntry } from 'storybook/internal/types';
 
 import { CircleIcon } from '@storybook/icons';
 
+import {
+  StatusValue,
+  type StatusValueType,
+  type StatusesByStoryIdAndTypeId,
+} from '../../shared/status-store';
 import { UseSymbol } from '../components/sidebar/IconSymbols';
 import { getDescendantIds } from './tree';
 
@@ -23,23 +28,29 @@ const LoadingIcons = styled(SmallIcons)(({ theme: { animation, color, base } }) 
   color: base === 'light' ? color.mediumdark : color.darker,
 }));
 
-export const statusPriority: API_StatusValue[] = ['unknown', 'pending', 'success', 'warn', 'error'];
-export const statusMapping: Record<API_StatusValue, [ReactElement | null, string | null]> = {
-  unknown: [null, null],
-  pending: [<LoadingIcons key="icon" />, 'currentColor'],
-  success: [
+export const statusPriority: StatusValueType[] = [
+  StatusValue.UNKNOWN,
+  StatusValue.PENDING,
+  StatusValue.SUCCESS,
+  StatusValue.WARN,
+  StatusValue.ERROR,
+];
+export const statusMapping: Record<StatusValueType, [ReactElement | null, string | null]> = {
+  [StatusValue.UNKNOWN]: [null, null],
+  [StatusValue.PENDING]: [<LoadingIcons key="icon" />, 'currentColor'],
+  [StatusValue.SUCCESS]: [
     <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
       <UseSymbol type="success" />
     </svg>,
     'currentColor',
   ],
-  warn: [
+  [StatusValue.WARN]: [
     <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
       <UseSymbol type="warning" />
     </svg>,
     '#A15C20',
   ],
-  error: [
+  [StatusValue.ERROR]: [
     <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
       <UseSymbol type="error" />
     </svg>,
@@ -47,10 +58,10 @@ export const statusMapping: Record<API_StatusValue, [ReactElement | null, string
   ],
 };
 
-export const getHighestStatus = (statuses: API_StatusValue[]): API_StatusValue => {
+export const getHighestStatus = (statusValues: StatusValueType[]): StatusValueType => {
   return statusPriority.reduce(
-    (acc, status) => (statuses.includes(status) ? status : acc),
-    'unknown'
+    (acc, value) => (statusValues.includes(value) ? value : acc),
+    StatusValue.UNKNOWN
   );
 };
 
@@ -58,9 +69,9 @@ export function getGroupStatus(
   collapsedData: {
     [x: string]: Partial<API_HashEntry>;
   },
-  status: API_StatusState
-): Record<string, API_StatusValue> {
-  return Object.values(collapsedData).reduce<Record<string, API_StatusValue>>((acc, item) => {
+  statuses: StatusesByStoryIdAndTypeId
+): Record<string, StatusValueType> {
+  return Object.values(collapsedData).reduce<Record<string, StatusValueType>>((acc, item) => {
     if (item.type === 'group' || item.type === 'component') {
       // @ts-expect-error (non strict)
       const leafs = getDescendantIds(collapsedData as any, item.id, false)
@@ -69,7 +80,7 @@ export function getGroupStatus(
 
       const combinedStatus = getHighestStatus(
         // @ts-expect-error (non strict)
-        leafs.flatMap((story) => Object.values(status?.[story.id] || {})).map((s) => s.status)
+        leafs.flatMap((story) => Object.values(statuses?.[story.id] || {})).map((s) => s.value)
       );
 
       if (combinedStatus) {

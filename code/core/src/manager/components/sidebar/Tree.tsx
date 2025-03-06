@@ -8,7 +8,6 @@ import type {
   API,
   ComponentEntry,
   GroupEntry,
-  State,
   StoriesHash,
   StoryEntry,
 } from 'storybook/internal/manager-api';
@@ -27,6 +26,8 @@ import {
 import { darken, lighten } from 'polished';
 
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList';
+import { fullStatusStore } from '../../../manager-api/stores/status';
+import type { StatusByTypeId, StatusesByStoryIdAndTypeId } from '../../../shared/status-store';
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
 import { getGroupStatus, getHighestStatus, statusMapping } from '../../utils/status';
 import {
@@ -155,14 +156,13 @@ interface NodeProps {
   docsMode: boolean;
   isOrphan: boolean;
   isDisplayed: boolean;
-  color: string | undefined;
   isSelected: boolean;
   isFullyExpanded?: boolean;
   isExpanded: boolean;
   setExpanded: (action: ExpandAction) => void;
   setFullyExpanded?: () => void;
   onSelectStoryId: (itemId: string) => void;
-  status: State['status'][keyof State['status']];
+  statuses: StatusByTypeId;
   groupStatus: Record<StoryId, API_StatusValue>;
   api: API;
   collapsedData: Record<string, API_HashEntry>;
@@ -204,7 +204,7 @@ const statusOrder: API_StatusValue[] = ['success', 'error', 'warn', 'pending', '
 
 const Node = React.memo<NodeProps>(function Node({
   item,
-  status,
+  statuses,
   groupStatus,
   refId,
   docsMode,
@@ -219,7 +219,7 @@ const Node = React.memo<NodeProps>(function Node({
   api,
 }) {
   const { isDesktop, isMobile, setMobileMenuOpen } = useLayout();
-  const { counts, statuses } = useStatusSummary(item);
+  const { counts, statusesByValue } = useStatusSummary(item);
 
   if (!isDisplayed) {
     return null;
@@ -227,18 +227,18 @@ const Node = React.memo<NodeProps>(function Node({
 
   const statusLinks = useMemo<Link[]>(() => {
     if (item.type === 'story' || item.type === 'docs') {
-      return Object.entries(status || {})
-        .filter(([, value]) => value.sidebarContextMenu !== false)
-        .sort((a, b) => statusOrder.indexOf(a[1].status) - statusOrder.indexOf(b[1].status))
-        .map(([addonId, value]) => ({
-          id: addonId,
-          title: value.title,
-          description: value.description,
-          'aria-label': `Test status for ${value.title}: ${value.status}`,
-          icon: StatusIconMap[value.status],
+      return Object.entries(statuses || {})
+        .filter(([, status]) => status.sidebarContextMenu !== false)
+        .sort((a, b) => statusOrder.indexOf(a[1].value) - statusOrder.indexOf(b[1].value))
+        .map(([typeId, status]) => ({
+          id: typeId,
+          title: status.title,
+          description: status.description,
+          'aria-label': `Test status for ${status.title}: ${status.value}`,
+          icon: StatusIconMap[status.value],
           onClick: () => {
             onSelectStoryId(item.id);
-            value.onClick?.();
+            fullStatusStore.selectStatuses([status]);
           },
         }));
     }
@@ -251,9 +251,10 @@ const Node = React.memo<NodeProps>(function Node({
           icon: StatusIconMap.error,
           title: `${counts.error} ${counts.error === 1 ? 'story' : 'stories'} with errors`,
           onClick: () => {
-            const [firstStoryId, [firstError]] = Object.entries(statuses.error)[0];
+            const [firstStoryId] = Object.entries(statusesByValue.error)[0];
             onSelectStoryId(firstStoryId);
-            firstError.onClick?.();
+            const errorStatuses = Object.values(statusesByValue.error).flat();
+            fullStatusStore.selectStatuses(errorStatuses);
           },
         });
       }
@@ -263,9 +264,10 @@ const Node = React.memo<NodeProps>(function Node({
           icon: StatusIconMap.warn,
           title: `${counts.warn} ${counts.warn === 1 ? 'story' : 'stories'} with warnings`,
           onClick: () => {
-            const [firstStoryId, [firstWarning]] = Object.entries(statuses.warn)[0];
+            const [firstStoryId] = Object.entries(statusesByValue.warn)[0];
             onSelectStoryId(firstStoryId);
-            firstWarning.onClick?.();
+            const warnStatuses = Object.values(statusesByValue.warn).flat();
+            fullStatusStore.selectStatuses(warnStatuses);
           },
         });
       }
@@ -273,16 +275,7 @@ const Node = React.memo<NodeProps>(function Node({
     }
 
     return [];
-  }, [
-    counts.error,
-    counts.warn,
-    item.id,
-    item.type,
-    onSelectStoryId,
-    status,
-    statuses.error,
-    statuses.warn,
-  ]);
+  }, [counts.error, counts.warn, item.id, item.type, onSelectStoryId, statuses, statusesByValue]);
 
   const id = createId(item.id, refId);
   const contextMenu =
@@ -293,7 +286,7 @@ const Node = React.memo<NodeProps>(function Node({
   if (item.type === 'story' || item.type === 'docs') {
     const LeafNode = item.type === 'docs' ? DocumentNode : StoryNode;
 
-    const statusValue = getHighestStatus(Object.values(status || {}).map((s) => s.status));
+    const statusValue = getHighestStatus(Object.values(statuses || {}).map((s) => s.value));
     const [icon, textColor] = statusMapping[statusValue];
 
     return (
@@ -472,7 +465,7 @@ const Root = React.memo<NodeProps & { expandableDescendants: string[] }>(functio
 export const Tree = React.memo<{
   isBrowsing: boolean;
   isMain: boolean;
-  status?: State['status'];
+  statuses?: StatusesByStoryIdAndTypeId;
   refId: string;
   data: StoriesHash;
   docsMode: boolean;
@@ -485,7 +478,7 @@ export const Tree = React.memo<{
   isMain,
   refId,
   data,
-  status,
+  statuses = {},
   docsMode,
   highlightedRef,
   setHighlightedItemId,
@@ -614,8 +607,10 @@ export const Tree = React.memo<{
     onSelectStoryId,
   });
 
-  // @ts-expect-error (non strict)
-  const groupStatus = useMemo(() => getGroupStatus(collapsedData, status), [collapsedData, status]);
+  const groupStatus = useMemo(
+    () => getGroupStatus(collapsedData, statuses),
+    [collapsedData, statuses]
+  );
 
   const treeItems = useMemo(() => {
     return collapsedItems.map((itemId) => {
@@ -657,8 +652,7 @@ export const Tree = React.memo<{
           collapsedData={collapsedData}
           key={id}
           item={item}
-          // @ts-expect-error (non strict)
-          status={status?.[itemId]}
+          statuses={statuses?.[itemId]}
           groupStatus={groupStatus}
           refId={refId}
           docsMode={docsMode}
@@ -685,10 +679,10 @@ export const Tree = React.memo<{
     refId,
     selectedStoryId,
     setExpanded,
-    status,
+    statuses,
   ]);
   return (
-    <StatusContext.Provider value={{ data, status, groupStatus }}>
+    <StatusContext.Provider value={{ data, statuses, groupStatus }}>
       <Container ref={containerRef} hasOrphans={isMain && orphanIds.length > 0}>
         <IconSymbols />
         {treeItems}

@@ -532,3 +532,4 @@ export {
   getStatusStoreByTypeId as experimental_getStatusStore,
   useStatusStore as experimental_useStatusStore,
 } from './stores/status';
+export { StatusValue } from '../shared/status-store';

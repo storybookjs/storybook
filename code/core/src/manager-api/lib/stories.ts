@@ -25,7 +25,9 @@ import { countBy, mapValues } from 'es-toolkit';
 import memoize from 'memoizerific';
 import { dedent } from 'ts-dedent';
 
+import { StatusValue } from '../../shared/status-store';
 import { type API, type State, combineParameters } from '../root';
+import { fullStatusStore } from '../stores/status';
 import intersect from './intersect';
 import merge from './merge';
 
@@ -45,12 +47,6 @@ export const denormalizeStoryParameters = ({
     ),
   })) as SetStoriesStoryData;
 };
-
-export const transformSetStoriesStoryDataToStoriesHash = (
-  data: SetStoriesStoryData,
-  options: ToStoriesHashOptions
-) =>
-  transformStoryIndexToStoriesHash(transformSetStoriesStoryDataToPreparedStoryIndex(data), options);
 
 export const transformSetStoriesStoryDataToPreparedStoryIndex = (
   stories: SetStoriesStoryData
@@ -172,12 +168,11 @@ type ToStoriesHashOptions = {
   provider: API_Provider<API>;
   docsOptions: DocsOptions;
   filters: State['filters'];
-  status: State['status'];
 };
 
 export const transformStoryIndexToStoriesHash = (
   input: API_PreparedStoryIndex | StoryIndexV2 | StoryIndexV3,
-  { provider, docsOptions, filters, status }: ToStoriesHashOptions
+  { provider, docsOptions, filters }: ToStoriesHashOptions
 ): API_IndexHash | any => {
   if (!input.v) {
     throw new Error('Composition: Missing stories.json version');
@@ -189,12 +184,14 @@ export const transformStoryIndexToStoriesHash = (
   index = index.v === 4 ? transformStoryIndexV4toV5(index as any) : index;
   index = index as API_PreparedStoryIndex;
 
+  const allStatuses = fullStatusStore.get();
+
   const entryValues = Object.values(index.entries).filter((entry: any) => {
     let result = true;
 
     // All stories with a failing status should always show up, regardless of the applied filters
-    const storyStatus = status[entry.id];
-    if (Object.values(storyStatus ?? {}).some(({ status: s }) => s === 'error')) {
+    const storyStatuses = allStatuses[entry.id];
+    if (Object.values(storyStatuses ?? {}).some(({ value }) => value === StatusValue.ERROR)) {
       return result;
     }
 
@@ -202,7 +199,7 @@ export const transformStoryIndexToStoriesHash = (
       if (result === false) {
         return;
       }
-      result = filter({ ...entry, status: storyStatus });
+      result = filter({ ...entry, status: storyStatuses });
     });
 
     return result;

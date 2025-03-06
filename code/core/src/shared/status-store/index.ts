@@ -14,7 +14,7 @@ export const StatusValue = {
 
 export type StatusTypeId = string;
 export type StatusValueType = (typeof StatusValue)[keyof typeof StatusValue];
-type StatusByTypeId = Record<StatusTypeId, Status>;
+export type StatusByTypeId = Record<StatusTypeId, Status>;
 export type StatusesByStoryIdAndTypeId = Record<StoryId, StatusByTypeId>;
 
 export interface Status {

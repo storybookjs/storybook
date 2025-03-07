@@ -180,6 +180,23 @@ describe('transformImportFiles', () => {
     );
   });
 
+  it('should transform import declarations with sub-paths', async () => {
+    const sourceContents = dedent`
+      import { other } from '@storybook/theming/create';
+    `;
+    const sourceFiles = [join('src', 'test.ts')];
+
+    vi.mocked(readFile).mockResolvedValueOnce(sourceContents);
+
+    const errors = await transformImportFiles(sourceFiles, false);
+
+    expect(errors).toHaveLength(0);
+    expect(writeFile).toHaveBeenCalledWith(
+      sourceFiles[0],
+      expect.stringContaining(`from 'storybook/internal/theming/create'`)
+    );
+  });
+
   it('should transform require calls', async () => {
     const sourceContents = dedent`
       const something = require('@storybook/components');

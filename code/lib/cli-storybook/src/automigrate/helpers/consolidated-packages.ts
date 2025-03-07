@@ -21,7 +21,7 @@ export const consolidatedPackages = {
   '@storybook/core-server': 'storybook/internal/core-server',
   '@storybook/builder-manager': 'storybook/internal/builder-manager',
   '@storybook/components': 'storybook/internal/components',
-  '@storybook/test': 'storybook/internal/test',
+  '@storybook/test': 'storybook/test',
 } as const;
 
 export type ConsolidatedPackage = keyof typeof consolidatedPackages;

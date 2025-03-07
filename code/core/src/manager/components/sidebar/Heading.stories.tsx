@@ -4,8 +4,9 @@ import React from 'react';
 import { ThemeProvider, useTheme } from 'storybook/internal/theming';
 import type { Theme } from 'storybook/internal/theming';
 
-import type { Meta, StoryFn, StoryObj } from '@storybook/react';
 import { screen } from '@storybook/test';
+
+import type { Meta, StoryFn, StoryObj } from '@storybook/react-vite';
 
 import { action } from '@storybook/addon-actions';
 

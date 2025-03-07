@@ -6284,7 +6284,6 @@ __metadata:
     "@neoconfetti/react": "npm:^1.0.0"
     "@radix-ui/react-dialog": "npm:^1.0.5"
     "@storybook/icons": "npm:^1.2.12"
-    "@storybook/react": "workspace:*"
     framer-motion: "npm:^11.0.3"
     react: "npm:^18.2.0"
     react-dom: "npm:^18.2.0"

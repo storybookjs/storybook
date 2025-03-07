@@ -4,8 +4,9 @@ import React, { useState } from 'react';
 import { LocationProvider } from 'storybook/internal/router';
 import { styled } from 'storybook/internal/theming';
 
-import type { Meta, StoryObj } from '@storybook/react';
 import { fn } from '@storybook/test';
+
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { action } from '@storybook/addon-actions';
 

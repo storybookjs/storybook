@@ -194,6 +194,7 @@ async function run() {
               alias: {
                 ...browserAliases,
                 'storybook/internal': join(cwd, 'src'),
+                'storybook/test': join(cwd, 'src', 'test'),
                 'storybook/actions': join(cwd, 'src', 'actions'),
                 react: dirname(require.resolve('react/package.json')),
                 'react-dom': dirname(require.resolve('react-dom/package.json')),

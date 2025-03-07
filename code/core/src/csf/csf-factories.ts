@@ -5,12 +5,14 @@ import type {
   ComponentAnnotations,
   NormalizedComponentAnnotations,
   NormalizedProjectAnnotations,
+  NormalizedStoryAnnotations,
   ProjectAnnotations,
   Renderer,
   StoryAnnotations,
 } from 'storybook/internal/types';
 
 import actionAnnotations from 'storybook/actions';
+import testAnnotations from 'storybook/test';
 
 export interface Preview<TRenderer extends Renderer = Renderer> {
   readonly _tag: 'Preview';
@@ -35,7 +37,7 @@ export function __definePreview<TRenderer extends Renderer>(
       const { addons, ...rest } = input;
       composed = normalizeProjectAnnotations<TRenderer>(
         // @ts-expect-error Ignore for now
-        composeConfigs([actionAnnotations(), ...(addons ?? []), rest])
+        composeConfigs([testAnnotations(), actionAnnotations(), ...(addons ?? []), rest])
       );
       return composed;
     },

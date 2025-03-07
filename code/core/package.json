@@ -204,6 +204,11 @@
       "import": "./dist/instrumenter/index.js",
       "require": "./dist/instrumenter/index.cjs"
     },
+    "./test/preview": {
+      "types": "./dist/test/preview.d.ts",
+      "import": "./dist/test/preview.js",
+      "require": "./dist/test/preview.cjs"
+    },
     "./test": {
       "types": "./dist/test/index.d.ts",
       "import": "./dist/test/index.js",
@@ -317,6 +322,9 @@
       ],
       "internal/instrumenter": [
         "./dist/instrumenter/index.d.ts"
+      ],
+      "test/preview": [
+        "./dist/test/preview.d.ts"
       ],
       "test": [
         "./dist/test/index.d.ts"

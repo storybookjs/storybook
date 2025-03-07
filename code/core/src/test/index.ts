@@ -3,20 +3,12 @@ import type { BoundFunctions } from '@testing-library/dom';
 import type { LoaderFunction } from 'storybook/internal/csf';
 import { instrument } from 'storybook/internal/instrumenter';
 
-import { global } from '@storybook/global';
-
 import { Assertion } from 'chai';
 
+import { definePreview } from '../preview-api';
 import { expect as rawExpect } from './expect';
-import {
-  clearAllMocks,
-  fn,
-  isMockFunction,
-  onMockCall,
-  resetAllMocks,
-  restoreAllMocks,
-} from './spy';
-import { type queries, within } from './testing-library';
+import { clearAllMocks, fn, isMockFunction, resetAllMocks, restoreAllMocks } from './spy';
+import { type queries, userEvent, within } from './testing-library';
 
 export * from './spy';
 
@@ -26,7 +18,7 @@ declare module 'storybook/internal/csf' {
   interface Canvas extends Queries {}
   interface StoryContext {
     // TODO enable this in a later PR, once we have time to QA this properly
-    //   userEvent: ReturnType<typeof userEvent.setup>;
+    userEvent: ReturnType<typeof userEvent.setup>;
   }
 }
 
@@ -49,7 +41,7 @@ export const { expect } = instrument(
 
 export * from './testing-library';
 
-const resetAllMocksLoader: LoaderFunction = ({ parameters }) => {
+export const resetAllMocksLoader: LoaderFunction = ({ parameters }) => {
   if (parameters?.test?.mockReset === true) {
     resetAllMocks();
   } else if (parameters?.test?.clearMocks === true) {
@@ -113,24 +105,18 @@ export const traverseArgs = (value: unknown, depth = 0, key?: string): unknown =
   return value;
 };
 
-const nameSpiesAndWrapActionsInSpies: LoaderFunction = ({ initialArgs }) => {
+export const nameSpiesAndWrapActionsInSpies: LoaderFunction = ({ initialArgs }) => {
   traverseArgs(initialArgs);
 };
 
-const enhanceContext: LoaderFunction = (context) => {
+export const enhanceContext: LoaderFunction = (context) => {
   if (globalThis.HTMLElement && context.canvasElement instanceof globalThis.HTMLElement) {
     context.canvas = within(context.canvasElement);
-    // TODO enable this in a later PR, once we have time to QA this properly
-    // context.userEvent = userEvent.setup();
+    context.userEvent = userEvent.setup();
   }
 };
 
-// We are using this as a default Storybook loader, when the test package is used. This avoids the need for optional peer dependency workarounds.
-// eslint-disable-next-line no-underscore-dangle
-(global as any).__STORYBOOK_TEST_LOADERS__ = [
-  resetAllMocksLoader,
-  nameSpiesAndWrapActionsInSpies,
-  enhanceContext,
-];
-// eslint-disable-next-line no-underscore-dangle
-(global as any).__STORYBOOK_TEST_ON_MOCK_CALL__ = onMockCall;
+export default () =>
+  definePreview({
+    loaders: [resetAllMocksLoader, nameSpiesAndWrapActionsInSpies, enhanceContext],
+  });

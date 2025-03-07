@@ -14,7 +14,9 @@ export default {
 
 export const Basic = {
   parameters: {
-    handles: [{ click: 'clicked', contextmenu: 'right clicked' }],
+    actions: {
+      handles: [{ click: 'clicked', contextmenu: 'right clicked' }],
+    },
   },
   decorators: [withActions],
 };

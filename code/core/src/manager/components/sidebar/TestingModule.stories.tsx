@@ -72,6 +72,8 @@ const meta = {
   title: 'Sidebar/TestingModule',
   args: {
     testProviders,
+    statusCount: 0,
+    clearStatuses: fn(),
     errorCount: 0,
     errorsActive: false,
     setErrorsActive: fn(),
@@ -107,6 +109,7 @@ export const Expanded: Story = {
 
 export const Statuses: Story = {
   args: {
+    statusCount: 56,
     errorCount: 14,
     warningCount: 42,
   },

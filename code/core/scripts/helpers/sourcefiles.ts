@@ -85,6 +85,10 @@ const localAlias = {
   'storybook/internal': join(__dirname, '..', '..', 'src'),
   'storybook/test': join(__dirname, '..', '..', 'src'),
   storybook: join(__dirname, '..', '..', 'src', 'test'),
+  'storybook/actions': join(__dirname, '..', '..', 'src', 'actions'),
+  'storybook/actions/preview': join(__dirname, '..', '..', 'src', 'actions', 'preview'),
+  'storybook/actions/manager': join(__dirname, '..', '..', 'src', 'actions', 'manager'),
+  'storybook/actions/decorator': join(__dirname, '..', '..', 'src', 'actions', 'decorator'),
 };
 async function generateExportsFile(prettierConfig: prettier.Options | null): Promise<void> {
   function removeDefault(input: string) {

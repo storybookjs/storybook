@@ -333,7 +333,7 @@ export const TestingModule = ({
                   }}
                   aria-label="Toggle errors"
                 >
-                  {errorCount < 100 ? errorCount : '99+'}
+                  {errorCount < 1000 ? errorCount : '999+'}
                 </StatusButton>
               </WithTooltip>
             )}
@@ -356,7 +356,7 @@ export const TestingModule = ({
                   }}
                   aria-label="Toggle warnings"
                 >
-                  {warningCount < 100 ? warningCount : '99+'}
+                  {warningCount < 1000 ? warningCount : '999+'}
                 </StatusButton>
               </WithTooltip>
             )}

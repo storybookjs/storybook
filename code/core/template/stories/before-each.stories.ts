@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/naming-convention,storybook/prefer-pascal-case */
-import { expect } from '@storybook/test';
+import { expect } from 'storybook/test';
 
 const meta = {
   component: globalThis.Components.Button,

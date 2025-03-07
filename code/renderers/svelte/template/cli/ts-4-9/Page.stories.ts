@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/svelte';
-import { expect, userEvent, waitFor, within } from '@storybook/test';
+
+import { expect, userEvent, waitFor, within } from 'storybook/test';
 
 import Page from './Page.svelte';
 

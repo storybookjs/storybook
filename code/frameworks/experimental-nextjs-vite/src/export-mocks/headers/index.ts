@@ -1,7 +1,6 @@
-import { fn } from '@storybook/test';
-
 import { draftMode as originalDraftMode } from 'next/dist/server/request/draft-mode';
 import * as headers from 'next/dist/server/request/headers';
+import { fn } from 'storybook/test';
 
 // re-exports of the actual module
 export * from 'next/dist/server/request/headers';

@@ -37,10 +37,16 @@ const statusMap: Record<TestStatus, StatusValueType> = {
 addons.register(ADDON_ID, (api) => {
   const storybookBuilder = (globalThis as any).STORYBOOK_BUILDER || '';
   if (storybookBuilder.includes('vite')) {
-    const openTestsPanel = () => {
-      api.setSelectedPanel(PANEL_ID);
+    const openPanel = (panelId: string) => {
+      api.setSelectedPanel(panelId);
       api.togglePanel(true);
     };
+    componentTestStatusStore.onSelect(() => {
+      openPanel(PANEL_ID);
+    });
+    a11yStatusStore.onSelect(() => {
+      openPanel('storybook/a11y/panel');
+    });
 
     addons.add(TEST_PROVIDER_ID, {
       type: Addon_TypesEnum.experimental_TEST_PROVIDER,
@@ -132,10 +138,6 @@ addons.register(ADDON_ID, (api) => {
                     title: 'Accessibility tests',
                     description: '',
                     data: { testRunId },
-                    // onClick: () => {
-                    //   api.setSelectedPanel('storybook/a11y/panel');
-                    //   api.togglePanel(true);
-                    // },
                     sidebarContextMenu: false,
                   };
                 })

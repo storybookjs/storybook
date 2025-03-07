@@ -1,8 +1,9 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
 import React from 'react';
 
-import type { Meta, StoryObj } from '@storybook/react';
 import { expect, fireEvent, within } from '@storybook/test';
+
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { Button } from './Button';
 

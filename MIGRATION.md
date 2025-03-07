@@ -453,7 +453,7 @@ Please un-install these packages, and ensure you have the `storybook` package in
 
 Replace any imports with the path listed in the second column.
 
-Additionally the following packages were also consolidated and placed under a `/internal` sub-path, top indicate they are for internal usage only.
+Additionally the following packages were also consolidated and placed under a `/internal` sub-path, to indicate they are for internal usage only.
 If you're depending on these packages, they will continue to work for `9.0`, but they will likely be removed in `10.0`.
 
 | Old Package                | New Path                           |

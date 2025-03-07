@@ -5,8 +5,10 @@ import type vitePluginStorybookNextJs from 'vite-plugin-storybook-nextjs';
 
 import * as nextPreview from './preview';
 
-export * from './types';
+export * from '@storybook/react';
+// @ts-expect-error (double exports)
 export * from './portable-stories';
+export * from './types';
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore

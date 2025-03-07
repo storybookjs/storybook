@@ -127,9 +127,6 @@
       "optional": true
     }
   },
-  "optionalDependencies": {
-    "sharp": "^0.33.3"
-  },
   "engines": {
     "node": ">=18.0.0"
   },

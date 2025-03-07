@@ -47,7 +47,7 @@
   "devDependencies": {
     "@neoconfetti/react": "^1.0.0",
     "@radix-ui/react-dialog": "^1.0.5",
-    "@storybook/icons": "^1.2.12",
+    "@storybook/icons": "^1.4.0",
     "@storybook/react": "workspace:*",
     "framer-motion": "^11.0.3",
     "react": "^18.2.0",

@@ -6,7 +6,7 @@ import { type TestProviders } from 'storybook/internal/core-events';
 import { useStorybookApi } from 'storybook/internal/manager-api';
 import { keyframes, styled } from 'storybook/internal/theming';
 
-import { ChevronSmallUpIcon, PlayAllHollowIcon, TrashIcon } from '@storybook/icons';
+import { ChevronSmallUpIcon, PlayAllHollowIcon, SweepIcon } from '@storybook/icons';
 
 import { LegacyRender } from './LegacyRender';
 
@@ -376,7 +376,7 @@ export const TestingModule = ({
                   }}
                   aria-label="Clear all statuses"
                 >
-                  <TrashIcon />
+                  <SweepIcon />
                 </IconButton>
               </WithTooltip>
             )}

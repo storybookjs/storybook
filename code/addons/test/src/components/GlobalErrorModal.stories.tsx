@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 
 import { ManagerContext } from 'storybook/internal/manager-api';
 
-import type { Meta, StoryObj } from '@storybook/react';
 import { expect, fn, userEvent, within } from '@storybook/test';
+
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import dedent from 'ts-dedent';
 

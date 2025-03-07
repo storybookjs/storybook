@@ -1,5 +1,7 @@
 import { defaultExclude, defineProject, mergeConfig } from 'vitest/config';
 
+import { storybookTest } from '@storybook/addon-test/vitest-plugin';
+
 import Inspect from 'vite-plugin-inspect';
 
 import { vitestCommonConfig } from '../vitest.workspace';
@@ -22,14 +24,12 @@ export default mergeConfig(
   // @ts-expect-error added this because of testNamePattern below
   defineProject({
     plugins: [
-      import('@storybook/addon-test/vitest-plugin').then(({ storybookTest }) =>
-        storybookTest({
-          configDir: __dirname,
-          tags: {
-            include: ['vitest'],
-          },
-        })
-      ),
+      storybookTest({
+        configDir: __dirname,
+        tags: {
+          include: ['vitest'],
+        },
+      }),
       ...extraPlugins,
     ],
     test: {

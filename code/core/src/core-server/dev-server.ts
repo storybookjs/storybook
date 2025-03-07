@@ -14,6 +14,7 @@ import { getCachingMiddleware } from './utils/get-caching-middleware';
 import { getServerChannel } from './utils/get-server-channel';
 import { getAccessControlMiddleware } from './utils/getAccessControlMiddleware';
 import { getStoryIndexGenerator } from './utils/getStoryIndexGenerator';
+import { useLlmsTxt } from './utils/llms';
 import { getMiddleware } from './utils/middleware';
 import { openInBrowser } from './utils/open-in-browser';
 import { getServerAddresses } from './utils/server-address';
@@ -28,6 +29,7 @@ export async function storybookDevServer(options: Options) {
     'experimental_serverChannel',
     getServerChannel(server)
   );
+  const features = options.presets.apply('features', {});
 
   let indexError: Error | undefined;
   // try get index generator, if failed, send telemetry without storyCount, then rethrow the error
@@ -122,6 +124,19 @@ export async function storybookDevServer(options: Options) {
     await managerBuilder?.bail().catch();
     await previewBuilder?.bail().catch();
     throw indexError;
+  }
+
+  if ((await features).experimentalLlmsTxt) {
+    const llms = await options.presets.apply('llms');
+    if (llms) {
+      const includeDocs = typeof llms === 'string' ? false : llms.includeDocs;
+      let indexJson = undefined;
+      if (includeDocs) {
+        const storyIndexGenerator = await initializedStoryIndexGenerator;
+        indexJson = await storyIndexGenerator?.getIndex();
+      }
+      useLlmsTxt(app, llms, indexJson);
+    }
   }
 
   // Now the preview has successfully started, we can count this as a 'dev' event.

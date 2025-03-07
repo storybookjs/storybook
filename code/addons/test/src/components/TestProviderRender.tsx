@@ -61,7 +61,7 @@ const Title = styled.div<{ crashed?: boolean }>(({ crashed, theme }) => ({
 
 const Actions = styled.div({
   display: 'flex',
-  gap: 2,
+  gap: 4,
 });
 
 const Extras = styled.div({
@@ -81,7 +81,7 @@ const Progress = styled(ProgressSpinner)({
 
 const Row = styled.div({
   display: 'flex',
-  gap: 2,
+  gap: 4,
 });
 
 const StopIcon = styled(StopAltIcon)({

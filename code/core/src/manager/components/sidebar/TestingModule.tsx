@@ -96,7 +96,7 @@ const Filters = styled.div({
   display: 'flex',
   flexBasis: '100%',
   justifyContent: 'flex-end',
-  gap: 6,
+  gap: 4,
 });
 
 const CollapseToggle = styled(Button)({

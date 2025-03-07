@@ -17,6 +17,7 @@ import {
   AccessibilityIcon,
   EditIcon,
   EyeIcon,
+  InfoIcon,
   PlayHollowIcon,
   PointerHandIcon,
   ShieldIcon,
@@ -74,6 +75,10 @@ const Checkbox = styled.input({
     cursor: 'pointer',
   },
 });
+
+const Muted = styled.span(({ theme }) => ({
+  color: theme.textMutedColor,
+}));
 
 const Progress = styled(ProgressSpinner)({
   margin: 4,
@@ -344,12 +349,11 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
               <Row>
                 <ListItem
                   as="label"
-                  title="Coverage"
+                  title={watching ? <Muted>Coverage (unavailable)</Muted> : <>Coverage</>}
                   icon={
                     <Checkbox
                       type="checkbox"
-                      checked={watching ? false : config.coverage}
-                      disabled={watching}
+                      checked={config.coverage}
                       onChange={() =>
                         setStoreState((s) => ({
                           ...s,
@@ -359,9 +363,21 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                     />
                   }
                 />
-                <IconButton size="medium">
-                  <TestStatusIcon status="unknown" aria-label={`status: unknown`} />
-                </IconButton>
+                {watching ? (
+                  <WithTooltip
+                    hasChrome={false}
+                    trigger="hover"
+                    tooltip={<TooltipNote note="Coverage is unavailable in watch mode" />}
+                  >
+                    <IconButton size="medium">
+                      <InfoIcon />
+                    </IconButton>
+                  </WithTooltip>
+                ) : (
+                  <IconButton size="medium">
+                    <TestStatusIcon status="unknown" aria-label={`status: unknown`} />
+                  </IconButton>
+                )}
               </Row>
             )}
 

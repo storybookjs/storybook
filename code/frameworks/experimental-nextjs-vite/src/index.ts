@@ -1,5 +1,8 @@
+import type { ProjectAnnotations } from 'storybook/internal/types';
+
 import type { ReactPreview } from '@storybook/react';
 import { __definePreview } from '@storybook/react';
+import type { ReactRenderer } from '@storybook/react';
 
 import type vitePluginStorybookNextJs from 'vite-plugin-storybook-nextjs';
 
@@ -19,7 +22,10 @@ declare module '@storybook/experimental-nextjs-vite/vite-plugin' {
 export function definePreview(preview: NextPreview['input']) {
   return __definePreview({
     ...preview,
-    addons: [nextPreview, ...(preview.addons ?? [])],
+    addons: [
+      nextPreview as unknown as ProjectAnnotations<ReactRenderer>,
+      ...(preview.addons ?? []),
+    ],
   }) as NextPreview;
 }
 

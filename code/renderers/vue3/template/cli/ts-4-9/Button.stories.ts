@@ -1,5 +1,6 @@
-import { fn } from '@storybook/test';
 import type { Meta, StoryObj } from '@storybook/vue3';
+
+import { fn } from 'storybook/test';
 
 import Button from './Button.vue';
 

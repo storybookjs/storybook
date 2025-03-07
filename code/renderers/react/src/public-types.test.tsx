@@ -9,10 +9,9 @@ import { satisfies } from 'storybook/internal/common';
 import type { Canvas } from 'storybook/internal/csf';
 import type { Args, StoryAnnotations, StrictArgs } from 'storybook/internal/types';
 
-import type { Mock } from '@storybook/test';
-import { fn } from '@storybook/test';
-
 import { expectTypeOf } from 'expect-type';
+import { fn } from 'storybook/test';
+import type { Mock } from 'storybook/test';
 import type { SetOptional } from 'type-fest';
 
 import type { Decorator, Meta, StoryObj } from './public-types';

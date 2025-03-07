@@ -1,18 +1,6 @@
 # Storybook Test
 
-The `@storybook/test` package contains utilities for testing your stories inside `play` functions.
-
-## Installation
-
-Install the package by adding the `@storybook/test` dev dependency:
-
-```sh
-npm install -D @storybook/test
-pnpm add -D @storybook/test
-yarn add -D @storybook/test
-```
-
-Note that this package is not an addon, so you don't have to add it to your `main.js/main.ts` file.
+The `storybook/test` package contains utilities for testing your stories inside `play` functions.
 
 ## Usage
 
@@ -21,7 +9,7 @@ The instrumentation makes sure you can debug those methods in the [addon-interac
 
 ```ts
 // Button.stories.ts
-import { expect, fn, userEvent, within } from '@storybook/test';
+import { expect, fn, userEvent, within } from 'storybook/test';
 import { Button } from './Button';
 
 export default {

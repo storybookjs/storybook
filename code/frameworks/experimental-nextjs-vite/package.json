@@ -109,7 +109,7 @@
     "@storybook/react-vite": "workspace:*",
     "@storybook/test": "workspace:*",
     "styled-jsx": "5.1.6",
-    "vite-plugin-storybook-nextjs": "^1.1.2"
+    "vite-plugin-storybook-nextjs": "^1.1.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
@@ -128,6 +128,9 @@
     "typescript": {
       "optional": true
     }
+  },
+  "optionalDependencies": {
+    "sharp": "^0.33.3"
   },
   "engines": {
     "node": ">=18.0.0"

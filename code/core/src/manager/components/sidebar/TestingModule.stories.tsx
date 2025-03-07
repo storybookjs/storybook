@@ -158,6 +158,14 @@ export const RunningAll: Story = {
   play: Expanded.play,
 };
 
+export const RunningWithStatuses: Story = {
+  args: {
+    ...Statuses.args,
+    testProviders: [{ ...testProviders[0], running: true }, ...testProviders.slice(1)],
+  },
+  play: Expanded.play,
+};
+
 export const CollapsedRunning: Story = {
   args: RunningAll.args,
 };

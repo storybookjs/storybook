@@ -263,7 +263,7 @@ export const TestingModule = ({
             {hasTestProviders && (
               <WithTooltip
                 hasChrome={false}
-                tooltip={<TooltipNote note="Start all tests" />}
+                tooltip={<TooltipNote note={isRunning ? 'Running tests...' : 'Start all tests'} />}
                 trigger="hover"
               >
                 <RunButton

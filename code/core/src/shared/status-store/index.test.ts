@@ -253,6 +253,30 @@ describe('statusStore', () => {
       });
     });
 
+    describe('onSelect', () => {
+      it('should call listener when statuses are selected', () => {
+        // Arrange - set up the store with initial state and a mock listener
+        const mockListener = vi.fn();
+        const { fullStatusStore } = createStatusStore({
+          universalStatusStore: new MockUniversalStore({
+            ...UNIVERSAL_STATUS_STORE_OPTIONS,
+            initialState,
+          }),
+        });
+        const unsubscribe = fullStatusStore.onSelect(mockListener);
+
+        // Act - select statuses
+        const selectedStatuses = [story1Type1Status, story2Type2Status];
+        fullStatusStore.selectStatuses(selectedStatuses);
+
+        // Assert - the listener should be called with the selected statuses
+        expect(mockListener).toHaveBeenCalledWith(selectedStatuses);
+
+        // Clean up
+        unsubscribe();
+      });
+    });
+
     describe('unset', () => {
       it('should unset all statuses when typeIds and storyIds are not provided', () => {
         // Arrange - set up the store with initial state
@@ -475,6 +499,58 @@ describe('statusStore', () => {
         });
       });
     });
+
+    describe('onSelect', () => {
+      it('should call listener when statuses of the specified typeId are selected', () => {
+        // Arrange - set up the store with initial state and a mock listener
+        const mockListener = vi.fn();
+        const { getStatusStoreByTypeId, fullStatusStore } = createStatusStore({
+          universalStatusStore: new MockUniversalStore({
+            ...UNIVERSAL_STATUS_STORE_OPTIONS,
+            initialState,
+          }),
+        });
+
+        // Get a type-specific store and subscribe to selections
+        const type1StatusStore = getStatusStoreByTypeId('type-1');
+        const unsubscribe = type1StatusStore.onSelect(mockListener);
+
+        // Act - select statuses including one with the matching typeId
+        const selectedStatuses = [story1Type1Status, story2Type2Status];
+        fullStatusStore.selectStatuses(selectedStatuses);
+
+        // Assert - the listener should be called with the selected statuses
+        expect(mockListener).toHaveBeenCalledWith(selectedStatuses);
+
+        // Clean up
+        unsubscribe();
+      });
+
+      it('should not call listener when selected statuses do not include the specified typeId', () => {
+        // Arrange - set up the store with initial state and a mock listener
+        const mockListener = vi.fn();
+        const { getStatusStoreByTypeId, fullStatusStore } = createStatusStore({
+          universalStatusStore: new MockUniversalStore({
+            ...UNIVERSAL_STATUS_STORE_OPTIONS,
+            initialState,
+          }),
+        });
+
+        // Get a type-specific store and subscribe to selections
+        const type1StatusStore = getStatusStoreByTypeId('type-1');
+        const unsubscribe = type1StatusStore.onSelect(mockListener);
+
+        // Act - select statuses without any matching typeId
+        const selectedStatuses = [story1Type2Status, story2Type2Status];
+        fullStatusStore.selectStatuses(selectedStatuses);
+
+        // Assert - the listener should not be called
+        expect(mockListener).not.toHaveBeenCalled();
+
+        // Clean up
+        unsubscribe();
+      });
+    });
   });
 
   describe('useStatusStore', () => {
@@ -588,6 +664,53 @@ describe('statusStore', () => {
       expect(renderCounter).toHaveBeenCalledTimes(2);
       expect(result.current).toEqual({
         'type-1': updatedStory1Type1Status,
+        'type-2': story1Type2Status,
+      });
+    });
+
+    it('should not re-render when statuses not matching the selector change', async () => {
+      // Arrange - create a status store
+      const { useStatusStore, fullStatusStore } = createStatusStore({
+        universalStatusStore: new MockUniversalStore({
+          ...UNIVERSAL_STATUS_STORE_OPTIONS,
+          initialState,
+        }),
+        useUniversalStore,
+      });
+      const renderCounter = vi.fn();
+
+      // Create a selector that only returns statuses for story-1
+      const story1Selector = (statuses: StatusesByStoryIdAndTypeId) => statuses['story-1'] || {};
+
+      // Act - render the hook with the selector
+      const { result } = renderHook(() => {
+        renderCounter();
+        return useStatusStore(story1Selector);
+      });
+
+      // Assert - initial render
+      expect(renderCounter).toHaveBeenCalledTimes(1);
+      expect(result.current).toEqual({
+        'type-1': story1Type1Status,
+        'type-2': story1Type2Status,
+      });
+
+      // Act - update a status for story-2 (which doesn't match the selector)
+      const updatedStory2Type1Status = {
+        ...story2Type1Status,
+        value: StatusValue.ERROR,
+        title: 'Updated Error',
+        description: 'Updated error description',
+      };
+
+      act(() => {
+        fullStatusStore.set([updatedStory2Type1Status]);
+      });
+
+      // Assert - the hook should not re-render since the change doesn't affect the selected data
+      expect(renderCounter).toHaveBeenCalledTimes(1);
+      expect(result.current).toEqual({
+        'type-1': story1Type1Status,
         'type-2': story1Type2Status,
       });
     });

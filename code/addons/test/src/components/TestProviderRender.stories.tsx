@@ -5,9 +5,9 @@ import { ManagerContext } from 'storybook/internal/manager-api';
 import { styled } from 'storybook/internal/theming';
 import { Addon_TypesEnum } from 'storybook/internal/types';
 
-import { expect, fn } from '@storybook/test';
-
 import type { Meta, StoryObj } from '@storybook/react-vite';
+
+import { expect, fn } from 'storybook/test';
 
 import { type Details, storeOptions } from '../constants';
 import { store as mockStore } from '../manager-store.mock';

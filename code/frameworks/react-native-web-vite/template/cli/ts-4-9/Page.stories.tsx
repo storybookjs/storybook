@@ -1,6 +1,6 @@
-import { expect, userEvent, within } from '@storybook/test';
-
 import type { Meta } from '@storybook/react-native-web-vite';
+
+import { expect, userEvent, within } from 'storybook/test';
 
 import { Page } from './Page';
 

@@ -2,9 +2,9 @@ import React from 'react';
 
 import type { PlayFunctionContext } from 'storybook/internal/csf';
 
-import { within } from '@storybook/test';
-
 import type { Meta, StoryObj } from '@storybook/react-vite';
+
+import { within } from 'storybook/test';
 
 import * as ExampleStories from '../examples/ControlsParameters.stories';
 import * as SubcomponentsExampleStories from '../examples/ControlsWithSubcomponentsParameters.stories';

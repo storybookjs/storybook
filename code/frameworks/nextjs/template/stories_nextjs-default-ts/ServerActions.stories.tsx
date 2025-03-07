@@ -4,7 +4,8 @@ import type { Meta, StoryObj } from '@storybook/nextjs';
 import { revalidatePath } from '@storybook/nextjs/cache.mock';
 import { cookies } from '@storybook/nextjs/headers.mock';
 import { getRouter, redirect } from '@storybook/nextjs/navigation.mock';
-import { expect, userEvent, waitFor, within } from '@storybook/test';
+
+import { expect, userEvent, waitFor, within } from 'storybook/test';
 
 import { accessRoute, login, logout } from './server-actions';
 

@@ -2,9 +2,9 @@ import React from 'react';
 
 import { ManagerContext } from 'storybook/internal/manager-api';
 
-import { fn } from '@storybook/test';
-
 import type { Meta, StoryObj } from '@storybook/react-vite';
+
+import { fn } from 'storybook/test';
 
 import { UpgradeBlock } from './UpgradeBlock';
 

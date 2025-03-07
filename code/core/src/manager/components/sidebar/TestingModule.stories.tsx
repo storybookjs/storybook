@@ -6,9 +6,9 @@ import { ManagerContext, mockChannel } from 'storybook/internal/manager-api';
 import { styled } from 'storybook/internal/theming';
 import { Addon_TypesEnum } from 'storybook/internal/types';
 
-import { fireEvent, fn } from '@storybook/test';
-
 import type { Meta, StoryObj } from '@storybook/react-vite';
+
+import { fireEvent, fn } from 'storybook/test';
 
 import { TestingModule } from './TestingModule';
 

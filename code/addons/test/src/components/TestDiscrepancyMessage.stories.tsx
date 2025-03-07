@@ -3,9 +3,9 @@ import React from 'react';
 import { CallStates } from 'storybook/internal/instrumenter';
 import { ManagerContext } from 'storybook/internal/manager-api';
 
-import { fn } from '@storybook/test';
-
 import type { Meta, StoryObj } from '@storybook/react-vite';
+
+import { fn } from 'storybook/test';
 
 import { TestDiscrepancyMessage } from './TestDiscrepancyMessage';
 

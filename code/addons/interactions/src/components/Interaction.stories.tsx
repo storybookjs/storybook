@@ -1,8 +1,8 @@
 import { CallStates } from 'storybook/internal/instrumenter';
 
-import { expect, userEvent, within } from '@storybook/test';
-
 import type { Meta, StoryObj } from '@storybook/react-vite';
+
+import { expect, userEvent, within } from 'storybook/test';
 
 import { getCalls } from '../mocks';
 import { Interaction } from './Interaction';

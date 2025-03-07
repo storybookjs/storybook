@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/nextjs';
-import { expect, userEvent, within } from '@storybook/test';
+
+import { expect, userEvent, within } from 'storybook/test';
 
 import { Page } from './Page';
 

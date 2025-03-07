@@ -4,9 +4,9 @@ import type { IndexHash, State } from 'storybook/internal/manager-api';
 import { ManagerContext } from 'storybook/internal/manager-api';
 import type { API_StatusState, Addon_SidebarTopType } from 'storybook/internal/types';
 
-import { expect, fn, userEvent, within } from '@storybook/test';
-
 import type { Meta, StoryObj } from '@storybook/react-vite';
+
+import { expect, fn, userEvent, within } from 'storybook/test';
 
 import { LayoutProvider } from '../layout/LayoutProvider';
 import { standardData as standardHeaderData } from './Heading.stories';

@@ -1,6 +1,6 @@
-import { fn } from '@storybook/test';
-
 import type { Meta, StoryObj } from '@storybook/web-components-webpack5';
+
+import { fn } from 'storybook/test';
 
 import type { HeaderProps } from './Header';
 import { Header } from './Header';

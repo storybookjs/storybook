@@ -10,9 +10,9 @@ import type { PlayFunctionContext } from 'storybook/internal/csf';
 import type { PreviewWeb } from 'storybook/internal/preview-api';
 import type { ModuleExport, WebRenderer } from 'storybook/internal/types';
 
-import { within } from '@storybook/test';
-
 import type { Meta, ReactRenderer, StoryObj } from '@storybook/react-vite';
+
+import { within } from 'storybook/test';
 
 import type { DocsContextProps } from '../blocks';
 import * as ButtonStories from '../examples/Button.stories';

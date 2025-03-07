@@ -22,7 +22,6 @@ import { removeReactDependency } from './prompt-remove-react';
 import { reactDocgen } from './react-docgen';
 import { removeArgtypesRegex } from './remove-argtypes-regex';
 import { removedGlobalClientAPIs } from './remove-global-client-apis';
-import { removeJestTestingLibrary } from './remove-jest-testing-library';
 import { removeLegacyMDX1 } from './remove-legacymdx1';
 import { sbBinary } from './sb-binary';
 import { sbScripts } from './sb-scripts';
@@ -50,7 +49,6 @@ export const allFixes: Fix[] = [
   builderVite,
   sbBinary,
   sbScripts,
-  removeJestTestingLibrary,
   removeArgtypesRegex,
   removedGlobalClientAPIs,
   mdxgfm,

@@ -1,6 +1,6 @@
-import { expect, userEvent, within } from '@storybook/test';
-
 import type { Meta, StoryObj } from '@storybook/experimental-nextjs-vite';
+
+import { expect, userEvent, within } from 'storybook/test';
 
 import { Page } from './Page';
 

@@ -3,9 +3,9 @@ import React from 'react';
 
 import { styled } from 'storybook/internal/theming';
 
-import { expect, screen } from '@storybook/test';
-
 import type { StoryObj } from '@storybook/react-vite';
+
+import { expect, screen } from 'storybook/test';
 
 import { TooltipMessage } from './TooltipMessage';
 import { WithToolTipState as WithTooltip } from './WithTooltip';

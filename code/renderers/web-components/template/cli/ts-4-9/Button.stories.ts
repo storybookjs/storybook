@@ -1,6 +1,6 @@
-import { fn } from '@storybook/test';
-
 import type { Meta, StoryObj } from '@storybook/web-components';
+
+import { fn } from 'storybook/test';
 
 import type { ButtonProps } from './Button';
 import { Button } from './Button';

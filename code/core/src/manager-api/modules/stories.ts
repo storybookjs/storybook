@@ -268,12 +268,6 @@ export interface SubAPI {
    */
   setPreviewInitialized: (ref?: ComposedRef) => Promise<void>;
   /**
-   * Returns the current statuses of the stories.
-   *
-   * @returns {StatusByTypeId} The current statuses of the story.
-   */
-  getCurrentStoryStatus: () => StatusByTypeId;
-  /**
    * Updates the filtering of the index.
    *
    * @param {string} addonId - The ID of the addon to update.
@@ -650,12 +644,6 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       } else {
         fullAPI.updateRef(ref.id, { previewInitialized: true });
       }
-    },
-
-    getCurrentStoryStatus: () => {
-      const { storyId } = store.getState();
-      const allStatuses = fullStatusStore.get();
-      return allStatuses[storyId];
     },
 
     experimental_setFilter: async (id, filterFunction) => {

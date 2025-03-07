@@ -7,7 +7,7 @@ const statusStore = createStatusStore({
     process.env.VITEST !== 'true'
       ? UniversalStore.create({
           ...UNIVERSAL_STATUS_STORE_OPTIONS,
-          leader: process.env.VITEST !== 'true',
+          leader: true,
         })
       : ({} as any),
 });

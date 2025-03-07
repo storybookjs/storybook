@@ -5,9 +5,10 @@ import { ThemeProvider, useTheme } from 'storybook/internal/theming';
 import type { Theme } from 'storybook/internal/theming';
 
 import type { Meta, StoryFn, StoryObj } from '@storybook/react';
-import { screen } from '@storybook/test';
 
 import { action } from '@storybook/addon-actions';
+
+import { screen } from 'storybook/test';
 
 import { Heading } from './Heading';
 

@@ -6,6 +6,7 @@ import type { InstallationMetadata, JsPackageManager } from 'storybook/internal/
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
+import { consolidatedPackages } from '../helpers/consolidated-packages';
 import type { Fix } from '../types';
 
 const logger = console;
@@ -15,27 +16,6 @@ type PackageUsage = Record<string, string[]>;
 interface MissingStorybookDependenciesOptions {
   packageUsage: PackageUsage;
 }
-
-const consolidatedPackages = [
-  '@storybook/channels',
-  '@storybook/client-logger',
-  '@storybook/core-common',
-  '@storybook/core-events',
-  '@storybook/csf-tools',
-  '@storybook/docs-tools',
-  '@storybook/node-logger',
-  '@storybook/preview-api',
-  '@storybook/router',
-  '@storybook/telemetry',
-  '@storybook/theming',
-  '@storybook/types',
-  '@storybook/manager-api',
-  '@storybook/manager',
-  '@storybook/preview',
-  '@storybook/core-server',
-  '@storybook/builder-manager',
-  '@storybook/components',
-];
 
 async function checkInstallations(
   packageManager: JsPackageManager,
@@ -65,20 +45,20 @@ async function checkInstallations(
 export const missingStorybookDependencies: Fix<MissingStorybookDependenciesOptions> = {
   id: 'missingStorybookDependencies',
   promptType: 'auto',
-  versionRange: ['<8.2', '>=8.2'],
+  versionRange: ['<8.2', '<9.0'],
 
   async check({ packageManager }) {
     // Dynamically import globby because it is a pure ESM module
     // eslint-disable-next-line depend/ban-dependencies
     const { globby } = await import('globby');
 
-    const result = await checkInstallations(packageManager, consolidatedPackages);
+    const result = await checkInstallations(packageManager, Object.keys(consolidatedPackages));
     if (!result) {
       return null;
     }
 
     const installedDependencies = Object.keys(result).sort();
-    const dependenciesToCheck = consolidatedPackages.filter(
+    const dependenciesToCheck = Object.keys(consolidatedPackages).filter(
       (pkg) => !installedDependencies.includes(pkg)
     );
 

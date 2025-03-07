@@ -3,7 +3,7 @@ import React from 'react';
 import type { API } from 'storybook/internal/manager-api';
 import { ManagerContext } from 'storybook/internal/manager-api';
 
-import type { Meta, StoryFn } from '@storybook/react';
+import type { Meta, StoryFn } from '@storybook/react-vite';
 
 import { action } from '@storybook/addon-actions';
 

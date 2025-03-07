@@ -1,6 +1,6 @@
 import React from 'react';
 
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/nextjs';
 
 import Head from 'next/head';
 import { expect, waitFor } from 'storybook/test';

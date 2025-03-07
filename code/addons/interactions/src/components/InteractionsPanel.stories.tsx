@@ -3,7 +3,7 @@ import React from 'react';
 import { CallStates } from 'storybook/internal/instrumenter';
 import { styled } from 'storybook/internal/theming';
 
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 

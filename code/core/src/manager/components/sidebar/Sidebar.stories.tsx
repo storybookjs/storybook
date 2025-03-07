@@ -4,7 +4,7 @@ import type { IndexHash, State } from 'storybook/internal/manager-api';
 import { ManagerContext } from 'storybook/internal/manager-api';
 import type { API_StatusState, Addon_SidebarTopType } from 'storybook/internal/types';
 
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { expect, fn, userEvent, within } from 'storybook/test';
 

@@ -180,7 +180,7 @@ export const UnsupportedDark = {
 export const Story = {
   args: {
     language: 'jsx',
-    children: `import type { Meta, StoryObj } from '@storybook/react';
+    children: `import type { Meta, StoryObj } from '@storybook/react-vite';
 
     import { Header } from './Header';
     

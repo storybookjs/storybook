@@ -447,7 +447,7 @@ export async function baseGenerator(
       throw new Error(`Could not find template location for ${framework} or ${rendererId}`);
     }
     await copyTemplateFiles({
-      renderer: templateLocation,
+      templateLocation,
       packageManager: packageManager as any,
       language,
       destination: componentsDestinationPath,

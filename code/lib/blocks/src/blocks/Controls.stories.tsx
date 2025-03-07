@@ -2,7 +2,7 @@ import React from 'react';
 
 import type { PlayFunctionContext } from 'storybook/internal/csf';
 
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { within } from 'storybook/test';
 

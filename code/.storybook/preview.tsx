@@ -16,8 +16,8 @@ import {
 
 import { DocsContext } from '@storybook/blocks';
 import { global } from '@storybook/global';
-import type { Decorator, Loader, ReactRenderer } from '@storybook/react';
 
+import type { Decorator, Loader, ReactRenderer } from '@storybook/react-vite';
 // TODO add empty preview
 // import * as storysource from '@storybook/addon-storysource';
 // import * as designs from '@storybook/addon-designs/preview';

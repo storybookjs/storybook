@@ -4,7 +4,7 @@ import { CallStates } from 'storybook/internal/instrumenter';
 import { ManagerContext } from 'storybook/internal/manager-api';
 import { styled } from 'storybook/internal/theming';
 
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 

@@ -6,7 +6,6 @@ import { styled } from 'storybook/internal/theming';
 import type { NodeResult } from 'axe-core';
 
 import type { RuleType } from '../A11YPanel';
-import HighlightToggle from './HighlightToggle';
 import { Rules } from './Rules';
 
 const Item = styled.li({
@@ -22,16 +21,6 @@ const ItemTitle = styled.span(({ theme }) => ({
   justifyContent: 'space-between',
 }));
 
-const HighlightToggleElement = styled.span({
-  fontWeight: 'normal',
-  alignSelf: 'center',
-  paddingRight: 15,
-  input: {
-    margin: 0,
-    display: 'block',
-  },
-});
-
 interface ElementProps {
   element: NodeResult;
   type: RuleType;
@@ -40,16 +29,10 @@ interface ElementProps {
 const Element: FC<ElementProps> = ({ element, type }) => {
   const { any, all, none } = element;
   const rules = [...any, ...all, ...none];
-  const highlightToggleId = `${type}-${element.target[0]}`;
 
   return (
     <Item>
-      <ItemTitle>
-        {element.target[0]}
-        <HighlightToggleElement>
-          <HighlightToggle toggleId={highlightToggleId} elementsToHighlight={[element]} />
-        </HighlightToggleElement>
-      </ItemTitle>
+      <ItemTitle>{element.target[0]}</ItemTitle>
       <Rules rules={rules} />
     </Item>
   );

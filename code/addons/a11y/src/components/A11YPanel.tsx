@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 
-import { ActionBar, ScrollArea } from 'storybook/internal/components';
+import { ActionBar, Badge, ScrollArea } from 'storybook/internal/components';
 import { styled } from 'storybook/internal/theming';
 
 import { CheckIcon, SyncIcon } from '@storybook/icons';
@@ -24,23 +24,22 @@ const RotatingIcon = styled(Icon)(({ theme }) => ({
   animation: `${theme.animation.rotate360} 1s linear infinite;`,
 }));
 
-const Passes = styled.span(({ theme }) => ({
-  color: theme.color.positiveText,
-}));
-
-const Violations = styled.span(({ theme }) => ({
-  color: theme.color.negativeText,
-}));
-
-const Incomplete = styled.span(({ theme }) => ({
-  color: theme.color.warningText,
-}));
+const Tab = styled.div({
+  display: 'flex',
+  alignItems: 'center',
+  gap: 6,
+});
 
 const Centered = styled.span({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
   height: '100%',
+});
+
+const Count = styled(Badge)({
+  padding: 4,
+  minWidth: 24,
 });
 
 export const A11YPanel: React.FC = () => {
@@ -71,7 +70,12 @@ export const A11YPanel: React.FC = () => {
     const { passes, incomplete, violations } = results;
     return [
       {
-        label: <Violations>{violations.length} Violations</Violations>,
+        label: (
+          <Tab>
+            Violations
+            <Count status="neutral">{violations.length}</Count>
+          </Tab>
+        ),
         panel: (
           <Report
             items={violations}
@@ -83,7 +87,12 @@ export const A11YPanel: React.FC = () => {
         type: RuleType.VIOLATION,
       },
       {
-        label: <Passes>{passes.length} Passes</Passes>,
+        label: (
+          <Tab>
+            Passes
+            <Count status="neutral">{passes.length}</Count>
+          </Tab>
+        ),
         panel: (
           <Report items={passes} type={RuleType.PASS} empty="No accessibility checks passed." />
         ),
@@ -91,7 +100,12 @@ export const A11YPanel: React.FC = () => {
         type: RuleType.PASS,
       },
       {
-        label: <Incomplete>{incomplete.length} Incomplete</Incomplete>,
+        label: (
+          <Tab>
+            Incomplete
+            <Count status="neutral">{incomplete.length}</Count>
+          </Tab>
+        ),
         panel: (
           <Report
             items={incomplete}

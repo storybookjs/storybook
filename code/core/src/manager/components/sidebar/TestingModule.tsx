@@ -369,7 +369,6 @@ export const TestingModule = ({
                 <IconButton
                   id="clear-statuses"
                   size="medium"
-                  active={warningsActive}
                   onClick={(e: SyntheticEvent) => {
                     e.stopPropagation();
                     clearStatuses();

@@ -1,12 +1,12 @@
 import React, { type SyntheticEvent, useCallback, useEffect, useRef, useState } from 'react';
 
-import { Button, TooltipNote } from 'storybook/internal/components';
+import { Button, IconButton, TooltipNote } from 'storybook/internal/components';
 import { WithTooltip } from 'storybook/internal/components';
 import { type TestProviders } from 'storybook/internal/core-events';
 import { useStorybookApi } from 'storybook/internal/manager-api';
 import { keyframes, styled } from 'storybook/internal/theming';
 
-import { ChevronSmallUpIcon, PlayAllHollowIcon } from '@storybook/icons';
+import { ChevronSmallUpIcon, PlayAllHollowIcon, TrashIcon } from '@storybook/icons';
 
 import { LegacyRender } from './LegacyRender';
 
@@ -90,11 +90,17 @@ const Bar = styled.div<{ onClick?: (e: SyntheticEvent) => void }>(({ onClick }) 
   justifyContent: 'space-between',
   overflow: 'hidden',
   padding: 4,
+  gap: 4,
 }));
+
+const Action = styled.div({
+  display: 'flex',
+  flexBasis: '100%',
+  containerType: 'inline-size',
+});
 
 const Filters = styled.div({
   display: 'flex',
-  flexBasis: '100%',
   justifyContent: 'flex-end',
   gap: 4,
 });
@@ -105,6 +111,15 @@ const CollapseToggle = styled(Button)({
   willChange: 'auto',
   '&:focus, &:hover': {
     opacity: 1,
+  },
+});
+
+const RunButton = styled(Button)({
+  // 90px is the width of the button when the label is visible
+  '@container (max-width: 90px)': {
+    span: {
+      display: 'none',
+    },
   },
 });
 
@@ -145,6 +160,8 @@ const TestProvider = styled.div(({ theme }) => ({
 
 interface TestingModuleProps {
   testProviders: TestProviders[keyof TestProviders][];
+  statusCount: number;
+  clearStatuses: () => void;
   errorCount: number;
   errorsActive: boolean;
   setErrorsActive: (active: boolean) => void;
@@ -155,6 +172,8 @@ interface TestingModuleProps {
 
 export const TestingModule = ({
   testProviders,
+  statusCount,
+  clearStatuses,
   errorCount,
   errorsActive,
   setErrorsActive,
@@ -240,23 +259,31 @@ export const TestingModule = ({
         )}
 
         <Bar {...(hasTestProviders ? { onClick: toggleCollapsed } : {})}>
-          {hasTestProviders && (
-            <Button
-              size="medium"
-              variant="ghost"
-              padding="small"
-              onClick={(e: SyntheticEvent) => {
-                e.stopPropagation();
-                testProviders
-                  .filter((state) => !state.running && state.runnable)
-                  .forEach(({ id }) => api.runTestProvider(id));
-              }}
-              disabled={isRunning}
-            >
-              <PlayAllHollowIcon />
-              {isRunning ? 'Running...' : 'Run tests'}
-            </Button>
-          )}
+          <Action>
+            {hasTestProviders && (
+              <WithTooltip
+                hasChrome={false}
+                tooltip={<TooltipNote note="Start all tests" />}
+                trigger="hover"
+              >
+                <RunButton
+                  size="medium"
+                  variant="ghost"
+                  padding="small"
+                  onClick={(e: SyntheticEvent) => {
+                    e.stopPropagation();
+                    testProviders
+                      .filter((state) => !state.running && state.runnable)
+                      .forEach(({ id }) => api.runTestProvider(id));
+                  }}
+                  disabled={isRunning}
+                >
+                  <PlayAllHollowIcon />
+                  <span>{isRunning ? 'Running...' : 'Run tests'}</span>
+                </RunButton>
+              </WithTooltip>
+            )}
+          </Action>
           <Filters>
             {hasTestProviders && (
               <WithTooltip
@@ -331,6 +358,26 @@ export const TestingModule = ({
                 >
                   {warningCount < 100 ? warningCount : '99+'}
                 </StatusButton>
+              </WithTooltip>
+            )}
+            {statusCount > 0 && (
+              <WithTooltip
+                hasChrome={false}
+                tooltip={<TooltipNote note="Clear all statuses" />}
+                trigger="hover"
+              >
+                <IconButton
+                  id="clear-statuses"
+                  size="medium"
+                  active={warningsActive}
+                  onClick={(e: SyntheticEvent) => {
+                    e.stopPropagation();
+                    clearStatuses();
+                  }}
+                  aria-label="Clear all statuses"
+                >
+                  <TrashIcon />
+                </IconButton>
               </WithTooltip>
             )}
           </Filters>

@@ -5,18 +5,18 @@ import type { TestProviders } from 'storybook/internal/core-events';
 import { useStorybookApi } from 'storybook/internal/manager-api';
 import { styled } from 'storybook/internal/theming';
 
-import { EyeIcon, PlayHollowIcon, StopAltIcon } from '@storybook/icons';
+import { PlayHollowIcon, StopAltIcon } from '@storybook/icons';
 
 const Container = styled.div({
   display: 'flex',
   justifyContent: 'space-between',
-  padding: '8px 2px',
+  padding: '8px 0',
 });
 
 const Info = styled.div({
   display: 'flex',
   flexDirection: 'column',
-  marginLeft: 6,
+  marginLeft: 8,
 });
 
 const Actions = styled.div({
@@ -70,6 +70,7 @@ export const LegacyRender = ({ ...state }: TestProviders[keyof TestProviders]) =
               >
                 <Button
                   aria-label={`Stop ${state.name}`}
+                  size="medium"
                   variant="ghost"
                   padding="none"
                   onClick={() => api.cancelTestProvider(state.id)}
@@ -93,6 +94,7 @@ export const LegacyRender = ({ ...state }: TestProviders[keyof TestProviders]) =
               >
                 <Button
                   aria-label={`Start ${state.name}`}
+                  size="medium"
                   variant="ghost"
                   padding="small"
                   onClick={() => api.runTestProvider(state.id)}

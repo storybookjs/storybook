@@ -1,13 +1,14 @@
 import React from 'react';
 
 import type { TestProviderConfig, TestProviderState } from 'storybook/internal/core-events';
-import { ManagerContext } from 'storybook/internal/manager-api';
+import { ManagerContext, addons } from 'storybook/internal/manager-api';
 import { styled } from 'storybook/internal/theming';
 import { Addon_TypesEnum } from 'storybook/internal/types';
 
 import type { Meta, StoryObj } from '@storybook/react';
 import { expect, fn } from '@storybook/test';
 
+import { ADDON_ID as A11Y_ADDON_ID } from '../../../a11y/src/constants';
 import { type Details, storeOptions } from '../constants';
 import { store as mockStore } from '../manager-store.mock';
 import { TestProviderRender } from './TestProviderRender';
@@ -100,6 +101,7 @@ export default {
     layout: 'fullscreen',
   },
   beforeEach: async () => {
+    addons.register(A11Y_ADDON_ID, () => {});
     return () => {
       mockStore.setState(storeOptions.initialState);
     };
@@ -137,7 +139,18 @@ export const Watching: Story = {
   },
 };
 
+export const CoverageEnabled: Story = {
+  args: Default.args,
+  beforeEach: async () => {
+    mockStore.setState({
+      ...storeOptions.initialState,
+      config: { ...storeOptions.initialState.config, coverage: true },
+    });
+  },
+};
+
 export const WithCoverageNegative: Story = {
+  ...CoverageEnabled,
   args: {
     state: {
       ...config,
@@ -154,6 +167,7 @@ export const WithCoverageNegative: Story = {
 };
 
 export const WithCoverageWarning: Story = {
+  ...CoverageEnabled,
   args: {
     state: {
       ...config,
@@ -170,6 +184,7 @@ export const WithCoverageWarning: Story = {
 };
 
 export const WithCoveragePositive: Story = {
+  ...CoverageEnabled,
   args: {
     state: {
       ...config,

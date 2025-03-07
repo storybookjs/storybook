@@ -89,7 +89,7 @@ const Bar = styled.div<{ onClick?: (e: SyntheticEvent) => void }>(({ onClick }) 
   alignItems: 'center',
   justifyContent: 'space-between',
   overflow: 'hidden',
-  padding: '6px',
+  padding: 4,
 }));
 
 const Filters = styled.div({
@@ -242,6 +242,7 @@ export const TestingModule = ({
         <Bar {...(hasTestProviders ? { onClick: toggleCollapsed } : {})}>
           {hasTestProviders && (
             <Button
+              size="medium"
               variant="ghost"
               padding="small"
               onClick={(e: SyntheticEvent) => {
@@ -268,6 +269,7 @@ export const TestingModule = ({
                 trigger="hover"
               >
                 <CollapseToggle
+                  size="medium"
                   variant="ghost"
                   padding="small"
                   onClick={toggleCollapsed}
@@ -293,6 +295,7 @@ export const TestingModule = ({
               >
                 <StatusButton
                   id="errors-found-filter"
+                  size="medium"
                   variant="ghost"
                   padding={errorCount < 10 ? 'medium' : 'small'}
                   status="negative"
@@ -315,6 +318,7 @@ export const TestingModule = ({
               >
                 <StatusButton
                   id="warnings-found-filter"
+                  size="medium"
                   variant="ghost"
                   padding={warningCount < 10 ? 'medium' : 'small'}
                   status="warning"

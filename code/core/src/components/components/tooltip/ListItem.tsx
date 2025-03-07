@@ -4,7 +4,6 @@ import React from 'react';
 import { styled } from 'storybook/internal/theming';
 
 import memoize from 'memoizerific';
-import { transparentize } from 'polished';
 
 export interface TitleProps {
   children?: ReactNode;

@@ -440,7 +440,6 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
       import { setProjectAnnotations } from '${storybookPackage}'
       import * as rendererDocsAnnotations from '${template.expected.renderer}/dist/entry-preview-docs.mjs'
       import * as addonA11yAnnotations from '@storybook/addon-a11y/preview'
-      import * as addonActionsAnnotations from '@storybook/addon-actions/preview'
       import * as addonTestAnnotations from '@storybook/addon-test/preview'
       import '../src/stories/components'
       import * as coreAnnotations from '../template-stories/core/preview'

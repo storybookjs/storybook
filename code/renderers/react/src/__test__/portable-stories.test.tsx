@@ -1,6 +1,4 @@
 // @vitest-environment happy-dom
-
-/* eslint-disable import/namespace */
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
@@ -10,8 +8,6 @@ import type { ProjectAnnotations } from 'storybook/internal/csf';
 import { addons } from 'storybook/internal/preview-api';
 
 import type { Meta, ReactRenderer } from '@storybook/react';
-
-import * as addonActionsPreview from '@storybook/addon-actions/preview';
 
 import { expectTypeOf } from 'expect-type';
 
@@ -122,11 +118,7 @@ describe('projectAnnotations', () => {
   });
 
   it('has action arg from argTypes when addon-actions annotations are added', () => {
-    const Story = composeStory(
-      ButtonStories.WithActionArgType,
-      ButtonStories.default,
-      addonActionsPreview as ProjectAnnotations<ReactRenderer>
-    );
+    const Story = composeStory(ButtonStories.WithActionArgType, ButtonStories.default);
     expect(Story.args.someActionArg).toHaveProperty('isAction', true);
   });
 });

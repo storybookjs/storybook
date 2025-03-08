@@ -2,8 +2,7 @@ import React from 'react';
 
 import type { Meta, StoryObj } from '@storybook/react';
 
-import { action } from '@storybook/addon-actions';
-
+import { action } from 'storybook/actions';
 import { expect, fireEvent, fn, userEvent, within } from 'storybook/test';
 
 import { SaveStory } from './SaveStory';

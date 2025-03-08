@@ -4,7 +4,7 @@ import { styled } from 'storybook/internal/theming';
 
 import type { Meta, StoryObj } from '@storybook/react';
 
-import { action } from '@storybook/addon-actions';
+import { action } from 'storybook/actions';
 
 import * as ArgRow from './ArgRow.stories';
 import { ArgsTable, ArgsTableError } from './ArgsTable';

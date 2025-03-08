@@ -11,7 +11,6 @@ module.exports = {
   addons: [
     '@storybook/addon-a11y',
     '@storybook/addon-storysource',
-    '@storybook/addon-actions',
     '@storybook/addon-docs',
     '@storybook/addon-controls',
     '@storybook/addon-links',

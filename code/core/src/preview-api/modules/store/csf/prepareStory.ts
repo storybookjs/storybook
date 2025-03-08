@@ -55,9 +55,6 @@ export function prepareStory<TRenderer extends Renderer>(
   ): Promise<StoryContext<TRenderer>['loaded']> => {
     const loaded = {};
     for (const loaders of [
-      ...('__STORYBOOK_TEST_LOADERS__' in global && Array.isArray(global.__STORYBOOK_TEST_LOADERS__)
-        ? [global.__STORYBOOK_TEST_LOADERS__]
-        : []),
       normalizeArrays(projectAnnotations.loaders),
       normalizeArrays(componentAnnotations.loaders),
       normalizeArrays(storyAnnotations.loaders),

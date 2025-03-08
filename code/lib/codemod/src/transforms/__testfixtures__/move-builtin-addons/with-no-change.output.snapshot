@@ -1,7 +1,0 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`move-builtin-addons transforms correctly using "with-no-change.input.js" data 1`] = `
-"/* eslint-disable */
-import { action } from '@kadira/storybook-addons';
-import { storyOf } from '@storybook/react';"
-`;

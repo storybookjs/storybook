@@ -6,8 +6,7 @@ import type { Theme } from 'storybook/internal/theming';
 
 import type { Meta, StoryFn, StoryObj } from '@storybook/react';
 
-import { action } from '@storybook/addon-actions';
-
+import { action } from 'core/src/actions/dist';
 import { screen } from 'storybook/test';
 
 import { Heading } from './Heading';

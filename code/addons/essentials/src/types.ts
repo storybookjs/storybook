@@ -1,4 +1,3 @@
-import type { ActionsParameters } from '@storybook/addon-actions';
 import type { BackgroundsParameters } from '@storybook/addon-backgrounds';
 import type { DocsParameters } from '@storybook/addon-docs';
 import type { HighlightParameters } from '@storybook/addon-highlight';
@@ -7,8 +6,7 @@ import type { OutlineParameters } from '@storybook/addon-outline';
 import type { ViewportParameters } from '@storybook/addon-viewport';
 
 export interface EssentialsParameters
-  extends ActionsParameters,
-    BackgroundsParameters,
+  extends BackgroundsParameters,
     DocsParameters,
     HighlightParameters,
     MeasureParameters,

@@ -18,7 +18,10 @@ async function run() {
     ...nodeInternals,
     'typescript',
     'storybook',
-
+    'storybook/actions',
+    'storybook/actions/preview',
+    'storybook/actions/manager',
+    'storybook/actions/decorator',
     'storybook/internal/builder-manager',
     'storybook/internal/channels',
     'storybook/internal/client-logger',

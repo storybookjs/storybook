@@ -5,13 +5,6 @@ import { logger } from 'storybook/internal/node-logger';
 
 interface PresetOptions {
   /**
-   * Allow to use @storybook/addon-actions
-   *
-   * @default true
-   * @see https://storybook.js.org/addons/@storybook/addon-actions
-   */
-  actions?: boolean;
-  /**
    * Allow to use @storybook/addon-backgrounds
    *
    * @default true
@@ -89,7 +82,6 @@ export function addons(options: PresetOptions) {
   // NOTE: The order of these addons is important.
   return [
     'controls',
-    'actions',
     'docs',
     'backgrounds',
     'viewport',

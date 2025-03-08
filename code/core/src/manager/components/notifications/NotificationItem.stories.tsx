@@ -9,8 +9,7 @@ import {
 } from '@storybook/icons';
 import type { Meta, StoryObj } from '@storybook/react';
 
-import { action } from '@storybook/addon-actions';
-
+import { action } from 'core/src/actions/dist';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 
 import NotificationItem from './NotificationItem';

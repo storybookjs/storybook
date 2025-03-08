@@ -4,7 +4,7 @@ import { TooltipLinkList, WithTooltip } from 'storybook/internal/components';
 
 import type { Meta, StoryObj } from '@storybook/react';
 
-import { action } from '@storybook/addon-actions';
+import { action } from 'core/src/actions/dist';
 
 import { Shortcut } from './Menu';
 

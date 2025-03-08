@@ -16,7 +16,6 @@
   "resolutions": {
     "@playwright/test": "1.48.1",
     "@storybook/addon-a11y": "portal:../../../code/addons/a11y",
-    "@storybook/addon-actions": "portal:../../../code/addons/actions",
     "@storybook/addon-backgrounds": "portal:../../../code/addons/backgrounds",
     "@storybook/addon-controls": "portal:../../../code/addons/controls",
     "@storybook/addon-docs": "portal:../../../code/addons/docs",

@@ -15,7 +15,7 @@ test.describe('module-mocking', () => {
   test('should assert story lifecycle order', async ({ page }) => {
     const sbPage = new SbPage(page, expect);
 
-    await sbPage.navigateToStory('lib/test/order-of-hooks', 'order-of-hooks');
+    await sbPage.navigateToStory('core/order-of-hooks', 'order-of-hooks');
 
     await sbPage.viewAddonPanel('Actions');
     const logItem = page.locator('#storybook-panel-root #panel-tab-content');
@@ -43,7 +43,7 @@ test.describe('module-mocking', () => {
   test('should assert that utils import is mocked', async ({ page }) => {
     const sbPage = new SbPage(page, expect);
 
-    await sbPage.navigateToStory('lib/test/module-mocking', 'basic');
+    await sbPage.navigateToStory('core/module-mocking', 'basic');
 
     await sbPage.viewAddonPanel('Actions');
     const logItem = page.locator('#storybook-panel-root #panel-tab-content', {

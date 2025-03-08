@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { findByRole, fn } from '@storybook/test';
+
+import { findByRole, fn } from 'storybook/test';
 
 import { TagsFilter } from './TagsFilter';
 

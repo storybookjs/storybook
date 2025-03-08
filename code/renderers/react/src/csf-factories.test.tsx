@@ -9,10 +9,9 @@ import React from 'react';
 import type { Canvas } from 'storybook/internal/csf';
 import type { Args, StrictArgs } from 'storybook/internal/types';
 
-import type { Mock } from '@storybook/test';
-import { fn } from '@storybook/test';
-
 import { expectTypeOf } from 'expect-type';
+import { fn } from 'storybook/test';
+import type { Mock } from 'storybook/test';
 
 import { __definePreview } from './preview';
 import type { Decorator } from './public-types';

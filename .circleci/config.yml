@@ -878,10 +878,11 @@ workflows:
           parallelism: 4
           requires:
             - create-sandboxes
-      - bench-sandboxes:
-          parallelism: 5
-          requires:
-            - create-sandboxes
+# TODO: don't forget to reenable this
+#      - bench-sandboxes:
+#          parallelism: 5
+#          requires:
+#            - create-sandboxes
       - test-ui-testing-module:
           requires:
             - build
@@ -965,10 +966,11 @@ workflows:
       - test-init-features:
           requires:
             - build
-      - bench-sandboxes:
-          parallelism: 5
-          requires:
-            - create-sandboxes
+# TODO: don't forget to reenable this
+#      - bench-sandboxes:
+#          parallelism: 5
+#          requires:
+#            - create-sandboxes
       # TODO: reenable once we find out the source of flakyness
       # - test-runner-dev:
       #     parallelism: 4
@@ -1059,10 +1061,11 @@ workflows:
                 # --smoke-test is not supported for the angular builder right now
                 # - "angular-cli"
                 - "lit-vite-ts"
-      - bench-sandboxes:
-          parallelism: 5
-          requires:
-            - create-sandboxes
+# TODO: don't forget to reenable this
+#      - bench-sandboxes:
+#          parallelism: 5
+#          requires:
+#            - create-sandboxes
 
       # TODO: reenable once we find out the source of flakyness
       # - test-runner-dev:

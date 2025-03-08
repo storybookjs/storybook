@@ -1,7 +1,6 @@
 import React from 'react';
 
 import type { Meta, StoryObj } from '@storybook/react';
-import { expect, userEvent, within } from '@storybook/test';
 
 import { getRouter } from '@storybook/experimental-nextjs-vite/navigation.mock';
 
@@ -13,6 +12,7 @@ import {
   useSelectedLayoutSegment,
   useSelectedLayoutSegments,
 } from 'next/navigation';
+import { expect, userEvent, within } from 'storybook/test';
 
 function Component() {
   const router = useRouter();

@@ -1,7 +1,7 @@
 ```ts filename="MyComponent.stories.ts" renderer="angular" language="ts"
 import type { Meta, StoryObj } from '@storybook/angular';
 
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/test';
 
 import { MyComponent } from './MyComponent.component';
 
@@ -42,7 +42,7 @@ export const ExampleChangeEvent: Story = {
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
-  import { userEvent, within } from '@storybook/test';
+  import { userEvent, within } from 'storybook/test';
 
   import MyComponent from './MyComponent.svelte';
 
@@ -78,7 +78,7 @@ export const ExampleChangeEvent: Story = {
 ```
 
 ```js filename="MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF"
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/test';
 
 import MyComponent from './MyComponent.svelte';
 
@@ -112,7 +112,7 @@ export const ExampleChangeEvent = {
 ```
 
 ```js filename="MyComponent.stories.js|jsx" renderer="common" language="js"
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/test';
 
 import { MyComponent } from './MyComponent';
 
@@ -149,7 +149,7 @@ export const ExampleChangeEvent = {
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
-  import { userEvent, within } from '@storybook/test';
+  import { userEvent, within } from 'storybook/test';
 
   import MyComponent from './MyComponent.svelte';
 
@@ -187,7 +187,7 @@ export const ExampleChangeEvent = {
 ```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="CSF"
 import type { Meta, StoryObj } from '@storybook/svelte';
 
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/test';
 
 import MyComponent from './MyComponent.svelte';
 
@@ -227,7 +227,7 @@ export const ExampleChangeEvent: Story = {
 // Replace your-framework with the name of your framework
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/test';
 
 import { MyComponent } from './MyComponent';
 
@@ -267,7 +267,7 @@ export const ExampleChangeEvent: Story = {
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
-  import { userEvent, within } from '@storybook/test';
+  import { userEvent, within } from 'storybook/test';
 
   import MyComponent from './MyComponent.svelte';
 
@@ -306,7 +306,7 @@ export const ExampleChangeEvent: Story = {
 ```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
 import type { Meta, StoryObj } from '@storybook/svelte';
 
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/test';
 
 import MyComponent from './MyComponent.svelte';
 
@@ -346,7 +346,7 @@ export const ExampleChangeEvent: Story = {
 // Replace your-framework with the name of your framework
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/test';
 
 import { MyComponent } from './MyComponent';
 
@@ -383,7 +383,7 @@ export const ExampleChangeEvent: Story = {
 ```
 
 ```js filename="MyComponent.stories.js" renderer="web-components" language="js"
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/test';
 
 export default {
   component: 'demo-my-component',
@@ -416,7 +416,7 @@ export const ExampleChangeEvent = {
 
 ```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts"
 import type { Meta, StoryObj } from '@storybook/web-components';
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/test';
 
 const meta: Meta = {
   component: 'demo-my-component',

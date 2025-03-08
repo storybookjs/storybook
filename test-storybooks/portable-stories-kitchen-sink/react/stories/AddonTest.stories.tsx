@@ -1,4 +1,4 @@
-import { expect } from '@storybook/test';
+import { expect } from 'storybook/test';
 import { Meta, type StoryObj } from '@storybook/react'
 import { instrument } from 'storybook/internal/instrumenter'
 

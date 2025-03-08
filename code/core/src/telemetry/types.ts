@@ -11,6 +11,7 @@ export type EventType =
   | 'index'
   | 'upgrade'
   | 'init'
+  | 'init-step'
   | 'scaffolded-empty'
   | 'browser'
   | 'canceled'

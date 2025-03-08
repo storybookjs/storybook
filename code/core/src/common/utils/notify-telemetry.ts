@@ -25,7 +25,7 @@ export const notifyTelemetry = async () => {
   );
   logger.log(`This information is used to shape Storybook's roadmap and prioritize features.`);
   logger.log(
-    `You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:`
+    `You can learn more, including how to opt-out of this anonymous program, by visiting:`
   );
   logger.log(picocolors.cyan('https://storybook.js.org/telemetry'));
   logger.log();

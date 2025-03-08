@@ -30,7 +30,7 @@ export default defineWorkspace([
         }]
       },
       setupFiles: ["./.storybook/vitest.setup.ts"],
-      environment: "happy-dom",
+      environment: "jsdom",
     },
   },
 ]);

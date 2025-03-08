@@ -8,10 +8,11 @@ import { SbPage } from "../../../../code/e2e-tests/util";
 
 const STORYBOOK_URL = "http://localhost:6006";
 const TEST_STORY_PATH = path.resolve(__dirname, "..", "stories", "AddonTest.stories.tsx");
+const UNHANDLED_ERRORS_STORY_PATH = path.resolve(__dirname, "..", "stories", "UnhandledErrors.stories.tsx");
 
-const setForceFailureFlag = async (value: boolean) => {
+const setForceFailureFlag = async (storyPath: string, value: boolean) => {
   // Read the story file content asynchronously
-  const storyContent = (await fs.readFile(TEST_STORY_PATH)).toString();
+  const storyContent = (await fs.readFile(storyPath)).toString();
 
   // Create a regex to match 'forceFailure: true' or 'forceFailure: false'
   const forceFailureRegex = /forceFailure:\s*(true|false)/;
@@ -23,7 +24,7 @@ const setForceFailureFlag = async (value: boolean) => {
   );
 
   // Write the updated content back to the file asynchronously
-  await fs.writeFile(TEST_STORY_PATH, updatedContent);
+  await fs.writeFile(storyPath, updatedContent);
 
   // the file change causes a HMR event, which causes a browser reload,and that can take a few seconds
   await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -129,7 +130,7 @@ test.describe("component testing", () => {
     browserName,
   }) => {
     test.skip(browserName !== "chromium", `Skipping tests for ${browserName}`);
-    await setForceFailureFlag(true);
+    await setForceFailureFlag(TEST_STORY_PATH, true);
 
     const sbPage = new SbPage(page, expect);
     await sbPage.navigateToStory("addons/group/test", "Expected Failure");
@@ -197,7 +198,7 @@ test.describe("component testing", () => {
     browserName,
   }) => {
     test.skip(browserName !== "chromium", `Skipping tests for ${browserName}`);
-    await setForceFailureFlag(false);
+    await setForceFailureFlag(TEST_STORY_PATH, false);
 
     const sbPage = new SbPage(page, expect);
     await sbPage.navigateToStory("addons/group/test", "Expected Failure");
@@ -212,7 +213,7 @@ test.describe("component testing", () => {
 
     // We shouldn't have to do an arbitrary wait, but because there is no UI for loading state yet, we have to
     await page.waitForTimeout(8000);
-    await setForceFailureFlag(true);
+    await setForceFailureFlag(TEST_STORY_PATH, true);
     await page.waitForTimeout(500);
 
     // Wait for test results to appear
@@ -252,7 +253,7 @@ test.describe("component testing", () => {
   }) => {
     test.skip(browserName !== "chromium", `Skipping tests for ${browserName}`);
     // Arrange - Prepare Storybook
-    await setForceFailureFlag(false);
+    await setForceFailureFlag(TEST_STORY_PATH, false);
 
     const sbPage = new SbPage(page, expect);
     await sbPage.navigateToStory("addons/group/test", "Expected Failure");
@@ -302,7 +303,7 @@ test.describe("component testing", () => {
   }) => {
     test.skip(browserName !== "chromium", `Skipping tests for ${browserName}`);
     // Arrange - Prepare Storybook
-    await setForceFailureFlag(false);
+    await setForceFailureFlag(TEST_STORY_PATH, false);
 
     const sbPage = new SbPage(page, expect);
     await sbPage.navigateToStory("addons/group/test", "Expected Failure");
@@ -325,13 +326,50 @@ test.describe("component testing", () => {
     await expect(page.locator('#storybook-explorer-menu').getByRole('status', { name: 'Test status: success' })).toHaveCount(1);
   });
 
+  test("should show unhandled errors in the testing module", async ({
+    page,
+    browserName,
+  }) => {
+    
+    test.skip(browserName !== "chromium", `Skipping tests for ${browserName}`);
+    // Arrange - Prepare Storybook
+    await setForceFailureFlag(UNHANDLED_ERRORS_STORY_PATH, true);
+
+    const sbPage = new SbPage(page, expect);
+    await sbPage.navigateToStory("example/unhandlederrors", "Success");
+
+    const storyElement = sbPage
+      .getCanvasBodyElement()
+      .getByText("Hello world");
+    await expect(storyElement).toBeVisible({ timeout: 30000 });
+
+    // Act - Open sidebar context menu and start focused test
+    await page.locator('[data-item-id="example-unhandlederrors"]').hover();
+    await page.locator('[data-item-id="example-unhandlederrors"] div[data-testid="context-menu"] button').click();
+    const sidebarContextMenu = page.getByTestId('tooltip');
+    await sidebarContextMenu.getByLabel('Start test run').click();
+
+    // Assert - Tests are running and errors are reported
+    const errorLink = page.locator('#testing-module-description a');
+    await expect(errorLink).toContainText('2 unhandled errors', { timeout: 30000 });
+    await errorLink.click();
+
+    await expect(page.locator('pre')).toContainText('I THREW AN UNHANDLED ERROR!');
+    await expect(page.locator('pre')).toContainText('This error originated in');
+    await expect(page.locator('pre')).toContainText("The latest test that might've caused the error is");
+    await page.locator('body').click();
+
+    // Cleanup
+    await setForceFailureFlag(UNHANDLED_ERRORS_STORY_PATH, false);
+  });
+
   test("should run focused test for a component", async ({
     page,
     browserName,
   }) => {
     test.skip(browserName !== "chromium", `Skipping tests for ${browserName}`);
     // Arrange - Prepare Storybook
-    await setForceFailureFlag(false);
+    await setForceFailureFlag(TEST_STORY_PATH, false);
 
     const sbPage = new SbPage(page, expect);
     await sbPage.navigateToStory("addons/group/test", "Expected Failure");
@@ -364,7 +402,7 @@ test.describe("component testing", () => {
   }) => {
     test.skip(browserName !== "chromium", `Skipping tests for ${browserName}`);
     // Arrange - Prepare Storybook
-    await setForceFailureFlag(false);
+    await setForceFailureFlag(TEST_STORY_PATH, false);
 
     const sbPage = new SbPage(page, expect);
     await sbPage.navigateToStory("addons/group/test", "Expected Failure");
@@ -397,7 +435,7 @@ test.describe("component testing", () => {
   }) => {
     test.skip(browserName !== "chromium", `Skipping tests for ${browserName}`);
     // Arrange - Prepare Storybook
-    await setForceFailureFlag(false);
+    await setForceFailureFlag(TEST_STORY_PATH, false);
 
     const sbPage = new SbPage(page, expect);
     await sbPage.navigateToStory("example/button", "CSF 3 Primary");
@@ -441,5 +479,4 @@ test.describe("component testing", () => {
     expect(sbPercentage).toBeGreaterThanOrEqual(0);
     expect(sbPercentage).toBeLessThanOrEqual(100);
   });
-
 });

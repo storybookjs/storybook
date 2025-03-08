@@ -8,7 +8,7 @@ import path from 'path';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
-// Relative path import to avoid dependency to @storybook/test
+// Relative path import to avoid dependency to storybook/test
 import {
   SUPPORTED_FRAMEWORKS,
   SUPPORTED_RENDERERS,

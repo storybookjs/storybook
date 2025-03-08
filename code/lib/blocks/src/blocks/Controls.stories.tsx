@@ -3,7 +3,8 @@ import React from 'react';
 import type { PlayFunctionContext } from 'storybook/internal/csf';
 
 import type { Meta, StoryObj } from '@storybook/react';
-import { within } from '@storybook/test';
+
+import { within } from 'storybook/test';
 
 import * as ExampleStories from '../examples/ControlsParameters.stories';
 import * as SubcomponentsExampleStories from '../examples/ControlsWithSubcomponentsParameters.stories';

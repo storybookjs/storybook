@@ -16,6 +16,7 @@ import {
   detectPnp,
   isStorybookInstantiated,
 } from '../../../core/src/cli/detect';
+import { Settings } from '../../../core/src/cli/globalSettings';
 import type { Builder } from '../../../core/src/cli/project_types';
 import { ProjectType, installableProjectTypes } from '../../../core/src/cli/project_types';
 import type { JsPackageManager } from '../../../core/src/common/js-package-manager/JsPackageManager';
@@ -249,9 +250,120 @@ const projectTypeInquirer = async (
   process.exit(0);
 };
 
+interface PromptOptions {
+  skipPrompt?: boolean;
+  disableTelemetry?: boolean;
+  settings: Settings;
+  projectType?: ProjectType;
+}
+
+type InstallType = 'recommended' | 'light';
+
+/**
+ * Prompt the user whether they are a new user and whether to include onboarding. Return whether or
+ * not this is a new user.
+ *
+ * ```
+ *  New to Storybook?
+ *  > Yes: Help me with onboarding
+ *    No: Skip onboarding & don't ask me again
+ * ```
+ */
+export const promptNewUser = async ({
+  settings,
+  skipPrompt,
+  disableTelemetry,
+}: PromptOptions): Promise<boolean | undefined> => {
+  const isNewUser = (s: Settings) => {
+    const newUserPrompt = s.get('init.promptNewUser');
+    return newUserPrompt === undefined || newUserPrompt;
+  };
+
+  if (isNewUser(settings) && !skipPrompt) {
+    const { newUser } = await prompts({
+      type: 'select',
+      name: 'newUser',
+      message: 'New to Storybook?',
+      choices: [
+        {
+          title: `${picocolors.bold('Yes:')} Help me with onboarding`,
+          value: true,
+        },
+        {
+          title: `${picocolors.bold('No:')} Skip onboarding & don't ask again`,
+          value: false,
+        },
+      ],
+    });
+
+    if (typeof newUser === 'undefined') {
+      return newUser;
+    }
+
+    settings.set('init.promptNewUser', newUser);
+  } else {
+    //  true if new user and not interactive, false if interactive
+    settings.set('init.promptNewUser', isNewUser(settings));
+  }
+
+  if (!disableTelemetry) {
+    const settingsCreationTime = (await settings.getFileCreationDate())?.getTime();
+    await telemetry('init-step', {
+      step: 'new-user-check',
+      settingsCreationTime,
+      promptNewUser: settings.get('init.promptNewUser'),
+    });
+  }
+
+  return isNewUser(settings);
+};
+
+/**
+ * Prompt the user to choose the configuration to install.
+ *
+ * ```
+ * What configuration should we install?
+ *  > Recommended: Component dev, docs, test
+ *    Minimal: Dev only
+ * ```
+ */
+export const promptInstallType = async ({
+  skipPrompt,
+  disableTelemetry,
+  projectType,
+}: PromptOptions): Promise<InstallType | undefined> => {
+  let installType = 'recommended' as InstallType;
+  if (!skipPrompt && projectType !== ProjectType.REACT_NATIVE) {
+    const { configuration } = await prompts({
+      type: 'select',
+      name: 'configuration',
+      message: 'What configuration should we install?',
+      choices: [
+        {
+          title: `${picocolors.bold('Recommended:')} Component dev, docs, test`,
+          value: 'recommended',
+        },
+        {
+          title: `${picocolors.bold('Minimal:')} Dev only`,
+          value: 'light',
+        },
+      ],
+    });
+    if (typeof configuration === 'undefined') {
+      return configuration;
+    }
+    installType = configuration;
+  }
+  if (!disableTelemetry) {
+    await telemetry('init-step', { step: 'install-type', installType });
+  }
+  return installType;
+};
+
 export async function doInitiate(options: CommandOptions): Promise<
   | {
       shouldRunDev: true;
+      shouldOnboard: boolean;
       projectType: ProjectType;
       packageManager: JsPackageManager;
       storybookCommand: string;
@@ -294,46 +406,38 @@ export async function doInitiate(options: CommandOptions): Promise<
 
   const isInteractive = process.stdout.isTTY && !process.env.CI;
 
-  const selectableFeatures: Record<GeneratorFeature, { name: string; description: string }> = {
-    docs: { name: 'Documentation', description: 'MDX, auto-generated component docs' },
-    test: { name: 'Testing', description: 'Fast browser-based component tests, watch mode' },
+  const settings = new Settings();
+  await settings.safeLoad();
+  const promptOptions = {
+    ...options,
+    settings,
+    skipPrompt: !isInteractive || options.yes,
+    projectType: options.type,
   };
+  const newUser = await promptNewUser(promptOptions);
+  await settings.safeSave();
 
-  const printFeatures = (features: Set<GeneratorFeature>) =>
-    Array.from(features)
-      .map((f) => selectableFeatures[f].name)
-      .join(', ') || 'none';
+  if (typeof newUser === 'undefined') {
+    logger.info('canceling');
+    process.exit(0);
+  }
+
+  let installType = 'recommended' as InstallType;
+  if (!newUser) {
+    const install = await promptInstallType(promptOptions);
+    if (typeof install === 'undefined') {
+      logger.info('canceling');
+      process.exit(0);
+    }
+    installType = install;
+  }
 
   let selectedFeatures = new Set<GeneratorFeature>();
-
-  if (options.features?.length > 0) {
-    if (options.features.includes('docs')) {
-      selectedFeatures.add('docs');
-    }
-    if (options.features.includes('test')) {
-      selectedFeatures.add('test');
-    }
-    logger.log(`Selected features: ${printFeatures(selectedFeatures)}`);
-  } else if (options.yes || !isInteractive) {
+  if (installType === 'recommended') {
     selectedFeatures.add('docs');
-
     if (isInteractive) {
-      // Don't automatically add test feature in CI
       selectedFeatures.add('test');
     }
-    logger.log(`Selected features: ${printFeatures(selectedFeatures)}`);
-  } else {
-    const out = await prompts({
-      type: 'multiselect',
-      name: 'features',
-      message: `What do you want to use Storybook for?`,
-      choices: Object.entries(selectableFeatures).map(([value, { name, description }]) => ({
-        title: `${name}: ${description}`,
-        value,
-        selected: true,
-      })),
-    });
-    selectedFeatures = new Set(out.features);
   }
 
   const telemetryFeatures = {
@@ -488,7 +592,7 @@ export async function doInitiate(options: CommandOptions): Promise<
   }
 
   if (!options.disableTelemetry) {
-    await telemetry('init', { projectType, features: telemetryFeatures });
+    await telemetry('init', { projectType, features: telemetryFeatures, newUser });
   }
 
   if (projectType === ProjectType.REACT_NATIVE) {
@@ -572,6 +676,7 @@ export async function doInitiate(options: CommandOptions): Promise<
 
   return {
     shouldRunDev: !!options.dev && !options.skipInstall,
+    shouldOnboard: newUser,
     projectType,
     packageManager,
     storybookCommand,
@@ -611,7 +716,7 @@ export async function initiate(options: CommandOptions): Promise<void> {
         flags.push('--');
       }
 
-      if (supportsOnboarding) {
+      if (supportsOnboarding && initiateResult.shouldOnboard) {
         flags.push('--initial-path=/onboarding');
       }
 

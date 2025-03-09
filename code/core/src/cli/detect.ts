@@ -207,10 +207,10 @@ export async function detectLanguage(packageManager: JsPackageManager) {
       (!eslintPluginStorybookVersion || semver.gte(eslintPluginStorybookVersion, '0.6.8'))
     ) {
       language = SupportedLanguage.TYPESCRIPT_4_9;
-    } else if (semver.gte(typescriptVersion, '3.8.0')) {
-      language = SupportedLanguage.TYPESCRIPT_3_8;
-    } else if (semver.lt(typescriptVersion, '3.8.0')) {
-      logger.warn('Detected TypeScript < 3.8, populating with JavaScript examples');
+    } else {
+      logger.warn(
+        'Detected TypeScript < 4.9 or incompatible tooling, populating with JavaScript examples'
+      );
     }
   } else {
     // No direct dependency on TypeScript, but could be a transitive dependency

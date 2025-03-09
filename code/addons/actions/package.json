@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-actions",
-  "version": "9.0.0-alpha.0",
+  "version": "9.0.0-alpha.2",
   "description": "Get UI feedback when an action is performed on an interactive element",
   "keywords": [
     "storybook",
@@ -74,7 +74,6 @@
     "uuid": "^9.0.0"
   },
   "devDependencies": {
-    "@storybook/test": "workspace:*",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-inspector": "^6.0.0",

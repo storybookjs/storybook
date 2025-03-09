@@ -1,10 +1,11 @@
 import React from 'react';
 
+import { CallStates } from 'storybook/internal/instrumenter';
 import { ManagerContext } from 'storybook/internal/manager-api';
 
-import { CallStates } from '@storybook/instrumenter';
 import type { Meta, StoryObj } from '@storybook/react';
-import { fn } from '@storybook/test';
+
+import { fn } from 'storybook/test';
 
 import { TestDiscrepancyMessage } from './TestDiscrepancyMessage';
 

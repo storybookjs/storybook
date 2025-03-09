@@ -74,8 +74,7 @@ export async function configureMain({
     ...custom,
   };
 
-  const isTypescript =
-    language === SupportedLanguage.TYPESCRIPT_4_9 || language === SupportedLanguage.TYPESCRIPT_3_8;
+  const isTypescript = language === SupportedLanguage.TYPESCRIPT_4_9;
 
   let mainConfigTemplate = dedent`<<import>><<prefix>>const config<<type>> = <<mainContents>>;
     export default config;`;
@@ -116,9 +115,7 @@ export async function configureMain({
 
 export async function configurePreview(options: ConfigurePreviewOptions) {
   const { prefix: frameworkPrefix = '' } = options.frameworkPreviewParts || {};
-  const isTypescript =
-    options.language === SupportedLanguage.TYPESCRIPT_4_9 ||
-    options.language === SupportedLanguage.TYPESCRIPT_3_8;
+  const isTypescript = options.language === SupportedLanguage.TYPESCRIPT_4_9;
 
   // We filter out community packages here, as we are not certain if they export a Preview type.
   // Let's make this configurable in the future.

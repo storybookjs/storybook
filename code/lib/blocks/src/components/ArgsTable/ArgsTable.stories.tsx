@@ -146,7 +146,7 @@ export const InAddonPanelNoControls = {
   args: {
     ...InAddonPanel.args,
     rows: Object.fromEntries(
-      Object.entries(InAddonPanel.args.rows).map(([k, v]) => [k, { ...v, control: null }])
+      Object.entries(InAddonPanel.args.rows).map(([k, v]) => [k, { ...v, control: null as any }])
     ),
   },
 };

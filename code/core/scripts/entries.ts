@@ -25,6 +25,7 @@ export const getEntries = (cwd: string) => {
     define('src/channels/index.ts', ['browser', 'node'], true),
     define('src/types/index.ts', ['browser', 'node'], true, ['react']),
     define('src/csf-tools/index.ts', ['node'], true),
+    define('src/csf/index.ts', ['browser', 'node'], true),
     define('src/common/index.ts', ['node'], true),
     define('src/builder-manager/index.ts', ['node'], true),
     define('src/telemetry/index.ts', ['node'], true),
@@ -46,6 +47,26 @@ export const getEntries = (cwd: string) => {
     define('src/cli/index.ts', ['node'], true),
     define('src/babel/index.ts', ['node'], true),
     define('src/cli/bin/index.ts', ['node'], true),
+    define('src/bin/index.ts', ['node'], false),
+
+    define('src/instrumenter/index.ts', ['browser', 'node'], true),
+    define(
+      'src/test/index.ts',
+      ['browser', 'node'],
+      true,
+      ['util'],
+      [],
+      [
+        '@testing-library/dom',
+        '@testing-library/jest-dom',
+        '@testing-library/user-event',
+        'chai',
+        '@vitest/expect',
+        '@vitest/spy',
+        '@vitest/utils',
+      ],
+      true
+    ),
   ];
 };
 
@@ -66,6 +87,6 @@ export const getFinals = (cwd: string) => {
 
   return [
     //
-    define('src/manager/runtime.ts', ['browser'], false),
+    define('src/manager/runtime.tsx', ['browser'], false),
   ];
 };

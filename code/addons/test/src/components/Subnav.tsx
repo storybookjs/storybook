@@ -10,6 +10,8 @@ import {
   TooltipNote,
   WithTooltip,
 } from 'storybook/internal/components';
+import type { Call, ControlStates } from 'storybook/internal/instrumenter';
+import { CallStates } from 'storybook/internal/instrumenter';
 import { styled } from 'storybook/internal/theming';
 
 import {
@@ -19,8 +21,6 @@ import {
   RewindIcon,
   SyncIcon,
 } from '@storybook/icons';
-import type { Call, ControlStates } from '@storybook/instrumenter';
-import { CallStates } from '@storybook/instrumenter';
 
 import type { Controls } from './InteractionsPanel';
 import { StatusBadge } from './StatusBadge';
@@ -109,7 +109,7 @@ const RerunButton = styled(StyledIconButton)<
 >(({ theme, animating, disabled }) => ({
   opacity: disabled ? 0.5 : 1,
   svg: {
-    animation: animating && `${theme.animation.rotate360} 200ms ease-out`,
+    animation: animating ? `${theme.animation.rotate360} 200ms ease-out` : undefined,
   },
 }));
 

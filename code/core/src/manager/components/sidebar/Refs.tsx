@@ -1,10 +1,9 @@
 import type { FC, MutableRefObject } from 'react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { styled } from '@storybook/core/theming';
-
-import type { State } from '@storybook/core/manager-api';
-import { useStorybookApi, useStorybookState } from '@storybook/core/manager-api';
+import type { State } from 'storybook/internal/manager-api';
+import { useStorybookApi, useStorybookState } from 'storybook/internal/manager-api';
+import { styled } from 'storybook/internal/theming';
 
 import { transparentize } from 'polished';
 

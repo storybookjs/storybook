@@ -1,9 +1,10 @@
 import React from 'react';
 
-import type { Meta, StoryObj } from '@storybook/react';
-import { fn } from '@storybook/test';
+import { ManagerContext } from 'storybook/internal/manager-api';
 
-import { ManagerContext } from '@storybook/core/manager-api';
+import type { Meta, StoryObj } from '@storybook/react';
+
+import { fn } from 'storybook/test';
 
 import { UpgradeBlock } from './UpgradeBlock';
 

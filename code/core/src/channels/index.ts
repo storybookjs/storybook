@@ -1,6 +1,7 @@
 /// <reference path="../typings.d.ts" />
 import { global } from '@storybook/global';
 
+import { UniversalStore } from '../shared/universal-store';
 import { Channel } from './main';
 import { PostMessageTransport } from './postmessage';
 import type { ChannelTransport, Config } from './types';
@@ -13,7 +14,7 @@ export * from './main';
 export default Channel;
 
 export { PostMessageTransport } from './postmessage';
-export { WebsocketTransport } from './websocket';
+export { WebsocketTransport, HEARTBEAT_INTERVAL, HEARTBEAT_MAX_LATENCY } from './websocket';
 
 type Options = Config & {
   extraTransports?: ChannelTransport[];
@@ -39,7 +40,14 @@ export function createBrowserChannel({ page, extraTransports = [] }: Options): C
     transports.push(new WebsocketTransport({ url: channelUrl, onError: () => {}, page }));
   }
 
-  return new Channel({ transports });
+  const channel = new Channel({ transports });
+  // eslint-disable-next-line no-underscore-dangle
+  UniversalStore.__prepare(
+    channel,
+    page === 'manager' ? UniversalStore.Environment.MANAGER : UniversalStore.Environment.PREVIEW
+  );
+
+  return channel;
 }
 
 export type { Listener, ChannelEvent, ChannelTransport, ChannelHandler } from './types';

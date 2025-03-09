@@ -1,9 +1,20 @@
 import type { ComponentProps, FC, MutableRefObject } from 'react';
 import React, { useCallback, useMemo, useRef } from 'react';
 
-import { Button, IconButton, ListItem } from '@storybook/core/components';
-import { styled, useTheme } from '@storybook/core/theming';
-import { type API_HashEntry, type API_StatusValue, type StoryId } from '@storybook/core/types';
+import { Button, IconButton, ListItem } from 'storybook/internal/components';
+import { PRELOAD_ENTRIES } from 'storybook/internal/core-events';
+import { useStorybookApi } from 'storybook/internal/manager-api';
+import type {
+  API,
+  ComponentEntry,
+  GroupEntry,
+  State,
+  StoriesHash,
+  StoryEntry,
+} from 'storybook/internal/manager-api';
+import { styled, useTheme } from 'storybook/internal/theming';
+import { type API_HashEntry, type API_StatusValue, type StoryId } from 'storybook/internal/types';
+
 import {
   CollapseIcon as CollapseIconSvg,
   ExpandAltIcon,
@@ -13,20 +24,10 @@ import {
   SyncIcon,
 } from '@storybook/icons';
 
-import { PRELOAD_ENTRIES } from '@storybook/core/core-events';
-import { useStorybookApi } from '@storybook/core/manager-api';
-import type {
-  API,
-  ComponentEntry,
-  GroupEntry,
-  State,
-  StoriesHash,
-  StoryEntry,
-} from '@storybook/core/manager-api';
-
-import { transparentize } from 'polished';
+import { darken, lighten } from 'polished';
 
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList';
+import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
 import { getGroupStatus, getHighestStatus, statusMapping } from '../../utils/status';
 import {
   createId,
@@ -66,7 +67,7 @@ const CollapseButton = styled.button(({ theme }) => ({
 
   '&:hover, &:focus': {
     outline: 'none',
-    background: transparentize(0.93, theme.color.secondary),
+    background: 'var(--tree-node-background-hover)',
   },
 }));
 
@@ -79,9 +80,19 @@ export const LeafNodeStyleWrapper = styled.div(({ theme }) => ({
   background: 'transparent',
   minHeight: 28,
   borderRadius: 4,
+  overflow: 'hidden',
+  '--tree-node-background-hover': theme.background.content,
+
+  [MEDIA_DESKTOP_BREAKPOINT]: {
+    '--tree-node-background-hover': theme.background.app,
+  },
 
   '&:hover, &:focus': {
-    background: transparentize(0.93, theme.color.secondary),
+    '--tree-node-background-hover':
+      theme.base === 'dark'
+        ? darken(0.35, theme.color.secondary)
+        : lighten(0.45, theme.color.secondary),
+    background: 'var(--tree-node-background-hover)',
     outline: 'none',
   },
 
@@ -94,11 +105,11 @@ export const LeafNodeStyleWrapper = styled.div(({ theme }) => ({
   },
 
   '& [data-displayed="on"] + *': {
-    display: 'none',
+    visibility: 'hidden',
   },
 
   '&:hover [data-displayed="off"] + *': {
-    display: 'none',
+    visibility: 'hidden',
   },
 
   '&[data-selected="true"]': {
@@ -107,7 +118,8 @@ export const LeafNodeStyleWrapper = styled.div(({ theme }) => ({
     fontWeight: theme.typography.weight.bold,
 
     '&&:hover, &&:focus': {
-      background: theme.color.secondary,
+      '--tree-node-background-hover': theme.color.secondary,
+      background: 'var(--tree-node-background-hover)',
     },
     svg: { color: theme.color.lightest },
   },

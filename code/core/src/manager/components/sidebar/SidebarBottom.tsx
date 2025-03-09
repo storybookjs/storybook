@@ -1,20 +1,19 @@
-import React, { Fragment, useEffect, useRef, useState } from 'react';
-
-import { styled } from '@storybook/core/theming';
-import { type API_FilterFunction, type API_StatusValue } from '@storybook/core/types';
+import React, { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import {
   TESTING_MODULE_CRASH_REPORT,
   TESTING_MODULE_PROGRESS_REPORT,
   type TestingModuleCrashReportPayload,
   type TestingModuleProgressReportPayload,
-} from '@storybook/core/core-events';
+} from 'storybook/internal/core-events';
 import {
   type API,
   type State,
   useStorybookApi,
   useStorybookState,
-} from '@storybook/core/manager-api';
+} from 'storybook/internal/manager-api';
+import { styled } from 'storybook/internal/theming';
+import { type API_FilterFunction } from 'storybook/internal/types';
 
 import { NotificationList } from '../notifications/NotificationList';
 import { TestingModule } from './TestingModule';
@@ -56,12 +55,14 @@ const Content = styled.div(({ theme }) => ({
   bottom: 0,
   left: 0,
   right: 0,
-  padding: 12,
+  padding: '12px 0',
+  margin: '0 12px',
   display: 'flex',
   flexDirection: 'column',
   gap: 12,
   color: theme.color.defaultText,
   fontSize: theme.typography.size.s1,
+  overflow: 'hidden',
 
   '&:empty': {
     display: 'none',
@@ -119,13 +120,13 @@ export const SidebarBottomBase = ({
     api.experimental_setFilter('sidebar-bottom-filter', filter);
   }, [api, hasWarnings, hasErrors, warningsActive, errorsActive]);
 
-  useEffect(() => {
+  // Register listeners before the first render
+  useLayoutEffect(() => {
     const onCrashReport = ({ providerId, ...details }: TestingModuleCrashReportPayload) => {
       api.updateTestProviderState(providerId, {
         error: { name: 'Crashed!', message: details.error.message },
         running: false,
         crashed: true,
-        watching: false,
       });
     };
 

@@ -18,7 +18,20 @@ import { DocsContext } from '@storybook/blocks';
 import { global } from '@storybook/global';
 import type { Decorator, Loader, ReactRenderer } from '@storybook/react';
 
+// TODO add empty preview
+// import * as storysource from '@storybook/addon-storysource';
+// import * as designs from '@storybook/addon-designs/preview';
+import { definePreview } from '@storybook/react-vite';
+
+import addonA11y from '@storybook/addon-a11y';
+import addonEssentials from '@storybook/addon-essentials';
+import addonTest from '@storybook/addon-test';
+import addonThemes from '@storybook/addon-themes';
+
+import * as addonsPreview from '../addons/toolbars/template/stories/preview';
+import * as templatePreview from '../core/template/stories/preview';
 import { DocsPageWrapper } from '../lib/blocks/src/components';
+import '../renderers/react/template/components/index';
 import { isChromatic } from './isChromatic';
 
 const { document } = global;
@@ -117,10 +130,7 @@ const ThemedSetRoot = () => {
   return null;
 };
 
-// eslint-disable-next-line no-underscore-dangle
-const preview = (window as any).__STORYBOOK_PREVIEW__ as PreviewWeb<ReactRenderer> | undefined;
-const channel = (window as any).__STORYBOOK_ADDONS_CHANNEL__ as Channel | undefined;
-export const loaders = [
+const loaders = [
   /**
    * This loader adds a DocsContext to the story, which is required for the most Blocks to work. A
    * story will specify which stories they need in the index with:
@@ -134,6 +144,9 @@ export const loaders = [
    * The DocsContext will then be added via the decorator below.
    */
   async ({ parameters: { relativeCsfPaths, attached = true } }) => {
+    // eslint-disable-next-line no-underscore-dangle
+    const preview = (window as any).__STORYBOOK_PREVIEW__ as PreviewWeb<ReactRenderer> | undefined;
+    const channel = (window as any).__STORYBOOK_ADDONS_CHANNEL__ as Channel | undefined;
     // __STORYBOOK_PREVIEW__ and __STORYBOOK_ADDONS_CHANNEL__ is set in the PreviewWeb constructor
     // which isn't loaded in portable stories/vitest
     if (!relativeCsfPaths || !preview || !channel) {
@@ -169,7 +182,7 @@ export const loaders = [
   },
 ] as Loader[];
 
-export const decorators = [
+const decorators = [
   // This decorator adds the DocsContext created in the loader above
   (Story, { loaded: { docsContext } }) =>
     docsContext ? (
@@ -307,11 +320,7 @@ export const decorators = [
   },
 ] satisfies Decorator[];
 
-export const parameters = {
-  options: {
-    storySort: (a, b) =>
-      a.title === b.title ? 0 : a.id.localeCompare(b.id, undefined, { numeric: true }),
-  },
+const parameters = {
   docs: {
     theme: themes.light,
     toc: {},
@@ -358,5 +367,19 @@ export const parameters = {
       opacity: 0.4,
     },
   },
-  tags: ['test', 'vitest', '!a11ytest'],
 };
+
+export default definePreview({
+  addons: [
+    addonThemes(),
+    addonEssentials(),
+    addonA11y(),
+    addonTest(),
+    addonsPreview,
+    templatePreview,
+  ],
+  decorators,
+  loaders,
+  tags: ['test', 'vitest'],
+  parameters,
+});

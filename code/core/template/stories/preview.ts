@@ -1,5 +1,7 @@
 /* eslint-disable no-underscore-dangle */
-import type { PartialStoryFn, StoryContext } from '@storybook/core/types';
+import type { PartialStoryFn, StoryContext } from 'storybook/internal/types';
+
+import type { ReactRenderer } from '@storybook/react';
 
 declare global {
   interface Window {
@@ -30,7 +32,7 @@ export const parameters = {
 
 export const loaders = [async () => ({ projectValue: 2 })];
 
-const testProjectDecorator = (storyFn: PartialStoryFn, context: StoryContext) => {
+const testProjectDecorator = (storyFn: PartialStoryFn<ReactRenderer>, context: StoryContext) => {
   if (context.parameters.useProjectDecorator) {
     return storyFn({ args: { ...context.args, text: `project ${context.args.text}` } });
   }

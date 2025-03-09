@@ -6,12 +6,13 @@ import {
   STORY_ARGS_UPDATED,
   UPDATE_STORY_ARGS,
 } from 'storybook/internal/core-events';
+import type { PlayFunctionContext } from 'storybook/internal/csf';
 import type { PreviewWeb } from 'storybook/internal/preview-api';
 import type { ModuleExport, WebRenderer } from 'storybook/internal/types';
 
-import type { PlayFunctionContext } from '@storybook/csf';
 import type { Meta, ReactRenderer, StoryObj } from '@storybook/react';
-import { within } from '@storybook/test';
+
+import { within } from 'storybook/test';
 
 import type { DocsContextProps } from '../blocks';
 import * as ButtonStories from '../examples/Button.stories';

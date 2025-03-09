@@ -1,13 +1,14 @@
 import type { ComponentProps, FC, SyntheticEvent } from 'react';
 import React, { useMemo, useState } from 'react';
 
-import { TooltipLinkList, WithTooltip } from '@storybook/core/components';
-import { type API_HashEntry, Addon_TypesEnum } from '@storybook/core/types';
-import { EllipsisIcon } from '@storybook/icons';
+import { TooltipLinkList, WithTooltip } from 'storybook/internal/components';
+import { type TestProviders } from 'storybook/internal/core-events';
+import { useStorybookState } from 'storybook/internal/manager-api';
+import type { API } from 'storybook/internal/manager-api';
+import { styled } from 'storybook/internal/theming';
+import { type API_HashEntry, Addon_TypesEnum } from 'storybook/internal/types';
 
-import { type TestProviders } from '@storybook/core/core-events';
-import { useStorybookState } from '@storybook/core/manager-api';
-import type { API } from '@storybook/core/manager-api';
+import { EllipsisIcon } from '@storybook/icons';
 
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList';
 import { StatusButton } from './StatusButton';
@@ -17,6 +18,17 @@ const empty = {
   onMouseEnter: () => {},
   node: null,
 };
+
+const PositionedWithTooltip = styled(WithTooltip)({
+  position: 'absolute',
+  right: 0,
+  zIndex: 1,
+});
+
+const FloatingStatusButton = styled(StatusButton)({
+  background: 'var(--tree-node-background-hover)',
+  boxShadow: '0 0 5px 5px var(--tree-node-background-hover)',
+});
 
 export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) => {
   const [hoverCount, setHoverCount] = useState(0);
@@ -63,7 +75,7 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
     return {
       onMouseEnter: handlers.onMouseEnter,
       node: isRendered ? (
-        <WithTooltip
+        <PositionedWithTooltip
           data-displayed={isOpen ? 'on' : 'off'}
           closeOnOutsideClick
           placement="bottom-end"
@@ -77,10 +89,10 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
           }}
           tooltip={<LiveContextMenu context={context} links={links} />}
         >
-          <StatusButton type="button" status={'pending'}>
+          <FloatingStatusButton type="button" status={'pending'}>
             <EllipsisIcon />
-          </StatusButton>
-        </WithTooltip>
+          </FloatingStatusButton>
+        </PositionedWithTooltip>
       ) : null,
     };
   }, [context, handlers, isOpen, isRendered, links]);

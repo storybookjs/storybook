@@ -1,6 +1,8 @@
-import type { PartialStoryFn, PlayFunctionContext, StoryContext } from '@storybook/core/types';
+import type { PartialStoryFn, PlayFunctionContext, StoryContext } from 'storybook/internal/types';
+
 import { global as globalThis } from '@storybook/global';
-import { expect, within } from '@storybook/test';
+
+import { expect, within } from 'storybook/test';
 
 export default {
   component: globalThis.Components.Pre,
@@ -44,7 +46,8 @@ export const Events = {
     await channel.emit('updateGlobals', { globals: { foo: 'fooValue' } });
     await within(canvasElement).findByText('fooValue');
   },
-  tags: ['!vitest'],
+  // this story can't be reliably tested because the globals changes results in renderPhases disrupting test runs
+  tags: ['!vitest', '!test'],
 };
 
 export const Overrides1 = {

@@ -71,12 +71,12 @@ describe('react component properties', () => {
         if (skippedTests.includes(testEntry.name)) {
           it.skip(`${testEntry.name}`, () => {});
         } else {
-          it(`${testEntry.name}`, () => {
+          it(`${testEntry.name}`, async () => {
             const inputPath = join(testDir, testFile);
 
             // snapshot the output of babel-plugin-react-docgen
             const docgenPretty = annotateWithDocgen(inputPath);
-            expect(docgenPretty).toMatchFileSnapshot(join(testDir, 'docgen.snapshot'));
+            await expect(docgenPretty).toMatchFileSnapshot(join(testDir, 'docgen.snapshot'));
 
             // transform into an uglier format that's works with require-from-string
             const docgenModule = transformToModule(docgenPretty);
@@ -84,7 +84,7 @@ describe('react component properties', () => {
             // snapshot the output of component-properties/react
             const { component } = requireFromString(docgenModule, inputPath);
             const properties = extractProps(component);
-            expect(properties).toMatchFileSnapshot(join(testDir, 'properties.snapshot'));
+            await expect(properties).toMatchFileSnapshot(join(testDir, 'properties.snapshot'));
 
             // snapshot the output of `extractArgTypes`
             const argTypes = extractArgTypes(component);
@@ -93,7 +93,7 @@ describe('react component properties', () => {
               argTypes,
               parameters,
             } as unknown as StoryContext<Renderer>);
-            expect(rows).toMatchFileSnapshot(join(testDir, 'argTypes.snapshot'));
+            await expect(rows).toMatchFileSnapshot(join(testDir, 'argTypes.snapshot'));
           });
         }
       }

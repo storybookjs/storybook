@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-a11y",
-  "version": "8.5.0-alpha.22",
+  "version": "9.0.0-alpha.2",
   "description": "Test component compliance with web accessibility standards",
   "keywords": [
     "a11y",
@@ -67,12 +67,10 @@
   },
   "dependencies": {
     "@storybook/addon-highlight": "workspace:*",
-    "@storybook/test": "workspace:*",
-    "axe-core": "^4.2.0",
-    "vitest-axe": "^0.1.0"
+    "@storybook/global": "^5.0.0",
+    "axe-core": "^4.2.0"
   },
   "devDependencies": {
-    "@storybook/global": "^5.0.0",
     "@storybook/icons": "^1.2.12",
     "@testing-library/react": "^14.0.0",
     "execa": "^9.5.2",
@@ -82,7 +80,8 @@
     "react-dom": "^18.2.0",
     "react-resize-detector": "^7.1.2",
     "resize-observer-polyfill": "^1.5.1",
-    "typescript": "^5.3.2"
+    "typescript": "^5.7.3",
+    "vitest-axe": "^0.1.0"
   },
   "peerDependencies": {
     "storybook": "workspace:^"

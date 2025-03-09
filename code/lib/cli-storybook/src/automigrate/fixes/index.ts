@@ -1,5 +1,7 @@
-import type { Fix } from '../types';
+import { csfFactories } from '../../codemod/csf-factories';
+import type { CommandFix, Fix } from '../types';
 import { addonA11yAddonTest } from './addon-a11y-addon-test';
+import { addonExperimentalTest } from './addon-experimental-test';
 import { addonPostCSS } from './addon-postcss';
 import { addonsAPI } from './addons-api';
 import { angularBuilders } from './angular-builders';
@@ -19,7 +21,6 @@ import { removeReactDependency } from './prompt-remove-react';
 import { reactDocgen } from './react-docgen';
 import { removeArgtypesRegex } from './remove-argtypes-regex';
 import { removedGlobalClientAPIs } from './remove-global-client-apis';
-import { removeJestTestingLibrary } from './remove-jest-testing-library';
 import { removeLegacyMDX1 } from './remove-legacymdx1';
 import { sbBinary } from './sb-binary';
 import { sbScripts } from './sb-scripts';
@@ -47,7 +48,6 @@ export const allFixes: Fix[] = [
   builderVite,
   sbBinary,
   sbScripts,
-  removeJestTestingLibrary,
   removeArgtypesRegex,
   removedGlobalClientAPIs,
   mdxgfm,
@@ -67,6 +67,11 @@ export const allFixes: Fix[] = [
   autodocsTags,
   initialGlobals,
   addonA11yAddonTest,
+  addonExperimentalTest,
 ];
 
 export const initFixes: Fix[] = [eslintPlugin];
+
+// These are specific fixes that only occur when triggered on command, and are hidden otherwise.
+// e.g. npx storybook automigrate csf-factories
+export const commandFixes: CommandFix[] = [csfFactories];

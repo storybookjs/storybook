@@ -93,8 +93,6 @@ enum events {
   TESTING_MODULE_RUN_ALL_REQUEST = 'testingModuleRunAllRequest',
   TESTING_MODULE_CANCEL_TEST_RUN_REQUEST = 'testingModuleCancelTestRunRequest',
   TESTING_MODULE_CANCEL_TEST_RUN_RESPONSE = 'testingModuleCancelTestRunResponse',
-  TESTING_MODULE_WATCH_MODE_REQUEST = 'testingModuleWatchModeRequest',
-  TESTING_MODULE_CONFIG_CHANGE = 'testingModuleConfigChange',
 }
 
 // Enables: `import Events from ...`
@@ -165,8 +163,6 @@ export const {
   TESTING_MODULE_RUN_ALL_REQUEST,
   TESTING_MODULE_CANCEL_TEST_RUN_REQUEST,
   TESTING_MODULE_CANCEL_TEST_RUN_RESPONSE,
-  TESTING_MODULE_WATCH_MODE_REQUEST,
-  TESTING_MODULE_CONFIG_CHANGE,
 } = events;
 
 export * from './data/create-new-story';

@@ -7,7 +7,8 @@ import type {
   API_StoryMapper,
   SetStoriesStoryData,
   StoryIndex,
-} from '@storybook/core/types';
+} from 'storybook/internal/types';
+
 import { global } from '@storybook/global';
 
 import { dedent } from 'ts-dedent';

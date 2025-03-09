@@ -74,10 +74,10 @@ const flip = ({ width, height, ...styles }: ViewportStyles) => ({
   width: height,
 });
 
-const ActiveViewportSize = styled.div(() => ({
+const ActiveViewportSize = styled.div({
   display: 'inline-flex',
   alignItems: 'center',
-}));
+});
 
 const ActiveViewportLabel = styled.div(({ theme }) => ({
   display: 'inline-block',

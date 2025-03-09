@@ -1,6 +1,6 @@
 {
   "name": "@storybook/server",
-  "version": "8.5.0-alpha.22",
+  "version": "9.0.0-alpha.2",
   "description": "Storybook Server renderer",
   "keywords": [
     "storybook"
@@ -45,17 +45,12 @@
     "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@storybook/components": "workspace:*",
-    "@storybook/csf": "0.1.12",
     "@storybook/global": "^5.0.0",
-    "@storybook/manager-api": "workspace:*",
-    "@storybook/preview-api": "workspace:*",
-    "@storybook/theming": "workspace:*",
     "ts-dedent": "^2.0.0",
     "yaml": "^2.3.1"
   },
   "devDependencies": {
-    "typescript": "^5.3.2"
+    "typescript": "^5.7.3"
   },
   "peerDependencies": {
     "storybook": "workspace:^"

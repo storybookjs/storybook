@@ -1,3 +1,4 @@
+import { sanitize } from 'storybook/internal/csf';
 import type {
   API_BaseEntry,
   API_ComponentEntry,
@@ -18,8 +19,7 @@ import type {
   StoryIndexV2,
   StoryIndexV3,
   Tag,
-} from '@storybook/core/types';
-import { sanitize } from '@storybook/csf';
+} from 'storybook/internal/types';
 
 import { countBy, mapValues } from 'es-toolkit';
 import memoize from 'memoizerific';
@@ -192,11 +192,17 @@ export const transformStoryIndexToStoriesHash = (
   const entryValues = Object.values(index.entries).filter((entry: any) => {
     let result = true;
 
+    // All stories with a failing status should always show up, regardless of the applied filters
+    const storyStatus = status[entry.id];
+    if (Object.values(storyStatus ?? {}).some(({ status: s }) => s === 'error')) {
+      return result;
+    }
+
     Object.values(filters).forEach((filter: any) => {
       if (result === false) {
         return;
       }
-      result = filter({ ...entry, status: status[entry.id] });
+      result = filter({ ...entry, status: storyStatus });
     });
 
     return result;

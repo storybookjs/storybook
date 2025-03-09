@@ -1,10 +1,10 @@
 import * as React from 'react';
 
 import { IconButton, TooltipNote, WithTooltip } from 'storybook/internal/components';
+import { type Call, CallStates, type ControlStates } from 'storybook/internal/instrumenter';
 import { styled, typography } from 'storybook/internal/theming';
 
 import { ListUnorderedIcon } from '@storybook/icons';
-import { type Call, CallStates, type ControlStates } from '@storybook/instrumenter';
 
 import { transparentize } from 'polished';
 
@@ -14,12 +14,12 @@ import { MatcherResult } from './MatcherResult';
 import { MethodCall } from './MethodCall';
 import { StatusIcon } from './StatusIcon';
 
-const MethodCallWrapper = styled.div(() => ({
+const MethodCallWrapper = styled.div({
   fontFamily: typography.fonts.mono,
   fontSize: typography.size.s1,
   overflowWrap: 'break-word',
   inlineSize: 'calc( 100% - 40px )',
-}));
+});
 
 const RowContainer = styled('div', {
   shouldForwardProp: (prop) => !['call', 'pausedAt'].includes(prop.toString()),

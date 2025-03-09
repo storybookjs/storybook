@@ -1,8 +1,8 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
-import type { SupportedFrameworks } from '@storybook/core/types';
-import type { CoreCommon_StorybookInfo, PackageJson } from '@storybook/core/types';
+import type { SupportedFrameworks } from 'storybook/internal/types';
+import type { CoreCommon_StorybookInfo, PackageJson } from 'storybook/internal/types';
 
 import { getStorybookConfiguration } from './get-storybook-configuration';
 

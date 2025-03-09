@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { Channel } from '@storybook/core/channels';
+import { Channel } from 'storybook/internal/channels';
 
 import { EventEmitter } from 'events';
 import type { Server } from 'http';

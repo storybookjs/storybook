@@ -2,7 +2,8 @@
 import React from 'react';
 
 import type { Meta, StoryObj } from '@storybook/react';
-import { expect, fireEvent, within } from '@storybook/test';
+
+import { expect, fireEvent, within } from 'storybook/test';
 
 import { Button } from './Button';
 

@@ -1,9 +1,6 @@
 import type { Mocked } from 'vitest';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { API_StoryEntry } from '@storybook/core/types';
-import { global } from '@storybook/global';
-
 import {
   CONFIG_ERROR,
   CURRENT_STORY_WAS_SET,
@@ -17,7 +14,10 @@ import {
   STORY_PREPARED,
   STORY_SPECIFIED,
   UPDATE_STORY_ARGS,
-} from '@storybook/core/core-events';
+} from 'storybook/internal/core-events';
+import type { API_StoryEntry } from 'storybook/internal/types';
+
+import { global } from '@storybook/global';
 
 import { EventEmitter } from 'events';
 

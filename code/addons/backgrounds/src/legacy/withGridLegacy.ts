@@ -1,14 +1,10 @@
 import { useEffect, useMemo } from 'storybook/internal/preview-api';
-import type {
-  Renderer,
-  StoryContext,
-  PartialStoryFn as StoryFunction,
-} from 'storybook/internal/types';
+import type { DecoratorFunction } from 'storybook/internal/types';
 
 import { PARAM_KEY as BACKGROUNDS_PARAM_KEY } from '../constants';
 import { addGridStyle, clearStyles } from '../utils';
 
-export const withGrid = (StoryFn: StoryFunction<Renderer>, context: StoryContext<Renderer>) => {
+export const withGrid: DecoratorFunction = (StoryFn, context) => {
   const { globals, parameters } = context;
   const gridParameters = parameters[BACKGROUNDS_PARAM_KEY].grid;
   const isActive = globals[BACKGROUNDS_PARAM_KEY]?.grid === true && gridParameters.disable !== true;

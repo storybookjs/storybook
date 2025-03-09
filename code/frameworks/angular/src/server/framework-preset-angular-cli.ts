@@ -1,5 +1,6 @@
 import { logger } from 'storybook/internal/node-logger';
 import { AngularLegacyBuildOptionsError } from 'storybook/internal/server-errors';
+import { WebpackDefinePlugin, WebpackIgnorePlugin } from '@storybook/builder-webpack5';
 
 import { BuilderContext, targetFromTargetString } from '@angular-devkit/architect';
 import { JsonObject, logging } from '@angular-devkit/core';
@@ -21,13 +22,35 @@ export async function webpackFinal(baseConfig: webpack.Configuration, options: P
   const builderContext = getBuilderContext(options);
   const builderOptions = await getBuilderOptions(options, builderContext);
 
-  return getCustomWebpackConfig(baseConfig, {
+  const webpackConfig = await getCustomWebpackConfig(baseConfig, {
     builderOptions: {
       watch: options.configType === 'DEVELOPMENT',
       ...builderOptions,
-    },
+    } as any,
     builderContext,
   });
+
+  webpackConfig.plugins = webpackConfig.plugins ?? [];
+
+  webpackConfig.plugins.push(
+    new WebpackDefinePlugin({
+      STORYBOOK_ANGULAR_OPTIONS: JSON.stringify({
+        experimentalZoneless: builderOptions.experimentalZoneless,
+      }),
+    })
+  );
+
+  try {
+    require.resolve('@angular/animations');
+  } catch (e) {
+    webpackConfig.plugins.push(
+      new WebpackIgnorePlugin({
+        resourceRegExp: /@angular\/platform-browser\/animations$/,
+      })
+    );
+  }
+
+  return webpackConfig;
 }
 
 /** Get Builder Context If storybook is not start by angular builder create dumb BuilderContext */
@@ -45,10 +68,7 @@ function getBuilderContext(options: PresetOptions): BuilderContext {
 }
 
 /** Get builder options Merge target options from browser target and from storybook options */
-async function getBuilderOptions(
-  options: PresetOptions,
-  builderContext: BuilderContext
-): Promise<JsonObject> {
+async function getBuilderOptions(options: PresetOptions, builderContext: BuilderContext) {
   /** Get Browser Target options */
   let browserTargetOptions: JsonObject = {};
   if (options.angularBrowserTarget) {
@@ -65,7 +85,7 @@ async function getBuilderOptions(
   /** Merge target options from browser target options and from storybook options */
   const builderOptions = {
     ...browserTargetOptions,
-    ...(options.angularBuilderOptions as JsonObject),
+    ...options.angularBuilderOptions,
     tsConfig:
       options.tsConfig ??
       findUpSync('tsconfig.json', { cwd: options.configDir }) ??

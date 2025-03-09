@@ -1,13 +1,11 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 
 import { Link } from 'storybook/internal/components';
+import { CallStates } from 'storybook/internal/instrumenter';
 import { useStorybookApi } from 'storybook/internal/manager-api';
 import { styled } from 'storybook/internal/theming';
-import type { StoryId } from 'storybook/internal/types';
 
-import { CallStates } from '@storybook/instrumenter';
-
-import { DOCUMENTATION_DISCREPANCY_LINK, STORYBOOK_ADDON_TEST_CHANNEL } from '../constants';
+import { DOCUMENTATION_DISCREPANCY_LINK } from '../constants';
 
 const Wrapper = styled.div(({ theme: { color, typography, background } }) => ({
   textAlign: 'start',
@@ -32,7 +30,7 @@ const Wrapper = styled.div(({ theme: { color, typography, background } }) => ({
 }));
 
 interface TestDiscrepancyMessageProps {
-  browserTestStatus: CallStates;
+  browserTestStatus?: CallStates;
 }
 
 export const TestDiscrepancyMessage = ({ browserTestStatus }: TestDiscrepancyMessageProps) => {

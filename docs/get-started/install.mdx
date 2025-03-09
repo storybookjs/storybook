@@ -9,18 +9,36 @@ Use the Storybook CLI to install it in a single command. Run this inside your pr
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="init-command.md" />
+<CodeSnippets path="create-command.md" />
 
 {/* prettier-ignore-end */}
 
 <details id="custom-storybook-version">
   <summary>Install a specific version</summary>
 
-  The `init` command will use whichever version you specify. For example:
+  For installing Storybook 8.3 or newer, you can use the `create` command with a specific version:
+
+  {/* prettier-ignore-start */}
+
+  <CodeSnippets path="create-command-custom-version.md" />
+
+  {/* prettier-ignore-end */}
+
+  To install a Storybook version prior to 8.3, you must use the `init` command:
+
+  {/* prettier-ignore-start */}
+
+  <CodeSnippets path="init-command-custom-version.md" />
+
+  {/* prettier-ignore-end */}
+
+  For either command, you can specify either an npm tag such as `latest` or `next`, or a (partial) version number. For example:
 
   * `storybook@latest init` will initialize the latest version
   * `storybook@7.6.10 init` will initialize `7.6.10`
   * `storybook@7 init` will initialize the newest `7.x.x` version
+
+  
 </details>
 
 Storybook will look into your project's dependencies during its install process and provide you with the best configuration available.
@@ -69,20 +87,19 @@ There are some noteworthy items here:
 
 <details>
   <summary><h3 id="troubleshooting">Troubleshooting</h3></summary>
-
   #### Run Storybook with other package managers
 
   The Storybook CLI includes support for the industry's popular package managers (e.g., [Yarn](https://yarnpkg.com/), [npm](https://www.npmjs.com/), and [pnpm](https://pnpm.io/)) automatically detecting the one you are using when you initialize Storybook. However, if you want to use a specific package manager as the default, add the `--package-manager` flag to the installation command. For example:
 
   {/* prettier-ignore-start */}
 
-  <CodeSnippets path="init-command-custom-package-manager.md" />
+  <CodeSnippets path="create-command-custom-package-manager.md" />
 
   {/* prettier-ignore-end */}
 
   #### The CLI doesn't detect my framework
 
-  If you're working with a custom environment set up or need set up Storybook manually, you can use the `--type` flag to specify the framework you need to use. Listed below are the supported frameworks and examples of how to use them:
+  If you're working with a custom environment setup or need to set up Storybook manually, you can use the `--type` flag to specify the framework you need to use. Listed below are the supported frameworks and examples of how to use them:
 
   | Framework      | Type             |
   | -------------- | ---------------- |
@@ -101,7 +118,7 @@ There are some noteworthy items here:
 
   {/* prettier-ignore-start */}
 
-  <CodeSnippets path="init-command-manual-framework.md" />
+  <CodeSnippets path="create-command-manual-framework.md" />
 
   {/* prettier-ignore-end */}
 
@@ -124,9 +141,9 @@ There are some noteworthy items here:
     #### Storybook doesn't work with an empty directory
 
     By default, Storybook is configured to detect whether you're initializing it on an empty directory or an existing project. However, if you attempt to initialize Storybook, select a Vite-based framework (e.g., [React](./frameworks/react-vite.mdx)) in a directory that only contains a `package.json` file, you may run into issues with [Yarn Modern](https://yarnpkg.com/getting-started). This is due to how Yarn handles peer dependencies and how Storybook is set up to work with Vite-based frameworks, as it requires the [Vite](https://vitejs.dev/) package to be installed. To solve this issue, you must install Vite manually and initialize Storybook.
-    
+
   </If>
-  
+
   <IfRenderer renderer="angular">
     #### Storybook doesn't work with my Angular project using the Angular CLI
 
@@ -174,11 +191,11 @@ There are some noteworthy items here:
     <Callout variant="info">
 
       The CLI's [`add`](../api/cli-options.mdx#add) command automates the addon's installation and setup. To install it manually, see our [documentation](../addons/install-addons.mdx#manual-installation) on how to install addons.
-    
+
     </Callout>
 
     Update your Storybook configuration file (i.e., `.storybook/main.js|ts`) to enable support for this format.
-  
+
     {/* prettier-ignore-start */}
 
     <CodeSnippets path="main-config-svelte-csf-register.md" />
@@ -195,7 +212,7 @@ There are some noteworthy items here:
   If you're still running into some issues during the installation process, we encourage you to check out the following resources:
 
   <IfRenderer renderer="angular">
-    * [Storybook's Angular README](https://github.com/storybookjs/storybook/tree/next/code/frameworks/angular) for more information on how to set up Storybook in your Angular project.
+    * Storybook's Angular [framework documentation](./frameworks/angular.mdx) for more information on how to set up Storybook in your Angular project.
     * [Storybook's help documentation](https://storybook.js.org/community#support) to contact the community and ask for help.
   </IfRenderer>
 
@@ -205,14 +222,14 @@ There are some noteworthy items here:
   </IfRenderer>
 
   <IfRenderer renderer="html">
-    * [Storybook's HTML Webpack README](https://github.com/storybookjs/storybook/tree/next/code/frameworks/html-webpack5) for more information on how to set up Storybook in your HTML project with Webpack 5.
     * [Storybook's HTML Vite README](https://github.com/storybookjs/storybook/tree/next/code/frameworks/html-vite) for more information on how to set up Storybook in your HTML project with Vite.
+    * [Storybook's HTML Webpack README](https://github.com/storybookjs/storybook/tree/next/code/frameworks/html-webpack5) for more information on how to set up Storybook in your HTML project with Webpack 5.
     * [Storybook's help documentation](https://storybook.js.org/community#support) to contact the community and ask for help.
   </IfRenderer>
 
   <IfRenderer renderer="preact">
+    * Storybook's Preact Vite [framework documentation](./frameworks/preact-vite.mdx) for more information on how to set up Storybook in your Preact project with Vite.
     * [Storybook's Preact Webpack README](https://github.com/storybookjs/storybook/tree/next/code/frameworks/preact-webpack5) for more information on how to set up Storybook in your Preact project with Webpack 5.
-    * [Storybook's Preact Vite README](https://github.com/storybookjs/storybook/tree/next/code/frameworks/preact-vite) for more information on how to set up Storybook in your Preact project with Vite.
     * [Storybook's help documentation](https://storybook.js.org/community#support) to contact the community and ask for help.
   </IfRenderer>
 
@@ -222,8 +239,8 @@ There are some noteworthy items here:
   </IfRenderer>
 
   <IfRenderer renderer="react">
-    * [Storybook's React Webpack README](https://github.com/storybookjs/storybook/tree/next/code/frameworks/react-webpack5) for more information on how to set up Storybook in your React project with Webpack 5.
-    * [Storybook's React Vite README](https://github.com/storybookjs/storybook/tree/next/code/frameworks/react-vite) for more information on how to set up Storybook in your React project with Vite.
+    * Storybook's React Vite [framework documentation](./frameworks/react-vite.mdx) for more information on how to set up Storybook in your React project with Vite.
+    * Storybook's React Webpack [framework documentation](./frameworks/react-webpack5.mdx) for more information on how to set up Storybook in your React project with Webpack 5.
     * [Storybook's help documentation](https://storybook.js.org/community#support) to contact the community and ask for help.
   </IfRenderer>
 
@@ -233,20 +250,21 @@ There are some noteworthy items here:
   </IfRenderer>
 
   <IfRenderer renderer="svelte">
-    * [Storybook's SvelteKit README](https://github.com/storybookjs/storybook/tree/next/code/frameworks/sveltekit) for more information on how to set up Storybook in your SvelteKit project.
-    * [Storybook's Svelte Webpack README](https://github.com/storybookjs/storybook/tree/next/code/frameworks/svelte-webpack5) for more information on how to set up Storybook in your Svelte project with Webpack 5.
+    * Storybook's SvelteKit [framework documentation](./frameworks/sveltekit.mdx) for more information on how to set up Storybook in your SvelteKit project.
+    * Storybook's Svelte Vite [framework documentation](./frameworks/svelte-vite.mdx) for more information on how to set up Storybook in your Svelte project with Vite.
+    * Storybook's Svelte Webpack [framework documentation](./frameworks/svelte-webpack5.mdx) for more information on how to set up Storybook in your Svelte project with Webpack 5.
     * [Storybook's help documentation](https://storybook.js.org/community#support) to contact the community and ask for help.
   </IfRenderer>
 
   <IfRenderer renderer="vue">
-    * [Storybook's Vue 3 Webpack README](https://github.com/storybookjs/storybook/tree/next/code/frameworks/vue3-webpack5) for more information on how to set up Storybook in your Vue 3 project with Webpack 5.
-    * [Storybook's Vue 3 Vite README](https://github.com/storybookjs/storybook/tree/next/code/frameworks/vue3-vite) for more information on how to set up Storybook in your Vue 3 project with Vite.
+    * Storybook's Vue 3 Vite [framework documentation](./frameworks/vue3-vite.mdx) for more information on how to set up Storybook in your Vue 3 project with Vite.
+    * Storybook's Vue 3 Webpack [framework documentation](./frameworks/vue3-webpack5.mdx) for more information on how to set up Storybook in your Vue 3 project with Webpack 5.
     * [Storybook's help documentation](https://storybook.js.org/community#support) to contact the community and ask for help.
   </IfRenderer>
 
   <IfRenderer renderer="web-components">
-    * [Storybook's Web Components Webpack README](https://github.com/storybookjs/storybook/tree/next/code/frameworks/web-components-webpack5) for more information on how to set up Storybook in your Web Components project with Webpack 5.
-    * [Storybook's Web Components Vite README](https://github.com/storybookjs/storybook/tree/next/code/frameworks/web-components-vite) for more information on how to set up Storybook in your Web Components project with Vite.
+    * Storybook's Web Components Vite [framework documentation](./frameworks/web-components-vite.mdx) for more information on how to set up Storybook in your Web Components project with Vite.
+    * Storybook's Web Components Webpack [framework documentation](./frameworks/web-components-webpack5.mdx) for more information on how to set up Storybook in your Web Components project with Webpack 5.
     * [Storybook's help documentation](https://storybook.js.org/community#support) to contact the community and ask for help.
   </IfRenderer>
 </details>

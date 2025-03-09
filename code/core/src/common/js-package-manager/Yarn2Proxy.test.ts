@@ -55,30 +55,30 @@ describe('Yarn 2 Proxy', () => {
   });
 
   describe('addDependencies', () => {
-    it('with devDep it should run `yarn install -D @storybook/core`', async () => {
+    it('with devDep it should run `yarn install -D storybook`', async () => {
       const executeCommandSpy = vi.spyOn(yarn2Proxy, 'executeCommand').mockResolvedValueOnce('');
 
-      await yarn2Proxy.addDependencies({ installAsDevDependencies: true }, ['@storybook/core']);
+      await yarn2Proxy.addDependencies({ installAsDevDependencies: true }, ['storybook']);
 
       expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           command: 'yarn',
-          args: ['add', '-D', '@storybook/core'],
+          args: ['add', '-D', 'storybook'],
         })
       );
     });
   });
 
   describe('removeDependencies', () => {
-    it('should run `yarn remove @storybook/core`', async () => {
+    it('should run `yarn remove storybook`', async () => {
       const executeCommandSpy = vi.spyOn(yarn2Proxy, 'executeCommand').mockResolvedValueOnce('');
 
-      await yarn2Proxy.removeDependencies({}, ['@storybook/core']);
+      await yarn2Proxy.removeDependencies({}, ['storybook']);
 
       expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           command: 'yarn',
-          args: ['remove', '@storybook/core'],
+          args: ['remove', 'storybook'],
         })
       );
     });
@@ -117,14 +117,14 @@ describe('Yarn 2 Proxy', () => {
     it('without constraint it returns the latest version', async () => {
       const executeCommandSpy = vi
         .spyOn(yarn2Proxy, 'executeCommand')
-        .mockResolvedValueOnce('{"name":"@storybook/core","version":"5.3.19"}');
+        .mockResolvedValueOnce('{"name":"storybook","version":"5.3.19"}');
 
-      const version = await yarn2Proxy.latestVersion('@storybook/core');
+      const version = await yarn2Proxy.latestVersion('storybook');
 
       expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           command: 'yarn',
-          args: ['npm', 'info', '@storybook/core', '--fields', 'version', '--json'],
+          args: ['npm', 'info', 'storybook', '--fields', 'version', '--json'],
         })
       );
       expect(version).toEqual('5.3.19');
@@ -134,15 +134,15 @@ describe('Yarn 2 Proxy', () => {
       const executeCommandSpy = vi
         .spyOn(yarn2Proxy, 'executeCommand')
         .mockResolvedValueOnce(
-          '{"name":"@storybook/core","versions":["4.25.3","5.3.19","6.0.0-beta.23"]}'
+          '{"name":"storybook","versions":["4.25.3","5.3.19","6.0.0-beta.23"]}'
         );
 
-      const version = await yarn2Proxy.latestVersion('@storybook/core', '5.X');
+      const version = await yarn2Proxy.latestVersion('storybook', '5.X');
 
       expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           command: 'yarn',
-          args: ['npm', 'info', '@storybook/core', '--fields', 'versions', '--json'],
+          args: ['npm', 'info', 'storybook', '--fields', 'versions', '--json'],
         })
       );
       expect(version).toEqual('5.3.19');
@@ -151,7 +151,7 @@ describe('Yarn 2 Proxy', () => {
     it('throws an error if command output is not a valid JSON', async () => {
       vi.spyOn(yarn2Proxy, 'executeCommand').mockResolvedValueOnce('NOT A JSON');
 
-      await expect(yarn2Proxy.latestVersion('@storybook/core')).rejects.toThrow();
+      await expect(yarn2Proxy.latestVersion('storybook')).rejects.toThrow();
     });
   });
 
@@ -194,8 +194,8 @@ describe('Yarn 2 Proxy', () => {
       vi.spyOn(yarn2Proxy, 'executeCommand').mockResolvedValueOnce(`
       "unrelated-and-should-be-filtered@npm:1.0.0"
       "@storybook/global@npm:5.0.0"
-      "@storybook/instrumenter@npm:7.0.0-beta.12"
-      "@storybook/instrumenter@npm:7.0.0-beta.19"
+      "@storybook/package@npm:7.0.0-beta.12"
+      "@storybook/package@npm:7.0.0-beta.19"
       "@storybook/jest@npm:0.0.11-next.0"
       "@storybook/manager-api@npm:7.0.0-beta.19"
       "@storybook/manager@npm:7.0.0-beta.19"
@@ -212,16 +212,6 @@ describe('Yarn 2 Proxy', () => {
               {
                 "location": "",
                 "version": "5.0.0",
-              },
-            ],
-            "@storybook/instrumenter": [
-              {
-                "location": "",
-                "version": "7.0.0-beta.12",
-              },
-              {
-                "location": "",
-                "version": "7.0.0-beta.19",
               },
             ],
             "@storybook/jest": [
@@ -248,9 +238,19 @@ describe('Yarn 2 Proxy', () => {
                 "version": "0.1.0-next.5",
               },
             ],
+            "@storybook/package": [
+              {
+                "location": "",
+                "version": "7.0.0-beta.12",
+              },
+              {
+                "location": "",
+                "version": "7.0.0-beta.19",
+              },
+            ],
           },
           "duplicatedDependencies": {
-            "@storybook/instrumenter": [
+            "@storybook/package": [
               "7.0.0-beta.12",
               "7.0.0-beta.19",
             ],

@@ -25,7 +25,7 @@ async function generate(filePath: string) {
         it(`${fixtureFile}`, async () => {
           const inputPath = join(transformFixturesDir, fixtureFile);
           const code = await generate(inputPath);
-          expect(code).toMatchFileSnapshot(inputPath.replace(inputRegExp, '.snapshot'));
+          await expect(code).toMatchFileSnapshot(inputPath.replace(inputRegExp, '.snapshot'));
         });
       });
   });

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/experimental-nextjs-vite",
-  "version": "8.5.0-alpha.22",
+  "version": "9.0.0-alpha.2",
   "description": "Storybook for Next.js and Vite",
   "keywords": [
     "storybook",
@@ -58,6 +58,12 @@
       "import": "./dist/vite-plugin/index.mjs",
       "require": "./dist/vite-plugin/index.js"
     },
+    "./node": {
+      "types": "./dist/node/index.d.ts",
+      "node": "./dist/node/index.js",
+      "import": "./dist/node/index.mjs",
+      "require": "./dist/node/index.js"
+    },
     "./package.json": "./package.json"
   },
   "main": "dist/index.js",
@@ -79,6 +85,9 @@
       ],
       "navigation.mock": [
         "dist/export-mocks/navigation/index.d.ts"
+      ],
+      "node": [
+        "dist/node/index.d.ts"
       ]
     }
   },
@@ -98,17 +107,15 @@
     "@storybook/builder-vite": "workspace:*",
     "@storybook/react": "workspace:*",
     "@storybook/react-vite": "workspace:*",
-    "@storybook/test": "workspace:*",
     "styled-jsx": "5.1.6",
-    "vite-plugin-storybook-nextjs": "^1.1.0"
+    "vite-plugin-storybook-nextjs": "2.0.0--canary.33.a61ad85.0"
   },
   "devDependencies": {
-    "@types/node": "^18.0.0",
+    "@types/node": "^22.0.0",
     "next": "^15.0.3",
-    "typescript": "^5.3.2"
+    "typescript": "^5.7.3"
   },
   "peerDependencies": {
-    "@storybook/test": "workspace:*",
     "next": "^14.1.0 || ^15.0.0",
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
     "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
@@ -119,9 +126,6 @@
     "typescript": {
       "optional": true
     }
-  },
-  "optionalDependencies": {
-    "sharp": "^0.33.3"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -134,6 +138,7 @@
       "./src/index.ts",
       "./src/vite-plugin/index.ts",
       "./src/preset.ts",
+      "./src/node/index.ts",
       "./src/preview.tsx",
       "./src/export-mocks/cache/index.ts",
       "./src/export-mocks/headers/index.ts",

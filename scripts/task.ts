@@ -159,6 +159,11 @@ export const options = createOptions({
     description: "Don't execute commands, just list them (dry run)?",
     promptType: false,
   },
+  skipCache: {
+    type: 'boolean',
+    description: 'Skip NX remote cache?',
+    promptType: false,
+  },
   debug: {
     type: 'boolean',
     description: 'Print all the logs to the console',
@@ -497,9 +502,11 @@ async function run() {
         }
       } catch (err) {
         invariant(err instanceof Error);
-        logger.error(
-          `Error running task ${picocolors.bold(getTaskKey(task))} for ${picocolors.bgCyan(picocolors.white(details.key))}:`
-        );
+        let errorTitle = `Error running task ${picocolors.bold(getTaskKey(task))}`;
+        if (details.key) {
+          errorTitle += ` for ${picocolors.bgCyan(picocolors.white(details.key))}:`;
+        }
+        logger.error(errorTitle);
         logger.error(JSON.stringify(err, null, 2));
 
         if (process.env.CI) {

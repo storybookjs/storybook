@@ -1,8 +1,7 @@
 import React from 'react';
 
+import { type Call, CallStates } from 'storybook/internal/instrumenter';
 import { styled, typography } from 'storybook/internal/theming';
-
-import { type Call, CallStates } from '@storybook/instrumenter';
 
 export interface StatusBadgeProps {
   status: Call['status'];
@@ -14,7 +13,7 @@ const StyledBadge = styled.div<StatusBadgeProps>(({ theme, status }) => {
     [CallStates.ERROR]: theme.color.negative,
     [CallStates.ACTIVE]: theme.color.warning,
     [CallStates.WAITING]: theme.color.warning,
-  }[status];
+  }[status!];
   return {
     padding: '4px 6px 4px 8px;',
     borderRadius: '4px',
@@ -36,7 +35,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
     [CallStates.ERROR]: 'Fail',
     [CallStates.ACTIVE]: 'Runs',
     [CallStates.WAITING]: 'Runs',
-  }[status];
+  }[status!];
   return (
     <StyledBadge aria-label="Status of the test run" status={status}>
       {badgeText}

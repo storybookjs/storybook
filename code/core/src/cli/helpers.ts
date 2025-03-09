@@ -7,9 +7,9 @@ import {
   type JsPackageManager,
   type PackageJson,
   type PackageJsonWithDepsAndDevDeps,
-} from '@storybook/core/common';
-import { versions as storybookMonorepoPackages } from '@storybook/core/common';
-import type { SupportedFrameworks, SupportedRenderers } from '@storybook/core/types';
+} from 'storybook/internal/common';
+import { versions as storybookMonorepoPackages } from 'storybook/internal/common';
+import type { SupportedFrameworks, SupportedRenderers } from 'storybook/internal/types';
 
 import { findUpSync } from 'find-up';
 import picocolors from 'picocolors';
@@ -139,9 +139,10 @@ type CopyTemplateFilesOptions = {
   language: SupportedLanguage;
   commonAssetsDir?: string;
   destination?: string;
+  features: string[];
 };
 
-/** @deprecated Please use `frameworkToRenderer` from `@storybook/core-common` instead */
+/** @deprecated Please use `frameworkToRenderer` from `storybook/internal/common` instead */
 export const frameworkToRenderer = CoreFrameworkToRenderer;
 
 export const frameworkToDefaultBuilder: Record<
@@ -153,6 +154,7 @@ export const frameworkToDefaultBuilder: Record<
   'html-vite': CoreBuilder.Vite,
   'html-webpack5': CoreBuilder.Webpack5,
   nextjs: CoreBuilder.Webpack5,
+  nuxt: CoreBuilder.Vite,
   'experimental-nextjs-vite': CoreBuilder.Vite,
   'preact-vite': CoreBuilder.Vite,
   'preact-webpack5': CoreBuilder.Webpack5,
@@ -207,12 +209,12 @@ export async function copyTemplateFiles({
   language,
   destination,
   commonAssetsDir,
+  features,
 }: CopyTemplateFilesOptions) {
   let languageFolderMapping: Record<SupportedLanguage | 'typescript', string> = {
     // keeping this for backwards compatibility in case community packages are using it
     typescript: 'ts',
     [SupportedLanguage.JAVASCRIPT]: 'js',
-    [SupportedLanguage.TYPESCRIPT_3_8]: 'ts-3-8',
     [SupportedLanguage.TYPESCRIPT_4_9]: 'ts-4-9',
   };
   // FIXME: remove after 9.0
@@ -223,7 +225,6 @@ export async function copyTemplateFiles({
         // keeping this for backwards compatibility in case community packages are using it
         typescript: 'ts',
         [SupportedLanguage.JAVASCRIPT]: 'svelte-5-js',
-        [SupportedLanguage.TYPESCRIPT_3_8]: 'svelte-5-ts-3-8',
         [SupportedLanguage.TYPESCRIPT_4_9]: 'svelte-5-ts-4-9',
       };
     }
@@ -235,15 +236,10 @@ export async function copyTemplateFiles({
     const assetsLanguage = join(assetsDir, languageFolderMapping[language]);
     const assetsJS = join(assetsDir, languageFolderMapping[SupportedLanguage.JAVASCRIPT]);
     const assetsTS = join(assetsDir, languageFolderMapping.typescript);
-    const assetsTS38 = join(assetsDir, languageFolderMapping[SupportedLanguage.TYPESCRIPT_3_8]);
 
     // Ideally use the assets that match the language & version.
     if (existsSync(assetsLanguage)) {
       return assetsLanguage;
-    }
-    // Use fallback typescript 3.8 assets if new ones aren't available
-    if (language === SupportedLanguage.TYPESCRIPT_4_9 && existsSync(assetsTS38)) {
-      return assetsTS38;
     }
     // Fallback further to TS (for backwards compatibility purposes)
     if (existsSync(assetsTS)) {
@@ -261,14 +257,13 @@ export async function copyTemplateFiles({
   };
 
   const destinationPath = destination ?? (await cliStoriesTargetPath());
+  const filter = (file: string) => features.includes('docs') || !file.endsWith('.mdx');
   if (commonAssetsDir) {
-    await cp(commonAssetsDir, destinationPath, {
-      recursive: true,
-    });
+    await cp(commonAssetsDir, destinationPath, { recursive: true, filter });
   }
-  await cp(await templatePath(), destinationPath, { recursive: true });
+  await cp(await templatePath(), destinationPath, { recursive: true, filter });
 
-  if (commonAssetsDir) {
+  if (commonAssetsDir && features.includes('docs')) {
     let rendererType = frameworkToRenderer[renderer] || 'react';
 
     // This is only used for docs links and the docs site uses `vue` for both `vue` & `vue3` renderers

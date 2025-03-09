@@ -1,5 +1,6 @@
 import type { TaskState } from 'vitest';
 import type { Vitest } from 'vitest/node';
+import * as vitestNode from 'vitest/node';
 import { type Reporter } from 'vitest/reporters';
 
 import type {
@@ -7,11 +8,11 @@ import type {
   TestingModuleProgressReportProgress,
 } from 'storybook/internal/core-events';
 import type { Report } from 'storybook/internal/preview-api';
-
-import type { API_StatusUpdate } from '@storybook/types';
+import type { API_StatusUpdate } from 'storybook/internal/types';
 
 import type { Suite } from '@vitest/runner';
 import { throttle } from 'es-toolkit';
+import { satisfies } from 'semver';
 
 import { TEST_PROVIDER_ID } from '../constants';
 import type { TestManager } from './test-manager';
@@ -50,7 +51,14 @@ const statusMap: Record<TaskState, TestStatus> = {
   run: 'pending',
   skip: 'skipped',
   todo: 'skipped',
+  queued: 'pending',
 };
+
+const vitestVersion = vitestNode.version;
+
+const isVitest3OrLater = vitestVersion
+  ? satisfies(vitestVersion, '>=3.0.0-beta.3', { includePrerelease: true })
+  : false;
 
 export class StorybookReporter implements Reporter {
   testStatusData: API_StatusUpdate = {};
@@ -212,14 +220,17 @@ export class StorybookReporter implements Reporter {
   async onFinished() {
     const unhandledErrors = this.ctx.state.getUnhandledErrors();
 
-    const isCancelled = this.ctx.isCancelling;
+    const isCancelled = isVitest3OrLater
+      ? this.testManager.vitestManager.isCancelling
+      : // @ts-expect-error isCancelling is private in Vitest 3.
+        this.ctx.isCancelling;
     const report = await this.getProgressReport(Date.now());
 
     const testSuiteFailures = report.details.testResults.filter(
       (t) => t.status === 'failed' && t.results.length === 0
     );
 
-    const reducedTestSuiteFailures = new Set<string>();
+    const reducedTestSuiteFailures = new Set<string | undefined>();
 
     testSuiteFailures.forEach((t) => {
       reducedTestSuiteFailures.add(t.message);
@@ -239,7 +250,7 @@ export class StorybookReporter implements Reporter {
               message: Array.from(reducedTestSuiteFailures).reduce(
                 (acc, curr) => `${acc}\n${curr}`,
                 ''
-              ),
+              )!,
             }
           : {
               name: `${unhandledErrors.length} unhandled error${unhandledErrors?.length > 1 ? 's' : ''}`,

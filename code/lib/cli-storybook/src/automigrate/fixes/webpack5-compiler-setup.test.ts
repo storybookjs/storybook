@@ -68,7 +68,7 @@ describe('webpack5Migration check function', () => {
         },
       });
 
-      expect(result).resolves.toBeNull();
+      await expect(result).resolves.toBeNull();
     });
 
     it('should return null if the builder is not webpack5', async () => {

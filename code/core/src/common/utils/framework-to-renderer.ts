@@ -1,5 +1,5 @@
-import type { SupportedFrameworks } from '@storybook/core/types';
-import type { SupportedRenderers } from '@storybook/core/types';
+import type { SupportedRenderers } from 'storybook/internal/types';
+import type { SupportedFrameworks } from 'storybook/internal/types';
 
 export const frameworkToRenderer: Record<
   SupportedFrameworks | SupportedRenderers,
@@ -24,6 +24,7 @@ export const frameworkToRenderer: Record<
   sveltekit: 'svelte',
   'vue3-vite': 'vue3',
   'vue3-webpack5': 'vue3',
+  nuxt: 'vue3',
   'web-components-vite': 'web-components',
   'web-components-webpack5': 'web-components',
   'react-rsbuild': 'react',

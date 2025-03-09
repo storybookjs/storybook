@@ -1,3 +1,25 @@
+import { logger } from 'storybook/internal/client-logger';
+import {
+  CONFIG_ERROR,
+  CURRENT_STORY_WAS_SET,
+  DOCS_PREPARED,
+  PRELOAD_ENTRIES,
+  RESET_STORY_ARGS,
+  SELECT_STORY,
+  SET_CONFIG,
+  SET_CURRENT_STORY,
+  SET_FILTER,
+  SET_INDEX,
+  SET_STORIES,
+  STORY_ARGS_UPDATED,
+  STORY_CHANGED,
+  STORY_INDEX_INVALIDATED,
+  STORY_MISSING,
+  STORY_PREPARED,
+  STORY_SPECIFIED,
+  UPDATE_STORY_ARGS,
+} from 'storybook/internal/core-events';
+import { sanitize, toId } from 'storybook/internal/csf';
 import type {
   API_ComposedRef,
   API_DocsEntry,
@@ -21,31 +43,9 @@ import type {
   StoryKind,
   StoryName,
   StoryPreparedPayload,
-} from '@storybook/core/types';
-import { sanitize, toId } from '@storybook/csf';
-import { global } from '@storybook/global';
+} from 'storybook/internal/types';
 
-import { logger } from '@storybook/core/client-logger';
-import {
-  CONFIG_ERROR,
-  CURRENT_STORY_WAS_SET,
-  DOCS_PREPARED,
-  PRELOAD_ENTRIES,
-  RESET_STORY_ARGS,
-  SELECT_STORY,
-  SET_CONFIG,
-  SET_CURRENT_STORY,
-  SET_FILTER,
-  SET_INDEX,
-  SET_STORIES,
-  STORY_ARGS_UPDATED,
-  STORY_CHANGED,
-  STORY_INDEX_INVALIDATED,
-  STORY_MISSING,
-  STORY_PREPARED,
-  STORY_SPECIFIED,
-  UPDATE_STORY_ARGS,
-} from '@storybook/core/core-events';
+import { global } from '@storybook/global';
 
 import { getEventMetadata } from '../lib/events';
 import {
@@ -345,8 +345,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         return undefined;
       }
       if (refId) {
-        // @ts-expect-error (possibly undefined)
-        return refs[refId].index ? refs[refId].index[storyId] : undefined;
+        return refs?.[refId]?.index?.[storyId] ?? undefined;
       }
       return index ? index[storyId] : undefined;
     },

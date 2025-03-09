@@ -47,17 +47,21 @@ vi.mock('./postinstallAddon', () => {
 vi.mock('./automigrate/fixes/wrap-require-utils', () => {
   return MockWrapRequireUtils;
 });
+vi.mock('./codemod/helpers/csf-factories-utils');
 vi.mock('storybook/internal/common', () => {
   return {
     getStorybookInfo: vi.fn(() => ({ mainConfig: {}, configDir: '' })),
     serverRequire: vi.fn(() => ({})),
+    loadMainConfig: vi.fn(() => ({})),
     JsPackageManagerFactory: {
       getPackageManager: vi.fn(() => MockedPackageManager),
     },
+    syncStorybookAddons: vi.fn(),
     getCoercedStorybookVersion: vi.fn(() => '8.0.0'),
     versions: {
       '@storybook/addon-docs': '^8.0.0',
     },
+    frameworkToRenderer: vi.fn(),
   };
 });
 

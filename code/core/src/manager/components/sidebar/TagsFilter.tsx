@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
 
-import { Badge, IconButton, WithTooltip } from '@storybook/core/components';
-import { styled } from '@storybook/core/theming';
-import { FilterIcon } from '@storybook/icons';
-import type { StoryIndex, Tag } from '@storybook/types';
+import { Badge, IconButton, WithTooltip } from 'storybook/internal/components';
+import type { API } from 'storybook/internal/manager-api';
+import { styled } from 'storybook/internal/theming';
+import type { StoryIndex, Tag } from 'storybook/internal/types';
 
-import type { API } from '@storybook/core/manager-api';
+import { FilterIcon } from '@storybook/icons';
 
 import { TagsFilterPanel } from './TagsFilterPanel';
 
@@ -103,6 +103,9 @@ export const TagsFilter = ({
     return null;
   }
 
+  const tags = Array.from(allTags);
+  tags.sort();
+
   return (
     <WithTooltip
       placement="bottom"
@@ -111,7 +114,7 @@ export const TagsFilter = ({
       tooltip={() => (
         <TagsFilterPanel
           api={api}
-          allTags={Array.from(allTags).toSorted()}
+          allTags={tags}
           selectedTags={selectedTags}
           toggleTag={toggleTag}
           isDevelopment={isDevelopment}

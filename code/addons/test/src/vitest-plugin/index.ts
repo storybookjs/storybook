@@ -24,7 +24,10 @@ import picocolors from 'picocolors';
 import sirv from 'sirv';
 import { convertPathToPattern } from 'tinyglobby';
 import { dedent } from 'ts-dedent';
+import type { PluginOption } from 'vite';
 
+// ! Relative import to prebundle it without needing to depend on the Vite builder
+import { withoutVitePlugins } from '../../../../builders/builder-vite/src/utils/without-vite-plugins';
 import type { InternalOptions, UserOptions } from './types';
 
 const WORKING_DIR = process.cwd();
@@ -64,9 +67,9 @@ const getStoryGlobsAndFiles = async (
   };
 };
 
-const packageDir = dirname(require.resolve('@storybook/experimental-addon-test/package.json'));
+const PACKAGE_DIR = dirname(require.resolve('@storybook/addon-test/package.json'));
 
-export const storybookTest = async (options?: UserOptions): Promise<Plugin> => {
+export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> => {
   const finalOptions = {
     ...defaultOptions,
     ...options,
@@ -109,14 +112,27 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin> => {
     getStoryGlobsAndFiles(presets, directories),
     presets.apply('framework', undefined),
     presets.apply('env', {}),
-    presets.apply('viteFinal', {}),
+    presets.apply<{ plugins?: Plugin[] }>('viteFinal', {}),
     presets.apply('staticDirs', []),
     extractTagsFromPreview(finalOptions.configDir),
   ]);
 
-  return {
+  // filter out plugins that we know are unnecesary for tests, eg. docgen plugins
+  const plugins = (await withoutVitePlugins(
+    (viteConfigFromStorybook.plugins as unknown as PluginOption[]) ?? [],
+    [
+      'storybook:package-deduplication', // addon-docs
+      'storybook:mdx-plugin', // addon-docs
+      'storybook:react-docgen-plugin',
+      'vite:react-docgen-typescript', // aka @joshwooding/vite-plugin-react-docgen-typescript
+      'storybook:svelte-docgen-plugin',
+      'storybook:vue-component-meta-plugin',
+      'storybook:vue-docgen-plugin',
+    ]
+  )) as unknown as Plugin[];
+
+  const storybookTestPlugin: Plugin = {
     name: 'vite-plugin-storybook-test',
-    enforce: 'pre',
     async transformIndexHtml(html) {
       const [headHtmlSnippet, bodyHtmlSnippet] = await Promise.all([
         presets.apply('previewHead'),
@@ -153,7 +169,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin> => {
       const baseConfig: Omit<ViteUserConfig, 'plugins'> = {
         test: {
           setupFiles: [
-            join(packageDir, 'dist/vitest-plugin/setup-file.mjs'),
+            join(PACKAGE_DIR, 'dist/vitest-plugin/setup-file.mjs'),
             // if the existing setupFiles is a string, we have to include it otherwise we're overwriting it
             typeof inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED.test
               ?.setupFiles === 'string' &&
@@ -162,7 +178,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin> => {
 
           ...(finalOptions.storybookScript
             ? {
-                globalSetup: [join(packageDir, 'dist/vitest-plugin/global-setup.mjs')],
+                globalSetup: [join(PACKAGE_DIR, 'dist/vitest-plugin/global-setup.mjs')],
               }
             : {}),
 
@@ -187,25 +203,24 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin> => {
             ? {
                 server: {
                   deps: {
-                    inline: ['@storybook/experimental-addon-test'],
+                    inline: ['@storybook/addon-test'],
                   },
                 },
               }
             : {}),
 
           browser: {
-            ...inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED.test?.browser,
             commands: {
               getInitialGlobals: () => {
                 const envConfig = JSON.parse(process.env.VITEST_STORYBOOK_CONFIG ?? '{}');
 
-                const isA11yEnabled = process.env.VITEST_STORYBOOK
+                const shouldRunA11yTests = process.env.VITEST_STORYBOOK
                   ? (envConfig.a11y ?? false)
                   : true;
 
                 return {
                   a11y: {
-                    manual: !isA11yEnabled,
+                    manual: !shouldRunA11yTests,
                   },
                 };
               },
@@ -244,7 +259,9 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin> => {
 
         optimizeDeps: {
           include: [
-            '@storybook/experimental-addon-test/**',
+            '@storybook/addon-test/internal/setup-file',
+            '@storybook/addon-test/internal/global-setup',
+            '@storybook/addon-test/internal/test-utils',
             ...(frameworkName?.includes('react') || frameworkName?.includes('nextjs')
               ? ['react-dom/test-utils']
               : []),
@@ -266,9 +283,11 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin> => {
 
       // alert the user of problems
       if (
-        inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED.test.include?.length > 0
+        (inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED.test?.include?.length ??
+          0) > 0
       ) {
         // remove the user's existing include, because we're replacing it with our own heuristic based on main.ts#stories
+        // @ts-expect-error: Ignore
         inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED.test.include = [];
         console.log(
           picocolors.yellow(dedent`
@@ -276,7 +295,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin> => {
 
             The values you passed to "test.include" will be ignored, please remove them from your Vitest configuration where the Storybook plugin is applied.
             
-            More info: https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#indexing-behavior-of-storybookexperimental-addon-test-is-changed
+            More info: https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#addon-test-indexing-behavior-of-storybookaddon-test-is-changed
           `)
         );
       }
@@ -285,19 +304,21 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin> => {
       return config;
     },
     async configureServer(server) {
-      for (const staticDir of staticDirs) {
-        try {
-          const { staticPath, targetEndpoint } = mapStaticDir(staticDir, directories.configDir);
-          server.middlewares.use(
-            targetEndpoint,
-            sirv(staticPath, {
-              dev: true,
-              etag: true,
-              extensions: [],
-            })
-          );
-        } catch (e) {
-          console.warn(e);
+      if (staticDirs) {
+        for (const staticDir of staticDirs) {
+          try {
+            const { staticPath, targetEndpoint } = mapStaticDir(staticDir, directories.configDir);
+            server.middlewares.use(
+              targetEndpoint,
+              sirv(staticPath, {
+                dev: true,
+                etag: true,
+                extensions: [],
+              })
+            );
+          } catch (e) {
+            console.warn(e);
+          }
         }
       }
     },
@@ -318,6 +339,9 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin> => {
       }
     },
   };
+
+  plugins.push(storybookTestPlugin);
+  return plugins;
 };
 
 export default storybookTest;

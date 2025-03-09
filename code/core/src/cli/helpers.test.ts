@@ -3,7 +3,7 @@ import fsp from 'node:fs/promises';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { JsPackageManager } from '@storybook/core/common';
+import type { JsPackageManager } from 'storybook/internal/common';
 
 import { sep } from 'path';
 
@@ -140,15 +140,12 @@ describe('Helpers', () => {
   });
 
   it.each`
-    language            | exists                        | expected
-    ${'javascript'}     | ${['js', 'ts-4-9']}           | ${'/js'}
-    ${'typescript-4-9'} | ${['js', 'ts-4-9']}           | ${'/ts-4-9'}
-    ${'typescript-4-9'} | ${['js', 'ts-3-8']}           | ${'/ts-3-8'}
-    ${'typescript-3-8'} | ${['js', 'ts-3-8', 'ts-4-9']} | ${'/ts-3-8'}
-    ${'typescript-3-8'} | ${['js', 'ts-4-9']}           | ${'/js'}
-    ${'typescript-4-9'} | ${['js']}                     | ${'/js'}
-    ${'javascript'}     | ${[]}                         | ${''}
-    ${'typescript-4-9'} | ${[]}                         | ${''}
+    language            | exists              | expected
+    ${'javascript'}     | ${['js', 'ts-4-9']} | ${'/js'}
+    ${'typescript-4-9'} | ${['js', 'ts-4-9']} | ${'/ts-4-9'}
+    ${'typescript-4-9'} | ${['js']}           | ${'/js'}
+    ${'javascript'}     | ${[]}               | ${''}
+    ${'typescript-4-9'} | ${[]}               | ${''}
   `(
     `should copy $expected when folder $exists exists for language $language`,
     async ({ language, exists, expected }) => {
@@ -165,6 +162,7 @@ describe('Helpers', () => {
         language,
         packageManager: packageManagerMock,
         commonAssetsDir: normalizePath('create-storybook/rendererAssets/common'),
+        features: ['dev', 'docs', 'test'],
       });
 
       expect(fsp.cp).toHaveBeenNthCalledWith(
@@ -187,6 +185,7 @@ describe('Helpers', () => {
       renderer: 'react',
       language: SupportedLanguage.JAVASCRIPT,
       packageManager: packageManagerMock,
+      features: ['dev', 'docs', 'test'],
     });
     expect(fsp.cp).toHaveBeenCalledWith(expect.anything(), './src/stories', expect.anything());
   });
@@ -199,6 +198,7 @@ describe('Helpers', () => {
       renderer: 'react',
       language: SupportedLanguage.JAVASCRIPT,
       packageManager: packageManagerMock,
+      features: ['dev', 'docs', 'test'],
     });
     expect(fsp.cp).toHaveBeenCalledWith(expect.anything(), './stories', expect.anything());
   });
@@ -211,6 +211,7 @@ describe('Helpers', () => {
         renderer,
         language: SupportedLanguage.JAVASCRIPT,
         packageManager: packageManagerMock,
+        features: ['dev', 'docs', 'test'],
       })
     ).rejects.toThrowError(expectedMessage);
   });

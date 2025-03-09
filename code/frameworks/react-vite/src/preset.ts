@@ -13,7 +13,7 @@ export const core: PresetProperty<'core'> = {
 };
 
 export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (config, { presets }) => {
-  const { plugins = [] } = config;
+  const plugins = [...(config?.plugins ?? [])];
 
   // Add docgen plugin
   const { reactDocgen: reactDocgenOption, reactDocgenTypescriptOptions } = await presets.apply<any>(
@@ -51,5 +51,5 @@ export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (confi
     );
   }
 
-  return config;
+  return { ...config, plugins };
 };

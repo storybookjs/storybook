@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { applyTransform } from 'jscodeshift/dist/testUtils';
 
-vi.mock('@storybook/core/node-logger');
+vi.mock('storybook/internal/node-logger');
 
 const inputRegExp = /\.input\.js$/;
 
@@ -24,8 +24,8 @@ readdirSync(fixturesDir).forEach((transformName) => {
       .filter((fileName) => inputRegExp.test(fileName))
       .forEach((fileName) => {
         const inputPath = join(transformFixturesDir, fileName);
-        it(`transforms correctly using "${fileName}" data`, () =>
-          expect(
+        it(`transforms correctly using "${fileName}" data`, async () =>
+          await expect(
             applyTransform(require(join(__dirname, '..', transformName)), null, {
               path: inputPath,
               source: fs.readFileSync(inputPath, 'utf8'),

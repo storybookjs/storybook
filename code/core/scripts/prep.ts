@@ -1,5 +1,5 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
-import { existsSync, mkdirSync, watch } from 'node:fs';
+import { existsSync, watch } from 'node:fs';
 import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
@@ -25,6 +25,7 @@ import { generateTypesMapperFiles } from './helpers/generateTypesMapperFiles';
 import { isBrowser, isNode, noExternals } from './helpers/isEntryType';
 import { modifyThemeTypes } from './helpers/modifyThemeTypes';
 import { generateSourceFiles } from './helpers/sourcefiles';
+import { externalPlugin } from './no-externals-plugin';
 
 async function run() {
   const flags = process.argv.slice(2);
@@ -94,7 +95,7 @@ async function run() {
       assetNames: 'assets/[name]-[hash]',
       bundle: true,
       chunkNames: 'chunks/[name]-[hash]',
-      external: ['@storybook/core', ...external],
+      external: ['storybook', ...external],
       keepNames: true,
       legalComments: 'none',
       lineLimit: 140,
@@ -192,7 +193,7 @@ async function run() {
               outExtension: { '.js': '.js' },
               alias: {
                 ...browserAliases,
-                '@storybook/core': join(cwd, 'src'),
+                'storybook/internal': join(cwd, 'src'),
                 react: dirname(require.resolve('react/package.json')),
                 'react-dom': dirname(require.resolve('react-dom/package.json')),
                 'react-dom/client': join(
@@ -217,7 +218,7 @@ async function run() {
           esbuild.context(
             merge<EsbuildContextOptions>(browserEsbuildOptions, {
               alias: {
-                '@storybook/core': join(cwd, 'src'),
+                'storybook/internal': join(cwd, 'src'),
                 react: dirname(require.resolve('react/package.json')),
                 'react-dom': dirname(require.resolve('react-dom/package.json')),
                 'react-dom/client': join(
@@ -253,9 +254,14 @@ async function run() {
                   entryPoints: [entry.file],
                   external: [
                     ...nodeInternals,
-                    ...esbuildDefaultOptions.external,
+                    ...esbuildDefaultOptions.external.filter((e) => !entry.noExternal.includes(e)),
                     ...entry.externals,
                   ].filter((e) => !entry.internals.includes(e)),
+                  plugins: [
+                    externalPlugin({
+                      noExternal: entry.noExternal,
+                    }),
+                  ],
                   format: 'cjs',
                   outdir: dirname(entry.file).replace('src', 'dist'),
                   outExtension: {
@@ -272,10 +278,15 @@ async function run() {
                   entryPoints: [entry.file],
                   external: [
                     ...nodeInternals,
-                    ...esbuildDefaultOptions.external,
+                    ...esbuildDefaultOptions.external.filter((e) => !entry.noExternal.includes(e)),
                     ...entry.externals,
                   ].filter((e) => !entry.internals.includes(e)),
                   outdir: dirname(entry.file).replace('src', 'dist'),
+                  plugins: [
+                    externalPlugin({
+                      noExternal: entry.noExternal,
+                    }),
+                  ],
                   outExtension: {
                     '.js': '.js',
                   },
@@ -289,9 +300,14 @@ async function run() {
                   entryPoints: [entry.file],
                   external: [
                     ...nodeInternals,
-                    ...esbuildDefaultOptions.external,
+                    ...esbuildDefaultOptions.external.filter((e) => !entry.noExternal.includes(e)),
                     ...entry.externals,
                   ].filter((e) => !entry.internals.includes(e)),
+                  plugins: [
+                    externalPlugin({
+                      noExternal: entry.noExternal,
+                    }),
+                  ],
                   format: 'esm',
                   outdir: dirname(entry.file).replace('src', 'dist'),
                   outExtension: {

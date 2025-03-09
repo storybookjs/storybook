@@ -1,9 +1,8 @@
 import type { ReactElement } from 'react';
 import React, { Fragment } from 'react';
 
+import type { Call, CallRef, ElementRef } from 'storybook/internal/instrumenter';
 import { useTheme } from 'storybook/internal/theming';
-
-import type { Call, CallRef, ElementRef } from '@storybook/instrumenter';
 
 import { ObjectInspector } from '@devtools-ds/object-inspector';
 
@@ -344,8 +343,9 @@ export const ElementNode = ({
   );
 };
 
-export const DateNode = ({ value }: { value: string }) => {
-  const [date, time, ms] = value.split(/[T.Z]/);
+export const DateNode = ({ value }: { value: string | Date }) => {
+  const string = value instanceof Date ? value.toISOString() : value;
+  const [date, time, ms] = string.split(/[T.Z]/);
   const colors = useThemeColors();
   return (
     <span style={{ whiteSpace: 'nowrap', color: colors.date }}>

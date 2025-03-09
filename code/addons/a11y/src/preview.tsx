@@ -1,23 +1,18 @@
-// Source: https://github.com/chaance/vitest-axe/blob/main/src/to-have-no-violations.ts
-import * as matchers from 'vitest-axe/matchers';
-
 import type { AfterEach } from 'storybook/internal/types';
 
-import { expect } from '@storybook/test';
+import { expect } from 'storybook/test';
 
 import { run } from './a11yRunner';
-import { A11Y_TEST_TAG } from './constants';
 import type { A11yParameters } from './params';
-import { getIsVitestRunning, getIsVitestStandaloneRun } from './utils';
+import { getIsVitestStandaloneRun } from './utils';
 
-expect.extend(matchers);
+let vitestMatchersExtended = false;
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export const experimental_afterEach: AfterEach<any> = async ({
   reporting,
   parameters,
   globals,
-  tags,
 }) => {
   const a11yParameter: A11yParameters | undefined = parameters.a11y;
   const a11yGlobals = globals.a11y;
@@ -25,12 +20,20 @@ export const experimental_afterEach: AfterEach<any> = async ({
   const shouldRunEnvironmentIndependent =
     a11yParameter?.manual !== true &&
     a11yParameter?.disable !== true &&
+    a11yParameter?.test !== 'off' &&
     a11yGlobals?.manual !== true;
 
-  if (shouldRunEnvironmentIndependent) {
-    if (getIsVitestRunning() && !tags.includes(A11Y_TEST_TAG)) {
-      return;
+  const getMode = (): (typeof reporting)['reports'][0]['status'] => {
+    switch (a11yParameter?.test) {
+      case 'todo':
+        return 'warning';
+      case 'error':
+      default:
+        return 'failed';
     }
+  };
+
+  if (shouldRunEnvironmentIndependent) {
     try {
       const result = await run(a11yParameter);
 
@@ -41,7 +44,7 @@ export const experimental_afterEach: AfterEach<any> = async ({
           type: 'a11y',
           version: 1,
           result: result,
-          status: hasViolations ? 'failed' : 'passed',
+          status: hasViolations ? getMode() : 'passed',
         });
 
         /**
@@ -53,8 +56,15 @@ export const experimental_afterEach: AfterEach<any> = async ({
          *   implement proper try catch handling.
          */
         if (getIsVitestStandaloneRun()) {
-          if (hasViolations) {
-            // @ts-expect-error - todo - fix type extension of expect from @storybook/test
+          if (hasViolations && getMode() === 'failed') {
+            if (!vitestMatchersExtended) {
+              // @ts-expect-error (unknown why vitest-axe is not typed correctly)
+              const { toHaveNoViolations } = await import('vitest-axe/matchers');
+              expect.extend({ toHaveNoViolations });
+              vitestMatchersExtended = true;
+            }
+
+            // @ts-expect-error - todo - fix type extension of expect from storybook/test
             expect(result).toHaveNoViolations();
           }
         }
@@ -86,5 +96,8 @@ export const initialGlobals = {
   },
 };
 
-// A11Y_TEST_TAG constant in ./constants.ts. Has to be statically analyzable.
-export const tags = ['a11ytest'];
+export const parameters = {
+  a11y: {
+    test: 'todo',
+  } as A11yParameters,
+};

@@ -195,7 +195,9 @@ export default async (
       }),
       new DefinePlugin({
         ...stringifyProcessEnvs(envs),
-        NODE_ENV: JSON.stringify(process.env.NODE_ENV),
+        NODE_ENV: JSON.stringify(
+          features?.developmentModeForBuild && isProd ? 'development' : process.env.NODE_ENV
+        ),
       }),
       new ProvidePlugin({ process: require.resolve('process/browser.js') }),
       isProd ? null : new HotModuleReplacementPlugin(),

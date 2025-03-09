@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import type { ProjectAnnotations, Renderer, StoryIndex } from '@storybook/core/types';
+import type { ProjectAnnotations, Renderer, StoryIndex } from 'storybook/internal/types';
 
 import { StoryStore } from './StoryStore';
 import { composeConfigs } from './csf/composeConfigs';
@@ -28,7 +28,7 @@ vi.mock('@storybook/global', async (importOriginal) => ({
   },
 }));
 
-vi.mock('@storybook/core/client-logger');
+vi.mock('storybook/internal/client-logger');
 
 const componentOneExports = {
   default: { title: 'Component One' },
@@ -301,6 +301,9 @@ describe('StoryStore', () => {
             },
             "component": undefined,
             "componentId": "component-one",
+            "globals": {
+              "a": "b",
+            },
             "id": "component-one--a",
             "initialArgs": {
               "foo": "a",
@@ -471,6 +474,9 @@ describe('StoryStore', () => {
             },
             "component": undefined,
             "componentId": "component-one",
+            "globals": {
+              "a": "b",
+            },
             "id": "component-one--a",
             "initialArgs": {
               "foo": "a",
@@ -514,6 +520,9 @@ describe('StoryStore', () => {
             },
             "component": undefined,
             "componentId": "component-one",
+            "globals": {
+              "a": "b",
+            },
             "id": "component-one--b",
             "initialArgs": {
               "foo": "b",
@@ -557,6 +566,9 @@ describe('StoryStore', () => {
             },
             "component": undefined,
             "componentId": "component-two",
+            "globals": {
+              "a": "b",
+            },
             "id": "component-two--c",
             "initialArgs": {
               "foo": "c",
@@ -847,6 +859,9 @@ describe('StoryStore', () => {
               },
               "component": undefined,
               "componentId": "component-one",
+              "globals": {
+                "a": "b",
+              },
               "id": "component-one--a",
               "initialArgs": {
                 "foo": "a",
@@ -890,6 +905,9 @@ describe('StoryStore', () => {
               },
               "component": undefined,
               "componentId": "component-one",
+              "globals": {
+                "a": "b",
+              },
               "id": "component-one--b",
               "initialArgs": {
                 "foo": "b",
@@ -933,6 +951,9 @@ describe('StoryStore', () => {
               },
               "component": undefined,
               "componentId": "component-two",
+              "globals": {
+                "a": "b",
+              },
               "id": "component-two--c",
               "initialArgs": {
                 "foo": "c",

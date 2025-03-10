@@ -5,8 +5,9 @@ import { ManagerContext } from 'storybook/internal/manager-api';
 import { type Addon_SidebarTopType, StatusValue } from 'storybook/internal/types';
 import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
 
-import type { Meta, StoryObj } from '@storybook/react';
-import { expect, fn, userEvent, within } from '@storybook/test';
+import type { Meta, StoryObj } from '@storybook/react-vite';
+
+import { expect, fn, userEvent, within } from 'storybook/test';
 
 import { internal_fullStatusStore } from '../../status-store.mock';
 import { LayoutProvider } from '../layout/LayoutProvider';

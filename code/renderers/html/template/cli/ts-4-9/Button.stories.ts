@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/html';
-import { fn } from '@storybook/test';
+
+import { fn } from 'storybook/test';
 
 import type { ButtonProps } from './Button';
 import { createButton } from './Button';

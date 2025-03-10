@@ -444,9 +444,9 @@ The following packages have been consolidated into the main `storybook` package:
 
 | Old Package            | New Path                       |
 | ---------------------- | ------------------------------ |
-| @storybook/manager-api | storybook/internal/manager-api |
-| @storybook/preview-api | storybook/internal/preview-api |
-| @storybook/theming     | storybook/internal/theming     |
+| @storybook/manager-api | storybook/manager-api |
+| @storybook/preview-api | storybook/preview-api |
+| @storybook/theming     | storybook/theming     |
 | @storybook/test        | storybook/test                 |
 
 Please un-install these packages, and ensure you have the `storybook` package installed.

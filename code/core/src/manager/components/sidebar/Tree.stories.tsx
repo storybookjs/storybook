@@ -7,7 +7,7 @@ import {
   ManagerContext,
 } from 'storybook/internal/manager-api';
 
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { action } from '@storybook/addon-actions';
 

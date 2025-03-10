@@ -3,7 +3,7 @@ import React from 'react';
 
 import { styled } from 'storybook/internal/theming';
 
-import type { StoryObj } from '@storybook/react';
+import type { StoryObj } from '@storybook/react-vite';
 
 import { expect, screen } from 'storybook/test';
 

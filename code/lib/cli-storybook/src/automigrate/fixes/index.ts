@@ -9,13 +9,13 @@ import { angularBuildersMultiproject } from './angular-builders-multiproject';
 import { autodocsTags } from './autodocs-tags';
 import { autodocsTrue } from './autodocs-true';
 import { builderVite } from './builder-vite';
+import { consolidatedImports } from './consolidated-imports';
 import { cra5 } from './cra5';
 import { eslintPlugin } from './eslint-plugin';
 import { initialGlobals } from './initial-globals';
 import { mdx1to3 } from './mdx-1-to-3';
 import { mdxgfm } from './mdx-gfm';
 import { mdxToCSF } from './mdx-to-csf';
-import { missingStorybookDependencies } from './missing-storybook-dependencies';
 import { newFrameworks } from './new-frameworks';
 import { removeReactDependency } from './prompt-remove-react';
 import { reactDocgen } from './react-docgen';
@@ -36,7 +36,6 @@ import { wrapRequire } from './wrap-require';
 export * from '../types';
 
 export const allFixes: Fix[] = [
-  missingStorybookDependencies,
   addonsAPI,
   newFrameworks,
   cra5,
@@ -67,6 +66,7 @@ export const allFixes: Fix[] = [
   autodocsTags,
   initialGlobals,
   addonA11yAddonTest,
+  consolidatedImports,
   addonExperimentalTest,
 ];
 

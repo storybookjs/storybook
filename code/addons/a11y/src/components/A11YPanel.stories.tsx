@@ -3,7 +3,7 @@ import React from 'react';
 import { ManagerContext } from 'storybook/internal/manager-api';
 import { ThemeProvider, convert, themes } from 'storybook/internal/theming';
 
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import type axe from 'axe-core';
 import { fn } from 'storybook/test';

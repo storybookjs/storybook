@@ -33,7 +33,6 @@ export const Default: Story = {};
 
 export const Creating = {
   play: async ({ canvasElement }) => {
-    throw new Error('Not implemented');
     const createButton = await within(canvasElement).findByRole('button', { name: /Create/i });
     await fireEvent.click(createButton);
     await new Promise((resolve) => setTimeout(resolve, 300));

@@ -259,10 +259,9 @@ export class UniversalStore<
     UniversalStore.isInternalConstructing = false;
 
     this.id = options.id;
-    this.actorId = globalThis.crypto
-      ? globalThis.crypto.randomUUID()
-      : // TODO: remove this fallback in SB 9.0 when we no longer support Node 18
-        Date.now().toString(36) + Math.random().toString(36).substring(2);
+    this.actorId =
+      globalThis.crypto?.randomUUID?.() ?? // TODO: remove this fallback in SB 9.0 when we no longer support Node 18
+      Date.now().toString(36) + Math.random().toString(36).substring(2);
     this.actorType = options.leader
       ? UniversalStore.ActorType.LEADER
       : UniversalStore.ActorType.FOLLOWER;

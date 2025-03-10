@@ -6261,7 +6261,6 @@ __metadata:
     "@neoconfetti/react": "npm:^1.0.0"
     "@radix-ui/react-dialog": "npm:^1.0.5"
     "@storybook/icons": "npm:^1.2.12"
-    "@storybook/react": "workspace:*"
     framer-motion: "npm:^11.0.3"
     react: "npm:^18.2.0"
     react-dom: "npm:^18.2.0"
@@ -7426,7 +7425,7 @@ __metadata:
     magic-string: "npm:^0.30.0"
     svelte: "npm:^5.0.5"
     svelte-preprocess: "npm:^5.1.1"
-    svelte2tsx: "npm:^0.7.13"
+    svelte2tsx: "npm:0.7.34"
     sveltedoc-parser: "npm:^4.2.1"
     ts-dedent: "npm:^2.2.0"
     typescript: "npm:^5.7.3"
@@ -28380,16 +28379,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"svelte2tsx@npm:^0.7.13":
-  version: 0.7.13
-  resolution: "svelte2tsx@npm:0.7.13"
+"svelte2tsx@npm:0.7.34":
+  version: 0.7.34
+  resolution: "svelte2tsx@npm:0.7.34"
   dependencies:
     dedent-js: "npm:^1.0.1"
     pascal-case: "npm:^3.1.1"
   peerDependencies:
     svelte: ^3.55 || ^4.0.0-next.0 || ^4.0 || ^5.0.0-next.0
     typescript: ^4.9.4 || ^5.0.0
-  checksum: 10c0/a6df2873e551d116bae8b4664b1838a52c6aa50ad50e30e41611e8bf390c525ceb97b53d034f2e0030a640e157e1f88ac33d52b6e4abb54861b3fc120aae82f7
+  checksum: 10c0/31f049bd4dc7db151a8d13773d3cdd6e30c205735da44d369ec06365039926332779fe6d441015d7c6647755e47674acc96ec9ccea68d1b225767f5e04d82d9c
   languageName: node
   linkType: hard
 

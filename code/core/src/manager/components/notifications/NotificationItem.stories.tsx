@@ -7,7 +7,8 @@ import {
   BookIcon as BookIconIcon,
   FaceHappyIcon,
 } from '@storybook/icons';
-import type { Meta, StoryObj } from '@storybook/react';
+
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { action } from 'core/src/actions/dist';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';

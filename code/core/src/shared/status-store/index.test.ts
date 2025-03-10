@@ -70,6 +70,7 @@ describe('statusStore', () => {
             ...UNIVERSAL_STATUS_STORE_OPTIONS,
             initialState,
           }),
+          environment: 'manager',
         });
 
         // Act - get all statuses
@@ -85,6 +86,7 @@ describe('statusStore', () => {
         // Arrange - create a status store
         const { fullStatusStore } = createStatusStore({
           universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
+          environment: 'manager',
         });
 
         // Act - set the status
@@ -103,6 +105,7 @@ describe('statusStore', () => {
         // Arrange - create a status store
         const { fullStatusStore } = createStatusStore({
           universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
+          environment: 'manager',
         });
 
         // Create an updated version of the status
@@ -143,6 +146,7 @@ describe('statusStore', () => {
               },
             },
           }),
+          environment: 'manager',
         });
 
         // Create an updated version of an existing status
@@ -175,6 +179,7 @@ describe('statusStore', () => {
         const mockSubscriber = vi.fn();
         const { fullStatusStore } = createStatusStore({
           universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
+          environment: 'manager',
         });
         const unsubscribe = fullStatusStore.onStatusChange(mockSubscriber);
 
@@ -204,6 +209,7 @@ describe('statusStore', () => {
               },
             },
           }),
+          environment: 'manager',
         });
         const unsubscribe = fullStatusStore.onStatusChange(mockSubscriber);
 
@@ -238,6 +244,7 @@ describe('statusStore', () => {
               },
             },
           }),
+          environment: 'manager',
         });
         const unsubscribe = fullStatusStore.onStatusChange(mockSubscriber);
 
@@ -262,6 +269,7 @@ describe('statusStore', () => {
             ...UNIVERSAL_STATUS_STORE_OPTIONS,
             initialState,
           }),
+          environment: 'manager',
         });
         const unsubscribe = fullStatusStore.onSelect(mockListener);
 
@@ -285,6 +293,7 @@ describe('statusStore', () => {
             ...UNIVERSAL_STATUS_STORE_OPTIONS,
             initialState,
           }),
+          environment: 'manager',
         });
 
         // Act - unset without a predicate
@@ -302,6 +311,7 @@ describe('statusStore', () => {
             ...UNIVERSAL_STATUS_STORE_OPTIONS,
             initialState,
           }),
+          environment: 'manager',
         });
 
         // Act - unset with a storyIds filter
@@ -327,6 +337,7 @@ describe('statusStore', () => {
           ...UNIVERSAL_STATUS_STORE_OPTIONS,
           initialState,
         }),
+        environment: 'manager',
       });
 
       // Act - get a status store for type-1
@@ -342,6 +353,7 @@ describe('statusStore', () => {
         // Arrange - create a status store
         const { getStatusStoreByTypeId, fullStatusStore } = createStatusStore({
           universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
+          environment: 'manager',
         });
 
         // Act - get a status store for type-1 and set a status
@@ -369,6 +381,7 @@ describe('statusStore', () => {
         // Arrange - create a status store
         const { getStatusStoreByTypeId } = createStatusStore({
           universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
+          environment: 'manager',
         });
 
         // Create an updated version of the status
@@ -400,6 +413,7 @@ describe('statusStore', () => {
             ...UNIVERSAL_STATUS_STORE_OPTIONS,
             initialState,
           }),
+          environment: 'manager',
         });
 
         // Get the type-specific store
@@ -434,21 +448,20 @@ describe('statusStore', () => {
         // Arrange - create a status store
         const { getStatusStoreByTypeId, fullStatusStore } = createStatusStore({
           universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
+          environment: 'manager',
         });
 
         // Act & Assert - get a status store for type-1 and try to set a status with type-2, expect it to throw
         const type1StatusStore = getStatusStoreByTypeId('type-1');
-        expect(() => type1StatusStore.set([story1Type2Status])).toThrowErrorMatchingInlineSnapshot(
-          `
-          [Error: Status typeId mismatch: Status has typeId "type-2" but was added to store with typeId "type-1". Full status: {
+        expect(() => type1StatusStore.set([story1Type2Status])).toThrowErrorMatchingInlineSnapshot(`
+          [SB_MANAGER_API_0001 (StatusTypeIdMismatchError): Status has typeId "type-2" but was added to store with typeId "type-1". Full status: {
             "storyId": "story-1",
             "typeId": "type-2",
             "value": "error",
             "title": "Error",
             "description": "Error description"
           }]
-        `
-        );
+        `);
       });
     });
 
@@ -460,6 +473,7 @@ describe('statusStore', () => {
             ...UNIVERSAL_STATUS_STORE_OPTIONS,
             initialState,
           }),
+          environment: 'manager',
         });
 
         // Act - get a status store for type-1 and unset without a predicate
@@ -485,6 +499,7 @@ describe('statusStore', () => {
             ...UNIVERSAL_STATUS_STORE_OPTIONS,
             initialState,
           }),
+          environment: 'manager',
         });
 
         // Act - get a status store for type-1 and unset with a storyIds filter
@@ -509,6 +524,7 @@ describe('statusStore', () => {
             ...UNIVERSAL_STATUS_STORE_OPTIONS,
             initialState,
           }),
+          environment: 'manager',
         });
 
         // Get a type-specific store and subscribe to selections
@@ -534,6 +550,7 @@ describe('statusStore', () => {
             ...UNIVERSAL_STATUS_STORE_OPTIONS,
             initialState,
           }),
+          environment: 'manager',
         });
 
         // Get a type-specific store and subscribe to selections
@@ -559,6 +576,7 @@ describe('statusStore', () => {
       const { useStatusStore } = createStatusStore({
         universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
         useUniversalStore,
+        environment: 'manager',
       });
 
       // Assert - useStatusStore should be defined
@@ -573,6 +591,7 @@ describe('statusStore', () => {
           initialState,
         }),
         useUniversalStore,
+        environment: 'manager',
       });
 
       // Act - get a status store for type-1 and render the hook
@@ -590,6 +609,7 @@ describe('statusStore', () => {
           initialState,
         }),
         useUniversalStore,
+        environment: 'manager',
       });
 
       // Create a selector that only returns SUCCESS statuses
@@ -629,6 +649,7 @@ describe('statusStore', () => {
           initialState,
         }),
         useUniversalStore,
+        environment: 'manager',
       });
       const renderCounter = vi.fn();
 
@@ -676,6 +697,7 @@ describe('statusStore', () => {
           initialState,
         }),
         useUniversalStore,
+        environment: 'manager',
       });
       const renderCounter = vi.fn();
 

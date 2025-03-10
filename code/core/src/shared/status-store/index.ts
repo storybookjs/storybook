@@ -1,5 +1,8 @@
 import type { StoryId } from 'storybook/internal/csf';
 
+import { StatusTypeIdMismatchError as ManagerStatusTypeIdMismatchError } from '../../manager-errors';
+import { StatusTypeIdMismatchError as PreviewStatusTypeIdMismatchError } from '../../preview-errors';
+import { StatusTypeIdMismatchError as ServerStatusTypeIdMismatchError } from '../../server-errors';
 import type { UniversalStore } from '../universal-store';
 import type { StoreOptions } from '../universal-store/types';
 import type { useUniversalStore as managerUseUniversalStore } from '../universal-store/use-universal-store-manager';
@@ -62,11 +65,14 @@ export type StatusStoreByTypeId = StatusStore & {
   typeId: StatusTypeId;
 };
 
+export type StatusStoreEnvironment = 'server' | 'manager' | 'preview';
+
 export type UseStatusStore = (selector?: (statuses: StatusesByStoryIdAndTypeId) => any) => any;
 
 export function createStatusStore(params: {
   universalStatusStore: UniversalStore<StatusesByStoryIdAndTypeId, StatusStoreEvent>;
   useUniversalStore?: never;
+  environment: StatusStoreEnvironment;
 }): {
   getStatusStoreByTypeId: (typeId: StatusTypeId) => StatusStoreByTypeId;
   fullStatusStore: FullStatusStore;
@@ -74,6 +80,7 @@ export function createStatusStore(params: {
 export function createStatusStore(params: {
   universalStatusStore: UniversalStore<StatusesByStoryIdAndTypeId, StatusStoreEvent>;
   useUniversalStore: typeof managerUseUniversalStore;
+  environment: StatusStoreEnvironment;
 }): {
   getStatusStoreByTypeId: (typeId: StatusTypeId) => StatusStoreByTypeId;
   fullStatusStore: FullStatusStore;
@@ -82,9 +89,11 @@ export function createStatusStore(params: {
 export function createStatusStore({
   universalStatusStore,
   useUniversalStore,
+  environment,
 }: {
   universalStatusStore: UniversalStore<StatusesByStoryIdAndTypeId, StatusStoreEvent>;
   useUniversalStore?: typeof managerUseUniversalStore;
+  environment: StatusStoreEnvironment;
 }): {
   getStatusStoreByTypeId: (typeId: StatusTypeId) => StatusStoreByTypeId;
   fullStatusStore: FullStatusStore;
@@ -158,13 +167,24 @@ export function createStatusStore({
           const { storyId } = status;
           if (status.typeId !== typeId) {
             // Validate that all statuses have the correct typeId
-            throw new Error(
-              `Status typeId mismatch: Status has typeId "${status.typeId}" but was added to store with typeId "${typeId}". Full status: ${JSON.stringify(
-                status,
-                null,
-                2
-              )}`
-            );
+            switch (environment) {
+              case 'server':
+                throw new ServerStatusTypeIdMismatchError({
+                  status,
+                  typeId,
+                });
+              case 'manager':
+                throw new ManagerStatusTypeIdMismatchError({
+                  status,
+                  typeId,
+                });
+              case 'preview':
+              default:
+                throw new PreviewStatusTypeIdMismatchError({
+                  status,
+                  typeId,
+                });
+            }
           }
 
           newState[storyId] = { ...(newState[storyId] ?? {}), [typeId]: status };

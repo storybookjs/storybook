@@ -375,11 +375,3 @@ export const managerEntries = async (existing: any, options: Options) => {
     ...(existing || []),
   ];
 };
-
-export const previewAnnotations = async (existing: any, options: Options) => {
-  return [
-    join(dirname(require.resolve('storybook/package.json')), 'dist/test/preview.js'),
-    join(dirname(require.resolve('storybook/package.json')), 'dist/actions/preview.js'),
-    ...(existing || []),
-  ];
-};

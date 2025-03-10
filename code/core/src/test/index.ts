@@ -14,11 +14,12 @@ export * from './spy';
 
 type Queries = BoundFunctions<typeof queries>;
 
+export type UserEventObject = ReturnType<typeof userEvent.setup>;
+
 declare module 'storybook/internal/csf' {
   interface Canvas extends Queries {}
   interface StoryContext {
-    // TODO enable this in a later PR, once we have time to QA this properly
-    userEvent: ReturnType<typeof userEvent.setup>;
+    userEvent: UserEventObject;
   }
 }
 
@@ -53,8 +54,6 @@ export const resetAllMocksLoader: LoaderFunction = ({ parameters }) => {
 
 export const traverseArgs = (value: unknown, depth = 0, key?: string): unknown => {
   // Make sure to not get in infinite loops with self referencing args
-
-  // Make sure to not get in infinite loops with self referencing args
   if (depth > 5) {
     return value;
   }
@@ -63,8 +62,6 @@ export const traverseArgs = (value: unknown, depth = 0, key?: string): unknown =
     return value;
   }
   if (isMockFunction(value)) {
-    // Makes sure we get the arg name in the interactions panel
-
     // Makes sure we get the arg name in the interactions panel
     if (key) {
       value.mockName(key);
@@ -112,8 +109,8 @@ export const nameSpiesAndWrapActionsInSpies: LoaderFunction = ({ initialArgs }) 
 export const enhanceContext: LoaderFunction = (context) => {
   if (globalThis.HTMLElement && context.canvasElement instanceof globalThis.HTMLElement) {
     context.canvas = within(context.canvasElement);
-    context.userEvent = userEvent.setup();
   }
+  context.userEvent = userEvent.setup();
 };
 
 export default () =>

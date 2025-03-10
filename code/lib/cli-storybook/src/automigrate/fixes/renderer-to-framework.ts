@@ -21,8 +21,8 @@ interface MigrationResult {
 
 const getAllDependencies = (packageJson: PackageJson): string[] =>
   Object.keys({
-    ...Object.keys(packageJson.dependencies || {}),
-    ...Object.keys(packageJson.devDependencies || {}),
+    ...(packageJson.dependencies || {}),
+    ...(packageJson.devDependencies || {}),
   });
 
 const detectFrameworks = (dependencies: string[]): string[] => {
@@ -38,7 +38,7 @@ const replaceImports = (source: string, renderer: string, framework: string) => 
   return regex.test(source) ? source.replace(regex, `$1${framework}$2`) : null;
 };
 
-const transformSourceFiles = async (
+export const transformSourceFiles = async (
   files: string[],
   renderer: string,
   framework: string,
@@ -67,7 +67,7 @@ const transformSourceFiles = async (
   return errors;
 };
 
-const removeRenderersInPackageJson = async (
+export const removeRenderersInPackageJson = async (
   packageJsonPath: string,
   renderers: string[],
   dryRun: boolean
@@ -156,7 +156,15 @@ export const rendererToFramework: Fix<MigrationResult> = {
     });
 
     // Check each package.json for migration needs
-    const results = await Promise.all(packageJsonFiles.map(checkPackageJson));
+    const results = await Promise.all(
+      packageJsonFiles.map(async (file) => {
+        try {
+          return await checkPackageJson(file);
+        } catch (error) {
+          return null;
+        }
+      })
+    );
     const validResults = results.filter(
       (r): r is { frameworks: string[]; renderers: string[] } =>
         r !== null && r.renderers.length > 0

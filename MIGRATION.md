@@ -449,12 +449,13 @@ Furthermore, we have deprecated the usage of `withActions` from `@storybook/addo
 The following packages are no longer published as part of `9.0.0`:
 The following packages have been consolidated into the main `storybook` package:
 
-| Old Package            | New Path              |
-| ---------------------- | --------------------- |
-| @storybook/manager-api | storybook/manager-api |
-| @storybook/preview-api | storybook/preview-api |
-| @storybook/theming     | storybook/theming     |
-| @storybook/test        | storybook/test        |
+| Old Package              | New Path              |
+| ------------------------ | --------------------- |
+| @storybook/manager-api   | storybook/manager-api |
+| @storybook/preview-api   | storybook/preview-api |
+| @storybook/theming       | storybook/theming     |
+| @storybook/test          | storybook/test        |
+| @storybook/addon-actions | storybook/actions     |
 
 Please un-install these packages, and ensure you have the `storybook` package installed.
 

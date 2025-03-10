@@ -4,7 +4,7 @@ import {
   experimental_useUniversalStore,
 } from 'storybook/internal/manager-api';
 
-import * as testUtils from '@storybook/test';
+import * as testUtils from 'storybook/test';
 
 import { createStatusStore } from '../shared/status-store';
 import { UNIVERSAL_STATUS_STORE_OPTIONS } from '../shared/status-store';

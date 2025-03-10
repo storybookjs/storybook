@@ -2,7 +2,7 @@ import React from 'react';
 
 import { ManagerContext } from 'storybook/internal/manager-api';
 
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { startCase } from 'es-toolkit';
 import { within } from 'storybook/test';

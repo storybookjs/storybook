@@ -136,7 +136,7 @@ Type: `boolean`
 
 Default: `false`
 
-[Similar to Vitest](https://vitest.dev/config/#clearmocks), it will call `.mockClear()` on all spies created with `fn()` from `@storybook/test` when a story unmounts. This will clear mock history, but not reset its implementation to the default one.
+[Similar to Vitest](https://vitest.dev/config/#clearmocks), it will call `.mockClear()` on all spies created with `fn()` from `storybook/test` when a story unmounts. This will clear mock history, but not reset its implementation to the default one.
 
 #### `mockReset`
 
@@ -144,7 +144,7 @@ Type: `boolean`
 
 Default: `false`
 
-[Similar to Vitest](https://vitest.dev/config/#mockreset), it will call `.mockReset()` on all spies created with `fn()` from `@storybook/test` when a story unmounts. This will clear mock history and reset its implementation to an empty function (will return `undefined`).
+[Similar to Vitest](https://vitest.dev/config/#mockreset), it will call `.mockReset()` on all spies created with `fn()` from `storybook/test` when a story unmounts. This will clear mock history and reset its implementation to an empty function (will return `undefined`).
 
 #### `restoreMocks`
 
@@ -152,7 +152,7 @@ Type: `boolean`
 
 Default: `true`
 
-[Similar to Vitest](https://vitest.dev/config/#restoremocks), it will call `.restoreMocks()` on all spies created with `fn()` from `@storybook/test` when a story unmounts. This will clear mock history and reset its implementation to the original one.
+[Similar to Vitest](https://vitest.dev/config/#restoremocks), it will call `.restoreMocks()` on all spies created with `fn()` from `storybook/test` when a story unmounts. This will clear mock history and reset its implementation to the original one.
 
 #### `dangerouslyIgnoreUnhandledErrors`
 

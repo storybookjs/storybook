@@ -2,7 +2,8 @@ import { RESET_STORY_ARGS, STORY_ARGS_UPDATED } from 'storybook/internal/core-ev
 import { addons } from 'storybook/internal/preview-api';
 
 import type { Meta, StoryObj } from '@storybook/react';
-import { expect, fireEvent, fn, waitFor, within } from '@storybook/test';
+
+import { expect, fireEvent, fn, waitFor, within } from 'storybook/test';
 
 import { BooleanControl } from './Boolean';
 

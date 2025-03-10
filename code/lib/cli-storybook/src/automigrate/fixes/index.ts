@@ -9,6 +9,7 @@ import { angularBuildersMultiproject } from './angular-builders-multiproject';
 import { autodocsTags } from './autodocs-tags';
 import { autodocsTrue } from './autodocs-true';
 import { builderVite } from './builder-vite';
+import { consolidatedImports } from './consolidated-imports';
 import { cra5 } from './cra5';
 import { eslintPlugin } from './eslint-plugin';
 import { initialGlobals } from './initial-globals';
@@ -21,7 +22,6 @@ import { removeReactDependency } from './prompt-remove-react';
 import { reactDocgen } from './react-docgen';
 import { removeArgtypesRegex } from './remove-argtypes-regex';
 import { removedGlobalClientAPIs } from './remove-global-client-apis';
-import { removeJestTestingLibrary } from './remove-jest-testing-library';
 import { removeLegacyMDX1 } from './remove-legacymdx1';
 import { sbBinary } from './sb-binary';
 import { sbScripts } from './sb-scripts';
@@ -49,7 +49,6 @@ export const allFixes: Fix[] = [
   builderVite,
   sbBinary,
   sbScripts,
-  removeJestTestingLibrary,
   removeArgtypesRegex,
   removedGlobalClientAPIs,
   mdxgfm,
@@ -69,6 +68,7 @@ export const allFixes: Fix[] = [
   autodocsTags,
   initialGlobals,
   addonA11yAddonTest,
+  consolidatedImports,
   addonExperimentalTest,
 ];
 

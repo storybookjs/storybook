@@ -43,12 +43,12 @@
       "import": "./dist/client-logger/index.js",
       "require": "./dist/client-logger/index.cjs"
     },
-    "./internal/theming": {
+    "./theming": {
       "types": "./dist/theming/index.d.ts",
       "import": "./dist/theming/index.js",
       "require": "./dist/theming/index.cjs"
     },
-    "./internal/theming/create": {
+    "./theming/create": {
       "types": "./dist/theming/create.d.ts",
       "import": "./dist/theming/create.js",
       "require": "./dist/theming/create.cjs"
@@ -123,12 +123,12 @@
       "import": "./dist/telemetry/index.js",
       "require": "./dist/telemetry/index.cjs"
     },
-    "./internal/preview-api": {
+    "./preview-api": {
       "types": "./dist/preview-api/index.d.ts",
       "import": "./dist/preview-api/index.js",
       "require": "./dist/preview-api/index.cjs"
     },
-    "./internal/manager-api": {
+    "./manager-api": {
       "types": "./dist/manager-api/index.d.ts",
       "import": "./dist/manager-api/index.js",
       "require": "./dist/manager-api/index.cjs"
@@ -214,10 +214,10 @@
       "internal/client-logger": [
         "./dist/client-logger/index.d.ts"
       ],
-      "internal/theming": [
+      "theming": [
         "./dist/theming/index.d.ts"
       ],
-      "internal/theming/create": [
+      "theming/create": [
         "./dist/theming/create.d.ts"
       ],
       "internal/core-server": [
@@ -256,10 +256,10 @@
       "internal/telemetry": [
         "./dist/telemetry/index.d.ts"
       ],
-      "internal/preview-api": [
+      "preview-api": [
         "./dist/preview-api/index.d.ts"
       ],
-      "internal/manager-api": [
+      "manager-api": [
         "./dist/manager-api/index.d.ts"
       ],
       "internal/router": [

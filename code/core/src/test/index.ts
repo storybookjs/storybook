@@ -1,4 +1,5 @@
 import type { BoundFunctions } from '@testing-library/dom';
+import { userEvent } from '@testing-library/user-event';
 
 import type { LoaderFunction } from 'storybook/internal/csf';
 import { instrument } from 'storybook/internal/instrumenter';
@@ -8,7 +9,7 @@ import { Assertion } from 'chai';
 
 import { expect as rawExpect } from './expect';
 import { clearAllMocks, fn, isMockFunction, resetAllMocks, restoreAllMocks } from './spy';
-import { type queries, userEvent, within } from './testing-library';
+import { type queries, within } from './testing-library';
 
 export * from './spy';
 

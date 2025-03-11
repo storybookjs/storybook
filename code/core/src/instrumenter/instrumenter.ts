@@ -101,7 +101,7 @@ const getRetainedState = (state: State, isDebugging = false) => {
 
 /** This class is not supposed to be used directly. Use the `instrument` function below instead. */
 export class Instrumenter {
-  channel: Channel;
+  channel: Channel | undefined;
 
   initialized = false;
 
@@ -109,8 +109,6 @@ export class Instrumenter {
   state: Record<StoryId, State>;
 
   constructor() {
-    this.channel = addons.getChannel();
-
     // Restore state from the parent window in case the iframe was reloaded.
     // @ts-expect-error (TS doesn't know about this global variable)
     this.state = global.window?.parent.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__ || {};
@@ -138,11 +136,91 @@ export class Instrumenter {
       this.sync(storyId);
     };
 
-    // A forceRemount might be triggered for debugging (on `start`), or elsewhere in Storybook.
-    this.channel.on(FORCE_REMOUNT, resetState);
+    const start =
+      (channel: Channel) =>
+      ({ storyId, playUntil }: { storyId: string; playUntil?: Call['id'] }) => {
+        if (!this.getState(storyId).isDebugging) {
+          // Move everything into shadowCalls (a "carbon copy") and mark them as "waiting", so we keep
+          // a record of the original calls which haven't yet been executed while stepping through.
+          this.setState(storyId, ({ calls }) => ({
+            calls: [],
+            shadowCalls: calls.map((call) => ({ ...call, status: CallStates.WAITING })),
+            isDebugging: true,
+          }));
+        }
 
-    // Start with a clean slate before playing after a remount, and stop debugging when done.
-    this.channel.on(STORY_RENDER_PHASE_CHANGED, ({ storyId, newPhase }) => {
+        const log = this.getLog(storyId);
+        this.setState(storyId, ({ shadowCalls }) => {
+          if (playUntil || !log.length) {
+            return { playUntil };
+          }
+          const firstRowIndex = shadowCalls.findIndex((call) => call.id === log[0].callId);
+          return {
+            playUntil: shadowCalls
+              .slice(0, firstRowIndex)
+              .filter((call) => call.interceptable && !call.ancestors?.length)
+              .slice(-1)[0]?.id,
+          };
+        });
+
+        // Force remount may trigger a page reload if the play function can't be aborted.
+        channel.emit(FORCE_REMOUNT, { storyId, isDebugging: true });
+      };
+
+    const back =
+      (channel: Channel) =>
+      ({ storyId }: { storyId: string }) => {
+        const log = this.getLog(storyId).filter((call) => !call.ancestors?.length);
+        const last = log.reduceRight((res, item, index) => {
+          if (res >= 0 || item.status === CallStates.WAITING) {
+            return res;
+          }
+          return index;
+        }, -1);
+        start(channel)({ storyId, playUntil: log[last - 1]?.callId });
+      };
+
+    const goto =
+      (channel: Channel) =>
+      ({ storyId, callId }: { storyId: string; callId: Call['id'] }) => {
+        const { calls, shadowCalls, resolvers } = this.getState(storyId);
+        const call = calls.find(({ id }) => id === callId);
+        const shadowCall = shadowCalls.find(({ id }) => id === callId);
+        if (!call && shadowCall && Object.values(resolvers).length > 0) {
+          const nextId = this.getLog(storyId).find((c) => c.status === CallStates.WAITING)?.callId;
+
+          if (shadowCall.id !== nextId) {
+            this.setState(storyId, { playUntil: shadowCall.id });
+          }
+          Object.values(resolvers).forEach((resolve) => resolve());
+        } else {
+          start(channel)({ storyId, playUntil: callId });
+        }
+      };
+
+    const next =
+      (channel: Channel) =>
+      ({ storyId }: { storyId: string }) => {
+        const { resolvers } = this.getState(storyId);
+        if (Object.values(resolvers).length > 0) {
+          Object.values(resolvers).forEach((resolve) => resolve());
+        } else {
+          const nextId = this.getLog(storyId).find((c) => c.status === CallStates.WAITING)?.callId;
+
+          if (nextId) {
+            start(channel)({ storyId, playUntil: nextId });
+          } else {
+            end({ storyId });
+          }
+        }
+      };
+
+    const end = ({ storyId }: { storyId: string }) => {
+      this.setState(storyId, { playUntil: undefined, isDebugging: false });
+      Object.values(this.getState(storyId).resolvers).forEach((resolve) => resolve());
+    };
+
+    const renderPhaseChanged = ({ storyId, newPhase }: { storyId: string; newPhase: any }) => {
       const { isDebugging } = this.getState(storyId);
       this.setState(storyId, { renderPhase: newPhase });
       if (newPhase === 'preparing' && isDebugging) {
@@ -164,98 +242,32 @@ export class Instrumenter {
           isPlaying: false,
         });
       }
-    });
+    };
 
-    // Trash non-retained state and clear the log when switching stories, but not on initial boot.
-    this.channel.on(SET_CURRENT_STORY, () => {
-      if (this.initialized) {
-        this.cleanup();
-      } else {
-        this.initialized = true;
-      }
-    });
+    addons.ready().then(() => {
+      this.channel = addons.getChannel();
 
-    const start = ({ storyId, playUntil }: { storyId: string; playUntil?: Call['id'] }) => {
-      if (!this.getState(storyId).isDebugging) {
-        // Move everything into shadowCalls (a "carbon copy") and mark them as "waiting", so we keep
-        // a record of the original calls which haven't yet been executed while stepping through.
-        this.setState(storyId, ({ calls }) => ({
-          calls: [],
-          shadowCalls: calls.map((call) => ({ ...call, status: CallStates.WAITING })),
-          isDebugging: true,
-        }));
-      }
+      // A forceRemount might be triggered for debugging (on `start`), or elsewhere in Storybook.
+      this.channel.on(FORCE_REMOUNT, resetState);
 
-      const log = this.getLog(storyId);
-      this.setState(storyId, ({ shadowCalls }) => {
-        if (playUntil || !log.length) {
-          return { playUntil };
+      // Start with a clean slate before playing after a remount, and stop debugging when done.
+      this.channel.on(STORY_RENDER_PHASE_CHANGED, renderPhaseChanged);
+
+      // Trash non-retained state and clear the log when switching stories, but not on initial boot.
+      this.channel.on(SET_CURRENT_STORY, () => {
+        if (this.initialized) {
+          this.cleanup();
+        } else {
+          this.initialized = true;
         }
-        const firstRowIndex = shadowCalls.findIndex((call) => call.id === log[0].callId);
-        return {
-          playUntil: shadowCalls
-            .slice(0, firstRowIndex)
-            .filter((call) => call.interceptable && !call.ancestors?.length)
-            .slice(-1)[0]?.id,
-        };
       });
 
-      // Force remount may trigger a page reload if the play function can't be aborted.
-      this.channel.emit(FORCE_REMOUNT, { storyId, isDebugging: true });
-    };
-
-    const back = ({ storyId }: { storyId: string }) => {
-      const log = this.getLog(storyId).filter((call) => !call.ancestors?.length);
-      const last = log.reduceRight((res, item, index) => {
-        if (res >= 0 || item.status === CallStates.WAITING) {
-          return res;
-        }
-        return index;
-      }, -1);
-      start({ storyId, playUntil: log[last - 1]?.callId });
-    };
-
-    const goto = ({ storyId, callId }: { storyId: string; callId: Call['id'] }) => {
-      const { calls, shadowCalls, resolvers } = this.getState(storyId);
-      const call = calls.find(({ id }) => id === callId);
-      const shadowCall = shadowCalls.find(({ id }) => id === callId);
-      if (!call && shadowCall && Object.values(resolvers).length > 0) {
-        const nextId = this.getLog(storyId).find((c) => c.status === CallStates.WAITING)?.callId;
-
-        if (shadowCall.id !== nextId) {
-          this.setState(storyId, { playUntil: shadowCall.id });
-        }
-        Object.values(resolvers).forEach((resolve) => resolve());
-      } else {
-        start({ storyId, playUntil: callId });
-      }
-    };
-
-    const next = ({ storyId }: { storyId: string }) => {
-      const { resolvers } = this.getState(storyId);
-      if (Object.values(resolvers).length > 0) {
-        Object.values(resolvers).forEach((resolve) => resolve());
-      } else {
-        const nextId = this.getLog(storyId).find((c) => c.status === CallStates.WAITING)?.callId;
-
-        if (nextId) {
-          start({ storyId, playUntil: nextId });
-        } else {
-          end({ storyId });
-        }
-      }
-    };
-
-    const end = ({ storyId }: { storyId: string }) => {
-      this.setState(storyId, { playUntil: undefined, isDebugging: false });
-      Object.values(this.getState(storyId).resolvers).forEach((resolve) => resolve());
-    };
-
-    this.channel.on(EVENTS.START, start);
-    this.channel.on(EVENTS.BACK, back);
-    this.channel.on(EVENTS.GOTO, goto);
-    this.channel.on(EVENTS.NEXT, next);
-    this.channel.on(EVENTS.END, end);
+      this.channel.on(EVENTS.START, start(this.channel));
+      this.channel.on(EVENTS.BACK, back(this.channel));
+      this.channel.on(EVENTS.GOTO, goto(this.channel));
+      this.channel.on(EVENTS.NEXT, next(this.channel));
+      this.channel.on(EVENTS.END, end);
+    });
   }
 
   getState(storyId: StoryId) {
@@ -288,7 +300,7 @@ export class Instrumenter {
       {} as Record<StoryId, State>
     );
     const payload: SyncPayload = { controlStates: controlsDisabled, logItems: [] };
-    this.channel.emit(EVENTS.SYNC, payload);
+    this.channel?.emit(EVENTS.SYNC, payload);
     if (global.window?.parent) {
       // @ts-expect-error fix this later in d.ts file
       global.window.parent.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__ = this.state;
@@ -625,7 +637,7 @@ export class Instrumenter {
 
   // Sends the call info to the manager and synchronizes the log.
   update(call: Call) {
-    this.channel.emit(EVENTS.CALL, call);
+    this.channel?.emit(EVENTS.CALL, call);
     this.setState(call.storyId, ({ calls }) => {
       // Omit earlier calls for the same ID, which may have been superseded by a later invocation.
       // This typically happens when calls are part of a callback which runs multiple times.
@@ -655,7 +667,7 @@ export class Instrumenter {
       const hasActive = logItems.some((item) => item.status === CallStates.ACTIVE);
       if (isLocked || hasActive || logItems.length === 0) {
         const payload: SyncPayload = { controlStates: controlsDisabled, logItems };
-        this.channel.emit(EVENTS.SYNC, payload);
+        this.channel?.emit(EVENTS.SYNC, payload);
         return;
       }
 
@@ -671,7 +683,7 @@ export class Instrumenter {
       };
 
       const payload: SyncPayload = { controlStates, logItems, pausedAt };
-      this.channel.emit(EVENTS.SYNC, payload);
+      this.channel?.emit(EVENTS.SYNC, payload);
     };
 
     this.setState(storyId, ({ syncTimeout }) => {

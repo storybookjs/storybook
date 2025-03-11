@@ -18,6 +18,7 @@ async function run() {
     ...nodeInternals,
     'typescript',
     'storybook',
+    'storybook/test',
     'storybook/actions',
     'storybook/actions/preview',
     'storybook/actions/manager',
@@ -38,6 +39,7 @@ async function run() {
     'storybook/internal/telemetry',
     'storybook/internal/theming',
     'storybook/internal/types',
+    'storybook/internal/instrumenter',
   ];
 
   const all = entries.filter((e) => e.dts);

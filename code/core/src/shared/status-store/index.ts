@@ -204,7 +204,7 @@ export function createStatusStore({
       universalStatusStore.setState((state) => {
         const newState = { ...state };
         for (const storyId in newState) {
-          if (newState[storyId][typeId] && (!storyIds || storyIds?.includes(storyId))) {
+          if (newState[storyId]?.[typeId] && (!storyIds || storyIds?.includes(storyId))) {
             const { [typeId]: omittedStatus, ...storyStatusesWithoutTypeId } = newState[storyId];
             newState[storyId] = storyStatusesWithoutTypeId;
           }

@@ -170,7 +170,7 @@ describe('A11yContext', () => {
     expect(getByTestId('discrepancy').textContent).toBe('cliFailedButModeManual');
   });
 
-  it('should set discrepancy to cliFailedButModeManual when in manual mode (set via globals', () => {
+  it('should set discrepancy to cliFailedButModeManual when in manual mode (set via globals)', () => {
     mockedApi.useGlobals.mockReturnValue([{ a11y: { manual: true } }] as any);
     mockedApi.experimental_useStatusStore.mockReturnValue(StatusValue.ERROR);
 

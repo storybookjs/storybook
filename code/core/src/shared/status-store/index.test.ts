@@ -413,8 +413,8 @@ describe('statusStore', () => {
         type1StatusStore.set([updatedStatus, story2Type1Status]);
 
         // Assert - all statuses should be in the full store
-        const rsult = type1StatusStore.get();
-        expect(rsult).toEqual({
+        const result = type1StatusStore.get();
+        expect(result).toEqual({
           'story-1': {
             'type-1': updatedStatus,
             'type-2': story1Type2Status,

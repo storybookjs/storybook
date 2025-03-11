@@ -244,7 +244,8 @@ export class Instrumenter {
       }
     };
 
-    addons.ready().then(() => {
+    // Support portable stories where addons are not available
+    (addons ? addons.ready() : Promise.resolve()).then(() => {
       this.channel = addons.getChannel();
 
       // A forceRemount might be triggered for debugging (on `start`), or elsewhere in Storybook.

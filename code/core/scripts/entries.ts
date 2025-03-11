@@ -61,15 +61,16 @@ export const getEntries = (cwd: string) => {
       true,
       ['util', 'react'],
       [],
-      [
-        '@testing-library/dom',
-        '@testing-library/jest-dom',
-        '@testing-library/user-event',
-        'chai',
-        '@vitest/expect',
-        '@vitest/spy',
-        '@vitest/utils',
-      ],
+      ['chai', '@vitest/expect', '@vitest/spy', '@vitest/utils'],
+      true
+    ),
+    define(
+      'src/test/spy.ts',
+      ['browser', 'node'],
+      true,
+      ['util', 'react'],
+      [],
+      ['chai', '@vitest/expect', '@vitest/spy', '@vitest/utils'],
       true
     ),
     define(
@@ -78,15 +79,7 @@ export const getEntries = (cwd: string) => {
       true,
       ['util', 'react'],
       [],
-      [
-        '@testing-library/dom',
-        '@testing-library/jest-dom',
-        '@testing-library/user-event',
-        'chai',
-        '@vitest/expect',
-        '@vitest/spy',
-        '@vitest/utils',
-      ],
+      ['chai', '@vitest/expect', '@vitest/spy', '@vitest/utils'],
       true
     ),
   ];

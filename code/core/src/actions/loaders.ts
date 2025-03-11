@@ -1,17 +1,15 @@
 import type { LoaderFunction } from 'storybook/internal/types';
 
-import { onMockCall } from 'storybook/test';
+import { onMockCall } from 'storybook/test/spy';
 
 import { action } from './runtime';
 
 let subscribed = false;
 
 const logActionsWhenMockCalled: LoaderFunction = (context) => {
-  const {
-    parameters: { actions },
-  } = context;
+  const { parameters } = context;
 
-  if (actions?.disable) {
+  if (parameters?.actions?.disable) {
     return;
   }
 

@@ -19,6 +19,8 @@ async function run() {
     'typescript',
     'storybook',
     'storybook/test',
+    'storybook/test/spy',
+    'storybook/test/preview',
     'storybook/actions',
     'storybook/actions/preview',
     'storybook/actions/manager',

@@ -85,6 +85,7 @@ const localAlias = {
   'storybook/internal': join(__dirname, '..', '..', 'src'),
   storybook: join(__dirname, '..', '..', 'src', 'test'),
   'storybook/test': join(__dirname, '..', '..', 'src', 'test'),
+  'storybook/test/spy': join(__dirname, '..', '..', 'src', 'test', 'spy'),
   'storybook/test/preview': join(__dirname, '..', '..', 'src', 'test', 'preview'),
   'storybook/actions': join(__dirname, '..', '..', 'src', 'actions'),
   'storybook/actions/preview': join(__dirname, '..', '..', 'src', 'actions', 'preview'),

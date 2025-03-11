@@ -101,6 +101,7 @@ export default {
     layout: 'fullscreen',
   },
   beforeEach: async () => {
+    mockStore.setState.mockClear();
     return () => {
       mockStore.setState(storeOptions.initialState);
     };

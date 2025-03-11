@@ -1,8 +1,8 @@
 import { composeConfigs } from 'storybook/internal/preview-api';
 import type { Renderer } from 'storybook/internal/types';
 
-import actionAnnotations from 'storybook/actions';
-import testAnnotations from 'storybook/test';
+import actionAnnotations from 'storybook/actions/preview';
+import testAnnotations from 'storybook/test/preview';
 
 import type { NormalizedProjectAnnotations } from '../types';
 

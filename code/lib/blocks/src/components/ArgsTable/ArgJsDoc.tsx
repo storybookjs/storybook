@@ -2,8 +2,9 @@ import type { FC } from 'react';
 import React from 'react';
 
 import { codeCommon } from 'storybook/internal/components';
-import type { CSSObject } from 'storybook/internal/theming';
-import { styled } from 'storybook/internal/theming';
+
+import type { CSSObject } from 'storybook/theming';
+import { styled } from 'storybook/theming';
 
 import type { JsDocTags } from './types';
 

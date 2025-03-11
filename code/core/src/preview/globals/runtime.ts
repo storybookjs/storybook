@@ -7,6 +7,9 @@ import * as TYPES from 'storybook/internal/types';
 
 import * as GLOBAL from '@storybook/global';
 
+import * as ACTIONS from 'storybook/actions';
+import * as TEST from 'storybook/test';
+
 import type { globalsNameReferenceMap } from './globals';
 
 // Here we map the name of a module to their VALUE in the global scope.
@@ -24,4 +27,8 @@ export const globalsNameValueMap: Required<Record<keyof typeof globalsNameRefere
   'storybook/internal/preview-api': PREVIEW_API,
 
   'storybook/internal/types': TYPES,
+
+  'storybook/actions': ACTIONS,
+
+  'storybook/test': TEST,
 };

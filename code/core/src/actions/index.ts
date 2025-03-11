@@ -1,6 +1,5 @@
+import * as addonAnnotations from 'storybook/actions/preview';
 import { definePreview } from 'storybook/preview-api';
-
-import * as addonAnnotations from './preview';
 
 export * from './constants';
 export * from './models';

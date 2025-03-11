@@ -2,10 +2,10 @@ import type { BoundFunctions } from '@testing-library/dom';
 
 import type { LoaderFunction } from 'storybook/internal/csf';
 import { instrument } from 'storybook/internal/instrumenter';
+import { definePreview } from 'storybook/internal/preview-api';
 
 import { Assertion } from 'chai';
 
-import { definePreview } from '../preview-api';
 import { expect as rawExpect } from './expect';
 import { clearAllMocks, fn, isMockFunction, resetAllMocks, restoreAllMocks } from './spy';
 import { type queries, userEvent, within } from './testing-library';

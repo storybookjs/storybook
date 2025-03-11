@@ -22,8 +22,7 @@ import type {
 import { global } from '@storybook/global';
 import { global as globalThis } from '@storybook/global';
 
-import { getComposedCoreAnnotations } from 'storybook/preview-api';
-
+import { getComposedCoreAnnotations } from '../../../core-annotations';
 import { applyHooks } from '../../addons';
 import { mountDestructured } from '../../preview-web/render/mount-utils';
 import { UNTARGETED, groupArgsByTarget } from '../args';
@@ -46,13 +45,13 @@ export function prepareStory<TRenderer extends Renderer>(
   // will have a limited cost. If this proves misguided, we can refactor it.
   const { moduleExport, id, name } = storyAnnotations || {};
 
+  const composedCoreAnnotations = getComposedCoreAnnotations<TRenderer>();
+
   const partialAnnotations = preparePartialAnnotations(
     storyAnnotations,
     componentAnnotations,
     projectAnnotations
   );
-
-  const composedCoreAnnotations = getComposedCoreAnnotations<TRenderer>();
 
   const applyLoaders = async (
     context: StoryContext<TRenderer>
@@ -279,7 +278,10 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
 
   const initialArgsBeforeEnhancers = { ...passedArgs };
 
-  contextForEnhancers.initialArgs = argsEnhancers.reduce(
+  contextForEnhancers.initialArgs = [
+    ...(coreAnnotations.argsEnhancers ?? []),
+    ...argsEnhancers,
+  ].reduce(
     (accumulatedArgs: Args, enhancer) => ({
       ...accumulatedArgs,
       ...enhancer({

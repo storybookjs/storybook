@@ -1,9 +1,9 @@
 import React, { Component } from 'react';
 
 import { STORY_CHANGED } from 'storybook/internal/core-events';
-import type { API } from 'storybook/internal/manager-api';
 
 import { dequal as deepEqual } from 'dequal';
+import type { API } from 'storybook/manager-api';
 
 import { ActionLogger as ActionLoggerComponent } from '../../components/ActionLogger';
 import { CLEAR_ID, EVENT_ID } from '../../constants';

@@ -1,10 +1,10 @@
-import type { PreviewWeb } from 'storybook/internal/preview-api';
-import { addons } from 'storybook/internal/preview-api';
 import { ImplicitActionsDuringRendering } from 'storybook/internal/preview-errors';
 import type { Renderer } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
+import type { PreviewWeb } from 'storybook/preview-api';
+import { addons } from 'storybook/preview-api';
 import { v4 as uuidv4 } from 'uuid';
 
 import { EVENT_ID } from '../constants';

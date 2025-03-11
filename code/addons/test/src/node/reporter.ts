@@ -13,6 +13,7 @@ import type { API_StatusUpdate } from 'storybook/internal/types';
 import type { Suite } from '@vitest/runner';
 import { throttle } from 'es-toolkit';
 import { satisfies } from 'semver';
+import { dedent } from 'ts-dedent';
 
 import { TEST_PROVIDER_ID } from '../constants';
 import type { TestManager } from './test-manager';
@@ -59,6 +60,36 @@ const vitestVersion = vitestNode.version;
 const isVitest3OrLater = vitestVersion
   ? satisfies(vitestVersion, '>=3.0.0-beta.3', { includePrerelease: true })
   : false;
+
+interface VitestError extends Error {
+  VITEST_TEST_PATH?: string;
+  VITEST_TEST_NAME?: string;
+}
+
+const getErrorOrigin = (error: VitestError): string => {
+  const parts: string[] = [];
+
+  if (error.VITEST_TEST_PATH) {
+    parts.push(
+      dedent`
+        \nThis error originated in "${error.VITEST_TEST_PATH}". It doesn't mean the error was thrown inside the file itself, but while it was running.
+      `
+    );
+  }
+
+  if (error.VITEST_TEST_NAME) {
+    parts.push(
+      dedent`
+        The latest test that might've caused the error is "${error.VITEST_TEST_NAME}". 
+        It might mean one of the following:
+        - The error was thrown, while Vitest was running this test.
+        - If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+      `
+    );
+  }
+
+  return parts.join('\n');
+};
 
 export class StorybookReporter implements Reporter {
   testStatusData: API_StatusUpdate = {};
@@ -219,6 +250,14 @@ export class StorybookReporter implements Reporter {
 
   async onFinished() {
     const unhandledErrors = this.ctx.state.getUnhandledErrors();
+    unhandledErrors.forEach((e: unknown) => {
+      const error = e as VitestError;
+      const origin = getErrorOrigin(error);
+      if (origin) {
+        error.message = `${error.message}\n${origin}`;
+        error.stack = `${error.stack}\n${origin}`;
+      }
+    });
 
     const isCancelled = isVitest3OrLater
       ? this.testManager.vitestManager.isCancelling
@@ -256,7 +295,7 @@ export class StorybookReporter implements Reporter {
               name: `${unhandledErrors.length} unhandled error${unhandledErrors?.length > 1 ? 's' : ''}`,
               message: unhandledErrors
                 .map((e, index) => `[${index}]: ${(e as any).stack || (e as any).message}`)
-                .join('\n----------\n'),
+                .join('\n\n----------\n\n'),
             };
 
       this.sendReport({

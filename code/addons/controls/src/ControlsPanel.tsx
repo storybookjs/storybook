@@ -1,19 +1,19 @@
 import React, { useEffect, useMemo, useState } from 'react';
 
-import {
-  useArgTypes,
-  useArgs,
-  useGlobals,
-  useParameter,
-  useStorybookState,
-} from 'storybook/internal/manager-api';
-import { styled } from 'storybook/internal/theming';
 import type { ArgTypes } from 'storybook/internal/types';
 
 import { PureArgsTable as ArgsTable, type PresetColor, type SortType } from '@storybook/blocks';
 import { global } from '@storybook/global';
 
 import { dequal as deepEqual } from 'dequal';
+import {
+  useArgTypes,
+  useArgs,
+  useGlobals,
+  useParameter,
+  useStorybookState,
+} from 'storybook/manager-api';
+import { styled } from 'storybook/theming';
 
 import { SaveStory } from './SaveStory';
 import { PARAM_KEY } from './constants';

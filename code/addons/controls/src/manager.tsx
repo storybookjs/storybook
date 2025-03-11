@@ -8,15 +8,10 @@ import type {
 } from 'storybook/internal/core-events';
 import { SAVE_STORY_REQUEST, SAVE_STORY_RESPONSE } from 'storybook/internal/core-events';
 import type { Args } from 'storybook/internal/csf';
-import {
-  addons,
-  experimental_requestResponse,
-  types,
-  useArgTypes,
-} from 'storybook/internal/manager-api';
-import { color } from 'storybook/internal/theming';
 
 import { dequal as deepEqual } from 'dequal';
+import { addons, experimental_requestResponse, types, useArgTypes } from 'storybook/manager-api';
+import { color } from 'storybook/theming';
 
 import { ControlsPanel } from './ControlsPanel';
 import { ADDON_ID, PARAM_KEY } from './constants';

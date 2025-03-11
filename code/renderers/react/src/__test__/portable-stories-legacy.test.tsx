@@ -1,14 +1,10 @@
 // @vitest-environment happy-dom
-
-/* eslint-disable import/namespace */
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import React from 'react';
 
 import type { Meta } from '@storybook/react';
-
-import * as addonActionsPreview from '@storybook/addon-actions/preview';
 
 import { expectTypeOf } from 'expect-type';
 import { addons } from 'storybook/preview-api';
@@ -110,7 +106,7 @@ describe('Legacy Portable Stories API', () => {
     });
 
     it('has action arg from argTypes when addon-actions annotations are added', () => {
-      const Story = composeStory(stories.WithActionArgType, stories.default, addonActionsPreview);
+      const Story = composeStory(stories.WithActionArgType, stories.default);
       expect(Story.args.someActionArg).toHaveProperty('isAction', true);
     });
   });

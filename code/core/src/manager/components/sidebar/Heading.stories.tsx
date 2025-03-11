@@ -3,8 +3,7 @@ import React from 'react';
 
 import type { Meta, StoryFn, StoryObj } from '@storybook/react-vite';
 
-import { action } from '@storybook/addon-actions';
-
+import { action } from 'storybook/actions';
 import { screen } from 'storybook/test';
 import { ThemeProvider, useTheme } from 'storybook/theming';
 import type { Theme } from 'storybook/theming';

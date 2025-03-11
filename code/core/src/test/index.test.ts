@@ -1,8 +1,7 @@
 // @vitest-environment happy-dom
 import { describe, it, test } from 'vitest';
 
-import { action } from '@storybook/addon-actions';
-
+import { action } from 'storybook/actions';
 import { expect, fn, isMockFunction, traverseArgs } from 'storybook/test';
 
 it('storybook expect and fn can be used in vitest test', () => {

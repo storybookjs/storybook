@@ -440,10 +440,9 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
       import { setProjectAnnotations } from '${storybookPackage}'
       import * as rendererDocsAnnotations from '${template.expected.renderer}/dist/entry-preview-docs.mjs'
       import * as addonA11yAnnotations from '@storybook/addon-a11y/preview'
-      import * as addonActionsAnnotations from '@storybook/addon-actions/preview'
       import * as addonTestAnnotations from '@storybook/addon-test/preview'
       import '../src/stories/components'
-      import * as coreAnnotations from '../template-stories/core/preview'
+      import * as templateAnnotations from '../template-stories/core/preview'
       import * as toolbarAnnotations from '../template-stories/addons/toolbars/preview'
       import * as projectAnnotations from './preview'
       ${isVue ? 'import * as vueAnnotations from "../src/stories/renderers/vue3/preview.js"' : ''}
@@ -451,7 +450,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
       const annotations = setProjectAnnotations([
         ${isVue ? 'vueAnnotations,' : ''}
         rendererDocsAnnotations,
-        coreAnnotations,
+        templateAnnotations,
         toolbarAnnotations,
         addonActionsAnnotations,
         addonTestAnnotations,
@@ -896,12 +895,15 @@ export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
       ? '../src/stories/components'
       : '../stories/components';
     previewConfig.setImport(null, storiesDir);
-    previewConfig.setImport({ namespace: 'coreAnnotations' }, '../template-stories/core/preview');
+    previewConfig.setImport(
+      { namespace: 'templateAnnotations' },
+      '../template-stories/core/preview'
+    );
     previewConfig.setImport(
       { namespace: 'toolbarAnnotations' },
       '../template-stories/addons/toolbars/preview'
     );
-    previewConfig.appendNodeToArray(['addons'], t.identifier('coreAnnotations'));
+    previewConfig.appendNodeToArray(['addons'], t.identifier('templateAnnotations'));
     previewConfig.appendNodeToArray(['addons'], t.identifier('toolbarAnnotations'));
   }
 

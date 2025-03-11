@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-import type { HandlerFunction } from '@storybook/addon-actions';
-import { action } from '@storybook/addon-actions';
-
+import { action } from 'storybook/actions';
+import type { HandlerFunction } from 'storybook/actions';
 import { expect, fn, mocked, userEvent, within } from 'storybook/test';
 
 import type { StoryFn as CSF2Story, StoryObj as CSF3Story, Meta } from '..';

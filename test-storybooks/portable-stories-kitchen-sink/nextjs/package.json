@@ -15,7 +15,6 @@
   },
   "resolutions": {
     "@storybook/addon-a11y": "file:../../../code/addons/a11y",
-    "@storybook/addon-actions": "file:../../../code/addons/actions",
     "@storybook/addon-backgrounds": "file:../../../code/addons/backgrounds",
     "@storybook/addon-controls": "file:../../../code/addons/controls",
     "@storybook/addon-docs": "file:../../../code/addons/docs",
@@ -79,7 +78,6 @@
   "devDependencies": {
     "@happy-dom/jest-environment": "^15.11.7",
     "@jest/globals": "^29.7.0",
-    "@storybook/addon-actions": "^8.0.0",
     "@storybook/addon-essentials": "^8.0.0",
     "@storybook/addon-interactions": "^8.0.0",
     "@storybook/nextjs": "^8.0.0",

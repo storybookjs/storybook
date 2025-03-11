@@ -1,5 +1,6 @@
 /* eslint-disable no-underscore-dangle */
 import { type CleanupCallback, combineTags, includeConditionalArg } from 'storybook/internal/csf';
+import { getComposedCoreAnnotations } from 'storybook/internal/preview-api';
 import { NoRenderFunctionError } from 'storybook/internal/preview-errors';
 import type {
   Args,
@@ -50,14 +51,14 @@ export function prepareStory<TRenderer extends Renderer>(
     projectAnnotations
   );
 
+  const composedCoreAnnotations = getComposedCoreAnnotations<TRenderer>();
+
   const applyLoaders = async (
     context: StoryContext<TRenderer>
   ): Promise<StoryContext<TRenderer>['loaded']> => {
     const loaded = {};
     for (const loaders of [
-      ...('__STORYBOOK_TEST_LOADERS__' in global && Array.isArray(global.__STORYBOOK_TEST_LOADERS__)
-        ? [global.__STORYBOOK_TEST_LOADERS__]
-        : []),
+      normalizeArrays(composedCoreAnnotations.loaders),
       normalizeArrays(projectAnnotations.loaders),
       normalizeArrays(componentAnnotations.loaders),
       normalizeArrays(storyAnnotations.loaders),
@@ -74,6 +75,7 @@ export function prepareStory<TRenderer extends Renderer>(
   const applyBeforeEach = async (context: StoryContext<TRenderer>): Promise<CleanupCallback[]> => {
     const cleanupCallbacks = new Array<() => unknown>();
     for (const beforeEach of [
+      ...normalizeArrays(composedCoreAnnotations.beforeEach),
       ...normalizeArrays(projectAnnotations.beforeEach),
       ...normalizeArrays(componentAnnotations.beforeEach),
       ...normalizeArrays(storyAnnotations.beforeEach),
@@ -92,6 +94,7 @@ export function prepareStory<TRenderer extends Renderer>(
 
   const applyAfterEach = async (context: StoryContext<TRenderer>): Promise<void> => {
     const reversedFinalizers = [
+      ...normalizeArrays(composedCoreAnnotations.experimental_afterEach),
       ...normalizeArrays(projectAnnotations.experimental_afterEach),
       ...normalizeArrays(componentAnnotations.experimental_afterEach),
       ...normalizeArrays(storyAnnotations.experimental_afterEach),
@@ -111,6 +114,7 @@ export function prepareStory<TRenderer extends Renderer>(
   const { applyDecorators = defaultDecorateStory, runStep } = projectAnnotations;
 
   const decorators = [
+    ...normalizeArrays(composedCoreAnnotations.decorators),
     ...normalizeArrays(storyAnnotations?.decorators),
     ...normalizeArrays(componentAnnotations?.decorators),
     ...normalizeArrays(projectAnnotations?.decorators),
@@ -146,6 +150,7 @@ export function prepareStory<TRenderer extends Renderer>(
     storyAnnotations.mount ??
     componentAnnotations.mount ??
     projectAnnotations.mount ??
+    composedCoreAnnotations.mount ??
     defaultMount;
 
   const testingLibraryRender = projectAnnotations.testingLibraryRender;
@@ -194,15 +199,19 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
   const defaultTags = ['dev', 'test'];
   const extraTags = globalThis.DOCS_OPTIONS?.autodocs === true ? ['autodocs'] : [];
 
+  const coreAnnotations = getComposedCoreAnnotations<TRenderer>();
+
   const tags = combineTags(
     ...defaultTags,
     ...extraTags,
+    ...(coreAnnotations.tags ?? []),
     ...(projectAnnotations.tags ?? []),
     ...(componentAnnotations.tags ?? []),
     ...(storyAnnotations?.tags ?? [])
   );
 
   const parameters: Parameters = combineParameters(
+    coreAnnotations.parameters,
     projectAnnotations.parameters,
     componentAnnotations.parameters,
     storyAnnotations?.parameters
@@ -212,6 +221,7 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
   const { argTypesEnhancers = [], argsEnhancers = [] } = projectAnnotations;
 
   const passedArgTypes: StrictArgTypes = combineParameters(
+    coreAnnotations.argTypes,
     projectAnnotations.argTypes,
     componentAnnotations.argTypes,
     storyAnnotations?.argTypes
@@ -224,13 +234,15 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
       storyAnnotations?.userStoryFn ||
       storyAnnotations?.render ||
       componentAnnotations.render ||
-      projectAnnotations.render;
+      projectAnnotations.render ||
+      coreAnnotations.render;
 
     parameters.__isArgsStory = render && render.length > 0;
   }
 
   // Pull out args[X] into initialArgs for argTypes enhancers
   const passedArgs: Args = {
+    ...coreAnnotations.args,
     ...projectAnnotations.args,
     ...componentAnnotations.args,
     ...storyAnnotations?.args,

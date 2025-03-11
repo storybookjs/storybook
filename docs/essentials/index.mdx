@@ -8,7 +8,6 @@ sidebar:
 
 A major strength of Storybook are [addons](https://storybook.js.org/addons) that extend Storybook’s UI and behavior. Storybook ships by default with a set of “essential” addons that add to the initial user experience. There are many third-party addons as well as “official” addons developed by the Storybook core team.
 
-* [Actions](./actions.mdx)
 * [Backgrounds](./backgrounds.mdx)
 * [Controls](./controls.mdx)
 * [Docs](../writing-docs/index.mdx)
@@ -45,13 +44,13 @@ If you need to reconfigure any of the [individual Essentials addons](https://sto
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="storybook-addon-actions-install.md" />
+<CodeSnippets path="storybook-addon-viewport-install.md" />
 
 {/* prettier-ignore-end */}
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="storybook-main-register-individual-actions-addon.md" />
+<CodeSnippets path="storybook-main-register-individual-viewport-addon.md" />
 
 {/* prettier-ignore-end */}
 
@@ -65,7 +64,6 @@ Below is an abridged configuration and table with all the available options for 
 
 | Addon                          | Option             | Description                                                                                                                                                    |
 | ------------------------------ | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@storybook/addon-actions`     | N/A                | N/A                                                                                                                                                            |
 | `@storybook/addon-viewport`    | N/A                | N/A                                                                                                                                                            |
 | `@storybook/addon-docs`        | `csfPluginOptions` | Provides additional configuration for Storybook's CSF plugin. Can be disabled with `null`.                                                                     |
 |                                | `mdxPluginOptions` | Provides additional configuration options and plugin configuration for [MDX documentation](../writing-docs/mdx.mdx#markdown-tables-arent-rendering-correctly). |

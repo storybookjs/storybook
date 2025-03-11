@@ -10,7 +10,9 @@ import type {
   StoryAnnotations,
 } from 'storybook/internal/types';
 
+import actionAnnotations from 'storybook/actions';
 import { composeConfigs, normalizeProjectAnnotations } from 'storybook/preview-api';
+import testAnnotations from 'storybook/test';
 
 export interface Preview<TRenderer extends Renderer = Renderer> {
   readonly _tag: 'Preview';
@@ -33,7 +35,17 @@ export function __definePreview<TRenderer extends Renderer>(
         return composed;
       }
       const { addons, ...rest } = input;
-      composed = normalizeProjectAnnotations<TRenderer>(composeConfigs([...(addons ?? []), rest]));
+      composed = normalizeProjectAnnotations<TRenderer>(
+        // TODO: Remove coreAnnotations once csf-factories use prepareStory (as core annotations already come from it)
+        composeConfigs([
+          // @ts-expect-error CJS fallback
+          (actionAnnotations.default ?? actionAnnotations)(),
+          // @ts-expect-error CJS fallback
+          (testAnnotations.default ?? testAnnotations)(),
+          ...(addons ?? []),
+          rest,
+        ])
+      );
       return composed;
     },
     meta(meta: ComponentAnnotations<TRenderer>) {

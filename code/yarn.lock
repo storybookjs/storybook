@@ -6067,25 +6067,6 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/addon-actions@workspace:*, @storybook/addon-actions@workspace:addons/actions":
-  version: 0.0.0-use.local
-  resolution: "@storybook/addon-actions@workspace:addons/actions"
-  dependencies:
-    "@storybook/global": "npm:^5.0.0"
-    "@types/uuid": "npm:^9.0.1"
-    dequal: "npm:^2.0.2"
-    polished: "npm:^4.2.2"
-    react: "npm:^18.2.0"
-    react-dom: "npm:^18.2.0"
-    react-inspector: "npm:^6.0.0"
-    telejson: "npm:^7.2.0"
-    typescript: "npm:^5.7.3"
-    uuid: "npm:^9.0.0"
-  peerDependencies:
-    storybook: "workspace:^"
-  languageName: unknown
-  linkType: soft
-
 "@storybook/addon-backgrounds@workspace:*, @storybook/addon-backgrounds@workspace:addons/backgrounds":
   version: 0.0.0-use.local
   resolution: "@storybook/addon-backgrounds@workspace:addons/backgrounds"
@@ -6165,7 +6146,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/addon-essentials@workspace:addons/essentials"
   dependencies:
-    "@storybook/addon-actions": "workspace:*"
     "@storybook/addon-backgrounds": "workspace:*"
     "@storybook/addon-controls": "workspace:*"
     "@storybook/addon-docs": "workspace:*"
@@ -6509,7 +6489,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/blocks@workspace:lib/blocks"
   dependencies:
-    "@storybook/addon-actions": "workspace:*"
     "@storybook/icons": "npm:^1.2.12"
     "@storybook/react": "workspace:*"
     "@types/color-convert": "npm:^2.0.0"
@@ -7251,7 +7230,6 @@ __metadata:
     "@nx/workspace": "npm:20.2.2"
     "@playwright/test": "npm:1.48.1"
     "@storybook/addon-a11y": "workspace:*"
-    "@storybook/addon-actions": "workspace:*"
     "@storybook/addon-backgrounds": "workspace:*"
     "@storybook/addon-controls": "workspace:*"
     "@storybook/addon-designs": "npm:9.0.0--canary.1499c1a.0"
@@ -7503,7 +7481,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/sveltekit@workspace:frameworks/sveltekit"
   dependencies:
-    "@storybook/addon-actions": "workspace:*"
     "@storybook/builder-vite": "workspace:*"
     "@storybook/svelte": "workspace:*"
     "@storybook/svelte-vite": "workspace:*"
@@ -27796,6 +27773,7 @@ __metadata:
     "@types/react-syntax-highlighter": "npm:11.0.5"
     "@types/react-transition-group": "npm:^4"
     "@types/semver": "npm:^7.5.8"
+    "@types/uuid": "npm:^9.0.1"
     "@types/ws": "npm:^8"
     "@vitest/expect": "npm:2.0.5"
     "@vitest/spy": "npm:2.0.5"
@@ -27865,6 +27843,7 @@ __metadata:
     react-dom: "npm:^18.2.0"
     react-draggable: "npm:^4.4.5"
     react-helmet-async: "npm:^1.3.0"
+    react-inspector: "npm:^6.0.0"
     react-popper-tooltip: "npm:^4.4.2"
     react-resize-detector: "npm:^7.1.2"
     react-router-dom: "npm:6.0.2"
@@ -27890,6 +27869,7 @@ __metadata:
     unique-string: "npm:^3.0.0"
     use-resize-observer: "npm:^9.1.0"
     util: "npm:^0.12.5"
+    uuid: "npm:^9.0.0"
     watchpack: "npm:^2.2.0"
     ws: "npm:^8.18.0"
   peerDependencies:

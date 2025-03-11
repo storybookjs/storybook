@@ -1,7 +1,6 @@
 import React from 'react';
 
-import { action } from '@storybook/addon-actions';
-
+import { action } from 'storybook/actions';
 import { styled } from 'storybook/theming';
 
 import { Field as FieldComponent } from './field/field';

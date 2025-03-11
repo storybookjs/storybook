@@ -5,8 +5,7 @@ import { LocationProvider } from 'storybook/internal/router';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { action } from '@storybook/addon-actions';
-
+import { action } from 'storybook/actions';
 import { fn } from 'storybook/test';
 import { styled } from 'storybook/theming';
 

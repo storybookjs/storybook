@@ -10,6 +10,7 @@ const statusStore = createStatusStore({
           leader: true,
         })
       : ({} as any),
+  environment: 'server',
 });
 
 export const { fullStatusStore, getStatusStoreByTypeId } = statusStore;

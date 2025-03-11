@@ -9,6 +9,7 @@ const statusStore = createStatusStore({
     leader: globalThis.CONFIG_TYPE === 'PRODUCTION',
   }),
   useUniversalStore,
+  environment: 'manager',
 });
 
 export const { fullStatusStore, getStatusStoreByTypeId, useStatusStore } = statusStore;

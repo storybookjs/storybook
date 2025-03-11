@@ -19,4 +19,5 @@ export const {
     testUtils
   ),
   useUniversalStore: experimental_useUniversalStore,
+  environment: 'manager',
 });

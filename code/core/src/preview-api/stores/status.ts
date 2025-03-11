@@ -9,6 +9,7 @@ const statusStore = createStatusStore({
     leader: false,
   }),
   useUniversalStore,
+  environment: 'preview',
 });
 
 export const { fullStatusStore, getStatusStoreByTypeId, useStatusStore } = statusStore;

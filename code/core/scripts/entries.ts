@@ -12,7 +12,7 @@ export const getEntries = (cwd: string) => {
     define('src/theming/index.ts', ['browser', 'node'], true, ['react']),
     define('src/theming/create.ts', ['browser', 'node'], true, ['react']),
 
-    define('src/core-server/index.ts', ['node'], true),
+    define('src/core-server/index.ts', ['node'], true, ['react']),
     define('src/core-server/presets/common-preset.ts', ['node'], false),
     define('src/core-server/presets/common-manager.ts', ['browser'], false),
     define('src/core-server/presets/common-override-preset.ts', ['node'], false),
@@ -29,7 +29,7 @@ export const getEntries = (cwd: string) => {
     define('src/common/index.ts', ['node'], true),
     define('src/builder-manager/index.ts', ['node'], true),
     define('src/telemetry/index.ts', ['node'], true),
-    define('src/preview-api/index.ts', ['browser', 'node'], true),
+    define('src/preview-api/index.ts', ['browser', 'node'], true, ['react']),
     define('src/manager-api/index.ts', ['browser', 'node'], true, ['react']),
     define('src/router/index.ts', ['browser', 'node'], true, ['react']),
     define(

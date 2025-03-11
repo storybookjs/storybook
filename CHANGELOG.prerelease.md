@@ -1,3 +1,21 @@
+## 9.0.0-alpha.3
+
+- Addon A11y: Promote @storybook/global to full dependency - [#30723](https://github.com/storybookjs/storybook/pull/30723), thanks @mrginglymus!
+- Addon Test: Improve unhandled error messages - [#30755](https://github.com/storybookjs/storybook/pull/30755), thanks @yannbf!
+- Angular: Add @angular-devkit/build-angular to default installed pacakages in angular - [#30790](https://github.com/storybookjs/storybook/pull/30790), thanks @kasperpeulen!
+- Automigrate: Disable `missingStorybookDependencies` for 9.0 - [#30769](https://github.com/storybookjs/storybook/pull/30769), thanks @ndelangen!
+- CLI: Fix test install in RNW projects - [#30786](https://github.com/storybookjs/storybook/pull/30786), thanks @shilman!
+- Core: Re-Export renderers from frameworks - [#30771](https://github.com/storybookjs/storybook/pull/30771), thanks @ndelangen!
+- Core: Replace 'min' instead of 'm' in printDuration - [#30668](https://github.com/storybookjs/storybook/pull/30668), thanks @wlewis-formative!
+- Migration: Add auto-automigration for merged packages - [#30753](https://github.com/storybookjs/storybook/pull/30753), thanks @ndelangen!
+- Next.js: Upgrade image-size to 2.0 - [#30741](https://github.com/storybookjs/storybook/pull/30741), thanks @valentinpalkovic!
+- Next.js: Use latest version when init in empty directory - [#30659](https://github.com/storybookjs/storybook/pull/30659), thanks @valentinpalkovic!
+- Svelte: Fix Vite crashing on virtual module imports - [#26838](https://github.com/storybookjs/storybook/pull/26838), thanks @rChaoz!
+- Svelte: Fix automatic argTypes inference coming up empty with `svelte2tsx@0.7.35` - [#30784](https://github.com/storybookjs/storybook/pull/30784), thanks @JReinhold!
+- Svelte: Pin svelte2tsx to solve argType regression - [#30783](https://github.com/storybookjs/storybook/pull/30783), thanks @kasperpeulen!
+- Test: Move `@storybook/test` into `storybook/test` - [#30742](https://github.com/storybookjs/storybook/pull/30742), thanks @valentinpalkovic!
+- Universal Store: Don't use `crypto.randomUUID` - [#30781](https://github.com/storybookjs/storybook/pull/30781), thanks @JReinhold!
+
 ## 9.0.0-alpha.2
 
 - AutoBlocker: Add major version upgrade blocker - [#30714](https://github.com/storybookjs/storybook/pull/30714), thanks @ndelangen!

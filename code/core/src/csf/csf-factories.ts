@@ -37,8 +37,14 @@ export function __definePreview<TRenderer extends Renderer>(
       const { addons, ...rest } = input;
       composed = normalizeProjectAnnotations<TRenderer>(
         // TODO: Remove coreAnnotations once csf-factories use prepareStory (as core annotations already come from it)
-        // @ts-expect-error TypeScript doesn't recognize the default export
-        composeConfigs([actionAnnotations(), testAnnotations(), ...(addons ?? []), rest])
+        composeConfigs([
+          // @ts-expect-error CJS fallback
+          (actionAnnotations.default ?? actionAnnotations)(),
+          // @ts-expect-error CJS fallback
+          (testAnnotations.default ?? testAnnotations)(),
+          ...(addons ?? []),
+          rest,
+        ])
       );
       return composed;
     },

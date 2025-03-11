@@ -7,8 +7,12 @@ import testAnnotations from 'storybook/test';
 import type { NormalizedProjectAnnotations } from '../types';
 
 export function getCoreAnnotations() {
-  //@ts-expect-error TypeScript doesn't recognize the default export
-  return [actionAnnotations(), testAnnotations()];
+  return [
+    // @ts-expect-error CJS fallback
+    (actionAnnotations.default ?? actionAnnotations)(),
+    // @ts-expect-error CJS fallback
+    (testAnnotations.default ?? testAnnotations)(),
+  ];
 }
 
 export function getComposedCoreAnnotations<

@@ -83,7 +83,6 @@
     "entries": [
       "./src/index.ts",
       "./src/transforms/csf-2-to-3.ts",
-      "./src/transforms/csf-hoist-story-annotations.js",
       "./src/transforms/find-implicit-spies.ts",
       "./src/transforms/upgrade-deprecated-types.ts",
       "./src/transforms/upgrade-hierarchy-separators.js"

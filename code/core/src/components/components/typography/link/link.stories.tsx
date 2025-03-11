@@ -3,7 +3,7 @@ import React from 'react';
 
 import { DiscordIcon, SidebarIcon } from '@storybook/icons';
 
-import { action } from 'core/src/actions/dist';
+import { action } from 'storybook/actions';
 
 import { Link } from './link';
 

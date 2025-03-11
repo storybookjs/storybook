@@ -6,7 +6,7 @@ import { styled } from 'storybook/internal/theming';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { action } from 'core/src/actions/dist';
+import { action } from 'storybook/actions';
 import { fn } from 'storybook/test';
 
 import MobileNavigationStoriesMeta from '../mobile/navigation/MobileNavigation.stories';

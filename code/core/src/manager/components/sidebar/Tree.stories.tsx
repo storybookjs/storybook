@@ -9,7 +9,7 @@ import {
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { action } from 'core/src/actions/dist';
+import { action } from 'storybook/actions';
 import { expect, fn, userEvent, within } from 'storybook/test';
 
 import { DEFAULT_REF_ID } from './Sidebar';

@@ -7,7 +7,7 @@ import { Addon_TypesEnum } from 'storybook/internal/types';
 
 import { BellIcon } from '@storybook/icons';
 
-import { action } from 'core/src/actions/dist';
+import { action } from 'storybook/actions';
 
 import { defaultShortcuts } from '../../settings/defaultShortcuts';
 import { AddonPanel } from './Panel';

@@ -5,7 +5,7 @@ import { ManagerContext } from 'storybook/internal/manager-api';
 
 import type { Meta, StoryFn } from '@storybook/react-vite';
 
-import { action } from 'core/src/actions/dist';
+import { action } from 'storybook/actions';
 
 import { IconSymbols } from './IconSymbols';
 import { Search } from './Search';

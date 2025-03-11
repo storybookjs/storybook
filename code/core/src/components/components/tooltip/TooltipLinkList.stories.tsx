@@ -4,7 +4,7 @@ import { LinkIcon, LinuxIcon } from '@storybook/icons';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { action } from 'core/src/actions/dist';
+import { action } from 'storybook/actions';
 
 import { TooltipLinkList } from './TooltipLinkList';
 import { WithTooltip } from './WithTooltip';

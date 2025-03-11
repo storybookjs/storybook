@@ -10,7 +10,7 @@ import {
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { action } from 'core/src/actions/dist';
+import { action } from 'storybook/actions';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 
 import NotificationItem from './NotificationItem';

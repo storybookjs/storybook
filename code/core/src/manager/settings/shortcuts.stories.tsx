@@ -2,7 +2,7 @@ import React from 'react';
 
 import type { Decorator } from '@storybook/react-vite';
 
-import { actions as makeActions } from 'core/src/actions/dist';
+import { actions as makeActions } from 'storybook/actions';
 
 import { defaultShortcuts } from './defaultShortcuts';
 import { ShortcutsScreen } from './shortcuts';

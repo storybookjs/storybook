@@ -567,7 +567,7 @@ describe('statusStore', () => {
 
     it('should return all statuses when no selector is provided', () => {
       // Arrange - create a status store
-      const { fullStatusStore, useStatusStore } = createStatusStore({
+      const { useStatusStore } = createStatusStore({
         universalStatusStore: new MockUniversalStore({
           ...UNIVERSAL_STATUS_STORE_OPTIONS,
           initialState,
@@ -585,7 +585,7 @@ describe('statusStore', () => {
 
     it('should filter statuses based on selector', () => {
       // Arrange - create a status store
-      const { fullStatusStore, useStatusStore } = createStatusStore({
+      const { useStatusStore } = createStatusStore({
         universalStatusStore: new MockUniversalStore({
           ...UNIVERSAL_STATUS_STORE_OPTIONS,
           initialState,

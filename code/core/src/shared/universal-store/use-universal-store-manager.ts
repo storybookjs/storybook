@@ -60,7 +60,19 @@ export const useUniversalStore: {
     [universalStore, selector]
   );
 
-  const getSnapshot = React.useCallback(() => snapshotRef.current, []);
+  const getSnapshot = React.useCallback(() => {
+    const currentState = universalStore.getState();
+    const selectedState = selector ? selector(currentState) : currentState;
+
+    // Compare with the previous snapshot to maintain referential equality
+    if (isEqual(selectedState, snapshotRef.current)) {
+      return snapshotRef.current;
+    }
+
+    // Update the snapshot reference when the selected state changes
+    snapshotRef.current = selectedState;
+    return snapshotRef.current;
+  }, [universalStore, selector]);
 
   const state = React.useSyncExternalStore(subscribe, getSnapshot);
 

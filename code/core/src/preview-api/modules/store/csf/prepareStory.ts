@@ -1,6 +1,5 @@
 /* eslint-disable no-underscore-dangle */
 import { type CleanupCallback, combineTags, includeConditionalArg } from 'storybook/internal/csf';
-import { getComposedCoreAnnotations } from 'storybook/internal/preview-api';
 import { NoRenderFunctionError } from 'storybook/internal/preview-errors';
 import type {
   Args,
@@ -22,6 +21,8 @@ import type {
 
 import { global } from '@storybook/global';
 import { global as globalThis } from '@storybook/global';
+
+import { getComposedCoreAnnotations } from 'storybook/preview-api';
 
 import { applyHooks } from '../../addons';
 import { mountDestructured } from '../../preview-web/render/mount-utils';

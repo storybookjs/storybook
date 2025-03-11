@@ -549,7 +549,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     // so we can cast one to the other easily enough
     setIndex: async (input) => {
       const { filteredIndex: oldFilteredHash, index: oldHash, filters } = store.getState();
-      const allStatuses = fullStatusStore.get();
+      const allStatuses = fullStatusStore.getAll();
       const newFilteredHash = transformStoryIndexToStoriesHash(input, {
         provider,
         docsOptions,
@@ -874,7 +874,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     }
   });
 
-  fullStatusStore.onStatusChange(async () => {
+  fullStatusStore.onAllStatusChange(async () => {
     // re-apply the filters when the statuses change
 
     const { internal_index: index } = store.getState();

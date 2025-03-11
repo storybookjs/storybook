@@ -46,9 +46,9 @@ export type StatusStoreEvent = {
 };
 
 export type StatusStore = {
-  get: () => StatusesByStoryIdAndTypeId;
+  getAll: () => StatusesByStoryIdAndTypeId;
   set: (statuses: Status[]) => void;
-  onStatusChange: (
+  onAllStatusChange: (
     listener: (
       statuses: StatusesByStoryIdAndTypeId,
       previousStatuses: StatusesByStoryIdAndTypeId
@@ -100,7 +100,7 @@ export function createStatusStore({
   useStatusStore?: UseStatusStore;
 } {
   const fullStatusStore: FullStatusStore = {
-    get() {
+    getAll() {
       return universalStatusStore.getState();
     },
     set(statuses) {
@@ -117,7 +117,7 @@ export function createStatusStore({
         return newState;
       });
     },
-    onStatusChange(
+    onAllStatusChange(
       listener: (
         statuses: StatusesByStoryIdAndTypeId,
         prevStatuses: StatusesByStoryIdAndTypeId
@@ -156,7 +156,7 @@ export function createStatusStore({
   };
 
   const getStatusStoreByTypeId = (typeId: StatusTypeId): StatusStoreByTypeId => ({
-    get: fullStatusStore.get,
+    getAll: fullStatusStore.getAll,
     set(statuses): void {
       universalStatusStore.setState((state) => {
         // Create a new state object to merge with the current state
@@ -192,7 +192,7 @@ export function createStatusStore({
         return newState;
       });
     },
-    onStatusChange: fullStatusStore.onStatusChange,
+    onAllStatusChange: fullStatusStore.onAllStatusChange,
     onSelect(listener) {
       return universalStatusStore.subscribe(StatusStoreEventType.SELECT, (event) => {
         if (event.payload.some((status) => status.typeId === typeId)) {

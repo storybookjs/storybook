@@ -74,7 +74,7 @@ describe('statusStore', () => {
         });
 
         // Act - get all statuses
-        const result = fullStatusStore.get();
+        const result = fullStatusStore.getAll();
 
         // Assert - all statuses should be returned
         expect(result).toEqual(initialState);
@@ -91,7 +91,7 @@ describe('statusStore', () => {
 
         // Act - set the status
         fullStatusStore.set([story1Type1Status]);
-        const result = fullStatusStore.get();
+        const result = fullStatusStore.getAll();
 
         // Assert - the status should be added
         expect(result).toEqual({
@@ -119,7 +119,7 @@ describe('statusStore', () => {
         // Act - set the initial status, then update it
         fullStatusStore.set([story1Type1Status]);
         fullStatusStore.set([updatedStatus]);
-        const result = fullStatusStore.get();
+        const result = fullStatusStore.getAll();
 
         // Assert - the status should be updated
         expect(result).toEqual({
@@ -158,7 +158,7 @@ describe('statusStore', () => {
 
         // Act - update one status and add a new one
         fullStatusStore.set([updatedStatus, story2Type1Status]);
-        const result = fullStatusStore.get();
+        const result = fullStatusStore.getAll();
 
         // Assert - the existing status should be updated and the new one added
         expect(result).toEqual({
@@ -181,7 +181,7 @@ describe('statusStore', () => {
           universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
           environment: 'manager',
         });
-        const unsubscribe = fullStatusStore.onStatusChange(mockSubscriber);
+        const unsubscribe = fullStatusStore.onAllStatusChange(mockSubscriber);
 
         // Act - set statuses to trigger the subscriber
         fullStatusStore.set([story1Type1Status]);
@@ -211,7 +211,7 @@ describe('statusStore', () => {
           }),
           environment: 'manager',
         });
-        const unsubscribe = fullStatusStore.onStatusChange(mockSubscriber);
+        const unsubscribe = fullStatusStore.onAllStatusChange(mockSubscriber);
 
         // Act - update the existing status
         const updatedStatus = {
@@ -246,7 +246,7 @@ describe('statusStore', () => {
           }),
           environment: 'manager',
         });
-        const unsubscribe = fullStatusStore.onStatusChange(mockSubscriber);
+        const unsubscribe = fullStatusStore.onAllStatusChange(mockSubscriber);
 
         // Act - unset the status
         fullStatusStore.unset([story1Type1Status.storyId]);
@@ -298,7 +298,7 @@ describe('statusStore', () => {
 
         // Act - unset without a predicate
         fullStatusStore.unset();
-        const result = fullStatusStore.get();
+        const result = fullStatusStore.getAll();
 
         // Assert - all statuses should be removed
         expect(result).toEqual({});
@@ -316,7 +316,7 @@ describe('statusStore', () => {
 
         // Act - unset with a storyIds filter
         fullStatusStore.unset(['story-1']);
-        const result = fullStatusStore.get();
+        const result = fullStatusStore.getAll();
 
         // Assert - only statuses with matching storyId should be removed
         expect(result).toEqual({
@@ -343,7 +343,7 @@ describe('statusStore', () => {
         type1StatusStore.set([story1Type1Status]);
 
         // Assert - the status should be added to the full store
-        const fullResult = fullStatusStore.get();
+        const fullResult = fullStatusStore.getAll();
         expect(fullResult).toEqual({
           'story-1': {
             'type-1': story1Type1Status,
@@ -351,7 +351,7 @@ describe('statusStore', () => {
         });
 
         // Assert - the status should be accessible from the type-specific store
-        const typeResult = type1StatusStore.get();
+        const typeResult = type1StatusStore.getAll();
         expect(typeResult).toEqual({
           'story-1': {
             'type-1': story1Type1Status,
@@ -378,7 +378,7 @@ describe('statusStore', () => {
         const type1StatusStore = getStatusStoreByTypeId('type-1');
         type1StatusStore.set([story1Type1Status]);
         type1StatusStore.set([updatedStatus]);
-        const result = type1StatusStore.get();
+        const result = type1StatusStore.getAll();
 
         // Assert - the status should be updated
         expect(result).toEqual({
@@ -413,7 +413,7 @@ describe('statusStore', () => {
         type1StatusStore.set([updatedStatus, story2Type1Status]);
 
         // Assert - all statuses should be in the full store
-        const result = type1StatusStore.get();
+        const result = type1StatusStore.getAll();
         expect(result).toEqual({
           'story-1': {
             'type-1': updatedStatus,
@@ -463,7 +463,7 @@ describe('statusStore', () => {
         type1StatusStore.unset();
 
         // Assert - statuses with other typeIds should remain
-        const fullResult = fullStatusStore.get();
+        const fullResult = fullStatusStore.getAll();
         expect(fullResult).toEqual({
           'story-1': {
             'type-2': story1Type2Status,
@@ -487,7 +487,7 @@ describe('statusStore', () => {
         // Act - get a status store for type-1 and unset with a storyIds filter
         const type1StatusStore = getStatusStoreByTypeId('type-1');
         type1StatusStore.unset(['story-1']);
-        const result = type1StatusStore.get();
+        const result = type1StatusStore.getAll();
 
         // Assert - only statuses with typeId 'type-1' and storyId 'story-1' should be removed
         expect(result).toEqual({

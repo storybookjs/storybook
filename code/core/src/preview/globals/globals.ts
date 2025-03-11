@@ -20,10 +20,6 @@ export const globalsNameReferenceMap = {
 
   'storybook/preview-api': '__STORYBOOK_MODULE_PREVIEW_API__',
 
-  'storybook/test': '__STORYBOOK_MODULE_TEST__',
-
-  'storybook/actions': '__STORYBOOK_MODULE_ACTIONS__',
-
   'storybook/internal/types': '__STORYBOOK_MODULE_TYPES__',
 } as const;
 

@@ -34,7 +34,7 @@ export const getEntries = (cwd: string) => {
     define('src/common/index.ts', ['node'], true),
     define('src/builder-manager/index.ts', ['node'], true),
     define('src/telemetry/index.ts', ['node'], true),
-    define('src/preview-api/index.ts', ['browser', 'node'], true, [], [], [], true),
+    define('src/preview-api/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
     define('src/manager-api/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
     define('src/router/index.ts', ['browser', 'node'], true, ['react']),
     define(

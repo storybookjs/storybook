@@ -153,7 +153,7 @@ const Actions = styled.div({
 
 const FocusContainer = styled.div({ outline: 0 });
 
-export const Search = React.memo<{
+export type SearchProps = {
   children: SearchChildrenFn;
   dataset: CombinedDataset;
   enableShortcuts?: boolean;
@@ -161,7 +161,9 @@ export const Search = React.memo<{
   initialQuery?: string;
   searchBarContent?: ReactNode;
   searchFieldContent?: ReactNode;
-}>(function Search({
+};
+
+export const Search = React.memo<SearchProps>(function Search({
   children,
   dataset,
   enableShortcuts = true,

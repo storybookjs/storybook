@@ -9,6 +9,7 @@ import { action } from '@storybook/addon-actions';
 
 import { IconSymbols } from './IconSymbols';
 import { Search } from './Search';
+import type { SearchProps } from './Search';
 import { SearchResults } from './SearchResults';
 import { noResults } from './SearchResults.stories';
 import { DEFAULT_REF_ID } from './Sidebar';
@@ -16,7 +17,7 @@ import { index } from './mockdata.large';
 import type { Selection } from './types';
 
 const refId = DEFAULT_REF_ID;
-const data = { [refId]: { id: refId, url: '/', index, previewInitialized: true } };
+const data = { [refId]: { id: refId, url: '/', index, previewInitialized: true, allStatuses: {} } };
 const dataset = { hash: data, entries: Object.entries(data) };
 const getLastViewed = () =>
   Object.values(index)
@@ -39,9 +40,8 @@ const meta = {
 } satisfies Meta<typeof Search>;
 export default meta;
 
-const baseProps = {
+const baseProps: Omit<SearchProps, 'children'> = {
   dataset,
-  clearLastViewed: action('clear'),
   getLastViewed: () => [] as Selection[],
 };
 

@@ -7,6 +7,7 @@ import * as TYPES from 'storybook/internal/types';
 import * as GLOBAL from '@storybook/global';
 
 import * as PREVIEW_API from 'storybook/preview-api';
+import * as TEST from 'storybook/test';
 
 import type { globalsNameReferenceMap } from './globals';
 
@@ -23,6 +24,8 @@ export const globalsNameValueMap: Required<Record<keyof typeof globalsNameRefere
   'storybook/internal/preview-errors': CORE_EVENTS_PREVIEW_ERRORS,
 
   'storybook/preview-api': PREVIEW_API,
+
+  'storybook/test': TEST,
 
   'storybook/internal/types': TYPES,
 };

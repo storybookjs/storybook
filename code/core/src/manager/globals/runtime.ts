@@ -13,6 +13,7 @@ import * as TYPES from 'storybook/internal/types';
 import * as ICONS from '@storybook/icons';
 
 import * as MANAGER_API from 'storybook/manager-api';
+import * as TEST from 'storybook/test';
 import * as THEMING from 'storybook/theming';
 import * as THEMINGCREATE from 'storybook/theming/create';
 
@@ -30,7 +31,6 @@ export const globalsNameValueMap: Required<Record<keyof typeof globalsNameRefere
   'storybook/manager-api': MANAGER_API,
 
   'storybook/internal/router': ROUTER,
-  '@storybook/router': ROUTER,
 
   'storybook/theming': THEMING,
   'storybook/theming/create': THEMINGCREATE,
@@ -41,6 +41,8 @@ export const globalsNameValueMap: Required<Record<keyof typeof globalsNameRefere
   'storybook/internal/core-events': EVENTS,
 
   'storybook/internal/types': TYPES,
+
+  'storybook/test': TEST,
 
   'storybook/internal/manager-errors': EVENTS_MANAGER_ERRORS,
 

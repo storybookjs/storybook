@@ -67,7 +67,7 @@ export function action(name: string, options: ActionOptions = {}): HandlerFuncti
       const preview =
         '__STORYBOOK_PREVIEW__' in global
           ? // eslint-disable-next-line no-underscore-dangle
-            (global.__STORYBOOK_PREVIEW__ as PreviewWeb<Renderer>)
+            (global.__STORYBOOK_PREVIEW__ as unknown as PreviewWeb<Renderer>)
           : undefined;
       const storyRenderer = preview?.storyRenders.find(
         (render) => render.phase === 'playing' || render.phase === 'rendering'

@@ -7809,7 +7809,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@testing-library/user-event@npm:14.6.1, @testing-library/user-event@npm:^14.4.0, @testing-library/user-event@npm:^14.6.0, @testing-library/user-event@npm:^14.6.1":
+"@testing-library/user-event@npm:14.6.1, @testing-library/user-event@npm:^14.4.0, @testing-library/user-event@npm:^14.6.1":
   version: 14.6.1
   resolution: "@testing-library/user-event@npm:14.6.1"
   peerDependencies:

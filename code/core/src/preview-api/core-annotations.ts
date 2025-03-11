@@ -1,9 +1,9 @@
 import { composeConfigs } from 'storybook/internal/preview-api';
+import type { Renderer } from 'storybook/internal/types';
 
 import actionAnnotations from 'storybook/actions';
 import testAnnotations from 'storybook/test';
 
-import type { Renderer } from '../csf';
 import type { NormalizedProjectAnnotations } from '../types';
 
 export function getCoreAnnotations() {

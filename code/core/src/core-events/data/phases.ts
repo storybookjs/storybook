@@ -1,4 +1,4 @@
-import type { Report } from '../../preview-api';
+import type { Report } from 'storybook/internal/preview-api';
 
 export interface StoryFinishedPayload {
   storyId: string;

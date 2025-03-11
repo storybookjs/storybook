@@ -9,6 +9,7 @@ import { viteFinal as reactViteFinal } from '@storybook/react-vite/preset';
 import { dirname, join } from 'path';
 import vitePluginStorybookNextjs from 'vite-plugin-storybook-nextjs';
 
+import transformRSCPlugin from './rsc/vite-plugin-transform-rsc';
 import type { FrameworkOptions } from './types';
 
 export const core: PresetProperty<'core'> = async (config, options) => {
@@ -43,6 +44,16 @@ export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, option
 
   return {
     ...reactConfig,
-    plugins: [...(reactConfig?.plugins ?? []), vitePluginStorybookNextjs({ dir: nextDir })],
+    resolve: {
+      ...reactConfig.resolve,
+      alias: {
+        memoizee: require.resolve('memoizee'),
+      },
+    },
+    plugins: [
+      transformRSCPlugin(),
+      ...(reactConfig?.plugins ?? []),
+      vitePluginStorybookNextjs({ dir: nextDir }),
+    ],
   };
 };

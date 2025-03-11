@@ -3,7 +3,7 @@ import React from 'react';
 
 import type { Meta, StoryObj } from '@storybook/experimental-nextjs-vite';
 
-import { Nested, RSC } from './RSC';
+import { Nested, RSC, ServerComponentWithManyAwaits, ServerComponentWithOneAwait } from './RSC';
 
 export default {
   component: RSC,
@@ -43,4 +43,12 @@ export const NestedRSC: Story = {
       <RSC {...args} />
     </Nested>
   ),
+};
+
+export const RSCWithOneAwait: Story = {
+  render: () => <ServerComponentWithOneAwait />,
+};
+
+export const RSCWithManyAwaits: Story = {
+  render: () => <ServerComponentWithManyAwaits />,
 };

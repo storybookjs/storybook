@@ -9,8 +9,8 @@ export const getEntries = (cwd: string) => {
     define('src/node-logger/index.ts', ['node'], true),
     define('src/client-logger/index.ts', ['browser', 'node'], true),
 
-    define('src/theming/index.ts', ['browser', 'node'], true, ['react']),
-    define('src/theming/create.ts', ['browser', 'node'], true, ['react']),
+    define('src/theming/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
+    define('src/theming/create.ts', ['browser', 'node'], true, ['react'], [], [], true),
 
     define('src/core-server/index.ts', ['node'], true),
     define('src/core-server/presets/common-preset.ts', ['node'], false),
@@ -29,8 +29,8 @@ export const getEntries = (cwd: string) => {
     define('src/common/index.ts', ['node'], true),
     define('src/builder-manager/index.ts', ['node'], true),
     define('src/telemetry/index.ts', ['node'], true),
-    define('src/preview-api/index.ts', ['browser', 'node'], true),
-    define('src/manager-api/index.ts', ['browser', 'node'], true, ['react']),
+    define('src/preview-api/index.ts', ['browser', 'node'], true, [], [], [], true),
+    define('src/manager-api/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
     define('src/router/index.ts', ['browser', 'node'], true, ['react']),
     define(
       'src/components/index.ts',

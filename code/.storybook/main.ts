@@ -144,7 +144,7 @@ const config = defineMain({
           ...(configType === 'DEVELOPMENT'
             ? {
                 'storybook/internal/components': componentsPath,
-                'storybook/internal/manager-api': managerApiPath,
+                'storybook/manager-api': managerApiPath,
                 'sb-original/image-context': imageContextPath,
               }
             : {}),

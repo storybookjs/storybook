@@ -6,6 +6,10 @@ import * as TYPES from 'storybook/internal/types';
 
 import * as GLOBAL from '@storybook/global';
 
+import * as ACTIONS from 'storybook/actions';
+import * as ACTIONS_DECORATOR from 'storybook/actions/decorator';
+import * as ACTIONS_MANAGER from 'storybook/actions/manager';
+import * as ACTIONS_PREVIEW from 'storybook/actions/preview';
 import * as PREVIEW_API from 'storybook/preview-api';
 import * as TEST from 'storybook/test';
 
@@ -26,6 +30,11 @@ export const globalsNameValueMap: Required<Record<keyof typeof globalsNameRefere
   'storybook/preview-api': PREVIEW_API,
 
   'storybook/test': TEST,
+
+  'storybook/actions': ACTIONS,
+  'storybook/actions/preview': ACTIONS_PREVIEW,
+  'storybook/actions/manager': ACTIONS_MANAGER,
+  'storybook/actions/decorator': ACTIONS_DECORATOR,
 
   'storybook/internal/types': TYPES,
 };

@@ -13,6 +13,11 @@ export const globalsNameReferenceMap = {
 
   'storybook/test': '__STORYBOOK_MODULE_TEST__',
 
+  'storybook/actions': '__STORYBOOK_MODULE_ACTIONS__',
+  'storybook/actions/preview': '__STORYBOOK_MODULE_ACTIONS_PREVIEW__',
+  'storybook/actions/manager': '__STORYBOOK_MODULE_ACTIONS_MANAGER__',
+  'storybook/actions/decorator': '__STORYBOOK_MODULE_ACTIONS_DECORATOR__',
+
   'storybook/preview-api': '__STORYBOOK_MODULE_PREVIEW_API__',
 
   'storybook/internal/types': '__STORYBOOK_MODULE_TYPES__',

@@ -20,6 +20,11 @@ export const globalsNameReferenceMap = {
 
   'storybook/test': '__STORYBOOK_TEST__',
 
+  'storybook/actions': '__STORYBOOK_ACTIONS__',
+  'storybook/actions/preview': '__STORYBOOK_ACTIONS_PREVIEW__',
+  'storybook/actions/manager': '__STORYBOOK_ACTIONS_MANAGER__',
+  'storybook/actions/decorator': '__STORYBOOK_ACTIONS_DECORATOR__',
+
   'storybook/theming': '__STORYBOOK_THEMING__',
   'storybook/theming/create': '__STORYBOOK_THEMING_CREATE__',
 

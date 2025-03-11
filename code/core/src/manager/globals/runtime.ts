@@ -12,6 +12,10 @@ import * as TYPES from 'storybook/internal/types';
 
 import * as ICONS from '@storybook/icons';
 
+import * as ACTIONS from 'storybook/actions';
+import * as ACTIONS_DECORATOR from 'storybook/actions/decorator';
+import * as ACTIONS_MANAGER from 'storybook/actions/manager';
+import * as ACTIONS_PREVIEW from 'storybook/actions/preview';
 import * as MANAGER_API from 'storybook/manager-api';
 import * as TEST from 'storybook/test';
 import * as THEMING from 'storybook/theming';
@@ -43,6 +47,11 @@ export const globalsNameValueMap: Required<Record<keyof typeof globalsNameRefere
   'storybook/internal/types': TYPES,
 
   'storybook/test': TEST,
+
+  'storybook/actions': ACTIONS,
+  'storybook/actions/preview': ACTIONS_PREVIEW,
+  'storybook/actions/manager': ACTIONS_MANAGER,
+  'storybook/actions/decorator': ACTIONS_DECORATOR,
 
   'storybook/internal/manager-errors': EVENTS_MANAGER_ERRORS,
 

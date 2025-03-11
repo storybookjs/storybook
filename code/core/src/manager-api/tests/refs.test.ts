@@ -1242,6 +1242,7 @@ describe('Refs API', () => {
         provider: provider as any,
         docsOptions: {},
         filters: {},
+        allStatuses: {},
       };
       const initialState: Partial<State> = {
         refs: {

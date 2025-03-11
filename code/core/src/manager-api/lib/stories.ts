@@ -14,6 +14,7 @@ import type {
   Parameters,
   SetStoriesPayload,
   SetStoriesStoryData,
+  StatusesByStoryIdAndTypeId,
   StoryId,
   StoryIndexV2,
   StoryIndexV3,
@@ -26,7 +27,6 @@ import memoize from 'memoizerific';
 import { dedent } from 'ts-dedent';
 
 import { type API, type State, combineParameters } from '../root';
-import { fullStatusStore } from '../stores/status';
 import intersect from './intersect';
 import merge from './merge';
 
@@ -167,11 +167,12 @@ type ToStoriesHashOptions = {
   provider: API_Provider<API>;
   docsOptions: DocsOptions;
   filters: State['filters'];
+  allStatuses: StatusesByStoryIdAndTypeId;
 };
 
 export const transformStoryIndexToStoriesHash = (
   input: API_PreparedStoryIndex | StoryIndexV2 | StoryIndexV3,
-  { provider, docsOptions, filters }: ToStoriesHashOptions
+  { provider, docsOptions, filters, allStatuses }: ToStoriesHashOptions
 ): API_IndexHash | any => {
   if (!input.v) {
     throw new Error('Composition: Missing stories.json version');
@@ -182,8 +183,6 @@ export const transformStoryIndexToStoriesHash = (
   index = index.v === 3 ? transformStoryIndexV3toV4(index as any) : index;
   index = index.v === 4 ? transformStoryIndexV4toV5(index as any) : index;
   index = index as API_PreparedStoryIndex;
-
-  const allStatuses = fullStatusStore.get();
 
   const entryValues = Object.values(index.entries).filter((entry: any) => {
     let result = true;

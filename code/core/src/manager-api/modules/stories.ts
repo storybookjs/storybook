@@ -549,15 +549,18 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     // so we can cast one to the other easily enough
     setIndex: async (input) => {
       const { filteredIndex: oldFilteredHash, index: oldHash, filters } = store.getState();
+      const allStatuses = fullStatusStore.get();
       const newFilteredHash = transformStoryIndexToStoriesHash(input, {
         provider,
         docsOptions,
         filters,
+        allStatuses,
       });
       const newHash = transformStoryIndexToStoriesHash(input, {
         provider,
         docsOptions,
         filters: {},
+        allStatuses,
       });
 
       await store.setState({
@@ -869,6 +872,23 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         },
       });
     }
+  });
+
+  fullStatusStore.onStatusChange(async () => {
+    // re-apply the filters when the statuses change
+
+    const { internal_index: index } = store.getState();
+
+    if (!index) {
+      return;
+    }
+    // apply new filters by setting the index again
+    await api.setIndex(index);
+
+    const refs = await fullAPI.getRefs();
+    Object.entries(refs).forEach(([refId, { internal_index, ...ref }]) => {
+      fullAPI.setRef(refId, { ...ref, storyIndex: internal_index }, true);
+    });
   });
 
   const config = provider.getConfig();

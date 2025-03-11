@@ -158,7 +158,7 @@ describe('Helpers', () => {
           filePath === normalizePath('@storybook/react/template/cli')
       );
       await helpers.copyTemplateFiles({
-        renderer: 'react',
+        templateLocation: 'react',
         language,
         packageManager: packageManagerMock,
         commonAssetsDir: normalizePath('create-storybook/rendererAssets/common'),
@@ -182,7 +182,7 @@ describe('Helpers', () => {
       return filePath === normalizePath('@storybook/react/template/cli') || filePath === './src';
     });
     await helpers.copyTemplateFiles({
-      renderer: 'react',
+      templateLocation: 'react',
       language: SupportedLanguage.JAVASCRIPT,
       packageManager: packageManagerMock,
       features: ['dev', 'docs', 'test'],
@@ -195,7 +195,7 @@ describe('Helpers', () => {
       return filePath === normalizePath('@storybook/react/template/cli');
     });
     await helpers.copyTemplateFiles({
-      renderer: 'react',
+      templateLocation: 'react',
       language: SupportedLanguage.JAVASCRIPT,
       packageManager: packageManagerMock,
       features: ['dev', 'docs', 'test'],
@@ -208,7 +208,7 @@ describe('Helpers', () => {
     const expectedMessage = `Unsupported renderer: ${renderer}`;
     await expect(
       helpers.copyTemplateFiles({
-        renderer,
+        templateLocation: renderer,
         language: SupportedLanguage.JAVASCRIPT,
         packageManager: packageManagerMock,
         features: ['dev', 'docs', 'test'],

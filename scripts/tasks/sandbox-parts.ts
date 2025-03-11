@@ -756,12 +756,6 @@ export const addStories: Task['run'] = async (
       disableDocs,
     });
 
-    await linkPackageStories(await workspacePath('test package', '@storybook/test'), {
-      mainConfig,
-      cwd,
-      disableDocs,
-    });
-
     await linkPackageStories(await workspacePath('addon test package', '@storybook/addon-test'), {
       mainConfig,
       cwd,

@@ -153,7 +153,6 @@
     "@storybook/source-loader": "workspace:*",
     "@storybook/svelte": "workspace:*",
     "@storybook/svelte-webpack5": "workspace:*",
-    "@storybook/test": "workspace:*",
     "@storybook/testing-library": "next",
     "@storybook/vue3": "workspace:*",
     "@storybook/vue3-vite": "workspace:*",
@@ -162,8 +161,8 @@
     "@storybook/web-components-vite": "workspace:*",
     "@storybook/web-components-webpack5": "workspace:*",
     "@testing-library/dom": "^10.4.0",
-    "@testing-library/jest-dom": "^6.5.0",
-    "@testing-library/react": "^16.0.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.2.0",
     "@testing-library/user-event": "^14.5.2",
     "@trivago/prettier-plugin-sort-imports": "^4.3.0",
     "@types/mock-require": "^2.0.3",
@@ -176,9 +175,9 @@
     "@typescript-eslint/parser": "7.18.0",
     "@vitejs/plugin-react": "^4.3.2",
     "@vitejs/plugin-vue": "^4.4.0",
-    "@vitest/browser": "^3.0.2",
-    "@vitest/coverage-istanbul": "^3.0.2",
-    "@vitest/coverage-v8": "^3.0.2",
+    "@vitest/browser": "^3.0.8",
+    "@vitest/coverage-istanbul": "^3.0.8",
+    "@vitest/coverage-v8": "^3.0.8",
     "create-storybook": "workspace:*",
     "cross-env": "^7.0.3",
     "danger": "^12.3.3",
@@ -192,7 +191,7 @@
     "eslint-plugin-import": "^2.29.1",
     "eslint-plugin-local-rules": "portal:../scripts/eslint-plugin-local-rules",
     "eslint-plugin-playwright": "^1.6.2",
-    "eslint-plugin-storybook": "0.11.3--canary.187.1af857a.0",
+    "eslint-plugin-storybook": "0.11.4",
     "github-release-from-changelog": "^2.1.1",
     "glob": "^10.0.0",
     "happy-dom": "^14.12.0",
@@ -225,7 +224,7 @@
     "util": "^0.12.4",
     "vite": "^4.0.0",
     "vite-plugin-inspect": "^0.8.5",
-    "vitest": "^3.0.2",
+    "vitest": "^3.0.8",
     "wait-on": "^7.0.1"
   },
   "dependenciesMeta": {
@@ -298,5 +297,6 @@
         "Dependency Upgrades"
       ]
     ]
-  }
+  },
+  "deferredNextVersion": "9.0.0-alpha.3"
 }

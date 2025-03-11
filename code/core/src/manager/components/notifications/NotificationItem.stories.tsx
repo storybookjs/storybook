@@ -7,10 +7,12 @@ import {
   BookIcon as BookIconIcon,
   FaceHappyIcon,
 } from '@storybook/icons';
-import type { Meta, StoryObj } from '@storybook/react';
-import { expect, fn, userEvent, waitFor, within } from '@storybook/test';
+
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { action } from '@storybook/addon-actions';
+
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 
 import NotificationItem from './NotificationItem';
 

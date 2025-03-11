@@ -193,7 +193,7 @@ describe('transformImportFiles', () => {
     expect(errors).toHaveLength(0);
     expect(writeFile).toHaveBeenCalledWith(
       sourceFiles[0],
-      expect.stringContaining(`from 'storybook/internal/theming/create'`)
+      expect.stringContaining(`from 'storybook/theming/create'`)
     );
   });
 

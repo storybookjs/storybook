@@ -11,7 +11,7 @@ export const globalsNameReferenceMap = {
 
   'storybook/internal/preview-errors': '__STORYBOOK_MODULE_CORE_EVENTS_PREVIEW_ERRORS__',
 
-  'storybook/internal/preview-api': '__STORYBOOK_MODULE_PREVIEW_API__',
+  'storybook/preview-api': '__STORYBOOK_MODULE_PREVIEW_API__',
 
   'storybook/internal/types': '__STORYBOOK_MODULE_TYPES__',
 } as const;

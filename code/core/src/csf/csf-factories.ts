@@ -1,5 +1,4 @@
 /* eslint-disable no-underscore-dangle,@typescript-eslint/naming-convention */
-import { composeConfigs, normalizeProjectAnnotations } from 'storybook/internal/preview-api';
 import type {
   Args,
   ComponentAnnotations,
@@ -10,6 +9,8 @@ import type {
   Renderer,
   StoryAnnotations,
 } from 'storybook/internal/types';
+
+import { composeConfigs, normalizeProjectAnnotations } from 'storybook/preview-api';
 
 export interface Preview<TRenderer extends Renderer = Renderer> {
   readonly _tag: 'Preview';

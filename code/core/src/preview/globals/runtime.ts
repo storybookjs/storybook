@@ -1,11 +1,12 @@
 import * as CHANNELS from 'storybook/internal/channels';
 import * as CLIENT_LOGGER from 'storybook/internal/client-logger';
 import * as CORE_EVENTS from 'storybook/internal/core-events';
-import * as PREVIEW_API from 'storybook/internal/preview-api';
 import * as CORE_EVENTS_PREVIEW_ERRORS from 'storybook/internal/preview-errors';
 import * as TYPES from 'storybook/internal/types';
 
 import * as GLOBAL from '@storybook/global';
+
+import * as PREVIEW_API from 'storybook/preview-api';
 
 import type { globalsNameReferenceMap } from './globals';
 
@@ -21,7 +22,7 @@ export const globalsNameValueMap: Required<Record<keyof typeof globalsNameRefere
 
   'storybook/internal/preview-errors': CORE_EVENTS_PREVIEW_ERRORS,
 
-  'storybook/internal/preview-api': PREVIEW_API,
+  'storybook/preview-api': PREVIEW_API,
 
   'storybook/internal/types': TYPES,
 };

@@ -1,8 +1,8 @@
 import React from 'react';
 
-import { styled } from 'storybook/internal/theming';
-
 import { action } from '@storybook/addon-actions';
+
+import { styled } from 'storybook/theming';
 
 import { Field as FieldComponent } from './field/field';
 import * as InputComponents from './input/input';

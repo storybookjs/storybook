@@ -373,7 +373,7 @@ export default {
     'resetComponents',
     'withReset',
   ],
-  'storybook/internal/manager-api': [
+  'storybook/manager-api': [
     'ActiveTabs',
     'Consumer',
     'ManagerContext',
@@ -442,7 +442,7 @@ export default {
     'stringifyQuery',
     'useNavigate',
   ],
-  'storybook/internal/theming': [
+  'storybook/theming': [
     'CacheProvider',
     'ClassNames',
     'Global',
@@ -468,7 +468,7 @@ export default {
     'useTheme',
     'withTheme',
   ],
-  'storybook/internal/theming/create': ['create', 'themes'],
+  'storybook/theming/create': ['create', 'themes'],
   'storybook/internal/channels': [
     'Channel',
     'HEARTBEAT_INTERVAL',

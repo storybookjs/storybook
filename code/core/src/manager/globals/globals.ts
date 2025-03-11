@@ -5,7 +5,7 @@ export const globalsNameReferenceMap = {
   'react-dom/client': '__REACT_DOM_CLIENT__',
   '@storybook/icons': '__STORYBOOK_ICONS__',
 
-  'storybook/internal/manager-api': '__STORYBOOK_API__',
+  'storybook/manager-api': '__STORYBOOK_API__',
 
   'storybook/internal/components': '__STORYBOOK_COMPONENTS__',
 
@@ -19,8 +19,8 @@ export const globalsNameReferenceMap = {
   'storybook/internal/router': '__STORYBOOK_ROUTER__',
   '@storybook/router': '__STORYBOOK_ROUTER__',
 
-  'storybook/internal/theming': '__STORYBOOK_THEMING__',
-  'storybook/internal/theming/create': '__STORYBOOK_THEMING_CREATE__',
+  'storybook/theming': '__STORYBOOK_THEMING__',
+  'storybook/theming/create': '__STORYBOOK_THEMING_CREATE__',
 
   'storybook/internal/client-logger': '__STORYBOOK_CLIENT_LOGGER__',
 

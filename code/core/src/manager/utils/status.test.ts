@@ -1,17 +1,19 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
 
+import { StatusValue } from 'storybook/internal/types';
+
 import { mockDataset } from '../components/sidebar/mockdata';
-import { getGroupStatus, getHighestStatus } from './status';
+import { getGroupStatus, getMostCriticalStatusValue } from './status';
 
 describe('getHighestStatus', () => {
   it('default value', () => {
-    expect(getHighestStatus([])).toBe('unknown');
+    expect(getMostCriticalStatusValue([])).toBe('unknown');
   });
   it('should return the highest status', () => {
-    expect(getHighestStatus(['success', 'error', 'warn', 'pending'])).toBe('error');
-    expect(getHighestStatus(['error', 'error', 'warn', 'pending'])).toBe('error');
-    expect(getHighestStatus(['warn', 'pending'])).toBe('warn');
+    expect(getMostCriticalStatusValue(['success', 'error', 'warn', 'pending'])).toBe('error');
+    expect(getMostCriticalStatusValue(['error', 'error', 'warn', 'pending'])).toBe('error');
+    expect(getMostCriticalStatusValue(['warn', 'pending'])).toBe('warn');
   });
 });
 
@@ -22,7 +24,15 @@ describe('getGroupStatus', () => {
   it('should return a color', () => {
     expect(
       getGroupStatus(mockDataset.withRoot, {
-        'group-1--child-b1': { a: { status: 'warn', description: '', title: '' } },
+        'group-1--child-b1': {
+          a: {
+            storyId: 'group-1--child-b1',
+            typeId: 'a',
+            value: StatusValue.WARN,
+            description: '',
+            title: '',
+          },
+        },
       })
     ).toMatchInlineSnapshot(`
       {
@@ -37,8 +47,20 @@ describe('getGroupStatus', () => {
     expect(
       getGroupStatus(mockDataset.withRoot, {
         'group-1--child-b1': {
-          a: { status: 'warn', description: '', title: '' },
-          b: { status: 'error', description: '', title: '' },
+          a: {
+            storyId: 'group-1--child-b1',
+            typeId: 'a',
+            value: StatusValue.WARN,
+            description: '',
+            title: '',
+          },
+          b: {
+            storyId: 'group-1--child-b1',
+            typeId: 'b',
+            value: StatusValue.ERROR,
+            description: '',
+            title: '',
+          },
         },
       })
     ).toMatchInlineSnapshot(`

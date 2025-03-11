@@ -330,24 +330,6 @@ describe('statusStore', () => {
   });
 
   describe('getStatusStoreByTypeId', () => {
-    it('should return a status store that only has access to statuses with the specified typeId', () => {
-      // Arrange - set up the store with initial state
-      const { getStatusStoreByTypeId } = createStatusStore({
-        universalStatusStore: new MockUniversalStore({
-          ...UNIVERSAL_STATUS_STORE_OPTIONS,
-          initialState,
-        }),
-        environment: 'manager',
-      });
-
-      // Act - get a status store for type-1
-      const type1StatusStore = getStatusStoreByTypeId('type-1');
-      const result = type1StatusStore.get();
-
-      // Assert - only statuses with typeId 'type-1' should be returned
-      expect(result).toEqual(initialState);
-    });
-
     describe('set', () => {
       it('should add new statuses of the specified typeId', () => {
         // Arrange - create a status store

@@ -612,6 +612,7 @@ export default {
   'storybook/internal/manager-errors': [
     'Category',
     'ProviderDoesNotExtendBaseProviderError',
+    'StatusTypeIdMismatchError',
     'UncaughtManagerError',
   ],
   'storybook/internal/client-logger': ['deprecate', 'logger', 'once', 'pretty'],

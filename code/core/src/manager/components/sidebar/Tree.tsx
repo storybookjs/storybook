@@ -35,7 +35,7 @@ import { darken, lighten } from 'polished';
 
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList';
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
-import { getGroupStatus, getHighestStatus, statusMapping } from '../../utils/status';
+import { getGroupStatus, getMostCriticalStatusValue, statusMapping } from '../../utils/status';
 import {
   createId,
   getAncestorIds,
@@ -298,7 +298,9 @@ const Node = React.memo<NodeProps>(function Node({
   if (item.type === 'story' || item.type === 'docs') {
     const LeafNode = item.type === 'docs' ? DocumentNode : StoryNode;
 
-    const statusValue = getHighestStatus(Object.values(statuses || {}).map((s) => s.value));
+    const statusValue = getMostCriticalStatusValue(
+      Object.values(statuses || {}).map((s) => s.value)
+    );
     const [icon, textColor] = statusMapping[statusValue];
 
     return (
@@ -620,7 +622,7 @@ export const Tree = React.memo<{
   });
 
   const groupStatus = useMemo(
-    () => getGroupStatus(collapsedData, allStatuses),
+    () => getGroupStatus(collapsedData, allStatuses ?? {}),
     [collapsedData, allStatuses]
   );
 

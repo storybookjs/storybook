@@ -58,7 +58,7 @@ export const statusMapping: Record<StatusValueType, [ReactElement | null, string
   ],
 };
 
-export const getHighestStatus = (statusValues: StatusValueType[]): StatusValueType => {
+export const getMostCriticalStatusValue = (statusValues: StatusValueType[]): StatusValueType => {
   return statusPriority.reduce(
     (acc, value) => (statusValues.includes(value) ? value : acc),
     StatusValue.UNKNOWN
@@ -69,7 +69,7 @@ export function getGroupStatus(
   collapsedData: {
     [x: string]: Partial<API_HashEntry>;
   },
-  allStatuses?: StatusesByStoryIdAndTypeId
+  allStatuses: StatusesByStoryIdAndTypeId
 ): Record<string, StatusValueType> {
   return Object.values(collapsedData).reduce<Record<string, StatusValueType>>((acc, item) => {
     if (item.type === 'group' || item.type === 'component') {
@@ -78,9 +78,9 @@ export function getGroupStatus(
         .map((id) => collapsedData[id])
         .filter((i) => i.type === 'story');
 
-      const combinedStatus = getHighestStatus(
+      const combinedStatus = getMostCriticalStatusValue(
         // @ts-expect-error (non strict)
-        leafs.flatMap((story) => Object.values(allStatuses?.[story.id] || {})).map((s) => s.value)
+        leafs.flatMap((story) => Object.values(allStatuses[story.id] || {})).map((s) => s.value)
       );
 
       if (combinedStatus) {

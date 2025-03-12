@@ -1,4 +1,5 @@
 /* eslint-disable no-underscore-dangle, @typescript-eslint/naming-convention */
+/// <reference path="../typings.d.ts" />
 
 declare var CONFIG_TYPE: 'DEVELOPMENT' | 'PRODUCTION';
 declare var FEATURES: import('./types/modules/core-common').StorybookConfigRaw['features'];
@@ -19,8 +20,8 @@ declare var __STORYBOOK_ADDONS_MANAGER: any;
 declare var __STORYBOOK_ADDONS_PREVIEW: any;
 declare var __STORYBOOK_PREVIEW__: import('./preview-api/modules/preview-web/PreviewWeb').PreviewWeb<any>;
 declare var __STORYBOOK_STORY_STORE__: any;
-declare var ___STORYBOOK_TEST__: any;
-declare var ___STORYBOOK_ACTIONS__: any;
+declare var __STORYBOOK_TEST__: any;
+declare var __STORYBOOK_ACTIONS__: any;
 
 declare module '@aw-web-design/x-default-browser';
 declare module 'ansi-to-html';

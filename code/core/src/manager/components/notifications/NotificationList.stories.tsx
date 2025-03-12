@@ -2,7 +2,7 @@ import React from 'react';
 
 import { LocationProvider } from 'storybook/internal/router';
 
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import * as itemStories from './NotificationItem.stories';
 import { NotificationList } from './NotificationList';

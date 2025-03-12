@@ -79,4 +79,4 @@ interface ReactMeta<
   ): ReactStory;
 }
 
-interface ReactStory extends Story<ReactRenderer> {}
+export interface ReactStory extends Story<ReactRenderer> {}

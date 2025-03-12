@@ -5,8 +5,9 @@ import { ManagerContext, addons } from 'storybook/internal/manager-api';
 import { styled } from 'storybook/internal/theming';
 import { Addon_TypesEnum } from 'storybook/internal/types';
 
-import type { Meta, StoryObj } from '@storybook/react';
-import { expect, fn, userEvent } from '@storybook/test';
+import type { Meta, StoryObj } from '@storybook/react-vite';
+
+import { expect, fn, userEvent } from 'storybook/test';
 
 import { ADDON_ID as A11Y_ADDON_ID } from '../../../a11y/src/constants';
 import { type Details, storeOptions } from '../constants';

@@ -4,7 +4,7 @@ import type { StatusValueType, StatusesByStoryIdAndTypeId } from 'storybook/inte
 import type { ControllerStateAndHelpers } from 'downshift';
 
 export type Refs = State['refs'];
-export type RefType = Refs[keyof Refs] & { allStatuses: StatusesByStoryIdAndTypeId };
+export type RefType = Refs[keyof Refs] & { allStatuses?: StatusesByStoryIdAndTypeId };
 export type Item = StoriesHash[keyof StoriesHash];
 export type Dataset = Record<string, Item>;
 

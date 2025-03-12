@@ -180,7 +180,7 @@ export const Search = React.memo<SearchProps>(function Search({
 
   const makeFuse = useCallback(() => {
     const list = dataset.entries.reduce<SearchItem[]>((acc, [refId, { index, allStatuses }]) => {
-      const groupStatus = getGroupStatus(index || {}, allStatuses);
+      const groupStatus = getGroupStatus(index || {}, allStatuses ?? {});
 
       if (index) {
         acc.push(

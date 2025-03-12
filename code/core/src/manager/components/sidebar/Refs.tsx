@@ -21,7 +21,6 @@ export interface RefProps {
   selectedStoryId: string | null;
   highlightedRef: MutableRefObject<Highlight>;
   setHighlighted: (highlight: Highlight) => void;
-  allStatuses: StatusesByStoryIdAndTypeId;
 }
 
 const Wrapper = styled.div<{ isMain: boolean }>(({ isMain }) => ({

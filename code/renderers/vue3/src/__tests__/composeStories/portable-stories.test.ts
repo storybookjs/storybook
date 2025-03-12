@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 /// <reference types="@testing-library/jest-dom" />;
-import { render, screen } from '@testing-library/vue';
-import { describe, expect, it, vi } from 'vitest';
+import { cleanup, render, screen } from '@testing-library/vue';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { addons } from 'storybook/internal/preview-api';
 
@@ -20,6 +20,10 @@ const { CSF3Primary, LoaderStory } = composeStories(stories);
 
 // example with composeStory, returns a single story composed with args/decorators
 const Secondary = composeStory(stories.CSF2Secondary, stories.default);
+
+afterEach(() => {
+  cleanup();
+});
 
 describe('renders', () => {
   it('renders primary button', () => {

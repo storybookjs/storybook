@@ -59,7 +59,8 @@
     },
     "./internal/core-server": {
       "types": "./dist/core-server/index.d.ts",
-      "default": "./dist/core-server/index.cjs"
+      "import": "./dist/core-server/index.js",
+      "require": "./dist/core-server/index.cjs"
     },
     "./internal/core-server/presets/common-preset": {
       "import": "./dist/core-server/presets/common-preset.js",

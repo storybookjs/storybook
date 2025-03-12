@@ -1,5 +1,4 @@
 import { within } from '@testing-library/dom';
-import { userEvent } from '@testing-library/user-event';
 
 import type { LoaderFunction } from 'storybook/internal/csf';
 import { definePreview } from 'storybook/internal/preview-api';
@@ -70,11 +69,12 @@ const nameSpiesAndWrapActionsInSpies: LoaderFunction = ({ initialArgs }) => {
   traverseArgs(initialArgs);
 };
 
-const enhanceContext: LoaderFunction = (context) => {
+const enhanceContext: LoaderFunction = async (context) => {
   if (globalThis.HTMLElement && context.canvasElement instanceof globalThis.HTMLElement) {
     context.canvas = within(context.canvasElement);
   }
   if (globalThis.window) {
+    const userEvent = (await import('@testing-library/user-event')).default;
     context.userEvent = userEvent.setup();
   }
 };

@@ -1,6 +1,8 @@
 import { within } from '@testing-library/dom';
+import { userEvent } from '@testing-library/user-event';
 
 import type { LoaderFunction } from 'storybook/internal/csf';
+import { instrument } from 'storybook/internal/instrumenter';
 import { definePreview } from 'storybook/internal/preview-api';
 
 import { clearAllMocks, fn, isMockFunction, resetAllMocks, restoreAllMocks } from './spy';
@@ -74,8 +76,7 @@ const enhanceContext: LoaderFunction = async (context) => {
     context.canvas = within(context.canvasElement);
   }
   if (globalThis.window) {
-    const userEvent = (await import('@testing-library/user-event')).default;
-    context.userEvent = userEvent.setup();
+    context.userEvent = instrument({ userEvent: userEvent.setup() }, { intercept: true }).userEvent;
   }
 };
 

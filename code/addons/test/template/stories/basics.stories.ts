@@ -103,8 +103,7 @@ export const WithLoaders = {
 
 const UserEventSetup = {
   play: async (context) => {
-    const { args, canvasElement, step } = context;
-    const user = userEvent.setup();
+    const { args, canvasElement, step, userEvent: user } = context;
     const canvas = within(canvasElement);
     await step('Select and type on input using user-event v14 setup', async () => {
       const input = canvas.getByRole('textbox');

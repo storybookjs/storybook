@@ -1,14 +1,6 @@
 import { global as globalThis } from '@storybook/global';
 
-import {
-  expect,
-  fireEvent,
-  fn,
-  userEvent,
-  waitFor,
-  waitForElementToBeRemoved,
-  within,
-} from 'storybook/test';
+import { expect, fireEvent, fn, waitFor, waitForElementToBeRemoved, within } from 'storybook/test';
 
 export default {
   component: globalThis.Components.Form,
@@ -45,7 +37,7 @@ export const Step = {
 };
 
 export const TypeAndClear = {
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement, userEvent }) => {
     const canvas = within(canvasElement);
     await userEvent.type(canvas.getByTestId('value'), 'initial value');
     await userEvent.clear(canvas.getByTestId('value'));
@@ -103,8 +95,7 @@ export const WithLoaders = {
 
 const UserEventSetup = {
   play: async (context) => {
-    const { args, canvasElement, step } = context;
-    const user = userEvent.setup();
+    const { args, canvasElement, step, userEvent: user } = context;
     const canvas = within(canvasElement);
     await step('Select and type on input using user-event v14 setup', async () => {
       const input = canvas.getByRole('textbox');

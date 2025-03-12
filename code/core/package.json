@@ -43,10 +43,20 @@
       "import": "./dist/client-logger/index.js",
       "require": "./dist/client-logger/index.cjs"
     },
+    "./internal/theming": {
+      "types": "./dist/theming/index.d.ts",
+      "import": "./dist/theming/index.js",
+      "require": "./dist/theming/index.cjs"
+    },
     "./theming": {
       "types": "./dist/theming/index.d.ts",
       "import": "./dist/theming/index.js",
       "require": "./dist/theming/index.cjs"
+    },
+    "./internal/theming/create": {
+      "types": "./dist/theming/create.d.ts",
+      "import": "./dist/theming/create.js",
+      "require": "./dist/theming/create.cjs"
     },
     "./theming/create": {
       "types": "./dist/theming/create.d.ts",
@@ -69,18 +79,35 @@
       "import": "./dist/core-server/presets/common-override-preset.js",
       "require": "./dist/core-server/presets/common-override-preset.cjs"
     },
+    "./internal/actions": {
+      "types": "./dist/actions/index.d.ts",
+      "import": "./dist/actions/index.js",
+      "require": "./dist/actions/index.cjs"
+    },
     "./actions": {
       "types": "./dist/actions/index.d.ts",
       "import": "./dist/actions/index.js",
       "require": "./dist/actions/index.cjs"
+    },
+    "./internal/actions/preview": {
+      "types": "./dist/actions/preview.d.ts",
+      "import": "./dist/actions/preview.js",
+      "require": "./dist/actions/preview.cjs"
     },
     "./actions/preview": {
       "types": "./dist/actions/preview.d.ts",
       "import": "./dist/actions/preview.js",
       "require": "./dist/actions/preview.cjs"
     },
+    "./internal/actions/manager": {
+      "import": "./dist/actions/manager.js"
+    },
     "./actions/manager": {
       "import": "./dist/actions/manager.js"
+    },
+    "./internal/actions/decorator": {
+      "types": "./dist/actions/decorator.d.ts",
+      "import": "./dist/actions/decorator.js"
     },
     "./actions/decorator": {
       "types": "./dist/actions/decorator.d.ts",
@@ -140,10 +167,20 @@
       "import": "./dist/telemetry/index.js",
       "require": "./dist/telemetry/index.cjs"
     },
+    "./internal/preview-api": {
+      "types": "./dist/preview-api/index.d.ts",
+      "import": "./dist/preview-api/index.js",
+      "require": "./dist/preview-api/index.cjs"
+    },
     "./preview-api": {
       "types": "./dist/preview-api/index.d.ts",
       "import": "./dist/preview-api/index.js",
       "require": "./dist/preview-api/index.cjs"
+    },
+    "./internal/manager-api": {
+      "types": "./dist/manager-api/index.d.ts",
+      "import": "./dist/manager-api/index.js",
+      "require": "./dist/manager-api/index.cjs"
     },
     "./manager-api": {
       "types": "./dist/manager-api/index.d.ts",
@@ -204,15 +241,30 @@
       "import": "./dist/instrumenter/index.js",
       "require": "./dist/instrumenter/index.cjs"
     },
+    "./internal/test/preview": {
+      "types": "./dist/test/preview.d.ts",
+      "import": "./dist/test/preview.js",
+      "require": "./dist/test/preview.cjs"
+    },
     "./test/preview": {
       "types": "./dist/test/preview.d.ts",
       "import": "./dist/test/preview.js",
       "require": "./dist/test/preview.cjs"
     },
+    "./internal/test/spy": {
+      "types": "./dist/test/spy.d.ts",
+      "import": "./dist/test/spy.js",
+      "require": "./dist/test/spy.cjs"
+    },
     "./test/spy": {
       "types": "./dist/test/spy.d.ts",
       "import": "./dist/test/spy.js",
       "require": "./dist/test/spy.cjs"
+    },
+    "./internal/test": {
+      "types": "./dist/test/index.d.ts",
+      "import": "./dist/test/index.js",
+      "require": "./dist/test/index.cjs"
     },
     "./test": {
       "types": "./dist/test/index.d.ts",
@@ -241,8 +293,14 @@
       "internal/client-logger": [
         "./dist/client-logger/index.d.ts"
       ],
+      "internal/theming": [
+        "./dist/theming/index.d.ts"
+      ],
       "theming": [
         "./dist/theming/index.d.ts"
+      ],
+      "internal/theming/create": [
+        "./dist/theming/create.d.ts"
       ],
       "theming/create": [
         "./dist/theming/create.d.ts"
@@ -250,11 +308,20 @@
       "internal/core-server": [
         "./dist/core-server/index.d.ts"
       ],
+      "internal/actions": [
+        "./dist/actions/index.d.ts"
+      ],
       "actions": [
         "./dist/actions/index.d.ts"
       ],
+      "internal/actions/preview": [
+        "./dist/actions/preview.d.ts"
+      ],
       "actions/preview": [
         "./dist/actions/preview.d.ts"
+      ],
+      "internal/actions/decorator": [
+        "./dist/actions/decorator.d.ts"
       ],
       "actions/decorator": [
         "./dist/actions/decorator.d.ts"
@@ -292,8 +359,14 @@
       "internal/telemetry": [
         "./dist/telemetry/index.d.ts"
       ],
+      "internal/preview-api": [
+        "./dist/preview-api/index.d.ts"
+      ],
       "preview-api": [
         "./dist/preview-api/index.d.ts"
+      ],
+      "internal/manager-api": [
+        "./dist/manager-api/index.d.ts"
       ],
       "manager-api": [
         "./dist/manager-api/index.d.ts"
@@ -328,11 +401,20 @@
       "internal/instrumenter": [
         "./dist/instrumenter/index.d.ts"
       ],
+      "internal/test/preview": [
+        "./dist/test/preview.d.ts"
+      ],
       "test/preview": [
         "./dist/test/preview.d.ts"
       ],
+      "internal/test/spy": [
+        "./dist/test/spy.d.ts"
+      ],
       "test/spy": [
         "./dist/test/spy.d.ts"
+      ],
+      "internal/test": [
+        "./dist/test/index.d.ts"
       ],
       "test": [
         "./dist/test/index.d.ts"

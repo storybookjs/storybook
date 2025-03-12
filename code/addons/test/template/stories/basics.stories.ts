@@ -1,14 +1,6 @@
 import { global as globalThis } from '@storybook/global';
 
-import {
-  expect,
-  fireEvent,
-  fn,
-  userEvent,
-  waitFor,
-  waitForElementToBeRemoved,
-  within,
-} from 'storybook/test';
+import { expect, fireEvent, fn, waitFor, waitForElementToBeRemoved, within } from 'storybook/test';
 
 export default {
   component: globalThis.Components.Form,
@@ -45,7 +37,7 @@ export const Step = {
 };
 
 export const TypeAndClear = {
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement, userEvent }) => {
     const canvas = within(canvasElement);
     await userEvent.type(canvas.getByTestId('value'), 'initial value');
     await userEvent.clear(canvas.getByTestId('value'));
@@ -103,15 +95,15 @@ export const WithLoaders = {
 
 const UserEventSetup = {
   play: async (context) => {
-    const { args, canvasElement, step, userEvent: user } = context;
+    const { args, canvasElement, step, userEvent } = context;
     const canvas = within(canvasElement);
     await step('Select and type on input using user-event v14 setup', async () => {
       const input = canvas.getByRole('textbox');
-      await user.click(input);
-      await user.type(input, 'Typing ...');
+      await userEvent.click(input);
+      await userEvent.type(input, 'Typing ...');
     });
     await step('Tab and press enter on submit button', async () => {
-      await user.pointer([
+      await userEvent.pointer([
         { keys: '[TouchA>]', target: canvas.getByRole('textbox') },
         { keys: '[/TouchA]' },
       ]);
@@ -121,8 +113,8 @@ const UserEventSetup = {
         // user event has a few issues on firefox, therefore we do it differently
         await fireEvent.click(submitButton);
       } else {
-        await user.tab();
-        await user.keyboard('{enter}');
+        await userEvent.tab();
+        await userEvent.keyboard('{enter}');
         await expect(submitButton).toHaveFocus();
       }
 

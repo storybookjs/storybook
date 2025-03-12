@@ -6,8 +6,13 @@ import {
 
 import * as testUtils from 'storybook/test';
 
-import { createStatusStore } from '../shared/status-store';
+import {
+  type StatusStoreEvent,
+  type StatusesByStoryIdAndTypeId,
+  createStatusStore,
+} from '../shared/status-store';
 import { UNIVERSAL_STATUS_STORE_OPTIONS } from '../shared/status-store';
+import type { UniversalStore } from '../shared/universal-store';
 
 export const {
   fullStatusStore: internal_fullStatusStore,
@@ -17,7 +22,7 @@ export const {
   universalStatusStore: new experimental_MockUniversalStore(
     UNIVERSAL_STATUS_STORE_OPTIONS,
     testUtils
-  ),
+  ) as unknown as UniversalStore<StatusesByStoryIdAndTypeId, StatusStoreEvent>,
   useUniversalStore: experimental_useUniversalStore,
   environment: 'manager',
 });

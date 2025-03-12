@@ -1,6 +1,14 @@
 import { global as globalThis } from '@storybook/global';
 
-import { expect, fireEvent, fn, waitFor, waitForElementToBeRemoved, within } from 'storybook/test';
+import {
+  expect,
+  fireEvent,
+  fn,
+  userEvent as testUserEvent,
+  waitFor,
+  waitForElementToBeRemoved,
+  within,
+} from 'storybook/test';
 
 export default {
   component: globalThis.Components.Form,
@@ -103,7 +111,8 @@ const UserEventSetup = {
       await userEvent.type(input, 'Typing ...');
     });
     await step('Tab and press enter on submit button', async () => {
-      await userEvent.pointer([
+      // Vitest's userEvent does not support pointer events, so we use storybook's
+      await testUserEvent.pointer([
         { keys: '[TouchA>]', target: canvas.getByRole('textbox') },
         { keys: '[/TouchA]' },
       ]);

@@ -2,7 +2,7 @@ import type { Renderer } from 'storybook/internal/types';
 
 import actionAnnotations from 'storybook/actions';
 import { composeConfigs } from 'storybook/preview-api';
-import testAnnotations from 'storybook/test';
+import testAnnotations from 'storybook/test/preview';
 
 import type { NormalizedProjectAnnotations } from '../types';
 

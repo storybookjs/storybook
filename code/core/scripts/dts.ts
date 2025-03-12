@@ -23,6 +23,10 @@ async function run() {
     'storybook/preview-api',
     'storybook/theming',
 
+    'storybook/test',
+    'storybook/test/spy',
+    'storybook/test/preview',
+
     'storybook/actions',
     'storybook/actions/preview',
     'storybook/actions/manager',
@@ -41,6 +45,7 @@ async function run() {
     'storybook/internal/router',
     'storybook/internal/telemetry',
     'storybook/internal/types',
+    'storybook/internal/instrumenter',
   ];
 
   const all = entries.filter((e) => e.dts);

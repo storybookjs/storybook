@@ -452,7 +452,6 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
         rendererDocsAnnotations,
         templateAnnotations,
         toolbarAnnotations,
-        addonActionsAnnotations,
         addonTestAnnotations,
         addonA11yAnnotations,
         projectAnnotations,

@@ -10,9 +10,9 @@ import type {
   StoryAnnotations,
 } from 'storybook/internal/types';
 
-import actionAnnotations from 'storybook/actions';
+import actionAnnotations from 'storybook/actions/preview';
 import { composeConfigs, normalizeProjectAnnotations } from 'storybook/preview-api';
-import testAnnotations from 'storybook/test';
+import testAnnotations from 'storybook/test/preview';
 
 export interface Preview<TRenderer extends Renderer = Renderer> {
   readonly _tag: 'Preview';

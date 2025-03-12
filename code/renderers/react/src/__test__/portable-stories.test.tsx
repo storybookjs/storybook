@@ -4,9 +4,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import React from 'react';
 
-import type { ProjectAnnotations } from 'storybook/internal/csf';
-
-import type { Meta, ReactRenderer } from '@storybook/react';
+import type { Meta } from '@storybook/react';
 
 import { expectTypeOf } from 'expect-type';
 import { addons } from 'storybook/preview-api';

@@ -1,7 +1,6 @@
-import React, { type ComponentProps, type FC, useMemo, useState } from 'react';
+import React, { type ComponentProps, type FC, useMemo } from 'react';
 
 import {
-  Button,
   IconButton,
   ListItem,
   ProgressSpinner,
@@ -11,18 +10,9 @@ import {
 import { type TestProviderConfig, type TestProviderState } from 'storybook/internal/core-events';
 import { addons, experimental_useUniversalStore } from 'storybook/internal/manager-api';
 import type { API } from 'storybook/internal/manager-api';
-import { styled, useTheme } from 'storybook/internal/theming';
+import { styled } from 'storybook/internal/theming';
 
-import {
-  AccessibilityIcon,
-  EditIcon,
-  EyeIcon,
-  InfoIcon,
-  PlayHollowIcon,
-  PointerHandIcon,
-  ShieldIcon,
-  StopAltIcon,
-} from '@storybook/icons';
+import { EyeIcon, InfoIcon, PlayHollowIcon, StopAltIcon } from '@storybook/icons';
 
 import { store } from '#manager-store';
 
@@ -94,12 +84,13 @@ const StopIcon = styled(StopAltIcon)({
 });
 
 const statusOrder: TestStatus[] = ['failed', 'warning', 'pending', 'passed', 'skipped'];
-const statusMap: Record<TestStatus, ComponentProps<typeof TestStatusIcon>['status']> = {
+const statusMap: Record<TestStatus | 'unknown', ComponentProps<typeof TestStatusIcon>['status']> = {
   failed: 'negative',
   warning: 'warning',
   passed: 'positive',
   skipped: 'unknown',
   pending: 'pending',
+  unknown: 'unknown',
 };
 
 type TestProviderRenderProps = {
@@ -135,13 +126,13 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
     );
   }, [isA11yAddon, state.details?.testResults, entryId]);
 
-  const a11yStatus = useMemo<'positive' | 'warning' | 'negative' | 'unknown'>(() => {
-    if (state.running) {
+  const a11yStatus = useMemo<'positive' | 'warning' | 'negative' | 'pending' | 'unknown'>(() => {
+    if (!isA11yAddon || config.a11y === false) {
       return 'unknown';
     }
 
-    if (!isA11yAddon || config.a11y === false) {
-      return 'unknown';
+    if (state.running) {
+      return 'pending';
     }
 
     const definedA11yResults = a11yResults?.filter(Boolean) ?? [];
@@ -170,10 +161,10 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
   const a11ySkippedAmount =
     state.running || !config?.a11y ? null : a11yResults?.filter((result) => !result).length;
 
-  const a11ySkippedLabel = a11ySkippedAmount
+  const a11ySkippedSuffix = a11ySkippedAmount
     ? a11ySkippedAmount === 1 && isStoryEntry
-      ? '(skipped)'
-      : `(${a11ySkippedAmount} skipped)`
+      ? ' (skipped)'
+      : ` (${a11ySkippedAmount} skipped)`
     : '';
 
   const storyId = isStoryEntry ? entryId : undefined;
@@ -189,12 +180,46 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
     })
     .sort((a, b) => statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status));
 
+  const testNotPassedAmount = results?.filter((result) => result.status === 'failed').length;
+
   const status = results[0]?.status ?? (state.running ? 'pending' : 'unknown');
 
-  const openPanel = (id: string, panelId: string) => {
-    api.selectStory(id);
+  const openPanel = (panelId: string, targetStoryId?: string) => {
+    if (targetStoryId) {
+      api.selectStory(targetStoryId);
+    }
     api.setSelectedPanel(panelId);
     api.togglePanel(true);
+  };
+
+  const openTestsPanel = () => {
+    const currentStoryId = api.getCurrentStoryData().id;
+    const currentStoryNotPassed = results.some(
+      (r) => r.storyId === currentStoryId && ['failed', 'warning'].includes(r.status)
+    );
+    if (currentStoryNotPassed) {
+      openPanel(PANEL_ID);
+    } else {
+      const firstNotPassed = results.find((r) => ['failed', 'warning'].includes(r.status));
+      openPanel(PANEL_ID, firstNotPassed?.storyId);
+    }
+  };
+
+  const openA11yPanel = () => {
+    const currentStoryId = api.getCurrentStoryData().id;
+    const currentStoryNotPassed = results.some(
+      (r) =>
+        r.storyId === currentStoryId &&
+        r.reports.some((rep) => rep.type === 'a11y' && ['failed', 'warning'].includes(rep.status))
+    );
+    if (currentStoryNotPassed) {
+      openPanel(A11y_ADDON_PANEL_ID);
+    } else {
+      const firstNotPassed = results.find((r) =>
+        r.reports.some((rep) => rep.type === 'a11y' && ['failed', 'warning'].includes(rep.status))
+      );
+      openPanel(A11y_ADDON_PANEL_ID, firstNotPassed?.storyId);
+    }
   };
 
   return (
@@ -282,32 +307,24 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
           <ListItem
             as="label"
             title="Component tests"
-            icon={<Checkbox type="checkbox" checked disabled />}
+            icon={entryId ? null : <Checkbox type="checkbox" checked disabled />}
           />
-          <IconButton
-            size="medium"
-            onClick={
-              (status === 'failed' || status === 'warning') && results.length
-                ? () => {
-                    const firstNotPassed = results.find(
-                      (r) => r.status === 'failed' || r.status === 'warning'
-                    );
-                    if (firstNotPassed) {
-                      openPanel(firstNotPassed.storyId, PANEL_ID);
-                    }
-                  }
-                : undefined
+          <WithTooltip
+            hasChrome={false}
+            trigger="hover"
+            tooltip={
+              <TooltipNote note={status === 'failed' ? 'View error' : 'View test details'} />
             }
           >
-            {state.crashed ? (
-              <TestStatusIcon status="critical" aria-label="status: crashed" />
-            ) : // @ts-expect-error TS got its inference wrong
-            status === 'unknown' ? (
-              <TestStatusIcon status="unknown" aria-label="status: unknown" />
-            ) : (
-              <TestStatusIcon status={statusMap[status]} aria-label={`status: ${status}`} />
-            )}
-          </IconButton>
+            <IconButton size="medium" disabled={!results?.length} onClick={openTestsPanel}>
+              {state.crashed ? (
+                <TestStatusIcon status="critical" aria-label="Test status: crashed" />
+              ) : (
+                <TestStatusIcon status={statusMap[status]} aria-label={`Test status: ${status}`} />
+              )}
+              {testNotPassedAmount || null}
+            </IconButton>
+          </WithTooltip>
         </Row>
 
         {!entryId && (
@@ -318,32 +335,44 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                   as="label"
                   title="Coverage"
                   icon={
-                    <Checkbox
-                      type="checkbox"
-                      checked={config.coverage}
-                      onChange={() =>
-                        setStoreState((s) => ({
-                          ...s,
-                          config: { ...s.config, coverage: !config.coverage },
-                        }))
-                      }
-                    />
+                    entryId ? null : (
+                      <Checkbox
+                        type="checkbox"
+                        checked={config.coverage}
+                        onChange={() =>
+                          setStoreState((s) => ({
+                            ...s,
+                            config: { ...s.config, coverage: !config.coverage },
+                          }))
+                        }
+                      />
+                    )
                   }
                 />
-                <IconButton asChild size="medium">
-                  <a href="/coverage/index.html" target="_blank" aria-label="Open coverage report">
-                    <TestStatusIcon
-                      percentage={coverageSummary.percentage}
-                      status={coverageSummary.status}
-                      aria-label={`status: ${coverageSummary.status}`}
-                    />
-                    {coverageSummary.percentage ? (
-                      <span aria-label={`${coverageSummary.percentage} percent coverage`}>
-                        {coverageSummary.percentage}%
-                      </span>
-                    ) : null}
-                  </a>
-                </IconButton>
+                <WithTooltip
+                  hasChrome={false}
+                  trigger="hover"
+                  tooltip={<TooltipNote note="Open coverage report" />}
+                >
+                  <IconButton asChild size="medium">
+                    <a
+                      href="/coverage/index.html"
+                      target="_blank"
+                      aria-label="Open coverage report"
+                    >
+                      <TestStatusIcon
+                        percentage={coverageSummary.percentage}
+                        status={coverageSummary.status}
+                        aria-label={`Coverage status: ${coverageSummary.status}`}
+                      />
+                      {coverageSummary.percentage ? (
+                        <span aria-label={`${coverageSummary.percentage} percent coverage`}>
+                          {coverageSummary.percentage}%
+                        </span>
+                      ) : null}
+                    </a>
+                  </IconButton>
+                </WithTooltip>
               </Row>
             ) : (
               <Row>
@@ -351,16 +380,18 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                   as="label"
                   title={watching ? <Muted>Coverage (unavailable)</Muted> : <>Coverage</>}
                   icon={
-                    <Checkbox
-                      type="checkbox"
-                      checked={config.coverage}
-                      onChange={() =>
-                        setStoreState((s) => ({
-                          ...s,
-                          config: { ...s.config, coverage: !config.coverage },
-                        }))
-                      }
-                    />
+                    entryId ? null : (
+                      <Checkbox
+                        type="checkbox"
+                        checked={config.coverage}
+                        onChange={() =>
+                          setStoreState((s) => ({
+                            ...s,
+                            config: { ...s.config, coverage: !config.coverage },
+                          }))
+                        }
+                      />
+                    )
                   }
                 />
                 {watching ? (
@@ -369,60 +400,79 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                     trigger="hover"
                     tooltip={<TooltipNote note="Coverage is unavailable in watch mode" />}
                   >
-                    <IconButton size="medium">
-                      <InfoIcon />
+                    <IconButton size="medium" disabled>
+                      <InfoIcon aria-label="Coverage is unavailable in watch mode" />
                     </IconButton>
                   </WithTooltip>
                 ) : (
-                  <IconButton size="medium">
-                    <TestStatusIcon status="unknown" aria-label={`status: unknown`} />
-                  </IconButton>
+                  <WithTooltip
+                    hasChrome={false}
+                    trigger="hover"
+                    tooltip={
+                      <TooltipNote
+                        note={
+                          state.running && config.coverage
+                            ? 'Calculating...'
+                            : 'Run tests to calculate coverage'
+                        }
+                      />
+                    }
+                  >
+                    <IconButton size="medium" disabled>
+                      <TestStatusIcon
+                        status={state.running && config.coverage ? 'pending' : 'unknown'}
+                        aria-label={`Coverage status: unknown`}
+                      />
+                    </IconButton>
+                  </WithTooltip>
                 )}
               </Row>
             )}
+          </>
+        )}
 
-            {isA11yAddon && (
-              <Row>
-                <ListItem
-                  as="label"
-                  title={`Accessibility ${a11ySkippedLabel}`}
-                  onClick={
-                    (a11yStatus === 'negative' || a11yStatus === 'warning') && a11yResults.length
-                      ? () => {
-                          const firstNotPassed = results.find((r) =>
-                            r.reports
-                              .filter((report) => report.type === 'a11y')
-                              .find(
-                                (report) =>
-                                  report.status === 'failed' || report.status === 'warning'
-                              )
-                          );
-                          if (firstNotPassed) {
-                            openPanel(firstNotPassed.storyId, A11y_ADDON_PANEL_ID);
-                          }
-                        }
-                      : undefined
-                  }
-                  icon={
-                    <Checkbox
-                      type="checkbox"
-                      checked={config.a11y}
-                      onChange={() =>
-                        setStoreState((s) => ({
-                          ...s,
-                          config: { ...s.config, a11y: !config.a11y },
-                        }))
-                      }
-                    />
+        {isA11yAddon && (
+          <Row>
+            <ListItem
+              as="label"
+              title={`Accessibility${a11ySkippedSuffix}`}
+              icon={
+                entryId ? null : (
+                  <Checkbox
+                    type="checkbox"
+                    checked={config.a11y}
+                    onChange={() =>
+                      setStoreState((s) => ({
+                        ...s,
+                        config: { ...s.config, a11y: !config.a11y },
+                      }))
+                    }
+                  />
+                )
+              }
+            />
+            <WithTooltip
+              hasChrome={false}
+              trigger="hover"
+              tooltip={
+                <TooltipNote
+                  note={
+                    state.running && config.coverage
+                      ? 'Testing in progress'
+                      : 'View accessibility results'
                   }
                 />
-                <IconButton size="medium">
-                  <TestStatusIcon status={a11yStatus} aria-label={`status: ${a11yStatus}`} />
-                  {isStoryEntry ? null : a11yNotPassedAmount || null}
-                </IconButton>
-              </Row>
-            )}
-          </>
+              }
+            >
+              <IconButton size="medium" disabled={!a11yResults?.length} onClick={openA11yPanel}>
+                <TestStatusIcon
+                  status={a11yStatus}
+                  aria-label={`Accessibility status: ${a11yStatus}`}
+                />
+                {isStoryEntry ? null : a11yNotPassedAmount || null}
+              </IconButton>
+            </WithTooltip>
+          </Row>
         )}
       </Extras>
     </Container>

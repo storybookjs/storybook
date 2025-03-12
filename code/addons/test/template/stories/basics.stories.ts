@@ -24,7 +24,7 @@ export const Validation = {
 };
 
 export const Type = {
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement, userEvent }) => {
     const canvas = within(canvasElement);
     await userEvent.type(canvas.getByTestId('value'), 'foobar');
   },

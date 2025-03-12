@@ -30,14 +30,15 @@ export { addons, mockChannel } from './addons';
 /** ADDON ANNOTATIONS TYPE HELPER */
 export { definePreview } from './addons';
 
-export { UniversalStore as experimental_UniversalStore } from '../shared/universal-store';
-export { useUniversalStore as experimental_useUniversalStore } from '../shared/universal-store/use-universal-store-preview';
-export { MockUniversalStore as experimental_MockUniversalStore } from '../shared/universal-store/mock';
-export {
-  getStatusStoreByTypeId as experimental_getStatusStore,
-  useStatusStore as experimental_useStatusStore,
-  fullStatusStore as internal_fullStatusStore,
-} from './stores/status';
+// TODO: Universal Stores are disabled in the preview, until we get automatic leader negotiation in place
+// export { UniversalStore as experimental_UniversalStore } from '../shared/universal-store';
+// export { useUniversalStore as experimental_useUniversalStore } from '../shared/universal-store/use-universal-store-preview';
+// export { MockUniversalStore as experimental_MockUniversalStore } from '../shared/universal-store/mock';
+// export {
+//   getStatusStoreByTypeId as experimental_getStatusStore,
+//   useStatusStore as experimental_useStatusStore,
+//   fullStatusStore as internal_fullStatusStore,
+// } from './stores/status';
 
 /** DOCS API */
 export { DocsContext } from './preview-web';

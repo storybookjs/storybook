@@ -367,10 +367,10 @@ jobs:
       - report-workflow-on-failure
   chromatic-internal-storybook:
     executor:
-      class: xlarge
+      class: large
       name: sb_node_22_browsers
     environment:
-      NODE_OPTIONS: --max_old_space_size=10000
+      NODE_OPTIONS: --max_old_space_size=4096
     steps:
       # switched this to the CircleCI helper to get the full git history for TurboSnap
       - checkout

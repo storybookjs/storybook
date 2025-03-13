@@ -1,4 +1,4 @@
-/* eslint-disable no-underscore-dangle,@typescript-eslint/naming-convention */
+/* eslint-disable no-underscore-dangle */
 import type {
   Args,
   ComponentAnnotations,
@@ -10,50 +10,12 @@ import type {
   StoryAnnotations,
 } from 'storybook/internal/types';
 
-import actionAnnotations from 'storybook/actions/preview';
-import { composeConfigs, normalizeProjectAnnotations } from 'storybook/preview-api';
-import testAnnotations from 'storybook/test/preview';
-
 export interface Preview<TRenderer extends Renderer = Renderer> {
   readonly _tag: 'Preview';
   input: ProjectAnnotations<TRenderer>;
   composed: NormalizedProjectAnnotations<TRenderer>;
 
   meta(input: ComponentAnnotations<TRenderer>): Meta<TRenderer>;
-}
-
-/** Do not use, use the definePreview exported from the framework instead. */
-export function __definePreview<TRenderer extends Renderer>(
-  input: Preview<TRenderer>['input']
-): Preview<TRenderer> {
-  let composed: NormalizedProjectAnnotations<TRenderer>;
-  const preview: Preview<TRenderer> = {
-    _tag: 'Preview',
-    input,
-    get composed() {
-      if (composed) {
-        return composed;
-      }
-      const { addons, ...rest } = input;
-      composed = normalizeProjectAnnotations<TRenderer>(
-        // TODO: Remove coreAnnotations once csf-factories use prepareStory (as core annotations already come from it)
-        composeConfigs([
-          // @ts-expect-error CJS fallback
-          (actionAnnotations.default ?? actionAnnotations)(),
-          // @ts-expect-error CJS fallback
-          (testAnnotations.default ?? testAnnotations)(),
-          ...(addons ?? []),
-          rest,
-        ])
-      );
-      return composed;
-    },
-    meta(meta: ComponentAnnotations<TRenderer>) {
-      return defineMeta(meta, this);
-    },
-  };
-  globalThis.globalProjectAnnotations = preview.composed;
-  return preview;
 }
 
 export function isPreview(input: unknown): input is Preview<Renderer> {
@@ -73,42 +35,11 @@ export function isMeta(input: unknown): input is Meta<Renderer> {
   return input != null && typeof input === 'object' && '_tag' in input && input?._tag === 'Meta';
 }
 
-function defineMeta<TRenderer extends Renderer>(
-  input: ComponentAnnotations<TRenderer>,
-  preview: Preview<TRenderer>
-): Meta<TRenderer> {
-  return {
-    _tag: 'Meta',
-    input,
-    preview,
-    get composed(): never {
-      throw new Error('Not implemented');
-    },
-    story(story: StoryAnnotations<TRenderer>) {
-      return defineStory(story, this);
-    },
-  };
-}
-
 export interface Story<TRenderer extends Renderer, TArgs extends Args = Args> {
   readonly _tag: 'Story';
   input: StoryAnnotations<TRenderer, TArgs>;
   composed: NormalizedStoryAnnotations<TRenderer>;
   meta: Meta<TRenderer, TArgs>;
-}
-
-function defineStory<TRenderer extends Renderer>(
-  input: ComponentAnnotations<TRenderer>,
-  meta: Meta<TRenderer>
-): Story<TRenderer> {
-  return {
-    _tag: 'Story',
-    input,
-    meta,
-    get composed(): never {
-      throw new Error('Not implemented');
-    },
-  };
 }
 
 export function isStory<TRenderer extends Renderer>(input: unknown): input is Story<TRenderer> {

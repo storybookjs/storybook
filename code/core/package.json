@@ -432,11 +432,14 @@
     "check": "jiti ./scripts/check.ts",
     "prep": "jiti ./scripts/prep.ts"
   },
+  "resolutions": {
+    "@testing-library/user-event": "patch:@testing-library/user-event@npm%3A14.6.1#~/../.yarn/patches/@testing-library-user-event-npm-14.6.1-5da7e1d4e2.patch"
+  },
   "dependencies": {
     "@storybook/global": "^5.0.0",
     "@testing-library/dom": "10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
-    "@testing-library/user-event": "14.5.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/uuid": "^9.0.1",
     "@vitest/expect": "2.0.5",
     "@vitest/spy": "2.0.5",

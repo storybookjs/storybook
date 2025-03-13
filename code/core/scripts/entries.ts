@@ -61,7 +61,15 @@ export const getEntries = (cwd: string) => {
       true,
       ['util', 'react'],
       [],
-      ['chai', '@vitest/expect', '@vitest/spy', '@vitest/utils'],
+      [
+        '@testing-library/dom',
+        '@testing-library/jest-dom',
+        '@testing-library/user-event',
+        'chai',
+        '@vitest/expect',
+        '@vitest/spy',
+        '@vitest/utils',
+      ],
       true
     ),
     define(
@@ -70,7 +78,15 @@ export const getEntries = (cwd: string) => {
       true,
       ['util', 'react'],
       [],
-      ['chai', '@vitest/expect', '@vitest/spy', '@vitest/utils'],
+      [
+        '@testing-library/dom',
+        '@testing-library/jest-dom',
+        '@testing-library/user-event',
+        'chai',
+        '@vitest/expect',
+        '@vitest/spy',
+        '@vitest/utils',
+      ],
       true
     ),
     define(
@@ -79,7 +95,15 @@ export const getEntries = (cwd: string) => {
       true,
       ['util', 'react'],
       [],
-      ['chai', '@vitest/expect', '@vitest/spy', '@vitest/utils'],
+      [
+        '@testing-library/dom',
+        '@testing-library/jest-dom',
+        '@testing-library/user-event',
+        'chai',
+        '@vitest/expect',
+        '@vitest/spy',
+        '@vitest/utils',
+      ],
       true
     ),
   ];

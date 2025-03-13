@@ -1,3 +1,6 @@
+## 9.0.0-alpha.3
+
+
 ## 9.0.0-alpha.2
 
 - AutoBlocker: Add major version upgrade blocker - [#30714](https://github.com/storybookjs/storybook/pull/30714), thanks @ndelangen!

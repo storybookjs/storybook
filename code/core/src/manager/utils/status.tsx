@@ -29,7 +29,7 @@ export const statusPriority: StatusValue[] = [
   'status-value:unknown',
   'status-value:pending',
   'status-value:success',
-  'status-value:warn',
+  'status-value:warning',
   'status-value:error',
 ];
 export const statusMapping: Record<StatusValue, [ReactElement | null, string | null]> = {
@@ -41,7 +41,7 @@ export const statusMapping: Record<StatusValue, [ReactElement | null, string | n
     </svg>,
     'currentColor',
   ],
-  ['status-value:warn']: [
+  ['status-value:warning']: [
     <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
       <UseSymbol type="warning" />
     </svg>,

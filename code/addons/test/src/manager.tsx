@@ -26,7 +26,7 @@ import type { TestStatus } from './node/reporter';
 const statusMap: Record<TestStatus, StatusValue> = {
   pending: 'status-value:pending',
   passed: 'status-value:success',
-  warning: 'status-value:warn',
+  warning: 'status-value:warning',
   failed: 'status-value:error',
   skipped: 'status-value:unknown',
 };

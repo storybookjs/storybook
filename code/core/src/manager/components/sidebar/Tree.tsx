@@ -198,7 +198,7 @@ const PendingStatusIcon: FC<ComponentProps<typeof SyncIcon>> = (props) => {
 const StatusIconMap: Record<StatusValue, React.ReactNode | null> = {
   'status-value:success': <SuccessStatusIcon />,
   'status-value:error': <ErrorStatusIcon />,
-  'status-value:warn': <WarnStatusIcon />,
+  'status-value:warning': <WarnStatusIcon />,
   'status-value:pending': <PendingStatusIcon />,
   'status-value:unknown': null,
 };
@@ -210,7 +210,7 @@ export const ContextMenu = {
 const statusOrder: StatusValue[] = [
   'status-value:success',
   'status-value:error',
-  'status-value:warn',
+  'status-value:warning',
   'status-value:pending',
   'status-value:unknown',
 ];
@@ -259,7 +259,7 @@ const Node = React.memo<NodeProps>(function Node({
     if (item.type === 'component' || item.type === 'group') {
       const links: Link[] = [];
       const errorCount = counts['status-value:error'];
-      const warnCount = counts['status-value:warn'];
+      const warningCount = counts['status-value:warning'];
       if (errorCount) {
         links.push({
           id: 'errors',
@@ -273,16 +273,16 @@ const Node = React.memo<NodeProps>(function Node({
           },
         });
       }
-      if (warnCount) {
+      if (warningCount) {
         links.push({
           id: 'warnings',
-          icon: StatusIconMap['status-value:warn'],
-          title: `${warnCount} ${warnCount === 1 ? 'story' : 'stories'} with warnings`,
+          icon: StatusIconMap['status-value:warning'],
+          title: `${warningCount} ${warningCount === 1 ? 'story' : 'stories'} with warnings`,
           onClick: () => {
-            const [firstStoryId] = Object.entries(statusesByValue['status-value:warn'])[0];
+            const [firstStoryId] = Object.entries(statusesByValue['status-value:warning'])[0];
             onSelectStoryId(firstStoryId);
-            const warnStatuses = Object.values(statusesByValue['status-value:warn']).flat();
-            fullStatusStore.selectStatuses(warnStatuses);
+            const warningStatuses = Object.values(statusesByValue['status-value:warning']).flat();
+            fullStatusStore.selectStatuses(warningStatuses);
           },
         });
       }
@@ -345,7 +345,7 @@ const Node = React.memo<NodeProps>(function Node({
         {contextMenu.node}
         {icon ? (
           <StatusButton
-            aria-label={`Test status: ${statusValue}`}
+            aria-label={`Test status: ${statusValue.replace('status-value:', '')}`}
             role="status"
             type="button"
             status={statusValue}

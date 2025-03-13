@@ -11,7 +11,7 @@ export type StatusValue =
   | 'status-value:pending'
   | 'status-value:success'
   | 'status-value:error'
-  | 'status-value:warn'
+  | 'status-value:warning'
   | 'status-value:unknown';
 
 export type StatusTypeId = string;

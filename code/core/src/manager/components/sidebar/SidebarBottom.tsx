@@ -22,12 +22,12 @@ const SIDEBAR_BOTTOM_WRAPPER_ID = 'sidebar-bottom-wrapper';
 
 const filterNone: API_FilterFunction = () => true;
 const filterWarn: API_FilterFunction = ({ statuses = {} }) =>
-  Object.values(statuses).some(({ value }) => value === 'status-value:warn');
+  Object.values(statuses).some(({ value }) => value === 'status-value:warning');
 const filterError: API_FilterFunction = ({ statuses = {} }) =>
   Object.values(statuses).some(({ value }) => value === 'status-value:error');
 const filterBoth: API_FilterFunction = ({ statuses = {} }) =>
   Object.values(statuses).some(({ value }) =>
-    ['status-value:warn', 'status-value:error'].includes(value as any)
+    ['status-value:warning', 'status-value:error'].includes(value as any)
   );
 
 const getFilter = (warningsActive = false, errorsActive = false) => {
@@ -183,7 +183,7 @@ export const SidebarBottom = ({ isDevelopment }: { isDevelopment?: boolean }) =>
             counts.errorCount += 1;
           }
 
-          if (status.value === 'status-value:warn') {
+          if (status.value === 'status-value:warning') {
             counts.warningCount += 1;
           }
         });

@@ -247,7 +247,7 @@ export const StatusesCollapsed: Story = {
             addonA: {
               typeId: 'addonA',
               storyId: id,
-              value: 'status-value:warn',
+              value: 'status-value:warning',
               title: 'Addon A',
               description: 'We just wanted you to know',
             },
@@ -280,7 +280,7 @@ export const StatusesOpen: Story = {
           addonA: {
             typeId: 'addonA',
             storyId: id,
-            value: 'status-value:warn',
+            value: 'status-value:warning',
             title: 'Addon A',
             description: 'We just wanted you to know',
           },
@@ -323,7 +323,7 @@ export const Bottom: Story = {
       {
         storyId,
         typeId: 'vitest',
-        value: 'status-value:warn',
+        value: 'status-value:warning',
         title: 'Vitest',
         description: 'Vitest',
       },

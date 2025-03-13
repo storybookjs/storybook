@@ -11,8 +11,8 @@ import {
   recast,
   types as t,
   traverse,
-} from '@storybook/core/babel';
-import { isExportStory, storyNameFromExport, toId } from '@storybook/core/csf';
+} from 'storybook/internal/babel';
+import { isExportStory, storyNameFromExport, toId } from 'storybook/internal/csf';
 import type {
   ComponentAnnotations,
   IndexInput,
@@ -20,7 +20,7 @@ import type {
   IndexedCSFFile,
   StoryAnnotations,
   Tag,
-} from '@storybook/core/types';
+} from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 
@@ -765,7 +765,7 @@ export class CsfFile {
           acc[key].tags = [...(acc[key].tags || []), 'play-fn'];
         }
         const stats = acc[key].__stats;
-        ['play', 'render', 'loaders', 'beforeEach', 'globals'].forEach((annotation) => {
+        ['play', 'render', 'loaders', 'beforeEach', 'globals', 'tags'].forEach((annotation) => {
           stats[annotation as keyof IndexInputStats] =
             !!storyAnnotations[annotation] || !!self._metaAnnotations[annotation];
         });

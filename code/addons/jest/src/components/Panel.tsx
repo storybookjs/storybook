@@ -2,9 +2,9 @@ import type { FC } from 'react';
 import React, { Fragment } from 'react';
 
 import { Link, Placeholder, ScrollArea, TabsState } from 'storybook/internal/components';
-import { convert, styled, themes } from 'storybook/internal/theming';
 
 import { useResizeDetector } from 'react-resize-detector';
+import { convert, styled, themes } from 'storybook/theming';
 
 import type { Test } from '../hoc/provideJestResult';
 import { provideTests as provideJestResult } from '../hoc/provideJestResult';

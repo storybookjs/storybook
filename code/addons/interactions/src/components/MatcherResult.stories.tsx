@@ -1,7 +1,6 @@
 import React from 'react';
 
-import { styled } from 'storybook/internal/theming';
-
+import { styled } from 'storybook/theming';
 import { dedent } from 'ts-dedent';
 
 import { MatcherResult } from './MatcherResult';

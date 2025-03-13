@@ -1,15 +1,16 @@
 import React from 'react';
 
-import type { Channel } from '@storybook/core/channels';
-import { createBrowserChannel } from '@storybook/core/channels';
-import type { Addon_Config, Addon_Types } from '@storybook/core/types';
+import type { Channel } from 'storybook/internal/channels';
+import { createBrowserChannel } from 'storybook/internal/channels';
+import { CHANNEL_CREATED, CHANNEL_WS_DISCONNECT } from 'storybook/internal/core-events';
+import type { Addon_Config, Addon_Types } from 'storybook/internal/types';
+
 import { global } from '@storybook/global';
 import { FailedIcon } from '@storybook/icons';
-import { color } from '@storybook/theming';
 
-import { CHANNEL_CREATED, CHANNEL_WS_DISCONNECT } from '@storybook/core/core-events';
-import type { API, AddonStore } from '@storybook/core/manager-api';
-import { addons } from '@storybook/core/manager-api';
+import type { API, AddonStore } from 'storybook/manager-api';
+import { addons } from 'storybook/manager-api';
+import { color } from 'storybook/theming';
 
 import { renderStorybookUI } from './index';
 import Provider from './provider';

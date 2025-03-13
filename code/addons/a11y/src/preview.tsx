@@ -1,6 +1,6 @@
 import type { AfterEach } from 'storybook/internal/types';
 
-import { expect } from '@storybook/test';
+import { expect } from 'storybook/test';
 
 import { run } from './a11yRunner';
 import type { A11yParameters } from './params';
@@ -58,12 +58,13 @@ export const experimental_afterEach: AfterEach<any> = async ({
         if (getIsVitestStandaloneRun()) {
           if (hasViolations && getMode() === 'failed') {
             if (!vitestMatchersExtended) {
+              // @ts-expect-error (unknown why vitest-axe is not typed correctly)
               const { toHaveNoViolations } = await import('vitest-axe/matchers');
               expect.extend({ toHaveNoViolations });
               vitestMatchersExtended = true;
             }
 
-            // @ts-expect-error - todo - fix type extension of expect from @storybook/test
+            // @ts-expect-error - todo - fix type extension of expect from storybook/test
             expect(result).toHaveNoViolations();
           }
         }

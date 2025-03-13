@@ -170,7 +170,6 @@ jobs:
             - code/bench
             - code/examples
             - code/frameworks
-            - code/deprecated
             - code/lib
             - code/core
             - code/builders
@@ -368,10 +367,10 @@ jobs:
       - report-workflow-on-failure
   chromatic-internal-storybook:
     executor:
-      class: medium
+      class: large
       name: sb_node_22_browsers
     environment:
-      NODE_OPTIONS: --max_old_space_size=6144
+      NODE_OPTIONS: --max_old_space_size=4096
     steps:
       # switched this to the CircleCI helper to get the full git history for TurboSnap
       - checkout
@@ -635,6 +634,7 @@ jobs:
           command: |
             cd code
             yarn local-registry --open &
+            yarn wait-on tcp:127.0.0.1:6001
             cd ../../
             mkdir features-1
             cd features-1
@@ -855,15 +855,15 @@ workflows:
           requires:
             - unit-tests
       - create-sandboxes:
-          parallelism: 14
+          parallelism: 13
           requires:
             - build
       - chromatic-sandboxes:
-          parallelism: 11
+          parallelism: 10
           requires:
             - create-sandboxes
       - e2e-production:
-          parallelism: 9
+          parallelism: 8
           requires:
             - create-sandboxes
       - e2e-dev:
@@ -875,13 +875,14 @@ workflows:
           requires:
             - create-sandboxes
       - vitest-integration:
-          parallelism: 5
+          parallelism: 4
           requires:
             - create-sandboxes
-      - bench-sandboxes:
-          parallelism: 5
-          requires:
-            - create-sandboxes
+# TODO: don't forget to reenable this
+#      - bench-sandboxes:
+#          parallelism: 5
+#          requires:
+#            - create-sandboxes
       - test-ui-testing-module:
           requires:
             - build
@@ -930,15 +931,15 @@ workflows:
           requires:
             - unit-tests
       - create-sandboxes:
-          parallelism: 20
+          parallelism: 19
           requires:
             - build
       - chromatic-sandboxes:
-          parallelism: 17
+          parallelism: 16
           requires:
             - create-sandboxes
       - e2e-production:
-          parallelism: 15
+          parallelism: 14
           requires:
             - create-sandboxes
       - e2e-dev:
@@ -950,7 +951,7 @@ workflows:
           requires:
             - create-sandboxes
       - vitest-integration:
-          parallelism: 5
+          parallelism: 4
           requires:
             - create-sandboxes
       - test-portable-stories:
@@ -965,10 +966,11 @@ workflows:
       - test-init-features:
           requires:
             - build
-      - bench-sandboxes:
-          parallelism: 5
-          requires:
-            - create-sandboxes
+# TODO: don't forget to reenable this
+#      - bench-sandboxes:
+#          parallelism: 5
+#          requires:
+#            - create-sandboxes
       # TODO: reenable once we find out the source of flakyness
       # - test-runner-dev:
       #     parallelism: 4
@@ -1003,18 +1005,18 @@ workflows:
           requires:
             - build
       - create-sandboxes:
-          parallelism: 37
+          parallelism: 34
           requires:
             - build
       # - smoke-test-sandboxes: # disabled for now
       #     requires:
       #       - create-sandboxes
       - chromatic-sandboxes:
-          parallelism: 34
+          parallelism: 31
           requires:
             - create-sandboxes
       - e2e-production:
-          parallelism: 32
+          parallelism: 29
           requires:
             - create-sandboxes
       - e2e-dev:
@@ -1022,11 +1024,11 @@ workflows:
           requires:
             - create-sandboxes
       - test-runner-production:
-          parallelism: 30
+          parallelism: 29
           requires:
             - create-sandboxes
       - vitest-integration:
-          parallelism: 11
+          parallelism: 9
           requires:
             - create-sandboxes
       - test-portable-stories:
@@ -1059,10 +1061,11 @@ workflows:
                 # --smoke-test is not supported for the angular builder right now
                 # - "angular-cli"
                 - "lit-vite-ts"
-      - bench-sandboxes:
-          parallelism: 5
-          requires:
-            - create-sandboxes
+# TODO: don't forget to reenable this
+#      - bench-sandboxes:
+#          parallelism: 5
+#          requires:
+#            - create-sandboxes
 
       # TODO: reenable once we find out the source of flakyness
       # - test-runner-dev:

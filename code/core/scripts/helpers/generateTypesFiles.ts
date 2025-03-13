@@ -63,6 +63,11 @@ export async function generateTypesFiles(
           }
 
           if (dtsProcess.exitCode !== 0) {
+            console.error(
+              '\nGenerating types for',
+              picocolors.cyan(relative(cwd, dtsEntries[index])),
+              ' failed'
+            );
             console.log(dtsProcess.exitCode);
             // If any fail, kill all the other processes and exit (bail)
             processes.forEach((p) => p.kill());

@@ -1,12 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { logger } from 'storybook/internal/node-logger';
 import type {
   CoreCommon_AddonEntry,
   CoreCommon_AddonInfo,
   CoreCommon_OptionsEntry,
-} from '@storybook/core/types';
-
-import { logger } from '@storybook/core/node-logger';
+} from 'storybook/internal/types';
 
 import { checkAddonOrder } from '../check-addon-order';
 

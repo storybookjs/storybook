@@ -31,7 +31,7 @@ import { printError, printInfo, printSuccess, printWarning, step } from './posti
 import { loadTemplate, updateConfigFile, updateWorkspaceFile } from './updateVitestFile';
 import { getAddonNames } from './utils';
 
-const ADDON_NAME = '@storybook/experimental-addon-test' as const;
+const ADDON_NAME = '@storybook/addon-test' as const;
 const EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.cts', '.mts', '.cjs', '.mjs'];
 
 const addonInteractionsName = '@storybook/addon-interactions';
@@ -359,7 +359,7 @@ export default async function postInstall(options: PostinstallOptions) {
 
   if (a11yAddon) {
     try {
-      logger.plain(`${step} Setting up ${addonA11yName} for @storybook/experimental-addon-test:`);
+      logger.plain(`${step} Setting up ${addonA11yName} for @storybook/addon-test:`);
       await $({
         stdio: 'inherit',
       })`storybook automigrate addonA11yAddonTest ${options.yes ? '--yes' : ''}`;
@@ -367,7 +367,7 @@ export default async function postInstall(options: PostinstallOptions) {
       printError(
         '🚨 Oh no!',
         dedent`
-        We have detected that you have ${addonA11yName} installed but could not automatically set it up for @storybook/experimental-addon-test.
+        We have detected that you have ${addonA11yName} installed but could not automatically set it up for @storybook/addon-test.
 
         Please refer to the documentation to complete the setup manually:
         ${picocolors.cyan(`https://storybook.js.org/docs/writing-tests/accessibility-testing#test-addon-integration`)}
@@ -405,9 +405,9 @@ export default async function postInstall(options: PostinstallOptions) {
     );
   }
 
+  // If there's an existing workspace file, we update that file to include the Storybook test plugin.
+  // We assume the existing workspaces include the Vite(st) config, so we won't add it.
   if (vitestWorkspaceFile) {
-    // If there's an existing workspace file, we update that file to include the Storybook test plugin.
-    // We assume the existing workspaces include the Vite(st) config, so we won't add it.
     const workspaceTemplate = await loadTemplate('vitest.workspace.template.ts', {
       EXTENDS_WORKSPACE: viteConfigFile
         ? relative(dirname(vitestWorkspaceFile), viteConfigFile)
@@ -445,21 +445,26 @@ export default async function postInstall(options: PostinstallOptions) {
       logger.line(1);
       return;
     }
-  } else if (rootConfig) {
-    // If there's an existing Vite/Vitest config, we update it to include the Storybook test plugin.
+  }
+  // If there's an existing Vite/Vitest config with workspaces, we update it to include the Storybook test plugin.
+  else if (rootConfig) {
     let target, updated;
-    // For Vitest 3+, we extend the config file, otherwise we fall back to creating a workspace file.
-    if (isVitest3OrLater) {
+    const configFile = await fs.readFile(rootConfig, 'utf8');
+    const hasWorkspaceConfig = configFile.includes('workspace:');
+
+    // For Vitest 3+ with an existing workspace option in the config file, we extend the workspace array,
+    // otherwise we fall back to creating a workspace file.
+    if (isVitest3OrLater && hasWorkspaceConfig) {
       const configTemplate = await loadTemplate('vitest.config.template.ts', {
         CONFIG_DIR: options.configDir,
         BROWSER_CONFIG: browserConfig,
         SETUP_FILE: relative(dirname(rootConfig), vitestSetupFile),
       });
-      const configFile = await fs.readFile(rootConfig, 'utf8');
       const source = babelParse(configTemplate);
       target = babelParse(configFile);
       updated = updateConfigFile(source, target);
     }
+
     if (target && updated) {
       logger.line(1);
       logger.plain(`${step} Updating your ${vitestConfigFile ? 'Vitest' : 'Vite'} config file:`);
@@ -502,8 +507,9 @@ export default async function postInstall(options: PostinstallOptions) {
       const formattedContent = await formatFileContent(newWorkspaceFile, workspaceTemplate);
       await writeFile(newWorkspaceFile, formattedContent);
     }
-  } else {
-    // If there's no existing Vitest/Vite config, we create a new Vitest config file.
+  }
+  // If there's no existing Vitest/Vite config, we create a new Vitest config file.
+  else {
     const newConfigFile = resolve(`vitest.config.${fileExtension}`);
     const configTemplate = await loadTemplate('vitest.config.template.ts', {
       CONFIG_DIR: options.configDir,
@@ -551,7 +557,7 @@ async function getStorybookInfo({ configDir, packageManager: pkgMgr }: Postinsta
   const presets = await loadAllPresets({
     corePresets: [join(frameworkName, 'preset')],
     overridePresets: [
-      require.resolve('@storybook/core/core-server/presets/common-override-preset'),
+      require.resolve('storybook/internal/core-server/presets/common-override-preset'),
     ],
     configDir,
     packageJson,

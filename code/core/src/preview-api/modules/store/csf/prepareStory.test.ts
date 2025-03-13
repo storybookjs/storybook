@@ -9,8 +9,11 @@ import type {
   Renderer,
   SBScalarType,
   StoryContext,
-} from '@storybook/core/types';
+} from 'storybook/internal/types';
+
 import { global } from '@storybook/global';
+
+import type { UserEventObject } from 'storybook/test';
 
 import { HooksContext, addons } from '../../addons';
 import { UNTARGETED } from '../args';
@@ -65,6 +68,7 @@ const addExtraContext = (
     step: vi.fn(),
     context: null! as StoryContext,
     canvas: null!,
+    userEvent: {} as UserEventObject,
     globalTypes: {},
   };
   extraContext.context = extraContext;

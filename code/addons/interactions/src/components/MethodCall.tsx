@@ -1,11 +1,10 @@
 import type { ReactElement } from 'react';
 import React, { Fragment } from 'react';
 
-import { useTheme } from 'storybook/internal/theming';
-
-import type { Call, CallRef, ElementRef } from '@storybook/instrumenter';
+import type { Call, CallRef, ElementRef } from 'storybook/internal/instrumenter';
 
 import { ObjectInspector } from '@devtools-ds/object-inspector';
+import { useTheme } from 'storybook/theming';
 
 const colorsLight = {
   base: '#444',

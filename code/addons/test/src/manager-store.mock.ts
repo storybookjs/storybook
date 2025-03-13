@@ -1,6 +1,5 @@
-import { experimental_MockUniversalStore } from 'storybook/internal/manager-api';
-
-import * as testUtils from '@storybook/test';
+import { experimental_MockUniversalStore } from 'storybook/manager-api';
+import * as testUtils from 'storybook/test';
 
 import { storeOptions } from './constants';
 

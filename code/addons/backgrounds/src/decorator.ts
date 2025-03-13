@@ -1,5 +1,6 @@
-import { useEffect } from 'storybook/internal/preview-api';
 import type { DecoratorFunction } from 'storybook/internal/types';
+
+import { useEffect } from 'storybook/preview-api';
 
 import { PARAM_KEY as KEY } from './constants';
 import { DEFAULT_BACKGROUNDS } from './defaults';

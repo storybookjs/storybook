@@ -17,6 +17,8 @@ import { VitestManager } from './vitest-manager';
 export class TestManager {
   vitestManager: VitestManager;
 
+  selectedStoryCountForLastRun = 0;
+
   constructor(
     private channel: Channel,
     public store: experimental_UniversalStore<StoreState>,
@@ -96,6 +98,8 @@ export class TestManager {
         await this.vitestManager.vitestRestartPromise;
       }
 
+      this.selectedStoryCountForLastRun = payload.storyIds?.length ?? 0;
+
       await this.vitestManager.runTests(payload);
 
       if (temporarilyDisableCoverage) {
@@ -120,7 +124,20 @@ export class TestManager {
   }
 
   async sendProgressReport(payload: TestingModuleProgressReportPayload) {
-    this.channel.emit(TESTING_MODULE_PROGRESS_REPORT, payload);
+    this.channel.emit(TESTING_MODULE_PROGRESS_REPORT, {
+      ...payload,
+      details: { ...payload.details, selectedStoryCount: this.selectedStoryCountForLastRun },
+    });
+
+    const status = 'status' in payload ? payload.status : undefined;
+    const progress = 'progress' in payload ? payload.progress : undefined;
+    if (
+      ((status === 'success' || status === 'cancelled') && progress?.finishedAt) ||
+      status === 'failed'
+    ) {
+      // reset the count when a test run is fully finished
+      this.selectedStoryCountForLastRun = 0;
+    }
   }
 
   async reportFatalError(message: string, error: Error | any) {

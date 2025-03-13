@@ -1,10 +1,10 @@
 import React from 'react';
 
 import { Link } from 'storybook/internal/components';
-import { useStorybookApi } from 'storybook/internal/manager-api';
-import { styled } from 'storybook/internal/theming';
+import { CallStates } from 'storybook/internal/instrumenter';
 
-import { CallStates } from '@storybook/instrumenter';
+import { useStorybookApi } from 'storybook/manager-api';
+import { styled } from 'storybook/theming';
 
 import { DOCUMENTATION_DISCREPANCY_LINK } from '../constants';
 

@@ -1,8 +1,13 @@
 import { createContext, useContext } from 'react';
 
-import type { API_StatusObject, API_StatusState, API_StatusValue, StoryId } from '@storybook/types';
+import type {
+  API_StatusObject,
+  API_StatusState,
+  API_StatusValue,
+  StoryId,
+} from 'storybook/internal/types';
 
-import type { StoriesHash } from '@storybook/core/manager-api';
+import type { StoriesHash } from 'storybook/manager-api';
 
 import type { Item } from '../../container/Sidebar';
 import { getDescendantIds } from '../../utils/tree';

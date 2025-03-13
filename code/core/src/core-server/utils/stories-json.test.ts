@@ -2,9 +2,8 @@ import { join } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { normalizeStoriesEntry } from '@storybook/core/common';
-
-import { STORY_INDEX_INVALIDATED } from '@storybook/core/core-events';
+import { normalizeStoriesEntry } from 'storybook/internal/common';
+import { STORY_INDEX_INVALIDATED } from 'storybook/internal/core-events';
 
 import { debounce } from 'es-toolkit/compat';
 import type { Polka, Request, Response } from 'polka';
@@ -18,7 +17,7 @@ import { DEBOUNCE, useStoriesJson } from './stories-json';
 
 vi.mock('watchpack');
 vi.mock('es-toolkit/compat');
-vi.mock('@storybook/core/node-logger');
+vi.mock('storybook/internal/node-logger');
 
 const workingDir = join(__dirname, '__mockdata__');
 const normalizedStories = [
@@ -254,6 +253,18 @@ describe('useStoriesJson', () => {
               ],
               "title": "docs2/Yabbadabbadooo",
               "type": "docs",
+            },
+            "example-button--story-one": {
+              "id": "example-button--story-one",
+              "importPath": "./src/Button.stories.ts",
+              "name": "Story One",
+              "tags": [
+                "dev",
+                "test",
+                "foobar",
+              ],
+              "title": "Example/Button",
+              "type": "story",
             },
             "first-nested-deeply-f--story-one": {
               "id": "first-nested-deeply-f--story-one",

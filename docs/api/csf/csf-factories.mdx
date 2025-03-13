@@ -120,34 +120,13 @@ import preview from '#.storybook/preview';
 import preview from '../../../.storybook/preview';
 ```
 
-The [CSF Factories codemod](#codemod) will automatically add the necessary subpath import for the preview file, or you can [add it manually](#1-add-subpath-import-in-packagejson).
+See the manual migration steps for details about [configuring the necessary subpath imports](#1-add-subpath-import-in-packagejson).
 
 For more details, refer to the [subpath imports documentation](../../writing-stories/mocking-data-and-modules/mocking-modules.mdx#subpath-imports).
 
 ## Upgrading from CSF 1, 2, or 3
 
 You can upgrade your project's story files to CSF Factories incrementally or all at once. However, before using CSF Factories in a story file, you must upgrade your `.storybook/main.js|ts` and `.storybook/preview.js|ts` files.
-
-### Codemod
-
-Storybook provides codemods to help you migrate your codebase to the CSF Factories format effortlessly. Run the following command in the root of your project:
-
-{/* prettier-ignore-start */}
-<CodeSnippets path="csf-factories-codemod.md" />
-{/* prettier-ignore-end */}
-
-<Callout variant="info" icon="💡">
-  If you use a monorepo or your `.storybook` directory is not at the root, make sure to pass the `--config-dir` flag to the command, specifying its path.
-</Callout>
-
-This command performs the following actions:
-
-- Adds [a subpath import](#1-add-subpath-import-in-packagejson) for the preview file in your `package.json`
-- [Migrates `.storybook/main.js`](#2-update-your-main-storybook-config-file)
-- [Migrates `.storybook/preview.js`](#3-update-your-preview-config-file)
-- Converts all story files to [use CSF Factories](#4-update-your-story-files)
-
-This should get you started with CSF Factories immediately. If you prefer a manual migration, the next sections detail the necessary updates.
 
 ### 1. Add subpath import in `package.json`
 
@@ -156,9 +135,6 @@ To be able to consistently import the preview file from any location in your pro
 ```json title="package.json"
 {
   "imports": {
-    "#.storybook/preview": {
-      "default": "./.storybook/preview.ts",
-    },
     "#*": ["./*", "./*.ts", "./*.tsx"],
   },
 }
@@ -197,8 +173,6 @@ If an addon provides annotations (i.e. it distributes a `./preview` export), it 
 
 2. For community addons, you should import the entire module and access the addon from there:
    `import * as addonName from 'community-addon-name'`
-
-Sound complicated? The [codemod](#codemod) will automatically add the necessary imports for you.   
 
 </details>
 
@@ -285,12 +259,34 @@ All of the story properties are now contained within a new property called `comp
 <Callout variant="info">
   The property name "composed" was chosen because the values within are composed from the story, its component meta, and the preview configuration.
 
- If you want to access the direct input to the story, you can use `Story.input` instead of `Story.composed`.
-
-  When running the [codemod](#codemod), it will automatically update usages of `Story.args` to `Story.input.args`. This is to ensure that your stories continue to work as expected. However, using `Story.composed.args` is likely more helpful in most cases.
+  If you want to access the direct input to the story, you can use `Story.input` instead of `Story.composed`.
 </Callout>
 
-### 5. Reusing stories in test files
+### 5. Update your Vitest setup file
+
+Whether you're using [Storybook's Test addon](../../writing-tests/test-addon.mdx) or [portable stories in Vitest](../portable-stories/portable-stories-vitest.mdx), you may use a Vitest setup file to configure your stories. This file must be updated to use the new CSF Factories format.
+
+<Callout variant="warning">
+Note that this only applies if you use CSF Factories for all your tested stories. If you use a mix of CSF 1, 2, or 3 and CSF Factories, you must maintain two separate setup files.
+</Callout>
+
+```diff title="vitest.setup.js|ts"
+import { beforeAll } from 'vitest';
+// 👇 No longer necessary
+- import { setProjectAnnotations } from '@storybook/react';
+- import * as addonAnnotations from 'my-addon/preview';
++ import preview from './.storybook/preview';
+- import * as previewAnnotations from './.storybook/preview';
+
+// No longer necessary
+- const annotations = setProjectAnnotations([previewAnnotations, addonAnnotations]);
+ 
+// Run Storybook's beforeAll hook
++ beforeAll(preview.composed.beforeAll);
+- beforeAll(annotations.beforeAll);
+```
+
+### 6. Reusing stories in test files
 
 [Storybook's Test addon](../../writing-tests/test-addon.mdx) allows you to test your components directly inside Storybook. All the stories are automatically turned into Vitest tests, making integration seamless in your testing suite.
 

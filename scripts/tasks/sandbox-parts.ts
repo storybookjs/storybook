@@ -398,7 +398,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
     const vitestAddonPath = relative(sandboxDir, join(CODE_DIRECTORY, 'addons', 'test'));
     packageJson.resolutions = {
       ...packageJson.resolutions,
-      '@storybook/experimental-addon-test': `file:${vitestAddonPath}`,
+      '@storybook/addon-test': `file:${vitestAddonPath}`,
     };
   }
 
@@ -440,10 +440,9 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
       import { setProjectAnnotations } from '${storybookPackage}'
       import * as rendererDocsAnnotations from '${template.expected.renderer}/dist/entry-preview-docs.mjs'
       import * as addonA11yAnnotations from '@storybook/addon-a11y/preview'
-      import * as addonActionsAnnotations from '@storybook/addon-actions/preview'
-      import * as addonTestAnnotations from '@storybook/experimental-addon-test/preview'
+      import * as addonTestAnnotations from '@storybook/addon-test/preview'
       import '../src/stories/components'
-      import * as coreAnnotations from '../template-stories/core/preview'
+      import * as templateAnnotations from '../template-stories/core/preview'
       import * as toolbarAnnotations from '../template-stories/addons/toolbars/preview'
       import * as projectAnnotations from './preview'
       ${isVue ? 'import * as vueAnnotations from "../src/stories/renderers/vue3/preview.js"' : ''}
@@ -451,9 +450,8 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
       const annotations = setProjectAnnotations([
         ${isVue ? 'vueAnnotations,' : ''}
         rendererDocsAnnotations,
-        coreAnnotations,
+        templateAnnotations,
         toolbarAnnotations,
-        addonActionsAnnotations,
         addonTestAnnotations,
         addonA11yAnnotations,
         projectAnnotations,
@@ -475,7 +473,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
         import path from 'node:path';
         import { fileURLToPath } from 'node:url';
         import { defineWorkspace, defaultExclude } from "vitest/config";
-        import { storybookTest } from "@storybook/experimental-addon-test/vitest-plugin";
+        import { storybookTest } from "@storybook/addon-test/vitest-plugin";
 
         ${viteConfigFile ? `import viteConfig from './${viteConfigFile}';` : ''}
 
@@ -520,7 +518,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
               ],
               /**
                * TODO: Either fix or acknowledge limitation of:
-               * - @storybook/core/preview-api hooks:
+               * - storybook/preview-api hooks:
                * -- UseState
                */
               // @ts-expect-error this type does not exist but the property does!
@@ -548,7 +546,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
         import path from 'node:path';
         import { fileURLToPath } from 'node:url';
         import { defineConfig, defaultExclude } from "vitest/config";
-        import { storybookTest } from "@storybook/experimental-addon-test/vitest-plugin";
+        import { storybookTest } from "@storybook/addon-test/vitest-plugin";
 
         ${vitestConfigFile && viteConfigFile ? `import viteConfig from './${viteConfigFile}';` : ''}
 
@@ -592,7 +590,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
             ],
             /**
              * TODO: Either fix or acknowledge limitation of:
-             * - @storybook/core/preview-api hooks:
+             * - storybook/preview-api hooks:
              * -- UseState
              */
             // @ts-expect-error this type does not exist but the property does!
@@ -750,26 +748,17 @@ export const addStories: Task['run'] = async (
   if (isCoreRenderer) {
     // Add stories for lib/preview-api (and addons below). NOTE: these stories will be in the
     // template-stories folder and *not* processed by the framework build config (instead by esbuild-loader)
-    await linkPackageStories(await workspacePath('core package', '@storybook/core'), {
+    await linkPackageStories(await workspacePath('core package', 'storybook'), {
       mainConfig,
       cwd,
       disableDocs,
     });
 
-    await linkPackageStories(await workspacePath('test package', '@storybook/test'), {
+    await linkPackageStories(await workspacePath('addon test package', '@storybook/addon-test'), {
       mainConfig,
       cwd,
       disableDocs,
     });
-
-    await linkPackageStories(
-      await workspacePath('addon test package', '@storybook/experimental-addon-test'),
-      {
-        mainConfig,
-        cwd,
-        disableDocs,
-      }
-    );
   }
 
   const mainAddons = (mainConfig.getSafeFieldValue(['addons']) || []).reduce(
@@ -905,12 +894,15 @@ export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
       ? '../src/stories/components'
       : '../stories/components';
     previewConfig.setImport(null, storiesDir);
-    previewConfig.setImport({ namespace: 'coreAnnotations' }, '../template-stories/core/preview');
+    previewConfig.setImport(
+      { namespace: 'templateAnnotations' },
+      '../template-stories/core/preview'
+    );
     previewConfig.setImport(
       { namespace: 'toolbarAnnotations' },
       '../template-stories/addons/toolbars/preview'
     );
-    previewConfig.appendNodeToArray(['addons'], t.identifier('coreAnnotations'));
+    previewConfig.appendNodeToArray(['addons'], t.identifier('templateAnnotations'));
     previewConfig.appendNodeToArray(['addons'], t.identifier('toolbarAnnotations'));
   }
 

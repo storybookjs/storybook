@@ -1,6 +1,6 @@
-import { CallStates } from '@storybook/instrumenter';
+import { CallStates } from 'storybook/internal/instrumenter';
 
-import { action } from '@storybook/addon-actions';
+import { action } from 'storybook/actions';
 
 import { parameters } from '../preview';
 import { Subnav } from './Subnav';

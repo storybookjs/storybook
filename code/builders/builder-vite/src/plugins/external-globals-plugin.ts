@@ -25,7 +25,7 @@ const replacementMap = new Map([
  * @example
  *
  * ```js
- * import { useMemo as useMemo2, useEffect as useEffect2 } from '@storybook/preview-api';
+ * import { useMemo as useMemo2, useEffect as useEffect2 } from 'storybook/preview-api';
  * ```
  *
  * Becomes

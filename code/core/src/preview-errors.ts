@@ -4,8 +4,8 @@ import { StorybookError } from './storybook-error';
 
 /**
  * If you can't find a suitable category for your error, create one based on the package name/file
- * path of which the error is thrown. For instance: If it's from `@storybook/client-logger`, then
- * CLIENT-LOGGER
+ * path of which the error is thrown. For instance: If it's from `storybook/internal/client-logger`,
+ * then CLIENT-LOGGER
  *
  * Categories are prefixed by a logical grouping, e.g. PREVIEW_ or FRAMEWORK_ to prevent manager and
  * preview errors from having the same category and error code.
@@ -60,7 +60,7 @@ export class ImplicitActionsDuringRendering extends StorybookError {
         We detected that you use an implicit action arg while ${data.phase} of your story.  
         ${data.deprecated ? `\nThis is deprecated and won't work in Storybook 8 anymore.\n` : ``}
         Please provide an explicit spy to your args like this:
-          import { fn } from '@storybook/test';
+          import { fn } from 'storybook/test';
           ... 
           args: {
            ${data.name}: fn()

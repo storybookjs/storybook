@@ -1,10 +1,9 @@
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import type { JsPackageManager, PackageJsonWithMaybeDeps } from '@storybook/core/common';
-import { HandledError, commandLog } from '@storybook/core/common';
-
-import { logger } from '@storybook/core/node-logger';
+import type { JsPackageManager, PackageJsonWithMaybeDeps } from 'storybook/internal/common';
+import { HandledError, commandLog } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 
 import { findUpSync } from 'find-up';
 import prompts from 'prompts';
@@ -208,10 +207,10 @@ export async function detectLanguage(packageManager: JsPackageManager) {
       (!eslintPluginStorybookVersion || semver.gte(eslintPluginStorybookVersion, '0.6.8'))
     ) {
       language = SupportedLanguage.TYPESCRIPT_4_9;
-    } else if (semver.gte(typescriptVersion, '3.8.0')) {
-      language = SupportedLanguage.TYPESCRIPT_3_8;
-    } else if (semver.lt(typescriptVersion, '3.8.0')) {
-      logger.warn('Detected TypeScript < 3.8, populating with JavaScript examples');
+    } else {
+      logger.warn(
+        'Detected TypeScript < 4.9 or incompatible tooling, populating with JavaScript examples'
+      );
     }
   } else {
     // No direct dependency on TypeScript, but could be a transitive dependency

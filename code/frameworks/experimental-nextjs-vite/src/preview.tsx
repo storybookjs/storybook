@@ -1,4 +1,8 @@
-import type { Addon_DecoratorFunction, Addon_LoaderFunction } from 'storybook/internal/types';
+import type * as React from 'react';
+
+import type { Addon_DecoratorFunction, LoaderFunction } from 'storybook/internal/types';
+
+import type { ReactRenderer, StoryFn } from '@storybook/react';
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore we must ignore types here as during compilation they are not generated yet
@@ -25,7 +29,8 @@ function addNextHeadCount() {
 function isAsyncClientComponentError(error: unknown) {
   return (
     typeof error === 'string' &&
-    (error.includes('A component was suspended by an uncached promise.') ||
+    (error.includes('Only Server Components can be async at the moment.') ||
+      error.includes('A component was suspended by an uncached promise.') ||
       error.includes('async/await is not yet supported in Client Components'))
   );
 }
@@ -49,21 +54,25 @@ globalThis.addEventListener('error', (ev: WindowEventMap['error']): void => {
   }
 });
 
-export const decorators: Addon_DecoratorFunction<any>[] = [
-  StyledJsxDecorator,
-  ImageDecorator,
-  RouterDecorator,
-  HeadManagerDecorator,
+// Type assertion to handle the decorator type mismatch
+const asDecorator = (decorator: (Story: React.FC, context?: any) => React.ReactNode) =>
+  decorator as unknown as Addon_DecoratorFunction<ReactRenderer>;
+
+export const decorators: Addon_DecoratorFunction<ReactRenderer>[] = [
+  asDecorator(StyledJsxDecorator),
+  asDecorator(ImageDecorator),
+  asDecorator(RouterDecorator),
+  asDecorator(HeadManagerDecorator),
 ];
 
-export const loaders: Addon_LoaderFunction = async ({ globals, parameters }) => {
+export const loaders: LoaderFunction<ReactRenderer> = async ({ globals, parameters }) => {
   const { router, appDirectory } = parameters.nextjs ?? {};
   if (appDirectory) {
     createNavigation(router);
   } else {
     createRouter({
       locale: globals.locale,
-      ...router,
+      ...(router as Record<string, unknown>),
     });
   }
 };

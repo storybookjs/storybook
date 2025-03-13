@@ -1,6 +1,7 @@
 /* eslint-env browser */
-import { useEffect } from 'storybook/internal/preview-api';
 import type { DecoratorFunction } from 'storybook/internal/types';
+
+import { useEffect } from 'storybook/preview-api';
 
 import { destroy, init, rescale } from './box-model/canvas';
 import { drawSelectedElement } from './box-model/visualizer';

@@ -1,12 +1,17 @@
+import type { ProjectAnnotations } from 'storybook/internal/types';
+
 import type { ReactPreview } from '@storybook/react';
-import { definePreview as definePreviewBase } from '@storybook/react';
+import { __definePreview } from '@storybook/react';
+import type { ReactRenderer } from '@storybook/react';
 
 import type vitePluginStorybookNextJs from 'vite-plugin-storybook-nextjs';
 
 import * as nextPreview from './preview';
 
-export * from './types';
+export * from '@storybook/react';
+// @ts-expect-error (double exports)
 export * from './portable-stories';
+export * from './types';
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -15,9 +20,12 @@ declare module '@storybook/experimental-nextjs-vite/vite-plugin' {
 }
 
 export function definePreview(preview: NextPreview['input']) {
-  return definePreviewBase({
+  return __definePreview({
     ...preview,
-    addons: [nextPreview, ...(preview.addons ?? [])],
+    addons: [
+      nextPreview as unknown as ProjectAnnotations<ReactRenderer>,
+      ...(preview.addons ?? []),
+    ],
   }) as NextPreview;
 }
 

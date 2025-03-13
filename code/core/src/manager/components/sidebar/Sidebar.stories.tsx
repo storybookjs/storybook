@@ -1,11 +1,12 @@
 import React from 'react';
 
-import type { API_StatusState, Addon_SidebarTopType } from '@storybook/core/types';
-import type { Meta, StoryObj } from '@storybook/react';
-import { expect, fn, userEvent, within } from '@storybook/test';
+import type { API_StatusState, Addon_SidebarTopType } from 'storybook/internal/types';
 
-import type { IndexHash, State } from '@storybook/core/manager-api';
-import { ManagerContext } from '@storybook/core/manager-api';
+import type { Meta, StoryObj } from '@storybook/react-vite';
+
+import type { IndexHash, State } from 'storybook/manager-api';
+import { ManagerContext } from 'storybook/manager-api';
+import { expect, fn, userEvent, within } from 'storybook/test';
 
 import { LayoutProvider } from '../layout/LayoutProvider';
 import { standardData as standardHeaderData } from './Heading.stories';

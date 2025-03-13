@@ -3,14 +3,15 @@
 /* eslint-disable no-underscore-dangle */
 import { type RunnerTask, type TaskMeta, type TestContext } from 'vitest';
 
-import {
-  type Report,
-  composeStory,
-  getCsfFactoryAnnotations,
-} from 'storybook/internal/preview-api';
 import type { ComponentAnnotations, ComposedStoryFn } from 'storybook/internal/types';
 
 import { server } from '@vitest/browser/context';
+import {
+  type Report,
+  composeConfigs,
+  composeStory,
+  getCsfFactoryAnnotations,
+} from 'storybook/preview-api';
 
 import { setViewport } from './viewports';
 
@@ -34,7 +35,7 @@ export const testStory = (
       annotations.story,
       annotations.meta!,
       { initialGlobals: (await getInitialGlobals?.()) ?? {} },
-      annotations.preview,
+      annotations.preview ?? globalThis.globalProjectAnnotations,
       exportName
     );
 

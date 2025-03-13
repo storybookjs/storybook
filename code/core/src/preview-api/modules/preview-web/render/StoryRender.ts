@@ -1,4 +1,16 @@
-import type { Channel } from '@storybook/core/channels';
+import type { Channel } from 'storybook/internal/channels';
+import {
+  PLAY_FUNCTION_THREW_EXCEPTION,
+  STORY_FINISHED,
+  STORY_RENDERED,
+  STORY_RENDER_PHASE_CHANGED,
+  type StoryFinishedPayload,
+  UNHANDLED_ERRORS_WHILE_PLAYING,
+} from 'storybook/internal/core-events';
+import {
+  MountMustBeDestructuredError,
+  NoStoryMountedError,
+} from 'storybook/internal/preview-errors';
 import type {
   Canvas,
   PreparedStory,
@@ -10,17 +22,9 @@ import type {
   StoryId,
   StoryRenderOptions,
   TeardownRenderToCanvas,
-} from '@storybook/core/types';
+} from 'storybook/internal/types';
 
-import {
-  PLAY_FUNCTION_THREW_EXCEPTION,
-  STORY_FINISHED,
-  STORY_RENDERED,
-  STORY_RENDER_PHASE_CHANGED,
-  type StoryFinishedPayload,
-  UNHANDLED_ERRORS_WHILE_PLAYING,
-} from '@storybook/core/core-events';
-import { MountMustBeDestructuredError, NoStoryMountedError } from '@storybook/core/preview-errors';
+import type { UserEventObject } from 'storybook/test';
 
 import type { StoryStore } from '../../store';
 import type { Render, RenderType } from './Render';
@@ -218,6 +222,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
         step: (label, play) => runStep(label, play, context),
         context: null!,
         canvas: {} as Canvas,
+        userEvent: {} as UserEventObject,
         renderToCanvas: async () => {
           const teardown = await this.renderToScreen(renderContext, canvasElement);
           this.teardownRender = teardown || (() => {});

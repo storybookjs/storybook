@@ -1,5 +1,5 @@
 import { defineWorkspace } from "vitest/config";
-import { storybookTest } from "@storybook/experimental-addon-test/vitest-plugin";
+import { storybookTest } from "@storybook/addon-test/vitest-plugin";
 
 export default defineWorkspace([
   {
@@ -30,7 +30,7 @@ export default defineWorkspace([
         }]
       },
       setupFiles: ["./.storybook/vitest.setup.ts"],
-      environment: "happy-dom",
+      environment: "jsdom",
     },
   },
 ]);

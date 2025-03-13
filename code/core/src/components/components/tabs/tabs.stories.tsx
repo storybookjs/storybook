@@ -1,11 +1,12 @@
 import React from 'react';
 
 import { BottomBarIcon, CloseIcon } from '@storybook/icons';
-import type { Meta, StoryObj } from '@storybook/react';
-import { expect } from '@storybook/test';
-import { findByText, fireEvent, screen, userEvent, waitFor, within } from '@storybook/test';
 
-import { action } from '@storybook/addon-actions';
+import type { Meta, StoryObj } from '@storybook/react-vite';
+
+import { action } from 'storybook/actions';
+import { expect } from 'storybook/test';
+import { findByText, fireEvent, screen, userEvent, waitFor, within } from 'storybook/test';
 
 import { IconButton } from '../IconButton/IconButton';
 import { TabWrapper, Tabs, TabsState } from './tabs';

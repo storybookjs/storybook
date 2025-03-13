@@ -224,6 +224,7 @@ export async function baseGenerator(
       ProjectType.SVELTE,
       ProjectType.SVELTEKIT,
       ProjectType.WEB_COMPONENTS,
+      ProjectType.REACT_NATIVE_WEB,
     ];
     const supportsTestAddon =
       projectType === ProjectType.NEXTJS ||
@@ -282,7 +283,8 @@ export async function baseGenerator(
         })
       : extraAddonPackages;
 
-  extraAddonsToInstall.push('@chromatic-com/storybook@^3');
+  // TODO: change the semver range to '^4' when VTA 4 and SB 9 is released
+  extraAddonsToInstall.push('@chromatic-com/storybook@^4.0.0-0');
 
   // added to main.js
   const addons = [
@@ -295,7 +297,6 @@ export async function baseGenerator(
   const addonPackages = [
     '@storybook/addon-essentials',
     '@storybook/blocks',
-    '@storybook/test',
     ...(compiler ? [`@storybook/addon-webpack5-compiler-${compiler}`] : []),
     ...extraAddonsToInstall,
   ].filter(Boolean);
@@ -331,7 +332,6 @@ export async function baseGenerator(
 
   const allPackages = [
     'storybook',
-    getExternalFramework(rendererId) ? undefined : `@storybook/${rendererId}`,
     ...(installFrameworkPackages ? frameworkPackages : []),
     ...addonPackages,
     ...(extraPackagesToInstall || []),
@@ -447,7 +447,7 @@ export async function baseGenerator(
       throw new Error(`Could not find template location for ${framework} or ${rendererId}`);
     }
     await copyTemplateFiles({
-      renderer: templateLocation,
+      templateLocation,
       packageManager: packageManager as any,
       language,
       destination: componentsDestinationPath,

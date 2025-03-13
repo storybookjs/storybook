@@ -1,6 +1,6 @@
 {
   "name": "@storybook/angular",
-  "version": "8.6.0-beta.0",
+  "version": "9.0.0-alpha.3",
   "description": "Storybook for Angular: Develop Angular components in isolation with hot reloading.",
   "keywords": [
     "storybook",
@@ -54,12 +54,8 @@
   },
   "dependencies": {
     "@storybook/builder-webpack5": "workspace:*",
-    "@storybook/components": "workspace:*",
     "@storybook/core-webpack": "workspace:*",
     "@storybook/global": "^5.0.0",
-    "@storybook/manager-api": "workspace:*",
-    "@storybook/preview-api": "workspace:*",
-    "@storybook/theming": "workspace:*",
     "@types/react": "^18.0.37",
     "@types/react-dom": "^18.0.11",
     "@types/semver": "^7.3.4",
@@ -101,6 +97,7 @@
     "@angular-devkit/architect": ">=0.1500.0 < 0.2000.0",
     "@angular-devkit/build-angular": ">=15.0.0 < 20.0.0",
     "@angular-devkit/core": ">=15.0.0 < 20.0.0",
+    "@angular/animations": ">=15.0.0 < 20.0.0",
     "@angular/cli": ">=15.0.0 < 20.0.0",
     "@angular/common": ">=15.0.0 < 20.0.0",
     "@angular/compiler": ">=15.0.0 < 20.0.0",
@@ -111,10 +108,13 @@
     "@angular/platform-browser-dynamic": ">=15.0.0 < 20.0.0",
     "rxjs": "^6.0.0 || ^7.4.0",
     "storybook": "workspace:^",
-    "typescript": "^4.0.0 || ^5.0.0",
+    "typescript": "^4.9.0 || ^5.0.0",
     "zone.js": ">= 0.11.1 < 1.0.0"
   },
   "peerDependenciesMeta": {
+    "@angular/animations": {
+      "optional": true
+    },
     "@angular/cli": {
       "optional": true
     },

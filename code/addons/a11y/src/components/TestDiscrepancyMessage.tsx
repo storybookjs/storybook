@@ -1,8 +1,9 @@
 import React, { useMemo } from 'react';
 
 import { Link } from 'storybook/internal/components';
-import { useStorybookApi } from 'storybook/internal/manager-api';
-import { styled } from 'storybook/internal/theming';
+
+import { useStorybookApi } from 'storybook/manager-api';
+import { styled } from 'storybook/theming';
 
 import { DOCUMENTATION_DISCREPANCY_LINK } from '../constants';
 

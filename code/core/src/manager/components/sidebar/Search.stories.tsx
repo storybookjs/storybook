@@ -1,11 +1,10 @@
 import React from 'react';
 
-import type { Meta, StoryFn } from '@storybook/react';
+import type { Meta, StoryFn } from '@storybook/react-vite';
 
-import type { API } from '@storybook/core/manager-api';
-import { ManagerContext } from '@storybook/core/manager-api';
-
-import { action } from '@storybook/addon-actions';
+import { action } from 'storybook/actions';
+import type { API } from 'storybook/manager-api';
+import { ManagerContext } from 'storybook/manager-api';
 
 import { IconSymbols } from './IconSymbols';
 import { Search } from './Search';

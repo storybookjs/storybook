@@ -144,10 +144,8 @@ export function createStatusStore({
 
       universalStatusStore.setState((state) => {
         const newState = { ...state };
-        for (const storyId in newState) {
-          if (storyIds.includes(storyId)) {
-            delete newState[storyId];
-          }
+        for (const storyId of storyIds) {
+          delete newState[storyId];
         }
         return newState;
       });

@@ -184,14 +184,25 @@ export const rendererToFramework: Fix<MigrationResult> = {
   prompt(result: MigrationResult): string {
     if (result.frameworks.length > 1) {
       return dedent`
-        Multiple frameworks detected. You will be prompted to select which framework to use.
+        As part of Storybook's evolution, we're moving from renderer-based to framework-based configuration.
+        We've detected multiple framework packages in your project: ${result.frameworks.join(', ')}.
+        You will be prompted to select which framework to use for your Storybook configuration.
+        This will update your imports and dependencies to use the framework-specific package.
+
         Would you like to proceed with the migration?
       `;
     }
 
     return dedent`
-      Found renderer packages "${result.renderers.join(', ')}" that can be replaced with framework package "${result.frameworks[0]}".
-      Would you like to update imports in source files and remove the renderer packages from package.json?
+      As part of Storybook's evolution, we're moving from renderer-based to framework-based configuration.
+      We've detected renderer packages (${result.renderers.join(', ')}) that can be replaced with the framework package "${result.frameworks[0]}".
+      
+      This migration will:
+      1. Update your source files to use framework-specific imports
+      2. Remove the renderer packages from your package.json
+      3. Install the necessary framework dependencies
+
+      Would you like to proceed with these changes?
     `;
   },
 

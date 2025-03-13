@@ -1,22 +1,18 @@
 import type { FC } from 'react';
 import React from 'react';
 
+import { Link } from 'storybook/internal/components';
 import { styled } from 'storybook/internal/theming';
 
 import type { Result } from 'axe-core';
 
 const Wrapper = styled.div({
-  padding: 12,
+  padding: '0 15px',
   marginBottom: 10,
 });
+
 const Description = styled.p({
-  margin: '0 0 12px',
-});
-const Link = styled.a({
-  marginTop: 12,
-  textDecoration: 'underline',
-  color: 'inherit',
-  display: 'block',
+  margin: '0 0 10px',
 });
 
 interface InfoProps {
@@ -26,9 +22,11 @@ interface InfoProps {
 export const Info: FC<InfoProps> = ({ item }) => {
   return (
     <Wrapper>
-      <Description>{item.description}</Description>
-      <Link href={item.helpUrl} target="_blank">
-        More info...
+      <Description>
+        {item.description.endsWith('.') ? item.description : `${item.description}.`}
+      </Description>
+      <Link href={item.helpUrl} target="_blank" withArrow>
+        Learn how to resolve this violation
       </Link>
     </Wrapper>
   );

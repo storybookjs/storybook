@@ -1,7 +1,6 @@
 export type {
   Status,
   StatusTypeId,
-  StatusValueType,
   StatusByTypeId,
   StatusesByStoryIdAndTypeId,
   StatusStore,

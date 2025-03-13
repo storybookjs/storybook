@@ -1,5 +1,5 @@
 import type { State, StoriesHash } from 'storybook/internal/manager-api';
-import type { StatusValueType, StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
+import type { StatusValue, StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
 
 import type { ControllerStateAndHelpers } from 'downshift';
 
@@ -44,7 +44,7 @@ export interface ExpandType {
   moreCount: number;
 }
 
-export type SearchItem = Item & { refId: string; path: string[]; status?: StatusValueType };
+export type SearchItem = Item & { refId: string; path: string[]; status?: StatusValue };
 
 export type SearchResult = Fuse.FuseResultWithMatches<SearchItem> &
   Fuse.FuseResultWithScore<SearchItem>;

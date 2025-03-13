@@ -16,7 +16,7 @@ import {
   useParameter,
   useStorybookState,
 } from 'storybook/internal/manager-api';
-import { StatusValue, type StatusValueType } from 'storybook/internal/types';
+import { StatusValue } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
@@ -35,7 +35,7 @@ const INITIAL_CONTROL_STATES = {
   end: false,
 };
 
-const statusMap: Record<CallStates, StatusValueType> = {
+const statusMap: Record<CallStates, StatusValue> = {
   [CallStates.DONE]: StatusValue.SUCCESS,
   [CallStates.ERROR]: StatusValue.ERROR,
   [CallStates.ACTIVE]: StatusValue.PENDING,

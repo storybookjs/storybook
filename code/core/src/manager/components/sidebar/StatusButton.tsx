@@ -1,12 +1,11 @@
 import { IconButton } from 'storybook/internal/components';
 import { styled } from 'storybook/internal/theming';
+import type { StatusValue } from 'storybook/internal/types';
 
 import type { Theme } from '@emotion/react';
 import { darken, lighten, transparentize } from 'polished';
 
-import type { StatusValueType } from '../../../types';
-
-const withStatusColor = ({ theme, status }: { theme: Theme; status: StatusValueType }) => {
+const withStatusColor = ({ theme, status }: { theme: Theme; status: StatusValue }) => {
   const defaultColor =
     theme.base === 'light'
       ? transparentize(0.3, theme.color.defaultText)
@@ -23,14 +22,14 @@ const withStatusColor = ({ theme, status }: { theme: Theme; status: StatusValueT
   };
 };
 
-export const StatusLabel = styled.div<{ status: StatusValueType }>(withStatusColor, {
+export const StatusLabel = styled.div<{ status: StatusValue }>(withStatusColor, {
   margin: 3,
 });
 
 export const StatusButton = styled(IconButton)<{
   height?: number;
   width?: number;
-  status: StatusValueType;
+  status: StatusValue;
   selectedItem?: boolean;
 }>(
   withStatusColor,

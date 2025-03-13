@@ -8,7 +8,6 @@ import {
   Addon_TypesEnum,
   StatusValue,
 } from 'storybook/internal/types';
-import type { StatusValueType } from 'storybook/internal/types';
 
 import { a11yStatusStore, componentTestStatusStore, store } from '#manager-store';
 
@@ -26,7 +25,7 @@ import {
 } from './constants';
 import type { TestStatus } from './node/reporter';
 
-const statusMap: Record<TestStatus, StatusValueType> = {
+const statusMap: Record<TestStatus, StatusValue> = {
   pending: StatusValue.PENDING,
   passed: StatusValue.SUCCESS,
   warning: StatusValue.WARN,

@@ -16,12 +16,12 @@ export const StatusValue = {
 } as const;
 
 export type StatusTypeId = string;
-export type StatusValueType = (typeof StatusValue)[keyof typeof StatusValue];
+export type StatusValue = (typeof StatusValue)[keyof typeof StatusValue];
 export type StatusByTypeId = Record<StatusTypeId, Status>;
 export type StatusesByStoryIdAndTypeId = Record<StoryId, StatusByTypeId>;
 
 export interface Status {
-  value: StatusValueType;
+  value: StatusValue;
   typeId: StatusTypeId;
   storyId: StoryId;
   title: string;

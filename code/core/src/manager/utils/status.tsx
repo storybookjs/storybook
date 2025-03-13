@@ -5,7 +5,6 @@ import { styled } from 'storybook/internal/theming';
 import {
   type API_HashEntry,
   StatusValue,
-  type StatusValueType,
   type StatusesByStoryIdAndTypeId,
 } from 'storybook/internal/types';
 
@@ -28,14 +27,14 @@ const LoadingIcons = styled(SmallIcons)(({ theme: { animation, color, base } }) 
   color: base === 'light' ? color.mediumdark : color.darker,
 }));
 
-export const statusPriority: StatusValueType[] = [
+export const statusPriority: StatusValue[] = [
   StatusValue.UNKNOWN,
   StatusValue.PENDING,
   StatusValue.SUCCESS,
   StatusValue.WARN,
   StatusValue.ERROR,
 ];
-export const statusMapping: Record<StatusValueType, [ReactElement | null, string | null]> = {
+export const statusMapping: Record<StatusValue, [ReactElement | null, string | null]> = {
   [StatusValue.UNKNOWN]: [null, null],
   [StatusValue.PENDING]: [<LoadingIcons key="icon" />, 'currentColor'],
   [StatusValue.SUCCESS]: [
@@ -58,7 +57,7 @@ export const statusMapping: Record<StatusValueType, [ReactElement | null, string
   ],
 };
 
-export const getMostCriticalStatusValue = (statusValues: StatusValueType[]): StatusValueType => {
+export const getMostCriticalStatusValue = (statusValues: StatusValue[]): StatusValue => {
   return statusPriority.reduce(
     (acc, value) => (statusValues.includes(value) ? value : acc),
     StatusValue.UNKNOWN
@@ -70,8 +69,8 @@ export function getGroupStatus(
     [x: string]: Partial<API_HashEntry>;
   },
   allStatuses: StatusesByStoryIdAndTypeId
-): Record<string, StatusValueType> {
-  return Object.values(collapsedData).reduce<Record<string, StatusValueType>>((acc, item) => {
+): Record<string, StatusValue> {
+  return Object.values(collapsedData).reduce<Record<string, StatusValue>>((acc, item) => {
     if (item.type === 'group' || item.type === 'component') {
       // @ts-expect-error (non strict)
       const leafs = getDescendantIds(collapsedData as any, item.id, false)

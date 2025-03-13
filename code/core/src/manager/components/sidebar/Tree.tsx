@@ -15,11 +15,12 @@ import type {
   StoryEntry,
 } from 'storybook/internal/manager-api';
 import { styled, useTheme } from 'storybook/internal/theming';
-import { type API_HashEntry, StatusValue, type StoryId } from 'storybook/internal/types';
-import type {
-  StatusByTypeId,
-  StatusValueType,
-  StatusesByStoryIdAndTypeId,
+import {
+  type API_HashEntry,
+  type StatusByTypeId,
+  StatusValue,
+  type StatusesByStoryIdAndTypeId,
+  type StoryId,
 } from 'storybook/internal/types';
 
 import {
@@ -169,7 +170,7 @@ interface NodeProps {
   setFullyExpanded?: () => void;
   onSelectStoryId: (itemId: string) => void;
   statuses: StatusByTypeId;
-  groupStatus: Record<StoryId, StatusValueType>;
+  groupStatus: Record<StoryId, StatusValue>;
   api: API;
   collapsedData: Record<string, API_HashEntry>;
 }
@@ -206,7 +207,7 @@ export const ContextMenu = {
   ListItem,
 };
 
-const statusOrder: StatusValueType[] = [
+const statusOrder: StatusValue[] = [
   StatusValue.SUCCESS,
   StatusValue.ERROR,
   StatusValue.WARN,

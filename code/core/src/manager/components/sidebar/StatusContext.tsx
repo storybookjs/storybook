@@ -2,7 +2,7 @@ import { createContext, useContext } from 'react';
 
 import type { StoriesHash } from 'storybook/internal/manager-api';
 import type { StoryId } from 'storybook/internal/types';
-import type { Status, StatusValueType, StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
+import type { Status, StatusValue, StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
 
 import type { Item } from '../../container/Sidebar';
 import { getDescendantIds } from '../../utils/tree';
@@ -10,14 +10,14 @@ import { getDescendantIds } from '../../utils/tree';
 export const StatusContext = createContext<{
   data?: StoriesHash;
   allStatuses?: StatusesByStoryIdAndTypeId;
-  groupStatus?: Record<StoryId, StatusValueType>;
+  groupStatus?: Record<StoryId, StatusValue>;
 }>({});
 
 export const useStatusSummary = (item: Item) => {
   const { data, allStatuses, groupStatus } = useContext(StatusContext);
   const summary: {
-    counts: Record<StatusValueType, number>;
-    statusesByValue: Record<StatusValueType, Record<StoryId, Status[]>>;
+    counts: Record<StatusValue, number>;
+    statusesByValue: Record<StatusValue, Record<StoryId, Status[]>>;
   } = {
     counts: { pending: 0, success: 0, error: 0, warn: 0, unknown: 0 },
     statusesByValue: { pending: {}, success: {}, error: {}, warn: {}, unknown: {} },

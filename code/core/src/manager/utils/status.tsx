@@ -2,11 +2,8 @@ import type { ReactElement } from 'react';
 import React from 'react';
 
 import { styled } from 'storybook/internal/theming';
-import {
-  type API_HashEntry,
-  StatusValue,
-  type StatusesByStoryIdAndTypeId,
-} from 'storybook/internal/types';
+import type { StatusValue } from 'storybook/internal/types';
+import { type API_HashEntry, type StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
 
 import { CircleIcon } from '@storybook/icons';
 
@@ -28,28 +25,28 @@ const LoadingIcons = styled(SmallIcons)(({ theme: { animation, color, base } }) 
 }));
 
 export const statusPriority: StatusValue[] = [
-  StatusValue.UNKNOWN,
-  StatusValue.PENDING,
-  StatusValue.SUCCESS,
-  StatusValue.WARN,
-  StatusValue.ERROR,
+  'status-value:unknown',
+  'status-value:pending',
+  'status-value:success',
+  'status-value:warn',
+  'status-value:error',
 ];
 export const statusMapping: Record<StatusValue, [ReactElement | null, string | null]> = {
-  [StatusValue.UNKNOWN]: [null, null],
-  [StatusValue.PENDING]: [<LoadingIcons key="icon" />, 'currentColor'],
-  [StatusValue.SUCCESS]: [
+  ['status-value:unknown']: [null, null],
+  ['status-value:pending']: [<LoadingIcons key="icon" />, 'currentColor'],
+  ['status-value:success']: [
     <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
       <UseSymbol type="success" />
     </svg>,
     'currentColor',
   ],
-  [StatusValue.WARN]: [
+  ['status-value:warn']: [
     <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
       <UseSymbol type="warning" />
     </svg>,
     '#A15C20',
   ],
-  [StatusValue.ERROR]: [
+  ['status-value:error']: [
     <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
       <UseSymbol type="error" />
     </svg>,
@@ -60,7 +57,7 @@ export const statusMapping: Record<StatusValue, [ReactElement | null, string | n
 export const getMostCriticalStatusValue = (statusValues: StatusValue[]): StatusValue => {
   return statusPriority.reduce(
     (acc, value) => (statusValues.includes(value) ? value : acc),
-    StatusValue.UNKNOWN
+    'status-value:unknown'
   );
 };
 

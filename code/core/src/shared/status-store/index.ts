@@ -7,16 +7,14 @@ import type { UniversalStore } from '../universal-store';
 import type { StoreOptions } from '../universal-store/types';
 import type { useUniversalStore as managerUseUniversalStore } from '../universal-store/use-universal-store-manager';
 
-export const StatusValue = {
-  PENDING: 'pending',
-  SUCCESS: 'success',
-  ERROR: 'error',
-  WARN: 'warn',
-  UNKNOWN: 'unknown',
-} as const;
+export type StatusValue =
+  | 'status-value:pending'
+  | 'status-value:success'
+  | 'status-value:error'
+  | 'status-value:warn'
+  | 'status-value:unknown';
 
 export type StatusTypeId = string;
-export type StatusValue = (typeof StatusValue)[keyof typeof StatusValue];
 export type StatusByTypeId = Record<StatusTypeId, Status>;
 export type StatusesByStoryIdAndTypeId = Record<StoryId, StatusByTypeId>;
 

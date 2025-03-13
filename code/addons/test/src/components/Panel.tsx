@@ -14,9 +14,8 @@ import {
   useAddonState,
   useChannel,
   useParameter,
-  useStorybookState,
 } from 'storybook/internal/manager-api';
-import { StatusValue } from 'storybook/internal/types';
+import type { StatusValue } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
@@ -36,10 +35,10 @@ const INITIAL_CONTROL_STATES = {
 };
 
 const statusMap: Record<CallStates, StatusValue> = {
-  [CallStates.DONE]: StatusValue.SUCCESS,
-  [CallStates.ERROR]: StatusValue.ERROR,
-  [CallStates.ACTIVE]: StatusValue.PENDING,
-  [CallStates.WAITING]: StatusValue.PENDING,
+  [CallStates.DONE]: 'status-value:success',
+  [CallStates.ERROR]: 'status-value:error',
+  [CallStates.ACTIVE]: 'status-value:pending',
+  [CallStates.WAITING]: 'status-value:pending',
 };
 
 export const getInteractions = ({
@@ -270,7 +269,7 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
     const isMismatch =
       browserTestStatus &&
       statusValue &&
-      statusValue !== StatusValue.PENDING &&
+      statusValue !== 'status-value:pending' &&
       statusValue !== statusMap[browserTestStatus];
 
     if (isMismatch) {

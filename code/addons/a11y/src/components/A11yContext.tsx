@@ -17,7 +17,6 @@ import {
 } from 'storybook/internal/manager-api';
 import type { Report } from 'storybook/internal/preview-api';
 import { convert, themes } from 'storybook/internal/theming';
-import { StatusValue } from 'storybook/internal/types';
 
 import { HIGHLIGHT } from '@storybook/addon-highlight';
 
@@ -201,11 +200,11 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
     if (!currentStoryA11yStatusValue) {
       return null;
     }
-    if (currentStoryA11yStatusValue === StatusValue.SUCCESS && results.violations.length > 0) {
+    if (currentStoryA11yStatusValue === 'status-value:success' && results.violations.length > 0) {
       return 'cliPassedBrowserFailed';
     }
 
-    if (currentStoryA11yStatusValue === StatusValue.ERROR && results.violations.length === 0) {
+    if (currentStoryA11yStatusValue === 'status-value:error' && results.violations.length === 0) {
       if (status === 'ready' || status === 'ran') {
         return 'browserPassedCliFailed';
       }

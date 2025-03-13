@@ -20,7 +20,6 @@ import type {
   StoryIndexV3,
   Tag,
 } from 'storybook/internal/types';
-import { StatusValue } from 'storybook/internal/types';
 
 import { countBy, mapValues } from 'es-toolkit';
 import memoize from 'memoizerific';
@@ -189,7 +188,7 @@ export const transformStoryIndexToStoriesHash = (
 
     // All stories with a failing status should always show up, regardless of the applied filters
     const storyStatuses = allStatuses[entry.id] ?? {};
-    if (Object.values(storyStatuses).some(({ value }) => value === StatusValue.ERROR)) {
+    if (Object.values(storyStatuses).some(({ value }) => value === 'status-value:error')) {
       return result;
     }
 

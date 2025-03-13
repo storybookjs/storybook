@@ -15,10 +15,10 @@ import type {
   StoryEntry,
 } from 'storybook/internal/manager-api';
 import { styled, useTheme } from 'storybook/internal/theming';
+import type { StatusValue } from 'storybook/internal/types';
 import {
   type API_HashEntry,
   type StatusByTypeId,
-  StatusValue,
   type StatusesByStoryIdAndTypeId,
   type StoryId,
 } from 'storybook/internal/types';
@@ -195,12 +195,12 @@ const PendingStatusIcon: FC<ComponentProps<typeof SyncIcon>> = (props) => {
   return <SyncIcon {...props} size={12} color={theme.color.defaultText} />;
 };
 
-const StatusIconMap = {
-  success: <SuccessStatusIcon />,
-  error: <ErrorStatusIcon />,
-  warn: <WarnStatusIcon />,
-  pending: <PendingStatusIcon />,
-  unknown: null,
+const StatusIconMap: Record<StatusValue, React.ReactNode | null> = {
+  'status-value:success': <SuccessStatusIcon />,
+  'status-value:error': <ErrorStatusIcon />,
+  'status-value:warn': <WarnStatusIcon />,
+  'status-value:pending': <PendingStatusIcon />,
+  'status-value:unknown': null,
 };
 
 export const ContextMenu = {
@@ -208,11 +208,11 @@ export const ContextMenu = {
 };
 
 const statusOrder: StatusValue[] = [
-  StatusValue.SUCCESS,
-  StatusValue.ERROR,
-  StatusValue.WARN,
-  StatusValue.PENDING,
-  StatusValue.UNKNOWN,
+  'status-value:success',
+  'status-value:error',
+  'status-value:warn',
+  'status-value:pending',
+  'status-value:unknown',
 ];
 
 const Node = React.memo<NodeProps>(function Node({
@@ -258,28 +258,30 @@ const Node = React.memo<NodeProps>(function Node({
 
     if (item.type === 'component' || item.type === 'group') {
       const links: Link[] = [];
-      if (counts.error) {
+      const errorCount = counts['status-value:error'];
+      const warnCount = counts['status-value:warn'];
+      if (errorCount) {
         links.push({
           id: 'errors',
-          icon: StatusIconMap.error,
-          title: `${counts.error} ${counts.error === 1 ? 'story' : 'stories'} with errors`,
+          icon: StatusIconMap['status-value:error'],
+          title: `${errorCount} ${errorCount === 1 ? 'story' : 'stories'} with errors`,
           onClick: () => {
-            const [firstStoryId] = Object.entries(statusesByValue.error)[0];
+            const [firstStoryId] = Object.entries(statusesByValue['status-value:error'])[0];
             onSelectStoryId(firstStoryId);
-            const errorStatuses = Object.values(statusesByValue.error).flat();
+            const errorStatuses = Object.values(statusesByValue['status-value:error']).flat();
             fullStatusStore.selectStatuses(errorStatuses);
           },
         });
       }
-      if (counts.warn) {
+      if (warnCount) {
         links.push({
           id: 'warnings',
-          icon: StatusIconMap.warn,
-          title: `${counts.warn} ${counts.warn === 1 ? 'story' : 'stories'} with warnings`,
+          icon: StatusIconMap['status-value:warn'],
+          title: `${warnCount} ${warnCount === 1 ? 'story' : 'stories'} with warnings`,
           onClick: () => {
-            const [firstStoryId] = Object.entries(statusesByValue.warn)[0];
+            const [firstStoryId] = Object.entries(statusesByValue['status-value:warn'])[0];
             onSelectStoryId(firstStoryId);
-            const warnStatuses = Object.values(statusesByValue.warn).flat();
+            const warnStatuses = Object.values(statusesByValue['status-value:warn']).flat();
             fullStatusStore.selectStatuses(warnStatuses);
           },
         });
@@ -288,7 +290,7 @@ const Node = React.memo<NodeProps>(function Node({
     }
 
     return [];
-  }, [counts.error, counts.warn, item.id, item.type, onSelectStoryId, statuses, statusesByValue]);
+  }, [counts, item.id, item.type, onSelectStoryId, statuses, statusesByValue]);
 
   const id = createId(item.id, refId);
   const contextMenu =

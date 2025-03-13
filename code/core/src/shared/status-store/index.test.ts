@@ -16,7 +16,7 @@ import { UNIVERSAL_STATUS_STORE_OPTIONS } from './index';
 const story1Type1Status: Status = {
   storyId: 'story-1',
   typeId: 'type-1',
-  value: StatusValue.SUCCESS,
+  value: 'status-value:success',
   title: 'Success',
   description: 'Success description',
 };
@@ -24,7 +24,7 @@ const story1Type1Status: Status = {
 const story1Type2Status: Status = {
   storyId: 'story-1',
   typeId: 'type-2',
-  value: StatusValue.ERROR,
+  value: 'status-value:error',
   title: 'Error',
   description: 'Error description',
 };
@@ -32,7 +32,7 @@ const story1Type2Status: Status = {
 const story2Type1Status: Status = {
   storyId: 'story-2',
   typeId: 'type-1',
-  value: StatusValue.PENDING,
+  value: 'status-value:pending',
   title: 'Pending',
   description: 'Pending description',
 };
@@ -40,7 +40,7 @@ const story2Type1Status: Status = {
 const story2Type2Status: Status = {
   storyId: 'story-2',
   typeId: 'type-2',
-  value: StatusValue.UNKNOWN,
+  value: 'status-value:unknown',
   title: 'Unknown',
   description: 'Unknown description',
 };
@@ -111,7 +111,7 @@ describe('statusStore', () => {
         // Create an updated version of the status
         const updatedStatus: Status = {
           ...story1Type1Status,
-          value: StatusValue.ERROR,
+          value: 'status-value:error',
           title: 'Updated Title',
           description: 'Updated Description',
         };
@@ -152,7 +152,7 @@ describe('statusStore', () => {
         // Create an updated version of an existing status
         const updatedStatus: Status = {
           ...story1Type1Status,
-          value: StatusValue.ERROR,
+          value: 'status-value:error',
           title: 'Updated Title',
         };
 
@@ -216,9 +216,9 @@ describe('statusStore', () => {
         // Act - update the existing status
         const updatedStatus = {
           ...story1Type1Status,
-          value: StatusValue.ERROR,
+          value: 'status-value:error',
           title: 'Updated Title',
-        };
+        } as const;
         fullStatusStore.set([updatedStatus]);
 
         // Assert - the subscriber should be called with the updated status and previous status
@@ -369,7 +369,7 @@ describe('statusStore', () => {
         // Create an updated version of the status
         const updatedStatus: Status = {
           ...story1Type1Status,
-          value: StatusValue.ERROR,
+          value: 'status-value:error',
           title: 'Updated Title',
           description: 'Updated Description',
         };
@@ -404,7 +404,7 @@ describe('statusStore', () => {
         // Create an updated version of the existing status
         const updatedStatus: Status = {
           ...story1Type1Status,
-          value: StatusValue.ERROR,
+          value: 'status-value:error',
           title: 'Updated Title',
           description: 'Updated Description',
         };
@@ -439,7 +439,7 @@ describe('statusStore', () => {
           [SB_MANAGER_API_0001 (StatusTypeIdMismatchError): Status has typeId "type-2" but was added to store with typeId "type-1". Full status: {
             "storyId": "story-1",
             "typeId": "type-2",
-            "value": "error",
+            "value": "status-value:error",
             "title": "Error",
             "description": "Error description"
           }]
@@ -600,7 +600,7 @@ describe('statusStore', () => {
 
         Object.entries(statuses).forEach(([storyId, typeStatuses]) => {
           Object.entries(typeStatuses).forEach(([typeId, status]) => {
-            if (status.value === StatusValue.SUCCESS) {
+            if (status.value === 'status-value:success') {
               if (!result[storyId]) {
                 result[storyId] = {};
               }
@@ -654,10 +654,10 @@ describe('statusStore', () => {
       // Act - update a status for story-1
       const updatedStory1Type1Status = {
         ...story1Type1Status,
-        value: StatusValue.ERROR,
+        value: 'status-value:error',
         title: 'Updated Error',
         description: 'Updated error description',
-      };
+      } as const;
 
       act(() => {
         fullStatusStore.set([updatedStory1Type1Status]);
@@ -702,10 +702,10 @@ describe('statusStore', () => {
       // Act - update a status for story-2 (which doesn't match the selector)
       const updatedStory2Type1Status = {
         ...story2Type1Status,
-        value: StatusValue.ERROR,
+        value: 'status-value:error',
         title: 'Updated Error',
         description: 'Updated error description',
-      };
+      } as const;
 
       act(() => {
         fullStatusStore.set([updatedStory2Type1Status]);

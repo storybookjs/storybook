@@ -3,11 +3,8 @@ import React, { useState } from 'react';
 import { AddonPanel } from 'storybook/internal/components';
 import type { Combo } from 'storybook/internal/manager-api';
 import { Consumer, addons, types } from 'storybook/internal/manager-api';
-import {
-  type Addon_TestProviderType,
-  Addon_TypesEnum,
-  StatusValue,
-} from 'storybook/internal/types';
+import type { StatusValue } from 'storybook/internal/types';
+import { type Addon_TestProviderType, Addon_TypesEnum } from 'storybook/internal/types';
 
 import { a11yStatusStore, componentTestStatusStore, store } from '#manager-store';
 
@@ -27,11 +24,11 @@ import {
 import type { TestStatus } from './node/reporter';
 
 const statusMap: Record<TestStatus, StatusValue> = {
-  pending: StatusValue.PENDING,
-  passed: StatusValue.SUCCESS,
-  warning: StatusValue.WARN,
-  failed: StatusValue.ERROR,
-  skipped: StatusValue.UNKNOWN,
+  pending: 'status-value:pending',
+  passed: 'status-value:success',
+  warning: 'status-value:warn',
+  failed: 'status-value:error',
+  skipped: 'status-value:unknown',
 };
 
 addons.register(ADDON_ID, (api) => {

@@ -1,5 +1,6 @@
 export type {
   Status,
+  StatusValue,
   StatusTypeId,
   StatusByTypeId,
   StatusesByStoryIdAndTypeId,
@@ -7,5 +8,3 @@ export type {
   StatusStoreByTypeId,
   UseStatusStore,
 } from '../../shared/status-store';
-
-export { StatusValue } from '../../shared/status-store';

@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 
 import {
   type API_PreparedStoryIndex,
-  StatusValue,
   type StatusesByStoryIdAndTypeId,
   type StoryIndexV2,
   type StoryIndexV3,
@@ -261,7 +260,7 @@ describe('transformStoryIndexToStoriesHash', () => {
         someStatus: {
           typeId: 'someStatus',
           storyId: '1',
-          value: StatusValue.ERROR,
+          value: 'status-value:error',
           title: 'broken',
           description: 'very bad',
         },
@@ -270,7 +269,7 @@ describe('transformStoryIndexToStoriesHash', () => {
         someStatus: {
           typeId: 'someStatus',
           storyId: '2',
-          value: StatusValue.SUCCESS,
+          value: 'status-value:success',
           title: 'perfect',
           description: 'nice',
         },

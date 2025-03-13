@@ -1,19 +1,33 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
 
-import { StatusValue } from 'storybook/internal/types';
-
 import { mockDataset } from '../components/sidebar/mockdata';
 import { getGroupStatus, getMostCriticalStatusValue } from './status';
 
 describe('getHighestStatus', () => {
   it('default value', () => {
-    expect(getMostCriticalStatusValue([])).toBe('unknown');
+    expect(getMostCriticalStatusValue([])).toBe('status-value:unknown');
   });
   it('should return the highest status', () => {
-    expect(getMostCriticalStatusValue(['success', 'error', 'warn', 'pending'])).toBe('error');
-    expect(getMostCriticalStatusValue(['error', 'error', 'warn', 'pending'])).toBe('error');
-    expect(getMostCriticalStatusValue(['warn', 'pending'])).toBe('warn');
+    expect(
+      getMostCriticalStatusValue([
+        'status-value:success',
+        'status-value:error',
+        'status-value:warn',
+        'status-value:pending',
+      ])
+    ).toBe('status-value:error');
+    expect(
+      getMostCriticalStatusValue([
+        'status-value:error',
+        'status-value:error',
+        'status-value:warn',
+        'status-value:pending',
+      ])
+    ).toBe('status-value:error');
+    expect(getMostCriticalStatusValue(['status-value:warn', 'status-value:pending'])).toBe(
+      'status-value:warn'
+    );
   });
 });
 
@@ -28,7 +42,7 @@ describe('getGroupStatus', () => {
           a: {
             storyId: 'group-1--child-b1',
             typeId: 'a',
-            value: StatusValue.WARN,
+            value: 'status-value:warn',
             description: '',
             title: '',
           },
@@ -36,10 +50,10 @@ describe('getGroupStatus', () => {
       })
     ).toMatchInlineSnapshot(`
       {
-        "group-1": "warn",
-        "root-1-child-a1": "unknown",
-        "root-1-child-a2": "unknown",
-        "root-3-child-a2": "unknown",
+        "group-1": "status-value:warn",
+        "root-1-child-a1": "status-value:unknown",
+        "root-1-child-a2": "status-value:unknown",
+        "root-3-child-a2": "status-value:unknown",
       }
     `);
   });
@@ -50,14 +64,14 @@ describe('getGroupStatus', () => {
           a: {
             storyId: 'group-1--child-b1',
             typeId: 'a',
-            value: StatusValue.WARN,
+            value: 'status-value:warn',
             description: '',
             title: '',
           },
           b: {
             storyId: 'group-1--child-b1',
             typeId: 'b',
-            value: StatusValue.ERROR,
+            value: 'status-value:error',
             description: '',
             title: '',
           },
@@ -65,10 +79,10 @@ describe('getGroupStatus', () => {
       })
     ).toMatchInlineSnapshot(`
       {
-        "group-1": "error",
-        "root-1-child-a1": "unknown",
-        "root-1-child-a2": "unknown",
-        "root-3-child-a2": "unknown",
+        "group-1": "status-value:error",
+        "root-1-child-a1": "status-value:unknown",
+        "root-1-child-a2": "status-value:unknown",
+        "root-3-child-a2": "status-value:unknown",
       }
     `);
   });

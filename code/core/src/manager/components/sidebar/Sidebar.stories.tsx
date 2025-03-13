@@ -2,7 +2,7 @@ import React from 'react';
 
 import type { IndexHash } from 'storybook/internal/manager-api';
 import { ManagerContext } from 'storybook/internal/manager-api';
-import { type Addon_SidebarTopType, StatusValue } from 'storybook/internal/types';
+import { type Addon_SidebarTopType } from 'storybook/internal/types';
 import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
@@ -247,14 +247,14 @@ export const StatusesCollapsed: Story = {
             addonA: {
               typeId: 'addonA',
               storyId: id,
-              value: StatusValue.WARN,
+              value: 'status-value:warn',
               title: 'Addon A',
               description: 'We just wanted you to know',
             },
             addonB: {
               typeId: 'addonB',
               storyId: id,
-              value: StatusValue.ERROR,
+              value: 'status-value:error',
               title: 'Addon B',
               description: 'This is a big deal!',
             },
@@ -280,14 +280,14 @@ export const StatusesOpen: Story = {
           addonA: {
             typeId: 'addonA',
             storyId: id,
-            value: StatusValue.WARN,
+            value: 'status-value:warn',
             title: 'Addon A',
             description: 'We just wanted you to know',
           },
           addonB: {
             typeId: 'addonB',
             storyId: id,
-            value: StatusValue.ERROR,
+            value: 'status-value:error',
             title: 'Addon B',
             description: 'This is a big deal!',
           },
@@ -323,14 +323,14 @@ export const Bottom: Story = {
       {
         storyId,
         typeId: 'vitest',
-        value: StatusValue.WARN,
+        value: 'status-value:warn',
         title: 'Vitest',
         description: 'Vitest',
       },
       {
         storyId,
         typeId: 'vta',
-        value: StatusValue.ERROR,
+        value: 'status-value:error',
         title: 'VTA',
         description: 'VTA',
       },

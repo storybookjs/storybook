@@ -19,15 +19,29 @@ export const useStatusSummary = (item: Item) => {
     counts: Record<StatusValue, number>;
     statusesByValue: Record<StatusValue, Record<StoryId, Status[]>>;
   } = {
-    counts: { pending: 0, success: 0, error: 0, warn: 0, unknown: 0 },
-    statusesByValue: { pending: {}, success: {}, error: {}, warn: {}, unknown: {} },
+    counts: {
+      'status-value:pending': 0,
+      'status-value:success': 0,
+      'status-value:error': 0,
+      'status-value:warn': 0,
+      'status-value:unknown': 0,
+    },
+    statusesByValue: {
+      'status-value:pending': {},
+      'status-value:success': {},
+      'status-value:error': {},
+      'status-value:warn': {},
+      'status-value:unknown': {},
+    },
   };
 
   if (
     data &&
     allStatuses &&
     groupStatus &&
-    ['pending', 'warn', 'error'].includes(groupStatus[item.id])
+    ['status-value:pending', 'status-value:warn', 'status-value:error'].includes(
+      groupStatus[item.id]
+    )
   ) {
     for (const storyId of getDescendantIds(data, item.id, false)) {
       for (const status of Object.values(allStatuses[storyId] ?? {})) {

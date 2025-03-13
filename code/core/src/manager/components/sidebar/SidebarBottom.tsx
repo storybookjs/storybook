@@ -13,7 +13,7 @@ import {
   useStorybookState,
 } from 'storybook/internal/manager-api';
 import { styled } from 'storybook/internal/theming';
-import { type API_FilterFunction, StatusValue } from 'storybook/internal/types';
+import { type API_FilterFunction } from 'storybook/internal/types';
 
 import { experimental_useStatusStore } from '#manager-status-store';
 
@@ -27,12 +27,12 @@ const SIDEBAR_BOTTOM_WRAPPER_ID = 'sidebar-bottom-wrapper';
 
 const filterNone: API_FilterFunction = () => true;
 const filterWarn: API_FilterFunction = ({ statuses = {} }) =>
-  Object.values(statuses).some(({ value }) => value === StatusValue.WARN);
+  Object.values(statuses).some(({ value }) => value === 'status-value:warn');
 const filterError: API_FilterFunction = ({ statuses = {} }) =>
-  Object.values(statuses).some(({ value }) => value === StatusValue.ERROR);
+  Object.values(statuses).some(({ value }) => value === 'status-value:error');
 const filterBoth: API_FilterFunction = ({ statuses = {} }) =>
   Object.values(statuses).some(({ value }) =>
-    [StatusValue.WARN, StatusValue.ERROR].includes(value as any)
+    ['status-value:warn', 'status-value:error'].includes(value as any)
   );
 
 const getFilter = (warningsActive = false, errorsActive = false) => {
@@ -184,11 +184,11 @@ export const SidebarBottom = ({ isDevelopment }: { isDevelopment?: boolean }) =>
     return Object.values(statuses).reduce(
       (counts, storyStatuses) => {
         Object.values(storyStatuses).forEach((status) => {
-          if (status.value === StatusValue.ERROR) {
+          if (status.value === 'status-value:error') {
             counts.errorCount += 1;
           }
 
-          if (status.value === StatusValue.WARN) {
+          if (status.value === 'status-value:warn') {
             counts.warningCount += 1;
           }
         });

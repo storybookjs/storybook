@@ -1439,7 +1439,7 @@ describe('stories API', () => {
         'myCustomFilter',
         (item) =>
           item.statuses !== undefined &&
-          Object.values(item.statuses).some((status) => status.value === StatusValue.PENDING)
+          Object.values(item.statuses).some((status) => status.value === 'status-value:pending')
       );
 
       // empty, because there are no stories with status
@@ -1450,14 +1450,14 @@ describe('stories API', () => {
         {
           typeId: 'a-addon-id',
           storyId: 'a--1',
-          value: StatusValue.PENDING,
+          value: 'status-value:pending',
           title: 'an addon title',
           description: 'an addon description',
         },
         {
           typeId: 'a-addon-id',
           storyId: 'a--2',
-          value: StatusValue.SUCCESS,
+          value: 'status-value:success',
           title: 'an addon title',
           description: 'an addon description',
         },

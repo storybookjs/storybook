@@ -13,11 +13,11 @@ const withStatusColor = ({ theme, status }: { theme: Theme; status: StatusValue 
 
   return {
     color: {
-      pending: defaultColor,
-      success: theme.color.positive,
-      error: theme.color.negative,
-      warn: theme.color.warning,
-      unknown: defaultColor,
+      'status-value:pending': defaultColor,
+      'status-value:success': theme.color.positive,
+      'status-value:error': theme.color.negative,
+      'status-value:warn': theme.color.warning,
+      'status-value:unknown': defaultColor,
     }[status],
   };
 };

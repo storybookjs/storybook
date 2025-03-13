@@ -16,6 +16,7 @@ import { Panel } from './components/Panel';
 import { PanelTitle } from './components/PanelTitle';
 import { TestProviderRender } from './components/TestProviderRender';
 import {
+  A11Y_PANEL_ID,
   ADDON_ID,
   type Details,
   PANEL_ID,
@@ -44,7 +45,7 @@ addons.register(ADDON_ID, (api) => {
       openPanel(PANEL_ID);
     });
     a11yStatusStore.onSelect(() => {
-      openPanel('storybook/a11y/panel');
+      openPanel(A11Y_PANEL_ID);
     });
 
     addons.add(TEST_PROVIDER_ID, {

@@ -48,6 +48,25 @@ export const getEntries = (cwd: string) => {
     define('src/babel/index.ts', ['node'], true),
     define('src/cli/bin/index.ts', ['node'], true),
     define('src/bin/index.ts', ['node'], false),
+
+    define('src/instrumenter/index.ts', ['browser', 'node'], true),
+    define(
+      'src/test/index.ts',
+      ['browser', 'node'],
+      true,
+      ['util'],
+      [],
+      [
+        '@testing-library/dom',
+        '@testing-library/jest-dom',
+        '@testing-library/user-event',
+        'chai',
+        '@vitest/expect',
+        '@vitest/spy',
+        '@vitest/utils',
+      ],
+      true
+    ),
   ];
 };
 

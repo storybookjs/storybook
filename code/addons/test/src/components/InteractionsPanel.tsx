@@ -1,10 +1,9 @@
 import * as React from 'react';
 
+import type { CallStates } from 'storybook/internal/instrumenter';
+import { type Call, type ControlStates } from 'storybook/internal/instrumenter';
 import { styled } from 'storybook/internal/theming';
 import type { StoryId } from 'storybook/internal/types';
-
-import type { CallStates } from '@storybook/instrumenter';
-import { type Call, type ControlStates } from '@storybook/instrumenter';
 
 import { transparentize } from 'polished';
 

@@ -2,10 +2,10 @@ import React from 'react';
 
 import { ManagerContext } from 'storybook/internal/manager-api';
 
-import type { Meta, StoryObj } from '@storybook/react';
-import { within } from '@storybook/test';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { startCase } from 'es-toolkit';
+import { within } from 'storybook/test';
 
 import { LayoutProvider, useLayout } from '../../layout/LayoutProvider';
 import { MobileNavigation } from './MobileNavigation';

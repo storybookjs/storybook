@@ -1,9 +1,10 @@
 import React, { Fragment } from 'react';
 
 import { IconButton } from 'storybook/internal/components';
-import { styled } from 'storybook/internal/theming';
 
 import { BrowserIcon, MobileIcon, TabletIcon } from '@storybook/icons';
+
+import { styled } from 'storybook/theming';
 
 import type { Viewport, ViewportMap } from './types';
 

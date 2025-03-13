@@ -3,8 +3,8 @@ import {
   STORY_RENDERED,
   UPDATE_STORY_ARGS,
 } from 'storybook/internal/core-events';
-import { addons } from 'storybook/internal/preview-api';
 
+import { addons } from 'storybook/preview-api';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 
 import ButtonView from './views/ButtonJavaScript.svelte';

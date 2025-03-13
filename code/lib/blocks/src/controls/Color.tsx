@@ -2,13 +2,13 @@ import type { ChangeEvent, FC, FocusEvent } from 'react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { Form, TooltipNote, WithTooltip } from 'storybook/internal/components';
-import { styled } from 'storybook/internal/theming';
 
 import { MarkupIcon } from '@storybook/icons';
 
 import convert from 'color-convert';
 import { debounce } from 'es-toolkit/compat';
 import { HexColorPicker, HslaStringColorPicker, RgbaStringColorPicker } from 'react-colorful';
+import { styled } from 'storybook/theming';
 
 import { getControlId } from './helpers';
 import type { ColorConfig, ColorValue, ControlProps, PresetColor } from './types';

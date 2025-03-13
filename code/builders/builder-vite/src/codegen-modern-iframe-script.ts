@@ -80,7 +80,7 @@ export async function generateModernIframeScriptCode(options: Options, projectRo
 
   setup();
  
-  import { composeConfigs, PreviewWeb } from 'storybook/internal/preview-api';
+  import { composeConfigs, PreviewWeb } from 'storybook/preview-api';
   import { isPreview } from 'storybook/internal/csf';
   import { importFn } from '${SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE}';
   

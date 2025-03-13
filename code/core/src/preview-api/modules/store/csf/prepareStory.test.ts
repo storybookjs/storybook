@@ -13,6 +13,8 @@ import type {
 
 import { global } from '@storybook/global';
 
+import type { UserEventObject } from 'storybook/test';
+
 import { HooksContext, addons } from '../../addons';
 import { UNTARGETED } from '../args';
 import { composeConfigs } from './composeConfigs';
@@ -66,6 +68,7 @@ const addExtraContext = (
     step: vi.fn(),
     context: null! as StoryContext,
     canvas: null!,
+    userEvent: {} as UserEventObject,
     globalTypes: {},
   };
   extraContext.context = extraContext;

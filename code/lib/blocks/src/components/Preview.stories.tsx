@@ -2,8 +2,9 @@ import type { ComponentProps } from 'react';
 import React from 'react';
 
 import { Button, Spaced } from 'storybook/internal/components';
-import { styled } from 'storybook/internal/theming';
 import type { DocsContextProps, ModuleExport } from 'storybook/internal/types';
+
+import { styled } from 'storybook/theming';
 
 import * as ButtonStories from '../examples/Button.stories';
 import { Preview, PreviewSkeleton } from './Preview';

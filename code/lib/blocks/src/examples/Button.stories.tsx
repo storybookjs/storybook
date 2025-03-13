@@ -107,7 +107,7 @@ export const Clicking: Story = {
     const button = canvas.getByText('Increment');
     await fireEvent.click(button);
 
-    expect(canvas.getByText('Click count: 1')).toBeInTheDocument();
+    expect(await canvas.findByText('Click count: 1')).toBeInTheDocument();
   },
 };
 

@@ -274,12 +274,7 @@ export const promptNewUser = async ({
   skipPrompt,
   disableTelemetry,
 }: PromptOptions): Promise<boolean | undefined> => {
-  const isNewUser = (s: Settings) => {
-    const newUserPrompt = s.get('init.promptNewUser');
-    return newUserPrompt === undefined || newUserPrompt;
-  };
-
-  if (isNewUser(settings) && !skipPrompt) {
+  if (!skipPrompt && !settings.get('skipOnboarding')) {
     const { newUser } = await prompts({
       type: 'select',
       name: 'newUser',
@@ -300,22 +295,23 @@ export const promptNewUser = async ({
       return newUser;
     }
 
-    settings.set('init.promptNewUser', newUser);
+    settings.set('init.skipOnboarding', !newUser);
   } else {
     //  true if new user and not interactive, false if interactive
-    settings.set('init.promptNewUser', isNewUser(settings));
+    settings.set('init.skipOnboarding', !!settings.get('init.skipOnboarding'));
   }
 
+  const newUser = !settings.get('skipOnboarding');
   if (!disableTelemetry) {
     const settingsCreationTime = (await settings.getFileCreationDate())?.getTime();
     await telemetry('init-step', {
       step: 'new-user-check',
       settingsCreationTime,
-      promptNewUser: settings.get('init.promptNewUser'),
+      newUser,
     });
   }
 
-  return isNewUser(settings);
+  return newUser;
 };
 
 /**

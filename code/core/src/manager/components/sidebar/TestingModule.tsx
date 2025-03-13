@@ -360,7 +360,7 @@ export const TestingModule = ({
                 </StatusButton>
               </WithTooltip>
             )}
-            {statusCount > 0 && (
+            {/* {statusCount > 0 && (
               <WithTooltip
                 hasChrome={false}
                 tooltip={<TooltipNote note="Clear all statuses" />}
@@ -378,7 +378,7 @@ export const TestingModule = ({
                   <SweepIcon />
                 </IconButton>
               </WithTooltip>
-            )}
+            )} */}
           </Filters>
         </Bar>
       </Card>

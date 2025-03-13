@@ -6,12 +6,12 @@ import {
   SET_CURRENT_STORY,
   STORY_RENDER_PHASE_CHANGED,
 } from 'storybook/internal/core-events';
-import { addons } from 'storybook/internal/preview-api';
 import type { StoryId } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
 import { processError } from '@vitest/utils/error';
+import { addons } from 'storybook/preview-api';
 
 import type { Call, CallRef, ControlStates, LogItem, Options, State, SyncPayload } from './types';
 import { CallStates } from './types';

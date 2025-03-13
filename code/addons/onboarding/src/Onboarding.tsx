@@ -2,10 +2,10 @@ import React, { useCallback, useEffect, useState } from 'react';
 
 import { SyntaxHighlighter } from 'storybook/internal/components';
 import { SAVE_STORY_RESPONSE } from 'storybook/internal/core-events';
-import { type API } from 'storybook/internal/manager-api';
-import { ThemeProvider, convert, styled, themes } from 'storybook/internal/theming';
 
 import type { Step } from 'react-joyride';
+import { type API } from 'storybook/manager-api';
+import { ThemeProvider, convert, styled, themes } from 'storybook/theming';
 
 import { Confetti } from './components/Confetti/Confetti';
 import { HighlightElement } from './components/HighlightElement/HighlightElement';

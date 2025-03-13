@@ -3,11 +3,10 @@
 import { cleanup, render, screen } from '@testing-library/vue';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { addons } from 'storybook/internal/preview-api';
-
 import type { Meta } from '@storybook/vue3';
 
 import { expectTypeOf } from 'expect-type';
+import { addons } from 'storybook/preview-api';
 
 import { composeStories, composeStory, setProjectAnnotations } from '../../portable-stories';
 import * as stories from './Button.stories';

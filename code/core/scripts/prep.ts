@@ -193,8 +193,11 @@ async function run() {
               outExtension: { '.js': '.js' },
               alias: {
                 ...browserAliases,
-                'storybook/internal': join(cwd, 'src'),
+                'storybook/preview-api': join(cwd, 'src', 'preview-api'),
+                'storybook/manager-api': join(cwd, 'src', 'manager-api'),
+                'storybook/theming': join(cwd, 'src', 'theming'),
                 'storybook/test': join(cwd, 'src', 'test'),
+                'storybook/internal': join(cwd, 'src'),
                 'storybook/actions': join(cwd, 'src', 'actions'),
                 react: dirname(require.resolve('react/package.json')),
                 'react-dom': dirname(require.resolve('react-dom/package.json')),
@@ -220,9 +223,13 @@ async function run() {
           esbuild.context(
             merge<EsbuildContextOptions>(browserEsbuildOptions, {
               alias: {
-                'storybook/internal': join(cwd, 'src'),
+                'storybook/preview-api': join(cwd, 'src', 'preview-api'),
+                'storybook/manager-api': join(cwd, 'src', 'manager-api'),
+                'storybook/theming': join(cwd, 'src', 'theming'),
                 'storybook/test': join(cwd, 'src', 'test'),
                 'storybook/actions': join(cwd, 'src', 'actions'),
+
+                'storybook/internal': join(cwd, 'src'),
                 react: dirname(require.resolve('react/package.json')),
                 'react-dom': dirname(require.resolve('react-dom/package.json')),
                 'react-dom/client': join(

@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 
 import { AddonPanel } from 'storybook/internal/components';
-import type { Combo } from 'storybook/internal/manager-api';
-import { Consumer, addons, types } from 'storybook/internal/manager-api';
 import {
   type API_StatusObject,
   type API_StatusValue,
@@ -11,6 +9,8 @@ import {
 } from 'storybook/internal/types';
 
 import { store } from '#manager-store';
+import type { Combo } from 'storybook/manager-api';
+import { Consumer, addons, types } from 'storybook/manager-api';
 
 import { GlobalErrorContext, GlobalErrorModal } from './components/GlobalErrorModal';
 import { Panel } from './components/Panel';

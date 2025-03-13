@@ -1,15 +1,10 @@
 // @TODO: use addon-interactions and remove the rule disable above
 import React, { useState } from 'react';
 
-import {
-  type ComponentEntry,
-  type IndexHash,
-  ManagerContext,
-} from 'storybook/internal/manager-api';
-
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { action } from 'storybook/actions';
+import { type ComponentEntry, type IndexHash, ManagerContext } from 'storybook/manager-api';
 import { expect, fn, userEvent, within } from 'storybook/test';
 
 import { DEFAULT_REF_ID } from './Sidebar';

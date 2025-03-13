@@ -3,11 +3,11 @@ import React, { memo, useCallback, useMemo, useState } from 'react';
 
 import { logger } from 'storybook/internal/client-logger';
 import { IconButton, TooltipLinkList, WithTooltip } from 'storybook/internal/components';
-import { useGlobals, useParameter } from 'storybook/internal/manager-api';
 
 import { PhotoIcon } from '@storybook/icons';
 
 import memoize from 'memoizerific';
+import { useGlobals, useParameter } from 'storybook/manager-api';
 
 import { PARAM_KEY as BACKGROUNDS_PARAM_KEY } from '../constants';
 import type { Background } from '../types';

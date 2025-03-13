@@ -1,13 +1,13 @@
 import React from 'react';
 
 import type { TestProviderConfig, TestProviderState } from 'storybook/internal/core-events';
-import { ManagerContext } from 'storybook/internal/manager-api';
-import { styled } from 'storybook/internal/theming';
 import { Addon_TypesEnum } from 'storybook/internal/types';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
+import { ManagerContext } from 'storybook/manager-api';
 import { expect, fn } from 'storybook/test';
+import { styled } from 'storybook/theming';
 
 import { type Details, storeOptions } from '../constants';
 import { store as mockStore } from '../manager-store.mock';

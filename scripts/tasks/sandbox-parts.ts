@@ -518,7 +518,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
               ],
               /**
                * TODO: Either fix or acknowledge limitation of:
-               * - storybook/internal/preview-api hooks:
+               * - storybook/preview-api hooks:
                * -- UseState
                */
               // @ts-expect-error this type does not exist but the property does!
@@ -590,7 +590,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
             ],
             /**
              * TODO: Either fix or acknowledge limitation of:
-             * - storybook/internal/preview-api hooks:
+             * - storybook/preview-api hooks:
              * -- UseState
              */
             // @ts-expect-error this type does not exist but the property does!

@@ -2,12 +2,12 @@ import type { FC, PropsWithChildren } from 'react';
 import React, { useState } from 'react';
 
 import { LocationProvider } from 'storybook/internal/router';
-import { styled } from 'storybook/internal/theming';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { action } from 'storybook/actions';
 import { fn } from 'storybook/test';
+import { styled } from 'storybook/theming';
 
 import MobileNavigationStoriesMeta from '../mobile/navigation/MobileNavigation.stories';
 import { Layout } from './Layout';

@@ -1,8 +1,9 @@
 import React, { useCallback } from 'react';
 
 import { AddonPanel, Badge, Spaced } from 'storybook/internal/components';
-import type { Combo } from 'storybook/internal/manager-api';
-import { Consumer, addons, types, useAddonState } from 'storybook/internal/manager-api';
+
+import type { Combo } from 'storybook/manager-api';
+import { Consumer, addons, types, useAddonState } from 'storybook/manager-api';
 
 import { Panel } from './Panel';
 import { ADDON_ID, PANEL_ID } from './constants';

@@ -3,7 +3,8 @@ import { userEvent } from '@testing-library/user-event';
 
 import type { LoaderFunction } from 'storybook/internal/csf';
 import { instrument } from 'storybook/internal/instrumenter';
-import { definePreview } from 'storybook/internal/preview-api';
+
+import { definePreview } from 'storybook/preview-api';
 
 import { clearAllMocks, fn, isMockFunction, resetAllMocks, restoreAllMocks } from './spy';
 

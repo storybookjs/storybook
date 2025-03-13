@@ -4,6 +4,7 @@ import type { userEvent } from '@testing-library/user-event';
 import { instrument } from 'storybook/internal/instrumenter';
 
 import { Assertion } from 'chai';
+import { definePreview } from 'storybook/preview-api';
 
 import { expect as rawExpect } from './expect';
 import { type queries } from './testing-library';

@@ -18,13 +18,20 @@ async function run() {
     ...nodeInternals,
     'typescript',
     'storybook',
+
+    'storybook/manager-api',
+    'storybook/preview-api',
+    'storybook/theming',
+
     'storybook/test',
     'storybook/test/spy',
     'storybook/test/preview',
+
     'storybook/actions',
     'storybook/actions/preview',
     'storybook/actions/manager',
     'storybook/actions/decorator',
+
     'storybook/internal/builder-manager',
     'storybook/internal/channels',
     'storybook/internal/client-logger',
@@ -34,12 +41,9 @@ async function run() {
     'storybook/internal/core-server',
     'storybook/internal/csf-tools',
     'storybook/internal/docs-tools',
-    'storybook/internal/manager-api',
     'storybook/internal/node-logger',
-    'storybook/internal/preview-api',
     'storybook/internal/router',
     'storybook/internal/telemetry',
-    'storybook/internal/theming',
     'storybook/internal/types',
     'storybook/internal/instrumenter',
   ];

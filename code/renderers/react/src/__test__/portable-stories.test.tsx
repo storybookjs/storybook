@@ -4,11 +4,10 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import React from 'react';
 
-import { addons } from 'storybook/internal/preview-api';
-
 import type { Meta } from '@storybook/react';
 
 import { expectTypeOf } from 'expect-type';
+import { addons } from 'storybook/preview-api';
 
 import { composeStories, composeStory, setProjectAnnotations } from '..';
 import type { Button } from './Button';

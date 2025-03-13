@@ -83,14 +83,14 @@ async function generateFrameworksFile(prettierConfig: prettier.Options | null): 
 const localAlias = {
   '@storybook/core': join(__dirname, '..', '..', 'src'),
   'storybook/internal': join(__dirname, '..', '..', 'src'),
-  storybook: join(__dirname, '..', '..', 'src', 'test'),
+  'storybook/theming': join(__dirname, '..', '..', 'src', 'theming'),
   'storybook/test': join(__dirname, '..', '..', 'src', 'test'),
   'storybook/test/spy': join(__dirname, '..', '..', 'src', 'test', 'spy'),
   'storybook/test/preview': join(__dirname, '..', '..', 'src', 'test', 'preview'),
   'storybook/actions': join(__dirname, '..', '..', 'src', 'actions'),
-  'storybook/actions/preview': join(__dirname, '..', '..', 'src', 'actions', 'preview'),
-  'storybook/actions/manager': join(__dirname, '..', '..', 'src', 'actions', 'manager'),
-  'storybook/actions/decorator': join(__dirname, '..', '..', 'src', 'actions', 'decorator'),
+  'storybook/preview-api': join(__dirname, '..', '..', 'src', 'preview-api'),
+  'storybook/manager-api': join(__dirname, '..', '..', 'src', 'manager-api'),
+  storybook: join(__dirname, '..', '..', 'src'),
 };
 async function generateExportsFile(prettierConfig: prettier.Options | null): Promise<void> {
   function removeDefault(input: string) {

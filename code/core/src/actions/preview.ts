@@ -1,4 +1,4 @@
-import { definePreview } from 'storybook/internal/preview-api';
+import { definePreview } from 'storybook/preview-api';
 
 import * as addArgs from './addArgs';
 import * as loaders from './loaders';

@@ -1,4 +1,4 @@
-import { experimental_UniversalStore } from 'storybook/internal/manager-api';
+import { experimental_UniversalStore } from 'storybook/manager-api';
 
 import { type StoreState, storeOptions } from './constants';
 

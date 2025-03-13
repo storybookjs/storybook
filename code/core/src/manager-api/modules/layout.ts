@@ -1,11 +1,11 @@
 import { SET_CONFIG } from 'storybook/internal/core-events';
-import type { ThemeVars } from 'storybook/internal/theming';
-import { create } from 'storybook/internal/theming/create';
 import type { API_Layout, API_PanelPositions, API_UI } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
 import { isEqual as deepEqual, pick, toMerged } from 'es-toolkit';
+import type { ThemeVars } from 'storybook/theming';
+import { create } from 'storybook/theming/create';
 
 import merge from '../lib/merge';
 import type { ModuleFn } from '../lib/types';

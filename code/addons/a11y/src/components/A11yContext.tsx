@@ -6,6 +6,10 @@ import {
   STORY_RENDER_PHASE_CHANGED,
   type StoryFinishedPayload,
 } from 'storybook/internal/core-events';
+
+import { HIGHLIGHT } from '@storybook/addon-highlight';
+
+import type { AxeResults, Result } from 'axe-core';
 import {
   experimental_useStatusStore,
   useAddonState,
@@ -14,13 +18,9 @@ import {
   useParameter,
   useStorybookApi,
   useStorybookState,
-} from 'storybook/internal/manager-api';
-import type { Report } from 'storybook/internal/preview-api';
-import { convert, themes } from 'storybook/internal/theming';
-
-import { HIGHLIGHT } from '@storybook/addon-highlight';
-
-import type { AxeResults, Result } from 'axe-core';
+} from 'storybook/manager-api';
+import type { Report } from 'storybook/preview-api';
+import { convert, themes } from 'storybook/theming';
 
 import { ADDON_ID, EVENTS, TEST_PROVIDER_ID } from '../constants';
 import type { A11yParameters } from '../params';

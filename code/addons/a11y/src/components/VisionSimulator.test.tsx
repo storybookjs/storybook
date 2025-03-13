@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 
 import React from 'react';
 
-import { ThemeProvider, convert, themes } from 'storybook/internal/theming';
+import { ThemeProvider, convert, themes } from 'storybook/theming';
 
 import { VisionSimulator, baseList } from './VisionSimulator';
 

@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 
 import { AddonPanel } from 'storybook/internal/components';
-import type { Combo } from 'storybook/internal/manager-api';
-import { Consumer, addons, types } from 'storybook/internal/manager-api';
 import type { StatusValue } from 'storybook/internal/types';
 import { type Addon_TestProviderType, Addon_TypesEnum } from 'storybook/internal/types';
 
 import { a11yStatusStore, componentTestStatusStore, store } from '#manager-store';
+import type { Combo } from 'storybook/manager-api';
+import { Consumer, addons, types } from 'storybook/manager-api';
 
 import { GlobalErrorContext, GlobalErrorModal } from './components/GlobalErrorModal';
 import { Panel } from './components/Panel';

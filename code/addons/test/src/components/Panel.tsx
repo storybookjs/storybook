@@ -9,15 +9,16 @@ import {
   UNHANDLED_ERRORS_WHILE_PLAYING,
 } from 'storybook/internal/core-events';
 import { type Call, CallStates, EVENTS, type LogItem } from 'storybook/internal/instrumenter';
+import type { StatusValue } from 'storybook/internal/types';
+
+import { global } from '@storybook/global';
+
 import {
   experimental_useStatusStore,
   useAddonState,
   useChannel,
   useParameter,
-} from 'storybook/internal/manager-api';
-import type { StatusValue } from 'storybook/internal/types';
-
-import { global } from '@storybook/global';
+} from 'storybook/manager-api';
 
 import {
   ADDON_ID,

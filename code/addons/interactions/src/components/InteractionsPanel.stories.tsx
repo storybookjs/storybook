@@ -1,11 +1,11 @@
 import React from 'react';
 
 import { CallStates } from 'storybook/internal/instrumenter';
-import { styled } from 'storybook/internal/theming';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { expect, userEvent, waitFor, within } from 'storybook/test';
+import { styled } from 'storybook/theming';
 
 import { isChromatic } from '../../../../.storybook/isChromatic';
 import { getCalls, getInteractions } from '../mocks';

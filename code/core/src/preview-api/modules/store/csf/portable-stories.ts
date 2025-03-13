@@ -22,6 +22,7 @@ import type {
   StrictArgTypes,
 } from 'storybook/internal/types';
 
+import type { UserEventObject } from 'storybook/test';
 import { dedent } from 'ts-dedent';
 
 import { HooksContext } from '../../../addons';
@@ -155,6 +156,7 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
       step: (label, play) => story.runStep(label, play, context),
       canvasElement: null!,
       canvas: {} as Canvas,
+      userEvent: {} as UserEventObject,
       globalTypes: normalizedProjectAnnotations.globalTypes,
       ...story,
       context: null!,

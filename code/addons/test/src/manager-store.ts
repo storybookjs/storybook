@@ -1,7 +1,4 @@
-import {
-  experimental_UniversalStore,
-  experimental_getStatusStore,
-} from 'storybook/internal/manager-api';
+import { experimental_UniversalStore, experimental_getStatusStore } from 'storybook/manager-api';
 
 import {
   STATUS_TYPE_ID_A11Y,

@@ -1,10 +1,9 @@
 import type { HTMLProps, SelectHTMLAttributes } from 'react';
 import React, { forwardRef } from 'react';
 
-import type { CSSObject, StorybookTheme } from 'storybook/internal/theming';
-import { styled } from 'storybook/internal/theming';
-
 import TextareaAutoResize from 'react-textarea-autosize';
+import type { CSSObject, StorybookTheme } from 'storybook/theming';
+import { styled } from 'storybook/theming';
 
 /**
  * These types are copied from `react-textarea-autosize`. I copied them because of

@@ -3,8 +3,6 @@ import React, { forwardRef, useCallback, useMemo } from 'react';
 
 import type { TooltipLinkListLink } from 'storybook/internal/components';
 import { Spaced, TooltipLinkList, WithTooltip } from 'storybook/internal/components';
-import { useStorybookApi } from 'storybook/internal/manager-api';
-import { styled, useTheme } from 'storybook/internal/theming';
 
 import { global } from '@storybook/global';
 import {
@@ -20,6 +18,8 @@ import {
 } from '@storybook/icons';
 
 import { transparentize } from 'polished';
+import { useStorybookApi } from 'storybook/manager-api';
+import { styled, useTheme } from 'storybook/theming';
 
 import type { NormalLink } from '../../../components/components/tooltip/TooltipLinkList';
 import type { getStateType } from '../../utils/tree';

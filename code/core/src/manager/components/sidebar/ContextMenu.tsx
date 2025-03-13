@@ -3,12 +3,13 @@ import React, { useMemo, useState } from 'react';
 
 import { TooltipLinkList, WithTooltip } from 'storybook/internal/components';
 import { type TestProviders } from 'storybook/internal/core-events';
-import { useStorybookState } from 'storybook/internal/manager-api';
-import type { API } from 'storybook/internal/manager-api';
-import { styled } from 'storybook/internal/theming';
 import { type API_HashEntry, Addon_TypesEnum } from 'storybook/internal/types';
 
 import { EllipsisIcon } from '@storybook/icons';
+
+import { useStorybookState } from 'storybook/manager-api';
+import type { API } from 'storybook/manager-api';
+import { styled } from 'storybook/theming';
 
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList';
 import { StatusButton } from './StatusButton';

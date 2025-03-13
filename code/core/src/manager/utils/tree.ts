@@ -1,10 +1,9 @@
 import type { SyntheticEvent } from 'react';
 
-import type { HashEntry, IndexHash } from 'storybook/internal/manager-api';
-
 import { global } from '@storybook/global';
 
 import memoize from 'memoizerific';
+import type { HashEntry, IndexHash } from 'storybook/manager-api';
 
 import { DEFAULT_REF_ID } from '../components/sidebar/Sidebar';
 import type { Dataset, Item, RefType, SearchItem } from '../components/sidebar/types';

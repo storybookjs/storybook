@@ -1,14 +1,12 @@
 // @TODO: use addon-interactions and remove the rule disable above
 import React from 'react';
 
-import { ThemeProvider, useTheme } from 'storybook/internal/theming';
-import type { Theme } from 'storybook/internal/theming';
-
 import type { Meta, StoryFn, StoryObj } from '@storybook/react-vite';
 
-import { action } from '@storybook/addon-actions';
-
+import { action } from 'storybook/actions';
 import { screen } from 'storybook/test';
+import { ThemeProvider, useTheme } from 'storybook/theming';
+import type { Theme } from 'storybook/theming';
 
 import { Heading } from './Heading';
 

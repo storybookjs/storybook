@@ -8,9 +8,10 @@ import {
   SET_CURRENT_STORY,
   STORY_RENDER_PHASE_CHANGED,
 } from 'storybook/internal/core-events';
-import { addons, mockChannel } from 'storybook/internal/preview-api';
 
 import { global } from '@storybook/global';
+
+import { addons, mockChannel } from 'storybook/preview-api';
 
 import { EVENTS, Instrumenter } from './instrumenter';
 import type { Options } from './types';

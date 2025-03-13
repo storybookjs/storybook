@@ -1,5 +1,6 @@
 import { withReset } from 'storybook/internal/components';
-import { styled } from 'storybook/internal/theming';
+
+import { styled } from 'storybook/theming';
 
 const breakpoint = 600;
 

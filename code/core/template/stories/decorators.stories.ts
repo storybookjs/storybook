@@ -3,7 +3,6 @@ import {
   STORY_ARGS_UPDATED,
   UPDATE_STORY_ARGS,
 } from 'storybook/internal/core-events';
-import { useEffect } from 'storybook/internal/preview-api';
 import type {
   ArgsStoryFn,
   PartialStoryFn,
@@ -13,6 +12,7 @@ import type {
 
 import { global as globalThis } from '@storybook/global';
 
+import { useEffect } from 'storybook/preview-api';
 import { expect, within } from 'storybook/test';
 
 export default {

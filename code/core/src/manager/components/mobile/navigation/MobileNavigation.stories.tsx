@@ -1,10 +1,9 @@
 import React from 'react';
 
-import { ManagerContext } from 'storybook/internal/manager-api';
-
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { startCase } from 'es-toolkit';
+import { ManagerContext } from 'storybook/manager-api';
 import { within } from 'storybook/test';
 
 import { LayoutProvider, useLayout } from '../../layout/LayoutProvider';

@@ -1,11 +1,9 @@
 import type { FC, MutableRefObject } from 'react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { useStorybookApi, useStorybookState } from 'storybook/internal/manager-api';
-import { styled } from 'storybook/internal/theming';
-import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
-
 import { transparentize } from 'polished';
+import { useStorybookApi, useStorybookState } from 'storybook/manager-api';
+import { styled } from 'storybook/theming';
 
 import { getStateType } from '../../utils/tree';
 import { AuthBlock, EmptyBlock, ErrorBlock, LoaderBlock } from './RefBlocks';

@@ -1,6 +1,7 @@
 <h1>Migration</h1>
 
 - [From version 8.x to 9.0.0](#from-version-8x-to-900)
+  - [Actions addon moved to core](#actions-addon-moved-to-core)
   - [Dropped support for legacy packages](#dropped-support-for-legacy-packages)
   - [Dropped support for TypeScript \< 4.9](#dropped-support-for-typescript--49)
   - [Test addon renamed from experimental to stable](#test-addon-renamed-from-experimental-to-stable)
@@ -438,17 +439,24 @@
 
 ## From version 8.x to 9.0.0
 
+### Actions addon moved to core
+
+The actions addon has been moved from `@storybook/addon-actions` to Storybook core. You no longer need to install it separately or include it in your addons list. As a consequence, `@storybook/addon-actions` is not part of `@storybook/addon-essentials` anymore.
+
+Furthermore, we have deprecated the usage of `withActions` from `@storybook/addon-actions` and we will remove it in Storybook v10. Please file an issue if you need this API.
+
 ### Dropped support for legacy packages
 
 The following packages are no longer published as part of `9.0.0`:
 The following packages have been consolidated into the main `storybook` package:
 
-| Old Package            | New Path                       |
-| ---------------------- | ------------------------------ |
-| @storybook/manager-api | storybook/manager-api |
-| @storybook/preview-api | storybook/preview-api |
-| @storybook/theming     | storybook/theming     |
-| @storybook/test        | storybook/test                 |
+| Old Package              | New Path              |
+| ------------------------ | --------------------- |
+| @storybook/manager-api   | storybook/manager-api |
+| @storybook/preview-api   | storybook/preview-api |
+| @storybook/theming       | storybook/theming     |
+| @storybook/test          | storybook/test        |
+| @storybook/addon-actions | storybook/actions     |
 
 Please un-install these packages, and ensure you have the `storybook` package installed.
 

@@ -1,6 +1,6 @@
 import React, { Fragment } from 'react';
 
-import { addons, types } from 'storybook/internal/manager-api';
+import { addons, types } from 'storybook/manager-api';
 
 import { BackgroundTool } from './components/Tool';
 import { ADDON_ID } from './constants';

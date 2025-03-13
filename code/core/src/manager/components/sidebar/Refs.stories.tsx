@@ -1,7 +1,6 @@
 import React from 'react';
 
-import { ManagerContext } from 'storybook/internal/manager-api';
-
+import { ManagerContext } from 'storybook/manager-api';
 import { fn } from 'storybook/test';
 
 import { standardData as standardHeaderData } from './Heading.stories';

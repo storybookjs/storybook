@@ -1,11 +1,12 @@
 import type { ReactElement } from 'react';
 import React from 'react';
 
-import { styled } from 'storybook/internal/theming';
 import type { StatusValue } from 'storybook/internal/types';
 import { type API_HashEntry, type StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
 
 import { CircleIcon } from '@storybook/icons';
+
+import { styled } from 'storybook/theming';
 
 import { UseSymbol } from '../components/sidebar/IconSymbols';
 import { getDescendantIds } from './tree';

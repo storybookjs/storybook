@@ -1,12 +1,12 @@
 import React from 'react';
 
-import type { IndexHash } from 'storybook/internal/manager-api';
-import { ManagerContext } from 'storybook/internal/manager-api';
 import { type Addon_SidebarTopType } from 'storybook/internal/types';
 import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
+import type { IndexHash } from 'storybook/manager-api';
+import { ManagerContext } from 'storybook/manager-api';
 import { expect, fn, userEvent, within } from 'storybook/test';
 
 import { internal_fullStatusStore } from '../../status-store.mock';

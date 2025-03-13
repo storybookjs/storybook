@@ -7,11 +7,11 @@ import type {
   TestingModuleProgressReportPayload,
   TestingModuleProgressReportProgress,
 } from 'storybook/internal/core-events';
-import type { Report } from 'storybook/internal/preview-api';
 
 import type { Suite } from '@vitest/runner';
 import { throttle } from 'es-toolkit';
 import { satisfies } from 'semver';
+import type { Report } from 'storybook/preview-api';
 import { dedent } from 'ts-dedent';
 
 import { TEST_PROVIDER_ID } from '../constants';

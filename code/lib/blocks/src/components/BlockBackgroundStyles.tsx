@@ -1,4 +1,4 @@
-import type { Theme } from 'storybook/internal/theming';
+import type { Theme } from 'storybook/theming';
 
 export const getBlockBackgroundStyle: (theme: Theme) => object = (theme: Theme) => ({
   borderRadius: theme.appBorderRadius,

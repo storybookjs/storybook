@@ -42,13 +42,12 @@ const Item = styled.div({
   flexDirection: 'row',
   alignItems: 'center',
   width: '100%',
-  padding: '0 8px',
 });
 
 const List = styled.div({
   display: 'grid',
   gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
-  gridGap: 8,
+  gridGap: '8px 16px',
   gridAutoFlow: 'row dense',
   gridAutoRows: 50,
 });

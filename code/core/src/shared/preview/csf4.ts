@@ -6,10 +6,10 @@ import type {
   Story,
   StoryAnnotations,
 } from 'storybook/internal/csf';
-import { composeConfigs, normalizeProjectAnnotations } from 'storybook/internal/preview-api';
 import type { NormalizedProjectAnnotations } from 'storybook/internal/types';
 
 import actionAnnotations from 'storybook/actions/preview';
+import { composeConfigs, normalizeProjectAnnotations } from 'storybook/preview-api';
 import testAnnotations from 'storybook/test/preview';
 
 /** Do not use, use the definePreview exported from the framework instead. */

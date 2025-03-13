@@ -49,6 +49,7 @@ export default {
   'create-storybook': '9.0.0-alpha.3',
   '@storybook/csf-plugin': '9.0.0-alpha.3',
   '@storybook/react-dom-shim': '9.0.0-alpha.3',
+  '@storybook/rsc-plugin': '9.0.0-alpha.2',
   '@storybook/source-loader': '9.0.0-alpha.3',
   '@storybook/preset-create-react-app': '9.0.0-alpha.3',
   '@storybook/preset-html-webpack': '9.0.0-alpha.3',

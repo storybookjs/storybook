@@ -5,11 +5,11 @@ import type { PresetProperty } from 'storybook/internal/types';
 
 import type { StorybookConfigVite } from '@storybook/builder-vite';
 import { viteFinal as reactViteFinal } from '@storybook/react-vite/preset';
+import { vite as transformRSCPlugin } from '@storybook/rsc-plugin';
 
 import { dirname, join } from 'path';
 import vitePluginStorybookNextjs from 'vite-plugin-storybook-nextjs';
 
-import transformRSCPlugin from './rsc/vite-plugin-transform-rsc';
 import type { FrameworkOptions } from './types';
 
 export const core: PresetProperty<'core'> = async (config, options) => {

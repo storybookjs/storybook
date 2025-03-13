@@ -104,12 +104,10 @@
     "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@babel/core": "^7.26.9",
-    "@babel/generator": "^7.26.9",
-    "@babel/parser": "^7.26.9",
     "@storybook/builder-vite": "workspace:*",
     "@storybook/react": "workspace:*",
     "@storybook/react-vite": "workspace:*",
+    "@storybook/rsc-plugin": "workspace:*",
     "memoizee": "0.4.17",
     "styled-jsx": "5.1.6",
     "vite-plugin-storybook-nextjs": "2.0.0--canary.33.a61ad85.0"

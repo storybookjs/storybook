@@ -1,10 +1,9 @@
 import React from 'react';
 
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { action } from '@storybook/addon-actions';
-
-import { expect, fireEvent, fn, userEvent, within } from 'storybook/test';
+import { action } from 'storybook/actions';
+import { expect, fireEvent, fn, within } from 'storybook/test';
 
 import { SaveStory } from './SaveStory';
 
@@ -41,7 +40,8 @@ export const Creating = {
 } satisfies Story;
 
 export const Created: Story = {
-  play: async (context) => {
+  play: async ({ context, userEvent }) => {
+    // eslint-disable-next-line storybook/context-in-play-function
     await Creating.play(context);
 
     const dialog = await within(document.body).findByRole('dialog');

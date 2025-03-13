@@ -2,9 +2,9 @@ import React from 'react';
 
 import { TooltipLinkList, WithTooltip } from 'storybook/internal/components';
 
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { action } from '@storybook/addon-actions';
+import { action } from 'storybook/actions';
 
 import { Shortcut } from './Menu';
 

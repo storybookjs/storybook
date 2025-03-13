@@ -1,6 +1,6 @@
 {
   "name": "@storybook/sveltekit",
-  "version": "9.0.0-alpha.2",
+  "version": "9.0.0-alpha.3",
   "description": "Storybook for SvelteKit",
   "keywords": [
     "storybook",
@@ -54,6 +54,7 @@
   "types": "dist/index.d.ts",
   "files": [
     "dist/**/*",
+    "template/**/*",
     "README.md",
     "*.js",
     "*.d.ts",
@@ -64,7 +65,6 @@
     "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@storybook/addon-actions": "workspace:*",
     "@storybook/builder-vite": "workspace:*",
     "@storybook/svelte": "workspace:*",
     "@storybook/svelte-vite": "workspace:*"

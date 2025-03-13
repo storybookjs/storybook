@@ -1,10 +1,10 @@
 import React, { type FC, useEffect, useState } from 'react';
 
-import { type API, ManagerContext } from 'storybook/internal/manager-api';
 import { Addon_TypesEnum } from 'storybook/internal/types';
 
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
+import { type API, ManagerContext } from 'storybook/manager-api';
 import { expect, fireEvent, fn, waitFor, within } from 'storybook/test';
 
 import { SidebarBottomBase } from './SidebarBottom';

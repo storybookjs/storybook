@@ -8,9 +8,6 @@ import {
   WithTooltip,
 } from 'storybook/internal/components';
 import { type TestProviderConfig, type TestProviderState } from 'storybook/internal/core-events';
-import { addons, experimental_useUniversalStore } from 'storybook/internal/manager-api';
-import type { API } from 'storybook/internal/manager-api';
-import { styled, useTheme } from 'storybook/internal/theming';
 
 import {
   AccessibilityIcon,
@@ -23,6 +20,9 @@ import {
 } from '@storybook/icons';
 
 import { store } from '#manager-store';
+import { addons, experimental_useUniversalStore } from 'storybook/manager-api';
+import type { API } from 'storybook/manager-api';
+import { styled, useTheme } from 'storybook/theming';
 
 import {
   ADDON_ID as A11Y_ADDON_ID,

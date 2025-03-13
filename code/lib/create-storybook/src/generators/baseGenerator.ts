@@ -224,6 +224,7 @@ export async function baseGenerator(
       ProjectType.SVELTE,
       ProjectType.SVELTEKIT,
       ProjectType.WEB_COMPONENTS,
+      ProjectType.REACT_NATIVE_WEB,
     ];
     const supportsTestAddon =
       projectType === ProjectType.NEXTJS ||
@@ -331,7 +332,6 @@ export async function baseGenerator(
 
   const allPackages = [
     'storybook',
-    getExternalFramework(rendererId) ? undefined : `@storybook/${rendererId}`,
     ...(installFrameworkPackages ? frameworkPackages : []),
     ...addonPackages,
     ...(extraPackagesToInstall || []),
@@ -447,7 +447,7 @@ export async function baseGenerator(
       throw new Error(`Could not find template location for ${framework} or ${rendererId}`);
     }
     await copyTemplateFiles({
-      renderer: templateLocation,
+      templateLocation,
       packageManager: packageManager as any,
       language,
       destination: componentsDestinationPath,

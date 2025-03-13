@@ -1,12 +1,13 @@
 import React from 'react';
 
 import { IconButton, getStoryHref } from 'storybook/internal/components';
-import { Consumer, types } from 'storybook/internal/manager-api';
-import type { Combo } from 'storybook/internal/manager-api';
 import type { Addon_BaseType } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 import { ShareAltIcon } from '@storybook/icons';
+
+import { Consumer, types } from 'storybook/manager-api';
+import type { Combo } from 'storybook/manager-api';
 
 const { PREVIEW_URL } = global;
 

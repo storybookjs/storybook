@@ -36,7 +36,8 @@ export const vitestCommonConfig = defineConfig({
     passWithNoTests: true,
     clearMocks: true,
     setupFiles: [resolve(__dirname, './vitest-setup.ts')],
-    globals: true,
+    // Disable globals due to https://github.com/testing-library/user-event/pull/1176 not being released yet
+    globals: false,
     testTimeout: 10000,
     environment: 'node',
   },

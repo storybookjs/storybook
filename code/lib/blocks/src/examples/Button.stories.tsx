@@ -1,7 +1,7 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
 import React from 'react';
 
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { expect, fireEvent, within } from 'storybook/test';
 
@@ -107,7 +107,7 @@ export const Clicking: Story = {
     const button = canvas.getByText('Increment');
     await fireEvent.click(button);
 
-    expect(canvas.getByText('Click count: 1')).toBeInTheDocument();
+    expect(await canvas.findByText('Click count: 1')).toBeInTheDocument();
   },
 };
 

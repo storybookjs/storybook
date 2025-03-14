@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
 /* eslint-disable no-underscore-dangle */
-import { afterEach, vi } from 'vitest';
+import { afterEach, beforeAll, vi } from 'vitest';
 import type { RunnerTask } from 'vitest';
 
 import { Channel } from 'storybook/internal/channels';
@@ -35,11 +35,10 @@ export const modifyErrorMessage = ({ task }: { task: Task }) => {
   }
 };
 
-// Enable this in 9.0
-// beforeAll(() => {
-//   if (globalThis.globalProjectAnnotations) {
-//     return globalThis.globalProjectAnnotations.beforeAll();
-//   }
-// });
+beforeAll(() => {
+  if (globalThis.globalProjectAnnotations) {
+    return globalThis.globalProjectAnnotations.beforeAll();
+  }
+});
 
 afterEach(modifyErrorMessage);

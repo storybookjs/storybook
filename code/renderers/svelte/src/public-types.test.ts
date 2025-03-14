@@ -291,5 +291,5 @@ it('mount accepts a Svelte 5 Component and props', () => {
       expectTypeOf(canvas).toMatchTypeOf<Canvas>();
     },
   };
-  expectTypeOf(Basic).toMatchTypeOf<StoryObj<Button>>();
+  expectTypeOf(Basic).toMatchTypeOf<StoryObj<typeof ButtonV5>>();
 });

@@ -46,11 +46,10 @@ test.describe("component testing", () => {
     if (await disableWatch.isVisible()) {
       await disableWatch.click();
     }
-    await page.getByLabel("Show settings").click();
 
     const configs = [page.getByLabel('Coverage'), page.getByLabel('Accessibility')];
-    for(const config of configs) {
-      if(await config.isChecked()){
+    for (const config of configs) {
+      if (await config.isChecked()) {
         await config.click();
       }
     }
@@ -267,9 +266,7 @@ test.describe("component testing", () => {
     await expect(page.getByLabel("Open coverage report")).toHaveCount(0);
 
     // Act - Enable coverage and run tests
-    await page.getByLabel("Show settings").click();
     await page.getByLabel("Coverage").click();
-    await page.getByLabel("Hide settings").click();
     // Wait for Vitest to have (re)started
     await page.waitForTimeout(2000);
 
@@ -330,7 +327,7 @@ test.describe("component testing", () => {
     page,
     browserName,
   }) => {
-    
+
     test.skip(browserName !== "chromium", `Skipping tests for ${browserName}`);
     // Arrange - Prepare Storybook
     await setForceFailureFlag(UNHANDLED_ERRORS_STORY_PATH, true);
@@ -446,9 +443,7 @@ test.describe("component testing", () => {
     await expect(storyElement).toBeVisible({ timeout: 30000 });
 
     // Act - Enable coverage
-    await page.getByLabel("Show settings").click();
     await page.getByLabel("Coverage").click();
-    await page.getByLabel("Hide settings").click();
     // Wait for Vitest to have (re)started
     await page.waitForTimeout(2000);
 

@@ -53,7 +53,6 @@ test.describe("component testing", () => {
         await config.click();
       }
     }
-    await page.getByLabel("Hide settings").click();
   });
 
   test("should show discrepancy between test results", async ({

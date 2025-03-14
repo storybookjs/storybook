@@ -6,14 +6,10 @@ import {
   type TestingModuleCrashReportPayload,
   type TestingModuleProgressReportPayload,
 } from 'storybook/internal/core-events';
-import {
-  type API,
-  type State,
-  useStorybookApi,
-  useStorybookState,
-} from 'storybook/internal/manager-api';
-import { styled } from 'storybook/internal/theming';
 import { type API_FilterFunction } from 'storybook/internal/types';
+
+import { type API, type State, useStorybookApi, useStorybookState } from 'storybook/manager-api';
+import { styled } from 'storybook/theming';
 
 import { NotificationList } from '../notifications/NotificationList';
 import { TestingModule } from './TestingModule';

@@ -3,10 +3,11 @@ import React, { Fragment, useCallback, useState } from 'react';
 
 import { logger } from 'storybook/internal/client-logger';
 import { Button, ErrorFormatter, Link, Spaced, WithTooltip } from 'storybook/internal/components';
-import { styled } from 'storybook/internal/theming';
 
 import { global } from '@storybook/global';
 import { ChevronDownIcon, LockIcon, SyncIcon } from '@storybook/icons';
+
+import { styled } from 'storybook/theming';
 
 import { Contained, Loader } from './Loader';
 

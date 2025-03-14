@@ -9,14 +9,14 @@ import {
   STORY_RENDER_PHASE_CHANGED,
   type StoryFinishedPayload,
 } from 'storybook/internal/core-events';
-import * as api from 'storybook/internal/manager-api';
 
 import type { AxeResults } from 'axe-core';
+import * as api from 'storybook/manager-api';
 
 import { EVENTS, TEST_PROVIDER_ID } from '../constants';
 import { A11yContextProvider, useA11yContext } from './A11yContext';
 
-vi.mock('storybook/internal/manager-api');
+vi.mock('storybook/manager-api');
 const mockedApi = vi.mocked(api);
 
 const storyId = 'button--primary';

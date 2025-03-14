@@ -2,16 +2,24 @@ import type { FunctionComponent } from 'react';
 import React from 'react';
 
 import { ResetWrapper } from 'storybook/internal/components';
-import { styled } from 'storybook/internal/theming';
+
+import { styled } from 'storybook/theming';
 
 import { getBlockBackgroundStyle } from './BlockBackgroundStyles';
 
 const ItemLabel = styled.div(({ theme }) => ({
   fontFamily: theme.typography.fonts.base,
-  fontSize: theme.typography.size.s2,
+  fontSize: theme.typography.size.s1,
   color: theme.color.defaultText,
   marginLeft: 10,
   lineHeight: 1.2,
+
+  display: '-webkit-box',
+  overflow: 'hidden',
+  wordBreak: 'break-word',
+  textOverflow: 'ellipsis',
+  WebkitLineClamp: 2,
+  WebkitBoxOrient: 'vertical',
 }));
 
 const ItemSpecimen = styled.div(({ theme }) => ({
@@ -34,15 +42,15 @@ const Item = styled.div({
   display: 'inline-flex',
   flexDirection: 'row',
   alignItems: 'center',
-  flex: '0 1 calc(20% - 10px)',
-  minWidth: 120,
-
-  margin: '0px 10px 30px 0',
+  width: '100%',
 });
 
 const List = styled.div({
-  display: 'flex',
-  flexFlow: 'row wrap',
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
+  gridGap: '8px 16px',
+  gridAutoFlow: 'row dense',
+  gridAutoRows: 50,
 });
 
 interface IconItemProps {

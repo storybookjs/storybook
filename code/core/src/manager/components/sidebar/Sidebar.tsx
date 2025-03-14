@@ -7,12 +7,13 @@ import {
   TooltipNote,
   WithTooltip,
 } from 'storybook/internal/components';
-import { type State, useStorybookApi } from 'storybook/internal/manager-api';
-import { styled } from 'storybook/internal/theming';
 import type { API_LoadedRefData, Addon_SidebarTopType, StoryIndex } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 import { PlusIcon } from '@storybook/icons';
+
+import { type State, useStorybookApi } from 'storybook/manager-api';
+import { styled } from 'storybook/theming';
 
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
 import { useLayout } from '../layout/LayoutProvider';

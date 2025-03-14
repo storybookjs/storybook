@@ -3,16 +3,6 @@ import React, { useCallback, useMemo, useRef } from 'react';
 
 import { Button, IconButton, ListItem } from 'storybook/internal/components';
 import { PRELOAD_ENTRIES } from 'storybook/internal/core-events';
-import { useStorybookApi } from 'storybook/internal/manager-api';
-import type {
-  API,
-  ComponentEntry,
-  GroupEntry,
-  State,
-  StoriesHash,
-  StoryEntry,
-} from 'storybook/internal/manager-api';
-import { styled, useTheme } from 'storybook/internal/theming';
 import { type API_HashEntry, type API_StatusValue, type StoryId } from 'storybook/internal/types';
 
 import {
@@ -25,6 +15,16 @@ import {
 } from '@storybook/icons';
 
 import { darken, lighten } from 'polished';
+import { useStorybookApi } from 'storybook/manager-api';
+import type {
+  API,
+  ComponentEntry,
+  GroupEntry,
+  State,
+  StoriesHash,
+  StoryEntry,
+} from 'storybook/manager-api';
+import { styled, useTheme } from 'storybook/theming';
 
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList';
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';

@@ -1,10 +1,10 @@
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { themes } from 'storybook/internal/theming';
 import type { API_Provider } from 'storybook/internal/types';
 
 import EventEmitter from 'events';
+import { themes } from 'storybook/theming';
 
 import type { ModuleArgs } from '../lib/types';
 import type { SubState as AddonsSubState } from '../modules/addons';

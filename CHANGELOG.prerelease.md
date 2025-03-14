@@ -1,3 +1,39 @@
+## 9.0.0-alpha.3
+
+- Addon A11y: Promote @storybook/global to full dependency - [#30723](https://github.com/storybookjs/storybook/pull/30723), thanks @mrginglymus!
+- Addon Test: Improve unhandled error messages - [#30755](https://github.com/storybookjs/storybook/pull/30755), thanks @yannbf!
+- Angular: Add @angular-devkit/build-angular to default installed pacakages in angular - [#30790](https://github.com/storybookjs/storybook/pull/30790), thanks @kasperpeulen!
+- Automigrate: Disable `missingStorybookDependencies` for 9.0 - [#30769](https://github.com/storybookjs/storybook/pull/30769), thanks @ndelangen!
+- CLI: Fix test install in RNW projects - [#30786](https://github.com/storybookjs/storybook/pull/30786), thanks @shilman!
+- Core: Re-Export renderers from frameworks - [#30771](https://github.com/storybookjs/storybook/pull/30771), thanks @ndelangen!
+- Core: Replace 'min' instead of 'm' in printDuration - [#30668](https://github.com/storybookjs/storybook/pull/30668), thanks @wlewis-formative!
+- Migration: Add auto-automigration for merged packages - [#30753](https://github.com/storybookjs/storybook/pull/30753), thanks @ndelangen!
+- Next.js: Upgrade image-size to 2.0 - [#30741](https://github.com/storybookjs/storybook/pull/30741), thanks @valentinpalkovic!
+- Next.js: Use latest version when init in empty directory - [#30659](https://github.com/storybookjs/storybook/pull/30659), thanks @valentinpalkovic!
+- Svelte: Fix Vite crashing on virtual module imports - [#26838](https://github.com/storybookjs/storybook/pull/26838), thanks @rChaoz!
+- Svelte: Fix automatic argTypes inference coming up empty with `svelte2tsx@0.7.35` - [#30784](https://github.com/storybookjs/storybook/pull/30784), thanks @JReinhold!
+- Svelte: Pin svelte2tsx to solve argType regression - [#30783](https://github.com/storybookjs/storybook/pull/30783), thanks @kasperpeulen!
+- Test: Move `@storybook/test` into `storybook/test` - [#30742](https://github.com/storybookjs/storybook/pull/30742), thanks @valentinpalkovic!
+- Universal Store: Don't use `crypto.randomUUID` - [#30781](https://github.com/storybookjs/storybook/pull/30781), thanks @JReinhold!
+
+## 9.0.0-alpha.2
+
+- AutoBlocker: Add major version upgrade blocker - [#30714](https://github.com/storybookjs/storybook/pull/30714), thanks @ndelangen!
+- CLI: Add index command / API - [#30071](https://github.com/storybookjs/storybook/pull/30071), thanks @shilman!
+- CSF Factories: Align addon-essentials import with other addons - [#30716](https://github.com/storybookjs/storybook/pull/30716), thanks @kasperpeulen!
+- Core: Move @storybook/instrumenter into core - [#30740](https://github.com/storybookjs/storybook/pull/30740), thanks @valentinpalkovic!
+- Core: Support TS3.8+ again - [#30700](https://github.com/storybookjs/storybook/pull/30700), thanks @kasperpeulen!
+- Maintenance: Merge `@storybook/core` with `storybook` - [#30168](https://github.com/storybookjs/storybook/pull/30168), thanks @ndelangen!
+- Maintenance: Remove deprecated packages - [#30690](https://github.com/storybookjs/storybook/pull/30690), thanks @ndelangen!
+- Manager: Add Content-Type to prevent reliance on content type sniffing, fixing Cloud IDEs - [#30606](https://github.com/storybookjs/storybook/pull/30606), thanks @GCHQDeveloper548!
+- Next: Support Next 15.2 - [#30702](https://github.com/storybookjs/storybook/pull/30702), thanks @kasperpeulen!
+- React: Export returntype of ReactMeta#story - [#30580](https://github.com/storybookjs/storybook/pull/30580), thanks @mrginglymus!
+- Revert "CLI: Don't initially select Documentation and Testing features" - [#30694](https://github.com/storybookjs/storybook/pull/30694), thanks @shilman!
+- Test Addon: Stabilize and remove experimental status - [#30727](https://github.com/storybookjs/storybook/pull/30727), thanks @valentinpalkovic!
+- Typescript: Drop Typescript < 4.9 support - [#30736](https://github.com/storybookjs/storybook/pull/30736), thanks @valentinpalkovic!
+- Vite: Improve handling of preview annotations - [#28798](https://github.com/storybookjs/storybook/pull/28798), thanks @tobiasdiez!
+- Vite: Include `node_modules` in stats file - [#30711](https://github.com/storybookjs/storybook/pull/30711), thanks @JReinhold!
+
 ## 9.0.0-alpha.1
 
 - CLI: Install prereleases of `@chromatic-com/storybook` - [#30662](https://github.com/storybookjs/storybook/pull/30662), thanks @JReinhold!

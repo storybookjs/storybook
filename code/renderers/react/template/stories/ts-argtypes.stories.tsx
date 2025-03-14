@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 
-import { inferControls } from 'storybook/internal/preview-api';
-import { ThemeProvider, convert, themes } from 'storybook/internal/theming';
 import type { Args, Parameters, StoryContext } from 'storybook/internal/types';
 
 import { PureArgsTable as ArgsTable } from '@storybook/blocks';
 import type { StoryObj } from '@storybook/react';
 
 import { mapValues } from 'es-toolkit/compat';
+import { inferControls } from 'storybook/preview-api';
+import { ThemeProvider, convert, themes } from 'storybook/theming';
 
 import { component as TsImportedTypesComponent } from './docgen-components/8143-ts-imported-types/input';
 import { component as TsReactFcGenericsComponent } from './docgen-components/8143-ts-react-fc-generics/input';

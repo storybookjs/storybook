@@ -12,7 +12,6 @@
   },
   "resolutions": {
     "@storybook/addon-a11y": "file:../../code/addons/a11y",
-    "@storybook/addon-actions": "file:../../code/addons/actions",
     "@storybook/addon-backgrounds": "file:../../code/addons/backgrounds",
     "@storybook/addon-controls": "file:../../code/addons/controls",
     "@storybook/addon-docs": "file:../../code/addons/docs",
@@ -61,7 +60,6 @@
     "@storybook/svelte-vite": "file:../../code/frameworks/svelte-vite",
     "@storybook/svelte-webpack5": "file:../../code/frameworks/svelte-webpack5",
     "@storybook/sveltekit": "file:../../code/frameworks/sveltekit",
-    "@storybook/test": "file:../../code/lib/test",
     "@storybook/vue3": "file:../../code/renderers/vue3",
     "@storybook/vue3-vite": "file:../../code/frameworks/vue3-vite",
     "@storybook/vue3-webpack5": "file:../../code/frameworks/vue3-webpack5",
@@ -77,7 +75,6 @@
     "@babel/core": "^7.22.0",
     "@ember/optional-features": "^2.0.0",
     "@storybook/addon-a11y": "*",
-    "@storybook/addon-actions": "*",
     "@storybook/addon-backgrounds": "*",
     "@storybook/addon-controls": "*",
     "@storybook/addon-docs": "*",

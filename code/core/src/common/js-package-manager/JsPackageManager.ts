@@ -220,7 +220,6 @@ export abstract class JsPackageManager {
    * ```ts
    * addDependencies(options, [
    *   `@storybook/react@${storybookVersion}`,
-   *   `@storybook/addon-actions@${actionsVersion}`,
    *   `@storybook/addon-links@${linksVersion}`,
    * ]);
    * ```
@@ -277,7 +276,7 @@ export abstract class JsPackageManager {
    * @example
    *
    * ```ts
-   * removeDependencies(options, [`@storybook/react`, `@storybook/addon-actions`]);
+   * removeDependencies(options, [`@storybook/react`]);
    * ```
    *
    * @param {Object} options Contains `skipInstall`, `packageJson` and `installAsDevDependencies`
@@ -333,6 +332,13 @@ export abstract class JsPackageManager {
     return Promise.all(
       packages.map(async (pkg) => {
         const [packageName, packageVersion] = getPackageDetails(pkg);
+
+        // If the packageVersion is specified and we are not dealing with a storybook package,
+        // just return the requested version.
+        if (packageVersion && !(packageName in storybookPackagesVersions)) {
+          return pkg;
+        }
+
         const latestInRange = await this.latestVersion(packageName, packageVersion);
 
         const k = packageName as keyof typeof storybookPackagesVersions;

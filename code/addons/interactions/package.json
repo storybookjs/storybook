@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-interactions",
-  "version": "9.0.0-alpha.1",
+  "version": "9.0.0-alpha.3",
   "description": "Automate, test and debug user interactions",
   "keywords": [
     "storybook-addons",
@@ -63,7 +63,6 @@
   },
   "dependencies": {
     "@storybook/global": "^5.0.0",
-    "@storybook/test": "workspace:*",
     "polished": "^4.2.2",
     "ts-dedent": "^2.2.0"
   },

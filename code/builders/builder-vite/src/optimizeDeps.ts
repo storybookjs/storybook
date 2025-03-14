@@ -127,6 +127,7 @@ const INCLUDE_CANDIDATES = [
   'qs',
   'react-dom',
   'react-dom/client',
+  'react-dom/test-utils',
   'react-fast-compare',
   'react-is',
   'react-textarea-autosize',
@@ -146,6 +147,7 @@ const INCLUDE_CANDIDATES = [
   'refractor/lang/typescript.js',
   'refractor/lang/yaml.js',
   'regenerator-runtime/runtime.js',
+  'semver', // TODO: Remove once https://github.com/npm/node-semver/issues/712 is fixed
   'sb-original/default-loader',
   'sb-original/image-context',
   'slash',

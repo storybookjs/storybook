@@ -65,7 +65,9 @@ export type StatusStoreByTypeId = StatusStore & {
 
 export type StatusStoreEnvironment = 'server' | 'manager' | 'preview';
 
-export type UseStatusStore = (selector?: (statuses: StatusesByStoryIdAndTypeId) => any) => any;
+export type UseStatusStore = <T = StatusesByStoryIdAndTypeId>(
+  selector?: (statuses: StatusesByStoryIdAndTypeId) => T
+) => T;
 
 export function createStatusStore(params: {
   universalStatusStore: UniversalStore<StatusesByStoryIdAndTypeId, StatusStoreEvent>;
@@ -218,6 +220,8 @@ export function createStatusStore({
   return {
     getStatusStoreByTypeId,
     fullStatusStore,
-    useStatusStore: (selector) => useUniversalStore(universalStatusStore, selector as any)[0],
+    useStatusStore: <T = StatusesByStoryIdAndTypeId>(
+      selector?: (statuses: StatusesByStoryIdAndTypeId) => T
+    ) => useUniversalStore(universalStatusStore, selector as any)[0] as T,
   };
 }

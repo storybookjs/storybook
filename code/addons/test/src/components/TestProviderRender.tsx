@@ -352,7 +352,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                 <WithTooltip
                   hasChrome={false}
                   trigger="hover"
-                  tooltip={<TooltipNote note="Open coverage report" />}
+                  tooltip={<TooltipNote note="View report" />}
                 >
                   <IconButton asChild size="medium">
                     <a

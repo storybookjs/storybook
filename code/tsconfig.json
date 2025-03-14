@@ -8,7 +8,7 @@
     "ignoreDeprecations": "5.0",
     "incremental": false,
     "isolatedModules": true,
-    "jsx": "react",
+    "jsx": "preserve",
     "lib": ["dom", "dom.iterable", "esnext"],
     "module": "Preserve",
     "moduleResolution": "bundler",

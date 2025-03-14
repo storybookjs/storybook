@@ -1,5 +1,5 @@
 import * as parser from '@babel/parser';
-import type { ParserOptions } from '@babel/parser';
+import type { ParseResult, ParserOptions } from '@babel/parser';
 import type * as t from '@babel/types';
 import * as recast from 'recast';
 
@@ -49,6 +49,6 @@ export const babelPrint = (ast: ASTNode): string => {
   }).code;
 };
 
-export const babelParseExpression = (code: string) => {
+export const babelParseExpression = (code: string): ParseResult<t.Expression> => {
   return parser.parseExpression(code, parserOptions);
 };

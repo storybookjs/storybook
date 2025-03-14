@@ -97,8 +97,7 @@ const config = defineMain({
     '@storybook/addon-designs',
     '@storybook/addon-test',
     '@storybook/addon-a11y',
-    // TODO: Re-enable Chromatic when it supports the new status API
-    // '@chromatic-com/storybook',
+    '@chromatic-com/storybook',
   ],
   previewAnnotations: [
     './core/template/stories/preview.ts',

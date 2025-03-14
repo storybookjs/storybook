@@ -28,7 +28,7 @@ const Outline = styled.div<{
   running: boolean;
 }>(({ crashed, failed, running, theme }) => ({
   position: 'relative',
-  lineHeight: '20px',
+  lineHeight: '16px',
   width: '100%',
   padding: 1,
   overflow: 'hidden',

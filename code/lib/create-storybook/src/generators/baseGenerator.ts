@@ -224,6 +224,7 @@ export async function baseGenerator(
       ProjectType.SVELTE,
       ProjectType.SVELTEKIT,
       ProjectType.WEB_COMPONENTS,
+      ProjectType.REACT_NATIVE_WEB,
     ];
     const supportsTestAddon =
       projectType === ProjectType.NEXTJS ||

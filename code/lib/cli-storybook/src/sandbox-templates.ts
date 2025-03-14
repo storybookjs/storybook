@@ -499,6 +499,9 @@ export const baseTemplates = {
       renderer: '@storybook/angular',
       builder: '@storybook/builder-webpack5',
     },
+    modifications: {
+      extraDependencies: ['@angular-devkit/build-angular@next'],
+    },
     skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },
   'angular-cli/default-ts': {

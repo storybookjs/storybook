@@ -2,9 +2,10 @@ import type { FC } from 'react';
 import React from 'react';
 
 import { Button, Link, StorybookLogo } from 'storybook/internal/components';
-import { styled } from 'storybook/internal/theming';
 
 import { DocumentIcon, GithubIcon } from '@storybook/icons';
+
+import { styled } from 'storybook/theming';
 
 import { UpgradeBlock } from '../components/upgrade/UpgradeBlock';
 

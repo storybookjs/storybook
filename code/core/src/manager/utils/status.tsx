@@ -1,10 +1,11 @@
 import type { ReactElement } from 'react';
 import React from 'react';
 
-import { styled } from 'storybook/internal/theming';
 import type { API_HashEntry, API_StatusState, API_StatusValue } from 'storybook/internal/types';
 
 import { CircleIcon } from '@storybook/icons';
+
+import { styled } from 'storybook/theming';
 
 import { UseSymbol } from '../components/sidebar/IconSymbols';
 import { getDescendantIds } from './tree';

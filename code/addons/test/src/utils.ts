@@ -1,7 +1,7 @@
-import { type StorybookTheme, useTheme } from 'storybook/internal/theming';
 import type { StorybookConfig } from 'storybook/internal/types';
 
 import Filter from 'ansi-to-html';
+import { type StorybookTheme, useTheme } from 'storybook/theming';
 import stripAnsi from 'strip-ansi';
 
 export function isTestAssertionError(error: unknown) {

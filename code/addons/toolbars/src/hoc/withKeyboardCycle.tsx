@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef } from 'react';
 
-import { useGlobals, useStorybookApi } from 'storybook/internal/manager-api';
+import { useGlobals, useStorybookApi } from 'storybook/manager-api';
 
 import type { ToolbarMenuProps } from '../types';
 import { createCycleValueArray } from '../utils/create-cycle-value-array';

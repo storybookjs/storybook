@@ -1,5 +1,4 @@
 import { Channel } from 'storybook/internal/channels';
-import { Preview, composeConfigs } from 'storybook/internal/preview-api';
 import type {
   ComponentTitle,
   ModuleExports,
@@ -8,6 +7,8 @@ import type {
   Renderer,
   StoryIndex,
 } from 'storybook/internal/types';
+
+import { Preview, composeConfigs } from 'storybook/preview-api';
 
 import { ExternalDocsContext } from './ExternalDocsContext';
 

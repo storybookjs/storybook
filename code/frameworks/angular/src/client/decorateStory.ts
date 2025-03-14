@@ -1,4 +1,4 @@
-import { sanitizeStoryContextUpdate } from 'storybook/internal/preview-api';
+import { sanitizeStoryContextUpdate } from 'storybook/preview-api';
 import { DecoratorFunction, LegacyStoryFn, StoryContext } from 'storybook/internal/types';
 
 import { computesTemplateFromComponent } from './angular-beta/ComputesTemplateFromComponent';

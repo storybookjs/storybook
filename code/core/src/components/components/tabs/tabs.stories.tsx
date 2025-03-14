@@ -4,8 +4,7 @@ import { BottomBarIcon, CloseIcon } from '@storybook/icons';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { action } from '@storybook/addon-actions';
-
+import { action } from 'storybook/actions';
 import { expect } from 'storybook/test';
 import { findByText, fireEvent, screen, userEvent, waitFor, within } from 'storybook/test';
 

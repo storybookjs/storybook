@@ -193,7 +193,12 @@ async function run() {
               outExtension: { '.js': '.js' },
               alias: {
                 ...browserAliases,
+                'storybook/preview-api': join(cwd, 'src', 'preview-api'),
+                'storybook/manager-api': join(cwd, 'src', 'manager-api'),
+                'storybook/theming': join(cwd, 'src', 'theming'),
+                'storybook/test': join(cwd, 'src', 'test'),
                 'storybook/internal': join(cwd, 'src'),
+                'storybook/actions': join(cwd, 'src', 'actions'),
                 react: dirname(require.resolve('react/package.json')),
                 'react-dom': dirname(require.resolve('react-dom/package.json')),
                 'react-dom/client': join(
@@ -218,6 +223,12 @@ async function run() {
           esbuild.context(
             merge<EsbuildContextOptions>(browserEsbuildOptions, {
               alias: {
+                'storybook/preview-api': join(cwd, 'src', 'preview-api'),
+                'storybook/manager-api': join(cwd, 'src', 'manager-api'),
+                'storybook/theming': join(cwd, 'src', 'theming'),
+                'storybook/test': join(cwd, 'src', 'test'),
+                'storybook/actions': join(cwd, 'src', 'actions'),
+
                 'storybook/internal': join(cwd, 'src'),
                 react: dirname(require.resolve('react/package.json')),
                 'react-dom': dirname(require.resolve('react-dom/package.json')),
@@ -340,28 +351,21 @@ async function run() {
         await rm(metafilesDir, { recursive: true });
       }
       await mkdir(metafilesDir, { recursive: true });
-
       const outputs = await Promise.all(
         compile.map(async (context) => {
           const output = await context.rebuild();
           await context.dispose();
-
           return output;
         })
       );
-
       const metafileByModule: Record<string, Metafile> = {};
-
       for (const currentOutput of outputs) {
         if (!currentOutput.metafile) {
           continue;
         }
-
         const keys = Object.keys(currentOutput.metafile.outputs);
         const moduleName = keys.length === 1 ? dirname(keys[0]).replace('dist/', '') : 'core';
-
         const existingMetafile = metafileByModule[moduleName];
-
         if (existingMetafile) {
           existingMetafile.inputs = {
             ...existingMetafile.inputs,
@@ -375,15 +379,16 @@ async function run() {
           metafileByModule[moduleName] = currentOutput.metafile;
         }
       }
-
       await Promise.all(
         Object.entries(metafileByModule).map(async ([moduleName, metafile]) => {
+          console.log('saving metafiles', moduleName);
+          const sanitizedModuleName = moduleName.replace('/', '-');
           await writeFile(
-            join(metafilesDir, `${moduleName}.json`),
+            join(metafilesDir, `${sanitizedModuleName}.json`),
             JSON.stringify(metafile, null, 2)
           );
           await writeFile(
-            join(metafilesDir, `${moduleName}.txt`),
+            join(metafilesDir, `${sanitizedModuleName}.txt`),
             await esbuild.analyzeMetafile(metafile, { color: false, verbose: false })
           );
         })

@@ -1,5 +1,6 @@
-import { useEffect, useMemo } from 'storybook/internal/preview-api';
 import type { DecoratorFunction } from 'storybook/internal/types';
+
+import { useEffect, useMemo } from 'storybook/preview-api';
 
 import { PARAM_KEY as BACKGROUNDS_PARAM_KEY } from '../constants';
 import { addGridStyle, clearStyles } from '../utils';

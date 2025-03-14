@@ -7,11 +7,11 @@ import {
   UPDATE_STORY_ARGS,
 } from 'storybook/internal/core-events';
 import type { PlayFunctionContext } from 'storybook/internal/csf';
-import type { PreviewWeb } from 'storybook/internal/preview-api';
 import type { ModuleExport, WebRenderer } from 'storybook/internal/types';
 
 import type { Meta, ReactRenderer, StoryObj } from '@storybook/react-vite';
 
+import type { PreviewWeb } from 'storybook/preview-api';
 import { within } from 'storybook/test';
 
 import type { DocsContextProps } from '../blocks';

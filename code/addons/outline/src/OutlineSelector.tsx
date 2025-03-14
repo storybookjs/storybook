@@ -1,9 +1,10 @@
 import React, { memo, useCallback, useEffect } from 'react';
 
 import { IconButton } from 'storybook/internal/components';
-import { useGlobals, useStorybookApi } from 'storybook/internal/manager-api';
 
 import { OutlineIcon } from '@storybook/icons';
+
+import { useGlobals, useStorybookApi } from 'storybook/manager-api';
 
 import { ADDON_ID, PARAM_KEY } from './constants';
 

@@ -1,8 +1,7 @@
 import React, { forwardRef } from 'react';
 
-import { styled } from 'storybook/internal/theming';
-
 import * as ScrollAreaPrimitive from '@radix-ui/react-scroll-area';
+import { styled } from 'storybook/theming';
 
 export interface ScrollAreaProps {
   children?: React.ReactNode;

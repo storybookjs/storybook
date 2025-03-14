@@ -2,7 +2,8 @@ import type { FC } from 'react';
 import React from 'react';
 
 import { Separator } from 'storybook/internal/components';
-import { useGlobalTypes } from 'storybook/internal/manager-api';
+
+import { useGlobalTypes } from 'storybook/manager-api';
 
 import type { ToolbarArgType } from '../types';
 import { normalizeArgType } from '../utils/normalize-toolbar-arg-type';

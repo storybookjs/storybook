@@ -47,7 +47,7 @@ test.describe("component testing", () => {
       await disableWatch.click();
     }
 
-    const configs = [page.getByLabel('Coverage'), page.getByLabel('Accessibility')];
+    const configs = [page.getByLabel('Coverage', { exact: true }), page.getByLabel('Accessibility', { exact: true })];
     for (const config of configs) {
       if (await config.isChecked()) {
         await config.click();
@@ -266,7 +266,7 @@ test.describe("component testing", () => {
     await expect(page.getByLabel("Open coverage report")).toHaveCount(0);
 
     // Act - Enable coverage and run tests
-    await page.getByLabel("Coverage").click();
+    await page.getByLabel("Coverage", { exact: true }).click();
     // Wait for Vitest to have (re)started
     await page.waitForTimeout(2000);
 
@@ -443,7 +443,7 @@ test.describe("component testing", () => {
     await expect(storyElement).toBeVisible({ timeout: 30000 });
 
     // Act - Enable coverage
-    await page.getByLabel("Coverage").click();
+    await page.getByLabel("Coverage", { exact: true }).click();
     // Wait for Vitest to have (re)started
     await page.waitForTimeout(2000);
 

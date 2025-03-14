@@ -169,6 +169,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
 
   const storyId = isStoryEntry ? entryId : undefined;
 
+  console.log(state.details?.testResults);
   const results = (state.details?.testResults || [])
     .flatMap((test) => {
       if (!entryId) {
@@ -180,7 +181,9 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
     })
     .sort((a, b) => statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status));
 
-  const testNotPassedAmount = results?.filter((result) => result.status === 'failed').length;
+  const componentTestsNotPassedAmount = results?.filter(
+    (result) => result.status === 'failed'
+  ).length;
 
   const status = results[0]?.status ?? (state.running ? 'pending' : 'unknown');
 
@@ -322,7 +325,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
               ) : (
                 <TestStatusIcon status={statusMap[status]} aria-label={`Test status: ${status}`} />
               )}
-              {testNotPassedAmount || null}
+              {componentTestsNotPassedAmount || null}
             </IconButton>
           </WithTooltip>
         </Row>
@@ -457,7 +460,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
               tooltip={
                 <TooltipNote
                   note={
-                    state.running && config.coverage
+                    state.running && config.a11y
                       ? 'Testing in progress'
                       : 'View accessibility results'
                   }

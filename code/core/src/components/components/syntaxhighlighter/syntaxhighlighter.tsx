@@ -2,7 +2,6 @@ import type { MouseEvent } from 'react';
 import React, { useCallback, useEffect, useState } from 'react';
 
 import { logger } from 'storybook/internal/client-logger';
-import { styled } from 'storybook/internal/theming';
 
 import { global } from '@storybook/global';
 
@@ -22,6 +21,7 @@ import tsx from 'react-syntax-highlighter/dist/esm/languages/prism/tsx';
 import typescript from 'react-syntax-highlighter/dist/esm/languages/prism/typescript';
 import yml from 'react-syntax-highlighter/dist/esm/languages/prism/yaml';
 import ReactSyntaxHighlighter from 'react-syntax-highlighter/dist/esm/prism-light';
+import { styled } from 'storybook/theming';
 
 import { ActionBar } from '../ActionBar/ActionBar';
 import type { ScrollAreaProps } from '../ScrollArea/ScrollArea';

@@ -11,7 +11,7 @@ import type { UniversalStore } from './index';
  * @param universalStore The UniversalStore instance to use.
  * @param selector An optional selector function to select a subset of the store state.
  * @remark This hook is intended for use in the manager UI. For use in the preview, import from
- * `storybook/internal/preview-api` instead.
+ * `storybook/preview-api` instead.
  */
 export const useUniversalStore: {
   <

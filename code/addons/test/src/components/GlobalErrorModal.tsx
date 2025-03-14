@@ -1,10 +1,11 @@
 import React, { useContext } from 'react';
 
 import { Button, IconButton, Modal } from 'storybook/internal/components';
-import { useStorybookApi } from 'storybook/internal/manager-api';
-import { styled } from 'storybook/internal/theming';
 
 import { CloseIcon, SyncIcon } from '@storybook/icons';
+
+import { useStorybookApi } from 'storybook/manager-api';
+import { styled } from 'storybook/theming';
 
 import { DOCUMENTATION_FATAL_ERROR_LINK } from '../constants';
 

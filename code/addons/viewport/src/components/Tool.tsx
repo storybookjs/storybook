@@ -1,10 +1,11 @@
 import React, { type FC, Fragment, useCallback, useEffect, useState } from 'react';
 
 import { IconButton, TooltipLinkList, WithTooltip } from 'storybook/internal/components';
-import { type API, useGlobals, useParameter } from 'storybook/internal/manager-api';
-import { Global } from 'storybook/internal/theming';
 
 import { GrowIcon, RefreshIcon, TransferIcon } from '@storybook/icons';
+
+import { type API, useGlobals, useParameter } from 'storybook/manager-api';
+import { Global } from 'storybook/theming';
 
 import { PARAM_KEY as KEY } from '../constants';
 import { MINIMAL_VIEWPORTS } from '../defaults';

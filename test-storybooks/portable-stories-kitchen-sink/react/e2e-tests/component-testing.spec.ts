@@ -274,8 +274,8 @@ test.describe("component testing", () => {
     // Assert - Coverage report is collected and shown
     await expect(page.getByLabel("Open coverage report")).toBeVisible({ timeout: 30000 });
     const sbPercentageText = await page.getByLabel(/percent coverage$/).textContent();
-    expect(sbPercentageText).toMatch(/^\d+\s%$/);
-    const sbPercentage = Number.parseInt(sbPercentageText!.replace(' %', '') ?? '');
+    expect(sbPercentageText).toMatch(/^\d+%$/);
+    const sbPercentage = Number.parseInt(sbPercentageText!.replace('%', '') ?? '');
     expect(sbPercentage).toBeGreaterThanOrEqual(0);
     expect(sbPercentage).toBeLessThanOrEqual(100);
 
@@ -468,8 +468,8 @@ test.describe("component testing", () => {
     // Assert - Coverage percentage is now collected and shown because running all tests automatically re-enables coverage
     await expect(page.getByLabel("Open coverage report")).toBeVisible({ timeout: 30000 });
     const sbPercentageText = await page.getByLabel(/percent coverage$/).textContent();
-    expect(sbPercentageText).toMatch(/^\d+\s%$/);
-    const sbPercentage = Number.parseInt(sbPercentageText!.replace(' %', '') ?? '');
+    expect(sbPercentageText).toMatch(/^\d+%$/);
+    const sbPercentage = Number.parseInt(sbPercentageText!.replace('%', '') ?? '');
     expect(sbPercentage).toBeGreaterThanOrEqual(0);
     expect(sbPercentage).toBeLessThanOrEqual(100);
   });

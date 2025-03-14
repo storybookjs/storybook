@@ -1,3 +1,11 @@
+## 9.0.0-alpha.4
+
+- Automigrate: Prefer framework import - [#30785](https://github.com/storybookjs/storybook/pull/30785), thanks @ndelangen!
+- Blocks: IconGallery improvement - [#30743](https://github.com/storybookjs/storybook/pull/30743), thanks @leeovictor!
+- CLI: Do not install renderer package on `init` - [#30799](https://github.com/storybookjs/storybook/pull/30799), thanks @ndelangen!
+- Core: Move @storybook/addon-actions into storybook - [#30765](https://github.com/storybookjs/storybook/pull/30765), thanks @valentinpalkovic!
+- React: Remove react import in template files - [#30757](https://github.com/storybookjs/storybook/pull/30757), thanks @kasperpeulen!
+
 ## 9.0.0-alpha.3
 
 - Addon A11y: Promote @storybook/global to full dependency - [#30723](https://github.com/storybookjs/storybook/pull/30723), thanks @mrginglymus!

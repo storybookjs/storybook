@@ -107,10 +107,14 @@
     "@storybook/builder-vite": "workspace:*",
     "@storybook/react": "workspace:*",
     "@storybook/react-vite": "workspace:*",
+    "@storybook/rsc-plugin": "workspace:*",
+    "memoizee": "0.4.17",
     "styled-jsx": "5.1.6",
     "vite-plugin-storybook-nextjs": "2.0.0--canary.33.a61ad85.0"
   },
   "devDependencies": {
+    "@types/babel__core": "^7",
+    "@types/babel__generator": "^7",
     "@types/node": "^22.0.0",
     "next": "^15.0.3",
     "typescript": "^5.7.3"

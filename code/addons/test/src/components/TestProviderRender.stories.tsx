@@ -251,7 +251,31 @@ export const AccessibilityEnabled: Story = {
 };
 
 export const AccessibilityViolations: Story = {
-  args: Default.args,
+  args: {
+    state: {
+      ...config,
+      ...baseState,
+      details: {
+        testResults: [
+          {
+            endTime: 0,
+            startTime: 0,
+            status: 'passed',
+            message: 'All tests passed',
+            results: [
+              {
+                storyId: 'story-id',
+                status: 'passed',
+                duration: 100,
+                testRunId: 'test-run-id',
+                reports: [{ type: 'a11y', status: 'warning', result: { violations: [] } }],
+              },
+            ],
+          },
+        ],
+      },
+    },
+  },
   beforeEach: async () => {
     mockStore.setState({
       ...storeOptions.initialState,

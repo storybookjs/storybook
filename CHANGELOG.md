@@ -1,3 +1,8 @@
+## 8.6.6
+
+- Angular: Make sure that polyfills are loaded before the storybook is loaded - [#30811](https://github.com/storybookjs/storybook/pull/30811), thanks @kasperpeulen!
+- CSF: Fix CSF subcomponent type - [#30729](https://github.com/storybookjs/storybook/pull/30729), thanks @filipemelo2002!
+
 ## 8.6.5
 
 - Addon A11y: Promote @storybook/global to full dependency - [#30723](https://github.com/storybookjs/storybook/pull/30723), thanks @mrginglymus!

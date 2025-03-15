@@ -2266,9 +2266,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@chromatic-com/storybook@npm:3.2.7--canary.359.267ee0c.0":
-  version: 3.2.7--canary.359.267ee0c.0
-  resolution: "@chromatic-com/storybook@npm:3.2.7--canary.359.267ee0c.0"
+"@chromatic-com/storybook@npm:3.2.7--canary.359.c56f89f.0":
+  version: 3.2.7--canary.359.c56f89f.0
+  resolution: "@chromatic-com/storybook@npm:3.2.7--canary.359.c56f89f.0"
   dependencies:
     chromatic: "npm:^11.27.0"
     filesize: "npm:^10.0.12"
@@ -2276,8 +2276,8 @@ __metadata:
     react-confetti: "npm:^6.1.0"
     strip-ansi: "npm:^7.1.0"
   peerDependencies:
-    storybook: ^0.0.0-0 || 0.0.0-pr-30764-sha-78d167d4
-  checksum: 10c0/fd77af7d2f1f04421a2d443c847aa83738891cd719ec94319c31b019c573d0c9dbe1c8faab8e4c5d01e91c33abc2337da1c70ddf59ac9d3a0396eb86ed0c88b9
+    storybook: ^0.0.0-0 || ^9.0.0 || ^9.0.0-alpha.4
+  checksum: 10c0/144a4ae94b6b40c476e740d375eefb1ed7d3d8d66120ac784a270d60830ccc906cf54e34089097520068e7079638ec2d4ed6fb3effdd9131cadc26c17dd86e1f
   languageName: node
   linkType: hard
 
@@ -7223,7 +7223,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/root@workspace:."
   dependencies:
-    "@chromatic-com/storybook": "npm:3.2.7--canary.359.267ee0c.0"
+    "@chromatic-com/storybook": "npm:3.2.7--canary.359.c56f89f.0"
     "@happy-dom/global-registrator": "npm:^14.12.0"
     "@nx/eslint": "npm:20.2.2"
     "@nx/vite": "npm:20.2.2"

@@ -99,7 +99,7 @@
   },
   "dependencies": {
     "@storybook/global": "^5.0.0",
-    "@storybook/icons": "^1.2.12",
+    "@storybook/icons": "^1.4.0",
     "polished": "^4.2.2",
     "prompts": "^2.4.0",
     "ts-dedent": "^2.2.0"

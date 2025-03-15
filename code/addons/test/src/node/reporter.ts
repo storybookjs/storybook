@@ -7,7 +7,6 @@ import type {
   TestingModuleProgressReportPayload,
   TestingModuleProgressReportProgress,
 } from 'storybook/internal/core-events';
-import type { API_StatusUpdate } from 'storybook/internal/types';
 
 import type { Suite } from '@vitest/runner';
 import { throttle } from 'es-toolkit';
@@ -92,8 +91,6 @@ const getErrorOrigin = (error: VitestError): string => {
 };
 
 export class StorybookReporter implements Reporter {
-  testStatusData: API_StatusUpdate = {};
-
   start = 0;
 
   ctx!: Vitest;

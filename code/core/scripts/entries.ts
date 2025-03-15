@@ -12,7 +12,7 @@ export const getEntries = (cwd: string) => {
     define('src/theming/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
     define('src/theming/create.ts', ['browser', 'node'], true, ['react'], [], [], true),
 
-    define('src/core-server/index.ts', ['node'], true),
+    define('src/core-server/index.ts', ['node'], true, ['react']),
     define('src/core-server/presets/common-preset.ts', ['node'], false),
     define('src/core-server/presets/common-manager.ts', ['browser'], false),
     define('src/core-server/presets/common-override-preset.ts', ['node'], false),

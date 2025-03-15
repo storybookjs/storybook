@@ -11,6 +11,7 @@ import { HIGHLIGHT } from '@storybook/addon-highlight';
 
 import type { AxeResults, Result } from 'axe-core';
 import {
+  experimental_useStatusStore,
   useAddonState,
   useChannel,
   useGlobals,
@@ -100,7 +101,9 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
   const [highlighted, setHighlighted] = useState<string[]>([]);
 
   const { storyId } = useStorybookState();
-  const storyStatus = api.getCurrentStoryStatus();
+  const currentStoryA11yStatusValue = experimental_useStatusStore(
+    (allStatuses) => allStatuses[storyId]?.[TEST_PROVIDER_ID]?.value
+  );
 
   const handleToggleHighlight = useCallback((target: string[], highlight: boolean) => {
     setHighlighted((prevHighlighted) =>
@@ -194,26 +197,24 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
   }, [emit, highlighted, tab]);
 
   const discrepancy: TestDiscrepancy = useMemo(() => {
-    const storyStatusA11y = storyStatus?.[TEST_PROVIDER_ID]?.status;
-
-    if (storyStatusA11y) {
-      if (storyStatusA11y === 'success' && results.violations.length > 0) {
-        return 'cliPassedBrowserFailed';
-      }
-
-      if (storyStatusA11y === 'error' && results.violations.length === 0) {
-        if (status === 'ready' || status === 'ran') {
-          return 'browserPassedCliFailed';
-        }
-
-        if (status === 'manual') {
-          return 'cliFailedButModeManual';
-        }
-      }
+    if (!currentStoryA11yStatusValue) {
+      return null;
+    }
+    if (currentStoryA11yStatusValue === 'status-value:success' && results.violations.length > 0) {
+      return 'cliPassedBrowserFailed';
     }
 
+    if (currentStoryA11yStatusValue === 'status-value:error' && results.violations.length === 0) {
+      if (status === 'ready' || status === 'ran') {
+        return 'browserPassedCliFailed';
+      }
+
+      if (status === 'manual') {
+        return 'cliFailedButModeManual';
+      }
+    }
     return null;
-  }, [results.violations.length, status, storyStatus]);
+  }, [results.violations.length, status, currentStoryA11yStatusValue]);
 
   return (
     <A11yContext.Provider

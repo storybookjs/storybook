@@ -1242,7 +1242,7 @@ describe('Refs API', () => {
         provider: provider as any,
         docsOptions: {},
         filters: {},
-        status: {},
+        allStatuses: {},
       };
       const initialState: Partial<State> = {
         refs: {

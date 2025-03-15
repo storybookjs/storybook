@@ -29,9 +29,6 @@ import type {
   API_LeafEntry,
   API_LoadedRefData,
   API_PreparedStoryIndex,
-  API_StatusObject,
-  API_StatusState,
-  API_StatusUpdate,
   API_StoryEntry,
   API_ViewMode,
   Args,
@@ -44,6 +41,7 @@ import type {
   StoryName,
   StoryPreparedPayload,
 } from 'storybook/internal/types';
+import type { StatusByTypeId } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
@@ -57,6 +55,7 @@ import {
 } from '../lib/stories';
 import type { ModuleFn } from '../lib/types';
 import type { ComposedRef } from '../root';
+import { fullStatusStore } from '../stores/status';
 
 const { fetch } = global;
 const STORY_INDEX_PATH = './index.json';
@@ -74,7 +73,6 @@ export interface SubState extends API_LoadedRefData {
   storyId: StoryId;
   internal_index?: API_PreparedStoryIndex;
   viewMode: API_ViewMode;
-  status: API_StatusState;
   filters: Record<string, API_FilterFunction>;
 }
 
@@ -269,23 +267,6 @@ export interface SubAPI {
    * @returns {Promise<void>} A promise that resolves when the preview has been set as initialized.
    */
   setPreviewInitialized: (ref?: ComposedRef) => Promise<void>;
-  /**
-   * Returns the current status of the stories.
-   *
-   * @returns {API_StatusState} The current status of the stories.
-   */
-  getCurrentStoryStatus: () => Record<string, API_StatusObject>;
-  /**
-   * Updates the status of a collection of stories.
-   *
-   * @param {string} addonId - The ID of the addon to update.
-   * @param {StatusUpdate} update - An object containing the updated status information.
-   * @returns {Promise<void>} A promise that resolves when the status has been updated.
-   */
-  experimental_updateStatus: (
-    addonId: string,
-    update: API_StatusUpdate | ((state: API_StatusState) => API_StatusUpdate)
-  ) => Promise<void>;
   /**
    * Updates the filtering of the index.
    *
@@ -567,18 +548,19 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     // The story index we receive on fetchStoryIndex is not, but all the prepared fields are optional
     // so we can cast one to the other easily enough
     setIndex: async (input) => {
-      const { filteredIndex: oldFilteredHash, index: oldHash, status, filters } = store.getState();
+      const { filteredIndex: oldFilteredHash, index: oldHash, filters } = store.getState();
+      const allStatuses = fullStatusStore.getAll();
       const newFilteredHash = transformStoryIndexToStoriesHash(input, {
         provider,
         docsOptions,
-        status,
         filters,
+        allStatuses,
       });
       const newHash = transformStoryIndexToStoriesHash(input, {
         provider,
         docsOptions,
-        status,
         filters: {},
+        allStatuses,
       });
 
       await store.setState({
@@ -667,50 +649,6 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       }
     },
 
-    getCurrentStoryStatus: () => {
-      const { status, storyId } = store.getState();
-      return status[storyId as StoryId];
-    },
-
-    /* EXPERIMENTAL APIs */
-    experimental_updateStatus: async (id, input) => {
-      const { status, internal_index: index } = store.getState();
-      const newStatus = { ...status };
-
-      const update = typeof input === 'function' ? input(status) : input;
-
-      if (!id || Object.keys(update).length === 0) {
-        return;
-      }
-
-      Object.entries(update).forEach(([storyId, value]) => {
-        if (!storyId || typeof value !== 'object') {
-          return;
-        }
-        newStatus[storyId] = { ...(newStatus[storyId] || {}) };
-        if (value === null) {
-          delete newStatus[storyId][id];
-        } else {
-          newStatus[storyId][id] = value;
-        }
-
-        if (Object.keys(newStatus[storyId]).length === 0) {
-          delete newStatus[storyId];
-        }
-      });
-
-      await store.setState({ status: newStatus }, { persistence: 'session' });
-
-      if (index) {
-        // We need to re-prepare the index
-        await api.setIndex(index);
-
-        const refs = await fullAPI.getRefs();
-        Object.entries(refs).forEach(([refId, { internal_index, ...ref }]) => {
-          fullAPI.setRef(refId, { ...ref, storyIndex: internal_index }, true);
-        });
-      }
-    },
     experimental_setFilter: async (id, filterFunction) => {
       await store.setState({ filters: { ...store.getState().filters, [id]: filterFunction } });
 
@@ -936,6 +874,23 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     }
   });
 
+  fullStatusStore.onAllStatusChange(async () => {
+    // re-apply the filters when the statuses change
+
+    const { internal_index: index } = store.getState();
+
+    if (!index) {
+      return;
+    }
+    // apply new filters by setting the index again
+    await api.setIndex(index);
+
+    const refs = await fullAPI.getRefs();
+    Object.entries(refs).forEach(([refId, { internal_index, ...ref }]) => {
+      fullAPI.setRef(refId, { ...ref, storyIndex: internal_index }, true);
+    });
+  });
+
   const config = provider.getConfig();
 
   return {
@@ -945,7 +900,6 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       viewMode: initialViewMode,
       hasCalledSetOptions: false,
       previewInitialized: false,
-      status: {},
       filters: config?.sidebar?.filters || {},
     },
     init: async () => {

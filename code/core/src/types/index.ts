@@ -13,3 +13,4 @@ export * from './modules/composedStory';
 export * from './modules/channelApi';
 export * from './modules/frameworks';
 export * from './modules/renderers';
+export * from './modules/status';

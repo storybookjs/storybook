@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/naming-convention */
+import type { StatusByTypeId } from '../../../dist/types';
 import type { DocsOptions } from './core-common';
 import type { ArgTypes, Args, ComponentTitle, Parameters, Path, StoryId, Tag } from './csf';
 import type { IndexEntry } from './indexer';
@@ -116,20 +117,6 @@ export interface API_Versions {
   current?: API_Version;
 }
 
-export type API_StatusValue = 'pending' | 'success' | 'error' | 'warn' | 'unknown';
-
-export interface API_StatusObject {
-  status: API_StatusValue;
-  title: string;
-  description: string;
-  data?: any;
-  onClick?: () => void;
-  sidebarContextMenu?: boolean;
-}
-
-export type API_StatusState = Record<StoryId, Record<string, API_StatusObject>>;
-export type API_StatusUpdate = Record<StoryId, API_StatusObject | null>;
-
 export type API_FilterFunction = (
-  item: API_PreparedIndexEntry & { status: Record<string, API_StatusObject | null> }
+  item: API_PreparedIndexEntry & { statuses: StatusByTypeId }
 ) => boolean;

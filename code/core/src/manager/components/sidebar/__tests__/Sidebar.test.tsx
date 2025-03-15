@@ -26,7 +26,7 @@ const factory = (props: Partial<SidebarProps>): RenderResult => {
         index={{}}
         previewInitialized
         refs={{}}
-        status={{}}
+        allStatuses={{}}
         extra={[]}
         {...props}
       />

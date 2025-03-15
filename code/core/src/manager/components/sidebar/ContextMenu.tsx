@@ -90,7 +90,7 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
           }}
           tooltip={<LiveContextMenu context={context} links={links} />}
         >
-          <FloatingStatusButton type="button" status={'pending'}>
+          <FloatingStatusButton type="button" status="status-value:pending">
             <EllipsisIcon />
           </FloatingStatusButton>
         </PositionedWithTooltip>

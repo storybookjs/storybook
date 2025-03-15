@@ -25,7 +25,7 @@ export default {
 };
 
 const combinedDataset = (refs: Record<string, StoriesHash>): CombinedDataset => {
-  const hash: Refs = Object.entries(refs).reduce(
+  const hash = Object.entries(refs).reduce(
     (acc, [refId, index]) =>
       Object.assign(acc, {
         [refId]: {
@@ -35,6 +35,7 @@ const combinedDataset = (refs: Record<string, StoriesHash>): CombinedDataset => 
           url: 'iframe.html',
           ready: true,
           error: false,
+          allStatuses: {},
         },
       }),
     {}

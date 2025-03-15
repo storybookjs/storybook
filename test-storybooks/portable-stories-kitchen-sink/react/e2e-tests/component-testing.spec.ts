@@ -39,6 +39,11 @@ test.describe("component testing", () => {
     await page.evaluate(() => window.sessionStorage.clear());
     await sbPage.waitUntilLoaded();
 
+    await page.evaluate(() => {
+      // @ts-expect-error -- temporary to clear statuses between tests, will be removed when we have a clear button in the UI
+      globalThis.clearStatuses()
+    });
+
     // Ensure that all features are disabled, as previous tests might have enabled them
 
     await page.getByLabel('Expand testing module').click();

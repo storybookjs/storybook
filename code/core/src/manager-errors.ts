@@ -1,3 +1,4 @@
+import type { Status, StatusTypeId } from './shared/status-store';
 import { StorybookError } from './storybook-error';
 
 /**
@@ -41,5 +42,24 @@ export class UncaughtManagerError extends StorybookError {
       message: data.error.message,
     });
     this.stack = data.error.stack;
+  }
+}
+
+export class StatusTypeIdMismatchError extends StorybookError {
+  constructor(
+    public data: {
+      status: Status;
+      typeId: StatusTypeId;
+    }
+  ) {
+    super({
+      category: Category.MANAGER_API,
+      code: 1,
+      message: `Status has typeId "${data.status.typeId}" but was added to store with typeId "${data.typeId}". Full status: ${JSON.stringify(
+        data.status,
+        null,
+        2
+      )}`,
+    });
   }
 }

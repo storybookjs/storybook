@@ -5,7 +5,7 @@ import { Linking, StyleSheet, Text, View } from 'react-native';
 import { Header } from './Header';
 
 export const Page = () => {
-  const [user, setUser] = useState();
+  const [user, setUser] = useState<{ name: string } | undefined>();
 
   return (
     <View>
@@ -39,14 +39,14 @@ export const Page = () => {
           data in Storybook:
         </Text>
         <View>
-          <View>
+          <Text>
             Use a higher-level connected component. Storybook helps you compose such data from the
             "args" of child component stories
-          </View>
-          <View>
+          </Text>
+          <Text>
             Assemble data in the page component from your services. You can mock these services out
             using Storybook.
-          </View>
+          </Text>
         </View>
         <Text style={styles.p}>
           Get a guided tutorial on component-driven development at{' '}

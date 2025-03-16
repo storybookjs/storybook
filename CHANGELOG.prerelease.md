@@ -1,3 +1,12 @@
+## 9.0.0-alpha.5
+
+- Angular: Make sure that polyfills are loaded before the storybook is loaded - [#30811](https://github.com/storybookjs/storybook/pull/30811), thanks @kasperpeulen!
+- CSF: Fix CSF subcomponent type - [#30729](https://github.com/storybookjs/storybook/pull/30729), thanks @filipemelo2002!
+- Ember: Fix `ember-template-compiler` import for ember 6+ - [#30682](https://github.com/storybookjs/storybook/pull/30682), thanks @leoeuclids!
+- React-Native-Web: Fix errors in CLI template stories - [#30821](https://github.com/storybookjs/storybook/pull/30821), thanks @dannyhw!
+- React-Native: Update config directory to .rnstorybook - [#30819](https://github.com/storybookjs/storybook/pull/30819), thanks @dannyhw!
+- React: Remove react import in template files - [#30757](https://github.com/storybookjs/storybook/pull/30757), thanks @kasperpeulen!
+
 ## 9.0.0-alpha.4
 
 - Automigrate: Prefer framework import - [#30785](https://github.com/storybookjs/storybook/pull/30785), thanks @ndelangen!

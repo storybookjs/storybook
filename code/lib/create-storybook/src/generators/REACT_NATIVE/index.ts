@@ -23,9 +23,9 @@ const generator: Generator = async (packageManager, npmOptions, options) => {
 
   const packagesToResolve = [
     ...peerDependencies,
-    '@storybook/addon-ondevice-controls',
-    '@storybook/addon-ondevice-actions',
-    '@storybook/react-native',
+    '@storybook/addon-ondevice-controls@next',
+    '@storybook/addon-ondevice-actions@next',
+    '@storybook/react-native@next',
   ];
 
   const packagesWithFixedVersion: string[] = [];
@@ -52,7 +52,7 @@ const generator: Generator = async (packageManager, npmOptions, options) => {
     'storybook-generate': 'sb-rn-get-stories',
   });
 
-  const storybookConfigFolder = '.storybook';
+  const storybookConfigFolder = '.rnstorybook';
 
   await copyTemplateFiles({
     packageManager: packageManager as any,

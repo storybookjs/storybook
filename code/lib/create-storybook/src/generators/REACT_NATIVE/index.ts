@@ -52,7 +52,7 @@ const generator: Generator = async (packageManager, npmOptions, options) => {
     'storybook-generate': 'sb-rn-get-stories',
   });
 
-  const storybookConfigFolder = '.storybook';
+  const storybookConfigFolder = '.rnstorybook';
 
   await copyTemplateFiles({
     packageManager: packageManager as any,

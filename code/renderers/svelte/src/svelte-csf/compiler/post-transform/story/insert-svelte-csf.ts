@@ -1,7 +1,7 @@
 import {
   findPropertyParametersIndex,
   getParametersPropertyValue,
-} from '$lib/compiler/post-transform/shared/description.js';
+} from '$lib/compiler/post-transform/shared/parameters.js';
 
 import type { extractStoriesNodesFromExportDefaultFn } from '$lib/parser/extract/compiled/stories.js';
 import { getStoryPropsObjectExpression } from '$lib/parser/extract/compiled/story.js';

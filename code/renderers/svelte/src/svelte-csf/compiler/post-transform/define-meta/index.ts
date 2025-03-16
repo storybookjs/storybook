@@ -2,7 +2,7 @@ import { print } from 'esrap';
 import type MagicString from 'magic-string';
 
 import { replaceDefineMetaArgument } from './replace-argument.js';
-import { insertDefineMetaJSDocCommentAsDescription } from './insert-description.js';
+import { insertDefineMetaParameters } from './insert-parameters.js';
 
 import { createASTIdentifier, type ESTreeAST } from '$lib/parser/ast.js';
 import type { CompiledASTNodes } from '$lib/parser/extract/compiled/nodes.js';
@@ -24,17 +24,9 @@ interface Params {
 export function transformDefineMeta(params: Params): void {
   const { code, nodes, filename } = params;
 
-  insertDefineMetaJSDocCommentAsDescription({
-    nodes,
-    filename,
-  });
-  const metaObjectExpression = replaceDefineMetaArgument({
-    nodes,
-    filename,
-  });
-  const metaVariableDeclaration = createMetaVariableDeclaration({
-    init: metaObjectExpression,
-  });
+  insertDefineMetaParameters({ nodes, filename });
+  const metaObjectExpression = replaceDefineMetaArgument({ nodes, filename });
+  const metaVariableDeclaration = createMetaVariableDeclaration({ init: metaObjectExpression });
 
   const { compiled } = nodes;
   const { defineMetaVariableDeclaration } = compiled;
@@ -49,7 +41,6 @@ export function createMetaVariableDeclaration({
 }: {
   init: ESTreeAST.ObjectExpression;
 }): ESTreeAST.VariableDeclaration {
-  //
   return {
     type: 'VariableDeclaration',
     kind: 'const',

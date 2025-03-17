@@ -284,7 +284,7 @@ export async function baseGenerator(
       : extraAddonPackages;
 
   // TODO: change the semver range to '^4' when VTA 4 and SB 9 is released
-  extraAddonsToInstall.push('@chromatic-com/storybook@3.2.7--canary.359.c56f89f.0');
+  extraAddonsToInstall.push('@chromatic-com/storybook@^4.0.0-0');
 
   // added to main.js
   const addons = [

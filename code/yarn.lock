@@ -6050,7 +6050,7 @@ __metadata:
   dependencies:
     "@storybook/addon-highlight": "workspace:*"
     "@storybook/global": "npm:^5.0.0"
-    "@storybook/icons": "npm:^1.2.12"
+    "@storybook/icons": "npm:^1.4.0"
     "@testing-library/react": "npm:^14.0.0"
     axe-core: "npm:^4.2.0"
     execa: "npm:^9.5.2"
@@ -6072,7 +6072,7 @@ __metadata:
   resolution: "@storybook/addon-backgrounds@workspace:addons/backgrounds"
   dependencies:
     "@storybook/global": "npm:^5.0.0"
-    "@storybook/icons": "npm:^1.2.12"
+    "@storybook/icons": "npm:^1.4.0"
     memoizerific: "npm:^1.11.3"
     react: "npm:^18.2.0"
     react-dom: "npm:^18.2.0"
@@ -6089,7 +6089,7 @@ __metadata:
   dependencies:
     "@storybook/blocks": "workspace:*"
     "@storybook/global": "npm:^5.0.0"
-    "@storybook/icons": "npm:^1.2.12"
+    "@storybook/icons": "npm:^1.4.0"
     dequal: "npm:^2.0.2"
     react: "npm:^18.2.0"
     react-dom: "npm:^18.2.0"
@@ -6179,7 +6179,7 @@ __metadata:
   dependencies:
     "@devtools-ds/object-inspector": "npm:^1.1.2"
     "@storybook/global": "npm:^5.0.0"
-    "@storybook/icons": "npm:^1.2.5"
+    "@storybook/icons": "npm:^1.4.0"
     "@types/node": "npm:^22.0.0"
     ansi-to-html: "npm:^0.7.2"
     formik: "npm:^2.2.9"
@@ -6198,7 +6198,7 @@ __metadata:
   resolution: "@storybook/addon-jest@workspace:addons/jest"
   dependencies:
     "@storybook/global": "npm:^5.0.0"
-    "@storybook/icons": "npm:^1.2.12"
+    "@storybook/icons": "npm:^1.4.0"
     react: "npm:^18.2.0"
     react-dom: "npm:^18.2.0"
     react-resize-detector: "npm:^7.1.2"
@@ -6244,7 +6244,7 @@ __metadata:
   resolution: "@storybook/addon-measure@workspace:addons/measure"
   dependencies:
     "@storybook/global": "npm:^5.0.0"
-    "@storybook/icons": "npm:^1.2.12"
+    "@storybook/icons": "npm:^1.4.0"
     react: "npm:^18.2.0"
     react-dom: "npm:^18.2.0"
     tiny-invariant: "npm:^1.3.1"
@@ -6260,7 +6260,7 @@ __metadata:
   dependencies:
     "@neoconfetti/react": "npm:^1.0.0"
     "@radix-ui/react-dialog": "npm:^1.0.5"
-    "@storybook/icons": "npm:^1.2.12"
+    "@storybook/icons": "npm:^1.4.0"
     framer-motion: "npm:^11.0.3"
     react: "npm:^18.2.0"
     react-dom: "npm:^18.2.0"
@@ -6277,7 +6277,7 @@ __metadata:
   resolution: "@storybook/addon-outline@workspace:addons/outline"
   dependencies:
     "@storybook/global": "npm:^5.0.0"
-    "@storybook/icons": "npm:^1.2.12"
+    "@storybook/icons": "npm:^1.4.0"
     react: "npm:^18.2.0"
     react-dom: "npm:^18.2.0"
     ts-dedent: "npm:^2.0.0"
@@ -6311,7 +6311,7 @@ __metadata:
   dependencies:
     "@devtools-ds/object-inspector": "npm:^1.1.2"
     "@storybook/global": "npm:^5.0.0"
-    "@storybook/icons": "npm:^1.2.12"
+    "@storybook/icons": "npm:^1.4.0"
     "@types/istanbul-lib-report": "npm:^3.0.3"
     "@types/node": "npm:^22.0.0"
     "@types/semver": "npm:^7"
@@ -6358,7 +6358,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/addon-themes@workspace:addons/themes"
   dependencies:
-    "@storybook/icons": "npm:^1.2.12"
+    "@storybook/icons": "npm:^1.4.0"
     ts-dedent: "npm:^2.0.0"
     typescript: "npm:^5.7.3"
   peerDependencies:
@@ -6383,7 +6383,7 @@ __metadata:
   resolution: "@storybook/addon-viewport@workspace:addons/viewport"
   dependencies:
     "@storybook/global": "npm:^5.0.0"
-    "@storybook/icons": "npm:^1.2.12"
+    "@storybook/icons": "npm:^1.4.0"
     memoizerific: "npm:^1.11.3"
     react: "npm:^18.2.0"
     react-dom: "npm:^18.2.0"
@@ -6489,7 +6489,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/blocks@workspace:lib/blocks"
   dependencies:
-    "@storybook/icons": "npm:^1.2.12"
+    "@storybook/icons": "npm:^1.4.0"
     "@storybook/react": "workspace:*"
     "@types/color-convert": "npm:^2.0.0"
     color-convert: "npm:^2.0.1"
@@ -6809,13 +6809,13 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/icons@npm:^1.2.12, @storybook/icons@npm:^1.2.5, @storybook/icons@npm:^1.3.2":
-  version: 1.3.2
-  resolution: "@storybook/icons@npm:1.3.2"
+"@storybook/icons@npm:^1.4.0":
+  version: 1.4.0
+  resolution: "@storybook/icons@npm:1.4.0"
   peerDependencies:
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
     react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
-  checksum: 10c0/83f21af9c95a1431a651d2e87d9ea0a06a9981e19c00e4db61bc6d4272624ef296929c4e93b8a962ee5b7af18beab5368249a37125f6663bc7761fd89a1fd3fe
+  checksum: 10c0/fd0514fb3fa431a8b5939fe1d9fc336b253ef2c25b34792d2d4ee59e13321108d34f8bf223a0981482f54f83c5ef47ffd1a98c376ca9071011c1b8afe2b01d43
   languageName: node
   linkType: hard
 
@@ -27724,7 +27724,7 @@ __metadata:
     "@radix-ui/react-slot": "npm:^1.0.2"
     "@storybook/docs-mdx": "npm:4.0.0-next.1"
     "@storybook/global": "npm:^5.0.0"
-    "@storybook/icons": "npm:^1.3.2"
+    "@storybook/icons": "npm:^1.4.0"
     "@tanstack/react-virtual": "npm:^3.3.0"
     "@testing-library/dom": "npm:10.4.0"
     "@testing-library/jest-dom": "npm:^6.6.3"

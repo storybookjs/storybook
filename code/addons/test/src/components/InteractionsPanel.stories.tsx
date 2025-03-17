@@ -1,11 +1,12 @@
 import React from 'react';
 
-import { ManagerContext } from 'storybook/internal/manager-api';
-import { styled } from 'storybook/internal/theming';
+import { CallStates } from 'storybook/internal/instrumenter';
 
-import { CallStates } from '@storybook/instrumenter';
-import type { Meta, StoryObj } from '@storybook/react';
-import { expect, fn, userEvent, waitFor, within } from '@storybook/test';
+import type { Meta, StoryObj } from '@storybook/react-vite';
+
+import { ManagerContext } from 'storybook/manager-api';
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
+import { styled } from 'storybook/theming';
 
 import { isChromatic } from '../../../../.storybook/isChromatic';
 import { getCalls, getInteractions } from '../mocks';

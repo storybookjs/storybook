@@ -1,7 +1,6 @@
 /* eslint-disable no-underscore-dangle,@typescript-eslint/naming-convention */
 import type { ComponentType } from 'react';
 
-import { __definePreview as definePreviewBase } from 'storybook/internal/csf';
 import type { Meta, Preview, Story } from 'storybook/internal/csf';
 import type {
   Args,
@@ -14,6 +13,7 @@ import type {
 
 import type { RemoveIndexSignature, SetOptional, Simplify, UnionToIntersection } from 'type-fest';
 
+import { __definePreview as definePreviewBase } from '../../../core/src/shared/preview/csf4';
 import * as reactAnnotations from './entry-preview';
 import * as reactDocsAnnotations from './entry-preview-docs';
 import type { AddMocks } from './public-types';
@@ -79,4 +79,4 @@ interface ReactMeta<
   ): ReactStory;
 }
 
-interface ReactStory extends Story<ReactRenderer> {}
+export interface ReactStory extends Story<ReactRenderer> {}

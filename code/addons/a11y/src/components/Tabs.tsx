@@ -1,17 +1,17 @@
 import * as React from 'react';
 
 import { IconButton, TooltipNote, WithTooltip } from 'storybook/internal/components';
-import { styled } from 'storybook/internal/theming';
 
 import { EyeCloseIcon, EyeIcon, SyncIcon } from '@storybook/icons';
 
 import type { Result } from 'axe-core';
 import { useResizeDetector } from 'react-resize-detector';
+import { styled } from 'storybook/theming';
 
 import type { RuleType } from './A11YPanel';
 import { useA11yContext } from './A11yContext';
 
-// TODO: reuse the Tabs component from storybook/internal/theming instead of re-building identical functionality
+// TODO: reuse the Tabs component from storybook/theming instead of re-building identical functionality
 
 const Container = styled.div({
   width: '100%',

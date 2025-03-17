@@ -43,23 +43,6 @@ type Event = {
   };
 };
 
-export const checkActionsLoaded = (configDir: string) => {
-  checkAddonOrder({
-    before: {
-      name: '@storybook/addon-actions',
-      inEssentials: true,
-    },
-    after: {
-      name: '@storybook/addon-test',
-      inEssentials: false,
-    },
-    configFile: isAbsolute(configDir)
-      ? join(configDir, 'main')
-      : join(process.cwd(), configDir, 'main'),
-    getConfig: (configFile) => serverRequire(configFile),
-  });
-};
-
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export const experimental_serverChannel = async (channel: Channel, options: Options) => {
   const core = await options.presets.apply('core');
@@ -196,14 +179,6 @@ export const staticDirs: PresetPropertyFn<'staticDirs'> = async (values = [], op
     },
     ...values,
   ];
-};
-
-export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
-  entry = [],
-  options
-) => {
-  checkActionsLoaded(options.configDir);
-  return entry;
 };
 
 export const managerEntries: PresetProperty<'managerEntries'> = async (entry = [], options) => {

@@ -1,9 +1,10 @@
 import React, { useMemo } from 'react';
 
 import { ActionBar, Badge, ScrollArea } from 'storybook/internal/components';
-import { styled } from 'storybook/internal/theming';
 
 import { CheckIcon, SyncIcon } from '@storybook/icons';
+
+import { styled } from 'storybook/theming';
 
 import { useA11yContext } from './A11yContext';
 import { Report } from './Report';

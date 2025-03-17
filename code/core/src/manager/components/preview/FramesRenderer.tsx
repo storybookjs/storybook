@@ -2,10 +2,11 @@ import type { FC } from 'react';
 import React, { Fragment, useRef } from 'react';
 
 import { Button, getStoryHref } from 'storybook/internal/components';
-import type { Combo } from 'storybook/internal/manager-api';
-import { Consumer } from 'storybook/internal/manager-api';
-import { Global, styled } from 'storybook/internal/theming';
-import type { CSSObject } from 'storybook/internal/theming';
+
+import type { Combo } from 'storybook/manager-api';
+import { Consumer } from 'storybook/manager-api';
+import { Global, styled } from 'storybook/theming';
+import type { CSSObject } from 'storybook/theming';
 
 import { IFrame } from './Iframe';
 import { stringifyQueryParams } from './utils/stringifyQueryParams';

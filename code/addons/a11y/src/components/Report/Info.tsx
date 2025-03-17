@@ -2,9 +2,9 @@ import type { FC } from 'react';
 import React from 'react';
 
 import { Link } from 'storybook/internal/components';
-import { styled } from 'storybook/internal/theming';
 
 import type { Result } from 'axe-core';
+import { styled } from 'storybook/theming';
 
 const Wrapper = styled.div({
   padding: '0 15px',

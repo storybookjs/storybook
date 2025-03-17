@@ -2,12 +2,12 @@ import type { FC, ReactNode } from 'react';
 import React, { Fragment, memo, useEffect, useRef, useState } from 'react';
 
 import { IconButton, TooltipLinkList, WithTooltip } from 'storybook/internal/components';
-import { useGlobals, useParameter, useStorybookApi } from 'storybook/internal/manager-api';
-import { Global, styled } from 'storybook/internal/theming';
 
 import { GrowIcon, TransferIcon } from '@storybook/icons';
 
 import memoize from 'memoizerific';
+import { useGlobals, useParameter, useStorybookApi } from 'storybook/manager-api';
+import { Global, styled } from 'storybook/theming';
 
 import { PARAM_KEY } from '../constants';
 import { MINIMAL_VIEWPORTS } from '../defaults';

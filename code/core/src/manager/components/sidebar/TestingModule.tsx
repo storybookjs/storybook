@@ -3,10 +3,11 @@ import React, { type SyntheticEvent, useCallback, useEffect, useRef, useState } 
 import { Button, TooltipNote } from 'storybook/internal/components';
 import { WithTooltip } from 'storybook/internal/components';
 import { type TestProviders } from 'storybook/internal/core-events';
-import { useStorybookApi } from 'storybook/internal/manager-api';
-import { keyframes, styled } from 'storybook/internal/theming';
 
 import { ChevronSmallUpIcon, PlayAllHollowIcon } from '@storybook/icons';
+
+import { useStorybookApi } from 'storybook/manager-api';
+import { keyframes, styled } from 'storybook/theming';
 
 import { LegacyRender } from './LegacyRender';
 

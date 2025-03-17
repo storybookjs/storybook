@@ -2,13 +2,14 @@ import type { FC, SyntheticEvent } from 'react';
 import React, { Fragment } from 'react';
 
 import { IconButton, ScrollArea, TabBar, TabButton } from 'storybook/internal/components';
-import { types, useStorybookApi, useStorybookState } from 'storybook/internal/manager-api';
 import { Location, Route } from 'storybook/internal/router';
-import { styled } from 'storybook/internal/theming';
 import type { Addon_PageType } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 import { CloseIcon } from '@storybook/icons';
+
+import { types, useStorybookApi, useStorybookState } from 'storybook/manager-api';
+import { styled } from 'storybook/theming';
 
 import { matchesKeyCode, matchesModifiers } from '../keybinding';
 import { AboutPage } from './AboutPage';

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/blocks",
-  "version": "9.0.0-alpha.0",
+  "version": "9.0.0-alpha.5",
   "description": "Storybook Doc Blocks",
   "keywords": [
     "storybook"
@@ -47,9 +47,7 @@
     "ts-dedent": "^2.0.0"
   },
   "devDependencies": {
-    "@storybook/addon-actions": "workspace:*",
     "@storybook/react": "workspace:*",
-    "@storybook/test": "workspace:*",
     "@types/color-convert": "^2.0.0",
     "color-convert": "^2.0.1",
     "es-toolkit": "^1.22.0",

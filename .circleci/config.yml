@@ -367,10 +367,10 @@ jobs:
       - report-workflow-on-failure
   chromatic-internal-storybook:
     executor:
-      class: medium
+      class: large
       name: sb_node_22_browsers
     environment:
-      NODE_OPTIONS: --max_old_space_size=6144
+      NODE_OPTIONS: --max_old_space_size=4096
     steps:
       # switched this to the CircleCI helper to get the full git history for TurboSnap
       - checkout
@@ -878,10 +878,11 @@ workflows:
           parallelism: 4
           requires:
             - create-sandboxes
-      - bench-sandboxes:
-          parallelism: 5
-          requires:
-            - create-sandboxes
+# TODO: don't forget to reenable this
+#      - bench-sandboxes:
+#          parallelism: 5
+#          requires:
+#            - create-sandboxes
       - test-ui-testing-module:
           requires:
             - build
@@ -965,10 +966,11 @@ workflows:
       - test-init-features:
           requires:
             - build
-      - bench-sandboxes:
-          parallelism: 5
-          requires:
-            - create-sandboxes
+# TODO: don't forget to reenable this
+#      - bench-sandboxes:
+#          parallelism: 5
+#          requires:
+#            - create-sandboxes
       # TODO: reenable once we find out the source of flakyness
       # - test-runner-dev:
       #     parallelism: 4
@@ -1059,10 +1061,11 @@ workflows:
                 # --smoke-test is not supported for the angular builder right now
                 # - "angular-cli"
                 - "lit-vite-ts"
-      - bench-sandboxes:
-          parallelism: 5
-          requires:
-            - create-sandboxes
+# TODO: don't forget to reenable this
+#      - bench-sandboxes:
+#          parallelism: 5
+#          requires:
+#            - create-sandboxes
 
       # TODO: reenable once we find out the source of flakyness
       # - test-runner-dev:

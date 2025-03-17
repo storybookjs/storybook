@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react';
 
 import { Badge, IconButton, WithTooltip } from 'storybook/internal/components';
-import type { API } from 'storybook/internal/manager-api';
-import { styled } from 'storybook/internal/theming';
 import type { StoryIndex, Tag } from 'storybook/internal/types';
 
 import { FilterIcon } from '@storybook/icons';
+
+import type { API } from 'storybook/manager-api';
+import { styled } from 'storybook/theming';
 
 import { TagsFilterPanel } from './TagsFilterPanel';
 

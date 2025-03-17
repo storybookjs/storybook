@@ -1,12 +1,9 @@
-import React from 'react';
-
-import { ManagerContext } from 'storybook/internal/manager-api';
-import { styled } from 'storybook/internal/theming';
-
-import type { Meta, StoryObj } from '@storybook/react';
-import { fn } from '@storybook/test';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import type axe from 'axe-core';
+import { ManagerContext } from 'storybook/manager-api';
+import { fn } from 'storybook/test';
+import { styled } from 'storybook/theming';
 
 import { A11YPanel } from './A11YPanel';
 import { A11yContext } from './A11yContext';

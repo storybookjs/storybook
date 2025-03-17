@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import { addons, types } from 'storybook/internal/manager-api';
+import { addons, types } from 'storybook/manager-api';
 
 import Panel from './components/Panel';
 import { ADDON_ID, PANEL_ID, PARAM_KEY } from './shared';

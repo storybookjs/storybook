@@ -22,6 +22,10 @@
   "sideEffects": false,
   "type": "module",
   "imports": {
+    "#manager-status-store": {
+      "storybook": "./src/manager/status-store.mock.ts",
+      "default": "./src/manager/status-store.ts"
+    },
     "#utils": {
       "storybook": "./template/stories/utils.mock.ts",
       "default": "./template/stories/utils.ts"

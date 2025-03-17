@@ -2267,17 +2267,17 @@ __metadata:
   linkType: hard
 
 "@chromatic-com/storybook@npm:^4.0.0-0":
-  version: 4.0.0-next.2
-  resolution: "@chromatic-com/storybook@npm:4.0.0-next.2"
+  version: 4.0.0-next.3
+  resolution: "@chromatic-com/storybook@npm:4.0.0-next.3"
   dependencies:
-    chromatic: "npm:^11.26.1"
+    chromatic: "npm:^11.27.0"
     filesize: "npm:^10.0.12"
     jsonfile: "npm:^6.1.0"
     react-confetti: "npm:^6.1.0"
     strip-ansi: "npm:^7.1.0"
   peerDependencies:
-    storybook: ^0.0.0-0 || ^9.0.0 || ^9.0.0-0
-  checksum: 10c0/85f6d8658429e246762ffa05068ce1a4a99bba4799ea0c6732aefb6f5ade68ae76a7fe04a1290614ecdd5ede2a27301c7e9c46b8601ecb65aaa7666f11e40c15
+    storybook: ^0.0.0-0 || ^9.0.0 || ^9.0.0-alpha.4
+  checksum: 10c0/43d9c7c04932b99b8654eccc5ab95736a0b79ba8dba4353e115eef938f93464ca63b36c9599dafb9d224608ffa730f07ccb592078063b5b070d69b44d52a080d
   languageName: node
   linkType: hard
 
@@ -12215,9 +12215,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"chromatic@npm:^11.26.1":
-  version: 11.26.1
-  resolution: "chromatic@npm:11.26.1"
+"chromatic@npm:^11.27.0":
+  version: 11.27.0
+  resolution: "chromatic@npm:11.27.0"
   peerDependencies:
     "@chromatic-com/cypress": ^0.*.* || ^1.0.0
     "@chromatic-com/playwright": ^0.*.* || ^1.0.0
@@ -12230,7 +12230,7 @@ __metadata:
     chroma: dist/bin.js
     chromatic: dist/bin.js
     chromatic-cli: dist/bin.js
-  checksum: 10c0/959b18b35867535411dc8b30ff3927a5a39b5f0169db06af5c9d377d5fb7c31ca5a883de3662f5db792f2e0469a3c5a90db78f65e597c5c7e27b8f1c054a1f92
+  checksum: 10c0/500c1a522a48b3ef9188d63693b2602128b4cd7b2b96e5cb5412cdc0e3b7ac2a33c30d8f55f7662de4111e1c7c70bcb970e86782700e02580881400bdd10419b
   languageName: node
   linkType: hard
 

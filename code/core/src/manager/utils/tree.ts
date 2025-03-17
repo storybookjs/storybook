@@ -52,7 +52,7 @@ export const getDescendantIds = memoize(1000)((
   }, [] as string[]);
 });
 
-export function getPath(item: Item, ref: RefType): string[] {
+export function getPath(item: Item, ref: Pick<RefType, 'id' | 'title' | 'index'>): string[] {
   // @ts-expect-error (non strict)
   const parent = item.type !== 'root' && item.parent ? ref.index[item.parent] : null;
 
@@ -62,7 +62,7 @@ export function getPath(item: Item, ref: RefType): string[] {
   return ref.id === DEFAULT_REF_ID ? [] : [ref.title || ref.id];
 }
 
-export const searchItem = (item: Item, ref: RefType): SearchItem => {
+export const searchItem = (item: Item, ref: Parameters<typeof getPath>[1]): SearchItem => {
   return { ...item, refId: ref.id, path: getPath(item, ref) };
 };
 

@@ -8,6 +8,7 @@ import {
 } from 'storybook/internal/core-events';
 import { type API_FilterFunction } from 'storybook/internal/types';
 
+import { experimental_useStatusStore } from '#manager-status-store';
 import { type API, type State, useStorybookApi, useStorybookState } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
@@ -20,12 +21,14 @@ const SIDEBAR_BOTTOM_SPACER_ID = 'sidebar-bottom-spacer';
 const SIDEBAR_BOTTOM_WRAPPER_ID = 'sidebar-bottom-wrapper';
 
 const filterNone: API_FilterFunction = () => true;
-const filterWarn: API_FilterFunction = ({ status = {} }) =>
-  Object.values(status).some((value) => value?.status === 'warn');
-const filterError: API_FilterFunction = ({ status = {} }) =>
-  Object.values(status).some((value) => value?.status === 'error');
-const filterBoth: API_FilterFunction = ({ status = {} }) =>
-  Object.values(status).some((value) => value?.status === 'warn' || value?.status === 'error');
+const filterWarn: API_FilterFunction = ({ statuses = {} }) =>
+  Object.values(statuses).some(({ value }) => value === 'status-value:warning');
+const filterError: API_FilterFunction = ({ statuses = {} }) =>
+  Object.values(statuses).some(({ value }) => value === 'status-value:error');
+const filterBoth: API_FilterFunction = ({ statuses = {} }) =>
+  Object.values(statuses).some(({ value }) =>
+    ['status-value:warning', 'status-value:error'].includes(value as any)
+  );
 
 const getFilter = (warningsActive = false, errorsActive = false) => {
   if (warningsActive && errorsActive) {
@@ -74,14 +77,16 @@ const Content = styled.div(({ theme }) => ({
 interface SidebarBottomProps {
   api: API;
   notifications: State['notifications'];
-  status: State['status'];
+  errorCount: number;
+  warningCount: number;
   isDevelopment?: boolean;
 }
 
 export const SidebarBottomBase = ({
   api,
   notifications = [],
-  status = {},
+  errorCount,
+  warningCount,
   isDevelopment,
 }: SidebarBottomProps) => {
   const spacerRef = useRef<HTMLDivElement | null>(null);
@@ -89,15 +94,6 @@ export const SidebarBottomBase = ({
   const [warningsActive, setWarningsActive] = useState(false);
   const [errorsActive, setErrorsActive] = useState(false);
   const { testProviders } = useStorybookState();
-
-  const warnings = Object.values(status).filter((statusByAddonId) =>
-    Object.values(statusByAddonId).some((value) => value?.status === 'warn')
-  );
-  const errors = Object.values(status).filter((statusByAddonId) =>
-    Object.values(statusByAddonId).some((value) => value?.status === 'error')
-  );
-  const hasWarnings = warnings.length > 0;
-  const hasErrors = errors.length > 0;
 
   useEffect(() => {
     if (spacerRef.current && wrapperRef.current) {
@@ -112,9 +108,9 @@ export const SidebarBottomBase = ({
   }, []);
 
   useEffect(() => {
-    const filter = getFilter(hasWarnings && warningsActive, hasErrors && errorsActive);
+    const filter = getFilter(warningCount > 0 && warningsActive, errorCount > 0 && errorsActive);
     api.experimental_setFilter('sidebar-bottom-filter', filter);
-  }, [api, hasWarnings, hasErrors, warningsActive, errorsActive]);
+  }, [api, warningCount, errorCount, warningsActive, errorsActive]);
 
   // Register listeners before the first render
   useLayoutEffect(() => {
@@ -149,7 +145,7 @@ export const SidebarBottomBase = ({
   }, [api, testProviders]);
 
   const testProvidersArray = Object.values(testProviders || {});
-  if (!hasWarnings && !hasErrors && !testProvidersArray.length && !notifications.length) {
+  if (!warningCount && !errorCount && !testProvidersArray.length && !notifications.length) {
     return null;
   }
 
@@ -162,10 +158,10 @@ export const SidebarBottomBase = ({
           <TestingModule
             {...{
               testProviders: testProvidersArray,
-              errorCount: errors.length,
+              errorCount,
               errorsActive,
               setErrorsActive,
-              warningCount: warnings.length,
+              warningCount,
               warningsActive,
               setWarningsActive,
             }}
@@ -178,13 +174,31 @@ export const SidebarBottomBase = ({
 
 export const SidebarBottom = ({ isDevelopment }: { isDevelopment?: boolean }) => {
   const api = useStorybookApi();
-  const { notifications, status } = useStorybookState();
+  const { notifications } = useStorybookState();
+  const { errorCount, warningCount } = experimental_useStatusStore((statuses) => {
+    return Object.values(statuses).reduce(
+      (counts, storyStatuses) => {
+        Object.values(storyStatuses).forEach((status) => {
+          if (status.value === 'status-value:error') {
+            counts.errorCount += 1;
+          }
+
+          if (status.value === 'status-value:warning') {
+            counts.warningCount += 1;
+          }
+        });
+        return counts;
+      },
+      { errorCount: 0, warningCount: 0 }
+    );
+  });
 
   return (
     <SidebarBottomBase
       api={api}
       notifications={notifications}
-      status={status}
+      errorCount={errorCount}
+      warningCount={warningCount}
       isDevelopment={isDevelopment}
     />
   );

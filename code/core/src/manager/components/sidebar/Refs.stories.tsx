@@ -60,6 +60,7 @@ const refs: Record<string, RefType> = {
     type: 'lazy',
     // @ts-expect-error (invalid input)
     filteredIndex,
+    allStatuses: {},
   },
   empty: {
     id: 'empty',
@@ -68,6 +69,7 @@ const refs: Record<string, RefType> = {
     type: 'lazy',
     filteredIndex: {},
     previewInitialized: false,
+    allStatuses: {},
   },
   startInjected_unknown: {
     id: 'startInjected_unknown',
@@ -77,6 +79,7 @@ const refs: Record<string, RefType> = {
     previewInitialized: false,
     // @ts-expect-error (invalid input)
     filteredIndex,
+    allStatuses: {},
   },
   startInjected_loading: {
     id: 'startInjected_loading',
@@ -86,6 +89,7 @@ const refs: Record<string, RefType> = {
     previewInitialized: false,
     // @ts-expect-error (invalid input)
     filteredIndex,
+    allStatuses: {},
   },
   startInjected_ready: {
     id: 'startInjected_ready',
@@ -95,6 +99,7 @@ const refs: Record<string, RefType> = {
     previewInitialized: true,
     // @ts-expect-error (invalid input)
     filteredIndex,
+    allStatuses: {},
   },
   versions: {
     id: 'versions',
@@ -105,6 +110,7 @@ const refs: Record<string, RefType> = {
     filteredIndex,
     versions: { '1.0.0': 'https://example.com/v1', '2.0.0': 'https://example.com' },
     previewInitialized: true,
+    allStatuses: {},
   },
   versionsMissingCurrent: {
     id: 'versions_missing_current',
@@ -115,6 +121,7 @@ const refs: Record<string, RefType> = {
     filteredIndex,
     versions: { '1.0.0': 'https://example.com/v1', '2.0.0': 'https://example.com/v2' },
     previewInitialized: true,
+    allStatuses: {},
   },
   error: {
     id: 'error',
@@ -123,6 +130,7 @@ const refs: Record<string, RefType> = {
     type: 'lazy',
     indexError,
     previewInitialized: true,
+    allStatuses: {},
   },
   auth: {
     id: 'Authentication',
@@ -131,6 +139,7 @@ const refs: Record<string, RefType> = {
     type: 'lazy',
     loginUrl: 'https://example.com',
     previewInitialized: true,
+    allStatuses: {},
   },
   long: {
     id: 'long',
@@ -154,6 +163,7 @@ const refs: Record<string, RefType> = {
     type: 'lazy',
     // @ts-expect-error (invalid input)
     filteredIndex,
+    allStatuses: {},
   },
 };
 

@@ -6,6 +6,7 @@
   - [Dropped support for legacy packages](#dropped-support-for-legacy-packages)
   - [Dropped support for TypeScript \< 4.9](#dropped-support-for-typescript--49)
   - [Test addon renamed from experimental to stable](#test-addon-renamed-from-experimental-to-stable)
+  - [Experimental Status API has turned into a Status Store](#experimental-status-api-has-turned-into-a-status-store)
 - [From version 8.5.x to 8.6.x](#from-version-85x-to-86x)
   - [Angular: Support experimental zoneless support](#angular-support-experimental-zoneless-support)
   - [Addon-a11y: Replaced experimental `ally-test` tag behavior with `parameters.a11y.test`](#addon-a11y-replaced-experimental-ally-test-tag-behavior-with-parametersa11ytest)
@@ -527,6 +528,33 @@ export default {
 ```
 
 The public API remains the same, so no additional changes should be needed in your test files or configuration.
+
+### Experimental Status API has turned into a Status Store
+
+The experimental status API previously available at `api.experimental_updateStatus` and `api.getCurrentStoryStatus` has changed, to a store that works both on the server, in the manager and in the preview.
+
+You can use the new Status Store by importing `experimental_getStatusStore` from either `storybook/internal/core-server`, `storybook/manager-api` or `storybook/preview-api`:
+
+```diff
++ import { experimental_getStatusStore } from 'storybook/manager-api';
++ import { StatusValue } from 'storybook/internal/types';
+
++ const myStatusStore = experimental_getStatusStore(MY_ADDON_ID);
+
+addons.register(MY_ADDON_ID, (api) => {
+-  api.experimental_updateStatus({
+-    someStoryId: {
+-      status: 'success',
+-       title: 'Component tests',
+-       description: 'Works!',
+-    }
+-  });
++  myStatusStore.set([{
++    value: StatusValue.SUCCESS
++    title: 'Component tests',
++    description: 'Works!',
++  }]);
+```
 
 ## From version 8.5.x to 8.6.x
 

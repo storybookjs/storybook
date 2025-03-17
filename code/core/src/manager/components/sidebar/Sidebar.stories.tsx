@@ -334,6 +334,13 @@ export const Bottom: Story = {
         title: 'VTA',
         description: 'VTA',
       },
+      {
+        storyId: 'root-1-child-a2--grandchild-a1-2',
+        typeId: 'vitest',
+        value: 'status-value:warning',
+        title: 'Vitest',
+        description: 'Vitest',
+      },
     ]);
   },
 };

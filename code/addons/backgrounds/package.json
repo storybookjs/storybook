@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-backgrounds",
-  "version": "9.0.0-alpha.4",
+  "version": "9.0.0-alpha.6",
   "description": "Switch backgrounds to view components in different settings",
   "keywords": [
     "addon",
@@ -70,7 +70,7 @@
     "ts-dedent": "^2.0.0"
   },
   "devDependencies": {
-    "@storybook/icons": "^1.2.12",
+    "@storybook/icons": "^1.4.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "typescript": "^5.7.3"

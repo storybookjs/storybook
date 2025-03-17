@@ -158,6 +158,10 @@ export const SidebarBottomBase = ({
           <TestingModule
             {...{
               testProviders: testProvidersArray,
+              statusCount: Object.keys(status).length,
+              clearStatuses: () => {
+                // TODO
+              },
               errorCount,
               errorsActive,
               setErrorsActive,

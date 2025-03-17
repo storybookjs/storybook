@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { Button } from './Button';
 
 export type HeaderProps = {
-  user?: {};
+  user?: { name: string };
   onLogin: () => void;
   onLogout: () => void;
   onCreateAccount: () => void;
@@ -18,10 +18,9 @@ export const Header = ({ user, onLogin, onLogout, onCreateAccount }: HeaderProps
       <View style={styles.buttonContainer}>
         {user ? (
           <>
-            <>
-              <Text>Welcome, </Text>
-              <Text style={styles.userName}>{user.name}!</Text>
-            </>
+            <Text>Welcome, </Text>
+            <Text style={styles.userName}>{user.name}!</Text>
+
             <Button style={styles.button} size="small" onPress={onLogout} label="Log out" />
           </>
         ) : (

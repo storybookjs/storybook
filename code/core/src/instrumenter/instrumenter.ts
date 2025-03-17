@@ -111,7 +111,7 @@ export class Instrumenter {
   constructor() {
     // Restore state from the parent window in case the iframe was reloaded.
     // @ts-expect-error (TS doesn't know about this global variable)
-    this.state = global.window?.parent.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__ || {};
+    this.state = global.window?.parent?.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__ || {};
 
     // When called from `start`, isDebugging will be true.
     const resetState = ({

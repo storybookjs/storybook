@@ -36,10 +36,15 @@ export const useUniversalStore: {
   universalStore: TUniversalStore,
   selector?: (state: TState) => TSelectedState
 ): [TSelectedState, TUniversalStore['setState']] => {
+  const snapshotRef = React.useRef<TSelectedState>(
+    selector ? selector(universalStore.getState()) : universalStore.getState()
+  );
+
   const subscribe = React.useCallback<Parameters<(typeof React)['useSyncExternalStore']>[0]>(
     (listener) =>
       universalStore.onStateChange((state, previousState) => {
         if (!selector) {
+          snapshotRef.current = state;
           listener();
           return;
         }
@@ -48,16 +53,26 @@ export const useUniversalStore: {
 
         const hasChanges = !isEqual(selectedState, selectedPreviousState);
         if (hasChanges) {
+          snapshotRef.current = selectedState;
           listener();
         }
       }),
     [universalStore, selector]
   );
 
-  const getSnapshot = React.useCallback(
-    () => (selector ? selector(universalStore.getState()) : universalStore.getState()),
-    [universalStore, selector]
-  );
+  const getSnapshot = React.useCallback(() => {
+    const currentState = universalStore.getState();
+    const selectedState = selector ? selector(currentState) : currentState;
+
+    // Compare with the previous snapshot to maintain referential equality
+    if (isEqual(selectedState, snapshotRef.current)) {
+      return snapshotRef.current;
+    }
+
+    // Update the snapshot reference when the selected state changes
+    snapshotRef.current = selectedState;
+    return snapshotRef.current;
+  }, [universalStore, selector]);
 
   const state = React.useSyncExternalStore(subscribe, getSnapshot);
 

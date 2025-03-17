@@ -186,7 +186,7 @@ export interface Renderer {
   // component: (args: this['T']) => string;
   // This generic type will eventually be filled in with TArgs
   // Credits to Michael Arnaldi.
-  T?: any;
+  T?: unknown;
 }
 
 /** @deprecated - Use `Renderer` */

@@ -169,7 +169,6 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
 
   const storyId = isStoryEntry ? entryId : undefined;
 
-  console.log(state.details?.testResults);
   const results = (state.details?.testResults || [])
     .flatMap((test) => {
       if (!entryId) {

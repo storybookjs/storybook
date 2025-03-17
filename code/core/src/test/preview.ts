@@ -77,7 +77,9 @@ const enhanceContext: LoaderFunction = async (context) => {
     context.canvas = within(context.canvasElement);
   }
 
-  if (globalThis.window && globalThis.HTMLElement) {
+  // userEvent.setup() cannot be called in non browser environment and will attempt to access window.navigator.clipboard
+  // which will throw an error in react native for example.
+  if (globalThis.window?.navigator?.clipboard) {
     context.userEvent = instrument({ userEvent: userEvent.setup() }, { intercept: true }).userEvent;
   }
 };

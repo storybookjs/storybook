@@ -2,11 +2,9 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { fullStatusStore, useStatusStore } from '../../manager-api/stores/status';
 import { MockUniversalStore } from '../universal-store/mock';
 import { useUniversalStore } from '../universal-store/use-universal-store-manager';
 import {
-  type TestProviderState,
   type TestProviderStateByProviderId,
   type TestProviderStoreEvent,
   createTestProviderStore,
@@ -26,6 +24,7 @@ describe('testProviderStore', () => {
   describe('fullTestProviderStore', () => {
     describe('getState', () => {
       it('should return all provider states', () => {
+        // Arrange - create test provider store with initial state
         const { fullTestProviderStore } = createTestProviderStore({
           universalTestProviderStore: new MockUniversalStore<
             TestProviderStateByProviderId,
@@ -36,13 +35,17 @@ describe('testProviderStore', () => {
           }),
         });
 
+        // Act - get full state
         const result = fullTestProviderStore.getFullState();
+
+        // Assert - verify state matches initial state
         expect(result).toEqual(initialState);
       });
     });
 
     describe('setState', () => {
       it('should set state', () => {
+        // Arrange - create test provider store with initial state
         const { fullTestProviderStore } = createTestProviderStore({
           universalTestProviderStore: new MockUniversalStore<
             TestProviderStateByProviderId,
@@ -53,12 +56,14 @@ describe('testProviderStore', () => {
           }),
         });
 
+        // Act - set new provider state and get updated state
         fullTestProviderStore.setFullState((currentState) => ({
           ...currentState,
           'provider-3': 'test-provider-state:crashed',
         }));
         const result = fullTestProviderStore.getFullState();
 
+        // Assert - verify new provider was added with correct state
         expect(result).toEqual({
           'provider-1': 'test-provider-state:running',
           'provider-2': 'test-provider-state:succeeded',
@@ -71,6 +76,7 @@ describe('testProviderStore', () => {
   describe('getTestProviderStoreById', () => {
     describe('getState', () => {
       it('should set initial provider state to pending', () => {
+        // Arrange - create empty test provider store
         const { getTestProviderStoreById, fullTestProviderStore } = createTestProviderStore({
           universalTestProviderStore: new MockUniversalStore<
             TestProviderStateByProviderId,
@@ -78,10 +84,13 @@ describe('testProviderStore', () => {
           >(UNIVERSAL_TEST_PROVIDER_STORE_OPTIONS),
         });
 
+        // Act - get store for new provider
         const store = getTestProviderStoreById('provider-1');
+
+        // Assert - verify initial state is pending
         expect(store.getState()).toBe('test-provider-state:pending');
 
-        // Check that the provider was added to the full state
+        // Assert - verify provider was added to full state
         const fullState = fullTestProviderStore.getFullState();
         expect(fullState).toEqual({
           'provider-1': 'test-provider-state:pending',
@@ -89,6 +98,7 @@ describe('testProviderStore', () => {
       });
 
       it('should return current state for existing provider', () => {
+        // Arrange - create store with existing provider state
         const { getTestProviderStoreById } = createTestProviderStore({
           universalTestProviderStore: new MockUniversalStore<
             TestProviderStateByProviderId,
@@ -99,13 +109,17 @@ describe('testProviderStore', () => {
           }),
         });
 
+        // Act - get store for existing provider
         const store = getTestProviderStoreById('provider-1');
+
+        // Assert - verify state matches initial state
         expect(store.getState()).toBe('test-provider-state:running');
       });
     });
 
     describe('setState', () => {
       it('should set state for the provider', async () => {
+        // Arrange - create store with initial state
         const { getTestProviderStoreById, fullTestProviderStore } = createTestProviderStore({
           universalTestProviderStore: new MockUniversalStore<
             TestProviderStateByProviderId,
@@ -116,15 +130,16 @@ describe('testProviderStore', () => {
           }),
         });
 
+        // Act - set provider state to crashed
         const store = getTestProviderStoreById('provider-1');
         store.setState('test-provider-state:crashed');
 
-        // Wait for the specific provider state to be updated
+        // Assert - verify provider state was updated
         await vi.waitFor(() => {
           expect(store.getState()).toBe('test-provider-state:crashed');
         });
 
-        // Verify that only this provider's state was changed in the full state
+        // Assert - verify only this provider's state changed in full state
         const fullState = fullTestProviderStore.getFullState();
         expect(fullState).toEqual({
           'provider-1': 'test-provider-state:crashed',
@@ -135,6 +150,7 @@ describe('testProviderStore', () => {
 
     describe('runWithState', () => {
       it('should update state during execution flow', async () => {
+        // Arrange - create store and setup success callback
         const { getTestProviderStoreById } = createTestProviderStore({
           universalTestProviderStore: new MockUniversalStore<
             TestProviderStateByProviderId,
@@ -152,18 +168,23 @@ describe('testProviderStore', () => {
 
         const store = getTestProviderStoreById('provider-1');
 
+        // Act - start execution
         store.runWithState(gatedSuccessCallback);
 
+        // Assert - verify running state
         expect(store.getState()).toBe('test-provider-state:running');
 
+        // Act - complete execution
         runningGate!();
 
+        // Assert - verify success state
         await vi.waitFor(() => {
           expect(store.getState()).toBe('test-provider-state:succeeded');
         });
       });
 
       it('should handle errors and update state to crashed', async () => {
+        // Arrange - create store and setup error callback
         const { getTestProviderStoreById } = createTestProviderStore({
           universalTestProviderStore: new MockUniversalStore<
             TestProviderStateByProviderId,
@@ -181,12 +202,16 @@ describe('testProviderStore', () => {
 
         const store = getTestProviderStoreById('provider-1');
 
+        // Act - start execution
         store.runWithState(gatedErrorCallback);
 
+        // Assert - verify running state
         expect(store.getState()).toBe('test-provider-state:running');
 
+        // Act - trigger error
         runningGate!();
 
+        // Assert - verify error state
         await vi.waitFor(() => {
           expect(store.getState()).toBe('test-provider-state:crashed');
         });
@@ -195,6 +220,7 @@ describe('testProviderStore', () => {
 
     describe('onRunAll', () => {
       it('should register and call listener when runAll is triggered', () => {
+        // Arrange - create store and setup listener
         const mockUniversalStore = new MockUniversalStore<
           TestProviderStateByProviderId,
           TestProviderStoreEvent
@@ -210,19 +236,25 @@ describe('testProviderStore', () => {
         const store = getTestProviderStoreById('provider-1');
         const listener = vi.fn();
 
+        // Act - register listener and trigger runAll
         const unsubscribe = store.onRunAll(listener);
-
         fullTestProviderStore.runAll();
+
+        // Assert - verify listener was called
         expect(listener).toHaveBeenCalledTimes(1);
 
+        // Act - unsubscribe and trigger again
         unsubscribe();
         fullTestProviderStore.runAll();
+
+        // Assert - verify listener was not called after unsubscribe
         expect(listener).toHaveBeenCalledTimes(1);
       });
     });
 
     describe('onClearAll', () => {
       it('should register and call listener when clearAll is triggered', () => {
+        // Arrange - create store and setup listener
         const mockUniversalStore = new MockUniversalStore<
           TestProviderStateByProviderId,
           TestProviderStoreEvent
@@ -238,19 +270,25 @@ describe('testProviderStore', () => {
         const store = getTestProviderStoreById('provider-1');
         const listener = vi.fn();
 
+        // Act - register listener and trigger clearAll
         const unsubscribe = store.onClearAll(listener);
-
         fullTestProviderStore.clearAll();
+
+        // Assert - verify listener was called
         expect(listener).toHaveBeenCalledTimes(1);
 
+        // Act - unsubscribe and trigger again
         unsubscribe();
         fullTestProviderStore.clearAll();
+
+        // Assert - verify listener was not called after unsubscribe
         expect(listener).toHaveBeenCalledTimes(1);
       });
     });
 
     describe('settingsChanged', () => {
       it('should register and call listener when settingsChanged is triggered', () => {
+        // Arrange - create store and setup listener
         const mockUniversalStore = new MockUniversalStore<
           TestProviderStateByProviderId,
           TestProviderStoreEvent
@@ -266,13 +304,18 @@ describe('testProviderStore', () => {
         const store = getTestProviderStoreById('provider-1');
         const listener = vi.fn();
 
+        // Act - register listener and trigger settings change
         const unsubscribe = fullTestProviderStore.onSettingsChanged(listener);
-
         store.settingsChanged();
+
+        // Assert - verify listener was called
         expect(listener).toHaveBeenCalledTimes(1);
 
+        // Act - unsubscribe and trigger again
         unsubscribe();
         store.settingsChanged();
+
+        // Assert - verify listener was not called after unsubscribe
         expect(listener).toHaveBeenCalledTimes(1);
       });
     });
@@ -280,6 +323,7 @@ describe('testProviderStore', () => {
 
   describe('useTestProviderStore', () => {
     it('should return all states when no selector is provided', () => {
+      // Arrange - create store with initial state
       const mockUniversalStore = new MockUniversalStore<
         TestProviderStateByProviderId,
         TestProviderStoreEvent
@@ -293,11 +337,15 @@ describe('testProviderStore', () => {
         useUniversalStore,
       });
 
+      // Act - render hook without selector
       const { result } = renderHook(() => testProviderStore.useTestProviderStore());
+
+      // Assert - verify all states are returned
       expect(result.current).toEqual(initialState);
     });
 
     it('should return selected states when selector is provided', () => {
+      // Arrange - create store with initial state
       const mockUniversalStore = new MockUniversalStore<
         TestProviderStateByProviderId,
         TestProviderStoreEvent
@@ -311,14 +359,17 @@ describe('testProviderStore', () => {
         useUniversalStore,
       });
 
+      // Act - render hook with selector
       const { result } = renderHook(() =>
         testProviderStore.useTestProviderStore((state) => state['provider-1'])
       );
+
+      // Assert - verify selected state is returned
       expect(result.current).toEqual('test-provider-state:running');
     });
 
     it('should re-render when test provider state matching the selector change', async () => {
-      // Arrange - create a test provider store
+      // Arrange - create store and setup render counter
       const { useTestProviderStore, fullTestProviderStore } = createTestProviderStore({
         universalTestProviderStore: new MockUniversalStore({
           ...UNIVERSAL_TEST_PROVIDER_STORE_OPTIONS,
@@ -331,17 +382,17 @@ describe('testProviderStore', () => {
       // Create a selector that only returns provider-1 state
       const provider1Selector = (state: TestProviderStateByProviderId) => state['provider-1'];
 
-      // Act - render the hook with the selector
+      // Act - render hook with selector
       const { result } = renderHook(() => {
         renderCounter();
         return useTestProviderStore(provider1Selector);
       });
 
-      // Assert - initial render
+      // Assert - verify initial render
       expect(renderCounter).toHaveBeenCalledTimes(1);
       expect(result.current).toEqual('test-provider-state:running');
 
-      // Act - update a state for provider-1
+      // Act - update provider-1 state
       act(() => {
         fullTestProviderStore.setFullState((currentState) => ({
           ...currentState,
@@ -349,13 +400,13 @@ describe('testProviderStore', () => {
         }));
       });
 
-      // Assert - the hook should re-render with the updated status
+      // Assert - verify re-render with new state
       expect(renderCounter).toHaveBeenCalledTimes(2);
       expect(result.current).toEqual('test-provider-state:succeeded');
     });
 
     it('should not re-render when test provider state not matching the selector change', async () => {
-      // Arrange - create a test provider store
+      // Arrange - create store and setup render counter
       const { useTestProviderStore, fullTestProviderStore } = createTestProviderStore({
         universalTestProviderStore: new MockUniversalStore({
           ...UNIVERSAL_TEST_PROVIDER_STORE_OPTIONS,
@@ -368,17 +419,17 @@ describe('testProviderStore', () => {
       // Create a selector that only returns provider-1 state
       const provider1Selector = (state: TestProviderStateByProviderId) => state['provider-1'];
 
-      // Act - render the hook with the selector
+      // Act - render hook with selector
       const { result } = renderHook(() => {
         renderCounter();
         return useTestProviderStore(provider1Selector);
       });
 
-      // Assert - initial render
+      // Assert - verify initial render
       expect(renderCounter).toHaveBeenCalledTimes(1);
       expect(result.current).toEqual('test-provider-state:running');
 
-      // Act - update a state for provider-2
+      // Act - update provider-2 state
       act(() => {
         fullTestProviderStore.setFullState((currentState) => ({
           ...currentState,
@@ -386,7 +437,7 @@ describe('testProviderStore', () => {
         }));
       });
 
-      // Assert - the hook should not re-render since the change doesn't affect the selected data
+      // Assert - verify no re-render occurred
       expect(renderCounter).toHaveBeenCalledTimes(1);
       expect(result.current).toEqual('test-provider-state:running');
     });

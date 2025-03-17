@@ -68,17 +68,17 @@ describe('testProviderStore', () => {
     });
   });
 
-  describe('getTestProviderStore', () => {
+  describe('getTestProviderStoreById', () => {
     describe('getState', () => {
       it('should set initial provider state to pending', () => {
-        const { getTestProviderStore, fullTestProviderStore } = createTestProviderStore({
+        const { getTestProviderStoreById, fullTestProviderStore } = createTestProviderStore({
           universalTestProviderStore: new MockUniversalStore<
             TestProviderStateByProviderId,
             TestProviderStoreEvent
           >(UNIVERSAL_TEST_PROVIDER_STORE_OPTIONS),
         });
 
-        const store = getTestProviderStore('provider-1');
+        const store = getTestProviderStoreById('provider-1');
         expect(store.getState()).toBe('test-provider-state:pending');
 
         // Check that the provider was added to the full state
@@ -89,7 +89,7 @@ describe('testProviderStore', () => {
       });
 
       it('should return current state for existing provider', () => {
-        const { getTestProviderStore } = createTestProviderStore({
+        const { getTestProviderStoreById } = createTestProviderStore({
           universalTestProviderStore: new MockUniversalStore<
             TestProviderStateByProviderId,
             TestProviderStoreEvent
@@ -99,14 +99,14 @@ describe('testProviderStore', () => {
           }),
         });
 
-        const store = getTestProviderStore('provider-1');
+        const store = getTestProviderStoreById('provider-1');
         expect(store.getState()).toBe('test-provider-state:running');
       });
     });
 
     describe('setState', () => {
       it('should set state for the provider', async () => {
-        const { getTestProviderStore, fullTestProviderStore } = createTestProviderStore({
+        const { getTestProviderStoreById, fullTestProviderStore } = createTestProviderStore({
           universalTestProviderStore: new MockUniversalStore<
             TestProviderStateByProviderId,
             TestProviderStoreEvent
@@ -116,7 +116,7 @@ describe('testProviderStore', () => {
           }),
         });
 
-        const store = getTestProviderStore('provider-1');
+        const store = getTestProviderStoreById('provider-1');
         store.setState('test-provider-state:crashed');
 
         // Wait for the specific provider state to be updated
@@ -135,7 +135,7 @@ describe('testProviderStore', () => {
 
     describe('runWithState', () => {
       it('should update state during execution flow', async () => {
-        const { getTestProviderStore } = createTestProviderStore({
+        const { getTestProviderStoreById } = createTestProviderStore({
           universalTestProviderStore: new MockUniversalStore<
             TestProviderStateByProviderId,
             TestProviderStoreEvent
@@ -150,7 +150,7 @@ describe('testProviderStore', () => {
             })
         );
 
-        const store = getTestProviderStore('provider-1');
+        const store = getTestProviderStoreById('provider-1');
 
         store.runWithState(gatedSuccessCallback);
 
@@ -164,7 +164,7 @@ describe('testProviderStore', () => {
       });
 
       it('should handle errors and update state to crashed', async () => {
-        const { getTestProviderStore } = createTestProviderStore({
+        const { getTestProviderStoreById } = createTestProviderStore({
           universalTestProviderStore: new MockUniversalStore<
             TestProviderStateByProviderId,
             TestProviderStoreEvent
@@ -179,7 +179,7 @@ describe('testProviderStore', () => {
             })
         );
 
-        const store = getTestProviderStore('provider-1');
+        const store = getTestProviderStoreById('provider-1');
 
         store.runWithState(gatedErrorCallback);
 
@@ -203,11 +203,11 @@ describe('testProviderStore', () => {
           initialState,
         });
 
-        const { getTestProviderStore, fullTestProviderStore } = createTestProviderStore({
+        const { getTestProviderStoreById, fullTestProviderStore } = createTestProviderStore({
           universalTestProviderStore: mockUniversalStore,
         });
 
-        const store = getTestProviderStore('provider-1');
+        const store = getTestProviderStoreById('provider-1');
         const listener = vi.fn();
 
         const unsubscribe = store.onRunAll(listener);
@@ -231,11 +231,11 @@ describe('testProviderStore', () => {
           initialState,
         });
 
-        const { getTestProviderStore, fullTestProviderStore } = createTestProviderStore({
+        const { getTestProviderStoreById, fullTestProviderStore } = createTestProviderStore({
           universalTestProviderStore: mockUniversalStore,
         });
 
-        const store = getTestProviderStore('provider-1');
+        const store = getTestProviderStoreById('provider-1');
         const listener = vi.fn();
 
         const unsubscribe = store.onClearAll(listener);
@@ -259,11 +259,11 @@ describe('testProviderStore', () => {
           initialState,
         });
 
-        const { getTestProviderStore, fullTestProviderStore } = createTestProviderStore({
+        const { getTestProviderStoreById, fullTestProviderStore } = createTestProviderStore({
           universalTestProviderStore: mockUniversalStore,
         });
 
-        const store = getTestProviderStore('provider-1');
+        const store = getTestProviderStoreById('provider-1');
         const listener = vi.fn();
 
         const unsubscribe = fullTestProviderStore.onSettingsChanged(listener);

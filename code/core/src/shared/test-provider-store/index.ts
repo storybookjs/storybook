@@ -51,14 +51,14 @@ export function createTestProviderStore(params: {
   universalTestProviderStore: UniversalStore<TestProviderStateByProviderId, TestProviderStoreEvent>;
   useUniversalStore?: never;
 }): {
-  getTestProviderStore: (testProviderId: TestProviderId) => TestProviderStoreById;
+  getTestProviderStoreById: (testProviderId: TestProviderId) => TestProviderStoreById;
   fullTestProviderStore: FullTestProviderStore;
 };
 export function createTestProviderStore(params: {
   universalTestProviderStore: UniversalStore<TestProviderStateByProviderId, TestProviderStoreEvent>;
   useUniversalStore: typeof managerUseUniversalStore;
 }): {
-  getTestProviderStore: (testProviderId: TestProviderId) => TestProviderStoreById;
+  getTestProviderStoreById: (testProviderId: TestProviderId) => TestProviderStoreById;
   fullTestProviderStore: FullTestProviderStore;
   useTestProviderStore: UseTestProviderStore;
 };
@@ -87,7 +87,7 @@ export function createTestProviderStore({
     clearAll: () => universalTestProviderStore.send({ type: 'clear-all' }),
   };
 
-  const getTestProviderStore = (testProviderId: string): TestProviderStoreById => {
+  const getTestProviderStoreById = (testProviderId: string): TestProviderStoreById => {
     const getStateForTestProvider = () => universalTestProviderStore.getState()[testProviderId];
     const setStateForTestProvider = (state: TestProviderState) => {
       universalTestProviderStore.setState((currentState) => ({
@@ -118,7 +118,7 @@ export function createTestProviderStore({
 
   if (useUniversalStore) {
     return {
-      getTestProviderStore,
+      getTestProviderStoreById,
       fullTestProviderStore,
       useTestProviderStore: <T = TestProviderStateByProviderId>(
         selector?: (testProviders: TestProviderStateByProviderId) => T
@@ -127,7 +127,7 @@ export function createTestProviderStore({
   }
 
   return {
-    getTestProviderStore,
+    getTestProviderStoreById,
     fullTestProviderStore,
   };
 }

@@ -9,13 +9,13 @@ import {
 import { MockUniversalStore } from '../universal-store/mock';
 import { useUniversalStore } from '../universal-store/use-universal-store-manager';
 
-const { fullTestProviderStore, getTestProviderStore, useTestProviderStore } =
+const { fullTestProviderStore, getTestProviderStoreById, useTestProviderStore } =
   createTestProviderStore({
     universalTestProviderStore: MockUniversalStore.create(UNIVERSAL_TEST_PROVIDER_STORE_OPTIONS),
     useUniversalStore,
   });
 
-const typedTestProviderStore = getTestProviderStore('test-provider-1');
+const typedTestProviderStore = getTestProviderStoreById('test-provider-1');
 
 describe('Test Provider Store', () => {
   it('getFullState should return typed provider states', () => {

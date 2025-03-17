@@ -7,12 +7,12 @@ import type { Result } from 'axe-core';
 import { styled } from 'storybook/theming';
 
 const Wrapper = styled.div({
-  padding: '0 15px',
-  marginBottom: 10,
+  display: 'flex',
+  flexDirection: 'column',
 });
 
 const Description = styled.p({
-  margin: '0 0 10px',
+  margin: 0,
 });
 
 interface InfoProps {

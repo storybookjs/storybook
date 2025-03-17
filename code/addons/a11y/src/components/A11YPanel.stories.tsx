@@ -1,3 +1,5 @@
+import React from 'react';
+
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import type axe from 'axe-core';
@@ -30,7 +32,7 @@ const managerContext: any = {
 };
 
 const meta: Meta = {
-  title: 'A11YPanel',
+  title: 'Panel',
   component: A11YPanel,
   decorators: [
     (Story) => (

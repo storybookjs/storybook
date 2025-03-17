@@ -10,7 +10,6 @@ import { styled } from 'storybook/theming';
 import type { RuleType } from '../A11YPanel';
 import { Elements } from './Elements';
 import { Info } from './Info';
-import { Tags } from './Tags';
 
 const Wrapper = styled.div(({ theme }) => ({
   display: 'flex',
@@ -40,6 +39,13 @@ const HeaderBar = styled.div(({ theme }) => ({
   },
 }));
 
+const Content = styled.div({
+  display: 'flex',
+  flexDirection: 'column',
+  padding: '0 15px 20px 15px',
+  gap: 20,
+});
+
 interface ItemProps {
   item: Result;
   type: RuleType;
@@ -60,11 +66,10 @@ export const Item = (props: ItemProps) => {
         </IconButton>
       </HeaderBar>
       {open ? (
-        <Fragment>
+        <Content>
           <Info item={item} key="info" />
           <Elements elements={item.nodes} type={type} key="elements" />
-          <Tags tags={item.tags} key="tags" />
-        </Fragment>
+        </Content>
       ) : null}
     </Wrapper>
   );

@@ -308,7 +308,7 @@ export type TestProviderStoreById = BaseTestProviderStore & {
    * };
    * ```
    */
-  runWithState: (callback: () => void) => void;
+  runWithState: (callback: () => void | Promise<void>) => Promise<void>;
 
   /** The unique identifier for this test provider */
   testProviderId: TestProviderId;

@@ -37,7 +37,9 @@ describe('Test Provider Store', () => {
   });
 
   it('runWithState should accept a callback', () => {
-    expectTypeOf(typedTestProviderStore.runWithState).parameter(0).toEqualTypeOf<() => void>();
+    expectTypeOf(typedTestProviderStore.runWithState)
+      .parameter(0)
+      .toEqualTypeOf<() => void | Promise<void>>();
   });
 
   it('onRunAll should accept a callback', () => {

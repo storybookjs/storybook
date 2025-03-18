@@ -127,7 +127,6 @@ const config = defineMain({
     disableTelemetry: true,
   },
   features: {
-    viewportStoryGlobals: true,
     backgroundsStoryGlobals: true,
     developmentModeForBuild: true,
   },

@@ -195,3 +195,10 @@ export const NoTestProvider: Story = {
     testProviderInterfaces: {},
   },
 };
+
+export const NoTestProviderWithStatuses: Story = {
+  args: {
+    ...Statuses.args,
+    testProviderInterfaces: {},
+  },
+};

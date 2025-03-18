@@ -3,15 +3,26 @@ import process from 'node:process';
 
 import { Channel } from 'storybook/internal/channels';
 
-import type { StoreState } from '../constants';
-import { storeOptions } from '../constants';
+import type { StoreEvent, StoreState } from '../constants';
+import {
+  STATUS_TYPE_ID_A11Y,
+  STATUS_TYPE_ID_COMPONENT_TEST,
+  TEST_PROVIDER_ID,
+  storeOptions,
+} from '../constants';
 import { TestManager } from './test-manager';
 
 const require = createRequire(import.meta.url);
+
 // we need to require core-server here, because its ESM output is not valid
-// eslint-disable-next-line @typescript-eslint/naming-convention
-const { experimental_UniversalStore } = require('storybook/internal/core-server') as {
+const {
+  experimental_UniversalStore: UniversalStore,
+  experimental_getStatusStore: getStatusStore,
+  experimental_getTestProviderStore: getTestProviderStore,
+} = require('storybook/internal/core-server') as {
   experimental_UniversalStore: typeof import('storybook/internal/core-server').experimental_UniversalStore;
+  experimental_getStatusStore: typeof import('storybook/internal/core-server').experimental_getStatusStore;
+  experimental_getTestProviderStore: typeof import('storybook/internal/core-server').experimental_getTestProviderStore;
 };
 
 const channel: Channel = new Channel({
@@ -27,12 +38,14 @@ const channel: Channel = new Channel({
 });
 
 // eslint-disable-next-line no-underscore-dangle
-(experimental_UniversalStore as any).__prepare(
-  channel,
-  experimental_UniversalStore.Environment.SERVER
-);
+(UniversalStore as any).__prepare(channel, UniversalStore.Environment.SERVER);
 
-new TestManager(channel, experimental_UniversalStore.create<StoreState>(storeOptions), {
+new TestManager({
+  channel,
+  store: UniversalStore.create<StoreState, StoreEvent>(storeOptions),
+  componentTestStatusStore: getStatusStore(STATUS_TYPE_ID_COMPONENT_TEST),
+  a11yStatusStore: getStatusStore(STATUS_TYPE_ID_A11Y),
+  testProviderStore: getTestProviderStore(TEST_PROVIDER_ID),
   onError: (message, error) => {
     process.send?.({ type: 'error', message, error: error.stack ?? error });
   },

@@ -11,7 +11,12 @@ import {
 import { execaNode } from 'execa';
 import { join } from 'pathe';
 
-import { STORE_CHANNEL_EVENT_NAME, TEST_PROVIDER_ID } from '../constants';
+import {
+  STATUS_STORE_CHANNEL_EVENT_NAME,
+  STORE_CHANNEL_EVENT_NAME,
+  TEST_PROVIDER_ID,
+  TEST_PROVIDER_STORE_CHANNEL_EVENT_NAME,
+} from '../constants';
 import { log } from '../logger';
 
 const MAX_START_TIME = 30000;
@@ -43,10 +48,18 @@ const bootTestRunner = async (channel: Channel) => {
   const forwardStore = (...args: any) => {
     child?.send({ args, from: 'server', type: STORE_CHANNEL_EVENT_NAME });
   };
+  const forwardStatusStore = (...args: any) => {
+    child?.send({ args, from: 'server', type: STATUS_STORE_CHANNEL_EVENT_NAME });
+  };
+  const forwardTestProviderStore = (...args: any) => {
+    child?.send({ args, from: 'server', type: TEST_PROVIDER_STORE_CHANNEL_EVENT_NAME });
+  };
 
   const killChild = () => {
     channel.off(TESTING_MODULE_CANCEL_TEST_RUN_REQUEST, forwardCancel);
     channel.off(STORE_CHANNEL_EVENT_NAME, forwardStore);
+    channel.off(STATUS_STORE_CHANNEL_EVENT_NAME, forwardStatusStore);
+    channel.off(TEST_PROVIDER_STORE_CHANNEL_EVENT_NAME, forwardTestProviderStore);
     child?.kill();
     child = null;
   };
@@ -79,9 +92,11 @@ const bootTestRunner = async (channel: Channel) => {
       });
 
       channel.on(STORE_CHANNEL_EVENT_NAME, forwardStore);
+      channel.on(STATUS_STORE_CHANNEL_EVENT_NAME, forwardStatusStore);
+      channel.on(TEST_PROVIDER_STORE_CHANNEL_EVENT_NAME, forwardTestProviderStore);
 
-      child.on('message', (result: any) => {
-        if (result.type === 'ready') {
+      child.on('message', (event: any) => {
+        if (event.type === 'ready') {
           // Resend events that triggered (during) the boot sequence, now that Vitest is ready
           while (eventQueue.length) {
             const { type, args } = eventQueue.shift()!;
@@ -92,12 +107,12 @@ const bootTestRunner = async (channel: Channel) => {
           channel.on(TESTING_MODULE_CANCEL_TEST_RUN_REQUEST, forwardCancel);
 
           resolve();
-        } else if (result.type === 'error') {
+        } else if (event.type === 'error') {
           killChild();
-          log(result.message);
-          log(result.error);
+          log(event.message);
+          log(event.error);
           // eslint-disable-next-line local-rules/no-uncategorized-errors
-          const error = new Error(`${result.message}\n${result.error}`);
+          const error = new Error(`${event.message}\n${event.error}`);
           // Reject if the child process reports an error before it's ready
           if (!ready) {
             reject(error);
@@ -105,7 +120,7 @@ const bootTestRunner = async (channel: Channel) => {
             reportFatalError(error);
           }
         } else {
-          channel.emit(result.type, ...result.args);
+          channel.emit(event.type, ...event.args);
         }
       });
     });

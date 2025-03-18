@@ -6,6 +6,7 @@ import {
   type TestingModuleProgressReportPayload,
 } from 'storybook/internal/core-events';
 import type { experimental_UniversalStore } from 'storybook/internal/core-server';
+import type { StatusStoreByTypeId, TestProviderStoreById } from 'storybook/internal/types';
 
 import { isEqual } from 'es-toolkit';
 
@@ -17,19 +18,44 @@ import {
 } from '../constants';
 import { VitestManager } from './vitest-manager';
 
+type TestManagerOptions = {
+  channel: Channel;
+  store: experimental_UniversalStore<StoreState, StoreEvent>;
+  componentTestStatusStore: StatusStoreByTypeId;
+  a11yStatusStore: StatusStoreByTypeId;
+  testProviderStore: TestProviderStoreById;
+  onError?: (message: string, error: Error) => void;
+  onReady?: () => void;
+};
+
 export class TestManager {
-  vitestManager: VitestManager;
+  private channel: TestManagerOptions['channel'];
 
-  selectedStoryCountForLastRun = 0;
+  public store: TestManagerOptions['store'];
 
-  constructor(
-    private channel: Channel,
-    public store: experimental_UniversalStore<StoreState, StoreEvent>,
-    private options: {
-      onError?: (message: string, error: Error) => void;
-      onReady?: () => void;
-    } = {}
-  ) {
+  private componentTestStatusStore: TestManagerOptions['componentTestStatusStore'];
+
+  private a11yStatusStore: TestManagerOptions['a11yStatusStore'];
+
+  private testProviderStore: TestManagerOptions['testProviderStore'];
+
+  private onError?: TestManagerOptions['onError'];
+
+  private onReady?: TestManagerOptions['onReady'];
+
+  private vitestManager: VitestManager;
+
+  private selectedStoryCountForLastRun = 0;
+
+  constructor(options: TestManagerOptions) {
+    this.channel = options.channel;
+    this.store = options.store;
+    this.componentTestStatusStore = options.componentTestStatusStore;
+    this.a11yStatusStore = options.a11yStatusStore;
+    this.testProviderStore = options.testProviderStore;
+    this.onError = options.onError;
+    this.onReady = options.onReady;
+
     this.vitestManager = new VitestManager(this);
 
     this.store.subscribe('TRIGGER_RUN', this.handleRunRequest.bind(this));
@@ -140,16 +166,12 @@ export class TestManager {
   }
 
   async reportFatalError(message: string, error: Error | any) {
-    this.options.onError?.(message, error);
+    this.onError?.(message, error);
   }
 
-  static async start(
-    channel: Channel,
-    store: experimental_UniversalStore<StoreState, StoreEvent>,
-    options: typeof TestManager.prototype.options = {}
-  ) {
+  static async start(options: TestManagerOptions) {
     return new Promise<TestManager>((resolve) => {
-      const testManager = new TestManager(channel, store, {
+      const testManager = new TestManager({
         ...options,
         onReady: () => {
           resolve(testManager);

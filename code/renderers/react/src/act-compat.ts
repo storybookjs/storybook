@@ -13,9 +13,6 @@ declare const globalThis: {
 // We do check if act exists, but webpack will still throw an error on compile time
 const clonedReact = { ...React };
 
-const reactAct =
-  typeof clonedReact.act === 'function' ? clonedReact.act : DeprecatedReactTestUtils.act;
-
 export function setReactActEnvironment(isReactActEnvironment: boolean) {
   globalThis.IS_REACT_ACT_ENVIRONMENT = isReactActEnvironment;
 }
@@ -67,7 +64,15 @@ function withGlobalActEnvironment(actImplementation: (callback: () => void) => P
   };
 }
 
-export const act =
-  process.env.NODE_ENV === 'production'
+export const getAct = async () => {
+  // Lazy loading this makes sure that @storybook/react can be loaded in SSR contexts
+  // For example when SSR'ing portable stories
+  const reactAct =
+    typeof clonedReact.act === 'function'
+      ? clonedReact.act
+      : (await import('react-dom/test-utils')).act;
+
+  return process.env.NODE_ENV === 'production'
     ? (cb: (...args: any[]) => any) => cb()
     : withGlobalActEnvironment(reactAct);
+};

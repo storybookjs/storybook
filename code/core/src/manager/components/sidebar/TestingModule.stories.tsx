@@ -174,10 +174,10 @@ export const CollapsedRunning: Story = {
   args: Running.args,
 };
 
-// TODO: is this now just when there are error statuses? or warnings?
-export const Failed: Story = {
-  args: {},
-  play: Expanded.play,
+export const CollapsedRunningWithErrors: Story = {
+  args: {
+    ...RunningWithErrors.args,
+  },
 };
 
 export const Crashed: Story = {

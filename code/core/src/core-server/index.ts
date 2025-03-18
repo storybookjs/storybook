@@ -18,3 +18,7 @@ export {
   getStatusStoreByTypeId as experimental_getStatusStore,
   fullStatusStore as internal_fullStatusStore,
 } from './stores/status';
+export {
+  getTestProviderStoreById as experimental_getTestProviderStore,
+  fullTestProviderStore as internal_fullTestProviderStore,
+} from './stores/test-provider';

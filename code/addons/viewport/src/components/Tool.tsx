@@ -49,8 +49,6 @@ export const ViewportTool: FC<{ api: API }> = ({ api }) => {
   const isActive = isTooltipVisible || item !== responsiveViewport;
   const isLocked = KEY in storyGlobals;
 
-  console.log({ viewportName, data, item, isActive, isLocked, options });
-
   const length = Object.keys(options).length;
 
   useEffect(() => {

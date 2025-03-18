@@ -37,13 +37,18 @@ type ComponentType<
   >[P];
 };
 
-export type Svelte5ComponentType<Props extends Record<string, any> = any> = (typeof import('svelte') extends { mount: any }
-? // @ts-ignore svelte.Component doesn't exist in Svelte 4
-  import('svelte').Component<Props, any, any>
-: never)
+export type Svelte5ComponentType<Props extends Record<string, any> = any> =
+  typeof import('svelte') extends { mount: any }
+    ? // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore svelte.Component doesn't exist in Svelte 4
+      import('svelte').Component<Props, any, any>
+    : never;
 
-export interface SvelteRenderer<C extends SvelteComponent | Svelte5ComponentType = SvelteComponent> extends WebRenderer {
-  component: ComponentType<this['T'] extends Record<string, any> ? this['T'] : any> | Svelte5ComponentType<this['T'] extends Record<string, any> ? this['T'] : any>;
+export interface SvelteRenderer<C extends SvelteComponent | Svelte5ComponentType = SvelteComponent>
+  extends WebRenderer {
+  component:
+    | ComponentType<this['T'] extends Record<string, any> ? this['T'] : any>
+    | Svelte5ComponentType<this['T'] extends Record<string, any> ? this['T'] : any>;
   storyResult: this['T'] extends Record<string, any>
     ? SvelteStoryResult<this['T'], C extends SvelteComponent ? ComponentEvents<C> : {}>
     : SvelteStoryResult;

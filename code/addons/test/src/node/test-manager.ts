@@ -106,34 +106,37 @@ export class TestManager {
   }
 
   async handleRunRequest(event: TriggerRunEvent) {
-    try {
-      const state = this.store.getState();
+    this.testProviderStore.runWithState(async () => {
+      try {
+        const state = this.store.getState();
 
-      /*
+        /*
         If we're only running a subset of stories, we have to temporarily disable coverage,
         as a coverage report for a subset of stories is not useful.
       */
-      const temporarilyDisableCoverage =
-        state.config.coverage && !state.watching && (event.payload.storyIds ?? []).length > 0;
-      if (temporarilyDisableCoverage) {
-        await this.vitestManager.restartVitest({
-          coverage: false,
-        });
-      } else {
-        await this.vitestManager.vitestRestartPromise;
+        const temporarilyDisableCoverage =
+          state.config.coverage && !state.watching && (event.payload.storyIds ?? []).length > 0;
+        if (temporarilyDisableCoverage) {
+          await this.vitestManager.restartVitest({
+            coverage: false,
+          });
+        } else {
+          await this.vitestManager.vitestRestartPromise;
+        }
+
+        this.selectedStoryCountForLastRun = event.payload.storyIds?.length ?? 0;
+
+        await this.vitestManager.runTests(event.payload);
+
+        if (temporarilyDisableCoverage) {
+          // Re-enable coverage if it was temporarily disabled because of a subset of stories was run
+          await this.vitestManager.restartVitest({ coverage: state?.config.coverage });
+        }
+      } catch (e) {
+        this.reportFatalError('Failed to run tests', e);
+        throw e;
       }
-
-      this.selectedStoryCountForLastRun = event.payload.storyIds?.length ?? 0;
-
-      await this.vitestManager.runTests(event.payload);
-
-      if (temporarilyDisableCoverage) {
-        // Re-enable coverage if it was temporarily disabled because of a subset of stories was run
-        await this.vitestManager.restartVitest({ coverage: state?.config.coverage });
-      }
-    } catch (e) {
-      this.reportFatalError('Failed to run tests', e);
-    }
+    });
   }
 
   async handleCancelRequest(payload: TestingModuleCancelTestRunRequestPayload) {

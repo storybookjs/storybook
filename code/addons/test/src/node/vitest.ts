@@ -5,9 +5,9 @@ import { Channel } from 'storybook/internal/channels';
 
 import type { StoreEvent, StoreState } from '../constants';
 import {
+  ADDON_ID,
   STATUS_TYPE_ID_A11Y,
   STATUS_TYPE_ID_COMPONENT_TEST,
-  TEST_PROVIDER_ID,
   storeOptions,
 } from '../constants';
 import { TestManager } from './test-manager';
@@ -45,7 +45,7 @@ new TestManager({
   store: UniversalStore.create<StoreState, StoreEvent>(storeOptions),
   componentTestStatusStore: getStatusStore(STATUS_TYPE_ID_COMPONENT_TEST),
   a11yStatusStore: getStatusStore(STATUS_TYPE_ID_A11Y),
-  testProviderStore: getTestProviderStore(TEST_PROVIDER_ID),
+  testProviderStore: getTestProviderStore(ADDON_ID),
   onError: (message, error) => {
     process.send?.({ type: 'error', message, error: error.stack ?? error });
   },

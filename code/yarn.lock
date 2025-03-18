@@ -9268,18 +9268,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@vitest/expect@npm:3.0.8":
-  version: 3.0.8
-  resolution: "@vitest/expect@npm:3.0.8"
-  dependencies:
-    "@vitest/spy": "npm:3.0.8"
-    "@vitest/utils": "npm:3.0.8"
-    chai: "npm:^5.2.0"
-    tinyrainbow: "npm:^2.0.0"
-  checksum: 10c0/48aebec816f5a1b1f64f82b474ccfba537801a654f9547c581ed1c2d30b5de72207b643d3db2ac2869809a63a585425df30f65481f86d2bbbf979d8f235661bd
-  languageName: node
-  linkType: hard
-
 "@vitest/expect@npm:3.0.9":
   version: 3.0.9
   resolution: "@vitest/expect@npm:3.0.9"
@@ -9289,6 +9277,18 @@ __metadata:
     chai: "npm:^5.2.0"
     tinyrainbow: "npm:^2.0.0"
   checksum: 10c0/4e5eef8fbc9c3e47f3fb69dbbd5b51aabdf1b6de2f781556d37d79731678fc83cf4a01d146226b12a27df051a4110153a6172506c9c74ae08e5b924a9c947f08
+  languageName: node
+  linkType: hard
+
+"@vitest/expect@patch:@vitest/expect@npm%3A3.0.9#~/.yarn/patches/@vitest-expect-npm-3.0.9-e2a2210fb4.patch":
+  version: 3.0.9
+  resolution: "@vitest/expect@patch:@vitest/expect@npm%3A3.0.9#~/.yarn/patches/@vitest-expect-npm-3.0.9-e2a2210fb4.patch::version=3.0.9&hash=f52714"
+  dependencies:
+    "@vitest/spy": "npm:3.0.9"
+    "@vitest/utils": "npm:3.0.9"
+    chai: "npm:^5.2.0"
+    tinyrainbow: "npm:^2.0.0"
+  checksum: 10c0/bc6b47602ba5c29742c227787cb254b4ba0372a96892416151199d9c50ccc6a830a55181f3434f659069ff25feedf41f611c534dce613fd6030f695982f21fbc
   languageName: node
   linkType: hard
 

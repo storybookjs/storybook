@@ -109,7 +109,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
 
   const isA11yAddon = addons.experimental_getRegisteredAddons().includes(A11Y_ADDON_ID);
 
-  const [{ config, watching }, setStoreState] = experimental_useUniversalStore(store);
+  const [{ config, watching, cancelling }, setStoreState] = experimental_useUniversalStore(store);
   const isRunning = testProviderState === 'test-provider-state:running';
 
   const componentTestStatusIcon: ComponentProps<typeof TestStatusIcon>['status'] =
@@ -278,14 +278,18 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
             <WithTooltip
               hasChrome={false}
               trigger="hover"
-              tooltip={<TooltipNote note="Stop test run" />}
+              tooltip={<TooltipNote note={cancelling ? 'Stopping...' : 'Stop test run'} />}
             >
               <IconButton
-                aria-label="Stop test run"
+                aria-label={cancelling ? 'Stopping...' : 'Stop test run'}
                 padding="none"
                 size="medium"
-                onClick={() => api.cancelTestProvider(state.id)}
-                disabled={state.cancelling}
+                onClick={() =>
+                  store.send({
+                    type: 'CANCEL_RUN',
+                  })
+                }
+                disabled={cancelling}
               >
                 <Progress percentage={state.progress?.percentageCompleted}>
                   <StopIcon />

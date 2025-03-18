@@ -59,7 +59,7 @@ export class TestManager {
     this.vitestManager = new VitestManager(this);
 
     this.store.subscribe('TRIGGER_RUN', this.handleRunRequest.bind(this));
-    this.channel.on(TESTING_MODULE_CANCEL_TEST_RUN_REQUEST, this.handleCancelRequest.bind(this));
+    this.store.subscribe('CANCEL_RUN', this.handleCancelRequest.bind(this));
 
     this.store.onStateChange((state, previousState) => {
       if (!isEqual(state.config, previousState.config)) {
@@ -139,15 +139,21 @@ export class TestManager {
     });
   }
 
-  async handleCancelRequest(payload: TestingModuleCancelTestRunRequestPayload) {
+  async handleCancelRequest() {
+    // TODO: if the run is cancelled to early, while Vitest is still starting up, it doesn't seem to have any effect
     try {
-      if (payload.providerId !== TEST_PROVIDER_ID) {
-        return;
-      }
-
+      this.store.setState((s) => ({
+        ...s,
+        cancelling: true,
+      }));
       await this.vitestManager.cancelCurrentRun();
     } catch (e) {
       this.reportFatalError('Failed to cancel tests', e);
+    } finally {
+      this.store.setState((s) => ({
+        ...s,
+        cancelling: false,
+      }));
     }
   }
 

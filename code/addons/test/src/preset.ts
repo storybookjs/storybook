@@ -9,7 +9,10 @@ import {
   type TestingModuleCrashReportPayload,
   type TestingModuleProgressReportPayload,
 } from 'storybook/internal/core-events';
-import { experimental_UniversalStore } from 'storybook/internal/core-server';
+import {
+  experimental_UniversalStore,
+  experimental_getTestProviderStore,
+} from 'storybook/internal/core-server';
 import { cleanPaths, oneWayHash, sanitizeError, telemetry } from 'storybook/internal/telemetry';
 import type { Options, PresetProperty, PresetPropertyFn, StoryId } from 'storybook/internal/types';
 
@@ -17,6 +20,7 @@ import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 import {
+  ADDON_ID,
   COVERAGE_DIRECTORY,
   STORE_CHANNEL_EVENT_NAME,
   STORYBOOK_ADDON_TEST_CHANNEL,
@@ -48,6 +52,7 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
     ...storeOptions,
     leader: true,
   });
+  const testProviderStore = experimental_getTestProviderStore(ADDON_ID);
 
   // Only boot the test runner if the builder is vite, else just provide interactions functionality
   if (!builderName?.includes('vite')) {
@@ -67,6 +72,9 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
     }
   });
   store.subscribe('TRIGGER_RUN', (event, eventInfo) => {
+    // TODO: this ensures the provider is marked as running immediately,
+    // but it could also result in a deadlock, if the state is never reset back due to the child process crashing or similar.
+    testProviderStore.setState('test-provider-state:running');
     runTestRunner(channel, STORE_CHANNEL_EVENT_NAME, [{ event, eventInfo }]);
   });
 

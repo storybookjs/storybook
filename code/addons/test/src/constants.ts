@@ -36,6 +36,7 @@ export type StoreState = {
     a11y: boolean;
   };
   watching: boolean;
+  cancelling: boolean;
 };
 
 export type TriggerRunEvent = {
@@ -46,8 +47,10 @@ export type TriggerRunEvent = {
     storyIds?: string[]; // ['button--primary', 'button--secondary']
   };
 };
-
-export type StoreEvent = TriggerRunEvent;
+export type CancelRunEvent = {
+  type: 'CANCEL_RUN';
+};
+export type StoreEvent = TriggerRunEvent | CancelRunEvent;
 
 export const storeOptions = {
   id: ADDON_ID,
@@ -57,6 +60,7 @@ export const storeOptions = {
       a11y: false,
     },
     watching: false,
+    cancelling: false,
   },
 };
 

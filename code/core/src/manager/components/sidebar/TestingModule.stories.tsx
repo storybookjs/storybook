@@ -86,7 +86,7 @@ const meta = {
       <ManagerContext.Provider value={managerContext}>{storyFn()}</ManagerContext.Provider>
     ),
     (StoryFn) => (
-      <div style={{ maxWidth: 232 }}>
+      <div style={{ maxWidth: 250 }}>
         <StoryFn />
       </div>
     ),

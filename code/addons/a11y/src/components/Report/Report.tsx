@@ -59,10 +59,15 @@ export const Report: FC<ReportProps> = ({
   <>
     {items && items.length ? (
       items.map((item) => {
-        const selection = selectedItems.get(`${type}.${item.id}`);
+        const id = `${type}.${item.id}`;
+        const selection = selectedItems.get(id);
         return (
-          <Wrapper key={`${type}.${item.id}`}>
-            <HeaderBar onClick={(e) => toggleOpen(e, type, item)} role="button">
+          <Wrapper key={id}>
+            <HeaderBar
+              onClick={(e) => toggleOpen(e, type, item)}
+              role="button"
+              data-active={!!selection}
+            >
               <strong>{item.help}</strong>
               <IconButton onClick={(ev) => toggleOpen(ev, type, item)}>
                 <Icon style={{ transform: `rotate(${selection ? -180 : 0}deg)` }} />

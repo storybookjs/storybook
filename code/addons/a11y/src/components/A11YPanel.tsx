@@ -58,7 +58,6 @@ export const A11YPanel: React.FC = () => {
     }
     return initialValue;
   });
-  console.log('selectedItems', selectedItems);
 
   const toggleOpen = useCallback(
     (event: React.SyntheticEvent<Element>, type: RuleType, item: Result) => {
@@ -77,23 +76,6 @@ export const A11YPanel: React.FC = () => {
   const manualActionItems = useMemo(
     () => [{ title: 'Run test', onClick: handleManual }],
     [handleManual]
-  );
-  const readyActionItems = useMemo(
-    () => [
-      {
-        title:
-          status === 'ready' ? (
-            'Rerun tests'
-          ) : (
-            <>
-              <CheckIcon style={{ marginRight: '0.4em' }} />
-              Tests completed
-            </>
-          ),
-        onClick: handleManual,
-      },
-    ],
-    [status, handleManual]
   );
   const tabs = useMemo(() => {
     const { passes, incomplete, violations } = results;
@@ -169,7 +151,6 @@ export const A11YPanel: React.FC = () => {
           <ScrollArea vertical horizontal>
             <Tabs key="tabs" tabs={tabs} />
           </ScrollArea>
-          <ActionBar key="actionbar" actionItems={readyActionItems} />
         </>
       ) : (
         <Centered style={{ marginTop: discrepancy ? '1em' : 0 }}>

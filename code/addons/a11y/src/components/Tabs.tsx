@@ -108,8 +108,10 @@ export const Tabs: React.FC<TabsProps> = ({ tabs }) => {
         <TabsWrapper>
           {tabs.map((tab, index) => (
             <Item
+              role="tab"
               key={index}
               data-type={tab.type}
+              data-active={activeTab === tab.type}
               active={activeTab === tab.type}
               onClick={handleToggle}
             >

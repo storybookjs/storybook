@@ -297,7 +297,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                         type: 'TRIGGER_RUN',
                         payload: {
                           indexUrl: new URL('index.json', window.location.href).toString(),
-                          // TODO: add storyIds based on entryId
+                          storyIds: entryId ? api.findAllLeafStoryIds(entryId) : undefined,
                         },
                       })
                     }

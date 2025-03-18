@@ -35,11 +35,11 @@ const config = defineMain({
     },
     {
       directory: '../addons/a11y/src',
-      titlePrefix: 'addons/a11y',
+      titlePrefix: 'addons/accessibility',
     },
     {
       directory: '../addons/a11y/template/stories',
-      titlePrefix: 'addons/a11y',
+      titlePrefix: 'addons/accessibility',
     },
     {
       directory: '../addons/backgrounds/template/stories',

@@ -42,7 +42,7 @@ export const ViewportTool: FC<{ api: API }> = ({ api }) => {
 
   const { options = MINIMAL_VIEWPORTS, disable } = config || {};
   const data = globals?.[KEY] || {};
-  const viewportName: string = data.value;
+  const viewportName: string = typeof data === 'string' ? data : data.value;
   const isRotated: boolean = data.isRotated;
 
   const item = options[viewportName] || responsiveViewport;

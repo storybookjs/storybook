@@ -56,6 +56,6 @@ export interface ViewportGlobals {
    * @see https://storybook.js.org/docs/essentials/viewport#globals
    */
   viewport: {
-    [key: string]: GlobalState;
+    [key: string]: GlobalState | GlobalState['value'];
   };
 }

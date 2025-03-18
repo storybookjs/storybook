@@ -76,7 +76,8 @@ const enhanceContext: LoaderFunction = async (context) => {
   if (globalThis.HTMLElement && context.canvasElement instanceof globalThis.HTMLElement) {
     context.canvas = within(context.canvasElement);
   }
-  if (globalThis.window) {
+
+  if (globalThis.window && globalThis.HTMLElement) {
     context.userEvent = instrument({ userEvent: userEvent.setup() }, { intercept: true }).userEvent;
   }
 };

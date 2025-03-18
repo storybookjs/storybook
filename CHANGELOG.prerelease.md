@@ -1,3 +1,12 @@
+## 9.0.0-alpha.6
+
+- Core: New Status Store - [#30764](https://github.com/storybookjs/storybook/pull/30764), thanks @JReinhold!
+- Core: Remove `util`, `browser-assert`, `process` deps - [#30805](https://github.com/storybookjs/storybook/pull/30805), thanks @ndelangen!
+- Core: Testing Module UI improvements - [#30773](https://github.com/storybookjs/storybook/pull/30773), thanks @ghengeveld!
+- React-Native-Web: Fix errors in CLI template stories - [#30821](https://github.com/storybookjs/storybook/pull/30821), thanks @dannyhw!
+- React-Native: Fix `__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__` access - [#30820](https://github.com/storybookjs/storybook/pull/30820), thanks @dannyhw!
+- React-Native: Update config directory to .rnstorybook - [#30819](https://github.com/storybookjs/storybook/pull/30819), thanks @dannyhw!
+
 ## 9.0.0-alpha.5
 
 - Angular: Make sure that polyfills are loaded before the storybook is loaded - [#30811](https://github.com/storybookjs/storybook/pull/30811), thanks @kasperpeulen!

@@ -1,11 +1,17 @@
+/* eslint-disable @typescript-eslint/no-shadow */
 // this file tests Typescript types that's why there are no assertions
 import { describe, it } from 'vitest';
 
 import { satisfies } from 'storybook/internal/common';
-import type { Canvas, ComponentAnnotations, StoryAnnotations } from 'storybook/internal/types';
+import type {
+  Args,
+  Canvas,
+  ComponentAnnotations,
+  StoryAnnotations,
+} from 'storybook/internal/types';
 
 import { expectTypeOf } from 'expect-type';
-import { SvelteComponent, type Component, type ComponentProps } from 'svelte';
+import { type Component, type ComponentProps, SvelteComponent } from 'svelte';
 
 import Button from './__test__/Button.svelte';
 import ButtonV5 from './__test__/ButtonV5.svelte';
@@ -314,4 +320,16 @@ it('mount accepts a Svelte 5 Component and props', () => {
     },
   };
   expectTypeOf(Basic).toMatchTypeOf<StoryObj<typeof ButtonV5>>();
+});
+
+it('StoryObj can accept args directly', () => {
+  const Story: StoryObj<Args> = {
+    args: {},
+  };
+
+  const Story2: StoryObj<{ args: { prop: boolean } }> = {
+    args: {
+      prop: true,
+    },
+  };
 });

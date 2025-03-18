@@ -12,7 +12,12 @@ import { type TestProviderConfig, type TestProviderState } from 'storybook/inter
 import { EyeIcon, InfoIcon, PlayHollowIcon, StopAltIcon } from '@storybook/icons';
 
 import { store } from '#manager-store';
-import { addons, experimental_useUniversalStore } from 'storybook/manager-api';
+import {
+  addons,
+  experimental_useStatusStore,
+  experimental_useTestProviderStore,
+  experimental_useUniversalStore,
+} from 'storybook/manager-api';
 import type { API } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
@@ -20,7 +25,7 @@ import {
   ADDON_ID as A11Y_ADDON_ID,
   PANEL_ID as A11y_ADDON_PANEL_ID,
 } from '../../../a11y/src/constants';
-import { type Details, PANEL_ID } from '../constants';
+import { ADDON_ID, type Details, PANEL_ID, STATUS_TYPE_ID_COMPONENT_TEST } from '../constants';
 import { type TestStatus } from '../node/reporter';
 import { Description } from './Description';
 import { TestStatusIcon } from './TestStatusIcon';
@@ -110,6 +115,30 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
   const isA11yAddon = addons.experimental_getRegisteredAddons().includes(A11Y_ADDON_ID);
 
   const [{ config, watching }, setStoreState] = experimental_useUniversalStore(store);
+  const testProviderState = experimental_useTestProviderStore((s) => s[ADDON_ID]);
+  const componentTestErrorCount = experimental_useStatusStore((allStatuses) => {
+    let errorCount = 0;
+    Object.values(allStatuses).forEach((statusByTypeId) => {
+      const componentTestStatus = statusByTypeId[STATUS_TYPE_ID_COMPONENT_TEST];
+      if (!componentTestStatus) {
+        return;
+      }
+      if (componentTestStatus.value === 'status-value:error') {
+        errorCount++;
+      }
+    });
+
+    return errorCount;
+  });
+
+  const componentTestStatusIcon: ComponentProps<typeof TestStatusIcon>['status'] =
+    componentTestErrorCount
+      ? 'negative'
+      : testProviderState === 'test-provider-state:running'
+        ? 'pending'
+        : testProviderState === 'test-provider-state:succeeded'
+          ? 'positive'
+          : 'unknown';
 
   const isStoryEntry = entryId?.includes('--') ?? false;
 
@@ -159,7 +188,9 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
     : undefined;
 
   const a11ySkippedAmount =
-    state.running || !config?.a11y ? null : a11yResults?.filter((result) => !result).length;
+    testProviderState === 'test-provider-state:running' || !config?.a11y
+      ? null
+      : a11yResults?.filter((result) => !result).length;
 
   const a11ySkippedSuffix = a11ySkippedAmount
     ? a11ySkippedAmount === 1 && isStoryEntry
@@ -179,10 +210,6 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
       );
     })
     .sort((a, b) => statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status));
-
-  const componentTestsNotPassedAmount = results?.filter(
-    (result) => result.status === 'failed'
-  ).length;
 
   const status = results[0]?.status ?? (state.running ? 'pending' : 'unknown');
 
@@ -327,12 +354,15 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
             }
           >
             <IconButton size="medium" disabled={!results?.length} onClick={openTestsPanel}>
-              {state.crashed ? (
+              {testProviderState === 'test-provider-state:crashed' ? (
                 <TestStatusIcon status="critical" aria-label="Test status: crashed" />
               ) : (
-                <TestStatusIcon status={statusMap[status]} aria-label={`Test status: ${status}`} />
+                <TestStatusIcon
+                  status={componentTestStatusIcon}
+                  aria-label={`Test status: ${status}`}
+                />
               )}
-              {componentTestsNotPassedAmount || null}
+              {componentTestErrorCount || null}
             </IconButton>
           </WithTooltip>
         </Row>

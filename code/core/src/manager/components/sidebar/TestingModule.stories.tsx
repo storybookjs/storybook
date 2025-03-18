@@ -26,33 +26,38 @@ const baseState = {
   crashed: false,
 };
 
-const testProviders: TestProviders[keyof TestProviders][] = [
-  {
+const testProviderInterfaces: TestProviders = {
+  'component-tests': {
     type: Addon_TypesEnum.experimental_TEST_PROVIDER,
     id: 'component-tests',
     name: 'Component tests',
-    title: () => 'Component tests',
-    description: () => 'Ran 2 seconds ago',
+    render: () => <TestProvider>Component tests</TestProvider>,
     runnable: true,
     ...baseState,
   },
-  {
+  'visual-tests': {
     type: Addon_TypesEnum.experimental_TEST_PROVIDER,
     id: 'visual-tests',
     name: 'Visual tests',
-    title: () => 'Visual tests',
-    description: () => 'Not run',
+    render: () => <TestProvider>Visual tests</TestProvider>,
     runnable: true,
     ...baseState,
   },
-  {
+  linting: {
     type: Addon_TypesEnum.experimental_TEST_PROVIDER,
     id: 'linting',
     name: 'Linting',
-    render: () => <TestProvider>Custom render function</TestProvider>,
+    render: () => <TestProvider>Linting</TestProvider>,
     ...baseState,
   },
-];
+};
+
+// TODO: use correct type here
+const testProviderStates: any = {
+  'component-tests': 'test-provider-state:pending',
+  'visual-tests': 'test-provider-state:pending',
+  linting: 'test-provider-state:pending',
+};
 
 const channel = mockChannel();
 const managerContext: any = {
@@ -71,9 +76,11 @@ const meta = {
   component: TestingModule,
   title: 'Sidebar/TestingModule',
   args: {
-    testProviders,
+    testProviderInterfaces,
+    testProviderStates,
     statusCount: 0,
     clearStatuses: fn(),
+    onRunAll: fn(),
     errorCount: 0,
     errorsActive: false,
     setErrorsActive: fn(),
@@ -147,89 +154,44 @@ export const CollapsedStatuses: Story = {
 
 export const Running: Story = {
   args: {
-    testProviders: [{ ...testProviders[0], running: true }, ...testProviders.slice(1)],
+    testProviderStates: {
+      ...testProviderStates,
+      'component-tests': 'test-provider-state:running',
+    },
   },
   play: Expanded.play,
 };
 
-export const RunningAll: Story = {
-  args: {
-    testProviders: testProviders.map((tp) => ({ ...tp, running: !!tp.runnable })),
-  },
-  play: Expanded.play,
-};
-
-export const RunningWithStatuses: Story = {
+export const RunningWithErrors: Story = {
   args: {
     ...Statuses.args,
-    testProviders: [{ ...testProviders[0], running: true }, ...testProviders.slice(1)],
+    ...Running.args,
   },
   play: Expanded.play,
 };
 
 export const CollapsedRunning: Story = {
-  args: RunningAll.args,
+  args: Running.args,
 };
 
-export const Cancellable: Story = {
-  args: {
-    testProviders: [
-      { ...testProviders[0], running: true, cancellable: true },
-      ...testProviders.slice(1),
-    ],
-  },
-  play: Expanded.play,
-};
-
-export const Cancelling: Story = {
-  args: {
-    testProviders: [
-      { ...testProviders[0], running: true, cancellable: true, cancelling: true },
-      ...testProviders.slice(1),
-    ],
-  },
-  play: Expanded.play,
-};
-
-export const Failing: Story = {
-  args: {
-    testProviders: [
-      { ...testProviders[0], failed: true, running: true },
-      ...testProviders.slice(1),
-    ],
-  },
-  play: Expanded.play,
-};
-
+// TODO: is this now just when there are error statuses? or warnings?
 export const Failed: Story = {
-  args: {
-    testProviders: [{ ...testProviders[0], failed: true }, ...testProviders.slice(1)],
-  },
+  args: {},
   play: Expanded.play,
 };
 
 export const Crashed: Story = {
   args: {
-    testProviders: [
-      {
-        ...testProviders[0],
-        render: () => (
-          <TestProvider>
-            Component tests didn't complete
-            <br />
-            Problems!
-          </TestProvider>
-        ),
-        crashed: true,
-      },
-      ...testProviders.slice(1),
-    ],
+    testProviderStates: {
+      ...testProviderStates,
+      'component-tests': 'test-provider-state:crashed',
+    },
   },
   play: Expanded.play,
 };
 
 export const NoTestProvider: Story = {
   args: {
-    testProviders: [],
+    testProviderInterfaces: {},
   },
 };

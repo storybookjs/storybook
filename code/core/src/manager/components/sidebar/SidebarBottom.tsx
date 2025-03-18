@@ -3,15 +3,21 @@ import React, { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'r
 import {
   TESTING_MODULE_CRASH_REPORT,
   TESTING_MODULE_PROGRESS_REPORT,
+  type TestProviders,
   type TestingModuleCrashReportPayload,
   type TestingModuleProgressReportPayload,
 } from 'storybook/internal/core-events';
 import { type API_FilterFunction } from 'storybook/internal/types';
 
-import { experimental_useStatusStore } from '#manager-status-store';
+import {
+  experimental_useStatusStore,
+  experimental_useTestProviderStore,
+  internal_fullTestProviderStore,
+} from '#manager-stores';
 import { type API, type State, useStorybookApi, useStorybookState } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
+import type { TestProviderStateByProviderId } from '../../../shared/test-provider-store';
 import { NotificationList } from '../notifications/NotificationList';
 import { TestingModule } from './TestingModule';
 
@@ -80,6 +86,9 @@ interface SidebarBottomProps {
   errorCount: number;
   warningCount: number;
   isDevelopment?: boolean;
+  testProviderStates: TestProviderStateByProviderId;
+  testProviderInterfaces: TestProviders;
+  onRunAll: () => void;
 }
 
 export const SidebarBottomBase = ({
@@ -88,12 +97,14 @@ export const SidebarBottomBase = ({
   errorCount,
   warningCount,
   isDevelopment,
+  testProviderStates,
+  testProviderInterfaces,
+  onRunAll,
 }: SidebarBottomProps) => {
   const spacerRef = useRef<HTMLDivElement | null>(null);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const [warningsActive, setWarningsActive] = useState(false);
   const [errorsActive, setErrorsActive] = useState(false);
-  const { testProviders } = useStorybookState();
 
   useEffect(() => {
     if (spacerRef.current && wrapperRef.current) {
@@ -142,10 +153,14 @@ export const SidebarBottomBase = ({
       api.off(TESTING_MODULE_CRASH_REPORT, onCrashReport);
       api.off(TESTING_MODULE_PROGRESS_REPORT, onProgressReport);
     };
-  }, [api, testProviders]);
+  }, [api, testProviderInterfaces]);
 
-  const testProvidersArray = Object.values(testProviders || {});
-  if (!warningCount && !errorCount && !testProvidersArray.length && !notifications.length) {
+  if (
+    !warningCount &&
+    !errorCount &&
+    Object.values(testProviderInterfaces).length === 0 &&
+    notifications.length === 0
+  ) {
     return null;
   }
 
@@ -157,11 +172,13 @@ export const SidebarBottomBase = ({
         {isDevelopment && (
           <TestingModule
             {...{
-              testProviders: testProvidersArray,
+              testProviderInterfaces,
+              testProviderStates,
               statusCount: Object.keys(status).length,
               clearStatuses: () => {
                 // TODO
               },
+              onRunAll,
               errorCount,
               errorsActive,
               setErrorsActive,
@@ -178,7 +195,7 @@ export const SidebarBottomBase = ({
 
 export const SidebarBottom = ({ isDevelopment }: { isDevelopment?: boolean }) => {
   const api = useStorybookApi();
-  const { notifications } = useStorybookState();
+  const { notifications, testProviders: testProviderInterfaces } = useStorybookState();
   const { errorCount, warningCount } = experimental_useStatusStore((statuses) => {
     return Object.values(statuses).reduce(
       (counts, storyStatuses) => {
@@ -197,6 +214,8 @@ export const SidebarBottom = ({ isDevelopment }: { isDevelopment?: boolean }) =>
     );
   });
 
+  const testProviderStates = experimental_useTestProviderStore();
+
   return (
     <SidebarBottomBase
       api={api}
@@ -204,6 +223,9 @@ export const SidebarBottom = ({ isDevelopment }: { isDevelopment?: boolean }) =>
       errorCount={errorCount}
       warningCount={warningCount}
       isDevelopment={isDevelopment}
+      testProviderStates={testProviderStates}
+      testProviderInterfaces={testProviderInterfaces}
+      onRunAll={internal_fullTestProviderStore.runAll}
     />
   );
 };

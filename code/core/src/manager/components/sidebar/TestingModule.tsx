@@ -6,9 +6,9 @@ import { type TestProviders } from 'storybook/internal/core-events';
 
 import { ChevronSmallUpIcon, PlayAllHollowIcon, SweepIcon } from '@storybook/icons';
 
-import { useStorybookApi } from 'storybook/manager-api';
 import { keyframes, styled } from 'storybook/theming';
 
+import type { TestProviderStateByProviderId } from '../../../shared/test-provider-store';
 import { LegacyRender } from './LegacyRender';
 
 const DEFAULT_HEIGHT = 500;
@@ -160,9 +160,11 @@ const TestProvider = styled.div(({ theme }) => ({
 }));
 
 interface TestingModuleProps {
-  testProviders: TestProviders[keyof TestProviders][];
+  testProviderInterfaces: TestProviders;
+  testProviderStates: TestProviderStateByProviderId;
   statusCount: number;
   clearStatuses: () => void;
+  onRunAll: () => void;
   errorCount: number;
   errorsActive: boolean;
   setErrorsActive: (active: boolean) => void;
@@ -172,9 +174,11 @@ interface TestingModuleProps {
 }
 
 export const TestingModule = ({
-  testProviders,
+  testProviderInterfaces,
+  testProviderStates,
   statusCount,
   clearStatuses,
+  onRunAll,
   errorCount,
   errorsActive,
   setErrorsActive,
@@ -182,8 +186,6 @@ export const TestingModule = ({
   warningsActive,
   setWarningsActive,
 }: TestingModuleProps) => {
-  const api = useStorybookApi();
-
   const timeoutRef = useRef<null | ReturnType<typeof setTimeout>>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const [maxHeight, setMaxHeight] = useState(DEFAULT_HEIGHT);
@@ -220,10 +222,13 @@ export const TestingModule = ({
     }, 250);
   }, []);
 
-  const isRunning = testProviders.some((tp) => tp.running);
-  const isCrashed = testProviders.some((tp) => tp.crashed);
-  const isFailed = testProviders.some((tp) => tp.failed);
-  const hasTestProviders = testProviders.length > 0;
+  const isRunning = Object.values(testProviderStates).some(
+    (testProviderState) => testProviderState === 'test-provider-state:running'
+  );
+  const isCrashed = Object.values(testProviderStates).some(
+    (testProviderState) => testProviderState === 'test-provider-state:crashed'
+  );
+  const hasTestProviders = Object.values(testProviderInterfaces).length > 0;
 
   if (!hasTestProviders && (!errorCount || !warningCount)) {
     return null;
@@ -234,7 +239,7 @@ export const TestingModule = ({
       id="storybook-testing-module"
       running={isRunning}
       crashed={isCrashed}
-      failed={isFailed || errorCount > 0}
+      failed={errorCount > 0}
     >
       <Card>
         {hasTestProviders && (
@@ -247,7 +252,7 @@ export const TestingModule = ({
             }}
           >
             <Content ref={contentRef}>
-              {testProviders.map((state) => {
+              {Object.values(testProviderInterfaces).map((state) => {
                 const { render: Render } = state;
                 return (
                   <TestProvider key={state.id} data-module-id={state.id}>
@@ -273,9 +278,7 @@ export const TestingModule = ({
                   padding="small"
                   onClick={(e: SyntheticEvent) => {
                     e.stopPropagation();
-                    testProviders
-                      .filter((state) => !state.running && state.runnable)
-                      .forEach(({ id }) => api.runTestProvider(id));
+                    onRunAll();
                   }}
                   disabled={isRunning}
                 >

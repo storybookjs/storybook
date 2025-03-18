@@ -327,7 +327,7 @@ it('StoryObj can accept args directly', () => {
     args: {},
   };
 
-  const Story2: StoryObj<{ args: { prop: boolean } }> = {
+  const Story2: StoryObj< { prop: boolean }> = {
     args: {
       prop: true,
     },

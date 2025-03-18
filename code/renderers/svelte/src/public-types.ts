@@ -48,7 +48,7 @@ export type StoryFn<TCmpOrArgs = Args> = TCmpOrArgs extends
  */
 export type StoryObj<MetaOrCmpOrArgs = Args> = MetaOrCmpOrArgs extends {
   render?: ArgsStoryFn<SvelteRenderer, any>;
-  component?: infer Comp; // We cannot use "extends ComponentType | Svelte5ComponentType" here, because TypeScript for some reason then refuses to ever enter the true branch
+  component: infer Comp; // We cannot use "extends ComponentType | Svelte5ComponentType" here, because TypeScript for some reason then refuses to ever enter the true branch
   args?: infer DefaultArgs;
 }
   ? Simplify<

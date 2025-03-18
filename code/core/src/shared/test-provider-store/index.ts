@@ -427,7 +427,8 @@ export function createTestProviderStore({
   };
 
   const getTestProviderStoreById = (testProviderId: string): TestProviderStoreById => {
-    const getStateForTestProvider = () => universalTestProviderStore.getState()[testProviderId];
+    const getStateForTestProvider = () =>
+      universalTestProviderStore.getState()[testProviderId] ?? 'test-provider-state:pending';
     const setStateForTestProvider = (state: TestProviderState) => {
       universalTestProviderStore.untilReady().then(() => {
         universalTestProviderStore.setState((currentState) => ({
@@ -437,9 +438,11 @@ export function createTestProviderStore({
       });
     };
     // Initialize the state to 'pending' if it doesn't exist yet
-    if (!getStateForTestProvider()) {
-      setStateForTestProvider('test-provider-state:pending');
-    }
+    universalTestProviderStore.untilReady().then(() => {
+      if (!getStateForTestProvider()) {
+        setStateForTestProvider('test-provider-state:pending');
+      }
+    });
     return {
       ...baseStore,
       testProviderId,

@@ -2,6 +2,7 @@ import React from 'react';
 
 import type { Listener } from 'storybook/internal/channels';
 import { type TestProviders } from 'storybook/internal/core-events';
+import type { TestProviderStateByProviderId } from 'storybook/internal/types';
 import { Addon_TypesEnum } from 'storybook/internal/types';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
@@ -52,8 +53,7 @@ const testProviderInterfaces: TestProviders = {
   },
 };
 
-// TODO: use correct type here
-const testProviderStates: any = {
+const testProviderStates: TestProviderStateByProviderId = {
   'component-tests': 'test-provider-state:pending',
   'visual-tests': 'test-provider-state:pending',
   linting: 'test-provider-state:pending',

@@ -148,6 +148,16 @@ export const Watching: Story = {
   },
 };
 
+export const Crashed: Story = {
+  args: {
+    state: {
+      ...config,
+      ...baseState,
+    },
+    testProviderState: 'test-provider-state:crashed',
+  },
+};
+
 export const TogglingSettings: Story = {
   args: {
     state: {

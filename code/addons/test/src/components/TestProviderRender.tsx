@@ -234,8 +234,13 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
     <Container {...props}>
       <Heading>
         <Info>
-          <Title id="testing-module-title" crashed={state.crashed}>
-            {state.crashed ? 'Local tests failed' : 'Run local tests'}
+          <Title
+            id="testing-module-title"
+            crashed={testProviderState === 'test-provider-state:crashed'}
+          >
+            {testProviderState === 'test-provider-state:crashed'
+              ? 'Local tests failed'
+              : 'Run local tests'}
           </Title>
           <Description
             id="testing-module-description"

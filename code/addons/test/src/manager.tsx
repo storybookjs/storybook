@@ -17,6 +17,7 @@ import {
 import { GlobalErrorContext, GlobalErrorModal } from './components/GlobalErrorModal';
 import { Panel } from './components/Panel';
 import { PanelTitle } from './components/PanelTitle';
+import { SidebarContextMenu } from './components/SidebarContextMenu';
 import { TestProviderRender } from './components/TestProviderRender';
 import {
   A11Y_PANEL_ID,
@@ -86,8 +87,12 @@ addons.register(ADDON_ID, (api) => {
             <GlobalErrorModal
               onRerun={() => {
                 setModalOpen(false);
-                // TODO: update this too
-                api.runTestProvider(TEST_PROVIDER_ID);
+                store.send({
+                  type: 'TRIGGER_RUN',
+                  payload: {
+                    indexUrl: new URL('index.json', window.location.href).toString(),
+                  },
+                });
               }}
             />
           </GlobalErrorContext.Provider>
@@ -102,31 +107,7 @@ addons.register(ADDON_ID, (api) => {
         if (context.type === 'story' && !context.tags.includes('test')) {
           return null;
         }
-        const testProviderState = experimental_useTestProviderStore((s) => s[ADDON_ID]);
-        const componentTestErrorCount = experimental_useStatusStore((allStatuses) => {
-          let errorCount = 0;
-          Object.values(allStatuses).forEach((statusByTypeId) => {
-            const componentTestStatus = statusByTypeId[STATUS_TYPE_ID_COMPONENT_TEST];
-            if (!componentTestStatus) {
-              return;
-            }
-            if (componentTestStatus.value === 'status-value:error') {
-              errorCount++;
-            }
-          });
-
-          return errorCount;
-        });
-        return (
-          <TestProviderRender
-            api={api}
-            state={state}
-            entryId={context.id}
-            style={{ minWidth: 240 }}
-            testProviderState={testProviderState}
-            componentTestErrorCount={componentTestErrorCount}
-          />
-        );
+        return <SidebarContextMenu context={context} state={state} api={api} />;
       },
 
       // @ts-expect-error: TODO: Fix types

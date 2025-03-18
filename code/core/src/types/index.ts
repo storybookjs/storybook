@@ -14,3 +14,4 @@ export * from './modules/channelApi';
 export * from './modules/frameworks';
 export * from './modules/renderers';
 export * from './modules/status';
+export * from './modules/test-provider';

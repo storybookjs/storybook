@@ -55,14 +55,14 @@
     "ts-dedent": "^2.0.0",
     "tsconfig-paths-webpack-plugin": "^4.0.1",
     "util-deprecate": "^1.0.2",
-    "webpack": "5"
+    "webpack": "5",
+    "@angular/animations": "^19.1.1"
   },
   "devDependencies": {
     "@analogjs/vite-plugin-angular": "^1.12.1",
     "@angular-devkit/architect": "^0.1901.1",
     "@angular-devkit/build-angular": "^19.1.1",
     "@angular-devkit/core": "^19.1.1",
-    "@angular/animations": "^19.1.1",
     "@angular/cli": "^19.1.1",
     "@angular/common": "^19.1.1",
     "@angular/compiler": "^19.1.1",

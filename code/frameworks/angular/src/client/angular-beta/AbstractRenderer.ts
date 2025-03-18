@@ -4,10 +4,14 @@ import { BehaviorSubject, Subject } from 'rxjs';
 import { stringify } from 'telejson';
 
 import { ICollection, StoryFnAngularReturnType } from '../types';
-import { getApplication } from './StorybookModule';
 import { storyPropsProvider } from './StorybookProvider';
 import { queueBootstrapping } from './utils/BootstrapQueue';
 import { PropertyExtractor } from './utils/PropertyExtractor';
+import {
+  buildComponent,
+  initTestBed,
+} from './utils/TestBedComponentBuilder';
+import { computesTemplateFromComponent } from './ComputesTemplateFromComponent';
 
 type StoryRenderInfo = {
   storyFnAngular: StoryFnAngularReturnType;
@@ -111,12 +115,24 @@ export abstract class AbstractRenderer {
       element.toggleAttribute(storyUid, true);
     }
 
-    const application = getApplication({
-      storyFnAngular,
-      component,
-      targetSelector: componentSelector,
-      analyzedMetadata,
-    });
+    // const application = getApplication({
+    //   storyFnAngular,
+    //   component,
+    //   targetSelector: componentSelector,
+    //   analyzedMetadata,
+    // });
+    let { template } = storyFnAngular;
+    console.log('Template', template);
+    const { props } = storyFnAngular;
+    const hasTemplate = !(template == null || template == undefined);
+    if (!hasTemplate && component) {
+      template = computesTemplateFromComponent(component, props, '');
+    }
+    console.log('Template after', template);
+    console.log('Component', component);
+    initTestBed();
+    const application = await buildComponent(analyzedMetadata, component, componentSelector);
+    console.log('ComponentFixture', application);
 
     const providers = [
       storyPropsProvider(newStoryProps$),
@@ -132,13 +148,18 @@ export abstract class AbstractRenderer {
         providers.unshift(provideExperimentalZonelessChangeDetection());
       }
     }
-
+    console.log('StoryFnAngular', storyFnAngular);
+    console.log('Providers', providers);
     const applicationRef = await queueBootstrapping(() => {
-      return bootstrapApplication(application, {
+      return bootstrapApplication(application.componentRef.componentType, {
         ...storyFnAngular.applicationConfig,
         providers,
       });
     });
+
+    // const applicationRef = getApplicationRef(application, componentSelector);
+    console.log('AppRef', applicationRef);
+    console.log('TargetDomNode', targetDOMNode);
 
     applicationRefs.set(targetDOMNode, applicationRef);
   }

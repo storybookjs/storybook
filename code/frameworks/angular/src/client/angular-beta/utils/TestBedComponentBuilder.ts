@@ -1,4 +1,4 @@
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import {
   BrowserDynamicTestingModule,
   platformBrowserDynamicTesting,
@@ -7,6 +7,7 @@ import { ApplicationRef, Provider, Type } from '@angular/core';
 import { PropertyExtractor } from './PropertyExtractor';
 
 export const initTestBed = () => {
+  resetTestBed();
   TestBed.initTestEnvironment(BrowserDynamicTestingModule, platformBrowserDynamicTesting());
 };
 
@@ -17,23 +18,26 @@ export const resetTestBed = () => {
 
 export const buildComponent = async (
   analyzedMetadata: PropertyExtractor,
-  storyComponent: Type<unknown> | undefined
+  storyComponent: Type<unknown> | undefined,
+  selector: string
 ) => {
   const { imports, declarations, providers } = analyzedMetadata;
   await TestBed.configureTestingModule({
-    imports: [imports],
+    imports: imports,
     declarations: declarations,
     providers: providers,
   })
     .overrideComponent(storyComponent, {
-      // set: {
-      //   providers: providers,
-      // },
+      set: {
+        providers: providers,
+        selector: selector,
+      },
     })
     .compileComponents();
+
   return TestBed.createComponent(storyComponent);
 };
 
-export const getApplicationRef = () => {
-  return TestBed.inject(ApplicationRef);
+export const getApplicationRef = (fixture: ComponentFixture<any>, componentSelector: string) => {
+  const appRef = TestBed.inject(ApplicationRef);
 };

@@ -11,6 +11,7 @@ export class ApiService {
   imports: [CommonModule],
   // Needs to be a different name to the CLI template button
   template: `<button type="button">{{ label }}</button>`,
+  selector: 'app-provider-button',
   providers: [ApiService],
 })
 export default class ProviderButtonComponent {

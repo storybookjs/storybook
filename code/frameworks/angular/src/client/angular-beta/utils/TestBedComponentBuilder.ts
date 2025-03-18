@@ -7,13 +7,19 @@ import { ApplicationRef, Provider, Type } from '@angular/core';
 import { PropertyExtractor } from './PropertyExtractor';
 
 export const initTestBed = () => {
-  resetTestBed();
-  TestBed.initTestEnvironment(BrowserDynamicTestingModule, platformBrowserDynamicTesting());
+  if (TestBed.platform == null) {
+    TestBed.initTestEnvironment(BrowserDynamicTestingModule, platformBrowserDynamicTesting());
+  } else {
+    resetTestBed();
+  }
 };
 
 export const resetTestBed = () => {
-  TestBed.resetTestingModule();
-  TestBed.resetTestEnvironment();
+  try {
+    TestBed.resetTestingModule().resetTestEnvironment();
+  } catch (e) {
+    console.log('Failed to reset', e);
+  }
 };
 
 export const buildComponent = async (
@@ -38,6 +44,6 @@ export const buildComponent = async (
   return TestBed.createComponent(storyComponent);
 };
 
-export const getApplicationRef = (fixture: ComponentFixture<any>, componentSelector: string) => {
-  const appRef = TestBed.inject(ApplicationRef);
+export const getApplicationRef = () => {
+  return TestBed.inject(ApplicationRef);
 };

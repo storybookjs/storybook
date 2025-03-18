@@ -7,10 +7,7 @@ import { ICollection, StoryFnAngularReturnType } from '../types';
 import { storyPropsProvider } from './StorybookProvider';
 import { queueBootstrapping } from './utils/BootstrapQueue';
 import { PropertyExtractor } from './utils/PropertyExtractor';
-import {
-  buildComponent,
-  initTestBed,
-} from './utils/TestBedComponentBuilder';
+import { buildComponent, getApplicationRef, initTestBed, resetTestBed } from './utils/TestBedComponentBuilder';
 import { computesTemplateFromComponent } from './ComputesTemplateFromComponent';
 
 type StoryRenderInfo = {
@@ -115,25 +112,6 @@ export abstract class AbstractRenderer {
       element.toggleAttribute(storyUid, true);
     }
 
-    // const application = getApplication({
-    //   storyFnAngular,
-    //   component,
-    //   targetSelector: componentSelector,
-    //   analyzedMetadata,
-    // });
-    let { template } = storyFnAngular;
-    console.log('Template', template);
-    const { props } = storyFnAngular;
-    const hasTemplate = !(template == null || template == undefined);
-    if (!hasTemplate && component) {
-      template = computesTemplateFromComponent(component, props, '');
-    }
-    console.log('Template after', template);
-    console.log('Component', component);
-    initTestBed();
-    const application = await buildComponent(analyzedMetadata, component, componentSelector);
-    console.log('ComponentFixture', application);
-
     const providers = [
       storyPropsProvider(newStoryProps$),
       ...analyzedMetadata.applicationProviders,
@@ -148,18 +126,12 @@ export abstract class AbstractRenderer {
         providers.unshift(provideExperimentalZonelessChangeDetection());
       }
     }
-    console.log('StoryFnAngular', storyFnAngular);
-    console.log('Providers', providers);
-    const applicationRef = await queueBootstrapping(() => {
-      return bootstrapApplication(application.componentRef.componentType, {
-        ...storyFnAngular.applicationConfig,
-        providers,
-      });
-    });
 
-    // const applicationRef = getApplicationRef(application, componentSelector);
-    console.log('AppRef', applicationRef);
-    console.log('TargetDomNode', targetDOMNode);
+    initTestBed();
+    const application = await buildComponent(analyzedMetadata, component, componentSelector);
+    // has to bet let or var because const not working
+    const applicationRef = getApplicationRef();
+    applicationRef.bootstrap(application.componentRef.componentType);
 
     applicationRefs.set(targetDOMNode, applicationRef);
   }

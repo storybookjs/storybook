@@ -527,3 +527,14 @@ export { typesX as types };
 
 /* deprecated */
 export { mockChannel, type Addon, type AddonStore } from './lib/addons';
+
+export {
+  getStatusStoreByTypeId as experimental_getStatusStore,
+  useStatusStore as experimental_useStatusStore,
+  fullStatusStore as internal_fullStatusStore,
+} from './stores/status';
+export {
+  getTestProviderStoreById as experimental_getTestProviderStore,
+  useTestProviderStore as experimental_useTestProviderStore,
+  fullTestProviderStore as internal_fullTestProviderStore,
+} from './stores/test-provider';

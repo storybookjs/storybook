@@ -39,22 +39,26 @@ test.describe("component testing", () => {
     await page.evaluate(() => window.sessionStorage.clear());
     await sbPage.waitUntilLoaded();
 
-    // Ensure that all features are disabled, as previous tests might have enabled them
+    
+    // Ensure that all test results are removed and features are disabled, as previous tests might have enabled them
+    
+    const clearStatusesButton = page.getByLabel('Clear all statuses');
+    if (await clearStatusesButton.isVisible()) {
+      await clearStatusesButton.click();
+    }
 
     await page.getByLabel('Expand testing module').click();
     const disableWatch = page.getByLabel('Disable watch mode');
     if (await disableWatch.isVisible()) {
       await disableWatch.click();
     }
-    await page.getByLabel("Show settings").click();
 
-    const configs = [page.getByLabel('Coverage'), page.getByLabel('Accessibility')];
-    for(const config of configs) {
-      if(await config.isChecked()){
+    const configs = [page.getByLabel('Coverage', { exact: true }), page.getByLabel('Accessibility', { exact: true })];
+    for (const config of configs) {
+      if (await config.isChecked()) {
         await config.click();
       }
     }
-    await page.getByLabel("Hide settings").click();
   });
 
   test("should show discrepancy between test results", async ({
@@ -267,9 +271,7 @@ test.describe("component testing", () => {
     await expect(page.getByLabel("Open coverage report")).toHaveCount(0);
 
     // Act - Enable coverage and run tests
-    await page.getByLabel("Show settings").click();
-    await page.getByLabel("Coverage").click();
-    await page.getByLabel("Hide settings").click();
+    await page.getByLabel("Coverage", { exact: true }).click();
     // Wait for Vitest to have (re)started
     await page.waitForTimeout(2000);
 
@@ -278,8 +280,8 @@ test.describe("component testing", () => {
     // Assert - Coverage report is collected and shown
     await expect(page.getByLabel("Open coverage report")).toBeVisible({ timeout: 30000 });
     const sbPercentageText = await page.getByLabel(/percent coverage$/).textContent();
-    expect(sbPercentageText).toMatch(/^\d+\s%$/);
-    const sbPercentage = Number.parseInt(sbPercentageText!.replace(' %', '') ?? '');
+    expect(sbPercentageText).toMatch(/^\d+%$/);
+    const sbPercentage = Number.parseInt(sbPercentageText!.replace('%', '') ?? '');
     expect(sbPercentage).toBeGreaterThanOrEqual(0);
     expect(sbPercentage).toBeLessThanOrEqual(100);
 
@@ -330,7 +332,7 @@ test.describe("component testing", () => {
     page,
     browserName,
   }) => {
-    
+
     test.skip(browserName !== "chromium", `Skipping tests for ${browserName}`);
     // Arrange - Prepare Storybook
     await setForceFailureFlag(UNHANDLED_ERRORS_STORY_PATH, true);
@@ -446,9 +448,7 @@ test.describe("component testing", () => {
     await expect(storyElement).toBeVisible({ timeout: 30000 });
 
     // Act - Enable coverage
-    await page.getByLabel("Show settings").click();
-    await page.getByLabel("Coverage").click();
-    await page.getByLabel("Hide settings").click();
+    await page.getByLabel("Coverage", { exact: true }).click();
     // Wait for Vitest to have (re)started
     await page.waitForTimeout(2000);
 
@@ -474,8 +474,8 @@ test.describe("component testing", () => {
     // Assert - Coverage percentage is now collected and shown because running all tests automatically re-enables coverage
     await expect(page.getByLabel("Open coverage report")).toBeVisible({ timeout: 30000 });
     const sbPercentageText = await page.getByLabel(/percent coverage$/).textContent();
-    expect(sbPercentageText).toMatch(/^\d+\s%$/);
-    const sbPercentage = Number.parseInt(sbPercentageText!.replace(' %', '') ?? '');
+    expect(sbPercentageText).toMatch(/^\d+%$/);
+    const sbPercentage = Number.parseInt(sbPercentageText!.replace('%', '') ?? '');
     expect(sbPercentage).toBeGreaterThanOrEqual(0);
     expect(sbPercentage).toBeLessThanOrEqual(100);
   });

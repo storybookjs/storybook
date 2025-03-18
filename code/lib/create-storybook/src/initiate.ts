@@ -499,7 +499,7 @@ export async function doInitiate(options: CommandOptions): Promise<
 
       1. Replace the contents of your app entry with the following
 
-      ${picocolors.inverse(' ' + "export {default} from './.storybook';" + ' ')}
+      ${picocolors.inverse(' ' + "export {default} from './.rnstorybook';" + ' ')}
 
       2. Wrap your metro config with the withStorybook enhancer function like this:
 

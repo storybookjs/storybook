@@ -4,7 +4,6 @@ import type { Channel } from 'storybook/internal/channels';
 import {
   TESTING_MODULE_CANCEL_TEST_RUN_REQUEST,
   TESTING_MODULE_CRASH_REPORT,
-  TESTING_MODULE_RUN_REQUEST,
   type TestingModuleCrashReportPayload,
 } from 'storybook/internal/core-events';
 
@@ -39,8 +38,6 @@ const bootTestRunner = async (channel: Channel) => {
     } as TestingModuleCrashReportPayload);
   }
 
-  const forwardRun = (...args: any[]) =>
-    child?.send({ args, from: 'server', type: TESTING_MODULE_RUN_REQUEST });
   const forwardCancel = (...args: any[]) =>
     child?.send({ args, from: 'server', type: TESTING_MODULE_CANCEL_TEST_RUN_REQUEST });
   const forwardStore = (...args: any) => {
@@ -48,7 +45,6 @@ const bootTestRunner = async (channel: Channel) => {
   };
 
   const killChild = () => {
-    channel.off(TESTING_MODULE_RUN_REQUEST, forwardRun);
     channel.off(TESTING_MODULE_CANCEL_TEST_RUN_REQUEST, forwardCancel);
     channel.off(STORE_CHANNEL_EVENT_NAME, forwardStore);
     child?.kill();
@@ -93,7 +89,6 @@ const bootTestRunner = async (channel: Channel) => {
           }
 
           // Forward all events from the channel to the child process
-          channel.on(TESTING_MODULE_RUN_REQUEST, forwardRun);
           channel.on(TESTING_MODULE_CANCEL_TEST_RUN_REQUEST, forwardCancel);
 
           resolve();

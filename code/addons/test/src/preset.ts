@@ -2,16 +2,10 @@ import { readFileSync } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 
 import type { Channel } from 'storybook/internal/channels';
-import {
-  checkAddonOrder,
-  getFrameworkName,
-  resolvePathInStorybookCache,
-  serverRequire,
-} from 'storybook/internal/common';
+import { getFrameworkName, resolvePathInStorybookCache } from 'storybook/internal/common';
 import {
   TESTING_MODULE_CRASH_REPORT,
   TESTING_MODULE_PROGRESS_REPORT,
-  TESTING_MODULE_RUN_REQUEST,
   type TestingModuleCrashReportPayload,
   type TestingModuleProgressReportPayload,
 } from 'storybook/internal/core-events';
@@ -19,13 +13,14 @@ import { experimental_UniversalStore } from 'storybook/internal/core-server';
 import { cleanPaths, oneWayHash, sanitizeError, telemetry } from 'storybook/internal/telemetry';
 import type { Options, PresetProperty, PresetPropertyFn, StoryId } from 'storybook/internal/types';
 
-import { isAbsolute, join } from 'pathe';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 import {
   COVERAGE_DIRECTORY,
+  STORE_CHANNEL_EVENT_NAME,
   STORYBOOK_ADDON_TEST_CHANNEL,
+  type StoreEvent,
   type StoreState,
   TEST_PROVIDER_ID,
   storeOptions,
@@ -49,7 +44,7 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
   const builderName = typeof core?.builder === 'string' ? core.builder : core?.builder?.name;
   const framework = await getFrameworkName(options);
 
-  const store = experimental_UniversalStore.create<StoreState>({
+  const store = experimental_UniversalStore.create<StoreState, StoreEvent>({
     ...storeOptions,
     leader: true,
   });
@@ -66,21 +61,15 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
     return channel;
   }
 
-  const execute =
-    (eventName: string) =>
-    (...args: any[]) => {
-      if (args[0]?.providerId === TEST_PROVIDER_ID) {
-        runTestRunner(channel, eventName, args);
-      }
-    };
-
-  channel.on(TESTING_MODULE_RUN_REQUEST, execute(TESTING_MODULE_RUN_REQUEST));
-
   store.onStateChange((state) => {
     if (state.watching) {
       runTestRunner(channel);
     }
   });
+  store.subscribe('TRIGGER_RUN', (event, eventInfo) => {
+    runTestRunner(channel, STORE_CHANNEL_EVENT_NAME, [{ event, eventInfo }]);
+  });
+
   if (!core.disableTelemetry) {
     const packageJsonPath = require.resolve('@storybook/addon-test/package.json');
 

@@ -20,7 +20,7 @@ import path, { dirname, join, normalize } from 'pathe';
 import { satisfies } from 'semver';
 import slash from 'slash';
 
-import { COVERAGE_DIRECTORY } from '../constants';
+import { COVERAGE_DIRECTORY, type TriggerRunEvent } from '../constants';
 import { log } from '../logger';
 import type { StorybookCoverageReporterOptions } from './coverage-reporter';
 import { StorybookReporter } from './reporter';
@@ -226,7 +226,7 @@ export class VitestManager {
     this.runningPromise = null;
   }
 
-  async runTests(requestPayload: TestingModuleRunRequestPayload) {
+  async runTests(runPayload: TriggerRunEvent['payload']) {
     if (!this.vitest) {
       await this.startVitest();
     } else {
@@ -235,9 +235,9 @@ export class VitestManager {
 
     this.resetGlobalTestNamePattern();
 
-    const stories = await this.fetchStories(requestPayload.indexUrl, requestPayload.storyIds);
+    const stories = await this.fetchStories(runPayload.indexUrl, runPayload.storyIds);
     const vitestTestSpecs = await this.getStorybookTestSpecs();
-    const isSingleStoryRun = requestPayload.storyIds?.length === 1;
+    const isSingleStoryRun = runPayload.storyIds?.length === 1;
 
     const { filteredTestFiles, totalTestCount } = vitestTestSpecs.reduce(
       (acc, spec) => {

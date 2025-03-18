@@ -7,7 +7,7 @@ import type { StoryIndex } from 'storybook/internal/types';
 
 import path from 'pathe';
 
-import { TEST_PROVIDER_ID, storeOptions } from '../constants';
+import { type StoreEvent, type StoreState, storeOptions } from '../constants';
 import { TestManager } from './test-manager';
 
 const setTestNamePattern = vi.hoisted(() => vi.fn());
@@ -134,8 +134,10 @@ describe('TestManager', () => {
     expect(createVitest).toHaveBeenCalledTimes(1);
 
     await testManager.handleRunRequest({
-      providerId: TEST_PROVIDER_ID,
-      indexUrl: 'http://localhost:6006/index.json',
+      type: 'TRIGGER_RUN',
+      payload: {
+        indexUrl: 'http://localhost:6006/index.json',
+      },
     });
     expect(createVitest).toHaveBeenCalledTimes(1);
     expect(vitest.runFiles).toHaveBeenCalledWith(tests, true);
@@ -150,16 +152,20 @@ describe('TestManager', () => {
     );
 
     await testManager.handleRunRequest({
-      providerId: TEST_PROVIDER_ID,
-      indexUrl: 'http://localhost:6006/index.json',
-      storyIds: [],
+      type: 'TRIGGER_RUN',
+      payload: {
+        indexUrl: 'http://localhost:6006/index.json',
+        storyIds: [],
+      },
     });
     expect(vitest.runFiles).toHaveBeenCalledWith([], true);
 
     await testManager.handleRunRequest({
-      providerId: TEST_PROVIDER_ID,
-      indexUrl: 'http://localhost:6006/index.json',
-      storyIds: ['story--one'],
+      type: 'TRIGGER_RUN',
+      payload: {
+        indexUrl: 'http://localhost:6006/index.json',
+        storyIds: ['story--one'],
+      },
     });
     expect(setTestNamePattern).toHaveBeenCalledWith(/^One$/);
     expect(vitest.runFiles).toHaveBeenCalledWith(tests.slice(0, 1), true);
@@ -202,7 +208,7 @@ describe('TestManager', () => {
 
   it('should temporarily disable coverage on focused tests', async () => {
     vitest.globTestSpecs.mockImplementation(() => tests);
-    const mockStore = new experimental_MockUniversalStore(storeOptions, vi);
+    const mockStore = new experimental_MockUniversalStore<StoreState, StoreEvent>(storeOptions, vi);
     const testManager = await TestManager.start(mockChannel, mockStore, options);
 
     expect(createVitest).toHaveBeenCalledTimes(1);
@@ -217,9 +223,11 @@ describe('TestManager', () => {
     createVitest.mockClear();
 
     await testManager.handleRunRequest({
-      providerId: TEST_PROVIDER_ID,
-      indexUrl: 'http://localhost:6006/index.json',
-      storyIds: ['button--primary', 'button--secondary'],
+      type: 'TRIGGER_RUN',
+      payload: {
+        indexUrl: 'http://localhost:6006/index.json',
+        storyIds: ['button--primary', 'button--secondary'],
+      },
     });
 
     // expect vitest to be restarted twice, without and with coverage
@@ -228,8 +236,10 @@ describe('TestManager', () => {
     createVitest.mockClear();
 
     await testManager.handleRunRequest({
-      providerId: TEST_PROVIDER_ID,
-      indexUrl: 'http://localhost:6006/index.json',
+      type: 'TRIGGER_RUN',
+      payload: {
+        indexUrl: 'http://localhost:6006/index.json',
+      },
     });
     // don't expect vitest to be restarted, as we're running all tests
     expect(createVitest).not.toHaveBeenCalled();

@@ -3,11 +3,12 @@ import { experimental_UniversalStore, experimental_getStatusStore } from 'storyb
 import {
   STATUS_TYPE_ID_A11Y,
   STATUS_TYPE_ID_COMPONENT_TEST,
+  type StoreEvent,
   type StoreState,
   storeOptions,
 } from './constants';
 
-export const store = experimental_UniversalStore.create<StoreState>({
+export const store = experimental_UniversalStore.create<StoreState, StoreEvent>({
   ...storeOptions,
   leader: (globalThis as any).CONFIG_TYPE === 'PRODUCTION',
 });

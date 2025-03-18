@@ -292,7 +292,15 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                   <IconButton
                     aria-label="Start test run"
                     size="medium"
-                    onClick={() => api.runTestProvider(state.id, { entryId })}
+                    onClick={() =>
+                      store.send({
+                        type: 'TRIGGER_RUN',
+                        payload: {
+                          indexUrl: new URL('index.json', window.location.href).toString(),
+                          // TODO: add storyIds based on entryId
+                        },
+                      })
+                    }
                     disabled={state.running}
                   >
                     <PlayHollowIcon />

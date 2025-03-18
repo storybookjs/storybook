@@ -38,6 +38,17 @@ export type StoreState = {
   watching: boolean;
 };
 
+export type TriggerRunEvent = {
+  type: 'TRIGGER_RUN';
+  payload: {
+    // TODO: Avoid needing to do a fetch request server-side to retrieve the index
+    indexUrl: string; // e.g. http://localhost:6006/index.json
+    storyIds?: string[]; // ['button--primary', 'button--secondary']
+  };
+};
+
+export type StoreEvent = TriggerRunEvent;
+
 export const storeOptions = {
   id: ADDON_ID,
   initialState: {

@@ -127,7 +127,6 @@ const config = defineMain({
     disableTelemetry: true,
   },
   features: {
-    backgroundsStoryGlobals: true,
     developmentModeForBuild: true,
   },
   viteFinal: async (viteConfig, { configType }) => {

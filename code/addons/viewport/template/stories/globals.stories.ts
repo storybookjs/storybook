@@ -47,7 +47,7 @@ export const Invalid = {
 
 export const Shorthand = {
   globals: {
-    viewport: 'phone',
+    viewport: first,
   },
 };
 

@@ -43,11 +43,13 @@ export const ViewportTool: FC<{ api: API }> = ({ api }) => {
   const { options = MINIMAL_VIEWPORTS, disable } = config || {};
   const data = globals?.[KEY] || {};
   const viewportName: string = typeof data === 'string' ? data : data.value;
-  const isRotated: boolean = data.isRotated;
+  const isRotated: boolean = typeof data === 'string' ? false : data.isRotated;
 
   const item = options[viewportName] || responsiveViewport;
   const isActive = isTooltipVisible || item !== responsiveViewport;
   const isLocked = KEY in storyGlobals;
+
+  console.log({ viewportName, data, item, isActive, isLocked, options });
 
   const length = Object.keys(options).length;
 

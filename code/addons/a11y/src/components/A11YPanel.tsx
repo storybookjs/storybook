@@ -1,20 +1,22 @@
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 
 import { ActionBar, Badge, ScrollArea } from 'storybook/internal/components';
+import { useStorybookApi } from 'storybook/internal/manager-api';
 
 import { CheckIcon, SyncIcon } from '@storybook/icons';
 
+import type { Result } from 'axe-core';
 import { styled } from 'storybook/theming';
 
 import { useA11yContext } from './A11yContext';
-import { Report } from './Report';
+import { Report } from './Report/Report';
 import { Tabs } from './Tabs';
 import { TestDiscrepancyMessage } from './TestDiscrepancyMessage';
 
 export enum RuleType {
-  VIOLATION,
-  PASS,
-  INCOMPLETION,
+  VIOLATION = 'violations',
+  PASS = 'passes',
+  INCOMPLETION = 'incomplete',
 }
 
 const Icon = styled(SyncIcon)({
@@ -44,7 +46,33 @@ const Count = styled(Badge)({
 });
 
 export const A11YPanel: React.FC = () => {
+  const api = useStorybookApi();
   const { results, status, handleManual, error, discrepancy } = useA11yContext();
+
+  const [selectedItems, setSelectedItems] = useState<Map<string, string>>(() => {
+    const initialValue = new Map();
+    const a11ySelection = api.getQueryParam('a11ySelection');
+    if (a11ySelection && /^[a-z]+.[a-z-]+.[0-9]+$/.test(a11ySelection)) {
+      const [type, id] = a11ySelection.split('.');
+      initialValue.set(`${type}.${id}`, a11ySelection);
+    }
+    return initialValue;
+  });
+  console.log('selectedItems', selectedItems);
+
+  const toggleOpen = useCallback(
+    (event: React.SyntheticEvent<Element>, type: RuleType, item: Result) => {
+      event.stopPropagation();
+      const key = `${type}.${item.id}`;
+      setSelectedItems((prev) => new Map(prev.delete(key) ? prev : prev.set(key, `${key}.1`)));
+    },
+    []
+  );
+
+  const onSelectionChange = useCallback((key: string) => {
+    const [type, id] = key.split('.');
+    setSelectedItems((prev) => new Map(prev.set(`${type}.${id}`, key)));
+  }, []);
 
   const manualActionItems = useMemo(
     () => [{ title: 'Run test', onClick: handleManual }],
@@ -82,6 +110,9 @@ export const A11YPanel: React.FC = () => {
             items={violations}
             type={RuleType.VIOLATION}
             empty="No accessibility violations found."
+            onSelectionChange={onSelectionChange}
+            selectedItems={selectedItems}
+            toggleOpen={toggleOpen}
           />
         ),
         items: violations,
@@ -95,7 +126,14 @@ export const A11YPanel: React.FC = () => {
           </Tab>
         ),
         panel: (
-          <Report items={passes} type={RuleType.PASS} empty="No accessibility checks passed." />
+          <Report
+            items={passes}
+            type={RuleType.PASS}
+            empty="No accessibility checks passed."
+            onSelectionChange={onSelectionChange}
+            selectedItems={selectedItems}
+            toggleOpen={toggleOpen}
+          />
         ),
         items: passes,
         type: RuleType.PASS,
@@ -112,13 +150,16 @@ export const A11YPanel: React.FC = () => {
             items={incomplete}
             type={RuleType.INCOMPLETION}
             empty="No accessibility checks incomplete."
+            onSelectionChange={onSelectionChange}
+            selectedItems={selectedItems}
+            toggleOpen={toggleOpen}
           />
         ),
         items: incomplete,
         type: RuleType.INCOMPLETION,
       },
     ];
-  }, [results]);
+  }, [results, onSelectionChange, selectedItems, toggleOpen]);
 
   return (
     <>

@@ -6,9 +6,9 @@ import { ManagerContext } from 'storybook/manager-api';
 import { fn } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
-import { Report } from '.';
+import { results } from '../../results.mock';
 import { RuleType } from '../A11YPanel';
-import { results } from './results';
+import { Report } from './Report';
 
 const StyledWrapper = styled.div(({ theme }) => ({
   backgroundColor: theme.background.content,
@@ -49,6 +49,9 @@ const meta: Meta = {
     items: [],
     empty: 'No issues found',
     type: RuleType.VIOLATION,
+    onSelectionChange: fn().mockName('onSelectionChange'),
+    selectedItems: new Map(),
+    toggleOpen: fn().mockName('toggleOpen'),
   },
 } satisfies Meta<typeof Report>;
 

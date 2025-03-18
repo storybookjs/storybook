@@ -97,7 +97,7 @@ export const Tabs: React.FC<TabsProps> = ({ tabs }) => {
 
   const handleToggle = React.useCallback(
     (event: React.SyntheticEvent) => {
-      setTab(parseInt(event.currentTarget.getAttribute('data-index') || '', 10));
+      setTab(event.currentTarget.getAttribute('data-type'));
     },
     [setTab]
   );
@@ -109,8 +109,8 @@ export const Tabs: React.FC<TabsProps> = ({ tabs }) => {
           {tabs.map((tab, index) => (
             <Item
               key={index}
-              data-index={index}
-              active={activeTab === index}
+              data-type={tab.type}
+              active={activeTab === tab.type}
               onClick={handleToggle}
             >
               {tab.label}
@@ -143,7 +143,7 @@ export const Tabs: React.FC<TabsProps> = ({ tabs }) => {
           </WithTooltip>
         </ActionsWrapper>
       </List>
-      {tabs[activeTab].panel}
+      {tabs.find((t) => t.type === activeTab)?.panel}
     </Container>
   );
 };

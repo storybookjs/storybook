@@ -21,9 +21,10 @@ import {
 import type { Report } from 'storybook/preview-api';
 import { convert, themes } from 'storybook/theming';
 
-import { ADDON_ID, EVENTS, TEST_PROVIDER_ID } from '../constants';
+import { ADDON_ID, EVENTS, PANEL_ID, TEST_PROVIDER_ID } from '../constants';
 import type { A11yParameters } from '../params';
 import type { A11YReport } from '../types';
+import { RuleType } from './A11YPanel';
 import type { TestDiscrepancy } from './TestDiscrepancyMessage';
 
 export interface Results {
@@ -36,8 +37,9 @@ export interface A11yContextStore {
   results: Results;
   highlighted: boolean;
   toggleHighlight: () => void;
-  tab: number;
-  setTab: (index: number) => void;
+  tab: RuleType;
+  handleCopyLink: (key: string) => void;
+  setTab: (type: RuleType) => void;
   status: Status;
   setStatus: (status: Status) => void;
   error: unknown;
@@ -45,11 +47,11 @@ export interface A11yContextStore {
   discrepancy: TestDiscrepancy;
 }
 
-const colorsByType = [
-  convert(themes.light).color.negative, // VIOLATION,
-  convert(themes.light).color.positive, // PASS,
-  convert(themes.light).color.warning, // INCOMPLETION,
-];
+const colorsByType = {
+  [RuleType.VIOLATION]: convert(themes.light).color.negative,
+  [RuleType.PASS]: convert(themes.light).color.positive,
+  [RuleType.INCOMPLETION]: convert(themes.light).color.warning,
+};
 
 export const A11yContext = createContext<A11yContextStore>({
   results: {
@@ -59,7 +61,8 @@ export const A11yContext = createContext<A11yContextStore>({
   },
   highlighted: false,
   toggleHighlight: () => {},
-  tab: 0,
+  tab: RuleType.VIOLATION,
+  handleCopyLink: () => {},
   setTab: () => {},
   setStatus: () => {},
   status: 'initial',
@@ -91,14 +94,36 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
   );
 
   const api = useStorybookApi();
+  const a11ySelection = api.getQueryParam('a11ySelection');
+
   const [results, setResults] = useAddonState<Results>(ADDON_ID, defaultResult);
-  const [tab, setTab] = useState(0);
-  const [error, setError] = React.useState<unknown>(undefined);
+  const [tab, setTab] = useState(() => {
+    const [type] = a11ySelection?.split('.') ?? [];
+    return type && Object.values(RuleType).includes(type as RuleType)
+      ? (type as RuleType)
+      : RuleType.VIOLATION;
+  });
+  const [error, setError] = useState<unknown>(undefined);
   const [status, setStatus] = useState<Status>(getInitialStatus(manual));
   const [highlighted, setHighlighted] = useState(false);
 
   const { storyId } = useStorybookState();
   const storyStatus = api.getCurrentStoryStatus();
+
+  useEffect(() => {
+    if (status !== 'ran') {
+      return;
+    }
+
+    if (a11ySelection) {
+      const currentUrl = api.getUrlState();
+      const queryParams = new URLSearchParams(
+        (currentUrl.queryParams as Record<string, string>) || {}
+      );
+      queryParams.delete('a11ySelection');
+      api.setQueryParams({ a11ySelection: undefined });
+    }
+  }, [api, results, status, a11ySelection]);
 
   const handleToggleHighlight = useCallback(
     () => setHighlighted((prevHighlighted) => !prevHighlighted),
@@ -170,6 +195,12 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
     emit(EVENTS.MANUAL, storyId, parameters);
   }, [emit, parameters, storyId]);
 
+  const handleCopyLink = useCallback(async (key: string) => {
+    const link = `${window.location.origin}${window.location.pathname}${window.location.search}&addonPanel=${PANEL_ID}&a11ySelection=${key}`;
+    const { createCopyToClipboardFunction } = await import('storybook/internal/components');
+    await createCopyToClipboardFunction()(link);
+  }, []);
+
   useEffect(() => {
     setStatus(getInitialStatus(manual));
   }, [getInitialStatus, manual]);
@@ -211,6 +242,7 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
         toggleHighlight: handleToggleHighlight,
         tab,
         setTab,
+        handleCopyLink,
         status,
         setStatus,
         error,

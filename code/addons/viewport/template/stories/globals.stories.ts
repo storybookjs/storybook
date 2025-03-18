@@ -45,6 +45,12 @@ export const Invalid = {
   },
 };
 
+export const Shorthand = {
+  globals: {
+    viewport: 'phone',
+  },
+};
+
 export const NoRationDefined = {
   globals: {
     viewport: {

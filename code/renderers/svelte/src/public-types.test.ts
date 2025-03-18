@@ -5,7 +5,7 @@ import { satisfies } from 'storybook/internal/common';
 import type { Canvas, ComponentAnnotations, StoryAnnotations } from 'storybook/internal/types';
 
 import { expectTypeOf } from 'expect-type';
-import type { Component, ComponentProps, SvelteComponent } from 'svelte';
+import { SvelteComponent, type Component, type ComponentProps } from 'svelte';
 
 import Button from './__test__/Button.svelte';
 import ButtonV5 from './__test__/ButtonV5.svelte';
@@ -100,6 +100,28 @@ describe('Meta', () => {
 
 describe('StoryObj', () => {
   it('✅ Required args may be provided partial in meta and the story', () => {
+    const meta = satisfies<Meta<Button>>()({
+      component: Button,
+      args: { label: 'good' },
+    });
+
+    type Actual = StoryObj<typeof meta>;
+    type Expected = SvelteStory<
+      Button,
+      { disabled: boolean; label: string },
+      { disabled: boolean; label?: string }
+    >;
+    expectTypeOf<Actual>().toMatchTypeOf<Expected>();
+  });
+
+  it('✅ Required args may be provided partial in meta and the story (Svelte 4, non-isomorphic type)', () => {
+    // The imported Svelte component in Svelte 5 has an isomorphic type (both function and class).
+    // In order to test how it would look like for real Svelte 4 components, we need to create the class type manually.
+    class Button extends SvelteComponent<{
+      disabled: boolean;
+      label: string;
+    }> {}
+
     const meta = satisfies<Meta<Button>>()({
       component: Button,
       args: { label: 'good' },

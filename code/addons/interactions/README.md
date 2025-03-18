@@ -9,7 +9,7 @@ Storybook Addon Interactions enables visual debugging of interactions and tests 
 Install this addon by adding the `@storybook/addon-interactions` dependency:
 
 ```sh
-yarn add -D @storybook/addon-interactions @storybook/test
+yarn add -D @storybook/addon-interactions
 ```
 
 within `.storybook/main.js`:
@@ -20,14 +20,12 @@ export default {
 };
 ```
 
-Note that `@storybook/addon-interactions` must be listed **after** `@storybook/addon-actions` or `@storybook/addon-essentials`.
-
 ## Usage
 
-Interactions relies on "instrumented" versions of Vitest and Testing Library, that you import from `@storybook/test` instead of their original package. You can then use these libraries in your `play` function.
+Interactions relies on "instrumented" versions of Vitest and Testing Library, that you import from `storybook/test` instead of their original package. You can then use these libraries in your `play` function.
 
 ```js
-import { expect, fn, userEvent, within } from '@storybook/test';
+import { expect, fn, userEvent, within } from 'storybook/test';
 import { Button } from './Button';
 
 export default {

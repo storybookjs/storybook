@@ -1,13 +1,15 @@
 import React from 'react';
 
 import type { TestProviderConfig, TestProviderState } from 'storybook/internal/core-events';
-import { ManagerContext } from 'storybook/internal/manager-api';
-import { styled } from 'storybook/internal/theming';
 import { Addon_TypesEnum } from 'storybook/internal/types';
 
-import type { Meta, StoryObj } from '@storybook/react';
-import { expect, fn } from '@storybook/test';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
+import { ManagerContext, addons } from 'storybook/manager-api';
+import { expect, fn, userEvent } from 'storybook/test';
+import { styled } from 'storybook/theming';
+
+import { ADDON_ID as A11Y_ADDON_ID } from '../../../a11y/src/constants';
 import { type Details, storeOptions } from '../constants';
 import { store as mockStore } from '../manager-store.mock';
 import { TestProviderRender } from './TestProviderRender';
@@ -100,6 +102,8 @@ export default {
     layout: 'fullscreen',
   },
   beforeEach: async () => {
+    addons.register(A11Y_ADDON_ID, () => {});
+    mockStore.setState.mockClear();
     return () => {
       mockStore.setState(storeOptions.initialState);
     };
@@ -137,7 +141,53 @@ export const Watching: Story = {
   },
 };
 
-export const WithCoverageNegative: Story = {
+export const TogglingSettings: Story = {
+  args: {
+    state: {
+      ...config,
+      ...baseState,
+      details: {
+        testResults: [],
+      },
+    },
+  },
+  play: async ({ canvas, step }) => {
+    await step('Enable coverage', async () => {
+      (await canvas.findByLabelText('Coverage')).click();
+      await expect(mockStore.setState).toHaveBeenCalledOnce();
+      mockStore.setState.mockClear();
+    });
+
+    await step('Enable watch mode', async () => {
+      (await canvas.findByLabelText('Enable watch mode')).click();
+      await expect(mockStore.setState).toHaveBeenCalledOnce();
+
+      await expect(await canvas.findByLabelText('Coverage (unavailable)')).not.toBeDisabled();
+    });
+  },
+};
+
+export const CoverageEnabled: Story = {
+  args: Default.args,
+  beforeEach: async () => {
+    mockStore.setState({
+      ...storeOptions.initialState,
+      config: { ...storeOptions.initialState.config, coverage: true },
+    });
+  },
+  play: async ({ canvas }) => {
+    userEvent.hover(await canvas.findByLabelText(/Coverage status:/));
+  },
+};
+
+export const CoverageCalculating: Story = {
+  ...CoverageEnabled,
+  args: Running.args,
+  play: CoverageEnabled.play,
+};
+
+export const CoverageNegative: Story = {
+  ...CoverageEnabled,
   args: {
     state: {
       ...config,
@@ -153,7 +203,8 @@ export const WithCoverageNegative: Story = {
   },
 };
 
-export const WithCoverageWarning: Story = {
+export const CoverageWarning: Story = {
+  ...CoverageEnabled,
   args: {
     state: {
       ...config,
@@ -169,7 +220,8 @@ export const WithCoverageWarning: Story = {
   },
 };
 
-export const WithCoveragePositive: Story = {
+export const CoveragePositive: Story = {
+  ...CoverageEnabled,
   args: {
     state: {
       ...config,
@@ -185,64 +237,52 @@ export const WithCoveragePositive: Story = {
   },
 };
 
-export const Editing: Story = {
-  args: {
-    state: {
-      ...config,
-      ...baseState,
-      details: {
-        testResults: [],
-      },
-    },
+export const AccessibilityEnabled: Story = {
+  args: Default.args,
+  beforeEach: async () => {
+    mockStore.setState({
+      ...storeOptions.initialState,
+      config: { ...storeOptions.initialState.config, a11y: true },
+    });
   },
-
   play: async ({ canvas }) => {
-    (await canvas.findByLabelText('Show settings')).click();
+    userEvent.hover(await canvas.findByLabelText(/Accessibility status:/));
   },
 };
 
-export const EditingAndWatching: Story = {
+export const AccessibilityViolations: Story = {
   args: {
     state: {
       ...config,
       ...baseState,
       details: {
-        testResults: [],
+        testResults: [
+          {
+            endTime: 0,
+            startTime: 0,
+            status: 'passed',
+            message: 'All tests passed',
+            results: [
+              {
+                storyId: 'story-id',
+                status: 'passed',
+                duration: 100,
+                testRunId: 'test-run-id',
+                reports: [{ type: 'a11y', status: 'warning', result: { violations: [] } }],
+              },
+            ],
+          },
+        ],
       },
     },
   },
-  beforeEach: Watching.beforeEach,
-  play: Editing.play,
-};
-
-export const TogglingSettings: Story = {
-  args: {
-    state: {
-      ...config,
-      ...baseState,
-      details: {
-        testResults: [],
-      },
-    },
+  beforeEach: async () => {
+    mockStore.setState({
+      ...storeOptions.initialState,
+      config: { ...storeOptions.initialState.config, a11y: true },
+    });
   },
-  play: async ({ canvas, step }) => {
-    await step('Enable coverage', async () => {
-      (await canvas.findByLabelText('Show settings')).click();
-
-      (await canvas.findByLabelText('Coverage')).click();
-      await expect(mockStore.setState).toHaveBeenCalledOnce();
-      mockStore.setState.mockClear();
-    });
-
-    (await canvas.findByLabelText('Hide settings')).click();
-
-    await step('Enable watch mode', async () => {
-      (await canvas.findByLabelText('Enable watch mode')).click();
-      await expect(mockStore.setState).toHaveBeenCalledOnce();
-
-      (await canvas.findByLabelText('Show settings')).click();
-
-      await expect(await canvas.findByLabelText('Coverage')).toBeDisabled();
-    });
+  play: async ({ canvas }) => {
+    userEvent.hover(await canvas.findByLabelText(/Accessibility status:/));
   },
 };

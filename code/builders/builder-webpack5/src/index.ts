@@ -29,7 +29,7 @@ export const printDuration = (startTime: [number, number]) =>
   prettyTime(process.hrtime(startTime))
     .replace(' ms', ' milliseconds')
     .replace(' s', ' seconds')
-    .replace(' m', ' minutes');
+    .replace(' min', ' minutes');
 
 const corePath = dirname(require.resolve('storybook/package.json'));
 

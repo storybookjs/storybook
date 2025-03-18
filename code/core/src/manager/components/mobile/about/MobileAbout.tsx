@@ -2,11 +2,11 @@ import type { FC } from 'react';
 import React, { useRef } from 'react';
 
 import { Link } from 'storybook/internal/components';
-import { styled } from 'storybook/internal/theming';
 
 import { ArrowLeftIcon, GithubIcon, ShareAltIcon, StorybookIcon } from '@storybook/icons';
 
 import { Transition, type TransitionStatus } from 'react-transition-group';
+import { styled } from 'storybook/theming';
 
 import { MOBILE_TRANSITION_DURATION } from '../../../constants';
 import { useLayout } from '../../layout/LayoutProvider';

@@ -1,10 +1,11 @@
 import React, { type FC, useEffect, useState } from 'react';
 
-import { type API, ManagerContext } from 'storybook/internal/manager-api';
 import { Addon_TypesEnum } from 'storybook/internal/types';
 
-import type { Meta, StoryObj } from '@storybook/react';
-import { expect, fireEvent, fn, waitFor, within } from '@storybook/test';
+import type { Meta, StoryObj } from '@storybook/react-vite';
+
+import { type API, ManagerContext } from 'storybook/manager-api';
+import { expect, fireEvent, fn, waitFor, within } from 'storybook/test';
 
 import { SidebarBottomBase } from './SidebarBottom';
 
@@ -65,12 +66,14 @@ const managerContext: any = {
   },
 };
 
-export default {
+const meta = {
   component: SidebarBottomBase,
   title: 'Sidebar/SidebarBottom',
   args: {
     isDevelopment: true,
-
+    warningCount: 0,
+    errorCount: 0,
+    notifications: [],
     api: {
       on: fn(),
       off: fn(),
@@ -87,47 +90,35 @@ export default {
   },
   decorators: [
     (storyFn) => (
-      <div style={{ position: 'relative', width: '100vw', height: '100vh' }}>
-        <div style={{ height: 300, background: 'orangered' }} />
-        {storyFn()}
-      </div>
-    ),
-    (storyFn) => (
       <ManagerContext.Provider value={managerContext}>{storyFn()}</ManagerContext.Provider>
     ),
   ],
-} as Meta<typeof SidebarBottomBase>;
+} satisfies Meta<typeof SidebarBottomBase>;
 
-export const Errors = {
+export default meta;
+
+type Story = StoryObj<typeof meta>;
+
+export const Errors: Story = {
   args: {
-    status: {
-      one: { 'sidebar-bottom-filter': { status: 'error' } },
-      two: { 'sidebar-bottom-filter': { status: 'error' } },
-    },
+    errorCount: 2,
   },
 };
 
-export const Warnings = {
+export const Warnings: Story = {
   args: {
-    status: {
-      one: { 'sidebar-bottom-filter': { status: 'warn' } },
-      two: { 'sidebar-bottom-filter': { status: 'warn' } },
-    },
+    warningCount: 2,
   },
 };
 
-export const Both = {
+export const Both: Story = {
   args: {
-    status: {
-      one: { 'sidebar-bottom-filter': { status: 'warn' } },
-      two: { 'sidebar-bottom-filter': { status: 'warn' } },
-      three: { 'sidebar-bottom-filter': { status: 'error' } },
-      four: { 'sidebar-bottom-filter': { status: 'error' } },
-    },
+    errorCount: 2,
+    warningCount: 2,
   },
 };
 
-export const DynamicHeight: StoryObj = {
+export const DynamicHeight: Story = {
   decorators: [
     (storyFn) => (
       <ManagerContext.Provider

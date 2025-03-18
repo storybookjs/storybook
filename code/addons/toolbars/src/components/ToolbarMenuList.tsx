@@ -2,7 +2,8 @@ import type { FC } from 'react';
 import React, { useCallback, useState } from 'react';
 
 import { TooltipLinkList, WithTooltip } from 'storybook/internal/components';
-import { useGlobals } from 'storybook/internal/manager-api';
+
+import { useGlobals } from 'storybook/manager-api';
 
 import type { WithKeyboardCycleProps } from '../hoc/withKeyboardCycle';
 import { withKeyboardCycle } from '../hoc/withKeyboardCycle';

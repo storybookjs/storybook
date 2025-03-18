@@ -2,11 +2,11 @@ import * as React from 'react';
 
 import { IconButton, TooltipNote, WithTooltip } from 'storybook/internal/components';
 import { type Call, CallStates, type ControlStates } from 'storybook/internal/instrumenter';
-import { styled, typography } from 'storybook/internal/theming';
 
 import { ListUnorderedIcon } from '@storybook/icons';
 
 import { transparentize } from 'polished';
+import { styled, typography } from 'storybook/theming';
 
 import { isChaiError, isJestError, useAnsiToHtmlFilter } from '../utils';
 import type { Controls } from './InteractionsPanel';

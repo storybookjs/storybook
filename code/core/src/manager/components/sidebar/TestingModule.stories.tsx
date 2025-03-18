@@ -2,12 +2,13 @@ import React from 'react';
 
 import type { Listener } from 'storybook/internal/channels';
 import { type TestProviders } from 'storybook/internal/core-events';
-import { ManagerContext, mockChannel } from 'storybook/internal/manager-api';
-import { styled } from 'storybook/internal/theming';
 import { Addon_TypesEnum } from 'storybook/internal/types';
 
-import type { Meta, StoryObj } from '@storybook/react';
-import { fireEvent, fn } from '@storybook/test';
+import type { Meta, StoryObj } from '@storybook/react-vite';
+
+import { ManagerContext, mockChannel } from 'storybook/manager-api';
+import { fireEvent, fn } from 'storybook/test';
+import { styled } from 'storybook/theming';
 
 import { TestingModule } from './TestingModule';
 
@@ -71,6 +72,8 @@ const meta = {
   title: 'Sidebar/TestingModule',
   args: {
     testProviders,
+    statusCount: 0,
+    clearStatuses: fn(),
     errorCount: 0,
     errorsActive: false,
     setErrorsActive: fn(),
@@ -106,6 +109,7 @@ export const Expanded: Story = {
 
 export const Statuses: Story = {
   args: {
+    statusCount: 56,
     errorCount: 14,
     warningCount: 42,
   },
@@ -151,6 +155,14 @@ export const Running: Story = {
 export const RunningAll: Story = {
   args: {
     testProviders: testProviders.map((tp) => ({ ...tp, running: !!tp.runnable })),
+  },
+  play: Expanded.play,
+};
+
+export const RunningWithStatuses: Story = {
+  args: {
+    ...Statuses.args,
+    testProviders: [{ ...testProviders[0], running: true }, ...testProviders.slice(1)],
   },
   play: Expanded.play,
 };

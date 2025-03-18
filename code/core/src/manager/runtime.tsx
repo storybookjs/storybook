@@ -3,13 +3,14 @@ import React from 'react';
 import type { Channel } from 'storybook/internal/channels';
 import { createBrowserChannel } from 'storybook/internal/channels';
 import { CHANNEL_CREATED, CHANNEL_WS_DISCONNECT } from 'storybook/internal/core-events';
-import type { API, AddonStore } from 'storybook/internal/manager-api';
-import { addons } from 'storybook/internal/manager-api';
-import { color } from 'storybook/internal/theming';
 import type { Addon_Config, Addon_Types } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 import { FailedIcon } from '@storybook/icons';
+
+import type { API, AddonStore } from 'storybook/manager-api';
+import { addons } from 'storybook/manager-api';
+import { color } from 'storybook/theming';
 
 import { renderStorybookUI } from './index';
 import Provider from './provider';

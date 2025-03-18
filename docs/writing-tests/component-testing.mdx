@@ -18,7 +18,7 @@ In Storybook, this familiar workflow happens in your browser. That makes it easi
 You start by writing a [**story**](../writing-stories/index.mdx) to set up the component's initial state. Then simulate user behavior using the **play** function. Finally, use the **test-runner** to confirm that the component renders correctly and that your component tests with the **play** function pass. The test runner can run via the command line or in CI.
 
 * The [`play`](../writing-stories/play-function.mdx) function is a small snippet of code that runs after a story finishes rendering. You can use this to test user workflows.
-* The test is written using Storybook-instrumented versions of [Vitest](https://vitest.dev/) and [Testing Library](https://testing-library.com/) coming from the [`@storybook/test`](https://npmjs.com/package/@storybook/test) package.
+* The test is written using Storybook-instrumented versions of [Vitest](https://vitest.dev/) and [Testing Library](https://testing-library.com/) coming from the [`storybook/test`](https://npmjs.com/package/storybook) package.
 * [`@storybook/addon-interactions`](https://storybook.js.org/addons/@storybook/addon-interactions/) visualizes the test in Storybook and provides a playback interface for convenient browser-based debugging.
 * [`@storybook/test-runner`](https://github.com/storybookjs/test-runner) is a standalone utility—powered by [Jest](https://jestjs.io/) and [Playwright](https://playwright.dev/)—that executes all of your interactions tests and catches broken stories.
     * The experimental [Vitest plugin](./vitest-plugin.mdx) is also available, which transforms your stories into Vitest tests and runs them in a browser.
@@ -181,7 +181,7 @@ You can return a cleanup function from the `beforeEach` function, which will run
 
 ### API for user-events
 
-Under the hood, Storybook’s `@storybook/test` package provides Testing Library’s [`user-events`](https://testing-library.com/docs/user-event/intro/) APIs. If you’re familiar with [Testing Library](https://testing-library.com/), you should be at home in Storybook.
+Under the hood, Storybook’s `storybook/test` package provides Testing Library’s [`user-events`](https://testing-library.com/docs/user-event/intro/) APIs. If you’re familiar with [Testing Library](https://testing-library.com/), you should be at home in Storybook.
 
 Below is an abridged API for user-event. For more, check out the [official user-event docs](https://testing-library.com/docs/user-event/utility/).
 
@@ -199,7 +199,7 @@ Below is an abridged API for user-event. For more, check out the [official user-
 
 ### Assert tests with Vitest's APIs
 
-Storybook’s `@storybook/test` also provides APIs from [Vitest](https://vitest.dev/), such as [`expect`](https://vitest.dev/api/expect.html#expect) and [`vi.fn`](https://vitest.dev/api/vi.html#vi-fn). These APIs improve your testing experience, helping you assert whether a function has been called, if an element exists in the DOM, and much more. If you are used to `expect` from testing packages such as [Jest](https://jestjs.io/) or [Vitest](https://vitest.dev/), you can write component tests in much the same way.
+Storybook’s `storybook/test` also provides APIs from [Vitest](https://vitest.dev/), such as [`expect`](https://vitest.dev/api/expect.html#expect) and [`vi.fn`](https://vitest.dev/api/vi.html#vi-fn). These APIs improve your testing experience, helping you assert whether a function has been called, if an element exists in the DOM, and much more. If you are used to `expect` from testing packages such as [Jest](https://jestjs.io/) or [Vitest](https://vitest.dev/), you can write component tests in much the same way.
 
 {/* prettier-ignore-start */}
 

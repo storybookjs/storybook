@@ -135,7 +135,7 @@ export function copyTemplate(templateRoot: string, destination = '.') {
 
 type CopyTemplateFilesOptions = {
   packageManager: JsPackageManager;
-  renderer: SupportedFrameworks | SupportedRenderers;
+  templateLocation: SupportedFrameworks | SupportedRenderers;
   language: SupportedLanguage;
   commonAssetsDir?: string;
   destination?: string;
@@ -205,7 +205,7 @@ export const cliStoriesTargetPath = async () => {
 
 export async function copyTemplateFiles({
   packageManager,
-  renderer,
+  templateLocation,
   language,
   destination,
   commonAssetsDir,
@@ -218,7 +218,7 @@ export async function copyTemplateFiles({
     [SupportedLanguage.TYPESCRIPT_4_9]: 'ts-4-9',
   };
   // FIXME: remove after 9.0
-  if (renderer === 'svelte') {
+  if (templateLocation === 'svelte') {
     const svelteVersion = await getVersionSafe(packageManager, 'svelte');
     if (svelteVersion && major(svelteVersion) >= 5) {
       languageFolderMapping = {
@@ -230,7 +230,7 @@ export async function copyTemplateFiles({
     }
   }
   const templatePath = async () => {
-    const baseDir = await getRendererDir(packageManager, renderer);
+    const baseDir = await getRendererDir(packageManager, templateLocation);
     const assetsDir = join(baseDir, 'template', 'cli');
 
     const assetsLanguage = join(assetsDir, languageFolderMapping[language]);
@@ -253,7 +253,7 @@ export async function copyTemplateFiles({
     if (existsSync(assetsDir)) {
       return assetsDir;
     }
-    throw new Error(`Unsupported renderer: ${renderer} (${baseDir})`);
+    throw new Error(`Unsupported renderer: ${templateLocation} (${baseDir})`);
   };
 
   const destinationPath = destination ?? (await cliStoriesTargetPath());
@@ -264,7 +264,7 @@ export async function copyTemplateFiles({
   await cp(await templatePath(), destinationPath, { recursive: true, filter });
 
   if (commonAssetsDir && features.includes('docs')) {
-    let rendererType = frameworkToRenderer[renderer] || 'react';
+    let rendererType = frameworkToRenderer[templateLocation] || 'react';
 
     // This is only used for docs links and the docs site uses `vue` for both `vue` & `vue3` renderers
     if (rendererType === 'vue3') {

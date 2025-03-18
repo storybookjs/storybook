@@ -2,22 +2,11 @@ import * as React from 'react';
 import { Fragment, useEffect } from 'react';
 
 import type { Channel } from 'storybook/internal/channels';
-import { DocsContext as DocsContextProps, useArgs } from 'storybook/internal/preview-api';
-import type { PreviewWeb } from 'storybook/internal/preview-api';
-import {
-  Global,
-  ThemeProvider,
-  convert,
-  createReset,
-  styled,
-  themes,
-  useTheme,
-} from 'storybook/internal/theming';
 
 import { DocsContext } from '@storybook/blocks';
 import { global } from '@storybook/global';
-import type { Decorator, Loader, ReactRenderer } from '@storybook/react';
 
+import type { Decorator, Loader, ReactRenderer } from '@storybook/react-vite';
 // TODO add empty preview
 // import * as storysource from '@storybook/addon-storysource';
 // import * as designs from '@storybook/addon-designs/preview';
@@ -27,6 +16,18 @@ import addonA11y from '@storybook/addon-a11y';
 import addonEssentials from '@storybook/addon-essentials';
 import addonTest from '@storybook/addon-test';
 import addonThemes from '@storybook/addon-themes';
+
+import { DocsContext as DocsContextProps, useArgs } from 'storybook/preview-api';
+import type { PreviewWeb } from 'storybook/preview-api';
+import {
+  Global,
+  ThemeProvider,
+  convert,
+  createReset,
+  styled,
+  themes,
+  useTheme,
+} from 'storybook/theming';
 
 import * as addonsPreview from '../addons/toolbars/template/stories/preview';
 import * as templatePreview from '../core/template/stories/preview';

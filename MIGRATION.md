@@ -1,8 +1,12 @@
 <h1>Migration</h1>
 
 - [From version 8.x to 9.0.0](#from-version-8x-to-900)
+  - [Manager builder removed alias for `util`, `assert` and `process`](#manager-builder-removed-alias-for-util-assert-and-process)
+  - [Actions addon moved to core](#actions-addon-moved-to-core)
+  - [Dropped support for legacy packages](#dropped-support-for-legacy-packages)
   - [Dropped support for TypeScript \< 4.9](#dropped-support-for-typescript--49)
   - [Test addon renamed from experimental to stable](#test-addon-renamed-from-experimental-to-stable)
+  - [Experimental Status API has turned into a Status Store](#experimental-status-api-has-turned-into-a-status-store)
 - [From version 8.5.x to 8.6.x](#from-version-85x-to-86x)
   - [Angular: Support experimental zoneless support](#angular-support-experimental-zoneless-support)
   - [Addon-a11y: Replaced experimental `ally-test` tag behavior with `parameters.a11y.test`](#addon-a11y-replaced-experimental-ally-test-tag-behavior-with-parametersa11ytest)
@@ -436,6 +440,62 @@
 
 ## From version 8.x to 9.0.0
 
+### Manager builder removed alias for `util`, `assert` and `process`
+
+These dependencies (often used accidentally) were polyfilled to mocks or browser equivalents by storybook's manager builder.
+
+Starting with Storybook `9.0`, we no longer alias these anymore.
+
+Adding these aliases meant storybook core, had to depend on these packages, which have a deep dependency graph, added to every storybook project.
+
+If you addon fails to load after this change, we recommend looking at implementing the alias at compile time of your addon, or alternatively look at other bundling config to ensure the correct entries/packages/dependencies are used.
+
+### Actions addon moved to core
+
+The actions addon has been moved from `@storybook/addon-actions` to Storybook core. You no longer need to install it separately or include it in your addons list. As a consequence, `@storybook/addon-actions` is not part of `@storybook/addon-essentials` anymore.
+
+Furthermore, we have deprecated the usage of `withActions` from `@storybook/addon-actions` and we will remove it in Storybook v10. Please file an issue if you need this API.
+
+### Dropped support for legacy packages
+
+The following packages are no longer published as part of `9.0.0`:
+The following packages have been consolidated into the main `storybook` package:
+
+| Old Package              | New Path              |
+| ------------------------ | --------------------- |
+| @storybook/manager-api   | storybook/manager-api |
+| @storybook/preview-api   | storybook/preview-api |
+| @storybook/theming       | storybook/theming     |
+| @storybook/test          | storybook/test        |
+| @storybook/addon-actions | storybook/actions     |
+
+Please un-install these packages, and ensure you have the `storybook` package installed.
+
+Replace any imports with the path listed in the second column.
+
+Additionally the following packages were also consolidated and placed under a `/internal` sub-path, to indicate they are for internal usage only.
+If you're depending on these packages, they will continue to work for `9.0`, but they will likely be removed in `10.0`.
+
+| Old Package                | New Path                           |
+| -------------------------- | ---------------------------------- |
+| @storybook/channels        | storybook/internal/channels        |
+| @storybook/client-logger   | storybook/internal/client-logger   |
+| @storybook/core-common     | storybook/internal/common          |
+| @storybook/core-events     | storybook/internal/core-events     |
+| @storybook/csf-tools       | storybook/internal/csf-tools       |
+| @storybook/docs-tools      | storybook/internal/docs-tools      |
+| @storybook/node-logger     | storybook/internal/node-logger     |
+| @storybook/router          | storybook/internal/router          |
+| @storybook/telemetry       | storybook/internal/telemetry       |
+| @storybook/types           | storybook/internal/types           |
+| @storybook/manager         | storybook/internal/manager         |
+| @storybook/preview         | storybook/internal/preview         |
+| @storybook/core-server     | storybook/internal/core-server     |
+| @storybook/builder-manager | storybook/internal/builder-manager |
+| @storybook/components      | storybook/internal/components      |
+
+Addon authors may continue to use the internal packages, there is currently not yet any replacement.
+
 ### Dropped support for TypeScript < 4.9
 
 Storybook now requires TypeScript 4.9 or later. If you're using an older version of TypeScript, you'll need to upgrade to continue using Storybook.
@@ -468,6 +528,33 @@ export default {
 ```
 
 The public API remains the same, so no additional changes should be needed in your test files or configuration.
+
+### Experimental Status API has turned into a Status Store
+
+The experimental status API previously available at `api.experimental_updateStatus` and `api.getCurrentStoryStatus` has changed, to a store that works both on the server, in the manager and in the preview.
+
+You can use the new Status Store by importing `experimental_getStatusStore` from either `storybook/internal/core-server`, `storybook/manager-api` or `storybook/preview-api`:
+
+```diff
++ import { experimental_getStatusStore } from 'storybook/manager-api';
++ import { StatusValue } from 'storybook/internal/types';
+
++ const myStatusStore = experimental_getStatusStore(MY_ADDON_ID);
+
+addons.register(MY_ADDON_ID, (api) => {
+-  api.experimental_updateStatus({
+-    someStoryId: {
+-      status: 'success',
+-       title: 'Component tests',
+-       description: 'Works!',
+-    }
+-  });
++  myStatusStore.set([{
++    value: StatusValue.SUCCESS
++    title: 'Component tests',
++    description: 'Works!',
++  }]);
+```
 
 ## From version 8.5.x to 8.6.x
 

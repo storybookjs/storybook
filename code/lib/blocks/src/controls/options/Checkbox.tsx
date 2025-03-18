@@ -2,7 +2,8 @@ import type { ChangeEvent, FC } from 'react';
 import React, { useEffect, useState } from 'react';
 
 import { logger } from 'storybook/internal/client-logger';
-import { styled } from 'storybook/internal/theming';
+
+import { styled } from 'storybook/theming';
 
 import { getControlId } from '../helpers';
 import type { ControlProps, NormalizedOptionsConfig, OptionsMultiSelection } from '../types';

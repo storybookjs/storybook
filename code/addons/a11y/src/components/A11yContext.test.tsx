@@ -9,14 +9,14 @@ import {
   STORY_RENDER_PHASE_CHANGED,
   type StoryFinishedPayload,
 } from 'storybook/internal/core-events';
-import * as api from 'storybook/internal/manager-api';
 
 import type { AxeResults } from 'axe-core';
+import * as api from 'storybook/manager-api';
 
-import { EVENTS, TEST_PROVIDER_ID } from '../constants';
+import { EVENTS } from '../constants';
 import { A11yContextProvider, useA11yContext } from './A11yContext';
 
-vi.mock('storybook/internal/manager-api');
+vi.mock('storybook/manager-api');
 const mockedApi = vi.mocked(api);
 
 const storyId = 'button--primary';
@@ -65,18 +65,15 @@ describe('A11yContext', () => {
 
   const getCurrentStoryData = vi.fn();
   const getParameters = vi.fn();
-  const getCurrentStoryStatus = vi.fn();
 
   beforeEach(() => {
     mockedApi.useAddonState.mockImplementation((_, defaultState) => React.useState(defaultState));
     mockedApi.useChannel.mockReturnValue(vi.fn());
     getCurrentStoryData.mockReturnValue({ id: storyId, type: 'story' });
     getParameters.mockReturnValue({});
-    getCurrentStoryStatus.mockReturnValue({ [TEST_PROVIDER_ID]: { status: 'success' } });
     mockedApi.useStorybookApi.mockReturnValue({
       getCurrentStoryData,
       getParameters,
-      getCurrentStoryStatus,
     } as any);
     mockedApi.useParameter.mockReturnValue({ manual: false });
     mockedApi.useStorybookState.mockReturnValue({ storyId } as any);
@@ -156,7 +153,7 @@ describe('A11yContext', () => {
 
   it('should set discrepancy to cliFailedButModeManual when in manual mode', () => {
     mockedApi.useParameter.mockReturnValue({ manual: true });
-    getCurrentStoryStatus.mockReturnValue({ [TEST_PROVIDER_ID]: { status: 'error' } });
+    mockedApi.experimental_useStatusStore.mockReturnValue('status-value:error');
 
     const Component = () => {
       const { discrepancy } = useA11yContext();
@@ -172,9 +169,9 @@ describe('A11yContext', () => {
     expect(getByTestId('discrepancy').textContent).toBe('cliFailedButModeManual');
   });
 
-  it('should set discrepancy to cliFailedButModeManual when in manual mode (set via globals', () => {
+  it('should set discrepancy to cliFailedButModeManual when in manual mode (set via globals)', () => {
     mockedApi.useGlobals.mockReturnValue([{ a11y: { manual: true } }] as any);
-    getCurrentStoryStatus.mockReturnValue({ [TEST_PROVIDER_ID]: { status: 'error' } });
+    mockedApi.experimental_useStatusStore.mockReturnValue('status-value:error');
 
     const Component = () => {
       const { discrepancy } = useA11yContext();
@@ -192,7 +189,7 @@ describe('A11yContext', () => {
 
   it('should set discrepancy to cliPassedBrowserFailed', () => {
     mockedApi.useParameter.mockReturnValue({ manual: true });
-    getCurrentStoryStatus.mockReturnValue({ [TEST_PROVIDER_ID]: { status: 'success' } });
+    mockedApi.experimental_useStatusStore.mockReturnValue('status-value:success');
 
     const Component = () => {
       const { discrepancy } = useA11yContext();

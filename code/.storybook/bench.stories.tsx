@@ -1,6 +1,6 @@
 import React from 'react';
 
-import type { Meta } from '@storybook/react';
+import type { Meta } from '@storybook/react-vite';
 
 // @ts-expect-error - TS doesn't know about import.meta.glob from Vite
 const allMetafiles = import.meta.glob([

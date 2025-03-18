@@ -7,7 +7,6 @@ import { commonGlobOptions, normalizeStoryPath } from 'storybook/internal/common
 import { combineTags, storyNameFromExport, toId } from 'storybook/internal/csf';
 import { getStorySortParameter, loadConfig } from 'storybook/internal/csf-tools';
 import { logger, once } from 'storybook/internal/node-logger';
-import { sortStoriesV7, userOrAutoTitleFromSpecifier } from 'storybook/internal/preview-api';
 import { isExampleStoryId } from 'storybook/internal/telemetry';
 import type {
   DocsIndexEntry,
@@ -26,6 +25,7 @@ import type {
 import { findUp } from 'find-up';
 import picocolors from 'picocolors';
 import slash from 'slash';
+import { sortStoriesV7, userOrAutoTitleFromSpecifier } from 'storybook/preview-api';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 import * as TsconfigPaths from 'tsconfig-paths';

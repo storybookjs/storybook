@@ -6,7 +6,13 @@ import { type Addon_TestProviderType, Addon_TypesEnum } from 'storybook/internal
 
 import { a11yStatusStore, componentTestStatusStore, store } from '#manager-store';
 import type { Combo } from 'storybook/manager-api';
-import { Consumer, addons, types } from 'storybook/manager-api';
+import {
+  Consumer,
+  addons,
+  experimental_useStatusStore,
+  experimental_useTestProviderStore,
+  types,
+} from 'storybook/manager-api';
 
 import { GlobalErrorContext, GlobalErrorModal } from './components/GlobalErrorModal';
 import { Panel } from './components/Panel';
@@ -52,14 +58,35 @@ addons.register(ADDON_ID, (api) => {
       // @ts-expect-error: TODO: Fix types
       render: (state) => {
         const [isModalOpen, setModalOpen] = useState(false);
+        const testProviderState = experimental_useTestProviderStore((s) => s[ADDON_ID]);
+        const componentTestErrorCount = experimental_useStatusStore((allStatuses) => {
+          let errorCount = 0;
+          Object.values(allStatuses).forEach((statusByTypeId) => {
+            const componentTestStatus = statusByTypeId[STATUS_TYPE_ID_COMPONENT_TEST];
+            if (!componentTestStatus) {
+              return;
+            }
+            if (componentTestStatus.value === 'status-value:error') {
+              errorCount++;
+            }
+          });
+
+          return errorCount;
+        });
         return (
           <GlobalErrorContext.Provider
             value={{ error: state.error?.message, isModalOpen, setModalOpen }}
           >
-            <TestProviderRender api={api} state={state} />
+            <TestProviderRender
+              api={api}
+              state={state}
+              testProviderState={testProviderState}
+              componentTestErrorCount={componentTestErrorCount}
+            />
             <GlobalErrorModal
               onRerun={() => {
                 setModalOpen(false);
+                // TODO: update this too
                 api.runTestProvider(TEST_PROVIDER_ID);
               }}
             />
@@ -75,12 +102,29 @@ addons.register(ADDON_ID, (api) => {
         if (context.type === 'story' && !context.tags.includes('test')) {
           return null;
         }
+        const testProviderState = experimental_useTestProviderStore((s) => s[ADDON_ID]);
+        const componentTestErrorCount = experimental_useStatusStore((allStatuses) => {
+          let errorCount = 0;
+          Object.values(allStatuses).forEach((statusByTypeId) => {
+            const componentTestStatus = statusByTypeId[STATUS_TYPE_ID_COMPONENT_TEST];
+            if (!componentTestStatus) {
+              return;
+            }
+            if (componentTestStatus.value === 'status-value:error') {
+              errorCount++;
+            }
+          });
+
+          return errorCount;
+        });
         return (
           <TestProviderRender
             api={api}
             state={state}
             entryId={context.id}
             style={{ minWidth: 240 }}
+            testProviderState={testProviderState}
+            componentTestErrorCount={componentTestErrorCount}
           />
         );
       },

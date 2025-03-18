@@ -14,7 +14,6 @@ import { type Details, storeOptions } from '../constants';
 import { store as mockStore } from '../manager-store.mock';
 import { TestProviderRender } from './TestProviderRender';
 
-type Story = StoryObj<typeof TestProviderRender>;
 const managerContext: any = {
   state: {
     testProviders: {
@@ -76,7 +75,7 @@ const Content = styled.div({
   gap: '12px',
 });
 
-export default {
+const meta = {
   title: 'TestProviderRender',
   component: TestProviderRender,
   args: {
@@ -84,6 +83,8 @@ export default {
       ...config,
       ...baseState,
     },
+    testProviderState: 'test-provider-state:pending',
+    componentTestErrorCount: 0,
     api: managerContext.api,
   },
   decorators: [
@@ -108,7 +109,11 @@ export default {
       mockStore.setState(storeOptions.initialState);
     };
   },
-} as Meta<typeof TestProviderRender>;
+} satisfies Meta<typeof TestProviderRender>;
+
+export default meta;
+
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
@@ -126,6 +131,8 @@ export const Running: Story = {
       ...baseState,
       running: true,
     },
+    testProviderState: 'test-provider-state:running',
+    componentTestErrorCount: 0,
   },
 };
 

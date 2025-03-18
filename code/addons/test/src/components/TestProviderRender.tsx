@@ -7,17 +7,16 @@ import {
   TooltipNote,
   WithTooltip,
 } from 'storybook/internal/components';
-import { type TestProviderConfig, type TestProviderState } from 'storybook/internal/core-events';
+import {
+  type TestProviderState as DeprecatedTestProviderState,
+  type TestProviderConfig,
+} from 'storybook/internal/core-events';
+import type { TestProviderState } from 'storybook/internal/types';
 
 import { EyeIcon, InfoIcon, PlayHollowIcon, StopAltIcon } from '@storybook/icons';
 
 import { store } from '#manager-store';
-import {
-  addons,
-  experimental_useStatusStore,
-  experimental_useTestProviderStore,
-  experimental_useUniversalStore,
-} from 'storybook/manager-api';
+import { addons, experimental_useUniversalStore } from 'storybook/manager-api';
 import type { API } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
@@ -25,7 +24,7 @@ import {
   ADDON_ID as A11Y_ADDON_ID,
   PANEL_ID as A11y_ADDON_PANEL_ID,
 } from '../../../a11y/src/constants';
-import { ADDON_ID, type Details, PANEL_ID, STATUS_TYPE_ID_COMPONENT_TEST } from '../constants';
+import { type Details, PANEL_ID } from '../constants';
 import { type TestStatus } from '../node/reporter';
 import { Description } from './Description';
 import { TestStatusIcon } from './TestStatusIcon';
@@ -89,18 +88,12 @@ const StopIcon = styled(StopAltIcon)({
 });
 
 const statusOrder: TestStatus[] = ['failed', 'warning', 'pending', 'passed', 'skipped'];
-const statusMap: Record<TestStatus | 'unknown', ComponentProps<typeof TestStatusIcon>['status']> = {
-  failed: 'negative',
-  warning: 'warning',
-  passed: 'positive',
-  skipped: 'unknown',
-  pending: 'pending',
-  unknown: 'unknown',
-};
 
 type TestProviderRenderProps = {
   api: API;
-  state: TestProviderConfig & TestProviderState<Details>;
+  state: TestProviderConfig & DeprecatedTestProviderState<Details>;
+  testProviderState: TestProviderState;
+  componentTestErrorCount: number;
   entryId?: string;
 } & ComponentProps<typeof Container>;
 
@@ -108,6 +101,8 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
   state,
   api,
   entryId,
+  testProviderState,
+  componentTestErrorCount,
   ...props
 }) => {
   const coverageSummary = state.details?.coverageSummary;
@@ -115,26 +110,12 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
   const isA11yAddon = addons.experimental_getRegisteredAddons().includes(A11Y_ADDON_ID);
 
   const [{ config, watching }, setStoreState] = experimental_useUniversalStore(store);
-  const testProviderState = experimental_useTestProviderStore((s) => s[ADDON_ID]);
-  const componentTestErrorCount = experimental_useStatusStore((allStatuses) => {
-    let errorCount = 0;
-    Object.values(allStatuses).forEach((statusByTypeId) => {
-      const componentTestStatus = statusByTypeId[STATUS_TYPE_ID_COMPONENT_TEST];
-      if (!componentTestStatus) {
-        return;
-      }
-      if (componentTestStatus.value === 'status-value:error') {
-        errorCount++;
-      }
-    });
-
-    return errorCount;
-  });
+  const isRunning = testProviderState === 'test-provider-state:running';
 
   const componentTestStatusIcon: ComponentProps<typeof TestStatusIcon>['status'] =
     componentTestErrorCount
       ? 'negative'
-      : testProviderState === 'test-provider-state:running'
+      : isRunning
         ? 'pending'
         : testProviderState === 'test-provider-state:succeeded'
           ? 'positive'
@@ -160,7 +141,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
       return 'unknown';
     }
 
-    if (state.running) {
+    if (isRunning) {
       return 'pending';
     }
 
@@ -180,7 +161,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
     }
 
     return 'positive';
-  }, [state.running, isA11yAddon, config.a11y, a11yResults]);
+  }, [isRunning, isA11yAddon, config.a11y, a11yResults]);
 
   const a11yNotPassedAmount = config?.a11y
     ? a11yResults?.filter((result) => result?.status === 'failed' || result?.status === 'warning')
@@ -188,9 +169,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
     : undefined;
 
   const a11ySkippedAmount =
-    testProviderState === 'test-provider-state:running' || !config?.a11y
-      ? null
-      : a11yResults?.filter((result) => !result).length;
+    isRunning || !config?.a11y ? null : a11yResults?.filter((result) => !result).length;
 
   const a11ySkippedSuffix = a11ySkippedAmount
     ? a11ySkippedAmount === 1 && isStoryEntry
@@ -211,7 +190,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
     })
     .sort((a, b) => statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status));
 
-  const status = results[0]?.status ?? (state.running ? 'pending' : 'unknown');
+  const status = results[0]?.status ?? (isRunning ? 'pending' : 'unknown');
 
   const openPanel = (panelId: string, targetStoryId?: string) => {
     if (targetStoryId) {
@@ -284,57 +263,53 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                     watching: !watching,
                   }))
                 }
-                disabled={state.running}
+                disabled={isRunning}
               >
                 <EyeIcon />
               </IconButton>
             </WithTooltip>
           )}
-          {state.runnable && (
-            <>
-              {state.running && state.cancellable ? (
-                <WithTooltip
-                  hasChrome={false}
-                  trigger="hover"
-                  tooltip={<TooltipNote note="Stop test run" />}
-                >
-                  <IconButton
-                    aria-label="Stop test run"
-                    padding="none"
-                    size="medium"
-                    onClick={() => api.cancelTestProvider(state.id)}
-                    disabled={state.cancelling}
-                  >
-                    <Progress percentage={state.progress?.percentageCompleted}>
-                      <StopIcon />
-                    </Progress>
-                  </IconButton>
-                </WithTooltip>
-              ) : (
-                <WithTooltip
-                  hasChrome={false}
-                  trigger="hover"
-                  tooltip={<TooltipNote note="Start test run" />}
-                >
-                  <IconButton
-                    aria-label="Start test run"
-                    size="medium"
-                    onClick={() =>
-                      store.send({
-                        type: 'TRIGGER_RUN',
-                        payload: {
-                          indexUrl: new URL('index.json', window.location.href).toString(),
-                          storyIds: entryId ? api.findAllLeafStoryIds(entryId) : undefined,
-                        },
-                      })
-                    }
-                    disabled={state.running}
-                  >
-                    <PlayHollowIcon />
-                  </IconButton>
-                </WithTooltip>
-              )}
-            </>
+          {isRunning ? (
+            <WithTooltip
+              hasChrome={false}
+              trigger="hover"
+              tooltip={<TooltipNote note="Stop test run" />}
+            >
+              <IconButton
+                aria-label="Stop test run"
+                padding="none"
+                size="medium"
+                onClick={() => api.cancelTestProvider(state.id)}
+                disabled={state.cancelling}
+              >
+                <Progress percentage={state.progress?.percentageCompleted}>
+                  <StopIcon />
+                </Progress>
+              </IconButton>
+            </WithTooltip>
+          ) : (
+            <WithTooltip
+              hasChrome={false}
+              trigger="hover"
+              tooltip={<TooltipNote note="Start test run" />}
+            >
+              <IconButton
+                aria-label="Start test run"
+                size="medium"
+                onClick={() =>
+                  store.send({
+                    type: 'TRIGGER_RUN',
+                    payload: {
+                      indexUrl: new URL('index.json', window.location.href).toString(),
+                      storyIds: entryId ? api.findAllLeafStoryIds(entryId) : undefined,
+                    },
+                  })
+                }
+                disabled={false}
+              >
+                <PlayHollowIcon />
+              </IconButton>
+            </WithTooltip>
           )}
         </Actions>
       </Heading>
@@ -350,7 +325,13 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
             hasChrome={false}
             trigger="hover"
             tooltip={
-              <TooltipNote note={status === 'failed' ? 'View error' : 'View test details'} />
+              <TooltipNote
+                note={
+                  testProviderState === 'test-provider-state:crashed'
+                    ? 'View error'
+                    : 'View test details'
+                }
+              />
             }
           >
             <IconButton size="medium" disabled={!results?.length} onClick={openTestsPanel}>
@@ -451,7 +432,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                     tooltip={
                       <TooltipNote
                         note={
-                          state.running && config.coverage
+                          isRunning && config.coverage
                             ? 'Calculating...'
                             : 'Run tests to calculate coverage'
                         }
@@ -460,7 +441,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                   >
                     <IconButton size="medium" disabled>
                       <TestStatusIcon
-                        status={state.running && config.coverage ? 'pending' : 'unknown'}
+                        status={isRunning && config.coverage ? 'pending' : 'unknown'}
                         aria-label={`Coverage status: unknown`}
                       />
                     </IconButton>
@@ -497,9 +478,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
               tooltip={
                 <TooltipNote
                   note={
-                    state.running && config.a11y
-                      ? 'Testing in progress'
-                      : 'View accessibility results'
+                    isRunning && config.a11y ? 'Testing in progress' : 'View accessibility results'
                   }
                 />
               }

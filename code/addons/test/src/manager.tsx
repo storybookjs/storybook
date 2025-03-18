@@ -4,7 +4,12 @@ import { AddonPanel } from 'storybook/internal/components';
 import type { StatusValue } from 'storybook/internal/types';
 import { type Addon_TestProviderType, Addon_TypesEnum } from 'storybook/internal/types';
 
-import { a11yStatusStore, componentTestStatusStore, store } from '#manager-store';
+import {
+  a11yStatusStore,
+  componentTestStatusStore,
+  store,
+  testProviderStore,
+} from '#manager-store';
 import type { Combo } from 'storybook/manager-api';
 import {
   Consumer,
@@ -50,6 +55,12 @@ addons.register(ADDON_ID, (api) => {
     });
     a11yStatusStore.onSelect(() => {
       openPanel(A11Y_PANEL_ID);
+    });
+    testProviderStore.onRunAll(() => {
+      store.send({
+        type: 'TRIGGER_RUN',
+        payload: { indexUrl: new URL('index.json', window.location.href).toString() },
+      });
     });
 
     addons.add(TEST_PROVIDER_ID, {

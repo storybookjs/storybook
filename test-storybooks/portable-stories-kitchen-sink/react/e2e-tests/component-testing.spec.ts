@@ -39,12 +39,13 @@ test.describe("component testing", () => {
     await page.evaluate(() => window.sessionStorage.clear());
     await sbPage.waitUntilLoaded();
 
-    await page.evaluate(() => {
-      // @ts-expect-error -- temporary to clear statuses between tests, will be removed when we have a clear button in the UI
-      globalThis.clearStatuses()
-    });
-
-    // Ensure that all features are disabled, as previous tests might have enabled them
+    
+    // Ensure that all test results are removed and features are disabled, as previous tests might have enabled them
+    
+    const clearStatusesButton = page.getByLabel('Clear all statuses');
+    if (await clearStatusesButton.isVisible()) {
+      await clearStatusesButton.click();
+    }
 
     await page.getByLabel('Expand testing module').click();
     const disableWatch = page.getByLabel('Disable watch mode');

@@ -73,6 +73,7 @@ const meta = {
     isDevelopment: true,
     warningCount: 0,
     errorCount: 0,
+    hasStatuses: false,
     notifications: [],
     api: {
       on: fn(),
@@ -102,12 +103,14 @@ type Story = StoryObj<typeof meta>;
 export const Errors: Story = {
   args: {
     errorCount: 2,
+    hasStatuses: true,
   },
 };
 
 export const Warnings: Story = {
   args: {
     warningCount: 2,
+    hasStatuses: true,
   },
 };
 
@@ -115,6 +118,7 @@ export const Both: Story = {
   args: {
     errorCount: 2,
     warningCount: 2,
+    hasStatuses: true,
   },
 };
 

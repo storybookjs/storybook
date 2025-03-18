@@ -72,7 +72,7 @@ const meta = {
   title: 'Sidebar/TestingModule',
   args: {
     testProviders,
-    statusCount: 0,
+    hasStatuses: false,
     clearStatuses: fn(),
     errorCount: 0,
     errorsActive: false,
@@ -109,9 +109,16 @@ export const Expanded: Story = {
 
 export const Statuses: Story = {
   args: {
-    statusCount: 56,
+    hasStatuses: true,
     errorCount: 14,
     warningCount: 42,
+  },
+  play: Expanded.play,
+};
+
+export const PassingStatuses: Story = {
+  args: {
+    hasStatuses: true,
   },
   play: Expanded.play,
 };

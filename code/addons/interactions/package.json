@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-interactions",
-  "version": "9.0.0-alpha.3",
+  "version": "9.0.0-alpha.6",
   "description": "Automate, test and debug user interactions",
   "keywords": [
     "storybook-addons",
@@ -68,7 +68,7 @@
   },
   "devDependencies": {
     "@devtools-ds/object-inspector": "^1.1.2",
-    "@storybook/icons": "^1.2.5",
+    "@storybook/icons": "^1.4.0",
     "@types/node": "^22.0.0",
     "ansi-to-html": "^0.7.2",
     "formik": "^2.2.9",

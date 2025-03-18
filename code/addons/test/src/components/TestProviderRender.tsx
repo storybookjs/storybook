@@ -1,7 +1,7 @@
-import React, { type ComponentProps, type FC, useMemo, useState } from 'react';
+import React, { type ComponentProps, type FC, useMemo } from 'react';
 
 import {
-  Button,
+  IconButton,
   ListItem,
   ProgressSpinner,
   TooltipNote,
@@ -9,20 +9,12 @@ import {
 } from 'storybook/internal/components';
 import { type TestProviderConfig, type TestProviderState } from 'storybook/internal/core-events';
 
-import {
-  AccessibilityIcon,
-  EditIcon,
-  EyeIcon,
-  PlayHollowIcon,
-  PointerHandIcon,
-  ShieldIcon,
-  StopAltIcon,
-} from '@storybook/icons';
+import { EyeIcon, InfoIcon, PlayHollowIcon, StopAltIcon } from '@storybook/icons';
 
 import { store } from '#manager-store';
 import { addons, experimental_useUniversalStore } from 'storybook/manager-api';
 import type { API } from 'storybook/manager-api';
-import { styled, useTheme } from 'storybook/theming';
+import { styled } from 'storybook/theming';
 
 import {
   ADDON_ID as A11Y_ADDON_ID,
@@ -41,14 +33,14 @@ const Container = styled.div({
 const Heading = styled.div({
   display: 'flex',
   justifyContent: 'space-between',
-  padding: '8px 2px',
+  padding: '8px 0',
   gap: 12,
 });
 
 const Info = styled.div({
   display: 'flex',
   flexDirection: 'column',
-  marginLeft: 6,
+  marginLeft: 8,
   minWidth: 0,
 });
 
@@ -60,7 +52,7 @@ const Title = styled.div<{ crashed?: boolean }>(({ crashed, theme }) => ({
 
 const Actions = styled.div({
   display: 'flex',
-  gap: 2,
+  gap: 4,
 });
 
 const Extras = styled.div({
@@ -74,31 +66,31 @@ const Checkbox = styled.input({
   },
 });
 
+const Muted = styled.span(({ theme }) => ({
+  color: theme.textMutedColor,
+}));
+
 const Progress = styled(ProgressSpinner)({
-  margin: 2,
+  margin: 4,
+});
+
+const Row = styled.div({
+  display: 'flex',
+  gap: 4,
 });
 
 const StopIcon = styled(StopAltIcon)({
   width: 10,
 });
 
-const ItemTitle = styled.span<{ enabled?: boolean }>(
-  ({ enabled, theme }) =>
-    !enabled && {
-      color: theme.textMutedColor,
-      '&:after': {
-        content: '" (disabled)"',
-      },
-    }
-);
-
 const statusOrder: TestStatus[] = ['failed', 'warning', 'pending', 'passed', 'skipped'];
-const statusMap: Record<TestStatus, ComponentProps<typeof TestStatusIcon>['status']> = {
+const statusMap: Record<TestStatus | 'unknown', ComponentProps<typeof TestStatusIcon>['status']> = {
   failed: 'negative',
   warning: 'warning',
   passed: 'positive',
   skipped: 'unknown',
   pending: 'pending',
+  unknown: 'unknown',
 };
 
 type TestProviderRenderProps = {
@@ -113,8 +105,6 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
   entryId,
   ...props
 }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const theme = useTheme();
   const coverageSummary = state.details?.coverageSummary;
 
   const isA11yAddon = addons.experimental_getRegisteredAddons().includes(A11Y_ADDON_ID);
@@ -136,13 +126,13 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
     );
   }, [isA11yAddon, state.details?.testResults, entryId]);
 
-  const a11yStatus = useMemo<'positive' | 'warning' | 'negative' | 'unknown'>(() => {
-    if (state.running) {
+  const a11yStatus = useMemo<'positive' | 'warning' | 'negative' | 'pending' | 'unknown'>(() => {
+    if (!isA11yAddon || config.a11y === false) {
       return 'unknown';
     }
 
-    if (!isA11yAddon || config.a11y === false) {
-      return 'unknown';
+    if (state.running) {
+      return 'pending';
     }
 
     const definedA11yResults = a11yResults?.filter(Boolean) ?? [];
@@ -171,10 +161,10 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
   const a11ySkippedAmount =
     state.running || !config?.a11y ? null : a11yResults?.filter((result) => !result).length;
 
-  const a11ySkippedLabel = a11ySkippedAmount
+  const a11ySkippedSuffix = a11ySkippedAmount
     ? a11ySkippedAmount === 1 && isStoryEntry
-      ? '(skipped)'
-      : `(${a11ySkippedAmount} skipped)`
+      ? ' (skipped)'
+      : ` (${a11ySkippedAmount} skipped)`
     : '';
 
   const storyId = isStoryEntry ? entryId : undefined;
@@ -190,12 +180,48 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
     })
     .sort((a, b) => statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status));
 
+  const componentTestsNotPassedAmount = results?.filter(
+    (result) => result.status === 'failed'
+  ).length;
+
   const status = results[0]?.status ?? (state.running ? 'pending' : 'unknown');
 
-  const openPanel = (id: string, panelId: string) => {
-    api.selectStory(id);
+  const openPanel = (panelId: string, targetStoryId?: string) => {
+    if (targetStoryId) {
+      api.selectStory(targetStoryId);
+    }
     api.setSelectedPanel(panelId);
     api.togglePanel(true);
+  };
+
+  const openTestsPanel = () => {
+    const currentStoryId = api.getCurrentStoryData().id;
+    const currentStoryNotPassed = results.some(
+      (r) => r.storyId === currentStoryId && ['failed', 'warning'].includes(r.status)
+    );
+    if (currentStoryNotPassed) {
+      openPanel(PANEL_ID);
+    } else {
+      const firstNotPassed = results.find((r) => ['failed', 'warning'].includes(r.status));
+      openPanel(PANEL_ID, firstNotPassed?.storyId);
+    }
+  };
+
+  const openA11yPanel = () => {
+    const currentStoryId = api.getCurrentStoryData().id;
+    const currentStoryNotPassed = results.some(
+      (r) =>
+        r.storyId === currentStoryId &&
+        r.reports.some((rep) => rep.type === 'a11y' && ['failed', 'warning'].includes(rep.status))
+    );
+    if (currentStoryNotPassed) {
+      openPanel(A11y_ADDON_PANEL_ID);
+    } else {
+      const firstNotPassed = results.find((r) =>
+        r.reports.some((rep) => rep.type === 'a11y' && ['failed', 'warning'].includes(rep.status))
+      );
+      openPanel(A11y_ADDON_PANEL_ID, firstNotPassed?.storyId);
+    }
   };
 
   return (
@@ -219,30 +245,11 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
             <WithTooltip
               hasChrome={false}
               trigger="hover"
-              tooltip={<TooltipNote note={`${isEditing ? 'Hide' : 'Show'} settings`} />}
-            >
-              <Button
-                aria-label={`${isEditing ? 'Hide' : 'Show'} settings`}
-                variant="ghost"
-                padding="small"
-                active={isEditing}
-                disabled={state.running && !isEditing}
-                onClick={() => setIsEditing(!isEditing)}
-              >
-                <EditIcon />
-              </Button>
-            </WithTooltip>
-          )}
-          {!entryId && (
-            <WithTooltip
-              hasChrome={false}
-              trigger="hover"
               tooltip={<TooltipNote note={`${watching ? 'Disable' : 'Enable'} watch mode`} />}
             >
-              <Button
+              <IconButton
                 aria-label={`${watching ? 'Disable' : 'Enable'} watch mode`}
-                variant="ghost"
-                padding="small"
+                size="medium"
                 active={watching}
                 onClick={() =>
                   setStoreState((s) => ({
@@ -250,10 +257,10 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                     watching: !watching,
                   }))
                 }
-                disabled={state.running || isEditing}
+                disabled={state.running}
               >
                 <EyeIcon />
-              </Button>
+              </IconButton>
             </WithTooltip>
           )}
           {state.runnable && (
@@ -264,17 +271,17 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                   trigger="hover"
                   tooltip={<TooltipNote note="Stop test run" />}
                 >
-                  <Button
+                  <IconButton
                     aria-label="Stop test run"
-                    variant="ghost"
                     padding="none"
+                    size="medium"
                     onClick={() => api.cancelTestProvider(state.id)}
                     disabled={state.cancelling}
                   >
                     <Progress percentage={state.progress?.percentageCompleted}>
                       <StopIcon />
                     </Progress>
-                  </Button>
+                  </IconButton>
                 </WithTooltip>
               ) : (
                 <WithTooltip
@@ -282,15 +289,14 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                   trigger="hover"
                   tooltip={<TooltipNote note="Start test run" />}
                 >
-                  <Button
+                  <IconButton
                     aria-label="Start test run"
-                    variant="ghost"
-                    padding="small"
+                    size="medium"
                     onClick={() => api.runTestProvider(state.id, { entryId })}
-                    disabled={state.running || isEditing}
+                    disabled={state.running}
                   >
                     <PlayHollowIcon />
-                  </Button>
+                  </IconButton>
                 </WithTooltip>
               )}
             </>
@@ -298,138 +304,179 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
         </Actions>
       </Heading>
 
-      {isEditing ? (
-        <Extras>
+      <Extras>
+        <Row>
           <ListItem
             as="label"
             title="Component tests"
-            icon={<PointerHandIcon color={theme.textMutedColor} />}
-            right={<Checkbox type="checkbox" checked disabled />}
+            icon={entryId ? null : <Checkbox type="checkbox" checked disabled />}
           />
-          {isA11yAddon && (
-            <ListItem
-              as="label"
-              title={<ItemTitle enabled={config.a11y}>Accessibility</ItemTitle>}
-              icon={<AccessibilityIcon color={theme.textMutedColor} />}
-              right={
-                <Checkbox
-                  type="checkbox"
-                  checked={config.a11y}
-                  onChange={() =>
-                    setStoreState((s) => ({
-                      ...s,
-                      config: { ...s.config, a11y: !config.a11y },
-                    }))
-                  }
-                />
-              }
-            />
-          )}
-          {!entryId && (
-            <ListItem
-              as="label"
-              title={<ItemTitle enabled={config.coverage}>Coverage</ItemTitle>}
-              icon={<ShieldIcon color={theme.textMutedColor} />}
-              right={
-                <Checkbox
-                  type="checkbox"
-                  checked={watching ? false : config.coverage}
-                  disabled={watching}
-                  onChange={() =>
-                    setStoreState((s) => ({
-                      ...s,
-                      config: { ...s.config, coverage: !config.coverage },
-                    }))
-                  }
-                />
-              }
-            />
-          )}
-        </Extras>
-      ) : (
-        <Extras>
-          <ListItem
-            title="Component tests"
-            onClick={
-              (status === 'failed' || status === 'warning') && results.length
-                ? () => {
-                    const firstNotPassed = results.find(
-                      (r) => r.status === 'failed' || r.status === 'warning'
-                    );
-                    if (firstNotPassed) {
-                      openPanel(firstNotPassed.storyId, PANEL_ID);
-                    }
-                  }
-                : undefined
+          <WithTooltip
+            hasChrome={false}
+            trigger="hover"
+            tooltip={
+              <TooltipNote note={status === 'failed' ? 'View error' : 'View test details'} />
             }
-            icon={
-              state.crashed ? (
-                <TestStatusIcon status="critical" aria-label="status: crashed" />
-              ) : // @ts-expect-error @ghengeveld should check whether this is a bug or not
-              status === 'unknown' ? (
-                <TestStatusIcon status="unknown" aria-label="status: unknown" />
+          >
+            <IconButton size="medium" disabled={!results?.length} onClick={openTestsPanel}>
+              {state.crashed ? (
+                <TestStatusIcon status="critical" aria-label="Test status: crashed" />
               ) : (
-                <TestStatusIcon status={statusMap[status]} aria-label={`status: ${status}`} />
-              )
-            }
-          />
-          {isA11yAddon && (
-            <ListItem
-              title={<ItemTitle enabled={config.a11y}>Accessibility {a11ySkippedLabel}</ItemTitle>}
-              onClick={
-                (a11yStatus === 'negative' || a11yStatus === 'warning') && a11yResults.length
-                  ? () => {
-                      const firstNotPassed = results.find((r) =>
-                        r.reports
-                          .filter((report) => report.type === 'a11y')
-                          .find(
-                            (report) => report.status === 'failed' || report.status === 'warning'
-                          )
-                      );
-                      if (firstNotPassed) {
-                        openPanel(firstNotPassed.storyId, A11y_ADDON_PANEL_ID);
-                      }
-                    }
-                  : undefined
-              }
-              icon={<TestStatusIcon status={a11yStatus} aria-label={`status: ${a11yStatus}`} />}
-              right={isStoryEntry ? null : a11yNotPassedAmount || null}
-            />
-          )}
-          {!entryId && (
-            <>
-              {coverageSummary ? (
-                <ListItem
-                  title={<ItemTitle enabled={config.coverage}>Coverage</ItemTitle>}
-                  href={'/coverage/index.html'}
-                  // @ts-expect-error ListItem doesn't include all anchor attributes in types, but it is an achor element
-                  target="_blank"
-                  aria-label="Open coverage report"
-                  icon={
-                    <TestStatusIcon
-                      percentage={coverageSummary.percentage}
-                      status={coverageSummary.status}
-                      aria-label={`status: ${coverageSummary.status}`}
-                    />
-                  }
-                  right={
-                    coverageSummary.percentage ? (
-                      <span aria-label={`${coverageSummary.percentage} percent coverage`}>
-                        {coverageSummary.percentage} %
-                      </span>
-                    ) : null
-                  }
-                />
-              ) : (
-                <ListItem
-                  title={<ItemTitle enabled={config.coverage}>Coverage</ItemTitle>}
-                  icon={<TestStatusIcon status="unknown" aria-label={`status: unknown`} />}
-                />
+                <TestStatusIcon status={statusMap[status]} aria-label={`Test status: ${status}`} />
               )}
-            </>
-          )}
-        </Extras>
-      )}
+              {componentTestsNotPassedAmount || null}
+            </IconButton>
+          </WithTooltip>
+        </Row>
+
+        {!entryId && (
+          <>
+            {coverageSummary ? (
+              <Row>
+                <ListItem
+                  as="label"
+                  title="Coverage"
+                  icon={
+                    entryId ? null : (
+                      <Checkbox
+                        type="checkbox"
+                        checked={config.coverage}
+                        onChange={() =>
+                          setStoreState((s) => ({
+                            ...s,
+                            config: { ...s.config, coverage: !config.coverage },
+                          }))
+                        }
+                      />
+                    )
+                  }
+                />
+                <WithTooltip
+                  hasChrome={false}
+                  trigger="hover"
+                  tooltip={<TooltipNote note="View report" />}
+                >
+                  <IconButton asChild size="medium">
+                    <a
+                      href="/coverage/index.html"
+                      target="_blank"
+                      aria-label="Open coverage report"
+                    >
+                      <TestStatusIcon
+                        percentage={coverageSummary.percentage}
+                        status={coverageSummary.status}
+                        aria-label={`Coverage status: ${coverageSummary.status}`}
+                      />
+                      {coverageSummary.percentage ? (
+                        <span aria-label={`${coverageSummary.percentage} percent coverage`}>
+                          {coverageSummary.percentage}%
+                        </span>
+                      ) : null}
+                    </a>
+                  </IconButton>
+                </WithTooltip>
+              </Row>
+            ) : (
+              <Row>
+                <ListItem
+                  as="label"
+                  title={watching ? <Muted>Coverage (unavailable)</Muted> : <>Coverage</>}
+                  icon={
+                    entryId ? null : (
+                      <Checkbox
+                        type="checkbox"
+                        checked={config.coverage}
+                        onChange={() =>
+                          setStoreState((s) => ({
+                            ...s,
+                            config: { ...s.config, coverage: !config.coverage },
+                          }))
+                        }
+                      />
+                    )
+                  }
+                />
+                {watching ? (
+                  <WithTooltip
+                    hasChrome={false}
+                    trigger="hover"
+                    tooltip={<TooltipNote note="Coverage is unavailable in watch mode" />}
+                  >
+                    <IconButton size="medium" disabled>
+                      <InfoIcon aria-label="Coverage is unavailable in watch mode" />
+                    </IconButton>
+                  </WithTooltip>
+                ) : (
+                  <WithTooltip
+                    hasChrome={false}
+                    trigger="hover"
+                    tooltip={
+                      <TooltipNote
+                        note={
+                          state.running && config.coverage
+                            ? 'Calculating...'
+                            : 'Run tests to calculate coverage'
+                        }
+                      />
+                    }
+                  >
+                    <IconButton size="medium" disabled>
+                      <TestStatusIcon
+                        status={state.running && config.coverage ? 'pending' : 'unknown'}
+                        aria-label={`Coverage status: unknown`}
+                      />
+                    </IconButton>
+                  </WithTooltip>
+                )}
+              </Row>
+            )}
+          </>
+        )}
+
+        {isA11yAddon && (
+          <Row>
+            <ListItem
+              as="label"
+              title={`Accessibility${a11ySkippedSuffix}`}
+              icon={
+                entryId ? null : (
+                  <Checkbox
+                    type="checkbox"
+                    checked={config.a11y}
+                    onChange={() =>
+                      setStoreState((s) => ({
+                        ...s,
+                        config: { ...s.config, a11y: !config.a11y },
+                      }))
+                    }
+                  />
+                )
+              }
+            />
+            <WithTooltip
+              hasChrome={false}
+              trigger="hover"
+              tooltip={
+                <TooltipNote
+                  note={
+                    state.running && config.a11y
+                      ? 'Testing in progress'
+                      : 'View accessibility results'
+                  }
+                />
+              }
+            >
+              <IconButton size="medium" disabled={!a11yResults?.length} onClick={openA11yPanel}>
+                <TestStatusIcon
+                  status={a11yStatus}
+                  aria-label={`Accessibility status: ${a11yStatus}`}
+                />
+                {isStoryEntry ? null : a11yNotPassedAmount || null}
+              </IconButton>
+            </WithTooltip>
+          </Row>
+        )}
+      </Extras>
     </Container>
   );
 };

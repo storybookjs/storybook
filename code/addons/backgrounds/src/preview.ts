@@ -1,6 +1,6 @@
 import { PARAM_KEY as KEY } from './constants';
 import { withBackgroundAndGrid } from './decorator';
-import type { Config, GlobalState } from './types';
+import type { BackgroundsParameters, GlobalState } from './types';
 
 export const decorators = [withBackgroundAndGrid];
 
@@ -12,8 +12,8 @@ export const parameters = {
       cellAmount: 5,
     },
     disable: false,
-  } satisfies Partial<Config>,
-};
+  },
+} satisfies Partial<BackgroundsParameters>;
 
 export const initialGlobals: Record<string, GlobalState> = {
   [KEY]: { value: undefined, grid: false },

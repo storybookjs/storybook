@@ -1,5 +1,3 @@
-import { readFile } from 'node:fs/promises';
-
 import { getStorybookVersionSpecifier } from 'storybook/internal/cli';
 
 import { dedent } from 'ts-dedent';
@@ -8,7 +6,6 @@ import { updateMainConfig } from '../helpers/mainConfigFile';
 import type { Fix } from '../types';
 
 interface AddonDocsOptions {
-  mainConfigPath: string;
   hasEssentials: boolean;
   hasDocsDisabled: boolean;
 }
@@ -30,22 +27,35 @@ export const addonEssentialsRemoveDocs: Fix<AddonDocsOptions> = {
     }
 
     try {
-      const mainConfig = await readFile(mainConfigPath, 'utf-8');
+      let hasEssentials = false;
+      let hasDocsDisabled = false;
 
-      // Check if addon-essentials is present
-      const hasEssentials = mainConfig.includes('@storybook/addon-essentials');
+      await updateMainConfig({ mainConfigPath, dryRun: true }, (main) => {
+        const addons = main.getFieldValue(['addons']) || [];
+
+        // Find the essentials entry and check its configuration
+        const essentialsEntry = addons.find((addon: any) => {
+          if (typeof addon === 'string') {
+            return addon === '@storybook/addon-essentials';
+          }
+          return addon?.name === '@storybook/addon-essentials';
+        });
+
+        if (essentialsEntry) {
+          hasEssentials = true;
+          // Check if docs is explicitly disabled in the options
+          if (typeof essentialsEntry === 'object') {
+            const options = essentialsEntry.options || {};
+            hasDocsDisabled = options.docs === false;
+          }
+        }
+      });
+
       if (!hasEssentials) {
         return null;
       }
 
-      // Check if docs is disabled in essentials config
-      const hasDocsDisabled =
-        mainConfig.includes('"docs": false') ||
-        mainConfig.includes("'docs': false") ||
-        mainConfig.includes('docs:false');
-
       return {
-        mainConfigPath,
         hasEssentials,
         hasDocsDisabled,
       };
@@ -72,8 +82,8 @@ export const addonEssentialsRemoveDocs: Fix<AddonDocsOptions> = {
     `;
   },
 
-  async run({ result, dryRun, packageManager, skipInstall = false }) {
-    const { mainConfigPath, hasDocsDisabled } = result;
+  async run({ result, dryRun, packageManager, skipInstall = false, mainConfigPath }) {
+    const { hasDocsDisabled } = result;
 
     await updateMainConfig({ mainConfigPath, dryRun: !!dryRun }, async (main) => {
       // Get the current addons array

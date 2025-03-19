@@ -63,7 +63,6 @@ const baseCheckOptions: CheckOptions = {
 };
 
 interface AddonDocsOptions {
-  mainConfigPath: string;
   hasEssentials: boolean;
   hasDocsDisabled: boolean;
 }
@@ -105,47 +104,51 @@ describe('addon-essentials-remove-docs migration', () => {
     });
 
     it('detects essentials with docs disabled', async () => {
-      const mainConfig = `
-        export default {
-          stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],
-          addons: [
-            {
-              name: '@storybook/addon-essentials',
-              options: {
-                "docs": false
-              }
-            }
-          ]
-        };
-      `;
-      readFileMock.mockResolvedValueOnce(mainConfig);
+      const mockMain: MockConfigFile = {
+        getFieldValue: vi.fn().mockReturnValue([
+          {
+            name: '@storybook/addon-essentials',
+            options: { docs: false },
+          },
+        ]),
+        setFieldValue: vi.fn(),
+        appendValueToArray: vi.fn(),
+        _ast: {},
+        _code: '',
+        _exports: {},
+        _exportDecls: [],
+      };
+
+      mockConfigs.set('main.ts', mockMain);
 
       const result = await typedAddonDocsEssentials.check({
         ...baseCheckOptions,
         mainConfigPath: 'main.ts',
       });
       expect(result).toEqual({
-        mainConfigPath: 'main.ts',
         hasEssentials: true,
         hasDocsDisabled: true,
       });
     });
 
     it('detects essentials with docs enabled', async () => {
-      const mainConfig = `
-        export default {
-          stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],
-          addons: ['@storybook/addon-essentials'],
-        };
-      `;
-      readFileMock.mockResolvedValueOnce(mainConfig);
+      const mockMain: MockConfigFile = {
+        getFieldValue: vi.fn().mockReturnValue(['@storybook/addon-essentials']),
+        setFieldValue: vi.fn(),
+        appendValueToArray: vi.fn(),
+        _ast: {},
+        _code: '',
+        _exports: {},
+        _exportDecls: [],
+      };
+
+      mockConfigs.set('main.ts', mockMain);
 
       const result = await typedAddonDocsEssentials.check({
         ...baseCheckOptions,
         mainConfigPath: 'main.ts',
       });
       expect(result).toEqual({
-        mainConfigPath: 'main.ts',
         hasEssentials: true,
         hasDocsDisabled: false,
       });
@@ -173,7 +176,6 @@ describe('addon-essentials-remove-docs migration', () => {
 
       await typedAddonDocsEssentials.run({
         result: {
-          mainConfigPath: 'main.ts',
           hasEssentials: true,
           hasDocsDisabled: true,
         },
@@ -218,7 +220,6 @@ describe('addon-essentials-remove-docs migration', () => {
 
       await typedAddonDocsEssentials.run({
         result: {
-          mainConfigPath: 'main.ts',
           hasEssentials: true,
           hasDocsDisabled: false,
         },
@@ -254,7 +255,6 @@ describe('addon-essentials-remove-docs migration', () => {
 
       await typedAddonDocsEssentials.run({
         result: {
-          mainConfigPath: 'main.ts',
           hasEssentials: true,
           hasDocsDisabled: false,
         },

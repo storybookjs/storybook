@@ -2,13 +2,13 @@ import * as React from 'react';
 
 import { IconButton, TooltipNote, WithTooltip } from 'storybook/internal/components';
 
-import { EyeCloseIcon, EyeIcon, SyncIcon } from '@storybook/icons';
+import { CollapseIcon, ExpandAltIcon, EyeCloseIcon, EyeIcon, SyncIcon } from '@storybook/icons';
 
 import type { Result } from 'axe-core';
 import { useResizeDetector } from 'react-resize-detector';
 import { styled } from 'storybook/theming';
 
-import type { RuleType } from './A11YPanel';
+import type { RuleType } from '../types';
 import { useA11yContext } from './A11yContext';
 
 // TODO: reuse the Tabs component from storybook/theming instead of re-building identical functionality
@@ -93,11 +93,20 @@ export const Tabs: React.FC<TabsProps> = ({ tabs }) => {
     handleHeight: false,
     handleWidth: true,
   });
-  const { tab: activeTab, setTab, toggleHighlight, highlighted, handleManual } = useA11yContext();
+  const {
+    tab: activeTab,
+    setTab,
+    toggleHighlight,
+    highlighted,
+    handleManual,
+    allExpanded,
+    handleCollapseAll,
+    handleExpandAll,
+  } = useA11yContext();
 
   const handleToggle = React.useCallback(
     (event: React.SyntheticEvent) => {
-      setTab(event.currentTarget.getAttribute('data-type'));
+      setTab(event.currentTarget.getAttribute('data-type') as RuleType);
     },
     [setTab]
   );
@@ -130,6 +139,20 @@ export const Tabs: React.FC<TabsProps> = ({ tabs }) => {
             <IconButton onClick={toggleHighlight} active={highlighted}>
               {highlighted ? <EyeCloseIcon /> : <EyeIcon />}
               {highlighted ? 'Hide highlights' : 'Show highlights'}
+            </IconButton>
+          </WithTooltip>
+          <WithTooltip
+            as="div"
+            hasChrome={false}
+            placement="top"
+            tooltip={<TooltipNote note={allExpanded ? 'Collapse all' : 'Expand all'} />}
+            trigger="hover"
+          >
+            <IconButton
+              onClick={allExpanded ? handleCollapseAll : handleExpandAll}
+              aria-label={allExpanded ? 'Collapse all' : 'Expand all'}
+            >
+              {allExpanded ? <CollapseIcon /> : <ExpandAltIcon />}
             </IconButton>
           </WithTooltip>
           <WithTooltip

@@ -7,7 +7,7 @@ import { fn } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
 import { results } from '../../results.mock';
-import { RuleType } from '../A11YPanel';
+import { RuleType } from '../../types';
 import { Report } from './Report';
 
 const StyledWrapper = styled.div(({ theme }) => ({

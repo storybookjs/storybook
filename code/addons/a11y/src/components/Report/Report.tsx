@@ -8,7 +8,7 @@ import { ChevronSmallDownIcon } from '@storybook/icons';
 import type { Result } from 'axe-core';
 import { styled } from 'storybook/theming';
 
-import type { RuleType } from '../A11YPanel';
+import type { RuleType } from '../../types';
 import { Details } from './Details';
 
 const Wrapper = styled.div(({ theme }) => ({

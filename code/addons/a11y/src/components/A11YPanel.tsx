@@ -1,23 +1,16 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 
 import { ActionBar, Badge, ScrollArea } from 'storybook/internal/components';
-import { useStorybookApi } from 'storybook/internal/manager-api';
 
-import { CheckIcon, SyncIcon } from '@storybook/icons';
+import { SyncIcon } from '@storybook/icons';
 
-import type { Result } from 'axe-core';
 import { styled } from 'storybook/theming';
 
+import { RuleType } from '../types';
 import { useA11yContext } from './A11yContext';
 import { Report } from './Report/Report';
 import { Tabs } from './Tabs';
 import { TestDiscrepancyMessage } from './TestDiscrepancyMessage';
-
-export enum RuleType {
-  VIOLATION = 'violations',
-  PASS = 'passes',
-  INCOMPLETION = 'incomplete',
-}
 
 const Icon = styled(SyncIcon)({
   marginRight: 4,
@@ -46,32 +39,16 @@ const Count = styled(Badge)({
 });
 
 export const A11YPanel: React.FC = () => {
-  const api = useStorybookApi();
-  const { results, status, handleManual, error, discrepancy } = useA11yContext();
-
-  const [selectedItems, setSelectedItems] = useState<Map<string, string>>(() => {
-    const initialValue = new Map();
-    const a11ySelection = api.getQueryParam('a11ySelection');
-    if (a11ySelection && /^[a-z]+.[a-z-]+.[0-9]+$/.test(a11ySelection)) {
-      const [type, id] = a11ySelection.split('.');
-      initialValue.set(`${type}.${id}`, a11ySelection);
-    }
-    return initialValue;
-  });
-
-  const toggleOpen = useCallback(
-    (event: React.SyntheticEvent<Element>, type: RuleType, item: Result) => {
-      event.stopPropagation();
-      const key = `${type}.${item.id}`;
-      setSelectedItems((prev) => new Map(prev.delete(key) ? prev : prev.set(key, `${key}.1`)));
-    },
-    []
-  );
-
-  const onSelectionChange = useCallback((key: string) => {
-    const [type, id] = key.split('.');
-    setSelectedItems((prev) => new Map(prev.set(`${type}.${id}`, key)));
-  }, []);
+  const {
+    results,
+    status,
+    handleManual,
+    error,
+    discrepancy,
+    onSelectionChange,
+    selectedItems,
+    toggleOpen,
+  } = useA11yContext();
 
   const manualActionItems = useMemo(
     () => [{ title: 'Run test', onClick: handleManual }],

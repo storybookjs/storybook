@@ -24,7 +24,7 @@ import { convert, themes } from 'storybook/theming';
 import { ADDON_ID, EVENTS, PANEL_ID, TEST_PROVIDER_ID } from '../constants';
 import type { A11yParameters } from '../params';
 import type { A11YReport } from '../types';
-import { RuleType } from './A11YPanel';
+import { RuleType } from '../types';
 import type { TestDiscrepancy } from './TestDiscrepancyMessage';
 
 export interface Results {
@@ -45,6 +45,12 @@ export interface A11yContextStore {
   error: unknown;
   handleManual: () => void;
   discrepancy: TestDiscrepancy;
+  selectedItems: Map<string, string>;
+  toggleOpen: (event: React.SyntheticEvent<Element>, type: RuleType, item: Result) => void;
+  allExpanded: boolean;
+  handleCollapseAll: () => void;
+  handleExpandAll: () => void;
+  onSelectionChange: (key: string) => void;
 }
 
 const colorsByType = {
@@ -69,6 +75,12 @@ export const A11yContext = createContext<A11yContextStore>({
   error: undefined,
   handleManual: () => {},
   discrepancy: null,
+  selectedItems: new Map(),
+  allExpanded: false,
+  toggleOpen: () => {},
+  handleCollapseAll: () => {},
+  handleExpandAll: () => {},
+  onSelectionChange: () => {},
 });
 
 const defaultResult = {
@@ -129,6 +141,51 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
     () => setHighlighted((prevHighlighted) => !prevHighlighted),
     []
   );
+
+  const [selectedItems, setSelectedItems] = useState<Map<string, string>>(() => {
+    const initialValue = new Map();
+    if (a11ySelection && /^[a-z]+.[a-z-]+.[0-9]+$/.test(a11ySelection)) {
+      const [type, id] = a11ySelection.split('.');
+      initialValue.set(`${type}.${id}`, a11ySelection);
+    }
+    return initialValue;
+  });
+
+  // All items are expanded if something is selected from each result for the current tab
+  const allExpanded = useMemo(() => {
+    const currentResults = results[tab];
+    return currentResults.every((result) => selectedItems.has(`${tab}.${result.id}`));
+  }, [results, selectedItems, tab]);
+
+  const toggleOpen = useCallback(
+    (event: React.SyntheticEvent<Element>, type: RuleType, item: Result) => {
+      event.stopPropagation();
+      const key = `${type}.${item.id}`;
+      setSelectedItems((prev) => new Map(prev.delete(key) ? prev : prev.set(key, `${key}.1`)));
+    },
+    []
+  );
+
+  const handleCollapseAll = useCallback(() => {
+    setSelectedItems(new Map());
+  }, []);
+
+  const handleExpandAll = useCallback(() => {
+    setSelectedItems(
+      (prev) =>
+        new Map(
+          results[tab].map((result) => {
+            const key = `${tab}.${result.id}`;
+            return [key, prev.get(key) ?? `${key}.1`];
+          })
+        )
+    );
+  }, [results, tab]);
+
+  const onSelectionChange = useCallback((key: string) => {
+    const [type, id] = key.split('.');
+    setSelectedItems((prev) => new Map(prev.set(`${type}.${id}`, key)));
+  }, []);
 
   const handleError = useCallback((err: unknown) => {
     setStatus('error');
@@ -248,6 +305,12 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
         error,
         handleManual,
         discrepancy,
+        selectedItems,
+        toggleOpen,
+        allExpanded,
+        handleCollapseAll,
+        handleExpandAll,
+        onSelectionChange,
       }}
       {...props}
     />

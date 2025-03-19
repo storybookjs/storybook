@@ -7,6 +7,7 @@ import { fn } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
 import { results } from '../results.mock';
+import { RuleType } from '../types';
 import { A11YPanel } from './A11YPanel';
 import { A11yContext } from './A11yContext';
 import type { A11yContextStore } from './A11yContext';
@@ -58,11 +59,16 @@ const Template = (args: Pick<A11yContextStore, 'results' | 'error' | 'status' | 
       handleManual: fn(),
       highlighted: false,
       toggleHighlight: fn(),
-      tab: 0,
+      tab: RuleType.VIOLATION,
       setTab: fn(),
       setStatus: fn(),
-      selection: null,
       handleCopyLink: fn().mockName('handleCopyLink'),
+      selectedItems: new Map(),
+      toggleOpen: fn(),
+      allExpanded: false,
+      handleCollapseAll: fn(),
+      handleExpandAll: fn(),
+      onSelectionChange: fn(),
       ...args,
     }}
   >

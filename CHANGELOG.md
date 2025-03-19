@@ -1,3 +1,7 @@
+## 8.6.7
+
+- React-Native-Web: Fix errors in CLI template stories - [#30821](https://github.com/storybookjs/storybook/pull/30821), thanks @dannyhw!
+
 ## 8.6.6
 
 - Angular: Make sure that polyfills are loaded before the storybook is loaded - [#30811](https://github.com/storybookjs/storybook/pull/30811), thanks @kasperpeulen!

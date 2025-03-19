@@ -533,3 +533,8 @@ export {
   useStatusStore as experimental_useStatusStore,
   fullStatusStore as internal_fullStatusStore,
 } from './stores/status';
+export {
+  getTestProviderStoreById as experimental_getTestProviderStore,
+  useTestProviderStore as experimental_useTestProviderStore,
+  fullTestProviderStore as internal_fullTestProviderStore,
+} from './stores/test-provider';

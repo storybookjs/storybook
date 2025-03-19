@@ -78,7 +78,7 @@ const meta = {
   args: {
     testProviderInterfaces,
     testProviderStates,
-    statusCount: 0,
+    hasStatuses: false,
     clearStatuses: fn(),
     onRunAll: fn(),
     errorCount: 0,
@@ -93,7 +93,7 @@ const meta = {
       <ManagerContext.Provider value={managerContext}>{storyFn()}</ManagerContext.Provider>
     ),
     (StoryFn) => (
-      <div style={{ maxWidth: 232 }}>
+      <div style={{ maxWidth: 250 }}>
         <StoryFn />
       </div>
     ),
@@ -116,9 +116,16 @@ export const Expanded: Story = {
 
 export const Statuses: Story = {
   args: {
-    statusCount: 56,
+    hasStatuses: true,
     errorCount: 14,
     warningCount: 42,
+  },
+  play: Expanded.play,
+};
+
+export const PassingStatuses: Story = {
+  args: {
+    hasStatuses: true,
   },
   play: Expanded.play,
 };

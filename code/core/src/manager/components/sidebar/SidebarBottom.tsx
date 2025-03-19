@@ -12,6 +12,7 @@ import { type API_FilterFunction } from 'storybook/internal/types';
 import {
   experimental_useStatusStore,
   experimental_useTestProviderStore,
+  internal_fullStatusStore,
   internal_fullTestProviderStore,
 } from '#manager-stores';
 import { type API, type State, useStorybookApi, useStorybookState } from 'storybook/manager-api';
@@ -85,6 +86,7 @@ interface SidebarBottomProps {
   notifications: State['notifications'];
   errorCount: number;
   warningCount: number;
+  hasStatuses: boolean;
   isDevelopment?: boolean;
   testProviderStates: TestProviderStateByProviderId;
   testProviderInterfaces: TestProviders;
@@ -96,6 +98,7 @@ export const SidebarBottomBase = ({
   notifications = [],
   errorCount,
   warningCount,
+  hasStatuses,
   isDevelopment,
   testProviderStates,
   testProviderInterfaces,
@@ -174,11 +177,9 @@ export const SidebarBottomBase = ({
             {...{
               testProviderInterfaces,
               testProviderStates,
-              statusCount: Object.keys(status).length,
-              clearStatuses: () => {
-                // TODO
-              },
               onRunAll,
+              hasStatuses,
+              clearStatuses: internal_fullStatusStore.unset,
               errorCount,
               errorsActive,
               setErrorsActive,
@@ -196,21 +197,22 @@ export const SidebarBottomBase = ({
 export const SidebarBottom = ({ isDevelopment }: { isDevelopment?: boolean }) => {
   const api = useStorybookApi();
   const { notifications, testProviders: testProviderInterfaces } = useStorybookState();
-  const { errorCount, warningCount } = experimental_useStatusStore((statuses) => {
+  const { hasStatuses, errorCount, warningCount } = experimental_useStatusStore((statuses) => {
     return Object.values(statuses).reduce(
-      (counts, storyStatuses) => {
+      (result, storyStatuses) => {
         Object.values(storyStatuses).forEach((status) => {
+          result.hasStatuses = true;
           if (status.value === 'status-value:error') {
-            counts.errorCount += 1;
+            result.errorCount += 1;
           }
 
           if (status.value === 'status-value:warning') {
-            counts.warningCount += 1;
+            result.warningCount += 1;
           }
         });
-        return counts;
+        return result;
       },
-      { errorCount: 0, warningCount: 0 }
+      { errorCount: 0, warningCount: 0, hasStatuses: false }
     );
   });
 
@@ -220,6 +222,7 @@ export const SidebarBottom = ({ isDevelopment }: { isDevelopment?: boolean }) =>
     <SidebarBottomBase
       api={api}
       notifications={notifications}
+      hasStatuses={hasStatuses}
       errorCount={errorCount}
       warningCount={warningCount}
       isDevelopment={isDevelopment}

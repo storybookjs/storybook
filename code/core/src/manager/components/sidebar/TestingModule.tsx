@@ -162,7 +162,7 @@ const TestProvider = styled.div(({ theme }) => ({
 interface TestingModuleProps {
   testProviderInterfaces: TestProviders;
   testProviderStates: TestProviderStateByProviderId;
-  statusCount: number;
+  hasStatuses: boolean;
   clearStatuses: () => void;
   onRunAll: () => void;
   errorCount: number;
@@ -176,7 +176,7 @@ interface TestingModuleProps {
 export const TestingModule = ({
   testProviderInterfaces,
   testProviderStates,
-  statusCount,
+  hasStatuses,
   clearStatuses,
   onRunAll,
   errorCount,
@@ -364,7 +364,7 @@ export const TestingModule = ({
                 </StatusButton>
               </WithTooltip>
             )}
-            {/* {statusCount > 0 && (
+            {hasStatuses && (
               <WithTooltip
                 hasChrome={false}
                 tooltip={<TooltipNote note="Clear all statuses" />}
@@ -382,7 +382,7 @@ export const TestingModule = ({
                   <SweepIcon />
                 </IconButton>
               </WithTooltip>
-            )} */}
+            )}
           </Filters>
         </Bar>
       </Card>

@@ -135,7 +135,7 @@ describe('StoryObj', () => {
 
     type Actual = StoryObj<typeof meta>;
     type Expected = SvelteStory<
-    ButtonV4,
+      ButtonV4,
       { disabled: boolean; label: string },
       { disabled: boolean; label?: string }
     >;

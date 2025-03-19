@@ -1,3 +1,14 @@
+## 9.0.0-alpha.8
+
+- Angular: Export all files in Angular package.json - [#30849](https://github.com/storybookjs/storybook/pull/30849), thanks @kasperpeulen!
+- CLI: Don't add packageManager entry to package.json automatically - [#30855](https://github.com/storybookjs/storybook/pull/30855), thanks @kasperpeulen!
+- React: Allow portable stories to be used in SSR - [#30847](https://github.com/storybookjs/storybook/pull/30847), thanks @kasperpeulen!
+- Revert "Svelte: Adjust Svelte typings to include Svelte 5 function components" - [#30851](https://github.com/storybookjs/storybook/pull/30851), thanks @kasperpeulen!
+- Svelte: Adjust Svelte typings to include Svelte 5 function components - [#30812](https://github.com/storybookjs/storybook/pull/30812), thanks @dummdidumm!
+- Svelte: Adjust Svelte typings to include Svelte 5 function components - [#30852](https://github.com/storybookjs/storybook/pull/30852), thanks @kasperpeulen!
+- Telemetry: Make sure that telemetry doesn't fail on init - [#30857](https://github.com/storybookjs/storybook/pull/30857), thanks @kasperpeulen!
+- Vite: Update HMR filter to target specific story file types - [#30845](https://github.com/storybookjs/storybook/pull/30845), thanks @kasperpeulen!
+
 ## 9.0.0-alpha.7
 
 - Core: New Test Provider Store - [#30828](https://github.com/storybookjs/storybook/pull/30828), thanks @JReinhold!

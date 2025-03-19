@@ -52,4 +52,6 @@ export default {
 };
 ```
 
-Valid addon keys include: `backgrounds`, `controls`, `viewport`, `toolbars`.
+Valid addon keys include: `backgrounds`, `controls`, `viewport`, `toolbars`, `measure`, `outline`.
+
+Note: The `docs` addon was previously part of essentials but is now a separate package. If you need documentation features, please install `@storybook/addon-docs` separately.

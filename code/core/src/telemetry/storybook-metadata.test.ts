@@ -16,6 +16,11 @@ import {
 } from './package-json';
 import { computeStorybookMetadata, metaFrameworks, sanitizeAddonName } from './storybook-metadata';
 
+vi.mock(import('./package-json'), { spy: true });
+vi.mock(import('./get-monorepo-type'), { spy: true });
+vi.mock(import('package-manager-detector'), { spy: true });
+vi.mock(import('storybook/internal/common'), { spy: true });
+
 const packageJsonMock: PackageJson = {
   name: 'some-user-project',
   version: 'x.x.x',
@@ -26,11 +31,6 @@ const packageJsonPath = process.cwd();
 const mainJsMock: StorybookConfig = {
   stories: [],
 };
-
-vi.mock('./package-json', { spy: true });
-vi.mock('./get-monorepo-type', { spy: true });
-vi.mock('package-manager-detector', { spy: true });
-vi.mock('storybook/internal/common', { spy: true });
 
 beforeEach(() => {
   vi.mocked(detect).mockImplementation(async () => ({

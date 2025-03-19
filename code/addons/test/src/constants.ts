@@ -37,6 +37,10 @@ export type StoreState = {
   };
   watching: boolean;
   cancelling: boolean;
+  currentRun: {
+    totalTestCount: number | undefined;
+    finishedAt: number | undefined;
+  };
 };
 
 export type TriggerRunEvent = {
@@ -61,6 +65,10 @@ export const storeOptions = {
     },
     watching: false,
     cancelling: false,
+    currentRun: {
+      totalTestCount: undefined,
+      finishedAt: undefined,
+    },
   },
 };
 

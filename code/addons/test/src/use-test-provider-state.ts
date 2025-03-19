@@ -8,13 +8,20 @@ import type {
   TestProviderState,
 } from 'storybook/internal/types';
 
+import { store } from '#manager-store';
 import {
   type API,
   experimental_useStatusStore,
   experimental_useTestProviderStore,
+  experimental_useUniversalStore,
 } from 'storybook/manager-api';
 
-import { ADDON_ID, STATUS_TYPE_ID_A11Y, STATUS_TYPE_ID_COMPONENT_TEST } from './constants';
+import {
+  ADDON_ID,
+  STATUS_TYPE_ID_A11Y,
+  STATUS_TYPE_ID_COMPONENT_TEST,
+  type StoreState,
+} from './constants';
 
 export type StatusCountsByValue = Record<StatusValue, number>;
 
@@ -49,11 +56,14 @@ export const useTestProvider = (
   api: API,
   entryId?: string
 ): {
+  storeState: StoreState;
+  setStoreState: (typeof store)['setState'];
   testProviderState: TestProviderState;
   componentTestStatusCountsByValue: StatusCountsByValue;
   a11yStatusCountsByValue: StatusCountsByValue;
 } => {
   const testProviderState = experimental_useTestProviderStore((s) => s[ADDON_ID]);
+  const [storeState, setStoreState] = experimental_useUniversalStore(store);
 
   // TODO: does this overmemo, if the index changes, would that trigger a re-calculation of storyIds?
   const storyIds = useMemo(
@@ -79,6 +89,8 @@ export const useTestProvider = (
   const a11yStatusCountsByValue = experimental_useStatusStore(a11yStatusCountsByValueSelector);
 
   return {
+    storeState,
+    setStoreState,
     testProviderState,
     componentTestStatusCountsByValue,
     a11yStatusCountsByValue,

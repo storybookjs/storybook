@@ -25,6 +25,7 @@ import {
   PANEL_ID as A11y_ADDON_PANEL_ID,
 } from '../../../a11y/src/constants';
 import { type Details, PANEL_ID } from '../constants';
+import type { StoreState } from '../constants';
 import { type TestStatus } from '../node/reporter';
 import type { StatusCountsByValue } from '../use-test-provider-state';
 import { Description } from './Description';
@@ -96,6 +97,8 @@ type TestProviderRenderProps = {
   testProviderState: TestProviderState;
   componentTestStatusCountsByValue: StatusCountsByValue;
   a11yStatusCountsByValue: StatusCountsByValue;
+  storeState: StoreState;
+  setStoreState: (typeof store)['setState'];
   entryId?: string;
 } & ComponentProps<typeof Container>;
 
@@ -104,15 +107,17 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
   api,
   entryId,
   testProviderState,
+  storeState,
+  setStoreState,
   componentTestStatusCountsByValue,
   a11yStatusCountsByValue,
   ...props
 }) => {
+  const { config, watching, cancelling, currentRun } = storeState;
   const coverageSummary = state.details?.coverageSummary;
 
   const isA11yAddon = addons.experimental_getRegisteredAddons().includes(A11Y_ADDON_ID);
 
-  const [{ config, watching, cancelling }, setStoreState] = experimental_useUniversalStore(store);
   const isRunning = testProviderState === 'test-provider-state:running';
 
   const componentTestStatusIcon: ComponentProps<typeof TestStatusIcon>['status'] =
@@ -166,13 +171,13 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
     return 'positive';
   }, [isRunning, isA11yAddon, config.a11y, a11yResults]);
 
-  const a11yNotPassedAmount = config?.a11y
+  const a11yNotPassedAmount = config.a11y
     ? a11yResults?.filter((result) => result?.status === 'failed' || result?.status === 'warning')
         .length
     : undefined;
 
   const a11ySkippedAmount =
-    isRunning || !config?.a11y ? null : a11yResults?.filter((result) => !result).length;
+    isRunning || !config.a11y ? null : a11yResults?.filter((result) => !result).length;
 
   const a11ySkippedSuffix = a11ySkippedAmount
     ? a11ySkippedAmount === 1 && isStoryEntry
@@ -251,6 +256,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
             entryId={entryId}
             results={results}
             watching={watching}
+            currentRun={currentRun}
           />
         </Info>
 

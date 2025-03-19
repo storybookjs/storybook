@@ -71,8 +71,13 @@ addons.register(ADDON_ID, (api) => {
       // @ts-expect-error: TODO: Fix types
       render: (state) => {
         const [isModalOpen, setModalOpen] = useState(false);
-        const { testProviderState, componentTestStatusCountsByValue, a11yStatusCountsByValue } =
-          useTestProvider(api);
+        const {
+          storeState,
+          setStoreState,
+          testProviderState,
+          componentTestStatusCountsByValue,
+          a11yStatusCountsByValue,
+        } = useTestProvider(api);
         return (
           <GlobalErrorContext.Provider
             value={{ error: state.error?.message, isModalOpen, setModalOpen }}
@@ -80,6 +85,8 @@ addons.register(ADDON_ID, (api) => {
             <TestProviderRender
               api={api}
               state={state}
+              storeState={storeState}
+              setStoreState={setStoreState}
               testProviderState={testProviderState}
               componentTestStatusCountsByValue={componentTestStatusCountsByValue}
               a11yStatusCountsByValue={a11yStatusCountsByValue}
@@ -121,50 +128,6 @@ addons.register(ADDON_ID, (api) => {
         if ((!state.running && update.running) || store.getState().watching) {
           // Clear coverage data when starting test run or enabling watch mode
           delete updated.details.coverageSummary;
-        }
-
-        if (update.details?.testResults) {
-          componentTestStatusStore.set(
-            update.details.testResults.flatMap((testResult) =>
-              testResult.results
-                .filter(({ storyId }) => storyId)
-                .map(({ storyId, status, testRunId, ...rest }) => {
-                  return {
-                    storyId,
-                    typeId: STATUS_TYPE_ID_COMPONENT_TEST,
-                    value: statusMap[status],
-                    title: 'Component tests',
-                    description:
-                      'failureMessages' in rest && rest.failureMessages
-                        ? rest.failureMessages.join('\n')
-                        : '',
-                    data: { testRunId },
-                    sidebarContextMenu: false,
-                  };
-                })
-            )
-          );
-          a11yStatusStore.set(
-            update.details.testResults.flatMap((testResult) =>
-              testResult.results
-                .filter(({ storyId, reports }) => {
-                  const a11yReport = reports.find((r: any) => r.type === 'a11y');
-                  return storyId && a11yReport;
-                })
-                .map(({ storyId, testRunId, reports }) => {
-                  const a11yReport = reports.find((r: any) => r.type === 'a11y')!;
-                  return {
-                    storyId,
-                    typeId: STATUS_TYPE_ID_A11Y,
-                    value: statusMap[a11yReport.status],
-                    title: 'Accessibility tests',
-                    description: '',
-                    data: { testRunId },
-                    sidebarContextMenu: false,
-                  };
-                })
-            )
-          );
         }
 
         return updated;

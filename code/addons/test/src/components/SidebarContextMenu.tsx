@@ -13,8 +13,13 @@ type SidebarContextMenuProps = {
 } & Parameters<NonNullable<Addon_TestProviderType<Details>['sidebarContextMenu']>>[0];
 
 export const SidebarContextMenu: FC<SidebarContextMenuProps> = ({ context, state, api }) => {
-  const { testProviderState, componentTestStatusCountsByValue, a11yStatusCountsByValue } =
-    useTestProvider(api, context.id);
+  const {
+    testProviderState,
+    componentTestStatusCountsByValue,
+    a11yStatusCountsByValue,
+    storeState,
+    setStoreState,
+  } = useTestProvider(api, context.id);
 
   return (
     <TestProviderRender
@@ -25,6 +30,8 @@ export const SidebarContextMenu: FC<SidebarContextMenuProps> = ({ context, state
       testProviderState={testProviderState}
       componentTestStatusCountsByValue={componentTestStatusCountsByValue}
       a11yStatusCountsByValue={a11yStatusCountsByValue}
+      storeState={storeState}
+      setStoreState={setStoreState}
     />
   );
 };

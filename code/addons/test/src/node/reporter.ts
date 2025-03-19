@@ -98,7 +98,7 @@ export class StorybookReporter implements Reporter {
   sendReport: (payload: TestingModuleProgressReportPayload) => void;
 
   constructor(public testManager: TestManager) {
-    this.sendReport = throttle((payload) => this.testManager.sendProgressReport(payload), 1000);
+    this.sendReport = throttle((payload) => this.testManager.handleProgressReport(payload), 1000);
   }
 
   onInit(ctx: Vitest) {
@@ -152,9 +152,9 @@ export class StorybookReporter implements Reporter {
         ancestorTitles.reverse();
 
         const status = statusMap[t.result?.state || t.mode] || 'skipped';
-        const storyId = (t.meta as any).storyId as string;
+        const storyId = (t.meta as { storyId: string }).storyId;
         const reports =
-          ((t.meta as any).reports as Report[])?.map((report) => ({
+          (t.meta as { reports?: Report[] }).reports?.map((report) => ({
             status: report.status,
             type: report.type,
           })) ?? [];

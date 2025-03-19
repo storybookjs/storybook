@@ -6,16 +6,24 @@ import {
   type TestingModuleProgressReportPayload,
 } from 'storybook/internal/core-events';
 import type { experimental_UniversalStore } from 'storybook/internal/core-server';
-import type { StatusStoreByTypeId, TestProviderStoreById } from 'storybook/internal/types';
+import type {
+  StatusStoreByTypeId,
+  StatusValue,
+  TestProviderStoreById,
+} from 'storybook/internal/types';
 
 import { isEqual } from 'es-toolkit';
 
 import {
+  type Details,
+  STATUS_TYPE_ID_A11Y,
+  STATUS_TYPE_ID_COMPONENT_TEST,
   type StoreEvent,
   type StoreState,
   TEST_PROVIDER_ID,
   type TriggerRunEvent,
 } from '../constants';
+import type { TestStatus } from './reporter';
 import { VitestManager } from './vitest-manager';
 
 type TestManagerOptions = {
@@ -28,10 +36,20 @@ type TestManagerOptions = {
   onReady?: () => void;
 };
 
-export class TestManager {
-  private channel: TestManagerOptions['channel'];
+const statusMap: Record<TestStatus, StatusValue> = {
+  pending: 'status-value:pending',
+  passed: 'status-value:success',
+  warning: 'status-value:warning',
+  failed: 'status-value:error',
+  skipped: 'status-value:unknown',
+};
 
+export class TestManager {
   public store: TestManagerOptions['store'];
+
+  public vitestManager: VitestManager;
+
+  private channel: TestManagerOptions['channel'];
 
   private componentTestStatusStore: TestManagerOptions['componentTestStatusStore'];
 
@@ -42,8 +60,6 @@ export class TestManager {
   private onError?: TestManagerOptions['onError'];
 
   private onReady?: TestManagerOptions['onReady'];
-
-  private vitestManager: VitestManager;
 
   private selectedStoryCountForLastRun = 0;
 
@@ -106,6 +122,14 @@ export class TestManager {
   }
 
   async handleRunRequest(event: TriggerRunEvent) {
+    this.store.setState((s) => ({
+      ...s,
+      currentRun: {
+        ...s.currentRun,
+        finishedAt: undefined,
+        totalTestCount: undefined,
+      },
+    }));
     this.testProviderStore.runWithState(async () => {
       try {
         const state = this.store.getState();
@@ -157,12 +181,67 @@ export class TestManager {
     }
   }
 
-  async sendProgressReport(payload: TestingModuleProgressReportPayload) {
-    this.channel.emit(TESTING_MODULE_PROGRESS_REPORT, {
-      ...payload,
-      details: { ...payload.details, selectedStoryCount: this.selectedStoryCountForLastRun },
-    });
+  async handleProgressReport(payload: TestingModuleProgressReportPayload) {
+    // this.channel.emit(TESTING_MODULE_PROGRESS_REPORT, {
+    //   ...payload,
+    //   details: { ...payload.details, selectedStoryCount: this.selectedStoryCountForLastRun },
+    // });
+    console.dir(payload.details, { depth: null });
+    if (!payload.details?.testResults) {
+      return;
+    }
+    this.store.setState((s) => ({
+      ...s,
+      currentRun: {
+        ...s.currentRun,
+        finishedAt: payload.progress?.finishedAt,
+        totalTestCount: payload.progress?.numTotalTests,
+      },
+    }));
 
+    this.componentTestStatusStore.set(
+      (payload.details as Details).testResults.flatMap((testResult) =>
+        testResult.results
+          .filter(({ storyId }) => storyId)
+          .map(({ storyId, status, testRunId, ...rest }) => {
+            return {
+              storyId,
+              typeId: STATUS_TYPE_ID_COMPONENT_TEST,
+              value: statusMap[status],
+              title: 'Component tests',
+              description:
+                'failureMessages' in rest && rest.failureMessages
+                  ? rest.failureMessages.join('\n')
+                  : '',
+              data: { testRunId },
+              sidebarContextMenu: false,
+            };
+          })
+      )
+    );
+    this.a11yStatusStore.set(
+      (payload.details as Details).testResults.flatMap((testResult) =>
+        testResult.results
+          .filter(({ storyId, reports }) => {
+            const a11yReport = reports.find((r: any) => r.type === 'a11y');
+            return storyId && a11yReport;
+          })
+          .map(({ storyId, testRunId, reports }) => {
+            const a11yReport = reports.find((r: any) => r.type === 'a11y')!;
+            return {
+              storyId,
+              typeId: STATUS_TYPE_ID_A11Y,
+              value: statusMap[a11yReport.status],
+              title: 'Accessibility tests',
+              description: '',
+              data: { testRunId },
+              sidebarContextMenu: false,
+            };
+          })
+      )
+    );
+
+    // TODO: do something with this
     const status = 'status' in payload ? payload.status : undefined;
     const progress = 'progress' in payload ? payload.progress : undefined;
     if (

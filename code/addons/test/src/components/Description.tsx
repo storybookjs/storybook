@@ -5,6 +5,7 @@ import { type TestProviderConfig, type TestProviderState } from 'storybook/inter
 
 import { styled } from 'storybook/theming';
 
+import type { StoreState } from '../constants';
 import type { TestResultResult } from '../node/reporter';
 import { GlobalErrorContext } from './GlobalErrorModal';
 import { RelativeTime } from './RelativeTime';
@@ -26,9 +27,17 @@ interface DescriptionProps extends Omit<ComponentProps<typeof Wrapper>, 'results
   watching: boolean;
   entryId?: string;
   results?: TestResultResult[];
+  currentRun: StoreState['currentRun'];
 }
 
-export function Description({ state, watching, entryId, results, ...props }: DescriptionProps) {
+export function Description({
+  state,
+  watching,
+  entryId,
+  results,
+  currentRun,
+  ...props
+}: DescriptionProps) {
   const { setModalOpen } = React.useContext(GlobalErrorContext);
 
   const errorMessage = state.error?.message;
@@ -50,11 +59,11 @@ export function Description({ state, watching, entryId, results, ...props }: Des
     ) : (
       state.error?.name || 'Failed'
     );
-  } else if (state.progress?.finishedAt) {
+  } else if (currentRun.finishedAt) {
     description = (
       <>
-        Ran {state.progress.numTotalTests} {state.progress.numTotalTests === 1 ? 'test' : 'tests'}{' '}
-        <RelativeTime timestamp={state.progress.finishedAt} />
+        Ran {currentRun.totalTestCount} {currentRun.totalTestCount === 1 ? 'test' : 'tests'}{' '}
+        <RelativeTime timestamp={currentRun.finishedAt} />
       </>
     );
   } else if (watching) {

@@ -43,7 +43,7 @@ export default class StorybookCoverageReporter extends ReportBase implements Par
             ? 'warning'
             : 'positive',
     };
-    this.#testManager.sendProgressReport({
+    this.#testManager.handleProgressReport({
       providerId: TEST_PROVIDER_ID,
       details: {
         coverageSummary: coverageDetails,

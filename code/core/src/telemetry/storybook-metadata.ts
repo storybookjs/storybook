@@ -9,8 +9,8 @@ import {
 import { readConfig } from 'storybook/internal/csf-tools';
 import type { PackageJson, StorybookConfig } from 'storybook/internal/types';
 
-import { detect, getNpmVersion } from 'detect-package-manager';
 import { findPackage, findPackagePath } from 'fd-package-json';
+import { detect } from 'package-manager-detector';
 
 import { getApplicationFileCount } from './get-application-file-count';
 import { getChromaticVersionSpecifier } from './get-chromatic-version';
@@ -114,12 +114,14 @@ export const computeStorybookMetadata = async ({
 
   try {
     const packageManagerType = await detect({ cwd: getProjectRoot() });
-    const packageManagerVersion = await getNpmVersion(packageManagerType);
+    if (packageManagerType) {
+      metadata.packageManager = {
+        type: packageManagerType.name,
+        version: packageManagerType.version,
+        agent: packageManagerType.agent,
+      };
+    }
 
-    metadata.packageManager = {
-      type: packageManagerType,
-      version: packageManagerVersion,
-    };
     // Better be safe than sorry, some codebases/paths might end up breaking with something like "spawn pnpm ENOENT"
     // so we just set the package manager if the detection is successful
   } catch (err) {}

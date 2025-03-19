@@ -69,7 +69,7 @@ interface AddonDocsOptions {
 
 // Add type for migration object
 interface Migration {
-  check: (options: CheckOptions) => Promise<any>;
+  check: (options: CheckOptions) => Promise<AddonDocsOptions | null>;
   run: (options: RunOptions<any>) => Promise<void>;
 }
 

@@ -92,6 +92,7 @@ const config = defineMain({
   ],
   addons: [
     '@storybook/addon-themes',
+    '@storybook/addon-docs',
     '@storybook/addon-essentials',
     '@storybook/addon-storysource',
     '@storybook/addon-designs',

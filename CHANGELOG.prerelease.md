@@ -1,3 +1,11 @@
+## 9.0.0-alpha.7
+
+- Core: New Test Provider Store - [#30828](https://github.com/storybookjs/storybook/pull/30828), thanks @JReinhold!
+- React-Native: Fix `userEvent.setup()` errors in jest - [#30833](https://github.com/storybookjs/storybook/pull/30833), thanks @dannyhw!
+- React-Native: Fix `userEvent.setup()` errors outside browser context - [#30831](https://github.com/storybookjs/storybook/pull/30831), thanks @dannyhw!
+- Test: Upgrade to vitest 3 - [#30840](https://github.com/storybookjs/storybook/pull/30840), thanks @kasperpeulen!
+- UI: Fix status missing from sidebar - [#30830](https://github.com/storybookjs/storybook/pull/30830), thanks @JReinhold!
+
 ## 9.0.0-alpha.6
 
 - Core: New Status Store - [#30764](https://github.com/storybookjs/storybook/pull/30764), thanks @JReinhold!

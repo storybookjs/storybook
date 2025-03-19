@@ -2,7 +2,7 @@
   interface Props {
     disabled: boolean;
     label: string;
-    clicked?: (e: MouseEvent) => void
+    clicked?: (e: MouseEvent) => void;
   }
 
   // When a Svelte 5 component only uses runes, it is typed as a function component.

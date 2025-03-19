@@ -1,11 +1,17 @@
+/* eslint-disable @typescript-eslint/no-shadow */
 // this file tests Typescript types that's why there are no assertions
 import { describe, it } from 'vitest';
 
 import { satisfies } from 'storybook/internal/common';
-import type { Canvas, ComponentAnnotations, StoryAnnotations } from 'storybook/internal/types';
+import type {
+  Args,
+  Canvas,
+  ComponentAnnotations,
+  StoryAnnotations,
+} from 'storybook/internal/types';
 
 import { expectTypeOf } from 'expect-type';
-import type { Component, ComponentProps, SvelteComponent } from 'svelte';
+import { type Component, type ComponentProps, SvelteComponent } from 'svelte';
 
 import Button from './__test__/Button.svelte';
 import ButtonV5 from './__test__/ButtonV5.svelte';
@@ -19,6 +25,13 @@ type SvelteStory<
   Args,
   RequiredArgs,
 > = StoryAnnotations<SvelteRenderer<Comp>, Args, RequiredArgs>;
+
+// The imported Svelte component in Svelte 5 has an isomorphic type (both function and class).
+// In order to test how it would look like for real Svelte 4 components, we need to create the class type manually.
+declare class ButtonV4 extends SvelteComponent<{
+  disabled: boolean;
+  label: string;
+}> {}
 
 describe('Meta', () => {
   it('Generic parameter of Meta can be a component', () => {
@@ -108,6 +121,21 @@ describe('StoryObj', () => {
     type Actual = StoryObj<typeof meta>;
     type Expected = SvelteStory<
       Button,
+      { disabled: boolean; label: string },
+      { disabled: boolean; label?: string }
+    >;
+    expectTypeOf<Actual>().toMatchTypeOf<Expected>();
+  });
+
+  it('✅ Required args may be provided partial in meta and the story (Svelte 4, non-isomorphic type)', () => {
+    const meta = satisfies<Meta<ButtonV4>>()({
+      component: null as any as typeof ButtonV4,
+      args: { label: 'good' },
+    });
+
+    type Actual = StoryObj<typeof meta>;
+    type Expected = SvelteStory<
+      ButtonV4,
       { disabled: boolean; label: string },
       { disabled: boolean; label?: string }
     >;
@@ -292,4 +320,16 @@ it('mount accepts a Svelte 5 Component and props', () => {
     },
   };
   expectTypeOf(Basic).toMatchTypeOf<StoryObj<typeof ButtonV5>>();
+});
+
+it('StoryObj can accept args directly', () => {
+  const Story: StoryObj<Args> = {
+    args: {},
+  };
+
+  const Story2: StoryObj<{ prop: boolean }> = {
+    args: {
+      prop: true,
+    },
+  };
 });

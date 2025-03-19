@@ -269,5 +269,38 @@ describe('addon-essentials-remove-docs migration', () => {
 
       expect(mockPackageManager.addDependencies).not.toHaveBeenCalled();
     });
+
+    it('handles missing essentials addon gracefully', async () => {
+      const mockMain: MockConfigFile = {
+        getFieldValue: vi.fn().mockReturnValue(['@storybook/addon-links']), // No essentials here
+        setFieldValue: vi.fn(),
+        appendValueToArray: vi.fn(),
+        _ast: {},
+        _code: '',
+        _exports: {},
+        _exportDecls: [],
+      };
+
+      mockConfigs.set('main.ts', mockMain);
+
+      await typedAddonDocsEssentials.run({
+        result: {
+          hasEssentials: true,
+          hasDocsDisabled: false,
+        },
+        dryRun: false,
+        packageManager: mockPackageManager,
+        packageJson: mockPackageJson,
+        mainConfigPath: 'main.ts',
+        mainConfig: {
+          stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],
+        } as StorybookConfigRaw,
+      });
+
+      // Should not modify anything if essentials isn't found
+      expect(mockMain.setFieldValue).not.toHaveBeenCalled();
+      expect(mockPackageManager.addDependencies).not.toHaveBeenCalled();
+      expect(mockMain.appendValueToArray).not.toHaveBeenCalled();
+    });
   });
 });

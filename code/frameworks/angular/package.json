@@ -23,18 +23,17 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "node": "./dist/index.js",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
     },
     "./preset": "./preset.js",
     "./node": {
       "types": "./dist/node/index.d.ts",
-      "node": "./dist/node/index.js",
       "import": "./dist/node/index.js",
       "require": "./dist/node/index.js"
     },
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./*": "./*"
   },
   "main": "dist/index.js",
   "module": "dist/index.mjs",

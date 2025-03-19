@@ -30,7 +30,8 @@
       "import": "./dist/node/index.js",
       "require": "./dist/node/index.js"
     },
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./*": "./*"
   },
   "main": "dist/index.js",
   "module": "dist/index.mjs",

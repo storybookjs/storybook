@@ -26,6 +26,13 @@ type SvelteStory<
   RequiredArgs,
 > = StoryAnnotations<SvelteRenderer<Comp>, Args, RequiredArgs>;
 
+// The imported Svelte component in Svelte 5 has an isomorphic type (both function and class).
+// In order to test how it would look like for real Svelte 4 components, we need to create the class type manually.
+declare class ButtonV4 extends SvelteComponent<{
+  disabled: boolean;
+  label: string;
+}> {}
+
 describe('Meta', () => {
   it('Generic parameter of Meta can be a component', () => {
     const meta: Meta<Button> = {
@@ -121,15 +128,8 @@ describe('StoryObj', () => {
   });
 
   it('✅ Required args may be provided partial in meta and the story (Svelte 4, non-isomorphic type)', () => {
-    // The imported Svelte component in Svelte 5 has an isomorphic type (both function and class).
-    // In order to test how it would look like for real Svelte 4 components, we need to create the class type manually.
-    class ButtonV4 extends SvelteComponent<{
-      disabled: boolean;
-      label: string;
-    }> {}
-
     const meta = satisfies<Meta<ButtonV4>>()({
-      component: ButtonV4,
+      component: null as any as typeof ButtonV4,
       args: { label: 'good' },
     });
 

@@ -84,7 +84,20 @@ const meta = {
       ...baseState,
     },
     testProviderState: 'test-provider-state:pending',
-    componentTestErrorCount: 0,
+    componentTestStatusCountsByValue: {
+      'status-value:error': 0,
+      'status-value:success': 0,
+      'status-value:pending': 0,
+      'status-value:warning': 0,
+      'status-value:unknown': 0,
+    },
+    a11yStatusCountsByValue: {
+      'status-value:error': 0,
+      'status-value:success': 0,
+      'status-value:pending': 0,
+      'status-value:warning': 0,
+      'status-value:unknown': 0,
+    },
     api: managerContext.api,
   },
   decorators: [
@@ -132,7 +145,6 @@ export const Running: Story = {
       running: true,
     },
     testProviderState: 'test-provider-state:running',
-    componentTestErrorCount: 0,
   },
 };
 
@@ -155,6 +167,34 @@ export const Crashed: Story = {
       ...baseState,
     },
     testProviderState: 'test-provider-state:crashed',
+  },
+};
+
+export const ComponentTestsSucceeded: Story = {
+  args: {
+    state: {
+      ...config,
+      ...baseState,
+    },
+    testProviderState: 'test-provider-state:succeeded',
+    componentTestStatusCountsByValue: {
+      ...meta.args.componentTestStatusCountsByValue,
+      'status-value:success': 1,
+    },
+  },
+};
+
+export const ComponentTestsFailed: Story = {
+  args: {
+    state: {
+      ...config,
+      ...baseState,
+    },
+    testProviderState: 'test-provider-state:succeeded',
+    componentTestStatusCountsByValue: {
+      ...meta.args.componentTestStatusCountsByValue,
+      'status-value:error': 10,
+    },
   },
 };
 

@@ -26,6 +26,7 @@ import {
 } from '../../../a11y/src/constants';
 import { type Details, PANEL_ID } from '../constants';
 import { type TestStatus } from '../node/reporter';
+import type { StatusCountsByValue } from '../use-test-provider-state';
 import { Description } from './Description';
 import { TestStatusIcon } from './TestStatusIcon';
 
@@ -93,7 +94,8 @@ type TestProviderRenderProps = {
   api: API;
   state: TestProviderConfig & DeprecatedTestProviderState<Details>;
   testProviderState: TestProviderState;
-  componentTestErrorCount: number;
+  componentTestStatusCountsByValue: StatusCountsByValue;
+  a11yStatusCountsByValue: StatusCountsByValue;
   entryId?: string;
 } & ComponentProps<typeof Container>;
 
@@ -102,7 +104,8 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
   api,
   entryId,
   testProviderState,
-  componentTestErrorCount,
+  componentTestStatusCountsByValue,
+  a11yStatusCountsByValue,
   ...props
 }) => {
   const coverageSummary = state.details?.coverageSummary;
@@ -113,11 +116,11 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
   const isRunning = testProviderState === 'test-provider-state:running';
 
   const componentTestStatusIcon: ComponentProps<typeof TestStatusIcon>['status'] =
-    componentTestErrorCount
+    componentTestStatusCountsByValue['status-value:error'] > 0
       ? 'negative'
       : isRunning
         ? 'pending'
-        : testProviderState === 'test-provider-state:succeeded'
+        : componentTestStatusCountsByValue['status-value:success'] > 0
           ? 'positive'
           : 'unknown';
 
@@ -352,7 +355,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                   aria-label={`Test status: ${status}`}
                 />
               )}
-              {componentTestErrorCount || null}
+              {componentTestStatusCountsByValue['status-value:error'] || null}
             </IconButton>
           </WithTooltip>
         </Row>

@@ -34,6 +34,7 @@ import {
   TEST_PROVIDER_ID,
 } from './constants';
 import type { TestStatus } from './node/reporter';
+import { useTestProvider } from './use-test-provider-state';
 
 const statusMap: Record<TestStatus, StatusValue> = {
   pending: 'status-value:pending',
@@ -70,21 +71,8 @@ addons.register(ADDON_ID, (api) => {
       // @ts-expect-error: TODO: Fix types
       render: (state) => {
         const [isModalOpen, setModalOpen] = useState(false);
-        const testProviderState = experimental_useTestProviderStore((s) => s[ADDON_ID]);
-        const componentTestErrorCount = experimental_useStatusStore((allStatuses) => {
-          let errorCount = 0;
-          Object.values(allStatuses).forEach((statusByTypeId) => {
-            const componentTestStatus = statusByTypeId[STATUS_TYPE_ID_COMPONENT_TEST];
-            if (!componentTestStatus) {
-              return;
-            }
-            if (componentTestStatus.value === 'status-value:error') {
-              errorCount++;
-            }
-          });
-
-          return errorCount;
-        });
+        const { testProviderState, componentTestStatusCountsByValue, a11yStatusCountsByValue } =
+          useTestProvider(api);
         return (
           <GlobalErrorContext.Provider
             value={{ error: state.error?.message, isModalOpen, setModalOpen }}
@@ -93,7 +81,8 @@ addons.register(ADDON_ID, (api) => {
               api={api}
               state={state}
               testProviderState={testProviderState}
-              componentTestErrorCount={componentTestErrorCount}
+              componentTestStatusCountsByValue={componentTestStatusCountsByValue}
+              a11yStatusCountsByValue={a11yStatusCountsByValue}
             />
             <GlobalErrorModal
               onRerun={() => {

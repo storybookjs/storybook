@@ -97,6 +97,11 @@ export const addonEssentialsRemoveDocs: Fix<AddonDocsOptions> = {
         return addon?.name === '@storybook/addon-essentials';
       });
 
+      // Safety check: if essentials isn't found, we can't modify it
+      if (essentialsIndex === -1) {
+        return;
+      }
+
       if (hasDocsDisabled) {
         // If docs was disabled, simply remove the docs config from essentials
         if (typeof addons[essentialsIndex] === 'object') {

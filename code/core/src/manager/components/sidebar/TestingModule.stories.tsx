@@ -72,6 +72,8 @@ const meta = {
   title: 'Sidebar/TestingModule',
   args: {
     testProviders,
+    hasStatuses: false,
+    clearStatuses: fn(),
     errorCount: 0,
     errorsActive: false,
     setErrorsActive: fn(),
@@ -84,7 +86,7 @@ const meta = {
       <ManagerContext.Provider value={managerContext}>{storyFn()}</ManagerContext.Provider>
     ),
     (StoryFn) => (
-      <div style={{ maxWidth: 232 }}>
+      <div style={{ maxWidth: 250 }}>
         <StoryFn />
       </div>
     ),
@@ -107,8 +109,16 @@ export const Expanded: Story = {
 
 export const Statuses: Story = {
   args: {
+    hasStatuses: true,
     errorCount: 14,
     warningCount: 42,
+  },
+  play: Expanded.play,
+};
+
+export const PassingStatuses: Story = {
+  args: {
+    hasStatuses: true,
   },
   play: Expanded.play,
 };
@@ -152,6 +162,14 @@ export const Running: Story = {
 export const RunningAll: Story = {
   args: {
     testProviders: testProviders.map((tp) => ({ ...tp, running: !!tp.runnable })),
+  },
+  play: Expanded.play,
+};
+
+export const RunningWithStatuses: Story = {
+  args: {
+    ...Statuses.args,
+    testProviders: [{ ...testProviders[0], running: true }, ...testProviders.slice(1)],
   },
   play: Expanded.play,
 };

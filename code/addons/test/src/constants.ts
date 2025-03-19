@@ -5,6 +5,8 @@ export const TEST_PROVIDER_ID = `${ADDON_ID}/test-provider`;
 export const PANEL_ID = `${ADDON_ID}/panel`;
 export const STORYBOOK_ADDON_TEST_CHANNEL = 'STORYBOOK_ADDON_TEST_CHANNEL';
 
+export const A11Y_PANEL_ID = 'storybook/a11y/panel';
+
 export const TUTORIAL_VIDEO_LINK = 'https://youtu.be/Waht9qq7AoA';
 export const DOCUMENTATION_LINK = 'writing-tests/test-addon';
 export const DOCUMENTATION_DISCREPANCY_LINK = `${DOCUMENTATION_LINK}#what-happens-when-there-are-different-test-results-in-multiple-environments`;
@@ -48,3 +50,6 @@ export const storeOptions = {
 };
 
 export const STORE_CHANNEL_EVENT_NAME = `UNIVERSAL_STORE:${storeOptions.id}`;
+
+export const STATUS_TYPE_ID_COMPONENT_TEST = 'storybook/component-test';
+export const STATUS_TYPE_ID_A11Y = 'storybook/a11y';

@@ -2,8 +2,6 @@
 // https://github.com/testing-library/react-testing-library/blob/3dcd8a9649e25054c0e650d95fca2317b7008576/src/act-compat.js
 import * as React from 'react';
 
-import * as DeprecatedReactTestUtils from 'react-dom/test-utils';
-
 declare const globalThis: {
   IS_REACT_ACT_ENVIRONMENT: boolean;
 };

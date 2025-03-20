@@ -12,11 +12,9 @@ import { checkAddonOrder } from '../check-addon-order';
 const configFile = './main.js';
 const essentialAddons = [
   'docs',
-  'controls',
   'actions',
   'backgrounds',
   'viewport',
-  'toolbars',
   'measure',
   'outline',
   'highlight',

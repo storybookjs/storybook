@@ -67,16 +67,27 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
     return channel;
   }
 
-  store.onStateChange((state) => {
-    if (state.watching) {
-      runTestRunner(channel, store);
-    }
-  });
   store.subscribe('TRIGGER_RUN', (event, eventInfo) => {
     // TODO: this ensures the provider is marked as running immediately,
     // but it could also result in a deadlock, if the state is never reset back due to the child process crashing or similar.
     testProviderStore.setState('test-provider-state:running');
     runTestRunner(channel, store, STORE_CHANNEL_EVENT_NAME, [{ event, eventInfo }]);
+  });
+  store.subscribe('TOGGLE_WATCHING', (event, eventInfo) => {
+    store.setState((s) => ({
+      ...s,
+      watching: event.payload.to,
+      currentRun: {
+        ...s.currentRun,
+        // when enabling watch mode, clear the coverage summary too
+        ...(event.payload.to && {
+          coverageSummary: undefined,
+        }),
+      },
+    }));
+    if (event.payload.to) {
+      runTestRunner(channel, store, STORE_CHANNEL_EVENT_NAME, [{ event, eventInfo }]);
+    }
   });
   store.subscribe('FATAL_ERROR', (event) => {
     const { message, error } = event.payload;

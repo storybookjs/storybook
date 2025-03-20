@@ -120,7 +120,7 @@ describe('TestManager', () => {
     );
     expect(createVitest).toHaveBeenCalledTimes(1);
 
-    await testManager.handleWatchModeRequest(true);
+    await testManager.handleToggleWatchingEvent(true);
     expect(createVitest).toHaveBeenCalledTimes(1); // shouldn't restart vitest
   });
 
@@ -133,7 +133,7 @@ describe('TestManager', () => {
     );
     expect(createVitest).toHaveBeenCalledTimes(1);
 
-    await testManager.handleRunRequest({
+    await testManager.handleTriggerRunEvent({
       type: 'TRIGGER_RUN',
       payload: {
         indexUrl: 'http://localhost:6006/index.json',
@@ -151,7 +151,7 @@ describe('TestManager', () => {
       options
     );
 
-    await testManager.handleRunRequest({
+    await testManager.handleTriggerRunEvent({
       type: 'TRIGGER_RUN',
       payload: {
         indexUrl: 'http://localhost:6006/index.json',
@@ -160,7 +160,7 @@ describe('TestManager', () => {
     });
     expect(vitest.runFiles).toHaveBeenCalledWith([], true);
 
-    await testManager.handleRunRequest({
+    await testManager.handleTriggerRunEvent({
       type: 'TRIGGER_RUN',
       payload: {
         indexUrl: 'http://localhost:6006/index.json',
@@ -222,7 +222,7 @@ describe('TestManager', () => {
 
     createVitest.mockClear();
 
-    await testManager.handleRunRequest({
+    await testManager.handleTriggerRunEvent({
       type: 'TRIGGER_RUN',
       payload: {
         indexUrl: 'http://localhost:6006/index.json',
@@ -235,7 +235,7 @@ describe('TestManager', () => {
     expect(vitest.runFiles).toHaveBeenCalledWith([], true);
     createVitest.mockClear();
 
-    await testManager.handleRunRequest({
+    await testManager.handleTriggerRunEvent({
       type: 'TRIGGER_RUN',
       payload: {
         indexUrl: 'http://localhost:6006/index.json',

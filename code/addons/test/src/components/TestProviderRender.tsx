@@ -187,10 +187,12 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                 size="medium"
                 active={watching}
                 onClick={() =>
-                  setStoreState((s) => ({
-                    ...s,
-                    watching: !watching,
-                  }))
+                  store.send({
+                    type: 'TOGGLE_WATCHING',
+                    payload: {
+                      to: !watching,
+                    },
+                  })
                 }
                 disabled={isRunning}
               >

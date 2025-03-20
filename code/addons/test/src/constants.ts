@@ -1,7 +1,6 @@
 import type { experimental_UniversalStore } from 'storybook/internal/core-server';
 import type { StoryId } from 'storybook/internal/types';
 
-import type { TestResult } from './node/old-reporter';
 import type { VitestError } from './types';
 
 export const ADDON_ID = 'storybook/test';
@@ -26,14 +25,6 @@ export const SUPPORTED_FRAMEWORKS = [
 ];
 
 export const SUPPORTED_RENDERERS = ['@storybook/react', '@storybook/svelte', '@storybook/vue3'];
-
-export type Details = {
-  testResults: TestResult[];
-  coverageSummary?: {
-    status: 'positive' | 'warning' | 'negative' | 'unknown';
-    percentage: number;
-  };
-};
 
 export type ErrorLike = {
   message: string;
@@ -84,6 +75,12 @@ export type TriggerRunEvent = {
 export type CancelRunEvent = {
   type: 'CANCEL_RUN';
 };
+export type ToggleWatchingEvent = {
+  type: 'TOGGLE_WATCHING';
+  payload: {
+    to: boolean;
+  };
+};
 export type FatalErrorEvent = {
   type: 'FATAL_ERROR';
   payload: {
@@ -91,7 +88,7 @@ export type FatalErrorEvent = {
     error: ErrorLike;
   };
 };
-export type StoreEvent = TriggerRunEvent | CancelRunEvent | FatalErrorEvent;
+export type StoreEvent = TriggerRunEvent | CancelRunEvent | FatalErrorEvent | ToggleWatchingEvent;
 
 export type Store = ReturnType<typeof experimental_UniversalStore.create<StoreState, StoreEvent>>;
 

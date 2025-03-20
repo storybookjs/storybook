@@ -1,6 +1,5 @@
-import type { TestResult } from 'vitest/dist/node.js';
+import type { TestResult, TestState } from 'vitest/dist/node.js';
 
-import type { Channel } from 'storybook/internal/channels';
 import type { experimental_UniversalStore } from 'storybook/internal/core-server';
 import type {
   StatusStoreByTypeId,
@@ -16,12 +15,12 @@ import {
   STATUS_TYPE_ID_COMPONENT_TEST,
   type StoreEvent,
   type StoreState,
+  type ToggleWatchingEvent,
   type TriggerRunEvent,
   storeOptions,
 } from '../constants';
 import type { VitestError } from '../types';
 import { errorToErrorLike } from '../utils';
-import type { TestStatus } from './old-reporter';
 import { VitestManager } from './vitest-manager';
 
 type TestManagerOptions = {
@@ -33,7 +32,7 @@ type TestManagerOptions = {
   onReady?: () => void;
 };
 
-const testStateToStatusValueMap: Record<TestStatus, StatusValue> = {
+const testStateToStatusValueMap: Record<TestState | 'warning', StatusValue> = {
   pending: 'status-value:pending',
   passed: 'status-value:success',
   warning: 'status-value:warning',
@@ -69,15 +68,12 @@ export class TestManager {
 
     this.vitestManager = new VitestManager(this);
 
-    this.store.subscribe('TRIGGER_RUN', this.handleRunRequest.bind(this));
-    this.store.subscribe('CANCEL_RUN', this.handleCancelRequest.bind(this));
-
+    this.store.subscribe('TRIGGER_RUN', this.handleTriggerRunEvent.bind(this));
+    this.store.subscribe('CANCEL_RUN', this.handleCancelEvent.bind(this));
+    this.store.subscribe('TOGGLE_WATCHING', this.handleToggleWatchingEvent.bind(this));
     this.store.onStateChange((state, previousState) => {
       if (!isEqual(state.config, previousState.config)) {
         this.handleConfigChange(state.config, previousState.config);
-      }
-      if (state.watching !== previousState.watching) {
-        this.handleWatchModeRequest(state.watching);
       }
     });
 
@@ -98,12 +94,12 @@ export class TestManager {
     }
   }
 
-  async handleWatchModeRequest(watching: boolean) {
+  async handleToggleWatchingEvent(event: ToggleWatchingEvent) {
     const coverage = this.store.getState().config.coverage ?? false;
 
     if (coverage) {
       try {
-        if (watching) {
+        if (event.payload.to) {
           // if watch mode is toggled on and coverage is already enabled, restart vitest without coverage to automatically disable it
           await this.vitestManager.restartVitest({ coverage: false });
         } else {
@@ -116,7 +112,7 @@ export class TestManager {
     }
   }
 
-  async handleRunRequest(event: TriggerRunEvent) {
+  async handleTriggerRunEvent(event: TriggerRunEvent) {
     this.componentTestStatusStore.unset(event.payload.storyIds);
     this.a11yStatusStore.unset(event.payload.storyIds);
 
@@ -162,7 +158,7 @@ export class TestManager {
     });
   }
 
-  async handleCancelRequest() {
+  async handleCancelEvent() {
     try {
       this.store.setState((s) => ({
         ...s,

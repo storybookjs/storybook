@@ -49,8 +49,6 @@ export class VitestManager {
 
   runningPromise: Promise<any> | null = null;
 
-  isCancelling = false;
-
   constructor(private testManager: TestManager) {}
 
   async startVitest({ coverage = false } = {}) {
@@ -252,10 +250,8 @@ export class VitestManager {
   }
 
   async cancelCurrentRun() {
-    this.isCancelling = true;
     await this.vitest?.cancelCurrentRun('keyboard-input');
     await this.runningPromise;
-    this.isCancelling = false;
   }
 
   async closeVitest() {
@@ -271,7 +267,9 @@ export class VitestManager {
     );
   }
 
-  private async getTestDependencies(spec: TestSpecification, deps = new Set<string>()) {
+  private async getTestDependencies(spec: TestSpecification) {
+    const deps = new Set<string>();
+
     const addImports = async (project: TestProject, filepath: string) => {
       if (deps.has(filepath)) {
         return;
@@ -279,9 +277,9 @@ export class VitestManager {
       deps.add(filepath);
 
       const mod = project.vite.moduleGraph.getModuleById(filepath);
-      // @ts-expect-error project.vitenode is a Vitest < 3 API.
-      const viteNode = isVitest3OrLater ? project.vite : project.vitenode;
-      const transformed = mod?.ssrTransformResult || (await viteNode.transformRequest(filepath));
+      const transformed =
+        mod?.ssrTransformResult || (await project.vite.transformRequest(filepath));
+
       if (!transformed) {
         return;
       }
@@ -304,11 +302,7 @@ export class VitestManager {
       );
     };
 
-    await addImports(
-      // @ts-expect-error spec.project.workspaceProject is a Vitest < 3 API.
-      isVitest3OrLater ? spec.project : spec.project.workspaceProject,
-      spec.moduleId
-    );
+    await addImports(spec.project, spec.moduleId);
     deps.delete(spec.moduleId);
 
     return deps;
@@ -320,7 +314,7 @@ export class VitestManager {
     }
     this.resetGlobalTestNamePattern();
 
-    const globTestFiles = await this.vitest?.globTestSpecifications.call(this.vitest);
+    const globTestFiles = await this.vitest?.globTestSpecifications();
 
     const testGraphs = await Promise.all(
       globTestFiles

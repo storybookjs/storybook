@@ -31,6 +31,12 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
 
+export const Other: Story = {
+  play: () => {
+    Promise.reject(new Error('This error has been rejected'));
+  },
+};
+
 export const Creating = {
   play: async ({ canvasElement }) => {
     throw new Error('test');

@@ -29,21 +29,13 @@ const managerContext: any = {
   state: {},
   api: {
     getDocsUrl: fn().mockName('api::getDocsUrl'),
+    getCurrentParameter: fn().mockName('api::getCurrentParameter'),
   },
 };
 
 const meta: Meta = {
   title: 'Panel',
   component: A11YPanel,
-  decorators: [
-    (Story) => (
-      <ManagerContext.Provider value={managerContext}>
-        <StyledWrapper id="panel-tab-content">
-          <Story />
-        </StyledWrapper>
-      </ManagerContext.Provider>
-    ),
-  ],
   parameters: {
     layout: 'fullscreen',
   },
@@ -73,7 +65,11 @@ const Template = (args: Pick<A11yContextStore, 'results' | 'error' | 'status' | 
       ...args,
     }}
   >
-    <A11YPanel />
+    <ManagerContext.Provider value={managerContext}>
+      <StyledWrapper id="panel-tab-content">
+        <A11YPanel />
+      </StyledWrapper>
+    </ManagerContext.Provider>
   </A11yContext.Provider>
 );
 
@@ -154,7 +150,7 @@ export const Error: Story = {
       <Template
         results={{ passes: [], incomplete: [], violations: [] }}
         status="error"
-        error="Test error message"
+        error={`TypeError: Configured rule { impact: "moderate", disable: true } is invalid. Rules must be an object with at least an id property.`}
         discrepancy={null}
       />
     );
@@ -168,6 +164,19 @@ export const ErrorStateWithObject: Story = {
         results={{ passes: [], incomplete: [], violations: [] }}
         status="error"
         error={{ message: 'Test error object message' }}
+        discrepancy={null}
+      />
+    );
+  },
+};
+
+export const Broken: Story = {
+  render: () => {
+    return (
+      <Template
+        results={{ passes: [], incomplete: [], violations: [] }}
+        status="broken"
+        error={null}
         discrepancy={null}
       />
     );

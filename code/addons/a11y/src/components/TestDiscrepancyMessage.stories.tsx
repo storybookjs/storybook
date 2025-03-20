@@ -13,6 +13,7 @@ const managerContext: any = {
   state: {},
   api: {
     getDocsUrl: fn().mockName('api::getDocsUrl'),
+    getCurrentParameter: fn().mockName('api::getCurrentParameter'),
   },
 };
 

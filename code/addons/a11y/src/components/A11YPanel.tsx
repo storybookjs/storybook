@@ -1,11 +1,13 @@
 import React, { useMemo } from 'react';
 
-import { ActionBar, Badge, ScrollArea } from 'storybook/internal/components';
+import { Badge, Button, ScrollArea } from 'storybook/internal/components';
 
 import { SyncIcon } from '@storybook/icons';
 
+import { useParameter } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
+import { PARAM_KEY } from '../constants';
 import { RuleType } from '../types';
 import { useA11yContext } from './A11yContext';
 import { Report } from './Report/Report';
@@ -26,12 +28,34 @@ const Tab = styled.div({
   gap: 6,
 });
 
-const Centered = styled.span({
+const Centered = styled.span(({ theme }) => ({
   display: 'flex',
+  flexDirection: 'column',
   alignItems: 'center',
   justifyContent: 'center',
+  textAlign: 'center',
+  fontSize: theme.typography.size.s2,
   height: '100%',
-});
+  gap: 24,
+
+  div: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 8,
+  },
+  p: {
+    margin: 0,
+    color: theme.textMutedColor,
+  },
+  code: {
+    display: 'inline-block',
+    fontSize: theme.typography.size.s2 - 1,
+    backgroundColor: theme.background.app,
+    border: `1px solid ${theme.color.border}`,
+    borderRadius: 4,
+    padding: '2px 3px',
+  },
+}));
 
 const Count = styled(Badge)({
   padding: 4,
@@ -39,6 +63,7 @@ const Count = styled(Badge)({
 });
 
 export const A11YPanel: React.FC = () => {
+  const { manual } = useParameter(PARAM_KEY, {} as any);
   const {
     results,
     status,
@@ -50,10 +75,6 @@ export const A11YPanel: React.FC = () => {
     toggleOpen,
   } = useA11yContext();
 
-  const manualActionItems = useMemo(
-    () => [{ title: 'Run test', onClick: handleManual }],
-    [handleManual]
-  );
   const tabs = useMemo(() => {
     const { passes, incomplete, violations } = results;
     return [
@@ -134,8 +155,20 @@ export const A11YPanel: React.FC = () => {
           {status === 'initial' && 'Initializing...'}
           {status === 'manual' && (
             <>
-              <>Manually run the accessibility scan.</>
-              <ActionBar key="actionbar" actionItems={manualActionItems} />
+              <div>
+                <strong>Accessibility tests run manually for this story</strong>
+                <p>
+                  Results will not show when using the testing module. You can still run
+                  accessibility tests manually.
+                </p>
+              </div>
+              <Button size="medium" onClick={handleManual}>
+                Run accessibility scan
+              </Button>
+              <p>
+                Update <code>{manual ? 'parameters' : 'globals'}.a11y.manual</code> to disable
+                manual mode.
+              </p>
             </>
           )}
           {status === 'running' && (
@@ -145,13 +178,33 @@ export const A11YPanel: React.FC = () => {
           )}
           {status === 'error' && (
             <>
-              The accessibility scan encountered an error.
-              <br />
-              {typeof error === 'string'
-                ? error
-                : error instanceof Error
-                  ? error.toString()
-                  : JSON.stringify(error)}
+              <div>
+                <strong>The accessibility scan encountered an error</strong>
+                <p>
+                  {typeof error === 'string'
+                    ? error
+                    : error instanceof Error
+                      ? error.toString()
+                      : JSON.stringify(error, null, 2)}
+                </p>
+              </div>
+              <Button size="medium" onClick={handleManual}>
+                Rerun accessibility scan
+              </Button>
+            </>
+          )}
+          {status === 'broken' && (
+            <>
+              <div>
+                <strong>This story&apos;s component tests failed</strong>
+                <p>
+                  Automated accessibility tests will not run until this is resolved. You can still
+                  test manually.
+                </p>
+              </div>
+              <Button size="medium" onClick={handleManual}>
+                Run accessibility scan
+              </Button>
             </>
           )}
         </Centered>

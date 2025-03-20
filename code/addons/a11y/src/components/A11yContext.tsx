@@ -11,6 +11,7 @@ import { HIGHLIGHT, RESET_HIGHLIGHT, SCROLL_INTO_VIEW } from '@storybook/addon-h
 
 import type { AxeResults, Result } from 'axe-core';
 import {
+  experimental_getStatusStore,
   experimental_useStatusStore,
   useAddonState,
   useChannel,
@@ -22,7 +23,14 @@ import {
 import type { Report } from 'storybook/preview-api';
 import { convert, themes } from 'storybook/theming';
 
-import { ADDON_ID, EVENTS, PANEL_ID, TEST_PROVIDER_ID } from '../constants';
+import {
+  ADDON_ID,
+  EVENTS,
+  PANEL_ID,
+  STATUS_TYPE_ID_A11Y,
+  STATUS_TYPE_ID_COMPONENT_TEST,
+  TEST_PROVIDER_ID,
+} from '../constants';
 import type { A11yParameters } from '../params';
 import type { A11YReport } from '../types';
 import { RuleType } from '../types';
@@ -54,6 +62,8 @@ export interface A11yContextStore {
   handleJumpToElement: (target: string) => void;
   handleSelectionChange: (key: string) => void;
 }
+
+const componentTestStatusStore = experimental_getStatusStore('storybook/component-test');
 
 const colorsByType = {
   [RuleType.VIOLATION]: convert(themes.light).color.negative,
@@ -92,7 +102,7 @@ const defaultResult = {
   violations: [],
 };
 
-type Status = 'initial' | 'manual' | 'running' | 'error' | 'ran' | 'ready';
+type Status = 'initial' | 'manual' | 'running' | 'error' | 'broken' | 'ran' | 'ready';
 
 export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
   const parameters = useParameter<A11yParameters>('a11y', {
@@ -124,8 +134,15 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
 
   const { storyId } = useStorybookState();
   const currentStoryA11yStatusValue = experimental_useStatusStore(
-    (allStatuses) => allStatuses[storyId]?.[TEST_PROVIDER_ID]?.value
+    (allStatuses) => allStatuses[storyId]?.[STATUS_TYPE_ID_A11Y]?.value
   );
+  componentTestStatusStore.onAllStatusChange((statuses, previousStatuses) => {
+    const current = statuses[storyId]?.[STATUS_TYPE_ID_COMPONENT_TEST];
+    const previous = previousStatuses[storyId]?.[STATUS_TYPE_ID_COMPONENT_TEST];
+    if (current?.value === 'status-value:error' && previous?.value !== 'status-value:error') {
+      setStatus('broken');
+    }
+  });
 
   useEffect(() => {
     if (status !== 'ran') {

@@ -104,12 +104,13 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
     config,
     watching,
     cancelling,
-    currentRun: { coverageSummary },
+    currentRun: { coverageSummary, finishedTestCount },
   } = storeState;
 
   const isA11yAddon = addons.experimental_getRegisteredAddons().includes(A11Y_ADDON_ID);
 
   const isRunning = testProviderState === 'test-provider-state:running';
+  const isStarting = isRunning && finishedTestCount === 0;
 
   const [componentTestStatusIcon, componentTestStatusLabel]: [
     ComponentProps<typeof TestStatusIcon>['status'],
@@ -212,7 +213,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                     type: 'CANCEL_RUN',
                   })
                 }
-                disabled={cancelling}
+                disabled={cancelling || isStarting}
               >
                 <Progress
                   percentage={

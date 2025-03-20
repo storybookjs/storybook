@@ -163,7 +163,6 @@ export class TestManager {
   }
 
   async handleCancelRequest() {
-    // TODO: if the run is cancelled too early, while Vitest is still starting up, it doesn't seem to have any effect
     try {
       this.store.setState((s) => ({
         ...s,

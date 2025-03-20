@@ -8,6 +8,7 @@ import { useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import { DOCUMENTATION_FATAL_ERROR_LINK } from '../constants';
+import type { ErrorLike, StoreState } from '../constants';
 
 const ModalBar = styled.div({
   display: 'flex',
@@ -29,6 +30,7 @@ const ModalTitle = styled.div(({ theme: { typography } }) => ({
 
 const ModalStackTrace = styled.pre(({ theme }) => ({
   whiteSpace: 'pre-wrap',
+  wordWrap: 'break-word',
   overflow: 'auto',
   maxHeight: '60vh',
   margin: 0,
@@ -46,20 +48,35 @@ const TroubleshootLink = styled.a(({ theme }) => ({
 export const GlobalErrorContext = React.createContext<{
   isModalOpen: boolean;
   setModalOpen: (isOpen: boolean) => void;
-  error?: string;
 }>({
   isModalOpen: false,
   setModalOpen: () => {},
-  error: undefined,
 });
 
 interface GlobalErrorModalProps {
   onRerun: () => void;
+  storeState: StoreState;
 }
 
-export function GlobalErrorModal({ onRerun }: GlobalErrorModalProps) {
+function ErrorCause({ error }: { error: ErrorLike }) {
+  if (!error) {
+    return null;
+  }
+
+  return (
+    <div>
+      <h4>
+        Caused by: {error.name || 'Error'}: {error.message}
+      </h4>
+      {error.stack && <pre>{error.stack}</pre>}
+      {error.cause && <ErrorCause error={error.cause} />}
+    </div>
+  );
+}
+
+export function GlobalErrorModal({ onRerun, storeState }: GlobalErrorModalProps) {
   const api = useStorybookApi();
-  const { error, isModalOpen, setModalOpen } = useContext(GlobalErrorContext);
+  const { isModalOpen, setModalOpen } = useContext(GlobalErrorContext);
   const handleClose = () => setModalOpen(false);
 
   const troubleshootURL = api.getDocsUrl({
@@ -67,6 +84,51 @@ export function GlobalErrorModal({ onRerun }: GlobalErrorModalProps) {
     versioned: true,
     renderer: true,
   });
+
+  const {
+    fatalError,
+    currentRun: { unhandledErrors },
+  } = storeState;
+
+  const content = fatalError ? (
+    <>
+      <h3>{fatalError.error.name || 'Error'}</h3>
+      {fatalError.message && <p>{fatalError.message}</p>}
+      {fatalError.error.message && <p>{fatalError.error.message}</p>}
+      {fatalError.error.stack && <p>{fatalError.error.stack}</p>}
+      {fatalError.error.cause && <ErrorCause error={fatalError.error.cause} />}
+    </>
+  ) : unhandledErrors.length > 0 ? (
+    <ol>
+      {unhandledErrors.map((error) => (
+        <li key={error.name + error.message}>
+          <h3>{error.message}</h3>
+          {error.VITEST_TEST_PATH && (
+            <p>
+              This error originated in "{error.VITEST_TEST_PATH}". It doesn't mean the error was
+              thrown inside the file itself, but while it was running.
+            </p>
+          )}
+          {error.VITEST_TEST_NAME && (
+            <p>
+              The latest test that might've caused the error is "
+              <code>{error.VITEST_TEST_NAME}</code>".
+              <br />
+              It might mean one of the following:
+              <ul>
+                <li>The error was thrown, while Vitest was running this test.</li>
+                <li>
+                  If the error occurred after the test had been completed, this was the last
+                  documented test before it was thrown.
+                </li>
+              </ul>
+            </p>
+          )}
+          <p>{error.stack}</p>
+        </li>
+      ))}
+    </ol>
+  ) : null;
 
   return (
     <Modal onEscapeKeyDown={handleClose} onInteractOutside={handleClose} open={isModalOpen}>
@@ -88,7 +150,7 @@ export function GlobalErrorModal({ onRerun }: GlobalErrorModalProps) {
         </ModalActionBar>
       </ModalBar>
       <ModalStackTrace>
-        {error}
+        {content}
         <br />
         <br />
         Troubleshoot:{' '}

@@ -26,7 +26,7 @@ import {
 } from '../../../a11y/src/constants';
 import { type Details, PANEL_ID } from '../constants';
 import type { StoreState } from '../constants';
-import { type TestStatus } from '../node/reporter';
+import { type TestStatus } from '../node/old-reporter';
 import type { StatusCountsByValue } from '../use-test-provider-state';
 import { Description } from './Description';
 import { TestStatusIcon } from './TestStatusIcon';
@@ -113,7 +113,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
   a11yStatusCountsByValue,
   ...props
 }) => {
-  const { config, watching, cancelling, currentRun } = storeState;
+  const { config, watching, cancelling } = storeState;
   const coverageSummary = state.details?.coverageSummary;
 
   const isA11yAddon = addons.experimental_getRegisteredAddons().includes(A11Y_ADDON_ID);
@@ -128,62 +128,16 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
         : componentTestStatusCountsByValue['status-value:success'] > 0
           ? 'positive'
           : 'unknown';
+  const a11yStatusIcon: ComponentProps<typeof TestStatusIcon>['status'] =
+    a11yStatusCountsByValue['status-value:warning'] > 0
+      ? 'warning'
+      : isRunning
+        ? 'pending'
+        : a11yStatusCountsByValue['status-value:success'] > 0
+          ? 'positive'
+          : 'unknown';
 
   const isStoryEntry = entryId?.includes('--') ?? false;
-
-  const a11yResults = useMemo(() => {
-    if (!isA11yAddon) {
-      return [];
-    }
-
-    return state.details?.testResults?.flatMap((result) =>
-      result.results
-        .filter(Boolean)
-        .filter((r) => !entryId || r.storyId === entryId || r.storyId?.startsWith(`${entryId}-`))
-        .map((r) => r.reports.find((report) => report.type === 'a11y'))
-    );
-  }, [isA11yAddon, state.details?.testResults, entryId]);
-
-  const a11yStatus = useMemo<'positive' | 'warning' | 'negative' | 'pending' | 'unknown'>(() => {
-    if (!isA11yAddon || config.a11y === false) {
-      return 'unknown';
-    }
-
-    if (isRunning) {
-      return 'pending';
-    }
-
-    const definedA11yResults = a11yResults?.filter(Boolean) ?? [];
-
-    if (!definedA11yResults || definedA11yResults.length === 0) {
-      return 'unknown';
-    }
-
-    const failed = definedA11yResults.some((result) => result?.status === 'failed');
-    const warning = definedA11yResults.some((result) => result?.status === 'warning');
-
-    if (failed) {
-      return 'negative';
-    } else if (warning) {
-      return 'warning';
-    }
-
-    return 'positive';
-  }, [isRunning, isA11yAddon, config.a11y, a11yResults]);
-
-  const a11yNotPassedAmount = config.a11y
-    ? a11yResults?.filter((result) => result?.status === 'failed' || result?.status === 'warning')
-        .length
-    : undefined;
-
-  const a11ySkippedAmount =
-    isRunning || !config.a11y ? null : a11yResults?.filter((result) => !result).length;
-
-  const a11ySkippedSuffix = a11ySkippedAmount
-    ? a11ySkippedAmount === 1 && isStoryEntry
-      ? ' (skipped)'
-      : ` (${a11ySkippedAmount} skipped)`
-    : '';
 
   const storyId = isStoryEntry ? entryId : undefined;
 
@@ -252,11 +206,9 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
           </Title>
           <Description
             id="testing-module-description"
-            state={state}
+            storeState={storeState}
+            testProviderState={testProviderState}
             entryId={entryId}
-            results={results}
-            watching={watching}
-            currentRun={currentRun}
           />
         </Info>
 
@@ -300,7 +252,15 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                 }
                 disabled={cancelling}
               >
-                <Progress percentage={state.progress?.percentageCompleted}>
+                <Progress
+                  percentage={
+                    storeState.currentRun.finishedTestCount && storeState.currentRun.totalTestCount
+                      ? (storeState.currentRun.finishedTestCount /
+                          storeState.currentRun.totalTestCount) *
+                        100
+                      : undefined
+                  }
+                >
                   <StopIcon />
                 </Progress>
               </IconButton>
@@ -352,7 +312,11 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
               />
             }
           >
-            <IconButton size="medium" disabled={!results?.length} onClick={openTestsPanel}>
+            <IconButton
+              size="medium"
+              disabled={componentTestStatusCountsByValue['status-value:error'] === 0}
+              onClick={openTestsPanel}
+            >
               {testProviderState === 'test-provider-state:crashed' ? (
                 <TestStatusIcon status="critical" aria-label="Test status: crashed" />
               ) : (
@@ -474,7 +438,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
           <Row>
             <ListItem
               as="label"
-              title={`Accessibility${a11ySkippedSuffix}`}
+              title="Accessibility"
               icon={
                 entryId ? null : (
                   <Checkbox
@@ -501,12 +465,16 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                 />
               }
             >
-              <IconButton size="medium" disabled={!a11yResults?.length} onClick={openA11yPanel}>
+              <IconButton
+                size="medium"
+                disabled={a11yStatusCountsByValue['status-value:warning'] === 0}
+                onClick={openA11yPanel}
+              >
                 <TestStatusIcon
-                  status={a11yStatus}
-                  aria-label={`Accessibility status: ${a11yStatus}`}
+                  status={a11yStatusIcon}
+                  aria-label={`Accessibility status: ${a11yStatusIcon}`}
                 />
-                {isStoryEntry ? null : a11yNotPassedAmount || null}
+                {a11yStatusCountsByValue['status-value:warning'] || null}
               </IconButton>
             </WithTooltip>
           </Row>

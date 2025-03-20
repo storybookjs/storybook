@@ -1,12 +1,12 @@
 import React, { type ComponentProps, useEffect } from 'react';
 
 import { Link as LinkComponent } from 'storybook/internal/components';
-import { type TestProviderConfig, type TestProviderState } from 'storybook/internal/core-events';
+import type { TestProviderState } from 'storybook/internal/types';
 
 import { styled } from 'storybook/theming';
 
 import type { StoreState } from '../constants';
-import type { TestResultResult } from '../node/reporter';
+import type { TestResultResult } from '../node/old-reporter';
 import { GlobalErrorContext } from './GlobalErrorModal';
 import { RelativeTime } from './RelativeTime';
 
@@ -23,50 +23,54 @@ const PositiveText = styled.span(({ theme }) => ({
 }));
 
 interface DescriptionProps extends Omit<ComponentProps<typeof Wrapper>, 'results'> {
-  state: TestProviderConfig & TestProviderState;
-  watching: boolean;
+  storeState: StoreState;
+  testProviderState: TestProviderState;
   entryId?: string;
-  results?: TestResultResult[];
-  currentRun: StoreState['currentRun'];
 }
 
 export function Description({
-  state,
-  watching,
   entryId,
-  results,
-  currentRun,
+  storeState,
+  testProviderState,
   ...props
 }: DescriptionProps) {
   const { setModalOpen } = React.useContext(GlobalErrorContext);
 
-  const errorMessage = state.error?.message;
+  const { finishedTestCount, totalTestCount, unhandledErrors, finishedAt } = storeState.currentRun;
 
   let description: string | React.ReactNode = 'Not run';
-  if (state.running) {
-    description = state.progress
-      ? `Testing... ${state.progress.numPassedTests}/${state.progress.numTotalTests}`
-      : 'Starting...';
-  } else if (entryId && results?.length) {
-    description = `Ran ${results.length} ${results.length === 1 ? 'test' : 'tests'}`;
-  } else if (state.failed && !errorMessage) {
-    description = 'Failed';
-  } else if (state.crashed || (state.failed && errorMessage)) {
+  if (testProviderState === 'test-provider-state:running') {
+    description =
+      (finishedTestCount ?? 0) === 0
+        ? 'Starting...'
+        : `Testing... ${finishedTestCount}/${totalTestCount}`;
+  } else if (testProviderState === 'test-provider-state:crashed') {
     description = setModalOpen ? (
       <LinkComponent isButton onClick={() => setModalOpen(true)}>
-        {state.error?.name || 'View full error'}
+        View full error
       </LinkComponent>
     ) : (
-      state.error?.name || 'Failed'
+      'Crashed'
     );
-  } else if (currentRun.finishedAt) {
+  } else if (unhandledErrors.length > 0) {
+    const unhandledErrorDescription = `${unhandledErrors.length} unhandled error${unhandledErrors?.length > 1 ? 's' : ''}`;
+    description = setModalOpen ? (
+      <LinkComponent isButton onClick={() => setModalOpen(true)}>
+        {unhandledErrorDescription}
+      </LinkComponent>
+    ) : (
+      unhandledErrorDescription
+    );
+  } else if (entryId && totalTestCount) {
+    description = `Ran ${totalTestCount} ${totalTestCount === 1 ? 'test' : 'tests'}`;
+  } else if (finishedAt) {
     description = (
       <>
-        Ran {currentRun.totalTestCount} {currentRun.totalTestCount === 1 ? 'test' : 'tests'}{' '}
-        <RelativeTime timestamp={currentRun.finishedAt} />
+        Ran {totalTestCount} {totalTestCount === 1 ? 'test' : 'tests'}{' '}
+        <RelativeTime timestamp={finishedAt} />
       </>
     );
-  } else if (watching) {
+  } else if (storeState.watching) {
     description = 'Watching for file changes';
   }
 

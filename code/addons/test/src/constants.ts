@@ -1,4 +1,7 @@
-import type { TestResult } from './node/reporter';
+import type { experimental_UniversalStore } from 'storybook/internal/core-server';
+
+import type { TestResult } from './node/old-reporter';
+import type { VitestError } from './types';
 
 export const ADDON_ID = 'storybook/test';
 export const TEST_PROVIDER_ID = `${ADDON_ID}/test-provider`;
@@ -30,6 +33,13 @@ export type Details = {
   };
 };
 
+export type ErrorLike = {
+  message: string;
+  name?: string;
+  stack?: string;
+  cause?: ErrorLike;
+};
+
 export type StoreState = {
   config: {
     coverage: boolean;
@@ -37,9 +47,20 @@ export type StoreState = {
   };
   watching: boolean;
   cancelling: boolean;
+  fatalError:
+    | {
+        message: string | undefined;
+        error: ErrorLike;
+      }
+    | undefined;
   currentRun: {
+    coverage: boolean;
+    a11y: boolean;
+    finishedTestCount: number;
     totalTestCount: number | undefined;
+    startedAt: number | undefined;
     finishedAt: number | undefined;
+    unhandledErrors: VitestError[];
   };
 };
 
@@ -54,7 +75,16 @@ export type TriggerRunEvent = {
 export type CancelRunEvent = {
   type: 'CANCEL_RUN';
 };
-export type StoreEvent = TriggerRunEvent | CancelRunEvent;
+export type FatalErrorEvent = {
+  type: 'FATAL_ERROR';
+  payload: {
+    message: string;
+    error: ErrorLike;
+  };
+};
+export type StoreEvent = TriggerRunEvent | CancelRunEvent | FatalErrorEvent;
+
+export type Store = ReturnType<typeof experimental_UniversalStore.create<StoreState, StoreEvent>>;
 
 export const storeOptions = {
   id: ADDON_ID,
@@ -65,9 +95,15 @@ export const storeOptions = {
     },
     watching: false,
     cancelling: false,
+    fatalError: undefined,
     currentRun: {
+      coverage: false,
+      a11y: false,
+      finishedTestCount: 0,
       totalTestCount: undefined,
+      startedAt: undefined,
       finishedAt: undefined,
+      unhandledErrors: [],
     },
   },
 };

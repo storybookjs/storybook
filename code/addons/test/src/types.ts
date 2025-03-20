@@ -12,3 +12,8 @@ export interface TestParameters {
     throwPlayFunctionExceptions?: boolean;
   };
 }
+
+export interface VitestError extends Error {
+  VITEST_TEST_PATH?: string;
+  VITEST_TEST_NAME?: string;
+}

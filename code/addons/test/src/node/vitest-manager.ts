@@ -52,8 +52,6 @@ export class VitestManager {
 
   vitestRestartPromise: Promise<void> | null = null;
 
-  storyCountForCurrentRun: number = 0;
-
   runningPromise: Promise<any> | null = null;
 
   isCancelling = false;
@@ -268,7 +266,13 @@ export class VitestManager {
     );
 
     await this.cancelCurrentRun();
-    this.storyCountForCurrentRun = totalTestCount;
+    this.testManager.store.setState((s) => ({
+      ...s,
+      currentRun: {
+        ...s.currentRun,
+        totalTestCount,
+      },
+    }));
 
     if (isSingleStoryRun) {
       const storyName = stories[0].name;
@@ -390,7 +394,6 @@ export class VitestManager {
       return;
     }
 
-    this.storyCountForCurrentRun = 0;
     await this.runAffectedTests(file);
   }
 

@@ -4,6 +4,8 @@ import Filter from 'ansi-to-html';
 import { type StorybookTheme, useTheme } from 'storybook/theming';
 import stripAnsi from 'strip-ansi';
 
+import type { ErrorLike } from './constants';
+
 export function isTestAssertionError(error: unknown) {
   return isChaiError(error) || isJestError(error);
 }
@@ -55,4 +57,13 @@ export function getAddonNames(mainConfig: StorybookConfig): string[] {
   });
 
   return addonList.filter((item): item is NonNullable<typeof item> => item != null);
+}
+
+export function errorToErrorLike(error: Error): ErrorLike {
+  return {
+    message: error.message,
+    name: error.name,
+    stack: error.stack,
+    cause: error.cause && error.cause instanceof Error ? errorToErrorLike(error.cause) : undefined,
+  };
 }

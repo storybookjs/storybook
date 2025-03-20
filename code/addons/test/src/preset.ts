@@ -22,6 +22,7 @@ import { dedent } from 'ts-dedent';
 import {
   ADDON_ID,
   COVERAGE_DIRECTORY,
+  type ErrorLike,
   STORE_CHANNEL_EVENT_NAME,
   STORYBOOK_ADDON_TEST_CHANNEL,
   type StoreEvent,
@@ -29,7 +30,7 @@ import {
   TEST_PROVIDER_ID,
   storeOptions,
 } from './constants';
-import { log } from './logger';
+import { log, logError } from './logger';
 import { runTestRunner } from './node/boot-test-runner';
 
 type Event = {
@@ -68,14 +69,50 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
 
   store.onStateChange((state) => {
     if (state.watching) {
-      runTestRunner(channel);
+      runTestRunner(channel, store);
     }
   });
   store.subscribe('TRIGGER_RUN', (event, eventInfo) => {
     // TODO: this ensures the provider is marked as running immediately,
     // but it could also result in a deadlock, if the state is never reset back due to the child process crashing or similar.
-    testProviderStore.setState('test-provider-state:running');
-    runTestRunner(channel, STORE_CHANNEL_EVENT_NAME, [{ event, eventInfo }]);
+    // testProviderStore.setState('test-provider-state:running');
+    runTestRunner(channel, store, STORE_CHANNEL_EVENT_NAME, [{ event, eventInfo }]);
+  });
+  store.subscribe('FATAL_ERROR', (event) => {
+    const { message, error } = event.payload;
+    const name = error.name || 'Error';
+    log(`${name}: ${message}`);
+    if (error.stack) {
+      log(error.stack);
+    }
+
+    function logErrorWithCauses(err: ErrorLike) {
+      if (!err) {
+        return;
+      }
+
+      log(`Caused by: ${err.name ?? 'Error'}: ${err.message}`);
+
+      if (err.stack) {
+        log(err.stack);
+      }
+
+      if (err.cause) {
+        logErrorWithCauses(err.cause);
+      }
+    }
+
+    if (error.cause) {
+      logErrorWithCauses(error.cause);
+    }
+    store.setState((s) => ({
+      ...s,
+      fatalError: {
+        message,
+        error,
+      },
+    }));
+    // TODO: potentially also set the test provider state to crashed ?
   });
 
   if (!core.disableTelemetry) {

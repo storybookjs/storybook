@@ -33,7 +33,7 @@ import {
   STATUS_TYPE_ID_COMPONENT_TEST,
   TEST_PROVIDER_ID,
 } from './constants';
-import type { TestStatus } from './node/reporter';
+import type { TestStatus } from './node/old-reporter';
 import { useTestProvider } from './use-test-provider-state';
 
 const statusMap: Record<TestStatus, StatusValue> = {
@@ -79,9 +79,7 @@ addons.register(ADDON_ID, (api) => {
           a11yStatusCountsByValue,
         } = useTestProvider(api);
         return (
-          <GlobalErrorContext.Provider
-            value={{ error: state.error?.message, isModalOpen, setModalOpen }}
-          >
+          <GlobalErrorContext.Provider value={{ isModalOpen, setModalOpen }}>
             <TestProviderRender
               api={api}
               state={state}
@@ -92,6 +90,7 @@ addons.register(ADDON_ID, (api) => {
               a11yStatusCountsByValue={a11yStatusCountsByValue}
             />
             <GlobalErrorModal
+              storeState={storeState}
               onRerun={() => {
                 setModalOpen(false);
                 store.send({

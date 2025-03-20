@@ -3,7 +3,7 @@ import process from 'node:process';
 
 import { Channel } from 'storybook/internal/channels';
 
-import type { StoreEvent, StoreState } from '../constants';
+import type { ErrorLike, StoreEvent, StoreState } from '../constants';
 import {
   ADDON_ID,
   STATUS_TYPE_ID_A11Y,
@@ -40,15 +40,14 @@ const channel: Channel = new Channel({
 // eslint-disable-next-line no-underscore-dangle
 (UniversalStore as any).__prepare(channel, UniversalStore.Environment.SERVER);
 
+const store = UniversalStore.create<StoreState, StoreEvent>(storeOptions);
+
 new TestManager({
   channel,
-  store: UniversalStore.create<StoreState, StoreEvent>(storeOptions),
+  store,
   componentTestStatusStore: getStatusStore(STATUS_TYPE_ID_COMPONENT_TEST),
   a11yStatusStore: getStatusStore(STATUS_TYPE_ID_A11Y),
   testProviderStore: getTestProviderStore(ADDON_ID),
-  onError: (message, error) => {
-    process.send?.({ type: 'error', message, error: error.stack ?? error });
-  },
   onReady: () => {
     process.send?.({ type: 'ready' });
   },
@@ -63,12 +62,35 @@ process.on('exit', exit);
 process.on('SIGINT', () => exit(0));
 process.on('SIGTERM', () => exit(0));
 
-process.on('uncaughtException', (err) => {
-  process.send?.({ type: 'error', message: 'Uncaught exception', error: err.stack });
+process.on('uncaughtException', (error) => {
+  store.send({
+    type: 'FATAL_ERROR',
+    payload: {
+      message: 'Uncaught exception in the test runner process',
+      error: {
+        message: error.message,
+        name: error.name,
+        stack: error.stack,
+        cause: error.cause as ErrorLike,
+      },
+    },
+  });
   exit(1);
 });
 
 process.on('unhandledRejection', (reason) => {
-  process.send?.({ type: 'error', message: 'Unhandled rejection', error: String(reason) });
+  const error = reason as ErrorLike | undefined;
+  store.send({
+    type: 'FATAL_ERROR',
+    payload: {
+      message: 'Unhandled rejection in the test runner process',
+      error: {
+        message: error?.message ?? 'Unknown error',
+        name: error?.name ?? 'Unhandled rejection',
+        stack: error?.stack,
+        cause: error?.cause as ErrorLike,
+      },
+    },
+  });
   exit(1);
 });

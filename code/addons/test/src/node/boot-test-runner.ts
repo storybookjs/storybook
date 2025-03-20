@@ -14,6 +14,7 @@ import { join } from 'pathe';
 import {
   STATUS_STORE_CHANNEL_EVENT_NAME,
   STORE_CHANNEL_EVENT_NAME,
+  type Store,
   TEST_PROVIDER_ID,
   TEST_PROVIDER_STORE_CHANNEL_EVENT_NAME,
 } from '../constants';
@@ -31,17 +32,19 @@ const eventQueue: { type: string; args?: any[] }[] = [];
 let child: null | ChildProcess;
 let ready = false;
 
-const bootTestRunner = async (channel: Channel) => {
+const bootTestRunner = async (channel: Channel, store: Store) => {
   let stderr: string[] = [];
 
-  function reportFatalError(e: any) {
-    channel.emit(TESTING_MODULE_CRASH_REPORT, {
-      providerId: TEST_PROVIDER_ID,
-      error: {
-        message: String(e),
-      },
-    } as TestingModuleCrashReportPayload);
-  }
+  const killChild = () => {
+    channel.off(TESTING_MODULE_CANCEL_TEST_RUN_REQUEST, forwardCancel);
+    channel.off(STORE_CHANNEL_EVENT_NAME, forwardStore);
+    channel.off(STATUS_STORE_CHANNEL_EVENT_NAME, forwardStatusStore);
+    channel.off(TEST_PROVIDER_STORE_CHANNEL_EVENT_NAME, forwardTestProviderStore);
+    child?.kill();
+    child = null;
+  };
+
+  store.subscribe('FATAL_ERROR', killChild);
 
   const forwardCancel = (...args: any[]) =>
     child?.send({ args, from: 'server', type: TESTING_MODULE_CANCEL_TEST_RUN_REQUEST });
@@ -55,15 +58,6 @@ const bootTestRunner = async (channel: Channel) => {
     child?.send({ args, from: 'server', type: TEST_PROVIDER_STORE_CHANNEL_EVENT_NAME });
   };
 
-  const killChild = () => {
-    channel.off(TESTING_MODULE_CANCEL_TEST_RUN_REQUEST, forwardCancel);
-    channel.off(STORE_CHANNEL_EVENT_NAME, forwardStore);
-    channel.off(STATUS_STORE_CHANNEL_EVENT_NAME, forwardStatusStore);
-    channel.off(TEST_PROVIDER_STORE_CHANNEL_EVENT_NAME, forwardTestProviderStore);
-    child?.kill();
-    child = null;
-  };
-
   const exit = (code = 0) => {
     killChild();
     eventQueue.length = 0;
@@ -75,7 +69,7 @@ const bootTestRunner = async (channel: Channel) => {
   process.on('SIGTERM', () => exit(0));
 
   const startChildProcess = () =>
-    new Promise<void>((resolve, reject) => {
+    new Promise<void>((resolve) => {
       child = execaNode(vitestModulePath, {
         env: { VITEST: 'true', TEST: 'true', NODE_ENV: process.env.NODE_ENV ?? 'test' },
         extendEnv: true,
@@ -107,18 +101,6 @@ const bootTestRunner = async (channel: Channel) => {
           channel.on(TESTING_MODULE_CANCEL_TEST_RUN_REQUEST, forwardCancel);
 
           resolve();
-        } else if (event.type === 'error') {
-          killChild();
-          log(event.message);
-          log(event.error);
-          // eslint-disable-next-line local-rules/no-uncategorized-errors
-          const error = new Error(`${event.message}\n${event.error}`);
-          // Reject if the child process reports an error before it's ready
-          if (!ready) {
-            reject(error);
-          } else {
-            reportFatalError(error);
-          }
         } else {
           channel.emit(event.type, ...event.args);
         }
@@ -136,20 +118,36 @@ const bootTestRunner = async (channel: Channel) => {
     )
   );
 
-  await Promise.race([startChildProcess(), timeout]).catch((e) => {
-    reportFatalError(e);
+  await Promise.race([startChildProcess(), timeout]).catch((error) => {
+    store.send({
+      type: 'FATAL_ERROR',
+      payload: {
+        message: 'Failed to start test runner process',
+        error: {
+          message: error.message,
+          name: error.name,
+          stack: error.stack,
+          cause: error.cause,
+        },
+      },
+    });
     eventQueue.length = 0;
-    throw e;
+    throw error;
   });
 };
 
-export const runTestRunner = async (channel: Channel, initEvent?: string, initArgs?: any[]) => {
+export const runTestRunner = async (
+  channel: Channel,
+  store: Store,
+  initEvent?: string,
+  initArgs?: any[]
+) => {
   if (!ready && initEvent) {
     eventQueue.push({ type: initEvent, args: initArgs });
   }
   if (!child) {
     ready = false;
-    await bootTestRunner(channel);
+    await bootTestRunner(channel, store);
     ready = true;
   }
 };

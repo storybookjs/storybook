@@ -212,18 +212,6 @@ export class VitestManager {
     return isVitest3OrLater ? this.vitest?.vite : this.vitest?.server;
   }
 
-  async runFiles(specifications: TestSpecification[], allTestsRun?: boolean) {
-    this.isCancelling = false;
-    const runTest: (
-      specifications: TestSpecification[],
-      allTestsRun?: boolean | undefined
-      // @ts-expect-error vitest.runFiles is a Vitest < 3.0.0 API. Remove as soon as we don't support < 3.0.0 anymore.
-    ) => Promise<TestRunResult> = this.vitest!.runFiles ?? this.vitest!.runTestSpecifications;
-    this.runningPromise = runTest.call(this.vitest, specifications, allTestsRun);
-    await this.runningPromise;
-    this.runningPromise = null;
-  }
-
   async runTests(runPayload: TriggerRunEvent['payload']) {
     if (!this.vitest) {
       await this.startVitest();
@@ -280,7 +268,7 @@ export class VitestManager {
       this.setGlobalTestNamePattern(regex);
     }
 
-    await this.runFiles(filteredTestFiles, true);
+    await this.vitest!.runTestSpecifications(filteredTestFiles, true);
     this.resetGlobalTestNamePattern();
   }
 
@@ -381,7 +369,7 @@ export class VitestManager {
     if (triggerAffectedTests.length) {
       await this.vitest.cancelCurrentRun('keyboard-input');
       await this.runningPromise;
-      await this.runFiles(triggerAffectedTests, false);
+      await this.vitest!.runTestSpecifications(triggerAffectedTests, false);
     }
   }
 

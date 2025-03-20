@@ -378,6 +378,7 @@ export function createTestProviderStore(params: {
 }): {
   getTestProviderStoreById: (testProviderId: TestProviderId) => TestProviderStoreById;
   fullTestProviderStore: FullTestProviderStore;
+  universalTestProviderStore: UniversalStore<TestProviderStateByProviderId, TestProviderStoreEvent>;
 };
 export function createTestProviderStore(params: {
   universalTestProviderStore: UniversalStore<TestProviderStateByProviderId, TestProviderStoreEvent>;
@@ -385,6 +386,7 @@ export function createTestProviderStore(params: {
 }): {
   getTestProviderStoreById: (testProviderId: TestProviderId) => TestProviderStoreById;
   fullTestProviderStore: FullTestProviderStore;
+  universalTestProviderStore: UniversalStore<TestProviderStateByProviderId, TestProviderStoreEvent>;
   useTestProviderStore: UseTestProviderStore;
 };
 export function createTestProviderStore({
@@ -464,6 +466,7 @@ export function createTestProviderStore({
     return {
       getTestProviderStoreById,
       fullTestProviderStore,
+      universalTestProviderStore,
       useTestProviderStore: <T = TestProviderStateByProviderId>(
         selector?: (testProviders: TestProviderStateByProviderId) => T
       ) => useUniversalStore(universalTestProviderStore, selector as any)[0] as T,
@@ -473,5 +476,6 @@ export function createTestProviderStore({
   return {
     getTestProviderStoreById,
     fullTestProviderStore,
+    universalTestProviderStore,
   };
 }

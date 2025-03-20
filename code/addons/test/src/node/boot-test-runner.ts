@@ -1,21 +1,21 @@
 import { type ChildProcess } from 'node:child_process';
 
 import type { Channel } from 'storybook/internal/channels';
+import { TESTING_MODULE_CANCEL_TEST_RUN_REQUEST } from 'storybook/internal/core-events';
 import {
-  TESTING_MODULE_CANCEL_TEST_RUN_REQUEST,
-  TESTING_MODULE_CRASH_REPORT,
-  type TestingModuleCrashReportPayload,
-} from 'storybook/internal/core-events';
+  internal_universalStatusStore,
+  internal_universalTestProviderStore,
+} from 'storybook/internal/core-server';
 
 // eslint-disable-next-line depend/ban-dependencies
 import { execaNode } from 'execa';
 import { join } from 'pathe';
 
+import type { EventInfo } from '../../../../core/src/shared/universal-store/types';
 import {
   STATUS_STORE_CHANNEL_EVENT_NAME,
   STORE_CHANNEL_EVENT_NAME,
   type Store,
-  TEST_PROVIDER_ID,
   TEST_PROVIDER_STORE_CHANNEL_EVENT_NAME,
 } from '../constants';
 import { log } from '../logger';
@@ -31,15 +31,26 @@ const eventQueue: { type: string; args?: any[] }[] = [];
 
 let child: null | ChildProcess;
 let ready = false;
+let unsubscribeStore: () => void;
+let unsubscribeStatusStore: () => void;
+let unsubscribeTestProviderStore: () => void;
+
+const forwardUniversalStoreEvent =
+  (storeEventName: string) => (event: any, eventInfo: EventInfo) => {
+    child?.send({
+      type: storeEventName,
+      args: [{ event, eventInfo }],
+      from: 'server',
+    });
+  };
 
 const bootTestRunner = async (channel: Channel, store: Store) => {
   let stderr: string[] = [];
 
   const killChild = () => {
-    channel.off(TESTING_MODULE_CANCEL_TEST_RUN_REQUEST, forwardCancel);
-    channel.off(STORE_CHANNEL_EVENT_NAME, forwardStore);
-    channel.off(STATUS_STORE_CHANNEL_EVENT_NAME, forwardStatusStore);
-    channel.off(TEST_PROVIDER_STORE_CHANNEL_EVENT_NAME, forwardTestProviderStore);
+    unsubscribeStore?.();
+    unsubscribeStatusStore?.();
+    unsubscribeTestProviderStore?.();
     child?.kill();
     child = null;
   };
@@ -48,15 +59,6 @@ const bootTestRunner = async (channel: Channel, store: Store) => {
 
   const forwardCancel = (...args: any[]) =>
     child?.send({ args, from: 'server', type: TESTING_MODULE_CANCEL_TEST_RUN_REQUEST });
-  const forwardStore = (...args: any) => {
-    child?.send({ args, from: 'server', type: STORE_CHANNEL_EVENT_NAME });
-  };
-  const forwardStatusStore = (...args: any) => {
-    child?.send({ args, from: 'server', type: STATUS_STORE_CHANNEL_EVENT_NAME });
-  };
-  const forwardTestProviderStore = (...args: any) => {
-    child?.send({ args, from: 'server', type: TEST_PROVIDER_STORE_CHANNEL_EVENT_NAME });
-  };
 
   const exit = (code = 0) => {
     killChild();
@@ -85,9 +87,13 @@ const bootTestRunner = async (channel: Channel, store: Store) => {
         }
       });
 
-      channel.on(STORE_CHANNEL_EVENT_NAME, forwardStore);
-      channel.on(STATUS_STORE_CHANNEL_EVENT_NAME, forwardStatusStore);
-      channel.on(TEST_PROVIDER_STORE_CHANNEL_EVENT_NAME, forwardTestProviderStore);
+      unsubscribeStore = store.subscribe(forwardUniversalStoreEvent(STORE_CHANNEL_EVENT_NAME));
+      unsubscribeStatusStore = internal_universalStatusStore.subscribe(
+        forwardUniversalStoreEvent(STATUS_STORE_CHANNEL_EVENT_NAME)
+      );
+      unsubscribeTestProviderStore = internal_universalTestProviderStore.subscribe(
+        forwardUniversalStoreEvent(TEST_PROVIDER_STORE_CHANNEL_EVENT_NAME)
+      );
 
       child.on('message', (event: any) => {
         if (event.type === 'ready') {

@@ -16,4 +16,5 @@ const testProviderStore = createTestProviderStore({
   }),
 });
 
-export const { fullTestProviderStore, getTestProviderStoreById } = testProviderStore;
+export const { fullTestProviderStore, getTestProviderStoreById, universalTestProviderStore } =
+  testProviderStore;

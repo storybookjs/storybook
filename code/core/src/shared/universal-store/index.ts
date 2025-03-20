@@ -600,6 +600,7 @@ export class UniversalStore<
             responseEvent,
           });
           this.emitToChannel(responseEvent, { actor: this.actor });
+          this.emitToListeners(responseEvent, { actor: this.actor });
           break;
         case UniversalStore.InternalEventType.LEADER_CREATED:
           // if a leader receives a LEADER_CREATED event it should not forward it,

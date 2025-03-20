@@ -63,34 +63,40 @@ process.on('SIGINT', () => exit(0));
 process.on('SIGTERM', () => exit(0));
 
 process.on('uncaughtException', (error) => {
-  store.send({
-    type: 'FATAL_ERROR',
-    payload: {
-      message: 'Uncaught exception in the test runner process',
-      error: {
-        message: error.message,
-        name: error.name,
-        stack: error.stack,
-        cause: error.cause as ErrorLike,
+  // FIXME: if the error is actually from the store not working, this won't finish
+  store.untilReady().then(() => {
+    store.send({
+      type: 'FATAL_ERROR',
+      payload: {
+        message: 'Uncaught exception in the test runner process',
+        error: {
+          message: error.message,
+          name: error.name,
+          stack: error.stack,
+          cause: error.cause as ErrorLike,
+        },
       },
-    },
+    });
   });
   exit(1);
 });
 
 process.on('unhandledRejection', (reason) => {
   const error = reason as ErrorLike | undefined;
-  store.send({
-    type: 'FATAL_ERROR',
-    payload: {
-      message: 'Unhandled rejection in the test runner process',
-      error: {
-        message: error?.message ?? 'Unknown error',
-        name: error?.name ?? 'Unhandled rejection',
-        stack: error?.stack,
-        cause: error?.cause as ErrorLike,
+  // FIXME: if the error is actually from the store not working, this won't finish
+  store.untilReady().then(() => {
+    store.send({
+      type: 'FATAL_ERROR',
+      payload: {
+        message: 'Unhandled rejection in the test runner process',
+        error: {
+          message: error?.message ?? 'Unknown error',
+          name: error?.name ?? 'Unhandled rejection',
+          stack: error?.stack,
+          cause: error?.cause as ErrorLike,
+        },
       },
-    },
+    });
   });
   exit(1);
 });

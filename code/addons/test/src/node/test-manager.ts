@@ -1,17 +1,10 @@
 import type { TestResult } from 'vitest/dist/node.js';
 
 import type { Channel } from 'storybook/internal/channels';
-import {
-  TESTING_MODULE_CANCEL_TEST_RUN_REQUEST,
-  TESTING_MODULE_PROGRESS_REPORT,
-  type TestingModuleCancelTestRunRequestPayload,
-  type TestingModuleProgressReportPayload,
-} from 'storybook/internal/core-events';
 import type { experimental_UniversalStore } from 'storybook/internal/core-server';
 import type {
   StatusStoreByTypeId,
   StatusValue,
-  StoryIndex,
   TestProviderStoreById,
 } from 'storybook/internal/types';
 
@@ -19,16 +12,13 @@ import { isEqual, throttle } from 'es-toolkit';
 import type { Report } from 'storybook/preview-api';
 
 import {
-  type Details,
   STATUS_TYPE_ID_A11Y,
   STATUS_TYPE_ID_COMPONENT_TEST,
   type StoreEvent,
   type StoreState,
-  TEST_PROVIDER_ID,
   type TriggerRunEvent,
   storeOptions,
 } from '../constants';
-import { log } from '../logger';
 import type { VitestError } from '../types';
 import { errorToErrorLike } from '../utils';
 import type { TestStatus } from './old-reporter';
@@ -354,6 +344,7 @@ export class TestManager {
 
   async reportFatalError(message: string, error: Error | any) {
     console.dir(error, { depth: null });
+    await this.store.untilReady();
     this.store.send({
       type: 'FATAL_ERROR',
       payload: {

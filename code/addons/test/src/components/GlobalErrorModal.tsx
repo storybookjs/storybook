@@ -90,6 +90,8 @@ export function GlobalErrorModal({ onRerun, storeState }: GlobalErrorModalProps)
     currentRun: { unhandledErrors },
   } = storeState;
 
+  console.dir(unhandledErrors, { depth: null });
+
   const content = fatalError ? (
     <>
       <h3>{fatalError.error.name || 'Error'}</h3>
@@ -105,14 +107,13 @@ export function GlobalErrorModal({ onRerun, storeState }: GlobalErrorModalProps)
           <h3>{error.message}</h3>
           {error.VITEST_TEST_PATH && (
             <p>
-              This error originated in "{error.VITEST_TEST_PATH}". It doesn't mean the error was
-              thrown inside the file itself, but while it was running.
+              This error originated in "<b>{error.VITEST_TEST_PATH}</b>"". It doesn't mean the error
+              was thrown inside the file itself, but while it was running.
             </p>
           )}
           {error.VITEST_TEST_NAME && (
             <p>
-              The latest test that might've caused the error is "
-              <code>{error.VITEST_TEST_NAME}</code>".
+              The latest test that might've caused the error is "<b>{error.VITEST_TEST_NAME}</b>".
               <br />
               It might mean one of the following:
               <ul>

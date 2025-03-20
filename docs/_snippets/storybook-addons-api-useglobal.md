@@ -1,9 +1,9 @@
 ```js filename="my-addon/manager.js|ts" renderer="common" language="js"
 import React from 'react';
 
-import { AddonPanel, Button } from '@storybook/components';
+import { AddonPanel, Button } from 'storybook/internal/components;
 
-import { useGlobals } from '@storybook/manager-api';
+import { useGlobals } from 'storybook/manager-api';
 
 export const Panel = () => {
   const [globals, updateGlobals] = useGlobals();

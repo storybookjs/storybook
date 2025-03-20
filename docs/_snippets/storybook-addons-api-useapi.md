@@ -1,8 +1,8 @@
 ```js filename="my-addon/manager.js|ts" renderer="common" language="js"
 import React, { useEffect, useCallback } from 'react';
 
-import { useStorybookApi } from '@storybook/manager-api';
-import { IconButton } from '@storybook/components';
+import { useStorybookApi } from 'storybook/manager-api';
+import { IconButton } from 'storybook/internal/components;
 import { ChevronDownIcon } from '@storybook/icons';
 
 export const Panel = () => {

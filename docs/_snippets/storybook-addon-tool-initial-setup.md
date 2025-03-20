@@ -1,8 +1,8 @@
 ```tsx filename="src/Tool.tsx" renderer="common" language="ts"
 import React, { memo, useCallback, useEffect } from 'react';
 
-import { useGlobals, useStorybookApi } from '@storybook/manager-api';
-import { IconButton } from '@storybook/components';
+import { useGlobals, useStorybookApi } from 'storybook/manager-api';
+import { IconButton } from 'storybook/internal/components;
 import { LightningIcon } from '@storybook/icons';
 
 import { ADDON_ID, PARAM_KEY, TOOL_ID } from './constants';

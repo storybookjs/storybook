@@ -1,80 +1,51 @@
 ---
-title: Addon migration guide for Storybook 8.0
+title: Addon migration guide for Storybook 9.0
 sidebar:
   order: 9
-  title: Migrate addons to 8.0
+  title: Migrate addons to 9.0
 ---
 
-We sincerely appreciate the dedication and effort addon creators put into keeping the Storybook ecosystem vibrant and up-to-date. As Storybook evolves to version 8.0, bringing new features and improvements, this guide is here to assist you in migrating your addons from 7.x to 8.0. If you need to migrate your addon from an earlier version of Storybook, please first refer to the [Addon migration guide for Storybook 7.0](https://storybook.js.org/docs/7.6/addons/addon-migration-guide).
+We sincerely appreciate the dedication and effort addon creators put into keeping the Storybook ecosystem vibrant and up-to-date. As Storybook evolves to version 9.0, bringing new features and improvements, this guide is here to assist you in migrating your addons from 8.x to 9.0. If you need to migrate your addon from an earlier version of Storybook, please first refer to the [Addon migration guide for Storybook 8.0](../../../release-8-6/docs/addons/addon-migration-guide.mdx).
 
 <Callout variant="info">
   As we gather feedback from the community, we’ll update this page. We also have a general [Storybook migration guide](../migration-guide/index.mdx) if you’re looking for that.
 </Callout>
 
-## Updating dependencies
+## Replacing dependencies
 
-Begin by updating your Storybook dependencies. Use the `next` tag for pre-release versions, `latest` for the most recent stable release, or specify the version directly.
+Many previously-published packages have [moved to be part of Storybook's core](../migration-guide/index.mdx#package-structure-changes). If your addon depends on any of these packages, you should remove them from your `package.json` and update your addon to import from the new location. If your addon does not already depend on the `storybook` package, you should add it to your `package.json` as a dependency.
 
-```jsonc title="package.json"
+```diff title="package.json"
 {
   "dependencies": {
-    "@storybook/client-logger": "next" // or "latest", or "^8.0.0"
++   "storybook": "next",
+-   "@storybook/client-logger": "latest",
   }
 }
 ```
 
+```diff title="example.ts"
++ import { ... } from 'storybook/internal/client-logger';
+- import { ... } from '@storybook/client-logger';
+```
+
 ## Key changes for addons
 
-Here are the essential changes in version 8.0 that impact addon development. Please check the [complete migration note](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#from-version-7x-to-800) for an exhaustive list of changes in 8.0.
+Here are the essential changes in version 9.0 that impact addon development. Please check the [complete migration note](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#from-version-8x-to-900) for an exhaustive list of changes in 9.0.
 
-### Node.js 16 support dropped
+### Node.js 18 support dropped
 
-Please upgrade your addon to Node.js 18, as support for Node.js 16 has ended.
-
-### React 18 for manager UI
-
-UI-based addons (e.g., [panels](../addons/addon-types.mdx#panels), [toolbars](../addons/addon-types.mdx#toolbars), [tabs](../addons/addon-types.mdx#tabs)) rely on React 18 to render their elements in the Storybook UI. Also, note that the `key` prop is no longer passed to the render function.
-
-### React peer dependency is no longer required
-
-To remove your addon's peer dependency on React and reduce its install size, do the following:
-
-1. Move `react`, `react-dom`, and the globalized Storybook packages from `peerDependencies` to `devDependencies`
-2. Add the list of globalized packages to the `externals` property in the `tsup` configuration to ensure they are not part of the bundle.
-
-For an example, see [the updates we've made to the Addon Kit](https://github.com/storybookjs/addon-kit/compare/79282986..fa7ee7c). These changes are optional but recommended.
-
-<Callout variant="info">
-  This assumes your addon uses [tsup](https://tsup.egoist.dev/) for bundling. If your addon was built with an older version of the Addon Kit that uses Babel for bundling, you must first switch to tsup. For guidance, explore these older changes implemented in the Addon Kit [repository](https://github.com/storybookjs/addon-kit/pull/45/files).
-</Callout>
-
-### @storybook/components deprecations
-
-The `Icons` component from `@storybook/components` is now deprecated in favor of [`@storybook/icons`](https://github.com/storybookjs/icons). Additionally, various `Button` component props are also deprecated, with alternatives provided.
-
-### Storybook layout state API changes
-
-If you're customizing the Storybook UI configuration with `addons.setConfig({...})`, be aware of [the changes to the layout state API](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#ui-layout-state-has-changed-shape).
+Please upgrade your addon to Node.js 20, as support for Node.js 18 has ended.
 
 ### Removal of deprecated features
 
-Deprecated packages and APIs from 7.0 are now removed in 8.0. Consult the [full migration notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#deprecations-which-are-now-removed) for details. Most notably, for addons, the removal of the `@storybook/addons` package requires you to switch to `@storybook/preview-api` and `@storybook/manager-api` for the same functionality.
-
-### Babel-loader removed from Webpack
-
-Storybook 8 [removes babel-loader from the webpack5 builder](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#removed-babelcore-and-babel-loader-from-storybookbuilder-webpack5). If your addon's preset overrides the `babel()` method, it will break if your users are using SWC to compile their files (which is the new default for Webpack 5-based Storybook projects).
-
-To ensure your addon supports both Babel and SWC, you can build a custom bundling plugin using [Unplugin](https://unplugin.vercel.app/) that will work with both Webpack and Vite builders, giving you complete control to run Babel (or whatever you want) on stories and components as they are loaded.
-
-As a workaround, update your documentation to tell users to opt-in to Babel support. This should fix your addon in their project at the cost of performance:
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="storybook-addon-compiler-babel-auto-install.md" />
-
-{/* prettier-ignore-end */}
+Deprecated packages and APIs from 8.0 are now removed in 9.0. Consult the [full migration notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#dropped-support-for-legacy-packages) for details. 
 
 ## Migration Example
+
+<Callout variant="warning">
+  This section and the addon-kit itself have not yet been updated to reflect the changes in Storybook 9.0.
+</Callout>
 
 The Addon Kit [repository](https://github.com/storybookjs/addon-kit) has already been updated to support Storybook 8.0, and you can use it as a reference for your migration. You'll see the changes mentioned in this guide, including ESM support via the `type: module` configuration. As an addon maintainer, we encourage you to update your addon to include them. It simplifies the setup and makes it easier for users to use your addon with the latest version of Storybook. If you choose to follow along with the ESM migration, we've prepared an abbreviated list of changes below.
 
@@ -88,7 +59,7 @@ The Addon Kit [repository](https://github.com/storybookjs/addon-kit) has already
 
 ## Releasing
 
-To support Storybook 8.0, we encourage you to release a new major version of your addon and continue supporting 7.x with minor or patch versions. For experimental features or testing, opt for the `next` tag. This will allow you to test your addon in projects and gather feedback before releasing a stable version.
+To support Storybook 9.0, we encourage you to release a new major version of your addon and continue supporting 8.x with minor or patch versions. For experimental features or testing, opt for the `next` tag. This will allow you to test your addon in projects and gather feedback before releasing a stable version.
 
 ## Support
 

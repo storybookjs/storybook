@@ -27,6 +27,7 @@ async function run() {
     'storybook/test/spy',
     'storybook/test/preview',
 
+    'storybook/internal/toolbar/manager',
     'storybook/actions',
     'storybook/actions/preview',
     'storybook/actions/manager',

@@ -122,17 +122,7 @@
       "import": "./dist/controls/index.js",
       "require": "./dist/controls/index.cjs"
     },
-    "./controls": {
-      "types": "./dist/controls/index.d.ts",
-      "import": "./dist/controls/index.js",
-      "require": "./dist/controls/index.cjs"
-    },
     "./internal/controls/preview": {
-      "types": "./dist/controls/preview.d.ts",
-      "import": "./dist/controls/preview.js",
-      "require": "./dist/controls/preview.cjs"
-    },
-    "./controls/preview": {
       "types": "./dist/controls/preview.d.ts",
       "import": "./dist/controls/preview.js",
       "require": "./dist/controls/preview.cjs"
@@ -140,14 +130,7 @@
     "./internal/controls/manager": {
       "import": "./dist/controls/manager.js"
     },
-    "./controls/manager": {
-      "import": "./dist/controls/manager.js"
-    },
     "./internal/controls/decorator": {
-      "types": "./dist/controls/decorator.d.ts",
-      "import": "./dist/controls/decorator.js"
-    },
-    "./controls/decorator": {
       "types": "./dist/controls/decorator.d.ts",
       "import": "./dist/controls/decorator.js"
     },
@@ -367,19 +350,10 @@
       "internal/controls": [
         "./dist/controls/index.d.ts"
       ],
-      "controls": [
-        "./dist/controls/index.d.ts"
-      ],
       "internal/controls/preview": [
         "./dist/controls/preview.d.ts"
       ],
-      "controls/preview": [
-        "./dist/controls/preview.d.ts"
-      ],
       "internal/controls/decorator": [
-        "./dist/controls/decorator.d.ts"
-      ],
-      "controls/decorator": [
         "./dist/controls/decorator.d.ts"
       ],
       "internal/core-events": [

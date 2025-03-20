@@ -6,5 +6,5 @@
     "module": "ES2022",
     "stripInternal": true
   },
-  "include": ["src/**/*", "scripts/**/*", "*.d.ts", "template/stories/controls.stories.ts"]
+  "include": ["src/**/*", "scripts/**/*", "*.d.ts"]
 }

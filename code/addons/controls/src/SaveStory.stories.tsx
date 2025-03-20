@@ -31,15 +31,8 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
 
-export const Other: Story = {
-  play: () => {
-    Promise.reject(new Error('This error has been rejected'));
-  },
-};
-
 export const Creating = {
   play: async ({ canvasElement }) => {
-    throw new Error('test');
     const createButton = await within(canvasElement).findByRole('button', { name: /Create/i });
     await fireEvent.click(createButton);
     await new Promise((resolve) => setTimeout(resolve, 300));

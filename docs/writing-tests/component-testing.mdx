@@ -19,29 +19,9 @@ You start by writing a [**story**](../writing-stories/index.mdx) to set up the c
 
 * The [`play`](../writing-stories/play-function.mdx) function is a small snippet of code that runs after a story finishes rendering. You can use this to test user workflows.
 * The test is written using Storybook-instrumented versions of [Vitest](https://vitest.dev/) and [Testing Library](https://testing-library.com/) coming from the [`storybook/test`](https://npmjs.com/package/storybook) package.
-* [`@storybook/addon-interactions`](https://storybook.js.org/addons/@storybook/addon-interactions/) visualizes the test in Storybook and provides a playback interface for convenient browser-based debugging.
+* The [Components tests panel](./component-testing.mdx) visualizes the test in Storybook and provides a playback interface for convenient browser-based debugging.
 * [`@storybook/test-runner`](https://github.com/storybookjs/test-runner) is a standalone utility—powered by [Jest](https://jestjs.io/) and [Playwright](https://playwright.dev/)—that executes all of your interactions tests and catches broken stories.
     * The experimental [Vitest plugin](./vitest-plugin.mdx) is also available, which transforms your stories into Vitest tests and runs them in a browser.
-
-## Set up the interactions addon
-
-To enable the full component testing experience with Storybook, you'll need to take additional steps to set it up properly. We recommend you go through the [test runner documentation](./test-runner.mdx) before proceeding with the rest of the required configuration.
-
-Run the following command to install the interactions addon and related dependencies.
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="storybook-addon-interactions-addon-full-install.md" />
-
-{/* prettier-ignore-end */}
-
-Update your Storybook configuration (in `.storybook/main.js|ts`) to include the interactions addon.
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="storybook-interactions-addon-registration.md" />
-
-{/* prettier-ignore-end */}
 
 ## Write a component test
 

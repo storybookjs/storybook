@@ -13694,15 +13694,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"detect-package-manager@npm:^3.0.2":
-  version: 3.0.2
-  resolution: "detect-package-manager@npm:3.0.2"
-  dependencies:
-    execa: "npm:^5.1.1"
-  checksum: 10c0/855a8ccd12ea8df19d9c7170e3180592ba6a0826c9d764e6426f115444f918e69724ca38b79121b9cea27a492effc9c8de1c25ff980997252379a7e4d9722569
-  languageName: node
-  linkType: hard
-
 "detect-port@npm:^1.3.0, detect-port@npm:^1.5.1":
   version: 1.5.1
   resolution: "detect-port@npm:1.5.1"
@@ -15504,7 +15495,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"execa@npm:^5.0.0, execa@npm:^5.1.1":
+"execa@npm:^5.0.0":
   version: 5.1.1
   resolution: "execa@npm:5.1.1"
   dependencies:
@@ -23308,6 +23299,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"package-manager-detector@npm:^1.1.0":
+  version: 1.1.0
+  resolution: "package-manager-detector@npm:1.1.0"
+  checksum: 10c0/b5ba0bdaae4d70bb6e1a1af047522fdcd811e65e60927c2e7cc3736324a00b30d66ac304bab1d7cd925b11142d90fcc4215a7efde430a5616cea698e0b2dfada
+  languageName: node
+  linkType: hard
+
 "pacote@npm:20.0.0":
   version: 20.0.0
   resolution: "pacote@npm:20.0.0"
@@ -27710,7 +27708,6 @@ __metadata:
     deep-object-diff: "npm:^1.1.0"
     dequal: "npm:^2.0.2"
     detect-indent: "npm:^7.0.1"
-    detect-package-manager: "npm:^3.0.2"
     detect-port: "npm:^1.3.0"
     diff: "npm:^5.2.0"
     downshift: "npm:^9.0.4"
@@ -27739,6 +27736,7 @@ __metadata:
     nanoid: "npm:^4.0.2"
     npmlog: "npm:^7.0.0"
     open: "npm:^8.4.0"
+    package-manager-detector: "npm:^1.1.0"
     picocolors: "npm:^1.1.0"
     picomatch: "npm:^2.3.0"
     picoquery: "npm:^1.4.0"

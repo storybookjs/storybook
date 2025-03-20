@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "9.0.0-alpha.6",
+  "version": "9.0.0-alpha.8",
   "description": "Storybook framework-agnostic API",
   "keywords": [
     "storybook"
@@ -520,7 +520,6 @@
     "deep-object-diff": "^1.1.0",
     "dequal": "^2.0.2",
     "detect-indent": "^7.0.1",
-    "detect-package-manager": "^3.0.2",
     "detect-port": "^1.3.0",
     "diff": "^5.2.0",
     "downshift": "^9.0.4",
@@ -547,6 +546,7 @@
     "nanoid": "^4.0.2",
     "npmlog": "^7.0.0",
     "open": "^8.4.0",
+    "package-manager-detector": "^1.1.0",
     "picocolors": "^1.1.0",
     "picomatch": "^2.3.0",
     "picoquery": "^1.4.0",

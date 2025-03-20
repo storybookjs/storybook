@@ -249,11 +249,12 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
   } as Args;
 
   const storyGlobals: Globals = {
+    ...projectAnnotations.initialGlobals,
     ...componentAnnotations.globals,
     ...storyAnnotations?.globals,
   };
 
-  const contextForEnhancers: StoryContextForEnhancers<TRenderer> & { storyGlobals: Globals } = {
+  const contextForEnhancers: StoryContextForEnhancers<TRenderer> = {
     componentId: componentAnnotations.id,
     title: componentAnnotations.title,
     kind: componentAnnotations.title, // Back compat

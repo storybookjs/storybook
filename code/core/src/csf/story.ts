@@ -199,6 +199,7 @@ export interface StoryContextForEnhancers<TRenderer extends Renderer = Renderer,
   parameters: Parameters;
   initialArgs: TArgs;
   argTypes: StrictArgTypes<TArgs>;
+  storyGlobals?: Globals;
 }
 
 export type ArgsEnhancer<TRenderer extends Renderer = Renderer, TArgs = Args> = (
@@ -405,7 +406,7 @@ export interface ProjectAnnotations<TRenderer extends Renderer = Renderer, TArgs
    */
   beforeAll?: BeforeAll;
 
-  /** @deprecated Project `globals` renamed to `initiaGlobals` */
+  /** @deprecated Project `globals` renamed to `initialGlobals` */
   globals?: Globals;
   initialGlobals?: Globals;
   globalTypes?: GlobalTypes;

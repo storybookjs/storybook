@@ -6945,9 +6945,7 @@ __metadata:
   dependencies:
     "@storybook/builder-vite": "workspace:*"
     "@storybook/vue3": "workspace:*"
-    "@types/find-package-json": "npm:^1.2.6"
     "@types/node": "npm:^22.0.0"
-    find-package-json: "npm:^1.2.0"
     magic-string: "npm:^0.30.0"
     typescript: "npm:^5.8.3"
     vite: "npm:^7.0.4"
@@ -7616,15 +7614,6 @@ __metadata:
     "@types/qs": "npm:*"
     "@types/serve-static": "npm:*"
   checksum: 10c0/12e562c4571da50c7d239e117e688dc434db1bac8be55613294762f84fd77fbd0658ccd553c7d3ab02408f385bc93980992369dd30e2ecd2c68c358e6af8fabf
-  languageName: node
-  linkType: hard
-
-"@types/find-package-json@npm:^1.2.6":
-  version: 1.2.6
-  resolution: "@types/find-package-json@npm:1.2.6"
-  dependencies:
-    "@types/node": "npm:*"
-  checksum: 10c0/e9ec7d10f9c919b14cf391e710f41ff6684a6e6d87afc6322e7f7e3afe30b5f046b806767cb1509af6265e3f4ceb11fac9da279757839269a4c849359d7f5f18
   languageName: node
   linkType: hard
 
@@ -14769,13 +14758,6 @@ __metadata:
   version: 1.1.1
   resolution: "find-index@npm:1.1.1"
   checksum: 10c0/9e5b73714b5b4e5af71872f25e1b97e23a9db58529350543f7dba11f109fc7f4047d69abbf76fe3dba25f638fda8ebe4df3d6a12ad7da93014d15ce28dbc564e
-  languageName: node
-  linkType: hard
-
-"find-package-json@npm:^1.2.0":
-  version: 1.2.0
-  resolution: "find-package-json@npm:1.2.0"
-  checksum: 10c0/85d6c97afb9f8f0deb0d344a1c4eb8027347cf4d61666c28d3ac3f913e916684441218682b3dd6f8ad570e5d43c96a7db521f70183d70df559d07e1f99cdc635
   languageName: node
   linkType: hard
 

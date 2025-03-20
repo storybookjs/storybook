@@ -24,15 +24,7 @@ import { Panel } from './components/Panel';
 import { PanelTitle } from './components/PanelTitle';
 import { SidebarContextMenu } from './components/SidebarContextMenu';
 import { TestProviderRender } from './components/TestProviderRender';
-import {
-  A11Y_PANEL_ID,
-  ADDON_ID,
-  type Details,
-  PANEL_ID,
-  STATUS_TYPE_ID_A11Y,
-  STATUS_TYPE_ID_COMPONENT_TEST,
-  TEST_PROVIDER_ID,
-} from './constants';
+import { A11Y_PANEL_ID, ADDON_ID, type Details, PANEL_ID, TEST_PROVIDER_ID } from './constants';
 import type { TestStatus } from './node/old-reporter';
 import { useTestProvider } from './use-test-provider-state';
 
@@ -68,26 +60,24 @@ addons.register(ADDON_ID, (api) => {
       type: Addon_TypesEnum.experimental_TEST_PROVIDER,
       runnable: true,
       name: 'Component tests',
-      // @ts-expect-error: TODO: Fix types
-      render: (state) => {
+      render: () => {
         const [isModalOpen, setModalOpen] = useState(false);
         const {
           storeState,
           setStoreState,
           testProviderState,
-          componentTestStatusCountsByValue,
-          a11yStatusCountsByValue,
+          componentTestStatusValueToStoryIds,
+          a11yStatusValueToStoryIds,
         } = useTestProvider(api);
         return (
           <GlobalErrorContext.Provider value={{ isModalOpen, setModalOpen }}>
             <TestProviderRender
               api={api}
-              state={state}
               storeState={storeState}
               setStoreState={setStoreState}
               testProviderState={testProviderState}
-              componentTestStatusCountsByValue={componentTestStatusCountsByValue}
-              a11yStatusCountsByValue={a11yStatusCountsByValue}
+              componentTestStatusValueToStoryIds={componentTestStatusValueToStoryIds}
+              a11yStatusValueToStoryIds={a11yStatusValueToStoryIds}
             />
             <GlobalErrorModal
               storeState={storeState}
@@ -106,14 +96,14 @@ addons.register(ADDON_ID, (api) => {
       },
 
       // @ts-expect-error: TODO: Fix types
-      sidebarContextMenu: ({ context, state }) => {
+      sidebarContextMenu: ({ context }) => {
         if (context.type === 'docs') {
           return null;
         }
         if (context.type === 'story' && !context.tags.includes('test')) {
           return null;
         }
-        return <SidebarContextMenu context={context} state={state} api={api} />;
+        return <SidebarContextMenu context={context} api={api} />;
       },
 
       // @ts-expect-error: TODO: Fix types

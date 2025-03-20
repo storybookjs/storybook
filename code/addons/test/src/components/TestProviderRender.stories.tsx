@@ -28,43 +28,10 @@ const managerContext: any = {
     getDocsUrl: fn(({ subpath }) => `https://storybook.js.org/docs/${subpath}`).mockName(
       'api::getDocsUrl'
     ),
-    emit: fn().mockName('api::emit'),
-    updateTestProviderState: fn().mockName('api::updateTestProviderState'),
-  },
-};
-
-const config: TestProviderConfig = {
-  id: 'test-provider-id',
-  name: 'Test Provider',
-  type: Addon_TypesEnum.experimental_TEST_PROVIDER,
-  runnable: true,
-};
-
-const baseState: TestProviderState<Details> = {
-  cancellable: true,
-  cancelling: false,
-  crashed: false,
-  error: undefined,
-  failed: false,
-  running: false,
-  details: {
-    testResults: [
-      {
-        endTime: 0,
-        startTime: 0,
-        status: 'passed',
-        message: 'All tests passed',
-        results: [
-          {
-            storyId: 'story-id',
-            status: 'passed',
-            duration: 100,
-            testRunId: 'test-run-id',
-            reports: [],
-          },
-        ],
-      },
-    ],
+    findAllLeafStoryIds: fn().mockName('api::findAllLeafStoryIds'),
+    selectStory: fn().mockName('api::selectStory'),
+    setSelectedPanel: fn().mockName('api::setSelectedPanel'),
+    togglePanel: fn().mockName('api::togglePanel'),
   },
 };
 
@@ -79,26 +46,24 @@ const meta = {
   title: 'TestProviderRender',
   component: TestProviderRender,
   args: {
-    state: {
-      ...config,
-      ...baseState,
-    },
-    testProviderState: 'test-provider-state:pending',
-    componentTestStatusCountsByValue: {
-      'status-value:error': 0,
-      'status-value:success': 0,
-      'status-value:pending': 0,
-      'status-value:warning': 0,
-      'status-value:unknown': 0,
-    },
-    a11yStatusCountsByValue: {
-      'status-value:error': 0,
-      'status-value:success': 0,
-      'status-value:pending': 0,
-      'status-value:warning': 0,
-      'status-value:unknown': 0,
-    },
     api: managerContext.api,
+    testProviderState: 'test-provider-state:pending',
+    componentTestStatusValueToStoryIds: {
+      'status-value:error': [],
+      'status-value:success': [],
+      'status-value:pending': [],
+      'status-value:warning': [],
+      'status-value:unknown': [],
+    },
+    a11yStatusValueToStoryIds: {
+      'status-value:error': [],
+      'status-value:success': [],
+      'status-value:pending': [],
+      'status-value:warning': [],
+      'status-value:unknown': [],
+    },
+    storeState: storeOptions.initialState,
+    setStoreState: fn(),
   },
   decorators: [
     (StoryFn) => (
@@ -128,218 +93,178 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
+export const Default: Story = {};
+
+export const Starting: Story = {
   args: {
-    state: {
-      ...config,
-      ...baseState,
-    },
+    testProviderState: 'test-provider-state:running',
   },
 };
 
-export const Running: Story = {
+export const Testing: Story = {
   args: {
-    state: {
-      ...config,
-      ...baseState,
-      running: true,
-    },
     testProviderState: 'test-provider-state:running',
+    storeState: {
+      ...storeOptions.initialState,
+      currentRun: {
+        ...storeOptions.initialState.currentRun,
+        finishedTestCount: 30,
+        totalTestCount: 100,
+      },
+    },
   },
 };
 
 export const Watching: Story = {
   args: {
-    state: {
-      ...config,
-      ...baseState,
+    storeState: {
+      ...storeOptions.initialState,
+      watching: true,
     },
-  },
-  beforeEach: async () => {
-    mockStore.setState((s) => ({ ...s, watching: true }));
   },
 };
 
 export const Crashed: Story = {
   args: {
-    state: {
-      ...config,
-      ...baseState,
-    },
     testProviderState: 'test-provider-state:crashed',
+    storeState: {
+      ...storeOptions.initialState,
+      fatalError: {
+        message: 'Error message',
+        error: {
+          name: 'Error',
+          message: 'Error message',
+          stack: 'Error stack',
+        },
+      },
+    },
+  },
+};
+
+export const UnhandledErrors: Story = {
+  args: {
+    testProviderState: 'test-provider-state:succeeded',
+    storeState: {
+      ...storeOptions.initialState,
+      currentRun: {
+        ...storeOptions.initialState.currentRun,
+        unhandledErrors: [
+          {
+            name: 'Error',
+            message: 'Error message',
+            stack: 'Error stack',
+            VITEST_TEST_PATH: '/test/path/test-name',
+            VITEST_TEST_NAME: 'Test name',
+          },
+          {
+            name: 'Error',
+            message: 'Other Error message',
+            stack: 'Other Error stack',
+            VITEST_TEST_PATH: '/test/path/other-test-name',
+            VITEST_TEST_NAME: 'Other Test name',
+          },
+        ],
+      },
+    },
   },
 };
 
 export const ComponentTestsSucceeded: Story = {
   args: {
-    state: {
-      ...config,
-      ...baseState,
-    },
     testProviderState: 'test-provider-state:succeeded',
-    componentTestStatusCountsByValue: {
-      ...meta.args.componentTestStatusCountsByValue,
-      'status-value:success': 1,
+    componentTestStatusValueToStoryIds: {
+      ...meta.args.componentTestStatusValueToStoryIds,
+      'status-value:success': ['story-id-1'],
     },
   },
 };
 
 export const ComponentTestsFailed: Story = {
   args: {
-    state: {
-      ...config,
-      ...baseState,
-    },
     testProviderState: 'test-provider-state:succeeded',
-    componentTestStatusCountsByValue: {
-      ...meta.args.componentTestStatusCountsByValue,
-      'status-value:error': 10,
+    componentTestStatusValueToStoryIds: {
+      ...meta.args.componentTestStatusValueToStoryIds,
+      'status-value:error': ['story-id-1'],
     },
-  },
-};
-
-export const TogglingSettings: Story = {
-  args: {
-    state: {
-      ...config,
-      ...baseState,
-      details: {
-        testResults: [],
-      },
-    },
-  },
-  play: async ({ canvas, step }) => {
-    await step('Enable coverage', async () => {
-      (await canvas.findByLabelText('Coverage')).click();
-      await expect(mockStore.setState).toHaveBeenCalledOnce();
-      mockStore.setState.mockClear();
-    });
-
-    await step('Enable watch mode', async () => {
-      (await canvas.findByLabelText('Enable watch mode')).click();
-      await expect(mockStore.setState).toHaveBeenCalledOnce();
-
-      await expect(await canvas.findByLabelText('Coverage (unavailable)')).not.toBeDisabled();
-    });
   },
 };
 
 export const CoverageEnabled: Story = {
-  args: Default.args,
-  beforeEach: async () => {
-    mockStore.setState({
-      ...storeOptions.initialState,
-      config: { ...storeOptions.initialState.config, coverage: true },
-    });
-  },
-  play: async ({ canvas }) => {
-    userEvent.hover(await canvas.findByLabelText(/Coverage status:/));
+  args: {
+    storeState: {
+      ...meta.args.storeState,
+      config: { ...meta.args.storeState.config, coverage: true },
+    },
   },
 };
 
-export const CoverageCalculating: Story = {
-  ...CoverageEnabled,
-  args: Running.args,
-  play: CoverageEnabled.play,
+export const RunningWithCoverageEnabled: Story = {
+  args: {
+    ...CoverageEnabled.args,
+    testProviderState: 'test-provider-state:running',
+  },
 };
 
 export const CoverageNegative: Story = {
-  ...CoverageEnabled,
   args: {
-    state: {
-      ...config,
-      ...baseState,
-      details: {
-        testResults: [],
-        coverageSummary: {
-          percentage: 20,
-          status: 'negative',
-        },
+    storeState: {
+      ...CoverageEnabled.args!.storeState!,
+      currentRun: {
+        ...meta.args.storeState.currentRun,
+        coverageSummary: { percentage: 20, status: 'negative' },
       },
     },
   },
 };
 
 export const CoverageWarning: Story = {
-  ...CoverageEnabled,
   args: {
-    state: {
-      ...config,
-      ...baseState,
-      details: {
-        testResults: [],
-        coverageSummary: {
-          percentage: 50,
-          status: 'warning',
-        },
+    storeState: {
+      ...CoverageEnabled.args!.storeState!,
+      currentRun: {
+        ...meta.args.storeState.currentRun,
+        coverageSummary: { percentage: 50, status: 'warning' },
       },
     },
   },
 };
 
 export const CoveragePositive: Story = {
-  ...CoverageEnabled,
   args: {
-    state: {
-      ...config,
-      ...baseState,
-      details: {
-        testResults: [],
-        coverageSummary: {
-          percentage: 80,
-          status: 'positive',
-        },
+    storeState: {
+      ...CoverageEnabled.args!.storeState!,
+      currentRun: {
+        ...meta.args.storeState.currentRun,
+        coverageSummary: { percentage: 80, status: 'positive' },
       },
     },
   },
 };
 
 export const AccessibilityEnabled: Story = {
-  args: Default.args,
-  beforeEach: async () => {
-    mockStore.setState({
-      ...storeOptions.initialState,
-      config: { ...storeOptions.initialState.config, a11y: true },
-    });
-  },
-  play: async ({ canvas }) => {
-    userEvent.hover(await canvas.findByLabelText(/Accessibility status:/));
+  args: {
+    storeState: {
+      ...meta.args.storeState,
+      config: { ...meta.args.storeState.config, a11y: true },
+    },
   },
 };
 
 export const AccessibilityViolations: Story = {
   args: {
-    state: {
-      ...config,
-      ...baseState,
-      details: {
-        testResults: [
-          {
-            endTime: 0,
-            startTime: 0,
-            status: 'passed',
-            message: 'All tests passed',
-            results: [
-              {
-                storyId: 'story-id',
-                status: 'passed',
-                duration: 100,
-                testRunId: 'test-run-id',
-                reports: [{ type: 'a11y', status: 'warning', result: { violations: [] } }],
-              },
-            ],
-          },
-        ],
-      },
+    ...AccessibilityEnabled.args,
+    testProviderState: 'test-provider-state:succeeded',
+    a11yStatusValueToStoryIds: {
+      ...meta.args.a11yStatusValueToStoryIds,
+      'status-value:warning': ['story-id-1'],
     },
   },
-  beforeEach: async () => {
-    mockStore.setState({
-      ...storeOptions.initialState,
-      config: { ...storeOptions.initialState.config, a11y: true },
-    });
-  },
-  play: async ({ canvas }) => {
-    userEvent.hover(await canvas.findByLabelText(/Accessibility status:/));
+};
+
+export const InSidebarContextMenu: Story = {
+  args: {
+    ...meta.args,
+    testProviderState: 'test-provider-state:succeeded',
+    entryId: 'story-id-1',
   },
 };

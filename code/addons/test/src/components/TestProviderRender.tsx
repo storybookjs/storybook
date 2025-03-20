@@ -1,4 +1,4 @@
-import React, { type ComponentProps, type FC, useMemo } from 'react';
+import React, { type ComponentProps, type FC, useCallback } from 'react';
 
 import {
   IconButton,
@@ -7,27 +7,18 @@ import {
   TooltipNote,
   WithTooltip,
 } from 'storybook/internal/components';
-import {
-  type TestProviderState as DeprecatedTestProviderState,
-  type TestProviderConfig,
-} from 'storybook/internal/core-events';
 import type { TestProviderState } from 'storybook/internal/types';
 
 import { EyeIcon, InfoIcon, PlayHollowIcon, StopAltIcon } from '@storybook/icons';
 
 import { store } from '#manager-store';
-import { addons, experimental_useUniversalStore } from 'storybook/manager-api';
+import { addons } from 'storybook/manager-api';
 import type { API } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import {
-  ADDON_ID as A11Y_ADDON_ID,
-  PANEL_ID as A11y_ADDON_PANEL_ID,
-} from '../../../a11y/src/constants';
-import { type Details, PANEL_ID } from '../constants';
+import { A11Y_ADDON_ID, A11Y_PANEL_ID, PANEL_ID } from '../constants';
 import type { StoreState } from '../constants';
-import { type TestStatus } from '../node/old-reporter';
-import type { StatusCountsByValue } from '../use-test-provider-state';
+import type { StatusValueToStoryIds } from '../use-test-provider-state';
 import { Description } from './Description';
 import { TestStatusIcon } from './TestStatusIcon';
 
@@ -89,28 +80,24 @@ const StopIcon = styled(StopAltIcon)({
   width: 10,
 });
 
-const statusOrder: TestStatus[] = ['failed', 'warning', 'pending', 'passed', 'skipped'];
-
 type TestProviderRenderProps = {
   api: API;
-  state: TestProviderConfig & DeprecatedTestProviderState<Details>;
   testProviderState: TestProviderState;
-  componentTestStatusCountsByValue: StatusCountsByValue;
-  a11yStatusCountsByValue: StatusCountsByValue;
+  componentTestStatusValueToStoryIds: StatusValueToStoryIds;
+  a11yStatusValueToStoryIds: StatusValueToStoryIds;
   storeState: StoreState;
   setStoreState: (typeof store)['setState'];
   entryId?: string;
 } & ComponentProps<typeof Container>;
 
 export const TestProviderRender: FC<TestProviderRenderProps> = ({
-  state,
   api,
   entryId,
   testProviderState,
   storeState,
   setStoreState,
-  componentTestStatusCountsByValue,
-  a11yStatusCountsByValue,
+  componentTestStatusValueToStoryIds,
+  a11yStatusValueToStoryIds,
   ...props
 }) => {
   const {
@@ -124,77 +111,48 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
 
   const isRunning = testProviderState === 'test-provider-state:running';
 
-  const componentTestStatusIcon: ComponentProps<typeof TestStatusIcon>['status'] =
-    componentTestStatusCountsByValue['status-value:error'] > 0
-      ? 'negative'
-      : isRunning
-        ? 'pending'
-        : componentTestStatusCountsByValue['status-value:success'] > 0
-          ? 'positive'
-          : 'unknown';
-  const a11yStatusIcon: ComponentProps<typeof TestStatusIcon>['status'] =
-    a11yStatusCountsByValue['status-value:warning'] > 0
-      ? 'warning'
-      : isRunning
-        ? 'pending'
-        : a11yStatusCountsByValue['status-value:success'] > 0
-          ? 'positive'
-          : 'unknown';
+  const [componentTestStatusIcon, componentTestStatusLabel]: [
+    ComponentProps<typeof TestStatusIcon>['status'],
+    string,
+  ] =
+    testProviderState === 'test-provider-state:crashed'
+      ? ['critical', 'Local tests crashed']
+      : componentTestStatusValueToStoryIds['status-value:error'].length > 0
+        ? ['negative', 'Component tests failed']
+        : isRunning
+          ? ['pending', 'Testing in progress']
+          : componentTestStatusValueToStoryIds['status-value:success'].length > 0
+            ? ['positive', 'Component tests passed']
+            : ['unknown', 'Unknown component test status'];
 
-  const isStoryEntry = entryId?.includes('--') ?? false;
+  const [a11yStatusIcon, a11yStatusLabel]: [
+    ComponentProps<typeof TestStatusIcon>['status'],
+    string,
+  ] =
+    testProviderState === 'test-provider-state:crashed'
+      ? ['critical', 'Local tests crashed']
+      : a11yStatusValueToStoryIds['status-value:warning'].length > 0
+        ? ['warning', 'Accessibility tests failed']
+        : isRunning
+          ? ['pending', 'Testing in progress']
+          : a11yStatusValueToStoryIds['status-value:success'].length > 0
+            ? ['positive', 'Accessibility tests passed']
+            : ['unknown', 'Unknown accessibility test status'];
 
-  const storyId = isStoryEntry ? entryId : undefined;
-
-  const results = (state.details?.testResults || [])
-    .flatMap((test) => {
-      if (!entryId) {
-        return test.results;
-      }
-      return test.results.filter((result) =>
-        storyId ? result.storyId === storyId : result.storyId?.startsWith(`${entryId}-`)
-      );
-    })
-    .sort((a, b) => statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status));
-
-  const status = results[0]?.status ?? (isRunning ? 'pending' : 'unknown');
-
-  const openPanel = (panelId: string, targetStoryId?: string) => {
-    if (targetStoryId) {
-      api.selectStory(targetStoryId);
-    }
-    api.setSelectedPanel(panelId);
+  const firstComponentTestErrorStoryId =
+    componentTestStatusValueToStoryIds['status-value:error'][0];
+  const openComponentTestPanel = useCallback(() => {
+    api.selectStory(firstComponentTestErrorStoryId);
+    api.setSelectedPanel(PANEL_ID);
     api.togglePanel(true);
-  };
+  }, [api, firstComponentTestErrorStoryId]);
 
-  const openTestsPanel = () => {
-    const currentStoryId = api.getCurrentStoryData().id;
-    const currentStoryNotPassed = results.some(
-      (r) => r.storyId === currentStoryId && ['failed', 'warning'].includes(r.status)
-    );
-    if (currentStoryNotPassed) {
-      openPanel(PANEL_ID);
-    } else {
-      const firstNotPassed = results.find((r) => ['failed', 'warning'].includes(r.status));
-      openPanel(PANEL_ID, firstNotPassed?.storyId);
-    }
-  };
-
-  const openA11yPanel = () => {
-    const currentStoryId = api.getCurrentStoryData().id;
-    const currentStoryNotPassed = results.some(
-      (r) =>
-        r.storyId === currentStoryId &&
-        r.reports.some((rep) => rep.type === 'a11y' && ['failed', 'warning'].includes(rep.status))
-    );
-    if (currentStoryNotPassed) {
-      openPanel(A11y_ADDON_PANEL_ID);
-    } else {
-      const firstNotPassed = results.find((r) =>
-        r.reports.some((rep) => rep.type === 'a11y' && ['failed', 'warning'].includes(rep.status))
-      );
-      openPanel(A11y_ADDON_PANEL_ID, firstNotPassed?.storyId);
-    }
-  };
+  const firstA11yTestWarningStoryId = a11yStatusValueToStoryIds['status-value:warning'][0];
+  const openA11yPanel = useCallback(() => {
+    api.selectStory(firstA11yTestWarningStoryId);
+    api.setSelectedPanel(A11Y_PANEL_ID);
+    api.togglePanel(true);
+  }, [api, firstA11yTestWarningStoryId]);
 
   return (
     <Container {...props}>
@@ -320,18 +278,14 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
           >
             <IconButton
               size="medium"
-              disabled={componentTestStatusCountsByValue['status-value:error'] === 0}
-              onClick={openTestsPanel}
+              disabled={componentTestStatusValueToStoryIds['status-value:error'].length === 0}
+              onClick={openComponentTestPanel}
             >
-              {testProviderState === 'test-provider-state:crashed' ? (
-                <TestStatusIcon status="critical" aria-label="Test status: crashed" />
-              ) : (
-                <TestStatusIcon
-                  status={componentTestStatusIcon}
-                  aria-label={`Test status: ${status}`}
-                />
-              )}
-              {componentTestStatusCountsByValue['status-value:error'] || null}
+              <TestStatusIcon
+                status={componentTestStatusIcon}
+                aria-label={componentTestStatusLabel}
+              />
+              {componentTestStatusValueToStoryIds['status-value:error'].length || null}
             </IconButton>
           </WithTooltip>
         </Row>
@@ -433,14 +387,11 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
             >
               <IconButton
                 size="medium"
-                disabled={a11yStatusCountsByValue['status-value:warning'] === 0}
+                disabled={a11yStatusValueToStoryIds['status-value:warning'].length === 0}
                 onClick={openA11yPanel}
               >
-                <TestStatusIcon
-                  status={a11yStatusIcon}
-                  aria-label={`Accessibility status: ${a11yStatusIcon}`}
-                />
-                {a11yStatusCountsByValue['status-value:warning'] || null}
+                <TestStatusIcon status={a11yStatusIcon} aria-label={a11yStatusLabel} />
+                {a11yStatusValueToStoryIds['status-value:warning'].length || null}
               </IconButton>
             </WithTooltip>
           </Row>

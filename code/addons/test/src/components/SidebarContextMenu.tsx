@@ -2,21 +2,21 @@ import type { FC } from 'react';
 import React from 'react';
 
 import { type API } from 'storybook/internal/manager-api';
-import type { Addon_TestProviderType } from 'storybook/internal/types';
+import type { API_HashEntry } from 'storybook/internal/types';
 
-import { type Details } from '../constants';
 import { useTestProvider } from '../use-test-provider-state';
 import { TestProviderRender } from './TestProviderRender';
 
 type SidebarContextMenuProps = {
   api: API;
-} & Parameters<NonNullable<Addon_TestProviderType<Details>['sidebarContextMenu']>>[0];
+  context: API_HashEntry;
+};
 
-export const SidebarContextMenu: FC<SidebarContextMenuProps> = ({ context, state, api }) => {
+export const SidebarContextMenu: FC<SidebarContextMenuProps> = ({ context, api }) => {
   const {
     testProviderState,
-    componentTestStatusCountsByValue,
-    a11yStatusCountsByValue,
+    componentTestStatusValueToStoryIds,
+    a11yStatusValueToStoryIds,
     storeState,
     setStoreState,
   } = useTestProvider(api, context.id);
@@ -24,12 +24,11 @@ export const SidebarContextMenu: FC<SidebarContextMenuProps> = ({ context, state
   return (
     <TestProviderRender
       api={api}
-      state={state}
       entryId={context.id}
       style={{ minWidth: 240 }}
       testProviderState={testProviderState}
-      componentTestStatusCountsByValue={componentTestStatusCountsByValue}
-      a11yStatusCountsByValue={a11yStatusCountsByValue}
+      componentTestStatusValueToStoryIds={componentTestStatusValueToStoryIds}
+      a11yStatusValueToStoryIds={a11yStatusValueToStoryIds}
       storeState={storeState}
       setStoreState={setStoreState}
     />

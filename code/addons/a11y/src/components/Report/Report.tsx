@@ -1,5 +1,5 @@
 import type { FC } from 'react';
-import React, { useCallback, useState } from 'react';
+import React from 'react';
 
 import { EmptyTabContent, IconButton } from 'storybook/internal/components';
 
@@ -43,7 +43,7 @@ export interface ReportProps {
   items: Result[];
   empty: string;
   type: RuleType;
-  onSelectionChange: (key: string) => void;
+  handleSelectionChange: (key: string) => void;
   selectedItems: Map<Result['id'], string>;
   toggleOpen: (event: React.SyntheticEvent<Element>, type: RuleType, item: Result) => void;
 }
@@ -52,7 +52,7 @@ export const Report: FC<ReportProps> = ({
   items,
   empty,
   type,
-  onSelectionChange,
+  handleSelectionChange,
   selectedItems,
   toggleOpen,
 }) => (
@@ -78,7 +78,7 @@ export const Report: FC<ReportProps> = ({
                 item={item}
                 type={type}
                 selection={selection}
-                onSelectionChange={onSelectionChange}
+                handleSelectionChange={handleSelectionChange}
               />
             ) : null}
           </Wrapper>

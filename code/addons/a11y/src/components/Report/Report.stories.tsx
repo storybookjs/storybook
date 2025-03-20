@@ -49,7 +49,7 @@ const meta: Meta = {
     items: [],
     empty: 'No issues found',
     type: RuleType.VIOLATION,
-    onSelectionChange: fn().mockName('onSelectionChange'),
+    handleSelectionChange: fn().mockName('handleSelectionChange'),
     selectedItems: new Map(),
     toggleOpen: fn().mockName('toggleOpen'),
   },

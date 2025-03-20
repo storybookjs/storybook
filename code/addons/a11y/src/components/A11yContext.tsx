@@ -7,7 +7,7 @@ import {
   type StoryFinishedPayload,
 } from 'storybook/internal/core-events';
 
-import { HIGHLIGHT } from '@storybook/addon-highlight';
+import { HIGHLIGHT, RESET_HIGHLIGHT, SCROLL_INTO_VIEW } from '@storybook/addon-highlight';
 
 import type { AxeResults, Result } from 'axe-core';
 import {
@@ -51,7 +51,8 @@ export interface A11yContextStore {
   allExpanded: boolean;
   handleCollapseAll: () => void;
   handleExpandAll: () => void;
-  onSelectionChange: (key: string) => void;
+  handleJumpToElement: (target: string) => void;
+  handleSelectionChange: (key: string) => void;
 }
 
 const colorsByType = {
@@ -81,7 +82,8 @@ export const A11yContext = createContext<A11yContextStore>({
   toggleOpen: () => {},
   handleCollapseAll: () => {},
   handleExpandAll: () => {},
-  onSelectionChange: () => {},
+  handleJumpToElement: () => {},
+  handleSelectionChange: () => {},
 });
 
 const defaultResult = {
@@ -185,7 +187,7 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
     );
   }, [results, tab]);
 
-  const onSelectionChange = useCallback((key: string) => {
+  const handleSelectionChange = useCallback((key: string) => {
     const [type, id] = key.split('.');
     setSelectedItems((prev) => new Map(prev.set(`${type}.${id}`, key)));
   }, []);
@@ -261,16 +263,44 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
     await createCopyToClipboardFunction()(link);
   }, []);
 
+  const handleJumpToElement = useCallback(
+    (target: string) => emit(SCROLL_INTO_VIEW, target),
+    [emit]
+  );
+
   useEffect(() => {
     setStatus(getInitialStatus(manual));
   }, [getInitialStatus, manual]);
 
   useEffect(() => {
-    const elements = highlighted
-      ? results.violations.flatMap((v) => v.nodes.map((n) => n.target))
-      : [];
-    emit(HIGHLIGHT, { elements, color: colorsByType[tab] });
-  }, [emit, highlighted, results, tab]);
+    emit(RESET_HIGHLIGHT);
+    if (!highlighted) {
+      return;
+    }
+
+    const selected = Array.from(selectedItems.values()).flatMap((key) => {
+      const [type, id, number] = key.split('.');
+      const result = results[type as RuleType].find((r) => r.id === id);
+      const target = result?.nodes[Number(number) - 1]?.target;
+      return target ? [target] : [];
+    });
+    emit(HIGHLIGHT, {
+      elements: selected,
+      color: colorsByType[tab],
+      width: '2px',
+      offset: '0px',
+    });
+
+    const others = results[tab as RuleType]
+      .flatMap((r) => r.nodes.map((n) => n.target))
+      .filter((e) => !selected.includes(e));
+    emit(HIGHLIGHT, {
+      elements: others,
+      color: `${colorsByType[tab]}99`,
+      width: '1px',
+      offset: '0px',
+    });
+  }, [emit, highlighted, results, tab, selectedItems]);
 
   const discrepancy: TestDiscrepancy = useMemo(() => {
     if (!currentStoryA11yStatusValue) {
@@ -311,7 +341,8 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
         allExpanded,
         handleCollapseAll,
         handleExpandAll,
-        onSelectionChange,
+        handleJumpToElement,
+        handleSelectionChange,
       }}
       {...props}
     />

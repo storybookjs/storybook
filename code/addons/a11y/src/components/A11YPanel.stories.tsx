@@ -68,7 +68,8 @@ const Template = (args: Pick<A11yContextStore, 'results' | 'error' | 'status' | 
       allExpanded: false,
       handleCollapseAll: fn(),
       handleExpandAll: fn(),
-      onSelectionChange: fn(),
+      handleSelectionChange: fn(),
+      handleJumpToElement: fn(),
       ...args,
     }}
   >

@@ -8,7 +8,7 @@ import * as Tabs from '@radix-ui/react-tabs';
 import type { NodeResult, Result } from 'axe-core';
 import { styled } from 'storybook/theming';
 
-import type { RuleType } from '../A11YPanel';
+import type { RuleType } from '../../types';
 import { useA11yContext } from '../A11yContext';
 
 const StyledSyntaxHighlighter = styled(SyntaxHighlighter)(
@@ -116,10 +116,10 @@ interface DetailsProps {
   item: Result;
   type: RuleType;
   selection: string | undefined;
-  onSelectionChange: (key: string) => void;
+  handleSelectionChange: (key: string) => void;
 }
 
-export const Details = ({ item, type, selection, onSelectionChange }: DetailsProps) => (
+export const Details = ({ item, type, selection, handleSelectionChange }: DetailsProps) => (
   <Wrapper>
     <Info>
       <Description>
@@ -134,7 +134,7 @@ export const Details = ({ item, type, selection, onSelectionChange }: DetailsPro
       defaultValue="tab0"
       orientation="vertical"
       value={selection}
-      onValueChange={onSelectionChange}
+      onValueChange={handleSelectionChange}
       asChild
     >
       <Columns>
@@ -170,7 +170,7 @@ export const Details = ({ item, type, selection, onSelectionChange }: DetailsPro
 );
 
 function getContent(node: NodeResult, key: string) {
-  const { handleCopyLink } = useA11yContext();
+  const { handleCopyLink, handleJumpToElement } = useA11yContext();
   const { any, all, none, html, target } = node;
   const rules = [...any, ...all, ...none];
   return (
@@ -184,7 +184,7 @@ function getContent(node: NodeResult, key: string) {
       </Messages>
 
       <Actions>
-        <Button>
+        <Button onClick={() => handleJumpToElement(node.target.toString())}>
           <LocationIcon /> Jump to element
         </Button>
         <CopyButton onClick={() => handleCopyLink(key)} />

@@ -45,7 +45,7 @@ export const A11YPanel: React.FC = () => {
     handleManual,
     error,
     discrepancy,
-    onSelectionChange,
+    handleSelectionChange,
     selectedItems,
     toggleOpen,
   } = useA11yContext();
@@ -69,7 +69,7 @@ export const A11YPanel: React.FC = () => {
             items={violations}
             type={RuleType.VIOLATION}
             empty="No accessibility violations found."
-            onSelectionChange={onSelectionChange}
+            handleSelectionChange={handleSelectionChange}
             selectedItems={selectedItems}
             toggleOpen={toggleOpen}
           />
@@ -89,7 +89,7 @@ export const A11YPanel: React.FC = () => {
             items={passes}
             type={RuleType.PASS}
             empty="No accessibility checks passed."
-            onSelectionChange={onSelectionChange}
+            handleSelectionChange={handleSelectionChange}
             selectedItems={selectedItems}
             toggleOpen={toggleOpen}
           />
@@ -109,7 +109,7 @@ export const A11YPanel: React.FC = () => {
             items={incomplete}
             type={RuleType.INCOMPLETION}
             empty="No accessibility checks incomplete."
-            onSelectionChange={onSelectionChange}
+            handleSelectionChange={handleSelectionChange}
             selectedItems={selectedItems}
             toggleOpen={toggleOpen}
           />
@@ -118,7 +118,7 @@ export const A11YPanel: React.FC = () => {
         type: RuleType.INCOMPLETION,
       },
     ];
-  }, [results, onSelectionChange, selectedItems, toggleOpen]);
+  }, [results, handleSelectionChange, selectedItems, toggleOpen]);
 
   return (
     <>

@@ -113,8 +113,12 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
   a11yStatusCountsByValue,
   ...props
 }) => {
-  const { config, watching, cancelling } = storeState;
-  const coverageSummary = state.details?.coverageSummary;
+  const {
+    config,
+    watching,
+    cancelling,
+    currentRun: { coverageSummary },
+  } = storeState;
 
   const isA11yAddon = addons.experimental_getRegisteredAddons().includes(A11Y_ADDON_ID);
 
@@ -305,9 +309,11 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
             tooltip={
               <TooltipNote
                 note={
-                  testProviderState === 'test-provider-state:crashed'
-                    ? 'View error'
-                    : 'View test details'
+                  isRunning
+                    ? 'Testing in progress'
+                    : testProviderState === 'test-provider-state:crashed'
+                      ? 'View error'
+                      : 'View test results'
                 }
               />
             }
@@ -331,107 +337,67 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
         </Row>
 
         {!entryId && (
-          <>
-            {coverageSummary ? (
-              <Row>
-                <ListItem
-                  as="label"
-                  title="Coverage"
-                  icon={
-                    entryId ? null : (
-                      <Checkbox
-                        type="checkbox"
-                        checked={config.coverage}
-                        onChange={() =>
-                          setStoreState((s) => ({
-                            ...s,
-                            config: { ...s.config, coverage: !config.coverage },
-                          }))
-                        }
-                      />
-                    )
+          <Row>
+            <ListItem
+              as="label"
+              title={watching ? <Muted>Coverage (unavailable)</Muted> : 'Coverage'}
+              icon={
+                <Checkbox
+                  type="checkbox"
+                  checked={config.coverage}
+                  onChange={() =>
+                    setStoreState((s) => ({
+                      ...s,
+                      config: { ...s.config, coverage: !config.coverage },
+                    }))
                   }
                 />
-                <WithTooltip
-                  hasChrome={false}
-                  trigger="hover"
-                  tooltip={<TooltipNote note="View report" />}
-                >
-                  <IconButton asChild size="medium">
-                    <a
-                      href="/coverage/index.html"
-                      target="_blank"
-                      aria-label="Open coverage report"
-                    >
-                      <TestStatusIcon
-                        percentage={coverageSummary.percentage}
-                        status={coverageSummary.status}
-                        aria-label={`Coverage status: ${coverageSummary.status}`}
-                      />
-                      {coverageSummary.percentage ? (
-                        <span aria-label={`${coverageSummary.percentage} percent coverage`}>
-                          {coverageSummary.percentage}%
-                        </span>
-                      ) : null}
-                    </a>
-                  </IconButton>
-                </WithTooltip>
-              </Row>
-            ) : (
-              <Row>
-                <ListItem
-                  as="label"
-                  title={watching ? <Muted>Coverage (unavailable)</Muted> : <>Coverage</>}
-                  icon={
-                    entryId ? null : (
-                      <Checkbox
-                        type="checkbox"
-                        checked={config.coverage}
-                        onChange={() =>
-                          setStoreState((s) => ({
-                            ...s,
-                            config: { ...s.config, coverage: !config.coverage },
-                          }))
-                        }
-                      />
-                    )
+              }
+            />
+            <WithTooltip
+              hasChrome={false}
+              trigger="hover"
+              tooltip={
+                <TooltipNote
+                  note={
+                    watching
+                      ? 'Coverage is unavailable in watch mode'
+                      : isRunning && config.coverage
+                        ? 'Calculating...'
+                        : coverageSummary
+                          ? 'View report'
+                          : 'Run tests to calculate coverage'
                   }
                 />
-                {watching ? (
-                  <WithTooltip
-                    hasChrome={false}
-                    trigger="hover"
-                    tooltip={<TooltipNote note="Coverage is unavailable in watch mode" />}
-                  >
-                    <IconButton size="medium" disabled>
-                      <InfoIcon aria-label="Coverage is unavailable in watch mode" />
-                    </IconButton>
-                  </WithTooltip>
-                ) : (
-                  <WithTooltip
-                    hasChrome={false}
-                    trigger="hover"
-                    tooltip={
-                      <TooltipNote
-                        note={
-                          isRunning && config.coverage
-                            ? 'Calculating...'
-                            : 'Run tests to calculate coverage'
-                        }
-                      />
-                    }
-                  >
-                    <IconButton size="medium" disabled>
-                      <TestStatusIcon
-                        status={isRunning && config.coverage ? 'pending' : 'unknown'}
-                        aria-label={`Coverage status: unknown`}
-                      />
-                    </IconButton>
-                  </WithTooltip>
-                )}
-              </Row>
-            )}
-          </>
+              }
+            >
+              {watching ? (
+                <IconButton size="medium" disabled>
+                  <InfoIcon aria-label="Coverage is unavailable in watch mode" />
+                </IconButton>
+              ) : coverageSummary ? (
+                <IconButton asChild size="medium">
+                  <a href="/coverage/index.html" target="_blank" aria-label="Open coverage report">
+                    <TestStatusIcon
+                      percentage={coverageSummary.percentage}
+                      status={coverageSummary.status}
+                      aria-label={`Coverage status: ${coverageSummary.status}`}
+                    />
+                    <span aria-label={`${coverageSummary.percentage} percent coverage`}>
+                      {coverageSummary.percentage}%
+                    </span>
+                  </a>
+                </IconButton>
+              ) : (
+                <IconButton size="medium">
+                  <TestStatusIcon
+                    status={isRunning && config.coverage ? 'pending' : 'unknown'}
+                    aria-label={`Coverage status: unknown`}
+                  />
+                </IconButton>
+              )}
+            </WithTooltip>
+          </Row>
         )}
 
         {isA11yAddon && (

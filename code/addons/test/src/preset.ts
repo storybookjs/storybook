@@ -30,7 +30,7 @@ import {
   TEST_PROVIDER_ID,
   storeOptions,
 } from './constants';
-import { log, logError } from './logger';
+import { log } from './logger';
 import { runTestRunner } from './node/boot-test-runner';
 
 type Event = {
@@ -113,6 +113,12 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
       },
     }));
     // TODO: potentially also set the test provider state to crashed ?
+  });
+  testProviderStore.onClearAll(() => {
+    store.setState((s) => ({
+      ...s,
+      currentRun: { ...s.currentRun, coverageSummary: undefined, unhandledErrors: [] },
+    }));
   });
 
   if (!core.disableTelemetry) {

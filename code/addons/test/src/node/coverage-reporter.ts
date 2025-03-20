@@ -3,7 +3,7 @@ import type { ResolvedCoverageOptions } from 'vitest/node';
 import type { ReportNode, Visitor } from 'istanbul-lib-report';
 import { ReportBase } from 'istanbul-lib-report';
 
-import { type Details, TEST_PROVIDER_ID } from '../constants';
+import { type Details, type StoreState, TEST_PROVIDER_ID } from '../constants';
 import type { TestManager } from './test-manager';
 
 export type StorybookCoverageReporterOptions = {
@@ -26,15 +26,15 @@ export default class StorybookCoverageReporter extends ReportBase implements Par
     if (!node.isRoot()) {
       return;
     }
-    const coverageSummary = node.getCoverageSummary(false);
+    const rawCoverageSummary = node.getCoverageSummary(false);
 
-    const percentage = Math.round(coverageSummary.data.statements.pct);
+    const percentage = Math.round(rawCoverageSummary.data.statements.pct);
 
     // Fallback to Vitest's default watermarks https://vitest.dev/config/#coverage-watermarks
     const [lowWatermark = 50, highWatermark = 80] =
       this.#coverageOptions?.watermarks?.statements ?? [];
 
-    const coverageDetails: Details['coverageSummary'] = {
+    const coverageSummary: StoreState['currentRun']['coverageSummary'] = {
       percentage,
       status:
         percentage < lowWatermark
@@ -43,11 +43,6 @@ export default class StorybookCoverageReporter extends ReportBase implements Par
             ? 'warning'
             : 'positive',
     };
-    this.#testManager.handleProgressReport({
-      providerId: TEST_PROVIDER_ID,
-      details: {
-        coverageSummary: coverageDetails,
-      },
-    });
+    this.#testManager.onCoverageCollected(coverageSummary);
   }
 }

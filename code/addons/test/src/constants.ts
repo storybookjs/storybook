@@ -1,4 +1,5 @@
 import type { experimental_UniversalStore } from 'storybook/internal/core-server';
+import type { StoryId } from 'storybook/internal/types';
 
 import type { TestResult } from './node/old-reporter';
 import type { VitestError } from './types';
@@ -58,9 +59,16 @@ export type StoreState = {
     a11y: boolean;
     finishedTestCount: number;
     totalTestCount: number | undefined;
+    storyIds: StoryId[] | undefined;
     startedAt: number | undefined;
     finishedAt: number | undefined;
     unhandledErrors: VitestError[];
+    coverageSummary:
+      | {
+          status: 'positive' | 'warning' | 'negative' | 'unknown';
+          percentage: number;
+        }
+      | undefined;
   };
 };
 
@@ -100,10 +108,12 @@ export const storeOptions = {
       coverage: false,
       a11y: false,
       finishedTestCount: 0,
+      storyIds: undefined,
       totalTestCount: undefined,
       startedAt: undefined,
       finishedAt: undefined,
       unhandledErrors: [],
+      coverageSummary: undefined,
     },
   },
 };

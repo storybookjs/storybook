@@ -141,6 +141,7 @@ export class TestManager {
           currentRun: {
             ...storeOptions.initialState.currentRun,
             startedAt: Date.now(),
+            storyIds: event.payload.storyIds,
             coverage: s.config.coverage,
             a11y: s.config.a11y,
           },
@@ -151,7 +152,7 @@ export class TestManager {
         /*
         If we're only running a subset of stories, we have to temporarily disable coverage,
         as a coverage report for a subset of stories is not useful.
-      */
+        */
         const temporarilyDisableCoverage =
           state.config.coverage && !state.watching && (event.payload.storyIds ?? []).length > 0;
         if (temporarilyDisableCoverage) {
@@ -204,7 +205,6 @@ export class TestManager {
   }
 
   onTestCaseResult(result: { storyId?: string; testResult: TestResult; reports?: Report[] }) {
-    console.log('onTestCaseResult', result.storyId);
     const { storyId, testResult, reports } = result;
     if (!storyId) {
       return;
@@ -218,10 +218,8 @@ export class TestManager {
     const testCaseResultsToFlush = this.batchedTestCaseResults;
     this.batchedTestCaseResults = [];
 
-    console.log('flushing ', testCaseResultsToFlush.length, ' test case results');
     this.store.setState((s) => {
       const finishedTestCount = s.currentRun.finishedTestCount + testCaseResultsToFlush.length;
-      console.log('finishedTestCount', finishedTestCount);
       return {
         ...s,
         currentRun: {
@@ -344,6 +342,13 @@ export class TestManager {
         unhandledErrors: endResult.unhandledErrors,
         finishedAt: Date.now(),
       },
+    }));
+  }
+
+  onCoverageCollected(coverageSummary: StoreState['currentRun']['coverageSummary']) {
+    this.store.setState((s) => ({
+      ...s,
+      currentRun: { ...s.currentRun, coverageSummary },
     }));
   }
 

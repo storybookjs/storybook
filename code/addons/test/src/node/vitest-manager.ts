@@ -296,9 +296,11 @@ export class VitestManager {
   }
 
   async getStorybookTestSpecs() {
-    const globTestSpecs = (await this.vitest?.globTestSpecs()) ?? [];
+    const globTestSpecifications = (await this.vitest?.globTestSpecifications()) ?? [];
     return (
-      globTestSpecs.filter((workspaceSpec) => this.isStorybookProject(workspaceSpec.project)) ?? []
+      globTestSpecifications.filter((workspaceSpec) =>
+        this.isStorybookProject(workspaceSpec.project)
+      ) ?? []
     );
   }
 

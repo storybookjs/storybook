@@ -252,69 +252,6 @@ export class TestManager {
     }
   }, 500);
 
-  // onTestModuleEnd(
-  //   results: {
-  //     storyId?: string;
-  //     testResult: TestResult;
-  //     reports?: Report[];
-  //   }[]
-  // ) {
-  //   if (results.length === 0) {
-  //     return;
-  //   }
-
-  //   const finishedTestCount =
-  //     (this.store.getState().currentRun?.finishedTestCount ?? 0) + results.length;
-
-  //   // Update the finished test count in the store
-  //   this.store.setState((s) => ({
-  //     ...s,
-  //     currentRun: {
-  //       ...s.currentRun!,
-  //       finishedTestCount,
-  //       totalTestCount:
-  //         finishedTestCount > (s.currentRun?.totalTestCount ?? 0)
-  //           ? finishedTestCount
-  //           : s.currentRun?.totalTestCount,
-  //     },
-  //   }));
-
-  //   // Process component test statuses
-  //   const componentTestStatuses = results
-  //     .filter(({ storyId }) => storyId)
-  //     .map(({ storyId, testResult }) => ({
-  //       storyId: storyId!,
-  //       typeId: STATUS_TYPE_ID_COMPONENT_TEST,
-  //       value: testStateToStatusValueMap[testResult.state],
-  //       title: 'Component tests',
-  //       description:
-  //         testResult.errors?.map((error) => error.stack || error.message).join('\n') ?? '',
-  //       sidebarContextMenu: false,
-  //     }));
-
-  //   if (componentTestStatuses.length > 0) {
-  //     this.componentTestStatusStore.set(componentTestStatuses);
-  //   }
-
-  //   // Process accessibility test reports
-  //   const a11yStatuses = results
-  //     .filter(({ storyId, reports }) => storyId && reports?.some((r) => r.type === 'a11y'))
-  //     .flatMap(({ storyId, reports }) =>
-  //       (reports?.filter((r) => r.type === 'a11y') || []).map((a11yReport) => ({
-  //         storyId: storyId!,
-  //         typeId: STATUS_TYPE_ID_A11Y,
-  //         value: testStateToStatusValueMap[a11yReport.status],
-  //         title: 'Accessibility tests',
-  //         description: '',
-  //         sidebarContextMenu: false,
-  //       }))
-  //     );
-
-  //   if (a11yStatuses.length > 0) {
-  //     this.a11yStatusStore.set(a11yStatuses);
-  //   }
-  // }
-
   onTestRunEnd(endResult: { totalTestCount: number; unhandledErrors: VitestError[] }) {
     this.store.setState((s) => ({
       ...s,

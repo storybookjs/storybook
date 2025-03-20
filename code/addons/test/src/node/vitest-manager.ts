@@ -37,11 +37,6 @@ type TagsFilter = {
 
 const packageDir = dirname(require.resolve('@storybook/addon-test/package.json'));
 
-const vitestVersion = vitestNode.version;
-const isVitest3OrLater = vitestVersion
-  ? satisfies(vitestVersion, '>=3.0.0-beta.3', { includePrerelease: true })
-  : false;
-
 // We have to tell Vitest that it runs as part of Storybook
 process.env.VITEST_STORYBOOK = 'true';
 
@@ -145,19 +140,8 @@ export class VitestManager {
     return this.vitestRestartPromise;
   }
 
-  private setGlobalTestNamePattern(pattern: string | RegExp) {
-    if (isVitest3OrLater) {
-      this.vitest!.setGlobalTestNamePattern(pattern);
-    } else {
-      // @ts-expect-error vitest.configOverride is a Vitest < 3 API.
-      this.vitest!.configOverride.testNamePattern = pattern;
-    }
-  }
-
   private resetGlobalTestNamePattern() {
-    if (this.vitest) {
-      this.setGlobalTestNamePattern('');
-    }
+    this.vitest?.setGlobalTestNamePattern('');
   }
 
   private updateLastChanged(filepath: string) {
@@ -205,11 +189,6 @@ export class VitestManager {
     }
     // Skipped tests are intentionally included here
     return true;
-  }
-
-  private get vite() {
-    // TODO: vitest.server is a Vitest < 3.0.0 API. Remove as soon as we don't support < 3.0.0 anymore.
-    return isVitest3OrLater ? this.vitest?.vite : this.vitest?.server;
   }
 
   async runTests(runPayload: TriggerRunEvent['payload']) {
@@ -265,7 +244,7 @@ export class VitestManager {
     if (isSingleStoryRun) {
       const storyName = stories[0].name;
       const regex = new RegExp(`^${storyName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`);
-      this.setGlobalTestNamePattern(regex);
+      this.vitest?.setGlobalTestNamePattern(regex);
     }
 
     await this.vitest!.runTestSpecifications(filteredTestFiles, true);
@@ -299,10 +278,7 @@ export class VitestManager {
       }
       deps.add(filepath);
 
-      // TODO: Remove project.server once we don't support Vitest < 3.0.0 anymore
-      const server = isVitest3OrLater ? project.vite : project.server;
-
-      const mod = server.moduleGraph.getModuleById(filepath);
+      const mod = project.vite.moduleGraph.getModuleById(filepath);
       // @ts-expect-error project.vitenode is a Vitest < 3 API.
       const viteNode = isVitest3OrLater ? project.vite : project.vitenode;
       const transformed = mod?.ssrTransformResult || (await viteNode.transformRequest(filepath));
@@ -312,7 +288,7 @@ export class VitestManager {
       const dependencies = [...(transformed.deps || []), ...(transformed.dynamicDeps || [])];
       await Promise.all(
         dependencies.map(async (dep) => {
-          const idPath = await server.pluginContainer.resolveId(dep, filepath, {
+          const idPath = await project.vite.pluginContainer.resolveId(dep, filepath, {
             ssr: true,
           });
           const fsPath = idPath && !idPath.external && idPath.id.split('?')[0];
@@ -344,11 +320,7 @@ export class VitestManager {
     }
     this.resetGlobalTestNamePattern();
 
-    const globTestSpecs: (filters?: string[] | undefined) => Promise<TestSpecification[]> =
-      // TODO: vitest.globTestSpecs is a Vitest < 3.0.0 API.
-      isVitest3OrLater ? this.vitest.globTestSpecifications : this.vitest.globTestSpecs;
-
-    const globTestFiles = await globTestSpecs.call(this.vitest);
+    const globTestFiles = await this.vitest?.globTestSpecifications.call(this.vitest);
 
     const testGraphs = await Promise.all(
       globTestFiles
@@ -388,9 +360,9 @@ export class VitestManager {
   }
 
   async registerVitestConfigListener() {
-    this.vite?.watcher.on('change', async (file) => {
+    this.vitest?.vite.watcher.on('change', async (file) => {
       file = normalize(file);
-      const isConfig = file === this.vite?.config.configFile;
+      const isConfig = file === this.vitest?.vite?.config.configFile;
       if (isConfig) {
         log('Restarting Vitest due to config change');
         await this.closeVitest();
@@ -401,11 +373,10 @@ export class VitestManager {
 
   async setupWatchers() {
     this.resetGlobalTestNamePattern();
-    const server = this.vite;
-    server?.watcher.removeAllListeners('change');
-    server?.watcher.removeAllListeners('add');
-    server?.watcher.on('change', this.runAffectedTestsAfterChange.bind(this));
-    server?.watcher.on('add', this.runAffectedTestsAfterChange.bind(this));
+    this.vitest?.vite?.watcher.removeAllListeners('change');
+    this.vitest?.vite?.watcher.removeAllListeners('add');
+    this.vitest?.vite?.watcher.on('change', this.runAffectedTestsAfterChange.bind(this));
+    this.vitest?.vite?.watcher.on('add', this.runAffectedTestsAfterChange.bind(this));
     this.registerVitestConfigListener();
   }
 

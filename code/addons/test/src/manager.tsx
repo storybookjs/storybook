@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 
 import { AddonPanel } from 'storybook/internal/components';
-import type { StatusValue } from 'storybook/internal/types';
 import { type Addon_TestProviderType, Addon_TypesEnum } from 'storybook/internal/types';
 
 import {
@@ -11,30 +10,15 @@ import {
   testProviderStore,
 } from '#manager-store';
 import type { Combo } from 'storybook/manager-api';
-import {
-  Consumer,
-  addons,
-  experimental_useStatusStore,
-  experimental_useTestProviderStore,
-  types,
-} from 'storybook/manager-api';
+import { Consumer, addons, types } from 'storybook/manager-api';
 
 import { GlobalErrorContext, GlobalErrorModal } from './components/GlobalErrorModal';
 import { Panel } from './components/Panel';
 import { PanelTitle } from './components/PanelTitle';
 import { SidebarContextMenu } from './components/SidebarContextMenu';
 import { TestProviderRender } from './components/TestProviderRender';
-import { A11Y_PANEL_ID, ADDON_ID, type Details, PANEL_ID, TEST_PROVIDER_ID } from './constants';
-import type { TestStatus } from './node/old-reporter';
+import { A11Y_PANEL_ID, ADDON_ID, PANEL_ID, TEST_PROVIDER_ID } from './constants';
 import { useTestProvider } from './use-test-provider-state';
-
-const statusMap: Record<TestStatus, StatusValue> = {
-  pending: 'status-value:pending',
-  passed: 'status-value:success',
-  warning: 'status-value:warning',
-  failed: 'status-value:error',
-  skipped: 'status-value:unknown',
-};
 
 addons.register(ADDON_ID, (api) => {
   const storybookBuilder = (globalThis as any).STORYBOOK_BUILDER || '';
@@ -95,7 +79,6 @@ addons.register(ADDON_ID, (api) => {
         );
       },
 
-      // @ts-expect-error: TODO: Fix types
       sidebarContextMenu: ({ context }) => {
         if (context.type === 'docs') {
           return null;
@@ -105,23 +88,7 @@ addons.register(ADDON_ID, (api) => {
         }
         return <SidebarContextMenu context={context} api={api} />;
       },
-
-      // @ts-expect-error: TODO: Fix types
-      stateUpdater: (state, update) => {
-        const updated = {
-          ...state,
-          ...update,
-          details: { ...state.details, ...update.details },
-        };
-
-        if ((!state.running && update.running) || store.getState().watching) {
-          // Clear coverage data when starting test run or enabling watch mode
-          delete updated.details.coverageSummary;
-        }
-
-        return updated;
-      },
-    } satisfies Omit<Addon_TestProviderType<Details>, 'id'>);
+    } satisfies Omit<Addon_TestProviderType, 'id'>);
   }
 
   const filter = ({ state }: Combo) => {

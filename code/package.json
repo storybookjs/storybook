@@ -117,7 +117,6 @@
     "@storybook/addon-storysource": "workspace:*",
     "@storybook/addon-test": "workspace:*",
     "@storybook/addon-themes": "workspace:*",
-    "@storybook/addon-toolbars": "workspace:*",
     "@storybook/addon-viewport": "workspace:*",
     "@storybook/angular": "workspace:*",
     "@storybook/bench": "next",

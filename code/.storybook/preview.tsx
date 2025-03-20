@@ -29,7 +29,6 @@ import {
   useTheme,
 } from 'storybook/theming';
 
-import * as addonsPreview from '../addons/toolbars/template/stories/preview';
 import * as templatePreview from '../core/template/stories/preview';
 import { DocsPageWrapper } from '../lib/blocks/src/components';
 import '../renderers/react/template/components/index';

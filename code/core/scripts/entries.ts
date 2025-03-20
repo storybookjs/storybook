@@ -27,6 +27,10 @@ export const getEntries = (cwd: string) => {
     define('src/controls/manager.tsx', ['browser'], false, ['react']),
     define('src/controls/decorator.ts', ['browser'], true, ['react']),
 
+    define('src/toolbar/index.ts', ['browser', 'node'], true, ['react']),
+    define('src/toolbar/preview.ts', ['browser', 'node'], true, ['react']),
+    define('src/toolbar/manager.tsx', ['browser'], false, ['react']),
+
     define('src/core-events/index.ts', ['browser', 'node'], true),
     define('src/manager-errors.ts', ['browser'], true),
     define('src/preview-errors.ts', ['browser', 'node'], true),

@@ -55,7 +55,6 @@
       "require": "./dist/outline/preview.js"
     },
     "./outline/manager": "./dist/outline/manager.js",
-    "./toolbars/manager": "./dist/toolbars/manager.js",
     "./viewport/manager": "./dist/viewport/manager.js",
     "./viewport/preview": {
       "types": "./dist/viewport/preview.d.ts",
@@ -94,7 +93,6 @@
     "@storybook/addon-highlight": "workspace:*",
     "@storybook/addon-measure": "workspace:*",
     "@storybook/addon-outline": "workspace:*",
-    "@storybook/addon-toolbars": "workspace:*",
     "@storybook/addon-viewport": "workspace:*",
     "ts-dedent": "^2.0.0"
   },
@@ -118,17 +116,14 @@
     "managerEntries": [
       "./src/backgrounds/manager.ts",
       "./src/measure/manager.ts",
-      "./src/outline/manager.ts",
-      "./src/toolbars/manager.ts",
-      "./src/viewport/manager.ts"
+      "./src/outline/manager.ts"
     ],
     "previewEntries": [
       "./src/preview.ts",
       "./src/backgrounds/preview.ts",
       "./src/highlight/preview.ts",
       "./src/measure/preview.ts",
-      "./src/outline/preview.ts",
-      "./src/viewport/preview.ts"
+      "./src/outline/preview.ts"
     ]
   },
   "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"

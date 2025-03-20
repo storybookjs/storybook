@@ -5,7 +5,7 @@ import { SbPage } from './util';
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
 
-test.describe('addon-toolbars', () => {
+test.describe('toolbar', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(storybookUrl);
     await new SbPage(page, expect).waitUntilLoaded();
@@ -15,7 +15,7 @@ test.describe('addon-toolbars', () => {
     const sbPage = new SbPage(page, expect);
 
     // Click on viewport button and select spanish
-    await sbPage.navigateToStory('core/toolbars/globals', 'basic');
+    await sbPage.navigateToStory('core/toolbar/globals', 'basic');
     await sbPage.selectToolbar('[title="Internationalization locale"]', '#list-item-es');
 
     // Check that spanish is selected
@@ -28,7 +28,7 @@ test.describe('addon-toolbars', () => {
     const sbPage = new SbPage(page, expect);
 
     // Click on viewport button and select spanish
-    await sbPage.navigateToStory('core/toolbars/globals', 'override-locale');
+    await sbPage.navigateToStory('core/toolbar/globals', 'override-locale');
     await expect(sbPage.previewRoot()).toContainText('안녕하세요');
     const button = sbPage.page.locator('[title="Internationalization locale"]');
 

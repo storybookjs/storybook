@@ -134,6 +134,19 @@
       "types": "./dist/controls/decorator.d.ts",
       "import": "./dist/controls/decorator.js"
     },
+    "./internal/toolbar": {
+      "types": "./dist/toolbar/index.d.ts",
+      "import": "./dist/toolbar/index.js",
+      "require": "./dist/toolbar/index.cjs"
+    },
+    "./internal/toolbar/preview": {
+      "types": "./dist/toolbar/preview.d.ts",
+      "import": "./dist/toolbar/preview.js",
+      "require": "./dist/toolbar/preview.cjs"
+    },
+    "./internal/toolbar/manager": {
+      "import": "./dist/toolbar/manager.js"
+    },
     "./internal/core-events": {
       "types": "./dist/core-events/index.d.ts",
       "import": "./dist/core-events/index.js",
@@ -355,6 +368,12 @@
       ],
       "internal/controls/decorator": [
         "./dist/controls/decorator.d.ts"
+      ],
+      "internal/toolbar": [
+        "./dist/toolbar/index.d.ts"
+      ],
+      "internal/toolbar/preview": [
+        "./dist/toolbar/preview.d.ts"
       ],
       "internal/core-events": [
         "./dist/core-events/index.d.ts"

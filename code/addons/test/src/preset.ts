@@ -75,7 +75,7 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
   store.subscribe('TRIGGER_RUN', (event, eventInfo) => {
     // TODO: this ensures the provider is marked as running immediately,
     // but it could also result in a deadlock, if the state is never reset back due to the child process crashing or similar.
-    // testProviderStore.setState('test-provider-state:running');
+    testProviderStore.setState('test-provider-state:running');
     runTestRunner(channel, store, STORE_CHANNEL_EVENT_NAME, [{ event, eventInfo }]);
   });
   store.subscribe('FATAL_ERROR', (event) => {
@@ -112,7 +112,7 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
         error,
       },
     }));
-    // TODO: potentially also set the test provider state to crashed ?
+    testProviderStore.setState('test-provider-state:crashed');
   });
   testProviderStore.onClearAll(() => {
     store.setState((s) => ({

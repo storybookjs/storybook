@@ -25,7 +25,6 @@ import type { TestStatus } from './old-reporter';
 import { VitestManager } from './vitest-manager';
 
 type TestManagerOptions = {
-  channel: Channel;
   store: experimental_UniversalStore<StoreState, StoreEvent>;
   componentTestStatusStore: StatusStoreByTypeId;
   a11yStatusStore: StatusStoreByTypeId;
@@ -47,8 +46,6 @@ export class TestManager {
 
   public vitestManager: VitestManager;
 
-  private channel: TestManagerOptions['channel'];
-
   private componentTestStatusStore: TestManagerOptions['componentTestStatusStore'];
 
   private a11yStatusStore: TestManagerOptions['a11yStatusStore'];
@@ -64,7 +61,6 @@ export class TestManager {
   }[] = [];
 
   constructor(options: TestManagerOptions) {
-    this.channel = options.channel;
     this.store = options.store;
     this.componentTestStatusStore = options.componentTestStatusStore;
     this.a11yStatusStore = options.a11yStatusStore;

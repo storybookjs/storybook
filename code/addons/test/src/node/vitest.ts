@@ -43,7 +43,6 @@ const channel: Channel = new Channel({
 const store = UniversalStore.create<StoreState, StoreEvent>(storeOptions);
 
 new TestManager({
-  channel,
   store,
   componentTestStatusStore: getStatusStore(STATUS_TYPE_ID_COMPONENT_TEST),
   a11yStatusStore: getStatusStore(STATUS_TYPE_ID_A11Y),

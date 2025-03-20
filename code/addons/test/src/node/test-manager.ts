@@ -10,16 +10,14 @@ import type {
 import { isEqual, throttle } from 'es-toolkit';
 import type { Report } from 'storybook/preview-api';
 
-import {
-  STATUS_TYPE_ID_A11Y,
-  STATUS_TYPE_ID_COMPONENT_TEST,
-  type StoreEvent,
-  type StoreState,
-  type ToggleWatchingEvent,
-  type TriggerRunEvent,
-  storeOptions,
-} from '../constants';
-import type { VitestError } from '../types';
+import { STATUS_TYPE_ID_A11Y, STATUS_TYPE_ID_COMPONENT_TEST, storeOptions } from '../constants';
+import type {
+  StoreEvent,
+  StoreState,
+  ToggleWatchingEvent,
+  TriggerRunEvent,
+  VitestError,
+} from '../types';
 import { errorToErrorLike } from '../utils';
 import { VitestManager } from './vitest-manager';
 

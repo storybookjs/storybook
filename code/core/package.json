@@ -117,6 +117,40 @@
       "types": "./dist/actions/decorator.d.ts",
       "import": "./dist/actions/decorator.js"
     },
+    "./internal/controls": {
+      "types": "./dist/controls/index.d.ts",
+      "import": "./dist/controls/index.js",
+      "require": "./dist/controls/index.cjs"
+    },
+    "./controls": {
+      "types": "./dist/controls/index.d.ts",
+      "import": "./dist/controls/index.js",
+      "require": "./dist/controls/index.cjs"
+    },
+    "./internal/controls/preview": {
+      "types": "./dist/controls/preview.d.ts",
+      "import": "./dist/controls/preview.js",
+      "require": "./dist/controls/preview.cjs"
+    },
+    "./controls/preview": {
+      "types": "./dist/controls/preview.d.ts",
+      "import": "./dist/controls/preview.js",
+      "require": "./dist/controls/preview.cjs"
+    },
+    "./internal/controls/manager": {
+      "import": "./dist/controls/manager.js"
+    },
+    "./controls/manager": {
+      "import": "./dist/controls/manager.js"
+    },
+    "./internal/controls/decorator": {
+      "types": "./dist/controls/decorator.d.ts",
+      "import": "./dist/controls/decorator.js"
+    },
+    "./controls/decorator": {
+      "types": "./dist/controls/decorator.d.ts",
+      "import": "./dist/controls/decorator.js"
+    },
     "./internal/core-events": {
       "types": "./dist/core-events/index.d.ts",
       "import": "./dist/core-events/index.js",
@@ -329,6 +363,24 @@
       ],
       "actions/decorator": [
         "./dist/actions/decorator.d.ts"
+      ],
+      "internal/controls": [
+        "./dist/controls/index.d.ts"
+      ],
+      "controls": [
+        "./dist/controls/index.d.ts"
+      ],
+      "internal/controls/preview": [
+        "./dist/controls/preview.d.ts"
+      ],
+      "controls/preview": [
+        "./dist/controls/preview.d.ts"
+      ],
+      "internal/controls/decorator": [
+        "./dist/controls/decorator.d.ts"
+      ],
+      "controls/decorator": [
+        "./dist/controls/decorator.d.ts"
       ],
       "internal/core-events": [
         "./dist/core-events/index.d.ts"

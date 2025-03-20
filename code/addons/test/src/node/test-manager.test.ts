@@ -7,7 +7,8 @@ import type { StoryIndex } from 'storybook/internal/types';
 
 import path from 'pathe';
 
-import { type StoreEvent, type StoreState, storeOptions } from '../constants';
+import { storeOptions } from '../constants';
+import type { StoreEvent, StoreState } from '../types';
 import { TestManager } from './test-manager';
 
 const setTestNamePattern = vi.hoisted(() => vi.fn());

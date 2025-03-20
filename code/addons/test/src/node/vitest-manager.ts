@@ -4,24 +4,21 @@ import type {
   CoverageOptions,
   ResolvedCoverageOptions,
   TestProject,
-  TestRunResult,
   TestSpecification,
   Vitest,
   WorkspaceProject,
 } from 'vitest/node';
-import * as vitestNode from 'vitest/node';
 
 import { resolvePathInStorybookCache } from 'storybook/internal/common';
-import type { TestingModuleRunRequestPayload } from 'storybook/internal/core-events';
 import type { DocsIndexEntry, StoryIndex, StoryIndexEntry } from 'storybook/internal/types';
 
 import { findUp } from 'find-up';
 import path, { dirname, join, normalize } from 'pathe';
-import { satisfies } from 'semver';
 import slash from 'slash';
 
-import { COVERAGE_DIRECTORY, type TriggerRunEvent } from '../constants';
+import { COVERAGE_DIRECTORY } from '../constants';
 import { log } from '../logger';
+import type { TriggerRunEvent } from '../types';
 import type { StorybookCoverageReporterOptions } from './coverage-reporter';
 import { StorybookReporter } from './reporter';
 import type { TestManager } from './test-manager';

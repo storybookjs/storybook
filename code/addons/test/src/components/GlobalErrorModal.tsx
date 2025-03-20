@@ -8,7 +8,7 @@ import { useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import { DOCUMENTATION_FATAL_ERROR_LINK } from '../constants';
-import type { ErrorLike, StoreState } from '../constants';
+import type { ErrorLike, StoreState } from '../types';
 
 const ModalBar = styled.div({
   display: 'flex',

@@ -1,7 +1,6 @@
 import { type ChildProcess } from 'node:child_process';
 
 import type { Channel } from 'storybook/internal/channels';
-import { TESTING_MODULE_CANCEL_TEST_RUN_REQUEST } from 'storybook/internal/core-events';
 import {
   internal_universalStatusStore,
   internal_universalTestProviderStore,
@@ -11,6 +10,7 @@ import {
 import { execaNode } from 'execa';
 import { join } from 'pathe';
 
+// TODO: export the types from the core package
 import type { EventInfo } from '../../../../core/src/shared/universal-store/types';
 import {
   STATUS_STORE_CHANNEL_EVENT_NAME,
@@ -57,9 +57,6 @@ const bootTestRunner = async (channel: Channel, store: Store) => {
 
   store.subscribe('FATAL_ERROR', killChild);
 
-  const forwardCancel = (...args: any[]) =>
-    child?.send({ args, from: 'server', type: TESTING_MODULE_CANCEL_TEST_RUN_REQUEST });
-
   const exit = (code = 0) => {
     killChild();
     eventQueue.length = 0;
@@ -102,10 +99,6 @@ const bootTestRunner = async (channel: Channel, store: Store) => {
             const { type, args } = eventQueue.shift()!;
             child?.send({ type, args, from: 'server' });
           }
-
-          // Forward all events from the channel to the child process
-          channel.on(TESTING_MODULE_CANCEL_TEST_RUN_REQUEST, forwardCancel);
-
           resolve();
         } else {
           channel.emit(event.type, ...event.args);

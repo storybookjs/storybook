@@ -16,12 +16,8 @@ import {
   experimental_useUniversalStore,
 } from 'storybook/manager-api';
 
-import {
-  ADDON_ID,
-  STATUS_TYPE_ID_A11Y,
-  STATUS_TYPE_ID_COMPONENT_TEST,
-  type StoreState,
-} from './constants';
+import { ADDON_ID, STATUS_TYPE_ID_A11Y, STATUS_TYPE_ID_COMPONENT_TEST } from './constants';
+import type { StoreState } from './types';
 
 export type StatusValueToStoryIds = Record<StatusValue, StoryId[]>;
 

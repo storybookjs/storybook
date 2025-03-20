@@ -1,12 +1,11 @@
-import React, { type ComponentProps, useEffect } from 'react';
+import React, { type ComponentProps } from 'react';
 
 import { Link as LinkComponent } from 'storybook/internal/components';
 import type { TestProviderState } from 'storybook/internal/types';
 
 import { styled } from 'storybook/theming';
 
-import type { StoreState } from '../constants';
-import type { TestResultResult } from '../node/old-reporter';
+import type { StoreState } from '../types';
 import { GlobalErrorContext } from './GlobalErrorModal';
 import { RelativeTime } from './RelativeTime';
 

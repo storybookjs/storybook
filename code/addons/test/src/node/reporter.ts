@@ -8,33 +8,6 @@ import type { Report } from 'storybook/preview-api';
 import type { VitestError } from '../types';
 import type { TestManager } from './test-manager';
 
-export type TestStatus = 'passed' | 'failed' | 'warning' | 'pending' | 'skipped';
-
-export type TestResultResult =
-  | {
-      status: Extract<TestStatus, 'passed' | 'pending'>;
-      storyId: string;
-      testRunId: string;
-      duration: number;
-      reports: Report[];
-    }
-  | {
-      status: Extract<TestStatus, 'failed' | 'warning'>;
-      storyId: string;
-      duration: number;
-      testRunId: string;
-      failureMessages: string[];
-      reports: Report[];
-    };
-
-export type TestResult = {
-  results: TestResultResult[];
-  startTime: number;
-  endTime: number;
-  status: Extract<TestStatus, 'passed' | 'failed' | 'warning'>;
-  message?: string;
-};
-
 export class StorybookReporter implements Reporter {
   ctx!: Vitest;
 

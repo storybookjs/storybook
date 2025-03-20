@@ -17,7 +17,7 @@ import type { API } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import { A11Y_ADDON_ID, A11Y_PANEL_ID, PANEL_ID } from '../constants';
-import type { StoreState } from '../constants';
+import type { StoreState } from '../types';
 import type { StatusValueToStoryIds } from '../use-test-provider-state';
 import { Description } from './Description';
 import { TestStatusIcon } from './TestStatusIcon';

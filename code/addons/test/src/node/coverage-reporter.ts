@@ -3,7 +3,7 @@ import type { ResolvedCoverageOptions } from 'vitest/node';
 import type { ReportNode, Visitor } from 'istanbul-lib-report';
 import { ReportBase } from 'istanbul-lib-report';
 
-import { type Details, type StoreState, TEST_PROVIDER_ID } from '../constants';
+import type { StoreState } from '../types';
 import type { TestManager } from './test-manager';
 
 export type StorybookCoverageReporterOptions = {

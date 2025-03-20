@@ -3,13 +3,13 @@ import process from 'node:process';
 
 import { Channel } from 'storybook/internal/channels';
 
-import type { ErrorLike, StoreEvent, StoreState } from '../constants';
 import {
   ADDON_ID,
   STATUS_TYPE_ID_A11Y,
   STATUS_TYPE_ID_COMPONENT_TEST,
   storeOptions,
 } from '../constants';
+import type { ErrorLike, StoreEvent, StoreState } from '../types';
 import { TestManager } from './test-manager';
 
 const require = createRequire(import.meta.url);

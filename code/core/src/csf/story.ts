@@ -200,6 +200,7 @@ export interface StoryContextForEnhancers<TRenderer extends Renderer = Renderer,
   initialArgs: TArgs;
   argTypes: StrictArgTypes<TArgs>;
   storyGlobals?: Globals;
+  globals?: Globals;
 }
 
 export type ArgsEnhancer<TRenderer extends Renderer = Renderer, TArgs = Args> = (

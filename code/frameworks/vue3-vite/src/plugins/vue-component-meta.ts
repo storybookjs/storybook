@@ -1,7 +1,7 @@
 import { readFile, stat } from 'node:fs/promises';
 import { dirname, join, parse, relative, resolve } from 'node:path';
 
-import findPackageJson from 'find-package-json';
+import * as pkg from 'empathic/package';
 import MagicString from 'magic-string';
 import type { ModuleNode, Plugin } from 'vite';
 import {
@@ -196,7 +196,7 @@ async function createVueComponentMetaChecker(tsconfigPath = 'tsconfig.json') {
 
 /** Gets the absolute path to the project root. */
 function getProjectRoot() {
-  const projectRoot = findPackageJson().next().value?.path ?? '';
+  const projectRoot = pkg.up() ?? '';
 
   const currentFileDir = dirname(__filename);
   const relativePathToProjectRoot = relative(currentFileDir, projectRoot);

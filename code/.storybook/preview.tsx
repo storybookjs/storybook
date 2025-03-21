@@ -29,7 +29,6 @@ import {
 } from 'storybook/theming';
 
 import * as templatePreview from '../core/template/stories/preview';
-import * as templateToolbarPreview from '../core/template/stories/toolbars/preview';
 import { DocsPageWrapper } from '../lib/blocks/src/components';
 import '../renderers/react/template/components/index';
 import { isChromatic } from './isChromatic';
@@ -331,7 +330,7 @@ const parameters = {
       { color: '#1EA7FD', title: 'Ocean' },
       { color: 'rgb(252, 82, 31)', title: 'Orange' },
       { color: 'rgba(255, 174, 0, 0.5)', title: 'Gold' },
-      { color: 'hsl(101, 52%, 49%)', title: 'Green' },
+      { color: 'hsl(102, 30.20%, 74.70%)', title: 'Green' },
       { color: 'hsla(179,65%,53%,0.5)', title: 'Seafoam' },
       { color: '#6F2CAC', title: 'Purple' },
       { color: '#2A0481', title: 'Ultraviolet' },
@@ -370,14 +369,7 @@ const parameters = {
 };
 
 export default definePreview({
-  addons: [
-    addonThemes(),
-    addonEssentials(),
-    addonA11y(),
-    addonTest(),
-    templatePreview,
-    templateToolbarPreview,
-  ],
+  addons: [addonThemes(), addonEssentials(), addonA11y(), addonTest(), templatePreview],
   decorators,
   loaders,
   tags: ['test', 'vitest'],

@@ -18,6 +18,7 @@ import { missingStorybookDependencies } from './missing-storybook-dependencies';
 import { newFrameworks } from './new-frameworks';
 import { removeReactDependency } from './prompt-remove-react';
 import { reactDocgen } from './react-docgen';
+import { reactNativeConfig } from './react-native-config';
 import { removeArgtypesRegex } from './remove-argtypes-regex';
 import { removedGlobalClientAPIs } from './remove-global-client-apis';
 import { removeJestTestingLibrary } from './remove-jest-testing-library';
@@ -68,6 +69,7 @@ export const allFixes: Fix[] = [
   autodocsTags,
   initialGlobals,
   addonA11yAddonTest,
+  reactNativeConfig,
 ];
 
 export const initFixes: Fix[] = [eslintPlugin];

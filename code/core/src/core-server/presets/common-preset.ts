@@ -373,7 +373,6 @@ export const managerEntries = async (existing: any, options: Options) => {
     ),
     join(dirname(require.resolve('storybook/package.json')), 'dist/actions/manager.js'),
     join(dirname(require.resolve('storybook/package.json')), 'dist/controls/manager.js'),
-    join(dirname(require.resolve('storybook/package.json')), 'dist/toolbar/manager.js'),
     ...(existing || []),
   ];
 };

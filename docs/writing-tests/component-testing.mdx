@@ -19,7 +19,7 @@ You start by writing a [**story**](../writing-stories/index.mdx) to set up the c
 
 * The [`play`](../writing-stories/play-function.mdx) function is a small snippet of code that runs after a story finishes rendering. You can use this to test user workflows.
 * The test is written using Storybook-instrumented versions of [Vitest](https://vitest.dev/) and [Testing Library](https://testing-library.com/) coming from the [`storybook/test`](https://npmjs.com/package/storybook) package.
-* The [Components tests panel](./component-testing.mdx) visualizes the test in Storybook and provides a playback interface for convenient browser-based debugging.
+* The [Components tests panel](#interactive-debugger) visualizes the test in Storybook and provides a playback interface for convenient browser-based debugging.
 * [`@storybook/test-runner`](https://github.com/storybookjs/test-runner) is a standalone utility—powered by [Jest](https://jestjs.io/) and [Playwright](https://playwright.dev/)—that executes all of your interactions tests and catches broken stories.
     * The experimental [Vitest plugin](./vitest-plugin.mdx) is also available, which transforms your stories into Vitest tests and runs them in a browser.
 
@@ -215,7 +215,7 @@ You can then import the mocked module (which has all of the helpful methods of a
 
 ### Interactive debugger
 
-If you check your interactions panel, you'll see the step-by-step flow. It also offers a handy set of UI controls to pause, resume, rewind, and step through each interaction.
+If you check your Component tests panel, you'll see the step-by-step flow. It also offers a handy set of UI controls to pause, resume, rewind, and step through each interaction.
 
 <Video src="../_assets/writing-tests/addon-interactions-playback-controls-optimized.mp4" />
 

@@ -47,3 +47,11 @@ export interface A11yGlobals {
     manual?: boolean;
   };
 }
+
+export const RuleType = {
+  VIOLATION: 'violations',
+  PASS: 'passes',
+  INCOMPLETION: 'incomplete',
+} as const;
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type RuleType = (typeof RuleType)[keyof typeof RuleType];

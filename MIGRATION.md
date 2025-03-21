@@ -1,10 +1,11 @@
 <h1>Migration</h1>
 
 - [From version 8.x to 9.0.0](#from-version-8x-to-900)
+  - [Addon Toolbars is now part of the core](#addon-toolbars-is-now-part-of-the-core)
   - [Addon Controls is now part of the core](#addon-controls-is-now-part-of-the-core)
+  - [Actions addon moved to core](#actions-addon-moved-to-core)
   - [Addon viewport and addon backgrounds synchronized configuration and use globals](#addon-viewport-and-addon-backgrounds-synchronized-configuration-and-use-globals)
   - [Manager builder removed alias for `util`, `assert` and `process`](#manager-builder-removed-alias-for-util-assert-and-process)
-  - [Actions addon moved to core](#actions-addon-moved-to-core)
   - [Docs addon moved out of addon-essentials](#docs-addon-moved-out-of-addon-essentials)
   - [Dropped support for legacy packages](#dropped-support-for-legacy-packages)
   - [Dropped support for TypeScript \< 4.9](#dropped-support-for-typescript--49)
@@ -443,6 +444,10 @@
 
 ## From version 8.x to 9.0.0
 
+### Addon Toolbars is now part of the core
+
+The actions addon has been moved from `@storybook/addon-toolbars` to Storybook core. You no longer need to install it separately or include it in your addons list. As a consequence, `@storybook/addon-toolbars` is not part of `@storybook/addon-essentials` anymore.
+
 ### Addon Controls is now part of the core
 
 Similar to the actions addon, the controls addon has been moved to core.
@@ -450,6 +455,12 @@ Similar to the actions addon, the controls addon has been moved to core.
 There should be no need to import anything from addon-controls, but it is available as `storybook/internal/controls`.
 
 Please uninstall `@storybook/addon-controls`, and remove it from your `main.ts`.
+
+### Actions addon moved to core
+
+The actions addon has been moved from `@storybook/addon-actions` to Storybook core. You no longer need to install it separately or include it in your addons list. As a consequence, `@storybook/addon-actions` is not part of `@storybook/addon-essentials` anymore.
+
+Furthermore, we have deprecated the usage of `withActions` from `@storybook/addon-actions` and we will remove it in Storybook v10. Please file an issue if you need this API.
 
 ### Addon viewport and addon backgrounds synchronized configuration and use globals
 
@@ -469,12 +480,6 @@ Starting with Storybook `9.0`, we no longer alias these anymore.
 Adding these aliases meant storybook core, had to depend on these packages, which have a deep dependency graph, added to every storybook project.
 
 If you addon fails to load after this change, we recommend looking at implementing the alias at compile time of your addon, or alternatively look at other bundling config to ensure the correct entries/packages/dependencies are used.
-
-### Actions addon moved to core
-
-The actions addon has been moved from `@storybook/addon-actions` to Storybook core. You no longer need to install it separately or include it in your addons list. As a consequence, `@storybook/addon-actions` is not part of `@storybook/addon-essentials` anymore.
-
-Furthermore, we have deprecated the usage of `withActions` from `@storybook/addon-actions` and we will remove it in Storybook v10. Please file an issue if you need this API.
 
 ### Docs addon moved out of addon-essentials
 

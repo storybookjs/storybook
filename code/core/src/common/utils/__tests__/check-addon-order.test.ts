@@ -10,15 +10,7 @@ import type {
 import { checkAddonOrder } from '../check-addon-order';
 
 const configFile = './main.js';
-const essentialAddons = [
-  'docs',
-  'actions',
-  'backgrounds',
-  'viewport',
-  'measure',
-  'outline',
-  'highlight',
-];
+const essentialAddons = ['backgrounds', 'viewport', 'measure', 'outline', 'highlight'];
 
 const pkgName = (entry: CoreCommon_AddonEntry): string => {
   if (typeof entry === 'string') {
@@ -43,27 +35,27 @@ afterEach(() => {
 });
 
 describe.each([
-  ['docs', 'controls', ['docs', 'controls']],
-  ['docs', 'controls', ['docs', 'foo/node_modules/@storybook/addon-controls']],
+  ['backgrounds', 'viewport', ['backgrounds', 'viewport']],
+  ['backgrounds', 'viewport', ['backgrounds', 'foo/node_modules/@storybook/addon-viewport']],
   [
-    'actions',
-    'interactions',
+    'backgrounds',
+    'measure',
     [
       'foo\\node_modules\\@storybook\\addon-essentials',
-      'foo\\node_modules\\@storybook\\addon-interactions',
+      'foo\\node_modules\\@storybook\\addon-measure',
     ],
   ],
   [
-    'actions',
-    'interactions',
+    'viewport',
+    'outline',
     [
       'foo\\\\node_modules\\\\@storybook\\\\addon-essentials',
-      'foo\\\\node_modules\\\\@storybook\\\\addon-interactions',
+      'foo\\\\node_modules\\\\@storybook\\\\addon-outline',
     ],
   ],
-  ['docs', 'controls', [{ name: '@storybook/addon-docs' }, 'controls']],
-  ['docs', 'controls', ['essentials', 'controls']],
-  ['docs', 'controls', ['essentials']],
+  ['backgrounds', 'viewport', [{ name: '@storybook/addon-backgrounds' }, 'viewport']],
+  ['backgrounds', 'viewport', ['essentials', 'viewport']],
+  ['backgrounds', 'viewport', ['essentials']],
 ])('checkAddonOrder', (_before, _after, _addons) => {
   it(`${str(_before)} before ${str(_after)} in [${_addons.map(str).join(', ')}]`, async () => {
     const before = fromName(_before);
@@ -75,13 +67,13 @@ describe.each([
 });
 
 describe.each([
-  ['docs', 'controls', []],
-  ['docs', 'controls', ['controls']],
-  ['docs', 'controls', ['docs']],
-  ['docs', 'controls', ['controls', 'docs']],
-  ['docs', 'controls', ['essentials', 'docs']],
-  ['docs', 'controls', ['controls', 'essentials']],
-  ['docs', 'controls', ['essentials', 'controls', 'docs']],
+  ['backgrounds', 'viewport', []],
+  ['backgrounds', 'viewport', ['viewport']],
+  ['backgrounds', 'viewport', ['backgrounds']],
+  ['backgrounds', 'viewport', ['viewport', 'backgrounds']],
+  ['backgrounds', 'viewport', ['essentials', 'backgrounds']],
+  ['backgrounds', 'viewport', ['viewport', 'essentials']],
+  ['backgrounds', 'viewport', ['essentials', 'viewport', 'backgrounds']],
 ])('checkAddonOrder', (_before, _after, _addons) => {
   it(`${str(_before)} not before ${str(_after)} in [${_addons.map(str).join(', ')}]`, async () => {
     const before = fromName(_before);

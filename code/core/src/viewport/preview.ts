@@ -1,6 +1,6 @@
-import { PARAM_KEY as KEY } from './constants';
+import { PARAM_KEY } from './constants';
 import type { GlobalState } from './types';
 
 export const initialGlobals: Record<string, GlobalState> = {
-  [KEY]: { value: undefined, isRotated: false },
+  [PARAM_KEY]: { value: undefined, isRotated: false },
 };

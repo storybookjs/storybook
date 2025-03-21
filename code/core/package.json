@@ -117,6 +117,19 @@
       "types": "./dist/actions/decorator.d.ts",
       "import": "./dist/actions/decorator.js"
     },
+    "./internal/viewport": {
+      "types": "./dist/viewport/index.d.ts",
+      "import": "./dist/viewport/index.js",
+      "require": "./dist/viewport/index.cjs"
+    },
+    "./viewport": {
+      "types": "./dist/viewport/index.d.ts",
+      "import": "./dist/viewport/index.js",
+      "require": "./dist/viewport/index.cjs"
+    },
+    "./internal/viewport/manager": {
+      "import": "./dist/viewport/manager.js"
+    },
     "./internal/controls": {
       "types": "./dist/controls/index.d.ts",
       "import": "./dist/controls/index.js",
@@ -346,6 +359,12 @@
       ],
       "actions/decorator": [
         "./dist/actions/decorator.d.ts"
+      ],
+      "internal/viewport": [
+        "./dist/viewport/index.d.ts"
+      ],
+      "viewport": [
+        "./dist/viewport/index.d.ts"
       ],
       "internal/controls": [
         "./dist/controls/index.d.ts"

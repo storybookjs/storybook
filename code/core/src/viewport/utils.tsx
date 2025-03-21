@@ -6,7 +6,7 @@ import { BrowserIcon, MobileIcon, TabletIcon } from '@storybook/icons';
 
 import { styled } from 'storybook/theming';
 
-import type { Viewport, ViewportMap } from './types';
+import type { Viewport } from './types';
 
 export const ActiveViewportSize = styled.div({
   display: 'inline-flex',

@@ -28,7 +28,6 @@
     "@storybook/addon-outline": "portal:../../../code/addons/outline",
     "@storybook/addon-storysource": "portal:../../../code/addons/storysource",
     "@storybook/addon-themes": "portal:../../../code/addons/themes",
-    "@storybook/addon-viewport": "portal:../../../code/addons/viewport",
     "@storybook/angular": "portal:../../../code/frameworks/angular",
     "@storybook/blocks": "portal:../../../code/lib/blocks",
     "@storybook/builder-vite": "portal:../../../code/builders/builder-vite",

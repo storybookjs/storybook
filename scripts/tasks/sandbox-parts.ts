@@ -442,7 +442,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
       import * as addonTestAnnotations from '@storybook/addon-test/preview'
       import '../src/stories/components'
       import * as templateAnnotations from '../template-stories/core/preview'
-      import * as toolbarAnnotations from '../template-stories/addons/toolbars/preview'
+      import * as toolbarAnnotations from '../template-stories/core/toolbars/preview'
       import * as projectAnnotations from './preview'
       ${isVue ? 'import * as vueAnnotations from "../src/stories/renderers/vue3/preview.js"' : ''}
   
@@ -897,7 +897,7 @@ export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
     );
     previewConfig.setImport(
       { namespace: 'toolbarAnnotations' },
-      '../template-stories/addons/toolbars/preview'
+      '../template-stories/core/toolbars/preview'
     );
     previewConfig.appendNodeToArray(['addons'], t.identifier('templateAnnotations'));
     previewConfig.appendNodeToArray(['addons'], t.identifier('toolbarAnnotations'));

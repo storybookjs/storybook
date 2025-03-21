@@ -29,6 +29,7 @@ import {
 } from 'storybook/theming';
 
 import * as templatePreview from '../core/template/stories/preview';
+import * as templateToolbarPreview from '../core/template/stories/toolbars/preview';
 import { DocsPageWrapper } from '../lib/blocks/src/components';
 import '../renderers/react/template/components/index';
 import { isChromatic } from './isChromatic';
@@ -369,7 +370,14 @@ const parameters = {
 };
 
 export default definePreview({
-  addons: [addonThemes(), addonEssentials(), addonA11y(), addonTest(), templatePreview],
+  addons: [
+    addonThemes(),
+    addonEssentials(),
+    addonA11y(),
+    addonTest(),
+    templatePreview,
+    templateToolbarPreview,
+  ],
   decorators,
   loaders,
   tags: ['test', 'vitest'],

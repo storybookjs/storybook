@@ -324,6 +324,7 @@ export class UniversalStore<
     this.environment = environmentOverrides?.environment ?? UniversalStore.preparation.environment;
 
     if (this.channel && this.environment) {
+      UniversalStore.preparation.resolve({ channel: this.channel, environment: this.environment });
       this.prepareThis({ channel: this.channel, environment: this.environment });
     } else {
       UniversalStore.preparation.promise.then(this.prepareThis);

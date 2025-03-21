@@ -4,6 +4,7 @@
   - [Addon Controls is now part of the core](#addon-controls-is-now-part-of-the-core)
   - [Manager builder removed alias for `util`, `assert` and `process`](#manager-builder-removed-alias-for-util-assert-and-process)
   - [Actions addon moved to core](#actions-addon-moved-to-core)
+  - [Docs addon moved out of addon-essentials](#docs-addon-moved-out-of-addon-essentials)
   - [Dropped support for legacy packages](#dropped-support-for-legacy-packages)
   - [Dropped support for TypeScript \< 4.9](#dropped-support-for-typescript--49)
   - [Test addon renamed from experimental to stable](#test-addon-renamed-from-experimental-to-stable)
@@ -464,6 +465,12 @@ If you addon fails to load after this change, we recommend looking at implementi
 The actions addon has been moved from `@storybook/addon-actions` to Storybook core. You no longer need to install it separately or include it in your addons list. As a consequence, `@storybook/addon-actions` is not part of `@storybook/addon-essentials` anymore.
 
 Furthermore, we have deprecated the usage of `withActions` from `@storybook/addon-actions` and we will remove it in Storybook v10. Please file an issue if you need this API.
+
+### Docs addon moved out of addon-essentials
+
+Addon docs is now no longer part of addon-essentials, because storybook is moving towards a more customizable & personally optimized approach.
+
+If you are using addon-docs via addon-essentials, you will need to add addon-docs to your project, by installing it and adding it to your `.storybook/main.ts`'s `addons` field.
 
 ### Dropped support for legacy packages
 

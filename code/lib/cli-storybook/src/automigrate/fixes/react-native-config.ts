@@ -41,6 +41,8 @@ export const reactNativeConfig: Fix<Options> = {
       In Storybook 9, React Native projects use the ${picocolors.yellow('.rnstorybook')} directory for
       configuration instead of ${picocolors.yellow('.storybook')}.
 
+      More info: ${picocolors.cyan('https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#react-native-config-dir-renamed')}
+
       Would you like to automatically move your config files to the new location?`;
   },
 

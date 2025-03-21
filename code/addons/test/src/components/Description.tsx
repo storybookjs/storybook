@@ -25,12 +25,14 @@ interface DescriptionProps extends Omit<ComponentProps<typeof Wrapper>, 'results
   storeState: StoreState;
   testProviderState: TestProviderState;
   entryId?: string;
+  isSettingsUpdated: boolean;
 }
 
 export function Description({
   entryId,
   storeState,
   testProviderState,
+  isSettingsUpdated,
   ...props
 }: DescriptionProps) {
   const { setModalOpen } = React.useContext(GlobalErrorContext);
@@ -38,7 +40,9 @@ export function Description({
   const { finishedTestCount, totalTestCount, unhandledErrors, finishedAt } = storeState.currentRun;
 
   let description: string | React.ReactNode = 'Not run';
-  if (testProviderState === 'test-provider-state:running') {
+  if (isSettingsUpdated) {
+    description = <PositiveText>Settings updated</PositiveText>;
+  } else if (testProviderState === 'test-provider-state:running') {
     description =
       (finishedTestCount ?? 0) === 0
         ? 'Starting...'

@@ -31,6 +31,7 @@ export const SidebarContextMenu: FC<SidebarContextMenuProps> = ({ context, api }
       a11yStatusValueToStoryIds={a11yStatusValueToStoryIds}
       storeState={storeState}
       setStoreState={setStoreState}
+      isSettingsUpdated={false}
     />
   );
 };

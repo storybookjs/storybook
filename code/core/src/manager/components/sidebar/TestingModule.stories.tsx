@@ -11,6 +11,7 @@ import { ManagerContext, mockChannel } from 'storybook/manager-api';
 import { fireEvent, fn } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
+import { internal_fullTestProviderStore } from '../../manager-stores.mock';
 import { TestingModule } from './TestingModule';
 
 const TestProvider = styled.div({
@@ -195,6 +196,13 @@ export const Crashed: Story = {
     },
   },
   play: Expanded.play,
+};
+
+export const SettingsUpdated: Story = {
+  play: async (playContext) => {
+    await Expanded.play!(playContext);
+    internal_fullTestProviderStore.settingsChanged();
+  },
 };
 
 export const NoTestProvider: Story = {

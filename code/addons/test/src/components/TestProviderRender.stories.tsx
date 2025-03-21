@@ -63,6 +63,7 @@ const meta = {
     },
     storeState: storeOptions.initialState,
     setStoreState: fn(),
+    isSettingsUpdated: false,
   },
   decorators: [
     (StoryFn) => (
@@ -257,6 +258,13 @@ export const AccessibilityViolations: Story = {
       ...meta.args.a11yStatusValueToStoryIds,
       'status-value:warning': ['story-id-1'],
     },
+  },
+};
+
+export const SettingsUpdated: Story = {
+  args: {
+    ...meta.args,
+    isSettingsUpdated: true,
   },
 };
 

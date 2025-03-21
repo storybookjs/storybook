@@ -87,6 +87,7 @@ type TestProviderRenderProps = {
   a11yStatusValueToStoryIds: StatusValueToStoryIds;
   storeState: StoreState;
   setStoreState: (typeof store)['setState'];
+  isSettingsUpdated: boolean;
   entryId?: string;
 } & ComponentProps<typeof Container>;
 
@@ -98,6 +99,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
   setStoreState,
   componentTestStatusValueToStoryIds,
   a11yStatusValueToStoryIds,
+  isSettingsUpdated,
   ...props
 }) => {
   const {
@@ -172,6 +174,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
             storeState={storeState}
             testProviderState={testProviderState}
             entryId={entryId}
+            isSettingsUpdated={isSettingsUpdated}
           />
         </Info>
 

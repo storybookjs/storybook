@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type {
   StatusTypeId,
@@ -8,7 +8,8 @@ import type {
   TestProviderState,
 } from 'storybook/internal/types';
 
-import { store } from '#manager-store';
+import { store, testProviderStore } from '#manager-store';
+import { isEqual } from 'es-toolkit';
 import {
   type API,
   experimental_useStatusStore,
@@ -57,9 +58,30 @@ export const useTestProvider = (
   testProviderState: TestProviderState;
   componentTestStatusValueToStoryIds: StatusValueToStoryIds;
   a11yStatusValueToStoryIds: StatusValueToStoryIds;
+  isSettingsUpdated: boolean;
 } => {
   const testProviderState = experimental_useTestProviderStore((s) => s[ADDON_ID]);
   const [storeState, setStoreState] = experimental_useUniversalStore(store);
+
+  // this follows the same behavior for the green border around the whole testing module in TestingModule.tsx
+  const [isSettingsUpdated, setIsSettingsUpdated] = useState(false);
+  const settingsUpdatedTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => {
+    const unsubscribe = store.onStateChange((state, previousState) => {
+      if (!isEqual(state.config, previousState.config)) {
+        testProviderStore.settingsChanged();
+        setIsSettingsUpdated(true);
+        clearTimeout(settingsUpdatedTimeoutRef.current);
+        settingsUpdatedTimeoutRef.current = setTimeout(() => {
+          setIsSettingsUpdated(false);
+        }, 1000);
+      }
+    });
+    return () => {
+      unsubscribe();
+      clearTimeout(settingsUpdatedTimeoutRef.current);
+    };
+  }, []);
 
   // TODO: does this overmemo, if the index changes, would that trigger a re-calculation of storyIds?
   const storyIds = useMemo(
@@ -88,5 +110,6 @@ export const useTestProvider = (
     testProviderState,
     componentTestStatusValueToStoryIds,
     a11yStatusValueToStoryIds,
+    isSettingsUpdated,
   };
 };

@@ -52,6 +52,7 @@ addons.register(ADDON_ID, (api) => {
           testProviderState,
           componentTestStatusValueToStoryIds,
           a11yStatusValueToStoryIds,
+          isSettingsUpdated,
         } = useTestProvider(api);
         return (
           <GlobalErrorContext.Provider value={{ isModalOpen, setModalOpen }}>
@@ -59,6 +60,7 @@ addons.register(ADDON_ID, (api) => {
               api={api}
               storeState={storeState}
               setStoreState={setStoreState}
+              isSettingsUpdated={isSettingsUpdated}
               testProviderState={testProviderState}
               componentTestStatusValueToStoryIds={componentTestStatusValueToStoryIds}
               a11yStatusValueToStoryIds={a11yStatusValueToStoryIds}

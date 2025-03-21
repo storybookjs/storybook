@@ -15,7 +15,7 @@ test.describe('addon-toolbars', () => {
     const sbPage = new SbPage(page, expect);
 
     // Click on viewport button and select spanish
-    await sbPage.navigateToStory('addons/toolbars/globals', 'basic');
+    await sbPage.navigateToStory('core/toolbars/globals', 'basic');
     await sbPage.selectToolbar('[title="Internationalization locale"]', '#list-item-es');
 
     // Check that spanish is selected
@@ -28,10 +28,10 @@ test.describe('addon-toolbars', () => {
     const sbPage = new SbPage(page, expect);
 
     // Click on viewport button and select spanish
-    await sbPage.navigateToStory('addons/toolbars/globals', 'override-locale');
+    await sbPage.navigateToStory('core/toolbars/globals', 'override-locale');
     await expect(sbPage.previewRoot()).toContainText('안녕하세요');
-    const button = sbPage.page.locator('[title="Internationalization locale"]');
 
-    await expect(button).toHaveAttribute('disabled', '');
+    const button = sbPage.page.getByTitle('Internationalization locale');
+    await expect(button).toBeDisabled();
   });
 });

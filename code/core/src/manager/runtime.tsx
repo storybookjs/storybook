@@ -9,13 +9,25 @@ import { global } from '@storybook/global';
 import { FailedIcon } from '@storybook/icons';
 
 import type { API, AddonStore } from 'storybook/manager-api';
-import { addons } from 'storybook/manager-api';
+import { addons, types } from 'storybook/manager-api';
 import { color } from 'storybook/theming';
 
+import { ToolbarManager } from '../toolbar/components/ToolbarManager';
+import { TOOLBAR_ID } from '../toolbar/constants';
 import { renderStorybookUI } from './index';
 import Provider from './provider';
 
 const WS_DISCONNECTED_NOTIFICATION_ID = 'CORE/WS_DISCONNECTED';
+
+// Register the toolbar in the manager
+addons.register(TOOLBAR_ID, () =>
+  addons.add(TOOLBAR_ID, {
+    title: TOOLBAR_ID,
+    type: types.TOOL,
+    match: ({ tabId }) => !tabId,
+    render: () => <ToolbarManager />,
+  })
+);
 
 class ReactProvider extends Provider {
   addons: AddonStore;

@@ -1,6 +1,6 @@
 import type { API } from 'storybook/manager-api';
 
-import { ADDON_ID } from '../constants';
+import { TOOLBAR_ID } from '../constants';
 import type { ToolbarShortcutConfig } from '../types';
 
 interface Shortcuts {
@@ -11,7 +11,7 @@ interface Shortcuts {
 
 export const registerShortcuts = async (api: API, id: string, shortcuts: Shortcuts) => {
   if (shortcuts && shortcuts.next) {
-    await api.setAddonShortcut(ADDON_ID, {
+    await api.setAddonShortcut(TOOLBAR_ID, {
       label: shortcuts.next.label,
       defaultShortcut: shortcuts.next.keys,
       actionName: `${id}:next`,
@@ -20,7 +20,7 @@ export const registerShortcuts = async (api: API, id: string, shortcuts: Shortcu
   }
 
   if (shortcuts && shortcuts.previous) {
-    await api.setAddonShortcut(ADDON_ID, {
+    await api.setAddonShortcut(TOOLBAR_ID, {
       label: shortcuts.previous.label,
       defaultShortcut: shortcuts.previous.keys,
       actionName: `${id}:previous`,
@@ -29,7 +29,7 @@ export const registerShortcuts = async (api: API, id: string, shortcuts: Shortcu
   }
 
   if (shortcuts && shortcuts.reset) {
-    await api.setAddonShortcut(ADDON_ID, {
+    await api.setAddonShortcut(TOOLBAR_ID, {
       label: shortcuts.reset.label,
       defaultShortcut: shortcuts.reset.keys,
       actionName: `${id}:reset`,

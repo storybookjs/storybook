@@ -28,13 +28,6 @@ interface PresetOptions {
   outline?: boolean;
   themes?: boolean;
   /**
-   * Allow to use @storybook/addon-toolbars
-   *
-   * @default true
-   * @see https://storybook.js.org/addons/@storybook/addon-toolbars
-   */
-  toolbars?: boolean;
-  /**
    * Allow to use @storybook/addon-viewport
    *
    * @default true
@@ -66,7 +59,7 @@ export function addons(options: PresetOptions) {
   const main = requireMain(options.configDir);
 
   // NOTE: The order of these addons is important.
-  return ['backgrounds', 'viewport', 'toolbars', 'measure', 'outline', 'highlight']
+  return ['backgrounds', 'viewport', 'measure', 'outline', 'highlight']
     .filter((key) => (options as any)[key] !== false)
     .filter((addon) => !checkInstalled(addon, main))
     .map((addon) => {

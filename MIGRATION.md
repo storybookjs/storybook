@@ -453,6 +453,12 @@ The actions addon has been moved from `@storybook/addon-actions` to Storybook co
 
 Furthermore, we have deprecated the usage of `withActions` from `@storybook/addon-actions` and we will remove it in Storybook v10. Please file an issue if you need this API.
 
+### Actions addon moved to core
+
+The actions addon has been moved from `@storybook/addon-actions` to Storybook core. You no longer need to install it separately or include it in your addons list. As a consequence, `@storybook/addon-actions` is not part of `@storybook/addon-essentials` anymore.
+
+Furthermore, we have deprecated the usage of `withActions` from `@storybook/addon-actions` and we will remove it in Storybook v10. Please file an issue if you need this API.
+
 ### Addon viewport and addon backgrounds synchronized configuration and use globals
 
 The feature flags: `viewportStoryGlobals` and `backgroundsStoryGlobals` have been removed, please remove these from your `.storybook/main.ts` file.

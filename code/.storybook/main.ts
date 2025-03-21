@@ -54,10 +54,6 @@ const config = defineMain({
       titlePrefix: 'addons/viewport',
     },
     {
-      directory: '../addons/toolbars/template/stories',
-      titlePrefix: 'addons/toolbars',
-    },
-    {
       directory: '../addons/themes/template/stories',
       titlePrefix: 'addons/themes',
     },
@@ -94,7 +90,6 @@ const config = defineMain({
   ],
   previewAnnotations: [
     './core/template/stories/preview.ts',
-    './addons/toolbars/template/stories/preview.ts',
     './renderers/react/template/components/index.js',
   ],
   build: {

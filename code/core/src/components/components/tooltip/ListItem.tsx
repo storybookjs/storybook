@@ -1,5 +1,4 @@
-import type { ComponentProps, ReactNode, SyntheticEvent } from 'react';
-import React from 'react';
+import React, { type ComponentProps, type ReactNode, type SyntheticEvent } from 'react';
 
 import memoize from 'memoizerific';
 import { styled } from 'storybook/theming';

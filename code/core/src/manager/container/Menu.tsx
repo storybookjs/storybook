@@ -3,11 +3,12 @@ import React, { useCallback, useMemo } from 'react';
 
 import { Badge } from 'storybook/internal/components';
 import { STORIES_COLLAPSE_ALL } from 'storybook/internal/core-events';
-import type { API, State } from 'storybook/internal/manager-api';
-import { shortcutToHumanString } from 'storybook/internal/manager-api';
-import { styled, useTheme } from 'storybook/internal/theming';
 
 import { CheckIcon, InfoIcon, ShareAltIcon, WandIcon } from '@storybook/icons';
+
+import type { API, State } from 'storybook/manager-api';
+import { shortcutToHumanString } from 'storybook/manager-api';
+import { styled, useTheme } from 'storybook/theming';
 
 import type { Link } from '../../components/components/tooltip/TooltipLinkList';
 

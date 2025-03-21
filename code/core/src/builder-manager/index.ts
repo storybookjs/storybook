@@ -7,7 +7,6 @@ import { logger } from 'storybook/internal/node-logger';
 
 import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
 import { pnpPlugin } from '@yarnpkg/esbuild-plugin-pnp';
-import aliasPlugin from 'esbuild-plugin-alias';
 import sirv from 'sirv';
 
 import type {
@@ -82,15 +81,7 @@ export const getConfig: ManagerBuilder['getConfig'] = async (options) => {
     tsconfig: tsconfigPath,
 
     legalComments: 'external',
-    plugins: [
-      aliasPlugin({
-        process: require.resolve('process/browser.js'),
-        util: require.resolve('util/util.js'),
-        assert: require.resolve('browser-assert'),
-      }),
-      globalExternals(globalsModuleInfoMap),
-      pnpPlugin(),
-    ],
+    plugins: [globalExternals(globalsModuleInfoMap), pnpPlugin()],
 
     banner: {
       js: 'try{',
@@ -206,6 +197,7 @@ const starter: StarterFunction = async function* starterGeneratorFn({
   router.use('/', ({ url }, res, next) => {
     if (url && isRootPath.test(url)) {
       res.statusCode = 200;
+      res.setHeader('Content-Type', 'text/html');
       res.write(html);
       res.end();
     } else {
@@ -214,6 +206,7 @@ const starter: StarterFunction = async function* starterGeneratorFn({
   });
   router.use(`/index.html`, (req, res) => {
     res.statusCode = 200;
+    res.setHeader('Content-Type', 'text/html');
     res.write(html);
     res.end();
   });

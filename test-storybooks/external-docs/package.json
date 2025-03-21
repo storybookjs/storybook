@@ -12,7 +12,6 @@
   },
   "resolutions": {
     "@storybook/addon-a11y": "file:../../code/addons/a11y",
-    "@storybook/addon-actions": "file:../../code/addons/actions",
     "@storybook/addon-backgrounds": "file:../../code/addons/backgrounds",
     "@storybook/addon-controls": "file:../../code/addons/controls",
     "@storybook/addon-docs": "file:../../code/addons/docs",
@@ -39,7 +38,6 @@
     "@storybook/ember": "file:../../code/frameworks/ember",
     "@storybook/html": "file:../../code/renderers/html",
     "@storybook/html-webpack5": "file:../../code/frameworks/html-webpack5",
-    "@storybook/instrumenter": "file:../../code/lib/instrumenter",
     "@storybook/nextjs": "file:../../code/frameworks/nextjs",
     "@storybook/preact": "file:../../code/renderers/preact",
     "@storybook/preact-vite": "file:../../code/frameworks/preact-vite",
@@ -62,7 +60,6 @@
     "@storybook/svelte-vite": "file:../../code/frameworks/svelte-vite",
     "@storybook/svelte-webpack5": "file:../../code/frameworks/svelte-webpack5",
     "@storybook/sveltekit": "file:../../code/frameworks/sveltekit",
-    "@storybook/test": "file:../../code/lib/test",
     "@storybook/vue3": "file:../../code/renderers/vue3",
     "@storybook/vue3-vite": "file:../../code/frameworks/vue3-vite",
     "@storybook/vue3-webpack5": "file:../../code/frameworks/vue3-webpack5",

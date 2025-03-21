@@ -1,10 +1,9 @@
 import * as React from 'react';
 
-import { styled } from 'storybook/internal/theming';
-
-import { type Call, CallStates, type ControlStates } from '@storybook/instrumenter';
+import { type Call, CallStates, type ControlStates } from 'storybook/internal/instrumenter';
 
 import { transparentize } from 'polished';
+import { styled } from 'storybook/theming';
 
 import { isTestAssertionError, useAnsiToHtmlFilter } from '../utils';
 import { Empty } from './EmptyState';

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-a11y",
-  "version": "9.0.0-alpha.0",
+  "version": "9.0.0-alpha.8",
   "description": "Test component compliance with web accessibility standards",
   "keywords": [
     "a11y",
@@ -67,12 +67,11 @@
   },
   "dependencies": {
     "@storybook/addon-highlight": "workspace:*",
-    "@storybook/test": "workspace:*",
+    "@storybook/global": "^5.0.0",
     "axe-core": "^4.2.0"
   },
   "devDependencies": {
-    "@storybook/global": "^5.0.0",
-    "@storybook/icons": "^1.2.12",
+    "@storybook/icons": "^1.4.0",
     "@testing-library/react": "^14.0.0",
     "execa": "^9.5.2",
     "picocolors": "^1.1.0",

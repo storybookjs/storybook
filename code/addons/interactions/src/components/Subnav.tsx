@@ -10,7 +10,8 @@ import {
   TooltipNote,
   WithTooltip,
 } from 'storybook/internal/components';
-import { styled } from 'storybook/internal/theming';
+import type { Call, ControlStates } from 'storybook/internal/instrumenter';
+import { CallStates } from 'storybook/internal/instrumenter';
 
 import {
   FastForwardIcon,
@@ -19,8 +20,8 @@ import {
   RewindIcon,
   SyncIcon,
 } from '@storybook/icons';
-import type { Call, ControlStates } from '@storybook/instrumenter';
-import { CallStates } from '@storybook/instrumenter';
+
+import { styled } from 'storybook/theming';
 
 import type { Controls } from './InteractionsPanel';
 import { StatusBadge } from './StatusBadge';

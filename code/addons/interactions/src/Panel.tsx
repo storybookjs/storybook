@@ -8,10 +8,11 @@ import {
   STORY_THREW_EXCEPTION,
   UNHANDLED_ERRORS_WHILE_PLAYING,
 } from 'storybook/internal/core-events';
-import { useAddonState, useChannel, useParameter } from 'storybook/internal/manager-api';
+import { type Call, CallStates, EVENTS, type LogItem } from 'storybook/internal/instrumenter';
 
 import { global } from '@storybook/global';
-import { type Call, CallStates, EVENTS, type LogItem } from '@storybook/instrumenter';
+
+import { useAddonState, useChannel, useParameter } from 'storybook/manager-api';
 
 import { InteractionsPanel } from './components/InteractionsPanel';
 import { ADDON_ID } from './constants';

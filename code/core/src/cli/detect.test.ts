@@ -271,35 +271,11 @@ describe('Detect', () => {
 
     await expect(detectLanguage(packageManager as any)).resolves.toBe(SupportedLanguage.JAVASCRIPT);
     expect(logger.warn).toHaveBeenCalledWith(
-      'Detected TypeScript < 3.8, populating with JavaScript examples'
+      'Detected TypeScript < 4.9 or incompatible tooling, populating with JavaScript examples'
     );
   });
 
-  it(`should return language typescript-3-8 if the TS dependency is >=3.8 and <4.9`, async () => {
-    await expect(
-      detectLanguage({
-        retrievePackageJson: () =>
-          Promise.resolve({
-            dependencies: {},
-            devDependencies: {
-              typescript: '3.8.0',
-            },
-          }),
-        getAllDependencies: () =>
-          Promise.resolve({
-            typescript: '3.8.0',
-          }),
-        getPackageVersion: (packageName: string) => {
-          switch (packageName) {
-            case 'typescript':
-              return Promise.resolve('3.8.0');
-            default:
-              return Promise.resolve(null);
-          }
-        },
-      } as Partial<JsPackageManager> as JsPackageManager)
-    ).resolves.toBe(SupportedLanguage.TYPESCRIPT_3_8);
-
+  it(`should return language javascript if the TS dependency is <4.9`, async () => {
     await expect(
       detectLanguage({
         retrievePackageJson: () =>
@@ -322,7 +298,7 @@ describe('Detect', () => {
           }
         },
       } as Partial<JsPackageManager> as JsPackageManager)
-    ).resolves.toBe(SupportedLanguage.TYPESCRIPT_3_8);
+    ).resolves.toBe(SupportedLanguage.JAVASCRIPT);
   });
 
   it(`should return language typescript-4-9 if the dependency is >TS4.9`, async () => {
@@ -377,7 +353,7 @@ describe('Detect', () => {
     ).resolves.toBe(SupportedLanguage.TYPESCRIPT_4_9);
   });
 
-  it(`should return language typescript if the dependency is =TS4.9beta`, async () => {
+  it(`should return language JavaScript if the dependency is =TS4.9beta`, async () => {
     await expect(
       detectLanguage({
         retrievePackageJson: () =>
@@ -400,7 +376,7 @@ describe('Detect', () => {
           }
         },
       } as Partial<JsPackageManager> as JsPackageManager)
-    ).resolves.toBe(SupportedLanguage.TYPESCRIPT_3_8);
+    ).resolves.toBe(SupportedLanguage.JAVASCRIPT);
   });
 
   it(`should return language javascript by default`, async () => {

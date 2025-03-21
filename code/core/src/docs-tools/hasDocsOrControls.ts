@@ -4,4 +4,4 @@ import type { Options } from 'storybook/internal/types';
 const packageRe = /(addons\/|addon-|addon-essentials\/)(docs|controls)/;
 
 export const hasDocsOrControls = (options: Options) =>
-  options.presetsList?.some((preset) => packageRe.test(preset.name));
+  options.presetsList?.some((preset: any) => packageRe.test(preset.name));

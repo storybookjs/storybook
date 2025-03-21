@@ -46,9 +46,12 @@ const mockChannel = {
 describe('UniversalStore', () => {
   beforeEach((context) => {
     vi.useFakeTimers();
-    let randomUUIDCounter = 0;
-    vi.spyOn(globalThis.crypto, 'randomUUID').mockImplementation(() => {
-      return `mocked-random-uuid-v4-${randomUUIDCounter++}`;
+
+    // Mock Date and Math.random to make the actorId deterministic
+    let randomNumberCounter = 1;
+    vi.setSystemTime(new Date('2025-02-14'));
+    vi.spyOn(Math, 'random').mockImplementation(() => {
+      return randomNumberCounter++ / 10;
     });
 
     // Always prepare the store, unless the test is specifically for unprepared state
@@ -57,7 +60,7 @@ describe('UniversalStore', () => {
     }
 
     return () => {
-      randomUUIDCounter = 0;
+      randomNumberCounter = 0;
       vi.clearAllTimers();
       mockedInstances.clearAllEnvironments();
       mockChannelListeners.clear();
@@ -78,7 +81,7 @@ describe('UniversalStore', () => {
         // Assert - the store should be created with the initial state and actor
         expect(store.getState()).toEqual({ count: 0 });
         expect(store.actor.type).toBe('LEADER');
-        expect(store.actor.id).toBe('mocked-random-uuid-v4-0');
+        expect(store.actor.id).toBe('m7405c003lllllllllm');
       });
 
       it('should throw when trying to create an instance with the constructor directly', () => {
@@ -195,7 +198,6 @@ You should reuse the existing instance instead of trying to create a new one.`);
         // Arrange - create an initial leader and follower
         vi.spyOn(console, 'error').mockImplementation(() => {});
 
-        vi.spyOn(globalThis.crypto, 'randomUUID').mockReturnValueOnce('first-uuid-1-2-3-4');
         const firstLeader = UniversalStore.create({
           id: 'env1:test',
           leader: true,
@@ -203,7 +205,6 @@ You should reuse the existing instance instead of trying to create a new one.`);
         });
 
         // Act - create the second leader
-        vi.spyOn(globalThis.crypto, 'randomUUID').mockReturnValueOnce('second-uuid-1-2-3-4');
         const secondLeader = UniversalStore.create({
           id: 'env2:test',
           leader: true,
@@ -250,12 +251,12 @@ You should reuse the existing instance instead of trying to create a new one.`);
             Only one leader can exists at a time, your stores are now in an invalid state.
             Leaders detected:
             this: {
-              "id": "second-uuid-1-2-3-4",
+              "id": "m7405c0077777777778",
               "type": "LEADER",
               "environment": "MANAGER"
             }
             other: {
-              "id": "first-uuid-1-2-3-4",
+              "id": "m7405c003lllllllllm",
               "type": "LEADER",
               "environment": "MANAGER"
             }`
@@ -266,12 +267,12 @@ You should reuse the existing instance instead of trying to create a new one.`);
             Only one leader can exists at a time, your stores are now in an invalid state.
             Leaders detected:
             this: {
-              "id": "first-uuid-1-2-3-4",
+              "id": "m7405c003lllllllllm",
               "type": "LEADER",
               "environment": "MANAGER"
             }
             other: {
-              "id": "second-uuid-1-2-3-4",
+              "id": "m7405c0077777777778",
               "type": "LEADER",
               "environment": "MANAGER"
             }`
@@ -290,7 +291,7 @@ You should reuse the existing instance instead of trying to create a new one.`);
         // Assert - the store should be created with the initial state and actor
         expect(store.getState()).toEqual(undefined);
         expect(store.actor.type).toBe('FOLLOWER');
-        expect(store.actor.id).toBe('mocked-random-uuid-v4-0');
+        expect(store.actor.id).toBe('m7405c003lllllllllm');
       });
 
       it('should get existing state when a follower is created without initialState', async () => {
@@ -325,7 +326,7 @@ You should reuse the existing instance instead of trying to create a new one.`);
                 "eventInfo": {
                   "actor": {
                     "environment": "MANAGER",
-                    "id": "mocked-random-uuid-v4-0",
+                    "id": "m7405c003lllllllllm",
                     "type": "LEADER",
                   },
                 },
@@ -340,7 +341,7 @@ You should reuse the existing instance instead of trying to create a new one.`);
                 "eventInfo": {
                   "actor": {
                     "environment": "MANAGER",
-                    "id": "mocked-random-uuid-v4-1",
+                    "id": "m7405c0077777777778",
                     "type": "FOLLOWER",
                   },
                 },
@@ -355,7 +356,7 @@ You should reuse the existing instance instead of trying to create a new one.`);
                 "eventInfo": {
                   "actor": {
                     "environment": "MANAGER",
-                    "id": "mocked-random-uuid-v4-1",
+                    "id": "m7405c0077777777778",
                     "type": "FOLLOWER",
                   },
                 },
@@ -370,12 +371,12 @@ You should reuse the existing instance instead of trying to create a new one.`);
                 "eventInfo": {
                   "actor": {
                     "environment": "MANAGER",
-                    "id": "mocked-random-uuid-v4-1",
+                    "id": "m7405c0077777777778",
                     "type": "FOLLOWER",
                   },
                   "forwardingActor": {
                     "environment": "MANAGER",
-                    "id": "mocked-random-uuid-v4-0",
+                    "id": "m7405c003lllllllllm",
                     "type": "LEADER",
                   },
                 },
@@ -393,7 +394,7 @@ You should reuse the existing instance instead of trying to create a new one.`);
                 "eventInfo": {
                   "actor": {
                     "environment": "MANAGER",
-                    "id": "mocked-random-uuid-v4-0",
+                    "id": "m7405c003lllllllllm",
                     "type": "LEADER",
                   },
                 },
@@ -437,7 +438,7 @@ You should reuse the existing instance instead of trying to create a new one.`);
                 "eventInfo": {
                   "actor": {
                     "environment": "MANAGER",
-                    "id": "mocked-random-uuid-v4-0",
+                    "id": "m7405c003lllllllllm",
                     "type": "LEADER",
                   },
                 },
@@ -452,7 +453,7 @@ You should reuse the existing instance instead of trying to create a new one.`);
                 "eventInfo": {
                   "actor": {
                     "environment": "MANAGER",
-                    "id": "mocked-random-uuid-v4-1",
+                    "id": "m7405c0077777777778",
                     "type": "FOLLOWER",
                   },
                 },
@@ -467,7 +468,7 @@ You should reuse the existing instance instead of trying to create a new one.`);
                 "eventInfo": {
                   "actor": {
                     "environment": "MANAGER",
-                    "id": "mocked-random-uuid-v4-1",
+                    "id": "m7405c0077777777778",
                     "type": "FOLLOWER",
                   },
                 },
@@ -482,12 +483,12 @@ You should reuse the existing instance instead of trying to create a new one.`);
                 "eventInfo": {
                   "actor": {
                     "environment": "MANAGER",
-                    "id": "mocked-random-uuid-v4-1",
+                    "id": "m7405c0077777777778",
                     "type": "FOLLOWER",
                   },
                   "forwardingActor": {
                     "environment": "MANAGER",
-                    "id": "mocked-random-uuid-v4-0",
+                    "id": "m7405c003lllllllllm",
                     "type": "LEADER",
                   },
                 },
@@ -505,7 +506,7 @@ You should reuse the existing instance instead of trying to create a new one.`);
                 "eventInfo": {
                   "actor": {
                     "environment": "MANAGER",
-                    "id": "mocked-random-uuid-v4-0",
+                    "id": "m7405c003lllllllllm",
                     "type": "LEADER",
                   },
                 },
@@ -560,7 +561,7 @@ You should reuse the existing instance instead of trying to create a new one.`);
                 "eventInfo": {
                   "actor": {
                     "environment": "MANAGER",
-                    "id": "mocked-random-uuid-v4-0",
+                    "id": "m7405c003lllllllllm",
                     "type": "LEADER",
                   },
                 },
@@ -575,7 +576,7 @@ You should reuse the existing instance instead of trying to create a new one.`);
                 "eventInfo": {
                   "actor": {
                     "environment": "MANAGER",
-                    "id": "mocked-random-uuid-v4-1",
+                    "id": "m7405c0077777777778",
                     "type": "FOLLOWER",
                   },
                 },
@@ -590,7 +591,7 @@ You should reuse the existing instance instead of trying to create a new one.`);
                 "eventInfo": {
                   "actor": {
                     "environment": "MANAGER",
-                    "id": "mocked-random-uuid-v4-1",
+                    "id": "m7405c0077777777778",
                     "type": "FOLLOWER",
                   },
                 },
@@ -605,12 +606,12 @@ You should reuse the existing instance instead of trying to create a new one.`);
                 "eventInfo": {
                   "actor": {
                     "environment": "MANAGER",
-                    "id": "mocked-random-uuid-v4-1",
+                    "id": "m7405c0077777777778",
                     "type": "FOLLOWER",
                   },
                   "forwardingActor": {
                     "environment": "MANAGER",
-                    "id": "mocked-random-uuid-v4-0",
+                    "id": "m7405c003lllllllllm",
                     "type": "LEADER",
                   },
                 },
@@ -628,7 +629,7 @@ You should reuse the existing instance instead of trying to create a new one.`);
                 "eventInfo": {
                   "actor": {
                     "environment": "MANAGER",
-                    "id": "mocked-random-uuid-v4-0",
+                    "id": "m7405c003lllllllllm",
                     "type": "LEADER",
                   },
                 },
@@ -664,7 +665,7 @@ You should reuse the existing instance instead of trying to create a new one.`);
                 "eventInfo": {
                   "actor": {
                     "environment": "MANAGER",
-                    "id": "mocked-random-uuid-v4-0",
+                    "id": "m7405c003lllllllllm",
                     "type": "FOLLOWER",
                   },
                 },
@@ -679,7 +680,7 @@ You should reuse the existing instance instead of trying to create a new one.`);
                 "eventInfo": {
                   "actor": {
                     "environment": "MANAGER",
-                    "id": "mocked-random-uuid-v4-0",
+                    "id": "m7405c003lllllllllm",
                     "type": "FOLLOWER",
                   },
                 },
@@ -951,7 +952,7 @@ You should reuse the existing instance instead of trying to create a new one.`);
           },
           "id": "env2:test",
           "actor": {
-            "id": "mocked-random-uuid-v4-1",
+            "id": "m7405c0077777777778",
             "type": "FOLLOWER",
             "environment": "MANAGER"
           },
@@ -1136,7 +1137,7 @@ You should reuse the existing instance instead of trying to create a new one.`);
           },
           "id": "env2:test",
           "actor": {
-            "id": "mocked-random-uuid-v4-1",
+            "id": "m7405c0077777777778",
             "type": "FOLLOWER",
             "environment": "MANAGER"
           },

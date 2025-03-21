@@ -2,7 +2,8 @@ import React, { type ComponentProps, useEffect } from 'react';
 
 import { Link as LinkComponent } from 'storybook/internal/components';
 import { type TestProviderConfig, type TestProviderState } from 'storybook/internal/core-events';
-import { styled } from 'storybook/internal/theming';
+
+import { styled } from 'storybook/theming';
 
 import type { TestResultResult } from '../node/reporter';
 import { GlobalErrorContext } from './GlobalErrorModal';

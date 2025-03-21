@@ -3,13 +3,13 @@ import React, { useCallback, useEffect, useRef } from 'react';
 
 import type { IconsProps } from 'storybook/internal/components';
 import { IconButton, Icons } from 'storybook/internal/components';
-import { type State } from 'storybook/internal/manager-api';
 import { Link } from 'storybook/internal/router';
-import { keyframes, styled, useTheme } from 'storybook/internal/theming';
 
 import { CloseAltIcon } from '@storybook/icons';
 
 import { transparentize } from 'polished';
+import { type State } from 'storybook/manager-api';
+import { keyframes, styled, useTheme } from 'storybook/theming';
 
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
 

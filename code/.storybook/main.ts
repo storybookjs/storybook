@@ -38,10 +38,6 @@ const config = defineMain({
       titlePrefix: 'addons/a11y',
     },
     {
-      directory: '../addons/actions/template/stories',
-      titlePrefix: 'addons/actions',
-    },
-    {
       directory: '../addons/backgrounds/template/stories',
       titlePrefix: 'addons/backgrounds',
     },
@@ -99,7 +95,7 @@ const config = defineMain({
     '@storybook/addon-essentials',
     '@storybook/addon-storysource',
     '@storybook/addon-designs',
-    '@storybook/experimental-addon-test',
+    '@storybook/addon-test',
     '@storybook/addon-a11y',
     '@chromatic-com/storybook',
   ],
@@ -144,7 +140,7 @@ const config = defineMain({
           ...(configType === 'DEVELOPMENT'
             ? {
                 'storybook/internal/components': componentsPath,
-                'storybook/internal/manager-api': managerApiPath,
+                'storybook/manager-api': managerApiPath,
                 'sb-original/image-context': imageContextPath,
               }
             : {}),

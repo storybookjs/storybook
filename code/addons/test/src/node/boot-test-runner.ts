@@ -67,7 +67,10 @@ const bootTestRunner = async (channel: Channel) => {
 
   const startChildProcess = () =>
     new Promise<void>((resolve, reject) => {
-      child = execaNode(vitestModulePath);
+      child = execaNode(vitestModulePath, {
+        env: { VITEST: 'true', TEST: 'true', NODE_ENV: process.env.NODE_ENV ?? 'test' },
+        extendEnv: true,
+      });
       stderr = [];
 
       child.stdout?.on('data', log);

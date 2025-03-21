@@ -13,6 +13,7 @@ module.exports = {
   rules: {
     // remove as shared eslint has jest rules removed
     '@typescript-eslint/ban-ts-comment': 'error',
+    '@typescript-eslint/no-redeclare': 'off',
     '@typescript-eslint/consistent-type-imports': ['error', { disallowTypeAnnotations: false }],
     'no-use-before-define': 'off',
     'eslint-comments/disable-enable-pair': ['error', { allowWholeFile: true }],

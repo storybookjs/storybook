@@ -1,39 +1,49 @@
 import React, { useState } from 'react';
 
 import { AddonPanel } from 'storybook/internal/components';
-import type { Combo } from 'storybook/internal/manager-api';
-import { Consumer, addons, types } from 'storybook/internal/manager-api';
-import {
-  type API_StatusObject,
-  type API_StatusValue,
-  type Addon_TestProviderType,
-  Addon_TypesEnum,
-} from 'storybook/internal/types';
+import type { StatusValue } from 'storybook/internal/types';
+import { type Addon_TestProviderType, Addon_TypesEnum } from 'storybook/internal/types';
 
-import { store } from '#manager-store';
+import { a11yStatusStore, componentTestStatusStore, store } from '#manager-store';
+import type { Combo } from 'storybook/manager-api';
+import { Consumer, addons, types } from 'storybook/manager-api';
 
 import { GlobalErrorContext, GlobalErrorModal } from './components/GlobalErrorModal';
 import { Panel } from './components/Panel';
 import { PanelTitle } from './components/PanelTitle';
 import { TestProviderRender } from './components/TestProviderRender';
-import { ADDON_ID, type Details, PANEL_ID, TEST_PROVIDER_ID } from './constants';
+import {
+  A11Y_PANEL_ID,
+  ADDON_ID,
+  type Details,
+  PANEL_ID,
+  STATUS_TYPE_ID_A11Y,
+  STATUS_TYPE_ID_COMPONENT_TEST,
+  TEST_PROVIDER_ID,
+} from './constants';
 import type { TestStatus } from './node/reporter';
 
-const statusMap: Record<TestStatus, API_StatusValue> = {
-  failed: 'error',
-  passed: 'success',
-  pending: 'pending',
-  warning: 'warn',
-  skipped: 'unknown',
+const statusMap: Record<TestStatus, StatusValue> = {
+  pending: 'status-value:pending',
+  passed: 'status-value:success',
+  warning: 'status-value:warning',
+  failed: 'status-value:error',
+  skipped: 'status-value:unknown',
 };
 
 addons.register(ADDON_ID, (api) => {
   const storybookBuilder = (globalThis as any).STORYBOOK_BUILDER || '';
   if (storybookBuilder.includes('vite')) {
-    const openTestsPanel = () => {
-      api.setSelectedPanel(PANEL_ID);
+    const openPanel = (panelId: string) => {
+      api.setSelectedPanel(panelId);
       api.togglePanel(true);
     };
+    componentTestStatusStore.onSelect(() => {
+      openPanel(PANEL_ID);
+    });
+    a11yStatusStore.onSelect(() => {
+      openPanel(A11Y_PANEL_ID);
+    });
 
     addons.add(TEST_PROVIDER_ID, {
       type: Addon_TypesEnum.experimental_TEST_PROVIDER,
@@ -89,62 +99,47 @@ addons.register(ADDON_ID, (api) => {
         }
 
         if (update.details?.testResults) {
-          (async () => {
-            await api.experimental_updateStatus(
-              TEST_PROVIDER_ID,
-              Object.fromEntries(
-                // @ts-expect-error: TODO: Fix types
-                update.details.testResults.flatMap((testResult) =>
-                  testResult.results
-                    .filter(({ storyId }) => storyId)
-                    .map(({ storyId, status, testRunId, ...rest }) => [
-                      storyId,
-                      {
-                        title: 'Component tests',
-                        status: statusMap[status],
-                        description:
-                          'failureMessages' in rest && rest.failureMessages
-                            ? rest.failureMessages.join('\n')
-                            : '',
-                        data: { testRunId },
-                        onClick: openTestsPanel,
-                        sidebarContextMenu: false,
-                      } satisfies API_StatusObject,
-                    ])
-                )
-              )
-            );
-
-            await api.experimental_updateStatus(
-              'storybook/addon-a11y/test-provider',
-              Object.fromEntries(
-                // @ts-expect-error: TODO: Fix types
-                update.details.testResults.flatMap((testResult) =>
-                  testResult.results
-                    .filter(({ storyId }) => storyId)
-                    .map(({ storyId, testRunId, reports }) => {
-                      const a11yReport = reports.find((r: any) => r.type === 'a11y');
-                      return [
-                        storyId,
-                        a11yReport
-                          ? ({
-                              title: 'Accessibility tests',
-                              description: '',
-                              status: statusMap[a11yReport.status],
-                              data: { testRunId },
-                              onClick: () => {
-                                api.setSelectedPanel('storybook/a11y/panel');
-                                api.togglePanel(true);
-                              },
-                              sidebarContextMenu: false,
-                            } satisfies API_StatusObject)
-                          : null,
-                      ];
-                    })
-                )
-              )
-            );
-          })();
+          componentTestStatusStore.set(
+            update.details.testResults.flatMap((testResult) =>
+              testResult.results
+                .filter(({ storyId }) => storyId)
+                .map(({ storyId, status, testRunId, ...rest }) => {
+                  return {
+                    storyId,
+                    typeId: STATUS_TYPE_ID_COMPONENT_TEST,
+                    value: statusMap[status],
+                    title: 'Component tests',
+                    description:
+                      'failureMessages' in rest && rest.failureMessages
+                        ? rest.failureMessages.join('\n')
+                        : '',
+                    data: { testRunId },
+                    sidebarContextMenu: false,
+                  };
+                })
+            )
+          );
+          a11yStatusStore.set(
+            update.details.testResults.flatMap((testResult) =>
+              testResult.results
+                .filter(({ storyId, reports }) => {
+                  const a11yReport = reports.find((r: any) => r.type === 'a11y');
+                  return storyId && a11yReport;
+                })
+                .map(({ storyId, testRunId, reports }) => {
+                  const a11yReport = reports.find((r: any) => r.type === 'a11y')!;
+                  return {
+                    storyId,
+                    typeId: STATUS_TYPE_ID_A11Y,
+                    value: statusMap[a11yReport.status],
+                    title: 'Accessibility tests',
+                    description: '',
+                    data: { testRunId },
+                    sidebarContextMenu: false,
+                  };
+                })
+            )
+          );
         }
 
         return updated;

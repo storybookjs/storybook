@@ -2,11 +2,11 @@ import type { FC } from 'react';
 import React, { useState } from 'react';
 
 import { codeCommon } from 'storybook/internal/components';
-import type { CSSObject } from 'storybook/internal/theming';
-import { styled } from 'storybook/internal/theming';
 
 import Markdown from 'markdown-to-jsx';
 import { transparentize } from 'polished';
+import type { CSSObject } from 'storybook/theming';
+import { styled } from 'storybook/theming';
 
 import type { ArgControlProps } from './ArgControl';
 import { ArgControl } from './ArgControl';

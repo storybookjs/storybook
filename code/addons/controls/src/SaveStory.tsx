@@ -9,9 +9,10 @@ import {
   TooltipNote,
   WithTooltip,
 } from 'storybook/internal/components';
-import { keyframes, styled } from 'storybook/internal/theming';
 
 import { AddIcon, CheckIcon, UndoIcon } from '@storybook/icons';
+
+import { keyframes, styled } from 'storybook/theming';
 
 const slideIn = keyframes({
   from: { transform: 'translateY(40px)' },

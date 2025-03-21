@@ -35,7 +35,7 @@ type TagsFilter = {
   skip: string[];
 };
 
-const packageDir = dirname(require.resolve('@storybook/experimental-addon-test/package.json'));
+const packageDir = dirname(require.resolve('@storybook/addon-test/package.json'));
 
 const vitestVersion = vitestNode.version;
 const isVitest3OrLater = vitestVersion

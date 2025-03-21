@@ -1,5 +1,7 @@
 import { defaultExclude, defineProject, mergeConfig } from 'vitest/config';
 
+import { storybookTest } from '@storybook/addon-test/vitest-plugin';
+
 import Inspect from 'vite-plugin-inspect';
 
 import { vitestCommonConfig } from '../vitest.workspace';
@@ -22,14 +24,12 @@ export default mergeConfig(
   // @ts-expect-error added this because of testNamePattern below
   defineProject({
     plugins: [
-      import('@storybook/experimental-addon-test/vitest-plugin').then(({ storybookTest }) =>
-        storybookTest({
-          configDir: __dirname,
-          tags: {
-            include: ['vitest'],
-          },
-        })
-      ),
+      storybookTest({
+        configDir: __dirname,
+        tags: {
+          include: ['vitest'],
+        },
+      }),
       ...extraPlugins,
     ],
     test: {
@@ -40,9 +40,9 @@ export default mergeConfig(
         '**/__mockdata__/**',
         '../**/__mockdata__/**',
         '**/Zoom.stories.tsx', // expected to fail in Vitest because of fetching /iframe.html to cause ECONNREFUSED
-        '**/lib/blocks/src/**', // won't work because of https://github.com/storybookjs/storybook/issues/29783
+        '../lib/blocks/src/**', // won't work because of https://github.com/storybookjs/storybook/issues/29783
       ],
-      // TODO: bring this back once portable stories support storybook/internal/preview-api hooks
+      // TODO: bring this back once portable stories support storybook/preview-api hooks
       // @ts-expect-error this type does not exist but the property does!
       testNamePattern: /^(?!.*(UseState)).*$/,
       browser: {

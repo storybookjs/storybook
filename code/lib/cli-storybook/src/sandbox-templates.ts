@@ -429,7 +429,7 @@ export const baseTemplates = {
   },
   'nuxt-vite/default-ts': {
     name: 'Nuxt v3 (Vite | TypeScript)',
-    script: 'npx nuxi init --packageManager yarn --gitInit false {{beforeDir}}',
+    script: 'npx nuxi init --packageManager yarn --gitInit false -M @nuxt/ui {{beforeDir}}',
     expected: {
       framework: '@storybook-vue/nuxt',
       renderer: '@storybook/vue3',
@@ -498,6 +498,9 @@ export const baseTemplates = {
       framework: '@storybook/angular',
       renderer: '@storybook/angular',
       builder: '@storybook/builder-webpack5',
+    },
+    modifications: {
+      extraDependencies: ['@angular-devkit/build-angular@next'],
     },
     skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },

@@ -90,6 +90,7 @@ const config = defineMain({
   ],
   previewAnnotations: [
     './core/template/stories/preview.ts',
+    './core/template/stories/toolbars/preview.ts',
     './renderers/react/template/components/index.js',
   ],
   build: {

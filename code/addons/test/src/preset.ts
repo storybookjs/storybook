@@ -22,16 +22,15 @@ import { dedent } from 'ts-dedent';
 import {
   ADDON_ID,
   COVERAGE_DIRECTORY,
-  type ErrorLike,
   STORE_CHANNEL_EVENT_NAME,
   STORYBOOK_ADDON_TEST_CHANNEL,
-  type StoreEvent,
-  type StoreState,
   TEST_PROVIDER_ID,
   storeOptions,
 } from './constants';
 import { log } from './logger';
 import { runTestRunner } from './node/boot-test-runner';
+import type { ErrorLike, StoreState } from './types';
+import type { StoreEvent } from './types';
 
 type Event = {
   type: 'test-discrepancy';

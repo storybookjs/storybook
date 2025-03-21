@@ -66,12 +66,12 @@ export const checkPackageCompatibility = async (
 
     // For now, we notify about updates only for core packages (which will match the currently installed storybook version)
     // In the future, we can use packageManager.latestVersion(name, constraint) for all packages
-    if (isCorePackage && semver.gt(currentStorybookVersion, packageVersion!)) {
+    if (isCorePackage && packageVersion && semver.gt(currentStorybookVersion, packageVersion)) {
       availableUpdate = currentStorybookVersion;
     }
 
     // If the package is greater than the current version, this means a core update is available.
-    if (isCorePackage && semver.gt(packageVersion!, currentStorybookVersion)) {
+    if (isCorePackage && packageVersion && semver.gt(packageVersion, currentStorybookVersion)) {
       availableCoreUpdate = packageVersion;
     }
 

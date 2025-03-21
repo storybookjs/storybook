@@ -121,9 +121,9 @@ export const getIncompatiblePackagesSummary = (
 
   if (incompatiblePackages.length > 0) {
     summaryMessage.push(
-      `The following packages are incompatible with Storybook ${picocolors.bold(
+      `You are currently using Storybook ${picocolors.bold(
         currentStorybookVersion
-      )} as they depend on different major versions of Storybook packages:`
+      )} but you have packages which are incompatible with it:`
     );
     incompatiblePackages.forEach(
       ({

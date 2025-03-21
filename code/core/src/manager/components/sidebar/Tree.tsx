@@ -445,7 +445,7 @@ const Node = React.memo<NodeProps>(function Node({
             item.name}
         </BranchNode>
         {contextMenu.node}
-        {['error', 'warn'].includes(itemStatus) && (
+        {(['status-value:error', 'status-value:warning'] as StatusValue[]).includes(itemStatus) && (
           <StatusButton type="button" status={itemStatus}>
             <svg key="icon" viewBox="0 0 6 6" width="6" height="6" type="dot">
               <UseSymbol type="dot" />

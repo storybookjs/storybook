@@ -2,7 +2,11 @@ import { readFileSync } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 
 import type { Channel } from 'storybook/internal/channels';
-import { getFrameworkName, resolvePathInStorybookCache } from 'storybook/internal/common';
+import {
+  createFileSystemCache,
+  getFrameworkName,
+  resolvePathInStorybookCache,
+} from 'storybook/internal/common';
 import {
   TESTING_MODULE_CRASH_REPORT,
   TESTING_MODULE_PROGRESS_REPORT,
@@ -16,6 +20,7 @@ import {
 import { cleanPaths, oneWayHash, sanitizeError, telemetry } from 'storybook/internal/telemetry';
 import type { Options, PresetProperty, PresetPropertyFn, StoryId } from 'storybook/internal/types';
 
+import { isEqual } from 'es-toolkit';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
@@ -29,7 +34,7 @@ import {
 } from './constants';
 import { log } from './logger';
 import { runTestRunner } from './node/boot-test-runner';
-import type { ErrorLike, StoreState } from './types';
+import type { CachedState, ErrorLike, StoreState } from './types';
 import type { StoreEvent } from './types';
 
 type Event = {
@@ -48,12 +53,6 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
   const builderName = typeof core?.builder === 'string' ? core.builder : core?.builder?.name;
   const framework = await getFrameworkName(options);
 
-  const store = experimental_UniversalStore.create<StoreState, StoreEvent>({
-    ...storeOptions,
-    leader: true,
-  });
-  const testProviderStore = experimental_getTestProviderStore(ADDON_ID);
-
   // Only boot the test runner if the builder is vite, else just provide interactions functionality
   if (!builderName?.includes('vite')) {
     if (framework.includes('nextjs')) {
@@ -65,6 +64,38 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
     }
     return channel;
   }
+
+  const fsCache = createFileSystemCache({
+    basePath: resolvePathInStorybookCache(ADDON_ID.replace('/', '-')),
+    ns: 'storybook',
+    ttl: 14 * 24 * 60 * 60 * 1000, // 14 days
+  });
+  const cachedState: CachedState = await fsCache.get<CachedState>('state', {
+    config: storeOptions.initialState.config,
+    watching: storeOptions.initialState.watching,
+  });
+
+  const store = experimental_UniversalStore.create<StoreState, StoreEvent>({
+    ...storeOptions,
+    initialState: {
+      ...storeOptions.initialState,
+      ...cachedState,
+    },
+    leader: true,
+  });
+  store.onStateChange((state, previousState) => {
+    const selectCachedState = (s: StoreState): CachedState => ({
+      config: s.config,
+      watching: s.watching,
+    });
+    if (!isEqual(selectCachedState(state), selectCachedState(previousState))) {
+      fsCache.set('state', selectCachedState(state));
+    }
+  });
+  if (cachedState.watching) {
+    runTestRunner(channel, store);
+  }
+  const testProviderStore = experimental_getTestProviderStore(ADDON_ID);
 
   store.subscribe('TRIGGER_RUN', (event, eventInfo) => {
     // TODO: this ensures the provider is marked as running immediately,

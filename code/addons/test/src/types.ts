@@ -59,6 +59,8 @@ export type StoreState = {
   };
 };
 
+export type CachedState = Pick<StoreState, 'config' | 'watching'>;
+
 export type TriggerRunEvent = {
   type: 'TRIGGER_RUN';
   payload: {

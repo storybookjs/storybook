@@ -17,7 +17,7 @@ export default {
 ```ts filename=".storybook/main.ts" renderer="common" language="ts"
 // Replace your-framework with the framework you are using (e.g., react-webpack5, vue3-vite)
 import type { StorybookConfig } from '@storybook/your-framework';
-import type { StoriesEntry } from '@storybook/types';
+import type { StoriesEntry } from 'storybook/internal/types';
 
 async function findStories(): Promise<StoriesEntry[]> {
   // your custom logic returns a list of files

@@ -1,5 +1,5 @@
 ```js filename="my-addon/src/decorator.js|ts" renderer="common" language="js"
-import { makeDecorator } from '@storybook/preview-api';
+import { makeDecorator } from 'storybook/preview-api';
 
 export const withAddonDecorator = makeDecorator({
   name: 'withSomething',

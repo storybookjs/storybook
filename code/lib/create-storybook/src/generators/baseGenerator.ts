@@ -271,10 +271,6 @@ export async function baseGenerator(
 
   const compiler = webpackCompiler ? webpackCompiler({ builder }) : undefined;
 
-  const essentials = features.includes('docs')
-    ? '@storybook/addon-essentials'
-    : { name: '@storybook/addon-essentials', options: { docs: false } };
-
   const extraAddonsToInstall =
     typeof extraAddonPackages === 'function'
       ? await extraAddonPackages({
@@ -286,10 +282,15 @@ export async function baseGenerator(
   // TODO: change the semver range to '^4' when VTA 4 and SB 9 is released
   extraAddonsToInstall.push('@chromatic-com/storybook@^4.0.0-0');
 
+  // Add @storybook/addon-docs when docs feature is selected
+  if (features.includes('docs')) {
+    extraAddonsToInstall.push('@storybook/addon-docs');
+  }
+
   // added to main.js
   const addons = [
     ...(compiler ? [`@storybook/addon-webpack5-compiler-${compiler}`] : []),
-    essentials,
+    '@storybook/addon-essentials',
     ...stripVersions(extraAddonsToInstall),
   ].filter(Boolean);
 

@@ -49,7 +49,6 @@ export const essentialsAddons = [
   'actions',
   'backgrounds',
   'controls',
-  'docs',
   'highlight',
   'measure',
   'outline',
@@ -865,9 +864,7 @@ export const extendMain: Task['run'] = async ({ template, sandboxDir, key }, { d
   // Simulate Storybook Lite
   if (disableDocs) {
     const addons = mainConfig.getFieldValue(['addons']);
-    const addonsNoDocs = addons.map((addon: any) =>
-      addon !== '@storybook/addon-essentials' ? addon : { name: addon, options: { docs: false } }
-    );
+    const addonsNoDocs = addons.filter((addon: any) => addon !== '@storybook/addon-docs');
     mainConfig.setFieldValue(['addons'], addonsNoDocs);
 
     // remove the docs options so that docs tags are ignored

@@ -6148,7 +6148,6 @@ __metadata:
   dependencies:
     "@storybook/addon-backgrounds": "workspace:*"
     "@storybook/addon-controls": "workspace:*"
-    "@storybook/addon-docs": "workspace:*"
     "@storybook/addon-highlight": "workspace:*"
     "@storybook/addon-measure": "workspace:*"
     "@storybook/addon-outline": "workspace:*"

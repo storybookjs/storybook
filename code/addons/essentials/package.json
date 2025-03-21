@@ -39,14 +39,6 @@
     },
     "./backgrounds/manager": "./dist/backgrounds/manager.js",
     "./controls/manager": "./dist/controls/manager.js",
-    "./docs/manager": "./dist/docs/manager.js",
-    "./docs/preview": {
-      "types": "./dist/docs/preview.d.ts",
-      "import": "./dist/docs/preview.mjs",
-      "require": "./dist/docs/preview.js"
-    },
-    "./docs/preset": "./dist/docs/preset.js",
-    "./docs/mdx-react-shim": "./dist/docs/mdx-react-shim.js",
     "./highlight/preview": {
       "types": "./dist/highlight/preview.d.ts",
       "import": "./dist/highlight/preview.mjs",
@@ -101,7 +93,6 @@
   "dependencies": {
     "@storybook/addon-backgrounds": "workspace:*",
     "@storybook/addon-controls": "workspace:*",
-    "@storybook/addon-docs": "workspace:*",
     "@storybook/addon-highlight": "workspace:*",
     "@storybook/addon-measure": "workspace:*",
     "@storybook/addon-outline": "workspace:*",
@@ -120,20 +111,15 @@
   },
   "bundler": {
     "nodeEntries": [
-      "./src/preset.ts",
-      "./src/docs/preset.ts",
-      "./src/docs/mdx-react-shim.ts"
+      "./src/preset.ts"
     ],
     "exportEntries": [
       "./src/index.ts"
     ],
-    "entries": [
-      "./src/docs/manager.ts"
-    ],
+    "entries": [],
     "managerEntries": [
       "./src/backgrounds/manager.ts",
       "./src/controls/manager.ts",
-      "./src/docs/manager.ts",
       "./src/measure/manager.ts",
       "./src/outline/manager.ts",
       "./src/toolbars/manager.ts",
@@ -142,7 +128,6 @@
     "previewEntries": [
       "./src/preview.ts",
       "./src/backgrounds/preview.ts",
-      "./src/docs/preview.ts",
       "./src/highlight/preview.ts",
       "./src/measure/preview.ts",
       "./src/outline/preview.ts",

@@ -1,5 +1,4 @@
-import * as React from 'react';
-import { Fragment, useEffect } from 'react';
+import React, { type FC, Fragment, useEffect } from 'react';
 
 import type { Channel } from 'storybook/internal/channels';
 
@@ -101,7 +100,7 @@ const PlayFnNotice = styled.div(
   })
 );
 
-const StackContainer = ({ children, layout }) => (
+const StackContainer: FC<React.PropsWithChildren<{ layout: string }>> = ({ children, layout }) => (
   <div
     style={{
       height: '100%',

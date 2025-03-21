@@ -253,7 +253,7 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
     ...storyAnnotations?.globals,
   };
 
-  const contextForEnhancers: StoryContextForEnhancers<TRenderer> & { storyGlobals: Globals } = {
+  const contextForEnhancers: StoryContextForEnhancers<TRenderer> = {
     componentId: componentAnnotations.id,
     title: componentAnnotations.title,
     kind: componentAnnotations.title, // Back compat
@@ -272,7 +272,11 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
 
   contextForEnhancers.argTypes = argTypesEnhancers.reduce(
     (accumulatedArgTypes, enhancer) =>
-      enhancer({ ...contextForEnhancers, argTypes: accumulatedArgTypes }),
+      enhancer({
+        ...contextForEnhancers,
+        globals: projectAnnotations.initialGlobals,
+        argTypes: accumulatedArgTypes,
+      }),
     contextForEnhancers.argTypes
   );
 

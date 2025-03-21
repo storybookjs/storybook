@@ -370,14 +370,7 @@ const parameters = {
 };
 
 export default definePreview({
-  addons: [
-    addonThemes(),
-    addonEssentials(),
-    addonA11y(),
-    addonTest(),
-    addonsPreview,
-    templatePreview,
-  ],
+  addons: [addonThemes(), addonEssentials(), addonA11y(), addonTest(), templatePreview],
   decorators,
   loaders,
   tags: ['test', 'vitest'],

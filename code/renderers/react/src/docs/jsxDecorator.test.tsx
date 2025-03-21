@@ -314,7 +314,7 @@ describe('jsxDecorator', () => {
 
   it('should render dynamically for args stories', async () => {
     const storyFn = (args: any) => <div>args story</div>;
-    const context = makeContext('args', { __isArgsStory: true }, {});
+    const context = makeContext('args', { __isArgsStory: true }, {}, { originalStoryFn: storyFn });
     jsxDecorator(storyFn, context);
     await new Promise((r) => setTimeout(r, 0));
     expect(mockChannel.emit).toHaveBeenCalledWith(SNIPPET_RENDERED, {
@@ -373,7 +373,10 @@ describe('jsxDecorator', () => {
       },
     };
 
-    jsxDecorator(() => mdxElement, makeContext('mdx-args', { __isArgsStory: true }, {}));
+    jsxDecorator(
+      () => mdxElement,
+      makeContext('mdx-args', { __isArgsStory: true }, {}, { originalStoryFn: () => mdxElement })
+    );
     await new Promise((r) => setTimeout(r, 0));
 
     expect(mockChannel.emit).toHaveBeenCalledWith(SNIPPET_RENDERED, {
@@ -396,7 +399,12 @@ describe('jsxDecorator', () => {
         return <div>resolved args story</div>;
       });
     const jsx = '';
-    const context = makeContext('args', { __isArgsStory: true, jsx }, {});
+    const context = makeContext(
+      'args',
+      { __isArgsStory: true, jsx },
+      {},
+      { originalStoryFn: storyFn }
+    );
     expect(() => {
       jsxDecorator(storyFn, context);
     }).toThrow(Promise);

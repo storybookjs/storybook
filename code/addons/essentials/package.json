@@ -116,14 +116,16 @@
     "managerEntries": [
       "./src/backgrounds/manager.ts",
       "./src/measure/manager.ts",
-      "./src/outline/manager.ts"
+      "./src/outline/manager.ts",
+      "./src/viewport/manager.ts"
     ],
     "previewEntries": [
       "./src/preview.ts",
       "./src/backgrounds/preview.ts",
       "./src/highlight/preview.ts",
       "./src/measure/preview.ts",
-      "./src/outline/preview.ts"
+      "./src/outline/preview.ts",
+      "./src/viewport/preview.ts"
     ]
   },
   "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"

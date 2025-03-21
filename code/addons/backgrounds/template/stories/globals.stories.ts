@@ -22,6 +22,12 @@ export const Set = {
   },
 };
 
+export const Shorthand = {
+  globals: {
+    backgrounds: 'red',
+  },
+};
+
 export const SetAndCustom = {
   parameters: {
     backgrounds: {

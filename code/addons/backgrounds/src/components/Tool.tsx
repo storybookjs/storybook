@@ -8,12 +8,12 @@ import { useGlobals, useParameter } from 'storybook/manager-api';
 
 import { PARAM_KEY as KEY } from '../constants';
 import { DEFAULT_BACKGROUNDS } from '../defaults';
-import type { Background, BackgroundMap, Config, GlobalStateUpdate } from '../types';
+import type { Background, BackgroundMap, BackgroundsParameters, GlobalStateUpdate } from '../types';
 
 type Link = Parameters<typeof TooltipLinkList>['0']['links'][0];
 
 export const BackgroundTool = memo(function BackgroundSelector() {
-  const config = useParameter<Config>(KEY);
+  const config = useParameter<BackgroundsParameters['backgrounds']>(KEY);
   const [globals, updateGlobals, storyGlobals] = useGlobals();
   const [isTooltipVisible, setIsTooltipVisible] = useState(false);
 

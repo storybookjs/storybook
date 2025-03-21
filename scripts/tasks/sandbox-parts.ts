@@ -52,6 +52,7 @@ export const essentialsAddons = [
   'highlight',
   'measure',
   'outline',
+  'toolbars',
   'viewport',
 ];
 
@@ -441,6 +442,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
       import * as addonTestAnnotations from '@storybook/addon-test/preview'
       import '../src/stories/components'
       import * as templateAnnotations from '../template-stories/core/preview'
+      import * as toolbarAnnotations from '../template-stories/addons/toolbars/preview'
       import * as projectAnnotations from './preview'
       ${isVue ? 'import * as vueAnnotations from "../src/stories/renderers/vue3/preview.js"' : ''}
   
@@ -448,6 +450,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
         ${isVue ? 'vueAnnotations,' : ''}
         rendererDocsAnnotations,
         templateAnnotations,
+        toolbarAnnotations,
         addonTestAnnotations,
         addonA11yAnnotations,
         projectAnnotations,
@@ -892,7 +895,12 @@ export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
       { namespace: 'templateAnnotations' },
       '../template-stories/core/preview'
     );
+    previewConfig.setImport(
+      { namespace: 'toolbarAnnotations' },
+      '../template-stories/addons/toolbars/preview'
+    );
     previewConfig.appendNodeToArray(['addons'], t.identifier('templateAnnotations'));
+    previewConfig.appendNodeToArray(['addons'], t.identifier('toolbarAnnotations'));
   }
 
   if (template.expected.builder.includes('vite')) {

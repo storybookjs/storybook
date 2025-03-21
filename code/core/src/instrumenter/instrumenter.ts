@@ -355,12 +355,14 @@ export class Instrumenter {
       (acc, key) => {
         const descriptor = getPropertyDescriptor(obj, key);
         if (typeof descriptor?.get === 'function') {
-          const getter = () => descriptor?.get?.bind(obj)?.();
-          Object.defineProperty(acc, key, {
-            get: () => {
-              return this.instrument(getter(), { ...options, path: path.concat(key) }, depth);
-            },
-          });
+          if (descriptor.configurable) {
+            const getter = () => descriptor?.get?.bind(obj)?.();
+            Object.defineProperty(acc, key, {
+              get: () => {
+                return this.instrument(getter(), { ...options, path: path.concat(key) }, depth);
+              },
+            });
+          }
           return acc;
         }
 

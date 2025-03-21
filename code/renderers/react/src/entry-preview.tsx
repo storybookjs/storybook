@@ -9,6 +9,7 @@ export const parameters = { renderer: 'react' };
 export { render } from './render';
 export { renderToCanvas } from './renderToCanvas';
 export { mount } from './mount';
+export { applyDecorators } from './applyDecorators';
 
 export const decorators: Decorator[] = [
   (story, context) => {

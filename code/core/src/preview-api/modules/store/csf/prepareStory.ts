@@ -108,7 +108,7 @@ export function prepareStory<TRenderer extends Renderer>(
   };
 
   const undecoratedStoryFn = (context: StoryContext<TRenderer>) =>
-    (context.originalStoryFn as ArgsStoryFn<TRenderer>)(context.args, context);
+    context.originalStoryFn(context.args, context);
 
   // Currently it is only possible to set these globally
   const { applyDecorators = defaultDecorateStory, runStep } = projectAnnotations;

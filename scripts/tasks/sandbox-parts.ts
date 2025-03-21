@@ -448,7 +448,6 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
         ${isVue ? 'vueAnnotations,' : ''}
         rendererDocsAnnotations,
         templateAnnotations,
-        toolbarAnnotations,
         addonTestAnnotations,
         addonA11yAnnotations,
         projectAnnotations,

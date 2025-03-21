@@ -1,9 +1,8 @@
 <h1>Migration</h1>
 
 - [From version 8.x to 9.0.0](#from-version-8x-to-900)
-  - [Addon Toolbars is now part of the core](#addon-toolbars-is-now-part-of-the-core)
-  - [Addon Controls is now part of the core](#addon-controls-is-now-part-of-the-core)
-  - [Actions addon moved to core](#actions-addon-moved-to-core)
+  - [Addon Controls is moved to core](#addon-controls-is-moved-to-core)
+  - [Addon Actions is moved to core](#addon-actions-is-moved-to-core)
   - [Addon viewport and addon backgrounds synchronized configuration and use globals](#addon-viewport-and-addon-backgrounds-synchronized-configuration-and-use-globals)
   - [Manager builder removed alias for `util`, `assert` and `process`](#manager-builder-removed-alias-for-util-assert-and-process)
   - [Docs addon moved out of addon-essentials](#docs-addon-moved-out-of-addon-essentials)
@@ -444,17 +443,15 @@
 
 ## From version 8.x to 9.0.0
 
-### Addon Toolbars is now part of the core
+### Addon Controls is moved to core
 
-The actions addon has been moved from `@storybook/addon-toolbars` to Storybook core. You no longer need to install it separately or include it in your addons list. As a consequence, `@storybook/addon-toolbars` is not part of `@storybook/addon-essentials` anymore.
+The controls addon has been moved from `@storybook/addon-controls` to Storybook core. You no longer need to install it separately or include it in your addons list. As a consequence, `@storybook/addon-controls` is not part of `@storybook/addon-essentials` anymore.
 
-### Addon Controls is now part of the core
+### Addon Actions is moved to core
 
-Similar to the actions addon, the controls addon has been moved to core.
+The actions addon has been moved from `@storybook/addon-actions` to Storybook core. You no longer need to install it separately or include it in your addons list. As a consequence, `@storybook/addon-actions` is not part of `@storybook/addon-essentials` anymore.
 
-There should be no need to import anything from addon-controls, but it is available as `storybook/internal/controls`.
-
-Please uninstall `@storybook/addon-controls`, and remove it from your `main.ts`.
+Furthermore, we have deprecated the usage of `withActions` from `@storybook/addon-actions` and we will remove it in Storybook v10. Please file an issue if you need this API.
 
 ### Actions addon moved to core
 

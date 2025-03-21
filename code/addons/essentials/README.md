@@ -9,7 +9,6 @@ Each addon is documented and maintained by the core team and will be upgraded al
 Storybook essentials includes the following addons. Addons can be disabled and re-configured as [described below](#configuration):
 
 - [Backgrounds](https://github.com/storybookjs/storybook/tree/next/code/addons/backgrounds)
-- [Controls](https://github.com/storybookjs/storybook/tree/next/code/addons/controls)
 - [Viewport](https://github.com/storybookjs/storybook/tree/next/code/addons/viewport)
 - [Toolbars](https://github.com/storybookjs/storybook/tree/next/code/addons/toolbars)
 - [Measure](https://github.com/storybookjs/storybook/tree/next/code/addons/measure)
@@ -52,6 +51,6 @@ export default {
 };
 ```
 
-Valid addon keys include: `backgrounds`, `controls`, `viewport`, `toolbars`, `measure`, `outline`.
+Valid addon keys include: `backgrounds`, `viewport`, `toolbars`, `measure`, `outline`.
 
 Note: The `docs` addon was previously part of essentials but is now a separate package. If you need documentation features, please install `@storybook/addon-docs` separately; see [MIGRATION.md](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#docs-addon-moved-out-of-addon-essentials)

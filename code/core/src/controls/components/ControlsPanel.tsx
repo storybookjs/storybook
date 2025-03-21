@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 
 import type { ArgTypes } from 'storybook/internal/types';
 
-import { PureArgsTable as ArgsTable, type PresetColor, type SortType } from '@storybook/blocks';
 import { global } from '@storybook/global';
 
 import { dequal as deepEqual } from 'dequal';
@@ -15,8 +14,13 @@ import {
 } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
+import {
+  PureArgsTable as ArgsTable,
+  type PresetColor,
+  type SortType,
+} from '../../../../lib/blocks/src/index';
+import { PARAM_KEY } from '../constants';
 import { SaveStory } from './SaveStory';
-import { PARAM_KEY } from './constants';
 
 // Remove undefined values (top-level only)
 const clean = (obj: { [key: string]: any }) =>

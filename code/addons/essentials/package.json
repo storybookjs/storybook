@@ -38,7 +38,6 @@
       "require": "./dist/backgrounds/preview.js"
     },
     "./backgrounds/manager": "./dist/backgrounds/manager.js",
-    "./controls/manager": "./dist/controls/manager.js",
     "./highlight/preview": {
       "types": "./dist/highlight/preview.d.ts",
       "import": "./dist/highlight/preview.mjs",
@@ -92,7 +91,6 @@
   },
   "dependencies": {
     "@storybook/addon-backgrounds": "workspace:*",
-    "@storybook/addon-controls": "workspace:*",
     "@storybook/addon-highlight": "workspace:*",
     "@storybook/addon-measure": "workspace:*",
     "@storybook/addon-outline": "workspace:*",
@@ -119,7 +117,6 @@
     "entries": [],
     "managerEntries": [
       "./src/backgrounds/manager.ts",
-      "./src/controls/manager.ts",
       "./src/measure/manager.ts",
       "./src/outline/manager.ts",
       "./src/toolbars/manager.ts",

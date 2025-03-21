@@ -13,7 +13,7 @@ import { dequal as deepEqual } from 'dequal';
 import { addons, experimental_requestResponse, types, useArgTypes } from 'storybook/manager-api';
 import { color } from 'storybook/theming';
 
-import { ControlsPanel } from './ControlsPanel';
+import { ControlsPanel } from './components/ControlsPanel';
 import { ADDON_ID, PARAM_KEY } from './constants';
 
 function Title() {

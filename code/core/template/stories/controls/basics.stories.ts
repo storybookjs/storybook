@@ -65,19 +65,3 @@ export const Defined = {
     text: 'hello',
   },
 };
-
-// export const ImageFileControl = (args) => <img src={args.imageUrls[0]} alt="Your Example Story" />;
-// ImageFileControl.args = {
-//   imageUrls: ['https://storybook.js.org/images/placeholders/350x150.png'],
-// };
-
-// const hasCycle: any = {};
-// hasCycle.cycle = hasCycle;
-
-// export const CyclicArgs = {
-//   args: process.env.NODE_ENV !== 'test' ? { object: hasCycle } : {},
-//   parameters: {
-//     docs: { disable: true },
-//     chromatic: { disable: true },
-//   },
-// };

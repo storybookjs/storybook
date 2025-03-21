@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 
 import { SyntaxHighlighter } from 'storybook/internal/components';
+import { ADDON_ID as CONTROLS_ADDON_ID } from 'storybook/internal/controls';
 import { SAVE_STORY_RESPONSE } from 'storybook/internal/core-events';
 
 import type { Step } from 'react-joyride';
@@ -119,7 +120,7 @@ export default function Onboarding({ api }: { api: API }) {
     selectStory('example-button--primary');
     api.togglePanel(true);
     api.togglePanelPosition('bottom');
-    api.setSelectedPanel('addon-controls');
+    api.setSelectedPanel(CONTROLS_ADDON_ID);
   }, [api, selectStory]);
 
   useEffect(() => {

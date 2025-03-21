@@ -23,6 +23,7 @@ export const consolidatedPackages = {
   '@storybook/components': 'storybook/internal/components',
   '@storybook/test': 'storybook/test',
   '@storybook/addon-actions': 'storybook/actions',
+  '@storybook/addon-controls': 'storybook/internal/controls',
 } as const;
 
 export type ConsolidatedPackage = keyof typeof consolidatedPackages;

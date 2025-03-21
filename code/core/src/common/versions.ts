@@ -2,7 +2,6 @@
 export default {
   '@storybook/addon-a11y': '9.0.0-alpha.8',
   '@storybook/addon-backgrounds': '9.0.0-alpha.8',
-  '@storybook/addon-controls': '9.0.0-alpha.8',
   '@storybook/addon-docs': '9.0.0-alpha.8',
   '@storybook/addon-essentials': '9.0.0-alpha.8',
   '@storybook/addon-mdx-gfm': '9.0.0-alpha.8',

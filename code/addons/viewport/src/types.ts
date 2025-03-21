@@ -1,12 +1,4 @@
-// TODO: remove the function type from styles in 9.0
-export type Styles = ViewportStyles | ((s: ViewportStyles | undefined) => ViewportStyles) | null;
-
 export interface Viewport {
-  name: string;
-  styles: Styles;
-  type: 'desktop' | 'mobile' | 'tablet' | 'other';
-}
-export interface ModernViewport {
   name: string;
   styles: ViewportStyles;
   type: 'desktop' | 'mobile' | 'tablet' | 'other';
@@ -18,11 +10,6 @@ export interface ViewportStyles {
 }
 
 export type ViewportMap = Record<string, Viewport>;
-
-export interface Config {
-  options: Record<string, ModernViewport>;
-  disable: boolean;
-}
 
 export type GlobalState = {
   /**
@@ -47,30 +34,18 @@ export interface ViewportParameters {
    */
   viewport: {
     /**
-     * Specifies the default orientation used when viewing a story. Only available if you haven't
-     * enabled the globals API.
-     */
-    defaultOrientation?: 'landscape' | 'portrait';
-
-    /**
-     * Specifies the default viewport used when viewing a story. Must match a key in the viewports
-     * (or options) object.
-     */
-    defaultViewport?: string;
-
-    /**
      * Remove the addon panel and disable the addon's behavior . If you wish to turn off this addon
      * for the entire Storybook, you should do so when registering addon-essentials
      *
      * @see https://storybook.js.org/docs/essentials/index#disabling-addons
      */
-    disabled?: boolean;
+    disable?: boolean;
 
     /**
      * Specify the available viewports. The width and height values must include the unit, e.g.
      * '320px'.
      */
-    viewports?: Viewport; // TODO: use ModernViewport in 9.0
+    options: Record<string, Viewport>;
   };
 }
 
@@ -81,6 +56,6 @@ export interface ViewportGlobals {
    * @see https://storybook.js.org/docs/essentials/viewport#globals
    */
   viewport: {
-    [key: string]: GlobalState;
+    [key: string]: GlobalState | GlobalState['value'];
   };
 }

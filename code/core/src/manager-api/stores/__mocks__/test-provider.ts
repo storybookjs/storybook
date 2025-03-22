@@ -10,5 +10,9 @@ const mockTestProviderStore = createTestProviderStore({
   useUniversalStore,
 });
 
-export const { fullTestProviderStore, getTestProviderStoreById, useTestProviderStore } =
-  mockTestProviderStore;
+export const {
+  fullTestProviderStore,
+  getTestProviderStoreById,
+  useTestProviderStore,
+  universalTestProviderStore,
+} = mockTestProviderStore;

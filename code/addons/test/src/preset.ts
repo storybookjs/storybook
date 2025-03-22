@@ -3,35 +3,39 @@ import { mkdir } from 'node:fs/promises';
 
 import type { Channel } from 'storybook/internal/channels';
 import {
-  checkAddonOrder,
+  createFileSystemCache,
   getFrameworkName,
   resolvePathInStorybookCache,
-  serverRequire,
 } from 'storybook/internal/common';
 import {
   TESTING_MODULE_CRASH_REPORT,
   TESTING_MODULE_PROGRESS_REPORT,
-  TESTING_MODULE_RUN_REQUEST,
   type TestingModuleCrashReportPayload,
   type TestingModuleProgressReportPayload,
 } from 'storybook/internal/core-events';
-import { experimental_UniversalStore } from 'storybook/internal/core-server';
+import {
+  experimental_UniversalStore,
+  experimental_getTestProviderStore,
+} from 'storybook/internal/core-server';
 import { cleanPaths, oneWayHash, sanitizeError, telemetry } from 'storybook/internal/telemetry';
 import type { Options, PresetProperty, PresetPropertyFn, StoryId } from 'storybook/internal/types';
 
-import { isAbsolute, join } from 'pathe';
+import { isEqual } from 'es-toolkit';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 import {
+  ADDON_ID,
   COVERAGE_DIRECTORY,
+  STORE_CHANNEL_EVENT_NAME,
   STORYBOOK_ADDON_TEST_CHANNEL,
-  type StoreState,
   TEST_PROVIDER_ID,
   storeOptions,
 } from './constants';
 import { log } from './logger';
 import { runTestRunner } from './node/boot-test-runner';
+import type { CachedState, ErrorLike, StoreState } from './types';
+import type { StoreEvent } from './types';
 
 type Event = {
   type: 'test-discrepancy';
@@ -49,11 +53,6 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
   const builderName = typeof core?.builder === 'string' ? core.builder : core?.builder?.name;
   const framework = await getFrameworkName(options);
 
-  const store = experimental_UniversalStore.create<StoreState>({
-    ...storeOptions,
-    leader: true,
-  });
-
   // Only boot the test runner if the builder is vite, else just provide interactions functionality
   if (!builderName?.includes('vite')) {
     if (framework.includes('nextjs')) {
@@ -66,21 +65,103 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
     return channel;
   }
 
-  const execute =
-    (eventName: string) =>
-    (...args: any[]) => {
-      if (args[0]?.providerId === TEST_PROVIDER_ID) {
-        runTestRunner(channel, eventName, args);
-      }
-    };
+  const fsCache = createFileSystemCache({
+    basePath: resolvePathInStorybookCache(ADDON_ID.replace('/', '-')),
+    ns: 'storybook',
+    ttl: 14 * 24 * 60 * 60 * 1000, // 14 days
+  });
+  const cachedState: CachedState = await fsCache.get<CachedState>('state', {
+    config: storeOptions.initialState.config,
+    watching: storeOptions.initialState.watching,
+  });
 
-  channel.on(TESTING_MODULE_RUN_REQUEST, execute(TESTING_MODULE_RUN_REQUEST));
-
-  store.onStateChange((state) => {
-    if (state.watching) {
-      runTestRunner(channel);
+  const store = experimental_UniversalStore.create<StoreState, StoreEvent>({
+    ...storeOptions,
+    initialState: {
+      ...storeOptions.initialState,
+      ...cachedState,
+    },
+    leader: true,
+  });
+  store.onStateChange((state, previousState) => {
+    const selectCachedState = (s: StoreState): CachedState => ({
+      config: s.config,
+      watching: s.watching,
+    });
+    if (!isEqual(selectCachedState(state), selectCachedState(previousState))) {
+      fsCache.set('state', selectCachedState(state));
     }
   });
+  if (cachedState.watching) {
+    runTestRunner(channel, store);
+  }
+  const testProviderStore = experimental_getTestProviderStore(ADDON_ID);
+
+  store.subscribe('TRIGGER_RUN', (event, eventInfo) => {
+    // TODO: this ensures the provider is marked as running immediately,
+    // but it could also result in a deadlock, if the state is never reset back due to the child process crashing or similar.
+    testProviderStore.setState('test-provider-state:running');
+    runTestRunner(channel, store, STORE_CHANNEL_EVENT_NAME, [{ event, eventInfo }]);
+  });
+  store.subscribe('TOGGLE_WATCHING', (event, eventInfo) => {
+    store.setState((s) => ({
+      ...s,
+      watching: event.payload.to,
+      currentRun: {
+        ...s.currentRun,
+        // when enabling watch mode, clear the coverage summary too
+        ...(event.payload.to && {
+          coverageSummary: undefined,
+        }),
+      },
+    }));
+    if (event.payload.to) {
+      runTestRunner(channel, store, STORE_CHANNEL_EVENT_NAME, [{ event, eventInfo }]);
+    }
+  });
+  store.subscribe('FATAL_ERROR', (event) => {
+    const { message, error } = event.payload;
+    const name = error.name || 'Error';
+    log(`${name}: ${message}`);
+    if (error.stack) {
+      log(error.stack);
+    }
+
+    function logErrorWithCauses(err: ErrorLike) {
+      if (!err) {
+        return;
+      }
+
+      log(`Caused by: ${err.name ?? 'Error'}: ${err.message}`);
+
+      if (err.stack) {
+        log(err.stack);
+      }
+
+      if (err.cause) {
+        logErrorWithCauses(err.cause);
+      }
+    }
+
+    if (error.cause) {
+      logErrorWithCauses(error.cause);
+    }
+    store.setState((s) => ({
+      ...s,
+      fatalError: {
+        message,
+        error,
+      },
+    }));
+    testProviderStore.setState('test-provider-state:crashed');
+  });
+  testProviderStore.onClearAll(() => {
+    store.setState((s) => ({
+      ...s,
+      currentRun: { ...s.currentRun, coverageSummary: undefined, unhandledErrors: [] },
+    }));
+  });
+
   if (!core.disableTelemetry) {
     const packageJsonPath = require.resolve('@storybook/addon-test/package.json');
 

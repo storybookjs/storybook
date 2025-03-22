@@ -11,5 +11,9 @@ const testProviderStore = createTestProviderStore({
   useUniversalStore,
 });
 
-export const { fullTestProviderStore, getTestProviderStoreById, useTestProviderStore } =
-  testProviderStore;
+export const {
+  fullTestProviderStore,
+  getTestProviderStoreById,
+  useTestProviderStore,
+  universalTestProviderStore,
+} = testProviderStore;

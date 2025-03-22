@@ -9,4 +9,5 @@ const mockStatusStore = createStatusStore({
   environment: 'manager',
 });
 
-export const { fullStatusStore, getStatusStoreByTypeId, useStatusStore } = mockStatusStore;
+export const { fullStatusStore, getStatusStoreByTypeId, useStatusStore, universalStatusStore } =
+  mockStatusStore;

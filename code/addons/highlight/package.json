@@ -65,7 +65,10 @@
   },
   "devDependencies": {
     "@types/webpack-env": "^1.16.0",
-    "typescript": "^5.7.3"
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "typescript": "^5.7.3",
+    "use-resize-observer": "^9.1.0"
   },
   "peerDependencies": {
     "storybook": "workspace:^"

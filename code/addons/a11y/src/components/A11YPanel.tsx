@@ -1,21 +1,18 @@
 import React, { useMemo } from 'react';
 
-import { ActionBar, ScrollArea } from 'storybook/internal/components';
+import { Badge, Button, ScrollArea } from 'storybook/internal/components';
 
-import { CheckIcon, SyncIcon } from '@storybook/icons';
+import { SyncIcon } from '@storybook/icons';
 
+import { useParameter } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
+import { PARAM_KEY } from '../constants';
+import { RuleType } from '../types';
 import { useA11yContext } from './A11yContext';
-import { Report } from './Report';
+import { Report } from './Report/Report';
 import { Tabs } from './Tabs';
 import { TestDiscrepancyMessage } from './TestDiscrepancyMessage';
-
-export enum RuleType {
-  VIOLATION,
-  PASS,
-  INCOMPLETION,
-}
 
 const Icon = styled(SyncIcon)({
   marginRight: 4,
@@ -25,86 +22,124 @@ const RotatingIcon = styled(Icon)(({ theme }) => ({
   animation: `${theme.animation.rotate360} 1s linear infinite;`,
 }));
 
-const Passes = styled.span(({ theme }) => ({
-  color: theme.color.positiveText,
-}));
-
-const Violations = styled.span(({ theme }) => ({
-  color: theme.color.negativeText,
-}));
-
-const Incomplete = styled.span(({ theme }) => ({
-  color: theme.color.warningText,
-}));
-
-const Centered = styled.span({
+const Tab = styled.div({
   display: 'flex',
   alignItems: 'center',
+  gap: 6,
+});
+
+const Centered = styled.span(({ theme }) => ({
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
   justifyContent: 'center',
+  textAlign: 'center',
+  fontSize: theme.typography.size.s2,
   height: '100%',
+  gap: 24,
+
+  div: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 8,
+  },
+  p: {
+    margin: 0,
+    color: theme.textMutedColor,
+  },
+  code: {
+    display: 'inline-block',
+    fontSize: theme.typography.size.s2 - 1,
+    backgroundColor: theme.background.app,
+    border: `1px solid ${theme.color.border}`,
+    borderRadius: 4,
+    padding: '2px 3px',
+  },
+}));
+
+const Count = styled(Badge)({
+  padding: 4,
+  minWidth: 24,
 });
 
 export const A11YPanel: React.FC = () => {
-  const { results, status, handleManual, error, discrepancy } = useA11yContext();
+  const { manual } = useParameter(PARAM_KEY, {} as any);
+  const {
+    results,
+    status,
+    handleManual,
+    error,
+    discrepancy,
+    handleSelectionChange,
+    selectedItems,
+    toggleOpen,
+  } = useA11yContext();
 
-  const manualActionItems = useMemo(
-    () => [{ title: 'Run test', onClick: handleManual }],
-    [handleManual]
-  );
-  const readyActionItems = useMemo(
-    () => [
-      {
-        title:
-          status === 'ready' ? (
-            'Rerun tests'
-          ) : (
-            <>
-              <CheckIcon style={{ marginRight: '0.4em' }} />
-              Tests completed
-            </>
-          ),
-        onClick: handleManual,
-      },
-    ],
-    [status, handleManual]
-  );
   const tabs = useMemo(() => {
     const { passes, incomplete, violations } = results;
     return [
       {
-        label: <Violations>{violations.length} Violations</Violations>,
+        label: (
+          <Tab>
+            Violations
+            <Count status="neutral">{violations.length}</Count>
+          </Tab>
+        ),
         panel: (
           <Report
             items={violations}
             type={RuleType.VIOLATION}
             empty="No accessibility violations found."
+            handleSelectionChange={handleSelectionChange}
+            selectedItems={selectedItems}
+            toggleOpen={toggleOpen}
           />
         ),
         items: violations,
         type: RuleType.VIOLATION,
       },
       {
-        label: <Passes>{passes.length} Passes</Passes>,
+        label: (
+          <Tab>
+            Passes
+            <Count status="neutral">{passes.length}</Count>
+          </Tab>
+        ),
         panel: (
-          <Report items={passes} type={RuleType.PASS} empty="No accessibility checks passed." />
+          <Report
+            items={passes}
+            type={RuleType.PASS}
+            empty="No accessibility checks passed."
+            handleSelectionChange={handleSelectionChange}
+            selectedItems={selectedItems}
+            toggleOpen={toggleOpen}
+          />
         ),
         items: passes,
         type: RuleType.PASS,
       },
       {
-        label: <Incomplete>{incomplete.length} Incomplete</Incomplete>,
+        label: (
+          <Tab>
+            Incomplete
+            <Count status="neutral">{incomplete.length}</Count>
+          </Tab>
+        ),
         panel: (
           <Report
             items={incomplete}
             type={RuleType.INCOMPLETION}
             empty="No accessibility checks incomplete."
+            handleSelectionChange={handleSelectionChange}
+            selectedItems={selectedItems}
+            toggleOpen={toggleOpen}
           />
         ),
         items: incomplete,
         type: RuleType.INCOMPLETION,
       },
     ];
-  }, [results]);
+  }, [results, handleSelectionChange, selectedItems, toggleOpen]);
 
   return (
     <>
@@ -114,15 +149,26 @@ export const A11YPanel: React.FC = () => {
           <ScrollArea vertical horizontal>
             <Tabs key="tabs" tabs={tabs} />
           </ScrollArea>
-          <ActionBar key="actionbar" actionItems={readyActionItems} />
         </>
       ) : (
         <Centered style={{ marginTop: discrepancy ? '1em' : 0 }}>
           {status === 'initial' && 'Initializing...'}
           {status === 'manual' && (
             <>
-              <>Manually run the accessibility scan.</>
-              <ActionBar key="actionbar" actionItems={manualActionItems} />
+              <div>
+                <strong>Accessibility tests run manually for this story</strong>
+                <p>
+                  Results will not show when using the testing module. You can still run
+                  accessibility tests manually.
+                </p>
+              </div>
+              <Button size="medium" onClick={handleManual}>
+                Run accessibility scan
+              </Button>
+              <p>
+                Update <code>{manual ? 'parameters' : 'globals'}.a11y.manual</code> to disable
+                manual mode.
+              </p>
             </>
           )}
           {status === 'running' && (
@@ -132,13 +178,33 @@ export const A11YPanel: React.FC = () => {
           )}
           {status === 'error' && (
             <>
-              The accessibility scan encountered an error.
-              <br />
-              {typeof error === 'string'
-                ? error
-                : error instanceof Error
-                  ? error.toString()
-                  : JSON.stringify(error)}
+              <div>
+                <strong>The accessibility scan encountered an error</strong>
+                <p>
+                  {typeof error === 'string'
+                    ? error
+                    : error instanceof Error
+                      ? error.toString()
+                      : JSON.stringify(error, null, 2)}
+                </p>
+              </div>
+              <Button size="medium" onClick={handleManual}>
+                Rerun accessibility scan
+              </Button>
+            </>
+          )}
+          {status === 'broken' && (
+            <>
+              <div>
+                <strong>This story&apos;s component tests failed</strong>
+                <p>
+                  Automated accessibility tests will not run until this is resolved. You can still
+                  test manually.
+                </p>
+              </div>
+              <Button size="medium" onClick={handleManual}>
+                Run accessibility scan
+              </Button>
             </>
           )}
         </Centered>

@@ -22,10 +22,6 @@ export const Violations = {
         <button></button>
       </div>
       <div>
-        <p>low contrast</p>
-        <button style="color: rgb(255, 255, 255); background-color: rgb(76, 175, 80);">Click me!</button>
-      </div>
-      <div>
         <p>missing label</p>
         <label><input /></label>
       </div>
@@ -33,6 +29,25 @@ export const Violations = {
         <p>missing alt</p>
         <img src="https://storybook.js.org/images/placeholders/350x150.png" />
       </div>
+      <div>
+      <p>Checkbox with contrast toggle</p>
+        <input type="checkbox" id="color-toggle" />
+        <label for="color-toggle">Toggle violation:</label>
+      </div>
+
+      <style>
+        input[type="checkbox"]:not(:checked) + label {
+          background-color: red;
+          color: white;
+          cursor: pointer;
+        }
+
+        input[type="checkbox"]:checked + label {
+          background-color: green;
+          color: white;
+          cursor: pointer;
+        }
+      </style>
     `,
   },
 };

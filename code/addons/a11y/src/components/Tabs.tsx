@@ -1,12 +1,15 @@
 import * as React from 'react';
 
-import type { NodeResult, Result } from 'axe-core';
+import { IconButton, TooltipNote, WithTooltip } from 'storybook/internal/components';
+
+import { CollapseIcon, ExpandAltIcon, EyeCloseIcon, EyeIcon, SyncIcon } from '@storybook/icons';
+
+import type { Result } from 'axe-core';
 import { useResizeDetector } from 'react-resize-detector';
 import { styled } from 'storybook/theming';
 
-import type { RuleType } from './A11YPanel';
+import type { RuleType } from '../types';
 import { useA11yContext } from './A11yContext';
-import HighlightToggle from './Report/HighlightToggle';
 
 // TODO: reuse the Tabs component from storybook/theming instead of re-building identical functionality
 
@@ -15,12 +18,6 @@ const Container = styled.div({
   position: 'relative',
   minHeight: '100%',
 });
-
-const HighlightToggleLabel = styled.label(({ theme }) => ({
-  cursor: 'pointer',
-  userSelect: 'none',
-  color: theme.color.dark,
-}));
 
 const GlobalToggle = styled.div(() => ({
   alignItems: 'center',
@@ -43,38 +40,42 @@ const Item = styled.button<{ active?: boolean }>(
     textDecoration: 'none',
     padding: '10px 15px',
     cursor: 'pointer',
+    color: theme.textMutedColor,
     fontWeight: theme.typography.weight.bold,
     fontSize: theme.typography.size.s2 - 1,
     lineHeight: 1,
     height: 40,
     border: 'none',
-    borderTop: '3px solid transparent',
     borderBottom: '3px solid transparent',
     background: 'transparent',
 
     '&:focus': {
       outline: '0 none',
-      borderBottom: `3px solid ${theme.color.secondary}`,
+      borderColor: theme.color.secondary,
     },
   }),
   ({ active, theme }) =>
     active
       ? {
           opacity: 1,
-          borderBottom: `3px solid ${theme.color.secondary}`,
+          color: theme.color.secondary,
+          borderColor: theme.color.secondary,
         }
       : {}
 );
 
 const TabsWrapper = styled.div({});
+const ActionsWrapper = styled.div({ display: 'flex', gap: 6 });
 
 const List = styled.div(({ theme }) => ({
   boxShadow: `${theme.appBorderColor} 0 -1px 0 0 inset`,
   background: theme.background.app,
   display: 'flex',
   flexWrap: 'wrap',
+  alignItems: 'center',
   justifyContent: 'space-between',
   whiteSpace: 'nowrap',
+  paddingRight: 10,
 }));
 
 interface TabsProps {
@@ -86,55 +87,88 @@ interface TabsProps {
   }[];
 }
 
-function retrieveAllNodesFromResults(items: Result[]): NodeResult[] {
-  return items.reduce((acc, item) => acc.concat(item.nodes), [] as NodeResult[]);
-}
-
 export const Tabs: React.FC<TabsProps> = ({ tabs }) => {
-  const { ref, width } = useResizeDetector({
+  const { ref } = useResizeDetector({
     refreshMode: 'debounce',
     handleHeight: false,
     handleWidth: true,
   });
-  const { tab: activeTab, setTab } = useA11yContext();
+  const {
+    tab: activeTab,
+    setTab,
+    toggleHighlight,
+    highlighted,
+    handleManual,
+    allExpanded,
+    handleCollapseAll,
+    handleExpandAll,
+  } = useA11yContext();
 
   const handleToggle = React.useCallback(
     (event: React.SyntheticEvent) => {
-      setTab(parseInt(event.currentTarget.getAttribute('data-index') || '', 10));
+      setTab(event.currentTarget.getAttribute('data-type') as RuleType);
     },
     [setTab]
   );
 
-  const highlightToggleId = `${tabs[activeTab].type}-global-checkbox`;
-  const highlightLabel = `Highlight results`;
   return (
     <Container ref={ref}>
       <List>
         <TabsWrapper>
           {tabs.map((tab, index) => (
             <Item
+              role="tab"
               key={index}
-              data-index={index}
-              active={activeTab === index}
+              data-type={tab.type}
+              data-active={activeTab === tab.type}
+              active={activeTab === tab.type}
               onClick={handleToggle}
             >
               {tab.label}
             </Item>
           ))}
         </TabsWrapper>
-        {tabs[activeTab].items.length > 0 ? (
-          <GlobalToggle>
-            <HighlightToggleLabel htmlFor={highlightToggleId}>
-              {highlightLabel}
-            </HighlightToggleLabel>
-            <HighlightToggle
-              toggleId={highlightToggleId}
-              elementsToHighlight={retrieveAllNodesFromResults(tabs[activeTab].items)}
-            />
-          </GlobalToggle>
-        ) : null}
+        <ActionsWrapper>
+          <WithTooltip
+            as="div"
+            hasChrome={false}
+            placement="top"
+            tooltip={<TooltipNote note="Highlight elements with accessibility violations" />}
+            trigger="hover"
+          >
+            <IconButton onClick={toggleHighlight} active={highlighted}>
+              {highlighted ? <EyeCloseIcon /> : <EyeIcon />}
+              {highlighted ? 'Hide highlights' : 'Show highlights'}
+            </IconButton>
+          </WithTooltip>
+          <WithTooltip
+            as="div"
+            hasChrome={false}
+            placement="top"
+            tooltip={<TooltipNote note={allExpanded ? 'Collapse all' : 'Expand all'} />}
+            trigger="hover"
+          >
+            <IconButton
+              onClick={allExpanded ? handleCollapseAll : handleExpandAll}
+              aria-label={allExpanded ? 'Collapse all' : 'Expand all'}
+            >
+              {allExpanded ? <CollapseIcon /> : <ExpandAltIcon />}
+            </IconButton>
+          </WithTooltip>
+          <WithTooltip
+            as="div"
+            hasChrome={false}
+            placement="top"
+            tooltip={<TooltipNote note="Rerun the accessibility scan" />}
+            trigger="hover"
+          >
+            <IconButton onClick={handleManual} aria-label="Rerun accessibility scan">
+              <SyncIcon />
+            </IconButton>
+          </WithTooltip>
+        </ActionsWrapper>
       </List>
-      {tabs[activeTab].panel}
+      {tabs.find((t) => t.type === activeTab)?.panel}
     </Container>
   );
 };

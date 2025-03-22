@@ -101,7 +101,7 @@ export const WithLoaders = {
   },
 };
 
-const UserEventSetup = {
+export const UserEventSetup = {
   play: async (context) => {
     const { args, canvasElement, step, userEvent } = context;
     const canvas = within(canvasElement);
@@ -132,4 +132,28 @@ const UserEventSetup = {
   },
 };
 
-export { UserEventSetup };
+/**
+ * Demonstrates the expect.toThrow functionality from issue #28406
+ * https://github.com/storybookjs/storybook/issues/28406
+ *
+ * This tests various forms of throw assertions to ensure they all work correctly.
+ */
+export const ToThrow = {
+  play: async () => {
+    await expect(() => {
+      throw new Error('test error');
+    }).toThrow();
+
+    await expect(() => {
+      throw new Error('specific error');
+    }).toThrowError();
+
+    await expect(() => {
+      throw new Error('specific message');
+    }).toThrow('specific message');
+
+    await expect(() => {
+      // This doesn't throw
+    }).not.toThrow();
+  },
+};

@@ -147,7 +147,7 @@ describe('getIncompatiblePackagesSummary', () => {
     ];
     const summary = getIncompatiblePackagesSummary(analysedPackages, '8.0.0');
     expect(summary).toMatchInlineSnapshot(`
-      "The following packages are incompatible with Storybook 8.0.0 as they depend on different major versions of Storybook packages:
+      "You are currently using Storybook 8.0.0 but you have packages which are incompatible with it:
       - storybook-react@1.0.0
       - @storybook/addon-essentials@7.0.0 (8.0.0 available!)
 

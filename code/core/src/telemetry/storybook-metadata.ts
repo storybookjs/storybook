@@ -6,9 +6,10 @@ import {
   getStorybookInfo,
   loadMainConfig,
   versions,
-} from 'storybook/internal/common';
-import { readConfig } from 'storybook/internal/csf-tools';
-import type { PackageJson, StorybookConfig } from 'storybook/internal/types';
+} from '@storybook/core/common';
+import type { PackageJson, StorybookConfig } from '@storybook/core/types';
+
+import { readConfig } from '@storybook/core/csf-tools';
 
 import { findPackage, findPackagePath } from 'fd-package-json';
 import { detect } from 'package-manager-detector';

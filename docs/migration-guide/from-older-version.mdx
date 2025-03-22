@@ -1,9 +1,11 @@
 ---
-title: 'Migration guide from Storybook 6.x to 8.0'
+title: 'Migration guide from Storybook 7.x to 8.0'
 sidebar:
-  order: 1
-  title: Migrate from 6.x to 8.0
+  order: 13
+  title: Migrate from 7.x to 8.0
 ---
+
+[full-migration-notes]: https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#from-version-7x-to-800
 
 Storybook 8 focuses on improving performance, compatibility, and stability. Key features include:
 
@@ -16,14 +18,18 @@ Storybook 8 focuses on improving performance, compatibility, and stability. Key 
 * ✨ A refreshed desktop UI & mobile UX
 * ➕ Much, much more
 
-This guide is meant to help you **upgrade from Storybook 6.x to 8.0** successfully!
+This guide is meant to help you **upgrade from Storybook 7.x to 8.0** successfully!
+
+<Callout variant="info">
+  **Migrating from Storybook 6.x?**
+  
+  You can reference our [migration guide for Storybook 6 to 8](../../release-8-6/docs/migration-guide/from-older-version.mdx).
+</Callout>
 
 ## Major breaking changes
 
-The rest of this guide will help you upgrade successfully, either automatically or manually. But first, we’ve accumulated a lot of breaking changes in both [Storybook 7](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#70-breaking-changes) and [Storybook 8](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#from-version-7x-to-800). Here are the most impactful changes you should know about before you go further:
+The rest of this guide will help you upgrade successfully, either automatically or manually. But first, there are some [breaking changes][full-migration-notes] in Storybook 8. Here are the most impactful changes you should know about before you go further:
 
-* [`framework` field is now mandatory](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#new-framework-api)
-* [Start and build CLI binaries removed](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#start-storybook--build-storybook-binaries-removed)
 * [`storiesOf` API has been removed](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#removal-of-storiesof-api)
 * [`*.stories.mdx` format has been removed](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#dropping-support-for-storiesmdx-csf-in-mdx-format-and-mdx1-support)
 * [Packages have been consolidated/removed](#package-structure-changes)
@@ -32,8 +38,6 @@ The rest of this guide will help you upgrade successfully, either automatically 
 * [Storyshots has been removed](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storyshots-has-been-removed)
 * [Addons API introduced in Storybook 7 is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#new-addons-api)
 * Ecosystem updates
-  * [Webpack4 support discontinued](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#webpack4-support-discontinued)
-  * [IE11 support discontinued](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#modern-browser-support)
   * [Node 18+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#dropping-support-for-nodejs-16)
   * [Next.js 13.5+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#require-nextjs-135-and-up)
   * [Vue 3+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#require-vue-3-and-up)
@@ -43,9 +47,9 @@ The rest of this guide will help you upgrade successfully, either automatically 
 
 If any of these changes apply to your project, please read through the linked migration notes before continuing.
 
-If any of these new requirements or changes are blockers for your project, we recommend looking at the [requirements to migrate to Storybook 7](../../release-7-6/docs/migration-guide#major-breaking-changes).
+If any of these new requirements or changes are blockers for your project, we recommend to continue using Storybook 7.x.
 
-You may wish to read the full migration notes for [Storybook 6 to 7](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#from-version-65x-to-700) and [Storybook 7 to 8](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#from-version-7x-to-800) before migrating. Or you can follow the instructions below and we’ll try to take care of everything for you!
+You may wish to read the [full migration notes][full-migration-notes] before migrating. Or you can follow the instructions below and we’ll try to take care of everything for you!
 
 ## Automatic upgrade
 
@@ -69,7 +73,7 @@ This will:
 
 ### Common upgrade issues
 
-While we'll do our best to upgrade your project automatically, there are two issues worth mentioning that you might encounter during the upgrade process:
+While we'll do our best to upgrade your project automatically, there is one issue worth mentioning that you might encounter during the upgrade process:
 
 #### `storyStoreV7:false` and `storiesOf`
 
@@ -77,13 +81,61 @@ If you have `storyStoreV7: false` in your `.storybook/main.js`, you will need to
 
 If you are using the `storiesOf` API (which requires `storyStoreV7: false` in Storybook 7), you will need to either [migrate your stories to CSF](../../release-7-6/docs/migration-guide.mdx#storiesof-to-csf) or use the [new indexer API to continue creating stories dynamically](../../release-7-6/docs/migration-guide.mdx#storiesof-to-dynamically-created-stories).
 
-#### MDX 1 to MDX 3
-
-Storybook 8 uses MDX 3. If you're coming from MDX 1 (used by Storybook 6), there were significant breaking changes in MDX 2. Please reference our [guidance on upgrading successfully](../../release-7-6/docs/migration-guide.mdx#upgrade-mdx1-to-mdx2).
-
 #### Missing `vite.config.js` file
 
 If you are using Vite, you may now need to create a `vite.config.js` file in your project root to allow newer versions of Vite to work with Storybook. Additionally, you may need to install and configure a Vite plugin for your framework. More information is available in the [full migration notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#framework-specific-vite-plugins-have-to-be-explicitly-added).
+
+## New projects
+
+To add Storybook to a project that isn’t currently using Storybook:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="create-command.md" />
+
+{/* prettier-ignore-end */}
+
+This will:
+
+1. Figure out which renderer (React, Vue, Angular, Web Components), builder (Webpack, Vite), or meta-framework (Next.js, SvelteKit) you’re using
+2. Install Storybook 8 and auto-configure it to mirror project settings
+
+## Manual migrations
+
+In addition to the automated upgrades above, there are manual migrations that might be required to get Storybook 8 working in your project. We’ve tried to minimize this list to make it easier to upgrade. These include:
+
+### `*.stories.mdx` to MDX+CSF
+
+Storybook now requires that MDX pages reference stories written in CSF, rather than the previous `.stories.mdx` hybrid approach. You can automatically convert your files using the following codemod (make sure to update the glob to fit your files):
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-migrate-mdx-to-csf.md" />
+
+{/* prettier-ignore-end */}
+
+You’ll also need to update your stories glob in `.storybook/main.js` to include the newly created .mdx and .stories.js files if it doesn’t already.
+
+#### Known limitations
+
+* The codemod does not remove the extracted stories from the `.stories.mdx` files. You will need to do this manually.
+
+**Note:** this migration supports the Storybook 6 ["CSF stories with MDX docs"](https://github.com/storybookjs/storybook/blob/6e19f0fe426d58f0f7981a42c3d0b0384fab49b1/code/addons/docs/docs/recipes.md#csf-stories-with-mdx-docs) recipe.
+
+## Troubleshooting
+
+The automatic upgrade should get your Storybook into a working state. If you encounter an error running Storybook after upgrading, here’s what to do:
+
+1. Try running the [`doctor` command](../api/cli-options.mdx#doctor) to check for common issues (such as duplicate dependencies, incompatible addons, or mismatched versions) and see suggestions for fixing them.
+2. If you’re running `storybook` with the `dev` command, try using the `build` command instead. Sometimes `build` errors are more legible than `dev` errors!
+3. Check [the full migration notes][full-migration-notes], which contains an exhaustive list of noteworthy changes in Storybook 8. Many of these are already handled by automigrations when you upgrade, but not all are. It’s also possible that you’re experiencing a corner case that we’re not aware of.
+4. Search [Storybook issues on GitHub](https://github.com/storybookjs/storybook/issues). If you’re seeing a problem, there’s a good chance other people are too. If so, upvote the issue, try out any workarounds described in the comments, and comment back if you have useful info to contribute.
+5. If there’s no existing issue, you can [file one](https://github.com/storybookjs/storybook/issues/new/choose), ideally with a reproduction attached. We’ll be on top of Storybook 8 issues as we’re stabilizing the release.
+
+If you prefer to debug yourself, here are a few useful things you can do to help narrow down the problem:
+
+1. Try removing all addons that are not in the `@storybook` npm namespace (make sure you don't remove the `storybook` package). Community addons that work well with 7.x might not yet be compatible with 8.0, and this is the fastest way to isolate that possibility. If you find an addon that needs to be upgraded to work with Storybook 8, please post an issue on the addon’s repository, or better yet, a pull request to upgrade it!
+2. Another debugging technique is to bisect to older prerelease versions of Storybook to figure out which release broke your Storybook. For example, assuming that the current prerelease of Storybook is `8.0.0-beta.56`, you could set the version to `8.0.0-alpha.0` in your `package.json` and reinstall to verify that it still works (`alpha.0` should be nearly identical to `7.6.x`). If it works, you could then try `8.0.0-beta.0`, then `8.0.0-beta.28` and so forth. Once you’ve isolated the bad release, read through its [CHANGELOG](https://github.com/storybookjs/storybook/blob/next/CHANGELOG.md) entry and perhaps there’s a change that jumps out as the culprit. If you find the problem, please submit an issue or pull request to the Storybook monorepo and we’ll do our best to take care of it quickly.
 
 ## Package structure changes
 
@@ -106,24 +158,9 @@ The following packages are **deprecated**. See the [full migration notes](https:
 | ---------------------------- | ----------------- |
 | `@storybook/testing-library` | `@storybook/test` |
 
-## Troubleshooting
-
-The automatic upgrade should get your Storybook into a working state. If you encounter an error running Storybook after upgrading, here’s what to do:
-
-1. Try running the [`doctor` command](../api/cli-options.mdx#doctor) to check for common issues (such as duplicate dependencies, incompatible addons, or mismatched versions) and see suggestions for fixing them.
-2. If you’re running `storybook` with the `dev` command, try using the `build` command instead. Sometimes `build` errors are more legible than `dev` errors!
-3. Check [the full migration notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#from-version-7x-to-800), which contains an exhaustive list of noteworthy changes in Storybook 8. Many of these are already handled by automigrations when you upgrade, but not all are. It’s also possible that you’re experiencing a corner case that we’re not aware of.
-4. Search [Storybook issues on GitHub](https://github.com/storybookjs/storybook/issues). If you’re seeing a problem, there’s a good chance other people are too. If so, upvote the issue, try out any workarounds described in the comments, and comment back if you have useful info to contribute.
-5. If there’s no existing issue, you can [file one](https://github.com/storybookjs/storybook/issues/new/choose), ideally with a reproduction attached. We’ll be on top of Storybook 8 issues as we’re stabilizing the release.
-
-If you prefer to debug yourself, here are a few useful things you can do to help narrow down the problem:
-
-1. Try removing all addons that are not in the `@storybook` npm namespace (make sure you don't remove the `storybook` package). Community addons that work well with 7.x might not yet be compatible with 8.0, and this is the fastest way to isolate that possibility. If you find an addon that needs to be upgraded to work with Storybook 8, please post an issue on the addon’s repository, or better yet, a pull request to upgrade it!
-2. Another debugging technique is to bisect to older prerelease versions of Storybook to figure out which release broke your Storybook. For example, assuming that the current prerelease of Storybook is `8.0.0-beta.56`, you could set the version to `8.0.0-alpha.0` in your `package.json` and reinstall to verify that it still works (`alpha.0` should be nearly identical to `7.6.x`). If it works, you could then try `8.0.0-beta.0`, then `8.0.0-beta.28` and so forth. Once you’ve isolated the bad release, read through its [CHANGELOG](https://github.com/storybookjs/storybook/blob/next/CHANGELOG.md) entry and perhaps there’s a change that jumps out as the culprit. If you find the problem, please submit an issue or pull request to the Storybook monorepo and we’ll do our best to take care of it quickly.
-
 ## Optional migrations
 
-In addition to the automigrations and manual migrations above, there are also optional migrations that you should consider. These are features that we’ve deprecated in Storybook 7 and 8 (but remain backwards compatible), or best practices that should help you be more productive in the future.
+In addition to the automigrations and manual migrations above, there are also optional migrations that you should consider. These are features that we’ve deprecated in Storybook 8 (but remain backwards compatible), or best practices that should help you be more productive in the future.
 
 ### CSF 2 to CSF 3
 

@@ -1,9 +1,11 @@
 import { existsSync } from 'node:fs';
 
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { JsPackageManager, PackageJsonWithDepsAndDevDeps } from 'storybook/internal/common';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
+
+// eslint-disable-next-line depend/ban-dependencies
+import { $ } from 'execa';
 
 import { makePackageManager } from '../helpers/testing-helpers';
 import { reactNativeConfig } from './react-native-config';
@@ -15,8 +17,14 @@ const mockMainConfig: StorybookConfigRaw = {
 };
 
 vi.mock('node:fs');
+vi.mock('execa');
 
 describe('react-native-config fix', () => {
+  beforeEach(() => {
+    vi.mocked($).mockClear();
+    vi.mocked($).mockResolvedValue({ stdout: '' });
+  });
+
   describe('no-ops', () => {
     it('when @storybook/react-native is not installed', async () => {
       const packageManager = makePackageManager({
@@ -92,6 +100,32 @@ describe('react-native-config fix', () => {
       expect(result).toEqual({
         storybookDir: expect.stringContaining('.storybook'),
         rnStorybookDir: expect.stringContaining('.rnstorybook'),
+        dotStorybookReferences: [],
+      });
+    });
+
+    it('when there are references to .storybook in the project', async () => {
+      vi.mocked($).mockResolvedValue({ stdout: 'a\nb\nc' });
+      const packageManager = makePackageManager({
+        devDependencies: {
+          '@storybook/react-native': '^8.0.0',
+        },
+      });
+
+      // Mock existsSync to return true for .storybook and false for .rnstorybook
+      vi.mocked(existsSync).mockImplementation((path) => path.toString().includes('.storybook'));
+
+      const result = await check({
+        packageManager,
+        mainConfigPath: '.storybook/main.js',
+        mainConfig: mockMainConfig,
+        storybookVersion: '8.0.0',
+      });
+
+      expect(result).toEqual({
+        storybookDir: expect.stringContaining('.storybook'),
+        rnStorybookDir: expect.stringContaining('.rnstorybook'),
+        dotStorybookReferences: ['a', 'b', 'c'],
       });
     });
   });

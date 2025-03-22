@@ -5,6 +5,7 @@ import {
   getStorybookConfiguration,
   getStorybookInfo,
   loadMainConfig,
+  versions
 } from '@storybook/core/common';
 import { readConfig } from '@storybook/core/csf-tools';
 import type { PackageJson, StorybookConfig } from '@storybook/core/types';

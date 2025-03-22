@@ -30,13 +30,12 @@ const getDotStorybookReferences = async () => {
     const { stdout } = await $`git grep -l \\.storybook`;
     return stdout.split('\n').filter(Boolean);
   } catch (error) {
-    console.log('Error getting .storybook references:', error);
     return [];
   }
 };
 
-export const reactNativeConfig: Fix<Options> = {
-  id: 'react-native-config',
+export const rnstorybookConfig: Fix<Options> = {
+  id: 'rnstorybook-config',
 
   versionRange: ['<9.0.0', '>=9.0.0'],
 

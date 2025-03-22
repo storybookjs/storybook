@@ -8,9 +8,9 @@ import type { StorybookConfigRaw } from 'storybook/internal/types';
 import { $ } from 'execa';
 
 import { makePackageManager } from '../helpers/testing-helpers';
-import { reactNativeConfig } from './react-native-config';
+import { rnstorybookConfig } from './rnstorybook-config';
 
-const { check } = reactNativeConfig;
+const { check } = rnstorybookConfig;
 
 const mockMainConfig: StorybookConfigRaw = {
   stories: ['../stories/**/*.stories.@(js|jsx|ts|tsx)'],

@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 import { styled } from 'storybook/internal/theming';
 
@@ -21,64 +22,45 @@ const Container = styled.div({
 
 const getElements = (selectors: string[]): Element[] => {
   const root = document.getElementById('storybook-root');
-  return selectors.flatMap((selector) => {
-    const elements = root?.querySelectorAll(selector) || [];
-    return Array.from(elements).filter((element) => element.id !== 'addon-highlight-container');
-  });
+  return selectors.flatMap((selector) => Array.from(root?.querySelectorAll(selector) || []));
 };
 
-const getBoxes = (elements: Element[]): Map<Element, Box> =>
-  new Map(
-    elements.map((element) => {
-      const { top, left, width, height } = element.getBoundingClientRect();
-      return [element, { top, left, width, height }];
-    })
-  );
-
-const equalBoxes = (a: Box, b?: Box) =>
-  a.top === b?.top && a.left === b?.left && a.width === b?.width && a.height === b?.height;
+const getHighlights = (elements: Element[]): Box[] =>
+  elements.map((element) => {
+    const { top, left, width, height } = element.getBoundingClientRect();
+    return { top, left, width, height };
+  });
 
 export const Highlights = ({ selectors }: { selectors: string[] }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const elementsRef = useRef<Element[]>([]);
+  const [elements, setElements] = useState<Element[]>([]);
+  const [highlights, setHighlights] = useState<Box[]>([]);
 
-  const [boxes, setBoxes] = useState<Map<Element, Box>>(() => getBoxes(getElements(selectors)));
-
-  const observer = useMemo(
-    () =>
-      new ResizeObserver(() => {
-        const updated = getBoxes(elementsRef.current);
-        setBoxes((current) =>
-          current.size === updated.size &&
-          current.entries().every(([element, box]) => equalBoxes(box, updated.get(element)))
-            ? current
-            : updated
-        );
-      }),
-    []
-  );
-
+  // Updates the tracked elements when selectors change or the DOM tree changes
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) {
-      return;
-    }
+    setElements(getElements(selectors));
+    const observer = new MutationObserver(() => {
+      setElements(getElements(selectors));
+    });
+    observer.observe(document.getElementById('storybook-root')!, {
+      subtree: true,
+      childList: true,
+    });
+    return () => observer.disconnect();
+  }, [selectors]);
 
-    const elements = getElements(selectors);
-    elementsRef.current = elements;
-
-    observer.observe(container);
+  // Updates the tracked highlights when elements are resized
+  useEffect(() => {
+    const observer = new ResizeObserver(() => {
+      setHighlights(getHighlights(elements));
+    });
+    observer.observe(document.getElementById('storybook-root')!);
     elements.forEach((element) => observer.observe(element));
+    return () => observer.disconnect();
+  }, [elements]);
 
-    return () => {
-      observer.unobserve(container);
-      elements.forEach((element) => observer.unobserve(element));
-    };
-  }, [observer, selectors]);
-
-  return (
-    <Container id="addon-highlight-container" ref={containerRef}>
-      {Array.from(boxes.values()).map((box) => (
+  return createPortal(
+    <Container id="addon-highlight-container">
+      {Array.from(highlights.values()).map((box) => (
         <div
           key={`${box.top}-${box.left}-${box.width}-${box.height}`}
           style={{
@@ -96,6 +78,7 @@ export const Highlights = ({ selectors }: { selectors: string[] }) => {
           {`x${box.left} y${box.top} w${box.width} h${box.height}`}
         </div>
       ))}
-    </Container>
+    </Container>,
+    document.body
   );
 };

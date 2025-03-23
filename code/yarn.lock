@@ -6598,6 +6598,7 @@ __metadata:
     create-storybook: "workspace:*"
     cross-spawn: "npm:^7.0.3"
     envinfo: "npm:^7.7.3"
+    execa: "npm:^9.5.2"
     fd-package-json: "npm:^1.2.0"
     find-up: "npm:^5.0.0"
     giget: "npm:^1.0.0"

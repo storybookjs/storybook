@@ -6,6 +6,8 @@ import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 // eslint-disable-next-line depend/ban-dependencies
 import { $ } from 'execa';
+// eslint-disable-next-line depend/ban-dependencies
+import { globby } from 'globby';
 
 import { makePackageManager } from '../helpers/testing-helpers';
 import { rnstorybookConfig } from './rnstorybook-config';
@@ -18,11 +20,13 @@ const mockMainConfig: StorybookConfigRaw = {
 
 vi.mock('node:fs');
 vi.mock('execa');
+vi.mock('globby');
 
 describe('react-native-config fix', () => {
   beforeEach(() => {
     vi.mocked($).mockClear();
     vi.mocked($).mockResolvedValue({ stdout: '' });
+    vi.mocked(globby).mockResolvedValue(['storybook.requires.ts']);
   });
 
   describe('no-ops', () => {
@@ -76,6 +80,26 @@ describe('react-native-config fix', () => {
           storybookVersion: '8.0.0',
         })
       ).resolves.toBeNull();
+    });
+
+    it('when @storybook/react-native is installed and .storybook exists but no requires file', async () => {
+      const packageManager = makePackageManager({
+        devDependencies: {
+          '@storybook/react-native': '^8.0.0',
+        },
+      });
+
+      // Mock existsSync to return true for .storybook and false for .rnstorybook
+      vi.mocked(existsSync).mockImplementation((path) => path.toString().includes('.storybook'));
+      vi.mocked(globby).mockResolvedValue([]);
+      const result = await check({
+        packageManager,
+        mainConfigPath: '.storybook/main.js',
+        mainConfig: mockMainConfig,
+        storybookVersion: '8.0.0',
+      });
+
+      expect(result).toBeNull();
     });
   });
 

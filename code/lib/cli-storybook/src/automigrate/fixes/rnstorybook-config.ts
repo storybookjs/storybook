@@ -2,11 +2,16 @@ import { existsSync } from 'node:fs';
 import { readFile, rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { $ } from 'execa';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 import type { Fix } from '../types';
+
+interface Options {
+  dotStorybookReferences: string[];
+  storybookDir: string;
+  rnStorybookDir: string;
+}
 
 /** Replaces all occurrences of a string in a file with another string */
 async function renameInFile(filePath: string, oldText: string, newText: string): Promise<void> {
@@ -19,14 +24,10 @@ async function renameInFile(filePath: string, oldText: string, newText: string):
   }
 }
 
-interface Options {
-  dotStorybookReferences: string[];
-  storybookDir: string;
-  rnStorybookDir: string;
-}
-
 const getDotStorybookReferences = async () => {
   try {
+    // eslint-disable-next-line depend/ban-dependencies
+    const { $ } = await import('execa');
     const { stdout } = await $`git grep -l \\.storybook`;
     return stdout.split('\n').filter(Boolean);
   } catch (error) {
@@ -50,8 +51,12 @@ export const rnstorybookConfig: Fix<Options> = {
     const projectDir = mainConfigPath ? join(mainConfigPath, '..', '..') : process.cwd();
     const storybookDir = join(projectDir, '.storybook');
     const rnStorybookDir = join(projectDir, '.rnstorybook');
+    // eslint-disable-next-line depend/ban-dependencies
+    const { globby } = await import('globby');
 
-    if (existsSync(storybookDir) && !existsSync(rnStorybookDir)) {
+    const requiresFiles = await globby(join(storybookDir, 'storybook.requires.*'));
+
+    if (existsSync(storybookDir) && requiresFiles.length > 0 && !existsSync(rnStorybookDir)) {
       const dotStorybookReferences = await getDotStorybookReferences();
       return { storybookDir, rnStorybookDir, dotStorybookReferences };
     }

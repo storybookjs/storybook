@@ -3,7 +3,7 @@ import type { PartialStoryFn, StoryContext } from 'storybook/internal/types';
 
 import type { ReactRenderer } from '@storybook/react';
 
-import { MINIMAL_VIEWPORTS } from '../../src/viewport';
+import { MINIMAL_VIEWPORTS } from 'storybook/viewport';
 
 declare global {
   interface Window {

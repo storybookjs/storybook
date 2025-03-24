@@ -23,7 +23,6 @@ const INCLUDE_CANDIDATES = [
   '@storybook/addon-essentials/highlight/preview',
   '@storybook/addon-essentials/measure/preview',
   '@storybook/addon-essentials/outline/preview',
-  '@storybook/addon-essentials/viewport/preview',
   '@storybook/addon-highlight/preview',
   '@storybook/addon-interactions/preview',
   '@storybook/addon-links/preview',

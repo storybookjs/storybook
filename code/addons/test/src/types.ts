@@ -35,6 +35,9 @@ export type StoreState = {
   };
   watching: boolean;
   cancelling: boolean;
+  // TODO: Avoid needing to do a fetch request server-side to retrieve the index
+  // e.g. http://localhost:6006/index.json
+  indexUrl: string | undefined;
   fatalError:
     | {
         message: string | undefined;
@@ -63,10 +66,8 @@ export type CachedState = Pick<StoreState, 'config' | 'watching'>;
 
 export type TriggerRunEvent = {
   type: 'TRIGGER_RUN';
-  payload: {
-    // TODO: Avoid needing to do a fetch request server-side to retrieve the index
-    indexUrl: string; // e.g. http://localhost:6006/index.json
-    storyIds?: string[]; // ['button--primary', 'button--secondary']
+  payload?: {
+    storyIds: string[];
   };
 };
 export type CancelRunEvent = {

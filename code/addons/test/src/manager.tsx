@@ -36,8 +36,13 @@ addons.register(ADDON_ID, (api) => {
     testProviderStore.onRunAll(() => {
       store.send({
         type: 'TRIGGER_RUN',
-        payload: { indexUrl: new URL('index.json', window.location.href).toString() },
       });
+    });
+    store.untilReady().then(() => {
+      store.setState((state) => ({
+        ...state,
+        indexUrl: new URL('index.json', window.location.href).toString(),
+      }));
     });
 
     addons.add(TEST_PROVIDER_ID, {
@@ -71,9 +76,6 @@ addons.register(ADDON_ID, (api) => {
                 setModalOpen(false);
                 store.send({
                   type: 'TRIGGER_RUN',
-                  payload: {
-                    indexUrl: new URL('index.json', window.location.href).toString(),
-                  },
                 });
               }}
             />

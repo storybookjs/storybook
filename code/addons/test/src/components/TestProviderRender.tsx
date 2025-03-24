@@ -245,10 +245,13 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                 onClick={() =>
                   store.send({
                     type: 'TRIGGER_RUN',
-                    payload: {
-                      indexUrl: new URL('index.json', window.location.href).toString(),
-                      storyIds: entryId ? api.findAllLeafStoryIds(entryId) : undefined,
-                    },
+                    ...(entryId
+                      ? {
+                          payload: {
+                            storyIds: api.findAllLeafStoryIds(entryId),
+                          },
+                        }
+                      : {}),
                   })
                 }
                 disabled={false}

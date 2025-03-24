@@ -10,7 +10,12 @@ import type {
 } from 'vitest/node';
 
 import { resolvePathInStorybookCache } from 'storybook/internal/common';
-import type { DocsIndexEntry, StoryIndex, StoryIndexEntry } from 'storybook/internal/types';
+import type {
+  DocsIndexEntry,
+  StoryId,
+  StoryIndex,
+  StoryIndexEntry,
+} from 'storybook/internal/types';
 
 import { findUp } from 'find-up';
 import path, { dirname, join, normalize } from 'pathe';
@@ -153,7 +158,13 @@ export class VitestManager {
     });
   }
 
-  private async fetchStories(indexUrl: string, requestStoryIds?: string[]) {
+  private async fetchStories(requestStoryIds?: string[]) {
+    const indexUrl = this.testManager.store.getState().indexUrl;
+    if (!indexUrl) {
+      throw new Error(
+        'Tried to fetch stories to test, but the index URL was not set in the store yet.'
+      );
+    }
     try {
       const index = (await Promise.race([
         fetch(indexUrl).then((res) => res.json()),
@@ -195,9 +206,9 @@ export class VitestManager {
 
     this.resetGlobalTestNamePattern();
 
-    const stories = await this.fetchStories(runPayload.indexUrl, runPayload.storyIds);
+    const stories = await this.fetchStories(runPayload?.storyIds);
     const vitestTestSpecs = await this.getStorybookTestSpecs();
-    const isSingleStoryRun = runPayload.storyIds?.length === 1;
+    const isSingleStoryRun = runPayload?.storyIds.length === 1;
 
     const { filteredTestFiles, totalTestCount } = vitestTestSpecs.reduce(
       (acc, spec) => {
@@ -329,11 +340,26 @@ export class VitestManager {
       }
     }
 
-    if (triggerAffectedTests.length) {
-      await this.vitest.cancelCurrentRun('keyboard-input');
-      await this.runningPromise;
-      await this.vitest!.runTestSpecifications(triggerAffectedTests, false);
-    }
+    const stories = this.testManager.store.getState().indexUrl ? await this.fetchStories() : [];
+
+    const affectedStoryIds = triggerAffectedTests
+      .map((spec) =>
+        stories
+          .filter((story) => join(process.cwd(), story.importPath) === spec.moduleId)
+          .map((story) => story.id)
+      )
+      .flat();
+
+    await this.testManager.runTestsWithState({
+      storyIds: affectedStoryIds,
+      callback: async () => {
+        if (triggerAffectedTests.length) {
+          await this.vitest!.cancelCurrentRun('keyboard-input');
+          await this.runningPromise;
+          await this.vitest!.runTestSpecifications(triggerAffectedTests, false);
+        }
+      },
+    });
   }
 
   async runAffectedTestsAfterChange(file: string) {

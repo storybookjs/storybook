@@ -32,6 +32,7 @@ export const storeOptions = {
     watching: false,
     cancelling: false,
     fatalError: undefined,
+    indexUrl: undefined,
     currentRun: {
       coverage: false,
       a11y: false,

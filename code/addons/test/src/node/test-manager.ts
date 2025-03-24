@@ -117,50 +117,39 @@ export class TestManager {
   }
 
   async handleTriggerRunEvent(event: TriggerRunEvent) {
-    this.componentTestStatusStore.unset(event.payload.storyIds);
-    this.a11yStatusStore.unset(event.payload.storyIds);
+    return this.runTestsWithState({
+      storyIds: event.payload?.storyIds,
+      callback: async () => {
+        try {
+          const state = this.store.getState();
 
-    this.testProviderStore.runWithState(async () => {
-      try {
-        this.store.setState((s) => ({
-          ...s,
-          currentRun: {
-            ...storeOptions.initialState.currentRun,
-            startedAt: Date.now(),
-            storyIds: event.payload.storyIds,
-            coverage: s.config.coverage,
-            a11y: s.config.a11y,
-          },
-        }));
+          /*
+            If we're only running a subset of stories, we have to temporarily disable coverage,
+            as a coverage report for a subset of stories is not useful.
+          */
+          const temporarilyDisableCoverage =
+            state.config.coverage && !state.watching && (event.payload?.storyIds ?? []).length > 0;
+          if (temporarilyDisableCoverage) {
+            await this.vitestManager.restartVitest({
+              coverage: false,
+            });
+          } else {
+            await this.vitestManager.vitestRestartPromise;
+          }
 
-        const state = this.store.getState();
+          await this.vitestManager.runTests(event.payload);
 
-        /*
-        If we're only running a subset of stories, we have to temporarily disable coverage,
-        as a coverage report for a subset of stories is not useful.
-        */
-        const temporarilyDisableCoverage =
-          state.config.coverage && !state.watching && (event.payload.storyIds ?? []).length > 0;
-        if (temporarilyDisableCoverage) {
-          await this.vitestManager.restartVitest({
-            coverage: false,
-          });
-        } else {
-          await this.vitestManager.vitestRestartPromise;
+          const stateAfterRun = this.store.getState();
+
+          if (temporarilyDisableCoverage && stateAfterRun.config.coverage) {
+            // Re-enable coverage if it was temporarily disabled because of a subset of stories was run
+            await this.vitestManager.restartVitest({ coverage: stateAfterRun.config.coverage });
+          }
+        } catch (err) {
+          this.reportFatalError('Failed to run tests', err);
+          throw err;
         }
-
-        await this.vitestManager.runTests(event.payload);
-
-        const stateAfterRun = this.store.getState();
-
-        if (temporarilyDisableCoverage && stateAfterRun.config.coverage) {
-          // Re-enable coverage if it was temporarily disabled because of a subset of stories was run
-          await this.vitestManager.restartVitest({ coverage: stateAfterRun.config.coverage });
-        }
-      } catch (err) {
-        this.reportFatalError('Failed to run tests', err);
-        throw err;
-      }
+      },
     });
   }
 
@@ -179,6 +168,29 @@ export class TestManager {
         cancelling: false,
       }));
     }
+  }
+
+  async runTestsWithState({
+    storyIds,
+    callback,
+  }: {
+    storyIds?: string[];
+    callback: () => Promise<void>;
+  }) {
+    this.componentTestStatusStore.unset(storyIds);
+    this.a11yStatusStore.unset(storyIds);
+
+    this.store.setState((s) => ({
+      ...s,
+      currentRun: {
+        ...storeOptions.initialState.currentRun,
+        startedAt: Date.now(),
+        storyIds: storyIds,
+        coverage: s.config.coverage,
+        a11y: s.config.a11y,
+      },
+    }));
+    return this.testProviderStore.runWithState(callback);
   }
 
   onTestModuleCollected(collectedTestCount: number) {

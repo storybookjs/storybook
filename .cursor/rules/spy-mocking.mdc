@@ -1,5 +1,5 @@
 ---
-description: 
+description: Rules for consistent and type-safe mocking in Vitest tests
 globs: "**/*.test.{ts,tsx,js,jsx}"
 alwaysApply: true
 ---

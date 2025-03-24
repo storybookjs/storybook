@@ -27,7 +27,7 @@ const managerContext: any = {
     getDocsUrl: fn(({ subpath }) => `https://storybook.js.org/docs/${subpath}`).mockName(
       'api::getDocsUrl'
     ),
-    findAllLeafStoryIds: fn().mockName('api::findAllLeafStoryIds'),
+    findAllLeafStoryIds: fn((entryId) => [entryId]),
     selectStory: fn().mockName('api::selectStory'),
     setSelectedPanel: fn().mockName('api::setSelectedPanel'),
     togglePanel: fn().mockName('api::togglePanel'),

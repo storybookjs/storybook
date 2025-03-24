@@ -80,6 +80,15 @@ const StopIcon = styled(StopAltIcon)({
   width: 10,
 });
 
+const openPanel = ({ api, panelId, entryId }: { api: API; panelId: string; entryId?: string }) => {
+  const story = entryId ? api.findAllLeafStoryIds(entryId)[0] : undefined;
+  if (story) {
+    api.selectStory(story);
+  }
+  api.setSelectedPanel(panelId);
+  api.togglePanel(true);
+};
+
 type TestProviderRenderProps = {
   api: API;
   testProviderState: TestProviderState;
@@ -143,23 +152,6 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
             : a11yStatusValueToStoryIds['status-value:success'].length > 0
               ? ['positive', 'Accessibility tests passed']
               : ['unknown', 'Unknown accessibility test status'];
-
-  const firstComponentTestErrorStoryId =
-    componentTestStatusValueToStoryIds['status-value:error'][0];
-  const openComponentTestPanel = useCallback(() => {
-    api.selectStory(firstComponentTestErrorStoryId);
-    api.setSelectedPanel(PANEL_ID);
-    api.togglePanel(true);
-  }, [api, firstComponentTestErrorStoryId]);
-
-  const firstA11yTestFailureStoryId =
-    a11yStatusValueToStoryIds['status-value:error'][0] ??
-    a11yStatusValueToStoryIds['status-value:warning'][0];
-  const openA11yPanel = useCallback(() => {
-    api.selectStory(firstA11yTestFailureStoryId);
-    api.setSelectedPanel(A11Y_PANEL_ID);
-    api.togglePanel(true);
-  }, [api, firstA11yTestFailureStoryId]);
 
   return (
     <Container {...props}>
@@ -291,8 +283,22 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
           >
             <IconButton
               size="medium"
-              disabled={componentTestStatusValueToStoryIds['status-value:error'].length === 0}
-              onClick={openComponentTestPanel}
+              disabled={
+                componentTestStatusValueToStoryIds['status-value:error'].length === 0 &&
+                componentTestStatusValueToStoryIds['status-value:warning'].length === 0 &&
+                componentTestStatusValueToStoryIds['status-value:success'].length === 0
+              }
+              onClick={() => {
+                openPanel({
+                  api,
+                  panelId: PANEL_ID,
+                  entryId:
+                    componentTestStatusValueToStoryIds['status-value:error'][0] ??
+                    componentTestStatusValueToStoryIds['status-value:warning'][0] ??
+                    componentTestStatusValueToStoryIds['status-value:success'][0] ??
+                    entryId,
+                });
+              }}
             >
               <TestStatusIcon
                 status={componentTestStatusIcon}
@@ -403,9 +409,20 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                 size="medium"
                 disabled={
                   a11yStatusValueToStoryIds['status-value:error'].length === 0 &&
-                  a11yStatusValueToStoryIds['status-value:warning'].length === 0
+                  a11yStatusValueToStoryIds['status-value:warning'].length === 0 &&
+                  a11yStatusValueToStoryIds['status-value:success'].length === 0
                 }
-                onClick={openA11yPanel}
+                onClick={() => {
+                  openPanel({
+                    api,
+                    entryId:
+                      a11yStatusValueToStoryIds['status-value:error'][0] ??
+                      a11yStatusValueToStoryIds['status-value:warning'][0] ??
+                      a11yStatusValueToStoryIds['status-value:success'][0] ??
+                      entryId,
+                    panelId: A11Y_PANEL_ID,
+                  });
+                }}
               >
                 <TestStatusIcon status={a11yStatusIcon} aria-label={a11yStatusLabel} />
                 {a11yStatusValueToStoryIds['status-value:error'].length +

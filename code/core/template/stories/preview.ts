@@ -30,6 +30,10 @@ export const parameters = {
     b: 'project',
     c: 'project',
   },
+
+  viewport: {
+    options: MINIMAL_VIEWPORTS,
+  },
 };
 
 export const loaders = [async () => ({ projectValue: 2 })];
@@ -96,9 +100,5 @@ export const globalTypes = {
         { value: 'kr', right: '🇰🇷', title: '한국어' },
       ],
     },
-  },
-
-  viewport: {
-    options: MINIMAL_VIEWPORTS,
   },
 };

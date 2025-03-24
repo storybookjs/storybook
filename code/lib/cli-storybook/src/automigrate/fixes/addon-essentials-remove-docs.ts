@@ -1,4 +1,3 @@
-import { getStorybookVersionSpecifier } from 'storybook/internal/cli';
 import { getAddonNames } from 'storybook/internal/common';
 
 import picocolors from 'picocolors';
@@ -91,7 +90,7 @@ export const addonEssentialsRemoveDocs: Fix<AddonDocsOptions> = {
     `;
   },
 
-  async run({ result, dryRun, packageManager, skipInstall = false, mainConfigPath }) {
+  async run({ result, dryRun, packageManager, mainConfigPath }) {
     const { hasEssentials, hasDocsDisabled, hasDocsAddon } = result;
 
     if (!hasEssentials) {

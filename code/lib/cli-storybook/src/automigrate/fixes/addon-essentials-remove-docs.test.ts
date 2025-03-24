@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getStorybookVersionSpecifier } from 'storybook/internal/cli';
 import type { JsPackageManager, PackageJson } from 'storybook/internal/common';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 

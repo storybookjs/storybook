@@ -109,7 +109,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
     currentRun: { coverageSummary, finishedTestCount },
   } = storeState;
 
-  const isA11yAddon = addons.experimental_getRegisteredAddons().includes(A11Y_ADDON_ID);
+  const hasA11yAddon = addons.experimental_getRegisteredAddons().includes(A11Y_ADDON_ID);
 
   const isRunning = testProviderState === 'test-provider-state:running';
   const isStarting = isRunning && finishedTestCount === 0;
@@ -349,7 +349,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                   </a>
                 </IconButton>
               ) : (
-                <IconButton size="medium">
+                <IconButton size="medium" disabled>
                   <TestStatusIcon
                     status={isRunning && config.coverage ? 'pending' : 'unknown'}
                     aria-label={`Coverage status: unknown`}
@@ -360,7 +360,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
           </Row>
         )}
 
-        {isA11yAddon && (
+        {hasA11yAddon && (
           <Row>
             <ListItem
               as="label"

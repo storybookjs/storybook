@@ -474,9 +474,9 @@ If you addon fails to load after this change, we recommend looking at implementi
 
 ### Docs addon moved out of addon-essentials
 
-Addon docs is now no longer part of addon-essentials, because storybook is moving towards a more customizable & personally optimized approach.
+Addon docs is now no longer part of `@storybook/addon-essentials`, because Storybook is moving towards a more customizable & personally optimized approach.
 
-If you are using addon-docs via addon-essentials, you will need to add addon-docs to your project, by installing it and adding it to your `.storybook/main.ts`'s `addons` field.
+If you are using addon-docs via addon-essentials, you will need to add addon-docs to your project, by installing it and adding it to your `.storybook/main.ts`'s `addons` field; or run this command: `npx storybook add @storybook/addon-docs`.
 
 ### Dropped support for legacy packages
 

@@ -233,10 +233,11 @@ export abstract class JsPackageManager {
       skipInstall?: boolean;
       installAsDevDependencies?: boolean;
       packageJson?: PackageJson;
+      writeOutputToFile?: boolean;
     },
     dependencies: string[]
   ) {
-    const { skipInstall } = options;
+    const { skipInstall, writeOutputToFile = true } = options;
 
     if (skipInstall) {
       const { packageJson } = options;
@@ -261,7 +262,11 @@ export abstract class JsPackageManager {
       await this.writePackageJson(packageJson);
     } else {
       try {
-        await this.runAddDeps(dependencies, Boolean(options.installAsDevDependencies));
+        await this.runAddDeps(
+          dependencies,
+          Boolean(options.installAsDevDependencies),
+          writeOutputToFile
+        );
       } catch (e: any) {
         logger.error('\nAn error occurred while installing dependencies:');
         logger.log(e.message);
@@ -464,7 +469,8 @@ export abstract class JsPackageManager {
 
   protected abstract runAddDeps(
     dependencies: string[],
-    installAsDevDependencies: boolean
+    installAsDevDependencies: boolean,
+    writeOutputToFile?: boolean
   ): Promise<void>;
 
   protected abstract runRemoveDeps(dependencies: string[]): Promise<void>;

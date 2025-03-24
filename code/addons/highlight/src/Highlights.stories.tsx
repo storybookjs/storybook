@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
-import { useArgs } from 'storybook/internal/preview-api';
+import { userEvent } from 'storybook/test';
 
 import preview from '../../../.storybook/preview';
 import { Highlights } from './Highlights';
@@ -11,8 +11,8 @@ const Content = ({ dynamic }: { dynamic: boolean }) => {
     if (!dynamic) {
       return;
     }
-    const timeout = setTimeout(() => setExtra(true), 500);
-    return () => clearTimeout(timeout);
+    const interval = setInterval(() => setExtra((v) => !v), 2000);
+    return () => clearInterval(interval);
   }, [dynamic]);
   return (
     <>
@@ -55,7 +55,7 @@ const Content = ({ dynamic }: { dynamic: boolean }) => {
       </div>
       {extra && (
         <div
-          id="moving"
+          id="extra"
           style={{
             position: 'absolute',
             top: 300,
@@ -107,5 +107,18 @@ export const Dynamic = meta.story({
   args: {
     selectors: ['div'],
     dynamic: true,
+  },
+});
+
+export const Popover = meta.story({
+  args: {
+    selectors: ['div'],
+  },
+  play: async () => {
+    await userEvent.pointer({
+      target: document.getElementById('addon-highlight-container')!,
+      coords: { clientX: 700, clientY: 130 },
+      keys: '[MouseLeft]',
+    });
   },
 });

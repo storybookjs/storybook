@@ -6,12 +6,7 @@ import { SbPage, hasVitestIntegration } from './util';
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
 const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
 
-test.describe('addon-interactions', () => {
-  test.skip(
-    hasVitestIntegration,
-    `Skipping ${templateName}, which does not have addon-interactions set up.`
-  );
-
+test.describe('interactions', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(storybookUrl);
     await new SbPage(page, expect).waitUntilLoaded();
@@ -21,7 +16,7 @@ test.describe('addon-interactions', () => {
     // templateName is e.g. 'vue-cli/default-js'
     test.skip(
       /^(lit)/i.test(`${templateName}`),
-      `Skipping ${templateName}, which does not support addon-interactions`
+      `Skipping ${templateName}, which does not support interactions`
     );
     test.skip(
       templateName.includes('react-native-web'),
@@ -53,7 +48,7 @@ test.describe('addon-interactions', () => {
     // templateName is e.g. 'vue-cli/default-js'
     test.skip(
       /^(lit)/i.test(`${templateName}`),
-      `Skipping ${templateName}, which does not support addon-interactions`
+      `Skipping ${templateName}, which does not support interactions`
     );
     test.skip(
       browserName === 'firefox',
@@ -131,7 +126,7 @@ test.describe('addon-interactions', () => {
   test('should show unhandled errors', async ({ page }) => {
     test.skip(
       /^(lit)/i.test(`${templateName}`),
-      `Skipping ${templateName}, which does not support addon-interactions`
+      `Skipping ${templateName}, which does not support interactions`
     );
     // We trigger the implicit action error here, but angular works a bit different with implicit actions.
     test.skip(/^(angular)/i.test(`${templateName}`));

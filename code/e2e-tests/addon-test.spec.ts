@@ -7,11 +7,6 @@ const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
 const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
 
 test.describe('addon-test', () => {
-  test.skip(
-    !hasVitestIntegration,
-    `Skipping ${templateName}, which does not have addon-test set up.`
-  );
-
   test.beforeEach(async ({ page }) => {
     await page.goto(storybookUrl);
     await new SbPage(page, expect).waitUntilLoaded();

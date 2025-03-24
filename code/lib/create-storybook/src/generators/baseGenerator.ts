@@ -301,11 +301,6 @@ export async function baseGenerator(
     ...extraAddonsToInstall,
   ].filter(Boolean);
 
-  if (hasInteractiveStories(rendererId) && !features.includes('test')) {
-    addons.push('@storybook/addon-interactions');
-    addonPackages.push('@storybook/addon-interactions');
-  }
-
   const packageJson = await packageManager.retrievePackageJson();
   const installedDependencies = new Set(
     Object.keys({ ...packageJson.dependencies, ...packageJson.devDependencies })

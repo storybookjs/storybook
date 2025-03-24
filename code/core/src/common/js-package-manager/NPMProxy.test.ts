@@ -316,23 +316,6 @@ describe('NPM Proxy', () => {
             "unrelated-and-should-be-filtered": {
               "version": "1.0.0"
             },
-            "@storybook/addon-interactions": {
-              "version": "7.0.0-rc.7",
-              "resolved": "https://registry.npmjs.org/@storybook/addon-interactions/-/addon-interactions-7.0.0-rc.7.tgz",
-              "overridden": false,
-              "dependencies": {
-                "@storybook/package": {
-                  "version": "6.0.0",
-                  "resolved": "https://registry.npmjs.org/@storybook/package/-/core-7.0.0-rc.7.tgz",
-                  "overridden": false,
-                  "dependencies": {
-                    "@storybook/channels": {
-                      "version": "7.0.0-rc.7"
-                    }
-                  }
-                }
-              }
-            },
             "@storybook/package": {
               "version": "7.0.0-beta.11",
               "resolved": "https://registry.npmjs.org/@storybook/package/-/core-7.0.0-beta.11.tgz",
@@ -369,12 +352,6 @@ describe('NPM Proxy', () => {
         {
           "dedupeCommand": "npm dedupe",
           "dependencies": {
-            "@storybook/addon-interactions": [
-              {
-                "location": "",
-                "version": "7.0.0-rc.7",
-              },
-            ],
             "@storybook/channels": [
               {
                 "location": "",

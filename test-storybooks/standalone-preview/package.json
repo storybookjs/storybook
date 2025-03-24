@@ -13,7 +13,6 @@
     "@storybook/addon-docs": "file:../../code/addons/docs",
     "@storybook/addon-essentials": "file:../../code/addons/essentials",
     "@storybook/addon-highlight": "file:../../code/addons/highlight",
-    "@storybook/addon-interactions": "file:../../code/addons/interactions",
     "@storybook/addon-jest": "file:../../code/addons/jest",
     "@storybook/addon-links": "file:../../code/addons/links",
     "@storybook/addon-measure": "file:../../code/addons/measure",

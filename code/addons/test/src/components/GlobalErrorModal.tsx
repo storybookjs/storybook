@@ -90,8 +90,6 @@ export function GlobalErrorModal({ onRerun, storeState }: GlobalErrorModalProps)
     currentRun: { unhandledErrors },
   } = storeState;
 
-  console.dir(unhandledErrors, { depth: null });
-
   const content = fatalError ? (
     <>
       <h3>{fatalError.error.name || 'Error'}</h3>

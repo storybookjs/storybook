@@ -289,7 +289,6 @@ export class TestManager {
   }
 
   async reportFatalError(message: string, error: Error | any) {
-    console.dir(error, { depth: null });
     await this.store.untilReady();
     this.store.send({
       type: 'FATAL_ERROR',

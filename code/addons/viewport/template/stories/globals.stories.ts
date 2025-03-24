@@ -51,7 +51,7 @@ export const Shorthand = {
   },
 };
 
-export const NoRationDefined = {
+export const NoRatioDefined = {
   globals: {
     viewport: {
       value: first,

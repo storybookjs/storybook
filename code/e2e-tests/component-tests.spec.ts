@@ -1,22 +1,26 @@
 import { expect, test } from '@playwright/test';
 import process from 'process';
 
-import { SbPage, hasVitestIntegration } from './util';
+import { SbPage } from './util';
 
-const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
+const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:6006';
 const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
 
-test.describe('addon-test', () => {
+test.describe('component tests', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(storybookUrl);
     await new SbPage(page, expect).waitUntilLoaded();
   });
 
-  test('should have interactions', async ({ page }) => {
+  test('should have component tests', async ({ page }) => {
     // templateName is e.g. 'vue-cli/default-js'
     test.skip(
       /^(lit)/i.test(`${templateName}`),
-      `Skipping ${templateName}, which does not support addon-test`
+      `Skipping ${templateName}, which does not support component tests`
+    );
+    test.skip(
+      templateName.includes('react-native-web'),
+      'React Native does not use className locators'
     );
 
     const sbPage = new SbPage(page, expect);
@@ -44,7 +48,7 @@ test.describe('addon-test', () => {
     // templateName is e.g. 'vue-cli/default-js'
     test.skip(
       /^(lit)/i.test(`${templateName}`),
-      `Skipping ${templateName}, which does not support addon-test`
+      `Skipping ${templateName}, which does not support component tests`
     );
     test.skip(
       browserName === 'firefox',
@@ -53,7 +57,7 @@ test.describe('addon-test', () => {
 
     const sbPage = new SbPage(page, expect);
 
-    await sbPage.deepLinkToStory(storybookUrl, 'addons/test/basics', 'type-and-clear');
+    await sbPage.deepLinkToStory(storybookUrl, 'core/component-test-basics', 'type-and-clear');
     await sbPage.viewAddonPanel('Component tests');
 
     // Test initial state - Interactions have run, count is correct and values are as expected
@@ -122,14 +126,14 @@ test.describe('addon-test', () => {
   test('should show unhandled errors', async ({ page }) => {
     test.skip(
       /^(lit)/i.test(`${templateName}`),
-      `Skipping ${templateName}, which does not support addon-test`
+      `Skipping ${templateName}, which does not support interactions`
     );
     // We trigger the implicit action error here, but angular works a bit different with implicit actions.
     test.skip(/^(angular)/i.test(`${templateName}`));
 
     const sbPage = new SbPage(page, expect);
 
-    await sbPage.deepLinkToStory(storybookUrl, 'addons/test/unhandled-errors', 'default');
+    await sbPage.deepLinkToStory(storybookUrl, 'core/component-test-unhandled-errors', 'default');
     await sbPage.viewAddonPanel('Component tests');
 
     const button = sbPage.previewRoot().locator('button');

@@ -30,8 +30,8 @@ test.describe('addon-toolbars', () => {
     // Click on viewport button and select spanish
     await sbPage.navigateToStory('core/toolbars/globals', 'override-locale');
     await expect(sbPage.previewRoot()).toContainText('안녕하세요');
-    const button = sbPage.page.locator('[title="Internationalization locale"]');
 
-    await expect(button).toHaveAttribute('disabled', '');
+    const button = sbPage.page.getByTitle('Internationalization locale');
+    await expect(button).toBeDisabled();
   });
 });

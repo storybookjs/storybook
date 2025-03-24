@@ -1,10 +1,10 @@
 <h1>Migration</h1>
 
 - [From version 8.x to 9.0.0](#from-version-8x-to-900)
-  - [Addon Toolbars is now part of the core](#addon-toolbars-is-now-part-of-the-core)
-  - [Addon Controls is now part of the core](#addon-controls-is-now-part-of-the-core)
+  - [Addon Viewport is moved to core](#addon-viewport-is-moved-to-core)
+  - [Addon Controls is moved to core](#addon-controls-is-moved-to-core)
+  - [Addon Actions is moved to core](#addon-actions-is-moved-to-core)
   - [Actions addon moved to core](#actions-addon-moved-to-core)
-  - [Viewport addon moved to core](#viewport-addon-moved-to-core)
   - [Addon viewport and addon backgrounds synchronized configuration and use globals](#addon-viewport-and-addon-backgrounds-synchronized-configuration-and-use-globals)
   - [Manager builder removed alias for `util`, `assert` and `process`](#manager-builder-removed-alias-for-util-assert-and-process)
   - [Docs addon moved out of addon-essentials](#docs-addon-moved-out-of-addon-essentials)
@@ -14,41 +14,6 @@
   - [Experimental Status API has turned into a Status Store](#experimental-status-api-has-turned-into-a-status-store)
 - [From version 8.5.x to 8.6.x](#from-version-85x-to-86x)
   - [Angular: Support experimental zoneless support](#angular-support-experimental-zoneless-support)
-  - [Addon-a11y: Replaced experimental `ally-test` tag behavior with `parameters.a11y.test`](#addon-a11y-replaced-experimental-ally-test-tag-behavior-with-parametersa11ytest)
-- [From version 8.4.x to 8.5.x](#from-version-84x-to-85x)
-  - [React Vite: react-docgen-typescript is updated](#react-vite-react-docgen-typescript-is-updated)
-  - [Introducing features.developmentModeForBuild](#introducing-featuresdevelopmentmodeforbuild)
-  - [Added source code panel to docs](#added-source-code-panel-to-docs)
-  - [Addon-a11y: Component test integration](#addon-a11y-component-test-integration)
-  - [Addon-a11y: Changing the default element selector](#addon-a11y-changing-the-default-element-selector)
-  - [Addon-a11y: Deprecated `parameters.a11y.manual`](#addon-a11y-deprecated-parametersa11ymanual)
-  - [Addon-test: You should no longer copy the content of `viteFinal` to your configuration](#addon-test-you-should-no-longer-copy-the-content-of-vitefinal-to-your-configuration)
-  - [Addon-test: Indexing behavior of @storybook/experimental-addon-test is changed](#addon-test-indexing-behavior-of-storybookexperimental-addon-test-is-changed)
-- [From version 8.2.x to 8.3.x](#from-version-82x-to-83x)
-  - [Removed `experimental_SIDEBAR_BOTTOM` and deprecated `experimental_SIDEBAR_TOP` addon types](#removed-experimental_sidebar_bottom-and-deprecated-experimental_sidebar_top-addon-types)
-  - [New parameters format for addon backgrounds](#new-parameters-format-for-addon-backgrounds)
-  - [New parameters format for addon viewport](#new-parameters-format-for-addon-viewport)
-- [From version 8.1.x to 8.2.x](#from-version-81x-to-82x)
-  - [Failed to resolve import "@storybook/X" error](#failed-to-resolve-import-storybookx-error)
-  - [Preview.js globals renamed to initialGlobals](#previewjs-globals-renamed-to-initialglobals)
-- [From version 8.0.x to 8.1.x](#from-version-80x-to-81x)
-  - [Portable stories](#portable-stories)
-    - [@storybook/nextjs requires specific path aliases to be setup](#storybooknextjs-requires-specific-path-aliases-to-be-setup)
-  - [main.js `docs.autodocs` is deprecated](#mainjs-docsautodocs-is-deprecated)
-  - [`docs` and `story` system tags removed](#docs-and-story-system-tags-removed)
-  - [Subtitle block and `parameters.componentSubtitle`](#subtitle-block-and-parameterscomponentsubtitle)
-  - [Title block `of` prop](#title-block-of-prop)
-- [From version 7.x to 8.0.0](#from-version-7x-to-800)
-  - [Portable stories](#portable-stories-1)
-    - [Project annotations are now merged instead of overwritten in composeStory](#project-annotations-are-now-merged-instead-of-overwritten-in-composestory)
-    - [Type change in `composeStories` API](#type-change-in-composestories-api)
-    - [Composed Vue stories are now components instead of functions](#composed-vue-stories-are-now-components-instead-of-functions)
-  - [Tab addons are now routed to a query parameter](#tab-addons-are-now-routed-to-a-query-parameter)
-  - [Default keyboard shortcuts changed](#default-keyboard-shortcuts-changed)
-  - [Manager addons are now rendered with React 18](#manager-addons-are-now-rendered-with-react-18)
-  - [Removal of `storiesOf`-API](#removal-of-storiesof-api)
-  - [Removed deprecated shim packages](#removed-deprecated-shim-packages)
-  - [Deprecated `@storybook/testing-library` package](#deprecated-storybooktesting-library-package)
   - [Framework-specific Vite plugins have to be explicitly added](#framework-specific-vite-plugins-have-to-be-explicitly-added)
     - [For React:](#for-react)
     - [For Vue:](#for-vue)
@@ -442,6 +407,153 @@
   - [Webpack upgrade](#webpack-upgrade)
   - [Packages renaming](#packages-renaming)
   - [Deprecated embedded addons](#deprecated-embedded-addons)
+
+## From version 8.x to 9.0.0
+
+### Addon Viewport is moved to core
+
+The viewport addon has been moved from `@storybook/addon-viewport` to Storybook core. You no longer need to install it separately or include it in your addons list. As a consequence, `@storybook/addon-viewport` is not part of `@storybook/addon-essentials` anymore.
+
+### Addon Controls is moved to core
+
+The controls addon has been moved from `@storybook/addon-controls` to Storybook core. You no longer need to install it separately or include it in your addons list. As a consequence, `@storybook/addon-controls` is not part of `@storybook/addon-essentials` anymore.
+
+### Addon Actions is moved to core
+
+The actions addon has been moved from `@storybook/addon-actions` to Storybook core. You no longer need to install it separately or include it in your addons list. As a consequence, `@storybook/addon-actions` is not part of `@storybook/addon-essentials` anymore.
+
+Furthermore, we have deprecated the usage of `withActions` from `@storybook/addon-actions` and we will remove it in Storybook v10. Please file an issue if you need this API.
+
+### Actions addon moved to core
+
+The actions addon has been moved from `@storybook/addon-actions` to Storybook core. You no longer need to install it separately or include it in your addons list. As a consequence, `@storybook/addon-actions` is not part of `@storybook/addon-essentials` anymore.
+
+Furthermore, we have deprecated the usage of `withActions` from `@storybook/addon-actions` and we will remove it in Storybook v10. Please file an issue if you need this API.
+
+### Addon viewport and addon backgrounds synchronized configuration and use globals
+
+The feature flags: `viewportStoryGlobals` and `backgroundsStoryGlobals` have been removed, please remove these from your `.storybook/main.ts` file.
+
+See here for the ways you have to configure addon viewports & backgrounds:
+
+- [New parameters format for addon backgrounds](#new-parameters-format-for-addon-backgrounds)
+- [New parameters format for addon viewport](#new-parameters-format-for-addon-viewport)
+
+### Manager builder removed alias for `util`, `assert` and `process`
+
+These dependencies (often used accidentally) were polyfilled to mocks or browser equivalents by storybook's manager builder.
+
+Starting with Storybook `9.0`, we no longer alias these anymore.
+
+Adding these aliases meant storybook core, had to depend on these packages, which have a deep dependency graph, added to every storybook project.
+
+If you addon fails to load after this change, we recommend looking at implementing the alias at compile time of your addon, or alternatively look at other bundling config to ensure the correct entries/packages/dependencies are used.
+
+### Docs addon moved out of addon-essentials
+
+Addon docs is now no longer part of addon-essentials, because storybook is moving towards a more customizable & personally optimized approach.
+
+If you are using addon-docs via addon-essentials, you will need to add addon-docs to your project, by installing it and adding it to your `.storybook/main.ts`'s `addons` field.
+
+### Dropped support for legacy packages
+
+The following packages are no longer published as part of `9.0.0`:
+The following packages have been consolidated into the main `storybook` package:
+
+| Old Package              | New Path              |
+| ------------------------ | --------------------- |
+| @storybook/manager-api   | storybook/manager-api |
+| @storybook/preview-api   | storybook/preview-api |
+| @storybook/theming       | storybook/theming     |
+| @storybook/test          | storybook/test        |
+| @storybook/addon-actions | storybook/actions     |
+
+Please un-install these packages, and ensure you have the `storybook` package installed.
+
+Replace any imports with the path listed in the second column.
+
+Additionally the following packages were also consolidated and placed under a `/internal` sub-path, to indicate they are for internal usage only.
+If you're depending on these packages, they will continue to work for `9.0`, but they will likely be removed in `10.0`.
+
+| Old Package                | New Path                           |
+| -------------------------- | ---------------------------------- |
+| @storybook/channels        | storybook/internal/channels        |
+| @storybook/client-logger   | storybook/internal/client-logger   |
+| @storybook/core-common     | storybook/internal/common          |
+| @storybook/core-events     | storybook/internal/core-events     |
+| @storybook/csf-tools       | storybook/internal/csf-tools       |
+| @storybook/docs-tools      | storybook/internal/docs-tools      |
+| @storybook/node-logger     | storybook/internal/node-logger     |
+| @storybook/router          | storybook/internal/router          |
+| @storybook/telemetry       | storybook/internal/telemetry       |
+| @storybook/types           | storybook/internal/types           |
+| @storybook/manager         | storybook/internal/manager         |
+| @storybook/preview         | storybook/internal/preview         |
+| @storybook/core-server     | storybook/internal/core-server     |
+| @storybook/builder-manager | storybook/internal/builder-manager |
+| @storybook/components      | storybook/internal/components      |
+
+Addon authors may continue to use the internal packages, there is currently not yet any replacement.
+
+### Dropped support for TypeScript < 4.9
+
+Storybook now requires TypeScript 4.9 or later. If you're using an older version of TypeScript, you'll need to upgrade to continue using Storybook.
+
+### Test addon renamed from experimental to stable
+
+In Storybook 9.0, we've officially stabilized the Test addon. The package has been renamed from `@storybook/experimental-addon-test` to `@storybook/addon-test`, reflecting its production-ready status. If you were using the experimental addon, you'll need to update your dependencies and imports:
+
+```diff
+- npm install --save-dev @storybook/experimental-addon-test
++ npm install --save-dev @storybook/addon-test
+```
+
+Update your imports in any custom configuration or test files:
+
+```diff
+- import { ... } from '@storybook/experimental-addon-test';
++ import { ... } from '@storybook/addon-test';
+```
+
+If you're using the addon in your Storybook configuration, update your `.storybook/main.js` or `.storybook/main.ts`:
+
+```diff
+export default {
+  addons: [
+-   '@storybook/experimental-addon-test',
++   '@storybook/addon-test',
+  ],
+};
+```
+
+The public API remains the same, so no additional changes should be needed in your test files or configuration.
+
+### Experimental Status API has turned into a Status Store
+
+The experimental status API previously available at `api.experimental_updateStatus` and `api.getCurrentStoryStatus` has changed, to a store that works both on the server, in the manager and in the preview.
+
+You can use the new Status Store by importing `experimental_getStatusStore` from either `storybook/internal/core-server`, `storybook/manager-api` or `storybook/preview-api`:
+
+```diff
++ import { experimental_getStatusStore } from 'storybook/manager-api';
++ import { StatusValue } from 'storybook/internal/types';
+
++ const myStatusStore = experimental_getStatusStore(MY_ADDON_ID);
+
+addons.register(MY_ADDON_ID, (api) => {
+-  api.experimental_updateStatus({
+-    someStoryId: {
+-      status: 'success',
+-       title: 'Component tests',
+-       description: 'Works!',
+-    }
+-  });
++  myStatusStore.set([{
++    value: StatusValue.SUCCESS
++    title: 'Component tests',
++    description: 'Works!',
++  }]);
+```
 
 ## From version 8.5.x to 8.6.x
 

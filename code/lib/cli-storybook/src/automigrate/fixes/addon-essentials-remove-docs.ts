@@ -1,6 +1,7 @@
 import { getStorybookVersionSpecifier } from 'storybook/internal/cli';
 import { getAddonNames } from 'storybook/internal/common';
 
+import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 import { updateMainConfig } from '../helpers/mainConfigFile';
@@ -75,18 +76,18 @@ export const addonEssentialsRemoveDocs: Fix<AddonDocsOptions> = {
   prompt({ hasDocsDisabled }) {
     if (hasDocsDisabled) {
       return dedent`
-        We've detected that you have @storybook/addon-essentials with docs disabled.
+        We've detected that you have ${picocolors.yellow('@storybook/addon-essentials')} with docs disabled.
         
-        @storybook/addon-docs has been removed from @storybook/addon-essentials.
+        ${picocolors.yellow('@storybook/addon-docs')} has been removed from ${picocolors.yellow('@storybook/addon-essentials')}.
         We'll remove the docs disabling configuration since it's no longer needed.
       `;
     }
 
     return dedent`
-      We've detected that you have @storybook/addon-essentials with docs enabled.
+      We've detected that you have ${picocolors.yellow('@storybook/addon-essentials')} with docs enabled.
       
-      @storybook/addon-docs has been removed from @storybook/addon-essentials.
-      We'll install @storybook/addon-docs separately and add it to your configuration.
+      ${picocolors.yellow('@storybook/addon-docs')} has been removed from ${picocolors.yellow('@storybook/addon-essentials')}.
+      We'll install ${picocolors.yellow('@storybook/addon-docs')} separately and add it to your configuration.
     `;
   },
 

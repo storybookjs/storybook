@@ -1,3 +1,15 @@
+# v1.1.3 (Mon Mar 24 2025)
+
+#### 🐛 Bug Fix
+
+- Fix: Add missing react aliases [#35](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/35) ([@kasperpeulen](https://github.com/kasperpeulen))
+
+#### Authors: 1
+
+- Kasper Peulen ([@kasperpeulen](https://github.com/kasperpeulen))
+
+---
+
 # v1.1.2 (Mon Mar 03 2025)
 
 #### 🐛 Bug Fix

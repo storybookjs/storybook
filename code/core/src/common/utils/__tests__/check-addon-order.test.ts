@@ -47,8 +47,6 @@ afterEach(() => {
 describe.each([
   ['docs', 'controls', ['docs', 'controls']],
   ['docs', 'controls', ['docs', 'foo/node_modules/@storybook/addon-controls']],
-  ['actions', 'interactions', ['foo\\node_modules\\@storybook\\addon-essentials']],
-  ['actions', 'interactions', ['foo\\\\node_modules\\\\@storybook\\\\addon-essentials']],
   ['docs', 'controls', [{ name: '@storybook/addon-docs' }, 'controls']],
   ['docs', 'controls', ['essentials', 'controls']],
   ['docs', 'controls', ['essentials']],

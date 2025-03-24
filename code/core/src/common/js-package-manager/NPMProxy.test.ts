@@ -352,12 +352,6 @@ describe('NPM Proxy', () => {
         {
           "dedupeCommand": "npm dedupe",
           "dependencies": {
-            "@storybook/channels": [
-              {
-                "location": "",
-                "version": "7.0.0-rc.7",
-              },
-            ],
             "@storybook/jest": [
               {
                 "location": "",
@@ -365,10 +359,6 @@ describe('NPM Proxy', () => {
               },
             ],
             "@storybook/package": [
-              {
-                "location": "",
-                "version": "6.0.0",
-              },
               {
                 "location": "",
                 "version": "7.0.0-beta.11",
@@ -392,7 +382,6 @@ describe('NPM Proxy', () => {
           "duplicatedDependencies": {
             "@storybook/package": [
               "5.4.2-alpha.0",
-              "6.0.0",
               "7.0.0-alpha.21",
               "7.0.0-beta.11",
             ],

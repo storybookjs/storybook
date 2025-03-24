@@ -68,12 +68,7 @@ export class TestManager {
 
     this.store.subscribe('TRIGGER_RUN', this.handleTriggerRunEvent.bind(this));
     this.store.subscribe('CANCEL_RUN', this.handleCancelEvent.bind(this));
-    this.store.subscribe('TOGGLE_WATCHING', this.handleToggleWatchingEvent.bind(this));
-    this.store.onStateChange((state, previousState) => {
-      if (!isEqual(state.config, previousState.config)) {
-        this.handleConfigChange(state, previousState);
-      }
-    });
+    this.store.onStateChange(this.handleConfigChange.bind(this));
 
     this.store
       .untilReady()
@@ -83,37 +78,8 @@ export class TestManager {
       .then(() => this.onReady?.());
   }
 
-  async handleConfigChange(state: StoreState, previousState: StoreState) {
+  async handleConfigChange(state: StoreState) {
     process.env.VITEST_STORYBOOK_CONFIG = JSON.stringify(state.config);
-
-    // Only restart vitest if we're not watching and the coverage configuration has changed
-    if (state.config.coverage !== previousState.config.coverage && !state.watching) {
-      try {
-        await this.vitestManager.restartVitest({
-          coverage: state.config.coverage,
-        });
-      } catch (err) {
-        this.reportFatalError('Failed to change coverage configuration', err);
-      }
-    }
-  }
-
-  async handleToggleWatchingEvent(event: ToggleWatchingEvent) {
-    const coverage = this.store.getState().config.coverage;
-
-    if (coverage) {
-      try {
-        if (event.payload.to) {
-          // if watch mode is toggled on and coverage is already enabled, restart vitest without coverage to automatically disable it
-          await this.vitestManager.restartVitest({ coverage: false });
-        } else {
-          // if watch mode is toggled off and coverage is already enabled, restart vitest with coverage to automatically re-enable it
-          await this.vitestManager.restartVitest({ coverage });
-        }
-      } catch (err) {
-        this.reportFatalError('Failed to change watch mode while coverage was enabled', err);
-      }
-    }
   }
 
   async handleTriggerRunEvent(event: TriggerRunEvent) {
@@ -121,30 +87,8 @@ export class TestManager {
       storyIds: event.payload?.storyIds,
       callback: async () => {
         try {
-          const state = this.store.getState();
-
-          /*
-            If we're only running a subset of stories, we have to temporarily disable coverage,
-            as a coverage report for a subset of stories is not useful.
-          */
-          const temporarilyDisableCoverage =
-            state.config.coverage && !state.watching && (event.payload?.storyIds ?? []).length > 0;
-          if (temporarilyDisableCoverage) {
-            await this.vitestManager.restartVitest({
-              coverage: false,
-            });
-          } else {
-            await this.vitestManager.vitestRestartPromise;
-          }
-
+          await this.vitestManager.vitestRestartPromise;
           await this.vitestManager.runTests(event.payload);
-
-          const stateAfterRun = this.store.getState();
-
-          if (temporarilyDisableCoverage && stateAfterRun.config.coverage) {
-            // Re-enable coverage if it was temporarily disabled because of a subset of stories was run
-            await this.vitestManager.restartVitest({ coverage: stateAfterRun.config.coverage });
-          }
         } catch (err) {
           this.reportFatalError('Failed to run tests', err);
           throw err;

@@ -198,8 +198,16 @@ export class VitestManager {
   }
 
   async runTests(runPayload: TriggerRunEvent['payload']) {
+    const { watching, config } = this.testManager.store.getState();
+    const coverageShouldBeEnabled =
+      config.coverage && !watching && (runPayload?.storyIds?.length ?? 0) === 0;
+    const currentCoverage = this.vitest?.config.coverage?.enabled;
+
     if (!this.vitest) {
-      await this.startVitest();
+      await this.startVitest({ coverage: coverageShouldBeEnabled });
+    } else if (currentCoverage !== coverageShouldBeEnabled) {
+      await this.vitestRestartPromise;
+      await this.restartVitest({ coverage: coverageShouldBeEnabled });
     } else {
       await this.vitestRestartPromise;
     }

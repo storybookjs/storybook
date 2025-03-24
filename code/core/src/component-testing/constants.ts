@@ -1,4 +1,4 @@
-export const ADDON_ID = 'storybook/interactions';
+export const ADDON_ID = 'storybook/component-tests';
 export const PANEL_ID = `${ADDON_ID}/panel`;
 
 export const DOCUMENTATION_LINK = 'writing-tests/test-addon';

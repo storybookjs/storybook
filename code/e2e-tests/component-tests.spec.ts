@@ -31,7 +31,7 @@ test.describe('component tests', () => {
     const welcome = sbPage.previewRoot().locator('.welcome');
     await expect(welcome).toContainText('Welcome, Jane Doe!', { timeout: 50000 });
 
-    const interactionsTab = page.locator('#tabbutton-storybook-test-panel');
+    const interactionsTab = page.locator('#tabbutton-storybook-component-tests-panel');
     await expect(interactionsTab).toContainText(/(\d)/);
     await expect(interactionsTab).toBeVisible();
 
@@ -64,7 +64,7 @@ test.describe('component tests', () => {
     const formInput = sbPage.previewRoot().locator('#interaction-test-form input');
     await expect(formInput).toHaveValue('final value', { timeout: 50000 });
 
-    const interactionsTab = page.locator('#tabbutton-storybook-test-panel');
+    const interactionsTab = page.locator('#tabbutton-storybook-component-tests-panel');
     await expect(interactionsTab.getByText('3')).toBeVisible();
     await expect(interactionsTab).toBeVisible();
     await expect(interactionsTab).toBeVisible();

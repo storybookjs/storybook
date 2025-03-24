@@ -32,7 +32,6 @@ export default defineConfig([
       "@storybook/test-runner",
       "@storybook/nextjs",
       "react",
-      "sharp",
       "next",
     ],
   },

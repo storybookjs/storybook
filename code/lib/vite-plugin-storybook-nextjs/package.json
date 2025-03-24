@@ -1,6 +1,6 @@
 {
   "name": "vite-plugin-storybook-nextjs",
-  "version": "1.1.1",
+  "version": "1.1.3",
   "description": "",
   "keywords": [
     "vite-plugin",
@@ -76,7 +76,6 @@
     "react": "19.0.0-rc-66855b96-20241106",
     "rollup": "^4.18.0",
     "semver": "^7.6.3",
-    "sharp": "^0.33.4",
     "storybook": "0.0.0-pr-30742-sha-cd7cb3d8",
     "tsup": "^8.1.0",
     "typescript": "^5.0.0",
@@ -86,13 +85,10 @@
   "packageManager": "pnpm@9.4.0",
   "dependencies": {
     "@next/env": "^15.0.3",
-    "image-size": "^1.1.1",
+    "image-size": "^2.0.0",
     "magic-string": "^0.30.11",
     "module-alias": "^2.2.3",
     "ts-dedent": "^2.2.0"
-  },
-  "optionalDependencies": {
-    "sharp": "^0.33.4"
   },
   "publishConfig": {
     "access": "public"

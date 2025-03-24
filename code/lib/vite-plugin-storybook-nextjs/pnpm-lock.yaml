@@ -15,8 +15,8 @@ importers:
         specifier: ^15.0.3
         version: 15.2.1
       image-size:
-        specifier: ^1.1.1
-        version: 1.2.0
+        specifier: ^2.0.0
+        version: 2.0.0
       magic-string:
         specifier: ^0.30.11
         version: 0.30.17
@@ -26,10 +26,6 @@ importers:
       ts-dedent:
         specifier: ^2.2.0
         version: 2.2.0
-    optionalDependencies:
-      sharp:
-        specifier: ^0.33.4
-        version: 0.33.5
     devDependencies:
       '@biomejs/biome':
         specifier: 1.8.1
@@ -103,7 +99,7 @@ importers:
         version: 0.0.0-pr-30742-sha-cd7cb3d8(@types/react@18.3.18)(storybook@0.0.0-pr-30742-sha-cd7cb3d8)
       '@storybook/addon-test':
         specifier: 0.0.0-pr-30742-sha-cd7cb3d8
-        version: 0.0.0-pr-30742-sha-cd7cb3d8(@vitest/browser@2.1.9)(@vitest/runner@2.1.9)(react-dom@19.0.0-rc-66855b96-20241106(react@19.0.0-rc-66855b96-20241106))(react@19.0.0-rc-66855b96-20241106)(storybook@0.0.0-pr-30742-sha-cd7cb3d8)(vitest@2.1.9)
+        version: 0.0.0-pr-30742-sha-cd7cb3d8(@vitest/browser@2.1.9(@types/node@20.17.23)(playwright@1.50.1)(typescript@5.8.2)(vite@5.4.14(@types/node@20.17.23)(terser@5.39.0))(vitest@2.1.9))(@vitest/runner@2.1.9)(react-dom@19.0.0-rc-66855b96-20241106(react@19.0.0-rc-66855b96-20241106))(react@19.0.0-rc-66855b96-20241106)(storybook@0.0.0-pr-30742-sha-cd7cb3d8)(vitest@2.1.9(@types/node@20.17.23)(@vitest/browser@2.1.9)(happy-dom@14.12.3)(jsdom@24.1.3)(msw@2.7.3(@types/node@20.17.23)(typescript@5.8.2))(terser@5.39.0))
       '@storybook/addon-toolbars':
         specifier: 0.0.0-pr-30742-sha-cd7cb3d8
         version: 0.0.0-pr-30742-sha-cd7cb3d8(storybook@0.0.0-pr-30742-sha-cd7cb3d8)
@@ -3260,6 +3256,11 @@ packages:
 
   image-size@1.2.0:
     resolution: {integrity: sha512-4S8fwbO6w3GeCVN6OPtA9I5IGKkcDMPcKndtUlpJuCwu7JLjtj7JZpwqLuyY2nrmQT3AWsCJLSKPsc2mPBSl3w==, tarball: https://registry.npmjs.org/image-size/-/image-size-1.2.0.tgz}
+    engines: {node: '>=16.x'}
+    hasBin: true
+
+  image-size@2.0.0:
+    resolution: {integrity: sha512-HP07n1SpdIXGUL4VotUIOQz66MQOq8g7VN+Yj02YTVowqZScQ5i/JYU0+lkNr2pwt5j4hOpk94/UBV1ZCbS2fA==}
     engines: {node: '>=16.x'}
     hasBin: true
 
@@ -6852,7 +6853,7 @@ snapshots:
       storybook: 0.0.0-pr-30742-sha-cd7cb3d8
       ts-dedent: 2.2.0
 
-  '@storybook/addon-test@0.0.0-pr-30742-sha-cd7cb3d8(@vitest/browser@2.1.9)(@vitest/runner@2.1.9)(react-dom@19.0.0-rc-66855b96-20241106(react@19.0.0-rc-66855b96-20241106))(react@19.0.0-rc-66855b96-20241106)(storybook@0.0.0-pr-30742-sha-cd7cb3d8)(vitest@2.1.9)':
+  '@storybook/addon-test@0.0.0-pr-30742-sha-cd7cb3d8(@vitest/browser@2.1.9(@types/node@20.17.23)(playwright@1.50.1)(typescript@5.8.2)(vite@5.4.14(@types/node@20.17.23)(terser@5.39.0))(vitest@2.1.9))(@vitest/runner@2.1.9)(react-dom@19.0.0-rc-66855b96-20241106(react@19.0.0-rc-66855b96-20241106))(react@19.0.0-rc-66855b96-20241106)(storybook@0.0.0-pr-30742-sha-cd7cb3d8)(vitest@2.1.9(@types/node@20.17.23)(@vitest/browser@2.1.9)(happy-dom@14.12.3)(jsdom@24.1.3)(msw@2.7.3(@types/node@20.17.23)(typescript@5.8.2))(terser@5.39.0))':
     dependencies:
       '@storybook/global': 5.0.0
       '@storybook/icons': 1.3.2(react-dom@19.0.0-rc-66855b96-20241106(react@19.0.0-rc-66855b96-20241106))(react@19.0.0-rc-66855b96-20241106)
@@ -7260,7 +7261,7 @@ snapshots:
 
   '@types/uuid@9.0.8': {}
 
-  '@vitest/browser@2.1.9(@types/node@18.19.79)(playwright@1.50.1)(typescript@5.8.2)(vite@5.4.14(@types/node@18.19.79)(terser@5.39.0))(vitest@2.1.9)':
+  '@vitest/browser@2.1.9(@types/node@18.19.79)(typescript@5.8.2)(vite@5.4.14(@types/node@18.19.79)(terser@5.39.0))(vitest@2.1.9)':
     dependencies:
       '@testing-library/dom': 10.4.0
       '@testing-library/user-event': 14.6.1(@testing-library/dom@10.4.0)
@@ -7272,8 +7273,6 @@ snapshots:
       tinyrainbow: 1.2.0
       vitest: 2.1.9(@types/node@18.19.79)(@vitest/browser@2.1.9)(happy-dom@14.12.3)(jsdom@24.1.3)(msw@2.7.3(@types/node@18.19.79)(typescript@5.8.2))(terser@5.39.0)
       ws: 8.18.1
-    optionalDependencies:
-      playwright: 1.50.1
     transitivePeerDependencies:
       - '@types/node'
       - bufferutil
@@ -8783,6 +8782,8 @@ snapshots:
   image-size@1.2.0:
     dependencies:
       queue: 6.0.2
+
+  image-size@2.0.0: {}
 
   import-cwd@3.0.0:
     dependencies:
@@ -10707,7 +10708,7 @@ snapshots:
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 18.19.79
-      '@vitest/browser': 2.1.9(@types/node@18.19.79)(playwright@1.50.1)(typescript@5.8.2)(vite@5.4.14(@types/node@18.19.79)(terser@5.39.0))(vitest@2.1.9)
+      '@vitest/browser': 2.1.9(@types/node@18.19.79)(typescript@5.8.2)(vite@5.4.14(@types/node@18.19.79)(terser@5.39.0))(vitest@2.1.9)
       happy-dom: 14.12.3
       jsdom: 24.1.3
     transitivePeerDependencies:

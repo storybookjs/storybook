@@ -25,6 +25,7 @@ vi.mock('globby');
 describe('react-native-config fix', () => {
   beforeEach(() => {
     vi.mocked($).mockClear();
+    // @ts-expect-error blah
     vi.mocked($).mockResolvedValue({ stdout: '' });
     vi.mocked(globby).mockResolvedValue(['storybook.requires.ts']);
   });
@@ -129,6 +130,7 @@ describe('react-native-config fix', () => {
     });
 
     it('when there are references to .storybook in the project', async () => {
+      // @ts-expect-error blah
       vi.mocked($).mockResolvedValue({ stdout: 'a\nb\nc' });
       const packageManager = makePackageManager({
         devDependencies: {

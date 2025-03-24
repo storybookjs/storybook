@@ -50,10 +50,6 @@ const config = defineMain({
       titlePrefix: 'addons/links',
     },
     {
-      directory: '../addons/viewport/template/stories',
-      titlePrefix: 'addons/viewport',
-    },
-    {
       directory: '../addons/themes/template/stories',
       titlePrefix: 'addons/themes',
     },

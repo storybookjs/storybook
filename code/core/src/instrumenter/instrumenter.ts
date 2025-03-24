@@ -11,7 +11,6 @@ import type { StoryId } from 'storybook/internal/types';
 import { global } from '@storybook/global';
 
 import { processError } from '@vitest/utils/error';
-import { addons } from 'storybook/preview-api';
 
 import type { Call, CallRef, ControlStates, LogItem, Options, State, SyncPayload } from './types';
 import { CallStates } from './types';
@@ -245,29 +244,32 @@ export class Instrumenter {
     };
 
     // Support portable stories where addons are not available
-    (addons ? addons.ready() : Promise.resolve()).then(() => {
-      this.channel = addons.getChannel();
+    // This is a workaround to avoid circular dependency
+    import('storybook/preview-api').then(({ addons }) => {
+      (addons ? addons.ready() : Promise.resolve()).then(() => {
+        this.channel = addons.getChannel();
 
-      // A forceRemount might be triggered for debugging (on `start`), or elsewhere in Storybook.
-      this.channel.on(FORCE_REMOUNT, resetState);
+        // A forceRemount might be triggered for debugging (on `start`), or elsewhere in Storybook.
+        this.channel.on(FORCE_REMOUNT, resetState);
 
-      // Start with a clean slate before playing after a remount, and stop debugging when done.
-      this.channel.on(STORY_RENDER_PHASE_CHANGED, renderPhaseChanged);
+        // Start with a clean slate before playing after a remount, and stop debugging when done.
+        this.channel.on(STORY_RENDER_PHASE_CHANGED, renderPhaseChanged);
 
-      // Trash non-retained state and clear the log when switching stories, but not on initial boot.
-      this.channel.on(SET_CURRENT_STORY, () => {
-        if (this.initialized) {
-          this.cleanup();
-        } else {
-          this.initialized = true;
-        }
+        // Trash non-retained state and clear the log when switching stories, but not on initial boot.
+        this.channel.on(SET_CURRENT_STORY, () => {
+          if (this.initialized) {
+            this.cleanup();
+          } else {
+            this.initialized = true;
+          }
+        });
+
+        this.channel.on(EVENTS.START, start(this.channel));
+        this.channel.on(EVENTS.BACK, back(this.channel));
+        this.channel.on(EVENTS.GOTO, goto(this.channel));
+        this.channel.on(EVENTS.NEXT, next(this.channel));
+        this.channel.on(EVENTS.END, end);
       });
-
-      this.channel.on(EVENTS.START, start(this.channel));
-      this.channel.on(EVENTS.BACK, back(this.channel));
-      this.channel.on(EVENTS.GOTO, goto(this.channel));
-      this.channel.on(EVENTS.NEXT, next(this.channel));
-      this.channel.on(EVENTS.END, end);
     });
   }
 

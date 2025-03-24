@@ -4,7 +4,7 @@ import { useEffect } from 'storybook/preview-api';
 
 import { PARAM_KEY as KEY } from './constants';
 import { DEFAULT_BACKGROUNDS } from './defaults';
-import type { Config, GridConfig } from './types';
+import type { BackgroundsParameters, GridConfig } from './types';
 import { addBackgroundStyle, addGridStyle, clearStyles, isReduceMotionEnabled } from './utils';
 
 const defaultGrid: GridConfig = {
@@ -24,14 +24,14 @@ export const withBackgroundAndGrid: DecoratorFunction = (StoryFn, context) => {
     options = DEFAULT_BACKGROUNDS,
     disable,
     grid = defaultGrid,
-  } = (parameters[KEY] || {}) as Config;
+  } = (parameters[KEY] || {}) as BackgroundsParameters['backgrounds'];
   const data = globals[KEY] || {};
-  const backgroundName: string | undefined = data.value;
+  const backgroundName: string | undefined = typeof data === 'string' ? data : data.value;
 
   const item = backgroundName ? options[backgroundName] : undefined;
-  const value = item?.value || 'transparent';
+  const value = typeof item === 'string' ? item : item?.value || 'transparent';
 
-  const showGrid = data.grid || false;
+  const showGrid = typeof data === 'string' ? false : data.grid || false;
   const shownBackground = !!item && !disable;
 
   const backgroundSelector = viewMode === 'docs' ? `#anchor--${id} .docs-story` : '.sb-show-main';

@@ -1,6 +1,8 @@
 <h1>Migration</h1>
 
 - [From version 8.x to 9.0.0](#from-version-8x-to-900)
+  - [React-Native config dir renamed](#react-native-config-dir-renamed)
+  - [Addon viewport and addon backgrounds synchronized configuration and use globals](#addon-viewport-and-addon-backgrounds-synchronized-configuration-and-use-globals)
   - [Manager builder removed alias for `util`, `assert` and `process`](#manager-builder-removed-alias-for-util-assert-and-process)
   - [Actions addon moved to core](#actions-addon-moved-to-core)
   - [Dropped support for legacy packages](#dropped-support-for-legacy-packages)
@@ -439,6 +441,22 @@
   - [Deprecated embedded addons](#deprecated-embedded-addons)
 
 ## From version 8.x to 9.0.0
+
+### React-Native config dir renamed
+
+In Storybook 9, React Native (RN) projects use the `.rnstorybook` config directory instead of `.storybook`.
+That makes it easier for RN and React Native Web (RNW) storybooks to co-exist in the same project.
+
+To upgrade, either rename your `.storybook` directory to `.rnstorybook` or if you wish to continue using `.storybook` (not recommended), you can use the [`configPath`](https://github.com/storybookjs/react-native#configpath) option to specify `.storybook` manually.
+
+### Addon viewport and addon backgrounds synchronized configuration and use globals
+
+The feature flags: `viewportStoryGlobals` and `backgroundsStoryGlobals` have been removed, please remove these from your `.storybook/main.ts` file.
+
+See here for the ways you have to configure addon viewports & backgrounds:
+
+- [New parameters format for addon backgrounds](#new-parameters-format-for-addon-backgrounds)
+- [New parameters format for addon viewport](#new-parameters-format-for-addon-viewport)
 
 ### Manager builder removed alias for `util`, `assert` and `process`
 

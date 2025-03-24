@@ -11,7 +11,7 @@ import { PARAM_KEY as KEY } from '../constants';
 import { MINIMAL_VIEWPORTS } from '../defaults';
 import { responsiveViewport } from '../responsiveViewport';
 import { registerShortcuts } from '../shortcuts';
-import type { Config, GlobalStateUpdate, Viewport, ViewportMap } from '../types';
+import type { GlobalStateUpdate, Viewport, ViewportMap, ViewportParameters } from '../types';
 import {
   ActiveViewportLabel,
   ActiveViewportSize,
@@ -36,14 +36,14 @@ interface PureProps {
 type Link = Parameters<typeof TooltipLinkList>['0']['links'][0];
 
 export const ViewportTool: FC<{ api: API }> = ({ api }) => {
-  const config = useParameter<Config>(KEY);
+  const config = useParameter<ViewportParameters['viewport']>(KEY);
   const [globals, updateGlobals, storyGlobals] = useGlobals();
   const [isTooltipVisible, setIsTooltipVisible] = useState(false);
 
   const { options = MINIMAL_VIEWPORTS, disable } = config || {};
   const data = globals?.[KEY] || {};
-  const viewportName: string = data.value;
-  const isRotated: boolean = data.isRotated;
+  const viewportName: string = typeof data === 'string' ? data : data.value;
+  const isRotated: boolean = typeof data === 'string' ? false : data.isRotated;
 
   const item = options[viewportName] || responsiveViewport;
   const isActive = isTooltipVisible || item !== responsiveViewport;

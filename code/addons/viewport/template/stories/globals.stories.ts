@@ -45,7 +45,13 @@ export const Invalid = {
   },
 };
 
-export const NoRationDefined = {
+export const Shorthand = {
+  globals: {
+    viewport: first,
+  },
+};
+
+export const NoRatioDefined = {
   globals: {
     viewport: {
       value: first,

@@ -12,7 +12,7 @@ type Highlight = {
 };
 
 const Container = styled.div({
-  position: 'fixed',
+  position: 'absolute',
   top: 0,
   left: 0,
   width: '100%',
@@ -73,14 +73,14 @@ const getHighlights = (elements: Element[]): Highlight[] =>
   elements
     .map((element) => {
       const { top, left, width, height } = element.getBoundingClientRect();
-      return { element, top, left, width, height };
+      return { element, top: top + window.scrollY, left: left + window.scrollX, width, height };
     })
     .sort((a, b) => b.width * b.height - a.width * a.height);
 
 export const Highlights = ({ selectors }: { selectors: string[] }) => {
   const [elements, setElements] = useState<Element[]>([]);
   const [highlights, setHighlights] = useState<Highlight[]>([]);
-  const [{ x, y }, setCoordinates] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [coordinates, setCoordinates] = useState<{ x: number; y: number } | undefined>();
   const [targets, setTargets] = useState<Highlight[]>([]);
   const [selected, setSelected] = useState<Element>();
 
@@ -112,20 +112,37 @@ export const Highlights = ({ selectors }: { selectors: string[] }) => {
     setTargets((t) => t.filter(({ element }) => elements.includes(element)));
   }, [elements]);
 
-  const handleClick = ({ clientX, clientY }: React.MouseEvent<HTMLDivElement>) => {
+  // Ensure the selected element is always an active target
+  useEffect(() => {
+    if (targets.length) {
+      setSelected((s) => (targets.some((t) => t.element === s) ? s : targets[0]?.element));
+    } else {
+      setCoordinates(undefined);
+      setSelected(undefined);
+    }
+  }, [targets]);
+
+  const handleClick = ({ pageX: px, pageY: py }: React.MouseEvent<HTMLDivElement>) => {
     const results = highlights.filter(
       ({ top, left, width, height }) =>
-        clientX >= left && clientX <= left + width && clientY >= top && clientY <= top + height
+        px >= left && px <= left + width && py >= top && py <= top + height
     );
-    setCoordinates({ x: clientX, y: clientY });
+    setCoordinates(results ? { x: px, y: py } : undefined);
     setTargets(results);
-    setSelected(results[0]?.element);
   };
 
   return createPortal(
-    <Container id="addon-highlight-container" onClick={handleClick}>
+    <Container
+      id="addon-highlight-container"
+      onClick={handleClick}
+      style={{ display: highlights.length ? 'block' : 'none' }}
+    >
       <Selection
-        style={{ top: y, left: x, display: targets.length ? 'block' : 'none' }}
+        style={{
+          display: coordinates && targets.length ? 'block' : 'none',
+          left: coordinates?.x,
+          top: coordinates?.y,
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         {targets.map((target, index) => {

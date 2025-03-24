@@ -15,7 +15,7 @@ const Content = ({ dynamic }: { dynamic: boolean }) => {
     return () => clearInterval(interval);
   }, [dynamic]);
   return (
-    <>
+    <main style={{ minHeight: 800 }}>
       <div
         id="moving"
         style={{
@@ -53,6 +53,28 @@ const Content = ({ dynamic }: { dynamic: boolean }) => {
           }}
         />
       </div>
+      <div
+        id="scrolling"
+        style={{
+          position: 'absolute',
+          top: 100,
+          left: 350,
+          width: 200,
+          height: 150,
+          border: '1px solid black',
+          overflow: 'scroll',
+        }}
+      >
+        <div
+          id="child"
+          style={{
+            margin: 30,
+            width: 120,
+            height: 200,
+            backgroundColor: 'yellow',
+          }}
+        />
+      </div>
       {extra && (
         <div
           id="extra"
@@ -67,7 +89,7 @@ const Content = ({ dynamic }: { dynamic: boolean }) => {
           }}
         />
       )}
-    </>
+    </main>
   );
 };
 

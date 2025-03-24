@@ -3,6 +3,8 @@ import type { PartialStoryFn, StoryContext } from 'storybook/internal/types';
 
 import type { ReactRenderer } from '@storybook/react';
 
+import { MINIMAL_VIEWPORTS } from '../../src/viewport';
+
 declare global {
   interface Window {
     __STORYBOOK_BEFORE_ALL_CALLS__: number;
@@ -94,5 +96,9 @@ export const globalTypes = {
         { value: 'kr', right: '🇰🇷', title: '한국어' },
       ],
     },
+  },
+
+  viewport: {
+    options: MINIMAL_VIEWPORTS,
   },
 };

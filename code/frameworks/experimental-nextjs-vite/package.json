@@ -108,7 +108,7 @@
     "@storybook/react": "workspace:*",
     "@storybook/react-vite": "workspace:*",
     "styled-jsx": "5.1.6",
-    "vite-plugin-storybook-nextjs": "2.0.0--canary.33.a61ad85.0"
+    "vite-plugin-storybook-nextjs": "2.0.0--canary.33.f53ad45.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

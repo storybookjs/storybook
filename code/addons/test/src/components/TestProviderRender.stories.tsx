@@ -256,7 +256,19 @@ export const AccessibilityViolations: Story = {
     testProviderState: 'test-provider-state:succeeded',
     a11yStatusValueToStoryIds: {
       ...meta.args.a11yStatusValueToStoryIds,
-      'status-value:warning': ['story-id-1'],
+      'status-value:warning': ['story-id-1', 'story-id-2', 'story-id-3'],
+    },
+  },
+};
+
+export const AccessibilityViolationsWithErrors: Story = {
+  args: {
+    ...AccessibilityEnabled.args,
+    testProviderState: 'test-provider-state:succeeded',
+    a11yStatusValueToStoryIds: {
+      ...meta.args.a11yStatusValueToStoryIds,
+      'status-value:warning': ['story-id-1', 'story-id-2', 'story-id-5'],
+      'status-value:error': ['story-id-3', 'story-id-4'],
     },
   },
 };

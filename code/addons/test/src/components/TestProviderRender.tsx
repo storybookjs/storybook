@@ -134,13 +134,15 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
   ] =
     testProviderState === 'test-provider-state:crashed'
       ? ['critical', 'Local tests crashed']
-      : a11yStatusValueToStoryIds['status-value:warning'].length > 0
-        ? ['warning', 'Accessibility tests failed']
-        : isRunning
-          ? ['pending', 'Testing in progress']
-          : a11yStatusValueToStoryIds['status-value:success'].length > 0
-            ? ['positive', 'Accessibility tests passed']
-            : ['unknown', 'Unknown accessibility test status'];
+      : a11yStatusValueToStoryIds['status-value:error'].length > 0
+        ? ['negative', 'Accessibility tests failed']
+        : a11yStatusValueToStoryIds['status-value:warning'].length > 0
+          ? ['warning', 'Accessibility tests failed']
+          : isRunning
+            ? ['pending', 'Testing in progress']
+            : a11yStatusValueToStoryIds['status-value:success'].length > 0
+              ? ['positive', 'Accessibility tests passed']
+              : ['unknown', 'Unknown accessibility test status'];
 
   const firstComponentTestErrorStoryId =
     componentTestStatusValueToStoryIds['status-value:error'][0];
@@ -150,12 +152,14 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
     api.togglePanel(true);
   }, [api, firstComponentTestErrorStoryId]);
 
-  const firstA11yTestWarningStoryId = a11yStatusValueToStoryIds['status-value:warning'][0];
+  const firstA11yTestFailureStoryId =
+    a11yStatusValueToStoryIds['status-value:error'][0] ??
+    a11yStatusValueToStoryIds['status-value:warning'][0];
   const openA11yPanel = useCallback(() => {
-    api.selectStory(firstA11yTestWarningStoryId);
+    api.selectStory(firstA11yTestFailureStoryId);
     api.setSelectedPanel(A11Y_PANEL_ID);
     api.togglePanel(true);
-  }, [api, firstA11yTestWarningStoryId]);
+  }, [api, firstA11yTestFailureStoryId]);
 
   return (
     <Container {...props}>
@@ -294,7 +298,8 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                 status={componentTestStatusIcon}
                 aria-label={componentTestStatusLabel}
               />
-              {componentTestStatusValueToStoryIds['status-value:error'].length || null}
+              {componentTestStatusValueToStoryIds['status-value:error'].length +
+                componentTestStatusValueToStoryIds['status-value:warning'].length || null}
             </IconButton>
           </WithTooltip>
         </Row>
@@ -396,11 +401,15 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
             >
               <IconButton
                 size="medium"
-                disabled={a11yStatusValueToStoryIds['status-value:warning'].length === 0}
+                disabled={
+                  a11yStatusValueToStoryIds['status-value:error'].length === 0 &&
+                  a11yStatusValueToStoryIds['status-value:warning'].length === 0
+                }
                 onClick={openA11yPanel}
               >
                 <TestStatusIcon status={a11yStatusIcon} aria-label={a11yStatusLabel} />
-                {a11yStatusValueToStoryIds['status-value:warning'].length || null}
+                {a11yStatusValueToStoryIds['status-value:error'].length +
+                  a11yStatusValueToStoryIds['status-value:warning'].length || null}
               </IconButton>
             </WithTooltip>
           </Row>

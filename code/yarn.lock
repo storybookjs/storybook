@@ -6551,6 +6551,7 @@ __metadata:
     create-storybook: "workspace:*"
     cross-spawn: "npm:^7.0.3"
     envinfo: "npm:^7.7.3"
+    execa: "npm:^9.5.2"
     fd-package-json: "npm:^1.2.0"
     find-up: "npm:^5.0.0"
     giget: "npm:^1.0.0"
@@ -6701,7 +6702,7 @@ __metadata:
     next: "npm:^15.0.3"
     styled-jsx: "npm:5.1.6"
     typescript: "npm:^5.7.3"
-    vite-plugin-storybook-nextjs: "npm:2.0.0--canary.33.a61ad85.0"
+    vite-plugin-storybook-nextjs: "npm:2.0.0--canary.33.f53ad45.0"
   peerDependencies:
     next: ^14.1.0 || ^15.0.0
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
@@ -17897,17 +17898,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"image-size@npm:^1.1.1":
-  version: 1.1.1
-  resolution: "image-size@npm:1.1.1"
-  dependencies:
-    queue: "npm:6.0.2"
-  bin:
-    image-size: bin/image-size.js
-  checksum: 10c0/2660470096d12be82195f7e80fe03274689fbd14184afb78eaf66ade7cd06352518325814f88af4bde4b26647889fe49e573129f6e7ba8f5ff5b85cc7f559000
-  languageName: node
-  linkType: hard
-
 "image-size@npm:^2.0.0":
   version: 2.0.0
   resolution: "image-size@npm:2.0.0"
@@ -24716,15 +24706,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"queue@npm:6.0.2":
-  version: 6.0.2
-  resolution: "queue@npm:6.0.2"
-  dependencies:
-    inherits: "npm:~2.0.3"
-  checksum: 10c0/cf987476cc72e7d3aaabe23ccefaab1cd757a2b5e0c8d80b67c9575a6b5e1198807ffd4f0948a3f118b149d1111d810ee773473530b77a5c606673cac2c9c996
-  languageName: node
-  linkType: hard
-
 "quick-temp@npm:^0.1.3, quick-temp@npm:^0.1.5, quick-temp@npm:^0.1.8":
   version: 0.1.8
   resolution: "quick-temp@npm:0.1.8"
@@ -26874,7 +26855,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"sharp@npm:^0.33.4, sharp@npm:^0.33.5":
+"sharp@npm:^0.33.5":
   version: 0.33.5
   resolution: "sharp@npm:0.33.5"
   dependencies:
@@ -30017,24 +29998,20 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vite-plugin-storybook-nextjs@npm:2.0.0--canary.33.a61ad85.0":
-  version: 2.0.0--canary.33.a61ad85.0
-  resolution: "vite-plugin-storybook-nextjs@npm:2.0.0--canary.33.a61ad85.0"
+"vite-plugin-storybook-nextjs@npm:2.0.0--canary.33.f53ad45.0":
+  version: 2.0.0--canary.33.f53ad45.0
+  resolution: "vite-plugin-storybook-nextjs@npm:2.0.0--canary.33.f53ad45.0"
   dependencies:
     "@next/env": "npm:^15.0.3"
-    image-size: "npm:^1.1.1"
+    image-size: "npm:^2.0.0"
     magic-string: "npm:^0.30.11"
     module-alias: "npm:^2.2.3"
-    sharp: "npm:^0.33.4"
     ts-dedent: "npm:^2.2.0"
   peerDependencies:
     next: ^14.1.0 || ^15.0.0
     storybook: ^9.0.0-0
     vite: ^5.0.0 || ^6.0.0
-  dependenciesMeta:
-    sharp:
-      optional: true
-  checksum: 10c0/b280c87deffde11123ebdef8227c1c0c7f93b39a771e29bf493da2d855d2b7d99a9a19c394d0ac7771302ea91ba4d4e98fb1a9a16322818be93a42706e4b4876
+  checksum: 10c0/ea9c13de1601dcf02d1d0a7a3a1b2f665b05a03f15a051d5a40480b64adae2a0ac2a2b88ecf550ab15e64c7a67c326b5181e9d1bedc13067e418c64c77d0ad33
   languageName: node
   linkType: hard
 

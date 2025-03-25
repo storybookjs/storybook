@@ -4,6 +4,7 @@
   - [Addon Viewport is moved to core](#addon-viewport-is-moved-to-core)
   - [Addon Controls is moved to core](#addon-controls-is-moved-to-core)
   - [Addon Actions is moved to core](#addon-actions-is-moved-to-core)
+  - [React-Native config dir renamed](#react-native-config-dir-renamed)
   - [Addon viewport and addon backgrounds synchronized configuration and use globals](#addon-viewport-and-addon-backgrounds-synchronized-configuration-and-use-globals)
   - [Manager builder removed alias for `util`, `assert` and `process`](#manager-builder-removed-alias-for-util-assert-and-process)
   - [Docs addon moved out of addon-essentials](#docs-addon-moved-out-of-addon-essentials)
@@ -422,6 +423,13 @@ The controls addon has been moved from `@storybook/addon-controls` to Storybook 
 The actions addon has been moved from `@storybook/addon-actions` to Storybook core. You no longer need to install it separately or include it in your addons list. As a consequence, `@storybook/addon-actions` is not part of `@storybook/addon-essentials` anymore.
 
 Furthermore, we have deprecated the usage of `withActions` from `@storybook/addon-actions` and we will remove it in Storybook v10. Please file an issue if you need this API.
+
+### React-Native config dir renamed
+
+In Storybook 9, React Native (RN) projects use the `.rnstorybook` config directory instead of `.storybook`.
+That makes it easier for RN and React Native Web (RNW) storybooks to co-exist in the same project.
+
+To upgrade, either rename your `.storybook` directory to `.rnstorybook` or if you wish to continue using `.storybook` (not recommended), you can use the [`configPath`](https://github.com/storybookjs/react-native#configpath) option to specify `.storybook` manually.
 
 ### Addon viewport and addon backgrounds synchronized configuration and use globals
 

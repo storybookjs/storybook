@@ -48,10 +48,21 @@ export function normalizeProjectAnnotations<TRenderer extends Renderer>({
     argTypesEnhancers: [
       ...(argTypesEnhancers || []),
       inferArgTypes,
-      // inferControls technically should only run if the user is using the controls addon,
-      // and so should be added by a preset there. However, as it seems some code relies on controls
-      // annotations (in particular the angular implementation's `cleanArgsDecorator`), for backwards
-      // compatibility reasons, we will leave this in the store until 7.0
+      // There's an architectural decision to be made regarding embedded addons in core:
+      //
+      // Option 1: Keep embedded addons but ensure consistency by moving addon-specific code
+      // (like inferControls) to live alongside the addon code itself. This maintains the
+      // concept of core addons while improving code organization.
+      //
+      // Option 2: Fully integrate these addons into core, potentially moving UI components
+      // into the manager and treating them as core features rather than addons. This is a
+      // bigger architectural change requiring careful consideration.
+      //
+      // For now, we're keeping inferControls here as we need time to properly evaluate
+      // these options and their implications. Some features (like Angular's cleanArgsDecorator)
+      // currently rely on this behavior.
+      //
+      // TODO: Make an architectural decision on the handling of core addons
       inferControls,
     ],
     initialGlobals: combineParameters(initialGlobals, globals),

@@ -1,10 +1,11 @@
 <h1>Migration</h1>
 
 - [From version 8.x to 9.0.0](#from-version-8x-to-900)
+  - [Addon Controls is moved to core](#addon-controls-is-moved-to-core)
+  - [Addon Actions is moved to core](#addon-actions-is-moved-to-core)
   - [React-Native config dir renamed](#react-native-config-dir-renamed)
   - [Addon viewport and addon backgrounds synchronized configuration and use globals](#addon-viewport-and-addon-backgrounds-synchronized-configuration-and-use-globals)
   - [Manager builder removed alias for `util`, `assert` and `process`](#manager-builder-removed-alias-for-util-assert-and-process)
-  - [Actions addon moved to core](#actions-addon-moved-to-core)
   - [Docs addon moved out of addon-essentials](#docs-addon-moved-out-of-addon-essentials)
   - [Dropped support for legacy packages](#dropped-support-for-legacy-packages)
   - [Dropped support for TypeScript \< 4.9](#dropped-support-for-typescript--49)
@@ -443,6 +444,16 @@
 
 ## From version 8.x to 9.0.0
 
+### Addon Controls is moved to core
+
+The controls addon has been moved from `@storybook/addon-controls` to Storybook core. You no longer need to install it separately or include it in your addons list. As a consequence, `@storybook/addon-controls` is not part of `@storybook/addon-essentials` anymore.
+
+### Addon Actions is moved to core
+
+The actions addon has been moved from `@storybook/addon-actions` to Storybook core. You no longer need to install it separately or include it in your addons list. As a consequence, `@storybook/addon-actions` is not part of `@storybook/addon-essentials` anymore.
+
+Furthermore, we have deprecated the usage of `withActions` from `@storybook/addon-actions` and we will remove it in Storybook v10. Please file an issue if you need this API.
+
 ### React-Native config dir renamed
 
 In Storybook 9, React Native (RN) projects use the `.rnstorybook` config directory instead of `.storybook`.
@@ -468,12 +479,6 @@ Starting with Storybook `9.0`, we no longer alias these anymore.
 Adding these aliases meant storybook core, had to depend on these packages, which have a deep dependency graph, added to every storybook project.
 
 If you addon fails to load after this change, we recommend looking at implementing the alias at compile time of your addon, or alternatively look at other bundling config to ensure the correct entries/packages/dependencies are used.
-
-### Actions addon moved to core
-
-The actions addon has been moved from `@storybook/addon-actions` to Storybook core. You no longer need to install it separately or include it in your addons list. As a consequence, `@storybook/addon-actions` is not part of `@storybook/addon-essentials` anymore.
-
-Furthermore, we have deprecated the usage of `withActions` from `@storybook/addon-actions` and we will remove it in Storybook v10. Please file an issue if you need this API.
 
 ### Docs addon moved out of addon-essentials
 

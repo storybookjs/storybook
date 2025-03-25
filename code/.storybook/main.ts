@@ -42,14 +42,6 @@ const config = defineMain({
       titlePrefix: 'addons/backgrounds',
     },
     {
-      directory: '../addons/controls/src',
-      titlePrefix: 'addons/controls',
-    },
-    {
-      directory: '../addons/controls/template/stories',
-      titlePrefix: 'addons/controls',
-    },
-    {
       directory: '../addons/docs/template/stories',
       titlePrefix: 'addons/docs',
     },

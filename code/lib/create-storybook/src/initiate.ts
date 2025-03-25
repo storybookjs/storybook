@@ -429,9 +429,23 @@ export async function doInitiate(options: CommandOptions): Promise<
     }
   }
 
-  const isTestFeatureEnabled = () =>
-    selectedFeatures.has('test') &&
-    (options.builder === CoreBuilder.Vite || projectType === ProjectType.NEXTJS);
+  const isTestFeatureEnabled = () => {
+    const supportedFrameworks: ProjectType[] = [
+      ProjectType.REACT,
+      ProjectType.VUE3,
+      ProjectType.NEXTJS,
+      ProjectType.NUXT,
+      ProjectType.PREACT,
+      ProjectType.SVELTE,
+      ProjectType.SVELTEKIT,
+      ProjectType.WEB_COMPONENTS,
+      ProjectType.REACT_NATIVE_WEB,
+    ];
+    const supportsTestAddon =
+      projectType === ProjectType.NEXTJS ||
+      (options.builder !== 'webpack5' && supportedFrameworks.includes(projectType));
+    return selectedFeatures.has('test') && supportsTestAddon;
+  };
 
   if (isTestFeatureEnabled()) {
     const packageVersionsData = await packageVersions.condition({ packageManager }, {} as any);
@@ -490,9 +504,6 @@ export async function doInitiate(options: CommandOptions): Promise<
   options.features = Array.from(selectedFeatures);
 
   const installResult = await installStorybook(projectType as ProjectType, packageManager, options);
-
-  // Sync features back because they may have been mutated by the generator (e.g. in case of undetected project type)
-  selectedFeatures = new Set(options.features);
 
   if (!options.skipInstall) {
     await packageManager.installDependencies();

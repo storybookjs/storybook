@@ -201,33 +201,13 @@ const hasFrameworkTemplates = (framework?: SupportedFrameworks) => {
 export async function baseGenerator(
   packageManager: JsPackageManager,
   npmOptions: NpmOptions,
-  { language, builder, pnp, frameworkPreviewParts, projectType, features }: GeneratorOptions,
+  { language, builder, pnp, frameworkPreviewParts, features }: GeneratorOptions,
   renderer: SupportedRenderers,
   options: FrameworkOptions = defaultOptions,
   framework?: SupportedFrameworks
 ) {
   const isStorybookInMonorepository = packageManager.isStorybookInMonorepo();
   const shouldApplyRequireWrapperOnPackageNames = isStorybookInMonorepository || pnp;
-
-  if (features.includes('test')) {
-    const supportedFrameworks: ProjectType[] = [
-      ProjectType.REACT,
-      ProjectType.VUE3,
-      ProjectType.NEXTJS,
-      ProjectType.NUXT,
-      ProjectType.PREACT,
-      ProjectType.SVELTE,
-      ProjectType.SVELTEKIT,
-      ProjectType.WEB_COMPONENTS,
-      ProjectType.REACT_NATIVE_WEB,
-    ];
-    const supportsTestAddon =
-      projectType === ProjectType.NEXTJS ||
-      (builder !== 'webpack5' && supportedFrameworks.includes(projectType));
-    if (!supportsTestAddon) {
-      features.splice(features.indexOf('test'), 1);
-    }
-  }
 
   const {
     packages: frameworkPackages,

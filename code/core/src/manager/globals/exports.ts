@@ -492,7 +492,6 @@ export default {
     'H6',
     'HR',
     'IconButton',
-    'IconButtonSkeleton',
     'Icons',
     'Img',
     'LI',

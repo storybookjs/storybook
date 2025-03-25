@@ -15,7 +15,6 @@ export default {
   '@storybook/addon-storysource': '9.0.0-alpha.9',
   '@storybook/addon-test': '9.0.0-alpha.9',
   '@storybook/addon-themes': '9.0.0-alpha.9',
-  '@storybook/addon-viewport': '9.0.0-alpha.9',
   '@storybook/builder-vite': '9.0.0-alpha.9',
   '@storybook/builder-webpack5': '9.0.0-alpha.9',
   storybook: '9.0.0-alpha.9',

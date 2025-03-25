@@ -258,4 +258,12 @@ export const MINIMAL_VIEWPORTS: ViewportMap = {
     },
     type: 'tablet',
   },
+  desktop: {
+    name: 'Desktop',
+    styles: {
+      height: '1024px',
+      width: '1280px',
+    },
+    type: 'desktop',
+  },
 };

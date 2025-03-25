@@ -24,6 +24,7 @@ export type GlobalState = {
    */
   isRotated: boolean;
 };
+
 export type GlobalStateUpdate = Partial<GlobalState>;
 
 export interface ViewportParameters {

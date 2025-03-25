@@ -7,7 +7,7 @@ import { GrowIcon, RefreshIcon, TransferIcon } from '@storybook/icons';
 import { type API, useGlobals, useParameter } from 'storybook/manager-api';
 import { Global } from 'storybook/theming';
 
-import { PARAM_KEY as KEY } from '../constants';
+import { PARAM_KEY } from '../constants';
 import { MINIMAL_VIEWPORTS } from '../defaults';
 import { responsiveViewport } from '../responsiveViewport';
 import { registerShortcuts } from '../shortcuts';
@@ -36,18 +36,18 @@ interface PureProps {
 type Link = Parameters<typeof TooltipLinkList>['0']['links'][0];
 
 export const ViewportTool: FC<{ api: API }> = ({ api }) => {
-  const config = useParameter<ViewportParameters['viewport']>(KEY);
+  const config = useParameter<ViewportParameters['viewport']>(PARAM_KEY);
   const [globals, updateGlobals, storyGlobals] = useGlobals();
   const [isTooltipVisible, setIsTooltipVisible] = useState(false);
 
   const { options = MINIMAL_VIEWPORTS, disable } = config || {};
-  const data = globals?.[KEY] || {};
+  const data = globals?.[PARAM_KEY] || {};
   const viewportName: string = typeof data === 'string' ? data : data.value;
   const isRotated: boolean = typeof data === 'string' ? false : data.isRotated;
 
   const item = options[viewportName] || responsiveViewport;
   const isActive = isTooltipVisible || item !== responsiveViewport;
-  const isLocked = KEY in storyGlobals;
+  const isLocked = PARAM_KEY in storyGlobals;
 
   const length = Object.keys(options).length;
 
@@ -106,7 +106,7 @@ const Pure = React.memo(function PureTool(props: PureProps) {
   } = props;
 
   const update = useCallback(
-    (input: GlobalStateUpdate) => updateGlobals({ [KEY]: input }),
+    (input: GlobalStateUpdate) => updateGlobals({ [PARAM_KEY]: input }),
     [updateGlobals]
   );
 

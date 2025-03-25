@@ -199,6 +199,7 @@ async function run() {
                 'storybook/test': join(cwd, 'src', 'test'),
                 'storybook/internal': join(cwd, 'src'),
                 'storybook/actions': join(cwd, 'src', 'actions'),
+                'storybook/viewport': join(cwd, 'src', 'viewport'),
                 react: dirname(require.resolve('react/package.json')),
                 'react-dom': dirname(require.resolve('react-dom/package.json')),
                 'react-dom/client': join(
@@ -228,6 +229,7 @@ async function run() {
                 'storybook/theming': join(cwd, 'src', 'theming'),
                 'storybook/test': join(cwd, 'src', 'test'),
                 'storybook/actions': join(cwd, 'src', 'actions'),
+                'storybook/viewport': join(cwd, 'src', 'viewport'),
 
                 'storybook/internal': join(cwd, 'src'),
                 react: dirname(require.resolve('react/package.json')),

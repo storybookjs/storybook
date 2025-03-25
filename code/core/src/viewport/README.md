@@ -11,14 +11,14 @@ Storybook Viewport Addon allows your stories to be displayed in different sizes 
 Viewport is part of [essentials](https://storybook.js.org/docs/essentials) and so is installed in all new Storybooks by default. If you need to add it to your Storybook, you can run:
 
 ```sh
-npm i -D @storybook/addon-viewport
+npm i -D storybook/viewport
 ```
 
 Then, add following content to [`.storybook/main.js`](https://storybook.js.org/docs/configure#configure-your-storybook-project):
 
 ```js
 export default {
-  addons: ['@storybook/addon-viewport'],
+  addons: ['storybook/viewport'],
 };
 ```
 

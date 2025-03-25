@@ -53,5 +53,5 @@ export const RuleType = {
   PASS: 'passes',
   INCOMPLETION: 'incomplete',
 } as const;
-// eslint-disable-next-line @typescript-eslint/no-redeclare
+
 export type RuleType = (typeof RuleType)[keyof typeof RuleType];

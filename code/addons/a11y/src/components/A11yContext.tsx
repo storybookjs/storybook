@@ -29,7 +29,6 @@ import {
   PANEL_ID,
   STATUS_TYPE_ID_A11Y,
   STATUS_TYPE_ID_COMPONENT_TEST,
-  TEST_PROVIDER_ID,
 } from '../constants';
 import type { A11yParameters } from '../params';
 import type { A11YReport } from '../types';
@@ -62,8 +61,6 @@ export interface A11yContextStore {
   handleJumpToElement: (target: string) => void;
   handleSelectionChange: (key: string) => void;
 }
-
-const componentTestStatusStore = experimental_getStatusStore('storybook/component-test');
 
 const colorsByType = {
   [RuleType.VIOLATION]: convert(themes.light).color.negative,
@@ -102,7 +99,7 @@ const defaultResult = {
   violations: [],
 };
 
-type Status = 'initial' | 'manual' | 'running' | 'error' | 'broken' | 'ran' | 'ready';
+type Status = 'initial' | 'manual' | 'running' | 'error' | 'component-test-error' | 'ran' | 'ready';
 
 export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
   const parameters = useParameter<A11yParameters>('a11y', {
@@ -120,6 +117,9 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
 
   const api = useStorybookApi();
   const a11ySelection = api.getQueryParam('a11ySelection');
+  if (a11ySelection) {
+    api.setQueryParams({ a11ySelection: '' });
+  }
 
   const [results, setResults] = useAddonState<Results>(ADDON_ID, defaultResult);
   const [tab, setTab] = useState(() => {
@@ -136,28 +136,19 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
   const currentStoryA11yStatusValue = experimental_useStatusStore(
     (allStatuses) => allStatuses[storyId]?.[STATUS_TYPE_ID_A11Y]?.value
   );
-  componentTestStatusStore.onAllStatusChange((statuses, previousStatuses) => {
-    const current = statuses[storyId]?.[STATUS_TYPE_ID_COMPONENT_TEST];
-    const previous = previousStatuses[storyId]?.[STATUS_TYPE_ID_COMPONENT_TEST];
-    if (current?.value === 'status-value:error' && previous?.value !== 'status-value:error') {
-      setStatus('broken');
-    }
-  });
 
   useEffect(() => {
-    if (status !== 'ran') {
-      return;
-    }
-
-    if (a11ySelection) {
-      const currentUrl = api.getUrlState();
-      const queryParams = new URLSearchParams(
-        (currentUrl.queryParams as Record<string, string>) || {}
-      );
-      queryParams.delete('a11ySelection');
-      api.setQueryParams({ a11ySelection: undefined });
-    }
-  }, [api, results, status, a11ySelection]);
+    const unsubscribe = experimental_getStatusStore('storybook/component-test').onAllStatusChange(
+      (statuses, previousStatuses) => {
+        const current = statuses[storyId]?.[STATUS_TYPE_ID_COMPONENT_TEST];
+        const previous = previousStatuses[storyId]?.[STATUS_TYPE_ID_COMPONENT_TEST];
+        if (current?.value === 'status-value:error' && previous?.value !== 'status-value:error') {
+          setStatus('component-test-error');
+        }
+      }
+    );
+    return unsubscribe;
+  }, [storyId]);
 
   const handleToggleHighlight = useCallback(
     () => setHighlighted((prevHighlighted) => !prevHighlighted),
@@ -166,6 +157,8 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
 
   const [selectedItems, setSelectedItems] = useState<Map<string, string>>(() => {
     const initialValue = new Map();
+    // Check if the a11ySelection param is a valid format before parsing it
+    // It should look like `violation.aria-hidden-body.1`
     if (a11ySelection && /^[a-z]+.[a-z-]+.[0-9]+$/.test(a11ySelection)) {
       const [type, id] = a11ySelection.split('.');
       initialValue.set(`${type}.${id}`, a11ySelection);

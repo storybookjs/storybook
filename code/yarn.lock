@@ -6205,22 +6205,6 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/addon-controls@workspace:*, @storybook/addon-controls@workspace:addons/controls":
-  version: 0.0.0-use.local
-  resolution: "@storybook/addon-controls@workspace:addons/controls"
-  dependencies:
-    "@storybook/blocks": "workspace:*"
-    "@storybook/global": "npm:^5.0.0"
-    "@storybook/icons": "npm:^1.4.0"
-    dequal: "npm:^2.0.2"
-    react: "npm:^18.2.0"
-    react-dom: "npm:^18.2.0"
-    ts-dedent: "npm:^2.0.0"
-  peerDependencies:
-    storybook: "workspace:^"
-  languageName: unknown
-  linkType: soft
-
 "@storybook/addon-designs@npm:9.0.0--canary.1499c1a.0":
   version: 9.0.0--canary.1499c1a.0
   resolution: "@storybook/addon-designs@npm:9.0.0--canary.1499c1a.0"
@@ -6269,13 +6253,9 @@ __metadata:
   resolution: "@storybook/addon-essentials@workspace:addons/essentials"
   dependencies:
     "@storybook/addon-backgrounds": "workspace:*"
-    "@storybook/addon-controls": "workspace:*"
-    "@storybook/addon-docs": "workspace:*"
     "@storybook/addon-highlight": "workspace:*"
     "@storybook/addon-measure": "workspace:*"
     "@storybook/addon-outline": "workspace:*"
-    "@storybook/addon-toolbars": "workspace:*"
-    "@storybook/addon-viewport": "workspace:*"
     ts-dedent: "npm:^2.0.0"
     typescript: "npm:^5.7.3"
   peerDependencies:
@@ -6492,33 +6472,6 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/addon-toolbars@workspace:*, @storybook/addon-toolbars@workspace:addons/toolbars":
-  version: 0.0.0-use.local
-  resolution: "@storybook/addon-toolbars@workspace:addons/toolbars"
-  dependencies:
-    react: "npm:^18.2.0"
-    react-dom: "npm:^18.2.0"
-    typescript: "npm:^5.7.3"
-  peerDependencies:
-    storybook: "workspace:^"
-  languageName: unknown
-  linkType: soft
-
-"@storybook/addon-viewport@workspace:*, @storybook/addon-viewport@workspace:addons/viewport":
-  version: 0.0.0-use.local
-  resolution: "@storybook/addon-viewport@workspace:addons/viewport"
-  dependencies:
-    "@storybook/global": "npm:^5.0.0"
-    "@storybook/icons": "npm:^1.4.0"
-    memoizerific: "npm:^1.11.3"
-    react: "npm:^18.2.0"
-    react-dom: "npm:^18.2.0"
-    typescript: "npm:^5.7.3"
-  peerDependencies:
-    storybook: "workspace:^"
-  languageName: unknown
-  linkType: soft
-
 "@storybook/angular@workspace:*, @storybook/angular@workspace:frameworks/angular":
   version: 0.0.0-use.local
   resolution: "@storybook/angular@workspace:frameworks/angular"
@@ -6724,6 +6677,7 @@ __metadata:
     create-storybook: "workspace:*"
     cross-spawn: "npm:^7.0.3"
     envinfo: "npm:^7.7.3"
+    execa: "npm:^9.5.2"
     fd-package-json: "npm:^1.2.0"
     find-up: "npm:^5.0.0"
     giget: "npm:^1.0.0"
@@ -6874,7 +6828,7 @@ __metadata:
     next: "npm:^15.0.3"
     styled-jsx: "npm:5.1.6"
     typescript: "npm:^5.7.3"
-    vite-plugin-storybook-nextjs: "npm:2.0.0--canary.33.a61ad85.0"
+    vite-plugin-storybook-nextjs: "npm:2.0.0--canary.33.f53ad45.0"
   peerDependencies:
     next: ^14.1.0 || ^15.0.0
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
@@ -7357,7 +7311,6 @@ __metadata:
     "@playwright/test": "npm:1.48.1"
     "@storybook/addon-a11y": "workspace:*"
     "@storybook/addon-backgrounds": "workspace:*"
-    "@storybook/addon-controls": "workspace:*"
     "@storybook/addon-designs": "npm:9.0.0--canary.1499c1a.0"
     "@storybook/addon-docs": "workspace:*"
     "@storybook/addon-essentials": "workspace:*"
@@ -7372,8 +7325,6 @@ __metadata:
     "@storybook/addon-storysource": "workspace:*"
     "@storybook/addon-test": "workspace:*"
     "@storybook/addon-themes": "workspace:*"
-    "@storybook/addon-toolbars": "workspace:*"
-    "@storybook/addon-viewport": "workspace:*"
     "@storybook/angular": "workspace:*"
     "@storybook/bench": "npm:next"
     "@storybook/blocks": "workspace:*"
@@ -13820,15 +13771,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"detect-package-manager@npm:^3.0.2":
-  version: 3.0.2
-  resolution: "detect-package-manager@npm:3.0.2"
-  dependencies:
-    execa: "npm:^5.1.1"
-  checksum: 10c0/855a8ccd12ea8df19d9c7170e3180592ba6a0826c9d764e6426f115444f918e69724ca38b79121b9cea27a492effc9c8de1c25ff980997252379a7e4d9722569
-  languageName: node
-  linkType: hard
-
 "detect-port@npm:^1.3.0, detect-port@npm:^1.5.1":
   version: 1.5.1
   resolution: "detect-port@npm:1.5.1"
@@ -15630,7 +15572,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"execa@npm:^5.0.0, execa@npm:^5.1.1":
+"execa@npm:^5.0.0":
   version: 5.1.1
   resolution: "execa@npm:5.1.1"
   dependencies:
@@ -18079,17 +18021,6 @@ __metadata:
   version: 5.3.2
   resolution: "ignore@npm:5.3.2"
   checksum: 10c0/f9f652c957983634ded1e7f02da3b559a0d4cc210fca3792cb67f1b153623c9c42efdc1c4121af171e295444459fc4a9201101fb041b1104a3c000bccb188337
-  languageName: node
-  linkType: hard
-
-"image-size@npm:^1.1.1":
-  version: 1.1.1
-  resolution: "image-size@npm:1.1.1"
-  dependencies:
-    queue: "npm:6.0.2"
-  bin:
-    image-size: bin/image-size.js
-  checksum: 10c0/2660470096d12be82195f7e80fe03274689fbd14184afb78eaf66ade7cd06352518325814f88af4bde4b26647889fe49e573129f6e7ba8f5ff5b85cc7f559000
   languageName: node
   linkType: hard
 
@@ -23434,6 +23365,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"package-manager-detector@npm:^1.1.0":
+  version: 1.1.0
+  resolution: "package-manager-detector@npm:1.1.0"
+  checksum: 10c0/b5ba0bdaae4d70bb6e1a1af047522fdcd811e65e60927c2e7cc3736324a00b30d66ac304bab1d7cd925b11142d90fcc4215a7efde430a5616cea698e0b2dfada
+  languageName: node
+  linkType: hard
+
 "pacote@npm:20.0.0":
   version: 20.0.0
   resolution: "pacote@npm:20.0.0"
@@ -24891,15 +24829,6 @@ __metadata:
   version: 1.2.3
   resolution: "queue-microtask@npm:1.2.3"
   checksum: 10c0/900a93d3cdae3acd7d16f642c29a642aea32c2026446151f0778c62ac089d4b8e6c986811076e1ae180a694cedf077d453a11b58ff0a865629a4f82ab558e102
-  languageName: node
-  linkType: hard
-
-"queue@npm:6.0.2":
-  version: 6.0.2
-  resolution: "queue@npm:6.0.2"
-  dependencies:
-    inherits: "npm:~2.0.3"
-  checksum: 10c0/cf987476cc72e7d3aaabe23ccefaab1cd757a2b5e0c8d80b67c9575a6b5e1198807ffd4f0948a3f118b149d1111d810ee773473530b77a5c606673cac2c9c996
   languageName: node
   linkType: hard
 
@@ -27052,7 +26981,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"sharp@npm:^0.33.4, sharp@npm:^0.33.5":
+"sharp@npm:^0.33.5":
   version: 0.33.5
   resolution: "sharp@npm:0.33.5"
   dependencies:
@@ -27836,7 +27765,6 @@ __metadata:
     deep-object-diff: "npm:^1.1.0"
     dequal: "npm:^2.0.2"
     detect-indent: "npm:^7.0.1"
-    detect-package-manager: "npm:^3.0.2"
     detect-port: "npm:^1.3.0"
     diff: "npm:^5.2.0"
     downshift: "npm:^9.0.4"
@@ -27865,6 +27793,7 @@ __metadata:
     nanoid: "npm:^4.0.2"
     npmlog: "npm:^7.0.0"
     open: "npm:^8.4.0"
+    package-manager-detector: "npm:^1.1.0"
     picocolors: "npm:^1.1.0"
     picomatch: "npm:^2.3.0"
     picoquery: "npm:^1.4.0"
@@ -30195,24 +30124,20 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vite-plugin-storybook-nextjs@npm:2.0.0--canary.33.a61ad85.0":
-  version: 2.0.0--canary.33.a61ad85.0
-  resolution: "vite-plugin-storybook-nextjs@npm:2.0.0--canary.33.a61ad85.0"
+"vite-plugin-storybook-nextjs@npm:2.0.0--canary.33.f53ad45.0":
+  version: 2.0.0--canary.33.f53ad45.0
+  resolution: "vite-plugin-storybook-nextjs@npm:2.0.0--canary.33.f53ad45.0"
   dependencies:
     "@next/env": "npm:^15.0.3"
-    image-size: "npm:^1.1.1"
+    image-size: "npm:^2.0.0"
     magic-string: "npm:^0.30.11"
     module-alias: "npm:^2.2.3"
-    sharp: "npm:^0.33.4"
     ts-dedent: "npm:^2.2.0"
   peerDependencies:
     next: ^14.1.0 || ^15.0.0
     storybook: ^9.0.0-0
     vite: ^5.0.0 || ^6.0.0
-  dependenciesMeta:
-    sharp:
-      optional: true
-  checksum: 10c0/b280c87deffde11123ebdef8227c1c0c7f93b39a771e29bf493da2d855d2b7d99a9a19c394d0ac7771302ea91ba4d4e98fb1a9a16322818be93a42706e4b4876
+  checksum: 10c0/ea9c13de1601dcf02d1d0a7a3a1b2f665b05a03f15a051d5a40480b64adae2a0ac2a2b88ecf550ab15e64c7a67c326b5181e9d1bedc13067e418c64c77d0ad33
   languageName: node
   linkType: hard
 

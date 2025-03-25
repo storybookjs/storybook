@@ -30,7 +30,7 @@ export const Violations = {
         <img src="https://storybook.js.org/images/placeholders/350x150.png" />
       </div>
       <div>
-      <p>Checkbox with contrast toggle</p>
+        <p>Checkbox with contrast toggle</p>
         <input type="checkbox" id="color-toggle" />
         <label for="color-toggle">Toggle violation:</label>
       </div>

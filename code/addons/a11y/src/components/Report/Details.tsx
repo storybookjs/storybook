@@ -102,7 +102,8 @@ const CopyButton = ({ onClick }: { onClick: () => void }) => {
   const handleClick = useCallback(() => {
     onClick();
     setCopied(true);
-    setTimeout(setCopied, 2000, false);
+    const timeout = setTimeout(() => setCopied(false), 2000);
+    return () => clearTimeout(timeout);
   }, [onClick]);
 
   return (
@@ -131,7 +132,7 @@ export const Details = ({ item, type, selection, handleSelectionChange }: Detail
     </Info>
 
     <Tabs.Root
-      defaultValue="tab0"
+      defaultValue={selection}
       orientation="vertical"
       value={selection}
       onValueChange={handleSelectionChange}
@@ -176,8 +177,8 @@ function getContent(node: NodeResult, key: string) {
   return (
     <>
       <Messages>
-        {rules.map((rule, index) => (
-          <div key={index}>
+        {rules.map((rule) => (
+          <div key={rule.id}>
             {`${rule.message}${/(\.|: [^.]+\.*)$/.test(rule.message) ? '' : '.'}`}
           </div>
         ))}

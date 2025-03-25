@@ -1,6 +1,6 @@
 import type { StorybookConfig, TypescriptOptions } from 'storybook/internal/types';
 
-import type { PM } from 'detect-package-manager';
+import type { DetectResult } from 'package-manager-detector';
 
 import type { MonorepoType } from './get-monorepo-type';
 
@@ -48,8 +48,9 @@ export type StorybookMetadata = {
   renderer?: string;
   monorepo?: MonorepoType;
   packageManager?: {
-    type: PM;
-    version: string;
+    type: DetectResult['name'];
+    version: DetectResult['version'];
+    agent: DetectResult['agent'];
   };
   typescriptOptions?: Partial<TypescriptOptions>;
   addons?: Record<string, StorybookAddon>;

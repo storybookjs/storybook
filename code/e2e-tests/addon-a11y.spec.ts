@@ -22,7 +22,7 @@ test.describe('addon-a11y', () => {
     // check that the highlight is visible
     const imageElement = sbPage.previewIframe().getByRole('img');
     expect(await imageElement.evaluate((el) => getComputedStyle(el).outline)).toBe(
-      'rgb(255, 68, 0) dashed 2px'
+      'rgba(255, 68, 0, 0.6) solid 1px'
     );
 
     await page.getByRole('button', { name: 'Hide highlights' }).click();
@@ -55,13 +55,13 @@ test.describe('addon-a11y', () => {
     const panel = sbPage.panelContent();
     await panel.getByRole('tab', { name: 'Passes' }).click();
     await panel.getByRole('button', { name: 'ARIA hidden element must not' }).click();
-    await panel.getByRole('tab', { name: '2. <table aria-hidden="true"' }).click();
+    await panel.getByRole('tab', { name: '1. <table aria-hidden="true"' }).click();
     await panel.getByRole('button', { name: 'Copy link' }).click();
 
     // test that clipboard contains the correct url
     const clipboard = await page.evaluate(() => navigator.clipboard.readText());
     await expect(clipboard).toContain(
-      'path=/story/addons-a11y-tests--violations&addonPanel=storybook/a11y/panel&a11ySelection=passes.aria-hidden-focus.2'
+      'path=/story/addons-a11y-tests--violations&addonPanel=storybook/a11y/panel&a11ySelection=passes.aria-hidden-focus.1'
     );
 
     // navigate to that url
@@ -71,7 +71,7 @@ test.describe('addon-a11y', () => {
     await expect(
       page.getByRole('button', { name: 'ARIA hidden element must not' })
     ).toHaveAttribute('data-active', 'true');
-    const element = page.getByRole('tab', { name: '2. <table aria-hidden="true"' });
+    const element = page.getByRole('tab', { name: '1. <table aria-hidden="true"' });
     await expect(element).toHaveAttribute('data-state', 'active');
   });
 });

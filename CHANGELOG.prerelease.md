@@ -1,3 +1,13 @@
+## 9.0.0-alpha.10
+
+- Addon-Essentials: Remove addon-docs - [#30856](https://github.com/storybookjs/storybook/pull/30856), thanks @ndelangen!
+- Addon-docs: Fix non-string handling in Stories block - [#30913](https://github.com/storybookjs/storybook/pull/30913), thanks @JamesIves!
+- Controls: Embed addon-controls into the core - [#30864](https://github.com/storybookjs/storybook/pull/30864), thanks @ndelangen!
+- Core: Prebundle jsdoc-type-pratt-parser again - [#30923](https://github.com/storybookjs/storybook/pull/30923), thanks @kasperpeulen!
+- React: Ensure render functions and decorators are react components - [#30869](https://github.com/storybookjs/storybook/pull/30869), thanks @kasperpeulen!
+- Toolbars: Embed addon-toolbars into the core - [#30871](https://github.com/storybookjs/storybook/pull/30871), thanks @ndelangen!
+- Viewport: Embed addon-viewport in the core - [#30909](https://github.com/storybookjs/storybook/pull/30909), thanks @ndelangen!
+
 ## 9.0.0-alpha.9
 
 - Addons: Update the Viewport and Background Addon - [#30841](https://github.com/storybookjs/storybook/pull/30841), thanks @ndelangen!

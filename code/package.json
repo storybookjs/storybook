@@ -294,5 +294,6 @@
         "Dependency Upgrades"
       ]
     ]
-  }
+  },
+  "deferredNextVersion": "9.0.0-alpha.10"
 }

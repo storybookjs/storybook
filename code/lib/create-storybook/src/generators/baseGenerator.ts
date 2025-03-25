@@ -7,7 +7,6 @@ import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 
 import type { NpmOptions } from '../../../../core/src/cli/NpmOptions';
-import { detectBuilder } from '../../../../core/src/cli/detect';
 import { configureEslintPlugin, extractEslintInfo } from '../../../../core/src/cli/eslintPlugin';
 import { copyTemplateFiles } from '../../../../core/src/cli/helpers';
 import {
@@ -209,10 +208,6 @@ export async function baseGenerator(
 ) {
   const isStorybookInMonorepository = packageManager.isStorybookInMonorepo();
   const shouldApplyRequireWrapperOnPackageNames = isStorybookInMonorepository || pnp;
-
-  if (!builder) {
-    builder = await detectBuilder(packageManager as any, projectType);
-  }
 
   if (features.includes('test')) {
     const supportedFrameworks: ProjectType[] = [

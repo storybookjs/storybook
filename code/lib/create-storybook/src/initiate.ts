@@ -12,12 +12,17 @@ import * as babel from '../../../core/src/babel';
 import type { NpmOptions } from '../../../core/src/cli/NpmOptions';
 import {
   detect,
+  detectBuilder,
   detectLanguage,
   detectPnp,
   isStorybookInstantiated,
 } from '../../../core/src/cli/detect';
 import type { Builder } from '../../../core/src/cli/project_types';
-import { ProjectType, installableProjectTypes } from '../../../core/src/cli/project_types';
+import {
+  CoreBuilder,
+  ProjectType,
+  installableProjectTypes,
+} from '../../../core/src/cli/project_types';
 import type { JsPackageManager } from '../../../core/src/common/js-package-manager/JsPackageManager';
 import { JsPackageManagerFactory } from '../../../core/src/common/js-package-manager/JsPackageManagerFactory';
 import { HandledError } from '../../../core/src/common/utils/HandledError';
@@ -403,6 +408,8 @@ export async function doInitiate(options: CommandOptions): Promise<
 
   const storybookInstantiated = isStorybookInstantiated();
 
+  options.builder = options.builder ?? (await detectBuilder(packageManager as any, projectType));
+
   if (options.force === false && storybookInstantiated && projectType !== ProjectType.ANGULAR) {
     logger.log();
     const { force } = await prompts([
@@ -422,7 +429,11 @@ export async function doInitiate(options: CommandOptions): Promise<
     }
   }
 
-  if (selectedFeatures.has('test')) {
+  const isTestFeatureEnabled = () =>
+    selectedFeatures.has('test') &&
+    (options.builder === CoreBuilder.Vite || projectType === ProjectType.NEXTJS);
+
+  if (isTestFeatureEnabled()) {
     const packageVersionsData = await packageVersions.condition({ packageManager }, {} as any);
     if (packageVersionsData.type === 'incompatible') {
       const { ignorePackageVersions } = isInteractive
@@ -445,7 +456,7 @@ export async function doInitiate(options: CommandOptions): Promise<
     }
   }
 
-  if (selectedFeatures.has('test')) {
+  if (isTestFeatureEnabled()) {
     const vitestConfigFilesData = await vitestConfigFiles.condition(
       { babel, findUp, fs } as any,
       { directory: process.cwd() } as any
@@ -532,7 +543,7 @@ export async function doInitiate(options: CommandOptions): Promise<
       ? `ng run ${installResult.projectName}:storybook`
       : packageManager.getRunStorybookCommand();
 
-  if (selectedFeatures.has('test')) {
+  if (isTestFeatureEnabled()) {
     logger.log(
       `> npx storybook@${versions.storybook} add @storybook/addon-test@${versions['@storybook/addon-test']}`
     );

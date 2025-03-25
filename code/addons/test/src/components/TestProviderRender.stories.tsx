@@ -115,6 +115,32 @@ export const Testing: Story = {
   },
 };
 
+export const TestingWithStatuses: Story = {
+  args: {
+    testProviderState: 'test-provider-state:running',
+    storeState: {
+      ...storeOptions.initialState,
+      config: {
+        coverage: true,
+        a11y: true,
+      },
+      currentRun: {
+        ...storeOptions.initialState.currentRun,
+        finishedTestCount: 30,
+        totalTestCount: 100,
+      },
+    },
+    componentTestStatusValueToStoryIds: {
+      ...meta.args.componentTestStatusValueToStoryIds,
+      'status-value:error': ['story-id-1', 'story-id-2'],
+    },
+    a11yStatusValueToStoryIds: {
+      ...meta.args.a11yStatusValueToStoryIds,
+      'status-value:warning': ['story-id-3', 'story-id-4', 'story-id-5'],
+    },
+  },
+};
+
 export const Watching: Story = {
   args: {
     storeState: {

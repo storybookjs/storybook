@@ -1,4 +1,4 @@
-import React, { type ComponentProps, type FC, useCallback } from 'react';
+import React, { type ComponentProps, type FC } from 'react';
 
 import {
   IconButton,
@@ -111,17 +111,12 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
   isSettingsUpdated,
   ...props
 }) => {
-  const {
-    config,
-    watching,
-    cancelling,
-    currentRun: { coverageSummary, finishedTestCount },
-  } = storeState;
+  const { config, watching, cancelling, currentRun } = storeState;
 
   const hasA11yAddon = addons.experimental_getRegisteredAddons().includes(A11Y_ADDON_ID);
 
   const isRunning = testProviderState === 'test-provider-state:running';
-  const isStarting = isRunning && finishedTestCount === 0;
+  const isStarting = isRunning && currentRun.finishedTestCount === 0;
 
   const [componentTestStatusIcon, componentTestStatusLabel]: [
     ComponentProps<typeof TestStatusIcon>['status'],
@@ -132,10 +127,10 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
       : componentTestStatusValueToStoryIds['status-value:error'].length > 0
         ? ['negative', 'Component tests failed']
         : isRunning
-          ? ['pending', 'Testing in progress']
+          ? ['unknown', 'Testing in progress']
           : componentTestStatusValueToStoryIds['status-value:success'].length > 0
             ? ['positive', 'Component tests passed']
-            : ['unknown', 'Unknown component test status'];
+            : ['unknown', 'Run tests to see results'];
 
   const [a11yStatusIcon, a11yStatusLabel]: [
     ComponentProps<typeof TestStatusIcon>['status'],
@@ -148,10 +143,10 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
         : a11yStatusValueToStoryIds['status-value:warning'].length > 0
           ? ['warning', 'Accessibility tests failed']
           : isRunning
-            ? ['pending', 'Testing in progress']
+            ? ['unknown', 'Testing in progress']
             : a11yStatusValueToStoryIds['status-value:success'].length > 0
               ? ['positive', 'Accessibility tests passed']
-              : ['unknown', 'Unknown accessibility test status'];
+              : ['unknown', 'Run tests to see accessibility results'];
 
   return (
     <Container {...props}>
@@ -269,17 +264,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
           <WithTooltip
             hasChrome={false}
             trigger="hover"
-            tooltip={
-              <TooltipNote
-                note={
-                  isRunning
-                    ? 'Testing in progress'
-                    : testProviderState === 'test-provider-state:crashed'
-                      ? 'View error'
-                      : 'View test results'
-                }
-              />
-            }
+            tooltip={<TooltipNote note={componentTestStatusLabel} />}
           >
             <IconButton
               size="medium"
@@ -303,6 +288,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
               <TestStatusIcon
                 status={componentTestStatusIcon}
                 aria-label={componentTestStatusLabel}
+                isRunning={isRunning}
               />
               {componentTestStatusValueToStoryIds['status-value:error'].length +
                 componentTestStatusValueToStoryIds['status-value:warning'].length || null}
@@ -336,11 +322,13 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                   note={
                     watching
                       ? 'Coverage is unavailable in watch mode'
-                      : isRunning && config.coverage
-                        ? 'Calculating...'
-                        : coverageSummary
-                          ? 'View report'
-                          : 'Run tests to calculate coverage'
+                      : isRunning
+                        ? 'Testing in progress'
+                        : currentRun.coverageSummary
+                          ? 'View coverage report'
+                          : testProviderState === 'test-provider-state:crashed'
+                            ? 'Local tests crashed'
+                            : 'Run tests to calculate coverage'
                   }
                 />
               }
@@ -349,24 +337,28 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                 <IconButton size="medium" disabled>
                   <InfoIcon aria-label="Coverage is unavailable in watch mode" />
                 </IconButton>
-              ) : coverageSummary ? (
+              ) : currentRun.coverageSummary ? (
                 <IconButton asChild size="medium">
                   <a href="/coverage/index.html" target="_blank" aria-label="Open coverage report">
                     <TestStatusIcon
-                      percentage={coverageSummary.percentage}
-                      status={coverageSummary.status}
-                      aria-label={`Coverage status: ${coverageSummary.status}`}
+                      isRunning={isRunning}
+                      percentage={currentRun.coverageSummary.percentage}
+                      status={currentRun.coverageSummary.status}
+                      aria-label={`Coverage status: ${currentRun.coverageSummary.status}`}
                     />
-                    <span aria-label={`${coverageSummary.percentage} percent coverage`}>
-                      {coverageSummary.percentage}%
+                    <span aria-label={`${currentRun.coverageSummary.percentage} percent coverage`}>
+                      {currentRun.coverageSummary.percentage}%
                     </span>
                   </a>
                 </IconButton>
               ) : (
                 <IconButton size="medium" disabled>
                   <TestStatusIcon
-                    status={isRunning && config.coverage ? 'pending' : 'unknown'}
-                    aria-label={`Coverage status: unknown`}
+                    isRunning={isRunning}
+                    status={
+                      testProviderState === 'test-provider-state:crashed' ? 'critical' : 'unknown'
+                    }
+                    aria-label="Coverage status: unknown"
                   />
                 </IconButton>
               )}
@@ -397,13 +389,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
             <WithTooltip
               hasChrome={false}
               trigger="hover"
-              tooltip={
-                <TooltipNote
-                  note={
-                    isRunning && config.a11y ? 'Testing in progress' : 'View accessibility results'
-                  }
-                />
-              }
+              tooltip={<TooltipNote note={a11yStatusLabel} />}
             >
               <IconButton
                 size="medium"
@@ -424,7 +410,11 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                   });
                 }}
               >
-                <TestStatusIcon status={a11yStatusIcon} aria-label={a11yStatusLabel} />
+                <TestStatusIcon
+                  status={a11yStatusIcon}
+                  aria-label={a11yStatusLabel}
+                  isRunning={isRunning}
+                />
                 {a11yStatusValueToStoryIds['status-value:error'].length +
                   a11yStatusValueToStoryIds['status-value:warning'].length || null}
               </IconButton>

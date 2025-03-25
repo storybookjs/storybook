@@ -121,6 +121,7 @@ export const Tabs: React.FC<TabsProps> = ({ tabs }) => {
               key={index}
               data-type={tab.type}
               data-active={activeTab === tab.type}
+              aria-selected={activeTab === tab.type}
               active={activeTab === tab.type}
               onClick={handleToggle}
             >

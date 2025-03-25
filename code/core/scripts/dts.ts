@@ -32,6 +32,9 @@ async function run() {
     'storybook/actions/manager',
     'storybook/actions/decorator',
 
+    'storybook/viewport',
+    'storybook/viewport/preview',
+
     'storybook/internal/builder-manager',
     'storybook/internal/channels',
     'storybook/internal/client-logger',

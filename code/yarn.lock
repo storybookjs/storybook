@@ -6134,7 +6134,6 @@ __metadata:
     "@storybook/addon-highlight": "workspace:*"
     "@storybook/addon-measure": "workspace:*"
     "@storybook/addon-outline": "workspace:*"
-    "@storybook/addon-toolbars": "workspace:*"
     "@storybook/addon-viewport": "workspace:*"
     ts-dedent: "npm:^2.0.0"
     typescript: "npm:^5.7.3"
@@ -6342,18 +6341,6 @@ __metadata:
   dependencies:
     "@storybook/icons": "npm:^1.4.0"
     ts-dedent: "npm:^2.0.0"
-    typescript: "npm:^5.7.3"
-  peerDependencies:
-    storybook: "workspace:^"
-  languageName: unknown
-  linkType: soft
-
-"@storybook/addon-toolbars@workspace:*, @storybook/addon-toolbars@workspace:addons/toolbars":
-  version: 0.0.0-use.local
-  resolution: "@storybook/addon-toolbars@workspace:addons/toolbars"
-  dependencies:
-    react: "npm:^18.2.0"
-    react-dom: "npm:^18.2.0"
     typescript: "npm:^5.7.3"
   peerDependencies:
     storybook: "workspace:^"
@@ -7228,7 +7215,6 @@ __metadata:
     "@storybook/addon-storysource": "workspace:*"
     "@storybook/addon-test": "workspace:*"
     "@storybook/addon-themes": "workspace:*"
-    "@storybook/addon-toolbars": "workspace:*"
     "@storybook/addon-viewport": "workspace:*"
     "@storybook/angular": "workspace:*"
     "@storybook/bench": "npm:next"

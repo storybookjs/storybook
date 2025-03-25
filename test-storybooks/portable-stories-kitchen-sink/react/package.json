@@ -30,7 +30,6 @@
     "@storybook/addon-outline": "file:../../../code/addons/outline",
     "@storybook/addon-storysource": "file:../../../code/addons/storysource",
     "@storybook/addon-themes": "file:../../../code/addons/themes",
-    "@storybook/addon-toolbars": "file:../../../code/addons/toolbars",
     "@storybook/addon-viewport": "file:../../../code/addons/viewport",
     "@storybook/angular": "file:../../../code/frameworks/angular",
     "@storybook/blocks": "file:../../../code/lib/blocks",

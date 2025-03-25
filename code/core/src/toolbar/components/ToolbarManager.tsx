@@ -1,5 +1,4 @@
-import type { FC } from 'react';
-import React from 'react';
+import React, { type FC } from 'react';
 
 import { Separator } from 'storybook/internal/components';
 

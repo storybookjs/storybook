@@ -111,7 +111,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
   isSettingsUpdated,
   ...props
 }) => {
-  const { config, watching, cancelling, currentRun } = storeState;
+  const { config, watching, cancelling, currentRun, fatalError } = storeState;
 
   const hasA11yAddon = addons.experimental_getRegisteredAddons().includes(A11Y_ADDON_ID);
 
@@ -121,32 +121,30 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
   const [componentTestStatusIcon, componentTestStatusLabel]: [
     ComponentProps<typeof TestStatusIcon>['status'],
     string,
-  ] =
-    testProviderState === 'test-provider-state:crashed'
-      ? ['critical', 'Local tests crashed']
-      : componentTestStatusValueToStoryIds['status-value:error'].length > 0
-        ? ['negative', 'Component tests failed']
-        : isRunning
-          ? ['unknown', 'Testing in progress']
-          : componentTestStatusValueToStoryIds['status-value:success'].length > 0
-            ? ['positive', 'Component tests passed']
-            : ['unknown', 'Run tests to see results'];
+  ] = fatalError
+    ? ['critical', 'Local tests crashed']
+    : componentTestStatusValueToStoryIds['status-value:error'].length > 0
+      ? ['negative', 'Component tests failed']
+      : isRunning
+        ? ['unknown', 'Testing in progress']
+        : componentTestStatusValueToStoryIds['status-value:success'].length > 0
+          ? ['positive', 'Component tests passed']
+          : ['unknown', 'Run tests to see results'];
 
   const [a11yStatusIcon, a11yStatusLabel]: [
     ComponentProps<typeof TestStatusIcon>['status'],
     string,
-  ] =
-    testProviderState === 'test-provider-state:crashed'
-      ? ['critical', 'Local tests crashed']
-      : a11yStatusValueToStoryIds['status-value:error'].length > 0
-        ? ['negative', 'Accessibility tests failed']
-        : a11yStatusValueToStoryIds['status-value:warning'].length > 0
-          ? ['warning', 'Accessibility tests failed']
-          : isRunning
-            ? ['unknown', 'Testing in progress']
-            : a11yStatusValueToStoryIds['status-value:success'].length > 0
-              ? ['positive', 'Accessibility tests passed']
-              : ['unknown', 'Run tests to see accessibility results'];
+  ] = fatalError
+    ? ['critical', 'Local tests crashed']
+    : a11yStatusValueToStoryIds['status-value:error'].length > 0
+      ? ['negative', 'Accessibility tests failed']
+      : a11yStatusValueToStoryIds['status-value:warning'].length > 0
+        ? ['warning', 'Accessibility tests failed']
+        : isRunning
+          ? ['unknown', 'Testing in progress']
+          : a11yStatusValueToStoryIds['status-value:success'].length > 0
+            ? ['positive', 'Accessibility tests passed']
+            : ['unknown', 'Run tests to see accessibility results'];
 
   return (
     <Container {...props}>
@@ -154,11 +152,19 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
         <Info>
           <Title
             id="testing-module-title"
-            crashed={testProviderState === 'test-provider-state:crashed'}
+            crashed={
+              testProviderState === 'test-provider-state:crashed' ||
+              fatalError !== undefined ||
+              currentRun.unhandledErrors.length > 0
+            }
           >
-            {testProviderState === 'test-provider-state:crashed'
-              ? 'Local tests failed'
-              : 'Run local tests'}
+            {currentRun.unhandledErrors.length === 1
+              ? 'Local tests completed with an error'
+              : currentRun.unhandledErrors.length > 1
+                ? 'Local tests completed with errors'
+                : fatalError
+                  ? 'Local tests didn’t complete'
+                  : 'Run local tests'}
           </Title>
           <Description
             id="testing-module-description"
@@ -326,7 +332,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                         ? 'Testing in progress'
                         : currentRun.coverageSummary
                           ? 'View coverage report'
-                          : testProviderState === 'test-provider-state:crashed'
+                          : fatalError
                             ? 'Local tests crashed'
                             : 'Run tests to calculate coverage'
                   }
@@ -355,9 +361,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                 <IconButton size="medium" disabled>
                   <TestStatusIcon
                     isRunning={isRunning}
-                    status={
-                      testProviderState === 'test-provider-state:crashed' ? 'critical' : 'unknown'
-                    }
+                    status={fatalError ? 'critical' : 'unknown'}
                     aria-label="Coverage status: unknown"
                   />
                 </IconButton>

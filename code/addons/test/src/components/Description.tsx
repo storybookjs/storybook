@@ -56,7 +56,7 @@ export function Description({
       'Crashed'
     );
   } else if (unhandledErrors.length > 0) {
-    const unhandledErrorDescription = `${unhandledErrors.length} unhandled error${unhandledErrors?.length > 1 ? 's' : ''}`;
+    const unhandledErrorDescription = `View ${unhandledErrors.length} unhandled error${unhandledErrors?.length > 1 ? 's' : ''}`;
     description = setModalOpen ? (
       <LinkComponent isButton onClick={() => setModalOpen(true)}>
         {unhandledErrorDescription}

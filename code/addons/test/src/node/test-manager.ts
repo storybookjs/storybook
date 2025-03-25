@@ -86,7 +86,7 @@ export class TestManager {
   }
 
   async handleTriggerRunEvent(event: TriggerRunEvent) {
-    return this.runTestsWithState({
+    await this.runTestsWithState({
       storyIds: event.payload?.storyIds,
       callback: async () => {
         try {
@@ -137,7 +137,12 @@ export class TestManager {
         a11y: s.config.a11y,
       },
     }));
-    return this.testProviderStore.runWithState(callback);
+    await this.testProviderStore.runWithState(async () => {
+      await callback();
+      if (this.store.getState().currentRun.unhandledErrors.length > 0) {
+        throw new Error('Tests completed but there are unhandled errors');
+      }
+    });
   }
 
   onTestModuleCollected(collectedTestCount: number) {

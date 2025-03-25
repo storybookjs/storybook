@@ -98,9 +98,11 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
   const testProviderStore = experimental_getTestProviderStore(ADDON_ID);
 
   store.subscribe('TRIGGER_RUN', (event, eventInfo) => {
-    // TODO: this ensures the provider is marked as running immediately,
-    // but it could also result in a deadlock, if the state is never reset back due to the child process crashing or similar.
     testProviderStore.setState('test-provider-state:running');
+    store.setState((s) => ({
+      ...s,
+      fatalError: undefined,
+    }));
     runTestRunner(channel, store, STORE_CHANNEL_EVENT_NAME, [{ event, eventInfo }]);
   });
   store.subscribe('TOGGLE_WATCHING', (event, eventInfo) => {

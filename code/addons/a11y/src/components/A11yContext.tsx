@@ -29,7 +29,6 @@ import {
   PANEL_ID,
   STATUS_TYPE_ID_A11Y,
   STATUS_TYPE_ID_COMPONENT_TEST,
-  TEST_PROVIDER_ID,
 } from '../constants';
 import type { A11yParameters } from '../params';
 import type { A11YReport } from '../types';
@@ -62,8 +61,6 @@ export interface A11yContextStore {
   handleJumpToElement: (target: string) => void;
   handleSelectionChange: (key: string) => void;
 }
-
-const componentTestStatusStore = experimental_getStatusStore('storybook/component-test');
 
 const colorsByType = {
   [RuleType.VIOLATION]: convert(themes.light).color.negative,
@@ -102,7 +99,7 @@ const defaultResult = {
   violations: [],
 };
 
-type Status = 'initial' | 'manual' | 'running' | 'error' | 'broken' | 'ran' | 'ready';
+type Status = 'initial' | 'manual' | 'running' | 'error' | 'component-test-error' | 'ran' | 'ready';
 
 export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
   const parameters = useParameter<A11yParameters>('a11y', {
@@ -136,13 +133,18 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
   const currentStoryA11yStatusValue = experimental_useStatusStore(
     (allStatuses) => allStatuses[storyId]?.[STATUS_TYPE_ID_A11Y]?.value
   );
-  componentTestStatusStore.onAllStatusChange((statuses, previousStatuses) => {
-    const current = statuses[storyId]?.[STATUS_TYPE_ID_COMPONENT_TEST];
-    const previous = previousStatuses[storyId]?.[STATUS_TYPE_ID_COMPONENT_TEST];
-    if (current?.value === 'status-value:error' && previous?.value !== 'status-value:error') {
-      setStatus('broken');
-    }
-  });
+
+  useEffect(() => {
+    return experimental_getStatusStore('storybook/component-test').onAllStatusChange(
+      (statuses, previousStatuses) => {
+        const current = statuses[storyId]?.[STATUS_TYPE_ID_COMPONENT_TEST];
+        const previous = previousStatuses[storyId]?.[STATUS_TYPE_ID_COMPONENT_TEST];
+        if (current?.value === 'status-value:error' && previous?.value !== 'status-value:error') {
+          setStatus('component-test-error');
+        }
+      }
+    );
+  }, [storyId]);
 
   useEffect(() => {
     if (status !== 'ran') {

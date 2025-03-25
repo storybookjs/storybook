@@ -193,7 +193,7 @@ export const A11YPanel: React.FC = () => {
               </Button>
             </>
           )}
-          {status === 'broken' && (
+          {status === 'component-test-error' && (
             <>
               <div>
                 <strong>This story&apos;s component tests failed</strong>

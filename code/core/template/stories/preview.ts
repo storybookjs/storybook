@@ -53,6 +53,11 @@ export const initialGlobals = {
 
   sb_theme: 'light',
   locale: 'en',
+
+  viewport: {
+    value: undefined,
+    isRotated: false,
+  },
 };
 
 export const globalTypes = {

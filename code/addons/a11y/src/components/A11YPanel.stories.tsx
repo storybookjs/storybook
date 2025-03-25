@@ -1,11 +1,10 @@
 import React from 'react';
 
-import type { Meta, StoryObj } from '@storybook/react-vite';
-
 import { ManagerContext } from 'storybook/manager-api';
 import { fn } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
+import preview from '../../../../.storybook/preview';
 import { results } from '../results.mock';
 import { RuleType } from '../types';
 import { A11YPanel } from './A11YPanel';
@@ -33,17 +32,13 @@ const managerContext: any = {
   },
 };
 
-const meta: Meta = {
+const meta = preview.meta({
   title: 'Panel',
   component: A11YPanel,
   parameters: {
     layout: 'fullscreen',
   },
-} satisfies Meta<typeof A11YPanel>;
-
-export default meta;
-
-type Story = StoryObj<typeof meta>;
+});
 
 const Template = (args: Pick<A11yContextStore, 'results' | 'error' | 'status' | 'discrepancy'>) => (
   <A11yContext.Provider
@@ -73,7 +68,7 @@ const Template = (args: Pick<A11yContextStore, 'results' | 'error' | 'status' | 
   </A11yContext.Provider>
 );
 
-export const Initializing: Story = {
+export const Initializing = meta.story({
   render: () => {
     return (
       <Template
@@ -84,9 +79,9 @@ export const Initializing: Story = {
       />
     );
   },
-};
+});
 
-export const Manual: Story = {
+export const Manual = meta.story({
   render: () => {
     return (
       <Template
@@ -97,9 +92,9 @@ export const Manual: Story = {
       />
     );
   },
-};
+});
 
-export const ManualWithDiscrepancy: Story = {
+export const ManualWithDiscrepancy = meta.story({
   render: () => {
     return (
       <Template
@@ -110,9 +105,9 @@ export const ManualWithDiscrepancy: Story = {
       />
     );
   },
-};
+});
 
-export const Running: Story = {
+export const Running = meta.story({
   render: () => {
     return (
       <Template
@@ -123,15 +118,15 @@ export const Running: Story = {
       />
     );
   },
-};
+});
 
-export const ReadyWithResults: Story = {
+export const ReadyWithResults = meta.story({
   render: () => {
     return <Template results={results} status="ready" error={null} discrepancy={null} />;
   },
-};
+});
 
-export const ReadyWithResultsDiscrepancyCLIPassedBrowserFailed: Story = {
+export const ReadyWithResultsDiscrepancyCLIPassedBrowserFailed = meta.story({
   render: () => {
     return (
       <Template
@@ -142,9 +137,9 @@ export const ReadyWithResultsDiscrepancyCLIPassedBrowserFailed: Story = {
       />
     );
   },
-};
+});
 
-export const Error: Story = {
+export const Error = meta.story({
   render: () => {
     return (
       <Template
@@ -155,9 +150,9 @@ export const Error: Story = {
       />
     );
   },
-};
+});
 
-export const ErrorStateWithObject: Story = {
+export const ErrorStateWithObject = meta.story({
   render: () => {
     return (
       <Template
@@ -168,17 +163,17 @@ export const ErrorStateWithObject: Story = {
       />
     );
   },
-};
+});
 
-export const Broken: Story = {
+export const Broken = meta.story({
   render: () => {
     return (
       <Template
         results={{ passes: [], incomplete: [], violations: [] }}
-        status="broken"
+        status="component-test-error"
         error={null}
         discrepancy={null}
       />
     );
   },
-};
+});

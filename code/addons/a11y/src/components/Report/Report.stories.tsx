@@ -1,11 +1,10 @@
 import React from 'react';
 
-import type { Meta, StoryObj } from '@storybook/react-vite';
-
 import { ManagerContext } from 'storybook/manager-api';
 import { fn } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
+import preview from '../../../../../.storybook/preview';
 import { results } from '../../results.mock';
 import { RuleType } from '../../types';
 import { Report } from './Report';
@@ -30,7 +29,7 @@ const managerContext: any = {
   },
 };
 
-const meta: Meta = {
+const meta = preview.meta({
   title: 'Report',
   component: Report,
   decorators: [
@@ -53,28 +52,24 @@ const meta: Meta = {
     selectedItems: new Map(),
     toggleOpen: fn().mockName('toggleOpen'),
   },
-} satisfies Meta<typeof Report>;
+});
 
-export default meta;
+export const Empty = meta.story({});
 
-type Story = StoryObj<typeof meta>;
-
-export const Empty: Story = {};
-
-export const Violations: Story = {
+export const Violations = meta.story({
   args: {
     items: results.violations,
   },
-};
+});
 
-export const Incomplete: Story = {
+export const Incomplete = meta.story({
   args: {
     items: results.incomplete,
   },
-};
+});
 
-export const Passes: Story = {
+export const Passes = meta.story({
   args: {
     items: results.passes,
   },
-};
+});

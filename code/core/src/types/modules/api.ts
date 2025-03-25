@@ -38,8 +38,6 @@ export interface API_ProviderData<API> {
 
 export interface API_Provider<API> {
   channel?: Channel;
-  /** @deprecated Will be removed in 8.0, please use channel instead */
-  serverChannel?: Channel;
   renderPreview?: API_IframeRenderer;
   handleAPI(api: API): void;
   getConfig(): {

@@ -102,7 +102,8 @@ const CopyButton = ({ onClick }: { onClick: () => void }) => {
   const handleClick = useCallback(() => {
     onClick();
     setCopied(true);
-    setTimeout(setCopied, 2000, false);
+    const timeout = setTimeout(() => setCopied(false), 2000);
+    return () => clearTimeout(timeout);
   }, [onClick]);
 
   return (

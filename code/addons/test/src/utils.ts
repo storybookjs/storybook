@@ -4,7 +4,7 @@ import Filter from 'ansi-to-html';
 import { type StorybookTheme, useTheme } from 'storybook/theming';
 import stripAnsi from 'strip-ansi';
 
-import type { ErrorLike } from './constants';
+import type { ErrorLike } from './types';
 
 export function isTestAssertionError(error: unknown) {
   return isChaiError(error) || isJestError(error);

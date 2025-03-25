@@ -102,7 +102,9 @@ export function GlobalErrorModal({ onRerun, storeState }: GlobalErrorModalProps)
     <ol>
       {unhandledErrors.map((error) => (
         <li key={error.name + error.message}>
-          <h3>{error.message}</h3>
+          <p>
+            {error.name}: {error.message}
+          </p>
           {error.VITEST_TEST_PATH && (
             <p>
               This error originated in "<b>{error.VITEST_TEST_PATH}</b>"". It doesn't mean the error
@@ -123,7 +125,7 @@ export function GlobalErrorModal({ onRerun, storeState }: GlobalErrorModalProps)
               </ul>
             </p>
           )}
-          <p>{error.stack}</p>
+          {error.stack && <p>{error.stack}</p>}
         </li>
       ))}
     </ol>

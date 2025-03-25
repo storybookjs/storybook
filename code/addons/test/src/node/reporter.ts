@@ -34,9 +34,19 @@ export class StorybookReporter implements Reporter {
     unhandledErrors: readonly SerializedError[]
   ) {
     const totalTestCount = testModules.flatMap((t) => Array.from(t.children.allTests())).length;
+    const testModulesErrors = testModules.flatMap((t) => t.errors());
+    const serializedErrors = unhandledErrors.concat(testModulesErrors).map((e) => {
+      return {
+        ...e,
+        name: e.name,
+        message: e.message,
+        stack: e.stack?.replace(e.message, ''),
+        cause: e.cause,
+      };
+    });
     this.testManager.onTestRunEnd({
       totalTestCount,
-      unhandledErrors: unhandledErrors as unknown as VitestError[],
+      unhandledErrors: serializedErrors as unknown as VitestError[],
     });
 
     this.clearVitestState();

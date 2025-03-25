@@ -19,6 +19,7 @@ import { mdxToCSF } from './mdx-to-csf';
 import { newFrameworks } from './new-frameworks';
 import { removeReactDependency } from './prompt-remove-react';
 import { reactDocgen } from './react-docgen';
+import { removeAddonInteractions } from './remove-addon-interactions';
 import { removeArgtypesRegex } from './remove-argtypes-regex';
 import { removedGlobalClientAPIs } from './remove-global-client-apis';
 import { removeLegacyMDX1 } from './remove-legacymdx1';
@@ -72,6 +73,7 @@ export const allFixes: Fix[] = [
   addonExperimentalTest,
   rendererToFramework,
   rnstorybookConfig,
+  removeAddonInteractions,
 ];
 
 export const initFixes: Fix[] = [eslintPlugin];

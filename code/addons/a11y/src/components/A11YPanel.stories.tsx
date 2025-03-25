@@ -1,7 +1,7 @@
 import React from 'react';
 
 import { ManagerContext } from 'storybook/manager-api';
-import { fn } from 'storybook/test';
+import { expect, fn, userEvent, within } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
 import preview from '../../../../.storybook/preview';
@@ -40,26 +40,25 @@ const meta = preview.meta({
   },
 });
 
+const context = {
+  handleManual: fn(),
+  highlighted: false,
+  toggleHighlight: fn(),
+  tab: RuleType.VIOLATION,
+  setTab: fn(),
+  setStatus: fn(),
+  handleCopyLink: fn(),
+  selectedItems: new Map(),
+  toggleOpen: fn(),
+  allExpanded: false,
+  handleCollapseAll: fn(),
+  handleExpandAll: fn(),
+  handleSelectionChange: fn(),
+  handleJumpToElement: fn(),
+};
+
 const Template = (args: Pick<A11yContextStore, 'results' | 'error' | 'status' | 'discrepancy'>) => (
-  <A11yContext.Provider
-    value={{
-      handleManual: fn(),
-      highlighted: false,
-      toggleHighlight: fn(),
-      tab: RuleType.VIOLATION,
-      setTab: fn(),
-      setStatus: fn(),
-      handleCopyLink: fn().mockName('handleCopyLink'),
-      selectedItems: new Map(),
-      toggleOpen: fn(),
-      allExpanded: false,
-      handleCollapseAll: fn(),
-      handleExpandAll: fn(),
-      handleSelectionChange: fn(),
-      handleJumpToElement: fn(),
-      ...args,
-    }}
-  >
+  <A11yContext.Provider value={{ ...context, ...args }}>
     <ManagerContext.Provider value={managerContext}>
       <StyledWrapper id="panel-tab-content">
         <A11YPanel />
@@ -123,6 +122,11 @@ export const Running = meta.story({
 export const ReadyWithResults = meta.story({
   render: () => {
     return <Template results={results} status="ready" error={null} discrepancy={null} />;
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(await canvas.findByRole('button', { name: /Rerun accessibility scan/ }));
+    expect(context.handleManual).toHaveBeenCalled();
   },
 });
 

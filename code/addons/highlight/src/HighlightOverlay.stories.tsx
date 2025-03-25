@@ -123,11 +123,11 @@ const meta = preview.meta({
   decorators: [
     (Story, { parameters }) => (
       <>
+        <Content dynamic={parameters.dynamic} />
         {createPortal(
-          <Content dynamic={parameters.dynamic} />,
+          <Story />,
           document.getElementById('storybook-addon-highlight-root') || document.body
         )}
-        <Story />
       </>
     ),
   ],

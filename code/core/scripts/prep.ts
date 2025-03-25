@@ -106,6 +106,17 @@ async function run() {
       outdir: 'dist',
       sourcemap: false,
       treeShaking: true,
+      supported: {
+        // This is an ES2018 feature, but esbuild is really strict here.
+        // Since not all browser support the latest Unicode characters.
+        //
+        // Also this feature only works in combination with a Regex polyfill that we don't load.
+        //
+        // The Hermes engine of React Native doesn't support this feature,
+        // but leaving the regex alone, actually allows Hermes to do its own thing,
+        // without us having to load a RegExp polyfill.
+        'regexp-unicode-property-escapes': true,
+      },
     } satisfies EsbuildContextOptions;
 
     const browserEsbuildOptions = {

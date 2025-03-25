@@ -67,7 +67,6 @@ test.describe('component tests', () => {
     const interactionsTab = page.locator('#tabbutton-storybook-component-tests-panel');
     await expect(interactionsTab.getByText('3')).toBeVisible();
     await expect(interactionsTab).toBeVisible();
-    await expect(interactionsTab).toBeVisible();
 
     const panel = sbPage.panelContent();
     const runStatusBadge = panel.locator('[aria-label="Status of the test run"]');

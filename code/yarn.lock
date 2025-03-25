@@ -6288,6 +6288,7 @@ __metadata:
   resolution: "@storybook/addon-highlight@workspace:addons/highlight"
   dependencies:
     "@storybook/global": "npm:^5.0.0"
+    "@storybook/icons": "npm:^1.4.0"
     "@types/webpack-env": "npm:^1.16.0"
     react: "npm:^18.2.0"
     react-dom: "npm:^18.2.0"

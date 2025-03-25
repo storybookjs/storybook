@@ -20,13 +20,6 @@ interface PresetOptions {
    */
   controls?: boolean;
   /**
-   * Allow to use @storybook/addon-docs
-   *
-   * @default true
-   * @see https://storybook.js.org/addons/@storybook/addon-docs
-   */
-  docs?: boolean;
-  /**
    * Allow to use @storybook/addon-measure
    *
    * @default true
@@ -80,16 +73,7 @@ export function addons(options: PresetOptions) {
   const main = requireMain(options.configDir);
 
   // NOTE: The order of these addons is important.
-  return [
-    'controls',
-    'docs',
-    'backgrounds',
-    'viewport',
-    'toolbars',
-    'measure',
-    'outline',
-    'highlight',
-  ]
+  return ['controls', 'backgrounds', 'viewport', 'toolbars', 'measure', 'outline', 'highlight']
     .filter((key) => (options as any)[key] !== false)
     .filter((addon) => !checkInstalled(addon, main))
     .map((addon) => {

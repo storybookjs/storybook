@@ -117,6 +117,9 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
 
   const api = useStorybookApi();
   const a11ySelection = api.getQueryParam('a11ySelection');
+  if (a11ySelection) {
+    api.setQueryParams({ a11ySelection: '' });
+  }
 
   const [results, setResults] = useAddonState<Results>(ADDON_ID, defaultResult);
   const [tab, setTab] = useState(() => {
@@ -146,21 +149,6 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
     );
     return unsubscribe;
   }, [storyId]);
-
-  useEffect(() => {
-    if (status !== 'ran') {
-      return;
-    }
-
-    if (a11ySelection) {
-      const currentUrl = api.getUrlState();
-      const queryParams = new URLSearchParams(
-        (currentUrl.queryParams as Record<string, string>) || {}
-      );
-      queryParams.delete('a11ySelection');
-      api.setQueryParams({ a11ySelection: undefined });
-    }
-  }, [api, results, status, a11ySelection]);
 
   const handleToggleHighlight = useCallback(
     () => setHighlighted((prevHighlighted) => !prevHighlighted),

@@ -1,5 +1,4 @@
 import React, { type CSSProperties, useEffect, useState } from 'react';
-import { createPortal } from 'react-dom';
 
 import type { Channel } from 'storybook/internal/channels';
 import { STORY_CHANGED } from 'storybook/internal/core-events';
@@ -178,7 +177,7 @@ export const HighlightOverlay = ({ channel }: { channel: Channel }) => {
     return () => document.body.removeEventListener('click', onClick);
   }, [boxes]);
 
-  return createPortal(
+  return (
     <>
       {coordinates && focused && (
         <HighlightMenu
@@ -205,7 +204,6 @@ export const HighlightOverlay = ({ channel }: { channel: Channel }) => {
           />
         );
       })}
-    </>,
-    document.body
+    </>
   );
 };

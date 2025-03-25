@@ -1,4 +1,5 @@
 import React, { type CSSProperties, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 import { mockChannel } from 'storybook/internal/preview-api';
 
@@ -122,7 +123,10 @@ const meta = preview.meta({
   decorators: [
     (Story, { parameters }) => (
       <>
-        <Content dynamic={parameters.dynamic} />
+        {createPortal(
+          <Content dynamic={parameters.dynamic} />,
+          document.getElementById('storybook-addon-highlight-root') || document.body
+        )}
         <Story />
       </>
     ),

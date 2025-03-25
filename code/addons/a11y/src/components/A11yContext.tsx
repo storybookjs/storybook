@@ -302,20 +302,21 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
       return target ? [target] : [];
     });
     emit(HIGHLIGHT, {
-      elements: selected,
-      color: colorsByType[tab],
-      width: '2px',
-      offset: '0px',
+      selectors: selected,
+      styles: {
+        outline: `2px solid ${colorsByType[tab]}`,
+        outlineOffset: '2px',
+      },
     });
 
     const others = results[tab as RuleType]
       .flatMap((r) => r.nodes.map((n) => n.target))
       .filter((e) => !selected.includes(e));
     emit(HIGHLIGHT, {
-      elements: others,
-      color: `${colorsByType[tab]}99`,
-      width: '1px',
-      offset: '0px',
+      selectors: others,
+      styles: {
+        border: `1px solid ${colorsByType[tab]}`,
+      },
     });
   }, [emit, highlighted, results, tab, selectedItems]);
 

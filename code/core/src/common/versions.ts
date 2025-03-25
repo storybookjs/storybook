@@ -2,7 +2,6 @@
 export default {
   '@storybook/addon-a11y': '9.0.0-alpha.9',
   '@storybook/addon-backgrounds': '9.0.0-alpha.9',
-  '@storybook/addon-controls': '9.0.0-alpha.9',
   '@storybook/addon-docs': '9.0.0-alpha.9',
   '@storybook/addon-essentials': '9.0.0-alpha.9',
   '@storybook/addon-mdx-gfm': '9.0.0-alpha.9',
@@ -16,8 +15,6 @@ export default {
   '@storybook/addon-storysource': '9.0.0-alpha.9',
   '@storybook/addon-test': '9.0.0-alpha.9',
   '@storybook/addon-themes': '9.0.0-alpha.9',
-  '@storybook/addon-toolbars': '9.0.0-alpha.9',
-  '@storybook/addon-viewport': '9.0.0-alpha.9',
   '@storybook/builder-vite': '9.0.0-alpha.9',
   '@storybook/builder-webpack5': '9.0.0-alpha.9',
   storybook: '9.0.0-alpha.9',

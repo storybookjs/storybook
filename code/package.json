@@ -103,7 +103,6 @@
     "@playwright/test": "1.48.1",
     "@storybook/addon-a11y": "workspace:*",
     "@storybook/addon-backgrounds": "workspace:*",
-    "@storybook/addon-controls": "workspace:*",
     "@storybook/addon-designs": "9.0.0--canary.1499c1a.0",
     "@storybook/addon-docs": "workspace:*",
     "@storybook/addon-essentials": "workspace:*",
@@ -118,8 +117,6 @@
     "@storybook/addon-storysource": "workspace:*",
     "@storybook/addon-test": "workspace:*",
     "@storybook/addon-themes": "workspace:*",
-    "@storybook/addon-toolbars": "workspace:*",
-    "@storybook/addon-viewport": "workspace:*",
     "@storybook/angular": "workspace:*",
     "@storybook/bench": "next",
     "@storybook/blocks": "workspace:*",
@@ -297,5 +294,6 @@
         "Dependency Upgrades"
       ]
     ]
-  }
+  },
+  "deferredNextVersion": "9.0.0-alpha.10"
 }

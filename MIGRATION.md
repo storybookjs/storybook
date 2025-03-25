@@ -1,6 +1,7 @@
 <h1>Migration</h1>
 
 - [From version 8.x to 9.0.0](#from-version-8x-to-900)
+  - [The parameter docs.source.excludeDecorators has no effect in React](#the-parameter-docssourceexcludedecorators-has-no-effect-in-react)
   - [Manager builder removed alias for `util`, `assert` and `process`](#manager-builder-removed-alias-for-util-assert-and-process)
   - [Actions addon moved to core](#actions-addon-moved-to-core)
   - [Dropped support for legacy packages](#dropped-support-for-legacy-packages)
@@ -439,6 +440,11 @@
   - [Deprecated embedded addons](#deprecated-embedded-addons)
 
 ## From version 8.x to 9.0.0
+
+### The parameter docs.source.excludeDecorators has no effect in React
+
+In React, the parameter `docs.source.excludeDecorators` option is no longer used.
+Decorators are always excluded as it causes performance issues and doc source snippets not showing the actual component. 
 
 ### Manager builder removed alias for `util`, `assert` and `process`
 

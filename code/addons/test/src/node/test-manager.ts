@@ -75,7 +75,10 @@ export class TestManager {
       .then(() =>
         this.vitestManager.startVitest({ coverage: this.store.getState().config.coverage })
       )
-      .then(() => this.onReady?.());
+      .then(() => this.onReady?.())
+      .catch((e) => {
+        this.reportFatalError('Failed to start Vitest', e);
+      });
   }
 
   async handleConfigChange(state: StoreState) {

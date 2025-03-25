@@ -49,7 +49,6 @@ export const essentialsAddons = [
   'actions',
   'backgrounds',
   'controls',
-  'docs',
   'highlight',
   'measure',
   'outline',
@@ -442,7 +441,6 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
       import * as addonA11yAnnotations from '@storybook/addon-a11y/preview'
       import '../src/stories/components'
       import * as templateAnnotations from '../template-stories/core/preview'
-      import * as toolbarAnnotations from '../template-stories/addons/toolbars/preview'
       import * as projectAnnotations from './preview'
       ${isVue ? 'import * as vueAnnotations from "../src/stories/renderers/vue3/preview.js"' : ''}
   
@@ -450,7 +448,6 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
         ${isVue ? 'vueAnnotations,' : ''}
         rendererDocsAnnotations,
         templateAnnotations,
-        toolbarAnnotations,
         addonA11yAnnotations,
         projectAnnotations,
       ])
@@ -863,9 +860,7 @@ export const extendMain: Task['run'] = async ({ template, sandboxDir, key }, { d
   // Simulate Storybook Lite
   if (disableDocs) {
     const addons = mainConfig.getFieldValue(['addons']);
-    const addonsNoDocs = addons.map((addon: any) =>
-      addon !== '@storybook/addon-essentials' ? addon : { name: addon, options: { docs: false } }
-    );
+    const addonsNoDocs = addons.filter((addon: any) => addon !== '@storybook/addon-docs');
     mainConfig.setFieldValue(['addons'], addonsNoDocs);
 
     // remove the docs options so that docs tags are ignored
@@ -896,12 +891,7 @@ export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
       { namespace: 'templateAnnotations' },
       '../template-stories/core/preview'
     );
-    previewConfig.setImport(
-      { namespace: 'toolbarAnnotations' },
-      '../template-stories/addons/toolbars/preview'
-    );
     previewConfig.appendNodeToArray(['addons'], t.identifier('templateAnnotations'));
-    previewConfig.appendNodeToArray(['addons'], t.identifier('toolbarAnnotations'));
   }
 
   if (template.expected.builder.includes('vite')) {

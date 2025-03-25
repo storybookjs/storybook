@@ -211,7 +211,6 @@ const optimizeViteDeps = [
   '@mdx-js/react',
   '@storybook/addon-docs > acorn-jsx',
   '@storybook/addon-docs',
-  '@storybook/addon-essentials/docs/mdx-react-shim',
   'markdown-to-jsx',
 ];
 

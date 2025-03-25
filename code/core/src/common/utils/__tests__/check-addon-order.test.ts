@@ -10,17 +10,7 @@ import type {
 import { checkAddonOrder } from '../check-addon-order';
 
 const configFile = './main.js';
-const essentialAddons = [
-  'docs',
-  'controls',
-  'actions',
-  'backgrounds',
-  'viewport',
-  'toolbars',
-  'measure',
-  'outline',
-  'highlight',
-];
+const essentialAddons = ['backgrounds', 'viewport', 'measure', 'outline', 'highlight'];
 
 const pkgName = (entry: CoreCommon_AddonEntry): string => {
   if (typeof entry === 'string') {
@@ -61,13 +51,13 @@ describe.each([
 });
 
 describe.each([
-  ['docs', 'controls', []],
-  ['docs', 'controls', ['controls']],
-  ['docs', 'controls', ['docs']],
-  ['docs', 'controls', ['controls', 'docs']],
-  ['docs', 'controls', ['essentials', 'docs']],
-  ['docs', 'controls', ['controls', 'essentials']],
-  ['docs', 'controls', ['essentials', 'controls', 'docs']],
+  ['backgrounds', 'viewport', []],
+  ['backgrounds', 'viewport', ['viewport']],
+  ['backgrounds', 'viewport', ['backgrounds']],
+  ['backgrounds', 'viewport', ['viewport', 'backgrounds']],
+  ['backgrounds', 'viewport', ['essentials', 'backgrounds']],
+  ['backgrounds', 'viewport', ['viewport', 'essentials']],
+  ['backgrounds', 'viewport', ['essentials', 'viewport', 'backgrounds']],
 ])('checkAddonOrder', (_before, _after, _addons) => {
   it(`${str(_before)} not before ${str(_after)} in [${_addons.map(str).join(', ')}]`, async () => {
     const before = fromName(_before);

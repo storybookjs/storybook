@@ -46,7 +46,7 @@ test.describe('addon-viewport', () => {
     const sbPage = new SbPage(page, expect);
 
     // Story parameters/selected is set to small mobile
-    await sbPage.navigateToStory('addons/viewport/globals', 'selected');
+    await sbPage.navigateToStory('core/viewport/globals', 'selected');
 
     // Measure the original dimensions of previewRoot
     const originalDimensions = await sbPage.getCanvasBodyElement().boundingBox();

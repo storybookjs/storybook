@@ -1,6 +1,7 @@
 import { csfFactories } from '../../codemod/csf-factories';
 import type { CommandFix, Fix } from '../types';
 import { addonA11yAddonTest } from './addon-a11y-addon-test';
+import { addonEssentialsRemoveDocs } from './addon-essentials-remove-docs';
 import { addonExperimentalTest } from './addon-experimental-test';
 import { addonPostCSS } from './addon-postcss';
 import { addonsAPI } from './addons-api';
@@ -72,6 +73,7 @@ export const allFixes: Fix[] = [
   consolidatedImports,
   addonExperimentalTest,
   rendererToFramework,
+  addonEssentialsRemoveDocs,
   rnstorybookConfig,
   removeAddonInteractions,
 ];

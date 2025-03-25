@@ -42,28 +42,12 @@ const config = defineMain({
       titlePrefix: 'addons/backgrounds',
     },
     {
-      directory: '../addons/controls/src',
-      titlePrefix: 'addons/controls',
-    },
-    {
-      directory: '../addons/controls/template/stories',
-      titlePrefix: 'addons/controls',
-    },
-    {
       directory: '../addons/docs/template/stories',
       titlePrefix: 'addons/docs',
     },
     {
       directory: '../addons/links/template/stories',
       titlePrefix: 'addons/links',
-    },
-    {
-      directory: '../addons/viewport/template/stories',
-      titlePrefix: 'addons/viewport',
-    },
-    {
-      directory: '../addons/toolbars/template/stories',
-      titlePrefix: 'addons/toolbars',
     },
     {
       directory: '../addons/themes/template/stories',
@@ -84,6 +68,7 @@ const config = defineMain({
   ],
   addons: [
     '@storybook/addon-themes',
+    '@storybook/addon-docs',
     '@storybook/addon-essentials',
     '@storybook/addon-storysource',
     '@storybook/addon-designs',
@@ -93,7 +78,6 @@ const config = defineMain({
   ],
   previewAnnotations: [
     './core/template/stories/preview.ts',
-    './addons/toolbars/template/stories/preview.ts',
     './renderers/react/template/components/index.js',
   ],
   build: {

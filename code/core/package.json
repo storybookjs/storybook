@@ -130,6 +130,46 @@
     "./internal/component-testing/manager": {
       "import": "./dist/component-testing/manager.js"
     },
+    "./internal/viewport": {
+      "types": "./dist/viewport/index.d.ts",
+      "import": "./dist/viewport/index.js",
+      "require": "./dist/viewport/index.cjs"
+    },
+    "./viewport": {
+      "types": "./dist/viewport/index.d.ts",
+      "import": "./dist/viewport/index.js",
+      "require": "./dist/viewport/index.cjs"
+    },
+    "./internal/viewport/preview": {
+      "types": "./dist/viewport/preview.d.ts",
+      "import": "./dist/viewport/preview.js",
+      "require": "./dist/viewport/preview.cjs"
+    },
+    "./viewport/preview": {
+      "types": "./dist/viewport/preview.d.ts",
+      "import": "./dist/viewport/preview.js",
+      "require": "./dist/viewport/preview.cjs"
+    },
+    "./internal/viewport/manager": {
+      "import": "./dist/viewport/manager.js"
+    },
+    "./internal/controls": {
+      "types": "./dist/controls/index.d.ts",
+      "import": "./dist/controls/index.js",
+      "require": "./dist/controls/index.cjs"
+    },
+    "./internal/controls/preview": {
+      "types": "./dist/controls/preview.d.ts",
+      "import": "./dist/controls/preview.js",
+      "require": "./dist/controls/preview.cjs"
+    },
+    "./internal/controls/manager": {
+      "import": "./dist/controls/manager.js"
+    },
+    "./internal/controls/decorator": {
+      "types": "./dist/controls/decorator.d.ts",
+      "import": "./dist/controls/decorator.js"
+    },
     "./internal/core-events": {
       "types": "./dist/core-events/index.d.ts",
       "import": "./dist/core-events/index.js",
@@ -348,6 +388,27 @@
       ],
       "internal/component-testing/preview": [
         "./dist/component-testing/preview.d.ts"
+      ],
+      "internal/viewport": [
+        "./dist/viewport/index.d.ts"
+      ],
+      "viewport": [
+        "./dist/viewport/index.d.ts"
+      ],
+      "internal/viewport/preview": [
+        "./dist/viewport/preview.d.ts"
+      ],
+      "viewport/preview": [
+        "./dist/viewport/preview.d.ts"
+      ],
+      "internal/controls": [
+        "./dist/controls/index.d.ts"
+      ],
+      "internal/controls/preview": [
+        "./dist/controls/preview.d.ts"
+      ],
+      "internal/controls/decorator": [
+        "./dist/controls/decorator.d.ts"
       ],
       "internal/core-events": [
         "./dist/core-events/index.d.ts"

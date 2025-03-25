@@ -73,9 +73,6 @@ export { Bar, FlexBar } from './components/bar/bar';
 export { AddonPanel } from './components/addon-panel/addon-panel';
 
 // Graphics
-export type { IconsProps } from './components/icon/icon';
-export { Icons, Symbols } from './components/icon/icon';
-export { icons } from './components/icon/icon';
 export { StorybookLogo } from './brand/StorybookLogo';
 export { StorybookIcon } from './brand/StorybookIcon';
 

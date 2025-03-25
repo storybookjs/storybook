@@ -71,7 +71,6 @@ const INCLUDE_CANDIDATES = [
   'fast-deep-equal',
   'html-tags',
   'isobject',
-  'jsdoc-type-pratt-parser', // TODO: Remove this once it's converted to ESM: https://github.com/jsdoc-type-pratt-parser/jsdoc-type-pratt-parser/issues/173
   'loader-utils',
   'lodash/camelCase.js',
   'lodash/camelCase',

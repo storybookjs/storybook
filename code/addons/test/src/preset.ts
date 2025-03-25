@@ -17,7 +17,13 @@ import type { Options, PresetPropertyFn, StoryId } from 'storybook/internal/type
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
-import { COVERAGE_DIRECTORY, type StoreState, TEST_PROVIDER_ID, storeOptions } from './constants';
+import {
+  COVERAGE_DIRECTORY,
+  STORYBOOK_ADDON_TEST_CHANNEL,
+  type StoreState,
+  TEST_PROVIDER_ID,
+  storeOptions,
+} from './constants';
 import { log } from './logger';
 import { runTestRunner } from './node/boot-test-runner';
 

@@ -135,7 +135,7 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
   );
 
   useEffect(() => {
-    return experimental_getStatusStore('storybook/component-test').onAllStatusChange(
+    const unsubscribe = experimental_getStatusStore('storybook/component-test').onAllStatusChange(
       (statuses, previousStatuses) => {
         const current = statuses[storyId]?.[STATUS_TYPE_ID_COMPONENT_TEST];
         const previous = previousStatuses[storyId]?.[STATUS_TYPE_ID_COMPONENT_TEST];
@@ -144,6 +144,7 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
         }
       }
     );
+    return unsubscribe;
   }, [storyId]);
 
   useEffect(() => {
@@ -168,6 +169,8 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
 
   const [selectedItems, setSelectedItems] = useState<Map<string, string>>(() => {
     const initialValue = new Map();
+    // Check if the a11ySelection param is a valid format before parsing it
+    // It should look like `violation.aria-hidden-body.1`
     if (a11ySelection && /^[a-z]+.[a-z-]+.[0-9]+$/.test(a11ySelection)) {
       const [type, id] = a11ySelection.split('.');
       initialValue.set(`${type}.${id}`, a11ySelection);

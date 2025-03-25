@@ -8,6 +8,7 @@ import { useParameter } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import { PARAM_KEY } from '../constants';
+import type { A11yParameters } from '../params';
 import { RuleType } from '../types';
 import { useA11yContext } from './A11yContext';
 import { Report } from './Report/Report';
@@ -63,7 +64,7 @@ const Count = styled(Badge)({
 });
 
 export const A11YPanel: React.FC = () => {
-  const { manual } = useParameter(PARAM_KEY, {} as any);
+  const { manual: manualParameter } = useParameter<A11yParameters>(PARAM_KEY, {} as any);
   const {
     results,
     status,
@@ -166,8 +167,8 @@ export const A11YPanel: React.FC = () => {
                 Run accessibility scan
               </Button>
               <p>
-                Update <code>{manual ? 'parameters' : 'globals'}.a11y.manual</code> to disable
-                manual mode.
+                Update <code>{manualParameter ? 'parameters' : 'globals'}.a11y.manual</code> to
+                disable manual mode.
               </p>
             </>
           )}

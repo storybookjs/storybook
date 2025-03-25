@@ -177,8 +177,8 @@ function getContent(node: NodeResult, key: string) {
   return (
     <>
       <Messages>
-        {rules.map((rule, index) => (
-          <div key={index}>
+        {rules.map((rule) => (
+          <div key={rule.id}>
             {`${rule.message}${/(\.|: [^.]+\.*)$/.test(rule.message) ? '' : '.'}`}
           </div>
         ))}

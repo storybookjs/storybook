@@ -132,7 +132,7 @@ export const Details = ({ item, type, selection, handleSelectionChange }: Detail
     </Info>
 
     <Tabs.Root
-      defaultValue="tab0"
+      defaultValue={selection}
       orientation="vertical"
       value={selection}
       onValueChange={handleSelectionChange}

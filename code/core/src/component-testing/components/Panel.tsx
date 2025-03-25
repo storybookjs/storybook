@@ -21,10 +21,10 @@ import {
 } from 'storybook/manager-api';
 
 import {
-  ADDON_ID,
   STATUS_TYPE_ID_COMPONENT_TEST,
   STORYBOOK_ADDON_TEST_CHANNEL,
 } from '../../../../addons/test/src/constants';
+import { ADDON_ID } from '../constants';
 import { InteractionsPanel } from './InteractionsPanel';
 
 const INITIAL_CONTROL_STATES = {

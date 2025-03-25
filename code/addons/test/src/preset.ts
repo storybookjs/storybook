@@ -2,12 +2,7 @@ import { readFileSync } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 
 import type { Channel } from 'storybook/internal/channels';
-import {
-  checkAddonOrder,
-  getFrameworkName,
-  resolvePathInStorybookCache,
-  serverRequire,
-} from 'storybook/internal/common';
+import { getFrameworkName, resolvePathInStorybookCache } from 'storybook/internal/common';
 import {
   TESTING_MODULE_CRASH_REPORT,
   TESTING_MODULE_PROGRESS_REPORT,
@@ -17,19 +12,12 @@ import {
 } from 'storybook/internal/core-events';
 import { experimental_UniversalStore } from 'storybook/internal/core-server';
 import { cleanPaths, oneWayHash, sanitizeError, telemetry } from 'storybook/internal/telemetry';
-import type { Options, PresetProperty, PresetPropertyFn, StoryId } from 'storybook/internal/types';
+import type { Options, PresetPropertyFn, StoryId } from 'storybook/internal/types';
 
-import { isAbsolute, join } from 'pathe';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
-import {
-  COVERAGE_DIRECTORY,
-  STORYBOOK_ADDON_TEST_CHANNEL,
-  type StoreState,
-  TEST_PROVIDER_ID,
-  storeOptions,
-} from './constants';
+import { COVERAGE_DIRECTORY, type StoreState, TEST_PROVIDER_ID, storeOptions } from './constants';
 import { log } from './logger';
 import { runTestRunner } from './node/boot-test-runner';
 

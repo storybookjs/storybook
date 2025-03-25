@@ -36,6 +36,9 @@ addons.register(ADDON_ID, (api) => {
     testProviderStore.onRunAll(() => {
       store.send({
         type: 'TRIGGER_RUN',
+        payload: {
+          triggeredBy: 'run-all',
+        },
       });
     });
     store.untilReady().then(() => {
@@ -76,6 +79,9 @@ addons.register(ADDON_ID, (api) => {
                 setModalOpen(false);
                 store.send({
                   type: 'TRIGGER_RUN',
+                  payload: {
+                    triggeredBy: 'global',
+                  },
                 });
               }}
             />

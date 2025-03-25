@@ -8,12 +8,6 @@ import {
   resolvePathInStorybookCache,
 } from 'storybook/internal/common';
 import {
-  TESTING_MODULE_CRASH_REPORT,
-  TESTING_MODULE_PROGRESS_REPORT,
-  type TestingModuleCrashReportPayload,
-  type TestingModuleProgressReportPayload,
-} from 'storybook/internal/core-events';
-import {
   experimental_UniversalStore,
   experimental_getTestProviderStore,
 } from 'storybook/internal/core-server';
@@ -29,7 +23,6 @@ import {
   COVERAGE_DIRECTORY,
   STORE_CHANNEL_EVENT_NAME,
   STORYBOOK_ADDON_TEST_CHANNEL,
-  TEST_PROVIDER_ID,
   storeOptions,
 } from './constants';
 import { log } from './logger';
@@ -165,6 +158,7 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
   });
 
   if (!core.disableTelemetry) {
+    const enableCrashReports = core.enableCrashReports || options.enableCrashReports;
     const packageJsonPath = require.resolve('@storybook/addon-test/package.json');
 
     const { version: addonVersion } = JSON.parse(
@@ -172,7 +166,6 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
     );
 
     channel.on(STORYBOOK_ADDON_TEST_CHANNEL, (event: Event) => {
-      // @ts-expect-error This telemetry is not a core one, so we don't have official types for it (similar to onboarding addon)
       telemetry('addon-test', {
         ...event,
         payload: {
@@ -183,66 +176,35 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
       });
     });
 
-    store.onStateChange(async (state, previous) => {
-      if (state.watching && !previous.watching) {
-        await telemetry('testing-module-watch-mode', {
-          provider: TEST_PROVIDER_ID,
-          watchMode: state.watching,
-        });
-      }
-    });
-
-    channel.on(
-      TESTING_MODULE_PROGRESS_REPORT,
-      async (payload: TestingModuleProgressReportPayload) => {
-        if (payload.providerId !== TEST_PROVIDER_ID) {
-          return;
-        }
-        const status = 'status' in payload ? payload.status : undefined;
-        const progress = 'progress' in payload ? payload.progress : undefined;
-        const error = 'error' in payload ? payload.error : undefined;
-
-        const config = store.getState().config;
-
-        if ((status === 'success' || status === 'cancelled') && progress?.finishedAt) {
-          await telemetry('testing-module-completed-report', {
-            provider: TEST_PROVIDER_ID,
-            status,
-            config,
-            duration: progress?.finishedAt - progress?.startedAt,
-            numTotalTests: progress?.numTotalTests,
-            numFailedTests: progress?.numFailedTests,
-            numPassedTests: progress?.numPassedTests,
-            numSelectedStories: payload.details?.selectedStoryCount ?? 0,
-          });
-        }
-
-        if (status === 'failed') {
-          await telemetry('testing-module-completed-report', {
-            provider: TEST_PROVIDER_ID,
-            status,
-            config,
-            ...(options.enableCrashReports && {
-              error: error && sanitizeError(error),
-            }),
-            numSelectedStories: payload.details?.selectedStoryCount ?? 0,
-          });
-        }
-      }
-    );
-
-    channel.on(TESTING_MODULE_CRASH_REPORT, async (payload: TestingModuleCrashReportPayload) => {
-      if (payload.providerId !== TEST_PROVIDER_ID) {
-        return;
-      }
-      await telemetry('testing-module-crash-report', {
-        provider: payload.providerId,
-
-        ...(options.enableCrashReports && {
-          error: cleanPaths(payload.error.message),
-        }),
+    store.subscribe('TOGGLE_WATCHING', async (event) => {
+      await telemetry('addon-test', {
+        watchMode: event.payload.to,
+        addonVersion,
       });
     });
+    store.subscribe('TEST_RUN_COMPLETED', async (event) => {
+      const { unhandledErrors, startedAt, finishedAt, storyIds, ...currentRun } = event.payload;
+      await telemetry('addon-test', {
+        ...currentRun,
+        duration: (finishedAt ?? 0) - (startedAt ?? 0),
+        selectedStoryCount: storyIds?.length ?? 0,
+        unhandledErrorCount: unhandledErrors.length,
+        ...(enableCrashReports &&
+          unhandledErrors.length > 0 && {
+            unhandledErrors: unhandledErrors.map((error) => sanitizeError(error)),
+          }),
+        addonVersion,
+      });
+    });
+
+    if (enableCrashReports) {
+      store.subscribe('FATAL_ERROR', async (event) => {
+        await telemetry('addon-test', {
+          fatalError: cleanPaths(event.payload.error.message),
+          addonVersion,
+        });
+      });
+    }
   }
 
   return channel;

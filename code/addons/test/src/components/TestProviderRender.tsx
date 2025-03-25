@@ -7,7 +7,7 @@ import {
   TooltipNote,
   WithTooltip,
 } from 'storybook/internal/components';
-import type { TestProviderState } from 'storybook/internal/types';
+import type { API_HashEntry, TestProviderState } from 'storybook/internal/types';
 
 import { EyeIcon, InfoIcon, PlayHollowIcon, StopAltIcon } from '@storybook/icons';
 
@@ -97,12 +97,12 @@ type TestProviderRenderProps = {
   storeState: StoreState;
   setStoreState: (typeof store)['setState'];
   isSettingsUpdated: boolean;
-  entryId?: string;
+  entry?: API_HashEntry;
 } & ComponentProps<typeof Container>;
 
 export const TestProviderRender: FC<TestProviderRenderProps> = ({
   api,
-  entryId,
+  entry,
   testProviderState,
   storeState,
   setStoreState,
@@ -112,11 +112,13 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
   ...props
 }) => {
   const { config, watching, cancelling, currentRun, fatalError } = storeState;
+  const finishedTestCount =
+    currentRun.componentTestCount.success + currentRun.componentTestCount.error;
 
   const hasA11yAddon = addons.experimental_getRegisteredAddons().includes(A11Y_ADDON_ID);
 
   const isRunning = testProviderState === 'test-provider-state:running';
-  const isStarting = isRunning && currentRun.finishedTestCount === 0;
+  const isStarting = isRunning && finishedTestCount === 0;
 
   const [componentTestStatusIcon, componentTestStatusLabel]: [
     ComponentProps<typeof TestStatusIcon>['status'],
@@ -170,13 +172,13 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
             id="testing-module-description"
             storeState={storeState}
             testProviderState={testProviderState}
-            entryId={entryId}
+            entryId={entry?.id}
             isSettingsUpdated={isSettingsUpdated}
           />
         </Info>
 
         <Actions>
-          {!entryId && (
+          {!entry && (
             <WithTooltip
               hasChrome={false}
               trigger="hover"
@@ -219,10 +221,8 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
               >
                 <Progress
                   percentage={
-                    storeState.currentRun.finishedTestCount && storeState.currentRun.totalTestCount
-                      ? (storeState.currentRun.finishedTestCount /
-                          storeState.currentRun.totalTestCount) *
-                        100
+                    finishedTestCount && storeState.currentRun.totalTestCount
+                      ? (finishedTestCount / storeState.currentRun.totalTestCount) * 100
                       : undefined
                   }
                 >
@@ -242,13 +242,10 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                 onClick={() =>
                   store.send({
                     type: 'TRIGGER_RUN',
-                    ...(entryId
-                      ? {
-                          payload: {
-                            storyIds: api.findAllLeafStoryIds(entryId),
-                          },
-                        }
-                      : {}),
+                    payload: {
+                      storyIds: entry ? api.findAllLeafStoryIds(entry.id) : undefined,
+                      triggeredBy: entry ? entry.type : 'global',
+                    },
                   })
                 }
                 disabled={false}
@@ -265,7 +262,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
           <ListItem
             as="label"
             title="Component tests"
-            icon={entryId ? null : <Checkbox type="checkbox" checked disabled />}
+            icon={entry ? null : <Checkbox type="checkbox" checked disabled />}
           />
           <WithTooltip
             hasChrome={false}
@@ -287,7 +284,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                     componentTestStatusValueToStoryIds['status-value:error'][0] ??
                     componentTestStatusValueToStoryIds['status-value:warning'][0] ??
                     componentTestStatusValueToStoryIds['status-value:success'][0] ??
-                    entryId,
+                    entry?.id,
                 });
               }}
             >
@@ -302,7 +299,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
           </WithTooltip>
         </Row>
 
-        {!entryId && (
+        {!entry && (
           <Row>
             <ListItem
               as="label"
@@ -327,21 +324,29 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                 <TooltipNote
                   note={
                     watching
-                      ? 'Coverage is unavailable in watch mode'
-                      : isRunning
-                        ? 'Testing in progress'
-                        : currentRun.coverageSummary
-                          ? 'View coverage report'
-                          : fatalError
-                            ? 'Local tests crashed'
-                            : 'Run tests to calculate coverage'
+                      ? 'Unavailable in watch mode'
+                      : currentRun.triggeredBy && currentRun.triggeredBy !== 'global'
+                        ? 'Unavailable when running focused tests'
+                        : isRunning
+                          ? 'Testing in progress'
+                          : currentRun.coverageSummary
+                            ? 'View coverage report'
+                            : fatalError
+                              ? 'Local tests crashed'
+                              : 'Run tests to calculate coverage'
                   }
                 />
               }
             >
-              {watching ? (
+              {watching || (currentRun.triggeredBy && currentRun.triggeredBy !== 'global') ? (
                 <IconButton size="medium" disabled>
-                  <InfoIcon aria-label="Coverage is unavailable in watch mode" />
+                  <InfoIcon
+                    aria-label={
+                      watching
+                        ? `Coverage is unavailable in watch mode`
+                        : `Coverage is unavailable when running focused tests`
+                    }
+                  />
                 </IconButton>
               ) : currentRun.coverageSummary ? (
                 <IconButton asChild size="medium">
@@ -376,7 +381,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
               as="label"
               title="Accessibility"
               icon={
-                entryId ? null : (
+                entry ? null : (
                   <Checkbox
                     type="checkbox"
                     checked={config.a11y}
@@ -409,7 +414,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                       a11yStatusValueToStoryIds['status-value:error'][0] ??
                       a11yStatusValueToStoryIds['status-value:warning'][0] ??
                       a11yStatusValueToStoryIds['status-value:success'][0] ??
-                      entryId,
+                      entry?.id,
                     panelId: A11Y_PANEL_ID,
                   });
                 }}

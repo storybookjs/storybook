@@ -24,7 +24,7 @@ export const SidebarContextMenu: FC<SidebarContextMenuProps> = ({ context, api }
   return (
     <TestProviderRender
       api={api}
-      entryId={context.id}
+      entry={context}
       style={{ minWidth: 240 }}
       testProviderState={testProviderState}
       componentTestStatusValueToStoryIds={componentTestStatusValueToStoryIds}

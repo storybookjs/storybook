@@ -37,7 +37,8 @@ export function Description({
 }: DescriptionProps) {
   const { setModalOpen } = React.useContext(GlobalErrorContext);
 
-  const { finishedTestCount, totalTestCount, unhandledErrors, finishedAt } = storeState.currentRun;
+  const { componentTestCount, totalTestCount, unhandledErrors, finishedAt } = storeState.currentRun;
+  const finishedTestCount = componentTestCount.success + componentTestCount.error;
 
   let description: string | React.ReactNode = 'Not run';
   if (isSettingsUpdated) {

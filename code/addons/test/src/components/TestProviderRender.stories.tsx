@@ -108,7 +108,10 @@ export const Testing: Story = {
       ...storeOptions.initialState,
       currentRun: {
         ...storeOptions.initialState.currentRun,
-        finishedTestCount: 30,
+        componentTestCount: {
+          success: 30,
+          error: 0,
+        },
         totalTestCount: 100,
       },
     },
@@ -126,7 +129,10 @@ export const TestingWithStatuses: Story = {
       },
       currentRun: {
         ...storeOptions.initialState.currentRun,
-        finishedTestCount: 30,
+        componentTestCount: {
+          success: 30,
+          error: 0,
+        },
         totalTestCount: 100,
       },
     },
@@ -310,6 +316,16 @@ export const InSidebarContextMenu: Story = {
   args: {
     ...meta.args,
     testProviderState: 'test-provider-state:succeeded',
-    entryId: 'story-id-1',
+    entry: {
+      id: 'story-id-1',
+      type: 'story',
+      name: 'Example Story',
+      tags: [],
+      title: 'Example Story',
+      importPath: './path/to/story',
+      prepared: true,
+      parent: 'parent-id',
+      depth: 1,
+    },
   },
 };

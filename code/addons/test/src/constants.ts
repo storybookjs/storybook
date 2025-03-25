@@ -1,3 +1,5 @@
+import type { StoreState } from './types';
+
 export const ADDON_ID = 'storybook/test';
 export const TEST_PROVIDER_ID = `${ADDON_ID}/test-provider`;
 export const PANEL_ID = `${ADDON_ID}/panel`;
@@ -21,8 +23,7 @@ export const SUPPORTED_FRAMEWORKS = [
 
 export const SUPPORTED_RENDERERS = ['@storybook/react', '@storybook/svelte', '@storybook/vue3'];
 
-// TODO: type this
-export const storeOptions = {
+export const storeOptions: { id: string; initialState: StoreState } = {
   id: ADDON_ID,
   initialState: {
     config: {
@@ -34,9 +35,18 @@ export const storeOptions = {
     fatalError: undefined,
     indexUrl: undefined,
     currentRun: {
+      triggeredBy: undefined,
       coverage: false,
       a11y: false,
-      finishedTestCount: 0,
+      componentTestCount: {
+        success: 0,
+        error: 0,
+      },
+      a11yCount: {
+        success: 0,
+        warning: 0,
+        error: 0,
+      },
       storyIds: undefined,
       totalTestCount: undefined,
       startedAt: undefined,

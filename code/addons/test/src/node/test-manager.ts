@@ -7,17 +7,11 @@ import type {
   TestProviderStoreById,
 } from 'storybook/internal/types';
 
-import { isEqual, throttle } from 'es-toolkit';
+import { throttle } from 'es-toolkit';
 import type { Report } from 'storybook/preview-api';
 
 import { STATUS_TYPE_ID_A11Y, STATUS_TYPE_ID_COMPONENT_TEST, storeOptions } from '../constants';
-import type {
-  StoreEvent,
-  StoreState,
-  ToggleWatchingEvent,
-  TriggerRunEvent,
-  VitestError,
-} from '../types';
+import type { RunTrigger, StoreEvent, StoreState, TriggerRunEvent, VitestError } from '../types';
 import { errorToErrorLike } from '../utils';
 import { VitestManager } from './vitest-manager';
 
@@ -87,7 +81,8 @@ export class TestManager {
 
   async handleTriggerRunEvent(event: TriggerRunEvent) {
     await this.runTestsWithState({
-      storyIds: event.payload?.storyIds,
+      storyIds: event.payload.storyIds,
+      triggeredBy: event.payload.triggeredBy,
       callback: async () => {
         try {
           await this.vitestManager.vitestRestartPromise;
@@ -119,9 +114,11 @@ export class TestManager {
 
   async runTestsWithState({
     storyIds,
+    triggeredBy,
     callback,
   }: {
     storyIds?: string[];
+    triggeredBy: RunTrigger;
     callback: () => Promise<void>;
   }) {
     this.componentTestStatusStore.unset(storyIds);
@@ -131,6 +128,7 @@ export class TestManager {
       ...s,
       currentRun: {
         ...storeOptions.initialState.currentRun,
+        triggeredBy,
         startedAt: Date.now(),
         storyIds: storyIds,
         coverage: s.config.coverage,
@@ -139,6 +137,10 @@ export class TestManager {
     }));
     await this.testProviderStore.runWithState(async () => {
       await callback();
+      this.store.send({
+        type: 'TEST_RUN_COMPLETED',
+        payload: this.store.getState().currentRun,
+      });
       if (this.store.getState().currentRun.unhandledErrors.length > 0) {
         throw new Error('Tests completed but there are unhandled errors');
       }
@@ -170,18 +172,41 @@ export class TestManager {
     this.batchedTestCaseResults = [];
 
     this.store.setState((s) => {
-      const finishedTestCount = s.currentRun.finishedTestCount + testCaseResultsToFlush.length;
+      let { success: ctSuccess, error: ctError } = s.currentRun.componentTestCount;
+      let { success: a11ySuccess, warning: a11yWarning, error: a11yError } = s.currentRun.a11yCount;
+      testCaseResultsToFlush.forEach(({ testResult, reports }) => {
+        if (testResult.state === 'passed') {
+          ctSuccess++;
+        } else if (testResult.state === 'failed') {
+          ctError++;
+        }
+        reports
+          ?.filter((r) => r.type === 'a11y')
+          .forEach((report) => {
+            if (report.status === 'passed') {
+              a11ySuccess++;
+            } else if (report.status === 'warning') {
+              a11yWarning++;
+            } else if (report.status === 'failed') {
+              a11yError++;
+            }
+          });
+      });
+
+      const totalTestCount = ctSuccess + ctError;
+
       return {
         ...s,
         currentRun: {
           ...s.currentRun,
-          finishedTestCount,
-          // in some cases the finishedTestCount can exceed the anticipated totalTestCount
+          componentTestCount: { success: ctSuccess, error: ctError },
+          a11yCount: { success: a11ySuccess, warning: a11yWarning, error: a11yError },
+          // in some cases successes and errors can exceed the anticipated totalTestCount
           // e.g. when testing more tests than the stories we know about upfront
-          // in those cases, we set the totalTestCount to the finishedTestCount
+          // in those cases, we set the totalTestCount to the sum of successes and errors
           totalTestCount:
-            finishedTestCount > (s.currentRun.totalTestCount ?? 0)
-              ? finishedTestCount
+            totalTestCount > (s.currentRun.totalTestCount ?? 0)
+              ? totalTestCount
               : s.currentRun.totalTestCount,
         },
       };

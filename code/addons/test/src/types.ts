@@ -1,5 +1,6 @@
 import type { experimental_UniversalStore } from 'storybook/internal/core-server';
 import type { StoryId } from 'storybook/internal/types';
+import type { API_HashEntry } from 'storybook/internal/types';
 
 export interface TestParameters {
   /**
@@ -28,6 +29,8 @@ export type ErrorLike = {
   cause?: ErrorLike;
 };
 
+export type RunTrigger = 'run-all' | 'global' | 'watch' | Extract<API_HashEntry['type'], string>;
+
 export type StoreState = {
   config: {
     coverage: boolean;
@@ -45,9 +48,18 @@ export type StoreState = {
       }
     | undefined;
   currentRun: {
+    triggeredBy: RunTrigger | undefined;
     coverage: boolean;
     a11y: boolean;
-    finishedTestCount: number;
+    componentTestCount: {
+      success: number;
+      error: number;
+    };
+    a11yCount: {
+      success: number;
+      warning: number;
+      error: number;
+    };
     totalTestCount: number | undefined;
     storyIds: StoryId[] | undefined;
     startedAt: number | undefined;
@@ -66,10 +78,12 @@ export type CachedState = Pick<StoreState, 'config' | 'watching'>;
 
 export type TriggerRunEvent = {
   type: 'TRIGGER_RUN';
-  payload?: {
-    storyIds: string[];
+  payload: {
+    storyIds?: string[] | undefined;
+    triggeredBy: RunTrigger;
   };
 };
+
 export type CancelRunEvent = {
   type: 'CANCEL_RUN';
 };
@@ -86,6 +100,15 @@ export type FatalErrorEvent = {
     error: ErrorLike;
   };
 };
-export type StoreEvent = TriggerRunEvent | CancelRunEvent | FatalErrorEvent | ToggleWatchingEvent;
+export type TestRunCompletedEvent = {
+  type: 'TEST_RUN_COMPLETED';
+  payload: StoreState['currentRun'];
+};
+export type StoreEvent =
+  | TriggerRunEvent
+  | CancelRunEvent
+  | FatalErrorEvent
+  | ToggleWatchingEvent
+  | TestRunCompletedEvent;
 
 export type Store = ReturnType<typeof experimental_UniversalStore.create<StoreState, StoreEvent>>;

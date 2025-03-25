@@ -216,7 +216,7 @@ export class VitestManager {
 
     const stories = await this.fetchStories(runPayload?.storyIds);
     const vitestTestSpecs = await this.getStorybookTestSpecs();
-    const isSingleStoryRun = runPayload?.storyIds.length === 1;
+    const isSingleStoryRun = runPayload.storyIds?.length === 1;
 
     const { filteredTestFiles, totalTestCount } = vitestTestSpecs.reduce(
       (acc, spec) => {
@@ -360,6 +360,7 @@ export class VitestManager {
 
     await this.testManager.runTestsWithState({
       storyIds: affectedStoryIds,
+      triggeredBy: 'watch',
       callback: async () => {
         if (triggerAffectedTests.length) {
           await this.vitest!.cancelCurrentRun('keyboard-input');

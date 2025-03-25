@@ -127,6 +127,16 @@
       "import": "./dist/viewport/index.js",
       "require": "./dist/viewport/index.cjs"
     },
+    "./internal/viewport/preview": {
+      "types": "./dist/viewport/preview.d.ts",
+      "import": "./dist/viewport/preview.js",
+      "require": "./dist/viewport/preview.cjs"
+    },
+    "./viewport/preview": {
+      "types": "./dist/viewport/preview.d.ts",
+      "import": "./dist/viewport/preview.js",
+      "require": "./dist/viewport/preview.cjs"
+    },
     "./internal/viewport/manager": {
       "import": "./dist/viewport/manager.js"
     },
@@ -365,6 +375,12 @@
       ],
       "viewport": [
         "./dist/viewport/index.d.ts"
+      ],
+      "internal/viewport/preview": [
+        "./dist/viewport/preview.d.ts"
+      ],
+      "viewport/preview": [
+        "./dist/viewport/preview.d.ts"
       ],
       "internal/controls": [
         "./dist/controls/index.d.ts"

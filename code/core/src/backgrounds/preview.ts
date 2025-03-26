@@ -1,3 +1,5 @@
+import { definePreview } from 'storybook/preview-api';
+
 import { PARAM_KEY as KEY } from './constants';
 import { withBackgroundAndGrid } from './decorator';
 import type { BackgroundsParameters, GlobalState } from './types';
@@ -18,3 +20,10 @@ export const parameters = {
 export const initialGlobals: Record<string, GlobalState> = {
   [KEY]: { value: undefined, grid: false },
 };
+
+export default () =>
+  definePreview({
+    decorators,
+    parameters,
+    initialGlobals,
+  });

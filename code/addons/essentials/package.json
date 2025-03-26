@@ -32,12 +32,6 @@
       "import": "./dist/preview.mjs",
       "require": "./dist/preview.js"
     },
-    "./backgrounds/preview": {
-      "types": "./dist/backgrounds/preview.d.ts",
-      "import": "./dist/backgrounds/preview.mjs",
-      "require": "./dist/backgrounds/preview.js"
-    },
-    "./backgrounds/manager": "./dist/backgrounds/manager.js",
     "./highlight/preview": {
       "types": "./dist/highlight/preview.d.ts",
       "import": "./dist/highlight/preview.mjs",
@@ -83,7 +77,6 @@
     "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
   },
   "dependencies": {
-    "@storybook/addon-backgrounds": "workspace:*",
     "@storybook/addon-highlight": "workspace:*",
     "@storybook/addon-measure": "workspace:*",
     "@storybook/addon-outline": "workspace:*",
@@ -107,13 +100,11 @@
     ],
     "entries": [],
     "managerEntries": [
-      "./src/backgrounds/manager.ts",
       "./src/measure/manager.ts",
       "./src/outline/manager.ts"
     ],
     "previewEntries": [
       "./src/preview.ts",
-      "./src/backgrounds/preview.ts",
       "./src/highlight/preview.ts",
       "./src/measure/preview.ts",
       "./src/outline/preview.ts"

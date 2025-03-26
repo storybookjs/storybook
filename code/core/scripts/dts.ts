@@ -27,6 +27,10 @@ async function run() {
     'storybook/test/spy',
     'storybook/test/preview',
 
+    'storybook/backgrounds',
+    'storybook/backgrounds/preview',
+    'storybook/backgrounds/manager',
+
     'storybook/actions',
     'storybook/actions/preview',
     'storybook/actions/manager',

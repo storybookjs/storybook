@@ -17,6 +17,10 @@ export const getEntries = (cwd: string) => {
     define('src/core-server/presets/common-manager.ts', ['browser'], false),
     define('src/core-server/presets/common-override-preset.ts', ['node'], false),
 
+    define('src/backgrounds/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
+    define('src/backgrounds/preview.ts', ['browser', 'node'], true, ['react'], [], [], true),
+    define('src/backgrounds/manager.tsx', ['browser'], false, ['react'], [], [], true),
+
     define('src/actions/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
     define('src/actions/preview.ts', ['browser', 'node'], true, ['react'], [], [], true),
     define('src/actions/manager.tsx', ['browser'], false, ['react'], [], [], true),

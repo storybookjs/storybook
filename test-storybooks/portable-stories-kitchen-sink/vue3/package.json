@@ -17,7 +17,6 @@
   "resolutions": {
     "@playwright/test": "1.48.1",
     "@storybook/addon-a11y": "file:../../../code/addons/a11y",
-    "@storybook/addon-backgrounds": "file:../../../code/addons/backgrounds",
     "@storybook/addon-docs": "file:../../../code/addons/docs",
     "@storybook/addon-essentials": "file:../../../code/addons/essentials",
     "@storybook/addon-highlight": "file:../../../code/addons/highlight",

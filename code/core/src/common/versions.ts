@@ -1,7 +1,6 @@
 // auto generated file, do not edit
 export default {
   '@storybook/addon-a11y': '9.0.0-alpha.10',
-  '@storybook/addon-backgrounds': '9.0.0-alpha.10',
   '@storybook/addon-docs': '9.0.0-alpha.10',
   '@storybook/addon-essentials': '9.0.0-alpha.10',
   '@storybook/addon-mdx-gfm': '9.0.0-alpha.10',

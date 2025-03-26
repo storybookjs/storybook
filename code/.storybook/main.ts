@@ -38,10 +38,6 @@ const config = defineMain({
       titlePrefix: 'addons/a11y',
     },
     {
-      directory: '../addons/backgrounds/template/stories',
-      titlePrefix: 'addons/backgrounds',
-    },
-    {
       directory: '../addons/docs/template/stories',
       titlePrefix: 'addons/docs',
     },

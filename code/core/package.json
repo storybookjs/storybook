@@ -83,6 +83,32 @@
       "import": "./dist/core-server/presets/common-override-preset.js",
       "require": "./dist/core-server/presets/common-override-preset.cjs"
     },
+    "./internal/backgrounds": {
+      "types": "./dist/backgrounds/index.d.ts",
+      "import": "./dist/backgrounds/index.js",
+      "require": "./dist/backgrounds/index.cjs"
+    },
+    "./backgrounds": {
+      "types": "./dist/backgrounds/index.d.ts",
+      "import": "./dist/backgrounds/index.js",
+      "require": "./dist/backgrounds/index.cjs"
+    },
+    "./internal/backgrounds/preview": {
+      "types": "./dist/backgrounds/preview.d.ts",
+      "import": "./dist/backgrounds/preview.js",
+      "require": "./dist/backgrounds/preview.cjs"
+    },
+    "./backgrounds/preview": {
+      "types": "./dist/backgrounds/preview.d.ts",
+      "import": "./dist/backgrounds/preview.js",
+      "require": "./dist/backgrounds/preview.cjs"
+    },
+    "./internal/backgrounds/manager": {
+      "import": "./dist/backgrounds/manager.js"
+    },
+    "./backgrounds/manager": {
+      "import": "./dist/backgrounds/manager.js"
+    },
     "./internal/actions": {
       "types": "./dist/actions/index.d.ts",
       "import": "./dist/actions/index.js",
@@ -351,6 +377,18 @@
       ],
       "internal/core-server": [
         "./dist/core-server/index.d.ts"
+      ],
+      "internal/backgrounds": [
+        "./dist/backgrounds/index.d.ts"
+      ],
+      "backgrounds": [
+        "./dist/backgrounds/index.d.ts"
+      ],
+      "internal/backgrounds/preview": [
+        "./dist/backgrounds/preview.d.ts"
+      ],
+      "backgrounds/preview": [
+        "./dist/backgrounds/preview.d.ts"
       ],
       "internal/actions": [
         "./dist/actions/index.d.ts"

@@ -13,7 +13,6 @@ module.exports = {
     '@storybook/addon-storysource',
     '@storybook/addon-docs',
     '@storybook/addon-links',
-    '@storybook/addon-backgrounds',
     '@storybook/addon-highlight',
   ],
   webpackFinal: async (config) => {

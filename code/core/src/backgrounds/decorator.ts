@@ -2,7 +2,7 @@ import type { DecoratorFunction } from 'storybook/internal/types';
 
 import { useEffect } from 'storybook/preview-api';
 
-import { PARAM_KEY as KEY } from './constants';
+import { PARAM_KEY } from './constants';
 import { DEFAULT_BACKGROUNDS } from './defaults';
 import type { BackgroundsParameters, GridConfig } from './types';
 import { addBackgroundStyle, addGridStyle, clearStyles, isReduceMotionEnabled } from './utils';
@@ -19,14 +19,14 @@ const GRID_SELECTOR_BASE = 'addon-backgrounds-grid';
 const transitionStyle = isReduceMotionEnabled() ? '' : 'transition: background-color 0.3s;';
 
 export const withBackgroundAndGrid: DecoratorFunction = (StoryFn, context) => {
-  const { globals, parameters, viewMode, id } = context;
+  const { globals = {}, parameters = {}, viewMode, id } = context;
   const {
     options = DEFAULT_BACKGROUNDS,
     disable,
     grid = defaultGrid,
-  } = (parameters[KEY] || {}) as BackgroundsParameters['backgrounds'];
-  const data = globals[KEY] || {};
-  const backgroundName: string | undefined = typeof data === 'string' ? data : data.value;
+  } = (parameters[PARAM_KEY] || {}) as BackgroundsParameters['backgrounds'];
+  const data = globals[PARAM_KEY] || {};
+  const backgroundName: string | undefined = typeof data === 'string' ? data : data?.value;
 
   const item = backgroundName ? options[backgroundName] : undefined;
   const value = typeof item === 'string' ? item : item?.value || 'transparent';

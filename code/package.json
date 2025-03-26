@@ -102,7 +102,6 @@
     "@nx/workspace": "20.2.2",
     "@playwright/test": "1.48.1",
     "@storybook/addon-a11y": "workspace:*",
-    "@storybook/addon-backgrounds": "workspace:*",
     "@storybook/addon-designs": "9.0.0--canary.1499c1a.0",
     "@storybook/addon-docs": "workspace:*",
     "@storybook/addon-essentials": "workspace:*",

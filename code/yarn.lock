@@ -6067,22 +6067,6 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/addon-backgrounds@workspace:*, @storybook/addon-backgrounds@workspace:addons/backgrounds":
-  version: 0.0.0-use.local
-  resolution: "@storybook/addon-backgrounds@workspace:addons/backgrounds"
-  dependencies:
-    "@storybook/global": "npm:^5.0.0"
-    "@storybook/icons": "npm:^1.4.0"
-    memoizerific: "npm:^1.11.3"
-    react: "npm:^18.2.0"
-    react-dom: "npm:^18.2.0"
-    ts-dedent: "npm:^2.0.0"
-    typescript: "npm:^5.7.3"
-  peerDependencies:
-    storybook: "workspace:^"
-  languageName: unknown
-  linkType: soft
-
 "@storybook/addon-designs@npm:9.0.0--canary.1499c1a.0":
   version: 9.0.0--canary.1499c1a.0
   resolution: "@storybook/addon-designs@npm:9.0.0--canary.1499c1a.0"
@@ -6130,7 +6114,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/addon-essentials@workspace:addons/essentials"
   dependencies:
-    "@storybook/addon-backgrounds": "workspace:*"
     "@storybook/addon-highlight": "workspace:*"
     "@storybook/addon-measure": "workspace:*"
     "@storybook/addon-outline": "workspace:*"
@@ -7184,7 +7167,6 @@ __metadata:
     "@nx/workspace": "npm:20.2.2"
     "@playwright/test": "npm:1.48.1"
     "@storybook/addon-a11y": "workspace:*"
-    "@storybook/addon-backgrounds": "workspace:*"
     "@storybook/addon-designs": "npm:9.0.0--canary.1499c1a.0"
     "@storybook/addon-docs": "workspace:*"
     "@storybook/addon-essentials": "workspace:*"

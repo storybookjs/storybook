@@ -1,6 +1,7 @@
 import type { Renderer } from 'storybook/internal/types';
 
 import actionAnnotations from 'storybook/actions/preview';
+import backgroundsAnnotations from 'storybook/backgrounds/preview';
 import { composeConfigs } from 'storybook/preview-api';
 import testAnnotations from 'storybook/test/preview';
 import viewportAnnotations from 'storybook/viewport/preview';
@@ -9,6 +10,8 @@ import type { NormalizedProjectAnnotations } from '../types';
 
 export function getCoreAnnotations() {
   return [
+    // @ts-expect-error CJS fallback
+    (backgroundsAnnotations.default ?? backgroundsAnnotations)(),
     // @ts-expect-error CJS fallback
     (viewportAnnotations.default ?? viewportAnnotations)(),
     // @ts-expect-error CJS fallback

@@ -23,7 +23,7 @@ const ModalActionBar = styled.div({
   alignItems: 'center',
 });
 
-const ModalTitle = styled.div(({ theme: { typography } }) => ({
+const ModalTitle = styled(Modal.Title)(({ theme: { typography } }) => ({
   fontSize: typography.size.s2,
   fontWeight: typography.weight.bold,
 }));
@@ -92,7 +92,7 @@ export function GlobalErrorModal({ onRerun, storeState }: GlobalErrorModalProps)
 
   const content = fatalError ? (
     <>
-      <h3>{fatalError.error.name || 'Error'}</h3>
+      <p>{fatalError.error.name || 'Error'}</p>
       {fatalError.message && <p>{fatalError.message}</p>}
       {fatalError.error.message && <p>{fatalError.error.message}</p>}
       {fatalError.error.stack && <p>{fatalError.error.stack}</p>}
@@ -107,15 +107,16 @@ export function GlobalErrorModal({ onRerun, storeState }: GlobalErrorModalProps)
           </p>
           {error.VITEST_TEST_PATH && (
             <p>
-              This error originated in "<b>{error.VITEST_TEST_PATH}</b>"". It doesn't mean the error
+              This error originated in "<b>{error.VITEST_TEST_PATH}</b>". It doesn't mean the error
               was thrown inside the file itself, but while it was running.
             </p>
           )}
           {error.VITEST_TEST_NAME && (
-            <p>
-              The latest test that might've caused the error is "<b>{error.VITEST_TEST_NAME}</b>".
-              <br />
-              It might mean one of the following:
+            <>
+              <p>
+                The latest test that might've caused the error is "<b>{error.VITEST_TEST_NAME}</b>".
+                It might mean one of the following:
+              </p>
               <ul>
                 <li>The error was thrown, while Vitest was running this test.</li>
                 <li>
@@ -123,9 +124,24 @@ export function GlobalErrorModal({ onRerun, storeState }: GlobalErrorModalProps)
                   documented test before it was thrown.
                 </li>
               </ul>
-            </p>
+            </>
+          )}
+          {error.stacks && (
+            <>
+              <p>
+                <b>Stacks:</b>
+              </p>
+              <ul>
+                {error.stacks.map((stack) => (
+                  <li key={stack.file + stack.line + stack.column}>
+                    {stack.file}:{stack.line}:{stack.column} - {stack.method || 'unknown method'}
+                  </li>
+                ))}
+              </ul>
+            </>
           )}
           {error.stack && <p>{error.stack}</p>}
+          {error.cause ? <ErrorCause error={error.cause as ErrorLike} /> : null}
         </li>
       ))}
     </ol>

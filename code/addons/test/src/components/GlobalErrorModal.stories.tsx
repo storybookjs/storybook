@@ -101,6 +101,20 @@ export const UnhandledErrors: Story = {
     at http://localhost:63315/some/absolute/path/to/file.js?import&browserv=1742507455852:74:13`,
             VITEST_TEST_PATH: '/some/absolute/path/to/file.js',
             VITEST_TEST_NAME: 'My test',
+            stacks: [
+              {
+                file: '/some/absolute/path/to/file.js',
+                line: 74,
+                column: 13,
+                method: 'someMethod',
+              },
+              {
+                file: '/some/absolute/path/to/other/file.js',
+                line: 123,
+                column: 45,
+                method: 'someOtherMethod',
+              },
+            ],
           },
           {
             name: 'Error',
@@ -112,6 +126,20 @@ export const UnhandledErrors: Story = {
     at async http://localhost:63315/@fs/some/absolute/path/to/@vitest/runner/dist/index.js?v=77e3ac43:573:22`,
             VITEST_TEST_PATH: '/some/absolute/path/to/file.js',
             VITEST_TEST_NAME: 'My other test',
+            stacks: [
+              {
+                file: '/some/absolute/path/to/file.js',
+                line: 73,
+                column: 20,
+                method: 'play',
+              },
+              {
+                file: '/some/absolute/path/to/.vite/deps/chunk-YVH55Y2L.js',
+                line: 31517,
+                column: 11,
+                method: 'runStory',
+              },
+            ],
           },
         ],
       },

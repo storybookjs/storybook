@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Channel, type ChannelTransport } from 'storybook/internal/channels';
+import type { MockUniversalStore } from 'storybook/internal/types';
 
 // eslint-disable-next-line depend/ban-dependencies
 import { execaNode } from 'execa';
 
-import type { MockUniversalStore } from '../../../../core/src/shared/universal-store/mock';
 import { storeOptions } from '../constants';
 import { log } from '../logger';
 import type { StoreEvent } from '../types';

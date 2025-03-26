@@ -5,13 +5,12 @@ import {
   internal_universalStatusStore,
   internal_universalTestProviderStore,
 } from 'storybook/internal/core-server';
+import type { EventInfo } from 'storybook/internal/types';
 
 // eslint-disable-next-line depend/ban-dependencies
 import { execaNode } from 'execa';
 import { join } from 'pathe';
 
-// TODO: export the types from the core package
-import type { EventInfo } from '../../../../core/src/shared/universal-store/types';
 import {
   STATUS_STORE_CHANNEL_EVENT_NAME,
   STORE_CHANNEL_EVENT_NAME,

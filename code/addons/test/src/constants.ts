@@ -1,3 +1,5 @@
+import type { StoreOptions } from 'storybook/internal/types';
+
 import type { StoreState } from './types';
 
 export const ADDON_ID = 'storybook/test';
@@ -23,7 +25,7 @@ export const SUPPORTED_FRAMEWORKS = [
 
 export const SUPPORTED_RENDERERS = ['@storybook/react', '@storybook/svelte', '@storybook/vue3'];
 
-export const storeOptions: { id: string; initialState: StoreState } = {
+export const storeOptions: StoreOptions<StoreState> = {
   id: ADDON_ID,
   initialState: {
     config: {

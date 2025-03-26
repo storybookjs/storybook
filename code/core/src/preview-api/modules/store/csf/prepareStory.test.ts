@@ -123,6 +123,7 @@ describe('prepareStory', () => {
             a: { name: 'component' },
             b: { name: 'component' },
             nested: { z: { name: 'component' }, y: { name: 'component' } },
+            throwPlayFunctionExceptions: false,
           },
         },
         {
@@ -132,6 +133,7 @@ describe('prepareStory', () => {
             b: { name: 'global' },
             c: { name: 'global' },
             nested: { z: { name: 'global' }, x: { name: 'global' } },
+            throwPlayFunctionExceptions: false,
           },
         }
       );

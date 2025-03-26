@@ -1,5 +1,6 @@
 import Filter from 'ansi-to-html';
 import { type StorybookTheme, useTheme } from 'storybook/theming';
+import stripAnsi from 'strip-ansi';
 
 export function isTestAssertionError(error: unknown) {
   return isChaiError(error) || isJestError(error);
@@ -21,15 +22,15 @@ export function isJestError(error: unknown) {
     typeof error === 'object' &&
     'message' in error &&
     typeof error.message === 'string' &&
-    error.message.startsWith('expect(')
+    stripAnsi(error.message).startsWith('expect(')
   );
 }
 
 export function createAnsiToHtmlFilter(theme: StorybookTheme) {
   return new Filter({
+    escapeXML: true,
     fg: theme.color.defaultText,
     bg: theme.background.content,
-    escapeXML: true,
   });
 }
 

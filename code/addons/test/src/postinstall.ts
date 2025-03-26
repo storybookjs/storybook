@@ -34,7 +34,6 @@ import { getAddonNames } from './utils';
 const ADDON_NAME = '@storybook/addon-test' as const;
 const EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.cts', '.mts', '.cjs', '.mjs'];
 
-const addonInteractionsName = '@storybook/addon-interactions';
 const addonA11yName = '@storybook/addon-a11y';
 
 const findFile = async (basename: string, extensions = EXTENSIONS) =>
@@ -208,38 +207,6 @@ export default async function postInstall(options: PostinstallOptions) {
     printError('⛔️ Sorry!', result);
     logger.line(1);
     return;
-  }
-
-  if (info.hasAddonInteractions) {
-    let shouldUninstall = options.yes;
-    if (!options.yes) {
-      printInfo(
-        '⚠️ Attention',
-        dedent`
-          We have detected that you're using ${addonInteractionsName}.
-          The Storybook test addon is a replacement for the interactions addon, so you must uninstall and unregister it in order to use the test addon correctly. This can be done automatically.
-
-          More info: ${picocolors.cyan('https://storybook.js.org/docs/writing-tests/test-addon')}
-        `
-      );
-
-      const response = isInteractive
-        ? await prompts({
-            type: 'confirm',
-            name: 'shouldUninstall',
-            message: `Would you like me to remove and unregister ${addonInteractionsName}? Press N to abort the entire installation.`,
-            initial: true,
-          })
-        : { shouldUninstall: true };
-
-      shouldUninstall = response.shouldUninstall;
-    }
-
-    if (shouldUninstall) {
-      await $({
-        stdio: 'inherit',
-      })`storybook remove ${addonInteractionsName} --package-manager ${options.packageManager} --config-dir ${options.configDir}`;
-    }
   }
 
   if (info.frameworkPackageName === '@storybook/nextjs') {
@@ -564,8 +531,6 @@ async function getStorybookInfo({ configDir, packageManager: pkgMgr }: Postinsta
     isCritical: true,
   });
 
-  const hasAddonInteractions = !!(await presets.apply('ADDON_INTERACTIONS_IN_USE', false));
-
   const core = await presets.apply('core', {});
 
   const { builder, renderer } = core;
@@ -593,7 +558,6 @@ async function getStorybookInfo({ configDir, packageManager: pkgMgr }: Postinsta
     frameworkPackageName,
     builderPackageName,
     rendererPackageName,
-    hasAddonInteractions,
     addons: getAddonNames(config),
   };
 }

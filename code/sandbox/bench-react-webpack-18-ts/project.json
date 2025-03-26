@@ -5,7 +5,6 @@
   "implicitDependencies": [
     "core",
     "addon-essentials",
-    "addon-interactions",
     "addon-links",
     "addon-onboarding",
     "blocks",

@@ -372,6 +372,7 @@ export const managerEntries = async (existing: any, options: Options) => {
       'dist/core-server/presets/common-manager.js'
     ),
     join(dirname(require.resolve('storybook/package.json')), 'dist/controls/manager.js'),
+    join(dirname(require.resolve('storybook/package.json')), 'dist/component-testing/manager.js'),
     join(dirname(require.resolve('storybook/package.json')), 'dist/actions/manager.js'),
     join(dirname(require.resolve('storybook/package.json')), 'dist/backgrounds/manager.js'),
     join(dirname(require.resolve('storybook/package.json')), 'dist/viewport/manager.js'),

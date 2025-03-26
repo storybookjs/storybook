@@ -1,3 +1,4 @@
+import componentTestingAnnotations from 'storybook/internal/component-testing/preview';
 import type {
   ComponentAnnotations,
   Meta,
@@ -37,6 +38,8 @@ export function __definePreview<TRenderer extends Renderer>(
           (backgroundsAnnotations.default ?? backgroundsAnnotations)(),
           // @ts-expect-error CJS fallback
           (actionAnnotations.default ?? actionAnnotations)(),
+          // @ts-expect-error CJS fallback
+          (componentTestingAnnotations.default ?? componentTestingAnnotations)(),
           // @ts-expect-error CJS fallback
           (testAnnotations.default ?? testAnnotations)(),
           ...(addons ?? []),

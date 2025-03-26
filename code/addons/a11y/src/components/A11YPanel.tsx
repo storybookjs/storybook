@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 
-import { Badge, Button, ScrollArea } from 'storybook/internal/components';
+import { Badge, Button } from 'storybook/internal/components';
 
 import { SyncIcon } from '@storybook/icons';
 
@@ -146,11 +146,7 @@ export const A11YPanel: React.FC = () => {
     <>
       {discrepancy && <TestDiscrepancyMessage discrepancy={discrepancy} />}
       {status === 'ready' || status === 'ran' ? (
-        <>
-          <ScrollArea vertical horizontal>
-            <Tabs key="tabs" tabs={tabs} />
-          </ScrollArea>
-        </>
+        <Tabs key="tabs" tabs={tabs} />
       ) : (
         <Centered style={{ marginTop: discrepancy ? '1em' : 0 }}>
           {status === 'initial' && 'Initializing...'}

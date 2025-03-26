@@ -22,7 +22,7 @@ test.describe('addon-a11y', () => {
     // check that the highlight is visible
     const imageElement = sbPage.previewIframe().getByRole('img');
     expect(await imageElement.evaluate((el) => getComputedStyle(el).outline)).toBe(
-      'rgba(255, 68, 0, 0.6) solid 1px'
+      'rgba(255, 68, 0, 0.6) dashed 1px'
     );
 
     await page.getByRole('button', { name: 'Hide highlights' }).click();

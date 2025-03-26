@@ -17,7 +17,7 @@ import addonTest from '@storybook/addon-test';
 import addonThemes from '@storybook/addon-themes';
 
 import { DocsContext as DocsContextProps, useArgs } from 'storybook/preview-api';
-import type { PreviewWeb } from 'storybook/preview-api';
+import type { PreviewWeb, StoryStore } from 'storybook/preview-api';
 import {
   Global,
   ThemeProvider,
@@ -146,9 +146,12 @@ const loaders = [
     // eslint-disable-next-line no-underscore-dangle
     const preview = (window as any).__STORYBOOK_PREVIEW__ as PreviewWeb<ReactRenderer> | undefined;
     const channel = (window as any).__STORYBOOK_ADDONS_CHANNEL__ as Channel | undefined;
+    const storyStore = (window as any).__STORYBOOK_STORY_STORE__ as
+      | StoryStore<ReactRenderer>
+      | undefined;
     // __STORYBOOK_PREVIEW__ and __STORYBOOK_ADDONS_CHANNEL__ is set in the PreviewWeb constructor
     // which isn't loaded in portable stories/vitest
-    if (!relativeCsfPaths || !preview || !channel) {
+    if (!relativeCsfPaths || !preview || !channel || !storyStore) {
       return {};
     }
     const csfFiles = await Promise.all(
@@ -157,7 +160,7 @@ const loaders = [
           /^..\//,
           ''
         )}.tsx`;
-        const entry = preview.storyStore.storyIndex?.importPathToEntry(projectRelativePath);
+        const entry = storyStore.storyIndex?.importPathToEntry(projectRelativePath);
 
         if (!entry) {
           throw new Error(
@@ -165,12 +168,12 @@ const loaders = [
           );
         }
 
-        return preview.storyStore.loadCSFFileByStoryId(entry.id);
+        return storyStore.loadCSFFileByStoryId(entry.id);
       })
     );
     const docsContext = new DocsContextProps(
       channel,
-      preview.storyStore,
+      storyStore,
       preview.renderStoryToElement.bind(preview),
       csfFiles
     );

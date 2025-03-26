@@ -36,6 +36,14 @@ function VitePlugin({ dir = process.cwd() }: VitePluginOptions = {}): Plugin[] {
   const resolvedDir = resolve(dir);
   const nextConfigResolver = Promise.withResolvers<NextConfigComplete>();
 
+  let styledJsxIsInstalled: boolean;
+  try {
+    require.resolve("styled-jsx");
+    styledJsxIsInstalled = true;
+  } catch (e) {
+    styledJsxIsInstalled = false;
+  }
+
   return [
     {
       name: "vite-plugin-storybook-nextjs",
@@ -117,7 +125,7 @@ function VitePlugin({ dir = process.cwd() }: VitePluginOptions = {}): Plugin[] {
               "next/image",
               "next/legacy/image",
               "react/jsx-dev-runtime",
-              "styled-jsx/style",
+              ...(styledJsxIsInstalled ? ["styled-jsx/style"] : []),
             ],
           },
           test: {

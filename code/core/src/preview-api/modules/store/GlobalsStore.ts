@@ -25,7 +25,12 @@ export class GlobalsStore {
   set({ globals = {}, globalTypes = {} }: { globals?: Globals; globalTypes?: GlobalTypes }) {
     const delta = this.initialGlobals && deepDiff(this.initialGlobals, this.globals);
 
-    this.allowedGlobalNames = new Set([...Object.keys(globals), ...Object.keys(globalTypes)]);
+    this.allowedGlobalNames = new Set([
+      ...Object.keys(globals),
+      ...Object.keys(globalTypes),
+      // core globals
+      ...['backgrounds'],
+    ]);
 
     const defaultGlobals: Globals = getValuesFromArgTypes(globalTypes);
     this.initialGlobals = { ...defaultGlobals, ...globals };

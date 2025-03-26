@@ -9,6 +9,8 @@ import type {
 import { SAVE_STORY_REQUEST, SAVE_STORY_RESPONSE } from 'storybook/internal/core-events';
 import type { Args } from 'storybook/internal/csf';
 
+import { FailedIcon, PassedIcon } from '@storybook/icons';
+
 import { dequal as deepEqual } from 'dequal';
 import { addons, experimental_requestResponse, types, useArgTypes } from 'storybook/manager-api';
 import { color } from 'storybook/theming';
@@ -71,7 +73,7 @@ addons.register(ADDON_ID, (api) => {
 
       api.addNotification({
         id: 'save-story-success',
-        icon: { name: 'passed', color: color.positive },
+        icon: <PassedIcon color={color.positive} />,
         content: {
           headline: 'Story saved',
           subHeadline: (
@@ -85,7 +87,7 @@ addons.register(ADDON_ID, (api) => {
     } catch (error: any) {
       api.addNotification({
         id: 'save-story-error',
-        icon: { name: 'failed', color: color.negative },
+        icon: <FailedIcon color={color.negative} />,
         content: {
           headline: 'Failed to save story',
           subHeadline:
@@ -116,7 +118,7 @@ addons.register(ADDON_ID, (api) => {
 
     api.addNotification({
       id: 'save-story-success',
-      icon: { name: 'passed', color: color.positive },
+      icon: <PassedIcon color={color.positive} />,
       content: {
         headline: 'Story created',
         subHeadline: (

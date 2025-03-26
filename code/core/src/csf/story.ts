@@ -246,7 +246,7 @@ export interface StoryContext<TRenderer extends Renderer = Renderer, TArgs = Arg
   abortSignal: AbortSignal;
   canvasElement: TRenderer['canvasElement'];
   hooks: unknown;
-  originalStoryFn: StoryFn<TRenderer>;
+  originalStoryFn: ArgsStoryFn<TRenderer>;
   viewMode: ViewMode;
   step: StepFunction<TRenderer, TArgs>;
   context: this;

@@ -107,6 +107,7 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
   });
 
   const [globals] = useGlobals() ?? [];
+  const api = useStorybookApi();
 
   const getInitialStatus = useCallback((manual = false) => (manual ? 'manual' : 'initial'), []);
 
@@ -115,11 +116,13 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
     [globals?.a11y?.manual, parameters.manual]
   );
 
-  const api = useStorybookApi();
-  const a11ySelection = api.getQueryParam('a11ySelection');
-  if (a11ySelection) {
-    api.setQueryParams({ a11ySelection: '' });
-  }
+  const a11ySelection = useMemo(() => {
+    const value = api.getQueryParam('a11ySelection');
+    if (value) {
+      api.setQueryParams({ a11ySelection: '' });
+    }
+    return value;
+  }, [api]);
 
   const [results, setResults] = useAddonState<Results>(ADDON_ID, defaultResult);
   const [tab, setTab] = useState(() => {
@@ -130,7 +133,7 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
   });
   const [error, setError] = useState<unknown>(undefined);
   const [status, setStatus] = useState<Status>(getInitialStatus(manual));
-  const [highlighted, setHighlighted] = useState(false);
+  const [highlighted, setHighlighted] = useState(!!a11ySelection);
 
   const { storyId } = useStorybookState();
   const currentStoryA11yStatusValue = experimental_useStatusStore(

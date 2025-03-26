@@ -45,7 +45,7 @@ const importFn = vi.fn(async (path) => {
 
 const projectAnnotations: ProjectAnnotations<any> = composeConfigs([
   {
-    globals: { a: 'b' },
+    initialGlobals: { a: 'b' },
     globalTypes: { a: { type: 'string' } },
     argTypes: { a: { type: 'string' } },
     render: vi.fn(),

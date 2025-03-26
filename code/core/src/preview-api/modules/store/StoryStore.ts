@@ -1,11 +1,9 @@
-import { deprecate } from 'storybook/internal/client-logger';
-import type { Canvas, CleanupCallback } from 'storybook/internal/csf';
+import type { CleanupCallback } from 'storybook/internal/csf';
 import {
   CalledExtractOnStoreError,
   MissingStoryFromCsfFileError,
 } from 'storybook/internal/preview-errors';
 import type {
-  BoundStory,
   CSFFile,
   ComponentTitle,
   IndexEntry,
@@ -18,7 +16,6 @@ import type {
   PreparedStory,
   ProjectAnnotations,
   Renderer,
-  StoryContext,
   StoryContextForEnhancers,
   StoryId,
   StoryIndex,
@@ -28,7 +25,6 @@ import type {
 
 import { mapValues, omitBy, pick } from 'es-toolkit';
 import memoize from 'memoizerific';
-import type { UserEventObject } from 'storybook/test';
 
 import { HooksContext } from '../addons';
 import { ArgsStore } from './ArgsStore';
@@ -386,55 +382,4 @@ export class StoryStore<TRenderer extends Renderer> {
       stories,
     };
   };
-
-  raw(): BoundStory<TRenderer>[] {
-    deprecate(
-      'StoryStore.raw() is deprecated and will be removed in 9.0, please use extract() instead'
-    );
-    return Object.values(this.extract())
-      .map(({ id }: { id: StoryId }) => this.fromId(id))
-      .filter(Boolean) as BoundStory<TRenderer>[];
-  }
-
-  fromId(storyId: StoryId): BoundStory<TRenderer> | null {
-    deprecate(
-      'StoryStore.fromId() is deprecated and will be removed in 9.0, please use loadStory() instead'
-    );
-
-    // Deprecated so won't make a proper error for this
-
-    // Deprecated so won't make a proper error for this
-    if (!this.cachedCSFFiles) {
-      // eslint-disable-next-line local-rules/no-uncategorized-errors
-      throw new Error('Cannot call fromId/raw() unless you call cacheAllCSFFiles() first.');
-    }
-
-    let importPath;
-    try {
-      ({ importPath } = this.storyIndex.storyIdToEntry(storyId));
-    } catch (err) {
-      return null;
-    }
-    const csfFile = this.cachedCSFFiles[importPath];
-    const story = this.storyFromCSFFile({ storyId, csfFile });
-    return {
-      ...story,
-      storyFn: (update) => {
-        const context = {
-          ...this.getStoryContext(story),
-          abortSignal: new AbortController().signal,
-          canvasElement: null!,
-          loaded: {},
-          step: (label, play) => story.runStep(label, play, context),
-          context: null!,
-          mount: null!,
-          canvas: {} as Canvas,
-          userEvent: {} as UserEventObject,
-          viewMode: 'story',
-        } as StoryContext<TRenderer>;
-
-        return story.unboundStoryFn({ ...context, ...update });
-      },
-    };
-  }
 }

@@ -46,9 +46,6 @@ const Item = styled.button<{ active?: boolean }>(
       : {}
 );
 
-const TabsWrapper = styled.div({});
-const ActionsWrapper = styled.div({ display: 'flex', gap: 6 });
-
 const Subnav = styled.div(({ theme }) => ({
   boxShadow: `${theme.appBorderColor} 0 -1px 0 0 inset`,
   background: theme.background.app,
@@ -56,12 +53,32 @@ const Subnav = styled.div(({ theme }) => ({
   top: 0,
   zIndex: 1,
   display: 'flex',
-  flexWrap: 'wrap',
   alignItems: 'center',
-  justifyContent: 'space-between',
   whiteSpace: 'nowrap',
+  overflow: 'auto',
   paddingRight: 10,
+  gap: 6,
 }));
+
+const TabsWrapper = styled.div({});
+const ActionsWrapper = styled.div({
+  display: 'flex',
+  flexBasis: '100%',
+  justifyContent: 'flex-end',
+  containerType: 'inline-size',
+  // 96px is the total width of the buttons without labels
+  minWidth: 96,
+  gap: 6,
+});
+
+const ToggleButton = styled(IconButton)({
+  // 193px is the total width of the action buttons when the label is visible
+  '@container (max-width: 193px)': {
+    span: {
+      display: 'none',
+    },
+  },
+});
 
 interface TabsProps {
   tabs: {
@@ -122,10 +139,10 @@ export const Tabs: React.FC<TabsProps> = ({ tabs }) => {
             tooltip={<TooltipNote note="Highlight elements with accessibility violations" />}
             trigger="hover"
           >
-            <IconButton onClick={toggleHighlight} active={highlighted}>
+            <ToggleButton onClick={toggleHighlight} active={highlighted}>
               {highlighted ? <EyeCloseIcon /> : <EyeIcon />}
-              {highlighted ? 'Hide highlights' : 'Show highlights'}
-            </IconButton>
+              <span>{highlighted ? 'Hide highlights' : 'Show highlights'}</span>
+            </ToggleButton>
           </WithTooltip>
           <WithTooltip
             as="div"

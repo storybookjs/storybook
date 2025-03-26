@@ -59,7 +59,7 @@ export const Stories: FC<StoriesProps> = ({ title = 'Stories', includePrimary = 
   }
   return (
     <>
-      <StyledHeading>{title}</StyledHeading>
+      {typeof title === 'string' ? <StyledHeading>{title}</StyledHeading> : title}
       {stories.map(
         (story) =>
           story && <DocsStory key={story.id} of={story.moduleExport} expanded __forceInitialArgs />

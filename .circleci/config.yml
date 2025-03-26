@@ -193,22 +193,6 @@ jobs:
             yarn lint
       - report-workflow-on-failure
       - cancel-workflow-on-failure
-  knip:
-    executor:
-      class: large
-      name: sb_node_22_classic
-    steps:
-      - git-shallow-clone/checkout_advanced:
-          clone_options: "--depth 1 --verbose"
-      - attach_workspace:
-          at: .
-      - run:
-          name: Knip
-          command: |
-            cd code
-            yarn knip --no-exit-code
-      - report-workflow-on-failure
-      - cancel-workflow-on-failure
   bench-packages:
     executor:
       class: small
@@ -833,9 +817,6 @@ workflows:
       - lint:
           requires:
             - build
-      - knip:
-          requires:
-            - build
 # TODO: don't forget to reenable this
 #      - bench-packages:
 #          requires:
@@ -908,9 +889,6 @@ workflows:
       - pretty-docs
       - build
       - lint:
-          requires:
-            - build
-      - knip:
           requires:
             - build
 # TODO: don't forget to reenable this
@@ -986,9 +964,6 @@ workflows:
       - pretty-docs
       - build
       - lint:
-          requires:
-            - build
-      - knip:
           requires:
             - build
 # TODO: don't forget to reenable this

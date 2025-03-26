@@ -316,23 +316,6 @@ describe('NPM Proxy', () => {
             "unrelated-and-should-be-filtered": {
               "version": "1.0.0"
             },
-            "@storybook/addon-interactions": {
-              "version": "7.0.0-rc.7",
-              "resolved": "https://registry.npmjs.org/@storybook/addon-interactions/-/addon-interactions-7.0.0-rc.7.tgz",
-              "overridden": false,
-              "dependencies": {
-                "@storybook/package": {
-                  "version": "6.0.0",
-                  "resolved": "https://registry.npmjs.org/@storybook/package/-/core-7.0.0-rc.7.tgz",
-                  "overridden": false,
-                  "dependencies": {
-                    "@storybook/channels": {
-                      "version": "7.0.0-rc.7"
-                    }
-                  }
-                }
-              }
-            },
             "@storybook/package": {
               "version": "7.0.0-beta.11",
               "resolved": "https://registry.npmjs.org/@storybook/package/-/core-7.0.0-beta.11.tgz",
@@ -369,18 +352,6 @@ describe('NPM Proxy', () => {
         {
           "dedupeCommand": "npm dedupe",
           "dependencies": {
-            "@storybook/addon-interactions": [
-              {
-                "location": "",
-                "version": "7.0.0-rc.7",
-              },
-            ],
-            "@storybook/channels": [
-              {
-                "location": "",
-                "version": "7.0.0-rc.7",
-              },
-            ],
             "@storybook/jest": [
               {
                 "location": "",
@@ -388,10 +359,6 @@ describe('NPM Proxy', () => {
               },
             ],
             "@storybook/package": [
-              {
-                "location": "",
-                "version": "6.0.0",
-              },
               {
                 "location": "",
                 "version": "7.0.0-beta.11",
@@ -415,7 +382,6 @@ describe('NPM Proxy', () => {
           "duplicatedDependencies": {
             "@storybook/package": [
               "5.4.2-alpha.0",
-              "6.0.0",
               "7.0.0-alpha.21",
               "7.0.0-beta.11",
             ],

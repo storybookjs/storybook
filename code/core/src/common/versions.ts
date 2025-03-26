@@ -6,7 +6,6 @@ export default {
   '@storybook/addon-essentials': '9.0.0-alpha.10',
   '@storybook/addon-mdx-gfm': '9.0.0-alpha.10',
   '@storybook/addon-highlight': '9.0.0-alpha.10',
-  '@storybook/addon-interactions': '9.0.0-alpha.10',
   '@storybook/addon-jest': '9.0.0-alpha.10',
   '@storybook/addon-links': '9.0.0-alpha.10',
   '@storybook/addon-measure': '9.0.0-alpha.10',

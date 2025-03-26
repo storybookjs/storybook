@@ -1,4 +1,3 @@
-// @TODO: use addon-interactions and remove the rule disable above
 import React from 'react';
 
 import type { Meta, StoryFn, StoryObj } from '@storybook/react-vite';

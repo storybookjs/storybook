@@ -9,10 +9,10 @@ export {
   useStatusStore as experimental_useStatusStore,
   fullStatusStore as internal_fullStatusStore,
   universalStatusStore as internal_universalStatusStore,
-} from './stores/status';
+} from './stores/__mocks__/status';
 export {
   getTestProviderStoreById as experimental_getTestProviderStore,
   useTestProviderStore as experimental_useTestProviderStore,
   fullTestProviderStore as internal_fullTestProviderStore,
   universalTestProviderStore as internal_universalTestProviderStore,
-} from './stores/test-provider';
+} from './stores/__mocks__/test-provider';

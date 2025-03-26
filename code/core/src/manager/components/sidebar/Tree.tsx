@@ -20,11 +20,9 @@ import {
   SyncIcon,
 } from '@storybook/icons';
 
+import { internal_fullStatusStore as fullStatusStore } from '#manager-stores';
 import { darken, lighten } from 'polished';
-import {
-  internal_fullStatusStore as fullStatusStore,
-  useStorybookApi,
-} from 'storybook/manager-api';
+import { useStorybookApi } from 'storybook/manager-api';
 import type {
   API,
   ComponentEntry,

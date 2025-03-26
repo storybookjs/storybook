@@ -110,7 +110,7 @@ export const A11YPanel: React.FC = () => {
           <Report
             items={passes}
             type={RuleType.PASS}
-            empty="No accessibility checks passed."
+            empty="No passing accessibility checks found."
             handleSelectionChange={handleSelectionChange}
             selectedItems={selectedItems}
             toggleOpen={toggleOpen}
@@ -122,7 +122,7 @@ export const A11YPanel: React.FC = () => {
       {
         label: (
           <Tab>
-            Incomplete
+            Inconclusive
             <Count status="neutral">{incomplete.length}</Count>
           </Tab>
         ),
@@ -130,7 +130,7 @@ export const A11YPanel: React.FC = () => {
           <Report
             items={incomplete}
             type={RuleType.INCOMPLETION}
-            empty="No accessibility checks incomplete."
+            empty="No inconclusive accessibility checks found."
             handleSelectionChange={handleSelectionChange}
             selectedItems={selectedItems}
             toggleOpen={toggleOpen}

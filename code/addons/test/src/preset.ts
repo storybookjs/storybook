@@ -191,7 +191,10 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
         unhandledErrorCount: unhandledErrors.length,
         ...(enableCrashReports &&
           unhandledErrors.length > 0 && {
-            unhandledErrors: unhandledErrors.map((error) => sanitizeError(error)),
+            unhandledErrors: unhandledErrors.map((error) => {
+              const { stacks, ...errorWithoutStacks } = error;
+              return sanitizeError(errorWithoutStacks);
+            }),
           }),
         addonVersion,
       });

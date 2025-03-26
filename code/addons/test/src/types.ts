@@ -20,6 +20,12 @@ export interface TestParameters {
 export interface VitestError extends Error {
   VITEST_TEST_PATH?: string;
   VITEST_TEST_NAME?: string;
+  stacks?: Array<{
+    line: number;
+    column: number;
+    file: string;
+    method: string;
+  }>;
 }
 
 export type ErrorLike = {

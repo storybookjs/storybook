@@ -36,8 +36,10 @@ export const storeOptions: { id: string; initialState: StoreState } = {
     indexUrl: undefined,
     currentRun: {
       triggeredBy: undefined,
-      coverage: false,
-      a11y: false,
+      config: {
+        coverage: false,
+        a11y: false,
+      },
       componentTestCount: {
         success: 0,
         error: 0,

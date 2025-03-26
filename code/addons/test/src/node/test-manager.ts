@@ -131,8 +131,7 @@ export class TestManager {
         triggeredBy,
         startedAt: Date.now(),
         storyIds: storyIds,
-        coverage: s.config.coverage,
-        a11y: s.config.a11y,
+        config: s.config,
       },
     }));
     await this.testProviderStore.runWithState(async () => {

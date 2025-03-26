@@ -49,8 +49,7 @@ export type StoreState = {
     | undefined;
   currentRun: {
     triggeredBy: RunTrigger | undefined;
-    coverage: boolean;
-    a11y: boolean;
+    config: StoreState['config'];
     componentTestCount: {
       success: number;
       error: number;

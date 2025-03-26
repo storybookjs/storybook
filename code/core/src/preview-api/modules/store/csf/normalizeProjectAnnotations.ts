@@ -1,4 +1,3 @@
-import { deprecate } from 'storybook/internal/client-logger';
 import type {
   ArgTypes,
   NormalizedProjectAnnotations,
@@ -6,11 +5,8 @@ import type {
   Renderer,
 } from 'storybook/internal/types';
 
-import { dedent } from 'ts-dedent';
-
 import { inferArgTypes } from '../inferArgTypes';
 import { inferControls } from '../inferControls';
-import { combineParameters } from '../parameters';
 import { normalizeArrays } from './normalizeArrays';
 import { normalizeInputTypes } from './normalizeInputTypes';
 
@@ -26,18 +22,9 @@ export function normalizeProjectAnnotations<TRenderer extends Renderer>({
   loaders,
   beforeEach,
   experimental_afterEach,
-  globals,
   initialGlobals,
   ...annotations
 }: ProjectAnnotations<TRenderer>): NormalizedProjectAnnotations<TRenderer> {
-  if (globals && Object.keys(globals).length > 0) {
-    deprecate(dedent`
-      The preview.js 'globals' field is deprecated and will be removed in Storybook 9.0.
-      Please use 'initialGlobals' instead. Learn more:
-
-      https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#previewjs-globals-renamed-to-initialglobals
-    `);
-  }
   return {
     ...(argTypes && { argTypes: normalizeInputTypes(argTypes as ArgTypes) }),
     ...(globalTypes && { globalTypes: normalizeInputTypes(globalTypes) }),
@@ -65,7 +52,7 @@ export function normalizeProjectAnnotations<TRenderer extends Renderer>({
       // TODO: Make an architectural decision on the handling of core addons
       inferControls,
     ],
-    initialGlobals: combineParameters(initialGlobals, globals),
+    initialGlobals,
     ...(annotations as NormalizedProjectAnnotations<TRenderer>),
   };
 }

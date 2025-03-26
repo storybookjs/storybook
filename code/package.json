@@ -103,7 +103,7 @@
     "@playwright/test": "1.48.1",
     "@storybook/addon-a11y": "workspace:*",
     "@storybook/addon-backgrounds": "workspace:*",
-    "@storybook/addon-designs": "9.0.0--canary.1499c1a.0",
+    "@storybook/addon-designs": "9.0.0-next.1",
     "@storybook/addon-docs": "workspace:*",
     "@storybook/addon-essentials": "workspace:*",
     "@storybook/addon-highlight": "workspace:*",

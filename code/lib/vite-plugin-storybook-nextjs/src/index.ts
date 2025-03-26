@@ -36,14 +36,6 @@ function VitePlugin({ dir = process.cwd() }: VitePluginOptions = {}): Plugin[] {
   const resolvedDir = resolve(dir);
   const nextConfigResolver = Promise.withResolvers<NextConfigComplete>();
 
-  let styledJsxIsInstalled: boolean;
-  try {
-    require.resolve("styled-jsx");
-    styledJsxIsInstalled = true;
-  } catch (e) {
-    styledJsxIsInstalled = false;
-  }
-
   return [
     {
       name: "vite-plugin-storybook-nextjs",
@@ -125,7 +117,10 @@ function VitePlugin({ dir = process.cwd() }: VitePluginOptions = {}): Plugin[] {
               "next/image",
               "next/legacy/image",
               "react/jsx-dev-runtime",
-              ...(styledJsxIsInstalled ? ["styled-jsx/style"] : []),
+              // Required for pnpm setups, since styled-jsx is a transitive dependency of Next.js and not directly listed.
+              // Refer to this pnpm issue for more details:
+              // https://github.com/vitejs/vite/issues/16293
+              "next > styled-jsx/style",
             ],
           },
           test: {

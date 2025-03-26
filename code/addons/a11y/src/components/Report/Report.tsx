@@ -1,7 +1,7 @@
 import type { FC } from 'react';
 import React from 'react';
 
-import { EmptyTabContent, IconButton } from 'storybook/internal/components';
+import { Badge, EmptyTabContent, IconButton } from 'storybook/internal/components';
 
 import { ChevronSmallDownIcon } from '@storybook/icons';
 
@@ -26,8 +26,8 @@ const HeaderBar = styled.div(({ theme }) => ({
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
-  padding: 5,
-  paddingLeft: 15,
+  gap: 4,
+  padding: '6px 5px 6px 15px',
   minHeight: 40,
   background: 'none',
   color: 'inherit',
@@ -38,6 +38,16 @@ const HeaderBar = styled.div(({ theme }) => ({
     color: theme.color.secondary,
   },
 }));
+
+const Title = styled.div(({ theme }) => ({
+  flexGrow: 1,
+  fontWeight: theme.typography.weight.bold,
+}));
+
+const RuleId = styled(Badge)<{ onClick: (event: React.SyntheticEvent<Element>) => void }>({
+  whiteSpace: 'nowrap',
+  cursor: 'text',
+});
 
 export interface ReportProps {
   items: Result[];
@@ -64,12 +74,15 @@ export const Report: FC<ReportProps> = ({
         return (
           <Wrapper key={id}>
             <HeaderBar
-              onClick={(e) => toggleOpen(e, type, item)}
+              onClick={(event) => toggleOpen(event, type, item)}
               role="button"
               data-active={!!selection}
             >
-              <strong>{item.help}</strong>
-              <IconButton onClick={(ev) => toggleOpen(ev, type, item)}>
+              <Title>{item.help}</Title>
+              <RuleId status="neutral" onClick={(event) => event.stopPropagation()}>
+                {item.id}
+              </RuleId>
+              <IconButton onClick={(event) => toggleOpen(event, type, item)}>
                 <Icon style={{ transform: `rotate(${selection ? -180 : 0}deg)` }} />
               </IconButton>
             </HeaderBar>

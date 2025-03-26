@@ -33,7 +33,9 @@ export class StorybookReporter implements Reporter {
     testModules: readonly TestModule[],
     unhandledErrors: readonly SerializedError[]
   ) {
-    const totalTestCount = testModules.flatMap((t) => Array.from(t.children.allTests())).length;
+    const totalTestCount = testModules.flatMap((t) =>
+      Array.from(t.children.allTests('passed')).concat(Array.from(t.children.allTests('failed')))
+    ).length;
     const testModulesErrors = testModules.flatMap((t) => t.errors());
     const serializedErrors = unhandledErrors.concat(testModulesErrors).map((e) => {
       return {

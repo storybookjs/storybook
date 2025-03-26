@@ -191,8 +191,7 @@ export class TestManager {
             }
           });
       });
-
-      const totalTestCount = ctSuccess + ctError;
+      const finishedTestCount = ctSuccess + ctError;
 
       return {
         ...s,
@@ -204,8 +203,8 @@ export class TestManager {
           // e.g. when testing more tests than the stories we know about upfront
           // in those cases, we set the totalTestCount to the sum of successes and errors
           totalTestCount:
-            totalTestCount > (s.currentRun.totalTestCount ?? 0)
-              ? totalTestCount
+            finishedTestCount > (s.currentRun.totalTestCount ?? 0)
+              ? finishedTestCount
               : s.currentRun.totalTestCount,
         },
       };

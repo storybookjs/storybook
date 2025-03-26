@@ -117,7 +117,10 @@ function VitePlugin({ dir = process.cwd() }: VitePluginOptions = {}): Plugin[] {
               "next/image",
               "next/legacy/image",
               "react/jsx-dev-runtime",
-              "styled-jsx/style",
+              // Required for pnpm setups, since styled-jsx is a transitive dependency of Next.js and not directly listed.
+              // Refer to this pnpm issue for more details:
+              // https://github.com/vitejs/vite/issues/16293
+              "next > styled-jsx/style",
             ],
           },
           test: {

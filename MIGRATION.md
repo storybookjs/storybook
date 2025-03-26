@@ -1,6 +1,7 @@
 <h1>Migration</h1>
 
 - [From version 8.x to 9.0.0](#from-version-8x-to-900)
+  - [The parameter docs.source.excludeDecorators has no effect in React](#the-parameter-docssourceexcludedecorators-has-no-effect-in-react)
   - [Addon Viewport is moved to core](#addon-viewport-is-moved-to-core)
   - [Addon Controls is moved to core](#addon-controls-is-moved-to-core)
   - [Addon Actions is moved to core](#addon-actions-is-moved-to-core)
@@ -410,6 +411,11 @@
   - [Deprecated embedded addons](#deprecated-embedded-addons)
 
 ## From version 8.x to 9.0.0
+
+### The parameter docs.source.excludeDecorators has no effect in React
+
+In React, the parameter `docs.source.excludeDecorators` option is no longer used.
+Decorators are always excluded as it causes performance issues and doc source snippets not showing the actual component.
 
 ### Addon Viewport is moved to core
 

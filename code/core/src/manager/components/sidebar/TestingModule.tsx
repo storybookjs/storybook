@@ -396,7 +396,10 @@ export const TestingModule = ({
                     e.stopPropagation();
                     clearStatuses();
                   }}
-                  aria-label="Clear all statuses"
+                  disabled={isRunning}
+                  aria-label={
+                    isRunning ? "Can't clear statuses while running tests" : 'Clear all statuses'
+                  }
                 >
                   <SweepIcon />
                 </IconButton>

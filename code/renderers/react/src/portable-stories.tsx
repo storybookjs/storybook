@@ -1,11 +1,5 @@
 import * as React from 'react';
 
-import {
-  composeStories as originalComposeStories,
-  composeStory as originalComposeStory,
-  setProjectAnnotations as originalSetProjectAnnotations,
-  setDefaultProjectAnnotations,
-} from 'storybook/internal/preview-api';
 import type {
   Args,
   ComposedStoryFn,
@@ -16,6 +10,13 @@ import type {
   StoriesWithPartialProps,
   StoryAnnotationsOrFn,
 } from 'storybook/internal/types';
+
+import {
+  composeStories as originalComposeStories,
+  composeStory as originalComposeStory,
+  setProjectAnnotations as originalSetProjectAnnotations,
+  setDefaultProjectAnnotations,
+} from 'storybook/preview-api';
 
 import * as reactProjectAnnotations from './entry-preview';
 import type { Meta } from './public-types';

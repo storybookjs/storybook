@@ -31,7 +31,7 @@ export const dts = async (entry: string, externals: string[], tsconfig: string) 
   const dir = dirname(entry).replace('src', 'dist');
   const out = await rollup.rollup({
     input: entry,
-    external: [...externals, 'ast-types'].map((dep) => new RegExp(`^${dep}($|\\/|\\\\)`)),
+    external: [...externals, 'ast-types', 'react'].map((dep) => new RegExp(`^${dep}($|\\/|\\\\)`)),
     output: { file: entry.replace('src', 'dist').replace('.ts', '.d.ts'), format: 'es' },
     plugins: [
       rpd.dts({
@@ -40,6 +40,7 @@ export const dts = async (entry: string, externals: string[], tsconfig: string) 
         compilerOptions: {
           esModuleInterop: true,
           baseUrl: '.',
+          jsx: ts.JsxEmit.React,
           declaration: true,
           noEmit: false,
           emitDeclarationOnly: true,
@@ -79,7 +80,9 @@ export const defineEntry =
     targets: ('node' | 'browser')[],
     generateDTS: boolean = true,
     externals: string[] = [],
-    internals: string[] = []
+    internals: string[] = [],
+    noExternal: string[] = [],
+    isPublic: boolean = false
   ) => ({
     file: slash(join(cwd, entry)),
     node: targets.includes('node'),
@@ -87,6 +90,8 @@ export const defineEntry =
     dts: generateDTS,
     externals,
     internals,
+    noExternal,
+    isPublic,
   });
 
 export const merge = <T extends Record<string, any>>(...objects: T[]): T =>

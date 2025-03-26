@@ -1,9 +1,9 @@
 import React from 'react';
 
-import { ManagerContext } from 'storybook/internal/manager-api';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import type { Meta, StoryObj } from '@storybook/react';
-import { fn } from '@storybook/test';
+import { ManagerContext } from 'storybook/manager-api';
+import { fn } from 'storybook/test';
 
 import { TestDiscrepancyMessage } from './TestDiscrepancyMessage';
 

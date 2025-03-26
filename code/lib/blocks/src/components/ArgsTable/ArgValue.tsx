@@ -2,12 +2,12 @@ import type { FC } from 'react';
 import React, { useState } from 'react';
 
 import { SyntaxHighlighter, WithTooltipPure, codeCommon } from 'storybook/internal/components';
-import { styled } from 'storybook/internal/theming';
 
 import { ChevronSmallDownIcon, ChevronSmallUpIcon } from '@storybook/icons';
 
 import { uniq } from 'es-toolkit/compat';
 import memoize from 'memoizerific';
+import { styled } from 'storybook/theming';
 
 import type { PropSummaryValue } from './types';
 

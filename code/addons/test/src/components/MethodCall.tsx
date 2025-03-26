@@ -2,9 +2,9 @@ import type { ReactElement } from 'react';
 import React, { Fragment } from 'react';
 
 import type { Call, CallRef, ElementRef } from 'storybook/internal/instrumenter';
-import { useTheme } from 'storybook/internal/theming';
 
 import { ObjectInspector } from '@devtools-ds/object-inspector';
+import { useTheme } from 'storybook/theming';
 
 const colorsLight = {
   base: '#444',

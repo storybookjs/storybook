@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { styled, typography } from 'storybook/internal/theming';
+import { styled, typography } from 'storybook/theming';
 
 import { useAnsiToHtmlFilter } from '../utils';
 import { Node } from './MethodCall';

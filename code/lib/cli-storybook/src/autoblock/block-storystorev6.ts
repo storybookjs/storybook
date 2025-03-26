@@ -28,7 +28,7 @@ export const blocker = createBlocker({
       
       In your Storybook configuration we found storyStoreV7 feature defined. For instance:
 
-      export default = {
+      export default {
           features: {
               ${picocolors.cyan(`storyStoreV7: false`)}, <--- ${picocolors.bold('remove this line')}
           },

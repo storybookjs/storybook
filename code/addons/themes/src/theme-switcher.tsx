@@ -2,16 +2,11 @@
 import React from 'react';
 
 import { IconButton, TooltipLinkList, WithTooltip } from 'storybook/internal/components';
-import {
-  addons,
-  useAddonState,
-  useChannel,
-  useGlobals,
-  useParameter,
-} from 'storybook/internal/manager-api';
-import { styled } from 'storybook/internal/theming';
 
 import { PaintBrushIcon } from '@storybook/icons';
+
+import { addons, useAddonState, useChannel, useGlobals, useParameter } from 'storybook/manager-api';
+import { styled } from 'storybook/theming';
 
 import {
   DEFAULT_ADDON_STATE,

@@ -1,15 +1,18 @@
+import { createRequire } from 'node:module';
 import process from 'node:process';
 
 import { Channel } from 'storybook/internal/channels';
-import { experimental_UniversalStore } from 'storybook/internal/core-server';
 
 import type { StoreState } from '../constants';
 import { storeOptions } from '../constants';
 import { TestManager } from './test-manager';
 
-process.env.TEST = 'true';
-process.env.VITEST = 'true';
-process.env.NODE_ENV ??= 'test';
+const require = createRequire(import.meta.url);
+// we need to require core-server here, because its ESM output is not valid
+// eslint-disable-next-line @typescript-eslint/naming-convention
+const { experimental_UniversalStore } = require('storybook/internal/core-server') as {
+  experimental_UniversalStore: typeof import('storybook/internal/core-server').experimental_UniversalStore;
+};
 
 const channel: Channel = new Channel({
   async: true,

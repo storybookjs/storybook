@@ -1,4 +1,4 @@
-import { styled } from 'storybook/internal/theming';
+import { styled } from 'storybook/theming';
 
 export const DocumentWrapper = styled.div(({ theme }) => ({
   fontSize: `${theme.typography.size.s2}px`,

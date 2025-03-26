@@ -1,9 +1,8 @@
 import type { FC } from 'react';
 import React from 'react';
 
-import { styled } from 'storybook/internal/theming';
-
 import type { TagValue } from 'axe-core';
+import { styled } from 'storybook/theming';
 
 const Wrapper = styled.div({
   display: 'flex',

@@ -3,15 +3,15 @@ import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { SNIPPET_RENDERED } from 'storybook/internal/docs-tools';
-import { addons, useEffect } from 'storybook/internal/preview-api';
 
 import { html, render } from 'lit';
 import { styleMap } from 'lit/directives/style-map.js';
+import { addons, useEffect } from 'storybook/preview-api';
 
 import type { StoryContext } from '../types';
 import { sourceDecorator } from './sourceDecorator';
 
-vi.mock('storybook/internal/preview-api');
+vi.mock('storybook/preview-api');
 const mockedAddons = vi.mocked(addons);
 const mockedUseEffect = vi.mocked(useEffect);
 

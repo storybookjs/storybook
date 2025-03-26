@@ -28,6 +28,7 @@ import type {
 
 import { mapValues, omitBy, pick } from 'es-toolkit';
 import memoize from 'memoizerific';
+import type { UserEventObject } from 'storybook/test';
 
 import { HooksContext } from '../addons';
 import { ArgsStore } from './ArgsStore';
@@ -428,6 +429,7 @@ export class StoryStore<TRenderer extends Renderer> {
           context: null!,
           mount: null!,
           canvas: {} as Canvas,
+          userEvent: {} as UserEventObject,
           viewMode: 'story',
         } as StoryContext<TRenderer>;
 

@@ -131,6 +131,99 @@ describe('useUniversalStore - Manager', () => {
     expect(thirdState).toEqual(20);
   });
 
+  it('should re-render when the selector changes', () => {
+    // Arrange - create a store
+    const store = UniversalStore.create({
+      id: 'env1:test',
+      leader: true,
+      initialState: { count: 0, selectedCount: 10, otherValue: 5 },
+    });
+    const renderCounter = vi.fn();
+
+    // Initial render with a selector for selectedCount
+    const { result, rerender } = renderHook(
+      ({ selector }) => {
+        renderCounter();
+        return useUniversalStoreManager(store, selector);
+      },
+      { initialProps: { selector: (state: any) => state.selectedCount } }
+    );
+
+    // Assert - initial render
+    expect(renderCounter).toHaveBeenCalledTimes(1);
+    const [firstState] = result.current;
+    expect(firstState).toEqual(10);
+
+    // Act - change the selector to a different property
+    rerender({ selector: (state: any) => state.otherValue });
+
+    // Assert - should re-render with the new selected state
+    expect(renderCounter).toHaveBeenCalledTimes(2);
+    const [secondState] = result.current;
+    expect(secondState).toEqual(5);
+
+    // Act - update the store state
+    act(() => store.setState({ count: 1, selectedCount: 10, otherValue: 15 }));
+
+    // Assert - should re-render because the newly selected state changed
+    expect(renderCounter).toHaveBeenCalledTimes(3);
+    const [thirdState] = result.current;
+    expect(thirdState).toEqual(15);
+  });
+
+  it('should re-render when the universalStore changes', () => {
+    // Arrange - create initial store
+    const initialStore = UniversalStore.create({
+      id: 'env1:test1',
+      leader: true,
+      initialState: { count: 0, selectedCount: 10 },
+    });
+    const renderCounter = vi.fn();
+
+    // Initial render with the first store
+    const { result, rerender } = renderHook(
+      ({ store }) => {
+        renderCounter();
+        return useUniversalStoreManager(store);
+      },
+      { initialProps: { store: initialStore } }
+    );
+
+    // Assert - initial render
+    expect(renderCounter).toHaveBeenCalledTimes(1);
+    const [firstState] = result.current;
+    expect(firstState).toEqual({ count: 0, selectedCount: 10 });
+
+    // Act - create a new store and rerender with it
+    const newStore = UniversalStore.create({
+      id: 'env1:test2',
+      leader: true,
+      initialState: { count: 5, selectedCount: 20 },
+    });
+    rerender({ store: newStore });
+
+    // Assert - should re-render with the new store's state
+    expect(renderCounter).toHaveBeenCalledTimes(2);
+    const [secondState] = result.current;
+    expect(secondState).toEqual({ count: 5, selectedCount: 20 });
+
+    // Act - update the new store's state
+    act(() => newStore.setState({ count: 10, selectedCount: 30 }));
+
+    // Assert - should re-render with the updated state
+    expect(renderCounter).toHaveBeenCalledTimes(3);
+    const [thirdState] = result.current;
+    expect(thirdState).toEqual({ count: 10, selectedCount: 30 });
+
+    // Act - update the old store's state (should have no effect)
+    act(() => initialStore.setState({ count: 100, selectedCount: 100 }));
+
+    // Assert - should not re-render as we're no longer using the initial store
+    expect(renderCounter).toHaveBeenCalledTimes(3);
+    const [fourthState] = result.current;
+    expect(fourthState).toEqual({ count: 10, selectedCount: 30 });
+  });
+
   it('should set the state when the setter is called', () => {
     // Arrange - create a store and render the hook
     const store = UniversalStore.create({

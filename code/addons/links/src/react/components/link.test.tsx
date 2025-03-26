@@ -7,11 +7,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
 
 import { SELECT_STORY } from 'storybook/internal/core-events';
-import { addons } from 'storybook/internal/preview-api';
+
+import { addons } from 'storybook/preview-api';
 
 import LinkTo from './link';
 
-vi.mock('storybook/internal/preview-api');
+vi.mock('storybook/preview-api');
 vi.mock('@storybook/global', () => ({
   global: {
     document: {

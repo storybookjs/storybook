@@ -1,0 +1,50 @@
+diff --git a/dist/cjs/utils/dataTransfer/Clipboard.js b/dist/cjs/utils/dataTransfer/Clipboard.js
+index 434be791b156984a8b76287bc0cc6c8955df4203..e28a15e85e2dccff058a18b4b80b099b7016d688 100644
+--- a/dist/cjs/utils/dataTransfer/Clipboard.js
++++ b/dist/cjs/utils/dataTransfer/Clipboard.js
+@@ -155,10 +155,18 @@ async function writeDataTransferToClipboard(document, clipboardData) {
+ }
+ const g = globalThis;
+ /* istanbul ignore else */ if (typeof g.afterEach === 'function') {
+-    g.afterEach(()=>resetClipboardStubOnView(globalThis.window));
++    g.afterEach(()=>{
++        if(typeof globalThis.window !== 'undefined'){
++            resetClipboardStubOnView(globalThis.window);
++        }
++    });
+ }
+ /* istanbul ignore else */ if (typeof g.afterAll === 'function') {
+-    g.afterAll(()=>detachClipboardStubFromView(globalThis.window));
++    g.afterAll(()=>{
++        if(typeof globalThis.window !== 'undefined'){
++            detachClipboardStubFromView(globalThis.window);
++        }
++    });
+ }
+ 
+ exports.attachClipboardStubToView = attachClipboardStubToView;
+diff --git a/dist/esm/utils/dataTransfer/Clipboard.js b/dist/esm/utils/dataTransfer/Clipboard.js
+index 2ed2676b52adaee045d2594b051c08a4b133e7df..337e644ed268ad4ad0ce9a601d6d0aec73264d5e 100644
+--- a/dist/esm/utils/dataTransfer/Clipboard.js
++++ b/dist/esm/utils/dataTransfer/Clipboard.js
+@@ -153,10 +153,18 @@ async function writeDataTransferToClipboard(document, clipboardData) {
+ }
+ const g = globalThis;
+ /* istanbul ignore else */ if (typeof g.afterEach === 'function') {
+-    g.afterEach(()=>resetClipboardStubOnView(globalThis.window));
++    g.afterEach(()=>{
++        if(typeof globalThis.window !== 'undefined'){
++            resetClipboardStubOnView(globalThis.window);
++        }
++    });
+ }
+ /* istanbul ignore else */ if (typeof g.afterAll === 'function') {
+-    g.afterAll(()=>detachClipboardStubFromView(globalThis.window));
++    g.afterAll(()=>{
++        if(typeof globalThis.window !== 'undefined'){
++            detachClipboardStubFromView(globalThis.window);
++        }
++    });
+ }
+ 
+ export { attachClipboardStubToView, createClipboardItem, detachClipboardStubFromView, readDataTransferFromClipboard, resetClipboardStubOnView, writeDataTransferToClipboard };

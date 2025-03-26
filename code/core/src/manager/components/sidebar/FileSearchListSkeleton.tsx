@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { styled } from 'storybook/internal/theming';
+import { styled } from 'storybook/theming';
 
 import { FileList, FileListItem } from './FileList';
 

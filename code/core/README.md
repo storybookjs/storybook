@@ -20,7 +20,7 @@ Even though this is where all of the code is located, it is NOT to be the entry 
 Consumers of the code should import like so:
 
 ```ts
-import { addons } from 'storybook/internal/manager-api';
+import { addons } from 'storybook/manager-api';
 ```
 
 Importing from `@storybook/core` is explicitly NOT supported; it WILL break in a future version of storybook, very likely in a non-major version bump.

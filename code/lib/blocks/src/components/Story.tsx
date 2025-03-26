@@ -3,8 +3,9 @@ import type { FunctionComponent } from 'react';
 import React, { useEffect, useRef, useState } from 'react';
 
 import { ErrorFormatter, Loader, getStoryHref } from 'storybook/internal/components';
-import { styled } from 'storybook/internal/theming';
 import type { DocsContextProps, PreparedStory } from 'storybook/internal/types';
+
+import { styled } from 'storybook/theming';
 
 import { IFrame } from './IFrame';
 import { ZoomContext } from './ZoomContext';

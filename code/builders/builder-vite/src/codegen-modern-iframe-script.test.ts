@@ -19,7 +19,7 @@ describe('generateModernIframeScriptCodeFromPreviews', () => {
 
        setup();
 
-       import { composeConfigs, PreviewWeb } from 'storybook/internal/preview-api';
+       import { composeConfigs, PreviewWeb } from 'storybook/preview-api';
        import { isPreview } from 'storybook/internal/csf';
        import { importFn } from 'virtual:/@storybook/builder-vite/storybook-stories.js';
        
@@ -63,7 +63,7 @@ describe('generateModernIframeScriptCodeFromPreviews', () => {
 
        setup();
 
-       import { composeConfigs, PreviewWeb } from 'storybook/internal/preview-api';
+       import { composeConfigs, PreviewWeb } from 'storybook/preview-api';
        import { isPreview } from 'storybook/internal/csf';
        import { importFn } from 'virtual:/@storybook/builder-vite/storybook-stories.js';
        
@@ -105,7 +105,7 @@ describe('generateModernIframeScriptCodeFromPreviews', () => {
 
        setup();
 
-       import { composeConfigs, PreviewWeb } from 'storybook/internal/preview-api';
+       import { composeConfigs, PreviewWeb } from 'storybook/preview-api';
        import { isPreview } from 'storybook/internal/csf';
        import { importFn } from 'virtual:/@storybook/builder-vite/storybook-stories.js';
        
@@ -151,7 +151,7 @@ describe('generateModernIframeScriptCodeFromPreviews', () => {
 
        setup();
 
-       import { composeConfigs, PreviewWeb } from 'storybook/internal/preview-api';
+       import { composeConfigs, PreviewWeb } from 'storybook/preview-api';
        import { isPreview } from 'storybook/internal/csf';
        import { importFn } from 'virtual:/@storybook/builder-vite/storybook-stories.js';
        

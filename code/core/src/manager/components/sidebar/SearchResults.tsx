@@ -3,14 +3,14 @@ import React, { useCallback, useEffect } from 'react';
 
 import { Button, IconButton } from 'storybook/internal/components';
 import { PRELOAD_ENTRIES } from 'storybook/internal/core-events';
-import { useStorybookApi } from 'storybook/internal/manager-api';
-import { styled } from 'storybook/internal/theming';
 
 import { global } from '@storybook/global';
 import { TrashIcon } from '@storybook/icons';
 
 import type { ControllerStateAndHelpers } from 'downshift';
 import { transparentize } from 'polished';
+import { useStorybookApi } from 'storybook/manager-api';
+import { styled } from 'storybook/theming';
 
 import { matchesKeyCode, matchesModifiers } from '../../keybinding';
 import { statusMapping } from '../../utils/status';

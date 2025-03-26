@@ -1,6 +1,13 @@
 import React from 'react';
 
-import { AddIcon, FaceHappyIcon, HomeIcon, SubtractIcon } from '@storybook/icons';
+import {
+  AddIcon,
+  AlertIcon,
+  BellIcon,
+  FaceHappyIcon,
+  HomeIcon,
+  SubtractIcon,
+} from '@storybook/icons';
 
 import { IconGallery, IconItem } from './IconGallery';
 
@@ -25,8 +32,11 @@ export const DefaultStyle = () => (
     <IconItem name="bar">
       <img src="https://storybook.js.org/images/placeholders/50x50.png" alt="example" />
     </IconItem>
-    <IconItem name="bar">
-      <img src="https://storybook.js.org/images/placeholders/50x50.png" alt="example" />
+    <IconItem name="very-long-icon-name">
+      <AlertIcon />
+    </IconItem>
+    <IconItem name="very-long-icon-name-that-should-truncate">
+      <BellIcon />
     </IconItem>
   </IconGallery>
 );

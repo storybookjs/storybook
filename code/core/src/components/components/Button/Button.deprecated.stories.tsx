@@ -1,7 +1,8 @@
 import React from 'react';
 
 import { LinkIcon } from '@storybook/icons';
-import type { Meta, StoryObj } from '@storybook/react';
+
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { Form } from '../form';
 import { Button } from './Button';

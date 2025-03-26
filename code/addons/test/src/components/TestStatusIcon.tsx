@@ -1,4 +1,4 @@
-import { styled } from 'storybook/internal/theming';
+import { styled } from 'storybook/theming';
 
 export const TestStatusIcon = styled.div<{
   status: 'pending' | 'positive' | 'warning' | 'negative' | 'critical' | 'unknown';

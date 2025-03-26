@@ -1,8 +1,7 @@
-import { addons } from 'storybook/internal/preview-api';
-
 import { global } from '@storybook/global';
 
 import type { AxeResults } from 'axe-core';
+import { addons } from 'storybook/preview-api';
 
 import { EVENTS } from './constants';
 import type { A11yParameters } from './params';

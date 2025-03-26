@@ -1,5 +1,6 @@
-import { useEffect } from 'storybook/internal/preview-api';
 import type { DecoratorFunction, Renderer } from 'storybook/internal/types';
+
+import { useEffect } from 'storybook/preview-api';
 
 import { PARAM_KEY } from '../constants';
 import { initializeThemeState, pluckThemeFromContext } from './helpers';

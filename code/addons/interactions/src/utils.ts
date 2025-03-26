@@ -1,6 +1,5 @@
-import { type StorybookTheme, useTheme } from 'storybook/internal/theming';
-
 import Filter from 'ansi-to-html';
+import { type StorybookTheme, useTheme } from 'storybook/theming';
 
 export function isTestAssertionError(error: unknown) {
   return isChaiError(error) || isJestError(error);

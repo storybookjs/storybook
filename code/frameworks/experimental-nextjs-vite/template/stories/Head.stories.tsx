@@ -1,10 +1,10 @@
 import React from 'react';
 
-import type { Meta } from '@storybook/react';
-import type { StoryObj } from '@storybook/react';
-import { expect, waitFor } from '@storybook/test';
+import type { Meta } from '@storybook/experimental-nextjs-vite';
+import type { StoryObj } from '@storybook/experimental-nextjs-vite';
 
 import Head from 'next/head';
+import { expect, waitFor } from 'storybook/test';
 
 function Component() {
   return (

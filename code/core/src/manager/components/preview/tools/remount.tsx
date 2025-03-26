@@ -3,12 +3,13 @@ import React, { useState } from 'react';
 
 import { IconButton } from 'storybook/internal/components';
 import { FORCE_REMOUNT } from 'storybook/internal/core-events';
-import { Consumer, types } from 'storybook/internal/manager-api';
-import type { Combo } from 'storybook/internal/manager-api';
-import { styled } from 'storybook/internal/theming';
 import type { Addon_BaseType } from 'storybook/internal/types';
 
 import { SyncIcon } from '@storybook/icons';
+
+import { Consumer, types } from 'storybook/manager-api';
+import type { Combo } from 'storybook/manager-api';
+import { styled } from 'storybook/theming';
 
 interface AnimatedButtonProps {
   animating?: boolean;

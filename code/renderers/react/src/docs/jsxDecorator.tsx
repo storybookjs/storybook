@@ -4,13 +4,13 @@ import React, { createElement, isValidElement } from 'react';
 
 import { logger } from 'storybook/internal/client-logger';
 import { SNIPPET_RENDERED, SourceType, getDocgenSection } from 'storybook/internal/docs-tools';
-import { addons, useEffect } from 'storybook/internal/preview-api';
 import type { ArgsStoryFn, PartialStoryFn, StoryContext } from 'storybook/internal/types';
 
 import type { Options } from 'react-element-to-jsx-string';
 import type reactElementToJSXStringType from 'react-element-to-jsx-string';
 // @ts-expect-error (this is needed, because our bundling prefers the `browser` field, but that yields CJS)
 import reactElementToJSXStringRaw from 'react-element-to-jsx-string/dist/esm/index.js';
+import { addons, useEffect } from 'storybook/preview-api';
 
 import type { ReactRenderer } from '../types';
 import { isForwardRef, isMemo } from './lib';
@@ -264,10 +264,7 @@ export const jsxDecorator = (
     ...(context?.parameters.jsx || {}),
   } as Required<JSXOptions>;
 
-  // Exclude decorators from source code snippet by default
-  const storyJsx = context?.parameters.docs?.source?.excludeDecorators
-    ? (context.originalStoryFn as ArgsStoryFn<ReactRenderer>)(context.args, context)
-    : story;
+  const storyJsx = context.originalStoryFn(context.args, context);
 
   const sourceJsx = mdxToJsx(storyJsx);
 

@@ -41,7 +41,7 @@ test.describe('addon-actions', () => {
     const sbPage = new SbPage(page, expect);
     sbPage.waitUntilLoaded();
 
-    await sbPage.navigateToStory('addons/actions/spies', 'show-spy-on-in-actions');
+    await sbPage.navigateToStory('core/spies', 'show-spy-on-in-actions');
 
     const root = sbPage.previewRoot();
     const button = root.getByRole('button', { name: 'Button' });

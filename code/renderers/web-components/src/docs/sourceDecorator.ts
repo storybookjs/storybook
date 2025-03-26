@@ -1,9 +1,9 @@
 /* eslint-disable no-underscore-dangle */
 import { SNIPPET_RENDERED, SourceType } from 'storybook/internal/docs-tools';
-import { addons, useEffect } from 'storybook/internal/preview-api';
 import type { ArgsStoryFn, PartialStoryFn, StoryContext } from 'storybook/internal/types';
 
 import { render } from 'lit';
+import { addons, useEffect } from 'storybook/preview-api';
 
 import type { WebComponentsRenderer } from '../types';
 

@@ -112,7 +112,7 @@ describe('add', () => {
     );
 
     expect(MockedPackageManager.addDependencies).toHaveBeenCalledWith(
-      { installAsDevDependencies: true },
+      { installAsDevDependencies: true, writeOutputToFile: false },
       [expected]
     );
   });

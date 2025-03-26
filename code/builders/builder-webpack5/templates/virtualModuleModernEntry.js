@@ -1,9 +1,9 @@
 import { createBrowserChannel } from 'storybook/internal/channels';
 import { isPreview } from 'storybook/internal/csf';
-import { PreviewWeb, addons, composeConfigs } from 'storybook/internal/preview-api';
 
 import { global } from '@storybook/global';
 
+import { PreviewWeb, addons, composeConfigs } from 'storybook/preview-api';
 import { importFn } from '{{storiesFilename}}';
 
 const getProjectAnnotations = () => {

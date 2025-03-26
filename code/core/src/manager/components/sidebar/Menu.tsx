@@ -3,11 +3,11 @@ import React, { useState } from 'react';
 
 import { IconButton, TooltipLinkList, WithTooltip } from 'storybook/internal/components';
 import type { Button } from 'storybook/internal/components';
-import { styled } from 'storybook/internal/theming';
 
 import { CloseIcon, CogIcon } from '@storybook/icons';
 
 import { transparentize } from 'polished';
+import { styled } from 'storybook/theming';
 
 import type { useMenu } from '../../container/Menu';
 import { useLayout } from '../layout/LayoutProvider';

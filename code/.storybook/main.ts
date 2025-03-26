@@ -38,20 +38,8 @@ const config = defineMain({
       titlePrefix: 'addons/a11y',
     },
     {
-      directory: '../addons/actions/template/stories',
-      titlePrefix: 'addons/actions',
-    },
-    {
       directory: '../addons/backgrounds/template/stories',
       titlePrefix: 'addons/backgrounds',
-    },
-    {
-      directory: '../addons/controls/src',
-      titlePrefix: 'addons/controls',
-    },
-    {
-      directory: '../addons/controls/template/stories',
-      titlePrefix: 'addons/controls',
     },
     {
       directory: '../addons/docs/template/stories',
@@ -60,14 +48,6 @@ const config = defineMain({
     {
       directory: '../addons/links/template/stories',
       titlePrefix: 'addons/links',
-    },
-    {
-      directory: '../addons/viewport/template/stories',
-      titlePrefix: 'addons/viewport',
-    },
-    {
-      directory: '../addons/toolbars/template/stories',
-      titlePrefix: 'addons/toolbars',
     },
     {
       directory: '../addons/themes/template/stories',
@@ -96,6 +76,7 @@ const config = defineMain({
   ],
   addons: [
     '@storybook/addon-themes',
+    '@storybook/addon-docs',
     '@storybook/addon-essentials',
     '@storybook/addon-storysource',
     '@storybook/addon-designs',
@@ -105,7 +86,6 @@ const config = defineMain({
   ],
   previewAnnotations: [
     './core/template/stories/preview.ts',
-    './addons/toolbars/template/stories/preview.ts',
     './renderers/react/template/components/index.js',
   ],
   build: {
@@ -131,8 +111,6 @@ const config = defineMain({
     disableTelemetry: true,
   },
   features: {
-    viewportStoryGlobals: true,
-    backgroundsStoryGlobals: true,
     developmentModeForBuild: true,
   },
   viteFinal: async (viteConfig, { configType }) => {
@@ -144,7 +122,7 @@ const config = defineMain({
           ...(configType === 'DEVELOPMENT'
             ? {
                 'storybook/internal/components': componentsPath,
-                'storybook/internal/manager-api': managerApiPath,
+                'storybook/manager-api': managerApiPath,
                 'sb-original/image-context': imageContextPath,
               }
             : {}),

@@ -1,8 +1,9 @@
 import React, { useMemo } from 'react';
 
-import type { Combo, StoriesHash } from 'storybook/internal/manager-api';
-import { Consumer } from 'storybook/internal/manager-api';
 import { Addon_TypesEnum } from 'storybook/internal/types';
+
+import type { Combo, StoriesHash } from 'storybook/manager-api';
+import { Consumer, experimental_useStatusStore } from 'storybook/manager-api';
 
 import type { SidebarProps as SidebarComponentProps } from '../components/sidebar/Sidebar';
 import { Sidebar as SidebarComponent } from '../components/sidebar/Sidebar';
@@ -27,7 +28,6 @@ const Sidebar = React.memo(function Sideber({ onMenuClick }: SidebarProps) {
       // eslint-disable-next-line @typescript-eslint/naming-convention
       internal_index,
       filteredIndex: index,
-      status,
       indexError,
       previewInitialized,
       refs,
@@ -56,7 +56,6 @@ const Sidebar = React.memo(function Sideber({ onMenuClick }: SidebarProps) {
       indexJson: internal_index,
       index,
       indexError,
-      status,
       previewInitialized,
       refs,
       storyId,
@@ -72,7 +71,11 @@ const Sidebar = React.memo(function Sideber({ onMenuClick }: SidebarProps) {
   return (
     <Consumer filter={mapper}>
       {(fromState) => {
-        return <SidebarComponent {...fromState} onMenuClick={onMenuClick} />;
+        const allStatuses = experimental_useStatusStore();
+
+        return (
+          <SidebarComponent {...fromState} allStatuses={allStatuses} onMenuClick={onMenuClick} />
+        );
       }}
     </Consumer>
   );

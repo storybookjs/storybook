@@ -1,11 +1,11 @@
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { addons } from 'storybook/internal/preview-api';
+import { addons } from 'storybook/preview-api';
 
 import { EVENTS } from './constants';
 
-vi.mock('storybook/internal/preview-api');
+vi.mock('storybook/preview-api');
 const mockedAddons = vi.mocked(addons);
 
 describe('a11yRunner', () => {

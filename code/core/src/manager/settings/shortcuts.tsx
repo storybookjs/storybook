@@ -2,14 +2,15 @@ import type { ComponentProps, FC } from 'react';
 import React, { Component } from 'react';
 
 import { Button, Form } from 'storybook/internal/components';
+
+import { CheckIcon } from '@storybook/icons';
+
 import {
   eventToShortcut,
   shortcutMatchesShortcut,
   shortcutToHumanString,
-} from 'storybook/internal/manager-api';
-import { keyframes, styled } from 'storybook/internal/theming';
-
-import { CheckIcon } from '@storybook/icons';
+} from 'storybook/manager-api';
+import { keyframes, styled } from 'storybook/theming';
 
 import SettingsFooter from './SettingsFooter';
 

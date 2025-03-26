@@ -1,7 +1,8 @@
 import React from 'react';
 
 import { Badge, Spaced } from 'storybook/internal/components';
-import { addons, types, useAddonState } from 'storybook/internal/manager-api';
+
+import { addons, types, useAddonState } from 'storybook/manager-api';
 
 import { A11YPanel } from './components/A11YPanel';
 import type { Results } from './components/A11yContext';

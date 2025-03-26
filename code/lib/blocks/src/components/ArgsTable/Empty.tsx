@@ -2,9 +2,10 @@ import type { FC } from 'react';
 import React, { useEffect, useState } from 'react';
 
 import { EmptyTabContent, Link } from 'storybook/internal/components';
-import { styled } from 'storybook/internal/theming';
 
 import { DocumentIcon, VideoIcon } from '@storybook/icons';
+
+import { styled } from 'storybook/theming';
 
 interface EmptyProps {
   inAddonPanel?: boolean;

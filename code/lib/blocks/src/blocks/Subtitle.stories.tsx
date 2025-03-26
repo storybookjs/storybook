@@ -1,6 +1,6 @@
 import React from 'react';
 
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import * as DefaultButtonStories from '../examples/Button.stories';
 import * as ButtonStoriesWithMetaSubtitleAsBoth from '../examples/ButtonWithMetaSubtitleAsBoth.stories';

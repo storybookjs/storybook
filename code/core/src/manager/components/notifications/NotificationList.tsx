@@ -1,8 +1,8 @@
 import type { FC } from 'react';
 import React from 'react';
 
-import type { State } from 'storybook/internal/manager-api';
-import { styled } from 'storybook/internal/theming';
+import type { State } from 'storybook/manager-api';
+import { styled } from 'storybook/theming';
 
 import { useLayout } from '../layout/LayoutProvider';
 import NotificationItem from './NotificationItem';

@@ -4,9 +4,10 @@ import React, { useContext } from 'react';
 
 import type { Parameters, Renderer, StrictArgTypes } from 'storybook/internal/csf';
 import type { ArgTypesExtractor } from 'storybook/internal/docs-tools';
-import { filterArgTypes } from 'storybook/internal/preview-api';
-import type { PropDescriptor } from 'storybook/internal/preview-api';
 import type { ModuleExports } from 'storybook/internal/types';
+
+import { filterArgTypes } from 'storybook/preview-api';
+import type { PropDescriptor } from 'storybook/preview-api';
 
 import type { SortType } from '../components';
 import { ArgsTableError, ArgsTable as PureArgsTable, TabbedArgsTable } from '../components';

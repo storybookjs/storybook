@@ -1,4 +1,5 @@
 /* eslint-disable no-underscore-dangle */
+import { createRequire } from 'node:module';
 import { dirname } from 'node:path';
 
 import type { Plugin } from 'vitest/config';
@@ -10,10 +11,10 @@ import {
   normalizeStories,
   validateConfigurationFiles,
 } from 'storybook/internal/common';
-import {
-  StoryIndexGenerator,
-  experimental_loadStorybook,
-  mapStaticDir,
+import type {
+  experimental_loadStorybook as ExperimentalLoadStorybookType,
+  mapStaticDir as MapStaticDirType,
+  StoryIndexGenerator as StoryIndexGeneratorType,
 } from 'storybook/internal/core-server';
 import { readConfig, vitestTransform } from 'storybook/internal/csf-tools';
 import { MainFileMissingError } from 'storybook/internal/server-errors';
@@ -29,6 +30,17 @@ import type { PluginOption } from 'vite';
 // ! Relative import to prebundle it without needing to depend on the Vite builder
 import { withoutVitePlugins } from '../../../../builders/builder-vite/src/utils/without-vite-plugins';
 import type { InternalOptions, UserOptions } from './types';
+
+const require = createRequire(import.meta.url);
+
+// we need to require core-server here, because its ESM output is not valid
+// eslint-disable-next-line @typescript-eslint/naming-convention
+const { StoryIndexGenerator, experimental_loadStorybook, mapStaticDir } =
+  require('storybook/internal/core-server') as {
+    StoryIndexGenerator: typeof StoryIndexGeneratorType;
+    experimental_loadStorybook: typeof ExperimentalLoadStorybookType;
+    mapStaticDir: typeof MapStaticDirType;
+  };
 
 const WORKING_DIR = process.cwd();
 

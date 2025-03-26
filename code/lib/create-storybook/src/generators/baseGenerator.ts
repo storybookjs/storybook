@@ -224,6 +224,7 @@ export async function baseGenerator(
       ProjectType.SVELTE,
       ProjectType.SVELTEKIT,
       ProjectType.WEB_COMPONENTS,
+      ProjectType.REACT_NATIVE_WEB,
     ];
     const supportsTestAddon =
       projectType === ProjectType.NEXTJS ||
@@ -270,10 +271,6 @@ export async function baseGenerator(
 
   const compiler = webpackCompiler ? webpackCompiler({ builder }) : undefined;
 
-  const essentials = features.includes('docs')
-    ? '@storybook/addon-essentials'
-    : { name: '@storybook/addon-essentials', options: { docs: false } };
-
   const extraAddonsToInstall =
     typeof extraAddonPackages === 'function'
       ? await extraAddonPackages({
@@ -285,10 +282,15 @@ export async function baseGenerator(
   // TODO: change the semver range to '^4' when VTA 4 and SB 9 is released
   extraAddonsToInstall.push('@chromatic-com/storybook@^4.0.0-0');
 
+  // Add @storybook/addon-docs when docs feature is selected
+  if (features.includes('docs')) {
+    extraAddonsToInstall.push('@storybook/addon-docs');
+  }
+
   // added to main.js
   const addons = [
     ...(compiler ? [`@storybook/addon-webpack5-compiler-${compiler}`] : []),
-    essentials,
+    '@storybook/addon-essentials',
     ...stripVersions(extraAddonsToInstall),
   ].filter(Boolean);
 
@@ -296,7 +298,6 @@ export async function baseGenerator(
   const addonPackages = [
     '@storybook/addon-essentials',
     '@storybook/blocks',
-    '@storybook/test',
     ...(compiler ? [`@storybook/addon-webpack5-compiler-${compiler}`] : []),
     ...extraAddonsToInstall,
   ].filter(Boolean);
@@ -332,7 +333,6 @@ export async function baseGenerator(
 
   const allPackages = [
     'storybook',
-    getExternalFramework(rendererId) ? undefined : `@storybook/${rendererId}`,
     ...(installFrameworkPackages ? frameworkPackages : []),
     ...addonPackages,
     ...(extraPackagesToInstall || []),
@@ -448,7 +448,7 @@ export async function baseGenerator(
       throw new Error(`Could not find template location for ${framework} or ${rendererId}`);
     }
     await copyTemplateFiles({
-      renderer: templateLocation,
+      templateLocation,
       packageManager: packageManager as any,
       language,
       destination: componentsDestinationPath,

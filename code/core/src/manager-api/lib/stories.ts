@@ -1,6 +1,5 @@
 import { sanitize } from 'storybook/internal/csf';
 import type {
-  API_BaseEntry,
   API_ComponentEntry,
   API_DocsEntry,
   API_GroupEntry,
@@ -15,6 +14,7 @@ import type {
   Parameters,
   SetStoriesPayload,
   SetStoriesStoryData,
+  StatusesByStoryIdAndTypeId,
   StoryId,
   StoryIndexV2,
   StoryIndexV3,
@@ -45,12 +45,6 @@ export const denormalizeStoryParameters = ({
     ),
   })) as SetStoriesStoryData;
 };
-
-export const transformSetStoriesStoryDataToStoriesHash = (
-  data: SetStoriesStoryData,
-  options: ToStoriesHashOptions
-) =>
-  transformStoryIndexToStoriesHash(transformSetStoriesStoryDataToPreparedStoryIndex(data), options);
 
 export const transformSetStoriesStoryDataToPreparedStoryIndex = (
   stories: SetStoriesStoryData
@@ -172,12 +166,12 @@ type ToStoriesHashOptions = {
   provider: API_Provider<API>;
   docsOptions: DocsOptions;
   filters: State['filters'];
-  status: State['status'];
+  allStatuses: StatusesByStoryIdAndTypeId;
 };
 
 export const transformStoryIndexToStoriesHash = (
   input: API_PreparedStoryIndex | StoryIndexV2 | StoryIndexV3,
-  { provider, docsOptions, filters, status }: ToStoriesHashOptions
+  { provider, docsOptions, filters, allStatuses }: ToStoriesHashOptions
 ): API_IndexHash | any => {
   if (!input.v) {
     throw new Error('Composition: Missing stories.json version');
@@ -193,16 +187,16 @@ export const transformStoryIndexToStoriesHash = (
     let result = true;
 
     // All stories with a failing status should always show up, regardless of the applied filters
-    const storyStatus = status[entry.id];
-    if (Object.values(storyStatus ?? {}).some(({ status: s }) => s === 'error')) {
+    const storyStatuses = allStatuses[entry.id] ?? {};
+    if (Object.values(storyStatuses).some(({ value }) => value === 'status-value:error')) {
       return result;
     }
 
-    Object.values(filters).forEach((filter: any) => {
+    Object.values(filters).forEach((filter) => {
       if (result === false) {
         return;
       }
-      result = filter({ ...entry, status: storyStatus });
+      result = filter({ ...entry, statuses: storyStatuses });
     });
 
     return result;

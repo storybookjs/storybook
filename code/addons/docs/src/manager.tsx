@@ -2,10 +2,11 @@ import React from 'react';
 
 import { AddonPanel, type SyntaxHighlighterFormatTypes } from 'storybook/internal/components';
 import { ADDON_ID, PANEL_ID, PARAM_KEY, SNIPPET_RENDERED } from 'storybook/internal/docs-tools';
-import { addons, types, useChannel, useParameter } from 'storybook/internal/manager-api';
-import { ignoreSsrWarning, styled, useTheme } from 'storybook/internal/theming';
 
 import { Source, type SourceParameters } from '@storybook/blocks';
+
+import { addons, types, useChannel, useParameter } from 'storybook/manager-api';
+import { ignoreSsrWarning, styled, useTheme } from 'storybook/theming';
 
 addons.register(ADDON_ID, (api) => {
   addons.add(PANEL_ID, {

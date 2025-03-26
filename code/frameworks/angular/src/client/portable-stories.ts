@@ -1,7 +1,7 @@
 import {
   setProjectAnnotations as originalSetProjectAnnotations,
   setDefaultProjectAnnotations,
-} from 'storybook/internal/preview-api';
+} from 'storybook/preview-api';
 import {
   NamedOrDefaultProjectAnnotations,
   NormalizedProjectAnnotations,

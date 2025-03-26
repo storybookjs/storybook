@@ -1,7 +1,8 @@
 import React from 'react';
 
-import { ThemeProvider, ensure, themes } from 'storybook/internal/theming';
 import type { Renderer } from 'storybook/internal/types';
+
+import { ThemeProvider, ensure, themes } from 'storybook/theming';
 
 import { DocsContext } from '../DocsContext';
 import { ExternalPreview } from './ExternalPreview';

@@ -1,8 +1,9 @@
 import type { ComponentProps } from 'react';
 import React from 'react';
 
-import { Global, createGlobal } from 'storybook/internal/theming';
 import type { Addon_PageType } from 'storybook/internal/types';
+
+import { Global, createGlobal } from 'storybook/theming';
 
 import { Layout } from './components/layout/Layout';
 import { useLayout } from './components/layout/LayoutProvider';

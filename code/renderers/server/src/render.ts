@@ -1,8 +1,8 @@
-import { simulateDOMContentLoaded, simulatePageLoad } from 'storybook/internal/preview-api';
 import type { RenderContext } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
+import { simulateDOMContentLoaded, simulatePageLoad } from 'storybook/preview-api';
 import { dedent } from 'ts-dedent';
 
 import type { ArgTypes, Args, StoryFn } from './public-types';

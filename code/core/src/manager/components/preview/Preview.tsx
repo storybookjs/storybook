@@ -3,12 +3,12 @@ import React, { Fragment, useEffect, useRef, useState } from 'react';
 
 import { Loader } from 'storybook/internal/components';
 import { PREVIEW_BUILDER_PROGRESS, SET_CURRENT_STORY } from 'storybook/internal/core-events';
-import { type Combo, Consumer, addons, merge, types } from 'storybook/internal/manager-api';
 import type { Addon_BaseType, Addon_WrapperType } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
 import { Helmet } from 'react-helmet-async';
+import { type Combo, Consumer, addons, merge, types } from 'storybook/manager-api';
 
 import { FramesRenderer } from './FramesRenderer';
 import { ToolbarComp } from './Toolbar';

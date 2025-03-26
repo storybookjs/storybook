@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import React from 'react';
 
-import { ThemeProvider, convert, themes } from 'storybook/internal/theming';
+import { ThemeProvider, convert, themes } from 'storybook/theming';
 
 import { A11YPanel } from './A11YPanel';
 import { type A11yContextStore, useA11yContext } from './A11yContext';

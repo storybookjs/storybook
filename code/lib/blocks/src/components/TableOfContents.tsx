@@ -3,8 +3,8 @@ import type { FC, ReactElement } from 'react';
 
 import type { Channel } from 'storybook/internal/channels';
 import { NAVIGATE_URL } from 'storybook/internal/core-events';
-import { styled } from 'storybook/internal/theming';
 
+import { styled } from 'storybook/theming';
 import * as tocbot from 'tocbot';
 
 export interface TocParameters {

@@ -2,9 +2,10 @@ import type { ReactNode } from 'react';
 import React, { useState } from 'react';
 
 import { IconButton, TooltipLinkList, WithTooltip } from 'storybook/internal/components';
-import { Global, styled } from 'storybook/internal/theming';
 
 import { AccessibilityIcon } from '@storybook/icons';
+
+import { Global, styled } from 'storybook/theming';
 
 import { Filters } from './ColorFilters';
 

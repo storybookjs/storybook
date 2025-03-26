@@ -1,10 +1,9 @@
 import React, { Fragment, useState } from 'react';
 
-import { styled } from 'storybook/internal/theming';
-
 import { ChevronSmallDownIcon } from '@storybook/icons';
 
 import type { Result } from 'axe-core';
+import { styled } from 'storybook/theming';
 
 import type { RuleType } from '../A11YPanel';
 import { Elements } from './Elements';

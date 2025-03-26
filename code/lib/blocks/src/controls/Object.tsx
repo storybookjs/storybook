@@ -2,11 +2,11 @@ import type { ComponentProps, FC, FocusEvent, SyntheticEvent } from 'react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Button, Form, IconButton } from 'storybook/internal/components';
-import { type Theme, styled, useTheme } from 'storybook/internal/theming';
 
 import { AddIcon, EyeCloseIcon, EyeIcon, SubtractIcon } from '@storybook/icons';
 
 import { cloneDeep } from 'es-toolkit/compat';
+import { type Theme, styled, useTheme } from 'storybook/theming';
 
 import { getControlId, getControlSetterButtonId } from './helpers';
 import { JsonTree } from './react-editable-json-tree';

@@ -9,7 +9,7 @@ import type { Plugin } from 'vite';
 export async function stripStoryHMRBoundary(): Promise<Plugin> {
   const { createFilter } = await import('vite');
 
-  const filter = createFilter(/\.stories\.\w+$/);
+  const filter = createFilter(/\.stories\.(tsx?|jsx?|svelte|vue)$/);
   return {
     name: 'storybook:strip-hmr-boundary-plugin',
     enforce: 'post',

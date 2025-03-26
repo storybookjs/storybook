@@ -1,9 +1,3 @@
-import {
-  composeStories as originalComposeStories,
-  composeStory as originalComposeStory,
-  setProjectAnnotations as originalSetProjectAnnotations,
-  setDefaultProjectAnnotations,
-} from 'storybook/internal/preview-api';
 import type {
   Args,
   ComposedStoryFn,
@@ -15,6 +9,12 @@ import type {
   StoryAnnotationsOrFn,
 } from 'storybook/internal/types';
 
+import {
+  composeStories as originalComposeStories,
+  composeStory as originalComposeStory,
+  setProjectAnnotations as originalSetProjectAnnotations,
+  setDefaultProjectAnnotations,
+} from 'storybook/preview-api';
 import { h } from 'vue';
 
 import * as defaultProjectAnnotations from './entry-preview';

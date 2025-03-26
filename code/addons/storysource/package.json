@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-storysource",
-  "version": "9.0.0-alpha.2",
+  "version": "9.0.0-alpha.10",
   "description": "View a story’s source code to see how it works and paste into your app",
   "keywords": [
     "addon",

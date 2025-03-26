@@ -1,11 +1,12 @@
 import React from 'react';
 
 import { IconButton, Separator } from 'storybook/internal/components';
-import { Consumer, types } from 'storybook/internal/manager-api';
-import type { Combo } from 'storybook/internal/manager-api';
 import type { Addon_BaseType } from 'storybook/internal/types';
 
 import { MenuIcon } from '@storybook/icons';
+
+import { Consumer, types } from 'storybook/manager-api';
+import type { Combo } from 'storybook/manager-api';
 
 const menuMapper = ({ api, state }: Combo) => ({
   isVisible: api.getIsNavShown(),

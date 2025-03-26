@@ -2,10 +2,10 @@ import type { FC } from 'react';
 import React from 'react';
 
 import { withReset } from 'storybook/internal/components';
-import type { CSSObject } from 'storybook/internal/theming';
-import { styled } from 'storybook/internal/theming';
 
 import { transparentize } from 'polished';
+import type { CSSObject } from 'storybook/theming';
+import { styled } from 'storybook/theming';
 
 /**
  * This selector styles all raw elements inside the DocsPage like this example with a `<div/>`:

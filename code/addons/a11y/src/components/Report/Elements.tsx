@@ -1,9 +1,8 @@
 import type { FC } from 'react';
 import React from 'react';
 
-import { styled } from 'storybook/internal/theming';
-
 import type { NodeResult } from 'axe-core';
+import { styled } from 'storybook/theming';
 
 import type { RuleType } from '../A11YPanel';
 import HighlightToggle from './HighlightToggle';

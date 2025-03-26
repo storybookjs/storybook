@@ -150,7 +150,10 @@ export async function add(
       : `${addonName}@${version}`;
 
   logger.log(`Installing ${addonWithVersion}`);
-  await packageManager.addDependencies({ installAsDevDependencies: true }, [addonWithVersion]);
+  await packageManager.addDependencies(
+    { installAsDevDependencies: true, writeOutputToFile: false },
+    [addonWithVersion]
+  );
 
   if (shouldAddToMain) {
     logger.log(`Adding '${addon}' to the "addons" field in ${mainConfigPath}`);

@@ -1,8 +1,8 @@
 import React, { Fragment, useState } from 'react';
 
-import { convert, styled, themes } from 'storybook/internal/theming';
-
 import { ChevronSmallDownIcon } from '@storybook/icons';
+
+import { convert, styled, themes } from 'storybook/theming';
 
 const ListWrapper = styled.ul({
   listStyle: 'none',

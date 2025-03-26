@@ -2,10 +2,11 @@ import type { ChangeEvent, FC } from 'react';
 import React from 'react';
 
 import { logger } from 'storybook/internal/client-logger';
-import { styled } from 'storybook/internal/theming';
-import type { CSSObject } from 'storybook/internal/theming';
 
 import { ChevronSmallDownIcon } from '@storybook/icons';
+
+import { styled } from 'storybook/theming';
+import type { CSSObject } from 'storybook/theming';
 
 import { getControlId } from '../helpers';
 import type { ControlProps, NormalizedOptionsConfig, OptionsSelection } from '../types';

@@ -1,4 +1,3 @@
-import { sanitizeStoryContextUpdate } from 'storybook/internal/preview-api';
 import type { DecoratorFunction, LegacyStoryFn, StoryContext } from 'storybook/internal/types';
 
 /*
@@ -9,6 +8,8 @@ import type { DecoratorFunction, LegacyStoryFn, StoryContext } from 'storybook/i
 ! with the same bundle as the user's Svelte components
 */
 import SlotDecorator from '@storybook/svelte/internal/SlotDecorator.svelte';
+
+import { sanitizeStoryContextUpdate } from 'storybook/preview-api';
 
 import type { SvelteRenderer } from './types';
 

@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 
 import { EmptyTabContent, Link } from 'storybook/internal/components';
-import { useStorybookApi } from 'storybook/internal/manager-api';
-import { styled } from 'storybook/internal/theming';
 
 import { DocumentIcon, VideoIcon } from '@storybook/icons';
+
+import { useStorybookApi } from 'storybook/manager-api';
+import { styled } from 'storybook/theming';
 
 import { DOCUMENTATION_LINK, TUTORIAL_VIDEO_LINK } from '../constants';
 

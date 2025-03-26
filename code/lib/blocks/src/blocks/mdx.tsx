@@ -4,9 +4,10 @@ import React, { useContext } from 'react';
 import type { SupportedLanguage } from 'storybook/internal/components';
 import { Code, components, nameSpaceClassNames } from 'storybook/internal/components';
 import { NAVIGATE_URL } from 'storybook/internal/core-events';
-import { styled } from 'storybook/internal/theming';
 
 import { LinkIcon } from '@storybook/icons';
+
+import { styled } from 'storybook/theming';
 
 import { Source } from '../components';
 import type { DocsContextProps } from './DocsContext';

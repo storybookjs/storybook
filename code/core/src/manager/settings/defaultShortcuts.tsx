@@ -1,4 +1,4 @@
-import type { State } from 'storybook/internal/manager-api';
+import type { State } from 'storybook/manager-api';
 
 export const defaultShortcuts: State['shortcuts'] = {
   fullScreen: ['F'],

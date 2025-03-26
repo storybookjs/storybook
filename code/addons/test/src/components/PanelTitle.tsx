@@ -1,7 +1,8 @@
 import React from 'react';
 
 import { Badge, Spaced } from 'storybook/internal/components';
-import { useAddonState } from 'storybook/internal/manager-api';
+
+import { useAddonState } from 'storybook/manager-api';
 
 import { ADDON_ID } from '../constants';
 

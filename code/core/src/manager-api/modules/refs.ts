@@ -318,14 +318,14 @@ export const init: ModuleFn<SubAPI, SubState> = (
           provider,
           docsOptions,
           filters,
-          status: {},
+          allStatuses: {},
         });
         // @ts-expect-error (could be undefined)
         index = transformStoryIndexToStoriesHash(storyIndex, {
           provider,
           docsOptions,
           filters: {},
-          status: {},
+          allStatuses: {},
         });
       }
 

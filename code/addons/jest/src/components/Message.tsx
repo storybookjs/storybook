@@ -1,7 +1,7 @@
 import type { FC, ReactElement } from 'react';
 import React, { Fragment } from 'react';
 
-import { styled } from 'storybook/internal/theming';
+import { styled } from 'storybook/theming';
 
 const positiveConsoleRegex = /\[32m(.*?)\[39m/;
 const negativeConsoleRegex = /\[31m(.*?)\[39m/;

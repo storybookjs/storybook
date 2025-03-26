@@ -1,6 +1,6 @@
 import React, { type ComponentProps } from 'react';
 
-import { keyframes, styled } from 'storybook/internal/theming';
+import { keyframes, styled } from 'storybook/theming';
 
 const XMLNS = 'http://www.w3.org/2000/svg';
 

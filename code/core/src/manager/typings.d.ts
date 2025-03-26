@@ -23,6 +23,8 @@ declare var __STORYBOOK_CORE_EVENTS_MANAGER_ERRORS__: any;
 declare var __STORYBOOK_ROUTER__: any;
 declare var __STORYBOOK_THEMING__: any;
 declare var __STORYBOOK_THEMING_CREATE__: any;
+declare var __STORYBOOK_TEST__: any;
+declare var __STORYBOOK_ACTIONS__: any;
 declare var __STORYBOOK_API__: any;
 declare var __STORYBOOK_ICONS__: any;
 declare var __STORYBOOK_CLIENT_LOGGER__: any;

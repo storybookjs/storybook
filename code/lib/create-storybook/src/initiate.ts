@@ -274,7 +274,7 @@ export const promptNewUser = async ({
   skipPrompt,
   disableTelemetry,
 }: PromptOptions): Promise<boolean | undefined> => {
-  if (!skipPrompt && !settings.get('skipOnboarding')) {
+  if (!skipPrompt && !settings.get('init.skipOnboarding')) {
     const { newUser } = await prompts({
       type: 'select',
       name: 'newUser',
@@ -301,12 +301,10 @@ export const promptNewUser = async ({
     settings.set('init.skipOnboarding', !!settings.get('init.skipOnboarding'));
   }
 
-  const newUser = !settings.get('skipOnboarding');
+  const newUser = !settings.get('init.skipOnboarding');
   if (!disableTelemetry) {
-    const settingsCreationTime = (await settings.getFileCreationDate())?.getTime();
     await telemetry('init-step', {
       step: 'new-user-check',
-      settingsCreationTime,
       newUser,
     });
   }
@@ -650,6 +648,9 @@ export async function doInitiate(options: CommandOptions): Promise<
       { cwd: process.cwd(), stdio: 'inherit' }
     );
   }
+
+  const printFeatures = (features: Set<GeneratorFeature>) =>
+    Array.from(features).join(', ') || 'none';
 
   logger.log(
     boxen(

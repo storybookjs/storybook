@@ -1,5 +1,6 @@
 /* eslint-disable no-underscore-dangle */
-import { existsSync, promises as fs } from 'node:fs';
+import { existsSync } from 'node:fs';
+import fs from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 

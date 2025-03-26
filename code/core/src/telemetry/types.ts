@@ -41,6 +41,7 @@ export type StorybookMetadata = {
   storybookVersion?: string;
   storybookVersionSpecifier: string;
   generatedAt?: number;
+  settingsCreatedAt?: number;
   language: 'typescript' | 'javascript';
   framework?: {
     name: string;

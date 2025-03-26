@@ -1,3 +1,15 @@
+# v1.1.4 (Wed Mar 26 2025)
+
+#### 🐛 Bug Fix
+
+- Fix: Add next > styled-jsx to optimizeDeps for pnpm compatibility [#36](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/36) ([@kasperpeulen](https://github.com/kasperpeulen))
+
+#### Authors: 1
+
+- Kasper Peulen ([@kasperpeulen](https://github.com/kasperpeulen))
+
+---
+
 # v1.1.3 (Mon Mar 24 2025)
 
 #### 🐛 Bug Fix

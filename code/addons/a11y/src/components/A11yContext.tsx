@@ -80,20 +80,14 @@ const defaultResult = {
 type Status = 'initial' | 'manual' | 'running' | 'error' | 'ran' | 'ready';
 
 export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
-  const parameters = useParameter<A11yParameters>('a11y', {
-    manual: false,
-  });
+  const parameters = useParameter<A11yParameters>('a11y', {});
 
   const [globals] = useGlobals() ?? [];
 
   const getInitialStatus = useCallback((manual = false) => (manual ? 'manual' : 'initial'), []);
 
-  const manual = useMemo(
-    () => globals?.a11y?.manual ?? parameters.manual ?? false,
-    [globals?.a11y?.manual, parameters.manual]
-  );
+  const manual = useMemo(() => globals?.a11y?.manual ?? false, [globals?.a11y?.manual]);
 
-  const api = useStorybookApi();
   const [results, setResults] = useAddonState<Results>(ADDON_ID, defaultResult);
   const [tab, setTab] = useState(0);
   const [error, setError] = React.useState<unknown>(undefined);

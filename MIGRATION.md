@@ -1,6 +1,7 @@
 <h1>Migration</h1>
 
 - [From version 8.x to 9.0.0](#from-version-8x-to-900)
+  - [A11y addon: Removed deprecated manual parameter](#a11y-addon-removed-deprecated-manual-parameter)
   - [Button Component API Changes](#button-component-api-changes)
   - [Documentation Generation Changes](#documentation-generation-changes)
   - [Global State Management](#global-state-management)
@@ -420,6 +421,42 @@
   - [Deprecated embedded addons](#deprecated-embedded-addons)
 
 ## From version 8.x to 9.0.0
+
+### A11y addon: Removed deprecated manual parameter
+
+The deprecated `manual` parameter from the A11y addon's parameters has been removed. Instead, use the `globals.a11y.manual` setting to control manual mode. For example:
+
+```js
+// Old way (no longer works)
+export const MyStory = {
+  parameters: {
+    a11y: {
+      manual: true
+    }
+  }
+};
+
+// New way
+export const MyStory = {
+  parameters: {
+    a11y: {
+      // other a11y parameters
+    }
+  }
+  globals: {
+    a11y: {
+      manual: true
+    }
+  }
+};
+
+// To enable manual mode globally, use .storybook/preview.js:
+export const initialGlobals = {
+  a11y: {
+    manual: true
+  }
+};
+```
 
 ### Button Component API Changes
 

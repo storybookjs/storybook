@@ -15,7 +15,7 @@ import type { RunTrigger, StoreEvent, StoreState, TriggerRunEvent, VitestError }
 import { errorToErrorLike } from '../utils';
 import { VitestManager } from './vitest-manager';
 
-type TestManagerOptions = {
+export type TestManagerOptions = {
   store: experimental_UniversalStore<StoreState, StoreEvent>;
   componentTestStatusStore: StatusStoreByTypeId;
   a11yStatusStore: StatusStoreByTypeId;
@@ -166,6 +166,20 @@ export class TestManager {
     this.throttledFlushTestCaseResults();
   }
 
+  /**
+   * Throttled function to process batched test case results.
+   *
+   * This function:
+   *
+   * 1. Takes all batched test case results and clears the batch
+   * 2. Updates the store state with new test counts (component tests and a11y tests)
+   * 3. Adjusts the totalTestCount if more tests were run than initially anticipated
+   * 4. Creates status objects for component tests and updates the component test status store
+   * 5. Creates status objects for a11y tests (if any) and updates the a11y status store
+   *
+   * The throttling (500ms) is necessary as the channel would otherwise get overwhelmed with events,
+   * eventually causing the manager and dev server to loose connection.
+   */
   throttledFlushTestCaseResults = throttle(() => {
     const testCaseResultsToFlush = this.batchedTestCaseResults;
     this.batchedTestCaseResults = [];

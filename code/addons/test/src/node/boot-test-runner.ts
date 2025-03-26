@@ -15,10 +15,10 @@ import type { EventInfo } from '../../../../core/src/shared/universal-store/type
 import {
   STATUS_STORE_CHANNEL_EVENT_NAME,
   STORE_CHANNEL_EVENT_NAME,
-  type Store,
   TEST_PROVIDER_STORE_CHANNEL_EVENT_NAME,
 } from '../constants';
 import { log } from '../logger';
+import type { Store } from '../types';
 
 const MAX_START_TIME = 30000;
 

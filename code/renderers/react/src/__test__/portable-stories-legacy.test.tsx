@@ -13,7 +13,7 @@ import { composeStories, composeStory, setProjectAnnotations } from '..';
 import type { Button } from './Button';
 import * as stories from './Button.stories';
 
-// TODO: Potentially remove this in Storybook 9.0 once we fully move users to the new portable stories API
+// TODO: Potentially remove this in Storybook 9.0 once we fully move users to the new portable stories API (with CSF4)
 describe('Legacy Portable Stories API', () => {
   // example with composeStories, returns an object with all stories composed with args/decorators
   const { CSF3Primary, LoaderStory } = composeStories(stories);

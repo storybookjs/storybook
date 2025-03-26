@@ -258,7 +258,7 @@ export class VitestManager {
     if (isSingleStoryRun) {
       const storyName = stories[0].name;
       const regex = new RegExp(`^${storyName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`);
-      this.vitest?.setGlobalTestNamePattern(regex);
+      this.vitest!.setGlobalTestNamePattern(regex);
     }
 
     await this.vitest!.runTestSpecifications(filteredTestFiles, true);
@@ -330,7 +330,7 @@ export class VitestManager {
     }
     this.resetGlobalTestNamePattern();
 
-    const globTestFiles = await this.vitest?.globTestSpecifications();
+    const globTestFiles = await this.vitest.globTestSpecifications();
 
     const testGraphs = await Promise.all(
       globTestFiles
@@ -386,7 +386,7 @@ export class VitestManager {
   }
 
   async registerVitestConfigListener() {
-    this.vitest?.vite.watcher.on('change', async (file) => {
+    this.vitest!.vite.watcher.on('change', async (file) => {
       file = normalize(file);
       const isConfig = file === this.vitest?.vite?.config.configFile;
       if (isConfig) {
@@ -399,10 +399,10 @@ export class VitestManager {
 
   async setupWatchers() {
     this.resetGlobalTestNamePattern();
-    this.vitest?.vite?.watcher.removeAllListeners('change');
-    this.vitest?.vite?.watcher.removeAllListeners('add');
-    this.vitest?.vite?.watcher.on('change', this.runAffectedTestsAfterChange.bind(this));
-    this.vitest?.vite?.watcher.on('add', this.runAffectedTestsAfterChange.bind(this));
+    this.vitest!.vite.watcher.removeAllListeners('change');
+    this.vitest!.vite.watcher.removeAllListeners('add');
+    this.vitest!.vite.watcher.on('change', this.runAffectedTestsAfterChange.bind(this));
+    this.vitest!.vite.watcher.on('add', this.runAffectedTestsAfterChange.bind(this));
     this.registerVitestConfigListener();
   }
 

@@ -389,7 +389,9 @@ export const TestingModule = ({
                 tooltip={
                   <TooltipNote
                     note={
-                      isRunning ? "Can't clear statuses while running tests" : 'Clear all statuses'
+                      isRunning
+                        ? "Can't clear statuses while tests are running"
+                        : 'Clear all statuses'
                     }
                   />
                 }
@@ -404,7 +406,9 @@ export const TestingModule = ({
                   }}
                   disabled={isRunning}
                   aria-label={
-                    isRunning ? "Can't clear statuses while running tests" : 'Clear all statuses'
+                    isRunning
+                      ? "Can't clear statuses while tests are running"
+                      : 'Clear all statuses'
                   }
                 >
                   <SweepIcon />

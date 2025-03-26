@@ -98,6 +98,27 @@ export class Preview<TRenderer extends Renderer> {
     }
   }
 
+  // Create a proxy object for `__STORYBOOK_STORY_STORE__` and `__STORYBOOK_PREVIEW__.storyStore`
+  // That proxies through to the store once ready, and errors beforehand. This means we can set
+  // `__STORYBOOK_STORY_STORE__ = __STORYBOOK_PREVIEW__.storyStore` without having to wait, and
+  // similarly integrators can access the `storyStore` on the preview at any time, although
+  // it is considered deprecated and we will no longer allow access in 9.0
+  get storyStore() {
+    return new Proxy(
+      {},
+      {
+        get: (_, method) => {
+          if (this.storyStoreValue) {
+            deprecate('Accessing the Story Store is deprecated and will be removed in 9.0');
+            return this.storyStoreValue[method as keyof StoryStore<TRenderer>];
+          }
+
+          throw new StoryStoreAccessedBeforeInitializationError();
+        },
+      }
+    ) as StoryStore<TRenderer>;
+  }
+
   // INITIALIZATION
   protected async initialize() {
     this.setupListeners();

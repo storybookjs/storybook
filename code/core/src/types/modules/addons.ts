@@ -288,7 +288,6 @@ export interface Addon_BaseMeta<ComponentType> {
    *
    * Used by addons for automatic prop table generation and display of other component metadata.
    *
-   * @deprecated
    * @example
    *
    * ```ts

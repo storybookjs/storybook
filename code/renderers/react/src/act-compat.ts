@@ -63,12 +63,15 @@ function withGlobalActEnvironment(actImplementation: (callback: () => void) => P
 }
 
 export const getAct = async () => {
-  // Lazy loading this makes sure that @storybook/react can be loaded in SSR contexts
-  // For example when SSR'ing portable stories
-  const reactAct =
-    typeof clonedReact.act === 'function'
-      ? clonedReact.act
-      : (await import('react-dom/test-utils')).act;
+  let reactAct: typeof React.act;
+  if (typeof clonedReact.act === 'function') {
+    reactAct = clonedReact.act;
+  } else {
+    // Lazy loading this makes sure that @storybook/react can be loaded in SSR contexts
+    // For example when SSR'ing portable stories
+    const deprecatedTestUtils = await import('react-dom/test-utils');
+    reactAct = deprecatedTestUtils?.default?.act ?? deprecatedTestUtils.act;
+  }
 
   return process.env.NODE_ENV === 'production'
     ? (cb: (...args: any[]) => any) => cb()

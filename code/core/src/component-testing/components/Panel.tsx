@@ -9,21 +9,23 @@ import {
   UNHANDLED_ERRORS_WHILE_PLAYING,
 } from 'storybook/internal/core-events';
 import { type Call, CallStates, EVENTS, type LogItem } from 'storybook/internal/instrumenter';
+import type { StatusValue } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
-import { useAddonState, useChannel, useParameter } from 'storybook/manager-api';
+import {
+  experimental_useStatusStore,
+  useAddonState,
+  useChannel,
+  useParameter,
+} from 'storybook/manager-api';
 
-import { InteractionsPanel } from './components/InteractionsPanel';
-import { ADDON_ID } from './constants';
-
-interface Interaction extends Call {
-  status: Call['status'];
-  childCallIds: Call['id'][];
-  isHidden: boolean;
-  isCollapsed: boolean;
-  toggleCollapsed: () => void;
-}
+import {
+  STATUS_TYPE_ID_COMPONENT_TEST,
+  STORYBOOK_ADDON_TEST_CHANNEL,
+} from '../../../../addons/test/src/constants';
+import { ADDON_ID } from '../constants';
+import { InteractionsPanel } from './InteractionsPanel';
 
 const INITIAL_CONTROL_STATES = {
   start: false,
@@ -31,6 +33,13 @@ const INITIAL_CONTROL_STATES = {
   goto: false,
   next: false,
   end: false,
+};
+
+const statusMap: Record<CallStates, StatusValue> = {
+  [CallStates.DONE]: 'status-value:success',
+  [CallStates.ERROR]: 'status-value:error',
+  [CallStates.ACTIVE]: 'status-value:pending',
+  [CallStates.WAITING]: 'status-value:pending',
 };
 
 export const getInteractions = ({
@@ -48,7 +57,7 @@ export const getInteractions = ({
   const childCallMap = new Map<Call['id'], Call['id'][]>();
 
   return log
-    .map<Call & { isHidden: boolean }>(({ callId, ancestors, status }) => {
+    .map(({ callId, ancestors, status }) => {
       let isHidden = false;
       ancestors.forEach((ancestor) => {
         if (collapsed.has(ancestor)) {
@@ -56,11 +65,12 @@ export const getInteractions = ({
         }
         childCallMap.set(ancestor, (childCallMap.get(ancestor) || []).concat(callId));
       });
-      return { ...calls.get(callId), status, isHidden };
+      return { ...calls.get(callId)!, status, isHidden };
     })
-    .map<Interaction>((call) => {
+    .map((call) => {
       const status =
         call.status === CallStates.ERROR &&
+        call.ancestors &&
         callsById.get(call.ancestors.slice(-1)[0])?.status === CallStates.ACTIVE
           ? CallStates.ACTIVE
           : call.status;
@@ -84,6 +94,14 @@ export const getInteractions = ({
 };
 
 export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId }) {
+  const { statusValue, testRunId } = experimental_useStatusStore((state) => {
+    const storyStatus = state[storyId]?.[STATUS_TYPE_ID_COMPONENT_TEST];
+    return {
+      statusValue: storyStatus?.value,
+      testRunId: storyStatus?.data?.testRunId,
+    };
+  });
+
   // shared state
   const [addonState, set] = useAddonState(ADDON_ID, {
     controlStates: INITIAL_CONTROL_STATES,
@@ -100,6 +118,7 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
   // local state
   const [scrollTarget, setScrollTarget] = useState<HTMLElement | undefined>(undefined);
   const [collapsed, setCollapsed] = useState<Set<Call['id']>>(new Set());
+  const [hasResultMismatch, setResultMismatch] = useState(false);
 
   const {
     controlStates = INITIAL_CONTROL_STATES,
@@ -116,7 +135,7 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
   const calls = useRef<Map<Call['id'], Omit<Call, 'status'>>>(new Map());
   const setCall = ({ status, ...call }: Call) => calls.current.set(call.id, call);
 
-  const endRef = useRef();
+  const endRef = useRef<HTMLDivElement>();
   useEffect(() => {
     let observer: IntersectionObserver;
     if (global.IntersectionObserver) {
@@ -136,6 +155,7 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
     {
       [EVENTS.CALL]: setCall,
       [EVENTS.SYNC]: (payload) => {
+        // @ts-expect-error TODO
         set((s) => {
           const list = getInteractions({
             log: payload.logItems,
@@ -199,6 +219,7 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
   );
 
   useEffect(() => {
+    // @ts-expect-error TODO
     set((s) => {
       const list = getInteractions({
         log: log.current,
@@ -212,7 +233,7 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
         interactionsCount: list.filter(({ method }) => method !== 'step').length,
       };
     });
-  }, [collapsed]);
+  }, [set, collapsed]);
 
   const controls = useMemo(
     () => ({
@@ -225,7 +246,7 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
         emit(FORCE_REMOUNT, { storyId });
       },
     }),
-    [storyId]
+    [emit, storyId]
   );
 
   const storyFilePath = useParameter('fileName', '');
@@ -235,15 +256,57 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
   const hasException =
     !!caughtException ||
     !!unhandledErrors ||
+    // @ts-expect-error TODO
     interactions.some((v) => v.status === CallStates.ERROR);
 
+  const browserTestStatus = useMemo<CallStates | undefined>(() => {
+    if (!isPlaying && (interactions.length > 0 || hasException)) {
+      return hasException ? CallStates.ERROR : CallStates.DONE;
+    }
+    return isPlaying ? CallStates.ACTIVE : undefined;
+  }, [isPlaying, interactions, hasException]);
+
+  useEffect(() => {
+    const isMismatch =
+      browserTestStatus &&
+      statusValue &&
+      statusValue !== 'status-value:pending' &&
+      statusValue !== statusMap[browserTestStatus];
+
+    if (isMismatch) {
+      const timeout = setTimeout(
+        () =>
+          setResultMismatch((currentValue) => {
+            if (!currentValue) {
+              emit(STORYBOOK_ADDON_TEST_CHANNEL, {
+                type: 'test-discrepancy',
+                payload: {
+                  browserStatus: browserTestStatus === CallStates.DONE ? 'PASS' : 'FAIL',
+                  cliStatus: browserTestStatus === CallStates.DONE ? 'FAIL' : 'PASS',
+                  storyId,
+                  testRunId,
+                },
+              });
+            }
+            return true;
+          }),
+        2000
+      );
+      return () => clearTimeout(timeout);
+    } else {
+      setResultMismatch(false);
+    }
+  }, [emit, browserTestStatus, statusValue, storyId, testRunId]);
+
   if (isErrored) {
-    return <Fragment key="interactions" />;
+    return <Fragment key="component-tests" />;
   }
 
   return (
-    <Fragment key="interactions">
+    <Fragment key="component-tests">
       <InteractionsPanel
+        hasResultMismatch={hasResultMismatch}
+        browserTestStatus={browserTestStatus}
         calls={calls.current}
         controls={controls}
         controlStates={controlStates}
@@ -254,6 +317,7 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
         unhandledErrors={unhandledErrors}
         isPlaying={isPlaying}
         pausedAt={pausedAt}
+        // @ts-expect-error TODO
         endRef={endRef}
         onScrollToEnd={scrollTarget && scrollToTarget}
       />

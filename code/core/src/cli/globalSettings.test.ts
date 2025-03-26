@@ -1,25 +1,20 @@
-import { existsSync, promises as fs } from 'node:fs';
+import { existsSync } from 'node:fs';
+import fs from 'node:fs/promises';
 import { dirname } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Settings } from './globalSettings';
 
-vi.mock('node:fs', () => ({
-  existsSync: vi.fn(),
-  promises: {
-    readFile: vi.fn(),
-    writeFile: vi.fn(),
-    mkdir: vi.fn(),
-  },
-}));
+vi.mock('node:fs');
+vi.mock('node:fs/promises');
 
 describe('Settings', () => {
   const TEST_SETTINGS_FILE = '/test/settings.json';
   let settings: Settings;
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
     settings = new Settings(TEST_SETTINGS_FILE);
   });
 

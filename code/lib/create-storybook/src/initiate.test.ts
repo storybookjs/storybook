@@ -17,7 +17,6 @@ describe('promptNewUser', () => {
     settings = new Settings();
     settings.load = vi.fn();
     settings.save = vi.fn();
-    settings.getFileCreationDate = vi.fn();
     vi.spyOn(settings, 'set');
     vi.resetAllMocks();
   });
@@ -30,29 +29,26 @@ describe('promptNewUser', () => {
     const newUser = await promptNewUser({ settings, skipPrompt: true });
     expect(newUser).toBe(true);
 
-    expect(settings.set).toHaveBeenCalledWith('init.promptNewUser', true);
+    expect(settings.set).toHaveBeenCalledWith('init.skipOnboarding', false);
     expect(prompts).not.toHaveBeenCalled();
     expect(vi.mocked(telemetry).mock.calls[0][1]).toMatchInlineSnapshot(`
       {
-        "promptNewUser": true,
-        "settingsCreationTime": undefined,
+        "newUser": true,
         "step": "new-user-check",
       }
     `);
   });
 
   it('skips prompt if user set previously opted out', async () => {
-    settings.set('init.promptNewUser', false);
-    vi.mocked(settings.getFileCreationDate).mockResolvedValue(new Date('2025-01-01'));
+    settings.set('init.skipOnboarding', true);
     const newUser = await promptNewUser({ settings });
 
     expect(newUser).toBe(false);
-    expect(settings.set).toHaveBeenLastCalledWith('init.promptNewUser', false);
+    expect(settings.set).toHaveBeenLastCalledWith('init.skipOnboarding', true);
     expect(prompts).not.toHaveBeenCalled();
     expect(vi.mocked(telemetry).mock.calls[0][1]).toMatchInlineSnapshot(`
       {
-        "promptNewUser": false,
-        "settingsCreationTime": 1735689600000,
+        "newUser": false,
         "step": "new-user-check",
       }
     `);
@@ -63,12 +59,11 @@ describe('promptNewUser', () => {
     const newUser = await promptNewUser({ settings });
 
     expect(newUser).toBe(true);
-    expect(settings.set).toHaveBeenCalledWith('init.promptNewUser', true);
+    expect(settings.set).toHaveBeenCalledWith('init.skipOnboarding', false);
     expect(prompts).toHaveBeenCalled();
     expect(vi.mocked(telemetry).mock.calls[0][1]).toMatchInlineSnapshot(`
       {
-        "promptNewUser": true,
-        "settingsCreationTime": undefined,
+        "newUser": true,
         "step": "new-user-check",
       }
     `);
@@ -77,6 +72,7 @@ describe('promptNewUser', () => {
   it('returns undefined when user cancels the prompt', async () => {
     prompts.inject([undefined]);
     const newUser = await promptNewUser({ settings });
+    expect(prompts).toHaveBeenCalled();
     expect(newUser).toBeUndefined();
     expect(settings.set).not.toHaveBeenCalled();
     expect(telemetry).not.toHaveBeenCalled();
@@ -86,8 +82,9 @@ describe('promptNewUser', () => {
     prompts.inject([false]);
     const newUser = await promptNewUser({ settings, disableTelemetry: true });
 
+    expect(prompts).toHaveBeenCalled();
     expect(newUser).toBe(false);
-    expect(settings.set).toHaveBeenCalledWith('init.promptNewUser', false);
+    expect(settings.set).toHaveBeenCalledWith('init.skipOnboarding', true);
     expect(telemetry).not.toHaveBeenCalled();
   });
 });

@@ -12,6 +12,7 @@ import type { Decorator, Loader, ReactRenderer } from '@storybook/react-vite';
 import { definePreview } from '@storybook/react-vite';
 
 import addonA11y from '@storybook/addon-a11y';
+import addonDocs from '@storybook/addon-docs';
 import addonEssentials from '@storybook/addon-essentials';
 import addonTest from '@storybook/addon-test';
 import addonThemes from '@storybook/addon-themes';
@@ -372,7 +373,14 @@ const parameters = {
 };
 
 export default definePreview({
-  addons: [addonThemes(), addonEssentials(), addonA11y(), addonTest(), templatePreview],
+  addons: [
+    addonDocs(),
+    addonThemes(),
+    addonEssentials(),
+    addonA11y(),
+    addonTest(),
+    templatePreview,
+  ],
   decorators,
   loaders,
   tags: ['test', 'vitest'],

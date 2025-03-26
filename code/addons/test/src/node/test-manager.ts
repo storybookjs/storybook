@@ -62,7 +62,6 @@ export class TestManager {
 
     this.store.subscribe('TRIGGER_RUN', this.handleTriggerRunEvent.bind(this));
     this.store.subscribe('CANCEL_RUN', this.handleCancelEvent.bind(this));
-    this.store.onStateChange(this.handleConfigChange.bind(this));
 
     this.store
       .untilReady()
@@ -73,10 +72,6 @@ export class TestManager {
       .catch((e) => {
         this.reportFatalError('Failed to start Vitest', e);
       });
-  }
-
-  async handleConfigChange(state: StoreState) {
-    process.env.VITEST_STORYBOOK_CONFIG = JSON.stringify(state.config);
   }
 
   async handleTriggerRunEvent(event: TriggerRunEvent) {
@@ -134,6 +129,10 @@ export class TestManager {
         config: s.config,
       },
     }));
+    // set the config at the start of a test run,
+    // so that changing the config during the test run does not affect the currently running test run
+    process.env.VITEST_STORYBOOK_CONFIG = JSON.stringify(this.store.getState().config);
+
     await this.testProviderStore.runWithState(async () => {
       await callback();
       this.store.send({

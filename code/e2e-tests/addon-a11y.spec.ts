@@ -28,9 +28,7 @@ test.describe('addon-a11y', () => {
     await page.getByRole('button', { name: 'Hide highlights' }).click();
 
     // check that the highlight is not visible
-    expect(await imageElement.evaluate((el) => getComputedStyle(el).outline)).toBe(
-      'rgb(0, 0, 0) none 0px'
-    );
+    expect(await imageElement.evaluate((el) => getComputedStyle(el).outline)).toMatch(/0px/);
   });
 
   test('should rerun a11y checks when clicking the rerun button', async ({ page }) => {

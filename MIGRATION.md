@@ -470,7 +470,27 @@ export const preview = {
 };
 ```
 
-Additionally loading `globals` from globalTypes isn't supported in portable stories anymore. Use `initialGlobals` instead.
+Additionally loading the defaultValue from `globalTypes` isn't supported anymore. Use `initialGlobals` instead to define the defaultValue.
+
+```diff
+// .storybook/preview.js
+export default {
++ initialGlobals: {
++   locale: 'en'
++ },
+  globalTypes: {
+    locale: {
+      description: 'Locale for components',
+-     defaultValue: 'en',
+      toolbar: {
+        title: 'Locale',
+        icon: 'circlehollow',
+        items: ['es', 'en'],
+      },
+    },
+  },
+}
+```
 
 ### Icon System Updates
 

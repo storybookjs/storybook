@@ -1,27 +1,22 @@
 import { expect, test } from '@playwright/test';
 import process from 'process';
 
-import { SbPage, hasVitestIntegration } from './util';
+import { SbPage } from './util';
 
-const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
+const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:6006';
 const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
 
-test.describe('addon-interactions', () => {
-  test.skip(
-    hasVitestIntegration,
-    `Skipping ${templateName}, which does not have addon-interactions set up.`
-  );
-
+test.describe('component tests', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(storybookUrl);
     await new SbPage(page, expect).waitUntilLoaded();
   });
 
-  test('should have interactions', async ({ page }) => {
+  test('should have component tests', async ({ page }) => {
     // templateName is e.g. 'vue-cli/default-js'
     test.skip(
       /^(lit)/i.test(`${templateName}`),
-      `Skipping ${templateName}, which does not support addon-interactions`
+      `Skipping ${templateName}, which does not support component tests`
     );
     test.skip(
       templateName.includes('react-native-web'),
@@ -31,12 +26,12 @@ test.describe('addon-interactions', () => {
     const sbPage = new SbPage(page, expect);
 
     await sbPage.navigateToStory('example/page', 'logged-in');
-    await sbPage.viewAddonPanel('Interactions');
+    await sbPage.viewAddonPanel('Component tests');
 
     const welcome = sbPage.previewRoot().locator('.welcome');
     await expect(welcome).toContainText('Welcome, Jane Doe!', { timeout: 50000 });
 
-    const interactionsTab = page.locator('#tabbutton-storybook-interactions-panel');
+    const interactionsTab = page.locator('#tabbutton-storybook-component-tests-panel');
     await expect(interactionsTab).toContainText(/(\d)/);
     await expect(interactionsTab).toBeVisible();
 
@@ -53,7 +48,7 @@ test.describe('addon-interactions', () => {
     // templateName is e.g. 'vue-cli/default-js'
     test.skip(
       /^(lit)/i.test(`${templateName}`),
-      `Skipping ${templateName}, which does not support addon-interactions`
+      `Skipping ${templateName}, which does not support component tests`
     );
     test.skip(
       browserName === 'firefox',
@@ -62,16 +57,15 @@ test.describe('addon-interactions', () => {
 
     const sbPage = new SbPage(page, expect);
 
-    await sbPage.deepLinkToStory(storybookUrl, 'addons/interactions/basics', 'type-and-clear');
-    await sbPage.viewAddonPanel('Interactions');
+    await sbPage.deepLinkToStory(storybookUrl, 'core/component-test-basics', 'type-and-clear');
+    await sbPage.viewAddonPanel('Component tests');
 
     // Test initial state - Interactions have run, count is correct and values are as expected
     const formInput = sbPage.previewRoot().locator('#interaction-test-form input');
     await expect(formInput).toHaveValue('final value', { timeout: 50000 });
 
-    const interactionsTab = page.locator('#tabbutton-storybook-interactions-panel');
+    const interactionsTab = page.locator('#tabbutton-storybook-component-tests-panel');
     await expect(interactionsTab.getByText('3')).toBeVisible();
-    await expect(interactionsTab).toBeVisible();
     await expect(interactionsTab).toBeVisible();
 
     const panel = sbPage.panelContent();
@@ -131,15 +125,15 @@ test.describe('addon-interactions', () => {
   test('should show unhandled errors', async ({ page }) => {
     test.skip(
       /^(lit)/i.test(`${templateName}`),
-      `Skipping ${templateName}, which does not support addon-interactions`
+      `Skipping ${templateName}, which does not support interactions`
     );
     // We trigger the implicit action error here, but angular works a bit different with implicit actions.
     test.skip(/^(angular)/i.test(`${templateName}`));
 
     const sbPage = new SbPage(page, expect);
 
-    await sbPage.deepLinkToStory(storybookUrl, 'addons/interactions/unhandled-errors', 'default');
-    await sbPage.viewAddonPanel('Interactions');
+    await sbPage.deepLinkToStory(storybookUrl, 'core/component-test-unhandled-errors', 'default');
+    await sbPage.viewAddonPanel('Component tests');
 
     const button = sbPage.previewRoot().locator('button');
     await expect(button).toContainText('Button', { timeout: 50000 });

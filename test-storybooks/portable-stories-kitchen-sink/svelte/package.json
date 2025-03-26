@@ -20,7 +20,6 @@
     "@storybook/addon-docs": "portal:../../../code/addons/docs",
     "@storybook/addon-essentials": "portal:../../../code/addons/essentials",
     "@storybook/addon-highlight": "portal:../../../code/addons/highlight",
-    "@storybook/addon-interactions": "portal:../../../code/addons/interactions",
     "@storybook/addon-jest": "portal:../../../code/addons/jest",
     "@storybook/addon-links": "portal:../../../code/addons/links",
     "@storybook/addon-measure": "portal:../../../code/addons/measure",
@@ -72,7 +71,6 @@
   "devDependencies": {
     "@playwright/experimental-ct-svelte": "1.48.1",
     "@storybook/addon-essentials": "8.0.0-rc.2",
-    "@storybook/addon-interactions": "8.0.0-rc.2",
     "@storybook/svelte": "8.0.0-rc.2",
     "@storybook/svelte-vite": "8.0.0-rc.2",
     "@sveltejs/vite-plugin-svelte": "^3.0.2",

@@ -22,6 +22,9 @@ export const getEntries = (cwd: string) => {
     define('src/actions/manager.tsx', ['browser'], false, ['react'], [], [], true),
     define('src/actions/decorator.ts', ['browser'], true, ['react'], [], [], true),
 
+    define('src/component-testing/index.ts', ['browser', 'node'], true, ['react'], [], []),
+    define('src/component-testing/preview.ts', ['browser', 'node'], true, ['react'], [], []),
+    define('src/component-testing/manager.tsx', ['browser'], false, ['react'], [], []),
     define('src/viewport/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
     define('src/viewport/preview.ts', ['browser', 'node'], true, ['react'], [], [], true),
     define('src/viewport/manager.tsx', ['browser'], false, ['react'], [], [], false),

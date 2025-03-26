@@ -31,7 +31,7 @@ import type { ModuleImportFn, ProjectAnnotations, Renderer } from 'storybook/int
 
 import { global } from '@storybook/global';
 
-import { merge, toMerged } from 'es-toolkit';
+import { toMerged } from 'es-toolkit';
 
 import { addons } from '../addons';
 import type { StoryStore } from '../store';
@@ -425,6 +425,7 @@ describe('PreviewWeb', () => {
             __isArgsStory: false,
             docs: expect.any(Object),
             fileName: './src/ComponentOne.stories.js',
+            throwPlayFunctionExceptions: false,
           },
           initialArgs: { foo: 'a', one: 1 },
           argTypes: {
@@ -483,6 +484,7 @@ describe('PreviewWeb', () => {
               __isArgsStory: false,
               docs: expect.any(Object),
               fileName: './src/ComponentOne.stories.js',
+              throwPlayFunctionExceptions: false,
             },
             initialArgs: { foo: 'a', one: 1 },
             argTypes: {
@@ -507,6 +509,7 @@ describe('PreviewWeb', () => {
                 __isArgsStory: false,
                 docs: expect.any(Object),
                 fileName: './src/ComponentOne.stories.js',
+                throwPlayFunctionExceptions: false,
               },
               globals: { a: 'b' },
               initialArgs: { foo: 'a', one: 1 },
@@ -569,7 +572,7 @@ describe('PreviewWeb', () => {
         `);
       });
 
-      describe('when `throwPlayFunctionExceptions` is set', () => {
+      describe('when `throwPlayFunctionExceptions` is set to false', () => {
         it('emits but does not render exception if the play function throws', async () => {
           const error = new Error('error');
           componentOneExports.a.play.mockImplementationOnce(() => {
@@ -599,11 +602,19 @@ describe('PreviewWeb', () => {
         });
       });
 
-      describe('when `throwPlayFunctionExceptions` is unset', () => {
+      describe('when `throwPlayFunctionExceptions` is set to true', () => {
         it('emits AND renders exception if the play function throws', async () => {
           const error = new Error('error');
           componentOneExports.a.play.mockImplementationOnce(() => {
             throw error;
+          });
+
+          getProjectAnnotations.mockReturnValueOnce({
+            ...projectAnnotations,
+            parameters: {
+              ...projectAnnotations.parameters,
+              throwPlayFunctionExceptions: true,
+            },
           });
 
           document.location.search = '?id=component-one--a';
@@ -673,6 +684,7 @@ describe('PreviewWeb', () => {
           parameters: {
             docs: expect.any(Object),
             fileName: './src/ComponentOne.stories.js',
+            throwPlayFunctionExceptions: false,
           },
         });
       });
@@ -764,6 +776,7 @@ describe('PreviewWeb', () => {
             parameters: {
               docs: expect.any(Object),
               fileName: './src/ComponentOne.stories.js',
+              throwPlayFunctionExceptions: false,
             },
           });
         });
@@ -2041,6 +2054,7 @@ describe('PreviewWeb', () => {
             __isArgsStory: false,
             docs: expect.any(Object),
             fileName: './src/ComponentOne.stories.js',
+            throwPlayFunctionExceptions: false,
           },
           initialArgs: { foo: 'b', one: 1 },
           argTypes: {
@@ -2121,6 +2135,7 @@ describe('PreviewWeb', () => {
               __isArgsStory: false,
               docs: expect.any(Object),
               fileName: './src/ComponentOne.stories.js',
+              throwPlayFunctionExceptions: false,
             },
             initialArgs: { foo: 'b', one: 1 },
             argTypes: {
@@ -2153,6 +2168,7 @@ describe('PreviewWeb', () => {
                 __isArgsStory: false,
                 docs: expect.any(Object),
                 fileName: './src/ComponentOne.stories.js',
+                throwPlayFunctionExceptions: false,
               },
               globals: { a: 'b' },
               initialArgs: { foo: 'b', one: 1 },
@@ -2460,6 +2476,7 @@ describe('PreviewWeb', () => {
           parameters: {
             docs: expect.any(Object),
             fileName: './src/ComponentOne.stories.js',
+            throwPlayFunctionExceptions: false,
           },
         });
       });
@@ -2658,6 +2675,7 @@ describe('PreviewWeb', () => {
             __isArgsStory: false,
             docs: expect.any(Object),
             fileName: './src/ComponentOne.stories.js',
+            throwPlayFunctionExceptions: false,
           },
           initialArgs: { foo: 'a', one: 1 },
           argTypes: {
@@ -2687,6 +2705,7 @@ describe('PreviewWeb', () => {
               __isArgsStory: false,
               docs: expect.any(Object),
               fileName: './src/ComponentOne.stories.js',
+              throwPlayFunctionExceptions: false,
             },
             initialArgs: { foo: 'a', one: 1 },
             argTypes: {
@@ -2719,6 +2738,7 @@ describe('PreviewWeb', () => {
                 __isArgsStory: false,
                 docs: expect.any(Object),
                 fileName: './src/ComponentOne.stories.js',
+                throwPlayFunctionExceptions: false,
               },
               globals: { a: 'b' },
               initialArgs: { foo: 'a', one: 1 },
@@ -2983,6 +3003,7 @@ describe('PreviewWeb', () => {
             __isArgsStory: false,
             docs: expect.any(Object),
             fileName: './src/ComponentOne.stories.js',
+            throwPlayFunctionExceptions: false,
           },
           initialArgs: { foo: 'edited', one: 1 },
           argTypes: {
@@ -3009,6 +3030,7 @@ describe('PreviewWeb', () => {
               __isArgsStory: false,
               docs: expect.any(Object),
               fileName: './src/ComponentOne.stories.js',
+              throwPlayFunctionExceptions: false,
             },
             initialArgs: { foo: 'edited', one: 1 },
             argTypes: {
@@ -3038,6 +3060,7 @@ describe('PreviewWeb', () => {
                 __isArgsStory: false,
                 docs: expect.any(Object),
                 fileName: './src/ComponentOne.stories.js',
+                throwPlayFunctionExceptions: false,
               },
               globals: { a: 'b' },
               initialArgs: { foo: 'edited', one: 1 },
@@ -3811,6 +3834,7 @@ describe('PreviewWeb', () => {
                 "renderer": [Function],
               },
               "fileName": "./src/ComponentOne.stories.js",
+              "throwPlayFunctionExceptions": false,
             },
             "story": "A",
             "storyGlobals": {},
@@ -3865,6 +3889,7 @@ describe('PreviewWeb', () => {
                 "renderer": [Function],
               },
               "fileName": "./src/ComponentOne.stories.js",
+              "throwPlayFunctionExceptions": false,
             },
             "story": "B",
             "storyGlobals": {},
@@ -3896,6 +3921,7 @@ describe('PreviewWeb', () => {
                 "renderer": [Function],
               },
               "fileName": "./src/ExtraComponentOne.stories.js",
+              "throwPlayFunctionExceptions": false,
             },
             "playFunction": undefined,
             "story": "E",
@@ -3938,6 +3964,7 @@ describe('PreviewWeb', () => {
                 "renderer": [Function],
               },
               "fileName": "./src/ComponentTwo.stories.js",
+              "throwPlayFunctionExceptions": false,
             },
             "playFunction": undefined,
             "story": "C",

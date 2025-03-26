@@ -2,12 +2,12 @@ import React, { useEffect, useState } from 'react';
 
 import { EmptyTabContent, Link } from 'storybook/internal/components';
 
-import { DocumentIcon, VideoIcon } from '@storybook/icons';
+import { DocumentIcon } from '@storybook/icons';
 
 import { useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { DOCUMENTATION_LINK, TUTORIAL_VIDEO_LINK } from '../constants';
+import { DOCUMENTATION_LINK } from '../constants';
 
 const Links = styled.div(({ theme }) => ({
   display: 'flex',
@@ -56,10 +56,6 @@ export const Empty = () => {
       }
       footer={
         <Links>
-          <Link href={TUTORIAL_VIDEO_LINK} target="_blank" withArrow>
-            <VideoIcon /> Watch 8m video
-          </Link>
-          <Divider />
           <Link href={docsUrl} target="_blank" withArrow>
             <DocumentIcon /> Read docs
           </Link>

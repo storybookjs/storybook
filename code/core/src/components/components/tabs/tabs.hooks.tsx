@@ -90,6 +90,7 @@ export function useList(list: ChildrenListComplete) {
             }
           >
             <AddonButton
+              id="addons-menu-button"
               // @ts-expect-error (non strict)
               ref={addonsRef}
               active={isAddonsActive}

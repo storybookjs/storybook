@@ -242,8 +242,12 @@ test.describe('Manager UI', () => {
       // open panel
       await sbPage.page.locator('[title="Open addon panel"]').click();
 
+      const addonsMenuButton = sbPage.page.locator('#addons-menu-button');
+      await expect(addonsMenuButton).toBeVisible();
+      await addonsMenuButton.click();
+
       // panel is open
-      await expect(sbPage.page.locator('#tabbutton-addon-controls')).toBeVisible();
+      await expect(sbPage.page.locator('#list-item-addon-controls')).toBeVisible();
 
       // close panel
       await sbPage.page.locator('[title="Close addon panel"]').click();

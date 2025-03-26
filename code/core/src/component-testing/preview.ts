@@ -1,7 +1,9 @@
 import { instrument } from 'storybook/internal/instrumenter';
 import type { PlayFunction, StepLabel, StoryContext } from 'storybook/internal/types';
 
-export const { step: runStep } = instrument(
+import { definePreview } from 'storybook/preview-api';
+
+const { step } = instrument(
   {
     // It seems like the label is unused, but the instrumenter has access to it
     // The context will be bounded later in StoryRender, so that the user can write just:
@@ -13,6 +15,10 @@ export const { step: runStep } = instrument(
   { intercept: true }
 );
 
-export const parameters = {
-  throwPlayFunctionExceptions: false,
-};
+export default () =>
+  definePreview({
+    parameters: {
+      throwPlayFunctionExceptions: false,
+    },
+    runStep: step,
+  });

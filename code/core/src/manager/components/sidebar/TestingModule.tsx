@@ -386,7 +386,13 @@ export const TestingModule = ({
             {hasStatuses && (
               <WithTooltip
                 hasChrome={false}
-                tooltip={<TooltipNote note="Clear all statuses" />}
+                tooltip={
+                  <TooltipNote
+                    note={
+                      isRunning ? "Can't clear statuses while running tests" : 'Clear all statuses'
+                    }
+                  />
+                }
                 trigger="hover"
               >
                 <IconButton

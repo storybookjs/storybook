@@ -103,12 +103,6 @@
       "import": "./dist/backgrounds/preview.js",
       "require": "./dist/backgrounds/preview.cjs"
     },
-    "./internal/backgrounds/manager": {
-      "import": "./dist/backgrounds/manager.js"
-    },
-    "./backgrounds/manager": {
-      "import": "./dist/backgrounds/manager.js"
-    },
     "./internal/actions": {
       "types": "./dist/actions/index.d.ts",
       "import": "./dist/actions/index.js",
@@ -128,12 +122,6 @@
       "types": "./dist/actions/preview.d.ts",
       "import": "./dist/actions/preview.js",
       "require": "./dist/actions/preview.cjs"
-    },
-    "./internal/actions/manager": {
-      "import": "./dist/actions/manager.js"
-    },
-    "./actions/manager": {
-      "import": "./dist/actions/manager.js"
     },
     "./internal/actions/decorator": {
       "types": "./dist/actions/decorator.d.ts",
@@ -176,9 +164,6 @@
       "import": "./dist/viewport/preview.js",
       "require": "./dist/viewport/preview.cjs"
     },
-    "./internal/viewport/manager": {
-      "import": "./dist/viewport/manager.js"
-    },
     "./internal/controls": {
       "types": "./dist/controls/index.d.ts",
       "import": "./dist/controls/index.js",
@@ -188,9 +173,6 @@
       "types": "./dist/controls/preview.d.ts",
       "import": "./dist/controls/preview.js",
       "require": "./dist/controls/preview.cjs"
-    },
-    "./internal/controls/manager": {
-      "import": "./dist/controls/manager.js"
     },
     "./internal/controls/decorator": {
       "types": "./dist/controls/decorator.d.ts",

@@ -14,16 +14,17 @@ export const getEntries = (cwd: string) => {
 
     define('src/core-server/index.ts', ['node'], true, ['react']),
     define('src/core-server/presets/common-preset.ts', ['node'], false),
-    define('src/core-server/presets/common-manager.ts', ['browser'], false),
+    define('src/core-server/presets/common-manager.ts', ['browser'], false, [
+      'react',
+      '@storybook/icons',
+    ]),
     define('src/core-server/presets/common-override-preset.ts', ['node'], false),
 
     define('src/backgrounds/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
     define('src/backgrounds/preview.ts', ['browser', 'node'], true, ['react'], [], [], true),
-    define('src/backgrounds/manager.tsx', ['browser'], false, ['react'], [], [], true),
 
     define('src/actions/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
     define('src/actions/preview.ts', ['browser', 'node'], true, ['react'], [], [], true),
-    define('src/actions/manager.tsx', ['browser'], false, ['react'], [], [], true),
     define('src/actions/decorator.ts', ['browser'], true, ['react'], [], [], true),
 
     define('src/component-testing/index.ts', ['browser', 'node'], true, ['react'], [], []),
@@ -31,11 +32,9 @@ export const getEntries = (cwd: string) => {
     define('src/component-testing/manager.tsx', ['browser'], false, ['react'], [], []),
     define('src/viewport/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
     define('src/viewport/preview.ts', ['browser', 'node'], true, ['react'], [], [], true),
-    define('src/viewport/manager.tsx', ['browser'], false, ['react'], [], [], false),
 
     define('src/controls/index.ts', ['browser', 'node'], true, ['react']),
     define('src/controls/preview.ts', ['browser', 'node'], true, ['react']),
-    define('src/controls/manager.tsx', ['browser'], false, ['react']),
     define('src/controls/decorator.ts', ['browser'], true, ['react']),
 
     define('src/core-events/index.ts', ['browser', 'node'], true),

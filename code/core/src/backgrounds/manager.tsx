@@ -5,7 +5,7 @@ import { addons, types } from 'storybook/manager-api';
 import { BackgroundTool } from './components/Tool';
 import { ADDON_ID } from './constants';
 
-addons.register(ADDON_ID, () => {
+export default addons.register(ADDON_ID, () => {
   addons.add(ADDON_ID, {
     title: 'Backgrounds',
     type: types.TOOL,

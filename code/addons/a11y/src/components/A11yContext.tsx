@@ -307,8 +307,9 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
     emit(HIGHLIGHT, {
       elements: others,
       color: `${colorsByType[tab]}99`,
+      style: 'dashed',
       width: '1px',
-      offset: '0px',
+      offset: '1px',
     });
   }, [emit, highlighted, results, tab, selectedItems]);
 

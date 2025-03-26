@@ -46,8 +46,6 @@ export interface ProjectAnnotations<TRenderer extends Renderer>
   addons?: ProjectAnnotations<TRenderer>[];
   testingLibraryRender?: (...args: never[]) => { unmount: () => void };
   renderToCanvas?: RenderToCanvas<TRenderer>;
-  /* @deprecated use renderToCanvas */
-  renderToDOM?: RenderToCanvas<TRenderer>;
 }
 
 type NamedExportsOrDefault<TExport> = TExport | { default: TExport };

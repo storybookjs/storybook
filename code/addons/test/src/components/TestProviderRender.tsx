@@ -308,6 +308,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                 <Checkbox
                   type="checkbox"
                   checked={config.coverage}
+                  disabled={isRunning}
                   onChange={() =>
                     setStoreState((s) => ({
                       ...s,
@@ -385,6 +386,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                   <Checkbox
                     type="checkbox"
                     checked={config.a11y}
+                    disabled={isRunning}
                     onChange={() =>
                       setStoreState((s) => ({
                         ...s,

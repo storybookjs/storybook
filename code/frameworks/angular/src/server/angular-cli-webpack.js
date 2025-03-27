@@ -56,6 +56,10 @@ exports.getWebpackConfig = async (baseConfig, { builderOptions, builderContext }
     ]
   );
 
+  if (!builderOptions.experimentalZoneless && !cliConfig.entry.polyfills?.includes('zone.js')) {
+    cliConfig.entry.polyfills.push('zone.js');
+  }
+
   /** Merge baseConfig Webpack with angular-cli Webpack */
   const entry = [
     ...(cliConfig.entry.polyfills ?? []),

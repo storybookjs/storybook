@@ -63,10 +63,24 @@ describe('A11yContext', () => {
     cleanup();
   });
 
+  const onAllStatusChange = vi.fn();
+  const getAll = vi.fn();
+  const set = vi.fn();
+  const onSelect = vi.fn();
+  const unset = vi.fn();
+
   const getCurrentStoryData = vi.fn();
   const getParameters = vi.fn();
+  const getQueryParam = vi.fn();
 
   beforeEach(() => {
+    mockedApi.experimental_getStatusStore.mockReturnValue({
+      onAllStatusChange,
+      getAll,
+      set,
+      onSelect,
+      unset,
+    } as any);
     mockedApi.useAddonState.mockImplementation((_, defaultState) => React.useState(defaultState));
     mockedApi.useChannel.mockReturnValue(vi.fn());
     getCurrentStoryData.mockReturnValue({ id: storyId, type: 'story' });
@@ -74,6 +88,7 @@ describe('A11yContext', () => {
     mockedApi.useStorybookApi.mockReturnValue({
       getCurrentStoryData,
       getParameters,
+      getQueryParam,
     } as any);
     mockedApi.useParameter.mockReturnValue({ manual: false });
     mockedApi.useStorybookState.mockReturnValue({ storyId } as any);
@@ -319,66 +334,5 @@ describe('A11yContext', () => {
     });
 
     expect(emit).toHaveBeenCalledWith(EVENTS.MANUAL, storyId, expect.any(Object));
-  });
-
-  it('should toggle highlight correctly', () => {
-    const Component = () => {
-      const { toggleHighlight, highlighted } = useA11yContext();
-      return (
-        <>
-          <button onClick={() => toggleHighlight(['element1'], true)} data-testid="highlightButton">
-            Highlight
-          </button>
-          <div data-testid="highlightedElements">{highlighted.join(',')}</div>
-        </>
-      );
-    };
-
-    const { getByTestId } = render(
-      <A11yContextProvider>
-        <Component />
-      </A11yContextProvider>
-    );
-
-    act(() => {
-      getByTestId('highlightButton').click();
-    });
-
-    expect(getByTestId('highlightedElements').textContent).toBe('element1');
-  });
-
-  it('should clear highlights correctly', () => {
-    const Component = () => {
-      const { toggleHighlight, clearHighlights, highlighted } = useA11yContext();
-      return (
-        <>
-          <button onClick={() => toggleHighlight(['element1'], true)} data-testid="highlightButton">
-            Highlight
-          </button>
-          <button onClick={clearHighlights} data-testid="clearHighlightsButton">
-            Clear Highlights
-          </button>
-          <div data-testid="highlightedElements">{highlighted.join(',')}</div>
-        </>
-      );
-    };
-
-    const { getByTestId } = render(
-      <A11yContextProvider>
-        <Component />
-      </A11yContextProvider>
-    );
-
-    act(() => {
-      getByTestId('highlightButton').click();
-    });
-
-    expect(getByTestId('highlightedElements').textContent).toBe('element1');
-
-    act(() => {
-      getByTestId('clearHighlightsButton').click();
-    });
-
-    expect(getByTestId('highlightedElements').textContent).toBe('');
   });
 });

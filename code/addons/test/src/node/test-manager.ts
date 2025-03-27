@@ -177,7 +177,7 @@ export class TestManager {
    * 5. Creates status objects for a11y tests (if any) and updates the a11y status store
    *
    * The throttling (500ms) is necessary as the channel would otherwise get overwhelmed with events,
-   * eventually causing the manager and dev server to loose connection.
+   * eventually causing the manager and dev server to lose connection.
    */
   throttledFlushTestCaseResults = throttle(() => {
     const testCaseResultsToFlush = this.batchedTestCaseResults;

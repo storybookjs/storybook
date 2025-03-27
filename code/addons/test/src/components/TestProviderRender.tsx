@@ -248,7 +248,6 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                     },
                   })
                 }
-                disabled={false}
               >
                 <PlayHollowIcon />
               </IconButton>

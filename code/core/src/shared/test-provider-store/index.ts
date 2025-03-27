@@ -433,12 +433,6 @@ export function createTestProviderStore({
         }));
       });
     };
-    // Initialize the state to 'pending' if it doesn't exist yet
-    universalTestProviderStore.untilReady().then(() => {
-      if (!getStateForTestProvider()) {
-        setStateForTestProvider('test-provider-state:pending');
-      }
-    });
     return {
       ...baseStore,
       testProviderId,

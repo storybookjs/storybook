@@ -2,8 +2,6 @@ import type {
   StatusStoreByTypeId,
   TestProviderState,
   TestProviderStoreById,
-  UseStatusStore,
-  UseTestProviderStore,
 } from 'storybook/internal/types';
 
 import { experimental_MockUniversalStore } from 'storybook/manager-api';

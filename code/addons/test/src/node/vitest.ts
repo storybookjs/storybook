@@ -76,7 +76,6 @@ const createUnhandledErrorHandler = (message: string) => async (error: ErrorLike
       payload,
     });
   } finally {
-    console.log('finally exiting the process');
     exit(1);
   }
 };

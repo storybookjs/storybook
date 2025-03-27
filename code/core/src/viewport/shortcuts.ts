@@ -52,7 +52,9 @@ export const registerShortcuts = async (
     defaultShortcut: ['alt', 'control', 'V'],
     actionName: 'reset',
     action: () => {
-      updateGlobals({ value: undefined, isRotated: false });
+      updateGlobals({
+        viewport: { value: undefined, isRotated: false },
+      });
     },
   });
 };

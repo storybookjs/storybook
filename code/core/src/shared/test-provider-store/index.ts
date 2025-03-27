@@ -1,4 +1,4 @@
-import { UniversalStore } from '../universal-store';
+import type { UniversalStore } from '../universal-store';
 import type { BaseEvent, StoreOptions } from '../universal-store/types';
 import type { useUniversalStore as managerUseUniversalStore } from '../universal-store/use-universal-store-manager';
 
@@ -412,19 +412,13 @@ export function createTestProviderStore({
     setFullState: universalTestProviderStore.setState,
     onSettingsChanged: (listener) =>
       universalTestProviderStore.subscribe('settings-changed', listener),
-    runAll: () => {
-      if (universalTestProviderStore.status !== UniversalStore.Status.READY) {
-        universalTestProviderStore.untilReady().then(() => {
-          universalTestProviderStore.send({ type: 'run-all' });
-        });
-      } else {
-        universalTestProviderStore.send({ type: 'run-all' });
-      }
+    runAll: async () => {
+      await universalTestProviderStore.untilReady();
+      universalTestProviderStore.send({ type: 'run-all' });
     },
-    clearAll: () => {
-      universalTestProviderStore.untilReady().then(() => {
-        universalTestProviderStore.send({ type: 'clear-all' });
-      });
+    clearAll: async () => {
+      await universalTestProviderStore.untilReady();
+      universalTestProviderStore.send({ type: 'clear-all' });
     },
   };
 

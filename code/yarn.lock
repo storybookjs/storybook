@@ -7080,7 +7080,7 @@ __metadata:
     "@types/semver": "npm:^7.3.4"
     find-up: "npm:^5.0.0"
     magic-string: "npm:^0.30.5"
-    react-docgen: "npm:^7.0.0"
+    react-docgen: "npm:^7.1.1"
     resolve: "npm:^1.22.8"
     semver: "npm:^7.3.7"
     tsconfig-paths: "npm:^4.2.0"
@@ -7220,7 +7220,7 @@ __metadata:
     "@types/node": "npm:^22.0.0"
     find-up: "npm:^5.0.0"
     magic-string: "npm:^0.30.0"
-    react-docgen: "npm:^7.0.0"
+    react-docgen: "npm:^7.1.1"
     resolve: "npm:^1.22.8"
     tsconfig-paths: "npm:^4.2.0"
     typescript: "npm:^5.7.3"
@@ -24895,9 +24895,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-docgen@npm:^7.0.0":
-  version: 7.0.1
-  resolution: "react-docgen@npm:7.0.1"
+"react-docgen@npm:^7.1.1":
+  version: 7.1.1
+  resolution: "react-docgen@npm:7.1.1"
   dependencies:
     "@babel/core": "npm:^7.18.9"
     "@babel/traverse": "npm:^7.18.9"
@@ -24909,7 +24909,7 @@ __metadata:
     doctrine: "npm:^3.0.0"
     resolve: "npm:^1.22.1"
     strip-indent: "npm:^4.0.0"
-  checksum: 10c0/870c1193211f14497bf7a96137f96840dc058842ca75ff7251d91e88c3c71d7a41d5f1a124cc1b53bfbf1f2b6b58bfccc4dd6e22592814a5155d3894953274be
+  checksum: 10c0/961e69487f6acbd9110afbda31f5a0c7fa7ab8b1ebe09fc0138c17efd297fa0b69518df873e937cac108732cd8125433bf939115d23ff99c1c171844140705a7
   languageName: node
   linkType: hard
 

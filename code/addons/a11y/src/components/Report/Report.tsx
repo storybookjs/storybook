@@ -16,6 +16,7 @@ const Wrapper = styled.div(({ theme }) => ({
   flexDirection: 'column',
   width: '100%',
   borderBottom: `1px solid ${theme.appBorderColor}`,
+  containerType: 'inline-size',
 }));
 
 const Icon = styled(ChevronSmallDownIcon)({
@@ -26,7 +27,7 @@ const HeaderBar = styled.div(({ theme }) => ({
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
-  gap: 4,
+  gap: 5,
   padding: '6px 5px 6px 15px',
   minHeight: 40,
   background: 'none',
@@ -44,10 +45,21 @@ const Title = styled.div(({ theme }) => ({
   fontWeight: theme.typography.weight.bold,
 }));
 
-const RuleId = styled(Badge)<{ onClick: (event: React.SyntheticEvent<Element>) => void }>({
-  whiteSpace: 'nowrap',
-  cursor: 'text',
-});
+const RuleId = styled.span<{ onClick: (event: React.SyntheticEvent<Element>) => void }>(
+  ({ theme }) => ({
+    display: 'none',
+    whiteSpace: 'nowrap',
+    cursor: 'text',
+    margin: 2,
+    color: theme.textMutedColor,
+    fontSize: theme.typography.size.s1,
+    fontWeight: theme.typography.weight.bold,
+
+    '@container (min-width: 800px)': {
+      display: 'inline-block',
+    },
+  })
+);
 
 export interface ReportProps {
   items: Result[];
@@ -79,9 +91,7 @@ export const Report: FC<ReportProps> = ({
               data-active={!!selection}
             >
               <Title>{item.help}</Title>
-              <RuleId status="neutral" onClick={(event) => event.stopPropagation()}>
-                {item.id}
-              </RuleId>
+              <RuleId onClick={(event) => event.stopPropagation()}>{item.id}</RuleId>
               <IconButton onClick={(event) => toggleOpen(event, type, item)}>
                 <Icon style={{ transform: `rotate(${selection ? -180 : 0}deg)` }} />
               </IconButton>

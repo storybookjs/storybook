@@ -48,7 +48,6 @@ const context = {
   setTab: fn(),
   setStatus: fn(),
   handleCopyLink: fn(),
-  selectedItems: new Map(),
   toggleOpen: fn(),
   allExpanded: false,
   handleCollapseAll: fn(),
@@ -57,7 +56,9 @@ const context = {
   handleJumpToElement: fn(),
 };
 
-const Template = (args: Pick<A11yContextStore, 'results' | 'error' | 'status' | 'discrepancy'>) => (
+const Template = (
+  args: Pick<A11yContextStore, 'results' | 'error' | 'status' | 'discrepancy' | 'selectedItems'>
+) => (
   <A11yContext.Provider value={{ ...context, ...args }}>
     <ManagerContext.Provider value={managerContext}>
       <StyledWrapper id="panel-tab-content">
@@ -75,6 +76,7 @@ export const Initializing = meta.story({
         status="initial"
         error={null}
         discrepancy={null}
+        selectedItems={new Map()}
       />
     );
   },
@@ -88,6 +90,7 @@ export const Manual = meta.story({
         status="manual"
         error={null}
         discrepancy={null}
+        selectedItems={new Map()}
       />
     );
   },
@@ -101,6 +104,7 @@ export const ManualWithDiscrepancy = meta.story({
         status="manual"
         error={null}
         discrepancy={'cliFailedButModeManual'}
+        selectedItems={new Map()}
       />
     );
   },
@@ -114,6 +118,7 @@ export const Running = meta.story({
         status="running"
         error={null}
         discrepancy={null}
+        selectedItems={new Map()}
       />
     );
   },
@@ -121,7 +126,22 @@ export const Running = meta.story({
 
 export const ReadyWithResults = meta.story({
   render: () => {
-    return <Template results={results} status="ready" error={null} discrepancy={null} />;
+    return (
+      <Template
+        results={results}
+        status="ready"
+        error={null}
+        discrepancy={null}
+        selectedItems={
+          new Map([
+            [
+              `${RuleType.VIOLATION}.${results.violations[0].id}`,
+              `${RuleType.VIOLATION}.${results.violations[0].id}.1`,
+            ],
+          ])
+        }
+      />
+    );
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -138,6 +158,14 @@ export const ReadyWithResultsDiscrepancyCLIPassedBrowserFailed = meta.story({
         status="ready"
         error={null}
         discrepancy={'cliPassedBrowserFailed'}
+        selectedItems={
+          new Map([
+            [
+              `${RuleType.VIOLATION}.${results.violations[0].id}`,
+              `${RuleType.VIOLATION}.${results.violations[0].id}.1`,
+            ],
+          ])
+        }
       />
     );
   },
@@ -151,6 +179,7 @@ export const Error = meta.story({
         status="error"
         error={`TypeError: Configured rule { impact: "moderate", disable: true } is invalid. Rules must be an object with at least an id property.`}
         discrepancy={null}
+        selectedItems={new Map()}
       />
     );
   },
@@ -164,6 +193,7 @@ export const ErrorStateWithObject = meta.story({
         status="error"
         error={{ message: 'Test error object message' }}
         discrepancy={null}
+        selectedItems={new Map()}
       />
     );
   },
@@ -177,6 +207,7 @@ export const Broken = meta.story({
         status="component-test-error"
         error={null}
         discrepancy={null}
+        selectedItems={new Map()}
       />
     );
   },

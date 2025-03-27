@@ -15,12 +15,9 @@ import { Report } from './Report/Report';
 import { Tabs } from './Tabs';
 import { TestDiscrepancyMessage } from './TestDiscrepancyMessage';
 
-const Icon = styled(SyncIcon)({
-  marginRight: 4,
-});
-
-const RotatingIcon = styled(Icon)(({ theme }) => ({
+const RotatingIcon = styled(SyncIcon)(({ theme }) => ({
   animation: `${theme.animation.rotate360} 1s linear infinite;`,
+  margin: 4,
 }));
 
 const Tab = styled.div({
@@ -42,6 +39,7 @@ const Centered = styled.span(({ theme }) => ({
   div: {
     display: 'flex',
     flexDirection: 'column',
+    alignItems: 'center',
     gap: 8,
   },
   p: {
@@ -149,7 +147,13 @@ export const A11YPanel: React.FC = () => {
         <Tabs key="tabs" tabs={tabs} />
       ) : (
         <Centered style={{ marginTop: discrepancy ? '1em' : 0 }}>
-          {status === 'initial' && 'Initializing...'}
+          {status === 'initial' && (
+            <div>
+              <RotatingIcon size={12} />
+              <strong>Preparing accessibility scan</strong>
+              <p>Please wait while the addon is initializing&hellip;</p>
+            </div>
+          )}
           {status === 'manual' && (
             <>
               <div>
@@ -169,9 +173,11 @@ export const A11YPanel: React.FC = () => {
             </>
           )}
           {status === 'running' && (
-            <>
-              <RotatingIcon size={12} /> Please wait while the accessibility scan is running ...
-            </>
+            <div>
+              <RotatingIcon size={12} />
+              <strong>Accessibility scan in progress</strong>
+              <p>Please wait while the accessibility scan is running&hellip;</p>
+            </div>
           )}
           {status === 'error' && (
             <>

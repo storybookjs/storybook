@@ -34,6 +34,10 @@ export const parameters = {
   viewport: {
     options: MINIMAL_VIEWPORTS,
   },
+
+  backgrounds: {
+    disable: false,
+  },
 };
 
 export const loaders = [async () => ({ projectValue: 2 })];

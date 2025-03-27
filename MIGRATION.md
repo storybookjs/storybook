@@ -25,6 +25,7 @@
   - [Dropped support for TypeScript \< 4.9](#dropped-support-for-typescript--49)
   - [Test addon renamed from experimental to stable](#test-addon-renamed-from-experimental-to-stable)
   - [Experimental Status API has turned into a Status Store](#experimental-status-api-has-turned-into-a-status-store)
+  - [Dropped support for Vite 4](#dropped-support-for-vite-4)
   - [Framework-specific changes](#framework-specific-changes)
     - [Angular = Require v18 and up](#angular--require-v18-and-up)
 - [From version 8.5.x to 8.6.x](#from-version-85x-to-86x)
@@ -761,6 +762,40 @@ addons.register(MY_ADDON_ID, (api) => {
 +    description: 'Works!',
 +  }]);
 ```
+
+### Dropped support for Vite 4
+
+Storybook 9.0 drops support for Vite 4. The minimum supported version is now Vite 5.0.0. This change affects all Vite-based frameworks and builders:
+
+- `@storybook/builder-vite`
+- `@storybook/react-vite`
+- `@storybook/vue-vite`
+- `@storybook/vue3-vite`
+- `@storybook/svelte-vite`
+- `@storybook/web-components-vite`
+- `@storybook/preact-vite`
+- `@storybook/html-vite`
+- `@storybook/experimental-nextjs-vite`
+
+To upgrade:
+
+1. Update your project's Vite version to 5.0.0 or higher
+2. Update your Storybook configuration to use Vite 5:
+   ```js
+   // vite.config.js or vite.config.ts
+   export default {
+     // ... your other config
+     // Make sure you're using Vite 5 compatible plugins
+   }
+   ```
+
+If you're using framework-specific Vite plugins, ensure they are compatible with Vite 5:
+- `@vitejs/plugin-react`
+- `@vitejs/plugin-vue`
+- `@sveltejs/vite-plugin-svelte`
+- etc.
+
+For more information on upgrading to Vite 5, see the [Vite Migration Guide](https://vitejs.dev/guide/migration).
 
 ### Framework-specific changes
 

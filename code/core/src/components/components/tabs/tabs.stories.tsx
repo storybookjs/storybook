@@ -42,6 +42,13 @@ function fibonacci(num: number, memo?: FibonacciMap): number {
   return memo[num];
 }
 
+// Component that throws an error when rendered
+function ErrorComponent() {
+  throw new Error('This is a test error thrown by ErrorComponent');
+  // The code below will never execute
+  return <div>This component throws an error</div>;
+}
+
 type Panels = Record<string, Omit<ChildrenList[0], 'id'>>;
 
 const panels: Panels = {
@@ -92,6 +99,10 @@ const panels: Panels = {
   test6: {
     title: 'Tab title #6',
     render: ({ active }) => <TabWrapper active={active} render={() => <div>CONTENT 6</div>} />,
+  },
+  errorTab: {
+    title: 'Error Tab',
+    render: ({ active }) => (active ? <ErrorComponent /> : null),
   },
 };
 
@@ -404,5 +415,40 @@ export const StatefulWithStatefulPanel = {
         </TabsState>
       </div>
     );
+  },
+} satisfies Story;
+
+// Story that demonstrates the error boundary functionality
+export const WithErrorBoundary = {
+  parameters: {
+    test: {
+      dangerouslyIgnoreUnhandledErrors: true,
+    },
+  },
+  render: (args) => (
+    <TabsState {...args} initial="test1">
+      <div id="test1" title="Normal Tab">
+        {
+          (({ active }: { active: boolean }) =>
+            active ? <div>This tab renders normally</div> : null) as any
+        }
+      </div>
+      <div id="errorTab" title="Error Tab">
+        {(({ active }: { active: boolean }) => (active ? <ErrorComponent /> : null)) as any}
+      </div>
+    </TabsState>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // Check that the normal tab renders correctly
+    await expect(canvas.getByText('This tab renders normally')).toBeInTheDocument();
+
+    // Find and click the error tab to trigger the error
+    const errorTab = canvas.getByRole('tab', { name: 'Error Tab' });
+    await userEvent.click(errorTab);
+
+    // Check that the error boundary message is displayed
+    await expect(await canvas.findByText('Error rendering tab content')).toBeInTheDocument();
   },
 } satisfies Story;

@@ -3,6 +3,7 @@ import React, { type CSSProperties, useEffect, useState } from 'react';
 import type { Channel } from 'storybook/internal/channels';
 import { STORY_CHANGED } from 'storybook/internal/core-events';
 
+import { throttle } from 'es-toolkit';
 import { styled } from 'storybook/theming';
 
 import { HighlightMenu } from './HighlightMenu';
@@ -18,6 +19,7 @@ const Rectangle = styled.div<{
   position: 'absolute',
   boxSizing: 'border-box',
   cursor: isSelectable ? 'pointer' : 'default',
+  pointerEvents: isSelectable ? 'auto' : 'none',
   ...baseStyles,
   ...(isSelected && {
     ...selectedStyles,
@@ -129,12 +131,23 @@ export const HighlightOverlay = ({ channel }: { channel: Channel }) => {
 
   // Updates the tracked highlights when elements are resized
   useEffect(() => {
-    const observer = new ResizeObserver(() => {
-      setBoxes(getBoxes(elements));
-    });
-    observer.observe(document.getElementById('storybook-root')!);
+    const storybookRoot = document.getElementById('storybook-root')!;
+    const updateBoxes = throttle(() => setBoxes(getBoxes(elements)), 50);
+
+    const observer = new ResizeObserver(updateBoxes);
+    observer.observe(storybookRoot);
     Array.from(elements.keys()).forEach((element) => observer.observe(element));
-    return () => observer.disconnect();
+
+    const scrollers = Array.from(storybookRoot.querySelectorAll('*')).filter((el) => {
+      const { overflow, overflowX, overflowY } = window.getComputedStyle(el);
+      return ['auto', 'scroll'].some((o) => [overflow, overflowX, overflowY].includes(o));
+    });
+    scrollers.forEach((element) => element.addEventListener('scroll', updateBoxes));
+
+    return () => {
+      observer.disconnect();
+      scrollers.forEach((element) => element.removeEventListener('scroll', updateBoxes));
+    };
   }, [elements]);
 
   // Updates click targets when elements are removed

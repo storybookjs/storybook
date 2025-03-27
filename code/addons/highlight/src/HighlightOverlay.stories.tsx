@@ -139,6 +139,7 @@ const highlight = (
     styles?: CSSProperties;
     selectedStyles?: CSSProperties;
     keyframes?: string;
+    selectable?: boolean;
     menuListItems?: {
       id: string;
       title: string;
@@ -159,6 +160,7 @@ const highlight = (
       background: 'transparent',
       border: '1px solid black',
     },
+    selectable: options?.selectable ?? !!options?.menuListItems?.length,
     ...options,
   });
 
@@ -195,17 +197,12 @@ export const Dynamic = meta.story({
   },
 });
 
-export const Popover = meta.story({
+export const Scrolling = meta.story({
+  parameters: {
+    scroll: true,
+  },
   play: async () => {
     highlight(['div']);
-
-    await new Promise((resolve) => setTimeout(resolve, 200));
-
-    await userEvent.pointer({
-      target: document.body,
-      coords: { pageX: 470, pageY: 240 },
-      keys: '[MouseLeft]',
-    });
   },
 });
 
@@ -232,6 +229,22 @@ export const Styles = meta.story({
 export const ScrollIntoView = meta.story({
   play: async () => {
     channel.emit(SCROLL_INTO_VIEW, '#footer');
+  },
+});
+
+export const Popover = meta.story({
+  play: async () => {
+    highlight(['div'], {
+      selectable: true,
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
+    await userEvent.pointer({
+      target: document.body,
+      coords: { pageX: 470, pageY: 240 },
+      keys: '[MouseLeft]',
+    });
   },
 });
 

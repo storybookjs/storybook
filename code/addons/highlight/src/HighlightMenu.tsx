@@ -39,7 +39,7 @@ const Monospaced = styled.div<{ withIcon?: boolean }>(({ theme, withIcon = false
 
 const MenuListItems = ({ channel, target }: { channel: Channel; target: Box }) => (
   <Group>
-    {target.menuListItems?.map((item) => (
+    {target.menuListItems!.map((item) => (
       <ListItem
         key={item.id}
         onClick={() => {
@@ -97,7 +97,7 @@ export const HighlightMenu = ({
         <Group>
           <ListItem title={<Monospaced>{target.element.outerHTML}</Monospaced>} />
         </Group>
-        <MenuListItems channel={channel} target={target} />
+        {target.menuListItems?.length ? <MenuListItems channel={channel} target={target} /> : null}
       </Menu>
     );
   }
@@ -112,7 +112,9 @@ export const HighlightMenu = ({
             onClick={() => setSelected(undefined)}
           />
         </Group>
-        <MenuListItems channel={channel} target={selected} />
+        {selected.menuListItems?.length ? (
+          <MenuListItems channel={channel} target={selected} />
+        ) : null}
       </Menu>
     );
   }
@@ -122,13 +124,14 @@ export const HighlightMenu = ({
       <Group>
         {targets.map((target, index) => {
           const { element, top, left, width, height } = target;
+          const hasMenu = targets.length > 1 && targets.some((t) => t.menuListItems?.length);
           return (
             <ListItem
               key={`${top}-${left}-${width}-${height}-${index}`}
-              title={<Monospaced withIcon>{element.outerHTML}</Monospaced>}
-              right={targets.length > 1 && <ChevronSmallRightIcon fill="currentColor" />}
+              title={<Monospaced withIcon={hasMenu}>{element.outerHTML}</Monospaced>}
+              right={hasMenu ? <ChevronSmallRightIcon fill="currentColor" /> : null}
               onMouseEnter={() => setFocused(element)}
-              onClick={() => setSelected(target)}
+              onClick={hasMenu ? () => setSelected(target) : undefined}
             />
           );
         })}

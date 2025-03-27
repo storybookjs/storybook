@@ -11,6 +11,7 @@ import type { NormalizedProjectAnnotations } from 'storybook/internal/types';
 
 import actionAnnotations from 'storybook/actions/preview';
 import backgroundsAnnotations from 'storybook/backgrounds/preview';
+import measureAnnotations from 'storybook/measure/preview';
 import { composeConfigs, normalizeProjectAnnotations } from 'storybook/preview-api';
 import testAnnotations from 'storybook/test/preview';
 import viewportAnnotations from 'storybook/viewport/preview';
@@ -36,6 +37,8 @@ export function __definePreview<TRenderer extends Renderer>(
           (viewportAnnotations.default ?? viewportAnnotations)(),
           // @ts-expect-error CJS fallback
           (backgroundsAnnotations.default ?? backgroundsAnnotations)(),
+          // @ts-expect-error CJS fallback
+          (measureAnnotations.default ?? measureAnnotations)(),
           // @ts-expect-error CJS fallback
           (actionAnnotations.default ?? actionAnnotations)(),
           // @ts-expect-error CJS fallback

@@ -19,7 +19,6 @@
     "@storybook/addon-essentials": "file:../../code/addons/essentials",
     "@storybook/addon-jest": "file:../../code/addons/jest",
     "@storybook/addon-links": "file:../../code/addons/links",
-    "@storybook/addon-measure": "file:../../code/addons/measure",
     "@storybook/addon-mgx-gfm": "file:../../code/addons/mgx-gfm",
     "@storybook/addon-outline": "file:../../code/addons/outline",
     "@storybook/addon-storysource": "file:../../code/addons/storysource",

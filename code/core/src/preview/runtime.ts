@@ -35,6 +35,7 @@ export function setup() {
   global.addEventListener('unhandledrejection', unhandledRejectionListener);
 
   import('../highlight/preview');
+  import('../measure/preview');
 }
 
 // TODO: In the future, remove this call to make the module side-effect free

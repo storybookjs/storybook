@@ -108,7 +108,6 @@
     "@storybook/addon-jest": "workspace:*",
     "@storybook/addon-links": "workspace:*",
     "@storybook/addon-mdx-gfm": "workspace:*",
-    "@storybook/addon-measure": "workspace:*",
     "@storybook/addon-onboarding": "workspace:*",
     "@storybook/addon-outline": "workspace:*",
     "@storybook/addon-storysource": "workspace:*",

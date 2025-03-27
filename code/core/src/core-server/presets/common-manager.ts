@@ -6,6 +6,7 @@ import actionsManager from '../../actions/manager';
 import backgroundsManager from '../../backgrounds/manager';
 import componentTestingManager from '../../component-testing/manager';
 import controlsManager from '../../controls/manager';
+import measureManager from '../../measure/manager';
 import viewportManager from '../../viewport/manager';
 
 const TAG_FILTERS = 'tag-filters';
@@ -36,6 +37,7 @@ const tagFiltersManager = addons.register(TAG_FILTERS, (api) => {
 });
 
 export default [
+  measureManager,
   tagFiltersManager,
   actionsManager,
   backgroundsManager,

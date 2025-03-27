@@ -6,13 +6,6 @@ import { logger } from 'storybook/internal/node-logger';
 interface PresetOptions {
   configDir: string;
   /**
-   * Allow to use @storybook/addon-measure
-   *
-   * @default true
-   * @see https://storybook.js.org/addons/@storybook/addon-measure
-   */
-  measure?: boolean;
-  /**
    * Allow to use @storybook/addon-outline
    *
    * @default true
@@ -45,7 +38,7 @@ export function addons(options: PresetOptions) {
   const main = requireMain(options.configDir);
 
   // NOTE: The order of these addons is important.
-  return ['measure', 'outline']
+  return ['outline']
     .filter((key) => (options as any)[key] !== false)
     .filter((addon) => !checkInstalled(addon, main))
     .map((addon) => {

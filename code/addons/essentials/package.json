@@ -77,7 +77,6 @@
     "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
   },
   "dependencies": {
-    "@storybook/addon-measure": "workspace:*",
     "@storybook/addon-outline": "workspace:*",
     "ts-dedent": "^2.0.0"
   },
@@ -104,8 +103,6 @@
     ],
     "previewEntries": [
       "./src/preview.ts",
-      "./src/highlight/preview.ts",
-      "./src/measure/preview.ts",
       "./src/outline/preview.ts"
     ]
   },

@@ -6,7 +6,6 @@ export default {
   '@storybook/addon-mdx-gfm': '9.0.0-alpha.11',
   '@storybook/addon-jest': '9.0.0-alpha.11',
   '@storybook/addon-links': '9.0.0-alpha.11',
-  '@storybook/addon-measure': '9.0.0-alpha.11',
   '@storybook/addon-onboarding': '9.0.0-alpha.11',
   '@storybook/addon-outline': '9.0.0-alpha.11',
   '@storybook/addon-storysource': '9.0.0-alpha.11',

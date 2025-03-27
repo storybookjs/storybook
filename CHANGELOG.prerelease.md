@@ -1,3 +1,28 @@
+## 9.0.0-alpha.11
+
+- Addons: Move @storybook/addon-interactions into core - [#30916](https://github.com/storybookjs/storybook/pull/30916), thanks @valentinpalkovic!
+- Nextjs: Fix styled-jsx optimize vite warnings - [#30932](https://github.com/storybookjs/storybook/pull/30932), thanks @kasperpeulen!
+- React: Fix actImplementation is not a function - [#30929](https://github.com/storybookjs/storybook/pull/30929), thanks @kasperpeulen!
+
+## 9.0.0-alpha.10
+
+- Addon-Essentials: Remove addon-docs - [#30856](https://github.com/storybookjs/storybook/pull/30856), thanks @ndelangen!
+- Addon-docs: Fix non-string handling in Stories block - [#30913](https://github.com/storybookjs/storybook/pull/30913), thanks @JamesIves!
+- Controls: Embed addon-controls into the core - [#30864](https://github.com/storybookjs/storybook/pull/30864), thanks @ndelangen!
+- Core: Prebundle jsdoc-type-pratt-parser again - [#30923](https://github.com/storybookjs/storybook/pull/30923), thanks @kasperpeulen!
+- React: Ensure render functions and decorators are react components - [#30869](https://github.com/storybookjs/storybook/pull/30869), thanks @kasperpeulen!
+- Toolbars: Embed addon-toolbars into the core - [#30871](https://github.com/storybookjs/storybook/pull/30871), thanks @ndelangen!
+- Viewport: Embed addon-viewport in the core - [#30909](https://github.com/storybookjs/storybook/pull/30909), thanks @ndelangen!
+
+## 9.0.0-alpha.9
+
+- Addons: Update the Viewport and Background Addon - [#30841](https://github.com/storybookjs/storybook/pull/30841), thanks @ndelangen!
+- CLI: Add React Native `.rnstorybook` CLI automigration - [#30882](https://github.com/storybookjs/storybook/pull/30882), thanks @shilman!
+- CLI: Add detection for the storybook package being behind any other core packages - [#30861](https://github.com/storybookjs/storybook/pull/30861), thanks @kasperpeulen!
+- CLI: Make sure that the add commands logs all output to the console - [#30865](https://github.com/storybookjs/storybook/pull/30865), thanks @kasperpeulen!
+- Next: Fix react aliases in next vite plugin - [#30914](https://github.com/storybookjs/storybook/pull/30914), thanks @kasperpeulen!
+- Test: Handle non-configurable properties in instrumenter for expect.toThrow - [#30876](https://github.com/storybookjs/storybook/pull/30876), thanks @kasperpeulen!
+
 ## 9.0.0-alpha.8
 
 - Angular: Export all files in Angular package.json - [#30849](https://github.com/storybookjs/storybook/pull/30849), thanks @kasperpeulen!

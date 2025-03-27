@@ -1,3 +1,5 @@
+import type { PARAM_KEY } from './constants';
+
 export interface Background {
   name: string;
   value: string;
@@ -13,33 +15,19 @@ export interface GridConfig {
   offsetY?: number;
 }
 
-export interface Config {
-  options: BackgroundMap;
-  disable: boolean;
-  grid: GridConfig;
-}
-
 export type GlobalState = { value: string | undefined; grid: boolean };
 export type GlobalStateUpdate = Partial<GlobalState>;
 
 export interface BackgroundsParameters {
-  /**
-   * Backgrounds configuration
-   *
-   * @see https://storybook.js.org/docs/essentials/backgrounds#parameters
-   */
-  backgrounds: {
-    /** Default background color */
-    default?: string;
-
+  [PARAM_KEY]: {
     /** Remove the addon panel and disable the addon's behavior */
     disable?: boolean;
 
     /** Configuration for the background grid */
-    grid?: Partial<GridConfig>;
+    grid?: GridConfig;
 
     /** Available background colors */
-    values?: Array<Background>;
+    options?: BackgroundMap;
   };
 }
 
@@ -49,5 +37,5 @@ export interface BackgroundsGlobals {
    *
    * @see https://storybook.js.org/docs/essentials/backgrounds#globals
    */
-  backgrounds: GlobalState;
+  [PARAM_KEY]: GlobalState | GlobalState['value'];
 }

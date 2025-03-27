@@ -32,10 +32,16 @@ async function run() {
     'storybook/actions/manager',
     'storybook/actions/decorator',
 
+    'storybook/viewport',
+    'storybook/viewport/preview',
+
     'storybook/internal/builder-manager',
     'storybook/internal/channels',
     'storybook/internal/client-logger',
     'storybook/internal/common',
+    'storybook/internal/component-testing',
+    'storybook/internal/component-testing/preview',
+    'storybook/internal/component-testing/manager',
     'storybook/internal/components',
     'storybook/internal/core-events',
     'storybook/internal/core-server',

@@ -12,7 +12,7 @@ import {
   experimental_getTestProviderStore,
 } from 'storybook/internal/core-server';
 import { cleanPaths, oneWayHash, sanitizeError, telemetry } from 'storybook/internal/telemetry';
-import type { Options, PresetProperty, PresetPropertyFn, StoryId } from 'storybook/internal/types';
+import type { Options, PresetPropertyFn, StoryId } from 'storybook/internal/types';
 
 import { isEqual } from 'es-toolkit';
 import picocolors from 'picocolors';
@@ -227,25 +227,4 @@ export const staticDirs: PresetPropertyFn<'staticDirs'> = async (values = [], op
     },
     ...values,
   ];
-};
-
-export const managerEntries: PresetProperty<'managerEntries'> = async (entry = [], options) => {
-  // Throw an error when addon-interactions is used.
-  // This is done by reading an annotation defined in addon-interactions, which although not ideal,
-  // is a way to handle addon conflict without having to worry about the order of which they are registered
-  const annotation = await options.presets.apply('ADDON_INTERACTIONS_IN_USE', false);
-  if (annotation) {
-    // eslint-disable-next-line local-rules/no-uncategorized-errors
-    const error = new Error(
-      dedent`
-        You have both "@storybook/addon-interactions" and "@storybook/addon-test" listed as addons in your Storybook config. This is not allowed, as @storybook/addon-test is a replacement for @storybook/addon-interactions.
-        Please remove "@storybook/addon-interactions" from the addons array in your main Storybook config at ${options.configDir} and remove the dependency from your package.json file.
-      `
-    );
-    error.name = 'AddonConflictError';
-    throw error;
-  }
-
-  // for whatever reason seems like the return type of managerEntries is not correct (it expects never instead of string[])
-  return entry as never;
 };

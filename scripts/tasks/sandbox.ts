@@ -79,6 +79,8 @@ export const sandbox: Task = {
 
     const shouldAddVitestIntegration = !details.template.skipTasks?.includes('vitest-integration');
 
+    options.addon.push('@storybook/addon-a11y');
+
     if (shouldAddVitestIntegration) {
       extraDeps.push('happy-dom', 'vitest', 'playwright', '@vitest/browser');
 
@@ -94,7 +96,7 @@ export const sandbox: Task = {
       //   extraDeps.push('@testing-library/angular', '@analogjs/vitest-angular');
       // }
 
-      options.addon = [...options.addon, '@storybook/addon-test', '@storybook/addon-a11y'];
+      options.addon.push('@storybook/addon-test');
     }
 
     let startTime = now();

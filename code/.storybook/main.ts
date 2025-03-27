@@ -34,20 +34,16 @@ const config = defineMain({
       titlePrefix: 'blocks',
     },
     {
+      directory: '../addons/a11y/src',
+      titlePrefix: 'addons/accessibility',
+    },
+    {
       directory: '../addons/a11y/template/stories',
-      titlePrefix: 'addons/a11y',
+      titlePrefix: 'addons/accessibility',
     },
     {
       directory: '../addons/backgrounds/template/stories',
       titlePrefix: 'addons/backgrounds',
-    },
-    {
-      directory: '../addons/controls/src',
-      titlePrefix: 'addons/controls',
-    },
-    {
-      directory: '../addons/controls/template/stories',
-      titlePrefix: 'addons/controls',
     },
     {
       directory: '../addons/docs/template/stories',
@@ -58,28 +54,12 @@ const config = defineMain({
       titlePrefix: 'addons/links',
     },
     {
-      directory: '../addons/viewport/template/stories',
-      titlePrefix: 'addons/viewport',
-    },
-    {
-      directory: '../addons/toolbars/template/stories',
-      titlePrefix: 'addons/toolbars',
-    },
-    {
       directory: '../addons/themes/template/stories',
       titlePrefix: 'addons/themes',
     },
     {
       directory: '../addons/onboarding/src',
       titlePrefix: 'addons/onboarding',
-    },
-    {
-      directory: '../addons/interactions/src',
-      titlePrefix: 'addons/interactions',
-    },
-    {
-      directory: '../addons/interactions/template/stories',
-      titlePrefix: 'addons/interactions/tests',
     },
     {
       directory: '../addons/test/src/components',
@@ -92,6 +72,7 @@ const config = defineMain({
   ],
   addons: [
     '@storybook/addon-themes',
+    '@storybook/addon-docs',
     '@storybook/addon-essentials',
     '@storybook/addon-storysource',
     '@storybook/addon-designs',
@@ -101,7 +82,6 @@ const config = defineMain({
   ],
   previewAnnotations: [
     './core/template/stories/preview.ts',
-    './addons/toolbars/template/stories/preview.ts',
     './renderers/react/template/components/index.js',
   ],
   build: {
@@ -127,8 +107,6 @@ const config = defineMain({
     disableTelemetry: true,
   },
   features: {
-    viewportStoryGlobals: true,
-    backgroundsStoryGlobals: true,
     developmentModeForBuild: true,
   },
   viteFinal: async (viteConfig, { configType }) => {

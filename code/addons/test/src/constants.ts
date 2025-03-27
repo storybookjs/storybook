@@ -12,7 +12,6 @@ export const A11Y_PANEL_ID = `${A11Y_ADDON_ID}/panel`;
 
 export const TUTORIAL_VIDEO_LINK = 'https://youtu.be/Waht9qq7AoA';
 export const DOCUMENTATION_LINK = 'writing-tests/test-addon';
-export const DOCUMENTATION_DISCREPANCY_LINK = `${DOCUMENTATION_LINK}#what-happens-when-there-are-different-test-results-in-multiple-environments`;
 export const DOCUMENTATION_FATAL_ERROR_LINK = `${DOCUMENTATION_LINK}#what-happens-if-vitest-itself-has-an-error`;
 
 export const COVERAGE_DIRECTORY = 'coverage';

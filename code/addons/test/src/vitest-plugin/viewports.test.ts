@@ -1,9 +1,8 @@
 /* eslint-disable no-underscore-dangle */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { INITIAL_VIEWPORTS } from '@storybook/addon-viewport';
-
 import { page } from '@vitest/browser/context';
+import { INITIAL_VIEWPORTS } from 'storybook/viewport';
 
 import {
   DEFAULT_VIEWPORT_DIMENSIONS,

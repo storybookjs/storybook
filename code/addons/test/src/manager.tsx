@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 
-import { AddonPanel } from 'storybook/internal/components';
 import { type Addon_TestProviderType, Addon_TypesEnum } from 'storybook/internal/types';
 
 import {
@@ -9,12 +8,9 @@ import {
   store,
   testProviderStore,
 } from '#manager-store';
-import type { Combo } from 'storybook/manager-api';
-import { Consumer, addons, types } from 'storybook/manager-api';
+import { addons } from 'storybook/manager-api';
 
 import { GlobalErrorContext, GlobalErrorModal } from './components/GlobalErrorModal';
-import { Panel } from './components/Panel';
-import { PanelTitle } from './components/PanelTitle';
 import { SidebarContextMenu } from './components/SidebarContextMenu';
 import { TestProviderRender } from './components/TestProviderRender';
 import { A11Y_PANEL_ID, ADDON_ID, PANEL_ID, TEST_PROVIDER_ID } from './constants';
@@ -100,23 +96,4 @@ addons.register(ADDON_ID, (api) => {
       },
     } satisfies Omit<Addon_TestProviderType, 'id'>);
   }
-
-  const filter = ({ state }: Combo) => {
-    return {
-      storyId: state.storyId,
-    };
-  };
-
-  addons.add(PANEL_ID, {
-    type: types.PANEL,
-    title: () => <PanelTitle />,
-    match: ({ viewMode }) => viewMode === 'story',
-    render: ({ active }) => {
-      return (
-        <AddonPanel active={!!active}>
-          <Consumer filter={filter}>{({ storyId }) => <Panel storyId={storyId} />}</Consumer>
-        </AddonPanel>
-      );
-    },
-  });
 });

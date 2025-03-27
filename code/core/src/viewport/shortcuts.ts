@@ -1,7 +1,6 @@
 import { type API } from 'storybook/manager-api';
 
 import { ADDON_ID } from './constants';
-import { initialGlobals as defaultGlobals } from './preview';
 
 const getCurrentViewportIndex = (viewportsKeys: string[], current: string): number =>
   viewportsKeys.indexOf(current);
@@ -53,7 +52,7 @@ export const registerShortcuts = async (
     defaultShortcut: ['alt', 'control', 'V'],
     actionName: 'reset',
     action: () => {
-      updateGlobals(defaultGlobals);
+      updateGlobals({ value: undefined, isRotated: false });
     },
   });
 };

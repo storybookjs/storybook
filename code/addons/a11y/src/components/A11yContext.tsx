@@ -7,8 +7,6 @@ import {
   type StoryFinishedPayload,
 } from 'storybook/internal/core-events';
 
-import { HIGHLIGHT } from '@storybook/addon-highlight';
-
 import type { AxeResults, Result } from 'axe-core';
 import {
   experimental_useStatusStore,
@@ -22,6 +20,7 @@ import {
 import type { Report } from 'storybook/preview-api';
 import { convert, themes } from 'storybook/theming';
 
+import { HIGHLIGHT } from '../../../highlight/src/constants';
 import { ADDON_ID, EVENTS, TEST_PROVIDER_ID } from '../constants';
 import type { A11yParameters } from '../params';
 import type { A11YReport } from '../types';

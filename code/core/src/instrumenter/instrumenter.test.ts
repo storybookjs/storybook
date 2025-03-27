@@ -9,7 +9,8 @@ import { global } from '@storybook/global';
 
 import { addons } from 'storybook/preview-api';
 
-import { EVENTS, Instrumenter } from './instrumenter';
+import { EVENTS } from './EVENTS';
+import { Instrumenter } from './instrumenter';
 import type { Options } from './types';
 
 const mocks = await vi.hoisted(async () => {

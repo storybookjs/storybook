@@ -1,13 +1,13 @@
 import { definePreview } from 'storybook/preview-api';
 
-import { PARAM_KEY as KEY } from './constants';
+import { PARAM_KEY } from './constants';
 import { withBackgroundAndGrid } from './decorator';
 import type { BackgroundsParameters, GlobalState } from './types';
 
-export const decorators = [withBackgroundAndGrid];
+const decorators = [withBackgroundAndGrid];
 
-export const parameters = {
-  [KEY]: {
+const parameters = {
+  [PARAM_KEY]: {
     grid: {
       cellSize: 20,
       opacity: 0.5,
@@ -17,9 +17,11 @@ export const parameters = {
   },
 } satisfies Partial<BackgroundsParameters>;
 
-export const initialGlobals: Record<string, GlobalState> = {
-  [KEY]: { value: undefined, grid: false },
+const initialGlobals: Record<string, GlobalState> = {
+  [PARAM_KEY]: { value: undefined, grid: false },
 };
+
+console.log('the backgrounds preview file is loaded!');
 
 export default () =>
   definePreview({

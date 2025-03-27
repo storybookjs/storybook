@@ -69,7 +69,14 @@ export const getConfig: ManagerBuilder['getConfig'] = async (options) => {
     target: ['chrome100', 'safari15', 'firefox91'],
     platform: 'browser',
     bundle: true,
-    minify: true,
+    minify: false,
+    minifyWhitespace: false,
+    minifyIdentifiers: false,
+    minifySyntax: false,
+    metafile: true,
+
+    // treeShaking: true,
+
     sourcemap: false,
     conditions: ['browser', 'module', 'default'],
 
@@ -150,6 +157,8 @@ const starter: StarterFunction = async function* starterGeneratorFn({
 
   yield;
 
+  console.log({ addonsDir, metafile: compilation.metafile });
+
   const coreDirOrigin = join(dirname(require.resolve('storybook/package.json')), 'dist', 'manager');
 
   router.use(
@@ -170,6 +179,13 @@ const starter: StarterFunction = async function* starterGeneratorFn({
   );
 
   const { cssFiles, jsFiles } = await readOrderedFiles(addonsDir, compilation?.outputFiles);
+
+  if (compilation.metafile && options.outputDir) {
+    await writeFile(
+      join(options.outputDir, 'metafile.json'),
+      JSON.stringify(compilation.metafile, null, 2)
+    );
+  }
 
   // Build additional global values
   const globals: Record<string, any> = await buildFrameworkGlobalsFromOptions(options);

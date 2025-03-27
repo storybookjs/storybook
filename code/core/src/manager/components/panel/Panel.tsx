@@ -17,28 +17,73 @@ export interface SafeTabProps {
   children: Addon_BaseType['render'];
 }
 
-class SafeTab extends Component<SafeTabProps, { hasError: boolean }> {
+interface SafeTabState {
+  hasError: boolean;
+  error?: Error;
+}
+
+class SafeTab extends Component<SafeTabProps, SafeTabState> {
   constructor(props: SafeTabProps) {
     super(props);
     this.state = { hasError: false };
   }
 
   componentDidCatch(error: Error, info: any) {
-    this.setState({ hasError: true });
-
-    console.error(error, info);
+    this.setState({ hasError: true, error });
+    console.error(`Addon Error: ${error.message}`, info);
   }
 
   // @ts-expect-error (we know this is broken)
   render() {
-    const { hasError } = this.state;
-    const { children } = this.props;
+    const { hasError, error } = this.state;
+    const { children, id } = this.props;
+
     if (hasError) {
-      return <h1>Something went wrong.</h1>;
+      return (
+        <ErrorDisplay>
+          <ErrorTitle>Addon Error</ErrorTitle>
+          <ErrorDescription>
+            This addon encountered an error. Other addons and stories remain accessible.
+          </ErrorDescription>
+          {error && <ErrorMessage>{error.message}</ErrorMessage>}
+        </ErrorDisplay>
+      );
     }
+
     return children;
   }
 }
+
+const ErrorDisplay = styled.div(({ theme }) => ({
+  padding: '16px',
+  fontFamily: theme.typography.fonts.base,
+  color: theme.color.defaultText,
+  backgroundColor: theme.background.app,
+  border: `1px solid ${theme.color.border}`,
+  borderRadius: theme.appBorderRadius,
+  margin: '16px',
+}));
+
+const ErrorTitle = styled.h3(({ theme }) => ({
+  margin: '0 0 8px',
+  color: theme.color.negativeText,
+  fontWeight: theme.typography.weight.bold,
+}));
+
+const ErrorDescription = styled.p(({ theme }) => ({
+  margin: '0 0 8px',
+}));
+
+const ErrorMessage = styled.pre(({ theme }) => ({
+  whiteSpace: 'pre-wrap',
+  overflow: 'auto',
+  fontSize: theme.typography.size.s1,
+  padding: '8px',
+  backgroundColor: theme.background.content,
+  border: `1px solid ${theme.color.border}`,
+  borderRadius: theme.appBorderRadius,
+  margin: 0,
+}));
 
 export const AddonPanel = React.memo<{
   selectedPanel?: string;

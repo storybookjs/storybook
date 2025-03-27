@@ -22,15 +22,13 @@ test.describe('addon-a11y', () => {
     // check that the highlight is visible
     const imageElement = sbPage.previewIframe().getByRole('img');
     expect(await imageElement.evaluate((el) => getComputedStyle(el).outline)).toBe(
-      'rgba(255, 68, 0, 0.6) solid 1px'
+      'rgba(255, 68, 0, 0.6) dashed 1px'
     );
 
     await page.getByRole('button', { name: 'Hide highlights' }).click();
 
     // check that the highlight is not visible
-    expect(await imageElement.evaluate((el) => getComputedStyle(el).outline)).toBe(
-      'rgb(0, 0, 0) none 0px'
-    );
+    expect(await imageElement.evaluate((el) => getComputedStyle(el).outline)).toMatch(/0px/);
   });
 
   test('should rerun a11y checks when clicking the rerun button', async ({ page }) => {

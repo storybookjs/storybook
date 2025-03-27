@@ -21,7 +21,6 @@
     "@storybook/addon-docs": "file:../../../code/addons/docs",
     "@storybook/addon-essentials": "file:../../../code/addons/essentials",
     "@storybook/addon-highlight": "file:../../../code/addons/highlight",
-    "@storybook/addon-interactions": "file:../../../code/addons/interactions",
     "@storybook/addon-jest": "file:../../../code/addons/jest",
     "@storybook/addon-links": "file:../../../code/addons/links",
     "@storybook/addon-measure": "file:../../../code/addons/measure",
@@ -76,7 +75,6 @@
   "devDependencies": {
     "@playwright/experimental-ct-vue": "1.48.1",
     "@storybook/addon-essentials": "^8.0.0",
-    "@storybook/addon-interactions": "^8.0.0",
     "@storybook/vue3": "^8.0.0",
     "@storybook/vue3-vite": "^8.0.0",
     "@testing-library/jest-dom": "^6.6.3",

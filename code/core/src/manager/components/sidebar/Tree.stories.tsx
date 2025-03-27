@@ -1,4 +1,3 @@
-// @TODO: use addon-interactions and remove the rule disable above
 import React, { useState } from 'react';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';

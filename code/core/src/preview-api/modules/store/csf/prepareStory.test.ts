@@ -123,6 +123,7 @@ describe('prepareStory', () => {
             a: { name: 'component' },
             b: { name: 'component' },
             nested: { z: { name: 'component' }, y: { name: 'component' } },
+            throwPlayFunctionExceptions: false,
           },
         },
         {
@@ -132,6 +133,7 @@ describe('prepareStory', () => {
             b: { name: 'global' },
             c: { name: 'global' },
             nested: { z: { name: 'global' }, x: { name: 'global' } },
+            throwPlayFunctionExceptions: false,
           },
         }
       );
@@ -142,6 +144,7 @@ describe('prepareStory', () => {
         b: { name: 'component' },
         c: { name: 'global' },
         nested: { z: 'story', y: { name: 'component' }, x: { name: 'global' } },
+        throwPlayFunctionExceptions: false,
       });
     });
 
@@ -152,7 +155,7 @@ describe('prepareStory', () => {
         { render: (args: any) => {} }
       );
 
-      expect(parameters).toEqual({ __isArgsStory: true });
+      expect(parameters).toEqual({ __isArgsStory: true, throwPlayFunctionExceptions: false });
     });
 
     it('does not set `__isArgsStory` if `render` does not take args', () => {
@@ -162,7 +165,7 @@ describe('prepareStory', () => {
         { render: () => {} }
       );
 
-      expect(parameters).toEqual({ __isArgsStory: false });
+      expect(parameters).toEqual({ __isArgsStory: false, throwPlayFunctionExceptions: false });
     });
   });
 

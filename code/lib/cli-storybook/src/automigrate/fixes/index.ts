@@ -1,7 +1,6 @@
 import { csfFactories } from '../../codemod/csf-factories';
 import type { CommandFix, Fix } from '../types';
 import { addonA11yAddonTest } from './addon-a11y-addon-test';
-import { addonEssentialsRemoveDocs } from './addon-essentials-remove-docs';
 import { addonExperimentalTest } from './addon-experimental-test';
 import { addonPostCSS } from './addon-postcss';
 import { addonsAPI } from './addons-api';
@@ -20,6 +19,7 @@ import { mdxToCSF } from './mdx-to-csf';
 import { newFrameworks } from './new-frameworks';
 import { removeReactDependency } from './prompt-remove-react';
 import { reactDocgen } from './react-docgen';
+import { removeAddonInteractions } from './remove-addon-interactions';
 import { removeArgtypesRegex } from './remove-argtypes-regex';
 import { removedGlobalClientAPIs } from './remove-global-client-apis';
 import { removeLegacyMDX1 } from './remove-legacymdx1';
@@ -72,8 +72,8 @@ export const allFixes: Fix[] = [
   consolidatedImports,
   addonExperimentalTest,
   rendererToFramework,
-  addonEssentialsRemoveDocs,
   rnstorybookConfig,
+  removeAddonInteractions,
 ];
 
 export const initFixes: Fix[] = [eslintPlugin];

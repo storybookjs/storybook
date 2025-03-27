@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 
-import { Badge, Button, ScrollArea } from 'storybook/internal/components';
+import { Badge, Button } from 'storybook/internal/components';
 
 import { SyncIcon } from '@storybook/icons';
 
@@ -15,12 +15,9 @@ import { Report } from './Report/Report';
 import { Tabs } from './Tabs';
 import { TestDiscrepancyMessage } from './TestDiscrepancyMessage';
 
-const Icon = styled(SyncIcon)({
-  marginRight: 4,
-});
-
-const RotatingIcon = styled(Icon)(({ theme }) => ({
+const RotatingIcon = styled(SyncIcon)(({ theme }) => ({
   animation: `${theme.animation.rotate360} 1s linear infinite;`,
+  margin: 4,
 }));
 
 const Tab = styled.div({
@@ -42,6 +39,7 @@ const Centered = styled.span(({ theme }) => ({
   div: {
     display: 'flex',
     flexDirection: 'column',
+    alignItems: 'center',
     gap: 8,
   },
   p: {
@@ -110,7 +108,7 @@ export const A11YPanel: React.FC = () => {
           <Report
             items={passes}
             type={RuleType.PASS}
-            empty="No accessibility checks passed."
+            empty="No passing accessibility checks found."
             handleSelectionChange={handleSelectionChange}
             selectedItems={selectedItems}
             toggleOpen={toggleOpen}
@@ -122,7 +120,7 @@ export const A11YPanel: React.FC = () => {
       {
         label: (
           <Tab>
-            Incomplete
+            Inconclusive
             <Count status="neutral">{incomplete.length}</Count>
           </Tab>
         ),
@@ -130,7 +128,7 @@ export const A11YPanel: React.FC = () => {
           <Report
             items={incomplete}
             type={RuleType.INCOMPLETION}
-            empty="No accessibility checks incomplete."
+            empty="No inconclusive accessibility checks found."
             handleSelectionChange={handleSelectionChange}
             selectedItems={selectedItems}
             toggleOpen={toggleOpen}
@@ -146,14 +144,16 @@ export const A11YPanel: React.FC = () => {
     <>
       {discrepancy && <TestDiscrepancyMessage discrepancy={discrepancy} />}
       {status === 'ready' || status === 'ran' ? (
-        <>
-          <ScrollArea vertical horizontal>
-            <Tabs key="tabs" tabs={tabs} />
-          </ScrollArea>
-        </>
+        <Tabs key="tabs" tabs={tabs} />
       ) : (
         <Centered style={{ marginTop: discrepancy ? '1em' : 0 }}>
-          {status === 'initial' && 'Initializing...'}
+          {status === 'initial' && (
+            <div>
+              <RotatingIcon size={12} />
+              <strong>Preparing accessibility scan</strong>
+              <p>Please wait while the addon is initializing...</p>
+            </div>
+          )}
           {status === 'manual' && (
             <>
               <div>
@@ -173,9 +173,11 @@ export const A11YPanel: React.FC = () => {
             </>
           )}
           {status === 'running' && (
-            <>
-              <RotatingIcon size={12} /> Please wait while the accessibility scan is running ...
-            </>
+            <div>
+              <RotatingIcon size={12} />
+              <strong>Accessibility scan in progress</strong>
+              <p>Please wait while the accessibility scan is running...</p>
+            </div>
           )}
           {status === 'error' && (
             <>

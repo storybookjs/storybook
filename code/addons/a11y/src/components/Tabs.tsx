@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import { IconButton, TooltipNote, WithTooltip } from 'storybook/internal/components';
+import { IconButton, ScrollArea, TooltipNote, WithTooltip } from 'storybook/internal/components';
 
 import { CollapseIcon, ExpandAltIcon, EyeCloseIcon, EyeIcon, SyncIcon } from '@storybook/icons';
 
@@ -11,29 +11,11 @@ import { styled } from 'storybook/theming';
 import type { RuleType } from '../types';
 import { useA11yContext } from './A11yContext';
 
-// TODO: reuse the Tabs component from storybook/theming instead of re-building identical functionality
-
 const Container = styled.div({
   width: '100%',
   position: 'relative',
   minHeight: '100%',
 });
-
-const GlobalToggle = styled.div(() => ({
-  alignItems: 'center',
-  cursor: 'pointer',
-  display: 'flex',
-  fontSize: 13,
-  height: 40,
-  padding: '0 15px',
-
-  input: {
-    marginBottom: 0,
-    marginLeft: 10,
-    marginRight: 0,
-    marginTop: -1,
-  },
-}));
 
 const Item = styled.button<{ active?: boolean }>(
   ({ theme }) => ({
@@ -64,19 +46,39 @@ const Item = styled.button<{ active?: boolean }>(
       : {}
 );
 
-const TabsWrapper = styled.div({});
-const ActionsWrapper = styled.div({ display: 'flex', gap: 6 });
-
-const List = styled.div(({ theme }) => ({
+const Subnav = styled.div(({ theme }) => ({
   boxShadow: `${theme.appBorderColor} 0 -1px 0 0 inset`,
   background: theme.background.app,
+  position: 'sticky',
+  top: 0,
+  zIndex: 1,
   display: 'flex',
-  flexWrap: 'wrap',
   alignItems: 'center',
-  justifyContent: 'space-between',
   whiteSpace: 'nowrap',
+  overflow: 'auto',
   paddingRight: 10,
+  gap: 6,
 }));
+
+const TabsWrapper = styled.div({});
+const ActionsWrapper = styled.div({
+  display: 'flex',
+  flexBasis: '100%',
+  justifyContent: 'flex-end',
+  containerType: 'inline-size',
+  // 96px is the total width of the buttons without labels
+  minWidth: 96,
+  gap: 6,
+});
+
+const ToggleButton = styled(IconButton)({
+  // 193px is the total width of the action buttons when the label is visible
+  '@container (max-width: 193px)': {
+    span: {
+      display: 'none',
+    },
+  },
+});
 
 interface TabsProps {
   tabs: {
@@ -113,7 +115,7 @@ export const Tabs: React.FC<TabsProps> = ({ tabs }) => {
 
   return (
     <Container ref={ref}>
-      <List>
+      <Subnav>
         <TabsWrapper>
           {tabs.map((tab, index) => (
             <Item
@@ -137,10 +139,10 @@ export const Tabs: React.FC<TabsProps> = ({ tabs }) => {
             tooltip={<TooltipNote note="Highlight elements with accessibility violations" />}
             trigger="hover"
           >
-            <IconButton onClick={toggleHighlight} active={highlighted}>
+            <ToggleButton onClick={toggleHighlight} active={highlighted}>
               {highlighted ? <EyeCloseIcon /> : <EyeIcon />}
-              {highlighted ? 'Hide highlights' : 'Show highlights'}
-            </IconButton>
+              <span>{highlighted ? 'Hide highlights' : 'Show highlights'}</span>
+            </ToggleButton>
           </WithTooltip>
           <WithTooltip
             as="div"
@@ -168,8 +170,10 @@ export const Tabs: React.FC<TabsProps> = ({ tabs }) => {
             </IconButton>
           </WithTooltip>
         </ActionsWrapper>
-      </List>
-      {tabs.find((t) => t.type === activeTab)?.panel}
+      </Subnav>
+      <ScrollArea vertical horizontal>
+        {tabs.find((t) => t.type === activeTab)?.panel}
+      </ScrollArea>
     </Container>
   );
 };

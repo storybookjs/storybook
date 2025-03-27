@@ -1,6 +1,6 @@
 {
   "name": "@storybook/experimental-nextjs-vite",
-  "version": "9.0.0-alpha.9",
+  "version": "9.0.0-alpha.11",
   "description": "Storybook for Next.js and Vite",
   "keywords": [
     "storybook",
@@ -108,7 +108,7 @@
     "@storybook/react": "workspace:*",
     "@storybook/react-vite": "workspace:*",
     "styled-jsx": "5.1.6",
-    "vite-plugin-storybook-nextjs": "2.0.0--canary.33.f53ad45.0"
+    "vite-plugin-storybook-nextjs": "2.0.0--canary.33.7c1f48f.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

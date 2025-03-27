@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-test",
-  "version": "9.0.0-alpha.9",
+  "version": "9.0.0-alpha.11",
   "description": "Storybook addon for testing components",
   "keywords": [
     "storybook-addons",
@@ -59,11 +59,6 @@
       "import": "./dist/node/coverage-reporter.mjs",
       "require": "./dist/node/coverage-reporter.js"
     },
-    "./preview": {
-      "types": "./dist/preview.d.ts",
-      "import": "./dist/preview.mjs",
-      "require": "./dist/preview.js"
-    },
     "./manager": "./dist/manager.js",
     "./preset": "./dist/preset.js",
     "./postinstall": "./dist/postinstall.js",
@@ -76,9 +71,6 @@
     "*": {
       "*": [
         "dist/index.d.ts"
-      ],
-      "preview": [
-        "dist/preview.d.ts"
       ]
     }
   },
@@ -100,23 +92,19 @@
   "dependencies": {
     "@storybook/global": "^5.0.0",
     "@storybook/icons": "^1.4.0",
-    "polished": "^4.2.2",
     "prompts": "^2.4.0",
     "ts-dedent": "^2.2.0"
   },
   "devDependencies": {
-    "@devtools-ds/object-inspector": "^1.1.2",
     "@types/istanbul-lib-report": "^3.0.3",
     "@types/node": "^22.0.0",
     "@types/semver": "^7",
     "@vitest/browser": "^3.0.9",
     "@vitest/runner": "^3.0.9",
-    "ansi-to-html": "^0.7.2",
     "boxen": "^8.0.1",
     "es-toolkit": "^1.22.0",
     "execa": "^8.0.1",
     "find-up": "^7.0.0",
-    "formik": "^2.2.9",
     "istanbul-lib-report": "^3.0.1",
     "pathe": "^1.1.2",
     "picocolors": "^1.1.0",
@@ -125,7 +113,6 @@
     "semver": "^7.6.3",
     "sirv": "^2.0.4",
     "slash": "^5.0.0",
-    "strip-ansi": "^7.1.0",
     "tinyglobby": "^0.2.10",
     "tree-kill": "^1.2.2",
     "ts-dedent": "^2.2.0",
@@ -160,9 +147,6 @@
     ],
     "managerEntries": [
       "./src/manager.tsx"
-    ],
-    "previewEntries": [
-      "./src/preview.ts"
     ],
     "nodeEntries": [
       "./src/preset.ts",

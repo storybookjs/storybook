@@ -37,6 +37,10 @@ export const parameters = {
 
   backgrounds: {
     disable: false,
+    options: {
+      light: { name: 'light', value: '#F8F8F8' },
+      dark: { name: 'dark', value: '#333' },
+    },
   },
 };
 

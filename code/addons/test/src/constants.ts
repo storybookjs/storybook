@@ -25,7 +25,7 @@ export const SUPPORTED_FRAMEWORKS = [
 
 export const SUPPORTED_RENDERERS = ['@storybook/react', '@storybook/svelte', '@storybook/vue3'];
 
-export const storeOptions: StoreOptions<StoreState> = {
+export const storeOptions = {
   id: ADDON_ID,
   initialState: {
     config: {
@@ -59,7 +59,7 @@ export const storeOptions: StoreOptions<StoreState> = {
       coverageSummary: undefined,
     },
   },
-};
+} satisfies StoreOptions<StoreState>;
 
 export const STORE_CHANNEL_EVENT_NAME = `UNIVERSAL_STORE:${storeOptions.id}`;
 export const STATUS_STORE_CHANNEL_EVENT_NAME = 'UNIVERSAL_STORE:storybook/status';

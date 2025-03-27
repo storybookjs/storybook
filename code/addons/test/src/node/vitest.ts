@@ -9,7 +9,7 @@ import {
   STATUS_TYPE_ID_COMPONENT_TEST,
   storeOptions,
 } from '../constants';
-import type { ErrorLike, StoreEvent, StoreState } from '../types';
+import type { ErrorLike, FatalErrorEvent, StoreEvent, StoreState } from '../types';
 import { TestManager } from './test-manager';
 
 const require = createRequire(import.meta.url);
@@ -57,45 +57,39 @@ const exit = (code = 0) => {
   process.exit(code);
 };
 
+const createUnhandledErrorHandler = (message: string) => async (error: ErrorLike) => {
+  try {
+    const payload: FatalErrorEvent['payload'] = {
+      message,
+      error: {
+        message: error.message,
+        name: error.name,
+        stack: error.stack,
+        cause: error.cause as ErrorLike,
+      },
+    };
+    // Node.js will exit immediately in these situations, so we can't send an event via the universal store
+    // because the process will exit before the event is sent.
+    // we're sending it manually instead, so the parent process can forward it to the store.
+    process.send?.({
+      type: 'uncaught-error',
+      payload,
+    });
+  } finally {
+    console.log('finally exiting the process');
+    exit(1);
+  }
+};
+
+process.on(
+  'uncaughtException',
+  createUnhandledErrorHandler('Uncaught exception in the test runner process')
+);
+process.on(
+  'unhandledRejection',
+  createUnhandledErrorHandler('Unhandled rejection in the test runner process')
+);
+
 process.on('exit', exit);
 process.on('SIGINT', () => exit(0));
 process.on('SIGTERM', () => exit(0));
-
-process.on('uncaughtException', (error) => {
-  // FIXME: if the error is actually from the store not working, this won't finish
-  store.untilReady().then(() => {
-    store.send({
-      type: 'FATAL_ERROR',
-      payload: {
-        message: 'Uncaught exception in the test runner process',
-        error: {
-          message: error.message,
-          name: error.name,
-          stack: error.stack,
-          cause: error.cause as ErrorLike,
-        },
-      },
-    });
-  });
-  exit(1);
-});
-
-process.on('unhandledRejection', (reason) => {
-  const error = reason as ErrorLike | undefined;
-  // FIXME: if the error is actually from the store not working, this won't finish
-  store.untilReady().then(() => {
-    store.send({
-      type: 'FATAL_ERROR',
-      payload: {
-        message: 'Unhandled rejection in the test runner process',
-        error: {
-          message: error?.message ?? 'Unknown error',
-          name: error?.name ?? 'Unhandled rejection',
-          stack: error?.stack,
-          cause: error?.cause as ErrorLike,
-        },
-      },
-    });
-  });
-  exit(1);
-});

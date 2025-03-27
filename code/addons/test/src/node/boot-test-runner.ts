@@ -67,7 +67,7 @@ const bootTestRunner = async (channel: Channel, store: Store) => {
   process.on('SIGTERM', () => exit(0));
 
   const startChildProcess = () =>
-    new Promise<void>((resolve) => {
+    new Promise<void>((resolve, reject) => {
       child = execaNode(vitestModulePath, {
         env: { VITEST: 'true', TEST: 'true', NODE_ENV: process.env.NODE_ENV ?? 'test' },
         extendEnv: true,
@@ -99,6 +99,12 @@ const bootTestRunner = async (channel: Channel, store: Store) => {
             child?.send({ type, args, from: 'server' });
           }
           resolve();
+        } else if (event.type === 'uncaught-error') {
+          store.send({
+            type: 'FATAL_ERROR',
+            payload: event.payload,
+          });
+          reject();
         } else {
           channel.emit(event.type, ...event.args);
         }

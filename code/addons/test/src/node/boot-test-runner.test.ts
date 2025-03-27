@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Channel, type ChannelTransport } from 'storybook/internal/channels';
-import type { MockUniversalStore } from 'storybook/internal/types';
 
 // eslint-disable-next-line depend/ban-dependencies
 import { execaNode } from 'execa';
@@ -75,7 +74,7 @@ const transport = { setHandler: vi.fn(), send: vi.fn() } satisfies ChannelTransp
 const mockChannel = new Channel({ transport });
 
 describe('bootTestRunner', () => {
-  let mockStore: MockUniversalStore<any, any>;
+  let mockStore: any;
 
   beforeEach(async () => {
     const { experimental_MockUniversalStore: MockUniversalStore } = await import(

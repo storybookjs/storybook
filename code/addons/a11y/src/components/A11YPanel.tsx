@@ -62,7 +62,6 @@ const Count = styled(Badge)({
 });
 
 export const A11YPanel: React.FC = () => {
-  const { manual: manualParameter } = useParameter<A11yParameters>(PARAM_KEY, {} as any);
   const {
     results,
     status,
@@ -167,8 +166,7 @@ export const A11YPanel: React.FC = () => {
                 Run accessibility scan
               </Button>
               <p>
-                Update <code>{manualParameter ? 'parameters' : 'globals'}.a11y.manual</code> to
-                disable manual mode.
+                Update <code>globals.a11y.manual</code> to disable manual mode.
               </p>
             </>
           )}

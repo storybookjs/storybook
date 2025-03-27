@@ -25,6 +25,8 @@
   - [Dropped support for TypeScript \< 4.9](#dropped-support-for-typescript--49)
   - [Test addon renamed from experimental to stable](#test-addon-renamed-from-experimental-to-stable)
   - [Experimental Status API has turned into a Status Store](#experimental-status-api-has-turned-into-a-status-store)
+  - [Framework-specific changes](#framework-specific-changes)
+    - [Angular = Require v18 and up](#angular--require-v18-and-up)
 - [From version 8.5.x to 8.6.x](#from-version-85x-to-86x)
   - [Angular: Support experimental zoneless support](#angular-support-experimental-zoneless-support)
   - [Framework-specific Vite plugins have to be explicitly added](#framework-specific-vite-plugins-have-to-be-explicitly-added)
@@ -58,7 +60,7 @@
     - [Removed `sb babelrc` command](#removed-sb-babelrc-command)
     - [Changed interfaces for `@storybook/router` components](#changed-interfaces-for-storybookrouter-components)
     - [Extract no longer batches](#extract-no-longer-batches)
-  - [Framework-specific changes](#framework-specific-changes)
+  - [Framework-specific changes](#framework-specific-changes-1)
     - [React](#react)
       - [`react-docgen` component analysis by default](#react-docgen-component-analysis-by-default)
     - [Next.js](#nextjs)
@@ -759,6 +761,22 @@ addons.register(MY_ADDON_ID, (api) => {
 +    description: 'Works!',
 +  }]);
 ```
+
+### Framework-specific changes
+
+#### Angular = Require v18 and up
+
+Storybook has dropped support for Angular versions 15-17. The minimum supported version is now Angular 18.
+
+If you're using an older version of Angular, you'll need to upgrade to Angular 18 or newer to use the latest version of Storybook.
+
+Key changes:
+- All Angular packages in peerDependencies now require `>=18.0.0 < 20.0.0`
+- Removed legacy code supporting Angular < 18
+- Standalone components are now the default (can be opted out by explicitly setting `standalone: false` in component decorators)
+- Updated RxJS requirement to `^7.4.0`
+- Updated TypeScript requirement to `^4.9.0 || ^5.0.0`
+- Updated Zone.js requirement to `^0.14.0 || ^0.15.0`
 
 ## From version 8.5.x to 8.6.x
 

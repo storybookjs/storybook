@@ -7,7 +7,7 @@ import { addOutlineStyles, clearStyles } from './helpers';
 import outlineCSS from './outlineCSS';
 
 export const withOutline: DecoratorFunction = (StoryFn, context) => {
-  const { globals } = context;
+  const globals = context.globals || {};
   const isActive = [true, 'true'].includes(globals[PARAM_KEY]);
   const isInDocs = context.viewMode === 'docs';
 

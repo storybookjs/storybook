@@ -28,7 +28,7 @@ vi.mock('./utils', () => ({
 const packageManagerMock = {
   getAllDependencies: () =>
     Promise.resolve({
-      '@storybook/addon-essentials': '7.0.0',
+      '@storybook/addon-docs': '7.0.0',
     }),
   latestVersion: vi.fn(() => Promise.resolve('8.0.0')),
   getPackageJSON: vi.fn(() => Promise.resolve('8.0.0')),
@@ -80,7 +80,7 @@ describe('checkPackageCompatibility', () => {
   });
 
   it('returns that a package is incompatible and because it is core, can be upgraded', async () => {
-    const packageName = '@storybook/addon-essentials';
+    const packageName = '@storybook/addon-docs';
 
     vi.mocked(packageManagerMock.getPackageJSON).mockResolvedValueOnce({
       name: packageName,
@@ -97,7 +97,7 @@ describe('checkPackageCompatibility', () => {
 
     expect(result).toEqual(
       expect.objectContaining({
-        packageName: '@storybook/addon-essentials',
+        packageName: '@storybook/addon-docs',
         packageVersion: '7.0.0',
         hasIncompatibleDependencies: true,
         availableUpdate: '8.0.0',
@@ -109,7 +109,7 @@ describe('checkPackageCompatibility', () => {
 describe('getIncompatibleStorybookPackages', () => {
   it('returns an array of incompatible packages', async () => {
     vi.mocked(packageManagerMock.getPackageJSON).mockResolvedValueOnce({
-      name: '@storybook/addon-essentials',
+      name: '@storybook/addon-docs',
       version: '7.0.0',
       dependencies: {
         storybook: '7.0.0',
@@ -123,7 +123,7 @@ describe('getIncompatibleStorybookPackages', () => {
 
     expect(result).toEqual([
       expect.objectContaining({
-        packageName: '@storybook/addon-essentials',
+        packageName: '@storybook/addon-docs',
         hasIncompatibleDependencies: true,
       }),
     ]);
@@ -139,7 +139,7 @@ describe('getIncompatiblePackagesSummary', () => {
         hasIncompatibleDependencies: true,
       },
       {
-        packageName: '@storybook/addon-essentials',
+        packageName: '@storybook/addon-docs',
         packageVersion: '7.0.0',
         hasIncompatibleDependencies: true,
         availableUpdate: '8.0.0',
@@ -149,7 +149,7 @@ describe('getIncompatiblePackagesSummary', () => {
     expect(summary).toMatchInlineSnapshot(`
       "You are currently using Storybook 8.0.0 but you have packages which are incompatible with it:
       - storybook-react@1.0.0
-      - @storybook/addon-essentials@7.0.0 (8.0.0 available!)
+      - @storybook/addon-docs@7.0.0 (8.0.0 available!)
 
 
       Please consider updating your packages or contacting the maintainers for compatibility details.

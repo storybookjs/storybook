@@ -16,7 +16,7 @@ function findAndDrawElement(x: number, y: number) {
 }
 
 export const withMeasure: DecoratorFunction = (StoryFn, context) => {
-  const { measureEnabled } = context.globals;
+  const { measureEnabled } = context.globals || {};
 
   useEffect(() => {
     const onPointerMove = (event: MouseEvent) => {

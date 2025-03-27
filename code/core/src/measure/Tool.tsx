@@ -10,7 +10,7 @@ import { ADDON_ID, TOOL_ID } from './constants';
 
 export const Tool = () => {
   const [globals, updateGlobals] = useGlobals();
-  const { measureEnabled } = globals;
+  const { measureEnabled } = globals || {};
   const api = useStorybookApi();
 
   const toggleMeasure = useCallback(

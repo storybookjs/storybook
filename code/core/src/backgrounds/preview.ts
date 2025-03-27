@@ -21,7 +21,6 @@ const initialGlobals: Record<string, GlobalState> = {
   [PARAM_KEY]: { value: undefined, grid: false },
 };
 
-console.log('the backgrounds preview file is loaded!');
 
 export default () =>
   definePreview({

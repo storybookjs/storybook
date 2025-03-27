@@ -157,7 +157,6 @@ const starter: StarterFunction = async function* starterGeneratorFn({
 
   yield;
 
-  console.log({ addonsDir, metafile: compilation.metafile });
 
   const coreDirOrigin = join(dirname(require.resolve('storybook/package.json')), 'dist', 'manager');
 

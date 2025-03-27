@@ -18,7 +18,7 @@ const StatusColorMapping = {
 const StyledBadge = styled.div<StatusBadgeProps>(({ theme, status }) => {
   const backgroundColor = theme.color[StatusColorMapping[status!]];
   return {
-    padding: '4px 6px 4px 8px;',
+    padding: '4px 6px 4px 8px',
     borderRadius: '4px',
     backgroundColor,
     color: 'white',

@@ -79,7 +79,7 @@ const getErrorOrigin = (error: VitestError): string => {
   if (error.VITEST_TEST_NAME) {
     parts.push(
       dedent`
-        The latest test that might've caused the error is "${error.VITEST_TEST_NAME}". 
+        The latest test that might've caused the error is "${error.VITEST_TEST_NAME}".
         It might mean one of the following:
         - The error was thrown, while Vitest was running this test.
         - If the error occurred after the test had been completed, this was the last documented test before it was thrown.

@@ -217,7 +217,7 @@ describe('testProviderStore', () => {
     });
 
     describe('onRunAll', () => {
-      it('should register and call listener when runAll is triggered', () => {
+      it('should register and call listener when runAll is triggered', async () => {
         // Arrange - create store and setup listener
         const mockUniversalStore = new MockUniversalStore<
           TestProviderStateByProviderId,
@@ -239,7 +239,9 @@ describe('testProviderStore', () => {
         fullTestProviderStore.runAll();
 
         // Assert - verify listener was called
-        expect(listener).toHaveBeenCalledTimes(1);
+        await vi.waitFor(() => {
+          expect(listener).toHaveBeenCalledTimes(1);
+        });
 
         // Act - unsubscribe and trigger again
         unsubscribe();

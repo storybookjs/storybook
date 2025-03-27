@@ -15,7 +15,7 @@ import {
   STORY_SPECIFIED,
   UPDATE_STORY_ARGS,
 } from 'storybook/internal/core-events';
-import { type API_StoryEntry, StatusValue } from 'storybook/internal/types';
+import { type API_StoryEntry } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
@@ -944,6 +944,33 @@ describe('stories API', () => {
       api.setIndex({ v: 5, entries: navigationEntries });
       const result = api.findSiblingStoryId('a--1', store.getState().index!, 1, true);
       expect(result).toBe('b-c--1');
+    });
+  });
+  describe('findAllLeafStoryIds', () => {
+    it('work for a leaf story', () => {
+      const initialState = { path: '/story/a--1', storyId: 'a--1', viewMode: 'story' };
+      const moduleArgs = createMockModuleArgs({ initialState });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+
+      api.setIndex({ v: 5, entries: navigationEntries });
+      const result = api.findAllLeafStoryIds('a--1');
+      expect(result).toEqual(['a--1']);
+    });
+    it('work for an entry with children', () => {
+      const initialState = {
+        path: '/story/group-a/component-a',
+        storyId: 'component-a--story-1',
+        viewMode: 'story',
+      };
+      const moduleArgs = createMockModuleArgs({ initialState });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+
+      api.setIndex({
+        v: 5,
+        entries: mockEntries,
+      });
+      const result = api.findAllLeafStoryIds('component-a');
+      expect(result).toEqual(['component-a--story-1', 'component-a--story-2']);
     });
   });
   describe('jumpToComponent', () => {

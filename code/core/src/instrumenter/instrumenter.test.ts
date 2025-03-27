@@ -15,7 +15,7 @@ import type { Options } from './types';
 
 const mocks = await vi.hoisted(async () => {
   const { Channel } = await import('storybook/internal/channels');
-  const { EVENTS: INSTRUMENTER_EVENTS } = await import('./instrumenter');
+  const { EVENTS: INSTRUMENTER_EVENTS } = await import('./EVENTS');
   const { FORCE_REMOUNT } = await import('storybook/internal/core-events');
 
   const transport = {

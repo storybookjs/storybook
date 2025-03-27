@@ -36,7 +36,7 @@ describe('A11YPanel', () => {
       </ThemeProvider>
     );
 
-    expect(element.getByText('Initializing...')).toBeInTheDocument();
+    expect(element.getByText('Please wait while the addon is initializing...')).toBeInTheDocument();
   });
 
   it('should render manual state', () => {
@@ -76,7 +76,7 @@ describe('A11YPanel', () => {
     );
 
     expect(
-      component.getByText('Please wait while the accessibility scan is running ...')
+      component.getByText('Please wait while the accessibility scan is running...')
     ).toBeInTheDocument();
   });
 

@@ -151,7 +151,7 @@ export const A11YPanel: React.FC = () => {
             <div>
               <RotatingIcon size={12} />
               <strong>Preparing accessibility scan</strong>
-              <p>Please wait while the addon is initializing&hellip;</p>
+              <p>Please wait while the addon is initializing...</p>
             </div>
           )}
           {status === 'manual' && (
@@ -176,7 +176,7 @@ export const A11YPanel: React.FC = () => {
             <div>
               <RotatingIcon size={12} />
               <strong>Accessibility scan in progress</strong>
-              <p>Please wait while the accessibility scan is running&hellip;</p>
+              <p>Please wait while the accessibility scan is running...</p>
             </div>
           )}
           {status === 'error' && (

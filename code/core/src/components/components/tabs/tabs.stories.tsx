@@ -5,7 +5,7 @@ import { BottomBarIcon, CloseIcon } from '@storybook/icons';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { action } from 'storybook/actions';
-import { expect } from 'storybook/test';
+import { expect, spyOn } from 'storybook/test';
 import { findByText, fireEvent, screen, userEvent, waitFor, within } from 'storybook/test';
 
 import { IconButton } from '../IconButton/IconButton';
@@ -425,22 +425,21 @@ export const WithErrorBoundary = {
       dangerouslyIgnoreUnhandledErrors: true,
     },
   },
-  render: (args) => (
-    <TabsState {...args} initial="test1">
-      <div id="test1" title="Normal Tab">
-        {
-          (({ active }: { active: boolean }) =>
-            active ? <div>This tab renders normally</div> : null) as any
-        }
-      </div>
-      <div id="errorTab" title="Error Tab">
-        {(({ active }: { active: boolean }) => (active ? <ErrorComponent /> : null)) as any}
-      </div>
-    </TabsState>
-  ),
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-
+  play: async ({ mount, args, canvas }) => {
+    spyOn(console, 'error').mockImplementation(() => {});
+    await mount(
+      <TabsState {...args} initial="test1">
+        <div id="test1" title="Normal Tab">
+          {
+            (({ active }: { active: boolean }) =>
+              active ? <div>This tab renders normally</div> : null) as any
+          }
+        </div>
+        <div id="errorTab" title="Error Tab">
+          {(({ active }: { active: boolean }) => (active ? <ErrorComponent /> : null)) as any}
+        </div>
+      </TabsState>
+    );
     // Check that the normal tab renders correctly
     await expect(canvas.getByText('This tab renders normally')).toBeInTheDocument();
 

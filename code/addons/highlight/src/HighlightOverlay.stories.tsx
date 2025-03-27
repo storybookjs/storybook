@@ -197,15 +197,6 @@ export const Dynamic = meta.story({
   },
 });
 
-export const Scrolling = meta.story({
-  parameters: {
-    scroll: true,
-  },
-  play: async () => {
-    highlight(['div']);
-  },
-});
-
 export const Styles = meta.story({
   play: async () => {
     highlight(['div'], {

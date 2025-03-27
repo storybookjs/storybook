@@ -20,9 +20,9 @@ globalThis.sendTelemetryError = (error) => {
 // handle all uncaught errors at the root of the application and log to telemetry
 globalThis.addEventListener('error', (args) => {
   const error = args.error || args;
-  global.sendTelemetryError(error);
+  globalThis.sendTelemetryError(error);
 });
 
 globalThis.addEventListener('unhandledrejection', ({ reason }) => {
-  global.sendTelemetryError(reason);
+  globalThis.sendTelemetryError(reason);
 });

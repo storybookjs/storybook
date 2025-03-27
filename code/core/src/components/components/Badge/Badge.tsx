@@ -9,7 +9,7 @@ const BadgeWrapper = styled.div<BadgeProps>(
     fontSize: 11,
     lineHeight: '12px',
     alignSelf: 'center',
-    padding: '4px 12px',
+    padding: '4px 10px',
     borderRadius: '3em',
     fontWeight: theme.typography.weight.bold,
   }),
@@ -55,12 +55,9 @@ const BadgeWrapper = styled.div<BadgeProps>(
       }
       case 'neutral': {
         return {
-          color: theme.color.dark,
-          background: theme.color.mediumlight,
-          boxShadow:
-            theme.base === 'light'
-              ? `inset 0 0 0 1px ${transparentize(0.9, theme.color.dark)}`
-              : 'none',
+          color: theme.textMutedColor,
+          background: theme.background.app,
+          boxShadow: `inset 0 0 0 1px ${transparentize(0.8, theme.textMutedColor)}`,
         };
       }
       case 'positive': {

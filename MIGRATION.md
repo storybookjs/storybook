@@ -1,6 +1,7 @@
 <h1>Migration</h1>
 
 - [From version 8.x to 9.0.0](#from-version-8x-to-900)
+  - [Package Manager Support](#package-manager-support)
   - [A11y addon: Removed deprecated manual parameter](#a11y-addon-removed-deprecated-manual-parameter)
   - [Button Component API Changes](#button-component-api-changes)
   - [Documentation Generation Changes](#documentation-generation-changes)
@@ -421,6 +422,23 @@
   - [Deprecated embedded addons](#deprecated-embedded-addons)
 
 ## From version 8.x to 9.0.0
+
+### Package Manager Support
+
+Storybook 9.0 drops official support and maintenance for older package manager versions:
+
+- npm v8 and v9 are no longer supported
+- yarn v3 is no longer supported  
+- pnpm v7 and v8 are no longer supported
+
+The minimum supported versions are now:
+
+- npm v10+
+- yarn v4+ 
+- pnpm v9+
+
+While Storybook may still work with older versions, we recommend upgrading to the latest supported versions for the best experience and to ensure compatibility.
+
 
 ### A11y addon: Removed deprecated manual parameter
 

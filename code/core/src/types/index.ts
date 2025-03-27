@@ -15,3 +15,4 @@ export * from './modules/frameworks';
 export * from './modules/renderers';
 export * from './modules/status';
 export * from './modules/test-provider';
+export * from './modules/universal-store';

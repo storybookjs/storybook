@@ -6,6 +6,7 @@ import {
   Pipe,
   ɵReflectionCapabilities as ReflectionCapabilities,
   Type,
+  reflectComponentType,
 } from '@angular/core';
 
 const reflectionCapabilities = new ReflectionCapabilities();
@@ -23,7 +24,7 @@ export type ComponentInputsOutputs = {
 
 /** Returns component Inputs / Outputs by browsing these properties and decorator */
 export const getComponentInputsOutputs = (component: any): ComponentInputsOutputs => {
-  const componentMetadata = getComponentDecoratorMetadata(component);
+  const componentMetadata = reflectComponentType(component);
   const componentPropsMetadata = getComponentPropsDecoratorMetadata(component);
 
   const initialValue: ComponentInputsOutputs = {
@@ -31,18 +32,22 @@ export const getComponentInputsOutputs = (component: any): ComponentInputsOutput
     outputs: [],
   };
 
-  // Adds the I/O present in @Component metadata
+  // Adds the I/O present in the component
   if (componentMetadata && componentMetadata.inputs) {
     initialValue.inputs.push(
-      ...componentMetadata.inputs.map((i) => ({
-        propName: typeof i === 'string' ? i : i.name,
-        templateName: typeof i === 'string' ? i : i.alias,
+      ...componentMetadata.inputs.map(({ propName, templateName }) => ({
+        propName,
+        templateName,
       }))
     );
   }
+
   if (componentMetadata && componentMetadata.outputs) {
     initialValue.outputs.push(
-      ...componentMetadata.outputs.map((i) => ({ propName: i, templateName: i }))
+      ...componentMetadata.outputs.map(({ propName, templateName }) => ({
+        propName,
+        templateName,
+      }))
     );
   }
 
@@ -113,13 +118,7 @@ export const isStandaloneComponent = (component: any): component is Type<unknown
     return false;
   }
 
-  const decorators = reflectionCapabilities.annotations(component);
-
-  // TODO: `standalone` is only available in Angular v14. Remove cast to `any` once
-  // Angular deps are updated to v14.x.x.
-  return (decorators || []).some(
-    (d) => (d instanceof Component || d instanceof Directive || d instanceof Pipe) && d.standalone
-  );
+  return reflectComponentType(component).isStandalone;
 };
 
 /** Returns all component decorator properties is used to get all `@Input` and `@Output` Decorator */

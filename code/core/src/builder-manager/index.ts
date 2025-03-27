@@ -157,7 +157,6 @@ const starter: StarterFunction = async function* starterGeneratorFn({
 
   yield;
 
-
   const coreDirOrigin = join(dirname(require.resolve('storybook/package.json')), 'dist', 'manager');
 
   router.use(

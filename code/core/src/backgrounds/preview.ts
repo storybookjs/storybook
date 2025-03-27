@@ -21,7 +21,6 @@ const initialGlobals: Record<string, GlobalState> = {
   [PARAM_KEY]: { value: undefined, grid: false },
 };
 
-
 export default () =>
   definePreview({
     decorators,

@@ -21,7 +21,11 @@ import {
 import type { Report } from 'storybook/preview-api';
 import { convert, themes } from 'storybook/theming';
 
-import { HIGHLIGHT, RESET_HIGHLIGHT, SCROLL_INTO_VIEW } from '../../../highlight/src/constants';
+import {
+  HIGHLIGHT,
+  RESET_HIGHLIGHT,
+  SCROLL_INTO_VIEW,
+} from '../../../../core/src/highlight/constants';
 import {
   ADDON_ID,
   EVENTS,

@@ -23,6 +23,8 @@ export const getEntries = (cwd: string) => {
     define('src/backgrounds/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
     define('src/backgrounds/preview.ts', ['browser', 'node'], true, ['react'], [], [], true),
 
+    define('src/highlight/index.ts', ['browser', 'node'], true, ['react'], [], [], false),
+
     define('src/actions/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
     define('src/actions/preview.ts', ['browser', 'node'], true, ['react'], [], [], true),
     define('src/actions/decorator.ts', ['browser'], true, ['react'], [], [], true),

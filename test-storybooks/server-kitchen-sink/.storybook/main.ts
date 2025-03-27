@@ -6,8 +6,7 @@ const mainConfig: StorybookConfig = {
   addons: [
     '@storybook/addon-docs',
     '@storybook/addon-a11y',
-    '@storybook/addon-links',
-    '@storybook/addon-highlight',
+    '@storybook/addon-links'
   ],
   core: {
     disableTelemetry: true,

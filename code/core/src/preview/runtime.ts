@@ -33,6 +33,8 @@ export function setup() {
   // handle all uncaught StorybookError at the root of the application and log to telemetry if applicable
   global.addEventListener('error', errorListener);
   global.addEventListener('unhandledrejection', unhandledRejectionListener);
+
+  import('../highlight/preview');
 }
 
 // TODO: In the future, remove this call to make the module side-effect free

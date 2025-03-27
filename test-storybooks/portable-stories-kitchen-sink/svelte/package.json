@@ -18,7 +18,6 @@
     "@storybook/addon-a11y": "portal:../../../code/addons/a11y",
     "@storybook/addon-docs": "portal:../../../code/addons/docs",
     "@storybook/addon-essentials": "portal:../../../code/addons/essentials",
-    "@storybook/addon-highlight": "portal:../../../code/addons/highlight",
     "@storybook/addon-jest": "portal:../../../code/addons/jest",
     "@storybook/addon-links": "portal:../../../code/addons/links",
     "@storybook/addon-measure": "portal:../../../code/addons/measure",

@@ -26,8 +26,8 @@ import type { Controls } from './InteractionsPanel';
 import { StatusBadge } from './StatusBadge';
 
 const SubnavWrapper = styled.div(({ theme }) => ({
+  boxShadow: `${theme.appBorderColor} 0 -1px 0 0 inset`,
   background: theme.background.app,
-  borderBottom: `1px solid ${theme.appBorderColor}`,
   position: 'sticky',
   top: 0,
   zIndex: 1,

@@ -34,8 +34,12 @@ const config = defineMain({
       titlePrefix: 'blocks',
     },
     {
+      directory: '../addons/a11y/src',
+      titlePrefix: 'addons/accessibility',
+    },
+    {
       directory: '../addons/a11y/template/stories',
-      titlePrefix: 'addons/a11y',
+      titlePrefix: 'addons/accessibility',
     },
     {
       directory: '../addons/docs/template/stories',

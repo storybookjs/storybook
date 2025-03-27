@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { defineMain } from '../frameworks/react-vite/src/node';
 
 const componentsPath = join(__dirname, '../core/src/components/index.ts');
-const managerApiPath = join(__dirname, '../core/src/manager-api/index.ts');
+const managerApiPath = join(__dirname, '../core/src/manager-api/index.mock.ts');
 const imageContextPath = join(__dirname, '../frameworks/nextjs/src/image-context.ts');
 
 const config = defineMain({
@@ -34,8 +34,12 @@ const config = defineMain({
       titlePrefix: 'blocks',
     },
     {
+      directory: '../addons/a11y/src',
+      titlePrefix: 'addons/accessibility',
+    },
+    {
       directory: '../addons/a11y/template/stories',
-      titlePrefix: 'addons/a11y',
+      titlePrefix: 'addons/accessibility',
     },
     {
       directory: '../addons/backgrounds/template/stories',
@@ -117,7 +121,9 @@ const config = defineMain({
                 'storybook/manager-api': managerApiPath,
                 'sb-original/image-context': imageContextPath,
               }
-            : {}),
+            : {
+                'storybook/manager-api': managerApiPath,
+              }),
         },
       },
       optimizeDeps: {

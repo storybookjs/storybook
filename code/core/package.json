@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "9.0.0-alpha.10",
+  "version": "9.0.0-alpha.11",
   "description": "Storybook framework-agnostic API",
   "keywords": [
     "storybook"
@@ -22,9 +22,9 @@
   "sideEffects": false,
   "type": "module",
   "imports": {
-    "#manager-status-store": {
-      "storybook": "./src/manager/status-store.mock.ts",
-      "default": "./src/manager/status-store.ts"
+    "#manager-stores": {
+      "storybook": "./src/manager/manager-stores.mock.ts",
+      "default": "./src/manager/manager-stores.ts"
     },
     "#utils": {
       "storybook": "./template/stories/utils.mock.ts",

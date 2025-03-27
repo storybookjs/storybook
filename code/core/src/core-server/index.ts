@@ -17,8 +17,10 @@ export { MockUniversalStore as experimental_MockUniversalStore } from '../shared
 export {
   getStatusStoreByTypeId as experimental_getStatusStore,
   fullStatusStore as internal_fullStatusStore,
+  universalStatusStore as internal_universalStatusStore,
 } from './stores/status';
 export {
   getTestProviderStoreById as experimental_getTestProviderStore,
   fullTestProviderStore as internal_fullTestProviderStore,
+  universalTestProviderStore as internal_universalTestProviderStore,
 } from './stores/test-provider';

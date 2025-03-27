@@ -28,6 +28,7 @@
   - [Dropped support for Vite 4](#dropped-support-for-vite-4)
   - [Framework-specific changes](#framework-specific-changes)
     - [Angular = Require v18 and up](#angular--require-v18-and-up)
+    - [Next.js = Require v14 and up](#nextjs--require-v14-and-up)
 - [From version 8.5.x to 8.6.x](#from-version-85x-to-86x)
   - [Angular: Support experimental zoneless support](#angular-support-experimental-zoneless-support)
   - [Framework-specific Vite plugins have to be explicitly added](#framework-specific-vite-plugins-have-to-be-explicitly-added)
@@ -812,6 +813,14 @@ Key changes:
 - Updated RxJS requirement to `^7.4.0`
 - Updated TypeScript requirement to `^4.9.0 || ^5.0.0`
 - Updated Zone.js requirement to `^0.14.0 || ^0.15.0`
+
+#### Next.js = Require v14 and up
+
+Storybook has dropped support for Next.js versions below 14. The minimum supported version is now Next.js 14.
+
+If you're using an older version of Next.js, you'll need to upgrade to Next.js 14 or newer to use the latest version of Storybook.
+
+For help upgrading your Next.js application, see the [Next.js upgrade guide](https://nextjs.org/docs/app/building-your-application/upgrading).
 
 ## From version 8.5.x to 8.6.x
 

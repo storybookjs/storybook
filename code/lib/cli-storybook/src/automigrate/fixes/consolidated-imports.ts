@@ -107,7 +107,7 @@ export const transformImportFiles = async (files: string[], dryRun: boolean) => 
 
 export const consolidatedImports: Fix<ConsolidatedOptions> = {
   id: 'consolidated-imports',
-  versionRange: ['^8.0.0', '^9.0.0-0'],
+  versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
   check: async () => {
     const projectRoot = getProjectRoot();
     // eslint-disable-next-line depend/ban-dependencies

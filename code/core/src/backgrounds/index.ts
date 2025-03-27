@@ -1,7 +1,5 @@
-import { definePreview } from 'storybook/preview-api';
+import addonAnnotations from './preview';
 
-import * as addonAnnotations from './preview';
-
-export default () => definePreview(addonAnnotations);
+export default addonAnnotations;
 
 export type { BackgroundsParameters, BackgroundsGlobals } from './types';

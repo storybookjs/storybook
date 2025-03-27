@@ -9,4 +9,4 @@ export const initialGlobals = {
   [PARAM_KEY]: false,
 };
 
-export default definePreview({ decorators, initialGlobals });
+export default () => definePreview({ decorators, initialGlobals });

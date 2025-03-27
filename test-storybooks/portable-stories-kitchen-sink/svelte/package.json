@@ -21,7 +21,6 @@
     "@storybook/addon-jest": "portal:../../../code/addons/jest",
     "@storybook/addon-links": "portal:../../../code/addons/links",
     "@storybook/addon-mgx-gfm": "portal:../../../code/addons/mgx-gfm",
-    "@storybook/addon-outline": "portal:../../../code/addons/outline",
     "@storybook/addon-storysource": "portal:../../../code/addons/storysource",
     "@storybook/addon-themes": "portal:../../../code/addons/themes",
     "@storybook/angular": "portal:../../../code/frameworks/angular",

@@ -30,6 +30,9 @@ async function run() {
     'storybook/measure',
     'storybook/measure/preview',
 
+    'storybook/outline',
+    'storybook/outline/preview',
+
     'storybook/backgrounds',
     'storybook/backgrounds/preview',
     'storybook/backgrounds/manager',

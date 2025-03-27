@@ -109,7 +109,6 @@
     "@storybook/addon-links": "workspace:*",
     "@storybook/addon-mdx-gfm": "workspace:*",
     "@storybook/addon-onboarding": "workspace:*",
-    "@storybook/addon-outline": "workspace:*",
     "@storybook/addon-storysource": "workspace:*",
     "@storybook/addon-test": "workspace:*",
     "@storybook/addon-themes": "workspace:*",

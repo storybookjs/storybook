@@ -123,6 +123,26 @@
       "import": "./dist/measure/preview.js",
       "require": "./dist/measure/preview.cjs"
     },
+    "./internal/outline": {
+      "types": "./dist/outline/index.d.ts",
+      "import": "./dist/outline/index.js",
+      "require": "./dist/outline/index.cjs"
+    },
+    "./outline": {
+      "types": "./dist/outline/index.d.ts",
+      "import": "./dist/outline/index.js",
+      "require": "./dist/outline/index.cjs"
+    },
+    "./internal/outline/preview": {
+      "types": "./dist/outline/preview.d.ts",
+      "import": "./dist/outline/preview.js",
+      "require": "./dist/outline/preview.cjs"
+    },
+    "./outline/preview": {
+      "types": "./dist/outline/preview.d.ts",
+      "import": "./dist/outline/preview.js",
+      "require": "./dist/outline/preview.cjs"
+    },
     "./internal/highlight": {
       "types": "./dist/highlight/index.d.ts",
       "import": "./dist/highlight/index.js",
@@ -421,6 +441,18 @@
       ],
       "measure/preview": [
         "./dist/measure/preview.d.ts"
+      ],
+      "internal/outline": [
+        "./dist/outline/index.d.ts"
+      ],
+      "outline": [
+        "./dist/outline/index.d.ts"
+      ],
+      "internal/outline/preview": [
+        "./dist/outline/preview.d.ts"
+      ],
+      "outline/preview": [
+        "./dist/outline/preview.d.ts"
       ],
       "internal/highlight": [
         "./dist/highlight/index.d.ts"

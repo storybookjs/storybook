@@ -26,6 +26,9 @@ export const getEntries = (cwd: string) => {
     define('src/measure/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
     define('src/measure/preview.ts', ['browser', 'node'], true, ['react'], [], [], true),
 
+    define('src/outline/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
+    define('src/outline/preview.ts', ['browser', 'node'], true, ['react'], [], [], true),
+
     define('src/highlight/index.ts', ['browser', 'node'], true, ['react'], [], [], false),
 
     define('src/actions/index.ts', ['browser', 'node'], true, ['react'], [], [], true),

@@ -18,7 +18,6 @@
     "@playwright/test": "1.48.1",
     "@storybook/addon-a11y": "file:../../../code/addons/a11y",
     "@storybook/addon-docs": "file:../../../code/addons/docs",
-    "@storybook/addon-essentials": "file:../../../code/addons/essentials",
     "@storybook/addon-jest": "file:../../../code/addons/jest",
     "@storybook/addon-links": "file:../../../code/addons/links",
     "@storybook/addon-mgx-gfm": "file:../../../code/addons/mgx-gfm",
@@ -70,7 +69,6 @@
   },
   "devDependencies": {
     "@playwright/experimental-ct-vue": "1.48.1",
-    "@storybook/addon-essentials": "^8.0.0",
     "@storybook/vue3": "^8.0.0",
     "@storybook/vue3-vite": "^8.0.0",
     "@testing-library/jest-dom": "^6.6.3",

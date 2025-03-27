@@ -17,7 +17,6 @@
     "@playwright/test": "1.48.1",
     "@storybook/addon-a11y": "portal:../../../code/addons/a11y",
     "@storybook/addon-docs": "portal:../../../code/addons/docs",
-    "@storybook/addon-essentials": "portal:../../../code/addons/essentials",
     "@storybook/addon-jest": "portal:../../../code/addons/jest",
     "@storybook/addon-links": "portal:../../../code/addons/links",
     "@storybook/addon-mgx-gfm": "portal:../../../code/addons/mgx-gfm",
@@ -66,7 +65,6 @@
   },
   "devDependencies": {
     "@playwright/experimental-ct-svelte": "1.48.1",
-    "@storybook/addon-essentials": "8.0.0-rc.2",
     "@storybook/svelte": "8.0.0-rc.2",
     "@storybook/svelte-vite": "8.0.0-rc.2",
     "@sveltejs/vite-plugin-svelte": "^3.0.2",

@@ -6370,17 +6370,6 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/addon-essentials@workspace:*, @storybook/addon-essentials@workspace:addons/essentials":
-  version: 0.0.0-use.local
-  resolution: "@storybook/addon-essentials@workspace:addons/essentials"
-  dependencies:
-    ts-dedent: "npm:^2.0.0"
-    typescript: "npm:^5.7.3"
-  peerDependencies:
-    storybook: "workspace:^"
-  languageName: unknown
-  linkType: soft
-
 "@storybook/addon-jest@workspace:*, @storybook/addon-jest@workspace:addons/jest":
   version: 0.0.0-use.local
   resolution: "@storybook/addon-jest@workspace:addons/jest"
@@ -7359,7 +7348,6 @@ __metadata:
     "@storybook/addon-a11y": "workspace:*"
     "@storybook/addon-designs": "npm:9.0.0--canary.1499c1a.0"
     "@storybook/addon-docs": "workspace:*"
-    "@storybook/addon-essentials": "workspace:*"
     "@storybook/addon-jest": "workspace:*"
     "@storybook/addon-links": "workspace:*"
     "@storybook/addon-mdx-gfm": "workspace:*"

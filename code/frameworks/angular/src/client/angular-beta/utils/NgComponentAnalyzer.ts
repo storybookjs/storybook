@@ -118,7 +118,7 @@ export const isStandaloneComponent = (component: any): component is Type<unknown
     return false;
   }
 
-  return reflectComponentType(component).isStandalone;
+  return reflectComponentType(component)?.isStandalone ?? false;
 };
 
 /** Returns all component decorator properties is used to get all `@Input` and `@Output` Decorator */

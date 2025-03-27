@@ -52,7 +52,7 @@ const managerContext: any = {
   },
 };
 
-const testProviderInterfaces: TestProviders = {
+const registeredTestProviders: TestProviders = {
   'component-tests': {
     type: Addon_TypesEnum.experimental_TEST_PROVIDER,
     id: 'component-tests',
@@ -104,7 +104,7 @@ const meta = {
       getElements: fn(() => ({})),
     } as any as API,
     onRunAll: fn(),
-    testProviderInterfaces,
+    registeredTestProviders,
     testProviderStates,
   },
   parameters: {
@@ -145,7 +145,7 @@ export const Both: Story = {
 
 export const DynamicHeight: Story = {
   args: {
-    testProviderInterfaces: {
+    registeredTestProviders: {
       'dynamic-height': {
         type: Addon_TypesEnum.experimental_TEST_PROVIDER,
         id: 'dynamic-height',

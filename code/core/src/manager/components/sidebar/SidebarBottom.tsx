@@ -89,7 +89,7 @@ interface SidebarBottomProps {
   hasStatuses: boolean;
   isDevelopment?: boolean;
   testProviderStates: TestProviderStateByProviderId;
-  testProviderInterfaces: TestProviders;
+  registeredTestProviders: TestProviders;
   onRunAll: () => void;
 }
 
@@ -101,7 +101,7 @@ export const SidebarBottomBase = ({
   hasStatuses,
   isDevelopment,
   testProviderStates,
-  testProviderInterfaces,
+  registeredTestProviders,
   onRunAll,
 }: SidebarBottomProps) => {
   const spacerRef = useRef<HTMLDivElement | null>(null);
@@ -156,12 +156,12 @@ export const SidebarBottomBase = ({
       api.off(TESTING_MODULE_CRASH_REPORT, onCrashReport);
       api.off(TESTING_MODULE_PROGRESS_REPORT, onProgressReport);
     };
-  }, [api, testProviderInterfaces]);
+  }, [api, registeredTestProviders]);
 
   if (
     !warningCount &&
     !errorCount &&
-    Object.values(testProviderInterfaces).length === 0 &&
+    Object.values(registeredTestProviders).length === 0 &&
     notifications.length === 0
   ) {
     return null;
@@ -175,7 +175,7 @@ export const SidebarBottomBase = ({
         {isDevelopment && (
           <TestingModule
             {...{
-              testProviderInterfaces,
+              registeredTestProviders,
               testProviderStates,
               onRunAll,
               hasStatuses,
@@ -199,7 +199,7 @@ export const SidebarBottomBase = ({
 
 export const SidebarBottom = ({ isDevelopment }: { isDevelopment?: boolean }) => {
   const api = useStorybookApi();
-  const { notifications, testProviders: testProviderInterfaces } = useStorybookState();
+  const { notifications, testProviders: registeredTestProviders } = useStorybookState();
   const { hasStatuses, errorCount, warningCount } = experimental_useStatusStore((statuses) => {
     return Object.values(statuses).reduce(
       (result, storyStatuses) => {
@@ -230,7 +230,7 @@ export const SidebarBottom = ({ isDevelopment }: { isDevelopment?: boolean }) =>
       warningCount={warningCount}
       isDevelopment={isDevelopment}
       testProviderStates={testProviderStates}
-      testProviderInterfaces={testProviderInterfaces}
+      registeredTestProviders={registeredTestProviders}
       onRunAll={internal_fullTestProviderStore.runAll}
     />
   );

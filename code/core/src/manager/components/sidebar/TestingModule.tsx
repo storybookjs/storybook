@@ -162,7 +162,7 @@ const TestProvider = styled.div(({ theme }) => ({
 }));
 
 interface TestingModuleProps {
-  testProviderInterfaces: TestProviders;
+  registeredTestProviders: TestProviders;
   testProviderStates: TestProviderStateByProviderId;
   hasStatuses: boolean;
   clearStatuses: () => void;
@@ -176,7 +176,7 @@ interface TestingModuleProps {
 }
 
 export const TestingModule = ({
-  testProviderInterfaces,
+  registeredTestProviders,
   testProviderStates,
   hasStatuses,
   clearStatuses,
@@ -246,7 +246,7 @@ export const TestingModule = ({
   const isCrashed = Object.values(testProviderStates).some(
     (testProviderState) => testProviderState === 'test-provider-state:crashed'
   );
-  const hasTestProviders = Object.values(testProviderInterfaces).length > 0;
+  const hasTestProviders = Object.values(registeredTestProviders).length > 0;
 
   if (!hasTestProviders && (!errorCount || !warningCount)) {
     return null;
@@ -271,7 +271,7 @@ export const TestingModule = ({
             }}
           >
             <Content ref={contentRef}>
-              {Object.values(testProviderInterfaces).map((state) => {
+              {Object.values(registeredTestProviders).map((state) => {
                 const { render: Render } = state;
                 return (
                   <TestProvider key={state.id} data-module-id={state.id}>

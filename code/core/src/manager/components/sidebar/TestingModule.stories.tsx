@@ -28,7 +28,7 @@ const baseState = {
   crashed: false,
 };
 
-const testProviderInterfaces: TestProviders = {
+const registeredTestProviders: TestProviders = {
   'component-tests': {
     type: Addon_TypesEnum.experimental_TEST_PROVIDER,
     id: 'component-tests',
@@ -77,7 +77,7 @@ const meta = {
   component: TestingModule,
   title: 'Sidebar/TestingModule',
   args: {
-    testProviderInterfaces,
+    registeredTestProviders,
     testProviderStates,
     hasStatuses: false,
     clearStatuses: fn(),
@@ -207,13 +207,13 @@ export const SettingsUpdated: Story = {
 
 export const NoTestProvider: Story = {
   args: {
-    testProviderInterfaces: {},
+    registeredTestProviders: {},
   },
 };
 
 export const NoTestProviderWithStatuses: Story = {
   args: {
     ...Statuses.args,
-    testProviderInterfaces: {},
+    registeredTestProviders: {},
   },
 };

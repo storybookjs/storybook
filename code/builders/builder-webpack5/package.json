@@ -1,6 +1,6 @@
 {
   "name": "@storybook/builder-webpack5",
-  "version": "8.6.10",
+  "version": "8.6.11",
   "description": "Storybook framework-agnostic API",
   "keywords": [
     "storybook"

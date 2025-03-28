@@ -29,6 +29,7 @@
   - [Framework-specific changes](#framework-specific-changes)
     - [Angular = Require v18 and up](#angular--require-v18-and-up)
     - [Next.js = Require v14 and up](#nextjs--require-v14-and-up)
+    - [Preact = Dropped webpack5 builder support](#preact--dropped-webpack5-builder-support)
 - [From version 8.5.x to 8.6.x](#from-version-85x-to-86x)
   - [Angular: Support experimental zoneless support](#angular-support-experimental-zoneless-support)
   - [Framework-specific Vite plugins have to be explicitly added](#framework-specific-vite-plugins-have-to-be-explicitly-added)
@@ -821,6 +822,26 @@ Storybook has dropped support for Next.js versions below 14. The minimum support
 If you're using an older version of Next.js, you'll need to upgrade to Next.js 14 or newer to use the latest version of Storybook.
 
 For help upgrading your Next.js application, see the [Next.js upgrade guide](https://nextjs.org/docs/app/building-your-application/upgrading).
+
+#### Preact = Dropped webpack5 builder support
+The `@storybook/preact-webpack5` and `@storybook/preset-preact-webpack5` packages have been removed. For Preact projects, please use the Vite builder instead:
+
+```bash
+npm remove @storybook/preact-webpack5 @storybook/preset-preact-webpack
+npm install @storybook/preact-vite --save-dev
+```
+
+Then update your `.storybook/main.js|ts`:
+
+```js
+export default {
+  framework: {
+    name: '@storybook/preact-vite',
+    options: {},
+  },
+  // ... other configurations
+};
+```
 
 ## From version 8.5.x to 8.6.x
 

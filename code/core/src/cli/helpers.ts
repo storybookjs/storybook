@@ -154,7 +154,6 @@ export const frameworkToDefaultBuilder: Record<
   nuxt: CoreBuilder.Vite,
   'experimental-nextjs-vite': CoreBuilder.Vite,
   'preact-vite': CoreBuilder.Vite,
-  'preact-webpack5': CoreBuilder.Webpack5,
   qwik: CoreBuilder.Vite,
   'react-native-web-vite': CoreBuilder.Vite,
   'react-vite': CoreBuilder.Vite,

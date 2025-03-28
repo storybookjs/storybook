@@ -33,7 +33,6 @@ export const frameworkPackages: Record<string, SupportedFrameworks> = {
   '@storybook/html-webpack5': 'html-webpack5',
   '@storybook/nextjs': 'nextjs',
   '@storybook/preact-vite': 'preact-vite',
-  '@storybook/preact-webpack5': 'preact-webpack5',
   '@storybook/react-vite': 'react-vite',
   '@storybook/react-webpack5': 'react-webpack5',
   '@storybook/server-webpack5': 'server-webpack5',

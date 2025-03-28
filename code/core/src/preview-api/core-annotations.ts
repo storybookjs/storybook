@@ -1,15 +1,11 @@
 import componentTestingAnnotations from 'storybook/internal/component-testing/preview';
-import type { Renderer } from 'storybook/internal/types';
 
 import actionAnnotations from 'storybook/actions/preview';
 import backgroundsAnnotations from 'storybook/backgrounds/preview';
 import measureAnnotations from 'storybook/measure/preview';
 import outlineAnnotations from 'storybook/outline/preview';
-import { composeConfigs } from 'storybook/preview-api';
 import testAnnotations from 'storybook/test/preview';
 import viewportAnnotations from 'storybook/viewport/preview';
-
-import type { NormalizedProjectAnnotations } from '../types';
 
 export function getCoreAnnotations() {
   return [
@@ -28,10 +24,4 @@ export function getCoreAnnotations() {
     // @ts-expect-error CJS fallback
     (testAnnotations.default ?? testAnnotations)(),
   ];
-}
-
-export function getComposedCoreAnnotations<
-  TRenderer extends Renderer,
->(): NormalizedProjectAnnotations<TRenderer> {
-  return composeConfigs<TRenderer>(getCoreAnnotations());
 }

@@ -22,7 +22,6 @@ import type {
 import { global } from '@storybook/global';
 import { global as globalThis } from '@storybook/global';
 
-import { getComposedCoreAnnotations } from '../../../core-annotations';
 import { applyHooks } from '../../addons';
 import { mountDestructured } from '../../preview-web/render/mount-utils';
 import { UNTARGETED, groupArgsByTarget } from '../args';

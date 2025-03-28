@@ -157,7 +157,12 @@ class TabErrorBoundary extends Component<ErrorBoundaryProps, { hasError: boolean
 
   render() {
     if (this.state.hasError && this.props.active) {
-      return <EmptyTabContent title="Error rendering tab content" />;
+      return (
+        <EmptyTabContent
+          title="This addon has errors"
+          description="Check your browser logs and addon code to pinpoint what went wrong. This issue was not caused by Storybook."
+        />
+      );
     }
 
     return this.props.children;

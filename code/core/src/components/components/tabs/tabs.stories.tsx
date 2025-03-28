@@ -448,6 +448,6 @@ export const WithErrorBoundary = {
     await userEvent.click(errorTab);
 
     // Check that the error boundary message is displayed
-    await expect(await canvas.findByText('Error rendering tab content')).toBeInTheDocument();
+    await expect(await canvas.findByText('This addon has errors')).toBeInTheDocument();
   },
 } satisfies Story;

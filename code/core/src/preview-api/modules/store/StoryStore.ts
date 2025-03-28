@@ -5,12 +5,10 @@ import {
 } from 'storybook/internal/preview-errors';
 import type {
   CSFFile,
-  ComponentTitle,
   IndexEntry,
   ModuleExports,
   ModuleImportFn,
   NormalizedProjectAnnotations,
-  Parameters,
   Path,
   PreparedMeta,
   PreparedStory,
@@ -19,18 +17,18 @@ import type {
   StoryContextForEnhancers,
   StoryId,
   StoryIndex,
-  StoryIndexV3,
-  V3CompatIndexEntry,
 } from 'storybook/internal/types';
 
-import { mapValues, omitBy, pick } from 'es-toolkit';
+import { omitBy, pick } from 'es-toolkit';
 import memoize from 'memoizerific';
 
+import { getCoreAnnotations } from '../../core-annotations';
 import { HooksContext } from '../addons';
 import { ArgsStore } from './ArgsStore';
 import { GlobalsStore } from './GlobalsStore';
 import { StoryIndexStore } from './StoryIndexStore';
 import {
+  composeConfigs,
   normalizeProjectAnnotations,
   prepareContext,
   prepareMeta,
@@ -80,7 +78,9 @@ export class StoryStore<TRenderer extends Renderer> {
   ) {
     this.storyIndex = new StoryIndexStore(storyIndex);
 
-    this.projectAnnotations = normalizeProjectAnnotations(projectAnnotations);
+    this.projectAnnotations = normalizeProjectAnnotations(
+      composeConfigs([...getCoreAnnotations(), projectAnnotations])
+    );
     const { initialGlobals, globalTypes } = this.projectAnnotations;
 
     this.args = new ArgsStore();

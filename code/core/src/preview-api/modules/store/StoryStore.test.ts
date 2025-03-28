@@ -280,56 +280,64 @@ describe('StoryStore', () => {
       });
 
       expect(store.extract()).toMatchInlineSnapshot(`
-  {
-    "component-one--a": {
-      "argTypes": {
-        "a": {
-          "name": "a",
-          "type": {
-            "name": "string",
+        {
+          "component-one--a": {
+            "argTypes": {
+              "a": {
+                "name": "a",
+                "type": {
+                  "name": "string",
+                },
+              },
+              "foo": {
+                "name": "foo",
+                "type": {
+                  "name": "string",
+                },
+              },
+            },
+            "args": {
+              "foo": "a",
+            },
+            "component": undefined,
+            "componentId": "component-one",
+            "globals": {
+              "a": "b",
+            },
+            "id": "component-one--a",
+            "initialArgs": {
+              "foo": "a",
+            },
+            "kind": "Component One",
+            "name": "A",
+            "parameters": {
+              "__isArgsStory": false,
+              "backgrounds": {
+                "disable": false,
+                "grid": {
+                  "cellAmount": 5,
+                  "cellSize": 20,
+                  "opacity": 0.5,
+                },
+              },
+              "fileName": "./src/ComponentOne-new.stories.js",
+              "throwPlayFunctionExceptions": false,
+            },
+            "playFunction": undefined,
+            "renderToCanvas": undefined,
+            "story": "A",
+            "storyGlobals": {},
+            "subcomponents": undefined,
+            "tags": [
+              "dev",
+              "test",
+            ],
+            "testingLibraryRender": undefined,
+            "title": "Component One",
+            "usesMount": false,
           },
-        },
-        "foo": {
-          "name": "foo",
-          "type": {
-            "name": "string",
-          },
-        },
-      },
-      "args": {
-        "foo": "a",
-      },
-      "component": undefined,
-      "componentId": "component-one",
-      "globals": {
-        "a": "b",
-      },
-      "id": "component-one--a",
-      "initialArgs": {
-        "foo": "a",
-      },
-      "kind": "Component One",
-      "name": "A",
-      "parameters": {
-        "__isArgsStory": false,
-        "fileName": "./src/ComponentOne-new.stories.js",
-        "throwPlayFunctionExceptions": false,
-      },
-      "playFunction": undefined,
-      "renderToCanvas": undefined,
-      "story": "A",
-      "storyGlobals": {},
-      "subcomponents": undefined,
-      "tags": [
-        "dev",
-        "test",
-      ],
-      "testingLibraryRender": undefined,
-      "title": "Component One",
-      "usesMount": false,
-    },
-  }
-`);
+        }
+      `);
     });
   });
 
@@ -454,150 +462,174 @@ describe('StoryStore', () => {
       await store.cacheAllCSFFiles();
 
       expect(store.extract()).toMatchInlineSnapshot(`
-  {
-    "component-one--a": {
-      "argTypes": {
-        "a": {
-          "name": "a",
-          "type": {
-            "name": "string",
+        {
+          "component-one--a": {
+            "argTypes": {
+              "a": {
+                "name": "a",
+                "type": {
+                  "name": "string",
+                },
+              },
+              "foo": {
+                "name": "foo",
+                "type": {
+                  "name": "string",
+                },
+              },
+            },
+            "args": {
+              "foo": "a",
+            },
+            "component": undefined,
+            "componentId": "component-one",
+            "globals": {
+              "a": "b",
+            },
+            "id": "component-one--a",
+            "initialArgs": {
+              "foo": "a",
+            },
+            "kind": "Component One",
+            "name": "A",
+            "parameters": {
+              "__isArgsStory": false,
+              "backgrounds": {
+                "disable": false,
+                "grid": {
+                  "cellAmount": 5,
+                  "cellSize": 20,
+                  "opacity": 0.5,
+                },
+              },
+              "fileName": "./src/ComponentOne.stories.js",
+              "throwPlayFunctionExceptions": false,
+            },
+            "playFunction": undefined,
+            "renderToCanvas": undefined,
+            "story": "A",
+            "storyGlobals": {},
+            "subcomponents": undefined,
+            "tags": [
+              "dev",
+              "test",
+            ],
+            "testingLibraryRender": undefined,
+            "title": "Component One",
+            "usesMount": false,
           },
-        },
-        "foo": {
-          "name": "foo",
-          "type": {
-            "name": "string",
+          "component-one--b": {
+            "argTypes": {
+              "a": {
+                "name": "a",
+                "type": {
+                  "name": "string",
+                },
+              },
+              "foo": {
+                "name": "foo",
+                "type": {
+                  "name": "string",
+                },
+              },
+            },
+            "args": {
+              "foo": "b",
+            },
+            "component": undefined,
+            "componentId": "component-one",
+            "globals": {
+              "a": "b",
+            },
+            "id": "component-one--b",
+            "initialArgs": {
+              "foo": "b",
+            },
+            "kind": "Component One",
+            "name": "B",
+            "parameters": {
+              "__isArgsStory": false,
+              "backgrounds": {
+                "disable": false,
+                "grid": {
+                  "cellAmount": 5,
+                  "cellSize": 20,
+                  "opacity": 0.5,
+                },
+              },
+              "fileName": "./src/ComponentOne.stories.js",
+              "throwPlayFunctionExceptions": false,
+            },
+            "playFunction": undefined,
+            "renderToCanvas": undefined,
+            "story": "B",
+            "storyGlobals": {},
+            "subcomponents": undefined,
+            "tags": [
+              "dev",
+              "test",
+            ],
+            "testingLibraryRender": undefined,
+            "title": "Component One",
+            "usesMount": false,
           },
-        },
-      },
-      "args": {
-        "foo": "a",
-      },
-      "component": undefined,
-      "componentId": "component-one",
-      "globals": {
-        "a": "b",
-      },
-      "id": "component-one--a",
-      "initialArgs": {
-        "foo": "a",
-      },
-      "kind": "Component One",
-      "name": "A",
-      "parameters": {
-        "__isArgsStory": false,
-        "fileName": "./src/ComponentOne.stories.js",
-        "throwPlayFunctionExceptions": false,
-      },
-      "playFunction": undefined,
-      "renderToCanvas": undefined,
-      "story": "A",
-      "storyGlobals": {},
-      "subcomponents": undefined,
-      "tags": [
-        "dev",
-        "test",
-      ],
-      "testingLibraryRender": undefined,
-      "title": "Component One",
-      "usesMount": false,
-    },
-    "component-one--b": {
-      "argTypes": {
-        "a": {
-          "name": "a",
-          "type": {
-            "name": "string",
+          "component-two--c": {
+            "argTypes": {
+              "a": {
+                "name": "a",
+                "type": {
+                  "name": "string",
+                },
+              },
+              "foo": {
+                "name": "foo",
+                "type": {
+                  "name": "string",
+                },
+              },
+            },
+            "args": {
+              "foo": "c",
+            },
+            "component": undefined,
+            "componentId": "component-two",
+            "globals": {
+              "a": "b",
+            },
+            "id": "component-two--c",
+            "initialArgs": {
+              "foo": "c",
+            },
+            "kind": "Component Two",
+            "name": "C",
+            "parameters": {
+              "__isArgsStory": false,
+              "backgrounds": {
+                "disable": false,
+                "grid": {
+                  "cellAmount": 5,
+                  "cellSize": 20,
+                  "opacity": 0.5,
+                },
+              },
+              "fileName": "./src/ComponentTwo.stories.js",
+              "throwPlayFunctionExceptions": false,
+            },
+            "playFunction": undefined,
+            "renderToCanvas": undefined,
+            "story": "C",
+            "storyGlobals": {},
+            "subcomponents": undefined,
+            "tags": [
+              "dev",
+              "test",
+            ],
+            "testingLibraryRender": undefined,
+            "title": "Component Two",
+            "usesMount": false,
           },
-        },
-        "foo": {
-          "name": "foo",
-          "type": {
-            "name": "string",
-          },
-        },
-      },
-      "args": {
-        "foo": "b",
-      },
-      "component": undefined,
-      "componentId": "component-one",
-      "globals": {
-        "a": "b",
-      },
-      "id": "component-one--b",
-      "initialArgs": {
-        "foo": "b",
-      },
-      "kind": "Component One",
-      "name": "B",
-      "parameters": {
-        "__isArgsStory": false,
-        "fileName": "./src/ComponentOne.stories.js",
-        "throwPlayFunctionExceptions": false,
-      },
-      "playFunction": undefined,
-      "renderToCanvas": undefined,
-      "story": "B",
-      "storyGlobals": {},
-      "subcomponents": undefined,
-      "tags": [
-        "dev",
-        "test",
-      ],
-      "testingLibraryRender": undefined,
-      "title": "Component One",
-      "usesMount": false,
-    },
-    "component-two--c": {
-      "argTypes": {
-        "a": {
-          "name": "a",
-          "type": {
-            "name": "string",
-          },
-        },
-        "foo": {
-          "name": "foo",
-          "type": {
-            "name": "string",
-          },
-        },
-      },
-      "args": {
-        "foo": "c",
-      },
-      "component": undefined,
-      "componentId": "component-two",
-      "globals": {
-        "a": "b",
-      },
-      "id": "component-two--c",
-      "initialArgs": {
-        "foo": "c",
-      },
-      "kind": "Component Two",
-      "name": "C",
-      "parameters": {
-        "__isArgsStory": false,
-        "fileName": "./src/ComponentTwo.stories.js",
-        "throwPlayFunctionExceptions": false,
-      },
-      "playFunction": undefined,
-      "renderToCanvas": undefined,
-      "story": "C",
-      "storyGlobals": {},
-      "subcomponents": undefined,
-      "tags": [
-        "dev",
-        "test",
-      ],
-      "testingLibraryRender": undefined,
-      "title": "Component Two",
-      "usesMount": false,
-    },
-  }
-`);
+        }
+      `);
     });
 
     it('does not include (legacy) docs only stories by default', async () => {

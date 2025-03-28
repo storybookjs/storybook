@@ -25,11 +25,12 @@ import type {
 import { findUp } from 'find-up';
 import picocolors from 'picocolors';
 import slash from 'slash';
-import { sortStoriesV7, userOrAutoTitleFromSpecifier } from 'storybook/preview-api';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 import * as TsconfigPaths from 'tsconfig-paths';
 
+import { userOrAutoTitleFromSpecifier } from '../../preview-api/modules/store/autoTitle';
+import { sortStoriesV7 } from '../../preview-api/modules/store/sortStories';
 import { IndexingError, MultipleIndexingError } from './IndexingError';
 import { autoName } from './autoName';
 import { type IndexStatsSummary, addStats } from './summarizeStats';

@@ -40,7 +40,7 @@ function Title() {
   );
 }
 
-addons.register(ADDON_ID, (api) => {
+export default addons.register(ADDON_ID, (api) => {
   addons.add(PANEL_ID, {
     title: Title,
     type: types.PANEL,

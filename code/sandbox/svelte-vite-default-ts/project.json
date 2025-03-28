@@ -2,14 +2,7 @@
   "name": "svelte-vite/default-ts",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
-  "implicitDependencies": [
-    "core",
-    "addon-essentials",
-    "addon-links",
-    "addon-onboarding",
-    "blocks",
-    "svelte-vite"
-  ],
+  "implicitDependencies": ["core", "addon-links", "addon-onboarding", "blocks", "svelte-vite"],
   "targets": {
     "sandbox": {},
     "sb:dev": {},

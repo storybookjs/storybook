@@ -237,7 +237,7 @@ test.describe('Manager UI', () => {
 
       // panel is closed
       await expect(mobileNavigationHeading).toHaveText('Example/Button/Secondary');
-      await expect(sbPage.page.locator('#tabbutton-addon-controls')).toBeHidden();
+      await expect(sbPage.page.locator('#list-item-storybook/a11y/panel')).toBeHidden();
 
       // open panel
       await sbPage.page.locator('[title="Open addon panel"]').click();
@@ -247,14 +247,14 @@ test.describe('Manager UI', () => {
       await addonsMenuButton.click();
 
       // panel is open
-      await expect(sbPage.page.locator('#list-item-addon-controls')).toBeVisible();
+      await expect(sbPage.page.locator('#list-item-storybook/a11y/panel')).toBeVisible();
 
       // close panel
       await sbPage.page.locator('[title="Close addon panel"]').click();
 
       // panel is closed
       await expect(mobileNavigationHeading).toHaveText('Example/Button/Secondary');
-      await expect(sbPage.page.locator('#tabbutton-addon-controls')).toBeHidden();
+      await expect(sbPage.page.locator('#list-item-storybook/a11y/panel')).toBeHidden();
     });
   });
 });

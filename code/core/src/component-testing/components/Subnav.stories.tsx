@@ -1,7 +1,6 @@
-import { CallStates } from 'storybook/internal/instrumenter';
-
 import { action } from 'storybook/actions';
 
+import { CallStates } from '../../instrumenter/types';
 import { Subnav } from './Subnav';
 
 export default {

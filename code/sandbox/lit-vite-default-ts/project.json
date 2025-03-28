@@ -4,7 +4,6 @@
   "projectType": "application",
   "implicitDependencies": [
     "core",
-    "addon-essentials",
     "addon-links",
     "addon-onboarding",
     "blocks",

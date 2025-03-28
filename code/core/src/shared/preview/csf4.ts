@@ -10,6 +10,10 @@ import type {
 import type { NormalizedProjectAnnotations } from 'storybook/internal/types';
 
 import actionAnnotations from 'storybook/actions/preview';
+import backgroundsAnnotations from 'storybook/backgrounds/preview';
+import highlightAnnotations from 'storybook/highlight/preview';
+import measureAnnotations from 'storybook/measure/preview';
+import outlineAnnotations from 'storybook/outline/preview';
 import { composeConfigs, normalizeProjectAnnotations } from 'storybook/preview-api';
 import testAnnotations from 'storybook/test/preview';
 import viewportAnnotations from 'storybook/viewport/preview';
@@ -33,6 +37,15 @@ export function __definePreview<TRenderer extends Renderer>(
         composeConfigs([
           // @ts-expect-error CJS fallback
           (viewportAnnotations.default ?? viewportAnnotations)(),
+          // @ts-expect-error CJS fallback
+          (backgroundsAnnotations.default ?? backgroundsAnnotations)(),
+          // @ts-expect-error CJS fallback
+          (highlightAnnotations.default ?? highlightAnnotations)(),
+
+          // @ts-expect-error CJS fallback
+          (measureAnnotations.default ?? measureAnnotations)(),
+          // @ts-expect-error CJS fallback
+          (outlineAnnotations.default ?? outlineAnnotations)(),
           // @ts-expect-error CJS fallback
           (actionAnnotations.default ?? actionAnnotations)(),
           // @ts-expect-error CJS fallback

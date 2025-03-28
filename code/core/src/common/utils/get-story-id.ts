@@ -4,9 +4,9 @@ import { normalizeStories, normalizeStoryPath } from 'storybook/internal/common'
 import { sanitize, storyNameFromExport, toId } from 'storybook/internal/csf';
 import type { Options, StoriesEntry } from 'storybook/internal/types';
 
-import { userOrAutoTitleFromSpecifier } from 'storybook/preview-api';
 import { dedent } from 'ts-dedent';
 
+import { userOrAutoTitleFromSpecifier } from '../../preview-api/modules/store/autoTitle';
 import { posix } from './posix';
 
 interface StoryIdData {

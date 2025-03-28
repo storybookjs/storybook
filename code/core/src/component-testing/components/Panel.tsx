@@ -8,7 +8,6 @@ import {
   STORY_THREW_EXCEPTION,
   UNHANDLED_ERRORS_WHILE_PLAYING,
 } from 'storybook/internal/core-events';
-import { type Call, CallStates, EVENTS, type LogItem } from 'storybook/internal/instrumenter';
 import type { StatusValue } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
@@ -24,6 +23,8 @@ import {
   STATUS_TYPE_ID_COMPONENT_TEST,
   STORYBOOK_ADDON_TEST_CHANNEL,
 } from '../../../../addons/test/src/constants';
+import { EVENTS } from '../../instrumenter/EVENTS';
+import { type Call, CallStates, type LogItem } from '../../instrumenter/types';
 import { ADDON_ID } from '../constants';
 import { InteractionsPanel } from './InteractionsPanel';
 

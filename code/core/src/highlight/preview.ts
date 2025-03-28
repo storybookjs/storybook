@@ -68,53 +68,52 @@ const highlightStyle = (
   }`;
 };
 
-console.trace('highlight preview');
+if (addons && addons.ready) {
+  addons.ready().then(() => {
+    const channel = addons.getChannel();
+    const sheetIds = new Set<string>();
 
-addons.ready().then(() => {
-  const channel = addons.getChannel();
-  const sheetIds = new Set<string>();
+    const highlight = (options: HighlightOptions) => {
+      const sheetId = Math.random().toString(36).substring(2, 15);
+      sheetIds.add(sheetId);
 
-  const highlight = (options: HighlightOptions) => {
-    const sheetId = Math.random().toString(36).substring(2, 15);
-    sheetIds.add(sheetId);
+      const sheet = document.createElement('style');
+      sheet.innerHTML = highlightStyle(Array.from(new Set(options.elements)), options);
+      sheet.setAttribute('id', sheetId);
+      document.head.appendChild(sheet);
 
-    const sheet = document.createElement('style');
-    sheet.innerHTML = highlightStyle(Array.from(new Set(options.elements)), options);
-    sheet.setAttribute('id', sheetId);
-    document.head.appendChild(sheet);
+      const timeout = options.pulseOut || options.fadeOut;
+      if (timeout) {
+        setTimeout(() => removeHighlight(sheetId), timeout + 500);
+      }
+    };
 
-    const timeout = options.pulseOut || options.fadeOut;
-    if (timeout) {
-      setTimeout(() => removeHighlight(sheetId), timeout + 500);
-    }
-  };
+    const removeHighlight = (id: string) => {
+      const sheetElement = document.getElementById(id);
+      sheetElement?.parentNode?.removeChild(sheetElement);
+      sheetIds.delete(id);
+    };
 
-  const removeHighlight = (id: string) => {
-    const sheetElement = document.getElementById(id);
-    sheetElement?.parentNode?.removeChild(sheetElement);
-    sheetIds.delete(id);
-  };
+    const resetHighlight = () => {
+      sheetIds.forEach(removeHighlight);
+    };
 
-  const resetHighlight = () => {
-    sheetIds.forEach(removeHighlight);
-  };
+    const scrollIntoView = (target: string, options?: ScrollIntoViewOptions) => {
+      const element = document.querySelector(target);
+      element?.scrollIntoView({ behavior: 'smooth', block: 'center', ...options });
+      highlight({
+        elements: [target],
+        color: '#1EA7FD',
+        width: '2px',
+        offset: '2px',
+        pulseOut: 3000,
+      });
+    };
 
-  const scrollIntoView = (target: string, options?: ScrollIntoViewOptions) => {
-    const element = document.querySelector(target);
-    element?.scrollIntoView({ behavior: 'smooth', block: 'center', ...options });
-    highlight({
-      elements: [target],
-      color: '#1EA7FD',
-      width: '2px',
-      offset: '2px',
-      pulseOut: 3000,
-    });
-  };
-
-  channel.on(STORY_CHANGED, resetHighlight);
-  channel.on(SCROLL_INTO_VIEW, scrollIntoView);
-  channel.on(RESET_HIGHLIGHT, resetHighlight);
-  channel.on(HIGHLIGHT, highlight);
-});
-
+    channel.on(STORY_CHANGED, resetHighlight);
+    channel.on(SCROLL_INTO_VIEW, scrollIntoView);
+    channel.on(RESET_HIGHLIGHT, resetHighlight);
+    channel.on(HIGHLIGHT, highlight);
+  });
+}
 export default () => definePreview({});

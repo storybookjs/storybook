@@ -12,8 +12,6 @@ export interface A11yParameters {
   element?: ElementContext;
   config?: Spec;
   options?: RunOptions;
-  /** @deprecated Use globals.a11y.manual instead */
-  manual?: boolean;
   disable?: boolean;
   test?: A11yTest;
 }

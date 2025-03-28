@@ -67,15 +67,12 @@ export { default as ListItem } from './components/tooltip/ListItem';
 // Toolbar and subcomponents
 export { Tabs, TabsState, TabBar, TabWrapper } from './components/tabs/tabs';
 export { EmptyTabContent } from './components/tabs/EmptyTabContent';
-export { IconButtonSkeleton, TabButton } from './components/bar/button';
+export { TabButton } from './components/bar/button';
 export { Separator, interleaveSeparators } from './components/bar/separator';
 export { Bar, FlexBar } from './components/bar/bar';
 export { AddonPanel } from './components/addon-panel/addon-panel';
 
 // Graphics
-export type { IconsProps } from './components/icon/icon';
-export { Icons, Symbols } from './components/icon/icon';
-export { icons } from './components/icon/icon';
 export { StorybookLogo } from './brand/StorybookLogo';
 export { StorybookIcon } from './brand/StorybookIcon';
 

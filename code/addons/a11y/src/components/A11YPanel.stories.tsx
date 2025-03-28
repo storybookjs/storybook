@@ -1,114 +1,74 @@
 import React from 'react';
 
-import type { Meta, StoryObj } from '@storybook/react-vite';
-
-import type axe from 'axe-core';
 import { ManagerContext } from 'storybook/manager-api';
-import { fn } from 'storybook/test';
-import { ThemeProvider, convert, themes } from 'storybook/theming';
+import { expect, fn, userEvent, within } from 'storybook/test';
+import { styled } from 'storybook/theming';
 
+import preview from '../../../../.storybook/preview';
+import { results } from '../results.mock';
+import { RuleType } from '../types';
 import { A11YPanel } from './A11YPanel';
 import { A11yContext } from './A11yContext';
 import type { A11yContextStore } from './A11yContext';
+
+const StyledWrapper = styled.div(({ theme }) => ({
+  backgroundColor: theme.background.content,
+  fontSize: theme.typography.size.s2 - 1,
+  color: theme.color.defaultText,
+  display: 'block',
+  height: '100%',
+  position: 'absolute',
+  left: 0,
+  right: 0,
+  bottom: 0,
+  overflow: 'auto',
+}));
 
 const managerContext: any = {
   state: {},
   api: {
     getDocsUrl: fn().mockName('api::getDocsUrl'),
+    getCurrentParameter: fn().mockName('api::getCurrentParameter'),
   },
 };
 
-const meta: Meta = {
-  title: 'A11YPanel',
+const meta = preview.meta({
+  title: 'Panel',
   component: A11YPanel,
-  decorators: [
-    (Story) => (
-      <ManagerContext.Provider value={managerContext}>
-        <ThemeProvider theme={convert(themes.light)}>
-          <Story />
-        </ThemeProvider>
-      </ManagerContext.Provider>
-    ),
-  ],
-} satisfies Meta<typeof A11YPanel>;
-
-export default meta;
-
-type Story = StoryObj<typeof meta>;
-
-const violations: axe.Result[] = [
-  {
-    id: 'aria-command-name',
-    impact: 'serious',
-    tags: ['cat.aria', 'wcag2a', 'wcag412', 'TTv5', 'TT6.a', 'EN-301-549', 'EN-9.4.1.2', 'ACT'],
-    description: 'Ensures every ARIA button, link and menuitem has an accessible name',
-    help: 'ARIA commands must have an accessible name',
-    helpUrl: 'https://dequeuniversity.com/rules/axe/4.8/aria-command-name?application=axeAPI',
-    nodes: [
-      {
-        any: [
-          {
-            id: 'has-visible-text',
-            data: null,
-            relatedNodes: [],
-            impact: 'serious',
-            message: 'Element does not have text that is visible to screen readers',
-          },
-          {
-            id: 'aria-label',
-            data: null,
-            relatedNodes: [],
-            impact: 'serious',
-            message: 'aria-label attribute does not exist or is empty',
-          },
-          {
-            id: 'aria-labelledby',
-            data: null,
-            relatedNodes: [],
-            impact: 'serious',
-            message:
-              'aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty',
-          },
-          {
-            id: 'non-empty-title',
-            data: {
-              messageKey: 'noAttr',
-            },
-            relatedNodes: [],
-            impact: 'serious',
-            message: 'Element has no title attribute',
-          },
-        ],
-        all: [],
-        none: [],
-        impact: 'serious',
-        html: '<div role="button" class="css-12jpz5t">',
-        target: ['.css-12jpz5t'],
-        failureSummary:
-          'Fix any of the following:\n  Element does not have text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute',
-      },
-    ],
+  parameters: {
+    layout: 'fullscreen',
   },
-];
+});
 
-const Template = (args: Pick<A11yContextStore, 'results' | 'error' | 'status' | 'discrepancy'>) => (
-  <A11yContext.Provider
-    value={{
-      handleManual: fn(),
-      highlighted: [],
-      toggleHighlight: fn(),
-      clearHighlights: fn(),
-      tab: 0,
-      setTab: fn(),
-      setStatus: fn(),
-      ...args,
-    }}
-  >
-    <A11YPanel />
+const context = {
+  handleManual: fn(),
+  highlighted: false,
+  toggleHighlight: fn(),
+  tab: RuleType.VIOLATION,
+  setTab: fn(),
+  setStatus: fn(),
+  handleCopyLink: fn(),
+  toggleOpen: fn(),
+  allExpanded: false,
+  handleCollapseAll: fn(),
+  handleExpandAll: fn(),
+  handleSelectionChange: fn(),
+  handleJumpToElement: fn(),
+};
+
+const Template = (
+  args: Pick<A11yContextStore, 'results' | 'error' | 'status' | 'discrepancy' | 'selectedItems'>
+) => (
+  <A11yContext.Provider value={{ ...context, ...args }}>
+    <ManagerContext.Provider value={managerContext}>
+      <StyledWrapper id="panel-tab-content">
+        <A11YPanel />
+      </StyledWrapper>
+    </ManagerContext.Provider>
   </A11yContext.Provider>
 );
 
-export const Initializing: Story = {
+export const Initializing = meta.story({
   render: () => {
     return (
       <Template
@@ -116,12 +76,13 @@ export const Initializing: Story = {
         status="initial"
         error={null}
         discrepancy={null}
+        selectedItems={new Map()}
       />
     );
   },
-};
+});
 
-export const Manual: Story = {
+export const Manual = meta.story({
   render: () => {
     return (
       <Template
@@ -129,12 +90,13 @@ export const Manual: Story = {
         status="manual"
         error={null}
         discrepancy={null}
+        selectedItems={new Map()}
       />
     );
   },
-};
+});
 
-export const ManualWithDiscrepancy: Story = {
+export const ManualWithDiscrepancy = meta.story({
   render: () => {
     return (
       <Template
@@ -142,12 +104,13 @@ export const ManualWithDiscrepancy: Story = {
         status="manual"
         error={null}
         discrepancy={'cliFailedButModeManual'}
+        selectedItems={new Map()}
       />
     );
   },
-};
+});
 
-export const Running: Story = {
+export const Running = meta.story({
   render: () => {
     return (
       <Template
@@ -155,59 +118,74 @@ export const Running: Story = {
         status="running"
         error={null}
         discrepancy={null}
+        selectedItems={new Map()}
       />
     );
   },
-};
+});
 
-export const ReadyWithResults: Story = {
+export const ReadyWithResults = meta.story({
   render: () => {
     return (
       <Template
-        results={{
-          passes: [],
-          incomplete: [],
-          violations,
-        }}
+        results={results}
         status="ready"
         error={null}
         discrepancy={null}
+        selectedItems={
+          new Map([
+            [
+              `${RuleType.VIOLATION}.${results.violations[0].id}`,
+              `${RuleType.VIOLATION}.${results.violations[0].id}.1`,
+            ],
+          ])
+        }
       />
     );
   },
-};
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(await canvas.findByRole('button', { name: /Rerun accessibility scan/ }));
+    expect(context.handleManual).toHaveBeenCalled();
+  },
+});
 
-export const ReadyWithResultsDiscrepancyCLIPassedBrowserFailed: Story = {
+export const ReadyWithResultsDiscrepancyCLIPassedBrowserFailed = meta.story({
   render: () => {
     return (
       <Template
-        results={{
-          passes: [],
-          incomplete: [],
-          violations,
-        }}
+        results={results}
         status="ready"
         error={null}
         discrepancy={'cliPassedBrowserFailed'}
+        selectedItems={
+          new Map([
+            [
+              `${RuleType.VIOLATION}.${results.violations[0].id}`,
+              `${RuleType.VIOLATION}.${results.violations[0].id}.1`,
+            ],
+          ])
+        }
       />
     );
   },
-};
+});
 
-export const Error: Story = {
+export const Error = meta.story({
   render: () => {
     return (
       <Template
         results={{ passes: [], incomplete: [], violations: [] }}
         status="error"
-        error="Test error message"
+        error={`TypeError: Configured rule { impact: "moderate", disable: true } is invalid. Rules must be an object with at least an id property.`}
         discrepancy={null}
+        selectedItems={new Map()}
       />
     );
   },
-};
+});
 
-export const ErrorStateWithObject: Story = {
+export const ErrorStateWithObject = meta.story({
   render: () => {
     return (
       <Template
@@ -215,7 +193,22 @@ export const ErrorStateWithObject: Story = {
         status="error"
         error={{ message: 'Test error object message' }}
         discrepancy={null}
+        selectedItems={new Map()}
       />
     );
   },
-};
+});
+
+export const Broken = meta.story({
+  render: () => {
+    return (
+      <Template
+        results={{ passes: [], incomplete: [], violations: [] }}
+        status="component-test-error"
+        error={null}
+        discrepancy={null}
+        selectedItems={new Map()}
+      />
+    );
+  },
+});

@@ -76,6 +76,7 @@ export function createStatusStore(params: {
 }): {
   getStatusStoreByTypeId: (typeId: StatusTypeId) => StatusStoreByTypeId;
   fullStatusStore: FullStatusStore;
+  universalStatusStore: UniversalStore<StatusesByStoryIdAndTypeId, StatusStoreEvent>;
 };
 export function createStatusStore(params: {
   universalStatusStore: UniversalStore<StatusesByStoryIdAndTypeId, StatusStoreEvent>;
@@ -85,6 +86,7 @@ export function createStatusStore(params: {
   getStatusStoreByTypeId: (typeId: StatusTypeId) => StatusStoreByTypeId;
   fullStatusStore: FullStatusStore;
   useStatusStore: UseStatusStore;
+  universalStatusStore: UniversalStore<StatusesByStoryIdAndTypeId, StatusStoreEvent>;
 };
 export function createStatusStore({
   universalStatusStore,
@@ -98,6 +100,7 @@ export function createStatusStore({
   getStatusStoreByTypeId: (typeId: StatusTypeId) => StatusStoreByTypeId;
   fullStatusStore: FullStatusStore;
   useStatusStore?: UseStatusStore;
+  universalStatusStore: UniversalStore<StatusesByStoryIdAndTypeId, StatusStoreEvent>;
 } {
   const fullStatusStore: FullStatusStore = {
     getAll() {
@@ -214,12 +217,13 @@ export function createStatusStore({
   });
 
   if (!useUniversalStore) {
-    return { getStatusStoreByTypeId, fullStatusStore };
+    return { getStatusStoreByTypeId, fullStatusStore, universalStatusStore };
   }
 
   return {
     getStatusStoreByTypeId,
     fullStatusStore,
+    universalStatusStore,
     useStatusStore: <T = StatusesByStoryIdAndTypeId>(
       selector?: (statuses: StatusesByStoryIdAndTypeId) => T
     ) => useUniversalStore(universalStatusStore, selector as any)[0] as T,

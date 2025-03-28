@@ -29,9 +29,7 @@ export interface SubAPI {
     T extends
       | Addon_Types
       | Addon_TypesEnum.experimental_PAGE
-      | Addon_TypesEnum.experimental_SIDEBAR_BOTTOM
-      | Addon_TypesEnum.experimental_TEST_PROVIDER
-      | Addon_TypesEnum.experimental_SIDEBAR_TOP = Addon_Types,
+      | Addon_TypesEnum.experimental_TEST_PROVIDER,
   >(
     type: T
   ) => Addon_Collection<Addon_TypesMapping[T]>;

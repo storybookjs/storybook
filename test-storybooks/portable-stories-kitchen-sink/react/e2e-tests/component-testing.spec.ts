@@ -90,8 +90,6 @@ test.describe("component testing", () => {
 
     const testingModuleDescription = await page.locator('#testing-module-description');
 
-    await expect(testingModuleDescription).toContainText('Not run');
-
     const runTestsButton = await page.getByLabel('Start test run')
     await runTestsButton.click();
 
@@ -148,8 +146,6 @@ test.describe("component testing", () => {
     await expect(page.locator('#testing-module-title')).toHaveText('Run local tests');
 
     const testingModuleDescription = await page.locator('#testing-module-description');
-
-    await expect(testingModuleDescription).toContainText('Not run');
 
     const runTestsButton = await page.getByLabel('Start test run')
     const watchModeButton = await page.getByLabel('Enable watch mode')
@@ -323,7 +319,7 @@ test.describe("component testing", () => {
 
     // Assert - Only one test is running and reported
     await expect(sidebarContextMenu.locator('#testing-module-description')).toContainText('Ran 1 test', { timeout: 30000 });
-    await expect(sidebarContextMenu.getByLabel('status: passed')).toHaveCount(1);
+    await expect(sidebarContextMenu.getByLabel('Component tests passed')).toHaveCount(1);
     await page.click('body');
     await expect(page.locator('#storybook-explorer-menu').getByRole('status', { name: 'Test status: success' })).toHaveCount(1);
   });
@@ -352,8 +348,8 @@ test.describe("component testing", () => {
     await sidebarContextMenu.getByLabel('Start test run').click();
 
     // Assert - Tests are running and errors are reported
-    const errorLink = page.locator('#testing-module-description a');
-    await expect(errorLink).toContainText('2 unhandled errors', { timeout: 30000 });
+    const errorLink = page.locator('#storybook-testing-module #testing-module-description a');
+    await expect(errorLink).toContainText('View full error', { timeout: 30000 });
     await errorLink.click();
 
     await expect(page.locator('pre')).toContainText('I THREW AN UNHANDLED ERROR!');
@@ -391,7 +387,7 @@ test.describe("component testing", () => {
     await expect(sidebarContextMenu.locator('#testing-module-description')).toContainText('Ran 8 tests', { timeout: 30000 });
     // Assert - Failing test shows as a failed status
     await expect(sidebarContextMenu.getByText('1 story with errors')).toBeVisible();
-    await expect(sidebarContextMenu.getByLabel('status: failed')).toHaveCount(1);
+    await expect(sidebarContextMenu.getByLabel('Component tests failed')).toHaveCount(1);
 
     await page.click('body');
     await expect(page.locator('#storybook-explorer-menu').getByRole('status', { name: 'Test status: success' })).toHaveCount(7);
@@ -424,7 +420,7 @@ test.describe("component testing", () => {
     await expect(sidebarContextMenu.locator('#testing-module-description')).toContainText('Ran 10 test', { timeout: 30000 });
     // Assert - 1 failing test shows as a failed status
     await expect(sidebarContextMenu.getByText('2 stories with errors')).toBeVisible();
-    await expect(sidebarContextMenu.getByLabel('status: failed')).toHaveCount(1);
+    await expect(sidebarContextMenu.getByLabel('Component tests failed')).toHaveCount(1);
 
     await page.click('body');
     await expect(page.locator('#storybook-explorer-menu').getByRole('status', { name: 'Test status: success' })).toHaveCount(7);
@@ -478,5 +474,14 @@ test.describe("component testing", () => {
     const sbPercentage = Number.parseInt(sbPercentageText!.replace('%', '') ?? '');
     expect(sbPercentage).toBeGreaterThanOrEqual(0);
     expect(sbPercentage).toBeLessThanOrEqual(100);
+  });
+
+  test.fixme("should still collect statuses even when the browser is closed", () => {
+  });
+
+  test.fixme("should have correct status count globally and in context menus", () => {
+  });
+  
+  test.fixme("should open the correct component test and a11y panels when clicking on statuses", () => {
   });
 });

@@ -24,7 +24,8 @@ export type EventType =
   | 'create-new-story-file-search'
   | 'testing-module-watch-mode'
   | 'testing-module-completed-report'
-  | 'testing-module-crash-report';
+  | 'testing-module-crash-report'
+  | 'addon-test';
 
 export interface Dependency {
   version: string | undefined;

@@ -1,4 +1,3 @@
-import { isEqual } from 'es-toolkit';
 import { dedent } from 'ts-dedent';
 
 import { instances } from './instances';
@@ -324,6 +323,7 @@ export class UniversalStore<
     this.environment = environmentOverrides?.environment ?? UniversalStore.preparation.environment;
 
     if (this.channel && this.environment) {
+      UniversalStore.preparation.resolve({ channel: this.channel, environment: this.environment });
       this.prepareThis({ channel: this.channel, environment: this.environment });
     } else {
       UniversalStore.preparation.promise.then(this.prepareThis);
@@ -600,6 +600,7 @@ export class UniversalStore<
             responseEvent,
           });
           this.emitToChannel(responseEvent, { actor: this.actor });
+          this.emitToListeners(responseEvent, { actor: this.actor });
           break;
         case UniversalStore.InternalEventType.LEADER_CREATED:
           // if a leader receives a LEADER_CREATED event it should not forward it,

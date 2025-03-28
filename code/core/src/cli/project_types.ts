@@ -1,7 +1,4 @@
-import type {
-  SupportedRenderers as CoreSupportedRenderers,
-  SupportedFrameworks,
-} from 'storybook/internal/types';
+import type { SupportedFrameworks, SupportedRenderers } from 'storybook/internal/types';
 
 import { minVersion, validRange } from 'semver';
 
@@ -31,9 +28,6 @@ export const externalFrameworks: ExternalFramework[] = [
     renderer: '@storybook/vue3',
   },
 ];
-
-/** @deprecated Please use `SupportedRenderers` from `storybook/internal/types` instead */
-export type SupportedRenderers = CoreSupportedRenderers;
 
 export const SUPPORTED_RENDERERS: SupportedRenderers[] = [
   'react',

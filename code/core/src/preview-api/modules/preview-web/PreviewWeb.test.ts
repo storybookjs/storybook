@@ -164,7 +164,10 @@ describe('PreviewWeb', () => {
 
       const preview = await createAndRenderPreview();
 
-      expect((preview.storyStore as StoryStore<Renderer>)!.userGlobals.get()).toEqual({ a: 'c' });
+      // @ts-expect-error Ignore protected property
+      expect((preview.storyStoreValue as StoryStore<Renderer>)!.userGlobals.get()).toEqual({
+        a: 'c',
+      });
     });
 
     it('emits the SET_GLOBALS event', async () => {
@@ -208,7 +211,10 @@ describe('PreviewWeb', () => {
 
       const preview = await createAndRenderPreview();
 
-      expect((preview.storyStore as StoryStore<Renderer>)?.args.get('component-one--a')).toEqual({
+      expect(
+        // @ts-expect-error Ignore protected property
+        (preview.storyStoreValue as StoryStore<Renderer>)?.args.get('component-one--a')
+      ).toEqual({
         foo: 'url',
         one: 1,
       });
@@ -234,7 +240,10 @@ describe('PreviewWeb', () => {
       });
       await preview.ready();
 
-      expect((preview.storyStore as StoryStore<Renderer>)!.userGlobals.get()).toEqual({ a: 'b' });
+      // @ts-expect-error Ignore protected property
+      expect((preview.storyStoreValue as StoryStore<Renderer>)!.userGlobals.get()).toEqual({
+        a: 'b',
+      });
     });
   });
 
@@ -896,7 +905,10 @@ describe('PreviewWeb', () => {
 
       emitter.emit(UPDATE_GLOBALS, { globals: { foo: 'bar' } });
 
-      expect((preview.storyStore as StoryStore<Renderer>)!.userGlobals.get()).toEqual({ a: 'b' });
+      // @ts-expect-error Ignore protected property
+      expect((preview.storyStoreValue as StoryStore<Renderer>)!.userGlobals.get()).toEqual({
+        a: 'b',
+      });
     });
 
     it('passes globals in context to renderToCanvas', async () => {
@@ -973,7 +985,8 @@ describe('PreviewWeb', () => {
       });
 
       expect(
-        (preview.storyStore as StoryStore<Renderer> as StoryStore<Renderer>)?.args.get(
+        // @ts-expect-error Ignore protected property
+        (preview.storyStoreValue as StoryStore<Renderer> as StoryStore<Renderer>)?.args.get(
           'component-one--a'
         )
       ).toEqual({
@@ -1257,7 +1270,8 @@ describe('PreviewWeb', () => {
           await waitForRender();
 
           mockChannel.emit.mockClear();
-          const story = await (preview.storyStore as StoryStore<Renderer>)?.loadStory({
+          // @ts-expect-error Ignore protected property
+          const story = await (preview.storyStoreValue as StoryStore<Renderer>)?.loadStory({
             storyId: 'component-one--a',
           });
           preview.renderStoryToElement(story, 'story-element' as any, callbacks, {});
@@ -1297,7 +1311,8 @@ describe('PreviewWeb', () => {
           await waitForRender();
 
           mockChannel.emit.mockClear();
-          const story = await (preview.storyStore as StoryStore<Renderer>)?.loadStory({
+          // @ts-expect-error Ignore protected property
+          const story = await (preview.storyStoreValue as StoryStore<Renderer>)?.loadStory({
             storyId: 'component-one--a',
           });
           preview.renderStoryToElement(story, 'story-element' as any, callbacks, {
@@ -2288,7 +2303,10 @@ describe('PreviewWeb', () => {
           updatedArgs: { foo: 'updated' },
         });
         await waitForRender();
-        expect((preview.storyStore as StoryStore<Renderer>)?.args.get('component-one--a')).toEqual({
+        expect(
+          // @ts-expect-error Ignore protected property
+          (preview.storyStoreValue as StoryStore<Renderer>)?.args.get('component-one--a')
+        ).toEqual({
           foo: 'updated',
           one: 1,
         });
@@ -2300,7 +2318,10 @@ describe('PreviewWeb', () => {
         });
         await waitForSetCurrentStory();
         await waitForRender();
-        expect((preview.storyStore as StoryStore<Renderer>)?.args.get('component-one--a')).toEqual({
+        expect(
+          // @ts-expect-error Ignore protected property
+          (preview.storyStoreValue as StoryStore<Renderer>)?.args.get('component-one--a')
+        ).toEqual({
           foo: 'updated',
           one: 1,
         });
@@ -2312,7 +2333,10 @@ describe('PreviewWeb', () => {
         });
         await waitForSetCurrentStory();
         await waitForRender();
-        expect((preview.storyStore as StoryStore<Renderer>)?.args.get('component-one--a')).toEqual({
+        expect(
+          // @ts-expect-error Ignore protected property
+          (preview.storyStoreValue as StoryStore<Renderer>)?.args.get('component-one--a')
+        ).toEqual({
           foo: 'updated',
           one: 1,
         });
@@ -2885,7 +2909,10 @@ describe('PreviewWeb', () => {
         mockFetchResult = { status: 200, json: mockStoryIndex, text: () => 'error text' };
         preview.onStoryIndexChanged();
         await waitForRender();
-        expect((preview.storyStore as StoryStore<Renderer>)?.args.get('component-one--a')).toEqual({
+        expect(
+          // @ts-expect-error Ignore protected property
+          (preview.storyStoreValue as StoryStore<Renderer>)?.args.get('component-one--a')
+        ).toEqual({
           foo: 'url',
           one: 1,
         });
@@ -3334,7 +3361,10 @@ describe('PreviewWeb', () => {
         });
         await waitForSetCurrentStory();
         await waitForRender();
-        expect((preview.storyStore as StoryStore<Renderer>)?.args.get('component-one--a')).toEqual({
+        expect(
+          // @ts-expect-error Ignore protected property
+          (preview.storyStoreValue as StoryStore<Renderer>)?.args.get('component-one--a')
+        ).toEqual({
           foo: 'updated',
           one: 1,
         });
@@ -3353,7 +3383,10 @@ describe('PreviewWeb', () => {
         });
         await waitForSetCurrentStory();
         await waitForRender();
-        expect((preview.storyStore as StoryStore<Renderer>)?.args.get('component-one--a')).toEqual({
+        expect(
+          // @ts-expect-error Ignore protected property
+          (preview.storyStoreValue as StoryStore<Renderer>)?.args.get('component-one--a')
+        ).toEqual({
           foo: 'updated',
           bar: 'edited',
           one: 1,
@@ -3524,7 +3557,10 @@ describe('PreviewWeb', () => {
         preview.onGetProjectAnnotationsChanged({ getProjectAnnotations });
         await waitForRender();
 
-        expect((preview.storyStore as StoryStore<Renderer>)!.userGlobals.get()).toEqual({ a: 'c' });
+        // @ts-expect-error Ignore protected property
+        expect((preview.storyStoreValue as StoryStore<Renderer>)!.userGlobals.get()).toEqual({
+          a: 'c',
+        });
       });
     });
 
@@ -3573,7 +3609,8 @@ describe('PreviewWeb', () => {
       preview.onGetProjectAnnotationsChanged({ getProjectAnnotations: newGetProjectAnnotations });
       await waitForRender();
 
-      expect((preview.storyStore as StoryStore<Renderer>)!.userGlobals.get()).toEqual({
+      // @ts-expect-error Ignore protected property
+      expect((preview.storyStoreValue as StoryStore<Renderer>)!.userGlobals.get()).toEqual({
         a: 'edited',
       });
     });
@@ -3601,7 +3638,10 @@ describe('PreviewWeb', () => {
       preview.onGetProjectAnnotationsChanged({ getProjectAnnotations: newGetProjectAnnotations });
       await waitForRender();
 
-      expect((preview.storyStore as StoryStore<Renderer>)?.args.get('component-one--a')).toEqual({
+      expect(
+        // @ts-expect-error Ignore protected property
+        (preview.storyStoreValue as StoryStore<Renderer>)?.args.get('component-one--a')
+      ).toEqual({
         foo: 'a',
         one: 1,
         global: 'added',
@@ -3729,7 +3769,8 @@ describe('PreviewWeb', () => {
       componentOneExports.b.play.mockImplementationOnce(async () => gate);
       // @ts-expect-error (not strict)
       preview.renderStoryToElement(
-        await (preview.storyStore as StoryStore<Renderer>)?.loadStory({
+        // @ts-expect-error Ignore protected property
+        await (preview.storyStoreValue as StoryStore<Renderer>)?.loadStory({
           storyId: 'component-one--b',
         }),
         {} as any,

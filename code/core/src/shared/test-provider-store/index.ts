@@ -378,6 +378,7 @@ export function createTestProviderStore(params: {
 }): {
   getTestProviderStoreById: (testProviderId: TestProviderId) => TestProviderStoreById;
   fullTestProviderStore: FullTestProviderStore;
+  universalTestProviderStore: UniversalStore<TestProviderStateByProviderId, TestProviderStoreEvent>;
 };
 export function createTestProviderStore(params: {
   universalTestProviderStore: UniversalStore<TestProviderStateByProviderId, TestProviderStoreEvent>;
@@ -385,6 +386,7 @@ export function createTestProviderStore(params: {
 }): {
   getTestProviderStoreById: (testProviderId: TestProviderId) => TestProviderStoreById;
   fullTestProviderStore: FullTestProviderStore;
+  universalTestProviderStore: UniversalStore<TestProviderStateByProviderId, TestProviderStoreEvent>;
   useTestProviderStore: UseTestProviderStore;
 };
 export function createTestProviderStore({
@@ -396,7 +398,9 @@ export function createTestProviderStore({
 }) {
   const baseStore: BaseTestProviderStore = {
     settingsChanged: () => {
-      universalTestProviderStore.send({ type: 'settings-changed' });
+      universalTestProviderStore.untilReady().then(() => {
+        universalTestProviderStore.send({ type: 'settings-changed' });
+      });
     },
     onRunAll: (listener) => universalTestProviderStore.subscribe('run-all', listener),
     onClearAll: (listener) => universalTestProviderStore.subscribe('clear-all', listener),
@@ -408,22 +412,27 @@ export function createTestProviderStore({
     setFullState: universalTestProviderStore.setState,
     onSettingsChanged: (listener) =>
       universalTestProviderStore.subscribe('settings-changed', listener),
-    runAll: () => universalTestProviderStore.send({ type: 'run-all' }),
-    clearAll: () => universalTestProviderStore.send({ type: 'clear-all' }),
+    runAll: async () => {
+      await universalTestProviderStore.untilReady();
+      universalTestProviderStore.send({ type: 'run-all' });
+    },
+    clearAll: async () => {
+      await universalTestProviderStore.untilReady();
+      universalTestProviderStore.send({ type: 'clear-all' });
+    },
   };
 
   const getTestProviderStoreById = (testProviderId: string): TestProviderStoreById => {
-    const getStateForTestProvider = () => universalTestProviderStore.getState()[testProviderId];
+    const getStateForTestProvider = () =>
+      universalTestProviderStore.getState()[testProviderId] ?? 'test-provider-state:pending';
     const setStateForTestProvider = (state: TestProviderState) => {
-      universalTestProviderStore.setState((currentState) => ({
-        ...currentState,
-        [testProviderId]: state,
-      }));
+      universalTestProviderStore.untilReady().then(() => {
+        universalTestProviderStore.setState((currentState) => ({
+          ...currentState,
+          [testProviderId]: state,
+        }));
+      });
     };
-    // Initialize the state to 'pending' if it doesn't exist yet
-    if (!getStateForTestProvider()) {
-      setStateForTestProvider('test-provider-state:pending');
-    }
     return {
       ...baseStore,
       testProviderId,
@@ -445,6 +454,7 @@ export function createTestProviderStore({
     return {
       getTestProviderStoreById,
       fullTestProviderStore,
+      universalTestProviderStore,
       useTestProviderStore: <T = TestProviderStateByProviderId>(
         selector?: (testProviders: TestProviderStateByProviderId) => T
       ) => useUniversalStore(universalTestProviderStore, selector as any)[0] as T,
@@ -454,5 +464,6 @@ export function createTestProviderStore({
   return {
     getTestProviderStoreById,
     fullTestProviderStore,
+    universalTestProviderStore,
   };
 }

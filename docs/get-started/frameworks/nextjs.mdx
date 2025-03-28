@@ -78,7 +78,7 @@ Finally, if you were using Storybook plugins to integrate with Next.js, those ar
 
 (⚠️ **Experimental**)
 
-You can use our freshly baked, experimental `@storybook/experimental-nextjs-vite` framework, which is based on Vite and removes the need for Webpack and Babel. It supports all of the features documented here.
+You can use our freshly baked, experimental `@storybook/nextjs-vite` framework, which is based on Vite and removes the need for Webpack and Babel. It supports all of the features documented here.
 
 <Callout variant="info">
   Using the Next.js framework with Vite requires Next.js 14.1.0 or later.
@@ -195,7 +195,7 @@ const localRubikStorm = localFont({ src: './fonts/RubikStorm-Regular.ttf' });
 #### `staticDir` mapping
 
 <Callout variant="info">
-  You can safely skip this section if you are using [`@storybook/experimental-nextjs-vite`](#with-vite) instead of `@storybook/nextjs`. The Vite-based framework takes care of the mapping automatically.
+  You can safely skip this section if you are using [`@storybook/nextjs-vite`](#with-vite) instead of `@storybook/nextjs`. The Vite-based framework takes care of the mapping automatically.
 </Callout>
 
 You have to tell Storybook where the `fonts` directory is located, via the [`staticDirs` configuration](../../api/main-config/main-config-static-dirs.mdx#with-configuration-objects). The `from` value is relative to the `.storybook` directory. The `to` value is relative to the execution context of Storybook. Very likely it is the root of your project.
@@ -751,7 +751,7 @@ Calls to `getConfig` would return the following object when called within Storyb
 ## Custom Webpack config
 
 <Callout variant="info">
-  You can safely skip this section if you are using `@storybook/experimental-nextjs-vite` instead of `@storybook/nextjs`.
+  You can safely skip this section if you are using `@storybook/nextjs-vite` instead of `@storybook/nextjs`.
   The Vite-based Next.js framework does not support Webpack settings.
 </Callout>
 
@@ -901,7 +901,7 @@ You might get this if you're using Yarn v2 or v3. See [Notes for Yarn v2 and v3 
 
 ### What if I'm using the Vite builder?
 
-We have introduced experimental Vite builder support. Just install the experimental framework package `@storybook/experimental-nextjs-vite` and replace all instances of `@storybook/nextjs` with `@storybook/experimental-nextjs-vite`.
+We have introduced experimental Vite builder support. Just install the experimental framework package `@storybook/nextjs-vite` and replace all instances of `@storybook/nextjs` with `@storybook/nextjs-vite`.
 
 ### Error: You are importing avif images, but you don't have sharp installed. You have to install sharp in order to use image optimization features in Next.js.
 

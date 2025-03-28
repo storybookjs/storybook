@@ -6,8 +6,6 @@ import { addonPostCSS } from './addon-postcss';
 import { addonsAPI } from './addons-api';
 import { angularBuilders } from './angular-builders';
 import { angularBuildersMultiproject } from './angular-builders-multiproject';
-import { autodocsTags } from './autodocs-tags';
-import { autodocsTrue } from './autodocs-true';
 import { builderVite } from './builder-vite';
 import { consolidatedImports } from './consolidated-imports';
 import { cra5 } from './cra5';
@@ -54,7 +52,6 @@ export const allFixes: Fix[] = [
   removedGlobalClientAPIs,
   mdxgfm,
   mdxToCSF,
-  autodocsTrue,
   angularBuildersMultiproject,
   angularBuilders,
   wrapRequire,
@@ -66,7 +63,6 @@ export const allFixes: Fix[] = [
   mdx1to3,
   upgradeStorybookRelatedDependencies,
   vta,
-  autodocsTags,
   initialGlobals,
   addonA11yAddonTest,
   consolidatedImports,

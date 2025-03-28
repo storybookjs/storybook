@@ -30,7 +30,7 @@ const INCLUDE_CANDIDATES = [
   '@storybook/addon-themes',
   '@storybook/addon-themes/preview',
   '@storybook/blocks',
-  '@storybook/experimental-nextjs-vite/dist/preview.mjs',
+  '@storybook/nextjs-vite/dist/preview.mjs',
   '@storybook/html',
   '@storybook/html/dist/entry-preview-docs.mjs',
   '@storybook/html/dist/entry-preview.mjs',

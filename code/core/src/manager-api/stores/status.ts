@@ -12,4 +12,5 @@ const statusStore = createStatusStore({
   environment: 'manager',
 });
 
-export const { fullStatusStore, getStatusStoreByTypeId, useStatusStore } = statusStore;
+export const { fullStatusStore, getStatusStoreByTypeId, useStatusStore, universalStatusStore } =
+  statusStore;

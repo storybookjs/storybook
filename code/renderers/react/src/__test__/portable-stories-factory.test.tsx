@@ -99,8 +99,8 @@ describe('projectAnnotations', () => {
     setProjectAnnotations([
       {
         parameters: { injected: true },
-        globalTypes: {
-          locale: { defaultValue: 'en' },
+        initialGlobals: {
+          locale: 'en',
         },
       },
     ]);

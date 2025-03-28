@@ -1,7 +1,7 @@
 import { createTestProviderStore } from '../../../shared/test-provider-store';
 import { UNIVERSAL_TEST_PROVIDER_STORE_OPTIONS } from '../../../shared/test-provider-store';
 import { useUniversalStore } from '../../../shared/universal-store/use-universal-store-manager';
-import { experimental_MockUniversalStore } from '../../root';
+import { experimental_MockUniversalStore } from '../../index.mock';
 
 const mockTestProviderStore = createTestProviderStore({
   universalTestProviderStore: new experimental_MockUniversalStore(
@@ -10,5 +10,9 @@ const mockTestProviderStore = createTestProviderStore({
   useUniversalStore,
 });
 
-export const { fullTestProviderStore, getTestProviderStoreById, useTestProviderStore } =
-  mockTestProviderStore;
+export const {
+  fullTestProviderStore,
+  getTestProviderStoreById,
+  useTestProviderStore,
+  universalTestProviderStore,
+} = mockTestProviderStore;

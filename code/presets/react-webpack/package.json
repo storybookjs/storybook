@@ -70,7 +70,7 @@
     "@types/semver": "^7.3.4",
     "find-up": "^5.0.0",
     "magic-string": "^0.30.5",
-    "react-docgen": "^7.0.0",
+    "react-docgen": "^7.1.1",
     "resolve": "^1.22.8",
     "semver": "^7.3.7",
     "tsconfig-paths": "^4.2.0",
@@ -91,7 +91,7 @@
     }
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   },
   "publishConfig": {
     "access": "public"

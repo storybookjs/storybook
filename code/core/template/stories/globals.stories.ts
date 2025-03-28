@@ -21,7 +21,7 @@ export const Inheritance = {
   play: async ({ canvasElement }: PlayFunctionContext<any>) => {
     await expect(JSON.parse(within(canvasElement).getByTestId('pre').innerText)).toMatchObject({
       foo: 'fooValue',
-      bar: 'barDefaultValue',
+      bar: 'barValue',
       baz: 'bazComponentValue',
     });
   },
@@ -63,7 +63,7 @@ export const Overrides1 = {
   play: async ({ canvasElement }: PlayFunctionContext<any>) => {
     await expect(JSON.parse(within(canvasElement).getByTestId('pre').innerText)).toMatchObject({
       foo: 'fooOverridden1',
-      bar: 'barDefaultValue',
+      bar: 'barValue',
       baz: 'bazOverridden1',
     });
   },
@@ -82,7 +82,7 @@ export const Overrides2 = {
   play: async ({ canvasElement }: PlayFunctionContext<any>) => {
     await expect(JSON.parse(within(canvasElement).getByTestId('pre').innerText)).toMatchObject({
       foo: 'fooOverridden2',
-      bar: 'barDefaultValue',
+      bar: 'barValue',
       baz: 'bazOverridden2',
     });
   },

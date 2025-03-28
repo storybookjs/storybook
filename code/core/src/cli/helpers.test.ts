@@ -4,12 +4,12 @@ import fsp from 'node:fs/promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
+import type { SupportedRenderers } from 'storybook/internal/types';
 
 import { sep } from 'path';
 
 import { IS_WINDOWS } from '../../../vitest.helpers';
 import * as helpers from './helpers';
-import type { SupportedRenderers } from './project_types';
 import { SupportedLanguage } from './project_types';
 
 const normalizePath = (path: string) => (IS_WINDOWS ? path.replace(/\//g, sep) : path);

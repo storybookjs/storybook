@@ -7,7 +7,7 @@ import {
   TooltipNote,
   WithTooltip,
 } from 'storybook/internal/components';
-import type { API_LoadedRefData, Addon_SidebarTopType, StoryIndex } from 'storybook/internal/types';
+import type { API_LoadedRefData, StoryIndex } from 'storybook/internal/types';
 import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
@@ -117,7 +117,6 @@ export interface SidebarProps extends API_LoadedRefData {
   refs: State['refs'];
   allStatuses: StatusesByStoryIdAndTypeId;
   menu: any[];
-  extra: Addon_SidebarTopType[];
   storyId?: string;
   refId?: string;
   menuHighlighted?: boolean;
@@ -137,7 +136,6 @@ export const Sidebar = React.memo(function Sidebar({
   allStatuses,
   previewInitialized,
   menu,
-  extra,
   menuHighlighted = false,
   enableShortcuts = true,
   isDevelopment = global.CONFIG_TYPE === 'DEVELOPMENT',
@@ -162,7 +160,6 @@ export const Sidebar = React.memo(function Sidebar({
             className="sidebar-header"
             menuHighlighted={menuHighlighted}
             menu={menu}
-            extra={extra}
             skipLinkHref="#storybook-preview-wrapper"
             isLoading={isLoading}
             onMenuClick={onMenuClick}

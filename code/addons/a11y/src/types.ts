@@ -47,3 +47,11 @@ export interface A11yGlobals {
     manual?: boolean;
   };
 }
+
+export const RuleType = {
+  VIOLATION: 'violations',
+  PASS: 'passes',
+  INCOMPLETION: 'incomplete',
+} as const;
+
+export type RuleType = (typeof RuleType)[keyof typeof RuleType];

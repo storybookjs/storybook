@@ -46,10 +46,6 @@ const Sidebar = React.memo(function Sideber({ onMenuClick }: SidebarProps) {
     const whatsNewNotificationsEnabled =
       state.whatsNewData?.status === 'SUCCESS' && !state.disableWhatsNewNotifications;
 
-    const topItems = api.getElements(Addon_TypesEnum.experimental_SIDEBAR_TOP);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    const top = useMemo(() => Object.values(topItems), [Object.keys(topItems).join('')]);
-
     return {
       title: name,
       url,
@@ -64,7 +60,6 @@ const Sidebar = React.memo(function Sideber({ onMenuClick }: SidebarProps) {
       menu,
       menuHighlighted: whatsNewNotificationsEnabled && api.isWhatsNewUnread(),
       enableShortcuts,
-      extra: top,
     };
   };
 

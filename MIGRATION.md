@@ -1,6 +1,16 @@
 <h1>Migration</h1>
 
 - [From version 8.x to 9.0.0](#from-version-8x-to-900)
+  - [A11y addon: Removed deprecated manual parameter](#a11y-addon-removed-deprecated-manual-parameter)
+  - [Button Component API Changes](#button-component-api-changes)
+  - [Documentation Generation Changes](#documentation-generation-changes)
+  - [Global State Management](#global-state-management)
+  - [Icon System Updates](#icon-system-updates)
+  - [Sidebar Component Changes](#sidebar-component-changes)
+  - [Testing Module Changes](#testing-module-changes)
+  - [Type System Updates](#type-system-updates)
+  - [Story Store API Changes](#story-store-api-changes)
+  - [CSF File Changes](#csf-file-changes)
   - [The parameter docs.source.excludeDecorators has no effect in React](#the-parameter-docssourceexcludedecorators-has-no-effect-in-react)
   - [Addon Viewport is moved to core](#addon-viewport-is-moved-to-core)
   - [Addon Controls is moved to core](#addon-controls-is-moved-to-core)
@@ -411,6 +421,171 @@
   - [Deprecated embedded addons](#deprecated-embedded-addons)
 
 ## From version 8.x to 9.0.0
+
+### A11y addon: Removed deprecated manual parameter
+
+The deprecated `manual` parameter from the A11y addon's parameters has been removed. Instead, use the `globals.a11y.manual` setting to control manual mode. For example:
+
+```js
+// Old way (no longer works)
+export const MyStory = {
+  parameters: {
+    a11y: {
+      manual: true
+    }
+  }
+};
+
+// New way
+export const MyStory = {
+  parameters: {
+    a11y: {
+      // other a11y parameters
+    }
+  }
+  globals: {
+    a11y: {
+      manual: true
+    }
+  }
+};
+
+// To enable manual mode globally, use .storybook/preview.js:
+export const initialGlobals = {
+  a11y: {
+    manual: true
+  }
+};
+```
+
+### Button Component API Changes
+
+The Button component has been updated to use a more modern props API. The following props have been removed:
+- `isLink`
+- `primary`
+- `secondary`
+- `tertiary`
+- `gray`
+- `inForm`
+- `small`
+- `outline`
+- `containsIcon`
+
+Use the new `variant` and `size` props instead:
+
+```diff
+- <Button primary small>Click me</Button>
++ <Button variant="primary" size="small">Click me</Button>
+```
+
+### Documentation Generation Changes
+
+The `autodocs` configuration option has been removed in favor of using tags:
+
+```diff
+// .storybook/preview.js
+export default {
+- docs: { autodocs: true }
+};
+
+// In your CSF files:
++ export default {
++   tags: ['autodocs']
++ };
+```
+
+### Global State Management
+
+The `globals` field in project annotations has been renamed to `initialGlobals`:
+
+```diff
+export const preview = {
+- globals: {
++ initialGlobals: {
+    theme: 'light'
+  }
+};
+```
+
+Additionally loading the defaultValue from `globalTypes` isn't supported anymore. Use `initialGlobals` instead to define the defaultValue.
+
+```diff
+// .storybook/preview.js
+export default {
++ initialGlobals: {
++   locale: 'en'
++ },
+  globalTypes: {
+    locale: {
+      description: 'Locale for components',
+-     defaultValue: 'en',
+      toolbar: {
+        title: 'Locale',
+        icon: 'circlehollow',
+        items: ['es', 'en'],
+      },
+    },
+  },
+}
+```
+
+### Icon System Updates
+
+Several icon-related exports have been removed:
+- `IconButtonSkeleton`
+- `Icons`
+- `Symbols`
+- Legacy icon exports
+
+Use the new icon system from `@storybook/icons` instead:
+
+```diff
+- import { Icons, IconButtonSkeleton } from '@storybook/components';
++ import { ZoomIcon } from '@storybook/icons';
+```
+
+### Sidebar Component Changes
+
+1. The 'extra' prop has been removed from the Sidebar's Heading component
+2. Experimental sidebar features have been removed:
+   - `experimental_SIDEBAR_BOTTOM`
+   - `experimental_SIDEBAR_TOP`
+
+### Testing Module Changes
+
+The `TESTING_MODULE_RUN_ALL_REQUEST` event has been removed:
+
+```diff
+- import { TESTING_MODULE_RUN_ALL_REQUEST } from '@storybook/core-events';
++ import { TESTING_MODULE_RUN_REQUEST } from '@storybook/core-events';
+```
+
+### Type System Updates
+
+The following types have been removed:
+- `Addon_SidebarBottomType`
+- `Addon_SidebarTopType`
+- `DeprecatedState`
+
+Import paths have been updated:
+```diff
+- import { SupportedRenderers } from './project_types';
++ import { SupportedRenderers } from 'storybook/internal/types';
+```
+
+### Story Store API Changes
+
+Several deprecated methods have been removed from the StoryStore:
+- `getSetStoriesPayload`
+- `getStoriesJsonData`
+- `raw`
+- `fromId`
+
+### CSF File Changes
+
+Deprecated getters have been removed from the CsfFile class:
+- `_fileName`
+- `_makeTitle`
 
 ### The parameter docs.source.excludeDecorators has no effect in React
 

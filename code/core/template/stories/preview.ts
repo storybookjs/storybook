@@ -57,6 +57,7 @@ export const decorators = [testProjectDecorator];
 
 export const initialGlobals = {
   foo: 'fooValue',
+  bar: 'barValue',
   baz: 'bazValue',
 
   sb_theme: 'light',
@@ -69,9 +70,6 @@ export const initialGlobals = {
 };
 
 export const globalTypes = {
-  foo: { defaultValue: 'fooDefaultValue' },
-  bar: { defaultValue: 'barDefaultValue' },
-
   sb_theme: {
     name: 'Theme',
     description: 'Global theme for components',

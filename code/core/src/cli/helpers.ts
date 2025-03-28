@@ -3,10 +3,10 @@ import { cp, readFile, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 
 import {
-  frameworkToRenderer as CoreFrameworkToRenderer,
   type JsPackageManager,
   type PackageJson,
   type PackageJsonWithDepsAndDevDeps,
+  frameworkToRenderer,
 } from 'storybook/internal/common';
 import { versions as storybookMonorepoPackages } from 'storybook/internal/common';
 import type { SupportedFrameworks, SupportedRenderers } from 'storybook/internal/types';
@@ -141,9 +141,6 @@ type CopyTemplateFilesOptions = {
   destination?: string;
   features: string[];
 };
-
-/** @deprecated Please use `frameworkToRenderer` from `storybook/internal/common` instead */
-export const frameworkToRenderer = CoreFrameworkToRenderer;
 
 export const frameworkToDefaultBuilder: Record<
   SupportedFrameworks,

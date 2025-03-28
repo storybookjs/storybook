@@ -183,21 +183,6 @@ describe('afterEach', () => {
     });
   });
 
-  it('should not run accessibility checks when manual is true', async () => {
-    const context = createContext({
-      parameters: {
-        a11y: {
-          manual: true,
-        },
-      },
-    });
-
-    await experimental_afterEach(context);
-
-    expect(mockedRun).not.toHaveBeenCalled();
-    expect(context.reporting.addReport).not.toHaveBeenCalled();
-  });
-
   it('should not run accessibility checks when disable is true', async () => {
     const context = createContext({
       parameters: {

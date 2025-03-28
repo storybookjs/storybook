@@ -6327,9 +6327,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/addon-designs@npm:9.0.0--canary.1499c1a.0":
-  version: 9.0.0--canary.1499c1a.0
-  resolution: "@storybook/addon-designs@npm:9.0.0--canary.1499c1a.0"
+"@storybook/addon-designs@npm:9.0.0-next.1":
+  version: 9.0.0-next.1
+  resolution: "@storybook/addon-designs@npm:9.0.0-next.1"
   dependencies:
     "@figspec/react": "npm:^1.0.0"
   peerDependencies:
@@ -6343,7 +6343,7 @@ __metadata:
       optional: true
     react-dom:
       optional: true
-  checksum: 10c0/5fd56ad8832778590f1bcdd144c17c234482a137475747e8791e4be9a4ba7132a6089287a614586b86d06b6082de932ee19a8709f39888077cbac98bc60b3705
+  checksum: 10c0/6989444d6caeb7abbb1a763e0a29d0749c529216d03d690618575378845e4259ddcf1935f7990fb05667a373940086dbacdcc6c97ff3f11eaa76f132bb11a1d5
   languageName: node
   linkType: hard
 
@@ -7346,7 +7346,7 @@ __metadata:
     "@nx/workspace": "npm:20.2.2"
     "@playwright/test": "npm:1.48.1"
     "@storybook/addon-a11y": "workspace:*"
-    "@storybook/addon-designs": "npm:9.0.0--canary.1499c1a.0"
+    "@storybook/addon-designs": "npm:9.0.0-next.1"
     "@storybook/addon-docs": "workspace:*"
     "@storybook/addon-jest": "workspace:*"
     "@storybook/addon-links": "workspace:*"

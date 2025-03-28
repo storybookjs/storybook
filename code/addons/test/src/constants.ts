@@ -14,7 +14,7 @@ export const COVERAGE_DIRECTORY = 'coverage';
 
 export const SUPPORTED_FRAMEWORKS = [
   '@storybook/nextjs',
-  '@storybook/experimental-nextjs-vite',
+  '@storybook/nextjs-vite',
   '@storybook/sveltekit',
 ];
 

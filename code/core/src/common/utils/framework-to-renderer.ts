@@ -22,7 +22,6 @@ export const frameworkToRenderer: Record<
   'svelte-webpack5': 'svelte',
   sveltekit: 'svelte',
   'vue3-vite': 'vue3',
-  'vue3-webpack5': 'vue3',
   nuxt: 'vue3',
   'web-components-vite': 'web-components',
   'web-components-webpack5': 'web-components',

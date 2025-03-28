@@ -23,7 +23,6 @@ export const supportedFrameworks = [
   'vue3-rsbuild',
   'vue3-vite',
   'react-native',
-  'vue3-webpack5',
   'web-components-vite',
   'web-components-webpack5',
 ] as const;
@@ -41,7 +40,6 @@ export const supportedFrameworksPackages = {
   'svelte-webpack5': '@storybook/svelte-webpack5',
   'vue3-rsbuild': 'storybook-vue3-rsbuild',
   'vue3-vite': '@storybook/vue3-vite',
-  'vue3-webpack5': '@storybook/vue3-webpack5',
   'web-components-vite': '@storybook/web-components-vite',
   'web-components-webpack5': '@storybook/web-components-webpack5',
 
@@ -70,7 +68,6 @@ export const supportedFrameworksNames = {
   'svelte-webpack5': 'Svelte with Webpack 5',
   'vue3-rsbuild': 'Vue 3 with Rsbuild',
   'vue3-vite': 'Vue 3 with Vite',
-  'vue3-webpack5': 'Vue 3 with Webpack 5',
   'web-components-vite': 'Web Components with Vite',
   'web-components-webpack5': 'Web Components with Webpack 5',
   angular: 'Angular',

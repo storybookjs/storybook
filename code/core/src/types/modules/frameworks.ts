@@ -15,7 +15,6 @@ export type SupportedFrameworks =
   | 'svelte-webpack5'
   | 'sveltekit'
   | 'vue3-vite'
-  | 'vue3-webpack5'
   | 'web-components-vite'
   | 'web-components-webpack5'
   | 'qwik'

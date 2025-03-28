@@ -293,7 +293,8 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
       return target ? [target] : [];
     });
     emit(HIGHLIGHT, {
-      elements: selected,
+      // Prefix with `html ` to boost selector specificity, to prioritize this over 'others' below
+      elements: selected.map((s) => (String(s).startsWith('html ') ? s : `html ${s}`)),
       color: colorsByType[tab],
       width: '2px',
       offset: '0px',

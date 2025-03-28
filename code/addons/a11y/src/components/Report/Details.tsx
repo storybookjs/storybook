@@ -31,12 +31,22 @@ const Info = styled.div({
   flexDirection: 'column',
 });
 
+const RuleId = styled.div(({ theme }) => ({
+  display: 'block',
+  color: theme.textMutedColor,
+  marginTop: -10,
+  marginBottom: 10,
+
+  '@container (min-width: 800px)': {
+    display: 'none',
+  },
+}));
+
 const Description = styled.p({
   margin: 0,
 });
 
 const Wrapper = styled.div({
-  containerType: 'inline-size',
   display: 'flex',
   flexDirection: 'column',
   padding: '0 15px 20px 15px',
@@ -56,7 +66,10 @@ const Content = styled.div<{ side: 'left' | 'right' }>(({ theme, side }) => ({
   display: side === 'left' ? 'flex' : 'none',
   flexDirection: 'column',
   gap: 15,
-  margin: side === 'left' ? '15px 0 20px 0' : 0,
+  margin: side === 'left' ? '15px 0' : 0,
+  padding: side === 'left' ? '0 15px' : 0,
+  borderLeft: side === 'left' ? `1px solid ${theme.color.border}` : 'none',
+
   '&:focus-visible': {
     outline: 'none',
     borderRadius: 4,
@@ -124,12 +137,13 @@ interface DetailsProps {
 export const Details = ({ item, type, selection, handleSelectionChange }: DetailsProps) => (
   <Wrapper>
     <Info>
+      <RuleId>{item.id}</RuleId>
       <Description>
-        {item.description.endsWith('.') ? item.description : `${item.description}.`}
+        {item.description.endsWith('.') ? item.description : `${item.description}.`}{' '}
+        <Link href={item.helpUrl} target="_blank" withArrow>
+          How to resolve this
+        </Link>
       </Description>
-      <Link href={item.helpUrl} target="_blank" withArrow>
-        Learn how to resolve this violation
-      </Link>
     </Info>
 
     <Tabs.Root

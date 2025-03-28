@@ -127,10 +127,7 @@ export const install: Task['run'] = async ({ sandboxDir, key }, { link, dryRun, 
   }
 };
 
-export const init: Task['run'] = async (
-  { sandboxDir, template },
-  { dryRun, debug, addon: addons, skipTemplateStories }
-) => {
+export const init: Task['run'] = async ({ sandboxDir, template }, { dryRun, debug }) => {
   const cwd = sandboxDir;
 
   let extra = {};
@@ -175,18 +172,6 @@ export const init: Task['run'] = async (
       await prepareAngularSandbox(cwd, template.name);
       break;
     default:
-  }
-
-  if (!skipTemplateStories) {
-    for (const addon of addons) {
-      await executeCLIStep(steps.add, {
-        argument: addon,
-        cwd,
-        dryRun,
-        debug,
-        optionValues: { yes: true },
-      });
-    }
   }
 };
 

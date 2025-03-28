@@ -825,6 +825,7 @@ If you're using an older version of Next.js, you'll need to upgrade to Next.js 1
 For help upgrading your Next.js application, see the [Next.js upgrade guide](https://nextjs.org/docs/app/building-your-application/upgrading).
 
 #### Preact = Dropped webpack5 builder support
+
 The packages `@storybook/preact-webpack5` and `@storybook/preset-preact-webpack5` have been removed. For Preact projects, please use the Vite builder instead:
 
 ```bash

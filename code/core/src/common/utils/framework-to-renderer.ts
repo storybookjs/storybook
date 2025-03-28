@@ -13,7 +13,6 @@ export const frameworkToRenderer: Record<
   nextjs: 'react',
   'experimental-nextjs-vite': 'react',
   'preact-vite': 'preact',
-  'preact-webpack5': 'preact',
   qwik: 'qwik',
   'react-vite': 'react',
   'react-webpack5': 'react',

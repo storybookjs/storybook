@@ -7255,22 +7255,6 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/preact-webpack5@workspace:*, @storybook/preact-webpack5@workspace:frameworks/preact-webpack5":
-  version: 0.0.0-use.local
-  resolution: "@storybook/preact-webpack5@workspace:frameworks/preact-webpack5"
-  dependencies:
-    "@storybook/builder-webpack5": "workspace:*"
-    "@storybook/preact": "workspace:*"
-    "@storybook/preset-preact-webpack": "workspace:*"
-    "@types/node": "npm:^22.0.0"
-    preact: "npm:^10.5.13"
-    typescript: "npm:^5.7.3"
-  peerDependencies:
-    preact: ">=10.0.0"
-    storybook: "workspace:^"
-  languageName: unknown
-  linkType: soft
-
 "@storybook/preact@workspace:*, @storybook/preact@workspace:renderers/preact":
   version: 0.0.0-use.local
   resolution: "@storybook/preact@workspace:renderers/preact"
@@ -7312,20 +7296,6 @@ __metadata:
     typescript: "npm:^5.7.3"
     webpack: "npm:5"
   peerDependencies:
-    storybook: "workspace:^"
-  languageName: unknown
-  linkType: soft
-
-"@storybook/preset-preact-webpack@workspace:*, @storybook/preset-preact-webpack@workspace:presets/preact-webpack":
-  version: 0.0.0-use.local
-  resolution: "@storybook/preset-preact-webpack@workspace:presets/preact-webpack"
-  dependencies:
-    "@storybook/core-webpack": "workspace:*"
-    "@types/node": "npm:^22.0.0"
-    preact: "npm:^10.5.13"
-    typescript: "npm:^5.7.3"
-  peerDependencies:
-    preact: ^8.0.0||^10.0.0
     storybook: "workspace:^"
   languageName: unknown
   linkType: soft
@@ -7592,10 +7562,8 @@ __metadata:
     "@storybook/nextjs": "workspace:*"
     "@storybook/preact": "workspace:*"
     "@storybook/preact-vite": "workspace:*"
-    "@storybook/preact-webpack5": "workspace:*"
     "@storybook/preset-create-react-app": "workspace:*"
     "@storybook/preset-html-webpack": "workspace:*"
-    "@storybook/preset-preact-webpack": "workspace:*"
     "@storybook/preset-react-webpack": "workspace:*"
     "@storybook/preset-server-webpack": "workspace:*"
     "@storybook/preset-svelte-webpack": "workspace:*"

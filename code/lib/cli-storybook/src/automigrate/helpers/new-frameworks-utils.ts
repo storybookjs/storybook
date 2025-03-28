@@ -14,7 +14,6 @@ export const packagesMap: Record<string, { webpack5?: string; vite?: string }> =
     vite: '@storybook/react-vite',
   },
   '@storybook/preact': {
-    webpack5: '@storybook/preact-webpack5',
     vite: '@storybook/preact-vite',
   },
   '@storybook/server': {

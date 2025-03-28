@@ -46,8 +46,6 @@ addons.register(ADDON_ID, (api) => {
 
     addons.add(TEST_PROVIDER_ID, {
       type: Addon_TypesEnum.experimental_TEST_PROVIDER,
-      runnable: true,
-      name: 'Component tests',
       render: () => {
         const [isModalOpen, setModalOpen] = useState(false);
         const {
@@ -94,6 +92,6 @@ addons.register(ADDON_ID, (api) => {
         }
         return <SidebarContextMenu context={context} api={api} />;
       },
-    } satisfies Omit<Addon_TestProviderType, 'id'>);
+    });
   }
 });

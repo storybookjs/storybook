@@ -10,7 +10,7 @@ import { mockDataset } from './mockdata';
 import type { RefType } from './types';
 
 const managerContext = {
-  state: { docsOptions: {}, testProviders: {} },
+  state: { docsOptions: {} },
   api: {
     on: fn().mockName('api::on'),
     off: fn().mockName('api::off'),

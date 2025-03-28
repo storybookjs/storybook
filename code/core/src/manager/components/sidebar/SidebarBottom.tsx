@@ -1,13 +1,11 @@
 import React, { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import {
-  TESTING_MODULE_CRASH_REPORT,
-  TESTING_MODULE_PROGRESS_REPORT,
-  type TestProviders,
-  type TestingModuleCrashReportPayload,
-  type TestingModuleProgressReportPayload,
-} from 'storybook/internal/core-events';
-import { type API_FilterFunction } from 'storybook/internal/types';
+  type API_FilterFunction,
+  type Addon_Collection,
+  type Addon_TestProviderType,
+  Addon_TypesEnum,
+} from 'storybook/internal/types';
 
 import {
   experimental_useStatusStore,
@@ -89,7 +87,7 @@ interface SidebarBottomProps {
   hasStatuses: boolean;
   isDevelopment?: boolean;
   testProviderStates: TestProviderStateByProviderId;
-  registeredTestProviders: TestProviders;
+  registeredTestProviders: Addon_Collection<Addon_TestProviderType>;
   onRunAll: () => void;
 }
 
@@ -125,38 +123,6 @@ export const SidebarBottomBase = ({
     const filter = getFilter(warningCount > 0 && warningsActive, errorCount > 0 && errorsActive);
     api.experimental_setFilter('sidebar-bottom-filter', filter);
   }, [api, warningCount, errorCount, warningsActive, errorsActive]);
-
-  // Register listeners before the first render
-  useLayoutEffect(() => {
-    const onCrashReport = ({ providerId, ...details }: TestingModuleCrashReportPayload) => {
-      api.updateTestProviderState(providerId, {
-        error: { name: 'Crashed!', message: details.error.message },
-        running: false,
-        crashed: true,
-      });
-    };
-
-    const onProgressReport = async ({
-      providerId,
-      ...result
-    }: TestingModuleProgressReportPayload) => {
-      const statusResult = 'status' in result ? result.status : undefined;
-      api.updateTestProviderState(
-        providerId,
-        statusResult === 'failed'
-          ? { ...result, running: false, failed: true }
-          : { ...result, running: statusResult === 'pending' }
-      );
-    };
-
-    api.on(TESTING_MODULE_CRASH_REPORT, onCrashReport);
-    api.on(TESTING_MODULE_PROGRESS_REPORT, onProgressReport);
-
-    return () => {
-      api.off(TESTING_MODULE_CRASH_REPORT, onCrashReport);
-      api.off(TESTING_MODULE_PROGRESS_REPORT, onProgressReport);
-    };
-  }, [api, registeredTestProviders]);
 
   if (
     !warningCount &&
@@ -199,7 +165,8 @@ export const SidebarBottomBase = ({
 
 export const SidebarBottom = ({ isDevelopment }: { isDevelopment?: boolean }) => {
   const api = useStorybookApi();
-  const { notifications, testProviders: registeredTestProviders } = useStorybookState();
+  const registeredTestProviders = api.getElements(Addon_TypesEnum.experimental_TEST_PROVIDER);
+  const { notifications } = useStorybookState();
   const { hasStatuses, errorCount, warningCount } = experimental_useStatusStore((statuses) => {
     return Object.values(statuses).reduce(
       (result, storyStatuses) => {

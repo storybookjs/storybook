@@ -18,7 +18,6 @@ const generator: Generator<{ projectName: string }> = async (
   commandOptions
 ) => {
   const angularJSON = new AngularJSON();
-
   if (
     !angularJSON.projects ||
     (angularJSON.projects && Object.keys(angularJSON.projects).length === 0)
@@ -58,9 +57,7 @@ const generator: Generator<{ projectName: string }> = async (
   });
   angularJSON.write();
 
-  const packageJson = await packageManager.retrievePackageJson();
-  const angularVersion =
-    packageJson.dependencies['@angular/core'] ?? packageJson.devDependencies['@angular/core'];
+  const compilerVersion = await packageManager.getInstalledVersion('@angular/compiler-cli');
 
   await baseGenerator(
     packageManager,
@@ -78,8 +75,8 @@ const generator: Generator<{ projectName: string }> = async (
     {
       extraAddons: [`@storybook/addon-onboarding`],
       extraPackages: [
-        angularVersion
-          ? `@angular-devkit/build-angular@${angularVersion}`
+        compilerVersion
+          ? `@angular-devkit/build-angular@${compilerVersion}`
           : '@angular-devkit/build-angular',
         ...(useCompodoc ? ['@compodoc/compodoc', '@storybook/addon-docs'] : []),
       ],

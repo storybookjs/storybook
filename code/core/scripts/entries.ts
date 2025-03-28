@@ -30,6 +30,7 @@ export const getEntries = (cwd: string) => {
     define('src/outline/preview.ts', ['browser', 'node'], true, ['react'], [], [], true),
 
     define('src/highlight/index.ts', ['browser', 'node'], true, ['react'], [], [], false),
+    define('src/highlight/preview.ts', ['browser', 'node'], true, ['react'], [], [], true),
 
     define('src/actions/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
     define('src/actions/preview.ts', ['browser', 'node'], true, ['react'], [], [], true),

@@ -211,6 +211,7 @@ async function run() {
                 'storybook/internal': join(cwd, 'src'),
                 'storybook/outline': join(cwd, 'src', 'outline'),
                 'storybook/backgrounds': join(cwd, 'src', 'backgrounds'),
+                'storybook/highlight': join(cwd, 'src', 'highlight'),
                 'storybook/measure': join(cwd, 'src', 'measure'),
                 'storybook/actions': join(cwd, 'src', 'actions'),
                 'storybook/viewport': join(cwd, 'src', 'viewport'),
@@ -247,6 +248,7 @@ async function run() {
                 'storybook/backgrounds': join(cwd, 'src', 'backgrounds'),
                 'storybook/measure': join(cwd, 'src', 'measure'),
                 'storybook/viewport': join(cwd, 'src', 'viewport'),
+                'storybook/highlight': join(cwd, 'src', 'highlight'),
 
                 'storybook/internal': join(cwd, 'src'),
                 react: dirname(require.resolve('react/package.json')),

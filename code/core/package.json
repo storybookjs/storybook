@@ -148,6 +148,16 @@
       "import": "./dist/highlight/index.js",
       "require": "./dist/highlight/index.cjs"
     },
+    "./internal/highlight/preview": {
+      "types": "./dist/highlight/preview.d.ts",
+      "import": "./dist/highlight/preview.js",
+      "require": "./dist/highlight/preview.cjs"
+    },
+    "./highlight/preview": {
+      "types": "./dist/highlight/preview.d.ts",
+      "import": "./dist/highlight/preview.js",
+      "require": "./dist/highlight/preview.cjs"
+    },
     "./internal/actions": {
       "types": "./dist/actions/index.d.ts",
       "import": "./dist/actions/index.js",
@@ -456,6 +466,12 @@
       ],
       "internal/highlight": [
         "./dist/highlight/index.d.ts"
+      ],
+      "internal/highlight/preview": [
+        "./dist/highlight/preview.d.ts"
+      ],
+      "highlight/preview": [
+        "./dist/highlight/preview.d.ts"
       ],
       "internal/actions": [
         "./dist/actions/index.d.ts"

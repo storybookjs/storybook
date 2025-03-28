@@ -2,6 +2,7 @@ import componentTestingAnnotations from 'storybook/internal/component-testing/pr
 
 import actionAnnotations from 'storybook/actions/preview';
 import backgroundsAnnotations from 'storybook/backgrounds/preview';
+import highlightAnnotations from 'storybook/highlight/preview';
 import measureAnnotations from 'storybook/measure/preview';
 import outlineAnnotations from 'storybook/outline/preview';
 import testAnnotations from 'storybook/test/preview';
@@ -13,6 +14,8 @@ export function getCoreAnnotations() {
     (measureAnnotations.default ?? measureAnnotations)(),
     // @ts-expect-error CJS fallback
     (backgroundsAnnotations.default ?? backgroundsAnnotations)(),
+    // @ts-expect-error CJS fallback
+    (highlightAnnotations.default ?? highlightAnnotations)(),
     // @ts-expect-error CJS fallback
     (outlineAnnotations.default ?? outlineAnnotations)(),
     // @ts-expect-error CJS fallback

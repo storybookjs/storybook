@@ -3,7 +3,7 @@ import { STORY_CHANGED } from 'storybook/internal/core-events';
 
 import { global } from '@storybook/global';
 
-import { addons } from 'storybook/preview-api';
+import { addons, definePreview } from 'storybook/preview-api';
 
 import { HIGHLIGHT, RESET_HIGHLIGHT, SCROLL_INTO_VIEW } from './constants';
 
@@ -68,41 +68,53 @@ const highlightStyle = (
   }`;
 };
 
-const channel = addons.getChannel();
-const sheetIds = new Set<string>();
+console.trace('highlight preview');
 
-const highlight = (options: HighlightOptions) => {
-  const sheetId = Math.random().toString(36).substring(2, 15);
-  sheetIds.add(sheetId);
+addons.ready().then(() => {
+  const channel = addons.getChannel();
+  const sheetIds = new Set<string>();
 
-  const sheet = document.createElement('style');
-  sheet.innerHTML = highlightStyle(Array.from(new Set(options.elements)), options);
-  sheet.setAttribute('id', sheetId);
-  document.head.appendChild(sheet);
+  const highlight = (options: HighlightOptions) => {
+    const sheetId = Math.random().toString(36).substring(2, 15);
+    sheetIds.add(sheetId);
 
-  const timeout = options.pulseOut || options.fadeOut;
-  if (timeout) {
-    setTimeout(() => removeHighlight(sheetId), timeout + 500);
-  }
-};
+    const sheet = document.createElement('style');
+    sheet.innerHTML = highlightStyle(Array.from(new Set(options.elements)), options);
+    sheet.setAttribute('id', sheetId);
+    document.head.appendChild(sheet);
 
-const removeHighlight = (id: string) => {
-  const sheetElement = document.getElementById(id);
-  sheetElement?.parentNode?.removeChild(sheetElement);
-  sheetIds.delete(id);
-};
+    const timeout = options.pulseOut || options.fadeOut;
+    if (timeout) {
+      setTimeout(() => removeHighlight(sheetId), timeout + 500);
+    }
+  };
 
-const resetHighlight = () => {
-  sheetIds.forEach(removeHighlight);
-};
+  const removeHighlight = (id: string) => {
+    const sheetElement = document.getElementById(id);
+    sheetElement?.parentNode?.removeChild(sheetElement);
+    sheetIds.delete(id);
+  };
 
-const scrollIntoView = (target: string, options?: ScrollIntoViewOptions) => {
-  const element = document.querySelector(target);
-  element?.scrollIntoView({ behavior: 'smooth', block: 'center', ...options });
-  highlight({ elements: [target], color: '#1EA7FD', width: '2px', offset: '2px', pulseOut: 3000 });
-};
+  const resetHighlight = () => {
+    sheetIds.forEach(removeHighlight);
+  };
 
-channel.on(STORY_CHANGED, resetHighlight);
-channel.on(SCROLL_INTO_VIEW, scrollIntoView);
-channel.on(RESET_HIGHLIGHT, resetHighlight);
-channel.on(HIGHLIGHT, highlight);
+  const scrollIntoView = (target: string, options?: ScrollIntoViewOptions) => {
+    const element = document.querySelector(target);
+    element?.scrollIntoView({ behavior: 'smooth', block: 'center', ...options });
+    highlight({
+      elements: [target],
+      color: '#1EA7FD',
+      width: '2px',
+      offset: '2px',
+      pulseOut: 3000,
+    });
+  };
+
+  channel.on(STORY_CHANGED, resetHighlight);
+  channel.on(SCROLL_INTO_VIEW, scrollIntoView);
+  channel.on(RESET_HIGHLIGHT, resetHighlight);
+  channel.on(HIGHLIGHT, highlight);
+});
+
+export default () => definePreview({});

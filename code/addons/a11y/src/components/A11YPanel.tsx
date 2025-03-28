@@ -56,14 +56,10 @@ const Centered = styled.span(({ theme }) => ({
   },
 }));
 
-const Count = styled(Badge)({
-  padding: 4,
-  minWidth: 24,
-});
-
 export const A11YPanel: React.FC = () => {
   const { manual: manualParameter } = useParameter<A11yParameters>(PARAM_KEY, {} as any);
   const {
+    tab,
     results,
     status,
     handleManual,
@@ -81,7 +77,9 @@ export const A11YPanel: React.FC = () => {
         label: (
           <Tab>
             Violations
-            <Count status="neutral">{violations.length}</Count>
+            <Badge compact status={tab === 'violations' ? 'active' : 'neutral'}>
+              {violations.length}
+            </Badge>
           </Tab>
         ),
         panel: (
@@ -101,7 +99,9 @@ export const A11YPanel: React.FC = () => {
         label: (
           <Tab>
             Passes
-            <Count status="neutral">{passes.length}</Count>
+            <Badge compact status={tab === 'passes' ? 'active' : 'neutral'}>
+              {passes.length}
+            </Badge>
           </Tab>
         ),
         panel: (
@@ -121,7 +121,9 @@ export const A11YPanel: React.FC = () => {
         label: (
           <Tab>
             Inconclusive
-            <Count status="neutral">{incomplete.length}</Count>
+            <Badge compact status={tab === 'incomplete' ? 'active' : 'neutral'}>
+              {incomplete.length}
+            </Badge>
           </Tab>
         ),
         panel: (
@@ -138,7 +140,7 @@ export const A11YPanel: React.FC = () => {
         type: RuleType.INCOMPLETION,
       },
     ];
-  }, [results, handleSelectionChange, selectedItems, toggleOpen]);
+  }, [tab, results, handleSelectionChange, selectedItems, toggleOpen]);
 
   return (
     <>

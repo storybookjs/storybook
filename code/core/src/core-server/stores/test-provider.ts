@@ -12,7 +12,7 @@ const testProviderStore = createTestProviderStore({
             before it was ready.
             This will be fixed when we do the planned UniversalStore v0.2.
           */
-    leader: process.env.VITEST !== 'true',
+    leader: process.env.VITEST_CHILD_PROCESS !== 'true',
   }),
 });
 

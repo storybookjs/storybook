@@ -189,7 +189,7 @@
     "webpack": "^5.65.0"
   },
   "peerDependencies": {
-    "next": "^13.5.0 || ^14.0.0 || ^15.0.0",
+    "next": "^14.1.0 || ^15.0.0",
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
     "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
     "storybook": "workspace:^",
@@ -204,7 +204,7 @@
     }
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   },
   "publishConfig": {
     "access": "public"

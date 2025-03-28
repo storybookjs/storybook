@@ -7,11 +7,11 @@ import { createBlocker } from './types';
 const minimalVersionsMap = {
   '@angular/core': '15.0.0',
   'react-scripts': '5.0.0',
-  next: '13.5.0',
+  next: '14.1.0',
   preact: '10.0.0',
   svelte: '4.0.0',
   vue: '3.0.0',
-  vite: '4.0.0',
+  vite: '5.0.0',
 };
 
 type Result = {

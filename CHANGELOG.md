@@ -1,3 +1,7 @@
+## 8.6.12
+
+- Core: Fix telemetry error on Storybok UI - [#30953](https://github.com/storybookjs/storybook/pull/30953), thanks @yannbf!
+
 ## 8.6.11
 
 - Angular: Fix zone.js support for Angular libraries - [#30941](https://github.com/storybookjs/storybook/pull/30941), thanks @valentinpalkovic!

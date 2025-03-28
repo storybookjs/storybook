@@ -25,10 +25,10 @@ export default mergeConfig(
       // Enable browser mode
       browser: {
         enabled: true,
-        name: 'chromium',
         // Make sure to install Playwright
         provider: 'playwright',
         headless: true,
+        instances: [{ browser: 'chromium' }],
       },
       setupFiles: ['./.storybook/vitest.setup.ts'],
     },
@@ -65,10 +65,10 @@ export default mergeConfig(
       // Enable browser mode
       browser: {
         enabled: true,
-        name: 'chromium',
         // Make sure to install Playwright
         provider: 'playwright',
         headless: true,
+        instances: [{ browser: 'chromium' }],
       },
       setupFiles: ['./.storybook/vitest.setup.ts'],
     },
@@ -103,10 +103,10 @@ export default mergeConfig(
       // Enable browser mode
       browser: {
         enabled: true,
-        name: 'chromium',
         // Make sure to install Playwright
         provider: 'playwright',
         headless: true,
+        instances: [{ browser: 'chromium' }],
       },
       setupFiles: ['./.storybook/vitest.setup.ts'],
     },

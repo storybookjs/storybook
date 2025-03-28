@@ -30,6 +30,7 @@
     - [Angular = Require v18 and up](#angular--require-v18-and-up)
     - [Next.js = Require v14 and up](#nextjs--require-v14-and-up)
     - [Preact = Dropped webpack5 builder support](#preact--dropped-webpack5-builder-support)
+    - [Next.js = Vite builder stabilized](#nextjs--vite-builder-stabilized)
 - [From version 8.5.x to 8.6.x](#from-version-85x-to-86x)
   - [Angular: Support experimental zoneless support](#angular-support-experimental-zoneless-support)
   - [Framework-specific Vite plugins have to be explicitly added](#framework-specific-vite-plugins-have-to-be-explicitly-added)
@@ -841,6 +842,30 @@ export default {
   },
   // ... other configurations
 };
+```
+
+#### Next.js = Vite builder stabilized
+
+The experimental Next.js Vite builder (`@storybook/experimental-nextjs-vite`) has been stabilized and renamed to `@storybook/nextjs-vite`. If you were using the experimental package, you should update your dependencies to use the new stable package name.
+
+```diff
+{
+  "dependencies": {
+-   "@storybook/experimental-nextjs-vite": "^x.x.x"
++   "@storybook/nextjs-vite": "^9.0.0"
+  }
+}
+```
+
+Also update your `.storybook/main.<js|ts>` file accordingly:
+
+```diff
+export default {
+  addons: [
+-   "@storybook/experimental-nextjs-vite",
++   "@storybook/nextjs-vite"    
+  ]
+}
 ```
 
 ## From version 8.5.x to 8.6.x

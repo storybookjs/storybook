@@ -1,5 +1,5 @@
 {
-  "name": "experimental-nextjs-vite/default-ts",
+  "name": "nextjs-vite/default-ts",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
   "implicitDependencies": [
@@ -8,7 +8,7 @@
     "addon-links",
     "addon-onboarding",
     "blocks",
-    "experimental-nextjs-vite"
+    "nextjs-vite"
   ],
   "targets": {
     "sandbox": {},

@@ -2,30 +2,33 @@ import { readFileSync } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 
 import type { Channel } from 'storybook/internal/channels';
-import { getFrameworkName, resolvePathInStorybookCache } from 'storybook/internal/common';
 import {
-  TESTING_MODULE_CRASH_REPORT,
-  TESTING_MODULE_PROGRESS_REPORT,
-  TESTING_MODULE_RUN_REQUEST,
-  type TestingModuleCrashReportPayload,
-  type TestingModuleProgressReportPayload,
-} from 'storybook/internal/core-events';
-import { experimental_UniversalStore } from 'storybook/internal/core-server';
+  createFileSystemCache,
+  getFrameworkName,
+  resolvePathInStorybookCache,
+} from 'storybook/internal/common';
+import {
+  experimental_UniversalStore,
+  experimental_getTestProviderStore,
+} from 'storybook/internal/core-server';
 import { cleanPaths, oneWayHash, sanitizeError, telemetry } from 'storybook/internal/telemetry';
 import type { Options, PresetPropertyFn, StoryId } from 'storybook/internal/types';
 
+import { isEqual } from 'es-toolkit';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 import {
+  ADDON_ID,
   COVERAGE_DIRECTORY,
+  STORE_CHANNEL_EVENT_NAME,
   STORYBOOK_ADDON_TEST_CHANNEL,
-  type StoreState,
-  TEST_PROVIDER_ID,
   storeOptions,
 } from './constants';
 import { log } from './logger';
 import { runTestRunner } from './node/boot-test-runner';
+import type { CachedState, ErrorLike, StoreState } from './types';
+import type { StoreEvent } from './types';
 
 type Event = {
   type: 'test-discrepancy';
@@ -43,16 +46,11 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
   const builderName = typeof core?.builder === 'string' ? core.builder : core?.builder?.name;
   const framework = await getFrameworkName(options);
 
-  const store = experimental_UniversalStore.create<StoreState>({
-    ...storeOptions,
-    leader: true,
-  });
-
   // Only boot the test runner if the builder is vite, else just provide interactions functionality
   if (!builderName?.includes('vite')) {
     if (framework.includes('nextjs')) {
       log(dedent`
-        You're using ${framework}, which is a Webpack-based builder. In order to use Storybook Test, with your project, you need to use '@storybook/experimental-nextjs-vite', a high performance Vite-based equivalent.
+        You're using ${framework}, which is a Webpack-based builder. In order to use Storybook Test, with your project, you need to use '@storybook/nextjs-vite', a high performance Vite-based equivalent.
 
         Information on how to upgrade here: ${picocolors.yellow('https://storybook.js.org/docs/get-started/frameworks/nextjs#with-vite')}\n
       `);
@@ -60,22 +58,107 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
     return channel;
   }
 
-  const execute =
-    (eventName: string) =>
-    (...args: any[]) => {
-      if (args[0]?.providerId === TEST_PROVIDER_ID) {
-        runTestRunner(channel, eventName, args);
-      }
-    };
+  const fsCache = createFileSystemCache({
+    basePath: resolvePathInStorybookCache(ADDON_ID.replace('/', '-')),
+    ns: 'storybook',
+    ttl: 14 * 24 * 60 * 60 * 1000, // 14 days
+  });
+  const cachedState: CachedState = await fsCache.get<CachedState>('state', {
+    config: storeOptions.initialState.config,
+    watching: storeOptions.initialState.watching,
+  });
 
-  channel.on(TESTING_MODULE_RUN_REQUEST, execute(TESTING_MODULE_RUN_REQUEST));
-
-  store.onStateChange((state) => {
-    if (state.watching) {
-      runTestRunner(channel);
+  const store = experimental_UniversalStore.create<StoreState, StoreEvent>({
+    ...storeOptions,
+    initialState: {
+      ...storeOptions.initialState,
+      ...cachedState,
+    },
+    leader: true,
+  });
+  store.onStateChange((state, previousState) => {
+    const selectCachedState = (s: StoreState): CachedState => ({
+      config: s.config,
+      watching: s.watching,
+    });
+    if (!isEqual(selectCachedState(state), selectCachedState(previousState))) {
+      fsCache.set('state', selectCachedState(state));
     }
   });
+  if (cachedState.watching) {
+    runTestRunner(channel, store);
+  }
+  const testProviderStore = experimental_getTestProviderStore(ADDON_ID);
+
+  store.subscribe('TRIGGER_RUN', (event, eventInfo) => {
+    testProviderStore.setState('test-provider-state:running');
+    store.setState((s) => ({
+      ...s,
+      fatalError: undefined,
+    }));
+    runTestRunner(channel, store, STORE_CHANNEL_EVENT_NAME, [{ event, eventInfo }]);
+  });
+  store.subscribe('TOGGLE_WATCHING', (event, eventInfo) => {
+    store.setState((s) => ({
+      ...s,
+      watching: event.payload.to,
+      currentRun: {
+        ...s.currentRun,
+        // when enabling watch mode, clear the coverage summary too
+        ...(event.payload.to && {
+          coverageSummary: undefined,
+        }),
+      },
+    }));
+    if (event.payload.to) {
+      runTestRunner(channel, store, STORE_CHANNEL_EVENT_NAME, [{ event, eventInfo }]);
+    }
+  });
+  store.subscribe('FATAL_ERROR', (event) => {
+    const { message, error } = event.payload;
+    const name = error.name || 'Error';
+    log(`${name}: ${message}`);
+    if (error.stack) {
+      log(error.stack);
+    }
+
+    function logErrorWithCauses(err: ErrorLike) {
+      if (!err) {
+        return;
+      }
+
+      log(`Caused by: ${err.name ?? 'Error'}: ${err.message}`);
+
+      if (err.stack) {
+        log(err.stack);
+      }
+
+      if (err.cause) {
+        logErrorWithCauses(err.cause);
+      }
+    }
+
+    if (error.cause) {
+      logErrorWithCauses(error.cause);
+    }
+    store.setState((s) => ({
+      ...s,
+      fatalError: {
+        message,
+        error,
+      },
+    }));
+    testProviderStore.setState('test-provider-state:crashed');
+  });
+  testProviderStore.onClearAll(() => {
+    store.setState((s) => ({
+      ...s,
+      currentRun: { ...s.currentRun, coverageSummary: undefined, unhandledErrors: [] },
+    }));
+  });
+
   if (!core.disableTelemetry) {
+    const enableCrashReports = core.enableCrashReports || options.enableCrashReports;
     const packageJsonPath = require.resolve('@storybook/addon-test/package.json');
 
     const { version: addonVersion } = JSON.parse(
@@ -83,7 +166,6 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
     );
 
     channel.on(STORYBOOK_ADDON_TEST_CHANNEL, (event: Event) => {
-      // @ts-expect-error This telemetry is not a core one, so we don't have official types for it (similar to onboarding addon)
       telemetry('addon-test', {
         ...event,
         payload: {
@@ -94,66 +176,38 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
       });
     });
 
-    store.onStateChange(async (state, previous) => {
-      if (state.watching && !previous.watching) {
-        await telemetry('testing-module-watch-mode', {
-          provider: TEST_PROVIDER_ID,
-          watchMode: state.watching,
-        });
-      }
-    });
-
-    channel.on(
-      TESTING_MODULE_PROGRESS_REPORT,
-      async (payload: TestingModuleProgressReportPayload) => {
-        if (payload.providerId !== TEST_PROVIDER_ID) {
-          return;
-        }
-        const status = 'status' in payload ? payload.status : undefined;
-        const progress = 'progress' in payload ? payload.progress : undefined;
-        const error = 'error' in payload ? payload.error : undefined;
-
-        const config = store.getState().config;
-
-        if ((status === 'success' || status === 'cancelled') && progress?.finishedAt) {
-          await telemetry('testing-module-completed-report', {
-            provider: TEST_PROVIDER_ID,
-            status,
-            config,
-            duration: progress?.finishedAt - progress?.startedAt,
-            numTotalTests: progress?.numTotalTests,
-            numFailedTests: progress?.numFailedTests,
-            numPassedTests: progress?.numPassedTests,
-            numSelectedStories: payload.details?.selectedStoryCount ?? 0,
-          });
-        }
-
-        if (status === 'failed') {
-          await telemetry('testing-module-completed-report', {
-            provider: TEST_PROVIDER_ID,
-            status,
-            config,
-            ...(options.enableCrashReports && {
-              error: error && sanitizeError(error),
-            }),
-            numSelectedStories: payload.details?.selectedStoryCount ?? 0,
-          });
-        }
-      }
-    );
-
-    channel.on(TESTING_MODULE_CRASH_REPORT, async (payload: TestingModuleCrashReportPayload) => {
-      if (payload.providerId !== TEST_PROVIDER_ID) {
-        return;
-      }
-      await telemetry('testing-module-crash-report', {
-        provider: payload.providerId,
-
-        ...(options.enableCrashReports && {
-          error: cleanPaths(payload.error.message),
-        }),
+    store.subscribe('TOGGLE_WATCHING', async (event) => {
+      await telemetry('addon-test', {
+        watchMode: event.payload.to,
+        addonVersion,
       });
     });
+    store.subscribe('TEST_RUN_COMPLETED', async (event) => {
+      const { unhandledErrors, startedAt, finishedAt, storyIds, ...currentRun } = event.payload;
+      await telemetry('addon-test', {
+        ...currentRun,
+        duration: (finishedAt ?? 0) - (startedAt ?? 0),
+        selectedStoryCount: storyIds?.length ?? 0,
+        unhandledErrorCount: unhandledErrors.length,
+        ...(enableCrashReports &&
+          unhandledErrors.length > 0 && {
+            unhandledErrors: unhandledErrors.map((error) => {
+              const { stacks, ...errorWithoutStacks } = error;
+              return sanitizeError(errorWithoutStacks);
+            }),
+          }),
+        addonVersion,
+      });
+    });
+
+    if (enableCrashReports) {
+      store.subscribe('FATAL_ERROR', async (event) => {
+        await telemetry('addon-test', {
+          fatalError: cleanPaths(event.payload.error.message),
+          addonVersion,
+        });
+      });
+    }
   }
 
   return channel;

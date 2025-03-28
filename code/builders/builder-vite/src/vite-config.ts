@@ -47,6 +47,7 @@ export async function commonConfig(
   _type: PluginConfigType
 ): Promise<ViteInlineConfig> {
   const configEnv = _type === 'development' ? configEnvServe : configEnvBuild;
+  // @ts-expect-error - defaultClientConditions only exists in Vite 6
   const { loadConfigFromFile, mergeConfig, defaultClientConditions = [] } = await import('vite');
 
   const { viteConfigPath } = await getBuilderOptions<BuilderOptions>(options);

@@ -210,25 +210,20 @@ export const baseTemplates = {
     script:
       'npx create-next-app@^14 {{beforeDir}} --eslint --tailwind --app --import-alias="@/*" --src-dir',
     expected: {
-      framework: '@storybook/experimental-nextjs-vite',
+      framework: '@storybook/nextjs-vite',
       renderer: '@storybook/react',
       builder: '@storybook/builder-vite',
     },
     modifications: {
       useCsfFactory: true,
       mainConfig: {
-        framework: '@storybook/experimental-nextjs-vite',
+        framework: '@storybook/nextjs-vite',
         features: {
           experimentalRSC: true,
           developmentModeForBuild: true,
         },
       },
-      extraDependencies: [
-        'server-only',
-        '@storybook/experimental-nextjs-vite',
-        'vite',
-        'prop-types',
-      ],
+      extraDependencies: ['server-only', '@storybook/nextjs-vite', 'vite', 'prop-types'],
     },
     skipTasks: ['e2e-tests-dev', 'bench'],
   },
@@ -237,25 +232,20 @@ export const baseTemplates = {
     script:
       'npx create-next-app {{beforeDir}} --eslint --no-tailwind --app --import-alias="@/*" --src-dir',
     expected: {
-      framework: '@storybook/experimental-nextjs-vite',
+      framework: '@storybook/nextjs-vite',
       renderer: '@storybook/react',
       builder: '@storybook/builder-vite',
     },
     modifications: {
       useCsfFactory: true,
       mainConfig: {
-        framework: '@storybook/experimental-nextjs-vite',
+        framework: '@storybook/nextjs-vite',
         features: {
           experimentalRSC: true,
           developmentModeForBuild: true,
         },
       },
-      extraDependencies: [
-        'server-only',
-        '@storybook/experimental-nextjs-vite',
-        'vite',
-        'prop-types',
-      ],
+      extraDependencies: ['server-only', '@storybook/nextjs-vite', 'vite', 'prop-types'],
     },
     skipTasks: ['e2e-tests-dev', 'bench'],
   },

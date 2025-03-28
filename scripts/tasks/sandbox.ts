@@ -140,7 +140,10 @@ export const sandbox: Task = {
       extraDeps,
     });
 
+    console.log('!!!', extraDeps);
+
     if (!options.skipTemplateStories) {
+      console.log('!!!', options.addon);
       for (const addon of options.addon) {
         await executeCLIStep(steps.add, {
           argument: addon,

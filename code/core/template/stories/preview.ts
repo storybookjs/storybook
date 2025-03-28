@@ -3,8 +3,6 @@ import type { PartialStoryFn, StoryContext } from 'storybook/internal/types';
 
 import type { ReactRenderer } from '@storybook/react';
 
-import { MINIMAL_VIEWPORTS } from 'storybook/viewport';
-
 declare global {
   interface Window {
     __STORYBOOK_BEFORE_ALL_CALLS__: number;
@@ -30,18 +28,6 @@ export const parameters = {
     b: 'project',
     c: 'project',
   },
-
-  viewport: {
-    options: MINIMAL_VIEWPORTS,
-  },
-
-  backgrounds: {
-    disable: false,
-    options: {
-      light: { name: 'light', value: '#F8F8F8' },
-      dark: { name: 'dark', value: '#333' },
-    },
-  },
 };
 
 export const loaders = [async () => ({ projectValue: 2 })];
@@ -62,11 +48,6 @@ export const initialGlobals = {
 
   sb_theme: 'light',
   locale: 'en',
-
-  viewport: {
-    value: undefined,
-    isRotated: false,
-  },
 };
 
 export const globalTypes = {

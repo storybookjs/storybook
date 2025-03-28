@@ -11,6 +11,16 @@ import {
   transformPackageJsonFiles,
 } from './consolidated-imports';
 
+// mock picocolors yellow and cyan
+vi.mock('picocolors', () => {
+  return {
+    default: {
+      cyan: (str: string) => str,
+      red: (str: string) => str,
+    },
+  };
+});
+
 vi.mock('node:fs/promises');
 vi.mock('globby', () => ({
   globby: vi.fn(),

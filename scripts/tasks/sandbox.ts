@@ -133,17 +133,6 @@ export const sandbox: Task = {
       await addStories(details, options);
     }
 
-    if (shouldAddVitestIntegration) {
-      await setupVitest(details, options);
-    }
-
-    await addExtraDependencies({
-      cwd: details.sandboxDir,
-      debug: options.debug,
-      dryRun: options.dryRun,
-      extraDeps,
-    });
-
     if (!options.skipTemplateStories) {
       for (const addon of options.addon) {
         await executeCLIStep(steps.add, {
@@ -155,6 +144,17 @@ export const sandbox: Task = {
         });
       }
     }
+
+    if (shouldAddVitestIntegration) {
+      await setupVitest(details, options);
+    }
+
+    await addExtraDependencies({
+      cwd: details.sandboxDir,
+      debug: options.debug,
+      dryRun: options.dryRun,
+      extraDeps,
+    });
 
     await extendMain(details, options);
     await setImportMap(details.sandboxDir);

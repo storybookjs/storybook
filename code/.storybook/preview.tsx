@@ -280,7 +280,7 @@ const decorators = [
                 <div style={{ marginBottom: 20 }} />
               </>
             )}
-            {StoryFn()}
+            <StoryFn />
           </ThemeProvider>
         );
       }

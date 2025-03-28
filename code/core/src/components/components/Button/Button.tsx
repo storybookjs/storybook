@@ -36,8 +36,6 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     if (asChild) {
       Comp = Slot;
     }
-    const localVariant = variant;
-    const localSize = size;
 
     const [isAnimating, setIsAnimating] = useState(false);
 
@@ -65,8 +63,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <StyledButton
         as={Comp}
         ref={ref}
-        variant={localVariant}
-        size={localSize}
+        variant={variant}
+        size={size}
         padding={padding}
         disabled={disabled}
         active={active}

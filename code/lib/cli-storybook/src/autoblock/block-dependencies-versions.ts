@@ -13,7 +13,7 @@ const minimalVersionsMap = {
   preact: '10.0.0',
   svelte: '4.0.0',
   vue: '3.0.0',
-  vite: '4.0.0',
+  vite: '5.0.0',
 };
 
 type Result = {

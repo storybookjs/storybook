@@ -8,6 +8,7 @@ import { promisify } from 'util';
 
 import { now, saveBench } from '../bench/utils';
 import type { Task, TaskKey } from '../task';
+import { executeCLIStep, steps } from '../utils/cli-step';
 
 const logger = console;
 
@@ -142,6 +143,18 @@ export const sandbox: Task = {
       dryRun: options.dryRun,
       extraDeps,
     });
+
+    if (!options.skipTemplateStories) {
+      for (const addon of options.addon) {
+        await executeCLIStep(steps.add, {
+          argument: addon,
+          cwd: details.sandboxDir,
+          dryRun: options.dryRun,
+          debug: options.debug,
+          optionValues: { yes: true },
+        });
+      }
+    }
 
     await extendMain(details, options);
 

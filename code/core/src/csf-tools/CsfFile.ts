@@ -278,16 +278,6 @@ export class CsfFile {
 
   imports: string[];
 
-  /** @deprecated Use `_options.fileName` instead */
-  get _fileName() {
-    return this._options.fileName;
-  }
-
-  /** @deprecated Use `_options.makeTitle` instead */
-  get _makeTitle() {
-    return this._options.makeTitle;
-  }
-
   constructor(ast: t.File, options: CsfOptions, file: BabelFile) {
     this._ast = ast;
     this._file = file;

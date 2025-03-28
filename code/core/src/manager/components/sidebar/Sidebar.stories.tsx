@@ -1,6 +1,5 @@
 import React from 'react';
 
-import { type Addon_SidebarTopType } from 'storybook/internal/types';
 import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
@@ -68,7 +67,6 @@ const meta = {
   args: {
     previewInitialized: true,
     menu,
-    extra: [] as Addon_SidebarTopType[],
     index: index,
     indexJson: {
       entries: {

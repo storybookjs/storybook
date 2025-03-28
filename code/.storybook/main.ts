@@ -1,5 +1,7 @@
 import { join } from 'node:path';
 
+import react from '@vitejs/plugin-react';
+
 import { defineMain } from '../frameworks/react-vite/src/node';
 
 const componentsPath = join(__dirname, '../core/src/components/index.ts');
@@ -121,6 +123,7 @@ const config = defineMain({
               }),
         },
       },
+      plugins: [react()],
       optimizeDeps: {
         force: true,
         include: ['@storybook/blocks'],

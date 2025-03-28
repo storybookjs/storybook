@@ -409,7 +409,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
 
   const portableStoriesFrameworks = [
     '@storybook/nextjs',
-    '@storybook/experimental-nextjs-vite',
+    '@storybook/nextjs-vite',
     '@storybook/sveltekit',
     // TODO: add angular once we enable their sandboxes
   ];

@@ -2,10 +2,10 @@
 export type SupportedFrameworks =
   | 'angular'
   | 'ember'
-  | 'experimental-nextjs-vite'
   | 'html-vite'
   | 'html-webpack5'
   | 'nextjs'
+  | 'nextjs-vite'
   | 'preact-vite'
   | 'preact-webpack5'
   | 'react-native-web-vite'

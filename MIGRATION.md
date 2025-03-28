@@ -30,6 +30,7 @@
     - [Angular = Require v18 and up](#angular--require-v18-and-up)
     - [Next.js = Require v14 and up](#nextjs--require-v14-and-up)
     - [Preact = Dropped webpack5 builder support](#preact--dropped-webpack5-builder-support)
+    - [Vue3 = Dropped webpack5 builder support](#vue3--dropped-webpack5-builder-support)
 - [From version 8.5.x to 8.6.x](#from-version-85x-to-86x)
   - [Angular: Support experimental zoneless support](#angular-support-experimental-zoneless-support)
   - [Framework-specific Vite plugins have to be explicitly added](#framework-specific-vite-plugins-have-to-be-explicitly-added)
@@ -837,6 +838,26 @@ Then update your `.storybook/main.js|ts`:
 export default {
   framework: {
     name: '@storybook/preact-vite',
+    options: {},
+  },
+  // ... other configurations
+};
+```
+
+#### Vue3 = Dropped webpack5 builder support
+The `@storybook/vue3-webpack5` package has been removed. For Vue3 projects, please use the Vite builder instead:
+
+```bash
+npm remove @storybook/vue3-webpack5 @storybook/preset-vue3-webpack
+npm install @storybook/vue3-vite --save-dev
+```
+
+Then update your `.storybook/main.js|ts`:
+
+```js
+export default {
+  framework: {
+    name: '@storybook/vue3-vite',
     options: {},
   },
   // ... other configurations

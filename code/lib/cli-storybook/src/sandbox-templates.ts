@@ -569,18 +569,6 @@ export const baseTemplates = {
     // Remove smoke-test from the list once https://github.com/storybookjs/storybook/issues/19351 is fixed.
     skipTasks: ['smoke-test', 'e2e-tests-dev', 'bench', 'vitest-integration'],
   },
-  'vue-cli/default-js': {
-    name: 'Vue CLI v3 (Webpack | JavaScript)',
-    script:
-      'npx -p @vue/cli vue create {{beforeDir}} --default --packageManager=yarn --force --merge && cd {{beforeDir}} && echo "module.exports = {}" > webpack.config.js',
-    expected: {
-      framework: '@storybook/vue3-webpack5',
-      renderer: '@storybook/vue3',
-      builder: '@storybook/builder-webpack5',
-    },
-    // Remove smoke-test from the list once https://github.com/storybookjs/storybook/issues/19351 is fixed.
-    skipTasks: ['smoke-test', 'e2e-tests-dev', 'bench', 'vitest-integration'],
-  },
   'preact-vite/default-js': {
     name: 'Preact Latest (Vite | JavaScript)',
     script: 'npm create vite --yes {{beforeDir}} -- --template preact',
@@ -872,7 +860,6 @@ export const daily: TemplateKey[] = [
   'react-vite/prerelease-ts',
   'react-webpack/prerelease-ts',
   'vue3-vite/default-js',
-  'vue-cli/default-js',
   'lit-vite/default-js',
   // 'svelte-kit/skeleton-js',
   'svelte-kit/prerelease-ts',

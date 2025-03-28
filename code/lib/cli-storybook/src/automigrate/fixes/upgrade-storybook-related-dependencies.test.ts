@@ -11,7 +11,7 @@ vi.mock('../../doctor/getIncompatibleStorybookPackages');
 const check = async ({
   packageManager,
   main: mainConfig = {},
-  storybookVersion = '8.0.0',
+  storybookVersion = '9.0.0',
 }: {
   packageManager: Partial<JsPackageManager>;
   main?: Partial<StorybookConfig> & Record<string, unknown>;

@@ -150,8 +150,8 @@ export const getIncompatiblePackagesSummary = (
     summaryMessage.push(
       '\n',
       'Please consider updating your packages or contacting the maintainers for compatibility details.',
-      'For more on Storybook 8 compatibility, see the linked GitHub issue:',
-      picocolors.yellow('https://github.com/storybookjs/storybook/issues/26031')
+      'For more on Storybook 9 compatibility, see the linked GitHub issue:',
+      picocolors.yellow('https://github.com/storybookjs/storybook/issues/30944')
     );
 
     if (incompatiblePackages.some((dep) => dep.availableCoreUpdate)) {
@@ -165,7 +165,7 @@ export const getIncompatiblePackagesSummary = (
               `- ${picocolors.blue(`${packageName}@${packageVersion}`)}`
           )
           .join('\n')}`,
-        `Upgrade storybook with:`,
+        `Upgrade Storybook with:`,
         picocolors.blue('npx storybook@latest upgrade')
       );
     }

@@ -1,15 +1,18 @@
 import React, { type SyntheticEvent, useCallback, useEffect, useRef, useState } from 'react';
 
+import { once } from 'storybook/internal/client-logger';
 import { Button, IconButton, TooltipNote } from 'storybook/internal/components';
 import { WithTooltip } from 'storybook/internal/components';
-import { type Addon_Collection, type Addon_TestProviderType } from 'storybook/internal/types';
+import type {
+  Addon_Collection,
+  Addon_TestProviderType,
+  TestProviderStateByProviderId,
+} from 'storybook/internal/types';
 
 import { ChevronSmallUpIcon, PlayAllHollowIcon, SweepIcon } from '@storybook/icons';
 
 import { internal_fullTestProviderStore } from '#manager-stores';
 import { keyframes, styled } from 'storybook/theming';
-
-import type { TestProviderStateByProviderId } from '../../../shared/test-provider-store';
 
 const DEFAULT_HEIGHT = 500;
 
@@ -273,7 +276,7 @@ export const TestingModule = ({
               {Object.values(registeredTestProviders).map((registeredTestProvider) => {
                 const { render: Render, id } = registeredTestProvider;
                 if (!Render) {
-                  console.warn(
+                  once.warn(
                     `No render function found for test provider with id '${id}', skipping...`
                   );
                   return null;

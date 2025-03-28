@@ -90,6 +90,7 @@ describe('bootTestRunner', () => {
         NODE_ENV: 'test',
         TEST: 'true',
         VITEST: 'true',
+        VITEST_CHILD_PROCESS: 'true',
       },
       extendEnv: true,
     });

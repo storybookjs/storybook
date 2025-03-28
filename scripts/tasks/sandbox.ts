@@ -144,15 +144,15 @@ export const sandbox: Task = {
 
     if (!options.skipTemplateStories) {
       console.log('!!!', options.addon);
-      // for (const addon of options.addon) {
-      //   await executeCLIStep(steps.add, {
-      //     argument: addon,
-      //     cwd: details.sandboxDir,
-      //     dryRun: options.dryRun,
-      //     debug: options.debug,
-      //     optionValues: { yes: true },
-      //   });
-      // }
+      for (const addon of options.addon) {
+        await executeCLIStep(steps.add, {
+          argument: addon,
+          cwd: details.sandboxDir,
+          dryRun: options.dryRun,
+          debug: true,
+          optionValues: { yes: true },
+        });
+      }
     }
 
     if (shouldAddVitestIntegration) {

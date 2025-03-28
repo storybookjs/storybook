@@ -1,7 +1,19 @@
 import { type Call, CallStates } from 'storybook/internal/instrumenter';
 
-export const getCalls = (finalStatus: CallStates) => {
-  const calls: Call[] = [
+export const getCalls = (finalStatus: CallStates, slice?: number) => {
+  let calls: Call[] = [
+    {
+      id: 'story--id internal_render',
+      storyId: 'story--id',
+      cursor: 0,
+      ancestors: [],
+      path: [],
+      method: 'internal_render',
+      args: [],
+      interceptable: true,
+      retain: false,
+      status: CallStates.DONE,
+    },
     {
       id: 'story--id [3] step',
       storyId: 'story--id',
@@ -124,7 +136,12 @@ export const getCalls = (finalStatus: CallStates) => {
     },
   ];
 
+  if (typeof slice === 'number') {
+    calls = slice < 0 ? calls.slice(slice) : calls.slice(0, slice);
+  }
+
   if (finalStatus === CallStates.ERROR) {
+    calls[calls.length - 1].status = finalStatus;
     calls[calls.length - 1].exception = {
       name: 'Error',
       stack: '',

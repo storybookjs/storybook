@@ -43,11 +43,13 @@ const statusMap: Record<CallStates, StatusValue> = {
 };
 
 export const getInteractions = ({
+  storyId,
   log,
   calls,
   collapsed,
   setCollapsed,
 }: {
+  storyId: string;
   log: LogItem[];
   calls: Map<Call['id'], Call>;
   collapsed: Set<Call['id']>;
@@ -56,7 +58,7 @@ export const getInteractions = ({
   const callsById = new Map<Call['id'], Call>();
   const childCallMap = new Map<Call['id'], Call['id'][]>();
 
-  return log
+  const interactions = log
     .map(({ callId, ancestors, status }) => {
       let isHidden = false;
       ancestors.forEach((ancestor) => {
@@ -91,6 +93,25 @@ export const getInteractions = ({
           }),
       };
     });
+
+  const renderInteraction = {
+    id: `${storyId} [0] internal_render`,
+    cursor: 0,
+    storyId,
+    ancestors: [],
+    path: [],
+    method: 'internal_render',
+    args: [],
+    interceptable: true,
+    retain: false,
+    status: CallStates.DONE,
+    childCallIds: undefined,
+    isHidden: false,
+    isCollapsed: false,
+    toggleCollapsed: () => {},
+  } as (typeof interactions)[number];
+
+  return [renderInteraction, ...interactions];
 };
 
 export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId }) {
@@ -158,6 +179,7 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
         // @ts-expect-error TODO
         set((s) => {
           const list = getInteractions({
+            storyId,
             log: payload.logItems,
             calls: calls.current,
             collapsed,
@@ -222,6 +244,7 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
     // @ts-expect-error TODO
     set((s) => {
       const list = getInteractions({
+        storyId,
         log: log.current,
         calls: calls.current,
         collapsed,
@@ -233,7 +256,7 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
         interactionsCount: list.filter(({ method }) => method !== 'step').length,
       };
     });
-  }, [set, collapsed]);
+  }, [storyId, set, collapsed]);
 
   const controls = useMemo(
     () => ({

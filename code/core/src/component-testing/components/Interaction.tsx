@@ -3,7 +3,7 @@ import * as React from 'react';
 import { IconButton, TooltipNote, WithTooltip } from 'storybook/internal/components';
 import { type Call, CallStates, type ControlStates } from 'storybook/internal/instrumenter';
 
-import { ListUnorderedIcon } from '@storybook/icons';
+import { BookmarkHollowIcon, ListUnorderedIcon, LockIcon, StopAltIcon } from '@storybook/icons';
 
 import { transparentize } from 'polished';
 import { styled, typography } from 'storybook/theming';
@@ -93,6 +93,8 @@ const RowLabel = styled('button', {
 }));
 
 const RowActions = styled.div({
+  display: 'flex',
+  alignItems: 'center',
   padding: 6,
 });
 
@@ -113,6 +115,24 @@ const RowMessage = styled('div')(({ theme }) => ({
     margin: 0,
     padding: 0,
   },
+}));
+
+const RenderIcon = styled(BookmarkHollowIcon)(({ theme }) => ({
+  color: theme.color.seafoam,
+}));
+
+const RenderLabel = styled('span')(({ theme }) => ({
+  color: theme.color.defaultText,
+  fontFamily: theme.typography.fonts.base,
+  fontSize: theme.typography.size.s2 - 1,
+}));
+
+const RenderLockIcon = styled(LockIcon)(({ theme }) => ({
+  display: 'block',
+  width: 12,
+  height: 12,
+  margin: 6,
+  color: theme.color.mediumdark,
 }));
 
 export const Exception = ({ exception }: { exception: Call['exception'] }) => {
@@ -171,6 +191,38 @@ export const Interaction = ({
 
   if (isHidden) {
     return null;
+  }
+
+  if (call.method === 'internal_render') {
+    return (
+      <RowContainer call={call} pausedAt={undefined}>
+        <RowHeader isInteractive>
+          <RowLabel aria-label="Interaction step" call={call} disabled>
+            {call.status === CallStates.ERROR ? (
+              <StatusIcon status={CallStates.ERROR} />
+            ) : (
+              <RenderIcon />
+            )}
+            <MethodCallWrapper style={{ marginLeft: 6, marginBottom: 1 }}>
+              <RenderLabel>Render story</RenderLabel>
+            </MethodCallWrapper>
+          </RowLabel>
+          <RowActions>
+            <WithTooltip
+              trigger="hover"
+              hasChrome={false}
+              tooltip={<Note note="Render is the first step of all component tests" />}
+            >
+              <RenderLockIcon />
+            </WithTooltip>
+          </RowActions>
+        </RowHeader>
+
+        {call.status === CallStates.ERROR && call.exception?.callId === call.id && (
+          <Exception exception={call.exception} />
+        )}
+      </RowContainer>
+    );
   }
 
   return (

@@ -13,12 +13,12 @@ import { Subnav } from './Subnav';
 import { TestDiscrepancyMessage } from './TestDiscrepancyMessage';
 
 export interface Controls {
-  start: (args: any) => void;
-  back: (args: any) => void;
-  goto: (args: any) => void;
-  next: (args: any) => void;
-  end: (args: any) => void;
-  rerun: (args: any) => void;
+  start: (args?: any) => void;
+  back: (args?: any) => void;
+  goto: (args?: any) => void;
+  next: (args?: any) => void;
+  end: (args?: any) => void;
+  rerun: (args?: any) => void;
 }
 
 interface InteractionsPanelProps {

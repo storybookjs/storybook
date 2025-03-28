@@ -20,33 +20,48 @@ export default {
   },
 } as Meta<typeof Interaction>;
 
+export const Render: Story = {
+  args: {
+    call: getCalls(CallStates.DONE, 1)[0],
+  },
+  render: (args) => {
+    throw new Error('Not implemented');
+  },
+};
+
+export const RenderError: Story = {
+  args: {
+    call: getCalls(CallStates.ERROR, 1)[0],
+  },
+};
+
 export const Active: Story = {
   args: {
-    call: getCalls(CallStates.ACTIVE).slice(-1)[0],
+    call: getCalls(CallStates.ACTIVE, -1)[0],
   },
 };
 
 export const Waiting: Story = {
   args: {
-    call: getCalls(CallStates.WAITING).slice(-1)[0],
+    call: getCalls(CallStates.WAITING, -1)[0],
   },
 };
 
 export const Failed: Story = {
   args: {
-    call: getCalls(CallStates.ERROR).slice(-1)[0],
+    call: getCalls(CallStates.ERROR, -1)[0],
   },
 };
 
 export const Done: Story = {
   args: {
-    call: getCalls(CallStates.DONE).slice(-1)[0],
+    call: getCalls(CallStates.DONE, -1)[0],
   },
 };
 
 export const WithParent: Story = {
   args: {
-    call: { ...getCalls(CallStates.DONE).slice(-1)[0], ancestors: ['parent-id'] },
+    call: { ...getCalls(CallStates.DONE, -1)[0], ancestors: ['parent-id'] },
   },
 };
 

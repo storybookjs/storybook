@@ -1,8 +1,8 @@
 ```js filename="addon-toolbar/manager.js" renderer="common" language="js"
 import React from 'react';
 
-import { addons, types } from '@storybook/manager-api';
-import { IconButton } from '@storybook/components';
+import { addons, types } from 'storybook/manager-api';
+import { IconButton } from 'storybook/internal/components;
 import { OutlineIcon } from '@storybook/icons';
 
 addons.register('my-addon', () => {

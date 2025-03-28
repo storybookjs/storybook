@@ -1,7 +1,11 @@
 ```ts filename="src/withGlobals.ts" renderer="common" language="ts"
-import type { Renderer, PartialStoryFn as StoryFunction, StoryContext } from '@storybook/types';
+import type {
+  Renderer,
+  PartialStoryFn as StoryFunction,
+  StoryContext,
+} from 'storybook/internal/types';
 
-import { useEffect, useMemo, useGlobals } from '@storybook/preview-api';
+import { useEffect, useMemo, useGlobals } from 'storybook/preview-api';
 import { PARAM_KEY } from './constants';
 
 import { clearStyles, addOutlineStyles } from './helpers';

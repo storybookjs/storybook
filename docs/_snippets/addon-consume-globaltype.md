@@ -1,9 +1,9 @@
 ```js filename="your-addon-register-file.js" renderer="common" language="js"
 import React from 'react';
 
-import { useGlobals } from '@storybook/manager-api';
+import { useGlobals } from 'storybook/manager-api';
 
-import { AddonPanel, Placeholder, Separator, Source, Spaced, Title } from '@storybook/components';
+import { AddonPanel, Placeholder, Separator, Source, Spaced, Title } from 'storybook/internal/components;
 
 import { MyThemes } from '../my-theme-folder/my-theme-file';
 

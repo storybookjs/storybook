@@ -157,7 +157,6 @@ export const sandbox: Task = {
     }
 
     await extendMain(details, options);
-
     await setImportMap(details.sandboxDir);
 
     const { JsPackageManagerFactory } = await import('../../code/core/src/common');

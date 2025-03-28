@@ -30,7 +30,7 @@ A rendering story goes through these phases:
 
 - `preparing` - (maybe async) import the story file and prepare the story function.
 - `loading` - async loaders are running
-- `rendering` - the `renderToDOM` function for the framework is running
+- `rendering` - the `renderToCanvas` function for the framework is running
 - `playing` - the `play` function is running
 - `completed` - the story is done.
 

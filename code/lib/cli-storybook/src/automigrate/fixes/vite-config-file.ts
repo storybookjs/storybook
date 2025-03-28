@@ -1,7 +1,6 @@
 import { join } from 'node:path';
 
-import { frameworkToRenderer } from 'storybook/internal/cli';
-import { frameworkPackages } from 'storybook/internal/common';
+import { frameworkPackages, frameworkToRenderer } from 'storybook/internal/common';
 
 import findUp from 'find-up';
 import { dedent } from 'ts-dedent';

@@ -86,7 +86,6 @@ export type State = layout.SubState &
   whatsnew.SubState &
   RouterData &
   API_OptionsData &
-  DeprecatedState &
   Other;
 
 export type API = addons.SubAPI &
@@ -103,15 +102,6 @@ export type API = addons.SubAPI &
   url.SubAPI &
   whatsnew.SubAPI &
   Other;
-
-interface DeprecatedState {
-  /** @deprecated Use index */
-  storiesHash: API_IndexHash;
-  /** @deprecated Use previewInitialized */
-  storiesConfigured: boolean;
-  /** @deprecated Use indexError */
-  storiesFailed?: Error;
-}
 
 interface Other {
   [key: string]: any;
@@ -295,23 +285,7 @@ function ManagerConsumer<P = Combo>({
 
 export function useStorybookState(): State {
   const { state } = useContext(ManagerContext);
-  return {
-    ...state,
-
-    // deprecated fields for back-compat
-    get storiesHash() {
-      deprecate('state.storiesHash is deprecated, please use state.index');
-      return this.index || {};
-    },
-    get storiesConfigured() {
-      deprecate('state.storiesConfigured is deprecated, please use state.previewInitialized');
-      return this.previewInitialized;
-    },
-    get storiesFailed() {
-      deprecate('state.storiesFailed is deprecated, please use state.indexError');
-      return this.indexError;
-    },
-  };
+  return state;
 }
 export function useStorybookApi(): API {
   const { api } = useContext(ManagerContext);

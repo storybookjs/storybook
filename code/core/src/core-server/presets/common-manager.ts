@@ -1,13 +1,16 @@
+/* these imports are in the exact order in which the panels need to be registered */
 import { global } from '@storybook/global';
 
 import { addons } from 'storybook/manager-api';
 
+/* eslint-disable prettier/prettier */
 import controlsManager from '../../controls/manager';
 import actionsManager from '../../actions/manager';
 import componentTestingManager from '../../component-testing/manager';
 import backgroundsManager from '../../backgrounds/manager';
 import measureManager from '../../measure/manager';
 import viewportManager from '../../viewport/manager';
+/* eslint-enable prettier/prettier */
 
 const TAG_FILTERS = 'tag-filters';
 const STATIC_FILTER = 'static-filter';

@@ -8,6 +8,7 @@ import { promisify } from 'util';
 
 import { now, saveBench } from '../bench/utils';
 import type { Task, TaskKey } from '../task';
+import { executeCLIStep, steps } from '../utils/cli-step';
 
 const logger = console;
 
@@ -79,8 +80,6 @@ export const sandbox: Task = {
 
     const shouldAddVitestIntegration = !details.template.skipTasks?.includes('vitest-integration');
 
-    options.addon.push('@storybook/addon-a11y');
-
     if (shouldAddVitestIntegration) {
       extraDeps.push('happy-dom', 'vitest', 'playwright', '@vitest/browser');
 
@@ -98,6 +97,8 @@ export const sandbox: Task = {
 
       options.addon.push('@storybook/addon-test');
     }
+
+    options.addon.push('@storybook/addon-a11y');
 
     let startTime = now();
     await create(details, options);
@@ -132,10 +133,6 @@ export const sandbox: Task = {
       await addStories(details, options);
     }
 
-    if (shouldAddVitestIntegration) {
-      await setupVitest(details, options);
-    }
-
     await addExtraDependencies({
       cwd: details.sandboxDir,
       debug: options.debug,
@@ -143,8 +140,26 @@ export const sandbox: Task = {
       extraDeps,
     });
 
-    await extendMain(details, options);
+    console.log('!!!', extraDeps);
 
+    if (!options.skipTemplateStories) {
+      console.log('!!!', options.addon);
+      for (const addon of options.addon) {
+        await executeCLIStep(steps.add, {
+          argument: addon,
+          cwd: details.sandboxDir,
+          dryRun: options.dryRun,
+          debug: true,
+          optionValues: { yes: true },
+        });
+      }
+    }
+
+    if (shouldAddVitestIntegration) {
+      await setupVitest(details, options);
+    }
+
+    await extendMain(details, options);
     await setImportMap(details.sandboxDir);
 
     const { JsPackageManagerFactory } = await import('../../code/core/src/common');

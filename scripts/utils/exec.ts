@@ -39,12 +39,12 @@ export const exec = async (
 
   try {
     if (typeof command === 'string') {
-      logger.debug(`> ${command}`);
+      logger.log(`> ${command}`);
       currentChild = execa(command, { ...defaultOptions, ...options });
       await currentChild;
     } else {
       for (const subcommand of command) {
-        logger.debug(`> ${subcommand}`);
+        logger.log(`> ${subcommand}`);
         currentChild = execa(subcommand, { ...defaultOptions, ...options });
         await currentChild;
       }

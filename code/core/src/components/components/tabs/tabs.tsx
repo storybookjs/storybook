@@ -1,3 +1,4 @@
+/* eslint-disable react/destructuring-assignment */
 import type { FC, PropsWithChildren, ReactElement, ReactNode, SyntheticEvent } from 'react';
 import React, { Component, memo, useMemo } from 'react';
 
@@ -133,6 +134,41 @@ export interface TabsProps {
   menuName?: string;
 }
 
+interface ErrorBoundaryProps {
+  children: ReactNode;
+  active: boolean;
+}
+
+class TabErrorBoundary extends Component<ErrorBoundaryProps, { hasError: boolean }> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    console.error('Error rendering addon panel');
+    console.error(error);
+    console.error(info.componentStack);
+  }
+
+  render() {
+    if (this.state.hasError && this.props.active) {
+      return (
+        <EmptyTabContent
+          title="This addon has errors"
+          description="Check your browser logs and addon code to pinpoint what went wrong. This issue was not caused by Storybook."
+        />
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
 export const Tabs: FC<TabsProps> = memo(
   ({
     children,
@@ -202,7 +238,11 @@ export const Tabs: FC<TabsProps> = memo(
         <Content id="panel-tab-content" bordered={bordered} absolute={absolute}>
           {list.length
             ? list.map(({ id, active, render }) => {
-                return React.createElement(render, { key: id, active }, null);
+                return (
+                  <TabErrorBoundary key={id} active={active}>
+                    {React.createElement(render, { active }, null)}
+                  </TabErrorBoundary>
+                );
               })
             : EmptyContent}
         </Content>

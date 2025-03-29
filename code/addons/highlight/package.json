@@ -64,8 +64,13 @@
     "@storybook/global": "^5.0.0"
   },
   "devDependencies": {
+    "@storybook/icons": "^1.4.0",
     "@types/webpack-env": "^1.16.0",
-    "typescript": "^5.7.3"
+    "es-toolkit": "^1.22.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "typescript": "^5.7.3",
+    "use-resize-observer": "^9.1.0"
   },
   "peerDependencies": {
     "storybook": "workspace:^"
@@ -78,7 +83,7 @@
       "./src/index.ts"
     ],
     "previewEntries": [
-      "./src/preview.ts"
+      "./src/preview.tsx"
     ]
   },
   "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16",

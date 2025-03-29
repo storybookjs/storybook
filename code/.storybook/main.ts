@@ -44,6 +44,10 @@ const config = defineMain({
       titlePrefix: 'addons/accessibility',
     },
     {
+      directory: '../addons/highlight/src',
+      titlePrefix: 'addons/highlight',
+    },
+    {
       directory: '../addons/backgrounds/template/stories',
       titlePrefix: 'addons/backgrounds',
     },

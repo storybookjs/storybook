@@ -9,7 +9,7 @@ import { global } from '@storybook/global';
 
 import { addons } from 'storybook/preview-api';
 
-import { EVENTS, Instrumenter } from './instrumenter';
+import { EVENTS, Instrumenter, isClass } from './instrumenter';
 import type { Options } from './types';
 
 const mocks = await vi.hoisted(async () => {
@@ -712,6 +712,52 @@ describe('Instrumenter', () => {
       expect(fn).toHaveBeenCalledTimes(3);
 
       await p;
+    });
+  });
+
+  describe('isClass', () => {
+    it('returns true for class declarations', () => {
+      class TestClass {}
+      expect(isClass(TestClass)).toBe(true);
+    });
+
+    it('returns true for class expressions', () => {
+      const TestClass = class {};
+      expect(isClass(TestClass)).toBe(true);
+    });
+
+    it('returns false for regular functions', () => {
+      function testFunction() {}
+      expect(isClass(testFunction)).toBe(false);
+    });
+
+    it('returns false for arrow functions', () => {
+      const arrowFunction = () => {};
+      expect(isClass(arrowFunction)).toBe(false);
+    });
+
+    it('returns false for function expressions', () => {
+      const functionExpression = function () {};
+      expect(isClass(functionExpression)).toBe(false);
+    });
+
+    it('returns false for functions without prototype', () => {
+      expect(isClass(Promise.resolve)).toBe(false);
+    });
+
+    it('returns false for method shorthand', () => {
+      expect(isClass({ method() {} })).toBe(false);
+    });
+
+    it('returns false for non-function values', () => {
+      expect(isClass(null)).toBe(false);
+      expect(isClass(undefined)).toBe(false);
+      expect(isClass(123)).toBe(false);
+      expect(isClass('string')).toBe(false);
+      expect(isClass({})).toBe(false);
+      expect(isClass([])).toBe(false);
+      expect(isClass(true)).toBe(false);
+      expect(isClass(Symbol('test'))).toBe(false);
     });
   });
 });

@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { AddonPanel, Badge, Spaced } from 'storybook/internal/components';
+import { AddonPanel, Badge } from 'storybook/internal/components';
 import type {
   ResponseData,
   SaveStoryRequestPayload,
@@ -9,26 +9,39 @@ import type {
 import { SAVE_STORY_REQUEST, SAVE_STORY_RESPONSE } from 'storybook/internal/core-events';
 import type { Args } from 'storybook/internal/csf';
 
+import { FailedIcon, PassedIcon } from '@storybook/icons';
+
 import { dequal as deepEqual } from 'dequal';
-import { addons, experimental_requestResponse, types, useArgTypes } from 'storybook/manager-api';
+import {
+  addons,
+  experimental_requestResponse,
+  types,
+  useArgTypes,
+  useStorybookApi,
+} from 'storybook/manager-api';
 import { color } from 'storybook/theming';
 
 import { ControlsPanel } from './components/ControlsPanel';
 import { ADDON_ID, PARAM_KEY } from './constants';
 
 function Title() {
+  const api = useStorybookApi();
+  const selectedPanel = api.getSelectedPanel();
   const rows = useArgTypes();
   const controlsCount = Object.values(rows).filter(
     (argType) => argType?.control && !argType?.table?.disable
   ).length;
-  const suffix = controlsCount === 0 ? '' : <Badge status="neutral">{controlsCount}</Badge>;
+  const suffix =
+    controlsCount === 0 ? null : (
+      <Badge compact status={selectedPanel === ADDON_ID ? 'active' : 'neutral'}>
+        {controlsCount}
+      </Badge>
+    );
 
   return (
-    <div>
-      <Spaced col={1}>
-        <span style={{ display: 'inline-block', verticalAlign: 'middle' }}>Controls</span>
-        {suffix}
-      </Spaced>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+      <span>Controls</span>
+      {suffix}
     </div>
   );
 }
@@ -71,7 +84,7 @@ addons.register(ADDON_ID, (api) => {
 
       api.addNotification({
         id: 'save-story-success',
-        icon: { name: 'passed', color: color.positive },
+        icon: <PassedIcon color={color.positive} />,
         content: {
           headline: 'Story saved',
           subHeadline: (
@@ -85,7 +98,7 @@ addons.register(ADDON_ID, (api) => {
     } catch (error: any) {
       api.addNotification({
         id: 'save-story-error',
-        icon: { name: 'failed', color: color.negative },
+        icon: <FailedIcon color={color.negative} />,
         content: {
           headline: 'Failed to save story',
           subHeadline:
@@ -116,7 +129,7 @@ addons.register(ADDON_ID, (api) => {
 
     api.addNotification({
       id: 'save-story-success',
-      icon: { name: 'passed', color: color.positive },
+      icon: <PassedIcon color={color.positive} />,
       content: {
         headline: 'Story created',
         subHeadline: (

@@ -3,10 +3,10 @@ import { cp, readFile, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 
 import {
-  frameworkToRenderer as CoreFrameworkToRenderer,
   type JsPackageManager,
   type PackageJson,
   type PackageJsonWithDepsAndDevDeps,
+  frameworkToRenderer,
 } from 'storybook/internal/common';
 import { versions as storybookMonorepoPackages } from 'storybook/internal/common';
 import type { SupportedFrameworks, SupportedRenderers } from 'storybook/internal/types';
@@ -142,9 +142,6 @@ type CopyTemplateFilesOptions = {
   features: string[];
 };
 
-/** @deprecated Please use `frameworkToRenderer` from `storybook/internal/common` instead */
-export const frameworkToRenderer = CoreFrameworkToRenderer;
-
 export const frameworkToDefaultBuilder: Record<
   SupportedFrameworks,
   CoreBuilder | CommunityBuilder
@@ -155,9 +152,8 @@ export const frameworkToDefaultBuilder: Record<
   'html-webpack5': CoreBuilder.Webpack5,
   nextjs: CoreBuilder.Webpack5,
   nuxt: CoreBuilder.Vite,
-  'experimental-nextjs-vite': CoreBuilder.Vite,
+  'nextjs-vite': CoreBuilder.Vite,
   'preact-vite': CoreBuilder.Vite,
-  'preact-webpack5': CoreBuilder.Webpack5,
   qwik: CoreBuilder.Vite,
   'react-native-web-vite': CoreBuilder.Vite,
   'react-vite': CoreBuilder.Vite,

@@ -1,6 +1,17 @@
 <h1>Migration</h1>
 
 - [From version 8.x to 9.0.0](#from-version-8x-to-900)
+  - [Package Manager Support](#package-manager-support)
+  - [A11y addon: Removed deprecated manual parameter](#a11y-addon-removed-deprecated-manual-parameter)
+  - [Button Component API Changes](#button-component-api-changes)
+  - [Documentation Generation Changes](#documentation-generation-changes)
+  - [Global State Management](#global-state-management)
+  - [Icon System Updates](#icon-system-updates)
+  - [Sidebar Component Changes](#sidebar-component-changes)
+  - [Testing Module Changes](#testing-module-changes)
+  - [Type System Updates](#type-system-updates)
+  - [Story Store API Changes](#story-store-api-changes)
+  - [CSF File Changes](#csf-file-changes)
   - [The parameter docs.source.excludeDecorators has no effect in React](#the-parameter-docssourceexcludedecorators-has-no-effect-in-react)
   - [Addon Viewport is moved to core](#addon-viewport-is-moved-to-core)
   - [Addon Controls is moved to core](#addon-controls-is-moved-to-core)
@@ -14,6 +25,12 @@
   - [Dropped support for TypeScript \< 4.9](#dropped-support-for-typescript--49)
   - [Test addon renamed from experimental to stable](#test-addon-renamed-from-experimental-to-stable)
   - [Experimental Status API has turned into a Status Store](#experimental-status-api-has-turned-into-a-status-store)
+  - [Dropped support for Vite 4](#dropped-support-for-vite-4)
+  - [Framework-specific changes](#framework-specific-changes)
+    - [Angular = Require v18 and up](#angular--require-v18-and-up)
+    - [Next.js = Require v14 and up](#nextjs--require-v14-and-up)
+    - [Preact = Dropped webpack5 builder support](#preact--dropped-webpack5-builder-support)
+    - [Next.js = Vite builder stabilized](#nextjs--vite-builder-stabilized)
 - [From version 8.5.x to 8.6.x](#from-version-85x-to-86x)
   - [Angular: Support experimental zoneless support](#angular-support-experimental-zoneless-support)
   - [Framework-specific Vite plugins have to be explicitly added](#framework-specific-vite-plugins-have-to-be-explicitly-added)
@@ -47,7 +64,7 @@
     - [Removed `sb babelrc` command](#removed-sb-babelrc-command)
     - [Changed interfaces for `@storybook/router` components](#changed-interfaces-for-storybookrouter-components)
     - [Extract no longer batches](#extract-no-longer-batches)
-  - [Framework-specific changes](#framework-specific-changes)
+  - [Framework-specific changes](#framework-specific-changes-1)
     - [React](#react)
       - [`react-docgen` component analysis by default](#react-docgen-component-analysis-by-default)
     - [Next.js](#nextjs)
@@ -412,6 +429,188 @@
 
 ## From version 8.x to 9.0.0
 
+### Package Manager Support
+
+Storybook 9.0 drops official support and maintenance for older package manager versions:
+
+- npm v8 and v9 are no longer supported
+- yarn v3 is no longer supported  
+- pnpm v7 and v8 are no longer supported
+
+The minimum supported versions are now:
+
+- npm v10+
+- yarn v4+ 
+- pnpm v9+
+
+While Storybook may still work with older versions, we recommend upgrading to the latest supported versions for the best experience and to ensure compatibility.
+
+
+### A11y addon: Removed deprecated manual parameter
+
+The deprecated `manual` parameter from the A11y addon's parameters has been removed. Instead, use the `globals.a11y.manual` setting to control manual mode. For example:
+
+```js
+// Old way (no longer works)
+export const MyStory = {
+  parameters: {
+    a11y: {
+      manual: true
+    }
+  }
+};
+
+// New way
+export const MyStory = {
+  parameters: {
+    a11y: {
+      // other a11y parameters
+    }
+  }
+  globals: {
+    a11y: {
+      manual: true
+    }
+  }
+};
+
+// To enable manual mode globally, use .storybook/preview.js:
+export const initialGlobals = {
+  a11y: {
+    manual: true
+  }
+};
+```
+
+### Button Component API Changes
+
+The Button component has been updated to use a more modern props API. The following props have been removed:
+- `isLink`
+- `primary`
+- `secondary`
+- `tertiary`
+- `gray`
+- `inForm`
+- `small`
+- `outline`
+- `containsIcon`
+
+Use the new `variant` and `size` props instead:
+
+```diff
+- <Button primary small>Click me</Button>
++ <Button variant="primary" size="small">Click me</Button>
+```
+
+### Documentation Generation Changes
+
+The `autodocs` configuration option has been removed in favor of using tags:
+
+```diff
+// .storybook/preview.js
+export default {
+- docs: { autodocs: true }
+};
+
+// In your CSF files:
++ export default {
++   tags: ['autodocs']
++ };
+```
+
+### Global State Management
+
+The `globals` field in project annotations has been renamed to `initialGlobals`:
+
+```diff
+export const preview = {
+- globals: {
++ initialGlobals: {
+    theme: 'light'
+  }
+};
+```
+
+Additionally loading the defaultValue from `globalTypes` isn't supported anymore. Use `initialGlobals` instead to define the defaultValue.
+
+```diff
+// .storybook/preview.js
+export default {
++ initialGlobals: {
++   locale: 'en'
++ },
+  globalTypes: {
+    locale: {
+      description: 'Locale for components',
+-     defaultValue: 'en',
+      toolbar: {
+        title: 'Locale',
+        icon: 'circlehollow',
+        items: ['es', 'en'],
+      },
+    },
+  },
+}
+```
+
+### Icon System Updates
+
+Several icon-related exports have been removed:
+- `IconButtonSkeleton`
+- `Icons`
+- `Symbols`
+- Legacy icon exports
+
+Use the new icon system from `@storybook/icons` instead:
+
+```diff
+- import { Icons, IconButtonSkeleton } from '@storybook/components';
++ import { ZoomIcon } from '@storybook/icons';
+```
+
+### Sidebar Component Changes
+
+1. The 'extra' prop has been removed from the Sidebar's Heading component
+2. Experimental sidebar features have been removed:
+   - `experimental_SIDEBAR_BOTTOM`
+   - `experimental_SIDEBAR_TOP`
+
+### Testing Module Changes
+
+The `TESTING_MODULE_RUN_ALL_REQUEST` event has been removed:
+
+```diff
+- import { TESTING_MODULE_RUN_ALL_REQUEST } from '@storybook/core-events';
++ import { TESTING_MODULE_RUN_REQUEST } from '@storybook/core-events';
+```
+
+### Type System Updates
+
+The following types have been removed:
+- `Addon_SidebarBottomType`
+- `Addon_SidebarTopType`
+- `DeprecatedState`
+
+Import paths have been updated:
+```diff
+- import { SupportedRenderers } from './project_types';
++ import { SupportedRenderers } from 'storybook/internal/types';
+```
+
+### Story Store API Changes
+
+Several deprecated methods have been removed from the StoryStore:
+- `getSetStoriesPayload`
+- `getStoriesJsonData`
+- `raw`
+- `fromId`
+
+### CSF File Changes
+
+Deprecated getters have been removed from the CsfFile class:
+- `_fileName`
+- `_makeTitle`
+
 ### The parameter docs.source.excludeDecorators has no effect in React
 
 In React, the parameter `docs.source.excludeDecorators` option is no longer used.
@@ -565,6 +764,109 @@ addons.register(MY_ADDON_ID, (api) => {
 +    title: 'Component tests',
 +    description: 'Works!',
 +  }]);
+```
+
+### Dropped support for Vite 4
+
+Storybook 9.0 drops support for Vite 4. The minimum supported version is now Vite 5.0.0. This change affects all Vite-based frameworks and builders:
+
+- `@storybook/builder-vite`
+- `@storybook/react-vite`
+- `@storybook/vue-vite`
+- `@storybook/vue3-vite`
+- `@storybook/svelte-vite`
+- `@storybook/web-components-vite`
+- `@storybook/preact-vite`
+- `@storybook/html-vite`
+- `@storybook/experimental-nextjs-vite`
+
+To upgrade:
+
+1. Update your project's Vite version to 5.0.0 or higher
+2. Update your Storybook configuration to use Vite 5:
+   ```js
+   // vite.config.js or vite.config.ts
+   export default {
+     // ... your other config
+     // Make sure you're using Vite 5 compatible plugins
+   }
+   ```
+
+If you're using framework-specific Vite plugins, ensure they are compatible with Vite 5:
+- `@vitejs/plugin-react`
+- `@vitejs/plugin-vue`
+- `@sveltejs/vite-plugin-svelte`
+- etc.
+
+For more information on upgrading to Vite 5, see the [Vite Migration Guide](https://vitejs.dev/guide/migration).
+
+### Framework-specific changes
+
+#### Angular = Require v18 and up
+
+Storybook has dropped support for Angular versions 15-17. The minimum supported version is now Angular 18.
+
+If you're using an older version of Angular, you'll need to upgrade to Angular 18 or newer to use the latest version of Storybook.
+
+Key changes:
+- All Angular packages in peerDependencies now require `>=18.0.0 < 20.0.0`
+- Removed legacy code supporting Angular < 18
+- Standalone components are now the default (can be opted out by explicitly setting `standalone: false` in component decorators)
+- Updated RxJS requirement to `^7.4.0`
+- Updated TypeScript requirement to `^4.9.0 || ^5.0.0`
+- Updated Zone.js requirement to `^0.14.0 || ^0.15.0`
+
+#### Next.js = Require v14 and up
+
+Storybook has dropped support for Next.js versions below 14. The minimum supported version is now Next.js 14.
+
+If you're using an older version of Next.js, you'll need to upgrade to Next.js 14 or newer to use the latest version of Storybook.
+
+For help upgrading your Next.js application, see the [Next.js upgrade guide](https://nextjs.org/docs/app/building-your-application/upgrading).
+
+#### Preact = Dropped webpack5 builder support
+
+The packages `@storybook/preact-webpack5` and `@storybook/preset-preact-webpack5` have been removed. For Preact projects, please use the Vite builder instead:
+
+```bash
+npm remove @storybook/preact-webpack5 @storybook/preset-preact-webpack
+npm install @storybook/preact-vite --save-dev
+```
+
+Then update your `.storybook/main.js|ts`:
+
+```js
+export default {
+  framework: {
+    name: '@storybook/preact-vite',
+    options: {},
+  },
+  // ... other configurations
+};
+```
+
+#### Next.js = Vite builder stabilized
+
+The experimental Next.js Vite builder (`@storybook/experimental-nextjs-vite`) has been stabilized and renamed to `@storybook/nextjs-vite`. If you were using the experimental package, you should update your dependencies to use the new stable package name.
+
+```diff
+{
+  "dependencies": {
+-   "@storybook/experimental-nextjs-vite": "^x.x.x"
++   "@storybook/nextjs-vite": "^9.0.0"
+  }
+}
+```
+
+Also update your `.storybook/main.<js|ts>` file accordingly:
+
+```diff
+export default {
+  addons: [
+-   "@storybook/experimental-nextjs-vite",
++   "@storybook/nextjs-vite"    
+  ]
+}
 ```
 
 ## From version 8.5.x to 8.6.x

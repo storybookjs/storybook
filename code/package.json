@@ -103,7 +103,7 @@
     "@playwright/test": "1.48.1",
     "@storybook/addon-a11y": "workspace:*",
     "@storybook/addon-backgrounds": "workspace:*",
-    "@storybook/addon-designs": "9.0.0--canary.1499c1a.0",
+    "@storybook/addon-designs": "9.0.0-next.1",
     "@storybook/addon-docs": "workspace:*",
     "@storybook/addon-essentials": "workspace:*",
     "@storybook/addon-highlight": "workspace:*",
@@ -134,10 +134,8 @@
     "@storybook/nextjs": "workspace:*",
     "@storybook/preact": "workspace:*",
     "@storybook/preact-vite": "workspace:*",
-    "@storybook/preact-webpack5": "workspace:*",
     "@storybook/preset-create-react-app": "workspace:*",
     "@storybook/preset-html-webpack": "workspace:*",
-    "@storybook/preset-preact-webpack": "workspace:*",
     "@storybook/preset-react-webpack": "workspace:*",
     "@storybook/preset-server-webpack": "workspace:*",
     "@storybook/preset-svelte-webpack": "workspace:*",
@@ -218,7 +216,7 @@
     "ts-dedent": "^2.0.0",
     "typescript": "^5.7.3",
     "util": "^0.12.4",
-    "vite": "^4.0.0",
+    "vite": "5.1.6",
     "vite-plugin-inspect": "^0.8.5",
     "vitest": "^3.0.9",
     "wait-on": "^7.0.1"
@@ -249,7 +247,7 @@
   },
   "packageManager": "yarn@4.6.0",
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   },
   "collective": {
     "type": "opencollective",

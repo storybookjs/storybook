@@ -38,11 +38,9 @@ async function run() {
 
     'storybook/backgrounds',
     'storybook/backgrounds/preview',
-    'storybook/backgrounds/manager',
 
     'storybook/actions',
     'storybook/actions/preview',
-    'storybook/actions/manager',
     'storybook/actions/decorator',
 
     'storybook/viewport',
@@ -54,7 +52,6 @@ async function run() {
     'storybook/internal/common',
     'storybook/internal/component-testing',
     'storybook/internal/component-testing/preview',
-    'storybook/internal/component-testing/manager',
     'storybook/internal/components',
     'storybook/internal/core-events',
     'storybook/internal/core-server',

@@ -133,6 +133,12 @@
       "import": "./dist/outline/index.js",
       "require": "./dist/outline/index.cjs"
     },
+    "./internal/outline/manager": {
+      "import": "./dist/outline/manager.js"
+    },
+    "./outline/manager": {
+      "import": "./dist/outline/manager.js"
+    },
     "./internal/outline/preview": {
       "types": "./dist/outline/preview.d.ts",
       "import": "./dist/outline/preview.js",

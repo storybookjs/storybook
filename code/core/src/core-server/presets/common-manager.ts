@@ -9,6 +9,7 @@ import actionsManager from '../../actions/manager';
 import componentTestingManager from '../../component-testing/manager';
 import backgroundsManager from '../../backgrounds/manager';
 import measureManager from '../../measure/manager';
+import outlineManager from '../../outline/manager';
 import viewportManager from '../../viewport/manager';
 /* eslint-enable prettier/prettier */
 
@@ -47,4 +48,5 @@ export default [
   componentTestingManager,
   controlsManager,
   viewportManager,
+  outlineManager,
 ];

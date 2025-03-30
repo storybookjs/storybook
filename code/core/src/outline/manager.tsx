@@ -5,7 +5,7 @@ import { addons, types } from 'storybook/manager-api';
 import { OutlineSelector } from './OutlineSelector';
 import { ADDON_ID } from './constants';
 
-addons.register(ADDON_ID, () => {
+export default addons.register(ADDON_ID, () => {
   addons.add(ADDON_ID, {
     title: 'Outline',
     type: types.TOOL,

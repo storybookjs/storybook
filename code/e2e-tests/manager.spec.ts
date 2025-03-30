@@ -243,14 +243,14 @@ test.describe('Manager UI', () => {
       await sbPage.page.locator('[title="Open addon panel"]').click();
 
       // panel is open
-      await expect(sbPage.page.locator('#list-item-addon-controls')).toBeVisible();
+      await expect(sbPage.page.locator('#tabbutton-addon-controls')).toBeVisible();
 
       // close panel
       await sbPage.page.locator('[title="Close addon panel"]').click();
 
       // panel is closed
       await expect(mobileNavigationHeading).toHaveText('Example/Button/Secondary');
-      await expect(sbPage.page.locator('#list-item-addon-controls')).toBeHidden();
+      await expect(sbPage.page.locator('#tabbutton-addon-controls')).toBeHidden();
     });
   });
 });

@@ -75,7 +75,7 @@ describe('testProviderStore', () => {
 
   describe('getTestProviderStoreById', () => {
     describe('getState', () => {
-      it('should set initial provider state to pending', () => {
+      it('should initially return pending state for new provider', () => {
         // Arrange - create empty test provider store
         const { getTestProviderStoreById, fullTestProviderStore } = createTestProviderStore({
           universalTestProviderStore: new MockUniversalStore<
@@ -89,12 +89,6 @@ describe('testProviderStore', () => {
 
         // Assert - verify initial state is pending
         expect(store.getState()).toBe('test-provider-state:pending');
-
-        // Assert - verify provider was added to full state
-        const fullState = fullTestProviderStore.getFullState();
-        expect(fullState).toEqual({
-          'provider-1': 'test-provider-state:pending',
-        });
       });
 
       it('should return current state for existing provider', () => {
@@ -172,7 +166,9 @@ describe('testProviderStore', () => {
         store.runWithState(gatedSuccessCallback);
 
         // Assert - verify running state
-        expect(store.getState()).toBe('test-provider-state:running');
+        await vi.waitFor(() => {
+          expect(store.getState()).toBe('test-provider-state:running');
+        });
 
         // Act - complete execution
         runningGate!();
@@ -206,7 +202,9 @@ describe('testProviderStore', () => {
         store.runWithState(gatedErrorCallback);
 
         // Assert - verify running state
-        expect(store.getState()).toBe('test-provider-state:running');
+        await vi.waitFor(() => {
+          expect(store.getState()).toBe('test-provider-state:running');
+        });
 
         // Act - trigger error
         runningGate!();
@@ -219,7 +217,7 @@ describe('testProviderStore', () => {
     });
 
     describe('onRunAll', () => {
-      it('should register and call listener when runAll is triggered', () => {
+      it('should register and call listener when runAll is triggered', async () => {
         // Arrange - create store and setup listener
         const mockUniversalStore = new MockUniversalStore<
           TestProviderStateByProviderId,
@@ -241,7 +239,9 @@ describe('testProviderStore', () => {
         fullTestProviderStore.runAll();
 
         // Assert - verify listener was called
-        expect(listener).toHaveBeenCalledTimes(1);
+        await vi.waitFor(() => {
+          expect(listener).toHaveBeenCalledTimes(1);
+        });
 
         // Act - unsubscribe and trigger again
         unsubscribe();
@@ -253,7 +253,7 @@ describe('testProviderStore', () => {
     });
 
     describe('onClearAll', () => {
-      it('should register and call listener when clearAll is triggered', () => {
+      it('should register and call listener when clearAll is triggered', async () => {
         // Arrange - create store and setup listener
         const mockUniversalStore = new MockUniversalStore<
           TestProviderStateByProviderId,
@@ -275,7 +275,9 @@ describe('testProviderStore', () => {
         fullTestProviderStore.clearAll();
 
         // Assert - verify listener was called
-        expect(listener).toHaveBeenCalledTimes(1);
+        await vi.waitFor(() => {
+          expect(listener).toHaveBeenCalledTimes(1);
+        });
 
         // Act - unsubscribe and trigger again
         unsubscribe();
@@ -287,7 +289,7 @@ describe('testProviderStore', () => {
     });
 
     describe('settingsChanged', () => {
-      it('should register and call listener when settingsChanged is triggered', () => {
+      it('should register and call listener when settingsChanged is triggered', async () => {
         // Arrange - create store and setup listener
         const mockUniversalStore = new MockUniversalStore<
           TestProviderStateByProviderId,
@@ -309,7 +311,9 @@ describe('testProviderStore', () => {
         store.settingsChanged();
 
         // Assert - verify listener was called
-        expect(listener).toHaveBeenCalledTimes(1);
+        await vi.waitFor(() => {
+          expect(listener).toHaveBeenCalledTimes(1);
+        });
 
         // Act - unsubscribe and trigger again
         unsubscribe();

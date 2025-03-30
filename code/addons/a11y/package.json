@@ -71,6 +71,7 @@
     "axe-core": "^4.2.0"
   },
   "devDependencies": {
+    "@radix-ui/react-tabs": "1.0.4",
     "@storybook/icons": "^1.4.0",
     "@testing-library/react": "^14.0.0",
     "execa": "^9.5.2",

@@ -7,11 +7,15 @@ import { createBlocker } from './types';
 const minimalVersionsMap = {
   '@angular/core': '15.0.0',
   'react-scripts': '5.0.0',
-  next: '13.5.0',
+  '@storybook/preact-webpack5': '9.0.0',
+  '@storybook/preset-preact-webpack': '9.0.0',
+  '@storybook/vue3-webpack5': '9.0.0',
+  '@storybook/preset-vue3-webpack': '9.0.0',
+  next: '14.1.0',
   preact: '10.0.0',
   svelte: '4.0.0',
   vue: '3.0.0',
-  vite: '4.0.0',
+  vite: '5.0.0',
 };
 
 type Result = {
@@ -57,6 +61,20 @@ export const blocker = createBlocker({
           )}
           
           Upgrade to the latest version of react-scripts.
+        `;
+      case '@storybook/preact-webpack5':
+      case '@storybook/preset-preact-webpack':
+        return dedent`
+          Support for Preact Webpack5 has been removed.
+          Please see the migration guide for more information:
+          ${picocolors.yellow('https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#preact--dropped-webpack5-builder-support')}
+        `;
+      case '@storybook/vue3-webpack5':
+      case '@storybook/preset-vue3-webpack':
+        return dedent`
+          Support for Vue3 Webpack5 has been removed.
+          Please see the migration guide for more information:
+          ${picocolors.yellow('https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vue3--dropped-webpack5-builder-support')}
         `;
       case 'vue':
         return dedent`

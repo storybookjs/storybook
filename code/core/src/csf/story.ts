@@ -405,8 +405,6 @@ export interface ProjectAnnotations<TRenderer extends Renderer = Renderer, TArgs
    */
   beforeAll?: BeforeAll;
 
-  /** @deprecated Project `globals` renamed to `initiaGlobals` */
-  globals?: Globals;
   initialGlobals?: Globals;
   globalTypes?: GlobalTypes;
   applyDecorators?: DecoratorApplicator<TRenderer, Args>;

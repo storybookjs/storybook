@@ -1,3 +1,13 @@
+## 8.6.11
+
+- Angular: Fix zone.js support for Angular libraries - [#30941](https://github.com/storybookjs/storybook/pull/30941), thanks @valentinpalkovic!
+
+## 8.6.10
+
+- Addon-docs: Fix non-string handling in Stories block - [#30913](https://github.com/storybookjs/storybook/pull/30913), thanks @JamesIves!
+- Nextjs: Fix styled-jsx optimize vite warnings - [#30932](https://github.com/storybookjs/storybook/pull/30932), thanks @kasperpeulen!
+- React: Fix actImplementation is not a function - [#30929](https://github.com/storybookjs/storybook/pull/30929), thanks @kasperpeulen!
+
 ## 8.6.9
 
 - Next: Fix react aliases in next vite plugin - [#30914](https://github.com/storybookjs/storybook/pull/30914), thanks @kasperpeulen!

@@ -448,7 +448,7 @@ export const Combo: Story = {
 ```
 
 ```ts filename="Button.stories.js" renderer="web-components" language="js"
-import { html } from 'lit';
+import { html } from '@storybook/web-components';
 
 export default {
   title: 'Button',
@@ -481,7 +481,7 @@ export const Combo = {
 
 ```ts filename="Button.stories.ts" renderer="web-components" language="ts"
 import type { Meta, StoryObj } from '@storybook/web-components';
-import { html } from 'lit';
+import { html } from '@storybook/web-components';
 
 const meta: Meta = {
   title: 'Button',

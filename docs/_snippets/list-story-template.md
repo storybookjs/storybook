@@ -516,7 +516,7 @@ export const OneItem: Story = {
 ```
 
 ```js filename="List.stories.js" renderer="web-components" language="js"
-import { html } from 'lit';
+import { html } from '@storybook/web-components';
 import { repeat } from 'lit/directives/repeat.js';
 
 import { Unchecked } from './ListItem.stories';
@@ -558,7 +558,7 @@ export const OneItem = {
 ```ts filename="List.stories.ts" renderer="web-components" language="ts"
 import type { Meta, StoryObj } from '@storybook/web-components';
 
-import { html } from 'lit';
+import { html } from '@storybook/web-components';
 import { repeat } from 'lit/directives/repeat.js';
 
 const meta: Meta = {

@@ -137,7 +137,7 @@ Primary.args = { primary: true };
 ```
 
 ```js filename="CSF 2 - Button.stories.js" renderer="web-components" language="js"
-import { html } from 'lit';
+import { html } from '@storybook/web-components';
 
 export default {
   title: 'components/Button',
@@ -153,7 +153,7 @@ Primary.args = {
 ```ts filename="CSF 2 - Button.stories.ts" renderer="web-components" language="ts"
 import type { Meta, Story } from '@storybook/web-components';
 
-import { html } from 'lit';
+import { html } from '@storybook/web-components';
 
 export default {
   title: 'components/Button',

@@ -332,7 +332,7 @@ export const OneItem: Story = {
 ```
 
 ```js filename="MyList.stories.js" renderer="web-components" language="js"
-import { html } from 'lit';
+import { html } from '@storybook/web-components';
 
 // 👇 Import the stories of MyListItem
 import { Unchecked } from './MyListItem.stories';
@@ -350,7 +350,7 @@ export const OneItem = {
 ```ts filename="MyList.stories.ts" renderer="web-components" language="ts"
 import { Meta, StoryObj } from '@storybook/web-components';
 
-import { html } from 'lit';
+import { html } from '@storybook/web-components';
 
 // 👇 Import the stories of MyListItem
 import { Unchecked } from './my-list-item.stories';

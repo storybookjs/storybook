@@ -5,6 +5,22 @@ import './globals';
 
 const { window, EventSource } = global;
 
+/**
+ * Storybook re-exports lit-html's `html` tag helper for stories stories that compose multiple web
+ * components.
+ *
+ * Import it from the framework package you're using (typically `@storybook/web-components-vite` or
+ * `@storybook/web-components-webpack5`).
+ *
+ * ```js
+ * import { html } from '@storybook/web-components-vite';
+ * export default { component: 'my-component' };
+ * export const WithProp = {
+ *   render: () => html`<my-component prop="value" />`,
+ * };
+ * ```
+ */
+export { html } from 'lit-html';
 export * from './public-types';
 export * from './framework-api';
 export * from './portable-stories';

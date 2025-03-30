@@ -246,7 +246,7 @@ describe('new-frameworks fix', () => {
     it('should update correctly when there is no builder', async () => {
       const packageManager = getPackageManager({
         '@storybook/vue3': '7.0.0',
-        '@storybook/builder-webpack5': '7.0.0',
+        '@storybook/builder-vite': '7.0.0',
       });
 
       await expect(
@@ -258,53 +258,9 @@ describe('new-frameworks fix', () => {
         })
       ).resolves.toEqual(
         expect.objectContaining({
-          frameworkPackage: '@storybook/vue3-webpack5',
-          dependenciesToAdd: ['@storybook/vue3-webpack5'],
-          dependenciesToRemove: ['@storybook/builder-webpack5'],
-        })
-      );
-    });
-
-    it('should update when there is no framework field in main', async () => {
-      const packageManager = getPackageManager({
-        '@storybook/vue3': '7.0.0',
-        '@storybook/manager-webpack5': '7.0.0',
-      });
-
-      await expect(
-        checkNewFrameworks({
-          packageManager,
-          main: {},
-        })
-      ).resolves.toEqual(
-        expect.objectContaining({
-          frameworkPackage: '@storybook/vue3-webpack5',
-          dependenciesToAdd: ['@storybook/vue3-webpack5'],
-          dependenciesToRemove: ['@storybook/manager-webpack5'],
-          hasFrameworkInMainConfig: false,
-        })
-      );
-    });
-
-    it('should update when the framework field has a legacy value', async () => {
-      const packageManager = getPackageManager({
-        '@storybook/vue3': '7.0.0',
-        '@storybook/manager-webpack5': '7.0.0',
-      });
-
-      await expect(
-        checkNewFrameworks({
-          packageManager,
-          main: {
-            framework: 'vue3',
-          },
-        })
-      ).resolves.toEqual(
-        expect.objectContaining({
-          frameworkPackage: '@storybook/vue3-webpack5',
-          dependenciesToAdd: ['@storybook/vue3-webpack5'],
-          dependenciesToRemove: ['@storybook/manager-webpack5'],
-          hasFrameworkInMainConfig: false,
+          frameworkPackage: '@storybook/vue3-vite',
+          dependenciesToAdd: ['@storybook/vue3-vite'],
+          dependenciesToRemove: ['@storybook/builder-vite'],
         })
       );
     });

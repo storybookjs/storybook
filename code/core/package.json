@@ -133,12 +133,6 @@
       "import": "./dist/outline/index.js",
       "require": "./dist/outline/index.cjs"
     },
-    "./internal/outline/manager": {
-      "import": "./dist/outline/manager.js"
-    },
-    "./outline/manager": {
-      "import": "./dist/outline/manager.js"
-    },
     "./internal/outline/preview": {
       "types": "./dist/outline/preview.d.ts",
       "import": "./dist/outline/preview.js",
@@ -201,9 +195,6 @@
       "types": "./dist/component-testing/preview.d.ts",
       "import": "./dist/component-testing/preview.js",
       "require": "./dist/component-testing/preview.cjs"
-    },
-    "./internal/component-testing/manager": {
-      "import": "./dist/component-testing/manager.js"
     },
     "./internal/viewport": {
       "types": "./dist/viewport/index.d.ts",

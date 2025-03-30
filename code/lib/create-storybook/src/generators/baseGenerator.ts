@@ -283,7 +283,9 @@ export async function baseGenerator(
         })
       : extraAddonPackages;
 
-  extraAddonsToInstall.push('@chromatic-com/storybook@^3');
+  if (features.includes('test')) {
+    extraAddonsToInstall.push('@chromatic-com/storybook@^3');
+  }
 
   // added to main.js
   const addons = [

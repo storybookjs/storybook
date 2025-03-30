@@ -50,7 +50,7 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
   if (!builderName?.includes('vite')) {
     if (framework.includes('nextjs')) {
       log(dedent`
-        You're using ${framework}, which is a Webpack-based builder. In order to use Storybook Test, with your project, you need to use '@storybook/experimental-nextjs-vite', a high performance Vite-based equivalent.
+        You're using ${framework}, which is a Webpack-based builder. In order to use Storybook Test, with your project, you need to use '@storybook/nextjs-vite', a high performance Vite-based equivalent.
 
         Information on how to upgrade here: ${picocolors.yellow('https://storybook.js.org/docs/get-started/frameworks/nextjs#with-vite')}\n
       `);

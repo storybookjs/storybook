@@ -2,6 +2,7 @@
 
 - [From version 8.x to 9.0.0](#from-version-8x-to-900)
   - [Package Manager Support](#package-manager-support)
+  - [Web components html helper](#web-components-html-helper)
   - [A11y addon: Removed deprecated manual parameter](#a11y-addon-removed-deprecated-manual-parameter)
   - [Button Component API Changes](#button-component-api-changes)
   - [Documentation Generation Changes](#documentation-generation-changes)
@@ -113,17 +114,17 @@
     - [Tab addons cannot manually route, Tool addons can filter their visibility via tabId](#tab-addons-cannot-manually-route-tool-addons-can-filter-their-visibility-via-tabid)
     - [Removed `config` preset](#removed-config-preset-1)
 - [From version 7.5.0 to 7.6.0](#from-version-750-to-760)
-    - [CommonJS with Vite is deprecated](#commonjs-with-vite-is-deprecated)
-    - [Using implicit actions during rendering is deprecated](#using-implicit-actions-during-rendering-is-deprecated)
-    - [typescript.skipBabel deprecated](#typescriptskipbabel-deprecated)
-    - [Primary doc block accepts of prop](#primary-doc-block-accepts-of-prop)
-    - [Addons no longer need a peer dependency on React](#addons-no-longer-need-a-peer-dependency-on-react)
+  - [CommonJS with Vite is deprecated](#commonjs-with-vite-is-deprecated)
+  - [Using implicit actions during rendering is deprecated](#using-implicit-actions-during-rendering-is-deprecated)
+  - [typescript.skipBabel deprecated](#typescriptskipbabel-deprecated)
+  - [Primary doc block accepts of prop](#primary-doc-block-accepts-of-prop)
+  - [Addons no longer need a peer dependency on React](#addons-no-longer-need-a-peer-dependency-on-react)
 - [From version 7.4.0 to 7.5.0](#from-version-740-to-750)
-    - [`storyStoreV6` and `storiesOf` is deprecated](#storystorev6-and-storiesof-is-deprecated)
-    - [`storyIndexers` is replaced with `experimental_indexers`](#storyindexers-is-replaced-with-experimental_indexers)
+  - [`storyStoreV6` and `storiesOf` is deprecated](#storystorev6-and-storiesof-is-deprecated)
+  - [`storyIndexers` is replaced with `experimental_indexers`](#storyindexers-is-replaced-with-experimental_indexers)
 - [From version 7.0.0 to 7.2.0](#from-version-700-to-720)
-    - [Addon API is more type-strict](#addon-api-is-more-type-strict)
-    - [Addon-controls hideNoControlsWarning parameter is deprecated](#addon-controls-hidenocontrolswarning-parameter-is-deprecated)
+  - [Addon API is more type-strict](#addon-api-is-more-type-strict)
+  - [Addon-controls hideNoControlsWarning parameter is deprecated](#addon-controls-hidenocontrolswarning-parameter-is-deprecated)
 - [From version 6.5.x to 7.0.0](#from-version-65x-to-700)
   - [7.0 breaking changes](#70-breaking-changes)
     - [Dropped support for Node 15 and below](#dropped-support-for-node-15-and-below)
@@ -149,7 +150,7 @@
     - [Deploying build artifacts](#deploying-build-artifacts)
       - [Dropped support for file URLs](#dropped-support-for-file-urls)
       - [Serving with nginx](#serving-with-nginx)
-      - [Ignore story files from node\_modules](#ignore-story-files-from-node_modules)
+      - [Ignore story files from node_modules](#ignore-story-files-from-node_modules)
   - [7.0 Core changes](#70-core-changes)
     - [7.0 feature flags removed](#70-feature-flags-removed)
     - [Story context is prepared before for supporting fine grained updates](#story-context-is-prepared-before-for-supporting-fine-grained-updates)
@@ -163,7 +164,7 @@
     - [Addon-interactions: Interactions debugger is now default](#addon-interactions-interactions-debugger-is-now-default)
   - [7.0 Vite changes](#70-vite-changes)
     - [Vite builder uses Vite config automatically](#vite-builder-uses-vite-config-automatically)
-    - [Vite cache moved to node\_modules/.cache/.vite-storybook](#vite-cache-moved-to-node_modulescachevite-storybook)
+    - [Vite cache moved to node_modules/.cache/.vite-storybook](#vite-cache-moved-to-node_modulescachevite-storybook)
   - [7.0 Webpack changes](#70-webpack-changes)
     - [Webpack4 support discontinued](#webpack4-support-discontinued)
     - [Babel mode v7 exclusively](#babel-mode-v7-exclusively)
@@ -214,7 +215,7 @@
     - [Dropped addon-docs manual babel configuration](#dropped-addon-docs-manual-babel-configuration)
     - [Dropped addon-docs manual configuration](#dropped-addon-docs-manual-configuration)
     - [Autoplay in docs](#autoplay-in-docs)
-    - [Removed STORYBOOK\_REACT\_CLASSES global](#removed-storybook_react_classes-global)
+    - [Removed STORYBOOK_REACT_CLASSES global](#removed-storybook_react_classes-global)
   - [7.0 Deprecations and default changes](#70-deprecations-and-default-changes)
     - [storyStoreV7 enabled by default](#storystorev7-enabled-by-default)
     - [`Story` type deprecated](#story-type-deprecated)
@@ -434,17 +435,29 @@
 Storybook 9.0 drops official support and maintenance for older package manager versions:
 
 - npm v8 and v9 are no longer supported
-- yarn v3 is no longer supported  
+- yarn v3 is no longer supported
 - pnpm v7 and v8 are no longer supported
 
 The minimum supported versions are now:
 
 - npm v10+
-- yarn v4+ 
+- yarn v4+
 - pnpm v9+
 
 While Storybook may still work with older versions, we recommend upgrading to the latest supported versions for the best experience and to ensure compatibility.
 
+### Web components html helper
+
+Storybook re-exports lit-html's `html` tag helper for stories with custom render functions that compose multiple web components. WC stories remain compatible with Lit's `html` helper (or plain strings!), but we recommend the following update to your stories (replace `web-components-vite` with `web-components-webpack5` if you use webpack):
+
+```diff
+- import { html } from 'lit';
++ import { html } from '@storybook/web-components-vite';
+export default { component: 'my-component' };
+export const WithProp = {
+  render: () => html\`<my-component prop="value" />\`,
+};
+```
 
 ### A11y addon: Removed deprecated manual parameter
 
@@ -485,6 +498,7 @@ export const initialGlobals = {
 ### Button Component API Changes
 
 The Button component has been updated to use a more modern props API. The following props have been removed:
+
 - `isLink`
 - `primary`
 - `secondary`
@@ -556,6 +570,7 @@ export default {
 ### Icon System Updates
 
 Several icon-related exports have been removed:
+
 - `IconButtonSkeleton`
 - `Icons`
 - `Symbols`
@@ -587,11 +602,13 @@ The `TESTING_MODULE_RUN_ALL_REQUEST` event has been removed:
 ### Type System Updates
 
 The following types have been removed:
+
 - `Addon_SidebarBottomType`
 - `Addon_SidebarTopType`
 - `DeprecatedState`
 
 Import paths have been updated:
+
 ```diff
 - import { SupportedRenderers } from './project_types';
 + import { SupportedRenderers } from 'storybook/internal/types';
@@ -600,6 +617,7 @@ Import paths have been updated:
 ### Story Store API Changes
 
 Several deprecated methods have been removed from the StoryStore:
+
 - `getSetStoriesPayload`
 - `getStoriesJsonData`
 - `raw`
@@ -608,6 +626,7 @@ Several deprecated methods have been removed from the StoryStore:
 ### CSF File Changes
 
 Deprecated getters have been removed from the CsfFile class:
+
 - `_fileName`
 - `_makeTitle`
 
@@ -789,10 +808,11 @@ To upgrade:
    export default {
      // ... your other config
      // Make sure you're using Vite 5 compatible plugins
-   }
+   };
    ```
 
 If you're using framework-specific Vite plugins, ensure they are compatible with Vite 5:
+
 - `@vitejs/plugin-react`
 - `@vitejs/plugin-vue`
 - `@sveltejs/vite-plugin-svelte`
@@ -809,6 +829,7 @@ Storybook has dropped support for Angular versions 15-17. The minimum supported 
 If you're using an older version of Angular, you'll need to upgrade to Angular 18 or newer to use the latest version of Storybook.
 
 Key changes:
+
 - All Angular packages in peerDependencies now require `>=18.0.0 < 20.0.0`
 - Removed legacy code supporting Angular < 18
 - Standalone components are now the default (can be opted out by explicitly setting `standalone: false` in component decorators)
@@ -838,7 +859,7 @@ Then update your `.storybook/main.js|ts`:
 ```js
 export default {
   framework: {
-    name: '@storybook/preact-vite',
+    name: "@storybook/preact-vite",
     options: {},
   },
   // ... other configurations
@@ -864,7 +885,7 @@ Also update your `.storybook/main.<js|ts>` file accordingly:
 export default {
   addons: [
 -   "@storybook/experimental-nextjs-vite",
-+   "@storybook/nextjs-vite"    
++   "@storybook/nextjs-vite"
   ]
 }
 ```

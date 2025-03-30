@@ -6,8 +6,8 @@ import './globals';
 const { window, EventSource } = global;
 
 /**
- * Storybook re-exports lit-html's `html` tag helper for stories stories that compose multiple web
- * components.
+ * Storybook re-exports lit-html's `html` tag helper for stories with custom render functions that
+ * compose multiple web components.
  *
  * Import it from the framework package you're using (typically `@storybook/web-components-vite` or
  * `@storybook/web-components-webpack5`).

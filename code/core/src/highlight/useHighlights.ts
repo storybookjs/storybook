@@ -480,7 +480,7 @@ export const useHighlights = ({
         }`,
       },
     ]);
-    removeTimeout = setTimeout(() => removeHighlight(id), 3000);
+    removeTimeout = setTimeout(() => removeHighlight(id), 3500);
   };
 
   channel.on(HIGHLIGHT, addHighlight);

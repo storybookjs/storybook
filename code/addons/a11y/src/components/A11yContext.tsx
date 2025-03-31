@@ -65,10 +65,11 @@ export interface A11yContextStore {
   handleSelectionChange: (key: string) => void;
 }
 
+const theme = convert(themes.light);
 const colorsByType = {
-  [RuleType.VIOLATION]: convert(themes.light).color.negative,
-  [RuleType.PASS]: convert(themes.light).color.positive,
-  [RuleType.INCOMPLETION]: convert(themes.light).color.warning,
+  [RuleType.VIOLATION]: theme.color.negative,
+  [RuleType.PASS]: theme.color.positive,
+  [RuleType.INCOMPLETION]: theme.color.warning,
 };
 
 export const A11yContext = createContext<A11yContextStore>({
@@ -314,13 +315,11 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
       priority: 1,
       selectors: selected,
       styles: {
-        outline: `2px solid color-mix(in srgb, ${colorsByType[tab]}, transparent 30%)`,
-        outlineOffset: '2px',
+        outline: `1px solid color-mix(in srgb, ${colorsByType[tab]}, transparent 30%)`,
         backgroundColor: 'transparent',
       },
       selectedStyles: {
-        outline: `2px solid ${colorsByType[tab]}`,
-        outlineOffset: '2px',
+        outline: `1px solid ${theme.color.secondary}`,
         backgroundColor: 'transparent',
       },
       menuListItems: results[tab as RuleType].map((result) => ({
@@ -341,13 +340,11 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
     emit(HIGHLIGHT, {
       selectors: others,
       styles: {
-        outline: `1px dashed color-mix(in srgb, ${colorsByType[tab]}, transparent 30%)`,
-        outlineOffset: '1px',
+        outline: `1px solid color-mix(in srgb, ${colorsByType[tab]}, transparent 30%)`,
         backgroundColor: `color-mix(in srgb, ${colorsByType[tab]}, transparent 60%)`,
       },
       selectedStyles: {
-        outline: `1px solid ${colorsByType[tab]}`,
-        outlineOffset: '1px',
+        outline: `1px solid ${theme.color.secondary}`,
         backgroundColor: 'transparent',
       },
       menuListItems: results[tab as RuleType].map((result) => ({

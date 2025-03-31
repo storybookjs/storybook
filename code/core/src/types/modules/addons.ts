@@ -26,10 +26,7 @@ import type { IndexEntry } from './indexer';
 
 export type Addon_Types = Exclude<
   Addon_TypesEnum,
-  | Addon_TypesEnum.experimental_PAGE
-  | Addon_TypesEnum.experimental_SIDEBAR_BOTTOM
-  | Addon_TypesEnum.experimental_TEST_PROVIDER
-  | Addon_TypesEnum.experimental_SIDEBAR_TOP
+  Addon_TypesEnum.experimental_PAGE | Addon_TypesEnum.experimental_TEST_PROVIDER
 >;
 
 export interface Addon_ArgType<TArg = unknown> extends InputType {
@@ -291,7 +288,6 @@ export interface Addon_BaseMeta<ComponentType> {
    *
    * Used by addons for automatic prop table generation and display of other component metadata.
    *
-   * @deprecated
    * @example
    *
    * ```ts
@@ -328,8 +324,6 @@ export type Addon_Type =
   | Addon_BaseType
   | Addon_PageType
   | Addon_WrapperType
-  | Addon_SidebarBottomType
-  | Addon_SidebarTopType
   | Addon_TestProviderType<Addon_TestProviderState>;
 export interface Addon_BaseType {
   /**
@@ -350,8 +344,6 @@ export interface Addon_BaseType {
     Addon_Types,
     | Addon_TypesEnum.PREVIEW
     | Addon_TypesEnum.experimental_PAGE
-    | Addon_TypesEnum.experimental_SIDEBAR_BOTTOM
-    | Addon_TypesEnum.experimental_SIDEBAR_TOP
     | Addon_TypesEnum.experimental_TEST_PROVIDER
   >;
   /**
@@ -448,24 +440,6 @@ export interface Addon_WrapperType {
   >;
 }
 
-/** @deprecated This doesn't do anything anymore and will be removed in Storybook 9.0. */
-export interface Addon_SidebarBottomType {
-  type: Addon_TypesEnum.experimental_SIDEBAR_BOTTOM;
-  /** The unique id of the tool. */
-  id: string;
-  /** A React.FunctionComponent. */
-  render: FC;
-}
-
-/** @deprecated This will be removed in Storybook 9.0. */
-export interface Addon_SidebarTopType {
-  type: Addon_TypesEnum.experimental_SIDEBAR_TOP;
-  /** The unique id of the tool. */
-  id: string;
-  /** A React.FunctionComponent. */
-  render: FC;
-}
-
 export interface Addon_TestProviderType<
   Details extends { [key: string]: any } = NonNullable<unknown>,
 > {
@@ -508,16 +482,12 @@ type Addon_TypeBaseNames = Exclude<
   Addon_TypesEnum,
   | Addon_TypesEnum.PREVIEW
   | Addon_TypesEnum.experimental_PAGE
-  | Addon_TypesEnum.experimental_SIDEBAR_BOTTOM
-  | Addon_TypesEnum.experimental_SIDEBAR_TOP
   | Addon_TypesEnum.experimental_TEST_PROVIDER
 >;
 
 export interface Addon_TypesMapping extends Record<Addon_TypeBaseNames, Addon_BaseType> {
   [Addon_TypesEnum.PREVIEW]: Addon_WrapperType;
   [Addon_TypesEnum.experimental_PAGE]: Addon_PageType;
-  [Addon_TypesEnum.experimental_SIDEBAR_BOTTOM]: Addon_SidebarBottomType;
-  [Addon_TypesEnum.experimental_SIDEBAR_TOP]: Addon_SidebarTopType;
   [Addon_TypesEnum.experimental_TEST_PROVIDER]: Addon_TestProviderType<Addon_TestProviderState>;
 }
 
@@ -570,18 +540,6 @@ export enum Addon_TypesEnum {
    * @unstable
    */
   experimental_PAGE = 'page',
-  /**
-   * This adds items in the bottom of the sidebar.
-   *
-   * @deprecated This doesn't do anything anymore and will be removed in Storybook 9.0.
-   */
-  experimental_SIDEBAR_BOTTOM = 'sidebar-bottom',
-  /**
-   * This adds items in the top of the sidebar.
-   *
-   * @deprecated This will be removed in Storybook 9.0.
-   */
-  experimental_SIDEBAR_TOP = 'sidebar-top',
   /** This adds items to the Testing Module in the sidebar. */
   experimental_TEST_PROVIDER = 'test-provider',
 }

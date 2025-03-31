@@ -1,4 +1,4 @@
-import { dirname, isAbsolute, join } from 'node:path';
+import path, { dirname, isAbsolute, join } from 'node:path';
 
 import { logger } from 'storybook/internal/node-logger';
 import type { DocsOptions, Options, PresetProperty } from 'storybook/internal/types';
@@ -96,7 +96,6 @@ async function webpack(
       ...webpackConfig.resolve?.alias,
       react,
       '@storybook/blocks': blocksPath,
-
       'react-dom': reactDom,
       '@mdx-js/react': mdx,
     };

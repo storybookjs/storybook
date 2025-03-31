@@ -139,13 +139,8 @@ export const useSourceProps = (
   }
 
   const sourceParameters = (story?.parameters?.docs?.source || {}) as SourceParameters;
-  let format = props.format ?? sourceParameters.format;
+  let format = props.format;
 
-  if (sourceParameters.format !== undefined) {
-    console.warn(
-      'The `parameters.docs.source.format` prop is deprecated. Use `parameters.docs.source.transform` instead to define your own transformer.'
-    );
-  }
   const language = props.language ?? sourceParameters.language ?? 'jsx';
   const dark = props.dark ?? sourceParameters.dark ?? false;
 
@@ -162,7 +157,7 @@ export const useSourceProps = (
     };
   }
 
-  format = source.format ?? story.parameters.docs?.source?.format ?? true;
+  format = source.format ?? true;
 
   return {
     code: transformedCode,

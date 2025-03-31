@@ -41,7 +41,7 @@ export interface SourceCodeProps {
   language?: SupportedLanguage;
   /** Use this to override the content of the source block. */
   code?: string;
-  /** The (prettier) formatter the syntax highlighter uses for your story’s code. */
+  /** The formatter the syntax highlighter uses for your story’s code. */
   format?: ComponentProps<typeof SyntaxHighlighter>['format'];
   /** Display the source snippet in a dark mode. */
   dark?: boolean;

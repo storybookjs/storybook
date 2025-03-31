@@ -301,7 +301,7 @@ export const Empty: Story = {
 ```
 
 ```js filename="List.stories.js" renderer="web-components" language="js"
-import { html } from 'lit';
+import { html } from '@storybook/web-components';
 
 export default {
   component: 'demo-list',

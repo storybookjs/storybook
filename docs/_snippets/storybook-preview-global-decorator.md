@@ -115,7 +115,7 @@ export default preview;
 ```
 
 ```js filename=".storybook/preview.js" renderer="web-components" language="js"
-import { html } from 'lit';
+import { html } from '@storybook/web-components';
 
 export default {
   decorators: [(story) => html`<div style="margin: 3em">${story()}</div>`],

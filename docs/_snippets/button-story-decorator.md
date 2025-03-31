@@ -342,7 +342,7 @@ export const Primary: Story = {
 ```
 
 ```js filename="Button.stories.js" renderer="web-components" language="js"
-import { html } from 'lit';
+import { html } from '@storybook/web-components';
 
 export default {
   component: 'demo-button',

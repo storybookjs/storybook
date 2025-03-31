@@ -264,7 +264,7 @@ export default meta;
 ```
 
 ```js filename="YourComponent.stories.js" renderer="web-components" language="js"
-import { html } from 'lit';
+import { html } from '@storybook/web-components';
 
 export default {
   component: 'demo-your-component',
@@ -273,7 +273,7 @@ export default {
 ```
 
 ```ts filename="YourComponent.stories.ts" renderer="web-components" language="ts"
-import { html } from 'lit';
+import { html } from '@storybook/web-components';
 
 import type { Meta } from '@storybook/web-components';
 

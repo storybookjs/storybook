@@ -62,11 +62,9 @@
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "lit": "2.3.1",
     "typescript": "^5.7.3"
   },
   "peerDependencies": {
-    "lit": "^2.0.0 || ^3.0.0",
     "storybook": "workspace:^"
   },
   "engines": {

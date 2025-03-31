@@ -1,4 +1,4 @@
-import { html } from 'lit';
+import { html } from '@storybook/web-components';
 
 import './demo-wc-card';
 

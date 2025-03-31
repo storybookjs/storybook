@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { SNIPPET_RENDERED } from 'storybook/internal/docs-tools';
 
-import { html, render } from 'lit';
+import { html, render } from 'lit-html';
 import { styleMap } from 'lit/directives/style-map.js';
 import { addons, useEffect } from 'storybook/preview-api';
 

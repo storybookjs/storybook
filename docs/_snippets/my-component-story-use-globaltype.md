@@ -460,7 +460,7 @@ export const MyStory: Story = {
 ```
 
 ```js filename="MyComponent.stories.js" renderer="web-components" language="js"
-import { html } from 'lit';
+import { html } from '@storybook/web-components';
 
 export default {
   component: 'my-component',
@@ -492,7 +492,7 @@ export const StoryWithLocale = {
 ```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts"
 import type { Meta, StoryObj } from '@storybook/web-components';
 
-import { html } from 'lit';
+import { html } from '@storybook/web-components';
 
 const meta: Meta = {
   component: 'my-component',

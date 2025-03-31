@@ -331,7 +331,7 @@ export const Primary: Story = {
 ```
 
 ```js filename="Page.stories.js" renderer="web-components" language="js"
-import { html } from 'lit';
+import { html } from '@storybook/web-components';
 
 export default {
   title: 'Page',
@@ -353,7 +353,7 @@ export const CustomFooter = {
 ```ts filename="Page.stories.ts" renderer="web-components" language="ts"
 import type { Meta, StoryObj } from '@storybook/web-components';
 
-import { html } from 'lit';
+import { html } from '@storybook/web-components';
 
 type CustomArgs = { footer?: string };
 

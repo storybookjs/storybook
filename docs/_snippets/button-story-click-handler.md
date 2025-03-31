@@ -277,7 +277,7 @@ export const Text: Story = {
 ```
 
 ```js filename="Button.stories.js" renderer="web-components" language="js"
-import { html } from 'lit';
+import { html } from '@storybook/web-components';
 
 import { action } from 'storybook/actions';
 
@@ -294,7 +294,7 @@ export const Text = {
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { action } from 'storybook/actions';
 
-import { html } from 'lit';
+import { html } from '@storybook/web-components';
 
 const meta: Meta = {
   component: 'custom-button',

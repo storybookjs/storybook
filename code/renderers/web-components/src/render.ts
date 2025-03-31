@@ -3,9 +3,9 @@ import type { ArgsStoryFn, RenderContext } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
-import { render as litRender } from 'lit';
+import { render as litRender } from 'lit-html';
 // Keep `.js` extension to avoid issue with Webpack (related to export map?)
-import { isTemplateResult } from 'lit/directive-helpers.js';
+import { isTemplateResult } from 'lit-html/directive-helpers.js';
 import { simulateDOMContentLoaded, simulatePageLoad } from 'storybook/preview-api';
 import { dedent } from 'ts-dedent';
 

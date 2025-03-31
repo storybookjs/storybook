@@ -2,7 +2,7 @@
 import { SNIPPET_RENDERED, SourceType } from 'storybook/internal/docs-tools';
 import type { ArgsStoryFn, PartialStoryFn, StoryContext } from 'storybook/internal/types';
 
-import { render } from 'lit';
+import { render } from 'lit-html';
 import { addons, useEffect } from 'storybook/preview-api';
 
 import type { WebComponentsRenderer } from '../types';

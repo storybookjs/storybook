@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
 
+import {
+  type Addon_Collection,
+  type Addon_TestProviderType,
+  Addon_TypesEnum,
+} from 'storybook/internal/types';
+
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { action } from 'storybook/actions';
@@ -17,43 +23,28 @@ const managerContext: any = {
       autodocs: 'tag',
       docsMode: false,
     },
-    testProviders: {
-      'component-tests': {
-        type: 'experimental_TEST_PROVIDER',
-        id: 'component-tests',
-        render: () => 'Component tests',
-        sidebarContextMenu: () => <div>TEST_PROVIDER_CONTEXT_CONTENT</div>,
-        runnable: true,
-      },
-      'visual-tests': {
-        type: 'experimental_TEST_PROVIDER',
-        id: 'visual-tests',
-        render: () => 'Visual tests',
-        sidebarContextMenu: () => null,
-        runnable: true,
-      },
-    },
   },
   api: {
     on: fn().mockName('api::on'),
     off: fn().mockName('api::off'),
     emit: fn().mockName('api::emit'),
-    getElements: fn(() => ({
-      'component-tests': {
-        type: 'experimental_TEST_PROVIDER',
-        id: 'component-tests',
-        render: () => 'Component tests',
-        sidebarContextMenu: () => <div>TEST_PROVIDER_CONTEXT_CONTENT</div>,
-        runnable: true,
-      },
-      'visual-tests': {
-        type: 'experimental_TEST_PROVIDER',
-        id: 'visual-tests',
-        render: () => 'Visual tests',
-        sidebarContextMenu: () => null,
-        runnable: true,
-      },
-    })),
+    getElements: fn(
+      () =>
+        ({
+          'component-tests': {
+            type: Addon_TypesEnum.experimental_TEST_PROVIDER,
+            id: 'component-tests',
+            render: () => 'Component tests',
+            sidebarContextMenu: () => <div>TEST_PROVIDER_CONTEXT_CONTENT</div>,
+          },
+          'visual-tests': {
+            type: Addon_TypesEnum.experimental_TEST_PROVIDER,
+            id: 'visual-tests',
+            render: () => 'Visual tests',
+            sidebarContextMenu: () => null,
+          },
+        }) satisfies Addon_Collection<Addon_TestProviderType>
+    ),
   },
 };
 

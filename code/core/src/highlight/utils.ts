@@ -1,4 +1,4 @@
-import type { Box, Highlight, HighlightInfo, RawHighlightInfo } from './types';
+import type { Box, Highlight, HighlightOptions, RawHighlightOptions } from './types';
 
 const svgElements = 'svg,path,rect,circle,line,polyline,polygon,ellipse,text'.split(',');
 
@@ -40,7 +40,7 @@ export const createElement = (type: string, props: Record<string, any>, children
   return element;
 };
 
-export const convertLegacy = (highlight: RawHighlightInfo): HighlightInfo => {
+export const convertLegacy = (highlight: RawHighlightOptions): HighlightOptions => {
   if ('elements' in highlight) {
     const { elements, color, style } = highlight;
     return {
@@ -92,7 +92,7 @@ export const useStore = <T>(initialValue?: T) => {
   return { get, set, subscribe, teardown } as const;
 };
 
-export const mapElements = (highlights: HighlightInfo[]): Map<HTMLElement, Highlight> => {
+export const mapElements = (highlights: HighlightOptions[]): Map<HTMLElement, Highlight> => {
   const root = document.getElementById('storybook-root');
   const map = new Map();
   for (const highlight of highlights) {

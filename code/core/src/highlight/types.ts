@@ -10,7 +10,7 @@ export interface HighlightParameters {
   };
 }
 
-export interface HighlightInfo {
+export interface HighlightOptions {
   /** Unique identifier for the highlight, required if you want to remove the highlight later */
   id?: string;
   /** HTML selectors of the elements */
@@ -38,7 +38,7 @@ export interface HighlightInfo {
 }
 
 // Legacy format
-export interface LegacyHighlightInfo {
+export interface LegacyHighlightOptions {
   /** @deprecated Use selectors instead */
   elements: string[];
   /** @deprecated Use styles instead */
@@ -47,7 +47,7 @@ export interface LegacyHighlightInfo {
   style: 'dotted' | 'dashed' | 'solid' | 'double';
 }
 
-export type RawHighlightInfo = HighlightInfo | LegacyHighlightInfo;
+export type RawHighlightOptions = HighlightOptions | LegacyHighlightOptions;
 
 export type Highlight = {
   id: string;
@@ -56,7 +56,7 @@ export type Highlight = {
   styles: Record<string, string>;
   selectable: boolean;
   selectedStyles?: Record<string, string>;
-  menuItems?: HighlightInfo['menuItems'];
+  menuItems?: HighlightOptions['menuItems'];
 };
 
 export type Box = {

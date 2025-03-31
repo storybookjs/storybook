@@ -3,7 +3,7 @@ import type { Channel } from 'storybook/internal/channels';
 import { STORY_CHANGED } from 'storybook/internal/core-events';
 
 import { HIGHLIGHT, REMOVE_HIGHLIGHT, RESET_HIGHLIGHT, SCROLL_INTO_VIEW } from './constants';
-import type { Box, Highlight, HighlightInfo, RawHighlightInfo } from './types';
+import type { Box, Highlight, HighlightOptions, RawHighlightOptions } from './types';
 import { convertLegacy, createElement, mapBoxes, mapElements, useStore } from './utils';
 
 const chevronLeft = () =>
@@ -53,7 +53,7 @@ export const useHighlights = ({
 
   const { document } = global;
 
-  const highlights = useStore<HighlightInfo[]>([]);
+  const highlights = useStore<HighlightOptions[]>([]);
   const elements = useStore<Map<HTMLElement, Highlight>>(new Map());
   const boxes = useStore<Box[]>([]);
 
@@ -442,7 +442,7 @@ export const useHighlights = ({
 
   // Event handlers
 
-  const addHighlight = (highlight: RawHighlightInfo) => {
+  const addHighlight = (highlight: RawHighlightOptions) => {
     const info = convertLegacy(highlight);
     if (info.selectors?.length) {
       highlights.set((value) => [...value, info]);

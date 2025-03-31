@@ -54,8 +54,7 @@
     "@storybook/vue3": "file:../../../code/renderers/vue3",
     "@storybook/vue3-vite": "file:../../../code/frameworks/vue3-vite",
     "@storybook/web-components": "file:../../../code/renderers/web-components",
-    "@storybook/web-components-vite": "file:../../../code/frameworks/web-components-vite",
-    "@storybook/web-components-webpack5": "file:../../../code/frameworks/web-components-webpack5"
+    "@storybook/web-components-vite": "file:../../../code/frameworks/web-components-vite"
   },
   "dependencies": {
     "next": "^14.2.0",

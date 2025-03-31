@@ -1,3 +1,15 @@
+# v1.1.5 (Mon Mar 31 2025)
+
+#### 🐛 Bug Fix
+
+- Fix: Remove React compiler-runtime alias that doesn't exist in Next 14 [#38](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/38) ([@kasperpeulen](https://github.com/kasperpeulen))
+
+#### Authors: 1
+
+- Kasper Peulen ([@kasperpeulen](https://github.com/kasperpeulen))
+
+---
+
 # v1.1.4 (Wed Mar 26 2025)
 
 #### 🐛 Bug Fix

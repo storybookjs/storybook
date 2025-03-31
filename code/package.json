@@ -106,7 +106,6 @@
     "@storybook/addon-docs": "workspace:*",
     "@storybook/addon-jest": "workspace:*",
     "@storybook/addon-links": "workspace:*",
-    "@storybook/addon-mdx-gfm": "workspace:*",
     "@storybook/addon-onboarding": "workspace:*",
     "@storybook/addon-storysource": "workspace:*",
     "@storybook/addon-test": "workspace:*",

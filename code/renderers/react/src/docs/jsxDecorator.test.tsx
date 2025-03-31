@@ -334,6 +334,7 @@ describe('jsxDecorator', () => {
       parameters: {
         docs: { source: { type: 'code' } },
       },
+      originalStoryFn: () => <div>Test Story</div>,
     };
 
     const result = jsxDecorator(mockStoryFn, context);
@@ -347,6 +348,7 @@ describe('jsxDecorator', () => {
       parameters: {
         docs: { source: { code: 'const x = 1;' } },
       },
+      originalStoryFn: () => <div>Test Story</div>,
     };
 
     const result = jsxDecorator(mockStoryFn, context);

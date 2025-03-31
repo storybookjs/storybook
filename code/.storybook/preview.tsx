@@ -322,7 +322,6 @@ const decorators = [
 const parameters = {
   docs: {
     theme: themes.light,
-    codePanel: true,
     source: {
       transform: async (source) => {
         const prettier = await import('prettier/standalone');

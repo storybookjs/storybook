@@ -3,9 +3,6 @@ export default {
   tags: ['autodocs'],
   parameters: {
     chromatic: { disable: true },
-    docs: {
-      codePanel: true,
-    },
   },
 };
 
@@ -18,15 +15,6 @@ export const CustomCode = {
       source: {
         code: '<button>Custom code</button>',
       },
-    },
-  },
-};
-
-export const WithoutPanel = {
-  args: { label: 'Without panel' },
-  parameters: {
-    docs: {
-      codePanel: false,
     },
   },
 };

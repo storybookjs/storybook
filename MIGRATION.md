@@ -5,6 +5,7 @@
   - [A11y addon: Removed deprecated manual parameter](#a11y-addon-removed-deprecated-manual-parameter)
   - [Button Component API Changes](#button-component-api-changes)
   - [Documentation Generation Changes](#documentation-generation-changes)
+  - [`parameters.docs.codePanel` removal](#parametersdocscodepanel-removal)
   - [`parameters.docs.source.format` removal](#parametersdocssourceformat-removal)
   - [Global State Management](#global-state-management)
   - [Icon System Updates](#icon-system-updates)
@@ -519,6 +520,12 @@ export default {
 +   tags: ['autodocs']
 + };
 ```
+
+### `parameters.docs.codePanel` removal
+
+The `parameters.docs.codePanel` parameter has been removed in Storybook 9.0. The code panel is now shown by default for all stories.
+
+If you were previously using this parameter to control the visibility of the code panel, you can remove it from your stories as it no longer has any effect.
 
 ### `parameters.docs.source.format` removal
 

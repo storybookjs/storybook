@@ -9,7 +9,7 @@ import { stringify } from 'telejson';
 
 type ArgsHash = string;
 export function argsHash(args: Args): ArgsHash {
-  return stringify(args, { allowFunction: false });
+  return stringify(args, {});
 }
 
 export interface SourceItem {

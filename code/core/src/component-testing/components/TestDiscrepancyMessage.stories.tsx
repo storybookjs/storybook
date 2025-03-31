@@ -1,12 +1,11 @@
 import React from 'react';
 
-import { CallStates } from 'storybook/internal/instrumenter';
-
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { ManagerContext } from 'storybook/manager-api';
 import { fn } from 'storybook/test';
 
+import { CallStates } from '../../instrumenter/types';
 import { TestDiscrepancyMessage } from './TestDiscrepancyMessage';
 
 type Story = StoryObj<typeof TestDiscrepancyMessage>;

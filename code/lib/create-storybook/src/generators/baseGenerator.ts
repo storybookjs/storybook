@@ -289,13 +289,11 @@ export async function baseGenerator(
   // added to main.js
   const addons = [
     ...(compiler ? [`@storybook/addon-webpack5-compiler-${compiler}`] : []),
-    '@storybook/addon-essentials',
     ...stripVersions(extraAddonsToInstall),
   ].filter(Boolean);
 
   // added to package.json
   const addonPackages = [
-    '@storybook/addon-essentials',
     '@storybook/blocks',
     ...(compiler ? [`@storybook/addon-webpack5-compiler-${compiler}`] : []),
     ...extraAddonsToInstall,

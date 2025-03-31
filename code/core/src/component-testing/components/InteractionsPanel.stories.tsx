@@ -1,7 +1,5 @@
 import React from 'react';
 
-import { CallStates } from 'storybook/internal/instrumenter';
-
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { ManagerContext } from 'storybook/manager-api';
@@ -9,6 +7,7 @@ import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
 import { isChromatic } from '../../../../.storybook/isChromatic';
+import { CallStates } from '../../instrumenter/types';
 import { getCalls, getInteractions } from '../mocks';
 import { InteractionsPanel } from './InteractionsPanel';
 import SubnavStories from './Subnav.stories';

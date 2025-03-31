@@ -343,6 +343,14 @@ export const useHighlights = ({
   });
 
   const boxElementByTargetElement = new Map<HTMLElement, HTMLDivElement>(new Map());
+  const resetStyles = {
+    animation: 'none',
+    background: 'transparent',
+    border: 'none',
+    boxSizing: 'border-box',
+    outline: 'none',
+    outlineOffset: '0px',
+  };
 
   boxes.subscribe((value) => {
     value.forEach(({ element, top, left, width, height, styles, selectable }) => {
@@ -352,6 +360,7 @@ export const useHighlights = ({
         boxElementByTargetElement.set(element, box);
       }
       Object.assign(box.style, {
+        ...resetStyles,
         ...styles,
         position: 'absolute',
         top: `${top}px`,
@@ -360,7 +369,6 @@ export const useHighlights = ({
         height: `${height}px`,
         cursor: selectable ? 'pointer' : 'default',
         pointerEvents: selectable ? 'auto' : 'none',
-        boxSizing: 'border-box',
       });
     });
     boxElementByTargetElement.forEach((box, element) => {
@@ -385,7 +393,7 @@ export const useHighlights = ({
       const box = boxElementByTargetElement.get(target.element);
       if (box) {
         const { styles, selectedStyles } = target || {};
-        Object.assign(box.style, { ...styles, ...selectedStyles });
+        Object.assign(box.style, { ...resetStyles, ...styles, ...selectedStyles });
       }
     }
   });

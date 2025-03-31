@@ -11,6 +11,8 @@ const minimalVersionsMap = {
   '@storybook/preset-preact-webpack': '9.0.0',
   '@storybook/vue3-webpack5': '9.0.0',
   '@storybook/preset-vue3-webpack': '9.0.0',
+  '@storybook/html-webpack5': '9.0.0',
+  '@storybook/preset-html-webpack': '9.0.0',
   '@storybook/web-components-webpack5': '9.0.0',
   next: '14.1.0',
   preact: '10.0.0',
@@ -74,6 +76,13 @@ export const blocker = createBlocker({
       case '@storybook/preset-vue3-webpack':
         return dedent`
           Support for Vue3 Webpack5 has been removed.
+          Please see the migration guide for more information:
+          ${picocolors.yellow('https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#dropped-webpack5-builder-support-in-favor-of-vite')}
+        `;
+      case '@storybook/html-webpack5':
+      case '@storybook/preset-html-webpack':
+        return dedent`
+          Support for HTML Webpack5 has been removed.
           Please see the migration guide for more information:
           ${picocolors.yellow('https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#dropped-webpack5-builder-support-in-favor-of-vite')}
         `;

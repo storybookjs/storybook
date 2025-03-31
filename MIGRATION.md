@@ -826,6 +826,8 @@ Removed Packages
 - `@storybook/vue3-webpack5`
 - `@storybook/preset-vue3-webpack`
 - `@storybook/web-components-webpack5`
+- `@storybook/html-webpack5`
+- `@storybook/preset-html-webpack`
 
 **For Preact Projects**
 
@@ -846,6 +848,13 @@ npm install @storybook/vue3-vite --save-dev
 ```bash
 npm remove @storybook/web-components-webpack5
 npm install @storybook/web-components-vite --save-dev
+```
+
+**For HTML Projects**
+
+```bash
+npm remove @storybook/html-webpack5 @storybook/preset-html-webpack
+npm install @storybook/html-vite --save-dev
 ```
 
 **Update .storybook/main.js|ts**

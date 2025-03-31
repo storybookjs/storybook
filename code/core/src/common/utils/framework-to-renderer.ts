@@ -9,7 +9,6 @@ export const frameworkToRenderer: Record<
   angular: 'angular',
   ember: 'ember',
   'html-vite': 'html',
-  'html-webpack5': 'html',
   nextjs: 'react',
   'nextjs-vite': 'react',
   'preact-vite': 'preact',

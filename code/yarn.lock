@@ -6958,21 +6958,6 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/html-webpack5@workspace:*, @storybook/html-webpack5@workspace:frameworks/html-webpack5":
-  version: 0.0.0-use.local
-  resolution: "@storybook/html-webpack5@workspace:frameworks/html-webpack5"
-  dependencies:
-    "@storybook/builder-webpack5": "workspace:*"
-    "@storybook/global": "npm:^5.0.0"
-    "@storybook/html": "workspace:*"
-    "@storybook/preset-html-webpack": "workspace:*"
-    "@types/node": "npm:^22.0.0"
-    typescript: "npm:^5.7.3"
-  peerDependencies:
-    storybook: "workspace:^"
-  languageName: unknown
-  linkType: soft
-
 "@storybook/html@workspace:*, @storybook/html@workspace:renderers/html":
   version: 0.0.0-use.local
   resolution: "@storybook/html@workspace:renderers/html"
@@ -7152,20 +7137,6 @@ __metadata:
     typescript: "npm:^5.7.3"
   peerDependencies:
     react-scripts: ">=5.0.0"
-    storybook: "workspace:^"
-  languageName: unknown
-  linkType: soft
-
-"@storybook/preset-html-webpack@workspace:*, @storybook/preset-html-webpack@workspace:presets/html-webpack":
-  version: 0.0.0-use.local
-  resolution: "@storybook/preset-html-webpack@workspace:presets/html-webpack"
-  dependencies:
-    "@storybook/core-webpack": "workspace:*"
-    "@types/node": "npm:^22.0.0"
-    html-loader: "npm:^3.1.0"
-    typescript: "npm:^5.7.3"
-    webpack: "npm:5"
-  peerDependencies:
     storybook: "workspace:^"
   languageName: unknown
   linkType: soft
@@ -7401,13 +7372,11 @@ __metadata:
     "@storybook/global": "npm:^5.0.0"
     "@storybook/html": "workspace:*"
     "@storybook/html-vite": "workspace:*"
-    "@storybook/html-webpack5": "workspace:*"
     "@storybook/linter-config": "npm:^4.0.0"
     "@storybook/nextjs": "workspace:*"
     "@storybook/preact": "workspace:*"
     "@storybook/preact-vite": "workspace:*"
     "@storybook/preset-create-react-app": "workspace:*"
-    "@storybook/preset-html-webpack": "workspace:*"
     "@storybook/preset-react-webpack": "workspace:*"
     "@storybook/preset-server-webpack": "workspace:*"
     "@storybook/preset-svelte-webpack": "workspace:*"
@@ -17218,18 +17187,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"html-loader@npm:^3.1.0":
-  version: 3.1.2
-  resolution: "html-loader@npm:3.1.2"
-  dependencies:
-    html-minifier-terser: "npm:^6.0.2"
-    parse5: "npm:^6.0.1"
-  peerDependencies:
-    webpack: ^5.0.0
-  checksum: 10c0/05667926d159ea4c8846986a43bd07184a3aeafdd66df689fb5a38dddee143babd861e81aa59559d665f595c0681773fcfcddd89a6859df426ddb73bfea3822c
-  languageName: node
-  linkType: hard
-
 "html-minifier-terser@npm:^6.0.2":
   version: 6.1.0
   resolution: "html-minifier-terser@npm:6.1.0"
@@ -22871,13 +22828,6 @@ __metadata:
   dependencies:
     parse5: "npm:^7.0.0"
   checksum: 10c0/6b4184354f5ee75c2ec16ab4c7f4703e40d710375ed6c08f82aa425cda22b7ba4a2f43a0925bc6eb6fc88610ab0877693a8d9e10f5a0c21504fd6f97dbd130e9
-  languageName: node
-  linkType: hard
-
-"parse5@npm:^6.0.1":
-  version: 6.0.1
-  resolution: "parse5@npm:6.0.1"
-  checksum: 10c0/595821edc094ecbcfb9ddcb46a3e1fe3a718540f8320eff08b8cf6742a5114cce2d46d45f95c26191c11b184dcaf4e2960abcd9c5ed9eb9393ac9a37efcfdecb
   languageName: node
   linkType: hard
 

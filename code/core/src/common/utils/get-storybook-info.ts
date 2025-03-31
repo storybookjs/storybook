@@ -30,7 +30,6 @@ export const frameworkPackages: Record<string, SupportedFrameworks> = {
   '@storybook/angular': 'angular',
   '@storybook/ember': 'ember',
   '@storybook/html-vite': 'html-vite',
-  '@storybook/html-webpack5': 'html-webpack5',
   '@storybook/nextjs': 'nextjs',
   '@storybook/preact-vite': 'preact-vite',
   '@storybook/react-vite': 'react-vite',

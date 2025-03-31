@@ -60,7 +60,7 @@
     "@storybook/vue3": "portal:../../../code/renderers/vue3",
     "@storybook/vue3-vite": "portal:../../../code/frameworks/vue3-vite",
     "@storybook/web-components": "portal:../../../code/renderers/web-components",
-    "@storybook/web-components-vite": "portal:../../../code/frameworks/web-components-vite"
+    "@storybook/web-components-vite": "portal:../../../code/frameworks/web-components-vite",
     "playwright": "1.48.1"
   },
   "devDependencies": {

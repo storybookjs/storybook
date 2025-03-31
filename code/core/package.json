@@ -83,6 +83,81 @@
       "import": "./dist/core-server/presets/common-override-preset.js",
       "require": "./dist/core-server/presets/common-override-preset.cjs"
     },
+    "./internal/backgrounds": {
+      "types": "./dist/backgrounds/index.d.ts",
+      "import": "./dist/backgrounds/index.js",
+      "require": "./dist/backgrounds/index.cjs"
+    },
+    "./backgrounds": {
+      "types": "./dist/backgrounds/index.d.ts",
+      "import": "./dist/backgrounds/index.js",
+      "require": "./dist/backgrounds/index.cjs"
+    },
+    "./internal/backgrounds/preview": {
+      "types": "./dist/backgrounds/preview.d.ts",
+      "import": "./dist/backgrounds/preview.js",
+      "require": "./dist/backgrounds/preview.cjs"
+    },
+    "./backgrounds/preview": {
+      "types": "./dist/backgrounds/preview.d.ts",
+      "import": "./dist/backgrounds/preview.js",
+      "require": "./dist/backgrounds/preview.cjs"
+    },
+    "./internal/measure": {
+      "types": "./dist/measure/index.d.ts",
+      "import": "./dist/measure/index.js",
+      "require": "./dist/measure/index.cjs"
+    },
+    "./measure": {
+      "types": "./dist/measure/index.d.ts",
+      "import": "./dist/measure/index.js",
+      "require": "./dist/measure/index.cjs"
+    },
+    "./internal/measure/preview": {
+      "types": "./dist/measure/preview.d.ts",
+      "import": "./dist/measure/preview.js",
+      "require": "./dist/measure/preview.cjs"
+    },
+    "./measure/preview": {
+      "types": "./dist/measure/preview.d.ts",
+      "import": "./dist/measure/preview.js",
+      "require": "./dist/measure/preview.cjs"
+    },
+    "./internal/outline": {
+      "types": "./dist/outline/index.d.ts",
+      "import": "./dist/outline/index.js",
+      "require": "./dist/outline/index.cjs"
+    },
+    "./outline": {
+      "types": "./dist/outline/index.d.ts",
+      "import": "./dist/outline/index.js",
+      "require": "./dist/outline/index.cjs"
+    },
+    "./internal/outline/preview": {
+      "types": "./dist/outline/preview.d.ts",
+      "import": "./dist/outline/preview.js",
+      "require": "./dist/outline/preview.cjs"
+    },
+    "./outline/preview": {
+      "types": "./dist/outline/preview.d.ts",
+      "import": "./dist/outline/preview.js",
+      "require": "./dist/outline/preview.cjs"
+    },
+    "./internal/highlight": {
+      "types": "./dist/highlight/index.d.ts",
+      "import": "./dist/highlight/index.js",
+      "require": "./dist/highlight/index.cjs"
+    },
+    "./internal/highlight/preview": {
+      "types": "./dist/highlight/preview.d.ts",
+      "import": "./dist/highlight/preview.js",
+      "require": "./dist/highlight/preview.cjs"
+    },
+    "./highlight/preview": {
+      "types": "./dist/highlight/preview.d.ts",
+      "import": "./dist/highlight/preview.js",
+      "require": "./dist/highlight/preview.cjs"
+    },
     "./internal/actions": {
       "types": "./dist/actions/index.d.ts",
       "import": "./dist/actions/index.js",
@@ -103,12 +178,6 @@
       "import": "./dist/actions/preview.js",
       "require": "./dist/actions/preview.cjs"
     },
-    "./internal/actions/manager": {
-      "import": "./dist/actions/manager.js"
-    },
-    "./actions/manager": {
-      "import": "./dist/actions/manager.js"
-    },
     "./internal/actions/decorator": {
       "types": "./dist/actions/decorator.d.ts",
       "import": "./dist/actions/decorator.js"
@@ -126,9 +195,6 @@
       "types": "./dist/component-testing/preview.d.ts",
       "import": "./dist/component-testing/preview.js",
       "require": "./dist/component-testing/preview.cjs"
-    },
-    "./internal/component-testing/manager": {
-      "import": "./dist/component-testing/manager.js"
     },
     "./internal/viewport": {
       "types": "./dist/viewport/index.d.ts",
@@ -150,9 +216,6 @@
       "import": "./dist/viewport/preview.js",
       "require": "./dist/viewport/preview.cjs"
     },
-    "./internal/viewport/manager": {
-      "import": "./dist/viewport/manager.js"
-    },
     "./internal/controls": {
       "types": "./dist/controls/index.d.ts",
       "import": "./dist/controls/index.js",
@@ -162,9 +225,6 @@
       "types": "./dist/controls/preview.d.ts",
       "import": "./dist/controls/preview.js",
       "require": "./dist/controls/preview.cjs"
-    },
-    "./internal/controls/manager": {
-      "import": "./dist/controls/manager.js"
     },
     "./internal/controls/decorator": {
       "types": "./dist/controls/decorator.d.ts",
@@ -364,6 +424,51 @@
       ],
       "internal/core-server": [
         "./dist/core-server/index.d.ts"
+      ],
+      "internal/backgrounds": [
+        "./dist/backgrounds/index.d.ts"
+      ],
+      "backgrounds": [
+        "./dist/backgrounds/index.d.ts"
+      ],
+      "internal/backgrounds/preview": [
+        "./dist/backgrounds/preview.d.ts"
+      ],
+      "backgrounds/preview": [
+        "./dist/backgrounds/preview.d.ts"
+      ],
+      "internal/measure": [
+        "./dist/measure/index.d.ts"
+      ],
+      "measure": [
+        "./dist/measure/index.d.ts"
+      ],
+      "internal/measure/preview": [
+        "./dist/measure/preview.d.ts"
+      ],
+      "measure/preview": [
+        "./dist/measure/preview.d.ts"
+      ],
+      "internal/outline": [
+        "./dist/outline/index.d.ts"
+      ],
+      "outline": [
+        "./dist/outline/index.d.ts"
+      ],
+      "internal/outline/preview": [
+        "./dist/outline/preview.d.ts"
+      ],
+      "outline/preview": [
+        "./dist/outline/preview.d.ts"
+      ],
+      "internal/highlight": [
+        "./dist/highlight/index.d.ts"
+      ],
+      "internal/highlight/preview": [
+        "./dist/highlight/preview.d.ts"
+      ],
+      "highlight/preview": [
+        "./dist/highlight/preview.d.ts"
       ],
       "internal/actions": [
         "./dist/actions/index.d.ts"

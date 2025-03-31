@@ -1,11 +1,11 @@
 import React from 'react';
 
-import { type Call, CallStates } from 'storybook/internal/instrumenter';
-
 import { CheckIcon, CircleIcon, PlayIcon, StopAltIcon } from '@storybook/icons';
 
 import { transparentize } from 'polished';
 import { styled, useTheme } from 'storybook/theming';
+
+import { type Call, CallStates } from '../../instrumenter/types';
 
 export interface StatusIconProps {
   status: Call['status'];

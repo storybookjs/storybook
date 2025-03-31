@@ -867,9 +867,9 @@ This change consolidates our builder support around Vite, which offers better pe
 
 #### Next.js = Require v14 and up
 
-Storybook has dropped support for Next.js versions below 14. The minimum supported version is now Next.js 14.
+Storybook has dropped support for Next.js versions below 14.1. The minimum supported version is now Next.js 14.1.
 
-If you're using an older version of Next.js, you'll need to upgrade to Next.js 14 or newer to use the latest version of Storybook.
+If you're using an older version of Next.js, you'll need to upgrade to Next.js 14.1 or newer to use the latest version of Storybook.
 
 For help upgrading your Next.js application, see the [Next.js upgrade guide](https://nextjs.org/docs/app/building-your-application/upgrading).
 

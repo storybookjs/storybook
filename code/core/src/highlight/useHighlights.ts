@@ -2,8 +2,6 @@
 import type { Channel } from 'storybook/internal/channels';
 import { STORY_CHANGED } from 'storybook/internal/core-events';
 
-import { global } from '@storybook/global';
-
 import { HIGHLIGHT, REMOVE_HIGHLIGHT, RESET_HIGHLIGHT, SCROLL_INTO_VIEW } from './constants';
 import type { Box, Highlight, HighlightInfo, RawHighlightInfo } from './types';
 import { convertLegacy, createElement, mapBoxes, mapElements, useStore } from './utils';
@@ -49,6 +47,10 @@ export const useHighlights = ({
   rootId?: string;
   storybookRootId?: string;
 }) => {
+  // Clean up any existing instance of useHighlights
+  // eslint-disable-next-line no-underscore-dangle
+  (globalThis as any).__STORYBOOK_HIGHLIGHT_TEARDOWN?.();
+
   const { document } = global;
 
   const highlights = useStore<HighlightInfo[]>([]);
@@ -487,7 +489,7 @@ export const useHighlights = ({
   channel.on(STORY_CHANGED, clearHighlights);
   channel.on(SCROLL_INTO_VIEW, scrollIntoView);
 
-  return () => {
+  const teardown = () => {
     clearTimeout(removeTimeout);
 
     channel.off(HIGHLIGHT, addHighlight);
@@ -507,4 +509,9 @@ export const useHighlights = ({
     document.getElementById(menuId)?.remove();
     document.getElementById(rootId)?.remove();
   };
+
+  // eslint-disable-next-line no-underscore-dangle
+  (globalThis as any).__STORYBOOK_HIGHLIGHT_TEARDOWN = teardown;
+
+  return teardown;
 };

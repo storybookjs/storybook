@@ -14,21 +14,12 @@
 
 # Addons
 # /code/addons/a11y/                 @ndelangen @yannbf
-# /code/addons/actions/              @ndelangen @yannbf
-# /code/addons/backgrounds/          @yannbf @ndelangen
-# /code/addons/controls/             @kasperpeulen @ndelangen
 # /code/addons/docs/                 @JReinhold @kasperpeulen
-# /code/addons/essentials/           @valentinpalkovic @ndelangen
 # /code/addons/gfm/                  @ndelangen @valentinpalkovic
-# /code/addons/highlight/            @yannbf @valentinpalkovic
 # /code/addons/jest/                 @ndelangen
 # /code/addons/links/                @yannbf @JReinhold
-# /code/addons/measure/              @yannbf @valentinpalkovic
-# /code/addons/outline/              @yannbf @valentinpalkovic
 # /code/addons/storysource/          @ndelangen
 # /code/addons/themes/               @JReinhold @yannbf
-# /code/addons/toolbars/             @ndelangen @JReinhold
-# /code/addons/viewport/             @yannbf @ndelangen
 
 # Builder
 # /code/builders/builder-manager/  @ndelangen @valentinpalkovic
@@ -46,33 +37,19 @@
 # /code/frameworks/svelte-webpack5/         @kasperpeulen @JReinhold
 # /code/frameworks/sveltekit/               @kasperpeulen @JReinhold
 # /code/frameworks/vue3-vite/               @kasperpeulen @yannbf @JReinhold
-# /code/frameworks/vue3-webpack5/           @kasperpeulen @yannbf @JReinhold
 # /code/frameworks/web-components-vite/     @kasperpeulen @JReinhold
 # /code/frameworks/web-components-webpack5/ @kasperpeulen @JReinhold
 
 # Lib
-# /code/lib/channels/       @ndelangen @kasperpeulen
 # /code/lib/cli/            @yannbf @valentinpalkovic @ndelangen
 # /code/lib/cli-sb/         @yannbf @valentinpalkovic @ndelangen
 # /code/lib/cli-storybook/  @yannbf @valentinpalkovic @ndelangen
-# /code/lib/client-logger/  @ndelangen @yannbf
 # /code/lib/codemod/        @kasperpeulen @ndelangen
-# /code/lib/core-common/    @ndelangen @yannbf
-# /code/lib/core-events/    @ndelangen @kasperpeulen
-# /code/lib/core-server/    @ndelangen @JReinhold @tmeasday @shilman
 # /code/lib/core-webpack/   @valentinpalkovic @ndelangen
 # /code/lib/csf-plugin/     @ndelangen @valentinpalkovic
-# /code/lib/csf-tools/      @kasperpeulen @shilman
-# /code/lib/docs-tools/     @JReinhold @shilman
-# /code/lib/instrumenter/   @yannbf @kasperpeulen
-# /code/lib/manager-api/    @ndelangen @valentinpalkovic @kasperpeulen
 # /code/lib/node-logger/    @yannbf @ndelangen
-# /code/lib/preview/        @ndelangen @kasperpeulen
-# /code/lib/preview-api/    @yannbf @ndelangen @tmeasday
 # /code/lib/react-dom-shim/ @ndelangen @valentinpalkovic @tmeasday
-# /code/lib/router/         @ndelangen @JReinhold
 # /code/lib/telemetry/      @shilman @yannbf @ndelangen
-# /code/lib/theming/        @cdedreuille @ndelangen @JReinhold
 # /code/lib/types/          @kasperpeulen @ndelangen
 
 # Presets
@@ -85,12 +62,6 @@
 # /code/renderers/svelte/         @JReinhold @kasperpeulen
 # /code/renderers/vue3/           @kasperpeulen @JReinhold
 # /code/renderers/web-components/ @kasperpeulen @JReinhold
-
-# UI
-# /code/ui/.storybook/ @JReinhold @cdedreuille
-# /code/ui/blocks/     @JReinhold @cdedreuille
-# /code/ui/components/ @cdedreuille @JReinhold
-# /code/ui/manager/    @ndelangen @JReinhold @cdedreuille @tmeasday
 
 # E2E
 # /code/e2e-tests/ @yannbf @valentinpalkovic

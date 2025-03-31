@@ -166,24 +166,6 @@ describe('A11yContext', () => {
     );
   });
 
-  it('should set discrepancy to cliFailedButModeManual when in manual mode', () => {
-    mockedApi.useParameter.mockReturnValue({ manual: true });
-    mockedApi.experimental_useStatusStore.mockReturnValue('status-value:error');
-
-    const Component = () => {
-      const { discrepancy } = useA11yContext();
-      return <div data-testid="discrepancy">{discrepancy}</div>;
-    };
-
-    const { getByTestId } = render(
-      <A11yContextProvider>
-        <Component />
-      </A11yContextProvider>
-    );
-
-    expect(getByTestId('discrepancy').textContent).toBe('cliFailedButModeManual');
-  });
-
   it('should set discrepancy to cliFailedButModeManual when in manual mode (set via globals)', () => {
     mockedApi.useGlobals.mockReturnValue([{ a11y: { manual: true } }] as any);
     mockedApi.experimental_useStatusStore.mockReturnValue('status-value:error');
@@ -262,35 +244,6 @@ describe('A11yContext', () => {
     act(() => useChannelArgs[STORY_RENDER_PHASE_CHANGED](storyRenderPhaseChangedPayload));
 
     expect(queryByTestId('status')).toHaveTextContent('running');
-  });
-
-  it('should handle STORY_RENDER_PHASE_CHANGED event correctly when in manual mode', () => {
-    mockedApi.useParameter.mockReturnValue({ manual: true });
-
-    const emit = vi.fn();
-    mockedApi.useChannel.mockReturnValue(emit);
-
-    const Component = () => {
-      const { status } = useA11yContext();
-      return <div data-testid="status">{status}</div>;
-    };
-
-    const { queryByTestId } = render(
-      <A11yContextProvider>
-        <Component />
-      </A11yContextProvider>
-    );
-
-    expect(queryByTestId('status')).toHaveTextContent('manual');
-
-    const useChannelArgs = mockedApi.useChannel.mock.calls[0][0];
-    const storyRenderPhaseChangedPayload = {
-      newPhase: 'loading',
-    };
-
-    act(() => useChannelArgs[STORY_RENDER_PHASE_CHANGED](storyRenderPhaseChangedPayload));
-
-    expect(queryByTestId('status')).toHaveTextContent('manual');
   });
 
   it('should handle STORY_RENDER_PHASE_CHANGED event correctly when in manual mode (set via globals)', () => {

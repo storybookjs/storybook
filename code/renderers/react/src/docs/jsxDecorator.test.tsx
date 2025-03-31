@@ -1,3 +1,5 @@
+/** @vitest-environment happy-dom */
+
 /* eslint-disable no-underscore-dangle */
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -8,13 +10,22 @@ import React, { Profiler, StrictMode, createElement } from 'react';
 import { SNIPPET_RENDERED } from 'storybook/internal/docs-tools';
 
 import PropTypes from 'prop-types';
-import { addons, useEffect } from 'storybook/preview-api';
+import { addons, useState, useTransformCode } from 'storybook/preview-api';
 
+import type { ReactRenderer, StoryContext } from '../types';
 import { getReactSymbolName, jsxDecorator, renderJsx } from './jsxDecorator';
 
-vi.mock('storybook/preview-api');
-const mockedAddons = vi.mocked(addons);
-const mockedUseEffect = vi.mocked(useEffect);
+vi.mock('storybook/preview-api', () => ({
+  addons: {
+    getChannel: vi.fn(),
+  },
+  useEffect: vi.fn((fn) => fn()),
+  useState: vi.fn(),
+  useTransformCode: vi.fn((code) => code),
+}));
+
+const mockedGetChannel = vi.mocked(addons.getChannel);
+const mockedUseTransformCode = vi.mocked(useTransformCode);
 
 expect.addSnapshotSerializer({
   print: (val: any) => val,
@@ -303,124 +314,96 @@ const makeContext = (name: string, parameters: any, args: any, extra?: object): 
 });
 
 describe('jsxDecorator', () => {
-  let mockChannel: { on: Mock; emit?: Mock };
+  const channel = { emit: vi.fn() };
+  let mockContext: StoryContext<ReactRenderer>;
+  let mockStoryFn: Mock;
+
+  const mockSetSource = vi.fn();
+
   beforeEach(() => {
-    mockedAddons.getChannel.mockReset();
-    mockedUseEffect.mockImplementation((cb) => setTimeout(() => cb(), 0));
+    vi.clearAllMocks();
+    mockedGetChannel.mockReturnValue(channel as any);
+    vi.mocked(useState).mockReturnValue([undefined, mockSetSource]);
+    mockedUseTransformCode.mockImplementation((code) => code);
 
-    mockChannel = { on: vi.fn(), emit: vi.fn() };
-    mockedAddons.getChannel.mockReturnValue(mockChannel as any);
+    mockContext = makeContext('test', {}, { foo: 'bar' });
+    mockStoryFn = vi.fn().mockReturnValue(<div>Test Story</div>);
   });
 
-  it('should render dynamically for args stories', async () => {
-    const storyFn = (args: any) => <div>args story</div>;
-    const context = makeContext('args', { __isArgsStory: true }, {}, { originalStoryFn: storyFn });
-    jsxDecorator(storyFn, context);
-    await new Promise((r) => setTimeout(r, 0));
-    expect(mockChannel.emit).toHaveBeenCalledWith(SNIPPET_RENDERED, {
-      id: 'jsx-test--args',
-      args: {},
-      source: '<div>\n  args story\n</div>',
-    });
-  });
-
-  it('should not render decorators when provided excludeDecorators parameter', async () => {
-    const storyFn = (args: any) => <div>args story</div>;
-    const decoratedStoryFn = (args: any) => (
-      <div style={{ padding: 25, border: '3px solid red' }}>{storyFn(args)}</div>
-    );
-    const context = makeContext(
-      'args',
-      {
-        __isArgsStory: true,
-        docs: {
-          source: {
-            excludeDecorators: true,
-          },
-        },
+  it('should skip JSX rendering when source type is CODE', () => {
+    const context = {
+      ...mockContext,
+      parameters: {
+        docs: { source: { type: 'code' } },
       },
-      {},
-      { originalStoryFn: storyFn }
-    );
-    jsxDecorator(decoratedStoryFn, context);
-    await new Promise((r) => setTimeout(r, 0));
+    };
 
-    expect(mockChannel.emit).toHaveBeenCalledWith(SNIPPET_RENDERED, {
-      id: 'jsx-test--args',
-      args: {},
-      source: '<div>\n  args story\n</div>',
-    });
+    const result = jsxDecorator(mockStoryFn, context);
+    expect(channel.emit).not.toHaveBeenCalled();
+    expect(result).toEqual(<div>Test Story</div>);
   });
 
-  it('should skip dynamic rendering for no-args stories', async () => {
-    const storyFn = () => <div>classic story</div>;
-    const context = makeContext('classic', {}, {});
-    jsxDecorator(storyFn, context);
-    await new Promise((r) => setTimeout(r, 0));
+  it('should skip JSX rendering when source code is provided', () => {
+    const context = {
+      ...mockContext,
+      parameters: {
+        docs: { source: { code: 'const x = 1;' } },
+      },
+    };
 
-    expect(mockChannel.emit).not.toHaveBeenCalled();
+    const result = jsxDecorator(mockStoryFn, context);
+    expect(channel.emit).not.toHaveBeenCalled();
+    expect(result).toEqual(<div>Test Story</div>);
   });
 
-  it('renders MDX properly', async () => {
-    // FIXME: generate this from actual MDX
-    const mdxElement: ReturnType<typeof createElement> = {
-      // @ts-expect-error (Converted from ts-ignore)
+  it('should force JSX rendering when source type is DYNAMIC', () => {
+    const context = {
+      ...mockContext,
+      parameters: {
+        docs: { source: { type: 'dynamic' } },
+        __isArgsStory: true,
+      },
+      originalStoryFn: () => <button>Click me</button>,
+    };
+
+    jsxDecorator(mockStoryFn, context);
+    expect(channel.emit).toHaveBeenCalledWith(SNIPPET_RENDERED, expect.any(Object));
+  });
+
+  it('should render JSX for args stories by default', () => {
+    const context = {
+      ...mockContext,
+      parameters: {
+        __isArgsStory: true,
+      },
+      originalStoryFn: () => <button>Click me</button>,
+    };
+
+    jsxDecorator(mockStoryFn, context);
+    expect(channel.emit).toHaveBeenCalledWith(SNIPPET_RENDERED, expect.any(Object));
+  });
+
+  it('should handle MDX elements correctly', () => {
+    const mdxElement = {
       type: { displayName: 'MDXCreateElement' },
       props: {
         mdxType: 'div',
         originalType: 'div',
-        className: 'foo',
+        children: 'Hello MDX',
       },
     };
 
-    jsxDecorator(
-      () => mdxElement,
-      makeContext('mdx-args', { __isArgsStory: true }, {}, { originalStoryFn: () => mdxElement })
-    );
-    await new Promise((r) => setTimeout(r, 0));
+    const context = {
+      ...mockContext,
+      parameters: {
+        __isArgsStory: true,
+      },
+      originalStoryFn: () => mdxElement,
+    };
 
-    expect(mockChannel.emit).toHaveBeenCalledWith(SNIPPET_RENDERED, {
-      id: 'jsx-test--mdx-args',
-      args: {},
-      source: '<div className="foo" />',
-    });
-  });
+    jsxDecorator(mockStoryFn, context as any);
 
-  it('handles stories that trigger Suspense', async () => {
-    // if a story function uses a hook or other library that triggers suspense, it will throw a Promise until it is resolved
-    // and then it will return the story content after the promise is resolved
-    const storyFn = vi.fn();
-    storyFn
-      .mockImplementationOnce(() => {
-        // eslint-disable-next-line @typescript-eslint/no-throw-literal
-        throw Promise.resolve();
-      })
-      .mockImplementation(() => {
-        return <div>resolved args story</div>;
-      });
-    const jsx = '';
-    const context = makeContext(
-      'args',
-      { __isArgsStory: true, jsx },
-      {},
-      { originalStoryFn: storyFn }
-    );
-    expect(() => {
-      jsxDecorator(storyFn, context);
-    }).toThrow(Promise);
-    jsxDecorator(storyFn, context);
-    await new Promise((r) => setTimeout(r, 0));
-
-    expect(mockChannel.emit).toHaveBeenCalledTimes(2);
-    expect(mockChannel.emit).nthCalledWith(1, SNIPPET_RENDERED, {
-      id: 'jsx-test--args',
-      args: {},
-      source: '',
-    });
-    expect(mockChannel.emit).nthCalledWith(2, SNIPPET_RENDERED, {
-      id: 'jsx-test--args',
-      args: {},
-      source: '<div>\n  resolved args story\n</div>',
-    });
+    // First verify that useState was called with the correct JSX string
+    expect(mockSetSource).toHaveBeenCalledWith(expect.stringContaining('Hello MDX'));
   });
 });

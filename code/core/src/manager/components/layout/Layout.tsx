@@ -112,7 +112,7 @@ const useLayoutSyncingState = ({
     ? internalDraggingSizeState
     : managerLayoutState;
 
-  const customisedNavSize = api.getNavSizeWithCustomisations(navSize);
+  const customisedNavSize = api.getNavSizeWithCustomisations?.(navSize) ?? navSize;
 
   return {
     navSize: customisedNavSize,

@@ -58,6 +58,7 @@ const defaultState = {
 const managerContext: any = {
   state: {},
   api: {
+    foo: 'bar',
     getNavSizeWithCustomisations: fn()
       .mockName('api::getNavSizeWithCustomisations')
       .mockImplementation((size: number) => size),

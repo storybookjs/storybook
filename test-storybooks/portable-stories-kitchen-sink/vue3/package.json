@@ -59,7 +59,7 @@
     "@storybook/vue3": "file:../../../code/renderers/vue3",
     "@storybook/vue3-vite": "file:../../../code/frameworks/vue3-vite",
     "@storybook/web-components": "file:../../../code/renderers/web-components",
-    "@storybook/web-components-vite": "file:../../../code/frameworks/web-components-vite"
+    "@storybook/web-components-vite": "file:../../../code/frameworks/web-components-vite",
     "playwright": "1.48.1"
   },
   "dependencies": {

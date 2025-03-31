@@ -27,8 +27,8 @@ const HeaderBar = styled.div(({ theme }) => ({
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
-  gap: 5,
-  padding: '6px 5px 6px 15px',
+  gap: 6,
+  padding: '6px 10px 6px 15px',
   minHeight: 40,
   background: 'none',
   color: 'inherit',
@@ -40,26 +40,29 @@ const HeaderBar = styled.div(({ theme }) => ({
   },
 }));
 
-const Title = styled.div(({ theme }) => ({
+const Title = styled.div({
+  display: 'flex',
   flexGrow: 1,
-  fontWeight: theme.typography.weight.bold,
+  gap: 6,
+});
+
+const RuleId = styled.div(({ theme }) => ({
+  display: 'none',
+  color: theme.textMutedColor,
+
+  '@container (min-width: 800px)': {
+    display: 'block',
+  },
 }));
 
-const RuleId = styled.span<{ onClick: (event: React.SyntheticEvent<Element>) => void }>(
-  ({ theme }) => ({
-    display: 'none',
-    whiteSpace: 'nowrap',
-    cursor: 'text',
-    margin: 2,
-    color: theme.textMutedColor,
-    fontSize: theme.typography.size.s1,
-    fontWeight: theme.typography.weight.bold,
-
-    '@container (min-width: 800px)': {
-      display: 'inline-block',
-    },
-  })
-);
+const Count = styled.div(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  color: theme.textMutedColor,
+  width: 28,
+  height: 28,
+}));
 
 export interface ReportProps {
   items: Result[];
@@ -90,8 +93,11 @@ export const Report: FC<ReportProps> = ({
               role="button"
               data-active={!!selection}
             >
-              <Title>{item.help}</Title>
-              <RuleId onClick={(event) => event.stopPropagation()}>{item.id}</RuleId>
+              <Title>
+                <strong>{item.help}</strong>
+                <RuleId>{item.id}</RuleId>
+              </Title>
+              <Count>{item.nodes.length}</Count>
               <IconButton onClick={(event) => toggleOpen(event, type, item)}>
                 <Icon style={{ transform: `rotate(${selection ? -180 : 0}deg)` }} />
               </IconButton>

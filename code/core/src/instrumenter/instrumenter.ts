@@ -12,19 +12,10 @@ import { global } from '@storybook/global';
 
 import { processError } from '@vitest/utils/error';
 
+import { EVENTS } from './EVENTS';
 import type { Call, CallRef, ControlStates, LogItem, Options, State, SyncPayload } from './types';
 import { CallStates } from './types';
 import './typings.d.ts';
-
-export const EVENTS = {
-  CALL: 'storybook/instrumenter/call',
-  SYNC: 'storybook/instrumenter/sync',
-  START: 'storybook/instrumenter/start',
-  BACK: 'storybook/instrumenter/back',
-  GOTO: 'storybook/instrumenter/goto',
-  NEXT: 'storybook/instrumenter/next',
-  END: 'storybook/instrumenter/end',
-};
 
 type PatchedObj<TObj extends Record<string, unknown>> = {
   [Property in keyof TObj]: TObj[Property] & { __originalFn__: TObj[Property] };

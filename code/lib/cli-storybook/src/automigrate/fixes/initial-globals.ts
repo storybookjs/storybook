@@ -21,7 +21,7 @@ interface Options {
 /** Rename preview.js globals to initialGlobals */
 export const initialGlobals: Fix<Options> = {
   id: 'initial-globals',
-  versionRange: ['*.*.*', '>=8.0.*'],
+  versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
   async check({ previewConfigPath }) {
     if (!previewConfigPath) {
       return null;
@@ -39,9 +39,7 @@ export const initialGlobals: Fix<Options> = {
 
   prompt({ previewConfigPath }) {
     return dedent`
-      The ${picocolors.cyan('globals')} setting in ${picocolors.cyan(
-        previewConfigPath
-      )} is deprecated
+      The ${picocolors.cyan('globals')} setting in ${picocolors.cyan(previewConfigPath)} was removed
       and has been renamed to ${picocolors.cyan('initialGlobals')}.
         
       Learn more: ${picocolors.yellow(MIGRATION)}

@@ -1,14 +1,16 @@
 import React from 'react';
 
-import { Badge, Spaced } from 'storybook/internal/components';
+import { Badge } from 'storybook/internal/components';
 import { STORY_CHANGED } from 'storybook/internal/core-events';
 
-import { addons, types, useAddonState, useChannel } from 'storybook/manager-api';
+import { addons, types, useAddonState, useChannel, useStorybookApi } from 'storybook/manager-api';
 
 import { ADDON_ID, CLEAR_ID, EVENT_ID, PANEL_ID, PARAM_KEY } from './constants';
 import ActionLogger from './containers/ActionLogger';
 
 function Title() {
+  const api = useStorybookApi();
+  const selectedPanel = api.getSelectedPanel();
   const [{ count }, setCount] = useAddonState(ADDON_ID, { count: 0 });
 
   useChannel({
@@ -23,19 +25,22 @@ function Title() {
     },
   });
 
-  const suffix = count === 0 ? '' : <Badge status="neutral">{count}</Badge>;
+  const suffix =
+    count === 0 ? null : (
+      <Badge compact status={selectedPanel === PANEL_ID ? 'active' : 'neutral'}>
+        {count}
+      </Badge>
+    );
 
   return (
-    <div>
-      <Spaced col={1}>
-        <span style={{ display: 'inline-block', verticalAlign: 'middle' }}>Actions</span>
-        {suffix}
-      </Spaced>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+      <span>Actions</span>
+      {suffix}
     </div>
   );
 }
 
-addons.register(ADDON_ID, (api) => {
+export default addons.register(ADDON_ID, (api) => {
   addons.add(PANEL_ID, {
     title: Title,
     type: types.PANEL,

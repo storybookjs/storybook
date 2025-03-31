@@ -7,8 +7,6 @@ import {
   type StoryFinishedPayload,
 } from 'storybook/internal/core-events';
 
-import { HIGHLIGHT, RESET_HIGHLIGHT, SCROLL_INTO_VIEW } from '@storybook/addon-highlight';
-
 import type { AxeResults, Result } from 'axe-core';
 import {
   experimental_getStatusStore,
@@ -23,6 +21,11 @@ import {
 import type { Report } from 'storybook/preview-api';
 import { convert, themes } from 'storybook/theming';
 
+import {
+  HIGHLIGHT,
+  RESET_HIGHLIGHT,
+  SCROLL_INTO_VIEW,
+} from '../../../../core/src/highlight/constants';
 import {
   ADDON_ID,
   EVENTS,
@@ -102,19 +105,14 @@ const defaultResult = {
 type Status = 'initial' | 'manual' | 'running' | 'error' | 'component-test-error' | 'ran' | 'ready';
 
 export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
-  const parameters = useParameter<A11yParameters>('a11y', {
-    manual: false,
-  });
+  const parameters = useParameter<A11yParameters>('a11y', {});
 
   const [globals] = useGlobals() ?? [];
   const api = useStorybookApi();
 
   const getInitialStatus = useCallback((manual = false) => (manual ? 'manual' : 'initial'), []);
 
-  const manual = useMemo(
-    () => globals?.a11y?.manual ?? parameters.manual ?? false,
-    [globals?.a11y?.manual, parameters.manual]
-  );
+  const manual = useMemo(() => globals?.a11y?.manual ?? false, [globals?.a11y?.manual]);
 
   const a11ySelection = useMemo(() => {
     const value = api.getQueryParam('a11ySelection');

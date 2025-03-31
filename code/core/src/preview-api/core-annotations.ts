@@ -1,15 +1,23 @@
 import componentTestingAnnotations from 'storybook/internal/component-testing/preview';
-import type { Renderer } from 'storybook/internal/types';
 
 import actionAnnotations from 'storybook/actions/preview';
-import { composeConfigs } from 'storybook/preview-api';
+import backgroundsAnnotations from 'storybook/backgrounds/preview';
+import highlightAnnotations from 'storybook/highlight/preview';
+import measureAnnotations from 'storybook/measure/preview';
+import outlineAnnotations from 'storybook/outline/preview';
 import testAnnotations from 'storybook/test/preview';
 import viewportAnnotations from 'storybook/viewport/preview';
 
-import type { NormalizedProjectAnnotations } from '../types';
-
 export function getCoreAnnotations() {
   return [
+    // @ts-expect-error CJS fallback
+    (measureAnnotations.default ?? measureAnnotations)(),
+    // @ts-expect-error CJS fallback
+    (backgroundsAnnotations.default ?? backgroundsAnnotations)(),
+    // @ts-expect-error CJS fallback
+    (highlightAnnotations.default ?? highlightAnnotations)(),
+    // @ts-expect-error CJS fallback
+    (outlineAnnotations.default ?? outlineAnnotations)(),
     // @ts-expect-error CJS fallback
     (viewportAnnotations.default ?? viewportAnnotations)(),
     // @ts-expect-error CJS fallback
@@ -19,10 +27,4 @@ export function getCoreAnnotations() {
     // @ts-expect-error CJS fallback
     (testAnnotations.default ?? testAnnotations)(),
   ];
-}
-
-export function getComposedCoreAnnotations<
-  TRenderer extends Renderer,
->(): NormalizedProjectAnnotations<TRenderer> {
-  return composeConfigs<TRenderer>(getCoreAnnotations());
 }

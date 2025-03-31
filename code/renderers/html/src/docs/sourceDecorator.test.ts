@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { SNIPPET_RENDERED, SourceType } from 'storybook/internal/docs-tools';
 
-import { addons, useEffect, useState, useTransformCode } from 'storybook/preview-api';
+import { addons, emitTransformCode, useEffect, useRef, useState } from 'storybook/preview-api';
 
 import { sourceDecorator } from './sourceDecorator';
 
@@ -13,21 +13,19 @@ vi.mock('storybook/preview-api', () => ({
     getChannel: vi.fn(),
   },
   useEffect: vi.fn((fn) => fn()),
-  useState: vi.fn(),
-  useTransformCode: vi.fn(),
+  useRef: vi.fn(),
+  emitTransformCode: vi.fn(),
 }));
 
 describe('sourceDecorator', () => {
   const mockChannel = {
     emit: vi.fn(),
   };
-  const mockSetSource = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(addons.getChannel).mockReturnValue(mockChannel as any);
-    vi.mocked(useState).mockReturnValue([undefined, mockSetSource]);
-    vi.mocked(useTransformCode).mockImplementation((source) => source);
+    vi.mocked(useRef).mockReturnValue({ current: undefined });
   });
 
   it('should not render source for non-args stories', () => {
@@ -44,7 +42,7 @@ describe('sourceDecorator', () => {
 
     sourceDecorator(storyFn, context as any);
 
-    expect(mockSetSource).not.toHaveBeenCalled();
+    expect(emitTransformCode).not.toHaveBeenCalled();
   });
 
   it('should render source for args stories', () => {
@@ -62,7 +60,7 @@ describe('sourceDecorator', () => {
 
     sourceDecorator(storyFn, context as any);
 
-    expect(mockSetSource).toHaveBeenCalledWith(storyContent);
+    expect(emitTransformCode).toHaveBeenCalledWith(storyContent, context);
   });
 
   it('should handle Element type story returns', () => {
@@ -81,12 +79,11 @@ describe('sourceDecorator', () => {
 
     sourceDecorator(storyFn, context as any);
 
-    expect(mockSetSource).toHaveBeenCalledWith(element.outerHTML);
+    expect(emitTransformCode).toHaveBeenCalledWith(element.outerHTML, context);
   });
 
   it('should emit SNIPPET_RENDERED event when source is available', () => {
     const source = '<div>Test Story</div>';
-    vi.mocked(useState).mockReturnValueOnce([source, mockSetSource]);
 
     const storyFn = () => source;
     const context = {
@@ -101,11 +98,7 @@ describe('sourceDecorator', () => {
 
     sourceDecorator(storyFn, context as any);
 
-    expect(mockChannel.emit).toHaveBeenCalledWith(SNIPPET_RENDERED, {
-      id: 'test-story',
-      args: {},
-      source: source,
-    });
+    expect(emitTransformCode).toHaveBeenCalledWith(source, context);
   });
 
   it('should respect excludeDecorators parameter', () => {
@@ -130,7 +123,7 @@ describe('sourceDecorator', () => {
 
     sourceDecorator(storyFn, context as any);
 
-    expect(mockSetSource).toHaveBeenCalledWith(originalStoryContent);
+    expect(emitTransformCode).toHaveBeenCalledWith(originalStoryContent, context);
   });
 
   it('should skip source render when type is CODE', () => {
@@ -152,6 +145,6 @@ describe('sourceDecorator', () => {
 
     sourceDecorator(storyFn, context as any);
 
-    expect(mockSetSource).not.toHaveBeenCalled();
+    expect(emitTransformCode).not.toHaveBeenCalled();
   });
 });

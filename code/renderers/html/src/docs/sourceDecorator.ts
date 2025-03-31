@@ -1,8 +1,8 @@
 /* eslint-disable no-underscore-dangle */
-import { SNIPPET_RENDERED, SourceType } from 'storybook/internal/docs-tools';
+import { SourceType } from 'storybook/internal/docs-tools';
 import type { DecoratorFunction } from 'storybook/internal/types';
 
-import { addons, useEffect, useState, useTransformCode } from 'storybook/preview-api';
+import { emitTransformCode, useEffect, useRef } from 'storybook/preview-api';
 
 import type { StoryFn } from '../public-types';
 import type { HtmlRenderer } from '../types';
@@ -22,34 +22,27 @@ function skipSourceRender(context: Parameters<DecoratorFunction<HtmlRenderer>>[1
 }
 
 export const sourceDecorator: DecoratorFunction<HtmlRenderer> = (storyFn, context) => {
+  const source = useRef<string | undefined>(undefined);
   const story = storyFn();
-  const renderedForSource = context?.parameters.docs?.source?.excludeDecorators
-    ? (context.originalStoryFn as StoryFn)(context.args, context)
-    : story;
-
-  const [source, setSource] = useState<string | undefined>(undefined);
-
-  const transformedCode = useTransformCode(source, context);
 
   useEffect(() => {
-    const { id, unmappedArgs } = context;
+    const renderedForSource = context?.parameters.docs?.source?.excludeDecorators
+      ? (context.originalStoryFn as StoryFn)(context.args, context)
+      : story;
 
-    if (source) {
-      addons.getChannel().emit(SNIPPET_RENDERED, {
-        id,
-        args: unmappedArgs,
-        source: transformedCode,
-      });
+    if (!skipSourceRender(context)) {
+      if (typeof renderedForSource === 'string' && source.current !== renderedForSource) {
+        emitTransformCode(renderedForSource, context);
+        source.current = renderedForSource;
+      } else if (
+        renderedForSource instanceof Element &&
+        source.current !== renderedForSource.outerHTML
+      ) {
+        emitTransformCode(renderedForSource.outerHTML, context);
+        source.current = renderedForSource.outerHTML;
+      }
     }
-  }, [context, source, transformedCode]);
-
-  if (!skipSourceRender(context)) {
-    if (typeof renderedForSource === 'string' && source !== renderedForSource) {
-      setSource(renderedForSource);
-    } else if (renderedForSource instanceof Element && source !== renderedForSource.outerHTML) {
-      setSource(renderedForSource.outerHTML);
-    }
-  }
+  });
 
   return story;
 };

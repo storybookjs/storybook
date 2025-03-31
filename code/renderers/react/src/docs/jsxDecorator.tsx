@@ -3,14 +3,14 @@ import type { ReactElement, ReactNode } from 'react';
 import React, { createElement, isValidElement } from 'react';
 
 import { logger } from 'storybook/internal/client-logger';
-import { SNIPPET_RENDERED, SourceType, getDocgenSection } from 'storybook/internal/docs-tools';
-import type { ArgsStoryFn, PartialStoryFn, StoryContext } from 'storybook/internal/types';
+import { SourceType, getDocgenSection } from 'storybook/internal/docs-tools';
+import type { PartialStoryFn, StoryContext } from 'storybook/internal/types';
 
 import type { Options } from 'react-element-to-jsx-string';
 import type reactElementToJSXStringType from 'react-element-to-jsx-string';
 // @ts-expect-error (this is needed, because our bundling prefers the `browser` field, but that yields CJS)
 import reactElementToJSXStringRaw from 'react-element-to-jsx-string/dist/esm/index.js';
-import { addons, useEffect, useState, useTransformCode } from 'storybook/preview-api';
+import { emitTransformCode, useEffect, useRef } from 'storybook/preview-api';
 
 import type { ReactRenderer } from '../types';
 import { isForwardRef, isMemo } from './lib';
@@ -236,43 +236,31 @@ export const jsxDecorator = (
   storyFn: PartialStoryFn<ReactRenderer>,
   context: StoryContext<ReactRenderer>
 ) => {
-  const channel = addons.getChannel();
-  const skip = skipJsxRender(context);
-  const [jsx, setJsx] = useState<undefined | string>(undefined);
-
-  const transformedCode = useTransformCode(jsx, context);
+  const jsx = useRef<undefined | string>(undefined);
+  const story = storyFn();
 
   useEffect(() => {
-    if (!skip) {
-      const { id, unmappedArgs } = context;
-      channel.emit(SNIPPET_RENDERED, {
-        id,
-        source: transformedCode,
-        args: unmappedArgs,
-      });
+    const skip = skipJsxRender(context);
+
+    if (skip) {
+      return;
     }
-  }, [transformedCode, channel, context, skip]);
 
-  const story = storyFn();
-  // We only need to render JSX if the source block is actually going to
-  // consume it. Otherwise it's just slowing us down.
-  if (skip) {
-    return story;
-  }
+    const options = {
+      ...defaultOpts,
+      ...(context?.parameters.jsx || {}),
+    } as Required<JSXOptions>;
 
-  const options = {
-    ...defaultOpts,
-    ...(context?.parameters.jsx || {}),
-  } as Required<JSXOptions>;
+    const storyJsx = context.originalStoryFn(context.args, context);
 
-  const storyJsx = context.originalStoryFn(context.args, context);
+    const sourceJsx = mdxToJsx(storyJsx);
 
-  const sourceJsx = mdxToJsx(storyJsx);
-
-  const rendered = renderJsx(sourceJsx, options);
-  if (rendered && jsx !== rendered) {
-    setJsx(rendered);
-  }
+    const rendered = renderJsx(sourceJsx, options);
+    if (rendered && jsx.current !== rendered) {
+      emitTransformCode(rendered, context);
+      jsx.current = rendered;
+    }
+  });
 
   return story;
 };

@@ -1,10 +1,10 @@
 /** @vitest-environment happy-dom */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { SNIPPET_RENDERED, SourceType } from 'storybook/internal/docs-tools';
+import { SourceType } from 'storybook/internal/docs-tools';
 
 import { render } from 'lit';
-import { addons, useState } from 'storybook/preview-api';
+import { addons, emitTransformCode, useRef } from 'storybook/preview-api';
 
 import { sourceDecorator } from './sourceDecorator';
 
@@ -13,8 +13,8 @@ vi.mock('storybook/preview-api', () => ({
     getChannel: vi.fn(),
   },
   useEffect: vi.fn((cb) => cb()),
-  useState: vi.fn(),
-  useTransformCode: vi.fn((code) => code),
+  useRef: vi.fn(),
+  emitTransformCode: vi.fn((code) => code),
 }));
 
 vi.mock('lit', () => ({
@@ -39,11 +39,9 @@ describe('sourceDecorator', () => {
     originalStoryFn: vi.fn(),
   };
 
-  const mockSetSource = vi.fn();
-
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(useState).mockReturnValue([undefined, mockSetSource]);
+    vi.mocked(useRef).mockReturnValue({ current: undefined });
     vi.mocked(addons.getChannel).mockReturnValue(mockChannel as any);
   });
 
@@ -97,7 +95,10 @@ describe('sourceDecorator', () => {
     sourceDecorator(storyFn, mockContext as any);
 
     expect(render).toHaveBeenCalled();
-    expect(mockSetSource).toHaveBeenCalledWith(expect.stringContaining('fragment content'));
+    expect(emitTransformCode).toHaveBeenCalledWith(
+      '<test-element>fragment content</test-element>',
+      mockContext
+    );
   });
 
   it('should force render when type is DYNAMIC', () => {
@@ -123,6 +124,9 @@ describe('sourceDecorator', () => {
     sourceDecorator(storyFn, contextWithDynamic as any);
 
     expect(render).toHaveBeenCalled();
-    expect(mockSetSource).toHaveBeenCalledWith(expect.stringContaining('dynamic content'));
+    expect(emitTransformCode).toHaveBeenCalledWith(
+      '<test-element>dynamic content</test-element>',
+      contextWithDynamic
+    );
   });
 });

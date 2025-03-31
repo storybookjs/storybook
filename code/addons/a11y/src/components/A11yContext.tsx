@@ -7,8 +7,6 @@ import {
   type StoryFinishedPayload,
 } from 'storybook/internal/core-events';
 
-import { HIGHLIGHT, RESET_HIGHLIGHT, SCROLL_INTO_VIEW } from '@storybook/addon-highlight';
-
 import type { AxeResults, Result } from 'axe-core';
 import {
   experimental_getStatusStore,
@@ -23,6 +21,11 @@ import {
 import type { Report } from 'storybook/preview-api';
 import { convert, themes } from 'storybook/theming';
 
+import {
+  HIGHLIGHT,
+  RESET_HIGHLIGHT,
+  SCROLL_INTO_VIEW,
+} from '../../../../core/src/highlight/constants';
 import {
   ADDON_ID,
   EVENTS,

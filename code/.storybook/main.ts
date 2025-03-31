@@ -32,6 +32,10 @@ const config = defineMain({
       titlePrefix: 'components',
     },
     {
+      directory: '../core/src/highlight',
+      titlePrefix: 'highlight',
+    },
+    {
       directory: '../lib/blocks/src',
       titlePrefix: 'blocks',
     },
@@ -42,14 +46,6 @@ const config = defineMain({
     {
       directory: '../addons/a11y/template/stories',
       titlePrefix: 'addons/accessibility',
-    },
-    {
-      directory: '../addons/highlight/src',
-      titlePrefix: 'addons/highlight',
-    },
-    {
-      directory: '../addons/backgrounds/template/stories',
-      titlePrefix: 'addons/backgrounds',
     },
     {
       directory: '../addons/docs/template/stories',
@@ -79,7 +75,6 @@ const config = defineMain({
   addons: [
     '@storybook/addon-themes',
     '@storybook/addon-docs',
-    '@storybook/addon-essentials',
     '@storybook/addon-storysource',
     '@storybook/addon-designs',
     '@storybook/addon-test',

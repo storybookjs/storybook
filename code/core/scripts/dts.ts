@@ -27,9 +27,20 @@ async function run() {
     'storybook/test/spy',
     'storybook/test/preview',
 
+    'storybook/measure',
+    'storybook/measure/preview',
+
+    'storybook/highlight',
+    'storybook/highlight/preview',
+
+    'storybook/outline',
+    'storybook/outline/preview',
+
+    'storybook/backgrounds',
+    'storybook/backgrounds/preview',
+
     'storybook/actions',
     'storybook/actions/preview',
-    'storybook/actions/manager',
     'storybook/actions/decorator',
 
     'storybook/viewport',
@@ -41,7 +52,6 @@ async function run() {
     'storybook/internal/common',
     'storybook/internal/component-testing',
     'storybook/internal/component-testing/preview',
-    'storybook/internal/component-testing/manager',
     'storybook/internal/components',
     'storybook/internal/core-events',
     'storybook/internal/core-server',

@@ -38,7 +38,7 @@ const getDotStorybookReferences = async () => {
 export const rnstorybookConfig: Fix<Options> = {
   id: 'rnstorybook-config',
 
-  versionRange: ['<9.0.0', '>=9.0.0'],
+  versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
 
   async check({ packageManager, mainConfigPath }) {
     const allDependencies = await packageManager.getAllDependencies();

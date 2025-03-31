@@ -127,7 +127,7 @@ describe('prompt', () => {
 
   We will automatically rename the following packages:
   - @storybook/core-common -> storybook/internal/common
-  - @storybook/experimental-nextjs-vite -> storybook/nextjs-vite
+  - @storybook/experimental-nextjs-vite -> @storybook/nextjs-vite
 
   These packages have been renamed or consolidated into the main storybook package and should be removed.
   The main storybook package will be added to devDependencies if not already present.

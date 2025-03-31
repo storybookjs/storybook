@@ -9,7 +9,6 @@ export const frameworkToRenderer: Record<
   angular: 'angular',
   ember: 'ember',
   'html-vite': 'html',
-  'html-webpack5': 'html',
   nextjs: 'react',
   'nextjs-vite': 'react',
   'preact-vite': 'preact',
@@ -22,10 +21,8 @@ export const frameworkToRenderer: Record<
   'svelte-webpack5': 'svelte',
   sveltekit: 'svelte',
   'vue3-vite': 'vue3',
-  'vue3-webpack5': 'vue3',
   nuxt: 'vue3',
   'web-components-vite': 'web-components',
-  'web-components-webpack5': 'web-components',
   'react-rsbuild': 'react',
   'vue3-rsbuild': 'vue3',
   // renderers

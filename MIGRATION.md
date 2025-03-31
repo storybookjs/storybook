@@ -28,8 +28,8 @@
   - [Dropped support for Vite 4](#dropped-support-for-vite-4)
   - [Framework-specific changes](#framework-specific-changes)
     - [Angular = Require v18 and up](#angular--require-v18-and-up)
+    - [Dropped webpack5 Builder Support in Favor of Vite](#dropped-webpack5-builder-support-in-favor-of-vite)
     - [Next.js = Require v14 and up](#nextjs--require-v14-and-up)
-    - [Preact = Dropped webpack5 builder support](#preact--dropped-webpack5-builder-support)
     - [Next.js = Vite builder stabilized](#nextjs--vite-builder-stabilized)
 - [From version 8.5.x to 8.6.x](#from-version-85x-to-86x)
   - [Angular: Support experimental zoneless support](#angular-support-experimental-zoneless-support)
@@ -816,34 +816,71 @@ Key changes:
 - Updated TypeScript requirement to `^4.9.0 || ^5.0.0`
 - Updated Zone.js requirement to `^0.14.0 || ^0.15.0`
 
-#### Next.js = Require v14 and up
+#### Dropped webpack5 Builder Support in Favor of Vite
 
-Storybook has dropped support for Next.js versions below 14. The minimum supported version is now Next.js 14.
+Removed webpack5 builder support for Preact, Vue3, and Web Components frameworks in favor of Vite builder. This change streamlines our builder support and improves performance across these frameworks.
 
-If you're using an older version of Next.js, you'll need to upgrade to Next.js 14 or newer to use the latest version of Storybook.
+Removed Packages
+- `@storybook/preact-webpack5`
+- `@storybook/preset-preact-webpack5`
+- `@storybook/vue3-webpack5`
+- `@storybook/preset-vue3-webpack`
+- `@storybook/web-components-webpack5`
+- `@storybook/html-webpack5`
+- `@storybook/preset-html-webpack`
 
-For help upgrading your Next.js application, see the [Next.js upgrade guide](https://nextjs.org/docs/app/building-your-application/upgrading).
-
-#### Preact = Dropped webpack5 builder support
-
-The packages `@storybook/preact-webpack5` and `@storybook/preset-preact-webpack5` have been removed. For Preact projects, please use the Vite builder instead:
+**For Preact Projects**
 
 ```bash
 npm remove @storybook/preact-webpack5 @storybook/preset-preact-webpack
 npm install @storybook/preact-vite --save-dev
 ```
 
-Then update your `.storybook/main.js|ts`:
+**For Vue3 Projects**
 
-```js
+```bash
+npm remove @storybook/vue3-webpack5 @storybook/preset-vue3-webpack
+npm install @storybook/vue3-vite --save-dev
+```
+
+**For Web Components Projects**
+
+```bash
+npm remove @storybook/web-components-webpack5
+npm install @storybook/web-components-vite --save-dev
+```
+
+**For HTML Projects**
+
+```bash
+npm remove @storybook/html-webpack5 @storybook/preset-html-webpack
+npm install @storybook/html-vite --save-dev
+```
+
+**Update .storybook/main.js|ts**
+
+For all affected frameworks, update your configuration to use the Vite builder:
+
+
+```tsx
 export default {
   framework: {
-    name: '@storybook/preact-vite',
+    name: '@storybook/[framework]-vite', // replace [framework] with preact, vue3, or web-components
     options: {},
   },
   // ... other configurations
 };
 ```
+
+This change consolidates our builder support around Vite, which offers better performance and a more streamlined development experience. The webpack5 builders for these frameworks have been deprecated in favor of the more modern Vite-based solution.
+
+#### Next.js = Require v14 and up
+
+Storybook has dropped support for Next.js versions below 14.1. The minimum supported version is now Next.js 14.1.
+
+If you're using an older version of Next.js, you'll need to upgrade to Next.js 14.1 or newer to use the latest version of Storybook.
+
+For help upgrading your Next.js application, see the [Next.js upgrade guide](https://nextjs.org/docs/app/building-your-application/upgrading).
 
 #### Next.js = Vite builder stabilized
 

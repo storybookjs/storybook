@@ -3,9 +3,8 @@ import React, { useEffect, useLayoutEffect, useState } from 'react';
 import { Match } from 'storybook/internal/router';
 import type { API_Layout, API_ViewMode } from 'storybook/internal/types';
 
+import { type API, useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
-
-import { type API, useStorybookApi } from '@storybook/core/manager-api';
 
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
 import { Notifications } from '../../container/Notifications';

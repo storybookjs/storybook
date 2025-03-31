@@ -5,7 +5,6 @@ export const supportedFrameworks = [
   'angular',
   'ember',
   'html-vite',
-  'html-webpack5',
   'nextjs',
   'nextjs-vite',
   'nuxt',
@@ -29,7 +28,6 @@ export const supportedFrameworks = [
 
 export const supportedFrameworksPackages = {
   'html-vite': '@storybook/html-vite',
-  'html-webpack5': '@storybook/html-webpack5',
   'preact-vite': '@storybook/preact-vite',
   'react-native-web-vite': '@storybook/react-native-web-vite',
   'react-rsbuild': 'storybook-react-rsbuild',
@@ -56,7 +54,6 @@ export const supportedFrameworksPackages = {
 
 export const supportedFrameworksNames = {
   'html-vite': 'HTML with Vite',
-  'html-webpack5': 'HTML with Webpack 5',
   'preact-vite': 'Preact with Vite',
   'react-native-web-vite': 'React Native Web with Vite',
   'react-rsbuild': 'React with Rsbuild',

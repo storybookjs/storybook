@@ -149,7 +149,6 @@ export const frameworkToDefaultBuilder: Record<
   angular: CoreBuilder.Webpack5,
   ember: CoreBuilder.Webpack5,
   'html-vite': CoreBuilder.Vite,
-  'html-webpack5': CoreBuilder.Webpack5,
   nextjs: CoreBuilder.Webpack5,
   nuxt: CoreBuilder.Vite,
   'nextjs-vite': CoreBuilder.Vite,

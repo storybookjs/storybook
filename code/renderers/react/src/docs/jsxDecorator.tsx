@@ -239,19 +239,19 @@ export const jsxDecorator = (
   const jsx = useRef<undefined | string>(undefined);
   const story = storyFn();
 
-  useEffect(() => {
-    const skip = skipJsxRender(context);
+  const skip = skipJsxRender(context);
 
+  const options = {
+    ...defaultOpts,
+    ...(context?.parameters.jsx || {}),
+  } as Required<JSXOptions>;
+
+  const storyJsx = context.originalStoryFn(context.args, context);
+
+  useEffect(() => {
     if (skip) {
       return;
     }
-
-    const options = {
-      ...defaultOpts,
-      ...(context?.parameters.jsx || {}),
-    } as Required<JSXOptions>;
-
-    const storyJsx = context.originalStoryFn(context.args, context);
 
     const sourceJsx = mdxToJsx(storyJsx);
 

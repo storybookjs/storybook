@@ -28,6 +28,7 @@ export const sourceDecorator = (
   context: StoryContext
 ) => {
   const story = storyFn();
+  const source = useRef<undefined | string>(undefined);
 
   useEffect(() => {
     if (skipSourceRender(context)) {
@@ -39,9 +40,6 @@ export const sourceDecorator = (
     const template: string = parameters.docs?.source?.excludeDecorators
       ? (context.originalStoryFn as ArgsStoryFn<AngularRenderer>)(context.args, context).template
       : story.template;
-
-    let toEmit: string;
-    const source = useRef<undefined | string>(undefined);
 
     if (component && !userDefinedTemplate) {
       const sourceFromComponent = computesTemplateSourceFromComponent(component, props, argTypes);
@@ -55,7 +53,8 @@ export const sourceDecorator = (
         source.current = newSource;
       }
     } else if (template && template !== source.current) {
-      toEmit = template;
+      emitTransformCode(template, context);
+      source.current = template;
     }
   });
 

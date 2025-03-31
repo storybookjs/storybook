@@ -18,7 +18,10 @@ export type * from '@vitest/spy';
 export { isMockFunction, mocks };
 
 type Listener = (mock: MockInstance, args: unknown[]) => void;
-const listeners = new Set<Listener>();
+// eslint-disable-next-line no-underscore-dangle
+const listeners = globalThis.__STORYBOOK_TEST_SPY_LISTENERS__ || new Set<Listener>();
+// eslint-disable-next-line no-underscore-dangle
+globalThis.__STORYBOOK_TEST_SPY_LISTENERS__ = listeners;
 
 export function onMockCall(callback: Listener): () => void {
   listeners.add(callback);

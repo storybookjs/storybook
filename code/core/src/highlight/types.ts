@@ -26,7 +26,7 @@ export interface HighlightInfo {
   /** Keyframes required for animations */
   keyframes?: string;
   /** Menu items to show when the highlight is selected, or true to show the element's HTML */
-  menuListItems?: {
+  menuItems?: {
     id: string;
     title: string;
     description?: string;
@@ -56,7 +56,7 @@ export type Highlight = {
   styles: Record<string, string>;
   selectable: boolean;
   selectedStyles?: Record<string, string>;
-  menuListItems?: HighlightInfo['menuListItems'];
+  menuItems?: HighlightInfo['menuItems'];
 };
 
 export type Box = {
@@ -65,7 +65,7 @@ export type Box = {
   styles: Highlight['styles'];
   selectable?: Highlight['selectable'];
   selectedStyles?: Highlight['selectedStyles'];
-  menuListItems?: Highlight['menuListItems'];
+  menuItems?: Highlight['menuItems'];
   top: number;
   left: number;
   width: number;

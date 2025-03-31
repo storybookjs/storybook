@@ -230,10 +230,10 @@ export const useHighlights = ({
           'ul',
           { class: 'element-list' },
           elementList.map((target) => {
-            const menuListItems = target.menuListItems?.filter(
+            const menuItems = target.menuItems?.filter(
               (item) => !item.selectors || item.selectors.some((s) => target.selectors.includes(s))
             );
-            const selectable = elementList.length > 1 && !!menuListItems?.length;
+            const selectable = elementList.length > 1 && !!menuItems?.length;
             const props = selectable
               ? {
                   class: 'selectable',
@@ -258,15 +258,15 @@ export const useHighlights = ({
 
     if (selected.get() || targets.get().length === 1) {
       const target = selected.get() || targets.get()[0];
-      const menuListItems = target.menuListItems?.filter(
+      const menuItems = target.menuItems?.filter(
         (item) => !item.selectors || item.selectors.some((s) => target.selectors.includes(s))
       );
-      if (menuListItems?.length) {
+      if (menuItems?.length) {
         menu.appendChild(
           createElement(
             'ul',
             { class: 'menu-list' },
-            menuListItems.map((item) => {
+            menuItems.map((item) => {
               const { title, description, clickEvent } = item;
               const onClick = clickEvent && (() => channel.emit(clickEvent, item, target));
               return createElement('li', {}, [

@@ -96,7 +96,7 @@ export const mapElements = (highlights: HighlightInfo[]): Map<HTMLElement, Highl
   const root = document.getElementById('storybook-root');
   const map = new Map();
   for (const highlight of highlights) {
-    const { priority = 0, selectable = !!highlight.menuListItems } = highlight;
+    const { priority = 0, selectable = !!highlight.menuItems } = highlight;
     for (const selector of highlight.selectors) {
       for (const element of root?.querySelectorAll(selector) || []) {
         const existing = map.get(element);
@@ -116,9 +116,9 @@ export const mapElements = (highlights: HighlightInfo[]): Map<HTMLElement, Highl
 
 export const mapBoxes = (elements: Map<HTMLElement, Highlight>): Box[] =>
   Array.from(elements.entries())
-    .map<Box>(([element, { selectors, styles, selectedStyles, selectable, menuListItems }]) => {
+    .map<Box>(([element, { selectors, styles, selectedStyles, selectable, menuItems }]) => {
       const { top, left, width, height } = element.getBoundingClientRect();
       const box = { top: top + window.scrollY, left: left + window.scrollX, width, height };
-      return { element, selectors, styles, selectedStyles, selectable, menuListItems, ...box };
+      return { element, selectors, styles, selectedStyles, selectable, menuItems, ...box };
     })
     .sort((a, b) => b.width * b.height - a.width * a.height);

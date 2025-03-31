@@ -142,7 +142,7 @@ const highlight = (
     selectedStyles?: Record<string, string>;
     keyframes?: string;
     selectable?: boolean;
-    menuListItems?: {
+    menuItems?: {
       id: string;
       title: string;
       description?: string;
@@ -162,7 +162,7 @@ const highlight = (
       background: 'transparent',
       border: '2px solid black',
     },
-    selectable: options?.selectable ?? !!options?.menuListItems?.length,
+    selectable: options?.selectable ?? !!options?.menuItems?.length,
     ...options,
   });
 
@@ -247,7 +247,7 @@ export const Menu = meta.story({
   },
   play: async () => {
     highlight(['div'], {
-      menuListItems: [
+      menuItems: [
         {
           id: '1',
           title: 'Insufficient color contrast',

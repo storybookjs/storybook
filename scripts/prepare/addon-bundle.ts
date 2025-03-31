@@ -130,6 +130,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
   };
 
   const commonExternals = [
+    '@storybook/csf',
     name,
     ...extraExternals,
     ...Object.keys(dependencies || {}),

@@ -1,5 +1,5 @@
 import { SNIPPET_RENDERED, SourceType } from 'storybook/internal/docs-tools';
-import { addons, useEffect, useState, useTransformCode } from 'storybook/internal/preview-api';
+import { addons, useEffect, useState, useTransformCode } from 'storybook/preview-api';
 import { ArgsStoryFn, PartialStoryFn } from 'storybook/internal/types';
 
 import { computesTemplateSourceFromComponent } from '../../renderer';

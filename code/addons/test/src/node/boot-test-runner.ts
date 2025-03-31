@@ -2,20 +2,22 @@ import { type ChildProcess } from 'node:child_process';
 
 import type { Channel } from 'storybook/internal/channels';
 import {
-  TESTING_MODULE_CANCEL_TEST_RUN_REQUEST,
-  TESTING_MODULE_CONFIG_CHANGE,
-  TESTING_MODULE_CRASH_REPORT,
-  TESTING_MODULE_RUN_REQUEST,
-  TESTING_MODULE_WATCH_MODE_REQUEST,
-  type TestingModuleCrashReportPayload,
-} from 'storybook/internal/core-events';
+  internal_universalStatusStore,
+  internal_universalTestProviderStore,
+} from 'storybook/internal/core-server';
+import type { EventInfo } from 'storybook/internal/types';
 
 // eslint-disable-next-line depend/ban-dependencies
 import { execaNode } from 'execa';
 import { join } from 'pathe';
 
-import { TEST_PROVIDER_ID } from '../constants';
+import {
+  STATUS_STORE_CHANNEL_EVENT_NAME,
+  STORE_CHANNEL_EVENT_NAME,
+  TEST_PROVIDER_STORE_CHANNEL_EVENT_NAME,
+} from '../constants';
 import { log } from '../logger';
+import type { Store } from '../types';
 
 const MAX_START_TIME = 30000;
 
@@ -28,36 +30,31 @@ const eventQueue: { type: string; args?: any[] }[] = [];
 
 let child: null | ChildProcess;
 let ready = false;
+let unsubscribeStore: () => void;
+let unsubscribeStatusStore: () => void;
+let unsubscribeTestProviderStore: () => void;
 
-const bootTestRunner = async (channel: Channel) => {
+const forwardUniversalStoreEvent =
+  (storeEventName: string) => (event: any, eventInfo: EventInfo) => {
+    child?.send({
+      type: storeEventName,
+      args: [{ event, eventInfo }],
+      from: 'server',
+    });
+  };
+
+const bootTestRunner = async (channel: Channel, store: Store) => {
   let stderr: string[] = [];
 
-  function reportFatalError(e: any) {
-    channel.emit(TESTING_MODULE_CRASH_REPORT, {
-      providerId: TEST_PROVIDER_ID,
-      error: {
-        message: String(e),
-      },
-    } as TestingModuleCrashReportPayload);
-  }
-
-  const forwardRun = (...args: any[]) =>
-    child?.send({ args, from: 'server', type: TESTING_MODULE_RUN_REQUEST });
-  const forwardWatchMode = (...args: any[]) =>
-    child?.send({ args, from: 'server', type: TESTING_MODULE_WATCH_MODE_REQUEST });
-  const forwardCancel = (...args: any[]) =>
-    child?.send({ args, from: 'server', type: TESTING_MODULE_CANCEL_TEST_RUN_REQUEST });
-  const forwardConfigChange = (...args: any[]) =>
-    child?.send({ args, from: 'server', type: TESTING_MODULE_CONFIG_CHANGE });
-
   const killChild = () => {
-    channel.off(TESTING_MODULE_RUN_REQUEST, forwardRun);
-    channel.off(TESTING_MODULE_WATCH_MODE_REQUEST, forwardWatchMode);
-    channel.off(TESTING_MODULE_CANCEL_TEST_RUN_REQUEST, forwardCancel);
-    channel.off(TESTING_MODULE_CONFIG_CHANGE, forwardConfigChange);
+    unsubscribeStore?.();
+    unsubscribeStatusStore?.();
+    unsubscribeTestProviderStore?.();
     child?.kill();
     child = null;
   };
+
+  store.subscribe('FATAL_ERROR', killChild);
 
   const exit = (code = 0) => {
     killChild();
@@ -71,7 +68,15 @@ const bootTestRunner = async (channel: Channel) => {
 
   const startChildProcess = () =>
     new Promise<void>((resolve, reject) => {
-      child = execaNode(vitestModulePath);
+      child = execaNode(vitestModulePath, {
+        env: {
+          VITEST: 'true',
+          TEST: 'true',
+          VITEST_CHILD_PROCESS: 'true',
+          NODE_ENV: process.env.NODE_ENV ?? 'test',
+        },
+        extendEnv: true,
+      });
       stderr = [];
 
       child.stdout?.on('data', log);
@@ -83,35 +88,30 @@ const bootTestRunner = async (channel: Channel) => {
         }
       });
 
-      child.on('message', (result: any) => {
-        if (result.type === 'ready') {
+      unsubscribeStore = store.subscribe(forwardUniversalStoreEvent(STORE_CHANNEL_EVENT_NAME));
+      unsubscribeStatusStore = internal_universalStatusStore.subscribe(
+        forwardUniversalStoreEvent(STATUS_STORE_CHANNEL_EVENT_NAME)
+      );
+      unsubscribeTestProviderStore = internal_universalTestProviderStore.subscribe(
+        forwardUniversalStoreEvent(TEST_PROVIDER_STORE_CHANNEL_EVENT_NAME)
+      );
+
+      child.on('message', (event: any) => {
+        if (event.type === 'ready') {
           // Resend events that triggered (during) the boot sequence, now that Vitest is ready
           while (eventQueue.length) {
             const { type, args } = eventQueue.shift()!;
             child?.send({ type, args, from: 'server' });
           }
-
-          // Forward all events from the channel to the child process
-          channel.on(TESTING_MODULE_RUN_REQUEST, forwardRun);
-          channel.on(TESTING_MODULE_WATCH_MODE_REQUEST, forwardWatchMode);
-          channel.on(TESTING_MODULE_CANCEL_TEST_RUN_REQUEST, forwardCancel);
-          channel.on(TESTING_MODULE_CONFIG_CHANGE, forwardConfigChange);
-
           resolve();
-        } else if (result.type === 'error') {
-          killChild();
-          log(result.message);
-          log(result.error);
-          // eslint-disable-next-line local-rules/no-uncategorized-errors
-          const error = new Error(`${result.message}\n${result.error}`);
-          // Reject if the child process reports an error before it's ready
-          if (!ready) {
-            reject(error);
-          } else {
-            reportFatalError(error);
-          }
+        } else if (event.type === 'uncaught-error') {
+          store.send({
+            type: 'FATAL_ERROR',
+            payload: event.payload,
+          });
+          reject();
         } else {
-          channel.emit(result.type, ...result.args);
+          channel.emit(event.type, ...event.args);
         }
       });
     });
@@ -127,20 +127,36 @@ const bootTestRunner = async (channel: Channel) => {
     )
   );
 
-  await Promise.race([startChildProcess(), timeout]).catch((e) => {
-    reportFatalError(e);
+  await Promise.race([startChildProcess(), timeout]).catch((error) => {
+    store.send({
+      type: 'FATAL_ERROR',
+      payload: {
+        message: 'Failed to start test runner process',
+        error: {
+          message: error.message,
+          name: error.name,
+          stack: error.stack,
+          cause: error.cause,
+        },
+      },
+    });
     eventQueue.length = 0;
-    throw e;
+    throw error;
   });
 };
 
-export const runTestRunner = async (channel: Channel, initEvent?: string, initArgs?: any[]) => {
+export const runTestRunner = async (
+  channel: Channel,
+  store: Store,
+  initEvent?: string,
+  initArgs?: any[]
+) => {
   if (!ready && initEvent) {
     eventQueue.push({ type: initEvent, args: initArgs });
   }
   if (!child) {
     ready = false;
-    await bootTestRunner(channel);
+    await bootTestRunner(channel, store);
     ready = true;
   }
 };

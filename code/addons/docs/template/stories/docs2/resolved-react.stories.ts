@@ -2,7 +2,7 @@ import * as ReactExport from 'react';
 import * as ReactDom from 'react-dom';
 import * as ReactDomServer from 'react-dom/server';
 
-import { expect, within } from '@storybook/test';
+import { expect, within } from 'storybook/test';
 
 /**
  * This component is used to display the resolved version of React and its related packages. As long
@@ -62,15 +62,15 @@ export const Story = {
     const actualReactDomVersion = (await canvas.findByTestId('react-dom')).textContent;
     const actualReactDomServerVersion = (await canvas.findByTestId('react-dom-server')).textContent;
 
-    step('Expect React packages to all resolve to the same version', () => {
+    step('Expect React packages to all resolve to the same version', async () => {
       // react-dom has a bug in its production build, reporting version 18.2.0-next-9e3b772b8-20220608 even though version 18.2.0 is installed.
-      expect(actualReactDomVersion!.startsWith(actualReactVersion!)).toBeTruthy();
+      await expect(actualReactDomVersion!.startsWith(actualReactVersion!)).toBeTruthy();
 
       if (parameters.renderer === 'preact') {
         // the preact/compat alias doesn't have a version export in react-dom/server
         return;
       }
-      expect(actualReactDomServerVersion).toBe(actualReactVersion);
+      await expect(actualReactDomServerVersion).toBe(actualReactVersion);
     });
   },
 };

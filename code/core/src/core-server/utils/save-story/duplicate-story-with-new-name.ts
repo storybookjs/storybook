@@ -1,7 +1,6 @@
 /* eslint-disable no-underscore-dangle */
-import { types as t, traverse } from '@storybook/core/babel';
-
-import type { CsfFile } from '@storybook/core/csf-tools';
+import { types as t, traverse } from 'storybook/internal/babel';
+import type { CsfFile } from 'storybook/internal/csf-tools';
 
 import { SaveStoryError } from './utils';
 
@@ -37,8 +36,17 @@ export const duplicateStoryWithNewName = (csfFile: In, storyName: string, newSto
     noScope: true,
   });
 
+  const isCsf4Story =
+    t.isCallExpression(cloned.init) &&
+    t.isMemberExpression(cloned.init.callee) &&
+    t.isIdentifier(cloned.init.callee.property) &&
+    cloned.init.callee.property.name === 'story';
+
   // detect CSF2 and throw
-  if (t.isArrowFunctionExpression(cloned.init) || t.isCallExpression(cloned.init)) {
+  if (
+    !isCsf4Story &&
+    (t.isArrowFunctionExpression(cloned.init) || t.isCallExpression(cloned.init))
+  ) {
     throw new SaveStoryError(`Creating a new story based on a CSF2 story is not supported`);
   }
 

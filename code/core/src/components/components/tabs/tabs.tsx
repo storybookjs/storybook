@@ -1,9 +1,10 @@
 import type { FC, PropsWithChildren, ReactElement, ReactNode, SyntheticEvent } from 'react';
 import React, { Component, memo, useMemo } from 'react';
 
-import { styled } from '@storybook/core/theming';
-import type { Addon_RenderOptions } from '@storybook/core/types';
-import { sanitize } from '@storybook/csf';
+import { sanitize } from 'storybook/internal/csf';
+import type { Addon_RenderOptions } from 'storybook/internal/types';
+
+import { styled } from 'storybook/theming';
 
 import { FlexBar } from '../bar/bar';
 import { TabButton } from '../bar/button';

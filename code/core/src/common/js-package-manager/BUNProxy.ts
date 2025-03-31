@@ -2,8 +2,8 @@ import { existsSync, readFileSync } from 'node:fs';
 import { platform } from 'node:os';
 import { join } from 'node:path';
 
-import { logger } from '@storybook/core/node-logger';
-import { FindPackageVersionsError } from '@storybook/core/server-errors';
+import { logger } from 'storybook/internal/node-logger';
+import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 
 import { findUp } from 'find-up';
 import sort from 'semver/functions/sort.js';
@@ -194,7 +194,11 @@ export class BUNProxy extends JsPackageManager {
     return url === 'undefined' ? undefined : url;
   }
 
-  protected async runAddDeps(dependencies: string[], installAsDevDependencies: boolean) {
+  protected async runAddDeps(
+    dependencies: string[],
+    installAsDevDependencies: boolean,
+    writeOutputToFile = true
+  ) {
     const { logStream, readLogFile, moveLogFile, removeLogFile } = await createLogStream();
     let args = [...dependencies];
 
@@ -206,15 +210,15 @@ export class BUNProxy extends JsPackageManager {
       await this.executeCommand({
         command: 'bun',
         args: ['add', ...args, ...this.getInstallArgs()],
-        stdio: process.env.CI ? 'inherit' : ['ignore', logStream, logStream],
+        stdio: process.env.CI || !writeOutputToFile ? 'inherit' : ['ignore', logStream, logStream],
       });
     } catch (err) {
+      if (!writeOutputToFile) {
+        throw err;
+      }
       const stdout = await readLogFile();
-
       const errorMessage = this.parseErrorFromLogs(stdout);
-
       await moveLogFile();
-
       throw new Error(
         dedent`${errorMessage}
         

@@ -1,9 +1,9 @@
 import type { FC } from 'react';
 import React, { useMemo, useState } from 'react';
 
-import { Addon_TypesEnum } from '@storybook/core/types';
+import { Addon_TypesEnum } from 'storybook/internal/types';
 
-import { useChannel, useStorybookApi, useStorybookState } from '@storybook/core/manager-api';
+import { useChannel, useStorybookApi, useStorybookState } from 'storybook/manager-api';
 
 import { STORY_PREPARED } from '../../core-events';
 import { AddonPanel } from '../components/panel/Panel';
@@ -47,7 +47,6 @@ const Panel: FC<any> = (props) => {
         return;
       }
       if (p.disabled === true || (typeof p.disabled === 'function' && p.disabled(parameters))) {
-        console.log('return empty');
         return;
       }
       filteredPanels[id] = p;

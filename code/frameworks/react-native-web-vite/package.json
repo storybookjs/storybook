@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react-native-web-vite",
-  "version": "8.6.0-alpha.4",
+  "version": "9.0.0-alpha.12",
   "description": "Develop react-native components an isolated web environment with hot reloading.",
   "keywords": [
     "storybook"
@@ -34,6 +34,12 @@
       "types": "./dist/vite-plugin.d.ts",
       "import": "./dist/vite-plugin.mjs",
       "require": "./dist/vite-plugin.js"
+    },
+    "./node": {
+      "types": "./dist/node/index.d.ts",
+      "node": "./dist/node/index.js",
+      "import": "./dist/node/index.mjs",
+      "require": "./dist/node/index.js"
     },
     "./package.json": "./package.json"
   },
@@ -78,7 +84,7 @@
     "vite": "^5.0.0 || ^6.0.0"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   },
   "publishConfig": {
     "access": "public"
@@ -87,7 +93,8 @@
     "entries": [
       "./src/index.ts",
       "./src/preset.ts",
-      "./src/vite-plugin.ts"
+      "./src/vite-plugin.ts",
+      "./src/node/index.ts"
     ],
     "platform": "node"
   },

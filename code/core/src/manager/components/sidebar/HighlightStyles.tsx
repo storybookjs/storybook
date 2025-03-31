@@ -1,9 +1,8 @@
 import type { FC } from 'react';
 import React from 'react';
 
-import { Global } from '@storybook/core/theming';
-
 import { transparentize } from 'polished';
+import { Global } from 'storybook/theming';
 
 import type { Highlight } from './types';
 

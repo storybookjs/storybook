@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import { simulateDOMContentLoaded, simulatePageLoad } from 'storybook/internal/preview-api';
 import type { ArgsStoryFn, RenderContext } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
@@ -7,6 +6,7 @@ import { global } from '@storybook/global';
 import { render as litRender } from 'lit';
 // Keep `.js` extension to avoid issue with Webpack (related to export map?)
 import { isTemplateResult } from 'lit/directive-helpers.js';
+import { simulateDOMContentLoaded, simulatePageLoad } from 'storybook/preview-api';
 import { dedent } from 'ts-dedent';
 
 import type { WebComponentsRenderer } from './types';

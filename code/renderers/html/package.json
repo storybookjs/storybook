@@ -1,6 +1,6 @@
 {
   "name": "@storybook/html",
-  "version": "8.6.0-alpha.4",
+  "version": "9.0.0-alpha.12",
   "description": "Storybook HTML renderer",
   "keywords": [
     "storybook"
@@ -46,11 +46,7 @@
     "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@storybook/components": "workspace:*",
     "@storybook/global": "^5.0.0",
-    "@storybook/manager-api": "workspace:*",
-    "@storybook/preview-api": "workspace:*",
-    "@storybook/theming": "workspace:*",
     "ts-dedent": "^2.0.0"
   },
   "devDependencies": {
@@ -60,7 +56,7 @@
     "storybook": "workspace:^"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   },
   "publishConfig": {
     "access": "public"

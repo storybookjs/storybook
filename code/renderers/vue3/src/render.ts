@@ -1,7 +1,7 @@
 /* eslint-disable local-rules/no-uncategorized-errors,no-underscore-dangle */
-import type { PreviewWeb } from 'storybook/internal/preview-api';
 import type { Args, ArgsStoryFn, RenderContext, StoryContext } from 'storybook/internal/types';
 
+import type { PreviewWeb } from 'storybook/preview-api';
 import type { App } from 'vue';
 import { createApp, h, isReactive, isVNode, reactive } from 'vue';
 

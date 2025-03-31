@@ -1,9 +1,11 @@
-import type { Channel } from '@storybook/core/channels';
+import type { Channel } from 'storybook/internal/channels';
 
 import type { UniversalStore } from '.';
 
 export type EnvironmentType =
   (typeof UniversalStore.Environment)[keyof typeof UniversalStore.Environment];
+
+export type StatusType = (typeof UniversalStore.Status)[keyof typeof UniversalStore.Status];
 
 export type StateUpdater<TState> = (prevState: TState) => TState;
 export type Actor = {
@@ -67,4 +69,9 @@ export type StoreOptions<TState> = {
   leader?: boolean;
   initialState?: TState;
   debug?: boolean;
+};
+
+export type EnvironmentOverrides = {
+  channel: ChannelLike;
+  environment: EnvironmentType;
 };

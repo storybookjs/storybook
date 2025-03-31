@@ -1,160 +1,295 @@
-import type { Channel } from 'storybook/internal/channels';
-import {
-  TESTING_MODULE_CANCEL_TEST_RUN_REQUEST,
-  TESTING_MODULE_CONFIG_CHANGE,
-  TESTING_MODULE_PROGRESS_REPORT,
-  TESTING_MODULE_RUN_REQUEST,
-  TESTING_MODULE_WATCH_MODE_REQUEST,
-  type TestingModuleCancelTestRunRequestPayload,
-  type TestingModuleConfigChangePayload,
-  type TestingModuleProgressReportPayload,
-  type TestingModuleRunRequestPayload,
-  type TestingModuleWatchModeRequestPayload,
-} from 'storybook/internal/core-events';
+import type { TestResult, TestState } from 'vitest/dist/node.js';
 
-import { type Config, TEST_PROVIDER_ID } from '../constants';
+import type { experimental_UniversalStore } from 'storybook/internal/core-server';
+import type {
+  StatusStoreByTypeId,
+  StatusValue,
+  TestProviderStoreById,
+} from 'storybook/internal/types';
+
+import { throttle } from 'es-toolkit';
+import type { Report } from 'storybook/preview-api';
+
+import { STATUS_TYPE_ID_A11Y, STATUS_TYPE_ID_COMPONENT_TEST, storeOptions } from '../constants';
+import type { RunTrigger, StoreEvent, StoreState, TriggerRunEvent, VitestError } from '../types';
+import { errorToErrorLike } from '../utils';
 import { VitestManager } from './vitest-manager';
 
+export type TestManagerOptions = {
+  store: experimental_UniversalStore<StoreState, StoreEvent>;
+  componentTestStatusStore: StatusStoreByTypeId;
+  a11yStatusStore: StatusStoreByTypeId;
+  testProviderStore: TestProviderStoreById;
+  onError?: (message: string, error: Error) => void;
+  onReady?: () => void;
+};
+
+const testStateToStatusValueMap: Record<TestState | 'warning', StatusValue> = {
+  pending: 'status-value:pending',
+  passed: 'status-value:success',
+  warning: 'status-value:warning',
+  failed: 'status-value:error',
+  skipped: 'status-value:unknown',
+};
+
 export class TestManager {
-  vitestManager: VitestManager;
+  public store: TestManagerOptions['store'];
 
-  config = {
-    watchMode: false,
-    coverage: false,
-    a11y: false,
-  };
+  public vitestManager: VitestManager;
 
-  constructor(
-    private channel: Channel,
-    private options: {
-      onError?: (message: string, error: Error) => void;
-      onReady?: () => void;
-    } = {}
-  ) {
+  private componentTestStatusStore: TestManagerOptions['componentTestStatusStore'];
+
+  private a11yStatusStore: TestManagerOptions['a11yStatusStore'];
+
+  private testProviderStore: TestManagerOptions['testProviderStore'];
+
+  private onReady?: TestManagerOptions['onReady'];
+
+  private batchedTestCaseResults: {
+    storyId: string;
+    testResult: TestResult;
+    reports?: Report[];
+  }[] = [];
+
+  constructor(options: TestManagerOptions) {
+    this.store = options.store;
+    this.componentTestStatusStore = options.componentTestStatusStore;
+    this.a11yStatusStore = options.a11yStatusStore;
+    this.testProviderStore = options.testProviderStore;
+    this.onReady = options.onReady;
+
     this.vitestManager = new VitestManager(this);
 
-    this.channel.on(TESTING_MODULE_RUN_REQUEST, this.handleRunRequest.bind(this));
-    this.channel.on(TESTING_MODULE_CONFIG_CHANGE, this.handleConfigChange.bind(this));
-    this.channel.on(TESTING_MODULE_WATCH_MODE_REQUEST, this.handleWatchModeRequest.bind(this));
-    this.channel.on(TESTING_MODULE_CANCEL_TEST_RUN_REQUEST, this.handleCancelRequest.bind(this));
+    this.store.subscribe('TRIGGER_RUN', this.handleTriggerRunEvent.bind(this));
+    this.store.subscribe('CANCEL_RUN', this.handleCancelEvent.bind(this));
 
-    this.vitestManager.startVitest().then(() => options.onReady?.());
-  }
-
-  async handleConfigChange(payload: TestingModuleConfigChangePayload<Config>) {
-    if (payload.providerId !== TEST_PROVIDER_ID) {
-      return;
-    }
-
-    const previousConfig = this.config;
-
-    this.config = {
-      ...this.config,
-      ...payload.config,
-    } satisfies Config;
-
-    process.env.VITEST_STORYBOOK_CONFIG = JSON.stringify(payload.config);
-
-    if (previousConfig.coverage !== payload.config.coverage) {
-      try {
-        await this.vitestManager.restartVitest({
-          coverage: this.config.coverage,
-        });
-      } catch (e) {
-        this.reportFatalError('Failed to change coverage configuration', e);
-      }
-    }
-  }
-
-  async handleWatchModeRequest(payload: TestingModuleWatchModeRequestPayload<Config>) {
-    if (payload.providerId !== TEST_PROVIDER_ID) {
-      return;
-    }
-    this.config.watchMode = payload.watchMode;
-
-    if (payload.config) {
-      this.handleConfigChange({
-        providerId: payload.providerId,
-        config: payload.config,
+    this.store
+      .untilReady()
+      .then(() =>
+        this.vitestManager.startVitest({ coverage: this.store.getState().config.coverage })
+      )
+      .then(() => this.onReady?.())
+      .catch((e) => {
+        this.reportFatalError('Failed to start Vitest', e);
       });
-    }
+  }
 
-    if (this.config.coverage) {
-      try {
-        if (payload.watchMode) {
-          // if watch mode is toggled on and coverage is already enabled, restart vitest without coverage to automatically disable it
-          await this.vitestManager.restartVitest({ coverage: false });
-        } else {
-          // if watch mode is toggled off and coverage is already enabled, restart vitest with coverage to automatically re-enable it
-          await this.vitestManager.restartVitest({ coverage: this.config.coverage });
+  async handleTriggerRunEvent(event: TriggerRunEvent) {
+    await this.runTestsWithState({
+      storyIds: event.payload.storyIds,
+      triggeredBy: event.payload.triggeredBy,
+      callback: async () => {
+        try {
+          await this.vitestManager.vitestRestartPromise;
+          await this.vitestManager.runTests(event.payload);
+        } catch (err) {
+          this.reportFatalError('Failed to run tests', err);
+          throw err;
         }
-      } catch (e) {
-        this.reportFatalError('Failed to change watch mode while coverage was enabled', e);
-      }
-    }
+      },
+    });
   }
 
-  async handleRunRequest(payload: TestingModuleRunRequestPayload<Config>) {
+  async handleCancelEvent() {
     try {
-      if (payload.providerId !== TEST_PROVIDER_ID) {
-        return;
-      }
-
-      if (payload.config) {
-        this.handleConfigChange({
-          providerId: payload.providerId,
-          config: payload.config,
-        });
-      }
-
-      /*
-        If we're only running a subset of stories, we have to temporarily disable coverage,
-        as a coverage report for a subset of stories is not useful.
-      */
-      const temporarilyDisableCoverage =
-        this.config.coverage && !this.config.watchMode && (payload.storyIds ?? []).length > 0;
-      if (temporarilyDisableCoverage) {
-        await this.vitestManager.restartVitest({
-          coverage: false,
-        });
-      } else {
-        await this.vitestManager.vitestRestartPromise;
-      }
-
-      await this.vitestManager.runTests(payload);
-
-      if (temporarilyDisableCoverage) {
-        // Re-enable coverage if it was temporarily disabled because of a subset of stories was run
-        await this.vitestManager.restartVitest({ coverage: this.config.coverage });
-      }
-    } catch (e) {
-      this.reportFatalError('Failed to run tests', e);
-    }
-  }
-
-  async handleCancelRequest(payload: TestingModuleCancelTestRunRequestPayload) {
-    try {
-      if (payload.providerId !== TEST_PROVIDER_ID) {
-        return;
-      }
-
+      this.store.setState((s) => ({
+        ...s,
+        cancelling: true,
+      }));
       await this.vitestManager.cancelCurrentRun();
-    } catch (e) {
-      this.reportFatalError('Failed to cancel tests', e);
+    } catch (err) {
+      this.reportFatalError('Failed to cancel tests', err);
+    } finally {
+      this.store.setState((s) => ({
+        ...s,
+        cancelling: false,
+      }));
     }
   }
 
-  async sendProgressReport(payload: TestingModuleProgressReportPayload) {
-    this.channel.emit(TESTING_MODULE_PROGRESS_REPORT, payload);
+  async runTestsWithState({
+    storyIds,
+    triggeredBy,
+    callback,
+  }: {
+    storyIds?: string[];
+    triggeredBy: RunTrigger;
+    callback: () => Promise<void>;
+  }) {
+    this.componentTestStatusStore.unset(storyIds);
+    this.a11yStatusStore.unset(storyIds);
+
+    this.store.setState((s) => ({
+      ...s,
+      currentRun: {
+        ...storeOptions.initialState.currentRun,
+        triggeredBy,
+        startedAt: Date.now(),
+        storyIds: storyIds,
+        config: s.config,
+      },
+    }));
+    // set the config at the start of a test run,
+    // so that changing the config during the test run does not affect the currently running test run
+    process.env.VITEST_STORYBOOK_CONFIG = JSON.stringify(this.store.getState().config);
+
+    await this.testProviderStore.runWithState(async () => {
+      await callback();
+      this.store.send({
+        type: 'TEST_RUN_COMPLETED',
+        payload: this.store.getState().currentRun,
+      });
+      if (this.store.getState().currentRun.unhandledErrors.length > 0) {
+        throw new Error('Tests completed but there are unhandled errors');
+      }
+    });
+  }
+
+  onTestModuleCollected(collectedTestCount: number) {
+    this.store.setState((s) => ({
+      ...s,
+      currentRun: {
+        ...s.currentRun,
+        totalTestCount: (s.currentRun.totalTestCount ?? 0) + collectedTestCount,
+      },
+    }));
+  }
+
+  onTestCaseResult(result: { storyId?: string; testResult: TestResult; reports?: Report[] }) {
+    const { storyId, testResult, reports } = result;
+    if (!storyId) {
+      return;
+    }
+
+    this.batchedTestCaseResults.push({ storyId, testResult, reports });
+    this.throttledFlushTestCaseResults();
+  }
+
+  /**
+   * Throttled function to process batched test case results.
+   *
+   * This function:
+   *
+   * 1. Takes all batched test case results and clears the batch
+   * 2. Updates the store state with new test counts (component tests and a11y tests)
+   * 3. Adjusts the totalTestCount if more tests were run than initially anticipated
+   * 4. Creates status objects for component tests and updates the component test status store
+   * 5. Creates status objects for a11y tests (if any) and updates the a11y status store
+   *
+   * The throttling (500ms) is necessary as the channel would otherwise get overwhelmed with events,
+   * eventually causing the manager and dev server to lose connection.
+   */
+  throttledFlushTestCaseResults = throttle(() => {
+    const testCaseResultsToFlush = this.batchedTestCaseResults;
+    this.batchedTestCaseResults = [];
+
+    this.store.setState((s) => {
+      let { success: ctSuccess, error: ctError } = s.currentRun.componentTestCount;
+      let { success: a11ySuccess, warning: a11yWarning, error: a11yError } = s.currentRun.a11yCount;
+      testCaseResultsToFlush.forEach(({ testResult, reports }) => {
+        if (testResult.state === 'passed') {
+          ctSuccess++;
+        } else if (testResult.state === 'failed') {
+          ctError++;
+        }
+        reports
+          ?.filter((r) => r.type === 'a11y')
+          .forEach((report) => {
+            if (report.status === 'passed') {
+              a11ySuccess++;
+            } else if (report.status === 'warning') {
+              a11yWarning++;
+            } else if (report.status === 'failed') {
+              a11yError++;
+            }
+          });
+      });
+      const finishedTestCount = ctSuccess + ctError;
+
+      return {
+        ...s,
+        currentRun: {
+          ...s.currentRun,
+          componentTestCount: { success: ctSuccess, error: ctError },
+          a11yCount: { success: a11ySuccess, warning: a11yWarning, error: a11yError },
+          // in some cases successes and errors can exceed the anticipated totalTestCount
+          // e.g. when testing more tests than the stories we know about upfront
+          // in those cases, we set the totalTestCount to the sum of successes and errors
+          totalTestCount:
+            finishedTestCount > (s.currentRun.totalTestCount ?? 0)
+              ? finishedTestCount
+              : s.currentRun.totalTestCount,
+        },
+      };
+    });
+
+    const componentTestStatuses = testCaseResultsToFlush.map(({ storyId, testResult }) => ({
+      storyId,
+      typeId: STATUS_TYPE_ID_COMPONENT_TEST,
+      value: testStateToStatusValueMap[testResult.state],
+      title: 'Component tests',
+      description: testResult.errors?.map((error) => error.stack || error.message).join('\n') ?? '',
+      sidebarContextMenu: false,
+    }));
+
+    this.componentTestStatusStore.set(componentTestStatuses);
+
+    const a11yStatuses = testCaseResultsToFlush
+      .flatMap(({ storyId, reports }) =>
+        reports
+          ?.filter((r) => r.type === 'a11y')
+          .map((a11yReport) => ({
+            storyId,
+            typeId: STATUS_TYPE_ID_A11Y,
+            value: testStateToStatusValueMap[a11yReport.status],
+            title: 'Accessibility tests',
+            description: '',
+            sidebarContextMenu: false,
+          }))
+      )
+      .filter((a11yStatus) => a11yStatus !== undefined);
+
+    if (a11yStatuses.length > 0) {
+      this.a11yStatusStore.set(a11yStatuses);
+    }
+  }, 500);
+
+  onTestRunEnd(endResult: { totalTestCount: number; unhandledErrors: VitestError[] }) {
+    this.store.setState((s) => ({
+      ...s,
+      currentRun: {
+        ...s.currentRun,
+        // when the test run is finished, we can set the totalTestCount to the actual number of tests run
+        // this number can be lower than the total number of tests we anticipated upfront
+        // e.g. when some tests where skipped without us knowing about it upfront
+        totalTestCount: endResult.totalTestCount,
+        unhandledErrors: endResult.unhandledErrors,
+        finishedAt: Date.now(),
+      },
+    }));
+  }
+
+  onCoverageCollected(coverageSummary: StoreState['currentRun']['coverageSummary']) {
+    this.store.setState((s) => ({
+      ...s,
+      currentRun: { ...s.currentRun, coverageSummary },
+    }));
   }
 
   async reportFatalError(message: string, error: Error | any) {
-    this.options.onError?.(message, error);
+    await this.store.untilReady();
+    this.store.send({
+      type: 'FATAL_ERROR',
+      payload: {
+        message,
+        error: errorToErrorLike(error),
+      },
+    });
   }
 
-  static async start(channel: Channel, options: typeof TestManager.prototype.options = {}) {
+  static async start(options: TestManagerOptions) {
     return new Promise<TestManager>((resolve) => {
-      const testManager = new TestManager(channel, {
+      const testManager = new TestManager({
         ...options,
         onReady: () => {
           resolve(testManager);

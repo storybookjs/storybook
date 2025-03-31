@@ -1,10 +1,18 @@
 import React, { useState } from 'react';
 
 import { AddonPanel, type SyntaxHighlighterFormatTypes } from 'storybook/internal/components';
-import { ADDON_ID, PANEL_ID, PARAM_KEY, SNIPPET_RENDERED } from 'storybook/internal/docs-tools';
-import { addons, types, useChannel } from 'storybook/internal/manager-api';
 
-import { Source } from '@storybook/blocks';
+import { addons, types, useChannel, useParameter } from 'storybook/manager-api';
+import { ignoreSsrWarning, styled, useTheme } from 'storybook/theming';
+
+import {
+  ADDON_ID,
+  PANEL_ID,
+  PARAM_KEY,
+  SNIPPET_RENDERED,
+} from '../../../core/src/docs-tools/shared';
+import type { SourceParameters } from '../../../lib/blocks/src';
+import { Source } from '../../../lib/blocks/src/components/Source';
 
 addons.register(ADDON_ID, (api) => {
   addons.add(PANEL_ID, {
@@ -39,17 +47,41 @@ addons.register(ADDON_ID, (api) => {
         format: lastEvent?.format ?? undefined,
       });
 
+      const parameter = useParameter(PARAM_KEY, {
+        source: { code: '' } as SourceParameters,
+        theme: 'dark',
+      });
+
       useChannel({
         [SNIPPET_RENDERED]: ({ source, format }) => {
           setSourceCode({ source, format: format ?? undefined });
         },
       });
 
+      const theme = useTheme();
+      const isDark = theme.base !== 'light';
+
       return (
         <AddonPanel active={!!active}>
-          <Source code={codeSnippet.source} format={codeSnippet.format} dark />
+          <SourceStyles>
+            <Source
+              {...parameter.source}
+              code={parameter.source.code || codeSnippet.source}
+              format={parameter.source.format || codeSnippet.format}
+              dark={isDark}
+            />
+          </SourceStyles>
         </AddonPanel>
       );
     },
   });
 });
+
+const SourceStyles = styled.div(() => ({
+  height: '100%',
+  [`> :first-child${ignoreSsrWarning}`]: {
+    margin: 0,
+    height: '100%',
+    boxShadow: 'none',
+  },
+}));

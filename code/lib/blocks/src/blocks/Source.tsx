@@ -12,7 +12,7 @@ import type { SourceContextProps, SourceItem } from './SourceContainer';
 import { SourceContext, UNKNOWN_ARGS_HASH, argsHash } from './SourceContainer';
 import { useTransformCode } from './useTransformCode';
 
-type SourceParameters = SourceCodeProps & {
+export type SourceParameters = SourceCodeProps & {
   /** Where to read the source code from, see `SourceType` */
   type?: SourceType;
   /** Transform the detected source for display */
@@ -20,7 +20,7 @@ type SourceParameters = SourceCodeProps & {
     code: string,
     storyContext: ReturnType<DocsContextProps['getStoryContext']>
   ) => string | Promise<string>;
-  /** Internal: set by our CSF loader (`enrichCsf` in `@storybook/csf-tools`). */
+  /** Internal: set by our CSF loader (`enrichCsf` in `storybook/internal/csf-tools`). */
   originalSource?: string;
 };
 

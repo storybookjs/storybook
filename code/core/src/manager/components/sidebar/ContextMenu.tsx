@@ -1,14 +1,15 @@
 import type { ComponentProps, FC, SyntheticEvent } from 'react';
 import React, { useMemo, useState } from 'react';
 
-import { TooltipLinkList, WithTooltip } from '@storybook/core/components';
-import { styled } from '@storybook/core/theming';
-import { type API_HashEntry, Addon_TypesEnum } from '@storybook/core/types';
+import { TooltipLinkList, WithTooltip } from 'storybook/internal/components';
+import { type TestProviders } from 'storybook/internal/core-events';
+import { type API_HashEntry, Addon_TypesEnum } from 'storybook/internal/types';
+
 import { EllipsisIcon } from '@storybook/icons';
 
-import { type TestProviders } from '@storybook/core/core-events';
-import { useStorybookState } from '@storybook/core/manager-api';
-import type { API } from '@storybook/core/manager-api';
+import { useStorybookState } from 'storybook/manager-api';
+import type { API } from 'storybook/manager-api';
+import { styled } from 'storybook/theming';
 
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList';
 import { StatusButton } from './StatusButton';
@@ -89,7 +90,7 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
           }}
           tooltip={<LiveContextMenu context={context} links={links} />}
         >
-          <FloatingStatusButton type="button" status={'pending'}>
+          <FloatingStatusButton type="button" status="status-value:pending">
             <EllipsisIcon />
           </FloatingStatusButton>
         </PositionedWithTooltip>

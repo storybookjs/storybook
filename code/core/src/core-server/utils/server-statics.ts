@@ -1,17 +1,16 @@
 import { existsSync, statSync } from 'node:fs';
 import { basename, isAbsolute, posix, resolve, sep, win32 } from 'node:path';
 
-import { getDirectoryFromWorkingDir } from '@storybook/core/common';
-import type { Options, StorybookConfigRaw } from '@storybook/core/types';
-
-import { logger } from '@storybook/core/node-logger';
+import { getDirectoryFromWorkingDir } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
+import type { Options, StorybookConfigRaw } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
-import type Polka from 'polka';
+import type { Polka } from 'polka';
 import sirv from 'sirv';
 import { dedent } from 'ts-dedent';
 
-export async function useStatics(app: Polka.Polka, options: Options): Promise<void> {
+export async function useStatics(app: Polka, options: Options): Promise<void> {
   const staticDirs = (await options.presets.apply('staticDirs')) ?? [];
   const faviconPath = await options.presets.apply<string>('favicon');
 

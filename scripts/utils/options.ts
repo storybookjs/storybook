@@ -296,7 +296,7 @@ function getFlag<TOption extends Option>(
 
   if (option.type === 'string') {
     if (value) {
-      return `--${longFlag(key, option)} ${value}`;
+      return `--${longFlag(key, option)} '${value}'`;
     }
     return '';
   }

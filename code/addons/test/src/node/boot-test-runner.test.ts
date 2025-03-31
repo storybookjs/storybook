@@ -1,18 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { Channel, type ChannelTransport } from '@storybook/core/channels';
-
-import {
-  TESTING_MODULE_CANCEL_TEST_RUN_REQUEST,
-  TESTING_MODULE_PROGRESS_REPORT,
-  TESTING_MODULE_RUN_REQUEST,
-  TESTING_MODULE_WATCH_MODE_REQUEST,
-} from '@storybook/core/core-events';
+import { Channel, type ChannelTransport } from 'storybook/internal/channels';
 
 // eslint-disable-next-line depend/ban-dependencies
 import { execaNode } from 'execa';
 
+import { storeOptions } from '../constants';
 import { log } from '../logger';
+import type { StoreEvent } from '../types';
+import type { StoreState } from '../types';
 import { killTestRunner, runTestRunner } from './boot-test-runner';
 
 let stdout: (chunk: any) => void;
@@ -45,6 +41,26 @@ vi.mock('../logger', () => ({
   log: vi.fn(),
 }));
 
+let statusStoreSubscriber = vi.hoisted(() => undefined);
+let testProviderStoreSubscriber = vi.hoisted(() => undefined);
+
+vi.mock('storybook/internal/core-server', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('storybook/internal/core-server')>();
+  return {
+    ...actual,
+    internal_universalStatusStore: {
+      subscribe: (listener: any) => {
+        statusStoreSubscriber = listener;
+      },
+    },
+    internal_universalTestProviderStore: {
+      subscribe: (listener: any) => {
+        testProviderStoreSubscriber = listener;
+      },
+    },
+  };
+});
+
 beforeEach(() => {
   vi.useFakeTimers();
   killTestRunner();
@@ -58,13 +74,30 @@ const transport = { setHandler: vi.fn(), send: vi.fn() } satisfies ChannelTransp
 const mockChannel = new Channel({ transport });
 
 describe('bootTestRunner', () => {
+  let mockStore: any;
+
+  beforeEach(async () => {
+    const { experimental_MockUniversalStore: MockUniversalStore } = await import(
+      'storybook/internal/core-server'
+    );
+    mockStore = new MockUniversalStore<StoreState, StoreEvent>(storeOptions);
+  });
+
   it('should execute vitest.js', async () => {
-    runTestRunner(mockChannel);
-    expect(execaNode).toHaveBeenCalledWith(expect.stringMatching(/vitest\.mjs$/));
+    runTestRunner(mockChannel, mockStore);
+    expect(execaNode).toHaveBeenCalledWith(expect.stringMatching(/vitest\.mjs$/), {
+      env: {
+        NODE_ENV: 'test',
+        TEST: 'true',
+        VITEST: 'true',
+        VITEST_CHILD_PROCESS: 'true',
+      },
+      extendEnv: true,
+    });
   });
 
   it('should log stdout and stderr', async () => {
-    runTestRunner(mockChannel);
+    runTestRunner(mockChannel, mockStore);
     stdout('foo');
     stderr('bar');
     expect(log).toHaveBeenCalledWith('foo');
@@ -73,7 +106,7 @@ describe('bootTestRunner', () => {
 
   it('should wait for vitest to be ready', async () => {
     let ready;
-    const promise = runTestRunner(mockChannel).then(() => {
+    const promise = runTestRunner(mockChannel, mockStore).then(() => {
       ready = true;
     });
     expect(ready).toBeUndefined();
@@ -83,42 +116,42 @@ describe('bootTestRunner', () => {
   });
 
   it('should abort if vitest doesn’t become ready in time', async () => {
-    const promise = runTestRunner(mockChannel);
+    const promise = runTestRunner(mockChannel, mockStore);
     vi.advanceTimersByTime(30001);
     await expect(promise).rejects.toThrow();
   });
 
-  it('should forward channel events', async () => {
-    runTestRunner(mockChannel);
+  it('should forward universal store events', async () => {
+    runTestRunner(mockChannel, mockStore);
     message({ type: 'ready' });
 
-    message({ type: TESTING_MODULE_PROGRESS_REPORT, args: ['foo'] });
-    expect(mockChannel.last(TESTING_MODULE_PROGRESS_REPORT)).toEqual(['foo']);
-
-    mockChannel.emit(TESTING_MODULE_RUN_REQUEST, 'foo');
+    mockStore.send({ type: 'TRIGGER_RUN', payload: { triggeredBy: 'global', storyIds: ['foo'] } });
     expect(child.send).toHaveBeenCalledWith({
-      args: ['foo'],
+      args: [
+        {
+          event: {
+            payload: { storyIds: ['foo'], triggeredBy: 'global' },
+            type: 'TRIGGER_RUN',
+          },
+          eventInfo: {
+            actor: {
+              environment: 'MOCK',
+              id: expect.any(String),
+              type: 'LEADER',
+            },
+          },
+        },
+      ],
       from: 'server',
-      type: TESTING_MODULE_RUN_REQUEST,
+      type: 'UNIVERSAL_STORE:storybook/test',
     });
 
-    mockChannel.emit(TESTING_MODULE_WATCH_MODE_REQUEST, 'baz');
-    expect(child.send).toHaveBeenCalledWith({
-      args: ['baz'],
-      from: 'server',
-      type: TESTING_MODULE_WATCH_MODE_REQUEST,
-    });
-
-    mockChannel.emit(TESTING_MODULE_CANCEL_TEST_RUN_REQUEST, 'qux');
-    expect(child.send).toHaveBeenCalledWith({
-      args: ['qux'],
-      from: 'server',
-      type: TESTING_MODULE_CANCEL_TEST_RUN_REQUEST,
-    });
+    message({ type: 'some-event', args: ['foo'] });
+    expect(mockChannel.last('some-event')).toEqual(['foo']);
   });
 
   it('should resend init event', async () => {
-    runTestRunner(mockChannel, 'init', ['foo']);
+    runTestRunner(mockChannel, mockStore, 'init', ['foo']);
     message({ type: 'ready' });
     expect(child.send).toHaveBeenCalledWith({
       args: ['foo'],

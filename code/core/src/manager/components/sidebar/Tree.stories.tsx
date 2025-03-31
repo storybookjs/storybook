@@ -1,12 +1,10 @@
-// @TODO: use addon-interactions and remove the rule disable above
 import React, { useState } from 'react';
 
-import type { Meta, StoryObj } from '@storybook/react';
-import { expect, fn, userEvent, within } from '@storybook/test';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { type ComponentEntry, type IndexHash, ManagerContext } from '@storybook/core/manager-api';
-
-import { action } from '@storybook/addon-actions';
+import { action } from 'storybook/actions';
+import { type ComponentEntry, type IndexHash, ManagerContext } from 'storybook/manager-api';
+import { expect, fn, userEvent, within } from 'storybook/test';
 
 import { DEFAULT_REF_ID } from './Sidebar';
 import { Tree } from './Tree';
@@ -26,7 +24,6 @@ const managerContext: any = {
         render: () => 'Component tests',
         sidebarContextMenu: () => <div>TEST_PROVIDER_CONTEXT_CONTENT</div>,
         runnable: true,
-        watchable: true,
       },
       'visual-tests': {
         type: 'experimental_TEST_PROVIDER',
@@ -48,7 +45,6 @@ const managerContext: any = {
         render: () => 'Component tests',
         sidebarContextMenu: () => <div>TEST_PROVIDER_CONTEXT_CONTENT</div>,
         runnable: true,
-        watchable: true,
       },
       'visual-tests': {
         type: 'experimental_TEST_PROVIDER',

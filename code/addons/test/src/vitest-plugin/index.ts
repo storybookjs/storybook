@@ -1,4 +1,5 @@
 /* eslint-disable no-underscore-dangle */
+import { createRequire } from 'node:module';
 import { dirname } from 'node:path';
 
 import type { Plugin } from 'vitest/config';
@@ -10,10 +11,10 @@ import {
   normalizeStories,
   validateConfigurationFiles,
 } from 'storybook/internal/common';
-import {
-  StoryIndexGenerator,
-  experimental_loadStorybook,
-  mapStaticDir,
+import type {
+  experimental_loadStorybook as ExperimentalLoadStorybookType,
+  mapStaticDir as MapStaticDirType,
+  StoryIndexGenerator as StoryIndexGeneratorType,
 } from 'storybook/internal/core-server';
 import { readConfig, vitestTransform } from 'storybook/internal/csf-tools';
 import { MainFileMissingError } from 'storybook/internal/server-errors';
@@ -29,6 +30,17 @@ import type { PluginOption } from 'vite';
 // ! Relative import to prebundle it without needing to depend on the Vite builder
 import { withoutVitePlugins } from '../../../../builders/builder-vite/src/utils/without-vite-plugins';
 import type { InternalOptions, UserOptions } from './types';
+
+const require = createRequire(import.meta.url);
+
+// we need to require core-server here, because its ESM output is not valid
+// eslint-disable-next-line @typescript-eslint/naming-convention
+const { StoryIndexGenerator, experimental_loadStorybook, mapStaticDir } =
+  require('storybook/internal/core-server') as {
+    StoryIndexGenerator: typeof StoryIndexGeneratorType;
+    experimental_loadStorybook: typeof ExperimentalLoadStorybookType;
+    mapStaticDir: typeof MapStaticDirType;
+  };
 
 const WORKING_DIR = process.cwd();
 
@@ -67,7 +79,7 @@ const getStoryGlobsAndFiles = async (
   };
 };
 
-const PACKAGE_DIR = dirname(require.resolve('@storybook/experimental-addon-test/package.json'));
+const PACKAGE_DIR = dirname(require.resolve('@storybook/addon-test/package.json'));
 
 export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> => {
   const finalOptions = {
@@ -203,7 +215,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
             ? {
                 server: {
                   deps: {
-                    inline: ['@storybook/experimental-addon-test'],
+                    inline: ['@storybook/addon-test'],
                   },
                 },
               }
@@ -223,15 +235,6 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
                     manual: !shouldRunA11yTests,
                   },
                 };
-              },
-              getTags: () => {
-                const envConfig = JSON.parse(process.env.VITEST_STORYBOOK_CONFIG ?? '{}');
-
-                const shouldSetTag = process.env.VITEST_STORYBOOK
-                  ? (envConfig.a11y ?? false)
-                  : false;
-
-                return shouldSetTag ? ['a11y-test'] : [];
               },
             },
             // if there is a test.browser config AND test.browser.screenshotFailures is not explicitly set, we set it to false
@@ -268,9 +271,9 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
 
         optimizeDeps: {
           include: [
-            '@storybook/experimental-addon-test/internal/setup-file',
-            '@storybook/experimental-addon-test/internal/global-setup',
-            '@storybook/experimental-addon-test/internal/test-utils',
+            '@storybook/addon-test/internal/setup-file',
+            '@storybook/addon-test/internal/global-setup',
+            '@storybook/addon-test/internal/test-utils',
             ...(frameworkName?.includes('react') || frameworkName?.includes('nextjs')
               ? ['react-dom/test-utils']
               : []),
@@ -304,7 +307,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
 
             The values you passed to "test.include" will be ignored, please remove them from your Vitest configuration where the Storybook plugin is applied.
             
-            More info: https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#indexing-behavior-of-storybookexperimental-addon-test-is-changed
+            More info: https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#addon-test-indexing-behavior-of-storybookaddon-test-is-changed
           `)
         );
       }

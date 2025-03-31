@@ -3,7 +3,7 @@ import { sep } from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';
 
-import { InvalidStoriesEntryError } from '@storybook/core/server-errors';
+import { InvalidStoriesEntryError } from 'storybook/internal/server-errors';
 
 import {
   getDirectoryFromWorkingDir,

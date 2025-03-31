@@ -31,9 +31,15 @@ export async function createViteServer(options: Options, devServer: Server) {
 
   const ipRegex = /^(?:\d{1,3}\.){3}\d{1,3}$|^(?:[a-fA-F0-9]{1,4}:){7}[a-fA-F0-9]{1,4}$/;
 
-  config.server.allowedHosts =
-    commonCfg.server?.allowedHosts ??
-    (options.host && !ipRegex.test(options.host) ? [options.host.toLowerCase()] : true);
+  if (
+    // @ts-expect-error - allowedHosts is not typed in Vite 5
+    !(config.server.allowedHosts as string[])?.length &&
+    options.host &&
+    !ipRegex.test(options.host)
+  ) {
+    // @ts-expect-error - allowedHosts is not typed in Vite 5
+    config.server.allowedHosts = [options.host.toLowerCase()];
+  }
 
   const finalConfig = await presets.apply('viteFinal', config, options);
 

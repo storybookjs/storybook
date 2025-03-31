@@ -1,16 +1,16 @@
 import type { FC, MouseEventHandler, PropsWithChildren, ReactNode } from 'react';
 import React, { useCallback, useEffect } from 'react';
 
-import { Button, IconButton } from '@storybook/core/components';
-import { styled } from '@storybook/core/theming';
+import { Button, IconButton } from 'storybook/internal/components';
+import { PRELOAD_ENTRIES } from 'storybook/internal/core-events';
+
 import { global } from '@storybook/global';
 import { TrashIcon } from '@storybook/icons';
 
-import { PRELOAD_ENTRIES } from '@storybook/core/core-events';
-import { useStorybookApi } from '@storybook/core/manager-api';
-
 import type { ControllerStateAndHelpers } from 'downshift';
 import { transparentize } from 'polished';
+import { useStorybookApi } from 'storybook/manager-api';
+import { styled } from 'storybook/theming';
 
 import { matchesKeyCode, matchesModifiers } from '../../keybinding';
 import { statusMapping } from '../../utils/status';

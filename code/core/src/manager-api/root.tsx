@@ -10,8 +10,15 @@ import React, {
   useRef,
 } from 'react';
 
-import type { Listener } from '@storybook/core/channels';
-import type { RouterData } from '@storybook/core/router';
+import type { Listener } from 'storybook/internal/channels';
+import { deprecate } from 'storybook/internal/client-logger';
+import {
+  SET_STORIES,
+  SHARED_STATE_CHANGED,
+  SHARED_STATE_SET,
+  STORY_CHANGED,
+} from 'storybook/internal/core-events';
+import type { RouterData } from 'storybook/internal/router';
 import type {
   API_ComponentEntry,
   API_ComposedRef,
@@ -31,15 +38,7 @@ import type {
   Globals,
   Parameters,
   StoryId,
-} from '@storybook/core/types';
-
-import { deprecate } from '@storybook/core/client-logger';
-import {
-  SET_STORIES,
-  SHARED_STATE_CHANGED,
-  SHARED_STATE_SET,
-  STORY_CHANGED,
-} from '@storybook/core/core-events';
+} from 'storybook/internal/types';
 
 import { isEqual } from 'es-toolkit';
 
@@ -89,7 +88,6 @@ export type State = layout.SubState &
   whatsnew.SubState &
   RouterData &
   API_OptionsData &
-  DeprecatedState &
   Other;
 
 export type API = addons.SubAPI &
@@ -108,15 +106,6 @@ export type API = addons.SubAPI &
   whatsnew.SubAPI &
   Other;
 
-interface DeprecatedState {
-  /** @deprecated Use index */
-  storiesHash: API_IndexHash;
-  /** @deprecated Use previewInitialized */
-  storiesConfigured: boolean;
-  /** @deprecated Use indexError */
-  storiesFailed?: Error;
-}
-
 interface Other {
   [key: string]: any;
 }
@@ -131,7 +120,7 @@ export type ManagerProviderProps = RouterData &
     children: ReactNode | FC<Combo>;
   };
 
-// This is duplicated from @storybook/preview-api for the reasons mentioned in lib-addons/types.js
+// This is duplicated from storybook/preview-api for the reasons mentioned in lib-addons/types.js
 export const combineParameters = (...parameterSets: Parameters[]) =>
   noArrayMerge({}, ...parameterSets);
 
@@ -300,23 +289,7 @@ function ManagerConsumer<P = Combo>({
 
 export function useStorybookState(): State {
   const { state } = useContext(ManagerContext);
-  return {
-    ...state,
-
-    // deprecated fields for back-compat
-    get storiesHash() {
-      deprecate('state.storiesHash is deprecated, please use state.index');
-      return this.index || {};
-    },
-    get storiesConfigured() {
-      deprecate('state.storiesConfigured is deprecated, please use state.previewInitialized');
-      return this.previewInitialized;
-    },
-    get storiesFailed() {
-      deprecate('state.storiesFailed is deprecated, please use state.indexError');
-      return this.indexError;
-    },
-  };
+  return state;
 }
 export function useStorybookApi(): API {
   const { api } = useContext(ManagerContext);
@@ -513,9 +486,6 @@ export function useArgTypes(): ArgTypes {
   const current = useCurrentStory();
   return (current?.type === 'story' && current.argTypes) || {};
 }
-
-export { UniversalStore as experimental_UniversalStore } from '../shared/universal-store';
-export { useUniversalStore as experimental_useUniversalStore } from '../shared/universal-store/use-universal-store-manager';
 
 export { addons } from './lib/addons';
 

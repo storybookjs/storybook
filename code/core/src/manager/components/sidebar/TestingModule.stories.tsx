@@ -1,14 +1,17 @@
 import React from 'react';
 
-import type { Listener } from '@storybook/core/channels';
-import { styled } from '@storybook/core/theming';
-import { Addon_TypesEnum } from '@storybook/core/types';
-import type { Meta, StoryObj } from '@storybook/react';
-import { fireEvent, fn } from '@storybook/test';
+import type { Listener } from 'storybook/internal/channels';
+import { type TestProviders } from 'storybook/internal/core-events';
+import type { TestProviderStateByProviderId } from 'storybook/internal/types';
+import { Addon_TypesEnum } from 'storybook/internal/types';
 
-import { TESTING_MODULE_CONFIG_CHANGE, type TestProviders } from '@storybook/core/core-events';
-import { ManagerContext, mockChannel } from '@storybook/core/manager-api';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
+import { ManagerContext, mockChannel } from 'storybook/manager-api';
+import { fireEvent, fn } from 'storybook/test';
+import { styled } from 'storybook/theming';
+
+import { internal_fullTestProviderStore } from '../../manager-stores.mock';
 import { TestingModule } from './TestingModule';
 
 const TestProvider = styled.div({
@@ -21,56 +24,52 @@ const baseState = {
   cancellable: false,
   cancelling: false,
   running: false,
-  watching: false,
   failed: false,
   crashed: false,
 };
 
-const testProviders: TestProviders[keyof TestProviders][] = [
-  {
+const registeredTestProviders: TestProviders = {
+  'component-tests': {
     type: Addon_TypesEnum.experimental_TEST_PROVIDER,
     id: 'component-tests',
     name: 'Component tests',
-    title: () => 'Component tests',
-    description: () => 'Ran 2 seconds ago',
+    render: () => <TestProvider>Component tests</TestProvider>,
     runnable: true,
-    watchable: true,
     ...baseState,
   },
-  {
+  'visual-tests': {
     type: Addon_TypesEnum.experimental_TEST_PROVIDER,
     id: 'visual-tests',
     name: 'Visual tests',
-    title: () => 'Visual tests',
-    description: () => 'Not run',
+    render: () => <TestProvider>Visual tests</TestProvider>,
     runnable: true,
     ...baseState,
   },
-  {
+  linting: {
     type: Addon_TypesEnum.experimental_TEST_PROVIDER,
     id: 'linting',
     name: 'Linting',
-    render: () => <TestProvider>Custom render function</TestProvider>,
+    render: () => <TestProvider>Linting</TestProvider>,
     ...baseState,
-    watching: true,
   },
-];
+};
 
-let triggerUpdate: () => void;
+const testProviderStates: TestProviderStateByProviderId = {
+  'component-tests': 'test-provider-state:pending',
+  'visual-tests': 'test-provider-state:pending',
+  linting: 'test-provider-state:pending',
+};
+
 const channel = mockChannel();
 const managerContext: any = {
   api: {
     on: (eventName: string, listener: Listener) => {
-      if (eventName === TESTING_MODULE_CONFIG_CHANGE) {
-        triggerUpdate = listener;
-      }
       return channel.on(eventName, listener);
     },
     off: (eventName: string, listener: Listener) => channel.off(eventName, listener),
     runTestProvider: fn().mockName('api::runTestProvider'),
     cancelTestProvider: fn().mockName('api::cancelTestProvider'),
     updateTestProviderState: fn().mockName('api::updateTestProviderState'),
-    setTestProviderWatchMode: fn().mockName('api::setTestProviderWatchMode'),
   },
 };
 
@@ -78,7 +77,11 @@ const meta = {
   component: TestingModule,
   title: 'Sidebar/TestingModule',
   args: {
-    testProviders,
+    registeredTestProviders,
+    testProviderStates,
+    hasStatuses: false,
+    clearStatuses: fn(),
+    onRunAll: fn(),
     errorCount: 0,
     errorsActive: false,
     setErrorsActive: fn(),
@@ -91,7 +94,7 @@ const meta = {
       <ManagerContext.Provider value={managerContext}>{storyFn()}</ManagerContext.Provider>
     ),
     (StoryFn) => (
-      <div style={{ maxWidth: 232 }}>
+      <div style={{ maxWidth: 250 }}>
         <StoryFn />
       </div>
     ),
@@ -114,8 +117,16 @@ export const Expanded: Story = {
 
 export const Statuses: Story = {
   args: {
+    hasStatuses: true,
     errorCount: 14,
     warningCount: 42,
+  },
+  play: Expanded.play,
+};
+
+export const PassingStatuses: Story = {
+  args: {
+    hasStatuses: true,
   },
   play: Expanded.play,
 };
@@ -151,96 +162,58 @@ export const CollapsedStatuses: Story = {
 
 export const Running: Story = {
   args: {
-    testProviders: [{ ...testProviders[0], running: true }, ...testProviders.slice(1)],
+    testProviderStates: {
+      ...testProviderStates,
+      'component-tests': 'test-provider-state:running',
+    },
   },
   play: Expanded.play,
 };
 
-export const RunningAll: Story = {
+export const RunningWithErrors: Story = {
   args: {
-    testProviders: testProviders.map((tp) => ({ ...tp, running: !!tp.runnable })),
+    ...Statuses.args,
+    ...Running.args,
   },
   play: Expanded.play,
 };
 
 export const CollapsedRunning: Story = {
-  args: RunningAll.args,
+  args: Running.args,
 };
 
-export const Cancellable: Story = {
+export const CollapsedRunningWithErrors: Story = {
   args: {
-    testProviders: [
-      { ...testProviders[0], running: true, cancellable: true },
-      ...testProviders.slice(1),
-    ],
+    ...RunningWithErrors.args,
   },
-  play: Expanded.play,
-};
-
-export const Cancelling: Story = {
-  args: {
-    testProviders: [
-      { ...testProviders[0], running: true, cancellable: true, cancelling: true },
-      ...testProviders.slice(1),
-    ],
-  },
-  play: Expanded.play,
-};
-
-export const Watching: Story = {
-  args: {
-    testProviders: [{ ...testProviders[0], watching: true }, ...testProviders.slice(1)],
-  },
-  play: Expanded.play,
-};
-
-export const Failing: Story = {
-  args: {
-    testProviders: [
-      { ...testProviders[0], failed: true, running: true },
-      ...testProviders.slice(1),
-    ],
-  },
-  play: Expanded.play,
-};
-
-export const Failed: Story = {
-  args: {
-    testProviders: [{ ...testProviders[0], failed: true }, ...testProviders.slice(1)],
-  },
-  play: Expanded.play,
 };
 
 export const Crashed: Story = {
   args: {
-    testProviders: [
-      {
-        ...testProviders[0],
-        render: () => (
-          <TestProvider>
-            Component tests didn't complete
-            <br />
-            Problems!
-          </TestProvider>
-        ),
-        crashed: true,
-      },
-      ...testProviders.slice(1),
-    ],
+    testProviderStates: {
+      ...testProviderStates,
+      'component-tests': 'test-provider-state:crashed',
+    },
   },
   play: Expanded.play,
 };
 
-export const Updated: Story = {
-  args: {},
-  play: async (context) => {
-    await Expanded.play!(context);
-    triggerUpdate?.();
+export const SettingsUpdated: Story = {
+  play: async (playContext) => {
+    await Expanded.play!(playContext);
+    internal_fullTestProviderStore.settingsChanged();
   },
 };
 
 export const NoTestProvider: Story = {
   args: {
-    testProviders: [],
+    registeredTestProviders: {},
+  },
+};
+
+export const NoTestProviderWithStatuses: Story = {
+  args: {
+    ...Statuses.args,
+    registeredTestProviders: {},
   },
 };

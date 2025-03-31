@@ -2,18 +2,12 @@
 import React from 'react';
 
 import { IconButton, TooltipLinkList, WithTooltip } from 'storybook/internal/components';
-import {
-  addons,
-  useAddonState,
-  useChannel,
-  useGlobals,
-  useParameter,
-} from 'storybook/internal/manager-api';
-import { styled } from 'storybook/internal/theming';
 
 import { PaintBrushIcon } from '@storybook/icons';
 
-import type { ThemeAddonState, ThemeParameters } from './constants';
+import { addons, useAddonState, useChannel, useGlobals, useParameter } from 'storybook/manager-api';
+import { styled } from 'storybook/theming';
+
 import {
   DEFAULT_ADDON_STATE,
   DEFAULT_THEME_PARAMETERS,
@@ -22,6 +16,9 @@ import {
   THEME_SWITCHER_ID,
   THEMING_EVENTS,
 } from './constants';
+import type { ThemesParameters as Parameters, ThemeAddonState } from './types';
+
+type ThemesParameters = Parameters['themes'];
 
 const IconButtonLabel = styled.div(({ theme }) => ({
   fontSize: theme.typography.size.s2 - 1,
@@ -31,10 +28,10 @@ const hasMultipleThemes = (themesList: ThemeAddonState['themesList']) => themesL
 const hasTwoThemes = (themesList: ThemeAddonState['themesList']) => themesList.length === 2;
 
 export const ThemeSwitcher = React.memo(function ThemeSwitcher() {
-  const { themeOverride, disable } = useParameter<ThemeParameters>(
+  const { themeOverride, disable } = useParameter<ThemesParameters>(
     PARAM_KEY,
     DEFAULT_THEME_PARAMETERS
-  ) as ThemeParameters;
+  ) as ThemesParameters;
   const [{ theme: selected }, updateGlobals, storyGlobals] = useGlobals();
 
   const channel = addons.getChannel();

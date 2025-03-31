@@ -3,6 +3,7 @@ import React from 'react';
 
 import type { SupportedLanguage, SyntaxHighlighterProps } from 'storybook/internal/components';
 import { SyntaxHighlighter } from 'storybook/internal/components';
+
 import {
   ThemeProvider,
   convert,
@@ -10,7 +11,7 @@ import {
   styled,
   themes,
   useTheme,
-} from 'storybook/internal/theming';
+} from 'storybook/theming';
 
 import { EmptyBlock } from './EmptyBlock';
 

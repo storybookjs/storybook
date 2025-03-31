@@ -1,9 +1,5 @@
-import type { storybookTest as storybookTestImport } from './vitest-plugin';
+import { definePreview } from 'storybook/preview-api';
 
-// make it work with --isolatedModules
-export default {};
+export default () => definePreview({});
 
-// @ts-expect-error - this is a hack to make the module's sub-path augmentable
-declare module '@storybook/experimental-addon-test/vitest-plugin' {
-  export const storybookTest: typeof storybookTestImport;
-}
+export type { TestParameters } from './types';

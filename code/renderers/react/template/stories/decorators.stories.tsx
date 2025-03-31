@@ -1,5 +1,7 @@
 import type { FC } from 'react';
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useContext, useState } from 'react';
+
+import { useParameter } from 'storybook/internal/preview-api';
 
 import type { Meta, StoryObj } from '@storybook/react';
 
@@ -29,11 +31,11 @@ export const All: StoryObj<typeof Component> = {
   ],
 };
 
-// This story will error if `parameters.docs.source.excludeDecorators` is true:
+// This story should not error
 // See https://github.com/storybookjs/storybook/issues/21900
 const TestContext = createContext<boolean>(false);
 export const Context: StoryObj<typeof Component> = {
-  // parameters: { docs: { source: { excludeDecorators: true } } },
+  parameters: { docs: { source: { excludeDecorators: true } } },
   decorators: [
     (Story) => (
       <TestContext.Provider value>
@@ -49,4 +51,30 @@ export const Context: StoryObj<typeof Component> = {
     }
     return <p>Story</p>;
   },
+};
+
+/**
+ * This story demonstrates is a regression test for this issue with React hooks in Storybook
+ * (https://github.com/storybookjs/storybook/issues/29189)
+ *
+ * Which happened when a decorator was using storybook hooks, and the render react hooks.
+ */
+export const AllowUseStateInRender: StoryObj = {
+  render: () => {
+    const [count, setCount] = useState(0);
+    const Button = (globalThis as any).Components.Button;
+    return <Button onClick={() => setCount(count + 1)} label={`Clicked ${count} times`} />;
+  },
+  decorators: [
+    (storyFn) => {
+      useParameter('docs', {});
+      return storyFn();
+    },
+  ],
+  play: async ({ canvas, userEvent }) => {
+    const button = await canvas.findByText('Clicked 0 times');
+    await userEvent.click(button);
+    await canvas.findByText('Clicked 1 times');
+  },
+  tags: ['!vitest'],
 };

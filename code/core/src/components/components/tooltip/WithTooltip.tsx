@@ -2,11 +2,11 @@ import type { ComponentProps, ReactNode } from 'react';
 import React, { useCallback, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 
-import { styled } from '@storybook/core/theming';
 import { global } from '@storybook/global';
 
 import type { PopperOptions, Config as ReactPopperTooltipConfig } from 'react-popper-tooltip';
 import { usePopperTooltip } from 'react-popper-tooltip';
+import { styled } from 'storybook/theming';
 
 import { Tooltip } from './Tooltip';
 
@@ -82,10 +82,10 @@ const WithTooltipPure = ({
   children,
   closeOnTriggerHidden,
   mutationObserverOptions,
-  delayHide,
+  delayHide = trigger === 'hover' ? 200 : 0,
   visible,
   interactive,
-  delayShow,
+  delayShow = trigger === 'hover' ? 400 : 0,
   strategy,
   followCursor,
   onVisibleChange,

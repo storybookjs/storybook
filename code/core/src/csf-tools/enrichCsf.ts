@@ -1,5 +1,5 @@
 /* eslint-disable no-underscore-dangle */
-import { generate, types as t } from '@storybook/core/babel';
+import { generate, types as t } from 'storybook/internal/babel';
 
 import type { CsfFile } from './CsfFile';
 
@@ -15,11 +15,20 @@ export const enrichCsfStory = (
   options?: EnrichCsfOptions
 ) => {
   const storyExport = csfSource.getStoryExport(key);
+  const isCsfFactory =
+    t.isCallExpression(storyExport) &&
+    t.isMemberExpression(storyExport.callee) &&
+    t.isIdentifier(storyExport.callee.object) &&
+    storyExport.callee.object.name === 'meta';
   const source = !options?.disableSource && extractSource(storyExport);
   const description =
     !options?.disableDescription && extractDescription(csfSource._storyStatements[key]);
   const parameters = [];
-  const originalParameters = t.memberExpression(t.identifier(key), t.identifier('parameters'));
+  // in csf 1/2/3 use Story.parameters; CSF factories use Story.input.parameters
+  const baseStoryObject = isCsfFactory
+    ? t.memberExpression(t.identifier(key), t.identifier('input'))
+    : t.identifier(key);
+  const originalParameters = t.memberExpression(baseStoryObject, t.identifier('parameters'));
   parameters.push(t.spreadElement(originalParameters));
   const optionalDocs = t.optionalMemberExpression(
     originalParameters,

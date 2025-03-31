@@ -4,9 +4,9 @@
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore we must ignore types here as during compilation they are not generated yet
 import { headers } from '@storybook/nextjs/headers.mock';
-import { fn } from '@storybook/test';
 
 import { RequestCookies } from 'next/dist/compiled/@edge-runtime/cookies';
+import { fn } from 'storybook/test';
 
 class RequestCookiesMock extends RequestCookies {
   get = fn(super.get.bind(this)).mockName('next/headers::cookies().get');

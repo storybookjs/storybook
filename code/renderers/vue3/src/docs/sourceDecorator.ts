@@ -1,7 +1,7 @@
 /* eslint-disable no-underscore-dangle */
 import { SNIPPET_RENDERED, SourceType } from 'storybook/internal/docs-tools';
-import { addons, useTransformCode } from 'storybook/internal/preview-api';
 
+import { addons, useTransformCode } from 'storybook/preview-api';
 import type { VNode } from 'vue';
 import { isVNode, watch } from 'vue';
 

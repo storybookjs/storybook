@@ -24,6 +24,7 @@ import semver, { clean, eq, lt, prerelease } from 'semver';
 import { dedent } from 'ts-dedent';
 
 import { autoblock } from './autoblock/index';
+import { getStorybookData } from './automigrate/helpers/mainConfigFile';
 import { automigrate } from './automigrate/index';
 
 type Package = {
@@ -157,10 +158,7 @@ export const doUpgrade = async ({
     logger.warn(new UpgradeStorybookToSameVersionError({ beforeVersion }).message);
   }
 
-  const [latestCLIVersionOnNPM, packageJson] = await Promise.all([
-    packageManager.latestVersion('storybook'),
-    packageManager.retrievePackageJson(),
-  ]);
+  const latestCLIVersionOnNPM = await packageManager.latestVersion('storybook');
 
   const isCLIOutdated = lt(currentCLIVersion, latestCLIVersionOnNPM);
   const isCLIExactLatest = currentCLIVersion === latestCLIVersionOnNPM;
@@ -198,13 +196,11 @@ export const doUpgrade = async ({
 
   let results;
 
-  const { configDir: inferredConfigDir, mainConfig: mainConfigPath } = getStorybookInfo(
-    packageJson,
-    userSpecifiedConfigDir
-  );
-  const configDir = userSpecifiedConfigDir || inferredConfigDir || '.storybook';
-
-  const mainConfig = await loadMainConfig({ configDir });
+  const { configDir, mainConfig, mainConfigPath, previewConfigPath, packageJson } =
+    await getStorybookData({
+      packageManager,
+      configDir: userSpecifiedConfigDir,
+    });
 
   // GUARDS
   if (!beforeVersion) {
@@ -254,19 +250,51 @@ export const doUpgrade = async ({
     const upgradedDependencies = toUpgradedDependencies(packageJson.dependencies);
     const upgradedDevDependencies = toUpgradedDependencies(packageJson.devDependencies);
 
+    // Users struggle to upgrade Storybook with npm because of conflicting peer-dependencies
+    // GitHub Issue: https://github.com/storybookjs/storybook/issues/30306
+    // Solution: Remove all Storybook packages (except 'storybook') from the package.json and install them again
+    if (packageManager.type === 'npm') {
+      const getPackageName = (dep: string) => {
+        const lastAtIndex = dep.lastIndexOf('@');
+        return lastAtIndex > 0 ? dep.slice(0, lastAtIndex) : dep;
+      };
+
+      // Remove all Storybook packages except 'storybook'
+      await packageManager.removeDependencies(
+        { skipInstall: false },
+        [...upgradedDependencies, ...upgradedDevDependencies]
+          .map(getPackageName)
+          .filter((dep) => dep !== 'storybook')
+      );
+
+      // Handle 'storybook' package separately to maintain peer dependencies
+      const findStorybookPackage = (deps: string[]) =>
+        deps.find((dep) => getPackageName(dep) === 'storybook');
+
+      const storybookDep = findStorybookPackage(upgradedDependencies);
+      const storybookDevDep = findStorybookPackage(upgradedDevDependencies);
+
+      if (storybookDep) {
+        await packageManager.addDependencies({ installAsDevDependencies: false }, [storybookDep]);
+      }
+      if (storybookDevDep) {
+        await packageManager.addDependencies({ installAsDevDependencies: true }, [storybookDevDep]);
+      }
+    }
+
+    // Update all dependencies
     logger.info(`Updating dependencies in ${picocolors.cyan('package.json')}..`);
-    if (upgradedDependencies.length > 0) {
-      await packageManager.addDependencies(
-        { installAsDevDependencies: false, skipInstall: true, packageJson },
-        upgradedDependencies
-      );
-    }
-    if (upgradedDevDependencies.length > 0) {
-      await packageManager.addDependencies(
-        { installAsDevDependencies: true, skipInstall: true, packageJson },
-        upgradedDevDependencies
-      );
-    }
+    const addDeps = async (deps: string[], isDev: boolean) => {
+      if (deps.length > 0) {
+        await packageManager.addDependencies(
+          { installAsDevDependencies: isDev, skipInstall: true, packageJson },
+          deps
+        );
+      }
+    };
+
+    await addDeps(upgradedDependencies, false);
+    await addDeps(upgradedDevDependencies, true);
     await packageManager.installDependencies();
   }
 
@@ -277,7 +305,10 @@ export const doUpgrade = async ({
       dryRun,
       yes,
       packageManager,
+      packageJson,
+      mainConfig,
       configDir,
+      previewConfigPath,
       mainConfigPath,
       beforeVersion,
       storybookVersion: currentCLIVersion,

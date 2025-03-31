@@ -468,11 +468,11 @@
 
 We have removed `@storybook/addon-essentials`. Most features/addons encapsulated have been moved to the core, except for `@storybook/addon-docs`.
 
-This has been done, to reduce the installation size of storybook.
+This has been done to reduce the installation size of Storybook.
 
 Please uninstall `@storybook/addon-essentials` and remove it from your `addons`-array in your `.storybook/main.ts` file.
 
-If you are using addon-docs via addon-essentials, you will need to add addon-docs to your project, by installing it and adding it to your `.storybook/main.ts`'s `addons` field; or run this command: `npx storybook add @storybook/addon-docs`.
+If you are using addon-docs via addon-essentials, you will need to add addon-docs to your project by installing it and adding it to your `.storybook/main.ts`’s `addons` field; or run this command: `npx storybook add @storybook/addon-docs`.
 
 ### Package Manager Support
 

@@ -8,7 +8,6 @@ const config = {
     },
   ],
   logLevel: 'debug',
-  addons: ['@storybook/addon-essentials'],
   typescript: {
     check: true,
     checkOptions: {},

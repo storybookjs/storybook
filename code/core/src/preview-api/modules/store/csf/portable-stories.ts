@@ -26,6 +26,7 @@ import type { UserEventObject } from 'storybook/test';
 import { dedent } from 'ts-dedent';
 
 import { HooksContext } from '../../../addons';
+import { getCoreAnnotations } from '../../../core-annotations';
 import { ReporterAPI } from '../reporter-api';
 import { composeConfigs } from './composeConfigs';
 import { getCsfFactoryAnnotations } from './csf-factory-utils';
@@ -122,6 +123,7 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
 
   const normalizedProjectAnnotations = normalizeProjectAnnotations<TRenderer>(
     composeConfigs([
+      ...getCoreAnnotations(),
       defaultConfig ?? globalThis.globalProjectAnnotations ?? {},
       projectAnnotations ?? {},
     ])

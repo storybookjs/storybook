@@ -201,7 +201,7 @@ describe('Yarn 1 Proxy', () => {
                 "children": []
               },
               {
-                "name": "@storybook/instrumenter@7.0.0-beta.12",
+                "name": "@storybook/package@7.0.0-beta.12",
                 "children": [
                   {
                     "name": "@storybook/types@7.0.0-beta.12",
@@ -210,10 +210,10 @@ describe('Yarn 1 Proxy', () => {
                 ]
               },
               {
-                "name": "@storybook/addon-interactions@7.0.0-beta.19",
+                "name": "@storybook/addon-example@7.0.0-beta.19",
                 "children": [
                   {
-                    "name": "@storybook/instrumenter@7.0.0-beta.19",
+                    "name": "@storybook/package@7.0.0-beta.19",
                     "children": []
                   }
                 ]
@@ -229,13 +229,13 @@ describe('Yarn 1 Proxy', () => {
         {
           "dedupeCommand": "yarn dedupe",
           "dependencies": {
-            "@storybook/addon-interactions": [
+            "@storybook/addon-example": [
               {
                 "location": "",
                 "version": "7.0.0-beta.19",
               },
             ],
-            "@storybook/instrumenter": [
+            "@storybook/package": [
               {
                 "location": "",
                 "version": "7.0.0-beta.12",
@@ -253,7 +253,7 @@ describe('Yarn 1 Proxy', () => {
             ],
           },
           "duplicatedDependencies": {
-            "@storybook/instrumenter": [
+            "@storybook/package": [
               "7.0.0-beta.12",
               "7.0.0-beta.19",
             ],

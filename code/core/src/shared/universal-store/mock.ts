@@ -21,7 +21,7 @@ import type { StoreOptions } from './types';
  * @example
  *
  * ```ts
- * import * as testUtils from '@storybook/test'; // in stories
+ * import * as testUtils from 'storybook/test'; // in stories
  * import { vi as testUtils } from 'vitest'; // ... or in Vitest tests
  *
  * const initialState = { ... };

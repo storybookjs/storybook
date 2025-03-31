@@ -1,4 +1,4 @@
-import { expect, fn, userEvent, within } from '@storybook/test';
+import { expect, fn, userEvent, within } from 'storybook/test';
 
 import type { StoryFn as CSF2Story, Meta, StoryObj } from '../..';
 import AddWrapperDecorator from './AddWrapperDecorator.svelte';

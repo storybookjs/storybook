@@ -3,10 +3,10 @@ import { cp, readFile, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 
 import {
-  frameworkToRenderer as CoreFrameworkToRenderer,
   type JsPackageManager,
   type PackageJson,
   type PackageJsonWithDepsAndDevDeps,
+  frameworkToRenderer,
 } from 'storybook/internal/common';
 import { versions as storybookMonorepoPackages } from 'storybook/internal/common';
 import type { SupportedFrameworks, SupportedRenderers } from 'storybook/internal/types';
@@ -135,15 +135,12 @@ export function copyTemplate(templateRoot: string, destination = '.') {
 
 type CopyTemplateFilesOptions = {
   packageManager: JsPackageManager;
-  renderer: SupportedFrameworks | SupportedRenderers;
+  templateLocation: SupportedFrameworks | SupportedRenderers;
   language: SupportedLanguage;
   commonAssetsDir?: string;
   destination?: string;
   features: string[];
 };
-
-/** @deprecated Please use `frameworkToRenderer` from `storybook/internal/common` instead */
-export const frameworkToRenderer = CoreFrameworkToRenderer;
 
 export const frameworkToDefaultBuilder: Record<
   SupportedFrameworks,
@@ -155,9 +152,8 @@ export const frameworkToDefaultBuilder: Record<
   'html-webpack5': CoreBuilder.Webpack5,
   nextjs: CoreBuilder.Webpack5,
   nuxt: CoreBuilder.Vite,
-  'experimental-nextjs-vite': CoreBuilder.Vite,
+  'nextjs-vite': CoreBuilder.Vite,
   'preact-vite': CoreBuilder.Vite,
-  'preact-webpack5': CoreBuilder.Webpack5,
   qwik: CoreBuilder.Vite,
   'react-native-web-vite': CoreBuilder.Vite,
   'react-vite': CoreBuilder.Vite,
@@ -167,7 +163,6 @@ export const frameworkToDefaultBuilder: Record<
   'svelte-vite': CoreBuilder.Vite,
   sveltekit: CoreBuilder.Vite,
   'vue3-vite': CoreBuilder.Vite,
-  'vue3-webpack5': CoreBuilder.Webpack5,
   'web-components-vite': CoreBuilder.Vite,
   'web-components-webpack5': CoreBuilder.Webpack5,
   // Only to pass type checking, will never be used
@@ -204,7 +199,7 @@ export const cliStoriesTargetPath = async () => {
 
 export async function copyTemplateFiles({
   packageManager,
-  renderer,
+  templateLocation,
   language,
   destination,
   commonAssetsDir,
@@ -214,25 +209,19 @@ export async function copyTemplateFiles({
     // keeping this for backwards compatibility in case community packages are using it
     typescript: 'ts',
     [SupportedLanguage.JAVASCRIPT]: 'js',
-    [SupportedLanguage.TYPESCRIPT_3_8]: 'ts-3-8',
     [SupportedLanguage.TYPESCRIPT_4_9]: 'ts-4-9',
   };
   const templatePath = async () => {
-    const baseDir = await getRendererDir(packageManager, renderer);
+    const baseDir = await getRendererDir(packageManager, templateLocation);
     const assetsDir = join(baseDir, 'template', 'cli');
 
     const assetsLanguage = join(assetsDir, languageFolderMapping[language]);
     const assetsJS = join(assetsDir, languageFolderMapping[SupportedLanguage.JAVASCRIPT]);
     const assetsTS = join(assetsDir, languageFolderMapping.typescript);
-    const assetsTS38 = join(assetsDir, languageFolderMapping[SupportedLanguage.TYPESCRIPT_3_8]);
 
     // Ideally use the assets that match the language & version.
     if (existsSync(assetsLanguage)) {
       return assetsLanguage;
-    }
-    // Use fallback typescript 3.8 assets if new ones aren't available
-    if (language === SupportedLanguage.TYPESCRIPT_4_9 && existsSync(assetsTS38)) {
-      return assetsTS38;
     }
     // Fallback further to TS (for backwards compatibility purposes)
     if (existsSync(assetsTS)) {
@@ -246,7 +235,7 @@ export async function copyTemplateFiles({
     if (existsSync(assetsDir)) {
       return assetsDir;
     }
-    throw new Error(`Unsupported renderer: ${renderer} (${baseDir})`);
+    throw new Error(`Unsupported renderer: ${templateLocation} (${baseDir})`);
   };
 
   const destinationPath = destination ?? (await cliStoriesTargetPath());
@@ -257,7 +246,7 @@ export async function copyTemplateFiles({
   await cp(await templatePath(), destinationPath, { recursive: true, filter });
 
   if (commonAssetsDir && features.includes('docs')) {
-    let rendererType = frameworkToRenderer[renderer] || 'react';
+    let rendererType = frameworkToRenderer[templateLocation] || 'react';
 
     // This is only used for docs links and the docs site uses `vue` for both `vue` & `vue3` renderers
     if (rendererType === 'vue3') {

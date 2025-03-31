@@ -6,7 +6,7 @@ import versions from '../common/versions';
 
 const args = process.argv.slice(2);
 
-if (['dev', 'build'].includes(args[0])) {
+if (['dev', 'build', 'index'].includes(args[0])) {
   require('storybook/internal/cli/bin');
 } else {
   let command;

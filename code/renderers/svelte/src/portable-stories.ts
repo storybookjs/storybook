@@ -1,9 +1,3 @@
-import {
-  composeStories as originalComposeStories,
-  composeStory as originalComposeStory,
-  setProjectAnnotations as originalSetProjectAnnotations,
-  setDefaultProjectAnnotations,
-} from 'storybook/internal/preview-api';
 import type {
   Args,
   ComposedStoryFn,
@@ -18,6 +12,13 @@ import type {
 import PreviewRender from '@storybook/svelte/internal/PreviewRender.svelte';
 // @ts-expect-error Don't know why TS doesn't pick up the types export here
 import { createSvelte5Props } from '@storybook/svelte/internal/createSvelte5Props';
+
+import {
+  composeStories as originalComposeStories,
+  composeStory as originalComposeStory,
+  setProjectAnnotations as originalSetProjectAnnotations,
+  setDefaultProjectAnnotations,
+} from 'storybook/preview-api';
 
 import * as svelteProjectAnnotations from './entry-preview';
 import type { Meta } from './public-types';

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/web-components-vite",
-  "version": "9.0.0-alpha.0",
+  "version": "9.0.0-alpha.12",
   "description": "Storybook for web-components and Vite: Develop Web Components in isolation with Hot Reloading.",
   "keywords": [
     "storybook"
@@ -43,6 +43,7 @@
   "types": "dist/index.d.ts",
   "files": [
     "dist/**/*",
+    "template/**/*",
     "README.md",
     "*.js",
     "*.d.ts",
@@ -65,7 +66,7 @@
     "storybook": "workspace:^"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   },
   "publishConfig": {
     "access": "public"

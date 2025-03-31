@@ -11,7 +11,7 @@ import type { UniversalStore } from './index';
  * @param universalStore The UniversalStore instance to use.
  * @param selector An optional selector function to select a subset of the store state.
  * @remark This hook is intended for use in the manager UI. For use in the preview, import from
- * `storybook/internal/preview-api` instead.
+ * `storybook/preview-api` instead.
  */
 export const useUniversalStore: {
   <
@@ -36,10 +36,15 @@ export const useUniversalStore: {
   universalStore: TUniversalStore,
   selector?: (state: TState) => TSelectedState
 ): [TSelectedState, TUniversalStore['setState']] => {
+  const snapshotRef = React.useRef<TSelectedState>(
+    selector ? selector(universalStore.getState()) : universalStore.getState()
+  );
+
   const subscribe = React.useCallback<Parameters<(typeof React)['useSyncExternalStore']>[0]>(
     (listener) =>
       universalStore.onStateChange((state, previousState) => {
         if (!selector) {
+          snapshotRef.current = state;
           listener();
           return;
         }
@@ -48,16 +53,26 @@ export const useUniversalStore: {
 
         const hasChanges = !isEqual(selectedState, selectedPreviousState);
         if (hasChanges) {
+          snapshotRef.current = selectedState;
           listener();
         }
       }),
     [universalStore, selector]
   );
 
-  const getSnapshot = React.useCallback(
-    () => (selector ? selector(universalStore.getState()) : universalStore.getState()),
-    [universalStore, selector]
-  );
+  const getSnapshot = React.useCallback(() => {
+    const currentState = universalStore.getState();
+    const selectedState = selector ? selector(currentState) : currentState;
+
+    // Compare with the previous snapshot to maintain referential equality
+    if (isEqual(selectedState, snapshotRef.current)) {
+      return snapshotRef.current;
+    }
+
+    // Update the snapshot reference when the selected state changes
+    snapshotRef.current = selectedState;
+    return snapshotRef.current;
+  }, [universalStore, selector]);
 
   const state = React.useSyncExternalStore(subscribe, getSnapshot);
 

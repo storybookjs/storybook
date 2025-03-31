@@ -7,12 +7,14 @@ import {
   TooltipNote,
   WithTooltip,
 } from 'storybook/internal/components';
-import { type State, useStorybookApi } from 'storybook/internal/manager-api';
-import { styled } from 'storybook/internal/theming';
-import type { API_LoadedRefData, Addon_SidebarTopType, StoryIndex } from 'storybook/internal/types';
+import type { API_LoadedRefData, StoryIndex } from 'storybook/internal/types';
+import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 import { PlusIcon } from '@storybook/icons';
+
+import { type State, useStorybookApi } from 'storybook/manager-api';
+import { styled } from 'storybook/theming';
 
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
 import { useLayout } from '../layout/LayoutProvider';
@@ -86,7 +88,7 @@ const useCombination = (
   index: SidebarProps['index'],
   indexError: SidebarProps['indexError'],
   previewInitialized: SidebarProps['previewInitialized'],
-  status: SidebarProps['status'],
+  allStatuses: StatusesByStoryIdAndTypeId,
   refs: SidebarProps['refs']
 ): CombinedDataset => {
   const hash = useMemo(
@@ -96,14 +98,14 @@ const useCombination = (
         filteredIndex: index,
         indexError,
         previewInitialized,
-        status,
+        allStatuses,
         title: null,
         id: DEFAULT_REF_ID,
         url: 'iframe.html',
       },
       ...refs,
     }),
-    [refs, index, indexError, previewInitialized, status]
+    [refs, index, indexError, previewInitialized, allStatuses]
   );
   // @ts-expect-error (non strict)
   return useMemo(() => ({ hash, entries: Object.entries(hash) }), [hash]);
@@ -113,9 +115,8 @@ const isRendererReact = global.STORYBOOK_RENDERER === 'react';
 
 export interface SidebarProps extends API_LoadedRefData {
   refs: State['refs'];
-  status: State['status'];
+  allStatuses: StatusesByStoryIdAndTypeId;
   menu: any[];
-  extra: Addon_SidebarTopType[];
   storyId?: string;
   refId?: string;
   menuHighlighted?: boolean;
@@ -132,10 +133,9 @@ export const Sidebar = React.memo(function Sidebar({
   index,
   indexJson,
   indexError,
-  status,
+  allStatuses,
   previewInitialized,
   menu,
-  extra,
   menuHighlighted = false,
   enableShortcuts = true,
   isDevelopment = global.CONFIG_TYPE === 'DEVELOPMENT',
@@ -146,7 +146,7 @@ export const Sidebar = React.memo(function Sidebar({
   const [isFileSearchModalOpen, setIsFileSearchModalOpen] = useState(false);
   // @ts-expect-error (non strict)
   const selected: Selection = useMemo(() => storyId && { storyId, refId }, [storyId, refId]);
-  const dataset = useCombination(index, indexError, previewInitialized, status, refs);
+  const dataset = useCombination(index, indexError, previewInitialized, allStatuses, refs);
   const isLoading = !index && !indexError;
   const lastViewedProps = useLastViewed(selected);
   const { isMobile } = useLayout();
@@ -160,7 +160,6 @@ export const Sidebar = React.memo(function Sidebar({
             className="sidebar-header"
             menuHighlighted={menuHighlighted}
             menu={menu}
-            extra={extra}
             skipLinkHref="#storybook-preview-wrapper"
             isLoading={isLoading}
             onMenuClick={onMenuClick}

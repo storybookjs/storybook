@@ -55,9 +55,6 @@ export function prepareStory<TRenderer extends Renderer>(
   ): Promise<StoryContext<TRenderer>['loaded']> => {
     const loaded = {};
     for (const loaders of [
-      ...('__STORYBOOK_TEST_LOADERS__' in global && Array.isArray(global.__STORYBOOK_TEST_LOADERS__)
-        ? [global.__STORYBOOK_TEST_LOADERS__]
-        : []),
       normalizeArrays(projectAnnotations.loaders),
       normalizeArrays(componentAnnotations.loaders),
       normalizeArrays(storyAnnotations.loaders),
@@ -105,7 +102,7 @@ export function prepareStory<TRenderer extends Renderer>(
   };
 
   const undecoratedStoryFn = (context: StoryContext<TRenderer>) =>
-    (context.originalStoryFn as ArgsStoryFn<TRenderer>)(context.args, context);
+    context.originalStoryFn(context.args, context);
 
   // Currently it is only possible to set these globally
   const { applyDecorators = defaultDecorateStory, runStep } = projectAnnotations;
@@ -241,7 +238,9 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
     ...storyAnnotations?.globals,
   };
 
-  const contextForEnhancers: StoryContextForEnhancers<TRenderer> & { storyGlobals: Globals } = {
+  const contextForEnhancers: StoryContextForEnhancers<TRenderer> & {
+    storyGlobals: Globals;
+  } = {
     componentId: componentAnnotations.id,
     title: componentAnnotations.title,
     kind: componentAnnotations.title, // Back compat
@@ -266,7 +265,7 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
 
   const initialArgsBeforeEnhancers = { ...passedArgs };
 
-  contextForEnhancers.initialArgs = argsEnhancers.reduce(
+  contextForEnhancers.initialArgs = [...argsEnhancers].reduce(
     (accumulatedArgs: Args, enhancer) => ({
       ...accumulatedArgs,
       ...enhancer({

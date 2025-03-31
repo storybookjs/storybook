@@ -1,9 +1,23 @@
-import * as React from 'react';
-import { Fragment, useEffect } from 'react';
+import React, { type FC, Fragment, useEffect } from 'react';
 
 import type { Channel } from 'storybook/internal/channels';
-import { DocsContext as DocsContextProps, useArgs } from 'storybook/internal/preview-api';
-import type { PreviewWeb } from 'storybook/internal/preview-api';
+
+import { DocsContext } from '@storybook/blocks';
+import { global } from '@storybook/global';
+
+import type { Decorator, Loader, ReactRenderer } from '@storybook/react-vite';
+// TODO add empty preview
+// import * as storysource from '@storybook/addon-storysource';
+// import * as designs from '@storybook/addon-designs/preview';
+import { definePreview } from '@storybook/react-vite';
+
+import addonA11y from '@storybook/addon-a11y';
+import addonDocs from '@storybook/addon-docs';
+import addonTest from '@storybook/addon-test';
+import addonThemes from '@storybook/addon-themes';
+
+import { DocsContext as DocsContextProps, useArgs } from 'storybook/preview-api';
+import type { PreviewWeb } from 'storybook/preview-api';
 import {
   Global,
   ThemeProvider,
@@ -12,23 +26,8 @@ import {
   styled,
   themes,
   useTheme,
-} from 'storybook/internal/theming';
+} from 'storybook/theming';
 
-import { DocsContext } from '@storybook/blocks';
-import { global } from '@storybook/global';
-import type { Decorator, Loader, ReactRenderer } from '@storybook/react';
-
-// TODO add empty preview
-// import * as storysource from '@storybook/addon-storysource';
-// import * as designs from '@storybook/addon-designs/preview';
-import addonTest from '@storybook/experimental-addon-test';
-import { definePreview } from '@storybook/react-vite';
-
-import addonA11y from '@storybook/addon-a11y';
-import addonEssentials from '@storybook/addon-essentials';
-import addonThemes from '@storybook/addon-themes';
-
-import * as addonsPreview from '../addons/toolbars/template/stories/preview';
 import * as templatePreview from '../core/template/stories/preview';
 import { DocsPageWrapper } from '../lib/blocks/src/components';
 import '../renderers/react/template/components/index';
@@ -101,7 +100,7 @@ const PlayFnNotice = styled.div(
   })
 );
 
-const StackContainer = ({ children, layout }) => (
+const StackContainer: FC<React.PropsWithChildren<{ layout: string }>> = ({ children, layout }) => (
   <div
     style={{
       height: '100%',
@@ -331,7 +330,7 @@ const parameters = {
       { color: '#1EA7FD', title: 'Ocean' },
       { color: 'rgb(252, 82, 31)', title: 'Orange' },
       { color: 'rgba(255, 174, 0, 0.5)', title: 'Gold' },
-      { color: 'hsl(101, 52%, 49%)', title: 'Green' },
+      { color: 'hsl(102, 30.20%, 74.70%)', title: 'Green' },
       { color: 'hsla(179,65%,53%,0.5)', title: 'Seafoam' },
       { color: '#6F2CAC', title: 'Purple' },
       { color: '#2A0481', title: 'Ultraviolet' },
@@ -370,14 +369,7 @@ const parameters = {
 };
 
 export default definePreview({
-  addons: [
-    addonThemes(),
-    addonEssentials(),
-    addonA11y(),
-    addonTest(),
-    addonsPreview,
-    templatePreview,
-  ],
+  addons: [addonDocs(), addonThemes(), addonA11y(), addonTest(), templatePreview],
   decorators,
   loaders,
   tags: ['test', 'vitest'],

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/cli",
-  "version": "9.0.0-alpha.0",
+  "version": "9.0.0-alpha.12",
   "description": "Storybook CLI",
   "keywords": [
     "storybook"
@@ -49,6 +49,7 @@
     "create-storybook": "workspace:*",
     "cross-spawn": "^7.0.3",
     "envinfo": "^7.7.3",
+    "execa": "^9.5.2",
     "fd-package-json": "^1.2.0",
     "find-up": "^5.0.0",
     "giget": "^1.0.0",

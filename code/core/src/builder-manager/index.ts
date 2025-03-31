@@ -7,7 +7,6 @@ import { logger } from 'storybook/internal/node-logger';
 
 import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
 import { pnpPlugin } from '@yarnpkg/esbuild-plugin-pnp';
-import aliasPlugin from 'esbuild-plugin-alias';
 import sirv from 'sirv';
 
 import type {
@@ -70,7 +69,14 @@ export const getConfig: ManagerBuilder['getConfig'] = async (options) => {
     target: ['chrome100', 'safari15', 'firefox91'],
     platform: 'browser',
     bundle: true,
-    minify: true,
+    minify: false,
+    minifyWhitespace: false,
+    minifyIdentifiers: false,
+    minifySyntax: false,
+    metafile: true,
+
+    // treeShaking: true,
+
     sourcemap: false,
     conditions: ['browser', 'module', 'default'],
 
@@ -82,15 +88,7 @@ export const getConfig: ManagerBuilder['getConfig'] = async (options) => {
     tsconfig: tsconfigPath,
 
     legalComments: 'external',
-    plugins: [
-      aliasPlugin({
-        process: require.resolve('process/browser.js'),
-        util: require.resolve('util/util.js'),
-        assert: require.resolve('browser-assert'),
-      }),
-      globalExternals(globalsModuleInfoMap),
-      pnpPlugin(),
-    ],
+    plugins: [globalExternals(globalsModuleInfoMap), pnpPlugin()],
 
     banner: {
       js: 'try{',
@@ -179,6 +177,13 @@ const starter: StarterFunction = async function* starterGeneratorFn({
   );
 
   const { cssFiles, jsFiles } = await readOrderedFiles(addonsDir, compilation?.outputFiles);
+
+  if (compilation.metafile && options.outputDir) {
+    await writeFile(
+      join(options.outputDir, 'metafile.json'),
+      JSON.stringify(compilation.metafile, null, 2)
+    );
+  }
 
   // Build additional global values
   const globals: Record<string, any> = await buildFrameworkGlobalsFromOptions(options);

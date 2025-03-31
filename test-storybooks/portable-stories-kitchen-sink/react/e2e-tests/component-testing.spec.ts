@@ -8,10 +8,11 @@ import { SbPage } from "../../../../code/e2e-tests/util";
 
 const STORYBOOK_URL = "http://localhost:6006";
 const TEST_STORY_PATH = path.resolve(__dirname, "..", "stories", "AddonTest.stories.tsx");
+const UNHANDLED_ERRORS_STORY_PATH = path.resolve(__dirname, "..", "stories", "UnhandledErrors.stories.tsx");
 
-const setForceFailureFlag = async (value: boolean) => {
+const setForceFailureFlag = async (storyPath: string, value: boolean) => {
   // Read the story file content asynchronously
-  const storyContent = (await fs.readFile(TEST_STORY_PATH)).toString();
+  const storyContent = (await fs.readFile(storyPath)).toString();
 
   // Create a regex to match 'forceFailure: true' or 'forceFailure: false'
   const forceFailureRegex = /forceFailure:\s*(true|false)/;
@@ -23,7 +24,7 @@ const setForceFailureFlag = async (value: boolean) => {
   );
 
   // Write the updated content back to the file asynchronously
-  await fs.writeFile(TEST_STORY_PATH, updatedContent);
+  await fs.writeFile(storyPath, updatedContent);
 
   // the file change causes a HMR event, which causes a browser reload,and that can take a few seconds
   await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -38,22 +39,26 @@ test.describe("component testing", () => {
     await page.evaluate(() => window.sessionStorage.clear());
     await sbPage.waitUntilLoaded();
 
-    // Ensure that all features are disabled, as previous tests might have enabled them
+    
+    // Ensure that all test results are removed and features are disabled, as previous tests might have enabled them
+    
+    const clearStatusesButton = page.getByLabel('Clear all statuses');
+    if (await clearStatusesButton.isVisible()) {
+      await clearStatusesButton.click();
+    }
 
     await page.getByLabel('Expand testing module').click();
     const disableWatch = page.getByLabel('Disable watch mode');
     if (await disableWatch.isVisible()) {
       await disableWatch.click();
     }
-    await page.getByLabel("Show settings").click();
 
-    const configs = [page.getByLabel('Coverage'), page.getByLabel('Accessibility')];
-    for(const config of configs) {
-      if(await config.isChecked()){
+    const configs = [page.getByLabel('Coverage', { exact: true }), page.getByLabel('Accessibility', { exact: true })];
+    for (const config of configs) {
+      if (await config.isChecked()) {
         await config.click();
       }
     }
-    await page.getByLabel("Hide settings").click();
   });
 
   test("should show discrepancy between test results", async ({
@@ -84,8 +89,6 @@ test.describe("component testing", () => {
     }
 
     const testingModuleDescription = await page.locator('#testing-module-description');
-
-    await expect(testingModuleDescription).toContainText('Not run');
 
     const runTestsButton = await page.getByLabel('Start test run')
     await runTestsButton.click();
@@ -129,7 +132,7 @@ test.describe("component testing", () => {
     browserName,
   }) => {
     test.skip(browserName !== "chromium", `Skipping tests for ${browserName}`);
-    await setForceFailureFlag(true);
+    await setForceFailureFlag(TEST_STORY_PATH, true);
 
     const sbPage = new SbPage(page, expect);
     await sbPage.navigateToStory("addons/group/test", "Expected Failure");
@@ -143,8 +146,6 @@ test.describe("component testing", () => {
     await expect(page.locator('#testing-module-title')).toHaveText('Run local tests');
 
     const testingModuleDescription = await page.locator('#testing-module-description');
-
-    await expect(testingModuleDescription).toContainText('Not run');
 
     const runTestsButton = await page.getByLabel('Start test run')
     const watchModeButton = await page.getByLabel('Enable watch mode')
@@ -197,7 +198,7 @@ test.describe("component testing", () => {
     browserName,
   }) => {
     test.skip(browserName !== "chromium", `Skipping tests for ${browserName}`);
-    await setForceFailureFlag(false);
+    await setForceFailureFlag(TEST_STORY_PATH, false);
 
     const sbPage = new SbPage(page, expect);
     await sbPage.navigateToStory("addons/group/test", "Expected Failure");
@@ -212,7 +213,7 @@ test.describe("component testing", () => {
 
     // We shouldn't have to do an arbitrary wait, but because there is no UI for loading state yet, we have to
     await page.waitForTimeout(8000);
-    await setForceFailureFlag(true);
+    await setForceFailureFlag(TEST_STORY_PATH, true);
     await page.waitForTimeout(500);
 
     // Wait for test results to appear
@@ -252,7 +253,7 @@ test.describe("component testing", () => {
   }) => {
     test.skip(browserName !== "chromium", `Skipping tests for ${browserName}`);
     // Arrange - Prepare Storybook
-    await setForceFailureFlag(false);
+    await setForceFailureFlag(TEST_STORY_PATH, false);
 
     const sbPage = new SbPage(page, expect);
     await sbPage.navigateToStory("addons/group/test", "Expected Failure");
@@ -266,9 +267,7 @@ test.describe("component testing", () => {
     await expect(page.getByLabel("Open coverage report")).toHaveCount(0);
 
     // Act - Enable coverage and run tests
-    await page.getByLabel("Show settings").click();
-    await page.getByLabel("Coverage").click();
-    await page.getByLabel("Hide settings").click();
+    await page.getByLabel("Coverage", { exact: true }).click();
     // Wait for Vitest to have (re)started
     await page.waitForTimeout(2000);
 
@@ -277,8 +276,8 @@ test.describe("component testing", () => {
     // Assert - Coverage report is collected and shown
     await expect(page.getByLabel("Open coverage report")).toBeVisible({ timeout: 30000 });
     const sbPercentageText = await page.getByLabel(/percent coverage$/).textContent();
-    expect(sbPercentageText).toMatch(/^\d+\s%$/);
-    const sbPercentage = Number.parseInt(sbPercentageText!.replace(' %', '') ?? '');
+    expect(sbPercentageText).toMatch(/^\d+%$/);
+    const sbPercentage = Number.parseInt(sbPercentageText!.replace('%', '') ?? '');
     expect(sbPercentage).toBeGreaterThanOrEqual(0);
     expect(sbPercentage).toBeLessThanOrEqual(100);
 
@@ -302,7 +301,7 @@ test.describe("component testing", () => {
   }) => {
     test.skip(browserName !== "chromium", `Skipping tests for ${browserName}`);
     // Arrange - Prepare Storybook
-    await setForceFailureFlag(false);
+    await setForceFailureFlag(TEST_STORY_PATH, false);
 
     const sbPage = new SbPage(page, expect);
     await sbPage.navigateToStory("addons/group/test", "Expected Failure");
@@ -320,9 +319,46 @@ test.describe("component testing", () => {
 
     // Assert - Only one test is running and reported
     await expect(sidebarContextMenu.locator('#testing-module-description')).toContainText('Ran 1 test', { timeout: 30000 });
-    await expect(sidebarContextMenu.getByLabel('status: passed')).toHaveCount(1);
+    await expect(sidebarContextMenu.getByLabel('Component tests passed')).toHaveCount(1);
     await page.click('body');
     await expect(page.locator('#storybook-explorer-menu').getByRole('status', { name: 'Test status: success' })).toHaveCount(1);
+  });
+
+  test("should show unhandled errors in the testing module", async ({
+    page,
+    browserName,
+  }) => {
+
+    test.skip(browserName !== "chromium", `Skipping tests for ${browserName}`);
+    // Arrange - Prepare Storybook
+    await setForceFailureFlag(UNHANDLED_ERRORS_STORY_PATH, true);
+
+    const sbPage = new SbPage(page, expect);
+    await sbPage.navigateToStory("example/unhandlederrors", "Success");
+
+    const storyElement = sbPage
+      .getCanvasBodyElement()
+      .getByText("Hello world");
+    await expect(storyElement).toBeVisible({ timeout: 30000 });
+
+    // Act - Open sidebar context menu and start focused test
+    await page.locator('[data-item-id="example-unhandlederrors"]').hover();
+    await page.locator('[data-item-id="example-unhandlederrors"] div[data-testid="context-menu"] button').click();
+    const sidebarContextMenu = page.getByTestId('tooltip');
+    await sidebarContextMenu.getByLabel('Start test run').click();
+
+    // Assert - Tests are running and errors are reported
+    const errorLink = page.locator('#storybook-testing-module #testing-module-description a');
+    await expect(errorLink).toContainText('View full error', { timeout: 30000 });
+    await errorLink.click();
+
+    await expect(page.locator('pre')).toContainText('I THREW AN UNHANDLED ERROR!');
+    await expect(page.locator('pre')).toContainText('This error originated in');
+    await expect(page.locator('pre')).toContainText("The latest test that might've caused the error is");
+    await page.locator('body').click();
+
+    // Cleanup
+    await setForceFailureFlag(UNHANDLED_ERRORS_STORY_PATH, false);
   });
 
   test("should run focused test for a component", async ({
@@ -331,7 +367,7 @@ test.describe("component testing", () => {
   }) => {
     test.skip(browserName !== "chromium", `Skipping tests for ${browserName}`);
     // Arrange - Prepare Storybook
-    await setForceFailureFlag(false);
+    await setForceFailureFlag(TEST_STORY_PATH, false);
 
     const sbPage = new SbPage(page, expect);
     await sbPage.navigateToStory("addons/group/test", "Expected Failure");
@@ -351,7 +387,7 @@ test.describe("component testing", () => {
     await expect(sidebarContextMenu.locator('#testing-module-description')).toContainText('Ran 8 tests', { timeout: 30000 });
     // Assert - Failing test shows as a failed status
     await expect(sidebarContextMenu.getByText('1 story with errors')).toBeVisible();
-    await expect(sidebarContextMenu.getByLabel('status: failed')).toHaveCount(1);
+    await expect(sidebarContextMenu.getByLabel('Component tests failed')).toHaveCount(1);
 
     await page.click('body');
     await expect(page.locator('#storybook-explorer-menu').getByRole('status', { name: 'Test status: success' })).toHaveCount(7);
@@ -364,7 +400,7 @@ test.describe("component testing", () => {
   }) => {
     test.skip(browserName !== "chromium", `Skipping tests for ${browserName}`);
     // Arrange - Prepare Storybook
-    await setForceFailureFlag(false);
+    await setForceFailureFlag(TEST_STORY_PATH, false);
 
     const sbPage = new SbPage(page, expect);
     await sbPage.navigateToStory("addons/group/test", "Expected Failure");
@@ -384,7 +420,7 @@ test.describe("component testing", () => {
     await expect(sidebarContextMenu.locator('#testing-module-description')).toContainText('Ran 10 test', { timeout: 30000 });
     // Assert - 1 failing test shows as a failed status
     await expect(sidebarContextMenu.getByText('2 stories with errors')).toBeVisible();
-    await expect(sidebarContextMenu.getByLabel('status: failed')).toHaveCount(1);
+    await expect(sidebarContextMenu.getByLabel('Component tests failed')).toHaveCount(1);
 
     await page.click('body');
     await expect(page.locator('#storybook-explorer-menu').getByRole('status', { name: 'Test status: success' })).toHaveCount(7);
@@ -397,7 +433,7 @@ test.describe("component testing", () => {
   }) => {
     test.skip(browserName !== "chromium", `Skipping tests for ${browserName}`);
     // Arrange - Prepare Storybook
-    await setForceFailureFlag(false);
+    await setForceFailureFlag(TEST_STORY_PATH, false);
 
     const sbPage = new SbPage(page, expect);
     await sbPage.navigateToStory("example/button", "CSF 3 Primary");
@@ -408,9 +444,7 @@ test.describe("component testing", () => {
     await expect(storyElement).toBeVisible({ timeout: 30000 });
 
     // Act - Enable coverage
-    await page.getByLabel("Show settings").click();
-    await page.getByLabel("Coverage").click();
-    await page.getByLabel("Hide settings").click();
+    await page.getByLabel("Coverage", { exact: true }).click();
     // Wait for Vitest to have (re)started
     await page.waitForTimeout(2000);
 
@@ -436,10 +470,18 @@ test.describe("component testing", () => {
     // Assert - Coverage percentage is now collected and shown because running all tests automatically re-enables coverage
     await expect(page.getByLabel("Open coverage report")).toBeVisible({ timeout: 30000 });
     const sbPercentageText = await page.getByLabel(/percent coverage$/).textContent();
-    expect(sbPercentageText).toMatch(/^\d+\s%$/);
-    const sbPercentage = Number.parseInt(sbPercentageText!.replace(' %', '') ?? '');
+    expect(sbPercentageText).toMatch(/^\d+%$/);
+    const sbPercentage = Number.parseInt(sbPercentageText!.replace('%', '') ?? '');
     expect(sbPercentage).toBeGreaterThanOrEqual(0);
     expect(sbPercentage).toBeLessThanOrEqual(100);
   });
 
+  test.fixme("should still collect statuses even when the browser is closed", () => {
+  });
+
+  test.fixme("should have correct status count globally and in context menus", () => {
+  });
+  
+  test.fixme("should open the correct component test and a11y panels when clicking on statuses", () => {
+  });
 });

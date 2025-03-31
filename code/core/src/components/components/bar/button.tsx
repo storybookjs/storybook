@@ -9,7 +9,7 @@ import type {
 } from 'react';
 import React, { forwardRef } from 'react';
 
-import { isPropValid, styled } from 'storybook/internal/theming';
+import { isPropValid, styled } from 'storybook/theming';
 
 interface ButtonProps
   extends DetailedHTMLProps<ButtonHTMLAttributes<HTMLButtonElement>, HTMLButtonElement> {
@@ -132,23 +132,3 @@ export interface IconButtonProps {
   active?: boolean;
   disabled?: boolean;
 }
-
-const IconPlaceholder = styled.div(({ theme }) => ({
-  width: 14,
-  height: 14,
-  backgroundColor: theme.appBorderColor,
-  animation: `${theme.animation.glow} 1.5s ease-in-out infinite`,
-}));
-
-const IconButtonSkeletonWrapper = styled.div({
-  marginTop: 6,
-  padding: 7,
-  height: 28,
-});
-
-/** @deprecated This component will be removed in Storybook 9.0 */
-export const IconButtonSkeleton = () => (
-  <IconButtonSkeletonWrapper>
-    <IconPlaceholder />
-  </IconButtonSkeletonWrapper>
-);

@@ -30,8 +30,7 @@ vi.mock('storybook/internal/node-logger', () => ({
 vi.mock('./utils/safeResolve', () => {
   const KNOWN_FILES = [
     '@storybook/react',
-    '@storybook/addon-actions/manager',
-    '@storybook/addon-actions/register.js',
+    'storybook/actions/manager',
     './local/preset',
     './local/addons',
     '/absolute/preset',
@@ -39,7 +38,6 @@ vi.mock('./utils/safeResolve', () => {
     '@storybook/addon-docs',
     '@storybook/addon-cool',
     '@storybook/addon-docs/preset',
-    '@storybook/addon-interactions/preset',
     '@storybook/addon-essentials',
     '@storybook/addon-knobs/manager',
     '@storybook/addon-knobs/register',
@@ -411,18 +409,10 @@ describe('resolveAddonName', () => {
     });
   });
 
-  it('should resolve managerEntries', () => {
-    expect(resolveAddonName({} as any, '@storybook/addon-actions/register.js', {})).toEqual({
-      name: '@storybook/addon-actions/register.js',
-      managerEntries: [normalize('@storybook/addon-actions/register')],
-      type: 'virtual',
-    });
-  });
-
   it('should resolve managerEntries from new /manager path', () => {
-    expect(resolveAddonName({} as any, '@storybook/addon-actions/manager', {})).toEqual({
-      name: '@storybook/addon-actions/manager',
-      managerEntries: [normalize('@storybook/addon-actions/manager')],
+    expect(resolveAddonName({} as any, 'storybook/actions/manager', {})).toEqual({
+      name: 'storybook/actions/manager',
+      managerEntries: [normalize('storybook/actions/manager')],
       type: 'virtual',
     });
   });
@@ -453,13 +443,11 @@ describe('loadPreset', () => {
     mockPreset('@storybook/react', {});
     mockPreset('@storybook/preset-typescript', {});
     mockPreset('@storybook/addon-docs/preset', {});
-    mockPreset('@storybook/addon-actions/register.js', {});
     mockPreset('addon-foo/register.js', {});
     mockPreset('@storybook/addon-cool', {});
-    mockPreset('@storybook/addon-interactions/preset', {});
     mockPreset('addon-bar', {
       addons: ['@storybook/addon-cool'],
-      presets: ['@storybook/addon-interactions/preset'],
+      presets: [],
     });
     mockPreset('addon-baz/register.js', {});
     mockPreset('@storybook/addon-notes/register-panel', {});
@@ -524,7 +512,6 @@ describe('loadPreset', () => {
         presets: ['@storybook/preset-typescript'],
         addons: [
           '@storybook/addon-docs/preset',
-          '@storybook/addon-actions/register.js',
           'addon-foo/register.js',
           'addon-bar',
           'addon-baz/register.js',
@@ -546,23 +533,11 @@ describe('loadPreset', () => {
         preset: {},
       },
       {
-        name: '@storybook/addon-actions/register.js',
-        options: {},
-        preset: {
-          managerEntries: [normalize('@storybook/addon-actions/register')],
-        },
-      },
-      {
         name: 'addon-foo/register.js',
         options: {},
         preset: {
           managerEntries: [normalize('addon-foo/register')],
         },
-      },
-      {
-        name: '@storybook/addon-interactions/preset',
-        options: {},
-        preset: {},
       },
       {
         name: '@storybook/addon-cool',
@@ -593,7 +568,6 @@ describe('loadPreset', () => {
           presets: ['@storybook/preset-typescript'],
           addons: [
             '@storybook/addon-docs/preset',
-            '@storybook/addon-actions/register.js',
             'addon-foo/register.js',
             'addon-bar',
             'addon-baz/register.js',
@@ -683,11 +657,6 @@ describe('loadPreset', () => {
       [
         {
           "name": "@storybook/preset-typescript",
-          "options": {},
-          "preset": {},
-        },
-        {
-          "name": "@storybook/addon-interactions/preset",
           "options": {},
           "preset": {},
         },

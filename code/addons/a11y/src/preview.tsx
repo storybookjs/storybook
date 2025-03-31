@@ -1,6 +1,6 @@
 import type { AfterEach } from 'storybook/internal/types';
 
-import { expect } from '@storybook/test';
+import { expect } from 'storybook/test';
 
 import { run } from './a11yRunner';
 import type { A11yParameters } from './params';
@@ -18,7 +18,6 @@ export const experimental_afterEach: AfterEach<any> = async ({
   const a11yGlobals = globals.a11y;
 
   const shouldRunEnvironmentIndependent =
-    a11yParameter?.manual !== true &&
     a11yParameter?.disable !== true &&
     a11yParameter?.test !== 'off' &&
     a11yGlobals?.manual !== true;
@@ -64,7 +63,7 @@ export const experimental_afterEach: AfterEach<any> = async ({
               vitestMatchersExtended = true;
             }
 
-            // @ts-expect-error - todo - fix type extension of expect from @storybook/test
+            // @ts-expect-error - todo - fix type extension of expect from storybook/test
             expect(result).toHaveNoViolations();
           }
         }

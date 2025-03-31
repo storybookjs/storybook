@@ -1,6 +1,6 @@
 {
   "name": "@storybook/codemod",
-  "version": "9.0.0-alpha.0",
+  "version": "9.0.0-alpha.12",
   "description": "A collection of codemod scripts written with JSCodeshift",
   "keywords": [
     "storybook"
@@ -26,16 +26,9 @@
       "node": "./dist/index.js",
       "require": "./dist/index.js"
     },
-    "./dist/transforms/add-component-parameters.js": "./dist/transforms/add-component-parameters.js",
     "./dist/transforms/csf-2-to-3.js": "./dist/transforms/csf-2-to-3.js",
     "./dist/transforms/csf-hoist-story-annotations.js": "./dist/transforms/csf-hoist-story-annotations.js",
     "./dist/transforms/find-implicit-spies.js": "./dist/transforms/find-implicit-spies.js",
-    "./dist/transforms/move-builtin-addons.js": "./dist/transforms/move-builtin-addons.js",
-    "./dist/transforms/mdx-to-csf.js": "./dist/transforms/mdx-to-csf.js",
-    "./dist/transforms/migrate-to-test-package.js": "./dist/transforms/migrate-to-test-package.js",
-    "./dist/transforms/storiesof-to-csf.js": "./dist/transforms/storiesof-to-csf.js",
-    "./dist/transforms/update-addon-info.js": "./dist/transforms/update-addon-info.js",
-    "./dist/transforms/update-organisation-name.js": "./dist/transforms/update-organisation-name.js",
     "./dist/transforms/upgrade-deprecated-types.js": "./dist/transforms/upgrade-deprecated-types.js",
     "./dist/transforms/upgrade-hierarchy-separators.js": "./dist/transforms/upgrade-hierarchy-separators.js",
     "./package.json": "./package.json"
@@ -89,16 +82,8 @@
   "bundler": {
     "entries": [
       "./src/index.ts",
-      "./src/transforms/storiesof-to-csf.js",
-      "./src/transforms/mdx-to-csf.ts",
       "./src/transforms/csf-2-to-3.ts",
-      "./src/transforms/csf-hoist-story-annotations.js",
       "./src/transforms/find-implicit-spies.ts",
-      "./src/transforms/add-component-parameters.js",
-      "./src/transforms/migrate-to-test-package.ts",
-      "./src/transforms/move-builtin-addons.js",
-      "./src/transforms/update-addon-info.js",
-      "./src/transforms/update-organisation-name.js",
       "./src/transforms/upgrade-deprecated-types.ts",
       "./src/transforms/upgrade-hierarchy-separators.js"
     ],

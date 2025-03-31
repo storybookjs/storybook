@@ -19,22 +19,49 @@ async function run() {
     'typescript',
     'storybook',
 
+    'storybook/manager-api',
+    'storybook/preview-api',
+    'storybook/theming',
+
+    'storybook/test',
+    'storybook/test/spy',
+    'storybook/test/preview',
+
+    'storybook/measure',
+    'storybook/measure/preview',
+
+    'storybook/highlight',
+    'storybook/highlight/preview',
+
+    'storybook/outline',
+    'storybook/outline/preview',
+
+    'storybook/backgrounds',
+    'storybook/backgrounds/preview',
+
+    'storybook/actions',
+    'storybook/actions/preview',
+    'storybook/actions/decorator',
+
+    'storybook/viewport',
+    'storybook/viewport/preview',
+
     'storybook/internal/builder-manager',
     'storybook/internal/channels',
     'storybook/internal/client-logger',
     'storybook/internal/common',
+    'storybook/internal/component-testing',
+    'storybook/internal/component-testing/preview',
     'storybook/internal/components',
     'storybook/internal/core-events',
     'storybook/internal/core-server',
     'storybook/internal/csf-tools',
     'storybook/internal/docs-tools',
-    'storybook/internal/manager-api',
     'storybook/internal/node-logger',
-    'storybook/internal/preview-api',
     'storybook/internal/router',
     'storybook/internal/telemetry',
-    'storybook/internal/theming',
     'storybook/internal/types',
+    'storybook/internal/instrumenter',
   ];
 
   const all = entries.filter((e) => e.dts);

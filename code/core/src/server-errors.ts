@@ -1,6 +1,8 @@
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
+import type { Status } from './shared/status-store';
+import type { StatusTypeId } from './shared/status-store';
 import { StorybookError } from './storybook-error';
 
 /**
@@ -419,6 +421,25 @@ export class MainFileEvaluationError extends StorybookError {
         
         Original error:
         ${errorText}`,
+    });
+  }
+}
+
+export class StatusTypeIdMismatchError extends StorybookError {
+  constructor(
+    public data: {
+      status: Status;
+      typeId: StatusTypeId;
+    }
+  ) {
+    super({
+      category: Category.CORE_SERVER,
+      code: 16,
+      message: `Status has typeId "${data.status.typeId}" but was added to store with typeId "${data.typeId}". Full status: ${JSON.stringify(
+        data.status,
+        null,
+        2
+      )}`,
     });
   }
 }

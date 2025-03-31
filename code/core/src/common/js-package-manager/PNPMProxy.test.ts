@@ -246,15 +246,15 @@ describe('PNPM Proxy', () => {
               }
             },
             "dependencies": {
-              "@storybook/addon-interactions": {
-                "from": "@storybook/addon-interactions",
+              "@storybook/addon-example": {
+                "from": "@storybook/addon-example",
                 "version": "7.0.0-beta.13",
-                "resolved": "https://registry.npmjs.org/@storybook/addon-interactions/-/addon-interactions-7.0.0-beta.13.tgz",
+                "resolved": "https://registry.npmjs.org/@storybook/addon-example/-/addon-example-7.0.0-beta.13.tgz",
                 "dependencies": {
-                  "@storybook/instrumenter": {
-                    "from": "@storybook/instrumenter",
+                  "@storybook/package": {
+                    "from": "@storybook/package",
                     "version": "7.0.0-beta.13",
-                    "resolved": "https://registry.npmjs.org/@storybook/instrumenter/-/instrumenter-7.0.0-beta.13.tgz"
+                    "resolved": "https://registry.npmjs.org/@storybook/package/-/package-7.0.0-beta.13.tgz"
                   }
                 }
               }
@@ -265,10 +265,10 @@ describe('PNPM Proxy', () => {
                 "version": "0.0.11-next.0",
                 "resolved": "https://registry.npmjs.org/@storybook/jest/-/jest-0.0.11-next.0.tgz",
                 "dependencies": {
-                  "@storybook/instrumenter": {
-                    "from": "@storybook/instrumenter",
+                  "@storybook/package": {
+                    "from": "@storybook/package",
                     "version": "7.0.0-rc.7",
-                    "resolved": "https://registry.npmjs.org/@storybook/instrumenter/-/instrumenter-7.0.0-rc.7.tgz"
+                    "resolved": "https://registry.npmjs.org/@storybook/package/-/package-7.0.0-rc.7.tgz"
                   }
                 }
               },
@@ -277,10 +277,10 @@ describe('PNPM Proxy', () => {
                 "version": "0.0.14-next.1",
                 "resolved": "https://registry.npmjs.org/@storybook/testing-library/-/testing-library-0.0.14-next.1.tgz",
                 "dependencies": {
-                  "@storybook/instrumenter": {
-                    "from": "@storybook/instrumenter",
+                  "@storybook/package": {
+                    "from": "@storybook/package",
                     "version": "7.0.0-rc.7",
-                    "resolved": "https://registry.npmjs.org/@storybook/instrumenter/-/instrumenter-7.0.0-rc.7.tgz"
+                    "resolved": "https://registry.npmjs.org/@storybook/package/-/package-7.0.0-rc.7.tgz"
                   }
                 }
               },
@@ -314,7 +314,7 @@ describe('PNPM Proxy', () => {
         {
           "dedupeCommand": "pnpm dedupe",
           "dependencies": {
-            "@storybook/addon-interactions": [
+            "@storybook/addon-example": [
               {
                 "location": "",
                 "version": "7.0.0-beta.13",
@@ -332,16 +332,6 @@ describe('PNPM Proxy', () => {
                 "version": "7.0.0-beta.13",
               },
             ],
-            "@storybook/instrumenter": [
-              {
-                "location": "",
-                "version": "7.0.0-rc.7",
-              },
-              {
-                "location": "",
-                "version": "7.0.0-beta.13",
-              },
-            ],
             "@storybook/jest": [
               {
                 "location": "",
@@ -349,6 +339,16 @@ describe('PNPM Proxy', () => {
               },
             ],
             "@storybook/nextjs": [
+              {
+                "location": "",
+                "version": "7.0.0-beta.13",
+              },
+            ],
+            "@storybook/package": [
+              {
+                "location": "",
+                "version": "7.0.0-rc.7",
+              },
               {
                 "location": "",
                 "version": "7.0.0-beta.13",
@@ -362,7 +362,7 @@ describe('PNPM Proxy', () => {
             ],
           },
           "duplicatedDependencies": {
-            "@storybook/instrumenter": [
+            "@storybook/package": [
               "7.0.0-rc.7",
               "7.0.0-beta.13",
             ],

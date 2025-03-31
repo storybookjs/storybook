@@ -1,7 +1,8 @@
-import { styled } from 'storybook/internal/theming';
+import { styled } from 'storybook/theming';
 
 export const TestStatusIcon = styled.div<{
-  status: 'pending' | 'positive' | 'warning' | 'negative' | 'critical' | 'unknown';
+  isRunning: boolean;
+  status: 'positive' | 'warning' | 'negative' | 'critical' | 'unknown';
   percentage?: number;
 }>(
   ({ percentage }) => ({
@@ -13,11 +14,9 @@ export const TestStatusIcon = styled.div<{
       : 'var(--status-color)',
     borderRadius: '50%',
   }),
-  ({ status, theme }) =>
-    status === 'pending' && {
+  ({ isRunning, theme }) =>
+    isRunning && {
       animation: `${theme.animation.glow} 1.5s ease-in-out infinite`,
-      '--status-color': theme.color.mediumdark,
-      '--status-background': `${theme.color.mediumdark}66`,
     },
   ({ status, theme }) =>
     status === 'positive' && {

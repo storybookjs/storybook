@@ -210,25 +210,20 @@ export const baseTemplates = {
     script:
       'npx create-next-app@^14 {{beforeDir}} --eslint --tailwind --app --import-alias="@/*" --src-dir',
     expected: {
-      framework: '@storybook/experimental-nextjs-vite',
+      framework: '@storybook/nextjs-vite',
       renderer: '@storybook/react',
       builder: '@storybook/builder-vite',
     },
     modifications: {
       useCsfFactory: true,
       mainConfig: {
-        framework: '@storybook/experimental-nextjs-vite',
+        framework: '@storybook/nextjs-vite',
         features: {
           experimentalRSC: true,
           developmentModeForBuild: true,
         },
       },
-      extraDependencies: [
-        'server-only',
-        '@storybook/experimental-nextjs-vite',
-        'vite',
-        'prop-types',
-      ],
+      extraDependencies: ['server-only', '@storybook/nextjs-vite', 'vite', 'prop-types'],
     },
     skipTasks: ['e2e-tests-dev', 'bench'],
   },
@@ -237,25 +232,20 @@ export const baseTemplates = {
     script:
       'npx create-next-app {{beforeDir}} --eslint --no-tailwind --app --import-alias="@/*" --src-dir',
     expected: {
-      framework: '@storybook/experimental-nextjs-vite',
+      framework: '@storybook/nextjs-vite',
       renderer: '@storybook/react',
       builder: '@storybook/builder-vite',
     },
     modifications: {
       useCsfFactory: true,
       mainConfig: {
-        framework: '@storybook/experimental-nextjs-vite',
+        framework: '@storybook/nextjs-vite',
         features: {
           experimentalRSC: true,
           developmentModeForBuild: true,
         },
       },
-      extraDependencies: [
-        'server-only',
-        '@storybook/experimental-nextjs-vite',
-        'vite',
-        'prop-types',
-      ],
+      extraDependencies: ['server-only', '@storybook/nextjs-vite', 'vite', 'prop-types'],
     },
     skipTasks: ['e2e-tests-dev', 'bench'],
   },
@@ -429,7 +419,7 @@ export const baseTemplates = {
   },
   'nuxt-vite/default-ts': {
     name: 'Nuxt v3 (Vite | TypeScript)',
-    script: 'npx nuxi init --packageManager yarn --gitInit false {{beforeDir}}',
+    script: 'npx nuxi init --packageManager yarn --gitInit false -M @nuxt/ui {{beforeDir}}',
     expected: {
       framework: '@storybook-vue/nuxt',
       renderer: '@storybook/vue3',
@@ -555,18 +545,6 @@ export const baseTemplates = {
       framework: '@storybook/web-components-vite',
       renderer: '@storybook/web-components',
       builder: '@storybook/builder-vite',
-    },
-    // Remove smoke-test from the list once https://github.com/storybookjs/storybook/issues/19351 is fixed.
-    skipTasks: ['smoke-test', 'e2e-tests-dev', 'bench', 'vitest-integration'],
-  },
-  'vue-cli/default-js': {
-    name: 'Vue CLI v3 (Webpack | JavaScript)',
-    script:
-      'npx -p @vue/cli vue create {{beforeDir}} --default --packageManager=yarn --force --merge && cd {{beforeDir}} && echo "module.exports = {}" > webpack.config.js',
-    expected: {
-      framework: '@storybook/vue3-webpack5',
-      renderer: '@storybook/vue3',
-      builder: '@storybook/builder-webpack5',
     },
     // Remove smoke-test from the list once https://github.com/storybookjs/storybook/issues/19351 is fixed.
     skipTasks: ['smoke-test', 'e2e-tests-dev', 'bench', 'vitest-integration'],
@@ -848,7 +826,6 @@ export const merged: TemplateKey[] = [
   ...normal,
   'react-webpack/18-ts',
   'react-webpack/17-ts',
-  'angular-cli/15-ts',
   'preact-vite/default-ts',
   'html-webpack/default',
   'html-vite/default-ts',
@@ -863,7 +840,6 @@ export const daily: TemplateKey[] = [
   'react-vite/prerelease-ts',
   'react-webpack/prerelease-ts',
   'vue3-vite/default-js',
-  'vue-cli/default-js',
   'lit-vite/default-js',
   'svelte-vite/default-js',
   'nextjs/prerelease',

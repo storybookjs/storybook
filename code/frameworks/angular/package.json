@@ -1,6 +1,6 @@
 {
   "name": "@storybook/angular",
-  "version": "9.0.0-alpha.0",
+  "version": "9.0.0-alpha.12",
   "description": "Storybook for Angular: Develop Angular components in isolation with hot reloading.",
   "keywords": [
     "storybook",
@@ -23,18 +23,17 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "node": "./dist/index.js",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
     },
     "./preset": "./preset.js",
     "./node": {
       "types": "./dist/node/index.d.ts",
-      "node": "./dist/node/index.js",
       "import": "./dist/node/index.js",
       "require": "./dist/node/index.js"
     },
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./*": "./*"
   },
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -94,22 +93,22 @@
     "zone.js": "^0.15.0"
   },
   "peerDependencies": {
-    "@angular-devkit/architect": ">=0.1500.0 < 0.2000.0",
-    "@angular-devkit/build-angular": ">=15.0.0 < 20.0.0",
-    "@angular-devkit/core": ">=15.0.0 < 20.0.0",
-    "@angular/animations": ">=15.0.0 < 20.0.0",
-    "@angular/cli": ">=15.0.0 < 20.0.0",
-    "@angular/common": ">=15.0.0 < 20.0.0",
-    "@angular/compiler": ">=15.0.0 < 20.0.0",
-    "@angular/compiler-cli": ">=15.0.0 < 20.0.0",
-    "@angular/core": ">=15.0.0 < 20.0.0",
-    "@angular/forms": ">=15.0.0 < 20.0.0",
-    "@angular/platform-browser": ">=15.0.0 < 20.0.0",
-    "@angular/platform-browser-dynamic": ">=15.0.0 < 20.0.0",
-    "rxjs": "^6.0.0 || ^7.4.0",
+    "@angular-devkit/architect": ">=0.1800.0 < 0.2000.0",
+    "@angular-devkit/build-angular": ">=18.0.0 < 20.0.0",
+    "@angular-devkit/core": ">=18.0.0 < 20.0.0",
+    "@angular/animations": ">=18.0.0 < 20.0.0",
+    "@angular/cli": ">=18.0.0 < 20.0.0",
+    "@angular/common": ">=18.0.0 < 20.0.0",
+    "@angular/compiler": ">=18.0.0 < 20.0.0",
+    "@angular/compiler-cli": ">=18.0.0 < 20.0.0",
+    "@angular/core": ">=18.0.0 < 20.0.0",
+    "@angular/forms": ">=18.0.0 < 20.0.0",
+    "@angular/platform-browser": ">=18.0.0 < 20.0.0",
+    "@angular/platform-browser-dynamic": ">=18.0.0 < 20.0.0",
+    "rxjs": "^6.5.3 || ^7.4.0",
     "storybook": "workspace:^",
-    "typescript": "^4.0.0 || ^5.0.0",
-    "zone.js": ">= 0.11.1 < 1.0.0"
+    "typescript": "^4.9.0 || ^5.0.0",
+    "zone.js": ">=0.14.0"
   },
   "peerDependenciesMeta": {
     "@angular/animations": {
@@ -123,7 +122,7 @@
     }
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   },
   "publishConfig": {
     "access": "public"

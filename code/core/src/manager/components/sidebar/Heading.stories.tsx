@@ -1,13 +1,11 @@
-// @TODO: use addon-interactions and remove the rule disable above
 import React from 'react';
 
-import { ThemeProvider, useTheme } from 'storybook/internal/theming';
-import type { Theme } from 'storybook/internal/theming';
+import type { Meta, StoryFn, StoryObj } from '@storybook/react-vite';
 
-import type { Meta, StoryFn, StoryObj } from '@storybook/react';
-import { screen } from '@storybook/test';
-
-import { action } from '@storybook/addon-actions';
+import { action } from 'storybook/actions';
+import { screen } from 'storybook/test';
+import { ThemeProvider, useTheme } from 'storybook/theming';
+import type { Theme } from 'storybook/theming';
 
 import { Heading } from './Heading';
 
@@ -33,7 +31,7 @@ const menuItems = [
 ];
 
 export const MenuHighlighted: Story = () => (
-  <Heading menuHighlighted menu={menuItems} isLoading={false} extra={[]} />
+  <Heading menuHighlighted menu={menuItems} isLoading={false} />
 );
 
 export const standardData = { menu: menuItems };
@@ -52,7 +50,7 @@ export const Standard: Story = () => {
         },
       }}
     >
-      <Heading menu={menuItems} isLoading={false} extra={[]} />
+      <Heading menu={menuItems} isLoading={false} />
     </ThemeProvider>
   );
 };
@@ -71,7 +69,7 @@ export const StandardNoLink: Story = () => {
         },
       }}
     >
-      <Heading menu={menuItems} isLoading={false} extra={[]} />
+      <Heading menu={menuItems} isLoading={false} />
     </ThemeProvider>
   );
 };
@@ -90,7 +88,7 @@ export const LinkAndText: Story = () => {
         },
       }}
     >
-      <Heading menu={menuItems} isLoading={false} extra={[]} />
+      <Heading menu={menuItems} isLoading={false} />
     </ThemeProvider>
   );
 };
@@ -109,7 +107,7 @@ export const OnlyText: Story = () => {
         },
       }}
     >
-      <Heading menu={menuItems} isLoading={false} extra={[]} />
+      <Heading menu={menuItems} isLoading={false} />
     </ThemeProvider>
   );
 };
@@ -128,7 +126,7 @@ export const LongText: Story = () => {
         },
       }}
     >
-      <Heading menu={menuItems} isLoading={false} extra={[]} />
+      <Heading menu={menuItems} isLoading={false} />
     </ThemeProvider>
   );
 };
@@ -147,7 +145,7 @@ export const CustomTitle: Story = () => {
         },
       }}
     >
-      <Heading menu={menuItems} isLoading={false} extra={[]} />
+      <Heading menu={menuItems} isLoading={false} />
     </ThemeProvider>
   );
 };
@@ -166,7 +164,7 @@ export const CustomBrandImage: Story = () => {
         },
       }}
     >
-      <Heading menu={menuItems} isLoading={false} extra={[]} />
+      <Heading menu={menuItems} isLoading={false} />
     </ThemeProvider>
   );
 };
@@ -185,7 +183,7 @@ export const CustomBrandImageTall: Story = () => {
         },
       }}
     >
-      <Heading menu={menuItems} isLoading={false} extra={[]} />
+      <Heading menu={menuItems} isLoading={false} />
     </ThemeProvider>
   );
 };
@@ -204,7 +202,7 @@ export const CustomBrandImageUnsizedSVG: Story = () => {
         },
       }}
     >
-      <Heading menu={menuItems} isLoading={false} extra={[]} />
+      <Heading menu={menuItems} isLoading={false} />
     </ThemeProvider>
   );
 };
@@ -223,7 +221,7 @@ export const NoBrand: Story = () => {
         },
       }}
     >
-      <Heading menu={menuItems} isLoading={false} extra={[]} />
+      <Heading menu={menuItems} isLoading={false} />
     </ThemeProvider>
   );
 };
@@ -232,7 +230,6 @@ export const SkipToCanvasLinkFocused: StoryObj<typeof Heading> = {
   args: {
     menu: menuItems,
     skipLinkHref: '#storybook-preview-wrapper',
-    extra: [],
     isLoading: false,
   },
   globals: { sb_theme: 'light' },

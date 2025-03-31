@@ -1,5 +1,4 @@
 import { RESET_STORY_ARGS } from 'storybook/internal/core-events';
-import { addons } from 'storybook/internal/preview-api';
 import type { ArgsStoryFn, RenderContext } from 'storybook/internal/types';
 
 /*
@@ -11,6 +10,7 @@ import PreviewRender from '@storybook/svelte/internal/PreviewRender.svelte';
 // @ts-expect-error Don't know why TS doesn't pick up the types export here
 import { createSvelte5Props } from '@storybook/svelte/internal/createSvelte5Props';
 
+import { addons } from 'storybook/preview-api';
 import * as svelte from 'svelte';
 
 import type { SvelteRenderer } from './types';

@@ -2,8 +2,9 @@ import type { ComponentProps } from 'react';
 import React from 'react';
 
 import { Button, Spaced } from 'storybook/internal/components';
-import { styled } from 'storybook/internal/theming';
 import type { DocsContextProps, ModuleExport } from 'storybook/internal/types';
+
+import { styled } from 'storybook/theming';
 
 import * as ButtonStories from '../examples/Button.stories';
 import { Preview, PreviewSkeleton } from './Preview';
@@ -29,70 +30,70 @@ export const Loading = () => <PreviewSkeleton />;
 
 export const CodeCollapsed = () => (
   <Preview isExpanded={false} withSource={sourceStories.JSX.args}>
-    <Button secondary>Button 1</Button>
+    <Button variant="outline">Button 1</Button>
   </Preview>
 );
 
 export const CodeExpanded = () => (
   <Preview isExpanded withSource={sourceStories.JSX.args}>
-    <Button secondary>Button 1</Button>
+    <Button variant="outline">Button 1</Button>
   </Preview>
 );
 
 export const CodeError = () => (
   <Preview isExpanded withSource={sourceStories.SourceUnavailable.args}>
-    <Button secondary>Button 1</Button>
+    <Button variant="outline">Button 1</Button>
   </Preview>
 );
 
 export const Single = () => (
   <Preview>
-    <Button secondary>Button 1</Button>
+    <Button variant="outline">Button 1</Button>
   </Preview>
 );
 
 export const Row = () => (
   <Preview>
-    <Button secondary>Button 1</Button>
-    <Button secondary>Button 2</Button>
-    <Button secondary>Button 3</Button>
-    <Button secondary>Button 4</Button>
-    <Button secondary>Button 5</Button>
-    <Button secondary>Button 6</Button>
-    <Button secondary>Button 7</Button>
+    <Button variant="outline">Button 1</Button>
+    <Button variant="outline">Button 2</Button>
+    <Button variant="outline">Button 3</Button>
+    <Button variant="outline">Button 4</Button>
+    <Button variant="outline">Button 5</Button>
+    <Button variant="outline">Button 6</Button>
+    <Button variant="outline">Button 7</Button>
   </Preview>
 );
 
 export const Column = () => (
   <Preview isColumn>
-    <Button secondary>Button 1</Button>
-    <Button secondary>Button 2</Button>
-    <Button secondary>Button 3</Button>
+    <Button variant="outline">Button 1</Button>
+    <Button variant="outline">Button 2</Button>
+    <Button variant="outline">Button 3</Button>
   </Preview>
 );
 
 export const GridWith3Columns = () => (
   <Preview columns={3}>
-    <Button secondary>Button 1</Button>
-    <Button secondary>Button 2</Button>
-    <Button secondary>Button 3</Button>
-    <Button secondary>Button 4</Button>
-    <Button secondary>Button 5</Button>
-    <Button secondary>Button 6</Button>
-    <Button secondary>Button 7 long long long long long </Button>
-    <Button secondary>Button 8</Button>
-    <Button secondary>Button 9</Button>
-    <Button secondary>Button 10</Button>
-    <Button secondary>Button 11</Button>
-    <Button secondary>Button 12</Button>
-    <Button secondary>Button 13</Button>
-    <Button secondary>Button 14</Button>
-    <Button secondary>Button 15</Button>
-    <Button secondary>Button 16</Button>
-    <Button secondary>Button 17</Button>
-    <Button secondary>Button 18</Button>
-    <Button secondary>Button 19</Button>
-    <Button secondary>Button 20</Button>
+    <Button variant="outline">Button 1</Button>
+    <Button variant="outline">Button 2</Button>
+    <Button variant="outline">Button 3</Button>
+    <Button variant="outline">Button 4</Button>
+    <Button variant="outline">Button 5</Button>
+    <Button variant="outline">Button 6</Button>
+    <Button variant="outline">Button 7 long long long long long </Button>
+    <Button variant="outline">Button 8</Button>
+    <Button variant="outline">Button 9</Button>
+    <Button variant="outline">Button 10</Button>
+    <Button variant="outline">Button 11</Button>
+    <Button variant="outline">Button 12</Button>
+    <Button variant="outline">Button 13</Button>
+    <Button variant="outline">Button 14</Button>
+    <Button variant="outline">Button 15</Button>
+    <Button variant="outline">Button 16</Button>
+    <Button variant="outline">Button 17</Button>
+    <Button variant="outline">Button 18</Button>
+    <Button variant="outline">Button 19</Button>
+    <Button variant="outline">Button 20</Button>
   </Preview>
 );
 
@@ -240,10 +241,7 @@ export const WithCenteredMulti = (
   </Preview>
 );
 
-export const WithAdditionalActions = (
-  args: any,
-  { loaded: { docsContext } }: { loaded: { docsContext: DocsContextProps } }
-) => (
+export const WithAdditionalActions = () => (
   <Preview
     additionalActions={[
       {
@@ -255,6 +253,6 @@ export const WithAdditionalActions = (
       },
     ]}
   >
-    <Button secondary>Button 1</Button>
+    <Button variant="outline">Button 1</Button>
   </Preview>
 );

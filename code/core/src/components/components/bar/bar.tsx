@@ -1,7 +1,7 @@
 import type { ComponentProps } from 'react';
 import React, { Children } from 'react';
 
-import { styled } from 'storybook/internal/theming';
+import { styled } from 'storybook/theming';
 
 import type { ScrollAreaProps } from '../ScrollArea/ScrollArea';
 import { ScrollArea } from '../ScrollArea/ScrollArea';
@@ -18,7 +18,7 @@ export const Side = styled.div<SideProps>(
     whiteSpace: 'nowrap',
     flexBasis: 'auto',
     marginLeft: 3,
-    marginRight: 3,
+    marginRight: 10,
   },
   ({ scrollable }) => (scrollable ? { flexShrink: 0 } : {}),
   ({ left }) =>
@@ -32,10 +32,7 @@ export const Side = styled.div<SideProps>(
   ({ right }) =>
     right
       ? {
-          marginLeft: 30,
-          '& > *': {
-            marginRight: 4,
-          },
+          gap: 6,
         }
       : {}
 );

@@ -7512,7 +7512,6 @@ __metadata:
     "@storybook/vue3-vite": "workspace:*"
     "@storybook/web-components": "workspace:*"
     "@storybook/web-components-vite": "workspace:*"
-    "@storybook/web-components-webpack5": "workspace:*"
     "@testing-library/dom": "npm:^10.4.0"
     "@testing-library/jest-dom": "npm:^6.6.3"
     "@testing-library/react": "npm:^16.2.0"
@@ -7780,21 +7779,6 @@ __metadata:
     magic-string: "npm:^0.30.0"
     typescript: "npm:^5.7.3"
   peerDependencies:
-    storybook: "workspace:^"
-  languageName: unknown
-  linkType: soft
-
-"@storybook/web-components-webpack5@workspace:*, @storybook/web-components-webpack5@workspace:frameworks/web-components-webpack5":
-  version: 0.0.0-use.local
-  resolution: "@storybook/web-components-webpack5@workspace:frameworks/web-components-webpack5"
-  dependencies:
-    "@storybook/builder-webpack5": "workspace:*"
-    "@storybook/web-components": "workspace:*"
-    "@types/node": "npm:^22.0.0"
-    lit: "npm:2.3.1"
-    typescript: "npm:^5.7.3"
-  peerDependencies:
-    lit: ^2.0.0 || ^3.0.0
     storybook: "workspace:^"
   languageName: unknown
   linkType: soft

@@ -28,6 +28,8 @@
   - [Dropped support for Vite 4](#dropped-support-for-vite-4)
   - [Framework-specific changes](#framework-specific-changes)
     - [Angular = Require v18 and up](#angular--require-v18-and-up)
+    - [Preact = Dropped webpack5 builder support](#preact--dropped-webpack5-builder-support)
+    - [Vue3 = Dropped webpack5 builder support](#vue3--dropped-webpack5-builder-support)
     - [Next.js = Require v14 and up](#nextjs--require-v14-and-up)
     - [Next.js = Vite builder stabilized](#nextjs--vite-builder-stabilized)
 - [From version 8.5.x to 8.6.x](#from-version-85x-to-86x)
@@ -815,11 +817,53 @@ Key changes:
 - Updated TypeScript requirement to `^4.9.0 || ^5.0.0`
 - Updated Zone.js requirement to `^0.14.0 || ^0.15.0`
 
+#### Preact = Dropped webpack5 builder support
+
+The packages `@storybook/preact-webpack5` and `@storybook/preset-preact-webpack5` have been removed. For Preact projects, please use the Vite builder instead:
+
+```bash
+npm remove @storybook/preact-webpack5 @storybook/preset-preact-webpack
+npm install @storybook/preact-vite --save-dev
+```
+
+Then update your `.storybook/main.js|ts`:
+
+```js
+export default {
+  framework: {
+    name: '@storybook/preact-vite',
+    options: {},
+  },
+  // ... other configurations
+};
+```
+
+#### Vue3 = Dropped webpack5 builder support
+
+The `@storybook/vue3-webpack5` package has been removed. For Vue3 projects, please use the Vite builder instead:
+
+```bash
+npm remove @storybook/vue3-webpack5 @storybook/preset-vue3-webpack
+npm install @storybook/vue3-vite --save-dev
+```
+
+Then update your `.storybook/main.js|ts`:
+
+```js
+export default {
+  framework: {
+    name: '@storybook/vue3-vite',
+    options: {},
+  },
+  // ... other configurations
+};
+```
+
 #### Next.js = Require v14 and up
 
-Storybook has dropped support for Next.js versions below 14. The minimum supported version is now Next.js 14.
+Storybook has dropped support for Next.js versions below 14.1. The minimum supported version is now Next.js 14.1.
 
-If you're using an older version of Next.js, you'll need to upgrade to Next.js 14 or newer to use the latest version of Storybook.
+If you're using an older version of Next.js, you'll need to upgrade to Next.js 14.1 or newer to use the latest version of Storybook.
 
 For help upgrading your Next.js application, see the [Next.js upgrade guide](https://nextjs.org/docs/app/building-your-application/upgrading).
 

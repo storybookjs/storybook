@@ -154,7 +154,6 @@ export const frameworkToDefaultBuilder: Record<
   nuxt: CoreBuilder.Vite,
   'nextjs-vite': CoreBuilder.Vite,
   'preact-vite': CoreBuilder.Vite,
-  'preact-webpack5': CoreBuilder.Webpack5,
   qwik: CoreBuilder.Vite,
   'react-native-web-vite': CoreBuilder.Vite,
   'react-vite': CoreBuilder.Vite,
@@ -165,7 +164,6 @@ export const frameworkToDefaultBuilder: Record<
   'svelte-webpack5': CoreBuilder.Webpack5,
   sveltekit: CoreBuilder.Vite,
   'vue3-vite': CoreBuilder.Vite,
-  'vue3-webpack5': CoreBuilder.Webpack5,
   'web-components-vite': CoreBuilder.Vite,
   'web-components-webpack5': CoreBuilder.Webpack5,
   // Only to pass type checking, will never be used

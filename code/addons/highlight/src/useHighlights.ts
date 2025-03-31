@@ -1,0 +1,510 @@
+/* eslint-env browser */
+import type { Channel } from 'storybook/internal/channels';
+import { STORY_CHANGED } from 'storybook/internal/core-events';
+
+import { global } from '@storybook/global';
+
+import { HIGHLIGHT, REMOVE_HIGHLIGHT, RESET_HIGHLIGHT, SCROLL_INTO_VIEW } from './constants';
+import type { Box, Highlight, HighlightInfo, RawHighlightInfo } from './types';
+import { convertLegacy, createElement, mapBoxes, mapElements, useStore } from './utils';
+
+const chevronLeft = () =>
+  createElement(
+    'svg',
+    { width: '14', height: '14', viewBox: '0 0 14 14', xmlns: 'http://www.w3.org/2000/svg' },
+    [
+      createElement('path', {
+        fillRule: 'evenodd',
+        clipRule: 'evenodd',
+        d: 'M9.10355 10.1464C9.29882 10.3417 9.29882 10.6583 9.10355 10.8536C8.90829 11.0488 8.59171 11.0488 8.39645 10.8536L4.89645 7.35355C4.70118 7.15829 4.70118 6.84171 4.89645 6.64645L8.39645 3.14645C8.59171 2.95118 8.90829 2.95118 9.10355 3.14645C9.29882 3.34171 9.29882 3.65829 9.10355 3.85355L5.95711 7L9.10355 10.1464Z',
+        fill: 'currentColor',
+      }),
+    ]
+  );
+
+const chevronRight = () =>
+  createElement(
+    'svg',
+    { width: '14', height: '14', viewBox: '0 0 14 14', xmlns: 'http://www.w3.org/2000/svg' },
+    [
+      createElement('path', {
+        fillRule: 'evenodd',
+        clipRule: 'evenodd',
+        d: 'M4.89645 10.1464C4.70118 10.3417 4.70118 10.6583 4.89645 10.8536C5.09171 11.0488 5.40829 11.0488 5.60355 10.8536L9.10355 7.35355C9.29882 7.15829 9.29882 6.84171 9.10355 6.64645L5.60355 3.14645C5.40829 2.95118 5.09171 2.95118 4.89645 3.14645C4.70118 3.34171 4.70118 3.65829 4.89645 3.85355L8.04289 7L4.89645 10.1464Z',
+        fill: 'currentColor',
+      }),
+    ]
+  );
+
+export const useHighlights = ({
+  channel,
+  uniqueId = Math.random().toString(36).substring(2, 15),
+  menuId = `addon-highlight-menu-${uniqueId}`,
+  rootId = `addon-highlight-root-${uniqueId}`,
+  storybookRootId = 'storybook-root',
+}: {
+  channel: Channel;
+  uniqueId?: string;
+  menuId?: string;
+  rootId?: string;
+  storybookRootId?: string;
+}) => {
+  const { document } = global;
+
+  const highlights = useStore<HighlightInfo[]>([]);
+  const elements = useStore<Map<HTMLElement, Highlight>>(new Map());
+  const boxes = useStore<Box[]>([]);
+
+  const coordinates = useStore<{ x: number; y: number } | undefined>();
+  const targets = useStore<Box[]>([]);
+  const focused = useStore<Box | undefined>();
+  const selected = useStore<Box | undefined>();
+
+  // Updates the tracked elements when highlights change or the DOM tree changes
+  highlights.subscribe((value) => {
+    elements.set(mapElements(value));
+
+    const observer = new MutationObserver(() => elements.set(mapElements(value)));
+    observer.observe(document.getElementById(storybookRootId)!, {
+      subtree: true,
+      childList: true,
+    });
+
+    return () => {
+      observer.disconnect();
+    };
+  });
+
+  // Updates the tracked highlights when elements are resized
+  elements.subscribe((value) => {
+    const storybookRoot = document.getElementById(storybookRootId)!;
+    const updateBoxes = () => requestAnimationFrame(() => boxes.set(mapBoxes(value)));
+
+    const observer = new ResizeObserver(updateBoxes);
+    observer.observe(storybookRoot);
+    Array.from(value.keys()).forEach((element) => observer.observe(element));
+
+    const scrollers = Array.from(storybookRoot.querySelectorAll('*')).filter((el) => {
+      const { overflow, overflowX, overflowY } = window.getComputedStyle(el);
+      return ['auto', 'scroll'].some((o) => [overflow, overflowX, overflowY].includes(o));
+    });
+    scrollers.forEach((element) => element.addEventListener('scroll', updateBoxes));
+
+    return () => {
+      observer.disconnect();
+      scrollers.forEach((element) => element.removeEventListener('scroll', updateBoxes));
+    };
+  });
+
+  // Updates click targets when elements are removed
+  elements.subscribe((value) => {
+    targets.set((t) => t.filter(({ element }) => value.has(element)));
+  });
+
+  // Ensure the selected element is always an active target
+  targets.subscribe((value) => {
+    if (value.length) {
+      selected.set((s) => (value.some((t) => t.element === s?.element) ? s : undefined));
+      focused.set((s) => (value.some((t) => t.element === s?.element) ? s : value[0]));
+    } else {
+      selected.set(undefined);
+      focused.set(undefined);
+      coordinates.set(undefined);
+    }
+  });
+
+  // Rendering
+
+  let root = document.getElementById(rootId);
+  if (!root) {
+    root = document.createElement('div');
+    root.setAttribute('id', rootId);
+    document.body.appendChild(root);
+  }
+
+  const renderMenu = () => {
+    let menu = document.getElementById(menuId);
+    if (menu) {
+      menu.innerHTML = '';
+    } else {
+      menu = root.appendChild(createElement('div', { id: menuId }) as HTMLElement);
+      root.appendChild(
+        createElement('style', {}, [
+          `
+            #${menuId} {
+              position: absolute;
+              z-index: 2147483647;
+              width: 300px;
+              margin-top: 15px;
+              margin-left: -150px;
+              font-size: 12px;
+              background: white;
+              border-radius: 6px;
+              box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.05), 0 5px 15px 0 rgba(0, 0, 0, 0.1);
+              color: #2E3438;
+            }
+            #${menuId} ul {
+              list-style: none;
+              padding: 4px 0;
+              margin: 0;
+              max-height: 300px;
+              overflow-y: auto;
+            }
+            #${menuId} li {
+              padding: 0 4px;
+              margin: 0;
+            }
+            #${menuId} li > * {
+              display: flex;
+              width: 100%;
+              padding: 8px;
+              margin: 0;
+              align-items: center;
+              gap: 8px;
+              border-radius: 4px;
+            }
+            #${menuId} button {
+              border: 0;
+              background: transparent;
+              color: inherit;
+              text-align: left;
+            }
+            #${menuId} button:focus {
+              outline-color: #029CFD;
+            }
+            #${menuId} button:hover {
+              background: rgba(2, 156, 253, 0.07);
+              color: #029CFD;
+              cursor: pointer;
+            }
+            #${menuId} li code {
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              line-height: 16px;
+              font-size: 11px;
+            }
+            #${menuId} li svg {
+              display: none;
+              flex-shrink: 0;
+              margin: 1px;
+              color: #73828C;
+            }
+            #${menuId} li > button:hover svg, #${menuId} li > button:focus svg {
+              color: #029CFD;
+            }
+            #${menuId} li.selectable svg, #${menuId} li.selected svg {
+              display: block;
+            }
+            #${menuId} .menu-list {
+              border-top: 1px solid rgba(38, 85, 115, 0.15);
+            }
+            #${menuId} .menu-list li:not(:last-child) {
+              padding-bottom: 4px;
+              margin-bottom: 4px;
+              border-bottom: 1px solid rgba(38, 85, 115, 0.15);
+            }
+            #${menuId} .menu-list li div {
+              display: flex;
+              flex-direction: column;
+              align-items: flex-start;
+              gap: 0;
+            }
+            #${menuId} .menu-list li small {
+              color: #5C6870;
+              font-size: 11px;
+            }
+          `,
+        ])
+      );
+    }
+
+    const selectedElement = selected.get();
+    const elementList = selectedElement ? [selectedElement] : targets.get();
+
+    if (elementList.length) {
+      menu.appendChild(
+        createElement(
+          'ul',
+          { class: 'element-list' },
+          elementList.map((target) => {
+            const menuListItems = target.menuListItems?.filter(
+              (item) => !item.selectors || item.selectors.some((s) => target.selectors.includes(s))
+            );
+            const selectable = elementList.length > 1 && !!menuListItems?.length;
+            const props = selectable
+              ? {
+                  class: 'selectable',
+                  onClick: () => selected.set(target),
+                  onMouseEnter: () => focused.set(target),
+                }
+              : selectedElement
+                ? { class: 'selected', onClick: () => selected.set(undefined) }
+                : {};
+            const asButton = selectable || selectedElement;
+            return createElement('li', props, [
+              createElement(asButton ? 'button' : 'div', asButton ? { type: 'button' } : {}, [
+                selectedElement ? chevronLeft() : null,
+                createElement('code', {}, [target.element.outerHTML]),
+                selectable ? chevronRight() : null,
+              ]),
+            ]);
+          })
+        )
+      );
+    }
+
+    if (selected.get() || targets.get().length === 1) {
+      const target = selected.get() || targets.get()[0];
+      const menuListItems = target.menuListItems?.filter(
+        (item) => !item.selectors || item.selectors.some((s) => target.selectors.includes(s))
+      );
+      if (menuListItems?.length) {
+        menu.appendChild(
+          createElement(
+            'ul',
+            { class: 'menu-list' },
+            menuListItems.map((item) => {
+              const { title, description, clickEvent } = item;
+              const onClick = clickEvent && (() => channel.emit(clickEvent, item, target));
+              return createElement('li', {}, [
+                createElement(
+                  onClick ? 'button' : 'div',
+                  onClick ? { type: 'button', onClick } : {},
+                  [
+                    createElement('div', {}, [
+                      createElement('strong', {}, [title]),
+                      description && createElement('small', {}, [description]),
+                    ]),
+                  ]
+                ),
+              ]);
+            })
+          )
+        );
+      }
+    }
+
+    const coords = coordinates.get();
+    if (coords) {
+      Object.assign(menu.style, {
+        display: 'block',
+        left: `${coords.x}px`,
+        top: `${coords.y}px`,
+      });
+
+      // Reposition the menu on after it renders, to avoid rendering outside the viewport
+      requestAnimationFrame(() => {
+        const margin = 5;
+        const left = Math.max(
+          Math.min(coords.x, window.innerWidth - menu.clientWidth / 2 - margin),
+          menu.clientWidth / 2 + margin
+        );
+        if (left !== coords.x) {
+          menu.style.left = `${left}px`;
+        }
+
+        const topOffset = 15;
+        const top = Math.min(coords.y, window.innerHeight - menu.clientHeight - margin - topOffset);
+        if (top !== coords.y) {
+          menu.style.top = `${top}px`;
+        }
+      });
+    } else {
+      Object.assign(menu.style, { display: 'none' });
+    }
+
+    return menu;
+  };
+
+  const styleElementByHighlight = new Map<string, HTMLStyleElement>(new Map());
+
+  highlights.subscribe((value) => {
+    value.forEach(({ keyframes }) => {
+      if (keyframes) {
+        let style = styleElementByHighlight.get(keyframes);
+        if (!style) {
+          style = document.createElement('style');
+          style.setAttribute('data-highlight', 'keyframes');
+          styleElementByHighlight.set(keyframes, style);
+          document.head.appendChild(style);
+        }
+        style.innerHTML = keyframes;
+      }
+    });
+    styleElementByHighlight.forEach((style, keyframes) => {
+      if (!value.some((v) => v.keyframes === keyframes)) {
+        style.remove();
+        styleElementByHighlight.delete(keyframes);
+      }
+    });
+  });
+
+  const boxElementByTargetElement = new Map<HTMLElement, HTMLDivElement>(new Map());
+
+  boxes.subscribe((value) => {
+    value.forEach(({ element, top, left, width, height, styles, selectable }) => {
+      let box = boxElementByTargetElement.get(element);
+      if (!box) {
+        box = root.appendChild(document.createElement('div'));
+        boxElementByTargetElement.set(element, box);
+      }
+      Object.assign(box.style, {
+        ...styles,
+        position: 'absolute',
+        top: `${top}px`,
+        left: `${left}px`,
+        width: `${width}px`,
+        height: `${height}px`,
+        cursor: selectable ? 'pointer' : 'default',
+        pointerEvents: selectable ? 'auto' : 'none',
+        boxSizing: 'border-box',
+      });
+    });
+    boxElementByTargetElement.forEach((box, element) => {
+      if (!value.some(({ element: e }) => e === element)) {
+        box.remove();
+        boxElementByTargetElement.delete(element);
+      }
+    });
+  });
+
+  focused.subscribe((value) => {
+    const selectedBox = selected.get();
+    const target = selectedBox || value;
+    boxes.get().forEach((box) => {
+      const el = boxElementByTargetElement.get(box.element);
+      if (el) {
+        Object.assign(el.style, box.styles);
+      }
+    });
+
+    if (target) {
+      const box = boxElementByTargetElement.get(target.element);
+      if (box) {
+        const { styles, selectedStyles } = target || {};
+        Object.assign(box.style, { ...styles, ...selectedStyles });
+      }
+    }
+  });
+
+  boxes.subscribe((value) => {
+    const selectable = value.filter((box) => box.selectable);
+    if (!selectable.length) {
+      return;
+    }
+
+    const onClick = ({ pageX: px, pageY: py }: MouseEvent) => {
+      // The menu may get repositioned, so we wait for the next frame before checking its position
+      requestAnimationFrame(() => {
+        const menu = document.getElementById(menuId)?.getBoundingClientRect();
+        if (
+          menu?.top &&
+          menu?.left &&
+          px >= menu.left + window.scrollX &&
+          px <= menu.left + menu.width + window.scrollX &&
+          py >= menu.top + window.scrollY &&
+          py <= menu.top + menu.height + window.scrollY
+        ) {
+          return;
+        }
+
+        const results = selectable.filter(
+          ({ top, left, width, height }) =>
+            px >= left && px <= left + width && py >= top && py <= top + height
+        );
+        coordinates.set(results ? { x: px, y: py } : undefined);
+        targets.set(results);
+      });
+    };
+
+    document.body.addEventListener('click', onClick);
+    return () => document.body.removeEventListener('click', onClick);
+  });
+
+  targets.subscribe(() => {
+    renderMenu();
+  });
+
+  selected.subscribe(() => {
+    renderMenu();
+  });
+
+  // Event handlers
+
+  const addHighlight = (highlight: RawHighlightInfo) => {
+    const info = convertLegacy(highlight);
+    if (info.selectors?.length) {
+      highlights.set((value) => [...value, info]);
+    }
+  };
+
+  const removeHighlight = (id: string) => {
+    highlights.set((value) => value.filter((h) => h.id !== id));
+  };
+
+  const clearHighlights = () => {
+    highlights.set([]);
+  };
+
+  let removeTimeout: NodeJS.Timeout;
+  const scrollIntoView = (target: string, options?: ScrollIntoViewOptions) => {
+    const id = 'scrollIntoView-highlight';
+    clearTimeout(removeTimeout);
+    removeHighlight(id);
+
+    const element = document.querySelector(target);
+    element?.scrollIntoView({ behavior: 'smooth', block: 'center', ...options });
+    const keyframeName = `kf-${Math.random().toString(36).substring(2, 15)}`;
+    highlights.set((value) => [
+      ...value,
+      {
+        id,
+        priority: 1000,
+        selectors: [target],
+        selectable: false,
+        styles: {
+          outline: '2px solid #1EA7FD',
+          outlineOffset: '2px',
+          animation: `${keyframeName} 3s linear forwards`,
+        },
+        keyframes: `@keyframes ${keyframeName} {
+          0% { outline: 2px solid #1EA7FD; }
+          20% { outline: 2px solid #1EA7FD00; }
+          40% { outline: 2px solid #1EA7FD; }
+          60% { outline: 2px solid #1EA7FD00; }
+          80% { outline: 2px solid #1EA7FD; }
+          100% { outline: 2px solid #1EA7FD00; }
+        }`,
+      },
+    ]);
+    removeTimeout = setTimeout(() => removeHighlight(id), 3000);
+  };
+
+  channel.on(HIGHLIGHT, addHighlight);
+  channel.on(REMOVE_HIGHLIGHT, removeHighlight);
+  channel.on(RESET_HIGHLIGHT, clearHighlights);
+  channel.on(STORY_CHANGED, clearHighlights);
+  channel.on(SCROLL_INTO_VIEW, scrollIntoView);
+
+  return () => {
+    clearTimeout(removeTimeout);
+
+    channel.off(HIGHLIGHT, addHighlight);
+    channel.off(RESET_HIGHLIGHT, clearHighlights);
+    channel.off(STORY_CHANGED, clearHighlights);
+    channel.off(SCROLL_INTO_VIEW, scrollIntoView);
+
+    highlights.teardown();
+    elements.teardown();
+    boxes.teardown();
+    targets.teardown();
+    coordinates.teardown();
+    focused.teardown();
+
+    styleElementByHighlight.forEach((style) => style.remove());
+    boxElementByTargetElement.forEach((box) => box.remove());
+    document.getElementById(menuId)?.remove();
+    document.getElementById(rootId)?.remove();
+  };
+};

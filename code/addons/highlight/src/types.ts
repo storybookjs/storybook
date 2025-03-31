@@ -1,5 +1,3 @@
-import type { CSSProperties } from 'react';
-
 export interface HighlightParameters {
   /**
    * Highlight configuration
@@ -13,24 +11,29 @@ export interface HighlightParameters {
 }
 
 export interface HighlightInfo {
+  /** Unique identifier for the highlight, required if you want to remove the highlight later */
+  id?: string;
   /** HTML selectors of the elements */
   selectors: string[];
   /** CSS styles to apply to the highlight */
-  styles: CSSProperties;
+  styles: Record<string, string>;
+  /** Priority of the highlight, higher takes precedence, defaults to 0 */
+  priority?: number;
   /** Whether the highlight is selectable / hoverable */
   selectable?: boolean;
   /** CSS styles to apply to the highlight when it is selected or hovered */
-  selectedStyles?: CSSProperties;
+  selectedStyles?: Record<string, string>;
   /** Keyframes required for animations */
   keyframes?: string;
   /** Menu items to show when the highlight is selected, or true to show the element's HTML */
   menuListItems?: {
     id: string;
     title: string;
-    center?: string;
+    description?: string;
     right?: string;
     href?: string;
     clickEvent?: string;
+    selectors?: string[];
   }[];
 }
 
@@ -44,14 +47,25 @@ export interface LegacyHighlightInfo {
   style: 'dotted' | 'dashed' | 'solid' | 'double';
 }
 
-export type Highlight = HighlightInfo | LegacyHighlightInfo;
+export type RawHighlightInfo = HighlightInfo | LegacyHighlightInfo;
+
+export type Highlight = {
+  id: string;
+  priority: number;
+  selectors: string[];
+  styles: Record<string, string>;
+  selectable: boolean;
+  selectedStyles?: Record<string, string>;
+  menuListItems?: HighlightInfo['menuListItems'];
+};
 
 export type Box = {
-  element: Element;
-  styles: HighlightInfo['styles'];
-  selectable?: HighlightInfo['selectable'];
-  selectedStyles?: HighlightInfo['selectedStyles'];
-  menuListItems?: HighlightInfo['menuListItems'];
+  element: HTMLElement;
+  selectors: Highlight['selectors'];
+  styles: Highlight['styles'];
+  selectable?: Highlight['selectable'];
+  selectedStyles?: Highlight['selectedStyles'];
+  menuListItems?: Highlight['menuListItems'];
   top: number;
   left: number;
   width: number;

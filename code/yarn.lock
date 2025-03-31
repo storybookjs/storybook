@@ -6551,7 +6551,6 @@ __metadata:
     "@types/webpack-env": "npm:^1.16.0"
     es-toolkit: "npm:^1.22.0"
     react: "npm:^18.2.0"
-    react-dom: "npm:^18.2.0"
     typescript: "npm:^5.7.3"
     use-resize-observer: "npm:^9.1.0"
   peerDependencies:

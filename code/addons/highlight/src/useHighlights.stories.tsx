@@ -1,13 +1,12 @@
-import React, { type CSSProperties, useEffect, useState } from 'react';
-import { createPortal } from 'react-dom';
+import React, { useEffect, useState } from 'react';
 
 import { mockChannel } from 'storybook/internal/preview-api';
 
 import { fn, userEvent } from 'storybook/test';
 
 import preview from '../../../.storybook/preview';
-import { HighlightOverlay } from './HighlightOverlay';
 import { HIGHLIGHT, RESET_HIGHLIGHT, SCROLL_INTO_VIEW } from './constants';
+import { useHighlights } from './useHighlights';
 
 const Content = ({ dynamic }: { dynamic: boolean }) => {
   const [extra, setExtra] = useState(false);
@@ -113,21 +112,24 @@ const channel = mockChannel();
 channel.on('click', fn().mockName('click'));
 
 const meta = preview.meta({
-  component: HighlightOverlay,
+  render: () => {
+    useEffect(() => useHighlights({ channel, menuId: 'menu', rootId: 'root' }), []);
+    return <></>;
+  },
   args: {
     channel,
   },
   parameters: {
     layout: 'fullscreen',
+    highlight: {
+      disable: true,
+    },
   },
   decorators: [
     (Story, { parameters }) => (
       <>
         <Content dynamic={parameters.dynamic} />
-        {createPortal(
-          <Story />,
-          document.getElementById('storybook-addon-highlight-root') || document.body
-        )}
+        <Story />,
       </>
     ),
   ],
@@ -136,14 +138,14 @@ const meta = preview.meta({
 const highlight = (
   selectors: string[],
   options?: {
-    styles?: CSSProperties;
-    selectedStyles?: CSSProperties;
+    styles?: Record<string, string>;
+    selectedStyles?: Record<string, string>;
     keyframes?: string;
     selectable?: boolean;
     menuListItems?: {
       id: string;
       title: string;
-      center?: string;
+      description?: string;
       right?: string;
       href?: string;
       clickEvent?: string;
@@ -158,7 +160,7 @@ const highlight = (
     },
     selectedStyles: {
       background: 'transparent',
-      border: '1px solid black',
+      border: '2px solid black',
     },
     selectable: options?.selectable ?? !!options?.menuListItems?.length,
     ...options,
@@ -241,7 +243,7 @@ export const Popover = meta.story({
 
 export const Menu = meta.story({
   parameters: {
-    dynamic: true,
+    // dynamic: true,
   },
   play: async () => {
     highlight(['div'], {
@@ -249,13 +251,13 @@ export const Menu = meta.story({
         {
           id: '1',
           title: 'Insufficient color contrast',
-          center: 'Elements must meet minimum color contrast ratio thresholds.',
+          description: 'Elements must meet minimum color contrast ratio thresholds.',
           clickEvent: 'click',
         },
         {
           id: '2',
           title: 'Links need discernible text',
-          center: 'This is where a summary of the violation goes.',
+          description: 'This is where a summary of the violation goes.',
           clickEvent: 'click',
         },
       ],

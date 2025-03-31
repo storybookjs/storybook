@@ -7,7 +7,7 @@
  * @param {TProps} data - The data to create Svelte 5 props from.
  * @returns {TProps} - The created Svelte 5 props.
  */
-export const createSvelte5Props = (data) => {
+export const createReactiveProps = (data) => {
   const props = $state(data);
   return props;
 };

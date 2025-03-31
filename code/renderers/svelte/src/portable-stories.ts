@@ -11,7 +11,7 @@ import type {
 
 import PreviewRender from '@storybook/svelte/internal/PreviewRender.svelte';
 // @ts-expect-error Don't know why TS doesn't pick up the types export here
-import { createSvelte5Props } from '@storybook/svelte/internal/createSvelte5Props';
+import { createReactiveProps } from '@storybook/svelte/internal/createReactiveProps';
 
 import {
   composeStories as originalComposeStories,
@@ -130,7 +130,7 @@ export function composeStory<TArgs extends Args = Args>(
     exportsName
   );
 
-  const props = createSvelte5Props({
+  const props = createReactiveProps({
     storyFn: composedStory,
     storyContext: { ...composedStory },
     name: composedStory.storyName,

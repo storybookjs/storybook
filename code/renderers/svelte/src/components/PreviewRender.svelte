@@ -8,7 +8,6 @@
     /** @type {import('svelte').SvelteComponent} */
     Component,
     props = {},
-    argTypes,
   } = $derived.by(storyFn);
 
   $effect(() => {
@@ -25,4 +24,4 @@
   });
 </script>
 
-<DecoratorHandler {Component} {props} {argTypes} />
+<DecoratorHandler {Component} {props} />

@@ -37,7 +37,7 @@
     "./internal/PreviewRender.svelte": "./dist/components/PreviewRender.svelte",
     "./internal/DecoratorHandler.svelte": "./dist/components/DecoratorHandler.svelte",
     "./internal/AddStorybookIdDecorator.svelte": "./dist/components/AddStorybookIdDecorator.svelte",
-    "./internal/createSvelte5Props": "./dist/createSvelte5Props.svelte.js"
+    "./internal/createReactiveProps": "./dist/createReactiveProps.svelte.js"
   },
   "main": "dist/index.js",
   "module": "dist/index.mjs",

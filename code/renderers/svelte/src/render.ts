@@ -8,7 +8,7 @@ import type { ArgsStoryFn, RenderContext } from 'storybook/internal/types';
 */
 import PreviewRender from '@storybook/svelte/internal/PreviewRender.svelte';
 // @ts-expect-error Don't know why TS doesn't pick up the types export here
-import { createSvelte5Props } from '@storybook/svelte/internal/createSvelte5Props';
+import { createReactiveProps } from '@storybook/svelte/internal/createReactiveProps';
 
 import { addons } from 'storybook/preview-api';
 import * as svelte from 'svelte';
@@ -69,7 +69,7 @@ export function renderToCanvas(
   }
 
   if (!existingComponent || remount) {
-    const props = createSvelte5Props({
+    const props = createReactiveProps({
       storyFn,
       storyContext,
       name,

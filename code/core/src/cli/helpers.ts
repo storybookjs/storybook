@@ -164,7 +164,6 @@ export const frameworkToDefaultBuilder: Record<
   sveltekit: CoreBuilder.Vite,
   'vue3-vite': CoreBuilder.Vite,
   'web-components-vite': CoreBuilder.Vite,
-  'web-components-webpack5': CoreBuilder.Webpack5,
   // Only to pass type checking, will never be used
   'react-rsbuild': CommunityBuilder.Rsbuild,
   'vue3-rsbuild': CommunityBuilder.Rsbuild,

@@ -41,7 +41,6 @@ export const supportedFrameworksPackages = {
   'vue3-rsbuild': 'storybook-vue3-rsbuild',
   'vue3-vite': '@storybook/vue3-vite',
   'web-components-vite': '@storybook/web-components-vite',
-  'web-components-webpack5': '@storybook/web-components-webpack5',
 
   angular: '@storybook/angular',
   ember: '@storybook/ember',

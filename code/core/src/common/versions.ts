@@ -33,7 +33,6 @@ export default {
   '@storybook/sveltekit': '9.0.0-alpha.12',
   '@storybook/vue3-vite': '9.0.0-alpha.12',
   '@storybook/web-components-vite': '9.0.0-alpha.12',
-  '@storybook/web-components-webpack5': '9.0.0-alpha.12',
   '@storybook/blocks': '9.0.0-alpha.12',
   sb: '9.0.0-alpha.12',
   '@storybook/cli': '9.0.0-alpha.12',

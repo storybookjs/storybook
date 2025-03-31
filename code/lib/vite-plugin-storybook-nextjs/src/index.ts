@@ -73,12 +73,6 @@ function VitePlugin({ dir = process.cwd() }: VitePluginOptions = {}): Plugin[] {
                   ),
                 },
                 {
-                  find: /^react\/compiler-runtime$/,
-                  replacement: require.resolve(
-                    "next/dist/compiled/react/compiler-runtime",
-                  ),
-                },
-                {
                   find: /^react-dom$/,
                   replacement: require.resolve("next/dist/compiled/react-dom"),
                 },

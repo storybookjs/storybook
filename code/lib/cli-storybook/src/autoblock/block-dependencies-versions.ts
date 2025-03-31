@@ -5,7 +5,7 @@ import { dedent } from 'ts-dedent';
 import { createBlocker } from './types';
 
 const minimalVersionsMap = {
-  '@angular/core': '15.0.0',
+  '@angular/core': '18.0.0',
   'react-scripts': '5.0.0',
   '@storybook/preact-webpack5': '9.0.0',
   '@storybook/preset-preact-webpack': '9.0.0',
@@ -86,7 +86,7 @@ export const blocker = createBlocker({
         `;
       case '@angular/core':
         return dedent`
-          Support for Angular < 15 has been removed.
+          Support for Angular < 18 has been removed.
           Please see the migration guide for more information:
           ${picocolors.yellow('https://angular.io/guide/update-to-version-15')}
 
@@ -94,7 +94,7 @@ export const blocker = createBlocker({
         `;
       case 'next':
         return dedent`
-          Support for Next.js < 13.5 has been removed.
+          Support for Next.js < 14.1 has been removed.
           Please see the migration guide for more information:
           ${picocolors.yellow(
             'https://nextjs.org/docs/pages/building-your-application/upgrading/version-13'

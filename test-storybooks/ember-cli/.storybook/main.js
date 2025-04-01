@@ -12,9 +12,7 @@ module.exports = {
     '@storybook/addon-a11y',
     '@storybook/addon-storysource',
     '@storybook/addon-docs',
-    '@storybook/addon-links',
-    '@storybook/addon-backgrounds',
-    '@storybook/addon-highlight',
+    '@storybook/addon-links'
   ],
   webpackFinal: async (config) => {
     config.module.rules.push({
@@ -36,7 +34,7 @@ module.exports = {
     return config;
   },
   core: {
-    channelOptions: { allowFunction: false, maxDepth: 10 },
+    channelOptions: { maxDepth: 10 },
     disableTelemetry: true,
   },
   staticDirs: ['../ember-output'],

@@ -3,10 +3,10 @@ import { cp, readFile, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 
 import {
-  frameworkToRenderer as CoreFrameworkToRenderer,
   type JsPackageManager,
   type PackageJson,
   type PackageJsonWithDepsAndDevDeps,
+  frameworkToRenderer,
 } from 'storybook/internal/common';
 import { versions as storybookMonorepoPackages } from 'storybook/internal/common';
 import type { SupportedFrameworks, SupportedRenderers } from 'storybook/internal/types';
@@ -142,9 +142,6 @@ type CopyTemplateFilesOptions = {
   features: string[];
 };
 
-/** @deprecated Please use `frameworkToRenderer` from `storybook/internal/common` instead */
-export const frameworkToRenderer = CoreFrameworkToRenderer;
-
 export const frameworkToDefaultBuilder: Record<
   SupportedFrameworks,
   CoreBuilder | CommunityBuilder
@@ -152,12 +149,10 @@ export const frameworkToDefaultBuilder: Record<
   angular: CoreBuilder.Webpack5,
   ember: CoreBuilder.Webpack5,
   'html-vite': CoreBuilder.Vite,
-  'html-webpack5': CoreBuilder.Webpack5,
   nextjs: CoreBuilder.Webpack5,
   nuxt: CoreBuilder.Vite,
-  'experimental-nextjs-vite': CoreBuilder.Vite,
+  'nextjs-vite': CoreBuilder.Vite,
   'preact-vite': CoreBuilder.Vite,
-  'preact-webpack5': CoreBuilder.Webpack5,
   qwik: CoreBuilder.Vite,
   'react-native-web-vite': CoreBuilder.Vite,
   'react-vite': CoreBuilder.Vite,
@@ -168,9 +163,7 @@ export const frameworkToDefaultBuilder: Record<
   'svelte-webpack5': CoreBuilder.Webpack5,
   sveltekit: CoreBuilder.Vite,
   'vue3-vite': CoreBuilder.Vite,
-  'vue3-webpack5': CoreBuilder.Webpack5,
   'web-components-vite': CoreBuilder.Vite,
-  'web-components-webpack5': CoreBuilder.Webpack5,
   // Only to pass type checking, will never be used
   'react-rsbuild': CommunityBuilder.Rsbuild,
   'vue3-rsbuild': CommunityBuilder.Rsbuild,

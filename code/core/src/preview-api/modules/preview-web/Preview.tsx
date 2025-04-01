@@ -56,9 +56,6 @@ const STORY_INDEX_PATH = './index.json';
 export type MaybePromise<T> = Promise<T> | T;
 
 export class Preview<TRenderer extends Renderer> {
-  /** @deprecated Will be removed in 8.0, please use channel instead */
-  serverChannel?: Channel;
-
   protected storyStoreValue?: StoryStore<TRenderer>;
 
   renderToCanvas?: RenderToCanvas<TRenderer>;

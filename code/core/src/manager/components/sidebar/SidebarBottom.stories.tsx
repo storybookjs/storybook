@@ -1,12 +1,17 @@
 import React, { type FC, useEffect, useState } from 'react';
 
-import { Addon_TypesEnum } from 'storybook/internal/types';
+import {
+  type Addon_Collection,
+  type Addon_TestProviderType,
+  Addon_TypesEnum,
+} from 'storybook/internal/types';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { type API, ManagerContext } from 'storybook/manager-api';
 import { expect, fireEvent, fn, waitFor, within } from 'storybook/test';
 
+import type { TestProviderStateByProviderId } from '../../../shared/test-provider-store';
 import { SidebarBottomBase } from './SidebarBottom';
 
 const DynamicHeightDemo: FC = () => {
@@ -42,22 +47,6 @@ const managerContext: any = {
       autodocs: 'tag',
       docsMode: false,
     },
-    testProviders: {
-      'component-tests': {
-        type: Addon_TypesEnum.experimental_TEST_PROVIDER,
-        id: 'component-tests',
-        title: () => 'Component tests',
-        description: () => 'Ran 2 seconds ago',
-        runnable: true,
-      },
-      'visual-tests': {
-        type: Addon_TypesEnum.experimental_TEST_PROVIDER,
-        id: 'visual-tests',
-        title: () => 'Visual tests',
-        description: () => 'Not run',
-        runnable: true,
-      },
-    },
   },
   api: {
     on: fn().mockName('api::on'),
@@ -66,6 +55,22 @@ const managerContext: any = {
   },
 };
 
+const registeredTestProviders: Addon_Collection<Addon_TestProviderType> = {
+  'component-tests': {
+    type: Addon_TypesEnum.experimental_TEST_PROVIDER,
+    id: 'component-tests',
+    render: () => <div>Component tests</div>,
+  },
+  'visual-tests': {
+    type: Addon_TypesEnum.experimental_TEST_PROVIDER,
+    id: 'visual-tests',
+    render: () => <div>Visual tests</div>,
+  },
+};
+const testProviderStates: TestProviderStateByProviderId = {
+  'component-tests': 'test-provider-state:succeeded',
+  'visual-tests': 'test-provider-state:pending',
+};
 const meta = {
   component: SidebarBottomBase,
   title: 'Sidebar/SidebarBottom',
@@ -85,6 +90,9 @@ const meta = {
       getChannel: fn(),
       getElements: fn(() => ({})),
     } as any as API,
+    onRunAll: fn(),
+    registeredTestProviders,
+    testProviderStates,
   },
   parameters: {
     layout: 'fullscreen',
@@ -123,28 +131,15 @@ export const Both: Story = {
 };
 
 export const DynamicHeight: Story = {
-  decorators: [
-    (storyFn) => (
-      <ManagerContext.Provider
-        value={{
-          ...managerContext,
-          state: {
-            ...managerContext.state,
-            testProviders: {
-              custom: {
-                type: Addon_TypesEnum.experimental_TEST_PROVIDER,
-                id: 'custom',
-                render: () => <DynamicHeightDemo />,
-                runnable: true,
-              },
-            },
-          },
-        }}
-      >
-        {storyFn()}
-      </ManagerContext.Provider>
-    ),
-  ],
+  args: {
+    registeredTestProviders: {
+      'dynamic-height': {
+        type: Addon_TypesEnum.experimental_TEST_PROVIDER,
+        id: 'dynamic-height',
+        render: () => <DynamicHeightDemo />,
+      },
+    },
+  },
   play: async ({ canvasElement }) => {
     const screen = await within(canvasElement);
 

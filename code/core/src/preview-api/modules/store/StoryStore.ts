@@ -1,40 +1,34 @@
-import { deprecate } from 'storybook/internal/client-logger';
-import type { Canvas, CleanupCallback } from 'storybook/internal/csf';
+import type { CleanupCallback } from 'storybook/internal/csf';
 import {
   CalledExtractOnStoreError,
   MissingStoryFromCsfFileError,
 } from 'storybook/internal/preview-errors';
 import type {
-  BoundStory,
   CSFFile,
-  ComponentTitle,
   IndexEntry,
   ModuleExports,
   ModuleImportFn,
   NormalizedProjectAnnotations,
-  Parameters,
   Path,
   PreparedMeta,
   PreparedStory,
   ProjectAnnotations,
   Renderer,
-  StoryContext,
   StoryContextForEnhancers,
   StoryId,
   StoryIndex,
-  StoryIndexV3,
-  V3CompatIndexEntry,
 } from 'storybook/internal/types';
 
-import { mapValues, omitBy, pick } from 'es-toolkit';
+import { omitBy, pick } from 'es-toolkit';
 import memoize from 'memoizerific';
-import type { UserEventObject } from 'storybook/test';
 
+import { getCoreAnnotations } from '../../core-annotations';
 import { HooksContext } from '../addons';
 import { ArgsStore } from './ArgsStore';
 import { GlobalsStore } from './GlobalsStore';
 import { StoryIndexStore } from './StoryIndexStore';
 import {
+  composeConfigs,
   normalizeProjectAnnotations,
   prepareContext,
   prepareMeta,
@@ -84,7 +78,9 @@ export class StoryStore<TRenderer extends Renderer> {
   ) {
     this.storyIndex = new StoryIndexStore(storyIndex);
 
-    this.projectAnnotations = normalizeProjectAnnotations(projectAnnotations);
+    this.projectAnnotations = normalizeProjectAnnotations(
+      composeConfigs([...getCoreAnnotations(), projectAnnotations])
+    );
     const { initialGlobals, globalTypes } = this.projectAnnotations;
 
     this.args = new ArgsStore();
@@ -333,108 +329,5 @@ export class StoryStore<TRenderer extends Renderer> {
       },
       {} as Record<string, any>
     );
-  }
-
-  // TODO: Remove in 9.0
-  getSetStoriesPayload() {
-    const stories = this.extract({ includeDocsOnly: true });
-
-    const kindParameters: Parameters = Object.values(stories).reduce(
-      (acc: Parameters, { title }: { title: ComponentTitle }) => {
-        acc[title] = {};
-        return acc;
-      },
-      {} as Parameters
-    );
-
-    return {
-      v: 2,
-      globals: this.userGlobals.get(),
-      globalParameters: {},
-      kindParameters,
-      stories,
-    };
-  }
-
-  // TODO: Remove in 9.0
-  // NOTE: this is legacy `stories.json` data for the `extract` script.
-  // It is used to allow v7 Storybooks to be composed in v6 Storybooks, which expect a
-  // `stories.json` file with legacy fields (`kind` etc).
-  getStoriesJsonData = (): StoryIndexV3 => {
-    const value = this.getSetStoriesPayload();
-    const allowedParameters = ['fileName', 'docsOnly', 'framework', '__id', '__isArgsStory'];
-
-    const stories: Record<StoryId, V3CompatIndexEntry> = mapValues(value.stories, (story) => {
-      const { importPath } = this.storyIndex.entries[story.id];
-      return {
-        ...picky(story, ['id', 'name', 'title']),
-        importPath,
-        // These 3 fields were going to be dropped in v7, but instead we will keep them for the
-        // 7.x cycle so that v7 Storybooks can be composed successfully in v6 Storybook.
-        // In v8 we will (likely) completely drop support for `extract` and `getStoriesJsonData`
-        kind: story.title,
-        story: story.name,
-        parameters: {
-          ...picky(story.parameters, allowedParameters),
-          fileName: importPath,
-        },
-      } as V3CompatIndexEntry;
-    });
-
-    return {
-      v: 3,
-      stories,
-    };
-  };
-
-  raw(): BoundStory<TRenderer>[] {
-    deprecate(
-      'StoryStore.raw() is deprecated and will be removed in 9.0, please use extract() instead'
-    );
-    return Object.values(this.extract())
-      .map(({ id }: { id: StoryId }) => this.fromId(id))
-      .filter(Boolean) as BoundStory<TRenderer>[];
-  }
-
-  fromId(storyId: StoryId): BoundStory<TRenderer> | null {
-    deprecate(
-      'StoryStore.fromId() is deprecated and will be removed in 9.0, please use loadStory() instead'
-    );
-
-    // Deprecated so won't make a proper error for this
-
-    // Deprecated so won't make a proper error for this
-    if (!this.cachedCSFFiles) {
-      // eslint-disable-next-line local-rules/no-uncategorized-errors
-      throw new Error('Cannot call fromId/raw() unless you call cacheAllCSFFiles() first.');
-    }
-
-    let importPath;
-    try {
-      ({ importPath } = this.storyIndex.storyIdToEntry(storyId));
-    } catch (err) {
-      return null;
-    }
-    const csfFile = this.cachedCSFFiles[importPath];
-    const story = this.storyFromCSFFile({ storyId, csfFile });
-    return {
-      ...story,
-      storyFn: (update) => {
-        const context = {
-          ...this.getStoryContext(story),
-          abortSignal: new AbortController().signal,
-          canvasElement: null!,
-          loaded: {},
-          step: (label, play) => story.runStep(label, play, context),
-          context: null!,
-          mount: null!,
-          canvas: {} as Canvas,
-          userEvent: {} as UserEventObject,
-          viewMode: 'story',
-        } as StoryContext<TRenderer>;
-
-        return story.unboundStoryFn({ ...context, ...update });
-      },
-    };
   }
 }

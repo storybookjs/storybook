@@ -13,7 +13,6 @@ import { definePreview } from '@storybook/react-vite';
 
 import addonA11y from '@storybook/addon-a11y';
 import addonDocs from '@storybook/addon-docs';
-import addonEssentials from '@storybook/addon-essentials';
 import addonTest from '@storybook/addon-test';
 import addonThemes from '@storybook/addon-themes';
 
@@ -323,6 +322,24 @@ const decorators = [
 const parameters = {
   docs: {
     theme: themes.light,
+    codePanel: true,
+    source: {
+      transform: async (source) => {
+        try {
+          const prettier = await import('prettier/standalone');
+          const prettierPluginBabel = await import('prettier/plugins/babel');
+          const prettierPluginEstree = (await import('prettier/plugins/estree')).default;
+
+          return await prettier.format(source, {
+            parser: 'babel',
+            plugins: [prettierPluginBabel, prettierPluginEstree],
+          });
+        } catch (error) {
+          console.error(error);
+          return source;
+        }
+      },
+    },
     toc: {},
   },
   controls: {
@@ -370,14 +387,7 @@ const parameters = {
 };
 
 export default definePreview({
-  addons: [
-    addonDocs(),
-    addonThemes(),
-    addonEssentials(),
-    addonA11y(),
-    addonTest(),
-    templatePreview,
-  ],
+  addons: [addonDocs(), addonThemes(), addonA11y(), addonTest(), templatePreview],
   decorators,
   loaders,
   tags: ['test', 'vitest'],

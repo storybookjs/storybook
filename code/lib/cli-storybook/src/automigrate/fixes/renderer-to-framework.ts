@@ -153,6 +153,7 @@ export const rendererToFramework: Fix<MigrationResult> = {
       ignore: ['**/node_modules/**'],
       cwd: projectRoot,
       gitignore: true,
+      absolute: true,
     });
 
     // Check each package.json for migration needs
@@ -188,7 +189,6 @@ export const rendererToFramework: Fix<MigrationResult> = {
         We've detected multiple framework packages in your project: ${result.frameworks.join(', ')}.
         You will be prompted to select which framework to use for your Storybook configuration.
         This will update your imports and dependencies to use the framework-specific package.
-
         Would you like to proceed with the migration?
       `;
     }
@@ -201,7 +201,6 @@ export const rendererToFramework: Fix<MigrationResult> = {
       1. Update your source files to use framework-specific imports
       2. Remove the renderer packages from your package.json
       3. Install the necessary framework dependencies
-
       Would you like to proceed with these changes?
     `;
   },
@@ -233,6 +232,7 @@ export const rendererToFramework: Fix<MigrationResult> = {
       ignore: ['**/node_modules/**'],
       dot: true,
       cwd: projectRoot,
+      absolute: true,
     });
 
     // Transform imports for each renderer

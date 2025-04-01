@@ -18,7 +18,6 @@ export const experimental_afterEach: AfterEach<any> = async ({
   const a11yGlobals = globals.a11y;
 
   const shouldRunEnvironmentIndependent =
-    a11yParameter?.manual !== true &&
     a11yParameter?.disable !== true &&
     a11yParameter?.test !== 'off' &&
     a11yGlobals?.manual !== true;

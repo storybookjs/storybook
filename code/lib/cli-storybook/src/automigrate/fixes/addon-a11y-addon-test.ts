@@ -1,7 +1,6 @@
 import { formatFileContent, getAddonNames, rendererPackages } from 'storybook/internal/common';
 import { formatConfig, loadConfig } from 'storybook/internal/csf-tools';
 
-import { type ArrayExpression } from '@babel/types';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import * as jscodeshift from 'jscodeshift';
 import path from 'path';
@@ -45,7 +44,7 @@ interface AddonA11yAddonTestOptions {
  */
 export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
   id: 'addonA11yAddonTest',
-  versionRange: ['<8.5.0', '>=8.5.0'],
+  versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
 
   promptType(result) {
     if (result.setupFile === null && result.previewFile === null) {

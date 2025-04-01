@@ -30,8 +30,7 @@
     - [Svelte: Require v5 and up](#svelte-require-v5-and-up)
     - [Svelte: Dropped support for @storybook/svelte-webpack5](#svelte-dropped-support-for-storybooksvelte-webpack5)
     - [Angular = Require v18 and up](#angular--require-v18-and-up)
-    - [Preact = Dropped webpack5 builder support](#preact--dropped-webpack5-builder-support)
-    - [Vue3 = Dropped webpack5 builder support](#vue3--dropped-webpack5-builder-support)
+    - [Dropped webpack5 Builder Support in Favor of Vite](#dropped-webpack5-builder-support-in-favor-of-vite)
     - [Next.js = Require v14 and up](#nextjs--require-v14-and-up)
     - [Next.js = Vite builder stabilized](#nextjs--vite-builder-stabilized)
 - [From version 8.5.x to 8.6.x](#from-version-85x-to-86x)
@@ -862,47 +861,63 @@ Key changes:
 - Updated TypeScript requirement to `^4.9.0 || ^5.0.0`
 - Updated Zone.js requirement to `^0.14.0 || ^0.15.0`
 
-#### Preact = Dropped webpack5 builder support
+#### Dropped webpack5 Builder Support in Favor of Vite
 
-The packages `@storybook/preact-webpack5` and `@storybook/preset-preact-webpack5` have been removed. For Preact projects, please use the Vite builder instead:
+Removed webpack5 builder support for Preact, Vue3, and Web Components frameworks in favor of Vite builder. This change streamlines our builder support and improves performance across these frameworks.
+
+Removed Packages
+- `@storybook/preact-webpack5`
+- `@storybook/preset-preact-webpack5`
+- `@storybook/vue3-webpack5`
+- `@storybook/preset-vue3-webpack`
+- `@storybook/web-components-webpack5`
+- `@storybook/html-webpack5`
+- `@storybook/preset-html-webpack`
+
+**For Preact Projects**
 
 ```bash
 npm remove @storybook/preact-webpack5 @storybook/preset-preact-webpack
 npm install @storybook/preact-vite --save-dev
 ```
 
-Then update your `.storybook/main.js|ts`:
-
-```js
-export default {
-  framework: {
-    name: '@storybook/preact-vite',
-    options: {},
-  },
-  // ... other configurations
-};
-```
-
-#### Vue3 = Dropped webpack5 builder support
-
-The `@storybook/vue3-webpack5` package has been removed. For Vue3 projects, please use the Vite builder instead:
+**For Vue3 Projects**
 
 ```bash
 npm remove @storybook/vue3-webpack5 @storybook/preset-vue3-webpack
 npm install @storybook/vue3-vite --save-dev
 ```
 
-Then update your `.storybook/main.js|ts`:
+**For Web Components Projects**
 
-```js
+```bash
+npm remove @storybook/web-components-webpack5
+npm install @storybook/web-components-vite --save-dev
+```
+
+**For HTML Projects**
+
+```bash
+npm remove @storybook/html-webpack5 @storybook/preset-html-webpack
+npm install @storybook/html-vite --save-dev
+```
+
+**Update .storybook/main.js|ts**
+
+For all affected frameworks, update your configuration to use the Vite builder:
+
+
+```tsx
 export default {
   framework: {
-    name: '@storybook/vue3-vite',
+    name: '@storybook/[framework]-vite', // replace [framework] with preact, vue3, or web-components
     options: {},
   },
   // ... other configurations
 };
 ```
+
+This change consolidates our builder support around Vite, which offers better performance and a more streamlined development experience. The webpack5 builders for these frameworks have been deprecated in favor of the more modern Vite-based solution.
 
 #### Next.js = Require v14 and up
 

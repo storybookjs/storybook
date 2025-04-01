@@ -427,16 +427,6 @@ export const baseTemplates = {
     },
     skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },
-  'html-webpack/default': {
-    name: 'HTML Latest (Webpack | JavaScript)',
-    script: 'yarn create webpack5-html {{beforeDir}}',
-    expected: {
-      framework: '@storybook/html-webpack5',
-      renderer: '@storybook/html',
-      builder: '@storybook/builder-webpack5',
-    },
-    skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
-  },
   'html-vite/default-js': {
     name: 'HTML Latest (Vite | JavaScript)',
     script:
@@ -826,7 +816,6 @@ export const merged: TemplateKey[] = [
   'react-webpack/18-ts',
   'react-webpack/17-ts',
   'preact-vite/default-ts',
-  'html-webpack/default',
   'html-vite/default-ts',
 ];
 

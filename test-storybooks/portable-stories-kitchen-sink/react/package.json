@@ -35,12 +35,10 @@
     "@storybook/ember": "portal:../../../code/frameworks/ember",
     "@storybook/addon-test": "file:../../../code/addons/test",
     "@storybook/html": "file:../../../code/renderers/html",
-    "@storybook/html-webpack5": "file:../../../code/frameworks/html-webpack5",
     "@storybook/nextjs": "file:../../../code/frameworks/nextjs",
     "@storybook/preact": "file:../../../code/renderers/preact",
     "@storybook/preact-vite": "file:../../../code/frameworks/preact-vite",
     "@storybook/preset-create-react-app": "file:../../../code/presets/create-react-app",
-    "@storybook/preset-html-webpack": "file:../../../code/presets/html-webpack",
     "@storybook/preset-react-webpack": "file:../../../code/presets/react-webpack",
     "@storybook/preset-server-webpack": "file:../../../code/presets/server-webpack",
     "@storybook/react": "file:../../../code/renderers/react",
@@ -57,7 +55,6 @@
     "@storybook/vue3-vite": "file:../../../code/frameworks/vue3-vite",
     "@storybook/web-components": "file:../../../code/renderers/web-components",
     "@storybook/web-components-vite": "file:../../../code/frameworks/web-components-vite",
-    "@storybook/web-components-webpack5": "file:../../../code/frameworks/web-components-webpack5",
     "playwright": "1.48.1"
   },
   "dependencies": {

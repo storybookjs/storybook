@@ -5,7 +5,6 @@ export const supportedFrameworks = [
   'angular',
   'ember',
   'html-vite',
-  'html-webpack5',
   'nextjs',
   'nextjs-vite',
   'nuxt',
@@ -23,12 +22,10 @@ export const supportedFrameworks = [
   'vue3-vite',
   'react-native',
   'web-components-vite',
-  'web-components-webpack5',
 ] as const;
 
 export const supportedFrameworksPackages = {
   'html-vite': '@storybook/html-vite',
-  'html-webpack5': '@storybook/html-webpack5',
   'preact-vite': '@storybook/preact-vite',
   'react-native-web-vite': '@storybook/react-native-web-vite',
   'react-rsbuild': 'storybook-react-rsbuild',
@@ -39,7 +36,6 @@ export const supportedFrameworksPackages = {
   'vue3-rsbuild': 'storybook-vue3-rsbuild',
   'vue3-vite': '@storybook/vue3-vite',
   'web-components-vite': '@storybook/web-components-vite',
-  'web-components-webpack5': '@storybook/web-components-webpack5',
 
   angular: '@storybook/angular',
   ember: '@storybook/ember',
@@ -55,7 +51,6 @@ export const supportedFrameworksPackages = {
 
 export const supportedFrameworksNames = {
   'html-vite': 'HTML with Vite',
-  'html-webpack5': 'HTML with Webpack 5',
   'preact-vite': 'Preact with Vite',
   'react-native-web-vite': 'React Native Web with Vite',
   'react-rsbuild': 'React with Rsbuild',
@@ -66,7 +61,6 @@ export const supportedFrameworksNames = {
   'vue3-rsbuild': 'Vue 3 with Rsbuild',
   'vue3-vite': 'Vue 3 with Vite',
   'web-components-vite': 'Web Components with Vite',
-  'web-components-webpack5': 'Web Components with Webpack 5',
   angular: 'Angular',
   ember: 'Ember',
   nextjs: 'NextJS',

@@ -77,7 +77,6 @@
       unionTypes,
       intersection,
       func,
-      argTypes,
     },
     null,
     2

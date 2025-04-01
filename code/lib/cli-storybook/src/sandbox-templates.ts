@@ -523,7 +523,6 @@ export const baseTemplates = {
       builder: '@storybook/builder-vite',
     },
     skipTasks: ['e2e-tests-dev', 'bench'],
-    inDevelopment: true,
   },
   'lit-vite/default-js': {
     name: 'Lit Latest (Vite | JavaScript)',

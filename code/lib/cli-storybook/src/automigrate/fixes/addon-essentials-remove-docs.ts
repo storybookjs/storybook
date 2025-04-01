@@ -13,11 +13,11 @@ interface AddonDocsOptions {
 }
 
 /**
- * Migration to handle @storybook/addon-docs being removed from @storybook/addon-essentials
+ * Migration to handle @storybook/addon-essentials being removed and its features moving to core
  *
- * - If user has essentials with docs disabled: Remove the docs disabling config
- * - If user has essentials without docs disabled: Install @storybook/addon-docs and add to main.ts
- * - If user doesn't have essentials: Skip migration
+ * - Remove @storybook/addon-essentials from main.ts and package.json
+ * - If user had docs enabled (default): Install @storybook/addon-docs and add to main.ts
+ * - If user had docs disabled: Skip addon-docs installation
  */
 export const addonEssentialsRemoveDocs: Fix<AddonDocsOptions> = {
   id: 'addon-essentials-remove-docs',
@@ -73,20 +73,24 @@ export const addonEssentialsRemoveDocs: Fix<AddonDocsOptions> = {
   },
 
   prompt({ hasDocsDisabled }) {
+    const baseMessage = dedent`
+      We've detected that you have ${picocolors.yellow('@storybook/addon-essentials')} installed.
+      
+      In Storybook 9.0, all features from ${picocolors.yellow('@storybook/addon-essentials')} (except docs) 
+      have been moved into Storybook's core. You no longer need to install or configure them separately.
+      
+      We'll remove ${picocolors.yellow('@storybook/addon-essentials')} from your configuration and dependencies.
+    `;
+
     if (hasDocsDisabled) {
-      return dedent`
-        We've detected that you have ${picocolors.yellow('@storybook/addon-essentials')} with docs disabled.
-        
-        ${picocolors.yellow('@storybook/addon-docs')} has been removed from ${picocolors.yellow('@storybook/addon-essentials')}.
-        We'll remove the docs disabling configuration since it's no longer needed.
-      `;
+      return baseMessage;
     }
 
     return dedent`
-      We've detected that you have ${picocolors.yellow('@storybook/addon-essentials')} with docs enabled.
+      ${baseMessage}
       
-      ${picocolors.yellow('@storybook/addon-docs')} has been removed from ${picocolors.yellow('@storybook/addon-essentials')}.
-      We'll install ${picocolors.yellow('@storybook/addon-docs')} separately and add it to your configuration.
+      Since you were using the docs feature, we'll install ${picocolors.yellow('@storybook/addon-docs')} 
+      separately and add it to your configuration.
     `;
   },
 
@@ -109,16 +113,20 @@ export const addonEssentialsRemoveDocs: Fix<AddonDocsOptions> = {
         return addon?.name.includes('@storybook/addon-essentials');
       });
 
-      // Safety check: if essentials isn't found, we can't modify it
-      if (essentialsIndex === -1) {
-        return;
+      // Remove the essentials entry completely
+      if (essentialsIndex !== -1) {
+        main.removeField(['addons', essentialsIndex]);
       }
-
-      main.removeField(['addons', essentialsIndex, 'options', 'docs']);
     });
 
-    if (!dryRun && !hasDocsDisabled && !hasDocsAddon) {
-      await packageManager.runPackageCommand('storybook', ['add', '@storybook/addon-docs']);
+    if (!dryRun) {
+      // Remove addon-essentials package
+      await packageManager.removeDependencies({}, ['@storybook/addon-essentials']);
+
+      // If docs was enabled (not disabled) and not already installed, add it
+      if (!hasDocsDisabled && !hasDocsAddon) {
+        await packageManager.runPackageCommand('storybook', ['add', '@storybook/addon-docs']);
+      }
     }
   },
 };

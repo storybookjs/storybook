@@ -38,6 +38,14 @@ export function sourceDecorator(
   const container = window.document.createElement('div');
 
   useEffect(() => {
+    if (!skipSourceRender(context)) {
+      if (renderedForSource instanceof DocumentFragment) {
+        render(renderedForSource.cloneNode(true), container);
+      } else {
+        render(renderedForSource, container);
+      }
+    }
+
     const newSource = container.innerHTML.replace(LIT_EXPRESSION_COMMENTS, '');
 
     if (newSource != source.current) {
@@ -45,16 +53,6 @@ export function sourceDecorator(
       source.current = newSource;
     }
   });
-
-  if (skipSourceRender(context)) {
-    return story;
-  }
-
-  if (renderedForSource instanceof DocumentFragment) {
-    render(renderedForSource.cloneNode(true), container);
-  } else {
-    render(renderedForSource, container);
-  }
 
   return story;
 }

@@ -810,7 +810,7 @@ export const normal: TemplateKey[] = [
   'vue3-vite/default-ts',
   'nuxt-vite/default-ts',
   'lit-vite/default-ts',
-  // 'svelte-vite/default-ts',
+  'svelte-vite/default-ts',
   // 'svelte-kit/skeleton-ts',
   'nextjs/default-ts',
   'experimental-nextjs-vite/default-ts',

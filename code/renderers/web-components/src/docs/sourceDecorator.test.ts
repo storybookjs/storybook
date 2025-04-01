@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SourceType } from 'storybook/internal/docs-tools';
 
 import { render } from 'lit';
-import { addons, emitTransformCode, useRef } from 'storybook/preview-api';
+import { addons, emitTransformCode, useEffect, useRef } from 'storybook/preview-api';
 
 import { sourceDecorator } from './sourceDecorator';
 
@@ -20,6 +20,8 @@ vi.mock('storybook/preview-api', () => ({
 vi.mock('lit', () => ({
   render: vi.fn(),
 }));
+
+const tick = () => new Promise((r) => setTimeout(r, 0));
 
 describe('sourceDecorator', () => {
   const mockChannel = {
@@ -43,6 +45,7 @@ describe('sourceDecorator', () => {
     vi.clearAllMocks();
     vi.mocked(useRef).mockReturnValue({ current: undefined });
     vi.mocked(addons.getChannel).mockReturnValue(mockChannel as any);
+    vi.mocked(useEffect).mockImplementation((cb) => setTimeout(() => cb(), 0));
   });
 
   it('should render source for a basic story', () => {
@@ -79,7 +82,7 @@ describe('sourceDecorator', () => {
     expect(mockChannel.emit).not.toHaveBeenCalled();
   });
 
-  it('should handle DocumentFragment stories', () => {
+  it('should handle DocumentFragment stories', async () => {
     const fragment = document.createDocumentFragment();
     const element = document.createElement('test-element');
     element.textContent = 'fragment content';
@@ -93,6 +96,7 @@ describe('sourceDecorator', () => {
     });
 
     sourceDecorator(storyFn, mockContext as any);
+    await tick();
 
     expect(render).toHaveBeenCalled();
     expect(emitTransformCode).toHaveBeenCalledWith(
@@ -101,7 +105,7 @@ describe('sourceDecorator', () => {
     );
   });
 
-  it('should force render when type is DYNAMIC', () => {
+  it('should force render when type is DYNAMIC', async () => {
     const storyFn = () => document.createElement('div');
     const contextWithDynamic = {
       ...mockContext,
@@ -122,6 +126,8 @@ describe('sourceDecorator', () => {
     });
 
     sourceDecorator(storyFn, contextWithDynamic as any);
+
+    await tick();
 
     expect(render).toHaveBeenCalled();
     expect(emitTransformCode).toHaveBeenCalledWith(

@@ -41,6 +41,8 @@
     undefinedValue?: undefined;
     /** Any */
     any?: any;
+    /** Date */
+    date?: Date;
     /** Array of numbers */
     arrayOfNumbers?: number[];
     /** Enum */
@@ -58,16 +60,14 @@
     };
     /** Record */
     record?: Record<string, number>;
-    /** Date */
-    date?: Date;
     /** Union of types */
     unionTypes?: number | string;
     /** Intersection of types */
     intersection?: { a: number } & { b: string };
-    /** Snippet contents */
-    children: Snippet;
     /** Event callback function */
     func?: (event: MouseEvent) => number;
+    /** Snippet contents */
+    children: Snippet;
     /** Actual arg types inferred from the component */
     argTypes: Record<string, any>;
   } = $props();

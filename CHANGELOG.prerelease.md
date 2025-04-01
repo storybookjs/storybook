@@ -1,3 +1,19 @@
+## 9.0.0-alpha.12
+
+- Addon-A11y: Various improvements - [#30774](https://github.com/storybookjs/storybook/pull/30774), thanks @ghengeveld!
+- Addon-Test: Migrate to new test provider API, drop Vitest 2 support - [#30875](https://github.com/storybookjs/storybook/pull/30875), thanks @JReinhold!
+- Angular: Fix zone.js support for Angular libraries - [#30941](https://github.com/storybookjs/storybook/pull/30941), thanks @valentinpalkovic!
+- Core: Fix flaky unit tests related to stores - [#30963](https://github.com/storybookjs/storybook/pull/30963), thanks @JReinhold!
+- Core: Fix telemetry error on Storybok UI - [#30953](https://github.com/storybookjs/storybook/pull/30953), thanks @yannbf!
+- Maintenance: Drop tooling support - [#30940](https://github.com/storybookjs/storybook/pull/30940), thanks @valentinpalkovic!
+- Maintenance: Remove deprecated APIs - [#30926](https://github.com/storybookjs/storybook/pull/30926), thanks @valentinpalkovic!
+- Maintenance: Remove obsolete automigrations - [#30945](https://github.com/storybookjs/storybook/pull/30945), thanks @valentinpalkovic!
+- Manager: Fix `Uncaught ReferenceError: global is not defined` - [#30970](https://github.com/storybookjs/storybook/pull/30970), thanks @JReinhold!
+- Next.js-Vite: Stabilize @storybook/experimental-nextjs-vite - [#30956](https://github.com/storybookjs/storybook/pull/30956), thanks @valentinpalkovic!
+- Preact: Remove support for Preact Webpack 5 - [#30957](https://github.com/storybookjs/storybook/pull/30957), thanks @valentinpalkovic!
+- UI: Visual tweaks to badges and improved layout for a11y panel - [#30955](https://github.com/storybookjs/storybook/pull/30955), thanks @ghengeveld!
+- Vue3: Remove support for Webpack 5 - [#30958](https://github.com/storybookjs/storybook/pull/30958), thanks @valentinpalkovic!
+
 ## 9.0.0-alpha.11
 
 - Addons: Move @storybook/addon-interactions into core - [#30916](https://github.com/storybookjs/storybook/pull/30916), thanks @valentinpalkovic!

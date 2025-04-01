@@ -3,14 +3,14 @@ import type { ReactElement, ReactNode } from 'react';
 import React, { createElement, isValidElement } from 'react';
 
 import { logger } from 'storybook/internal/client-logger';
-import { SNIPPET_RENDERED, SourceType, getDocgenSection } from 'storybook/internal/docs-tools';
-import type { ArgsStoryFn, PartialStoryFn, StoryContext } from 'storybook/internal/types';
+import { SourceType, getDocgenSection } from 'storybook/internal/docs-tools';
+import type { PartialStoryFn, StoryContext } from 'storybook/internal/types';
 
 import type { Options } from 'react-element-to-jsx-string';
 import type reactElementToJSXStringType from 'react-element-to-jsx-string';
 // @ts-expect-error (this is needed, because our bundling prefers the `browser` field, but that yields CJS)
 import reactElementToJSXStringRaw from 'react-element-to-jsx-string/dist/esm/index.js';
-import { addons, useEffect } from 'storybook/preview-api';
+import { emitTransformCode, useEffect, useRef } from 'storybook/preview-api';
 
 import type { ReactRenderer } from '../types';
 import { isForwardRef, isMemo } from './lib';
@@ -236,28 +236,10 @@ export const jsxDecorator = (
   storyFn: PartialStoryFn<ReactRenderer>,
   context: StoryContext<ReactRenderer>
 ) => {
-  const channel = addons.getChannel();
-  const skip = skipJsxRender(context);
-
-  let jsx = '';
-
-  useEffect(() => {
-    if (!skip) {
-      const { id, unmappedArgs } = context;
-      channel.emit(SNIPPET_RENDERED, {
-        id,
-        source: jsx,
-        args: unmappedArgs,
-      });
-    }
-  });
-
+  const jsx = useRef<undefined | string>(undefined);
   const story = storyFn();
-  // We only need to render JSX if the source block is actually going to
-  // consume it. Otherwise it's just slowing us down.
-  if (skip) {
-    return story;
-  }
+
+  const skip = skipJsxRender(context);
 
   const options = {
     ...defaultOpts,
@@ -266,12 +248,19 @@ export const jsxDecorator = (
 
   const storyJsx = context.originalStoryFn(context.args, context);
 
-  const sourceJsx = mdxToJsx(storyJsx);
+  useEffect(() => {
+    if (skip) {
+      return;
+    }
 
-  const rendered = renderJsx(sourceJsx, options);
-  if (rendered) {
-    jsx = rendered;
-  }
+    const sourceJsx = mdxToJsx(storyJsx);
+
+    const rendered = renderJsx(sourceJsx, options);
+    if (rendered && jsx.current !== rendered) {
+      emitTransformCode(rendered, context);
+      jsx.current = rendered;
+    }
+  });
 
   return story;
 };

@@ -1,13 +1,13 @@
 import * as React from 'react';
 
 import { IconButton, TooltipNote, WithTooltip } from 'storybook/internal/components';
-import { type Call, CallStates, type ControlStates } from 'storybook/internal/instrumenter';
 
 import { BookmarkHollowIcon, ListUnorderedIcon, LockIcon, StopAltIcon } from '@storybook/icons';
 
 import { transparentize } from 'polished';
 import { styled, typography } from 'storybook/theming';
 
+import { type Call, CallStates, type ControlStates } from '../../instrumenter/types';
 import { isChaiError, isJestError, useAnsiToHtmlFilter } from '../utils';
 import type { Controls } from './InteractionsPanel';
 import { MatcherResult } from './MatcherResult';

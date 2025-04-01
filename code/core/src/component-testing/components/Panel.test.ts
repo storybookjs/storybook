@@ -1,8 +1,7 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
 
-import { type Call, CallStates, type LogItem } from 'storybook/internal/instrumenter';
-
+import { type Call, CallStates, type LogItem } from '../../instrumenter/types';
 import { getInteractions } from './Panel';
 
 const renderInteraction = {

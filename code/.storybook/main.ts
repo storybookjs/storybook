@@ -1,5 +1,7 @@
 import { join } from 'node:path';
 
+import react from '@vitejs/plugin-react';
+
 import { defineMain } from '../frameworks/react-vite/src/node';
 
 const componentsPath = join(__dirname, '../core/src/components/index.ts');
@@ -46,10 +48,6 @@ const config = defineMain({
       titlePrefix: 'addons/accessibility',
     },
     {
-      directory: '../addons/backgrounds/template/stories',
-      titlePrefix: 'addons/backgrounds',
-    },
-    {
       directory: '../addons/docs/template/stories',
       titlePrefix: 'addons/docs',
     },
@@ -77,8 +75,6 @@ const config = defineMain({
   addons: [
     '@storybook/addon-themes',
     '@storybook/addon-docs',
-    '@storybook/addon-essentials',
-    '@storybook/addon-storysource',
     '@storybook/addon-designs',
     '@storybook/addon-test',
     '@storybook/addon-a11y',
@@ -130,6 +126,7 @@ const config = defineMain({
               }),
         },
       },
+      plugins: [react()],
       optimizeDeps: {
         force: true,
         include: ['@storybook/blocks'],

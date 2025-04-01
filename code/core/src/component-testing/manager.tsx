@@ -8,7 +8,7 @@ import { Panel } from './components/Panel';
 import { PanelTitle } from './components/PanelTitle';
 import { ADDON_ID, PANEL_ID } from './constants';
 
-addons.register(ADDON_ID, () => {
+export default addons.register(ADDON_ID, () => {
   const filter = ({ state }: Combo) => {
     return {
       storyId: state.storyId,

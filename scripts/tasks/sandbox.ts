@@ -85,7 +85,7 @@ export const sandbox: Task = {
       extraDeps.push('happy-dom', 'vitest', 'playwright', '@vitest/browser');
 
       if (details.template.expected.framework.includes('nextjs')) {
-        extraDeps.push('@storybook/experimental-nextjs-vite', 'jsdom');
+        extraDeps.push('@storybook/nextjs-vite', 'jsdom');
       }
 
       // if (details.template.expected.renderer === '@storybook/svelte') {

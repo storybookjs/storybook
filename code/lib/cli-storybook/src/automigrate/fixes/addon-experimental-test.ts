@@ -22,7 +22,7 @@ interface AddonExperimentalTestOptions {
 export const addonExperimentalTest: Fix<AddonExperimentalTestOptions> = {
   id: 'addon-experimental-test',
 
-  versionRange: ['*', '*'],
+  versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
 
   promptType: 'auto',
 

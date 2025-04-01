@@ -303,6 +303,16 @@ describe('StoryStore', () => {
       "componentId": "component-one",
       "globals": {
         "a": "b",
+        "backgrounds": {
+          "grid": false,
+          "value": undefined,
+        },
+        "measureEnabled": false,
+        "outline": false,
+        "viewport": {
+          "isRotated": false,
+          "value": undefined,
+        },
       },
       "id": "component-one--a",
       "initialArgs": {
@@ -312,6 +322,14 @@ describe('StoryStore', () => {
       "name": "A",
       "parameters": {
         "__isArgsStory": false,
+        "backgrounds": {
+          "disable": false,
+          "grid": {
+            "cellAmount": 5,
+            "cellSize": 20,
+            "opacity": 0.5,
+          },
+        },
         "fileName": "./src/ComponentOne-new.stories.js",
         "throwPlayFunctionExceptions": false,
       },
@@ -477,6 +495,16 @@ describe('StoryStore', () => {
       "componentId": "component-one",
       "globals": {
         "a": "b",
+        "backgrounds": {
+          "grid": false,
+          "value": undefined,
+        },
+        "measureEnabled": false,
+        "outline": false,
+        "viewport": {
+          "isRotated": false,
+          "value": undefined,
+        },
       },
       "id": "component-one--a",
       "initialArgs": {
@@ -486,6 +514,14 @@ describe('StoryStore', () => {
       "name": "A",
       "parameters": {
         "__isArgsStory": false,
+        "backgrounds": {
+          "disable": false,
+          "grid": {
+            "cellAmount": 5,
+            "cellSize": 20,
+            "opacity": 0.5,
+          },
+        },
         "fileName": "./src/ComponentOne.stories.js",
         "throwPlayFunctionExceptions": false,
       },
@@ -524,6 +560,16 @@ describe('StoryStore', () => {
       "componentId": "component-one",
       "globals": {
         "a": "b",
+        "backgrounds": {
+          "grid": false,
+          "value": undefined,
+        },
+        "measureEnabled": false,
+        "outline": false,
+        "viewport": {
+          "isRotated": false,
+          "value": undefined,
+        },
       },
       "id": "component-one--b",
       "initialArgs": {
@@ -533,6 +579,14 @@ describe('StoryStore', () => {
       "name": "B",
       "parameters": {
         "__isArgsStory": false,
+        "backgrounds": {
+          "disable": false,
+          "grid": {
+            "cellAmount": 5,
+            "cellSize": 20,
+            "opacity": 0.5,
+          },
+        },
         "fileName": "./src/ComponentOne.stories.js",
         "throwPlayFunctionExceptions": false,
       },
@@ -571,6 +625,16 @@ describe('StoryStore', () => {
       "componentId": "component-two",
       "globals": {
         "a": "b",
+        "backgrounds": {
+          "grid": false,
+          "value": undefined,
+        },
+        "measureEnabled": false,
+        "outline": false,
+        "viewport": {
+          "isRotated": false,
+          "value": undefined,
+        },
       },
       "id": "component-two--c",
       "initialArgs": {
@@ -580,6 +644,14 @@ describe('StoryStore', () => {
       "name": "C",
       "parameters": {
         "__isArgsStory": false,
+        "backgrounds": {
+          "disable": false,
+          "grid": {
+            "cellAmount": 5,
+            "cellSize": 20,
+            "opacity": 0.5,
+          },
+        },
         "fileName": "./src/ComponentTwo.stories.js",
         "throwPlayFunctionExceptions": false,
       },

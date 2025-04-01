@@ -11,6 +11,16 @@ import {
   transformPackageJsonFiles,
 } from './consolidated-imports';
 
+// mock picocolors yellow and cyan
+vi.mock('picocolors', () => {
+  return {
+    default: {
+      cyan: (str: string) => str,
+      red: (str: string) => str,
+    },
+  };
+});
+
 vi.mock('node:fs/promises');
 vi.mock('globby', () => ({
   globby: vi.fn(),
@@ -101,6 +111,33 @@ describe('check', () => {
 
     const result = await setupCheck(contents, [filePath]);
     expect(result).toBeNull();
+  });
+});
+
+describe('prompt', () => {
+  it('should return a prompt', () => {
+    const result = consolidatedImports.prompt({
+      packageJsonFiles: ['test/package.json'],
+      consolidatedDeps: new Set(['@storybook/core-common', '@storybook/experimental-nextjs-vite']),
+    });
+
+    expect(result).toMatchInlineSnapshot(`
+  "Found package.json files that contain consolidated or renamed Storybook packages that need to be updated:
+  - test/package.json
+
+  We will automatically rename the following packages:
+  - @storybook/core-common -> storybook/internal/common
+  - @storybook/experimental-nextjs-vite -> @storybook/nextjs-vite
+
+  These packages have been renamed or consolidated into the main storybook package and should be removed.
+  The main storybook package will be added to devDependencies if not already present.
+
+  Would you like to:
+  1. Update these package.json files
+  2. Scan your codebase and update any imports from these updated packages
+
+  This will ensure your project is properly updated to use the new updated package structure and to use the latest package names."
+`);
   });
 });
 

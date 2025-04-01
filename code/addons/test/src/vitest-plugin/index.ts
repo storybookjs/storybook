@@ -130,18 +130,15 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
   ]);
 
   // filter out plugins that we know are unnecesary for tests, eg. docgen plugins
-  const plugins = (await withoutVitePlugins(
-    (viteConfigFromStorybook.plugins as unknown as PluginOption[]) ?? [],
-    [
-      'storybook:package-deduplication', // addon-docs
-      'storybook:mdx-plugin', // addon-docs
-      'storybook:react-docgen-plugin',
-      'vite:react-docgen-typescript', // aka @joshwooding/vite-plugin-react-docgen-typescript
-      'storybook:svelte-docgen-plugin',
-      'storybook:vue-component-meta-plugin',
-      'storybook:vue-docgen-plugin',
-    ]
-  )) as unknown as Plugin[];
+  const plugins = (await withoutVitePlugins(viteConfigFromStorybook.plugins ?? [], [
+    'storybook:package-deduplication', // addon-docs
+    'storybook:mdx-plugin', // addon-docs
+    'storybook:react-docgen-plugin',
+    'vite:react-docgen-typescript', // aka @joshwooding/vite-plugin-react-docgen-typescript
+    'storybook:svelte-docgen-plugin',
+    'storybook:vue-component-meta-plugin',
+    'storybook:vue-docgen-plugin',
+  ])) as unknown as Plugin[];
 
   const storybookTestPlugin: Plugin = {
     name: 'vite-plugin-storybook-test',

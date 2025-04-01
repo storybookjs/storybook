@@ -856,15 +856,15 @@ workflows:
           requires:
             - unit-tests
       - create-sandboxes:
-          parallelism: 12
+          parallelism: 13
           requires:
             - build
       - chromatic-sandboxes:
-          parallelism: 9
+          parallelism: 10
           requires:
             - create-sandboxes
       - e2e-production:
-          parallelism: 7
+          parallelism: 8
           requires:
             - create-sandboxes
       - e2e-dev:
@@ -872,11 +872,11 @@ workflows:
           requires:
             - create-sandboxes
       - test-runner-production:
-          parallelism: 7
+          parallelism: 8
           requires:
             - create-sandboxes
       - vitest-integration:
-          parallelism: 3
+          parallelism: 4
           requires:
             - create-sandboxes
       # TODO: don't forget to reenable this

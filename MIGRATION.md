@@ -24,7 +24,7 @@
   - [Interactions addon moved to core](#interactions-addon-moved-to-core)
   - [Dropped support for legacy packages](#dropped-support-for-legacy-packages)
   - [Dropped support for TypeScript \< 4.9](#dropped-support-for-typescript--49)
-  - [Test addon renamed from experimental to stable](#test-addon-renamed-from-experimental-to-stable)
+  - [`@storybook/experimental-addon-test` renamed to `@storybook/addon-vitest`](#storybookexperimental-addon-test-renamed-to-storybookaddon-vitest)
   - [Experimental Status API has turned into a Status Store](#experimental-status-api-has-turned-into-a-status-store)
   - [Dropped support for Vite 4](#dropped-support-for-vite-4)
   - [Framework-specific changes](#framework-specific-changes)
@@ -770,20 +770,20 @@ Addon authors may continue to use the internal packages, there is currently not 
 
 Storybook now requires TypeScript 4.9 or later. If you're using an older version of TypeScript, you'll need to upgrade to continue using Storybook.
 
-### Test addon renamed from experimental to stable
+### `@storybook/experimental-addon-test` renamed to `@storybook/addon-vitest`
 
-In Storybook 9.0, we've officially stabilized the Test addon. The package has been renamed from `@storybook/experimental-addon-test` to `@storybook/addon-test`, reflecting its production-ready status. If you were using the experimental addon, you'll need to update your dependencies and imports:
+In Storybook 9.0, we've officially stabilized the Test addon. The package has been renamed from `@storybook/experimental-addon-test` to `@storybook/addon-vitest`, reflecting its production-ready status. If you were using the experimental addon, you'll need to update your dependencies and imports:
 
 ```diff
 - npm install --save-dev @storybook/experimental-addon-test
-+ npm install --save-dev @storybook/addon-test
++ npm install --save-dev @storybook/addon-vitest
 ```
 
 Update your imports in any custom configuration or test files:
 
 ```diff
 - import { ... } from '@storybook/experimental-addon-test';
-+ import { ... } from '@storybook/addon-test';
++ import { ... } from '@storybook/addon-vitest';
 ```
 
 If you're using the addon in your Storybook configuration, update your `.storybook/main.js` or `.storybook/main.ts`:
@@ -792,7 +792,7 @@ If you're using the addon in your Storybook configuration, update your `.storybo
 export default {
   addons: [
 -   '@storybook/experimental-addon-test',
-+   '@storybook/addon-test',
++   '@storybook/addon-vitest',
   ],
 };
 ```

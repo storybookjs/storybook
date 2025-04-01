@@ -13,8 +13,8 @@ import { definePreview } from '@storybook/react-vite';
 
 import addonA11y from '@storybook/addon-a11y';
 import addonDocs from '@storybook/addon-docs';
-import addonTest from '@storybook/addon-test';
 import addonThemes from '@storybook/addon-themes';
+import addonTest from '@storybook/addon-vitest';
 
 import { DocsContext as DocsContextProps, useArgs } from 'storybook/preview-api';
 import type { PreviewWeb } from 'storybook/preview-api';

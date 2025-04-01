@@ -397,7 +397,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
     const vitestAddonPath = relative(sandboxDir, join(CODE_DIRECTORY, 'addons', 'test'));
     packageJson.resolutions = {
       ...packageJson.resolutions,
-      '@storybook/addon-test': `file:${vitestAddonPath}`,
+      '@storybook/addon-vitest': `file:${vitestAddonPath}`,
     };
   }
 
@@ -468,7 +468,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
         import path from 'node:path';
         import { fileURLToPath } from 'node:url';
         import { defineWorkspace, defaultExclude } from "vitest/config";
-        import { storybookTest } from "@storybook/addon-test/vitest-plugin";
+        import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
 
         ${viteConfigFile ? `import viteConfig from './${viteConfigFile}';` : ''}
 
@@ -541,7 +541,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
         import path from 'node:path';
         import { fileURLToPath } from 'node:url';
         import { defineConfig, defaultExclude } from "vitest/config";
-        import { storybookTest } from "@storybook/addon-test/vitest-plugin";
+        import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
 
         ${vitestConfigFile && viteConfigFile ? `import viteConfig from './${viteConfigFile}';` : ''}
 
@@ -749,7 +749,7 @@ export const addStories: Task['run'] = async (
       disableDocs,
     });
 
-    await linkPackageStories(await workspacePath('addon test package', '@storybook/addon-test'), {
+    await linkPackageStories(await workspacePath('addon test package', '@storybook/addon-vitest'), {
       mainConfig,
       cwd,
       disableDocs,

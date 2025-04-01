@@ -79,7 +79,7 @@ const getStoryGlobsAndFiles = async (
   };
 };
 
-const PACKAGE_DIR = dirname(require.resolve('@storybook/addon-test/package.json'));
+const PACKAGE_DIR = dirname(require.resolve('@storybook/addon-vitest/package.json'));
 
 export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> => {
   const finalOptions = {
@@ -175,7 +175,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       // )
 
       // We signal the test runner that we are not running it via Storybook
-      // We are overriding the environment variable to 'true' if vitest runs via @storybook/addon-test's backend
+      // We are overriding the environment variable to 'true' if vitest runs via @storybook/addon-vitest's backend
       const vitestStorybook = process.env.VITEST_STORYBOOK ?? 'false';
 
       const baseConfig: Omit<ViteUserConfig, 'plugins'> = {
@@ -215,7 +215,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
             ? {
                 server: {
                   deps: {
-                    inline: ['@storybook/addon-test'],
+                    inline: ['@storybook/addon-vitest'],
                   },
                 },
               }
@@ -271,9 +271,9 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
 
         optimizeDeps: {
           include: [
-            '@storybook/addon-test/internal/setup-file',
-            '@storybook/addon-test/internal/global-setup',
-            '@storybook/addon-test/internal/test-utils',
+            '@storybook/addon-vitest/internal/setup-file',
+            '@storybook/addon-vitest/internal/global-setup',
+            '@storybook/addon-vitest/internal/test-utils',
             ...(frameworkName?.includes('react') || frameworkName?.includes('nextjs')
               ? ['react-dom/test-utils']
               : []),

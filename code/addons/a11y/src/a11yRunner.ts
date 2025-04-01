@@ -1,6 +1,10 @@
+import { deprecate } from 'storybook/internal/client-logger';
+import { ElementAndContextParametersError } from 'storybook/internal/preview-errors';
+import type { StoryContext } from 'storybook/internal/types';
+
 import { global } from '@storybook/global';
 
-import type { AxeResults } from 'axe-core';
+import type { AxeResults, ElementContext } from 'axe-core';
 import { addons } from 'storybook/preview-api';
 
 import { EVENTS } from './constants';
@@ -40,10 +44,24 @@ const runNext = async () => {
 export const run = async (input: A11yParameters = defaultParameters) => {
   const { default: axe } = await import('axe-core');
 
-  const { element = 'body', config = {}, options = {} } = input;
-  const htmlElement = document.querySelector(element as string) ?? document.body;
+  const { config = {}, options = {} } = input;
 
-  if (!htmlElement) {
+  if (input.element) {
+    if (input.context) {
+      throw new ElementAndContextParametersError();
+    } else {
+      // TODO: migration guide
+      deprecate(
+        "The 'element' parameter in parameters.a11y is deprecated. Use 'context' instead. See X."
+      );
+    }
+  }
+
+  const context: ElementContext =
+    input.context ??
+    (input.element ? (document.querySelector(input.element) ?? document.body) : document.body);
+
+  if (!context) {
     return;
   }
 
@@ -59,7 +77,7 @@ export const run = async (input: A11yParameters = defaultParameters) => {
   return new Promise<AxeResults>((resolve, reject) => {
     const task = async () => {
       try {
-        const result = await axe.run(htmlElement, options);
+        const result = await axe.run(context, options);
         resolve(result);
       } catch (error) {
         reject(error);

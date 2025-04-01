@@ -33,6 +33,7 @@ export enum Category {
   RENDERER_WEB_COMPONENTS = 'RENDERER_WEB-COMPONENTS',
   FRAMEWORK_NEXTJS = 'FRAMEWORK_NEXTJS',
   ADDON_VITEST = 'ADDON_VITEST',
+  ADDON_A11Y = 'ADDON_A11Y',
 }
 
 export class MissingStoryAfterHmrError extends StorybookError {
@@ -354,6 +355,21 @@ export class UnsupportedViewportDimensionError extends StorybookError {
         - px, vh, vw, em, rem and %.
         
         You can either change the viewport for this story to use one of the supported units or skip the test by adding '!test' to the story's tags per https://storybook.js.org/docs/writing-stories/tags
+      `,
+    });
+  }
+}
+
+export class ElementAndContextParametersError extends StorybookError {
+  constructor() {
+    super({
+      category: Category.ADDON_A11Y,
+      code: 1,
+      // TODO: migration guide
+      // documentation: '',
+      message: dedent`
+        Both the 'element' and 'context' parameters were provided to parameters.a11y,
+        please only provide the 'context' parameter instead.
       `,
     });
   }

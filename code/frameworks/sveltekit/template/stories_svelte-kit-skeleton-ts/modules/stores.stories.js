@@ -1,6 +1,7 @@
 import Stores from './Stores.svelte';
 
 export default {
+  title: 'stories/frameworks/sveltekit/modules/stores',
   component: Stores,
 };
 

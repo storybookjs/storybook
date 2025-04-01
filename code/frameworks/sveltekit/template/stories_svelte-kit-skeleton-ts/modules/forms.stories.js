@@ -3,6 +3,7 @@ import { expect, fn, within } from 'storybook/test';
 import Forms from './Forms.svelte';
 
 export default {
+  title: 'stories/frameworks/sveltekit/modules/forms',
   component: Forms,
 };
 

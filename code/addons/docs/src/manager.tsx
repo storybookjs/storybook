@@ -19,6 +19,20 @@ addons.register(ADDON_ID, (api) => {
     title: 'Code',
     type: types.PANEL,
     paramKey: PARAM_KEY,
+    /**
+     * This code panel can be enabled by adding this parameter:
+     *
+     * @example
+     *
+     * ```ts
+     *  parameters: {
+     *    docs: {
+     *      codePanel: true,
+     *    },
+     *  },
+     * ```
+     */
+    disabled: (parameters) => !parameters?.docs?.codePanel,
     match: ({ viewMode }) => viewMode === 'story',
     render: ({ active }) => {
       const channel = api.getChannel();
@@ -52,7 +66,7 @@ addons.register(ADDON_ID, (api) => {
           <SourceStyles>
             <Source
               {...parameter.source}
-              code={parameter.source?.code || codeSnippet.source}
+              code={parameter.source.code || codeSnippet.source}
               format={codeSnippet.format}
               dark={isDark}
             />

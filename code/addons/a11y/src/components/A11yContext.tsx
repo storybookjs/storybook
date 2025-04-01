@@ -268,10 +268,9 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
     emit(EVENTS.MANUAL, storyId, parameters);
   }, [emit, parameters, storyId]);
 
-  const handleCopyLink = useCallback(async (key: string) => {
-    const link = `${window.location.origin}${window.location.pathname}${window.location.search}&addonPanel=${PANEL_ID}&a11ySelection=${key}`;
+  const handleCopyLink = useCallback(async (linkPath: string) => {
     const { createCopyToClipboardFunction } = await import('storybook/internal/components');
-    await createCopyToClipboardFunction()(link);
+    await createCopyToClipboardFunction()(`${window.location.origin}${linkPath}`);
   }, []);
 
   const handleJumpToElement = useCallback(

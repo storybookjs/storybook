@@ -1,4 +1,4 @@
-import type { AxeResults, ElementContext, RunOptions, Spec } from 'axe-core';
+import type { AxeResults, ElementContext, NodeResult, Result, RunOptions, Spec } from 'axe-core';
 
 export type A11YReport = AxeResults | { error: Error };
 
@@ -55,3 +55,17 @@ export const RuleType = {
 } as const;
 
 export type RuleType = (typeof RuleType)[keyof typeof RuleType];
+
+export type EnhancedNodeResult = NodeResult & {
+  linkPath: string;
+};
+
+export type EnhancedResult = Omit<Result, 'nodes'> & {
+  nodes: EnhancedNodeResult[];
+};
+
+export type EnhancedResults = Omit<AxeResults, 'incomplete' | 'passes' | 'violations'> & {
+  incomplete: EnhancedResult[];
+  passes: EnhancedResult[];
+  violations: EnhancedResult[];
+};

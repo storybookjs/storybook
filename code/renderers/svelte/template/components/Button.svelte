@@ -9,7 +9,7 @@
    */
 
   /** @type {Props} */
-  const { primary = false, backgroundColor, size = 'medium', label, ...props } = $props();
+  const { primary = false, backgroundColor, size = 'medium', label, onClick } = $props();
 
   let mode = $derived(primary ? 'storybook-button--primary' : 'storybook-button--secondary');
   let style = $derived(backgroundColor ? `background-color: ${backgroundColor}` : '');

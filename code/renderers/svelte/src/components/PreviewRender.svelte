@@ -8,7 +8,9 @@
     /** @type {import('svelte').SvelteComponent} */
     Component,
     props = {},
-  } = $derived.by(storyFn);
+  } = $derived.by(() => {
+    return storyFn();
+  });
 
   $effect(() => {
     if (!Component) {

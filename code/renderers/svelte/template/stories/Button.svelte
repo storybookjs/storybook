@@ -6,7 +6,7 @@
   let count = $state(0);
 </script>
 
-<Button onclick={() => (count += 1)} label="{text}: {count}" />
+<Button onClick={() => (count += 1)} label="{text}: {count}" />
 
 <p>A little text to show this is a view.</p>
 <p>If we need to test components in a Svelte environment, for instance to test slot behaviour,</p>

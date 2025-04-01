@@ -1,16 +1,13 @@
 import { expect, fn } from 'storybook/test';
 
-import BorderDecoratorBlue from './views/BorderDecoratorBlue.svelte';
-import BorderDecoratorProps from './views/BorderDecoratorProps.svelte';
-import BorderDecoratorRed from './views/BorderDecoratorRed.svelte';
-import ButtonView from './views/ButtonJavaScript.svelte';
+import BorderDecoratorBlue from './BorderDecoratorBlue.svelte';
+import BorderDecoratorProps from './BorderDecoratorProps.svelte';
+import BorderDecoratorRed from './BorderDecoratorRed.svelte';
+import Button from './Button.svelte';
 
 export default {
-  component: ButtonView,
+  component: Button,
   decorators: [() => BorderDecoratorRed],
-  args: {
-    primary: true,
-  },
   tags: ['autodocs'],
 };
 
@@ -46,7 +43,7 @@ export const WithArgsBasedBorder = {
 
 const decoratorCalled = fn();
 
-export const DecoratorsRunsOnce = {
+export const DecoratorsRunOnce = {
   decorators: [
     (Story) => {
       decoratorCalled();

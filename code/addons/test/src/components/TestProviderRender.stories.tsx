@@ -14,15 +14,6 @@ import { store as mockStore } from '../manager-store.mock';
 import { TestProviderRender } from './TestProviderRender';
 
 const managerContext: any = {
-  state: {
-    testProviders: {
-      'test-provider-id': {
-        id: 'test-provider-id',
-        name: 'Test Provider',
-        type: Addon_TypesEnum.experimental_TEST_PROVIDER,
-      },
-    },
-  },
   api: {
     getDocsUrl: fn(({ subpath }) => `https://storybook.js.org/docs/${subpath}`).mockName(
       'api::getDocsUrl'

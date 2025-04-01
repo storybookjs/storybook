@@ -32,13 +32,13 @@ export type PluginConfigType = 'build' | 'development';
 const configEnvServe: ConfigEnv = {
   mode: 'development',
   command: 'serve',
-  ssrBuild: false,
+  isSsrBuild: false,
 };
 
 const configEnvBuild: ConfigEnv = {
   mode: 'production',
   command: 'build',
-  ssrBuild: false,
+  isSsrBuild: false,
 };
 
 // Vite config that is common to development and production mode
@@ -47,8 +47,7 @@ export async function commonConfig(
   _type: PluginConfigType
 ): Promise<ViteInlineConfig> {
   const configEnv = _type === 'development' ? configEnvServe : configEnvBuild;
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore this property only exists in Vite 6
+  // @ts-expect-error - defaultClientConditions only exists in Vite 6
   const { loadConfigFromFile, mergeConfig, defaultClientConditions = [] } = await import('vite');
 
   const { viteConfigPath } = await getBuilderOptions<BuilderOptions>(options);

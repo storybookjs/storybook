@@ -34,7 +34,6 @@ import { getAddonNames } from './utils';
 const ADDON_NAME = '@storybook/addon-test' as const;
 const EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.cts', '.mts', '.cjs', '.mjs'];
 
-const addonInteractionsName = '@storybook/addon-interactions';
 const addonA11yName = '@storybook/addon-a11y';
 
 const findFile = async (basename: string, extensions = EXTENSIONS) =>
@@ -73,12 +72,12 @@ export default async function postInstall(options: PostinstallOptions) {
   if (info.frameworkPackageName === '@storybook/nextjs' && !hasCustomWebpackConfig) {
     const out =
       options.yes || !isInteractive
-        ? { migrateToExperimentalNextjsVite: !!options.yes }
+        ? { migrateToNextjsVite: !!options.yes }
         : await prompts({
             type: 'confirm',
-            name: 'migrateToExperimentalNextjsVite',
+            name: 'migrateToNextjsVite',
             message: dedent`
-            The addon requires the use of @storybook/experimental-nextjs-vite to work with Next.js.
+            The addon requires the use of @storybook/nextjs-vite to work with Next.js.
             https://storybook.js.org/docs/writing-tests/test-addon#install-and-set-up
 
             Do you want to migrate?
@@ -86,9 +85,9 @@ export default async function postInstall(options: PostinstallOptions) {
             initial: true,
           });
 
-    if (out.migrateToExperimentalNextjsVite) {
+    if (out.migrateToNextjsVite) {
       await packageManager.addDependencies({ installAsDevDependencies: true }, [
-        `@storybook/experimental-nextjs-vite@${versions['@storybook/experimental-nextjs-vite']}`,
+        `@storybook/nextjs-vite@${versions['@storybook/nextjs-vite']}`,
       ]);
 
       await packageManager.removeDependencies({}, ['@storybook/nextjs']);
@@ -97,21 +96,21 @@ export default async function postInstall(options: PostinstallOptions) {
       traverse(config._ast, {
         StringLiteral(path) {
           if (path.node.value === '@storybook/nextjs') {
-            path.node.value = '@storybook/experimental-nextjs-vite';
+            path.node.value = '@storybook/nextjs-vite';
           }
         },
       });
 
       await writeConfig(config, mainJsPath);
 
-      info.frameworkPackageName = '@storybook/experimental-nextjs-vite';
+      info.frameworkPackageName = '@storybook/nextjs-vite';
       info.builderPackageName = '@storybook/builder-vite';
     }
   }
 
   const annotationsImport = SUPPORTED_FRAMEWORKS.includes(info.frameworkPackageName)
     ? info.frameworkPackageName === '@storybook/nextjs'
-      ? '@storybook/experimental-nextjs-vite'
+      ? '@storybook/nextjs-vite'
       : info.frameworkPackageName
     : info.rendererPackageName && SUPPORTED_RENDERERS.includes(info.rendererPackageName)
       ? info.rendererPackageName
@@ -210,56 +209,22 @@ export default async function postInstall(options: PostinstallOptions) {
     return;
   }
 
-  if (info.hasAddonInteractions) {
-    let shouldUninstall = options.yes;
-    if (!options.yes) {
-      printInfo(
-        '⚠️ Attention',
-        dedent`
-          We have detected that you're using ${addonInteractionsName}.
-          The Storybook test addon is a replacement for the interactions addon, so you must uninstall and unregister it in order to use the test addon correctly. This can be done automatically.
-
-          More info: ${picocolors.cyan('https://storybook.js.org/docs/writing-tests/test-addon')}
-        `
-      );
-
-      const response = isInteractive
-        ? await prompts({
-            type: 'confirm',
-            name: 'shouldUninstall',
-            message: `Would you like me to remove and unregister ${addonInteractionsName}? Press N to abort the entire installation.`,
-            initial: true,
-          })
-        : { shouldUninstall: true };
-
-      shouldUninstall = response.shouldUninstall;
-    }
-
-    if (shouldUninstall) {
-      await $({
-        stdio: 'inherit',
-      })`storybook remove ${addonInteractionsName} --package-manager ${options.packageManager} --config-dir ${options.configDir}`;
-    }
-  }
-
   if (info.frameworkPackageName === '@storybook/nextjs') {
     printInfo(
       '🍿 Just so you know...',
       dedent`
         It looks like you're using Next.js.
 
-        Adding ${picocolors.bold(colors.pink(`@storybook/experimental-nextjs-vite/vite-plugin`))} so you can use it with Vitest.
+        Adding ${picocolors.bold(colors.pink(`@storybook/nextjs-vite/vite-plugin`))} so you can use it with Vitest.
 
         More info about the plugin at ${picocolors.cyan(`https://github.com/storybookjs/vite-plugin-storybook-nextjs`)}
       `
     );
     try {
       const storybookVersion = await packageManager.getInstalledVersion('storybook');
-      dependencies.push(`@storybook/experimental-nextjs-vite@^${storybookVersion}`);
+      dependencies.push(`@storybook/nextjs-vite@^${storybookVersion}`);
     } catch (e) {
-      console.error(
-        'Failed to install @storybook/experimental-nextjs-vite. Please install it manually'
-      );
+      console.error('Failed to install @storybook/nextjs-vite. Please install it manually');
     }
   }
 
@@ -564,8 +529,6 @@ async function getStorybookInfo({ configDir, packageManager: pkgMgr }: Postinsta
     isCritical: true,
   });
 
-  const hasAddonInteractions = !!(await presets.apply('ADDON_INTERACTIONS_IN_USE', false));
-
   const core = await presets.apply('core', {});
 
   const { builder, renderer } = core;
@@ -593,7 +556,6 @@ async function getStorybookInfo({ configDir, packageManager: pkgMgr }: Postinsta
     frameworkPackageName,
     builderPackageName,
     rendererPackageName,
-    hasAddonInteractions,
     addons: getAddonNames(config),
   };
 }

@@ -23,6 +23,15 @@ export const consolidatedPackages = {
   '@storybook/components': 'storybook/internal/components',
   '@storybook/test': 'storybook/test',
   '@storybook/addon-actions': 'storybook/actions',
+  '@storybook/addon-controls': 'storybook/internal/controls',
+  '@storybook/addon-toolbars': 'storybook/internal/toolbars',
+  '@storybook/addon-highlight': 'storybook/highlight',
+  '@storybook/addon-measure': 'storybook/measure',
+  '@storybook/addon-outline': 'storybook/outline',
+  '@storybook/addon-backgrounds': 'storybook/backgrounds',
+  '@storybook/addon-viewport': 'storybook/viewport',
+  '@storybook/experimental-nextjs-vite': '@storybook/nextjs-vite',
+  '@storybook/instrumenter': 'storybook/internal/instrumenter',
 } as const;
 
 export type ConsolidatedPackage = keyof typeof consolidatedPackages;

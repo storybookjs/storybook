@@ -2,15 +2,7 @@
   "name": "svelte-kit/prerelease-ts",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
-  "implicitDependencies": [
-    "core",
-    "addon-essentials",
-    "addon-interactions",
-    "addon-links",
-    "addon-onboarding",
-    "blocks",
-    "sveltekit"
-  ],
+  "implicitDependencies": ["core", "addon-links", "addon-onboarding", "blocks", "sveltekit"],
   "targets": {
     "sandbox": {},
     "sb:dev": {},

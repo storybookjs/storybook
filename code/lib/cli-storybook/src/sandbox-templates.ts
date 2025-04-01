@@ -210,25 +210,20 @@ export const baseTemplates = {
     script:
       'npx create-next-app@^14 {{beforeDir}} --eslint --tailwind --app --import-alias="@/*" --src-dir',
     expected: {
-      framework: '@storybook/experimental-nextjs-vite',
+      framework: '@storybook/nextjs-vite',
       renderer: '@storybook/react',
       builder: '@storybook/builder-vite',
     },
     modifications: {
       useCsfFactory: true,
       mainConfig: {
-        framework: '@storybook/experimental-nextjs-vite',
+        framework: '@storybook/nextjs-vite',
         features: {
           experimentalRSC: true,
           developmentModeForBuild: true,
         },
       },
-      extraDependencies: [
-        'server-only',
-        '@storybook/experimental-nextjs-vite',
-        'vite',
-        'prop-types',
-      ],
+      extraDependencies: ['server-only', '@storybook/nextjs-vite', 'vite', 'prop-types'],
     },
     skipTasks: ['e2e-tests-dev', 'bench'],
   },
@@ -237,25 +232,20 @@ export const baseTemplates = {
     script:
       'npx create-next-app {{beforeDir}} --eslint --no-tailwind --app --import-alias="@/*" --src-dir',
     expected: {
-      framework: '@storybook/experimental-nextjs-vite',
+      framework: '@storybook/nextjs-vite',
       renderer: '@storybook/react',
       builder: '@storybook/builder-vite',
     },
     modifications: {
       useCsfFactory: true,
       mainConfig: {
-        framework: '@storybook/experimental-nextjs-vite',
+        framework: '@storybook/nextjs-vite',
         features: {
           experimentalRSC: true,
           developmentModeForBuild: true,
         },
       },
-      extraDependencies: [
-        'server-only',
-        '@storybook/experimental-nextjs-vite',
-        'vite',
-        'prop-types',
-      ],
+      extraDependencies: ['server-only', '@storybook/nextjs-vite', 'vite', 'prop-types'],
     },
     skipTasks: ['e2e-tests-dev', 'bench'],
   },
@@ -437,16 +427,6 @@ export const baseTemplates = {
     },
     skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },
-  'html-webpack/default': {
-    name: 'HTML Latest (Webpack | JavaScript)',
-    script: 'yarn create webpack5-html {{beforeDir}}',
-    expected: {
-      framework: '@storybook/html-webpack5',
-      renderer: '@storybook/html',
-      builder: '@storybook/builder-webpack5',
-    },
-    skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
-  },
   'html-vite/default-js': {
     name: 'HTML Latest (Vite | JavaScript)',
     script:
@@ -499,26 +479,12 @@ export const baseTemplates = {
       renderer: '@storybook/angular',
       builder: '@storybook/builder-webpack5',
     },
-    modifications: {
-      extraDependencies: ['@angular-devkit/build-angular@next'],
-    },
     skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },
   'angular-cli/default-ts': {
     name: 'Angular CLI Latest (Webpack | TypeScript)',
     script:
       'npx -p @angular/cli ng new angular-latest --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
-    expected: {
-      framework: '@storybook/angular',
-      renderer: '@storybook/angular',
-      builder: '@storybook/builder-webpack5',
-    },
-    skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
-  },
-  'angular-cli/15-ts': {
-    name: 'Angular CLI v15 (Webpack | TypeScript)',
-    script:
-      'npx -p @angular/cli@15 ng new angular-v15 --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn',
     expected: {
       framework: '@storybook/angular',
       renderer: '@storybook/angular',
@@ -579,18 +545,6 @@ export const baseTemplates = {
       framework: '@storybook/web-components-vite',
       renderer: '@storybook/web-components',
       builder: '@storybook/builder-vite',
-    },
-    // Remove smoke-test from the list once https://github.com/storybookjs/storybook/issues/19351 is fixed.
-    skipTasks: ['smoke-test', 'e2e-tests-dev', 'bench', 'vitest-integration'],
-  },
-  'vue-cli/default-js': {
-    name: 'Vue CLI v3 (Webpack | JavaScript)',
-    script:
-      'npx -p @vue/cli vue create {{beforeDir}} --default --packageManager=yarn --force --merge && cd {{beforeDir}} && echo "module.exports = {}" > webpack.config.js',
-    expected: {
-      framework: '@storybook/vue3-webpack5',
-      renderer: '@storybook/vue3',
-      builder: '@storybook/builder-webpack5',
     },
     // Remove smoke-test from the list once https://github.com/storybookjs/storybook/issues/19351 is fixed.
     skipTasks: ['smoke-test', 'e2e-tests-dev', 'bench', 'vitest-integration'],
@@ -872,9 +826,7 @@ export const merged: TemplateKey[] = [
   ...normal,
   'react-webpack/18-ts',
   'react-webpack/17-ts',
-  'angular-cli/15-ts',
   'preact-vite/default-ts',
-  'html-webpack/default',
   'html-vite/default-ts',
 ];
 
@@ -887,7 +839,6 @@ export const daily: TemplateKey[] = [
   'react-vite/prerelease-ts',
   'react-webpack/prerelease-ts',
   'vue3-vite/default-js',
-  'vue-cli/default-js',
   'lit-vite/default-js',
   // 'svelte-kit/skeleton-js',
   'svelte-kit/prerelease-ts',

@@ -1,4 +1,5 @@
 import type {
+  ArgsStoryFn,
   BaseProjectAnnotations,
   BeforeAll,
   Canvas,
@@ -46,8 +47,6 @@ export interface ProjectAnnotations<TRenderer extends Renderer>
   addons?: ProjectAnnotations<TRenderer>[];
   testingLibraryRender?: (...args: never[]) => { unmount: () => void };
   renderToCanvas?: RenderToCanvas<TRenderer>;
-  /* @deprecated use renderToCanvas */
-  renderToDOM?: RenderToCanvas<TRenderer>;
 }
 
 type NamedExportsOrDefault<TExport> = TExport | { default: TExport };
@@ -88,7 +87,7 @@ export type NormalizedStoryAnnotations<TRenderer extends Renderer = Renderer> = 
   id: StoryId;
   argTypes?: StrictArgTypes;
   name: StoryName;
-  userStoryFn?: StoryFn<TRenderer>;
+  userStoryFn?: ArgsStoryFn<TRenderer>;
   decorators?: DecoratorFunction<TRenderer>[];
   loaders?: LoaderFunction<TRenderer>[];
 };
@@ -103,7 +102,7 @@ export type CSFFile<TRenderer extends Renderer = Renderer> = {
 export type PreparedStory<TRenderer extends Renderer = Renderer> =
   StoryContextForEnhancers<TRenderer> & {
     moduleExport: ModuleExport;
-    originalStoryFn: StoryFn<TRenderer>;
+    originalStoryFn: ArgsStoryFn<TRenderer>;
     undecoratedStoryFn: LegacyStoryFn<TRenderer>;
     unboundStoryFn: LegacyStoryFn<TRenderer>;
     applyLoaders: (context: StoryContext<TRenderer>) => Promise<StoryContext<TRenderer>['loaded']>;

@@ -106,6 +106,17 @@ async function run() {
       outdir: 'dist',
       sourcemap: false,
       treeShaking: true,
+      supported: {
+        // This is an ES2018 feature, but esbuild is really strict here.
+        // Since not all browser support the latest Unicode characters.
+        //
+        // Also this feature only works in combination with a Regex polyfill that we don't load.
+        //
+        // The Hermes engine of React Native doesn't support this feature,
+        // but leaving the regex alone, actually allows Hermes to do its own thing,
+        // without us having to load a RegExp polyfill.
+        'regexp-unicode-property-escapes': true,
+      },
     } satisfies EsbuildContextOptions;
 
     const browserEsbuildOptions = {
@@ -198,7 +209,12 @@ async function run() {
                 'storybook/theming': join(cwd, 'src', 'theming'),
                 'storybook/test': join(cwd, 'src', 'test'),
                 'storybook/internal': join(cwd, 'src'),
+                'storybook/outline': join(cwd, 'src', 'outline'),
+                'storybook/backgrounds': join(cwd, 'src', 'backgrounds'),
+                'storybook/highlight': join(cwd, 'src', 'highlight'),
+                'storybook/measure': join(cwd, 'src', 'measure'),
                 'storybook/actions': join(cwd, 'src', 'actions'),
+                'storybook/viewport': join(cwd, 'src', 'viewport'),
                 react: dirname(require.resolve('react/package.json')),
                 'react-dom': dirname(require.resolve('react-dom/package.json')),
                 'react-dom/client': join(
@@ -228,6 +244,11 @@ async function run() {
                 'storybook/theming': join(cwd, 'src', 'theming'),
                 'storybook/test': join(cwd, 'src', 'test'),
                 'storybook/actions': join(cwd, 'src', 'actions'),
+                'storybook/outline': join(cwd, 'src', 'outline'),
+                'storybook/backgrounds': join(cwd, 'src', 'backgrounds'),
+                'storybook/measure': join(cwd, 'src', 'measure'),
+                'storybook/viewport': join(cwd, 'src', 'viewport'),
+                'storybook/highlight': join(cwd, 'src', 'highlight'),
 
                 'storybook/internal': join(cwd, 'src'),
                 react: dirname(require.resolve('react/package.json')),

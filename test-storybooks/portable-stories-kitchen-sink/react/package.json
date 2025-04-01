@@ -22,7 +22,6 @@
     "@storybook/addon-jest": "file:../../../code/addons/jest",
     "@storybook/addon-links": "file:../../../code/addons/links",
     "@storybook/addon-mgx-gfm": "file:../../../code/addons/mgx-gfm",
-    "@storybook/addon-storysource": "file:../../../code/addons/storysource",
     "@storybook/addon-themes": "file:../../../code/addons/themes",
     "@storybook/angular": "file:../../../code/frameworks/angular",
     "@storybook/blocks": "file:../../../code/lib/blocks",

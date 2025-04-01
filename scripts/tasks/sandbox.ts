@@ -81,24 +81,6 @@ export const sandbox: Task = {
 
     options.addon.push('@storybook/addon-a11y');
 
-    if (shouldAddVitestIntegration) {
-      extraDeps.push('happy-dom', 'vitest', 'playwright', '@vitest/browser');
-
-      if (details.template.expected.framework.includes('nextjs')) {
-        extraDeps.push('@storybook/nextjs-vite', 'jsdom');
-      }
-
-      // if (details.template.expected.renderer === '@storybook/svelte') {
-      //   extraDeps.push(`@testing-library/svelte`);
-      // }
-      //
-      // if (details.template.expected.framework === '@storybook/angular') {
-      //   extraDeps.push('@testing-library/angular', '@analogjs/vitest-angular');
-      // }
-
-      options.addon.push('@storybook/addon-test');
-    }
-
     let startTime = now();
     await create(details, options);
     const createTime = now() - startTime;

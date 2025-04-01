@@ -114,6 +114,7 @@ export const consolidatedImports: Fix<ConsolidatedOptions> = {
       ignore: ['**/node_modules/**'],
       cwd: projectRoot,
       gitignore: true,
+      absolute: true,
     });
 
     const consolidatedDeps = new Set<keyof typeof consolidatedPackages>();
@@ -203,6 +204,7 @@ export const consolidatedImports: Fix<ConsolidatedOptions> = {
       ignore: ['**/node_modules/**'],
       dot: true,
       cwd: projectRoot,
+      absolute: true,
     });
 
     const importErrors = await transformImportFiles(sourceFiles, dryRun);

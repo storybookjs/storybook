@@ -1,36 +1,12 @@
 <script>
-  /**
-   * @component Button View
-   * @wrapper
-   */
-  import { global as globalThis } from '@storybook/global';
-  // @ts-ignore
   const Button = globalThis.Components?.Button;
 
-  /**
-   * Rounds the button
-   */
-  export let primary = false;
+  const { text = 'You clicked' } = $props();
 
-  /**
-   * Displays the count
-   */
-  let count = 0;
-
-  /**
-   * Button text
-   * @slot
-   */
-  export let text = 'You clicked';
-
-  function handleClick(_event) {
-    count += 1;
-  }
+  let count = $state(0);
 </script>
 
-<h1>Button view</h1>
-
-<Button {primary} on:click on:click={handleClick} label="{text}: {count}" />
+<Button onclick={() => (count += 1)} label="{text}: {count}" />
 
 <p>A little text to show this is a view.</p>
 <p>If we need to test components in a Svelte environment, for instance to test slot behaviour,</p>

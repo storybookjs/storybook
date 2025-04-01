@@ -56,7 +56,7 @@
     "memoizerific": "^1.11.3",
     "polished": "^4.2.2",
     "react-colorful": "^5.1.2",
-    "telejson": "8.0.0--canary.106.06466345017f.0",
+    "telejson": "8.0.0--canary.106.377d63b.0",
     "tocbot": "^4.20.1"
   },
   "peerDependencies": {

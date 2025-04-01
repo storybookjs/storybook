@@ -205,7 +205,7 @@ export abstract class AbstractRenderer {
 
     const currentStoryRender = {
       storyFnAngular,
-      moduleMetadataSnapshot: stringify(moduleMetadata, {}),
+      moduleMetadataSnapshot: stringify(moduleMetadata, { maxDepth: 50 }),
     };
 
     this.previousStoryRenderInfo.set(targetDOMNode, currentStoryRender);

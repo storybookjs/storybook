@@ -54,7 +54,7 @@ const stringifyArgs = (args: Record<string, any>) =>
     return value;
   });
 
-addons.register(ADDON_ID, (api) => {
+export default addons.register(ADDON_ID, (api) => {
   const channel = addons.getChannel();
 
   const saveStory = async () => {

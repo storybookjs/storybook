@@ -2,14 +2,7 @@
   "name": "html-vite/default-js",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
-  "implicitDependencies": [
-    "core",
-    "addon-essentials",
-    "addon-links",
-    "addon-onboarding",
-    "blocks",
-    "html-vite"
-  ],
+  "implicitDependencies": ["core", "addon-links", "addon-onboarding", "blocks", "html-vite"],
   "targets": {
     "sandbox": {},
     "sb:dev": {},

@@ -277,7 +277,9 @@ export async function baseGenerator(
       : extraAddonPackages;
 
   // TODO: change the semver range to '^4' when VTA 4 and SB 9 is released
-  extraAddonsToInstall.push('@chromatic-com/storybook@^4.0.0-0');
+  if (features.includes('test')) {
+    extraAddonsToInstall.push('@chromatic-com/storybook@^4.0.0-0');
+  }
 
   // Add @storybook/addon-docs when docs feature is selected
   if (features.includes('docs')) {
@@ -287,13 +289,11 @@ export async function baseGenerator(
   // added to main.js
   const addons = [
     ...(compiler ? [`@storybook/addon-webpack5-compiler-${compiler}`] : []),
-    '@storybook/addon-essentials',
     ...stripVersions(extraAddonsToInstall),
   ].filter(Boolean);
 
   // added to package.json
   const addonPackages = [
-    '@storybook/addon-essentials',
     '@storybook/blocks',
     ...(compiler ? [`@storybook/addon-webpack5-compiler-${compiler}`] : []),
     ...extraAddonsToInstall,

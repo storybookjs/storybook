@@ -838,8 +838,8 @@ yarn add -D @storybook/svelte-vite
 ```diff
 export default {
   framework: {
--    name: '@storybook/svelte-vite',
-+    name: '@storybook/svelte-webpack5'
+-    name: '@storybook/svelte-webpack5'
++    name: '@storybook/svelte-vite',
   },
   // ...other configuration
 };

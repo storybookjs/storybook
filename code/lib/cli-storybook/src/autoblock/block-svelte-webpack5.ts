@@ -12,7 +12,7 @@ export const blocker = createBlocker({
     };
 
     // Check if @storybook/svelte-webpack5 is a dependency
-    return '@storybook/svelte-webpack5' in dependencies ? true : false;
+    return '@storybook/svelte-webpack5' in dependencies;
   },
   log() {
     return dedent`

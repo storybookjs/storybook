@@ -52,11 +52,11 @@
     unionTypes?: number | string;
     /** Intersection of types */
     intersection?: { a: number } & { b: string };
-    /** Snippet contents */
-    func?: (event: MouseEvent) => number;
-    /** Actual arg types inferred from the component */
-    children: Snippet;
     /** Event callback function */
+    func?: (event: MouseEvent) => number;
+    /** Snippet contents */
+    children: Snippet;
+    /** Actual arg types inferred from the component */
     argTypes: Record<string, any>;
   };
 

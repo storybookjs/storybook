@@ -29,6 +29,8 @@
   - [Experimental Status API has turned into a Status Store](#experimental-status-api-has-turned-into-a-status-store)
   - [Dropped support for Vite 4](#dropped-support-for-vite-4)
   - [Framework-specific changes](#framework-specific-changes)
+    - [Svelte: Require v5 and up](#svelte-require-v5-and-up)
+    - [Svelte: Dropped support for @storybook/svelte-webpack5](#svelte-dropped-support-for-storybooksvelte-webpack5)
     - [Angular = Require v18 and up](#angular--require-v18-and-up)
     - [Dropped webpack5 Builder Support in Favor of Vite](#dropped-webpack5-builder-support-in-favor-of-vite)
     - [Next.js = Require v14 and up](#nextjs--require-v14-and-up)
@@ -872,6 +874,49 @@ If you're using framework-specific Vite plugins, ensure they are compatible with
 For more information on upgrading to Vite 5, see the [Vite Migration Guide](https://vitejs.dev/guide/migration).
 
 ### Framework-specific changes
+
+
+#### Svelte: Require v5 and up
+
+Storybook has dropped support for Svelte versions 3 and 4. The minimum supported version is now Svelte 5.
+
+If you're using an older version of Svelte, you'll need to upgrade to Svelte 5 or newer to use the latest version of Storybook.
+
+#### Svelte: Dropped support for @storybook/svelte-webpack5
+
+In Storybook 9.0, we've dropped support for `@storybook/svelte-webpack5`. If you're currently using it, you need to migrate to `@storybook/svelte-vite` instead.
+
+Follow these steps to migrate:
+
+1. Remove the webpack5 framework package:
+
+```bash
+npm uninstall @storybook/svelte-webpack5
+# or
+yarn remove @storybook/svelte-webpack5
+```
+
+2. Install the Vite framework package:
+
+```bash
+npm install -D @storybook/svelte-vite
+# or
+yarn add -D @storybook/svelte-vite
+```
+
+3. Update your Storybook configuration in `.storybook/main.js` or `.storybook/main.ts`:
+
+```diff
+export default {
+  framework: {
+-    name: '@storybook/svelte-webpack5'
++    name: '@storybook/svelte-vite',
+  },
+  // ...other configuration
+};
+```
+
+For more details, please refer to the [Svelte & Vite documentation](https://storybook.js.org/docs/get-started/frameworks/svelte-vite).
 
 #### Angular = Require v18 and up
 
@@ -2451,7 +2496,6 @@ The current list of frameworks include:
 - `@storybook/nextjs`
 - `@storybook/server-webpack5`
 - `@storybook/svelte-vite`
-- `@storybook/svelte-webpack5`
 - `@storybook/sveltekit`
 - `@storybook/vue-vite`
 - `@storybook/vue-webpack5`

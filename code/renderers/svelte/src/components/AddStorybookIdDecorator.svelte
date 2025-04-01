@@ -3,5 +3,5 @@
 </script>
 
 <div data-story="true" id={storyId}>
-  {children}
+  {@render children()}
 </div>

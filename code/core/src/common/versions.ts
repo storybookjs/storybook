@@ -2,7 +2,6 @@
 export default {
   '@storybook/addon-a11y': '9.0.0-alpha.12',
   '@storybook/addon-docs': '9.0.0-alpha.12',
-  '@storybook/addon-mdx-gfm': '9.0.0-alpha.12',
   '@storybook/addon-jest': '9.0.0-alpha.12',
   '@storybook/addon-links': '9.0.0-alpha.12',
   '@storybook/addon-onboarding': '9.0.0-alpha.12',

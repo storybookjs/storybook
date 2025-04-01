@@ -140,9 +140,9 @@ export default async function postInstall(options: PostinstallOptions) {
       `);
     }
 
-    if (coercedVitestVersion && !satisfies(coercedVitestVersion, '>=2.1.0')) {
+    if (coercedVitestVersion && !satisfies(coercedVitestVersion, '>=3.0.0')) {
       reasons.push(dedent`
-        • The addon requires Vitest 2.1.0 or later. You are currently using ${picocolors.bold(vitestVersionSpecifier)}.
+        • The addon requires Vitest 3.0.0 or higher. You are currently using ${picocolors.bold(vitestVersionSpecifier)}.
           Please update all of your Vitest dependencies and try again.
       `);
     }
@@ -347,23 +347,14 @@ export default async function postInstall(options: PostinstallOptions) {
   const vitestShimFile = await findFile('vitest.shims.d');
   const rootConfig = vitestConfigFile || viteConfigFile;
 
-  const isVitest3OrLater = !!(coercedVitestVersion && satisfies(coercedVitestVersion, '>=3.0.0'));
-
-  const browserConfig = isVitest3OrLater
-    ? `{
+  const browserConfig = `{
         enabled: true,
         headless: true,
         provider: 'playwright',
         instances: [{ browser: 'chromium' }]
-      }`
-    : `{
-        enabled: true,
-        headless: true,
-        name: 'chromium',
-        provider: 'playwright'
       }`;
 
-  if (isVitest3OrLater && fileExtension === 'ts' && !vitestShimFile) {
+  if (fileExtension === 'ts' && !vitestShimFile) {
     await writeFile(
       'vitest.shims.d.ts',
       '/// <reference types="@vitest/browser/providers/playwright" />'
@@ -419,7 +410,7 @@ export default async function postInstall(options: PostinstallOptions) {
 
     // For Vitest 3+ with an existing workspace option in the config file, we extend the workspace array,
     // otherwise we fall back to creating a workspace file.
-    if (isVitest3OrLater && hasWorkspaceConfig) {
+    if (hasWorkspaceConfig) {
       const configTemplate = await loadTemplate('vitest.config.template.ts', {
         CONFIG_DIR: options.configDir,
         BROWSER_CONFIG: browserConfig,

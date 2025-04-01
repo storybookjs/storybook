@@ -102,7 +102,6 @@ export function action(name: string, options: ActionOptions = {}): HandlerFuncti
       options: {
         ...actionOptions,
         maxDepth: minDepth + (actionOptions.depth || 3),
-        allowFunction: actionOptions.allowFunction || false,
       },
     };
     channel.emit(EVENT_ID, actionDisplayToEmit);

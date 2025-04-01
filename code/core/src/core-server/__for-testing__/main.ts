@@ -23,7 +23,7 @@ const config: StorybookConfig = {
     '@storybook/addon-a11y',
   ],
   core: {
-    channelOptions: { allowFunction: false, maxDepth: 10 },
+    channelOptions: { maxDepth: 10 },
     disableTelemetry: true,
   },
   logLevel: 'debug',

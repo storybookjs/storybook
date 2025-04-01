@@ -1,13 +1,16 @@
 import React, { type FC, useEffect, useState } from 'react';
 
-import { Addon_TypesEnum } from 'storybook/internal/types';
+import {
+  type Addon_Collection,
+  type Addon_TestProviderType,
+  Addon_TypesEnum,
+} from 'storybook/internal/types';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { type API, ManagerContext } from 'storybook/manager-api';
 import { expect, fireEvent, fn, waitFor, within } from 'storybook/test';
 
-import type { TestProviders } from '../../../core-events';
 import type { TestProviderStateByProviderId } from '../../../shared/test-provider-store';
 import { SidebarBottomBase } from './SidebarBottom';
 
@@ -52,32 +55,16 @@ const managerContext: any = {
   },
 };
 
-const registeredTestProviders: TestProviders = {
+const registeredTestProviders: Addon_Collection<Addon_TestProviderType> = {
   'component-tests': {
     type: Addon_TypesEnum.experimental_TEST_PROVIDER,
     id: 'component-tests',
-    name: 'Component tests',
     render: () => <div>Component tests</div>,
-    runnable: true,
-    details: {},
-    cancellable: true,
-    cancelling: false,
-    running: false,
-    failed: false,
-    crashed: false,
   },
   'visual-tests': {
     type: Addon_TypesEnum.experimental_TEST_PROVIDER,
     id: 'visual-tests',
-    name: 'Visual tests',
     render: () => <div>Visual tests</div>,
-    runnable: true,
-    details: {},
-    cancellable: true,
-    cancelling: false,
-    running: false,
-    failed: false,
-    crashed: false,
   },
 };
 const testProviderStates: TestProviderStateByProviderId = {
@@ -149,15 +136,7 @@ export const DynamicHeight: Story = {
       'dynamic-height': {
         type: Addon_TypesEnum.experimental_TEST_PROVIDER,
         id: 'dynamic-height',
-        name: 'Dynamic height',
         render: () => <DynamicHeightDemo />,
-        runnable: true,
-        details: {},
-        cancellable: true,
-        cancelling: false,
-        running: false,
-        failed: false,
-        crashed: false,
       },
     },
   },

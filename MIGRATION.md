@@ -5,6 +5,7 @@
   - [A11y addon: Removed deprecated manual parameter](#a11y-addon-removed-deprecated-manual-parameter)
   - [Button Component API Changes](#button-component-api-changes)
   - [Documentation Generation Changes](#documentation-generation-changes)
+  - [`parameters.docs.source.format` removal](#parametersdocssourceformat-removal)
   - [Global State Management](#global-state-management)
   - [Icon System Updates](#icon-system-updates)
   - [Sidebar Component Changes](#sidebar-component-changes)
@@ -516,6 +517,65 @@ export default {
 + export default {
 +   tags: ['autodocs']
 + };
+```
+
+### `parameters.docs.source.format` removal
+
+The `parameters.docs.source.format` parameter has been removed in favor of using `parameters.docs.source.transform`. If you were using `format` to prettify your code via prettier, you can now use the `transform` parameter with Prettier directly:
+
+```js
+// .storybook/preview.js|ts|jsx|tsx
+export default {
+  parameters: {
+    docs: {
+      source: {
+        transform: async (source) => {
+          const prettier = await import('prettier/standalone');
+          const prettierPluginBabel = await import('prettier/plugins/babel');
+          const prettierPluginEstree = await import('prettier/plugins/estree');
+
+          return prettier.format(source, {
+            parser: 'babel',
+            plugins: [prettierPluginBabel, prettierPluginEstree],
+          });
+        },
+      },
+    },
+  },
+};
+```
+
+This change gives you more control over how your code is formatted and allows for asynchronous transformations. The `transform` function receives the source code and story context as parameters, enabling you to implement custom formatting logic or use any code formatting library of your choice.
+
+**Before:**
+
+```js
+export const MyStory = {
+  parameters: {
+    docs: {
+      source: {
+        format: 'html',
+      },
+    },
+  },
+};
+```
+
+**After:**
+
+```js
+export const MyStory = {
+  parameters: {
+    docs: {
+      source: {
+        transform: async (source) => {
+          // Your custom transformation logic here
+          return source;
+        },
+      },
+    },
+  },
+};
 ```
 
 ### Global State Management

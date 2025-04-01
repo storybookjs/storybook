@@ -24,6 +24,6 @@ export class DiComponent {
   }
 
   elRefStr(): string {
-    return stringify(this.elRef, { maxDepth: 1, allowFunction: false });
+    return stringify(this.elRef, { maxDepth: 1 });
   }
 }

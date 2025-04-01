@@ -15,7 +15,6 @@
     "@storybook/addon-docs": "file:../../code/addons/docs",
     "@storybook/addon-jest": "file:../../code/addons/jest",
     "@storybook/addon-links": "file:../../code/addons/links",
-    "@storybook/addon-mgx-gfm": "file:../../code/addons/mgx-gfm",
     "@storybook/addon-themes": "file:../../code/addons/themes",
     "@storybook/angular": "file:../../code/frameworks/angular",
     "@storybook/blocks": "file:../../code/lib/blocks",
@@ -27,12 +26,10 @@
     "@storybook/csf-plugin": "file:../../code/lib/csf-plugin",
     "@storybook/ember": "file:../../code/frameworks/ember",
     "@storybook/html": "file:../../code/renderers/html",
-    "@storybook/html-webpack5": "file:../../code/frameworks/html-webpack5",
     "@storybook/nextjs": "file:../../code/frameworks/nextjs",
     "@storybook/preact": "file:../../code/renderers/preact",
     "@storybook/preact-vite": "file:../../code/frameworks/preact-vite",
     "@storybook/preset-create-react-app": "file:../../code/presets/create-react-app",
-    "@storybook/preset-html-webpack": "file:../../code/presets/html-webpack",
     "@storybook/preset-react-webpack": "file:../../code/presets/react-webpack",
     "@storybook/preset-server-webpack": "file:../../code/presets/server-webpack",
     "@storybook/preset-svelte-webpack": "file:../../code/presets/svelte-webpack",
@@ -50,8 +47,7 @@
     "@storybook/vue3": "file:../../code/renderers/vue3",
     "@storybook/vue3-vite": "file:../../code/frameworks/vue3-vite",
     "@storybook/web-components": "file:../../code/renderers/web-components",
-    "@storybook/web-components-vite": "file:../../code/frameworks/web-components-vite",
-    "@storybook/web-components-webpack5": "file:../../code/frameworks/web-components-webpack5"
+    "@storybook/web-components-vite": "file:../../code/frameworks/web-components-vite"
   },
   "dependencies": {
     "ember-named-blocks-polyfill": "^0.2.3",

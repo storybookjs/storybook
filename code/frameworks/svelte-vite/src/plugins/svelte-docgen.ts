@@ -135,10 +135,11 @@ function transformToSvelteDocParserDataItems(docgen: Docgen): SvelteDataItem[] {
 export async function svelteDocgen(svelteOptions: Record<string, any> = {}): Promise<PluginOption> {
   const cwd = process.cwd();
   const { preprocess: preprocessOptions, logDocgen = false } = svelteOptions;
-  const include = /\.(svelte)$/;
+  const include = /\.svelte$/;
+  const exclude = /node_modules\/.*/;
   const { createFilter } = await import('vite');
 
-  const filter = createFilter(include);
+  const filter = createFilter(include, exclude);
   const sourceFileCache = createDocgenCache();
 
   let docPreprocessOptions: Parameters<typeof preprocess>[1] | undefined;

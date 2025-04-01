@@ -315,6 +315,9 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       // return the new config, it will be deep-merged by vite
       return config;
     },
+    configureVitest(context) {
+      context.vitest.config.coverage.exclude.push('storybook-static');
+    },
     async configureServer(server) {
       if (staticDirs) {
         for (const staticDir of staticDirs) {

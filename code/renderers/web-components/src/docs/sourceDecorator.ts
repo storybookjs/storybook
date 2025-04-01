@@ -31,20 +31,13 @@ export function sourceDecorator(
   const story = storyFn();
   const source = useRef<undefined | string>(undefined);
 
-  useEffect(() => {
-    if (skipSourceRender(context)) {
-      return;
-    }
-    const renderedForSource = context?.parameters.docs?.source?.excludeDecorators
-      ? (context.originalStoryFn as ArgsStoryFn<WebComponentsRenderer>)(context.args, context)
-      : story;
+  const renderedForSource = context?.parameters.docs?.source?.excludeDecorators
+    ? (context.originalStoryFn as ArgsStoryFn<WebComponentsRenderer>)(context.args, context)
+    : story;
 
-    const container = window.document.createElement('div');
-    if (renderedForSource instanceof DocumentFragment) {
-      render(renderedForSource.cloneNode(true), container);
-    } else {
-      render(renderedForSource, container);
-    }
+  const container = window.document.createElement('div');
+
+  useEffect(() => {
     const newSource = container.innerHTML.replace(LIT_EXPRESSION_COMMENTS, '');
 
     if (newSource != source.current) {
@@ -52,6 +45,16 @@ export function sourceDecorator(
       source.current = newSource;
     }
   });
+
+  if (skipSourceRender(context)) {
+    return story;
+  }
+
+  if (renderedForSource instanceof DocumentFragment) {
+    render(renderedForSource.cloneNode(true), container);
+  } else {
+    render(renderedForSource, container);
+  }
 
   return story;
 }

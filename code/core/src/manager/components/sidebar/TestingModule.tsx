@@ -251,10 +251,10 @@ export const TestingModule = ({
   const hasTestProviders = Object.values(registeredTestProviders).length > 0;
 
   useEffect(() => {
-    if (isCrashed) {
+    if (isCrashed && isCollapsed) {
       toggleCollapsed(undefined, false);
     }
-  }, [isCrashed, toggleCollapsed]);
+  }, [isCrashed, isCollapsed, toggleCollapsed]);
 
   if (!hasTestProviders && (!errorCount || !warningCount)) {
     return null;

@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { commonGlobOptions, getProjectRoot } from 'storybook/internal/common';
 import { writeConfig, writeCsf } from 'storybook/internal/csf-tools';
 
+import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 import {
@@ -76,11 +77,12 @@ export const addonA11yParameters: Fix<A11yOptions> = {
     return dedent`
       Found story or config files that may need to be updated.
       
-      The a11y addon has changed removed the \`selector\` parameter and replaced it with the \`context\` parameter:
+      The a11y addon has changed removed the ${picocolors.cyan('`selector`')} parameter and replaced it with the ${picocolors.cyan('`context`')} parameter:
       \`parameters.a11y.selector\` -> \`parameters.a11y.context\`
 
       This change affects how accessibility checks are scoped in your stories and allows you to have more flexibility in defining the scope of your checks. We can update your code automatically.
-      More info: https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#a11y-addon-replace-element-parameter-with-context-parameter
+
+      More info: ${picocolors.cyan('https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#a11y-addon-replace-element-parameter-with-context-parameter')}
 
       Would you like to update these files to use the new parameter name?
     `;

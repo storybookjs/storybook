@@ -34,7 +34,7 @@ module.exports = {
     return config;
   },
   core: {
-    channelOptions: { allowFunction: false, maxDepth: 10 },
+    channelOptions: { maxDepth: 10 },
     disableTelemetry: true,
   },
   staticDirs: ['../ember-output'],

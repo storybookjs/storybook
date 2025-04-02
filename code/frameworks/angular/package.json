@@ -62,7 +62,7 @@
     "fd-package-json": "^1.2.0",
     "find-up": "^5.0.0",
     "semver": "^7.3.7",
-    "telejson": "^7.2.0",
+    "telejson": "8.0.0--canary.106.377d63b.0",
     "ts-dedent": "^2.0.0",
     "tsconfig-paths-webpack-plugin": "^4.0.1",
     "util-deprecate": "^1.0.2",

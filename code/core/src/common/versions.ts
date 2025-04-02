@@ -2,7 +2,6 @@
 export default {
   '@storybook/addon-a11y': '9.0.0-alpha.13',
   '@storybook/addon-docs': '9.0.0-alpha.13',
-  '@storybook/addon-mdx-gfm': '9.0.0-alpha.13',
   '@storybook/addon-jest': '9.0.0-alpha.13',
   '@storybook/addon-links': '9.0.0-alpha.13',
   '@storybook/addon-onboarding': '9.0.0-alpha.13',
@@ -23,7 +22,6 @@ export default {
   '@storybook/react-webpack5': '9.0.0-alpha.13',
   '@storybook/server-webpack5': '9.0.0-alpha.13',
   '@storybook/svelte-vite': '9.0.0-alpha.13',
-  '@storybook/svelte-webpack5': '9.0.0-alpha.13',
   '@storybook/sveltekit': '9.0.0-alpha.13',
   '@storybook/vue3-vite': '9.0.0-alpha.13',
   '@storybook/web-components-vite': '9.0.0-alpha.13',
@@ -39,7 +37,6 @@ export default {
   '@storybook/preset-create-react-app': '9.0.0-alpha.13',
   '@storybook/preset-react-webpack': '9.0.0-alpha.13',
   '@storybook/preset-server-webpack': '9.0.0-alpha.13',
-  '@storybook/preset-svelte-webpack': '9.0.0-alpha.13',
   '@storybook/html': '9.0.0-alpha.13',
   '@storybook/preact': '9.0.0-alpha.13',
   '@storybook/react': '9.0.0-alpha.13',

@@ -106,7 +106,6 @@
     "@storybook/addon-docs": "workspace:*",
     "@storybook/addon-jest": "workspace:*",
     "@storybook/addon-links": "workspace:*",
-    "@storybook/addon-mdx-gfm": "workspace:*",
     "@storybook/addon-onboarding": "workspace:*",
     "@storybook/addon-storysource": "workspace:*",
     "@storybook/addon-test": "workspace:*",
@@ -131,7 +130,6 @@
     "@storybook/preset-create-react-app": "workspace:*",
     "@storybook/preset-react-webpack": "workspace:*",
     "@storybook/preset-server-webpack": "workspace:*",
-    "@storybook/preset-svelte-webpack": "workspace:*",
     "@storybook/react": "workspace:*",
     "@storybook/react-vite": "workspace:*",
     "@storybook/react-webpack5": "workspace:*",
@@ -139,8 +137,6 @@
     "@storybook/server-webpack5": "workspace:*",
     "@storybook/source-loader": "workspace:*",
     "@storybook/svelte": "workspace:*",
-    "@storybook/svelte-webpack5": "workspace:*",
-    "@storybook/testing-library": "next",
     "@storybook/vue3": "workspace:*",
     "@storybook/vue3-vite": "workspace:*",
     "@storybook/web-components": "workspace:*",
@@ -281,5 +277,6 @@
         "Dependency Upgrades"
       ]
     ]
-  }
+  },
+  "deferredNextVersion": "9.0.0-alpha.14"
 }

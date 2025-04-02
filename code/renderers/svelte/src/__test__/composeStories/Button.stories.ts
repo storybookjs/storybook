@@ -19,7 +19,7 @@ const meta = {
     },
   },
   excludeStories: /.*ImNotAStory$/,
-} satisfies Meta<Button>;
+} satisfies Meta<typeof Button>;
 
 export default meta;
 type CSF3Story = StoryObj<typeof meta>;

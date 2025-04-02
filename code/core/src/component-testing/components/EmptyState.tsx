@@ -7,7 +7,7 @@ import { DocumentIcon } from '@storybook/icons';
 import { useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { DOCUMENTATION_LINK } from '../constants';
+import { DOCUMENTATION_PLAY_FUNCTION_LINK } from '../constants';
 
 const Links = styled.div(({ theme }) => ({
   display: 'flex',
@@ -19,7 +19,7 @@ export const Empty = () => {
   const [isLoading, setIsLoading] = useState(true);
   const api = useStorybookApi();
   const docsUrl = api.getDocsUrl({
-    subpath: DOCUMENTATION_LINK,
+    subpath: DOCUMENTATION_PLAY_FUNCTION_LINK,
     versioned: true,
     renderer: true,
   });

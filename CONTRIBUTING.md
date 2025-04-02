@@ -6,9 +6,9 @@ Storybook is developed against a specific node version which is defined in an `.
 
 You will need to have the following installed:
 
-- git
-- node
-- yarn
+- [git](https://github.com/git-guides/install-git)
+- [node](#using-fnm-as-a-node-version-manager)
+- [yarn](https://yarnpkg.com/getting-started/install)
 
 ## Using fnm as a Node version manager
 

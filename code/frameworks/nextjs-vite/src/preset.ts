@@ -34,6 +34,11 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entry =
   return result;
 };
 
+export const optimizeViteDeps = [
+  '@storybook/nextjs-vite/navigation.mock',
+  '@storybook/nextjs-vite/router.mock',
+];
+
 export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, options) => {
   const reactConfig = await reactViteFinal(config, options);
 

@@ -24,7 +24,12 @@ import {
   STORYBOOK_ADDON_TEST_CHANNEL,
 } from '../../../../addons/test/src/constants';
 import { EVENTS } from '../../instrumenter/EVENTS';
-import { type Call, CallStates, type LogItem } from '../../instrumenter/types';
+import {
+  type Call,
+  CallStates,
+  INTERNAL_RENDER_CALL_ID,
+  type LogItem,
+} from '../../instrumenter/types';
 import { ADDON_ID } from '../constants';
 import { InteractionsPanel } from './InteractionsPanel';
 
@@ -44,13 +49,11 @@ const statusMap: Record<CallStates, StatusValue> = {
 };
 
 export const getInteractions = ({
-  storyId,
   log,
   calls,
   collapsed,
   setCollapsed,
 }: {
-  storyId: string;
   log: LogItem[];
   calls: Map<Call['id'], Call>;
   collapsed: Set<Call['id']>;
@@ -95,25 +98,27 @@ export const getInteractions = ({
       };
     });
 
-  const renderInteraction = {
-    id: `${storyId} [0] internal_render`,
-    cursor: 0,
-    storyId,
-    ancestors: [],
-    path: [],
-    method: 'internal_render',
-    args: [],
-    interceptable: true,
-    retain: false,
-    status: CallStates.DONE,
-    childCallIds: undefined,
-    isHidden: false,
-    isCollapsed: false,
-    toggleCollapsed: () => {},
-  } as (typeof interactions)[number];
-
-  return [renderInteraction, ...interactions];
+  return interactions;
 };
+
+const getInternalRenderCall = (storyId: string, exception?: Call['exception']): Call => ({
+  id: INTERNAL_RENDER_CALL_ID,
+  method: 'render',
+  args: [],
+  cursor: 0,
+  storyId,
+  ancestors: [],
+  path: [],
+  interceptable: true,
+  retain: false,
+  exception,
+});
+
+const getInternalRenderLogItem = (status: CallStates): LogItem => ({
+  callId: INTERNAL_RENDER_CALL_ID,
+  status,
+  ancestors: [],
+});
 
 export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId }) {
   const { statusValue, testRunId } = experimental_useStatusStore((state) => {
@@ -153,8 +158,10 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
   } = addonState;
 
   // Log and calls are tracked in a ref so we don't needlessly rerender.
-  const log = useRef<LogItem[]>([]);
-  const calls = useRef<Map<Call['id'], Omit<Call, 'status'>>>(new Map());
+  const log = useRef<LogItem[]>([getInternalRenderLogItem(CallStates.ACTIVE)]);
+  const calls = useRef<Map<Call['id'], Omit<Call, 'status'>>>(
+    new Map([[INTERNAL_RENDER_CALL_ID, getInternalRenderCall(storyId)]])
+  );
   const setCall = ({ status, ...call }: Call) => calls.current.set(call.id, call);
 
   const endRef = useRef<HTMLDivElement>();
@@ -177,28 +184,30 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
     {
       [EVENTS.CALL]: setCall,
       [EVENTS.SYNC]: (payload) => {
-        // @ts-expect-error TODO
+        log.current = [getInternalRenderLogItem(CallStates.DONE), ...payload.logItems];
         set((s) => {
-          const list = getInteractions({
-            storyId,
-            log: payload.logItems,
+          const interactionsList = getInteractions({
+            log: log.current,
             calls: calls.current,
             collapsed,
             setCollapsed,
           });
+          const interactionsCount = interactionsList.filter(
+            ({ id, method }) => id !== INTERNAL_RENDER_CALL_ID && method !== 'step'
+          ).length;
           return {
             ...s,
             controlStates: payload.controlStates,
             pausedAt: payload.pausedAt,
-            interactions: list,
-            interactionsCount: list.filter(({ method }) => method !== 'step').length,
-          };
+            interactions: interactionsList,
+            interactionsCount,
+          } as typeof s;
         });
-
-        log.current = payload.logItems;
       },
       [STORY_RENDER_PHASE_CHANGED]: (event) => {
         if (event.newPhase === 'preparing') {
+          log.current = [getInternalRenderLogItem(CallStates.ACTIVE)];
+          calls.current.set(INTERNAL_RENDER_CALL_ID, getInternalRenderCall(storyId));
           set({
             controlStates: INITIAL_CONTROL_STATES,
             isErrored: false,
@@ -210,26 +219,53 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
             interactionsCount: 0,
             unhandledErrors: undefined,
           });
-          return;
+        } else {
+          const interactionsList = getInteractions({
+            log: log.current,
+            calls: calls.current,
+            collapsed,
+            setCollapsed,
+          });
+          const interactionsCount = interactionsList.filter(
+            ({ id, method }) => id !== INTERNAL_RENDER_CALL_ID && method !== 'step'
+          ).length;
+          set(
+            (s) =>
+              ({
+                ...s,
+                interactions: interactionsList,
+                interactionsCount,
+                isPlaying: event.newPhase === 'playing',
+                pausedAt: undefined,
+              }) as typeof s
+          );
         }
-        set((s) => {
-          const newState: typeof s = {
-            ...s,
-            isPlaying: event.newPhase === 'playing',
-            pausedAt: undefined,
-            ...(event.newPhase === 'rendering'
-              ? {
-                  isErrored: false,
-                  caughtException: undefined,
-                }
-              : {}),
-          };
-
-          return newState;
-        });
       },
-      [STORY_THREW_EXCEPTION]: () => {
-        set((s) => ({ ...s, isErrored: true, hasException: true }));
+      [STORY_THREW_EXCEPTION]: (e: { name: string; message: string; stack: string }) => {
+        log.current = [getInternalRenderLogItem(CallStates.ERROR)];
+        calls.current.set(
+          INTERNAL_RENDER_CALL_ID,
+          getInternalRenderCall(storyId, { ...e, callId: INTERNAL_RENDER_CALL_ID })
+        );
+        const interactionsList = getInteractions({
+          log: log.current,
+          calls: calls.current,
+          collapsed,
+          setCollapsed,
+        });
+        set(
+          (s) =>
+            ({
+              ...s,
+              isErrored: true,
+              hasException: true,
+              caughtException: undefined,
+              controlStates: INITIAL_CONTROL_STATES,
+              pausedAt: undefined,
+              interactions: interactionsList,
+              interactionsCount: 0,
+            }) as typeof s
+        );
       },
       [PLAY_FUNCTION_THREW_EXCEPTION]: (e) => {
         set((s) => ({ ...s, caughtException: e, hasException: true }));
@@ -244,20 +280,18 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
   useEffect(() => {
     // @ts-expect-error TODO
     set((s) => {
-      const list = getInteractions({
-        storyId,
+      const interactionsList = getInteractions({
         log: log.current,
         calls: calls.current,
         collapsed,
         setCollapsed,
       });
-      return {
-        ...s,
-        interactions: list,
-        interactionsCount: list.filter(({ method }) => method !== 'step').length,
-      };
+      const interactionsCount = interactionsList.filter(
+        ({ id, method }) => id !== INTERNAL_RENDER_CALL_ID && method !== 'step'
+      ).length;
+      return { ...s, interactions: interactionsList, interactionsCount };
     });
-  }, [storyId, set, collapsed]);
+  }, [set, collapsed]);
 
   const controls = useMemo(
     () => ({
@@ -322,10 +356,6 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
     }
   }, [emit, browserTestStatus, statusValue, storyId, testRunId]);
 
-  if (isErrored) {
-    return <Fragment key="component-tests" />;
-  }
-
   return (
     <Fragment key="component-tests">
       <InteractionsPanel
@@ -339,6 +369,7 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
         hasException={hasException}
         caughtException={caughtException}
         unhandledErrors={unhandledErrors}
+        isErrored={isErrored}
         isPlaying={isPlaying}
         pausedAt={pausedAt}
         // @ts-expect-error TODO

@@ -7,7 +7,12 @@ import { BookmarkHollowIcon, ListUnorderedIcon, LockIcon, StopAltIcon } from '@s
 import { transparentize } from 'polished';
 import { styled, typography } from 'storybook/theming';
 
-import { type Call, CallStates, type ControlStates } from '../../instrumenter/types';
+import {
+  type Call,
+  CallStates,
+  type ControlStates,
+  INTERNAL_RENDER_CALL_ID,
+} from '../../instrumenter/types';
 import { isChaiError, isJestError, useAnsiToHtmlFilter } from '../utils';
 import type { Controls } from './InteractionsPanel';
 import { MatcherResult } from './MatcherResult';
@@ -135,10 +140,34 @@ const RenderLockIcon = styled(LockIcon)(({ theme }) => ({
   color: theme.color.mediumdark,
 }));
 
+const ErrorName = styled.span({
+  color: '#4876D6',
+});
+
+const ErrorExplainer = styled.p(({ theme }) => ({
+  color: theme.base === 'light' ? theme.color.negativeText : theme.color.negative,
+  fontSize: theme.typography.size.s2,
+  maxWidth: 500,
+  textWrap: 'balance',
+}));
+
 export const Exception = ({ exception }: { exception: Call['exception'] }) => {
   const filter = useAnsiToHtmlFilter();
   if (!exception) {
     return null;
+  }
+  if (exception.callId === INTERNAL_RENDER_CALL_ID) {
+    return (
+      <RowMessage>
+        <pre>
+          <ErrorName>{exception.name}:</ErrorName> {exception.message}
+        </pre>
+        <ErrorExplainer>
+          The component failed to render properly. Automated component tests will not run until this
+          is resolved. Check the full error message in Storybook’s canvas to debug.
+        </ErrorExplainer>
+      </RowMessage>
+    );
   }
   if (isJestError(exception)) {
     return <MatcherResult {...exception} />;
@@ -193,7 +222,7 @@ export const Interaction = ({
     return null;
   }
 
-  if (call.method === 'internal_render') {
+  if (call.id === INTERNAL_RENDER_CALL_ID) {
     return (
       <RowContainer call={call} pausedAt={undefined}>
         <RowHeader isInteractive>

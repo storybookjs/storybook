@@ -1,5 +1,7 @@
 import type { StoryId } from 'storybook/internal/types';
 
+export const INTERNAL_RENDER_CALL_ID = 'internal_render_call';
+
 export interface Call {
   id: string;
   cursor: number;

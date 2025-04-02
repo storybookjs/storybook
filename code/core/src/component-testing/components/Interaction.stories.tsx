@@ -23,9 +23,6 @@ export const Render: Story = {
   args: {
     call: getCalls(CallStates.DONE, 1)[0],
   },
-  render: (args) => {
-    throw new Error('Not implemented');
-  },
 };
 
 export const RenderError: Story = {

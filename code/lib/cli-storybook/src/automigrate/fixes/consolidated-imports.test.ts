@@ -282,6 +282,27 @@ describe('transformImportFiles', () => {
     );
   });
 
+  it('should transform not transformimport declarations matching a package partially', async () => {
+    const sourceContents = dedent`
+      import { a } from '@storybook/test-runner';
+      import { b } from '@storybook/test';
+    `;
+    const sourceFiles = [join('src', 'test.ts')];
+
+    vi.mocked(readFile).mockResolvedValueOnce(sourceContents);
+
+    const errors = await transformImportFiles(sourceFiles, false);
+
+    expect(errors).toHaveLength(0);
+    expect(writeFile).toHaveBeenCalledWith(
+      sourceFiles[0],
+      dedent`
+      import { a } from '@storybook/test-runner';
+      import { b } from 'storybook/test';
+    `
+    );
+  });
+
   it('should transform import declarations with sub-paths', async () => {
     const sourceContents = dedent`
       import { other } from '@storybook/theming/create';

@@ -107,7 +107,6 @@
     "@storybook/addon-jest": "workspace:*",
     "@storybook/addon-links": "workspace:*",
     "@storybook/addon-onboarding": "workspace:*",
-    "@storybook/addon-storysource": "workspace:*",
     "@storybook/addon-themes": "workspace:*",
     "@storybook/addon-vitest": "workspace:*",
     "@storybook/angular": "workspace:*",

@@ -7,7 +7,6 @@ import { global } from '@storybook/global';
 
 import type { Decorator, Loader, ReactRenderer } from '@storybook/react-vite';
 // TODO add empty preview
-// import * as storysource from '@storybook/addon-storysource';
 // import * as designs from '@storybook/addon-designs/preview';
 import { definePreview } from '@storybook/react-vite';
 

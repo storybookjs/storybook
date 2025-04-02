@@ -7,7 +7,7 @@ import React from 'react';
 import * as managerApi from 'storybook/manager-api';
 import { ThemeProvider, convert, themes } from 'storybook/theming';
 
-import { RuleType } from '../types';
+import { type EnhancedResults } from '../types';
 import { A11YPanel } from './A11YPanel';
 import { type A11yContextStore, useA11yContext } from './A11yContext';
 
@@ -21,10 +21,23 @@ mockedManagerApi.useParameter.mockReturnValue({
   manual: false,
 } as any);
 
+const emptyResults: EnhancedResults = {
+  passes: [],
+  incomplete: [],
+  violations: [],
+  toolOptions: {},
+  inapplicable: [],
+  testEngine: { name: '', version: '' },
+  testRunner: { name: '' },
+  testEnvironment: { userAgent: '', windowWidth: 0, windowHeight: 0 },
+  url: '',
+  timestamp: '',
+};
+
 describe('A11YPanel', () => {
   it('should render initializing state', () => {
     mockedUseA11yContext.mockReturnValue({
-      results: { passes: [], incomplete: [], violations: [] },
+      results: emptyResults,
       status: 'initial',
       handleManual: vi.fn(),
       error: null,
@@ -42,7 +55,7 @@ describe('A11YPanel', () => {
   it('should render manual state', () => {
     const handleManual = vi.fn();
     mockedUseA11yContext.mockReturnValue({
-      results: { passes: [], incomplete: [], violations: [] },
+      results: emptyResults,
       status: 'manual',
       handleManual,
       error: null,
@@ -63,7 +76,7 @@ describe('A11YPanel', () => {
 
   it('should render running state', () => {
     mockedUseA11yContext.mockReturnValue({
-      results: { passes: [], incomplete: [], violations: [] },
+      results: emptyResults,
       status: 'running',
       handleManual: vi.fn(),
       error: null,
@@ -82,7 +95,7 @@ describe('A11YPanel', () => {
 
   it('should render error state', () => {
     mockedUseA11yContext.mockReturnValue({
-      results: { passes: [], incomplete: [], violations: [] },
+      results: emptyResults,
       status: 'error',
       handleManual: vi.fn(),
       error: 'Test error message',
@@ -100,7 +113,7 @@ describe('A11YPanel', () => {
 
   it('should render error state with object error', () => {
     mockedUseA11yContext.mockReturnValue({
-      results: { passes: [], incomplete: [], violations: [] },
+      results: emptyResults,
       status: 'error',
       handleManual: vi.fn(),
       error: { message: 'Test error object message' },

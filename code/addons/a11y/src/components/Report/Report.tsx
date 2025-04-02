@@ -1,14 +1,13 @@
 import type { FC } from 'react';
 import React from 'react';
 
-import { Badge, EmptyTabContent, IconButton } from 'storybook/internal/components';
+import { EmptyTabContent, IconButton } from 'storybook/internal/components';
 
 import { ChevronSmallDownIcon } from '@storybook/icons';
 
-import type { Result } from 'axe-core';
 import { styled } from 'storybook/theming';
 
-import type { RuleType } from '../../types';
+import type { EnhancedResult, RuleType } from '../../types';
 import { Details } from './Details';
 
 const Wrapper = styled.div(({ theme }) => ({
@@ -65,12 +64,12 @@ const Count = styled.div(({ theme }) => ({
 }));
 
 export interface ReportProps {
-  items: Result[];
+  items: EnhancedResult[];
   empty: string;
   type: RuleType;
   handleSelectionChange: (key: string) => void;
-  selectedItems: Map<Result['id'], string>;
-  toggleOpen: (event: React.SyntheticEvent<Element>, type: RuleType, item: Result) => void;
+  selectedItems: Map<EnhancedResult['id'], string>;
+  toggleOpen: (event: React.SyntheticEvent<Element>, type: RuleType, item: EnhancedResult) => void;
 }
 
 export const Report: FC<ReportProps> = ({

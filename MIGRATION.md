@@ -6,6 +6,8 @@
   - [A11y addon: Removed deprecated manual parameter](#a11y-addon-removed-deprecated-manual-parameter)
   - [Button Component API Changes](#button-component-api-changes)
   - [Documentation Generation Changes](#documentation-generation-changes)
+  - [Migration from @storybook/addon-storysource to Code Panel](#migration-from-storybookaddon-storysource-to-code-panel)
+    - [Migration Steps](#migration-steps)
   - [`parameters.docs.source.format` removal](#parametersdocssourceformat-removal)
   - [Global State Management](#global-state-management)
   - [Icon System Updates](#icon-system-updates)
@@ -524,6 +526,48 @@ export default {
 + export default {
 +   tags: ['autodocs']
 + };
+```
+
+### Migration from @storybook/addon-storysource to Code Panel
+
+The `@storybook/addon-storysource` addon is being removed in Storybook 9.0. Instead, Storybook now provides a Code Panel via `@storybook/addon-docs` that offers similar functionality with improved integration and performance.
+
+#### Migration Steps
+
+1. Remove the old addon
+
+Remove `@storybook/addon-storysource` from your project:
+
+```bash
+npx storybook remove @storybook/addon-storysource
+```
+
+2. Enable the Code Panel
+
+The Code Panel can be enabled by adding the following parameter to your stories or globally in `.storybook/preview.js`:
+
+```js
+export const parameters = {
+  docs: {
+    source: {
+      codePanel: true,
+    },
+  },
+};
+```
+
+Or for individual stories:
+
+```js
+export const MyStory = {
+  parameters: {
+    docs: {
+      source: {
+        codePanel: true,
+      },
+    },
+  },
+};
 ```
 
 ### `parameters.docs.source.format` removal

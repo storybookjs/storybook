@@ -316,6 +316,20 @@ export class GoogleFontsLoadingError extends StorybookError {
   }
 }
 
+export class SvelteViteWithSvelteKitError extends StorybookError {
+  constructor() {
+    super({
+      category: Category.FRAMEWORK_SVELTE_VITE,
+      code: 1,
+      documentation:
+        'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#sveltekit-needs-the-storybooksveltekit-framework',
+      message: dedent`
+        We've detected a SvelteKit project using the @storybook/svelte-vite framework, which is not supported.
+        Please use the @storybook/sveltekit framework instead.`,
+    });
+  }
+}
+
 export class NoMatchingExportError extends StorybookError {
   constructor(public data: { error: unknown | Error }) {
     super({

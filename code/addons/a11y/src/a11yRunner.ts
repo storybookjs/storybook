@@ -1,26 +1,30 @@
 import { deprecate } from 'storybook/internal/client-logger';
-import { ElementAndContextParametersError } from 'storybook/internal/preview-errors';
-import type { StoryContext } from 'storybook/internal/types';
+import { ElementA11yParameterError } from 'storybook/internal/preview-errors';
 
 import { global } from '@storybook/global';
 
-import type { AxeResults, ElementContext } from 'axe-core';
+import type { AxeResults, ContextProp, ContextSpec, Selector, SelectorList } from 'axe-core';
 import { addons } from 'storybook/preview-api';
 
 import { EVENTS } from './constants';
-import type { A11yParameters } from './params';
+import type { A11yParameters, SelectorWithoutNode } from './params';
 
 const { document } = global;
 
 const channel = addons.getChannel();
 
-const defaultParameters = { config: {}, options: {} };
+const DEFAULT_PARAMETERS = { config: {}, options: {} } as const;
 
-const disabledRules = [
+const DEFAULT_CONTEXT = {
+  include: document.body,
+  exclude: ['.sb-wrapper', '#storybook-docs'], // Internal Storybook elements that are always in the document
+} satisfies ContextSpec;
+
+const DISABLED_RULES = [
   // In component testing, landmarks are not always present
   // and the rule check can cause false positives
   'region',
-];
+] as const;
 
 // A simple queue to run axe-core in sequence
 // This is necessary because axe-core is not designed to run in parallel
@@ -41,35 +45,47 @@ const runNext = async () => {
   runNext();
 };
 
-export const run = async (input: A11yParameters = defaultParameters) => {
+export const run = async (input: A11yParameters = DEFAULT_PARAMETERS) => {
   const { default: axe } = await import('axe-core');
 
   const { config = {}, options = {} } = input;
 
+  // @ts-expect-error - the whole point of this is to error if 'element' is passed
   if (input.element) {
-    if (input.context) {
-      throw new ElementAndContextParametersError();
-    } else {
-      // TODO: migration guide
-      deprecate(
-        "The 'element' parameter in parameters.a11y is deprecated. Use 'context' instead. See X."
-      );
-    }
+    throw new ElementA11yParameterError();
   }
 
-  const context: ElementContext =
-    input.context ??
-    (input.element ? (document.querySelector(input.element) ?? document.body) : document.body);
+  const context: ContextSpec = DEFAULT_CONTEXT;
 
-  if (!context) {
-    return;
+  if (input.context) {
+    // 1. if context exists, but it's not an object with include or exclude, it's an implicit include to be used directly
+    if (
+      !(
+        typeof input.context === 'object' &&
+        ('include' in input.context || 'exclude' in input.context)
+      )
+    ) {
+      context.include = input.context as ContextProp;
+    } else if (typeof input.context === 'object' && 'include' in input.context) {
+      // 2. if context.include exists, use it
+      context.include = input.context.include as ContextProp;
+    }
+
+    // 3. if context.exclude exists, merge it with the default exclude
+    if (
+      typeof input.context === 'object' &&
+      'exclude' in input.context &&
+      input.context.exclude !== undefined
+    ) {
+      context.exclude = (DEFAULT_CONTEXT.exclude as any).concat(input.context.exclude);
+    }
   }
 
   axe.reset();
 
   const configWithDefault = {
     ...config,
-    rules: [...disabledRules.map((id) => ({ id, enabled: false })), ...(config?.rules ?? [])],
+    rules: [...DISABLED_RULES.map((id) => ({ id, enabled: false })), ...(config?.rules ?? [])],
   };
 
   axe.configure(configWithDefault);
@@ -92,7 +108,7 @@ export const run = async (input: A11yParameters = defaultParameters) => {
   });
 };
 
-channel.on(EVENTS.MANUAL, async (storyId: string, input: A11yParameters = defaultParameters) => {
+channel.on(EVENTS.MANUAL, async (storyId: string, input: A11yParameters = DEFAULT_PARAMETERS) => {
   try {
     const result = await run(input);
     // Axe result contains class instances, which telejson deserializes in a

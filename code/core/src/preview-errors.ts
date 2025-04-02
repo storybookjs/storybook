@@ -360,7 +360,7 @@ export class UnsupportedViewportDimensionError extends StorybookError {
   }
 }
 
-export class ElementAndContextParametersError extends StorybookError {
+export class ElementA11yParameterError extends StorybookError {
   constructor() {
     super({
       category: Category.ADDON_A11Y,
@@ -368,8 +368,7 @@ export class ElementAndContextParametersError extends StorybookError {
       // TODO: migration guide
       // documentation: '',
       message: dedent`
-        Both the 'element' and 'context' parameters were provided to parameters.a11y,
-        please only provide the 'context' parameter instead.
+        The 'element' parameter in parameters.a11y has been removed. Use 'context' instead.
       `,
     });
   }

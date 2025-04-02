@@ -1,21 +1,30 @@
-import type { BaseSelector, ElementContext, RunOptions, Spec } from 'axe-core';
+import type { RunOptions, Selector, SelectorList, Spec } from 'axe-core';
+
+export type SelectorWithoutNode = Omit<Selector, 'Node'> | Omit<SelectorList, 'NodeList'>;
+
+// copy of ContextObject from axe-core
+export type ContextObjectWithoutNode =
+  | {
+      include: SelectorWithoutNode;
+      exclude?: SelectorWithoutNode;
+    }
+  | {
+      exclude: SelectorWithoutNode;
+      include?: SelectorWithoutNode;
+    };
+// copy of ContextSpec from axe-core
+export type ContextSpecWithoutNode = SelectorWithoutNode | ContextObjectWithoutNode;
 
 type A11yTest = 'off' | 'todo' | 'error';
 
 export interface A11yParameters {
   /**
-   * Target element to test for accessibility issues.
-   *
-   * @deprecated Use {@link A11yParameters.context} instead.
-   * @see https://github.com/dequelabs/axe-core/blob/develop/doc/context.md#test-dom-nodes
-   */
-  element?: BaseSelector;
-  /**
-   * Context parameter for axe-core's run function.
+   * Context parameter for axe-core's run function, except without support for passing Nodes and
+   * NodeLists directly.
    *
    * @see https://github.com/dequelabs/axe-core/blob/develop/doc/context.md
    */
-  context?: ElementContext;
+  context?: ContextSpecWithoutNode;
   /**
    * Options for running axe-core.
    *

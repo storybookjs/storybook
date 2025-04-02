@@ -1,6 +1,7 @@
 import { csfFactories } from '../../codemod/csf-factories';
 import type { CommandFix, Fix } from '../types';
 import { addonA11yAddonTest } from './addon-a11y-addon-test';
+import { addonEssentialsRemoveDocs } from './addon-essentials-remove-docs';
 import { addonExperimentalTest } from './addon-experimental-test';
 import { addonMdxGfmRemove } from './addon-mdx-gfm-remove';
 import { addonStorysourceRemove } from './addon-storysource-remove';
@@ -28,6 +29,7 @@ export const allFixes: Fix[] = [
   rnstorybookConfig,
   removeAddonInteractions,
   rendererToFramework,
+  addonEssentialsRemoveDocs,
 ];
 
 export const initFixes: Fix[] = [eslintPlugin];

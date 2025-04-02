@@ -105,6 +105,18 @@ function VitePlugin({ dir = process.cwd() }: VitePluginOptions = {}): Plugin[] {
           }),
           optimizeDeps: {
             include: [
+              "next/dist/shared/lib/app-router-context.shared-runtime",
+              "next/dist/shared/lib/head-manager-context.shared-runtime",
+              "next/dist/shared/lib/hooks-client-context.shared-runtime",
+              "next/dist/shared/lib/router-context.shared-runtime",
+              "next/dist/client/components/redirect-boundary",
+              "next/dist/client/head-manager",
+              "next/dist/client/components/is-next-router-error",
+              "next/config",
+              "next/dist/shared/lib/segment",
+              "styled-jsx",
+              "sb-original/image-context",
+              "sb-original/default-loader",
               "@mdx-js/react",
               "@storybook/blocks",
               "next/dist/compiled/react",

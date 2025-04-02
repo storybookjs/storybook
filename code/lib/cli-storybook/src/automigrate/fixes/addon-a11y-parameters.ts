@@ -100,7 +100,7 @@ export const addonA11yParameters: Fix<A11yOptions> = {
       if (code) {
         if (!dryRun) {
           try {
-            await writeConfig(code);
+            await writeConfig(code, previewFileToUpdate);
           } catch (error) {
             errors.push({ file: previewFileToUpdate, error: error as Error });
           }
@@ -122,7 +122,7 @@ export const addonA11yParameters: Fix<A11yOptions> = {
 
             if (code) {
               if (!dryRun) {
-                await writeCsf(code);
+                await writeCsf(code, file);
               } else {
                 console.log('Would have updated', file);
               }

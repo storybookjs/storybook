@@ -259,7 +259,7 @@ export const doUpgrade = async ({
         }
 
         // Add Storybook overrides
-        packageJson.overrides.storybook = `^${versions.storybook}`;
+        packageJson.overrides.storybook = `$storybook`;
 
         if (!dryRun) {
           await packageManager.writePackageJson(packageJson);

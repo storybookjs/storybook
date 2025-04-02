@@ -74,5 +74,6 @@
     "storybook": "*",
     "typescript": "~5.2.2",
     "webpack": "5"
-  }
+  },
+  "packageManager": "yarn@4.8.1"
 }

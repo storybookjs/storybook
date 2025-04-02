@@ -53,5 +53,6 @@
     "react": "16.14.0",
     "react-dom": "^18.2.0",
     "storybook": "*"
-  }
+  },
+  "packageManager": "yarn@4.8.1"
 }

@@ -75,5 +75,6 @@
   },
   "maintainer_please_read_this": {
     "_": "we use file protocol to make this setup close to real life scenarios as well as avoid issues with duplicated React instances. When you recompile the SB packages, you need to rerun install."
-  }
+  },
+  "packageManager": "yarn@4.8.1"
 }

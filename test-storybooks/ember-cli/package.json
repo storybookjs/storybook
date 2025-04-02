@@ -94,5 +94,6 @@
     "chromatic": {
       "projectToken": "19z23qxndju"
     }
-  }
+  },
+  "packageManager": "yarn@4.8.1"
 }

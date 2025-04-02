@@ -70,5 +70,6 @@
     "typescript": "^5.2.2",
     "vite": "^6",
     "vitest": "^3.0.2"
-  }
+  },
+  "packageManager": "yarn@4.8.1"
 }

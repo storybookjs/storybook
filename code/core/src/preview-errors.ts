@@ -365,11 +365,10 @@ export class ElementA11yParameterError extends StorybookError {
     super({
       category: Category.ADDON_A11Y,
       code: 1,
-      // TODO: migration guide
-      // documentation: '',
-      message: dedent`
-        The 'element' parameter in parameters.a11y has been removed. Use 'context' instead.
-      `,
+      documentation:
+        'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#a11y-addon-replace-element-parameter-with-context-parameter',
+      message:
+        'The "element" parameter in parameters.a11y has been removed. Use "context" instead.',
     });
   }
 }

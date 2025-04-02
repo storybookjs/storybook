@@ -49,6 +49,7 @@ const readFileMock = vi.mocked(await import('node:fs/promises')).readFile;
 const mockPackageManager = {
   retrievePackageJson: vi.fn(),
   removeDependencies: vi.fn(),
+  runPackageCommand: vi.fn(),
 } as unknown as JsPackageManager;
 
 const mockPackageJson = {
@@ -166,103 +167,18 @@ describe('addon-mdx-gfm-remove migration', () => {
   });
 
   describe('run phase', () => {
-    it('removes mdx-gfm addon and uninstalls package', async () => {
-      const mockMain: MockConfigFile = {
-        getFieldValue: vi.fn().mockReturnValue(['@storybook/addon-mdx-gfm']),
-        setFieldValue: vi.fn(),
-        appendValueToArray: vi.fn(),
-        removeField: vi.fn(),
-        _ast: {},
-        _code: '',
-        _exports: {},
-        _exportDecls: [],
-      };
-
-      mockConfigs.set('main.ts', mockMain);
-
+    it('removes mdx-gfm addon using storybook remove command', async () => {
       await typedAddonMdxGfmRemove.run({
         result: {
           hasMdxGfm: true,
         },
-        dryRun: false,
         packageManager: mockPackageManager,
-        packageJson: mockPackageJson,
-        mainConfigPath: 'main.ts',
-        mainConfig: {
-          stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],
-          addons: ['@storybook/addon-mdx-gfm'],
-        } as StorybookConfigRaw,
-      });
+      } as RunOptions<AddonMdxGfmOptions>);
 
-      expect(mockMain.removeField).toHaveBeenCalledWith(['addons', 0]);
-      expect(mockPackageManager.removeDependencies).toHaveBeenCalledWith({}, [
+      expect(mockPackageManager.runPackageCommand).toHaveBeenCalledWith('storybook', [
+        'remove',
         '@storybook/addon-mdx-gfm',
       ]);
-    });
-
-    it('does nothing in dry run mode', async () => {
-      const mockMain: MockConfigFile = {
-        getFieldValue: vi.fn().mockReturnValue(['@storybook/addon-mdx-gfm']),
-        setFieldValue: vi.fn(),
-        appendValueToArray: vi.fn(),
-        removeField: vi.fn(),
-        _ast: {},
-        _code: '',
-        _exports: {},
-        _exportDecls: [],
-      };
-
-      mockConfigs.set('main.ts', mockMain);
-
-      await typedAddonMdxGfmRemove.run({
-        result: {
-          hasMdxGfm: true,
-        },
-        dryRun: true,
-        packageManager: mockPackageManager,
-        packageJson: mockPackageJson,
-        mainConfigPath: 'main.ts',
-        mainConfig: {
-          stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],
-          addons: ['@storybook/addon-mdx-gfm'],
-        } as StorybookConfigRaw,
-      });
-
-      expect(mockMain.removeField).toHaveBeenCalledWith(['addons', 0]);
-      expect(mockPackageManager.removeDependencies).not.toHaveBeenCalled();
-    });
-
-    it('handles missing mdx-gfm addon gracefully', async () => {
-      const mockMain: MockConfigFile = {
-        getFieldValue: vi.fn().mockReturnValue(['@storybook/addon-links']), // No mdx-gfm here
-        setFieldValue: vi.fn(),
-        appendValueToArray: vi.fn(),
-        removeField: vi.fn(),
-        _ast: {},
-        _code: '',
-        _exports: {},
-        _exportDecls: [],
-      };
-
-      mockConfigs.set('main.ts', mockMain);
-
-      await typedAddonMdxGfmRemove.run({
-        result: {
-          hasMdxGfm: false,
-        },
-        dryRun: false,
-        packageManager: mockPackageManager,
-        packageJson: mockPackageJson,
-        mainConfigPath: 'main.ts',
-        mainConfig: {
-          stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],
-          addons: ['@storybook/addon-links'], // Match the mockMain config
-        } as StorybookConfigRaw,
-      });
-
-      // Should not modify anything if mdx-gfm isn't found
-      expect(mockMain.removeField).not.toHaveBeenCalled();
-      expect(mockPackageManager.removeDependencies).not.toHaveBeenCalled();
     });
   });
 });

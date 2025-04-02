@@ -7,7 +7,7 @@ import { updateMainConfig } from '../helpers/mainConfigFile';
 import type { Fix } from '../types';
 
 interface AddonMdxGfmOptions {
-  hasMdxGfm: boolean;
+  hasMdxGfm: true;
 }
 
 /**
@@ -52,34 +52,7 @@ export const addonMdxGfmRemove: Fix<AddonMdxGfmOptions> = {
     `;
   },
 
-  async run({ result, dryRun, packageManager, mainConfigPath }) {
-    const { hasMdxGfm } = result;
-
-    if (!hasMdxGfm) {
-      return;
-    }
-
-    await updateMainConfig({ mainConfigPath, dryRun: !!dryRun }, async (main) => {
-      // Get the current addons array
-      const addons = main.getFieldValue(['addons']) || [];
-
-      // Find the mdx-gfm entry
-      const mdxGfmIndex = addons.findIndex((addon: any) => {
-        if (typeof addon === 'string') {
-          return addon.includes('@storybook/addon-mdx-gfm');
-        }
-        return addon?.name.includes('@storybook/addon-mdx-gfm');
-      });
-
-      // Remove the mdx-gfm entry completely
-      if (mdxGfmIndex !== -1) {
-        main.removeField(['addons', mdxGfmIndex]);
-      }
-    });
-
-    if (!dryRun) {
-      // Remove addon-mdx-gfm package
-      await packageManager.removeDependencies({}, ['@storybook/addon-mdx-gfm']);
-    }
+  async run({ result, packageManager }) {
+    await packageManager.runPackageCommand('storybook', ['remove', '@storybook/addon-mdx-gfm']);
   },
 };

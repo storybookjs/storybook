@@ -3,7 +3,7 @@
 - CLI: Only install Visual Test Addon if test feature is selected - [#30966](https://github.com/storybookjs/storybook/pull/30966), thanks @ghengeveld!
 - Core: Fix telemetry error on Storybook UI - [#30953](https://github.com/storybookjs/storybook/pull/30953), thanks @yannbf!
 - Ember: Fix `ember-template-compiler` import for ember 6+ - [#30682](https://github.com/storybookjs/storybook/pull/30682), thanks @leoeuclids!
-- Next: Update vite-plugin-storybook-nextjs to 2.0.0--canary.33.17a2310.0 - [#30997](https://github.com/storybookjs/storybook/pull/30997), thanks @kasperpeulen!
+- Next: Upgrade vite-plugin-storybook-nextjs for Next v14 compatibility - [#30997](https://github.com/storybookjs/storybook/pull/30997), thanks @kasperpeulen!
 - Svelte: Exclude `node_modules` from docgen - [#30981](https://github.com/storybookjs/storybook/pull/30981), thanks @JReinhold!
 
 ## 8.6.11

@@ -3,6 +3,8 @@ import { join } from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';
 
+import { versions } from 'storybook/internal/common';
+
 import { dedent } from 'ts-dedent';
 
 import {
@@ -157,6 +159,69 @@ describe('transformPackageJsonFiles', () => {
     );
   });
 
+  it('should add renamed packages to devDependencies when storybook is in devDependencies', async () => {
+    const pkgJson = {
+      dependencies: {
+        '@storybook/experimental-nextjs-vite': '^8.0.0',
+      },
+      devDependencies: {
+        storybook: '^9.0.0',
+      },
+    };
+    const contents = JSON.stringify(pkgJson);
+    const filePath = 'test/package.json';
+
+    vi.mocked(readFile).mockResolvedValueOnce(contents);
+
+    const errors = await transformPackageJsonFiles([filePath], false);
+
+    expect(errors).toHaveLength(0);
+    const written = JSON.parse(vi.mocked(writeFile).mock.calls[0][1] as string);
+    expect(written.devDependencies['@storybook/nextjs-vite']).toBe('^9.0.0');
+    expect(written.dependencies['@storybook/experimental-nextjs-vite']).toBeUndefined();
+  });
+
+  it('should add renamed packages to dependencies when storybook is in dependencies', async () => {
+    const pkgJson = {
+      dependencies: {
+        storybook: '^9.0.0',
+        '@storybook/experimental-nextjs-vite': '^8.0.0',
+      },
+    };
+    const contents = JSON.stringify(pkgJson);
+    const filePath = 'test/package.json';
+
+    vi.mocked(readFile).mockResolvedValueOnce(contents);
+
+    const errors = await transformPackageJsonFiles([filePath], false);
+
+    expect(errors).toHaveLength(0);
+    const written = JSON.parse(vi.mocked(writeFile).mock.calls[0][1] as string);
+    expect(written.dependencies['@storybook/nextjs-vite']).toBe('^9.0.0');
+    expect(written.dependencies['@storybook/experimental-nextjs-vite']).toBeUndefined();
+  });
+
+  it('should add renamed packages if storybook is not found', async () => {
+    const pkgJson = {
+      dependencies: {
+        '@storybook/experimental-nextjs-vite': '^7.0.0',
+      },
+    };
+    const contents = JSON.stringify(pkgJson);
+    const filePath = 'test/package.json';
+
+    vi.mocked(readFile).mockResolvedValueOnce(contents);
+
+    const errors = await transformPackageJsonFiles([filePath], false);
+
+    expect(errors).toHaveLength(0);
+    const written = JSON.parse(vi.mocked(writeFile).mock.calls[0][1] as string);
+    expect(written.devDependencies['@storybook/nextjs-vite']).toEqual(
+      versions['@storybook/nextjs-vite']
+    );
+    expect(written.dependencies?.['@storybook/nextjs-vite']).toBeUndefined();
+  });
+
   it('should not write files in dry run mode', async () => {
     const contents = JSON.stringify(mockPackageJson);
     const filePath = 'test/package.json';
@@ -214,6 +279,27 @@ describe('transformImportFiles', () => {
     expect(writeFile).toHaveBeenCalledWith(
       sourceFiles[0],
       expect.stringContaining(`from 'storybook/internal/components'`)
+    );
+  });
+
+  it('should transform not transformimport declarations matching a package partially', async () => {
+    const sourceContents = dedent`
+      import { a } from '@storybook/test-runner';
+      import { b } from '@storybook/test';
+    `;
+    const sourceFiles = [join('src', 'test.ts')];
+
+    vi.mocked(readFile).mockResolvedValueOnce(sourceContents);
+
+    const errors = await transformImportFiles(sourceFiles, false);
+
+    expect(errors).toHaveLength(0);
+    expect(writeFile).toHaveBeenCalledWith(
+      sourceFiles[0],
+      dedent`
+      import { a } from '@storybook/test-runner';
+      import { b } from 'storybook/test';
+    `
     );
   });
 

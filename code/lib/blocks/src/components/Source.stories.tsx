@@ -59,7 +59,6 @@ export const GraphQLWithFormatting: Story = {
         }
 `,
     language: 'graphql',
-    format: true,
   },
 };
 

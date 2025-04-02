@@ -2078,7 +2078,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@babel/runtime@npm:^7.11.2, @babel/runtime@npm:^7.12.5, @babel/runtime@npm:^7.13.10, @babel/runtime@npm:^7.17.8, @babel/runtime@npm:^7.18.3, @babel/runtime@npm:^7.20.13, @babel/runtime@npm:^7.22.15, @babel/runtime@npm:^7.22.6, @babel/runtime@npm:^7.23.2, @babel/runtime@npm:^7.24.4, @babel/runtime@npm:^7.3.1, @babel/runtime@npm:^7.5.5, @babel/runtime@npm:^7.7.2, @babel/runtime@npm:^7.7.6, @babel/runtime@npm:^7.8.4, @babel/runtime@npm:^7.8.7":
+"@babel/runtime@npm:^7.11.2, @babel/runtime@npm:^7.12.5, @babel/runtime@npm:^7.17.8, @babel/runtime@npm:^7.18.3, @babel/runtime@npm:^7.20.13, @babel/runtime@npm:^7.22.15, @babel/runtime@npm:^7.22.6, @babel/runtime@npm:^7.23.2, @babel/runtime@npm:^7.24.4, @babel/runtime@npm:^7.3.1, @babel/runtime@npm:^7.5.5, @babel/runtime@npm:^7.7.2, @babel/runtime@npm:^7.7.6, @babel/runtime@npm:^7.8.4, @babel/runtime@npm:^7.8.7":
+  version: 7.26.9
+  resolution: "@babel/runtime@npm:7.26.9"
+  dependencies:
+    regenerator-runtime: "npm:^0.14.0"
+  checksum: 10c0/e8517131110a6ec3a7360881438b85060e49824e007f4a64b5dfa9192cf2bb5c01e84bfc109f02d822c7edb0db926928dd6b991e3ee460b483fb0fac43152d9b
+  languageName: node
+  linkType: hard
+
+"@babel/runtime@npm:^7.13.10":
   version: 7.27.0
   resolution: "@babel/runtime@npm:7.27.0"
   dependencies:
@@ -2220,17 +2229,17 @@ __metadata:
   linkType: hard
 
 "@chromatic-com/storybook@npm:^4.0.0-0":
-  version: 4.0.0-next.3
-  resolution: "@chromatic-com/storybook@npm:4.0.0-next.3"
+  version: 4.0.0-next.2
+  resolution: "@chromatic-com/storybook@npm:4.0.0-next.2"
   dependencies:
-    chromatic: "npm:^11.27.0"
+    chromatic: "npm:^11.26.1"
     filesize: "npm:^10.0.12"
     jsonfile: "npm:^6.1.0"
     react-confetti: "npm:^6.1.0"
     strip-ansi: "npm:^7.1.0"
   peerDependencies:
-    storybook: ^0.0.0-0 || ^9.0.0 || ^9.0.0-alpha.4
-  checksum: 10c0/43d9c7c04932b99b8654eccc5ab95736a0b79ba8dba4353e115eef938f93464ca63b36c9599dafb9d224608ffa730f07ccb592078063b5b070d69b44d52a080d
+    storybook: ^0.0.0-0 || ^9.0.0 || ^9.0.0-0
+  checksum: 10c0/85f6d8658429e246762ffa05068ce1a4a99bba4799ea0c6732aefb6f5ade68ae76a7fe04a1290614ecdd5ede2a27301c7e9c46b8601ecb65aaa7666f11e40c15
   languageName: node
   linkType: hard
 
@@ -6488,18 +6497,6 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/addon-mdx-gfm@workspace:*, @storybook/addon-mdx-gfm@workspace:addons/gfm":
-  version: 0.0.0-use.local
-  resolution: "@storybook/addon-mdx-gfm@workspace:addons/gfm"
-  dependencies:
-    remark-gfm: "npm:^4.0.0"
-    ts-dedent: "npm:^2.0.0"
-    typescript: "npm:^5.7.3"
-  peerDependencies:
-    storybook: "workspace:^"
-  languageName: unknown
-  linkType: soft
-
 "@storybook/addon-onboarding@workspace:*, @storybook/addon-onboarding@workspace:addons/onboarding":
   version: 0.0.0-use.local
   resolution: "@storybook/addon-onboarding@workspace:addons/onboarding"
@@ -6518,24 +6515,6 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/addon-storysource@workspace:*, @storybook/addon-storysource@workspace:addons/storysource":
-  version: 0.0.0-use.local
-  resolution: "@storybook/addon-storysource@workspace:addons/storysource"
-  dependencies:
-    "@storybook/source-loader": "workspace:*"
-    "@types/react": "npm:^18.0.37"
-    "@types/react-syntax-highlighter": "npm:11.0.5"
-    estraverse: "npm:^5.2.0"
-    react: "npm:^18.2.0"
-    react-dom: "npm:^18.2.0"
-    react-syntax-highlighter: "npm:^15.5.0"
-    tiny-invariant: "npm:^1.3.1"
-    typescript: "npm:^5.7.3"
-  peerDependencies:
-    storybook: "workspace:^"
-  languageName: unknown
-  linkType: soft
-
 "@storybook/addon-test@workspace:*, @storybook/addon-test@workspace:addons/test":
   version: 0.0.0-use.local
   resolution: "@storybook/addon-test@workspace:addons/test"
@@ -6545,8 +6524,8 @@ __metadata:
     "@types/istanbul-lib-report": "npm:^3.0.3"
     "@types/node": "npm:^22.0.0"
     "@types/semver": "npm:^7"
-    "@vitest/browser": "npm:^3.0.9"
-    "@vitest/runner": "npm:^3.0.9"
+    "@vitest/browser": "npm:^3.1.1"
+    "@vitest/runner": "npm:^3.1.1"
     boxen: "npm:^8.0.1"
     es-toolkit: "npm:^1.22.0"
     execa: "npm:^8.0.1"
@@ -6564,7 +6543,7 @@ __metadata:
     tree-kill: "npm:^1.2.2"
     ts-dedent: "npm:^2.2.0"
     typescript: "npm:^5.7.3"
-    vitest: "npm:^3.0.9"
+    vitest: "npm:^3.1.1"
   peerDependencies:
     "@vitest/browser": ^3.0.0
     "@vitest/runner": ^3.0.0
@@ -6624,7 +6603,7 @@ __metadata:
     find-up: "npm:^5.0.0"
     rimraf: "npm:^6.0.1"
     semver: "npm:^7.3.7"
-    telejson: "npm:^7.2.0"
+    telejson: "npm:8.0.0--canary.106.377d63b.0"
     tmp: "npm:^0.2.1"
     ts-dedent: "npm:^2.0.0"
     tsconfig-paths-webpack-plugin: "npm:^4.0.1"
@@ -6698,7 +6677,7 @@ __metadata:
     memoizerific: "npm:^1.11.3"
     polished: "npm:^4.2.2"
     react-colorful: "npm:^5.1.2"
-    telejson: "npm:^7.2.0"
+    telejson: "npm:8.0.0--canary.106.377d63b.0"
     tocbot: "npm:^4.20.1"
     ts-dedent: "npm:^2.0.0"
   peerDependencies:
@@ -6958,21 +6937,6 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/html-webpack5@workspace:*, @storybook/html-webpack5@workspace:frameworks/html-webpack5":
-  version: 0.0.0-use.local
-  resolution: "@storybook/html-webpack5@workspace:frameworks/html-webpack5"
-  dependencies:
-    "@storybook/builder-webpack5": "workspace:*"
-    "@storybook/global": "npm:^5.0.0"
-    "@storybook/html": "workspace:*"
-    "@storybook/preset-html-webpack": "workspace:*"
-    "@types/node": "npm:^22.0.0"
-    typescript: "npm:^5.7.3"
-  peerDependencies:
-    storybook: "workspace:^"
-  languageName: unknown
-  linkType: soft
-
 "@storybook/html@workspace:*, @storybook/html@workspace:renderers/html":
   version: 0.0.0-use.local
   resolution: "@storybook/html@workspace:renderers/html"
@@ -7033,7 +6997,7 @@ __metadata:
     next: "npm:^15.0.3"
     styled-jsx: "npm:5.1.6"
     typescript: "npm:^5.7.3"
-    vite-plugin-storybook-nextjs: "npm:2.0.0--canary.33.7c1f48f.0"
+    vite-plugin-storybook-nextjs: "npm:2.0.0--canary.33.c17eb1b.0"
   peerDependencies:
     next: ^14.1.0 || ^15.0.0
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
@@ -7156,20 +7120,6 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/preset-html-webpack@workspace:*, @storybook/preset-html-webpack@workspace:presets/html-webpack":
-  version: 0.0.0-use.local
-  resolution: "@storybook/preset-html-webpack@workspace:presets/html-webpack"
-  dependencies:
-    "@storybook/core-webpack": "workspace:*"
-    "@types/node": "npm:^22.0.0"
-    html-loader: "npm:^3.1.0"
-    typescript: "npm:^5.7.3"
-    webpack: "npm:5"
-  peerDependencies:
-    storybook: "workspace:^"
-  languageName: unknown
-  linkType: soft
-
 "@storybook/preset-react-webpack@workspace:*, @storybook/preset-react-webpack@workspace:presets/react-webpack":
   version: 0.0.0-use.local
   resolution: "@storybook/preset-react-webpack@workspace:presets/react-webpack"
@@ -7212,23 +7162,6 @@ __metadata:
     yaml-loader: "npm:^0.8.0"
   peerDependencies:
     storybook: "workspace:^"
-  languageName: unknown
-  linkType: soft
-
-"@storybook/preset-svelte-webpack@workspace:*, @storybook/preset-svelte-webpack@workspace:presets/svelte-webpack":
-  version: 0.0.0-use.local
-  resolution: "@storybook/preset-svelte-webpack@workspace:presets/svelte-webpack"
-  dependencies:
-    "@storybook/core-webpack": "workspace:*"
-    svelte: "npm:^5.0.0"
-    svelte-loader: "npm:^3.2.4"
-    sveltedoc-parser: "npm:^4.2.1"
-    ts-dedent: "npm:^2.0.0"
-    typescript: "npm:^5.7.3"
-  peerDependencies:
-    storybook: "workspace:^"
-    svelte: ^4.0.0 || ^5.0.0
-    svelte-loader: "*"
   languageName: unknown
   linkType: soft
 
@@ -7383,9 +7316,7 @@ __metadata:
     "@storybook/addon-docs": "workspace:*"
     "@storybook/addon-jest": "workspace:*"
     "@storybook/addon-links": "workspace:*"
-    "@storybook/addon-mdx-gfm": "workspace:*"
     "@storybook/addon-onboarding": "workspace:*"
-    "@storybook/addon-storysource": "workspace:*"
     "@storybook/addon-test": "workspace:*"
     "@storybook/addon-themes": "workspace:*"
     "@storybook/angular": "workspace:*"
@@ -7401,16 +7332,13 @@ __metadata:
     "@storybook/global": "npm:^5.0.0"
     "@storybook/html": "workspace:*"
     "@storybook/html-vite": "workspace:*"
-    "@storybook/html-webpack5": "workspace:*"
     "@storybook/linter-config": "npm:^4.0.0"
     "@storybook/nextjs": "workspace:*"
     "@storybook/preact": "workspace:*"
     "@storybook/preact-vite": "workspace:*"
     "@storybook/preset-create-react-app": "workspace:*"
-    "@storybook/preset-html-webpack": "workspace:*"
     "@storybook/preset-react-webpack": "workspace:*"
     "@storybook/preset-server-webpack": "workspace:*"
-    "@storybook/preset-svelte-webpack": "workspace:*"
     "@storybook/react": "workspace:*"
     "@storybook/react-vite": "workspace:*"
     "@storybook/react-webpack5": "workspace:*"
@@ -7418,13 +7346,10 @@ __metadata:
     "@storybook/server-webpack5": "workspace:*"
     "@storybook/source-loader": "workspace:*"
     "@storybook/svelte": "workspace:*"
-    "@storybook/svelte-webpack5": "workspace:*"
-    "@storybook/testing-library": "npm:next"
     "@storybook/vue3": "workspace:*"
     "@storybook/vue3-vite": "workspace:*"
     "@storybook/web-components": "workspace:*"
     "@storybook/web-components-vite": "workspace:*"
-    "@storybook/web-components-webpack5": "workspace:*"
     "@testing-library/dom": "npm:^10.4.0"
     "@testing-library/jest-dom": "npm:^6.6.3"
     "@testing-library/react": "npm:^16.2.0"
@@ -7568,25 +7493,8 @@ __metadata:
   peerDependencies:
     "@sveltejs/vite-plugin-svelte": ^2.0.0 || ^3.0.0 || ^4.0.0 || ^5.0.0
     storybook: "workspace:^"
-    svelte: ^4.0.0 || ^5.0.0
+    svelte: ^5.0.0
     vite: ^5.0.0 || ^6.0.0
-  languageName: unknown
-  linkType: soft
-
-"@storybook/svelte-webpack5@workspace:*, @storybook/svelte-webpack5@workspace:frameworks/svelte-webpack5":
-  version: 0.0.0-use.local
-  resolution: "@storybook/svelte-webpack5@workspace:frameworks/svelte-webpack5"
-  dependencies:
-    "@storybook/builder-webpack5": "workspace:*"
-    "@storybook/preset-svelte-webpack": "workspace:*"
-    "@storybook/svelte": "workspace:*"
-    svelte: "npm:^5.0.5"
-    svelte-loader: "npm:^3.2.4"
-    typescript: "npm:^5.7.3"
-  peerDependencies:
-    storybook: "workspace:^"
-    svelte: ^4.0.0 || ^5.0.0
-    svelte-loader: "*"
   languageName: unknown
   linkType: soft
 
@@ -7599,7 +7507,7 @@ __metadata:
     "@sveltejs/vite-plugin-svelte": "npm:^5.0.3"
     "@testing-library/svelte": "npm:^5.2.4"
     expect-type: "npm:^1.1.0"
-    svelte: "npm:^5.19.2"
+    svelte: "npm:^5.20.5"
     svelte-check: "npm:^4.1.4"
     sveltedoc-parser: "npm:^4.2.1"
     ts-dedent: "npm:^2.0.0"
@@ -7608,7 +7516,7 @@ __metadata:
     vite: "npm:^6.0.11"
   peerDependencies:
     storybook: "workspace:^"
-    svelte: ^4.0.0 || ^5.0.0
+    svelte: ^5.0.0
   languageName: unknown
   linkType: soft
 
@@ -7624,21 +7532,10 @@ __metadata:
     vite: "npm:5.1.6"
   peerDependencies:
     storybook: "workspace:^"
-    svelte: ^4.0.0 || ^5.0.0
+    svelte: ^5.0.0
     vite: ^5.0.0 || ^6.0.0
   languageName: unknown
   linkType: soft
-
-"@storybook/testing-library@npm:next":
-  version: 0.2.2-next.0
-  resolution: "@storybook/testing-library@npm:0.2.2-next.0"
-  dependencies:
-    "@testing-library/dom": "npm:^9.0.0"
-    "@testing-library/user-event": "npm:^14.4.0"
-    ts-dedent: "npm:^2.2.0"
-  checksum: 10c0/4350e73776cba8ab5037ee9a8b07b957c73540873f64097648ed96b93f086469eab475ad19b917e5e2eee4faec67891fa443d703b9b4aa28efc9a74243970a4e
-  languageName: node
-  linkType: hard
 
 "@storybook/vue3-vite@workspace:*, @storybook/vue3-vite@workspace:frameworks/vue3-vite":
   version: 0.0.0-use.local
@@ -7692,21 +7589,6 @@ __metadata:
     magic-string: "npm:^0.30.0"
     typescript: "npm:^5.7.3"
   peerDependencies:
-    storybook: "workspace:^"
-  languageName: unknown
-  linkType: soft
-
-"@storybook/web-components-webpack5@workspace:*, @storybook/web-components-webpack5@workspace:frameworks/web-components-webpack5":
-  version: 0.0.0-use.local
-  resolution: "@storybook/web-components-webpack5@workspace:frameworks/web-components-webpack5"
-  dependencies:
-    "@storybook/builder-webpack5": "workspace:*"
-    "@storybook/web-components": "workspace:*"
-    "@types/node": "npm:^22.0.0"
-    lit: "npm:2.3.1"
-    typescript: "npm:^5.7.3"
-  peerDependencies:
-    lit: ^2.0.0 || ^3.0.0
     storybook: "workspace:^"
   languageName: unknown
   linkType: soft
@@ -9331,6 +9213,33 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@vitest/browser@npm:^3.1.1":
+  version: 3.1.1
+  resolution: "@vitest/browser@npm:3.1.1"
+  dependencies:
+    "@testing-library/dom": "npm:^10.4.0"
+    "@testing-library/user-event": "npm:^14.6.1"
+    "@vitest/mocker": "npm:3.1.1"
+    "@vitest/utils": "npm:3.1.1"
+    magic-string: "npm:^0.30.17"
+    sirv: "npm:^3.0.1"
+    tinyrainbow: "npm:^2.0.0"
+    ws: "npm:^8.18.1"
+  peerDependencies:
+    playwright: "*"
+    vitest: 3.1.1
+    webdriverio: ^7.0.0 || ^8.0.0 || ^9.0.0
+  peerDependenciesMeta:
+    playwright:
+      optional: true
+    safaridriver:
+      optional: true
+    webdriverio:
+      optional: true
+  checksum: 10c0/7937e092c6378b2825329ac2a33b0964a658d08ba219c74b18b01c803ba26f703b331e624167b8c3e5b5787ff1e9fbd6f25415c3d13b62091c9d1b27b78706cf
+  languageName: node
+  linkType: hard
+
 "@vitest/coverage-istanbul@npm:^3.0.9":
   version: 3.0.9
   resolution: "@vitest/coverage-istanbul@npm:3.0.9"
@@ -9389,6 +9298,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@vitest/expect@npm:3.1.1":
+  version: 3.1.1
+  resolution: "@vitest/expect@npm:3.1.1"
+  dependencies:
+    "@vitest/spy": "npm:3.1.1"
+    "@vitest/utils": "npm:3.1.1"
+    chai: "npm:^5.2.0"
+    tinyrainbow: "npm:^2.0.0"
+  checksum: 10c0/ef4528d0ebb89eb3cc044cf597d051c35df8471bb6ba4029e9b3412aa69d0d85a0ce4eb49531fc78fe1ebd97e6428260463068cc96a8d8c1a80150dedfd1ab3a
+  languageName: node
+  linkType: hard
+
 "@vitest/expect@patch:@vitest/expect@npm%3A3.0.9#~/.yarn/patches/@vitest-expect-npm-3.0.9-e2a2210fb4.patch":
   version: 3.0.9
   resolution: "@vitest/expect@patch:@vitest/expect@npm%3A3.0.9#~/.yarn/patches/@vitest-expect-npm-3.0.9-e2a2210fb4.patch::version=3.0.9&hash=f52714"
@@ -9420,6 +9341,25 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@vitest/mocker@npm:3.1.1":
+  version: 3.1.1
+  resolution: "@vitest/mocker@npm:3.1.1"
+  dependencies:
+    "@vitest/spy": "npm:3.1.1"
+    estree-walker: "npm:^3.0.3"
+    magic-string: "npm:^0.30.17"
+  peerDependencies:
+    msw: ^2.4.9
+    vite: ^5.0.0 || ^6.0.0
+  peerDependenciesMeta:
+    msw:
+      optional: true
+    vite:
+      optional: true
+  checksum: 10c0/9264558809e2d7c77ae9ceefad521dc5f886a567aaf0bdd021b73089b8906ffd92c893f3998d16814f38fc653c7413836f508712355c87749a0e86c7d435eec1
+  languageName: node
+  linkType: hard
+
 "@vitest/pretty-format@npm:3.0.9, @vitest/pretty-format@npm:^3.0.9":
   version: 3.0.9
   resolution: "@vitest/pretty-format@npm:3.0.9"
@@ -9429,13 +9369,32 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@vitest/runner@npm:3.0.9, @vitest/runner@npm:^3.0.9":
+"@vitest/pretty-format@npm:3.1.1, @vitest/pretty-format@npm:^3.1.1":
+  version: 3.1.1
+  resolution: "@vitest/pretty-format@npm:3.1.1"
+  dependencies:
+    tinyrainbow: "npm:^2.0.0"
+  checksum: 10c0/540cd46d317fc80298c93b185f3fb48dfe90eaaa3942fd700fde6e88d658772c01b56ad5b9b36e4ac368a02e0fc8e0dc72bbdd6dd07a5d75e89ef99c8df5ba6e
+  languageName: node
+  linkType: hard
+
+"@vitest/runner@npm:3.0.9":
   version: 3.0.9
   resolution: "@vitest/runner@npm:3.0.9"
   dependencies:
     "@vitest/utils": "npm:3.0.9"
     pathe: "npm:^2.0.3"
   checksum: 10c0/b276f238a16a6d02bb244f655d9cd8db8cce4708a6267cc48476a785ca8887741c440ae27b379a5bbbb6fe4f9f12675f13da0270253043195defd7a36bf15114
+  languageName: node
+  linkType: hard
+
+"@vitest/runner@npm:3.1.1, @vitest/runner@npm:^3.1.1":
+  version: 3.1.1
+  resolution: "@vitest/runner@npm:3.1.1"
+  dependencies:
+    "@vitest/utils": "npm:3.1.1"
+    pathe: "npm:^2.0.3"
+  checksum: 10c0/35a541069c3c94a2dd02fca2d70cc8d5e66ba2e891cfb80da354174f510aeb96774ffb34fff39cecde9d5c969be4dd20e240a900beb9b225b7512a615ecc5503
   languageName: node
   linkType: hard
 
@@ -9450,12 +9409,32 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@vitest/snapshot@npm:3.1.1":
+  version: 3.1.1
+  resolution: "@vitest/snapshot@npm:3.1.1"
+  dependencies:
+    "@vitest/pretty-format": "npm:3.1.1"
+    magic-string: "npm:^0.30.17"
+    pathe: "npm:^2.0.3"
+  checksum: 10c0/43e5fc5db580f20903eb1493d07f08752df8864f7b9b7293a202b2ffe93d8c196a5614d66dda096c6bacc16e12f1836f33ba41898812af6d32676d1eb501536a
+  languageName: node
+  linkType: hard
+
 "@vitest/spy@npm:3.0.9":
   version: 3.0.9
   resolution: "@vitest/spy@npm:3.0.9"
   dependencies:
     tinyspy: "npm:^3.0.2"
   checksum: 10c0/993085dbaf9e651ca9516f88e440424d29279def998186628a1ebcab5558a3045fee8562630608f58303507135f6f3bf9970f65639f3b9baa8bf86cab3eb4742
+  languageName: node
+  linkType: hard
+
+"@vitest/spy@npm:3.1.1":
+  version: 3.1.1
+  resolution: "@vitest/spy@npm:3.1.1"
+  dependencies:
+    tinyspy: "npm:^3.0.2"
+  checksum: 10c0/896659d4b42776cfa2057a1da2c33adbd3f2ebd28005ca606d1616d08d2e726dc1460fb37f1ea7f734756b5bccf926c7165f410e63f0a3b8d992eb5489528b08
   languageName: node
   linkType: hard
 
@@ -9467,6 +9446,17 @@ __metadata:
     loupe: "npm:^3.1.3"
     tinyrainbow: "npm:^2.0.0"
   checksum: 10c0/b966dfb3b926ee9bea59c1fb297abc67adaa23a8a582453ee81167b238446394693617a5e0523eb2791d6983173ef1c07bf28a76bd5a63b49a100610ed6b6a6c
+  languageName: node
+  linkType: hard
+
+"@vitest/utils@npm:3.1.1":
+  version: 3.1.1
+  resolution: "@vitest/utils@npm:3.1.1"
+  dependencies:
+    "@vitest/pretty-format": "npm:3.1.1"
+    loupe: "npm:^3.1.3"
+    tinyrainbow: "npm:^2.0.0"
+  checksum: 10c0/a9cfe0c0f095b58644ce3ba08309de5be8564c10dad9e62035bd378e60b2834e6a256e6e4ded7dcf027fdc2371301f7965040ad3e6323b747d5b3abbb7ceb0d6
   languageName: node
   linkType: hard
 
@@ -12074,9 +12064,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"chromatic@npm:^11.27.0":
-  version: 11.27.0
-  resolution: "chromatic@npm:11.27.0"
+"chromatic@npm:^11.26.1":
+  version: 11.26.1
+  resolution: "chromatic@npm:11.26.1"
   peerDependencies:
     "@chromatic-com/cypress": ^0.*.* || ^1.0.0
     "@chromatic-com/playwright": ^0.*.* || ^1.0.0
@@ -12089,7 +12079,7 @@ __metadata:
     chroma: dist/bin.js
     chromatic: dist/bin.js
     chromatic-cli: dist/bin.js
-  checksum: 10c0/500c1a522a48b3ef9188d63693b2602128b4cd7b2b96e5cb5412cdc0e3b7ac2a33c30d8f55f7662de4111e1c7c70bcb970e86782700e02580881400bdd10419b
+  checksum: 10c0/959b18b35867535411dc8b30ff3927a5a39b5f0169db06af5c9d377d5fb7c31ca5a883de3662f5db792f2e0469a3c5a90db78f65e597c5c7e27b8f1c054a1f92
   languageName: node
   linkType: hard
 
@@ -14607,13 +14597,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"escape-string-regexp@npm:^5.0.0":
-  version: 5.0.0
-  resolution: "escape-string-regexp@npm:5.0.0"
-  checksum: 10c0/6366f474c6f37a802800a435232395e04e9885919873e382b157ab7e8f0feb8fed71497f84a6f6a81a49aab41815522f5839112bd38026d203aea0c91622df95
-  languageName: node
-  linkType: hard
-
 "escodegen@npm:^2.1.0":
   version: 2.1.0
   resolution: "escodegen@npm:2.1.0"
@@ -15412,6 +15395,13 @@ __metadata:
   version: 1.1.0
   resolution: "expect-type@npm:1.1.0"
   checksum: 10c0/5af0febbe8fe18da05a6d51e3677adafd75213512285408156b368ca471252565d5ca6e59e4bddab25121f3cfcbbebc6a5489f8cc9db131cc29e69dcdcc7ae15
+  languageName: node
+  linkType: hard
+
+"expect-type@npm:^1.2.0":
+  version: 1.2.1
+  resolution: "expect-type@npm:1.2.1"
+  checksum: 10c0/b775c9adab3c190dd0d398c722531726cdd6022849b4adba19dceab58dda7e000a7c6c872408cd73d665baa20d381eca36af4f7b393a4ba60dd10232d1fb8898
   languageName: node
   linkType: hard
 
@@ -17231,18 +17221,6 @@ __metadata:
   version: 2.0.2
   resolution: "html-escaper@npm:2.0.2"
   checksum: 10c0/208e8a12de1a6569edbb14544f4567e6ce8ecc30b9394fcaa4e7bb1e60c12a7c9a1ed27e31290817157e8626f3a4f29e76c8747030822eb84a6abb15c255f0a0
-  languageName: node
-  linkType: hard
-
-"html-loader@npm:^3.1.0":
-  version: 3.1.2
-  resolution: "html-loader@npm:3.1.2"
-  dependencies:
-    html-minifier-terser: "npm:^6.0.2"
-    parse5: "npm:^6.0.1"
-  peerDependencies:
-    webpack: ^5.0.0
-  checksum: 10c0/05667926d159ea4c8846986a43bd07184a3aeafdd66df689fb5a38dddee143babd861e81aa59559d665f595c0681773fcfcddd89a6859df426ddb73bfea3822c
   languageName: node
   linkType: hard
 
@@ -19827,13 +19805,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"markdown-table@npm:^3.0.0":
-  version: 3.0.3
-  resolution: "markdown-table@npm:3.0.3"
-  checksum: 10c0/47433a3f31e4637a184e38e873ab1d2fadfb0106a683d466fec329e99a2d8dfa09f091fa42202c6f13ec94aef0199f449a684b28042c636f2edbc1b7e1811dcd
-  languageName: node
-  linkType: hard
-
 "markdown-to-jsx@npm:^7.7.2":
   version: 7.7.2
   resolution: "markdown-to-jsx@npm:7.7.2"
@@ -19890,18 +19861,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"mdast-util-find-and-replace@npm:^3.0.0":
-  version: 3.0.1
-  resolution: "mdast-util-find-and-replace@npm:3.0.1"
-  dependencies:
-    "@types/mdast": "npm:^4.0.0"
-    escape-string-regexp: "npm:^5.0.0"
-    unist-util-is: "npm:^6.0.0"
-    unist-util-visit-parents: "npm:^6.0.0"
-  checksum: 10c0/1faca98c4ee10a919f23b8cc6d818e5bb6953216a71dfd35f51066ed5d51ef86e5063b43dcfdc6061cd946e016a9f0d44a1dccadd58452cf4ed14e39377f00cb
-  languageName: node
-  linkType: hard
-
 "mdast-util-from-markdown@npm:^1.0.0":
   version: 1.3.1
   resolution: "mdast-util-from-markdown@npm:1.3.1"
@@ -19939,83 +19898,6 @@ __metadata:
     micromark-util-types: "npm:^2.0.0"
     unist-util-stringify-position: "npm:^4.0.0"
   checksum: 10c0/fb66e917f66e33fc60d6964264c4abd519fd8829a4a58ff9c61b2ba5c337554fb954b9ec31ca1c34e83c1163a73f310c39072d656f9a2d3184fe39c87cbba65a
-  languageName: node
-  linkType: hard
-
-"mdast-util-gfm-autolink-literal@npm:^2.0.0":
-  version: 2.0.0
-  resolution: "mdast-util-gfm-autolink-literal@npm:2.0.0"
-  dependencies:
-    "@types/mdast": "npm:^4.0.0"
-    ccount: "npm:^2.0.0"
-    devlop: "npm:^1.0.0"
-    mdast-util-find-and-replace: "npm:^3.0.0"
-    micromark-util-character: "npm:^2.0.0"
-  checksum: 10c0/821ef91db108f05b321c54fdf4436df9d6badb33e18f714d8d52c0e70f988f5b6b118cdd4d607b4cb3bef1718304ce7e9fb25fa580622c3d20d68c1489c64875
-  languageName: node
-  linkType: hard
-
-"mdast-util-gfm-footnote@npm:^2.0.0":
-  version: 2.0.0
-  resolution: "mdast-util-gfm-footnote@npm:2.0.0"
-  dependencies:
-    "@types/mdast": "npm:^4.0.0"
-    devlop: "npm:^1.1.0"
-    mdast-util-from-markdown: "npm:^2.0.0"
-    mdast-util-to-markdown: "npm:^2.0.0"
-    micromark-util-normalize-identifier: "npm:^2.0.0"
-  checksum: 10c0/c673b22bea24740235e74cfd66765b41a2fa540334f7043fa934b94938b06b7d3c93f2d3b33671910c5492b922c0cc98be833be3b04cfed540e0679650a6d2de
-  languageName: node
-  linkType: hard
-
-"mdast-util-gfm-strikethrough@npm:^2.0.0":
-  version: 2.0.0
-  resolution: "mdast-util-gfm-strikethrough@npm:2.0.0"
-  dependencies:
-    "@types/mdast": "npm:^4.0.0"
-    mdast-util-from-markdown: "npm:^2.0.0"
-    mdast-util-to-markdown: "npm:^2.0.0"
-  checksum: 10c0/b053e93d62c7545019bd914271ea9e5667ad3b3b57d16dbf68e56fea39a7e19b4a345e781312714eb3d43fdd069ff7ee22a3ca7f6149dfa774554f19ce3ac056
-  languageName: node
-  linkType: hard
-
-"mdast-util-gfm-table@npm:^2.0.0":
-  version: 2.0.0
-  resolution: "mdast-util-gfm-table@npm:2.0.0"
-  dependencies:
-    "@types/mdast": "npm:^4.0.0"
-    devlop: "npm:^1.0.0"
-    markdown-table: "npm:^3.0.0"
-    mdast-util-from-markdown: "npm:^2.0.0"
-    mdast-util-to-markdown: "npm:^2.0.0"
-  checksum: 10c0/128af47c503a53bd1c79f20642561e54a510ad5e2db1e418d28fefaf1294ab839e6c838e341aef5d7e404f9170b9ca3d1d89605f234efafde93ee51174a6e31e
-  languageName: node
-  linkType: hard
-
-"mdast-util-gfm-task-list-item@npm:^2.0.0":
-  version: 2.0.0
-  resolution: "mdast-util-gfm-task-list-item@npm:2.0.0"
-  dependencies:
-    "@types/mdast": "npm:^4.0.0"
-    devlop: "npm:^1.0.0"
-    mdast-util-from-markdown: "npm:^2.0.0"
-    mdast-util-to-markdown: "npm:^2.0.0"
-  checksum: 10c0/258d725288482b636c0a376c296431390c14b4f29588675297cb6580a8598ed311fc73ebc312acfca12cc8546f07a3a285a53a3b082712e2cbf5c190d677d834
-  languageName: node
-  linkType: hard
-
-"mdast-util-gfm@npm:^3.0.0":
-  version: 3.0.0
-  resolution: "mdast-util-gfm@npm:3.0.0"
-  dependencies:
-    mdast-util-from-markdown: "npm:^2.0.0"
-    mdast-util-gfm-autolink-literal: "npm:^2.0.0"
-    mdast-util-gfm-footnote: "npm:^2.0.0"
-    mdast-util-gfm-strikethrough: "npm:^2.0.0"
-    mdast-util-gfm-table: "npm:^2.0.0"
-    mdast-util-gfm-task-list-item: "npm:^2.0.0"
-    mdast-util-to-markdown: "npm:^2.0.0"
-  checksum: 10c0/91596fe9bf3e4a0c546d0c57f88106c17956d9afbe88ceb08308e4da2388aff64489d649ddad599caecfdf755fc3ae4c9b82c219b85281bc0586b67599881fca
   languageName: node
   linkType: hard
 
@@ -20327,99 +20209,6 @@ __metadata:
     micromark-util-symbol: "npm:^2.0.0"
     micromark-util-types: "npm:^2.0.0"
   checksum: 10c0/e087824b98d1f1d0db34791ac53945b0d68fb5e541c6c9da6700cc3db54d6b697d8110d3120d5d30e2fb39443aabddccd3e2bbf684795359f38b5a696fdc5913
-  languageName: node
-  linkType: hard
-
-"micromark-extension-gfm-autolink-literal@npm:^2.0.0":
-  version: 2.0.0
-  resolution: "micromark-extension-gfm-autolink-literal@npm:2.0.0"
-  dependencies:
-    micromark-util-character: "npm:^2.0.0"
-    micromark-util-sanitize-uri: "npm:^2.0.0"
-    micromark-util-symbol: "npm:^2.0.0"
-    micromark-util-types: "npm:^2.0.0"
-  checksum: 10c0/9349b8a4c45ad6375d85f196ef6ffc7472311bf0e7493dc387cb6e37498c2fa56f0b670f54ae54f0c6bbbed3b22997643f05057ffcc58457ca56368f7a636319
-  languageName: node
-  linkType: hard
-
-"micromark-extension-gfm-footnote@npm:^2.0.0":
-  version: 2.0.0
-  resolution: "micromark-extension-gfm-footnote@npm:2.0.0"
-  dependencies:
-    devlop: "npm:^1.0.0"
-    micromark-core-commonmark: "npm:^2.0.0"
-    micromark-factory-space: "npm:^2.0.0"
-    micromark-util-character: "npm:^2.0.0"
-    micromark-util-normalize-identifier: "npm:^2.0.0"
-    micromark-util-sanitize-uri: "npm:^2.0.0"
-    micromark-util-symbol: "npm:^2.0.0"
-    micromark-util-types: "npm:^2.0.0"
-  checksum: 10c0/59958d8a6e28a16470937de69a01476cd9766f310a892655cb6bcd32b0833ffaa8accddb77e031b1c710c856fc943174e1b0f8f2c60dfa542743f4ba7cff6f15
-  languageName: node
-  linkType: hard
-
-"micromark-extension-gfm-strikethrough@npm:^2.0.0":
-  version: 2.0.0
-  resolution: "micromark-extension-gfm-strikethrough@npm:2.0.0"
-  dependencies:
-    devlop: "npm:^1.0.0"
-    micromark-util-chunked: "npm:^2.0.0"
-    micromark-util-classify-character: "npm:^2.0.0"
-    micromark-util-resolve-all: "npm:^2.0.0"
-    micromark-util-symbol: "npm:^2.0.0"
-    micromark-util-types: "npm:^2.0.0"
-  checksum: 10c0/b1c4f0e12935e1ffa3981a256de38c5c347f91a015cc1002c0bcdbab476fa97a5992f0d5a9788b2437a96bc94fe4c32d5f539d84b2d699a36dafe31b81b41eb1
-  languageName: node
-  linkType: hard
-
-"micromark-extension-gfm-table@npm:^2.0.0":
-  version: 2.0.0
-  resolution: "micromark-extension-gfm-table@npm:2.0.0"
-  dependencies:
-    devlop: "npm:^1.0.0"
-    micromark-factory-space: "npm:^2.0.0"
-    micromark-util-character: "npm:^2.0.0"
-    micromark-util-symbol: "npm:^2.0.0"
-    micromark-util-types: "npm:^2.0.0"
-  checksum: 10c0/3777b5074054d97888ffdcb8e383399adc9066a755ad7197423fda16e09769a18d7e713d969c204228d9abf1e18fef19c7b04790698afc973418ea5f75015f72
-  languageName: node
-  linkType: hard
-
-"micromark-extension-gfm-tagfilter@npm:^2.0.0":
-  version: 2.0.0
-  resolution: "micromark-extension-gfm-tagfilter@npm:2.0.0"
-  dependencies:
-    micromark-util-types: "npm:^2.0.0"
-  checksum: 10c0/995558843fff137ae4e46aecb878d8a4691cdf23527dcf1e2f0157d66786be9f7bea0109c52a8ef70e68e3f930af811828ba912239438e31a9cfb9981f44d34d
-  languageName: node
-  linkType: hard
-
-"micromark-extension-gfm-task-list-item@npm:^2.0.0":
-  version: 2.0.1
-  resolution: "micromark-extension-gfm-task-list-item@npm:2.0.1"
-  dependencies:
-    devlop: "npm:^1.0.0"
-    micromark-factory-space: "npm:^2.0.0"
-    micromark-util-character: "npm:^2.0.0"
-    micromark-util-symbol: "npm:^2.0.0"
-    micromark-util-types: "npm:^2.0.0"
-  checksum: 10c0/16a55040a1697339eeeeebaabbbe28dc9e8281979cdeec343a58dc97f7b447365d3e37329f394455c5d17902639b786c7669dbbc4ea558cf8680eb7808330598
-  languageName: node
-  linkType: hard
-
-"micromark-extension-gfm@npm:^3.0.0":
-  version: 3.0.0
-  resolution: "micromark-extension-gfm@npm:3.0.0"
-  dependencies:
-    micromark-extension-gfm-autolink-literal: "npm:^2.0.0"
-    micromark-extension-gfm-footnote: "npm:^2.0.0"
-    micromark-extension-gfm-strikethrough: "npm:^2.0.0"
-    micromark-extension-gfm-table: "npm:^2.0.0"
-    micromark-extension-gfm-tagfilter: "npm:^2.0.0"
-    micromark-extension-gfm-task-list-item: "npm:^2.0.0"
-    micromark-util-combine-extensions: "npm:^2.0.0"
-    micromark-util-types: "npm:^2.0.0"
-  checksum: 10c0/970e28df6ebdd7c7249f52a0dda56e0566fbfa9ae56c8eeeb2445d77b6b89d44096880cd57a1c01e7821b1f4e31009109fbaca4e89731bff7b83b8519690e5d9
   languageName: node
   linkType: hard
 
@@ -22890,13 +22679,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"parse5@npm:^6.0.1":
-  version: 6.0.1
-  resolution: "parse5@npm:6.0.1"
-  checksum: 10c0/595821edc094ecbcfb9ddcb46a3e1fe3a718540f8320eff08b8cf6742a5114cce2d46d45f95c26191c11b184dcaf4e2960abcd9c5ed9eb9393ac9a37efcfdecb
-  languageName: node
-  linkType: hard
-
 "parse5@npm:^7.0.0":
   version: 7.1.2
   resolution: "parse5@npm:7.1.2"
@@ -24443,7 +24225,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-syntax-highlighter@npm:^15.4.5, react-syntax-highlighter@npm:^15.5.0":
+"react-syntax-highlighter@npm:^15.4.5":
   version: 15.5.0
   resolution: "react-syntax-highlighter@npm:15.5.0"
   dependencies:
@@ -24833,20 +24615,6 @@ __metadata:
   bin:
     remark: cli.js
   checksum: 10c0/4d6681e63cb4b37c74e18814c9ff3e323267ec6f4e912a3c68c5c5bfe0b99fa8030513bb430270a2784b1ff01fe5cc2e80dfdf5945e3e03e652b917e6f8eadb6
-  languageName: node
-  linkType: hard
-
-"remark-gfm@npm:^4.0.0":
-  version: 4.0.0
-  resolution: "remark-gfm@npm:4.0.0"
-  dependencies:
-    "@types/mdast": "npm:^4.0.0"
-    mdast-util-gfm: "npm:^3.0.0"
-    micromark-extension-gfm: "npm:^3.0.0"
-    remark-parse: "npm:^11.0.0"
-    remark-stringify: "npm:^11.0.0"
-    unified: "npm:^11.0.0"
-  checksum: 10c0/db0aa85ab718d475c2596e27c95be9255d3b0fc730a4eda9af076b919f7dd812f7be3ac020611a8dbe5253fd29671d7b12750b56e529fdc32dfebad6dbf77403
   languageName: node
   linkType: hard
 
@@ -26805,6 +26573,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"std-env@npm:^3.8.1":
+  version: 3.8.1
+  resolution: "std-env@npm:3.8.1"
+  checksum: 10c0/e9b19cca6bc6f06f91607db5b636662914ca8ec9efc525a99da6ec7e493afec109d3b017d21d9782b4369fcfb2891c7c4b4e3c60d495fdadf6861ce434e07bf8
+  languageName: node
+  linkType: hard
+
 "stop-iteration-iterator@npm:^1.0.0":
   version: 1.0.0
   resolution: "stop-iteration-iterator@npm:1.0.0"
@@ -26954,7 +26729,7 @@ __metadata:
     store2: "npm:^2.14.2"
     strip-ansi: "npm:^7.1.0"
     strip-json-comments: "npm:^5.0.1"
-    telejson: "npm:^7.2.0"
+    telejson: "npm:8.0.0--canary.106.377d63b.0"
     tiny-invariant: "npm:^1.3.1"
     tinyspy: "npm:^3.0.2"
     ts-dedent: "npm:^2.0.0"
@@ -27380,35 +27155,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"svelte-dev-helper@npm:^1.1.9":
-  version: 1.1.9
-  resolution: "svelte-dev-helper@npm:1.1.9"
-  checksum: 10c0/6a154829c88f4e92de59755d3e36db468a90dbbbbfc5f3e7d10fef3d3552454e11d4145cc9fe9892105bfe66433aea60c5e087e759266edb8e8d9ec4400606ae
-  languageName: node
-  linkType: hard
-
-"svelte-hmr@npm:^0.14.2":
-  version: 0.14.12
-  resolution: "svelte-hmr@npm:0.14.12"
-  peerDependencies:
-    svelte: ">=3.19.0"
-  checksum: 10c0/7e9d9980770ff5f61b3578950e142ac4093edfb1c7c64c6a20b3858c75fbc77a13a33db6f994223f1f23cf813507c4e777de1e601d9fe887bcd448805f98fce7
-  languageName: node
-  linkType: hard
-
-"svelte-loader@npm:^3.2.4":
-  version: 3.2.4
-  resolution: "svelte-loader@npm:3.2.4"
-  dependencies:
-    loader-utils: "npm:^2.0.4"
-    svelte-dev-helper: "npm:^1.1.9"
-    svelte-hmr: "npm:^0.14.2"
-  peerDependencies:
-    svelte: ^3.0.0 || ^4.0.0-next.0 || ^5.0.0-next.1
-  checksum: 10c0/837f8e3c81f92c584f97f617ebf969249e0170509697ade502e65b5674b0623810b24d0058456115dd417247cd81df8fbedcb421ce9314f01f0cc8b66b2afef6
-  languageName: node
-  linkType: hard
-
 "svelte-preprocess@npm:^5.1.1":
   version: 5.1.1
   resolution: "svelte-preprocess@npm:5.1.1"
@@ -27468,7 +27214,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"svelte@npm:^5.0.0, svelte@npm:^5.0.0-next.268, svelte@npm:^5.0.5, svelte@npm:^5.19.2":
+"svelte@npm:^5.0.0-next.268, svelte@npm:^5.0.5":
   version: 5.19.2
   resolution: "svelte@npm:5.19.2"
   dependencies:
@@ -27487,6 +27233,28 @@ __metadata:
     magic-string: "npm:^0.30.11"
     zimmerframe: "npm:^1.1.2"
   checksum: 10c0/9931d2b3a6a5ec22a433529c7a7a29e2bbe32257348db3f368163f844e784bc0091cce3e8b1cd22b0be6a167aeb9109c46d2cd7c68222dcb97b362c01a322bd1
+  languageName: node
+  linkType: hard
+
+"svelte@npm:^5.20.5":
+  version: 5.20.5
+  resolution: "svelte@npm:5.20.5"
+  dependencies:
+    "@ampproject/remapping": "npm:^2.3.0"
+    "@jridgewell/sourcemap-codec": "npm:^1.5.0"
+    "@types/estree": "npm:^1.0.5"
+    acorn: "npm:^8.12.1"
+    acorn-typescript: "npm:^1.4.13"
+    aria-query: "npm:^5.3.1"
+    axobject-query: "npm:^4.1.0"
+    clsx: "npm:^2.1.1"
+    esm-env: "npm:^1.2.1"
+    esrap: "npm:^1.4.3"
+    is-reference: "npm:^3.0.3"
+    locate-character: "npm:^3.0.0"
+    magic-string: "npm:^0.30.11"
+    zimmerframe: "npm:^1.1.2"
+  checksum: 10c0/20c1e083c0d87a1fa0d667dbfccc994f326f7fe5e90fc91f0ad5153351f27f993ff0f5b6d62cab936cf7c06afe0a748680d2d55bea1c317e8d17c364e6e9965a
   languageName: node
   linkType: hard
 
@@ -27611,12 +27379,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"telejson@npm:^7.2.0":
-  version: 7.2.0
-  resolution: "telejson@npm:7.2.0"
-  dependencies:
-    memoizerific: "npm:^1.11.3"
-  checksum: 10c0/d26e6cc93e54bfdcdb207b49905508c5db45862e811a2e2193a735409e47b14530e1c19351618a3e03ad2fd4ffc3759364fcd72851aba2df0300fab574b6151c
+"telejson@npm:8.0.0--canary.106.377d63b.0":
+  version: 8.0.0--canary.106.377d63b.0
+  resolution: "telejson@npm:8.0.0--canary.106.377d63b.0"
+  checksum: 10c0/bb4770fde54c591c0d3432cc5a3d96fb5fdac4d8044db85703849b05e40f7701cfa666cd82ac854f8fc5fe5339573cd186154e0f75fcf94c2f7fe3cacae575cb
   languageName: node
   linkType: hard
 
@@ -29104,6 +28870,21 @@ __metadata:
   languageName: node
   linkType: hard
 
+"vite-node@npm:3.1.1":
+  version: 3.1.1
+  resolution: "vite-node@npm:3.1.1"
+  dependencies:
+    cac: "npm:^6.7.14"
+    debug: "npm:^4.4.0"
+    es-module-lexer: "npm:^1.6.0"
+    pathe: "npm:^2.0.3"
+    vite: "npm:^5.0.0 || ^6.0.0"
+  bin:
+    vite-node: vite-node.mjs
+  checksum: 10c0/15ee73c472ae00f042a7cee09a31355d2c0efbb2dab160377545be9ba4b980a5f4cb2841b98319d87bedf630bbbb075e6b40796b39f65610920cf3fde66fdf8d
+  languageName: node
+  linkType: hard
+
 "vite-plugin-babel@npm:^1.3.0":
   version: 1.3.0
   resolution: "vite-plugin-babel@npm:1.3.0"
@@ -29159,9 +28940,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vite-plugin-storybook-nextjs@npm:2.0.0--canary.33.7c1f48f.0":
-  version: 2.0.0--canary.33.7c1f48f.0
-  resolution: "vite-plugin-storybook-nextjs@npm:2.0.0--canary.33.7c1f48f.0"
+"vite-plugin-storybook-nextjs@npm:2.0.0--canary.33.c17eb1b.0":
+  version: 2.0.0--canary.33.c17eb1b.0
+  resolution: "vite-plugin-storybook-nextjs@npm:2.0.0--canary.33.c17eb1b.0"
   dependencies:
     "@next/env": "npm:^15.0.3"
     image-size: "npm:^2.0.0"
@@ -29172,7 +28953,7 @@ __metadata:
     next: ^14.1.0 || ^15.0.0
     storybook: ^9.0.0-0
     vite: ^5.0.0 || ^6.0.0
-  checksum: 10c0/12ac552fa2ddd8512b07c77d18e290e8988822995fcd9bde6aacae58fec98a4a8f7b18d0cb609790256528d51beea76ccb124322684d7241b30908043a8473bd
+  checksum: 10c0/f2679fd3fe931afacf32636bd03e2d8f9846702ca2be32586c1f80c340653ba19ad8a9fd367f712f81179c89c9a12dd8700ee9d6cbd75d5769590ded50d8c8b0
   languageName: node
   linkType: hard
 
@@ -29414,6 +29195,59 @@ __metadata:
   bin:
     vitest: vitest.mjs
   checksum: 10c0/5bcd25cab1681f3a968a6483cd5fe115791bc02769bd73bc680bf40153474391a03a6329781b0fb0b8c2f95c82eb342a972bd5132d9bd0d4be92977af19574d0
+  languageName: node
+  linkType: hard
+
+"vitest@npm:^3.1.1":
+  version: 3.1.1
+  resolution: "vitest@npm:3.1.1"
+  dependencies:
+    "@vitest/expect": "npm:3.1.1"
+    "@vitest/mocker": "npm:3.1.1"
+    "@vitest/pretty-format": "npm:^3.1.1"
+    "@vitest/runner": "npm:3.1.1"
+    "@vitest/snapshot": "npm:3.1.1"
+    "@vitest/spy": "npm:3.1.1"
+    "@vitest/utils": "npm:3.1.1"
+    chai: "npm:^5.2.0"
+    debug: "npm:^4.4.0"
+    expect-type: "npm:^1.2.0"
+    magic-string: "npm:^0.30.17"
+    pathe: "npm:^2.0.3"
+    std-env: "npm:^3.8.1"
+    tinybench: "npm:^2.9.0"
+    tinyexec: "npm:^0.3.2"
+    tinypool: "npm:^1.0.2"
+    tinyrainbow: "npm:^2.0.0"
+    vite: "npm:^5.0.0 || ^6.0.0"
+    vite-node: "npm:3.1.1"
+    why-is-node-running: "npm:^2.3.0"
+  peerDependencies:
+    "@edge-runtime/vm": "*"
+    "@types/debug": ^4.1.12
+    "@types/node": ^18.0.0 || ^20.0.0 || >=22.0.0
+    "@vitest/browser": 3.1.1
+    "@vitest/ui": 3.1.1
+    happy-dom: "*"
+    jsdom: "*"
+  peerDependenciesMeta:
+    "@edge-runtime/vm":
+      optional: true
+    "@types/debug":
+      optional: true
+    "@types/node":
+      optional: true
+    "@vitest/browser":
+      optional: true
+    "@vitest/ui":
+      optional: true
+    happy-dom:
+      optional: true
+    jsdom:
+      optional: true
+  bin:
+    vitest: vitest.mjs
+  checksum: 10c0/680f31d2a7ca59509f837acdbacd9dff405e1b00c606d7cd29717127c6b543f186055854562c2604f74c5cd668b70174968d28feb4ed948a7e013c9477a68d50
   languageName: node
   linkType: hard
 

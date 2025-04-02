@@ -6,11 +6,23 @@ import { styled } from 'storybook/theming';
 
 import preview from '../../../../.storybook/preview';
 import { results } from '../results.mock';
-import { RuleType } from '../types';
+import { type EnhancedResults, RuleType } from '../types';
 import { A11YPanel } from './A11YPanel';
-import { emptyResults } from './A11YPanel.test';
 import { A11yContext } from './A11yContext';
 import type { A11yContextStore } from './A11yContext';
+
+const emptyResults: EnhancedResults = {
+  passes: [],
+  incomplete: [],
+  violations: [],
+  toolOptions: {},
+  inapplicable: [],
+  testEngine: { name: '', version: '' },
+  testRunner: { name: '' },
+  testEnvironment: { userAgent: '', windowWidth: 0, windowHeight: 0 },
+  url: '',
+  timestamp: '',
+};
 
 const StyledWrapper = styled.div(({ theme }) => ({
   backgroundColor: theme.background.content,

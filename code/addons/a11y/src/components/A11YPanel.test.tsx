@@ -21,7 +21,7 @@ mockedManagerApi.useParameter.mockReturnValue({
   manual: false,
 } as any);
 
-export const emptyResults: EnhancedResults = {
+const emptyResults: EnhancedResults = {
   passes: [],
   incomplete: [],
   violations: [],

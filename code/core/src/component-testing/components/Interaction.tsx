@@ -140,12 +140,16 @@ const RenderLockIcon = styled(LockIcon)(({ theme }) => ({
   color: theme.color.mediumdark,
 }));
 
-const ErrorName = styled.span({
-  color: '#4876D6',
-});
+const ErrorName = styled.span(({ theme }) => ({
+  color: theme.base === 'dark' ? '#5EC1FF' : '#0271B6',
+}));
+
+const ErrorMessage = styled.span(({ theme }) => ({
+  color: theme.base === 'dark' ? '#eee' : '#444',
+}));
 
 const ErrorExplainer = styled.p(({ theme }) => ({
-  color: theme.base === 'light' ? theme.color.negativeText : theme.color.negative,
+  color: theme.base === 'dark' ? theme.color.negative : theme.color.negativeText,
   fontSize: theme.typography.size.s2,
   maxWidth: 500,
   textWrap: 'balance',
@@ -160,7 +164,7 @@ export const Exception = ({ exception }: { exception: Call['exception'] }) => {
     return (
       <RowMessage>
         <pre>
-          <ErrorName>{exception.name}:</ErrorName> {exception.message}
+          <ErrorName>{exception.name}:</ErrorName> <ErrorMessage>{exception.message}</ErrorMessage>
         </pre>
         <ErrorExplainer>
           The component failed to render properly. Automated component tests will not run until this

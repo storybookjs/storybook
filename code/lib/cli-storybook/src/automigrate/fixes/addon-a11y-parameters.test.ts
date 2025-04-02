@@ -64,7 +64,7 @@ describe('addon-a11y-parameters', () => {
       expect(result).toBeNull();
     });
 
-    it.only('should return files that need to be updated', async () => {
+    it('should return files that need to be updated', async () => {
       const { globby } = await import('globby');
       (globby as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(mockStoryFiles);
       const { readFile } = await import('node:fs/promises');

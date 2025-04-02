@@ -26,37 +26,42 @@ const transformPreview = (code: string) => {
 
 describe('a11yParameters', () => {
   describe('transformA11yParameters', () => {
-    it('should transform a11y selector to context in story parameters', () => {
+    it('should transform a11y element to context in story parameters', () => {
       const code = dedent`
         import { StoryObj } from '@storybook/react-vite';
         export default {
-          title: 'Button'
+          title: 'Button',
+          parameters: {
+            a11y: {
+              element: '#root',
+            },
+          },
         };
         export const TypeAssign: StoryObj = {
           parameters: {
             a11y: {
-              selector: '#root',
+              element: '#root',
             },
           },
         };
         export const TypeAlias = {
           parameters: {
             a11y: {
-              selector: '#root',
+              element: '#root',
             },
           },
         } as StoryObj;
         export const TypeSatisfies = {
           parameters: {
             a11y: {
-              selector: '#root',
+              element: '#root',
             },
           },
         } satisfies StoryObj;
         export const WithNestedProperties = {
           parameters: {
             a11y: {
-              selector: '#app',
+              element: '#app',
               config: {
                 rules: [{ id: 'xyz', options: {} }],
               },
@@ -71,7 +76,12 @@ describe('a11yParameters', () => {
       expect(transformedCode).toMatchInlineSnapshot(`
         import { StoryObj } from '@storybook/react-vite';
         export default {
-          title: 'Button'
+          title: 'Button',
+          parameters: {
+            a11y: {
+              context: '#root',
+            },
+          },
         };
         export const TypeAssign: StoryObj = {
           parameters: {
@@ -109,7 +119,7 @@ describe('a11yParameters', () => {
       expect(transformedCode).toContain("context: '#root'");
     });
 
-    it('should not transform if a11y selector is not present', () => {
+    it('should not transform if a11y element is not present', () => {
       const code = dedent`
         export default {
           title: 'Button'
@@ -134,7 +144,7 @@ describe('a11yParameters', () => {
         export const Primary = {};
         Primary.parameters = {
           a11y: {
-            selector: '#root',
+            element: '#root',
           }
         }
       `;
@@ -144,12 +154,12 @@ describe('a11yParameters', () => {
   });
 
   describe('transformPreviewA11yParameters', () => {
-    it('should transform a11y selector to context in preview parameters', () => {
+    it('should transform a11y element to context in preview parameters', () => {
       const code = dedent`
         const preview = {
           parameters: {
             a11y: {
-              selector: '#root',
+              element: '#root',
             },
           },
         };
@@ -168,7 +178,7 @@ describe('a11yParameters', () => {
       `);
     });
 
-    it('should not transform if a11y selector is not present', () => {
+    it('should not transform if a11y element is not present', () => {
       const code = dedent`
         const preview = {
           parameters: {},

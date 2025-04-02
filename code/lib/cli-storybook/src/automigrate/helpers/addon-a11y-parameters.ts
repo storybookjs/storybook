@@ -16,12 +16,12 @@ function migrateA11yParameters(obj: t.ObjectExpression): boolean {
 
     if (a11yProp && t.isObjectProperty(a11yProp)) {
       const a11yValue = a11yProp.value as t.ObjectExpression;
-      const selectorProp = a11yValue.properties.find(
+      const elementProp = a11yValue.properties.find(
         (prop) =>
-          t.isObjectProperty(prop) && t.isIdentifier(prop.key) && prop.key.name === 'selector'
+          t.isObjectProperty(prop) && t.isIdentifier(prop.key) && prop.key.name === 'element'
       );
-      if (selectorProp && t.isObjectProperty(selectorProp)) {
-        selectorProp.key = t.identifier('context');
+      if (elementProp && t.isObjectProperty(elementProp)) {
+        elementProp.key = t.identifier('context');
         return true;
       }
     }
@@ -34,6 +34,12 @@ export function transformStoryA11yParameters(code: string): CsfFile | null {
   const parsed = loadCsf(code, { makeTitle: (title) => title }).parse();
 
   let hasChanges = false;
+
+  if (t.isObjectExpression(parsed._metaNode)) {
+    if (migrateA11yParameters(parsed._metaNode)) {
+      hasChanges = true;
+    }
+  }
 
   Object.values(parsed._storyExports).forEach((declaration) => {
     const declarator = declaration as t.VariableDeclarator;

@@ -8,6 +8,7 @@ import { consolidatedImports } from './consolidated-imports';
 import { eslintPlugin } from './eslint-plugin';
 import { initialGlobals } from './initial-globals';
 import { removeAddonInteractions } from './remove-addon-interactions';
+import { rendererToFramework } from './renderer-to-framework';
 import { rnstorybookConfig } from './rnstorybook-config';
 import { upgradeStorybookRelatedDependencies } from './upgrade-storybook-related-dependencies';
 import { wrapRequire } from './wrap-require';
@@ -26,6 +27,7 @@ export const allFixes: Fix[] = [
   addonExperimentalTest,
   rnstorybookConfig,
   removeAddonInteractions,
+  rendererToFramework,
 ];
 
 export const initFixes: Fix[] = [eslintPlugin];

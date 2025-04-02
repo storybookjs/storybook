@@ -71,7 +71,6 @@ const config = defineMain({
   addons: [
     '@storybook/addon-themes',
     '@storybook/addon-docs',
-    '@storybook/addon-storysource',
     '@storybook/addon-designs',
     '@storybook/addon-test',
     '@storybook/addon-a11y',

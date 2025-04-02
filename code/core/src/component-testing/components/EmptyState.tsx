@@ -15,12 +15,6 @@ const Links = styled.div(({ theme }) => ({
   gap: 25,
 }));
 
-const Divider = styled.div(({ theme }) => ({
-  width: 1,
-  height: 16,
-  backgroundColor: theme.appBorderColor,
-}));
-
 export const Empty = () => {
   const [isLoading, setIsLoading] = useState(true);
   const api = useStorybookApi();
@@ -46,21 +40,23 @@ export const Empty = () => {
   }
 
   return (
-    <EmptyTabContent
-      title="Component testing"
-      description={
-        <>
-          Component tests allow you to verify the functional aspects of UIs. Write a play function
-          for your story and you&apos;ll see it run here.
-        </>
-      }
-      footer={
-        <Links>
-          <Link href={docsUrl} target="_blank" withArrow>
-            <DocumentIcon /> Read docs
-          </Link>
-        </Links>
-      }
-    />
+    <div>
+      <EmptyTabContent
+        title="Component testing"
+        description={
+          <>
+            Component tests allow you to verify the functional aspects of UIs. Write a play function
+            for your story and you&apos;ll see it run here.
+          </>
+        }
+        footer={
+          <Links>
+            <Link href={docsUrl} target="_blank" withArrow>
+              <DocumentIcon /> Read docs
+            </Link>
+          </Links>
+        }
+      />
+    </div>
   );
 };

@@ -3,7 +3,12 @@ import * as React from 'react';
 import { transparentize } from 'polished';
 import { styled } from 'storybook/theming';
 
-import type { Call, CallStates, ControlStates } from '../../instrumenter/types';
+import {
+  type Call,
+  type CallStates,
+  type ControlStates,
+  INTERNAL_RENDER_CALL_ID,
+} from '../../instrumenter/types';
 import { isTestAssertionError, useAnsiToHtmlFilter } from '../utils';
 import { Empty } from './EmptyState';
 import { Interaction } from './Interaction';
@@ -162,7 +167,9 @@ export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
           </CaughtException>
         )}
         <div ref={endRef} />
-        {!isPlaying && !caughtException && interactions.length === 0 && <Empty />}
+        {!isPlaying &&
+          !caughtException &&
+          !interactions.some((i) => i.id !== INTERNAL_RENDER_CALL_ID) && <Empty />}
       </Container>
     );
   }

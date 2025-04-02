@@ -230,7 +230,7 @@ export const Interaction = ({
     return (
       <RowContainer call={call} pausedAt={undefined}>
         <RowHeader isInteractive>
-          <RowLabel aria-label="Interaction step" call={call} disabled>
+          <RowLabel aria-label="Render step" call={call} disabled>
             {call.status === CallStates.ERROR ? (
               <StatusIcon status={CallStates.ERROR} />
             ) : (

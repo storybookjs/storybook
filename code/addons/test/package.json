@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-test",
-  "version": "9.0.0-alpha.12",
+  "version": "9.0.0-alpha.13",
   "description": "Storybook addon for testing components",
   "keywords": [
     "storybook-addons",

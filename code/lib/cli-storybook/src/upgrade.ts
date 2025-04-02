@@ -250,6 +250,30 @@ export const doUpgrade = async ({
     const upgradedDependencies = toUpgradedDependencies(packageJson.dependencies);
     const upgradedDevDependencies = toUpgradedDependencies(packageJson.devDependencies);
 
+    // Add Storybook overrides to package.json when using npm to prevent peer dependency conflicts
+    if (packageManager.type === 'npm') {
+      try {
+        // Add overrides section if it doesn't exist
+        if (!packageJson.overrides) {
+          packageJson.overrides = {};
+        }
+
+        // Add Storybook overrides
+        packageJson.overrides.storybook = `^${versions.storybook}`;
+
+        if (!dryRun) {
+          await packageManager.writePackageJson(packageJson);
+          logger.info(
+            `Added Storybook overrides to ${picocolors.cyan(
+              'package.json'
+            )} to ensure consistent dependency resolution`
+          );
+        }
+      } catch (err) {
+        logger.warn('Failed to add Storybook overrides to package.json');
+      }
+    }
+
     // Users struggle to upgrade Storybook with npm because of conflicting peer-dependencies
     // GitHub Issue: https://github.com/storybookjs/storybook/issues/30306
     // Solution: Remove all Storybook packages (except 'storybook') from the package.json and install them again

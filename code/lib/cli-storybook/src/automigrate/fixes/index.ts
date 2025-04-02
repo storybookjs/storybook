@@ -1,6 +1,5 @@
 import { csfFactories } from '../../codemod/csf-factories';
 import type { CommandFix, Fix } from '../types';
-import { addStorybookOverrides } from './add-storybook-overrides';
 import { addonA11yAddonTest } from './addon-a11y-addon-test';
 import { addonExperimentalTest } from './addon-experimental-test';
 import { addonMdxGfmRemove } from './addon-mdx-gfm-remove';
@@ -16,7 +15,6 @@ import { wrapRequire } from './wrap-require';
 export * from '../types';
 
 export const allFixes: Fix[] = [
-  addStorybookOverrides,
   eslintPlugin,
   wrapRequire,
   addonMdxGfmRemove,

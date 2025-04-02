@@ -74,6 +74,7 @@ export const addonA11yParameters: Fix<A11yOptions> = {
   },
 
   prompt: () => {
+    console.trace('debug!');
     return dedent`
       Found story or config files that may need to be updated.
       

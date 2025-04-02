@@ -7921,7 +7921,7 @@ __metadata:
     sharp: "npm:^0.33.3"
     styled-jsx: "npm:5.1.6"
     typescript: "npm:^5.7.3"
-    vite-plugin-storybook-nextjs: "npm:^1.1.4"
+    vite-plugin-storybook-nextjs: "npm:^1.1.5"
   peerDependencies:
     "@storybook/test": "workspace:*"
     next: ^14.1.0 || ^15.0.0
@@ -15992,13 +15992,23 @@ __metadata:
   languageName: node
   linkType: hard
 
-"enhanced-resolve@npm:^5.0.0, enhanced-resolve@npm:^5.12.0, enhanced-resolve@npm:^5.17.1, enhanced-resolve@npm:^5.7.0":
+"enhanced-resolve@npm:^5.0.0":
   version: 5.18.0
   resolution: "enhanced-resolve@npm:5.18.0"
   dependencies:
     graceful-fs: "npm:^4.2.4"
     tapable: "npm:^2.2.0"
   checksum: 10c0/5fcc264a6040754ab5b349628cac2bb5f89cee475cbe340804e657a5b9565f70e6aafb338d5895554eb0ced9f66c50f38a255274a0591dcb64ee17c549c459ce
+  languageName: node
+  linkType: hard
+
+"enhanced-resolve@npm:^5.12.0, enhanced-resolve@npm:^5.17.1, enhanced-resolve@npm:^5.7.0":
+  version: 5.18.1
+  resolution: "enhanced-resolve@npm:5.18.1"
+  dependencies:
+    graceful-fs: "npm:^4.2.4"
+    tapable: "npm:^2.2.0"
+  checksum: 10c0/4cffd9b125225184e2abed9fdf0ed3dbd2224c873b165d0838fd066cde32e0918626cba2f1f4bf6860762f13a7e2364fd89a82b99566be2873d813573ac71846
   languageName: node
   linkType: hard
 
@@ -31822,9 +31832,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vite-plugin-storybook-nextjs@npm:^1.1.4":
-  version: 1.1.4
-  resolution: "vite-plugin-storybook-nextjs@npm:1.1.4"
+"vite-plugin-storybook-nextjs@npm:^1.1.5":
+  version: 1.1.5
+  resolution: "vite-plugin-storybook-nextjs@npm:1.1.5"
   dependencies:
     "@next/env": "npm:^15.0.3"
     image-size: "npm:^2.0.0"
@@ -31836,7 +31846,7 @@ __metadata:
     next: ^14.1.0 || ^15.0.0
     storybook: ^8.3.0
     vite: ^5.0.0 || ^6.0.0
-  checksum: 10c0/b5511dcf6fe0f2cec111f118ca2547621ede7abd6e373685935be89b6cc860b3a6f836b560d9b4c5577d15b62e83b5c4acefb1e19bd806939cd71cd394bfe919
+  checksum: 10c0/244ca3df21fa30a0236434cb3106afc5f393f198e2470c7b5c938ae28083ed75726023b972a4f2eb090f20c6abd582682eabfc257c4bff202f499a65a1e5fc41
   languageName: node
   linkType: hard
 

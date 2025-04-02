@@ -1,11 +1,15 @@
 import { readFileSync } from 'node:fs';
 
-import type { Options } from 'storybook/internal/types';
+import { loadPreviewOrConfigFile } from 'storybook/internal/common';
+import type { Options, PreviewAnnotation } from 'storybook/internal/types';
 
-import type { Plugin } from 'vite';
+import type { Plugin, UserConfig } from 'vite';
 
 import { generateImportFnScriptCode } from '../codegen-importfn-script';
-import { generateModernIframeScriptCode } from '../codegen-modern-iframe-script';
+import {
+  generateModernIframeScriptCode,
+  generatePreviewImports,
+} from '../codegen-modern-iframe-script';
 import { generateAddonSetupCode } from '../codegen-set-addon-channel';
 import { transformIframeHtml } from '../transform-iframe-html';
 import { SB_VIRTUAL_FILES, getResolvedVirtualModuleId } from '../virtual-file-names';
@@ -51,20 +55,45 @@ export function codeGeneratorPlugin(options: Options): Plugin {
         }
       });
     },
-    config(config, { command }) {
+    async config(_, { command }) {
       // If we are building the static distribution, add iframe.html as an entry.
       // In development mode, it's not an entry - instead, we use a middleware
       // to serve iframe.html. The reason is that Vite's dev server (at the time of writing)
       // does not support virtual files as entry points.
+      const config: Omit<UserConfig, 'plugins'> = {};
+
       if (command === 'build') {
         if (!config.build) {
           config.build = {};
         }
-        config.build.rollupOptions = {
-          ...config.build.rollupOptions,
-          input: iframePath,
+        config.build = {
+          rollupOptions: {
+            input: iframePath,
+          },
         };
       }
+
+      const { presets, configDir } = options;
+      const previewOrConfigFile = loadPreviewOrConfigFile({ configDir });
+      const previewAnnotations = await presets.apply<PreviewAnnotation[]>(
+        'previewAnnotations',
+        [],
+        options
+      );
+
+      const allPreviewAnnotations = previewOrConfigFile
+        ? [...previewAnnotations, previewOrConfigFile]
+        : previewAnnotations;
+
+      const { previewAnnotationURLs } = generatePreviewImports(allPreviewAnnotations, config.root!);
+
+      config.optimizeDeps = {
+        // These include the dependencies that are imported by the virtual vite-app.js file
+        include: ['storybook/internal/preview/runtime', 'storybook/internal/csf'],
+        entries: [...previewAnnotationURLs],
+      };
+
+      return config;
     },
     configResolved(config) {
       projectRoot = config.root;

@@ -9,6 +9,35 @@ import { dedent } from 'ts-dedent';
 import { processPreviewAnnotation } from './utils/process-preview-annotation';
 import { SB_VIRTUAL_FILES } from './virtual-file-names';
 
+export type PreviewImports = {
+  imports: string[];
+  variables: string[];
+  previewAnnotationURLs: string[];
+};
+
+export function generatePreviewImports(
+  previewAnnotations: (PreviewAnnotation | undefined)[],
+  projectRoot: string
+): PreviewImports {
+  const previewAnnotationURLs = previewAnnotations
+    .filter((path): path is PreviewAnnotation => path !== undefined)
+    .map((path) => processPreviewAnnotation(path, projectRoot))
+    .filter((url): url is string => url !== undefined);
+
+  const variables: string[] = [];
+  const imports: string[] = [];
+  for (const previewAnnotation of previewAnnotationURLs) {
+    const variable =
+      genSafeVariableName(filename(previewAnnotation)).replace(/_(45|46|47)/g, '_') +
+      '_' +
+      hash(previewAnnotation);
+    variables.push(variable);
+    imports.push(genImport(previewAnnotation, { name: '*', as: variable }));
+  }
+
+  return { imports, variables, previewAnnotationURLs };
+}
+
 export async function generateModernIframeScriptCode(options: Options, projectRoot: string) {
   const { presets, configDir } = options;
   const frameworkName = await getFrameworkName(options);
@@ -37,20 +66,10 @@ export async function generateModernIframeScriptCodeFromPreviews(options: {
   isCsf4: boolean;
 }) {
   const { projectRoot, frameworkName } = options;
-  const previewAnnotationURLs = options.previewAnnotations
-    .filter((path) => path !== undefined)
-    .map((path) => processPreviewAnnotation(path, projectRoot));
-
-  const variables: string[] = [];
-  const imports: string[] = [];
-  for (const previewAnnotation of previewAnnotationURLs) {
-    const variable =
-      genSafeVariableName(filename(previewAnnotation)).replace(/_(45|46|47)/g, '_') +
-      '_' +
-      hash(previewAnnotation);
-    variables.push(variable);
-    imports.push(genImport(previewAnnotation, { name: '*', as: variable }));
-  }
+  const { imports, variables, previewAnnotationURLs } = generatePreviewImports(
+    options.previewAnnotations,
+    projectRoot
+  );
 
   const previewFileURL = previewAnnotationURLs[previewAnnotationURLs.length - 1];
   const previewFileVariable = variables[variables.length - 1];

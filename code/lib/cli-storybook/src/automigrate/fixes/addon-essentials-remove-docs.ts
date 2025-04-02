@@ -101,27 +101,12 @@ export const addonEssentialsRemoveDocs: Fix<AddonDocsOptions> = {
       return;
     }
 
-    await updateMainConfig({ mainConfigPath, dryRun: !!dryRun }, async (main) => {
-      // Get the current addons array
-      const addons = main.getFieldValue(['addons']) || [];
-
-      // Find the essentials entry
-      const essentialsIndex = addons.findIndex((addon: any) => {
-        if (typeof addon === 'string') {
-          return addon.includes('@storybook/addon-essentials');
-        }
-        return addon?.name.includes('@storybook/addon-essentials');
-      });
-
-      // Remove the essentials entry completely
-      if (essentialsIndex !== -1) {
-        main.removeField(['addons', essentialsIndex]);
-      }
-    });
-
     if (!dryRun) {
       // Remove addon-essentials package
-      await packageManager.removeDependencies({}, ['@storybook/addon-essentials']);
+      await packageManager.runPackageCommand('storybook', [
+        'remove',
+        '@storybook/addon-essentials',
+      ]);
 
       // If docs was enabled (not disabled) and not already installed, add it
       if (!hasDocsDisabled && !hasDocsAddon) {

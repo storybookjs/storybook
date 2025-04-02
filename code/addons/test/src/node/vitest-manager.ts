@@ -328,15 +328,27 @@ export class VitestManager {
     }
     this.resetGlobalTestNamePattern();
 
-    const globTestFiles = await this.vitest.globTestSpecifications();
+    const { previewAnnotations } = this.testManager.store.getState();
+
+    if (previewAnnotations.includes(trigger)) {
+      // if the trigger is a preview annotation, run all tests
+      await this.testManager.runTestsWithState({
+        triggeredBy: 'watch',
+        callback: async () => {
+          await this.vitest!.cancelCurrentRun('keyboard-input');
+          await this.runningPromise;
+          const globTestFiles = await this.getStorybookTestSpecs();
+          await this.vitest!.runTestSpecifications(globTestFiles, false);
+        },
+      });
+      return;
+    }
 
     const testGraphs = await Promise.all(
-      globTestFiles
-        .filter((workspace) => this.isStorybookProject(workspace.project))
-        .map(async (spec) => {
-          const deps = await this.getTestDependencies(spec);
-          return [spec, deps] as const;
-        })
+      (await this.getStorybookTestSpecs()).map(async (spec) => {
+        const deps = await this.getTestDependencies(spec);
+        return [spec, deps] as const;
+      })
     );
     const triggerAffectedTests: TestSpecification[] = [];
 
@@ -356,15 +368,17 @@ export class VitestManager {
       )
       .flat();
 
+    if (!triggerAffectedTests.length) {
+      return;
+    }
+
     await this.testManager.runTestsWithState({
       storyIds: affectedStoryIds,
       triggeredBy: 'watch',
       callback: async () => {
-        if (triggerAffectedTests.length) {
-          await this.vitest!.cancelCurrentRun('keyboard-input');
-          await this.runningPromise;
-          await this.vitest!.runTestSpecifications(triggerAffectedTests, false);
-        }
+        await this.vitest!.cancelCurrentRun('keyboard-input');
+        await this.runningPromise;
+        await this.vitest!.runTestSpecifications(triggerAffectedTests, false);
       },
     });
   }

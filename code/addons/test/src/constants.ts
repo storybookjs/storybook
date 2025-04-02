@@ -35,6 +35,7 @@ export const storeOptions = {
     cancelling: false,
     fatalError: undefined,
     indexUrl: undefined,
+    previewAnnotations: [],
     currentRun: {
       triggeredBy: undefined,
       config: {

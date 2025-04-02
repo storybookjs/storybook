@@ -1,5 +1,5 @@
 import type { experimental_UniversalStore } from 'storybook/internal/core-server';
-import type { StoryId } from 'storybook/internal/types';
+import type { PreviewAnnotation, StoryId } from 'storybook/internal/types';
 import type { API_HashEntry } from 'storybook/internal/types';
 
 export interface TestParameters {
@@ -47,6 +47,7 @@ export type StoreState = {
   // TODO: Avoid needing to do a fetch request server-side to retrieve the index
   // e.g. http://localhost:6006/index.json
   indexUrl: string | undefined;
+  previewAnnotations: PreviewAnnotation[];
   fatalError:
     | {
         message: string | undefined;

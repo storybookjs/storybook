@@ -5,6 +5,7 @@ import type { Channel } from 'storybook/internal/channels';
 import {
   createFileSystemCache,
   getFrameworkName,
+  loadPreviewOrConfigFile,
   resolvePathInStorybookCache,
 } from 'storybook/internal/common';
 import {
@@ -12,7 +13,12 @@ import {
   experimental_getTestProviderStore,
 } from 'storybook/internal/core-server';
 import { cleanPaths, oneWayHash, sanitizeError, telemetry } from 'storybook/internal/telemetry';
-import type { Options, PresetPropertyFn, StoryId } from 'storybook/internal/types';
+import type {
+  Options,
+  PresetPropertyFn,
+  PreviewAnnotation,
+  StoryId,
+} from 'storybook/internal/types';
 
 import { isEqual } from 'es-toolkit';
 import picocolors from 'picocolors';
@@ -43,6 +49,14 @@ type Event = {
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export const experimental_serverChannel = async (channel: Channel, options: Options) => {
   const core = await options.presets.apply('core');
+
+  const previewPath = loadPreviewOrConfigFile({ configDir: options.configDir });
+  const previewAnnotations = await options.presets.apply<PreviewAnnotation[]>(
+    'previewAnnotations',
+    [],
+    options
+  );
+
   const builderName = typeof core?.builder === 'string' ? core.builder : core?.builder?.name;
   const framework = await getFrameworkName(options);
 
@@ -72,6 +86,7 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
     ...storeOptions,
     initialState: {
       ...storeOptions.initialState,
+      previewAnnotations: (previewAnnotations ?? []).concat(previewPath ?? []),
       ...cachedState,
     },
     leader: true,

@@ -32,6 +32,10 @@ const config = defineMain({
       titlePrefix: 'components',
     },
     {
+      directory: '../core/src/highlight',
+      titlePrefix: 'highlight',
+    },
+    {
       directory: '../lib/blocks/src',
       titlePrefix: 'blocks',
     },

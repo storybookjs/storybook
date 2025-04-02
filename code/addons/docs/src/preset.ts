@@ -160,6 +160,9 @@ export const viteFinal = async (config: any, options: Options) => {
     name: 'storybook:package-deduplication',
     enforce: 'pre',
     config: () => ({
+      optimizeDeps: {
+        include: ['react/jsx-runtime'],
+      },
       resolve: {
         alias: {
           react,
@@ -206,11 +209,4 @@ export const resolvedReact = async (existing: any) => ({
   mdx: existing?.mdx ?? dirname(require.resolve('@mdx-js/react')),
 });
 
-const optimizeViteDeps = [
-  '@mdx-js/react',
-  '@storybook/addon-docs > acorn-jsx',
-  '@storybook/addon-docs',
-  'markdown-to-jsx',
-];
-
-export { webpackX as webpack, docsX as docs, optimizeViteDeps };
+export { webpackX as webpack, docsX as docs };

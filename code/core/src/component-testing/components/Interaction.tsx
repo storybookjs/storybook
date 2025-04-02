@@ -2,17 +2,13 @@ import * as React from 'react';
 
 import { IconButton, TooltipNote, WithTooltip } from 'storybook/internal/components';
 
-import { BookmarkHollowIcon, ListUnorderedIcon, LockIcon, StopAltIcon } from '@storybook/icons';
+import { BookmarkHollowIcon, ListUnorderedIcon, LockIcon } from '@storybook/icons';
 
 import { transparentize } from 'polished';
 import { styled, typography } from 'storybook/theming';
 
-import {
-  type Call,
-  CallStates,
-  type ControlStates,
-  INTERNAL_RENDER_CALL_ID,
-} from '../../instrumenter/types';
+import { type Call, CallStates, type ControlStates } from '../../instrumenter/types';
+import { INTERNAL_RENDER_CALL_ID } from '../constants';
 import { isChaiError, isJestError, useAnsiToHtmlFilter } from '../utils';
 import type { Controls } from './InteractionsPanel';
 import { MatcherResult } from './MatcherResult';

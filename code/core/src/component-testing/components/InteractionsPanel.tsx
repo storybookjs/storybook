@@ -3,12 +3,8 @@ import * as React from 'react';
 import { transparentize } from 'polished';
 import { styled } from 'storybook/theming';
 
-import {
-  type Call,
-  type CallStates,
-  type ControlStates,
-  INTERNAL_RENDER_CALL_ID,
-} from '../../instrumenter/types';
+import { type Call, type CallStates, type ControlStates } from '../../instrumenter/types';
+import { INTERNAL_RENDER_CALL_ID } from '../constants';
 import { isTestAssertionError, useAnsiToHtmlFilter } from '../utils';
 import { Empty } from './EmptyState';
 import { Interaction } from './Interaction';

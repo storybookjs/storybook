@@ -24,13 +24,8 @@ import {
   STORYBOOK_ADDON_TEST_CHANNEL,
 } from '../../../../addons/test/src/constants';
 import { EVENTS } from '../../instrumenter/EVENTS';
-import {
-  type Call,
-  CallStates,
-  INTERNAL_RENDER_CALL_ID,
-  type LogItem,
-} from '../../instrumenter/types';
-import { ADDON_ID } from '../constants';
+import { type Call, CallStates, type LogItem } from '../../instrumenter/types';
+import { ADDON_ID, INTERNAL_RENDER_CALL_ID } from '../constants';
 import { InteractionsPanel } from './InteractionsPanel';
 
 const INITIAL_CONTROL_STATES = {

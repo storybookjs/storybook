@@ -4,23 +4,6 @@ import { describe, expect, it } from 'vitest';
 import { type Call, CallStates, type LogItem } from '../../instrumenter/types';
 import { getInteractions } from './Panel';
 
-const renderInteraction = {
-  id: 'story--id internal_render',
-  cursor: 0,
-  storyId: 'story--id',
-  ancestors: [],
-  path: [],
-  method: 'internal_render',
-  args: [],
-  interceptable: true,
-  retain: false,
-  status: CallStates.DONE,
-  childCallIds: undefined,
-  isHidden: false,
-  isCollapsed: false,
-  toggleCollapsed: expect.any(Function),
-} as Call;
-
 describe('Panel', () => {
   describe('getInteractions', () => {
     const log: LogItem[] = [
@@ -163,10 +146,7 @@ describe('Panel', () => {
     const setCollapsed = () => {};
 
     it('returns list of interactions', () => {
-      expect(
-        getInteractions({ storyId: 'story--id', log, calls, collapsed, setCollapsed })
-      ).toEqual([
-        renderInteraction,
+      expect(getInteractions({ log, calls, collapsed, setCollapsed })).toEqual([
         {
           ...calls.get('story--id [4] findByText'),
           status: CallStates.DONE,
@@ -206,7 +186,6 @@ describe('Panel', () => {
       const withCollapsed = new Set<Call['id']>(['story--id [6] waitFor']);
 
       expect(getInteractions({ log, calls, collapsed: withCollapsed, setCollapsed })).toEqual([
-        renderInteraction,
         expect.objectContaining({
           ...calls.get('story--id [4] findByText'),
           childCallIds: undefined,
@@ -238,7 +217,6 @@ describe('Panel', () => {
       const withError = log.slice(0, 3).concat({ ...log[3], status: CallStates.ERROR });
 
       expect(getInteractions({ log: withError, calls, collapsed, setCollapsed })).toEqual([
-        renderInteraction,
         expect.objectContaining({
           id: 'story--id [4] findByText',
           status: CallStates.DONE,
@@ -265,7 +243,6 @@ describe('Panel', () => {
       ]);
 
       expect(getInteractions({ log: withActiveError, calls, collapsed, setCollapsed })).toEqual([
-        renderInteraction,
         expect.objectContaining({
           id: 'story--id [4] findByText',
           status: CallStates.DONE,
@@ -292,7 +269,6 @@ describe('Panel', () => {
       ]);
 
       expect(getInteractions({ log: withActiveWaiting, calls, collapsed, setCollapsed })).toEqual([
-        renderInteraction,
         expect.objectContaining({
           id: 'story--id [4] findByText',
           status: CallStates.DONE,

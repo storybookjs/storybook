@@ -7,14 +7,14 @@ import {
 import { addons } from 'storybook/preview-api';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 
-import ButtonView from './views/ButtonJavaScript.svelte';
+import Button from './Button.svelte';
 
 export default {
-  component: ButtonView,
+  component: Button,
   tags: ['!vitest'],
 };
 
-export const RemountOnResetStoryArgs = {
+export const UpdatingArgs = {
   play: async ({ canvasElement, id, step }) => {
     const canvas = await within(canvasElement);
     const channel = addons.getChannel();
@@ -25,14 +25,16 @@ export const RemountOnResetStoryArgs = {
       await new Promise((resolve) => {
         channel.once(STORY_RENDERED, resolve);
       });
+      await expect(await canvas.getByRole('button')).toHaveTextContent('You clicked: 0');
     });
+
     const button = await canvas.getByRole('button');
-    await expect(button).toHaveTextContent('You clicked: 0');
+    await step('Change state', async () => {
+      await userEvent.click(button);
 
-    await userEvent.click(button);
-
-    await waitFor(async () => {
-      await expect(button).toHaveTextContent('You clicked: 1');
+      await waitFor(async () => {
+        await expect(button).toHaveTextContent('You clicked: 1');
+      });
     });
 
     await step("Update story args with { text: 'Changed' }", async () => {
@@ -40,15 +42,24 @@ export const RemountOnResetStoryArgs = {
       await new Promise((resolve) => {
         channel.once(STORY_RENDERED, resolve);
       });
+      await expect(button).toHaveTextContent('Changed: 1');
     });
-    await expect(button).toHaveTextContent('Changed: 1');
+  },
+};
+
+export const RemountOnResetStoryArgs = {
+  play: async (playContext) => {
+    const { canvas, id, step } = playContext;
+    await UpdatingArgs.play(playContext);
+
+    const channel = addons.getChannel();
 
     // expect that all state and args are reset after RESET_STORY_ARGS because Svelte needs to remount the component
     // most other renderers would have 'You clicked: 1' here because they don't remount the component
     // if this doesn't fully remount it would be 'undefined: 1' because undefined args are used as is in Svelte, and the state is kept
     await step('Reset story args', () => channel.emit(RESET_STORY_ARGS, { storyId: id }));
     await waitFor(async () =>
-      expect(await within(canvasElement).getByRole('button')).toHaveTextContent('You clicked: 0')
+      expect(await canvas.getByRole('button')).toHaveTextContent('You clicked: 0')
     );
   },
 };

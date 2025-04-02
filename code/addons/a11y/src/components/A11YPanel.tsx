@@ -67,7 +67,11 @@ export const A11YPanel: React.FC = () => {
   } = useA11yContext();
 
   const tabs = useMemo(() => {
-    const { passes, incomplete, violations } = results;
+    const { passes, incomplete, violations } = results ?? {
+      passes: [],
+      incomplete: [],
+      violations: [],
+    };
     return [
       {
         label: (

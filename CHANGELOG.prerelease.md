@@ -1,3 +1,26 @@
+## 9.0.0-alpha.14
+
+- Automigrations: Re-add renderer-to-framework and fix issue in monorepositories - [#31011](https://github.com/storybookjs/storybook/pull/31011), thanks @valentinpalkovic!
+- Dependencies: Upgrade `telejson` - [#30998](https://github.com/storybookjs/storybook/pull/30998), thanks @ndelangen!
+- Maintenance: Specify that Addon Test now requires Vitest 3.0 - [#30948](https://github.com/storybookjs/storybook/pull/30948), thanks @yannbf!
+- Remove: Addon mdx-gfm (`@storybook/addon-mdx-gfm`) - [#30996](https://github.com/storybookjs/storybook/pull/30996), thanks @ndelangen!
+- Source: Support async parameters.docs.source.transform - [#30426](https://github.com/storybookjs/storybook/pull/30426), thanks @valentinpalkovic!
+- Svelte: Drop Support for Svelte < 5 - [#30703](https://github.com/storybookjs/storybook/pull/30703), thanks @valentinpalkovic!
+
+## 9.0.0-alpha.13
+
+- Automigration: Add new Storybook addons to consolidated packages mapping - [#30993](https://github.com/storybookjs/storybook/pull/30993), thanks @valentinpalkovic!
+- Automigration: Update mapping for '@storybook/experimental-nextjs-vite' - [#30991](https://github.com/storybookjs/storybook/pull/30991), thanks @valentinpalkovic!
+- CLI: Only install Visual Test Addon if test feature is selected - [#30966](https://github.com/storybookjs/storybook/pull/30966), thanks @ghengeveld!
+- Core: Add error boundary to tabs to prevent addon errors breaking Storybook - [#30952](https://github.com/storybookjs/storybook/pull/30952), thanks @kasperpeulen!
+- Core: Remove deprecated parts of test provider API - [#30962](https://github.com/storybookjs/storybook/pull/30962), thanks @JReinhold!
+- Essentials: Move remaining addons into core - [#30924](https://github.com/storybookjs/storybook/pull/30924), thanks @ndelangen!
+- HTML Framework: Remove support for HTML Webpack 5 - [#30990](https://github.com/storybookjs/storybook/pull/30990), thanks @valentinpalkovic!
+- Next: Upgrade vite-plugin-storybook-nextjs for Next v14 compatibility - [#30997](https://github.com/storybookjs/storybook/pull/30997), thanks @kasperpeulen!
+- Svelte: Exclude `node_modules` from docgen - [#30981](https://github.com/storybookjs/storybook/pull/30981), thanks @JReinhold!
+- Test: Make sure that expect has no different behavior after instrumentation - [#30935](https://github.com/storybookjs/storybook/pull/30935), thanks @kasperpeulen!
+- Web Components: Remove Webpack 5 support - [#30988](https://github.com/storybookjs/storybook/pull/30988), thanks @valentinpalkovic!
+
 ## 9.0.0-alpha.12
 
 - Addon-A11y: Various improvements - [#30774](https://github.com/storybookjs/storybook/pull/30774), thanks @ghengeveld!
@@ -243,7 +266,6 @@
 
 ## 8.6.0-alpha.0
 
-
 ## 8.5.0-beta.11
 
 - CLI: Update a11y-test comment with experimental caveat - [#30258](https://github.com/storybookjs/storybook/pull/30258), thanks @shilman!
@@ -254,7 +276,7 @@
 - Addon A11y: Adjust default behaviour when using with experimental-addon-test - [#30162](https://github.com/storybookjs/storybook/pull/30162), thanks @valentinpalkovic!
 - Addon A11y: Change default element selector - [#30253](https://github.com/storybookjs/storybook/pull/30253), thanks @valentinpalkovic!
 - Addon Docs: Make new code panel opt in - [#30248](https://github.com/storybookjs/storybook/pull/30248), thanks @shilman!
-- Addon Test: Fix generated path to `vitest.setup.js`  - [#30233](https://github.com/storybookjs/storybook/pull/30233), thanks @JReinhold!
+- Addon Test: Fix generated path to `vitest.setup.js` - [#30233](https://github.com/storybookjs/storybook/pull/30233), thanks @JReinhold!
 
 ## 8.5.0-beta.9
 
@@ -289,7 +311,7 @@
 
 - Addon Test: Only reset story count on file change when watch mode is enabled - [#30121](https://github.com/storybookjs/storybook/pull/30121), thanks @ghengeveld!
 - Build: Revert Downgrade to esbuild 0.24.0 - [#30120](https://github.com/storybookjs/storybook/pull/30120), thanks @yannbf!
-- Core: Fix `ERR_PACKAGE_PATH_NOT_EXPORTED` in `@storybook/node-logger`  - [#30093](https://github.com/storybookjs/storybook/pull/30093), thanks @JReinhold!
+- Core: Fix `ERR_PACKAGE_PATH_NOT_EXPORTED` in `@storybook/node-logger` - [#30093](https://github.com/storybookjs/storybook/pull/30093), thanks @JReinhold!
 - React: Use Act wrapper in Storybook for component rendering - [#30037](https://github.com/storybookjs/storybook/pull/30037), thanks @valentinpalkovic!
 - Vite: Add extra entries to `optimizeDeps` - [#30117](https://github.com/storybookjs/storybook/pull/30117), thanks @ndelangen!
 
@@ -489,7 +511,6 @@
 
 ## 8.5.0-alpha.0
 
-
 ## 8.4.0-beta.5
 
 - Addon Test: Improve unsupported vitest message - [#29486](https://github.com/storybookjs/storybook/pull/29486), thanks @valentinpalkovic!
@@ -599,7 +620,6 @@
 - Vite: Add jsdoc-type-pratt-parser to `optimizeDeps` - [#29179](https://github.com/storybookjs/storybook/pull/29179), thanks @tobiasdiez!
 
 ## 8.4.0-alpha.0
-
 
 ## 8.3.0-beta.5
 

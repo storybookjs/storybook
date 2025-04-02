@@ -1,33 +1,50 @@
 <script lang="ts">
-  /**
-   * Is this the principal call to action on the page?
-   */
-  export let primary = false;
+  type Props = {
+    /**
+     * Is this the principal call to action on the page?
+     */
+    primary?: boolean;
 
-  /**
-   * What background color to use
-   */
-  export let backgroundColor: string | undefined = undefined;
-  /**
-   * How large should the button be?
-   */
-  export let size: 'small' | 'medium' | 'large' = 'medium';
-  /**
-   * Button contents
-   */
-  export let label: string = '';
+    /**
+     * What background color to use
+     */
+    backgroundColor?: string;
 
-  $: mode = primary ? 'storybook-button--primary' : 'storybook-button--secondary';
+    /**
+     * How large should the button be?
+     */
+    size?: 'small' | 'medium' | 'large';
 
-  $: style = backgroundColor ? `background-color: ${backgroundColor}` : '';
+    /**
+     * Button contents
+     */
+    label?: string;
+
+    /**
+     * Button contents
+     */
+    children?: any;
+  };
+
+  const {
+    primary = false,
+    backgroundColor = undefined,
+    size = 'medium',
+    label = '',
+    children,
+    ...props
+  }: Props = $props();
+
+  let mode = $derived(primary ? 'storybook-button--primary' : 'storybook-button--secondary');
+  let style = $derived(backgroundColor ? `background-color: ${backgroundColor}` : '');
 </script>
 
 <button
   type="button"
   class={['storybook-button', `storybook-button--${size}`, mode].join(' ')}
   {style}
-  on:click
+  {...props}
 >
   {label}
-  <slot/>
+  {@render children?.()}
 </button>

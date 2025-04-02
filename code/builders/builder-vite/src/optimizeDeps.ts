@@ -43,6 +43,7 @@ const INCLUDE_CANDIDATES = [
   '@storybook/web-components',
   '@storybook/web-components/dist/entry-preview-docs.mjs',
   '@storybook/web-components/dist/entry-preview.mjs',
+  'storybook/viewport',
   'acorn-jsx',
   'acorn-walk',
   'acorn',

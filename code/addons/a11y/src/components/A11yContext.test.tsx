@@ -119,13 +119,13 @@ describe('A11yContext', () => {
       const { results } = useA11yContext();
       return (
         <>
-          {!!results.passes.length && (
+          {!!results?.passes.length && (
             <div data-testid="anyPassesResults">{JSON.stringify(results.passes)}</div>
           )}
-          {!!results.incomplete.length && (
+          {!!results?.incomplete.length && (
             <div data-testid="anyIncompleteResults">{JSON.stringify(results.incomplete)}</div>
           )}
-          {!!results.violations.length && (
+          {!!results?.violations.length && (
             <div data-testid="anyViolationsResults">{JSON.stringify(results.violations)}</div>
           )}
         </>

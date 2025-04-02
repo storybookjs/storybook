@@ -8,6 +8,7 @@ import preview from '../../../../.storybook/preview';
 import { results } from '../results.mock';
 import { RuleType } from '../types';
 import { A11YPanel } from './A11YPanel';
+import { emptyResults } from './A11YPanel.test';
 import { A11yContext } from './A11yContext';
 import type { A11yContextStore } from './A11yContext';
 
@@ -72,7 +73,7 @@ export const Initializing = meta.story({
   render: () => {
     return (
       <Template
-        results={{ passes: [], incomplete: [], violations: [] }}
+        results={emptyResults}
         status="initial"
         error={null}
         discrepancy={null}
@@ -86,7 +87,7 @@ export const Manual = meta.story({
   render: () => {
     return (
       <Template
-        results={{ passes: [], incomplete: [], violations: [] }}
+        results={emptyResults}
         status="manual"
         error={null}
         discrepancy={null}
@@ -100,7 +101,7 @@ export const ManualWithDiscrepancy = meta.story({
   render: () => {
     return (
       <Template
-        results={{ passes: [], incomplete: [], violations: [] }}
+        results={emptyResults}
         status="manual"
         error={null}
         discrepancy={'cliFailedButModeManual'}
@@ -114,7 +115,7 @@ export const Running = meta.story({
   render: () => {
     return (
       <Template
-        results={{ passes: [], incomplete: [], violations: [] }}
+        results={emptyResults}
         status="running"
         error={null}
         discrepancy={null}
@@ -175,7 +176,7 @@ export const Error = meta.story({
   render: () => {
     return (
       <Template
-        results={{ passes: [], incomplete: [], violations: [] }}
+        results={emptyResults}
         status="error"
         error={`TypeError: Configured rule { impact: "moderate", disable: true } is invalid. Rules must be an object with at least an id property.`}
         discrepancy={null}
@@ -189,7 +190,7 @@ export const ErrorStateWithObject = meta.story({
   render: () => {
     return (
       <Template
-        results={{ passes: [], incomplete: [], violations: [] }}
+        results={emptyResults}
         status="error"
         error={{ message: 'Test error object message' }}
         discrepancy={null}
@@ -203,7 +204,7 @@ export const Broken = meta.story({
   render: () => {
     return (
       <Template
-        results={{ passes: [], incomplete: [], violations: [] }}
+        results={emptyResults}
         status="component-test-error"
         error={null}
         discrepancy={null}

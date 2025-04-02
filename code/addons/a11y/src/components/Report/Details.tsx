@@ -5,7 +5,6 @@ import { Button, Link, SyntaxHighlighter } from 'storybook/internal/components';
 import { CheckIcon, CopyIcon, LocationIcon } from '@storybook/icons';
 
 import * as Tabs from '@radix-ui/react-tabs';
-import type { NodeResult, Result } from 'axe-core';
 import { styled } from 'storybook/theming';
 
 import type { EnhancedNodeResult, EnhancedResult, RuleType } from '../../types';

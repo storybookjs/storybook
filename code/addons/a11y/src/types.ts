@@ -1,6 +1,6 @@
 import type { AxeResults, ElementContext, NodeResult, Result, RunOptions, Spec } from 'axe-core';
 
-export type A11YReport = AxeResults | { error: Error };
+export type A11YReport = EnhancedResults | { error: Error };
 
 export interface A11yParameters {
   /**

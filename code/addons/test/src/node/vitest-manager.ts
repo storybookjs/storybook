@@ -283,6 +283,8 @@ export class VitestManager {
     );
   }
 
+  // This is an adaptation of Vitest's own implementation
+  // see https://github.com/vitest-dev/vitest/blob/14409088166152c920ce7fa4ad4c0ba57149b869/packages/vitest/src/node/specifications.ts#L171-L198
   private async getTestDependencies(spec: TestSpecification) {
     const deps = new Set<string>();
 
@@ -294,24 +296,20 @@ export class VitestManager {
 
       const mod = project.vite.moduleGraph.getModuleById(filepath);
       const transformed =
-        mod?.ssrTransformResult || (await project.vite.transformRequest(filepath));
-
+        mod?.ssrTransformResult || (await project.vite.transformRequest(filepath, { ssr: true }));
       if (!transformed) {
         return;
       }
-      const dependencies = [...(transformed.deps || []), ...(transformed.dynamicDeps || [])];
+
+      const dependencies = [...(transformed.deps ?? []), ...(transformed.dynamicDeps ?? [])];
+
       await Promise.all(
         dependencies.map(async (dep) => {
-          const idPath = await project.vite.pluginContainer.resolveId(dep, filepath, {
-            ssr: true,
-          });
-          const fsPath = idPath && !idPath.external && idPath.id.split('?')[0];
-          if (
-            fsPath &&
-            !fsPath.includes('node_modules') &&
-            !deps.has(fsPath) &&
-            existsSync(fsPath)
-          ) {
+          const fsPath = dep.startsWith('/@fs/')
+            ? dep.slice(process.platform === 'win32' ? 5 : 4)
+            : join(process.cwd(), dep);
+
+          if (!fsPath.includes('node_modules') && !deps.has(fsPath) && existsSync(fsPath)) {
             await addImports(project, fsPath);
           }
         })

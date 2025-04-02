@@ -21,6 +21,7 @@ export default {
   '@storybook/react-webpack5': '9.0.0-alpha.13',
   '@storybook/server-webpack5': '9.0.0-alpha.13',
   '@storybook/svelte-vite': '9.0.0-alpha.13',
+  '@storybook/sveltekit': '9.0.0-alpha.13',
   '@storybook/vue3-vite': '9.0.0-alpha.13',
   '@storybook/web-components-vite': '9.0.0-alpha.13',
   '@storybook/blocks': '9.0.0-alpha.13',

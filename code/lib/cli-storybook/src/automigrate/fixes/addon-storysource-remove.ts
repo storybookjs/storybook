@@ -49,6 +49,9 @@ export const addonStorysourceRemove: Fix<AddonStorysourceOptions> = {
       We've detected that you have ${picocolors.yellow('@storybook/addon-storysource')} installed.
       
       This package has been removed in Storybook 9.0. We'll remove it from your configuration and dependencies.
+
+      For more information, see the migration guide:
+      https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#migration-from-storybookaddon-storysource-to-code-panel
     `;
   },
 

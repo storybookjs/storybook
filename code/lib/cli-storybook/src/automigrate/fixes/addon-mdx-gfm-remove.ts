@@ -3,7 +3,6 @@ import { getAddonNames } from 'storybook/internal/common';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
-import { updateMainConfig } from '../helpers/mainConfigFile';
 import type { Fix } from '../types';
 
 interface AddonMdxGfmOptions {
@@ -25,12 +24,8 @@ export const addonMdxGfmRemove: Fix<AddonMdxGfmOptions> = {
     }
 
     try {
-      let hasMdxGfm = false;
-
-      await updateMainConfig({ mainConfigPath, dryRun: true }, () => {
-        const addonNames = getAddonNames(mainConfig);
-        hasMdxGfm = addonNames.includes('@storybook/addon-mdx-gfm');
-      });
+      const addonNames = getAddonNames(mainConfig);
+      const hasMdxGfm = addonNames.includes('@storybook/addon-mdx-gfm');
 
       if (!hasMdxGfm) {
         return null;

@@ -1,14 +1,11 @@
 import { ApplicationRef, NgModule } from '@angular/core';
-import { bootstrapApplication } from '@angular/platform-browser';
 import { BehaviorSubject, Subject } from 'rxjs';
 import { stringify } from 'telejson';
 
 import { ICollection, StoryFnAngularReturnType } from '../types';
 import { storyPropsProvider } from './StorybookProvider';
-import { queueBootstrapping } from './utils/BootstrapQueue';
 import { PropertyExtractor } from './utils/PropertyExtractor';
-import { buildComponent, getApplicationRef, initTestBed, resetTestBed } from './utils/TestBedComponentBuilder';
-import { computesTemplateFromComponent } from './ComputesTemplateFromComponent';
+import { TestBedComponentBuilder } from './utils/TestBedComponentBuilder';
 
 type StoryRenderInfo = {
   storyFnAngular: StoryFnAngularReturnType;
@@ -22,7 +19,6 @@ declare global {
 }
 
 const applicationRefs = new Map<HTMLElement, ApplicationRef>();
-
 /**
  * Attribute name for the story UID that may be written to the targetDOMNode.
  *
@@ -127,11 +123,16 @@ export abstract class AbstractRenderer {
       }
     }
 
-    initTestBed();
-    const application = await buildComponent(analyzedMetadata, component, componentSelector);
-    // has to bet let or var because const not working
-    const applicationRef = getApplicationRef();
-    applicationRef.bootstrap(application.componentRef.componentType);
+    const componentBuilder = new TestBedComponentBuilder();
+    const componentFixture = await componentBuilder
+      .setComponent(component)
+      .setSelector(componentSelector)
+      .setMetaData(analyzedMetadata)
+      .configureModule()
+      .compileComponents();
+
+    const applicationRef = componentBuilder.getApplicationRef();
+    applicationRef.bootstrap(componentFixture.componentRef.componentType);
 
     applicationRefs.set(targetDOMNode, applicationRef);
   }

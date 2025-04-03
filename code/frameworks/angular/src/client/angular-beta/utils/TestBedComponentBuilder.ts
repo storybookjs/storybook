@@ -1,49 +1,78 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, getTestBed, TestBed } from '@angular/core/testing';
 import {
   BrowserDynamicTestingModule,
   platformBrowserDynamicTesting,
 } from '@angular/platform-browser-dynamic/testing';
-import { ApplicationRef, Provider, Type } from '@angular/core';
+import { ApplicationRef, Type } from '@angular/core';
 import { PropertyExtractor } from './PropertyExtractor';
 
-export const initTestBed = () => {
-  if (TestBed.platform == null) {
-    TestBed.initTestEnvironment(BrowserDynamicTestingModule, platformBrowserDynamicTesting());
-  } else {
-    resetTestBed();
+export class TestBedComponentBuilder {
+  private testBedInstance: TestBed;
+
+  private component: Type<unknown> | undefined = undefined;
+
+  private imports: any[];
+
+  private declarations: any[];
+
+  private providers: any[];
+
+  private selector: string;
+
+  constructor() {
+    this.testBedInstance = new TestBed();
+    this.testBedInstance.initTestEnvironment(
+      BrowserDynamicTestingModule,
+      platformBrowserDynamicTesting()
+    );
   }
-};
 
-export const resetTestBed = () => {
-  try {
-    TestBed.resetTestingModule().resetTestEnvironment();
-  } catch (e) {
-    console.log('Failed to reset', e);
+  setComponent(storyComponent: Type<unknown> | undefined) {
+    this.component = storyComponent;
+    return this;
   }
-};
 
-export const buildComponent = async (
-  analyzedMetadata: PropertyExtractor,
-  storyComponent: Type<unknown> | undefined,
-  selector: string
-) => {
-  const { imports, declarations, providers } = analyzedMetadata;
-  await TestBed.configureTestingModule({
-    imports: imports,
-    declarations: declarations,
-    providers: providers,
-  })
-    .overrideComponent(storyComponent, {
-      set: {
-        providers: providers,
-        selector: selector,
-      },
-    })
-    .compileComponents();
+  setMetaData(analyzedMetadata: PropertyExtractor) {
+    const { imports, declarations, providers } = analyzedMetadata;
+    this.imports = imports;
+    this.declarations = declarations;
+    this.providers = providers;
+    return this;
+  }
 
-  return TestBed.createComponent(storyComponent);
-};
+  setSelector(selector: string) {
+    this.selector = selector;
+    return this;
+  }
 
-export const getApplicationRef = () => {
-  return TestBed.inject(ApplicationRef);
-};
+  configureModule() {
+    this.throwOnRequiredNullProperties();
+    this.testBedInstance
+      .configureTestingModule({
+        imports: this.imports,
+        declarations: this.declarations,
+        providers: this.providers,
+      })
+      .overrideComponent(this.component, {
+        set: {
+          providers: this.providers,
+          selector: this.selector,
+        },
+      });
+    return this;
+  }
+
+  async compileComponents() {
+    await this.testBedInstance.compileComponents();
+    return this.testBedInstance.createComponent(this.component);
+  }
+
+  getApplicationRef() {
+    return this.testBedInstance.inject(ApplicationRef);
+  }
+
+  private throwOnRequiredNullProperties() {
+    if (this.component == null || this.testBedInstance == null)
+      throw new Error("NullReference")
+  }
+}

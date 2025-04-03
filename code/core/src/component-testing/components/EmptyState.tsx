@@ -7,7 +7,7 @@ import { DocumentIcon } from '@storybook/icons';
 import { useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { DOCUMENTATION_LINK } from '../constants';
+import { DOCUMENTATION_PLAY_FUNCTION_LINK } from '../constants';
 
 const Links = styled.div(({ theme }) => ({
   display: 'flex',
@@ -15,17 +15,11 @@ const Links = styled.div(({ theme }) => ({
   gap: 25,
 }));
 
-const Divider = styled.div(({ theme }) => ({
-  width: 1,
-  height: 16,
-  backgroundColor: theme.appBorderColor,
-}));
-
 export const Empty = () => {
   const [isLoading, setIsLoading] = useState(true);
   const api = useStorybookApi();
   const docsUrl = api.getDocsUrl({
-    subpath: DOCUMENTATION_LINK,
+    subpath: DOCUMENTATION_PLAY_FUNCTION_LINK,
     versioned: true,
     renderer: true,
   });
@@ -46,21 +40,23 @@ export const Empty = () => {
   }
 
   return (
-    <EmptyTabContent
-      title="Component testing"
-      description={
-        <>
-          Component tests allow you to verify the functional aspects of UIs. Write a play function
-          for your story and you&apos;ll see it run here.
-        </>
-      }
-      footer={
-        <Links>
-          <Link href={docsUrl} target="_blank" withArrow>
-            <DocumentIcon /> Read docs
-          </Link>
-        </Links>
-      }
-    />
+    <div>
+      <EmptyTabContent
+        title="Component testing"
+        description={
+          <>
+            Component tests allow you to verify the functional aspects of UIs. Write a play function
+            for your story and you&apos;ll see it run here.
+          </>
+        }
+        footer={
+          <Links>
+            <Link href={docsUrl} target="_blank" withArrow>
+              <DocumentIcon /> Read docs
+            </Link>
+          </Links>
+        }
+      />
+    </div>
   );
 };

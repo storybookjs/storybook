@@ -1,12 +1,13 @@
 import type { ComponentProps, FC } from 'react';
 import React, { Fragment, useEffect, useState } from 'react';
 
-import { Button, Loader } from '@storybook/core/components';
-import { styled, useTheme } from '@storybook/core/theming';
+import { Button, Loader } from 'storybook/internal/components';
+
 import { global } from '@storybook/global';
 import { AlertIcon as AlertIconSvg, EyeCloseIcon, EyeIcon, HeartIcon } from '@storybook/icons';
 
-import { useStorybookApi, useStorybookState } from '@storybook/core/manager-api';
+import { useStorybookApi, useStorybookState } from 'storybook/manager-api';
+import { styled, useTheme } from 'storybook/theming';
 
 const Centered = styled.div({
   top: '50%',

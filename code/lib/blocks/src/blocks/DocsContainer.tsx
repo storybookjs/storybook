@@ -1,9 +1,10 @@
 import type { FC, PropsWithChildren } from 'react';
 import React, { useEffect } from 'react';
 
-import type { ThemeVars } from 'storybook/internal/theming';
-import { ThemeProvider, ensure as ensureTheme } from 'storybook/internal/theming';
 import type { Renderer } from 'storybook/internal/types';
+
+import type { ThemeVars } from 'storybook/theming';
+import { ThemeProvider, ensure as ensureTheme } from 'storybook/theming';
 
 import { DocsPageWrapper } from '../components';
 import { TableOfContents } from '../components/TableOfContents';
@@ -57,7 +58,15 @@ export const DocsContainer: FC<PropsWithChildren<DocsContainerProps>> = ({
       <SourceContainer channel={context.channel}>
         <ThemeProvider theme={ensureTheme(theme)}>
           <DocsPageWrapper
-            toc={toc ? <TableOfContents className="sbdocs sbdocs-toc--custom" {...toc} /> : null}
+            toc={
+              toc ? (
+                <TableOfContents
+                  className="sbdocs sbdocs-toc--custom"
+                  channel={context.channel}
+                  {...toc}
+                />
+              ) : null
+            }
           >
             {children}
           </DocsPageWrapper>

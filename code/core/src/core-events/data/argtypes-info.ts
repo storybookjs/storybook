@@ -1,4 +1,4 @@
-import type { ArgTypes } from '@storybook/csf';
+import type { ArgTypes } from '../../csf';
 
 export interface ArgTypesRequestPayload {
   storyId: string;

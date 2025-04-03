@@ -4,9 +4,10 @@ import React, { useContext } from 'react';
 import type { SupportedLanguage } from 'storybook/internal/components';
 import { Code, components, nameSpaceClassNames } from 'storybook/internal/components';
 import { NAVIGATE_URL } from 'storybook/internal/core-events';
-import { styled } from 'storybook/internal/theming';
 
 import { LinkIcon } from '@storybook/icons';
+
+import { styled } from 'storybook/theming';
 
 import { Source } from '../components';
 import type { DocsContextProps } from './DocsContext';
@@ -156,14 +157,17 @@ const OcticonHeaders = SUPPORTED_MDX_HEADERS.reduce(
   {}
 );
 
-const OcticonAnchor = styled.a(() => ({
-  float: 'left',
-  lineHeight: 'inherit',
-  paddingRight: '10px',
-  marginLeft: '-24px',
-  // Allow the theme's text color to override the default link color.
-  color: 'inherit',
-}));
+const OcticonAnchor = styled.a(
+  () =>
+    ({
+      float: 'left',
+      lineHeight: 'inherit',
+      paddingRight: '10px',
+      marginLeft: '-24px',
+      // Allow the theme's text color to override the default link color.
+      color: 'inherit',
+    }) as const
+);
 
 interface HeaderWithOcticonAnchorProps {
   as: string;

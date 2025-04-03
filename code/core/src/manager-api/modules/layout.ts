@@ -1,11 +1,11 @@
-import type { ThemeVars } from '@storybook/core/theming';
-import { create } from '@storybook/core/theming/create';
-import type { API_Layout, API_PanelPositions, API_UI } from '@storybook/core/types';
+import { SET_CONFIG } from 'storybook/internal/core-events';
+import type { API_Layout, API_PanelPositions, API_UI } from 'storybook/internal/types';
+
 import { global } from '@storybook/global';
 
-import { SET_CONFIG } from '@storybook/core/core-events';
-
 import { isEqual as deepEqual, pick, toMerged } from 'es-toolkit';
+import type { ThemeVars } from 'storybook/theming';
+import { create } from 'storybook/theming/create';
 
 import merge from '../lib/merge';
 import type { ModuleFn } from '../lib/types';
@@ -100,7 +100,7 @@ export const defaultLayoutState: SubState = {
     panelPosition: 'bottom',
     showTabs: true,
   },
-  selectedPanel: 'chromaui/addon-visual-tests/panel',
+  selectedPanel: undefined,
   theme: create(),
 };
 

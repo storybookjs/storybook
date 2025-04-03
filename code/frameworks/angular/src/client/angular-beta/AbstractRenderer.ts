@@ -1,4 +1,4 @@
-import { ApplicationRef, NgModule, enableProdMode } from '@angular/core';
+import { ApplicationRef, NgModule } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { BehaviorSubject, Subject } from 'rxjs';
 import { stringify } from 'telejson';
@@ -13,6 +13,12 @@ type StoryRenderInfo = {
   storyFnAngular: StoryFnAngularReturnType;
   moduleMetadataSnapshot: string;
 };
+
+declare global {
+  const STORYBOOK_ANGULAR_OPTIONS: {
+    experimentalZoneless: boolean;
+  };
+}
 
 const applicationRefs = new Map<HTMLElement, ApplicationRef>();
 
@@ -95,6 +101,7 @@ export abstract class AbstractRenderer {
     this.initAngularRootElement(targetDOMNode, targetSelector);
 
     const analyzedMetadata = new PropertyExtractor(storyFnAngular.moduleMetadata, component);
+    await analyzedMetadata.init();
 
     const storyUid = this.generateStoryUIdFromRawStoryUid(
       targetDOMNode.getAttribute(STORY_UID_ATTRIBUTE)
@@ -112,14 +119,25 @@ export abstract class AbstractRenderer {
       analyzedMetadata,
     });
 
+    const providers = [
+      storyPropsProvider(newStoryProps$),
+      ...analyzedMetadata.applicationProviders,
+      ...(storyFnAngular.applicationConfig?.providers ?? []),
+    ];
+
+    if (STORYBOOK_ANGULAR_OPTIONS?.experimentalZoneless) {
+      const { provideExperimentalZonelessChangeDetection } = await import('@angular/core');
+      if (!provideExperimentalZonelessChangeDetection) {
+        throw new Error('Experimental zoneless change detection requires Angular 18 or higher');
+      } else {
+        providers.unshift(provideExperimentalZonelessChangeDetection());
+      }
+    }
+
     const applicationRef = await queueBootstrapping(() => {
       return bootstrapApplication(application, {
         ...storyFnAngular.applicationConfig,
-        providers: [
-          storyPropsProvider(newStoryProps$),
-          ...analyzedMetadata.applicationProviders,
-          ...(storyFnAngular.applicationConfig?.providers ?? []),
-        ],
+        providers,
       });
     });
 
@@ -187,7 +205,7 @@ export abstract class AbstractRenderer {
 
     const currentStoryRender = {
       storyFnAngular,
-      moduleMetadataSnapshot: stringify(moduleMetadata, { allowFunction: false }),
+      moduleMetadataSnapshot: stringify(moduleMetadata, { maxDepth: 50 }),
     };
 
     this.previousStoryRenderInfo.set(targetDOMNode, currentStoryRender);

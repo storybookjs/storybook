@@ -1,7 +1,9 @@
-import type { ModuleExports, NormalizedProjectAnnotations } from '@storybook/core/types';
-import type { Renderer } from '@storybook/core/types';
+import type { ModuleExports, NormalizedProjectAnnotations } from 'storybook/internal/types';
+import type { Renderer } from 'storybook/internal/types';
+
 import { global } from '@storybook/global';
 
+import { getCoreAnnotations } from '../../..';
 import { combineParameters } from '../parameters';
 import { composeBeforeAllHooks } from './beforeAll';
 import { normalizeArrays } from './normalizeArrays';
@@ -40,8 +42,9 @@ export function getSingletonField<TFieldType = any>(
 }
 
 export function composeConfigs<TRenderer extends Renderer>(
-  moduleExportList: ModuleExports[]
+  input: ModuleExports[]
 ): NormalizedProjectAnnotations<TRenderer> {
+  const moduleExportList = [getCoreAnnotations(), ...input];
   const allArgTypeEnhancers = getArrayField(moduleExportList, 'argTypesEnhancers');
   const stepRunners = getField(moduleExportList, 'runStep');
   const beforeAllHooks = getArrayField(moduleExportList, 'beforeAll');
@@ -58,7 +61,6 @@ export function composeConfigs<TRenderer extends Renderer>(
       ...allArgTypeEnhancers.filter((e) => !e.secondPass),
       ...allArgTypeEnhancers.filter((e) => e.secondPass),
     ],
-    globals: getObjectField(moduleExportList, 'globals'),
     initialGlobals: getObjectField(moduleExportList, 'initialGlobals'),
     globalTypes: getObjectField(moduleExportList, 'globalTypes'),
     loaders: getArrayField(moduleExportList, 'loaders'),
@@ -67,7 +69,6 @@ export function composeConfigs<TRenderer extends Renderer>(
     experimental_afterEach: getArrayField(moduleExportList, 'experimental_afterEach'),
     render: getSingletonField(moduleExportList, 'render'),
     renderToCanvas: getSingletonField(moduleExportList, 'renderToCanvas'),
-    renderToDOM: getSingletonField(moduleExportList, 'renderToDOM'), // deprecated
     applyDecorators: getSingletonField(moduleExportList, 'applyDecorators'),
     runStep: composeStepRunners<TRenderer>(stepRunners),
     tags: getArrayField(moduleExportList, 'tags'),

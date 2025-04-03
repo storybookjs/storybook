@@ -19,9 +19,6 @@ async function run() {
       if (pkg.name === '@storybook/cli') {
         suffix = 'sb-cli';
       }
-      if (pkg.name === 'storybook') {
-        suffix = 'cli';
-      }
       return {
         ...pkg,
         suffix,
@@ -165,7 +162,7 @@ async function run() {
 
     const cwd = resolve(__dirname, '..', 'code', v.location);
     const sub = execaCommand(
-      `${command}${watchMode ? ' --watch' : ''}${prodMode ? ' --optimized' : ''}`,
+      `${command}${watchMode ? ' --watch' : ''}${prodMode ? ' --optimized' : ''} --reset`,
       {
         cwd,
         buffer: false,

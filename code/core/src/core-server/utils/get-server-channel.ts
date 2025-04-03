@@ -1,8 +1,10 @@
-import type { ChannelHandler } from '@storybook/core/channels';
-import { Channel } from '@storybook/core/channels';
+import type { ChannelHandler } from 'storybook/internal/channels';
+import { Channel, HEARTBEAT_INTERVAL } from 'storybook/internal/channels';
 
 import { isJSON, parse, stringify } from 'telejson';
 import WebSocket, { WebSocketServer } from 'ws';
+
+import { UniversalStore } from '../../shared/universal-store';
 
 type Server = NonNullable<NonNullable<ConstructorParameters<typeof WebSocketServer>[0]>['server']>;
 
@@ -30,12 +32,26 @@ export class ServerChannelTransport {
     this.socket.on('connection', (wss) => {
       wss.on('message', (raw) => {
         const data = raw.toString();
-        const event =
-          typeof data === 'string' && isJSON(data)
-            ? parse(data, { allowFunction: false, allowClass: false })
-            : data;
+        const event = typeof data === 'string' && isJSON(data) ? parse(data, {}) : data;
         this.handler?.(event);
       });
+    });
+
+    const interval = setInterval(() => {
+      this.send({ type: 'ping' });
+    }, HEARTBEAT_INTERVAL);
+
+    this.socket.on('close', function close() {
+      clearInterval(interval);
+    });
+
+    process.on('SIGTERM', () => {
+      this.socket.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.close(1001, 'Server is shutting down');
+        }
+      });
+      this.socket.close(() => process.exit(0));
     });
   }
 
@@ -44,7 +60,7 @@ export class ServerChannelTransport {
   }
 
   send(event: any) {
-    const data = stringify(event, { maxDepth: 15, allowFunction: false, allowClass: false });
+    const data = stringify(event, { maxDepth: 15 });
 
     Array.from(this.socket.clients)
       .filter((c) => c.readyState === WebSocket.OPEN)
@@ -55,7 +71,12 @@ export class ServerChannelTransport {
 export function getServerChannel(server: Server) {
   const transports = [new ServerChannelTransport(server)];
 
-  return new Channel({ transports, async: true });
+  const channel = new Channel({ transports, async: true });
+
+  // eslint-disable-next-line no-underscore-dangle
+  UniversalStore.__prepare(channel, UniversalStore.Environment.SERVER);
+
+  return channel;
 }
 
 // for backwards compatibility

@@ -18,11 +18,11 @@ export const WithLayout: Story = {
 ```
 
 ```js filename="Button.stories.js|jsx" renderer="common" language="js"
-import { Button } from './Button':
+import { Button } from './Button';
 
 export default {
   component: Button,
-}
+};
 
 export const WithLayout = {
   parameters: {

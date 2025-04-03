@@ -16,90 +16,94 @@ import { PropertyExtractor } from './PropertyExtractor';
 const TEST_TOKEN = new InjectionToken('testToken');
 const TestTokenProvider = { provide: TEST_TOKEN, useValue: 123 };
 const TestService = Injectable()(class {});
-const TestComponent1 = Component({})(class {});
-const TestComponent2 = Component({})(class {});
-const StandaloneTestComponent = Component({ standalone: true })(class {});
-const StandaloneTestDirective = Directive({ standalone: true })(class {});
-const MixedTestComponent1 = Component({ standalone: true })(
-  class extends StandaloneTestComponent {}
-);
-const MixedTestComponent2 = Component({})(class extends MixedTestComponent1 {});
-const MixedTestComponent3 = Component({ standalone: true })(class extends MixedTestComponent2 {});
+const TestComponent1 = Component({ standalone: false })(class {});
+const TestComponent2 = Component({ standalone: false })(class {});
+const StandaloneTestComponent = Component({})(class {});
+const StandaloneTestDirective = Directive({})(class {});
+const MixedTestComponent1 = Component({})(class extends StandaloneTestComponent {});
+const MixedTestComponent2 = Component({ standalone: false })(class extends MixedTestComponent1 {});
+const MixedTestComponent3 = Component({})(class extends MixedTestComponent2 {});
 const TestModuleWithDeclarations = NgModule({ declarations: [TestComponent1] })(class {});
 const TestModuleWithImportsAndProviders = NgModule({
   imports: [TestModuleWithDeclarations],
   providers: [TestTokenProvider],
 })(class {});
 
-const analyzeMetadata = (metadata: NgModuleMetadata, component?: any) => {
-  return new PropertyExtractor(metadata, component);
+const analyzeMetadata = async (metadata: NgModuleMetadata, component?: any) => {
+  const propertyExtractor = new PropertyExtractor(metadata, component);
+  await propertyExtractor.init();
+  return propertyExtractor;
 };
-const extractImports = (metadata: NgModuleMetadata, component?: any) => {
-  const { imports } = new PropertyExtractor(metadata, component);
-  return imports;
+const extractImports = async (metadata: NgModuleMetadata, component?: any) => {
+  const propertyExtractor = new PropertyExtractor(metadata, component);
+  await propertyExtractor.init();
+  return propertyExtractor.imports;
 };
-const extractDeclarations = (metadata: NgModuleMetadata, component?: any) => {
-  const { declarations } = new PropertyExtractor(metadata, component);
-  return declarations;
+const extractDeclarations = async (metadata: NgModuleMetadata, component?: any) => {
+  const propertyExtractor = new PropertyExtractor(metadata, component);
+  await propertyExtractor.init();
+  return propertyExtractor.declarations;
 };
-const extractProviders = (metadata: NgModuleMetadata, component?: any) => {
-  const { providers } = new PropertyExtractor(metadata, component);
-  return providers;
+const extractProviders = async (metadata: NgModuleMetadata, component?: any) => {
+  const propertyExtractor = new PropertyExtractor(metadata, component);
+  await propertyExtractor.init();
+  return propertyExtractor.providers;
 };
-const extractApplicationProviders = (metadata: NgModuleMetadata, component?: any) => {
-  const { applicationProviders } = new PropertyExtractor(metadata, component);
-  return applicationProviders;
+const extractApplicationProviders = async (metadata: NgModuleMetadata, component?: any) => {
+  const propertyExtractor = new PropertyExtractor(metadata, component);
+  await propertyExtractor.init();
+  return propertyExtractor.applicationProviders;
 };
 
 describe('PropertyExtractor', () => {
   vi.spyOn(console, 'warn').mockImplementation(() => {});
 
   describe('analyzeMetadata', () => {
-    it('should remove BrowserModule', () => {
+    it('should remove BrowserModule', async () => {
       const metadata = {
         imports: [BrowserModule],
       };
-      const { imports, providers, applicationProviders } = analyzeMetadata(metadata);
+      const { imports, providers, applicationProviders } = await analyzeMetadata(metadata);
       expect(imports.flat(Number.MAX_VALUE)).toEqual([CommonModule]);
       expect(providers.flat(Number.MAX_VALUE)).toEqual([]);
       expect(applicationProviders.flat(Number.MAX_VALUE)).toEqual([]);
     });
 
-    it('should remove BrowserAnimationsModule and use its providers instead', () => {
+    it('should remove BrowserAnimationsModule and use its providers instead', async () => {
       const metadata = {
         imports: [BrowserAnimationsModule],
       };
-      const { imports, providers, applicationProviders } = analyzeMetadata(metadata);
+      const { imports, providers, applicationProviders } = await analyzeMetadata(metadata);
       expect(imports.flat(Number.MAX_VALUE)).toEqual([CommonModule]);
       expect(providers.flat(Number.MAX_VALUE)).toEqual([]);
       expect(applicationProviders.flat(Number.MAX_VALUE)).toEqual(provideAnimations());
     });
 
-    it('should remove NoopAnimationsModule and use its providers instead', () => {
+    it('should remove NoopAnimationsModule and use its providers instead', async () => {
       const metadata = {
         imports: [NoopAnimationsModule],
       };
-      const { imports, providers, applicationProviders } = analyzeMetadata(metadata);
+      const { imports, providers, applicationProviders } = await analyzeMetadata(metadata);
       expect(imports.flat(Number.MAX_VALUE)).toEqual([CommonModule]);
       expect(providers.flat(Number.MAX_VALUE)).toEqual([]);
       expect(applicationProviders.flat(Number.MAX_VALUE)).toEqual(provideNoopAnimations());
     });
 
-    it('should remove Browser/Animations modules recursively', () => {
+    it('should remove Browser/Animations modules recursively', async () => {
       const metadata = {
         imports: [BrowserAnimationsModule, BrowserModule],
       };
-      const { imports, providers, applicationProviders } = analyzeMetadata(metadata);
+      const { imports, providers, applicationProviders } = await analyzeMetadata(metadata);
       expect(imports.flat(Number.MAX_VALUE)).toEqual([CommonModule]);
       expect(providers.flat(Number.MAX_VALUE)).toEqual([]);
       expect(applicationProviders.flat(Number.MAX_VALUE)).toEqual(provideAnimations());
     });
 
-    it('should not destructure Angular official module', () => {
+    it('should not destructure Angular official module', async () => {
       const metadata = {
         imports: [WithOfficialModule],
       };
-      const { imports, providers, applicationProviders } = analyzeMetadata(metadata);
+      const { imports, providers, applicationProviders } = await analyzeMetadata(metadata);
       expect(imports.flat(Number.MAX_VALUE)).toEqual([CommonModule, WithOfficialModule]);
       expect(providers.flat(Number.MAX_VALUE)).toEqual([]);
       expect(applicationProviders.flat(Number.MAX_VALUE)).toEqual([]);
@@ -107,13 +111,13 @@ describe('PropertyExtractor', () => {
   });
 
   describe('extractImports', () => {
-    it('should return Angular official modules', () => {
-      const imports = extractImports({ imports: [TestModuleWithImportsAndProviders] });
+    it('should return Angular official modules', async () => {
+      const imports = await extractImports({ imports: [TestModuleWithImportsAndProviders] });
       expect(imports).toEqual([CommonModule, TestModuleWithImportsAndProviders]);
     });
 
-    it('should return standalone components', () => {
-      const imports = extractImports(
+    it('should return standalone components', async () => {
+      const imports = await extractImports(
         {
           imports: [TestModuleWithImportsAndProviders],
         },
@@ -126,8 +130,8 @@ describe('PropertyExtractor', () => {
       ]);
     });
 
-    it('should return standalone directives', () => {
-      const imports = extractImports(
+    it('should return standalone directives', async () => {
+      const imports = await extractImports(
         {
           imports: [TestModuleWithImportsAndProviders],
         },
@@ -142,8 +146,11 @@ describe('PropertyExtractor', () => {
   });
 
   describe('extractDeclarations', () => {
-    it('should return an array of declarations that contains `storyComponent`', () => {
-      const declarations = extractDeclarations({ declarations: [TestComponent1] }, TestComponent2);
+    it('should return an array of declarations that contains `storyComponent`', async () => {
+      const declarations = await extractDeclarations(
+        { declarations: [TestComponent1] },
+        TestComponent2
+      );
       expect(declarations).toEqual([TestComponent1, TestComponent2]);
     });
   });
@@ -176,15 +183,15 @@ describe('PropertyExtractor', () => {
   });
 
   describe('extractProviders', () => {
-    it('should return an array of providers', () => {
-      const providers = extractProviders({
+    it('should return an array of providers', async () => {
+      const providers = await extractProviders({
         providers: [TestService],
       });
       expect(providers).toEqual([TestService]);
     });
 
-    it('should return an array of singletons extracted', () => {
-      const singeltons = extractApplicationProviders({
+    it('should return an array of singletons extracted', async () => {
+      const singeltons = await extractApplicationProviders({
         imports: [BrowserAnimationsModule],
       });
 

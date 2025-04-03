@@ -1,9 +1,20 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import React from 'react';
+
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { TestStatusIcon } from './TestStatusIcon';
 
 const meta = {
   component: TestStatusIcon,
+  args: {
+    isRunning: false,
+  },
+  render: (args) => (
+    <div style={{ display: 'flex', gap: 12 }}>
+      <TestStatusIcon {...args} />
+      <TestStatusIcon {...args} isRunning />
+    </div>
+  ),
 } satisfies Meta<typeof TestStatusIcon>;
 
 export default meta;
@@ -13,12 +24,6 @@ type Story = StoryObj<typeof meta>;
 export const Unknown: Story = {
   args: {
     status: 'unknown',
-  },
-};
-
-export const Pending: Story = {
-  args: {
-    status: 'pending',
   },
 };
 

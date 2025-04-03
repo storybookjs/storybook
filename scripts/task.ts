@@ -40,7 +40,7 @@ import { createOptions, getCommand, getOptionsOrPrompt } from './utils/options';
 
 const sandboxDir = process.env.SANDBOX_ROOT || SANDBOX_DIRECTORY;
 
-export const extraAddons = ['@storybook/addon-a11y', '@storybook/addon-storysource'];
+export const extraAddons = ['@storybook/addon-a11y'];
 
 export type Path = string;
 export type TemplateDetails = {
@@ -157,6 +157,11 @@ export const options = createOptions({
   dryRun: {
     type: 'boolean',
     description: "Don't execute commands, just list them (dry run)?",
+    promptType: false,
+  },
+  skipCache: {
+    type: 'boolean',
+    description: 'Skip NX remote cache?',
     promptType: false,
   },
   debug: {
@@ -497,9 +502,11 @@ async function run() {
         }
       } catch (err) {
         invariant(err instanceof Error);
-        logger.error(
-          `Error running task ${picocolors.bold(getTaskKey(task))} for ${picocolors.bgCyan(picocolors.white(details.key))}:`
-        );
+        let errorTitle = `Error running task ${picocolors.bold(getTaskKey(task))}`;
+        if (details.key) {
+          errorTitle += ` for ${picocolors.bgCyan(picocolors.white(details.key))}:`;
+        }
+        logger.error(errorTitle);
         logger.error(JSON.stringify(err, null, 2));
 
         if (process.env.CI) {

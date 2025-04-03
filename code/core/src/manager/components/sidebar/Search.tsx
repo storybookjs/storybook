@@ -1,18 +1,18 @@
 import React, { type ReactNode, useCallback, useRef, useState } from 'react';
 
-import { IconButton } from '@storybook/core/components';
-import { styled } from '@storybook/core/theming';
+import { IconButton } from 'storybook/internal/components';
+
 import { global } from '@storybook/global';
 import { CloseIcon, SearchIcon } from '@storybook/icons';
-
-import { shortcutToHumanString, useStorybookApi } from '@storybook/core/manager-api';
 
 import type { DownshiftState, StateChangeOptions } from 'downshift';
 import Downshift from 'downshift';
 import type { FuseOptions } from 'fuse.js';
 import Fuse from 'fuse.js';
+import { shortcutToHumanString, useStorybookApi } from 'storybook/manager-api';
+import { styled } from 'storybook/theming';
 
-import { getGroupStatus, getHighestStatus } from '../../utils/status';
+import { getGroupStatus, getMostCriticalStatusValue } from '../../utils/status';
 import { scrollIntoView, searchItem } from '../../utils/tree';
 import { useLayout } from '../layout/LayoutProvider';
 import { DEFAULT_REF_ID } from './Sidebar';
@@ -153,7 +153,7 @@ const Actions = styled.div({
 
 const FocusContainer = styled.div({ outline: 0 });
 
-export const Search = React.memo<{
+export type SearchProps = {
   children: SearchChildrenFn;
   dataset: CombinedDataset;
   enableShortcuts?: boolean;
@@ -161,7 +161,9 @@ export const Search = React.memo<{
   initialQuery?: string;
   searchBarContent?: ReactNode;
   searchFieldContent?: ReactNode;
-}>(function Search({
+};
+
+export const Search = React.memo<SearchProps>(function Search({
   children,
   dataset,
   enableShortcuts = true,
@@ -177,20 +179,19 @@ export const Search = React.memo<{
   const searchShortcut = api ? shortcutToHumanString(api.getShortcutKeys().search) : '/';
 
   const makeFuse = useCallback(() => {
-    const list = dataset.entries.reduce<SearchItem[]>((acc, [refId, { index, status }]) => {
-      // @ts-expect-error (non strict)
-      const groupStatus = getGroupStatus(index || {}, status);
+    const list = dataset.entries.reduce<SearchItem[]>((acc, [refId, { index, allStatuses }]) => {
+      const groupStatus = getGroupStatus(index || {}, allStatuses ?? {});
 
       if (index) {
         acc.push(
           ...Object.values(index).map((item) => {
-            const statusValue =
-              status && status[item.id]
-                ? getHighestStatus(Object.values(status[item.id] || {}).map((s) => s.status))
-                : null;
+            const storyStatuses = allStatuses?.[item.id];
+            const mostCriticalStatusValue = storyStatuses
+              ? getMostCriticalStatusValue(Object.values(storyStatuses).map((s) => s.value))
+              : null;
             return {
               ...searchItem(item, dataset.hash[refId]),
-              status: statusValue || groupStatus[item.id] || null,
+              status: mostCriticalStatusValue ?? groupStatus[item.id] ?? null,
             };
           })
         );

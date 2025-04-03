@@ -1,10 +1,9 @@
 import type { FC } from 'react';
 import React, { useRef } from 'react';
 
-import { styled } from '@storybook/core/theming';
-
 import { Transition } from 'react-transition-group';
 import type { TransitionStatus } from 'react-transition-group/Transition';
+import { styled } from 'storybook/theming';
 
 import { MOBILE_TRANSITION_DURATION } from '../../../constants';
 import { useLayout } from '../../layout/LayoutProvider';

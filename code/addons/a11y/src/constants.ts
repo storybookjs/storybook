@@ -14,4 +14,5 @@ export const TEST_PROVIDER_ID = 'storybook/addon-a11y/test-provider';
 
 export const EVENTS = { RESULT, REQUEST, RUNNING, ERROR, MANUAL };
 
-export const A11Y_TEST_TAG = 'a11y-test';
+export const STATUS_TYPE_ID_COMPONENT_TEST = 'storybook/component-test';
+export const STATUS_TYPE_ID_A11Y = 'storybook/a11y';

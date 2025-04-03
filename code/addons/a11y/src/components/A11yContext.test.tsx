@@ -9,14 +9,14 @@ import {
   STORY_RENDER_PHASE_CHANGED,
   type StoryFinishedPayload,
 } from 'storybook/internal/core-events';
-import * as api from 'storybook/internal/manager-api';
 
 import type { AxeResults } from 'axe-core';
+import * as api from 'storybook/manager-api';
 
-import { EVENTS, TEST_PROVIDER_ID } from '../constants';
+import { EVENTS } from '../constants';
 import { A11yContextProvider, useA11yContext } from './A11yContext';
 
-vi.mock('storybook/internal/manager-api');
+vi.mock('storybook/manager-api');
 const mockedApi = vi.mocked(api);
 
 const storyId = 'button--primary';
@@ -63,20 +63,32 @@ describe('A11yContext', () => {
     cleanup();
   });
 
+  const onAllStatusChange = vi.fn();
+  const getAll = vi.fn();
+  const set = vi.fn();
+  const onSelect = vi.fn();
+  const unset = vi.fn();
+
   const getCurrentStoryData = vi.fn();
   const getParameters = vi.fn();
-  const getCurrentStoryStatus = vi.fn();
+  const getQueryParam = vi.fn();
 
   beforeEach(() => {
+    mockedApi.experimental_getStatusStore.mockReturnValue({
+      onAllStatusChange,
+      getAll,
+      set,
+      onSelect,
+      unset,
+    } as any);
     mockedApi.useAddonState.mockImplementation((_, defaultState) => React.useState(defaultState));
     mockedApi.useChannel.mockReturnValue(vi.fn());
     getCurrentStoryData.mockReturnValue({ id: storyId, type: 'story' });
     getParameters.mockReturnValue({});
-    getCurrentStoryStatus.mockReturnValue({ [TEST_PROVIDER_ID]: { status: 'success' } });
     mockedApi.useStorybookApi.mockReturnValue({
       getCurrentStoryData,
       getParameters,
-      getCurrentStoryStatus,
+      getQueryParam,
     } as any);
     mockedApi.useParameter.mockReturnValue({ manual: false });
     mockedApi.useStorybookState.mockReturnValue({ storyId } as any);
@@ -107,13 +119,13 @@ describe('A11yContext', () => {
       const { results } = useA11yContext();
       return (
         <>
-          {!!results.passes.length && (
+          {!!results?.passes.length && (
             <div data-testid="anyPassesResults">{JSON.stringify(results.passes)}</div>
           )}
-          {!!results.incomplete.length && (
+          {!!results?.incomplete.length && (
             <div data-testid="anyIncompleteResults">{JSON.stringify(results.incomplete)}</div>
           )}
-          {!!results.violations.length && (
+          {!!results?.violations.length && (
             <div data-testid="anyViolationsResults">{JSON.stringify(results.violations)}</div>
           )}
         </>
@@ -154,27 +166,9 @@ describe('A11yContext', () => {
     );
   });
 
-  it('should set discrepancy to cliFailedButModeManual when in manual mode', () => {
-    mockedApi.useParameter.mockReturnValue({ manual: true });
-    getCurrentStoryStatus.mockReturnValue({ [TEST_PROVIDER_ID]: { status: 'error' } });
-
-    const Component = () => {
-      const { discrepancy } = useA11yContext();
-      return <div data-testid="discrepancy">{discrepancy}</div>;
-    };
-
-    const { getByTestId } = render(
-      <A11yContextProvider>
-        <Component />
-      </A11yContextProvider>
-    );
-
-    expect(getByTestId('discrepancy').textContent).toBe('cliFailedButModeManual');
-  });
-
-  it('should set discrepancy to cliFailedButModeManual when in manual mode (set via globals', () => {
+  it('should set discrepancy to cliFailedButModeManual when in manual mode (set via globals)', () => {
     mockedApi.useGlobals.mockReturnValue([{ a11y: { manual: true } }] as any);
-    getCurrentStoryStatus.mockReturnValue({ [TEST_PROVIDER_ID]: { status: 'error' } });
+    mockedApi.experimental_useStatusStore.mockReturnValue('status-value:error');
 
     const Component = () => {
       const { discrepancy } = useA11yContext();
@@ -192,7 +186,7 @@ describe('A11yContext', () => {
 
   it('should set discrepancy to cliPassedBrowserFailed', () => {
     mockedApi.useParameter.mockReturnValue({ manual: true });
-    getCurrentStoryStatus.mockReturnValue({ [TEST_PROVIDER_ID]: { status: 'success' } });
+    mockedApi.experimental_useStatusStore.mockReturnValue('status-value:success');
 
     const Component = () => {
       const { discrepancy } = useA11yContext();
@@ -250,35 +244,6 @@ describe('A11yContext', () => {
     act(() => useChannelArgs[STORY_RENDER_PHASE_CHANGED](storyRenderPhaseChangedPayload));
 
     expect(queryByTestId('status')).toHaveTextContent('running');
-  });
-
-  it('should handle STORY_RENDER_PHASE_CHANGED event correctly when in manual mode', () => {
-    mockedApi.useParameter.mockReturnValue({ manual: true });
-
-    const emit = vi.fn();
-    mockedApi.useChannel.mockReturnValue(emit);
-
-    const Component = () => {
-      const { status } = useA11yContext();
-      return <div data-testid="status">{status}</div>;
-    };
-
-    const { queryByTestId } = render(
-      <A11yContextProvider>
-        <Component />
-      </A11yContextProvider>
-    );
-
-    expect(queryByTestId('status')).toHaveTextContent('manual');
-
-    const useChannelArgs = mockedApi.useChannel.mock.calls[0][0];
-    const storyRenderPhaseChangedPayload = {
-      newPhase: 'loading',
-    };
-
-    act(() => useChannelArgs[STORY_RENDER_PHASE_CHANGED](storyRenderPhaseChangedPayload));
-
-    expect(queryByTestId('status')).toHaveTextContent('manual');
   });
 
   it('should handle STORY_RENDER_PHASE_CHANGED event correctly when in manual mode (set via globals)', () => {
@@ -369,66 +334,5 @@ describe('A11yContext', () => {
     });
 
     expect(emit).toHaveBeenCalledWith(EVENTS.MANUAL, storyId, expect.any(Object));
-  });
-
-  it('should toggle highlight correctly', () => {
-    const Component = () => {
-      const { toggleHighlight, highlighted } = useA11yContext();
-      return (
-        <>
-          <button onClick={() => toggleHighlight(['element1'], true)} data-testid="highlightButton">
-            Highlight
-          </button>
-          <div data-testid="highlightedElements">{highlighted.join(',')}</div>
-        </>
-      );
-    };
-
-    const { getByTestId } = render(
-      <A11yContextProvider>
-        <Component />
-      </A11yContextProvider>
-    );
-
-    act(() => {
-      getByTestId('highlightButton').click();
-    });
-
-    expect(getByTestId('highlightedElements').textContent).toBe('element1');
-  });
-
-  it('should clear highlights correctly', () => {
-    const Component = () => {
-      const { toggleHighlight, clearHighlights, highlighted } = useA11yContext();
-      return (
-        <>
-          <button onClick={() => toggleHighlight(['element1'], true)} data-testid="highlightButton">
-            Highlight
-          </button>
-          <button onClick={clearHighlights} data-testid="clearHighlightsButton">
-            Clear Highlights
-          </button>
-          <div data-testid="highlightedElements">{highlighted.join(',')}</div>
-        </>
-      );
-    };
-
-    const { getByTestId } = render(
-      <A11yContextProvider>
-        <Component />
-      </A11yContextProvider>
-    );
-
-    act(() => {
-      getByTestId('highlightButton').click();
-    });
-
-    expect(getByTestId('highlightedElements').textContent).toBe('element1');
-
-    act(() => {
-      getByTestId('clearHighlightsButton').click();
-    });
-
-    expect(getByTestId('highlightedElements').textContent).toBe('');
   });
 });

@@ -3,6 +3,7 @@ import React from 'react';
 
 import type { SupportedLanguage, SyntaxHighlighterProps } from 'storybook/internal/components';
 import { SyntaxHighlighter } from 'storybook/internal/components';
+
 import {
   ThemeProvider,
   convert,
@@ -10,7 +11,7 @@ import {
   styled,
   themes,
   useTheme,
-} from 'storybook/internal/theming';
+} from 'storybook/theming';
 
 import { EmptyBlock } from './EmptyBlock';
 
@@ -40,7 +41,7 @@ export interface SourceCodeProps {
   language?: SupportedLanguage;
   /** Use this to override the content of the source block. */
   code?: string;
-  /** The (prettier) formatter the syntax highlighter uses for your story’s code. */
+  /** The formatter the syntax highlighter uses for your story’s code. */
   format?: ComponentProps<typeof SyntaxHighlighter>['format'];
   /** Display the source snippet in a dark mode. */
   dark?: boolean;
@@ -89,7 +90,7 @@ const Source: FunctionComponent<SourceProps> = ({
   language,
   code,
   dark,
-  format = false,
+  format = true,
   ...rest
 }) => {
   const { typography } = useTheme();

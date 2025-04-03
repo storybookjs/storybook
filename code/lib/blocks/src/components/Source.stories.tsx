@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { Source, SourceError } from './Source';
 
@@ -59,7 +59,6 @@ export const GraphQLWithFormatting: Story = {
         }
 `,
     language: 'graphql',
-    format: true,
   },
 };
 

@@ -20,10 +20,10 @@ import { Button } from './Button';
 
 export default {
   component: Button,
-}
+};
 
 export const Text = {
-  args: {...},
+  args: {/* ... */},
 };
 ```
 
@@ -66,10 +66,10 @@ import { Button } from './Button';
 
 export default {
   component: Button,
-}
+};
 
 export const Text = {
-  args: {...},
+  args: {/* ... */},
 };
 ```
 
@@ -115,7 +115,7 @@ export default {
 };
 
 export const Text = {
-  args: {...},
+  args: {/* ... */},
 };
 ```
 
@@ -132,7 +132,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Text: Story = {
-  args: {...},
+  args: {/* ... */},
 };
 ```
 
@@ -149,7 +149,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Text: Story = {
-  args: {...},
+  args: {/* ... */},
 };
 ```
 
@@ -219,7 +219,7 @@ export default {
 };
 
 export const Text = {
-  args: {...},
+  args: {/* ... */},
 };
 ```
 

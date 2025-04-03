@@ -34,6 +34,8 @@ const meta = {
                   </div>`,
     });
   },
+  // this story can't be reliably tested because the (inherited) args changes results in renderPhases disrupting test runs
+  tags: ['!vitest', '!test'],
 } satisfies Meta<typeof Reactivity>;
 
 export default meta;

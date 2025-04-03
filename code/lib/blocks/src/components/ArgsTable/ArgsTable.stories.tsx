@@ -1,10 +1,9 @@
 import React from 'react';
 
-import { styled } from 'storybook/internal/theming';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import type { Meta, StoryObj } from '@storybook/react';
-
-import { action } from '@storybook/addon-actions';
+import { action } from 'storybook/actions';
+import { styled } from 'storybook/theming';
 
 import * as ArgRow from './ArgRow.stories';
 import { ArgsTable, ArgsTableError } from './ArgsTable';
@@ -146,7 +145,7 @@ export const InAddonPanelNoControls = {
   args: {
     ...InAddonPanel.args,
     rows: Object.fromEntries(
-      Object.entries(InAddonPanel.args.rows).map(([k, v]) => [k, { ...v, control: null }])
+      Object.entries(InAddonPanel.args.rows).map(([k, v]) => [k, { ...v, control: null as any }])
     ),
   },
 };

@@ -8,17 +8,16 @@ import * as fs from 'fs-extra';
 // eslint-disable-next-line depend/ban-dependencies
 import { glob } from 'glob';
 import slash from 'slash';
-import { dedent } from 'ts-dedent';
 import type { Options } from 'tsup';
 import { build } from 'tsup';
 import type { PackageJson } from 'type-fest';
 
 import { exec } from '../utils/exec';
-import { esbuild } from './tools';
+import { dedent, esbuild, nodeInternals } from './tools';
 
 /* TYPES */
 
-type Formats = 'esm' | 'cjs';
+type Formats = 'esm' | 'cjs' | 'node-esm';
 type BundlerConfig = {
   entries: string[];
   externals: string[];
@@ -27,6 +26,7 @@ type BundlerConfig = {
   pre: string;
   post: string;
   formats: Formats[];
+  types?: boolean;
 };
 type PackageJsonWithBundlerConfig = PackageJson & {
   bundler: BundlerConfig;
@@ -50,6 +50,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
       pre,
       post,
       formats = ['esm', 'cjs'],
+      types = true,
     },
   } = (await fs.readJson(join(cwd, 'package.json'))) as PackageJsonWithBundlerConfig;
 
@@ -90,6 +91,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
     formats,
     entries,
     optimized,
+    types,
   });
 
   /* preset files are always CJS only.
@@ -122,6 +124,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
           // Then, the variable can be set accordingly in dev/build mode
           'process.env.NODE_ENV': 'process.env.NODE_ENV',
         },
+
         esbuildPlugins:
           platform === 'node'
             ? []
@@ -136,6 +139,48 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
         esbuildOptions: (c) => {
           c.conditions = ['module'];
           c.platform = platform || 'browser';
+          Object.assign(c, getESBuildOptions(optimized));
+        },
+      })
+    );
+  }
+  if (formats.includes('node-esm')) {
+    tasks.push(
+      build({
+        noExternal,
+        silent: true,
+        treeshake: true,
+        entry: nonPresetEntries,
+        shims: true,
+        watch,
+        outDir: OUT_DIR,
+        sourcemap: false,
+        metafile: true,
+        format: ['esm'],
+        target: ['node18'],
+        clean: false,
+        ...(dtsBuild === 'node-esm' ? dtsConfig : {}),
+        platform: 'neutral',
+        define: {
+          // tsup replaces 'process.env.NODE_ENV' during build time. We don't want to do this. Instead, the builders (vite/webpack) should replace it
+          // Then, the variable can be set accordingly in dev/build mode
+          'process.env.NODE_ENV': 'process.env.NODE_ENV',
+        },
+
+        banner: {
+          js: dedent`
+            import ESM_COMPAT_Module1 from "node:module";
+            import { fileURLToPath as ESM_COMPAT_fileURLToPath1 } from 'node:url';
+            import { dirname as ESM_COMPAT_dirname1 } from 'node:path';
+            const require = ESM_COMPAT_Module1.createRequire(import.meta.url);
+          `,
+        },
+
+        external: [...externals, ...nodeInternals],
+
+        esbuildOptions: (c) => {
+          c.conditions = ['node', 'module'];
+          c.platform = 'neutral';
           Object.assign(c, getESBuildOptions(optimized));
         },
       })
@@ -203,15 +248,17 @@ async function getDTSConfigs({
   formats,
   entries,
   optimized,
+  types,
 }: {
   formats: Formats[];
   entries: string[];
   optimized: boolean;
+  types: boolean;
 }) {
   const tsConfigPath = join(cwd, 'tsconfig.json');
   const tsConfigExists = await fs.pathExists(tsConfigPath);
 
-  const dtsBuild = optimized && formats[0] && tsConfigExists ? formats[0] : undefined;
+  const dtsBuild = types && optimized && formats[0] && tsConfigExists ? formats[0] : undefined;
 
   const dtsConfig: DtsConfigSection = {
     tsconfig: tsConfigPath,
@@ -267,7 +314,7 @@ async function saveMetafiles({
 
   await Promise.all(
     formats.map(async (format) => {
-      const fromFilename = `metafile-${format}.json`;
+      const fromFilename = format === 'node-esm' ? `metafile-esm.json` : `metafile-${format}.json`;
       const currentMetafile = await fs.readJson(join(OUT_DIR, fromFilename));
       metafile.inputs = { ...metafile.inputs, ...currentMetafile.inputs };
       metafile.outputs = { ...metafile.outputs, ...currentMetafile.outputs };

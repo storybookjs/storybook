@@ -3,21 +3,25 @@
 /* eslint-disable no-underscore-dangle */
 import { type RunnerTask, type TaskMeta, type TestContext } from 'vitest';
 
-import { type Report, composeStory } from 'storybook/internal/preview-api';
 import type { ComponentAnnotations, ComposedStoryFn } from 'storybook/internal/types';
 
 import { server } from '@vitest/browser/context';
+import {
+  type Report,
+  composeConfigs,
+  composeStory,
+  getCsfFactoryAnnotations,
+} from 'storybook/preview-api';
 
 import { setViewport } from './viewports';
 
 declare module '@vitest/browser/context' {
   interface BrowserCommands {
     getInitialGlobals: () => Promise<Record<string, any>>;
-    getTags: () => Promise<string[] | undefined>;
   }
 }
 
-const { getInitialGlobals, getTags } = server.commands;
+const { getInitialGlobals } = server.commands;
 
 export const testStory = (
   exportName: string,
@@ -26,13 +30,15 @@ export const testStory = (
   skipTags: string[]
 ) => {
   return async (context: TestContext & { story: ComposedStoryFn }) => {
+    const annotations = getCsfFactoryAnnotations(story, meta);
     const composedStory = composeStory(
-      story,
-      meta,
-      { initialGlobals: (await getInitialGlobals?.()) ?? {}, tags: await getTags?.() },
-      undefined,
+      annotations.story,
+      annotations.meta!,
+      { initialGlobals: (await getInitialGlobals?.()) ?? {} },
+      annotations.preview ?? globalThis.globalProjectAnnotations,
       exportName
     );
+
     if (composedStory === undefined || skipTags?.some((tag) => composedStory.tags.includes(tag))) {
       context.skip();
     }

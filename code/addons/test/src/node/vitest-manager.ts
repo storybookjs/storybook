@@ -316,8 +316,8 @@ export class VitestManager {
     );
   }
 
-  async runAffectedTestsAfterChange(filepath: string) {
-    const id = slash(filepath);
+  async runAffectedTestsAfterChange(changedFilePath: string) {
+    const id = slash(changedFilePath);
     this.vitest?.logger.clearHighlightCache(id);
     this.updateLastChanged(id);
 
@@ -331,53 +331,62 @@ export class VitestManager {
     }
     this.resetGlobalTestNamePattern();
 
-    const { previewAnnotations } = this.testManager.store.getState();
+    const storybookProject = this.vitest!.projects.find((p) => this.isStorybookProject(p));
+    // we create synthetic TestSpecifications for the preview annotations and setup files, so that we can analyze their dependencies
+    const previewAnnotationSpecifications = this.testManager.store
+      .getState()
+      .previewAnnotations.map((previewAnnotation) => {
+        return {
+          project: storybookProject ?? this.vitest!.projects[0],
+          moduleId:
+            typeof previewAnnotation === 'string' ? previewAnnotation : previewAnnotation.absolute,
+        };
+      }) as TestSpecification[];
+    const setupFilesSpecifications = this.vitest!.projects.flatMap((project) =>
+      project.config.setupFiles.map((setupFile) => ({
+        project,
+        moduleId: setupFile,
+      }))
+    ) as TestSpecification[];
+    const syntheticGlobalTestSpecifications =
+      previewAnnotationSpecifications.concat(setupFilesSpecifications);
 
     const testSpecifications = await this.getStorybookTestSpecifications();
     const allStories = await this.fetchStories();
 
-    // TODO: setup files too
-    if (previewAnnotations.includes(filepath)) {
-      // if the changed filepath is a preview annotation, run all tests
+    let affectsGlobalFiles = false;
 
-      await this.testManager.runTestsWithState({
-        triggeredBy: 'watch',
-        callback: async () => {
-          await this.vitest!.cancelCurrentRun('keyboard-input');
-          await this.runningPromise;
-          const { filteredStoryIds } = this.filterTestSpecifications(
-            testSpecifications,
-            allStories
-          );
-          this.testManager.store.setState((s) => ({
-            ...s,
-            currentRun: {
-              ...s.currentRun,
-              totalTestCount: filteredStoryIds.length,
-            },
-          }));
-          await this.vitest!.runTestSpecifications(testSpecifications, false);
-        },
-      });
-      return;
-    }
+    const affectedTestSpecifications = (
+      await Promise.all(
+        syntheticGlobalTestSpecifications
+          .concat(testSpecifications)
+          .map(async (testSpecification) => {
+            const dependencies = await this.getTestDependencies(testSpecification);
+            if (
+              changedFilePath === testSpecification.moduleId ||
+              dependencies.has(changedFilePath)
+            ) {
+              // if the changed file path affects a preview annotation or setup file
+              // we mark global files as affected, which triggers a run of _all_ tests
+              if (syntheticGlobalTestSpecifications.includes(testSpecification)) {
+                affectsGlobalFiles = true;
+              }
+              return testSpecification;
+            }
+          })
+      )
+    ).filter(Boolean) as TestSpecification[];
 
-    const affectedTestSpecifications: TestSpecification[] = [];
-    await Promise.all(
-      testSpecifications.map(async (testSpecification) => {
-        const dependencies = await this.getTestDependencies(testSpecification);
-        if (filepath === testSpecification.moduleId || dependencies.has(filepath)) {
-          affectedTestSpecifications.push(testSpecification);
-        }
-      })
-    );
+    const testSpecificationsToRun = affectsGlobalFiles
+      ? testSpecifications
+      : affectedTestSpecifications;
 
-    if (!affectedTestSpecifications.length) {
+    if (!testSpecificationsToRun.length) {
       return;
     }
 
     const { filteredTestSpecifications, filteredStoryIds } = this.filterTestSpecifications(
-      affectedTestSpecifications,
+      testSpecificationsToRun,
       allStories
     );
     await this.testManager.runTestsWithState({
@@ -422,7 +431,7 @@ export class VitestManager {
         dependencies.map(async (dep) => {
           const fsPath = dep.startsWith('/@fs/')
             ? dep.slice(process.platform === 'win32' ? 5 : 4)
-            : join(process.cwd(), dep);
+            : join(project.config.root, dep);
 
           if (!fsPath.includes('node_modules') && !deps.has(fsPath) && existsSync(fsPath)) {
             await addImports(project, fsPath);

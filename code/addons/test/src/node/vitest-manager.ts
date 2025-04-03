@@ -128,7 +128,7 @@ export class VitestManager {
     this.vitestRestartPromise = new Promise(async (resolve, reject) => {
       try {
         await this.runningPromise;
-        await this.closeVitest();
+        await this.vitest?.close();
         await this.startVitest({ coverage });
         resolve();
       } catch (e) {
@@ -178,6 +178,65 @@ export class VitestManager {
     }
   }
 
+  private filterTestSpecifications(
+    testSpecifications: TestSpecification[],
+    stories: StoryIndexEntry[]
+  ) {
+    const filteredTestSpecifications: TestSpecification[] = [];
+    const filteredStoryIds: StoryId[] = [];
+
+    const storiesByImportPath: Record<StoryIndexEntry['importPath'], StoryIndexEntry[]> = {};
+
+    for (const story of stories) {
+      const absoluteImportPath = path.join(process.cwd(), story.importPath);
+      if (!storiesByImportPath[absoluteImportPath]) {
+        storiesByImportPath[absoluteImportPath] = [];
+      }
+      storiesByImportPath[absoluteImportPath].push(story);
+    }
+
+    for (const testSpecification of testSpecifications) {
+      /* eslint-disable no-underscore-dangle */
+      const { env = {} } = testSpecification.project.config;
+      const include = env.__VITEST_INCLUDE_TAGS__?.split(',').filter(Boolean) ?? ['test'];
+      const exclude = env.__VITEST_EXCLUDE_TAGS__?.split(',').filter(Boolean) ?? [];
+      const skip = env.__VITEST_SKIP_TAGS__?.split(',').filter(Boolean) ?? [];
+      /* eslint-enable no-underscore-dangle */
+
+      const storiesInTestSpecification = storiesByImportPath[testSpecification.moduleId] ?? [];
+
+      const filteredStories = storiesInTestSpecification.filter((story) => {
+        if (include.length && !include.some((tag) => story.tags?.includes(tag))) {
+          return false;
+        }
+        if (exclude.some((tag) => story.tags?.includes(tag))) {
+          return false;
+        }
+        // Skipped tests are intentionally included here
+        return true;
+      });
+
+      if (!filteredStories.length) {
+        continue;
+      }
+
+      if (!this.testManager.store.getState().watching) {
+        // Clear the file cache if watch mode is disabled
+        this.updateLastChanged(testSpecification.moduleId);
+      }
+
+      filteredTestSpecifications.push(testSpecification);
+      filteredStoryIds.push(
+        ...filteredStories
+          // Don't count skipped stories, because StorybookReporter doesn't include them either
+          .filter((story) => !skip.some((tag) => story.tags?.includes(tag)))
+          .map((story) => story.id)
+      );
+    }
+
+    return { filteredTestSpecifications, filteredStoryIds };
+  }
+
   private filterStories(
     story: StoryIndexEntry | DocsIndexEntry,
     moduleId: string,
@@ -214,54 +273,32 @@ export class VitestManager {
 
     this.resetGlobalTestNamePattern();
 
-    const stories = await this.fetchStories(runPayload?.storyIds);
-    const vitestTestSpecs = await this.getStorybookTestSpecs();
-    const isSingleStoryRun = runPayload.storyIds?.length === 1;
-
-    const { filteredTestFiles, totalTestCount } = vitestTestSpecs.reduce(
-      (acc, spec) => {
-        /* eslint-disable no-underscore-dangle */
-        const { env = {} } = spec.project.config;
-        const include = env.__VITEST_INCLUDE_TAGS__?.split(',').filter(Boolean) ?? ['test'];
-        const exclude = env.__VITEST_EXCLUDE_TAGS__?.split(',').filter(Boolean) ?? [];
-        const skip = env.__VITEST_SKIP_TAGS__?.split(',').filter(Boolean) ?? [];
-        /* eslint-enable no-underscore-dangle */
-
-        const matches = stories.filter((story) =>
-          this.filterStories(story, spec.moduleId, { include, exclude, skip })
-        );
-        if (matches.length) {
-          if (!this.testManager.store.getState().watching) {
-            // Clear the file cache if watch mode is not enabled
-            this.updateLastChanged(spec.moduleId);
-          }
-          acc.filteredTestFiles.push(spec);
-          acc.totalTestCount += matches.filter(
-            // Don't count skipped stories, because StorybookReporter doesn't include them either
-            (story) => !skip.some((tag) => story.tags?.includes(tag))
-          ).length;
-        }
-        return acc;
-      },
-      { filteredTestFiles: [] as TestSpecification[], totalTestCount: 0 }
-    );
-
     await this.cancelCurrentRun();
-    this.testManager.store.setState((s) => ({
-      ...s,
-      currentRun: {
-        ...s.currentRun,
-        totalTestCount,
-      },
-    }));
 
+    const testSpecifications = await this.getStorybookTestSpecifications();
+    const stories = await this.fetchStories(runPayload?.storyIds);
+
+    const isSingleStoryRun = runPayload.storyIds?.length === 1;
     if (isSingleStoryRun) {
       const storyName = stories[0].name;
       const regex = new RegExp(`^${storyName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`);
       this.vitest!.setGlobalTestNamePattern(regex);
     }
 
-    await this.vitest!.runTestSpecifications(filteredTestFiles, true);
+    const { filteredTestSpecifications, filteredStoryIds } = this.filterTestSpecifications(
+      testSpecifications,
+      stories
+    );
+
+    this.testManager.store.setState((s) => ({
+      ...s,
+      currentRun: {
+        ...s.currentRun,
+        totalTestCount: filteredStoryIds.length,
+      },
+    }));
+
+    await this.vitest!.runTestSpecifications(filteredTestSpecifications, true);
     this.resetGlobalTestNamePattern();
   }
 
@@ -270,17 +307,95 @@ export class VitestManager {
     await this.runningPromise;
   }
 
-  async closeVitest() {
-    await this.vitest?.close();
-  }
-
-  async getStorybookTestSpecs() {
+  async getStorybookTestSpecifications() {
     const globTestSpecifications = (await this.vitest?.globTestSpecifications()) ?? [];
     return (
       globTestSpecifications.filter((workspaceSpec) =>
         this.isStorybookProject(workspaceSpec.project)
       ) ?? []
     );
+  }
+
+  async runAffectedTestsAfterChange(filepath: string) {
+    const id = slash(filepath);
+    this.vitest?.logger.clearHighlightCache(id);
+    this.updateLastChanged(id);
+
+    // when watch mode is disabled, don't trigger any tests (below)
+    // but still invalidate the cache for the changed file, which is handled above
+    if (!this.testManager.store.getState().watching) {
+      return;
+    }
+    if (!this.vitest) {
+      return;
+    }
+    this.resetGlobalTestNamePattern();
+
+    const { previewAnnotations } = this.testManager.store.getState();
+
+    const testSpecifications = await this.getStorybookTestSpecifications();
+    const allStories = await this.fetchStories();
+
+    // TODO: setup files too
+    if (previewAnnotations.includes(filepath)) {
+      // if the changed filepath is a preview annotation, run all tests
+
+      await this.testManager.runTestsWithState({
+        triggeredBy: 'watch',
+        callback: async () => {
+          await this.vitest!.cancelCurrentRun('keyboard-input');
+          await this.runningPromise;
+          const { filteredStoryIds } = this.filterTestSpecifications(
+            testSpecifications,
+            allStories
+          );
+          this.testManager.store.setState((s) => ({
+            ...s,
+            currentRun: {
+              ...s.currentRun,
+              totalTestCount: filteredStoryIds.length,
+            },
+          }));
+          await this.vitest!.runTestSpecifications(testSpecifications, false);
+        },
+      });
+      return;
+    }
+
+    const affectedTestSpecifications: TestSpecification[] = [];
+    await Promise.all(
+      testSpecifications.map(async (testSpecification) => {
+        const dependencies = await this.getTestDependencies(testSpecification);
+        if (filepath === testSpecification.moduleId || dependencies.has(filepath)) {
+          affectedTestSpecifications.push(testSpecification);
+        }
+      })
+    );
+
+    if (!affectedTestSpecifications.length) {
+      return;
+    }
+
+    const { filteredTestSpecifications, filteredStoryIds } = this.filterTestSpecifications(
+      affectedTestSpecifications,
+      allStories
+    );
+    await this.testManager.runTestsWithState({
+      storyIds: filteredStoryIds,
+      triggeredBy: 'watch',
+      callback: async () => {
+        this.testManager.store.setState((s) => ({
+          ...s,
+          currentRun: {
+            ...s.currentRun,
+            totalTestCount: filteredStoryIds.length,
+          },
+        }));
+        await this.vitest!.cancelCurrentRun('keyboard-input');
+        await this.runningPromise;
+        await this.vitest!.runTestSpecifications(filteredTestSpecifications, false);
+      },
+    });
   }
 
   // This is an adaptation of Vitest's own implementation
@@ -322,88 +437,12 @@ export class VitestManager {
     return deps;
   }
 
-  async runAffectedTests(trigger: string) {
-    if (!this.vitest) {
-      return;
-    }
-    this.resetGlobalTestNamePattern();
-
-    const { previewAnnotations } = this.testManager.store.getState();
-
-    if (previewAnnotations.includes(trigger)) {
-      // if the trigger is a preview annotation, run all tests
-      await this.testManager.runTestsWithState({
-        triggeredBy: 'watch',
-        callback: async () => {
-          await this.vitest!.cancelCurrentRun('keyboard-input');
-          await this.runningPromise;
-          const globTestFiles = await this.getStorybookTestSpecs();
-          await this.vitest!.runTestSpecifications(globTestFiles, false);
-        },
-      });
-      return;
-    }
-
-    const testGraphs = await Promise.all(
-      (await this.getStorybookTestSpecs()).map(async (spec) => {
-        const deps = await this.getTestDependencies(spec);
-        return [spec, deps] as const;
-      })
-    );
-    const triggerAffectedTests: TestSpecification[] = [];
-
-    for (const [workspaceSpec, deps] of testGraphs) {
-      if (trigger && (trigger === workspaceSpec.moduleId || deps.has(trigger))) {
-        triggerAffectedTests.push(workspaceSpec);
-      }
-    }
-
-    const stories = this.testManager.store.getState().indexUrl ? await this.fetchStories() : [];
-
-    const affectedStoryIds = triggerAffectedTests
-      .map((spec) =>
-        stories
-          .filter((story) => join(process.cwd(), story.importPath) === spec.moduleId)
-          .map((story) => story.id)
-      )
-      .flat();
-
-    if (!triggerAffectedTests.length) {
-      return;
-    }
-
-    await this.testManager.runTestsWithState({
-      storyIds: affectedStoryIds,
-      triggeredBy: 'watch',
-      callback: async () => {
-        await this.vitest!.cancelCurrentRun('keyboard-input');
-        await this.runningPromise;
-        await this.vitest!.runTestSpecifications(triggerAffectedTests, false);
-      },
-    });
-  }
-
-  async runAffectedTestsAfterChange(file: string) {
-    const id = slash(file);
-    this.vitest?.logger.clearHighlightCache(id);
-    this.updateLastChanged(id);
-
-    // when watch mode is disabled, don't trigger any tests (below)
-    // but still invalidate the cache for the changed file, which is handled above
-    if (!this.testManager.store.getState().watching) {
-      return;
-    }
-
-    await this.runAffectedTests(file);
-  }
-
   async registerVitestConfigListener() {
     this.vitest!.vite.watcher.on('change', async (file) => {
-      file = normalize(file);
-      const isConfig = file === this.vitest?.vite?.config.configFile;
+      const isConfig = normalize(file) === this.vitest?.vite?.config.configFile;
       if (isConfig) {
         log('Restarting Vitest due to config change');
-        await this.closeVitest();
+        await this.vitest?.close();
         await this.startVitest();
       }
     });

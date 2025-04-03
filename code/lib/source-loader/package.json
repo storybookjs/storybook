@@ -1,6 +1,6 @@
 {
   "name": "@storybook/source-loader",
-  "version": "9.0.0-alpha.14",
+  "version": "9.0.0-alpha.15",
   "description": "Source loader",
   "keywords": [
     "lib",

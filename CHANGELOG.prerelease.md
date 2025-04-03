@@ -1,3 +1,16 @@
+## 9.0.0-alpha.15
+
+- Addon A11y: Add `linkPath` to Axe results and use it in copy link action - [#31009](https://github.com/storybookjs/storybook/pull/31009), thanks @ghengeveld!
+- Addon-test: Exclude `storybook-static` from coverage reports - [#31005](https://github.com/storybookjs/storybook/pull/31005), thanks @JReinhold!
+- Addons: Remove @storybook/addon-storysource - [#31007](https://github.com/storybookjs/storybook/pull/31007), thanks @valentinpalkovic!
+- Automigration: Enhance import transformation to handle partial package matches - [#31033](https://github.com/storybookjs/storybook/pull/31033), thanks @valentinpalkovic!
+- Automigration: Ensure correct addition of missing dependencies - [#31023](https://github.com/storybookjs/storybook/pull/31023), thanks @valentinpalkovic!
+- Core: Show "Render story" event explicitly in Component Tests event trace - [#31027](https://github.com/storybookjs/storybook/pull/31027), thanks @ghengeveld!
+- Nextjs-Vite: Update vite-plugin-storybook-nextjs version and add optimizeDeps - [#31037](https://github.com/storybookjs/storybook/pull/31037), thanks @valentinpalkovic!
+- Node.js: Align Node.js version support - [#31041](https://github.com/storybookjs/storybook/pull/31041), thanks @valentinpalkovic!
+- Svelte-vite: Improve SvelteKit detection error - [#31038](https://github.com/storybookjs/storybook/pull/31038), thanks @JReinhold!
+- Vite: Add 'storybook/viewport' to INCLUDE_CANDIDATES in optimizeDeps.ts - [#31039](https://github.com/storybookjs/storybook/pull/31039), thanks @valentinpalkovic!
+
 ## 9.0.0-alpha.14
 
 - Automigrations: Re-add renderer-to-framework and fix issue in monorepositories - [#31011](https://github.com/storybookjs/storybook/pull/31011), thanks @valentinpalkovic!

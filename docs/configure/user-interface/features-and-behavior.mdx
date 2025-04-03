@@ -15,19 +15,20 @@ To control the layout of Storybook’s UI you can use `addons.setConfig` in your
 
 The following table details how to use the API values:
 
-| Name                  | Type            | Description                                             | Example Value                           |
-| --------------------- | --------------- | ------------------------------------------------------- | --------------------------------------- |
-| **navSize**           | Number (pixels) | The size of the sidebar that shows a list of stories    | `300`                                   |
-| **bottomPanelHeight** | Number (pixels) | The size of the addon panel when in the bottom position | `200`                                   |
-| **rightPanelWidth**   | Number (pixels) | The size of the addon panel when in the right position  | `200`                                   |
-| **panelPosition**     | String          | Where to show the addon panel                           | `'bottom'` or `'right'`                 |
-| **enableShortcuts**   | Boolean         | Enable/disable shortcuts                                | `true`                                  |
-| **showToolbar**       | Boolean         | Show/hide tool bar                                      | `true`                                  |
-| **theme**             | Object          | Storybook Theme, see next section                       | `undefined`                             |
-| **selectedPanel**     | String          | Id to select an addon panel                             | `'storybook/actions/panel'`             |
-| **initialActive**     | String          | Select the default active tab on Mobile                 | `'sidebar'` or `'canvas'` or `'addons'` |
-| **sidebar**           | Object          | Sidebar options, see below                              | `{ showRoots: false }`                  |
-| **toolbar**           | Object          | Modify the tools in the toolbar using the addon id      | `{ fullscreen: { hidden: false } } `    |
+| Name                     | Type            | Description                                             | Example Value                                                                                  |
+| ------------------------ | --------------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| **navSize**              | Number (pixels) | The size of the sidebar that shows a list of stories    | `300`                                                                                          |
+| **bottomPanelHeight**    | Number (pixels) | The size of the addon panel when in the bottom position | `200`                                                                                          |
+| **rightPanelWidth**      | Number (pixels) | The size of the addon panel when in the right position  | `200`                                                                                          |
+| **panelPosition**        | String          | Where to show the addon panel                           | `'bottom'` or `'right'`                                                                        |
+| **enableShortcuts**      | Boolean         | Enable/disable shortcuts                                | `true`                                                                                         |
+| **showToolbar**          | Boolean         | Show/hide tool bar                                      | `true`                                                                                         |
+| **theme**                | Object          | Storybook Theme, see next section                       | `undefined`                                                                                    |
+| **selectedPanel**        | String          | Id to select an addon panel                             | `'storybook/actions/panel'`                                                                    |
+| **initialActive**        | String          | Select the default active tab on Mobile                 | `'sidebar'` or `'canvas'` or `'addons'`                                                        |
+| **layoutCustomisations** | Object          | Layout customisation options, see below                 | `{ showSidebar: ({ viewMode }, defaultValue) => viewMode === 'docs' ? false : defaultValue` }` |
+| **sidebar**              | Object          | Sidebar options, see below                              | `{ showRoots: false }`                                                                         |
+| **toolbar**              | Object          | Modify the tools in the toolbar using the addon id      | `{ fullscreen: { hidden: false } } `                                                           |
 
 The following options are configurable under the `sidebar` namespace:
 
@@ -39,9 +40,76 @@ The following options are configurable under the `sidebar` namespace:
 
 The following options are configurable under the `toolbar` namespace:
 
-| Name   | Type   | Description                        | Example Value       |
-| ------ | ------ | ---------------------------------- | ------------------- |
-| **id** | String | Toggle visibility for toolbar item | `{ hidden: false }` |
+| Name     | Type   | Description                                                          | Example Value        |
+| ---------| ------ | -------------------------------------------------------------------- | -------------------- |
+| **[id]** | String | Toggle visibility for a specific toolbar item (e.g. `title`, `zoom`) | `{ hidden: false }`  |
+
+The following options are configurable under the `layoutCustomisations` namespace:
+
+| Name            | Type     | Description                       | Example Value                                                                 |
+| --------------- | -------- | --------------------------------- | ----------------------------------------------------------------------------- |
+| **showSidebar** | Function | Toggle visibility for the sidebar | `({ storyId }, defaultValue) => storyId === 'landing' ? false : defaultValue` |
+| **showToolbar** | Function | Toggle visibility for the toolbar | `({ viewMode }, defaultValue) => viewMode === 'docs' ? false : defaultValue`  |
+
+<Callout variant="warning">
+  The `showSidebar` and `showToolbar` functions let you hide parts of the UI that are essential to Storybook's functionality. If misused, they can make navigation impossible. When hiding the sidebar, ensure the displayed page provides an alternative means of navigation.
+</Callout>
+
+## Customize the UI
+
+Storybook's UI is highly customizable. Its API and configuration options, available via the `showSidebar` and `showToolbar` functions, allow you to control how the sidebar and toolbar elements are displayed. Both functions will enable you to include some default behavior and can be overridden to customize the UI to your needs.
+
+### Override sidebar visibility
+
+The sidebar, present on the left of the screen, contains the search function and navigation menu. Users may show or hide it with a keyboard shortcut. If you want to force the sidebar to be visible or hidden in certain places, you can define a `showSidebar` function in `layoutCustomisations`. Below are the available parameters passed to this function and an overview of how to use them.
+
+| Name                     | Type     | Description                                                    | Example Value                         |
+| ------------------------ | -------- | -------------------------------------------------------------- | ------------------------------------- |
+| **path**                 | String   | Path to the page being displayed                               | `'/story/components-button--default'` |
+| **viewMode**             | String   | Whether the current page is a story or docs                    | `'docs'` or `'story'`                 |
+| **singleStory**          | Boolean  | Whether the current page is the only story for a component     | `true` or `false`                     |
+| **storyId**              | String   | The id of the current story or docs page                       | `'blocks-blocks-unstyled--docs'`      |
+| **layout**               | Object   | The current layout state                                       | *see below*                           |
+| **layout.isFullscreen**  | Boolean  | Whether the preview canvas is in fullscreen mode               | `true` or `false`                     |
+| **layout.panelPosition** | String   | Whether the panel is shown below or on the side of the preview | `'bottom'` or `'right'`               |
+| **layout.showNav**       | Boolean  | The setting for whether the end user wants to see the sidebar  | `true` or `false`                     |
+| **layout.showPanel**     | Boolean  | The setting for whether the end user wants to see the panel    | `true` or `false`                     |
+| **layout.showSidebar**   | Boolean  | The setting for whether the end user wants to see the sidebar  | `true` or `false`                     |
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-manager-sidebar-hide-on-landing.md"  />
+
+{/* prettier-ignore-end */}
+
+<Callout variant="warning">
+
+  If you're hiding the sidebar through `showSidebar`, ensure the displayed page provides an alternative means of navigation.
+
+</Callout>
+
+### Configure the toolbar
+
+By default, Storybook displays a toolbar at the top of the UI, allowing you to access menus from addons (e.g., [viewport](../../essentials/viewport.mdx), [background](../../essentials/backgrounds.mdx)), or custom defined [menus](../../essentials/toolbars-and-globals.mdx#global-types-and-the-toolbar-annotation). However, if you want to customize the toolbar's behavior, you can use the `showToolbar` function. Listed below are the available options and an overview of how to use them.
+
+| Name                     | Type     | Description                                                    | Example Value                         |
+| ------------------------ | -------- | -------------------------------------------------------------- | ------------------------------------- |
+| **path**                 | String   | Path to the page being displayed                               | `'/story/components-button--default'` |
+| **viewMode**             | String   | Whether the current page is a story or docs                    | `'docs'` or `'story'`                 |
+| **singleStory**          | Boolean  | Whether the current page is the only story for a component     | `true` or `false`                     |
+| **storyId**              | String   | The id of the current story or docs page                       | `'blocks-blocks-unstyled--docs'`      |
+| **layout**               | Object   | The current layout state                                       | *see below*                           |
+| **layout.isFullscreen**  | Boolean  | Whether the preview canvas is in fullscreen mode               | `true` or `false`                     |
+| **layout.panelPosition** | String   | Whether the panel is shown below or on the side of the preview | `'bottom'` or `'right'`               |
+| **layout.showNav**       | Boolean  | The setting for whether the end user wants to see the sidebar  | `true` or `false`                     |
+| **layout.showPanel**     | Boolean  | The setting for whether the end user wants to see the panel    | `true` or `false`                     |
+| **layout.showToolbar**   | Boolean  | The setting for whether the end user wants to see the toolbar  | `true` or `false`                     |
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-manager-toolbar-hide-on-docs.md"  />
+
+{/* prettier-ignore-end */}
 
 ## Configuring through URL parameters
 

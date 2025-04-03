@@ -1,6 +1,7 @@
 import type { FC, PropsWithChildren } from 'react';
 import React, { useState } from 'react';
 
+import { ManagerContext } from 'storybook/internal/manager-api';
 import { LocationProvider } from 'storybook/internal/router';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
@@ -54,6 +55,16 @@ const defaultState = {
   viewMode: 'story',
 } as const;
 
+const managerContext: any = {
+  state: {},
+  api: {
+    foo: 'bar',
+    getNavSizeWithCustomisations: fn()
+      .mockName('api::getNavSizeWithCustomisations')
+      .mockImplementation((size: number) => size),
+  },
+};
+
 const meta = {
   title: 'Layout',
   component: Layout,
@@ -69,6 +80,9 @@ const meta = {
   globals: { sb_theme: 'light' },
   parameters: { layout: 'fullscreen' },
   decorators: [
+    (storyFn) => (
+      <ManagerContext.Provider value={managerContext}>{storyFn()}</ManagerContext.Provider>
+    ),
     MobileNavigationStoriesMeta.decorators[0] as any,
     (storyFn) => (
       <LocationProvider>

@@ -181,7 +181,6 @@ export const Crashed: Story = {
       'component-tests': 'test-provider-state:crashed',
     },
   },
-  play: Expanded.play,
 };
 
 export const SettingsUpdated: Story = {

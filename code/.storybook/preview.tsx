@@ -7,7 +7,6 @@ import { global } from '@storybook/global';
 
 import type { Decorator, Loader, ReactRenderer } from '@storybook/react-vite';
 // TODO add empty preview
-// import * as storysource from '@storybook/addon-storysource';
 // import * as designs from '@storybook/addon-designs/preview';
 import { definePreview } from '@storybook/react-vite';
 
@@ -322,6 +321,24 @@ const decorators = [
 const parameters = {
   docs: {
     theme: themes.light,
+    codePanel: true,
+    source: {
+      transform: async (source) => {
+        try {
+          const prettier = await import('prettier/standalone');
+          const prettierPluginBabel = await import('prettier/plugins/babel');
+          const prettierPluginEstree = (await import('prettier/plugins/estree')).default;
+
+          return await prettier.format(source, {
+            parser: 'babel',
+            plugins: [prettierPluginBabel, prettierPluginEstree],
+          });
+        } catch (error) {
+          console.error(error);
+          return source;
+        }
+      },
+    },
     toc: {},
   },
   controls: {

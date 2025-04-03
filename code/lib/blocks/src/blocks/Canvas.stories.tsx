@@ -155,7 +155,6 @@ export const PropSource: Story = {
     source: {
       language: 'html',
       code: '<button>           Button          </button>', // spaces should be removed by the prettier formatter
-      format: 'html',
     },
   },
 };

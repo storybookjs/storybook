@@ -102,14 +102,6 @@ Determines if the snippet is rendered in dark mode.
   Determines if [decorators](../../writing-stories/decorators.mdx) are rendered in the source code snippet.
 </IfRenderer>
 
-### `format`
-
-Type: `boolean | 'dedent' | BuiltInParserName`
-
-Default: `parameters.docs.source.format` or `true`
-
-Specifies the formatting used on source code. Both `true` and `'dedent'` have the same effect of removing any extraneous indentation. Supports all valid [prettier parser names](https://prettier.io/docs/en/configuration.html#setting-the-parserdocsenoptionshtmlparser-option).
-
 ### `language`
 
 Type:
@@ -134,12 +126,40 @@ Specifies which story's source is rendered.
 
 ### `transform`
 
-Type: `(code: string, storyContext: StoryContext) => string`
+Type: `(code: string, storyContext: StoryContext) => string | Promise<string>`
 
 Default: `parameters.docs.source.transform`
 
-A function to dynamically transform the source before being rendered, based on the original source and any story context necessary. The returned string is displayed as-is.
+An async function to dynamically transform the source before being rendered, based on the original source and any story context necessary. The returned string is displayed as-is.
 If both [`code`](#code) and `transform` are specified, `transform` will be ignored.
+
+{/* prettier-ignore-start */}
+
+```js
+// .storybook/preview.js|ts|jsx|tsx
+export default {
+  parameters: {
+    docs: {
+      source: {
+        transform: async (source) => {
+          const prettier = await import('prettier/standalone');
+          const prettierPluginBabel = await import('prettier/plugins/babel');
+          const prettierPluginEstree = await import('prettier/plugins/estree');
+
+          return prettier.format(source, {
+            parser: 'babel',
+            plugins: [prettierPluginBabel, prettierPluginEstree],
+          });
+        },
+      },
+    },
+  },
+};
+```
+
+{/* prettier-ignore-end */}
+
+This example shows how to use Prettier to format all source code snippets in your documentation. The transform function is applied globally through the preview configuration, ensuring consistent code formatting across all stories.
 
 ### `type`
 

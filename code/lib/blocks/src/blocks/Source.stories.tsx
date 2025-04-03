@@ -129,7 +129,6 @@ export const CodeParameters: Story = {
 export const CodeFormat: Story = {
   args: {
     code,
-    format: true,
   },
 };
 
@@ -141,7 +140,6 @@ export const CodeLanguage: Story = {
   args: {
     code,
     language: 'graphql',
-    format: true,
   },
 };
 

@@ -1,6 +1,6 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
-import { commonGlobOptions, getProjectRoot } from 'storybook/internal/common';
+import { commonGlobOptions, getProjectRoot, versions } from 'storybook/internal/common';
 
 import picocolors from 'picocolors';
 import prompts from 'prompts';
@@ -18,18 +18,49 @@ function transformPackageJson(content: string): string | null {
   const packageJson = JSON.parse(content);
   let hasChanges = false;
 
+  // Track new packages to add
+  const packagesToAdd = new Set<string>();
+
   // Check both dependencies and devDependencies
   const depTypes = ['dependencies', 'devDependencies'] as const;
+
+  // Determine where storybook is installed and get its version
+  let storybookVersion: string | null = null;
+  let storybookDepType: (typeof depTypes)[number] | null = null;
+
+  for (const depType of depTypes) {
+    if (packageJson[depType]?.storybook) {
+      storybookVersion = packageJson[depType].storybook;
+      storybookDepType = depType;
+      break;
+    }
+  }
 
   for (const depType of depTypes) {
     if (packageJson[depType]) {
       for (const [dep] of Object.entries(packageJson[depType])) {
         if (dep in consolidatedPackages) {
+          const newPackage = consolidatedPackages[dep as keyof typeof consolidatedPackages];
+          // Only add to packagesToAdd if it's not being consolidated into storybook/*
+          if (!newPackage.startsWith('storybook/')) {
+            packagesToAdd.add(newPackage);
+          }
           delete packageJson[depType][dep];
           hasChanges = true;
         }
       }
     }
+  }
+
+  // Add new packages to the same dependency type as storybook
+  if (packagesToAdd.size > 0) {
+    const version = storybookVersion ?? versions['@storybook/nextjs-vite'];
+    const depType = storybookDepType ?? 'devDependencies';
+    packageJson[depType] = packageJson[depType] || {};
+    for (const pkg of packagesToAdd) {
+      packageJson[depType][pkg] = version;
+    }
+    hasChanges = true;
   }
 
   return hasChanges ? JSON.stringify(packageJson, null, 2) : null;
@@ -41,7 +72,7 @@ function transformImports(source: string) {
 
   for (const [from, to] of Object.entries(consolidatedPackages)) {
     // Match the package name when it's inside either single or double quotes
-    const regex = new RegExp(`(['"])${from}(.*)\\1`, 'g');
+    const regex = new RegExp(`(['"])${from}(\/.*)?\\1`, 'g');
     if (regex.test(transformed)) {
       transformed = transformed.replace(regex, `$1${to}$2$1`);
       hasChanges = true;
@@ -114,6 +145,7 @@ export const consolidatedImports: Fix<ConsolidatedOptions> = {
       ignore: ['**/node_modules/**'],
       cwd: projectRoot,
       gitignore: true,
+      absolute: true,
     });
 
     const consolidatedDeps = new Set<keyof typeof consolidatedPackages>();
@@ -203,6 +235,7 @@ export const consolidatedImports: Fix<ConsolidatedOptions> = {
       ignore: ['**/node_modules/**'],
       dot: true,
       cwd: projectRoot,
+      absolute: true,
     });
 
     const importErrors = await transformImportFiles(sourceFiles, dryRun);

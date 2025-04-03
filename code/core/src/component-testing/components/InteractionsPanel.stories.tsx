@@ -151,6 +151,13 @@ export const DiscrepancyResult: Story = {
   },
 };
 
+export const RenderOnly: Story = {
+  args: {
+    browserTestStatus: CallStates.DONE,
+    interactions: getInteractions(CallStates.DONE).slice(0, 1),
+  },
+};
+
 export const Empty: Story = {
   args: {
     interactions: [],

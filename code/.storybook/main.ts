@@ -32,6 +32,10 @@ const config = defineMain({
       titlePrefix: 'components',
     },
     {
+      directory: '../core/src/component-testing/components',
+      titlePrefix: 'component-testing',
+    },
+    {
       directory: '../lib/blocks/src',
       titlePrefix: 'blocks',
     },
@@ -71,7 +75,6 @@ const config = defineMain({
   addons: [
     '@storybook/addon-themes',
     '@storybook/addon-docs',
-    '@storybook/addon-storysource',
     '@storybook/addon-designs',
     '@storybook/addon-test',
     '@storybook/addon-a11y',

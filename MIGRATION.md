@@ -1,10 +1,14 @@
 <h1>Migration</h1>
 
 - [From version 8.x to 9.0.0](#from-version-8x-to-900)
+  - [Vitest 2.0 support is dropped](#vitest-20-support-is-dropped)
   - [Package Manager Support](#package-manager-support)
   - [A11y addon: Removed deprecated manual parameter](#a11y-addon-removed-deprecated-manual-parameter)
   - [Button Component API Changes](#button-component-api-changes)
   - [Documentation Generation Changes](#documentation-generation-changes)
+  - [Migration from @storybook/addon-storysource to Code Panel](#migration-from-storybookaddon-storysource-to-code-panel)
+    - [Migration Steps](#migration-steps)
+  - [`parameters.docs.source.format` removal](#parametersdocssourceformat-removal)
   - [Global State Management](#global-state-management)
   - [Icon System Updates](#icon-system-updates)
   - [Sidebar Component Changes](#sidebar-component-changes)
@@ -27,6 +31,8 @@
   - [Experimental Status API has turned into a Status Store](#experimental-status-api-has-turned-into-a-status-store)
   - [Dropped support for Vite 4](#dropped-support-for-vite-4)
   - [Framework-specific changes](#framework-specific-changes)
+    - [Svelte: Require v5 and up](#svelte-require-v5-and-up)
+    - [Svelte: Dropped support for @storybook/svelte-webpack5](#svelte-dropped-support-for-storybooksvelte-webpack5)
     - [Angular = Require v18 and up](#angular--require-v18-and-up)
     - [Dropped webpack5 Builder Support in Favor of Vite](#dropped-webpack5-builder-support-in-favor-of-vite)
     - [Next.js = Require v14 and up](#nextjs--require-v14-and-up)
@@ -429,22 +435,25 @@
 
 ## From version 8.x to 9.0.0
 
+### Vitest 2.0 support is dropped
+
+The Storybook Test addon now only supports Vitest 3.0 and higher, which is where browser mode was made into a stable state. Please upgrade to Vitest 3.0.
+
 ### Package Manager Support
 
 Storybook 9.0 drops official support and maintenance for older package manager versions:
 
 - npm v8 and v9 are no longer supported
-- yarn v3 is no longer supported  
+- yarn v3 is no longer supported
 - pnpm v7 and v8 are no longer supported
 
 The minimum supported versions are now:
 
 - npm v10+
-- yarn v4+ 
+- yarn v4+
 - pnpm v9+
 
 While Storybook may still work with older versions, we recommend upgrading to the latest supported versions for the best experience and to ensure compatibility.
-
 
 ### A11y addon: Removed deprecated manual parameter
 
@@ -485,6 +494,7 @@ export const initialGlobals = {
 ### Button Component API Changes
 
 The Button component has been updated to use a more modern props API. The following props have been removed:
+
 - `isLink`
 - `primary`
 - `secondary`
@@ -516,6 +526,107 @@ export default {
 + export default {
 +   tags: ['autodocs']
 + };
+```
+
+### Migration from @storybook/addon-storysource to Code Panel
+
+The `@storybook/addon-storysource` addon is being removed in Storybook 9.0. Instead, Storybook now provides a Code Panel via `@storybook/addon-docs` that offers similar functionality with improved integration and performance.
+
+#### Migration Steps
+
+1. Remove the old addon
+
+Remove `@storybook/addon-storysource` from your project:
+
+```bash
+npx storybook remove @storybook/addon-storysource
+```
+
+2. Enable the Code Panel
+
+The Code Panel can be enabled by adding the following parameter to your stories or globally in `.storybook/preview.js`:
+
+```js
+export const parameters = {
+  docs: {
+    source: {
+      codePanel: true,
+    },
+  },
+};
+```
+
+Or for individual stories:
+
+```js
+export const MyStory = {
+  parameters: {
+    docs: {
+      source: {
+        codePanel: true,
+      },
+    },
+  },
+};
+```
+
+### `parameters.docs.source.format` removal
+
+The `parameters.docs.source.format` parameter has been removed in favor of using `parameters.docs.source.transform`. If you were using `format` to prettify your code via prettier, you can now use the `transform` parameter with Prettier directly:
+
+```js
+// .storybook/preview.js|ts|jsx|tsx
+export default {
+  parameters: {
+    docs: {
+      source: {
+        transform: async (source) => {
+          const prettier = await import("prettier/standalone");
+          const prettierPluginBabel = await import("prettier/plugins/babel");
+          const prettierPluginEstree = await import("prettier/plugins/estree");
+
+          return prettier.format(source, {
+            parser: "babel",
+            plugins: [prettierPluginBabel, prettierPluginEstree],
+          });
+        },
+      },
+    },
+  },
+};
+```
+
+This change gives you more control over how your code is formatted and allows for asynchronous transformations. The `transform` function receives the source code and story context as parameters, enabling you to implement custom formatting logic or use any code formatting library of your choice.
+
+**Before:**
+
+```js
+export const MyStory = {
+  parameters: {
+    docs: {
+      source: {
+        format: "html",
+      },
+    },
+  },
+};
+```
+
+**After:**
+
+```js
+export const MyStory = {
+  parameters: {
+    docs: {
+      source: {
+        transform: async (source) => {
+          // Your custom transformation logic here
+          return source;
+        },
+      },
+    },
+  },
+};
 ```
 
 ### Global State Management
@@ -556,6 +667,7 @@ export default {
 ### Icon System Updates
 
 Several icon-related exports have been removed:
+
 - `IconButtonSkeleton`
 - `Icons`
 - `Symbols`
@@ -587,11 +699,13 @@ The `TESTING_MODULE_RUN_ALL_REQUEST` event has been removed:
 ### Type System Updates
 
 The following types have been removed:
+
 - `Addon_SidebarBottomType`
 - `Addon_SidebarTopType`
 - `DeprecatedState`
 
 Import paths have been updated:
+
 ```diff
 - import { SupportedRenderers } from './project_types';
 + import { SupportedRenderers } from 'storybook/internal/types';
@@ -600,6 +714,7 @@ Import paths have been updated:
 ### Story Store API Changes
 
 Several deprecated methods have been removed from the StoryStore:
+
 - `getSetStoriesPayload`
 - `getStoriesJsonData`
 - `raw`
@@ -608,6 +723,7 @@ Several deprecated methods have been removed from the StoryStore:
 ### CSF File Changes
 
 Deprecated getters have been removed from the CsfFile class:
+
 - `_fileName`
 - `_makeTitle`
 
@@ -789,10 +905,11 @@ To upgrade:
    export default {
      // ... your other config
      // Make sure you're using Vite 5 compatible plugins
-   }
+   };
    ```
 
 If you're using framework-specific Vite plugins, ensure they are compatible with Vite 5:
+
 - `@vitejs/plugin-react`
 - `@vitejs/plugin-vue`
 - `@sveltejs/vite-plugin-svelte`
@@ -802,6 +919,49 @@ For more information on upgrading to Vite 5, see the [Vite Migration Guide](http
 
 ### Framework-specific changes
 
+
+#### Svelte: Require v5 and up
+
+Storybook has dropped support for Svelte versions 3 and 4. The minimum supported version is now Svelte 5.
+
+If you're using an older version of Svelte, you'll need to upgrade to Svelte 5 or newer to use the latest version of Storybook.
+
+#### Svelte: Dropped support for @storybook/svelte-webpack5
+
+In Storybook 9.0, we've dropped support for `@storybook/svelte-webpack5`. If you're currently using it, you need to migrate to `@storybook/svelte-vite` instead.
+
+Follow these steps to migrate:
+
+1. Remove the webpack5 framework package:
+
+```bash
+npm uninstall @storybook/svelte-webpack5
+# or
+yarn remove @storybook/svelte-webpack5
+```
+
+2. Install the Vite framework package:
+
+```bash
+npm install -D @storybook/svelte-vite
+# or
+yarn add -D @storybook/svelte-vite
+```
+
+3. Update your Storybook configuration in `.storybook/main.js` or `.storybook/main.ts`:
+
+```diff
+export default {
+  framework: {
+-    name: '@storybook/svelte-webpack5'
++    name: '@storybook/svelte-vite',
+  },
+  // ...other configuration
+};
+```
+
+For more details, please refer to the [Svelte & Vite documentation](https://storybook.js.org/docs/get-started/frameworks/svelte-vite).
+
 #### Angular = Require v18 and up
 
 Storybook has dropped support for Angular versions 15-17. The minimum supported version is now Angular 18.
@@ -809,6 +969,7 @@ Storybook has dropped support for Angular versions 15-17. The minimum supported 
 If you're using an older version of Angular, you'll need to upgrade to Angular 18 or newer to use the latest version of Storybook.
 
 Key changes:
+
 - All Angular packages in peerDependencies now require `>=18.0.0 < 20.0.0`
 - Removed legacy code supporting Angular < 18
 - Standalone components are now the default (can be opted out by explicitly setting `standalone: false` in component decorators)
@@ -821,6 +982,7 @@ Key changes:
 Removed webpack5 builder support for Preact, Vue3, and Web Components frameworks in favor of Vite builder. This change streamlines our builder support and improves performance across these frameworks.
 
 Removed Packages
+
 - `@storybook/preact-webpack5`
 - `@storybook/preset-preact-webpack5`
 - `@storybook/vue3-webpack5`
@@ -861,11 +1023,10 @@ npm install @storybook/html-vite --save-dev
 
 For all affected frameworks, update your configuration to use the Vite builder:
 
-
 ```tsx
 export default {
   framework: {
-    name: '@storybook/[framework]-vite', // replace [framework] with preact, vue3, or web-components
+    name: "@storybook/[framework]-vite", // replace [framework] with preact, vue3, or web-components
     options: {},
   },
   // ... other configurations
@@ -901,7 +1062,7 @@ Also update your `.storybook/main.<js|ts>` file accordingly:
 export default {
   addons: [
 -   "@storybook/experimental-nextjs-vite",
-+   "@storybook/nextjs-vite"    
++   "@storybook/nextjs-vite"
   ]
 }
 ```
@@ -2379,7 +2540,6 @@ The current list of frameworks include:
 - `@storybook/nextjs`
 - `@storybook/server-webpack5`
 - `@storybook/svelte-vite`
-- `@storybook/svelte-webpack5`
 - `@storybook/sveltekit`
 - `@storybook/vue-vite`
 - `@storybook/vue-webpack5`
@@ -2974,7 +3134,7 @@ In Storybook 7.0 we introduced a convenient package that provides an out of the 
 
 #### SvelteKit: needs the `@storybook/sveltekit` framework
 
-In Storybook 7.0 we introduced a convenient package that provides an out of the box experience for SvelteKit projects: `@storybook/sveltekit`. Please see the [following resource](./code/frameworks/sveltekit/README.md#getting-started) to get started with it.
+In Storybook 7.0 we introduced a convenient package that provides an out of the box experience for SvelteKit projects: `@storybook/sveltekit`. Please see the [following resource](https://storybook.js.org/docs/get-started/frameworks/sveltekit?renderer=svelte) to get started with it.
 
 For existing users, SvelteKit projects need to use the `@storybook/sveltekit` framework in the `main.js` file. Previously it was enough to just setup Storybook with Svelte+Vite, but that is no longer the case.
 

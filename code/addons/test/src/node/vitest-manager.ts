@@ -237,25 +237,6 @@ export class VitestManager {
     return { filteredTestSpecifications, filteredStoryIds };
   }
 
-  private filterStories(
-    story: StoryIndexEntry | DocsIndexEntry,
-    moduleId: string,
-    tagsFilter: TagsFilter
-  ) {
-    const absoluteImportPath = path.join(process.cwd(), story.importPath);
-    if (absoluteImportPath !== moduleId) {
-      return false;
-    }
-    if (tagsFilter.include.length && !tagsFilter.include.some((tag) => story.tags?.includes(tag))) {
-      return false;
-    }
-    if (tagsFilter.exclude.some((tag) => story.tags?.includes(tag))) {
-      return false;
-    }
-    // Skipped tests are intentionally included here
-    return true;
-  }
-
   async runTests(runPayload: TriggerRunEvent['payload']) {
     const { watching, config } = this.testManager.store.getState();
     const coverageShouldBeEnabled =

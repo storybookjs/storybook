@@ -136,12 +136,12 @@ describe('a11yParameters', () => {
       expect(transformStories(code)).toBeNull();
     });
 
-    it.todo('should handle stories with CSF v2 parameter style', () => {
-      const code = `
+    it('should handle stories with CSF v2 parameter style', () => {
+      const code = dedent`
         export default {
           title: 'Button'
         };
-        export const Primary = {};
+        export const Primary = (args) => <Button {...args} />;
         Primary.parameters = {
           a11y: {
             element: '#root',
@@ -149,7 +149,17 @@ describe('a11yParameters', () => {
         }
       `;
 
-      expect(transformStories(code)).toMatchInlineSnapshot();
+      expect(transformStories(code)).toMatchInlineSnapshot(`
+        export default {
+          title: 'Button'
+        };
+        export const Primary = (args) => <Button {...args} />;
+        Primary.parameters = {
+          a11y: {
+            context: '#root',
+          }
+        }
+      `);
     });
   });
 

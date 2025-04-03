@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
+import { types as t } from 'storybook/internal/babel';
 import { commonGlobOptions, getProjectRoot } from 'storybook/internal/common';
 import { writeConfig, writeCsf } from 'storybook/internal/csf-tools';
 
@@ -17,6 +18,8 @@ interface A11yOptions {
   storyFilesToUpdate: string[];
   previewFileToUpdate: string | undefined;
 }
+
+const logger = console;
 
 export const addonA11yParameters: Fix<A11yOptions> = {
   id: 'addon-a11y-parameters',
@@ -105,7 +108,7 @@ export const addonA11yParameters: Fix<A11yOptions> = {
             errors.push({ file: previewFileToUpdate, error: error as Error });
           }
         } else {
-          console.log('Would have updated', code.fileName);
+          logger.log('Would have updated', code.fileName);
         }
       }
     }
@@ -124,7 +127,7 @@ export const addonA11yParameters: Fix<A11yOptions> = {
               if (!dryRun) {
                 await writeCsf(code, file);
               } else {
-                console.log('Would have updated', file);
+                logger.log('Would have updated', file);
               }
             }
           } catch (error) {

@@ -52,7 +52,7 @@ export const addonMdxGfmRemove: Fix<AddonMdxGfmOptions> = {
     `;
   },
 
-  async run({ result, packageManager }) {
+  async run({ packageManager }) {
     await packageManager.runPackageCommand('storybook', ['remove', '@storybook/addon-mdx-gfm']);
   },
 };

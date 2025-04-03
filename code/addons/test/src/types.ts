@@ -80,7 +80,7 @@ export type StoreState = {
   };
 };
 
-export type CachedState = Pick<StoreState, 'config' | 'watching'>;
+export type CachedState = Pick<StoreState, 'config'>;
 
 export type TriggerRunEvent = {
   type: 'TRIGGER_RUN';

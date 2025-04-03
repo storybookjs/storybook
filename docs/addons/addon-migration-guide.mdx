@@ -34,7 +34,7 @@ With Storybook 9.0, most Storybook packages have been consolidated into the main
     "storybook": "^9.0.0"
   },
   "devDependencies": {
-    "storybook": "^9.0.0" // For local development
+    "storybook": ">=9.0.0-0 <10.0.0-0" // For local development
   }
 }
 ```
@@ -53,7 +53,7 @@ If your addon supports multiple major versions of Storybook, you can specify a w
     "storybook": "^8.0.0 || ^9.0.0"
   },
   "devDependencies": {
-    "storybook": "^9.0.0" // For local development
+    "storybook": ">=9.0.0-0 <10.0.0-0" // For local development
   }
 }
 ```
@@ -79,7 +79,8 @@ Several packages have been consolidated into the main `storybook` package. Updat
 | @storybook/test          | storybook/test        |
 | @storybook/addon-actions | storybook/actions     |
 
-Additionally, several internal packages have been moved under the `/internal` sub-path:
+Additionally, several internal packages have been moved under the `/internal` sub-path. 
+These paths are not part of our public API, so they may change without following semver. While you can use them for a quick upgrade, we strongly encourage finding replacements as they could break in future minor versions:
 
 | Old Package                | New Path                           |
 | -------------------------- | ---------------------------------- |
@@ -125,7 +126,8 @@ The following types have been removed:
 
 ## Migration Example
 
-For a complete example of an addon updated to support Storybook 9.0, refer to the [Addon Kit repository](https://github.com/storybookjs/addon-kit). It demonstrates all the necessary changes for modern addon development.
+For a complete example of an addon updated to support Storybook 9.0, refer to the [Addon Kit migration PR](https://github.com/storybookjs/addon-kit/pull/75). 
+Once merged, it will demonstrate all the necessary changes for modern addon development.
 
 ## Releasing
 
@@ -133,4 +135,4 @@ To support Storybook 9.0, we encourage you to release a new major version of you
 
 ## Support
 
-If you're having issues with your addon after following this guide, please open a [new discussion](https://github.com/storybookjs/storybook/discussions/new?category=help) in our GitHub repository. 
+If you're having issues with your addon after following this guide, please open a [new discussion](https://github.com/storybookjs/storybook/discussions/new?category=migrations) in our GitHub repository. 

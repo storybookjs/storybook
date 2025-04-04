@@ -84,11 +84,14 @@ describe('getComponentInputsOutputs', () => {
         { propName: 'inputInComponentMetadata', templateName: 'inputInComponentMetadata' },
         { propName: 'input', templateName: 'input' },
         { propName: 'inputWithBindingPropertyName', templateName: 'inputPropertyName' },
+        { propName: 'signalInput', templateName: 'signalInput' },
+        { propName: 'signalInputAliased', templateName: 'signalInputAliasedAlias' },
       ],
       outputs: [
         { propName: 'outputInComponentMetadata', templateName: 'outputInComponentMetadata' },
         { propName: 'output', templateName: 'output' },
         { propName: 'outputWithBindingPropertyName', templateName: 'outputPropertyName' },
+        { propName: 'signalOutput', templateName: 'signalOutput' },
       ],
     });
 

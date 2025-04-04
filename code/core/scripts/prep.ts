@@ -127,6 +127,10 @@ async function run() {
       platform: 'browser',
 
       conditions: ['browser', 'module', 'import', 'default'],
+
+      define: {
+        'process.env.NODE_ENV': JSON.stringify('production'),
+      },
     } satisfies EsbuildContextOptions;
 
     const nodeEsbuildOptions = {

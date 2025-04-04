@@ -53,7 +53,7 @@ export class VitestManager {
 
   constructor(private testManager: TestManager) {}
 
-  async startVitest({ coverage = false } = {}) {
+  async startVitest({ coverage }: { coverage: boolean }) {
     const { createVitest } = await import('vitest/node');
 
     const storybookCoverageReporter: [string, StorybookCoverageReporterOptions] = [
@@ -246,7 +246,6 @@ export class VitestManager {
     if (!this.vitest) {
       await this.startVitest({ coverage: coverageShouldBeEnabled });
     } else if (currentCoverage !== coverageShouldBeEnabled) {
-      await this.vitestRestartPromise;
       await this.restartVitest({ coverage: coverageShouldBeEnabled });
     } else {
       await this.vitestRestartPromise;
@@ -432,8 +431,8 @@ export class VitestManager {
       const isConfig = normalize(file) === this.vitest?.vite?.config.configFile;
       if (isConfig) {
         log('Restarting Vitest due to config change');
-        await this.vitest?.close();
-        await this.startVitest();
+        const { watching, config } = this.testManager.store.getState();
+        await this.restartVitest({ coverage: config.coverage && !watching });
       }
     });
   }

@@ -21,7 +21,9 @@ export default meta;
 
 type Story = StoryObj<ProviderButtonComponent>;
 
-export const ProviderTest: Story = {
+export const ProviderTestWithoutArgs: Story = {};
+
+export const ProviderTestWithArgs: Story = {
   args: {
     label: 'Test',
   },

@@ -1,4 +1,4 @@
-import { ApplicationRef, NgModule } from '@angular/core';
+import { ApplicationRef, NgModule, Type } from '@angular/core';
 import { BehaviorSubject, Subject } from 'rxjs';
 import { stringify } from 'telejson';
 
@@ -19,6 +19,7 @@ declare global {
 }
 
 const applicationRefs = new Map<HTMLElement, ApplicationRef>();
+const componentBuilders: TestBedComponentBuilder[] = [];
 /**
  * Attribute name for the story UID that may be written to the targetDOMNode.
  *
@@ -82,18 +83,13 @@ export abstract class AbstractRenderer {
         forced,
       })
     ) {
-      this.storyProps$.next(storyFnAngular.props);
+      // ToDo: need some unique id to get the Testbed instance for prop update
+      // now there can be more instances for one component
+      this.getTestBedComponentBuilder(component).setAndUpdateProps(storyFnAngular.props);
 
       return;
     }
-
     await this.beforeFullRender(targetDOMNode);
-
-    // Complete last BehaviorSubject and set a new one for the current module
-    if (this.storyProps$) {
-      this.storyProps$.complete();
-    }
-    this.storyProps$ = newStoryProps$;
 
     this.initAngularRootElement(targetDOMNode, targetSelector);
 
@@ -108,7 +104,7 @@ export abstract class AbstractRenderer {
       element.toggleAttribute(storyUid, true);
     }
 
-    const providers = [
+    const environmentProviders = [
       storyPropsProvider(newStoryProps$),
       ...analyzedMetadata.applicationProviders,
       ...(storyFnAngular.applicationConfig?.providers ?? []),
@@ -119,22 +115,28 @@ export abstract class AbstractRenderer {
       if (!provideExperimentalZonelessChangeDetection) {
         throw new Error('Experimental zoneless change detection requires Angular 18 or higher');
       } else {
-        providers.unshift(provideExperimentalZonelessChangeDetection());
+        environmentProviders.unshift(provideExperimentalZonelessChangeDetection());
       }
     }
 
-    const componentBuilder = new TestBedComponentBuilder();
-    const componentFixture = await componentBuilder
+    const componentBuilder = await new TestBedComponentBuilder()
+      .initTestBed()
       .setComponent(component)
       .setSelector(componentSelector)
+      .setStoryFn(storyFnAngular)
       .setMetaData(analyzedMetadata)
+      .setEnvironmentProviders(environmentProviders)
       .configureModule()
       .compileComponents();
 
-    const applicationRef = componentBuilder.getApplicationRef();
-    applicationRef.bootstrap(componentFixture.componentRef.componentType);
+    applicationRefs.set(targetDOMNode, componentBuilder.getApplicationRef());
+    componentBuilders.push(componentBuilder);
+  }
 
-    applicationRefs.set(targetDOMNode, applicationRef);
+  getTestBedComponentBuilder(component: Type<unknown>) {
+    for (const componentBuilder of componentBuilders) {
+      if (componentBuilder.isInstanceFor(component)) return componentBuilder;
+    }
   }
 
   /**
@@ -195,7 +197,6 @@ export abstract class AbstractRenderer {
     forced: boolean;
   }) {
     const previousStoryRenderInfo = this.previousStoryRenderInfo.get(targetDOMNode);
-
     const currentStoryRender = {
       storyFnAngular,
       moduleMetadataSnapshot: stringify(moduleMetadata, { allowFunction: false }),

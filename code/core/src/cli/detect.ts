@@ -111,7 +111,10 @@ export function detectFrameworkPreset(
  *
  * @returns CoreBuilder
  */
-export async function detectBuilder(packageManager: JsPackageManager, projectType: ProjectType) {
+export async function detectBuilder(
+  packageManager: JsPackageManager,
+  projectType: ProjectType
+): Promise<CoreBuilder> {
   const viteConfig = findUpSync(viteConfigFiles);
   const webpackConfig = findUpSync(webpackConfigFiles);
   const dependencies = await packageManager.getAllDependencies();

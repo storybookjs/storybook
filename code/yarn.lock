@@ -6442,9 +6442,21 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/addon-test@workspace:*, @storybook/addon-test@workspace:addons/test":
+"@storybook/addon-themes@workspace:*, @storybook/addon-themes@workspace:addons/themes":
   version: 0.0.0-use.local
-  resolution: "@storybook/addon-test@workspace:addons/test"
+  resolution: "@storybook/addon-themes@workspace:addons/themes"
+  dependencies:
+    "@storybook/icons": "npm:^1.4.0"
+    ts-dedent: "npm:^2.0.0"
+    typescript: "npm:^5.7.3"
+  peerDependencies:
+    storybook: "workspace:^"
+  languageName: unknown
+  linkType: soft
+
+"@storybook/addon-vitest@workspace:*, @storybook/addon-vitest@workspace:addons/vitest":
+  version: 0.0.0-use.local
+  resolution: "@storybook/addon-vitest@workspace:addons/vitest"
   dependencies:
     "@storybook/global": "npm:^5.0.0"
     "@storybook/icons": "npm:^1.4.0"
@@ -6483,18 +6495,6 @@ __metadata:
       optional: true
     vitest:
       optional: true
-  languageName: unknown
-  linkType: soft
-
-"@storybook/addon-themes@workspace:*, @storybook/addon-themes@workspace:addons/themes":
-  version: 0.0.0-use.local
-  resolution: "@storybook/addon-themes@workspace:addons/themes"
-  dependencies:
-    "@storybook/icons": "npm:^1.4.0"
-    ts-dedent: "npm:^2.0.0"
-    typescript: "npm:^5.7.3"
-  peerDependencies:
-    storybook: "workspace:^"
   languageName: unknown
   linkType: soft
 
@@ -7244,8 +7244,8 @@ __metadata:
     "@storybook/addon-jest": "workspace:*"
     "@storybook/addon-links": "workspace:*"
     "@storybook/addon-onboarding": "workspace:*"
-    "@storybook/addon-test": "workspace:*"
     "@storybook/addon-themes": "workspace:*"
+    "@storybook/addon-vitest": "workspace:*"
     "@storybook/angular": "workspace:*"
     "@storybook/bench": "npm:next"
     "@storybook/blocks": "workspace:*"

@@ -230,10 +230,10 @@ export const TestingModule = ({
     }
   }, [isCollapsed]);
 
-  const toggleCollapsed = useCallback((event: SyntheticEvent) => {
-    event.stopPropagation();
+  const toggleCollapsed = useCallback((event?: SyntheticEvent, value?: boolean) => {
+    event?.stopPropagation();
     setChangingCollapse(true);
-    setCollapsed((s) => !s);
+    setCollapsed((s) => value ?? !s);
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
@@ -249,6 +249,12 @@ export const TestingModule = ({
     (testProviderState) => testProviderState === 'test-provider-state:crashed'
   );
   const hasTestProviders = Object.values(registeredTestProviders).length > 0;
+
+  useEffect(() => {
+    if (isCrashed && isCollapsed) {
+      toggleCollapsed(undefined, false);
+    }
+  }, [isCrashed, isCollapsed, toggleCollapsed]);
 
   if (!hasTestProviders && (!errorCount || !warningCount)) {
     return null;
@@ -291,7 +297,7 @@ export const TestingModule = ({
           </Collapsible>
         )}
 
-        <Bar {...(hasTestProviders ? { onClick: toggleCollapsed } : {})}>
+        <Bar {...(hasTestProviders ? { onClick: (e) => toggleCollapsed(e) } : {})}>
           <Action>
             {hasTestProviders && (
               <WithTooltip
@@ -330,7 +336,7 @@ export const TestingModule = ({
                   size="medium"
                   variant="ghost"
                   padding="small"
-                  onClick={toggleCollapsed}
+                  onClick={(e) => toggleCollapsed(e)}
                   id="testing-module-collapse-toggle"
                   aria-label={isCollapsed ? 'Expand testing module' : 'Collapse testing module'}
                 >

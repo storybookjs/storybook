@@ -155,7 +155,7 @@ export const viteFinal = async (config: any, options: Options) => {
   const { react, reactDom, mdx } = await getResolvedReact(options);
 
   const blocksPath = dirname(require.resolve('@storybook/blocks/package.json'));
-
+  const themingPath = dirname(require.resolve('storybook/theming'));
   const packageDeduplicationPlugin = {
     name: 'storybook:package-deduplication',
     enforce: 'pre',
@@ -173,6 +173,7 @@ export const viteFinal = async (config: any, options: Options) => {
            * components to fail to render.
            */
           '@storybook/blocks': blocksPath,
+          'storybook/theming': themingPath,
         },
       },
     }),

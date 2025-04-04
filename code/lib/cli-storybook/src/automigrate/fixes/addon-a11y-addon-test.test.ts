@@ -790,5 +790,32 @@ describe('addonA11yAddonTest', () => {
         };"
       `);
     });
+
+    it('should handle const parameters with preview object', async () => {
+      const source = dedent`
+        const parameters = {};
+        const preview = {
+          parameters,
+        };
+        export default preview;
+      `;
+
+      const transformed = await transformPreviewFile(source, process.cwd());
+
+      expect(transformed).toMatchInlineSnapshot(`
+        "const parameters = {
+          a11y: {
+            // 'todo' - show a11y violations in the test UI only
+            // 'error' - fail CI on a11y violations
+            // 'off' - skip a11y checks entirely
+            test: "todo"
+          }
+        };
+        const preview = {
+          parameters,
+        };
+        export default preview;"
+      `);
+    });
   });
 });

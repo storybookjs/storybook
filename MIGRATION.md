@@ -3134,7 +3134,7 @@ In Storybook 7.0 we introduced a convenient package that provides an out of the 
 
 #### SvelteKit: needs the `@storybook/sveltekit` framework
 
-In Storybook 7.0 we introduced a convenient package that provides an out of the box experience for SvelteKit projects: `@storybook/sveltekit`. Please see the [following resource](./code/frameworks/sveltekit/README.md#getting-started) to get started with it.
+In Storybook 7.0 we introduced a convenient package that provides an out of the box experience for SvelteKit projects: `@storybook/sveltekit`. Please see the [following resource](https://storybook.js.org/docs/get-started/frameworks/sveltekit?renderer=svelte) to get started with it.
 
 For existing users, SvelteKit projects need to use the `@storybook/sveltekit` framework in the `main.js` file. Previously it was enough to just setup Storybook with Svelte+Vite, but that is no longer the case.
 

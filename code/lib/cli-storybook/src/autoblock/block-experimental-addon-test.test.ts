@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 import semver from 'semver';
+import dedent from 'ts-dedent';
 
 import { blocker } from './block-experimental-addon-test';
 
@@ -101,7 +102,7 @@ describe('experimentalAddonTestVitest blocker', () => {
 
   test('log should return correct message', () => {
     const message = blocker.log({} as any, true);
-    expect(message).toMatchInlineSnapshot(`
+    expect(message).toMatchInlineSnapshot(dedent`
       "@storybook/experimental-addon-test is being stabilized in Storybook 9.
 
       The addon will be renamed to @storybook/addon-vitest and as part of this stabilization, we have dropped support for Vitest 2.

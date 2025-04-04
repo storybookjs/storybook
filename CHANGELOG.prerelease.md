@@ -1,3 +1,10 @@
+## 9.0.0-alpha.16
+
+- Automigration: Remove `@storybook/addon-essentials` proper - [#31015](https://github.com/storybookjs/storybook/pull/31015), thanks @ndelangen!
+- Core: Automatically expand testing module on unhandled error - [#31028](https://github.com/storybookjs/storybook/pull/31028), thanks @ghengeveld!
+- Core: Fix using dates in expect statements - [#28413](https://github.com/storybookjs/storybook/pull/28413), thanks @yann-combarnous!
+- Csf-Tools: Enhance setFieldNode logic to handle variable declarations - [#31056](https://github.com/storybookjs/storybook/pull/31056), thanks @valentinpalkovic!
+
 ## 9.0.0-alpha.15
 
 - Addon A11y: Add `linkPath` to Axe results and use it in copy link action - [#31009](https://github.com/storybookjs/storybook/pull/31009), thanks @ghengeveld!

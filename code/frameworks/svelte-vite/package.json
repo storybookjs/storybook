@@ -68,7 +68,7 @@
     "@types/node": "^22.0.0",
     "svelte": "^5.0.5",
     "typescript": "^5.7.3",
-    "vite": "5.1.6"
+    "vite": "^6.2.5"
   },
   "peerDependencies": {
     "@sveltejs/vite-plugin-svelte": "^2.0.0 || ^3.0.0 || ^4.0.0 || ^5.0.0",

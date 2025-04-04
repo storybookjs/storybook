@@ -31,7 +31,7 @@ import { printError, printInfo, printSuccess, printWarning, step } from './posti
 import { loadTemplate, updateConfigFile, updateWorkspaceFile } from './updateVitestFile';
 import { getAddonNames } from './utils';
 
-const ADDON_NAME = '@storybook/addon-test' as const;
+const ADDON_NAME = '@storybook/addon-vitest' as const;
 const EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.cts', '.mts', '.cjs', '.mjs'];
 
 const addonA11yName = '@storybook/addon-a11y';
@@ -324,7 +324,7 @@ export default async function postInstall(options: PostinstallOptions) {
 
   if (a11yAddon) {
     try {
-      logger.plain(`${step} Setting up ${addonA11yName} for @storybook/addon-test:`);
+      logger.plain(`${step} Setting up ${addonA11yName} for @storybook/addon-vitest:`);
       await $({
         stdio: 'inherit',
       })`storybook automigrate addonA11yAddonTest ${options.yes ? '--yes' : ''}`;
@@ -332,7 +332,7 @@ export default async function postInstall(options: PostinstallOptions) {
       printError(
         '🚨 Oh no!',
         dedent`
-        We have detected that you have ${addonA11yName} installed but could not automatically set it up for @storybook/addon-test.
+        We have detected that you have ${addonA11yName} installed but could not automatically set it up for @storybook/addon-vitest.
 
         Please refer to the documentation to complete the setup manually:
         ${picocolors.cyan(`https://storybook.js.org/docs/writing-tests/accessibility-testing#test-addon-integration`)}

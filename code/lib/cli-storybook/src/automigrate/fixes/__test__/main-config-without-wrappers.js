@@ -1,6 +1,6 @@
 const config = {
   stories: ['../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
-  addons: ['@storybook/addon-essentials', '@storybook/addon-test'],
+  addons: ['@storybook/addon-essentials', '@storybook/addon-vitest'],
   framework: {
     name: '@storybook/angular',
     options: {},

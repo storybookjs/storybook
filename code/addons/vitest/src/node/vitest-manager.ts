@@ -37,7 +37,7 @@ type TagsFilter = {
   skip: string[];
 };
 
-const packageDir = dirname(require.resolve('@storybook/addon-test/package.json'));
+const packageDir = dirname(require.resolve('@storybook/addon-vitest/package.json'));
 
 // We have to tell Vitest that it runs as part of Storybook
 process.env.VITEST_STORYBOOK = 'true';

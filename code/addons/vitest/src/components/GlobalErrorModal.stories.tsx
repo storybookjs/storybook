@@ -122,7 +122,7 @@ export const UnhandledErrors: Story = {
             stack: dedent`Error: this is an error rejected in play
     at play (http://localhost:63315/some/absolute/path/to/file.js?import&browserv=1742507682505:73:20)
     at runStory (http://localhost:63315/@fs/some/absolute/path/to/.vite/deps/chunk-YVH55Y2L.js?v=77e3ac43:31517:11)
-    at async http://localhost:63315/@fs/some/absolute/path/to/.vite/deps/@storybook_addon-test_internal_test-utils.js?v=59e7fce5:121:5
+    at async http://localhost:63315/@fs/some/absolute/path/to/.vite/deps/@storybook_addon-vitest_internal_test-utils.js?v=59e7fce5:121:5
     at async http://localhost:63315/@fs/some/absolute/path/to/@vitest/runner/dist/index.js?v=77e3ac43:573:22`,
             VITEST_TEST_PATH: '/some/absolute/path/to/file.js',
             VITEST_TEST_NAME: 'My other test',

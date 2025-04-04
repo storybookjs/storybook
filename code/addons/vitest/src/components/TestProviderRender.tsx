@@ -17,7 +17,7 @@ import type { API } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import { A11Y_ADDON_ID, A11Y_PANEL_ID, PANEL_ID } from '../constants';
-import type { StoreState } from '../types';
+import type { RunTrigger, StoreState } from '../types';
 import type { StatusValueToStoryIds } from '../use-test-provider-state';
 import { Description } from './Description';
 import { TestStatusIcon } from './TestStatusIcon';
@@ -325,7 +325,8 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                   note={
                     watching
                       ? 'Unavailable in watch mode'
-                      : currentRun.triggeredBy && currentRun.triggeredBy !== 'global'
+                      : currentRun.triggeredBy &&
+                          !(['global', 'run-all'] as RunTrigger[]).includes(currentRun.triggeredBy)
                         ? 'Unavailable when running focused tests'
                         : isRunning
                           ? 'Testing in progress'
@@ -338,7 +339,9 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                 />
               }
             >
-              {watching || (currentRun.triggeredBy && currentRun.triggeredBy !== 'global') ? (
+              {watching ||
+              (currentRun.triggeredBy &&
+                !(['global', 'run-all'] as RunTrigger[]).includes(currentRun.triggeredBy)) ? (
                 <IconButton size="medium" disabled>
                   <InfoIcon
                     aria-label={

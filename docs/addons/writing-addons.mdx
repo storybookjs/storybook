@@ -69,14 +69,14 @@ By default, code for the UI-based addons is located in one of the following file
 Going through the code blocks in sequence:
 
 ```ts title="src/Tool.tsx"
-import { useGlobals, useStorybookApi } from '@storybook/manager-api';
-import { IconButton } from '@storybook/components';
+import { useGlobals, useStorybookApi } from 'storybook/manager-api';
+import { IconButton } from 'storybook/internal/components;
 import { LightningIcon } from '@storybook/icons';
 ```
 
 The [`useGlobals`](./addons-api.mdx#useglobals) and [`useStorybookApi`](./addons-api.mdx#usestorybookapi) hooks from the `manager-api` package are used to access the Storybook's APIs, allowing users to interact with the addon, such as enabling or disabling it.
 
-The `IconButton` or `Button` component from the [`@storybook/components`](https://www.npmjs.com/package/@storybook/components) package can be used to render the buttons in the toolbar. The [`@storybook/icons`](https://github.com/storybookjs/icons) package provides a large set of appropriately sized and styled icons to choose from.
+The `IconButton` or `Button` component from the `storybook/internal/components` module can be used to render the buttons in the toolbar. The [`@storybook/icons`](https://github.com/storybookjs/icons) package provides a large set of appropriately sized and styled icons to choose from.
 
 ```ts title="src/Tool.tsx"
 export const Tool = memo(function MyAddonSelector() {
@@ -189,13 +189,8 @@ The first category of metadata is related to the addon itself. This includes the
   "types": "dist/index.d.ts",
   "files": ["dist/**/*", "README.md", "*.js", "*.d.ts"],
   "devDependencies": {
-    "@storybook/blocks": "^7.0.0",
-    "@storybook/components": "^7.0.0",
-    "@storybook/core-events": "^7.0.0",
-    "@storybook/manager-api": "^7.0.0",
-    "@storybook/preview-api": "^7.0.0",
-    "@storybook/theming": "^7.0.0",
-    "@storybook/types": "^7.0.0"
+    "@storybook/blocks": "^9.0.0",
+    "storybook": "^9.0.0"
   },
   "bundler": {
     "exportEntries": ["src/index.ts"],

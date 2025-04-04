@@ -435,7 +435,7 @@ Some example usages of custom indexers include:
 
   ```ts title=".storybook/main.js|ts"
   import type { StorybookConfig } from '@storybook/svelte-vite';
-  import type { Indexer } from '@storybook/types';
+  import type { Indexer } from 'storybook/internal/types';
 
   const urlIndexer: Indexer = {
     test: /\.url\.js$/,
@@ -473,7 +473,7 @@ Some example usages of custom indexers include:
   Add a Storybook UI configuration file (i.e., `.storybook/manager.js|ts`) to render the indexed URLs as sidebar links in the UI:
 
   ```ts title=".storybook/manager.ts"
-  import { addons } from '@storybook/manager-api';
+  import { addons } from 'storybook/manager-api';
 
   import SidebarLabelWrapper from './components/SidebarLabelWrapper.tsx';
 

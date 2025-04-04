@@ -33,7 +33,7 @@ export default config;
 ```ts filename=".storybook/main.ts" renderer="common" language="ts-4-9"
 // Replace your-framework with the framework you are using (e.g., react-webpack5, vue3-vite)
 import type { StorybookConfig } from '@storybook/your-framework';
-import type { Indexer } from '@storybook/types';
+import type { Indexer } from 'storybook/internal/types';
 
 import fs from 'fs/promises';
 
@@ -69,7 +69,7 @@ export default config;
 ```ts filename=".storybook/main.ts" renderer="common" language="ts"
 // Replace your-framework with the framework you are using (e.g., react-webpack5, vue3-vite)
 import type { StorybookConfig } from '@storybook/your-framework';
-import type { Indexer } from '@storybook/types';
+import type { Indexer } from 'storybook/internal/types';
 
 import fs from 'fs/promises';
 

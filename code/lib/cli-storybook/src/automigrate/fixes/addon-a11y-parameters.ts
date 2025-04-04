@@ -80,7 +80,7 @@ export const addonA11yParameters: Fix<A11yOptions> = {
     return dedent`
       Found story or config files that may need to be updated.
       
-      The a11y addon has changed removed the ${picocolors.yellow('element')} parameter and replaced it with the ${picocolors.yellow('context')} parameter:
+      The a11y addon has removed the ${picocolors.yellow('element')} parameter and replaced it with the ${picocolors.yellow('context')} parameter:
       ${picocolors.yellow('parameters.a11y.element')} -> ${picocolors.yellow('parameters.a11y.context')}
 
       This change affects how accessibility checks are scoped in your stories and allows you to have more flexibility in defining the scope of your checks such as including or excluding multiple elements. We can update your code automatically.

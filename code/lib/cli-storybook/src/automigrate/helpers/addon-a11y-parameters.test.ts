@@ -196,7 +196,7 @@ describe('a11yParameters', () => {
         export default preview;
       `;
 
-      expect(transformStories(code)).toBeNull();
+      expect(transformPreview(code)).toBeNull();
     });
   });
 });

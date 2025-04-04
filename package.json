@@ -18,7 +18,7 @@
     "vite-ecosystem-ci:build": "yarn task --task sandbox --template react-vite/default-ts --start-from=install",
     "vite-ecosystem-ci:test": "yarn task --task test-runner-dev --template react-vite/default-ts --start-from=dev && yarn task --task test-runner --template react-vite/default-ts --start-from=build"
   },
-  "packageManager": "yarn@4.6.0",
+  "packageManager": "yarn@4.8.1",
   "engines": {
     "node": ">=20.0.0"
   }

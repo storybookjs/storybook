@@ -7,6 +7,17 @@ import { blocker } from './block-experimental-addon-test';
 
 vi.mock('semver');
 
+vi.mock('picocolors', async (importOriginal) => {
+  const mod = (await importOriginal()) as any;
+  return {
+    ...mod,
+    default: {
+      bold: (s: string) => s,
+      magenta: (s: string) => s,
+    },
+  };
+});
+
 describe('experimentalAddonTestVitest blocker', () => {
   const mockPackageManager = {
     getInstalledVersion: vi.fn(),

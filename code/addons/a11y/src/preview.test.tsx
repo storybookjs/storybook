@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { StoryContext } from 'storybook/internal/csf';
 
 import { run } from './a11yRunner';
-import { experimental_afterEach } from './preview';
+import { experimental_afterEach, withLinkPaths } from './preview';
 import { getIsVitestRunning, getIsVitestStandaloneRun } from './utils';
 
 const mocks = vi.hoisted(() => {
@@ -112,7 +112,7 @@ describe('afterEach', () => {
     expect(context.reporting.addReport).toHaveBeenCalledWith({
       type: 'a11y',
       version: 1,
-      result,
+      result: withLinkPaths(result as any, context.id),
       status: 'failed',
     });
   });
@@ -133,7 +133,7 @@ describe('afterEach', () => {
     expect(context.reporting.addReport).toHaveBeenCalledWith({
       type: 'a11y',
       version: 1,
-      result,
+      result: withLinkPaths(result as any, context.id),
       status: 'failed',
     });
   });
@@ -160,7 +160,7 @@ describe('afterEach', () => {
     expect(context.reporting.addReport).toHaveBeenCalledWith({
       type: 'a11y',
       version: 1,
-      result,
+      result: withLinkPaths(result as any, context.id),
       status: 'warning',
     });
   });
@@ -178,7 +178,7 @@ describe('afterEach', () => {
     expect(context.reporting.addReport).toHaveBeenCalledWith({
       type: 'a11y',
       version: 1,
-      result,
+      result: withLinkPaths(result as any, context.id),
       status: 'passed',
     });
   });
@@ -262,5 +262,19 @@ describe('afterEach', () => {
       },
       status: 'failed',
     });
+  });
+});
+
+describe('withLinkPaths', () => {
+  it('should add link paths to the result', () => {
+    const result = { violations };
+    // @ts-expect-error - linkPath doesn't exist here
+    expect(result.violations[0].nodes[0].linkPath).toBeUndefined();
+
+    const linkPaths = withLinkPaths(result as any, 'test-story');
+
+    expect(linkPaths.violations[0].nodes[0].linkPath).toEqual(
+      '/?path=/story/test-story&addonPanel=storybook/a11y/panel&a11ySelection=violations.color-contrast.1'
+    );
   });
 });

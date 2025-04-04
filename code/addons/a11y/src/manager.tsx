@@ -5,15 +5,15 @@ import { Badge } from 'storybook/internal/components';
 import { addons, types, useAddonState, useStorybookApi } from 'storybook/manager-api';
 
 import { A11YPanel } from './components/A11YPanel';
-import type { Results } from './components/A11yContext';
 import { A11yContextProvider } from './components/A11yContext';
 import { VisionSimulator } from './components/VisionSimulator';
 import { ADDON_ID, PANEL_ID, PARAM_KEY } from './constants';
+import type { EnhancedResults } from './types';
 
 const Title = () => {
   const api = useStorybookApi();
   const selectedPanel = api.getSelectedPanel();
-  const [addonState] = useAddonState<Results>(ADDON_ID);
+  const [addonState] = useAddonState<EnhancedResults>(ADDON_ID);
   const violationsNb = addonState?.violations?.length || 0;
   const incompleteNb = addonState?.incomplete?.length || 0;
   const count = violationsNb + incompleteNb;

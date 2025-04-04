@@ -36,6 +36,10 @@ const config = defineMain({
       titlePrefix: 'component-testing',
     },
     {
+      directory: '../core/src/controls/components',
+      titlePrefix: 'controls',
+    },
+    {
       directory: '../lib/blocks/src',
       titlePrefix: 'blocks',
     },

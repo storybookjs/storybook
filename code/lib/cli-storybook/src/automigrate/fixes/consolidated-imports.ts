@@ -227,6 +227,8 @@ export const consolidatedImports: Fix<ConsolidatedOptions> = {
       initial: defaultGlob,
     });
 
+    console.log('Scanning for affected files...');
+
     // eslint-disable-next-line depend/ban-dependencies
     const globby = (await import('globby')).globby;
 
@@ -237,6 +239,8 @@ export const consolidatedImports: Fix<ConsolidatedOptions> = {
       cwd: projectRoot,
       absolute: true,
     });
+
+    console.log(`Transforming ${sourceFiles.length} files...`);
 
     const importErrors = await transformImportFiles(sourceFiles, dryRun);
     errors.push(...importErrors);

@@ -103,6 +103,7 @@ export const addonEssentialsRemoveDocs: Fix<AddonDocsOptions> = {
 
     if (!dryRun) {
       // Remove addon-essentials package
+      console.log('Removing @storybook/addon-essentials...');
       await packageManager.runPackageCommand('storybook', [
         'remove',
         '@storybook/addon-essentials',
@@ -110,6 +111,7 @@ export const addonEssentialsRemoveDocs: Fix<AddonDocsOptions> = {
 
       // If docs was enabled (not disabled) and not already installed, add it
       if (!hasDocsDisabled && !hasDocsAddon) {
+        console.log('Adding @storybook/addon-docs...');
         await packageManager.runPackageCommand('storybook', ['add', '@storybook/addon-docs']);
       }
     }

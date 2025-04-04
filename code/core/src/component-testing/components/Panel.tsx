@@ -22,7 +22,7 @@ import {
 import {
   STATUS_TYPE_ID_COMPONENT_TEST,
   STORYBOOK_ADDON_TEST_CHANNEL,
-} from '../../../../addons/test/src/constants';
+} from '../../../../addons/vitest/src/constants';
 import { EVENTS } from '../../instrumenter/EVENTS';
 import { type Call, CallStates, type LogItem } from '../../instrumenter/types';
 import { ADDON_ID, INTERNAL_RENDER_CALL_ID } from '../constants';

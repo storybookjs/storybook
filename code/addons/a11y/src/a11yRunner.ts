@@ -15,11 +15,6 @@ const channel = addons.getChannel();
 
 const DEFAULT_PARAMETERS = { config: {}, options: {} } as const;
 
-const DEFAULT_CONTEXT = {
-  include: document.body,
-  exclude: ['.sb-wrapper', '#storybook-docs'], // Internal Storybook elements that are always in the document
-} satisfies ContextSpec;
-
 const DISABLED_RULES = [
   // In component testing, landmarks are not always present
   // and the rule check can cause false positives
@@ -55,7 +50,10 @@ export const run = async (input: A11yParameters = DEFAULT_PARAMETERS) => {
     throw new ElementA11yParameterError();
   }
 
-  const context: ContextSpec = DEFAULT_CONTEXT;
+  const context: ContextSpec = {
+    include: document?.body,
+    exclude: ['.sb-wrapper', '#storybook-docs'], // Internal Storybook elements that are always in the document
+  };
 
   if (input.context) {
     // 1. if context exists, but it's not an object with include or exclude, it's an implicit include to be used directly

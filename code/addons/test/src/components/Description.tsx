@@ -41,14 +41,14 @@ export function Description({
   const finishedTestCount = componentTestCount.success + componentTestCount.error;
 
   let description: string | React.ReactNode = 'Not run';
-  if (isSettingsUpdated) {
+  if (!entryId && isSettingsUpdated) {
     description = <PositiveText>Settings updated</PositiveText>;
   } else if (testProviderState === 'test-provider-state:running') {
     description =
       (finishedTestCount ?? 0) === 0
         ? 'Starting...'
         : `Testing... ${finishedTestCount}/${totalTestCount}`;
-  } else if (testProviderState === 'test-provider-state:crashed') {
+  } else if (!entryId && testProviderState === 'test-provider-state:crashed') {
     description = setModalOpen ? (
       <LinkComponent isButton onClick={() => setModalOpen(true)}>
         View full error
@@ -56,7 +56,7 @@ export function Description({
     ) : (
       'Crashed'
     );
-  } else if (unhandledErrors.length > 0) {
+  } else if (!entryId && unhandledErrors.length > 0) {
     const unhandledErrorDescription = `View ${unhandledErrors.length} unhandled error${unhandledErrors?.length > 1 ? 's' : ''}`;
     description = setModalOpen ? (
       <LinkComponent isButton onClick={() => setModalOpen(true)}>

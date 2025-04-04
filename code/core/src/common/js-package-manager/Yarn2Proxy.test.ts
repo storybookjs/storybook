@@ -48,7 +48,7 @@ describe('Yarn 2 Proxy', () => {
       expect(executeCommandSpy).toHaveBeenLastCalledWith(
         expect.objectContaining({
           command: 'yarn',
-          args: ['compodoc', '-e', 'json', '-d', '.'],
+          args: ['exec', 'compodoc', '-e', 'json', '-d', '.'],
         })
       );
     });

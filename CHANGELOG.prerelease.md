@@ -1,3 +1,7 @@
+## 9.0.0-alpha.18
+
+- Addon-vitest: Correctly set coverage when restarting Vitest due to config change - [#31069](https://github.com/storybookjs/storybook/pull/31069), thanks @JReinhold!
+
 ## 9.0.0-alpha.17
 
 - Addon Test: Rename `@storybook/experimental-addon-test` to `@storybook/addon-vitest` - [#31014](https://github.com/storybookjs/storybook/pull/31014), thanks @valentinpalkovic!

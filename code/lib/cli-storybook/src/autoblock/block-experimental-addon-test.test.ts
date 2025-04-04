@@ -1,0 +1,116 @@
+import { beforeEach, describe, expect, test, vi } from 'vitest';
+
+import semver from 'semver';
+
+import { blocker } from './block-experimental-addon-test';
+
+vi.mock('semver');
+
+describe('experimentalAddonTestVitest blocker', () => {
+  const mockPackageManager = {
+    getInstalledVersion: vi.fn(),
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(semver.lt).mockReturnValue(false);
+    mockPackageManager.getInstalledVersion.mockResolvedValue('3.0.0');
+  });
+
+  test('should return false if experimental addon is not installed', async () => {
+    const result = await blocker.check({
+      packageJson: {
+        dependencies: {},
+        devDependencies: {},
+      },
+      packageManager: mockPackageManager as any,
+    } as any);
+
+    expect(result).toBe(false);
+    expect(mockPackageManager.getInstalledVersion).not.toHaveBeenCalled();
+  });
+
+  test('should return false if vitest is not installed', async () => {
+    mockPackageManager.getInstalledVersion.mockResolvedValue(null);
+
+    const result = await blocker.check({
+      packageJson: {
+        dependencies: {
+          '@storybook/experimental-addon-test': '^1.0.0',
+        },
+        devDependencies: {},
+      },
+      packageManager: mockPackageManager as any,
+    } as any);
+
+    expect(result).toBe(false);
+    expect(mockPackageManager.getInstalledVersion).toHaveBeenCalledWith('vitest');
+  });
+
+  test('should return true if vitest version is less than 3.0.0', async () => {
+    mockPackageManager.getInstalledVersion.mockResolvedValue('2.9.0');
+    vi.mocked(semver.lt).mockReturnValue(true);
+
+    const result = await blocker.check({
+      packageJson: {
+        dependencies: {
+          '@storybook/experimental-addon-test': '^1.0.0',
+        },
+        devDependencies: {},
+      },
+      packageManager: mockPackageManager as any,
+    } as any);
+
+    expect(result).toBe(true);
+    expect(mockPackageManager.getInstalledVersion).toHaveBeenCalledWith('vitest');
+    expect(semver.lt).toHaveBeenCalledWith('2.9.0', '3.0.0');
+  });
+
+  test('should return false if vitest version is 3.0.0 or greater', async () => {
+    mockPackageManager.getInstalledVersion.mockResolvedValue('3.0.0');
+    vi.mocked(semver.lt).mockReturnValue(false);
+
+    const result = await blocker.check({
+      packageJson: {
+        dependencies: {
+          '@storybook/experimental-addon-test': '^1.0.0',
+        },
+        devDependencies: {},
+      },
+      packageManager: mockPackageManager as any,
+    } as any);
+
+    expect(result).toBe(false);
+    expect(mockPackageManager.getInstalledVersion).toHaveBeenCalledWith('vitest');
+    expect(semver.lt).toHaveBeenCalledWith('3.0.0', '3.0.0');
+  });
+
+  test('should check both dependencies and devDependencies for experimental addon', async () => {
+    const result = await blocker.check({
+      packageJson: {
+        dependencies: {},
+        devDependencies: {
+          '@storybook/experimental-addon-test': '^1.0.0',
+        },
+      },
+      packageManager: mockPackageManager as any,
+    } as any);
+
+    expect(mockPackageManager.getInstalledVersion).toHaveBeenCalledWith('vitest');
+  });
+
+  test('log should return correct message', () => {
+    const message = blocker.log({} as any, true);
+    expect(message).toMatchInlineSnapshot(`
+      "@storybook/experimental-addon-test is being stabilized in Storybook 9.
+
+      The addon will be renamed to @storybook/addon-vitest and as part of this stabilization, we have dropped support for Vitest 2.
+
+      You have two options to proceed:
+      1. Remove @storybook/experimental-addon-test if you don't need it
+      2. Upgrade to Vitest 3 to continue using the addon
+
+      After addressing this, you can try running the upgrade command again."
+    `);
+  });
+});

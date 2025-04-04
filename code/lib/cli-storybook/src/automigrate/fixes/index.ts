@@ -2,7 +2,10 @@ import { csfFactories } from '../../codemod/csf-factories';
 import type { CommandFix, Fix } from '../types';
 import { addonA11yAddonTest } from './addon-a11y-addon-test';
 import { addonA11yParameters } from './addon-a11y-parameters';
+import { addonEssentialsRemoveDocs } from './addon-essentials-remove-docs';
 import { addonExperimentalTest } from './addon-experimental-test';
+import { addonMdxGfmRemove } from './addon-mdx-gfm-remove';
+import { addonStorysourceRemove } from './addon-storysource-remove';
 import { consolidatedImports } from './consolidated-imports';
 import { eslintPlugin } from './eslint-plugin';
 import { initialGlobals } from './initial-globals';
@@ -17,6 +20,8 @@ export * from '../types';
 export const allFixes: Fix[] = [
   eslintPlugin,
   wrapRequire,
+  addonMdxGfmRemove,
+  addonStorysourceRemove,
   upgradeStorybookRelatedDependencies,
   initialGlobals,
   addonA11yAddonTest,
@@ -25,6 +30,7 @@ export const allFixes: Fix[] = [
   rnstorybookConfig,
   removeAddonInteractions,
   rendererToFramework,
+  addonEssentialsRemoveDocs,
   addonA11yParameters,
 ];
 

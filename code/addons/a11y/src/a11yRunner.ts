@@ -75,7 +75,7 @@ export const run = async (input: A11yParameters = DEFAULT_PARAMETERS) => {
       'exclude' in input.context &&
       input.context.exclude !== undefined
     ) {
-      context.exclude = (DEFAULT_CONTEXT.exclude as any).concat(input.context.exclude);
+      context.exclude = (context.exclude as any).concat(input.context.exclude);
     }
   }
 

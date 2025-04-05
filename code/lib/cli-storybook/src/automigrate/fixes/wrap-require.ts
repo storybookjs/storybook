@@ -1,3 +1,4 @@
+import { types as t } from 'storybook/internal/babel';
 import { detectPnp } from 'storybook/internal/cli';
 import { readConfig } from 'storybook/internal/csf-tools';
 
@@ -69,16 +70,63 @@ export const wrapRequire: Fix<WrapRequireRunOptions> = {
           });
 
           if (getRequireWrapperName(mainConfig) === null) {
-            if (
-              mainConfig?.fileName?.endsWith('.cjs') ||
-              mainConfig?.fileName?.endsWith('.cts') ||
-              mainConfig?.fileName?.endsWith('.cjsx') ||
-              mainConfig?.fileName?.endsWith('.ctsx')
-            ) {
-              mainConfig.setRequireImport(['dirname', 'join'], 'path');
-            } else {
-              mainConfig.setImport(['dirname', 'join'], 'path');
+            // Check for existing path imports
+            const existingPathImport = mainConfig
+              .getBodyDeclarations()
+              .find(
+                (node): node is t.ImportDeclaration =>
+                  t.isImportDeclaration(node) &&
+                  (node.source.value === 'path' || node.source.value === 'node:path')
+              );
+
+            const pathSource = existingPathImport?.source.value || 'path';
+            const existingSpecifiers = existingPathImport?.specifiers || [];
+
+            // Check if we already have the imports we need
+            const hasDirname = existingSpecifiers.some(
+              (spec) =>
+                t.isImportSpecifier(spec) &&
+                t.isIdentifier(spec.imported) &&
+                spec.imported.name === 'dirname'
+            );
+            const hasJoin = existingSpecifiers.some(
+              (spec) =>
+                t.isImportSpecifier(spec) &&
+                t.isIdentifier(spec.imported) &&
+                spec.imported.name === 'join'
+            );
+
+            const importsToAdd = [];
+
+            if (!hasDirname) {
+              importsToAdd.push('dirname');
             }
+
+            if (!hasJoin) {
+              importsToAdd.push('join');
+            }
+
+            if (importsToAdd.length > 0) {
+              if (existingPathImport) {
+                importsToAdd.forEach((importName) => {
+                  existingPathImport.specifiers.push(
+                    t.importSpecifier(t.identifier(importName), t.identifier(importName))
+                  );
+                });
+              } else {
+                if (
+                  mainConfig?.fileName?.endsWith('.cjs') ||
+                  mainConfig?.fileName?.endsWith('.cts') ||
+                  mainConfig?.fileName?.endsWith('.cjsx') ||
+                  mainConfig?.fileName?.endsWith('.ctsx')
+                ) {
+                  mainConfig.setRequireImport(importsToAdd, pathSource);
+                } else {
+                  mainConfig.setImport(importsToAdd, pathSource);
+                }
+              }
+            }
+
             mainConfig.setBodyDeclaration(
               getRequireWrapperAsCallExpression(result.isConfigTypescript)
             );

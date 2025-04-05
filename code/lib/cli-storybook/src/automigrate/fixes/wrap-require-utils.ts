@@ -195,7 +195,13 @@ export function wrapValueWithRequireWrapper(config: ConfigFile, node: t.Node) {
     if (t.isArrayExpression(n)) {
       n.elements.forEach((element, index, elements) => {
         if (t.isStringLiteral(element)) {
-          elements[index] = getReferenceToRequireWrapper(config, element.value);
+          // TODO: Recheck this logic, it's weird for the user that we don't wrap the svelte-csf addon.
+          // Until the svelte-csf addon is updated, we don't want to wrap it as it causes issues in Storybook.
+          if (element.value === '@storybook/addon-svelte-csf') {
+            elements[index] = element;
+          } else {
+            elements[index] = getReferenceToRequireWrapper(config, element.value);
+          }
         }
       });
     }

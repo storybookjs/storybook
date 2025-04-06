@@ -7,6 +7,17 @@ export default {
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   addons: [
     // Other addons go here
+
+    // If you have @storybook/addon-essentials enabled, change it to the following:
+    /*
+    {
+      name: "@storybook/addon-essentials",
+      options: {
+        docs: false,
+      },
+    },
+    */
+
     {
       name: '@storybook/addon-docs',
       options: {
@@ -32,6 +43,17 @@ const config: StorybookConfig = {
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   addons: [
     // Other addons go here
+
+    // If you have @storybook/addon-essentials enabled, change it to the following:
+    /*
+    {
+      name: "@storybook/addon-essentials",
+      options: {
+        docs: false,
+      },
+    },
+    */
+
     {
       name: '@storybook/addon-docs',
       options: {

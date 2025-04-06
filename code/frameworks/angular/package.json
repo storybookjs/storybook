@@ -52,6 +52,7 @@
     "prep": "rimraf dist && jiti ../../../scripts/prepare/tsc.ts"
   },
   "dependencies": {
+    "@storybook/builder-vite": "workspace:*",
     "@storybook/builder-webpack5": "workspace:*",
     "@storybook/core-webpack": "workspace:*",
     "@storybook/global": "^5.0.0",
@@ -69,7 +70,7 @@
     "webpack": "5"
   },
   "devDependencies": {
-    "@analogjs/vite-plugin-angular": "^1.12.1",
+    "@analogjs/vite-plugin-angular": "^1.15.0",
     "@angular-devkit/architect": "^0.1901.1",
     "@angular-devkit/build-angular": "^19.1.1",
     "@angular-devkit/core": "^19.1.1",
@@ -89,10 +90,12 @@
     "rimraf": "^6.0.1",
     "tmp": "^0.2.1",
     "typescript": "^5.7.3",
+    "vite": "^6.0.0",
     "webpack": "5",
     "zone.js": "^0.15.0"
   },
   "peerDependencies": {
+    "@analogjs/vite-plugin-angular": ">=1.15.0 < 2.0.0",
     "@angular-devkit/architect": ">=0.1800.0 < 0.2000.0",
     "@angular-devkit/build-angular": ">=18.0.0 < 20.0.0",
     "@angular-devkit/core": ">=18.0.0 < 20.0.0",
@@ -108,6 +111,7 @@
     "rxjs": "^6.5.3 || ^7.4.0",
     "storybook": "workspace:^",
     "typescript": "^4.9.0 || ^5.0.0",
+    "vite": "*",
     "zone.js": ">=0.14.0"
   },
   "peerDependenciesMeta": {

@@ -22,6 +22,7 @@ export type StandaloneOptions = CLIOptions &
       preserveSymlinks?: boolean;
       experimentalZoneless?: boolean;
     };
+    bundler?: string | null;
     angularBuilderContext?: BuilderContext | null;
     tsConfig?: string;
   };

@@ -123,6 +123,7 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (options, cont
         sourceMap = false,
         preserveSymlinks = false,
         experimentalZoneless = false,
+        bundler,
       } = options;
 
       const standaloneOptions: StandaloneOptions = {
@@ -158,6 +159,7 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (options, cont
         statsJson,
         loglevel,
         previewUrl,
+        bundler,
       };
 
       return standaloneOptions;

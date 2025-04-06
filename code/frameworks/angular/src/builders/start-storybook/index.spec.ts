@@ -230,4 +230,38 @@ describe.skip('Start Storybook Builder', () => {
       tsConfig: 'path/to/tsConfig.json',
     });
   });
+
+  it('should start storybook with Vite bundler', async () => {
+    const run = await architect.scheduleBuilder('@storybook/angular:start-storybook', {
+      port: 4400,
+      compodoc: false,
+      bundler: 'vite',
+    });
+
+    const output = await run.result;
+
+    await run.stop();
+
+    expect(output.success).toBeTruthy();
+    expect(mockRunScript).not.toHaveBeenCalledWith();
+    expect(buildDevStandaloneMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        angularBuilderContext: expect.any(Object),
+        ci: false,
+        configDir: '.storybook',
+        disableTelemetry: undefined,
+        host: 'localhost',
+        https: false,
+        packageJson: expect.any(Object),
+        port: 4400,
+        quiet: false,
+        smokeTest: false,
+        sslCa: undefined,
+        sslCert: undefined,
+        sslKey: undefined,
+        tsConfig: './storybook/tsconfig.ts',
+        bundler: 'vite',
+      })
+    );
+  });
 });

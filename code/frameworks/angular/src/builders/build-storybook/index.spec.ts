@@ -241,4 +241,33 @@ describe.skip('Build Storybook Builder', () => {
       })
     );
   });
+
+  it('should start storybook with Vite bundler', async () => {
+    const run = await architect.scheduleBuilder('@storybook/angular:build-storybook', {
+      compodoc: false,
+      bundler: 'vite',
+    });
+
+    const output = await run.result;
+
+    await run.stop();
+
+    expect(output.success).toBeTruthy();
+    expect(mockRunScript).not.toHaveBeenCalledWith();
+    expect(buildStaticStandaloneMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        angularBuilderContext: expect.any(Object),
+        configDir: '.storybook',
+        loglevel: undefined,
+        quiet: false,
+        disableTelemetry: undefined,
+        outputDir: 'storybook-static',
+        packageJson: expect.any(Object),
+        mode: 'static',
+        tsConfig: './storybook/tsconfig.ts',
+        statsJson: false,
+        bundler: 'vite',
+      })
+    );
+  });
 });

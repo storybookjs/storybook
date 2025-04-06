@@ -126,6 +126,11 @@
       "type": "boolean",
       "description": "Experimental: Use zoneless change detection.",
       "default": false
+    },
+    "bundler": {
+      "type": "string",
+      "default": "webpack",
+      "enum": ["webpack", "vite"]
     }
   },
   "additionalProperties": false,

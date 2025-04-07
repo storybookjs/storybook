@@ -237,7 +237,7 @@ export const rendererToFramework: Fix<MigrationResult> = {
       absolute: true,
     });
 
-    console.log(`Transforming ${sourceFiles.length} files...`);
+    console.log(`Scanning ${sourceFiles.length} files...`);
 
     // Transform imports for each renderer
     await Promise.all(

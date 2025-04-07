@@ -19,7 +19,7 @@ import { storyNameFromExport, toId } from 'storybook/internal/csf';
 import { printCsf, readCsf } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 import { isExampleStoryId, telemetry } from 'storybook/internal/telemetry';
-import type { CoreConfig, Options } from 'storybook/internal/types';
+import type { CoreConfig, Indexer, Options } from 'storybook/internal/types';
 
 import { duplicateStoryWithNewName } from './duplicate-story-with-new-name';
 import { updateArgsInCsfFile } from './update-args-in-csf-file';
@@ -50,50 +50,36 @@ const removeExtraNewlines = (code: string, name: string) => {
     : code;
 };
 
-export function initializeSaveStory(channel: Channel, options: Options, coreConfig: CoreConfig) {
+export async function initializeSaveStory(
+  channel: Channel,
+  options: Options,
+  coreConfig: CoreConfig,
+  indexers: Indexer[]
+) {
   channel.on(SAVE_STORY_REQUEST, async ({ id, payload }: RequestData<SaveStoryRequestPayload>) => {
     const { csfId, importPath, args, name } = payload;
 
-    let newStoryId: string | undefined;
-    let newStoryName: string | undefined;
-    let sourceFileName: string | undefined;
-    let sourceFilePath: string | undefined;
-    let sourceStoryName: string | undefined;
+    const sourceFileName = basename(importPath);
+    const sourceFilePath = join(process.cwd(), importPath);
 
     try {
-      sourceFileName = basename(importPath);
-      sourceFilePath = join(process.cwd(), importPath);
+      const indexer = indexers.find((ind) => ind.test.exec(sourceFilePath));
 
-      const csf = await readCsf(sourceFilePath, {
-        makeTitle: (userTitle: string) => userTitle || 'myTitle',
-      });
-
-      const parsed = csf.parse();
-      const stories = Object.entries(parsed._stories);
-
-      const [componentId, storyId] = csfId.split('--');
-      newStoryName = name && storyNameFromExport(name);
-      newStoryId = newStoryName && toId(componentId, newStoryName);
-
-      const [storyName] = stories.find(([key, value]) => value.id.endsWith(`--${storyId}`)) || [];
-      if (!storyName) {
-        throw new SaveStoryError(`Source story not found.`);
+      if (!indexer) {
+        throw new SaveStoryError(`No indexer found for ${sourceFilePath}`);
       }
-      if (name && csf.getStoryExport(name)) {
-        throw new SaveStoryError(`Story already exists.`);
+      if (!indexer.saveStory) {
+        throw new SaveStoryError(
+          `The indexer for the story format of ${sourceFilePath} does not support saving a story`
+        );
       }
 
-      sourceStoryName = storyNameFromExport(storyName);
-
-      await updateArgsInCsfFile(
-        name ? duplicateStoryWithNewName(parsed, storyName, name) : csf.getStoryExport(storyName),
-        args ? parseArgs(args) : {}
-      );
-
-      const code = await formatFileContent(
+      const { code, sourceStoryName, newStoryId, newStoryName } = await indexer.saveStory({
         sourceFilePath,
-        removeExtraNewlines(printCsf(csf).code, name || storyName)
-      );
+        sourceStoryId: csfId,
+        name,
+        args: args ? parseArgs(args) : {},
+      });
 
       // Writing the CSF file should trigger HMR, which causes the story to rerender. Delay the
       // response until that happens, but don't wait too long.
@@ -116,7 +102,7 @@ export function initializeSaveStory(channel: Channel, options: Options, coreConf
           sourceFileContent: code,
           sourceFileName,
           sourceStoryName,
-          sourceStoryExportName: storyName,
+          sourceStoryExportName: sourceStoryName,
         },
         error: null,
       } satisfies ResponseData<SaveStoryResponsePayload>);
@@ -150,3 +136,48 @@ export function initializeSaveStory(channel: Channel, options: Options, coreConf
     }
   });
 }
+
+export const csfSaveStory: Indexer['saveStory'] = async ({
+  sourceFilePath,
+  sourceStoryId,
+  name,
+  args,
+}) => {
+  const csf = await readCsf(sourceFilePath, {
+    makeTitle: (userTitle: string) => userTitle || 'myTitle',
+  });
+
+  const parsed = csf.parse();
+  const stories = Object.entries(parsed._stories);
+
+  const [componentId] = sourceStoryId.split('--');
+  const newStoryName = name && storyNameFromExport(name);
+  const newStoryId = newStoryName && toId(componentId, newStoryName);
+
+  const storyExportName = stories.find(([exportName, story]) => story.id === sourceStoryId)?.[0];
+  if (!storyExportName) {
+    throw new SaveStoryError(`Source story not found.`);
+  }
+  if (name && csf.getStoryExport(name)) {
+    throw new SaveStoryError(`Story already exists.`);
+  }
+
+  await updateArgsInCsfFile(
+    name
+      ? duplicateStoryWithNewName(parsed, storyExportName, name)
+      : csf.getStoryExport(storyExportName),
+    args
+  );
+
+  const code = await formatFileContent(
+    sourceFilePath,
+    removeExtraNewlines(printCsf(csf).code, name || storyExportName)
+  );
+
+  return {
+    sourceStoryName: storyNameFromExport(storyExportName),
+    newStoryName,
+    newStoryId,
+    code,
+  };
+};

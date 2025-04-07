@@ -62,6 +62,17 @@ export type Indexer = BaseIndexer & {
    * @returns A promise that resolves to an array of {@link IndexInput} objects.
    */
   createIndex: (fileName: string, options: IndexerOptions) => Promise<IndexInput[]>;
+  saveStory?: (params: {
+    sourceFilePath: string;
+    sourceStoryId: StoryId;
+    name: StoryName | undefined;
+    args: Record<string, any>;
+  }) => Promise<{
+    sourceStoryName: StoryName;
+    newStoryName: StoryName | undefined;
+    newStoryId: StoryId | undefined;
+    code: string;
+  }>;
 };
 
 export interface BaseIndexEntry {

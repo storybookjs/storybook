@@ -24,11 +24,10 @@ import type {
 
 import { dedent } from 'ts-dedent';
 
-import { cleanPaths, sanitizeError } from '../../telemetry/sanitize';
 import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel';
 import { initFileSearchChannel } from '../server-channel/file-search-channel';
 import { defaultStaticDirs } from '../utils/constants';
-import { initializeSaveStory } from '../utils/save-story/save-story';
+import { csfSaveStory, initializeSaveStory } from '../utils/save-story/save-story';
 import { parseStaticDir } from '../utils/server-statics';
 import { type OptionsWithRequiredCache, initializeWhatsNew } from '../utils/whats-new';
 
@@ -222,6 +221,7 @@ export const features: PresetProperty<'features'> = async (existing) => ({
 export const csfIndexer: Indexer = {
   test: /(stories|story)\.(m?js|ts)x?$/,
   createIndex: async (fileName, options) => (await readCsf(fileName, options)).parse().indexInputs,
+  saveStory: csfSaveStory,
 };
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -271,9 +271,10 @@ export const experimental_serverChannel = async (
   options: OptionsWithRequiredCache
 ) => {
   const coreOptions = await options.presets.apply('core');
+  const indexers = await options.presets.apply('experimental_indexers', []);
 
   initializeWhatsNew(channel, options, coreOptions);
-  initializeSaveStory(channel, options, coreOptions);
+  initializeSaveStory(channel, options, coreOptions, indexers);
 
   initFileSearchChannel(channel, options, coreOptions);
   initCreateNewStoryChannel(channel, options, coreOptions);

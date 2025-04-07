@@ -1,7 +1,7 @@
 export type SearchResult = Array<string>;
 
 /** File extensions that should be searched for */
-const FILE_EXTENSIONS = ['js', 'mjs', 'cjs', 'jsx', 'mts', 'ts', 'tsx', 'cts'];
+const FILE_EXTENSIONS = ['js', 'mjs', 'cjs', 'jsx', 'mts', 'ts', 'tsx', 'cts', 'svelte'];
 
 const IGNORED_FILES = [
   '**/node_modules/**',

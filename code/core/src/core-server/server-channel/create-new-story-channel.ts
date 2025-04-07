@@ -16,30 +16,42 @@ import {
   CREATE_NEW_STORYFILE_RESPONSE,
 } from 'storybook/internal/core-events';
 import { telemetry } from 'storybook/internal/telemetry';
-import type { CoreConfig, Options } from 'storybook/internal/types';
+import type { CoreConfig, Indexer, Options } from 'storybook/internal/types';
 
-import { getNewStoryFile } from '../utils/get-new-story-file';
+const DEFAULT_NEW_STORY_NAME = 'Default';
 
 export function initCreateNewStoryChannel(
   channel: Channel,
   options: Options,
-  coreOptions: CoreConfig
+  coreOptions: CoreConfig,
+  indexers: Indexer[]
 ) {
   /** Listens for events to create a new storyfile */
   channel.on(
     CREATE_NEW_STORYFILE_REQUEST,
     async (data: RequestData<CreateNewStoryRequestPayload>) => {
       try {
-        const { storyFilePath, exportedStoryName, storyFileContent } = await getNewStoryFile(
-          data.payload,
+        const indexer = indexers.find((ind) =>
+          ind.createNewStoryFile?.test.exec(data.payload.componentFilePath)
+        );
+
+        if (!indexer) {
+          throw new Error(`No indexer found for ${data.payload.componentFilePath}`);
+        }
+
+        const { newStoryFilePath, code } = await indexer.createNewStoryFile!.create(
+          { ...data.payload, newStoryName: DEFAULT_NEW_STORY_NAME },
           options
         );
 
-        const relativeStoryFilePath = relative(process.cwd(), storyFilePath);
+        const relativeStoryFilePath = relative(process.cwd(), newStoryFilePath);
 
-        const { storyId, kind } = await getStoryId({ storyFilePath, exportedStoryName }, options);
+        const { storyId, kind } = await getStoryId(
+          { storyFilePath: newStoryFilePath, exportedStoryName: DEFAULT_NEW_STORY_NAME },
+          options
+        );
 
-        if (existsSync(storyFilePath)) {
+        if (existsSync(newStoryFilePath)) {
           channel.emit(CREATE_NEW_STORYFILE_RESPONSE, {
             success: false,
             id: data.id,
@@ -60,15 +72,15 @@ export function initCreateNewStoryChannel(
           return;
         }
 
-        await writeFile(storyFilePath, storyFileContent, 'utf-8');
+        await writeFile(newStoryFilePath, code, 'utf-8');
 
         channel.emit(CREATE_NEW_STORYFILE_RESPONSE, {
           success: true,
           id: data.id,
           payload: {
             storyId,
-            storyFilePath: relative(process.cwd(), storyFilePath),
-            exportedStoryName,
+            storyFilePath: relative(process.cwd(), newStoryFilePath),
+            exportedStoryName: DEFAULT_NEW_STORY_NAME,
           },
           error: null,
         } satisfies ResponseData<CreateNewStoryResponsePayload>);

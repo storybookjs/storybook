@@ -27,6 +27,7 @@ import { dedent } from 'ts-dedent';
 import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel';
 import { initFileSearchChannel } from '../server-channel/file-search-channel';
 import { defaultStaticDirs } from '../utils/constants';
+import { csfCreateNewStoryFile } from '../utils/create-new-story-file';
 import { csfSaveStory, initializeSaveStory } from '../utils/save-story/save-story';
 import { parseStaticDir } from '../utils/server-statics';
 import { type OptionsWithRequiredCache, initializeWhatsNew } from '../utils/whats-new';
@@ -222,11 +223,15 @@ export const csfIndexer: Indexer = {
   test: /(stories|story)\.(m?js|ts)x?$/,
   createIndex: async (fileName, options) => (await readCsf(fileName, options)).parse().indexInputs,
   saveStory: csfSaveStory,
+  createNewStoryFile: {
+    test: /\.[cm]?[jt]sx?$/,
+    create: csfCreateNewStoryFile,
+  },
 };
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export const experimental_indexers: PresetProperty<'experimental_indexers'> = (existingIndexers) =>
-  [csfIndexer].concat(existingIndexers || []);
+  (existingIndexers || []).concat(csfIndexer);
 
 export const frameworkOptions = async (
   _: never,
@@ -277,7 +282,7 @@ export const experimental_serverChannel = async (
   initializeSaveStory(channel, options, coreOptions, indexers);
 
   initFileSearchChannel(channel, options, coreOptions);
-  initCreateNewStoryChannel(channel, options, coreOptions);
+  initCreateNewStoryChannel(channel, options, coreOptions, indexers);
 
   return channel;
 };

@@ -1,3 +1,4 @@
+import type { Options } from '..';
 import type { ComponentTitle, Parameters, Path, StoryId, StoryName, Tag } from './csf';
 
 type ExportName = string;
@@ -73,6 +74,22 @@ export type Indexer = BaseIndexer & {
     newStoryId: StoryId | undefined;
     code: string;
   }>;
+  createNewStoryFile?: {
+    test: RegExp;
+    create: (
+      params: {
+        componentFilePath: string;
+        componentExportName: string;
+        componentIsDefaultExport: boolean;
+        componentExportCount: number;
+        newStoryName: StoryName;
+      },
+      options: Options
+    ) => Promise<{
+      newStoryFilePath: string;
+      code: string;
+    }>;
+  };
 };
 
 export interface BaseIndexEntry {

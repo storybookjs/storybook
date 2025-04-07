@@ -20,7 +20,7 @@ import {
 import { telemetry } from 'storybook/internal/telemetry';
 import type { CoreConfig, Options, SupportedRenderers } from 'storybook/internal/types';
 
-import { doesStoryFileExist, getStoryMetadata } from '../utils/get-new-story-file';
+import { doesStoryFileExist, getStoryMetadata } from '../utils/create-new-story-file';
 import { getParser } from '../utils/parser';
 import { searchFiles } from '../utils/search-files';
 

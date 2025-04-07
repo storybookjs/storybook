@@ -2,7 +2,7 @@ import { join } from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';
 
-import { getNewStoryFile } from './get-new-story-file';
+import { csfCreateNewStoryFile } from './create-new-story-file';
 
 vi.mock('storybook/internal/common', async (importOriginal) => {
   const actual = await importOriginal<typeof import('storybook/internal/common')>();
@@ -14,7 +14,7 @@ vi.mock('storybook/internal/common', async (importOriginal) => {
 
 describe('get-new-story-file', () => {
   it('should create a new story file (TypeScript)', async () => {
-    const { exportedStoryName, storyFileContent, storyFilePath } = await getNewStoryFile(
+    const { exportedStoryName, storyFileContent, storyFilePath } = await csfCreateNewStoryFile(
       {
         componentFilePath: 'src/components/Page.tsx',
         componentExportName: 'Page',
@@ -52,7 +52,7 @@ describe('get-new-story-file', () => {
   });
 
   it('should create a new story file (JavaScript)', async () => {
-    const { exportedStoryName, storyFileContent, storyFilePath } = await getNewStoryFile(
+    const { exportedStoryName, storyFileContent, storyFilePath } = await csfCreateNewStoryFile(
       {
         componentFilePath: 'src/components/Page.jsx',
         componentExportName: 'Page',

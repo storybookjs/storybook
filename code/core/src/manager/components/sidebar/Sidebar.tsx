@@ -10,7 +10,6 @@ import {
 import type { API_LoadedRefData, StoryIndex } from 'storybook/internal/types';
 import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
 import { PlusIcon } from '@storybook/icons';
 
 import { type State, useStorybookApi } from 'storybook/manager-api';
@@ -111,7 +110,9 @@ const useCombination = (
   return useMemo(() => ({ hash, entries: Object.entries(hash) }), [hash]);
 };
 
-const isRendererReact = global.STORYBOOK_RENDERER === 'react';
+const rendererSupportsCreateStoryButton = ['react', 'svelte'].includes(
+  globalThis.STORYBOOK_RENDERER ?? ''
+);
 
 export interface SidebarProps extends API_LoadedRefData {
   refs: State['refs'];
@@ -138,10 +139,10 @@ export const Sidebar = React.memo(function Sidebar({
   menu,
   menuHighlighted = false,
   enableShortcuts = true,
-  isDevelopment = global.CONFIG_TYPE === 'DEVELOPMENT',
+  isDevelopment = globalThis.CONFIG_TYPE === 'DEVELOPMENT',
   refs = {},
   onMenuClick,
-  showCreateStoryButton = isDevelopment && isRendererReact,
+  showCreateStoryButton = isDevelopment && rendererSupportsCreateStoryButton,
 }: SidebarProps) {
   const [isFileSearchModalOpen, setIsFileSearchModalOpen] = useState(false);
   // @ts-expect-error (non strict)

@@ -93,16 +93,25 @@ export const csfCreateNewStoryFile: NonNullable<Indexer['createNewStoryFile']>['
   };
 };
 
-export const getStoryMetadata = (componentFilePath: string) => {
+export const getStoryMetadata = (
+  componentFilePath: string
+): {
+  storyFileName: string;
+  storyFileExtension: string;
+  isTypescript: boolean;
+  isSvelte: boolean;
+} => {
+  const isSvelte = /\.svelte$/.test(componentFilePath);
   const isTypescript = /\.(ts|tsx|mts|cts)$/.test(componentFilePath);
   const base = basename(componentFilePath);
   const extension = extname(componentFilePath);
   const basenameWithoutExtension = base.replace(extension, '');
-  const storyFileExtension = isTypescript ? 'tsx' : 'jsx';
+  const storyFileExtension = isSvelte ? 'svelte' : isTypescript ? 'tsx' : 'jsx';
   return {
     storyFileName: `${basenameWithoutExtension}.stories`,
     storyFileExtension,
     isTypescript,
+    isSvelte,
   };
 };
 
@@ -111,6 +120,7 @@ export const doesStoryFileExist = (parentFolder: string, storyFileName: string) 
     existsSync(join(parentFolder, `${storyFileName}.ts`)) ||
     existsSync(join(parentFolder, `${storyFileName}.tsx`)) ||
     existsSync(join(parentFolder, `${storyFileName}.js`)) ||
-    existsSync(join(parentFolder, `${storyFileName}.jsx`))
+    existsSync(join(parentFolder, `${storyFileName}.jsx`)) ||
+    existsSync(join(parentFolder, `${storyFileName}.svelte`))
   );
 };

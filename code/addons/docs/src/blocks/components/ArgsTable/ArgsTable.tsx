@@ -185,10 +185,11 @@ export type SortType = 'alpha' | 'requiredFirst' | 'none';
 type SortFn = (a: ArgType, b: ArgType) => number;
 
 const sortFns: Record<SortType, SortFn | null> = {
-  alpha: (a: ArgType, b: ArgType) => a.name.localeCompare(b.name),
+  alpha: (a: ArgType, b: ArgType) => (a.name ?? '').localeCompare(b.name ?? ''),
   requiredFirst: (a: ArgType, b: ArgType) =>
-    Number(!!b.type?.required) - Number(!!a.type?.required) || a.name.localeCompare(b.name),
-  none: undefined,
+    Number(!!b.type?.required) - Number(!!a.type?.required) ||
+    (a.name ?? '').localeCompare(b.name ?? ''),
+  none: null,
 };
 
 export interface ArgsTableOptionProps {
@@ -230,7 +231,7 @@ type Sections = {
   sections: Record<string, Section>;
 };
 
-const groupRows = (rows: ArgType, sort: SortType) => {
+const groupRows = (rows: ArgType, sort: SortType): Sections => {
   const sections: Sections = { ungrouped: [], ungroupedSubsections: {}, sections: {} };
 
   if (!rows) {
@@ -275,13 +276,15 @@ const groupRows = (rows: ArgType, sort: SortType) => {
   };
 
   const sorted = {
-    ungrouped: sections.ungrouped.sort(sortFn),
+    ungrouped: sortFn ? sections.ungrouped.sort(sortFn) : sections.ungrouped,
     ungroupedSubsections: sortSubsection(sections.ungroupedSubsections),
     sections: Object.keys(sections.sections).reduce<Record<string, Section>>(
       (acc, cur) => ({
         ...acc,
         [cur]: {
-          ungrouped: sections.sections[cur].ungrouped.sort(sortFn),
+          ungrouped: sortFn
+            ? sections.sections[cur].ungrouped.sort(sortFn)
+            : sections.sections[cur].ungrouped,
           subsections: sortSubsection(sections.sections[cur].subsections),
         },
       }),
@@ -301,8 +304,8 @@ const groupRows = (rows: ArgType, sort: SortType) => {
 const safeIncludeConditionalArg = (row: ArgType, args: Args, globals: Globals) => {
   try {
     return includeConditionalArg(row, args, globals);
-  } catch (err) {
-    once.warn(err.message);
+  } catch (err: unknown) {
+    once.warn((err as Error).message);
     return false;
   }
 };
@@ -343,8 +346,9 @@ export const ArgsTable: FC<ArgsTableProps> = (props) => {
     return <Skeleton />;
   }
 
-  const { rows, args, globals } = 'rows' in props && props;
-  const groups = groupRows(
+  const { rows, args, globals } =
+    'rows' in props ? props : { rows: undefined, args: undefined, globals: undefined };
+  const groups: Sections = groupRows(
     pickBy(
       rows || {},
       (row) => !row?.table?.disable && safeIncludeConditionalArg(row, args || {}, globals || {})

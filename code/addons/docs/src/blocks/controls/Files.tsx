@@ -53,13 +53,13 @@ export const FilesControl: FC<FilesControlProps> = ({
     }
     const fileUrls = Array.from(e.target.files).map((file) => URL.createObjectURL(file));
     onChange(fileUrls);
-    revokeOldUrls(value);
+    revokeOldUrls(value || []);
   }
 
   // Added useEffect hook to reset the file value when value is null
   useEffect(() => {
     if (value == null && inputElement.current) {
-      inputElement.current.value = null;
+      inputElement.current.value = '';
     }
   }, [value, name]);
 

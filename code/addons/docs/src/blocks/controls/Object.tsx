@@ -253,7 +253,7 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
   const hasData = data !== null && data !== undefined;
   const [showRaw, setShowRaw] = useState(!hasData);
 
-  const [parseError, setParseError] = useState<Error>(null);
+  const [parseError, setParseError] = useState<Error | null>(null);
   const readonly = !!argType?.table?.readonly;
   const updateRaw: (raw: string) => void = useCallback(
     (raw) => {
@@ -261,9 +261,9 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
         if (raw) {
           onChange(JSON.parse(raw));
         }
-        setParseError(undefined);
+        setParseError(null);
       } catch (e) {
-        setParseError(e);
+        setParseError(e as Error);
       }
     },
     [onChange]
@@ -275,7 +275,7 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
     setForceVisible(true);
   }, [setForceVisible]);
 
-  const htmlElRef = useRef(null);
+  const htmlElRef = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
     if (forceVisible && htmlElRef.current) {
       htmlElRef.current.select();
@@ -299,7 +299,7 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
       onBlur={(event: FocusEvent<HTMLTextAreaElement>) => updateRaw(event.target.value)}
       placeholder="Edit JSON string..."
       autoFocus={forceVisible}
-      valid={parseError ? 'error' : null}
+      valid={parseError ? 'error' : undefined}
       readOnly={readonly}
     />
   );

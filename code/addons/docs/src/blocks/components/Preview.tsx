@@ -1,4 +1,4 @@
-import type { ClipboardEvent, FC, ReactElement, ReactNode } from 'react';
+import type { ClipboardEvent, FC, PropsWithChildren, ReactElement, ReactNode } from 'react';
 import React, { Children, useCallback, useState } from 'react';
 
 import { ActionBar, Zoom } from 'storybook/internal/components';
@@ -14,7 +14,7 @@ import { StorySkeleton } from './Story';
 import { Toolbar } from './Toolbar';
 import { ZoomContext } from './ZoomContext';
 
-export interface PreviewProps {
+export type PreviewProps = PropsWithChildren<{
   isLoading?: true;
   layout?: Layout;
   isColumn?: boolean;
@@ -24,8 +24,7 @@ export interface PreviewProps {
   withToolbar?: boolean;
   className?: string;
   additionalActions?: ActionItem[];
-  children?: ReactNode;
-}
+}>;
 
 export type Layout = 'padded' | 'fullscreen' | 'centered';
 
@@ -96,9 +95,9 @@ const PreviewContainer = styled.div<PreviewProps>(
     overflow: 'hidden',
     margin: '25px 0 40px',
     ...getBlockBackgroundStyle(theme),
-    borderBottomLeftRadius: withSource && isExpanded && 0,
-    borderBottomRightRadius: withSource && isExpanded && 0,
-    borderBottomWidth: isExpanded && 0,
+    borderBottomLeftRadius: (withSource && isExpanded && 0) as any,
+    borderBottomRightRadius: (withSource && isExpanded && 0) as any,
+    borderBottomWidth: (isExpanded && 0) as any,
 
     'h3 + &': {
       marginTop: '16px',
@@ -108,12 +107,12 @@ const PreviewContainer = styled.div<PreviewProps>(
 );
 
 interface SourceItem {
-  source?: ReactElement;
+  source?: ReactElement | null;
   actionItem: ActionItem;
 }
 
 const getSource = (
-  withSource: SourceProps,
+  withSource: SourceProps | undefined,
   expanded: boolean,
   setExpanded: Function
 ): SourceItem => {
@@ -220,7 +219,7 @@ export const Preview: FC<PreviewProps> = ({
 
     e.preventDefault();
     if (additionalActionItems.filter((item) => item.title === 'Copied').length === 0) {
-      copyToClipboard(source.props.code).then(() => {
+      copyToClipboard(source?.props.code ?? '').then(() => {
         setAdditionalActionItems([
           ...additionalActionItems,
           {

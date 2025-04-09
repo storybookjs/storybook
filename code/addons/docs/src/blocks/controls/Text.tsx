@@ -68,7 +68,7 @@ export const TextControl: FC<TextProps> = ({
         size="flex"
         placeholder="Edit string..."
         autoFocus={forceVisible}
-        valid={isValid ? null : 'error'}
+        valid={isValid ? undefined : 'error'}
         {...{ name, value: isValid ? value : '', onFocus, onBlur }}
       />
       {maxLength && (

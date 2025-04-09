@@ -84,7 +84,7 @@ const InlineStory: FunctionComponent<InlineStoryProps> = (props) => {
         )} { min-height: ${height}; transform: translateZ(0); overflow: auto }`}</style>
       ) : null}
       {showLoader && <StorySkeleton />}
-      <div ref={storyRef} id={`${storyBlockIdFromId(props)}-inner`} data-name={story.name} />
+      <div ref={storyRef as any} id={`${storyBlockIdFromId(props)}-inner`} data-name={story.name} />
     </>
   );
 };

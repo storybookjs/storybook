@@ -163,8 +163,7 @@
       "./src/preview.ts",
       "./src/blocks.ts",
       "./src/shims/mdx-react-shim.ts",
-      "./src/mdx-loader.ts",
-      "./src/manager.tsx"
+      "./src/mdx-loader.ts"
     ],
     "managerEntries": [
       "./src/manager.tsx"

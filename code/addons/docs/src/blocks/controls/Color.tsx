@@ -209,7 +209,7 @@ const parseValue = (value: string): ParsedColor | undefined => {
   };
 };
 
-const getRealValue = (value: string, color: ParsedColor, colorSpace: ColorSpace) => {
+const getRealValue = (value: string, color: ParsedColor | undefined, colorSpace: ColorSpace) => {
   if (!value || !color?.valid) {
     return fallbackColor[colorSpace];
   }
@@ -235,7 +235,7 @@ const getRealValue = (value: string, color: ParsedColor, colorSpace: ColorSpace)
 
 const useColorInput = (
   initialValue: string | undefined,
-  onChange: (value: string) => string | void
+  onChange: (value: string | undefined) => string | void
 ) => {
   const [value, setValue] = useState(initialValue || '');
   const [color, setColor] = useState(() => parseValue(value));
@@ -330,7 +330,14 @@ const usePresets = (
         return;
       }
 
-      if (presets.some((preset) => id(preset[colorSpace]) === id(color[colorSpace]))) {
+      if (
+        presets.some(
+          (preset) =>
+            preset &&
+            preset[colorSpace] &&
+            id(preset[colorSpace] || '') === id(color[colorSpace] || '')
+        )
+      ) {
         return;
       }
       setSelectedColors((arr) => arr.concat(color));
@@ -357,7 +364,7 @@ export const ColorControl: FC<ColorControlProps> = ({
     initialValue,
     debouncedOnChange
   );
-  const { presets, addPreset } = usePresets(presetColors, color, colorSpace);
+  const { presets, addPreset } = usePresets(presetColors ?? [], color, colorSpace);
   const Picker = ColorPicker[colorSpace];
 
   const readonly = !!argType?.table?.readonly;
@@ -366,9 +373,9 @@ export const ColorControl: FC<ColorControlProps> = ({
     <Wrapper aria-readonly={readonly}>
       <PickerTooltip
         startOpen={startOpen}
-        trigger={readonly ? [null] : undefined}
+        trigger={readonly ? null : undefined}
         closeOnOutsideClick
-        onVisibleChange={() => addPreset(color)}
+        onVisibleChange={() => color && addPreset(color)}
         tooltip={
           <TooltipContent>
             <Picker
@@ -379,14 +386,21 @@ export const ColorControl: FC<ColorControlProps> = ({
               <Swatches>
                 {presets.map((preset, index: number) => (
                   <WithTooltip
-                    key={`${preset.value}-${index}`}
+                    key={`${preset?.value || index}-${index}`}
                     hasChrome={false}
-                    tooltip={<Note note={preset.keyword || preset.value} />}
+                    tooltip={<Note note={preset?.keyword || preset?.value || ''} />}
                   >
                     <Swatch
-                      value={preset[colorSpace]}
-                      active={color && id(preset[colorSpace]) === id(color[colorSpace])}
-                      onClick={() => updateValue(preset.value)}
+                      value={preset?.[colorSpace] || ''}
+                      active={
+                        !!(
+                          color &&
+                          preset &&
+                          preset[colorSpace] &&
+                          id(preset[colorSpace] || '') === id(color[colorSpace])
+                        )
+                      }
+                      onClick={() => preset && updateValue(preset.value || '')}
                     />
                   </WithTooltip>
                 ))}

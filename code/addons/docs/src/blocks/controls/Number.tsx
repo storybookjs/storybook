@@ -38,7 +38,7 @@ export const NumberControl: FC<NumberProps> = ({
 }) => {
   const [inputValue, setInputValue] = useState(typeof value === 'number' ? value : '');
   const [forceVisible, setForceVisible] = useState(false);
-  const [parseError, setParseError] = useState<Error>(null);
+  const [parseError, setParseError] = useState<Error | null>(null);
   const readonly = !!argType?.table?.readonly;
 
   const handleChange = useCallback(
@@ -62,7 +62,7 @@ export const NumberControl: FC<NumberProps> = ({
     setForceVisible(true);
   }, [setForceVisible]);
 
-  const htmlElRef = useRef(null);
+  const htmlElRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (forceVisible && htmlElRef.current) {
       htmlElRef.current.select();
@@ -72,7 +72,7 @@ export const NumberControl: FC<NumberProps> = ({
   useEffect(() => {
     const newInputValue = typeof value === 'number' ? value : '';
     if (inputValue !== newInputValue) {
-      setInputValue(value);
+      setInputValue(newInputValue);
     }
   }, [value]);
 
@@ -100,7 +100,7 @@ export const NumberControl: FC<NumberProps> = ({
         size="flex"
         placeholder="Edit number..."
         value={inputValue}
-        valid={parseError ? 'error' : null}
+        valid={parseError ? 'error' : undefined}
         autoFocus={forceVisible}
         readOnly={readonly}
         {...{ name, min, max, step, onFocus, onBlur }}

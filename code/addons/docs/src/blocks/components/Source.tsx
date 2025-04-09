@@ -106,7 +106,7 @@ const Source: FunctionComponent<SourceProps> = ({
       bordered
       copyable
       format={format}
-      language={language}
+      language={language ?? 'jsx'}
       className="docblock-source sb-unstyled"
       {...rest}
     >

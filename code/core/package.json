@@ -741,6 +741,7 @@
     "prettier": "^3.2.5",
     "pretty-hrtime": "^1.0.3",
     "prompts": "^2.4.0",
+    "qrcode.react": "^4.2.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-draggable": "^4.4.5",

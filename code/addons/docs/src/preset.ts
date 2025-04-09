@@ -70,7 +70,6 @@ async function webpack(
    * multiple instances of react & emotion being loaded, both would cause the components to fail to
    * render.
    */
-  const blocksPath = dirname(require.resolve('@storybook/blocks/package.json'));
   if (Array.isArray(webpackConfig.resolve?.alias)) {
     alias = [...webpackConfig.resolve?.alias];
     alias.push(
@@ -85,17 +84,12 @@ async function webpack(
       {
         name: '@mdx-js/react',
         alias: mdx,
-      },
-      {
-        name: '@storybook/addon-docs/blocks',
-        alias: blocksPath,
       }
     );
   } else {
     alias = {
       ...webpackConfig.resolve?.alias,
       react,
-      '@storybook/addon-docs/blocks': blocksPath,
       'react-dom': reactDom,
       '@mdx-js/react': mdx,
     };
@@ -154,7 +148,6 @@ export const viteFinal = async (config: any, options: Options) => {
   // Use the resolvedReact preset to alias react and react-dom to either the users version or the version shipped with addon-docs
   const { react, reactDom, mdx } = await getResolvedReact(options);
 
-  const blocksPath = dirname(require.resolve('@storybook/blocks/package.json'));
   const themingPath = dirname(require.resolve('storybook/theming'));
   const packageDeduplicationPlugin = {
     name: 'storybook:package-deduplication',
@@ -167,12 +160,6 @@ export const viteFinal = async (config: any, options: Options) => {
           ...(isAbsolute(reactDom) && { 'react-dom/server': `${reactDom}/server.browser.js` }),
           'react-dom': reactDom,
           '@mdx-js/react': mdx,
-          /**
-           * Add aliases for `@storybook/addon-docs` & `@storybook/blocks` These must be singletons
-           * to avoid multiple instances of react & emotion being loaded, both would cause the
-           * components to fail to render.
-           */
-          '@storybook/addon-docs/blocks': blocksPath,
           'storybook/theming': themingPath,
         },
       },

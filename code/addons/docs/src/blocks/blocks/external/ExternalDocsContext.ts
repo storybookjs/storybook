@@ -7,10 +7,15 @@ export class ExternalDocsContext<TRenderer extends Renderer> extends DocsContext
   constructor(
     public channel: DocsContext<TRenderer>['channel'],
     protected store: StoryStore<TRenderer>,
-    public renderStoryToElement: DocsContextProps['renderStoryToElement'],
+    public renderStoryToElement: DocsContextProps<TRenderer>['renderStoryToElement'],
     private processMetaExports: (metaExports: ModuleExports) => CSFFile<TRenderer>
   ) {
-    super(channel, store, renderStoryToElement, []);
+    super(
+      channel,
+      store,
+      renderStoryToElement as DocsContextProps<TRenderer>['renderStoryToElement'],
+      []
+    );
   }
 
   referenceMeta = (metaExports: ModuleExports, attach: boolean) => {

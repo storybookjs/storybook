@@ -6,7 +6,7 @@ import { ArgTypesParameters, SubcomponentA, SubcomponentB } from './ArgTypesPara
 const meta = {
   title: 'examples/Stories for the ArgTypes Block with Subcomponents',
   component: ArgTypesParameters,
-  subcomponents: { SubcomponentA, SubcomponentB },
+  subcomponents: { SubcomponentA, SubcomponentB } as Record<string, React.ComponentType<any>>,
   args: { b: 'b' },
   argTypes: {
     // @ts-expect-error Meta type is trying to force us to use real props as args

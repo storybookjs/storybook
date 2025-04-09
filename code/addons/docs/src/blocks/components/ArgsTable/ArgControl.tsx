@@ -6,6 +6,7 @@ import { Link } from 'storybook/internal/components';
 import {
   BooleanControl,
   ColorControl,
+  type ControlProps,
   DateControl,
   FilesControl,
   NumberControl,
@@ -23,7 +24,7 @@ export interface ArgControlProps {
   isHovered: boolean;
 }
 
-const Controls: Record<string, FC> = {
+const Controls: Record<string, FC<any>> = {
   array: ObjectControl,
   object: ObjectControl,
   boolean: BooleanControl,

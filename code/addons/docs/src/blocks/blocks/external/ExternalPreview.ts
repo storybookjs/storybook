@@ -53,12 +53,12 @@ export class ExternalPreview<TRenderer extends Renderer = Renderer> extends Prev
   }
 
   processMetaExports = (metaExports: MetaExports) => {
-    const importPath = this.importPaths.get(metaExports);
+    const importPath = this.importPaths.get(metaExports)!;
     this.moduleExportsByImportPath[importPath] = metaExports;
 
-    const title = metaExports.default.title || this.titles.get(metaExports);
+    const title = metaExports.default.title || this.titles.get(metaExports)!;
 
-    const csfFile = this.storyStoreValue.processCSFFileWithCache<TRenderer>(
+    const csfFile = this.storyStoreValue!.processCSFFileWithCache<TRenderer>(
       metaExports,
       importPath,
       title
@@ -82,7 +82,7 @@ export class ExternalPreview<TRenderer extends Renderer = Renderer> extends Prev
   docsContext = () => {
     return new ExternalDocsContext(
       this.channel,
-      this.storyStoreValue,
+      this.storyStoreValue!,
       this.renderStoryToElement.bind(this),
       this.processMetaExports.bind(this)
     );

@@ -44,7 +44,7 @@ export const SourceContainer: FC<PropsWithChildren<{ channel: DocsContextProps['
   useEffect(() => {
     const handleSnippetRendered = (
       idOrEvent: StoryId | SnippetRenderedEvent,
-      inputSource: string = null,
+      inputSource: string | null = null,
       inputFormat: SyntaxHighlighterFormatTypes = false
     ) => {
       const {
@@ -75,7 +75,7 @@ export const SourceContainer: FC<PropsWithChildren<{ channel: DocsContextProps['
           ...current,
           [id]: {
             ...current[id],
-            [hash]: { code: source, format },
+            [hash]: { code: source || '', format },
           },
         };
 

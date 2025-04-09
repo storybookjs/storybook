@@ -7,7 +7,7 @@ const titleCase = (str: string): string =>
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join('');
 
-export const getComponentName = (component: Component): string => {
+export const getComponentName = (component: Component): string | undefined => {
   if (!component) {
     return undefined;
   }

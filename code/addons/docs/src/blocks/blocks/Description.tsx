@@ -44,7 +44,7 @@ const getDescriptionFromResolvedOf = (resolvedOf: ReturnType<typeof useOf>): str
         projectAnnotations: { parameters },
       } = resolvedOf;
       return (
-        parameters.docs?.extractComponentDescription?.(component, {
+        parameters?.docs?.extractComponentDescription?.(component, {
           component,
           parameters,
         }) || null

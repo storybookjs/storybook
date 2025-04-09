@@ -34,7 +34,7 @@ function extractComponentArgTypes(
   if (!extractArgTypes) {
     throw new Error(ArgsTableError.ARGS_UNSUPPORTED);
   }
-  return extractArgTypes(component);
+  return extractArgTypes(component) as StrictArgTypes;
 }
 
 export const Controls: FC<ControlsProps> = (props) => {
@@ -57,7 +57,7 @@ export const Controls: FC<ControlsProps> = (props) => {
 
   const filteredArgTypes = filterArgTypes(argTypes, include, exclude);
 
-  const hasSubcomponents = Boolean(subcomponents) && Object.keys(subcomponents).length > 0;
+  const hasSubcomponents = Boolean(subcomponents) && Object.keys(subcomponents || {}).length > 0;
 
   if (!hasSubcomponents) {
     if (!(Object.keys(filteredArgTypes).length > 0 || Object.keys(args).length > 0)) {
@@ -65,7 +65,7 @@ export const Controls: FC<ControlsProps> = (props) => {
     }
     return (
       <PureArgsTable
-        rows={filteredArgTypes}
+        rows={filteredArgTypes as any}
         sort={sort}
         args={args}
         globals={globals}
@@ -75,9 +75,9 @@ export const Controls: FC<ControlsProps> = (props) => {
     );
   }
 
-  const mainComponentName = getComponentName(component);
+  const mainComponentName = getComponentName(component) || 'Story';
   const subcomponentTabs = Object.fromEntries(
-    Object.entries(subcomponents).map(([key, comp]) => [
+    Object.entries(subcomponents || {}).map(([key, comp]) => [
       key,
       {
         rows: filterArgTypes(extractComponentArgTypes(comp, parameters), include, exclude),
@@ -91,7 +91,7 @@ export const Controls: FC<ControlsProps> = (props) => {
   };
   return (
     <TabbedArgsTable
-      tabs={tabs}
+      tabs={tabs as any}
       sort={sort}
       args={args}
       globals={globals}

@@ -127,7 +127,7 @@ export const AnchorMdx: FC<PropsWithChildren<AnchorMdxProps>> = (props) => {
           event.preventDefault();
           // use the A element's href, which has been modified for
           // local paths without a `?path=` query param prefix
-          navigate(context, event.currentTarget.getAttribute('href'));
+          navigate(context, event.currentTarget.getAttribute('href') || '');
         }
       }}
       target={target}

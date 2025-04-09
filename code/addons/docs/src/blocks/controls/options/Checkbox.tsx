@@ -74,7 +74,7 @@ export const CheckboxControl: FC<CheckboxProps> = ({
     return <>-</>;
   }
 
-  const initial = selectedKeys(value, options);
+  const initial = selectedKeys(value || [], options);
   const [selected, setSelected] = useState(initial);
 
   const readonly = !!argType?.table?.readonly;
@@ -92,7 +92,7 @@ export const CheckboxControl: FC<CheckboxProps> = ({
   };
 
   useEffect(() => {
-    setSelected(selectedKeys(value, options));
+    setSelected(selectedKeys(value || [], options));
   }, [value]);
 
   const controlId = getControlId(name);

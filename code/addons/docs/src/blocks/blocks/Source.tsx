@@ -85,7 +85,7 @@ const useCode = ({
   const code = useSnippet ? snippet : sourceParameters.originalSource || '';
   const transformer = transformFromProps ?? sourceParameters.transform;
 
-  const transformedCode = useTransformCode(code, transformer, storyContext);
+  const transformedCode = transformer ? useTransformCode(code, transformer, storyContext) : code;
 
   if (sourceParameters.code !== undefined) {
     return sourceParameters.code;
@@ -130,7 +130,7 @@ export const useSourceProps = (
   const transformedCode = useCode({
     snippet: source ? source.code : '',
     storyContext: { ...storyContext, args: argsForSource },
-    typeFromProps: props.type,
+    typeFromProps: props.type as SourceType,
     transformFromProps: props.transform,
   });
 
@@ -157,7 +157,7 @@ export const useSourceProps = (
     };
   }
 
-  format = source.format ?? true;
+  format = source?.format ?? true;
 
   return {
     code: transformedCode,

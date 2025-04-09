@@ -1,4 +1,4 @@
-import type { FC, MouseEvent } from 'react';
+import type { FC, MouseEvent as ReactMouseEvent, SyntheticEvent } from 'react';
 import React from 'react';
 
 import { FlexBar, IconButton } from 'storybook/internal/components';
@@ -66,7 +66,7 @@ export const Toolbar: FC<ToolbarProps> = ({
         <>
           <IconButton
             key="zoomin"
-            onClick={(e: MouseEvent<HTMLButtonElement>) => {
+            onClick={(e: SyntheticEvent) => {
               e.preventDefault();
               zoom(0.8);
             }}
@@ -76,7 +76,7 @@ export const Toolbar: FC<ToolbarProps> = ({
           </IconButton>
           <IconButton
             key="zoomout"
-            onClick={(e: MouseEvent<HTMLButtonElement>) => {
+            onClick={(e: SyntheticEvent) => {
               e.preventDefault();
               zoom(1.25);
             }}
@@ -86,7 +86,7 @@ export const Toolbar: FC<ToolbarProps> = ({
           </IconButton>
           <IconButton
             key="zoomreset"
-            onClick={(e: MouseEvent<HTMLButtonElement>) => {
+            onClick={(e: SyntheticEvent) => {
               e.preventDefault();
               resetZoom();
             }}

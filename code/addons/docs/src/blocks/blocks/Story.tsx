@@ -81,7 +81,7 @@ export const getStoryProps = <TFramework extends Renderer>(
   const storyParameters = (docs.story || {}) as StoryParameters & { iframeHeight?: string };
 
   if (docs.disable) {
-    return null;
+    return null as any;
   }
 
   // prefer block props, then story parameters defined by the framework-specific settings
@@ -93,7 +93,7 @@ export const getStoryProps = <TFramework extends Renderer>(
     const height = props.height ?? storyParameters.height;
     const autoplay = props.autoplay ?? storyParameters.autoplay ?? false;
     return {
-      story,
+      story: story as any,
       inline: true,
       height,
       autoplay,
@@ -101,13 +101,13 @@ export const getStoryProps = <TFramework extends Renderer>(
       forceInitialArgs: !!props.__forceInitialArgs,
       // eslint-disable-next-line no-underscore-dangle
       primary: !!props.__primary,
-      renderStoryToElement: context.renderStoryToElement,
+      renderStoryToElement: context.renderStoryToElement as any,
     };
   }
 
   const height = props.height ?? storyParameters.height ?? storyParameters.iframeHeight ?? '100px';
   return {
-    story,
+    story: story as any,
     inline: false,
     height,
     // eslint-disable-next-line no-underscore-dangle

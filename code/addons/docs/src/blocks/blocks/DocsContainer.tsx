@@ -56,7 +56,7 @@ export const DocsContainer: FC<PropsWithChildren<DocsContainerProps>> = ({
   return (
     <DocsContext.Provider value={context}>
       <SourceContainer channel={context.channel}>
-        <ThemeProvider theme={ensureTheme(theme)}>
+        <ThemeProvider theme={ensureTheme(theme as ThemeVars)}>
           <DocsPageWrapper
             toc={
               toc ? (

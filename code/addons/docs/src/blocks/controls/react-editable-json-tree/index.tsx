@@ -35,9 +35,9 @@ export class JsonTree extends Component<JsonTreeProps, JsonTreeState> {
     return null;
   }
 
-  onUpdate(key: string, data: any) {
+  onUpdate(key: string | null, data: any) {
     this.setState({ data });
-    this.props.onFullyUpdate(data);
+    this.props.onFullyUpdate?.(data);
   }
 
   removeRoot() {
@@ -89,13 +89,13 @@ export class JsonTree extends Component<JsonTreeProps, JsonTreeState> {
         <div className="rejt-tree">
           <JsonNode
             data={data}
-            name={rootName}
+            name={rootName || 'root'}
             deep={-1}
-            isCollapsed={isCollapsed}
+            isCollapsed={isCollapsed ?? (() => false)}
             onUpdate={this.onUpdate}
-            onDeltaUpdate={onDeltaUpdate}
+            onDeltaUpdate={onDeltaUpdate ?? (() => {})}
             readOnly={readOnlyFunction as (...args: any) => any}
-            getStyle={getStyle}
+            getStyle={getStyle ?? (() => ({}))}
             addButtonElement={addButtonElement}
             cancelButtonElement={cancelButtonElement}
             editButtonElement={editButtonElement}
@@ -107,8 +107,8 @@ export class JsonTree extends Component<JsonTreeProps, JsonTreeState> {
             beforeRemoveAction={beforeRemoveAction}
             beforeAddAction={beforeAddAction}
             beforeUpdateAction={beforeUpdateAction}
-            logger={logger}
-            onSubmitValueParser={onSubmitValueParser}
+            logger={logger ?? {}}
+            onSubmitValueParser={onSubmitValueParser ?? ((val) => val)}
           />
         </div>
       );

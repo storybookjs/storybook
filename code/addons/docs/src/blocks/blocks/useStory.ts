@@ -47,7 +47,7 @@ export function useStories<TRenderer extends Renderer = Renderer>(
       // If we are allowed to load this story id synchonously, this will work
       return context.storyById(storyId);
     } catch (err) {
-      return null;
+      return undefined;
     }
   });
 }

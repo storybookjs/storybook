@@ -35,14 +35,18 @@ export const Title: FunctionComponent<TitleProps> = (props) => {
   let preparedMeta;
   try {
     preparedMeta = useOf(of || 'meta', ['meta']).preparedMeta;
-  } catch (error) {
-    if (children && !error.message.includes('did you forget to use <Meta of={} />?')) {
+  } catch (error: unknown) {
+    if (
+      children &&
+      error instanceof Error &&
+      !error.message.includes('did you forget to use <Meta of={} />?')
+    ) {
       // ignore error about unattached CSF since we can still render children
       throw error;
     }
   }
 
-  const content = children || extractTitle(preparedMeta?.title);
+  const content = children || extractTitle(preparedMeta?.title || '');
 
   return content ? <PureTitle className="sbdocs-title sb-unstyled">{content}</PureTitle> : null;
 };

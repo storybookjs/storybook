@@ -31,7 +31,7 @@ function extractComponentArgTypes(
   if (!extractArgTypes) {
     throw new Error(ArgsTableError.ARGS_UNSUPPORTED);
   }
-  return extractArgTypes(component);
+  return extractArgTypes(component) as StrictArgTypes;
 }
 
 function getArgTypesFromResolved(resolved: ReturnType<typeof useOf>) {
@@ -41,7 +41,7 @@ function getArgTypesFromResolved(resolved: ReturnType<typeof useOf>) {
       projectAnnotations: { parameters },
     } = resolved;
     return {
-      argTypes: extractComponentArgTypes(component, parameters),
+      argTypes: extractComponentArgTypes(component, parameters as Parameters),
       parameters,
       component,
     };
@@ -69,7 +69,7 @@ export const ArgTypes: FC<ArgTypesProps> = (props) => {
   }
   const resolved = useOf(of || 'meta');
   const { argTypes, parameters, component, subcomponents } = getArgTypesFromResolved(resolved);
-  const argTypesParameters = parameters.docs?.argTypes || ({} as ArgTypesParameters);
+  const argTypesParameters = parameters?.docs?.argTypes || ({} as ArgTypesParameters);
 
   const include = props.include ?? argTypesParameters.include;
   const exclude = props.exclude ?? argTypesParameters.exclude;
@@ -77,18 +77,22 @@ export const ArgTypes: FC<ArgTypesProps> = (props) => {
 
   const filteredArgTypes = filterArgTypes(argTypes, include, exclude);
 
-  const hasSubcomponents = Boolean(subcomponents) && Object.keys(subcomponents).length > 0;
+  const hasSubcomponents = Boolean(subcomponents) && Object.keys(subcomponents || {}).length > 0;
 
   if (!hasSubcomponents) {
-    return <PureArgsTable rows={filteredArgTypes} sort={sort} />;
+    return <PureArgsTable rows={filteredArgTypes as any} sort={sort} />;
   }
 
-  const mainComponentName = getComponentName(component);
+  const mainComponentName = getComponentName(component) || 'Main';
   const subcomponentTabs = Object.fromEntries(
-    Object.entries(subcomponents).map(([key, comp]) => [
+    Object.entries(subcomponents || {}).map(([key, comp]) => [
       key,
       {
-        rows: filterArgTypes(extractComponentArgTypes(comp, parameters), include, exclude),
+        rows: filterArgTypes(
+          extractComponentArgTypes(comp, parameters as Parameters),
+          include,
+          exclude
+        ),
         sort,
       },
     ])
@@ -97,5 +101,5 @@ export const ArgTypes: FC<ArgTypesProps> = (props) => {
     [mainComponentName]: { rows: filteredArgTypes, sort },
     ...subcomponentTabs,
   };
-  return <TabbedArgsTable tabs={tabs} sort={sort} />;
+  return <TabbedArgsTable tabs={tabs as any} sort={sort} />;
 };

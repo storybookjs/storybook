@@ -102,8 +102,8 @@ const findSubcomponentTabs = async (
   canvas: ReturnType<typeof within>,
   step: PlayFunctionContext['step']
 ) => {
-  let subcomponentATab: HTMLElement;
-  let subcomponentBTab: HTMLElement;
+  let subcomponentATab: HTMLElement | null = null;
+  let subcomponentBTab: HTMLElement | null = null;
   await step('should have tabs for the subcomponents', async () => {
     subcomponentATab = await canvas.findByText('SubcomponentA');
     subcomponentBTab = await canvas.findByText('SubcomponentB');
@@ -129,7 +129,9 @@ export const SubcomponentsIncludeProp: Story = {
   play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement);
     const { subcomponentBTab } = await findSubcomponentTabs(canvas, step);
-    await subcomponentBTab.click();
+    if (subcomponentBTab) {
+      await (subcomponentBTab as HTMLElement & { click: () => Promise<void> }).click();
+    }
   },
 };
 

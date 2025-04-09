@@ -5,7 +5,21 @@ import type { Channel } from 'storybook/internal/channels';
 import { NAVIGATE_URL } from 'storybook/internal/core-events';
 
 import { styled } from 'storybook/theming';
-import * as tocbot from 'tocbot';
+import tocbot from 'tocbot';
+
+// Define our own interface based on tocbot's actual options
+interface TocbotOptions {
+  tocSelector: string;
+  contentSelector: string;
+  headingSelector: string;
+  ignoreSelector?: string;
+  headingsOffset?: number;
+  scrollSmoothOffset?: number;
+  orderedList?: boolean;
+  onClick?: (e: MouseEvent) => void;
+  scrollEndCallback?: () => void;
+  [key: string]: any;
+}
 
 export interface TocParameters {
   /** CSS selector for the container to search for headings. */
@@ -31,7 +45,7 @@ export interface TocParameters {
    *
    * @see tocbot docs {@link https://tscanlin.github.io/tocbot/#usage}
    */
-  unsafeTocbotOptions?: Omit<tocbot.IStaticOptions, 'onClick' | 'scrollEndCallback'>;
+  unsafeTocbotOptions?: Omit<TocbotOptions, 'onClick' | 'scrollEndCallback'>;
 }
 
 const Wrapper = styled.div(({ theme }) => ({

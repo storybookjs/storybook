@@ -99,12 +99,16 @@ export class JsonAddValue extends Component<JsonAddValueProps, JsonAddValueState
       keyPath,
       deep,
     } = this.props;
-    const addButtonElementLayout = cloneElement(addButtonElement, {
-      onClick: this.onSubmit,
-    });
-    const cancelButtonElementLayout = cloneElement(cancelButtonElement, {
-      onClick: handleCancel,
-    });
+    const addButtonElementLayout =
+      addButtonElement &&
+      cloneElement(addButtonElement, {
+        onClick: this.onSubmit,
+      });
+    const cancelButtonElementLayout =
+      cancelButtonElement &&
+      cloneElement(cancelButtonElement, {
+        onClick: handleCancel,
+      });
     const inputElementValue = inputElementGenerator(inputUsageTypes.VALUE, keyPath, deep);
     const inputElementValueLayout = cloneElement(inputElementValue, {
       placeholder: 'Value',
@@ -162,14 +166,14 @@ interface JsonArrayState {
 export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
   constructor(props: JsonArrayProps) {
     super(props);
-    const keyPath = [...props.keyPath, props.name];
+    const keyPath = [...(props.keyPath || []), props.name];
     this.state = {
       data: props.data,
       name: props.name,
       keyPath,
-      deep: props.deep,
-      nextDeep: props.deep + 1,
-      collapsed: props.isCollapsed(keyPath, props.deep, props.data),
+      deep: props.deep ?? 0,
+      nextDeep: (props.deep ?? 0) + 1,
+      collapsed: props.isCollapsed(keyPath, props.deep ?? 0, props.data),
       addFormVisible: false,
     };
 
@@ -190,10 +194,9 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
   }
 
   onChildUpdate(childKey: string, childData: any) {
-    const { data, keyPath } = this.state;
+    const { data, keyPath = [] } = this.state;
     // Update data
-    // @ts-expect-error (Converted from ts-ignore)
-    data[childKey] = childData;
+    (data as Record<string, any>)[childKey] = childData;
     // Put new data
     this.setState({
       data,
@@ -223,7 +226,7 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
       const oldValue = data[index];
 
       // Before Remove Action
-      beforeRemoveAction(index, keyPath, deep, oldValue)
+      (beforeRemoveAction || Promise.resolve.bind(Promise))(index, keyPath, deep, oldValue)
         .then(() => {
           const deltaUpdateResult = {
             keyPath,
@@ -246,28 +249,28 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
     };
   }
 
-  handleAddValueAdd({ newValue }: any) {
-    const { data, keyPath, nextDeep: deep } = this.state;
+  handleAddValueAdd({ key, newValue }: any) {
+    const { data, keyPath = [], nextDeep: deep } = this.state;
     const { beforeAddAction, logger } = this.props;
 
-    beforeAddAction(data.length, keyPath, deep, newValue)
+    (beforeAddAction || Promise.resolve.bind(Promise))(key, keyPath, deep, newValue)
       .then(() => {
         // Update data
-        const newData = [...data, newValue];
+        data[key] = newValue;
         this.setState({
-          data: newData,
+          data,
         });
         // Cancel add to close
         this.handleAddValueCancel();
         // Spread new update
         const { onUpdate, onDeltaUpdate } = this.props;
-        onUpdate(keyPath[keyPath.length - 1], newData);
+        onUpdate(keyPath[keyPath.length - 1], data);
         // Spread delta update
         onDeltaUpdate({
           type: deltaTypes.ADD_DELTA_TYPE,
           keyPath,
           deep,
-          key: newData.length - 1,
+          key,
           newValue,
         });
       })
@@ -289,7 +292,7 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
       const oldValue = data[key];
 
       // Before update action
-      beforeUpdateAction(key, keyPath, deep, oldValue, value)
+      (beforeUpdateAction || Promise.resolve.bind(Promise))(key, keyPath, deep, oldValue, value)
         .then(() => {
           // Update value
           data[key] = value;
@@ -323,11 +326,13 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
 
     const isReadOnly = readOnly(name, data, keyPath, deep, dataType);
 
-    const removeItemButton = cloneElement(minusMenuElement, {
-      onClick: handleRemove,
-      className: 'rejt-minus-menu',
-      style: minus,
-    });
+    const removeItemButton =
+      minusMenuElement &&
+      cloneElement(minusMenuElement, {
+        onClick: handleRemove,
+        className: 'rejt-minus-menu',
+        style: minus,
+      });
 
     return (
       <span className="rejt-collapsed">
@@ -365,16 +370,20 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
 
     const isReadOnly = readOnly(name, data, keyPath, deep, dataType);
 
-    const addItemButton = cloneElement(plusMenuElement, {
-      onClick: this.handleAddMode,
-      className: 'rejt-plus-menu',
-      style: plus,
-    });
-    const removeItemButton = cloneElement(minusMenuElement, {
-      onClick: handleRemove,
-      className: 'rejt-minus-menu',
-      style: minus,
-    });
+    const addItemButton =
+      plusMenuElement &&
+      cloneElement(plusMenuElement, {
+        onClick: this.handleAddMode,
+        className: 'rejt-plus-menu',
+        style: plus,
+      });
+    const removeItemButton =
+      minusMenuElement &&
+      cloneElement(minusMenuElement, {
+        onClick: handleRemove,
+        className: 'rejt-minus-menu',
+        style: minus,
+      });
 
     const onlyValue = true;
     const startObject = '[';
@@ -503,7 +512,7 @@ interface JsonFunctionValueState {
 export class JsonFunctionValue extends Component<JsonFunctionValueProps, JsonFunctionValueState> {
   constructor(props: JsonFunctionValueProps) {
     super(props);
-    const keyPath = [...props.keyPath, props.name];
+    const keyPath = [...(props.keyPath || []), props.name];
     this.state = {
       value: props.value,
       name: props.name,
@@ -573,7 +582,7 @@ export class JsonFunctionValue extends Component<JsonFunctionValueProps, JsonFun
     };
 
     // Run update
-    handleUpdateValue(result)
+    (handleUpdateValue || Promise.resolve.bind(Promise))(result)
       .then(() => {
         // Cancel edit mode if necessary
         if (!isComponentWillChange(originalValue, newValue)) {
@@ -630,12 +639,16 @@ export class JsonFunctionValue extends Component<JsonFunctionValueProps, JsonFun
         dataType
       );
 
-      const editButtonElementLayout = cloneElement(editButtonElement, {
-        onClick: this.handleEdit,
-      });
-      const cancelButtonElementLayout = cloneElement(cancelButtonElement, {
-        onClick: this.handleCancelEdit,
-      });
+      const editButtonElementLayout =
+        editButtonElement &&
+        cloneElement(editButtonElement, {
+          onClick: this.handleEdit,
+        });
+      const cancelButtonElementLayout =
+        cancelButtonElement &&
+        cloneElement(cancelButtonElement, {
+          onClick: this.handleCancelEdit,
+        });
       const textareaElementLayout = cloneElement(textareaElement, {
         ref: this.refInput,
         defaultValue: originalValue,
@@ -653,16 +666,18 @@ export class JsonFunctionValue extends Component<JsonFunctionValueProps, JsonFun
         <span
           className="rejt-value"
           style={style.value}
-          onClick={resultOnlyResult ? null : this.handleEditMode}
+          onClick={resultOnlyResult ? undefined : this.handleEditMode}
         >
           {value}
         </span>
       );
-      const minusMenuLayout = cloneElement(minusMenuElement, {
-        onClick: handleRemove,
-        className: 'rejt-minus-menu',
-        style: style.minus,
-      });
+      const minusMenuLayout =
+        minusMenuElement &&
+        cloneElement(minusMenuElement, {
+          onClick: handleRemove,
+          className: 'rejt-minus-menu',
+          style: style.minus,
+        });
       minusElement = resultOnlyResult ? null : minusMenuLayout;
     }
 
@@ -1059,14 +1074,14 @@ interface JsonObjectState {
 export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
   constructor(props: JsonObjectProps) {
     super(props);
-    const keyPath = props.deep === -1 ? [] : [...props.keyPath, props.name];
+    const keyPath = props.deep === -1 ? [] : [...(props.keyPath || []), props.name];
     this.state = {
       name: props.name,
       data: props.data,
       keyPath,
-      deep: props.deep,
-      nextDeep: props.deep + 1,
-      collapsed: props.isCollapsed(keyPath, props.deep, props.data),
+      deep: props.deep ?? 0,
+      nextDeep: (props.deep ?? 0) + 1,
+      collapsed: props.isCollapsed(keyPath, props.deep ?? 0, props.data),
       addFormVisible: false,
     };
 
@@ -1087,9 +1102,9 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
   }
 
   onChildUpdate(childKey: string, childData: any) {
-    const { data, keyPath } = this.state;
+    const { data, keyPath = [] } = this.state;
     // Update data
-    data[childKey] = childData;
+    (data as Record<string, any>)[childKey] = childData;
     // Put new data
     this.setState({
       data,
@@ -1113,10 +1128,10 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
   }
 
   handleAddValueAdd({ key, newValue }: any) {
-    const { data, keyPath, nextDeep: deep } = this.state;
+    const { data, keyPath = [], nextDeep: deep } = this.state;
     const { beforeAddAction, logger } = this.props;
 
-    beforeAddAction(key, keyPath, deep, newValue)
+    (beforeAddAction || Promise.resolve.bind(Promise))(key, keyPath, deep, newValue)
       .then(() => {
         // Update data
         data[key] = newValue;
@@ -1143,10 +1158,10 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
   handleRemoveValue(key: string) {
     return () => {
       const { beforeRemoveAction, logger } = this.props;
-      const { data, keyPath, nextDeep: deep } = this.state;
+      const { data, keyPath = [], nextDeep: deep } = this.state;
       const oldValue = data[key];
       // Before Remove Action
-      beforeRemoveAction(key, keyPath, deep, oldValue)
+      (beforeRemoveAction || Promise.resolve.bind(Promise))(key, keyPath, deep, oldValue)
         .then(() => {
           const deltaUpdateResult = {
             keyPath,
@@ -1178,13 +1193,13 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
   handleEditValue({ key, value }: any) {
     return new Promise<void>((resolve, reject) => {
       const { beforeUpdateAction } = this.props;
-      const { data, keyPath, nextDeep: deep } = this.state;
+      const { data, keyPath = [], nextDeep: deep } = this.state;
 
       // Old value
       const oldValue = data[key];
 
       // Before update action
-      beforeUpdateAction(key, keyPath, deep, oldValue, value)
+      (beforeUpdateAction || Promise.resolve.bind(Promise))(key, keyPath, deep, oldValue, value)
         .then(() => {
           // Update value
           data[key] = value;
@@ -1220,11 +1235,13 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
 
     const isReadOnly = readOnly(name, data, keyPath, deep, dataType);
 
-    const removeItemButton = cloneElement(minusMenuElement, {
-      onClick: handleRemove,
-      className: 'rejt-minus-menu',
-      style: minus,
-    });
+    const removeItemButton =
+      minusMenuElement &&
+      cloneElement(minusMenuElement, {
+        onClick: handleRemove,
+        className: 'rejt-minus-menu',
+        style: minus,
+      });
 
     return (
       <span className="rejt-collapsed">
@@ -1264,16 +1281,20 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
 
     const isReadOnly = readOnly(name, data, keyPath, deep, dataType);
 
-    const addItemButton = cloneElement(plusMenuElement, {
-      onClick: this.handleAddMode,
-      className: 'rejt-plus-menu',
-      style: plus,
-    });
-    const removeItemButton = cloneElement(minusMenuElement, {
-      onClick: handleRemove,
-      className: 'rejt-minus-menu',
-      style: minus,
-    });
+    const addItemButton =
+      plusMenuElement &&
+      cloneElement(plusMenuElement, {
+        onClick: this.handleAddMode,
+        className: 'rejt-plus-menu',
+        style: plus,
+      });
+    const removeItemButton =
+      minusMenuElement &&
+      cloneElement(minusMenuElement, {
+        onClick: handleRemove,
+        className: 'rejt-minus-menu',
+        style: minus,
+      });
 
     const list = keyList.map((key) => (
       <JsonNode
@@ -1403,7 +1424,7 @@ interface JsonValueState {
 export class JsonValue extends Component<JsonValueProps, JsonValueState> {
   constructor(props: JsonValueProps) {
     super(props);
-    const keyPath = [...props.keyPath, props.name];
+    const keyPath = [...(props.keyPath || []), props.name];
     this.state = {
       value: props.value,
       name: props.name,
@@ -1473,7 +1494,7 @@ export class JsonValue extends Component<JsonValueProps, JsonValueState> {
     };
 
     // Run update
-    handleUpdateValue(result)
+    (handleUpdateValue || Promise.resolve.bind(Promise))(result)
       .then(() => {
         // Cancel edit mode if necessary
         if (!isComponentWillChange(originalValue, newValue)) {
@@ -1527,21 +1548,27 @@ export class JsonValue extends Component<JsonValueProps, JsonValueState> {
       dataType
     );
 
-    const editButtonElementLayout = cloneElement(editButtonElement, {
-      onClick: this.handleEdit,
-    });
-    const cancelButtonElementLayout = cloneElement(cancelButtonElement, {
-      onClick: this.handleCancelEdit,
-    });
+    const editButtonElementLayout =
+      editButtonElement &&
+      cloneElement(editButtonElement, {
+        onClick: this.handleEdit,
+      });
+    const cancelButtonElementLayout =
+      cancelButtonElement &&
+      cloneElement(cancelButtonElement, {
+        onClick: this.handleCancelEdit,
+      });
     const inputElementLayout = cloneElement(inputElement, {
       ref: this.refInput,
       defaultValue: JSON.stringify(originalValue),
     });
-    const minusMenuLayout = cloneElement(minusMenuElement, {
-      onClick: handleRemove,
-      className: 'rejt-minus-menu',
-      style: style.minus,
-    });
+    const minusMenuLayout =
+      minusMenuElement &&
+      cloneElement(minusMenuElement, {
+        onClick: handleRemove,
+        className: 'rejt-minus-menu',
+        style: style.minus,
+      });
 
     return (
       <li className="rejt-value-node" style={style.li}>
@@ -1558,7 +1585,7 @@ export class JsonValue extends Component<JsonValueProps, JsonValueState> {
           <span
             className="rejt-value"
             style={style.value}
-            onClick={isReadOnly ? null : this.handleEditMode}
+            onClick={isReadOnly ? undefined : this.handleEditMode}
           >
             {String(value)}
           </span>

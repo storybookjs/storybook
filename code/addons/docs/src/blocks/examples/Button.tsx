@@ -50,7 +50,7 @@ const StyledButton = styled.button<Omit<ButtonProps, 'label' | 'onClick'>>(
       display: 'inline-block',
       lineHeight: 1,
       ...modeStyles,
-      ...sizeStyles[size],
+      ...sizeStyles[size || 'medium'],
       ...(backgroundColor && { backgroundColor }),
     };
   }

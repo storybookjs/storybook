@@ -74,7 +74,7 @@ const TypeWithJsDoc = styled.div<{ hasDescription: boolean }>(({ theme, hasDescr
   marginBottom: 12,
 }));
 
-const StyledTd = styled.td<{ expandable: boolean }>(({ theme, expandable }) => ({
+const StyledTd = styled.td<{ expandable: boolean }>(({ expandable }) => ({
   paddingLeft: expandable ? '40px !important' : '20px !important',
 }));
 
@@ -98,7 +98,7 @@ export const ArgRow: FC<ArgRowProps> = (props) => {
 
   return (
     <tr onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
-      <StyledTd expandable={expandable}>
+      <StyledTd expandable={expandable ?? false}>
         <Name>{name}</Name>
         {required ? <Required title="Required">*</Required> : null}
       </StyledTd>

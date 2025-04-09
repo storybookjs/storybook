@@ -29,8 +29,8 @@ export const Subtitle: FunctionComponent<SubtitleProps> = (props) => {
   let preparedMeta;
   try {
     preparedMeta = useOf(of || 'meta', ['meta']).preparedMeta;
-  } catch (error) {
-    if (children && !error.message.includes('did you forget to use <Meta of={} />?')) {
+  } catch (error: unknown) {
+    if (children && !(error as Error).message.includes('did you forget to use <Meta of={} />?')) {
       // ignore error about unattached CSF since we can still render children
       throw error;
     }

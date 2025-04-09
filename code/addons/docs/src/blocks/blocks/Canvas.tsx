@@ -19,7 +19,7 @@ type CanvasProps = Pick<PurePreviewProps, 'withToolbar' | 'additionalActions' | 
    * Pass the export defining a story to render that story
    *
    * ```jsx
-   * import { Meta, Canvas } from '@storybook/blocks';
+   * import { Meta, Canvas } from '@storybook/addon-docs/blocks';
    * import * as ButtonStories from './Button.stories';
    *
    * <Meta of={ButtonStories} />
@@ -31,7 +31,7 @@ type CanvasProps = Pick<PurePreviewProps, 'withToolbar' | 'additionalActions' | 
    * Pass all exports of the CSF file if this MDX file is unattached
    *
    * ```jsx
-   * import { Canvas } from '@storybook/blocks';
+   * import { Canvas } from '@storybook/addon-docs/blocks';
    * import * as ButtonStories from './Button.stories';
    *
    * <Canvas of={ButtonStories.Primary} meta={ButtonStories} />;

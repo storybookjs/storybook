@@ -18,7 +18,7 @@ import {
   PureArgsTable as ArgsTable,
   type PresetColor,
   type SortType,
-} from '../../../../lib/blocks/src/index';
+} from '../../../../addons/docs/src/blocks/blocks';
 import { PARAM_KEY } from '../constants';
 import { SaveStory } from './SaveStory';
 

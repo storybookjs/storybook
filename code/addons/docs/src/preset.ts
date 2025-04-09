@@ -87,7 +87,7 @@ async function webpack(
         alias: mdx,
       },
       {
-        name: '@storybook/blocks',
+        name: '@storybook/addon-docs/blocks',
         alias: blocksPath,
       }
     );
@@ -95,7 +95,7 @@ async function webpack(
     alias = {
       ...webpackConfig.resolve?.alias,
       react,
-      '@storybook/blocks': blocksPath,
+      '@storybook/addon-docs/blocks': blocksPath,
       'react-dom': reactDom,
       '@mdx-js/react': mdx,
     };
@@ -172,7 +172,7 @@ export const viteFinal = async (config: any, options: Options) => {
            * to avoid multiple instances of react & emotion being loaded, both would cause the
            * components to fail to render.
            */
-          '@storybook/blocks': blocksPath,
+          '@storybook/addon-docs/blocks': blocksPath,
           'storybook/theming': themingPath,
         },
       },

@@ -29,7 +29,7 @@ export type SourceProps = SourceParameters & {
    * Pass the export defining a story to render its source
    *
    * ```jsx
-   * import { Source } from '@storybook/blocks';
+   * import { Source } from '@storybook/addon-docs/blocks';
    * import * as ButtonStories from './Button.stories';
    *
    * <Source of={ButtonStories.Primary} />;

@@ -22,7 +22,7 @@ type StoryRefProps = {
    * Pass the export defining a story to render that story
    *
    * ```jsx
-   * import { Meta, Story } from '@storybook/blocks';
+   * import { Meta, Story } from '@storybook/addon-docs/blocks';
    * import * as ButtonStories from './Button.stories';
    *
    * <Meta of={ButtonStories} />
@@ -34,7 +34,7 @@ type StoryRefProps = {
    * Pass all exports of the CSF file if this MDX file is unattached
    *
    * ```jsx
-   * import { Story } from '@storybook/blocks';
+   * import { Story } from '@storybook/addon-docs/blocks';
    * import * as ButtonStories from './Button.stories';
    *
    * <Story of={ButtonStories.Primary} meta={ButtonStories} />;

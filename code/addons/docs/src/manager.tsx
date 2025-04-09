@@ -11,8 +11,8 @@ import {
   PARAM_KEY,
   SNIPPET_RENDERED,
 } from '../../../core/src/docs-tools/shared';
-import type { SourceParameters } from '../../../lib/blocks/src';
-import { Source } from '../../../lib/blocks/src/components/Source';
+import type { SourceParameters } from './blocks/blocks';
+import { Source } from './blocks/components/Source';
 
 addons.register(ADDON_ID, (api) => {
   addons.add(PANEL_ID, {

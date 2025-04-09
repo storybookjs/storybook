@@ -294,7 +294,7 @@ export async function baseGenerator(
 
   // added to package.json
   const addonPackages = [
-    '@storybook/blocks',
+    '@storybook/addon-docs/blocks',
     ...(compiler ? [`@storybook/addon-webpack5-compiler-${compiler}`] : []),
     ...extraAddonsToInstall,
   ].filter(Boolean);

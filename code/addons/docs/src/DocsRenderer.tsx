@@ -8,9 +8,9 @@ import type {
   Renderer,
 } from 'storybook/internal/types';
 
-import { AnchorMdx, CodeOrSourceMdx, Docs, HeadersMdx } from '@storybook/blocks';
-
 import { renderElement, unmountElement } from '@storybook/react-dom-shim';
+
+import { AnchorMdx, CodeOrSourceMdx, Docs, HeadersMdx } from '@storybook/addon-docs/blocks';
 
 // TS doesn't like that we export a component with types that it doesn't know about (TS4203)
 export const defaultComponents: Record<string, any> = {

@@ -3,5 +3,5 @@
 export { ArgsTable as PureArgsTable } from './blocks/components';
 export type { SortType } from './blocks/components';
 
-export * from './blocks';
+export * from './blocks/blocks';
 export * from './blocks/controls';

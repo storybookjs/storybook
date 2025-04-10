@@ -118,7 +118,18 @@ export const mapBoxes = (elements: Map<HTMLElement, Highlight>): Box[] =>
   Array.from(elements.entries())
     .map<Box>(([element, { selectors, styles, selectedStyles, selectable, menuItems }]) => {
       const { top, left, width, height } = element.getBoundingClientRect();
-      const box = { top: top + window.scrollY, left: left + window.scrollX, width, height };
-      return { element, selectors, styles, selectedStyles, selectable, menuItems, ...box };
+      const { position } = getComputedStyle(element);
+      return {
+        element,
+        selectors,
+        styles,
+        selectedStyles,
+        selectable,
+        menuItems,
+        top: position === 'fixed' ? top : top + window.scrollY,
+        left: position === 'fixed' ? left : left + window.scrollX,
+        width,
+        height,
+      };
     })
     .sort((a, b) => b.width * b.height - a.width * a.height);

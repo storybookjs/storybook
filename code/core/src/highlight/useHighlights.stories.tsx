@@ -2,13 +2,13 @@ import React, { useEffect, useState } from 'react';
 
 import { mockChannel } from 'storybook/internal/preview-api';
 
-import { fn, userEvent } from 'storybook/test';
+import { fn, userEvent, within } from 'storybook/test';
 
 import preview from '../../../.storybook/preview';
 import { HIGHLIGHT, RESET_HIGHLIGHT, SCROLL_INTO_VIEW } from './constants';
 import { useHighlights } from './useHighlights';
 
-const Content = ({ dynamic }: { dynamic: boolean }) => {
+const Content = ({ dynamic, withPopover }: { dynamic: boolean; withPopover: boolean }) => {
   const [extra, setExtra] = useState(false);
   useEffect(() => {
     if (!dynamic) {
@@ -17,15 +17,52 @@ const Content = ({ dynamic }: { dynamic: boolean }) => {
     const interval = setInterval(() => setExtra((v) => !v), 1200);
     return () => clearInterval(interval);
   }, [dynamic]);
+  /* eslint-disable react/no-unknown-property */
   return (
-    <main style={{ minHeight: 1200 }}>
+    <main style={{ minHeight: 1200, minWidth: 1200 }}>
+      {withPopover && (
+        <>
+          {/* @ts-expect-error popover is not yet supported by React */}
+          <button popovertarget="my-popover">Open Popover 1</button>
+          {/* @ts-expect-error popover is not yet supported by React */}
+          <div popover="manual" id="my-popover" style={{ padding: 20 }}>
+            Greetings, one and all!
+          </div>
+        </>
+      )}
+      <input id="input" type="text" style={{ margin: 20 }} defaultValue="input" />
+      <div
+        id="sticky"
+        style={{
+          position: 'sticky',
+          marginTop: 150,
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: 50,
+          border: '1px solid black',
+          borderRadius: 10,
+        }}
+      />
+      <div
+        id="fixed"
+        style={{
+          position: 'fixed',
+          top: 300,
+          left: 50,
+          right: 50,
+          height: 150,
+          border: '1px solid black',
+          borderRadius: 10,
+        }}
+      />
       <div
         id="moving"
         style={{
           position: 'absolute',
           top: 100,
-          left: 100,
-          width: 200,
+          left: 150,
+          width: 150,
           height: 150,
           border: '1px solid black',
           borderRadius: 10,
@@ -106,6 +143,7 @@ const Content = ({ dynamic }: { dynamic: boolean }) => {
       />
     </main>
   );
+  /* eslint-enable react/no-unknown-property */
 };
 
 const channel = mockChannel();
@@ -128,7 +166,7 @@ const meta = preview.meta({
   decorators: [
     (Story, { parameters }) => (
       <>
-        <Content dynamic={parameters.dynamic} />
+        <Content dynamic={parameters.dynamic} withPopover={parameters.withPopover} />
         <Story />,
       </>
     ),
@@ -168,13 +206,13 @@ const highlight = (
 
 export const Default = meta.story({
   play: async () => {
-    highlight(['div']);
+    highlight(['div', 'input']);
   },
 });
 
 export const Multiple = meta.story({
   play: async () => {
-    highlight(['main > div']);
+    highlight(['main > div', 'input']);
     highlight(['div > div'], {
       styles: {
         border: '3px solid hotpink',
@@ -188,7 +226,7 @@ export const Dynamic = meta.story({
     dynamic: true,
   },
   play: async ({ canvasElement }) => {
-    highlight(['div']);
+    highlight(['div', 'input']);
 
     const scaling = canvasElement.querySelector('#scaling') as HTMLElement;
     const moving = canvasElement.querySelector('#moving') as HTMLElement;
@@ -201,7 +239,7 @@ export const Dynamic = meta.story({
 
 export const Styles = meta.story({
   play: async () => {
-    highlight(['div'], {
+    highlight(['div', 'input'], {
       styles: {
         outline: '3px dashed hotpink',
         animation: 'pulse 3s linear infinite',
@@ -225,9 +263,9 @@ export const ScrollIntoView = meta.story({
   },
 });
 
-export const Popover = meta.story({
+export const Selectable = meta.story({
   play: async () => {
-    highlight(['div'], {
+    highlight(['div', 'input'], {
       selectable: true,
     });
 
@@ -242,11 +280,8 @@ export const Popover = meta.story({
 });
 
 export const Menu = meta.story({
-  parameters: {
-    // dynamic: true,
-  },
   play: async () => {
-    highlight(['div'], {
+    highlight(['div', 'input'], {
       menuItems: [
         {
           id: '1',
@@ -268,6 +303,28 @@ export const Menu = meta.story({
     await userEvent.pointer({
       target: document.body,
       coords: { pageX: 470, pageY: 240 },
+      keys: '[MouseLeft]',
+    });
+  },
+});
+
+export const OnPopover = meta.story({
+  parameters: {
+    withPopover: true,
+  },
+  play: async ({ canvasElement }) => {
+    const button = within(canvasElement).getByText('Open Popover 1');
+    await userEvent.click(button);
+
+    highlight(['[popover]'], {
+      selectable: true,
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
+    await userEvent.pointer({
+      target: document.body,
+      coords: { pageX: window.innerWidth / 2, pageY: window.innerHeight / 2 },
       keys: '[MouseLeft]',
     });
   },

@@ -6,6 +6,8 @@ import { HIGHLIGHT, REMOVE_HIGHLIGHT, RESET_HIGHLIGHT, SCROLL_INTO_VIEW } from '
 import type { Box, Highlight, HighlightOptions, RawHighlightOptions } from './types';
 import { convertLegacy, createElement, mapBoxes, mapElements, useStore } from './utils';
 
+const supportsPopover = HTMLElement.prototype.hasOwnProperty('showPopover');
+
 const chevronLeft = () =>
   createElement(
     'svg',
@@ -62,7 +64,7 @@ export const useHighlights = ({
   const focused = useStore<Box | undefined>();
   const selected = useStore<Box | undefined>();
 
-  // Updates the tracked elements when highlights change or the DOM tree changes
+  // Update tracked elements when highlights change or the DOM tree changes
   highlights.subscribe((value) => {
     elements.set(mapElements(value));
 
@@ -77,7 +79,7 @@ export const useHighlights = ({
     };
   });
 
-  // Updates the tracked highlights when elements are resized
+  // Update highlight boxes when elements are resized or scrollable elements are scrolled
   elements.subscribe((value) => {
     const storybookRoot = document.getElementById(storybookRootId)!;
     const updateBoxes = () => requestAnimationFrame(() => boxes.set(mapBoxes(value)));
@@ -98,12 +100,32 @@ export const useHighlights = ({
     };
   });
 
-  // Updates click targets when elements are removed
+  // Update highlight boxes for sticky elements when scrolling the window
+  elements.subscribe((value) => {
+    const sticky = Array.from(value.keys()).filter(({ style }) => style.position === 'sticky');
+    const updateBoxes = () =>
+      requestAnimationFrame(() => {
+        boxes.set((current) =>
+          current.map((box) => {
+            if (sticky.includes(box.element)) {
+              const { top, left } = box.element.getBoundingClientRect();
+              return { ...box, top: top + window.scrollY, left: left + window.scrollX };
+            }
+            return box;
+          })
+        );
+      });
+
+    document.addEventListener('scroll', updateBoxes);
+    return () => document.removeEventListener('scroll', updateBoxes);
+  });
+
+  // Remove stale click targets (boxes) when elements are removed
   elements.subscribe((value) => {
     targets.set((t) => t.filter(({ element }) => value.has(element)));
   });
 
-  // Ensure the selected element is always an active target
+  // Update selected and focused elements when clickable targets change
   targets.subscribe((value) => {
     if (value.length) {
       selected.set((s) => (value.some((t) => t.element === s?.element) ? s : undefined));
@@ -115,7 +137,9 @@ export const useHighlights = ({
     }
   });
 
+  //
   // Rendering
+  //
 
   let root = document.getElementById(rootId);
   if (!root) {
@@ -129,7 +153,8 @@ export const useHighlights = ({
     if (menu) {
       menu.innerHTML = '';
     } else {
-      menu = root.appendChild(createElement('div', { id: menuId }) as HTMLElement);
+      const props = { id: menuId, popover: 'manual' };
+      menu = root.appendChild(createElement('div', props) as HTMLElement);
       root.appendChild(
         createElement('style', {}, [
           `
@@ -137,10 +162,12 @@ export const useHighlights = ({
               position: absolute;
               z-index: 2147483647;
               width: 300px;
+              padding: 0px;
               margin-top: 15px;
               margin-left: -150px;
               font-size: 12px;
               background: white;
+              border: none;
               border-radius: 6px;
               box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.05), 0 5px 15px 0 rgba(0, 0, 0, 0.1);
               color: #2E3438;
@@ -225,6 +252,9 @@ export const useHighlights = ({
     const elementList = selectedElement ? [selectedElement] : targets.get();
 
     if (elementList.length) {
+      menu.style.position =
+        getComputedStyle(elementList[0].element).position === 'fixed' ? 'fixed' : 'absolute';
+
       menu.appendChild(
         createElement(
           'ul',
@@ -291,28 +321,45 @@ export const useHighlights = ({
     if (coords) {
       Object.assign(menu.style, {
         display: 'block',
-        left: `${coords.x}px`,
-        top: `${coords.y}px`,
+        left: `${menu.style.position === 'fixed' ? coords.x - window.scrollX : coords.x}px`,
+        top: `${menu.style.position === 'fixed' ? coords.y - window.scrollY : coords.y}px`,
       });
+      if (supportsPopover) {
+        // Puts the menu in #top-layer, above any other popovers
+        menu.showPopover();
+      }
 
       // Reposition the menu on after it renders, to avoid rendering outside the viewport
       requestAnimationFrame(() => {
+        const { scrollX, scrollY, innerHeight: windowHeight, innerWidth: windowWidth } = window;
         const margin = 5;
-        const left = Math.max(
-          Math.min(coords.x, window.innerWidth - menu.clientWidth / 2 - margin),
-          menu.clientWidth / 2 + margin
-        );
-        if (left !== coords.x) {
-          menu.style.left = `${left}px`;
-        }
-
         const topOffset = 15;
-        const top = Math.min(coords.y, window.innerHeight - menu.clientHeight - margin - topOffset);
+        const top = Math.min(
+          menu.style.position === 'fixed' ? coords.y - scrollY : coords.y,
+          windowHeight - menu.clientHeight - margin - topOffset + scrollY
+        );
+        const left =
+          menu.style.position === 'fixed'
+            ? Math.max(
+                Math.min(coords.x - scrollX, windowWidth - menu.clientWidth / 2 - margin),
+                menu.clientWidth / 2 + margin
+              )
+            : Math.max(
+                Math.min(coords.x, windowWidth - menu.clientWidth / 2 - margin + scrollX),
+                menu.clientWidth / 2 + margin + scrollX
+              );
+
         if (top !== coords.y) {
           menu.style.top = `${top}px`;
         }
+        if (left !== coords.x) {
+          menu.style.left = `${left}px`;
+        }
       });
     } else {
+      if (supportsPopover) {
+        menu.hidePopover();
+      }
       Object.assign(menu.style, { display: 'none' });
     }
 
@@ -321,6 +368,7 @@ export const useHighlights = ({
 
   const styleElementByHighlight = new Map<string, HTMLStyleElement>(new Map());
 
+  // Update highlight keyframes when highlights change
   highlights.subscribe((value) => {
     value.forEach(({ keyframes }) => {
       if (keyframes) {
@@ -334,6 +382,8 @@ export const useHighlights = ({
         style.innerHTML = keyframes;
       }
     });
+
+    // Clean up stale keyframes
     styleElementByHighlight.forEach((style, keyframes) => {
       if (!value.some((v) => v.keyframes === keyframes)) {
         style.remove();
@@ -352,6 +402,7 @@ export const useHighlights = ({
     outlineOffset: '0px',
   };
 
+  // Create an element for every highlight box
   boxes.subscribe((value) => {
     value.forEach(({ element, top, left, width, height, styles, selectable }) => {
       let box = boxElementByTargetElement.get(element);
@@ -362,7 +413,7 @@ export const useHighlights = ({
       Object.assign(box.style, {
         ...resetStyles,
         ...styles,
-        position: 'absolute',
+        position: getComputedStyle(element).position === 'fixed' ? 'fixed' : 'absolute',
         top: `${top}px`,
         left: `${left}px`,
         width: `${width}px`,
@@ -371,6 +422,8 @@ export const useHighlights = ({
         pointerEvents: selectable ? 'auto' : 'none',
       });
     });
+
+    // Clean up stale highlight boxes
     boxElementByTargetElement.forEach((box, element) => {
       if (!value.some(({ element: e }) => e === element)) {
         box.remove();
@@ -379,25 +432,7 @@ export const useHighlights = ({
     });
   });
 
-  focused.subscribe((value) => {
-    const selectedBox = selected.get();
-    const target = selectedBox || value;
-    boxes.get().forEach((box) => {
-      const el = boxElementByTargetElement.get(box.element);
-      if (el) {
-        Object.assign(el.style, box.styles);
-      }
-    });
-
-    if (target) {
-      const box = boxElementByTargetElement.get(target.element);
-      if (box) {
-        const { styles, selectedStyles } = target || {};
-        Object.assign(box.style, { ...resetStyles, ...styles, ...selectedStyles });
-      }
-    }
-  });
-
+  // Handle click events on highlight boxes
   boxes.subscribe((value) => {
     const selectable = value.filter((box) => box.selectable);
     if (!selectable.length) {
@@ -407,6 +442,7 @@ export const useHighlights = ({
     const onClick = ({ pageX: px, pageY: py }: MouseEvent) => {
       // The menu may get repositioned, so we wait for the next frame before checking its position
       requestAnimationFrame(() => {
+        // Don't do anything if the click is within the menu
         const menu = document.getElementById(menuId)?.getBoundingClientRect();
         if (
           menu?.top &&
@@ -419,17 +455,45 @@ export const useHighlights = ({
           return;
         }
 
-        const results = selectable.filter(
-          ({ top, left, width, height }) =>
-            px >= left && px <= left + width && py >= top && py <= top + height
-        );
-        coordinates.set(results ? { x: px, y: py } : undefined);
+        // Update menu coordinates and clicked target boxes based on the click position
+        const results = selectable.filter((box) => {
+          let { left, top } = box;
+          const { element, width, height } = box;
+          const boxElement = boxElementByTargetElement.get(element);
+          if (boxElement?.style.position === 'fixed') {
+            left += window.scrollX;
+            top += window.scrollY;
+          }
+          return px >= left && px <= left + width && py >= top && py <= top + height;
+        });
+        coordinates.set(results.length ? { x: px, y: py } : undefined);
         targets.set(results);
       });
     };
 
     document.body.addEventListener('click', onClick);
     return () => document.body.removeEventListener('click', onClick);
+  });
+
+  // Update styles for the selected or focused highlight box
+  focused.subscribe((value) => {
+    // Reset all highlight boxes to their default styles
+    boxes.get().forEach((box) => {
+      const el = boxElementByTargetElement.get(box.element);
+      if (el) {
+        Object.assign(el.style, box.styles);
+      }
+    });
+
+    // Set styles for the focused highlight box
+    const target = selected.get() || value;
+    if (target) {
+      const box = boxElementByTargetElement.get(target.element);
+      if (box) {
+        const { styles, selectedStyles } = target || {};
+        Object.assign(box.style, { ...resetStyles, ...styles, ...selectedStyles });
+      }
+    }
   });
 
   targets.subscribe(() => {
@@ -440,7 +504,9 @@ export const useHighlights = ({
     renderMenu();
   });
 
-  // Event handlers
+  //
+  // Channel event handlers
+  //
 
   const addHighlight = (highlight: RawHighlightOptions) => {
     const info = convertLegacy(highlight);

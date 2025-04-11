@@ -1,7 +1,7 @@
 /* eslint-disable no-underscore-dangle */
 import { describe, expect, it } from 'vitest';
 
-import { babelPrint } from '@storybook/core/babel';
+import { babelPrint } from 'storybook/internal/babel';
 
 import { dedent } from 'ts-dedent';
 
@@ -517,6 +517,55 @@ describe('ConfigFile', () => {
         ).toMatchInlineSnapshot(`
           const core = { builder: 'webpack5' };
           export { core };
+        `);
+      });
+
+      it('sets nested field in parameters variable', () => {
+        expect(
+          setField(
+            ['parameters', 'a11y'],
+            'todo',
+            dedent`
+              const parameters = { foo: 'bar' };
+              const preview = {
+                parameters,
+              }
+              export default preview;
+            `
+          )
+        ).toMatchInlineSnapshot(`
+          const parameters = {
+            foo: 'bar',
+            a11y: 'todo'
+          };
+          const preview = {
+            parameters,
+          }
+          export default preview;
+        `);
+      });
+
+      it('sets nested field when parameters exists as both variable and direct object', () => {
+        expect(
+          setField(
+            ['parameters', 'a11y'],
+            'todo',
+            dedent`
+              const parameters = { foo: 'bar' };
+              const preview = {
+                parameters: {},
+              }
+              export default preview;
+            `
+          )
+        ).toMatchInlineSnapshot(`
+          const parameters = { foo: 'bar' };
+          const preview = {
+            parameters: {
+              a11y: 'todo'
+            },
+          }
+          export default preview;
         `);
       });
     });

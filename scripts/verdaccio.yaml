@@ -27,8 +27,80 @@ packages:
     access: $all
     publish: $all
     proxy: npmjs
+  '@storybook/builder-manager':
+    access: $all
+    publish: $all
+    proxy: npmjs
+  '@storybook/channels':
+    access: $all
+    publish: $all
+    proxy: npmjs
+  '@storybook/client-logger':
+    access: $all
+    publish: $all
+    proxy: npmjs
+  '@storybook/components':
+    access: $all
+    publish: $all
+    proxy: npmjs
+  '@storybook/core-common':
+    access: $all
+    publish: $all
+    proxy: npmjs
+  '@storybook/core-events':
+    access: $all
+    publish: $all
+    proxy: npmjs
+  '@storybook/core-server':
+    access: $all
+    publish: $all
+    proxy: npmjs
+  '@storybook/csf-tools':
+    access: $all
+    publish: $all
+    proxy: npmjs
+  '@storybook/docs-tools':
+    access: $all
+    publish: $all
+    proxy: npmjs
+  '@storybook/manager-api':
+    access: $all
+    publish: $all
+    proxy: npmjs
+  '@storybook/manager':
+    access: $all
+    publish: $all
+    proxy: npmjs
+  '@storybook/node-logger':
+    access: $all
+    publish: $all
+    proxy: npmjs
+  '@storybook/preview-api':
+    access: $all
+    publish: $all
+    proxy: npmjs
+  '@storybook/preview':
+    access: $all
+    publish: $all
+    proxy: npmjs
+  '@storybook/router':
+    access: $all
+    publish: $all
+    proxy: npmjs
+  '@storybook/telemetry':
+    access: $all
+    publish: $all
+    proxy: npmjs
+  '@storybook/theming':
+    access: $all
+    publish: $all
+    proxy: npmjs
+  '@storybook/types':
+    access: $all
+    publish: $all
+    proxy: npmjs
 
-  # storybook's packages not hosted in this monorepo
+  # storybook's packages never hosted in this monorepo
   '@storybook/csf':
     access: $all
     publish: $all

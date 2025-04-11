@@ -9,21 +9,20 @@ import React from 'react';
 import type { Canvas } from 'storybook/internal/csf';
 import type { Args, StrictArgs } from 'storybook/internal/types';
 
-import type { Mock } from '@storybook/test';
-import { fn } from '@storybook/test';
-
 import { expectTypeOf } from 'expect-type';
+import { fn } from 'storybook/test';
+import type { Mock } from 'storybook/test';
 
-import { definePreview } from './preview';
+import { __definePreview } from './preview';
 import type { Decorator } from './public-types';
 
 type ButtonProps = { label: string; disabled: boolean };
 const Button: (props: ButtonProps) => ReactElement = () => <></>;
 
-const preview = definePreview({});
+const preview = __definePreview({});
 
 test('csf factories', () => {
-  const config = definePreview({
+  const config = __definePreview({
     addons: [
       {
         decorators: [],
@@ -65,8 +64,8 @@ describe('Args can be provided in multiple ways', () => {
   it('❌ The combined shape of meta args and story args must match the required args.', () => {
     {
       const meta = preview.meta({ component: Button });
+      // @ts-expect-error disabled not provided ❌
       const Basic = meta.story({
-        // @ts-expect-error disabled not provided ❌
         args: { label: 'good' },
       });
     }
@@ -80,11 +79,36 @@ describe('Args can be provided in multiple ways', () => {
     }
     {
       const meta = preview.meta({ component: Button });
+      // @ts-expect-error disabled not provided ❌
       const Basic = meta.story({
-        // @ts-expect-error disabled not provided ❌
         args: { label: 'good' },
       });
     }
+  });
+
+  it("✅ Required args don't need to be provided when the user uses an empty render", () => {
+    const meta = preview.meta({
+      component: Button,
+      args: { label: 'good' },
+    });
+    const Basic = meta.story({
+      args: {},
+      render: () => <div>Hello world</div>,
+    });
+  });
+
+  it('❌ Required args need to be provided when the user uses a non-empty render', () => {
+    const meta = preview.meta({
+      component: Button,
+      args: { label: 'good' },
+    });
+    // @ts-expect-error disabled not provided ❌
+    const Basic = meta.story({
+      args: {
+        label: 'good',
+      },
+      render: (args) => <div>Hello world</div>,
+    });
   });
 });
 

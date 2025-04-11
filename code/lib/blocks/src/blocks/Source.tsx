@@ -1,8 +1,8 @@
 import type { ComponentProps, FC } from 'react';
-import React, { useContext } from 'react';
+import React, { useContext, useMemo } from 'react';
 
 import { SourceType } from 'storybook/internal/docs-tools';
-import type { Args, ModuleExport, PreparedStory, StoryId } from 'storybook/internal/types';
+import type { Args, ModuleExport, StoryId } from 'storybook/internal/types';
 
 import type { SourceCodeProps } from '../components/Source';
 import { Source as PureSource, SourceError } from '../components/Source';
@@ -10,6 +10,7 @@ import type { DocsContextProps } from './DocsContext';
 import { DocsContext } from './DocsContext';
 import type { SourceContextProps, SourceItem } from './SourceContainer';
 import { SourceContext, UNKNOWN_ARGS_HASH, argsHash } from './SourceContainer';
+import { useTransformCode } from './useTransformCode';
 
 export type SourceParameters = SourceCodeProps & {
   /** Where to read the source code from, see `SourceType` */
@@ -18,8 +19,8 @@ export type SourceParameters = SourceCodeProps & {
   transform?: (
     code: string,
     storyContext: ReturnType<DocsContextProps['getStoryContext']>
-  ) => string;
-  /** Internal: set by our CSF loader (`enrichCsf` in `@storybook/csf-tools`). */
+  ) => string | Promise<string>;
+  /** Internal: set by our CSF loader (`enrichCsf` in `storybook/internal/csf-tools`). */
   originalSource?: string;
 };
 
@@ -58,7 +59,7 @@ const getStorySource = (
   return source || { code: '' };
 };
 
-const getSnippet = ({
+const useCode = ({
   snippet,
   storyContext,
   typeFromProps,
@@ -69,15 +70,11 @@ const getSnippet = ({
   typeFromProps: SourceType;
   transformFromProps?: SourceProps['transform'];
 }): string => {
-  const { __isArgsStory: isArgsStory } = storyContext.parameters;
-  const sourceParameters = (storyContext.parameters.docs?.source || {}) as SourceParameters;
+  const parameters = storyContext.parameters ?? {};
+  const { __isArgsStory: isArgsStory } = parameters;
+  const sourceParameters = (parameters.docs?.source || {}) as SourceParameters;
 
   const type = typeFromProps || sourceParameters.type || SourceType.AUTO;
-
-  // if user has hard-coded the snippet, that takes precedence
-  if (sourceParameters.code !== undefined) {
-    return sourceParameters.code;
-  }
 
   const useSnippet =
     // if user has explicitly set this as dynamic, use snippet
@@ -86,10 +83,15 @@ const getSnippet = ({
     (type === SourceType.AUTO && snippet && isArgsStory);
 
   const code = useSnippet ? snippet : sourceParameters.originalSource || '';
-
   const transformer = transformFromProps ?? sourceParameters.transform;
 
-  return transformer?.(code, storyContext) || code;
+  const transformedCode = useTransformCode(code, transformer, storyContext);
+
+  if (sourceParameters.code !== undefined) {
+    return sourceParameters.code;
+  }
+
+  return transformedCode;
 };
 
 // state is used by the Canvas block, which also calls useSourceProps
@@ -100,58 +102,65 @@ export const useSourceProps = (
   docsContext: DocsContextProps<any>,
   sourceContext: SourceContextProps
 ): PureSourceProps => {
-  let story: PreparedStory;
   const { of } = props;
-  if ('of' in props && of === undefined) {
-    throw new Error('Unexpected `of={undefined}`, did you mistype a CSF file reference?');
-  }
 
-  if (of) {
-    const resolved = docsContext.resolveOf(of, ['story']);
-    story = resolved.story;
-  } else {
-    try {
-      // Always fall back to the primary story for source parameters, even if code is set.
-      story = docsContext.storyById();
-    } catch (err) {
-      // You are allowed to use <Source code="..." /> and <Canvas /> unattached.
+  const story = useMemo(() => {
+    if (of) {
+      const resolved = docsContext.resolveOf(of, ['story']);
+      return resolved.story;
+    } else {
+      try {
+        // Always fall back to the primary story for source parameters, even if code is set.
+        return docsContext.storyById();
+      } catch (err) {
+        // You are allowed to use <Source code="..." /> and <Canvas /> unattached.
+      }
     }
-  }
+  }, [docsContext, of]);
 
-  const sourceParameters = (story?.parameters?.docs?.source || {}) as SourceParameters;
-  const { code } = props; // We will fall back to `sourceParameters.code`, but per story below
-  let format = props.format ?? sourceParameters.format;
-  const language = props.language ?? sourceParameters.language ?? 'jsx';
-  const dark = props.dark ?? sourceParameters.dark ?? false;
-
-  if (!code && !story) {
-    return { error: SourceError.SOURCE_UNAVAILABLE };
-  }
-  if (code) {
-    return {
-      code,
-      format,
-      language,
-      dark,
-    };
-  }
-  const storyContext = docsContext.getStoryContext(story);
+  const storyContext = story ? docsContext.getStoryContext(story) : {};
 
   // eslint-disable-next-line no-underscore-dangle
   const argsForSource = props.__forceInitialArgs
     ? storyContext.initialArgs
     : storyContext.unmappedArgs;
 
-  const source = getStorySource(story.id, argsForSource, sourceContext);
-  format = source.format ?? story.parameters.docs?.source?.format ?? false;
+  const source = story ? getStorySource(story.id, argsForSource, sourceContext) : null;
+
+  const transformedCode = useCode({
+    snippet: source ? source.code : '',
+    storyContext: { ...storyContext, args: argsForSource },
+    typeFromProps: props.type,
+    transformFromProps: props.transform,
+  });
+
+  if ('of' in props && of === undefined) {
+    throw new Error('Unexpected `of={undefined}`, did you mistype a CSF file reference?');
+  }
+
+  const sourceParameters = (story?.parameters?.docs?.source || {}) as SourceParameters;
+  let format = props.format;
+
+  const language = props.language ?? sourceParameters.language ?? 'jsx';
+  const dark = props.dark ?? sourceParameters.dark ?? false;
+
+  if (!props.code && !story) {
+    return { error: SourceError.SOURCE_UNAVAILABLE };
+  }
+
+  if (props.code) {
+    return {
+      code: props.code,
+      format,
+      language,
+      dark,
+    };
+  }
+
+  format = source.format ?? true;
 
   return {
-    code: getSnippet({
-      snippet: source.code,
-      storyContext: { ...storyContext, args: argsForSource },
-      typeFromProps: props.type,
-      transformFromProps: props.transform,
-    }),
+    code: transformedCode,
     format,
     language,
     dark,

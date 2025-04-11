@@ -135,10 +135,11 @@ function transformToSvelteDocParserDataItems(docgen: Docgen): SvelteDataItem[] {
 export async function svelteDocgen(svelteOptions: Record<string, any> = {}): Promise<PluginOption> {
   const cwd = process.cwd();
   const { preprocess: preprocessOptions, logDocgen = false } = svelteOptions;
-  const include = /\.(svelte)$/;
+  const include = /\.svelte$/;
+  const exclude = /node_modules\/.*/;
   const { createFilter } = await import('vite');
 
-  const filter = createFilter(include);
+  const filter = createFilter(include, exclude);
   const sourceFileCache = createDocgenCache();
 
   let docPreprocessOptions: Parameters<typeof preprocess>[1] | undefined;
@@ -146,7 +147,7 @@ export async function svelteDocgen(svelteOptions: Record<string, any> = {}): Pro
   return {
     name: 'storybook:svelte-docgen-plugin',
     async transform(src: string, id: string) {
-      if (!filter(id)) {
+      if (id.startsWith('\0') || !filter(id)) {
         return undefined;
       }
 
@@ -189,7 +190,13 @@ export async function svelteDocgen(svelteOptions: Record<string, any> = {}): Pro
 
         let docOptions;
         if (docPreprocessOptions) {
-          const rawSource = readFileSync(resource).toString();
+          let rawSource;
+          try {
+            rawSource = readFileSync(resource).toString();
+          } catch (_) {
+            // ignore/skip modules that can't be loaded, possibly virtual module
+            return undefined;
+          }
           const { code: fileContent } = await preprocess(rawSource, docPreprocessOptions, {
             filename: resource,
           });

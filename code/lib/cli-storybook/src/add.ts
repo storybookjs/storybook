@@ -8,8 +8,7 @@ import {
   versions,
 } from 'storybook/internal/common';
 import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
-
-import type { StorybookConfigRaw } from '@storybook/types';
+import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import prompts from 'prompts';
 import SemVer from 'semver';
@@ -79,10 +78,10 @@ type CLIOptions = {
  *
  * ```sh
  * sb add "@storybook/addon-docs"
- * sb add "@storybook/addon-interactions@7.0.1"
+ * sb add "@storybook/addon-vitest@9.0.1"
  * ```
  *
- * If there is no version specifier and it's a storybook addon, it will try to use the version
+ * If there is no version specifier and it's a Storybook addon, it will try to use the version
  * specifier matching your current Storybook install version.
  */
 export async function add(
@@ -151,7 +150,10 @@ export async function add(
       : `${addonName}@${version}`;
 
   logger.log(`Installing ${addonWithVersion}`);
-  await packageManager.addDependencies({ installAsDevDependencies: true }, [addonWithVersion]);
+  await packageManager.addDependencies(
+    { installAsDevDependencies: true, writeOutputToFile: false },
+    [addonWithVersion]
+  );
 
   if (shouldAddToMain) {
     logger.log(`Adding '${addon}' to the "addons" field in ${mainConfigPath}`);
@@ -168,7 +170,10 @@ export async function add(
     await writeConfig(main);
   }
 
-  await syncStorybookAddons(mainConfig, previewConfigPath!);
+  // TODO: remove try/catch once CSF factories is shipped, for now gracefully handle any error
+  try {
+    await syncStorybookAddons(mainConfig, previewConfigPath!);
+  } catch (e) {}
 
   if (!skipPostinstall && isCoreAddon(addonName)) {
     await postinstallAddon(addonName, { packageManager: packageManager.type, configDir, yes });

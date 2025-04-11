@@ -48,10 +48,12 @@ export type Generator<T = void> = (
   commandOptions?: CommandOptions
 ) => Promise<T>;
 
+export type GeneratorFeature = 'docs' | 'test';
+
 export type CommandOptions = {
   packageManager: PackageManagerName;
   usePnp?: boolean;
-  features: string[];
+  features: GeneratorFeature[];
   type?: ProjectType;
   force?: any;
   html?: boolean;

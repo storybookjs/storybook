@@ -1,11 +1,11 @@
-import { IconButton } from '@storybook/core/components';
-import { styled } from '@storybook/core/theming';
-import type { API_StatusValue } from '@storybook/types';
+import { IconButton } from 'storybook/internal/components';
+import type { StatusValue } from 'storybook/internal/types';
 
 import type { Theme } from '@emotion/react';
 import { darken, lighten, transparentize } from 'polished';
+import { styled } from 'storybook/theming';
 
-const withStatusColor = ({ theme, status }: { theme: Theme; status: API_StatusValue }) => {
+const withStatusColor = ({ theme, status }: { theme: Theme; status: StatusValue }) => {
   const defaultColor =
     theme.base === 'light'
       ? transparentize(0.3, theme.color.defaultText)
@@ -13,23 +13,23 @@ const withStatusColor = ({ theme, status }: { theme: Theme; status: API_StatusVa
 
   return {
     color: {
-      pending: defaultColor,
-      success: theme.color.positive,
-      error: theme.color.negative,
-      warn: theme.color.warning,
-      unknown: defaultColor,
+      'status-value:pending': defaultColor,
+      'status-value:success': theme.color.positive,
+      'status-value:error': theme.color.negative,
+      'status-value:warning': theme.color.warning,
+      'status-value:unknown': defaultColor,
     }[status],
   };
 };
 
-export const StatusLabel = styled.div<{ status: API_StatusValue }>(withStatusColor, {
+export const StatusLabel = styled.div<{ status: StatusValue }>(withStatusColor, {
   margin: 3,
 });
 
 export const StatusButton = styled(IconButton)<{
   height?: number;
   width?: number;
-  status: API_StatusValue;
+  status: StatusValue;
   selectedItem?: boolean;
 }>(
   withStatusColor,

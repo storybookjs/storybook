@@ -1,13 +1,15 @@
 import type { ReactPreview } from '@storybook/react';
-import { definePreview as definePreviewBase } from '@storybook/react';
+import { __definePreview } from '@storybook/react';
 
 import * as nextPreview from './preview';
 
+export * from '@storybook/react';
 export * from './types';
+// @ts-expect-error (double exports)
 export * from './portable-stories';
 
 export function definePreview(preview: NextPreview['input']) {
-  return definePreviewBase({
+  return __definePreview({
     ...preview,
     addons: [nextPreview, ...(preview.addons ?? [])],
   }) as NextPreview;

@@ -2,7 +2,7 @@ import React from 'react';
 
 import { SourceType } from 'storybook/internal/docs-tools';
 
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { dedent } from 'ts-dedent';
 
@@ -129,7 +129,6 @@ export const CodeParameters: Story = {
 export const CodeFormat: Story = {
   args: {
     code,
-    format: true,
   },
 };
 
@@ -141,7 +140,6 @@ export const CodeLanguage: Story = {
   args: {
     code,
     language: 'graphql',
-    format: true,
   },
 };
 

@@ -3,8 +3,11 @@ import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { dirname, extname, join, normalize, relative, resolve, sep } from 'node:path';
 
-import { commonGlobOptions, normalizeStoryPath } from '@storybook/core/common';
-import { combineTags, storyNameFromExport, toId } from '@storybook/core/csf';
+import { commonGlobOptions, normalizeStoryPath } from 'storybook/internal/common';
+import { combineTags, storyNameFromExport, toId } from 'storybook/internal/csf';
+import { getStorySortParameter, loadConfig } from 'storybook/internal/csf-tools';
+import { logger, once } from 'storybook/internal/node-logger';
+import { isExampleStoryId } from 'storybook/internal/telemetry';
 import type {
   DocsIndexEntry,
   DocsOptions,
@@ -17,11 +20,7 @@ import type {
   StoryIndexEntry,
   StorybookConfigRaw,
   Tag,
-} from '@storybook/core/types';
-
-import { getStorySortParameter, loadConfig } from '@storybook/core/csf-tools';
-import { logger, once } from '@storybook/core/node-logger';
-import { sortStoriesV7, userOrAutoTitleFromSpecifier } from '@storybook/core/preview-api';
+} from 'storybook/internal/types';
 
 import { findUp } from 'find-up';
 import picocolors from 'picocolors';
@@ -30,6 +29,8 @@ import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 import * as TsconfigPaths from 'tsconfig-paths';
 
+import { userOrAutoTitleFromSpecifier } from '../../preview-api/modules/store/autoTitle';
+import { sortStoriesV7 } from '../../preview-api/modules/store/sortStories';
 import { IndexingError, MultipleIndexingError } from './IndexingError';
 import { autoName } from './autoName';
 import { type IndexStatsSummary, addStats } from './summarizeStats';
@@ -269,7 +270,10 @@ export class StoryIndexGenerator {
             return item;
           }
 
-          addStats(item.extra.stats, statsSummary);
+          // don't count example stories towards feature usage stats
+          if (!isExampleStoryId(item.id)) {
+            addStats(item.extra.stats, statsSummary);
+          }
 
           // Drop extra data used for internal bookkeeping
           const { extra, ...existing } = item;
@@ -397,7 +401,7 @@ export class StoryIndexGenerator {
     //  a) autodocs is globally enabled
     //  b) we have autodocs enabled for this file
     const hasAutodocsTag = entries.some((entry) => entry.tags.includes(AUTODOCS_TAG));
-    const createDocEntry = hasAutodocsTag && !!this.options.docs.autodocs;
+    const createDocEntry = hasAutodocsTag;
 
     if (createDocEntry && this.options.build?.test?.disableAutoDocs !== true) {
       const name = this.options.docs.defaultName ?? 'Docs';
@@ -589,10 +593,7 @@ export class StoryIndexGenerator {
       }
 
       // If you link a file to a tagged CSF file, you have probably made a mistake
-      if (
-        worseEntry.tags?.includes(AUTODOCS_TAG) &&
-        !(this.options.docs.autodocs === true || projectTags?.includes(AUTODOCS_TAG))
-      ) {
+      if (worseEntry.tags?.includes(AUTODOCS_TAG) && !projectTags?.includes(AUTODOCS_TAG)) {
         throw new IndexingError(
           `You created a component docs page for '${worseEntry.title}', but also tagged the CSF file with '${AUTODOCS_TAG}'. This is probably a mistake.`,
           [betterEntry.importPath, worseEntry.importPath]
@@ -765,7 +766,6 @@ export class StoryIndexGenerator {
   getProjectTags(previewCode?: string) {
     let projectTags = [] as Tag[];
     const defaultTags = ['dev', 'test'];
-    const extraTags = this.options.docs.autodocs === true ? [AUTODOCS_TAG] : [];
     if (previewCode) {
       try {
         const projectAnnotations = loadConfig(previewCode).parse();
@@ -786,7 +786,7 @@ export class StoryIndexGenerator {
         `);
       }
     }
-    return [...defaultTags, ...projectTags, ...extraTags];
+    return [...defaultTags, ...projectTags];
   }
 
   // Get the story file names in "imported order"

@@ -2,9 +2,8 @@ import { join } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { normalizeStoriesEntry } from '@storybook/core/common';
-
-import { STORY_INDEX_INVALIDATED } from '@storybook/core/core-events';
+import { normalizeStoriesEntry } from 'storybook/internal/common';
+import { STORY_INDEX_INVALIDATED } from 'storybook/internal/core-events';
 
 import { debounce } from 'es-toolkit/compat';
 import type { Polka, Request, Response } from 'polka';
@@ -18,7 +17,7 @@ import { DEBOUNCE, useStoriesJson } from './stories-json';
 
 vi.mock('watchpack');
 vi.mock('es-toolkit/compat');
-vi.mock('@storybook/core/node-logger');
+vi.mock('storybook/internal/node-logger');
 
 const workingDir = join(__dirname, '__mockdata__');
 const normalizedStories = [
@@ -48,7 +47,7 @@ const getInitializedStoryIndexGenerator = async (
     indexers: [csfIndexer],
     configDir: workingDir,
     workingDir,
-    docs: { defaultName: 'docs', autodocs: false },
+    docs: { defaultName: 'docs' },
     ...overrides,
   };
   const generator = new StoryIndexGenerator(inputNormalizedStories, options);
@@ -156,6 +155,19 @@ describe('useStoriesJson', () => {
               "title": "A",
               "type": "story",
             },
+            "b--docs": {
+              "id": "b--docs",
+              "importPath": "./src/B.stories.ts",
+              "name": "docs",
+              "storiesImports": [],
+              "tags": [
+                "dev",
+                "test",
+                "autodocs",
+              ],
+              "title": "B",
+              "type": "docs",
+            },
             "b--story-one": {
               "id": "b--story-one",
               "importPath": "./src/B.stories.ts",
@@ -203,6 +215,19 @@ describe('useStoriesJson', () => {
               ],
               "title": "componentPath/package",
               "type": "story",
+            },
+            "d--docs": {
+              "id": "d--docs",
+              "importPath": "./src/D.stories.jsx",
+              "name": "docs",
+              "storiesImports": [],
+              "tags": [
+                "dev",
+                "test",
+                "autodocs",
+              ],
+              "title": "D",
+              "type": "docs",
             },
             "d--story-one": {
               "id": "d--story-one",
@@ -254,6 +279,18 @@ describe('useStoriesJson', () => {
               ],
               "title": "docs2/Yabbadabbadooo",
               "type": "docs",
+            },
+            "example-button--story-one": {
+              "id": "example-button--story-one",
+              "importPath": "./src/Button.stories.ts",
+              "name": "Story One",
+              "tags": [
+                "dev",
+                "test",
+                "foobar",
+              ],
+              "title": "Example/Button",
+              "type": "story",
             },
             "first-nested-deeply-f--story-one": {
               "id": "first-nested-deeply-f--story-one",
@@ -322,6 +359,19 @@ describe('useStoriesJson', () => {
               ],
               "title": "first-nested/deeply/Features",
               "type": "story",
+            },
+            "h--docs": {
+              "id": "h--docs",
+              "importPath": "./src/H.stories.mjs",
+              "name": "docs",
+              "storiesImports": [],
+              "tags": [
+                "dev",
+                "test",
+                "autodocs",
+              ],
+              "title": "H",
+              "type": "docs",
             },
             "h--story-one": {
               "id": "h--story-one",

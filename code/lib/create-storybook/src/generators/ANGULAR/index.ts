@@ -58,6 +58,10 @@ const generator: Generator<{ projectName: string }> = async (
   });
   angularJSON.write();
 
+  const packageJson = await packageManager.retrievePackageJson();
+  const angularVersion =
+    packageJson.dependencies['@angular/core'] ?? packageJson.devDependencies['@angular/core'];
+
   await baseGenerator(
     packageManager,
     npmOptions,
@@ -73,7 +77,12 @@ const generator: Generator<{ projectName: string }> = async (
     'angular',
     {
       extraAddons: [`@storybook/addon-onboarding`],
-      ...(useCompodoc && { extraPackages: ['@compodoc/compodoc', '@storybook/addon-docs'] }),
+      extraPackages: [
+        angularVersion
+          ? `@angular-devkit/build-angular@${angularVersion}`
+          : '@angular-devkit/build-angular',
+        ...(useCompodoc ? ['@compodoc/compodoc', '@storybook/addon-docs'] : []),
+      ],
       addScripts: false,
       componentsDestinationPath: root ? `${root}/src/stories` : undefined,
       storybookConfigFolder: storybookFolder,

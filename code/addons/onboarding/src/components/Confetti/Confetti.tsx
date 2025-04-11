@@ -1,8 +1,7 @@
 import React, { type ComponentProps } from 'react';
 
-import { styled } from 'storybook/internal/theming';
-
 import { Confetti as ReactConfetti } from '@neoconfetti/react';
+import { styled } from 'storybook/theming';
 
 const Wrapper = styled.div({
   zIndex: 9999,

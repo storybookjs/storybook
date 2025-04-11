@@ -1,6 +1,6 @@
+/* eslint-disable no-underscore-dangle,@typescript-eslint/naming-convention */
 import type { ComponentType } from 'react';
 
-import { definePreview as definePreviewBase } from 'storybook/internal/csf';
 import type { Meta, Preview, Story } from 'storybook/internal/csf';
 import type {
   Args,
@@ -11,14 +11,16 @@ import type {
   StoryAnnotations,
 } from 'storybook/internal/types';
 
-import type { AddMocks } from 'src/public-types';
 import type { RemoveIndexSignature, SetOptional, Simplify, UnionToIntersection } from 'type-fest';
 
+import { __definePreview as definePreviewBase } from '../../../core/src/shared/preview/csf4';
 import * as reactAnnotations from './entry-preview';
 import * as reactDocsAnnotations from './entry-preview-docs';
+import type { AddMocks } from './public-types';
 import type { ReactRenderer } from './types';
 
-export function definePreview(preview: ReactPreview['input']) {
+/** Do not use, use the definePreview exported from the framework instead */
+export function __definePreview(preview: ReactPreview['input']) {
   return definePreviewBase({
     ...preview,
     addons: [reactAnnotations, reactDocsAnnotations, ...(preview.addons ?? [])],
@@ -56,7 +58,15 @@ interface ReactMeta<
   MetaInput extends ComponentAnnotations<ReactRenderer>,
 > extends Meta<ReactRenderer, Context['args']> {
   story<
-    const TInput extends Simplify<
+    TInput extends StoryAnnotations<ReactRenderer, Context['args']> & {
+      render: () => ReactRenderer['storyResult'];
+    },
+  >(
+    story: TInput
+  ): ReactStory;
+
+  story<
+    TInput extends Simplify<
       StoryAnnotations<
         ReactRenderer,
         // TODO: infer mocks from story itself as well
@@ -69,4 +79,4 @@ interface ReactMeta<
   ): ReactStory;
 }
 
-interface ReactStory extends Story<ReactRenderer> {}
+export interface ReactStory extends Story<ReactRenderer> {}

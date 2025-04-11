@@ -5,7 +5,7 @@ import type { RenderContext } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
-import { act } from './act-compat';
+import { getAct } from './act-compat';
 import type { ReactRenderer, StoryContext } from './types';
 
 const { FRAMEWORK_OPTIONS } = global;
@@ -98,6 +98,7 @@ export async function renderToCanvas(
     unmountElement(canvasElement);
   }
 
+  const act = await getAct();
   await new Promise<void>(async (resolve, reject) => {
     actQueue.push(async () => {
       try {

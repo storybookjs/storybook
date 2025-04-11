@@ -45,10 +45,10 @@ const SUPPORTED_PROJECTS: Record<string, SupportedProject> = {
       language: 'TS',
     },
     createScript: {
-      npm: 'npm create next-app@^14 . -- --typescript --use-npm --eslint --tailwind --no-app --import-alias="@/*" --src-dir',
+      npm: 'npm create next-app . -- --turbopack --typescript --use-npm --eslint --tailwind --no-app --import-alias="@/*" --src-dir',
       // yarn doesn't support version ranges, so we have to use npx
-      yarn: 'npx create-next-app@^14 . --typescript --use-yarn --eslint --tailwind --no-app --import-alias="@/*" --src-dir',
-      pnpm: 'pnpm create next-app@^14 . --typescript --use-pnpm --eslint --tailwind --no-app --import-alias="@/*" --src-dir',
+      yarn: 'npx create-next-app . --turbopack --typescript --use-yarn --eslint --tailwind --no-app --import-alias="@/*" --src-dir',
+      pnpm: 'pnpm create next-app . --turbopack --typescript --use-pnpm --eslint --tailwind --no-app --import-alias="@/*" --src-dir',
     },
   },
   'vue-vite-ts': {
@@ -177,7 +177,18 @@ export const scaffoldNewProject = async (
     // If target directory has a .cache folder, remove it
     // so that it does not block the creation of the new project
     await rm(`${targetDir}/.cache`, { recursive: true, force: true });
+  } catch (e) {
+    //
+  }
+  try {
+    // If target directory has a node_modules folder, remove it
+    // so that it does not block the creation of the new project
+    await rm(`${targetDir}/node_modules`, { recursive: true, force: true });
+  } catch (e) {
+    //
+  }
 
+  try {
     // Create new project in temp directory
     await execa.command(createScript, {
       stdio: 'pipe',
@@ -220,7 +231,7 @@ export const scaffoldNewProject = async (
   logger.line(1);
 };
 
-const BASE_IGNORED_FILES = ['.git', '.gitignore', '.DS_Store', '.cache'];
+const BASE_IGNORED_FILES = ['.git', '.gitignore', '.DS_Store', '.cache', 'node_modules'];
 
 const IGNORED_FILES_BY_PACKAGE_MANAGER: Record<CoercedPackageManagerName, string[]> = {
   npm: [...BASE_IGNORED_FILES],

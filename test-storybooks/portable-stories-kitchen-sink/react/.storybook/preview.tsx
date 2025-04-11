@@ -12,10 +12,12 @@ const preview: Preview = {
       </div>
     ),
   ],
+  initialGlobals: {
+    locale: 'en',
+  },
   globalTypes: {
     locale: {
       description: 'Locale for components',
-      defaultValue: 'en',
       toolbar: {
         title: 'Locale',
         icon: 'circlehollow',

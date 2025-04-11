@@ -1,6 +1,6 @@
 {
   "name": "@storybook/nextjs",
-  "version": "8.6.0-alpha.5",
+  "version": "9.0.0-alpha.17",
   "description": "Storybook for Next.js",
   "keywords": [
     "storybook",
@@ -156,12 +156,11 @@
     "@storybook/builder-webpack5": "workspace:*",
     "@storybook/preset-react-webpack": "workspace:*",
     "@storybook/react": "workspace:*",
-    "@storybook/test": "workspace:*",
     "@types/semver": "^7.3.4",
     "babel-loader": "^9.1.3",
     "css-loader": "^6.7.3",
     "find-up": "^5.0.0",
-    "image-size": "^1.0.0",
+    "image-size": "^2.0.0",
     "loader-utils": "^3.2.1",
     "node-polyfill-webpack-plugin": "^2.0.1",
     "pnp-webpack-plugin": "^1.7.0",
@@ -190,7 +189,7 @@
     "webpack": "^5.65.0"
   },
   "peerDependencies": {
-    "next": "^13.5.0 || ^14.0.0 || ^15.0.0",
+    "next": "^14.1.0 || ^15.0.0",
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
     "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
     "storybook": "workspace:^",
@@ -204,11 +203,8 @@
       "optional": true
     }
   },
-  "optionalDependencies": {
-    "sharp": "^0.33.3"
-  },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   },
   "publishConfig": {
     "access": "public"

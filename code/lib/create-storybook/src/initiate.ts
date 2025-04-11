@@ -45,7 +45,7 @@ import svelteKitGenerator from './generators/SVELTEKIT';
 import vue3Generator from './generators/VUE3';
 import webComponentsGenerator from './generators/WEB-COMPONENTS';
 import webpackReactGenerator from './generators/WEBPACK_REACT';
-import type { CommandOptions, GeneratorOptions } from './generators/types';
+import type { CommandOptions, GeneratorFeature, GeneratorOptions } from './generators/types';
 import { packageVersions } from './ink/steps/checks/packageVersions';
 import { vitestConfigFiles } from './ink/steps/checks/vitestConfigFiles';
 import { currentDirectoryIsEmpty, scaffoldNewProject } from './scaffold-new-project';
@@ -294,27 +294,53 @@ export async function doInitiate(options: CommandOptions): Promise<
 
   const isInteractive = process.stdout.isTTY && !process.env.CI;
 
-  let features = options.features || isInteractive ? ['dev', 'docs', 'test'] : ['dev', 'docs'];
+  const selectableFeatures: Record<GeneratorFeature, { name: string; description: string }> = {
+    docs: { name: 'Documentation', description: 'MDX, auto-generated component docs' },
+    test: { name: 'Testing', description: 'Fast browser-based component tests, watch mode' },
+  };
 
-  if (isInteractive && !options.features) {
+  const printFeatures = (features: Set<GeneratorFeature>) =>
+    Array.from(features)
+      .map((f) => selectableFeatures[f].name)
+      .join(', ') || 'none';
+
+  let selectedFeatures = new Set<GeneratorFeature>();
+
+  if (options.features?.length > 0) {
+    if (options.features.includes('docs')) {
+      selectedFeatures.add('docs');
+    }
+    if (options.features.includes('test')) {
+      selectedFeatures.add('test');
+    }
+    logger.log(`Selected features: ${printFeatures(selectedFeatures)}`);
+  } else if (options.yes || !isInteractive) {
+    selectedFeatures.add('docs');
+
+    if (isInteractive) {
+      // Don't automatically add test feature in CI
+      selectedFeatures.add('test');
+    }
+    logger.log(`Selected features: ${printFeatures(selectedFeatures)}`);
+  } else {
     const out = await prompts({
       type: 'multiselect',
       name: 'features',
-      message: `What are you using Storybook for?`,
-      choices: [
-        { title: 'Development', value: 'dev', selected: true, disabled: true },
-        { title: 'Documentation', value: 'docs', selected: true },
-        { title: 'Testing', value: 'test', selected: true },
-      ],
+      message: `What do you want to use Storybook for?`,
+      choices: Object.entries(selectableFeatures).map(([value, { name, description }]) => ({
+        title: `${name}: ${description}`,
+        value,
+        selected: true,
+      })),
     });
-    features = out.features;
+    selectedFeatures = new Set(out.features);
   }
 
-  if (!features.includes('dev')) {
-    features.push('dev');
-  }
-
-  const telemetryFeatures = [...features];
+  const telemetryFeatures = {
+    dev: true,
+    docs: selectedFeatures.has('docs'),
+    test: selectedFeatures.has('test'),
+  };
 
   // Check if the current directory is empty.
   if (options.force !== true && currentDirectoryIsEmpty(packageManager.type)) {
@@ -349,6 +375,25 @@ export async function doInitiate(options: CommandOptions): Promise<
   } else {
     try {
       projectType = (await detect(packageManager as any, options)) as ProjectType;
+
+      if (projectType === ProjectType.REACT_NATIVE && !options.yes) {
+        const { manualType } = await prompts({
+          type: 'select',
+          name: 'manualType',
+          message: "We've detected a React Native project. Install:",
+          choices: [
+            {
+              title: `${picocolors.bold('React Native')}: Storybook on your device/simulator`,
+              value: ProjectType.REACT_NATIVE,
+            },
+            {
+              title: `${picocolors.bold('React Native Web')}: Storybook on web for docs, test, and sharing`,
+              value: ProjectType.REACT_NATIVE_WEB,
+            },
+          ],
+        });
+        projectType = manualType;
+      }
     } catch (err) {
       done(String(err));
       throw new HandledError(err);
@@ -377,7 +422,7 @@ export async function doInitiate(options: CommandOptions): Promise<
     }
   }
 
-  if (features.includes('test')) {
+  if (selectedFeatures.has('test')) {
     const packageVersionsData = await packageVersions.condition({ packageManager }, {} as any);
     if (packageVersionsData.type === 'incompatible') {
       const { ignorePackageVersions } = isInteractive
@@ -393,14 +438,14 @@ export async function doInitiate(options: CommandOptions): Promise<
           ])
         : { ignorePackageVersions: true };
       if (ignorePackageVersions) {
-        features.splice(features.indexOf('test'), 1);
+        selectedFeatures.delete('test');
       } else {
         process.exit(0);
       }
     }
   }
 
-  if (features.includes('test')) {
+  if (selectedFeatures.has('test')) {
     const vitestConfigFilesData = await vitestConfigFiles.condition(
       { babel, findUp, fs } as any,
       { directory: process.cwd() } as any
@@ -419,7 +464,7 @@ export async function doInitiate(options: CommandOptions): Promise<
           ])
         : { ignoreVitestConfigFiles: true };
       if (ignoreVitestConfigFiles) {
-        features.splice(features.indexOf('test'), 1);
+        selectedFeatures.delete('test');
       } else {
         process.exit(0);
       }
@@ -430,10 +475,13 @@ export async function doInitiate(options: CommandOptions): Promise<
     await packageManager.installDependencies();
   }
 
-  // update the mutated value
-  options.features = features;
+  // Update the options object with the selected features before passing it down to the generator
+  options.features = Array.from(selectedFeatures);
 
   const installResult = await installStorybook(projectType as ProjectType, packageManager, options);
+
+  // Sync features back because they may have been mutated by the generator (e.g. in case of undetected project type)
+  selectedFeatures = new Set(options.features);
 
   if (!options.skipInstall) {
     await packageManager.installDependencies();
@@ -451,7 +499,7 @@ export async function doInitiate(options: CommandOptions): Promise<
 
       1. Replace the contents of your app entry with the following
 
-      ${picocolors.inverse(' ' + "export {default} from './.storybook';" + ' ')}
+      ${picocolors.inverse(' ' + "export {default} from './.rnstorybook';" + ' ')}
 
       2. Wrap your metro config with the withStorybook enhancer function like this:
 
@@ -484,12 +532,12 @@ export async function doInitiate(options: CommandOptions): Promise<
       ? `ng run ${installResult.projectName}:storybook`
       : packageManager.getRunStorybookCommand();
 
-  if (features.includes('test')) {
+  if (selectedFeatures.has('test')) {
     logger.log(
-      `> npx storybook@${versions.storybook} add @storybook/experimental-addon-test@${versions['@storybook/experimental-addon-test']}`
+      `> npx storybook@${versions.storybook} add @storybook/addon-vitest@${versions['@storybook/addon-vitest']}`
     );
     execSync(
-      `npx storybook@${versions.storybook} add @storybook/experimental-addon-test@${versions['@storybook/experimental-addon-test']}`,
+      `npx storybook@${versions.storybook} add @storybook/addon-vitest@${versions['@storybook/addon-vitest']}`,
       { cwd: process.cwd(), stdio: 'inherit' }
     );
   }
@@ -498,6 +546,8 @@ export async function doInitiate(options: CommandOptions): Promise<
     boxen(
       dedent`
           Storybook was successfully installed in your project! 🎉
+          Additional features: ${printFeatures(selectedFeatures)}
+
           To run Storybook manually, run ${picocolors.yellow(
             picocolors.bold(storybookCommand)
           )}. CTRL+C to stop.

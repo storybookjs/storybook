@@ -25,7 +25,7 @@ const createStorybookProgram = program
     // default value is false, but if the user sets STORYBOOK_DISABLE_TELEMETRY, it can be true
     process.env.STORYBOOK_DISABLE_TELEMETRY && process.env.STORYBOOK_DISABLE_TELEMETRY !== 'false'
   )
-  .option('--features <...list>', 'What features of storybook are you interested in?')
+  .option('--features <list...>', 'What features of storybook are you interested in?')
   .option('--debug', 'Get more logs in debug mode')
   .option('--enable-crash-reports', 'Enable sending crash reports to telemetry data')
   .option('-f --force', 'Force add Storybook')

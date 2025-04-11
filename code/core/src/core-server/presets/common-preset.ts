@@ -2,15 +2,17 @@ import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { dirname, isAbsolute, join } from 'node:path';
 
-import type { Channel } from '@storybook/core/channels';
+import type { Channel } from 'storybook/internal/channels';
 import {
   getDirectoryFromWorkingDir,
   getPreviewBodyTemplate,
   getPreviewHeadTemplate,
   loadEnvs,
   removeAddon as removeAddonBase,
-} from '@storybook/core/common';
-import { telemetry } from '@storybook/core/telemetry';
+} from 'storybook/internal/common';
+import { readCsf } from 'storybook/internal/csf-tools';
+import { logger } from 'storybook/internal/node-logger';
+import { telemetry } from 'storybook/internal/telemetry';
 import type {
   CLIOptions,
   CoreConfig,
@@ -18,20 +20,10 @@ import type {
   Options,
   PresetProperty,
   PresetPropertyFn,
-} from '@storybook/core/types';
-
-import { readCsf } from '@storybook/core/csf-tools';
-import { logger } from '@storybook/core/node-logger';
+} from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 
-import { TEST_PROVIDER_ID as ADDON_TEST_PROVIDER_ID } from '../../../../addons/test/src/constants';
-import {
-  TESTING_MODULE_CRASH_REPORT,
-  TESTING_MODULE_PROGRESS_REPORT,
-  type TestingModuleCrashReportPayload,
-  type TestingModuleProgressReportPayload,
-} from '../../core-events';
 import { cleanPaths, sanitizeError } from '../../telemetry/sanitize';
 import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel';
 import { initFileSearchChannel } from '../server-channel/file-search-channel';
@@ -44,7 +36,7 @@ const interpolate = (string: string, data: Record<string, string> = {}) =>
   Object.entries(data).reduce((acc, [k, v]) => acc.replace(new RegExp(`%${k}%`, 'g'), v), string);
 
 const defaultFavicon = join(
-  dirname(require.resolve('@storybook/core/package.json')),
+  dirname(require.resolve('storybook/package.json')),
   '/assets/browser/favicon.svg'
 );
 
@@ -286,55 +278,6 @@ export const experimental_serverChannel = async (
   initFileSearchChannel(channel, options, coreOptions);
   initCreateNewStoryChannel(channel, options, coreOptions);
 
-  if (!options.disableTelemetry) {
-    channel.on(
-      TESTING_MODULE_PROGRESS_REPORT,
-      async (payload: TestingModuleProgressReportPayload) => {
-        if (payload.providerId === ADDON_TEST_PROVIDER_ID) {
-          // addon-test does its own telemetry
-          return;
-        }
-        const status = 'status' in payload ? payload.status : undefined;
-        const progress = 'progress' in payload ? payload.progress : undefined;
-        const error = 'error' in payload ? payload.error : undefined;
-
-        if ((status === 'success' || status === 'cancelled') && progress?.finishedAt) {
-          await telemetry('testing-module-completed-report', {
-            provider: payload.providerId,
-            duration: progress?.finishedAt - progress?.startedAt,
-            numTotalTests: progress?.numTotalTests,
-            numFailedTests: progress?.numFailedTests,
-            numPassedTests: progress?.numPassedTests,
-            status,
-          });
-        }
-
-        if (status === 'failed') {
-          await telemetry('testing-module-completed-report', {
-            provider: payload.providerId,
-            status: 'failed',
-            ...(options.enableCrashReports && {
-              error: error && sanitizeError(error),
-            }),
-          });
-        }
-      }
-    );
-
-    channel.on(TESTING_MODULE_CRASH_REPORT, async (payload: TestingModuleCrashReportPayload) => {
-      if (payload.providerId === ADDON_TEST_PROVIDER_ID) {
-        // addon-test does its own telemetry
-        return;
-      }
-      await telemetry('testing-module-crash-report', {
-        provider: payload.providerId,
-        ...(options.enableCrashReports && {
-          error: cleanPaths(payload.error.message),
-        }),
-      });
-    });
-  }
-
   return channel;
 };
 
@@ -369,7 +312,7 @@ export const tags = async (existing: any) => {
 export const managerEntries = async (existing: any, options: Options) => {
   return [
     join(
-      dirname(require.resolve('@storybook/core/package.json')),
+      dirname(require.resolve('storybook/package.json')),
       'dist/core-server/presets/common-manager.js'
     ),
     ...(existing || []),

@@ -26,7 +26,7 @@ test.describe('preview-api', () => {
     await expect(sbPage.page.locator('.sidebar-container')).toBeVisible();
 
     // wait for the play function to complete
-    await sbPage.viewAddonPanel('Component tests');
+    await sbPage.viewAddonPanel('Component test');
     const interactionsTab = page.locator('#tabbutton-storybook-component-tests-panel');
     await expect(interactionsTab).toBeVisible();
     const panel = sbPage.panelContent();

@@ -7,6 +7,7 @@ import prompts from 'prompts';
 import { dedent } from 'ts-dedent';
 
 import { consolidatedPackages } from '../helpers/consolidated-packages';
+import { transformImportFiles } from '../helpers/transformImports';
 import type { Fix, RunOptions } from '../types';
 
 export interface ConsolidatedOptions {
@@ -66,22 +67,6 @@ function transformPackageJson(content: string): string | null {
   return hasChanges ? JSON.stringify(packageJson, null, 2) : null;
 }
 
-function transformImports(source: string) {
-  let hasChanges = false;
-  let transformed = source;
-
-  for (const [from, to] of Object.entries(consolidatedPackages)) {
-    // Match the package name when it's inside either single or double quotes
-    const regex = new RegExp(`(['"])${from}(\/.*)?\\1`, 'g');
-    if (regex.test(transformed)) {
-      transformed = transformed.replace(regex, `$1${to}$2$1`);
-      hasChanges = true;
-    }
-  }
-
-  return hasChanges ? transformed : null;
-}
-
 export const transformPackageJsonFiles = async (files: string[], dryRun: boolean) => {
   const errors: Array<{ file: string; error: Error }> = [];
 
@@ -95,30 +80,6 @@ export const transformPackageJsonFiles = async (files: string[], dryRun: boolean
         try {
           const contents = await readFile(file, 'utf-8');
           const transformed = transformPackageJson(contents);
-          if (!dryRun && transformed) {
-            await writeFile(file, transformed);
-          }
-        } catch (error) {
-          errors.push({ file, error: error as Error });
-        }
-      })
-    )
-  );
-
-  return errors;
-};
-
-export const transformImportFiles = async (files: string[], dryRun: boolean) => {
-  const errors: Array<{ file: string; error: Error }> = [];
-  const { default: pLimit } = await import('p-limit');
-  const limit = pLimit(10);
-
-  await Promise.all(
-    files.map((file) =>
-      limit(async () => {
-        try {
-          const contents = await readFile(file, 'utf-8');
-          const transformed = transformImports(contents);
           if (!dryRun && transformed) {
             await writeFile(file, transformed);
           }
@@ -227,6 +188,8 @@ export const consolidatedImports: Fix<ConsolidatedOptions> = {
       initial: defaultGlob,
     });
 
+    console.log('Scanning for affected files...');
+
     // eslint-disable-next-line depend/ban-dependencies
     const globby = (await import('globby')).globby;
 
@@ -238,7 +201,9 @@ export const consolidatedImports: Fix<ConsolidatedOptions> = {
       absolute: true,
     });
 
-    const importErrors = await transformImportFiles(sourceFiles, dryRun);
+    console.log(`Scanning ${sourceFiles.length} files...`);
+
+    const importErrors = await transformImportFiles(sourceFiles, consolidatedPackages, dryRun);
     errors.push(...importErrors);
 
     if (errors.length > 0) {

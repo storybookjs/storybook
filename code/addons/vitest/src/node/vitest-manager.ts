@@ -37,7 +37,7 @@ type TagsFilter = {
   skip: string[];
 };
 
-const packageDir = dirname(require.resolve('@storybook/addon-test/package.json'));
+const packageDir = dirname(require.resolve('@storybook/addon-vitest/package.json'));
 
 // We have to tell Vitest that it runs as part of Storybook
 process.env.VITEST_STORYBOOK = 'true';
@@ -53,7 +53,7 @@ export class VitestManager {
 
   constructor(private testManager: TestManager) {}
 
-  async startVitest({ coverage = false } = {}) {
+  async startVitest({ coverage }: { coverage: boolean }) {
     const { createVitest } = await import('vitest/node');
 
     const storybookCoverageReporter: [string, StorybookCoverageReporterOptions] = [
@@ -206,7 +206,6 @@ export class VitestManager {
     if (!this.vitest) {
       await this.startVitest({ coverage: coverageShouldBeEnabled });
     } else if (currentCoverage !== coverageShouldBeEnabled) {
-      await this.vitestRestartPromise;
       await this.restartVitest({ coverage: coverageShouldBeEnabled });
     } else {
       await this.vitestRestartPromise;
@@ -391,8 +390,8 @@ export class VitestManager {
       const isConfig = file === this.vitest?.vite?.config.configFile;
       if (isConfig) {
         log('Restarting Vitest due to config change');
-        await this.closeVitest();
-        await this.startVitest();
+        const { watching, config } = this.testManager.store.getState();
+        await this.restartVitest({ coverage: config.coverage && !watching });
       }
     });
   }

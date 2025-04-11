@@ -81,7 +81,7 @@ test.describe("component testing", () => {
       .getByRole("button", { name: "test" });
     await expect(storyElement).toBeVisible({ timeout: 30000 });
 
-    await sbPage.viewAddonPanel("Component tests");
+    await sbPage.viewAddonPanel("Component test");
 
     // For whatever reason, when visiting a story sometimes the story element is collapsed and that causes flake
     const testStoryElement = await page.getByRole("button", {

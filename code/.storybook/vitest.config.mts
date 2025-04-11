@@ -1,6 +1,6 @@
 import { defaultExclude, defineProject, mergeConfig } from 'vitest/config';
 
-import { storybookTest } from '@storybook/addon-test/vitest-plugin';
+import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
 
 import Inspect from 'vite-plugin-inspect';
 

@@ -424,7 +424,7 @@ export async function baseGenerator(
       frameworkPreviewParts,
       storybookConfigFolder: storybookConfigFolder as string,
       language,
-      rendererId,
+      frameworkPackage,
     });
   }
 

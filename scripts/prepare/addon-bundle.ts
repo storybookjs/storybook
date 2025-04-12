@@ -14,6 +14,7 @@ import type { Options } from 'tsup';
 import { build } from 'tsup';
 import type { PackageJson } from 'type-fest';
 
+import { NODE_TARGET } from '../../code/core/scripts/prep';
 import { BROWSER_TARGETS } from '../../code/core/src/builder-manager';
 import { globalPackages as globalManagerPackages } from '../../code/core/src/manager/globals/globals';
 import { globalPackages as globalPreviewPackages } from '../../code/core/src/preview/globals/globals';
@@ -238,7 +239,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
             ...commonOptions,
             entry: cjsEntries.map((e) => slash(join(cwd, typeof e === 'string' ? e : e.file))),
             format: ['cjs'],
-            target: 'node18',
+            target: NODE_TARGET,
             platform: 'node',
             external: commonExternals,
             esbuildOptions: (c) => {
@@ -262,7 +263,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
             ...(optimized ? dtsConfig : {}),
             entry: esmEntries.map((e) => slash(join(cwd, e.file))),
             format: ['esm'],
-            target: 'node18',
+            target: NODE_TARGET,
             platform: 'neutral',
             banner: {
               js: dedent`

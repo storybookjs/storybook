@@ -28,6 +28,8 @@ import { modifyThemeTypes } from './helpers/modifyThemeTypes';
 import { generateSourceFiles } from './helpers/sourcefiles';
 import { externalPlugin } from './no-externals-plugin';
 
+export const NODE_TARGET = 'node20';
+
 async function run() {
   const flags = process.argv.slice(2);
   const cwd = process.cwd();
@@ -132,7 +134,7 @@ async function run() {
 
     const nodeEsbuildOptions = {
       ...esbuildDefaultOptions,
-      target: 'node18',
+      target: NODE_TARGET,
       splitting: false,
       platform: 'neutral',
       mainFields: ['main', 'module', 'node'],

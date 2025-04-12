@@ -27,7 +27,16 @@ export async function maybeSetupPreviewNavigator() {
   // TODO: custom story sort is not respected
   const index = (await (await fetch('/index.json')).json()) as StoryIndex;
 
-  const currentEntryId = url.searchParams.get('id') || '';
+  const currentEntryId = url.searchParams.get('id');
+  if (!currentEntryId) {
+    const firstEntry = Object.values(index.entries)[0];
+    if (firstEntry) {
+      url.searchParams.set('id', firstEntry.id);
+      url.searchParams.set('viewMode', firstEntry.type);
+      window.location.href = url.toString();
+    }
+    return;
+  }
   setupPreviewNavigator(index, currentEntryId);
 }
 
@@ -137,8 +146,7 @@ export const setupPreviewNavigator = async (index: StoryIndex, currentEntryId: s
         z-index: 1000;
     }
     .sb-main-padded .sb-navigator-nav {
-      margin-left: -1rem;
-      margin-block: -1rem;
+      margin: -1rem 1rem -1rem -1rem;
     }
     .sb-navigator-list {
       list-style-type: none;

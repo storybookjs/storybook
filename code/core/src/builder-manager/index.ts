@@ -28,6 +28,8 @@ const isRootPath = /^\/($|\?)/;
 let compilation: Compilation;
 let asyncIterator: ReturnType<StarterFunction> | ReturnType<BuilderFunction>;
 
+export const BROWSER_TARGETS = ['chrome130', 'safari18.1', 'edge132', 'firefox134'];
+
 export const getConfig: ManagerBuilder['getConfig'] = async (options) => {
   const [addonsEntryPoints, customManagerEntryPoint, tsconfigPath, envs] = await Promise.all([
     options.presets.apply('managerEntries', []),
@@ -66,7 +68,7 @@ export const getConfig: ManagerBuilder['getConfig'] = async (options) => {
       '.eot': 'dataurl',
       '.ttf': 'dataurl',
     },
-    target: ['chrome100', 'safari15', 'firefox91'],
+    target: BROWSER_TARGETS,
     platform: 'browser',
     bundle: true,
     minify: false,

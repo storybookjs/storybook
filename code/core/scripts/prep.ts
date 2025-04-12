@@ -17,6 +17,7 @@ import {
   process,
 } from '../../../scripts/prepare/tools';
 import pkg from '../package.json';
+import { BROWSER_TARGETS } from '../src/builder-manager';
 import { globalsModuleInfoMap } from '../src/manager/globals-module-info';
 import { getBundles, getEntries, getFinals } from './entries';
 import { generatePackageJsonFile } from './helpers/generatePackageJsonFile';
@@ -122,7 +123,7 @@ async function run() {
     const browserEsbuildOptions = {
       ...esbuildDefaultOptions,
       format: 'esm',
-      target: ['chrome100', 'safari15', 'firefox91'],
+      target: BROWSER_TARGETS,
       splitting: false,
       platform: 'browser',
 

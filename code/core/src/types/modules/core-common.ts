@@ -192,6 +192,7 @@ export interface CLIOptions extends CLIBaseOptions {
   webpackStatsJson?: string | boolean;
   statsJson?: string | boolean;
   outputDir?: string;
+  previewOnly?: boolean;
 }
 
 export interface BuilderOptions {

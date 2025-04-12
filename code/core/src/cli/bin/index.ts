@@ -67,6 +67,7 @@ command('dev')
     '--initial-path [path]',
     'URL path to be appended when visiting Storybook for the first time'
   )
+  .option('--preview-only', 'Use the preview without the manager UI')
   .action(async (options) => {
     logger.setLevel(options.loglevel);
     const pkg = await findPackage(__dirname);

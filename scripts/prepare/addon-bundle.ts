@@ -14,6 +14,7 @@ import type { Options } from 'tsup';
 import { build } from 'tsup';
 import type { PackageJson } from 'type-fest';
 
+import { BROWSER_TARGETS } from '../../code/core/src/builder-manager';
 import { globalPackages as globalManagerPackages } from '../../code/core/src/manager/globals/globals';
 import { globalPackages as globalPreviewPackages } from '../../code/core/src/preview/globals/globals';
 import { exec } from '../utils/exec';
@@ -108,7 +109,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
   };
 
   const browserOptions: Options = {
-    target: ['chrome100', 'safari15', 'firefox91'],
+    target: BROWSER_TARGETS as Options['target'],
     platform: 'browser',
     esbuildPlugins: [
       aliasPlugin({

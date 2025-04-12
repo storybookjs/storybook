@@ -12,6 +12,7 @@ import type { Options } from 'tsup';
 import { build } from 'tsup';
 import type { PackageJson } from 'type-fest';
 
+import { BROWSER_TARGETS } from '../../code/core/src/builder-manager';
 import { exec } from '../utils/exec';
 import { dedent, esbuild, nodeInternals } from './tools';
 
@@ -115,7 +116,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
         sourcemap: false,
         metafile: true,
         format: ['esm'],
-        target: platform === 'node' ? ['node18'] : ['chrome100', 'safari15', 'firefox91'],
+        target: platform === 'node' ? ['node18'] : BROWSER_TARGETS,
         clean: false,
         ...(dtsBuild === 'esm' ? dtsConfig : {}),
         platform: platform || 'browser',

@@ -5,6 +5,7 @@ import { GlobalRegistrator } from '@happy-dom/global-registrator';
 import { isNotNil } from 'es-toolkit';
 
 import { dedent, esbuild, getWorkspace, prettier } from '../../../../scripts/prepare/tools';
+import { BROWSER_TARGETS } from '../../src/builder-manager';
 import { temporaryFile } from '../../src/common/utils/cli';
 
 GlobalRegistrator.register({ url: 'http://localhost:3000', width: 1920, height: 1080 });
@@ -112,7 +113,7 @@ async function generateExportsFile(prettierConfig: prettier.Options | null): Pro
     legalComments: 'none',
     splitting: false,
     platform: 'browser',
-    target: 'chrome100',
+    target: BROWSER_TARGETS,
   });
 
   const { globalsNameValueMap: data } = await import(outFile);

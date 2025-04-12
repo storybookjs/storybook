@@ -56,26 +56,26 @@ export const run = async (input: A11yParameters = DEFAULT_PARAMETERS) => {
   };
 
   if (input.context) {
-    // 1. if context exists, but it's not an object with include or exclude, it's an implicit include to be used directly
-    if (
-      !(
-        typeof input.context === 'object' &&
-        ('include' in input.context || 'exclude' in input.context)
-      )
-    ) {
+    const hasInclude =
+      typeof input.context === 'object' &&
+      'include' in input.context &&
+      input.context.include !== undefined;
+    const hasExclude =
+      typeof input.context === 'object' &&
+      'exclude' in input.context &&
+      input.context.exclude !== undefined;
+
+    // 1. if context.include exists, use it
+    if (hasInclude) {
+      context.include = (input.context as any).include as ContextProp;
+    } else if (!hasInclude && !hasExclude) {
+      // 2. if context exists, but it's not an object with include or exclude, it's an implicit include to be used directly
       context.include = input.context as ContextProp;
-    } else if (typeof input.context === 'object' && 'include' in input.context) {
-      // 2. if context.include exists, use it
-      context.include = input.context.include as ContextProp;
     }
 
     // 3. if context.exclude exists, merge it with the default exclude
-    if (
-      typeof input.context === 'object' &&
-      'exclude' in input.context &&
-      input.context.exclude !== undefined
-    ) {
-      context.exclude = (context.exclude as any).concat(input.context.exclude);
+    if (hasExclude) {
+      context.exclude = (context.exclude as any).concat((input.context as any).exclude);
     }
   }
 

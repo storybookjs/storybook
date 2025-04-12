@@ -15,14 +15,16 @@ export interface HighlightOptions {
   id?: string;
   /** HTML selectors of the elements */
   selectors: string[];
-  /** CSS styles to apply to the highlight */
-  styles: Record<string, string>;
   /** Priority of the highlight, higher takes precedence, defaults to 0 */
   priority?: number;
   /** Whether the highlight is selectable / hoverable */
   selectable?: boolean;
-  /** CSS styles to apply to the highlight when it is selected or hovered */
-  selectedStyles?: Record<string, string>;
+  /** CSS styles to apply to the highlight */
+  styles: Record<string, string>;
+  /** CSS styles to apply to the highlight when it is hovered */
+  hoverStyles?: Record<string, string>;
+  /** CSS styles to apply to the highlight when it is focused or selected */
+  focusStyles?: Record<string, string>;
   /** Keyframes required for animations */
   keyframes?: string;
   /** Menu items to show when the highlight is selected, or true to show the element's HTML */
@@ -53,20 +55,20 @@ export type Highlight = {
   id: string;
   priority: number;
   selectors: string[];
-  styles: Record<string, string>;
-  hoverStyles?: Record<string, string>;
   selectable: boolean;
-  selectedStyles?: Record<string, string>;
+  styles: HighlightOptions['styles'];
+  hoverStyles?: HighlightOptions['hoverStyles'];
+  focusStyles?: HighlightOptions['focusStyles'];
   menuItems?: HighlightOptions['menuItems'];
 };
 
 export type Box = {
   element: HTMLElement;
   selectors: Highlight['selectors'];
+  selectable?: Highlight['selectable'];
   styles: Highlight['styles'];
   hoverStyles?: Highlight['hoverStyles'];
-  selectable?: Highlight['selectable'];
-  selectedStyles?: Highlight['selectedStyles'];
+  focusStyles?: Highlight['focusStyles'];
   menuItems?: Highlight['menuItems'];
   top: number;
   left: number;

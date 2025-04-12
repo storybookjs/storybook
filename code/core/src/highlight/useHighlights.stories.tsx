@@ -176,11 +176,11 @@ const meta = preview.meta({
 const highlight = (
   selectors: string[],
   options?: {
+    selectable?: boolean;
     styles?: Record<string, string>;
     hoverStyles?: Record<string, string>;
-    selectedStyles?: Record<string, string>;
+    focusStyles?: Record<string, string>;
     keyframes?: string;
-    selectable?: boolean;
     menuItems?: {
       id: string;
       title: string;
@@ -193,6 +193,7 @@ const highlight = (
 ) =>
   channel.emit(HIGHLIGHT, {
     selectors,
+    selectable: options?.selectable ?? !!options?.menuItems?.length,
     styles: {
       background: 'rgba(0, 137, 80, 0.2)',
       border: '1px solid teal',
@@ -200,11 +201,10 @@ const highlight = (
     hoverStyles: {
       borderWidth: '3px',
     },
-    selectedStyles: {
+    focusStyles: {
       background: 'transparent',
-      border: '2px solid black',
+      border: '2px solid teal',
     },
-    selectable: options?.selectable ?? !!options?.menuItems?.length,
     ...options,
   });
 
@@ -249,7 +249,7 @@ export const Styles = meta.story({
         animation: 'pulse 3s linear infinite',
         transition: 'outline-offset 0.2s ease-in-out',
       },
-      selectedStyles: {
+      focusStyles: {
         outlineOffset: '3px',
       },
       keyframes: `@keyframes pulse {

@@ -131,7 +131,7 @@ export const useHighlights = ({
   targets.subscribe((value) => {
     if (value.length) {
       selected.set((s) => (value.some((t) => t.element === s?.element) ? s : undefined));
-      focused.set((s) => (value.some((t) => t.element === s?.element) ? s : value[0]));
+      focused.set((s) => (value.some((t) => t.element === s?.element) ? s : undefined));
     } else {
       selected.set(undefined);
       focused.set(undefined);
@@ -255,10 +255,21 @@ export const useHighlights = ({
   boxes.subscribe(updateHovered);
 
   const updateBoxStyles = () => {
+    const selectedElement = selected.get();
+    const focusedElement = selectedElement || focused.get();
+    const targetElements = selectedElement ? [selectedElement] : targets.get();
+    const isMenuOpen = clickCoords.get() !== undefined;
+
     boxes.get().forEach((box) => {
       const boxElement = boxElementByTargetElement.get(box.element);
       if (boxElement) {
-        const target = selected.get() || focused.get();
+        const isFocused = focusedElement === box;
+        const isHovered = isMenuOpen
+          ? focusedElement
+            ? isFocused
+            : targetElements.includes(box)
+          : hovered.get()?.includes(box);
+
         Object.assign(boxElement.style, {
           animation: 'none',
           background: 'transparent',
@@ -267,8 +278,8 @@ export const useHighlights = ({
           outline: 'none',
           outlineOffset: '0px',
           ...box.styles,
-          ...(hovered.get()?.includes(box) ? box.hoverStyles : {}),
-          ...(target === box ? box.selectedStyles : {}),
+          ...(isHovered ? box.hoverStyles : {}),
+          ...(isFocused ? box.focusStyles : {}),
           position: getComputedStyle(box.element).position === 'fixed' ? 'fixed' : 'absolute',
           top: `${box.top}px`,
           left: `${box.left}px`,
@@ -283,6 +294,7 @@ export const useHighlights = ({
   boxes.subscribe(updateBoxStyles);
   hovered.subscribe(updateBoxStyles);
   focused.subscribe(updateBoxStyles);
+  selected.subscribe(updateBoxStyles);
 
   const renderMenu = () => {
     let menu = document.getElementById(menuId);
@@ -405,6 +417,7 @@ export const useHighlights = ({
                   class: 'selectable',
                   onClick: () => selected.set(target),
                   onMouseEnter: () => focused.set(target),
+                  onMouseLeave: () => focused.set(undefined),
                 }
               : selectedElement
                 ? { class: 'selected', onClick: () => selected.set(undefined) }

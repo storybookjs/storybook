@@ -318,7 +318,7 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
         outline: `1px solid color-mix(in srgb, ${colorsByType[tab]}, transparent 30%)`,
         backgroundColor: 'transparent',
       },
-      selectedStyles: {
+      focusStyles: {
         outline: `1px solid ${theme.color.secondary}`,
         backgroundColor: 'transparent',
       },
@@ -343,7 +343,7 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
         outline: `1px solid color-mix(in srgb, ${colorsByType[tab]}, transparent 30%)`,
         backgroundColor: `color-mix(in srgb, ${colorsByType[tab]}, transparent 60%)`,
       },
-      selectedStyles: {
+      focusStyles: {
         outline: `1px solid ${theme.color.secondary}`,
         backgroundColor: 'transparent',
       },

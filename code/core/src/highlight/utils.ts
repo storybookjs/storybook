@@ -21,6 +21,9 @@ export const createElement = (type: string, props: Record<string, any>, children
       if (key === 'onMouseEnter') {
         element.addEventListener('mouseenter', val);
       }
+      if (key === 'onMouseLeave') {
+        element.addEventListener('mouseleave', val);
+      }
     } else {
       element.setAttribute(key, val);
     }
@@ -121,16 +124,16 @@ export const mapElements = (highlights: HighlightOptions[]): Map<HTMLElement, Hi
 export const mapBoxes = (elements: Map<HTMLElement, Highlight>): Box[] =>
   Array.from(elements.entries())
     .map<Box>(
-      ([element, { selectors, styles, hoverStyles, selectedStyles, selectable, menuItems }]) => {
+      ([element, { selectors, styles, hoverStyles, focusStyles, selectable, menuItems }]) => {
         const { top, left, width, height } = element.getBoundingClientRect();
         const { position } = getComputedStyle(element);
         return {
           element,
           selectors,
+          selectable,
           styles,
           hoverStyles,
-          selectedStyles,
-          selectable,
+          focusStyles,
           menuItems,
           top: position === 'fixed' ? top : top + window.scrollY,
           left: position === 'fixed' ? left : left + window.scrollX,

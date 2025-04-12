@@ -70,11 +70,15 @@ export const useStore = <T>(initialValue?: T) => {
 
   const get = () => state.get(key) as T;
   const set = (update: T | ((state: T) => T)) => {
-    state.set(key, isFunction(update) ? update(state.get(key)) : update);
-    listeners.get(key)?.forEach((listener) => {
-      teardowns.get(listener)?.();
-      teardowns.set(listener, listener(state.get(key)));
-    });
+    const current = state.get(key) as T;
+    const next = isFunction(update) ? update(current) : update;
+    if (next !== current) {
+      state.set(key, next);
+      listeners.get(key)?.forEach((listener) => {
+        teardowns.get(listener)?.();
+        teardowns.set(listener, listener(next));
+      });
+    }
   };
   const subscribe = (listener: Listener<T>) => {
     listeners.get(key)?.push(listener);
@@ -116,20 +120,40 @@ export const mapElements = (highlights: HighlightOptions[]): Map<HTMLElement, Hi
 
 export const mapBoxes = (elements: Map<HTMLElement, Highlight>): Box[] =>
   Array.from(elements.entries())
-    .map<Box>(([element, { selectors, styles, selectedStyles, selectable, menuItems }]) => {
-      const { top, left, width, height } = element.getBoundingClientRect();
-      const { position } = getComputedStyle(element);
-      return {
-        element,
-        selectors,
-        styles,
-        selectedStyles,
-        selectable,
-        menuItems,
-        top: position === 'fixed' ? top : top + window.scrollY,
-        left: position === 'fixed' ? left : left + window.scrollX,
-        width,
-        height,
-      };
-    })
+    .map<Box>(
+      ([element, { selectors, styles, hoverStyles, selectedStyles, selectable, menuItems }]) => {
+        const { top, left, width, height } = element.getBoundingClientRect();
+        const { position } = getComputedStyle(element);
+        return {
+          element,
+          selectors,
+          styles,
+          hoverStyles,
+          selectedStyles,
+          selectable,
+          menuItems,
+          top: position === 'fixed' ? top : top + window.scrollY,
+          left: position === 'fixed' ? left : left + window.scrollX,
+          width,
+          height,
+        };
+      }
+    )
     .sort((a, b) => b.width * b.height - a.width * a.height);
+
+export const isTargeted = (
+  box: Box,
+  boxElement: HTMLElement,
+  coordinates: { x: number; y: number }
+) => {
+  if (!coordinates) {
+    return false;
+  }
+  let { left, top } = box;
+  if (boxElement.style.position === 'fixed') {
+    left += window.scrollX;
+    top += window.scrollY;
+  }
+  const { x, y } = coordinates;
+  return x >= left && x <= left + box.width && y >= top && y <= top + box.height;
+};

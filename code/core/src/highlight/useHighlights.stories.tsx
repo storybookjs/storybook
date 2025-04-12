@@ -120,8 +120,8 @@ const Content = ({ dynamic, withPopover }: { dynamic: boolean; withPopover: bool
           id="extra"
           style={{
             position: 'absolute',
-            top: 300,
-            left: 50,
+            top: 325,
+            left: 75,
             width: 300,
             height: 100,
             border: '1px solid black',
@@ -177,6 +177,7 @@ const highlight = (
   selectors: string[],
   options?: {
     styles?: Record<string, string>;
+    hoverStyles?: Record<string, string>;
     selectedStyles?: Record<string, string>;
     keyframes?: string;
     selectable?: boolean;
@@ -195,6 +196,9 @@ const highlight = (
     styles: {
       background: 'rgba(0, 137, 80, 0.2)',
       border: '1px solid teal',
+    },
+    hoverStyles: {
+      borderWidth: '3px',
     },
     selectedStyles: {
       background: 'transparent',

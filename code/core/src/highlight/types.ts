@@ -54,6 +54,7 @@ export type Highlight = {
   priority: number;
   selectors: string[];
   styles: Record<string, string>;
+  hoverStyles?: Record<string, string>;
   selectable: boolean;
   selectedStyles?: Record<string, string>;
   menuItems?: HighlightOptions['menuItems'];
@@ -63,6 +64,7 @@ export type Box = {
   element: HTMLElement;
   selectors: Highlight['selectors'];
   styles: Highlight['styles'];
+  hoverStyles?: Highlight['hoverStyles'];
   selectable?: Highlight['selectable'];
   selectedStyles?: Highlight['selectedStyles'];
   menuItems?: Highlight['menuItems'];

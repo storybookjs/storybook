@@ -17,7 +17,7 @@ export interface HighlightOptions {
   selectors: string[];
   /** Priority of the highlight, higher takes precedence, defaults to 0 */
   priority?: number;
-  /** Whether the highlight is selectable / hoverable */
+  /** Whether the highlight is selectable (reveals the element's HTML) */
   selectable?: boolean;
   /** CSS styles to apply to the highlight */
   styles: Record<string, string>;
@@ -27,8 +27,10 @@ export interface HighlightOptions {
   focusStyles?: Record<string, string>;
   /** Keyframes required for animations */
   keyframes?: string;
-  /** Menu items to show when the highlight is selected, or true to show the element's HTML */
-  menuItems?: {
+  /** Hint to show as a tooltip when the highlight is hovered */
+  hint?: string;
+  /** Menu items to show when the highlight is selected (implies selectable: true) */
+  menu?: {
     id: string;
     title: string;
     description?: string;
@@ -59,7 +61,8 @@ export type Highlight = {
   styles: HighlightOptions['styles'];
   hoverStyles?: HighlightOptions['hoverStyles'];
   focusStyles?: HighlightOptions['focusStyles'];
-  menuItems?: HighlightOptions['menuItems'];
+  hint?: HighlightOptions['hint'];
+  menu?: HighlightOptions['menu'];
 };
 
 export type Box = {
@@ -69,7 +72,8 @@ export type Box = {
   styles: Highlight['styles'];
   hoverStyles?: Highlight['hoverStyles'];
   focusStyles?: Highlight['focusStyles'];
-  menuItems?: Highlight['menuItems'];
+  hint?: Highlight['hint'];
+  menu?: Highlight['menu'];
   top: number;
   left: number;
   width: number;

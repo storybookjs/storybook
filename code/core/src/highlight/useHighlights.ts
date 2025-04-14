@@ -4,9 +4,18 @@ import { STORY_CHANGED } from 'storybook/internal/core-events';
 
 import { HIGHLIGHT, REMOVE_HIGHLIGHT, RESET_HIGHLIGHT, SCROLL_INTO_VIEW } from './constants';
 import type { Box, Highlight, HighlightOptions, RawHighlightOptions } from './types';
-import { convertLegacy, createElement, isTargeted, mapBoxes, mapElements, useStore } from './utils';
-
-const supportsPopover = HTMLElement.prototype.hasOwnProperty('showPopover');
+import {
+  convertLegacy,
+  createElement,
+  hidePopover,
+  isOverMenu,
+  isTargeted,
+  keepInViewport,
+  mapBoxes,
+  mapElements,
+  showPopover,
+  useStore,
+} from './utils';
 
 const chevronLeft = () =>
   createElement(
@@ -39,12 +48,14 @@ const chevronRight = () =>
 export const useHighlights = ({
   channel,
   uniqueId = Math.random().toString(36).substring(2, 15),
+  hintId = `addon-highlight-hint-${uniqueId}`,
   menuId = `addon-highlight-menu-${uniqueId}`,
   rootId = `addon-highlight-root-${uniqueId}`,
   storybookRootId = 'storybook-root',
 }: {
   channel: Channel;
   uniqueId?: string;
+  hintId?: string;
   menuId?: string;
   rootId?: string;
   storybookRootId?: string;
@@ -207,28 +218,19 @@ export const useHighlights = ({
     const onClick = (event: MouseEvent) => {
       // The menu may get repositioned, so we wait for the next frame before checking its position
       requestAnimationFrame(() => {
-        // Don't do anything if the click is within the menu
-        const menu = document.getElementById(menuId)?.getBoundingClientRect();
-        const { pageX: px, pageY: py } = event;
-        if (
-          menu?.top &&
-          menu?.left &&
-          px >= menu.left + window.scrollX &&
-          px <= menu.left + menu.width + window.scrollX &&
-          py >= menu.top + window.scrollY &&
-          py <= menu.top + menu.height + window.scrollY
-        ) {
-          return;
-        }
+        const menu = document.getElementById(menuId);
+        const coords = { x: event.pageX, y: event.pageY };
 
-        // Update menu coordinates and clicked target boxes based on the click position
-        const coords = { x: px, y: py };
-        const results = selectable.filter((box) => {
-          const boxElement = boxElementByTargetElement.get(box.element)!;
-          return isTargeted(box, boxElement, coords);
-        });
-        clickCoords.set(results.length ? coords : undefined);
-        targets.set(results);
+        // Don't do anything if the click is within the menu
+        if (menu && !isOverMenu(menu, coords)) {
+          // Update menu coordinates and clicked target boxes based on the click position
+          const results = selectable.filter((box) => {
+            const boxElement = boxElementByTargetElement.get(box.element)!;
+            return isTargeted(box, boxElement, coords);
+          });
+          clickCoords.set(results.length ? coords : undefined);
+          targets.set(results);
+        }
       });
     };
 
@@ -236,19 +238,23 @@ export const useHighlights = ({
     return () => document.body.removeEventListener('click', onClick);
   });
 
-  document.addEventListener('mousemove', (event) => {
-    hoverCoords.set({ x: event.pageX, y: event.pageY });
-  });
-
   const updateHovered = () => {
+    const menu = document.getElementById(menuId);
+    const coords = hoverCoords.get();
+    if (!coords || (menu && isOverMenu(menu, coords))) {
+      return;
+    }
+
     hovered.set((current) => {
       const update = boxes.get().filter((box) => {
         const boxElement = boxElementByTargetElement.get(box.element)!;
-        return isTargeted(box, boxElement, hoverCoords.get()!);
+        return isTargeted(box, boxElement, coords);
       });
-      return update.length !== current.length || update.some((v) => !current.includes(v))
-        ? update
-        : current;
+      const existing = current.filter((box) => update.includes(box));
+      const additions = update.filter((box) => !current.includes(box));
+      const hasRemovals = current.length - existing.length;
+      // Only set a new value if there are additions or removals
+      return additions.length || hasRemovals ? [...existing, ...additions] : current;
     });
   };
   hoverCoords.subscribe(updateHovered);
@@ -296,6 +302,67 @@ export const useHighlights = ({
   focused.subscribe(updateBoxStyles);
   selected.subscribe(updateBoxStyles);
 
+  const renderHint = () => {
+    let hint = document.getElementById(hintId);
+    if (hint) {
+      hint.innerHTML = '';
+    } else {
+      const props = { id: hintId, popover: 'manual' };
+      hint = root.appendChild(createElement('div', props) as HTMLElement);
+      root.appendChild(
+        createElement('style', {}, [
+          `
+            #${hintId} {
+              position: absolute;
+              z-index: 2147483646;
+              padding: 7px 10px;
+              margin: 5px 0 0 0;
+              max-width: 300px;
+              overflow: hidden;
+              white-space: nowrap;
+              text-overflow: ellipsis;
+              font-size: 12px;
+              background: white;
+              border: none;
+              border-radius: 6px;
+              box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.05), 0 5px 15px 0 rgba(0, 0, 0, 0.1);
+              color: #2E3438;
+            }
+          `,
+        ])
+      );
+    }
+
+    const targetList = targets.get();
+    const elementList = hovered.get();
+    const lastHoveredBox = elementList.at(-1);
+    if (!lastHoveredBox || !lastHoveredBox.hint || targetList.includes(lastHoveredBox)) {
+      Object.assign(hint.style, { display: 'none' });
+      return;
+    }
+
+    const { position } = getComputedStyle(lastHoveredBox.element);
+    const { left, bottom } = lastHoveredBox.element.getBoundingClientRect();
+    const x = position === 'fixed' ? left : left + window.scrollX;
+    const y = position === 'fixed' ? bottom : bottom + window.scrollY;
+    Object.assign(hint.style, {
+      display: 'block',
+      position: position === 'fixed' ? 'fixed' : 'absolute',
+      left: `${x}px`,
+      top: `${y}px`,
+    });
+
+    // Put the hint in #top-layer, above any other popovers and z-indexes
+    showPopover(hint);
+
+    // Reposition the hint on after it renders, to avoid rendering outside the viewport
+    requestAnimationFrame(() => keepInViewport(hint, { x, y }));
+
+    hint.innerText = lastHoveredBox.hint;
+  };
+  hovered.subscribe(renderHint);
+  targets.subscribe(renderHint);
+
   const renderMenu = () => {
     let menu = document.getElementById(menuId);
     if (menu) {
@@ -311,8 +378,8 @@ export const useHighlights = ({
               z-index: 2147483647;
               width: 300px;
               padding: 0px;
-              margin-top: 15px;
-              margin-left: -150px;
+              margin: 15px 0 0 0;
+              transform: translateX(-50%);
               font-size: 12px;
               background: white;
               border: none;
@@ -408,7 +475,7 @@ export const useHighlights = ({
           'ul',
           { class: 'element-list' },
           elementList.map((target) => {
-            const menuItems = target.menuItems?.filter(
+            const menuItems = target.menu?.filter(
               (item) => !item.selectors || item.selectors.some((s) => target.selectors.includes(s))
             );
             const selectable = elementList.length > 1 && !!menuItems?.length;
@@ -437,7 +504,7 @@ export const useHighlights = ({
 
     if (selected.get() || targets.get().length === 1) {
       const target = selected.get() || targets.get()[0];
-      const menuItems = target.menuItems?.filter(
+      const menuItems = target.menu?.filter(
         (item) => !item.selectors || item.selectors.some((s) => target.selectors.includes(s))
       );
       if (menuItems?.length) {
@@ -473,42 +540,14 @@ export const useHighlights = ({
         left: `${menu.style.position === 'fixed' ? coords.x - window.scrollX : coords.x}px`,
         top: `${menu.style.position === 'fixed' ? coords.y - window.scrollY : coords.y}px`,
       });
-      if (supportsPopover) {
-        // Puts the menu in #top-layer, above any other popovers
-        menu.showPopover();
-      }
+
+      // Put the menu in #top-layer, above any other popovers and z-indexes
+      showPopover(menu);
 
       // Reposition the menu on after it renders, to avoid rendering outside the viewport
-      requestAnimationFrame(() => {
-        const { scrollX, scrollY, innerHeight: windowHeight, innerWidth: windowWidth } = window;
-        const margin = 5;
-        const topOffset = 15;
-        const top = Math.min(
-          menu.style.position === 'fixed' ? coords.y - scrollY : coords.y,
-          windowHeight - menu.clientHeight - margin - topOffset + scrollY
-        );
-        const left =
-          menu.style.position === 'fixed'
-            ? Math.max(
-                Math.min(coords.x - scrollX, windowWidth - menu.clientWidth / 2 - margin),
-                menu.clientWidth / 2 + margin
-              )
-            : Math.max(
-                Math.min(coords.x, windowWidth - menu.clientWidth / 2 - margin + scrollX),
-                menu.clientWidth / 2 + margin + scrollX
-              );
-
-        if (top !== coords.y) {
-          menu.style.top = `${top}px`;
-        }
-        if (left !== coords.x) {
-          menu.style.left = `${left}px`;
-        }
-      });
+      requestAnimationFrame(() => keepInViewport(menu, coords, { topOffset: 15, centered: true }));
     } else {
-      if (supportsPopover) {
-        menu.hidePopover();
-      }
+      hidePopover(menu);
       Object.assign(menu.style, { display: 'none' });
     }
   };
@@ -568,6 +607,12 @@ export const useHighlights = ({
     removeTimeout = setTimeout(() => removeHighlight(id), 3500);
   };
 
+  const onMouseMove = (event: MouseEvent): void => {
+    requestAnimationFrame(() => hoverCoords.set({ x: event.pageX, y: event.pageY }));
+  };
+
+  document.body.addEventListener('mousemove', onMouseMove);
+
   channel.on(HIGHLIGHT, addHighlight);
   channel.on(REMOVE_HIGHLIGHT, removeHighlight);
   channel.on(RESET_HIGHLIGHT, clearHighlights);
@@ -576,6 +621,8 @@ export const useHighlights = ({
 
   const teardown = () => {
     clearTimeout(removeTimeout);
+
+    document.body.removeEventListener('mousemove', onMouseMove);
 
     channel.off(HIGHLIGHT, addHighlight);
     channel.off(RESET_HIGHLIGHT, clearHighlights);

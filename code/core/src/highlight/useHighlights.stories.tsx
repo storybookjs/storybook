@@ -85,7 +85,7 @@ const Content = ({ dynamic, withPopover }: { dynamic: boolean; withPopover: bool
           style={{
             position: 'absolute',
             top: '25%',
-            left: '25%',
+            left: '-1px',
             width: 120,
             height: '50%',
             border: '1px solid black',
@@ -151,7 +151,7 @@ channel.on('click', fn().mockName('click'));
 
 const meta = preview.meta({
   render: () => {
-    useEffect(() => useHighlights({ channel, menuId: 'menu', rootId: 'root' }), []);
+    useEffect(() => useHighlights({ channel, hintId: 'hint', menuId: 'menu', rootId: 'root' }), []);
     return <></>;
   },
   args: {
@@ -181,7 +181,8 @@ const highlight = (
     hoverStyles?: Record<string, string>;
     focusStyles?: Record<string, string>;
     keyframes?: string;
-    menuItems?: {
+    hint?: string;
+    menu?: {
       id: string;
       title: string;
       description?: string;
@@ -193,7 +194,7 @@ const highlight = (
 ) =>
   channel.emit(HIGHLIGHT, {
     selectors,
-    selectable: options?.selectable ?? !!options?.menuItems?.length,
+    selectable: options?.selectable ?? !!options?.menu?.length,
     styles: {
       background: 'rgba(0, 137, 80, 0.2)',
       border: '1px solid teal',
@@ -283,10 +284,25 @@ export const Selectable = meta.story({
   },
 });
 
+export const Hint = meta.story({
+  play: async () => {
+    highlight(['div', 'input'], {
+      hint: "Hello world, I'm a hint!",
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
+    await userEvent.pointer({
+      target: document.body,
+      coords: { pageX: 270, pageY: 240 },
+    });
+  },
+});
+
 export const Menu = meta.story({
   play: async () => {
     highlight(['div', 'input'], {
-      menuItems: [
+      menu: [
         {
           id: '1',
           title: 'Insufficient color contrast',
@@ -308,6 +324,40 @@ export const Menu = meta.story({
       target: document.body,
       coords: { pageX: 470, pageY: 240 },
       keys: '[MouseLeft]',
+    });
+  },
+});
+
+export const HintAndMenu = meta.story({
+  play: async () => {
+    highlight(['div', 'input'], {
+      hint: "Hello world, I'm a hint!",
+      menu: [
+        {
+          id: '1',
+          title: 'Insufficient color contrast',
+          description: 'Elements must meet minimum color contrast ratio thresholds.',
+          clickEvent: 'click',
+        },
+        {
+          id: '2',
+          title: 'Links need discernible text',
+          description: 'This is where a summary of the violation goes.',
+          clickEvent: 'click',
+        },
+      ],
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
+    await userEvent.pointer({
+      target: document.body,
+      coords: { pageX: 470, pageY: 240 },
+      keys: '[MouseLeft]',
+    });
+    await userEvent.pointer({
+      target: document.body,
+      coords: { pageX: 270, pageY: 240 },
     });
   },
 });

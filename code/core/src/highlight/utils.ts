@@ -103,7 +103,7 @@ export const mapElements = (highlights: HighlightOptions[]): Map<HTMLElement, Hi
   const root = document.getElementById('storybook-root');
   const map = new Map();
   for (const highlight of highlights) {
-    const { priority = 0, selectable = !!highlight.menuItems } = highlight;
+    const { priority = 0, selectable = !!highlight.menu } = highlight;
     for (const selector of highlight.selectors) {
       for (const element of root?.querySelectorAll(selector) || []) {
         const existing = map.get(element);
@@ -124,7 +124,7 @@ export const mapElements = (highlights: HighlightOptions[]): Map<HTMLElement, Hi
 export const mapBoxes = (elements: Map<HTMLElement, Highlight>): Box[] =>
   Array.from(elements.entries())
     .map<Box>(
-      ([element, { selectors, styles, hoverStyles, focusStyles, selectable, menuItems }]) => {
+      ([element, { selectors, styles, hoverStyles, focusStyles, selectable, hint, menu }]) => {
         const { top, left, width, height } = element.getBoundingClientRect();
         const { position } = getComputedStyle(element);
         return {
@@ -134,7 +134,8 @@ export const mapBoxes = (elements: Map<HTMLElement, Highlight>): Box[] =>
           styles,
           hoverStyles,
           focusStyles,
-          menuItems,
+          hint,
+          menu,
           top: position === 'fixed' ? top : top + window.scrollY,
           left: position === 'fixed' ? left : left + window.scrollX,
           width,
@@ -143,6 +144,19 @@ export const mapBoxes = (elements: Map<HTMLElement, Highlight>): Box[] =>
       }
     )
     .sort((a, b) => b.width * b.height - a.width * a.height);
+
+export const isOverMenu = (menuElement: HTMLElement, coordinates: { x: number; y: number }) => {
+  const menu = menuElement.getBoundingClientRect();
+  const { x, y } = coordinates;
+  return (
+    menu?.top &&
+    menu?.left &&
+    x >= menu.left &&
+    x <= menu.left + menu.width &&
+    y >= menu.top &&
+    y <= menu.top + menu.height
+  );
+};
 
 export const isTargeted = (
   box: Box,
@@ -159,4 +173,45 @@ export const isTargeted = (
   }
   const { x, y } = coordinates;
   return x >= left && x <= left + box.width && y >= top && y <= top + box.height;
+};
+
+export const keepInViewport = (
+  element: HTMLElement,
+  targetCoordinates: { x: number; y: number },
+  options: { margin?: number; topOffset?: number; centered?: boolean } = {}
+) => {
+  const { x, y } = targetCoordinates;
+  const { margin = 5, topOffset = 0, centered = false } = options;
+  const { scrollX, scrollY, innerHeight: windowHeight, innerWidth: windowWidth } = window;
+
+  const top = Math.min(
+    element.style.position === 'fixed' ? y - scrollY : y,
+    windowHeight - element.clientHeight - margin - topOffset + scrollY
+  );
+
+  const leftOffset = centered ? element.clientWidth / 2 : 0;
+  const left =
+    element.style.position === 'fixed'
+      ? Math.max(Math.min(x - scrollX, windowWidth - leftOffset - margin), leftOffset + margin)
+      : Math.max(
+          Math.min(x, windowWidth - leftOffset - margin + scrollX),
+          leftOffset + margin + scrollX
+        );
+
+  Object.assign(element.style, {
+    ...(left !== x && { left: `${left}px` }),
+    ...(top !== y && { top: `${top}px` }),
+  });
+};
+
+const supportsPopover = HTMLElement.prototype.hasOwnProperty('showPopover');
+export const showPopover = (element: HTMLElement) => {
+  if (supportsPopover) {
+    element.showPopover();
+  }
+};
+export const hidePopover = (element: HTMLElement) => {
+  if (supportsPopover) {
+    element.hidePopover();
+  }
 };

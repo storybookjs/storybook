@@ -21,7 +21,6 @@ const Wrapper = styled.div<{ inAddonPanel?: boolean }>(({ inAddonPanel, theme })
   flexDirection: 'column',
   gap: 15,
   background: theme.background.content,
-  boxShadow: 'rgba(0, 0, 0, 0.10) 0 1px 3px 0',
 }));
 
 const Links = styled.div(({ theme }) => ({

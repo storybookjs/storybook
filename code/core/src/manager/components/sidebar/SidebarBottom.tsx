@@ -143,11 +143,17 @@ export const SidebarBottomBase = ({
             {...{
               registeredTestProviders,
               testProviderStates,
-              onRunAll,
+              onRunAll: () => {
+                onRunAll();
+                setErrorsActive(false);
+                setWarningsActive(false);
+              },
               hasStatuses,
               clearStatuses: () => {
                 internal_fullStatusStore.unset();
                 internal_fullTestProviderStore.clearAll();
+                setErrorsActive(false);
+                setWarningsActive(false);
               },
               errorCount,
               errorsActive,

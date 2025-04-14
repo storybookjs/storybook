@@ -103,32 +103,6 @@ function VitePlugin({ dir = process.cwd() }: VitePluginOptions = {}): Plugin[] {
               ],
             },
           }),
-          optimizeDeps: {
-            include: [
-              "next/dist/shared/lib/app-router-context.shared-runtime",
-              "next/dist/shared/lib/head-manager-context.shared-runtime",
-              "next/dist/shared/lib/hooks-client-context.shared-runtime",
-              "next/dist/shared/lib/router-context.shared-runtime",
-              "next/dist/client/components/redirect-boundary",
-              "next/dist/client/head-manager",
-              "next/dist/client/components/is-next-router-error",
-              "next/config",
-              "next/dist/shared/lib/segment",
-              "styled-jsx",
-              "sb-original/image-context",
-              "sb-original/default-loader",
-              "@mdx-js/react",
-              "@storybook/blocks",
-              "next/dist/compiled/react",
-              "next/image",
-              "next/legacy/image",
-              "react/jsx-dev-runtime",
-              // Required for pnpm setups, since styled-jsx is a transitive dependency of Next.js and not directly listed.
-              // Refer to this pnpm issue for more details:
-              // https://github.com/vitejs/vite/issues/16293
-              "next > styled-jsx/style",
-            ],
-          },
           test: {
             alias: {
               "react/jsx-dev-runtime": require.resolve(

@@ -3,8 +3,7 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@storybook/react": ["./src"],
-      "@storybook/blocks": ["../../lib/blocks/src"]
+      "@storybook/react": ["./src"]
     }
   },
   "include": ["src/**/*", "template/**/*"]

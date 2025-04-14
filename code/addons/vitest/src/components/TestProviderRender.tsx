@@ -152,22 +152,26 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
     <Container {...props}>
       <Heading>
         <Info>
-          <Title
-            id="testing-module-title"
-            crashed={
-              testProviderState === 'test-provider-state:crashed' ||
-              fatalError !== undefined ||
-              currentRun.unhandledErrors.length > 0
-            }
-          >
-            {currentRun.unhandledErrors.length === 1
-              ? 'Local tests completed with an error'
-              : currentRun.unhandledErrors.length > 1
-                ? 'Local tests completed with errors'
-                : fatalError
-                  ? 'Local tests didn’t complete'
-                  : 'Run local tests'}
-          </Title>
+          {entry ? (
+            <Title id="testing-module-title">Run local tests</Title>
+          ) : (
+            <Title
+              id="testing-module-title"
+              crashed={
+                testProviderState === 'test-provider-state:crashed' ||
+                fatalError !== undefined ||
+                currentRun.unhandledErrors.length > 0
+              }
+            >
+              {currentRun.unhandledErrors.length === 1
+                ? 'Local tests completed with an error'
+                : currentRun.unhandledErrors.length > 1
+                  ? 'Local tests completed with errors'
+                  : fatalError
+                    ? 'Local tests didn’t complete'
+                    : 'Run local tests'}
+            </Title>
+          )}
           <Description
             id="testing-module-description"
             storeState={storeState}

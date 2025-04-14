@@ -1,6 +1,6 @@
 <!-- prettier-ignore -->
 ```mdx filename="MyComponent.mdx" renderer="common" language="mdx"
-import { Meta } from '@storybook/blocks';
+import { Meta } from '@storybook/addon-docs/blocks';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 
 <Meta title="A Storybook doc with a custom syntax highlight for SCSS" />

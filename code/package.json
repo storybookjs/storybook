@@ -1,6 +1,6 @@
 {
   "name": "@storybook/root",
-  "version": "9.0.0-alpha.17",
+  "version": "9.0.0-alpha.18",
   "private": true,
   "description": "Storybook root",
   "homepage": "https://storybook.js.org/",
@@ -111,7 +111,6 @@
     "@storybook/addon-vitest": "workspace:*",
     "@storybook/angular": "workspace:*",
     "@storybook/bench": "next",
-    "@storybook/blocks": "workspace:*",
     "@storybook/builder-vite": "workspace:*",
     "@storybook/builder-webpack5": "workspace:*",
     "@storybook/codemod": "workspace:*",

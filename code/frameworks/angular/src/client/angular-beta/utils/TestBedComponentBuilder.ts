@@ -3,9 +3,18 @@ import {
   BrowserDynamicTestingModule,
   platformBrowserDynamicTesting,
 } from '@angular/platform-browser-dynamic/testing';
-import { ApplicationRef, Component, NgModule, Type } from '@angular/core';
+import {
+  ApplicationRef,
+  Component,
+  EnvironmentProviders,
+  importProvidersFrom,
+  Type,
+} from '@angular/core';
 import { PropertyExtractor } from './PropertyExtractor';
 import { ICollection, StoryFnAngularReturnType } from '../../types';
+import { BrowserModule } from '@angular/platform-browser';
+import { getWrapperComponent, getWrapperModule } from '../StorybookWrapperComponent';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 export class TestBedComponentBuilder {
   private testBedInstance: TestBed;
@@ -34,7 +43,10 @@ export class TestBedComponentBuilder {
 
   private styles: string[];
 
-  private id: string;
+  // some providers need to be removed, due already provided on module level of testbed
+  private providersToRemove: EnvironmentProviders[] = [
+    importProvidersFrom(BrowserDynamicTestingModule),
+  ];
 
   setComponent(storyComponent: Type<unknown> | undefined) {
     this.component = storyComponent;
@@ -61,6 +73,9 @@ export class TestBedComponentBuilder {
   setEnvironmentProviders(providers: any[]) {
     if (providers == null) return this;
     this.environmentProviders = providers ?? [];
+    console.log('EnvironmentProviders', this.environmentProviders);
+    console.log('ProvidersToBeRemoved', this.providersToRemove);
+    console.log('AfterFilter', this.environmentProviders);
     return this;
   }
 
@@ -88,7 +103,12 @@ export class TestBedComponentBuilder {
     }
 
     const metaData = this.generateOverrideMetaData();
-    this.testBedInstance.configureTestingModule({}).overrideComponent(this.component, metaData);
+    this.testBedInstance
+      .configureTestingModule({
+        providers: this.environmentProviders,
+      })
+      .overrideComponent(this.component, metaData);
+
     return this;
   }
 
@@ -107,11 +127,7 @@ export class TestBedComponentBuilder {
       overrideData.set.selector = this.selector;
     }
 
-    const wrapperModule = getWrapperModule(
-      this.declarations,
-      this.imports,
-      this.environmentProviders
-    );
+    const wrapperModule = getWrapperModule(this.declarations, this.imports);
     overrideData.set.imports = [wrapperModule];
 
     return overrideData;
@@ -130,7 +146,6 @@ export class TestBedComponentBuilder {
     await this.testBedInstance.compileComponents();
     this.fixture = this.testBedInstance.createComponent(this.component);
     this.updateComponentProps();
-    this.id = this.fixture.nativeElement.id;
     return this;
   }
 
@@ -138,8 +153,8 @@ export class TestBedComponentBuilder {
     return this.testBedInstance.inject(ApplicationRef);
   }
 
-  isInstanceFor(component: Type<unknown>) {
-    return this.component == component;
+  resetTestBed() {
+    this.testBedInstance.resetTestingModule().resetTestEnvironment();
   }
 
   private updateComponentProps() {
@@ -153,33 +168,3 @@ export class TestBedComponentBuilder {
     if (this.component == null || this.testBedInstance == null) throw new Error('NullReference');
   }
 }
-
-export const getWrapperComponent = (
-  selector: string,
-  template: string,
-  providers: any[],
-  styles: string[],
-  schemas: any[]
-) => {
-  @Component({
-    selector,
-    template,
-    standalone: true,
-    providers,
-    styles,
-    schemas: schemas,
-  })
-  class CustomWrapperComponent {}
-  return CustomWrapperComponent;
-};
-
-export const getWrapperModule = (declarations: any[], imports: any[], moduleProviders: any[]) => {
-  @NgModule({
-    declarations,
-    imports,
-    providers: [...moduleProviders],
-    exports: [...declarations, ...imports],
-  })
-  class WrapperModule {}
-  return WrapperModule;
-};

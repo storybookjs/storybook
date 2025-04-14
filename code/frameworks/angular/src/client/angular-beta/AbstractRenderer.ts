@@ -19,7 +19,7 @@ declare global {
 }
 
 const applicationRefs = new Map<HTMLElement, ApplicationRef>();
-const componentBuilders: TestBedComponentBuilder[] = [];
+let previousComponentBuilder: TestBedComponentBuilder = null;
 /**
  * Attribute name for the story UID that may be written to the targetDOMNode.
  *
@@ -71,8 +71,6 @@ export abstract class AbstractRenderer {
   }) {
     const targetSelector = this.generateTargetSelectorFromStoryId(targetDOMNode.id);
 
-    const newStoryProps$ = new BehaviorSubject<ICollection>(storyFnAngular.props);
-    console.log('Selector', targetSelector);
     if (
       !this.fullRendererRequired({
         targetDOMNode,
@@ -81,14 +79,17 @@ export abstract class AbstractRenderer {
           ...storyFnAngular.moduleMetadata,
         },
         forced,
-      })
+      }) &&
+      previousComponentBuilder != null
     ) {
-      // ToDo: need some unique id to get the Testbed instance for prop update
-      // now there can be more instances for one component
-      this.getTestBedComponentBuilder(component).setAndUpdateProps(storyFnAngular.props);
-
+      previousComponentBuilder.setAndUpdateProps(storyFnAngular.props);
       return;
     }
+
+    if (previousComponentBuilder != null) {
+      previousComponentBuilder.resetTestBed();
+    }
+
     await this.beforeFullRender(targetDOMNode);
 
     this.initAngularRootElement(targetDOMNode, targetSelector);
@@ -105,7 +106,6 @@ export abstract class AbstractRenderer {
     }
 
     const environmentProviders = [
-      storyPropsProvider(newStoryProps$),
       ...analyzedMetadata.applicationProviders,
       ...(storyFnAngular.applicationConfig?.providers ?? []),
     ];
@@ -130,14 +130,7 @@ export abstract class AbstractRenderer {
       .compileComponents();
 
     applicationRefs.set(targetDOMNode, componentBuilder.getApplicationRef());
-    componentBuilders.push(componentBuilder);
-  }
-
-  getTestBedComponentBuilder(component: Type<unknown>) {
-    for (const componentBuilder of componentBuilders) {
-      if (componentBuilder.isInstanceFor(component)) return componentBuilder;
-    }
-    return null;
+    previousComponentBuilder = componentBuilder;
   }
 
   /**

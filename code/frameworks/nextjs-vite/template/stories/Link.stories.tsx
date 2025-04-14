@@ -40,16 +40,6 @@ const Component = () => (
       </Link>
     </li>
     <li>
-      <Link href="/legacy-behaviour" legacyBehavior>
-        <a>Legacy behavior</a>
-      </Link>
-    </li>
-    <li>
-      <Link href="/child-is-functional-component" passHref legacyBehavior>
-        <MyButton>child is a functional component</MyButton>
-      </Link>
-    </li>
-    <li>
       <Link href="/#hashid" scroll={false}>
         Disables scrolling to the top
       </Link>
@@ -86,4 +76,13 @@ export const InAppDir: Story = {
       appDirectory: true,
     },
   },
+};
+
+export const LegacyLink: Story = {
+  render: () => (
+    <Link href="/legacy-behaviour" legacyBehavior>
+      <a>Legacy behavior</a>
+    </Link>
+  ),
+  tags: ['!test'],
 };

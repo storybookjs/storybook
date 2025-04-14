@@ -111,7 +111,6 @@
     "@storybook/addon-vitest": "workspace:*",
     "@storybook/angular": "workspace:*",
     "@storybook/bench": "next",
-    "@storybook/blocks": "workspace:*",
     "@storybook/builder-vite": "workspace:*",
     "@storybook/builder-webpack5": "workspace:*",
     "@storybook/codemod": "workspace:*",

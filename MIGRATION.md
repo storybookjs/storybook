@@ -2801,7 +2801,7 @@ The `transcludeMarkdown` option in `addon-docs` have been removed, and the autom
 Instead `.md` files can be imported as plain strings by adding the `?raw` suffix to the import, and then passed to the new `Markdown` block. In an MDX file that would look like this:
 
 ```
-import { Markdown } from '@storybook/addon-docs/blocks';
+import { Markdown } from '@storybook/blocks';
 import ReadMe from './README.md?raw';
 
 ...
@@ -3462,7 +3462,7 @@ The props have been simplified and the block now only accepts an `of` prop, whic
 If you were previously using the `Description` block to render plain markdown in your docs, that behavior can now be achieved with the new `Markdown` block instead like this:
 
 ```
-import { Markdown } from '@storybook/addon-docs/blocks';
+import { Markdown } from '@storybook/blocks';
 import ReadMe from './README.md?raw';
 
 ...

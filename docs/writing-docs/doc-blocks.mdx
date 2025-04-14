@@ -22,7 +22,7 @@ The blocks are most commonly used within Storybook's [MDX documentation](./mdx.m
 ```md
 {/* ButtonDocs.mdx */}
 
-import { Meta, Primary, Controls, Story } from '@storybook/blocks';
+import { Meta, Primary, Controls, Story } from '@storybook/addon-docs/blocks';
 import * as ButtonStories from './Button.stories';
 
 <Meta of={ButtonStories} />
@@ -61,7 +61,7 @@ The blocks are also used to define the page template for [automatics docs](./aut
 ![Screenshot of automatic docs template](../_assets/writing-docs/autodocs-default-template.png)
 
 ```jsx
-import { Title, Subtitle, Description, Primary, Controls, Stories } from '@storybook/blocks';
+import { Title, Subtitle, Description, Primary, Controls, Stories } from '@storybook/addon-docs/blocks';
 
 export const autoDocsTemplate = () => (
   <>

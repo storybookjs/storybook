@@ -24,7 +24,6 @@ export default {
   '@storybook/sveltekit': '9.0.0-alpha.17',
   '@storybook/vue3-vite': '9.0.0-alpha.17',
   '@storybook/web-components-vite': '9.0.0-alpha.17',
-  '@storybook/blocks': '9.0.0-alpha.17',
   sb: '9.0.0-alpha.17',
   '@storybook/cli': '9.0.0-alpha.17',
   '@storybook/codemod': '9.0.0-alpha.17',

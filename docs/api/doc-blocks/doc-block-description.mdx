@@ -14,7 +14,7 @@ The `Description` block displays the description for a component, story, or meta
 {/* prettier-ignore-start */}
 
 ```md title="ButtonDocs.mdx"
-import { Meta, Description } from '@storybook/blocks';
+import { Meta, Description } from '@storybook/addon-docs/blocks';
 import * as ButtonStories from './Button.stories';
 
 <Meta of={ButtonStories} />
@@ -27,7 +27,7 @@ import * as ButtonStories from './Button.stories';
 ## Description
 
 ```js
-import { Description } from '@storybook/blocks';
+import { Description } from '@storybook/addon-docs/blocks';
 ```
 
 `Description` is configured with the following props:
@@ -77,7 +77,7 @@ export const Button = () => <button>Click me</button>;
 {/* prettier-ignore-start */}
 
 ```md title="ButtonDocs.mdx"
-import { Meta, Description } from '@storybook/blocks';
+import { Meta, Description } from '@storybook/addon-docs/blocks';
 import * as ButtonStories from './Button.stories';
 
 <Meta of={ButtonStories} />

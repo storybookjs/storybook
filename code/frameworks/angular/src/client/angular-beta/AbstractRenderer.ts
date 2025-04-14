@@ -72,7 +72,7 @@ export abstract class AbstractRenderer {
     const targetSelector = this.generateTargetSelectorFromStoryId(targetDOMNode.id);
 
     const newStoryProps$ = new BehaviorSubject<ICollection>(storyFnAngular.props);
-
+    console.log('Selector', targetSelector);
     if (
       !this.fullRendererRequired({
         targetDOMNode,
@@ -137,6 +137,7 @@ export abstract class AbstractRenderer {
     for (const componentBuilder of componentBuilders) {
       if (componentBuilder.isInstanceFor(component)) return componentBuilder;
     }
+    return null;
   }
 
   /**

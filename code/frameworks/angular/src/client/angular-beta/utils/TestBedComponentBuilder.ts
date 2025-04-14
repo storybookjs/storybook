@@ -1,9 +1,9 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, MetadataOverride, TestBed } from '@angular/core/testing';
 import {
   BrowserDynamicTestingModule,
   platformBrowserDynamicTesting,
 } from '@angular/platform-browser-dynamic/testing';
-import { ApplicationRef, Component, Type } from '@angular/core';
+import { ApplicationRef, Component, NgModule, Type } from '@angular/core';
 import { PropertyExtractor } from './PropertyExtractor';
 import { ICollection, StoryFnAngularReturnType } from '../../types';
 
@@ -20,7 +20,7 @@ export class TestBedComponentBuilder {
 
   private componentProviders: any[] = [];
 
-  private environmentProvider: any[] = [];
+  private environmentProviders: any[] = [];
 
   private selector: string;
 
@@ -30,9 +30,9 @@ export class TestBedComponentBuilder {
 
   private userDefinedTemplate: string;
 
-  private schemas: any[] = [];
+  private schemas: any[];
 
-  private styles: string[] = [];
+  private styles: string[];
 
   private id: string;
 
@@ -42,8 +42,8 @@ export class TestBedComponentBuilder {
   }
 
   setStoryFn(storyFn: StoryFnAngularReturnType) {
-    this.styles = storyFn.styles ?? [];
-    this.schemas = storyFn.moduleMetadata?.schemas ?? [];
+    this.styles = storyFn.styles;
+    this.schemas = storyFn.moduleMetadata?.schemas;
     this.isUserDefinedTemplate = storyFn.userDefinedTemplate;
     this.userDefinedTemplate = storyFn.template;
     this.props = storyFn.props;
@@ -52,15 +52,15 @@ export class TestBedComponentBuilder {
 
   setMetaData(metaData: PropertyExtractor) {
     const { imports, declarations, providers } = metaData;
-    this.imports = imports ?? [];
-    this.declarations = declarations ?? [];
-    this.componentProviders = providers ?? [];
+    this.imports = imports;
+    this.declarations = declarations;
+    this.componentProviders = providers;
     return this;
   }
 
   setEnvironmentProviders(providers: any[]) {
     if (providers == null) return this;
-    this.environmentProvider = providers ?? [];
+    this.environmentProviders = providers ?? [];
     return this;
   }
 
@@ -70,7 +70,7 @@ export class TestBedComponentBuilder {
   }
 
   setAndUpdateProps(props: ICollection) {
-    this.props = props ?? [];
+    this.props = props;
     this.updateComponentProps();
     return this;
   }
@@ -78,24 +78,43 @@ export class TestBedComponentBuilder {
   configureModule() {
     this.throwOnRequiredNullProperties();
     if (this.isUserDefinedTemplate) {
-      this.component = getWrapper(this.selector, this.userDefinedTemplate);
+      this.component = getWrapperComponent(
+        this.selector,
+        this.userDefinedTemplate,
+        this.componentProviders,
+        this.styles,
+        this.schemas
+      );
     }
 
-    this.testBedInstance
-      .configureTestingModule({
-        providers: this.environmentProvider,
-        declarations: this.declarations,
-        imports: this.imports,
-      })
-      .overrideComponent(this.component, {
-        set: {
-          providers: this.componentProviders,
-          selector: this.selector,
-          schemas: this.schemas,
-          styles: this.styles,
-        },
-      });
+    const metaData = this.generateOverrideMetaData();
+    this.testBedInstance.configureTestingModule({}).overrideComponent(this.component, metaData);
     return this;
+  }
+
+  private generateOverrideMetaData() {
+    const overrideData: MetadataOverride<Component> = { set: {} };
+    if (this.schemas != null && this.schemas.length != 0) {
+      overrideData.set.schemas = this.schemas;
+    }
+    if (this.componentProviders != null) {
+      overrideData.set.providers = this.componentProviders;
+    }
+    if (this.styles != null) {
+      overrideData.set.styles = this.styles;
+    }
+    if (this.selector != null) {
+      overrideData.set.selector = this.selector;
+    }
+
+    const wrapperModule = getWrapperModule(
+      this.declarations,
+      this.imports,
+      this.environmentProviders
+    );
+    overrideData.set.imports = [wrapperModule];
+
+    return overrideData;
   }
 
   initTestBed() {
@@ -124,7 +143,8 @@ export class TestBedComponentBuilder {
   }
 
   private updateComponentProps() {
-    this.fixture.componentInstance = Object.assign(this.fixture.componentInstance, this.props);
+    if (this.props != null)
+      this.fixture.componentInstance = Object.assign(this.fixture.componentInstance, this.props);
     this.fixture.detectChanges();
     return this;
   }
@@ -134,12 +154,32 @@ export class TestBedComponentBuilder {
   }
 }
 
-export const getWrapper = (selector: string, template: string) => {
+export const getWrapperComponent = (
+  selector: string,
+  template: string,
+  providers: any[],
+  styles: string[],
+  schemas: any[]
+) => {
   @Component({
     selector,
     template,
     standalone: true,
+    providers,
+    styles,
+    schemas: schemas,
   })
   class CustomWrapperComponent {}
   return CustomWrapperComponent;
+};
+
+export const getWrapperModule = (declarations: any[], imports: any[], moduleProviders: any[]) => {
+  @NgModule({
+    declarations,
+    imports,
+    providers: [...moduleProviders],
+    exports: [...declarations, ...imports],
+  })
+  class WrapperModule {}
+  return WrapperModule;
 };

@@ -6248,7 +6248,7 @@ __metadata:
     react-dom: "npm:^18.2.0"
     rehype-external-links: "npm:^3.0.0"
     rehype-slug: "npm:^6.0.0"
-    telejson: "npm:^7.2.0"
+    telejson: "npm:8.0.0--canary.106.377d63b.0"
     tocbot: "npm:^4.20.1"
     ts-dedent: "npm:^2.0.0"
     typescript: "npm:^5.7.3"
@@ -26861,15 +26861,6 @@ __metadata:
   version: 8.0.0--canary.106.377d63b.0
   resolution: "telejson@npm:8.0.0--canary.106.377d63b.0"
   checksum: 10c0/bb4770fde54c591c0d3432cc5a3d96fb5fdac4d8044db85703849b05e40f7701cfa666cd82ac854f8fc5fe5339573cd186154e0f75fcf94c2f7fe3cacae575cb
-  languageName: node
-  linkType: hard
-
-"telejson@npm:^7.2.0":
-  version: 7.2.0
-  resolution: "telejson@npm:7.2.0"
-  dependencies:
-    memoizerific: "npm:^1.11.3"
-  checksum: 10c0/d26e6cc93e54bfdcdb207b49905508c5db45862e811a2e2193a735409e47b14530e1c19351618a3e03ad2fd4ffc3759364fcd72851aba2df0300fab574b6151c
   languageName: node
   linkType: hard
 

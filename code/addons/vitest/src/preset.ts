@@ -159,7 +159,7 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
 
   if (!core.disableTelemetry) {
     const enableCrashReports = core.enableCrashReports || options.enableCrashReports;
-    const packageJsonPath = require.resolve('@storybook/addon-test/package.json');
+    const packageJsonPath = require.resolve('@storybook/addon-vitest/package.json');
 
     const { version: addonVersion } = JSON.parse(
       readFileSync(packageJsonPath, { encoding: 'utf-8' })

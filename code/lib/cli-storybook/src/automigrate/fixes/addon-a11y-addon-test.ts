@@ -11,7 +11,7 @@ import { dedent } from 'ts-dedent';
 import {
   SUPPORTED_FRAMEWORKS,
   SUPPORTED_RENDERERS,
-} from '../../../../../addons/test/src/constants';
+} from '../../../../../addons/vitest/src/constants';
 import { getFrameworkPackageName, getRendererName } from '../helpers/mainConfigFile';
 import type { Fix } from '../types';
 
@@ -36,7 +36,7 @@ interface AddonA11yAddonTestOptions {
 }
 
 /**
- * If addon-a11y and addon-test are already installed, we need to update
+ * If addon-a11y and addon-vitest are already installed, we need to update
  *
  * - `.storybook/vitest.setup.<ts|js>` to set up project annotations from addon-a11y.
  * - `.storybook/preview.<ts|js>` to set up tags.
@@ -61,7 +61,7 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
     const rendererPackageName = getRendererName(mainConfig);
 
     const hasA11yAddon = !!addons.find((addon) => addon.includes('@storybook/addon-a11y'));
-    const hasTestAddon = !!addons.find((addon) => addon.includes('@storybook/addon-test'));
+    const hasTestAddon = !!addons.find((addon) => addon.includes('@storybook/addon-vitest'));
 
     if (
       !SUPPORTED_FRAMEWORKS.find((framework) => frameworkPackageName?.includes(framework)) &&
@@ -146,9 +146,9 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
     skipVitestSetupTransformation,
   }) {
     const introduction = dedent`
-      We have detected that you have ${picocolors.magenta(`@storybook/addon-a11y`)} and ${picocolors.magenta(`@storybook/addon-test`)} installed.
+      We have detected that you have ${picocolors.magenta(`@storybook/addon-a11y`)} and ${picocolors.magenta(`@storybook/addon-vitest`)} installed.
 
-      ${picocolors.magenta(`@storybook/addon-a11y`)} now integrates with ${picocolors.magenta(`@storybook/addon-test`)} to provide automatic accessibility checks for your stories, powered by Axe and Vitest.
+      ${picocolors.magenta(`@storybook/addon-a11y`)} now integrates with ${picocolors.magenta(`@storybook/addon-vitest`)} to provide automatic accessibility checks for your stories, powered by Axe and Vitest.
     `;
 
     const prompt = [introduction];

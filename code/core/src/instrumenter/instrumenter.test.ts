@@ -7,10 +7,9 @@ import { SET_CURRENT_STORY, STORY_RENDER_PHASE_CHANGED } from 'storybook/interna
 
 import { global } from '@storybook/global';
 
-import { addons } from 'storybook/preview-api';
-
 import { EVENTS } from './EVENTS';
 import { Instrumenter, isClass } from './instrumenter';
+import { addons } from './preview-api';
 import type { Options } from './types';
 
 const mocks = await vi.hoisted(async () => {
@@ -37,13 +36,13 @@ const mocks = await vi.hoisted(async () => {
     callSpy,
     syncSpy,
     forceRemountSpy,
-    ready: vi.fn().mockResolvedValue(Promise.resolve()),
+    ready: vi.fn().mockResolvedValue(Promise.resolve(true)),
     channel,
   };
 });
 
 vi.mock('storybook/internal/client-logger');
-vi.mock('storybook/preview-api', () => {
+vi.mock('./preview-api', () => {
   return {
     addons: {
       ready: mocks.ready,

@@ -43,11 +43,6 @@ export class TestBedComponentBuilder {
 
   private styles: string[];
 
-  // some providers need to be removed, due already provided on module level of testbed
-  private providersToRemove: EnvironmentProviders[] = [
-    importProvidersFrom(BrowserDynamicTestingModule),
-  ];
-
   setComponent(storyComponent: Type<unknown> | undefined) {
     this.component = storyComponent;
     return this;
@@ -73,9 +68,6 @@ export class TestBedComponentBuilder {
   setEnvironmentProviders(providers: any[]) {
     if (providers == null) return this;
     this.environmentProviders = providers ?? [];
-    console.log('EnvironmentProviders', this.environmentProviders);
-    console.log('ProvidersToBeRemoved', this.providersToRemove);
-    console.log('AfterFilter', this.environmentProviders);
     return this;
   }
 
@@ -153,8 +145,8 @@ export class TestBedComponentBuilder {
     return this.testBedInstance.inject(ApplicationRef);
   }
 
-  resetTestBed() {
-    this.testBedInstance.resetTestingModule().resetTestEnvironment();
+  isInstanceOf(component: Type<any>) {
+    return this.fixture.componentRef.componentType == component;
   }
 
   private updateComponentProps() {

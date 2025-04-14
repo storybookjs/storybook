@@ -1,9 +1,8 @@
 import { ApplicationRef, NgModule, Type } from '@angular/core';
-import { BehaviorSubject, Subject } from 'rxjs';
+import { Subject } from 'rxjs';
 import { stringify } from 'telejson';
 
 import { ICollection, StoryFnAngularReturnType } from '../types';
-import { storyPropsProvider } from './StorybookProvider';
 import { PropertyExtractor } from './utils/PropertyExtractor';
 import { TestBedComponentBuilder } from './utils/TestBedComponentBuilder';
 
@@ -19,7 +18,7 @@ declare global {
 }
 
 const applicationRefs = new Map<HTMLElement, ApplicationRef>();
-let previousComponentBuilder: TestBedComponentBuilder = null;
+const componentBuilders: TestBedComponentBuilder[] = [];
 /**
  * Attribute name for the story UID that may be written to the targetDOMNode.
  *
@@ -70,6 +69,7 @@ export abstract class AbstractRenderer {
     targetDOMNode: HTMLElement;
   }) {
     const targetSelector = this.generateTargetSelectorFromStoryId(targetDOMNode.id);
+    const testBedInstance = this.getTestBedInstance(component);
 
     if (
       !this.fullRendererRequired({
@@ -80,14 +80,10 @@ export abstract class AbstractRenderer {
         },
         forced,
       }) &&
-      previousComponentBuilder != null
+      testBedInstance != null
     ) {
-      previousComponentBuilder.setAndUpdateProps(storyFnAngular.props);
+      testBedInstance.setAndUpdateProps(storyFnAngular.props);
       return;
-    }
-
-    if (previousComponentBuilder != null) {
-      previousComponentBuilder.resetTestBed();
     }
 
     await this.beforeFullRender(targetDOMNode);
@@ -130,7 +126,14 @@ export abstract class AbstractRenderer {
       .compileComponents();
 
     applicationRefs.set(targetDOMNode, componentBuilder.getApplicationRef());
-    previousComponentBuilder = componentBuilder;
+    componentBuilders.push(componentBuilder);
+  }
+
+  getTestBedInstance(component: Type<any>): TestBedComponentBuilder | null {
+    for (const builder of componentBuilders) {
+      if (builder.isInstanceOf(component)) return builder;
+    }
+    return null;
   }
 
   /**

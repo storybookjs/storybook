@@ -394,7 +394,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
   // This workaround is needed because Vitest seems to have issues in link mode
   // so the /setup-file and /global-setup files from the vitest addon won't work in portal protocol
   if (options.link) {
-    const vitestAddonPath = relative(sandboxDir, join(CODE_DIRECTORY, 'addons', 'test'));
+    const vitestAddonPath = relative(sandboxDir, join(CODE_DIRECTORY, 'addons', 'vitest'));
     packageJson.resolutions = {
       ...packageJson.resolutions,
       '@storybook/addon-vitest': `file:${vitestAddonPath}`,

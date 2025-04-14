@@ -8,14 +8,16 @@ const preview: Preview = {
       <div data-testid="global-decorator">
         Global Decorator
         <br />
-        {StoryFn()}
+        <StoryFn />
       </div>
     ),
   ],
+  initialGlobals: {
+    locale: 'en',
+  },
   globalTypes: {
     locale: {
       description: 'Locale for components',
-      defaultValue: 'en',
       toolbar: {
         title: 'Locale',
         icon: 'circlehollow',

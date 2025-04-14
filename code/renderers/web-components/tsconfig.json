@@ -1,8 +1,11 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
+    "baseUrl": ".",
     "resolveJsonModule": true,
-    "strict": true
+    "paths": {
+      "storybook/internal/*": ["../../lib/cli/core/*"]
+    }
   },
   "include": ["src/**/*", "template/**/*"]
 }

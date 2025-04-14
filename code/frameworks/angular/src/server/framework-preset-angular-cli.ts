@@ -1,10 +1,15 @@
+import { logger } from 'storybook/internal/node-logger';
+import { AngularLegacyBuildOptionsError } from 'storybook/internal/server-errors';
+import { WebpackDefinePlugin, WebpackIgnorePlugin } from '@storybook/builder-webpack5';
+
+import { BuilderContext, targetFromTargetString } from '@angular-devkit/architect';
+import { JsonObject, logging } from '@angular-devkit/core';
+import { sync as findUpSync } from 'find-up';
 import webpack from 'webpack';
-import { logger } from '@storybook/node-logger';
-import { AngularLegacyBuildOptionsError } from '@storybook/core-events/server-errors';
 
 import { getWebpackConfig as getCustomWebpackConfig } from './angular-cli-webpack';
-import { moduleIsAvailable } from './utils/module-is-available';
 import { PresetOptions } from './preset-options';
+import { moduleIsAvailable } from './utils/module-is-available';
 
 export async function webpackFinal(baseConfig: webpack.Configuration, options: PresetOptions) {
   if (!moduleIsAvailable('@angular-devkit/build-angular')) {
@@ -14,17 +19,86 @@ export async function webpackFinal(baseConfig: webpack.Configuration, options: P
 
   checkForLegacyBuildOptions(options);
 
-  return getCustomWebpackConfig(baseConfig, {
+  const builderContext = getBuilderContext(options);
+  const builderOptions = await getBuilderOptions(options, builderContext);
+
+  const webpackConfig = await getCustomWebpackConfig(baseConfig, {
     builderOptions: {
       watch: options.configType === 'DEVELOPMENT',
-      ...options.angularBuilderOptions,
-    },
-    builderContext: options.angularBuilderContext,
+      ...builderOptions,
+    } as any,
+    builderContext,
   });
+
+  webpackConfig.plugins = webpackConfig.plugins ?? [];
+
+  webpackConfig.plugins.push(
+    new WebpackDefinePlugin({
+      STORYBOOK_ANGULAR_OPTIONS: JSON.stringify({
+        experimentalZoneless: builderOptions.experimentalZoneless,
+      }),
+    })
+  );
+
+  try {
+    require.resolve('@angular/animations');
+  } catch (e) {
+    webpackConfig.plugins.push(
+      new WebpackIgnorePlugin({
+        resourceRegExp: /@angular\/platform-browser\/animations$/,
+      })
+    );
+  }
+
+  return webpackConfig;
+}
+
+/** Get Builder Context If storybook is not start by angular builder create dumb BuilderContext */
+function getBuilderContext(options: PresetOptions): BuilderContext {
+  return (
+    options.angularBuilderContext ??
+    ({
+      target: { project: 'noop-project', builder: '', options: {} },
+      workspaceRoot: process.cwd(),
+      getProjectMetadata: () => ({}),
+      getTargetOptions: () => ({}),
+      logger: new logging.Logger('Storybook'),
+    } as unknown as BuilderContext)
+  );
+}
+
+/** Get builder options Merge target options from browser target and from storybook options */
+async function getBuilderOptions(options: PresetOptions, builderContext: BuilderContext) {
+  /** Get Browser Target options */
+  let browserTargetOptions: JsonObject = {};
+  if (options.angularBrowserTarget) {
+    const browserTarget = targetFromTargetString(options.angularBrowserTarget);
+
+    logger.info(
+      `=> Using angular browser target options from "${browserTarget.project}:${
+        browserTarget.target
+      }${browserTarget.configuration ? `:${browserTarget.configuration}` : ''}"`
+    );
+    browserTargetOptions = await builderContext.getTargetOptions(browserTarget);
+  }
+
+  /** Merge target options from browser target options and from storybook options */
+  const builderOptions = {
+    ...browserTargetOptions,
+    ...options.angularBuilderOptions,
+    tsConfig:
+      options.tsConfig ??
+      findUpSync('tsconfig.json', { cwd: options.configDir }) ??
+      browserTargetOptions.tsConfig,
+  };
+  logger.info(`=> Using angular project with "tsConfig:${builderOptions.tsConfig}"`);
+
+  return builderOptions;
 }
 
 /**
- * Checks if using legacy configuration that doesn't use builder and logs message referring to migration docs.
+ * Checks if using legacy configuration that doesn't use builder and logs message referring to
+ * migration docs.
  */
 function checkForLegacyBuildOptions(options: PresetOptions) {
   if (options.angularBrowserTarget !== undefined) {

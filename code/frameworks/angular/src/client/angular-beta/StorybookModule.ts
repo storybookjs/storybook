@@ -1,6 +1,6 @@
 import { StoryFnAngularReturnType } from '../types';
-import { createStorybookWrapperComponent } from './StorybookWrapperComponent';
 import { computesTemplateFromComponent } from './ComputesTemplateFromComponent';
+import { createStorybookWrapperComponent } from './StorybookWrapperComponent';
 import { PropertyExtractor } from './utils/PropertyExtractor';
 
 export const getApplication = ({
@@ -22,9 +22,7 @@ export const getApplication = ({
     template = computesTemplateFromComponent(component, props, '');
   }
 
-  /**
-   * Create a component that wraps generated template and gives it props
-   */
+  /** Create a component that wraps generated template and gives it props */
   return createStorybookWrapperComponent({
     moduleMetadata,
     selector: targetSelector,

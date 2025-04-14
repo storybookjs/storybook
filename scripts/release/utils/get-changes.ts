@@ -1,5 +1,6 @@
-import chalk from 'chalk';
+import picocolors from 'picocolors';
 import semver from 'semver';
+
 import type { PullRequestInfo } from './get-github-info';
 import { getPullInfoFromCommit } from './get-github-info';
 import { getLatestTag, git } from './git-client';
@@ -26,13 +27,15 @@ export const LABELS_BY_IMPORTANCE = {
 
 const getCommitAt = async (id: string, verbose?: boolean) => {
   if (!semver.valid(id)) {
-    console.log(`🔍 ${chalk.red(id)} is not a valid semver string, assuming it is a commit hash`);
+    console.log(
+      `🔍 ${picocolors.red(id)} is not a valid semver string, assuming it is a commit hash`
+    );
     return id;
   }
   const version = id.startsWith('v') ? id : `v${id}`;
   const commitSha = (await git.raw(['rev-list', '-n', '1', version])).split('\n')[0];
   if (verbose) {
-    console.log(`🔍 Commit at tag ${chalk.green(version)}: ${chalk.blue(commitSha)}`);
+    console.log(`🔍 Commit at tag ${picocolors.green(version)}: ${picocolors.blue(commitSha)}`);
   }
   return commitSha;
 };
@@ -49,12 +52,12 @@ export const getFromCommit = async (from?: string | undefined, verbose?: boolean
     }
     actualFrom = latest;
     if (verbose) {
-      console.log(`🔍 No 'from' specified, found latest tag: ${chalk.blue(latest)}`);
+      console.log(`🔍 No 'from' specified, found latest tag: ${picocolors.blue(latest)}`);
     }
   }
   const commit = await getCommitAt(actualFrom!, verbose);
   if (verbose) {
-    console.log(`🔍 Found 'from' commit: ${chalk.blue(commit)}`);
+    console.log(`🔍 Found 'from' commit: ${picocolors.blue(commit)}`);
   }
   return commit;
 };
@@ -63,14 +66,14 @@ export const getToCommit = async (to?: string | undefined, verbose?: boolean) =>
   if (!to) {
     const head = await git.revparse('HEAD');
     if (verbose) {
-      console.log(`🔍 No 'to' specified, HEAD is at commit: ${chalk.blue(head)}`);
+      console.log(`🔍 No 'to' specified, HEAD is at commit: ${picocolors.blue(head)}`);
     }
     return head;
   }
 
   const commit = await getCommitAt(to, verbose);
   if (verbose) {
-    console.log(`🔍 Found 'to' commit: ${chalk.blue(commit)}`);
+    console.log(`🔍 Found 'to' commit: ${picocolors.blue(commit)}`);
   }
   return commit;
 };
@@ -87,9 +90,9 @@ export const getAllCommitsBetween = async ({
   const logResult = await git.log({ from, to, '--first-parent': null });
   if (verbose) {
     console.log(
-      `🔍 Found ${chalk.blue(logResult.total)} commits between ${chalk.green(
+      `🔍 Found ${picocolors.blue(logResult.total)} commits between ${picocolors.green(
         `${from}`
-      )} and ${chalk.green(`${to}`)}:`
+      )} and ${picocolors.green(`${to}`)}:`
     );
     console.dir(logResult.all, { depth: null, colors: true });
   }
@@ -109,7 +112,7 @@ export const getRepo = async (verbose?: boolean): Promise<string> => {
   const pushUrl = originRemote.refs.push;
   const repo = pushUrl.replace(/\.git$/, '').replace(/.*:(\/\/github\.com\/)*/, '');
   if (verbose) {
-    console.log(`📦 Extracted repo: ${chalk.blue(repo)}`);
+    console.log(`📦 Extracted repo: ${picocolors.blue(repo)}`);
   }
   return repo;
 };
@@ -233,7 +236,7 @@ export const getChanges = async ({
   unpickedPatches?: boolean;
   verbose?: boolean;
 }) => {
-  console.log(`💬 Getting changes for ${chalk.blue(version)}`);
+  console.log(`💬 Getting changes for ${picocolors.blue(version)}`);
 
   let commits;
   if (unpickedPatches) {

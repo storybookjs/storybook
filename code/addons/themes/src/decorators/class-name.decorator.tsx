@@ -1,7 +1,9 @@
-import { useEffect } from '@storybook/preview-api';
-import type { DecoratorFunction, Renderer } from '@storybook/types';
+import type { DecoratorFunction, Renderer } from 'storybook/internal/types';
 
-import { initializeThemeState, pluckThemeFromContext, useThemeParameters } from './helpers';
+import { useEffect } from 'storybook/preview-api';
+
+import { PARAM_KEY } from '../constants';
+import { initializeThemeState, pluckThemeFromContext } from './helpers';
 
 export interface ClassNameStrategyConfiguration {
   themes: Record<string, string>;
@@ -14,7 +16,7 @@ const DEFAULT_ELEMENT_SELECTOR = 'html';
 const classStringToArray = (classString: string) => classString.split(' ').filter(Boolean);
 
 // TODO check with @kasperpeulen: change the types so they can be correctly inferred from context e.g. <Story extends (...args: any[]) => any>
-export const withThemeByClassName = <TRenderer extends Renderer = any>({
+export const withThemeByClassName = <TRenderer extends Renderer = Renderer>({
   themes,
   defaultTheme,
   parentSelector = DEFAULT_ELEMENT_SELECTOR,
@@ -22,7 +24,7 @@ export const withThemeByClassName = <TRenderer extends Renderer = any>({
   initializeThemeState(Object.keys(themes), defaultTheme);
 
   return (storyFn, context) => {
-    const { themeOverride } = useThemeParameters();
+    const { themeOverride } = context.parameters[PARAM_KEY] ?? {};
     const selected = pluckThemeFromContext(context);
 
     useEffect(() => {
@@ -47,7 +49,7 @@ export const withThemeByClassName = <TRenderer extends Renderer = any>({
       if (newThemeClasses.length > 0) {
         parentElement.classList.add(...newThemeClasses);
       }
-    }, [themeOverride, selected, parentSelector]);
+    }, [themeOverride, selected]);
 
     return storyFn();
   };

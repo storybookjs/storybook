@@ -1,0 +1,21 @@
+// auto generated file, do not edit
+export type SupportedFrameworks =
+  | 'angular'
+  | 'ember'
+  | 'html-vite'
+  | 'nextjs'
+  | 'nextjs-vite'
+  | 'preact-vite'
+  | 'react-native-web-vite'
+  | 'react-vite'
+  | 'react-webpack5'
+  | 'server-webpack5'
+  | 'svelte-vite'
+  | 'sveltekit'
+  | 'vue3-vite'
+  | 'web-components-vite'
+  | 'qwik'
+  | 'solid'
+  | 'nuxt'
+  | 'react-rsbuild'
+  | 'vue3-rsbuild';

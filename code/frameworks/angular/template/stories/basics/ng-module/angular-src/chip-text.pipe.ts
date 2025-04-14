@@ -1,6 +1,7 @@
 import { PipeTransform, Pipe } from '@angular/core';
 
 @Pipe({
+  standalone: false,
   name: 'chipText',
 })
 export class ChipTextPipe implements PipeTransform {

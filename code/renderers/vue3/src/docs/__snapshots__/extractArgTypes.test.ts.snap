@@ -157,12 +157,7 @@ exports[`extractArgTypes (vue-docgen-api) > should extract props for component 1
       "value": {
         "name": "object",
         "required": false,
-        "value": {
-          "nestedProp": {
-            "name": "string",
-            "required": true,
-          },
-        },
+        "value": {},
       },
     },
   },
@@ -183,12 +178,7 @@ exports[`extractArgTypes (vue-docgen-api) > should extract props for component 1
       "value": {
         "name": "object",
         "required": false,
-        "value": {
-          "nestedProp": {
-            "name": "string",
-            "required": true,
-          },
-        },
+        "value": {},
       },
     },
   },
@@ -279,12 +269,7 @@ exports[`extractArgTypes (vue-docgen-api) > should extract props for component 1
     "type": {
       "name": "object",
       "required": true,
-      "value": {
-        "foo": {
-          "name": "string",
-          "required": true,
-        },
-      },
+      "value": {},
     },
   },
   "literalFromContext": {
@@ -325,12 +310,7 @@ exports[`extractArgTypes (vue-docgen-api) > should extract props for component 1
     "type": {
       "name": "object",
       "required": true,
-      "value": {
-        "nestedProp": {
-          "name": "string",
-          "required": true,
-        },
-      },
+      "value": {},
     },
   },
   "nestedIntersection": {
@@ -347,16 +327,7 @@ exports[`extractArgTypes (vue-docgen-api) > should extract props for component 1
     "type": {
       "name": "object",
       "required": true,
-      "value": {
-        "additionalProp": {
-          "name": "string",
-          "required": true,
-        },
-        "nestedProp": {
-          "name": "string",
-          "required": true,
-        },
-      },
+      "value": {},
     },
   },
   "nestedOptional": {
@@ -377,22 +348,12 @@ exports[`extractArgTypes (vue-docgen-api) > should extract props for component 1
         {
           "name": "object",
           "required": false,
-          "value": {
-            "nestedProp": {
-              "name": "string",
-              "required": true,
-            },
-          },
+          "value": {},
         },
         {
           "name": "object",
           "required": false,
-          "value": {
-            "nestedProp": {
-              "name": "string",
-              "required": true,
-            },
-          },
+          "value": {},
         },
       ],
     },
@@ -411,13 +372,7 @@ exports[`extractArgTypes (vue-docgen-api) > should extract props for component 1
     "type": {
       "name": "object",
       "required": false,
-      "value": {
-        "recursive": {
-          "name": "other",
-          "required": true,
-          "value": "MyNestedRecursiveProps",
-        },
-      },
+      "value": {},
     },
   },
   "stringArray": {

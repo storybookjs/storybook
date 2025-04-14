@@ -1,25 +1,32 @@
 /* eslint-disable @typescript-eslint/naming-convention */
+
 /* eslint-disable no-underscore-dangle */
 
 /**
- * Source: https://github.com/vercel/next.js/blob/canary/packages/next/src/build/babel/plugins/react-loadable-plugin.ts
+ * Source:
+ * https://github.com/vercel/next.js/blob/canary/packages/next/src/build/babel/plugins/react-loadable-plugin.ts
  */
-import type { NodePath, PluginObj, types as BabelTypes } from '@babel/core';
+import { relative as relativePath } from 'node:path';
 
-import { relative as relativePath } from 'path';
+import type { types as BabelTypes, NodePath, PluginObj } from '@babel/core';
 
 export default function ({ types: t }: { types: typeof BabelTypes }): PluginObj {
   return {
     visitor: {
       ImportDeclaration(path: NodePath<BabelTypes.ImportDeclaration>, state: any) {
         const source = path.node.source.value;
-        if (source !== 'next/dynamic') return;
+
+        if (source !== 'next/dynamic') {
+          return;
+        }
 
         const defaultSpecifier = path.get('specifiers').find((specifier: any) => {
           return specifier.isImportDefaultSpecifier();
         });
 
-        if (!defaultSpecifier) return;
+        if (!defaultSpecifier) {
+          return;
+        }
 
         const bindingName = defaultSpecifier.node.local.name;
         const binding = path.scope.getBinding(bindingName);
@@ -38,7 +45,9 @@ export default function ({ types: t }: { types: typeof BabelTypes }): PluginObj 
             }
           }
 
-          if (!callExpression.isCallExpression()) return;
+          if (!callExpression.isCallExpression()) {
+            return;
+          }
 
           const callExpression_ = callExpression as NodePath<BabelTypes.CallExpression>;
 
@@ -66,7 +75,9 @@ export default function ({ types: t }: { types: typeof BabelTypes }): PluginObj 
             options = args[1];
           }
 
-          if (!options.isObjectExpression()) return;
+          if (!options.isObjectExpression()) {
+            return;
+          }
           const options_ = options as NodePath<BabelTypes.ObjectExpression>;
 
           const properties = options_.get('properties');
@@ -119,7 +130,10 @@ export default function ({ types: t }: { types: typeof BabelTypes }): PluginObj 
           loader.traverse({
             Import(importPath) {
               const importArguments = importPath.parentPath.get('arguments');
-              if (!Array.isArray(importArguments)) return;
+
+              if (!Array.isArray(importArguments)) {
+                return;
+              }
               const { node } = importArguments[0];
               dynamicImports.push(node as any);
               dynamicKeys.push(
@@ -138,7 +152,9 @@ export default function ({ types: t }: { types: typeof BabelTypes }): PluginObj 
             },
           });
 
-          if (!dynamicImports.length) return;
+          if (!dynamicImports.length) {
+            return;
+          }
 
           options.node.properties.push(
             t.objectProperty(

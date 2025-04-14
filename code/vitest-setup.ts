@@ -1,12 +1,17 @@
 import '@testing-library/jest-dom/vitest';
-import { vi, expect } from 'vitest';
+import { expect, vi } from 'vitest';
 
 import { dedent } from 'ts-dedent';
 
 const ignoreList = [
   (error: any) => error.message.includes('":nth-child" is potentially unsafe'),
   (error: any) => error.message.includes('":first-child" is potentially unsafe'),
+  (error: any) =>
+    error.message.match(
+      `Support for defaultProps will be removed from function components in a future major release`
+    ),
   (error: any) => error.message.match(/Browserslist: .* is outdated. Please run:/),
+  (error: any) => error.message.includes('Consider adding an error boundary'),
   (error: any) =>
     error.message.includes('react-async-component-lifecycle-hooks') &&
     error.stack.includes('addons/knobs/src/components/__tests__/Options.js'),
@@ -17,6 +22,7 @@ const ignoreList = [
       /React will try to recreate this component tree from scratch using the error boundary you provided/
     ),
   (error: any) => error.message.includes('Lit is in dev mode. Not recommended for production!'),
+  (error: any) => error.message.includes('error: `DialogContent` requires a `DialogTitle`'),
 ];
 
 const throwMessage = (type: any, message: any) => {

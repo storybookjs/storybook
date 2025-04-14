@@ -1,8 +1,6 @@
-/* eslint-disable no-console */
 import type { GraphQlQueryResponseData } from '@octokit/graphql';
 import { graphql } from '@octokit/graphql';
 import { request } from '@octokit/request';
-import fetch from 'node-fetch';
 
 export interface PullRequest {
   number: number;

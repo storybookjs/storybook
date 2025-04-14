@@ -1,19 +1,20 @@
 /* eslint-disable no-underscore-dangle */
+import { logger } from 'storybook/internal/client-logger';
+import { ArgTypes, InputType, SBType } from 'storybook/internal/types';
+
 import { global } from '@storybook/global';
 
-import { InputType, ArgTypes, SBType } from '@storybook/types';
-import { logger } from '@storybook/client-logger';
 import {
   Argument,
   Class,
   CompodocJson,
   Component,
+  Directive,
   Injectable,
+  JsDocTag,
   Method,
   Pipe,
   Property,
-  Directive,
-  JsDocTag,
 } from './types';
 
 export const isMethod = (methodOrProp: Method | Property): methodOrProp is Method => {

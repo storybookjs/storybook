@@ -2,9 +2,7 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "module": "ESNext",
-    "skipLibCheck": true,
-    "strict": true,
-    "resolveJsonModule": true
+    "verbatimModuleSyntax": true
   },
   "include": ["src/**/*", "src/**/*.svelte", "template/**/*", "template/**/*.svelte"]
 }

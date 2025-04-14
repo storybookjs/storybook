@@ -1,6 +1,11 @@
 module.exports = {
   root: true,
-  extends: ['@storybook/eslint-config-storybook', 'plugin:storybook/recommended'],
+  extends: [
+    //
+    '@storybook/eslint-config-storybook',
+    'plugin:storybook/recommended',
+    'plugin:depend/recommended'
+  ],
   parserOptions: {
     tsconfigRootDir: __dirname,
     project: ['./tsconfig.json'],
@@ -8,9 +13,13 @@ module.exports = {
   rules: {
     // remove as shared eslint has jest rules removed
     '@typescript-eslint/ban-ts-comment': 'error',
+    '@typescript-eslint/no-redeclare': 'off',
     '@typescript-eslint/consistent-type-imports': ['error', { disallowTypeAnnotations: false }],
     'no-use-before-define': 'off',
     'eslint-comments/disable-enable-pair': ['error', { allowWholeFile: true }],
+    "depend/ban-dependencies": ["error", {
+      "modules": ["lodash", "chalk", "qs", "handlebars", "fs-extra"]
+    }]
   },
   overrides: [
     {

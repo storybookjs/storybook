@@ -1,16 +1,15 @@
-import { dirname, join, isAbsolute } from 'path';
-import rehypeSlug from 'rehype-slug';
-import rehypeExternalLinks from 'rehype-external-links';
+import path, { dirname, isAbsolute, join } from 'node:path';
 
-import type { DocsOptions, Options, PresetProperty } from '@storybook/types';
+import { logger } from 'storybook/internal/node-logger';
+import type { DocsOptions, Options, PresetProperty } from 'storybook/internal/types';
+
 import type { CsfPluginOptions } from '@storybook/csf-plugin';
-import { logger } from '@storybook/node-logger';
+
 import type { CompileOptions } from './compiler';
 
 /**
- * Get the resolvedReact preset, which points either to
- * the user's react dependencies or the react dependencies shipped with addon-docs
- * if the user has not installed react explicitly.
+ * Get the resolvedReact preset, which points either to the user's react dependencies or the react
+ * dependencies shipped with addon-docs if the user has not installed react explicitly.
  */
 const getResolvedReact = async (options: Options) => {
   const resolvedReact = (await options.presets.apply('resolvedReact', {})) as any;
@@ -40,6 +39,9 @@ async function webpack(
 
   const { csfPluginOptions = {}, mdxPluginOptions = {} } = options;
 
+  const rehypeSlug = (await import('rehype-slug')).default;
+  const rehypeExternalLinks = (await import('rehype-external-links')).default;
+
   const mdxLoaderOptions: CompileOptions = await options.presets.apply('mdxLoaderOptions', {
     ...mdxPluginOptions,
     mdxCompileOptions: {
@@ -62,6 +64,12 @@ async function webpack(
   const { react, reactDom, mdx } = await getResolvedReact(options);
 
   let alias;
+
+  /**
+   * Add aliases for `@storybook/addon-docs` & `@storybook/blocks` These must be singletons to avoid
+   * multiple instances of react & emotion being loaded, both would cause the components to fail to
+   * render.
+   */
   if (Array.isArray(webpackConfig.resolve?.alias)) {
     alias = [...webpackConfig.resolve?.alias];
     alias.push(
@@ -140,6 +148,7 @@ export const viteFinal = async (config: any, options: Options) => {
   // Use the resolvedReact preset to alias react and react-dom to either the users version or the version shipped with addon-docs
   const { react, reactDom, mdx } = await getResolvedReact(options);
 
+  const themingPath = dirname(require.resolve('storybook/theming'));
   const packageDeduplicationPlugin = {
     name: 'storybook:package-deduplication',
     enforce: 'pre',
@@ -151,13 +160,7 @@ export const viteFinal = async (config: any, options: Options) => {
           ...(isAbsolute(reactDom) && { 'react-dom/server': `${reactDom}/server.browser.js` }),
           'react-dom': reactDom,
           '@mdx-js/react': mdx,
-          /**
-           * The following aliases are used to ensure a single instance of these packages are used in situations where they are duplicated
-           * The packages will be duplicated by the package manager when the user has react installed with another version than 18.2.0
-           */
-          '@storybook/theming': dirname(require.resolve('@storybook/theming')),
-          '@storybook/components': dirname(require.resolve('@storybook/components')),
-          '@storybook/blocks': dirname(require.resolve('@storybook/blocks')),
+          'storybook/theming': themingPath,
         },
       },
     }),
@@ -180,11 +183,10 @@ const webpackX = webpack as any;
 const docsX = docs as any;
 
 /**
- * If the user has not installed react explicitly in their project,
- * the resolvedReact preset will not be set.
- * We then set it here in addon-docs to use addon-docs's react version that always exists.
- * This is just a fallback that never overrides the existing preset,
- * but ensures that there is always a resolved react.
+ * If the user has not installed react explicitly in their project, the resolvedReact preset will
+ * not be set. We then set it here in addon-docs to use addon-docs's react version that always
+ * exists. This is just a fallback that never overrides the existing preset, but ensures that there
+ * is always a resolved react.
  */
 export const resolvedReact = async (existing: any) => ({
   react: existing?.react ?? dirname(require.resolve('react/package.json')),
@@ -196,7 +198,6 @@ const optimizeViteDeps = [
   '@mdx-js/react',
   '@storybook/addon-docs > acorn-jsx',
   '@storybook/addon-docs',
-  '@storybook/addon-essentials/docs/mdx-react-shim',
   'markdown-to-jsx',
 ];
 

@@ -1,4 +1,6 @@
-import type { ElementContext, Spec, RunOptions } from 'axe-core';
+import type { ElementContext, RunOptions, Spec } from 'axe-core';
+
+type A11yTest = 'off' | 'todo' | 'error';
 
 export interface Setup {
   element?: ElementContext;
@@ -10,5 +12,6 @@ export interface A11yParameters {
   element?: ElementContext;
   config?: Spec;
   options?: RunOptions;
-  manual?: boolean;
+  disable?: boolean;
+  test?: A11yTest;
 }

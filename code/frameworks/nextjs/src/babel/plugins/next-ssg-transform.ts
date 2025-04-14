@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-loop-func */
 
 /**
- * Source: https://github.com/vercel/next.js/blob/canary/packages/next/src/build/babel/plugins/next-ssg-transform.ts
+ * Source:
+ * https://github.com/vercel/next.js/blob/canary/packages/next/src/build/babel/plugins/next-ssg-transform.ts
  */
-import type { NodePath, PluginObj, types as BabelTypes } from '@babel/core';
+import type { types as BabelTypes, NodePath, PluginObj } from '@babel/core';
 import { SERVER_PROPS_ID, STATIC_PROPS_ID } from 'next/constants';
 
 export const EXPORT_NAME_GET_STATIC_PROPS = 'getStaticProps';

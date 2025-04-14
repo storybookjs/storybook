@@ -12,10 +12,11 @@ Rename this local import and try again.
 
 exports[`upgrade-deprecated-types > typescript > upgrade imports with local names 1`] = `
 import {
-  StoryFn as Story_,
   Meta as ComponentMeta_,
   StoryObj as ComponentStoryObj_,
+  StoryFn as Story_,
 } from '@storybook/react';
+
 import { Cat } from './Cat';
 
 const meta = { title: 'Cat', component: Cat } satisfies ComponentMeta_<typeof Cat>;
@@ -35,6 +36,7 @@ export const E: Story_<CatProps> = (args) => <Cat {...args} />;
 
 exports[`upgrade-deprecated-types > typescript > upgrade namespaces 1`] = `
 import * as SB from '@storybook/react';
+
 import { Cat, CatProps } from './Cat';
 
 const meta = { title: 'Cat', component: Cat } satisfies SB.Meta<typeof Cat>;
@@ -53,7 +55,8 @@ export const E: SB.StoryFn<CatProps> = (args) => <Cat {...args} />;
 `;
 
 exports[`upgrade-deprecated-types > typescript > upgrade regular imports 1`] = `
-import { StoryFn, Meta, StoryObj } from '@storybook/react';
+import { Meta, StoryFn, StoryObj } from '@storybook/react';
+
 import { Cat, CatProps } from './Cat';
 
 const meta = { title: 'Cat', component: Cat } satisfies Meta<typeof Cat>;

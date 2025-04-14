@@ -1,19 +1,19 @@
+import type { Options } from 'storybook/internal/types';
+
 import type { Server } from 'http';
-import type { Options } from '@storybook/types';
-import { commonConfig } from './vite-config';
-import { getOptimizeDeps } from './optimizeDeps';
+import type { InlineConfig, ServerOptions } from 'vite';
+
 import { sanitizeEnvVars } from './envs';
-import { getAssetsInclude } from './assetsInclude';
+import { getOptimizeDeps } from './optimizeDeps';
+import { commonConfig } from './vite-config';
 
 export async function createViteServer(options: Options, devServer: Server) {
   const { presets } = options;
 
   const commonCfg = await commonConfig(options, 'development');
 
-  const config = {
+  const config: InlineConfig & { server: ServerOptions } = {
     ...commonCfg,
-    // Needed in Vite 5: https://github.com/storybookjs/storybook/issues/25256
-    assetsInclude: getAssetsInclude(commonCfg, ['/sb-preview/**']),
     // Set up dev server
     server: {
       middlewareMode: true,
@@ -28,6 +28,16 @@ export async function createViteServer(options: Options, devServer: Server) {
     appType: 'custom' as const,
     optimizeDeps: await getOptimizeDeps(commonCfg, options),
   };
+
+  const ipRegex = /^(?:\d{1,3}\.){3}\d{1,3}$|^(?:[a-fA-F0-9]{1,4}:){7}[a-fA-F0-9]{1,4}$/;
+
+  if (
+    !(config.server.allowedHosts as string[])?.length &&
+    options.host &&
+    !ipRegex.test(options.host)
+  ) {
+    config.server.allowedHosts = [options.host.toLowerCase()];
+  }
 
   const finalConfig = await presets.apply('viteFinal', config, options);
 

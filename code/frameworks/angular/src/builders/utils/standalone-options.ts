@@ -1,7 +1,12 @@
-import { BuilderContext } from '@angular-devkit/architect';
+import { BuilderOptions, CLIOptions, LoadOptions } from 'storybook/internal/types';
 
-import { LoadOptions, CLIOptions, BuilderOptions } from '@storybook/types';
-import { AngularBuilderOptions } from './setup';
+import { BuilderContext } from '@angular-devkit/architect';
+import {
+  AssetPattern,
+  SourceMapUnion,
+  StyleElement,
+  StylePreprocessorOptions,
+} from '@angular-devkit/build-angular/src/builders/browser/schema';
 
 export type StandaloneOptions = CLIOptions &
   LoadOptions &
@@ -9,8 +14,14 @@ export type StandaloneOptions = CLIOptions &
     mode?: 'static' | 'dev';
     enableProdMode: boolean;
     angularBrowserTarget?: string | null;
-    angularBuilderOptions?: AngularBuilderOptions;
+    angularBuilderOptions?: Record<string, any> & {
+      styles?: StyleElement[];
+      stylePreprocessorOptions?: StylePreprocessorOptions;
+      assets?: AssetPattern[];
+      sourceMap?: SourceMapUnion;
+      preserveSymlinks?: boolean;
+      experimentalZoneless?: boolean;
+    };
     angularBuilderContext?: BuilderContext | null;
     tsConfig?: string;
-    excludeChunks?: string[];
   };

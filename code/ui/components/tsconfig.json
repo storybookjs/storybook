@@ -1,9 +1,0 @@
-{
-  "extends": "../../tsconfig.json",
-  "compilerOptions": {
-    "types": ["react-syntax-highlighter"],
-    "skipLibCheck": true,
-    "strict": false
-  },
-  "include": ["src/**/*"]
-}

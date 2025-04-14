@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/angular';
-import { within, userEvent, expect } from '@storybook/test';
+import { expect, userEvent, within } from 'storybook/test';
 
 import { PageComponent } from './page.component';
 
@@ -17,7 +17,7 @@ type Story = StoryObj<PageComponent>;
 
 export const LoggedOut: Story = {};
 
-// More on interaction testing: https://storybook.js.org/docs/writing-tests/interaction-testing
+// More on component testing: https://storybook.js.org/docs/writing-tests/component-testing
 export const LoggedIn: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

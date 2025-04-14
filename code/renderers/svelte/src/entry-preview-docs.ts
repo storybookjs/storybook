@@ -1,11 +1,21 @@
-import type { ArgTypesEnhancer, DecoratorFunction } from '@storybook/types';
-import { enhanceArgTypes } from '@storybook/docs-tools';
+import type { ArgTypesExtractor } from 'storybook/internal/docs-tools';
+import { enhanceArgTypes } from 'storybook/internal/docs-tools';
+import type { ArgTypesEnhancer, DecoratorFunction } from 'storybook/internal/types';
+
 import { extractArgTypes } from './docs/extractArgTypes';
 import { extractComponentDescription } from './docs/extractComponentDescription';
 import { sourceDecorator } from './docs/sourceDecorator';
 import type { SvelteRenderer } from './types';
 
-export const parameters = {
+export const parameters: {
+  docs: {
+    story: {
+      inline: boolean;
+    };
+    extractArgTypes: ArgTypesExtractor;
+    extractComponentDescription: (component?: any) => string;
+  };
+} = {
   docs: {
     story: { inline: true },
     extractArgTypes,

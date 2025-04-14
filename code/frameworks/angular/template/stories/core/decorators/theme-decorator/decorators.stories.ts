@@ -1,7 +1,7 @@
 import { Args, Meta, componentWrapperDecorator } from '@storybook/angular';
 
 export const Base = (args: Args) => ({
-  template: 'Change theme with the brush in toolbar',
+  template: 'Change sb_theme with the brush in toolbar',
   props: {
     ...args,
   },
@@ -14,7 +14,7 @@ export default {
     componentWrapperDecorator(
       (story) => `<div [class]="myTheme">${story}</div>`,
 
-      ({ globals }) => ({ myTheme: `${globals['theme']}-theme` })
+      ({ globals }) => ({ myTheme: `${globals['sb_theme']}-theme` })
     ),
   ],
 } as Meta;

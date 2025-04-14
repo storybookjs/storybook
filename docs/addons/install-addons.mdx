@@ -1,0 +1,58 @@
+---
+title: 'Install addons'
+sidebar:
+  order: 1
+  title: Install
+---
+
+Storybook has [hundreds of reusable addons](https://storybook.js.org/integrations) packaged as NPM modules. Let's walk through how to extend Storybook by installing and registering addons.
+
+## Automatic installation
+
+Storybook includes a [`storybook add`](../api/cli-options.mdx#add) command to automate the setup of addons. Several community-led addons can be added using this command, except for preset addons. We encourage you to read the addon's documentation to learn more about its installation process.
+
+Run the `storybook add` command using your chosen package manager, and the CLI will update your Storybook configuration to include the addon and install any necessary dependencies.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-add-command.md" />
+
+{/* prettier-ignore-end */}
+
+<Callout variant="warning">
+  If you're attempting to install multiple addons at once, it will only install the first addon that was specified. This is a known limitation of the current implementation and will be addressed in a future release.
+</Callout>
+
+### Manual installation
+
+Storybook addons are always added through the [`addons`](../api/main-config/main-config-addons.mdx) configuration array in [`.storybook/main.js|ts`](../configure/index.mdx). The following example shows how to manually add the [Accessibility addon](https://storybook.js.org/addons/@storybook/addon-a11y) to Storybook.
+
+Run the following command with your package manager of choice to install the addon.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-a11y-install.md" />
+
+{/* prettier-ignore-end */}
+
+Next, update `.storybook/main.js|ts` to the following:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-a11y-register.md" />
+
+{/* prettier-ignore-end */}
+
+When you run Storybook, the accessibility testing addon will be enabled.
+
+![Storybook addon installed and registered](../_assets/addons/storybook-addon-installed-registered.png)
+
+### Removing addons
+
+To remove an addon from Storybook, you can choose to manually uninstall it and remove it from the configuration file (i.e., [`.storybook/main.js|ts`](../configure/index.mdx)) or opt-in to do it automatically via the CLI with the [`remove`](../api/cli-options.mdx#remove) command. For example, to remove the [Accessibility addon](https://storybook.js.org/addons/@storybook/addon-a11y) from Storybook with the CLI, run the following command:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-remove-command.md" />
+
+{/* prettier-ignore-end */}

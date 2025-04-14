@@ -1,9 +1,10 @@
 import { Meta, StoryObj } from '@storybook/angular';
+
 import {
-  EnumsComponent,
   EnumNumeric,
   EnumNumericInitial,
   EnumStringValues,
+  EnumsComponent,
 } from './enums.component';
 
 const meta: Meta<EnumsComponent> = {

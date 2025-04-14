@@ -1,0 +1,60 @@
+---
+title: 'features'
+sidebar:
+  order: 11
+  title: features
+---
+
+Parent: [main.js|ts configuration](./main-config.mdx)
+
+Type:
+
+```ts
+{
+  argTypeTargetsV7?: boolean;
+  backgroundsStoryGlobals?: boolean;
+  legacyDecoratorFileOrder?: boolean;
+  viewportStoryGlobals?: boolean;
+  developmentModeForBuild?: boolean;
+}
+```
+
+Enables Storybook's additional features.
+
+## `argTypeTargetsV7`
+
+(⚠️ **Experimental**)
+
+Type: `boolean`
+
+Filter args with a "target" on the type from the render function.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="main-config-features-arg-type-targets-v7.md" />
+
+{/* prettier-ignore-end */}
+
+## `legacyDecoratorFileOrder`
+
+Type: `boolean`
+
+Apply decorators from preview.js before decorators from addons or frameworks. [More information](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#changed-decorator-order-between-previewjs-and-addonsframeworks).
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="main-config-features-legacy-decorator-file-order.md" />
+
+{/* prettier-ignore-end */}
+
+## `developmentModeForBuild`
+
+Type: `boolean`
+
+Set `NODE_ENV` to `'development'` in built Storybooks for better testing and debugging capabilities.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="main-config-features-development-mode-for-build.md" />
+
+{/* prettier-ignore-end */}

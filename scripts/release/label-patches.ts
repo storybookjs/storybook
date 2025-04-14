@@ -1,10 +1,12 @@
-import program from 'commander';
-import { v4 as uuidv4 } from 'uuid';
+import { program } from 'commander';
+// eslint-disable-next-line depend/ban-dependencies
 import ora from 'ora';
+import { v4 as uuidv4 } from 'uuid';
+
 import { esMain } from '../utils/esmain';
-import { getLabelIds, githubGraphQlClient, getUnpickedPRs } from './utils/github-client';
 import { getPullInfoFromCommits, getRepo } from './utils/get-changes';
 import { getLatestTag, git } from './utils/git-client';
+import { getLabelIds, getUnpickedPRs, githubGraphQlClient } from './utils/github-client';
 
 program
   .name('label-patches')

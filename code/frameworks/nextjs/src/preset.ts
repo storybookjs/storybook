@@ -1,37 +1,38 @@
 // https://storybook.js.org/docs/react/addons/writing-presets
-import { dirname, join } from 'path';
-import type { PresetProperty } from '@storybook/types';
+import { existsSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+
+import { getProjectRoot } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
+import type { PresetProperty } from 'storybook/internal/types';
+
 import type { ConfigItem, PluginItem, TransformOptions } from '@babel/core';
 import { loadPartialConfig } from '@babel/core';
-import { getProjectRoot } from '@storybook/core-common';
-import fs from 'fs';
 import semver from 'semver';
-import { configureConfig } from './config/webpack';
-import { configureCss } from './css/webpack';
-import { configureImports } from './imports/webpack';
-import { configureStyledJsx } from './styledJsx/webpack';
-import { configureImages } from './images/webpack';
-import { configureRSC } from './rsc/webpack';
-import { configureRuntimeNextjsVersionResolution, getNextjsVersion } from './utils';
-import type { FrameworkOptions, StorybookConfig } from './types';
-import TransformFontImports from './font/babel';
-import { configureNextFont } from './font/webpack/configureNextFont';
+
 import nextBabelPreset from './babel/preset';
-import { configureNodePolyfills } from './nodePolyfills/webpack';
-import { configureSWCLoader } from './swc/loader';
-import { configureBabelLoader } from './babel/loader';
-import { configureFastRefresh } from './fastRefresh/webpack';
-import { configureAliases } from './aliases/webpack';
-import { logger } from '@storybook/node-logger';
-import { configureNextExportMocks } from './export-mocks/webpack';
-import { configureCompatibilityAliases } from './compatibility/compatibility-map';
+import { configureConfig } from './config/webpack';
+import TransformFontImports from './font/babel';
+import type { FrameworkOptions, StorybookConfig } from './types';
 
 export const addons: PresetProperty<'addons'> = [
   dirname(require.resolve(join('@storybook/preset-react-webpack', 'package.json'))),
 ];
 
 export const core: PresetProperty<'core'> = async (config, options) => {
-  const framework = await options.presets.apply('framework');
+  const framework = await options.presets.apply<StorybookConfig['framework']>('framework');
+
+  // Load the Next.js configuration before we need it in webpackFinal (below).
+  // This gives Next.js an opportunity to override some of webpack's internals
+  // (see next/dist/server/config-utils.js) before @storybook/builder-webpack5
+  // starts to use it. Without this, webpack's file system cache (fsCache: true)
+  // does not work.
+  await configureConfig({
+    // Pass in a dummy webpack config object for now, since we don't want to
+    // modify the real one yet. We pass in the real one in webpackFinal.
+    baseConfig: {},
+    nextConfigPath: typeof framework === 'string' ? undefined : framework.options.nextConfigPath,
+  });
 
   return {
     ...config,
@@ -108,6 +109,29 @@ export const babel: PresetProperty<'babel'> = async (baseConfig: TransformOption
     presets,
     babelrc: false,
     configFile: false,
+    overrides: [
+      ...(options?.overrides ?? []),
+      // We need to re-apply the default storybook babel override from:
+      // https://github.com/storybookjs/storybook/blob/next/code/core/src/core-server/presets/common-preset.ts
+      // Because it get lost in the loadPartialConfig call above.
+      // See https://github.com/storybookjs/storybook/issues/28467
+      {
+        include: /(story|stories)\.[cm]?[jt]sx?$/,
+        presets: [
+          [
+            'next/dist/compiled/babel/preset-env',
+            {
+              bugfixes: true,
+              targets: {
+                chrome: 100,
+                safari: 15,
+                firefox: 91,
+              },
+            },
+          ],
+        ],
+      },
+    ],
   };
 };
 
@@ -118,9 +142,25 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (baseConfig, 
     nextConfigPath,
   });
 
+  // Use dynamic imports to ensure these modules that use webpack load after
+  // Next.js has been configured (above), and has replaced webpack with its precompiled
+  // version.
+  const { configureNextFont } = await import('./font/webpack/configureNextFont');
+  const { configureRuntimeNextjsVersionResolution, getNextjsVersion } = await import('./utils');
+  const { configureImports } = await import('./imports/webpack');
+  const { configureCss } = await import('./css/webpack');
+  const { configureImages } = await import('./images/webpack');
+  const { configureStyledJsx } = await import('./styledJsx/webpack');
+  const { configureNodePolyfills } = await import('./nodePolyfills/webpack');
+  const { configureAliases } = await import('./aliases/webpack');
+  const { configureFastRefresh } = await import('./fastRefresh/webpack');
+  const { configureRSC } = await import('./rsc/webpack');
+  const { configureSWCLoader } = await import('./swc/loader');
+  const { configureBabelLoader } = await import('./babel/loader');
+
   const babelRCPath = join(getProjectRoot(), '.babelrc');
   const babelConfigPath = join(getProjectRoot(), 'babel.config.js');
-  const hasBabelConfig = fs.existsSync(babelRCPath) || fs.existsSync(babelConfigPath);
+  const hasBabelConfig = existsSync(babelRCPath) || existsSync(babelConfigPath);
   const nextjsVersion = getNextjsVersion();
   const isDevelopment = options.configType !== 'PRODUCTION';
 
@@ -136,8 +176,6 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (baseConfig, 
   configureStyledJsx(baseConfig);
   configureNodePolyfills(baseConfig);
   configureAliases(baseConfig);
-  configureCompatibilityAliases(baseConfig);
-  configureNextExportMocks(baseConfig);
 
   if (isDevelopment) {
     configureFastRefresh(baseConfig);

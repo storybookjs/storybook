@@ -64,7 +64,10 @@ export interface BenchResults {
   devManagerHeaderVisible: number;
   /** Time to browse to index.html and load the story index */
   devManagerIndexVisible: number;
-  /** Time to browse to index.html and load iframe content and the story is rendered, for the very first run */
+  /**
+   * Time to browse to index.html and load iframe content and the story is rendered, for the very
+   * first run
+   */
   devStoryVisibleUncached: number;
   /** Time to browse to index.html and load iframe content and the story is rendered */
   devStoryVisible: number;

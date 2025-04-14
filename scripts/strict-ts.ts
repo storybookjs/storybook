@@ -1,6 +1,8 @@
+import { existsSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+
+// eslint-disable-next-line depend/ban-dependencies
 import glob from 'fast-glob';
-import path from 'path';
-import fsSync from 'node:fs';
 import JSON5 from 'json5';
 
 const files = glob.sync('**/*/tsconfig.json', {
@@ -12,16 +14,16 @@ const files = glob.sync('**/*/tsconfig.json', {
   const packages = files
     .filter((file) => !file.includes('node_modules') && !file.includes('dist'))
     .map((file) => {
-      const packageJson = path.join(path.dirname(file), 'package.json');
+      const packageJson = join(dirname(file), 'package.json');
       let packageName;
-      if (fsSync.existsSync(packageJson)) {
-        const json = fsSync.readFileSync(packageJson, { encoding: 'utf-8' });
+      if (existsSync(packageJson)) {
+        const json = readFileSync(packageJson, { encoding: 'utf-8' });
         packageName = JSON5.parse(json).name;
       }
 
       let strict;
-      if (fsSync.existsSync(file)) {
-        const tsconfig = fsSync.readFileSync(file, { encoding: 'utf-8' });
+      if (existsSync(file)) {
+        const tsconfig = readFileSync(file, { encoding: 'utf-8' });
         const tsconfigJson = JSON5.parse(tsconfig);
         strict = tsconfigJson?.compilerOptions?.strict ?? false;
       }

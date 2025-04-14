@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
-import { within, userEvent, expect } from '@storybook/test';
+
+import { expect, userEvent, within } from 'storybook/test';
+
 import MyPage from './Page.vue';
 
 const meta = {
@@ -20,7 +22,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-// More on interaction testing: https://storybook.js.org/docs/writing-tests/interaction-testing
+// More on component testing: https://storybook.js.org/docs/writing-tests/component-testing
 export const LoggedIn: Story = {
   play: async ({ canvasElement }: any) => {
     const canvas = within(canvasElement);

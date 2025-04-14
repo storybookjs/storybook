@@ -1,5 +1,6 @@
 /**
- * Source: https://github.com/vercel/next.js/blob/canary/packages/next/src/build/babel/plugins/commonjs.ts
+ * Source:
+ * https://github.com/vercel/next.js/blob/canary/packages/next/src/build/babel/plugins/commonjs.ts
  */
 import type { NodePath, PluginObj, types } from '@babel/core';
 import commonjsPlugin from 'next/dist/compiled/babel/plugin-transform-modules-commonjs';
@@ -14,8 +15,13 @@ export default function CommonJSModulePlugin(...args: any): PluginObj {
           let foundModuleExports = false;
           path.traverse({
             MemberExpression(expressionPath: any) {
-              if (expressionPath.node.object.name !== 'module') return;
-              if (expressionPath.node.property.name !== 'exports') return;
+              if (expressionPath.node.object.name !== 'module') {
+                return;
+              }
+
+              if (expressionPath.node.property.name !== 'exports') {
+                return;
+              }
               foundModuleExports = true;
             },
           });

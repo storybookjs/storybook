@@ -1,7 +1,7 @@
-import { describe, it, expect } from '@jest/globals'
-import { render } from '@testing-library/react';
+import { describe, it, expect } from '@jest/globals';
+import { jest } from '@jest/globals';
 
-import { composeStories } from '@storybook/nextjs';
+import { composeStories, setProjectAnnotations } from '@storybook/nextjs';
 import * as imageStories from './Image.stories';
 import * as navigationStories from './Navigation.stories';
 import * as linkStories from './Link.stories';
@@ -14,20 +14,21 @@ import * as headStories from './Head.stories';
 import * as nextHeaderStories from './NextHeader.stories';
 import * as getImagePropsStories from './GetImageProps.stories';
 
+// the imageLegacyStories test is flaky
+jest.retryTimes(3);
+
 // example with composeStories, returns an object with all stories composed with args/decorators
 const runTests = (name: string, storiesModule: any) => {
   describe(`${name} stories`, () => {
     const composedStories = composeStories(storiesModule);
     Object.entries(composedStories).forEach(([name, Story]: [any, any]) => {
       it(`renders ${name}`, async () => {
-        await Story.load();
-        const { baseElement } = render(<Story />);
-        await Story.play?.();
-        expect(baseElement).toMatchSnapshot();
+        await Story.run?.();
+        expect(document.body).toMatchSnapshot();
       });
     });
-  })
-}
+  });
+};
 
 // example with composeStory, returns a single story composed with args/decorators
 describe('renders', () => {

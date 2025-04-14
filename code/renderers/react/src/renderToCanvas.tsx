@@ -1,10 +1,11 @@
-import { global } from '@storybook/global';
 import type { FC } from 'react';
-import React, { Component as ReactComponent, StrictMode, Fragment } from 'react';
-import { renderElement, unmountElement } from '@storybook/react-dom-shim';
+import React, { Fragment, Component as ReactComponent, StrictMode } from 'react';
 
-import type { RenderContext } from '@storybook/types';
+import type { RenderContext } from 'storybook/internal/types';
 
+import { global } from '@storybook/global';
+
+import { getAct } from './act-compat';
 import type { ReactRenderer, StoryContext } from './types';
 
 const { FRAMEWORK_OPTIONS } = global;
@@ -44,6 +45,23 @@ class ErrorBoundary extends ReactComponent<{
 
 const Wrapper = FRAMEWORK_OPTIONS?.strictMode ? StrictMode : Fragment;
 
+const actQueue: (() => Promise<void>)[] = [];
+let isActing = false;
+
+const processActQueue = async () => {
+  if (isActing || actQueue.length === 0) {
+    return;
+  }
+
+  isActing = true;
+  const actTask = actQueue.shift();
+  if (actTask) {
+    await actTask();
+  }
+  isActing = false;
+  processActQueue();
+};
+
 export async function renderToCanvas(
   {
     storyContext,
@@ -54,9 +72,15 @@ export async function renderToCanvas(
   }: RenderContext<ReactRenderer>,
   canvasElement: ReactRenderer['canvasElement']
 ) {
+  const { renderElement, unmountElement } = await import('@storybook/react-dom-shim');
   const Story = unboundStoryFn as FC<StoryContext<ReactRenderer>>;
 
-  const content = (
+  // eslint-disable-next-line no-underscore-dangle
+  const isPortableStory = storyContext.parameters.__isPortableStory;
+
+  const content = isPortableStory ? (
+    <Story {...storyContext} />
+  ) : (
     <ErrorBoundary showMain={showMain} showException={showException}>
       <Story {...storyContext} />
     </ErrorBoundary>
@@ -74,7 +98,24 @@ export async function renderToCanvas(
     unmountElement(canvasElement);
   }
 
-  await renderElement(element, canvasElement, storyContext?.parameters?.react?.rootOptions);
+  const act = await getAct();
+  await new Promise<void>(async (resolve, reject) => {
+    actQueue.push(async () => {
+      try {
+        await act(async () => {
+          await renderElement(element, canvasElement, storyContext?.parameters?.react?.rootOptions);
+        });
+        resolve();
+      } catch (e) {
+        reject(e);
+      }
+    });
+    processActQueue();
+  });
 
-  return () => unmountElement(canvasElement);
+  return async () => {
+    await act(() => {
+      unmountElement(canvasElement);
+    });
+  };
 }

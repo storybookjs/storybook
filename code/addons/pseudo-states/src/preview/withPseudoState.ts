@@ -8,8 +8,9 @@ import {
   STORY_RENDERED,
   UPDATE_GLOBALS,
 } from 'storybook/internal/core-events';
-import { addons, useEffect, useMemo } from 'storybook/internal/preview-api';
 import type { DecoratorFunction } from 'storybook/internal/types';
+
+import { addons, useEffect, useMemo, useRef } from 'storybook/preview-api';
 
 import type { PseudoState } from '../constants';
 import { PSEUDO_STATES } from '../constants';
@@ -153,11 +154,14 @@ export const withPseudoState: DecoratorFunction = (
     );
   }, [rootSelector, viewMode, id]);
 
+  // Use a ref to avoid a dependency on globals in the useEffect
+  const globalsRef = useRef(globals);
+
   // Sync parameter to globals, used by the toolbar (only in canvas as this
   // doesn't make sense for docs because many stories are displayed at once)
   useEffect(() => {
     const config = pseudoConfig(parameter);
-    if (viewMode === 'story' && !equals(config, globals)) {
+    if (viewMode === 'story' && !equals(config, globalsRef.current)) {
       channel.emit(UPDATE_GLOBALS, {
         globals: { pseudo: config },
       });

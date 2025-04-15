@@ -4,12 +4,12 @@ export const ShadowRoot = ({ label = 'Hello from shadow DOM' }) => {
   const ref = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
-    if (!ref.current?.attachShadow || !ref.current?.shadowRoot) {
+    if (!ref.current?.attachShadow) {
       return;
     }
 
     ref.current.attachShadow({ mode: 'closed' });
-    ref.current.shadowRoot.innerHTML = `
+    ref.current.shadowRoot!.innerHTML = `
       <style>
         button {
           font-family: "Nunito Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;

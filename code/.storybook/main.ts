@@ -40,6 +40,10 @@ const config = defineMain({
       titlePrefix: 'component-testing',
     },
     {
+      directory: '../core/src/controls/components',
+      titlePrefix: 'controls',
+    },
+    {
       directory: '../lib/blocks/src',
       titlePrefix: 'blocks',
     },
@@ -131,10 +135,6 @@ const config = defineMain({
         },
       },
       plugins: [react()],
-      optimizeDeps: {
-        force: true,
-        include: ['@storybook/blocks'],
-      },
       build: {
         // disable sourcemaps in CI to not run out of memory
         sourcemap: process.env.CI !== 'true',

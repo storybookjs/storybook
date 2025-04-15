@@ -21,7 +21,6 @@
     "@storybook/addon-links": "portal:../../../code/addons/links",
     "@storybook/addon-themes": "portal:../../../code/addons/themes",
     "@storybook/angular": "portal:../../../code/frameworks/angular",
-    "@storybook/blocks": "portal:../../../code/lib/blocks",
     "@storybook/builder-vite": "portal:../../../code/builders/builder-vite",
     "@storybook/builder-webpack5": "portal:../../../code/builders/builder-webpack5",
     "@storybook/codemod": "portal:../../../code/lib/codemod",

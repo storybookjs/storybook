@@ -24,6 +24,7 @@ export const consolidatedPackages = {
   '@storybook/test': 'storybook/test',
   '@storybook/experimental-nextjs-vite': '@storybook/nextjs-vite',
   '@storybook/instrumenter': 'storybook/internal/instrumenter',
+  '@storybook/blocks': '@storybook/addon-docs/blocks',
 } as const;
 
 export type ConsolidatedPackage = keyof typeof consolidatedPackages;

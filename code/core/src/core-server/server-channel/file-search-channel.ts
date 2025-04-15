@@ -20,7 +20,7 @@ import {
 import { telemetry } from 'storybook/internal/telemetry';
 import type { CoreConfig, Options, SupportedRenderers } from 'storybook/internal/types';
 
-import { doesStoryFileExist, getStoryMetadata } from '../utils/get-new-story-file';
+import { doesStoryFileExist, getStoryMetadata } from '../utils/create-new-story-file';
 import { getParser } from '../utils/parser';
 import { searchFiles } from '../utils/search-files';
 
@@ -57,16 +57,16 @@ export async function initFileSearchChannel(
 
           try {
             const content = await readFile(join(projectRoot, file), 'utf-8');
-            const { storyFileName } = getStoryMetadata(join(projectRoot, file));
+            const { storyFileName, isSvelte } = getStoryMetadata(join(projectRoot, file));
             const dir = dirname(file);
 
             const storyFileExists = doesStoryFileExist(join(projectRoot, dir), storyFileName);
 
-            const info = await parser.parse(content);
-
             return {
               filepath: file,
-              exportedComponents: info.exports,
+              exportedComponents: isSvelte
+                ? [{ name: file.replace('.svelte', ''), default: true }]
+                : (await parser.parse(content)).exports,
               storyFileExists,
             };
           } catch (e) {

@@ -11,22 +11,23 @@ import {
 } from 'storybook/internal/common';
 import type { CreateNewStoryRequestPayload } from 'storybook/internal/core-events';
 import { isCsfFactoryPreview } from 'storybook/internal/csf-tools';
-import type { Options } from 'storybook/internal/types';
+import type { Indexer, Options } from 'storybook/internal/types';
 
 import { loadConfig } from '../../csf-tools';
 import { getCsfFactoryTemplateForNewStoryFile } from './new-story-templates/csf-factory-template';
 import { getJavaScriptTemplateForNewStoryFile } from './new-story-templates/javascript';
 import { getTypeScriptTemplateForNewStoryFile } from './new-story-templates/typescript';
 
-export async function getNewStoryFile(
+export const csfCreateNewStoryFile: NonNullable<Indexer['createNewStoryFile']>['create'] = async (
   {
     componentFilePath,
     componentExportName,
     componentIsDefaultExport,
     componentExportCount,
-  }: CreateNewStoryRequestPayload,
-  options: Options
-) {
+    newStoryName,
+  },
+  options
+) => {
   const cwd = getProjectRoot();
 
   const frameworkPackageName = await getFrameworkName(options);
@@ -44,8 +45,6 @@ export async function getNewStoryFile(
   const storyFileNameWithExtension = `${storyFileName}.${storyFileExtension}`;
   const alternativeStoryFileNameWithExtension = `${basenameWithoutExtension}.${componentExportName}.stories.${storyFileExtension}`;
 
-  const exportedStoryName = 'Default';
-
   let useCsfFactory = false;
   try {
     const previewConfig = findConfigFile('preview', options.configDir);
@@ -57,50 +56,62 @@ export async function getNewStoryFile(
     // TODO: improve this later on, for now while CSF factories are experimental, just fallback to CSF3
   }
 
-  let storyFileContent = '';
+  let code = '';
   if (useCsfFactory) {
-    storyFileContent = await getCsfFactoryTemplateForNewStoryFile({
+    code = await getCsfFactoryTemplateForNewStoryFile({
       basenameWithoutExtension,
       componentExportName,
       componentIsDefaultExport,
-      exportedStoryName,
+      exportedStoryName: newStoryName,
     });
   } else {
-    storyFileContent =
+    code =
       isTypescript && rendererPackage
         ? await getTypeScriptTemplateForNewStoryFile({
             basenameWithoutExtension,
             componentExportName,
             componentIsDefaultExport,
             rendererPackage,
-            exportedStoryName,
+            exportedStoryName: newStoryName,
           })
         : await getJavaScriptTemplateForNewStoryFile({
             basenameWithoutExtension,
             componentExportName,
             componentIsDefaultExport,
-            exportedStoryName,
+            exportedStoryName: newStoryName,
           });
   }
 
-  const storyFilePath =
+  const newStoryFilePath =
     doesStoryFileExist(join(cwd, dir), storyFileName) && componentExportCount > 1
       ? join(cwd, dir, alternativeStoryFileNameWithExtension)
       : join(cwd, dir, storyFileNameWithExtension);
 
-  return { storyFilePath, exportedStoryName, storyFileContent, dirname };
-}
+  return {
+    newStoryFilePath,
+    code,
+  };
+};
 
-export const getStoryMetadata = (componentFilePath: string) => {
+export const getStoryMetadata = (
+  componentFilePath: string
+): {
+  storyFileName: string;
+  storyFileExtension: string;
+  isTypescript: boolean;
+  isSvelte: boolean;
+} => {
+  const isSvelte = /\.svelte$/.test(componentFilePath);
   const isTypescript = /\.(ts|tsx|mts|cts)$/.test(componentFilePath);
   const base = basename(componentFilePath);
   const extension = extname(componentFilePath);
   const basenameWithoutExtension = base.replace(extension, '');
-  const storyFileExtension = isTypescript ? 'tsx' : 'jsx';
+  const storyFileExtension = isSvelte ? 'svelte' : isTypescript ? 'tsx' : 'jsx';
   return {
     storyFileName: `${basenameWithoutExtension}.stories`,
     storyFileExtension,
     isTypescript,
+    isSvelte,
   };
 };
 
@@ -109,6 +120,7 @@ export const doesStoryFileExist = (parentFolder: string, storyFileName: string) 
     existsSync(join(parentFolder, `${storyFileName}.ts`)) ||
     existsSync(join(parentFolder, `${storyFileName}.tsx`)) ||
     existsSync(join(parentFolder, `${storyFileName}.js`)) ||
-    existsSync(join(parentFolder, `${storyFileName}.jsx`))
+    existsSync(join(parentFolder, `${storyFileName}.jsx`)) ||
+    existsSync(join(parentFolder, `${storyFileName}.svelte`))
   );
 };

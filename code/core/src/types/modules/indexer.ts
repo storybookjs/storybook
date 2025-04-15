@@ -1,3 +1,4 @@
+import type { Options } from '..';
 import type { ComponentTitle, Parameters, Path, StoryId, StoryName, Tag } from './csf';
 
 type ExportName = string;
@@ -62,6 +63,33 @@ export type Indexer = BaseIndexer & {
    * @returns A promise that resolves to an array of {@link IndexInput} objects.
    */
   createIndex: (fileName: string, options: IndexerOptions) => Promise<IndexInput[]>;
+  saveStory?: (params: {
+    sourceFilePath: string;
+    sourceStoryId: StoryId;
+    name: StoryName | undefined;
+    args: Record<string, any>;
+  }) => Promise<{
+    sourceStoryName: StoryName;
+    newStoryName: StoryName | undefined;
+    newStoryId: StoryId | undefined;
+    code: string;
+  }>;
+  createNewStoryFile?: {
+    test: RegExp;
+    create: (
+      params: {
+        componentFilePath: string;
+        componentExportName: string;
+        componentIsDefaultExport: boolean;
+        componentExportCount: number;
+        newStoryName: StoryName;
+      },
+      options: Options
+    ) => Promise<{
+      newStoryFilePath: string;
+      code: string;
+    }>;
+  };
 };
 
 export interface BaseIndexEntry {

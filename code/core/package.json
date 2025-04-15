@@ -148,6 +148,11 @@
       "import": "./dist/highlight/index.js",
       "require": "./dist/highlight/index.cjs"
     },
+    "./highlight": {
+      "types": "./dist/highlight/index.d.ts",
+      "import": "./dist/highlight/index.js",
+      "require": "./dist/highlight/index.cjs"
+    },
     "./internal/highlight/preview": {
       "types": "./dist/highlight/preview.d.ts",
       "import": "./dist/highlight/preview.js",
@@ -462,6 +467,9 @@
         "./dist/outline/preview.d.ts"
       ],
       "internal/highlight": [
+        "./dist/highlight/index.d.ts"
+      ],
+      "highlight": [
         "./dist/highlight/index.d.ts"
       ],
       "internal/highlight/preview": [

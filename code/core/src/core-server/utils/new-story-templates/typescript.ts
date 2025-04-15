@@ -7,8 +7,8 @@ interface TypeScriptTemplateData {
   basenameWithoutExtension: string;
   componentExportName: string;
   componentIsDefaultExport: boolean;
-  /** The renderer package name, e.g. @storybook/nextjs */
-  rendererPackage: string;
+  /** The framework package name, e.g. @storybook/nextjs */
+  frameworkPackage: string;
   /** The exported name of the default story */
   exportedStoryName: string;
 }
@@ -22,7 +22,7 @@ export async function getTypeScriptTemplateForNewStoryFile(data: TypeScriptTempl
     : `import { ${importName} } from './${data.basenameWithoutExtension}'`;
 
   return dedent`
-  import type { Meta, StoryObj } from '${data.rendererPackage}';
+  import type { Meta, StoryObj } from '${data.frameworkPackage}';
 
   ${importStatement};
 

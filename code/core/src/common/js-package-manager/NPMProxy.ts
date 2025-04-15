@@ -2,8 +2,8 @@ import { existsSync, readFileSync } from 'node:fs';
 import { platform } from 'node:os';
 import { join } from 'node:path';
 
-import { logger } from '@storybook/core/node-logger';
-import { FindPackageVersionsError } from '@storybook/core/server-errors';
+import { logger } from 'storybook/internal/node-logger';
+import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 
 import { findUp } from 'find-up';
 import sort from 'semver/functions/sort.js';
@@ -28,8 +28,8 @@ type NpmDependencies = {
 export type NpmListOutput = {
   dependencies: NpmDependencies;
 };
+const NPM_ERROR_REGEX = /npm (ERR!|error) (code|errno) (\w+)/i;
 
-const NPM_ERROR_REGEX = /npm ERR! code (\w+)/;
 const NPM_ERROR_CODES = {
   E401: 'Authentication failed or is required.',
   E403: 'Access to the resource is forbidden.',
@@ -83,10 +83,6 @@ export class NPMProxy extends JsPackageManager {
 
   getRemoteRunCommand(): string {
     return 'npx';
-  }
-
-  async getNpmVersion(): Promise<string> {
-    return this.executeCommand({ command: 'npm', args: ['--version'] });
   }
 
   public async getPackageJSON(
@@ -198,7 +194,11 @@ export class NPMProxy extends JsPackageManager {
     return url === 'undefined' ? undefined : url;
   }
 
-  protected async runAddDeps(dependencies: string[], installAsDevDependencies: boolean) {
+  protected async runAddDeps(
+    dependencies: string[],
+    installAsDevDependencies: boolean,
+    writeOutputToFile = true
+  ) {
     const { logStream, readLogFile, moveLogFile, removeLogFile } = await createLogStream();
     let args = [...dependencies];
 
@@ -210,15 +210,15 @@ export class NPMProxy extends JsPackageManager {
       await this.executeCommand({
         command: 'npm',
         args: ['install', ...args, ...this.getInstallArgs()],
-        stdio: process.env.CI ? 'inherit' : ['ignore', logStream, logStream],
+        stdio: process.env.CI || !writeOutputToFile ? 'inherit' : ['ignore', logStream, logStream],
       });
     } catch (err) {
+      if (!writeOutputToFile) {
+        throw err;
+      }
       const stdout = await readLogFile();
-
       const errorMessage = this.parseErrorFromLogs(stdout);
-
       await moveLogFile();
-
       throw new Error(
         dedent`${errorMessage}
         
@@ -320,7 +320,7 @@ export class NPMProxy extends JsPackageManager {
     const match = logs.match(NPM_ERROR_REGEX);
 
     if (match) {
-      const errorCode = match[1] as keyof typeof NPM_ERROR_CODES;
+      const errorCode = match[3] as keyof typeof NPM_ERROR_CODES;
       if (errorCode) {
         finalMessage = `${finalMessage} ${errorCode}`;
       }

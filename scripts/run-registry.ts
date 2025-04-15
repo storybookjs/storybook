@@ -1,12 +1,12 @@
 import { exec } from 'node:child_process';
-import { mkdir } from 'node:fs/promises';
+import { mkdir, rm } from 'node:fs/promises';
 import http from 'node:http';
 import type { Server } from 'node:http';
 import { join, resolve as resolvePath } from 'node:path';
 
 import { program } from 'commander';
 // eslint-disable-next-line depend/ban-dependencies
-import { execa, execaSync } from 'execa';
+import { execa } from 'execa';
 // eslint-disable-next-line depend/ban-dependencies
 import { pathExists, readJSON, remove } from 'fs-extra';
 import pLimit from 'p-limit';
@@ -138,7 +138,7 @@ const publish = async (packages: { name: string; location: string }[], url: stri
             const command = `cd ${resolvePath(
               '../code',
               location
-            )} && yarn pack --out=${PACKS_DIRECTORY}/${tarballFilename} && cd ${PACKS_DIRECTORY} && npm publish ./${tarballFilename} --registry ${url} --force --ignore-scripts`;
+            )} && yarn pack --out=${PACKS_DIRECTORY}/${tarballFilename} && cd ${PACKS_DIRECTORY} && npm publish ./${tarballFilename} --registry ${url} --force --tag="xyz" --ignore-scripts`;
             exec(command, (e) => {
               if (e) {
                 rej(e);
@@ -207,7 +207,7 @@ const run = async () => {
     await publish(packages, 'http://localhost:6002');
   }
 
-  await execa('npx', ['rimraf', '.npmrc'], { cwd: root });
+  await rm(join(root, '.npmrc'), { force: true });
 
   if (!opts.open) {
     verdaccioServer.close();
@@ -217,6 +217,7 @@ const run = async () => {
 
 run().catch((e) => {
   logger.error(e);
-  execaSync('npx', ['rimraf', '.npmrc'], { cwd: root });
-  process.exit(1);
+  rm(join(root, '.npmrc'), { force: true }).then(() => {
+    process.exit(1);
+  });
 });

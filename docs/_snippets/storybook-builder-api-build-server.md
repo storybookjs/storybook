@@ -32,4 +32,3 @@ export async function build(options: ExtendedOptions) {
   await viteBuild(finalConfig);
 }
 ```
-

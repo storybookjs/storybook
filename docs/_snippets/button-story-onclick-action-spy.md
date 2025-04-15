@@ -1,6 +1,6 @@
 ```ts filename="Button.stories.ts" renderer="angular" language="ts"
 import type { Meta, StoryObj } from '@storybook/angular';
-import { fn } from '@storybook/test';
+import { fn } from 'storybook/test';
 
 import { Button } from './button.component';
 
@@ -14,7 +14,7 @@ export default meta;
 ```
 
 ```js filename="Button.stories.js|jsx" renderer="common" language="js"
-import { fn } from '@storybook/test';
+import { fn } from 'storybook/test';
 import { Button } from './Button';
 
 export default {
@@ -27,7 +27,7 @@ export default {
 ```ts filename="Button.stories.ts|tsx" renderer="common" language="ts-4-9"
 // Replace your-framework with the name of your framework
 import type { Meta } from '@storybook/your-framework';
-import { fn } from '@storybook/test';
+import { fn } from 'storybook/test';
 
 import { Button } from './Button';
 
@@ -43,7 +43,7 @@ export default meta;
 ```ts filename="Button.stories.ts|tsx" renderer="common" language="ts"
 // Replace your-framework with the name of your framework
 import type { Meta } from '@storybook/your-framework';
-import { fn } from '@storybook/test';
+import { fn } from 'storybook/test';
 
 import { Button } from './Button';
 
@@ -55,4 +55,3 @@ const meta: Meta<typeof Button> = {
 
 export default meta;
 ```
-

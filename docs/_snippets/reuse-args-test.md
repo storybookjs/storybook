@@ -34,7 +34,7 @@ test('reuses args from composed story', () => {
 });
 ```
 
-```js filename="tests/Button.test.js" renderer="vue" language="js" tabTitle="3"
+```js filename="tests/Button.test.js" renderer="vue" language="js"
 import { render, screen } from '@testing-library/vue';
 
 import { composeStories } from '@storybook/vue3';
@@ -52,7 +52,7 @@ test('reuses args from composed story', () => {
 });
 ```
 
-```ts filename="tests/Button.test.ts" renderer="vue" language="ts" tabTitle="3"
+```ts filename="tests/Button.test.ts" renderer="vue" language="ts"
 import { render, screen } from '@testing-library/vue';
 
 import { composeStories } from '@storybook/vue3';
@@ -69,4 +69,3 @@ test('reuses args from composed story', () => {
   expect(buttonElement.textContent).toEqual(Primary.args.label);
 });
 ```
-

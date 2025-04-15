@@ -1,16 +1,52 @@
-// @TODO: use addon-interactions and remove the rule disable above
 import React, { useState } from 'react';
 
-import type { Meta, StoryObj } from '@storybook/react';
-import { expect, within } from '@storybook/test';
+import {
+  type Addon_Collection,
+  type Addon_TestProviderType,
+  Addon_TypesEnum,
+} from 'storybook/internal/types';
 
-import type { ComponentEntry, IndexHash } from '@storybook/core/manager-api';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { action } from '@storybook/addon-actions';
+import { action } from 'storybook/actions';
+import { type ComponentEntry, type IndexHash, ManagerContext } from 'storybook/manager-api';
+import { expect, fn, userEvent, within } from 'storybook/test';
 
 import { DEFAULT_REF_ID } from './Sidebar';
 import { Tree } from './Tree';
 import { index } from './mockdata.large';
+
+const managerContext: any = {
+  state: {
+    docsOptions: {
+      defaultName: 'Docs',
+      autodocs: 'tag',
+      docsMode: false,
+    },
+  },
+  api: {
+    on: fn().mockName('api::on'),
+    off: fn().mockName('api::off'),
+    emit: fn().mockName('api::emit'),
+    getElements: fn(
+      () =>
+        ({
+          'component-tests': {
+            type: Addon_TypesEnum.experimental_TEST_PROVIDER,
+            id: 'component-tests',
+            render: () => 'Component tests',
+            sidebarContextMenu: () => <div>TEST_PROVIDER_CONTEXT_CONTENT</div>,
+          },
+          'visual-tests': {
+            type: Addon_TypesEnum.experimental_TEST_PROVIDER,
+            id: 'visual-tests',
+            render: () => 'Visual tests',
+            sidebarContextMenu: () => null,
+          },
+        }) satisfies Addon_Collection<Addon_TestProviderType>
+    ),
+  },
+};
 
 const meta = {
   component: Tree,
@@ -35,6 +71,11 @@ const meta = {
     },
     chromatic: { viewports: [380] },
   },
+  decorators: [
+    (storyFn) => (
+      <ManagerContext.Provider value={managerContext}>{storyFn()}</ManagerContext.Provider>
+    ),
+  ],
 } as Meta<typeof Tree>;
 
 export default meta;
@@ -231,5 +272,43 @@ export const SkipToCanvasLinkFocused: Story = {
     await link.focus();
 
     await expect(link).toBeVisible();
+  },
+};
+
+// SkipToCanvas Link only shows on desktop widths
+export const WithContextContent: Story = {
+  ...DocsOnlySingleStoryComponents,
+  parameters: {
+    chromatic: { viewports: [1280] },
+    viewport: {
+      options: {
+        desktop: {
+          name: 'Desktop',
+          styles: {
+            width: '100%',
+            height: '100%',
+          },
+        },
+      },
+    },
+  },
+  globals: {
+    viewport: { value: 'desktop' },
+  },
+  play: async ({ canvasElement }) => {
+    const screen = await within(canvasElement);
+
+    const link = await screen.findByText('TooltipBuildList');
+    await userEvent.hover(link);
+
+    const contextButton = await screen.findByTestId('context-menu');
+    await userEvent.click(contextButton);
+
+    const body = await within(document.body);
+
+    const tooltip = await body.findByTestId('tooltip');
+
+    await expect(tooltip).toBeVisible();
+    expect(tooltip).toHaveTextContent('TEST_PROVIDER_CONTEXT_CONTENT');
   },
 };

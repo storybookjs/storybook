@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 // should be node:http, but that caused the ui/manager to fail to build, might be able to switch this back once ui/manager is in the core
+import type { FileSystemCache } from 'storybook/internal/common';
+
 import type { Server as HttpServer, IncomingMessage, ServerResponse } from 'http';
 import type { Server as NetServer } from 'net';
 import type { Options as TelejsonOptions } from 'telejson';
 import type { PackageJson as PackageJsonFromTypeFest } from 'type-fest';
 
-import type { FileSystemCache } from '../../common/utils/file-cache';
 import type { Indexer, StoriesEntry } from './indexer';
 
 /** ⚠️ This file contains internal WIP types they MUST NOT be exported outside this package for now! */
@@ -71,6 +72,7 @@ export interface Presets {
   apply(extension: 'babel', config?: {}, args?: any): Promise<any>;
   apply(extension: 'swc', config?: {}, args?: any): Promise<any>;
   apply(extension: 'entries', config?: [], args?: any): Promise<unknown>;
+  apply(extension: 'env', config?: {}, args?: any): Promise<any>;
   apply(extension: 'stories', config?: [], args?: any): Promise<StoriesEntry[]>;
   apply(extension: 'managerEntries', config: [], args?: any): Promise<string[]>;
   apply(extension: 'refs', config?: [], args?: any): Promise<StorybookConfigRaw['refs']>;
@@ -159,17 +161,22 @@ export interface LoadOptions {
   extendServer?: (server: HttpServer) => void;
 }
 
-export interface CLIOptions {
+export interface CLIBaseOptions {
+  disableTelemetry?: boolean;
+  enableCrashReports?: boolean;
+  configDir?: string;
+  loglevel?: string;
+  quiet?: boolean;
+}
+
+export interface CLIOptions extends CLIBaseOptions {
   port?: number;
   ignorePreview?: boolean;
   previewUrl?: string;
   forceBuildPreview?: boolean;
-  disableTelemetry?: boolean;
-  enableCrashReports?: boolean;
   host?: string;
   initialPath?: string;
   exactPort?: boolean;
-  configDir?: string;
   https?: boolean;
   sslCa?: string[];
   sslCert?: string;
@@ -178,8 +185,6 @@ export interface CLIOptions {
   managerCache?: boolean;
   open?: boolean;
   ci?: boolean;
-  loglevel?: string;
-  quiet?: boolean;
   versionUpdates?: boolean;
   docs?: boolean;
   test?: boolean;
@@ -292,13 +297,6 @@ type CoreCommon_StorybookRefs = Record<
 export type DocsOptions = {
   /** What should we call the generated docs entries? */
   defaultName?: string;
-  /**
-   * Should we generate a docs entry per CSF file? Set to 'tag' (the default) to generate an entry
-   * for every CSF file with the 'autodocs' tag.
-   *
-   * @deprecated Use `tags: ['autodocs']` in `.storybook/preview.js` instead
-   */
-  autodocs?: boolean | 'tag';
   /** Only show doc entries in the side bar (usually set with the `--docs` CLI flag) */
   docsMode?: boolean;
 };
@@ -374,10 +372,8 @@ export interface StorybookConfigRaw {
     /** Enable asynchronous component rendering in React renderer */
     experimentalRSC?: boolean;
 
-    /** Use globals & globalTypes for configuring the viewport addon */
-    viewportStoryGlobals?: boolean;
-    /** Use globals & globalTypes for configuring the backgrounds addon */
-    backgroundsStoryGlobals?: boolean;
+    /** Set NODE_ENV to development in built Storybooks for better testability and debuggability */
+    developmentModeForBuild?: boolean;
   };
 
   build?: TestBuildConfig;

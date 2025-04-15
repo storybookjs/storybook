@@ -9,13 +9,25 @@ A story captures the rendered state of a UI component. Developers write multiple
 
 When you installed Storybook, the CLI created example components that demonstrate the types of components you can build with Storybook: Button, Header, and Page.
 
-Each example component has a set of stories that show the states it supports. You can browse the stories in the UI and see the code behind them in files that end with `.stories.js|ts`. The stories are written in [Component Story Format](../api/csf.mdx) (CSF), an ES6 modules-based standard for writing component examples.
+<If renderer="svelte">
 
-Let’s start with the `Button` component. A story is an object that describes how to render the component in question. Here’s how to render `Button` in the “primary” state and export a story called `Primary`.
+  Each example component has a set of stories that show the states it supports. You can browse the stories in the UI and see the code behind them in files that end with `.stories.svelte`. Stories can be written in [Component Story Format](../api/csf.mdx) (CSF), an ES6 modules-based standard for writing component examples or using Svelte native template syntax, via a community-led project called [`Svelte CSF`](https://storybook.js.org/addons/@storybook/addon-svelte-csf).
+
+  Let’s start with the `Button` component. With Svelte, a story can be defined as an object using standard CSF or with a `Story` component using Svelte CSF. Here’s how to render `Button` in the “primary” state and export a story called `Primary` using both approaches.
+
+</If>
+
+<If notRenderer="svelte">
+  
+  Each example component has a set of stories that show the states it supports. You can browse the stories in the UI and see the code behind them in files that end with `.stories.js|ts`. The stories are written in [Component Story Format](../api/csf.mdx) (CSF), an ES6 modules-based standard for writing component examples.
+
+  Let’s start with the `Button` component. A story is an object that describes how to render the component in question. Here’s how to render `Button` in the “primary” state and export a story called `Primary`.
+
+</If>
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="button-story-with-args.md" usesCsf3 csf2Path="get-started/whats-a-story#snippet-button-story-with-args" />
+<CodeSnippets path="button-story-with-args.md" />
 
 {/* prettier-ignore-end */}
 
@@ -38,6 +50,16 @@ Storybook makes it easy to work on one component in one state (aka a story) at a
   <Video src="../_assets/get-started/new-component-story-from-plus-button-optimized.mp4" />
 
   You can also create a story file for your new story. We recommend copy/pasting an existing story file next to the component source file, then adjusting it for your component.
+</If>
+
+<If renderer="svelte">
+
+  <Callout variant="info">
+
+    This feature is not supported with the Svelte template syntax story format. To opt-in to this feature with Svelte, you must use Storybook's [Component Story Format](../api/csf.mdx).
+    
+  </Callout>
+  
 </If>
 
 <If notRenderer="react">

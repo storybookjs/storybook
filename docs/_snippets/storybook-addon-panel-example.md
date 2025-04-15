@@ -18,4 +18,3 @@ addons.register('my/panel', () => {
   });
 });
 ```
-

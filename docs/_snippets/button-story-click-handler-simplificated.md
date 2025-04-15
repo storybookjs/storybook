@@ -20,10 +20,10 @@ import { Button } from './Button';
 
 export default {
   component: Button,
-}
+};
 
 export const Text = {
-  args: {...},
+  args: {/* ... */},
 };
 ```
 
@@ -66,10 +66,10 @@ import { Button } from './Button';
 
 export default {
   component: Button,
-}
+};
 
 export const Text = {
-  args: {...},
+  args: {/* ... */},
 };
 ```
 
@@ -115,30 +115,8 @@ export default {
 };
 
 export const Text = {
-  args: {...},
+  args: {/* ... */},
 };
-```
-
-```html renderer="svelte" language="ts" tabTitle="native-format"
-{/* Button.stories.svelte */}
-
-<script>
-  import { Meta, Template, Story } from '@storybook/addon-svelte-csf';
-  import Button from './Button.svelte';
-</script>
-
-{/*
-  See https://storybook.js.org/docs/essentials/actions#action-argtype-annotation
-  to learn how to set up argTypes for actions
-*/}
-
-<Meta title="Button" component={Button} argTypes={{ onClick: { action: "onClick" }, }} />
-
-<template let:args>
-  <button {...args} on:click="{args.onClick}" />
-</template>
-
-<Story name="Text" args={{ label: 'Hello' }}/>
 ```
 
 ```ts filename="Button.stories.ts" renderer="svelte" language="ts-4-9"
@@ -154,7 +132,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Text: Story = {
-  args: {...},
+  args: {/* ... */},
 };
 ```
 
@@ -171,7 +149,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Text: Story = {
-  args: {...},
+  args: {/* ... */},
 };
 ```
 
@@ -241,7 +219,7 @@ export default {
 };
 
 export const Text = {
-  args: {...},
+  args: {/* ... */},
 };
 ```
 
@@ -262,4 +240,3 @@ export const Text: Story = {
   args: {},
 };
 ```
-

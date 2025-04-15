@@ -7,11 +7,11 @@ sidebar:
 
 Now that you’ve learned what stories are and how to browse them, let’s demo working on one of your components.
 
-Pick a simple component from your project, like a Button, and write a `.stories.js`, or a `.stories.ts` file to go along with it. It might look something like this:
+Pick a simple component from your project, like a Button, and write a `.stories.js`, `.stories.ts`, or `.stories.svelte` file to go along with it. It might look something like this:
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="your-component.md" usesCsf3 csf2Path="get-started/setup#snippet-your-component" />
+<CodeSnippets path="your-component.md" />
 
 {/* prettier-ignore-end */}
 
@@ -66,7 +66,7 @@ Your project may have additional requirements before components can be rendered 
 
   A common frontend pattern is for components to assume that they render in a specific “context” with parent components higher up the rendering hierarchy (for instance, theme providers).
 
-  Use [decorators](../writing-stories/decorators.mdx) to “wrap” every story in the necessary context providers. The [`.storybook/preview.js`](../configure/index.mdx#configure-story-rendering) file allows you to customize how components render in Canvas, the preview iframe. See how you can wrap every component rendered in Storybook with [Styled Components](https://styled-components.com/) `ThemeProvider`, [Vue's Fontawesome](https://github.com/FortAwesome/vue-fontawesome), or with an Angular theme provider component in the example below.
+  Use [decorators](../writing-stories/decorators.mdx) to “wrap” every story in the necessary context providers. The [`.storybook/preview.js|ts`](../configure/index.mdx#configure-story-rendering) file allows you to customize how components render in Canvas, the preview iframe. See how you can wrap every component rendered in Storybook with [Styled Components](https://styled-components.com/) `ThemeProvider`, [Vue's Fontawesome](https://github.com/FortAwesome/vue-fontawesome), or with an Angular theme provider component in the example below.
 
   {/* prettier-ignore-start */}
 

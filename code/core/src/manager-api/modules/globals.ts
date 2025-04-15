@@ -1,12 +1,11 @@
+import { logger } from 'storybook/internal/client-logger';
+import { GLOBALS_UPDATED, SET_GLOBALS, UPDATE_GLOBALS } from 'storybook/internal/core-events';
 import type {
   GlobalTypes,
   Globals,
   GlobalsUpdatedPayload,
   SetGlobalsPayload,
-} from '@storybook/core/types';
-
-import { logger } from '@storybook/core/client-logger';
-import { GLOBALS_UPDATED, SET_GLOBALS, UPDATE_GLOBALS } from '@storybook/core/core-events';
+} from 'storybook/internal/types';
 
 import { dequal as deepEqual } from 'dequal';
 

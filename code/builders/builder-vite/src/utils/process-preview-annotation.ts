@@ -1,54 +1,25 @@
-import { isAbsolute, relative, resolve } from 'node:path';
-
-import { stripAbsNodeModulesPath } from 'storybook/internal/common';
 import type { PreviewAnnotation } from 'storybook/internal/types';
 
-import slash from 'slash';
+import { isAbsolute, normalize, resolve } from 'pathe';
 
-/**
- * Preview annotations can take several forms, and vite needs them to be a bit more restrained.
- *
- * For node_modules, we want bare imports (so vite can process them), and for files in the user's
- * source, we want URLs absolute relative to project root.
- */
-export function processPreviewAnnotation(path: PreviewAnnotation | undefined, projectRoot: string) {
-  // If entry is an object, take the first, which is the
-  // bare (non-absolute) specifier.
-  // This is so that webpack can use an absolute path, and
-  // continue supporting super-addons in pnp/pnpm without
-  // requiring them to re-export their sub-addons as we do
-  // in addon-essentials.
+/** Preview annotations can take several forms, so we normalize them here to absolute file paths. */
+export function processPreviewAnnotation(path: PreviewAnnotation, projectRoot: string) {
+  // If entry is an object, take the absolute specifier.
+  // This absolute specifier is automatically made for addons here:
+  // https://github.com/storybookjs/storybook/blob/ac6e73b9d8ce31dd9acc80999c8d7c22a111f3cc/code/core/src/common/presets.ts#L161-L171
   if (typeof path === 'object') {
-    return path.bare;
+    // TODO: Remove this once the new version of Nuxt is released that removes this workaround:
+    // https://github.com/nuxt-modules/storybook/blob/a2eec6e898386f76c74826842e8e007b185c3d35/packages/storybook-addon/src/preset.ts#L279-L306
+    if (path.bare != null && path.absolute === '') {
+      return path.bare;
+    }
+    return path.absolute;
   }
 
-  // This should not occur, since we use `.filter(Boolean)` prior to
-  // calling this function, but this makes typescript happy
-  if (!path) {
-    throw new Error('Could not determine path for previewAnnotation');
+  // If it's already an absolute path, return it.
+  if (isAbsolute(path)) {
+    return normalize(path);
   }
-
-  // For addon dependencies that use require.resolve(), we need to convert to a bare path
-  // so that vite will process it as a dependency (cjs -> esm, etc).
-  // TODO: Evaluate if searching for node_modules in a yarn pnp environment is correct
-  if (path.includes('node_modules')) {
-    return stripAbsNodeModulesPath(path);
-  }
-
-  // resolve absolute paths relative to project root
-  const relativePath = isAbsolute(path) ? slash(relative(projectRoot, path)) : path;
-
-  // resolve relative paths into absolute urls
-  // note: this only works if vite's projectRoot === cwd.
-  if (relativePath.startsWith('./')) {
-    return slash(relativePath.replace(/^\.\//, '/'));
-  }
-
-  // If something is outside of root, convert to absolute.  Uncommon?
-  if (relativePath.startsWith('../')) {
-    return slash(resolve(projectRoot, relativePath));
-  }
-
-  // At this point, it must be relative to the root but not start with a ./ or ../
-  return slash(`/${relativePath}`);
+  // resolve relative paths, relative to project root
+  return normalize(resolve(projectRoot, path));
 }

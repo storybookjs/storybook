@@ -26,12 +26,8 @@ test.describe('preview-api', () => {
     await expect(sbPage.page.locator('.sidebar-container')).toBeVisible();
 
     // wait for the play function to complete
-    await sbPage.viewAddonPanel(hasVitestIntegration ? 'Component tests' : 'Interactions');
-    const interactionsTab = page.locator(
-      hasVitestIntegration
-        ? '#tabbutton-storybook-test-panel'
-        : '#tabbutton-storybook-interactions-panel'
-    );
+    await sbPage.viewAddonPanel('Component test');
+    const interactionsTab = page.locator('#tabbutton-storybook-component-tests-panel');
     await expect(interactionsTab).toBeVisible();
     const panel = sbPage.panelContent();
     const runStatusBadge = panel.locator('[aria-label="Status of the test run"]');
@@ -65,6 +61,7 @@ test.describe('preview-api', () => {
 
     const root = sbPage.previewRoot();
 
+    await sbPage.viewAddonPanel('Controls');
     const labelControl = sbPage.page.locator('#control-label');
 
     await expect(root.getByText('Loaded. Click me')).toBeVisible();

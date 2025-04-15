@@ -4,4 +4,3 @@ import { useArgTypes } from '@storybook/manager-api';
 // inside your panel
 const { argTypes } = useArgTypes();
 ```
-

@@ -1,9 +1,10 @@
 import React from 'react';
 
 import { LinkIcon, LinuxIcon } from '@storybook/icons';
-import type { Meta, StoryObj } from '@storybook/react';
 
-import { action } from '@storybook/addon-actions';
+import type { Meta, StoryObj } from '@storybook/react-vite';
+
+import { action } from 'storybook/actions';
 
 import { TooltipLinkList } from './TooltipLinkList';
 import { WithTooltip } from './WithTooltip';
@@ -188,6 +189,48 @@ export const WithCustomIcon = {
         href: 'http://google.com',
         onClick: onLinkClick,
       },
+    ],
+  },
+} satisfies Story;
+
+export const WithGroups = {
+  args: {
+    links: [
+      [
+        {
+          id: '1',
+          title: 'Link 1',
+          center: 'This is an addition description',
+          href: 'http://google.com',
+          onClick: onLinkClick,
+        },
+      ],
+      [
+        {
+          id: '1',
+          title: 'Link 1',
+          center: 'This is an addition description',
+          icon: <LinkIcon />,
+          href: 'http://google.com',
+          onClick: onLinkClick,
+        },
+        {
+          id: '2',
+          title: 'Link 2',
+          center: 'This is an addition description',
+          href: 'http://google.com',
+          onClick: onLinkClick,
+        },
+      ],
+      [
+        {
+          id: '2',
+          title: 'Link 2',
+          center: 'This is an addition description',
+          href: 'http://google.com',
+          onClick: onLinkClick,
+        },
+      ],
     ],
   },
 } satisfies Story;

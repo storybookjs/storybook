@@ -10,8 +10,6 @@ const meta: Meta<ChipComponent> = {
       imports: [ChipsModule],
     }),
   ],
-  tags: ['!test', '!vitest'],
-  parameters: { chromatic: { disable: true } },
 };
 
 export default meta;

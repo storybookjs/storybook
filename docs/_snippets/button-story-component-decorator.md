@@ -190,7 +190,21 @@ const meta: Meta<typeof Button> = {
 export default meta;
 ```
 
-```js filename="Button.stories.js" renderer="svelte" language="js"
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import Button from './Button.svelte';
+  import MarginDecorator from './MarginDecorator.svelte';
+
+  const { Story } = defineMeta({
+    component: Button,
+    decorators: [() => MarginDecorator],
+  });
+</script>
+```
+
+```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF"
 import Button from './Button.svelte';
 import MarginDecorator from './MarginDecorator.svelte';
 
@@ -200,27 +214,21 @@ export default {
 };
 ```
 
-```html renderer="svelte" language="ts" tabTitle="native-format"
-{/* Button.stories.svelte */}
-
-<script>
-  import { Meta, Template } from '@storybook/addon-svelte-csf';
-
-  import MarginDecorator from './MarginDecorator.svelte';
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
 
   import Button from './Button.svelte';
+  import MarginDecorator from './MarginDecorator.svelte';
+
+  const { Story } = defineMeta({
+    component: Button,
+    decorators: [() => MarginDecorator],
+  });
 </script>
-
-<meta title="Button" component="{Button}" />
-
-<template let:args>
-  <MarginDecorator>
-    {/*👇 Your component here */}
-  </MarginDecorator>
-</template>
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts-4-9"
+```ts filename="Button.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="CSF"
 import type { Meta } from '@storybook/svelte';
 
 import Button from './Button.svelte';
@@ -229,12 +237,26 @@ import MarginDecorator from './MarginDecorator.svelte';
 const meta = {
   component: Button,
   decorators: [() => MarginDecorator],
-};
+} satisfies Meta<typeof Button>;
 
 export default meta;
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts"
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import Button from './Button.svelte';
+  import MarginDecorator from './MarginDecorator.svelte';
+
+  const { Story } = defineMeta({
+    component: Button,
+    decorators: [() => MarginDecorator],
+  });
+</script>
+```
+
+```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
 import type { Meta } from '@storybook/svelte';
 
 import Button from './Button.svelte';
@@ -309,4 +331,3 @@ type Story = StoryObj;
 
 export const Example: Story = {};
 ```
-

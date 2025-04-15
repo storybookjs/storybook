@@ -21,4 +21,3 @@ export const viteFinal = vite as any;
 
 export const babelDefault = babel as any;
 ```
-

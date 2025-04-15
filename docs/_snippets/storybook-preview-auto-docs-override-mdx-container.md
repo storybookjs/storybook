@@ -1,7 +1,7 @@
 ```js filename=".storybook/preview.js" renderer="common" language="js"
 import { MDXProvider } from '@mdx-js/react';
 
-import { DocsContainer } from '@storybook/blocks';
+import { DocsContainer } from '@storybook/addon-docs/blocks';
 
 import * as DesignSystem from 'your-design-system';
 
@@ -37,7 +37,7 @@ import { Preview } from '@storybook/your-framework';
 
 import { MDXProvider } from '@mdx-js/react';
 
-import { DocsContainer } from '@storybook/blocks';
+import { DocsContainer } from '@storybook/addon-docs/blocks';
 
 import * as DesignSystem from 'your-design-system';
 
@@ -68,4 +68,3 @@ const preview: Preview = {
 
 export default preview;
 ```
-

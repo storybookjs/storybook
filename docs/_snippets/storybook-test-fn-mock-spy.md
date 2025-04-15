@@ -1,10 +1,11 @@
 ```ts filename="NoteUI.stories.ts" renderer="angular" language="ts"
 import type { Meta, StoryObj } from '@storybook/angular';
-import { expect, userEvent, within } from '@storybook/test';
+import { expect, userEvent, within } from 'storybook/test';
 
 // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
 import { saveNote } from '#app/actions.mock';
 import { createNotes } from '#mocks/notes';
+
 import NoteUI from './note-ui';
 
 const meta: Meta<NoteUI> = {
@@ -35,10 +36,11 @@ export const SaveFlow: Story = {
 ```
 
 ```js filename="NoteUI.stories.js" renderer="common" language="js"
-import { expect, userEvent, within } from '@storybook/test';
+import { expect, userEvent, within } from 'storybook/test';
 
 import { saveNote } from '#app/actions.mock';
 import { createNotes } from '#mocks/notes';
+
 import NoteUI from './note-ui';
 
 export default {
@@ -68,11 +70,12 @@ export const SaveFlow = {
 ```ts filename="NoteUI.stories.ts" renderer="common" language="ts-4-9"
 // Replace your-renderer with the name of your renderer (e.g. react, vue3)
 import type { Meta, StoryObj } from '@storybook/your-renderer';
-import { expect, userEvent, within } from '@storybook/test';
+import { expect, userEvent, within } from 'storybook/test';
 
 // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
 import { saveNote } from '#app/actions.mock';
 import { createNotes } from '#mocks/notes';
+
 import NoteUI from './note-ui';
 
 const meta = {
@@ -105,7 +108,7 @@ export const SaveFlow: Story = {
 ```ts filename="NoteUI.stories.ts" renderer="common" language="ts"
 // Replace your-renderer with the name of your renderer (e.g. react, vue3)
 import type { Meta, StoryObj } from '@storybook/your-renderer';
-import { expect, userEvent, within } from '@storybook/test';
+import { expect, userEvent, within } from 'storybook/test';
 
 // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
 import { saveNote } from '#app/actions.mock';
@@ -140,7 +143,7 @@ export const SaveFlow: Story = {
 ```
 
 ```js filename="NoteUI.stories.js" renderer="web-components" language="js"
-import { expect, userEvent, within } from '@storybook/test';
+import { expect, userEvent, within } from 'storybook/test';
 
 import { saveNote } from '#app/actions.mock';
 import { createNotes } from '#mocks/notes';
@@ -170,8 +173,8 @@ export const SaveFlow = {
 ```
 
 ```ts filename="NoteUI.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/react';
-import { expect, userEvent, within } from '@storybook/test';
+import type { Meta, StoryObj } from '@storybook/web-components';
+import { expect, userEvent, within } from 'storybook/test';
 
 // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
 import { saveNote } from '#app/actions.mock';
@@ -203,4 +206,3 @@ export const SaveFlow: Story = {
   },
 };
 ```
-

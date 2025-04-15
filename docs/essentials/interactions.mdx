@@ -15,7 +15,7 @@ For example, clicking a button to open/close a dialog box, dragging a list item 
 
 ### Powered by Testing Library and Vitest
 
-The interactions are written using a package called `@storybook/test`. It provides Storybook-instrumented versions of [Testing Library](https://testing-library.com/) and [Vitest](https://vitest.dev). That gives you a familiar developer-friendly syntax to interact with the DOM and make assertions, but with extra telemetry to help with debugging.
+The interactions are written using a package called `storybook/test`. It provides Storybook-instrumented versions of [Testing Library](https://testing-library.com/) and [Vitest](https://vitest.dev). That gives you a familiar developer-friendly syntax to interact with the DOM and make assertions, but with extra telemetry to help with debugging.
 
 ## Set up the interactions addon
 
@@ -37,12 +37,6 @@ Next, update [`.storybook/main.js|ts`](../configure/index.mdx#configure-story-re
 
 {/* prettier-ignore-end */}
 
-<Callout variant="info" icon="💡">
-
-  Make sure to list `@storybook/addon-interactions` **after** the [`@storybook/addon-essentials`](./index.mdx) addon (or the [`@storybook/addon-actions`](./actions.mdx) if you've installed it individually).
-  
-</Callout>
-
 Now when you run Storybook, the Interactions addon will be enabled.
 
 ![Storybook Interactions installed and registered](../_assets/essentials/addon-interactions-installed-registered.png)
@@ -51,11 +45,11 @@ Now when you run Storybook, the Interactions addon will be enabled.
 
 Interactions run as part of the `play` function of your stories. We rely on Testing Library to do the heavy lifting.
 
-Make sure to import the Storybook wrappers for Vitest and Testing Library via `@storybook/test` rather than importing the original packages directly.
+Make sure to import the Storybook wrappers for Vitest and Testing Library via `storybook/test` rather than importing the original packages directly.
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="storybook-interactions-play-function.md" usesCsf3 csf2Path="essentials/interactions#snippet-storybook-interactions-play-function" />
+<CodeSnippets path="storybook-interactions-play-function.md" />
 
 {/* prettier-ignore-end */}
 
@@ -66,19 +60,5 @@ While you can refer to the [Testing Library documentation](https://testing-libra
 Any `args` that have been marked as an Action, either using the [argTypes annotation](./actions.mdx#action-argtype-annotation) or the [argTypesRegex](./actions.mdx#automatically-matching-args), will be automatically converted to a [Jest mock function](https://jestjs.io/docs/mock-function-api) (spy). This allows you to make assertions about calls to these functions.
 
 <Callout variant="info">
-  To mock functions in your Storybook stories for reliable and isolated component testing, use the named `fn` import from `@storybook/test`.
+  To mock functions in your Storybook stories for reliable and isolated component testing, use the named `fn` import from `storybook/test`.
 </Callout>
-
-## API
-
-### Parameters
-
-This addon contributes the following [parameters](../writing-stories/parameters.mdx) to Storybook, under the `interactions` namespace:
-
-#### `disable`
-
-Type: `boolean`
-
-Disable this addon's behavior. If you wish to disable this addon for the entire Storybook, you should do so when registering `addon-essentials`. See the [essential addon's docs](../essentials/index.mdx#disabling-addons) for more information.
-
-This parameter is most useful to allow overriding at more specific levels. For example, if this parameter is set to `true` at the project level, it could then be re-enabled by setting it to `false` at the meta (component) or story level.

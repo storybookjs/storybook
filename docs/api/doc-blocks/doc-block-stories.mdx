@@ -13,10 +13,8 @@ The `Stories` block renders the full collection of stories in a stories file.
 
 {/* prettier-ignore-start */}
 
-```md
-{/* ButtonDocs.mdx */}
-
-import { Meta, Stories } from '@storybook/blocks';
+```md title="ButtonDocs.mdx"
+import { Meta, Stories } from '@storybook/addon-docs/blocks';
 import * as ButtonStories from './Button.stories';
 
 <Meta of={ButtonStories} />
@@ -29,7 +27,7 @@ import * as ButtonStories from './Button.stories';
 ## Stories
 
 ```js
-import { Stories } from '@storybook/blocks';
+import { Stories } from '@storybook/addon-docs/blocks';
 ```
 
 `Stories` is configured with the following props:

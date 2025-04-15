@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import type { StoryIndex } from '@storybook/core/types';
+import type { StoryIndex } from 'storybook/internal/types';
+
 import { global } from '@storybook/global';
 
 import { transformStoryIndexToStoriesHash } from '../lib/stories';
@@ -291,6 +292,7 @@ describe('Refs API', () => {
         {
           "refs": {
             "fake": {
+              "filteredIndex": undefined,
               "id": "fake",
               "index": undefined,
               "indexError": {
@@ -360,6 +362,7 @@ describe('Refs API', () => {
         {
           "refs": {
             "fake": {
+              "filteredIndex": undefined,
               "id": "fake",
               "index": undefined,
               "indexError": {
@@ -504,6 +507,7 @@ describe('Refs API', () => {
         {
           "refs": {
             "fake": {
+              "filteredIndex": {},
               "id": "fake",
               "index": {},
               "internal_index": {
@@ -522,6 +526,7 @@ describe('Refs API', () => {
         {
           "refs": {
             "fake": {
+              "filteredIndex": {},
               "id": "fake",
               "index": {},
               "internal_index": {
@@ -601,6 +606,7 @@ describe('Refs API', () => {
         {
           "refs": {
             "fake": {
+              "filteredIndex": {},
               "id": "fake",
               "index": {},
               "internal_index": {
@@ -682,6 +688,7 @@ describe('Refs API', () => {
         {
           "refs": {
             "fake": {
+              "filteredIndex": {},
               "id": "fake",
               "index": {},
               "internal_index": {
@@ -763,6 +770,7 @@ describe('Refs API', () => {
         {
           "refs": {
             "fake": {
+              "filteredIndex": undefined,
               "id": "fake",
               "index": undefined,
               "internal_index": undefined,
@@ -905,6 +913,7 @@ describe('Refs API', () => {
         {
           "refs": {
             "fake": {
+              "filteredIndex": undefined,
               "id": "fake",
               "index": undefined,
               "internal_index": undefined,
@@ -987,6 +996,7 @@ describe('Refs API', () => {
         {
           "refs": {
             "fake": {
+              "filteredIndex": {},
               "id": "fake",
               "index": {},
               "internal_index": {
@@ -1068,6 +1078,7 @@ describe('Refs API', () => {
         {
           "refs": {
             "fake": {
+              "filteredIndex": {},
               "id": "fake",
               "index": {},
               "internal_index": {
@@ -1227,18 +1238,20 @@ describe('Refs API', () => {
         },
       };
 
+      const transformOptions = {
+        provider: provider as any,
+        docsOptions: {},
+        filters: {},
+        allStatuses: {},
+      };
       const initialState: Partial<State> = {
         refs: {
           fake: {
             id: 'fake',
             url: 'https://example.com',
             previewInitialized: true,
-            index: transformStoryIndexToStoriesHash(index, {
-              provider: provider as any,
-              docsOptions: {},
-              filters: {},
-              status: {},
-            }),
+            index: transformStoryIndexToStoriesHash(index, transformOptions),
+            filteredIndex: transformStoryIndexToStoriesHash(index, transformOptions),
             internal_index: index,
           },
         },
@@ -1261,10 +1274,10 @@ describe('Refs API', () => {
 
       await api.setRef('fake', { storyIndex: index });
 
-      await expect(api.getRefs().fake.index).toEqual(
+      await expect(api.getRefs().fake.filteredIndex).toEqual(
         expect.objectContaining({ 'a--1': expect.anything() })
       );
-      await expect(api.getRefs().fake.index).not.toEqual(
+      await expect(api.getRefs().fake.filteredIndex).not.toEqual(
         expect.objectContaining({ 'a--2': expect.anything() })
       );
     });

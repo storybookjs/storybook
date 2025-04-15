@@ -6,7 +6,7 @@ import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
 import { spawn } from 'cross-spawn';
 import * as esbuild from 'esbuild';
 // eslint-disable-next-line depend/ban-dependencies
-import { readJson } from 'fs-extra';
+import { pathExists, readJson } from 'fs-extra';
 // eslint-disable-next-line depend/ban-dependencies
 import { glob } from 'glob';
 import limit from 'p-limit';
@@ -31,7 +31,7 @@ export const dts = async (entry: string, externals: string[], tsconfig: string) 
   const dir = dirname(entry).replace('src', 'dist');
   const out = await rollup.rollup({
     input: entry,
-    external: [...externals, 'ast-types'].map((dep) => new RegExp(`^${dep}($|\\/|\\\\)`)),
+    external: [...externals, 'ast-types', 'react'].map((dep) => new RegExp(`^${dep}($|\\/|\\\\)`)),
     output: { file: entry.replace('src', 'dist').replace('.ts', '.d.ts'), format: 'es' },
     plugins: [
       rpd.dts({
@@ -40,6 +40,7 @@ export const dts = async (entry: string, externals: string[], tsconfig: string) 
         compilerOptions: {
           esModuleInterop: true,
           baseUrl: '.',
+          jsx: ts.JsxEmit.React,
           declaration: true,
           noEmit: false,
           emitDeclarationOnly: true,
@@ -79,7 +80,9 @@ export const defineEntry =
     targets: ('node' | 'browser')[],
     generateDTS: boolean = true,
     externals: string[] = [],
-    internals: string[] = []
+    internals: string[] = [],
+    noExternal: string[] = [],
+    isPublic: boolean = false
   ) => ({
     file: slash(join(cwd, entry)),
     node: targets.includes('node'),
@@ -87,6 +90,8 @@ export const defineEntry =
     dts: generateDTS,
     externals,
     internals,
+    noExternal,
+    isPublic,
   });
 
 export const merge = <T extends Record<string, any>>(...objects: T[]): T =>
@@ -118,7 +123,10 @@ export const nodeInternals = [
   ...require('module').builtinModules.flatMap((m: string) => [m, `node:${m}`]),
 ];
 
-export const getWorkspace = async () => {
+type PackageJson = typefest.PackageJson &
+  Required<Pick<typefest.PackageJson, 'name' | 'version'>> & { path: string };
+
+export const getWorkspace = async (): Promise<PackageJson[]> => {
   const codePackage = await readJson(join(CODE_DIRECTORY, 'package.json'));
   const {
     workspaces: { packages: patterns },
@@ -131,10 +139,18 @@ export const getWorkspace = async () => {
   return Promise.all(
     workspaces
       .flatMap((p) => p.map((i) => join(CODE_DIRECTORY, i)))
-      .map(async (p) => {
-        const pkg = await readJson(join(p, 'package.json'));
-        return { ...pkg, path: p } as typefest.PackageJson &
-          Required<Pick<typefest.PackageJson, 'name' | 'version'>> & { path: string };
+      .map(async (packagePath) => {
+        const packageJsonPath = join(packagePath, 'package.json');
+        if (!(await pathExists(packageJsonPath))) {
+          // If we delete a package, then an empty folder might still be left behind on some dev machines
+          // In this case, just ignore the folder
+          console.warn(
+            `No package.json found in ${packagePath}. You might want to delete this folder.`
+          );
+          return null;
+        }
+        const pkg = await readJson(packageJsonPath);
+        return { ...pkg, path: packagePath } as PackageJson;
       })
-  );
+  ).then((packages) => packages.filter((p) => p !== null));
 };

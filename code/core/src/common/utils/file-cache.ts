@@ -85,6 +85,7 @@ export class FileSystemCache {
     orgOpts: CacheSetOptions | number = {}
   ): Promise<void> {
     const opts: CacheSetOptions = typeof orgOpts === 'number' ? { ttl: orgOpts } : orgOpts;
+    mkdirSync(this.cache_dir, { recursive: true });
     await writeFile(this.generateHash(name), this.parseSetData(name, data, opts), {
       encoding: opts.encoding || 'utf8',
     });
@@ -92,6 +93,7 @@ export class FileSystemCache {
 
   public setSync<T>(name: string, data: T, orgOpts: CacheSetOptions | number = {}): void {
     const opts: CacheSetOptions = typeof orgOpts === 'number' ? { ttl: orgOpts } : orgOpts;
+    mkdirSync(this.cache_dir, { recursive: true });
     writeFileSync(this.generateHash(name), this.parseSetData(name, data, opts), {
       encoding: opts.encoding || 'utf8',
     });

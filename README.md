@@ -36,7 +36,7 @@
   <a href="#sponsors">
     <img src="https://opencollective.com/storybook/tiers/sponsors/badge.svg" alt="Sponsors on Open Collective" />
   </a>
-  <a href="https://twitter.com/intent/follow?screen_name=storybookjs">
+  <a href="https://x.com/intent/follow?screen_name=storybookjs">
     <img src="https://img.shields.io/twitter/follow/storybookjs?color=blue&logo=twitter" alt="Official Twitter Handle" />
   </a>
   <a href="https://api.securityscorecards.dev/projects/github.com/storybookjs/storybook">
@@ -68,8 +68,8 @@ Storybook is a frontend workshop for building UI components and pages in isolati
 - 👥 [Community](#community)
 - 👏 [Contributing](#contributing)
   - 👨‍💻 [Development scripts](#development-scripts)
-  - 💵 [Backers](#backers)
   - 💸 [Sponsors](#sponsors)
+  - 💵 [Backers](#backers)
 - :memo: [License](#license)
 
 ## Getting Started
@@ -156,7 +156,7 @@ If you're looking for material to use in your Storybook presentation, such as lo
 
 ## Community
 
-- Tweeting via [@storybookjs](https://twitter.com/storybookjs)
+- Tweeting via [@storybookjs](https://x.com/storybookjs)
 - Blogging at [storybook.js.org](https://storybook.js.org/blog/) and [Medium](https://medium.com/storybookjs)
 - Chatting on [Discord](https://discord.gg/storybook)
 - Videos and streams at [YouTube](https://www.youtube.com/channel/UCr7Quur3eIyA_oe8FNYexfg)

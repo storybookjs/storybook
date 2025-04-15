@@ -15,6 +15,7 @@ Type:
   backgroundsStoryGlobals?: boolean;
   legacyDecoratorFileOrder?: boolean;
   viewportStoryGlobals?: boolean;
+  developmentModeForBuild?: boolean;
 }
 ```
 
@@ -34,18 +35,6 @@ Filter args with a "target" on the type from the render function.
 
 {/* prettier-ignore-end */}
 
-## `backgroundsStoryGlobals`
-
-Type: `boolean`
-
-Configures the [Backgrounds addon](../../essentials/backgrounds.mdx) to opt-in to the new story globals API for configuring backgrounds.
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="main-config-features-backgrounds-story-globals.md" />
-
-{/* prettier-ignore-end */}
-
 ## `legacyDecoratorFileOrder`
 
 Type: `boolean`
@@ -58,14 +47,14 @@ Apply decorators from preview.js before decorators from addons or frameworks. [M
 
 {/* prettier-ignore-end */}
 
-## `viewportStoryGlobals`
+## `developmentModeForBuild`
 
 Type: `boolean`
 
-Configures the [Viewports addon](../../essentials/viewport.mdx) to opt-in to the new story globals API for configuring viewports.
+Set `NODE_ENV` to `'development'` in built Storybooks for better testing and debugging capabilities.
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="main-config-features-viewport-story-globals.md" />
+<CodeSnippets path="main-config-features-development-mode-for-build.md" />
 
 {/* prettier-ignore-end */}

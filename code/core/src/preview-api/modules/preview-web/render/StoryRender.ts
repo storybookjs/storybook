@@ -1,4 +1,16 @@
-import type { Channel } from '@storybook/core/channels';
+import type { Channel } from 'storybook/internal/channels';
+import {
+  PLAY_FUNCTION_THREW_EXCEPTION,
+  STORY_FINISHED,
+  STORY_RENDERED,
+  STORY_RENDER_PHASE_CHANGED,
+  type StoryFinishedPayload,
+  UNHANDLED_ERRORS_WHILE_PLAYING,
+} from 'storybook/internal/core-events';
+import {
+  MountMustBeDestructuredError,
+  NoStoryMountedError,
+} from 'storybook/internal/preview-errors';
 import type {
   Canvas,
   PreparedStory,
@@ -10,15 +22,9 @@ import type {
   StoryId,
   StoryRenderOptions,
   TeardownRenderToCanvas,
-} from '@storybook/core/types';
+} from 'storybook/internal/types';
 
-import {
-  PLAY_FUNCTION_THREW_EXCEPTION,
-  STORY_RENDERED,
-  STORY_RENDER_PHASE_CHANGED,
-  UNHANDLED_ERRORS_WHILE_PLAYING,
-} from '@storybook/core/core-events';
-import { MountMustBeDestructuredError, NoStoryMountedError } from '@storybook/core/preview-errors';
+import type { UserEventObject } from 'storybook/test';
 
 import type { StoryStore } from '../../store';
 import type { Render, RenderType } from './Render';
@@ -33,11 +39,13 @@ export type RenderPhase =
   | 'rendering'
   | 'playing'
   | 'played'
+  | 'afterEach'
   | 'completed'
+  | 'finished'
   | 'aborted'
   | 'errored';
 
-function serializeError(error: any) {
+export function serializeError(error: any) {
   try {
     const { name = 'Error', message = String(error), stack } = error;
     return { name, message, stack };
@@ -132,7 +140,9 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
   }
 
   isPending() {
-    return ['loading', 'beforeEach', 'rendering', 'playing'].includes(this.phase as RenderPhase);
+    return ['loading', 'beforeEach', 'rendering', 'playing', 'afterEach'].includes(
+      this.phase as RenderPhase
+    );
   }
 
   async renderToElement(canvasElement: TRenderer['canvasElement']) {
@@ -180,6 +190,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
       tags,
       applyLoaders,
       applyBeforeEach,
+      applyAfterEach,
       unboundStoryFn,
       playFunction,
       runStep,
@@ -211,6 +222,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
         step: (label, play) => runStep(label, play, context),
         context: null!,
         canvas: {} as Canvas,
+        userEvent: {} as UserEventObject,
         renderToCanvas: async () => {
           const teardown = await this.renderToScreen(renderContext, canvasElement);
           this.teardownRender = teardown || (() => {});
@@ -288,7 +300,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
       const ignoreUnhandledErrors =
         this.story.parameters?.test?.dangerouslyIgnoreUnhandledErrors === true;
 
-      const unhandledErrors: Set<unknown> = new Set();
+      const unhandledErrors: Set<unknown> = new Set<unknown>();
       const onError = (event: ErrorEvent | PromiseRejectionEvent) =>
         unhandledErrors.add('error' in event ? event.error : event.reason);
 
@@ -349,9 +361,39 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
       await this.runPhase(abortSignal, 'completed', async () =>
         this.channel.emit(STORY_RENDERED, id)
       );
+
+      if (this.phase !== 'errored') {
+        await this.runPhase(abortSignal, 'afterEach', async () => {
+          await applyAfterEach(context);
+        });
+      }
+
+      const hasUnhandledErrors = !ignoreUnhandledErrors && unhandledErrors.size > 0;
+
+      const hasSomeReportsFailed = context.reporting.reports.some(
+        (report) => report.status === 'failed'
+      );
+
+      const hasStoryErrored = hasUnhandledErrors || hasSomeReportsFailed;
+
+      await this.runPhase(abortSignal, 'finished', async () =>
+        this.channel.emit(STORY_FINISHED, {
+          storyId: id,
+          status: hasStoryErrored ? 'error' : 'success',
+          reporters: context.reporting.reports,
+        } as StoryFinishedPayload)
+      );
     } catch (err) {
       this.phase = 'errored';
       this.callbacks.showException(err as Error);
+
+      await this.runPhase(abortSignal, 'finished', async () =>
+        this.channel.emit(STORY_FINISHED, {
+          storyId: id,
+          status: 'error',
+          reporters: [],
+        } as StoryFinishedPayload)
+      );
     }
 
     // If a rerender was enqueued during the render, clear the queue and render again

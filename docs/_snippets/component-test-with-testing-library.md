@@ -104,7 +104,7 @@ it('Checks if the form is valid', async () => {
 });
 ```
 
-```js filename="tests/Form.test.js" renderer="vue" language="js" tabTitle="3"
+```js filename="tests/Form.test.js" renderer="vue" language="js"
 import { fireEvent, render, screen } from '@testing-library/vue';
 
 import { composeStories } from '@storybook/vue3';
@@ -128,7 +128,7 @@ test('Checks if the form is valid', async () => {
 });
 ```
 
-```ts filename="tests/Form.test.ts" renderer="vue" language="ts" tabTitle="3"
+```ts filename="tests/Form.test.ts" renderer="vue" language="ts"
 import { fireEvent, render, screen } from '@testing-library/vue';
 
 import { composeStories } from '@storybook/vue3';

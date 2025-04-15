@@ -17,10 +17,8 @@ The `Controls` block can be used to show a dynamic table of args for a given sto
 
 {/* prettier-ignore-start */}
 
-```md
-{/* ButtonDocs.mdx */}
-
-import { Meta, Canvas, Controls } from '@storybook/blocks';
+```md title="ButtonDocs.mdx"
+import { Meta, Canvas, Controls } from '@storybook/addon-docs/blocks';
 import * as ButtonStories from './Button.stories'
 
 <Meta of={ButtonStories} />
@@ -41,7 +39,7 @@ import * as ButtonStories from './Button.stories'
 ## Controls
 
 ```js
-import { Controls } from '@storybook/blocks';
+import { Controls } from '@storybook/addon-docs/blocks';
 ```
 
 <details>
@@ -59,9 +57,7 @@ import { Controls } from '@storybook/blocks';
 
   {/* prettier-ignore-start */}
 
-  ```md
-  {/* ButtonDocs.mdx */}
-
+  ```md title="ButtonDocs.mdx"
   <Controls of={ButtonStories} exclude={['style']} />
   ```
 

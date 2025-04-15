@@ -1,10 +1,12 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { fn } from '@storybook/test';
+import type { Meta, StoryObj } from '@storybook/react-vite';
+
+import { fn } from 'storybook/test';
 
 import { TagsFilterPanel } from './TagsFilterPanel';
 
 const meta = {
   component: TagsFilterPanel,
+  title: 'Sidebar/TagsFilterPanel',
   args: {
     toggleTag: fn(),
     api: {

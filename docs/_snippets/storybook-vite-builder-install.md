@@ -9,4 +9,3 @@ pnpm add --save-dev @storybook/builder-vite
 ```shell renderer="common" language="js" packageManager="yarn"
 yarn add --dev @storybook/builder-vite
 ```
-

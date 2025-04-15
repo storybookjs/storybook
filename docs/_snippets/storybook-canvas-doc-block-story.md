@@ -1,5 +1,5 @@
 ```jsx filename="MyComponent.stories.js|jsx" renderer="common" language="js"
-import { ColorItem, ColorPalette } from '@storybook/blocks';
+import { ColorItem, ColorPalette } from '@storybook/addon-docs/blocks';
 
 import { MyComponent } from './MyComponent';
 
@@ -53,7 +53,7 @@ export const Colors = {
 // Replace your-framework with the name of your framework
 import type { Meta } from '@storybook/your-framework';
 
-import { ColorItem, ColorPalette } from '@storybook/blocks';
+import { ColorItem, ColorPalette } from '@storybook/addon-docs/blocks';
 
 import { MyComponent } from './MyComponent';
 
@@ -110,7 +110,7 @@ export const Colors: Story = {
 // Replace your-framework with the name of your framework
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
-import { ColorItem, ColorPalette } from '@storybook/blocks';
+import { ColorItem, ColorPalette } from '@storybook/addon-docs/blocks';
 
 import { MyComponent } from './MyComponent';
 
@@ -162,4 +162,3 @@ export const Colors: Story = {
   ),
 };
 ```
-

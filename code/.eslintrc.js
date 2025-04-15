@@ -15,6 +15,7 @@ module.exports = {
       'error',
       { devDependencies: true, peerDependencies: true },
     ],
+    'react/react-in-jsx-scope': 'off',
     'import/no-unresolved': 'off', // covered by typescript
     'eslint-comments/disable-enable-pair': ['error', { allowWholeFile: true }],
     'eslint-comments/no-unused-disable': 'error',
@@ -58,7 +59,16 @@ module.exports = {
       },
     },
     {
-      files: ['*.js', '*.jsx', '*.json', '*.html', '**/.storybook/*.ts', '**/.storybook/*.tsx'],
+      files: [
+        '*.js',
+        '*.jsx',
+        '*.json',
+        '*.html',
+        '**/.storybook/*.ts',
+        '**/.storybook/*.tsx',
+        '**/.storybook/**/*.ts',
+        '**/.storybook/**/*.tsx',
+      ],
       parserOptions: {
         project: null,
       },
@@ -93,6 +103,7 @@ module.exports = {
         '**/__tests__/**',
         '**/__testfixtures__/**',
         '**/*.test.*',
+        '**/*.test-d.*',
         '**/*.stories.*',
         '**/*.mockdata.*',
         '**/template/**/*',

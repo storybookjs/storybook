@@ -20,7 +20,7 @@ describe(options.suite, () => {
             options.snapshotsDirName,
             `${componentName}${options.snapshotExtension}`
           );
-          expect(document.body.firstChild).toMatchFileSnapshot(snapshotPath);
+          await expect(document.body.firstChild).toMatchFileSnapshot(snapshotPath);
         });
       });
     });

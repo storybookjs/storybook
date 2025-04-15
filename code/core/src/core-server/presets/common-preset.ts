@@ -2,15 +2,17 @@ import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { dirname, isAbsolute, join } from 'node:path';
 
-import type { Channel } from '@storybook/core/channels';
+import type { Channel } from 'storybook/internal/channels';
 import {
   getDirectoryFromWorkingDir,
   getPreviewBodyTemplate,
   getPreviewHeadTemplate,
   loadEnvs,
   removeAddon as removeAddonBase,
-} from '@storybook/core/common';
-import { telemetry } from '@storybook/core/telemetry';
+} from 'storybook/internal/common';
+import { readCsf } from 'storybook/internal/csf-tools';
+import { logger } from 'storybook/internal/node-logger';
+import { telemetry } from 'storybook/internal/telemetry';
 import type {
   CLIOptions,
   CoreConfig,
@@ -18,21 +20,10 @@ import type {
   Options,
   PresetProperty,
   PresetPropertyFn,
-} from '@storybook/core/types';
-
-import { readCsf } from '@storybook/core/csf-tools';
-import { logger } from '@storybook/core/node-logger';
+} from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 
-import {
-  TESTING_MODULE_CRASH_REPORT,
-  TESTING_MODULE_PROGRESS_REPORT,
-  TESTING_MODULE_WATCH_MODE_REQUEST,
-  type TestingModuleCrashReportPayload,
-  type TestingModuleProgressReportPayload,
-  type TestingModuleWatchModeRequestPayload,
-} from '../../core-events';
 import { cleanPaths, sanitizeError } from '../../telemetry/sanitize';
 import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel';
 import { initFileSearchChannel } from '../server-channel/file-search-channel';
@@ -45,7 +36,7 @@ const interpolate = (string: string, data: Record<string, string> = {}) =>
   Object.entries(data).reduce((acc, [k, v]) => acc.replace(new RegExp(`%${k}%`, 'g'), v), string);
 
 const defaultFavicon = join(
-  dirname(require.resolve('@storybook/core/package.json')),
+  dirname(require.resolve('storybook/package.json')),
   '/assets/browser/favicon.svg'
 );
 
@@ -67,39 +58,37 @@ export const favicon = async (
     ? staticDirsValue.map((dir) => (typeof dir === 'string' ? dir : `${dir.from}:${dir.to}`))
     : [];
 
-  if (statics && statics.length > 0) {
-    const lists = await Promise.all(
-      statics.map(async (dir) => {
-        const results = [];
-        const normalizedDir =
-          staticDirsValue && !isAbsolute(dir)
-            ? getDirectoryFromWorkingDir({
-                configDir: options.configDir,
-                workingDir: process.cwd(),
-                directory: dir,
-              })
-            : dir;
+  if (statics.length > 0) {
+    const lists = statics.map((dir) => {
+      const results = [];
+      const normalizedDir =
+        staticDirsValue && !isAbsolute(dir)
+          ? getDirectoryFromWorkingDir({
+              configDir: options.configDir,
+              workingDir: process.cwd(),
+              directory: dir,
+            })
+          : dir;
 
-        const { staticPath, targetEndpoint } = await parseStaticDir(normalizedDir);
+      const { staticPath, targetEndpoint } = parseStaticDir(normalizedDir);
 
-        if (targetEndpoint === '/') {
-          const url = 'favicon.svg';
-          const path = join(staticPath, url);
-          if (existsSync(path)) {
-            results.push(path);
-          }
+      if (targetEndpoint === '/') {
+        const url = 'favicon.svg';
+        const path = join(staticPath, url);
+        if (existsSync(path)) {
+          results.push(path);
         }
-        if (targetEndpoint === '/') {
-          const url = 'favicon.ico';
-          const path = join(staticPath, url);
-          if (existsSync(path)) {
-            results.push(path);
-          }
+      }
+      if (targetEndpoint === '/') {
+        const url = 'favicon.ico';
+        const path = join(staticPath, url);
+        if (existsSync(path)) {
+          results.push(path);
         }
+      }
 
-        return results;
-      })
-    );
+      return results;
+    });
     const flatlist = lists.reduce((l1, l2) => l1.concat(l2), []);
 
     if (flatlist.length > 1) {
@@ -289,56 +278,6 @@ export const experimental_serverChannel = async (
   initFileSearchChannel(channel, options, coreOptions);
   initCreateNewStoryChannel(channel, options, coreOptions);
 
-  if (!options.disableTelemetry) {
-    channel.on(
-      TESTING_MODULE_WATCH_MODE_REQUEST,
-      async (request: TestingModuleWatchModeRequestPayload) => {
-        await telemetry('testing-module-watch-mode', {
-          provider: request.providerId,
-          watchMode: request.watchMode,
-        });
-      }
-    );
-
-    channel.on(
-      TESTING_MODULE_PROGRESS_REPORT,
-      async (payload: TestingModuleProgressReportPayload) => {
-        if (
-          (payload.status === 'success' || payload.status === 'cancelled') &&
-          payload.progress?.finishedAt
-        ) {
-          await telemetry('testing-module-completed-report', {
-            provider: payload.providerId,
-            duration: payload.progress.finishedAt - payload.progress.startedAt,
-            numTotalTests: payload.progress.numTotalTests,
-            numFailedTests: payload.progress.numFailedTests,
-            numPassedTests: payload.progress.numPassedTests,
-            status: payload.status,
-          });
-        }
-
-        if (payload.status === 'failed') {
-          await telemetry('testing-module-completed-report', {
-            provider: payload.providerId,
-            status: 'failed',
-            ...(options.enableCrashReports && {
-              error: sanitizeError(payload.error),
-            }),
-          });
-        }
-      }
-    );
-
-    channel.on(TESTING_MODULE_CRASH_REPORT, async (payload: TestingModuleCrashReportPayload) => {
-      await telemetry('testing-module-crash-report', {
-        provider: payload.providerId,
-        ...(options.enableCrashReports && {
-          error: cleanPaths(payload.error.message),
-        }),
-      });
-    });
-  }
-
   return channel;
 };
 
@@ -373,7 +312,7 @@ export const tags = async (existing: any) => {
 export const managerEntries = async (existing: any, options: Options) => {
   return [
     join(
-      dirname(require.resolve('@storybook/core/package.json')),
+      dirname(require.resolve('storybook/package.json')),
       'dist/core-server/presets/common-manager.js'
     ),
     ...(existing || []),

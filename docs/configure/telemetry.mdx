@@ -1,5 +1,6 @@
 ---
 title: 'Telemetry'
+hideRendererSelector: true
 sidebar:
   order: 3
   title: Telemetry
@@ -41,7 +42,7 @@ Specifically, we track the following information in our telemetry events:
   * Testing tools (e.g. [Jest](https://jestjs.io/), [Vitest](https://vitest.dev/), [Playwright](https://playwright.dev/)).
 * Package manager information (e.g., `npm`, `yarn`).
 * Monorepo information (e.g., [NX](https://nx.dev/), [Turborepo](https://turborepo.org/)).
-* In-app events (e.g., [Storybook guided tour](https://github.com/storybookjs/addon-onboarding)).
+* In-app events (e.g., [Storybook guided tour](https://github.com/storybookjs/addon-onboarding), [UI test run](https://storybook.js.org/docs/writing-tests/test-addon#storybook-ui)).
 
 Access to the raw data is highly controlled, limited to select members of Storybook's core team who maintain the telemetry. We cannot identify individual users from the dataset: it is anonymized and untraceable back to the user.
 
@@ -74,9 +75,10 @@ Will generate the following output:
       "exampleDocsCount": 3,
       "onboardingStoryCount": 0,
       "onboardingDocsCount": 0,
-      "version": 4
+      "version": 5
     },
     "storyStats": {
+      "factory": 0,
       "play": 0,
       "render": 1,
       "loaders": 0,
@@ -84,7 +86,8 @@ Will generate the following output:
       "globals": 0,
       "storyFn": 5,
       "mount": 0,
-      "moduleMock": 0
+      "moduleMock": 0,
+      "tags": 0
     }
   },
   "metadata": {
@@ -110,7 +113,7 @@ Will generate the following output:
     "storybookVersionSpecifier": "^7.1.0",
     "language": "typescript",
     "storybookPackages": {
-      "@storybook/blocks": {
+      "@storybook/addon-docs/blocks": {
         "version": "7.1.0"
       },
       "@storybook/react": {
@@ -163,11 +166,27 @@ In the future, we plan to share relevant data with the community through public 
 
 ## How to opt-out
 
-You may opt-out of the telemetry by setting Storybook's configuration element `disableTelemetry` to `true`, using the `--disable-telemetry` flag, or setting the environment variable`STORYBOOK_DISABLE_TELEMETRY` to `1`. For example:
+You may opt out of the telemetry within your Storybook configuration by setting the `disableTelemetry` configuration element to `true`.
 
 {/* prettier-ignore-start */}
 
 <CodeSnippets path="storybook-main-disable-telemetry.md" />
+
+{/* prettier-ignore-end */}
+
+If necessary, you can also turn off telemetry via the command line with the `--disable-telemetry` flag.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-disable-telemetry-flag.md" />
+
+{/* prettier-ignore-end */}
+
+Or via the `STORYBOOK_DISABLE_TELEMETRY` environment variable.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-disable-telemetry-env.md" />
 
 {/* prettier-ignore-end */}
 
@@ -177,7 +196,7 @@ You may opt-out of the telemetry by setting Storybook's configuration element `d
 
 ## Crash reports (disabled by default)
 
-In addition to general usage telemetry, you may also choose to share crash reports. Storybook will then sanitize the error object (removing all user paths) and append it to the telemetry event. To enable crash reporting, you can set the `enableCrashReports` configuration element to `true`, using the `--enable-crash-reports` flag, or set the `STORYBOOK_ENABLE_CRASH_REPORTS` environment variable to `1`. For example:
+In addition to general usage telemetry, you may also choose to share crash reports. Storybook will then sanitize the error object (removing all user paths) and append it to the telemetry event. To enable crash reporting, you can set the `enableCrashReports` configuration element to `true`.
 
 {/* prettier-ignore-start */}
 
@@ -185,7 +204,23 @@ In addition to general usage telemetry, you may also choose to share crash repor
 
 {/* prettier-ignore-end */}
 
-Generates the following item in the telemetry event:
+You can also enable crash reporting via the command line with the `--enable-crash-reports` flag.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-telemetry-storybook-enable-crash-reports-flag.md" />
+
+{/* prettier-ignore-end */}
+
+Or by setting the `STORYBOOK_ENABLE_CRASH_REPORTS` environment variable to `1`.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-telemetry-storybook-enable-crash-reports-env.md" />
+
+{/* prettier-ignore-end */}
+
+Enabling any of the options will generate the following item in the telemetry event:
 
 {/* prettier-ignore-start */}
 

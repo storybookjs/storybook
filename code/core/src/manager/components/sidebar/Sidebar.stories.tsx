@@ -1,12 +1,14 @@
 import React from 'react';
 
-import type { API_StatusState, Addon_SidebarTopType } from '@storybook/core/types';
-import type { Meta, StoryObj } from '@storybook/react';
-import { expect, fn, userEvent, within } from '@storybook/test';
+import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
 
-import type { IndexHash, State } from '@storybook/core/manager-api';
-import { ManagerContext } from '@storybook/core/manager-api';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
+import type { IndexHash } from 'storybook/manager-api';
+import { ManagerContext } from 'storybook/manager-api';
+import { expect, fn, userEvent, within } from 'storybook/test';
+
+import { internal_fullStatusStore } from '../../manager-stores.mock';
 import { LayoutProvider } from '../layout/LayoutProvider';
 import { standardData as standardHeaderData } from './Heading.stories';
 import { IconSymbols } from './IconSymbols';
@@ -64,7 +66,6 @@ const meta = {
   args: {
     previewInitialized: true,
     menu,
-    extra: [] as Addon_SidebarTopType[],
     index: index,
     indexJson: {
       entries: {
@@ -83,8 +84,9 @@ const meta = {
     storyId,
     refId: DEFAULT_REF_ID,
     refs: {},
-    status: {},
+    allStatuses: {},
     showCreateStoryButton: true,
+    isDevelopment: true,
   },
   decorators: [
     (storyFn) => (
@@ -97,6 +99,9 @@ const meta = {
     ),
   ],
   globals: { sb_theme: 'side-by-side' },
+  beforeEach: () => {
+    internal_fullStatusStore.unset();
+  },
 } satisfies Meta<typeof Sidebar>;
 
 export default meta;
@@ -109,8 +114,9 @@ const refs: Record<string, RefType> = {
     title: 'This is a ref',
     url: 'https://example.com',
     type: 'lazy',
-    index,
+    filteredIndex: index,
     previewInitialized: true,
+    allStatuses: {},
   },
 };
 
@@ -121,7 +127,7 @@ const refsError = {
   optimized: {
     ...refs.optimized,
     // @ts-expect-error (non strict)
-    index: undefined as IndexHash,
+    filteredIndex: undefined as IndexHash,
     indexError,
   },
 };
@@ -130,7 +136,7 @@ const refsEmpty = {
   optimized: {
     ...refs.optimized,
     // type: 'auto-inject',
-    index: {} as IndexHash,
+    filteredIndex: {} as IndexHash,
   },
 };
 
@@ -226,7 +232,7 @@ export const WithRefEmpty: Story = {
 
 export const StatusesCollapsed: Story = {
   args: {
-    status: Object.entries(index).reduce<State['status']>((acc, [id, item]) => {
+    allStatuses: Object.entries(index).reduce((acc, [id, item]) => {
       if (item.type !== 'story') {
         return acc;
       }
@@ -235,21 +241,32 @@ export const StatusesCollapsed: Story = {
         return {
           ...acc,
           [id]: {
-            addonA: { status: 'warn', title: 'Addon A', description: 'We just wanted you to know' },
-            addonB: { status: 'error', title: 'Addon B', description: 'This is a big deal!' },
+            addonA: {
+              typeId: 'addonA',
+              storyId: id,
+              value: 'status-value:warning',
+              title: 'Addon A',
+              description: 'We just wanted you to know',
+            },
+            addonB: {
+              typeId: 'addonB',
+              storyId: id,
+              value: 'status-value:error',
+              title: 'Addon B',
+              description: 'This is a big deal!',
+            },
           },
-        };
+        } satisfies StatusesByStoryIdAndTypeId;
       }
       return acc;
-    }, {}),
+    }, {} as StatusesByStoryIdAndTypeId),
   },
 };
 
 export const StatusesOpen: Story = {
   ...StatusesCollapsed,
   args: {
-    ...StatusesCollapsed.args,
-    status: Object.entries(index).reduce<State['status']>((acc, [id, item]) => {
+    allStatuses: Object.entries(index).reduce((acc, [id, item]) => {
       if (item.type !== 'story') {
         return acc;
       }
@@ -257,11 +274,23 @@ export const StatusesOpen: Story = {
       return {
         ...acc,
         [id]: {
-          addonA: { status: 'warn', title: 'Addon A', description: 'We just wanted you to know' },
-          addonB: { status: 'error', title: 'Addon B', description: 'This is a big deal!' },
+          addonA: {
+            typeId: 'addonA',
+            storyId: id,
+            value: 'status-value:warning',
+            title: 'Addon A',
+            description: 'We just wanted you to know',
+          },
+          addonB: {
+            typeId: 'addonB',
+            storyId: id,
+            value: 'status-value:error',
+            title: 'Addon B',
+            description: 'This is a big deal!',
+          },
         },
-      };
-    }, {}),
+      } satisfies StatusesByStoryIdAndTypeId;
+    }, {} as StatusesByStoryIdAndTypeId),
   },
 };
 
@@ -286,29 +315,31 @@ export const Searching: Story = {
 };
 
 export const Bottom: Story = {
-  decorators: [
-    (storyFn) => (
-      <ManagerContext.Provider
-        value={{
-          ...managerContext,
-          state: {
-            ...managerContext.state,
-            status: {
-              [storyId]: {
-                vitest: { status: 'warn', title: '', description: '' },
-                vta: { status: 'error', title: '', description: '' },
-              },
-              'root-1-child-a2--grandchild-a1-2': {
-                vitest: { status: 'warn', title: '', description: '' },
-              },
-            } satisfies API_StatusState,
-          },
-        }}
-      >
-        {storyFn()}
-      </ManagerContext.Provider>
-    ),
-  ],
+  beforeEach: () => {
+    internal_fullStatusStore.set([
+      {
+        storyId,
+        typeId: 'vitest',
+        value: 'status-value:warning',
+        title: 'Vitest',
+        description: 'Vitest',
+      },
+      {
+        storyId,
+        typeId: 'vta',
+        value: 'status-value:error',
+        title: 'VTA',
+        description: 'VTA',
+      },
+      {
+        storyId: 'root-1-child-a2--grandchild-a1-2',
+        typeId: 'vitest',
+        value: 'status-value:warning',
+        title: 'Vitest',
+        description: 'Vitest',
+      },
+    ]);
+  },
 };
 
 /**

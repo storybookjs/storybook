@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { JsPackageManager } from '@storybook/core/common';
-
+import type { JsPackageManager } from '../../../../../core/src/common/js-package-manager/JsPackageManager';
 import { getAddonSvelteCsfVersion } from './index';
 
 describe('installed', () => {

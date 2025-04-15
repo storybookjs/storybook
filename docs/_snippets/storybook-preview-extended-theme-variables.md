@@ -5,4 +5,3 @@ addonActionsTheme: {
   BASE_BACKGROUND_COLOR: 'transparent',
 }
 ```
-

@@ -2,15 +2,7 @@
   "name": "solid-vite/default-js",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
-  "implicitDependencies": [
-    "storybook",
-    "core",
-    "addon-essentials",
-    "addon-interactions",
-    "addon-links",
-    "addon-onboarding",
-    "blocks"
-  ],
+  "implicitDependencies": ["core", "addon-links", "addon-onboarding"],
   "targets": {
     "sandbox": {},
     "sb:dev": {},

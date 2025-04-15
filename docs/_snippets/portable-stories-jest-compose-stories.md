@@ -50,4 +50,3 @@ test('renders primary button with overridden props', () => {
   expect(buttonElement).not.toBeNull();
 });
 ```
-

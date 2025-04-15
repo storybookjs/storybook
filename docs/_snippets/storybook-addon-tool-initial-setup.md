@@ -36,4 +36,3 @@ export const Tool = memo(function MyAddonSelector() {
   );
 });
 ```
-

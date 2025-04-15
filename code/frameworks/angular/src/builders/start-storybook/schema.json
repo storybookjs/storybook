@@ -139,6 +139,11 @@
       "description": "Write Webpack Stats JSON to disk",
       "default": false
     },
+    "statsJson": {
+      "type": ["boolean", "string"],
+      "description": "Write stats JSON to disk",
+      "default": false
+    },
     "previewUrl": {
       "type": "string",
       "description": "Disables the default storybook preview and lets you use your own"
@@ -151,6 +156,11 @@
     "sourceMap": {
       "type": ["boolean", "object"],
       "description": "Configure sourcemaps. See: https://angular.io/guide/workspace-config#source-map-configuration",
+      "default": false
+    },
+    "experimentalZoneless": {
+      "type": "boolean",
+      "description": "Experimental: Use zoneless change detection.",
       "default": false
     }
   },

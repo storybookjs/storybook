@@ -1,10 +1,9 @@
 import type { MouseEvent } from 'react';
 import React, { useCallback, useEffect, useState } from 'react';
 
-import { styled } from '@storybook/core/theming';
-import { global } from '@storybook/global';
+import { logger } from 'storybook/internal/client-logger';
 
-import { logger } from '@storybook/core/client-logger';
+import { global } from '@storybook/global';
 
 import memoize from 'memoizerific';
 // @ts-expect-error (Converted from ts-ignore)
@@ -22,6 +21,7 @@ import tsx from 'react-syntax-highlighter/dist/esm/languages/prism/tsx';
 import typescript from 'react-syntax-highlighter/dist/esm/languages/prism/typescript';
 import yml from 'react-syntax-highlighter/dist/esm/languages/prism/yaml';
 import ReactSyntaxHighlighter from 'react-syntax-highlighter/dist/esm/prism-light';
+import { styled } from 'storybook/theming';
 
 import { ActionBar } from '../ActionBar/ActionBar';
 import type { ScrollAreaProps } from '../ScrollArea/ScrollArea';

@@ -5,10 +5,7 @@ import { setProjectAnnotations } from '@storybook/react';
 import * as addonAnnotations from 'my-addon/preview';
 import * as previewAnnotations from './.storybook/preview';
 
-const annotations = setProjectAnnotations([
-  previewAnnotations,
-  addonAnnotations,
-]);
+const annotations = setProjectAnnotations([previewAnnotations, addonAnnotations]);
 
 // Supports beforeAll hook from Storybook
 beforeAll(annotations.beforeAll);
@@ -21,10 +18,7 @@ import { setProjectAnnotations } from '@storybook/vue3';
 import * as addonAnnotations from 'my-addon/preview';
 import * as previewAnnotations from './.storybook/preview';
 
-const annotations = setProjectAnnotations([
-  previewAnnotations,
-  addonAnnotations,
-]);
+const annotations = setProjectAnnotations([previewAnnotations, addonAnnotations]);
 
 // Supports beforeAll hook from Storybook
 beforeAll(annotations.beforeAll);

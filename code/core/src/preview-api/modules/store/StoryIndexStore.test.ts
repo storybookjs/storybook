@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import type { StoryIndex } from '@storybook/core/types';
+import type { StoryIndex } from 'storybook/internal/types';
 
 import { StoryIndexStore } from './StoryIndexStore';
 

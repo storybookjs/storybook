@@ -31,4 +31,3 @@ export const ExcludeStory: Story = {
   tags: ['no-tests'],
 };
 ```
-

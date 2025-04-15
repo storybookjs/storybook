@@ -1,10 +1,7 @@
-import type { ComponentProps, ReactNode, SyntheticEvent } from 'react';
-import React from 'react';
-
-import { styled } from '@storybook/core/theming';
+import React, { type ComponentProps, type ReactNode, type SyntheticEvent } from 'react';
 
 import memoize from 'memoizerific';
-import { transparentize } from 'polished';
+import { styled } from 'storybook/theming';
 
 export interface TitleProps {
   children?: ReactNode;
@@ -40,7 +37,7 @@ const Title = styled(({ active, loading, disabled, ...rest }: TitleProps) => <sp
   ({ disabled, theme }) =>
     disabled
       ? {
-          color: transparentize(0.7, theme.color.defaultText),
+          color: theme.textMutedColor,
         }
       : {}
 );
@@ -123,6 +120,7 @@ const Item = styled.div<ItemProps>(
   ({ theme }) => ({
     width: '100%',
     border: 'none',
+    borderRadius: theme.appBorderRadius,
     background: 'none',
     fontSize: theme.typography.size.s1,
     transition: 'all 150ms ease-out',
@@ -147,6 +145,15 @@ const Item = styled.div<ItemProps>(
       },
       '&:hover svg': {
         opacity: 1,
+      },
+    },
+  ({ theme, as }) =>
+    as === 'label' && {
+      '&:has(input:not(:disabled))': {
+        cursor: 'pointer',
+        '&:hover': {
+          background: theme.background.hoverable,
+        },
       },
     },
   ({ disabled }) => disabled && { cursor: 'not-allowed' }

@@ -1,14 +1,15 @@
-import { sanitizeStoryContextUpdate } from 'storybook/internal/preview-api';
 import type { DecoratorFunction, LegacyStoryFn, StoryContext } from 'storybook/internal/types';
 
 /*
-! DO NOT change this SlotDecorator import to a relative path, it will break it.
+! DO NOT change this DecoratorHandler import to a relative path, it will break it.
 ! A relative import will be compiled at build time, and Svelte will be unable to
 ! render the component together with the user's Svelte components
 ! importing from @storybook/svelte will make sure that it is compiled at runtime
 ! with the same bundle as the user's Svelte components
 */
-import SlotDecorator from '@storybook/svelte/internal/SlotDecorator.svelte';
+import DecoratorHandler from '@storybook/svelte/internal/DecoratorHandler.svelte';
+
+import { sanitizeStoryContextUpdate } from 'storybook/preview-api';
 
 import type { SvelteRenderer } from './types';
 
@@ -29,8 +30,8 @@ function unWrap<T>(obj: { default: T } | T): T {
  * - `() => MyComponent` is transformed to `() => ({ Component: MyComponent })`
  * - `() => ({})` is transformed to component from context with `() => ({ Component: context.component
  *   })`
- * - A decorator component is wrapped with SlotDecorator, injecting the decorated component in a <slot
- *   />
+ * - A decorator component is wrapped with DecoratorHandler, injecting the decorated component as a
+ *   child
  *
  * @param context StoryContext
  * @param story The current story
@@ -62,10 +63,10 @@ function prepareStory(
   }
 
   if (innerStory) {
-    // render a SlotDecorator with innerStory as its regular component,
+    // render a DecoratorHandler with innerStory as its regular component,
     // and the prepared story as the decorating component
     return {
-      Component: SlotDecorator,
+      Component: DecoratorHandler,
       props: {
         // inner stories will already have been prepared, keep as is
         ...innerStory,

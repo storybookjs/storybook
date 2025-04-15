@@ -1,5 +1,5 @@
 ```js filename="MyForm.stories.js" renderer="react" language="js"
-import { expect, userEvent, within } from '@storybook/test';
+import { expect, userEvent, within } from 'storybook/test';
 import { cookies, headers } from '@storybook/nextjs/headers.mock';
 
 import MyForm from './my-form';
@@ -26,7 +26,7 @@ export const LoggedInEurope = {
 
 ```ts filename="MyForm.stories.ts" renderer="react" language="ts-4-9"
 import type { Meta, StoryObj } from '@storybook/react';
-import { expect, fireEvent, userEvent, within } from '@storybook/test';
+import { expect, fireEvent, userEvent, within } from 'storybook/test';
 // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
 import { cookies, headers } from '@storybook/nextjs/headers.mock';
 
@@ -58,7 +58,7 @@ export const LoggedInEurope: Story = {
 
 ```ts filename="MyForm.stories.ts" renderer="react" language="ts"
 import type { Meta, StoryObj } from '@storybook/react';
-import { expect, fireEvent, userEvent, within } from '@storybook/test';
+import { expect, fireEvent, userEvent, within } from 'storybook/test';
 // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
 import { cookies, headers } from '@storybook/nextjs/headers.mock';
 
@@ -87,4 +87,3 @@ export const LoggedInEurope: Story = {
   },
 };
 ```
-

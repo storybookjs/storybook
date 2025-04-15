@@ -149,6 +149,51 @@ describe('enrichCsf', () => {
         };
       `);
     });
+    it('csf factories', () => {
+      expect(
+        enrich(
+          dedent`
+          // compiled code
+          import {config} from "/.storybook/preview.ts";
+          const meta = config.meta({
+              args: {
+                label: "Hello world!"
+              }
+          });
+          export const Story = meta.story({});
+        `,
+          dedent`
+          // original code
+          import {config} from "#.storybook/preview.ts";
+          const meta = config.meta({
+              args: {
+                label: "Hello world!"
+              }
+          });
+          export const Story = meta.story({});
+        `
+        )
+      ).toMatchInlineSnapshot(`
+        // compiled code
+        import { config } from "/.storybook/preview.ts";
+        const meta = config.meta({
+          args: {
+            label: "Hello world!"
+          }
+        });
+        export const Story = meta.story({});
+        Story.input.parameters = {
+          ...Story.input.parameters,
+          docs: {
+            ...Story.input.parameters?.docs,
+            source: {
+              originalSource: "meta.story({})",
+              ...Story.input.parameters?.docs?.source
+            }
+          }
+        };
+      `);
+    });
     it('multiple stories', () => {
       expect(
         enrich(

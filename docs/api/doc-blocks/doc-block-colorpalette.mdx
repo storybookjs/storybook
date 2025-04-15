@@ -13,10 +13,8 @@ The `ColorPalette` block allows you to document all color-related items (e.g., s
 
 {/* prettier-ignore-start */}
 
-```md
-{/* Colors.mdx */}
-
-import { Meta, ColorPalette, ColorItem } from '@storybook/blocks';
+```md title="Colors.mdx"
+import { Meta, ColorPalette, ColorItem } from '@storybook/addon-docs/blocks';
 
 <Meta title="Colors" />
 
@@ -66,7 +64,7 @@ import { Meta, ColorPalette, ColorItem } from '@storybook/blocks';
 ## ColorPalette
 
 ```js
-import { ColorPalette } from '@storybook/blocks';
+import { ColorPalette } from '@storybook/addon-docs/blocks';
 ```
 
 `ColorPalette` is configured with the following props:
@@ -80,7 +78,7 @@ Type: `React.ReactNode`
 ## ColorItem
 
 ```js
-import { ColorItem } from '@storybook/blocks';
+import { ColorItem } from '@storybook/addon-docs/blocks';
 ```
 
 `ColorItem` is configured with the following props:

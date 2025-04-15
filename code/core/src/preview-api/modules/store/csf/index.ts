@@ -8,3 +8,4 @@ export * from './getValuesFromArgTypes';
 export * from './composeConfigs';
 export * from './stepRunners';
 export * from './portable-stories';
+export * from './csf-factory-utils';

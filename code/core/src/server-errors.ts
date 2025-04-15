@@ -1,6 +1,8 @@
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
+import type { Status } from './shared/status-store';
+import type { StatusTypeId } from './shared/status-store';
 import { StorybookError } from './storybook-error';
 
 /**
@@ -40,7 +42,6 @@ export enum Category {
   FRAMEWORK_REACT_WEBPACK5 = 'FRAMEWORK_REACT-WEBPACK5',
   FRAMEWORK_SERVER_WEBPACK5 = 'FRAMEWORK_SERVER-WEBPACK5',
   FRAMEWORK_SVELTE_VITE = 'FRAMEWORK_SVELTE-VITE',
-  FRAMEWORK_SVELTE_WEBPACK5 = 'FRAMEWORK_SVELTE-WEBPACK5',
   FRAMEWORK_SVELTEKIT = 'FRAMEWORK_SVELTEKIT',
   FRAMEWORK_VUE_VITE = 'FRAMEWORK_VUE-VITE',
   FRAMEWORK_VUE_WEBPACK5 = 'FRAMEWORK_VUE-WEBPACK5',
@@ -314,6 +315,20 @@ export class GoogleFontsLoadingError extends StorybookError {
   }
 }
 
+export class SvelteViteWithSvelteKitError extends StorybookError {
+  constructor() {
+    super({
+      category: Category.FRAMEWORK_SVELTE_VITE,
+      code: 1,
+      documentation:
+        'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#sveltekit-needs-the-storybooksveltekit-framework',
+      message: dedent`
+        We've detected a SvelteKit project using the @storybook/svelte-vite framework, which is not supported.
+        Please use the @storybook/sveltekit framework instead.`,
+    });
+  }
+}
+
 export class NoMatchingExportError extends StorybookError {
   constructor(public data: { error: unknown | Error }) {
     super({
@@ -420,6 +435,25 @@ export class MainFileEvaluationError extends StorybookError {
         
         Original error:
         ${errorText}`,
+    });
+  }
+}
+
+export class StatusTypeIdMismatchError extends StorybookError {
+  constructor(
+    public data: {
+      status: Status;
+      typeId: StatusTypeId;
+    }
+  ) {
+    super({
+      category: Category.CORE_SERVER,
+      code: 16,
+      message: `Status has typeId "${data.status.typeId}" but was added to store with typeId "${data.typeId}". Full status: ${JSON.stringify(
+        data.status,
+        null,
+        2
+      )}`,
     });
   }
 }

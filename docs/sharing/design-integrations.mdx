@@ -70,13 +70,11 @@ Run the following command to install the addon.
 
 {/* prettier-ignore-end */}
 
-Update your Storybook configuration (in `.storybook/main.js|ts`) to include the addon.
+<Callout variant="info">
 
-{/* prettier-ignore-start */}
+The CLI's [`add`](../api/cli-options.mdx#add) command automates the addon's installation and setup. To install it manually, see our [documentation](../addons/install-addons.mdx#manual-installation) on how to install addons.
 
-<CodeSnippets path="storybook-main-figma-addon-register.md" />
-
-{/* prettier-ignore-end */}
+</Callout>
 
 #### Link Figma components to stories
 
@@ -90,7 +88,7 @@ In Storybook, add a new [parameter](../writing-stories/parameters.mdx) named `de
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="component-story-figma-integration.md" usesCsf3 csf2Path="sharing/design-integrations#snippet-component-story-figma-integration" />
+<CodeSnippets path="component-story-figma-integration.md" />
 
 {/* prettier-ignore-end */}
 

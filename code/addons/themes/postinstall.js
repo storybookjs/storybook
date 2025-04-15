@@ -5,6 +5,7 @@ const PACKAGE_MANAGER_TO_COMMAND = {
   pnpm: ['pnpm', 'dlx'],
   yarn1: ['npx'],
   yarn2: ['yarn', 'dlx'],
+  bun: ['bunx'],
 };
 
 const selectPackageManagerCommand = (packageManager) => PACKAGE_MANAGER_TO_COMMAND[packageManager];

@@ -12,4 +12,3 @@ resetArgs((argNames: ['key']));
 // To reset all args
 resetArgs();
 ```
-

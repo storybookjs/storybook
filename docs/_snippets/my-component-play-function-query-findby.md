@@ -1,7 +1,7 @@
 ```ts filename="MyComponent.stories.ts" renderer="angular" language="ts"
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/test';
 
 import { MyComponent } from './MyComponent.component';
 
@@ -28,8 +28,61 @@ export const AsyncExample: Story = {
 };
 ```
 
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import { userEvent, within } from 'storybook/test';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+  });
+</script>
+
+<!--
+  See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+  to learn more about using the canvasElement to query the DOM
+-->
+<Story
+  name="AsyncExample"
+  play={async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // Other steps
+
+    // Waits for the component to be rendered before querying the element
+    await canvas.findByRole('button', { name: / button label/i });
+  }} />
+```
+
+```js filename="MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+import { userEvent, within } from 'storybook/test';
+
+import MyComponent from './MyComponent.svelte';
+
+export default {
+  component: MyComponent,
+};
+
+/* See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * to learn more about using the canvasElement to query the DOM
+ */
+export const AsyncExample = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // Other steps
+
+    // Waits for the component to be rendered before querying the element
+    await canvas.findByRole('button', { name: / button label/i });
+  },
+};
+```
+
 ```js filename="MyComponent.stories.js|jsx" renderer="common" language="js"
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/test';
 
 import { MyComponent } from './MyComponent';
 
@@ -47,7 +100,65 @@ export const AsyncExample = {
     // Other steps
 
     // Waits for the component to be rendered before querying the element
-    await canvas.findByRole('button', { name: / button label/i }));
+    await canvas.findByRole('button', { name: / button label/i });
+  },
+};
+```
+
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import { userEvent, within } from 'storybook/test';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+  });
+</script>
+
+<!--
+  See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+  to learn more about using the canvasElement to query the DOM
+-->
+<Story
+  name="AsyncExample"
+  play={async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // Other steps
+
+    // Waits for the component to be rendered before querying the element
+    await canvas.findByRole('button', { name: / button label/i });
+  }} />
+```
+
+```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="CSF"
+import type { Meta, StoryObj } from '@storybook/svelte';
+
+import { userEvent, within } from 'storybook/test';
+
+import MyComponent from './MyComponent.svelte';
+
+const meta = {
+  component: MyComponent,
+} satisfies Meta<typeof MyComponent>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+/* See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * to learn more about using the canvasElement to query the DOM
+ */
+export const AsyncExample: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // Other steps
+
+    // Waits for the component to be rendered before querying the element
+    await canvas.findByRole('button', { name: / button label/i });
   },
 };
 ```
@@ -56,7 +167,7 @@ export const AsyncExample = {
 // Replace your-framework with the name of your framework
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/test';
 
 import { MyComponent } from './MyComponent';
 
@@ -82,11 +193,69 @@ export const AsyncExample: Story = {
 };
 ```
 
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import { userEvent, within } from 'storybook/test';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+  });
+</script>
+
+<!--
+  See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+  to learn more about using the canvasElement to query the DOM
+-->
+<Story
+  name="AsyncExample"
+  play={async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // Other steps
+
+    // Waits for the component to be rendered before querying the element
+    await canvas.findByRole('button', { name: / button label/i });
+  }} />
+```
+
+```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+import type { Meta, StoryObj } from '@storybook/svelte';
+
+import { userEvent, within } from 'storybook/test';
+
+import MyComponent from './MyComponent.svelte';
+
+const meta: Meta<typeof MyComponent> = {
+  component: MyComponent,
+};
+
+export default meta;
+type Story = StoryObj<typeof MyComponent>;
+
+/* See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * to learn more about using the canvasElement to query the DOM
+ */
+export const AsyncExample: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // Other steps
+
+    // Waits for the component to be rendered before querying the element
+    await canvas.findByRole('button', { name: / button label/i });
+  },
+};
+```
+
 ```ts filename="MyComponent.stories.ts|tsx" renderer="common" language="ts"
 // Replace your-framework with the name of your framework
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/test';
 
 import { MyComponent } from './MyComponent';
 
@@ -113,7 +282,7 @@ export const AsyncExample: Story = {
 ```
 
 ```js filename="MyComponent.stories.js" renderer="web-components" language="js"
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/test';
 
 export default {
   component: 'demo-my-component',
@@ -129,14 +298,14 @@ export const AsyncExample = {
     // Other steps
 
     // Waits for the component to be rendered before querying the element
-    await canvas.findByRole('button', { name: / button label/i }));
+    await canvas.findByRole('button', { name: / button label/i });
   },
 };
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts"
 import type { Meta, StoryObj } from '@storybook/web-components';
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/test';
 
 const meta: Meta = {
   component: 'demo-my-component',
@@ -159,4 +328,3 @@ export const AsyncExample: Story = {
   },
 };
 ```
-

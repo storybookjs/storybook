@@ -40,7 +40,7 @@ run({ cwd: process.cwd() }).catch((err: unknown) => {
 
 function getTSDiagnostics(program: ts.Program, cwd: string, host: ts.CompilerHost): any {
   return ts.formatDiagnosticsWithColorAndContext(
-    ts.getPreEmitDiagnostics(program).filter((d) => d.file.fileName.startsWith(cwd)),
+    ts.getPreEmitDiagnostics(program).filter((d) => d.file && d.file.fileName.startsWith(cwd)),
     host
   );
 }

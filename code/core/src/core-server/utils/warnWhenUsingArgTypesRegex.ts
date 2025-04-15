@@ -1,9 +1,8 @@
 import { readFile } from 'node:fs/promises';
 
-import { type BabelFile, core } from '@storybook/core/babel';
-import type { StorybookConfig } from '@storybook/core/types';
-
-import { babelParse } from '@storybook/core/csf-tools';
+import { type BabelFile, core } from 'storybook/internal/babel';
+import { babelParse } from 'storybook/internal/csf-tools';
+import type { StorybookConfig } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
@@ -44,7 +43,7 @@ export async function warnWhenUsingArgTypesRegex(
               'argTypesRegex'
             )} and assigning explicit action with the ${picocolors.cyan(
               'fn'
-            )} function from ${picocolors.cyan('@storybook/test')} instead:
+            )} function from ${picocolors.cyan('storybook/test')} instead:
             https://storybook.js.org/docs/essentials/actions#via-storybooktest-fn-spy-function
             
             The build used by the addon for snapshot testing doesn't take the regex into account, which can cause hard to debug problems when a snapshot depends on the presence of action props.

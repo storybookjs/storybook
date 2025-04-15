@@ -8,7 +8,7 @@ const preview: Preview = {
       (story) => `<div [class]="myTheme">${story}</div>`,
       ({ globals }) => {
         return { myTheme: globals['theme'] };
-      },
+      }
     ),
   ],
 };
@@ -24,9 +24,8 @@ const preview = {
     (story, context) => {
       const selectedTheme = context.globals.theme || 'light';
       const theme = MyThemes[selectedTheme];
-      return (
-        // Your theme provider and other context providers go here
-      )
+      // Your theme provider and other context providers goes in the return statement
+      return;
     },
   ],
 };
@@ -45,9 +44,8 @@ const preview: Preview = {
     (story, context) => {
       const selectedTheme = context.globals.theme || 'light';
       const theme = MyThemes[selectedTheme];
-      return (
-        // Your theme provider and other context providers go here
-      )
+      // Your theme provider and other context providers goes in the return statement
+      return;
     },
   ],
 };
@@ -66,9 +64,8 @@ const preview: Preview = {
     (story, context) => {
       const selectedTheme = context.globals.theme || 'light';
       const theme = MyThemes[selectedTheme];
-      return (
-        // Your theme provider and other context providers go here
-      )
+      // Your theme provider and other context providers goes in the return statement
+      return;
     },
   ],
 };
@@ -143,7 +140,7 @@ const preview: Preview = {
 export default preview;
 ```
 
-```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="3"
+```js filename=".storybook/preview.js" renderer="vue" language="js"
 import { setup } from '@storybook/vue3';
 
 import { VApp } from 'vuetify/components';
@@ -176,7 +173,7 @@ const preview = {
 export default preview;
 ```
 
-```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="3"
+```ts filename=".storybook/preview.ts" renderer="vue" language="ts"
 import type { Preview } from '@storybook/vue3';
 import { setup } from '@storybook/vue3';
 
@@ -243,4 +240,3 @@ const preview: Preview = {
 
 export default preview;
 ```
-

@@ -9,4 +9,3 @@ const api = start(render);
 
 // the boilerplate code
 ```
-

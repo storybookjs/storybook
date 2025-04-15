@@ -5,6 +5,7 @@ import { stringify } from 'telejson';
 import { ICollection, StoryFnAngularReturnType } from '../types';
 import { PropertyExtractor } from './utils/PropertyExtractor';
 import { TestBedComponentBuilder } from './utils/TestBedComponentBuilder';
+import { getWrapperComponent } from './StorybookWrapperComponent';
 
 type StoryRenderInfo = {
   storyFnAngular: StoryFnAngularReturnType;
@@ -115,6 +116,10 @@ export abstract class AbstractRenderer {
       }
     }
 
+    if (storyFnAngular.userDefinedTemplate) {
+      component = getWrapperComponent(storyFnAngular.template);
+    }
+
     const componentBuilder = await new TestBedComponentBuilder()
       .initTestBed()
       .setComponent(component)
@@ -122,7 +127,7 @@ export abstract class AbstractRenderer {
       .setStoryFn(storyFnAngular)
       .setMetaData(analyzedMetadata)
       .setEnvironmentProviders(environmentProviders)
-      .configureModule()
+      .configure()
       .compileComponents();
 
     applicationRefs.set(targetDOMNode, componentBuilder.getApplicationRef());

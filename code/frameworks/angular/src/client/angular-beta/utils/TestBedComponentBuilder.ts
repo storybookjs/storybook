@@ -1,20 +1,12 @@
-import { ComponentFixture, MetadataOverride, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import {
   BrowserDynamicTestingModule,
   platformBrowserDynamicTesting,
 } from '@angular/platform-browser-dynamic/testing';
-import {
-  ApplicationRef,
-  Component,
-  EnvironmentProviders,
-  importProvidersFrom,
-  Type,
-} from '@angular/core';
+import { ApplicationRef, Type } from '@angular/core';
 import { PropertyExtractor } from './PropertyExtractor';
 import { ICollection, StoryFnAngularReturnType } from '../../types';
-import { BrowserModule } from '@angular/platform-browser';
-import { getWrapperComponent, getWrapperModule } from '../StorybookWrapperComponent';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { getWrapperModule } from '../StorybookWrapperComponent';
 
 export class TestBedComponentBuilder {
   private testBedInstance: TestBed;
@@ -35,15 +27,24 @@ export class TestBedComponentBuilder {
 
   private props: ICollection;
 
-  private isUserDefinedTemplate = false;
-
-  private userDefinedTemplate: string;
-
   private schemas: any[];
 
   private styles: string[];
 
-  setComponent(storyComponent: Type<unknown> | undefined) {
+  constructor() {
+    this.testBedInstance = new TestBed();
+  }
+
+  initTestBed() {
+    this.testBedInstance.initTestEnvironment(
+      BrowserDynamicTestingModule,
+      platformBrowserDynamicTesting()
+    );
+    this.testBedInstance.configureTestingModule({});
+    return this;
+  }
+
+  setComponent(storyComponent: Type<unknown>) {
     this.component = storyComponent;
     return this;
   }
@@ -51,8 +52,6 @@ export class TestBedComponentBuilder {
   setStoryFn(storyFn: StoryFnAngularReturnType) {
     this.styles = storyFn.styles;
     this.schemas = storyFn.moduleMetadata?.schemas;
-    this.isUserDefinedTemplate = storyFn.userDefinedTemplate;
-    this.userDefinedTemplate = storyFn.template;
     this.props = storyFn.props;
     return this;
   }
@@ -66,7 +65,6 @@ export class TestBedComponentBuilder {
   }
 
   setEnvironmentProviders(providers: any[]) {
-    if (providers == null) return this;
     this.environmentProviders = providers ?? [];
     return this;
   }
@@ -82,55 +80,28 @@ export class TestBedComponentBuilder {
     return this;
   }
 
-  configureModule() {
+  configure() {
     this.throwOnRequiredNullProperties();
-    if (this.isUserDefinedTemplate) {
-      this.component = getWrapperComponent(
-        this.selector,
-        this.userDefinedTemplate,
-        this.componentProviders,
-        this.styles,
-        this.schemas
-      );
-    }
-
-    const metaData = this.generateOverrideMetaData();
+    const wrapperModule = getWrapperModule();
     this.testBedInstance
-      .configureTestingModule({
-        providers: this.environmentProviders,
+      .overrideComponent(this.component, {
+        add: {
+          schemas: this.schemas ?? [],
+          providers: this.componentProviders ?? [],
+          styles: this.styles ?? [],
+          selector: this.selector,
+          imports: [wrapperModule],
+        },
       })
-      .overrideComponent(this.component, metaData);
+      .overrideModule(wrapperModule, {
+        set: {
+          exports: [...this.declarations, ...this.imports],
+          declarations: this.declarations,
+          imports: this.imports,
+          providers: this.environmentProviders,
+        },
+      });
 
-    return this;
-  }
-
-  private generateOverrideMetaData() {
-    const overrideData: MetadataOverride<Component> = { set: {} };
-    if (this.schemas != null && this.schemas.length != 0) {
-      overrideData.set.schemas = this.schemas;
-    }
-    if (this.componentProviders != null) {
-      overrideData.set.providers = this.componentProviders;
-    }
-    if (this.styles != null) {
-      overrideData.set.styles = this.styles;
-    }
-    if (this.selector != null) {
-      overrideData.set.selector = this.selector;
-    }
-
-    const wrapperModule = getWrapperModule(this.declarations, this.imports);
-    overrideData.set.imports = [wrapperModule];
-
-    return overrideData;
-  }
-
-  initTestBed() {
-    this.testBedInstance = new TestBed();
-    this.testBedInstance.initTestEnvironment(
-      BrowserDynamicTestingModule,
-      platformBrowserDynamicTesting()
-    );
     return this;
   }
 

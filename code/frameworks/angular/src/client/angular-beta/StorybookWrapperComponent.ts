@@ -1,30 +1,16 @@
 import { Component, NgModule } from '@angular/core';
 
-export const getWrapperComponent = (
-  selector: string,
-  template: string,
-  providers: any[],
-  styles: string[],
-  schemas: any[]
-) => {
+export const getWrapperComponent = (template: string) => {
   @Component({
-    selector,
     template,
     standalone: true,
-    providers,
-    styles,
-    schemas: schemas,
   })
   class CustomWrapperComponent {}
   return CustomWrapperComponent;
 };
 
-export const getWrapperModule = (declarations: any[], imports: any[]) => {
-  @NgModule({
-    declarations: declarations,
-    imports: imports,
-    exports: [...declarations, ...imports],
-  })
+export const getWrapperModule = () => {
+  @NgModule()
   class WrapperModule {}
   return WrapperModule;
 };

@@ -1,2 +1,7 @@
-// make it work with --isolatedModules
-export default {};
+import { definePreview } from 'storybook/preview-api';
+
+import * as addonAnnotations from './preview';
+
+export { PARAM_KEY } from './constants';
+
+export default () => definePreview(addonAnnotations);

@@ -43,7 +43,7 @@ function transformPackageJson(content: string): string | null {
         if (dep in consolidatedPackages) {
           const newPackage = consolidatedPackages[dep as keyof typeof consolidatedPackages];
           // Only add to packagesToAdd if it's not being consolidated into storybook/* or if it's a sub-path of a consolidated package
-          if (!newPackage.startsWith('storybook/') && !newPackage.match(/(?:.*\/){3,}/)) {
+          if (!newPackage.startsWith('storybook/') && !newPackage.match(/(?:.*\/){2,}/)) {
             packagesToAdd.add(newPackage);
           }
           delete packageJson[depType][dep];

@@ -184,7 +184,8 @@ export const consolidatedImports: Fix<ConsolidatedOptions> = {
     const { glob } = await prompts({
       type: 'text',
       name: 'glob',
-      message: 'Enter a custom glob pattern to scan (or press enter to use default):',
+      message:
+        'Enter a custom glob pattern (relative to the project root) to scan (or press enter to use default):',
       initial: defaultGlob,
     });
 

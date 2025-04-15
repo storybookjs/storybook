@@ -13,6 +13,7 @@ type Story = StoryObj<typeof meta>;
 export const All: Story = {
   render: () => (
     <div style={{ display: 'flex', gap: 10 }}>
+      <Checkbox checked data-focus />
       <Checkbox checked />
       <Checkbox data-indeterminate />
       <Checkbox />
@@ -21,10 +22,15 @@ export const All: Story = {
       <Checkbox disabled />
     </div>
   ),
-  play: async ({ canvasElement }) => {
+  experimental_afterEach: async ({ canvasElement }) => {
     canvasElement.querySelectorAll<HTMLInputElement>('[data-indeterminate]').forEach((checkbox) => {
       checkbox.indeterminate = true;
     });
+  },
+  parameters: {
+    pseudo: {
+      focus: '[data-focus]',
+    },
   },
 };
 
@@ -37,7 +43,7 @@ export const Checked: Story = {
 };
 
 export const Indeterminate: Story = {
-  play: async ({ canvasElement }) => {
+  experimental_afterEach: async ({ canvasElement }) => {
     canvasElement.getElementsByTagName('input')[0].indeterminate = true;
   },
 };
@@ -59,7 +65,7 @@ export const DisabledIndeterminate: Story = {
   args: {
     disabled: true,
   },
-  play: async ({ canvasElement }) => {
+  experimental_afterEach: async ({ canvasElement }) => {
     canvasElement.getElementsByTagName('input')[0].indeterminate = true;
   },
 };

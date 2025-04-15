@@ -37,6 +37,10 @@ const Input = styled.input({
     height: 2,
     background: 'white',
   },
+  '&:focus': {
+    outline: `1px solid ${color.secondary}`,
+    outlineOffset: 1,
+  },
 });
 
 export const Checkbox = (props: React.InputHTMLAttributes<HTMLInputElement>) => {

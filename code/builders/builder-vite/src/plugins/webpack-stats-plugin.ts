@@ -6,12 +6,6 @@ import type { BuilderStats } from 'storybook/internal/types';
 import slash from 'slash';
 import type { Plugin } from 'vite';
 
-import {
-  SB_VIRTUAL_FILES,
-  getOriginalVirtualModuleId,
-  getResolvedVirtualModuleId,
-} from '../virtual-file-names';
-
 /*
  * Reason, Module are copied from chromatic types
  * https://github.com/chromaui/chromatic-cli/blob/145a5e295dde21042e96396c7e004f250d842182/bin-src/types.ts#L265-L276
@@ -45,9 +39,6 @@ function isUserCode(moduleName: string) {
   }
 
   // keep Storybook's virtual files because they import the story files, so they are essential to the module graph
-  if (Object.values(SB_VIRTUAL_FILES).includes(getOriginalVirtualModuleId(moduleName))) {
-    return true;
-  }
 
   return Boolean(
     !moduleName.startsWith('vite/') &&
@@ -68,17 +59,6 @@ export function pluginWebpackStats({ workingDir }: WebpackStatsPluginOptions): W
       // we can remove adding the forward slash here
       // Reference: https://github.com/chromaui/chromatic-cli/blob/v11.25.2/node-src/lib/getDependentStoryFiles.ts#L53
       return `/${filename}`;
-    }
-    // ! Maintain backwards compatibility with the old virtual file names
-    // ! to ensure that the stats file doesn't change between the versions
-    // ! Turbosnap is also only compatible with the old virtual file names
-    // ! the old virtual file names did not start with the obligatory \0 character
-    if (Object.values(SB_VIRTUAL_FILES).includes(getOriginalVirtualModuleId(filename))) {
-      // We have to append a forward slash because otherwise we break turbosnap.
-      // As soon as the chromatic-cli supports `virtual:` id's without a starting forward slash,
-      // we can remove adding the forward slash here
-      // Reference: https://github.com/chromaui/chromatic-cli/blob/v11.25.2/node-src/lib/getDependentStoryFiles.ts#L53
-      return `/${getOriginalVirtualModuleId(filename)}`;
     }
 
     // Otherwise, we need them in the format `./path/to/file.js`.

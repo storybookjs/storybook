@@ -1,60 +1,139 @@
-import { normalizeStories } from 'storybook/internal/common';
+import { getFrameworkName, getProjectRoot, normalizeStories } from 'storybook/internal/common';
 import type { DocsOptions, Options, TagsOptions } from 'storybook/internal/types';
 
-import { SB_VIRTUAL_FILES } from './virtual-file-names';
+import { genDynamicImport, genObjectFromRawEntries } from 'knitwork';
+import { dirname, normalize, relative } from 'pathe';
+import dedent from 'ts-dedent';
 
-export type PreviewHtml = string | undefined;
+import { listStories } from './list-stories';
 
 export async function transformIframeHtml(html: string, options: Options) {
-  const { configType, features, presets } = options;
-  const build = await presets.apply('build');
-  const frameworkOptions = await presets.apply<Record<string, any> | null>('frameworkOptions');
-  const headHtmlSnippet = await presets.apply<PreviewHtml>('previewHead');
-  const bodyHtmlSnippet = await presets.apply<PreviewHtml>('previewBody');
-  const logLevel = await presets.apply('logLevel', undefined);
-  const docsOptions = await presets.apply<DocsOptions>('docs');
-  const tagsOptions = await presets.apply<TagsOptions>('tags');
+  // Batch fetch all preset data
+  const [
+    build,
+    frameworkOptions,
+    headHtmlSnippet,
+    bodyHtmlSnippet,
+    logLevel,
+    docsOptions,
+    tagsOptions,
+    coreOptions,
+    stories,
+    frameworkName,
+  ] = await Promise.all([
+    options.presets.apply('build'),
+    options.presets.apply<Record<string, any> | null>('frameworkOptions'),
+    options.presets.apply<string | undefined>('previewHead'),
+    options.presets.apply<string | undefined>('previewBody'),
+    options.presets.apply('logLevel', undefined),
+    options.presets.apply<DocsOptions>('docs'),
+    options.presets.apply<TagsOptions>('tags'),
+    options.presets.apply('core'),
+    options.presets.apply('stories', [], options).then((s) =>
+      normalizeStories(s, {
+        configDir: options.configDir,
+        workingDir: process.cwd(),
+      }).map((specifier) => ({
+        ...specifier,
+        importPathMatcher: specifier.importPathMatcher.source,
+      }))
+    ),
+    getFrameworkName(options),
+  ]);
 
-  const coreOptions = await presets.apply('core');
-  const stories = normalizeStories(await options.presets.apply('stories', [], options), {
-    configDir: options.configDir,
-    workingDir: process.cwd(),
-  }).map((specifier) => ({
-    ...specifier,
-    importPathMatcher: specifier.importPathMatcher.source,
-  }));
+  const projectRoot = getProjectRoot();
+  const storiesFiles = await listStories(options);
 
-  const otherGlobals = {
-    ...(build?.test?.disableBlocks ? { __STORYBOOK_BLOCKS_EMPTY_MODULE__: {} } : {}),
-  };
+  // Generate the bootstrapping script
 
-  const transformedHtml = html
-    .replace('[CONFIG_TYPE HERE]', configType || '')
-    .replace('[LOGLEVEL HERE]', logLevel || '')
-    .replace(`'[FRAMEWORK_OPTIONS HERE]'`, JSON.stringify(frameworkOptions))
-    .replace(
-      `('OTHER_GLOBLALS HERE');`,
-      Object.entries(otherGlobals)
-        .map(([k, v]) => `window["${k}"] = ${JSON.stringify(v)};`)
-        .join('')
-    )
-    .replace(
-      `'[CHANNEL_OPTIONS HERE]'`,
-      JSON.stringify(coreOptions && coreOptions.channelOptions ? coreOptions.channelOptions : {})
-    )
-    .replace(`'[FEATURES HERE]'`, JSON.stringify(features || {}))
-    .replace(`'[STORIES HERE]'`, JSON.stringify(stories || {}))
-    .replace(`'[DOCS_OPTIONS HERE]'`, JSON.stringify(docsOptions || {}))
-    .replace(`'[TAGS_OPTIONS HERE]'`, JSON.stringify(tagsOptions || {}))
-    .replace('<!-- [HEAD HTML SNIPPET HERE] -->', headHtmlSnippet || '')
-    .replace('<!-- [BODY HTML SNIPPET HERE] -->', bodyHtmlSnippet || '');
+  const relativePathToStorybookPackageDirectory =
+    (process.cwd(), dirname(require.resolve('storybook/package.json')));
 
-  if (configType === 'DEVELOPMENT') {
-    return transformedHtml.replace(
-      'virtual:/@storybook/builder-vite/vite-app.js',
-      `/@id/__x00__${SB_VIRTUAL_FILES.VIRTUAL_APP_FILE}`
-    );
-  }
+  const mainScript = dedent`
+    import { createBrowserChannel } from '/@fs${relativePathToStorybookPackageDirectory}/storybook/internal/channels';
+    import { addons } from '/@fs${relativePathToStorybookPackageDirectory}/storybook/preview-api';
+    import { setup } from '/@fs${relativePathToStorybookPackageDirectory}/storybook/internal/preview/runtime';
+    import { PreviewWeb } from '/@fs${relativePathToStorybookPackageDirectory}/storybook/preview-api';
 
-  return transformedHtml;
+    // Set up the channel
+    const channel = createBrowserChannel({ page: 'preview' });
+    addons.setChannel(channel);
+    window.__STORYBOOK_ADDONS_CHANNEL__ = channel;
+    window.__STORYBOOK_SERVER_CHANNEL__ = window.CONFIG_TYPE === 'DEVELOPMENT' ? channel : undefined;
+
+    // Initialize Storybook
+    setup();
+    
+    // Set up story loading
+    const importers = ${genObjectFromRawEntries(
+      storiesFiles.map((file) => {
+        const relativePath = relative(process.cwd(), file);
+        return [
+          relativePath.startsWith('../') ? relativePath : `./${relativePath}`,
+          genDynamicImport(normalize(file)),
+        ];
+      })
+    )};
+
+    async function importFn(path) {
+      return await importers[path]();
+    }
+
+    // Initialize preview
+    const preview = window.__STORYBOOK_PREVIEW__ = window.__STORYBOOK_PREVIEW__ || new PreviewWeb();
+    window.__STORYBOOK_STORY_STORE__ = window.__STORYBOOK_STORY_STORE__ || preview.storyStore;
+    
+    preview.onStoriesChanged({ importFn });
+
+    // Set up HMR
+    if (import.meta.hot) {
+      ${
+        frameworkName === '@storybook/web-components-vite'
+          ? 'import.meta.hot.decline();'
+          : dedent`
+          // HMR for preview
+          import.meta.hot.accept(['${projectRoot}/preview'], () => {
+            preview.onGetProjectAnnotationsChanged({ 
+              getProjectAnnotations: () => import('${projectRoot}/preview').then(m => m.default)
+            });
+          });
+
+          // HMR for stories
+          import.meta.hot.accept(Object.values(importers).map(imp => imp.toString()), () => {
+            preview.onStoriesChanged({ importFn });
+          });
+        `
+      }
+    }
+  `.trim();
+
+  // Replace all placeholders in the template
+  return (
+    html
+      // Replace configuration placeholders
+      .replace('[CONFIG_TYPE HERE]', options.configType || '')
+      .replace('[LOGLEVEL HERE]', logLevel || '')
+      .replace(`'[FRAMEWORK_OPTIONS HERE]'`, JSON.stringify(frameworkOptions))
+      .replace(
+        `('OTHER_GLOBLALS HERE');`,
+        build?.test?.disableBlocks ? 'window["__STORYBOOK_BLOCKS_EMPTY_MODULE__"] = {};' : ''
+      )
+      .replace(`'[CHANNEL_OPTIONS HERE]'`, JSON.stringify(coreOptions?.channelOptions || {}))
+      .replace(`'[FEATURES HERE]'`, JSON.stringify(options.features || {}))
+      .replace(`'[STORIES HERE]'`, JSON.stringify(stories || {}))
+      .replace(`'[DOCS_OPTIONS HERE]'`, JSON.stringify(docsOptions || {}))
+      .replace(`'[TAGS_OPTIONS HERE]'`, JSON.stringify(tagsOptions || {}))
+      // Replace HTML snippets
+      .replace('<!-- [HEAD HTML SNIPPET HERE] -->', headHtmlSnippet || '')
+      .replace('<!-- [BODY HTML SNIPPET HERE] -->', bodyHtmlSnippet || '')
+      // Replace script placeholders with a single consolidated script
+      .replace(
+        '<!-- [STORYBOOK_INIT_SCRIPTS HERE] -->',
+        dedent`
+        <script type="module">
+          ${mainScript}
+        </script>
+      `
+      )
+  );
 }

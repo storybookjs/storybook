@@ -19,10 +19,13 @@ export const COVERAGE_DIRECTORY = 'coverage';
 export const SUPPORTED_FRAMEWORKS = [
   '@storybook/nextjs',
   '@storybook/nextjs-vite',
+  '@storybook/react-vite',
+  '@storybook/svelte-vite',
+  '@storybook/vue3-vite',
+  '@storybook/html-vite',
+  '@storybook/web-components-vite',
   '@storybook/sveltekit',
 ];
-
-export const SUPPORTED_RENDERERS = ['@storybook/react', '@storybook/svelte', '@storybook/vue3'];
 
 export const storeOptions = {
   id: ADDON_ID,

@@ -1,8 +1,8 @@
-import { fn } from "@storybook/test";
 import {
   type RequestCookie,
   RequestCookies,
 } from "next/dist/compiled/@edge-runtime/cookies/index.js";
+import { fn } from "storybook/test";
 import type { Mock } from "vitest";
 import { headers } from "./index.js";
 

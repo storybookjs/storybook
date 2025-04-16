@@ -15,29 +15,25 @@
     "inspect": "serve .storybook/.vite-inspect"
   },
   "dependencies": {
-    "next": "^15.0.3",
-    "react": "19.0.0-rc-66855b96-20241106",
-    "react-dom": "19.0.0-rc-66855b96-20241106",
+    "next": "^15.3.0",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
     "styled-jsx": "^5.1.6"
   },
   "devDependencies": {
-    "@chromatic-com/storybook": "^3.2.2",
-    "@storybook/addon-actions": "0.0.0-pr-29640-sha-3521df0d",
-    "@storybook/addon-essentials": "0.0.0-pr-29640-sha-3521df0d",
-    "@storybook/addon-toolbars": "0.0.0-pr-29640-sha-3521df0d",
-    "@storybook/blocks": "0.0.0-pr-29640-sha-3521df0d",
-    "@storybook/experimental-addon-test": "0.0.0-pr-29640-sha-3521df0d",
-    "@storybook/experimental-nextjs-vite": "0.0.0-pr-29640-sha-3521df0d",
-    "@storybook/react": "0.0.0-pr-29640-sha-3521df0d",
-    "@storybook/test": "0.0.0-pr-29640-sha-3521df0d",
-    "@storybook/nextjs": "0.0.0-pr-29640-sha-3521df0d",
+    "@chromatic-com/storybook": "^4.0.0-next.2",
+    "@storybook/addon-docs": "^9.0.0-0",
+    "@storybook/addon-vitest": "^9.0.0-0",
+    "@storybook/nextjs-vite": "^9.0.0-0",
+    "@storybook/react": "^9.0.0-0",
+    "@storybook/nextjs": "^9.0.0-0",
     "@testing-library/dom": "^10.3.2",
     "@testing-library/jest-dom": "^6.4.6",
     "@testing-library/react": "^16.0.0",
     "@types/node": "^20",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
-    "@vitest/browser": "^2.1.4",
+    "@vitest/browser": "^3.0.0",
     "autoprefixer": "^10.4.19",
     "bootstrap": "^5.3.3",
     "chromatic": "^11.7.0",
@@ -46,10 +42,10 @@
     "playwright": "^1.45.3",
     "postcss": "^8.4.38",
     "serve": "^14.2.3",
-    "storybook": "0.0.0-pr-29640-sha-3521df0d",
+    "storybook": "^9.0.0-0",
     "tailwindcss": "^3.4.4",
     "typescript": "^5",
     "vite-plugin-inspect": "^0.8.5",
-    "vitest": "^2.1.4"
+    "vitest": "^3.0.0"
   }
 }

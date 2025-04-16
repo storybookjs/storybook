@@ -1,4 +1,4 @@
-import { fn } from "@storybook/test";
+import { fn } from "storybook/test";
 
 import { HeadersAdapter } from "next/dist/server/web/spec-extension/adapters/headers.js";
 import type { Mock } from "vitest";

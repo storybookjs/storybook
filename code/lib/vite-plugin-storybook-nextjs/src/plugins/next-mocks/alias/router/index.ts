@@ -1,5 +1,3 @@
-import type { Mock } from "@storybook/test";
-import { fn } from "@storybook/test";
 import type { NextComponentType, NextPageContext } from "next";
 import singletonRouter, * as originalRouter from "next/dist/client/router.js";
 import type {
@@ -9,6 +7,8 @@ import type {
 import type { NextRouter, SingletonRouter } from "next/router.js";
 import type { ComponentType } from "react";
 import { NextjsRouterMocksNotAvailable } from "storybook/internal/preview-errors";
+import type { Mock } from "storybook/test";
+import { fn } from "storybook/test";
 
 const defaultRouterState = {
   route: "/",
@@ -81,7 +81,7 @@ export const createRouter = (overrides: Partial<NextRouter>) => {
     for (const key of Object.keys(routerActions)) {
       if (key in overrides) {
         // biome-ignore lint/suspicious/noExplicitAny: simply casting to any for convenience
-        (routerActions as any)[key] = fn((...args) => {
+        (routerActions as any)[key] = fn((...args: unknown[]) => {
           // biome-ignore lint/suspicious/noExplicitAny: simply casting to any for convenience
           return (overrides as any)[key](...args);
         }).mockName(`useRouter().${key}`);

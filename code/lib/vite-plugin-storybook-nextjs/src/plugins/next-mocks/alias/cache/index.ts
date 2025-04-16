@@ -1,4 +1,4 @@
-import { fn } from "@storybook/test";
+import { fn } from "storybook/test";
 import type { Mock } from "vitest";
 
 // biome-ignore lint/suspicious/noExplicitAny: <explanation>

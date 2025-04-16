@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/react";
+import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import Link from "next/link";
 import React from "react";
 
@@ -38,17 +38,6 @@ const Component = () => (
     <li>
       <Link href="/replace-url" replace>
         Replace the URL instead of push
-      </Link>
-    </li>
-    <li>
-      <Link href="/legacy-behaviour" legacyBehavior>
-        {/* biome-ignore lint/a11y/useValidAnchor: <explanation> */}
-        <a>Legacy behavior</a>
-      </Link>
-    </li>
-    <li>
-      <Link href="/child-is-functional-component" passHref legacyBehavior>
-        <MyButton>child is a functional component</MyButton>
       </Link>
     </li>
     <li>

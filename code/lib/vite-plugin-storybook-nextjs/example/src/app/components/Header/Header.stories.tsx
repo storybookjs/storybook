@@ -2,10 +2,10 @@
  * @vitest-environment jsdom
  */
 
-import { cookies, headers } from "@storybook/nextjs/headers.mock";
-import type { Meta } from "@storybook/react";
-import type { StoryObj } from "@storybook/react";
-import { expect, userEvent, within } from "@storybook/test";
+import type { Meta } from "@storybook/nextjs-vite";
+import type { StoryObj } from "@storybook/nextjs-vite";
+import { cookies, headers } from "@storybook/nextjs-vite/headers.mock";
+import { expect, userEvent, within } from "storybook/test";
 import NextHeader from "./Header";
 
 export default {

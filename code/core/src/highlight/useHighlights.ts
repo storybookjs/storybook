@@ -198,7 +198,8 @@ export const useHighlights = ({
     value.forEach((box) => {
       let boxElement = boxElementByTargetElement.get(box.element);
       if (!boxElement) {
-        boxElement = root.appendChild(document.createElement('div'));
+        const props = { popover: 'manual' };
+        boxElement = root.appendChild(createElement('div', props) as HTMLDivElement);
         boxElementByTargetElement.set(box.element, boxElement);
       }
     });
@@ -296,9 +297,13 @@ export const useHighlights = ({
           left: `${box.left}px`,
           width: `${box.width}px`,
           height: `${box.height}px`,
+          margin: 0,
+          padding: 0,
           cursor: box.selectable ? 'pointer' : 'default',
           pointerEvents: box.selectable ? 'auto' : 'none',
         });
+
+        showPopover(boxElement);
       }
     });
   };

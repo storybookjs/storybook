@@ -151,7 +151,7 @@ channel.on('click', fn().mockName('click'));
 
 const meta = preview.meta({
   render: () => {
-    useEffect(() => useHighlights({ channel, menuId: 'menu', rootId: 'root' }), []);
+    useEffect(() => useHighlights({ channel, menuId: 'menu-id', rootId: 'root-id' }), []);
     return <></>;
   },
   args: {

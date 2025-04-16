@@ -2,7 +2,13 @@
 import type { Channel } from 'storybook/internal/channels';
 import { STORY_CHANGED } from 'storybook/internal/core-events';
 
-import { HIGHLIGHT, REMOVE_HIGHLIGHT, RESET_HIGHLIGHT, SCROLL_INTO_VIEW } from './constants';
+import {
+  HIGHLIGHT,
+  MAX_Z_INDEX,
+  REMOVE_HIGHLIGHT,
+  RESET_HIGHLIGHT,
+  SCROLL_INTO_VIEW,
+} from './constants';
 import type { Box, Highlight, HighlightOptions, RawHighlightOptions } from './types';
 import {
   convertLegacy,
@@ -285,6 +291,7 @@ export const useHighlights = ({
           ...(isHovered ? box.hoverStyles : {}),
           ...(isFocused ? box.focusStyles : {}),
           position: getComputedStyle(box.element).position === 'fixed' ? 'fixed' : 'absolute',
+          zIndex: MAX_Z_INDEX - 10,
           top: `${box.top}px`,
           left: `${box.left}px`,
           width: `${box.width}px`,
@@ -312,7 +319,7 @@ export const useHighlights = ({
           `
             #${menuId} {
               position: absolute;
-              z-index: 2147483647;
+              z-index: ${MAX_Z_INDEX};
               width: 300px;
               padding: 0px;
               margin: 15px 0 0 0;

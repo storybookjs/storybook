@@ -87,7 +87,12 @@ export const useStore = <T>(initialValue?: T) => {
     listeners.get(key)?.push(listener);
     return () => {
       const list = listeners.get(key);
-      if (list) listeners.set(key, list.filter((l) => l !== listener));
+      if (list) {
+        listeners.set(
+          key,
+          list.filter((l) => l !== listener)
+        );
+      }
     };
   };
   const teardown = () => {

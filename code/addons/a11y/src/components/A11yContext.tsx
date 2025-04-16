@@ -206,8 +206,8 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
     (item: { id: string }, target: { selectors: string[] }) => {
       const [type, id] = item.id.split('.');
       const index =
-        results[type as RuleType]
-          .find((r) => r.id === id)
+        results?.[type as RuleType]
+          ?.find((r) => r.id === id)
           ?.nodes.findIndex((n) => target.selectors.some((s) => s === String(n.target))) ?? -1;
       if (index !== -1) {
         setSelectedItems(new Map([[`${type}.${id}`, `${type}.${id}.${index + 1}`]]));

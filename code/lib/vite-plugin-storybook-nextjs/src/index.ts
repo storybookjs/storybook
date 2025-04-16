@@ -118,7 +118,6 @@ function VitePlugin({ dir = process.cwd() }: VitePluginOptions = {}): Plugin[] {
               "sb-original/image-context",
               "sb-original/default-loader",
               "@mdx-js/react",
-              "@storybook/blocks",
               "next/dist/compiled/react",
               "next/image",
               "next/legacy/image",

@@ -129,7 +129,7 @@ describe('configurePreview', () => {
     await configurePreview({
       language: SupportedLanguage.JAVASCRIPT,
       storybookConfigFolder: '.storybook',
-      rendererId: 'react',
+      frameworkPackage: '@storybook/react-vite',
     });
 
     const { calls } = vi.mocked(fsp.writeFile).mock;
@@ -137,7 +137,7 @@ describe('configurePreview', () => {
 
     expect(previewConfigPath).toEqual('./.storybook/preview.js');
     expect(previewConfigContent).toMatchInlineSnapshot(`
-      "/** @type { import('@storybook/react').Preview } */
+      "/** @type { import('@storybook/react-vite').Preview } */
       const preview = {
         parameters: {
           controls: {
@@ -157,7 +157,7 @@ describe('configurePreview', () => {
     await configurePreview({
       language: SupportedLanguage.TYPESCRIPT_4_9,
       storybookConfigFolder: '.storybook',
-      rendererId: 'react',
+      frameworkPackage: '@storybook/react-vite',
     });
 
     const { calls } = vi.mocked(fsp.writeFile).mock;
@@ -165,7 +165,7 @@ describe('configurePreview', () => {
 
     expect(previewConfigPath).toEqual('./.storybook/preview.ts');
     expect(previewConfigContent).toMatchInlineSnapshot(`
-      "import type { Preview } from '@storybook/react'
+      "import type { Preview } from '@storybook/react-vite'
 
       const preview: Preview = {
         parameters: {
@@ -187,7 +187,7 @@ describe('configurePreview', () => {
     await configurePreview({
       language: SupportedLanguage.TYPESCRIPT_4_9,
       storybookConfigFolder: '.storybook',
-      rendererId: 'react',
+      frameworkPackage: '@storybook/react-vite',
     });
     expect(fsp.writeFile).not.toHaveBeenCalled();
   });
@@ -196,7 +196,7 @@ describe('configurePreview', () => {
     await configurePreview({
       language: SupportedLanguage.TYPESCRIPT_4_9,
       storybookConfigFolder: '.storybook',
-      rendererId: 'angular',
+      frameworkPackage: '@storybook/angular',
       frameworkPreviewParts: {
         prefix: dedent`
         import { setCompodocJson } from "@storybook/addon-docs/angular";

@@ -56,14 +56,20 @@ export async function useStatics(app: Polka, options: Options): Promise<void> {
     }
   });
 
-  app.get(
-    `/${basename(faviconPath)}`,
-    sirvWorkaround(faviconPath, {
-      dev: true,
-      etag: true,
-      extensions: [],
-    })
-  );
+  // Fix for serving favicon in dev mode - use the directory containing the favicon
+  // rather than trying to serve the file directly
+  const faviconDir = resolve(faviconPath, '..');
+  const faviconFile = basename(faviconPath);
+  app.use('/', (req, res, next) => {
+    if (req.url === `/${faviconFile}`) {
+      return sirvWorkaround(faviconDir, {
+        dev: true,
+        etag: true,
+        extensions: [],
+      })(req, res, next);
+    }
+    next();
+  });
 }
 
 /**

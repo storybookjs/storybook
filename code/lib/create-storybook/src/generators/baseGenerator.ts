@@ -294,7 +294,6 @@ export async function baseGenerator(
 
   // added to package.json
   const addonPackages = [
-    '@storybook/blocks',
     ...(compiler ? [`@storybook/addon-webpack5-compiler-${compiler}`] : []),
     ...extraAddonsToInstall,
   ].filter(Boolean);
@@ -424,7 +423,7 @@ export async function baseGenerator(
       frameworkPreviewParts,
       storybookConfigFolder: storybookConfigFolder as string,
       language,
-      rendererId,
+      frameworkPackage,
     });
   }
 

@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "9.0.0-alpha.17",
+  "version": "9.0.0-alpha.19",
   "description": "Storybook framework-agnostic API",
   "keywords": [
     "storybook"
@@ -144,6 +144,11 @@
       "require": "./dist/outline/preview.cjs"
     },
     "./internal/highlight": {
+      "types": "./dist/highlight/index.d.ts",
+      "import": "./dist/highlight/index.js",
+      "require": "./dist/highlight/index.cjs"
+    },
+    "./highlight": {
       "types": "./dist/highlight/index.d.ts",
       "import": "./dist/highlight/index.js",
       "require": "./dist/highlight/index.cjs"
@@ -462,6 +467,9 @@
         "./dist/outline/preview.d.ts"
       ],
       "internal/highlight": [
+        "./dist/highlight/index.d.ts"
+      ],
+      "highlight": [
         "./dist/highlight/index.d.ts"
       ],
       "internal/highlight/preview": [

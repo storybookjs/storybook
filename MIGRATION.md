@@ -1,6 +1,7 @@
 <h1>Migration</h1>
 
 - [From version 8.x to 9.0.0](#from-version-8x-to-900)
+  - [Consolidate `@storybook/blocks` into addon docs](#consolidate-storybookblocks-into-addon-docs)
   - [Vitest 2.0 support is dropped](#vitest-20-support-is-dropped)
   - [Package Manager Support](#package-manager-support)
   - [A11y addon: Removed deprecated manual parameter](#a11y-addon-removed-deprecated-manual-parameter)
@@ -435,6 +436,12 @@
   - [Deprecated embedded addons](#deprecated-embedded-addons)
 
 ## From version 8.x to 9.0.0
+
+### Consolidate `@storybook/blocks` into addon docs
+
+The package `@storybook/blocks` is no longer published as of Storybook 9.
+
+All exports can now be found in the export `@storybook/addon-docs/blocks`.
 
 ### Vitest 2.0 support is dropped
 
@@ -935,7 +942,6 @@ If you're using framework-specific Vite plugins, ensure they are compatible with
 For more information on upgrading to Vite 5, see the [Vite Migration Guide](https://vitejs.dev/guide/migration).
 
 ### Framework-specific changes
-
 
 #### Svelte: Require v5 and up
 

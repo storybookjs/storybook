@@ -16,7 +16,7 @@ import { addons } from 'storybook/manager-api';
 import type { API } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { A11Y_ADDON_ID, A11Y_PANEL_ID, PANEL_ID } from '../constants';
+import { A11Y_ADDON_ID, A11Y_PANEL_ID, COMPONENT_TESTING_PANEL_ID } from '../constants';
 import type { StoreState } from '../types';
 import type { StatusValueToStoryIds } from '../use-test-provider-state';
 import { Description } from './Description';
@@ -282,7 +282,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
               onClick={() => {
                 openPanel({
                   api,
-                  panelId: PANEL_ID,
+                  panelId: COMPONENT_TESTING_PANEL_ID,
                   entryId:
                     componentTestStatusValueToStoryIds['status-value:error'][0] ??
                     componentTestStatusValueToStoryIds['status-value:warning'][0] ??

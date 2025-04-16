@@ -20,8 +20,8 @@ import { styled } from 'storybook/theming';
 
 import { useLayout } from '../layout/LayoutProvider';
 import { addonsTool } from './tools/addons';
-import { copyTool } from './tools/copy';
 import { ejectTool } from './tools/eject';
+import { openInEditorTool } from './tools/openInEditor';
 import { remountTool } from './tools/remount';
 import { zoomTool } from './tools/zoom';
 import type { PreviewProps } from './utils/types';
@@ -117,7 +117,7 @@ export const defaultToolsExtra: Addon_BaseType[] = [
   addonsTool,
   fullScreenTool,
   ejectTool,
-  copyTool,
+  openInEditorTool,
 ];
 
 export interface ToolData {

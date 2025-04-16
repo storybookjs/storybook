@@ -39,15 +39,12 @@ const QRCodeWrapper = styled.div(({ theme }) => ({
   borderRadius: theme.appBorderRadius,
 }));
 
-const ejectMapper = ({ state, api }: Combo) => {
+const ejectMapper = ({ state }: Combo) => {
   const { storyId, refId, refs } = state;
   // @ts-expect-error (non strict)
   const ref = refs[refId];
 
-  const data = api.getCurrentStoryData();
-
   return {
-    storyFileName: data?.parameters?.fileName,
     refId,
     baseUrl: ref ? `${ref.url}/iframe.html` : (PREVIEW_URL as string) || 'iframe.html',
     storyId,
@@ -59,10 +56,9 @@ interface EjectButtonProps {
   storyId: string;
   baseUrl: string;
   queryParams: Record<string, string | undefined>;
-  storyFileName: string;
 }
 
-export const EjectButton = ({ storyId, baseUrl, queryParams, storyFileName }: EjectButtonProps) => {
+export const EjectButton = ({ storyId, baseUrl, queryParams }: EjectButtonProps) => {
   const [isTooltipVisible, setIsTooltipVisible] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [showQRCode, setShowQRCode] = useState(false);
@@ -81,10 +77,6 @@ export const EjectButton = ({ storyId, baseUrl, queryParams, storyFileName }: Ej
     [origin]
   );
 
-  const handleOpenInEditorLink = useCallback(async () => {
-    await fetch(`/__open-in-editor?file=${storyFileName}`);
-  }, [storyFileName]);
-
   return (
     <>
       <WithTooltip
@@ -93,16 +85,6 @@ export const EjectButton = ({ storyId, baseUrl, queryParams, storyFileName }: Ej
         tooltip={({ onHide }) => (
           <TooltipLinkList
             links={[
-              // {
-              //   id: 'editor',
-              //   title: 'Open in Editor',
-              //   icon: <MarkupIcon />,
-              //   right: '⌥⇧E',
-              //   onClick: () => {
-              //     handleOpenInEditorLink();
-              //     onHide();
-              //   },
-              // },
               {
                 id: 'copy',
                 title: isCopied ? 'Copied!' : 'Copy story link',
@@ -181,14 +163,9 @@ export const ejectTool: Addon_BaseType = {
   match: ({ viewMode, tabId }) => viewMode === 'story' && !tabId,
   render: () => (
     <Consumer filter={ejectMapper}>
-      {({ baseUrl, storyId, queryParams, storyFileName }) =>
+      {({ baseUrl, storyId, queryParams }) =>
         storyId ? (
-          <EjectButton
-            storyId={storyId}
-            baseUrl={baseUrl}
-            queryParams={queryParams}
-            storyFileName={storyFileName}
-          />
+          <EjectButton storyId={storyId} baseUrl={baseUrl} queryParams={queryParams} />
         ) : null
       }
     </Consumer>

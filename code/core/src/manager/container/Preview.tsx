@@ -14,16 +14,16 @@ import { Preview, createCanvasTab, filterTabs } from '../components/preview/Prev
 import { filterToolsSide, fullScreenTool } from '../components/preview/Toolbar';
 import { defaultWrappers } from '../components/preview/Wrappers';
 import { addonsTool } from '../components/preview/tools/addons';
-import { copyTool } from '../components/preview/tools/copy';
 import { ejectTool } from '../components/preview/tools/eject';
 import { menuTool } from '../components/preview/tools/menu';
+import { openInEditorTool } from '../components/preview/tools/openInEditor';
 import { remountTool } from '../components/preview/tools/remount';
 import { zoomTool } from '../components/preview/tools/zoom';
 import type { PreviewProps } from '../components/preview/utils/types';
 
 const defaultTabs = [createCanvasTab()];
 const defaultTools = [menuTool, remountTool, zoomTool];
-const defaultToolsExtra = [addonsTool, fullScreenTool, ejectTool, copyTool];
+const defaultToolsExtra = [addonsTool, fullScreenTool, ejectTool, openInEditorTool];
 
 const emptyTabsList: Addon_BaseType[] = [];
 

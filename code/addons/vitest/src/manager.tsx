@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 
 import { Addon_TypesEnum } from 'storybook/internal/types';
 

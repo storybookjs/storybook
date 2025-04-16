@@ -32,6 +32,14 @@ const config = defineMain({
       titlePrefix: 'components',
     },
     {
+      directory: '../core/src/component-testing/components',
+      titlePrefix: 'component-testing',
+    },
+    {
+      directory: '../core/src/controls/components',
+      titlePrefix: 'controls',
+    },
+    {
       directory: '../lib/blocks/src',
       titlePrefix: 'blocks',
     },
@@ -60,20 +68,19 @@ const config = defineMain({
       titlePrefix: 'addons/onboarding',
     },
     {
-      directory: '../addons/test/src/components',
-      titlePrefix: 'addons/test',
+      directory: '../addons/vitest/src/components',
+      titlePrefix: 'addons/vitest',
     },
     {
-      directory: '../addons/test/template/stories',
-      titlePrefix: 'addons/test',
+      directory: '../addons/vitest/template/stories',
+      titlePrefix: 'addons/vitest',
     },
   ],
   addons: [
     '@storybook/addon-themes',
     '@storybook/addon-docs',
-    '@storybook/addon-storysource',
     '@storybook/addon-designs',
-    '@storybook/addon-test',
+    '@storybook/addon-vitest',
     '@storybook/addon-a11y',
     '@chromatic-com/storybook',
   ],
@@ -124,10 +131,6 @@ const config = defineMain({
         },
       },
       plugins: [react()],
-      optimizeDeps: {
-        force: true,
-        include: ['@storybook/blocks'],
-      },
       build: {
         // disable sourcemaps in CI to not run out of memory
         sourcemap: process.env.CI !== 'true',

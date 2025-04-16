@@ -39,15 +39,19 @@ test.describe("component testing", () => {
     await page.evaluate(() => window.sessionStorage.clear());
     await sbPage.waitUntilLoaded();
 
-    
+
     // Ensure that all test results are removed and features are disabled, as previous tests might have enabled them
-    
+
     const clearStatusesButton = page.getByLabel('Clear all statuses');
     if (await clearStatusesButton.isVisible()) {
       await clearStatusesButton.click();
     }
 
-    await page.getByLabel('Expand testing module').click();
+    const expandTestingModule = page.getByLabel('Expand testing module');
+    if (await expandTestingModule.isVisible()) {
+      await expandTestingModule.click();
+    }
+
     const disableWatch = page.getByLabel('Disable watch mode');
     if (await disableWatch.isVisible()) {
       await disableWatch.click();
@@ -77,7 +81,7 @@ test.describe("component testing", () => {
       .getByRole("button", { name: "test" });
     await expect(storyElement).toBeVisible({ timeout: 30000 });
 
-    await sbPage.viewAddonPanel("Component tests");
+    await sbPage.viewAddonPanel("Interactions");
 
     // For whatever reason, when visiting a story sometimes the story element is collapsed and that causes flake
     const testStoryElement = await page.getByRole("button", {
@@ -481,7 +485,7 @@ test.describe("component testing", () => {
 
   test.fixme("should have correct status count globally and in context menus", () => {
   });
-  
+
   test.fixme("should open the correct component test and a11y panels when clicking on statuses", () => {
   });
 });

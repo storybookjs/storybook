@@ -7,10 +7,9 @@ import { SET_CURRENT_STORY, STORY_RENDER_PHASE_CHANGED } from 'storybook/interna
 
 import { global } from '@storybook/global';
 
-import { addons } from 'storybook/preview-api';
-
 import { EVENTS } from './EVENTS';
-import { Instrumenter } from './instrumenter';
+import { Instrumenter, isClass } from './instrumenter';
+import { addons } from './preview-api';
 import type { Options } from './types';
 
 const mocks = await vi.hoisted(async () => {
@@ -37,13 +36,13 @@ const mocks = await vi.hoisted(async () => {
     callSpy,
     syncSpy,
     forceRemountSpy,
-    ready: vi.fn().mockResolvedValue(Promise.resolve()),
+    ready: vi.fn().mockResolvedValue(Promise.resolve(true)),
     channel,
   };
 });
 
 vi.mock('storybook/internal/client-logger');
-vi.mock('storybook/preview-api', () => {
+vi.mock('./preview-api', () => {
   return {
     addons: {
       ready: mocks.ready,
@@ -713,6 +712,52 @@ describe('Instrumenter', () => {
       expect(fn).toHaveBeenCalledTimes(3);
 
       await p;
+    });
+  });
+
+  describe('isClass', () => {
+    it('returns true for class declarations', () => {
+      class TestClass {}
+      expect(isClass(TestClass)).toBe(true);
+    });
+
+    it('returns true for class expressions', () => {
+      const TestClass = class {};
+      expect(isClass(TestClass)).toBe(true);
+    });
+
+    it('returns false for regular functions', () => {
+      function testFunction() {}
+      expect(isClass(testFunction)).toBe(false);
+    });
+
+    it('returns false for arrow functions', () => {
+      const arrowFunction = () => {};
+      expect(isClass(arrowFunction)).toBe(false);
+    });
+
+    it('returns false for function expressions', () => {
+      const functionExpression = function () {};
+      expect(isClass(functionExpression)).toBe(false);
+    });
+
+    it('returns false for functions without prototype', () => {
+      expect(isClass(Promise.resolve)).toBe(false);
+    });
+
+    it('returns false for method shorthand', () => {
+      expect(isClass({ method() {} })).toBe(false);
+    });
+
+    it('returns false for non-function values', () => {
+      expect(isClass(null)).toBe(false);
+      expect(isClass(undefined)).toBe(false);
+      expect(isClass(123)).toBe(false);
+      expect(isClass('string')).toBe(false);
+      expect(isClass({})).toBe(false);
+      expect(isClass([])).toBe(false);
+      expect(isClass(true)).toBe(false);
+      expect(isClass(Symbol('test'))).toBe(false);
     });
   });
 });

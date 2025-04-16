@@ -35,13 +35,3 @@ export async function migrate(
     throw new Error('Migrate: please specify a migration name or --list');
   }
 }
-
-export async function addStorybookBlocksPackage() {
-  const packageManager = JsPackageManagerFactory.getPackageManager();
-  const packageJson = await packageManager.retrievePackageJson();
-  const versionToInstall = getStorybookVersionSpecifier(await packageManager.retrievePackageJson());
-  logger.info(`✅ Adding "@storybook/blocks" package`);
-  await packageManager.addDependencies({ installAsDevDependencies: true, packageJson }, [
-    `@storybook/blocks@${versionToInstall}`,
-  ]);
-}

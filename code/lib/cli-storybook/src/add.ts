@@ -78,7 +78,7 @@ type CLIOptions = {
  *
  * ```sh
  * sb add "@storybook/addon-docs"
- * sb add "@storybook/addon-test@9.0.1"
+ * sb add "@storybook/addon-vitest@9.0.1"
  * ```
  *
  * If there is no version specifier and it's a Storybook addon, it will try to use the version

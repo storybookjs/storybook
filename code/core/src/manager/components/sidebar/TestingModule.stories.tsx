@@ -1,9 +1,12 @@
 import React from 'react';
 
 import type { Listener } from 'storybook/internal/channels';
-import { type TestProviders } from 'storybook/internal/core-events';
 import type { TestProviderStateByProviderId } from 'storybook/internal/types';
-import { Addon_TypesEnum } from 'storybook/internal/types';
+import {
+  type Addon_Collection,
+  type Addon_TestProviderType,
+  Addon_TypesEnum,
+} from 'storybook/internal/types';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
@@ -19,38 +22,21 @@ const TestProvider = styled.div({
   fontSize: 12,
 });
 
-const baseState = {
-  details: {},
-  cancellable: false,
-  cancelling: false,
-  running: false,
-  failed: false,
-  crashed: false,
-};
-
-const registeredTestProviders: TestProviders = {
+const registeredTestProviders: Addon_Collection<Addon_TestProviderType> = {
   'component-tests': {
     type: Addon_TypesEnum.experimental_TEST_PROVIDER,
     id: 'component-tests',
-    name: 'Component tests',
     render: () => <TestProvider>Component tests</TestProvider>,
-    runnable: true,
-    ...baseState,
   },
   'visual-tests': {
     type: Addon_TypesEnum.experimental_TEST_PROVIDER,
     id: 'visual-tests',
-    name: 'Visual tests',
     render: () => <TestProvider>Visual tests</TestProvider>,
-    runnable: true,
-    ...baseState,
   },
   linting: {
     type: Addon_TypesEnum.experimental_TEST_PROVIDER,
     id: 'linting',
-    name: 'Linting',
     render: () => <TestProvider>Linting</TestProvider>,
-    ...baseState,
   },
 };
 
@@ -195,7 +181,6 @@ export const Crashed: Story = {
       'component-tests': 'test-provider-state:crashed',
     },
   },
-  play: Expanded.play,
 };
 
 export const SettingsUpdated: Story = {

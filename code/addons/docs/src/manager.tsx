@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 import { AddonPanel, type SyntaxHighlighterFormatTypes } from 'storybook/internal/components';
 
@@ -11,8 +11,8 @@ import {
   PARAM_KEY,
   SNIPPET_RENDERED,
 } from '../../../core/src/docs-tools/shared';
-import type { SourceParameters } from '../../../lib/blocks/src';
-import { Source } from '../../../lib/blocks/src/components/Source';
+import type { SourceParameters } from './blocks/blocks';
+import { Source } from './blocks/components/Source';
 
 addons.register(ADDON_ID, (api) => {
   addons.add(PANEL_ID, {
@@ -35,15 +35,22 @@ addons.register(ADDON_ID, (api) => {
     disabled: (parameters) => !parameters?.docs?.codePanel,
     match: ({ viewMode }) => viewMode === 'story',
     render: ({ active }) => {
+      const channel = api.getChannel();
+
+      const lastEvent = channel?.last(SNIPPET_RENDERED)?.[0];
+
+      const [codeSnippet, setSourceCode] = useState<{
+        source: string;
+        format: SyntaxHighlighterFormatTypes;
+      }>({
+        source: lastEvent?.source ?? '',
+        format: lastEvent?.format ?? undefined,
+      });
+
       const parameter = useParameter(PARAM_KEY, {
         source: { code: '' } as SourceParameters,
         theme: 'dark',
       });
-
-      const [codeSnippet, setSourceCode] = React.useState<{
-        source?: string;
-        format?: SyntaxHighlighterFormatTypes;
-      }>({});
 
       useChannel({
         [SNIPPET_RENDERED]: ({ source, format }) => {
@@ -60,7 +67,7 @@ addons.register(ADDON_ID, (api) => {
             <Source
               {...parameter.source}
               code={parameter.source.code || codeSnippet.source}
-              format={parameter.source.format || codeSnippet.format}
+              format={codeSnippet.format}
               dark={isDark}
             />
           </SourceStyles>

@@ -18,7 +18,6 @@ export const frameworkToRenderer: Record<
   'server-webpack5': 'server',
   solid: 'solid',
   'svelte-vite': 'svelte',
-  'svelte-webpack5': 'svelte',
   sveltekit: 'svelte',
   'vue3-vite': 'vue3',
   nuxt: 'vue3',

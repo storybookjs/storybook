@@ -96,7 +96,7 @@ export const sandbox: Task = {
       //   extraDeps.push('@testing-library/angular', '@analogjs/vitest-angular');
       // }
 
-      options.addon.push('@storybook/addon-test');
+      options.addon.push('@storybook/addon-vitest');
     }
 
     let startTime = now();

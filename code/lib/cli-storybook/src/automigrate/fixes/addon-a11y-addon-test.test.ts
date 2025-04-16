@@ -75,7 +75,10 @@ describe('addonA11yAddonTest', () => {
     });
 
     it('should return null if provided framework is not supported', async () => {
-      vi.mocked(getAddonNames).mockReturnValue(['@storybook/addon-a11y', '@storybook/addon-test']);
+      vi.mocked(getAddonNames).mockReturnValue([
+        '@storybook/addon-a11y',
+        '@storybook/addon-vitest',
+      ]);
       const result = await addonA11yAddonTest.check({
         mainConfig: {
           framework: '@storybook/angular',
@@ -86,7 +89,10 @@ describe('addonA11yAddonTest', () => {
     });
 
     it('should return null if vitest.setup file and preview file have the necessary transformations', async () => {
-      vi.mocked(getAddonNames).mockReturnValue(['@storybook/addon-a11y', '@storybook/addon-test']);
+      vi.mocked(getAddonNames).mockReturnValue([
+        '@storybook/addon-a11y',
+        '@storybook/addon-vitest',
+      ]);
       vi.mocked(existsSync).mockReturnValue(true);
       vi.mocked(readFileSync).mockImplementation((p) => {
         if (p.toString().includes('vitest.setup')) {
@@ -123,7 +129,10 @@ describe('addonA11yAddonTest', () => {
     });
 
     it('should return setupFile and transformedSetupCode if vitest.setup file exists', async () => {
-      vi.mocked(getAddonNames).mockReturnValue(['@storybook/addon-a11y', '@storybook/addon-test']);
+      vi.mocked(getAddonNames).mockReturnValue([
+        '@storybook/addon-a11y',
+        '@storybook/addon-vitest',
+      ]);
       vi.mocked(existsSync).mockImplementation((p) => {
         if (p.toString().includes('vitest.setup')) {
           return true;
@@ -156,7 +165,10 @@ describe('addonA11yAddonTest', () => {
     });
 
     it.skip('should return previewFile and transformedPreviewCode if preview file exists', async () => {
-      vi.mocked(getAddonNames).mockReturnValue(['@storybook/addon-a11y', '@storybook/addon-test']);
+      vi.mocked(getAddonNames).mockReturnValue([
+        '@storybook/addon-a11y',
+        '@storybook/addon-vitest',
+      ]);
       vi.mocked(existsSync).mockImplementation((p) => {
         if (p.toString().includes('preview')) {
           return true;
@@ -189,7 +201,10 @@ describe('addonA11yAddonTest', () => {
     });
 
     it('should return setupFile and null transformedSetupCode if transformation fails', async () => {
-      vi.mocked(getAddonNames).mockReturnValue(['@storybook/addon-a11y', '@storybook/addon-test']);
+      vi.mocked(getAddonNames).mockReturnValue([
+        '@storybook/addon-a11y',
+        '@storybook/addon-vitest',
+      ]);
       vi.mocked(existsSync).mockImplementation((p) => {
         if (p.toString().includes('vitest.setup')) {
           return true;
@@ -222,7 +237,10 @@ describe('addonA11yAddonTest', () => {
     });
 
     it('should return previewFile and null transformedPreviewCode if transformation fails', async () => {
-      vi.mocked(getAddonNames).mockReturnValue(['@storybook/addon-a11y', '@storybook/addon-test']);
+      vi.mocked(getAddonNames).mockReturnValue([
+        '@storybook/addon-a11y',
+        '@storybook/addon-vitest',
+      ]);
       vi.mocked(existsSync).mockImplementation((p) => {
         if (p.toString().includes('preview')) {
           return true;
@@ -255,7 +273,10 @@ describe('addonA11yAddonTest', () => {
     });
 
     it('should return skipPreviewTransformation=true if preview file has the necessary change', async () => {
-      vi.mocked(getAddonNames).mockReturnValue(['@storybook/addon-a11y', '@storybook/addon-test']);
+      vi.mocked(getAddonNames).mockReturnValue([
+        '@storybook/addon-a11y',
+        '@storybook/addon-vitest',
+      ]);
       vi.mocked(existsSync).mockReturnValue(true);
       vi.mocked(readFileSync).mockImplementation((p) => {
         if (p.toString().includes('vitest.setup')) {
@@ -298,7 +319,10 @@ describe('addonA11yAddonTest', () => {
     });
 
     it('should return skipVitestSetupTransformation=true if setup file has the necessary change', async () => {
-      vi.mocked(getAddonNames).mockReturnValue(['@storybook/addon-a11y', '@storybook/addon-test']);
+      vi.mocked(getAddonNames).mockReturnValue([
+        '@storybook/addon-a11y',
+        '@storybook/addon-vitest',
+      ]);
       vi.mocked(existsSync).mockReturnValue(true);
       vi.mocked(readFileSync).mockImplementation((p) => {
         if (p.toString().includes('vitest.setup')) {
@@ -349,9 +373,9 @@ describe('addonA11yAddonTest', () => {
         skipVitestSetupTransformation: false,
       });
       expect(result).toMatchInlineSnapshot(`
-        "We have detected that you have @storybook/addon-a11y and @storybook/addon-test installed.
+        "We have detected that you have @storybook/addon-a11y and @storybook/addon-vitest installed.
 
-        @storybook/addon-a11y now integrates with @storybook/addon-test to provide automatic accessibility checks for your stories, powered by Axe and Vitest.
+        @storybook/addon-a11y now integrates with @storybook/addon-vitest to provide automatic accessibility checks for your stories, powered by Axe and Vitest.
 
         1) We couldn't find or automatically update .storybook/vitest.setup.<ts|js> in your project to smoothly set up project annotations from @storybook/addon-a11y. 
         Please manually update your vitest.setup.ts file to include the following:
@@ -393,9 +417,9 @@ describe('addonA11yAddonTest', () => {
         skipVitestSetupTransformation: false,
       });
       expect(result).toMatchInlineSnapshot(`
-        "We have detected that you have @storybook/addon-a11y and @storybook/addon-test installed.
+        "We have detected that you have @storybook/addon-a11y and @storybook/addon-vitest installed.
 
-        @storybook/addon-a11y now integrates with @storybook/addon-test to provide automatic accessibility checks for your stories, powered by Axe and Vitest.
+        @storybook/addon-a11y now integrates with @storybook/addon-vitest to provide automatic accessibility checks for your stories, powered by Axe and Vitest.
 
         1) We couldn't find or automatically update .storybook/vitest.setup.<ts|js> in your project to smoothly set up project annotations from @storybook/addon-a11y. 
         Please manually update your vitest.setup.ts file to include the following:
@@ -427,9 +451,9 @@ describe('addonA11yAddonTest', () => {
         skipVitestSetupTransformation: false,
       });
       expect(result).toMatchInlineSnapshot(`
-        "We have detected that you have @storybook/addon-a11y and @storybook/addon-test installed.
+        "We have detected that you have @storybook/addon-a11y and @storybook/addon-vitest installed.
 
-        @storybook/addon-a11y now integrates with @storybook/addon-test to provide automatic accessibility checks for your stories, powered by Axe and Vitest.
+        @storybook/addon-a11y now integrates with @storybook/addon-vitest to provide automatic accessibility checks for your stories, powered by Axe and Vitest.
 
         1) We have to update your .storybook/vitest.setup.ts file to set up project annotations from @storybook/addon-a11y.
 
@@ -460,9 +484,9 @@ describe('addonA11yAddonTest', () => {
         skipVitestSetupTransformation: false,
       });
       expect(result).toMatchInlineSnapshot(`
-        "We have detected that you have @storybook/addon-a11y and @storybook/addon-test installed.
+        "We have detected that you have @storybook/addon-a11y and @storybook/addon-vitest installed.
 
-        @storybook/addon-a11y now integrates with @storybook/addon-test to provide automatic accessibility checks for your stories, powered by Axe and Vitest.
+        @storybook/addon-a11y now integrates with @storybook/addon-vitest to provide automatic accessibility checks for your stories, powered by Axe and Vitest.
 
         1) We have to update your .storybook/vitest.setup.ts file to set up project annotations from @storybook/addon-a11y.
 
@@ -481,9 +505,9 @@ describe('addonA11yAddonTest', () => {
         skipVitestSetupTransformation: true,
       });
       expect(result).toMatchInlineSnapshot(`
-        "We have detected that you have @storybook/addon-a11y and @storybook/addon-test installed.
+        "We have detected that you have @storybook/addon-a11y and @storybook/addon-vitest installed.
 
-        @storybook/addon-a11y now integrates with @storybook/addon-test to provide automatic accessibility checks for your stories, powered by Axe and Vitest.
+        @storybook/addon-a11y now integrates with @storybook/addon-vitest to provide automatic accessibility checks for your stories, powered by Axe and Vitest.
 
         1) We have to update your .storybook/preview.js file to set up parameters.a11y.test from @storybook/addon-a11y.
 
@@ -764,6 +788,33 @@ describe('addonA11yAddonTest', () => {
             }
           }
         };"
+      `);
+    });
+
+    it('should handle const parameters with preview object', async () => {
+      const source = dedent`
+        const parameters = {};
+        const preview = {
+          parameters,
+        };
+        export default preview;
+      `;
+
+      const transformed = await transformPreviewFile(source, process.cwd());
+
+      expect(transformed).toMatchInlineSnapshot(`
+        "const parameters = {
+          a11y: {
+            // 'todo' - show a11y violations in the test UI only
+            // 'error' - fail CI on a11y violations
+            // 'off' - skip a11y checks entirely
+            test: "todo"
+          }
+        };
+        const preview = {
+          parameters,
+        };
+        export default preview;"
       `);
     });
   });

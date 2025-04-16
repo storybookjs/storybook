@@ -6,17 +6,17 @@ import { SbPage } from './util';
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:6006';
 const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
 
-test.describe('component tests', () => {
+test.describe('interactions', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(storybookUrl);
     await new SbPage(page, expect).waitUntilLoaded();
   });
 
-  test('should have component tests', async ({ page }) => {
+  test('should have interactions', async ({ page }) => {
     // templateName is e.g. 'vue-cli/default-js'
     test.skip(
       /^(lit)/i.test(`${templateName}`),
-      `Skipping ${templateName}, which does not support component tests`
+      `Skipping ${templateName}, which does not support interactions`
     );
     test.skip(
       templateName.includes('react-native-web'),
@@ -26,16 +26,18 @@ test.describe('component tests', () => {
     const sbPage = new SbPage(page, expect);
 
     await sbPage.navigateToStory('example/page', 'logged-in');
-    await sbPage.viewAddonPanel('Component tests');
+    await sbPage.viewAddonPanel('Interactions');
 
     const welcome = sbPage.previewRoot().locator('.welcome');
     await expect(welcome).toContainText('Welcome, Jane Doe!', { timeout: 50000 });
 
-    const interactionsTab = page.locator('#tabbutton-storybook-component-tests-panel');
+    const interactionsTab = page.locator('#tabbutton-storybook-interactions-panel');
     await expect(interactionsTab).toContainText(/(\d)/);
     await expect(interactionsTab).toBeVisible();
 
     const panel = sbPage.panelContent();
+    const renderStep = panel.locator('[aria-label="Render step"]');
+    await expect(renderStep).toContainText(/Render story/);
     await expect(panel).toContainText(/Pass/);
     await expect(panel).toContainText(/userEvent.click/);
     await expect(panel).toBeVisible();
@@ -48,7 +50,7 @@ test.describe('component tests', () => {
     // templateName is e.g. 'vue-cli/default-js'
     test.skip(
       /^(lit)/i.test(`${templateName}`),
-      `Skipping ${templateName}, which does not support component tests`
+      `Skipping ${templateName}, which does not support interactions`
     );
     test.skip(
       browserName === 'firefox',
@@ -58,13 +60,13 @@ test.describe('component tests', () => {
     const sbPage = new SbPage(page, expect);
 
     await sbPage.deepLinkToStory(storybookUrl, 'core/component-test-basics', 'type-and-clear');
-    await sbPage.viewAddonPanel('Component tests');
+    await sbPage.viewAddonPanel('Interactions');
 
     // Test initial state - Interactions have run, count is correct and values are as expected
     const formInput = sbPage.previewRoot().locator('#interaction-test-form input');
     await expect(formInput).toHaveValue('final value', { timeout: 50000 });
 
-    const interactionsTab = page.locator('#tabbutton-storybook-component-tests-panel');
+    const interactionsTab = page.locator('#tabbutton-storybook-interactions-panel');
     await expect(interactionsTab.getByText('3')).toBeVisible();
     await expect(interactionsTab).toBeVisible();
 
@@ -133,7 +135,7 @@ test.describe('component tests', () => {
     const sbPage = new SbPage(page, expect);
 
     await sbPage.deepLinkToStory(storybookUrl, 'core/component-test-unhandled-errors', 'default');
-    await sbPage.viewAddonPanel('Component tests');
+    await sbPage.viewAddonPanel('Interactions');
 
     const button = sbPage.previewRoot().locator('button');
     await expect(button).toContainText('Button', { timeout: 50000 });

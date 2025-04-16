@@ -4,11 +4,8 @@ import { Badge, Button } from 'storybook/internal/components';
 
 import { SyncIcon } from '@storybook/icons';
 
-import { useParameter } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { PARAM_KEY } from '../constants';
-import type { A11yParameters } from '../params';
 import { RuleType } from '../types';
 import { useA11yContext } from './A11yContext';
 import { Report } from './Report/Report';
@@ -70,7 +67,11 @@ export const A11YPanel: React.FC = () => {
   } = useA11yContext();
 
   const tabs = useMemo(() => {
-    const { passes, incomplete, violations } = results;
+    const { passes, incomplete, violations } = results ?? {
+      passes: [],
+      incomplete: [],
+      violations: [],
+    };
     return [
       {
         label: (

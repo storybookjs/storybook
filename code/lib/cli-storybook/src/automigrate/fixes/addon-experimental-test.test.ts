@@ -140,7 +140,7 @@ describe('addon-experimental-test fix', () => {
       expect(promptResult).toMatchInlineSnapshot(dedent`
         "We've detected you're using @storybook/experimental-addon-test, which is now available as a stable addon.
 
-        We can automatically migrate your project to use @storybook/addon-test instead.
+        We can automatically migrate your project to use @storybook/addon-vitest instead.
 
         This will update 2 file(s) and your package.json:
           - .storybook/test-setup.ts
@@ -163,7 +163,7 @@ describe('addon-experimental-test fix', () => {
       expect(promptResult).toMatchInlineSnapshot(dedent`
         "We've detected you're using @storybook/experimental-addon-test, which is now available as a stable addon.
 
-        We can automatically migrate your project to use @storybook/addon-test instead.
+        We can automatically migrate your project to use @storybook/addon-vitest instead.
 
         This will update 7 file(s) and your package.json:
           - .storybook/test-setup.ts
@@ -218,7 +218,7 @@ describe('addon-experimental-test fix', () => {
       matchingFiles.forEach((file) => {
         expect(writeFileSync).toHaveBeenCalledWith(
           file,
-          expect.stringContaining('@storybook/addon-test'),
+          expect.stringContaining('@storybook/addon-vitest'),
           'utf-8'
         );
       });
@@ -230,7 +230,7 @@ describe('addon-experimental-test fix', () => {
 
       expect(packageManager.addDependencies).toHaveBeenCalledWith(
         { installAsDevDependencies: true },
-        ['@storybook/addon-test@9.0.0']
+        ['@storybook/addon-vitest@9.0.0']
       );
     });
 
@@ -269,7 +269,7 @@ describe('addon-experimental-test fix', () => {
 
       expect(packageManager.addDependencies).toHaveBeenCalledWith(
         { installAsDevDependencies: false },
-        ['@storybook/addon-test@9.0.0']
+        ['@storybook/addon-vitest@9.0.0']
       );
     });
 

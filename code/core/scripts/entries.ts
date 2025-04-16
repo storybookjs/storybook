@@ -29,7 +29,7 @@ export const getEntries = (cwd: string) => {
     define('src/outline/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
     define('src/outline/preview.ts', ['browser', 'node'], true, ['react'], [], [], true),
 
-    define('src/highlight/index.ts', ['browser', 'node'], true, ['react'], [], [], false),
+    define('src/highlight/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
     define('src/highlight/preview.ts', ['browser', 'node'], true, ['react'], [], [], true),
 
     define('src/actions/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
@@ -60,13 +60,7 @@ export const getEntries = (cwd: string) => {
     define('src/preview-api/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
     define('src/manager-api/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
     define('src/router/index.ts', ['browser', 'node'], true, ['react']),
-    define(
-      'src/components/index.ts',
-      ['browser', 'node'],
-      true,
-      ['react', 'react-dom'],
-      ['prettier'] // the syntax highlighter uses prettier/standalone to format the code
-    ),
+    define('src/components/index.ts', ['browser', 'node'], true, ['react', 'react-dom'], []),
     define('src/docs-tools/index.ts', ['browser', 'node'], true),
 
     define('src/manager/globals-module-info.ts', ['node'], true),

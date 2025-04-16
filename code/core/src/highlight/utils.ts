@@ -1,3 +1,4 @@
+/* eslint-env browser */
 import type { Box, Highlight, HighlightOptions, RawHighlightOptions } from './types';
 
 const svgElements = 'svg,path,rect,circle,line,polyline,polygon,ellipse,text'.split(',');

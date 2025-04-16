@@ -114,7 +114,7 @@ test.describe("component testing", () => {
       "Test status: success"
     );
     await expect(sbPage.panelContent()).toContainText(
-      /This component test passed in the CLI, but the tests failed in this browser/
+      /This interaction test passed in the CLI, but the tests failed in this browser/
     );
 
     // Assert discrepancy: CLI fail + Browser pass
@@ -127,7 +127,7 @@ test.describe("component testing", () => {
       "Test status: error"
     );
     await expect(sbPage.panelContent()).toContainText(
-      /This component test passed in this browser, but the tests failed in the CLI/
+      /This interaction test passed in this browser, but the tests failed in the CLI/
     );
   });
 

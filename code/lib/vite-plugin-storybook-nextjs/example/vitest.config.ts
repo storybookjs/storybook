@@ -1,5 +1,5 @@
-import { storybookTest } from "@storybook/addon-test/vitest-plugin";
-import { storybookNextJsPlugin } from "@storybook/experimental-nextjs-vite/vite-plugin";
+import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
+import { storybookNextJsPlugin } from "@storybook/nextjs-vite/vite-plugin";
 import { defineConfig } from "vitest/config";
 
 // More info at: https://storybook.js.org/docs/writing-tests/vitest-plugin

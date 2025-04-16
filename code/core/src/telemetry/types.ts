@@ -1,4 +1,4 @@
-import type { StorybookConfig, TypescriptOptions } from 'storybook/internal/types';
+import type { StorybookConfigRaw, TypescriptOptions } from 'storybook/internal/types';
 
 import type { DetectResult } from 'package-manager-detector';
 
@@ -67,7 +67,8 @@ export type StorybookMetadata = {
   hasStaticDirs?: boolean;
   hasCustomWebpack?: boolean;
   hasCustomBabel?: boolean;
-  features?: StorybookConfig['features'];
+  features?: StorybookConfigRaw['features'];
+  flags?: StorybookConfigRaw['flags'];
   refCount?: number;
   preview?: {
     usesGlobals?: boolean;

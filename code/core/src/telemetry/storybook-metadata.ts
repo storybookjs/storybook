@@ -154,6 +154,10 @@ export const computeStorybookMetadata = async ({
     metadata.features = mainConfig.features;
   }
 
+  if (typeof mainConfig.flags === 'object') {
+    metadata.flags = mainConfig.flags;
+  }
+
   const addons: Record<string, StorybookAddon> = {};
   if (mainConfig.addons) {
     mainConfig.addons.forEach((addon) => {

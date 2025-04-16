@@ -298,7 +298,7 @@ export function prepareContext<
     allArgs: undefined,
     argsByTarget: undefined,
   };
-  if (global.FEATURES?.argTypeTargetsV7) {
+  if (global.FLAGS?.argTypeTargetsV7) {
     const argsByTarget = groupArgsByTarget(context);
     targetedContext = {
       ...context,

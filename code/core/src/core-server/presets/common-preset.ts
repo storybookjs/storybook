@@ -212,7 +212,7 @@ export const core = async (existing: CoreConfig, options: Options): Promise<Core
     options.enableCrashReports || optionalEnvToBoolean(process.env.STORYBOOK_ENABLE_CRASH_REPORTS),
 });
 
-export const features: PresetProperty<'features'> = async (existing) => ({
+export const flags: PresetProperty<'flags'> = async (existing) => ({
   ...existing,
   argTypeTargetsV7: true,
   legacyDecoratorFileOrder: false,

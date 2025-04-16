@@ -26,6 +26,7 @@ export const renderHTML = async (
   customHead: Promise<string | false>,
   cssFiles: string[],
   jsFiles: string[],
+  flags: Promise<Record<string, any>>,
   features: Promise<Record<string, any>>,
   refs: Promise<Record<string, Ref>>,
   logLevel: Promise<string>,
@@ -46,6 +47,7 @@ export const renderHTML = async (
     files: { js: jsFiles, css: cssFiles },
     favicon: await favicon,
     globals: {
+      FLAGS: JSON.stringify(await flags, null, 2),
       FEATURES: JSON.stringify(await features, null, 2),
       REFS: JSON.stringify(await refs, null, 2),
       LOGLEVEL: JSON.stringify(await logLevel, null, 2),

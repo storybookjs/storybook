@@ -10,6 +10,7 @@ export const getData = async (options: Options) => {
   const refs = getRefs(options);
   const favicon = options.presets.apply<string>('favicon').then((p) => basename(p));
 
+  const flags = options.presets.apply<Record<string, string | boolean>>('flags');
   const features = options.presets.apply<Record<string, string | boolean>>('features');
   const logLevel = options.presets.apply<string>('logLevel');
   const title = options.presets.apply<string>('title');
@@ -27,6 +28,7 @@ export const getData = async (options: Options) => {
 
   return {
     refs,
+    flags,
     features,
     title,
     docsOptions,

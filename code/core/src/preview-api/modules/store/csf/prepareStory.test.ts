@@ -615,9 +615,9 @@ describe('prepareStory', () => {
     });
   });
 
-  describe('with `FEATURES.argTypeTargetsV7`', () => {
+  describe('with `FLAGS.argTypeTargetsV7`', () => {
     beforeEach(() => {
-      global.FEATURES = { argTypeTargetsV7: true };
+      global.FLAGS = { argTypeTargetsV7: true };
     });
     it('filters out targeted args', () => {
       const renderMock = vi.fn();

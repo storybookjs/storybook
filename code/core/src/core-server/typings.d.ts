@@ -7,4 +7,5 @@ declare module '@discoveryjs/json-ext';
 declare module 'watchpack';
 
 declare var FEATURES: import('storybook/internal/types').StorybookConfigRaw['features'];
+declare var FLAGS: import('storybook/internal/types').StorybookConfigRaw['flags'];
 declare var TAGS_OPTIONS: import('storybook/internal/types').TagsOptions;

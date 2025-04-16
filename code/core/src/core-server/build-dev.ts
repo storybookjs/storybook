@@ -190,13 +190,13 @@ export async function buildDevStandalone(
     ...options,
   });
 
-  const features = await presets.apply('features');
-  global.FEATURES = features;
+  const flags = await presets.apply('flags');
+  global.FLAGS = flags;
 
   const fullOptions: Options = {
     ...options,
     presets,
-    features,
+    flags,
   };
 
   const { address, networkAddress, managerResult, previewResult } = await buildOrThrow(async () =>

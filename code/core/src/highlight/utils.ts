@@ -210,14 +210,14 @@ export const keepInViewport = (
   });
 };
 
-const supportsPopover = HTMLElement.prototype.hasOwnProperty('showPopover');
 export const showPopover = (element: HTMLElement) => {
-  if (supportsPopover) {
+  if (window.HTMLElement.prototype.hasOwnProperty('showPopover')) {
     element.showPopover();
   }
 };
+
 export const hidePopover = (element: HTMLElement) => {
-  if (supportsPopover) {
+  if (window.HTMLElement.prototype.hasOwnProperty('showPopover')) {
     element.hidePopover();
   }
 };

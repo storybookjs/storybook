@@ -68,7 +68,7 @@ export const useHighlights = ({
   // eslint-disable-next-line no-underscore-dangle
   (globalThis as any).__STORYBOOK_HIGHLIGHT_TEARDOWN?.();
 
-  const { document } = global;
+  const { document } = globalThis;
 
   const highlights = useStore<HighlightOptions[]>([]);
   const elements = useStore<Map<HTMLElement, Highlight>>(new Map());
@@ -83,13 +83,15 @@ export const useHighlights = ({
 
   // Update tracked elements when highlights change or the DOM tree changes
   highlights.subscribe((value) => {
+    const storybookRoot = document.getElementById(storybookRootId)!;
+    if (!storybookRoot) {
+      return;
+    }
+
     elements.set(mapElements(value));
 
     const observer = new MutationObserver(() => elements.set(mapElements(value)));
-    observer.observe(document.getElementById(storybookRootId)!, {
-      subtree: true,
-      childList: true,
-    });
+    observer.observe(storybookRoot, { subtree: true, childList: true });
 
     return () => {
       observer.disconnect();
@@ -99,6 +101,10 @@ export const useHighlights = ({
   // Update highlight boxes when elements are resized or scrollable elements are scrolled
   elements.subscribe((value) => {
     const storybookRoot = document.getElementById(storybookRootId)!;
+    if (!storybookRoot) {
+      return;
+    }
+
     const updateBoxes = () => requestAnimationFrame(() => boxes.set(mapBoxes(value)));
 
     const observer = new ResizeObserver(updateBoxes);

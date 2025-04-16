@@ -1,6 +1,7 @@
 import React, { type ComponentProps, type FC } from 'react';
 
 import {
+  Checkbox,
   IconButton,
   ListItem,
   ProgressSpinner,
@@ -54,13 +55,6 @@ const Actions = styled.div({
 
 const Extras = styled.div({
   marginBottom: 2,
-});
-
-const Checkbox = styled.input({
-  margin: 0,
-  '&:enabled': {
-    cursor: 'pointer',
-  },
 });
 
 const Muted = styled.span(({ theme }) => ({
@@ -265,7 +259,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
           <ListItem
             as="label"
             title="Component tests"
-            icon={entry ? null : <Checkbox type="checkbox" checked disabled />}
+            icon={entry ? null : <Checkbox checked disabled />}
           />
           <WithTooltip
             hasChrome={false}
@@ -309,7 +303,6 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
               title={watching ? <Muted>Coverage (unavailable)</Muted> : 'Coverage'}
               icon={
                 <Checkbox
-                  type="checkbox"
                   checked={config.coverage}
                   disabled={isRunning}
                   onChange={() =>
@@ -387,7 +380,6 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
               icon={
                 entry ? null : (
                   <Checkbox
-                    type="checkbox"
                     checked={config.a11y}
                     disabled={isRunning}
                     onChange={() =>

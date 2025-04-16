@@ -41,7 +41,7 @@ export const PseudoStateTool = () => {
   const toggleOption = useCallback(
     (option: keyof typeof PSEUDO_STATES) => () => {
       const { [option]: value, ...rest } = pseudo;
-      updateGlobals({ [PARAM_KEY]: value ? rest : { ...rest, [option]: true } });
+      updateGlobals({ [PARAM_KEY]: value === true ? rest : { ...rest, [option]: true } });
     },
     [pseudo, updateGlobals]
   );

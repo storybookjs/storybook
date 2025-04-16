@@ -13,11 +13,12 @@ const Input = styled.input({
   borderRadius: 2,
   backgroundColor: 'white',
   transition: 'background-color 0.1s',
-  cursor: 'pointer',
 
+  '&:enabled': {
+    cursor: 'pointer',
+  },
   '&:disabled': {
-    backgroundColor: color.border,
-    cursor: 'not-allowed',
+    backgroundColor: color.medium,
   },
   '&:disabled:checked, &:disabled:indeterminate': {
     backgroundColor: color.mediumdark,
@@ -37,7 +38,7 @@ const Input = styled.input({
     height: 2,
     background: 'white',
   },
-  '&:focus': {
+  '&:enabled:focus': {
     outline: `1px solid ${color.secondary}`,
     outlineOffset: 1,
   },

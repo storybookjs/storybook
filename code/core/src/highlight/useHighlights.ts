@@ -54,8 +54,8 @@ const chevronRight = () =>
 export const useHighlights = ({
   channel,
   uniqueId = Math.random().toString(36).substring(2, 15),
-  menuId = `addon-highlight-menu-${uniqueId}`,
-  rootId = `addon-highlight-root-${uniqueId}`,
+  menuId = `storybook-highlights-menu-${uniqueId}`,
+  rootId = `storybook-highlights-root-${uniqueId}`,
   storybookRootId = 'storybook-root',
 }: {
   channel: Channel;

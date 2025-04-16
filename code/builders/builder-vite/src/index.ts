@@ -1,5 +1,6 @@
 // noinspection JSUnusedGlobalSymbols
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 
 import { NoStatsForViteDevError } from 'storybook/internal/server-errors';
 import type { Middleware, Options } from 'storybook/internal/types';
@@ -16,12 +17,8 @@ export { hasVitePlugins } from './utils/has-vite-plugins';
 
 export * from './types';
 
-function iframeHandler(options: Options, server: ViteDevServer): Middleware {
+function iframeHandler(options: Options, server: ViteDevServer, content: string): Middleware {
   return async (req, res) => {
-    const indexHtml = await readFile(require.resolve('@storybook/builder-vite/input/iframe.html'), {
-      encoding: 'utf8',
-    });
-    const content = await transformIframeHtml(indexHtml, options);
     const transformed = await server.transformIndexHtml('/iframe.html', content);
     res.setHeader('Content-Type', 'text/html');
     res.statusCode = 200;
@@ -42,9 +39,16 @@ export const start: ViteBuilder['start'] = async ({
   router,
   server: devServer,
 }) => {
+  const indexHtml = await readFile(require.resolve('@storybook/builder-vite/input/iframe.html'), {
+    encoding: 'utf8',
+  });
+  const content = await transformIframeHtml(indexHtml, options);
+
+  await writeFile(join(process.cwd(), 'storybook.html'), content.replaceAll(process.cwd(), '.'));
+
   server = await createViteServer(options as Options, devServer);
 
-  router.get('/iframe.html', iframeHandler(options as Options, server));
+  router.get('/iframe.html', iframeHandler(options as Options, server, content));
   router.use(server.middlewares);
 
   return {

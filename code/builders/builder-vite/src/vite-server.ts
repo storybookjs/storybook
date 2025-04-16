@@ -26,7 +26,7 @@ export async function createViteServer(options: Options, devServer: Server) {
       },
     },
     appType: 'custom' as const,
-    optimizeDeps: await getOptimizeDeps(commonCfg, options),
+    // optimizeDeps: await getOptimizeDeps(commonCfg, options),
   };
 
   const ipRegex = /^(?:\d{1,3}\.){3}\d{1,3}$|^(?:[a-fA-F0-9]{1,4}:){7}[a-fA-F0-9]{1,4}$/;

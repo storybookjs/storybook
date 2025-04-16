@@ -33,7 +33,7 @@ export async function getOptimizeDeps(config: ViteInlineConfig, options: Options
   const optimizeDeps: UserConfig['optimizeDeps'] = {
     ...config.optimizeDeps,
     // We don't need to resolve the glob since vite supports globs for entries.
-    entries: stories,
+    // entries: stories,
     // We need Vite to precompile these dependencies, because they contain non-ESM code that would break
     // if we served it directly to the browser.
     include: [...include, ...(config.optimizeDeps?.include || [])],

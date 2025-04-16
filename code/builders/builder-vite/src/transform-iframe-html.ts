@@ -1,11 +1,9 @@
 import { getFrameworkName, getProjectRoot, normalizeStories } from 'storybook/internal/common';
 import type { DocsOptions, Options, TagsOptions } from 'storybook/internal/types';
 
-import { genDynamicImport, genObjectFromRawEntries } from 'knitwork';
-import { dirname, normalize, relative } from 'pathe';
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 
-import { listStories } from './list-stories';
+import { generateModernIframeScriptCode } from './codegen-modern-iframe-script';
 
 export async function transformIframeHtml(html: string, options: Options) {
   // Batch fetch all preset data
@@ -19,7 +17,6 @@ export async function transformIframeHtml(html: string, options: Options) {
     tagsOptions,
     coreOptions,
     stories,
-    frameworkName,
   ] = await Promise.all([
     options.presets.apply('build'),
     options.presets.apply<Record<string, any> | null>('frameworkOptions'),
@@ -42,47 +39,8 @@ export async function transformIframeHtml(html: string, options: Options) {
   ]);
 
   const projectRoot = getProjectRoot();
-  const storiesFiles = await listStories(options);
 
-  // Generate the bootstrapping script
-
-  const mainScript = dedent`
-    import { createBrowserChannel } from 'storybook/internal/channels';
-    import { addons } from 'storybook/preview-api';
-    import { setup } from 'storybook/internal/preview/runtime';
-    import { PreviewWeb } from 'storybook/preview-api';
-
-    // Set up the channel
-    const channel = createBrowserChannel({ page: 'preview' });
-    addons.setChannel(channel);
-    window.__STORYBOOK_ADDONS_CHANNEL__ = channel;
-    window.__STORYBOOK_SERVER_CHANNEL__ = window.CONFIG_TYPE === 'DEVELOPMENT' ? channel : undefined;
-
-    // Initialize Storybook
-    setup();
-    
-    // Set up story loading
-    const importers = ${genObjectFromRawEntries(
-      storiesFiles.map((file) => {
-        const relativePath = relative(process.cwd(), file);
-        return [
-          relativePath.startsWith('../') ? relativePath : `./${relativePath}`,
-          genDynamicImport(normalize(file)),
-        ];
-      })
-    )};
-
-    async function importFn(path) {
-      return await importers[path]();
-    }
-
-    // Initialize preview
-    const preview = window.__STORYBOOK_PREVIEW__ = window.__STORYBOOK_PREVIEW__ || new PreviewWeb();
-    window.__STORYBOOK_STORY_STORE__ = window.__STORYBOOK_STORY_STORE__ || preview.storyStore;
-    
-    preview.onStoriesChanged({ importFn });
-
-  `.trim();
+  const mainScript = (await generateModernIframeScriptCode(options, projectRoot)).trim();
 
   // Replace all placeholders in the template
   return (

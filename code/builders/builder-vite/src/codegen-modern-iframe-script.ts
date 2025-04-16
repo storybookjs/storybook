@@ -1,43 +1,36 @@
-import { getFrameworkName, loadPreviewOrConfigFile } from 'storybook/internal/common';
+import { loadPreviewOrConfigFile } from 'storybook/internal/common';
 import { isCsfFactoryPreview, readConfig } from 'storybook/internal/csf-tools';
 import type { Options, PreviewAnnotation } from 'storybook/internal/types';
 
-import { genArrayFromRaw, genImport, genSafeVariableName } from 'knitwork';
+import {
+  genArrayFromRaw,
+  genDynamicImport,
+  genImport,
+  genObjectFromRawEntries,
+  genSafeVariableName,
+} from 'knitwork';
+import { normalize, relative } from 'pathe';
 import { filename } from 'pathe/utils';
 import { dedent } from 'ts-dedent';
 
+import { listStories } from './list-stories';
 import { processPreviewAnnotation } from './utils/process-preview-annotation';
-import { SB_VIRTUAL_FILES } from './virtual-file-names';
 
 export async function generateModernIframeScriptCode(options: Options, projectRoot: string) {
   const { presets, configDir } = options;
-  const frameworkName = await getFrameworkName(options);
 
   const previewOrConfigFile = loadPreviewOrConfigFile({ configDir });
   const previewConfig = await readConfig(previewOrConfigFile!);
   const isCsf4 = isCsfFactoryPreview(previewConfig);
 
-  const previewAnnotations = await presets.apply<PreviewAnnotation[]>(
+  const previewAnnotationsL = await presets.apply<PreviewAnnotation[]>(
     'previewAnnotations',
     [],
     options
   );
-  return generateModernIframeScriptCodeFromPreviews({
-    previewAnnotations: [...previewAnnotations, previewOrConfigFile],
-    projectRoot,
-    frameworkName,
-    isCsf4,
-  });
-}
+  const previewAnnotations = [...previewAnnotationsL, previewOrConfigFile];
 
-export async function generateModernIframeScriptCodeFromPreviews(options: {
-  previewAnnotations: (PreviewAnnotation | undefined)[];
-  projectRoot: string;
-  frameworkName: string;
-  isCsf4: boolean;
-}) {
-  const { projectRoot, frameworkName } = options;
-  const previewAnnotationURLs = options.previewAnnotations
+  const previewAnnotationURLs = previewAnnotations
     .filter((path) => path !== undefined)
     .map((path) => processPreviewAnnotation(path, projectRoot));
 
@@ -60,7 +53,7 @@ export async function generateModernIframeScriptCodeFromPreviews(options: {
   // and the HMR handler.
   // The `hmrPreviewAnnotationModules` parameter is used to pass the updated modules from HMR.
   // However, only the changed modules are provided, the rest are null.
-  const getPreviewAnnotationsFunction = options.isCsf4
+  const getPreviewAnnotationsFunction = isCsf4
     ? dedent`
   const getProjectAnnotations = (hmrPreviewAnnotationModules = []) => {
     const preview = hmrPreviewAnnotationModules[0] ?? ${previewFileVariable};
@@ -80,26 +73,32 @@ export async function generateModernIframeScriptCodeFromPreviews(options: {
   }`;
 
   const generateHMRHandler = (): string => {
-    // Web components are not compatible with HMR, so disable HMR, reload page instead.
-    if (frameworkName === '@storybook/web-components-vite') {
-      return dedent`
-      if (import.meta.hot) {
-        import.meta.hot.decline();
-      }`.trim();
-    }
+    // TODO: I disabled HMR for now because it still depends on the virtual module code I removed
 
+    // Web components are not compatible with HMR, so disable HMR, reload page instead.
     return dedent`
     if (import.meta.hot) {
-      import.meta.hot.accept('${SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE}', (newModule) => {
-        // importFn has changed so we need to patch the new one in
-        window.__STORYBOOK_PREVIEW__.onStoriesChanged({ importFn: newModule.importFn });
-      });
-
-      import.meta.hot.accept(${JSON.stringify(options.isCsf4 ? [previewFileURL] : previewAnnotationURLs)}, (previewAnnotationModules) => {
-        // getProjectAnnotations has changed so we need to patch the new one in
-        window.__STORYBOOK_PREVIEW__.onGetProjectAnnotationsChanged({ getProjectAnnotations: () => getProjectAnnotations(previewAnnotationModules) });
-      });
+      import.meta.hot.decline();
     }`.trim();
+    // if (frameworkName === '@storybook/web-components-vite') {
+    //   return dedent`
+    //   if (import.meta.hot) {
+    //     import.meta.hot.decline();
+    //   }`.trim();
+    // }
+
+    // return dedent`
+    // if (import.meta.hot) {
+    //   import.meta.hot.accept('${SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE}', (newModule) => {
+    //     // importFn has changed so we need to patch the new one in
+    //     window.__STORYBOOK_PREVIEW__.onStoriesChanged({ importFn: newModule.importFn });
+    //   });
+
+    //   import.meta.hot.accept(${JSON.stringify(isCsf4 ? [previewFileURL] : previewAnnotationURLs)}, (previewAnnotationModules) => {
+    //     // getProjectAnnotations has changed so we need to patch the new one in
+    //     window.__STORYBOOK_PREVIEW__.onGetProjectAnnotationsChanged({ getProjectAnnotations: () => getProjectAnnotations(previewAnnotationModules) });
+    //   });
+    // }`.trim();
   };
 
   /**
@@ -110,18 +109,42 @@ export async function generateModernIframeScriptCodeFromPreviews(options: {
    *
    * @todo Inline variable and remove `noinspection`
    */
+
+  const storiesFiles = await listStories(options);
+
   const code = dedent`
   import { setup } from 'storybook/internal/preview/runtime';
 
-  import '${SB_VIRTUAL_FILES.VIRTUAL_ADDON_SETUP_FILE}';
+    import { createBrowserChannel } from 'storybook/internal/channels';
+    import { addons } from 'storybook/preview-api';
+    import { PreviewWeb, composeConfigs } from 'storybook/preview-api';
+
+    // Set up the channel
+    const channel = createBrowserChannel({ page: 'preview' });
+    addons.setChannel(channel);
+    window.__STORYBOOK_ADDONS_CHANNEL__ = channel;
+    window.__STORYBOOK_SERVER_CHANNEL__ = window.CONFIG_TYPE === 'DEVELOPMENT' ? channel : undefined;
 
   setup();
  
-  import { composeConfigs, PreviewWeb } from 'storybook/preview-api';
   import { isPreview } from 'storybook/internal/csf';
-  import { importFn } from '${SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE}';
-  
-  ${options.isCsf4 ? previewFileImport : imports.join('\n')}
+
+      // Set up story loading
+    const importers = ${genObjectFromRawEntries(
+      storiesFiles.map((file) => {
+        const relativePath = relative(process.cwd(), file);
+        return [
+          relativePath.startsWith('../') ? relativePath : `./${relativePath}`,
+          genDynamicImport(normalize(file)),
+        ];
+      })
+    )};
+
+    async function importFn(path) {
+      return await importers[path]();
+    }
+
+  ${isCsf4 ? previewFileImport : imports.join('\n')}
   ${getPreviewAnnotationsFunction}
 
   window.__STORYBOOK_PREVIEW__ = window.__STORYBOOK_PREVIEW__ || new PreviewWeb(importFn, getProjectAnnotations);
@@ -132,6 +155,13 @@ export async function generateModernIframeScriptCodeFromPreviews(options: {
   `.trim();
   return code;
 }
+
+export async function generateModernIframeScriptCodeFromPreviews(options: {
+  previewAnnotations: (PreviewAnnotation | undefined)[];
+  projectRoot: string;
+  frameworkName: string;
+  isCsf4: boolean;
+}) {}
 function hash(value: string) {
   return value.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
 }

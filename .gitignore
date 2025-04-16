@@ -65,3 +65,4 @@ code/core/report
 node_modules/.svelte2tsx-language-server-files
 
 *storybook.log
+code/storybook.html

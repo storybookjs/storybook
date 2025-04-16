@@ -117,6 +117,9 @@ const config = defineMain({
     const { mergeConfig } = await import('vite');
 
     return mergeConfig(viteConfig, {
+      optimizeDeps: {
+        force: true,
+      },
       resolve: {
         alias: {
           ...(configType === 'DEVELOPMENT'

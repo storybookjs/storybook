@@ -524,7 +524,12 @@ export const useHighlights = ({
     removeHighlight(id);
 
     const element = document.querySelector(target);
-    element?.scrollIntoView({ behavior: 'smooth', block: 'center', ...options });
+    if (!element) {
+      console.warn(`Cannot scroll into view: ${target} not found`);
+      return;
+    }
+
+    element.scrollIntoView({ behavior: 'smooth', block: 'center', ...options });
     const keyframeName = `kf-${Math.random().toString(36).substring(2, 15)}`;
     highlights.set((value) => [
       ...value,

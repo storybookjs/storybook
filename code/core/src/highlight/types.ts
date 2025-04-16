@@ -29,12 +29,15 @@ export interface HighlightOptions {
   keyframes?: string;
   /** Menu items to show when the highlight is selected (implies selectable: true) */
   menu?: {
+    /** Unique identifier for the menu item */
     id: string;
+    /** Title of the menu item */
     title: string;
+    /** Description of the menu item */
     description?: string;
-    right?: string;
-    href?: string;
+    /** Name for a channel event to trigger when the menu item is clicked */
     clickEvent?: string;
+    /** HTML selectors for which this menu item should show (subset of `selectors`) */
     selectors?: string[];
   }[];
 }

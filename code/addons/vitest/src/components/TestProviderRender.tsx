@@ -264,7 +264,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
         <Row>
           <ListItem
             as="label"
-            title="Interactions"
+            title="Interaction tests"
             icon={entry ? null : <Checkbox type="checkbox" checked disabled />}
           />
           <WithTooltip

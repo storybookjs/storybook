@@ -75,12 +75,15 @@
     ]
   },
   "browserslist": [
-    "chrome > 130",
-    "safari > 18.1",
-    "ios > 18.1",
-    "edge > 132",
-    "firefox > 134",
-    "node 20"
+    "chrome >= 131",
+    "android >= 131",
+    "and_chr >= 131",
+    "edge >= 134",
+    "firefox >= 136",
+    "safari >= 18.3",
+    "ios_saf >= 18.3",
+    "opera >= 117",
+    "node >= 20"
   ],
   "resolutions": {
     "@playwright/test": "1.48.1",

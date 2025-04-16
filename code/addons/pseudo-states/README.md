@@ -68,7 +68,7 @@ This accepts a single CSS selector (string), or an array of CSS selectors on whi
 
 By default, we use `#storybook-root` (or `#root` before Storybook 7) element as the root element for all pseudo classes. If you need to render elements outside Storybook's root element, you can set `parameters.pseudo.rootSelector` to override it. This is convenient for portals, dialogs, tooltips, etc.
 
-For example, consider a `Dialog` component that inject itself to the document's `body` node:
+For example, consider a `Dialog` component that injects itself to the document's `body` node:
 
 ```jsx
 export const DialogButton = () => (

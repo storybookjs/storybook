@@ -11,6 +11,7 @@ This is a Vite plugin that allows you to use Next.js features in Vite. It is the
 ## Requirements
 
 - Next.js v14.1.0 or higher
+- Storybook 9 or higher
 
 ## Installation
 

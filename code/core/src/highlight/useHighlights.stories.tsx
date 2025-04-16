@@ -234,10 +234,12 @@ export const Dynamic = meta.story({
 
     const scaling = canvasElement.querySelector('#scaling') as HTMLElement;
     const moving = canvasElement.querySelector('#moving') as HTMLElement;
-    setInterval(() => {
+
+    const interval = setInterval(() => {
       scaling.style.height = `${parseInt(scaling.style.height) + 5}px`;
       moving.style.left = `${parseInt(moving.style.left) + 5}px`;
     }, 1000);
+    setTimeout(() => clearInterval(interval), 60000);
   },
 });
 

@@ -27,8 +27,6 @@ export interface HighlightOptions {
   focusStyles?: Record<string, string>;
   /** Keyframes required for animations */
   keyframes?: string;
-  /** Hint to show as a tooltip when the highlight is hovered */
-  hint?: string;
   /** Menu items to show when the highlight is selected (implies selectable: true) */
   menu?: {
     id: string;
@@ -61,7 +59,6 @@ export type Highlight = {
   styles: HighlightOptions['styles'];
   hoverStyles?: HighlightOptions['hoverStyles'];
   focusStyles?: HighlightOptions['focusStyles'];
-  hint?: HighlightOptions['hint'];
   menu?: HighlightOptions['menu'];
 };
 
@@ -72,7 +69,6 @@ export type Box = {
   styles: Highlight['styles'];
   hoverStyles?: Highlight['hoverStyles'];
   focusStyles?: Highlight['focusStyles'];
-  hint?: Highlight['hint'];
   menu?: Highlight['menu'];
   top: number;
   left: number;

@@ -151,7 +151,7 @@ channel.on('click', fn().mockName('click'));
 
 const meta = preview.meta({
   render: () => {
-    useEffect(() => useHighlights({ channel, hintId: 'hint', menuId: 'menu', rootId: 'root' }), []);
+    useEffect(() => useHighlights({ channel, menuId: 'menu', rootId: 'root' }), []);
     return <></>;
   },
   args: {
@@ -181,7 +181,6 @@ const highlight = (
     hoverStyles?: Record<string, string>;
     focusStyles?: Record<string, string>;
     keyframes?: string;
-    hint?: string;
     menu?: {
       id: string;
       title: string;
@@ -284,21 +283,6 @@ export const Selectable = meta.story({
   },
 });
 
-export const Hint = meta.story({
-  play: async () => {
-    highlight(['div', 'input'], {
-      hint: "Hello world, I'm a hint!",
-    });
-
-    await new Promise((resolve) => setTimeout(resolve, 200));
-
-    await userEvent.pointer({
-      target: document.body,
-      coords: { pageX: 270, pageY: 240 },
-    });
-  },
-});
-
 export const Menu = meta.story({
   play: async () => {
     highlight(['div', 'input'], {
@@ -324,40 +308,6 @@ export const Menu = meta.story({
       target: document.body,
       coords: { pageX: 470, pageY: 240 },
       keys: '[MouseLeft]',
-    });
-  },
-});
-
-export const HintAndMenu = meta.story({
-  play: async () => {
-    highlight(['div', 'input'], {
-      hint: "Hello world, I'm a hint!",
-      menu: [
-        {
-          id: '1',
-          title: 'Insufficient color contrast',
-          description: 'Elements must meet minimum color contrast ratio thresholds.',
-          clickEvent: 'click',
-        },
-        {
-          id: '2',
-          title: 'Links need discernible text',
-          description: 'This is where a summary of the violation goes.',
-          clickEvent: 'click',
-        },
-      ],
-    });
-
-    await new Promise((resolve) => setTimeout(resolve, 200));
-
-    await userEvent.pointer({
-      target: document.body,
-      coords: { pageX: 470, pageY: 240 },
-      keys: '[MouseLeft]',
-    });
-    await userEvent.pointer({
-      target: document.body,
-      coords: { pageX: 270, pageY: 240 },
     });
   },
 });

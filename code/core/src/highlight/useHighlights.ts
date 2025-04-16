@@ -48,14 +48,12 @@ const chevronRight = () =>
 export const useHighlights = ({
   channel,
   uniqueId = Math.random().toString(36).substring(2, 15),
-  hintId = `addon-highlight-hint-${uniqueId}`,
   menuId = `addon-highlight-menu-${uniqueId}`,
   rootId = `addon-highlight-root-${uniqueId}`,
   storybookRootId = 'storybook-root',
 }: {
   channel: Channel;
   uniqueId?: string;
-  hintId?: string;
   menuId?: string;
   rootId?: string;
   storybookRootId?: string;
@@ -301,67 +299,6 @@ export const useHighlights = ({
   hovered.subscribe(updateBoxStyles);
   focused.subscribe(updateBoxStyles);
   selected.subscribe(updateBoxStyles);
-
-  const renderHint = () => {
-    let hint = document.getElementById(hintId);
-    if (hint) {
-      hint.innerHTML = '';
-    } else {
-      const props = { id: hintId, popover: 'manual' };
-      hint = root.appendChild(createElement('div', props) as HTMLElement);
-      root.appendChild(
-        createElement('style', {}, [
-          `
-            #${hintId} {
-              position: absolute;
-              z-index: 2147483646;
-              padding: 7px 10px;
-              margin: 5px 0 0 0;
-              max-width: 300px;
-              overflow: hidden;
-              white-space: nowrap;
-              text-overflow: ellipsis;
-              font-size: 12px;
-              background: white;
-              border: none;
-              border-radius: 6px;
-              box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.05), 0 5px 15px 0 rgba(0, 0, 0, 0.1);
-              color: #2E3438;
-            }
-          `,
-        ])
-      );
-    }
-
-    const targetList = targets.get();
-    const elementList = hovered.get();
-    const lastHoveredBox = elementList.at(-1);
-    if (!lastHoveredBox || !lastHoveredBox.hint || targetList.includes(lastHoveredBox)) {
-      Object.assign(hint.style, { display: 'none' });
-      return;
-    }
-
-    const { position } = getComputedStyle(lastHoveredBox.element);
-    const { left, bottom } = lastHoveredBox.element.getBoundingClientRect();
-    const x = position === 'fixed' ? left : left + window.scrollX;
-    const y = position === 'fixed' ? bottom : bottom + window.scrollY;
-    Object.assign(hint.style, {
-      display: 'block',
-      position: position === 'fixed' ? 'fixed' : 'absolute',
-      left: `${x}px`,
-      top: `${y}px`,
-    });
-
-    // Put the hint in #top-layer, above any other popovers and z-indexes
-    showPopover(hint);
-
-    // Reposition the hint on after it renders, to avoid rendering outside the viewport
-    requestAnimationFrame(() => keepInViewport(hint, { x, y }));
-
-    hint.innerText = lastHoveredBox.hint;
-  };
-  hovered.subscribe(renderHint);
-  targets.subscribe(renderHint);
 
   const renderMenu = () => {
     let menu = document.getElementById(menuId);

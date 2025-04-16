@@ -123,26 +123,23 @@ export const mapElements = (highlights: HighlightOptions[]): Map<HTMLElement, Hi
 
 export const mapBoxes = (elements: Map<HTMLElement, Highlight>): Box[] =>
   Array.from(elements.entries())
-    .map<Box>(
-      ([element, { selectors, styles, hoverStyles, focusStyles, selectable, hint, menu }]) => {
-        const { top, left, width, height } = element.getBoundingClientRect();
-        const { position } = getComputedStyle(element);
-        return {
-          element,
-          selectors,
-          selectable,
-          styles,
-          hoverStyles,
-          focusStyles,
-          hint,
-          menu,
-          top: position === 'fixed' ? top : top + window.scrollY,
-          left: position === 'fixed' ? left : left + window.scrollX,
-          width,
-          height,
-        };
-      }
-    )
+    .map<Box>(([element, { selectors, styles, hoverStyles, focusStyles, selectable, menu }]) => {
+      const { top, left, width, height } = element.getBoundingClientRect();
+      const { position } = getComputedStyle(element);
+      return {
+        element,
+        selectors,
+        selectable,
+        styles,
+        hoverStyles,
+        focusStyles,
+        menu,
+        top: position === 'fixed' ? top : top + window.scrollY,
+        left: position === 'fixed' ? left : left + window.scrollX,
+        width,
+        height,
+      };
+    })
     .sort((a, b) => b.width * b.height - a.width * a.height);
 
 export const isOverMenu = (menuElement: HTMLElement, coordinates: { x: number; y: number }) => {

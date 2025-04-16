@@ -10,8 +10,8 @@ export const ShadowRoot = ({ label = 'Hello from shadow DOM' }) => {
       return;
     }
 
-    ref.current.attachShadow({ mode: 'closed' });
-    ref.current.shadowRoot!.innerHTML = `
+    const shadowRoot = ref.current.attachShadow({ mode: 'open' });
+    shadowRoot.innerHTML = `
       <button part="foo">${label}</button>
     `;
   }, [label]);

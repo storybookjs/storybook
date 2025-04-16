@@ -46,14 +46,11 @@ export async function transformIframeHtml(html: string, options: Options) {
 
   // Generate the bootstrapping script
 
-  const relativePathToStorybookPackageDirectory =
-    (process.cwd(), dirname(require.resolve('storybook/package.json')));
-
   const mainScript = dedent`
-    import { createBrowserChannel } from '/@fs${relativePathToStorybookPackageDirectory}/storybook/internal/channels';
-    import { addons } from '/@fs${relativePathToStorybookPackageDirectory}/storybook/preview-api';
-    import { setup } from '/@fs${relativePathToStorybookPackageDirectory}/storybook/internal/preview/runtime';
-    import { PreviewWeb } from '/@fs${relativePathToStorybookPackageDirectory}/storybook/preview-api';
+    import { createBrowserChannel } from 'storybook/internal/channels';
+    import { addons } from 'storybook/preview-api';
+    import { setup } from 'storybook/internal/preview/runtime';
+    import { PreviewWeb } from 'storybook/preview-api';
 
     // Set up the channel
     const channel = createBrowserChannel({ page: 'preview' });
@@ -85,26 +82,6 @@ export async function transformIframeHtml(html: string, options: Options) {
     
     preview.onStoriesChanged({ importFn });
 
-    // Set up HMR
-    if (import.meta.hot) {
-      ${
-        frameworkName === '@storybook/web-components-vite'
-          ? 'import.meta.hot.decline();'
-          : dedent`
-          // HMR for preview
-          import.meta.hot.accept(['${projectRoot}/preview'], () => {
-            preview.onGetProjectAnnotationsChanged({ 
-              getProjectAnnotations: () => import('${projectRoot}/preview').then(m => m.default)
-            });
-          });
-
-          // HMR for stories
-          import.meta.hot.accept(Object.values(importers).map(imp => imp.toString()), () => {
-            preview.onStoriesChanged({ importFn });
-          });
-        `
-      }
-    }
   `.trim();
 
   // Replace all placeholders in the template

@@ -1,10 +1,6 @@
-import { readFile } from 'node:fs/promises';
-
 import type { Options } from 'storybook/internal/types';
 
 import type { HmrContext, Plugin } from 'vite';
-
-import { transformIframeHtml } from '../transform-iframe-html';
 
 export function codeGeneratorPlugin(options: Options): Plugin {
   const iframePath = require.resolve('@storybook/builder-vite/input/iframe.html');
@@ -24,14 +20,7 @@ export function codeGeneratorPlugin(options: Options): Plugin {
         };
       }
     },
-    async transformIndexHtml(html, ctx) {
-      if (!ctx.path?.endsWith('iframe.html')) {
-        return html;
-      }
 
-      const template = await readFile(iframePath, 'utf-8');
-      return transformIframeHtml(template, options);
-    },
     handleHotUpdate(ctx: HmrContext) {
       // Invalidate iframe.html when stories change
       if (/\.stories\.([tj])sx?$/.test(ctx.file) || /\.mdx$/.test(ctx.file)) {

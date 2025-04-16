@@ -7,6 +7,7 @@ import type { Middleware, Options } from 'storybook/internal/types';
 import type { ViteDevServer } from 'vite';
 
 import { build as viteBuild } from './build';
+import { transformIframeHtml } from './transform-iframe-html';
 import type { ViteBuilder } from './types';
 import { createViteServer } from './vite-server';
 
@@ -20,7 +21,8 @@ function iframeHandler(options: Options, server: ViteDevServer): Middleware {
     const indexHtml = await readFile(require.resolve('@storybook/builder-vite/input/iframe.html'), {
       encoding: 'utf8',
     });
-    const transformed = await server.transformIndexHtml('/iframe.html', indexHtml);
+    const content = await transformIframeHtml(indexHtml, options);
+    const transformed = await server.transformIndexHtml('/iframe.html', content);
     res.setHeader('Content-Type', 'text/html');
     res.statusCode = 200;
     res.write(transformed);

@@ -147,7 +147,7 @@ test.describe("component testing", () => {
       .getByRole("button", { name: "test" });
     await expect(storyElement).toBeVisible({ timeout: 30000 });
 
-    await expect(page.locator('#testing-module-title')).toHaveText('Run local tests');
+    await expect(page.locator('#testing-module-title')).toHaveText('Run component tests');
 
     const testingModuleDescription = await page.locator('#testing-module-description');
 

@@ -85,7 +85,10 @@ export const useStore = <T>(initialValue?: T) => {
   };
   const subscribe = (listener: Listener<T>) => {
     listeners.get(key)?.push(listener);
-    return () => listeners.get(key)?.filter((l) => l !== listener);
+    return () => {
+      const list = listeners.get(key);
+      if (list) listeners.set(key, list.filter((l) => l !== listener));
+    };
   };
   const teardown = () => {
     listeners.get(key)?.forEach((listener) => {

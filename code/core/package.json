@@ -148,6 +148,11 @@
       "import": "./dist/highlight/index.js",
       "require": "./dist/highlight/index.cjs"
     },
+    "./highlight": {
+      "types": "./dist/highlight/index.d.ts",
+      "import": "./dist/highlight/index.js",
+      "require": "./dist/highlight/index.cjs"
+    },
     "./internal/highlight/preview": {
       "types": "./dist/highlight/preview.d.ts",
       "import": "./dist/highlight/preview.js",
@@ -464,6 +469,9 @@
       "internal/highlight": [
         "./dist/highlight/index.d.ts"
       ],
+      "highlight": [
+        "./dist/highlight/index.d.ts"
+      ],
       "internal/highlight/preview": [
         "./dist/highlight/preview.d.ts"
       ],
@@ -760,7 +768,7 @@
     "store2": "^2.14.2",
     "strip-ansi": "^7.1.0",
     "strip-json-comments": "^5.0.1",
-    "telejson": "8.0.0--canary.106.377d63b.0",
+    "telejson": "8.0.0",
     "tiny-invariant": "^1.3.1",
     "tinyspy": "^3.0.2",
     "ts-dedent": "^2.0.0",

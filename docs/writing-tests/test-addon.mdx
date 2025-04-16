@@ -390,6 +390,18 @@ export default defineConfig({
 
 </If>
 
+### How do I fix the `Error: Vitest failed to find the current suite` error?
+
+If you encounter this error, it's often not a Vitest issue but rather related to how your stories are being transformed. Here are steps to troubleshoot:
+
+1. Check the complete error logs for additional context, particularly around story transformation
+2. Pay attention to Vite dependency optimization warnings (e.g., "new dependencies optimized: lodash")
+3. If you see dependency optimization warnings, these can cause test-breaking reloads during execution
+
+The most common fix is to pre-optimize your dependencies. You can do this by adding the dependencies to your Vite config's [`optimizeDeps.include`](https://vitejs.dev/config/dep-optimization-options.html#optimizedeps-include) array.
+
+This prevents mid-test dependency optimization, which can interfere with Vitest's test suite management.
+
 ## API
 
 ### Exports

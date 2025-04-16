@@ -1,0 +1,14 @@
+{
+  "private": true,
+  "name": "integration-test-for-flat-config",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "Integration test for flat config",
+  "scripts": {
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "eslint": "^9.0.0",
+    "eslint-plugin-storybook": "file:../../.."
+  }
+}

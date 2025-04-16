@@ -1,3 +1,16 @@
+# v2.0.0 (Wed Apr 16 2025)
+
+#### 💥 Breaking Change
+
+- Breaking Change: Support Storybook 9 [#33](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/33) ([@valentinpalkovic](https://github.com/valentinpalkovic) [@kasperpeulen](https://github.com/kasperpeulen))
+
+#### Authors: 2
+
+- Kasper Peulen ([@kasperpeulen](https://github.com/kasperpeulen))
+- Valentin Palkovic ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+---
+
 # v1.1.5 (Mon Mar 31 2025)
 
 #### 🐛 Bug Fix

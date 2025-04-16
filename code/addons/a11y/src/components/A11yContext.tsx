@@ -322,7 +322,7 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
         outline: `1px solid ${theme.color.secondary}`,
         backgroundColor: 'transparent',
       },
-      menuItems: results[tab as RuleType].map((result) => ({
+      menu: results[tab as RuleType].map((result) => ({
         id: `${tab}.${result.id}`,
         title: result.help,
         description: result.description,
@@ -347,7 +347,7 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
         outline: `1px solid ${theme.color.secondary}`,
         backgroundColor: 'transparent',
       },
-      menuItems: results[tab as RuleType].map((result) => ({
+      menu: results[tab as RuleType].map((result) => ({
         id: `${tab}.${result.id}`,
         title: result.help,
         description: result.description,

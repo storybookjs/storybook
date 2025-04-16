@@ -17,7 +17,7 @@ export default {
   title: 'Button',
   args: { primary: true },
   component: Button,
-}
+};
 // no named export
 ```
 
@@ -28,8 +28,8 @@ export default {
   title: 'Button',
   args: { primary: true },
   component: Button,
-}
-export const Primary = {} // at least one named export!
+};
+export const Primary = {}; // at least one named export!
 ```
 
 ## When Not To Use It

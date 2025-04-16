@@ -15,7 +15,7 @@ Examples of **incorrect** code for this rule:
 ```js
 export default {
   title: 'Button',
-}
+};
 ```
 
 Examples of **correct** code for this rule:
@@ -24,7 +24,7 @@ Examples of **correct** code for this rule:
 export default {
   title: 'Button',
   component: Button,
-}
+};
 ```
 
 ## When Not To Use It

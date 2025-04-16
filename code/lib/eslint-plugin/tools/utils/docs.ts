@@ -1,14 +1,13 @@
-import { readFile, writeFile } from 'fs/promises'
-import { resolve } from 'path'
+import { readFile, writeFile } from 'fs/promises';
+import { resolve } from 'path';
+import { format, resolveConfig } from 'prettier';
 
-import { format, resolveConfig } from 'prettier'
-import { TRulesList, TRuleListWithoutName } from '../update-rules-list'
+import type { TRuleListWithoutName, TRulesList } from '../update-rules-list';
+import { categoryIds } from './categories';
 
-import { categoryIds } from './categories'
-
-const prettierConfig = resolveConfig(__dirname)
-const readmePath = resolve(__dirname, `../../README.md`)
-const ruleDocsPath = resolve(__dirname, `../../docs/rules`)
+const prettierConfig = resolveConfig(__dirname);
+const readmePath = resolve(__dirname, `../../README.md`);
+const ruleDocsPath = resolve(__dirname, `../../docs/rules`);
 
 export const configBadges = categoryIds.reduce(
   (badges, category) => ({
@@ -17,11 +16,11 @@ export const configBadges = categoryIds.reduce(
     [category]: `![${category}-badge][]`,
   }),
   {}
-)
+);
 
 export const emojiKey = {
   fixable: '🔧',
-}
+};
 
 const staticElements = {
   listHeaderRow: ['Name', 'Description', emojiKey.fixable, 'Included in configurations'],
@@ -36,25 +35,25 @@ const staticElements = {
         .join(', '),
     ].join(' '),
   ].join('\n'),
-}
+};
 
 const generateRulesListTable = (rulesList: TRuleListWithoutName[]) =>
   [staticElements.listHeaderRow, staticElements.listSpacerRow, ...rulesList]
     .map((column) => `|${column.join('|')}|`)
-    .join('\n')
+    .join('\n');
 
 const generateRulesListMarkdown = (rulesList: TRuleListWithoutName[]) =>
-  ['', staticElements.rulesListKey, '', generateRulesListTable(rulesList), ''].join('\n')
+  ['', staticElements.rulesListKey, '', generateRulesListTable(rulesList), ''].join('\n');
 
-const listBeginMarker = '<!-- RULES-LIST:START -->'
-const listEndMarker = '<!-- RULES-LIST:END -->'
+const listBeginMarker = '<!-- RULES-LIST:START -->';
+const listEndMarker = '<!-- RULES-LIST:END -->';
 
 const overWriteRulesList = (rulesList: TRuleListWithoutName[], readme: string) => {
-  const listStartIndex = readme.indexOf(listBeginMarker)
-  const listEndIndex = readme.indexOf(listEndMarker)
+  const listStartIndex = readme.indexOf(listBeginMarker);
+  const listEndIndex = readme.indexOf(listEndMarker);
 
   if ([listStartIndex, listEndIndex].includes(-1)) {
-    throw new Error(`cannot find start or end rules-list`)
+    throw new Error(`cannot find start or end rules-list`);
   }
 
   return [
@@ -63,18 +62,18 @@ const overWriteRulesList = (rulesList: TRuleListWithoutName[], readme: string) =
     '',
     generateRulesListMarkdown(rulesList),
     readme.substring(listEndIndex),
-  ].join('\n')
-}
+  ].join('\n');
+};
 
-const ruleCategoriesBeginMarker = '<!-- RULE-CATEGORIES:START -->'
-const ruleCategoriesEndMarker = '<!-- RULE-CATEGORIES:END -->'
+const ruleCategoriesBeginMarker = '<!-- RULE-CATEGORIES:START -->';
+const ruleCategoriesEndMarker = '<!-- RULE-CATEGORIES:END -->';
 
 const overWriteRuleDocs = (rule: TRulesList, ruleDocFile: string) => {
-  const ruleCategoriesStartIndex = ruleDocFile.indexOf(ruleCategoriesBeginMarker)
-  const ruleCategoriesEndIndex = ruleDocFile.indexOf(ruleCategoriesEndMarker)
+  const ruleCategoriesStartIndex = ruleDocFile.indexOf(ruleCategoriesBeginMarker);
+  const ruleCategoriesEndIndex = ruleDocFile.indexOf(ruleCategoriesEndMarker);
 
   if ([ruleCategoriesStartIndex, ruleCategoriesEndIndex].includes(-1)) {
-    throw new Error(`cannot find start or end rules-categories`)
+    throw new Error(`cannot find start or end rules-categories`);
   }
 
   return [
@@ -83,33 +82,33 @@ const overWriteRuleDocs = (rule: TRulesList, ruleDocFile: string) => {
     '',
     `**Included in these configurations**: ${rule[4]}`,
     ruleDocFile.substring(ruleCategoriesEndIndex),
-  ].join('\n')
-}
+  ].join('\n');
+};
 
 export const writeRulesListInReadme = async (rulesList: TRulesList[]) => {
-  const readme = await readFile(readmePath, 'utf8')
-  const rulesListWithoutName = rulesList.map((rule) => rule.slice(1)) as TRuleListWithoutName[]
+  const readme = await readFile(readmePath, 'utf8');
+  const rulesListWithoutName = rulesList.map((rule) => rule.slice(1)) as TRuleListWithoutName[];
   const newReadme = await format(overWriteRulesList(rulesListWithoutName, readme), {
     parser: 'markdown',
     ...(await prettierConfig),
-  })
+  });
 
-  await writeFile(readmePath, newReadme)
-}
+  await writeFile(readmePath, newReadme);
+};
 
 export const updateRulesDocs = async (rulesList: TRulesList[]) => {
   await Promise.all(
     rulesList.map(async (rule) => {
-      const ruleName = rule[0]
-      const ruleDocFilePath = resolve(ruleDocsPath, `${ruleName}.md`)
-      const ruleDocFile = await readFile(ruleDocFilePath, 'utf8')
+      const ruleName = rule[0];
+      const ruleDocFilePath = resolve(ruleDocsPath, `${ruleName}.md`);
+      const ruleDocFile = await readFile(ruleDocFilePath, 'utf8');
 
       const updatedDocFile = await format(overWriteRuleDocs(rule, ruleDocFile), {
         parser: 'markdown',
         ...(await prettierConfig),
-      })
+      });
 
-      await writeFile(ruleDocFilePath, updatedDocFile)
+      await writeFile(ruleDocFilePath, updatedDocFile);
     })
-  )
-}
+  );
+};

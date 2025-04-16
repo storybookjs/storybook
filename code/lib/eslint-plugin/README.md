@@ -68,7 +68,7 @@ export default [
     // Inside your .eslintignore file
     ignores: ['!.storybook'],
   },
-]
+];
 ```
 
 ## ESLint compatibility
@@ -124,7 +124,7 @@ Optionally, you can override, add or disable rules settings. You likely don't wa
 Use `eslint.config.[c|m]?js` file to configure rules using the [flat config style](https://eslint.org/docs/latest/use/configure/configuration-files-new). This is the default in ESLint v9, but can be used starting from ESLint v8.57.0. See also: https://eslint.org/docs/latest/use/configure/configuration-files-new.
 
 ```js
-import storybook from 'eslint-plugin-storybook'
+import storybook from 'eslint-plugin-storybook';
 
 export default [
   // add more generic rulesets here, such as:
@@ -132,7 +132,7 @@ export default [
   ...storybook.configs['flat/recommended'],
 
   // something ...
-]
+];
 ```
 
 #### Overriding/disabling rules
@@ -140,7 +140,7 @@ export default [
 Optionally, you can override, add or disable rules settings. You likely don't want these settings to be applied in every file, so make sure that you add a flat config section in your `eslint.config.[m|c]?js` file that applies the overrides only to your stories files.
 
 ```js
-import storybook from 'eslint-plugin-storybook'
+import storybook from 'eslint-plugin-storybook';
 
 export default [
   // ...
@@ -157,7 +157,7 @@ export default [
   },
 
   // something ...
-]
+];
 ```
 
 ### MDX Support

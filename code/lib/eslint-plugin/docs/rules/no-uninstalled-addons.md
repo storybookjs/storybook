@@ -77,7 +77,7 @@ module.exports = {
   rules: {
     'storybook/no-uninstalled-addons': ['error', { packageJsonLocation: './folder/package.json' }],
   },
-}
+};
 ```
 
 Note that the path must be relative to where ESLint runs from, which is usually relative to the root of the project.
@@ -97,7 +97,7 @@ module.exports = {
       },
     ],
   },
-}
+};
 ```
 
 ### What if I use a different storybook config directory?

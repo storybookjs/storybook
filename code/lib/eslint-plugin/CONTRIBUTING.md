@@ -21,7 +21,7 @@ First of all, thank you so much for taking the time to contribute to this projec
 Run the following command and answer the prompts:
 
 ```sh
-pnpm run generate-rule
+yarn generate-rule
 ```
 
 This command will generate the rule file, tests as well as the documentation page.
@@ -38,7 +38,7 @@ This command will auto-generate the test file with an example for you. Please re
 #### Important metadata for a rule
 
 ```js
-import { CategoryId } from '../utils/constants'
+import { CategoryId } from '../utils/constants';
 
 module.exports = {
   meta: {
@@ -49,7 +49,7 @@ module.exports = {
     },
   },
   ...otherProperties,
-}
+};
 ```
 
 ### Testing rules
@@ -57,7 +57,7 @@ module.exports = {
 Run the following command for testing the rules:
 
 ```sh
-pnpm run test --watch
+yarn test
 ```
 
 If you want to run tests for a particular rule and skip the rest, you can do so like this:
@@ -83,7 +83,7 @@ ruleTester.run('my-rule-name', rule, {
 When you make changes to rules or create/delete rules, the configuration files and documentation have to be updated. For that, run the following command:
 
 ```sh
-pnpm run update-all
+yarn update-all
 ```
 
 ### Useful resources

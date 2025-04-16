@@ -16,7 +16,7 @@ Examples of **incorrect** code for this rule:
 export default {
   title: 'Components|Forms/Input',
   component: Input,
-}
+};
 ```
 
 Examples of **correct** code for this rule:
@@ -25,7 +25,7 @@ Examples of **correct** code for this rule:
 export default {
   title: 'Components/Forms/Input',
   component: Input,
-}
+};
 ```
 
 ## Further Reading

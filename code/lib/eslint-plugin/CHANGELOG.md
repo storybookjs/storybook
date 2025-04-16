@@ -346,9 +346,9 @@ The `story-exports` rule now detects whether you are using `includeStories/exclu
 export default {
   title: 'Button',
   includeStories: ['myStory'], // <-- notice the lowercase m, which won't match with the story name
-}
+};
 
-export const MyStory = {}
+export const MyStory = {};
 ```
 
 ---

@@ -1,7 +1,7 @@
-import rules from './utils/rules'
-
-import { emojiKey, writeRulesListInReadme, updateRulesDocs } from './utils/docs'
-import { extendsCategories } from './utils/updates'
+/* eslint-disable no-unused-vars */
+import { emojiKey, updateRulesDocs, writeRulesListInReadme } from './utils/docs';
+import rules from './utils/rules';
+import { extendsCategories } from './utils/updates';
 
 /*
 This script updates the rules table in `README.md`from rule's meta data.
@@ -13,21 +13,20 @@ export type TRulesList = readonly [
   docsDescription: string,
   fixable: string,
   categories: string,
-]
+];
 export type TRuleListWithoutName = TRulesList extends readonly [string, ...infer TRulesWithoutName]
   ? TRulesWithoutName
-  : never
+  : never;
 
 const createRuleLink = (ruleName: string) =>
-  `[\`storybook/${ruleName}\`](./docs/rules/${ruleName}.md)`
+  `[\`storybook/${ruleName}\`](./docs/rules/${ruleName}.md)`;
 
 const rulesList: TRulesList[] = Object.entries(rules)
   .sort(([_, { name: ruleNameA }], [__, { name: ruleNameB }]) => {
-    return ruleNameA.localeCompare(ruleNameB)
+    return ruleNameA.localeCompare(ruleNameB);
   })
   .map(([_, rule]) => {
-    const ruleCategories: string[] = rule.meta.docs?.categories ?? []
-    const extendedCategories: string[] = []
+    const ruleCategories: string[] = rule.meta.docs?.categories ?? [];
 
     Object.entries(extendsCategories).map(([category, extendedCategory]) => {
       if (
@@ -35,9 +34,9 @@ const rulesList: TRulesList[] = Object.entries(rules)
         !ruleCategories.includes(category) &&
         ruleCategories.includes(extendedCategory)
       ) {
-        ruleCategories.push(category)
+        ruleCategories.push(category);
       }
-    })
+    });
 
     return [
       rule.name,
@@ -49,16 +48,16 @@ const rulesList: TRulesList[] = Object.entries(rules)
         : ruleCategories
           ? `<ul>${ruleCategories.map((c) => `<li>${c}</li><li>flat/${c}</li>`).join('')}</ul>`
           : '',
-    ]
-  })
+    ];
+  });
 
 async function run() {
-  await writeRulesListInReadme(rulesList)
+  await writeRulesListInReadme(rulesList);
 
-  await updateRulesDocs(rulesList)
+  await updateRulesDocs(rulesList);
 }
 
 run().catch((error) => {
-  console.error(error)
-  process.exit(1)
-})
+  console.error(error);
+  process.exit(1);
+});

@@ -1,18 +1,18 @@
-import path from 'path'
+import cp from 'child_process';
+import fs from 'fs/promises';
+import path from 'path';
+import type { PromptObject } from 'prompts';
+import prompts from 'prompts';
+import { dedent } from 'ts-dedent';
 
-import fs from 'fs/promises'
-import cp from 'child_process'
-import prompts, { PromptObject } from 'prompts'
-import dedent from 'ts-dedent'
-
-const logger = console
+const logger = console;
 
 type Answers = {
-  authorName: string
-  ruleId: string
-  ruleDescription: string
-  isAutoFixable: boolean
-}
+  authorName: string;
+  ruleId: string;
+  ruleDescription: string;
+  isAutoFixable: boolean;
+};
 
 // CLI questions
 const questions: PromptObject<keyof Answers>[] = [
@@ -47,25 +47,25 @@ const questions: PromptObject<keyof Answers>[] = [
     message: 'Will this rule contain an autofix?',
     initial: true,
   },
-]
+];
 
 const generateRule = async () => {
   logger.log(
     '👋 Welcome to the Storybook ESLint rule generator! Please answer a few questions so I can provide everything you need for your new rule.'
-  )
-  logger.log()
+  );
+  logger.log();
   const { authorName, ruleId, ruleDescription, isAutoFixable } = await prompts(questions, {
     onCancel: () => {
-      logger.log('Process canceled by the user.')
-      process.exit(0)
+      logger.log('Process canceled by the user.');
+      process.exit(0);
     },
-  })
+  });
 
-  const ruleFile = path.resolve(__dirname, `../lib/rules/${ruleId}.ts`)
-  const testFile = path.resolve(__dirname, `../tests/lib/rules/${ruleId}.test.ts`)
-  const docFile = path.resolve(__dirname, `../docs/rules/${ruleId}.md`)
+  const ruleFile = path.resolve(__dirname, `../src/rules/${ruleId}.ts`);
+  const testFile = path.resolve(__dirname, `../tests/rules/${ruleId}.test.ts`);
+  const docFile = path.resolve(__dirname, `../docs/rules/${ruleId}.md`);
 
-  logger.log(`creating lib/rules/${ruleId}.ts`)
+  logger.log(`creating src/rules/${ruleId}.ts`);
   await fs.writeFile(
     ruleFile,
     dedent(`/**
@@ -148,9 +148,9 @@ const generateRule = async () => {
       })
 
 `)
-  )
+  );
 
-  logger.log(`creating tests/lib/rules/${ruleId}.test.ts`)
+  logger.log(`creating tests/rules/${ruleId}.test.ts`);
   await fs.writeFile(
     testFile,
     dedent(`/**
@@ -162,8 +162,8 @@ const generateRule = async () => {
         // Requirements
         //------------------------------------------------------------------------------
 
-        import rule from '../../../lib/rules/${ruleId}'
-        import ruleTester from '../../utils/rule-tester'
+        import rule from '../../src/rules/${ruleId}'
+        import ruleTester from '../utils/rule-tester'
 
         //------------------------------------------------------------------------------
         // Tests
@@ -189,9 +189,9 @@ const generateRule = async () => {
         })
 
 `)
-  )
+  );
 
-  logger.log(`creating docs/rules/${ruleId}.md`)
+  logger.log(`creating docs/rules/${ruleId}.md`);
   await fs.writeFile(
     docFile,
     dedent(`
@@ -229,28 +229,28 @@ const generateRule = async () => {
       If there are other links that describe the issue this rule addresses, please include them here in a bulleted list. Otherwise, delete this section.
 
 `)
-  )
+  );
 
   const { shouldOpenInVSCode } = await prompts({
     type: 'confirm',
     name: 'shouldOpenInVSCode',
     message: 'Do you want to open the newly generated files in VS Code?',
     initial: false,
-  })
+  });
 
   if (shouldOpenInVSCode) {
-    cp.execSync(`code "${ruleFile}"`)
-    cp.execSync(`code "${testFile}"`)
-    cp.execSync(`code "${docFile}"`)
+    cp.execSync(`code "${ruleFile}"`);
+    cp.execSync(`code "${testFile}"`);
+    cp.execSync(`code "${docFile}"`);
   }
 
   logger.log(
-    '\n🚀 All done! Make sure to run `pnpm run test` as you write the rule and `pnpm run update-all` when you are done.'
-  )
-  logger.log(`❤️  Thanks for helping this plugin get better, ${authorName.split(' ')[0]}!`)
-}
+    '\n🚀 All done! Make sure to run `yarn test` as you write the rule and `yarn update-all` when you are done.'
+  );
+  logger.log(`❤️  Thanks for helping this plugin get better, ${authorName.split(' ')[0]}!`);
+};
 
 generateRule().catch((error) => {
-  logger.error('An error occurred while generating the rule:', error)
-  process.exit(1)
-})
+  logger.error('An error occurred while generating the rule:', error);
+  process.exit(1);
+});

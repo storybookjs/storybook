@@ -19,7 +19,7 @@ export default {
   title: 'Button',
   args: { primary: true },
   component: Button,
-}
+};
 ```
 
 ```ts
@@ -27,8 +27,8 @@ const meta: Meta<typeof Button> = {
   title: 'Button',
   args: { primary: true },
   component: Button,
-}
-export default meta
+};
+export default meta;
 ```
 
 Examples of **correct** code for this rule:
@@ -38,7 +38,7 @@ export default {
   title: 'Button',
   args: { primary: true },
   component: Button,
-} satisfies Meta<typeof Button>
+} satisfies Meta<typeof Button>;
 ```
 
 ```ts
@@ -46,8 +46,8 @@ const meta = {
   title: 'Button',
   args: { primary: true },
   component: Button,
-} satisfies Meta<typeof Button>
-export default meta
+} satisfies Meta<typeof Button>;
+export default meta;
 ```
 
 ## When Not To Use It

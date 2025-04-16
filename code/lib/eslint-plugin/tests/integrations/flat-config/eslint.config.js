@@ -1,4 +1,4 @@
-import plugin from 'eslint-plugin-storybook'
+import plugin from 'eslint-plugin-storybook';
 
 export default [
   ...plugin.configs['flat/recommended'],
@@ -9,4 +9,4 @@ export default [
       'storybook/meta-inline-properties': 'warn',
     },
   },
-]
+];

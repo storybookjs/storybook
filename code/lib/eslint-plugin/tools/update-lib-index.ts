@@ -1,26 +1,27 @@
-'use strict'
+'use strict';
 
 /*
 This script updates `lib/index.js` file from rule's meta data.
 */
+import fs from 'fs/promises';
+import path from 'path';
+import type { Options } from 'prettier';
+import { format } from 'prettier';
 
-import fs from 'fs/promises'
-import path from 'path'
-import { format, Options } from 'prettier'
-import prettierConfig from '../.prettierrc.js'
-import rules from './utils/rules'
-import { categoryIds } from './utils/categories'
+import prettierConfig from '../.prettierrc.js';
+import { categoryIds } from './utils/categories';
+import rules from './utils/rules';
 
 function camelize(text: string) {
-  const a = text.toLowerCase().replace(/[-_\s.]+(.)?/g, (_, c) => (c ? c.toUpperCase() : ''))
-  return a.substring(0, 1).toLowerCase() + a.substring(1)
+  const a = text.toLowerCase().replace(/[-_\s.]+(.)?/g, (_, c) => (c ? c.toUpperCase() : ''));
+  return a.substring(0, 1).toLowerCase() + a.substring(1);
 }
 
 export async function update() {
   const rawContent = `/*
  * IMPORTANT!
  * This file has been automatically generated,
- * in order to update its content execute "pnpm run update"
+ * in order to update its content execute "yarn update"
  */
 // configs
 ${categoryIds
@@ -50,10 +51,10 @@ export = {
     ${rules.map((rule) => `'${rule.name}': ${camelize(rule.name)}`).join(',\n')}
   }
 }
-`
+`;
   const content = await format(rawContent, {
     parser: 'typescript',
     ...(prettierConfig as Options),
-  })
-  await fs.writeFile(path.resolve(__dirname, '../lib/index.ts'), content)
+  });
+  await fs.writeFile(path.resolve(__dirname, '../lib/index.ts'), content);
 }

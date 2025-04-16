@@ -16,8 +16,8 @@ Examples of **incorrect** code for this rule:
 ```js
 Default.play = async () => {
   // using global expect from Jest. Will break on the browser
-  await expect(123).toEqual(123)
-}
+  await expect(123).toEqual(123);
+};
 ```
 
 Examples of **correct** code for this rule:

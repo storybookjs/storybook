@@ -16,7 +16,7 @@ Examples of **incorrect** code for this rule:
 export const PrimaryButton = {
   // no need for this, as Storybook will resolve to this name already
   name: 'Primary Button',
-}
+};
 ```
 
 Examples of **correct** code for this rule:
@@ -24,7 +24,7 @@ Examples of **correct** code for this rule:
 ```js
 export const PrimaryButton = {
   name: 'I am the primary',
-}
+};
 ```
 
 ## When Not To Use It

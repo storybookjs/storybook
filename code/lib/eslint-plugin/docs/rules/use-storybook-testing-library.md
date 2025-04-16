@@ -15,11 +15,11 @@ Examples of **incorrect** code for this rule:
 
 ```js
 // wrong import!
-import { within } from '@testing-library/react'
+import { within } from '@testing-library/react';
 
 Default.play = async (context) => {
-  const canvas = within(context.canvasElement)
-}
+  const canvas = within(context.canvasElement);
+};
 ```
 
 Examples of **correct** code for this rule:

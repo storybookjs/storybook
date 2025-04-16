@@ -17,7 +17,7 @@ Examples of **incorrect** code for this rule:
 export default {
   title: 'Components/Forms/Input',
   component: Input,
-}
+};
 ```
 
 Examples of **correct** code for this rule:
@@ -25,7 +25,7 @@ Examples of **correct** code for this rule:
 ```js
 export default {
   component: Input, // no title necessary, it will be inferred from path on disk!
-}
+};
 ```
 
 ## When Not To Use It

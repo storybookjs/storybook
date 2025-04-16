@@ -14,7 +14,7 @@ Examples of **incorrect** code for this rule:
 
 ```js
 // no default export
-export const Primary = {}
+export const Primary = {};
 ```
 
 Examples of **correct** code for this rule:
@@ -24,8 +24,8 @@ export default {
   title: 'Button',
   args: { primary: true },
   component: Button,
-}
-export const Primary = {}
+};
+export const Primary = {};
 ```
 
 ## When Not To Use It

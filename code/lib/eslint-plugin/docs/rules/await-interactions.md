@@ -13,25 +13,29 @@ Storybook provides an instrumented version of testing library in the [@storybook
 Examples of **incorrect** code for this rule:
 
 ```js
-import { within, userEvent } from '@storybook/test' // or from the legacy package "@storybook/testing-library";
+import { within, userEvent } from '@storybook/test';
+
+// or from the legacy package "@storybook/testing-library";
 
 MyStory.play = (context) => {
-  const canvas = within(context.canvasElement)
+  const canvas = within(context.canvasElement);
   // not awaited!
-  userEvent.click(canvas.getByRole('button'))
-}
+  userEvent.click(canvas.getByRole('button'));
+};
 ```
 
 Examples of **correct** code for this rule:
 
 ```js
-import { within, userEvent } from '@storybook/test' // or from the legacy package "@storybook/testing-library";
+import { within, userEvent } from '@storybook/test';
+
+// or from the legacy package "@storybook/testing-library";
 
 MyStory.play = async (context) => {
-  const canvas = within(context.canvasElement)
+  const canvas = within(context.canvasElement);
   // awaited 👍
-  await userEvent.click(canvas.getByRole('button'))
-}
+  await userEvent.click(canvas.getByRole('button'));
+};
 ```
 
 ## When Not To Use It

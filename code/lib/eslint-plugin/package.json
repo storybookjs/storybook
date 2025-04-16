@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-storybook",
-  "version": "0.12.0",
+  "version": "9.0.0-alpha.19",
   "description": "Best practice rules for Storybook",
   "keywords": [
     "eslint",
@@ -8,13 +8,14 @@
     "eslint-plugin",
     "storybook"
   ],
-  "homepage": "https://github.com/storybookjs/eslint-plugin-storybook#readme",
+  "homepage": "https://github.com/storybookjs/storybook/code/lib/eslint-plugin#readme",
   "bugs": {
-    "url": "https://github.com/storybookjs/eslint-plugin-storybook/issues"
+    "url": "https://github.com/storybook/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/storybookjs/eslint-plugin-storybook"
+    "url": "https://github.com/storybookjs/storybook",
+    "directory": "code/lib/eslint-plugin"
   },
   "license": "MIT",
   "author": "yannbf@gmail.com",
@@ -30,74 +31,49 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsup",
-    "dev": "tsup --watch",
-    "generate-rule": "ts-node ./tools/generate-rule",
-    "lint": "eslint --fix .",
-    "check": "tsc --noEmit",
-    "migrate": "ts-migrate-full",
-    "prepare": "husky",
-    "prettier": "prettier --write .",
-    "release": "git status && pnpm run build && git status && auto shipit --name storybookbot --email storybookbot@gmail.com",
-    "test": "pnpm run test:unit && pnpm run test:integration",
-    "test:unit": "vitest run --allowOnly",
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/bundle.ts",
+    "generate-rule": "jiti ./tools/generate-rule",
+    "update-all": "yarn run update-configs && yarn run update-docs",
+    "update-configs": "jiti ./tools/update-configs",
+    "update-docs": "jiti ./tools/update-rules-list",
+    "test": "yarn run test:unit && yarn run test:integration",
+    "test:ci": "yarn run check && yarn run test:unit --run && yarn run test:integration --run",
     "test:integration": "vitest run --config vitest.integration.config.ts",
-    "test:ci": "pnpm run check && pnpm run test:unit --run && pnpm run test:integration --run",
-    "update-all": "pnpm run update-configs && pnpm run update-docs",
-    "update-configs": "ts-node ./tools/update-configs",
-    "update-docs": "ts-node ./tools/update-rules-list"
-  },
-  "lint-staged": {
-    "*.js": "eslint --cache --fix",
-    "*.{js,css,md}": "prettier --write"
+    "test:unit": "vitest run --allowOnly"
   },
   "dependencies": {
     "@typescript-eslint/utils": "^8.8.1"
   },
   "devDependencies": {
-    "@auto-it/released": "^11.2.1",
-    "@storybook/csf": "^0.1.11",
     "@types/eslint": "^8.56.2",
-    "@types/node": "^18.19.17",
-    "@types/prompts": "^2.4.9",
+    "@types/node": "^22.0.0",
+    "@types/prompts": "^2.0.9",
     "@types/requireindex": "^1.2.4",
     "@types/semver": "^7.5.8",
     "@typescript-eslint/eslint-plugin": "^8.8.1",
     "@typescript-eslint/parser": "^8.8.1",
     "@typescript-eslint/rule-tester": "^8.8.1",
     "@vitest/coverage-v8": "^3.0.9",
-    "auto": "^11.2.1",
     "eslint": "^8.57.1",
-    "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-eslint-plugin": "^6.2.0",
     "eslint-plugin-node": "^11.1.0",
-    "eslint-plugin-prettier": "^5.1.3",
-    "husky": "^9.0.11",
-    "lint-staged": "^15.2.2",
-    "prettier": "^3.2.5",
-    "prompts": "^2.4.2",
-    "semver": "^7.6.0",
-    "ts-dedent": "^2.2.0",
-    "ts-migrate": "^0.1.35",
-    "ts-node": "^10.9.2",
-    "tsup": "^8.4.0",
-    "typescript": "^5.8.0",
-    "vitest": "^3.0.9"
+    "prettier": "~3.4.0",
+    "prompts": "^2.4.0",
+    "semver": "^7.3.7",
+    "ts-dedent": "^2.0.0",
+    "typescript": "^5.7.3"
   },
   "peerDependencies": {
-    "eslint": ">=8"
+    "eslint": ">=8",
+    "storybook": "workspace:^"
   },
   "engines": {
-    "node": ">= 18"
+    "node": ">=20.0.0"
   },
   "publishConfig": {
     "access": "public"
   },
-  "auto": {
-    "plugins": [
-      "npm",
-      "released"
-    ]
-  },
-  "packageManager": "pnpm@10.4.0+sha512.6b849d0787d97f8f4e1f03a9b8ff8f038e79e153d6f11ae539ae7c435ff9e796df6a862c991502695c7f9e8fac8aeafc1ac5a8dab47e36148d183832d886dd52"
+  "bundler": {},
+  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
 }

@@ -13,13 +13,13 @@ As a best practice, stories should be defined in [_PascalCase_](https://en.wikti
 Examples of **incorrect** code for this rule:
 
 ```js
-export const primaryButton = {}
+export const primaryButton = {};
 ```
 
 Examples of **correct** code for this rule:
 
 ```js
-export const PrimaryButton = {}
+export const PrimaryButton = {};
 ```
 
 ## Further Reading

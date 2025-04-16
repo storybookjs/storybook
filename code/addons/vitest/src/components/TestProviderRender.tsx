@@ -153,7 +153,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
       <Heading>
         <Info>
           {entry ? (
-            <Title id="testing-module-title">Run Component tests</Title>
+            <Title id="testing-module-title">Run component tests</Title>
           ) : (
             <Title
               id="testing-module-title"
@@ -169,7 +169,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                   ? 'Component tests completed with errors'
                   : fatalError
                     ? 'Component tests didn’t complete'
-                    : 'Run Component tests'}
+                    : 'Run component tests'}
             </Title>
           )}
           <Description

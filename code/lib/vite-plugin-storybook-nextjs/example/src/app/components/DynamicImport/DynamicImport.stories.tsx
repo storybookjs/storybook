@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/react";
+import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import dynamic from "next/dynamic";
 import { expect, waitFor } from "storybook/test";
 

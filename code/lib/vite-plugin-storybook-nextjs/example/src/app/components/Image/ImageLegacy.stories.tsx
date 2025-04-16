@@ -1,7 +1,7 @@
 import Image from "next/legacy/image";
 import React, { useRef, useState } from "react";
 
-import type { Meta, StoryObj } from "@storybook/react";
+import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import Accessibility from "./assets/accessibility.svg";
 import AvifImage from "./assets/avif-test-image.avif";
 

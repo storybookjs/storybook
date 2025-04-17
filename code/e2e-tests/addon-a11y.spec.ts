@@ -19,16 +19,17 @@ test.describe('addon-a11y', () => {
     const panel = sbPage.panelContent();
     await panel.getByRole('button', { name: 'Show highlights' }).click();
 
-    // check that the highlight is visible
-    const imageElement = sbPage.previewIframe().getByRole('img');
-    expect(await imageElement.evaluate((el) => getComputedStyle(el).outline)).toBe(
-      'rgba(255, 68, 0, 0.6) dashed 1px'
-    );
+    const highlightElement = sbPage
+      .previewIframe()
+      .locator('[data-highlight-dimensions="w350h150"][data-highlight-coordinates="x16y247"]');
+
+    await expect(highlightElement).toBeVisible();
+    expect(await highlightElement.evaluate((el) => getComputedStyle(el))).toMatchObject({
+      backgroundColor: 'color(srgb 1 0.266667 0 / 0.4)',
+    });
 
     await page.getByRole('button', { name: 'Hide highlights' }).click();
-
-    // check that the highlight is not visible
-    expect(await imageElement.evaluate((el) => getComputedStyle(el).outline)).toMatch(/0px/);
+    await expect(highlightElement).toBeHidden();
   });
 
   test('should rerun a11y checks when clicking the rerun button', async ({ page }) => {

@@ -166,8 +166,7 @@ export const useHighlights = ({
 
   let root = document.getElementById(rootId);
   if (!root) {
-    root = document.createElement('div');
-    root.setAttribute('id', rootId);
+    root = createElement('div', { id: rootId, 'data-highlight-root': 'true' }) as HTMLElement;
     document.body.appendChild(root);
   }
 
@@ -204,7 +203,11 @@ export const useHighlights = ({
     value.forEach((box) => {
       let boxElement = boxElementByTargetElement.get(box.element);
       if (!boxElement) {
-        const props = { popover: 'manual' };
+        const props = {
+          popover: 'manual',
+          'data-highlight-dimensions': `w${box.width.toFixed(0)}h${box.height.toFixed(0)}`,
+          'data-highlight-coordinates': `x${box.left.toFixed(0)}y${box.top.toFixed(0)}`,
+        };
         boxElement = root.appendChild(createElement('div', props) as HTMLDivElement);
         boxElementByTargetElement.set(box.element, boxElement);
       }
@@ -323,7 +326,7 @@ export const useHighlights = ({
     if (menu) {
       menu.innerHTML = '';
     } else {
-      const props = { id: menuId, popover: 'manual' };
+      const props = { id: menuId, popover: 'manual', 'data-highlight-menu': 'true' };
       menu = root.appendChild(createElement('div', props) as HTMLElement);
       root.appendChild(
         createElement('style', {}, [
@@ -335,6 +338,7 @@ export const useHighlights = ({
               padding: 0px;
               margin: 15px 0 0 0;
               transform: translateX(-50%);
+              font-family: "Nunito Sans", -apple-system, ".SFNSText-Regular", "San Francisco", BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
               font-size: 12px;
               background: white;
               border: none;
@@ -355,7 +359,6 @@ export const useHighlights = ({
             }
             #${menuId} li > * {
               display: flex;
-              width: 100%;
               padding: 8px;
               margin: 0;
               align-items: center;
@@ -367,6 +370,8 @@ export const useHighlights = ({
               background: transparent;
               color: inherit;
               text-align: left;
+              font-family: inherit;
+              font-size: inherit;
             }
             #${menuId} button:focus {
               outline-color: #029CFD;

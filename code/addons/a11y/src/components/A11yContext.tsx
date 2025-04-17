@@ -283,6 +283,9 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
 
     const selected = Array.from(selectedItems.values()).flatMap((key) => {
       const [type, id, number] = key.split('.');
+      if (type !== tab) {
+        return [];
+      }
       const result = results?.[type as RuleType]?.find((r) => r.id === id);
       const target = result?.nodes[Number(number) - 1]?.target;
       return target ? [String(target)] : [];

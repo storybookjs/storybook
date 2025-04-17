@@ -30,7 +30,7 @@ export default {
   '@storybook/core-webpack': '9.0.0-alpha.20',
   'create-storybook': '9.0.0-alpha.20',
   '@storybook/csf-plugin': '9.0.0-alpha.20',
-  'eslint-plugin-storybook': '9.0.0-alpha.29',
+  'eslint-plugin-storybook': '9.0.0-alpha.20',
   '@storybook/react-dom-shim': '9.0.0-alpha.20',
   '@storybook/source-loader': '9.0.0-alpha.20',
   '@storybook/preset-create-react-app': '9.0.0-alpha.20',

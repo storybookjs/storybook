@@ -222,6 +222,9 @@ export const features: PresetProperty<'features'> = async (existing) => ({
   controls: true,
   interactions: true,
   actions: true,
+  backgrounds: true,
+  outline: true,
+  measure: true,
 });
 
 export const csfIndexer: Indexer = {

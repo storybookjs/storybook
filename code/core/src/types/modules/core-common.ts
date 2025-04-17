@@ -371,6 +371,27 @@ export interface StorybookConfigRaw {
     highlight?: boolean;
 
     /**
+     * Enable the integrated backgrounds addon
+     *
+     * @default true
+     */
+    backgrounds?: boolean;
+
+    /**
+     * Enable the integrated measure addon
+     *
+     * @default true
+     */
+    measure?: boolean;
+
+    /**
+     * Enable the integrated outline addon
+     *
+     * @default true
+     */
+    outline?: boolean;
+
+    /**
      * Enable the integrated controls addon
      *
      * @default true

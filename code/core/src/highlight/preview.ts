@@ -1,13 +1,9 @@
 /* eslint-env browser */
 import { STORY_CHANGED } from 'storybook/internal/core-events';
 
-import { global } from '@storybook/global';
-
 import { addons, definePreview } from 'storybook/preview-api';
 
 import { HIGHLIGHT, RESET_HIGHLIGHT, SCROLL_INTO_VIEW } from './constants';
-
-const { document } = global;
 
 interface HighlightOptions {
   /** HTML selectors of the elements */
@@ -32,43 +28,42 @@ interface HighlightOptions {
   pulseOut?: number;
 }
 
-const highlightStyle = (
-  selectors: string[],
-  {
-    color = '#FF4785',
-    style = 'solid',
-    width = '1px',
-    offset = '2px',
-    fadeOut = 0,
-    pulseOut = 0,
-  }: HighlightOptions
-) => {
-  const animationName = Math.random().toString(36).substring(2, 15);
-  let keyframes = '';
-  if (pulseOut) {
-    keyframes = `@keyframes ${animationName} {
-      0% { outline: ${width} ${style} ${color}; }
-      20% { outline: ${width} ${style} ${color}00; }
-      40% { outline: ${width} ${style} ${color}; }
-      60% { outline: ${width} ${style} ${color}00; }
-      80% { outline: ${width} ${style} ${color}; }
-      100% { outline: ${width} ${style} ${color}00; }
-    }\n`;
-  } else if (fadeOut) {
-    keyframes = `@keyframes ${animationName} {
-      0% { outline: ${width} ${style} ${color}; }
-      100% { outline: ${width} ${style} ${color}00; }
-    }\n`;
-  }
+if (addons && addons.ready && typeof globalThis.document !== 'undefined') {
+  const highlightStyle = (
+    selectors: string[],
+    {
+      color = '#FF4785',
+      style = 'solid',
+      width = '1px',
+      offset = '2px',
+      fadeOut = 0,
+      pulseOut = 0,
+    }: HighlightOptions
+  ) => {
+    const animationName = Math.random().toString(36).substring(2, 15);
+    let keyframes = '';
+    if (pulseOut) {
+      keyframes = `@keyframes ${animationName} {
+        0% { outline: ${width} ${style} ${color}; }
+        20% { outline: ${width} ${style} ${color}00; }
+        40% { outline: ${width} ${style} ${color}; }
+        60% { outline: ${width} ${style} ${color}00; }
+        80% { outline: ${width} ${style} ${color}; }
+        100% { outline: ${width} ${style} ${color}00; }
+      }\n`;
+    } else if (fadeOut) {
+      keyframes = `@keyframes ${animationName} {
+        0% { outline: ${width} ${style} ${color}; }
+        100% { outline: ${width} ${style} ${color}00; }
+      }\n`;
+    }
 
-  return `${keyframes}${selectors.join(', ')} {
-    outline: ${width} ${style} ${color};
-    outline-offset: ${offset};
-    ${pulseOut || fadeOut ? `animation: ${animationName} ${pulseOut || fadeOut}ms linear forwards;` : ''}
-  }`;
-};
-
-if (addons && addons.ready) {
+    return `${keyframes}${selectors.join(', ')} {
+      outline: ${width} ${style} ${color};
+      outline-offset: ${offset};
+      ${pulseOut || fadeOut ? `animation: ${animationName} ${pulseOut || fadeOut}ms linear forwards;` : ''}
+    }`;
+  };
   addons.ready().then(() => {
     const channel = addons.getChannel();
     const sheetIds = new Set<string>();

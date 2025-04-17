@@ -180,26 +180,16 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       const includeStories = stories
         .map((story) => {
           let storyPath;
+
           if (typeof story === 'string') {
             storyPath = story;
           } else {
             storyPath = `${story.directory}/${story.files ?? DEFAULT_FILES_PATTERN}`;
           }
 
-          // Transform the path from Storybook configDir relative to Vitest root relative
-          // First, make the path absolute from configDir
-          const absolutePath = join(finalOptions.configDir, storyPath);
-          // Then make it relative to Vitest root
-          const relativeToViteRoot = absolutePath
-            .replace(
-              inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED.root ?? WORKING_DIR,
-              ''
-            )
-            .replace(/^\//, ''); // Remove leading slash if present
-
-          return relativeToViteRoot;
+          return join(finalOptions.configDir, storyPath);
         })
-        .filter((story) => story.replace(/mdx|stories/g, 'stories'));
+        .filter((story) => story.replace(/mdx\|stories/g, 'stories'));
 
       finalOptions.includeStories = includeStories;
 

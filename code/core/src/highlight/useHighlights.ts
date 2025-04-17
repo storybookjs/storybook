@@ -79,6 +79,16 @@ export const useHighlights = ({
   const focused = useStore<Box | undefined>();
   const selected = useStore<Box | undefined>();
 
+  let root = document.getElementById(rootId);
+
+  // Only create the root element when first highlights are added
+  highlights.subscribe(() => {
+    if (!root) {
+      root = createElement('div', { id: rootId }) as HTMLElement;
+      document.body.appendChild(root);
+    }
+  });
+
   // Update tracked elements when highlights change or the DOM tree changes
   highlights.subscribe((value) => {
     const storybookRoot = document.getElementById(storybookRootId)!;
@@ -162,16 +172,6 @@ export const useHighlights = ({
   // Rendering
   //
 
-  let root = document.getElementById(rootId);
-
-  // Only create the root element when first highlights are added
-  highlights.subscribe(() => {
-    if (!root) {
-      root = createElement('div', { id: rootId }) as HTMLElement;
-      document.body.appendChild(root);
-    }
-  });
-
   const styleElementByHighlight = new Map<string, HTMLStyleElement>(new Map());
 
   // Update highlight keyframes when highlights change
@@ -250,8 +250,8 @@ export const useHighlights = ({
       });
     };
 
-    document.body.addEventListener('click', onClick);
-    return () => document.body.removeEventListener('click', onClick);
+    document.addEventListener('click', onClick);
+    return () => document.removeEventListener('click', onClick);
   });
 
   const updateHovered = () => {
@@ -372,6 +372,7 @@ export const useHighlights = ({
               border-radius: 4px;
             }
             #${menuId} button {
+              width: 100%;
               border: 0;
               background: transparent;
               color: inherit;

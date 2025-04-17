@@ -278,7 +278,6 @@ export const Selectable = meta.story({
     await new Promise((resolve) => setTimeout(resolve, 200));
 
     await userEvent.pointer({
-      target: document.body,
       coords: { pageX: 470, pageY: 240 },
       keys: '[MouseLeft]',
     });
@@ -307,7 +306,6 @@ export const Menu = meta.story({
     await new Promise((resolve) => setTimeout(resolve, 200));
 
     await userEvent.pointer({
-      target: document.body,
       coords: { pageX: 470, pageY: 240 },
       keys: '[MouseLeft]',
     });
@@ -329,7 +327,6 @@ export const OnPopover = meta.story({
     await new Promise((resolve) => setTimeout(resolve, 200));
 
     await userEvent.pointer({
-      target: document.body,
       coords: { pageX: window.innerWidth / 2, pageY: window.innerHeight / 2 },
       keys: '[MouseLeft]',
     });

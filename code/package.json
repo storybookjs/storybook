@@ -204,6 +204,7 @@
     "slash": "^5.0.0",
     "sort-package-json": "^2.14.0",
     "storybook": "workspace:^",
+    "storybook-addon-pseudo-states": "workspace:*",
     "stream-browserify": "^3.0.0",
     "svelte": "^5.0.0-next.268",
     "ts-dedent": "^2.0.0",

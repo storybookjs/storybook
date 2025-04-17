@@ -1,7 +1,7 @@
 ```js filename="addon-panel/manager.js" renderer="common" language="js"
 import React from 'react';
 
-import { AddonPanel } from 'storybook/internal/components;
+import { AddonPanel } from 'storybook/internal/components';
 
 import { useGlobals, addons, types } from 'storybook/manager-api';
 

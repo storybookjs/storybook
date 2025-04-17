@@ -2,7 +2,7 @@
 import React, { memo, useCallback, useEffect } from 'react';
 
 import { useGlobals, useStorybookApi } from 'storybook/manager-api';
-import { IconButton } from 'storybook/internal/components;
+import { IconButton } from 'storybook/internal/components';
 import { LightningIcon } from '@storybook/icons';
 
 import { ADDON_ID, PARAM_KEY, TOOL_ID } from './constants';
@@ -41,7 +41,7 @@ export const Tool = memo(function MyAddonSelector() {
 import React from 'react';
 
 import { useAddonState, useChannel } from 'storybook/manager-api';
-import { AddonPanel } from 'storybook/internal/components;
+import { AddonPanel } from 'storybook/internal/components';
 
 import { ADDON_ID, EVENTS } from './constants';
 

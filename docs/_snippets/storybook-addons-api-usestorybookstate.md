@@ -1,7 +1,7 @@
 ```js filename="my-addon/src/manager.js|ts" renderer="common" language="js"
 import React from 'react';
 
-import { AddonPanel } from 'storybook/internal/components;
+import { AddonPanel } from 'storybook/internal/components';
 
 import { useStorybookState } from 'storybook/manager-api';
 

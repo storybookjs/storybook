@@ -2,7 +2,7 @@
 import React from 'react';
 
 import { useAddonState } from 'storybook/manager-api';
-import { AddonPanel, IconButton } from 'storybook/internal/components;
+import { AddonPanel, IconButton } from 'storybook/internal/components';
 import { LightningIcon } from '@storybook/icons';
 
 export const Panel = () => {

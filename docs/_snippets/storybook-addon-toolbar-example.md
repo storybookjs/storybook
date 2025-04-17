@@ -2,7 +2,7 @@
 import React from 'react';
 
 import { addons, types } from 'storybook/manager-api';
-import { IconButton } from 'storybook/internal/components;
+import { IconButton } from 'storybook/internal/components';
 import { OutlineIcon } from '@storybook/icons';
 
 addons.register('my-addon', () => {

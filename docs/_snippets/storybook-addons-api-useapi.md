@@ -2,7 +2,7 @@
 import React, { useEffect, useCallback } from 'react';
 
 import { useStorybookApi } from 'storybook/manager-api';
-import { IconButton } from 'storybook/internal/components;
+import { IconButton } from 'storybook/internal/components';
 import { ChevronDownIcon } from '@storybook/icons';
 
 export const Panel = () => {

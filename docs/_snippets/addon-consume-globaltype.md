@@ -3,7 +3,14 @@ import React from 'react';
 
 import { useGlobals } from 'storybook/manager-api';
 
-import { AddonPanel, Placeholder, Separator, Source, Spaced, Title } from 'storybook/internal/components;
+import {
+  AddonPanel,
+  Placeholder,
+  Separator,
+  Source,
+  Spaced,
+  Title,
+} from 'storybook/internal/components';
 
 import { MyThemes } from '../my-theme-folder/my-theme-file';
 

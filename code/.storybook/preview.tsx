@@ -2,7 +2,6 @@ import React, { type FC, Fragment, useEffect } from 'react';
 
 import type { Channel } from 'storybook/internal/channels';
 
-import { DocsContext } from '@storybook/blocks';
 import { global } from '@storybook/global';
 
 import type { Decorator, Loader, ReactRenderer } from '@storybook/react-vite';
@@ -12,6 +11,7 @@ import { definePreview } from '@storybook/react-vite';
 
 import addonA11y from '@storybook/addon-a11y';
 import addonDocs from '@storybook/addon-docs';
+import { DocsContext } from '@storybook/addon-docs/blocks';
 import addonThemes from '@storybook/addon-themes';
 import addonTest from '@storybook/addon-vitest';
 
@@ -27,8 +27,8 @@ import {
   useTheme,
 } from 'storybook/theming';
 
+import { DocsPageWrapper } from '../addons/docs/src/blocks/components';
 import * as templatePreview from '../core/template/stories/preview';
-import { DocsPageWrapper } from '../lib/blocks/src/components';
 import '../renderers/react/template/components/index';
 import { isChromatic } from './isChromatic';
 

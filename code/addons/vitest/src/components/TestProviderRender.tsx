@@ -16,7 +16,7 @@ import { addons } from 'storybook/manager-api';
 import type { API } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { A11Y_ADDON_ID, A11Y_PANEL_ID, PANEL_ID } from '../constants';
+import { A11Y_ADDON_ID, A11Y_PANEL_ID, COMPONENT_TESTING_PANEL_ID } from '../constants';
 import type { StoreState } from '../types';
 import type { StatusValueToStoryIds } from '../use-test-provider-state';
 import { Description } from './Description';
@@ -124,7 +124,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
     ComponentProps<typeof TestStatusIcon>['status'],
     string,
   ] = fatalError
-    ? ['critical', 'Local tests crashed']
+    ? ['critical', 'Component tests crashed']
     : componentTestStatusValueToStoryIds['status-value:error'].length > 0
       ? ['negative', 'Component tests failed']
       : isRunning
@@ -137,7 +137,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
     ComponentProps<typeof TestStatusIcon>['status'],
     string,
   ] = fatalError
-    ? ['critical', 'Local tests crashed']
+    ? ['critical', 'Component tests crashed']
     : a11yStatusValueToStoryIds['status-value:error'].length > 0
       ? ['negative', 'Accessibility tests failed']
       : a11yStatusValueToStoryIds['status-value:warning'].length > 0
@@ -152,22 +152,26 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
     <Container {...props}>
       <Heading>
         <Info>
-          <Title
-            id="testing-module-title"
-            crashed={
-              testProviderState === 'test-provider-state:crashed' ||
-              fatalError !== undefined ||
-              currentRun.unhandledErrors.length > 0
-            }
-          >
-            {currentRun.unhandledErrors.length === 1
-              ? 'Local tests completed with an error'
-              : currentRun.unhandledErrors.length > 1
-                ? 'Local tests completed with errors'
-                : fatalError
-                  ? 'Local tests didn’t complete'
-                  : 'Run local tests'}
-          </Title>
+          {entry ? (
+            <Title id="testing-module-title">Run component tests</Title>
+          ) : (
+            <Title
+              id="testing-module-title"
+              crashed={
+                testProviderState === 'test-provider-state:crashed' ||
+                fatalError !== undefined ||
+                currentRun.unhandledErrors.length > 0
+              }
+            >
+              {currentRun.unhandledErrors.length === 1
+                ? 'Component tests completed with an error'
+                : currentRun.unhandledErrors.length > 1
+                  ? 'Component tests completed with errors'
+                  : fatalError
+                    ? 'Component tests didn’t complete'
+                    : 'Run component tests'}
+            </Title>
+          )}
           <Description
             id="testing-module-description"
             storeState={storeState}
@@ -260,7 +264,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
         <Row>
           <ListItem
             as="label"
-            title="Component tests"
+            title="Interactions"
             icon={entry ? null : <Checkbox type="checkbox" checked disabled />}
           />
           <WithTooltip
@@ -278,7 +282,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
               onClick={() => {
                 openPanel({
                   api,
-                  panelId: PANEL_ID,
+                  panelId: COMPONENT_TESTING_PANEL_ID,
                   entryId:
                     componentTestStatusValueToStoryIds['status-value:error'][0] ??
                     componentTestStatusValueToStoryIds['status-value:warning'][0] ??
@@ -332,7 +336,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                           : currentRun.coverageSummary
                             ? 'View coverage report'
                             : fatalError
-                              ? 'Local tests crashed'
+                              ? 'Component tests crashed'
                               : 'Run tests to calculate coverage'
                   }
                 />

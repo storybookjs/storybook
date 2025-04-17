@@ -6,6 +6,8 @@ import type { RunnerTask } from 'vitest';
 
 import { Channel } from 'storybook/internal/channels';
 
+import { COMPONENT_TESTING_PANEL_ID } from '../constants';
+
 declare global {
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore - The module is augmented elsewhere but we need to duplicate it to avoid issues in no-link mode.
@@ -30,7 +32,7 @@ export const modifyErrorMessage = ({ task }: { task: Task }) => {
   ) {
     const currentError = task.result.errors[0];
     const storybookUrl = import.meta.env.__STORYBOOK_URL__;
-    const storyUrl = `${storybookUrl}/?path=/story/${meta.storyId}&addonPanel=storybook/test/panel`;
+    const storyUrl = `${storybookUrl}/?path=/story/${meta.storyId}&addonPanel=${COMPONENT_TESTING_PANEL_ID}`;
     currentError.message = `\n\x1B[34mClick to debug the error directly in Storybook: ${storyUrl}\x1B[39m\n\n${currentError.message}`;
   }
 };

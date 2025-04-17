@@ -1,6 +1,6 @@
 <!-- prettier-ignore -->
 ```mdx filename="ExampleDocumentation.mdx" renderer="common" language="mdx"
-import { Meta } from '@storybook/blocks';
+import { Meta } from '@storybook/addon-docs/blocks';
 
 import * as ExampleComponentStories from './ExampleComponent.stories';
 
@@ -15,7 +15,7 @@ import * as ExampleComponentStories from './ExampleComponent.stories';
 
 <!-- prettier-ignore -->
 ```mdx filename="ExampleDocumentation.mdx" renderer="svelte" language="mdx" tabTitle="Svelte CSF"
-import { Meta } from '@storybook/blocks';
+import { Meta } from '@storybook/addon-docs/blocks';
 
 import * as ExampleComponentStories from './ExampleComponent.stories.svelte';
 
@@ -30,7 +30,7 @@ import * as ExampleComponentStories from './ExampleComponent.stories.svelte';
 
 <!-- prettier-ignore -->
 ```mdx filename="ExampleDocumentation.mdx" renderer="svelte" language="mdx" tabTitle="CSF"
-import { Meta } from '@storybook/blocks';
+import { Meta } from '@storybook/addon-docs/blocks';
 
 import * as ExampleComponentStories from './ExampleComponent.stories';
 

@@ -1,5 +1,12 @@
 ```jsx filename=".storybook/preview.jsx" renderer="common" language="js"
-import { Title, Subtitle, Description, Primary, Controls, Stories } from '@storybook/blocks';
+import {
+  Title,
+  Subtitle,
+  Description,
+  Primary,
+  Controls,
+  Stories,
+} from '@storybook/addon-docs/blocks';
 
 export default {
   parameters: {
@@ -29,7 +36,14 @@ export default {
 // Replace your-framework with the framework you are using (e.g., react, vue3)
 import { Preview } from '@storybook/your-framework';
 
-import { Title, Subtitle, Description, Primary, Controls, Stories } from '@storybook/blocks';
+import {
+  Title,
+  Subtitle,
+  Description,
+  Primary,
+  Controls,
+  Stories,
+} from '@storybook/addon-docs/blocks';
 
 const preview: Preview = {
   parameters: {

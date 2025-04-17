@@ -18,6 +18,7 @@ import {
 } from '../../../scripts/prepare/tools';
 import pkg from '../package.json';
 import { globalsModuleInfoMap } from '../src/manager/globals-module-info';
+import { BROWSER_TARGETS, NODE_TARGET } from '../src/shared/constants/environments-support';
 import { getBundles, getEntries, getFinals } from './entries';
 import { generatePackageJsonFile } from './helpers/generatePackageJsonFile';
 import { generateTypesFiles } from './helpers/generateTypesFiles';
@@ -122,7 +123,7 @@ async function run() {
     const browserEsbuildOptions = {
       ...esbuildDefaultOptions,
       format: 'esm',
-      target: ['chrome100', 'safari15', 'firefox91'],
+      target: BROWSER_TARGETS,
       splitting: false,
       platform: 'browser',
 
@@ -131,7 +132,7 @@ async function run() {
 
     const nodeEsbuildOptions = {
       ...esbuildDefaultOptions,
-      target: 'node18',
+      target: NODE_TARGET,
       splitting: false,
       platform: 'neutral',
       mainFields: ['main', 'module', 'node'],

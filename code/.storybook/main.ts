@@ -2,6 +2,7 @@ import { join } from 'node:path';
 
 import react from '@vitejs/plugin-react';
 
+import { BROWSER_TARGETS } from '../core/src/builder-manager';
 import { defineMain } from '../frameworks/react-vite/src/node';
 
 const componentsPath = join(__dirname, '../core/src/components/index.ts');
@@ -34,6 +35,10 @@ const config = defineMain({
     {
       directory: '../core/src/component-testing/components',
       titlePrefix: 'component-testing',
+    },
+    {
+      directory: '../core/src/controls/components',
+      titlePrefix: 'controls',
     },
     {
       directory: '../lib/blocks/src',
@@ -127,14 +132,10 @@ const config = defineMain({
         },
       },
       plugins: [react()],
-      optimizeDeps: {
-        force: true,
-        include: ['@storybook/blocks'],
-      },
       build: {
         // disable sourcemaps in CI to not run out of memory
         sourcemap: process.env.CI !== 'true',
-        target: ['chrome100'],
+        target: BROWSER_TARGETS,
       },
       server: {
         watch: {

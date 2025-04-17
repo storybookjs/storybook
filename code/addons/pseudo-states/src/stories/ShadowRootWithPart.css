@@ -1,0 +1,23 @@
+::part(foo) {
+  display: inline-block;
+  cursor: pointer;
+  border: 0;
+  border-radius: 3em;
+  background-color: tomato;
+  padding: 11px 20px;
+  color: white;
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1;
+  font-family: 'Nunito Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+::part(foo):hover {
+  text-decoration: underline;
+}
+::part(foo):focus {
+  outline: 0;
+  box-shadow: inset 0 0 0 2px maroon;
+}
+::part(foo):active {
+  background-color: firebrick;
+}

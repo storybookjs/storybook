@@ -4,7 +4,7 @@ import { join } from 'path';
 const config: StorybookConfig = {
   stories: ["../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)"],
   addons: [
-    "@storybook/addon-test",
+    "@storybook/addon-vitest",
     "@storybook/addon-a11y",
   ],
   framework: {

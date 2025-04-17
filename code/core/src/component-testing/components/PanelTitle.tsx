@@ -16,7 +16,7 @@ export function PanelTitle() {
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-      <span>Component tests</span>
+      <span>Interactions</span>
       {interactionsCount && !isErrored && !hasException ? (
         <Badge compact status={selectedPanel === PANEL_ID ? 'active' : 'neutral'}>
           {interactionsCount}

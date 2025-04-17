@@ -110,7 +110,7 @@ export class Yarn2Proxy extends JsPackageManager {
   }
 
   async runPackageCommand(command: string, args: string[], cwd?: string) {
-    return this.executeCommand({ command: 'yarn', args: [command, ...args], cwd });
+    return this.executeCommand({ command: 'yarn', args: ['exec', command, ...args], cwd });
   }
 
   public async findInstallations(pattern: string[], { depth = 99 }: { depth?: number } = {}) {

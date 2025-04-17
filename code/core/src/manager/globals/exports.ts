@@ -477,6 +477,7 @@ export default {
     'Bar',
     'Blockquote',
     'Button',
+    'Checkbox',
     'ClipboardCode',
     'Code',
     'DL',

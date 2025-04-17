@@ -3,7 +3,6 @@ import { existsSync, watch } from 'node:fs';
 import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
-import { BROWSER_TARGETS, NODE_TARGET } from 'core/src/shared/constants/environments-support';
 import type { Metafile } from 'esbuild';
 
 import {
@@ -19,6 +18,7 @@ import {
 } from '../../../scripts/prepare/tools';
 import pkg from '../package.json';
 import { globalsModuleInfoMap } from '../src/manager/globals-module-info';
+import { BROWSER_TARGETS, NODE_TARGET } from '../src/shared/constants/environments-support';
 import { getBundles, getEntries, getFinals } from './entries';
 import { generatePackageJsonFile } from './helpers/generatePackageJsonFile';
 import { generateTypesFiles } from './helpers/generateTypesFiles';

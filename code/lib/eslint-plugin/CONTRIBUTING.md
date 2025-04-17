@@ -29,8 +29,8 @@ The generated files will look like this:
 
 ```
 docs/rules/<rule-name>.md
-lib/rules/<rule-name>.js
-tests/lib/rules/<rule-name>.js
+src/rules/<rule-name>.js
+tests/rules/<rule-name>.js
 ```
 
 This command will auto-generate the test file with an example for you. Please refer to existing tests if more reference is needed.

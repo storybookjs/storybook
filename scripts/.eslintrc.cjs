@@ -3,7 +3,6 @@ module.exports = {
   extends: [
     //
     '@storybook/eslint-config-storybook',
-    'plugin:storybook/recommended',
     'plugin:depend/recommended'
   ],
   parserOptions: {

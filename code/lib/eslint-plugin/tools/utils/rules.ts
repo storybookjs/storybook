@@ -4,7 +4,7 @@ import path from 'path';
 import type { StorybookRuleMeta } from '../../src/types';
 import type { createStorybookRule } from '../../src/utils/create-storybook-rule';
 
-const ROOT = path.resolve(__dirname, '../../lib/rules');
+const ROOT = path.resolve(__dirname, '../../src/rules');
 
 export type TRule = ReturnType<typeof createStorybookRule> & {
   meta: StorybookRuleMeta;

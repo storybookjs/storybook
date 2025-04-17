@@ -32,15 +32,15 @@
   ],
   "scripts": {
     "check": "jiti ../../../scripts/prepare/check.ts",
-    "prep": "jiti ../../../scripts/prepare/bundle.ts",
     "generate-rule": "jiti ./tools/generate-rule",
-    "update-all": "yarn run update-configs && yarn run update-docs",
-    "update-configs": "jiti ./tools/update-configs",
-    "update-docs": "jiti ./tools/update-rules-list",
+    "prep": "jiti ../../../scripts/prepare/bundle.ts",
     "test": "yarn run test:unit && yarn run test:integration",
     "test:ci": "yarn run check && yarn run test:unit --run && yarn run test:integration --run",
     "test:integration": "vitest run --config vitest.integration.config.ts",
-    "test:unit": "vitest run --allowOnly"
+    "test:unit": "vitest run --allowOnly",
+    "update-all": "yarn run update-configs && yarn run update-docs",
+    "update-configs": "jiti ./tools/update-configs",
+    "update-docs": "jiti ./tools/update-rules-list"
   },
   "dependencies": {
     "@typescript-eslint/utils": "^8.8.1"
@@ -74,6 +74,19 @@
   "publishConfig": {
     "access": "public"
   },
-  "bundler": {},
+  "bundler": {
+    "entries": [
+      "./src/index.ts",
+      "./src/configs/recommended.ts",
+      "./src/configs/csf.ts",
+      "./src/configs/csf-strict.ts",
+      "./src/configs/addon-interactions.ts",
+      "./src/configs/flat/recommended.ts",
+      "./src/configs/flat/csf.ts",
+      "./src/configs/flat/csf-strict.ts",
+      "./src/configs/flat/addon-interactions.ts"
+    ],
+    "platform": "node"
+  },
   "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
 }

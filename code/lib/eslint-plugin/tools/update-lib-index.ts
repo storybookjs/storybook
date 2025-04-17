@@ -1,14 +1,15 @@
 'use strict';
 
 /*
-This script updates `lib/index.js` file from rule's meta data.
+This script updates `src/index.js` file from rule's meta data.
 */
 import fs from 'fs/promises';
 import path from 'path';
 import type { Options } from 'prettier';
 import { format } from 'prettier';
 
-import prettierConfig from '../.prettierrc.js';
+// @ts-expect-error this file has no types
+import prettierConfig from '../../../../prettier.config.mjs';
 import { categoryIds } from './utils/categories';
 import rules from './utils/rules';
 
@@ -56,5 +57,5 @@ export = {
     parser: 'typescript',
     ...(prettierConfig as Options),
   });
-  await fs.writeFile(path.resolve(__dirname, '../lib/index.ts'), content);
+  await fs.writeFile(path.resolve(__dirname, '../src/index.ts'), content);
 }

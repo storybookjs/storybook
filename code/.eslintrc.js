@@ -4,7 +4,7 @@ const scriptPath = path.join(__dirname, '..', 'scripts');
 
 module.exports = {
   root: true,
-  extends: [path.join(scriptPath, '.eslintrc.cjs')],
+  extends: [path.join(scriptPath, '.eslintrc.cjs'), 'plugin:storybook/recommended'],
   parserOptions: {
     tsconfigRootDir: __dirname,
     project: ['./tsconfig.json'],
@@ -216,6 +216,12 @@ module.exports = {
         'playwright/prefer-to-have-length': 'error',
         'playwright/require-to-throw-message': 'error',
         'playwright/require-top-level-describe': 'error',
+      },
+    },
+    {
+      files: ['**/renderers/**/*.stories.*'],
+      rules: {
+        'storybook/no-renderer-packages': 'off',
       },
     },
   ],

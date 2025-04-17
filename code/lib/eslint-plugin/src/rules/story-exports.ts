@@ -13,8 +13,8 @@ import {
   isValidStoryExport,
 } from '../utils';
 import { isImportDeclaration } from '../utils/ast';
-import type { CategoryId } from '../utils/constants';
-import type { createStorybookRule } from '../utils/create-storybook-rule';
+import { CategoryId } from '../utils/constants';
+import { createStorybookRule } from '../utils/create-storybook-rule';
 
 //------------------------------------------------------------------------------
 // Rule Definition

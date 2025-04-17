@@ -125,7 +125,6 @@
     "eslint-plugin-prettier": "^5.1.3",
     "eslint-plugin-react": "^7.34.2",
     "eslint-plugin-react-hooks": "^4.6.2",
-    "eslint-plugin-storybook": "0.11.3--canary.187.1af857a.0",
     "execa": "^6.1.0",
     "fast-folder-size": "^2.2.0",
     "fast-glob": "^3.3.2",

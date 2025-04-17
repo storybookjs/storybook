@@ -6,7 +6,8 @@ import path from 'path';
 import type { Options } from 'prettier';
 import { format } from 'prettier';
 
-import prettierConfig from '../.prettierrc';
+// @ts-expect-error this file has no types
+import prettierConfig from '../../../../prettier.config.mjs';
 import type { TCategory } from './utils/categories';
 import { categories } from './utils/categories';
 import {
@@ -45,13 +46,15 @@ function formatCategory(category: TCategory) {
     * in order to update its content, execute "yarn update-all"
     */
     export = {
-      extends: require.resolve('eslint-plugin-storybook/dist/configs/${extendsCategoryId}'),
+      // This file is bundled in an index.js file at the root
+      // so the reference is relative to the src directory
+      extends: './configs/${extendsCategoryId}',
       rules: ${formatRules(category.rules)}
     }
   `;
 }
 
-const CONFIG_DIR = path.resolve(__dirname, '../lib/configs/');
+const CONFIG_DIR = path.resolve(__dirname, '../src/configs/');
 
 export async function update() {
   // setup config directory

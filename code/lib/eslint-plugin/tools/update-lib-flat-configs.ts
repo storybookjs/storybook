@@ -6,7 +6,8 @@ import path from 'path';
 import type { Options } from 'prettier';
 import { format } from 'prettier';
 
-import prettierConfig from '../.prettierrc.js';
+// @ts-expect-error this file has no types
+import prettierConfig from '../../../../prettier.config.mjs';
 import type { TCategory } from './utils/categories';
 import { categories } from './utils/categories';
 import {
@@ -30,7 +31,6 @@ function formatCategory(category: TCategory) {
           name: 'storybook:${category.categoryId}:setup',
           plugins: {
             get storybook() {
-              // eslint-disable-next-line @typescript-eslint/no-require-imports
               return require('../../index')
             }
           }
@@ -65,7 +65,7 @@ function formatCategory(category: TCategory) {
   `;
 }
 
-const FLAT_CONFIG_DIR = path.resolve(__dirname, '../lib/configs/flat');
+const FLAT_CONFIG_DIR = path.resolve(__dirname, '../src/configs/flat');
 
 export async function update() {
   // setup config directory

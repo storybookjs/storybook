@@ -4,7 +4,9 @@
  * in order to update its content, execute "yarn update-all"
  */
 export = {
-  extends: require.resolve('eslint-plugin-storybook/dist/configs/csf'),
+  // This file is bundled in an index.js file at the root
+  // so the reference is relative to the src directory
+  extends: './configs/csf',
   rules: {
     'react-hooks/rules-of-hooks': 'off',
     'import/no-anonymous-default-export': 'off',

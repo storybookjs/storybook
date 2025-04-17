@@ -2,9 +2,6 @@
 
 exports[`Renders CSF2Secondary story 1`] = `
 <body>
-  <div
-    id="storybook-highlights-root"
-  />
   <div>
     <div
       data-testid="global-decorator"
@@ -24,9 +21,6 @@ exports[`Renders CSF2Secondary story 1`] = `
 
 exports[`Renders CSF2StoryWithLocale story 1`] = `
 <body>
-  <div
-    id="storybook-highlights-root"
-  />
   <div>
     <div
       data-testid="global-decorator"
@@ -50,9 +44,6 @@ exports[`Renders CSF2StoryWithLocale story 1`] = `
 
 exports[`Renders CSF2StoryWithParamsAndDecorator story 1`] = `
 <body>
-  <div
-    id="storybook-highlights-root"
-  />
   <div>
     <div
       data-testid="global-decorator"
@@ -72,9 +63,6 @@ exports[`Renders CSF2StoryWithParamsAndDecorator story 1`] = `
 
 exports[`Renders CSF3Button story 1`] = `
 <body>
-  <div
-    id="storybook-highlights-root"
-  />
   <div>
     <div
       data-testid="global-decorator"
@@ -94,9 +82,6 @@ exports[`Renders CSF3Button story 1`] = `
 
 exports[`Renders CSF3ButtonWithRender story 1`] = `
 <body>
-  <div
-    id="storybook-highlights-root"
-  />
   <div>
     <div
       data-testid="global-decorator"
@@ -123,9 +108,6 @@ exports[`Renders CSF3ButtonWithRender story 1`] = `
 
 exports[`Renders CSF3Primary story 1`] = `
 <body>
-  <div
-    id="storybook-highlights-root"
-  />
   <div>
     <div
       data-testid="global-decorator"
@@ -145,9 +127,6 @@ exports[`Renders CSF3Primary story 1`] = `
 
 exports[`Renders WithLoader story 1`] = `
 <body>
-  <div
-    id="storybook-highlights-root"
-  />
   <div>
     <div
       data-testid="global-decorator"

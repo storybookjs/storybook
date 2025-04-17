@@ -163,10 +163,14 @@ export const useHighlights = ({
   //
 
   let root = document.getElementById(rootId);
-  if (!root) {
-    root = createElement('div', { id: rootId }) as HTMLElement;
-    document.body.appendChild(root);
-  }
+
+  // Only create the root element when first highlights are added
+  highlights.subscribe(() => {
+    if (!root) {
+      root = createElement('div', { id: rootId }) as HTMLElement;
+      document.body.appendChild(root);
+    }
+  });
 
   const styleElementByHighlight = new Map<string, HTMLStyleElement>(new Map());
 
@@ -200,7 +204,7 @@ export const useHighlights = ({
   boxes.subscribe((value) => {
     value.forEach((box) => {
       let boxElement = boxElementByTargetElement.get(box.element);
-      if (!boxElement) {
+      if (root && !boxElement) {
         const props = {
           popover: 'manual',
           'data-highlight-dimensions': `w${box.width.toFixed(0)}h${box.height.toFixed(0)}`,
@@ -320,6 +324,10 @@ export const useHighlights = ({
   selected.subscribe(updateBoxStyles);
 
   const renderMenu = () => {
+    if (!root) {
+      return;
+    }
+
     let menu = document.getElementById(menuId);
     if (menu) {
       menu.innerHTML = '';

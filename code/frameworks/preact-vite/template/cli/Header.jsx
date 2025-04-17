@@ -1,20 +1,17 @@
-import React from 'react';
-
 import { Button } from './Button';
 import './header.css';
 
-type User = {
-  name: string;
-};
-
-export interface HeaderProps {
-  user?: User;
-  onLogin?: () => void;
-  onLogout?: () => void;
-  onCreateAccount?: () => void;
-}
-
-export const Header = ({ user, onLogin, onLogout, onCreateAccount }: HeaderProps) => (
+/**
+ * Header component
+ *
+ * @param {object} props
+ * @param {object} [props.user]
+ * @param {string} props.user.name
+ * @param {function} props.onLogin
+ * @param {function} props.onLogout
+ * @param {function} props.onCreateAccount
+ */
+export const Header = ({ user = null, onLogin, onLogout, onCreateAccount }) => (
   <header>
     <div className="storybook-header">
       <div>

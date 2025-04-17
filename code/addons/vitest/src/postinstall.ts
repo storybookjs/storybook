@@ -26,7 +26,7 @@ import { coerce, satisfies } from 'semver';
 import { dedent } from 'ts-dedent';
 
 import { type PostinstallOptions } from '../../../lib/cli-storybook/src/add';
-import { SUPPORTED_FRAMEWORKS, SUPPORTED_RENDERERS } from './constants';
+import { SUPPORTED_FRAMEWORKS } from './constants';
 import { printError, printInfo, printSuccess, printWarning, step } from './postinstall-logger';
 import { loadTemplate, updateConfigFile, updateWorkspaceFile } from './updateVitestFile';
 import { getAddonNames } from './utils';
@@ -111,9 +111,7 @@ export default async function postInstall(options: PostinstallOptions) {
     ? info.frameworkPackageName === '@storybook/nextjs'
       ? '@storybook/nextjs-vite'
       : info.frameworkPackageName
-    : info.rendererPackageName && SUPPORTED_RENDERERS.includes(info.rendererPackageName)
-      ? info.rendererPackageName
-      : null;
+    : null;
 
   const isRendererSupported = !!annotationsImport;
 

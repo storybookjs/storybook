@@ -47,6 +47,7 @@ module.exports = {
     'prettier',
   ],
   rules: {
+    'react/no-unescaped-entities': 'off',
     'no-unused-vars': 'off',
     // TODO: Storybook 10 - When we do the ESM migration we must turn this rule on
     '@typescript-eslint/no-require-imports': 'off',

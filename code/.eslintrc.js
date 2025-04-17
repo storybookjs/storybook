@@ -4,12 +4,16 @@ const scriptPath = path.join(__dirname, '..', 'scripts');
 
 module.exports = {
   root: true,
-  extends: [path.join(scriptPath, '.eslintrc.cjs'), 'plugin:storybook/recommended'],
+  extends: [
+    path.join(scriptPath, '.eslintrc.cjs'),
+    'plugin:storybook/recommended',
+    'plugin:compat/recommended',
+  ],
   parserOptions: {
     tsconfigRootDir: __dirname,
     project: ['./tsconfig.json'],
   },
-  plugins: ['local-rules'],
+  plugins: ['local-rules', 'compat'],
   rules: {
     'import/no-extraneous-dependencies': 'off',
     'react/react-in-jsx-scope': 'off',
@@ -73,6 +77,23 @@ module.exports = {
       files: ['**/builder-vite/**/*.html'],
       rules: {
         '@typescript-eslint/no-unused-expressions': 'off', // should become error, in the future
+      },
+    },
+    {
+      files: [
+        '*.test.*',
+        '*.spec.*',
+        '**/addons/docs/**/*',
+        '**/__tests__/**',
+        '**/__testfixtures__/**',
+        '**/*.test.*',
+        '**/*.test-d.*',
+        '**/*.stories.*',
+        '**/*.mockdata.*',
+        '**/template/**/*',
+      ],
+      rules: {
+        'compat/compat': 'off',
       },
     },
     {

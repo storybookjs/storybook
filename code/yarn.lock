@@ -4476,25 +4476,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nx/eslint@npm:20.2.2":
-  version: 20.2.2
-  resolution: "@nx/eslint@npm:20.2.2"
-  dependencies:
-    "@nx/devkit": "npm:20.2.2"
-    "@nx/js": "npm:20.2.2"
-    semver: "npm:^7.5.3"
-    tslib: "npm:^2.3.0"
-    typescript: "npm:~5.6.2"
-  peerDependencies:
-    "@zkochan/js-yaml": 0.0.7
-    eslint: ^8.0.0 || ^9.0.0
-  peerDependenciesMeta:
-    "@zkochan/js-yaml":
-      optional: true
-  checksum: 10c0/79b7f28b391b8f49572063d1056f2a15097d8e544c4c65ab982879e2c6680eca5c42d3e30b0d8544fb4e6372a4b124a19d00e78e7567e231e294379fa2eb1470
-  languageName: node
-  linkType: hard
-
 "@nx/js@npm:20.2.2":
   version: 20.2.2
   resolution: "@nx/js@npm:20.2.2"
@@ -7064,7 +7045,6 @@ __metadata:
   dependencies:
     "@chromatic-com/storybook": "npm:^4.0.0-0"
     "@happy-dom/global-registrator": "npm:^14.12.0"
-    "@nx/eslint": "npm:20.2.2"
     "@nx/vite": "npm:20.2.2"
     "@nx/workspace": "npm:20.2.2"
     "@playwright/test": "npm:1.48.1"

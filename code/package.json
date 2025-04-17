@@ -97,7 +97,6 @@
   "dependencies": {
     "@chromatic-com/storybook": "^4.0.0-0",
     "@happy-dom/global-registrator": "^14.12.0",
-    "@nx/eslint": "20.2.2",
     "@nx/vite": "20.2.2",
     "@nx/workspace": "20.2.2",
     "@playwright/test": "1.48.1",

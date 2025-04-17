@@ -42,8 +42,8 @@ function transformPackageJson(content: string): string | null {
       for (const [dep] of Object.entries(packageJson[depType])) {
         if (dep in consolidatedPackages) {
           const newPackage = consolidatedPackages[dep as keyof typeof consolidatedPackages];
-          // Only add to packagesToAdd if it's not being consolidated into storybook/*
-          if (!newPackage.startsWith('storybook/')) {
+          // Only add to packagesToAdd if it's not being consolidated into storybook/* or if it's a sub-path of a consolidated package
+          if (!newPackage.startsWith('storybook/') && !newPackage.match(/(?:.*\/){2,}/)) {
             packagesToAdd.add(newPackage);
           }
           delete packageJson[depType][dep];
@@ -184,7 +184,8 @@ export const consolidatedImports: Fix<ConsolidatedOptions> = {
     const { glob } = await prompts({
       type: 'text',
       name: 'glob',
-      message: 'Enter a custom glob pattern to scan (or press enter to use default):',
+      message:
+        'Enter a custom glob pattern (relative to the project root) to scan (or press enter to use default):',
       initial: defaultGlob,
     });
 

@@ -81,7 +81,7 @@ test.describe("component testing", () => {
       .getByRole("button", { name: "test" });
     await expect(storyElement).toBeVisible({ timeout: 30000 });
 
-    await sbPage.viewAddonPanel("Component test");
+    await sbPage.viewAddonPanel("Interactions");
 
     // For whatever reason, when visiting a story sometimes the story element is collapsed and that causes flake
     const testStoryElement = await page.getByRole("button", {
@@ -114,7 +114,7 @@ test.describe("component testing", () => {
       "Test status: success"
     );
     await expect(sbPage.panelContent()).toContainText(
-      /This component test passed in the CLI, but the tests failed in this browser/
+      /This interaction test passed in the CLI, but the tests failed in this browser/
     );
 
     // Assert discrepancy: CLI fail + Browser pass
@@ -127,7 +127,7 @@ test.describe("component testing", () => {
       "Test status: error"
     );
     await expect(sbPage.panelContent()).toContainText(
-      /This component test passed in this browser, but the tests failed in the CLI/
+      /This interaction test passed in this browser, but the tests failed in the CLI/
     );
   });
 
@@ -147,7 +147,7 @@ test.describe("component testing", () => {
       .getByRole("button", { name: "test" });
     await expect(storyElement).toBeVisible({ timeout: 30000 });
 
-    await expect(page.locator('#testing-module-title')).toHaveText('Run local tests');
+    await expect(page.locator('#testing-module-title')).toHaveText('Run component tests');
 
     const testingModuleDescription = await page.locator('#testing-module-description');
 

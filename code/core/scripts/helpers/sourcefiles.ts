@@ -5,8 +5,8 @@ import { GlobalRegistrator } from '@happy-dom/global-registrator';
 import { isNotNil } from 'es-toolkit';
 
 import { dedent, esbuild, getWorkspace, prettier } from '../../../../scripts/prepare/tools';
-import { BROWSER_TARGETS } from '../../code/core/src/shared/constants/environments-support';
 import { temporaryFile } from '../../src/common/utils/cli';
+import { BROWSER_TARGETS } from '../../src/shared/constants/environments-support';
 
 GlobalRegistrator.register({ url: 'http://localhost:3000', width: 1920, height: 1080 });
 

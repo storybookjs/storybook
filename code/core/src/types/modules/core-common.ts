@@ -87,11 +87,6 @@ export interface Presets {
     args?: any
   ): Promise<NonNullable<StorybookConfigRaw['docs']>>;
   apply(
-    extension: 'flags',
-    config?: StorybookConfigRaw['flags'],
-    args?: any
-  ): Promise<NonNullable<StorybookConfigRaw['flags']>>;
-  apply(
     extension: 'features',
     config?: StorybookConfigRaw['features'],
     args?: any
@@ -206,7 +201,6 @@ export interface BuilderOptions {
   configDir: string;
   docsMode?: boolean;
   features?: StorybookConfigRaw['features'];
-  flags?: StorybookConfigRaw['flags'];
   versionCheck?: VersionCheck;
   disableWebpackDefaults?: boolean;
   serverChannelUrl?: string;
@@ -342,30 +336,6 @@ export interface TagOptions {
 
 export type TagsOptions = Record<Tag, Partial<TagOptions>>;
 
-interface Features extends LegacyFeatureFlags {
-  viewport?: boolean;
-}
-
-interface Flags extends LegacyFeatureFlags {}
-
-/* deprecated: DO NOT ADD ANYTHING TO THIS TYPE, we should remove this at v10 */
-interface LegacyFeatureFlags {
-  /** Filter args with a "target" on the type from the render function (EXPERIMENTAL) */
-  argTypeTargetsV7?: boolean;
-  /** Apply decorators from preview.js before decorators from addons or frameworks */
-  legacyDecoratorFileOrder?: boolean;
-  /**
-   * Disallow implicit actions during rendering. This will be the default in Storybook 8.
-   *
-   * This will make sure that your story renders the same no matter if docgen is enabled or not.
-   */
-  disallowImplicitActionsInRenderV8?: boolean;
-  /** Enable asynchronous component rendering in React renderer */
-  experimentalRSC?: boolean;
-  /** Set NODE_ENV to development in built Storybooks for better testability and debuggability */
-  developmentModeForBuild?: boolean;
-}
-
 /**
  * The interface for Storybook configuration used internally in presets The difference is that these
  * values are the raw values, AKA, not wrapped with `PresetValue<>`
@@ -385,8 +355,26 @@ export interface StorybookConfigRaw {
   core?: CoreConfig;
   staticDirs?: (DirectoryMapping | string)[];
   logLevel?: string;
-  features?: Features;
-  flags?: Flags;
+  features?: {
+    /** Filter args with a "target" on the type from the render function (EXPERIMENTAL) */
+    argTypeTargetsV7?: boolean;
+
+    /** Apply decorators from preview.js before decorators from addons or frameworks */
+    legacyDecoratorFileOrder?: boolean;
+
+    /**
+     * Disallow implicit actions during rendering. This will be the default in Storybook 8.
+     *
+     * This will make sure that your story renders the same no matter if docgen is enabled or not.
+     */
+    disallowImplicitActionsInRenderV8?: boolean;
+
+    /** Enable asynchronous component rendering in React renderer */
+    experimentalRSC?: boolean;
+
+    /** Set NODE_ENV to development in built Storybooks for better testability and debuggability */
+    developmentModeForBuild?: boolean;
+  };
 
   build?: TestBuildConfig;
 
@@ -455,7 +443,6 @@ export interface StorybookConfig {
   staticDirs?: PresetValue<StorybookConfigRaw['staticDirs']>;
   logLevel?: PresetValue<StorybookConfigRaw['logLevel']>;
   features?: PresetValue<StorybookConfigRaw['features']>;
-  flags?: PresetValue<StorybookConfigRaw['features'] & StorybookConfigRaw['flags']>;
 
   build?: PresetValue<StorybookConfigRaw['build']>;
 

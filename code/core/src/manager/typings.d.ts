@@ -8,7 +8,6 @@ declare var __STORYBOOK_ADDONS_MANAGER: any;
 declare var RELEASE_NOTES_DATA: any;
 
 declare var FEATURES: import('storybook/internal/types').StorybookConfigRaw['features'];
-declare var FLAGS: import('storybook/internal/types').StorybookConfigRaw['flags'];
 
 declare var REFS: any;
 declare var VERSIONCHECK: any;

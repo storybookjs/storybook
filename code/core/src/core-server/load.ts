@@ -74,14 +74,11 @@ export async function loadStorybook(
   });
 
   const features = await presets.apply('features');
-  const flags = await presets.apply('flags', features);
   global.FEATURES = features;
-  global.FLAGS = flags;
 
   return {
     ...options,
     presets,
     features,
-    flags,
   } as Options;
 }

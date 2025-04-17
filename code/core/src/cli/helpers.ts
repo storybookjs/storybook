@@ -140,7 +140,6 @@ type CopyTemplateFilesOptions = {
   commonAssetsDir?: string;
   destination?: string;
   features: string[];
-  flags: string[];
 };
 
 export const frameworkToDefaultBuilder: Record<

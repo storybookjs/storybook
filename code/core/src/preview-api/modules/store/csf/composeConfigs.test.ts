@@ -6,8 +6,7 @@ import { composeConfigs } from './composeConfigs';
 
 vi.mock('@storybook/global', () => ({
   global: {
-    FLAGS: {},
-    FLAGS: {},
+    FEATURES: {},
   },
 }));
 
@@ -365,13 +364,13 @@ describe('composeConfigs', () => {
     expect(fn).toHaveBeenNthCalledWith(3, 'Label1', expect.anything());
   });
 
-  describe('FLAGS.legacyDecoratorFileOrder set to true', () => {
+  describe('FEATURES.legacyDecoratorFileOrder set to true', () => {
     beforeEach(() => {
-      global.FLAGS!.legacyDecoratorFileOrder = true;
+      global.FEATURES!.legacyDecoratorFileOrder = true;
     });
 
     afterEach(() => {
-      global.FLAGS!.legacyDecoratorFileOrder = false;
+      global.FEATURES!.legacyDecoratorFileOrder = false;
     });
 
     it('should merge decorators in the order they are defined file-wise', () => {

@@ -52,7 +52,7 @@ export function composeConfigs<TRenderer extends Renderer>(
   return {
     parameters: combineParameters(...getField(moduleExportList, 'parameters')),
     decorators: getArrayField(moduleExportList, 'decorators', {
-      reverseFileOrder: !(global.FLAGS?.legacyDecoratorFileOrder ?? false),
+      reverseFileOrder: !(global.FEATURES?.legacyDecoratorFileOrder ?? false),
     }),
     args: getObjectField(moduleExportList, 'args'),
     argsEnhancers: getArrayField(moduleExportList, 'argsEnhancers'),

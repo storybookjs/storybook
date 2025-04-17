@@ -3,7 +3,6 @@
 
 declare var CONFIG_TYPE: 'DEVELOPMENT' | 'PRODUCTION';
 declare var FEATURES: import('./types/modules/core-common').StorybookConfigRaw['features'];
-declare var FLAGS: import('./types/modules/core-common').StorybookConfigRaw['flags'];
 declare var LOGLEVEL: 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'silent' | undefined;
 declare var REFS: any;
 declare var VERSIONCHECK: any;

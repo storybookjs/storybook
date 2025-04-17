@@ -105,20 +105,16 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     presets.apply('docs', {}),
   ]);
 
-  const flags = await presets.apply('flags', features);
-
   const fullOptions: Options = {
     ...options,
     presets,
     features,
-    flags,
     build,
   };
 
   const effects: Promise<void>[] = [];
 
   global.FEATURES = features;
-  global.FLAGS = flags;
 
   await buildOrThrow(async () =>
     managerBuilder.build({ startTime: process.hrtime(), options: fullOptions })

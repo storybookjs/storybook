@@ -8,6 +8,7 @@ module.exports = {
     'plugin:prettier/recommended',
     'plugin:react-hooks/recommended',
     'plugin:react/recommended',
+    'plugin:jsx-a11y/recommended'
   ],
   env: {
     es6: true,
@@ -38,12 +39,13 @@ module.exports = {
     },
   },
   plugins: [
+    'local-rules',
+    'compat',
     'file-progress',
     '@typescript-eslint',
     'import',
     'json',
     'html',
-    'jsx-a11y',
     'prettier',
   ],
   rules: {
@@ -51,7 +53,7 @@ module.exports = {
     'no-unused-vars': 'off',
     // TODO: Storybook 10 - When we do the ESM migration we must turn this rule on
     '@typescript-eslint/no-require-imports': 'off',
-    // remove as shared eslint has jest rules removed
+    '@typescript-eslint/no-implied-eval': 'error',
     '@typescript-eslint/no-explicit-any': 'warn',
     '@typescript-eslint/no-wrapper-object-types': 'warn',
     '@typescript-eslint/no-empty-object-type': 'warn',

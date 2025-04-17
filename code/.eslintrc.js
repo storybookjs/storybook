@@ -13,7 +13,6 @@ module.exports = {
     tsconfigRootDir: __dirname,
     project: ['./tsconfig.json'],
   },
-  plugins: ['local-rules', 'compat'],
   rules: {
     'import/no-extraneous-dependencies': 'off',
     'react/react-in-jsx-scope': 'off',
@@ -94,6 +93,8 @@ module.exports = {
       ],
       rules: {
         'compat/compat': 'off',
+        'jsx-a11y/click-events-have-key-events': 'off',
+        'jsx-a11y/no-static-element-interactions': 'off',
       },
     },
     {
@@ -202,7 +203,7 @@ module.exports = {
       },
     },
     {
-      files: ['**/renderers/**/*.stories.*'],
+      files: ['**/renderers/**/*.stories.*', '**/core/template/**/*.stories.*'],
       rules: {
         'storybook/no-renderer-packages': 'off',
       },

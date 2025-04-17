@@ -1460,6 +1460,7 @@ __metadata:
     eslint-plugin-json: "npm:^4.0.0"
     eslint-plugin-json-files: "npm:^4.1.0"
     eslint-plugin-jsx-a11y: "npm:^6.8.0"
+    eslint-plugin-local-rules: "portal:./eslint-plugin-local-rules"
     eslint-plugin-prettier: "npm:^5.1.3"
     eslint-plugin-react: "npm:^7.34.2"
     eslint-plugin-react-hooks: "npm:^4.6.2"
@@ -5354,6 +5355,12 @@ __metadata:
   checksum: 10c0/199b883e526e6f9d7c54cb3f094abc54f11a1ec816db5fb6cae3b938eb0e503acc10ccba91ca7451633a9d0b9abc0ea03601844a8aba5fe88c5e8897c9ac8f49
   languageName: node
   linkType: hard
+
+"eslint-plugin-local-rules@portal:./eslint-plugin-local-rules::locator=%40storybook%2Fscripts%40workspace%3A.":
+  version: 0.0.0-use.local
+  resolution: "eslint-plugin-local-rules@portal:./eslint-plugin-local-rules::locator=%40storybook%2Fscripts%40workspace%3A."
+  languageName: node
+  linkType: soft
 
 "eslint-plugin-prettier@npm:^5.1.3":
   version: 5.1.3

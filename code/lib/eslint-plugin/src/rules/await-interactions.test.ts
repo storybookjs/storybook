@@ -161,7 +161,6 @@ ruleTester.run('await-interactions', rule, {
           const element = await findByText(canvasElement, 'asdf')
         }
       `,
-      only: true,
       errors: [
         {
           messageId: 'interactionShouldBeAwaited',

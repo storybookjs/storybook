@@ -10,7 +10,7 @@
   ],
   "homepage": "https://github.com/storybookjs/storybook/code/lib/eslint-plugin#readme",
   "bugs": {
-    "url": "https://github.com/storybook/issues"
+    "url": "https://github.com/storybookjs/storybook/issues"
   },
   "repository": {
     "type": "git",
@@ -33,14 +33,7 @@
   "scripts": {
     "check": "jiti ../../../scripts/prepare/check.ts",
     "generate-rule": "jiti ./scripts/generate-rule",
-    "prep": "jiti ../../../scripts/prepare/bundle.ts",
-    "test": "yarn run test:unit && yarn run test:integration",
-    "test:ci": "yarn run check && yarn run test:unit --run && yarn run test:integration --run",
-    "test:integration": "vitest run --config vitest.integration.config.ts",
-    "test:unit": "vitest run --allowOnly",
-    "update-all": "yarn run update-configs && yarn run update-docs",
-    "update-configs": "jiti ./scripts/update-configs",
-    "update-docs": "jiti ./scripts/update-rules-list"
+    "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
     "@typescript-eslint/utils": "^8.8.1"

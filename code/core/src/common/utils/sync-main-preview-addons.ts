@@ -49,7 +49,7 @@ export async function getSyncedStorybookAddons(
         (node) => t.isImportDeclaration(node) && node.source.value === annotations.importPath
       );
 
-      if (!!hasAlreadyImportedAddonAnnotations) {
+      if (hasAlreadyImportedAddonAnnotations) {
         continue;
       }
 

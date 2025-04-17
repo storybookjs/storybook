@@ -1,4 +1,3 @@
-/* eslint-disable no-fallthrough */
 import type { IncludeExcludeOptions } from 'storybook/internal/csf';
 import { isExportStory } from 'storybook/internal/csf';
 

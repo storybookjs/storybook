@@ -9,7 +9,6 @@ import {
   resolveAddonName,
   resolvePathInStorybookCache,
   serverResolve,
-  syncStorybookAddons,
   validateFrameworkName,
   versions,
 } from 'storybook/internal/common';

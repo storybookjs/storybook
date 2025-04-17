@@ -20,6 +20,7 @@ module.exports = {
     'eslint-comments/disable-enable-pair': ['error', { allowWholeFile: true }],
     'eslint-comments/no-unused-disable': 'error',
     'react-hooks/rules-of-hooks': 'off',
+    'jsx-a11y/no-autofocus': 'warn',
     'import/extensions': 'off', // for mjs, we sometimes need extensions
     'jsx-a11y/control-has-associated-label': 'off',
     '@typescript-eslint/dot-notation': [
@@ -95,6 +96,8 @@ module.exports = {
         'compat/compat': 'off',
         'jsx-a11y/click-events-have-key-events': 'off',
         'jsx-a11y/no-static-element-interactions': 'off',
+        'jsx-a11y/iframe-has-title': 'off',
+        'jsx-a11y/alt-text': 'off',
       },
     },
     {

@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 import { emojiKey, updateRulesDocs, writeRulesListInReadme } from './utils/docs';
 import rules from './utils/rules';
 import { extendsCategories } from './utils/updates';

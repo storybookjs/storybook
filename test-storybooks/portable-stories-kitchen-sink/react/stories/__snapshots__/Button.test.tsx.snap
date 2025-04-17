@@ -3,8 +3,7 @@
 exports[`Renders CSF2Secondary story 1`] = `
 <body>
   <div
-    data-highlight-root="true"
-    id="storybook-highlights-root-h9cbc7wia5l"
+    id="storybook-highlights-root"
   />
   <div>
     <div
@@ -26,8 +25,7 @@ exports[`Renders CSF2Secondary story 1`] = `
 exports[`Renders CSF2StoryWithLocale story 1`] = `
 <body>
   <div
-    data-highlight-root="true"
-    id="storybook-highlights-root-h9cbc7wia5l"
+    id="storybook-highlights-root"
   />
   <div>
     <div
@@ -53,8 +51,7 @@ exports[`Renders CSF2StoryWithLocale story 1`] = `
 exports[`Renders CSF2StoryWithParamsAndDecorator story 1`] = `
 <body>
   <div
-    data-highlight-root="true"
-    id="storybook-highlights-root-h9cbc7wia5l"
+    id="storybook-highlights-root"
   />
   <div>
     <div
@@ -76,8 +73,7 @@ exports[`Renders CSF2StoryWithParamsAndDecorator story 1`] = `
 exports[`Renders CSF3Button story 1`] = `
 <body>
   <div
-    data-highlight-root="true"
-    id="storybook-highlights-root-h9cbc7wia5l"
+    id="storybook-highlights-root"
   />
   <div>
     <div
@@ -99,8 +95,7 @@ exports[`Renders CSF3Button story 1`] = `
 exports[`Renders CSF3ButtonWithRender story 1`] = `
 <body>
   <div
-    data-highlight-root="true"
-    id="storybook-highlights-root-h9cbc7wia5l"
+    id="storybook-highlights-root"
   />
   <div>
     <div
@@ -129,8 +124,7 @@ exports[`Renders CSF3ButtonWithRender story 1`] = `
 exports[`Renders CSF3Primary story 1`] = `
 <body>
   <div
-    data-highlight-root="true"
-    id="storybook-highlights-root-h9cbc7wia5l"
+    id="storybook-highlights-root"
   />
   <div>
     <div
@@ -152,8 +146,7 @@ exports[`Renders CSF3Primary story 1`] = `
 exports[`Renders WithLoader story 1`] = `
 <body>
   <div
-    data-highlight-root="true"
-    id="storybook-highlights-root-h9cbc7wia5l"
+    id="storybook-highlights-root"
   />
   <div>
     <div

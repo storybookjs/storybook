@@ -53,13 +53,11 @@ const chevronRight = () =>
 
 export const useHighlights = ({
   channel,
-  uniqueId = Math.random().toString(36).substring(2, 15),
-  menuId = `storybook-highlights-menu-${uniqueId}`,
-  rootId = `storybook-highlights-root-${uniqueId}`,
+  menuId = `storybook-highlights-menu`,
+  rootId = `storybook-highlights-root`,
   storybookRootId = 'storybook-root',
 }: {
   channel: Channel;
-  uniqueId?: string;
   menuId?: string;
   rootId?: string;
   storybookRootId?: string;
@@ -166,7 +164,7 @@ export const useHighlights = ({
 
   let root = document.getElementById(rootId);
   if (!root) {
-    root = createElement('div', { id: rootId, 'data-highlight-root': 'true' }) as HTMLElement;
+    root = createElement('div', { id: rootId }) as HTMLElement;
     document.body.appendChild(root);
   }
 
@@ -326,7 +324,7 @@ export const useHighlights = ({
     if (menu) {
       menu.innerHTML = '';
     } else {
-      const props = { id: menuId, popover: 'manual', 'data-highlight-menu': 'true' };
+      const props = { id: menuId, popover: 'manual' };
       menu = root.appendChild(createElement('div', props) as HTMLElement);
       root.appendChild(
         createElement('style', {}, [

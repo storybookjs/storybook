@@ -7,8 +7,8 @@
 //------------------------------------------------------------------------------
 import { dedent } from 'ts-dedent';
 
-import rule from '../../../src/rules/story-exports';
-import ruleTester from '../../utils/rule-tester';
+import ruleTester from '../test-utils';
+import rule from './story-exports';
 
 //------------------------------------------------------------------------------
 // Tests

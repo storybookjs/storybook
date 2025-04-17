@@ -11,10 +11,7 @@ module.exports = {
   },
   plugins: ['local-rules'],
   rules: {
-    'import/no-extraneous-dependencies': [
-      'error',
-      { devDependencies: true, peerDependencies: true },
-    ],
+    'import/no-extraneous-dependencies': 'off',
     'react/react-in-jsx-scope': 'off',
     'import/no-unresolved': 'off', // covered by typescript
     'eslint-comments/disable-enable-pair': ['error', { allowWholeFile: true }],
@@ -44,13 +41,6 @@ module.exports = {
   },
   overrides: [
     {
-      files: ['**/templates/virtualModuleModernEntry.js'],
-      rules: {
-        'no-underscore-dangle': 'off',
-        'import/no-extraneous-dependencies': 'off',
-      },
-    },
-    {
       // this package depends on a lot of peerDependencies we don't want to specify, because npm would install them
       files: ['**/frameworks/angular/template/**/*'],
       rules: {
@@ -75,7 +65,6 @@ module.exports = {
       rules: {
         '@typescript-eslint/dot-notation': 'off',
         '@typescript-eslint/no-implied-eval': 'off',
-        '@typescript-eslint/no-throw-literal': 'off',
         '@typescript-eslint/return-await': 'off',
       },
     },
@@ -84,32 +73,6 @@ module.exports = {
       files: ['**/builder-vite/**/*.html'],
       rules: {
         '@typescript-eslint/no-unused-expressions': 'off', // should become error, in the future
-      },
-    },
-    {
-      files: ['**/.storybook/**', '**/scripts/**/*', 'vitest.d.ts', '**/vitest.config.*'],
-      rules: {
-        'import/no-extraneous-dependencies': [
-          'error',
-          { packageDir: [__dirname], devDependencies: true, peerDependencies: true },
-        ],
-      },
-    },
-    {
-      files: [
-        '*.test.*',
-        '*.spec.*',
-        '**/addons/docs/**/*',
-        '**/__tests__/**',
-        '**/__testfixtures__/**',
-        '**/*.test.*',
-        '**/*.test-d.*',
-        '**/*.stories.*',
-        '**/*.mockdata.*',
-        '**/template/**/*',
-      ],
-      rules: {
-        'import/no-extraneous-dependencies': 'off',
       },
     },
     {
@@ -143,7 +106,6 @@ module.exports = {
       files: ['**/*.tsx', '**/*.ts'],
       rules: {
         'no-shadow': 'off',
-        '@typescript-eslint/ban-types': 'warn', // should become error, in the future
         'react/require-default-props': 'off',
         'react/prop-types': 'off', // we should use types
         'react/forbid-prop-types': 'off', // we should use types

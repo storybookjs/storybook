@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import * as fs from 'node:fs';
 import * as fsp from 'node:fs/promises';
 

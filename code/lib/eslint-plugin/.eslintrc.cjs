@@ -10,5 +10,11 @@ module.exports = {
         'storybook/meta-inline-properties': 'warn',
       },
     },
+    {
+      files: ['.eslintrc.cjs'],
+      parserOptions: {
+        project: null
+      }
+    }
   ],
 };

@@ -12,7 +12,7 @@ export type TRule = ReturnType<typeof createStorybookRule> & {
 
 const rules = fs
   .readdirSync(ROOT)
-  .filter((file) => path.extname(file) === '.ts')
+  .filter((file) => path.extname(file) === '.ts' && !file.endsWith('.test.ts'))
   .map((file) => path.basename(file, '.ts'))
   .map((name) => {
     const rule = require(path.join(ROOT, name)) as TRule;

@@ -11,8 +11,8 @@ import { vi } from 'vitest';
 import { AST_NODE_TYPES } from '@typescript-eslint/utils';
 import { sep } from 'path';
 
-import rule from '../../../src/rules/no-uninstalled-addons';
-import ruleTester from '../../utils/rule-tester';
+import ruleTester from '../test-utils';
+import rule from './no-uninstalled-addons';
 
 vi.mock('fs', () => ({
   ...vi.importActual('fs'),

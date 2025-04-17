@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import { type BabelFile, type NodePath, core as babel, types as t } from 'storybook/internal/babel';
 import { loadCsf, printCsf } from 'storybook/internal/csf-tools';
 

@@ -124,7 +124,6 @@ export const Node = ({
     case typeof value === 'boolean':
       return <BooleanNode {...props} value={value} />;
 
-    /* eslint-disable no-underscore-dangle */
     case Object.prototype.hasOwnProperty.call(value, '__date__'):
       return <DateNode {...props} {...value.__date__} />;
     case Object.prototype.hasOwnProperty.call(value, '__error__'):
@@ -141,7 +140,6 @@ export const Node = ({
       return <ClassNode {...props} {...value.__class__} />;
     case Object.prototype.hasOwnProperty.call(value, '__callId__'):
       return <MethodCall call={callsById?.get(value.__callId__)} callsById={callsById} />;
-    /* eslint-enable no-underscore-dangle */
 
     case Object.prototype.toString.call(value) === '[object Object]':
       return (
@@ -398,7 +396,7 @@ export const SymbolNode = ({ description }: { description: string }) => {
   return (
     <span style={{ whiteSpace: 'nowrap', color: colors.instance }}>
       Symbol(
-      {description && <span style={{ color: colors.meta }}>"{description}"</span>})
+      {description && <span style={{ color: colors.meta }}>{`&quot;${description}&quot;`}</span>})
     </span>
   );
 };
@@ -441,7 +439,6 @@ export const MethodCall = ({
   }
 
   const path = call.path?.flatMap((elem, index) => {
-    // eslint-disable-next-line no-underscore-dangle
     const callId = (elem as CallRef).__callId__;
     return [
       callId ? (

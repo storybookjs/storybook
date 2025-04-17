@@ -9,8 +9,8 @@
 import { AST_NODE_TYPES } from '@typescript-eslint/utils';
 import { dedent } from 'ts-dedent';
 
-import rule from '../../../src/rules/no-redundant-story-name';
-import ruleTester from '../../utils/rule-tester';
+import ruleTester from '../test-utils';
+import rule from './no-redundant-story-name';
 
 //------------------------------------------------------------------------------
 // Tests

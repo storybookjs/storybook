@@ -8,8 +8,8 @@
 import { AST_NODE_TYPES } from '@typescript-eslint/utils';
 import { dedent } from 'ts-dedent';
 
-import rule from '../../../src/rules/no-title-property-in-meta';
-import ruleTester from '../../utils/rule-tester';
+import ruleTester from '../test-utils';
+import rule from './no-title-property-in-meta';
 
 //------------------------------------------------------------------------------
 // Tests

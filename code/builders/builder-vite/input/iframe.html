@@ -61,11 +61,9 @@
   </head>
 
   <body>
-    <!-- [BODY HTML SNIPPET HERE] -->
     <div id="storybook-root"></div>
     <div id="storybook-docs"></div>
     <script>
-      // eslint-disable-next-line no-underscore-dangle, @typescript-eslint/naming-convention
       function __onViteAppLoadingError(event) {
         const hostname = globalThis.location.hostname;
         if (hostname !== 'localhost' && globalThis.CONFIG_TYPE === 'DEVELOPMENT') {
@@ -91,6 +89,10 @@ See:`;
         }
       }
     </script>
-    <script type="module" src="virtual:/@storybook/builder-vite/vite-app.js" onerror="__onViteAppLoadingError(event)"></script>
+    <script
+      type="module"
+      src="virtual:/@storybook/builder-vite/vite-app.js"
+      onerror="__onViteAppLoadingError(event)"
+    ></script>
   </body>
 </html>

@@ -8,8 +8,8 @@
 import { AST_NODE_TYPES } from '@typescript-eslint/utils';
 import { dedent } from 'ts-dedent';
 
-import rule from '../../../src/rules/hierarchy-separator';
-import ruleTester from '../../utils/rule-tester';
+import ruleTester from '../test-utils';
+import rule from './hierarchy-separator';
 
 //------------------------------------------------------------------------------
 // Tests

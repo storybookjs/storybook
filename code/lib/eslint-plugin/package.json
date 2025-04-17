@@ -32,15 +32,15 @@
   ],
   "scripts": {
     "check": "jiti ../../../scripts/prepare/check.ts",
-    "generate-rule": "jiti ./tools/generate-rule",
+    "generate-rule": "jiti ./scripts/generate-rule",
     "prep": "jiti ../../../scripts/prepare/bundle.ts",
     "test": "yarn run test:unit && yarn run test:integration",
     "test:ci": "yarn run check && yarn run test:unit --run && yarn run test:integration --run",
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:unit": "vitest run --allowOnly",
     "update-all": "yarn run update-configs && yarn run update-docs",
-    "update-configs": "jiti ./tools/update-configs",
-    "update-docs": "jiti ./tools/update-rules-list"
+    "update-configs": "jiti ./scripts/update-configs",
+    "update-docs": "jiti ./scripts/update-rules-list"
   },
   "dependencies": {
     "@typescript-eslint/utils": "^8.8.1"
@@ -75,6 +75,7 @@
     "access": "public"
   },
   "bundler": {
+    "pre": "./scripts/update-all.ts",
     "entries": [
       "./src/index.ts",
       "./src/configs/recommended.ts",

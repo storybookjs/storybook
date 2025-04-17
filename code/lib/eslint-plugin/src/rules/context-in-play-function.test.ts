@@ -7,8 +7,8 @@
 //------------------------------------------------------------------------------
 import { dedent } from 'ts-dedent';
 
-import rule from '../../../src/rules/context-in-play-function';
-import ruleTester from '../../utils/rule-tester';
+import ruleTester from '../test-utils';
+import rule from './context-in-play-function';
 
 //------------------------------------------------------------------------------
 // Tests

@@ -74,7 +74,7 @@ export async function configureMain({
     ...custom,
   };
 
-  const isTypescript = language === SupportedLanguage.TYPESCRIPT_4_9;
+  const isTypescript = language === SupportedLanguage.TYPESCRIPT;
 
   let mainConfigTemplate = dedent`<<import>><<prefix>>const config<<type>> = <<mainContents>>;
     export default config;`;
@@ -115,7 +115,7 @@ export async function configureMain({
 
 export async function configurePreview(options: ConfigurePreviewOptions) {
   const { prefix: frameworkPrefix = '' } = options.frameworkPreviewParts || {};
-  const isTypescript = options.language === SupportedLanguage.TYPESCRIPT_4_9;
+  const isTypescript = options.language === SupportedLanguage.TYPESCRIPT;
 
   const previewPath = `./${options.storybookConfigFolder}/preview.${isTypescript ? 'ts' : 'js'}`;
 

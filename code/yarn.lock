@@ -6329,6 +6329,7 @@ __metadata:
     "@storybook/global": "npm:^5.0.0"
     "@storybook/icons": "npm:^1.4.0"
     "@types/istanbul-lib-report": "npm:^3.0.3"
+    "@types/micromatch": "npm:^4"
     "@types/node": "npm:^22.0.0"
     "@types/semver": "npm:^7"
     "@vitest/browser": "npm:^3.1.1"
@@ -6338,6 +6339,7 @@ __metadata:
     execa: "npm:^8.0.1"
     find-up: "npm:^7.0.0"
     istanbul-lib-report: "npm:^3.0.1"
+    micromatch: "npm:^4.0.8"
     pathe: "npm:^1.1.2"
     picocolors: "npm:^1.1.0"
     prompts: "npm:^2.4.0"
@@ -7781,6 +7783,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/braces@npm:*":
+  version: 3.0.5
+  resolution: "@types/braces@npm:3.0.5"
+  checksum: 10c0/fff17426731376b452abf747e862f0116b80ccc68a2c8e6b56aff240048c26c983d61c456c6792dffe9df407d80c1a504bea21e8c1a56afaed1f311dfe75bc68
+  languageName: node
+  linkType: hard
+
 "@types/color-convert@npm:^2.0.0":
   version: 2.0.4
   resolution: "@types/color-convert@npm:2.0.4"
@@ -8149,6 +8158,15 @@ __metadata:
   version: 2.0.8
   resolution: "@types/mdx@npm:2.0.8"
   checksum: 10c0/6ee0e54d886afcbc2547f1db73ac9de60603ce26592e21f5fff2ba2791f6c58d3eb7b849add8f6b8b9c10f7c8ff3855d29fe7122f532f2f64fce95fe5b8e23ef
+  languageName: node
+  linkType: hard
+
+"@types/micromatch@npm:^4":
+  version: 4.0.9
+  resolution: "@types/micromatch@npm:4.0.9"
+  dependencies:
+    "@types/braces": "npm:*"
+  checksum: 10c0/b13d7594b4320f20729f20156c51e957d79deb15083f98a736689cd0d3e4ba83b5d125959f6edf65270a6b6db90db9cebef8168d88e1c4eedc9a18aecc0234a3
   languageName: node
   linkType: hard
 

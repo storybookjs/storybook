@@ -97,6 +97,7 @@
   },
   "devDependencies": {
     "@types/istanbul-lib-report": "^3.0.3",
+    "@types/micromatch": "^4",
     "@types/node": "^22.0.0",
     "@types/semver": "^7",
     "@vitest/browser": "^3.1.1",
@@ -106,6 +107,7 @@
     "execa": "^8.0.1",
     "find-up": "^7.0.0",
     "istanbul-lib-report": "^3.0.1",
+    "micromatch": "^4.0.8",
     "pathe": "^1.1.2",
     "picocolors": "^1.1.0",
     "react": "^18.2.0",

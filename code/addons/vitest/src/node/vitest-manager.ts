@@ -329,15 +329,13 @@ export class VitestManager {
     }
     this.resetGlobalTestNamePattern();
 
-    const globTestFiles = await this.vitest.globTestSpecifications();
+    const globTestFiles = await this.getStorybookTestSpecs();
 
     const testGraphs = await Promise.all(
-      globTestFiles
-        .filter((workspace) => this.isStorybookProject(workspace.project))
-        .map(async (spec) => {
-          const deps = await this.getTestDependencies(spec);
-          return [spec, deps] as const;
-        })
+      globTestFiles.map(async (spec) => {
+        const deps = await this.getTestDependencies(spec);
+        return [spec, deps] as const;
+      })
     );
     const triggerAffectedTests: TestSpecification[] = [];
 
@@ -370,8 +368,16 @@ export class VitestManager {
     });
   }
 
-  async runAffectedTestsAfterChange(file: string) {
+  async runAffectedTestsAfterChange(file: string, event: 'add' | 'change') {
     const id = slash(file);
+
+    if (event === 'add') {
+      const project = this.vitest?.projects.find(this.isStorybookProject.bind(this));
+      // This function not onlye test a file matches the test globs, but it also
+      // adds the file to the project's internal testFilesList
+      project?.matchesTestGlob(id);
+    }
+
     this.vitest?.logger.clearHighlightCache(id);
     this.updateLastChanged(id);
 
@@ -400,8 +406,12 @@ export class VitestManager {
     this.resetGlobalTestNamePattern();
     this.vitest!.vite.watcher.removeAllListeners('change');
     this.vitest!.vite.watcher.removeAllListeners('add');
-    this.vitest!.vite.watcher.on('change', this.runAffectedTestsAfterChange.bind(this));
-    this.vitest!.vite.watcher.on('add', this.runAffectedTestsAfterChange.bind(this));
+    this.vitest!.vite.watcher.on('change', (file) =>
+      this.runAffectedTestsAfterChange(file, 'change')
+    );
+    this.vitest!.vite.watcher.on('add', (file) => {
+      this.runAffectedTestsAfterChange(file, 'add');
+    });
     this.registerVitestConfigListener();
   }
 

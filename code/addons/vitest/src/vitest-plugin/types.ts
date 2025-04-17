@@ -32,4 +32,5 @@ export type UserOptions = {
 export type InternalOptions = Required<UserOptions> & {
   debug: boolean;
   tags: Required<UserOptions['tags']>;
+  includeStories: string[];
 };

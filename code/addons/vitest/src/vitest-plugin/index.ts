@@ -7,6 +7,7 @@ import { mergeConfig } from 'vitest/config';
 import type { ViteUserConfig } from 'vitest/config';
 
 import {
+  DEFAULT_FILES_PATTERN,
   getInterpretedFile,
   normalizeStories,
   validateConfigurationFiles,
@@ -20,12 +21,11 @@ import { readConfig, vitestTransform } from 'storybook/internal/csf-tools';
 import { MainFileMissingError } from 'storybook/internal/server-errors';
 import type { Presets } from 'storybook/internal/types';
 
+import { match } from 'micromatch';
 import { join, resolve } from 'pathe';
 import picocolors from 'picocolors';
 import sirv from 'sirv';
-import { convertPathToPattern } from 'tinyglobby';
 import { dedent } from 'ts-dedent';
-import type { PluginOption } from 'vite';
 
 // ! Relative import to prebundle it without needing to depend on the Vite builder
 import { withoutVitePlugins } from '../../../../builders/builder-vite/src/utils/without-vite-plugins';
@@ -113,8 +113,10 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     packageJson: {},
   });
 
+  const stories = await presets.apply('stories', []);
+
   const [
-    { storiesGlobs, storiesFiles },
+    { storiesGlobs },
     framework,
     storybookEnv,
     viteConfigFromStorybook,
@@ -175,6 +177,32 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       // We are overriding the environment variable to 'true' if vitest runs via @storybook/addon-vitest's backend
       const vitestStorybook = process.env.VITEST_STORYBOOK ?? 'false';
 
+      const includeStories = stories
+        .map((story) => {
+          let storyPath;
+          if (typeof story === 'string') {
+            storyPath = story;
+          } else {
+            storyPath = `${story.directory}/${story.files ?? DEFAULT_FILES_PATTERN}`;
+          }
+
+          // Transform the path from Storybook configDir relative to Vitest root relative
+          // First, make the path absolute from configDir
+          const absolutePath = join(finalOptions.configDir, storyPath);
+          // Then make it relative to Vitest root
+          const relativeToViteRoot = absolutePath
+            .replace(
+              inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED.root ?? WORKING_DIR,
+              ''
+            )
+            .replace(/^\//, ''); // Remove leading slash if present
+
+          return relativeToViteRoot;
+        })
+        .filter((story) => story.replace('mdx|stories', 'stories'));
+
+      finalOptions.includeStories = includeStories;
+
       const baseConfig: Omit<ViteUserConfig, 'plugins'> = {
         test: {
           setupFiles: [
@@ -202,9 +230,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
             __VITEST_SKIP_TAGS__: finalOptions.tags.skip.join(','),
           },
 
-          include: storiesFiles
-            .filter((path) => !path.endsWith('.mdx'))
-            .map((path) => convertPathToPattern(path)),
+          include: includeStories,
 
           // if the existing deps.inline is true, we keep it as-is, because it will inline everything
           ...(inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED.test?.server?.deps
@@ -339,7 +365,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
         return code;
       }
 
-      if (storiesFiles.includes(id)) {
+      if (match([id], finalOptions.includeStories)) {
         return vitestTransform({
           code,
           fileName: id,

@@ -14,10 +14,12 @@ import type { Options } from 'tsup';
 import { build } from 'tsup';
 import type { PackageJson } from 'type-fest';
 
-import { NODE_TARGET } from '../../code/core/scripts/prep';
-import { BROWSER_TARGETS } from '../../code/core/src/builder-manager';
 import { globalPackages as globalManagerPackages } from '../../code/core/src/manager/globals/globals';
 import { globalPackages as globalPreviewPackages } from '../../code/core/src/preview/globals/globals';
+import {
+  BROWSER_TARGETS,
+  NODE_TARGET,
+} from '../../code/core/src/shared/constants/environments-support';
 import { exec } from '../utils/exec';
 import { esbuild } from './tools';
 

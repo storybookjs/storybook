@@ -3,6 +3,7 @@ import { existsSync, watch } from 'node:fs';
 import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
+import { BROWSER_TARGETS, NODE_TARGET } from 'core/src/shared/constants/environments-support';
 import type { Metafile } from 'esbuild';
 
 import {
@@ -17,7 +18,6 @@ import {
   process,
 } from '../../../scripts/prepare/tools';
 import pkg from '../package.json';
-import { BROWSER_TARGETS } from '../src/builder-manager';
 import { globalsModuleInfoMap } from '../src/manager/globals-module-info';
 import { getBundles, getEntries, getFinals } from './entries';
 import { generatePackageJsonFile } from './helpers/generatePackageJsonFile';
@@ -27,8 +27,6 @@ import { isBrowser, isNode, noExternals } from './helpers/isEntryType';
 import { modifyThemeTypes } from './helpers/modifyThemeTypes';
 import { generateSourceFiles } from './helpers/sourcefiles';
 import { externalPlugin } from './no-externals-plugin';
-
-export const NODE_TARGET = 'node20';
 
 async function run() {
   const flags = process.argv.slice(2);

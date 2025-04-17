@@ -9,6 +9,7 @@ import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
 import { pnpPlugin } from '@yarnpkg/esbuild-plugin-pnp';
 import sirv from 'sirv';
 
+import { BROWSER_TARGETS } from '../shared/constants/environments-support';
 import type {
   BuilderBuildResult,
   BuilderFunction,
@@ -27,15 +28,6 @@ import { getTemplatePath, renderHTML } from './utils/template';
 const isRootPath = /^\/($|\?)/;
 let compilation: Compilation;
 let asyncIterator: ReturnType<StarterFunction> | ReturnType<BuilderFunction>;
-
-export const BROWSER_TARGETS = [
-  'chrome131',
-  'edge134',
-  'firefox136',
-  'safari18.3',
-  'ios18.3',
-  'opera117',
-];
 
 export const getConfig: ManagerBuilder['getConfig'] = async (options) => {
   const [addonsEntryPoints, customManagerEntryPoint, tsconfigPath, envs] = await Promise.all([

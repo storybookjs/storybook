@@ -2,10 +2,10 @@ import { readdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { GlobalRegistrator } from '@happy-dom/global-registrator';
+import { BROWSER_TARGETS } from 'core/src/shared/constants/environments-support';
 import { isNotNil } from 'es-toolkit';
 
 import { dedent, esbuild, getWorkspace, prettier } from '../../../../scripts/prepare/tools';
-import { BROWSER_TARGETS } from '../../src/builder-manager';
 import { temporaryFile } from '../../src/common/utils/cli';
 
 GlobalRegistrator.register({ url: 'http://localhost:3000', width: 1920, height: 1080 });

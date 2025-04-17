@@ -15,6 +15,7 @@ import { DocsContext } from '@storybook/addon-docs/blocks';
 import addonThemes from '@storybook/addon-themes';
 import addonTest from '@storybook/addon-vitest';
 
+import addonPseudoStates from 'storybook-addon-pseudo-states';
 import { DocsContext as DocsContextProps, useArgs } from 'storybook/preview-api';
 import type { PreviewWeb } from 'storybook/preview-api';
 import {
@@ -385,7 +386,14 @@ const parameters = {
 };
 
 export default definePreview({
-  addons: [addonDocs(), addonThemes(), addonA11y(), addonTest(), templatePreview],
+  addons: [
+    addonDocs(),
+    addonThemes(),
+    addonA11y(),
+    addonTest(),
+    addonPseudoStates(),
+    templatePreview,
+  ],
   decorators,
   loaders,
   tags: ['test', 'vitest'],

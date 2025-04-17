@@ -7088,6 +7088,7 @@ __metadata:
     slash: "npm:^5.0.0"
     sort-package-json: "npm:^2.14.0"
     storybook: "workspace:^"
+    storybook-addon-pseudo-states: "workspace:*"
     stream-browserify: "npm:^3.0.0"
     svelte: "npm:^5.0.0-next.268"
     ts-dedent: "npm:^2.0.0"
@@ -25150,6 +25151,19 @@ __metadata:
   checksum: 10c0/2f27c3eaa7207b81410e170e7c41379816d22c1566308a9d97fbf853c4facff531fcb2a85f085c7503c578736570972f747c26018ebeaba7d1341fb82a7b6d52
   languageName: node
   linkType: hard
+
+"storybook-addon-pseudo-states@workspace:*, storybook-addon-pseudo-states@workspace:addons/pseudo-states":
+  version: 0.0.0-use.local
+  resolution: "storybook-addon-pseudo-states@workspace:addons/pseudo-states"
+  dependencies:
+    "@storybook/icons": "npm:^1.4.0"
+    react: "npm:^18.2.0"
+    react-dom: "npm:^18.2.0"
+    typescript: "npm:^5.7.3"
+  peerDependencies:
+    storybook: "workspace:^"
+  languageName: unknown
+  linkType: soft
 
 "storybook@workspace:*, storybook@workspace:^, storybook@workspace:core":
   version: 0.0.0-use.local

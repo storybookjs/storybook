@@ -229,6 +229,8 @@ export const Interaction = ({
           <RowLabel aria-label="Render step" call={call} disabled>
             {call.status === CallStates.ERROR ? (
               <StatusIcon status={CallStates.ERROR} />
+            ) : call.status === CallStates.ACTIVE ? (
+              <StatusIcon status={CallStates.ACTIVE} />
             ) : (
               <RenderIcon />
             )}
@@ -240,7 +242,7 @@ export const Interaction = ({
             <WithTooltip
               trigger="hover"
               hasChrome={false}
-              tooltip={<Note note="Render is the first step of all component tests" />}
+              tooltip={<Note note="Render is the first step of all interactions" />}
             >
               <RenderLockIcon />
             </WithTooltip>

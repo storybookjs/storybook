@@ -118,7 +118,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
     ComponentProps<typeof TestStatusIcon>['status'],
     string,
   ] = fatalError
-    ? ['critical', 'Local tests crashed']
+    ? ['critical', 'Component tests crashed']
     : componentTestStatusValueToStoryIds['status-value:error'].length > 0
       ? ['negative', 'Component tests failed']
       : isRunning
@@ -131,7 +131,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
     ComponentProps<typeof TestStatusIcon>['status'],
     string,
   ] = fatalError
-    ? ['critical', 'Local tests crashed']
+    ? ['critical', 'Component tests crashed']
     : a11yStatusValueToStoryIds['status-value:error'].length > 0
       ? ['negative', 'Accessibility tests failed']
       : a11yStatusValueToStoryIds['status-value:warning'].length > 0
@@ -147,7 +147,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
       <Heading>
         <Info>
           {entry ? (
-            <Title id="testing-module-title">Run local tests</Title>
+            <Title id="testing-module-title">Run component tests</Title>
           ) : (
             <Title
               id="testing-module-title"
@@ -158,12 +158,12 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
               }
             >
               {currentRun.unhandledErrors.length === 1
-                ? 'Local tests completed with an error'
+                ? 'Component tests completed with an error'
                 : currentRun.unhandledErrors.length > 1
-                  ? 'Local tests completed with errors'
+                  ? 'Component tests completed with errors'
                   : fatalError
-                    ? 'Local tests didn’t complete'
-                    : 'Run local tests'}
+                    ? 'Component tests didn’t complete'
+                    : 'Run component tests'}
             </Title>
           )}
           <Description
@@ -258,7 +258,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
         <Row>
           <ListItem
             as="label"
-            title="Component tests"
+            title="Interactions"
             icon={entry ? null : <Checkbox checked disabled />}
           />
           <WithTooltip
@@ -329,7 +329,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                           : currentRun.coverageSummary
                             ? 'View coverage report'
                             : fatalError
-                              ? 'Local tests crashed'
+                              ? 'Component tests crashed'
                               : 'Run tests to calculate coverage'
                   }
                 />

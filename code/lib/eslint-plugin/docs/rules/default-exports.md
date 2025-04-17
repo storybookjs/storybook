@@ -30,9 +30,9 @@ export const Primary = {};
 
 ## When Not To Use It
 
-This rule should only be applied in your `.stories.*` files. Please ensure you are defining the storybook rules only for story files. You can see more details [here](https://github.com/storybookjs/eslint-plugin-storybook#overridingdisabling-rules).
+This rule should only be applied in your `.stories.*` files. Please ensure you are defining the storybook rules only for story files. You can see more details [here](https://github.com/storybookjs/storybook/blob/next/code/lib/eslint-plugin#overridingdisabling-rules).
 
-If you're using Storybook 6.5 and [CSF in MDX](https://github.com/storybookjs/storybook/blob/v6.5.0/addons/docs/docs/recipes.md#csf-stories-with-mdx-docs), you should disable this rule for the stories that use CSF in MDX. You can see how to override the rule [here](https://github.com/storybookjs/eslint-plugin-storybook#overridingdisabling-rules).
+If you're using Storybook 6.5 and [CSF in MDX](https://github.com/storybookjs/storybook/blob/v6.5.0/addons/docs/docs/recipes.md#csf-stories-with-mdx-docs), you should disable this rule for the stories that use CSF in MDX. You can see how to override the rule [here](https://github.com/storybookjs/storybook/blob/next/code/lib/eslint-plugin#overridingdisabling-rules).
 
 ## Further Reading
 

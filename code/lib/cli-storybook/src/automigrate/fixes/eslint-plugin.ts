@@ -59,7 +59,7 @@ export const eslintPlugin: Fix<EslintPluginRunOptions> = {
       In order to have the best experience with Storybook and follow best practices, we advise you to install eslint-plugin-storybook.
 
       More info: ${picocolors.yellow(
-        'https://github.com/storybookjs/eslint-plugin-storybook#readme'
+        'https://github.com/storybookjs/storybook/blob/next/code/lib/eslint-plugin#readme'
       )}
     `;
   },
@@ -81,7 +81,7 @@ export const eslintPlugin: Fix<EslintPluginRunOptions> = {
             ', '
           )}.
 
-          Please refer to https://github.com/storybookjs/eslint-plugin-storybook#usage to finish setting up the plugin manually.
+          Please refer to https://github.com/storybookjs/storybook/blob/next/code/lib/eslint-plugin#usage to finish setting up the plugin manually.
       `);
       return;
     }

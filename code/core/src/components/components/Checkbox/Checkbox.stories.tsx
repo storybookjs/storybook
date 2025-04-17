@@ -13,19 +13,19 @@ type Story = StoryObj<typeof meta>;
 export const All: Story = {
   render: () => (
     <div style={{ display: 'inline-grid', gap: 15, gridTemplateColumns: 'repeat(8, auto)' }}>
-      <Checkbox checked data-focus />
-      <Checkbox checked />
+      <Checkbox defaultChecked data-focus />
+      <Checkbox defaultChecked />
       <Checkbox data-indeterminate />
       <Checkbox />
-      <Checkbox disabled checked />
+      <Checkbox disabled defaultChecked />
       <Checkbox disabled data-indeterminate />
       <Checkbox disabled />
       <small>(custom)</small>
-      <input type="checkbox" style={{ margin: 0 }} checked data-focus />
-      <input type="checkbox" style={{ margin: 0 }} checked />
+      <input type="checkbox" style={{ margin: 0 }} defaultChecked data-focus />
+      <input type="checkbox" style={{ margin: 0 }} defaultChecked />
       <input type="checkbox" style={{ margin: 0 }} data-indeterminate />
       <input type="checkbox" style={{ margin: 0 }} />
-      <input type="checkbox" style={{ margin: 0 }} disabled checked />
+      <input type="checkbox" style={{ margin: 0 }} disabled defaultChecked />
       <input type="checkbox" style={{ margin: 0 }} disabled data-indeterminate />
       <input type="checkbox" style={{ margin: 0 }} disabled />
       <small>(native)</small>
@@ -47,7 +47,7 @@ export const Default: Story = {};
 
 export const Checked: Story = {
   args: {
-    checked: true,
+    defaultChecked: true,
   },
 };
 
@@ -65,7 +65,7 @@ export const Disabled: Story = {
 
 export const DisabledChecked: Story = {
   args: {
-    checked: true,
+    defaultChecked: true,
     disabled: true,
   },
 };

@@ -33,14 +33,14 @@ Before installing, make sure your project meets the following requirements:
 
 - Storybook ≥ 8.5
 - A Storybook framework that uses Vite (e.g. [`vue3-vite`](../get-started/frameworks/vue3-vite.mdx), [`react-vite`](../get-started/frameworks/react-vite.mdx), ['sveltekit`](../get-started/frameworks/sveltekit.mdx), etc.), or the [Storybook Next.js framework with Vite](../get-started/frameworks/nextjs.mdx#with-vite)
-- Vitest ≥ 2.1
+- Vitest ≥ 3.0
     - If you're not yet using Vitest, it will be installed and configured for you when you install the addon
 - (optional) MSW ≥ 2.0
     - If MSW is installed, it must be v2.0.0 or later to not conflict with Vitest's dependency
 
 <If renderer="react">
   <Callout variant="info" icon="ℹ️">
-    **Using with Next.js** — The Test addon is supported in Next.js ≥ 14.1 projects, but you must be using the [`@storybook/experimental-nextjs-vite` framework](../get-started/frameworks/nextjs.mdx#with-vite). When you run the setup command below, you will be prompted to install and use the framework if you haven't already.
+    **Using with Next.js** — The Test addon is supported in Next.js ≥ 14.1 projects, but you must be using the [`@storybook/nextjs-vite` framework](../get-started/frameworks/nextjs.mdx#with-vite). When you run the setup command below, you will be prompted to install and use the framework if you haven't already.
   </Callout>
 </If>
 
@@ -62,7 +62,7 @@ For some project setups, the `add` command may be unable to automate the addon a
 
 1. Make sure Vite and Vitest are configured in your project.
 1. Configure Vitest to use [browser mode](https://vitest.dev/guide/browser/).
-1. Install the addon, `@storybook/addon-test`, in your project and [register it in your Storybook configuration](http://storybook.js.org/docs/addons/install-addons#manual-installation).
+1. Install the addon, `@storybook/addon-vitest`, in your project and [register it in your Storybook configuration](http://storybook.js.org/docs/addons/install-addons#manual-installation).
 1. Create a test setup file, `.storybook/vitest.setup.ts`. You can use the [example setup file](#example-vitest-setup) as a guide.
 1. Adjust your Vitest configuration to include the plugin and reference the setup file. You can use the [example configuration files](#example-configuration-files) as a guide.
 
@@ -390,6 +390,18 @@ export default defineConfig({
 
 </If>
 
+### How do I fix the `Error: Vitest failed to find the current suite` error?
+
+If you encounter this error, it's often not a Vitest issue but rather related to how your stories are being transformed. Here are steps to troubleshoot:
+
+1. Check the complete error logs for additional context, particularly around story transformation
+2. Pay attention to Vite dependency optimization warnings (e.g., "new dependencies optimized: lodash")
+3. If you see dependency optimization warnings, these can cause test-breaking reloads during execution
+
+The most common fix is to pre-optimize your dependencies. You can do this by adding the dependencies to your Vite config's [`optimizeDeps.include`](https://vitejs.dev/config/dep-optimization-options.html#optimizedeps-include) array.
+
+This prevents mid-test dependency optimization, which can interfere with Vitest's test suite management.
+
 ## API
 
 ### Exports
@@ -397,7 +409,7 @@ export default defineConfig({
 This addon has the following exports:
 
 ```js
-import { storybookTest } from '@storybook/addon-test/vitest-plugin'
+import { storybookTest } from '@storybook/addon-vitest/vitest-plugin'
 ```
 
 #### `storybookTest`

@@ -22,7 +22,9 @@ export const consolidatedPackages = {
   '@storybook/builder-manager': 'storybook/internal/builder-manager',
   '@storybook/components': 'storybook/internal/components',
   '@storybook/test': 'storybook/test',
-  '@storybook/addon-actions': 'storybook/actions',
+  '@storybook/experimental-nextjs-vite': '@storybook/nextjs-vite',
+  '@storybook/instrumenter': 'storybook/internal/instrumenter',
+  '@storybook/blocks': '@storybook/addon-docs/blocks',
 } as const;
 
 export type ConsolidatedPackage = keyof typeof consolidatedPackages;

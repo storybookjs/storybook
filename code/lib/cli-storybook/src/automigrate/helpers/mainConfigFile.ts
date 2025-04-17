@@ -1,6 +1,5 @@
 import { normalize } from 'node:path';
 
-import { frameworkToRenderer } from 'storybook/internal/cli';
 import {
   builderPackages,
   extractProperFrameworkName,
@@ -10,7 +9,7 @@ import {
   rendererPackages,
 } from 'storybook/internal/common';
 import type { JsPackageManager } from 'storybook/internal/common';
-import { getCoercedStorybookVersion } from 'storybook/internal/common';
+import { frameworkToRenderer, getCoercedStorybookVersion } from 'storybook/internal/common';
 import type { ConfigFile } from 'storybook/internal/csf-tools';
 import { readConfig, writeConfig as writeConfigFile } from 'storybook/internal/csf-tools';
 import type { StorybookConfigRaw } from 'storybook/internal/types';

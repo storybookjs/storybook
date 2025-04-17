@@ -22,7 +22,7 @@ In Storybook Docs, you can render any of your stories from your CSF files in the
 {/* prettier-ignore-start */}
 
 ```md title="ButtonDocs.mdx"+
-import { Meta, Story } from '@storybook/blocks';
+import { Meta, Story } from '@storybook/addon-docs/blocks';
 import * as ButtonStories from './Button.stories';
 
 <Meta of={ButtonStories} />
@@ -35,7 +35,7 @@ import * as ButtonStories from './Button.stories';
 ## Story
 
 ```js
-import { Story } from '@storybook/blocks';
+import { Story } from '@storybook/addon-docs/blocks';
 ```
 
 <details>
@@ -111,7 +111,7 @@ You can render a story from a CSF file that you haven’t attached to the MDX fi
 {/* prettier-ignore-start */}
 
 ```md title="ButtonDocs.mdx"
-import { Meta, Story } from '@storybook/blocks';
+import { Meta, Story } from '@storybook/addon-docs/blocks';
 import * as ButtonStories from './Button.stories';
 import * as HeaderStories from './Header.stories';
 

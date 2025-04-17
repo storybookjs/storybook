@@ -26,10 +26,10 @@ import type { UserEventObject } from 'storybook/test';
 import { dedent } from 'ts-dedent';
 
 import { HooksContext } from '../../../addons';
+import { getCoreAnnotations } from '../../../core-annotations';
 import { ReporterAPI } from '../reporter-api';
 import { composeConfigs } from './composeConfigs';
 import { getCsfFactoryAnnotations } from './csf-factory-utils';
-import { getValuesFromArgTypes } from './getValuesFromArgTypes';
 import { normalizeComponentAnnotations } from './normalizeComponentAnnotations';
 import { normalizeProjectAnnotations } from './normalizeProjectAnnotations';
 import { normalizeStory } from './normalizeStory';
@@ -123,6 +123,7 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
 
   const normalizedProjectAnnotations = normalizeProjectAnnotations<TRenderer>(
     composeConfigs([
+      ...getCoreAnnotations(),
       defaultConfig ?? globalThis.globalProjectAnnotations ?? {},
       projectAnnotations ?? {},
     ])
@@ -134,10 +135,7 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
     normalizedProjectAnnotations
   );
 
-  const globalsFromGlobalTypes = getValuesFromArgTypes(normalizedProjectAnnotations.globalTypes);
   const globals = {
-    // TODO: remove loading from globalTypes in 9.0
-    ...globalsFromGlobalTypes,
     ...normalizedProjectAnnotations.initialGlobals,
     ...story.storyGlobals,
   };
@@ -169,7 +167,10 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
 
     if (story.renderToCanvas) {
       context.renderToCanvas = async () => {
-        // Consolidate this renderContext with Context in SB 9.0
+        // TODO: Consolidate this renderContext with Context in SB 10.0
+        // Change renderToCanvas function to only use the context object
+        // and to make the renderContext an internal implementation detail
+        // wasnt'possible so far because showError and showException are not part of the story context (yet)
         const unmount = await story.renderToCanvas?.(
           {
             componentId: story.componentId,

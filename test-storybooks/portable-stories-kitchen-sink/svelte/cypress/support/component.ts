@@ -25,7 +25,6 @@ import type { ProjectAnnotations } from 'storybook/internal/types';
 import type { SvelteRenderer } from '@storybook/svelte';
 import { setProjectAnnotations } from '@storybook/svelte';
 import sbAnnotations from '../../.storybook/preview';
-import * as addonInteractions from '@storybook/addon-interactions/preview';
 
 // Augment the Cypress namespace to include type definitions for
 // your custom command.
@@ -52,5 +51,4 @@ process.env = {};
 
 setProjectAnnotations([
   sbAnnotations,
-  addonInteractions as ProjectAnnotations<SvelteRenderer>, // instruments actions as spies
 ]);

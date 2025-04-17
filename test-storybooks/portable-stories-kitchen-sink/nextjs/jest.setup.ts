@@ -1,8 +1,5 @@
 import '@testing-library/jest-dom';
-import type { ProjectAnnotations } from 'storybook/internal/types';
-import { ReactRenderer } from '@storybook/react';
 import { setProjectAnnotations } from '@storybook/nextjs';
-import * as addonInteractions from '@storybook/addon-interactions/preview';
 
 /**
  * For some weird reason, Jest in Nextjs throws the following error:
@@ -14,5 +11,4 @@ const sbAnnotations = require('./.storybook/preview');
 
 setProjectAnnotations([
   sbAnnotations,
-  addonInteractions as ProjectAnnotations<ReactRenderer>, // instruments actions as spies
 ]);

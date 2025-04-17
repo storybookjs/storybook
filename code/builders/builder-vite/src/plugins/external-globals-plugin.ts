@@ -38,7 +38,7 @@ const replacementMap = new Map([
  * https://github.com/eight04/rollup-plugin-external-globals, but simplified to meet our simple
  * needs.
  */
-export async function externalGlobalsPlugin(externals: Record<string, string>) {
+export async function externalGlobalsPlugin(externals: Record<string, string>): Promise<Plugin> {
   await init;
   const { mergeAlias } = await import('vite');
 

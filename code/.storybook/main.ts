@@ -1,9 +1,12 @@
 import { join } from 'node:path';
 
+import react from '@vitejs/plugin-react';
+
+import { BROWSER_TARGETS } from '../core/src/builder-manager';
 import { defineMain } from '../frameworks/react-vite/src/node';
 
 const componentsPath = join(__dirname, '../core/src/components/index.ts');
-const managerApiPath = join(__dirname, '../core/src/manager-api/index.ts');
+const managerApiPath = join(__dirname, '../core/src/manager-api/index.mock.ts');
 const imageContextPath = join(__dirname, '../frameworks/nextjs/src/image-context.ts');
 
 const config = defineMain({
@@ -30,24 +33,24 @@ const config = defineMain({
       titlePrefix: 'components',
     },
     {
+      directory: '../core/src/component-testing/components',
+      titlePrefix: 'component-testing',
+    },
+    {
+      directory: '../core/src/controls/components',
+      titlePrefix: 'controls',
+    },
+    {
       directory: '../lib/blocks/src',
       titlePrefix: 'blocks',
     },
     {
+      directory: '../addons/a11y/src',
+      titlePrefix: 'addons/accessibility',
+    },
+    {
       directory: '../addons/a11y/template/stories',
-      titlePrefix: 'addons/a11y',
-    },
-    {
-      directory: '../addons/backgrounds/template/stories',
-      titlePrefix: 'addons/backgrounds',
-    },
-    {
-      directory: '../addons/controls/src',
-      titlePrefix: 'addons/controls',
-    },
-    {
-      directory: '../addons/controls/template/stories',
-      titlePrefix: 'addons/controls',
+      titlePrefix: 'addons/accessibility',
     },
     {
       directory: '../addons/docs/template/stories',
@@ -58,14 +61,6 @@ const config = defineMain({
       titlePrefix: 'addons/links',
     },
     {
-      directory: '../addons/viewport/template/stories',
-      titlePrefix: 'addons/viewport',
-    },
-    {
-      directory: '../addons/toolbars/template/stories',
-      titlePrefix: 'addons/toolbars',
-    },
-    {
       directory: '../addons/themes/template/stories',
       titlePrefix: 'addons/themes',
     },
@@ -74,34 +69,29 @@ const config = defineMain({
       titlePrefix: 'addons/onboarding',
     },
     {
-      directory: '../addons/interactions/src',
-      titlePrefix: 'addons/interactions',
+      directory: '../addons/pseudo-states/src',
+      titlePrefix: 'addons/pseudo-states',
     },
     {
-      directory: '../addons/interactions/template/stories',
-      titlePrefix: 'addons/interactions/tests',
+      directory: '../addons/vitest/src/components',
+      titlePrefix: 'addons/vitest',
     },
     {
-      directory: '../addons/test/src/components',
-      titlePrefix: 'addons/test',
-    },
-    {
-      directory: '../addons/test/template/stories',
-      titlePrefix: 'addons/test',
+      directory: '../addons/vitest/template/stories',
+      titlePrefix: 'addons/vitest',
     },
   ],
   addons: [
     '@storybook/addon-themes',
-    '@storybook/addon-essentials',
-    '@storybook/addon-storysource',
+    '@storybook/addon-docs',
     '@storybook/addon-designs',
-    '@storybook/addon-test',
+    '@storybook/addon-vitest',
     '@storybook/addon-a11y',
+    'storybook-addon-pseudo-states',
     '@chromatic-com/storybook',
   ],
   previewAnnotations: [
     './core/template/stories/preview.ts',
-    './addons/toolbars/template/stories/preview.ts',
     './renderers/react/template/components/index.js',
   ],
   build: {
@@ -127,8 +117,6 @@ const config = defineMain({
     disableTelemetry: true,
   },
   features: {
-    viewportStoryGlobals: true,
-    backgroundsStoryGlobals: true,
     developmentModeForBuild: true,
   },
   viteFinal: async (viteConfig, { configType }) => {
@@ -143,17 +131,16 @@ const config = defineMain({
                 'storybook/manager-api': managerApiPath,
                 'sb-original/image-context': imageContextPath,
               }
-            : {}),
+            : {
+                'storybook/manager-api': managerApiPath,
+              }),
         },
       },
-      optimizeDeps: {
-        force: true,
-        include: ['@storybook/blocks'],
-      },
+      plugins: [react()],
       build: {
         // disable sourcemaps in CI to not run out of memory
         sourcemap: process.env.CI !== 'true',
-        target: ['chrome100'],
+        target: BROWSER_TARGETS,
       },
       server: {
         watch: {

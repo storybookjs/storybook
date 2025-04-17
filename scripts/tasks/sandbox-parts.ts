@@ -49,7 +49,6 @@ export const essentialsAddons = [
   'actions',
   'backgrounds',
   'controls',
-  'docs',
   'highlight',
   'measure',
   'outline',
@@ -395,10 +394,10 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
   // This workaround is needed because Vitest seems to have issues in link mode
   // so the /setup-file and /global-setup files from the vitest addon won't work in portal protocol
   if (options.link) {
-    const vitestAddonPath = relative(sandboxDir, join(CODE_DIRECTORY, 'addons', 'test'));
+    const vitestAddonPath = relative(sandboxDir, join(CODE_DIRECTORY, 'addons', 'vitest'));
     packageJson.resolutions = {
       ...packageJson.resolutions,
-      '@storybook/addon-test': `file:${vitestAddonPath}`,
+      '@storybook/addon-vitest': `file:${vitestAddonPath}`,
     };
   }
 
@@ -410,7 +409,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
 
   const portableStoriesFrameworks = [
     '@storybook/nextjs',
-    '@storybook/experimental-nextjs-vite',
+    '@storybook/nextjs-vite',
     '@storybook/sveltekit',
     // TODO: add angular once we enable their sandboxes
   ];
@@ -440,10 +439,8 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
       import { setProjectAnnotations } from '${storybookPackage}'
       import * as rendererDocsAnnotations from '${template.expected.renderer}/dist/entry-preview-docs.mjs'
       import * as addonA11yAnnotations from '@storybook/addon-a11y/preview'
-      import * as addonTestAnnotations from '@storybook/addon-test/preview'
       import '../src/stories/components'
       import * as templateAnnotations from '../template-stories/core/preview'
-      import * as toolbarAnnotations from '../template-stories/addons/toolbars/preview'
       import * as projectAnnotations from './preview'
       ${isVue ? 'import * as vueAnnotations from "../src/stories/renderers/vue3/preview.js"' : ''}
   
@@ -451,8 +448,6 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
         ${isVue ? 'vueAnnotations,' : ''}
         rendererDocsAnnotations,
         templateAnnotations,
-        toolbarAnnotations,
-        addonTestAnnotations,
         addonA11yAnnotations,
         projectAnnotations,
       ])
@@ -473,7 +468,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
         import path from 'node:path';
         import { fileURLToPath } from 'node:url';
         import { defineWorkspace, defaultExclude } from "vitest/config";
-        import { storybookTest } from "@storybook/addon-test/vitest-plugin";
+        import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
 
         ${viteConfigFile ? `import viteConfig from './${viteConfigFile}';` : ''}
 
@@ -546,7 +541,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
         import path from 'node:path';
         import { fileURLToPath } from 'node:url';
         import { defineConfig, defaultExclude } from "vitest/config";
-        import { storybookTest } from "@storybook/addon-test/vitest-plugin";
+        import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
 
         ${vitestConfigFile && viteConfigFile ? `import viteConfig from './${viteConfigFile}';` : ''}
 
@@ -754,7 +749,7 @@ export const addStories: Task['run'] = async (
       disableDocs,
     });
 
-    await linkPackageStories(await workspacePath('addon test package', '@storybook/addon-test'), {
+    await linkPackageStories(await workspacePath('addon test package', '@storybook/addon-vitest'), {
       mainConfig,
       cwd,
       disableDocs,
@@ -865,9 +860,7 @@ export const extendMain: Task['run'] = async ({ template, sandboxDir, key }, { d
   // Simulate Storybook Lite
   if (disableDocs) {
     const addons = mainConfig.getFieldValue(['addons']);
-    const addonsNoDocs = addons.map((addon: any) =>
-      addon !== '@storybook/addon-essentials' ? addon : { name: addon, options: { docs: false } }
-    );
+    const addonsNoDocs = addons.filter((addon: any) => addon !== '@storybook/addon-docs');
     mainConfig.setFieldValue(['addons'], addonsNoDocs);
 
     // remove the docs options so that docs tags are ignored
@@ -898,12 +891,7 @@ export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
       { namespace: 'templateAnnotations' },
       '../template-stories/core/preview'
     );
-    previewConfig.setImport(
-      { namespace: 'toolbarAnnotations' },
-      '../template-stories/addons/toolbars/preview'
-    );
     previewConfig.appendNodeToArray(['addons'], t.identifier('templateAnnotations'));
-    previewConfig.appendNodeToArray(['addons'], t.identifier('toolbarAnnotations'));
   }
 
   if (template.expected.builder.includes('vite')) {

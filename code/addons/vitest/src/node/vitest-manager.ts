@@ -373,7 +373,7 @@ export class VitestManager {
 
     if (event === 'add') {
       const project = this.vitest?.projects.find(this.isStorybookProject.bind(this));
-      // This function not onlye test a file matches the test globs, but it also
+      // This function not only tests whether a file matches the test globs, but it also
       // adds the file to the project's internal testFilesList
       project?.matchesTestGlob(id);
     }

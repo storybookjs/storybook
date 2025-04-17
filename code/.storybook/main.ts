@@ -2,6 +2,7 @@ import { join } from 'node:path';
 
 import react from '@vitejs/plugin-react';
 
+import { BROWSER_TARGETS } from '../core/src/builder-manager';
 import { defineMain } from '../frameworks/react-vite/src/node';
 
 const componentsPath = join(__dirname, '../core/src/components/index.ts');
@@ -138,7 +139,7 @@ const config = defineMain({
       build: {
         // disable sourcemaps in CI to not run out of memory
         sourcemap: process.env.CI !== 'true',
-        target: ['chrome100'],
+        target: BROWSER_TARGETS,
       },
       server: {
         watch: {

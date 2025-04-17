@@ -75,7 +75,15 @@
     ]
   },
   "browserslist": [
-    "defaults"
+    "chrome >= 131",
+    "android >= 131",
+    "and_chr >= 131",
+    "edge >= 134",
+    "firefox >= 136",
+    "safari >= 18.3",
+    "ios_saf >= 18.3",
+    "opera >= 117",
+    "node >= 20"
   ],
   "resolutions": {
     "@playwright/test": "1.48.1",
@@ -165,6 +173,7 @@
     "esbuild-loader": "^4.3.0",
     "eslint": "8.57.1",
     "eslint-import-resolver-typescript": "^3.6.1",
+    "eslint-plugin-compat": "^6.0.2",
     "eslint-plugin-depend": "^0.11.0",
     "eslint-plugin-import": "^2.29.1",
     "eslint-plugin-local-rules": "portal:../scripts/eslint-plugin-local-rules",

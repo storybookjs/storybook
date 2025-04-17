@@ -1,16 +1,7 @@
 import '@testing-library/jest-dom/vitest';
-import * as vitest from 'vitest';
 import { expect, vi } from 'vitest';
 
-import { RuleTester } from '@typescript-eslint/rule-tester';
 import { dedent } from 'ts-dedent';
-
-// Set up the RuleTester for the Storybook eslint-plugin tests
-// https://typescript-eslint.io/packages/rule-tester/
-RuleTester.afterAll = vitest.afterAll;
-RuleTester.it = vitest.it;
-RuleTester.itOnly = vitest.it.only;
-RuleTester.describe = vitest.describe;
 
 const ignoreList = [
   (error: any) => error.message.includes('":nth-child" is potentially unsafe'),

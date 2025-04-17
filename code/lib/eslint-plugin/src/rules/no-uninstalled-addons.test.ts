@@ -177,7 +177,7 @@ ruleTester.run('no-uninstalled-addons', rule, {
           type: AST_NODE_TYPES.Literal,
           data: {
             addonName: '@storybook/not-installed-addon',
-            packageJsonPath: `eslint-plugin-storybook${sep}`,
+            packageJsonPath: `code${sep}`,
           },
         },
       ],
@@ -201,7 +201,7 @@ ruleTester.run('no-uninstalled-addons', rule, {
           type: AST_NODE_TYPES.Literal,
           data: {
             addonName: '@storybook/not-installed-addon',
-            packageJsonPath: `eslint-plugin-storybook${sep}`,
+            packageJsonPath: `code${sep}`,
           },
         },
       ],
@@ -224,7 +224,7 @@ ruleTester.run('no-uninstalled-addons', rule, {
           type: AST_NODE_TYPES.Literal,
           data: {
             addonName: '@storybook/addon-esentials',
-            packageJsonPath: `eslint-plugin-storybook${sep}`,
+            packageJsonPath: `code${sep}`,
           },
         },
       ],
@@ -245,7 +245,7 @@ ruleTester.run('no-uninstalled-addons', rule, {
           type: AST_NODE_TYPES.Literal,
           data: {
             addonName: '@storybook/adon-essentials',
-            packageJsonPath: `eslint-plugin-storybook${sep}`,
+            packageJsonPath: `code${sep}`,
           },
         },
       ],
@@ -268,7 +268,7 @@ ruleTester.run('no-uninstalled-addons', rule, {
           type: AST_NODE_TYPES.Literal,
           data: {
             addonName: 'addon-withut-the-prefix',
-            packageJsonPath: `eslint-plugin-storybook${sep}`,
+            packageJsonPath: `code${sep}`,
           },
         },
         {
@@ -276,7 +276,7 @@ ruleTester.run('no-uninstalled-addons', rule, {
           type: AST_NODE_TYPES.Literal,
           data: {
             addonName: '@storybook/addon-esentials',
-            packageJsonPath: `eslint-plugin-storybook${sep}`,
+            packageJsonPath: `code${sep}`,
           },
         },
       ],
@@ -299,7 +299,7 @@ ruleTester.run('no-uninstalled-addons', rule, {
           type: AST_NODE_TYPES.Literal,
           data: {
             addonName: 'addon-withut-the-prefix',
-            packageJsonPath: `eslint-plugin-storybook${sep}`,
+            packageJsonPath: `code${sep}`,
           },
         },
         {
@@ -307,7 +307,7 @@ ruleTester.run('no-uninstalled-addons', rule, {
           type: AST_NODE_TYPES.Literal,
           data: {
             addonName: '@storybook/addon-esentials',
-            packageJsonPath: `eslint-plugin-storybook${sep}`,
+            packageJsonPath: `code${sep}`,
           },
         },
       ],
@@ -330,7 +330,7 @@ ruleTester.run('no-uninstalled-addons', rule, {
           type: AST_NODE_TYPES.Literal,
           data: {
             addonName: 'addon-withut-the-prefix',
-            packageJsonPath: `eslint-plugin-storybook${sep}`,
+            packageJsonPath: `code${sep}`,
           },
         },
         {
@@ -338,7 +338,7 @@ ruleTester.run('no-uninstalled-addons', rule, {
           type: AST_NODE_TYPES.Literal,
           data: {
             addonName: '@storybook/addon-esentials',
-            packageJsonPath: `eslint-plugin-storybook${sep}`,
+            packageJsonPath: `code${sep}`,
           },
         },
       ],
@@ -362,7 +362,7 @@ ruleTester.run('no-uninstalled-addons', rule, {
           type: AST_NODE_TYPES.Literal,
           data: {
             addonName: 'addon-withut-the-prefix',
-            packageJsonPath: `eslint-plugin-storybook${sep}`,
+            packageJsonPath: `code${sep}`,
           },
         },
         {
@@ -370,7 +370,7 @@ ruleTester.run('no-uninstalled-addons', rule, {
           type: AST_NODE_TYPES.Literal,
           data: {
             addonName: '@storybook/addon-esentials',
-            packageJsonPath: `eslint-plugin-storybook${sep}`,
+            packageJsonPath: `code${sep}`,
           },
         },
       ],
@@ -392,7 +392,7 @@ ruleTester.run('no-uninstalled-addons', rule, {
           type: AST_NODE_TYPES.Literal,
           data: {
             addonName: 'addon-withut-the-prefix',
-            packageJsonPath: `eslint-plugin-storybook${sep}`,
+            packageJsonPath: `code${sep}`,
           },
         },
         {
@@ -400,7 +400,7 @@ ruleTester.run('no-uninstalled-addons', rule, {
           type: AST_NODE_TYPES.Literal,
           data: {
             addonName: '@storybook/addon-esentials',
-            packageJsonPath: `eslint-plugin-storybook${sep}`,
+            packageJsonPath: `code${sep}`,
           },
         },
       ],

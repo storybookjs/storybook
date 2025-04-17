@@ -2,7 +2,8 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
-    include: ['**/tests/**/*.test.ts'],
+    name: 'eslint-plugin-storybook',
+    include: ['**/*.test.ts'],
     environment: 'node',
     globals: true,
     coverage: {

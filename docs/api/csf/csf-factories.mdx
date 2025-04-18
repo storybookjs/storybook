@@ -33,7 +33,7 @@ The CSF Factories API is composed of four main functions to help you write stori
 With CSF Factories, your [main Storybook config](../main-config/main-config.mdx) is specified by the `defineMain` function. This function is type-safe and will automatically infer types for your project.
 
 ```ts title=".storybook/main.js|ts"
-// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, experimental-nextjs-vite)
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import { defineMain } from '@storybook/your-framework/node';
 
 export default defineMain({
@@ -52,7 +52,7 @@ Importantly, by specifying addons here, their types will be available throughout
 You will import the result of this function, `preview`, in your story files to define the component meta.
 
 ```ts title=".storybook/preview.js|ts"
-// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, experimental-nextjs-vite)
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import { definePreview } from '@storybook/your-framework';
 import addonA11y from '@storybook/addon-a11y';
 
@@ -145,7 +145,7 @@ To be able to consistently import the preview file from any location in your pro
 Update your `.storybook/main.js|ts` file to use the new [`defineMain`](#definemain) function.
 
 ```diff title=".storybook/main.js|ts"
-// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, experimental-nextjs-vite)
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 + import { defineMain } from '@storybook/your-framework/node';
 - import { StorybookConfig } from '@storybook/your-framework';
 
@@ -177,7 +177,7 @@ If an addon provides annotations (i.e. it distributes a `./preview` export), it 
 </details>
 
 ```diff title=".storybook/preview.js|ts"
-// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, experimental-nextjs-vite)
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 + import { definePreview } from '@storybook/your-framework';
 - import { Preview } from '@storybook/your-renderer';
 // 👇 Import the addons you are using

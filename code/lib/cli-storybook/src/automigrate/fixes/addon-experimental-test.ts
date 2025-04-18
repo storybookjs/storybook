@@ -11,18 +11,18 @@ interface AddonExperimentalTestOptions {
 }
 
 /**
- * This fix migrates users from @storybook/experimental-addon-test to @storybook/addon-test
+ * This fix migrates users from @storybook/experimental-addon-test to @storybook/addon-vitest
  *
  * It will:
  *
- * - Replace all instances of @storybook/experimental-addon-test with @storybook/addon-test in all
+ * - Replace all instances of @storybook/experimental-addon-test with @storybook/addon-vitest in all
  *   project files
  * - Update package.json dependencies if needed
  */
 export const addonExperimentalTest: Fix<AddonExperimentalTestOptions> = {
   id: 'addon-experimental-test',
 
-  versionRange: ['*', '*'],
+  versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
 
   promptType: 'auto',
 
@@ -76,7 +76,7 @@ export const addonExperimentalTest: Fix<AddonExperimentalTestOptions> = {
     return dedent`
       We've detected you're using ${picocolors.cyan('@storybook/experimental-addon-test')}, which is now available as a stable addon.
       
-      We can automatically migrate your project to use ${picocolors.cyan('@storybook/addon-test')} instead.
+      We can automatically migrate your project to use ${picocolors.cyan('@storybook/addon-vitest')} instead.
       
       This will update ${fileCount} file(s) and your package.json:
       ${fileList}${hasMoreFiles ? `\n  ... and ${fileCount - 5} more files` : ''}
@@ -89,7 +89,7 @@ export const addonExperimentalTest: Fix<AddonExperimentalTestOptions> = {
       const content = readFileSync(file, 'utf-8');
       const updatedContent = content.replace(
         /@storybook\/experimental-addon-test/g,
-        '@storybook/addon-test'
+        '@storybook/addon-vitest'
       );
 
       if (!dryRun) {
@@ -109,13 +109,13 @@ export const addonExperimentalTest: Fix<AddonExperimentalTestOptions> = {
       await packageManager.removeDependencies({}, ['@storybook/experimental-addon-test']);
       await packageManager.addDependencies(
         { installAsDevDependencies: isExperimentalAddonTestDevDependency },
-        [`@storybook/addon-test@${storybookVersion}`]
+        [`@storybook/addon-vitest@${storybookVersion}`]
       );
     }
 
     // Log success message instead of returning it
     logger.info(dedent`
-      ✅ Successfully migrated from ${picocolors.cyan('@storybook/experimental-addon-test')} to ${picocolors.cyan('@storybook/addon-test')}
+      ✅ Successfully migrated from ${picocolors.cyan('@storybook/experimental-addon-test')} to ${picocolors.cyan('@storybook/addon-vitest')}
       ✅ Updated package.json dependency
       ✅ Updated ${matchingFiles.length} file(s)
     `);

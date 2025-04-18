@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "9.0.0-alpha.8",
+  "version": "9.0.0-alpha.20",
   "description": "Storybook framework-agnostic API",
   "keywords": [
     "storybook"
@@ -22,9 +22,9 @@
   "sideEffects": false,
   "type": "module",
   "imports": {
-    "#manager-status-store": {
-      "storybook": "./src/manager/status-store.mock.ts",
-      "default": "./src/manager/status-store.ts"
+    "#manager-stores": {
+      "storybook": "./src/manager/manager-stores.mock.ts",
+      "default": "./src/manager/manager-stores.ts"
     },
     "#utils": {
       "storybook": "./template/stories/utils.mock.ts",
@@ -83,6 +83,86 @@
       "import": "./dist/core-server/presets/common-override-preset.js",
       "require": "./dist/core-server/presets/common-override-preset.cjs"
     },
+    "./internal/backgrounds": {
+      "types": "./dist/backgrounds/index.d.ts",
+      "import": "./dist/backgrounds/index.js",
+      "require": "./dist/backgrounds/index.cjs"
+    },
+    "./backgrounds": {
+      "types": "./dist/backgrounds/index.d.ts",
+      "import": "./dist/backgrounds/index.js",
+      "require": "./dist/backgrounds/index.cjs"
+    },
+    "./internal/backgrounds/preview": {
+      "types": "./dist/backgrounds/preview.d.ts",
+      "import": "./dist/backgrounds/preview.js",
+      "require": "./dist/backgrounds/preview.cjs"
+    },
+    "./backgrounds/preview": {
+      "types": "./dist/backgrounds/preview.d.ts",
+      "import": "./dist/backgrounds/preview.js",
+      "require": "./dist/backgrounds/preview.cjs"
+    },
+    "./internal/measure": {
+      "types": "./dist/measure/index.d.ts",
+      "import": "./dist/measure/index.js",
+      "require": "./dist/measure/index.cjs"
+    },
+    "./measure": {
+      "types": "./dist/measure/index.d.ts",
+      "import": "./dist/measure/index.js",
+      "require": "./dist/measure/index.cjs"
+    },
+    "./internal/measure/preview": {
+      "types": "./dist/measure/preview.d.ts",
+      "import": "./dist/measure/preview.js",
+      "require": "./dist/measure/preview.cjs"
+    },
+    "./measure/preview": {
+      "types": "./dist/measure/preview.d.ts",
+      "import": "./dist/measure/preview.js",
+      "require": "./dist/measure/preview.cjs"
+    },
+    "./internal/outline": {
+      "types": "./dist/outline/index.d.ts",
+      "import": "./dist/outline/index.js",
+      "require": "./dist/outline/index.cjs"
+    },
+    "./outline": {
+      "types": "./dist/outline/index.d.ts",
+      "import": "./dist/outline/index.js",
+      "require": "./dist/outline/index.cjs"
+    },
+    "./internal/outline/preview": {
+      "types": "./dist/outline/preview.d.ts",
+      "import": "./dist/outline/preview.js",
+      "require": "./dist/outline/preview.cjs"
+    },
+    "./outline/preview": {
+      "types": "./dist/outline/preview.d.ts",
+      "import": "./dist/outline/preview.js",
+      "require": "./dist/outline/preview.cjs"
+    },
+    "./internal/highlight": {
+      "types": "./dist/highlight/index.d.ts",
+      "import": "./dist/highlight/index.js",
+      "require": "./dist/highlight/index.cjs"
+    },
+    "./highlight": {
+      "types": "./dist/highlight/index.d.ts",
+      "import": "./dist/highlight/index.js",
+      "require": "./dist/highlight/index.cjs"
+    },
+    "./internal/highlight/preview": {
+      "types": "./dist/highlight/preview.d.ts",
+      "import": "./dist/highlight/preview.js",
+      "require": "./dist/highlight/preview.cjs"
+    },
+    "./highlight/preview": {
+      "types": "./dist/highlight/preview.d.ts",
+      "import": "./dist/highlight/preview.js",
+      "require": "./dist/highlight/preview.cjs"
+    },
     "./internal/actions": {
       "types": "./dist/actions/index.d.ts",
       "import": "./dist/actions/index.js",
@@ -103,12 +183,6 @@
       "import": "./dist/actions/preview.js",
       "require": "./dist/actions/preview.cjs"
     },
-    "./internal/actions/manager": {
-      "import": "./dist/actions/manager.js"
-    },
-    "./actions/manager": {
-      "import": "./dist/actions/manager.js"
-    },
     "./internal/actions/decorator": {
       "types": "./dist/actions/decorator.d.ts",
       "import": "./dist/actions/decorator.js"
@@ -116,6 +190,50 @@
     "./actions/decorator": {
       "types": "./dist/actions/decorator.d.ts",
       "import": "./dist/actions/decorator.js"
+    },
+    "./internal/component-testing": {
+      "types": "./dist/component-testing/index.d.ts",
+      "import": "./dist/component-testing/index.js",
+      "require": "./dist/component-testing/index.cjs"
+    },
+    "./internal/component-testing/preview": {
+      "types": "./dist/component-testing/preview.d.ts",
+      "import": "./dist/component-testing/preview.js",
+      "require": "./dist/component-testing/preview.cjs"
+    },
+    "./internal/viewport": {
+      "types": "./dist/viewport/index.d.ts",
+      "import": "./dist/viewport/index.js",
+      "require": "./dist/viewport/index.cjs"
+    },
+    "./viewport": {
+      "types": "./dist/viewport/index.d.ts",
+      "import": "./dist/viewport/index.js",
+      "require": "./dist/viewport/index.cjs"
+    },
+    "./internal/viewport/preview": {
+      "types": "./dist/viewport/preview.d.ts",
+      "import": "./dist/viewport/preview.js",
+      "require": "./dist/viewport/preview.cjs"
+    },
+    "./viewport/preview": {
+      "types": "./dist/viewport/preview.d.ts",
+      "import": "./dist/viewport/preview.js",
+      "require": "./dist/viewport/preview.cjs"
+    },
+    "./internal/controls": {
+      "types": "./dist/controls/index.d.ts",
+      "import": "./dist/controls/index.js",
+      "require": "./dist/controls/index.cjs"
+    },
+    "./internal/controls/preview": {
+      "types": "./dist/controls/preview.d.ts",
+      "import": "./dist/controls/preview.js",
+      "require": "./dist/controls/preview.cjs"
+    },
+    "./internal/controls/decorator": {
+      "types": "./dist/controls/decorator.d.ts",
+      "import": "./dist/controls/decorator.js"
     },
     "./internal/core-events": {
       "types": "./dist/core-events/index.d.ts",
@@ -312,6 +430,54 @@
       "internal/core-server": [
         "./dist/core-server/index.d.ts"
       ],
+      "internal/backgrounds": [
+        "./dist/backgrounds/index.d.ts"
+      ],
+      "backgrounds": [
+        "./dist/backgrounds/index.d.ts"
+      ],
+      "internal/backgrounds/preview": [
+        "./dist/backgrounds/preview.d.ts"
+      ],
+      "backgrounds/preview": [
+        "./dist/backgrounds/preview.d.ts"
+      ],
+      "internal/measure": [
+        "./dist/measure/index.d.ts"
+      ],
+      "measure": [
+        "./dist/measure/index.d.ts"
+      ],
+      "internal/measure/preview": [
+        "./dist/measure/preview.d.ts"
+      ],
+      "measure/preview": [
+        "./dist/measure/preview.d.ts"
+      ],
+      "internal/outline": [
+        "./dist/outline/index.d.ts"
+      ],
+      "outline": [
+        "./dist/outline/index.d.ts"
+      ],
+      "internal/outline/preview": [
+        "./dist/outline/preview.d.ts"
+      ],
+      "outline/preview": [
+        "./dist/outline/preview.d.ts"
+      ],
+      "internal/highlight": [
+        "./dist/highlight/index.d.ts"
+      ],
+      "highlight": [
+        "./dist/highlight/index.d.ts"
+      ],
+      "internal/highlight/preview": [
+        "./dist/highlight/preview.d.ts"
+      ],
+      "highlight/preview": [
+        "./dist/highlight/preview.d.ts"
+      ],
       "internal/actions": [
         "./dist/actions/index.d.ts"
       ],
@@ -329,6 +495,33 @@
       ],
       "actions/decorator": [
         "./dist/actions/decorator.d.ts"
+      ],
+      "internal/component-testing": [
+        "./dist/component-testing/index.d.ts"
+      ],
+      "internal/component-testing/preview": [
+        "./dist/component-testing/preview.d.ts"
+      ],
+      "internal/viewport": [
+        "./dist/viewport/index.d.ts"
+      ],
+      "viewport": [
+        "./dist/viewport/index.d.ts"
+      ],
+      "internal/viewport/preview": [
+        "./dist/viewport/preview.d.ts"
+      ],
+      "viewport/preview": [
+        "./dist/viewport/preview.d.ts"
+      ],
+      "internal/controls": [
+        "./dist/controls/index.d.ts"
+      ],
+      "internal/controls/preview": [
+        "./dist/controls/preview.d.ts"
+      ],
+      "internal/controls/decorator": [
+        "./dist/controls/decorator.d.ts"
       ],
       "internal/core-events": [
         "./dist/core-events/index.d.ts"
@@ -450,7 +643,6 @@
     "better-opn": "^3.0.2",
     "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0",
     "esbuild-register": "^3.5.0",
-    "jsdoc-type-pratt-parser": "^4.0.0",
     "polished": "^4.2.2",
     "recast": "^0.23.5",
     "semver": "^7.6.2",
@@ -465,6 +657,7 @@
     "@babel/preset-react": "^7.26.3",
     "@babel/traverse": "^7.26.9",
     "@babel/types": "^7.26.8",
+    "@devtools-ds/object-inspector": "^1.1.2",
     "@discoveryjs/json-ext": "^0.5.3",
     "@emotion/cache": "^11.14.0",
     "@emotion/is-prop-valid": "^1.3.1",
@@ -538,6 +731,7 @@
     "globby": "^14.0.1",
     "jiti": "^1.21.6",
     "js-yaml": "^4.1.0",
+    "jsdoc-type-pratt-parser": "^4.0.0",
     "lazy-universal-dotenv": "^4.0.0",
     "leven": "^4.0.0",
     "markdown-to-jsx": "^7.7.2",
@@ -572,8 +766,9 @@
     "slash": "^5.0.0",
     "source-map": "^0.7.4",
     "store2": "^2.14.2",
+    "strip-ansi": "^7.1.0",
     "strip-json-comments": "^5.0.1",
-    "telejson": "^7.2.0",
+    "telejson": "8.0.0",
     "tiny-invariant": "^1.3.1",
     "tinyspy": "^3.0.2",
     "ts-dedent": "^2.0.0",

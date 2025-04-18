@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react",
-  "version": "9.0.0-alpha.8",
+  "version": "9.0.0-alpha.20",
   "description": "Storybook React renderer",
   "keywords": [
     "storybook"
@@ -106,7 +106,7 @@
     }
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   },
   "publishConfig": {
     "access": "public"

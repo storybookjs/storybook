@@ -474,7 +474,7 @@ jobs:
       parallelism:
         type: integer
     executor:
-      class: large
+      class: xlarge
       name: sb_playwright
     parallelism: << parameters.parallelism >>
     steps:
@@ -835,10 +835,10 @@ workflows:
       - knip:
           requires:
             - build
-# TODO: don't forget to reenable this
-#      - bench-packages:
-#          requires:
-#            - build
+      # TODO: don't forget to reenable this
+      #      - bench-packages:
+      #          requires:
+      #            - build
       - check
       - unit-tests:
           requires:
@@ -856,15 +856,15 @@ workflows:
           requires:
             - unit-tests
       - create-sandboxes:
-          parallelism: 13
+          parallelism: 14
           requires:
             - build
       - chromatic-sandboxes:
-          parallelism: 10
+          parallelism: 11
           requires:
             - create-sandboxes
       - e2e-production:
-          parallelism: 8
+          parallelism: 9
           requires:
             - create-sandboxes
       - e2e-dev:
@@ -872,18 +872,18 @@ workflows:
           requires:
             - create-sandboxes
       - test-runner-production:
-          parallelism: 8
+          parallelism: 9
           requires:
             - create-sandboxes
       - vitest-integration:
-          parallelism: 4
+          parallelism: 5
           requires:
             - create-sandboxes
-# TODO: don't forget to reenable this
-#      - bench-sandboxes:
-#          parallelism: 5
-#          requires:
-#            - create-sandboxes
+      # TODO: don't forget to reenable this
+      #      - bench-sandboxes:
+      #          parallelism: 5
+      #          requires:
+      #            - create-sandboxes
       - test-ui-testing-module:
           requires:
             - build
@@ -912,10 +912,10 @@ workflows:
       - knip:
           requires:
             - build
-# TODO: don't forget to reenable this
-#      - bench-packages:
-#          requires:
-#            - build
+      # TODO: don't forget to reenable this
+      #      - bench-packages:
+      #          requires:
+      #            - build
       - check
       - unit-tests:
           requires:
@@ -933,15 +933,15 @@ workflows:
           requires:
             - unit-tests
       - create-sandboxes:
-          parallelism: 19
+          parallelism: 18
           requires:
             - build
       - chromatic-sandboxes:
-          parallelism: 16
+          parallelism: 15
           requires:
             - create-sandboxes
       - e2e-production:
-          parallelism: 14
+          parallelism: 13
           requires:
             - create-sandboxes
       - e2e-dev:
@@ -949,11 +949,11 @@ workflows:
           requires:
             - create-sandboxes
       - test-runner-production:
-          parallelism: 14
+          parallelism: 13
           requires:
             - create-sandboxes
       - vitest-integration:
-          parallelism: 4
+          parallelism: 5
           requires:
             - create-sandboxes
       - test-portable-stories:
@@ -968,16 +968,16 @@ workflows:
       - test-init-features:
           requires:
             - build
-# TODO: don't forget to reenable this
-#      - bench-sandboxes:
-#          parallelism: 5
-#          requires:
-#            - create-sandboxes
-      # TODO: reenable once we find out the source of flakyness
-      # - test-runner-dev:
-      #     parallelism: 4
-      #     requires:
-      #       - create-sandboxes
+  # TODO: don't forget to reenable this
+  #      - bench-sandboxes:
+  #          parallelism: 5
+  #          requires:
+  #            - create-sandboxes
+  # TODO: reenable once we find out the source of flakyness
+  # - test-runner-dev:
+  #     parallelism: 4
+  #     requires:
+  #       - create-sandboxes
   daily:
     when:
       equal: [daily, << pipeline.parameters.workflow >>]
@@ -990,10 +990,10 @@ workflows:
       - knip:
           requires:
             - build
-# TODO: don't forget to reenable this
-#      - bench-packages:
-#          requires:
-#            - build
+      # TODO: don't forget to reenable this
+      #      - bench-packages:
+      #          requires:
+      #            - build
       - check
       - unit-tests:
           requires:
@@ -1008,18 +1008,18 @@ workflows:
           requires:
             - build
       - create-sandboxes:
-          parallelism: 34
+          parallelism: 31
           requires:
             - build
       # - smoke-test-sandboxes: # disabled for now
       #     requires:
       #       - create-sandboxes
       - chromatic-sandboxes:
-          parallelism: 31
+          parallelism: 28
           requires:
             - create-sandboxes
       - e2e-production:
-          parallelism: 29
+          parallelism: 26
           requires:
             - create-sandboxes
       - e2e-dev:
@@ -1027,7 +1027,7 @@ workflows:
           requires:
             - create-sandboxes
       - test-runner-production:
-          parallelism: 29
+          parallelism: 26
           requires:
             - create-sandboxes
       - vitest-integration:
@@ -1070,8 +1070,8 @@ workflows:
 #          requires:
 #            - create-sandboxes
 
-      # TODO: reenable once we find out the source of flakyness
-      # - test-runner-dev:
-      #     parallelism: 4
-      #     requires:
-      #       - create-sandboxes
+# TODO: reenable once we find out the source of flakyness
+# - test-runner-dev:
+#     parallelism: 4
+#     requires:
+#       - create-sandboxes

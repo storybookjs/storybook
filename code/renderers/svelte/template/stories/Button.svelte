@@ -1,44 +1,14 @@
 <script>
-  import { createEventDispatcher } from 'svelte';
-  /**
-   * Is this the principal call to action on the page?
-   */
-  export let primary = false;
+  const Button = globalThis.Components?.Button;
 
-  /**
-   * What background color to use
-   */
-  export let backgroundColor = undefined;
+  const { text = 'You clicked' } = $props();
 
-  /**
-   * How large should the button be?
-   */
-  export let size = 'medium';
-
-  /**
-   * Button contents
-   */
-  export let label = '';
-
-  $: mode = primary ? 'storybook-button--primary' : 'storybook-button--secondary';
-
-  $: style = backgroundColor ? `background-color: ${backgroundColor}` : '';
-
-  const dispatch = createEventDispatcher();
-
-  /**
-   * Optional click handler
-   */
-  export let onClick = (event) => {
-    dispatch('click', event);
-  };
+  let count = $state(0);
 </script>
 
-<button
-  type="button"
-  class={['storybook-button', `storybook-button--${size}`, mode].join(' ')}
-  {style}
-  on:click={onClick}
->
-  {label}
-</button>
+<Button onClick={() => (count += 1)} label="{text}: {count}" />
+
+<p>A little text to show this is a view.</p>
+<p>If we need to test components in a Svelte environment, for instance to test slot behaviour,</p>
+<p>then wrapping the component up in a view</p>
+<p>made just for the story is the simplest way to achieve this.</p>

@@ -297,13 +297,6 @@ type CoreCommon_StorybookRefs = Record<
 export type DocsOptions = {
   /** What should we call the generated docs entries? */
   defaultName?: string;
-  /**
-   * Should we generate a docs entry per CSF file? Set to 'tag' (the default) to generate an entry
-   * for every CSF file with the 'autodocs' tag.
-   *
-   * @deprecated Use `tags: ['autodocs']` in `.storybook/preview.js` instead
-   */
-  autodocs?: boolean | 'tag';
   /** Only show doc entries in the side bar (usually set with the `--docs` CLI flag) */
   docsMode?: boolean;
 };
@@ -379,10 +372,6 @@ export interface StorybookConfigRaw {
     /** Enable asynchronous component rendering in React renderer */
     experimentalRSC?: boolean;
 
-    /** Use globals & globalTypes for configuring the viewport addon */
-    viewportStoryGlobals?: boolean;
-    /** Use globals & globalTypes for configuring the backgrounds addon */
-    backgroundsStoryGlobals?: boolean;
     /** Set NODE_ENV to development in built Storybooks for better testability and debuggability */
     developmentModeForBuild?: boolean;
   };

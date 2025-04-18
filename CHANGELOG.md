@@ -1,3 +1,34 @@
+## 8.6.12
+
+- CLI: Only install Visual Test Addon if test feature is selected - [#30966](https://github.com/storybookjs/storybook/pull/30966), thanks @ghengeveld!
+- Core: Fix telemetry error on Storybook UI - [#30953](https://github.com/storybookjs/storybook/pull/30953), thanks @yannbf!
+- Ember: Fix `ember-template-compiler` import for ember 6+ - [#30682](https://github.com/storybookjs/storybook/pull/30682), thanks @leoeuclids!
+- Next: Upgrade vite-plugin-storybook-nextjs for Next v14 compatibility - [#30997](https://github.com/storybookjs/storybook/pull/30997), thanks @kasperpeulen!
+- Svelte: Exclude `node_modules` from docgen - [#30981](https://github.com/storybookjs/storybook/pull/30981), thanks @JReinhold!
+
+## 8.6.11
+
+- Angular: Fix zone.js support for Angular libraries - [#30941](https://github.com/storybookjs/storybook/pull/30941), thanks @valentinpalkovic!
+
+## 8.6.10
+
+- Addon-docs: Fix non-string handling in Stories block - [#30913](https://github.com/storybookjs/storybook/pull/30913), thanks @JamesIves!
+- Nextjs: Fix styled-jsx optimize vite warnings - [#30932](https://github.com/storybookjs/storybook/pull/30932), thanks @kasperpeulen!
+- React: Fix actImplementation is not a function - [#30929](https://github.com/storybookjs/storybook/pull/30929), thanks @kasperpeulen!
+
+## 8.6.9
+
+- Next: Fix react aliases in next vite plugin - [#30914](https://github.com/storybookjs/storybook/pull/30914), thanks @kasperpeulen!
+
+## 8.6.8
+
+- Angular: Export all files in Angular package.json - [#30849](https://github.com/storybookjs/storybook/pull/30849), thanks @kasperpeulen!
+- CLI: Don't add packageManager entry to package.json automatically - [#30855](https://github.com/storybookjs/storybook/pull/30855), thanks @kasperpeulen!
+- React: Allow portable stories to be used in SSR - [#30847](https://github.com/storybookjs/storybook/pull/30847), thanks @kasperpeulen!
+- Svelte: Adjust Svelte typings to include Svelte 5 function components - [#30852](https://github.com/storybookjs/storybook/pull/30852), thanks @dummdidumm!
+- Telemetry: Make sure that telemetry doesn't fail on init - [#30857](https://github.com/storybookjs/storybook/pull/30857), thanks @kasperpeulen!
+- Vite: Update HMR filter to target specific story file types - [#30845](https://github.com/storybookjs/storybook/pull/30845), thanks @kasperpeulen!
+
 ## 8.6.7
 
 - React-Native-Web: Fix errors in CLI template stories - [#30821](https://github.com/storybookjs/storybook/pull/30821), thanks @dannyhw!

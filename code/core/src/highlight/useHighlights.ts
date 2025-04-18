@@ -108,18 +108,12 @@ export const useHighlights = ({
 
   // Update highlight boxes when elements are resized or scrollable elements are scrolled
   elements.subscribe((value) => {
-    const storybookRoot = document.getElementById(storybookRootId)!;
-    if (!storybookRoot) {
-      return;
-    }
-
     const updateBoxes = () => requestAnimationFrame(() => boxes.set(mapBoxes(value)));
-
     const observer = new ResizeObserver(updateBoxes);
-    observer.observe(storybookRoot);
+    observer.observe(document.body);
     Array.from(value.keys()).forEach((element) => observer.observe(element));
 
-    const scrollers = Array.from(storybookRoot.querySelectorAll('*')).filter((el) => {
+    const scrollers = Array.from(document.body.querySelectorAll('*')).filter((el) => {
       const { overflow, overflowX, overflowY } = window.getComputedStyle(el);
       return ['auto', 'scroll'].some((o) => [overflow, overflowX, overflowY].includes(o));
     });

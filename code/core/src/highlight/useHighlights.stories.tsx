@@ -150,9 +150,9 @@ const channel = mockChannel();
 channel.on('click', fn().mockName('click'));
 
 const meta = preview.meta({
-  render: () => {
+  render: (args, { parameters }) => {
     useEffect(() => useHighlights({ channel, menuId: 'menu-id', rootId: 'root-id' }), []);
-    return <></>;
+    return <Content dynamic={parameters.dynamic} withPopover={parameters.withPopover} />;
   },
   args: {
     channel,
@@ -163,14 +163,6 @@ const meta = preview.meta({
       disable: true,
     },
   },
-  decorators: [
-    (Story, { parameters }) => (
-      <>
-        <Content dynamic={parameters.dynamic} withPopover={parameters.withPopover} />
-        <Story />,
-      </>
-    ),
-  ],
 });
 
 const highlight = (
@@ -356,4 +348,17 @@ export const Toggling = meta.story({
       </Toggler>
     ),
   ],
+});
+
+export const LayoutCentered = meta.story({
+  parameters: {
+    layout: 'centered',
+  },
+  play: async () => {
+    highlight(['div']);
+  },
+  render: () => {
+    useEffect(() => useHighlights({ channel, menuId: 'menu-id', rootId: 'root-id' }), []);
+    return <div style={{ padding: 10 }}>Content</div>;
+  },
 });

@@ -24,9 +24,9 @@ test.describe('addon-a11y', () => {
       .locator('[data-highlight-dimensions="w350h150"]');
 
     await expect(highlightElement).toBeVisible();
-    expect(await highlightElement.evaluate((el) => getComputedStyle(el))).toMatchObject({
-      backgroundColor: 'color(srgb 1 0.266667 0 / 0.4)',
-    });
+    expect(await highlightElement.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(
+      'color(srgb 1 0.266667 0 / 0.4)'
+    );
 
     await page.getByRole('button', { name: 'Hide highlights' }).click();
     await expect(highlightElement).toBeHidden();

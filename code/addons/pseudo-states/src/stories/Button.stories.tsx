@@ -1,8 +1,5 @@
 import React, { type ComponentProps } from 'react';
 
-import { FORCE_REMOUNT } from 'storybook/internal/core-events';
-import { useChannel, useStoryContext } from 'storybook/internal/preview-api';
-
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { Button } from './Button';
@@ -127,23 +124,21 @@ export const DirectSelectorParentDoesNotAffectDescendants: Story = {
 
 export const DynamicStyles: Story = {
   render: (args, context) => {
-    const emit = useChannel({});
-    const { id: storyId } = useStoryContext();
-
-    setTimeout(() => {
-      // @ts-expect-error We're adding this nonstandard property below
-      // eslint-disable-next-line no-underscore-dangle
-      if (window.__dynamicRuleInjected) {
-        return;
-      }
-      // @ts-expect-error We're adding this nonstandard property
-      // eslint-disable-next-line no-underscore-dangle
-      window.__dynamicRuleInjected = true;
-      const sheet = Array.from(document.styleSheets).at(-1);
-      sheet?.insertRule('.dynamic.button:hover { background-color: tomato }');
-      emit(FORCE_REMOUNT, { storyId });
-    }, 100);
-
     return All.render!({ className: 'dynamic' }, context);
+  },
+  play: async ({ id: storyId }) => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        // @ts-expect-error We're adding this nonstandard property
+        if (globalThis[`__dynamicRuleInjected_${storyId}`]) {
+          return;
+        }
+        // @ts-expect-error We're adding this nonstandard property
+        globalThis[`__dynamicRuleInjected_${storyId}`] = true;
+        const sheet = Array.from(document.styleSheets).at(-1);
+        sheet?.insertRule('.dynamic.button:hover { background-color: tomato }');
+        resolve();
+      }, 100);
+    });
   },
 };

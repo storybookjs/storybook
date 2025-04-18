@@ -1,5 +1,5 @@
 ```js filename="my-component/component.stories.js|jsx" renderer="react" language="js"
-import { useArgs } from '@storybook/preview-api';
+import { useArgs } from 'storybook/preview-api';
 import { Checkbox } from './checkbox';
 
 export default {
@@ -30,7 +30,7 @@ export const Example = {
 
 ```ts filename="my-component/component.stories.ts|tsx" renderer="react" language="ts-4-9"
 import { StoryObj, Meta } from '@storybook/react';
-import { useArgs } from '@storybook/preview-api';
+import { useArgs } from 'storybook/preview-api';
 import { Checkbox } from './checkbox';
 
 const meta = {
@@ -64,7 +64,7 @@ export const Example = {
 
 ```ts filename="my-component/component.stories.ts|tsx" renderer="react" language="ts"
 import { StoryObj, Meta } from '@storybook/react';
-import { useArgs } from '@storybook/preview-api';
+import { useArgs } from 'storybook/preview-api';
 import { Checkbox } from './checkbox';
 
 const meta: Meta<typeof Checkbox> = {

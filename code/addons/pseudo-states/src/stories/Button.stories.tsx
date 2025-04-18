@@ -132,12 +132,10 @@ export const DynamicStyles: Story = {
 
     setTimeout(() => {
       // @ts-expect-error We're adding this nonstandard property below
-      // eslint-disable-next-line no-underscore-dangle
       if (window.__dynamicRuleInjected) {
         return;
       }
       // @ts-expect-error We're adding this nonstandard property
-      // eslint-disable-next-line no-underscore-dangle
       window.__dynamicRuleInjected = true;
       const sheet = Array.from(document.styleSheets).at(-1);
       sheet?.insertRule('.dynamic.button:hover { background-color: tomato }');

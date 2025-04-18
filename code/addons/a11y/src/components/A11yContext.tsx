@@ -2,6 +2,7 @@ import type { FC, PropsWithChildren } from 'react';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import {
+  STORY_CHANGED,
   STORY_FINISHED,
   STORY_RENDER_PHASE_CHANGED,
   type StoryFinishedPayload,
@@ -250,6 +251,7 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
       [EVENTS.RESULT]: handleResult,
       [EVENTS.ERROR]: handleError,
       [EVENTS.SELECT]: handleSelect,
+      [STORY_CHANGED]: () => setSelectedItems(new Map()),
       [STORY_RENDER_PHASE_CHANGED]: handleReset,
       [STORY_FINISHED]: handleReport,
     },

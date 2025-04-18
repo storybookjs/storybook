@@ -5,6 +5,7 @@ export default {
   '@storybook/addon-jest': '9.0.0-alpha.20',
   '@storybook/addon-links': '9.0.0-alpha.20',
   '@storybook/addon-onboarding': '9.0.0-alpha.20',
+  'storybook-addon-pseudo-states': '9.0.0-alpha.20',
   '@storybook/addon-themes': '9.0.0-alpha.20',
   '@storybook/addon-vitest': '9.0.0-alpha.20',
   '@storybook/builder-vite': '9.0.0-alpha.20',

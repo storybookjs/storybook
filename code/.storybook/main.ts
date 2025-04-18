@@ -73,6 +73,10 @@ const config = defineMain({
       titlePrefix: 'addons/onboarding',
     },
     {
+      directory: '../addons/pseudo-states/src',
+      titlePrefix: 'addons/pseudo-states',
+    },
+    {
       directory: '../addons/vitest/src/components',
       titlePrefix: 'addons/vitest',
     },
@@ -87,6 +91,7 @@ const config = defineMain({
     '@storybook/addon-designs',
     '@storybook/addon-vitest',
     '@storybook/addon-a11y',
+    'storybook-addon-pseudo-states',
     '@chromatic-com/storybook',
   ],
   previewAnnotations: [

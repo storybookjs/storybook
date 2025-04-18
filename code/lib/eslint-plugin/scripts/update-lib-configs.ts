@@ -24,7 +24,7 @@ function formatCategory(category: TCategory) {
     return `/*
       * IMPORTANT!
       * This file has been automatically generated,
-      * in order to update its content, execute "yarn update-all"
+      * in order to update its content, execute "yarn update-rules" or rebuild this package.
       */
       export = {
         plugins: [
@@ -43,7 +43,7 @@ function formatCategory(category: TCategory) {
   return `/*
     * IMPORTANT!
     * This file has been automatically generated,
-    * in order to update its content, execute "yarn update-all"
+    * in order to update its content, execute "yarn update-rules" or rebuild this package.
     */
     export = {
       // This file is bundled in an index.js file at the root

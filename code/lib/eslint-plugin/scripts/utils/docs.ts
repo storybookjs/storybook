@@ -6,7 +6,10 @@ import type { TRuleListWithoutName, TRulesList } from '../update-rules-list';
 import { categoryIds } from './categories';
 
 const prettierConfig = resolveConfig(__dirname);
-const readmePath = resolve(__dirname, `../../README.md`);
+const readmePath = resolve(
+  __dirname,
+  `../../../../../docs/configure/integration/eslint-plugin.mdx`
+);
 const ruleDocsPath = resolve(__dirname, `../../docs/rules`);
 
 export const configBadges = categoryIds.reduce(
@@ -26,7 +29,7 @@ const staticElements = {
   listHeaderRow: ['Name', 'Description', emojiKey.fixable, 'Included in configurations'],
   listSpacerRow: Array(4).fill('-'),
   rulesListKey: [
-    `**Key**: ${emojiKey.fixable} = fixable`,
+    `**Key**: ${emojiKey.fixable} = automatically fixable`,
     '',
     [
       `**Configurations**:`,
@@ -45,8 +48,8 @@ const generateRulesListTable = (rulesList: TRuleListWithoutName[]) =>
 const generateRulesListMarkdown = (rulesList: TRuleListWithoutName[]) =>
   ['', staticElements.rulesListKey, '', generateRulesListTable(rulesList), ''].join('\n');
 
-const listBeginMarker = '<!-- RULES-LIST:START -->';
-const listEndMarker = '<!-- RULES-LIST:END -->';
+const listBeginMarker = '{/* RULES-LIST:START */}';
+const listEndMarker = '{/* RULES-LIST:END */}';
 
 const overWriteRulesList = (rulesList: TRuleListWithoutName[], readme: string) => {
   const listStartIndex = readme.indexOf(listBeginMarker);
@@ -92,8 +95,9 @@ export const writeRulesListInReadme = async (rulesList: TRulesList[]) => {
     parser: 'markdown',
     ...(await prettierConfig),
   });
-
-  await writeFile(readmePath, newReadme);
+  // Workaround for prettier that keeps replacing {/* xyz */} with {_ xyz _} and that breaks the docs
+  const contentToWrite = newReadme.replaceAll('{/_', '{/*').replaceAll('_/}', '*/}');
+  await writeFile(readmePath, contentToWrite);
 };
 
 export const updateRulesDocs = async (rulesList: TRulesList[]) => {

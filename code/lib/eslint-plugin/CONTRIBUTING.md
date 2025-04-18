@@ -83,7 +83,13 @@ ruleTester.run('my-rule-name', rule, {
 When you make changes to rules or create/delete rules, the configuration files and documentation have to be updated. For that, run the following command:
 
 ```sh
-yarn update-all
+yarn update-rules
+```
+
+or rebuild the package:
+
+```sh
+nx build eslint-plugin
 ```
 
 ### Useful resources

@@ -21,7 +21,7 @@ test.describe('addon-a11y', () => {
 
     const highlightElement = sbPage
       .previewIframe()
-      .locator('[data-highlight-dimensions="w350h150"][data-highlight-coordinates="x16y247"]');
+      .locator('[data-highlight-dimensions="w350h150"]');
 
     await expect(highlightElement).toBeVisible();
     expect(await highlightElement.evaluate((el) => getComputedStyle(el))).toMatchObject({

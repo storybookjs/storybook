@@ -396,7 +396,7 @@ export const SymbolNode = ({ description }: { description: string }) => {
   return (
     <span style={{ whiteSpace: 'nowrap', color: colors.instance }}>
       Symbol(
-      {description && <span style={{ color: colors.meta }}>{`'${description}'`}</span>})
+      {description && <span style={{ color: colors.meta }}>"{description}"</span>})
     </span>
   );
 };

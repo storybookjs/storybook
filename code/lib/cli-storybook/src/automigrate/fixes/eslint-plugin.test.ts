@@ -95,7 +95,7 @@ describe('eslint-plugin fix', () => {
     });
 
     describe('should install eslint plugin', () => {
-      it.skip('when .eslintrc is using a supported extension', async () => {
+      it('when .eslintrc is using a supported extension', async () => {
         await expect(
           checkEslint({
             packageJson,
@@ -105,7 +105,7 @@ describe('eslint-plugin fix', () => {
         );
       });
 
-      it.skip('when .eslintrc is using unsupported extension', async () => {
+      it('when .eslintrc is using unsupported extension', async () => {
         await expect(
           checkEslint({
             packageJson,

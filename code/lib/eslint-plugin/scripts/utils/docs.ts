@@ -22,14 +22,14 @@ export const configBadges = categoryIds.reduce(
 );
 
 export const emojiKey = {
-  fixable: '🔧',
+  fixable: '✅',
 };
 
 const staticElements = {
-  listHeaderRow: ['Name', 'Description', emojiKey.fixable, 'Included in configurations'],
+  listHeaderRow: ['Name', 'Description', 'Automatically fixable', 'Included in configurations'],
   listSpacerRow: Array(4).fill('-'),
   rulesListKey: [
-    `**Key**: ${emojiKey.fixable} = automatically fixable`,
+    '',
     '',
     [
       `**Configurations**:`,

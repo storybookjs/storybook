@@ -51,6 +51,7 @@ export { ErrorFormatter } from './components/ErrorFormatter/ErrorFormatter';
 
 // Forms
 export { Button } from './components/Button/Button';
+export { Checkbox } from './components/Checkbox/Checkbox';
 export { IconButton } from './components/IconButton/IconButton';
 export { Form } from './components/form/index';
 

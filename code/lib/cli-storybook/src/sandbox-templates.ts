@@ -536,7 +536,7 @@ export const baseTemplates = {
       builder: '@storybook/builder-vite',
     },
     modifications: {
-      extraDependencies: ['preact-render-to-string'],
+      extraDependencies: ['preact-render-to-string', 'magic-string'],
     },
     skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },
@@ -549,7 +549,7 @@ export const baseTemplates = {
       builder: '@storybook/builder-vite',
     },
     modifications: {
-      extraDependencies: ['preact-render-to-string'],
+      extraDependencies: ['preact-render-to-string', 'magic-string'],
     },
     skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },

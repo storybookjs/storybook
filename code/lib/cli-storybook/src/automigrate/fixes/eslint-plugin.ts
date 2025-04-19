@@ -15,6 +15,7 @@ const logger = console;
 interface EslintPluginRunOptions {
   eslintFile: string;
   unsupportedExtension?: string;
+  isFlatConfig: boolean;
 }
 
 /**
@@ -30,7 +31,8 @@ export const eslintPlugin: Fix<EslintPluginRunOptions> = {
   versionRange: ['*', '*'],
 
   async check({ packageManager }) {
-    const { hasEslint, isStorybookPluginInstalled } = await extractEslintInfo(packageManager);
+    const { hasEslint, isStorybookPluginInstalled, isFlatConfig } =
+      await extractEslintInfo(packageManager);
 
     if (isStorybookPluginInstalled || !hasEslint) {
       return null;
@@ -45,26 +47,33 @@ export const eslintPlugin: Fix<EslintPluginRunOptions> = {
     }
 
     if (!eslintFile || !unsupportedExtension) {
-      logger.warn('Unable to find .eslintrc config file, skipping');
+      logger.warn('Unable to find eslint config file, skipping');
       return null;
     }
 
-    return { eslintFile, unsupportedExtension };
+    return { eslintFile, unsupportedExtension, isFlatConfig };
   },
 
   prompt() {
     return dedent`
-      We've detected you are not using our eslint-plugin.
+      We've detected you are not using the Storybook ESLint plugin.
 
       In order to have the best experience with Storybook and follow best practices, we advise you to install eslint-plugin-storybook.
 
+      We can set it up automatically for you.
+
       More info: ${picocolors.yellow(
-        'https://github.com/storybookjs/storybook/blob/next/code/lib/eslint-plugin#readme'
+        'https://storybook.js.org/docs/configure/integration/eslint-plugin'
       )}
     `;
   },
 
-  async run({ result: { eslintFile, unsupportedExtension }, packageManager, dryRun, skipInstall }) {
+  async run({
+    result: { eslintFile, unsupportedExtension, isFlatConfig },
+    packageManager,
+    dryRun,
+    skipInstall,
+  }) {
     const deps = [`eslint-plugin-storybook`];
 
     logger.info(`✅ Adding dependencies: ${deps}`);
@@ -74,19 +83,31 @@ export const eslintPlugin: Fix<EslintPluginRunOptions> = {
 
     if (!dryRun && unsupportedExtension) {
       logger.info(dedent`
-          ⚠️ The plugin was successfully installed but failed to configure.
+          ⚠️ The plugin was successfully installed but failed to be configured.
           
           Found an eslint config file with an unsupported automigration format: .eslintrc.${unsupportedExtension}.
           The supported formats for this automigration are: ${SUPPORTED_ESLINT_EXTENSIONS.join(
             ', '
           )}.
 
-          Please refer to https://github.com/storybookjs/storybook/blob/next/code/lib/eslint-plugin#usage to finish setting up the plugin manually.
+          Please refer to https://storybook.js.org/docs/configure/integration/eslint-plugin#configuration-eslintrc to finish setting up the plugin manually.
+      `);
+      return;
+    }
+
+    if (!dryRun && isFlatConfig) {
+      logger.info(dedent`
+          ⚠️ The plugin was successfully installed but failed to be configured.
+          
+          You are using a flat-config format for ESLint, which we can't configure automatically yet.
+
+          Please refer to https://storybook.js.org/docs/configure/integration/eslint-plugin#configuration-flat-config-format to finish setting up the plugin manually.
       `);
       return;
     }
 
     if (!dryRun) {
+      // TODO: Add support for flat config
       await configureEslintPlugin(eslintFile, packageManager);
     }
   },

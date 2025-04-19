@@ -10,11 +10,21 @@ import picocolors from 'picocolors';
 import prompts from 'prompts';
 import { dedent } from 'ts-dedent';
 
-export const SUPPORTED_ESLINT_EXTENSIONS = ['js', 'cjs', 'json'];
+export const SUPPORTED_ESLINT_EXTENSIONS = ['ts', 'mts', 'cts', 'mjs', 'js', 'cjs', 'json'];
 const UNSUPPORTED_ESLINT_EXTENSIONS = ['yaml', 'yml'];
 
 export const findEslintFile = () => {
-  const filePrefix = '.eslintrc';
+  let filePrefix = 'eslint.config';
+  // Check for flat config first eslint.config.*
+  const flatConfigFile = SUPPORTED_ESLINT_EXTENSIONS.find((ext) =>
+    existsSync(`${filePrefix}.${ext}`)
+  );
+  if (flatConfigFile) {
+    return `${filePrefix}.${flatConfigFile}`;
+  }
+
+  // Otherwise, check for .eslintrc.*
+  filePrefix = '.eslintrc';
   const unsupportedExtension = UNSUPPORTED_ESLINT_EXTENSIONS.find((ext: string) =>
     existsSync(`${filePrefix}.${ext}`)
   );
@@ -33,6 +43,7 @@ export async function extractEslintInfo(packageManager: JsPackageManager): Promi
   hasEslint: boolean;
   isStorybookPluginInstalled: boolean;
   eslintConfigFile: string | null;
+  isFlatConfig: boolean;
 }> {
   const allDependencies = await packageManager.getAllDependencies();
   const packageJson = await packageManager.retrievePackageJson();
@@ -46,7 +57,12 @@ export async function extractEslintInfo(packageManager: JsPackageManager): Promi
 
   const isStorybookPluginInstalled = !!allDependencies['eslint-plugin-storybook'];
   const hasEslint = allDependencies.eslint || eslintConfigFile || packageJson.eslintConfig;
-  return { hasEslint, isStorybookPluginInstalled, eslintConfigFile };
+  return {
+    hasEslint,
+    isStorybookPluginInstalled,
+    eslintConfigFile,
+    isFlatConfig: !!eslintConfigFile?.startsWith('eslint.config'),
+  };
 }
 
 export const normalizeExtends = (existingExtends: any): string[] => {
@@ -82,6 +98,23 @@ export async function configureEslintPlugin(
       await writeFile(eslintFile, JSON.stringify(eslintConfig, undefined, spaces));
     } else {
       const eslint = await readConfig(eslintFile);
+      /**
+       * TODO: Implement setting up flat config We can't just use readConfig because ConfigFile is
+       * incompatible We will have to use babel directly
+       *
+       * Normal use case: before: export default [ someRule ]
+       *
+       * After: import storybook from 'eslint-plugin-storybook' export default [ someRule,
+       * storybook.configs['flat/recommended']
+       *
+       * Vite boilerplate use case with typescript-eslint:
+       *
+       * Before: import tseslint from 'typescript-eslint' export default tseslint.config(someRule)
+       *
+       * After: import storybook from 'eslint-plugin-storybook' import tseslint from
+       * 'typescript-eslint' export default tseslint.config(someRule,
+       * storybook.configs['flat/recommended'])
+       */
       const existingExtends = normalizeExtends(eslint.getFieldValue(['extends'])).filter(Boolean);
       eslint.setFieldValue(['extends'], [...existingExtends, 'plugin:storybook/recommended']);
 
@@ -108,7 +141,7 @@ export const suggestESLintPlugin = async (): Promise<boolean> => {
     name: 'shouldInstall',
     message: dedent`
         We have detected that you're using ESLint. Storybook provides a plugin that gives the best experience with Storybook and helps follow best practices: ${picocolors.yellow(
-          'https://github.com/storybookjs/eslint-plugin#readme'
+          'https://storybook.js.org/docs/configure/integration/eslint-plugin'
         )}
 
         Would you like to install it?

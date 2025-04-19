@@ -28,7 +28,7 @@ const Column = styled.div<{ position: 'first' | 'second' | 'third' | 'last' }>(
       alignItems: 'flex-start',
     };
 
-    // 実際のArgsTableと同じ列幅の比率を適用
+    // Apply the same column width ratios as the actual ArgsTable component
     switch (position) {
       case 'first':
         return {

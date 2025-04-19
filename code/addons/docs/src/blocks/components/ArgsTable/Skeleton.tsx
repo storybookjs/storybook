@@ -3,9 +3,14 @@ import React from 'react';
 
 import { styled } from 'storybook/theming';
 
+const TableWrapper = styled.div(({ theme }) => ({
+  width: '100%',
+  borderSpacing: 0,
+  color: theme.color.defaultText,
+}));
+
 const Row = styled.div(({ theme }) => ({
   display: 'flex',
-  gap: 16,
   borderBottom: `1px solid ${theme.appBorderColor}`,
 
   '&:last-child': {
@@ -13,13 +18,45 @@ const Row = styled.div(({ theme }) => ({
   },
 }));
 
-const Column = styled.div<{ numColumn: number }>(({ numColumn }) => ({
-  display: 'flex',
-  flexDirection: 'column',
-  flex: numColumn || 1,
-  gap: 5,
-  padding: '12px 20px',
-}));
+const Column = styled.div<{ position: 'first' | 'second' | 'third' | 'last' }>(
+  ({ position, theme }) => {
+    const baseStyles = {
+      display: 'flex',
+      flexDirection: 'column' as const,
+      gap: 5,
+      padding: '10px 15px',
+      alignItems: 'flex-start',
+    };
+
+    // 実際のArgsTableと同じ列幅の比率を適用
+    switch (position) {
+      case 'first':
+        return {
+          ...baseStyles,
+          width: '25%',
+          paddingLeft: 20,
+        };
+      case 'second':
+        return {
+          ...baseStyles,
+          width: '35%',
+        };
+      case 'third':
+        return {
+          ...baseStyles,
+          width: '15%',
+        };
+      case 'last':
+        return {
+          ...baseStyles,
+          width: '25%',
+          paddingRight: 20,
+        };
+      default:
+        return baseStyles;
+    }
+  }
+);
 
 const SkeletonText = styled.div<{ width?: number | string; height?: number }>(
   ({ theme, width, height }) => ({
@@ -31,68 +68,66 @@ const SkeletonText = styled.div<{ width?: number | string; height?: number }>(
   })
 );
 
-const columnWidth = [2, 4, 2, 2];
-
 export const Skeleton: FC = () => (
-  <>
+  <TableWrapper>
     <Row>
-      <Column numColumn={columnWidth[0]}>
+      <Column position="first">
         <SkeletonText width="60%" />
       </Column>
-      <Column numColumn={columnWidth[1]}>
+      <Column position="second">
         <SkeletonText width="30%" />
       </Column>
-      <Column numColumn={columnWidth[2]}>
+      <Column position="third">
         <SkeletonText width="60%" />
       </Column>
-      <Column numColumn={columnWidth[3]}>
+      <Column position="last">
         <SkeletonText width="60%" />
       </Column>
     </Row>
     <Row>
-      <Column numColumn={columnWidth[0]}>
+      <Column position="first">
         <SkeletonText width="60%" />
       </Column>
-      <Column numColumn={columnWidth[1]}>
+      <Column position="second">
         <SkeletonText width="80%" />
         <SkeletonText width="30%" />
       </Column>
-      <Column numColumn={columnWidth[2]}>
+      <Column position="third">
         <SkeletonText width="60%" />
       </Column>
-      <Column numColumn={columnWidth[3]}>
-        <SkeletonText width="60%" />
-      </Column>
-    </Row>
-    <Row>
-      <Column numColumn={columnWidth[0]}>
-        <SkeletonText width="60%" />
-      </Column>
-      <Column numColumn={columnWidth[1]}>
-        <SkeletonText width="80%" />
-        <SkeletonText width="30%" />
-      </Column>
-      <Column numColumn={columnWidth[2]}>
-        <SkeletonText width="60%" />
-      </Column>
-      <Column numColumn={columnWidth[3]}>
+      <Column position="last">
         <SkeletonText width="60%" />
       </Column>
     </Row>
     <Row>
-      <Column numColumn={columnWidth[0]}>
+      <Column position="first">
         <SkeletonText width="60%" />
       </Column>
-      <Column numColumn={columnWidth[1]}>
+      <Column position="second">
         <SkeletonText width="80%" />
         <SkeletonText width="30%" />
       </Column>
-      <Column numColumn={columnWidth[2]}>
+      <Column position="third">
         <SkeletonText width="60%" />
       </Column>
-      <Column numColumn={columnWidth[3]}>
+      <Column position="last">
         <SkeletonText width="60%" />
       </Column>
     </Row>
-  </>
+    <Row>
+      <Column position="first">
+        <SkeletonText width="60%" />
+      </Column>
+      <Column position="second">
+        <SkeletonText width="80%" />
+        <SkeletonText width="30%" />
+      </Column>
+      <Column position="third">
+        <SkeletonText width="60%" />
+      </Column>
+      <Column position="last">
+        <SkeletonText width="60%" />
+      </Column>
+    </Row>
+  </TableWrapper>
 );

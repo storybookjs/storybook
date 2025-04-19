@@ -2,44 +2,44 @@
 title: 'ESLint plugin'
 hideRendererSelector: true
 sidebar:
-  order: 6
+  order: 5
   title: ESLint plugin
 ---
 
-Storybook provides an integrated [ESLint plugin](https://github.com/storybookjs/eslint-plugin-storybook) to help you write better stories and components.
+Storybook provides an dedicated [ESLint plugin](https://github.com/storybookjs/eslint-plugin-storybook) to help you write stories and components aligned with the latest Storybook and frontend development best practices.
 
 ## Installation
 
 You'll first need to install [ESLint](https://eslint.org/):
 
-```sh
-npm install eslint --save-dev
-# or
-yarn add eslint --dev
-```
+<CodeSnippets path="eslint-install.md" />
 
 Next, install `eslint-plugin-storybook`:
 
-```sh
-npm install eslint-plugin-storybook --save-dev
-# or
-yarn add eslint-plugin-storybook --dev
+<CodeSnippets path="eslint-plugin-storybook-install.md" />
+
+Then add `plugin:storybook/recommended` to the extends section of your `.eslintrc` configuration file. Note that we can omit the `eslint-plugin-` prefix:
+
+```js title=".eslintrc"
+{
+  // extend plugin:storybook/<configuration>, such as:
+  "extends": ["plugin:storybook/recommended"]
+}
 ```
 
 And finally, add this to your `.eslintignore` file:
 
-```
-// Inside your .eslintignore file
+```txt title=".eslintignore"
 !.storybook
 ```
 
-This allows for this plugin to also lint your configuration files inside the .storybook folder, so that you always have a correct configuration and don't face any issues regarding mistyped addon names, for instance.
+This ensures that the plugin will also lint your configuration files inside the `.storybook` directory, so that you always have a correct configuration. For example, it can catch mistyped addon names in your `main.js|ts` file.
 
-> For more info on why this line is required in the .eslintignore file, check this [ESLint documentation](https://eslint.org/docs/latest/use/configure/ignore-deprecated#:~:text=In%20addition%20to,contents%20are%20ignored).
+For more details on why this line is required in the `.eslintignore` file, refer to the [ESLint documentation](https://eslint.org/docs/latest/use/configure/ignore-deprecated#:~:text=In%20addition%20to,contents%20are%20ignored).
 
 If you are using [flat config style](https://eslint.org/docs/latest/use/configure/configuration-files-new), add this to your configuration file:
 
-```js
+```js title="eslint.config.js"
 export default [
   // ...
   {
@@ -51,13 +51,13 @@ export default [
 
 ## ESLint compatibility
 
-Use the following table to use the correct version of this package, based on the version of ESLint you're using:
+Depending on the version of ESLint you are using, you may need to install a specific version of the Storybook plugin. Use the table below to match the plugin version to your ESLint version.
 
 | ESLint version | Storybook plugin version |
 | -------------- | ------------------------ |
-| ^9.0.0         | ^9.0.0 or ^0.10.0        |
-| ^8.57.0        | ^9.0.0 or ^0.10.0        |
-| ^7.0.0         | ~0.9.0                   |
+| `^9.0.0`       | `^9.0.0` or `^0.10.0`    |
+| `^8.57.0`      | `^9.0.0` or `^0.10.0`    |
+| `^7.0.0`       | `~0.9.0`                 |
 
 ## Usage
 
@@ -65,31 +65,22 @@ Use the following table to use the correct version of this package, based on the
 
 Use `.eslintrc.*` file to configure rules in ESLint < v9. See also: https://eslint.org/docs/latest/use/configure/.
 
-Add `plugin:storybook/recommended` to the extends section of your `.eslintrc` configuration file. Note that we can omit the `eslint-plugin-` prefix:
-
-```js
-{
-  // extend plugin:storybook/<configuration>, such as:
-  "extends": ["plugin:storybook/recommended"]
-}
-```
-
 This plugin will only be applied to files following the `*.stories.*` (we recommend this) or `*.story.*` pattern. This is an automatic configuration, so you don't have to do anything.
 
 #### Overriding/disabling rules
 
-Optionally, you can override, add or disable rules settings. You likely don't want these settings to be applied in every file, so make sure that you add a `overrides` section in your `.eslintrc.*` file that applies the overrides only to your stories files.
+Optionally, you can override, add, or disable individual rules. You likely don't want these settings to be applied in every file, so make sure that you add a `overrides` section in your `.eslintrc.*` file that applies the overrides only to your stories files.
 
-```js
+```js title=".eslintrc"
 {
   "overrides": [
     {
-      // or whatever matches stories specified in .storybook/main.js
+      // 👇 This should match the `stories` property in .storybook/main.js|ts
       "files": ['**/*.stories.@(ts|tsx|js|jsx|mjs|cjs)'],
       "rules": {
-        // example of overriding a rule
-        'storybook/hierarchy-separator': 'error',
-        // example of disabling a rule
+        // 👇 Enable this rule
+        'storybook/csf-component': 'error',
+        // 👇 Disable this rule
         'storybook/default-exports': 'off',
       }
     }
@@ -97,25 +88,25 @@ Optionally, you can override, add or disable rules settings. You likely don't wa
 }
 ```
 
-### Configuration (`eslint.config.[c|m]?js`)
+### Configuration (`eslint.config.js`)
 
-Use `eslint.config.[c|m]?js` file to configure rules using the [flat config style](https://eslint.org/docs/latest/use/configure/configuration-files-new). This is the default in ESLint v9, but can be used starting from ESLint v8.57.0. See also: https://eslint.org/docs/latest/use/configure/configuration-files-new.
+Use `eslint.config.js` file to configure rules using the [flat config style](https://eslint.org/docs/latest/use/configure/configuration-files-new). This is the default in ESLint v9, but can be used starting from ESLint v8.57.0. See also: https://eslint.org/docs/latest/use/configure/configuration-files-new.
 
-```js
+```js title="eslint.config.js"
 import storybook from 'eslint-plugin-storybook';
 
 export default [
-  // add more generic rulesets here, such as:
+  // Add more generic rulesets here, such as:
   // js.configs.recommended,
   ...storybook.configs['flat/recommended'],
 
-  // something ...
+  // ...
 ];
 ```
 
 #### Overriding/disabling rules
 
-Optionally, you can override, add or disable rules settings. You likely don't want these settings to be applied in every file, so make sure that you add a flat config section in your `eslint.config.[m|c]?js` file that applies the overrides only to your stories files.
+Optionally, you can override, add, or disable individual rules. You likely don't want these settings to be applied in every file, so make sure that you add a flat config section in your `eslint.config.js` file that applies the overrides only to your stories files.
 
 ```js
 import storybook from 'eslint-plugin-storybook';
@@ -125,16 +116,17 @@ export default [
 
   ...storybook.configs['flat/recommended'],
   {
+    // 👇 This should match the `stories` property in .storybook/main.js|ts
     files: ['**/*.stories.@(ts|tsx|js|jsx|mjs|cjs)'],
     rules: {
-      // example of overriding a rule
-      'storybook/hierarchy-separator': 'error',
-      // example of disabling a rule
+      // 👇 Enable this rule
+      'storybook/csf-component': 'error',
+      // 👇 Disable this rule
       'storybook/default-exports': 'off',
     },
   },
 
-  // something ...
+  // ...
 ];
 ```
 

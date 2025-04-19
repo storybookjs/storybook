@@ -71,23 +71,23 @@ export const Active: Story = {
 
 export const DynamicStyles: Story = {
   render: (args, context) => {
-    const emit = useChannel({});
-    const { id: storyId } = useStoryContext();
-
-    setTimeout(() => {
-      // @ts-expect-error We're adding this nonstandard property below
-      if (window.__dynamicRuleInjected) {
-        return;
-      }
-      // @ts-expect-error We're adding this nonstandard property below
-      window.__dynamicRuleInjected = true;
-      const sheet = Array.from(document.styleSheets).at(-1);
-      sheet?.insertRule(
-        '@layer foo { .dynamic.button:hover { background-color: tomato!important } }'
-      );
-      emit(FORCE_REMOUNT, { storyId });
-    }, 100);
-
     return All.render!({ className: 'dynamic' }, context);
+  },
+  play: async ({ id: storyId }) => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        // @ts-expect-error We're adding this nonstandard property below
+        if (globalThis[`__dynamicRuleInjected_${storyId}`]) {
+          return;
+        }
+        // @ts-expect-error We're adding this nonstandard property
+        globalThis[`__dynamicRuleInjected_${storyId}`] = true;
+        const sheet = Array.from(document.styleSheets).at(-1);
+        sheet?.insertRule(
+          '@layer foo { .dynamic.button:hover { background-color: tomato!important } }'
+        );
+        resolve();
+      }, 100);
+    });
   },
 };

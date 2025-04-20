@@ -7067,7 +7067,7 @@ __metadata:
     expect-type: "npm:^0.15.0"
     html-tags: "npm:^3.1.0"
     prop-types: "npm:^15.7.2"
-    react-element-to-jsx-string: "npm:^15.0.0"
+    react-element-to-jsx-string: "npm:@7rulnik/react-element-to-jsx-string@15.0.1"
     require-from-string: "npm:^2.0.2"
     semver: "npm:^7.3.7"
     ts-dedent: "npm:^2.0.0"
@@ -23618,9 +23618,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-element-to-jsx-string@npm:^15.0.0":
-  version: 15.0.0
-  resolution: "react-element-to-jsx-string@npm:15.0.0"
+"react-element-to-jsx-string@npm:@7rulnik/react-element-to-jsx-string@15.0.1":
+  version: 15.0.1
+  resolution: "@7rulnik/react-element-to-jsx-string@npm:15.0.1"
   dependencies:
     "@base2/pretty-print-object": "npm:1.0.1"
     is-plain-object: "npm:5.0.0"
@@ -23628,7 +23628,7 @@ __metadata:
   peerDependencies:
     react: ^0.14.8 || ^15.0.1 || ^16.0.0 || ^17.0.1 || ^18.0.0
     react-dom: ^0.14.8 || ^15.0.1 || ^16.0.0 || ^17.0.1 || ^18.0.0
-  checksum: 10c0/0d60a0ea758529c32a706d0c69d70b69fb94de3c46442fffdee34f08f51ffceddbb5395b41dfd1565895653e9f60f98ca525835be9d5db1f16d6b22be12f4cd4
+  checksum: 10c0/e52439d2dd4b25e073ab3928c484a6470a7094f4e77c4844cb86248016c7b34a3d5efddfc6e2ae30cf715c1cb53498d08d7211a505e67c56c7ab6607c5d0fbfe
   languageName: node
   linkType: hard
 

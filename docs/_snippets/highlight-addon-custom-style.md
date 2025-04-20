@@ -1,7 +1,7 @@
 ```ts filename="MyComponent.stories.ts" renderer="angular" language="ts"
 import type { Meta, StoryObj } from '@storybook/angular';
 import { componentWrapperDecorator } from '@storybook/angular';
-import { useChannel } from '@storybook/preview-api';
+import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT } from '@storybook/addon-highlight';
 
 import { MyComponent } from './MyComponent.component';
@@ -29,7 +29,7 @@ export const StyledHighlight: Story = {
 ```
 
 ```js filename="MyComponent.stories.js|jsx" renderer="react" language="js"
-import { useChannel } from '@storybook/preview-api';
+import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT } from '@storybook/addon-highlight';
 
 import { MyComponent } from './MyComponent';
@@ -55,7 +55,7 @@ export const StyledHighlight = {
 
 ```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts-4-9"
 import type { Meta, StoryObj } from '@storybook/react';
-import { useChannel } from '@storybook/preview-api';
+import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT } from '@storybook/addon-highlight';
 
 import { MyComponent } from './MyComponent';
@@ -84,7 +84,7 @@ export const StyledHighlight: Story = {
 
 ```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts"
 import type { Meta, StoryObj } from '@storybook/react';
-import { useChannel } from '@storybook/preview-api';
+import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT } from '@storybook/addon-highlight';
 
 import { MyComponent } from './MyComponent';
@@ -112,7 +112,7 @@ export const StyledHighlight: Story = {
 ```
 
 ```js filename="MyComponent.stories.js" renderer="vue" language="js"
-import { useChannel } from '@storybook/preview-api';
+import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT } from '@storybook/addon-highlight';
 
 import MyComponent from './MyComponent.vue';
@@ -140,7 +140,7 @@ export const StyledHighlight = {
 
 ```ts filename="MyComponent.stories.ts" renderer="vue" language="ts-4-9"
 import type { Meta, StoryObj } from '@storybook/vue3';
-import { useChannel } from '@storybook/preview-api';
+import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT } from '@storybook/addon-highlight';
 
 import MyComponent from './MyComponent.vue';
@@ -171,7 +171,7 @@ export const StyledHighlight: Story = {
 
 ```ts filename="MyComponent.stories.ts" renderer="vue" language="ts"
 import type { Meta, StoryObj } from '@storybook/vue3';
-import { useChannel } from '@storybook/preview-api';
+import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT } from '@storybook/addon-highlight';
 
 import MyComponent from './MyComponent.vue';
@@ -201,7 +201,7 @@ export const StyledHighlight: Story = {
 ```
 
 ```js filename="MyComponent.stories.js" renderer="web-components" language="js"
-import { useChannel } from '@storybook/preview-api';
+import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT } from '@storybook/addon-highlight';
 
 export default {
@@ -225,7 +225,7 @@ export const StyledHighlight = {
 
 ```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts"
 import type { Meta, StoryObj } from '@storybook/web-components';
-import { useChannel } from '@storybook/preview-api';
+import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT } from '@storybook/addon-highlight';
 
 const meta: Meta = {

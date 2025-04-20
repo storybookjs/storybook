@@ -1,5 +1,5 @@
 ```js filename=".storybook/preview.js" renderer="common" language="js"
-import { themes } from '@storybook/theming';
+import { themes } from 'storybook/theming';
 
 export default {
   parameters: {
@@ -14,7 +14,7 @@ export default {
 // Replace your-framework with the framework you are using (e.g., react, vue3)
 import { Preview } from '@storybook/your-framework';
 
-import { themes } from '@storybook/theming';
+import { themes } from 'storybook/theming';
 
 const preview: Preview = {
   parameters: {

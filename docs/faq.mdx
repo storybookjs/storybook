@@ -125,7 +125,7 @@ A common error is that an addon tries to access the "channel", but the channel i
 1. You're trying to access addon channel (e.g., by calling `setOptions`) in a non-browser environment like Jest. You may need to add a channel mock:
 
    ```js
-   import { addons, mockChannel } from '@storybook/preview-api';
+   import { addons, mockChannel } from 'storybook/preview-api';
 
    addons.setChannel(mockChannel());
    ```
@@ -301,10 +301,7 @@ We're only covering versions 5.3 and 5.0 as they were important milestones for S
 
 ## What icons are available for my toolbar or my addon?
 
-With the [`@storybook/components`](https://www.npmjs.com/package/@storybook/components) package, you get a set of icons that you can use to customize your UI. Use the table below as a reference while writing your addon or defining your Storybook global types.
-Go through this [story](https://main--5a375b97f4b14f0020b0cda3.chromatic.com/?path=/story/basics-icon--labels) to see how the icons look.
-
-<iframe src="https://main--5a375b97f4b14f0020b0cda3.chromatic.com/iframe.html?args=&id=basics-icon--labels&viewMode=story&shortcuts=false&singleStory=true" width="100%" height="600" />
+With the [`@storybook/icons`](https://www.npmjs.com/package/@storybook/icons) package, you get a set of icons that you can use to customize your UI. Go through the [documentation](https://main--64b56e737c0aeefed9d5e675.chromatic.com/?path=/docs/introduction--docs) to see how the icons look and use it as a reference when writing your addon or defining your Storybook global types.
 
 ## I see a "No Preview" error with a Storybook production build
 

@@ -52,8 +52,6 @@ const Column = styled.div<{ position: 'first' | 'second' | 'third' | 'last' }>(
           width: '25%',
           paddingRight: 20,
         };
-      default:
-        return baseStyles;
     }
   }
 );

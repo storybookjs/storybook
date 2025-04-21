@@ -2,7 +2,6 @@ import {
   SUPPORTED_ESLINT_EXTENSIONS,
   configureEslintPlugin,
   extractEslintInfo,
-  findEslintFile,
 } from 'storybook/internal/cli';
 
 import picocolors from 'picocolors';
@@ -13,7 +12,7 @@ import type { Fix } from '../types';
 const logger = console;
 
 interface EslintPluginRunOptions {
-  eslintFile: string;
+  eslintConfigFile: string;
   unsupportedExtension?: string;
   isFlatConfig: boolean;
 }
@@ -31,27 +30,23 @@ export const eslintPlugin: Fix<EslintPluginRunOptions> = {
   versionRange: ['*', '*'],
 
   async check({ packageManager }) {
-    const { hasEslint, isStorybookPluginInstalled, isFlatConfig } =
-      await extractEslintInfo(packageManager);
+    const {
+      hasEslint,
+      eslintConfigFile,
+      isStorybookPluginInstalled,
+      isFlatConfig,
+      unsupportedExtension,
+    } = await extractEslintInfo(packageManager);
 
     if (isStorybookPluginInstalled || !hasEslint) {
       return null;
     }
-
-    let eslintFile: string | null = null;
-    let unsupportedExtension: string | undefined;
-    try {
-      eslintFile = findEslintFile();
-    } catch (err) {
-      unsupportedExtension = String(err);
-    }
-
-    if (!eslintFile || !unsupportedExtension) {
+    if (!eslintConfigFile || !unsupportedExtension) {
       logger.warn('Unable to find eslint config file, skipping');
       return null;
     }
 
-    return { eslintFile, unsupportedExtension, isFlatConfig };
+    return { eslintConfigFile, unsupportedExtension, isFlatConfig };
   },
 
   prompt() {
@@ -69,7 +64,7 @@ export const eslintPlugin: Fix<EslintPluginRunOptions> = {
   },
 
   async run({
-    result: { eslintFile, unsupportedExtension, isFlatConfig },
+    result: { eslintConfigFile, unsupportedExtension, isFlatConfig },
     packageManager,
     dryRun,
     skipInstall,
@@ -108,7 +103,7 @@ export const eslintPlugin: Fix<EslintPluginRunOptions> = {
 
     if (!dryRun) {
       // TODO: Add support for flat config
-      await configureEslintPlugin(eslintFile, packageManager);
+      await configureEslintPlugin(eslintConfigFile, packageManager);
     }
   },
 };

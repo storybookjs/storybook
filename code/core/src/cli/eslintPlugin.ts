@@ -6,6 +6,7 @@ import { paddedLog } from 'storybook/internal/common';
 import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
 
 import detectIndent from 'detect-indent';
+import { findUp } from 'find-up';
 import picocolors from 'picocolors';
 import prompts from 'prompts';
 import { dedent } from 'ts-dedent';
@@ -13,55 +14,62 @@ import { dedent } from 'ts-dedent';
 export const SUPPORTED_ESLINT_EXTENSIONS = ['ts', 'mts', 'cts', 'mjs', 'js', 'cjs', 'json'];
 const UNSUPPORTED_ESLINT_EXTENSIONS = ['yaml', 'yml'];
 
-export const findEslintFile = () => {
-  let filePrefix = 'eslint.config';
-  // Check for flat config first eslint.config.*
-  const flatConfigFile = SUPPORTED_ESLINT_EXTENSIONS.find((ext) =>
-    existsSync(`${filePrefix}.${ext}`)
-  );
-  if (flatConfigFile) {
-    return `${filePrefix}.${flatConfigFile}`;
+export const findEslintFile = async () => {
+  const filePrefixes = ['eslint.config', '.eslintrc'];
+
+  // Check for unsupported files
+  for (const prefix of filePrefixes) {
+    for (const ext of UNSUPPORTED_ESLINT_EXTENSIONS) {
+      const file = await findUp(`${prefix}.${ext}`);
+      if (file) {
+        throw new Error(`Unsupported ESLint config extension: .${ext}`);
+      }
+    }
   }
 
-  // Otherwise, check for .eslintrc.*
-  filePrefix = '.eslintrc';
-  const unsupportedExtension = UNSUPPORTED_ESLINT_EXTENSIONS.find((ext: string) =>
-    existsSync(`${filePrefix}.${ext}`)
-  );
-
-  if (unsupportedExtension) {
-    throw new Error(unsupportedExtension);
+  // Find supported ESLint config files
+  for (const prefix of filePrefixes) {
+    for (const ext of SUPPORTED_ESLINT_EXTENSIONS) {
+      const file = await findUp(`${prefix}.${ext}`);
+      if (file) {
+        return file;
+      }
+    }
   }
 
-  const extension = SUPPORTED_ESLINT_EXTENSIONS.find((ext: string) =>
-    existsSync(`${filePrefix}.${ext}`)
-  );
-  return extension ? `${filePrefix}.${extension}` : null;
+  return undefined;
 };
 
 export async function extractEslintInfo(packageManager: JsPackageManager): Promise<{
   hasEslint: boolean;
   isStorybookPluginInstalled: boolean;
-  eslintConfigFile: string | null;
+  eslintConfigFile: string | undefined;
+  unsupportedExtension?: string;
   isFlatConfig: boolean;
 }> {
+  let unsupportedExtension = undefined;
   const allDependencies = await packageManager.getAllDependencies();
   const packageJson = await packageManager.retrievePackageJson();
-  let eslintConfigFile: string | null = null;
+  let eslintConfigFile: string | undefined = undefined;
 
   try {
-    eslintConfigFile = findEslintFile();
+    eslintConfigFile = await findEslintFile();
   } catch (err) {
-    //
+    if (err instanceof Error && err.message.includes('Unsupported ESLint')) {
+      unsupportedExtension = String(err);
+    } else {
+      throw err;
+    }
   }
 
   const isStorybookPluginInstalled = !!allDependencies['eslint-plugin-storybook'];
   const hasEslint = allDependencies.eslint || eslintConfigFile || packageJson.eslintConfig;
   return {
-    hasEslint,
+    hasEslint: !!hasEslint,
     isStorybookPluginInstalled,
     eslintConfigFile,
-    isFlatConfig: !!eslintConfigFile?.startsWith('eslint.config'),
+    unsupportedExtension,
+    isFlatConfig: !!eslintConfigFile && eslintConfigFile.startsWith('eslint.config'),
   };
 }
 
@@ -81,23 +89,28 @@ export const normalizeExtends = (existingExtends: any): string[] => {
 };
 
 export async function configureEslintPlugin(
-  eslintFile: string | undefined,
+  eslintConfigFile: string | undefined,
   packageManager: JsPackageManager
 ) {
-  if (eslintFile) {
-    paddedLog(`Configuring Storybook ESLint plugin at ${eslintFile}`);
-    if (eslintFile.endsWith('json')) {
-      const eslintConfig = JSON.parse(await readFile(eslintFile, { encoding: 'utf8' })) as {
+  if (eslintConfigFile) {
+    paddedLog(`Configuring Storybook ESLint plugin at ${eslintConfigFile}`);
+    if (eslintConfigFile.endsWith('json')) {
+      const eslintConfig = JSON.parse(await readFile(eslintConfigFile, { encoding: 'utf8' })) as {
         extends?: string[];
       };
       const existingExtends = normalizeExtends(eslintConfig.extends).filter(Boolean);
+
+      if (existingExtends.includes('plugin:storybook/recommended')) {
+        return;
+      }
+
       eslintConfig.extends = [...existingExtends, 'plugin:storybook/recommended'] as string[];
 
-      const eslintFileContents = await readFile(eslintFile, { encoding: 'utf8' });
+      const eslintFileContents = await readFile(eslintConfigFile, { encoding: 'utf8' });
       const spaces = detectIndent(eslintFileContents).amount || 2;
-      await writeFile(eslintFile, JSON.stringify(eslintConfig, undefined, spaces));
+      await writeFile(eslintConfigFile, JSON.stringify(eslintConfig, undefined, spaces));
     } else {
-      const eslint = await readConfig(eslintFile);
+      const eslint = await readConfig(eslintConfigFile);
       /**
        * TODO: Implement setting up flat config We can't just use readConfig because ConfigFile is
        * incompatible We will have to use babel directly
@@ -116,6 +129,11 @@ export async function configureEslintPlugin(
        * storybook.configs['flat/recommended'])
        */
       const existingExtends = normalizeExtends(eslint.getFieldValue(['extends'])).filter(Boolean);
+
+      if (existingExtends.includes('plugin:storybook/recommended')) {
+        return;
+      }
+
       eslint.setFieldValue(['extends'], [...existingExtends, 'plugin:storybook/recommended']);
 
       await writeConfig(eslint);

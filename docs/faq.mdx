@@ -132,16 +132,6 @@ A common error is that an addon tries to access the "channel", but the channel i
 
 2. In React Native, it's a special case documented in [#1192](https://github.com/storybookjs/storybook/issues/1192)
 
-## Why aren't Controls visible in the Canvas panel but visible in Docs?
-
-If you're adding Storybook's dependencies manually, make sure you include the [`@storybook/addon-controls`](https://www.npmjs.com/package/@storybook/addon-controls) dependency in your project and reference it in your `.storybook/main.js|ts` as follows:
-
-```js title=".storybook/main.js|ts"
-export default {
-  addons: ['@storybook/addon-controls'],
-};
-```
-
 ## Why aren't the addons working in a composed Storybook?
 
 Composition is a new feature that we released with version 6.0, and there are still some limitations to it.
@@ -156,7 +146,7 @@ Storybook does not work unless you have at least one local story (or docs page) 
 
 If you're in a [Storybook composition](./sharing/storybook-composition.mdx) scenario, where you have multiple Storybooks, and want to have an extra Storybook with no stories of its own, that serves as a "glue" for all the other Storybooks in a project for demo/documentation purposes, you can do the following steps:
 
-Introduce a single `.mdx` docs page (addon-essentials or addon-docs required), that serves as an Introduction page, like so:
+Introduce a single `.mdx` docs page (addon-docs required), that serves as an Introduction page, like so:
 
 ```mdx title="Introduction.mdx"
 # Welcome

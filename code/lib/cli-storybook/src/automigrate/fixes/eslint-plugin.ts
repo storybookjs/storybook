@@ -34,8 +34,8 @@ export const eslintPlugin: Fix<EslintPluginRunOptions> = {
       hasEslint,
       eslintConfigFile,
       isStorybookPluginInstalled,
-      isFlatConfig,
       unsupportedExtension,
+      isFlatConfig,
     } = await extractEslintInfo(packageManager);
 
     if (isStorybookPluginInstalled || !hasEslint) {
@@ -90,20 +90,8 @@ export const eslintPlugin: Fix<EslintPluginRunOptions> = {
       return;
     }
 
-    if (!dryRun && isFlatConfig) {
-      logger.info(dedent`
-          ⚠️ The plugin was successfully installed but failed to be configured.
-          
-          You are using a flat-config format for ESLint, which we can't configure automatically yet.
-
-          Please refer to https://storybook.js.org/docs/configure/integration/eslint-plugin#configuration-flat-config-format to finish setting up the plugin manually.
-      `);
-      return;
-    }
-
     if (!dryRun) {
-      // TODO: Add support for flat config
-      await configureEslintPlugin(eslintConfigFile, packageManager);
+      await configureEslintPlugin({ eslintConfigFile, packageManager, isFlatConfig });
     }
   },
 };

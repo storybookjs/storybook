@@ -173,7 +173,7 @@ export async function extractEslintInfo(packageManager: JsPackageManager): Promi
     isStorybookPluginInstalled,
     eslintConfigFile,
     unsupportedExtension,
-    isFlatConfig: !!eslintConfigFile && eslintConfigFile.startsWith('eslint.config'),
+    isFlatConfig: !!(eslintConfigFile && eslintConfigFile.match(/eslint\.config\.[^/]+/)),
   };
 }
 
@@ -199,7 +199,7 @@ export async function configureEslintPlugin({
 }: {
   eslintConfigFile: string | undefined;
   packageManager: JsPackageManager;
-  isFlatConfig?: boolean;
+  isFlatConfig: boolean;
 }) {
   if (eslintConfigFile) {
     paddedLog(`Configuring Storybook ESLint plugin at ${eslintConfigFile}`);

@@ -41,11 +41,11 @@ export const eslintPlugin: Fix<EslintPluginRunOptions> = {
     if (isStorybookPluginInstalled || !hasEslint) {
       return null;
     }
-    if (!eslintConfigFile || !unsupportedExtension) {
+
+    if (!eslintConfigFile) {
       logger.warn('Unable to find eslint config file, skipping');
       return null;
     }
-
     return { eslintConfigFile, unsupportedExtension, isFlatConfig };
   },
 
@@ -68,8 +68,9 @@ export const eslintPlugin: Fix<EslintPluginRunOptions> = {
     packageManager,
     dryRun,
     skipInstall,
+    storybookVersion,
   }) {
-    const deps = [`eslint-plugin-storybook`];
+    const deps = [`eslint-plugin-storybook@${storybookVersion}`];
 
     logger.info(`✅ Adding dependencies: ${deps}`);
     if (!dryRun) {

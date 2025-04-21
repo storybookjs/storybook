@@ -116,6 +116,7 @@ describe('configureEslintPlugin', () => {
       await configureEslintPlugin({
         eslintConfigFile: '.eslintrc.json',
         packageManager: mockPackageManager as any,
+        isFlatConfig: false,
       });
       expect(vi.mocked(writeFile).mock.calls).toHaveLength(0);
     });
@@ -135,6 +136,7 @@ describe('configureEslintPlugin', () => {
       await configureEslintPlugin({
         eslintConfigFile: '.eslintrc.json',
         packageManager: mockPackageManager as any,
+        isFlatConfig: false,
       });
       const [filePath, content] = vi.mocked(writeFile).mock.calls[0];
       expect(filePath).toBe('.eslintrc.json');
@@ -167,6 +169,7 @@ describe('configureEslintPlugin', () => {
       await configureEslintPlugin({
         eslintConfigFile: '.eslintrc.js',
         packageManager: mockPackageManager as any,
+        isFlatConfig: false,
       });
       expect(vi.mocked(writeFile).mock.calls).toHaveLength(0);
     });
@@ -179,7 +182,7 @@ describe('configureEslintPlugin', () => {
 
       const mockConfigFile = dedent`
         module.exports = {
-          extends: ['plugin:other'],
+          extends: ["plugin:other"],
         };
       `;
 
@@ -188,11 +191,12 @@ describe('configureEslintPlugin', () => {
       await configureEslintPlugin({
         eslintConfigFile: '.eslintrc.js',
         packageManager: mockPackageManager as any,
+        isFlatConfig: false,
       });
       const [, content] = vi.mocked(writeFile).mock.calls[0];
       expect(content).toMatchInlineSnapshot(`
         "module.exports = {
-          extends: ['plugin:other', 'plugin:storybook/recommended'],
+          extends: ["plugin:other", "plugin:storybook/recommended"],
         };"
       `);
     });

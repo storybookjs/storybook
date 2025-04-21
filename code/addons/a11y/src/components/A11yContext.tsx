@@ -2,6 +2,7 @@ import type { FC, PropsWithChildren } from 'react';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import {
+  STORY_CHANGED,
   STORY_FINISHED,
   STORY_RENDER_PHASE_CHANGED,
   type StoryFinishedPayload,
@@ -52,10 +53,11 @@ export interface A11yContextStore {
   handleSelectionChange: (key: string) => void;
 }
 
+const theme = convert(themes.light);
 const colorsByType = {
-  [RuleType.VIOLATION]: convert(themes.light).color.negative,
-  [RuleType.PASS]: convert(themes.light).color.positive,
-  [RuleType.INCOMPLETION]: convert(themes.light).color.warning,
+  [RuleType.VIOLATION]: theme.color.negative,
+  [RuleType.PASS]: theme.color.positive,
+  [RuleType.INCOMPLETION]: theme.color.warning,
 };
 
 export const A11yContext = createContext<A11yContextStore>({
@@ -201,6 +203,20 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
     [setResults, status, storyId]
   );
 
+  const handleSelect = useCallback(
+    (item: { id: string }, target: { selectors: string[] }) => {
+      const [type, id] = item.id.split('.');
+      const index =
+        results?.[type as RuleType]
+          ?.find((r) => r.id === id)
+          ?.nodes.findIndex((n) => target.selectors.some((s) => s === String(n.target))) ?? -1;
+      if (index !== -1) {
+        setSelectedItems(new Map([[`${type}.${id}`, `${type}.${id}.${index + 1}`]]));
+      }
+    },
+    [results]
+  );
+
   const handleReport = useCallback(
     ({ reporters }: StoryFinishedPayload) => {
       const a11yReport = reporters.find((r) => r.type === 'a11y') as Report<A11YReport> | undefined;
@@ -234,10 +250,12 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
     {
       [EVENTS.RESULT]: handleResult,
       [EVENTS.ERROR]: handleError,
+      [EVENTS.SELECT]: handleSelect,
+      [STORY_CHANGED]: () => setSelectedItems(new Map()),
       [STORY_RENDER_PHASE_CHANGED]: handleReset,
       [STORY_FINISHED]: handleReport,
     },
-    [handleReset, handleReport, handleReset, handleError, handleResult]
+    [handleReset, handleReport, handleSelect, handleError, handleResult]
   );
 
   const handleManual = useCallback(() => {
@@ -267,31 +285,60 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
 
     const selected = Array.from(selectedItems.values()).flatMap((key) => {
       const [type, id, number] = key.split('.');
+      if (type !== tab) {
+        return [];
+      }
       const result = results?.[type as RuleType]?.find((r) => r.id === id);
       const target = result?.nodes[Number(number) - 1]?.target;
-      return target ? [target] : [];
+      return target ? [String(target)] : [];
     });
-    const others = results?.[tab as RuleType]
-      ?.flatMap((r) => r.nodes.map((n) => n.target))
-      .filter((e) => !selected.includes(e));
+    emit(HIGHLIGHT, {
+      priority: 1,
+      selectors: selected,
+      styles: {
+        outline: `1px solid color-mix(in srgb, ${colorsByType[tab]}, transparent 30%)`,
+        backgroundColor: 'transparent',
+      },
+      focusStyles: {
+        outline: `1px solid ${theme.color.secondary}`,
+        backgroundColor: 'transparent',
+      },
+      menu: results?.[tab as RuleType].map((result) => ({
+        id: `${tab}.${result.id}`,
+        title: result.help,
+        description: result.description,
+        clickEvent: EVENTS.SELECT,
+        selectors: result.nodes
+          .flatMap((n) => n.target)
+          .map(String)
+          .filter((e) => selected.includes(e)),
+      })),
+    });
 
-    if (selected?.length) {
-      emit(HIGHLIGHT, {
-        elements: selected,
-        color: colorsByType[tab],
-        width: '2px',
-        offset: '0px',
-      });
-    }
-    if (others?.length) {
-      emit(HIGHLIGHT, {
-        elements: others,
-        color: `${colorsByType[tab]}99`,
-        style: 'dashed',
-        width: '1px',
-        offset: '1px',
-      });
-    }
+    const others = results?.[tab as RuleType]
+      .flatMap((r) => r.nodes.flatMap((n) => n.target).map(String))
+      .filter((e) => !selected.includes(e));
+    emit(HIGHLIGHT, {
+      selectors: others,
+      styles: {
+        outline: `1px solid color-mix(in srgb, ${colorsByType[tab]}, transparent 30%)`,
+        backgroundColor: `color-mix(in srgb, ${colorsByType[tab]}, transparent 60%)`,
+      },
+      focusStyles: {
+        outline: `1px solid ${theme.color.secondary}`,
+        backgroundColor: 'transparent',
+      },
+      menu: results?.[tab as RuleType].map((result) => ({
+        id: `${tab}.${result.id}`,
+        title: result.help,
+        description: result.description,
+        clickEvent: EVENTS.SELECT,
+        selectors: result.nodes
+          .flatMap((n) => n.target)
+          .map(String)
+          .filter((e) => !selected.includes(e)),
+      })),
+    });
   }, [emit, highlighted, results, tab, selectedItems]);
 
   const discrepancy: TestDiscrepancy = useMemo(() => {

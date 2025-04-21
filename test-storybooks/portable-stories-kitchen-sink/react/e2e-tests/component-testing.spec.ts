@@ -39,15 +39,19 @@ test.describe("component testing", () => {
     await page.evaluate(() => window.sessionStorage.clear());
     await sbPage.waitUntilLoaded();
 
-    
+
     // Ensure that all test results are removed and features are disabled, as previous tests might have enabled them
-    
+
     const clearStatusesButton = page.getByLabel('Clear all statuses');
     if (await clearStatusesButton.isVisible()) {
       await clearStatusesButton.click();
     }
 
-    await page.getByLabel('Expand testing module').click();
+    const expandTestingModule = page.getByLabel('Expand testing module');
+    if (await expandTestingModule.isVisible()) {
+      await expandTestingModule.click();
+    }
+
     const disableWatch = page.getByLabel('Disable watch mode');
     if (await disableWatch.isVisible()) {
       await disableWatch.click();
@@ -77,7 +81,7 @@ test.describe("component testing", () => {
       .getByRole("button", { name: "test" });
     await expect(storyElement).toBeVisible({ timeout: 30000 });
 
-    await sbPage.viewAddonPanel("Component tests");
+    await sbPage.viewAddonPanel("Interactions");
 
     // For whatever reason, when visiting a story sometimes the story element is collapsed and that causes flake
     const testStoryElement = await page.getByRole("button", {
@@ -89,8 +93,6 @@ test.describe("component testing", () => {
     }
 
     const testingModuleDescription = await page.locator('#testing-module-description');
-
-    await expect(testingModuleDescription).toContainText('Not run');
 
     const runTestsButton = await page.getByLabel('Start test run')
     await runTestsButton.click();
@@ -112,7 +114,7 @@ test.describe("component testing", () => {
       "Test status: success"
     );
     await expect(sbPage.panelContent()).toContainText(
-      /This component test passed in the CLI, but the tests failed in this browser/
+      /This interaction test passed in the CLI, but the tests failed in this browser/
     );
 
     // Assert discrepancy: CLI fail + Browser pass
@@ -125,7 +127,7 @@ test.describe("component testing", () => {
       "Test status: error"
     );
     await expect(sbPage.panelContent()).toContainText(
-      /This component test passed in this browser, but the tests failed in the CLI/
+      /This interaction test passed in this browser, but the tests failed in the CLI/
     );
   });
 
@@ -145,11 +147,9 @@ test.describe("component testing", () => {
       .getByRole("button", { name: "test" });
     await expect(storyElement).toBeVisible({ timeout: 30000 });
 
-    await expect(page.locator('#testing-module-title')).toHaveText('Run local tests');
+    await expect(page.locator('#testing-module-title')).toHaveText('Run component tests');
 
     const testingModuleDescription = await page.locator('#testing-module-description');
-
-    await expect(testingModuleDescription).toContainText('Not run');
 
     const runTestsButton = await page.getByLabel('Start test run')
     const watchModeButton = await page.getByLabel('Enable watch mode')
@@ -323,7 +323,7 @@ test.describe("component testing", () => {
 
     // Assert - Only one test is running and reported
     await expect(sidebarContextMenu.locator('#testing-module-description')).toContainText('Ran 1 test', { timeout: 30000 });
-    await expect(sidebarContextMenu.getByLabel('status: passed')).toHaveCount(1);
+    await expect(sidebarContextMenu.getByLabel('Component tests passed')).toHaveCount(1);
     await page.click('body');
     await expect(page.locator('#storybook-explorer-menu').getByRole('status', { name: 'Test status: success' })).toHaveCount(1);
   });
@@ -352,8 +352,8 @@ test.describe("component testing", () => {
     await sidebarContextMenu.getByLabel('Start test run').click();
 
     // Assert - Tests are running and errors are reported
-    const errorLink = page.locator('#testing-module-description a');
-    await expect(errorLink).toContainText('2 unhandled errors', { timeout: 30000 });
+    const errorLink = page.locator('#storybook-testing-module #testing-module-description a');
+    await expect(errorLink).toContainText('View full error', { timeout: 30000 });
     await errorLink.click();
 
     await expect(page.locator('pre')).toContainText('I THREW AN UNHANDLED ERROR!');
@@ -391,7 +391,7 @@ test.describe("component testing", () => {
     await expect(sidebarContextMenu.locator('#testing-module-description')).toContainText('Ran 8 tests', { timeout: 30000 });
     // Assert - Failing test shows as a failed status
     await expect(sidebarContextMenu.getByText('1 story with errors')).toBeVisible();
-    await expect(sidebarContextMenu.getByLabel('status: failed')).toHaveCount(1);
+    await expect(sidebarContextMenu.getByLabel('Component tests failed')).toHaveCount(1);
 
     await page.click('body');
     await expect(page.locator('#storybook-explorer-menu').getByRole('status', { name: 'Test status: success' })).toHaveCount(7);
@@ -424,7 +424,7 @@ test.describe("component testing", () => {
     await expect(sidebarContextMenu.locator('#testing-module-description')).toContainText('Ran 10 test', { timeout: 30000 });
     // Assert - 1 failing test shows as a failed status
     await expect(sidebarContextMenu.getByText('2 stories with errors')).toBeVisible();
-    await expect(sidebarContextMenu.getByLabel('status: failed')).toHaveCount(1);
+    await expect(sidebarContextMenu.getByLabel('Component tests failed')).toHaveCount(1);
 
     await page.click('body');
     await expect(page.locator('#storybook-explorer-menu').getByRole('status', { name: 'Test status: success' })).toHaveCount(7);
@@ -478,5 +478,14 @@ test.describe("component testing", () => {
     const sbPercentage = Number.parseInt(sbPercentageText!.replace('%', '') ?? '');
     expect(sbPercentage).toBeGreaterThanOrEqual(0);
     expect(sbPercentage).toBeLessThanOrEqual(100);
+  });
+
+  test.fixme("should still collect statuses even when the browser is closed", () => {
+  });
+
+  test.fixme("should have correct status count globally and in context menus", () => {
+  });
+
+  test.fixme("should open the correct component test and a11y panels when clicking on statuses", () => {
   });
 });

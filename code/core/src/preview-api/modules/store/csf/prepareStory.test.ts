@@ -123,6 +123,7 @@ describe('prepareStory', () => {
             a: { name: 'component' },
             b: { name: 'component' },
             nested: { z: { name: 'component' }, y: { name: 'component' } },
+            throwPlayFunctionExceptions: false,
           },
         },
         {
@@ -132,17 +133,20 @@ describe('prepareStory', () => {
             b: { name: 'global' },
             c: { name: 'global' },
             nested: { z: { name: 'global' }, x: { name: 'global' } },
+            throwPlayFunctionExceptions: false,
           },
         }
       );
 
-      expect(parameters).toEqual({
-        __isArgsStory: false,
-        a: 'story',
-        b: { name: 'component' },
-        c: { name: 'global' },
-        nested: { z: 'story', y: { name: 'component' }, x: { name: 'global' } },
-      });
+      expect(parameters).toEqual(
+        expect.objectContaining({
+          __isArgsStory: false,
+          a: 'story',
+          b: { name: 'component' },
+          c: { name: 'global' },
+          nested: { z: 'story', y: { name: 'component' }, x: { name: 'global' } },
+        })
+      );
     });
 
     it('sets a value even if annotations do not have parameters', () => {
@@ -152,7 +156,7 @@ describe('prepareStory', () => {
         { render: (args: any) => {} }
       );
 
-      expect(parameters).toEqual({ __isArgsStory: true });
+      expect(parameters).toEqual(expect.objectContaining({ __isArgsStory: true }));
     });
 
     it('does not set `__isArgsStory` if `render` does not take args', () => {
@@ -162,7 +166,7 @@ describe('prepareStory', () => {
         { render: () => {} }
       );
 
-      expect(parameters).toEqual({ __isArgsStory: false });
+      expect(parameters).toEqual(expect.objectContaining({ __isArgsStory: false }));
     });
   });
 
@@ -500,6 +504,8 @@ describe('prepareStory', () => {
           id,
           name,
           decorators: [storyDecorator],
+          parameters: {},
+          globals: {},
           moduleExport,
         },
         { id, title, decorators: [componentDecorator] },

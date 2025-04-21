@@ -246,7 +246,7 @@ export interface StoryContext<TRenderer extends Renderer = Renderer, TArgs = Arg
   abortSignal: AbortSignal;
   canvasElement: TRenderer['canvasElement'];
   hooks: unknown;
-  originalStoryFn: StoryFn<TRenderer>;
+  originalStoryFn: ArgsStoryFn<TRenderer>;
   viewMode: ViewMode;
   step: StepFunction<TRenderer, TArgs>;
   context: this;
@@ -405,8 +405,6 @@ export interface ProjectAnnotations<TRenderer extends Renderer = Renderer, TArgs
    */
   beforeAll?: BeforeAll;
 
-  /** @deprecated Project `globals` renamed to `initiaGlobals` */
-  globals?: Globals;
   initialGlobals?: Globals;
   globalTypes?: GlobalTypes;
   applyDecorators?: DecoratorApplicator<TRenderer, Args>;

@@ -1,15 +1,18 @@
 import React, { type SyntheticEvent, useCallback, useEffect, useRef, useState } from 'react';
 
+import { once } from 'storybook/internal/client-logger';
 import { Button, IconButton, TooltipNote } from 'storybook/internal/components';
 import { WithTooltip } from 'storybook/internal/components';
-import { type TestProviders } from 'storybook/internal/core-events';
+import type {
+  Addon_Collection,
+  Addon_TestProviderType,
+  TestProviderStateByProviderId,
+} from 'storybook/internal/types';
 
 import { ChevronSmallUpIcon, PlayAllHollowIcon, SweepIcon } from '@storybook/icons';
 
-import { useStorybookApi } from 'storybook/manager-api';
+import { internal_fullTestProviderStore } from '#manager-stores';
 import { keyframes, styled } from 'storybook/theming';
-
-import { LegacyRender } from './LegacyRender';
 
 const DEFAULT_HEIGHT = 500;
 
@@ -27,7 +30,8 @@ const Outline = styled.div<{
   crashed: boolean;
   failed: boolean;
   running: boolean;
-}>(({ crashed, failed, running, theme }) => ({
+  updated: boolean;
+}>(({ crashed, failed, running, updated, theme }) => ({
   position: 'relative',
   lineHeight: '16px',
   width: '100%',
@@ -36,7 +40,7 @@ const Outline = styled.div<{
   backgroundColor: `var(--sb-sidebar-bottom-card-background, ${theme.background.content})`,
   borderRadius:
     `var(--sb-sidebar-bottom-card-border-radius, ${theme.appBorderRadius + 1}px)` as any,
-  boxShadow: `inset 0 0 0 1px ${crashed && !running ? theme.color.negative : theme.appBorderColor}, var(--sb-sidebar-bottom-card-box-shadow, 0 1px 2px 0 rgba(0, 0, 0, 0.05), 0px -5px 20px 10px ${theme.background.app})`,
+  boxShadow: `inset 0 0 0 1px ${crashed && !running ? theme.color.negative : updated ? theme.color.positive : theme.appBorderColor}, var(--sb-sidebar-bottom-card-box-shadow, 0 1px 2px 0 rgba(0, 0, 0, 0.05), 0px -5px 20px 10px ${theme.background.app})`,
   transition: 'box-shadow 1s',
 
   '&:after': {
@@ -160,9 +164,11 @@ const TestProvider = styled.div(({ theme }) => ({
 }));
 
 interface TestingModuleProps {
-  testProviders: TestProviders[keyof TestProviders][];
+  registeredTestProviders: Addon_Collection<Addon_TestProviderType>;
+  testProviderStates: TestProviderStateByProviderId;
   hasStatuses: boolean;
   clearStatuses: () => void;
+  onRunAll: () => void;
   errorCount: number;
   errorsActive: boolean;
   setErrorsActive: (active: boolean) => void;
@@ -172,9 +178,11 @@ interface TestingModuleProps {
 }
 
 export const TestingModule = ({
-  testProviders,
+  registeredTestProviders,
+  testProviderStates,
   hasStatuses,
   clearStatuses,
+  onRunAll,
   errorCount,
   errorsActive,
   setErrorsActive,
@@ -182,13 +190,27 @@ export const TestingModule = ({
   warningsActive,
   setWarningsActive,
 }: TestingModuleProps) => {
-  const api = useStorybookApi();
-
   const timeoutRef = useRef<null | ReturnType<typeof setTimeout>>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const [maxHeight, setMaxHeight] = useState(DEFAULT_HEIGHT);
   const [isCollapsed, setCollapsed] = useState(true);
   const [isChangingCollapse, setChangingCollapse] = useState(false);
+  const [isUpdated, setIsUpdated] = useState(false);
+  const settingsUpdatedTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+
+  useEffect(() => {
+    const unsubscribe = internal_fullTestProviderStore.onSettingsChanged(() => {
+      setIsUpdated(true);
+      clearTimeout(settingsUpdatedTimeoutRef.current);
+      settingsUpdatedTimeoutRef.current = setTimeout(() => {
+        setIsUpdated(false);
+      }, 1000);
+    });
+    return () => {
+      unsubscribe();
+      clearTimeout(settingsUpdatedTimeoutRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (contentRef.current) {
@@ -208,10 +230,10 @@ export const TestingModule = ({
     }
   }, [isCollapsed]);
 
-  const toggleCollapsed = useCallback((event: SyntheticEvent) => {
-    event.stopPropagation();
+  const toggleCollapsed = useCallback((event?: SyntheticEvent, value?: boolean) => {
+    event?.stopPropagation();
     setChangingCollapse(true);
-    setCollapsed((s) => !s);
+    setCollapsed((s) => value ?? !s);
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
@@ -220,10 +242,19 @@ export const TestingModule = ({
     }, 250);
   }, []);
 
-  const isRunning = testProviders.some((tp) => tp.running);
-  const isCrashed = testProviders.some((tp) => tp.crashed);
-  const isFailed = testProviders.some((tp) => tp.failed);
-  const hasTestProviders = testProviders.length > 0;
+  const isRunning = Object.values(testProviderStates).some(
+    (testProviderState) => testProviderState === 'test-provider-state:running'
+  );
+  const isCrashed = Object.values(testProviderStates).some(
+    (testProviderState) => testProviderState === 'test-provider-state:crashed'
+  );
+  const hasTestProviders = Object.values(registeredTestProviders).length > 0;
+
+  useEffect(() => {
+    if (isCrashed && isCollapsed) {
+      toggleCollapsed(undefined, false);
+    }
+  }, [isCrashed, isCollapsed, toggleCollapsed]);
 
   if (!hasTestProviders && (!errorCount || !warningCount)) {
     return null;
@@ -234,7 +265,8 @@ export const TestingModule = ({
       id="storybook-testing-module"
       running={isRunning}
       crashed={isCrashed}
-      failed={isFailed || errorCount > 0}
+      failed={errorCount > 0}
+      updated={isUpdated}
     >
       <Card>
         {hasTestProviders && (
@@ -247,11 +279,17 @@ export const TestingModule = ({
             }}
           >
             <Content ref={contentRef}>
-              {testProviders.map((state) => {
-                const { render: Render } = state;
+              {Object.values(registeredTestProviders).map((registeredTestProvider) => {
+                const { render: Render, id } = registeredTestProvider;
+                if (!Render) {
+                  once.warn(
+                    `No render function found for test provider with id '${id}', skipping...`
+                  );
+                  return null;
+                }
                 return (
-                  <TestProvider key={state.id} data-module-id={state.id}>
-                    {Render ? <Render {...state} /> : <LegacyRender {...state} />}
+                  <TestProvider key={id} data-module-id={id}>
+                    <Render />
                   </TestProvider>
                 );
               })}
@@ -259,7 +297,7 @@ export const TestingModule = ({
           </Collapsible>
         )}
 
-        <Bar {...(hasTestProviders ? { onClick: toggleCollapsed } : {})}>
+        <Bar {...(hasTestProviders ? { onClick: (e) => toggleCollapsed(e) } : {})}>
           <Action>
             {hasTestProviders && (
               <WithTooltip
@@ -273,9 +311,7 @@ export const TestingModule = ({
                   padding="small"
                   onClick={(e: SyntheticEvent) => {
                     e.stopPropagation();
-                    testProviders
-                      .filter((state) => !state.running && state.runnable)
-                      .forEach(({ id }) => api.runTestProvider(id));
+                    onRunAll();
                   }}
                   disabled={isRunning}
                 >
@@ -300,7 +336,7 @@ export const TestingModule = ({
                   size="medium"
                   variant="ghost"
                   padding="small"
-                  onClick={toggleCollapsed}
+                  onClick={(e) => toggleCollapsed(e)}
                   id="testing-module-collapse-toggle"
                   aria-label={isCollapsed ? 'Expand testing module' : 'Collapse testing module'}
                 >
@@ -364,7 +400,15 @@ export const TestingModule = ({
             {hasStatuses && (
               <WithTooltip
                 hasChrome={false}
-                tooltip={<TooltipNote note="Clear all statuses" />}
+                tooltip={
+                  <TooltipNote
+                    note={
+                      isRunning
+                        ? "Can't clear statuses while tests are running"
+                        : 'Clear all statuses'
+                    }
+                  />
+                }
                 trigger="hover"
               >
                 <IconButton
@@ -374,7 +418,12 @@ export const TestingModule = ({
                     e.stopPropagation();
                     clearStatuses();
                   }}
-                  aria-label="Clear all statuses"
+                  disabled={isRunning}
+                  aria-label={
+                    isRunning
+                      ? "Can't clear statuses while tests are running"
+                      : 'Clear all statuses'
+                  }
                 >
                   <SweepIcon />
                 </IconButton>

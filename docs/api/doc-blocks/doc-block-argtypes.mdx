@@ -5,8 +5,6 @@ sidebar:
   title: ArgTypes
 ---
 
-<YouTubeCallout id="uAA1JvLcl-w" title="Avoid Documentation Nightmares with Storybook's ArgTypes Doc Block" params="start=232" />
-
 The `ArgTypes` block can be used to show a static table of [arg types](../arg-types.mdx) for a given component, as a way to document its interface.
 
 <Callout variant="info" icon="💡">
@@ -18,7 +16,7 @@ The `ArgTypes` block can be used to show a static table of [arg types](../arg-ty
 {/* prettier-ignore-start */}
 
 ```md title="ButtonDocs.mdx"
-import { Meta, ArgTypes } from '@storybook/blocks';
+import { Meta, ArgTypes } from '@storybook/addon-docs/blocks';
 import * as ButtonStories from './Button.stories';
 
 <Meta of={ButtonStories} />
@@ -31,7 +29,7 @@ import * as ButtonStories from './Button.stories';
 ## ArgTypes
 
 ```js
-import { ArgTypes } from '@storybook/blocks';
+import { ArgTypes } from '@storybook/addon-docs/blocks';
 ```
 
 <details>

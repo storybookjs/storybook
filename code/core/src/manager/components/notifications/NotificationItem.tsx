@@ -1,15 +1,14 @@
 import type { FC, SyntheticEvent } from 'react';
 import React, { useCallback, useEffect, useRef } from 'react';
 
-import type { IconsProps } from 'storybook/internal/components';
-import { IconButton, Icons } from 'storybook/internal/components';
+import { IconButton } from 'storybook/internal/components';
 import { Link } from 'storybook/internal/router';
 
 import { CloseAltIcon } from '@storybook/icons';
 
 import { transparentize } from 'polished';
 import { type State } from 'storybook/manager-api';
-import { keyframes, styled, useTheme } from 'storybook/theming';
+import { keyframes, styled } from 'storybook/theming';
 
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
 
@@ -133,31 +132,17 @@ const SubHeadline = styled.div(({ theme }) => ({
 const ItemContent: FC<Pick<State['notifications'][0], 'icon' | 'content'>> = ({
   icon,
   content: { headline, subHeadline },
-}) => {
-  const theme = useTheme();
-  const defaultColor = theme.base === 'dark' ? theme.color.mediumdark : theme.color.mediumlight;
-
-  return (
-    <>
-      {!icon || (
-        <NotificationIconWrapper>
-          {React.isValidElement(icon)
-            ? icon
-            : typeof icon === 'object' &&
-              'name' in icon && (
-                <Icons icon={icon.name as IconsProps['icon']} color={icon.color || defaultColor} />
-              )}
-        </NotificationIconWrapper>
-      )}
-      <NotificationTextWrapper>
-        <Headline title={headline} hasIcon={!!icon}>
-          {headline}
-        </Headline>
-        {subHeadline && <SubHeadline>{subHeadline}</SubHeadline>}
-      </NotificationTextWrapper>
-    </>
-  );
-};
+}) => (
+  <>
+    {!icon || <NotificationIconWrapper>{icon}</NotificationIconWrapper>}
+    <NotificationTextWrapper>
+      <Headline title={headline} hasIcon={!!icon}>
+        {headline}
+      </Headline>
+      {subHeadline && <SubHeadline>{subHeadline}</SubHeadline>}
+    </NotificationTextWrapper>
+  </>
+);
 
 const DismissButtonWrapper = styled(IconButton)(({ theme }) => ({
   width: 28,

@@ -1,6 +1,5 @@
 import React from 'react';
 
-import { type Addon_SidebarTopType } from 'storybook/internal/types';
 import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
@@ -9,7 +8,7 @@ import type { IndexHash } from 'storybook/manager-api';
 import { ManagerContext } from 'storybook/manager-api';
 import { expect, fn, userEvent, within } from 'storybook/test';
 
-import { internal_fullStatusStore } from '../../status-store.mock';
+import { internal_fullStatusStore } from '../../manager-stores.mock';
 import { LayoutProvider } from '../layout/LayoutProvider';
 import { standardData as standardHeaderData } from './Heading.stories';
 import { IconSymbols } from './IconSymbols';
@@ -36,7 +35,6 @@ const managerContext: any = {
       autodocs: 'tag',
       docsMode: false,
     },
-    testProviders: {},
   },
   api: {
     emit: fn().mockName('api::emit'),
@@ -68,7 +66,6 @@ const meta = {
   args: {
     previewInitialized: true,
     menu,
-    extra: [] as Addon_SidebarTopType[],
     index: index,
     indexJson: {
       entries: {

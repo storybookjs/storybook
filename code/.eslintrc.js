@@ -4,12 +4,12 @@ const scriptPath = path.join(__dirname, '..', 'scripts');
 
 module.exports = {
   root: true,
-  extends: [path.join(scriptPath, '.eslintrc.cjs')],
+  extends: [path.join(scriptPath, '.eslintrc.cjs'), 'plugin:compat/recommended'],
   parserOptions: {
     tsconfigRootDir: __dirname,
     project: ['./tsconfig.json'],
   },
-  plugins: ['local-rules'],
+  plugins: ['local-rules', 'compat'],
   rules: {
     'import/no-extraneous-dependencies': [
       'error',
@@ -110,6 +110,7 @@ module.exports = {
       ],
       rules: {
         'import/no-extraneous-dependencies': 'off',
+        'compat/compat': 'off',
       },
     },
     {

@@ -78,10 +78,10 @@ type CLIOptions = {
  *
  * ```sh
  * sb add "@storybook/addon-docs"
- * sb add "@storybook/addon-interactions@7.0.1"
+ * sb add "@storybook/addon-vitest@9.0.1"
  * ```
  *
- * If there is no version specifier and it's a storybook addon, it will try to use the version
+ * If there is no version specifier and it's a Storybook addon, it will try to use the version
  * specifier matching your current Storybook install version.
  */
 export async function add(
@@ -150,7 +150,10 @@ export async function add(
       : `${addonName}@${version}`;
 
   logger.log(`Installing ${addonWithVersion}`);
-  await packageManager.addDependencies({ installAsDevDependencies: true }, [addonWithVersion]);
+  await packageManager.addDependencies(
+    { installAsDevDependencies: true, writeOutputToFile: false },
+    [addonWithVersion]
+  );
 
   if (shouldAddToMain) {
     logger.log(`Adding '${addon}' to the "addons" field in ${mainConfigPath}`);

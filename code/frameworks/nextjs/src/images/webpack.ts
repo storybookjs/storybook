@@ -34,10 +34,6 @@ const configureImageDefaults = (baseConfig: WebpackConfig): void => {
 const configureStaticImageImport = (baseConfig: WebpackConfig, nextConfig: NextConfig): void => {
   const version = getNextjsVersion();
 
-  if (semver.lt(version, '11.0.0')) {
-    return;
-  }
-
   const rules = baseConfig.module?.rules;
 
   const assetRule = rules?.find(

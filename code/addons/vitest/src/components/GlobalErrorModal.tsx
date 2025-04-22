@@ -47,10 +47,10 @@ const TroubleshootLink = styled.a(({ theme }) => ({
 
 export const GlobalErrorContext = React.createContext<{
   isModalOpen: boolean;
-  setModalOpen: (isOpen: boolean) => void;
+  setModalOpen?: (isOpen: boolean) => void;
 }>({
   isModalOpen: false,
-  setModalOpen: () => {},
+  setModalOpen: undefined,
 });
 
 interface GlobalErrorModalProps {
@@ -77,7 +77,7 @@ function ErrorCause({ error }: { error: ErrorLike }) {
 export function GlobalErrorModal({ onRerun, storeState }: GlobalErrorModalProps) {
   const api = useStorybookApi();
   const { isModalOpen, setModalOpen } = useContext(GlobalErrorContext);
-  const handleClose = () => setModalOpen(false);
+  const handleClose = () => setModalOpen?.(false);
 
   const troubleshootURL = api.getDocsUrl({
     subpath: DOCUMENTATION_FATAL_ERROR_LINK,
@@ -161,7 +161,7 @@ export function GlobalErrorModal({ onRerun, storeState }: GlobalErrorModalProps)
               Troubleshoot
             </a>
           </Button>
-          <IconButton onClick={handleClose}>
+          <IconButton onClick={handleClose} aria-label="Close modal">
             <CloseIcon />
           </IconButton>
         </ModalActionBar>

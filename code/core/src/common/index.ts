@@ -44,6 +44,8 @@ export * from './utils/posix';
 export * from './utils/get-addon-names';
 export * from './utils/sync-main-preview-addons';
 export * from './js-package-manager';
+export * from './utils/scan-and-transform-files';
+export * from './utils/transform-imports';
 
 export { versions };
 

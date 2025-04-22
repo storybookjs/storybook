@@ -78,3 +78,17 @@ export type Box = {
   width: number;
   height: number;
 };
+
+export type ClickEventDetails = {
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+  selectors: string[];
+  element: {
+    attributes: Record<string, string>;
+    localName: string;
+    tagName: string;
+    outerHTML: string;
+  };
+};

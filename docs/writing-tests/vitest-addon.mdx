@@ -1,13 +1,13 @@
 ---
-title: 'Test addon'
+title: 'Vitest addon'
 sidebar:
   order: 6
-  title: Test addon
+  title: Vitest addon
 ---
 
 <If notRenderer={['react', 'vue', 'svelte']}>
   <Callout variant="info">
-    The Test addon is currently only supported in [React](?renderer=react), [Vue](?renderer=vue) and [Svelte](?renderer=svelte) projects, which use the [Vite builder](../builders/vite.mdx) (or the [Next.js framework with Vite](../get-started/frameworks/nextjs.mdx#with-vite)).
+    The Vitest addon is currently only supported in [React](?renderer=react), [Vue](?renderer=vue) and [Svelte](?renderer=svelte) projects, which use the [Vite builder](../builders/vite.mdx) (or the [Next.js framework with Vite](../get-started/frameworks/nextjs.mdx#with-vite)).
 
     If you are using a different renderer (such as Angular) or the Webpack builder, you can use the [Storyboook test runner](./test-runner.mdx) to test your stories.
   </Callout>
@@ -17,7 +17,7 @@ sidebar:
 
 <If renderer={['react', 'vue', 'svelte']}>
 
-Storybook's Test addon allows you to test your components directly inside Storybook. On its own, it transforms your [stories](../writing-stories/index.mdx) into [component tests](./component-testing.mdx), which test the rendering and behavior of your components in a real browser environment. It can also calculate project [coverage](./test-coverage.mdx) provided by your stories.
+Storybook's Vitest addon allows you to test your components directly inside Storybook. On its own, it transforms your [stories](../writing-stories/index.mdx) into [component tests](./component-testing.mdx), which test the rendering and behavior of your components in a real browser environment. It can also calculate project [coverage](./test-coverage.mdx) provided by your stories.
 
 If your project is using other testing addons, such as the [Visual tests addon](./visual-testing.mdx) or the [Accessibility addon](./accessibility-testing.mdx), you can run those tests alongside your component tests.
 
@@ -40,13 +40,13 @@ Before installing, make sure your project meets the following requirements:
 
 <If renderer="react">
   <Callout variant="info" icon="ℹ️">
-    **Using with Next.js** — The Test addon is supported in Next.js ≥ 14.1 projects, but you must be using the [`@storybook/nextjs-vite` framework](../get-started/frameworks/nextjs.mdx#with-vite). When you run the setup command below, you will be prompted to install and use the framework if you haven't already.
+    **Using with Next.js** — The Vitest addon is supported in Next.js ≥ 14.1 projects, but you must be using the [`@storybook/nextjs-vite` framework](../get-started/frameworks/nextjs.mdx#with-vite). When you run the setup command below, you will be prompted to install and use the framework if you haven't already.
   </Callout>
 </If>
 
-If you're not yet using Storybook 8.5, you can [upgrade your Storybook](../configure/upgrading.mdx) to the prerelease version:
+If you're not yet using Storybook 8.5, you can [upgrade your Storybook](../configure/upgrading.mdx):
 
-<CodeSnippets path="storybook-upgrade-prerelease.md" />
+<CodeSnippets path="storybook-upgrade.md" />
 
 ### Automatic setup
 
@@ -54,7 +54,7 @@ Run the following command to install and configure the addon, which contains the
 
 <CodeSnippets path="addon-test-install.md" />
 
-That [`add` command](../addons/install-addons.mdx#automatic-installation) will install and register the test addon. It will also inspect your project's Vite and Vitest setup, and install and configure them with sensible defaults, if necessary. You may need to adjust the configuration to fit your project's needs. The full configuration options can be found in the [API section](#options), below.
+That [`add` command](../addons/install-addons.mdx#automatic-installation) will install and register the Vitest addon. It will also inspect your project's Vite and Vitest setup, and install and configure them with sensible defaults, if necessary. You may need to adjust the configuration to fit your project's needs. The full configuration options can be found in the [API section](#options), below.
 
 ### Manual setup
 
@@ -142,7 +142,7 @@ To run tests for a specific story or group of stories, press the menu button (th
 
 ![Screenshot of story sidebar item with open menu](../_assets/writing-tests/addon-test-sidebar-item-menu.png)
 
-After running your tests, you will now see status indicators on stories and components for their pass, fail, or error state. You can press on the menu button when hovering a story to see the test results for that story. Selecting a result in the menu will navigate you to that story and open the appropriate debugging panel. For example, if a component test fails, you can jump straight to the failure in the Component tests addon panel. That panel provides an interactive debugger for your component test, allowing you to step through each simulated behavior or assertion.
+After running your tests, you will now see status indicators on stories and components for their pass, fail, or error state. You can press on the menu button when hovering a story to see the test results for that story. Selecting a result in the menu will navigate you to that story and open the appropriate debugging panel. For example, if a component test fails, you can jump straight to the failure in the Interactions panel. That panel provides an interactive debugger for your component test, allowing you to step through each simulated behavior or assertion.
 
 The test module will also show you the total number of tests run, the number of tests that passed, and the number of tests that failed or errored. You can press the failure number to filter the sidebar to only those stories that failed.
 
@@ -232,7 +232,7 @@ export default defineWorkspace([
 
 ## How it works
 
-The Test addon works by using a Vitest plugin to transform your stories into [Vitest](https://vitest.dev) tests using [portable stories](../api/portable-stories/portable-stories-vitest.mdx). It also configures Vitest to run those tests in [browser mode](https://vitest.dev/guide/browser/), using Playwright's Chromium browser. Because it is built on top of Vitest, the addon requires a Vite-based Storybook framework.
+The Vitest addon works by using a Vitest plugin to transform your stories into [Vitest](https://vitest.dev) tests using [portable stories](../api/portable-stories/portable-stories-vitest.mdx). It also configures Vitest to run those tests in [browser mode](https://vitest.dev/guide/browser/), using Playwright's Chromium browser. Because it is built on top of Vitest, the addon requires a Vite-based Storybook framework.
 
 Stories are tested in two ways: a smoke test to ensure it renders and, if a [play function](../writing-tests/component-testing#write-a-component-test) is defined, that function is run and any [assertions made](../writing-tests/component-testing.mdx#assert-tests-with-vitests-apis) within it are validated.
 
@@ -244,7 +244,7 @@ The tests run by the addon can be configured in two ways. You can toggle which t
 
 ### Toggling test types
 
-In addition to component tests, the Test addon supports multiple types of tests, depending on which other addons you are using in your project. Some test types, like [visual tests](./visual-testing.mdx), are run independently. Others, like [accessibility](./accessibility-testing.mdx), must be run alongside component tests. For these dependent test types, you can toggle them on or off in the test module by pressing the edit button (pencil icon) and checking or unchecking the test types you want to run.
+In addition to component tests, the Vitest addon supports multiple types of tests, depending on which other addons you are using in your project. Some test types, like [visual tests](./visual-testing.mdx), are run independently. Others, like [accessibility](./accessibility-testing.mdx), must be run alongside component tests. For these dependent test types, you can toggle them on or off in the test module by pressing the edit button (pencil icon) and checking or unchecking the test types you want to run.
 
 ![Screenshot of test module, expanded, edit mode, everything is checked](../_assets/writing-tests/addon-test-module-edit.png)
 
@@ -316,7 +316,7 @@ Vitest offers [troubleshooting help for common errors](https://vitest.dev/guide/
 
 ### What happens when there are different test results in multiple environments?
 
-When you run tests with this addon, they are run as Vitest tests with whatever configuration you have set up in your project. By default, they will run in browser mode, using Playwright's Chromium browser. Sometimes, tests will fail when run in the addon (or via CLI), but then pass when viewed in the Component tests addon panel (or vice versa). This can happen because the tests are run in different environments, which can have different behaviors.
+When you run tests with this addon, they are run as Vitest tests with whatever configuration you have set up in your project. By default, they will run in browser mode, using Playwright's Chromium browser. Sometimes, tests will fail when run in the addon (or via CLI), but then pass when viewed in the Interactions panel (or vice versa). This can happen because the tests are run in different environments, which can have different behaviors.
 
 ### How do I debug my CLI tests in Storybook?
 

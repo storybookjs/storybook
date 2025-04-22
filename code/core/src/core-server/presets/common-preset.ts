@@ -216,6 +216,14 @@ export const features: PresetProperty<'features'> = async (existing) => ({
   argTypeTargetsV7: true,
   legacyDecoratorFileOrder: false,
   disallowImplicitActionsInRenderV8: true,
+  viewport: true,
+  highlight: true,
+  controls: true,
+  interactions: true,
+  actions: true,
+  backgrounds: true,
+  outline: true,
+  measure: true,
 });
 
 export const csfIndexer: Indexer = {

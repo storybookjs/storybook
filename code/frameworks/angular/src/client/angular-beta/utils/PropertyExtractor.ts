@@ -29,12 +29,10 @@ export const uniqueArray = (arr: any[]) => {
 };
 
 export class PropertyExtractor implements NgModuleMetadata {
-  /* eslint-disable @typescript-eslint/lines-between-class-members */
   declarations?: any[] = [];
   imports?: any[];
   providers?: Provider[];
   applicationProviders?: Array<Provider | ReturnType<typeof importProvidersFrom>>;
-  /* eslint-enable @typescript-eslint/lines-between-class-members */
 
   constructor(
     private metadata: NgModuleMetadata,

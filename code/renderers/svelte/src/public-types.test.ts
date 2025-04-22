@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-shadow */
 // this file tests Typescript types that's why there are no assertions
 import { describe, it } from 'vitest';
 

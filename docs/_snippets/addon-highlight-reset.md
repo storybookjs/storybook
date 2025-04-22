@@ -1,8 +1,9 @@
 ```ts filename="MyComponent.stories.ts" renderer="angular" language="ts"
 import type { Meta, StoryObj } from '@storybook/angular';
 import { componentWrapperDecorator } from '@storybook/angular';
-import { useChannel } from '@storybook/preview-api';
-import { HIGHLIGHT, RESET_HIGHLIGHT } from '@storybook/addon-highlight';
+
+import { useChannel } from 'storybook/preview-api';
+import { HIGHLIGHT, RESET_HIGHLIGHT } from 'storybook/highlight';
 
 import { MyComponent } from './MyComponent.component';
 
@@ -28,8 +29,8 @@ export const ResetHighlight: Story = {
 ```
 
 ```js filename="MyComponent.stories.js|jsx" renderer="react" language="js"
-import { useChannel } from '@storybook/preview-api';
-import { HIGHLIGHT, RESET_HIGHLIGHT } from '@storybook/addon-highlight';
+import { useChannel } from 'storybook/preview-api';
+import { HIGHLIGHT, RESET_HIGHLIGHT } from 'storybook/highlight';
 
 import { MyComponent } from './MyComponent';
 
@@ -51,10 +52,11 @@ export const ResetHighlight = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/react';
-import { useChannel } from '@storybook/preview-api';
-import { HIGHLIGHT, RESET_HIGHLIGHT } from '@storybook/addon-highlight';
+```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts"
+import type { Meta, StoryObj } from '@storybook/react-vite';
+
+import { useChannel } from 'storybook/preview-api';
+import { HIGHLIGHT, RESET_HIGHLIGHT } from 'storybook/highlight';
 
 import { MyComponent } from './MyComponent';
 
@@ -64,34 +66,6 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-export const ResetHighlight: Story = {
-  decorators: [
-    (storyFn) => {
-      const emit = useChannel({});
-      emit(RESET_HIGHLIGHT); //👈 Remove previously highlighted elements
-      emit(HIGHLIGHT, {
-        elements: ['header', 'section', 'footer'],
-      });
-      return storyFn();
-    },
-  ],
-};
-```
-
-```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts"
-import type { Meta, StoryObj } from '@storybook/react';
-import { useChannel } from '@storybook/preview-api';
-import { HIGHLIGHT, RESET_HIGHLIGHT } from '@storybook/addon-highlight';
-
-import { MyComponent } from './MyComponent';
-
-const meta: Meta<typeof MyComponent> = {
-  component: MyComponent,
-};
-
-export default meta;
-type Story = StoryObj<typeof MyComponent>;
 
 export const ResetHighlight: Story = {
   decorators: [
@@ -108,8 +82,8 @@ export const ResetHighlight: Story = {
 ```
 
 ```js filename="MyComponent.stories.js" renderer="vue" language="js"
-import { useChannel } from '@storybook/preview-api';
-import { HIGHLIGHT, RESET_HIGHLIGHT } from '@storybook/addon-highlight';
+import { useChannel } from 'storybook/preview-api';
+import { HIGHLIGHT, RESET_HIGHLIGHT } from 'storybook/highlight';
 
 import MyComponent from './MyComponent.vue';
 
@@ -133,10 +107,11 @@ export const ResetHighlight = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="vue" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/vue3';
-import { useChannel } from '@storybook/preview-api';
-import { HIGHLIGHT, RESET_HIGHLIGHT } from '@storybook/addon-highlight';
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts"
+import type { Meta, StoryObj } from '@storybook/vue3-vite';
+
+import { useChannel } from 'storybook/preview-api';
+import { HIGHLIGHT, RESET_HIGHLIGHT } from 'storybook/highlight';
 
 import MyComponent from './MyComponent.vue';
 
@@ -146,36 +121,6 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-export const ResetHighlight: Story = {
-  decorators: [
-    () => {
-      const emit = useChannel({});
-      emit(RESET_HIGHLIGHT); //👈 Remove previously highlighted elements
-      emit(HIGHLIGHT, {
-        elements: ['header', 'section', 'footer'],
-      });
-      return {
-        template: '<story />',
-      };
-    },
-  ],
-};
-```
-
-```ts filename="MyComponent.stories.ts" renderer="vue" language="ts"
-import type { Meta, StoryObj } from '@storybook/vue3';
-import { useChannel } from '@storybook/preview-api';
-import { HIGHLIGHT, RESET_HIGHLIGHT } from '@storybook/addon-highlight';
-
-import MyComponent from './MyComponent.vue';
-
-const meta: Meta<typeof MyComponent> = {
-  component: MyComponent,
-};
-
-export default meta;
-type Story = StoryObj<typeof MyComponent>;
 
 export const ResetHighlight: Story = {
   decorators: [
@@ -194,8 +139,8 @@ export const ResetHighlight: Story = {
 ```
 
 ```js filename="MyComponent.stories.js" renderer="web-components" language="js"
-import { useChannel } from '@storybook/preview-api';
-import { HIGHLIGHT, RESET_HIGHLIGHT } from '@storybook/addon-highlight';
+import { useChannel } from 'storybook/preview-api';
+import { HIGHLIGHT, RESET_HIGHLIGHT } from 'storybook/highlight';
 
 export default {
   component: 'my-component',
@@ -216,9 +161,10 @@ export const ResetHighlight = {
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components';
-import { useChannel } from '@storybook/preview-api';
-import { HIGHLIGHT, RESET_HIGHLIGHT } from '@storybook/addon-highlight';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
+
+import { useChannel } from 'storybook/preview-api';
+import { HIGHLIGHT, RESET_HIGHLIGHT } from 'storybook/highlight';
 
 const meta: Meta = {
   component: 'my-component',

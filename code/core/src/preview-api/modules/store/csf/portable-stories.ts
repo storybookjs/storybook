@@ -1,6 +1,3 @@
-/* eslint-disable no-underscore-dangle */
-
-/* eslint-disable @typescript-eslint/naming-convention */
 import { type CleanupCallback, type Preview, isExportStory } from 'storybook/internal/csf';
 import { MountMustBeDestructuredError } from 'storybook/internal/preview-errors';
 import type {

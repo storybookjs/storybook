@@ -54,10 +54,10 @@
 </template>
 
 <script lang="ts" setup>
-import './page.css';
-import MyHeader from './Header.vue';
-
 import { ref } from 'vue';
+
+import MyHeader from './Header.vue';
+import './page.css';
 
 const user = ref<{ name: string } | null>(null);
 

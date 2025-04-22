@@ -5,8 +5,6 @@ sidebar:
   title: Theming
 ---
 
-<YouTubeCallout id="x2nGXHAKOrE" title="Storybook Theming" />
-
 Storybook is theme-able using a lightweight theming API.
 
 ## Global theming
@@ -14,14 +12,6 @@ Storybook is theme-able using a lightweight theming API.
 It's possible to theme Storybook globally.
 
 Storybook includes two themes that look good out of the box: "light" and "dark". Unless you've set your preferred color scheme as dark, Storybook will use the light theme as default.
-
-Make sure you have installed [`@storybook/manager-api`](https://www.npmjs.com/package/@storybook/manager-api) and [`@storybook/theming`](https://www.npmjs.com/package/@storybook/theming) packages.
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="storybook-theming-packages-install.md" />
-
-{/* prettier-ignore-end */}
 
 As an example, you can tell Storybook to use the "dark" theme by modifying [`.storybook/manager.js`](./features-and-behavior.mdx):
 
@@ -113,7 +103,7 @@ With the new changes introduced, the custom theme should yield a similar result.
   Many theme variables are optional, the <code>base</code> property is **NOT**.
 </Callout>
 
-The `@storybook/theming` package is built using TypeScript, which should help create a valid theme for TypeScript users. The types are part of the package itself.
+The `storybook/theming` module is built using TypeScript, which should help create a valid theme for TypeScript users. The types are part of the package itself.
 
 ## CSS escape hatches
 

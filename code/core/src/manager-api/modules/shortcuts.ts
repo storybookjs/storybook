@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/naming-convention */
 import {
   FORCE_REMOUNT,
   PREVIEW_KEYDOWN,

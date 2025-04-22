@@ -40,7 +40,6 @@ type Event = {
   };
 };
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export const experimental_serverChannel = async (channel: Channel, options: Options) => {
   const core = await options.presets.apply('core');
   const builderName = typeof core?.builder === 'string' ? core.builder : core?.builder?.name;

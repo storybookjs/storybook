@@ -1,6 +1,4 @@
 /* eslint-disable react/no-direct-mutation-state */
-
-/* eslint-disable react/sort-comp */
 import type { ReactElement } from 'react';
 import React, { Component, cloneElement } from 'react';
 

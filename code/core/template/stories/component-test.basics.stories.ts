@@ -73,6 +73,9 @@ export const SyncWaitFor = {
     const canvas = within(canvasElement);
     await step('Submit form', Callback.play);
     await waitFor(() => canvas.getByText('Completed!!'));
+    await waitForElementToBeRemoved(() => canvas.queryByText('Completed!!'), {
+      timeout: 2000,
+    });
   },
 };
 
@@ -81,13 +84,6 @@ export const AsyncWaitFor = {
     const canvas = within(canvasElement);
     await step('Submit form', Callback.play);
     await waitFor(async () => canvas.getByText('Completed!!'));
-  },
-};
-
-export const WaitForElementToBeRemoved = {
-  play: async ({ canvasElement, step }) => {
-    const canvas = within(canvasElement);
-    await step('SyncWaitFor play fn', SyncWaitFor.play);
     await waitForElementToBeRemoved(() => canvas.queryByText('Completed!!'), {
       timeout: 2000,
     });

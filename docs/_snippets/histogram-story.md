@@ -344,8 +344,8 @@ export const Default = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from 'storybook/web-components-vite';
+```ts filename="Histogram.stories.ts" renderer="web-components" language="ts"
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
   component: 'histogram-component',

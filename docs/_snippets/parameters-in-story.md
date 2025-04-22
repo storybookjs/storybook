@@ -198,7 +198,7 @@ const meta: Meta = {
 };
 
 export default meta;
-type Story = StoryObj<typeof Button>;
+type Story = StoryObj;
 
 export const Primary = {
   // 👇 Story-level parameters

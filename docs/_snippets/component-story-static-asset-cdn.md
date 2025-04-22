@@ -181,7 +181,7 @@ export const WithAnImage = {
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="vue" language="ts"
-import type { Meta, StoryObj } from 'storybook/vue3-vite';
+import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import MyComponent from './MyComponent.vue';
 

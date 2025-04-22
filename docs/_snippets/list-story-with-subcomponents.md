@@ -215,7 +215,7 @@ export const OneItem = {
 ```
 
 ```ts filename="List.stories.ts" renderer="vue" language="ts"
-import type { Meta, StoryObj } from "@storybook/vue3-vite";
+import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import List from './List.vue';
 import ListItem from './ListItem.vue';

@@ -164,7 +164,7 @@ export const Empty = {};
 ```
 
 ```ts filename="List.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
-import type { Meta, StoryObj } from 'storybook/svelte-vite';
+import type { Meta, StoryObj } from '@storybook/svelte-vite';
 
 import List from './List.svelte';
 
@@ -230,7 +230,7 @@ export const Empty = {
 ```
 
 ```ts filename="List.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from 'storybook/web-components-vite';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
   component: 'demo-list',

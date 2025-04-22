@@ -146,7 +146,7 @@ export default {
 ```
 
 ```ts filename="YourComponent.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components-vite';
+import type { Meta } from '@storybook/web-components-vite';
 
 const meta: Meta = {
   component: 'your-component',

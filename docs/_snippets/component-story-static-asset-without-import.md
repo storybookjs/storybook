@@ -65,7 +65,7 @@ export const WithAnImage = {
 };
 ```
 
-```tsx filename=" MyComponent.stories.ts|tsx" renderer="solid" language="ts"
+```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts"
 import type { Meta, StoryObj } from 'storybook-solidjs';
 
 import { MyComponent } from './MyComponent';
@@ -174,7 +174,7 @@ export const WithAnImage = {
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="vue" language="ts"
-import type { Meta, StoryObj } from 'storybook/vue3-vite';
+import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import MyComponent from './MyComponent.vue';
 

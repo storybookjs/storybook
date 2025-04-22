@@ -203,7 +203,7 @@ export const StoryWithLocale = {
 ```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts"
 import type { Meta, StoryObj } from '@storybook/svelte-vite';
 
-import MyComponent from './YourComponent.svelte';
+import MyComponent from './MyComponent.svelte';
 
 const meta = {
   component: MyComponent,

@@ -12,6 +12,10 @@ import { dedent } from 'ts-dedent';
 
 import { babelParse, recast, types as t, traverse } from '../babel';
 
+// TODO: @kasperpeulen check how to use the JSPackageManager type from common later
+// Right now there is a mismatch issue with the types because conflicts with baseGenerator.ts
+type JsPackageManager = any;
+
 export const SUPPORTED_ESLINT_EXTENSIONS = ['ts', 'mts', 'cts', 'mjs', 'js', 'cjs', 'json'];
 const UNSUPPORTED_ESLINT_EXTENSIONS = ['yaml', 'yml'];
 

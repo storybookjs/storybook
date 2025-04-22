@@ -225,6 +225,7 @@ export const sandbox = async ({
         const before = process.cwd();
         process.chdir(templateDestination);
         // we run doInitiate, instead of initiate, to avoid sending this init event to telemetry, because it's not a real world project
+        // @ts-expect-error (no types for this)
         const { initiate } = await import('create-storybook');
         // @ts-expect-error (no types for this)
         await initiate({

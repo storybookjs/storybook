@@ -351,18 +351,13 @@ export async function baseGenerator(
     text: `Getting the correct version of ${packagesToInstall.length} packages`,
   }).start();
 
-  const versionedPackages = await packageManager.getVersionedPackages(
-    packagesToInstall as string[]
-  );
-  versionedPackagesSpinner.succeed();
-
   try {
     if (process.env.CI !== 'true') {
       const { hasEslint, isStorybookPluginInstalled, isFlatConfig, eslintConfigFile } =
         await extractEslintInfo(packageManager);
 
       if (hasEslint && !isStorybookPluginInstalled) {
-        versionedPackages.push('eslint-plugin-storybook');
+        packagesToInstall.push('eslint-plugin-storybook');
         await configureEslintPlugin({
           eslintConfigFile,
           packageManager,
@@ -373,6 +368,11 @@ export async function baseGenerator(
   } catch (err) {
     // any failure regarding configuring the eslint plugin should not fail the whole generator
   }
+
+  const versionedPackages = await packageManager.getVersionedPackages(
+    packagesToInstall as string[]
+  );
+  versionedPackagesSpinner.succeed();
 
   if (versionedPackages.length > 0) {
     const addDependenciesSpinner = ora({

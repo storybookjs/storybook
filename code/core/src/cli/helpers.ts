@@ -204,10 +204,8 @@ export async function copyTemplateFiles({
   features,
 }: CopyTemplateFilesOptions) {
   const languageFolderMapping: Record<SupportedLanguage | 'typescript', string> = {
-    // keeping this for backwards compatibility in case community packages are using it
-    typescript: 'ts',
     [SupportedLanguage.JAVASCRIPT]: 'js',
-    [SupportedLanguage.TYPESCRIPT_4_9]: 'ts-4-9',
+    [SupportedLanguage.TYPESCRIPT]: 'ts',
   };
   const templatePath = async () => {
     const baseDir = await getRendererDir(packageManager, templateLocation);

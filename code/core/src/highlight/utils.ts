@@ -1,5 +1,11 @@
 /* eslint-env browser */
-import type { Box, Highlight, HighlightOptions, RawHighlightOptions } from './types';
+import type {
+  Box,
+  ClickEventDetails,
+  Highlight,
+  HighlightOptions,
+  RawHighlightOptions,
+} from './types';
 
 const svgElements = 'svg,path,rect,circle,line,polyline,polygon,ellipse,text'.split(',');
 
@@ -172,13 +178,19 @@ export const isTargeted = (
   if (!coordinates) {
     return false;
   }
-  let { left, top } = box;
+  let { left, top, width, height } = box;
+  if (height === 0 || width === 0) {
+    left -= 10;
+    top -= 10;
+    width += 20;
+    height += 20;
+  }
   if (boxElement.style.position === 'fixed') {
     left += window.scrollX;
     top += window.scrollY;
   }
   const { x, y } = coordinates;
-  return x >= left && x <= left + box.width && y >= top && y <= top + box.height;
+  return x >= left && x <= left + width && y >= top && y <= top + height;
 };
 
 export const keepInViewport = (
@@ -221,3 +233,19 @@ export const hidePopover = (element: HTMLElement) => {
     element.hidePopover();
   }
 };
+
+export const getEventDetails = (target: Box): ClickEventDetails => ({
+  top: target.top,
+  left: target.left,
+  width: target.width,
+  height: target.height,
+  selectors: target.selectors,
+  element: {
+    attributes: Object.fromEntries(
+      Array.from(target.element.attributes).map((attr) => [attr.name, attr.value])
+    ),
+    localName: target.element.localName,
+    tagName: target.element.tagName,
+    outerHTML: target.element.outerHTML,
+  },
+});

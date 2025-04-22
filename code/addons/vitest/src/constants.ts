@@ -1,6 +1,6 @@
 import type { StoreOptions } from 'storybook/internal/types';
 
-import type { StoreState } from './types';
+import type { RunTrigger, StoreState } from './types';
 
 export const ADDON_ID = 'storybook/test';
 export const TEST_PROVIDER_ID = `${ADDON_ID}/test-provider`;
@@ -59,6 +59,8 @@ export const storeOptions = {
     },
   },
 } satisfies StoreOptions<StoreState>;
+
+export const FULL_RUN_TRIGGERS: RunTrigger[] = ['global', 'run-all'] as const;
 
 export const STORE_CHANNEL_EVENT_NAME = `UNIVERSAL_STORE:${storeOptions.id}`;
 export const STATUS_STORE_CHANNEL_EVENT_NAME = 'UNIVERSAL_STORE:storybook/status';

@@ -1,6 +1,6 @@
 import type { StoreOptions } from 'storybook/internal/types';
 
-import type { StoreState } from './types';
+import type { RunTrigger, StoreState } from './types';
 
 export { PANEL_ID as COMPONENT_TESTING_PANEL_ID } from '../../../core/src/component-testing/constants';
 export {
@@ -40,6 +40,7 @@ export const storeOptions = {
     cancelling: false,
     fatalError: undefined,
     indexUrl: undefined,
+    previewAnnotations: [],
     currentRun: {
       triggeredBy: undefined,
       config: {
@@ -64,6 +65,8 @@ export const storeOptions = {
     },
   },
 } satisfies StoreOptions<StoreState>;
+
+export const FULL_RUN_TRIGGERS: RunTrigger[] = ['global', 'run-all'] as const;
 
 export const STORE_CHANNEL_EVENT_NAME = `UNIVERSAL_STORE:${storeOptions.id}`;
 export const STATUS_STORE_CHANNEL_EVENT_NAME = 'UNIVERSAL_STORE:storybook/status';

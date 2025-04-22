@@ -1,5 +1,3 @@
-/* eslint-disable no-underscore-dangle */
-/* eslint-disable @typescript-eslint/naming-convention */
 declare module '@egoist/vue-to-react';
 declare module 'acorn-jsx';
 declare module 'vue/dist/vue';

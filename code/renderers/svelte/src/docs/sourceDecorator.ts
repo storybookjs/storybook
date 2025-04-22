@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import { deprecate } from 'storybook/internal/client-logger';
 import { SourceType } from 'storybook/internal/docs-tools';
 import type {
@@ -85,7 +84,6 @@ function getComponentName(component: any): string | null {
     return null;
   }
 
-  // eslint-disable-next-line @typescript-eslint/naming-convention
   const { __docgen = {} } = component;
   let { name } = __docgen;
 
@@ -153,7 +151,6 @@ function getWrapperProperties(
     __docgen?: SvelteComponentDoc & { keywords?: string[] };
   }
 ) {
-  // eslint-disable-next-line @typescript-eslint/naming-convention
   const { __docgen } = component || {};
   if (!__docgen) {
     return { wrapper: false };

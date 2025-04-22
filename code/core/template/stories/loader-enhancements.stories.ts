@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/naming-convention,storybook/prefer-pascal-case */
+/* eslint-disable storybook/prefer-pascal-case */
 import { expect, userEvent as globalUserEvent, within } from 'storybook/test';
 
 const meta = {

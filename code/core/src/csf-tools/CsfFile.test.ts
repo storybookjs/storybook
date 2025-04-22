@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import { describe, expect, it, vi } from 'vitest';
 
 import yaml from 'js-yaml';

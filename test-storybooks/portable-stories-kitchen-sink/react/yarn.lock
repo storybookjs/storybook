@@ -1616,20 +1616,20 @@ __metadata:
   linkType: hard
 
 "@storybook/addon-a11y@file:../../../code/addons/a11y::locator=portable-stories-react%40workspace%3A.":
-  version: 9.0.0-alpha.12
-  resolution: "@storybook/addon-a11y@file:../../../code/addons/a11y#../../../code/addons/a11y::hash=518cc6&locator=portable-stories-react%40workspace%3A."
+  version: 9.0.0-alpha.20
+  resolution: "@storybook/addon-a11y@file:../../../code/addons/a11y#../../../code/addons/a11y::hash=9b86d9&locator=portable-stories-react%40workspace%3A."
   dependencies:
     "@storybook/global": "npm:^5.0.0"
     axe-core: "npm:^4.2.0"
   peerDependencies:
     storybook: "workspace:^"
-  checksum: 10/5fe060ca05ee82f17d5ed69866fe140d9b4da3ea533489b309ed57dd3879c46e0ae8fc2eb57d0dc1e162146a6212035af19740956f0a3076a6abe45460afe075
+  checksum: 10/2adbe5990de64eb7eb41ed4405f2f814cf902eb183eae5a1b63eeeef6a6f11877f4d5c5be044ba74316ba5905399e1ed855326baf5979544652aedf215062a25
   languageName: node
   linkType: hard
 
-"@storybook/addon-test@file:../../../code/addons/test::locator=portable-stories-react%40workspace%3A.":
-  version: 9.0.0-alpha.12
-  resolution: "@storybook/addon-test@file:../../../code/addons/test#../../../code/addons/test::hash=7401e5&locator=portable-stories-react%40workspace%3A."
+"@storybook/addon-vitest@file:../../../code/addons/vitest::locator=portable-stories-react%40workspace%3A.":
+  version: 9.0.0-alpha.20
+  resolution: "@storybook/addon-vitest@file:../../../code/addons/vitest#../../../code/addons/vitest::hash=c97f89&locator=portable-stories-react%40workspace%3A."
   dependencies:
     "@storybook/global": "npm:^5.0.0"
     "@storybook/icons": "npm:^1.4.0"
@@ -1647,13 +1647,13 @@ __metadata:
       optional: true
     vitest:
       optional: true
-  checksum: 10/bcded6471cca0b5e95fcbd8a68b613f7c5d954caf69876df2751a10c8899eb7ca694639a98f07740c4fa9c755eac2d57224edbdbec21776e07eb8643ec8b1426
+  checksum: 10/50e767309891ba481e881b9bd3876b94be316b3377d0cc319a45af3436d2b39145e5f4efb301594991c311e9ed2e2e9bff0c11bc37a29e15d5ce2b1112b04008
   languageName: node
   linkType: hard
 
 "@storybook/builder-vite@file:../../../code/builders/builder-vite::locator=portable-stories-react%40workspace%3A.":
-  version: 9.0.0-alpha.12
-  resolution: "@storybook/builder-vite@file:../../../code/builders/builder-vite#../../../code/builders/builder-vite::hash=832030&locator=portable-stories-react%40workspace%3A."
+  version: 9.0.0-alpha.20
+  resolution: "@storybook/builder-vite@file:../../../code/builders/builder-vite#../../../code/builders/builder-vite::hash=ad1d47&locator=portable-stories-react%40workspace%3A."
   dependencies:
     "@storybook/csf-plugin": "workspace:*"
     browser-assert: "npm:^1.2.1"
@@ -1661,7 +1661,7 @@ __metadata:
   peerDependencies:
     storybook: "workspace:^"
     vite: ^5.0.0 || ^6.0.0
-  checksum: 10/f0135755c3e89824a4794816dc876df9c64c461164e05c53099e380d360bbc789c4e8f9a345b2ce8e6503605cb7b60f4d76c370a9716a39fc7c83c91c98c0532
+  checksum: 10/3e2d73a3962dccac457d725611405414c6b379f7baa0c64d6e90f794296598dc4cbbc2be8eaec2715f7056ef35bd2bab1191be6a116ea503fb1afe7416c96f57
   languageName: node
   linkType: hard
 
@@ -1674,15 +1674,6 @@ __metadata:
     storybook: "workspace:^"
   languageName: node
   linkType: soft
-
-"@storybook/csf@npm:^0.1.11":
-  version: 0.1.13
-  resolution: "@storybook/csf@npm:0.1.13"
-  dependencies:
-    type-fest: "npm:^2.19.0"
-  checksum: 10/8a590703c44180798869fd12c1f314cb96de18349415a33bcfe30ef6af11fdc1cdb755ea620dedfd5eb7666cf05af5647b77fe28b63000aa52b53b0dc3c77bb5
-  languageName: node
-  linkType: hard
 
 "@storybook/global@npm:^5.0.0":
   version: 5.0.0
@@ -1702,19 +1693,19 @@ __metadata:
   linkType: hard
 
 "@storybook/react-dom-shim@file:../../../code/lib/react-dom-shim::locator=portable-stories-react%40workspace%3A.":
-  version: 9.0.0-alpha.12
-  resolution: "@storybook/react-dom-shim@file:../../../code/lib/react-dom-shim#../../../code/lib/react-dom-shim::hash=4cbab7&locator=portable-stories-react%40workspace%3A."
+  version: 9.0.0-alpha.20
+  resolution: "@storybook/react-dom-shim@file:../../../code/lib/react-dom-shim#../../../code/lib/react-dom-shim::hash=f04a35&locator=portable-stories-react%40workspace%3A."
   peerDependencies:
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
     react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
     storybook: "workspace:^"
-  checksum: 10/88871ea877f6edfbf1a3e2481722b5a5f4af190afb939d7dd9dcc0b9611ef6903afb9554342418510cf998595dad01bedc20cbea329060942aa5b05d2f5eaf9c
+  checksum: 10/2fc2fd6f2e05662ea843f6378b96684dba1d935bd6335fb6c3f7a38220389606c56a1fdb131fe2dbc55d963543686bd3fe5994b523db40ad52863da91e3793fe
   languageName: node
   linkType: hard
 
 "@storybook/react-vite@file:../../../code/frameworks/react-vite::locator=portable-stories-react%40workspace%3A.":
-  version: 9.0.0-alpha.12
-  resolution: "@storybook/react-vite@file:../../../code/frameworks/react-vite#../../../code/frameworks/react-vite::hash=02d8ff&locator=portable-stories-react%40workspace%3A."
+  version: 9.0.0-alpha.20
+  resolution: "@storybook/react-vite@file:../../../code/frameworks/react-vite#../../../code/frameworks/react-vite::hash=6da483&locator=portable-stories-react%40workspace%3A."
   dependencies:
     "@joshwooding/vite-plugin-react-docgen-typescript": "npm:0.5.0"
     "@rollup/pluginutils": "npm:^5.0.2"
@@ -1730,13 +1721,13 @@ __metadata:
     react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
     storybook: "workspace:^"
     vite: ^5.0.0 || ^6.0.0
-  checksum: 10/a153b8ec4ca5b764ead598d7875569f646c153092047e39b1d3c1c01974e6553c099804d99dadb35bf81488bc4deec7ad2a8d5f542911210b6a8f243277a5037
+  checksum: 10/45ef0a3768921d274af858acf08295301a2f4e82fbf04b86010d4030c0ee2a86c18a33c57fa569ab3279a65bec2fd429e216f5177e97a6221745a5c9af8aba2e
   languageName: node
   linkType: hard
 
 "@storybook/react@file:../../../code/renderers/react::locator=portable-stories-react%40workspace%3A.":
-  version: 9.0.0-alpha.12
-  resolution: "@storybook/react@file:../../../code/renderers/react#../../../code/renderers/react::hash=135009&locator=portable-stories-react%40workspace%3A."
+  version: 9.0.0-alpha.20
+  resolution: "@storybook/react@file:../../../code/renderers/react#../../../code/renderers/react::hash=158cff&locator=portable-stories-react%40workspace%3A."
   dependencies:
     "@storybook/global": "npm:^5.0.0"
     "@storybook/react-dom-shim": "workspace:*"
@@ -1748,7 +1739,7 @@ __metadata:
   peerDependenciesMeta:
     typescript:
       optional: true
-  checksum: 10/dd52bb4aef893fdac2a95d39c015590550ffc9980d6ef89328b838576d6913e169355da289d231b07796573ff810e00cef75c232975d7fbae8d808c90cfb0d9f
+  checksum: 10/037b339383e60db0e71f950d6f7cd0bbe147221eb6673cf17e8e51ef70cb504e66080f9553dffd5405d4f6b76528bb763cfec16eddef111fac16c3123cf0d665
   languageName: node
   linkType: hard
 
@@ -4038,16 +4029,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-plugin-storybook@npm:^0.11.4":
-  version: 0.11.6
-  resolution: "eslint-plugin-storybook@npm:0.11.6"
+"eslint-plugin-storybook@file:../../../code/lib/eslint-plugin::locator=portable-stories-react%40workspace%3A.":
+  version: 9.0.0-alpha.20
+  resolution: "eslint-plugin-storybook@file:../../../code/lib/eslint-plugin#../../../code/lib/eslint-plugin::hash=e7f5eb&locator=portable-stories-react%40workspace%3A."
   dependencies:
-    "@storybook/csf": "npm:^0.1.11"
     "@typescript-eslint/utils": "npm:^8.8.1"
-    ts-dedent: "npm:^2.2.0"
   peerDependencies:
     eslint: ">=8"
-  checksum: 10/9872dd37386bed244b56589348949d54cad0a526ef81229681a5c918fe1a74dbef56fd7a6cf1c8014b5b38744ba759d1b24a3f94fdbec5d0fddfc6a54f5e6eb7
+    storybook: "workspace:^"
+  checksum: 10/783149c634c8729823f8031e1dc1ce99ae010cc94902b9364c21d489c097010099a764ad9c833ee91b96d8d4d3134b40937dc71f1cd80fde84bdca8dfce2400a
   languageName: node
   linkType: hard
 
@@ -6752,7 +6742,7 @@ __metadata:
     "@playwright/experimental-ct-react": "npm:1.48.1"
     "@playwright/test": "npm:1.48.1"
     "@storybook/addon-a11y": "npm:^8.0.0"
-    "@storybook/addon-test": "npm:^8.0.0"
+    "@storybook/addon-vitest": "npm:^8.0.0"
     "@storybook/react": "npm:^8.0.0"
     "@storybook/react-vite": "npm:^8.0.0"
     "@swc/core": "npm:^1.4.2"
@@ -8007,13 +7997,6 @@ __metadata:
   version: 0.21.3
   resolution: "type-fest@npm:0.21.3"
   checksum: 10/f4254070d9c3d83a6e573bcb95173008d73474ceadbbf620dd32d273940ca18734dff39c2b2480282df9afe5d1675ebed5499a00d791758748ea81f61a38961f
-  languageName: node
-  linkType: hard
-
-"type-fest@npm:^2.19.0":
-  version: 2.19.0
-  resolution: "type-fest@npm:2.19.0"
-  checksum: 10/7bf9e8fdf34f92c8bb364c0af14ca875fac7e0183f2985498b77be129dc1b3b1ad0a6b3281580f19e48c6105c037fb966ad9934520c69c6434d17fd0af4eed78
   languageName: node
   linkType: hard
 

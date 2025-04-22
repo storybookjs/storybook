@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import { readFile, writeFile } from 'node:fs/promises';
 
 import {
@@ -48,7 +47,6 @@ const unwrap = (node: t.Node | undefined | null): any => {
   return node;
 };
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 const _getPath = (path: string[], node: t.Node): t.Node | undefined => {
   if (path.length === 0) {
     return node;
@@ -63,7 +61,6 @@ const _getPath = (path: string[], node: t.Node): t.Node | undefined => {
   return undefined;
 };
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 const _getPathProperties = (path: string[], node: t.Node): t.ObjectProperty[] | undefined => {
   if (path.length === 0) {
     if (t.isObjectExpression(node)) {
@@ -85,7 +82,7 @@ const _getPathProperties = (path: string[], node: t.Node): t.ObjectProperty[] | 
   }
   return undefined;
 };
-// eslint-disable-next-line @typescript-eslint/naming-convention
+
 const _findVarDeclarator = (
   identifier: string,
   program: t.Program
@@ -118,13 +115,11 @@ const _findVarDeclarator = (
   return declarator;
 };
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 const _findVarInitialization = (identifier: string, program: t.Program) => {
   const declarator = _findVarDeclarator(identifier, program);
   return declarator?.init;
 };
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 const _makeObjectExpression = (path: string[], value: t.Expression): t.Expression => {
   if (path.length === 0) {
     return value;
@@ -134,7 +129,6 @@ const _makeObjectExpression = (path: string[], value: t.Expression): t.Expressio
   return t.objectExpression([t.objectProperty(t.identifier(first), innerExpression)]);
 };
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 const _updateExportNode = (path: string[], expr: t.Expression, existing: t.ObjectExpression) => {
   const [first, ...rest] = path;
   const existingField = (existing.properties as t.ObjectProperty[]).find(

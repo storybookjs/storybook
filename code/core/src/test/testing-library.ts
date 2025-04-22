@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-types */
 import * as domTestingLibrary from '@testing-library/dom';
 import type { FireFunction, FireObject } from '@testing-library/dom/types/events';
 import _userEvent from '@testing-library/user-event';
@@ -110,7 +109,7 @@ export const {
 
 // This lines below are to prevent tsup doing stupid (not working) inline stuff, see:
 // https://github.com/storybookjs/storybook/issues/25258
-// eslint-disable-next-line @typescript-eslint/naming-convention
+
 type _UserEvent = typeof _userEvent;
 
 export interface UserEvent extends _UserEvent {}

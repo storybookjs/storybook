@@ -18,7 +18,7 @@ vi.mock('node:fs/promises', async () => {
 });
 
 vi.mock('../helpers/mainConfigFile', () => {
-  const updateMainConfig = vi.fn().mockImplementation(({ mainConfigPath, dryRun }, callback) => {
+  const updateMainConfig = vi.fn().mockImplementation(({ mainConfigPath }, callback) => {
     return callback(mockConfigs.get(mainConfigPath));
   });
   return { updateMainConfig };
@@ -28,11 +28,15 @@ vi.mock('storybook/internal/cli', () => ({
   getStorybookVersionSpecifier: vi.fn(),
 }));
 
-vi.mock('storybook/internal/common', () => ({
-  getAddonNames: vi.fn(),
-  getProjectRoot: vi.fn().mockReturnValue('/fake/project/root'),
-  commonGlobOptions: vi.fn().mockReturnValue({}),
-}));
+vi.mock('storybook/internal/common', async (importOriginal) => {
+  return {
+    ...(await importOriginal<typeof import('storybook/internal/common')>()),
+    getAddonNames: vi.fn(),
+    getProjectRoot: vi.fn().mockReturnValue('/fake/project/root'),
+    commonGlobOptions: vi.fn().mockReturnValue({}),
+    scanAndTransformFiles: vi.fn().mockResolvedValue([]),
+  };
+});
 
 vi.mock('prompts', () => ({
   default: vi.fn().mockResolvedValue({ glob: '**/*.{mjs,cjs,js,jsx,ts,tsx,mdx}' }),
@@ -40,10 +44,6 @@ vi.mock('prompts', () => ({
 
 vi.mock('globby', () => ({
   globby: vi.fn().mockResolvedValue(['/fake/project/root/src/stories/Button.stories.tsx']),
-}));
-
-vi.mock('../helpers/transformImports', () => ({
-  transformImportFiles: vi.fn().mockResolvedValue([]),
 }));
 
 // Mock ConfigFile type
@@ -255,6 +255,7 @@ describe('addon-essentials-remove-docs migration', () => {
         packageJson: mockPackageJson,
         mainConfigPath: 'main.ts',
         mainConfig: {} as StorybookConfigRaw,
+        storybookVersion: '8.0.0',
       });
 
       expect(mockPackageManager.runPackageCommand).toHaveBeenCalledWith('storybook', [
@@ -289,6 +290,7 @@ describe('addon-essentials-remove-docs migration', () => {
         packageJson: mockPackageJson,
         mainConfigPath: 'main.ts',
         mainConfig: {} as StorybookConfigRaw,
+        storybookVersion: '8.0.0',
       });
 
       expect(mockPackageManagerLocal.runPackageCommand).toHaveBeenCalledWith('storybook', [
@@ -307,7 +309,7 @@ describe('addon-essentials-remove-docs migration', () => {
     });
 
     it('handles import transformations', async () => {
-      const { transformImportFiles } = await import('../helpers/transformImports');
+      const { scanAndTransformFiles } = await import('storybook/internal/common');
 
       await typedAddonDocsEssentials.run({
         result: {
@@ -320,21 +322,23 @@ describe('addon-essentials-remove-docs migration', () => {
         packageJson: mockPackageJson,
         mainConfigPath: 'main.ts',
         mainConfig: {} as StorybookConfigRaw,
+        storybookVersion: '8.0.0',
       });
 
-      expect(transformImportFiles).toHaveBeenCalledWith(
-        ['/fake/project/root/src/stories/Button.stories.tsx'],
-        {
-          '@storybook/addon-actions': 'storybook/actions',
-          '@storybook/addon-controls': 'storybook/internal/controls',
-          '@storybook/addon-toolbars': 'storybook/internal/toolbars',
-          '@storybook/addon-highlight': 'storybook/highlight',
-          '@storybook/addon-measure': 'storybook/measure',
-          '@storybook/addon-outline': 'storybook/outline',
-          '@storybook/addon-backgrounds': 'storybook/backgrounds',
-          '@storybook/addon-viewport': 'storybook/viewport',
-        },
-        undefined
+      expect(scanAndTransformFiles).toHaveBeenCalledWith(
+        expect.objectContaining({
+          dryRun: false,
+          transformOptions: {
+            '@storybook/addon-actions': 'storybook/actions',
+            '@storybook/addon-backgrounds': 'storybook/backgrounds',
+            '@storybook/addon-controls': 'storybook/internal/controls',
+            '@storybook/addon-highlight': 'storybook/highlight',
+            '@storybook/addon-measure': 'storybook/measure',
+            '@storybook/addon-outline': 'storybook/outline',
+            '@storybook/addon-toolbars': 'storybook/internal/toolbars',
+            '@storybook/addon-viewport': 'storybook/viewport',
+          },
+        })
       );
     });
 
@@ -351,6 +355,7 @@ describe('addon-essentials-remove-docs migration', () => {
         mainConfigPath: 'main.ts',
         mainConfig: {} as StorybookConfigRaw,
         dryRun: true,
+        storybookVersion: '8.0.0',
       });
 
       expect(mockPackageManager.runPackageCommand).not.toHaveBeenCalled();
@@ -368,6 +373,7 @@ describe('addon-essentials-remove-docs migration', () => {
         packageJson: mockPackageJson,
         mainConfigPath: 'main.ts',
         mainConfig: {} as StorybookConfigRaw,
+        storybookVersion: '8.0.0',
       });
 
       expect(mockPackageManager.runPackageCommand).not.toHaveBeenCalled();

@@ -2,6 +2,7 @@ import { join } from 'node:path';
 
 import react from '@vitejs/plugin-react';
 
+import { BROWSER_TARGETS } from '../core/src/builder-manager';
 import { defineMain } from '../frameworks/react-vite/src/node';
 
 const componentsPath = join(__dirname, '../core/src/components/index.ts');
@@ -40,6 +41,14 @@ const config = defineMain({
       titlePrefix: 'component-testing',
     },
     {
+      directory: '../core/src/controls/components',
+      titlePrefix: 'controls',
+    },
+    {
+      directory: '../core/src/highlight',
+      titlePrefix: 'highlight',
+    },
+    {
       directory: '../lib/blocks/src',
       titlePrefix: 'blocks',
     },
@@ -68,6 +77,10 @@ const config = defineMain({
       titlePrefix: 'addons/onboarding',
     },
     {
+      directory: '../addons/pseudo-states/src',
+      titlePrefix: 'addons/pseudo-states',
+    },
+    {
       directory: '../addons/vitest/src/components',
       titlePrefix: 'addons/vitest',
     },
@@ -82,6 +95,7 @@ const config = defineMain({
     '@storybook/addon-designs',
     '@storybook/addon-vitest',
     '@storybook/addon-a11y',
+    'storybook-addon-pseudo-states',
     '@chromatic-com/storybook',
   ],
   previewAnnotations: [
@@ -131,14 +145,10 @@ const config = defineMain({
         },
       },
       plugins: [react()],
-      optimizeDeps: {
-        force: true,
-        include: ['@storybook/blocks'],
-      },
       build: {
         // disable sourcemaps in CI to not run out of memory
         sourcemap: process.env.CI !== 'true',
-        target: ['chrome100'],
+        target: BROWSER_TARGETS,
       },
       server: {
         watch: {

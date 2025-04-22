@@ -33,7 +33,7 @@ interface ConfigurePreviewOptions {
   frameworkPreviewParts?: FrameworkPreviewParts;
   storybookConfigFolder: string;
   language: SupportedLanguage;
-  rendererId: string;
+  frameworkPackage?: string;
 }
 
 const pathExists = async (path: string) => {
@@ -117,14 +117,6 @@ export async function configurePreview(options: ConfigurePreviewOptions) {
   const { prefix: frameworkPrefix = '' } = options.frameworkPreviewParts || {};
   const isTypescript = options.language === SupportedLanguage.TYPESCRIPT_4_9;
 
-  // We filter out community packages here, as we are not certain if they export a Preview type.
-  // Let's make this configurable in the future.
-  const rendererPackage =
-    options.rendererId &&
-    !externalFrameworks.map(({ name }) => name as string).includes(options.rendererId)
-      ? `@storybook/${options.rendererId}`
-      : null;
-
   const previewPath = `./${options.storybookConfigFolder}/preview.${isTypescript ? 'ts' : 'js'}`;
 
   // If the framework template included a preview then we have nothing to do
@@ -132,8 +124,10 @@ export async function configurePreview(options: ConfigurePreviewOptions) {
     return;
   }
 
+  const frameworkPackage = options.frameworkPackage;
+
   const prefix = [
-    isTypescript && rendererPackage ? `import type { Preview } from '${rendererPackage}'` : '',
+    isTypescript && frameworkPackage ? `import type { Preview } from '${frameworkPackage}'` : '',
     frameworkPrefix,
   ]
     .filter(Boolean)
@@ -143,8 +137,8 @@ export async function configurePreview(options: ConfigurePreviewOptions) {
   preview = dedent`
     ${prefix}${prefix.length > 0 ? '\n' : ''}
     ${
-      !isTypescript && rendererPackage
-        ? `/** @type { import('${rendererPackage}').Preview } */\n`
+      !isTypescript && frameworkPackage
+        ? `/** @type { import('${frameworkPackage}').Preview } */\n`
         : ''
     }const preview${isTypescript ? ': Preview' : ''} = {
       parameters: {

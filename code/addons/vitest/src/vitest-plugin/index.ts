@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import { createRequire } from 'node:module';
 import { dirname } from 'node:path';
 
@@ -34,7 +33,7 @@ import type { InternalOptions, UserOptions } from './types';
 const require = createRequire(import.meta.url);
 
 // we need to require core-server here, because its ESM output is not valid
-// eslint-disable-next-line @typescript-eslint/naming-convention
+
 const { StoryIndexGenerator, experimental_loadStorybook, mapStaticDir } =
   require('storybook/internal/core-server') as {
     StoryIndexGenerator: typeof StoryIndexGeneratorType;

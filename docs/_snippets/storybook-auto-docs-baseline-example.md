@@ -1,6 +1,6 @@
 <!-- prettier-ignore -->
 ```mdx filename="Button.mdx" renderer="common" language="mdx" tabTitle="custom-title"
-import { Meta, Controls } from '@storybook/blocks';
+import { Meta, Controls } from '@storybook/addon-docs/blocks';
 
 <Meta title="Button" />
 
@@ -25,7 +25,7 @@ Button has the following properties:
 
 <!-- prettier-ignore -->
 ```mdx filename="Button.mdx" renderer="common" language="mdx" tabTitle="of-prop"
-import { Meta, Controls } from '@storybook/blocks';
+import { Meta, Controls } from '@storybook/addon-docs/blocks';
 
 import * as ButtonStories from './Button.stories';
 

@@ -20,6 +20,7 @@ export interface RunOptions<ResultType> {
   previewConfigPath?: string;
   mainConfig: StorybookConfigRaw;
   skipInstall?: boolean;
+  storybookVersion: string;
 }
 
 /**

@@ -2,13 +2,15 @@ import type { StoreOptions } from 'storybook/internal/types';
 
 import type { StoreState } from './types';
 
+export { PANEL_ID as COMPONENT_TESTING_PANEL_ID } from '../../../core/src/component-testing/constants';
+export {
+  PANEL_ID as A11Y_PANEL_ID,
+  ADDON_ID as A11Y_ADDON_ID,
+} from '../../../addons/a11y/src/constants';
+
 export const ADDON_ID = 'storybook/test';
 export const TEST_PROVIDER_ID = `${ADDON_ID}/test-provider`;
-export const PANEL_ID = `${ADDON_ID}/panel`;
 export const STORYBOOK_ADDON_TEST_CHANNEL = 'STORYBOOK_ADDON_TEST_CHANNEL';
-
-export const A11Y_ADDON_ID = 'storybook/a11y';
-export const A11Y_PANEL_ID = `${A11Y_ADDON_ID}/panel`;
 
 export const TUTORIAL_VIDEO_LINK = 'https://youtu.be/Waht9qq7AoA';
 export const DOCUMENTATION_LINK = 'writing-tests/test-addon';
@@ -19,10 +21,13 @@ export const COVERAGE_DIRECTORY = 'coverage';
 export const SUPPORTED_FRAMEWORKS = [
   '@storybook/nextjs',
   '@storybook/nextjs-vite',
+  '@storybook/react-vite',
+  '@storybook/svelte-vite',
+  '@storybook/vue3-vite',
+  '@storybook/html-vite',
+  '@storybook/web-components-vite',
   '@storybook/sveltekit',
 ];
-
-export const SUPPORTED_RENDERERS = ['@storybook/react', '@storybook/svelte', '@storybook/vue3'];
 
 export const storeOptions = {
   id: ADDON_ID,
@@ -35,6 +40,7 @@ export const storeOptions = {
     cancelling: false,
     fatalError: undefined,
     indexUrl: undefined,
+    previewAnnotations: [],
     currentRun: {
       triggeredBy: undefined,
       config: {

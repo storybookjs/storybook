@@ -10,7 +10,6 @@ export class RequestResponseError<Payload extends Record<string, any> | void> ex
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export const experimental_requestResponse = <
   RequestPayload,
   ResponsePayload = void,

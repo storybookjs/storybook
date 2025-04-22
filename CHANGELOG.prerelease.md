@@ -1,3 +1,30 @@
+## 9.0.0-alpha.20
+
+- Addon Docs: Update telejson - [#31115](https://github.com/storybookjs/storybook/pull/31115), thanks @valentinpalkovic!
+- AddonVitest: Use framework package, not renderer - [#31133](https://github.com/storybookjs/storybook/pull/31133), thanks @ndelangen!
+- Automigration: Fix consolidated-imports with sub-paths - [#31135](https://github.com/storybookjs/storybook/pull/31135), thanks @ndelangen!
+- Core: Add highlight as public API - [#31134](https://github.com/storybookjs/storybook/pull/31134), thanks @valentinpalkovic!
+- Core: Rename local tests to interactions - [#31141](https://github.com/storybookjs/storybook/pull/31141), thanks @yannbf!
+- Dependencies: Update dependencies - [#31143](https://github.com/storybookjs/storybook/pull/31143), thanks @valentinpalkovic!
+- Interactions: Rename component test panel - [#31130](https://github.com/storybookjs/storybook/pull/31130), thanks @valentinpalkovic!
+- Migration: Improve glob question text - [#31118](https://github.com/storybookjs/storybook/pull/31118), thanks @ndelangen!
+- Refactor: Update panel IDs in vitest addon to use new constants - [#31132](https://github.com/storybookjs/storybook/pull/31132), thanks @ndelangen!
+- Save from Controls: Replace rendererPackage with frameworkPackage - [#31114](https://github.com/storybookjs/storybook/pull/31114), thanks @valentinpalkovic!
+
+## 9.0.0-alpha.19
+
+- CLI: Fix framework for preview imports - [#31101](https://github.com/storybookjs/storybook/pull/31101), thanks @valentinpalkovic!
+- Controls: Fix boxShadow on empty controls - [#27193](https://github.com/storybookjs/storybook/pull/27193), thanks @H0onnn!
+- Core: Fix favicon issue on dev server - [#30818](https://github.com/storybookjs/storybook/pull/30818), thanks @MuhdHishamP!
+- UI: Clear filters on run all and clear all statuses - [#31073](https://github.com/storybookjs/storybook/pull/31073), thanks @JReinhold!
+- UI: Don't include error state in sidebar context menu - [#31054](https://github.com/storybookjs/storybook/pull/31054), thanks @ghengeveld!
+
+## 9.0.0-alpha.18
+
+- Addon-vitest: Fix coverage when restarting Vitest due to config change - [#31069](https://github.com/storybookjs/storybook/pull/31069), thanks @JReinhold!
+- Automigration: Misc addon-essentials migration fixes - [#31072](https://github.com/storybookjs/storybook/pull/31072), thanks @valentinpalkovic!
+- Docs: Consolidate blocks into addon-docs - [#31097](https://github.com/storybookjs/storybook/pull/31097), thanks @ndelangen!
+
 ## 9.0.0-alpha.17
 
 - Addon Test: Rename `@storybook/experimental-addon-test` to `@storybook/addon-vitest` - [#31014](https://github.com/storybookjs/storybook/pull/31014), thanks @valentinpalkovic!

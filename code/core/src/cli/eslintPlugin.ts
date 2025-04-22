@@ -1,6 +1,5 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
-import type { JsPackageManager } from 'storybook/internal/common';
 import { paddedLog } from 'storybook/internal/common';
 import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
 

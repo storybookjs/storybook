@@ -1,6 +1,7 @@
 // Here we map the name of a module to their REFERENCE in the global scope.
 export const globalsNameReferenceMap = {
   react: '__REACT__',
+  'react/jsx-runtime': '__REACT_JSX_RUNTIME__',
   'react-dom': '__REACT_DOM__',
   'react-dom/client': '__REACT_DOM_CLIENT__',
   '@storybook/icons': '__STORYBOOK_ICONS__',

@@ -12,6 +12,7 @@ import * as TYPES from 'storybook/internal/types';
 
 import * as ICONS from '@storybook/icons';
 
+import * as REACT_RUNTIME from 'react/jsx-runtime';
 import * as MANAGER_API from 'storybook/manager-api';
 import * as TEST from 'storybook/test';
 import * as THEMING from 'storybook/theming';
@@ -22,6 +23,7 @@ import type { globalsNameReferenceMap } from './globals';
 // Here we map the name of a module to their VALUE in the global scope.
 export const globalsNameValueMap: Required<Record<keyof typeof globalsNameReferenceMap, any>> = {
   react: REACT,
+  'react/jsx-runtime': REACT_RUNTIME,
   'react-dom': REACT_DOM,
   'react-dom/client': REACT_DOM_CLIENT,
   '@storybook/icons': ICONS,

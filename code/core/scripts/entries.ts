@@ -17,6 +17,7 @@ export const getEntries = (cwd: string) => {
     define('src/core-server/presets/common-manager.ts', ['browser'], false, [
       'react',
       '@storybook/icons',
+      'storybook',
     ]),
     define('src/core-server/presets/common-override-preset.ts', ['node'], false),
 

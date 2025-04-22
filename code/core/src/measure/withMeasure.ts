@@ -19,6 +19,10 @@ export const withMeasure: DecoratorFunction = (StoryFn, context) => {
   const { measureEnabled } = context.globals || {};
 
   useEffect(() => {
+    if (typeof globalThis.document === 'undefined') {
+      return;
+    }
+
     const onPointerMove = (event: MouseEvent) => {
       window.requestAnimationFrame(() => {
         event.stopPropagation();
@@ -27,10 +31,10 @@ export const withMeasure: DecoratorFunction = (StoryFn, context) => {
       });
     };
 
-    document.addEventListener('pointermove', onPointerMove);
+    globalThis.document.addEventListener('pointermove', onPointerMove);
 
     return () => {
-      document.removeEventListener('pointermove', onPointerMove);
+      globalThis.document.removeEventListener('pointermove', onPointerMove);
     };
   }, []);
 
@@ -49,15 +53,15 @@ export const withMeasure: DecoratorFunction = (StoryFn, context) => {
     };
 
     if (context.viewMode === 'story' && measureEnabled) {
-      document.addEventListener('pointerover', onPointerOver);
+      globalThis.document.addEventListener('pointerover', onPointerOver);
       init();
-      window.addEventListener('resize', onResize);
+      globalThis.window.addEventListener('resize', onResize);
       // Draw the element below the pointer when first enabled
       findAndDrawElement(pointer.x, pointer.y);
     }
 
     return () => {
-      window.removeEventListener('resize', onResize);
+      globalThis.window.removeEventListener('resize', onResize);
       destroy();
     };
   }, [measureEnabled, context.viewMode]);

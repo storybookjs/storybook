@@ -34,6 +34,12 @@ export async function maybeSetupPreviewNavigator() {
       url.searchParams.set('viewMode', firstEntry.type);
       window.location.href = url.toString();
     }
+    /*
+      We do a hard navigation above, stopping all code execution, so the return here is never reached.
+      It's merely there to tell TypeScript that currentEntryId is always defined.
+      If there is no firstEntryId, that means there are no entries in the story index,
+      and then we want to return early too, because it doesn't make sense to show the sidebar at all.
+    */
     return;
   }
   setupPreviewNavigator(index, currentEntryId);

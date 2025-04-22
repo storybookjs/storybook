@@ -4,7 +4,7 @@ import { PARAM_KEY } from './constants';
 import { withBackgroundAndGrid } from './decorator';
 import type { BackgroundsParameters, GlobalState } from './types';
 
-const decorators = [withBackgroundAndGrid];
+const decorators = globalThis.FEATURES?.backgrounds ? [withBackgroundAndGrid] : [];
 
 const parameters = {
   [PARAM_KEY]: {

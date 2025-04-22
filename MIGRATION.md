@@ -6,6 +6,7 @@
   - [Vitest 2.0 support is dropped](#vitest-20-support-is-dropped)
   - [Package Manager Support](#package-manager-support)
   - [A11y addon: Removed deprecated manual parameter](#a11y-addon-removed-deprecated-manual-parameter)
+  - [A11y addon: Replace `element` parameter with `context` parameter](#a11y-addon-replace-element-parameter-with-context-parameter)
   - [Button Component API Changes](#button-component-api-changes)
   - [Documentation Generation Changes](#documentation-generation-changes)
   - [Migration from @storybook/addon-storysource to Code Panel](#migration-from-storybookaddon-storysource-to-code-panel)
@@ -539,6 +540,22 @@ export const MyStory = {
 export const initialGlobals = {
   a11y: {
     manual: true
+  }
+};
+```
+
+### A11y addon: Replace `element` parameter with `context` parameter
+
+The `element` parameter from the A11y addon's parameters has been removed in favor of a new `context` parameter. The `element` parameter could be used with a single CSS selector string to configure which element to target with axe. The new `context` parameter supports the full range that `axe-core`'s Context API supports, _including_ a single selector like the removed `element` parameter did.
+`context` does _not_ support passing in a `Node` or `NodeList` (like `document.getElementById('my-target')`).
+
+```diff
+export const MyStory = {
+  parameters: {
+    a11y: {
+-      element: '#my-target'
++      context: '#my-target'
+    }
   }
 };
 ```

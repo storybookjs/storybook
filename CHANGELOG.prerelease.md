@@ -1,3 +1,21 @@
+## 9.0.0-alpha.21
+
+- Addon Controls: Fix loading state UI in addon panel - [#31168](https://github.com/storybookjs/storybook/pull/31168), thanks @iineineno03k!
+- Addon Pseudo States: Move package into monorepo - [#31123](https://github.com/storybookjs/storybook/pull/31123), thanks @ghengeveld!
+- Addon Vitest: Transform @storybook/nextjs imports to @storybook/nextjs-vite during init - [#31180](https://github.com/storybookjs/storybook/pull/31180), thanks @valentinpalkovic!
+- Addon-a11y: Replace `element` parameter with `context` - [#31036](https://github.com/storybookjs/storybook/pull/31036), thanks @JReinhold!
+- Addon-test: Fix watching non-story files, run all tests on preview change - [#31045](https://github.com/storybookjs/storybook/pull/31045), thanks @JReinhold!
+- Automigration: Always scan file system to substitute essential addons - [#31176](https://github.com/storybookjs/storybook/pull/31176), thanks @valentinpalkovic!
+- Cleanup: Remove obsolete dependency - [#31177](https://github.com/storybookjs/storybook/pull/31177), thanks @valentinpalkovic!
+- Core: Create `features` for addons moved into core - [#31146](https://github.com/storybookjs/storybook/pull/31146), thanks @ndelangen!
+- Core: Draw highlights on top of canvas and add various new features - [#30894](https://github.com/storybookjs/storybook/pull/30894), thanks @ghengeveld!
+- Core: Fix highlight `clickEvent` serialization and export public types - [#31179](https://github.com/storybookjs/storybook/pull/31179), thanks @ghengeveld!
+- Core: Fix highlighting zero-pixel elements and focus on single element - [#31183](https://github.com/storybookjs/storybook/pull/31183), thanks @ghengeveld!
+- Core: Increase compile targets for node & browsers - [#31139](https://github.com/storybookjs/storybook/pull/31139), thanks @JReinhold!
+- Init: Install framework stories instead of renderer stories - [#31160](https://github.com/storybookjs/storybook/pull/31160), thanks @valentinpalkovic!
+- Maintenance: Migrate eslint-storybook-plugin into the monorepo - [#31151](https://github.com/storybookjs/storybook/pull/31151), thanks @yannbf!
+- Nextjs Vite: Add runtime check for malformed postcss config - [#31184](https://github.com/storybookjs/storybook/pull/31184), thanks @valentinpalkovic!
+
 ## 9.0.0-alpha.20
 
 - Addon Docs: Update telejson - [#31115](https://github.com/storybookjs/storybook/pull/31115), thanks @valentinpalkovic!

@@ -82,12 +82,10 @@ const sirvWorkaround: typeof sirv =
   (req, res, next) => {
     // polka+sirv will modify the request URL, so we need to restore it after sirv is done
     // req._parsedUrl is an internal construct used by both polka and sirv
-    // eslint-disable-next-line no-underscore-dangle
     const originalParsedUrl = (req as any)._parsedUrl;
 
     const maybeNext = next
       ? () => {
-          // eslint-disable-next-line no-underscore-dangle
           (req as any)._parsedUrl = originalParsedUrl;
           next();
         }

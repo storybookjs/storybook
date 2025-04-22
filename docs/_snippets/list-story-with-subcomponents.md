@@ -59,9 +59,10 @@ export const OneItem = {
 };
 ```
 
-```tsx filename="List.stories.ts|tsx" renderer="react" language="ts-4-9"
+```tsx filename="List.stories.ts|tsx" renderer="react" language="ts"
 import React from 'react';
-import type { Meta, StoryObj } from '@storybook/react';
+
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { List } from './List';
 import { ListItem } from './ListItem';
@@ -73,32 +74,6 @@ const meta = {
 export default meta;
 
 type Story = StoryObj<typeof meta>;
-
-export const Empty: Story = {};
-
-export const OneItem: Story = {
-  render: (args) => (
-    <List {...args}>
-      <ListItem />
-    </List>
-  ),
-};
-```
-
-```tsx filename="List.stories.ts|tsx" renderer="react" language="ts"
-import React from 'react';
-import type { Meta, StoryObj } from '@storybook/react';
-
-import { List } from './List';
-import { ListItem } from './ListItem';
-
-const meta: Meta<typeof List> = {
-  component: List,
-  subcomponents: { ListItem }, //👈 Adds the ListItem component as a subcomponent
-};
-export default meta;
-
-type Story = StoryObj<typeof List>;
 
 export const Empty: Story = {};
 
@@ -136,7 +111,7 @@ export const OneItem = {
 };
 ```
 
-```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts-4-9"
+```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts"
 import type { Meta, StoryObj } from 'storybook-solidjs';
 
 import { List } from './List';
@@ -155,36 +130,6 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-export const Empty: Story = {};
-
-export const OneItem: Story = {
-  render: (args) => (
-    <List {...args}>
-      <ListItem />
-    </List>
-  ),
-};
-```
-
-```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs';
-
-import { List } from './List';
-import { ListItem } from './ListItem';
-
-const meta: Meta<typeof List> = {
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
-  component: List,
-  subcomponents: { ListItem }, //👈 Adds the ListItem component as a subcomponent
-};
-
-export default meta;
-type Story = StoryObj<typeof List>;
 
 export const Empty: Story = {};
 
@@ -218,7 +163,7 @@ export const OneItem = {
 ```
 
 ```ts filename="List.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import { html } from 'lit';
 
@@ -269,8 +214,8 @@ export const OneItem = {
 };
 ```
 
-```ts filename="List.stories.ts" renderer="vue" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/vue3';
+```ts filename="List.stories.ts" renderer="vue" language="ts"
+import type { Meta, StoryObj } from "@storybook/vue3-vite";
 
 import List from './List.vue';
 import ListItem from './ListItem.vue';
@@ -282,38 +227,6 @@ const meta = {
 export default meta;
 
 type Story = StoryObj<typeof meta>;
-
-export const Empty: Story = {
-  render: () => ({
-    components: { List },
-    template: '<List />',
-  }),
-};
-
-export const OneItem: Story = {
-  render: (args) => ({
-    components: { List, ListItem },
-    setup() {
-      return { args }
-    }
-    template: '<List v-bind="args"><ListItem /></List>',
-  }),
-};
-```
-
-```ts filename="List.stories.ts" renderer="vue" language="ts"
-import type { Meta, StoryObj } from '@storybook/vue3';
-
-import List from './List.vue';
-import ListItem from './ListItem.vue';
-
-const meta: Meta<typeof List> = {
-  component: List,
-  subcomponents: { ListItem }, //👈 Adds the ListItem component as a subcomponent
-};
-export default meta;
-
-type Story = StoryObj<typeof List>;
 
 export const Empty: Story = {
   render: () => ({

@@ -2,7 +2,7 @@
 export default {
   parameters: {
     backgrounds: {
-      values: [
+      options: [
         { name: 'light', value: '#fff' },
         { name: 'dark', value: '#333' },
       ],
@@ -12,13 +12,13 @@ export default {
 ```
 
 ```ts filename=".storybook/preview.ts" renderer="common" language="ts"
-// Replace your-renderer with the renderer you are using (e.g., react, vue3)
-import { Preview } from '@storybook/your-renderer';
+// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
+import type { Preview } from '@storybook/your-framework';
 
 const preview: Preview = {
   parameters: {
     backgrounds: {
-      values: [
+      options: [
         { name: 'light', value: '#fff' },
         { name: 'dark', value: '#333' },
       ],

@@ -67,8 +67,8 @@ export const Combo = {
 };
 ```
 
-```tsx filename="Button.stories.tsx" renderer="react" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/react';
+```tsx filename="Button.stories.tsx" renderer="react" language="ts"
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { Button } from './Button';
 
@@ -78,42 +78,6 @@ const meta = {
 export default meta;
 
 type Story = StoryObj<typeof meta>;
-
-export const Variant1: Story = {
-  // 👇 This story will not appear in Storybook's sidebar or docs page
-  tags: ['!dev', '!autodocs'],
-  args: { variant: 1 },
-};
-
-export const Variant2: Story = {
-  // 👇 This story will not appear in Storybook's sidebar or docs page
-  tags: ['!dev', '!autodocs'],
-  args: { variant: 2 },
-};
-
-export const Combo: Story = {
-  // 👇 This story should not be tested, but will appear in the sidebar and docs page
-  tags: ['!test'],
-  render: () => (
-    <>
-      <Button variant={1} />
-      <Button variant={2} />
-    </>
-  ),
-};
-```
-
-```tsx filename="Button.stories.tsx" renderer="react" language="ts"
-import type { Meta, StoryObj } from '@storybook/react';
-
-import { Button } from './Button';
-
-const meta: Meta<typeof Button> = {
-  component: Button,
-};
-export default meta;
-
-type Story = StoryObj<typeof Button>;
 
 export const Variant1: Story = {
   // 👇 This story will not appear in Storybook's sidebar or docs page
@@ -170,7 +134,7 @@ export const Combo = {
 };
 ```
 
-```tsx filename="Button.stories.tsx" renderer="solid" language="ts-4-9"
+```tsx filename="Button.stories.tsx" renderer="solid" language="ts"
 import type { Meta, StoryObj } from 'storybook-solidjs';
 
 import { Button } from './Button';
@@ -181,42 +145,6 @@ const meta = {
 export default meta;
 
 type Story = StoryObj<typeof meta>;
-
-export const Variant1: Story = {
-  // 👇 This story will not appear in Storybook's sidebar or docs page
-  tags: ['!dev', '!autodocs'],
-  args: { variant: 1 },
-};
-
-export const Variant2: Story = {
-  // 👇 This story will not appear in Storybook's sidebar or docs page
-  tags: ['!dev', '!autodocs'],
-  args: { variant: 2 },
-};
-
-export const Combo: Story = {
-  // 👇 This story should not be tested, but will appear in the sidebar and docs page
-  tags: ['!test'],
-  render: () => (
-    <>
-      <Button variant={1} />
-      <Button variant={2} />
-    </>
-  ),
-};
-```
-
-```tsx filename="Button.stories.tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs';
-
-import { Button } from './Button';
-
-const meta: Meta<typeof Button> = {
-  component: Button,
-};
-export default meta;
-
-type Story = StoryObj<typeof Button>;
 
 export const Variant1: Story = {
   // 👇 This story will not appear in Storybook's sidebar or docs page
@@ -270,37 +198,6 @@ export const Combo: Story = {
 <Story name="Combo" tags={['!test']}>
   <Button variant={1}>
   <Button variant={2}>
-</Story>
-```
-
-```svelte filename="Button.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
-<script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
-  import { Button } from './Button.svelte';
-
-  const { Story } = defineMeta({
-    component: Button,
-  });
-</script>
-
-<!-- 👇 This story will not appear in Storybook's sidebar or docs page -->
-<Story
-  name="Variant1"
-  tags={['!dev', '!autodocs']}
-  args={{ variant: 1 }}
-/>
-
-<!-- 👇 This story will not appear in Storybook's sidebar or docs page -->
-<Story
-  name="Variant2"
-  tags={['!dev', '!autodocs']}
-  args={{ variant: 2 }}
-/>
-
-<!-- 👇 This story should not be tested, but will appear in the sidebar and docs page -->
-<Story name="Combo" tags={['!test']}>
-  <Button variant={1} />
-  <Button variant={2} />
 </Story>
 ```
 
@@ -369,8 +266,8 @@ export const Combo = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="vue" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/vue3';
+```ts filename="Button.stories.ts" renderer="vue" language="ts"
+import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import { Button } from './Button';
 
@@ -380,45 +277,6 @@ const meta = {
 export default meta;
 
 type Story = StoryObj<typeof meta>;
-
-export const Variant1: Story = {
-  // 👇 This story will not appear in Storybook's sidebar or docs page
-  tags: ['!dev', '!autodocs'],
-  args: { variant: 1 },
-};
-
-export const Variant2: Story = {
-  // 👇 This story will not appear in Storybook's sidebar or docs page
-  tags: ['!dev', '!autodocs'],
-  args: { variant: 2 },
-};
-
-export const Combo: Story = {
-  // 👇 This story should not be tested, but will appear in the sidebar and docs page
-  tags: ['!test'],
-  render: () => ({
-    components: { Button },
-    template: `
-      <div>
-        <Button :variant="1" />
-        <Button :variant="2" />
-      </div>
-    `,
-  }),
-};
-```
-
-```ts filename="Button.stories.ts" renderer="vue" language="ts"
-import type { Meta, StoryObj } from '@storybook/vue3';
-
-import { Button } from './Button';
-
-const meta: Meta<typeof Button> = {
-  component: Button,
-};
-export default meta;
-
-type Story = StoryObj<typeof Button>;
 
 export const Variant1: Story = {
   // 👇 This story will not appear in Storybook's sidebar or docs page
@@ -480,7 +338,8 @@ export const Combo = {
 ```
 
 ```ts filename="Button.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
+
 import { html } from 'lit';
 
 const meta: Meta = {

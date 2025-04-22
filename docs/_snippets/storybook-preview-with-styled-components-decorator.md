@@ -8,7 +8,7 @@ const preview: Preview = {
   decorators: [
     moduleMetadata({ declarations: [ThemeProvider] }),
     componentWrapperDecorator(
-      (story) => `<theme-provider class="default">${story}</theme-provider>`,
+      (story) => `<theme-provider class="default">${story}</theme-provider>`
     ),
   ],
 };
@@ -20,7 +20,7 @@ const preview: Preview = {
     moduleMetadata({ declarations: [ThemeProvider] }),
     componentWrapperDecorator(
       (story) => `<theme-provider [class]="theme">${story}</theme-provider>`,
-      ({ globals }) => ({ theme: globals.theme }),
+      ({ globals }) => ({ theme: globals.theme })
     ),
   ],
 };
@@ -47,7 +47,7 @@ export default {
 ```tsx filename=".storybook/preview.tsx" renderer="react" language="ts"
 import React from 'react';
 
-import { Preview } from '@storybook/react';
+import type { Preview } from '@storybook/react-vite';
 
 import { ThemeProvider } from 'styled-components';
 
@@ -84,7 +84,8 @@ export const decorators = [
 ```
 
 ```tsx filename=".storybook/preview.tsx" renderer="solid" language="ts"
-import { Preview } from 'storybook-solidjs';
+import type { Preview } from 'storybook-solidjs';
+
 import { ThemeProvider, DefaultTheme } from 'solid-styled-components';
 
 const theme: DefaultTheme = {

@@ -11,9 +11,10 @@ export default meta;
 type Story = StoryObj<Button>;
 
 export const Primary: Story = {
+  // 👇 Story-level parameters
   parameters: {
     backgrounds: {
-      values: [
+      options: [
         { name: 'red', value: '#f00' },
         { name: 'green', value: '#0f0' },
         { name: 'blue', value: '#00f' },
@@ -36,9 +37,15 @@ export const Primary: Story = {
 
 <!-- 👇 Story-level parameters-->
 <Story
-  name="OnDark"
+  name="Primary"
   parameters={{
-    backgrounds: { default: 'dark' }
+    backgrounds: {
+      options: [
+        { name: 'red', value: '#f00' },
+        { name: 'green', value: '#0f0' },
+        { name: 'blue', value: '#00f' },
+      ],
+    },
   }}
 />
 ```
@@ -50,11 +57,15 @@ export default {
   component: Button,
 };
 
-export const OnDark = {
+export const Primary = {
   // 👇 Story-level parameters
   parameters: {
     backgrounds: {
-      default: 'dark',
+      options: [
+        { name: 'red', value: '#f00' },
+        { name: 'green', value: '#0f0' },
+        { name: 'blue', value: '#00f' },
+      ],
     },
   },
 };
@@ -67,76 +78,15 @@ export default {
   component: Button,
 };
 
-export const OnDark = {
+export const Primary = {
   // 👇 Story-level parameters
   parameters: {
     backgrounds: {
-      default: 'dark',
-    },
-  },
-};
-```
-
-```svelte filename="Button.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
-<script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
-
-  import Button from './Button.svelte';
-
-  const { Story } = defineMeta({
-    component: Button,
-  });
-</script>
-
-<!-- 👇 Story-level parameters-->
-<Story
-  name="OnDark"
-  parameters={{
-    backgrounds: { default: 'dark' }
-  }}
-/>
-```
-
-```ts filename="Button.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="CSF"
-import type { Meta, StoryObj } from '@storybook/svelte';
-
-import Button from './Button.svelte';
-
-const meta = {
-  component: Button,
-} satisfies Meta<typeof Button>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const OnDark: Story = {
-  // 👇 Story-level parameters
-  parameters: {
-    backgrounds: {
-      default: 'dark',
-    },
-  },
-};
-```
-
-```ts filename="Button.stories.ts|tsx" renderer="common" language="ts-4-9"
-// Replace your-framework with the framework you are using (e.g., react-webpack5, vue3-vite)
-import type { Meta, StoryObj } from '@storybook/your-framework';
-
-import { Button } from './Button';
-
-const meta = {
-  component: Button,
-} satisfies Meta<typeof Button>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const OnDark: Story = {
-  // 👇 Story-level parameters
-  parameters: {
-    backgrounds: {
-      default: 'dark',
+      options: [
+        { name: 'red', value: '#f00' },
+        { name: 'green', value: '#0f0' },
+        { name: 'blue', value: '#00f' },
+      ],
     },
   },
 };
@@ -155,53 +105,67 @@ export const OnDark: Story = {
 
 <!-- 👇 Story-level parameters-->
 <Story
-  name="OnDark"
+  name="Primary"
   parameters={{
-    backgrounds: { default: 'dark' }
+    backgrounds: {
+      options: [
+        { name: 'red', value: '#f00' },
+        { name: 'green', value: '#0f0' },
+        { name: 'blue', value: '#00f' },
+      ],
+    },
   }}
 />
 ```
 
 ```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
-import type { Meta, StoryObj } from '@storybook/svelte';
+import type { Meta, StoryObj } from '@storybook/svelte-vite';
 
 import Button from './Button.svelte';
 
-const meta: Meta<typeof Button> = {
+const meta = {
   component: Button,
-};
+} satisfies Meta<typeof Button>;
 
 export default meta;
-type Story = StoryObj<typeof Button>;
+type Story = StoryObj<typeof meta>;
 
-export const OnDark: Story = {
+export const Primary: Story = {
   // 👇 Story-level parameters
   parameters: {
     backgrounds: {
-      default: 'dark',
+      options: [
+        { name: 'red', value: '#f00' },
+        { name: 'green', value: '#0f0' },
+        { name: 'blue', value: '#00f' },
+      ],
     },
   },
 };
 ```
 
 ```ts filename="Button.stories.ts|tsx" renderer="common" language="ts"
-// Replace your-framework with the framework you are using (e.g., react-webpack5, vue3-vite)
+// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { Button } from './Button';
 
-const meta: Meta<typeof Button> = {
+const meta = {
   component: Button,
-};
+} satisfies Meta<typeof Button>;
 
 export default meta;
-type Story = StoryObj<typeof Button>;
+type Story = StoryObj<typeof meta>;
 
-export const OnDark: Story = {
+export const Primary: Story = {
   // 👇 Story-level parameters
   parameters: {
     backgrounds: {
-      default: 'dark',
+      options: [
+        { name: 'red', value: '#f00' },
+        { name: 'green', value: '#0f0' },
+        { name: 'blue', value: '#00f' },
+      ],
     },
   },
 };
@@ -213,13 +177,10 @@ export default {
 };
 
 export const Primary = {
-  args: {
-    primary: true,
-    label: 'Button',
-  },
+  // 👇 Story-level parameters
   parameters: {
     backgrounds: {
-      values: [
+      options: [
         { name: 'red', value: '#f00' },
         { name: 'green', value: '#0f0' },
         { name: 'blue', value: '#00f' },
@@ -230,7 +191,7 @@ export const Primary = {
 ```
 
 ```ts filename="Button.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
   component: 'demo-button',
@@ -239,14 +200,11 @@ const meta: Meta = {
 export default meta;
 type Story = StoryObj<typeof Button>;
 
-export const Primary: Story = {
-  args: {
-    primary: true,
-    label: 'Button',
-  },
+export const Primary = {
+  // 👇 Story-level parameters
   parameters: {
     backgrounds: {
-      values: [
+      options: [
         { name: 'red', value: '#f00' },
         { name: 'green', value: '#0f0' },
         { name: 'blue', value: '#00f' },

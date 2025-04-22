@@ -28,8 +28,8 @@ export default {
 };
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="common" language="ts-4-9"
-// Replace your-framework with the name of your framework
+```ts filename="Button.stories.ts|tsx" renderer="common" language="ts"
+// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
 import type { Meta } from '@storybook/your-framework';
 
 import { Button } from './Button';
@@ -42,24 +42,6 @@ const meta = {
     },
   },
 } satisfies Meta<typeof Button>;
-
-export default meta;
-```
-
-```ts filename="Button.stories.ts|tsx" renderer="common" language="ts"
-// Replace your-framework with the name of your framework
-import type { Meta } from '@storybook/your-framework';
-
-import { Button } from './Button';
-
-const meta: Meta<typeof Button> = {
-  component: Button,
-  parameters: {
-    docs: {
-      controls: { exclude: ['style'] },
-    },
-  },
-};
 
 export default meta;
 ```
@@ -80,7 +62,7 @@ export const Basic = {
 ```
 
 ```ts filename="Button.stories.ts" renderer="web-components" language="ts"
-import type { Meta } from '@storybook/web-components';
+import type { Meta } from '@storybook/web-components-vite';
 
 const meta: Meta = {
   title: 'Button',

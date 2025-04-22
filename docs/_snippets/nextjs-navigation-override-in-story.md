@@ -26,8 +26,8 @@ export const Example = {
 };
 ```
 
-```ts filename="NavigationBasedComponent.stories.ts" renderer="react" language="ts-4-9"
-import { Meta, StoryObj } from '@storybook/react';
+```ts filename="NavigationBasedComponent.stories.ts" renderer="react" language="ts"
+import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 
 import NavigationBasedComponent from './NavigationBasedComponent';
 
@@ -42,39 +42,6 @@ const meta = {
 export default meta;
 
 type Story = StoryObj<typeof meta>;
-
-// If you have the actions addon,
-// you can interact with the links and see the route change events there
-export const Example: Story = {
-  parameters: {
-    nextjs: {
-      navigation: {
-        pathname: '/profile',
-        query: {
-          user: '1',
-        },
-      },
-    },
-  },
-};
-```
-
-```ts filename="NavigationBasedComponent.stories.ts" renderer="react" language="ts"
-import { Meta, StoryObj } from '@storybook/react';
-
-import NavigationBasedComponent from './NavigationBasedComponent';
-
-const meta: Meta<typeof NavigationBasedComponent> = {
-  component: NavigationBasedComponent,
-  parameters: {
-    nextjs: {
-      appDirectory: true,
-    },
-  },
-};
-export default meta;
-
-type Story = StoryObj<typeof NavigationBasedComponent>;
 
 // If you have the actions addon,
 // you can interact with the links and see the route change events there

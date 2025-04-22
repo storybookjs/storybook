@@ -228,14 +228,18 @@ export const hidePopover = (element: HTMLElement) => {
   }
 };
 
-export const getEventDetails = ({ element, ...box }: Box): ClickEventDetails => ({
-  ...box,
+export const getEventDetails = (target: Box): ClickEventDetails => ({
+  top: target.top,
+  left: target.left,
+  width: target.width,
+  height: target.height,
+  selectors: target.selectors,
   element: {
     attributes: Object.fromEntries(
-      Array.from(element.attributes).map((attr) => [attr.name, attr.value])
+      Array.from(target.element.attributes).map((attr) => [attr.name, attr.value])
     ),
-    localName: element.localName,
-    tagName: element.tagName,
-    outerHTML: element.outerHTML,
+    localName: target.element.localName,
+    tagName: target.element.tagName,
+    outerHTML: target.element.outerHTML,
   },
 });

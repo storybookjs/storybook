@@ -95,7 +95,7 @@ export type Builder = CoreBuilder | (string & {});
 
 export enum SupportedLanguage {
   JAVASCRIPT = 'javascript',
-  TYPESCRIPT_4_9 = 'typescript-4-9',
+  TYPESCRIPT = 'typescript',
 }
 
 export type TemplateMatcher = {

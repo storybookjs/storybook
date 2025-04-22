@@ -1,13 +1,9 @@
 import type { PartialStoryFn, Renderer } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import { makeDecorator, useEffect } from 'storybook/preview-api';
 
 import { PARAM_KEY } from './constants';
 import { actions } from './runtime/actions';
-
-const { document, Element } = global;
 
 const delegateEventSplitter = /^(\S+)\s*(.*)$/;
 
@@ -41,9 +37,11 @@ const createHandlers = (actionsFn: (...arg: any[]) => object, ...handles: any[])
 };
 
 const applyEventHandlers = (actionsFn: any, ...handles: any[]) => {
-  const root = document && document.getElementById('storybook-root');
+  const root =
+    typeof globalThis.document !== 'undefined' &&
+    globalThis.document.getElementById('storybook-root');
   useEffect(() => {
-    if (root != null) {
+    if (root) {
       const handlers = createHandlers(actionsFn, ...handles);
       handlers.forEach(({ eventName, handler }) => root.addEventListener(eventName, handler));
       return () =>

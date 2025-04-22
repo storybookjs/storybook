@@ -324,7 +324,7 @@ describe('Detect', () => {
           }
         },
       } as Partial<JsPackageManager> as JsPackageManager)
-    ).resolves.toBe(SupportedLanguage.TYPESCRIPT_4_9);
+    ).resolves.toBe(SupportedLanguage.TYPESCRIPT);
   });
 
   it(`should return language typescript if the dependency is =TS4.9`, async () => {
@@ -350,7 +350,7 @@ describe('Detect', () => {
           }
         },
       } as Partial<JsPackageManager> as JsPackageManager)
-    ).resolves.toBe(SupportedLanguage.TYPESCRIPT_4_9);
+    ).resolves.toBe(SupportedLanguage.TYPESCRIPT);
   });
 
   it(`should return language JavaScript if the dependency is =TS4.9beta`, async () => {

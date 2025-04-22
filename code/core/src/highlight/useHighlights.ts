@@ -13,6 +13,7 @@ import type { Box, Highlight, HighlightOptions, RawHighlightOptions } from './ty
 import {
   convertLegacy,
   createElement,
+  getEventDetails,
   hidePopover,
   isOverMenu,
   isTargeted,
@@ -272,8 +273,8 @@ export const useHighlights = ({
 
   const updateBoxStyles = () => {
     const selectedElement = selected.get();
-    const focusedElement = selectedElement || focused.get();
     const targetElements = selectedElement ? [selectedElement] : targets.get();
+    const focusedElement = targetElements.length === 1 ? targetElements[0] : focused.get();
     const isMenuOpen = clickCoords.get() !== undefined;
 
     boxes.get().forEach((box) => {
@@ -313,6 +314,7 @@ export const useHighlights = ({
     });
   };
   boxes.subscribe(updateBoxStyles);
+  targets.subscribe(updateBoxStyles);
   hovered.subscribe(updateBoxStyles);
   focused.subscribe(updateBoxStyles);
   selected.subscribe(updateBoxStyles);
@@ -473,9 +475,8 @@ export const useHighlights = ({
           createElement(
             'ul',
             { class: 'menu-list' },
-            menuItems.map((item) => {
-              const { title, description, clickEvent } = item;
-              const onClick = clickEvent && (() => channel.emit(clickEvent, item, target));
+            menuItems.map(({ id, title, description, clickEvent: event }) => {
+              const onClick = event && (() => channel.emit(event, id, getEventDetails(target)));
               return createElement('li', {}, [
                 createElement(
                   onClick ? 'button' : 'div',

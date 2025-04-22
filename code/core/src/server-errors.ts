@@ -572,3 +572,33 @@ export class FindPackageVersionsError extends StorybookError {
     });
   }
 }
+
+export class IncompatiblePostCssConfigError extends StorybookError {
+  constructor(public data: { error: Error }) {
+    super({
+      category: Category.FRAMEWORK_NEXTJS,
+      code: 3,
+      message: dedent`
+        Incompatible PostCSS configuration format detected.
+
+        Next.js uses an array-based format for plugins which is not compatible with Vite:
+        
+        // ❌ Incompatible format (used by Next.js)
+        const config = {
+          plugins: ["@tailwindcss/postcss"],
+        };
+        
+        Please transform your PostCSS config to use the object-based format, which is compatible with Next.js and Vite:
+        
+        // ✅ Compatible format (works with Next.js and Vite)
+        const config = {
+          plugins: {
+            "@tailwindcss/postcss": {},
+          },
+        };
+        
+        Original error: ${data.error.message}
+      `,
+    });
+  }
+}

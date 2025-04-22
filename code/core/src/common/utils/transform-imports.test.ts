@@ -5,8 +5,14 @@ import { describe, expect, it, vi } from 'vitest';
 
 import dedent from 'ts-dedent';
 
-import { consolidatedPackages } from './consolidated-packages';
-import { transformImportFiles } from './transformImports';
+import { transformImportFiles } from './transform-imports';
+
+const consolidatedPackages = {
+  '@storybook/core-common': 'storybook/internal/common',
+  '@storybook/theming': 'storybook/theming',
+  '@storybook/components': 'storybook/internal/components',
+  '@storybook/test': 'storybook/test',
+} as const;
 
 vi.mock('node:fs/promises');
 

@@ -176,43 +176,41 @@ export const addonEssentialsRemoveDocs: Fix<AddonDocsOptions> = {
         await packageManager.runPackageCommand('storybook', ['remove', addon]);
       }
 
-      if (additionalAddonsToRemove.length) {
-        const projectRoot = getProjectRoot();
-        const errors: Array<{ file: string; error: Error }> = [];
-        const defaultGlob = '**/*.{mjs,cjs,js,jsx,ts,tsx,mdx}';
-        // Find all files matching the glob pattern
-        console.log('Scanning for affected files...');
-        const { glob } = await prompts({
-          type: 'text',
-          name: 'glob',
-          message: 'Enter a custom glob pattern to scan (or press enter to use default):',
-          initial: defaultGlob,
-        });
+      const projectRoot = getProjectRoot();
+      const errors: Array<{ file: string; error: Error }> = [];
+      const defaultGlob = '**/*.{mjs,cjs,js,jsx,ts,tsx,mdx}';
+      // Find all files matching the glob pattern
+      console.log('Scanning for affected files...');
+      const { glob } = await prompts({
+        type: 'text',
+        name: 'glob',
+        message: 'Enter a custom glob pattern to scan (or press enter to use default):',
+        initial: defaultGlob,
+      });
 
-        // eslint-disable-next-line depend/ban-dependencies
-        const globby = (await import('globby')).globby;
+      // eslint-disable-next-line depend/ban-dependencies
+      const globby = (await import('globby')).globby;
 
-        const sourceFiles = await globby([glob], {
-          ...commonGlobOptions(''),
-          ignore: ['**/node_modules/**'],
-          dot: true,
-          cwd: projectRoot,
-          absolute: true,
-        });
+      const sourceFiles = await globby([glob], {
+        ...commonGlobOptions(''),
+        ignore: ['**/node_modules/**'],
+        dot: true,
+        cwd: projectRoot,
+        absolute: true,
+      });
 
-        console.log(`Scanning ${sourceFiles.length} files...`);
+      console.log(`Scanning ${sourceFiles.length} files...`);
 
-        const importErrors = await transformImportFiles(sourceFiles, consolidatedAddons, dryRun);
-        errors.push(...importErrors);
+      const importErrors = await transformImportFiles(sourceFiles, consolidatedAddons, dryRun);
+      errors.push(...importErrors);
 
-        if (errors.length > 0) {
-          // eslint-disable-next-line local-rules/no-uncategorized-errors
-          throw new Error(
-            `Failed to process ${errors.length} files:\n${errors
-              .map(({ file, error }) => `- ${file}: ${error.message}`)
-              .join('\n')}`
-          );
-        }
+      if (errors.length > 0) {
+        // eslint-disable-next-line local-rules/no-uncategorized-errors
+        throw new Error(
+          `Failed to process ${errors.length} files:\n${errors
+            .map(({ file, error }) => `- ${file}: ${error.message}`)
+            .join('\n')}`
+        );
       }
 
       // If docs was enabled (not disabled) and not already installed, add it

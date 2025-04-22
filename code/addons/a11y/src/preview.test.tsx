@@ -82,6 +82,7 @@ describe('afterEach', () => {
 
   const createContext = (overrides: Partial<StoryContext> = {}): StoryContext =>
     ({
+      viewMode: 'story',
       reporting: {
         reports: [],
         addReport: vi.fn(),
@@ -262,6 +263,17 @@ describe('afterEach', () => {
       },
       status: 'failed',
     });
+  });
+
+  it('should not run in docs mode', async () => {
+    const context = createContext({
+      viewMode: 'docs',
+    });
+
+    await experimental_afterEach(context);
+
+    expect(mockedRun).not.toHaveBeenCalled();
+    expect(context.reporting.addReport).not.toHaveBeenCalled();
   });
 });
 

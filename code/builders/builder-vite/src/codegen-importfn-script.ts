@@ -50,6 +50,6 @@ export async function generateImportFnScriptCode(options: Options): Promise<stri
   const stories = await listStories(options);
 
   // We can then call toImportFn to create a function that can be used to load each story dynamically.
-  // eslint-disable-next-line @typescript-eslint/return-await
+
   return await toImportFn(stories);
 }

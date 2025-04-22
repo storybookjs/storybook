@@ -9,22 +9,24 @@ import { PanelTitle } from './components/PanelTitle';
 import { ADDON_ID, PANEL_ID } from './constants';
 
 export default addons.register(ADDON_ID, () => {
-  const filter = ({ state }: Combo) => {
-    return {
-      storyId: state.storyId,
+  if (globalThis?.FEATURES?.interactions) {
+    const filter = ({ state }: Combo) => {
+      return {
+        storyId: state.storyId,
+      };
     };
-  };
 
-  addons.add(PANEL_ID, {
-    type: types.PANEL,
-    title: () => <PanelTitle />,
-    match: ({ viewMode }) => viewMode === 'story',
-    render: ({ active }) => {
-      return (
-        <AddonPanel active={!!active}>
-          <Consumer filter={filter}>{({ storyId }) => <Panel storyId={storyId} />}</Consumer>
-        </AddonPanel>
-      );
-    },
-  });
+    addons.add(PANEL_ID, {
+      type: types.PANEL,
+      title: () => <PanelTitle />,
+      match: ({ viewMode }) => viewMode === 'story',
+      render: ({ active }) => {
+        return (
+          <AddonPanel active={!!active}>
+            <Consumer filter={filter}>{({ storyId }) => <Panel storyId={storyId} />}</Consumer>
+          </AddonPanel>
+        );
+      },
+    });
+  }
 });

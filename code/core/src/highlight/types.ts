@@ -42,6 +42,20 @@ export interface HighlightOptions {
   }[];
 }
 
+export interface ClickEventDetails {
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+  selectors: string[];
+  element: {
+    attributes: Record<string, string>;
+    localName: string;
+    tagName: string;
+    outerHTML: string;
+  };
+}
+
 // Legacy format
 export interface LegacyHighlightOptions {
   /** @deprecated Use selectors instead */

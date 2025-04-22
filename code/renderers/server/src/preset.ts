@@ -11,7 +11,6 @@ type FileContent = {
   stories: { name: StoryName; tags?: Tag[] }[];
 };
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export const experimental_indexers: PresetProperty<'experimental_indexers'> = (
   existingIndexers
 ) => [

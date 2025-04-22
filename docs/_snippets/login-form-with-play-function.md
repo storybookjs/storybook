@@ -201,9 +201,7 @@ export const FilledForm = {
 ```tsx filename="LoginForm.stories.ts|tsx" renderer="solid" language="ts-4-9"
 import type { Meta, StoryObj } from 'storybook-solidjs';
 
-import { within, userEvent } from '@storybook/testing-library';
-
-import { expect } from 'storybook/test';
+import { expect, within, userEvent } from 'storybook/test';
 
 import { LoginForm } from './LoginForm';
 
@@ -245,9 +243,7 @@ export const FilledForm: Story = {
 ```tsx filename="LoginForm.stories.ts|tsx" renderer="solid" language="ts"
 import type { Meta, StoryObj } from 'storybook-solidjs';
 
-import { within, userEvent } from '@storybook/testing-library';
-
-import { expect } from 'storybook/test';
+import { expect, within, userEvent } from 'storybook/test';
 
 import { LoginForm } from './LoginForm';
 

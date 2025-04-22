@@ -1,5 +1,3 @@
-/* eslint-disable import/no-extraneous-dependencies */
-
 /**
  * Mock implementation of a universal store instances manager for testing purposes.
  *

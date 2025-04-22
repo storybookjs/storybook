@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import { SourceType } from 'storybook/internal/docs-tools';
 import type { DecoratorFunction } from 'storybook/internal/types';
 

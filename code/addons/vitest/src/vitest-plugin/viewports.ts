@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import type { Globals, Parameters } from 'storybook/internal/csf';
 import { UnsupportedViewportDimensionError } from 'storybook/internal/preview-errors';
 
@@ -6,7 +5,7 @@ import { MINIMAL_VIEWPORTS } from 'storybook/viewport';
 import type { ViewportMap, ViewportStyles } from 'storybook/viewport';
 
 declare global {
-  // eslint-disable-next-line no-var, @typescript-eslint/naming-convention
+  // eslint-disable-next-line no-var
   var __vitest_browser__: boolean;
 }
 

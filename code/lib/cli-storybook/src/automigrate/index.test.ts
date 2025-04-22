@@ -78,7 +78,6 @@ const beforeVersion = '6.5.15';
 const isUpgrade = true;
 
 const runFixWrapper = async ({
-  // eslint-disable-next-line @typescript-eslint/no-shadow
   beforeVersion,
   storybookVersion,
 }: {

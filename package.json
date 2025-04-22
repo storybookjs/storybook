@@ -21,5 +21,9 @@
   "packageManager": "yarn@4.6.0",
   "engines": {
     "node": ">=20.0.0"
+  },
+  "devDependencies": {
+    "eslint-plugin-jsonc": "^2.20.0",
+    "jsonc-eslint-parser": "^2.4.0"
   }
 }

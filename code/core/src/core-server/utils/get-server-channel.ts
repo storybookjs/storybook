@@ -73,7 +73,6 @@ export function getServerChannel(server: Server) {
 
   const channel = new Channel({ transports, async: true });
 
-  // eslint-disable-next-line no-underscore-dangle
   UniversalStore.__prepare(channel, UniversalStore.Environment.SERVER);
 
   return channel;

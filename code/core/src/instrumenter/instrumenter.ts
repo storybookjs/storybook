@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import type { Channel } from 'storybook/internal/channels';
 import { once } from 'storybook/internal/client-logger';
 import {
@@ -438,7 +437,6 @@ export class Instrumenter {
       }));
     }).then(() => {
       this.setState(call.storyId, (state) => {
-        // eslint-disable-next-line @typescript-eslint/naming-convention
         const { [call.id]: _, ...resolvers } = state.resolvers;
         return { isLocked: true, resolvers };
       });

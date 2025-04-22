@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { page } from '@vitest/browser/context';

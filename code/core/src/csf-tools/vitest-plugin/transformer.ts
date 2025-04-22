@@ -1,6 +1,4 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
-
-/* eslint-disable no-underscore-dangle */
 import { types as t } from 'storybook/internal/babel';
 import { getStoryTitle } from 'storybook/internal/common';
 import { combineTags } from 'storybook/internal/csf';

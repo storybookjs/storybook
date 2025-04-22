@@ -187,10 +187,8 @@ const rewriteRuleContainer = (
     let numRewritten = 0;
 
     // @ts-expect-error We're adding this nonstandard property below
-    // eslint-disable-next-line no-underscore-dangle
     if (cssRule.__processed) {
       // @ts-expect-error We're adding this nonstandard property below
-      // eslint-disable-next-line no-underscore-dangle
       numRewritten = cssRule.__pseudoStatesRewrittenCount;
     } else {
       if ('cssRules' in cssRule && (cssRule.cssRules as CSSRuleList).length) {
@@ -212,10 +210,8 @@ const rewriteRuleContainer = (
         }
       }
       // @ts-expect-error We're adding this nonstandard property
-      // eslint-disable-next-line no-underscore-dangle
       cssRule.__processed = true;
       // @ts-expect-error We're adding this nonstandard property
-      // eslint-disable-next-line no-underscore-dangle
       cssRule.__pseudoStatesRewrittenCount = numRewritten;
     }
     count += numRewritten;

@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import { SourceType } from 'storybook/internal/docs-tools';
 
 import { emitTransformCode, useEffect, useRef } from 'storybook/preview-api';
@@ -582,7 +581,6 @@ const getVNodeName = (vnode: VNode) => {
  *
  * @see Based on https://stackoverflow.com/a/9924463
  */
-// eslint-disable-next-line @typescript-eslint/ban-types
 export const getFunctionParamNames = (func: Function): string[] => {
   const STRIP_COMMENTS = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/gm;
   const ARGUMENT_NAMES = /([^\s,]+)/g;

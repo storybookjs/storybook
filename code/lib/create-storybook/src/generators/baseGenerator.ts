@@ -344,13 +344,16 @@ export async function baseGenerator(
 
   try {
     if (process.env.CI !== 'true') {
-      const { hasEslint, isStorybookPluginInstalled, eslintConfigFile } = await extractEslintInfo(
-        packageManager as any
-      );
+      const { hasEslint, isStorybookPluginInstalled, isFlatConfig, eslintConfigFile } =
+        await extractEslintInfo(packageManager);
 
       if (hasEslint && !isStorybookPluginInstalled) {
         versionedPackages.push('eslint-plugin-storybook');
-        await configureEslintPlugin(eslintConfigFile ?? undefined, packageManager as any);
+        await configureEslintPlugin({
+          eslintConfigFile,
+          packageManager,
+          isFlatConfig,
+        });
       }
     }
   } catch (err) {

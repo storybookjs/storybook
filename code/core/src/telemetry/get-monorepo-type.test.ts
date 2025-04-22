@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import * as fs from 'node:fs';
 import { join } from 'node:path';
 

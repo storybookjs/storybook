@@ -157,6 +157,7 @@ export const automigrate = async ({
       dryRun,
       mainConfig,
       result: null,
+      storybookVersion,
     });
 
     return null;
@@ -188,6 +189,10 @@ export const automigrate = async ({
 
   logger.info('🔎 checking possible migrations..');
 
+  console.log({
+    storybookVersion,
+    beforeVersion,
+  });
   const { fixResults, fixSummary, preCheckFailure } = await runFixes({
     fixes,
     packageManager,
@@ -416,6 +421,7 @@ export async function runFixes({
               packageJson,
               mainConfig,
               skipInstall,
+              storybookVersion,
             });
             logger.info(`✅ ran ${picocolors.cyan(f.id)} migration`);
 

@@ -32,7 +32,7 @@ const PlaceholderClock: FC<PropsWithChildren> = ({ children }) => {
   }, [count]);
   return (
     <PlaceholderBlock>
-      <h2>{count}</h2>
+      <h2 data-chromatic="ignore">{count}</h2>
       {children}
     </PlaceholderBlock>
   );

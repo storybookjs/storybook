@@ -63,7 +63,7 @@ export const useHighlights = ({
   storybookRootId?: string;
 }) => {
   // Clean up any existing instance of useHighlights
-  // eslint-disable-next-line no-underscore-dangle
+
   (globalThis as any).__STORYBOOK_HIGHLIGHT_TEARDOWN?.();
 
   const { document } = globalThis;
@@ -611,7 +611,6 @@ export const useHighlights = ({
     document.getElementById(rootId)?.remove();
   };
 
-  // eslint-disable-next-line no-underscore-dangle
   (globalThis as any).__STORYBOOK_HIGHLIGHT_TEARDOWN = teardown;
 
   return teardown;

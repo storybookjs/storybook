@@ -205,6 +205,14 @@ packages:
     access: $all
     publish: $all
 
+  'storybook-addon-pseudo-states':
+    access: $all
+    publish: $all
+
+  'eslint-plugin-storybook':
+    access: $all
+    publish: $all
+
   '@*/*':
     access: $all
     publish: $all

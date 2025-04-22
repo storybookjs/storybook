@@ -299,8 +299,10 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
         outline: `1px solid color-mix(in srgb, ${colorsByType[tab]}, transparent 30%)`,
         backgroundColor: 'transparent',
       },
+      hoverStyles: {
+        outlineWidth: '2px',
+      },
       focusStyles: {
-        outline: `1px solid ${theme.color.secondary}`,
         backgroundColor: 'transparent',
       },
       menu: results?.[tab as RuleType].map((result) => ({
@@ -324,8 +326,10 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
         outline: `1px solid color-mix(in srgb, ${colorsByType[tab]}, transparent 30%)`,
         backgroundColor: `color-mix(in srgb, ${colorsByType[tab]}, transparent 60%)`,
       },
+      hoverStyles: {
+        outlineWidth: '2px',
+      },
       focusStyles: {
-        outline: `1px solid ${theme.color.secondary}`,
         backgroundColor: 'transparent',
       },
       menu: results?.[tab as RuleType].map((result) => ({

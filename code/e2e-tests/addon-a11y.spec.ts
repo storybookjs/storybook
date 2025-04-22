@@ -67,10 +67,7 @@ test.describe('addon-a11y', () => {
     await page.goto(clipboard);
     await new SbPage(page, expect).waitUntilLoaded();
     await expect(page.getByRole('tab', { name: 'Passes' })).toHaveAttribute('data-active', 'true');
-    await expect(page.getByRole('button', { name: 'Hidden body' })).toHaveAttribute(
-      'data-active',
-      'true'
-    );
+    await expect(page.getByText(/Hidden body/)).toHaveAttribute('data-active', 'true');
     const element = page.getByRole('tab', { name: '1. <body' });
     await expect(element).toHaveAttribute('data-state', 'active');
   });

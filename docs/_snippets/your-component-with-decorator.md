@@ -173,7 +173,7 @@ import type { Meta } from '@storybook/web-components-vite';
 
 import { html } from 'lit';
 
-const meta: Meta<YourComponentProps> = {
+const meta: Meta = {
   component: 'demo-your-component',
   decorators: [(story) => html`<div style="margin: 3em">${story()}</div>`],
 };

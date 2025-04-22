@@ -1,8 +1,10 @@
-import type React from 'react';
+import React from 'react';
 
-import { Badge } from '../../components';
-import { STORY_CHANGED } from '../../core-events';
-import { useAddonState, useChannel, useStorybookApi } from '../../manager-api';
+import { Badge } from 'storybook/internal/components';
+import { STORY_CHANGED } from 'storybook/internal/core-events';
+
+import { useAddonState, useChannel, useStorybookApi } from 'storybook/manager-api';
+
 import { ADDON_ID, CLEAR_ID, EVENT_ID, PANEL_ID } from '../constants';
 
 export function Title() {

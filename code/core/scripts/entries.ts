@@ -16,6 +16,8 @@ export const getEntries = (cwd: string) => {
     define('src/core-server/presets/common-preset.ts', ['node'], false),
     define('src/core-server/presets/common-manager.ts', ['browser'], false, [
       'react',
+      'react-dom',
+      'react/jsx-runtime',
       '@storybook/icons',
       'storybook',
     ]),

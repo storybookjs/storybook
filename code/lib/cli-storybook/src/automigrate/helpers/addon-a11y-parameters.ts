@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import { type ConfigFile, type CsfFile, loadConfig, loadCsf } from 'storybook/internal/csf-tools';
 
 import * as t from '@babel/types';

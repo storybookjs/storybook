@@ -75,6 +75,7 @@ export const setupPreviewNavigator = async (index: StoryIndex, currentEntryId: s
     if ('entries' in node && 'title' in node) {
       const branchNode = node as BranchNode;
       return `
+      <li class="sb-navigator-branch">
         <details${branchNode.isActive ? ' open' : ''}>
           <summary class="sb-navigator-title">
             ${branchNode.title}
@@ -83,6 +84,7 @@ export const setupPreviewNavigator = async (index: StoryIndex, currentEntryId: s
             ${Object.values(branchNode.entries).map(createHtmlForNode).join('')}
           </ul>
         </details>
+      </li>
       `;
     }
 
@@ -152,6 +154,9 @@ export const setupPreviewNavigator = async (index: StoryIndex, currentEntryId: s
       list-style-type: none;
       padding: 0;
       margin: 0;
+    }
+    .sb-navigator-branch {
+      list-style-type: none;
     }
     .sb-navigator-item {
       margin-bottom: 15px;

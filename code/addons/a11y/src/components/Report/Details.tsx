@@ -128,14 +128,15 @@ const CopyButton = ({ onClick }: { onClick: () => void }) => {
 };
 
 interface DetailsProps {
+  id: string;
   item: EnhancedResult;
   type: RuleType;
   selection: string | undefined;
   handleSelectionChange: (key: string) => void;
 }
 
-export const Details = ({ item, type, selection, handleSelectionChange }: DetailsProps) => (
-  <Wrapper>
+export const Details = ({ id, item, type, selection, handleSelectionChange }: DetailsProps) => (
+  <Wrapper id={id}>
     <Info>
       <RuleId>{item.id}</RuleId>
       <Description>

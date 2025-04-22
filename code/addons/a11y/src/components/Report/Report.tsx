@@ -76,30 +76,36 @@ export const Report: FC<ReportProps> = ({
     {items && items.length ? (
       items.map((item) => {
         const id = `${type}.${item.id}`;
+        const detailsId = `details:${id}`;
         const selection = selectedItems.get(id);
+        const title = getTitleForAxeResult(item);
         return (
           <Wrapper key={id}>
-            <HeaderBar
-              onClick={(event) => toggleOpen(event, type, item)}
-              role="button"
-              data-active={!!selection}
-            >
+            <HeaderBar onClick={(event) => toggleOpen(event, type, item)} data-active={!!selection}>
               <Title>
-                <strong>{getTitleForAxeResult(item)}</strong>
+                <strong>{title}</strong>
               </Title>
               <Count>{item.nodes.length}</Count>
-              <IconButton onClick={(event) => toggleOpen(event, type, item)}>
+              <IconButton
+                onClick={(event) => toggleOpen(event, type, item)}
+                aria-label={`${selection ? 'Collapse' : 'Expand'} details for ${title}`}
+                aria-expanded={!!selection}
+                aria-controls={detailsId}
+              >
                 <Icon style={{ transform: `rotate(${selection ? -180 : 0}deg)` }} />
               </IconButton>
             </HeaderBar>
             {selection ? (
               <Details
+                id={detailsId}
                 item={item}
                 type={type}
                 selection={selection}
                 handleSelectionChange={handleSelectionChange}
               />
-            ) : null}
+            ) : (
+              <div id={detailsId} />
+            )}
           </Wrapper>
         );
       })

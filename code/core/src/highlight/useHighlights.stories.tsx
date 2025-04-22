@@ -31,6 +31,8 @@ const Content = ({ dynamic, withPopover }: { dynamic: boolean; withPopover: bool
         </>
       )}
       <input id="input" type="text" style={{ margin: 20 }} defaultValue="input" />
+      <div id="zeroheight" />
+      <div id="zerowidth" style={{ width: 0, margin: 20 }} />
       <div
         id="sticky"
         style={{
@@ -186,15 +188,14 @@ const highlight = (
     selectors,
     selectable: options?.selectable ?? !!options?.menu?.length,
     styles: {
-      background: 'rgba(0, 137, 80, 0.2)',
-      border: '1px solid teal',
+      backgroundColor: `color-mix(in srgb, teal, transparent 80%)`,
+      outline: `1px solid color-mix(in srgb, teal, transparent 30%)`,
     },
     hoverStyles: {
-      borderWidth: '3px',
+      outlineWidth: '2px',
     },
     focusStyles: {
-      background: 'transparent',
-      border: '2px solid teal',
+      backgroundColor: 'transparent',
     },
     ...options,
   });

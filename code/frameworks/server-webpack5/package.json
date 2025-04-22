@@ -43,6 +43,7 @@
   "types": "dist/index.d.ts",
   "files": [
     "dist/**/*",
+    "template/cli/**/*",
     "README.md",
     "*.js",
     "*.d.ts",

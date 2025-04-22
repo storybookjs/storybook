@@ -15,6 +15,7 @@ import { DocsContext } from '@storybook/addon-docs/blocks';
 import addonThemes from '@storybook/addon-themes';
 import addonTest from '@storybook/addon-vitest';
 
+import addonPseudoStates from 'storybook-addon-pseudo-states';
 import { DocsContext as DocsContextProps, useArgs } from 'storybook/preview-api';
 import type { PreviewWeb } from 'storybook/preview-api';
 import {
@@ -142,7 +143,6 @@ const loaders = [
    * The DocsContext will then be added via the decorator below.
    */
   async ({ parameters: { relativeCsfPaths, attached = true } }) => {
-    // eslint-disable-next-line no-underscore-dangle
     const preview = (window as any).__STORYBOOK_PREVIEW__ as PreviewWeb<ReactRenderer> | undefined;
     const channel = (window as any).__STORYBOOK_ADDONS_CHANNEL__ as Channel | undefined;
     // __STORYBOOK_PREVIEW__ and __STORYBOOK_ADDONS_CHANNEL__ is set in the PreviewWeb constructor
@@ -386,7 +386,14 @@ const parameters = {
 };
 
 export default definePreview({
-  addons: [addonDocs(), addonThemes(), addonA11y(), addonTest(), templatePreview],
+  addons: [
+    addonDocs(),
+    addonThemes(),
+    addonA11y(),
+    addonTest(),
+    addonPseudoStates(),
+    templatePreview,
+  ],
   decorators,
   loaders,
   tags: ['test', 'vitest'],

@@ -5,6 +5,7 @@ import type { Channel } from 'storybook/internal/channels';
 import {
   createFileSystemCache,
   getFrameworkName,
+  loadPreviewOrConfigFile,
   resolvePathInStorybookCache,
 } from 'storybook/internal/common';
 import {
@@ -12,7 +13,12 @@ import {
   experimental_getTestProviderStore,
 } from 'storybook/internal/core-server';
 import { cleanPaths, oneWayHash, sanitizeError, telemetry } from 'storybook/internal/telemetry';
-import type { Options, PresetPropertyFn, StoryId } from 'storybook/internal/types';
+import type {
+  Options,
+  PresetPropertyFn,
+  PreviewAnnotation,
+  StoryId,
+} from 'storybook/internal/types';
 
 import { isEqual } from 'es-toolkit';
 import picocolors from 'picocolors';
@@ -40,9 +46,16 @@ type Event = {
   };
 };
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export const experimental_serverChannel = async (channel: Channel, options: Options) => {
   const core = await options.presets.apply('core');
+
+  const previewPath = loadPreviewOrConfigFile({ configDir: options.configDir });
+  const previewAnnotations = await options.presets.apply<PreviewAnnotation[]>(
+    'previewAnnotations',
+    [],
+    options
+  );
+
   const builderName = typeof core?.builder === 'string' ? core.builder : core?.builder?.name;
   const framework = await getFrameworkName(options);
 
@@ -65,29 +78,25 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
   });
   const cachedState: CachedState = await fsCache.get<CachedState>('state', {
     config: storeOptions.initialState.config,
-    watching: storeOptions.initialState.watching,
   });
 
+  const selectCachedState = (s: Partial<StoreState>): Partial<CachedState> => ({
+    config: s.config,
+  });
   const store = experimental_UniversalStore.create<StoreState, StoreEvent>({
     ...storeOptions,
     initialState: {
       ...storeOptions.initialState,
-      ...cachedState,
+      previewAnnotations: (previewAnnotations ?? []).concat(previewPath ?? []),
+      ...selectCachedState(cachedState),
     },
     leader: true,
   });
   store.onStateChange((state, previousState) => {
-    const selectCachedState = (s: StoreState): CachedState => ({
-      config: s.config,
-      watching: s.watching,
-    });
     if (!isEqual(selectCachedState(state), selectCachedState(previousState))) {
       fsCache.set('state', selectCachedState(state));
     }
   });
-  if (cachedState.watching) {
-    runTestRunner(channel, store);
-  }
   const testProviderStore = experimental_getTestProviderStore(ADDON_ID);
 
   store.subscribe('TRIGGER_RUN', (event, eventInfo) => {

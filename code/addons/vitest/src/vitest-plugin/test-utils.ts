@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/naming-convention */
-
-/* eslint-disable no-underscore-dangle */
 import { type RunnerTask, type TaskMeta, type TestContext } from 'vitest';
 
 import type { ComponentAnnotations, ComposedStoryFn } from 'storybook/internal/types';

@@ -12,6 +12,10 @@ import type { Options } from 'tsup';
 import { build } from 'tsup';
 import type { PackageJson } from 'type-fest';
 
+import {
+  BROWSER_TARGETS,
+  NODE_TARGET,
+} from '../../code/core/src/shared/constants/environments-support';
 import { exec } from '../utils/exec';
 import { dedent, esbuild, nodeInternals } from './tools';
 
@@ -115,7 +119,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
         sourcemap: false,
         metafile: true,
         format: ['esm'],
-        target: platform === 'node' ? ['node18'] : ['chrome100', 'safari15', 'firefox91'],
+        target: platform === 'node' ? NODE_TARGET : (BROWSER_TARGETS as Options['target']),
         clean: false,
         ...(dtsBuild === 'esm' ? dtsConfig : {}),
         platform: platform || 'browser',
@@ -157,7 +161,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
         sourcemap: false,
         metafile: true,
         format: ['esm'],
-        target: ['node18'],
+        target: NODE_TARGET,
         clean: false,
         ...(dtsBuild === 'node-esm' ? dtsConfig : {}),
         platform: 'neutral',
@@ -198,7 +202,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
         sourcemap: false,
         metafile: true,
         format: ['cjs'],
-        target: 'node18',
+        target: NODE_TARGET,
         ...(dtsBuild === 'cjs' ? dtsConfig : {}),
         platform: 'node',
         clean: false,

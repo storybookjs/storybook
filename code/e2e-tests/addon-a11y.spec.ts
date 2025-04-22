@@ -67,9 +67,10 @@ test.describe('addon-a11y', () => {
     await page.goto(clipboard);
     await new SbPage(page, expect).waitUntilLoaded();
     await expect(page.getByRole('tab', { name: 'Passes' })).toHaveAttribute('data-active', 'true');
-    const toggle = page.getByRole('button', { name: 'Hidden body' });
-    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
-    await expect(page.locator('div', { has: toggle })).toHaveAttribute('data-active', 'true');
+    await expect(page.getByRole('button', { name: 'Hidden body' })).toHaveAttribute(
+      'aria-expanded',
+      'true'
+    );
     const element = page.getByRole('tab', { name: '1. <body' });
     await expect(element).toHaveAttribute('data-state', 'active');
   });

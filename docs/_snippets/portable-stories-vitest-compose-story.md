@@ -25,7 +25,7 @@ test('renders primary button with overridden props', async () => {
 
 ```ts filename="Button.test.ts" renderer="svelte" language="ts"
 import { vi, test, expect } from 'vitest';
-import { render, screen } from '@testing-library/svelte-vite';
+import { render, screen } from '@testing-library/svelte';
 import { composeStory } from '@storybook/svelte-vite';
 
 import meta, { Primary as PrimaryStory } from './Button.stories';

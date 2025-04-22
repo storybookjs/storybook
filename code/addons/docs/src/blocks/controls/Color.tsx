@@ -142,11 +142,7 @@ const stringToArgs = (value: string) => {
   return [x, y, z, a].map(Number);
 };
 
-const parseRgb = (value: string): ParsedColor | undefined => {
-  if (!RGB_REGEXP.test(value)) {
-    return undefined;
-  }
-
+const parseRgb = (value: string): ParsedColor => {
   const [r, g, b, a] = stringToArgs(value);
   const [h, s, l] = convert.rgb.hsl([r, g, b]) || [0, 0, 0];
 
@@ -161,11 +157,7 @@ const parseRgb = (value: string): ParsedColor | undefined => {
   };
 };
 
-const parseHsl = (value: string): ParsedColor | undefined => {
-  if (!HSL_REGEXP.test(value)) {
-    return undefined;
-  }
-
+const parseHsl = (value: string): ParsedColor => {
   const [h, s, l, a] = stringToArgs(value);
   const [r, g, b] = convert.hsl.rgb([h, s, l]) || [0, 0, 0];
 
@@ -180,7 +172,7 @@ const parseHsl = (value: string): ParsedColor | undefined => {
   };
 };
 
-const parseHexOrKeyword = (value: string): ParsedColor | undefined => {
+const parseHexOrKeyword = (value: string): ParsedColor => {
   const plain = value.replace('#', '');
   // Try interpreting as keyword or hex
   const rgb = convert.keyword.rgb(plain as any) || convert.hex.rgb(plain);
@@ -220,28 +212,12 @@ const parseValue = (value: string): ParsedColor | undefined => {
   if (!value) {
     return undefined;
   }
-
-  // Try RGB
-
-  // Try RGB
-  const rgbColor = parseRgb(value);
-
-  if (rgbColor) {
-    return rgbColor;
+  if (RGB_REGEXP.test(value)) {
+    return parseRgb(value);
   }
-
-  // Try HSL
-
-  // Try HSL
-  const hslColor = parseHsl(value);
-
-  if (hslColor) {
-    return hslColor;
+  if (HSL_REGEXP.test(value)) {
+    return parseHsl(value);
   }
-
-  // Try HEX/Keyword
-
-  // Try HEX/Keyword
   return parseHexOrKeyword(value);
 };
 

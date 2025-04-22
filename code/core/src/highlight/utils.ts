@@ -1,5 +1,11 @@
 /* eslint-env browser */
-import type { Box, Highlight, HighlightOptions, RawHighlightOptions } from './types';
+import type {
+  Box,
+  ClickEventDetails,
+  Highlight,
+  HighlightOptions,
+  RawHighlightOptions,
+} from './types';
 
 const svgElements = 'svg,path,rect,circle,line,polyline,polygon,ellipse,text'.split(',');
 
@@ -221,3 +227,19 @@ export const hidePopover = (element: HTMLElement) => {
     element.hidePopover();
   }
 };
+
+export const getEventDetails = (target: Box): ClickEventDetails => ({
+  top: target.top,
+  left: target.left,
+  width: target.width,
+  height: target.height,
+  selectors: target.selectors,
+  element: {
+    attributes: Object.fromEntries(
+      Array.from(target.element.attributes).map((attr) => [attr.name, attr.value])
+    ),
+    localName: target.element.localName,
+    tagName: target.element.tagName,
+    outerHTML: target.element.outerHTML,
+  },
+});

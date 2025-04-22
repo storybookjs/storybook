@@ -1,6 +1,6 @@
-import { expect, userEvent, within } from '@storybook/test';
-
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
+
+import { expect, userEvent, within } from 'storybook/test';
 
 import MyPage from './Page.vue';
 

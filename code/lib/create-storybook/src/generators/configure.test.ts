@@ -52,7 +52,7 @@ describe('configureMain', () => {
 
   it('should generate main.ts', async () => {
     await configureMain({
-      language: SupportedLanguage.TYPESCRIPT_4_9,
+      language: SupportedLanguage.TYPESCRIPT,
       addons: [],
       prefixes: [],
       storybookConfigFolder: '.storybook',
@@ -155,7 +155,7 @@ describe('configurePreview', () => {
 
   it('should generate preview.ts', async () => {
     await configurePreview({
-      language: SupportedLanguage.TYPESCRIPT_4_9,
+      language: SupportedLanguage.TYPESCRIPT,
       storybookConfigFolder: '.storybook',
       frameworkPackage: '@storybook/react-vite',
     });
@@ -185,7 +185,7 @@ describe('configurePreview', () => {
   it('should not do anything if the framework template already included a preview', async () => {
     vi.mocked(fsp.stat).mockResolvedValueOnce({} as Stats);
     await configurePreview({
-      language: SupportedLanguage.TYPESCRIPT_4_9,
+      language: SupportedLanguage.TYPESCRIPT,
       storybookConfigFolder: '.storybook',
       frameworkPackage: '@storybook/react-vite',
     });
@@ -194,7 +194,7 @@ describe('configurePreview', () => {
 
   it('should add prefix if frameworkParts are passed', async () => {
     await configurePreview({
-      language: SupportedLanguage.TYPESCRIPT_4_9,
+      language: SupportedLanguage.TYPESCRIPT,
       storybookConfigFolder: '.storybook',
       frameworkPackage: '@storybook/angular',
       frameworkPreviewParts: {

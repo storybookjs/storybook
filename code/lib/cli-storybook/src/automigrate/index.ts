@@ -189,10 +189,6 @@ export const automigrate = async ({
 
   logger.info('🔎 checking possible migrations..');
 
-  console.log({
-    storybookVersion,
-    beforeVersion,
-  });
   const { fixResults, fixSummary, preCheckFailure } = await runFixes({
     fixes,
     packageManager,

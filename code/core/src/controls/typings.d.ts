@@ -1,5 +1,3 @@
-/* eslint-disable no-underscore-dangle,  @typescript-eslint/naming-convention */
-
 declare var DOCS_OPTIONS: any;
 declare var CONFIG_TYPE: 'DEVELOPMENT' | 'PRODUCTION';
 declare var PREVIEW_URL: any;

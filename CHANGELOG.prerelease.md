@@ -1,3 +1,16 @@
+## 9.0.0-alpha.20
+
+- Addon Docs: Update telejson - [#31115](https://github.com/storybookjs/storybook/pull/31115), thanks @valentinpalkovic!
+- AddonVitest: Use framework package, not renderer - [#31133](https://github.com/storybookjs/storybook/pull/31133), thanks @ndelangen!
+- Automigration: Fix consolidated-imports with sub-paths - [#31135](https://github.com/storybookjs/storybook/pull/31135), thanks @ndelangen!
+- Core: Add highlight as public API - [#31134](https://github.com/storybookjs/storybook/pull/31134), thanks @valentinpalkovic!
+- Core: Rename local tests to interactions - [#31141](https://github.com/storybookjs/storybook/pull/31141), thanks @yannbf!
+- Dependencies: Update dependencies - [#31143](https://github.com/storybookjs/storybook/pull/31143), thanks @valentinpalkovic!
+- Interactions: Rename component test panel - [#31130](https://github.com/storybookjs/storybook/pull/31130), thanks @valentinpalkovic!
+- Migration: Improve glob question text - [#31118](https://github.com/storybookjs/storybook/pull/31118), thanks @ndelangen!
+- Refactor: Update panel IDs in vitest addon to use new constants - [#31132](https://github.com/storybookjs/storybook/pull/31132), thanks @ndelangen!
+- Save from Controls: Replace rendererPackage with frameworkPackage - [#31114](https://github.com/storybookjs/storybook/pull/31114), thanks @valentinpalkovic!
+
 ## 9.0.0-alpha.19
 
 - CLI: Fix framework for preview imports - [#31101](https://github.com/storybookjs/storybook/pull/31101), thanks @valentinpalkovic!

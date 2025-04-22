@@ -37,7 +37,6 @@ const channel: Channel = new Channel({
   },
 });
 
-// eslint-disable-next-line no-underscore-dangle
 (UniversalStore as any).__prepare(channel, UniversalStore.Environment.SERVER);
 
 const store = UniversalStore.create<StoreState, StoreEvent>(storeOptions);

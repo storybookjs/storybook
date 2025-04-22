@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import { readFile, writeFile } from 'node:fs/promises';
 
 import {

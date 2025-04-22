@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import type { ReactElement, ReactNode } from 'react';
 import React, { createElement, isValidElement } from 'react';
 

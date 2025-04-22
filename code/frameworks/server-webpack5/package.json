@@ -1,6 +1,6 @@
 {
   "name": "@storybook/server-webpack5",
-  "version": "9.0.0-alpha.19",
+  "version": "9.0.0-alpha.20",
   "description": "Storybook for Server: View HTML snippets from a server in isolation with Hot Reloading.",
   "keywords": [
     "storybook"
@@ -43,6 +43,7 @@
   "types": "dist/index.d.ts",
   "files": [
     "dist/**/*",
+    "template/cli/**/*",
     "README.md",
     "*.js",
     "*.d.ts",

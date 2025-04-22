@@ -41,7 +41,6 @@ export const Creating = {
 
 export const Created: Story = {
   play: async ({ context, userEvent }) => {
-    // eslint-disable-next-line storybook/context-in-play-function
     await Creating.play(context);
 
     const dialog = await within(document.body).findByRole('dialog');

@@ -18,7 +18,6 @@ export default {
   },
 };
 
-// eslint-disable-next-line no-underscore-dangle
 const preview = (window as any).__STORYBOOK_PREVIEW__;
 const renderStoryToElement = preview.renderStoryToElement.bind(preview);
 

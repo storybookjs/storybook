@@ -87,7 +87,6 @@ function jestFakeTimersAreEnabled() {
     return (
       // legacy timers
 
-      // eslint-disable-next-line no-underscore-dangle
       (setTimeout as any)._isMockFunction === true || // modern timers
       Object.prototype.hasOwnProperty.call(setTimeout, 'clock')
     );

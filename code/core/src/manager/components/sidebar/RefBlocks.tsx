@@ -116,7 +116,6 @@ export const ErrorBlock: FC<{ error: Error }> = ({ error }) => (
             </ErrorDisplay>
           }
         >
-          {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
           <Link isButton>
             View error <ChevronDownIcon />
           </Link>

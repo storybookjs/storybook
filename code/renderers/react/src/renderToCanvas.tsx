@@ -75,7 +75,6 @@ export async function renderToCanvas(
   const { renderElement, unmountElement } = await import('@storybook/react-dom-shim');
   const Story = unboundStoryFn as FC<StoryContext<ReactRenderer>>;
 
-  // eslint-disable-next-line no-underscore-dangle
   const isPortableStory = storyContext.parameters.__isPortableStory;
 
   const content = isPortableStory ? (

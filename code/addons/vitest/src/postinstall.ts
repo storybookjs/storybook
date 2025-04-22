@@ -92,7 +92,6 @@ export default async function postInstall(options: PostinstallOptions) {
 
       await packageManager.removeDependencies({}, ['@storybook/nextjs']);
 
-      // eslint-disable-next-line no-underscore-dangle
       traverse(config._ast, {
         StringLiteral(path) {
           if (path.node.value === '@storybook/nextjs') {

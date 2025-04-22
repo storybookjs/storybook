@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import { types as t } from 'storybook/internal/babel';
 import {
   type ConfigFile,
@@ -50,7 +49,7 @@ export async function getSyncedStorybookAddons(
         (node) => t.isImportDeclaration(node) && node.source.value === annotations.importPath
       );
 
-      if (!!hasAlreadyImportedAddonAnnotations) {
+      if (hasAlreadyImportedAddonAnnotations) {
         continue;
       }
 

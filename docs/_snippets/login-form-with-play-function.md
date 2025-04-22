@@ -408,7 +408,7 @@ export const FilledForm = {
 ```
 
 ```ts filename="LoginForm.stories.ts" renderer="vue" language="ts"
-import type { Meta, StoryObj } from 'storybook/vue3-vite';
+import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import { userEvent, within, expect } from 'storybook/test';
 

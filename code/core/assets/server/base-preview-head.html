@@ -1,8 +1,7 @@
 <base target="_parent" />
 
 <style>
-  /* While we aren't showing the main block yet, but still preparing, we want everything the user
-     has rendered, which may or may not be in #storybook-root, to be display none */
+  /* While we aren't showing the main block yet, but still preparing, we want everything the user has rendered, which may or may not be in #storybook-root, to be display none */
   .sb-show-preparing-story:not(.sb-show-main) > :not(.sb-preparing-story) {
     display: none;
   }
@@ -437,7 +436,6 @@
 
 <script>
   /* globals window */
-  /* eslint-disable no-underscore-dangle */
   try {
     if (window.top !== window) {
       window.__REACT_DEVTOOLS_GLOBAL_HOOK__ = window.top.__REACT_DEVTOOLS_GLOBAL_HOOK__;

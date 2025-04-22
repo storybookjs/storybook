@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/naming-convention */
 // should be node:http, but that caused the ui/manager to fail to build, might be able to switch this back once ui/manager is in the core
 import type { FileSystemCache } from 'storybook/internal/common';
 

@@ -24,7 +24,6 @@ const hasMatchInAncestry = (element: any, selector: any): boolean => {
 const createHandlers = (actionsFn: (...arg: any[]) => object, ...handles: any[]) => {
   const actionsObject = actionsFn(...handles);
   return Object.entries(actionsObject).map(([key, action]) => {
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     const [_, eventName, selector] = key.match(delegateEventSplitter) || [];
     return {
       eventName,

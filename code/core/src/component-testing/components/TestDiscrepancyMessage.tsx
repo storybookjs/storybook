@@ -48,7 +48,7 @@ export const TestDiscrepancyMessage = ({ browserTestStatus }: TestDiscrepancyMes
 
   return (
     <Wrapper>
-      This component test passed in {passed}, but the tests failed in {failed}.{' '}
+      This interaction test passed in {passed}, but the tests failed in {failed}.{' '}
       <Link href={docsUrl} target="_blank" withArrow>
         Learn what could cause this
       </Link>

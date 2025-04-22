@@ -187,7 +187,6 @@ const optionalEnvToBoolean = (input: string | undefined): boolean | undefined =>
   return undefined;
 };
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export const experimental_serverAPI = (extension: Record<string, Function>, options: Options) => {
   let removeAddon = removeAddonBase;
   if (!options.disableTelemetry) {
@@ -232,7 +231,6 @@ export const csfIndexer: Indexer = {
   createIndex: async (fileName, options) => (await readCsf(fileName, options)).parse().indexInputs,
 };
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export const experimental_indexers: PresetProperty<'experimental_indexers'> = (existingIndexers) =>
   [csfIndexer].concat(existingIndexers || []);
 
@@ -273,7 +271,6 @@ export const managerHead = async (_: any, options: Options) => {
   return '';
 };
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export const experimental_serverChannel = async (
   channel: Channel,
   options: OptionsWithRequiredCache

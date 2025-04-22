@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import type { Component } from './types';
 
 const titleCase = (str: string): string =>

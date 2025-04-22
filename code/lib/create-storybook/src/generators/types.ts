@@ -23,9 +23,7 @@ export type GeneratorOptions = {
 };
 
 export interface FrameworkOptions {
-  extraPackages?:
-    | string[]
-    | ((details: { builder: Builder }) => Promise<string[]>);
+  extraPackages?: string[] | ((details: { builder: Builder }) => Promise<string[]>);
   extraAddons?: string[];
   staticDir?: string;
   addScripts?: boolean;

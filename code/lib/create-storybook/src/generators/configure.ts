@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 
 import { dedent } from 'ts-dedent';
 
-import { SupportedLanguage, externalFrameworks } from '../../../../core/src/cli/project_types';
+import { SupportedLanguage } from '../../../../core/src/cli/project_types';
 import { logger } from '../../../../core/src/node-logger';
 
 interface ConfigureMainOptions {

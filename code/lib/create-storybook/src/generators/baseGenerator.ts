@@ -16,6 +16,7 @@ import {
   SupportedLanguage,
   externalFrameworks,
 } from '../../../../core/src/cli/project_types';
+import { frameworkPackages } from '../../../../core/src/common';
 import {
   type JsPackageManager,
   getPackageDetails,
@@ -25,7 +26,6 @@ import type { SupportedFrameworks } from '../../../../core/src/types/modules/fra
 import type { SupportedRenderers } from '../../../../core/src/types/modules/renderers';
 import { configureMain, configurePreview } from './configure';
 import type { FrameworkOptions, GeneratorOptions } from './types';
-import { frameworkPackages } from '../../../../core/src/common';
 
 const logger = console;
 
@@ -209,7 +209,7 @@ const hasFrameworkTemplates = (framework?: string) => {
     'svelte-vite',
     'sveltekit',
     'vue3-vite',
-    'web-components-vite'
+    'web-components-vite',
   ];
 
   return frameworksWithTemplates.includes(framework as SupportedFrameworks);
@@ -351,7 +351,9 @@ export async function baseGenerator(
     text: `Getting the correct version of ${packagesToInstall.length} packages`,
   }).start();
 
-  const versionedPackages = await packageManager.getVersionedPackages(packagesToInstall as string[]);
+  const versionedPackages = await packageManager.getVersionedPackages(
+    packagesToInstall as string[]
+  );
   versionedPackagesSpinner.succeed();
 
   try {

@@ -1,8 +1,9 @@
 ```ts filename="MyComponent.stories.ts" renderer="angular" language="ts"
 import type { Meta, StoryObj } from '@storybook/angular';
 import { componentWrapperDecorator } from '@storybook/angular';
+
 import { useChannel } from 'storybook/preview-api';
-import { HIGHLIGHT } from '@storybook/addon-highlight';
+import { HIGHLIGHT } from 'storybook/highlight';
 
 import { MyComponent } from './MyComponent.component';
 
@@ -28,7 +29,7 @@ export const Highlighted: Story = {
 
 ```js filename="MyComponent.stories.js|jsx" renderer="react" language="js"
 import { useChannel } from 'storybook/preview-api';
-import { HIGHLIGHT } from '@storybook/addon-highlight';
+import { HIGHLIGHT } from 'storybook/highlight';
 
 import { MyComponent } from './MyComponent';
 
@@ -49,10 +50,11 @@ export const Highlighted = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/react';
+```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts"
+import type { Meta, StoryObj } from '@storybook/react-vite';
+
 import { useChannel } from 'storybook/preview-api';
-import { HIGHLIGHT } from '@storybook/addon-highlight';
+import { HIGHLIGHT } from 'storybook/highlight';
 
 import { MyComponent } from './MyComponent';
 
@@ -62,33 +64,6 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-export const Highlighted: Story = {
-  decorators: [
-    (storyFn) => {
-      const emit = useChannel({});
-      emit(HIGHLIGHT, {
-        elements: ['h2', 'a', '.storybook-button'],
-      });
-      return storyFn();
-    },
-  ],
-};
-```
-
-```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts"
-import type { Meta, StoryObj } from '@storybook/react';
-import { useChannel } from 'storybook/preview-api';
-import { HIGHLIGHT } from '@storybook/addon-highlight';
-
-import { MyComponent } from './MyComponent';
-
-const meta: Meta<typeof MyComponent> = {
-  component: MyComponent,
-};
-
-export default meta;
-type Story = StoryObj<typeof MyComponent>;
 
 export const Highlighted: Story = {
   decorators: [
@@ -105,7 +80,7 @@ export const Highlighted: Story = {
 
 ```js filename="MyComponent.stories.js" renderer="vue" language="js"
 import { useChannel } from 'storybook/preview-api';
-import { HIGHLIGHT } from '@storybook/addon-highlight';
+import { HIGHLIGHT } from 'storybook/highlight';
 
 import MyComponent from './MyComponent.vue';
 
@@ -128,10 +103,11 @@ export const Highlighted = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="vue" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/vue3';
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts"
+import type { Meta, StoryObj } from '@storybook/vue3-vite';
+
 import { useChannel } from 'storybook/preview-api';
-import { HIGHLIGHT } from '@storybook/addon-highlight';
+import { HIGHLIGHT } from 'storybook/highlight';
 
 import MyComponent from './MyComponent.vue';
 
@@ -141,35 +117,6 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-export const Highlighted: Story = {
-  decorators: [
-    () => {
-      const emit = useChannel({});
-      emit(HIGHLIGHT, {
-        elements: ['h2', 'a', '.storybook-button'],
-      });
-      return {
-        template: '<story />',
-      };
-    },
-  ],
-};
-```
-
-```ts filename="MyComponent.stories.ts" renderer="vue" language="ts"
-import type { Meta, StoryObj } from '@storybook/vue3';
-import { useChannel } from 'storybook/preview-api';
-import { HIGHLIGHT } from '@storybook/addon-highlight';
-
-import MyComponent from './MyComponent.vue';
-
-const meta: Meta<typeof MyComponent> = {
-  component: MyComponent,
-};
-
-export default meta;
-type Story = StoryObj<typeof MyComponent>;
 
 export const Highlighted: Story = {
   decorators: [
@@ -188,7 +135,7 @@ export const Highlighted: Story = {
 
 ```js filename="MyComponent.stories.js" renderer="web-components" language="js"
 import { useChannel } from 'storybook/preview-api';
-import { HIGHLIGHT } from '@storybook/addon-highlight';
+import { HIGHLIGHT } from 'storybook/highlight';
 
 export default {
   component: 'my-component',
@@ -208,9 +155,10 @@ export const Highlighted = {
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
+
 import { useChannel } from 'storybook/preview-api';
-import { HIGHLIGHT } from '@storybook/addon-highlight';
+import { HIGHLIGHT } from 'storybook/highlight';
 
 const meta: Meta = {
   component: 'my-component',

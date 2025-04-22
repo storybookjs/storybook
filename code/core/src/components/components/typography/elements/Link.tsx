@@ -10,5 +10,6 @@ export const Link = ({
   const isAnchorUrl = /^#.*/.test(input);
   const target = isAnchorUrl ? '_self' : '_top';
 
+  // eslint-disable-next-line jsx-a11y/anchor-has-content
   return <a href={href} target={target} {...props} />;
 };

@@ -31,7 +31,6 @@ export const withLinkPaths = (results: AxeResults, storyId: string) => {
 
 let vitestMatchersExtended = false;
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export const experimental_afterEach: AfterEach<any> = async ({
   id: storyId,
   reporting,

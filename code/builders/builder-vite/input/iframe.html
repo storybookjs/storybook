@@ -50,7 +50,7 @@
       window.DOCS_OPTIONS = '[DOCS_OPTIONS HERE]';
       window.TAGS_OPTIONS = '[TAGS_OPTIONS HERE]';
 
-      ('OTHER_GLOBLALS HERE');
+      ('OTHER_GLOBALS HERE');
 
       // We do this so that "module && module.hot" etc. in Storybook source code
       // doesn't fail (it will simply be disabled)
@@ -65,7 +65,6 @@
     <div id="storybook-root"></div>
     <div id="storybook-docs"></div>
     <script>
-      // eslint-disable-next-line no-underscore-dangle, @typescript-eslint/naming-convention
       function __onViteAppLoadingError(event) {
         const hostname = globalThis.location.hostname;
         if (hostname !== 'localhost' && globalThis.CONFIG_TYPE === 'DEVELOPMENT') {
@@ -91,6 +90,10 @@ See:`;
         }
       }
     </script>
-    <script type="module" src="virtual:/@storybook/builder-vite/vite-app.js" onerror="__onViteAppLoadingError(event)"></script>
+    <script
+      type="module"
+      src="virtual:/@storybook/builder-vite/vite-app.js"
+      onerror="__onViteAppLoadingError(event)"
+    ></script>
   </body>
 </html>

@@ -25,8 +25,9 @@ const projectAnnotations = setProjectAnnotations([]);
 
 // example with composeStories, returns an object with all stories composed with args/decorators
 // @ts-expect-error TODO: add a way to provide custom args/argTypes
-// eslint-disable-next-line prettier/prettier
-const { CSF3Primary, LoaderStory, MountInPlayFunction, MountInPlayFunctionThrow } = composeStories(ButtonStories);
+const { CSF3Primary, LoaderStory, MountInPlayFunction, MountInPlayFunctionThrow } =
+  // @ts-expect-error TODO: add a way to provide custom args/argTypes
+  composeStories(ButtonStories);
 const { ThrowsError } = composeStories(ComponentWithErrorStories);
 
 beforeAll(async () => {

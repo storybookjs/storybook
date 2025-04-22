@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/naming-convention */
 import type { FC, ReactElement, ReactNode } from 'react';
 import React, {
   Component,

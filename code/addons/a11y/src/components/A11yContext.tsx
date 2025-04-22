@@ -8,6 +8,8 @@ import {
   type StoryFinishedPayload,
 } from 'storybook/internal/core-events';
 
+import type { ClickEventDetails } from 'storybook/highlight';
+import { HIGHLIGHT, RESET_HIGHLIGHT, SCROLL_INTO_VIEW } from 'storybook/highlight';
 import {
   experimental_getStatusStore,
   experimental_useStatusStore,
@@ -21,11 +23,6 @@ import {
 import type { Report } from 'storybook/preview-api';
 import { convert, themes } from 'storybook/theming';
 
-import {
-  HIGHLIGHT,
-  RESET_HIGHLIGHT,
-  SCROLL_INTO_VIEW,
-} from '../../../../core/src/highlight/constants';
 import { ADDON_ID, EVENTS, STATUS_TYPE_ID_A11Y, STATUS_TYPE_ID_COMPONENT_TEST } from '../constants';
 import type { A11yParameters } from '../params';
 import type { A11YReport, EnhancedResult, EnhancedResults } from '../types';
@@ -204,12 +201,12 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
   );
 
   const handleSelect = useCallback(
-    (item: { id: string }, target: { selectors: string[] }) => {
-      const [type, id] = item.id.split('.');
+    (itemId: string, details: ClickEventDetails) => {
+      const [type, id] = itemId.split('.');
       const index =
         results?.[type as RuleType]
           ?.find((r) => r.id === id)
-          ?.nodes.findIndex((n) => target.selectors.some((s) => s === String(n.target))) ?? -1;
+          ?.nodes.findIndex((n) => details.selectors.some((s) => s === String(n.target))) ?? -1;
       if (index !== -1) {
         setSelectedItems(new Map([[`${type}.${id}`, `${type}.${id}.${index + 1}`]]));
       }

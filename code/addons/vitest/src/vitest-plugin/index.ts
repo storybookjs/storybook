@@ -199,7 +199,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
 
           return relativeToViteRoot;
         })
-        .filter((story) => story.replace('mdx|stories', 'stories'));
+        .filter((story) => story.replace(/mdx|stories/g, 'stories'));
 
       finalOptions.includeStories = includeStories;
 

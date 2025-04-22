@@ -272,8 +272,8 @@ export const useHighlights = ({
 
   const updateBoxStyles = () => {
     const selectedElement = selected.get();
-    const focusedElement = selectedElement || focused.get();
     const targetElements = selectedElement ? [selectedElement] : targets.get();
+    const focusedElement = targetElements.length === 1 ? targetElements[0] : focused.get();
     const isMenuOpen = clickCoords.get() !== undefined;
 
     boxes.get().forEach((box) => {
@@ -313,6 +313,7 @@ export const useHighlights = ({
     });
   };
   boxes.subscribe(updateBoxStyles);
+  targets.subscribe(updateBoxStyles);
   hovered.subscribe(updateBoxStyles);
   focused.subscribe(updateBoxStyles);
   selected.subscribe(updateBoxStyles);

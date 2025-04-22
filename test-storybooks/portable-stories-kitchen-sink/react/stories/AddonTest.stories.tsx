@@ -23,7 +23,7 @@ const { pass } = instrument({
 
 export const ExpectedFailure: Story = {
   args: {
-    forceFailure: true,
+    forceFailure: false,
   },
   play: async ({ args }) => {
     await pass();

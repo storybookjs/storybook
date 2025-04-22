@@ -1,5 +1,3 @@
-import { Fragment } from 'react';
-
 import type { StoryIndex } from 'storybook/internal/types';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';

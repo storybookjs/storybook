@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import type { StoryIndex } from 'storybook/internal/types';
 
 type LeafNode = {
@@ -100,7 +99,7 @@ export const setupPreviewNavigator = async (index: StoryIndex, currentEntryId: s
   const navItems = Object.values(tree.entries).map(createHtmlForNode).join('');
 
   const nav = document.createElement('nav');
-  nav.className = 'sb-navigator-nav';
+  nav.id = 'sb-navigator-container';
   nav.setAttribute('role', 'navigation');
   nav.setAttribute('aria-label', 'Story navigation');
   nav.innerHTML = `
@@ -110,6 +109,7 @@ export const setupPreviewNavigator = async (index: StoryIndex, currentEntryId: s
   document.body.insertBefore(nav, document.body.firstChild);
 
   const style = document.createElement('style');
+  style.id = 'sb-navigator-style';
   style.textContent = `
     body {
       display: grid !important;
@@ -131,10 +131,10 @@ export const setupPreviewNavigator = async (index: StoryIndex, currentEntryId: s
       max-height: 100vh;
       max-width: 100%;
     }
-    .sb-navigator-nav, .sb-navigator-nav * {
+    #sb-navigator-container, #sb-navigator-container * {
       box-sizing: border-box;
     }
-    .sb-navigator-nav {
+    #sb-navigator-container {
         height: 100vh;
         overflow-y: auto;
         border-right: 1px solid #eee;
@@ -145,7 +145,7 @@ export const setupPreviewNavigator = async (index: StoryIndex, currentEntryId: s
         align-self: start;
         z-index: 1000;
     }
-    .sb-main-padded .sb-navigator-nav {
+    .sb-main-padded #sb-navigator-container {
       margin: -1rem 1rem -1rem -1rem;
     }
     .sb-navigator-list {
@@ -187,7 +187,7 @@ export const setupPreviewNavigator = async (index: StoryIndex, currentEntryId: s
 };
 
 export const teardownPreviewNavigator = () => {
-  document.querySelector('.sb-navigator-nav')?.remove();
-  document.querySelector('.sb-navigator-style')?.remove();
+  document.querySelector('#sb-navigator-container')?.remove();
+  document.querySelector('#sb-navigator-style')?.remove();
   (globalThis as any).__STORYBOOK_PREVIEW_NAVIGATOR__ = false;
 };

@@ -17,7 +17,7 @@ const Content = ({ dynamic, withPopover }: { dynamic: boolean; withPopover: bool
     const interval = setInterval(() => setExtra((v) => !v), 1200);
     return () => clearInterval(interval);
   }, [dynamic]);
-  /* eslint-disable react/no-unknown-property */
+
   return (
     <main style={{ minHeight: 1200, minWidth: 1200 }}>
       {withPopover && (
@@ -143,7 +143,6 @@ const Content = ({ dynamic, withPopover }: { dynamic: boolean; withPopover: bool
       />
     </main>
   );
-  /* eslint-enable react/no-unknown-property */
 };
 
 const channel = mockChannel();

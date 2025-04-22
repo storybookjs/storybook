@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import { type CleanupCallback, combineTags, includeConditionalArg } from 'storybook/internal/csf';
 import { NoRenderFunctionError } from 'storybook/internal/preview-errors';
 import type {

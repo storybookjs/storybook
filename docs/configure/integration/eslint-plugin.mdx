@@ -1,0 +1,162 @@
+---
+title: 'ESLint plugin'
+hideRendererSelector: true
+sidebar:
+  order: 5
+  title: ESLint plugin
+---
+
+Storybook provides an dedicated [ESLint plugin](https://github.com/storybookjs/eslint-plugin-storybook) to help you write stories and components aligned with the latest Storybook and frontend development best practices.
+
+## Installation
+
+You'll first need to install [ESLint](https://eslint.org/):
+
+<CodeSnippets path="eslint-install.md" />
+
+Next, install `eslint-plugin-storybook`:
+
+<CodeSnippets path="eslint-plugin-storybook-install.md" />
+
+Then add `plugin:storybook/recommended` to the extends section of your `.eslintrc` configuration file. Note that we can omit the `eslint-plugin-` prefix:
+
+```js title=".eslintrc"
+{
+  // extend plugin:storybook/<configuration>, such as:
+  "extends": ["plugin:storybook/recommended"]
+}
+```
+
+And finally, add this to your `.eslintignore` file:
+
+```txt title=".eslintignore"
+!.storybook
+```
+
+This ensures that the plugin will also lint your configuration files inside the `.storybook` directory, so that you always have a correct configuration. For example, it can catch mistyped addon names in your `main.js|ts` file.
+
+For more details on why this line is required in the `.eslintignore` file, refer to the [ESLint documentation](https://eslint.org/docs/latest/use/configure/ignore-deprecated#:~:text=In%20addition%20to,contents%20are%20ignored).
+
+If you are using [flat config style](https://eslint.org/docs/latest/use/configure/configuration-files-new), add this to your configuration file:
+
+```js title="eslint.config.js"
+export default [
+  // ...
+  {
+    // Inside your .eslintignore file
+    ignores: ['!.storybook'],
+  },
+];
+```
+
+## ESLint compatibility
+
+Depending on the version of ESLint you are using, you may need to install a specific version of the Storybook plugin. Use the table below to match the plugin version to your ESLint version.
+
+| ESLint version | Storybook plugin version |
+| -------------- | ------------------------ |
+| `^9.0.0`       | `^9.0.0` or `^0.10.0`    |
+| `^8.57.0`      | `^9.0.0` or `^0.10.0`    |
+| `^7.0.0`       | `~0.9.0`                 |
+
+## Usage
+
+### Configuration (`.eslintrc`)
+
+Use `.eslintrc.*` file to configure rules in ESLint < v9. See also: https://eslint.org/docs/latest/use/configure/.
+
+This plugin will only be applied to files following the `*.stories.*` (we recommend this) or `*.story.*` pattern. This is an automatic configuration, so you don't have to do anything.
+
+#### Overriding/disabling rules
+
+Optionally, you can override, add, or disable individual rules. You likely don't want these settings to be applied in every file, so make sure that you add a `overrides` section in your `.eslintrc.*` file that applies the overrides only to your stories files.
+
+```js title=".eslintrc"
+{
+  "overrides": [
+    {
+      // 👇 This should match the `stories` property in .storybook/main.js|ts
+      "files": ['**/*.stories.@(ts|tsx|js|jsx|mjs|cjs)'],
+      "rules": {
+        // 👇 Enable this rule
+        'storybook/csf-component': 'error',
+        // 👇 Disable this rule
+        'storybook/default-exports': 'off',
+      }
+    }
+  ]
+}
+```
+
+### Configuration (flat config format)
+
+Use `eslint.config.js` file to configure rules using the [flat config style](https://eslint.org/docs/latest/use/configure/configuration-files-new). This is the default in ESLint v9, but can be used starting from ESLint v8.57.0. See also: https://eslint.org/docs/latest/use/configure/configuration-files-new.
+
+```js title="eslint.config.js"
+import storybook from 'eslint-plugin-storybook';
+
+export default [
+  // Add more generic rulesets here, such as:
+  // js.configs.recommended,
+  ...storybook.configs['flat/recommended'],
+
+  // ...
+];
+```
+
+#### Overriding/disabling rules
+
+Optionally, you can override, add, or disable individual rules. You likely don't want these settings to be applied in every file, so make sure that you add a flat config section in your `eslint.config.js` file that applies the overrides only to your stories files.
+
+```js
+import storybook from 'eslint-plugin-storybook';
+
+export default [
+  // ...
+
+  ...storybook.configs['flat/recommended'],
+  {
+    // 👇 This should match the `stories` property in .storybook/main.js|ts
+    files: ['**/*.stories.@(ts|tsx|js|jsx|mjs|cjs)'],
+    rules: {
+      // 👇 Enable this rule
+      'storybook/csf-component': 'error',
+      // 👇 Disable this rule
+      'storybook/default-exports': 'off',
+    },
+  },
+
+  // ...
+];
+```
+
+### MDX Support
+
+This plugin does not support MDX files.
+
+## Supported Rules and configurations
+
+{/* RULES-LIST:START */}
+
+**Configurations**: csf, csf-strict, addon-interactions, recommended
+
+| Name                                                                                                                                                               | Description                                                                                                                   | Automatically fixable | Included in configurations                                                                                                     |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| [`storybook/await-interactions`](https://github.com/storybookjs/storybook/blob/next/code/lib/eslint-plugin/docs/rules/await-interactions.md)                       | Interactions should be awaited                                                                                                | ✅                    | <ul><li>addon-interactions</li><li>flat/addon-interactions</li><li>recommended</li><li>flat/recommended</li></ul>              |
+| [`storybook/context-in-play-function`](https://github.com/storybookjs/storybook/blob/next/code/lib/eslint-plugin/docs/rules/context-in-play-function.md)           | Pass a context when invoking play function of another story                                                                   |                       | <ul><li>recommended</li><li>flat/recommended</li><li>addon-interactions</li><li>flat/addon-interactions</li></ul>              |
+| [`storybook/csf-component`](https://github.com/storybookjs/storybook/blob/next/code/lib/eslint-plugin/docs/rules/csf-component.md)                                 | The component property should be set                                                                                          |                       | <ul><li>csf</li><li>flat/csf</li><li>csf-strict</li><li>flat/csf-strict</li></ul>                                              |
+| [`storybook/default-exports`](https://github.com/storybookjs/storybook/blob/next/code/lib/eslint-plugin/docs/rules/default-exports.md)                             | Story files should have a default export                                                                                      | ✅                    | <ul><li>csf</li><li>flat/csf</li><li>recommended</li><li>flat/recommended</li><li>csf-strict</li><li>flat/csf-strict</li></ul> |
+| [`storybook/hierarchy-separator`](https://github.com/storybookjs/storybook/blob/next/code/lib/eslint-plugin/docs/rules/hierarchy-separator.md)                     | Deprecated hierarchy separator in title property                                                                              | ✅                    | <ul><li>csf</li><li>flat/csf</li><li>recommended</li><li>flat/recommended</li><li>csf-strict</li><li>flat/csf-strict</li></ul> |
+| [`storybook/meta-inline-properties`](https://github.com/storybookjs/storybook/blob/next/code/lib/eslint-plugin/docs/rules/meta-inline-properties.md)               | Meta should only have inline properties                                                                                       |                       | N/A                                                                                                                            |
+| [`storybook/meta-satisfies-type`](https://github.com/storybookjs/storybook/blob/next/code/lib/eslint-plugin/docs/rules/meta-satisfies-type.md)                     | Meta should use `satisfies Meta`                                                                                              | ✅                    | N/A                                                                                                                            |
+| [`storybook/no-redundant-story-name`](https://github.com/storybookjs/storybook/blob/next/code/lib/eslint-plugin/docs/rules/no-redundant-story-name.md)             | A story should not have a redundant name property                                                                             | ✅                    | <ul><li>csf</li><li>flat/csf</li><li>recommended</li><li>flat/recommended</li><li>csf-strict</li><li>flat/csf-strict</li></ul> |
+| [`storybook/no-renderer-packages`](https://github.com/storybookjs/storybook/blob/next/code/lib/eslint-plugin/docs/rules/no-renderer-packages.md)                   | Do not import renderer packages directly in stories                                                                           |                       | <ul><li>recommended</li><li>flat/recommended</li></ul>                                                                         |
+| [`storybook/no-stories-of`](https://github.com/storybookjs/storybook/blob/next/code/lib/eslint-plugin/docs/rules/no-stories-of.md)                                 | storiesOf is deprecated and should not be used                                                                                |                       | <ul><li>csf-strict</li><li>flat/csf-strict</li></ul>                                                                           |
+| [`storybook/no-title-property-in-meta`](https://github.com/storybookjs/storybook/blob/next/code/lib/eslint-plugin/docs/rules/no-title-property-in-meta.md)         | Do not define a title in meta                                                                                                 | ✅                    | <ul><li>csf-strict</li><li>flat/csf-strict</li></ul>                                                                           |
+| [`storybook/no-uninstalled-addons`](https://github.com/storybookjs/storybook/blob/next/code/lib/eslint-plugin/docs/rules/no-uninstalled-addons.md)                 | This rule identifies storybook addons that are invalid because they are either not installed or contain a typo in their name. |                       | <ul><li>recommended</li><li>flat/recommended</li></ul>                                                                         |
+| [`storybook/prefer-pascal-case`](https://github.com/storybookjs/storybook/blob/next/code/lib/eslint-plugin/docs/rules/prefer-pascal-case.md)                       | Stories should use PascalCase                                                                                                 | ✅                    | <ul><li>recommended</li><li>flat/recommended</li></ul>                                                                         |
+| [`storybook/story-exports`](https://github.com/storybookjs/storybook/blob/next/code/lib/eslint-plugin/docs/rules/story-exports.md)                                 | A story file must contain at least one story export                                                                           |                       | <ul><li>recommended</li><li>flat/recommended</li><li>csf</li><li>flat/csf</li><li>csf-strict</li><li>flat/csf-strict</li></ul> |
+| [`storybook/use-storybook-expect`](https://github.com/storybookjs/storybook/blob/next/code/lib/eslint-plugin/docs/rules/use-storybook-expect.md)                   | Use expect from `@storybook/test`, `storybook/test` or `@storybook/jest`                                                      | ✅                    | <ul><li>addon-interactions</li><li>flat/addon-interactions</li><li>recommended</li><li>flat/recommended</li></ul>              |
+| [`storybook/use-storybook-testing-library`](https://github.com/storybookjs/storybook/blob/next/code/lib/eslint-plugin/docs/rules/use-storybook-testing-library.md) | Do not use testing-library directly on stories                                                                                | ✅                    | <ul><li>addon-interactions</li><li>flat/addon-interactions</li><li>recommended</li><li>flat/recommended</li></ul>              |
+
+{/* RULES-LIST:END */}

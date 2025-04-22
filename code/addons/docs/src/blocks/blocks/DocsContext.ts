@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import type { Context } from 'react';
 import { createContext } from 'react';
 

@@ -219,12 +219,10 @@ export class VitestManager {
 
     const { filteredTestFiles, totalTestCount } = vitestTestSpecs.reduce(
       (acc, spec) => {
-        /* eslint-disable no-underscore-dangle */
         const { env = {} } = spec.project.config;
         const include = env.__VITEST_INCLUDE_TAGS__?.split(',').filter(Boolean) ?? ['test'];
         const exclude = env.__VITEST_EXCLUDE_TAGS__?.split(',').filter(Boolean) ?? [];
         const skip = env.__VITEST_SKIP_TAGS__?.split(',').filter(Boolean) ?? [];
-        /* eslint-enable no-underscore-dangle */
 
         const matches = stories.filter((story) =>
           this.filterStories(story, spec.moduleId, { include, exclude, skip })
@@ -406,7 +404,6 @@ export class VitestManager {
   }
 
   isStorybookProject(project: TestProject | WorkspaceProject) {
-    // eslint-disable-next-line no-underscore-dangle
     return !!project.config.env?.__STORYBOOK_URL__;
   }
 }

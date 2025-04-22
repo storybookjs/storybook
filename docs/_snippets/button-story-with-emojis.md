@@ -360,6 +360,7 @@ export const Tertiary = {
     components: { Button },
     template: '<Button backgroundColor="#ff0" label="📚📕📈🤓" />',
   }),
+};
 ```
 
 ```ts filename="Button.stories.ts" renderer="vue" language="ts"

@@ -223,7 +223,7 @@ export const FirstStory = {
 ```
 
 ```ts filename="YourComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
-import type { Meta, StoryObj } from 'storybook/svelte-vite';
+import type { Meta, StoryObj } from '@storybook/svelte-vite';
 
 import YourComponent from './YourComponent.svelte';
 

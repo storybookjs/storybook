@@ -94,7 +94,7 @@ export const configureFlatConfig = async (code: string) => {
 
       // Case 1: Direct array
       if (t.isArrayExpression(eslintConfigExpression)) {
-        eslintConfigExpression.elements.push(storybookConfig);
+        eslintConfigExpression.elements.push(t.spreadElement(storybookConfig));
       }
 
       // Case 2: tseslint.config(...)
@@ -115,7 +115,7 @@ export const configureFlatConfig = async (code: string) => {
           const init = unwrapTSExpression(binding.path.node.init);
 
           if (t.isArrayExpression(init)) {
-            init.elements.push(storybookConfig);
+            init.elements.push(t.spreadElement(storybookConfig));
           }
         }
       }

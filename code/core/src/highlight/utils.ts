@@ -173,7 +173,7 @@ export const isTargeted = (
     return false;
   }
   let { left, top, width, height } = box;
-  if (height === 0) {
+  if (height === 0 || width === 0) {
     left -= 10;
     top -= 10;
     width += 20;

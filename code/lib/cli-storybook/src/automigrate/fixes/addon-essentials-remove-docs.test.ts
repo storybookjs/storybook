@@ -254,6 +254,7 @@ describe('addon-essentials-remove-docs migration', () => {
         packageManager: mockPackageManager,
         packageJson: mockPackageJson,
         mainConfigPath: 'main.ts',
+        storybookVersion: '8.0.0',
         mainConfig: {} as StorybookConfigRaw,
       });
 
@@ -288,6 +289,7 @@ describe('addon-essentials-remove-docs migration', () => {
         packageManager: mockPackageManagerLocal,
         packageJson: mockPackageJson,
         mainConfigPath: 'main.ts',
+        storybookVersion: '8.0.0',
         mainConfig: {} as StorybookConfigRaw,
       });
 
@@ -318,6 +320,7 @@ describe('addon-essentials-remove-docs migration', () => {
         },
         packageManager: mockPackageManager,
         packageJson: mockPackageJson,
+        storybookVersion: '8.0.0',
         mainConfigPath: 'main.ts',
         mainConfig: {} as StorybookConfigRaw,
       });
@@ -349,6 +352,7 @@ describe('addon-essentials-remove-docs migration', () => {
         packageManager: mockPackageManager,
         packageJson: mockPackageJson,
         mainConfigPath: 'main.ts',
+        storybookVersion: '8.0.0',
         mainConfig: {} as StorybookConfigRaw,
         dryRun: true,
       });
@@ -366,6 +370,7 @@ describe('addon-essentials-remove-docs migration', () => {
         },
         packageManager: mockPackageManager,
         packageJson: mockPackageJson,
+        storybookVersion: '8.0.0',
         mainConfigPath: 'main.ts',
         mainConfig: {} as StorybookConfigRaw,
       });

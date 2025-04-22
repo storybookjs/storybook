@@ -255,6 +255,7 @@ describe('addon-essentials-remove-docs migration', () => {
         packageJson: mockPackageJson,
         mainConfigPath: 'main.ts',
         mainConfig: {} as StorybookConfigRaw,
+        storybookVersion: '8.0.0',
       });
 
       expect(mockPackageManager.runPackageCommand).toHaveBeenCalledWith('storybook', [
@@ -289,6 +290,7 @@ describe('addon-essentials-remove-docs migration', () => {
         packageJson: mockPackageJson,
         mainConfigPath: 'main.ts',
         mainConfig: {} as StorybookConfigRaw,
+        storybookVersion: '8.0.0',
       });
 
       expect(mockPackageManagerLocal.runPackageCommand).toHaveBeenCalledWith('storybook', [
@@ -320,6 +322,7 @@ describe('addon-essentials-remove-docs migration', () => {
         packageJson: mockPackageJson,
         mainConfigPath: 'main.ts',
         mainConfig: {} as StorybookConfigRaw,
+        storybookVersion: '8.0.0',
       });
 
       expect(transformImportFiles).toHaveBeenCalledWith(
@@ -351,6 +354,7 @@ describe('addon-essentials-remove-docs migration', () => {
         mainConfigPath: 'main.ts',
         mainConfig: {} as StorybookConfigRaw,
         dryRun: true,
+        storybookVersion: '8.0.0',
       });
 
       expect(mockPackageManager.runPackageCommand).not.toHaveBeenCalled();
@@ -368,6 +372,7 @@ describe('addon-essentials-remove-docs migration', () => {
         packageJson: mockPackageJson,
         mainConfigPath: 'main.ts',
         mainConfig: {} as StorybookConfigRaw,
+        storybookVersion: '8.0.0',
       });
 
       expect(mockPackageManager.runPackageCommand).not.toHaveBeenCalled();

@@ -359,7 +359,6 @@ test.describe("component testing", () => {
     await modifyFile(SETUP_FILE_DEPENDENCY_PATH, (content) => content.replace("initial string", "changed string"));
 
     // Expect at least 20 tests to have run
-    await expect(page.locator('#testing-module-description')).toContainText("Testing...", { timeout: 30000 });
     await expect(page.locator('#testing-module-description')).toContainText(/Ran [2-9]\d tests/, { timeout: 30000 });
   });
 

@@ -9,7 +9,12 @@ sidebar:
 
 Storybook 9 focuses on improving performance, compatibility, and stability. Key features include:
 
-* TK
+- 🔋 Storybook Test, a batteries-included testing tool in your Storybook
+- 🧪 Component testing
+- ♿️ Accessibility testing
+- 🛡️ Test coverage
+- 🪶 48% lighter bundle
+- ⚛️ React Native for device and web
 
 This guide is meant to help you **upgrade from Storybook 8.x to 9.0** successfully!
 
@@ -25,10 +30,10 @@ The rest of this guide will help you upgrade successfully, either automatically 
 
 * [Packages have been consolidated/removed](#package-structure-changes)
 * [Essential addons moved to core](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#addon-essentials-has-been-removed)
-* [Manager builder removed alias for `util`, `assert` and `process`](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#manager-builder-removed-alias-for-util-assert-and-process)
 * [Test addon renamed from `experimental-addon-test` to `addon-vitest`](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storybookexperimental-addon-test-renamed-to-storybookaddon-vitest)
 * [`nextjs-vite` framework stabilized](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nextjs--vite-builder-stabilized)
 * [Removed Webpack builder support for Preact, Vue, and Web Components in favor of Vite](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#dropped-webpack5-builder-support-in-favor-of-vite)
+* [Manager builder removed alias for `util`, `assert` and `process`](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#manager-builder-removed-alias-for-util-assert-and-process)
 * Ecosystem updates
   * [Node 20+ is now required](#TK)
   * [Angular 18+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#angular--require-v18-and-up)
@@ -68,12 +73,6 @@ This will:
    * Explain the necessary changes with links to more information
    * Ask for approval, then perform the task on your behalf
 
-### Common upgrade issues
-
-While we'll do our best to upgrade your project automatically, there is one issue worth mentioning that you might encounter during the upgrade process:
-
-#### TK
-
 ## New projects
 
 To add Storybook to a project that isn’t currently using Storybook:
@@ -88,16 +87,6 @@ This will:
 
 1. Figure out which renderer (React, Vue, Angular, Web Components), builder (Webpack, Vite), or meta-framework (Next.js, SvelteKit) you’re using
 2. Install Storybook 9 and auto-configure it to mirror project settings
-
-## Manual migrations
-
-In addition to the automated upgrades above, there are manual migrations that might be required to get Storybook 9 working in your project. We’ve tried to minimize this list to make it easier to upgrade. These include:
-
-### TK - Removal of deprecated packages
-
-### TK - Backgrounds and Viewport config, story globals
-
-### TK - Removed compatibility aliases
 
 ## Troubleshooting
 
@@ -120,10 +109,6 @@ The following packages are **removed**. See the [full migration notes](https://g
 
 | Removal                         | Replacement             |
 | ------------------------------- | ----------------------- |
-| `@storybook/manager-api`        | `storybook/manager-api` |
-| `@storybook/preview-api`        | `storybook/preview-api` |
-| `@storybook/theming`            | `storybook/theming`     |
-| `@storybook/test`               | `storybook/test`        |
 | `@storybook/addon-actions`      | `storybook/actions`     |
 | `@storybook/addon-backgrounds`  | N/A                     |
 | `@storybook/addon-controls`     | N/A                     |
@@ -133,29 +118,45 @@ The following packages are **removed**. See the [full migration notes](https://g
 | `@storybook/addon-outline`      | N/A                     |
 | `@storybook/addon-toolbars`     | N/A                     |
 | `@storybook/addon-viewport`     | `storybook/viewport`    |
+| `@storybook/manager-api`        | `storybook/manager-api` |
+| `@storybook/preview-api`        | `storybook/preview-api` |
+| `@storybook/test`               | `storybook/test`        |
+| `@storybook/theming`            | `storybook/theming`     |
 
 The following packages are **deprecated**. See the [full migration notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#dropped-support-for-legacy-packages) for details.
 
 | Deprecation                  | Replacement                           |
 | ---------------------------- | ------------------------------------- |
+| `@storybook/builder-manager` |	`storybook/internal/builder-manager` |
 | `@storybook/channels`        |	`storybook/internal/channels`        |
 | `@storybook/client-logger`   |	`storybook/internal/client-logger`   |
+| `@storybook/components`      |	`storybook/internal/components`      |
 | `@storybook/core-common`     |	`storybook/internal/common`          |
 | `@storybook/core-events`     |	`storybook/internal/core-events`     |
+| `@storybook/core-server`     |	`storybook/internal/core-server`     |
 | `@storybook/csf-tools`       |	`storybook/internal/csf-tools`       |
 | `@storybook/docs-tools`      |	`storybook/internal/docs-tools`      |
+| `@storybook/manager`         |	`storybook/internal/manager`         |
 | `@storybook/node-logger`     |	`storybook/internal/node-logger`     |
+| `@storybook/preview`         |	`storybook/internal/preview`         |
 | `@storybook/router`          |	`storybook/internal/router`          |
 | `@storybook/telemetry`       |	`storybook/internal/telemetry`       |
 | `@storybook/types`           |	`storybook/internal/types`           |
-| `@storybook/manager`         |	`storybook/internal/manager`         |
-| `@storybook/preview`         |	`storybook/internal/preview`         |
-| `@storybook/core-server`     |	`storybook/internal/core-server`     |
-| `@storybook/builder-manager` |	`storybook/internal/builder-manager` |
-| `@storybook/components`      |	`storybook/internal/components`      |
 
 ## Optional migrations
 
 In addition to the automigrations and manual migrations above, there are also optional migrations that you should consider. These are features that we’ve deprecated in Storybook 9 (but remain backwards compatible), or best practices that should help you be more productive in the future.
 
-### TK - test-runner to addon-vitest
+### `test-runner` to `addon-vitest`
+
+`addon-vitest` and the rest of the [Storybook Test experience](https://storybook.js.org/blog/storybook-test-sneak-peek/) is designed to supercede the `test-runner`. It's faster and provides a better experience for writing and running tests. If your project uses React, Vue, or Svelte and is built with Vite, you should consider migrating to `addon-vitest`, by following the [installation instructions](../writing-tests/test-addon.mdx#automatic-setup).
+
+### CSF 2 to CSF 3
+
+There are [many good reasons](/blog/storybook-csf3-is-here/) to convert your stories from CSF 2 to CSF 3. We provide a codemod which, in most cases, should automatically make the code changes for you (make sure to update the glob to fit your files):
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-migrate-csf-2-to-3.md" />
+
+{/* prettier-ignore-end */}

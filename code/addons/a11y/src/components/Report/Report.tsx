@@ -7,7 +7,7 @@ import { ChevronSmallDownIcon } from '@storybook/icons';
 
 import { styled } from 'storybook/theming';
 
-import { getTitleForAxeId } from '../../axeRuleMappingHelper';
+import { getTitleForAxeResult } from '../../axeRuleMappingHelper';
 import type { EnhancedResult, RuleType } from '../../types';
 import { Details } from './Details';
 
@@ -85,7 +85,7 @@ export const Report: FC<ReportProps> = ({
               data-active={!!selection}
             >
               <Title>
-                <strong>{getTitleForAxeId(item.id)}</strong>
+                <strong>{getTitleForAxeResult(item)}</strong>
               </Title>
               <Count>{item.nodes.length}</Count>
               <IconButton onClick={(event) => toggleOpen(event, type, item)}>

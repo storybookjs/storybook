@@ -7,7 +7,7 @@ import { CheckIcon, CopyIcon, LocationIcon } from '@storybook/icons';
 import * as Tabs from '@radix-ui/react-tabs';
 import { styled } from 'storybook/theming';
 
-import { getFriendlySummaryForAxeId } from '../../axeRuleMappingHelper';
+import { getFriendlySummaryForAxeResult } from '../../axeRuleMappingHelper';
 import type { EnhancedNodeResult, EnhancedResult, RuleType } from '../../types';
 import { useA11yContext } from '../A11yContext';
 
@@ -139,7 +139,7 @@ export const Details = ({ item, type, selection, handleSelectionChange }: Detail
     <Info>
       <RuleId>{item.id}</RuleId>
       <Description>
-        {getFriendlySummaryForAxeId(item.id)}{' '}
+        {getFriendlySummaryForAxeResult(item)}{' '}
         <Link href={item.helpUrl} target="_blank" withArrow>
           How to resolve this
         </Link>

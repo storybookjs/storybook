@@ -1,6 +1,8 @@
 import { combinedRulesMap } from './AccessibilityRuleMaps';
+import type { EnhancedResult } from './types';
 
-export const getTitleForAxeId = (axeId: string): string => combinedRulesMap[axeId]?.title || axeId;
+export const getTitleForAxeResult = (axeResult: EnhancedResult): string =>
+  combinedRulesMap[axeResult.id]?.title || axeResult.id;
 
-export const getFriendlySummaryForAxeId = (axeId: string): string | undefined =>
-  combinedRulesMap[axeId]?.friendlySummary;
+export const getFriendlySummaryForAxeResult = (axeResult: EnhancedResult): string | undefined =>
+  combinedRulesMap[axeResult.id]?.friendlySummary || axeResult.description;

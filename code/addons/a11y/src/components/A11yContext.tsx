@@ -23,7 +23,7 @@ import {
 import type { Report } from 'storybook/preview-api';
 import { convert, themes } from 'storybook/theming';
 
-import { getFriendlySummaryForAxeId, getTitleForAxeId } from '../axeRuleMappingHelper';
+import { getFriendlySummaryForAxeResult, getTitleForAxeResult } from '../axeRuleMappingHelper';
 import { ADDON_ID, EVENTS, STATUS_TYPE_ID_A11Y, STATUS_TYPE_ID_COMPONENT_TEST } from '../constants';
 import type { A11yParameters } from '../params';
 import type { A11YReport, EnhancedResult, EnhancedResults } from '../types';
@@ -305,8 +305,8 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
       },
       menu: results?.[tab as RuleType].map((result) => ({
         id: `${tab}.${result.id}`,
-        title: getTitleForAxeId(result.id),
-        description: getFriendlySummaryForAxeId(result.id),
+        title: getTitleForAxeResult(result),
+        description: getFriendlySummaryForAxeResult(result),
         clickEvent: EVENTS.SELECT,
         selectors: result.nodes
           .flatMap((n) => n.target)
@@ -332,8 +332,8 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
       },
       menu: results?.[tab as RuleType].map((result) => ({
         id: `${tab}.${result.id}`,
-        title: getTitleForAxeId(result.id),
-        description: getFriendlySummaryForAxeId(result.id),
+        title: getTitleForAxeResult(result),
+        description: getFriendlySummaryForAxeResult(result),
         clickEvent: EVENTS.SELECT,
         selectors: result.nodes
           .flatMap((n) => n.target)

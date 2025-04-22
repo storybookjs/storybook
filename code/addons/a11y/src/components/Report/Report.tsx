@@ -7,6 +7,7 @@ import { ChevronSmallDownIcon } from '@storybook/icons';
 
 import { styled } from 'storybook/theming';
 
+import { getTitleForAxeId } from '../../axeRuleMappingHelper';
 import type { EnhancedResult, RuleType } from '../../types';
 import { Details } from './Details';
 
@@ -44,15 +45,6 @@ const Title = styled.div({
   flexGrow: 1,
   gap: 6,
 });
-
-const RuleId = styled.div(({ theme }) => ({
-  display: 'none',
-  color: theme.textMutedColor,
-
-  '@container (min-width: 800px)': {
-    display: 'block',
-  },
-}));
 
 const Count = styled.div(({ theme }) => ({
   display: 'flex',
@@ -93,8 +85,7 @@ export const Report: FC<ReportProps> = ({
               data-active={!!selection}
             >
               <Title>
-                <strong>{item.help}</strong>
-                <RuleId>{item.id}</RuleId>
+                <strong>{getTitleForAxeId(item.id)}</strong>
               </Title>
               <Count>{item.nodes.length}</Count>
               <IconButton onClick={(event) => toggleOpen(event, type, item)}>

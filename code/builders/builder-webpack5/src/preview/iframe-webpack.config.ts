@@ -120,7 +120,7 @@ export default async (
 
   const externals: Record<string, string> = globalsNameReferenceMap;
   if (build?.test?.disableBlocks) {
-    externals['@storybook/blocks'] = '__STORYBOOK_BLOCKS_EMPTY_MODULE__';
+    externals['@storybook/addon-docs/blocks'] = '__STORYBOOK_BLOCKS_EMPTY_MODULE__';
   }
 
   const { virtualModules: virtualModuleMapping, entries: dynamicEntries } =
@@ -195,7 +195,9 @@ export default async (
       }),
       new DefinePlugin({
         ...stringifyProcessEnvs(envs),
-        NODE_ENV: JSON.stringify(process.env.NODE_ENV),
+        NODE_ENV: JSON.stringify(
+          features?.developmentModeForBuild && isProd ? 'development' : process.env.NODE_ENV
+        ),
       }),
       new ProvidePlugin({ process: require.resolve('process/browser.js') }),
       isProd ? null : new HotModuleReplacementPlugin(),

@@ -4,10 +4,10 @@ export default {
   framework: '@storybook/your-framework',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   webpackFinal: async (config) => {
-    config.plugins.push(...);
+    config.plugins.push(/* ... */);
     return config;
   },
-}
+};
 ```
 
 ```ts filename=".storybook/main.ts" renderer="common" language="ts"
@@ -17,8 +17,8 @@ import type { StorybookConfig } from '@storybook/your-framework';
 const config: StorybookConfig = {
   framework: '@storybook/your-framework',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
-   webpackFinal: async (config) => {
-    config.plugins.push(...);
+  webpackFinal: async (config) => {
+    config.plugins.push(/* ... */);
     return config;
   },
 };

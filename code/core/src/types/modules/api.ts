@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/naming-convention */
 import type { ReactElement } from 'react';
 
 import type { Channel } from '../../channels';
@@ -38,8 +37,6 @@ export interface API_ProviderData<API> {
 
 export interface API_Provider<API> {
   channel?: Channel;
-  /** @deprecated Will be removed in 8.0, please use channel instead */
-  serverChannel?: Channel;
   renderPreview?: API_IframeRenderer;
   handleAPI(api: API): void;
   getConfig(): {
@@ -88,8 +85,6 @@ export interface API_Layout {
   panelPosition: API_PanelPositions;
   showTabs: boolean;
   showToolbar: boolean;
-  /** @deprecated, will be removed in 8.0 - this API no longer works */
-  isToolshown?: boolean;
 }
 
 export interface API_UI {
@@ -120,14 +115,6 @@ interface OnClickOptions {
   onDismiss: () => void;
 }
 
-/**
- * @deprecated Use ReactNode for the icon instead.
- * @see https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#icons-is-deprecated
- */
-interface DeprecatedIconType {
-  name: string;
-  color?: string;
-}
 export interface API_Notification {
   id: string;
   content: {
@@ -136,8 +123,7 @@ export interface API_Notification {
   };
   duration?: number;
   link?: string;
-  // TODO: Remove DeprecatedIconType in 9.0
-  icon?: React.ReactNode | DeprecatedIconType;
+  icon?: React.ReactNode;
   onClear?: (options: OnClearOptions) => void;
   onClick?: (options: OnClickOptions) => void;
 }
@@ -155,6 +141,7 @@ export type API_StoryMapper = (ref: API_ComposedRef, story: SetStoriesStory) => 
 
 export interface API_LoadedRefData {
   index?: API_IndexHash;
+  filteredIndex?: API_IndexHash;
   indexError?: Error;
   previewInitialized: boolean;
 }
@@ -180,6 +167,7 @@ export type API_ComposedRefUpdate = Partial<
     | 'type'
     | 'expanded'
     | 'index'
+    | 'filteredIndex'
     | 'versions'
     | 'loginUrl'
     | 'version'

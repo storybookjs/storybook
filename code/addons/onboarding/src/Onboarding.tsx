@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react';
 
 import { SyntaxHighlighter } from 'storybook/internal/components';
+import { ADDON_ID as CONTROLS_ADDON_ID } from 'storybook/internal/controls';
 import { SAVE_STORY_RESPONSE } from 'storybook/internal/core-events';
-import { type API } from 'storybook/internal/manager-api';
-import { ThemeProvider, convert, styled, themes } from 'storybook/internal/theming';
 
 import type { Step } from 'react-joyride';
+import { type API } from 'storybook/manager-api';
+import { ThemeProvider, convert, styled, themes } from 'storybook/theming';
 
 import { Confetti } from './components/Confetti/Confetti';
 import { HighlightElement } from './components/HighlightElement/HighlightElement';
@@ -119,7 +120,7 @@ export default function Onboarding({ api }: { api: API }) {
     selectStory('example-button--primary');
     api.togglePanel(true);
     api.togglePanelPosition('bottom');
-    api.setSelectedPanel('addon-controls');
+    api.setSelectedPanel(CONTROLS_ADDON_ID);
   }, [api, selectStory]);
 
   useEffect(() => {
@@ -268,17 +269,7 @@ export default function Onboarding({ api }: { api: API }) {
 
   return (
     <ThemeProvider theme={theme}>
-      {showConfetti && (
-        <Confetti
-          numberOfPieces={800}
-          recycle={false}
-          tweenDuration={20000}
-          onConfettiComplete={(confetti) => {
-            confetti?.reset();
-            setShowConfetti(false);
-          }}
-        />
-      )}
+      {showConfetti && <Confetti />}
       {step === '1:Intro' ? (
         <SplashScreen onDismiss={() => setStep('2:Controls')} />
       ) : (

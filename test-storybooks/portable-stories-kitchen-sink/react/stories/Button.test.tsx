@@ -1,5 +1,5 @@
 import { render, screen, cleanup } from '@testing-library/react';
-import { addons } from 'storybook/internal/preview-api';
+import { addons } from 'storybook/preview-api';
 
 import { setProjectAnnotations, composeStories, composeStory } from '@storybook/react';
 import * as stories from './Button.stories';
@@ -55,7 +55,7 @@ describe('projectAnnotations', () => {
 
   it('renders with custom projectAnnotations via composeStory params', () => {
     const WithPortugueseText = composeStory(stories.CSF2StoryWithLocale, stories.default, {
-      globalTypes: { locale: { defaultValue: 'pt' } },
+      initialGlobals: { locale: 'pt' },
     });
     const { getByText } = render(<WithPortugueseText />);
     const buttonElement = getByText('Olá!');

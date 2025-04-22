@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import { logger } from 'storybook/internal/client-logger';
 import { ArgTypes, InputType, SBType } from 'storybook/internal/types';
 
@@ -226,7 +225,7 @@ export const extractArgTypesFromData = (componentData: Class | Directive | Injec
   const compodocClasses = ['component', 'directive'].includes(componentData.type)
     ? ['propertiesClass', 'methodsClass', 'inputsClass', 'outputsClass']
     : ['properties', 'methods'];
-  // eslint-disable-next-line @typescript-eslint/naming-convention
+
   type COMPODOC_CLASS =
     | 'properties'
     | 'methods'

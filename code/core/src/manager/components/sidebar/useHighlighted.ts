@@ -1,10 +1,11 @@
 import type { Dispatch, MutableRefObject, RefObject, SetStateAction } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { PRELOAD_ENTRIES } from 'storybook/internal/core-events';
+
 import { global } from '@storybook/global';
 
-import { PRELOAD_ENTRIES } from '@storybook/core/core-events';
-import { useStorybookApi } from '@storybook/core/manager-api';
+import { useStorybookApi } from 'storybook/manager-api';
 
 import { matchesKeyCode, matchesModifiers } from '../../keybinding';
 import { cycle, isAncestor, scrollIntoView } from '../../utils/tree';
@@ -21,6 +22,25 @@ export interface HighlightedProps {
 
 const fromSelection = (selection: Selection): Highlight =>
   selection ? { itemId: selection.storyId, refId: selection.refId } : null;
+
+const scrollToSelector = (
+  selector: string,
+  options: {
+    containerRef?: RefObject<Element | null>;
+    center?: boolean;
+    attempts?: number;
+    delay?: number;
+  } = {},
+  _attempt = 1
+) => {
+  const { containerRef, center = false, attempts = 3, delay = 500 } = options;
+  const element = (containerRef ? containerRef.current : document)?.querySelector(selector);
+  if (element) {
+    scrollIntoView(element, center);
+  } else if (_attempt <= attempts) {
+    setTimeout(scrollToSelector, delay, selector, options, _attempt + 1);
+  }
+};
 
 export const useHighlighted = ({
   containerRef,
@@ -65,14 +85,10 @@ export const useHighlighted = ({
     const highlight = fromSelection(selected);
     updateHighlighted(highlight);
     if (highlight) {
-      const { itemId, refId } = highlight;
-      setTimeout(() => {
-        scrollIntoView(
-          // @ts-expect-error (non strict)
-          containerRef.current?.querySelector(`[data-item-id="${itemId}"][data-ref-id="${refId}"]`),
-          true // make sure it's clearly visible by centering it
-        );
-      }, 0);
+      scrollToSelector(`[data-item-id="${highlight.itemId}"][data-ref-id="${highlight.refId}"]`, {
+        containerRef,
+        center: true,
+      });
     }
   }, [containerRef, selected, updateHighlighted]);
 

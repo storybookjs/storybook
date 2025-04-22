@@ -1,4 +1,5 @@
 import type { Preview } from '@storybook/react';
+import { getDecoratorString } from './get-decorator-string';
 
 console.log('preview file is called!');
 
@@ -6,16 +7,18 @@ const preview: Preview = {
   decorators: [
     (StoryFn) => (
       <div data-testid="global-decorator">
-        Global Decorator
+        <div data-testid="decorator-string">{getDecoratorString()}</div>
         <br />
         <StoryFn />
       </div>
     ),
   ],
+  initialGlobals: {
+    locale: 'en',
+  },
   globalTypes: {
     locale: {
       description: 'Locale for components',
-      defaultValue: 'en',
       toolbar: {
         title: 'Locale',
         icon: 'circlehollow',

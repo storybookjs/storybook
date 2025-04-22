@@ -82,7 +82,7 @@ export async function getCoercedStorybookVersion(packageManager: JsPackageManage
     )
   ).filter(({ version }) => !!version);
 
-  return packages[0]?.version;
+  return packages[0]?.version || versions.storybook;
 }
 
 export function getEnvConfig(program: Record<string, any>, configEnv: Record<string, any>): void {

@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 const majorNodeVersion = parseInt(process.versions.node, 10);
-if (majorNodeVersion < 18) {
-  console.error('To run Storybook you need to have Node.js 18 or higher');
+if (majorNodeVersion < 20) {
+  console.error('To run Storybook you need to have Node.js 20 or higher');
   process.exit(1);
 }
 
@@ -23,4 +23,7 @@ process.once('uncaughtException', (error) => {
   throw error;
 });
 
-require('../dist/bin/index.cjs');
+import('../dist/bin/index.js').catch((error) => {
+  console.error(error);
+  process.exit(1);
+});

@@ -41,7 +41,7 @@ async function run() {
       throw new Error(`Unexpected template '${templateName}'`);
     }
 
-    const events = await (await fetch(`http://localhost:${PORT}/event-log`)).json();
+    const events: any = await (await fetch(`http://localhost:${PORT}/event-log`)).json();
 
     test('Should log 2 events', () => {
       assert.equal(

@@ -1,12 +1,17 @@
-import React, { type FC, Fragment, useEffect, useState } from 'react';
+import React, { type FC, useEffect, useState } from 'react';
 
-import { Addon_TypesEnum } from '@storybook/core/types';
-import type { Meta, StoryObj } from '@storybook/react';
-import { expect, fn, waitFor, within } from '@storybook/test';
+import {
+  type Addon_Collection,
+  type Addon_TestProviderType,
+  Addon_TypesEnum,
+} from 'storybook/internal/types';
 
-import { type API, ManagerContext } from '@storybook/core/manager-api';
-import { userEvent } from '@storybook/testing-library';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
+import { type API, ManagerContext } from 'storybook/manager-api';
+import { expect, fireEvent, fn, waitFor, within } from 'storybook/test';
+
+import type { TestProviderStateByProviderId } from '../../../shared/test-provider-store';
 import { SidebarBottomBase } from './SidebarBottom';
 
 const DynamicHeightDemo: FC = () => {
@@ -42,23 +47,6 @@ const managerContext: any = {
       autodocs: 'tag',
       docsMode: false,
     },
-    testProviders: {
-      'component-tests': {
-        type: Addon_TypesEnum.experimental_TEST_PROVIDER,
-        id: 'component-tests',
-        title: () => 'Component tests',
-        description: () => 'Ran 2 seconds ago',
-        runnable: true,
-        watchable: true,
-      },
-      'visual-tests': {
-        type: Addon_TypesEnum.experimental_TEST_PROVIDER,
-        id: 'visual-tests',
-        title: () => 'Visual tests',
-        description: () => 'Not run',
-        runnable: true,
-      },
-    },
   },
   api: {
     on: fn().mockName('api::on'),
@@ -67,12 +55,31 @@ const managerContext: any = {
   },
 };
 
-export default {
+const registeredTestProviders: Addon_Collection<Addon_TestProviderType> = {
+  'component-tests': {
+    type: Addon_TypesEnum.experimental_TEST_PROVIDER,
+    id: 'component-tests',
+    render: () => <div>Component tests</div>,
+  },
+  'visual-tests': {
+    type: Addon_TypesEnum.experimental_TEST_PROVIDER,
+    id: 'visual-tests',
+    render: () => <div>Visual tests</div>,
+  },
+};
+const testProviderStates: TestProviderStateByProviderId = {
+  'component-tests': 'test-provider-state:succeeded',
+  'visual-tests': 'test-provider-state:pending',
+};
+const meta = {
   component: SidebarBottomBase,
   title: 'Sidebar/SidebarBottom',
   args: {
     isDevelopment: true,
-
+    warningCount: 0,
+    errorCount: 0,
+    hasStatuses: false,
+    notifications: [],
     api: {
       on: fn(),
       off: fn(),
@@ -83,91 +90,72 @@ export default {
       getChannel: fn(),
       getElements: fn(() => ({})),
     } as any as API,
+    onRunAll: fn(),
+    registeredTestProviders,
+    testProviderStates,
   },
   parameters: {
     layout: 'fullscreen',
   },
   decorators: [
     (storyFn) => (
-      <div style={{ position: 'relative', width: '100vw', height: '100vh' }}>
-        <div style={{ height: 300, background: 'orangered' }} />
-        {storyFn()}
-      </div>
-    ),
-    (storyFn) => (
       <ManagerContext.Provider value={managerContext}>{storyFn()}</ManagerContext.Provider>
     ),
   ],
-} as Meta<typeof SidebarBottomBase>;
+} satisfies Meta<typeof SidebarBottomBase>;
 
-export const Errors = {
+export default meta;
+
+type Story = StoryObj<typeof meta>;
+
+export const Errors: Story = {
   args: {
-    status: {
-      one: { 'sidebar-bottom-filter': { status: 'error' } },
-      two: { 'sidebar-bottom-filter': { status: 'error' } },
-    },
+    errorCount: 2,
+    hasStatuses: true,
   },
 };
 
-export const Warnings = {
+export const Warnings: Story = {
   args: {
-    status: {
-      one: { 'sidebar-bottom-filter': { status: 'warn' } },
-      two: { 'sidebar-bottom-filter': { status: 'warn' } },
-    },
+    warningCount: 2,
+    hasStatuses: true,
   },
 };
 
-export const Both = {
+export const Both: Story = {
   args: {
-    status: {
-      one: { 'sidebar-bottom-filter': { status: 'warn' } },
-      two: { 'sidebar-bottom-filter': { status: 'warn' } },
-      three: { 'sidebar-bottom-filter': { status: 'error' } },
-      four: { 'sidebar-bottom-filter': { status: 'error' } },
-    },
+    errorCount: 2,
+    warningCount: 2,
+    hasStatuses: true,
   },
 };
 
-export const DynamicHeight: StoryObj = {
-  decorators: [
-    (storyFn) => (
-      <ManagerContext.Provider
-        value={{
-          ...managerContext,
-          state: {
-            ...managerContext.state,
-            testProviders: {
-              custom: {
-                type: Addon_TypesEnum.experimental_TEST_PROVIDER,
-                id: 'custom',
-                render: () => <DynamicHeightDemo />,
-                runnable: true,
-              },
-            },
-          },
-        }}
-      >
-        {storyFn()}
-      </ManagerContext.Provider>
-    ),
-  ],
+export const DynamicHeight: Story = {
+  args: {
+    registeredTestProviders: {
+      'dynamic-height': {
+        type: Addon_TypesEnum.experimental_TEST_PROVIDER,
+        id: 'dynamic-height',
+        render: () => <DynamicHeightDemo />,
+      },
+    },
+  },
   play: async ({ canvasElement }) => {
     const screen = await within(canvasElement);
 
     const toggleButton = await screen.getByLabelText(/Expand/);
-    await userEvent.click(toggleButton);
+    await fireEvent.click(toggleButton);
 
     const content = await screen.findByText('CUSTOM CONTENT WITH DYNAMIC HEIGHT');
     const collapse = await screen.getByTestId('collapse');
 
     await expect(content).toBeVisible();
 
-    await userEvent.click(toggleButton);
+    await fireEvent.click(toggleButton);
 
     await waitFor(() => expect(collapse.getBoundingClientRect()).toHaveProperty('height', 0));
 
-    await userEvent.click(toggleButton);
+    await fireEvent.click(toggleButton);
 
     await waitFor(() => expect(collapse.getBoundingClientRect()).not.toHaveProperty('height', 0));
   },

@@ -11,6 +11,8 @@ import {
   Input,
   Output,
   Pipe,
+  input,
+  output,
 } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { BrowserDynamicTestingModule } from '@angular/platform-browser-dynamic/testing';
@@ -26,7 +28,9 @@ import {
 
 describe('getComponentInputsOutputs', () => {
   it('should return empty if no I/O found', () => {
-    @Component({})
+    @Component({
+      standalone: false,
+    })
     class FooComponent {}
 
     expect(getComponentInputsOutputs(FooComponent)).toEqual({
@@ -47,10 +51,17 @@ describe('getComponentInputsOutputs', () => {
       template: '',
       inputs: ['inputInComponentMetadata'],
       outputs: ['outputInComponentMetadata'],
+      standalone: false,
     })
     class FooComponent {
       @Input()
       public input: string;
+
+      public signalInput = input<string>();
+
+      public signalInputAliased = input<string>('signalInputAliased', {
+        alias: 'signalInputAliasedAlias',
+      });
 
       @Input('inputPropertyName')
       public inputWithBindingPropertyName: string;
@@ -60,6 +71,8 @@ describe('getComponentInputsOutputs', () => {
 
       @Output('outputPropertyName')
       public outputWithBindingPropertyName = new EventEmitter<Event>();
+
+      public signalOutput = output<string>();
     }
 
     const fooComponentFactory = resolveComponentFactory(FooComponent);
@@ -79,7 +92,9 @@ describe('getComponentInputsOutputs', () => {
       ],
     });
 
-    expect(sortByPropName(inputs)).toEqual(sortByPropName(fooComponentFactory.inputs));
+    expect(sortByPropName(inputs)).toEqual(
+      sortByPropName(fooComponentFactory.inputs.map(({ isSignal, ...rest }) => rest))
+    );
     expect(sortByPropName(outputs)).toEqual(sortByPropName(fooComponentFactory.outputs));
   });
 
@@ -88,6 +103,7 @@ describe('getComponentInputsOutputs', () => {
       template: '',
       inputs: ['input', 'inputWithBindingPropertyName'],
       outputs: ['outputWithBindingPropertyName'],
+      standalone: false,
     })
     class FooComponent {
       @Input()
@@ -107,13 +123,16 @@ describe('getComponentInputsOutputs', () => {
 
     const { inputs, outputs } = getComponentInputsOutputs(FooComponent);
 
-    expect(sortByPropName(inputs)).toEqual(sortByPropName(fooComponentFactory.inputs));
+    expect(sortByPropName(inputs)).toEqual(
+      sortByPropName(fooComponentFactory.inputs.map(({ isSignal, ...rest }) => rest))
+    );
     expect(sortByPropName(outputs)).toEqual(sortByPropName(fooComponentFactory.outputs));
   });
 
   it('should return I/O in the presence of multiple decorators', () => {
     @Component({
       template: '',
+      standalone: false,
     })
     class FooComponent {
       @Input()
@@ -137,13 +156,16 @@ describe('getComponentInputsOutputs', () => {
       outputs: [],
     });
 
-    expect(sortByPropName(inputs)).toEqual(sortByPropName(fooComponentFactory.inputs));
+    expect(sortByPropName(inputs)).toEqual(
+      sortByPropName(fooComponentFactory.inputs.map(({ isSignal, ...rest }) => rest))
+    );
     expect(sortByPropName(outputs)).toEqual(sortByPropName(fooComponentFactory.outputs));
   });
 
   it('should return I/O with extending classes', () => {
     @Component({
       template: '',
+      standalone: false,
     })
     class BarComponent {
       @Input()
@@ -155,6 +177,7 @@ describe('getComponentInputsOutputs', () => {
 
     @Component({
       template: '',
+      standalone: false,
     })
     class FooComponent extends BarComponent {
       @Input()
@@ -177,7 +200,9 @@ describe('getComponentInputsOutputs', () => {
       outputs: [],
     });
 
-    expect(sortByPropName(inputs)).toEqual(sortByPropName(fooComponentFactory.inputs));
+    expect(sortByPropName(inputs)).toEqual(
+      sortByPropName(fooComponentFactory.inputs.map(({ isSignal, ...rest }) => rest))
+    );
     expect(sortByPropName(outputs)).toEqual(sortByPropName(fooComponentFactory.outputs));
   });
 });

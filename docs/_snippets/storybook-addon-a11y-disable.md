@@ -11,10 +11,10 @@ export default meta;
 type Story = StoryObj<MyComponent>;
 
 export const NonA11yStory: Story = {
-  parameters: {
+  globals: {
     a11y: {
-      // This option disables all a11y checks on this story
-      disabled: true,
+      // This option disables all automatic a11y checks on this story
+      manual: true,
     },
   },
 };
@@ -28,10 +28,10 @@ export default {
 };
 
 export const NonA11yStory = {
-  parameters: {
+  globals: {
     a11y: {
-      // This option disables all a11y checks on this story
-      disable: true,
+      // This option disables all automatic a11y checks on this story
+      manual: true,
     },
   },
 };
@@ -50,10 +50,10 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const NonA11yStory: Story = {
-  parameters: {
+  globals: {
     a11y: {
-      // This option disables all a11y checks on this story
-      disable: true,
+      // This option disables all automatic a11y checks on this story
+      manual: true,
     },
   },
 };
@@ -72,10 +72,10 @@ export default meta;
 type Story = StoryObj<typeof MyComponent>;
 
 export const NonA11yStory: Story = {
-  parameters: {
+  globals: {
     a11y: {
-      // This option disables all a11y checks on this story
-      disable: true,
+      // This option disables all automatic a11y checks on this story
+      manual: true,
     },
   },
 };
@@ -94,10 +94,10 @@ export const NonA11yStory: Story = {
 
 <Story
   name="NonA11yStory"
-  parameters={{
+  globals={{
     a11y: {
-      // This option disables all a11y checks on this story
-      disable: true,
+      // This option disables all automatic a11y checks on this story
+      manual: true,
     },
   }}
 />
@@ -111,10 +111,10 @@ export default {
 };
 
 export const NonA11yStory = {
-  parameters: {
+  globals: {
     a11y: {
-      // This option disables all a11y checks on this story
-      disable: true,
+      // This option disables all automatic a11y checks on this story
+      manual: true,
     },
   },
 };
@@ -133,10 +133,10 @@ export const NonA11yStory = {
 
 <Story
   name="NonA11yStory"
-  parameters={{
+  globals={{
     a11y: {
-      // This option disables all a11y checks on this story
-      disable: true,
+      // This option disables all automatic a11y checks on this story
+      manual: true,
     },
   }}
 />
@@ -155,10 +155,10 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const NonA11yStory: Story = {
-  parameters: {
+  globals: {
     a11y: {
-      // This option disables all a11y checks on this story
-      disable: true,
+      // This option disables all automatic a11y checks on this story
+      manual: true,
     },
   },
 };
@@ -177,10 +177,10 @@ export const NonA11yStory: Story = {
 
 <Story
   name="NonA11yStory"
-  parameters={{
+  globals={{
     a11y: {
-      // This option disables all a11y checks on this story
-      disable: true,
+      // This option disables all automatic a11y checks on this story
+      manual: true,
     },
   }}
 />
@@ -199,10 +199,10 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const NonA11yStory: Story = {
-  parameters: {
+  globals: {
     a11y: {
-      // This option disables all a11y checks on this story
-      disable: true,
+      // This option disables all automatic a11y checks on this story
+      manual: true,
     },
   },
 };
@@ -216,10 +216,10 @@ export default {
 };
 
 export const NonA11yStory = {
-  parameters: {
+  globals: {
     a11y: {
-      // This option disables all a11y checks on this story
-      disable: true,
+      // This option disables all automatic a11y checks on this story
+      manual: true,
     },
   },
 };
@@ -238,10 +238,10 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const NonA11yStory: Story = {
-  parameters: {
+  globals: {
     a11y: {
-      // This option disables all a11y checks on this story
-      disable: true,
+      // This option disables all automatic a11y checks on this story
+      manual: true,
     },
   },
 };
@@ -260,10 +260,10 @@ export default meta;
 type Story = StoryObj<typeof MyComponent>;
 
 export const NonA11yStory: Story = {
-  parameters: {
+  globals: {
     a11y: {
-      // This option disables all a11y checks on this story
-      disable: true,
+      // This option disables all automatic a11y checks on this story
+      manual: true,
     },
   },
 };
@@ -275,10 +275,10 @@ export default {
 };
 
 export const ExampleStory = {
-  parameters: {
+  globals: {
     a11y: {
-      // This option disables all a11y checks on this story
-      disable: true,
+      // This option disables all automatic a11y checks on this story
+      manual: true,
     },
   },
 };
@@ -295,10 +295,10 @@ export default meta;
 type Story = StoryObj;
 
 export const ExampleStory: Story = {
-  parameters: {
+  globals: {
     a11y: {
-      // This option disables all a11y checks on this story
-      disable: true,
+      // This option disables all automatic a11y checks on this story
+      manual: true,
     },
   },
 };

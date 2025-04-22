@@ -1,14 +1,18 @@
 import React, { type SyntheticEvent, useCallback, useEffect, useRef, useState } from 'react';
 
-import { Button, TooltipNote } from '@storybook/core/components';
-import { WithTooltip } from '@storybook/core/components';
-import { keyframes, styled } from '@storybook/core/theming';
-import { ChevronSmallUpIcon, PlayAllHollowIcon } from '@storybook/icons';
+import { once } from 'storybook/internal/client-logger';
+import { Button, IconButton, TooltipNote } from 'storybook/internal/components';
+import { WithTooltip } from 'storybook/internal/components';
+import type {
+  Addon_Collection,
+  Addon_TestProviderType,
+  TestProviderStateByProviderId,
+} from 'storybook/internal/types';
 
-import { TESTING_MODULE_CONFIG_CHANGE, type TestProviders } from '@storybook/core/core-events';
-import { useStorybookApi } from '@storybook/core/manager-api';
+import { ChevronSmallUpIcon, PlayAllHollowIcon, SweepIcon } from '@storybook/icons';
 
-import { LegacyRender } from './LegacyRender';
+import { internal_fullTestProviderStore } from '#manager-stores';
+import { keyframes, styled } from 'storybook/theming';
 
 const DEFAULT_HEIGHT = 500;
 
@@ -27,9 +31,9 @@ const Outline = styled.div<{
   failed: boolean;
   running: boolean;
   updated: boolean;
-}>(({ crashed, failed, running, theme, updated }) => ({
+}>(({ crashed, failed, running, updated, theme }) => ({
   position: 'relative',
-  lineHeight: '20px',
+  lineHeight: '16px',
   width: '100%',
   padding: 1,
   overflow: 'hidden',
@@ -90,14 +94,20 @@ const Bar = styled.div<{ onClick?: (e: SyntheticEvent) => void }>(({ onClick }) 
   alignItems: 'center',
   justifyContent: 'space-between',
   overflow: 'hidden',
-  padding: '6px',
+  padding: 4,
+  gap: 4,
 }));
+
+const Action = styled.div({
+  display: 'flex',
+  flexBasis: '100%',
+  containerType: 'inline-size',
+});
 
 const Filters = styled.div({
   display: 'flex',
-  flexBasis: '100%',
   justifyContent: 'flex-end',
-  gap: 6,
+  gap: 4,
 });
 
 const CollapseToggle = styled(Button)({
@@ -106,6 +116,15 @@ const CollapseToggle = styled(Button)({
   willChange: 'auto',
   '&:focus, &:hover': {
     opacity: 1,
+  },
+});
+
+const RunButton = styled(Button)({
+  // 90px is the width of the button when the label is visible
+  '@container (max-width: 90px)': {
+    span: {
+      display: 'none',
+    },
   },
 });
 
@@ -145,7 +164,11 @@ const TestProvider = styled.div(({ theme }) => ({
 }));
 
 interface TestingModuleProps {
-  testProviders: TestProviders[keyof TestProviders][];
+  registeredTestProviders: Addon_Collection<Addon_TestProviderType>;
+  testProviderStates: TestProviderStateByProviderId;
+  hasStatuses: boolean;
+  clearStatuses: () => void;
+  onRunAll: () => void;
   errorCount: number;
   errorsActive: boolean;
   setErrorsActive: (active: boolean) => void;
@@ -155,7 +178,11 @@ interface TestingModuleProps {
 }
 
 export const TestingModule = ({
-  testProviders,
+  registeredTestProviders,
+  testProviderStates,
+  hasStatuses,
+  clearStatuses,
+  onRunAll,
   errorCount,
   errorsActive,
   setErrorsActive,
@@ -163,14 +190,27 @@ export const TestingModule = ({
   warningsActive,
   setWarningsActive,
 }: TestingModuleProps) => {
-  const api = useStorybookApi();
-
   const timeoutRef = useRef<null | ReturnType<typeof setTimeout>>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const [maxHeight, setMaxHeight] = useState(DEFAULT_HEIGHT);
-  const [isUpdated, setUpdated] = useState(false);
   const [isCollapsed, setCollapsed] = useState(true);
   const [isChangingCollapse, setChangingCollapse] = useState(false);
+  const [isUpdated, setIsUpdated] = useState(false);
+  const settingsUpdatedTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+
+  useEffect(() => {
+    const unsubscribe = internal_fullTestProviderStore.onSettingsChanged(() => {
+      setIsUpdated(true);
+      clearTimeout(settingsUpdatedTimeoutRef.current);
+      settingsUpdatedTimeoutRef.current = setTimeout(() => {
+        setIsUpdated(false);
+      }, 1000);
+    });
+    return () => {
+      unsubscribe();
+      clearTimeout(settingsUpdatedTimeoutRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (contentRef.current) {
@@ -190,23 +230,10 @@ export const TestingModule = ({
     }
   }, [isCollapsed]);
 
-  useEffect(() => {
-    let timeout: ReturnType<typeof setTimeout>;
-    const handler = () => {
-      setUpdated(true);
-      timeout = setTimeout(setUpdated, 1000, false);
-    };
-    api.on(TESTING_MODULE_CONFIG_CHANGE, handler);
-    return () => {
-      api.off(TESTING_MODULE_CONFIG_CHANGE, handler);
-      clearTimeout(timeout);
-    };
-  }, [api]);
-
-  const toggleCollapsed = useCallback((event: SyntheticEvent) => {
-    event.stopPropagation();
+  const toggleCollapsed = useCallback((event?: SyntheticEvent, value?: boolean) => {
+    event?.stopPropagation();
     setChangingCollapse(true);
-    setCollapsed((s) => !s);
+    setCollapsed((s) => value ?? !s);
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
@@ -215,10 +242,19 @@ export const TestingModule = ({
     }, 250);
   }, []);
 
-  const isRunning = testProviders.some((tp) => tp.running);
-  const isCrashed = testProviders.some((tp) => tp.crashed);
-  const isFailed = testProviders.some((tp) => tp.failed);
-  const hasTestProviders = testProviders.length > 0;
+  const isRunning = Object.values(testProviderStates).some(
+    (testProviderState) => testProviderState === 'test-provider-state:running'
+  );
+  const isCrashed = Object.values(testProviderStates).some(
+    (testProviderState) => testProviderState === 'test-provider-state:crashed'
+  );
+  const hasTestProviders = Object.values(registeredTestProviders).length > 0;
+
+  useEffect(() => {
+    if (isCrashed && isCollapsed) {
+      toggleCollapsed(undefined, false);
+    }
+  }, [isCrashed, isCollapsed, toggleCollapsed]);
 
   if (!hasTestProviders && (!errorCount || !warningCount)) {
     return null;
@@ -229,7 +265,7 @@ export const TestingModule = ({
       id="storybook-testing-module"
       running={isRunning}
       crashed={isCrashed}
-      failed={isFailed || errorCount > 0}
+      failed={errorCount > 0}
       updated={isUpdated}
     >
       <Card>
@@ -243,11 +279,17 @@ export const TestingModule = ({
             }}
           >
             <Content ref={contentRef}>
-              {testProviders.map((state) => {
-                const { render: Render } = state;
+              {Object.values(registeredTestProviders).map((registeredTestProvider) => {
+                const { render: Render, id } = registeredTestProvider;
+                if (!Render) {
+                  once.warn(
+                    `No render function found for test provider with id '${id}', skipping...`
+                  );
+                  return null;
+                }
                 return (
-                  <TestProvider key={state.id} data-module-id={state.id}>
-                    {Render ? <Render {...state} /> : <LegacyRender {...state} />}
+                  <TestProvider key={id} data-module-id={id}>
+                    <Render />
                   </TestProvider>
                 );
               })}
@@ -255,40 +297,58 @@ export const TestingModule = ({
           </Collapsible>
         )}
 
-        <Bar {...(hasTestProviders ? { onClick: toggleCollapsed } : {})}>
-          {hasTestProviders && (
-            <Button
-              variant="ghost"
-              padding="small"
-              onClick={(e: SyntheticEvent) => {
-                e.stopPropagation();
-                testProviders
-                  .filter((state) => !state.running && state.runnable)
-                  .forEach(({ id }) => api.runTestProvider(id));
-              }}
-              disabled={isRunning}
-            >
-              <PlayAllHollowIcon />
-              {isRunning ? 'Running...' : 'Run tests'}
-            </Button>
-          )}
+        <Bar {...(hasTestProviders ? { onClick: (e) => toggleCollapsed(e) } : {})}>
+          <Action>
+            {hasTestProviders && (
+              <WithTooltip
+                hasChrome={false}
+                tooltip={<TooltipNote note={isRunning ? 'Running tests...' : 'Start all tests'} />}
+                trigger="hover"
+              >
+                <RunButton
+                  size="medium"
+                  variant="ghost"
+                  padding="small"
+                  onClick={(e: SyntheticEvent) => {
+                    e.stopPropagation();
+                    onRunAll();
+                  }}
+                  disabled={isRunning}
+                >
+                  <PlayAllHollowIcon />
+                  <span>{isRunning ? 'Running...' : 'Run tests'}</span>
+                </RunButton>
+              </WithTooltip>
+            )}
+          </Action>
           <Filters>
             {hasTestProviders && (
-              <CollapseToggle
-                variant="ghost"
-                padding="small"
-                onClick={toggleCollapsed}
-                id="testing-module-collapse-toggle"
-                aria-label={isCollapsed ? 'Expand testing module' : 'Collapse testing module'}
+              <WithTooltip
+                hasChrome={false}
+                tooltip={
+                  <TooltipNote
+                    note={isCollapsed ? 'Expand testing module' : 'Collapse testing module'}
+                  />
+                }
+                trigger="hover"
               >
-                <ChevronSmallUpIcon
-                  style={{
-                    transform: isCollapsed ? 'none' : 'rotate(180deg)',
-                    transition: 'transform 250ms',
-                    willChange: 'auto',
-                  }}
-                />
-              </CollapseToggle>
+                <CollapseToggle
+                  size="medium"
+                  variant="ghost"
+                  padding="small"
+                  onClick={(e) => toggleCollapsed(e)}
+                  id="testing-module-collapse-toggle"
+                  aria-label={isCollapsed ? 'Expand testing module' : 'Collapse testing module'}
+                >
+                  <ChevronSmallUpIcon
+                    style={{
+                      transform: isCollapsed ? 'none' : 'rotate(180deg)',
+                      transition: 'transform 250ms',
+                      willChange: 'auto',
+                    }}
+                  />
+                </CollapseToggle>
+              </WithTooltip>
             )}
 
             {errorCount > 0 && (
@@ -299,6 +359,7 @@ export const TestingModule = ({
               >
                 <StatusButton
                   id="errors-found-filter"
+                  size="medium"
                   variant="ghost"
                   padding={errorCount < 10 ? 'medium' : 'small'}
                   status="negative"
@@ -309,7 +370,7 @@ export const TestingModule = ({
                   }}
                   aria-label="Toggle errors"
                 >
-                  {errorCount < 100 ? errorCount : '99+'}
+                  {errorCount < 1000 ? errorCount : '999+'}
                 </StatusButton>
               </WithTooltip>
             )}
@@ -321,6 +382,7 @@ export const TestingModule = ({
               >
                 <StatusButton
                   id="warnings-found-filter"
+                  size="medium"
                   variant="ghost"
                   padding={warningCount < 10 ? 'medium' : 'small'}
                   status="warning"
@@ -331,8 +393,40 @@ export const TestingModule = ({
                   }}
                   aria-label="Toggle warnings"
                 >
-                  {warningCount < 100 ? warningCount : '99+'}
+                  {warningCount < 1000 ? warningCount : '999+'}
                 </StatusButton>
+              </WithTooltip>
+            )}
+            {hasStatuses && (
+              <WithTooltip
+                hasChrome={false}
+                tooltip={
+                  <TooltipNote
+                    note={
+                      isRunning
+                        ? "Can't clear statuses while tests are running"
+                        : 'Clear all statuses'
+                    }
+                  />
+                }
+                trigger="hover"
+              >
+                <IconButton
+                  id="clear-statuses"
+                  size="medium"
+                  onClick={(e: SyntheticEvent) => {
+                    e.stopPropagation();
+                    clearStatuses();
+                  }}
+                  disabled={isRunning}
+                  aria-label={
+                    isRunning
+                      ? "Can't clear statuses while tests are running"
+                      : 'Clear all statuses'
+                  }
+                >
+                  <SweepIcon />
+                </IconButton>
               </WithTooltip>
             )}
           </Filters>

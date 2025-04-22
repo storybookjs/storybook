@@ -1,6 +1,6 @@
 ```js filename="MyComponent.stories.js|jsx" renderer="common" language="js"
 // ❌ Don't use the package's index file to import the component.
-import { MyComponent } from '@component-package';
+// import { MyComponent } from '@component-package';
 
 // ✅ Use the component's export to import it directly.
 import { MyComponent } from '@component-package/src/MyComponent';
@@ -20,7 +20,7 @@ export default {
 import type { Meta } from '@storybook/your-framework';
 
 // ❌ Don't use the package's index file to import the component.
-import { MyComponent } from '@component-package';
+// import { MyComponent } from '@component-package';
 
 // ✅ Use the component's export to import it directly.
 import { MyComponent } from '@component-package/src/MyComponent';
@@ -42,7 +42,7 @@ export default meta;
 import type { Meta } from '@storybook/your-framework';
 
 // ❌ Don't use the package's index file to import the component.
-import { MyComponent } from '@component-package';
+// import { MyComponent } from '@component-package';
 
 // ✅ Use the component's export to import it directly.
 import { MyComponent } from '@component-package/src/MyComponent';

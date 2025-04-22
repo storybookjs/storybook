@@ -1,15 +1,15 @@
 import React from 'react';
 
-import { global } from '@storybook/global';
-import { StorybookIcon } from '@storybook/icons';
-
-import type { WhatsNewCache, WhatsNewData } from '@storybook/core/core-events';
 import {
   REQUEST_WHATS_NEW_DATA,
   RESULT_WHATS_NEW_DATA,
   SET_WHATS_NEW_CACHE,
   TOGGLE_WHATS_NEW_NOTIFICATIONS,
-} from '@storybook/core/core-events';
+} from 'storybook/internal/core-events';
+import type { WhatsNewCache, WhatsNewData } from 'storybook/internal/core-events';
+
+import { global } from '@storybook/global';
+import { StorybookIcon } from '@storybook/icons';
 
 import type { ModuleFn } from '../lib/types';
 

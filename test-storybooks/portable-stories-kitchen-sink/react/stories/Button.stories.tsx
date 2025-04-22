@@ -1,4 +1,4 @@
-import { expect, fn } from '@storybook/test';
+import { expect, fn } from 'storybook/test';
 import type { Meta, StoryFn as CSF2Story, StoryObj as CSF3Story } from '@storybook/react';
 
 import type { ButtonProps } from './Button';
@@ -67,6 +67,8 @@ export const CSF3Primary: CSF3Story<ButtonProps> = {
     size: 'large',
     primary: true,
   },
+  // Accessibility is failing for the Button
+  tags: ['fail-on-purpose'],
 };
 
 export const CSF3Button: CSF3Story<ButtonProps> = {

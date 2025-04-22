@@ -1,6 +1,6 @@
 <!-- prettier-ignore -->
 ```mdx filename="MyComponent.mdx" renderer="common" language="mdx"
-import { Meta } from '@storybook/blocks';
+import { Meta } from '@storybook/addon-docs/blocks';
 
 <Meta title="A storybook story with syntax highlight registered globally" />
 

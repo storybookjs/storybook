@@ -11,7 +11,9 @@ export default {
   experimental_indexers: async (existingIndexers) => {
     const customIndexer = {
       test: /\.custom-stories\.[tj]sx?$/,
-      createIndex: // See API and examples below...
+      createIndex: async (fileName) => {
+        // See API and examples below...
+      },
     };
     return [...existingIndexers, customIndexer];
   },
@@ -33,13 +35,15 @@ const config: StorybookConfig = {
   experimental_indexers: async (existingIndexers) => {
     const customIndexer = {
       test: /\.custom-stories\.[tj]sx?$/,
-      createIndex: // See API and examples below...
+      createIndex: async (fileName) => {
+        // See API and examples below...
+      },
     };
     return [...existingIndexers, customIndexer];
   },
 };
 
-export default config
+export default config;
 ```
 
 ```ts filename=".storybook/main.ts" renderer="common" language="ts"
@@ -57,11 +61,13 @@ const config: StorybookConfig = {
   experimental_indexers: async (existingIndexers) => {
     const customIndexer = {
       test: /\.custom-stories\.[tj]sx?$/,
-      createIndex: // See API and examples below...
+      createIndex: async (fileName) => {
+        // See API and examples below...
+      },
     };
     return [...existingIndexers, customIndexer];
   },
 };
 
-export default config
+export default config;
 ```

@@ -1,5 +1,5 @@
-import { styled } from '@storybook/core/theming';
-import type { Interpolation } from '@storybook/core/theming';
+import type { Interpolation } from 'storybook/theming';
+import { styled } from 'storybook/theming';
 
 import { withMargin, withReset } from '../lib/common';
 

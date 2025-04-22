@@ -1,8 +1,10 @@
 import React, { useEffect, useState, useTransition } from 'react';
 
-import { Form, Modal } from '@storybook/core/components';
-import { styled } from '@storybook/core/theming';
+import { Form, Modal } from 'storybook/internal/components';
+
 import { CloseAltIcon, SearchIcon, SyncIcon } from '@storybook/icons';
+
+import { styled } from 'storybook/theming';
 
 import { useMeasure } from '../../hooks/useMeasure';
 import type { NewStoryPayload, SearchResult } from './FileSearchList';

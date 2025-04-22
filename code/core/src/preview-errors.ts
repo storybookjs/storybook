@@ -1,11 +1,13 @@
 import { dedent } from 'ts-dedent';
 
+import type { Status } from './shared/status-store';
+import type { StatusTypeId } from './shared/status-store';
 import { StorybookError } from './storybook-error';
 
 /**
  * If you can't find a suitable category for your error, create one based on the package name/file
- * path of which the error is thrown. For instance: If it's from `@storybook/client-logger`, then
- * CLIENT-LOGGER
+ * path of which the error is thrown. For instance: If it's from `storybook/internal/client-logger`,
+ * then CLIENT-LOGGER
  *
  * Categories are prefixed by a logical grouping, e.g. PREVIEW_ or FRAMEWORK_ to prevent manager and
  * preview errors from having the same category and error code.
@@ -31,6 +33,7 @@ export enum Category {
   RENDERER_WEB_COMPONENTS = 'RENDERER_WEB-COMPONENTS',
   FRAMEWORK_NEXTJS = 'FRAMEWORK_NEXTJS',
   ADDON_VITEST = 'ADDON_VITEST',
+  ADDON_A11Y = 'ADDON_A11Y',
 }
 
 export class MissingStoryAfterHmrError extends StorybookError {
@@ -60,7 +63,7 @@ export class ImplicitActionsDuringRendering extends StorybookError {
         We detected that you use an implicit action arg while ${data.phase} of your story.  
         ${data.deprecated ? `\nThis is deprecated and won't work in Storybook 8 anymore.\n` : ``}
         Please provide an explicit spy to your args like this:
-          import { fn } from '@storybook/test';
+          import { fn } from 'storybook/test';
           ... 
           args: {
            ${data.name}: fn()
@@ -273,6 +276,25 @@ export class NoStoryMountedError extends StorybookError {
   }
 }
 
+export class StatusTypeIdMismatchError extends StorybookError {
+  constructor(
+    public data: {
+      status: Status;
+      typeId: StatusTypeId;
+    }
+  ) {
+    super({
+      category: Category.PREVIEW_API,
+      code: 16,
+      message: `Status has typeId "${data.status.typeId}" but was added to store with typeId "${data.typeId}". Full status: ${JSON.stringify(
+        data.status,
+        null,
+        2
+      )}`,
+    });
+  }
+}
+
 export class NextJsSharpError extends StorybookError {
   constructor() {
     super({
@@ -334,6 +356,19 @@ export class UnsupportedViewportDimensionError extends StorybookError {
         
         You can either change the viewport for this story to use one of the supported units or skip the test by adding '!test' to the story's tags per https://storybook.js.org/docs/writing-stories/tags
       `,
+    });
+  }
+}
+
+export class ElementA11yParameterError extends StorybookError {
+  constructor() {
+    super({
+      category: Category.ADDON_A11Y,
+      code: 1,
+      documentation:
+        'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#a11y-addon-replace-element-parameter-with-context-parameter',
+      message:
+        'The "element" parameter in parameters.a11y has been removed. Use "context" instead.',
     });
   }
 }

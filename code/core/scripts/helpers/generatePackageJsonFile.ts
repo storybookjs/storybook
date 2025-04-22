@@ -36,12 +36,35 @@ export async function generatePackageJsonFile(entries: ReturnType<typeof getEntr
     if (main === './dist/index.ts' || main === './dist/index.tsx') {
       main = '.';
     }
+    /**
+     * We always write an entry for /internal/X, even when it's isPublic is true, this is for
+     * compatibility reasons. We should remove this once everything stops referencing public APIs as
+     * internal.
+     *
+     * Known references:
+     *
+     * - VTA
+     * - Design addon
+     * - Addon kit
+     *
+     * I expect that we should be able to drop it in the process of of the release of 9.0, or keep
+     * it for now, and drop it in the release of 9.1.
+     */
     acc[
       main
         .replace(/\/index\.tsx?/, '')
         .replace(/\.tsx?/, '')
-        .replace('dist/', '')
+        .replace('dist/', 'internal/')
     ] = content;
+
+    if (entry.isPublic) {
+      acc[
+        main
+          .replace(/\/index\.tsx?/, '')
+          .replace(/\.tsx?/, '')
+          .replace('dist/', '')
+      ] = content;
+    }
     return acc;
   }, {});
 
@@ -73,7 +96,25 @@ export async function generatePackageJsonFile(entries: ReturnType<typeof getEntr
         }
 
         const content = ['./' + main.replace(/\.tsx?/, '.d.ts')];
-        acc[key.replace('dist/', '')] = content;
+
+        /**
+         * We always write an entry for /internal/X, even when it's isPublic is true, this is for
+         * compatibility reasons. We should remove this once everything stops referencing public
+         * APIs as internal.
+         *
+         * Known references:
+         *
+         * - VTA
+         * - Design addon
+         * - Addon kit
+         *
+         * I expect that we should be able to drop it in the process of of the release of 9.0, or
+         * keep it for now, and drop it in the release of 9.1.
+         */
+        acc[key.replace('dist/', 'internal/')] = content;
+        if (entry.isPublic) {
+          acc[key.replace('dist/', '')] = content;
+        }
         return acc;
       }, {}),
     },

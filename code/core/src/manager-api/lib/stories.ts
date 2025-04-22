@@ -1,5 +1,5 @@
+import { sanitize } from 'storybook/internal/csf';
 import type {
-  API_BaseEntry,
   API_ComponentEntry,
   API_DocsEntry,
   API_GroupEntry,
@@ -14,12 +14,12 @@ import type {
   Parameters,
   SetStoriesPayload,
   SetStoriesStoryData,
+  StatusesByStoryIdAndTypeId,
   StoryId,
   StoryIndexV2,
   StoryIndexV3,
   Tag,
-} from '@storybook/core/types';
-import { sanitize } from '@storybook/csf';
+} from 'storybook/internal/types';
 
 import { countBy, mapValues } from 'es-toolkit';
 import memoize from 'memoizerific';
@@ -45,12 +45,6 @@ export const denormalizeStoryParameters = ({
     ),
   })) as SetStoriesStoryData;
 };
-
-export const transformSetStoriesStoryDataToStoriesHash = (
-  data: SetStoriesStoryData,
-  options: ToStoriesHashOptions
-) =>
-  transformStoryIndexToStoriesHash(transformSetStoriesStoryDataToPreparedStoryIndex(data), options);
 
 export const transformSetStoriesStoryDataToPreparedStoryIndex = (
   stories: SetStoriesStoryData
@@ -172,12 +166,12 @@ type ToStoriesHashOptions = {
   provider: API_Provider<API>;
   docsOptions: DocsOptions;
   filters: State['filters'];
-  status: State['status'];
+  allStatuses: StatusesByStoryIdAndTypeId;
 };
 
 export const transformStoryIndexToStoriesHash = (
   input: API_PreparedStoryIndex | StoryIndexV2 | StoryIndexV3,
-  { provider, docsOptions, filters, status }: ToStoriesHashOptions
+  { provider, docsOptions, filters, allStatuses }: ToStoriesHashOptions
 ): API_IndexHash | any => {
   if (!input.v) {
     throw new Error('Composition: Missing stories.json version');
@@ -192,11 +186,17 @@ export const transformStoryIndexToStoriesHash = (
   const entryValues = Object.values(index.entries).filter((entry: any) => {
     let result = true;
 
-    Object.values(filters).forEach((filter: any) => {
+    // All stories with a failing status should always show up, regardless of the applied filters
+    const storyStatuses = allStatuses[entry.id] ?? {};
+    if (Object.values(storyStatuses).some(({ value }) => value === 'status-value:error')) {
+      return result;
+    }
+
+    Object.values(filters).forEach((filter) => {
       if (result === false) {
         return;
       }
-      result = filter({ ...entry, status: status[entry.id] });
+      result = filter({ ...entry, statuses: storyStatuses });
     });
 
     return result;
@@ -342,6 +342,7 @@ export const transformStoryIndexToStoriesHash = (
     .reduce(addItem, orphanHash);
 };
 
+/** Now we need to patch in the existing prepared stories */
 export const addPreparedStories = (newHash: API_IndexHash, oldHash?: API_IndexHash) => {
   if (!oldHash) {
     return newHash;

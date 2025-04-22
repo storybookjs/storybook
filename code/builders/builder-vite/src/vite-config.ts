@@ -32,13 +32,13 @@ export type PluginConfigType = 'build' | 'development';
 const configEnvServe: ConfigEnv = {
   mode: 'development',
   command: 'serve',
-  ssrBuild: false,
+  isSsrBuild: false,
 };
 
 const configEnvBuild: ConfigEnv = {
   mode: 'production',
   command: 'build',
-  ssrBuild: false,
+  isSsrBuild: false,
 };
 
 // Vite config that is common to development and production mode
@@ -47,24 +47,22 @@ export async function commonConfig(
   _type: PluginConfigType
 ): Promise<ViteInlineConfig> {
   const configEnv = _type === 'development' ? configEnvServe : configEnvBuild;
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore this property only exists in Vite 6
   const { loadConfigFromFile, mergeConfig, defaultClientConditions = [] } = await import('vite');
 
   const { viteConfigPath } = await getBuilderOptions<BuilderOptions>(options);
 
-  options.projectRoot = options.projectRoot || resolve(options.configDir, '..');
+  const projectRoot = resolve(options.configDir, '..');
 
   // I destructure away the `build` property from the user's config object
   // I do this because I can contain config that breaks storybook, such as we had in a lit project.
   // If the user needs to configure the `build` they need to do so in the viteFinal function in main.js.
   const { config: { build: buildProperty = undefined, ...userConfig } = {} } =
-    (await loadConfigFromFile(configEnv, viteConfigPath, options.projectRoot)) ?? {};
+    (await loadConfigFromFile(configEnv, viteConfigPath, projectRoot)) ?? {};
 
   const sbConfig: InlineConfig = {
     configFile: false,
     cacheDir: resolvePathInStorybookCache('sb-vite', options.cacheKey),
-    root: options.projectRoot,
+    root: projectRoot,
     // Allow storybook deployed as subfolder.  See https://github.com/storybookjs/builder-vite/issues/238
     base: './',
     plugins: await pluginConfig(options),
@@ -96,7 +94,7 @@ export async function pluginConfig(options: Options) {
   const externals: Record<string, string> = globalsNameReferenceMap;
 
   if (build?.test?.disableBlocks) {
-    externals['@storybook/blocks'] = '__STORYBOOK_BLOCKS_EMPTY_MODULE__';
+    externals['@storybook/addon-docs/blocks'] = '__STORYBOOK_BLOCKS_EMPTY_MODULE__';
   }
 
   const plugins = [

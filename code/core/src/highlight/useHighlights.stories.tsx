@@ -1,16 +1,55 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 
-import { mockChannel } from 'storybook/internal/preview-api';
+import { useChannel } from 'storybook/internal/preview-api';
 
 import { fn, userEvent, within } from 'storybook/test';
 
 import preview from '../../../.storybook/preview';
-import { HIGHLIGHT, RESET_HIGHLIGHT, SCROLL_INTO_VIEW } from './constants';
-import { useHighlights } from './useHighlights';
+import { HIGHLIGHT, REMOVE_HIGHLIGHT, SCROLL_INTO_VIEW } from './constants';
+
+const highlight = (
+  selectors: string[],
+  options?: {
+    selectable?: boolean;
+    styles?: Record<string, string>;
+    hoverStyles?: Record<string, string>;
+    focusStyles?: Record<string, string>;
+    keyframes?: string;
+    menu?: {
+      id: string;
+      title: string;
+      description?: string;
+      right?: string;
+      href?: string;
+      clickEvent?: string;
+    }[];
+  }
+) => {
+  const emit = useChannel({ click: fn().mockName('click') });
+  const id = Math.random().toString(36).substring(2, 15);
+  React.useEffect(() => {
+    emit(HIGHLIGHT, {
+      id,
+      selectors,
+      selectable: options?.selectable ?? !!options?.menu?.length,
+      styles: {
+        backgroundColor: `color-mix(in srgb, teal, transparent 80%)`,
+        outline: `1px solid color-mix(in srgb, teal, transparent 30%)`,
+      },
+      hoverStyles: options?.selectable || options?.menu?.length ? { outlineWidth: '2px' } : {},
+      focusStyles: {
+        backgroundColor: 'transparent',
+      },
+      ...options,
+    });
+    return () => emit(REMOVE_HIGHLIGHT, id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [emit]);
+};
 
 const Content = ({ dynamic, withPopover }: { dynamic: boolean; withPopover: boolean }) => {
-  const [extra, setExtra] = useState(false);
-  useEffect(() => {
+  const [extra, setExtra] = React.useState(false);
+  React.useEffect(() => {
     if (!dynamic) {
       return;
     }
@@ -147,83 +186,45 @@ const Content = ({ dynamic, withPopover }: { dynamic: boolean; withPopover: bool
   );
 };
 
-const channel = mockChannel();
-channel.on('click', fn().mockName('click'));
-
 const meta = preview.meta({
+  title: 'Highlight',
+  decorators: [
+    (storyFn, { parameters }) => {
+      // @ts-expect-error Parameters are not inferred
+      parameters.highlights.forEach(({ selectors, options }) => highlight(selectors, options));
+      return storyFn();
+    },
+  ],
   render: (args, { parameters }) => {
-    useEffect(() => useHighlights({ channel, menuId: 'menu-id', rootId: 'root-id' }), []);
     return <Content dynamic={parameters.dynamic} withPopover={parameters.withPopover} />;
-  },
-  args: {
-    channel,
   },
   parameters: {
     layout: 'fullscreen',
-    highlight: {
-      disable: true,
-    },
+    highlights: [],
   },
 });
 
-const highlight = (
-  selectors: string[],
-  options?: {
-    selectable?: boolean;
-    styles?: Record<string, string>;
-    hoverStyles?: Record<string, string>;
-    focusStyles?: Record<string, string>;
-    keyframes?: string;
-    menu?: {
-      id: string;
-      title: string;
-      description?: string;
-      right?: string;
-      href?: string;
-      clickEvent?: string;
-    }[];
-  }
-) =>
-  channel.emit(HIGHLIGHT, {
-    selectors,
-    selectable: options?.selectable ?? !!options?.menu?.length,
-    styles: {
-      backgroundColor: `color-mix(in srgb, teal, transparent 80%)`,
-      outline: `1px solid color-mix(in srgb, teal, transparent 30%)`,
-    },
-    hoverStyles: {
-      outlineWidth: '2px',
-    },
-    focusStyles: {
-      backgroundColor: 'transparent',
-    },
-    ...options,
-  });
-
 export const Default = meta.story({
-  play: async () => {
-    highlight(['div', 'input']);
+  parameters: {
+    highlights: [{ selectors: ['div', 'input'] }],
   },
 });
 
 export const Multiple = meta.story({
-  play: async () => {
-    highlight(['main > div', 'input']);
-    highlight(['div > div'], {
-      styles: {
-        border: '3px solid hotpink',
-      },
-    });
+  parameters: {
+    highlights: [
+      { selectors: ['main > div', 'input'] },
+      { selectors: ['div > div'], options: { styles: { border: '3px solid hotpink' } } },
+    ],
   },
 });
 
 export const Dynamic = meta.story({
   parameters: {
     dynamic: true,
+    highlights: [{ selectors: ['div', 'input'] }],
   },
   play: async ({ canvasElement }) => {
-    highlight(['div', 'input']);
-
     const scaling = canvasElement.querySelector('#scaling') as HTMLElement;
     const moving = canvasElement.querySelector('#moving') as HTMLElement;
 
@@ -236,39 +237,46 @@ export const Dynamic = meta.story({
 });
 
 export const Styles = meta.story({
-  play: async () => {
-    highlight(['div', 'input'], {
-      styles: {
-        outline: '3px dashed hotpink',
-        animation: 'pulse 3s linear infinite',
-        transition: 'outline-offset 0.2s ease-in-out',
+  parameters: {
+    highlights: [
+      {
+        selectors: ['div', 'input'],
+        options: {
+          styles: {
+            outline: '3px dashed hotpink',
+            animation: 'pulse 3s linear infinite',
+            transition: 'outline-offset 0.2s ease-in-out',
+          },
+          focusStyles: {
+            outlineOffset: '3px',
+          },
+          keyframes: `@keyframes pulse {
+            0% { outline: 3px dashed rgba(255, 105, 180, 1); }
+            50% { outline: 3px dashed rgba(255, 105, 180, 0.2); }
+            100% { outline: 3px dashed rgba(255, 105, 180, 1); }
+          }`,
+        },
       },
-      focusStyles: {
-        outlineOffset: '3px',
-      },
-      keyframes: `@keyframes pulse {
-        0% { outline: 3px dashed rgba(255, 105, 180, 1); }
-        50% { outline: 3px dashed rgba(255, 105, 180, 0.2); }
-        100% { outline: 3px dashed rgba(255, 105, 180, 1); }
-      }`,
-    });
+    ],
   },
 });
 
 export const ScrollIntoView = meta.story({
-  play: async () => {
-    channel.emit(SCROLL_INTO_VIEW, '#footer');
-  },
+  decorators: [
+    (storyFn) => {
+      const emit = useChannel({});
+      React.useEffect(() => emit(SCROLL_INTO_VIEW, '#footer'), [emit]);
+      return storyFn();
+    },
+  ],
 });
 
 export const Selectable = meta.story({
+  parameters: {
+    highlights: [{ selectors: ['div', 'input'], options: { selectable: true } }],
+  },
   play: async () => {
-    highlight(['div', 'input'], {
-      selectable: true,
-    });
-
     await new Promise((resolve) => setTimeout(resolve, 200));
-
     await userEvent.pointer({
       coords: { pageX: 470, pageY: 240 },
       keys: '[MouseLeft]',
@@ -277,26 +285,31 @@ export const Selectable = meta.story({
 });
 
 export const Menu = meta.story({
+  parameters: {
+    highlights: [
+      {
+        selectors: ['div', 'input'],
+        options: {
+          menu: [
+            {
+              id: '1',
+              title: 'Insufficient color contrast',
+              description: 'Elements must meet minimum color contrast ratio thresholds.',
+              clickEvent: 'click',
+            },
+            {
+              id: '2',
+              title: 'Links need discernible text',
+              description: 'This is where a summary of the violation goes.',
+              clickEvent: 'click',
+            },
+          ],
+        },
+      },
+    ],
+  },
   play: async () => {
-    highlight(['div', 'input'], {
-      menu: [
-        {
-          id: '1',
-          title: 'Insufficient color contrast',
-          description: 'Elements must meet minimum color contrast ratio thresholds.',
-          clickEvent: 'click',
-        },
-        {
-          id: '2',
-          title: 'Links need discernible text',
-          description: 'This is where a summary of the violation goes.',
-          clickEvent: 'click',
-        },
-      ],
-    });
-
     await new Promise((resolve) => setTimeout(resolve, 200));
-
     await userEvent.pointer({
       coords: { pageX: 470, pageY: 240 },
       keys: '[MouseLeft]',
@@ -306,18 +319,14 @@ export const Menu = meta.story({
 
 export const OnPopover = meta.story({
   parameters: {
+    highlights: [{ selectors: ['[popover]'], options: { selectable: true } }],
     withPopover: true,
   },
   play: async ({ canvasElement }) => {
     const button = within(canvasElement).getByText('Open Popover 1');
     await userEvent.click(button);
 
-    highlight(['[popover]'], {
-      selectable: true,
-    });
-
     await new Promise((resolve) => setTimeout(resolve, 200));
-
     await userEvent.pointer({
       coords: { pageX: window.innerWidth / 2, pageY: window.innerHeight / 2 },
       keys: '[MouseLeft]',
@@ -325,40 +334,10 @@ export const OnPopover = meta.story({
   },
 });
 
-const Toggler = ({ children }: { children: React.ReactNode }) => {
-  useEffect(() => {
-    let timeout = setTimeout(() => highlight(['div']), 1500);
-    const interval = setInterval(() => {
-      channel.emit(RESET_HIGHLIGHT);
-      timeout = setTimeout(() => highlight(['div']), 1500);
-    }, 3000);
-    return () => {
-      clearInterval(interval);
-      clearTimeout(timeout);
-    };
-  }, []);
-  return children;
-};
-
-export const Toggling = meta.story({
-  decorators: [
-    (Story) => (
-      <Toggler>
-        <Story />
-      </Toggler>
-    ),
-  ],
-});
-
 export const LayoutCentered = meta.story({
   parameters: {
+    highlights: [{ selectors: ['div'] }],
     layout: 'centered',
   },
-  play: async () => {
-    highlight(['div']);
-  },
-  render: () => {
-    useEffect(() => useHighlights({ channel, menuId: 'menu-id', rootId: 'root-id' }), []);
-    return <div style={{ padding: 10 }}>Content</div>;
-  },
+  render: () => <div style={{ padding: 10 }}>Content</div>,
 });

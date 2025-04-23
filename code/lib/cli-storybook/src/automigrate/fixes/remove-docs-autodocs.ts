@@ -1,3 +1,5 @@
+import { loadConfig, writeConfig } from 'storybook/internal/csf-tools';
+
 import { dedent } from 'ts-dedent';
 
 import { updateMainConfig } from '../helpers/mainConfigFile';
@@ -5,6 +7,7 @@ import type { Fix } from '../types';
 
 interface RemoveDocsAutodocsOptions {
   hasAutodocs: boolean;
+  autodocs: boolean | 'tag' | undefined;
 }
 
 /**
@@ -21,12 +24,10 @@ export const removeDocsAutodocs: Fix<RemoveDocsAutodocsOptions> = {
     }
 
     try {
-      let hasAutodocs = false;
-
-      await updateMainConfig({ mainConfigPath, dryRun: true }, async (main) => {
-        const docs = main.getFieldValue(['docs']) || {};
-        hasAutodocs = 'autodocs' in docs;
-      });
+      const config = loadConfig(mainConfigPath).parse();
+      const docs = config.getFieldValue(['docs']) || {};
+      const hasAutodocs = 'autodocs' in docs;
+      const autodocs = docs.autodocs;
 
       if (!hasAutodocs) {
         return null;
@@ -34,6 +35,7 @@ export const removeDocsAutodocs: Fix<RemoveDocsAutodocsOptions> = {
 
       return {
         hasAutodocs,
+        autodocs,
       };
     } catch (err) {
       return null;
@@ -46,19 +48,21 @@ export const removeDocsAutodocs: Fix<RemoveDocsAutodocsOptions> = {
       This field was deprecated in Storybook 7-8 and is no longer supported.
       
       We will remove this field from your configuration.
+      If autodocs was set to true, we'll update your preview configuration to use tags: ["autodocs"].
       
       Would you like us to:
       1. Remove the docs.autodocs field from your Storybook configuration
     `;
   },
 
-  async run({ result, dryRun, mainConfigPath }) {
-    const { hasAutodocs } = result;
+  async run({ result, dryRun, mainConfigPath, previewConfigPath }) {
+    const { hasAutodocs, autodocs } = result;
 
     if (!hasAutodocs) {
       return;
     }
 
+    // Remove autodocs from main config
     await updateMainConfig({ mainConfigPath, dryRun: !!dryRun }, async (main) => {
       const docs = main.getFieldValue(['docs']) || {};
 
@@ -75,5 +79,19 @@ export const removeDocsAutodocs: Fix<RemoveDocsAutodocsOptions> = {
         main.setFieldValue(['docs'], docs);
       }
     });
+
+    // If autodocs was true, update preview config to use tags
+    if (autodocs === true && previewConfigPath) {
+      const previewConfig = loadConfig(previewConfigPath).parse();
+      const tags = previewConfig.getFieldValue(['tags']) || [];
+
+      if (!dryRun) {
+        // Only add autodocs tag if it's not already present
+        if (!tags.includes('autodocs')) {
+          previewConfig.setFieldValue(['tags'], [...tags, 'autodocs']);
+          await writeConfig(previewConfig);
+        }
+      }
+    }
   },
 };

@@ -1,0 +1,79 @@
+import { dedent } from 'ts-dedent';
+
+import { updateMainConfig } from '../helpers/mainConfigFile';
+import type { Fix } from '../types';
+
+interface RemoveDocsAutodocsOptions {
+  hasAutodocs: boolean;
+}
+
+/**
+ * Migration to remove the docs.autodocs field from main.ts config This field was deprecated in
+ * Storybook 7-8 and removed in Storybook 9
+ */
+export const removeDocsAutodocs: Fix<RemoveDocsAutodocsOptions> = {
+  id: 'remove-docs-autodocs',
+  versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
+
+  async check({ mainConfigPath }) {
+    if (!mainConfigPath) {
+      return null;
+    }
+
+    try {
+      let hasAutodocs = false;
+
+      await updateMainConfig({ mainConfigPath, dryRun: true }, async (main) => {
+        const docs = main.getFieldValue(['docs']) || {};
+        hasAutodocs = 'autodocs' in docs;
+      });
+
+      if (!hasAutodocs) {
+        return null;
+      }
+
+      return {
+        hasAutodocs,
+      };
+    } catch (err) {
+      return null;
+    }
+  },
+
+  prompt: () => {
+    return dedent`
+      The docs.autodocs field in your Storybook configuration has been removed in Storybook 9.
+      This field was deprecated in Storybook 7-8 and is no longer supported.
+      
+      We will remove this field from your configuration.
+      
+      Would you like us to:
+      1. Remove the docs.autodocs field from your Storybook configuration
+    `;
+  },
+
+  async run({ result, dryRun, mainConfigPath }) {
+    const { hasAutodocs } = result;
+
+    if (!hasAutodocs) {
+      return;
+    }
+
+    await updateMainConfig({ mainConfigPath, dryRun: !!dryRun }, async (main) => {
+      const docs = main.getFieldValue(['docs']) || {};
+
+      if (dryRun) {
+        return;
+      }
+
+      delete docs.autodocs;
+
+      // If docs object is now empty, remove it entirely
+      if (Object.keys(docs).length === 0) {
+        main.removeField(['docs']);
+      } else {
+        main.setFieldValue(['docs'], docs);
+      }
+    });
+  },
+};

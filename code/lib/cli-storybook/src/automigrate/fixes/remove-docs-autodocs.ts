@@ -86,9 +86,8 @@ export const removeDocsAutodocs: Fix<RemoveDocsAutodocsOptions> = {
       const tags = previewConfig.getFieldValue(['tags']) || [];
 
       if (!tags.includes('autodocs')) {
-        // Only add autodocs tag if it's not already present
+        logger.log(`🔄 Updating ${picocolors.cyan('tags')} parameter in preview config file...`);
         if (!dryRun) {
-          logger.log(`🔄 Updating ${picocolors.cyan('tags')} parameter in preview config file...`);
           previewConfig.setFieldValue(['tags'], [...tags, 'autodocs']);
           await writeConfig(previewConfig);
         }

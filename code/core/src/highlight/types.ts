@@ -20,7 +20,7 @@ export interface HighlightOptions {
   /** Whether the highlight is selectable (reveals the element's HTML) */
   selectable?: boolean;
   /** CSS styles to apply to the highlight */
-  styles: Record<string, string>;
+  styles?: Record<string, string>;
   /** CSS styles to apply to the highlight when it is hovered */
   hoverStyles?: Record<string, string>;
   /** CSS styles to apply to the highlight when it is focused or selected */
@@ -73,9 +73,9 @@ export type Highlight = {
   priority: number;
   selectors: string[];
   selectable: boolean;
-  styles: HighlightOptions['styles'];
-  hoverStyles?: HighlightOptions['hoverStyles'];
-  focusStyles?: HighlightOptions['focusStyles'];
+  styles: Record<string, string>;
+  hoverStyles?: Record<string, string>;
+  focusStyles?: Record<string, string>;
   menu?: HighlightOptions['menu'];
 };
 

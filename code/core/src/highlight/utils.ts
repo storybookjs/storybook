@@ -62,7 +62,12 @@ export const convertLegacy = (highlight: RawHighlightOptions): HighlightOptions 
       },
     };
   }
-  return highlight;
+  return {
+    styles: {
+      outline: '2px dashed #029cfd',
+    },
+    ...highlight,
+  };
 };
 
 export const isFunction = (obj: unknown): obj is (...args: any[]) => any => obj instanceof Function;

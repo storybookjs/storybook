@@ -60,11 +60,16 @@ export const DocsContainer: FC<PropsWithChildren<DocsContainerProps>> = ({
           <DocsPageWrapper
             toc={
               toc ? (
-                <TableOfContents
-                  className="sbdocs sbdocs-toc--custom"
-                  channel={context.channel}
-                  {...toc}
-                />
+                <section aria-labelledby="sbdocs-toc-heading">
+                  <h2 id="sbdocs-toc-heading" className="sbdocs sbdocs-toc-heading">
+                    Table of Contents
+                  </h2>
+                  <TableOfContents
+                    className="sbdocs sbdocs-toc--custom"
+                    channel={context.channel}
+                    {...toc}
+                  />
+                </section>
               ) : null
             }
           >

@@ -40,6 +40,7 @@ import reactNativeWebGenerator from './generators/REACT_NATIVE_WEB';
 import reactScriptsGenerator from './generators/REACT_SCRIPTS';
 import serverGenerator from './generators/SERVER';
 import solidGenerator from './generators/SOLID';
+import stencilGenerator from './generators/STENCIL';
 import svelteGenerator from './generators/SVELTE';
 import svelteKitGenerator from './generators/SVELTEKIT';
 import vue3Generator from './generators/VUE3';
@@ -167,6 +168,11 @@ const installStorybook = async <Project extends ProjectType>(
       case ProjectType.SERVER:
         return serverGenerator(packageManager, npmOptions, generatorOptions).then(
           commandLog('Adding Storybook support to your "Server" app')
+        );
+
+      case ProjectType.STENCIL:
+        return stencilGenerator(packageManager, npmOptions, generatorOptions).then(
+          commandLog('Adding Storybook support to your "Stencil" app')
         );
 
       case ProjectType.NX:

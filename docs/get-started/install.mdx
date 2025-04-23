@@ -111,6 +111,7 @@ There are some noteworthy items here:
   | Qwik           | `qwik`           |
   | React          | `react`          |
   | Server         | `server`         |
+  | Stencil        | `stencil`        |
   | Solid          | `solid`          |
   | Svelte         | `svelte`         |
   | Vue 3          | `vue3`           |
@@ -247,6 +248,11 @@ There are some noteworthy items here:
     * [Storybook's help documentation](https://storybook.js.org/community#support) to contact the community and ask for help.
   </IfRenderer>
 
+  <IfRenderer renderer="stencil">
+    * [Storybook's Stencil README](https://github.com/stenciljs/storybook) for more information on how to set up Storybook in your Qwik project.
+    * [Storybook's help documentation](https://storybook.js.org/community#support) to contact the community and ask for help.
+  </IfRenderer>
+
   <IfRenderer renderer="svelte">
     * Storybook's SvelteKit [framework documentation](./frameworks/sveltekit.mdx) for more information on how to set up Storybook in your SvelteKit project.
     * Storybook's Svelte Vite [framework documentation](./frameworks/svelte-vite.mdx) for more information on how to set up Storybook in your Svelte project with Vite.
@@ -268,6 +274,6 @@ There are some noteworthy items here:
   Now that you have successfully installed Storybook and understood how it works, let's continue where you left off in the [setup wizard](#run-the-setup-wizard) and delve deeper into writing stories.
 </IfRenderer>
 
-<IfRenderer renderer={['angular', 'vue', 'web-components', 'ember', 'html', 'svelte', 'preact', 'qwik', 'solid' ]}>
+<IfRenderer renderer={['angular', 'vue', 'web-components', 'ember', 'html', 'svelte', 'preact', 'qwik', 'solid', 'stencil' ]}>
   Now that you installed Storybook successfully, let’s take a look at a story that was written for us.
 </IfRenderer>

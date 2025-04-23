@@ -231,6 +231,16 @@ const MOCK_FRAMEWORK_FILES: {
       },
     },
   },
+  {
+    name: ProjectType.STENCIL,
+    files: {
+      'package.json': {
+        dependencies: {
+          '@stencil/core': '4.30.0',
+        },
+      },
+    },
+  },
 ];
 
 describe('Detect', () => {

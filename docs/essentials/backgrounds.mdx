@@ -5,13 +5,13 @@ sidebar:
   title: Backgrounds
 ---
 
-The backgrounds toolbar item allows you to set the background color on which the story renders in the UI:
+The backgrounds feature allows you to set the background color on which the story renders in the UI:
 
 <Video src="../_assets/essentials/addon-backgrounds-optimized.mp4" />
 
 ## Configuration
 
-By default, the backgrounds toolbar item includes a light and dark background.
+By default, the backgrounds feature includes a light and dark background.
 
 But you're not restricted to these backgrounds. You can configure your own set of colors with the `backgrounds` [parameter](../writing-stories/parameters.mdx) in your [`.storybook/preview.js|ts`](../configure/index.mdx#configure-story-rendering).
 
@@ -25,7 +25,7 @@ You can define the available background colors using the [`options` property](#o
 
 ## Defining the background for a story
 
-The backgrounds toolbar item enables you to change the background color applied to a story by selecting from the list of predefined background colors in the toolbar. If needed, you can set a story to default to a specific background color, by using the `globals` option:
+The backgrounds feature enables you to change the background color applied to a story by selecting from the list of predefined background colors in the toolbar. If needed, you can set a story to default to a specific background color, by using the `globals` option:
 
 {/* prettier-ignore-start */}
 
@@ -65,7 +65,7 @@ If you want to turn off backgrounds in a story, you can do so by configuring the
 
 ## Grid
 
-The backgrounds toolbar item also includes a Grid selector, which allows you to quickly see if your components are aligned.
+The backgrounds feature also includes a Grid selector, which allows you to quickly see if your components are aligned.
 
 You don't need additional configuration to get started. But its properties are fully customizable; if you don't supply any value to any of its properties, they'll default to the following values:
 
@@ -101,7 +101,9 @@ This module contributes the following [parameters](../writing-stories/parameters
 
 Type: `boolean`
 
-Turn off this module's behavior. This parameter is most useful to allow overriding at more specific levels. For example, if this parameter is set to `true` at the project level, it could be re-enabled by setting it to `false` at the meta (component) or story level.
+Disable this feature's behavior. If you wish to disable this feature for the entire Storybook, you should [do so in your main configuration file](./index.mdx#disabling-features).
+
+This parameter is most useful to allow overriding at more specific levels. For example, if this parameter is set to `true` at the project level, it could then be re-enabled by setting it to `false` at the meta (component) or story level.
 
 #### `grid`
 

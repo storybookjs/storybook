@@ -1,5 +1,5 @@
 ```js filename="MyComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="Without globals API"
-import { INITIAL_VIEWPORTS } from '@storybook/addon-viewport';
+import { INITIAL_VIEWPORTS } from 'storybook/viewport';
 
 import { MyComponent } from './MyComponent';
 
@@ -16,7 +16,7 @@ export default {
 
 ```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts-4-9" tabTitle="Without globals API"
 import type { Meta, StoryObj } from 'storybook-solidjs';
-import { INITIAL_VIEWPORTS } from '@storybook/addon-viewport';
+import { INITIAL_VIEWPORTS } from 'storybook/viewport';
 
 import { MyComponent } from './MyComponent';
 
@@ -35,7 +35,7 @@ export default meta;
 
 ```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="Without globals API"
 import type { Meta, StoryObj } from 'storybook-solidjs';
-import { INITIAL_VIEWPORTS } from '@storybook/addon-viewport';
+import { INITIAL_VIEWPORTS } from 'storybook/viewport';
 
 import { MyComponent } from './MyComponent';
 

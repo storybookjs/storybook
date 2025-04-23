@@ -13,7 +13,7 @@ export default {
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   addons: [
     //👇 Use getAbsolutePath when referencing Storybook's addons and frameworks
-    getAbsolutePath('@storybook/addon-essentials'),
+    getAbsolutePath('@storybook/addon-docs'),
   ],
 };
 ```
@@ -36,7 +36,7 @@ const config: StorybookConfig = {
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   addons: [
     //👇 Use getAbsolutePath when referencing Storybook's addons and frameworks
-    getAbsolutePath('@storybook/addon-essentials'),
+    getAbsolutePath('@storybook/addon-docs'),
   ],
 };
 

@@ -5,13 +5,13 @@ sidebar:
   title: Viewport
 ---
 
-The viewport toolbar item allows you to adjust the dimensions of the iframe your story is rendered in. It makes it easy to develop responsive UIs.
+The viewport feature allows you to adjust the dimensions of the iframe your story is rendered in. It makes it easy to develop responsive UIs.
 
 <Video src="../_assets/essentials/addon-viewports-optimized.mp4" />
 
 ## Configuration
 
-Out of the box, the viewport toolbar item offers you a standard set of viewports that you can use. If you want to change the default set of viewports, you can configure your own viewports with the `viewport` [parameter](../writing-stories/parameters.mdx) in your [`.storybook/preview.js|ts`](../configure/index.mdx#configure-story-rendering).
+Out of the box, the viewport feature offers you a standard set of viewports that you can use. If you want to change the default set of viewports, you can configure your own viewports with the `viewport` [parameter](../writing-stories/parameters.mdx) in your [`.storybook/preview.js|ts`](../configure/index.mdx#configure-story-rendering).
 
 You can define the available viewports using the [`options` property](#options) and set the initial viewport using the `initialGlobals` property:
 
@@ -23,7 +23,7 @@ You can define the available viewports using the [`options` property](#options) 
 
 ### Use a detailed set of devices
 
-By default, the viewport toolbar item will use a minimal set of viewports, which enables you to test your UI in common responsive scenarios. These are also available in the [`MINIMAL_VIEWPORTS` export](#minimal_viewports) and include the following devices:
+By default, the viewport feature will use a minimal set of viewports, which enables you to test your UI in common responsive scenarios. These are also available in the [`MINIMAL_VIEWPORTS` export](#minimal_viewports) and include the following devices:
 
 | Key       | Description  | Dimensions<br />(<abbr title="width">w</abbr>×<abbr title="height">h</abbr>, px) |
 | ----------|------------- | -------------------------------------------------------------------------------- |

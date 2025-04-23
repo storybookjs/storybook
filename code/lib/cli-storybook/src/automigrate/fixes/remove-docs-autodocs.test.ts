@@ -242,6 +242,47 @@ describe('remove-docs-autodocs migration', () => {
       expect(vi.mocked(writeConfig)).toHaveBeenCalled();
     });
 
+    it('adds autodocs tag to empty tags array in preview.js when autodocs is true', async () => {
+      const mainGetFieldValue = vi.fn().mockReturnValue({ autodocs: true });
+      const previewGetFieldValue = vi.fn().mockReturnValue(undefined);
+      const mockMain: MockConfigFile = {
+        getFieldValue: mainGetFieldValue,
+        setFieldValue: vi.fn(),
+        removeField: vi.fn(),
+        _ast: {},
+        _code: '',
+        _exports: {},
+        _exportDecls: [],
+      };
+      const mockPreview: MockConfigFile = {
+        getFieldValue: previewGetFieldValue,
+        setFieldValue: vi.fn(),
+        removeField: vi.fn(),
+        _ast: {},
+        _code: '',
+        _exports: {},
+        _exportDecls: [],
+      };
+
+      mockConfigs.set('main.ts', mockMain);
+      mockConfigs.set('preview.ts', mockPreview);
+
+      await typedRemoveDocsAutodocs.run({
+        result: { hasAutodocs: true, autodocs: true },
+        packageManager: mockPackageManager,
+        packageJson: mockPackageJson,
+        mainConfigPath: 'main.ts',
+        previewConfigPath: 'preview.ts',
+        storybookVersion: '9.0.0',
+        mainConfig: {} as StorybookConfigRaw,
+      });
+
+      expect(mainGetFieldValue).toHaveBeenCalledWith(['docs']);
+      expect(previewGetFieldValue).toHaveBeenCalledWith(['tags']);
+      expect(mockPreview.setFieldValue).toHaveBeenCalledWith(['tags'], ['autodocs']);
+      expect(vi.mocked(writeConfig)).toHaveBeenCalled();
+    });
+
     it('does nothing in dry run mode', async () => {
       const setFieldValue = vi.fn();
       const removeField = vi.fn();

@@ -534,8 +534,16 @@ export const useHighlights = ({
     highlights.set((value) => value.filter((h) => h.id !== id));
   };
 
-  const clearHighlights = () => {
+  const resetState = () => {
     highlights.set([]);
+    elements.set(new Map());
+    boxes.set([]);
+    clickCoords.set(undefined);
+    hoverCoords.set(undefined);
+    targets.set([]);
+    hovered.set([]);
+    focused.set(undefined);
+    selected.set(undefined);
   };
 
   let removeTimeout: NodeJS.Timeout;
@@ -585,7 +593,7 @@ export const useHighlights = ({
 
   channel.on(HIGHLIGHT, addHighlight);
   channel.on(REMOVE_HIGHLIGHT, removeHighlight);
-  channel.on(RESET_HIGHLIGHT, clearHighlights);
-  channel.on(STORY_CHANGED, clearHighlights);
+  channel.on(RESET_HIGHLIGHT, resetState);
+  channel.on(STORY_CHANGED, resetState);
   channel.on(SCROLL_INTO_VIEW, scrollIntoView);
 };

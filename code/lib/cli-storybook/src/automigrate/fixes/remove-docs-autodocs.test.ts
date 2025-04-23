@@ -10,6 +10,7 @@ import { removeDocsAutodocs } from './remove-docs-autodocs';
 // Mock ConfigFile type
 interface MockConfigFile {
   getFieldValue: (path: string[]) => any;
+  getSafeFieldValue: (path: string[]) => any;
   setFieldValue: (path: string[], value: any) => void;
   removeField: (path: string[]) => void;
   _ast: Record<string, unknown>;
@@ -69,7 +70,7 @@ const baseCheckOptions: CheckOptions = {
 };
 
 const typedRemoveDocsAutodocs = removeDocsAutodocs as Required<
-  Fix<{ hasAutodocs: boolean; autodocs: boolean | 'tag' | undefined }>
+  Fix<{ autodocs: boolean | 'tag' | undefined }>
 >;
 
 describe('remove-docs-autodocs migration', () => {
@@ -85,9 +86,10 @@ describe('remove-docs-autodocs migration', () => {
     });
 
     it('returns null if docs.autodocs not found in config', async () => {
-      const getFieldValue = vi.fn().mockReturnValue({});
+      const getSafeFieldValue = vi.fn().mockReturnValue(undefined);
       const mockMain: MockConfigFile = {
-        getFieldValue,
+        getFieldValue: vi.fn(),
+        getSafeFieldValue,
         setFieldValue: vi.fn(),
         removeField: vi.fn(),
         _ast: {},
@@ -107,13 +109,14 @@ describe('remove-docs-autodocs migration', () => {
         } as StorybookConfigRaw,
       });
       expect(result).toBeNull();
-      expect(vi.mocked(getFieldValue)).toHaveBeenCalledWith(['docs']);
+      expect(vi.mocked(getSafeFieldValue)).toHaveBeenCalledWith(['docs', 'autodocs']);
     });
 
     it('detects docs.autodocs when present with tag value', async () => {
-      const getFieldValue = vi.fn().mockReturnValue({ autodocs: 'tag' });
+      const getSafeFieldValue = vi.fn().mockReturnValue('tag');
       const mockMain: MockConfigFile = {
-        getFieldValue,
+        getFieldValue: vi.fn(),
+        getSafeFieldValue,
         setFieldValue: vi.fn(),
         removeField: vi.fn(),
         _ast: {},
@@ -133,16 +136,16 @@ describe('remove-docs-autodocs migration', () => {
         } as StorybookConfigRaw,
       });
       expect(result).toEqual({
-        hasAutodocs: true,
         autodocs: 'tag',
       });
-      expect(vi.mocked(getFieldValue)).toHaveBeenCalledWith(['docs']);
+      expect(vi.mocked(getSafeFieldValue)).toHaveBeenCalledWith(['docs', 'autodocs']);
     });
 
     it('detects docs.autodocs when present with true value', async () => {
-      const getFieldValue = vi.fn().mockReturnValue({ autodocs: true });
+      const getSafeFieldValue = vi.fn().mockReturnValue(true);
       const mockMain: MockConfigFile = {
-        getFieldValue,
+        getFieldValue: vi.fn(),
+        getSafeFieldValue,
         setFieldValue: vi.fn(),
         removeField: vi.fn(),
         _ast: {},
@@ -162,10 +165,9 @@ describe('remove-docs-autodocs migration', () => {
         } as StorybookConfigRaw,
       });
       expect(result).toEqual({
-        hasAutodocs: true,
         autodocs: true,
       });
-      expect(vi.mocked(getFieldValue)).toHaveBeenCalledWith(['docs']);
+      expect(vi.mocked(getSafeFieldValue)).toHaveBeenCalledWith(['docs', 'autodocs']);
     });
   });
 
@@ -175,6 +177,7 @@ describe('remove-docs-autodocs migration', () => {
       const getFieldValue = vi.fn().mockReturnValue({ autodocs: 'tag', defaultName: 'Docs' });
       const mockMain: MockConfigFile = {
         getFieldValue,
+        getSafeFieldValue: vi.fn(),
         setFieldValue,
         removeField: vi.fn(),
         _ast: {},
@@ -186,7 +189,7 @@ describe('remove-docs-autodocs migration', () => {
       mockConfigs.set('main.ts', mockMain);
 
       await typedRemoveDocsAutodocs.run({
-        result: { hasAutodocs: true, autodocs: 'tag' },
+        result: { autodocs: 'tag' },
         packageManager: mockPackageManager,
         packageJson: mockPackageJson,
         mainConfigPath: 'main.ts',
@@ -203,6 +206,7 @@ describe('remove-docs-autodocs migration', () => {
       const previewGetFieldValue = vi.fn().mockReturnValue(['existing-tag']);
       const mockMain: MockConfigFile = {
         getFieldValue: mainGetFieldValue,
+        getSafeFieldValue: vi.fn(),
         setFieldValue: vi.fn(),
         removeField: vi.fn(),
         _ast: {},
@@ -212,6 +216,7 @@ describe('remove-docs-autodocs migration', () => {
       };
       const mockPreview: MockConfigFile = {
         getFieldValue: previewGetFieldValue,
+        getSafeFieldValue: vi.fn(),
         setFieldValue: vi.fn(),
         removeField: vi.fn(),
         _ast: {},
@@ -224,7 +229,7 @@ describe('remove-docs-autodocs migration', () => {
       mockConfigs.set('preview.ts', mockPreview);
 
       await typedRemoveDocsAutodocs.run({
-        result: { hasAutodocs: true, autodocs: true },
+        result: { autodocs: true },
         packageManager: mockPackageManager,
         packageJson: mockPackageJson,
         mainConfigPath: 'main.ts',
@@ -247,6 +252,7 @@ describe('remove-docs-autodocs migration', () => {
       const previewGetFieldValue = vi.fn().mockReturnValue(undefined);
       const mockMain: MockConfigFile = {
         getFieldValue: mainGetFieldValue,
+        getSafeFieldValue: vi.fn(),
         setFieldValue: vi.fn(),
         removeField: vi.fn(),
         _ast: {},
@@ -256,6 +262,7 @@ describe('remove-docs-autodocs migration', () => {
       };
       const mockPreview: MockConfigFile = {
         getFieldValue: previewGetFieldValue,
+        getSafeFieldValue: vi.fn(),
         setFieldValue: vi.fn(),
         removeField: vi.fn(),
         _ast: {},
@@ -268,7 +275,7 @@ describe('remove-docs-autodocs migration', () => {
       mockConfigs.set('preview.ts', mockPreview);
 
       await typedRemoveDocsAutodocs.run({
-        result: { hasAutodocs: true, autodocs: true },
+        result: { autodocs: true },
         packageManager: mockPackageManager,
         packageJson: mockPackageJson,
         mainConfigPath: 'main.ts',
@@ -289,6 +296,7 @@ describe('remove-docs-autodocs migration', () => {
       const getFieldValue = vi.fn().mockReturnValue({ autodocs: true });
       const mockMain: MockConfigFile = {
         getFieldValue,
+        getSafeFieldValue: vi.fn(),
         setFieldValue,
         removeField,
         _ast: {},
@@ -298,6 +306,7 @@ describe('remove-docs-autodocs migration', () => {
       };
       const mockPreview: MockConfigFile = {
         getFieldValue: vi.fn().mockReturnValue(['existing-tag']),
+        getSafeFieldValue: vi.fn(),
         setFieldValue: vi.fn(),
         removeField: vi.fn(),
         _ast: {},
@@ -310,7 +319,7 @@ describe('remove-docs-autodocs migration', () => {
       mockConfigs.set('preview.ts', mockPreview);
 
       await typedRemoveDocsAutodocs.run({
-        result: { hasAutodocs: true, autodocs: true },
+        result: { autodocs: true },
         packageManager: mockPackageManager,
         packageJson: mockPackageJson,
         mainConfigPath: 'main.ts',

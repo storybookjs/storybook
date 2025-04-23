@@ -1,12 +1,20 @@
 import { loadConfig, writeConfig } from 'storybook/internal/csf-tools';
 
+import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 import { updateMainConfig } from '../helpers/mainConfigFile';
 import type { Fix } from '../types';
 
+const logger = {
+  log: (message: string) => {
+    if (process.env.NODE_ENV !== 'test') {
+      console.log(message);
+    }
+  },
+};
+
 interface RemoveDocsAutodocsOptions {
-  hasAutodocs: boolean;
   autodocs: boolean | 'tag' | undefined;
 }
 
@@ -25,16 +33,13 @@ export const removeDocsAutodocs: Fix<RemoveDocsAutodocsOptions> = {
 
     try {
       const config = loadConfig(mainConfigPath).parse();
-      const docs = config.getFieldValue(['docs']) || {};
-      const hasAutodocs = 'autodocs' in docs;
-      const autodocs = docs.autodocs;
+      const autodocs = config.getSafeFieldValue(['docs', 'autodocs']);
 
-      if (!hasAutodocs) {
+      if (autodocs === undefined) {
         return null;
       }
 
       return {
-        hasAutodocs,
         autodocs,
       };
     } catch (err) {
@@ -54,13 +59,10 @@ export const removeDocsAutodocs: Fix<RemoveDocsAutodocsOptions> = {
   },
 
   async run({ result, dryRun, mainConfigPath, previewConfigPath }) {
-    const { hasAutodocs, autodocs } = result;
-
-    if (!hasAutodocs) {
-      return;
-    }
+    const { autodocs } = result;
 
     // Remove autodocs from main config
+    logger.log(`🔄 Updating ${picocolors.cyan('docs')} parameter in main config file...`);
     await updateMainConfig({ mainConfigPath, dryRun: !!dryRun }, async (main) => {
       const docs = main.getFieldValue(['docs']) || {};
 
@@ -80,6 +82,7 @@ export const removeDocsAutodocs: Fix<RemoveDocsAutodocsOptions> = {
 
     // If autodocs was true, update preview config to use tags
     if (autodocs === true && previewConfigPath) {
+      logger.log(`🔄 Adding ${picocolors.cyan('autodocs')} tag to preview config file...`);
       const previewConfig = loadConfig(previewConfigPath).parse();
       const tags = previewConfig.getFieldValue(['tags']) || [];
 

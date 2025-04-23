@@ -63,9 +63,11 @@ export const useHighlights = ({
   rootId?: string;
   storybookRootId?: string;
 }) => {
-  // Clean up any existing instance of useHighlights
+  if (globalThis.__STORYBOOK_HIGHLIGHT_INITIALIZED) {
+    return;
+  }
 
-  (globalThis as any).__STORYBOOK_HIGHLIGHT_TEARDOWN?.();
+  globalThis.__STORYBOOK_HIGHLIGHT_INITIALIZED = true;
 
   const { document } = globalThis;
 
@@ -585,34 +587,4 @@ export const useHighlights = ({
   channel.on(RESET_HIGHLIGHT, clearHighlights);
   channel.on(STORY_CHANGED, clearHighlights);
   channel.on(SCROLL_INTO_VIEW, scrollIntoView);
-
-  const teardown = () => {
-    clearTimeout(removeTimeout);
-
-    document.body.removeEventListener('mousemove', onMouseMove);
-
-    channel.off(HIGHLIGHT, addHighlight);
-    channel.off(RESET_HIGHLIGHT, clearHighlights);
-    channel.off(STORY_CHANGED, clearHighlights);
-    channel.off(SCROLL_INTO_VIEW, scrollIntoView);
-
-    highlights.teardown();
-    elements.teardown();
-    boxes.teardown();
-    targets.teardown();
-    clickCoords.teardown();
-    hoverCoords.teardown();
-    hovered.teardown();
-    focused.teardown();
-    selected.teardown();
-
-    styleElementByHighlight.forEach((style) => style.remove());
-    boxElementByTargetElement.forEach((box) => box.remove());
-    document.getElementById(menuId)?.remove();
-    document.getElementById(rootId)?.remove();
-  };
-
-  (globalThis as any).__STORYBOOK_HIGHLIGHT_TEARDOWN = teardown;
-
-  return teardown;
 };

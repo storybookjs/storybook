@@ -44,14 +44,12 @@ export const removeDocsAutodocs: Fix<RemoveDocsAutodocsOptions> = {
 
   prompt: () => {
     return dedent`
-      The docs.autodocs field in your Storybook configuration has been removed in Storybook 9.
+      The \`docs.autodocs\` field in Storybook's main configuration has been removed in Storybook 9.
       This field was deprecated in Storybook 7-8 and is no longer supported.
       
-      We will remove this field from your configuration.
-      If autodocs was set to true, we'll update your preview configuration to use tags: ["autodocs"].
+      We can make the necessary changes in your configuration automatically.
       
-      Would you like us to:
-      1. Remove the docs.autodocs field from your Storybook configuration
+      More info: https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#mainjs-docsautodocs-is-deprecated
     `;
   },
 

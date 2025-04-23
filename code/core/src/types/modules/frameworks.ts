@@ -16,7 +16,7 @@ export type SupportedFrameworks =
   | 'web-components-vite'
   | 'qwik'
   | 'solid'
-  | 'stencil'
   | 'nuxt'
   | 'react-rsbuild'
-  | 'vue3-rsbuild';
+  | 'vue3-rsbuild'
+  | 'stencil';

@@ -840,7 +840,7 @@ export const daily: TemplateKey[] = [
   'internal/react18-webpack-babel',
   'react-native-web-vite/expo-ts',
   // 'react-native-web-vite/rn-cli-ts',
-  'stencil/default-ts',
+  // 'stencil/default-ts',
 ];
 
 export const templatesByCadence = { normal, merged, daily };

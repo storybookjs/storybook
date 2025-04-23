@@ -524,9 +524,10 @@ export const useHighlights = ({
 
   const addHighlight = (highlight: RawHighlightOptions) => {
     const info = convertLegacy(highlight);
-    if (info.selectors?.length) {
-      highlights.set((value) => [...value, info]);
-    }
+    highlights.set((value) => {
+      const others = info.id ? value.filter((h) => h.id !== info.id) : value;
+      return info.selectors?.length ? [...others, info] : others;
+    });
   };
 
   const removeHighlight = (id: string) => {

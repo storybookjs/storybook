@@ -82,13 +82,13 @@ export const removeDocsAutodocs: Fix<RemoveDocsAutodocsOptions> = {
 
     // If autodocs was true, update preview config to use tags
     if (autodocs === true && previewConfigPath) {
-      logger.log(`🔄 Adding ${picocolors.cyan('autodocs')} tag to preview config file...`);
       const previewConfig = loadConfig(previewConfigPath).parse();
       const tags = previewConfig.getFieldValue(['tags']) || [];
 
-      if (!dryRun) {
+      if (!tags.includes('autodocs')) {
         // Only add autodocs tag if it's not already present
-        if (!tags.includes('autodocs')) {
+        if (!dryRun) {
+          logger.log(`🔄 Updating ${picocolors.cyan('tags')} parameter in preview config file...`);
           previewConfig.setFieldValue(['tags'], [...tags, 'autodocs']);
           await writeConfig(previewConfig);
         }

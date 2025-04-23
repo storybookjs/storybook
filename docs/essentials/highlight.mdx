@@ -61,7 +61,7 @@ The element will briefly be highlighted in addition to being scrolled into view.
 
 ## Customize style
 
-By default, Highlight applies a standard style to the highlighted elements you've enabled for the story. However, you can provide custom CSS styles using the `styles`, `hoverStyles`, `focusStyles`, and `keyframes` properties. For example:
+By default, highlights receive a basic outline style. However, you can provide custom CSS styles using the `styles`, `hoverStyles`, `focusStyles`, and `keyframes` properties. For example:
 
 {/* prettier-ignore-start */}
 
@@ -69,7 +69,7 @@ By default, Highlight applies a standard style to the highlighted elements you'v
 
 {/* prettier-ignore-end */}
 
-Each of these are optional. In general, you should probably only use `hoverStyles` and `focusStyles` in conjunction with `selectable: true` or the `menu` property.
+Each of these are optional. In general, you should use `hoverStyles` and `focusStyles` in conjunction with `selectable: true` or the `menu` property. Note that pseudo-classes and pseudo-elements are not supported.
 
 ## API
 
@@ -95,24 +95,68 @@ import { HIGHLIGHT, REMOVE_HIGHLIGHT, RESET_HIGHLIGHT, SCROLL_INTO_VIEW } from '
 
 #### `HIGHLIGHT`
 
-Type: `string`
+An event that highlights DOM elements. The event payload must contain a `selectors` property assigned to an array of selectors matching the elements you want to highlight. See the [usage example](#highlighting-dom-elements), above.
 
-An event that highlights DOM elements. The event payload must contain an `elements` property assigned to an array of selectors matching the elements you want to highlight. See the [usage example](#highlighting-dom-elements), above.
+```ts
+channel.emit(HIGHLIGHT, /* HighlightOptions */ options);
+```
+
+```ts
+interface HighlightOptions {
+  /** Unique identifier for the highlight, required if you want to remove the highlight later */
+  id?: string;
+  /** HTML selectors of the elements */
+  selectors: string[];
+  /** Priority of the highlight, higher takes precedence, defaults to 0 */
+  priority?: number;
+  /** Whether the highlight is selectable (reveals the element's HTML) */
+  selectable?: boolean;
+  /** CSS styles to apply to the highlight */
+  styles?: Record<string, string>;
+  /** CSS styles to apply to the highlight when it is hovered */
+  hoverStyles?: Record<string, string>;
+  /** CSS styles to apply to the highlight when it is focused or selected */
+  focusStyles?: Record<string, string>;
+  /** Keyframes required for animations */
+  keyframes?: string;
+  /** Menu items to show when the highlight is selected (implies selectable: true) */
+  menu?: {
+    /** Unique identifier for the menu item */
+    id: string;
+    /** Title of the menu item */
+    title: string;
+    /** Description of the menu item */
+    description?: string;
+    /** Name for a channel event to trigger when the menu item is clicked */
+    clickEvent?: string;
+    /** HTML selectors for which this menu item should show (subset of `selectors`) */
+    selectors?: string[];
+  }[];
+}
+```
 
 #### `REMOVE_HIGHLIGHT`
 
-Type: `string`
-
 An event to remove a previously created highlight. The event payload must contain an `id` property assigned to the id of the highlight you want to remove. See the [usage example](#remove-highlights), above.
+
+```ts
+channel.emit(REMOVE_HIGHLIGHT, /* string */ id);
+```
 
 #### `RESET_HIGHLIGHT`
 
-Type: `string`
-
 An event to clear all highlights from highlighted elements. See the [usage example](#reset-highlighted-elements), above.
+
+```ts
+channel.emit(RESET_HIGHLIGHT);
+```
 
 #### `SCROLL_INTO_VIEW`
 
-Type: `string`
+An event to scroll a DOM element into view, and briefly highlight it. The event payload must contain a `selector` property assigned to the selector of the element you want to scroll into view. You may optionally provide an `options` object to customize the scroll behavior. See the [usage example](#scroll-into-view), above.
 
-An event to scroll a DOM element into view, and briefly highlight it. The event payload must contain a `selector` property assigned to the selector of the element you want to scroll into view. See the [usage example](#scroll-into-view), above.
+```ts
+channel.emit(SCROLL_INTO_VIEW, /* string */ selector, /* ScrollIntoViewOptions */ options);
+```
+
+See the [MDN documentation](https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollIntoView#scrollintoviewoptions) for more information on the `ScrollIntoViewOptions` type.

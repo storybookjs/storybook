@@ -58,7 +58,7 @@ const generator: Generator = async (packageManager, npmOptions, options) => {
     packageManager: packageManager as any,
     templateLocation: 'react-native',
     // this value for language is not used since we only ship the ts template. This means we just fallback to @storybook/react-native/template/cli.
-    language: SupportedLanguage.TYPESCRIPT_4_9,
+    language: SupportedLanguage.TYPESCRIPT,
     destination: storybookConfigFolder,
     features: options.features,
   });

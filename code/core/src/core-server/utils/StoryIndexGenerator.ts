@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { dirname, extname, join, normalize, relative, resolve, sep } from 'node:path';

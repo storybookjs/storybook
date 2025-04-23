@@ -1,6 +1,4 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
-
-/* eslint-disable no-underscore-dangle */
 import { types as t } from 'storybook/internal/babel';
 import { getStoryTitle } from 'storybook/internal/common';
 import { combineTags } from 'storybook/internal/csf';
@@ -267,7 +265,7 @@ export async function vitestTransform({
       ),
       t.importDeclaration(
         [t.importSpecifier(testStoryId, t.identifier('testStory'))],
-        t.stringLiteral('@storybook/addon-test/internal/test-utils')
+        t.stringLiteral('@storybook/addon-vitest/internal/test-utils')
       ),
     ];
 

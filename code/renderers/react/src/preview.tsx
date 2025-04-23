@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle,@typescript-eslint/naming-convention */
 import type { ComponentType } from 'react';
 
 import type { Meta, Preview, Story } from 'storybook/internal/csf';

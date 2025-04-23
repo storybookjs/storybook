@@ -1,6 +1,4 @@
 // @vitest-environment happy-dom
-
-/* eslint-disable no-underscore-dangle */
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 

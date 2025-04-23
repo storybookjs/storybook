@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import type { Channel } from 'storybook/internal/channels';
 import { once } from 'storybook/internal/client-logger';
 import {
@@ -13,6 +12,7 @@ import { global } from '@storybook/global';
 import { processError } from '@vitest/utils/error';
 
 import { EVENTS } from './EVENTS';
+import { addons } from './preview-api';
 import type { Call, CallRef, ControlStates, LogItem, Options, State, SyncPayload } from './types';
 import { CallStates } from './types';
 import './typings.d.ts';
@@ -235,9 +235,8 @@ export class Instrumenter {
     };
 
     // Support portable stories where addons are not available
-    // This is a workaround to avoid circular dependency
-    import('storybook/preview-api').then(({ addons }) => {
-      (addons ? addons.ready() : Promise.resolve()).then(() => {
+    if (addons) {
+      addons.ready().then(() => {
         this.channel = addons.getChannel();
 
         // A forceRemount might be triggered for debugging (on `start`), or elsewhere in Storybook.
@@ -261,7 +260,7 @@ export class Instrumenter {
         this.channel.on(EVENTS.NEXT, next(this.channel));
         this.channel.on(EVENTS.END, end);
       });
-    });
+    }
   }
 
   getState(storyId: StoryId) {
@@ -438,7 +437,6 @@ export class Instrumenter {
       }));
     }).then(() => {
       this.setState(call.storyId, (state) => {
-        // eslint-disable-next-line @typescript-eslint/naming-convention
         const { [call.id]: _, ...resolvers } = state.resolvers;
         return { isLocked: true, resolvers };
       });

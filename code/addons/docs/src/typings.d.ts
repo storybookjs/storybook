@@ -7,7 +7,10 @@ declare module 'sveltedoc-parser' {
 }
 
 declare var FEATURES: import('storybook/internal/types').StorybookConfigRaw['features'];
-
+declare var __DOCS_CONTEXT__: any;
+declare var PREVIEW_URL: any;
 declare var LOGLEVEL: 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'silent' | undefined;
-
 declare var TAGS_OPTIONS: import('storybook/internal/types').TagsOptions;
+
+declare module '*.md';
+declare module '*.md?raw';

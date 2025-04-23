@@ -2,12 +2,13 @@ import * as React from 'react';
 
 import { IconButton, TooltipNote, WithTooltip } from 'storybook/internal/components';
 
-import { ListUnorderedIcon } from '@storybook/icons';
+import { BookmarkHollowIcon, ListUnorderedIcon, LockIcon } from '@storybook/icons';
 
 import { transparentize } from 'polished';
 import { styled, typography } from 'storybook/theming';
 
 import { type Call, CallStates, type ControlStates } from '../../instrumenter/types';
+import { INTERNAL_RENDER_CALL_ID } from '../constants';
 import { isChaiError, isJestError, useAnsiToHtmlFilter } from '../utils';
 import type { Controls } from './InteractionsPanel';
 import { MatcherResult } from './MatcherResult';
@@ -93,6 +94,8 @@ const RowLabel = styled('button', {
 }));
 
 const RowActions = styled.div({
+  display: 'flex',
+  alignItems: 'center',
   padding: 6,
 });
 
@@ -115,10 +118,56 @@ const RowMessage = styled('div')(({ theme }) => ({
   },
 }));
 
+const RenderIcon = styled(BookmarkHollowIcon)(({ theme }) => ({
+  color: theme.color.seafoam,
+}));
+
+const RenderLabel = styled('span')(({ theme }) => ({
+  color: theme.color.defaultText,
+  fontFamily: theme.typography.fonts.base,
+  fontSize: theme.typography.size.s2 - 1,
+}));
+
+const RenderLockIcon = styled(LockIcon)(({ theme }) => ({
+  display: 'block',
+  width: 12,
+  height: 12,
+  margin: 6,
+  color: theme.color.mediumdark,
+}));
+
+const ErrorName = styled.span(({ theme }) => ({
+  color: theme.base === 'dark' ? '#5EC1FF' : '#0271B6',
+}));
+
+const ErrorMessage = styled.span(({ theme }) => ({
+  color: theme.base === 'dark' ? '#eee' : '#444',
+}));
+
+const ErrorExplainer = styled.p(({ theme }) => ({
+  color: theme.base === 'dark' ? theme.color.negative : theme.color.negativeText,
+  fontSize: theme.typography.size.s2,
+  maxWidth: 500,
+  textWrap: 'balance',
+}));
+
 export const Exception = ({ exception }: { exception: Call['exception'] }) => {
   const filter = useAnsiToHtmlFilter();
   if (!exception) {
     return null;
+  }
+  if (exception.callId === INTERNAL_RENDER_CALL_ID) {
+    return (
+      <RowMessage>
+        <pre>
+          <ErrorName>{exception.name}:</ErrorName> <ErrorMessage>{exception.message}</ErrorMessage>
+        </pre>
+        <ErrorExplainer>
+          The component failed to render properly. Automated component tests will not run until this
+          is resolved. Check the full error message in Storybook’s canvas to debug.
+        </ErrorExplainer>
+      </RowMessage>
+    );
   }
   if (isJestError(exception)) {
     return <MatcherResult {...exception} />;
@@ -171,6 +220,40 @@ export const Interaction = ({
 
   if (isHidden) {
     return null;
+  }
+
+  if (call.id === INTERNAL_RENDER_CALL_ID) {
+    return (
+      <RowContainer call={call} pausedAt={undefined}>
+        <RowHeader isInteractive>
+          <RowLabel aria-label="Render step" call={call} disabled>
+            {call.status === CallStates.ERROR ? (
+              <StatusIcon status={CallStates.ERROR} />
+            ) : call.status === CallStates.ACTIVE ? (
+              <StatusIcon status={CallStates.ACTIVE} />
+            ) : (
+              <RenderIcon />
+            )}
+            <MethodCallWrapper style={{ marginLeft: 6, marginBottom: 1 }}>
+              <RenderLabel>Render story</RenderLabel>
+            </MethodCallWrapper>
+          </RowLabel>
+          <RowActions>
+            <WithTooltip
+              trigger="hover"
+              hasChrome={false}
+              tooltip={<Note note="Render is the first step of all interactions" />}
+            >
+              <RenderLockIcon />
+            </WithTooltip>
+          </RowActions>
+        </RowHeader>
+
+        {call.status === CallStates.ERROR && call.exception?.callId === call.id && (
+          <Exception exception={call.exception} />
+        )}
+      </RowContainer>
+    );
   }
 
   return (

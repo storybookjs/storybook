@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/naming-convention */
 // should be node:http, but that caused the ui/manager to fail to build, might be able to switch this back once ui/manager is in the core
 import type { FileSystemCache } from 'storybook/internal/common';
 
@@ -192,6 +191,7 @@ export interface CLIOptions extends CLIBaseOptions {
   webpackStatsJson?: string | boolean;
   statsJson?: string | boolean;
   outputDir?: string;
+  previewOnly?: boolean;
 }
 
 export interface BuilderOptions {
@@ -267,14 +267,14 @@ export interface TypescriptOptions {
   /**
    * Enables type checking within Storybook.
    *
-   * @default `false`
+   * @default false
    */
   check: boolean;
 
   /**
    * Disable parsing TypeScript files through compiler.
    *
-   * @default `false`
+   * @default false
    */
   skipCompiler: boolean;
 }
@@ -356,23 +356,97 @@ export interface StorybookConfigRaw {
   staticDirs?: (DirectoryMapping | string)[];
   logLevel?: string;
   features?: {
-    /** Filter args with a "target" on the type from the render function (EXPERIMENTAL) */
+    /**
+     * Enable the integrated viewport addon
+     *
+     * @default true
+     */
+    viewport?: boolean;
+
+    /**
+     * Enable the integrated highlight addon
+     *
+     * @default true
+     */
+    highlight?: boolean;
+
+    /**
+     * Enable the integrated backgrounds addon
+     *
+     * @default true
+     */
+    backgrounds?: boolean;
+
+    /**
+     * Enable the integrated measure addon
+     *
+     * @default true
+     */
+    measure?: boolean;
+
+    /**
+     * Enable the integrated outline addon
+     *
+     * @default true
+     */
+    outline?: boolean;
+
+    /**
+     * Enable the integrated controls addon
+     *
+     * @default true
+     */
+    controls?: boolean;
+
+    /**
+     * Enable the integrated interactions addon
+     *
+     * @default true
+     */
+    interactions?: boolean;
+
+    /**
+     * Enable the integrated actions addon
+     *
+     * @default true
+     */
+    actions?: boolean;
+
+    /**
+     * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
+     *
+     * Filter args with a "target" on the type from the render function (EXPERIMENTAL)
+     */
     argTypeTargetsV7?: boolean;
 
-    /** Apply decorators from preview.js before decorators from addons or frameworks */
+    /**
+     * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
+     *
+     * Apply decorators from preview.js before decorators from addons or frameworks
+     */
     legacyDecoratorFileOrder?: boolean;
 
     /**
+     * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
+     *
      * Disallow implicit actions during rendering. This will be the default in Storybook 8.
      *
      * This will make sure that your story renders the same no matter if docgen is enabled or not.
      */
     disallowImplicitActionsInRenderV8?: boolean;
 
-    /** Enable asynchronous component rendering in React renderer */
+    /**
+     * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
+     *
+     * Enable asynchronous component rendering in React renderer
+     */
     experimentalRSC?: boolean;
 
-    /** Set NODE_ENV to development in built Storybooks for better testability and debuggability */
+    /**
+     * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
+     *
+     * Set NODE_ENV to development in built Storybooks for better testability and debuggability
+     */
     developmentModeForBuild?: boolean;
   };
 

@@ -78,7 +78,7 @@ type CLIOptions = {
  *
  * ```sh
  * sb add "@storybook/addon-docs"
- * sb add "@storybook/addon-test@9.0.1"
+ * sb add "@storybook/addon-vitest@9.0.1"
  * ```
  *
  * If there is no version specifier and it's a Storybook addon, it will try to use the version
@@ -173,7 +173,9 @@ export async function add(
   // TODO: remove try/catch once CSF factories is shipped, for now gracefully handle any error
   try {
     await syncStorybookAddons(mainConfig, previewConfigPath!);
-  } catch (e) {}
+  } catch (e) {
+    //
+  }
 
   if (!skipPostinstall && isCoreAddon(addonName)) {
     await postinstallAddon(addonName, { packageManager: packageManager.type, configDir, yes });

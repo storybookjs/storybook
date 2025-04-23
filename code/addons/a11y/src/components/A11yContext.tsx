@@ -2,12 +2,14 @@ import type { FC, PropsWithChildren } from 'react';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import {
+  STORY_CHANGED,
   STORY_FINISHED,
   STORY_RENDER_PHASE_CHANGED,
   type StoryFinishedPayload,
 } from 'storybook/internal/core-events';
 
-import type { AxeResults, Result } from 'axe-core';
+import type { ClickEventDetails } from 'storybook/highlight';
+import { HIGHLIGHT, RESET_HIGHLIGHT, SCROLL_INTO_VIEW } from 'storybook/highlight';
 import {
   experimental_getStatusStore,
   experimental_useStatusStore,
@@ -21,31 +23,15 @@ import {
 import type { Report } from 'storybook/preview-api';
 import { convert, themes } from 'storybook/theming';
 
-import {
-  HIGHLIGHT,
-  RESET_HIGHLIGHT,
-  SCROLL_INTO_VIEW,
-} from '../../../../core/src/highlight/constants';
-import {
-  ADDON_ID,
-  EVENTS,
-  PANEL_ID,
-  STATUS_TYPE_ID_A11Y,
-  STATUS_TYPE_ID_COMPONENT_TEST,
-} from '../constants';
+import { getFriendlySummaryForAxeResult, getTitleForAxeResult } from '../axeRuleMappingHelper';
+import { ADDON_ID, EVENTS, STATUS_TYPE_ID_A11Y, STATUS_TYPE_ID_COMPONENT_TEST } from '../constants';
 import type { A11yParameters } from '../params';
-import type { A11YReport } from '../types';
+import type { A11YReport, EnhancedResult, EnhancedResults } from '../types';
 import { RuleType } from '../types';
 import type { TestDiscrepancy } from './TestDiscrepancyMessage';
 
-export interface Results {
-  passes: Result[];
-  violations: Result[];
-  incomplete: Result[];
-}
-
 export interface A11yContextStore {
-  results: Results;
+  results: EnhancedResults | undefined;
   highlighted: boolean;
   toggleHighlight: () => void;
   tab: RuleType;
@@ -57,7 +43,7 @@ export interface A11yContextStore {
   handleManual: () => void;
   discrepancy: TestDiscrepancy;
   selectedItems: Map<string, string>;
-  toggleOpen: (event: React.SyntheticEvent<Element>, type: RuleType, item: Result) => void;
+  toggleOpen: (event: React.SyntheticEvent<Element>, type: RuleType, item: EnhancedResult) => void;
   allExpanded: boolean;
   handleCollapseAll: () => void;
   handleExpandAll: () => void;
@@ -65,18 +51,15 @@ export interface A11yContextStore {
   handleSelectionChange: (key: string) => void;
 }
 
+const theme = convert(themes.light);
 const colorsByType = {
-  [RuleType.VIOLATION]: convert(themes.light).color.negative,
-  [RuleType.PASS]: convert(themes.light).color.positive,
-  [RuleType.INCOMPLETION]: convert(themes.light).color.warning,
+  [RuleType.VIOLATION]: theme.color.negative,
+  [RuleType.PASS]: theme.color.positive,
+  [RuleType.INCOMPLETION]: theme.color.warning,
 };
 
 export const A11yContext = createContext<A11yContextStore>({
-  results: {
-    passes: [],
-    incomplete: [],
-    violations: [],
-  },
+  results: undefined,
   highlighted: false,
   toggleHighlight: () => {},
   tab: RuleType.VIOLATION,
@@ -95,12 +78,6 @@ export const A11yContext = createContext<A11yContextStore>({
   handleJumpToElement: () => {},
   handleSelectionChange: () => {},
 });
-
-const defaultResult = {
-  passes: [],
-  incomplete: [],
-  violations: [],
-};
 
 type Status = 'initial' | 'manual' | 'running' | 'error' | 'component-test-error' | 'ran' | 'ready';
 
@@ -122,7 +99,7 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
     return value;
   }, [api]);
 
-  const [results, setResults] = useAddonState<Results>(ADDON_ID, defaultResult);
+  const [results, setResults] = useAddonState<EnhancedResults | undefined>(ADDON_ID);
   const [tab, setTab] = useState(() => {
     const [type] = a11ySelection?.split('.') ?? [];
     return type && Object.values(RuleType).includes(type as RuleType)
@@ -169,12 +146,12 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
 
   // All items are expanded if something is selected from each result for the current tab
   const allExpanded = useMemo(() => {
-    const currentResults = results[tab];
-    return currentResults.every((result) => selectedItems.has(`${tab}.${result.id}`));
+    const currentResults = results?.[tab];
+    return currentResults?.every((result) => selectedItems.has(`${tab}.${result.id}`)) ?? false;
   }, [results, selectedItems, tab]);
 
   const toggleOpen = useCallback(
-    (event: React.SyntheticEvent<Element>, type: RuleType, item: Result) => {
+    (event: React.SyntheticEvent<Element>, type: RuleType, item: EnhancedResult) => {
       event.stopPropagation();
       const key = `${type}.${item.id}`;
       setSelectedItems((prev) => new Map(prev.delete(key) ? prev : prev.set(key, `${key}.1`)));
@@ -190,10 +167,10 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
     setSelectedItems(
       (prev) =>
         new Map(
-          results[tab].map((result) => {
+          results?.[tab]?.map((result) => {
             const key = `${tab}.${result.id}`;
             return [key, prev.get(key) ?? `${key}.1`];
-          })
+          }) ?? []
         )
     );
   }, [results, tab]);
@@ -209,7 +186,7 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
   }, []);
 
   const handleResult = useCallback(
-    (axeResults: AxeResults, id: string) => {
+    (axeResults: EnhancedResults, id: string) => {
       if (storyId === id) {
         setStatus('ran');
         setResults(axeResults);
@@ -222,6 +199,20 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
       }
     },
     [setResults, status, storyId]
+  );
+
+  const handleSelect = useCallback(
+    (itemId: string, details: ClickEventDetails) => {
+      const [type, id] = itemId.split('.');
+      const index =
+        results?.[type as RuleType]
+          ?.find((r) => r.id === id)
+          ?.nodes.findIndex((n) => details.selectors.some((s) => s === String(n.target))) ?? -1;
+      if (index !== -1) {
+        setSelectedItems(new Map([[`${type}.${id}`, `${type}.${id}.${index + 1}`]]));
+      }
+    },
+    [results]
   );
 
   const handleReport = useCallback(
@@ -242,7 +233,7 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
   const handleReset = useCallback(
     ({ newPhase }: { newPhase: string }) => {
       if (newPhase === 'loading') {
-        setResults(defaultResult);
+        setResults(undefined);
         if (manual) {
           setStatus('manual');
         } else {
@@ -257,10 +248,12 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
     {
       [EVENTS.RESULT]: handleResult,
       [EVENTS.ERROR]: handleError,
+      [EVENTS.SELECT]: handleSelect,
+      [STORY_CHANGED]: () => setSelectedItems(new Map()),
       [STORY_RENDER_PHASE_CHANGED]: handleReset,
       [STORY_FINISHED]: handleReport,
     },
-    [handleReset, handleReport, handleReset, handleError, handleResult]
+    [handleReset, handleReport, handleSelect, handleError, handleResult]
   );
 
   const handleManual = useCallback(() => {
@@ -268,10 +261,9 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
     emit(EVENTS.MANUAL, storyId, parameters);
   }, [emit, parameters, storyId]);
 
-  const handleCopyLink = useCallback(async (key: string) => {
-    const link = `${window.location.origin}${window.location.pathname}${window.location.search}&addonPanel=${PANEL_ID}&a11ySelection=${key}`;
+  const handleCopyLink = useCallback(async (linkPath: string) => {
     const { createCopyToClipboardFunction } = await import('storybook/internal/components');
-    await createCopyToClipboardFunction()(link);
+    await createCopyToClipboardFunction()(`${window.location.origin}${linkPath}`);
   }, []);
 
   const handleJumpToElement = useCallback(
@@ -291,26 +283,63 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
 
     const selected = Array.from(selectedItems.values()).flatMap((key) => {
       const [type, id, number] = key.split('.');
-      const result = results[type as RuleType].find((r) => r.id === id);
+      if (type !== tab) {
+        return [];
+      }
+      const result = results?.[type as RuleType]?.find((r) => r.id === id);
       const target = result?.nodes[Number(number) - 1]?.target;
-      return target ? [target] : [];
+      return target ? [String(target)] : [];
     });
     emit(HIGHLIGHT, {
-      elements: selected,
-      color: colorsByType[tab],
-      width: '2px',
-      offset: '0px',
+      priority: 1,
+      selectors: selected,
+      styles: {
+        outline: `1px solid color-mix(in srgb, ${colorsByType[tab]}, transparent 30%)`,
+        backgroundColor: 'transparent',
+      },
+      hoverStyles: {
+        outlineWidth: '2px',
+      },
+      focusStyles: {
+        backgroundColor: 'transparent',
+      },
+      menu: results?.[tab as RuleType].map((result) => ({
+        id: `${tab}.${result.id}`,
+        title: getTitleForAxeResult(result),
+        description: getFriendlySummaryForAxeResult(result),
+        clickEvent: EVENTS.SELECT,
+        selectors: result.nodes
+          .flatMap((n) => n.target)
+          .map(String)
+          .filter((e) => selected.includes(e)),
+      })),
     });
 
-    const others = results[tab as RuleType]
-      .flatMap((r) => r.nodes.map((n) => n.target))
+    const others = results?.[tab as RuleType]
+      .flatMap((r) => r.nodes.flatMap((n) => n.target).map(String))
       .filter((e) => !selected.includes(e));
     emit(HIGHLIGHT, {
-      elements: others,
-      color: `${colorsByType[tab]}99`,
-      style: 'dashed',
-      width: '1px',
-      offset: '1px',
+      selectors: others,
+      styles: {
+        outline: `1px solid color-mix(in srgb, ${colorsByType[tab]}, transparent 30%)`,
+        backgroundColor: `color-mix(in srgb, ${colorsByType[tab]}, transparent 60%)`,
+      },
+      hoverStyles: {
+        outlineWidth: '2px',
+      },
+      focusStyles: {
+        backgroundColor: 'transparent',
+      },
+      menu: results?.[tab as RuleType].map((result) => ({
+        id: `${tab}.${result.id}`,
+        title: getTitleForAxeResult(result),
+        description: getFriendlySummaryForAxeResult(result),
+        clickEvent: EVENTS.SELECT,
+        selectors: result.nodes
+          .flatMap((n) => n.target)
+          .map(String)
+          .filter((e) => !selected.includes(e)),
+      })),
     });
   }, [emit, highlighted, results, tab, selectedItems]);
 
@@ -318,11 +347,11 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
     if (!currentStoryA11yStatusValue) {
       return null;
     }
-    if (currentStoryA11yStatusValue === 'status-value:success' && results.violations.length > 0) {
+    if (currentStoryA11yStatusValue === 'status-value:success' && results?.violations.length) {
       return 'cliPassedBrowserFailed';
     }
 
-    if (currentStoryA11yStatusValue === 'status-value:error' && results.violations.length === 0) {
+    if (currentStoryA11yStatusValue === 'status-value:error' && !results?.violations.length) {
       if (status === 'ready' || status === 'ran') {
         return 'browserPassedCliFailed';
       }
@@ -332,7 +361,7 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
       }
     }
     return null;
-  }, [results.violations.length, status, currentStoryA11yStatusValue]);
+  }, [results?.violations.length, status, currentStoryA11yStatusValue]);
 
   return (
     <A11yContext.Provider

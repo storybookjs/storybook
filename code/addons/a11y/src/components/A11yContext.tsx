@@ -9,7 +9,7 @@ import {
 } from 'storybook/internal/core-events';
 
 import type { ClickEventDetails } from 'storybook/highlight';
-import { HIGHLIGHT, RESET_HIGHLIGHT, SCROLL_INTO_VIEW } from 'storybook/highlight';
+import { HIGHLIGHT, REMOVE_HIGHLIGHT, SCROLL_INTO_VIEW } from 'storybook/highlight';
 import {
   experimental_getStatusStore,
   experimental_useStatusStore,
@@ -276,7 +276,9 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
   }, [getInitialStatus, manual]);
 
   useEffect(() => {
-    emit(RESET_HIGHLIGHT);
+    emit(REMOVE_HIGHLIGHT, `${ADDON_ID}/selected`);
+    emit(REMOVE_HIGHLIGHT, `${ADDON_ID}/others`);
+
     if (!highlighted) {
       return;
     }
@@ -291,6 +293,7 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
       return target ? [String(target)] : [];
     });
     emit(HIGHLIGHT, {
+      id: `${ADDON_ID}/selected`,
       priority: 1,
       selectors: selected,
       styles: {
@@ -319,6 +322,7 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
       .flatMap((r) => r.nodes.flatMap((n) => n.target).map(String))
       .filter((e) => !selected.includes(e));
     emit(HIGHLIGHT, {
+      id: `${ADDON_ID}/others`,
       selectors: others,
       styles: {
         outline: `1px solid color-mix(in srgb, ${colorsByType[tab]}, transparent 30%)`,

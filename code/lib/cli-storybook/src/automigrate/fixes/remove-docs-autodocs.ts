@@ -63,22 +63,19 @@ export const removeDocsAutodocs: Fix<RemoveDocsAutodocsOptions> = {
 
     // Remove autodocs from main config
     logger.log(`🔄 Updating ${picocolors.cyan('docs')} parameter in main config file...`);
-    await updateMainConfig({ mainConfigPath, dryRun: !!dryRun }, async (main) => {
-      const docs = main.getFieldValue(['docs']) || {};
+    if (!dryRun) {
+      await updateMainConfig({ mainConfigPath, dryRun: !!dryRun }, async (main) => {
+        const docs = main.getFieldValue(['docs']) || {};
+        delete docs.autodocs;
 
-      if (dryRun) {
-        return;
-      }
-
-      delete docs.autodocs;
-
-      // If docs object is now empty, remove it entirely
-      if (Object.keys(docs).length === 0) {
-        main.removeField(['docs']);
-      } else {
-        main.setFieldValue(['docs'], docs);
-      }
-    });
+        // If docs object is now empty, remove it entirely
+        if (Object.keys(docs).length === 0) {
+          main.removeField(['docs']);
+        } else {
+          main.setFieldValue(['docs'], docs);
+        }
+      });
+    }
 
     // If autodocs was true, update preview config to use tags
     if (autodocs === true && previewConfigPath) {

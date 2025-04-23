@@ -135,6 +135,44 @@ interface HighlightOptions {
 }
 ```
 
+Menu items can specify a `clickEvent` to be emitted on the channel when the item is clicked. The channel event will receive two arguments: the menu item `id` and a `ClickEventDetails` object:
+
+```ts
+interface ClickEventDetails {
+  // Position and dimensions of the element on the page
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+  // Selector(s) which matched the element
+  selectors: string[];
+  // DOM element details
+  element: {
+    attributes: Record<string, string>;
+    localName: string;
+    tagName: string;
+    outerHTML: string;
+  };
+}
+```
+
+To listen for this event (assuming `clickEvent: 'MY_CLICK_EVENT'`):
+
+```ts
+import type { ClickEventDetails } from 'storybook/highlight';
+
+const handleClickEvent = (itemId: string, details: ClickEventDetails) => {
+  // do things
+}
+
+channel.on('MY_CLICK_EVENT', handleSelect)
+
+// Or with `useChannel`:
+useChannel({
+  MY_CLICK_EVENT: handleSelect,
+}, [handleSelect])
+```
+
 #### `REMOVE_HIGHLIGHT`
 
 An event to remove a previously created highlight. The event payload must contain an `id` property assigned to the id of the highlight you want to remove. See the [usage example](#remove-highlights), above.

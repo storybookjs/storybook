@@ -180,7 +180,7 @@ export const isTargeted = (
   boxElement: HTMLElement,
   coordinates: { x: number; y: number }
 ) => {
-  if (!coordinates) {
+  if (!boxElement || !coordinates) {
     return false;
   }
   let { left, top, width, height } = box;

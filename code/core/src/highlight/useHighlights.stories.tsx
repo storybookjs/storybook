@@ -239,17 +239,21 @@ export const Styles = meta.story({
   play: async () => {
     highlight(['div', 'input'], {
       styles: {
-        outline: '3px dashed hotpink',
+        backgroundColor: `color-mix(in srgb, hotpink, transparent 90%)`,
+        outline: '3px solid hotpink',
         animation: 'pulse 3s linear infinite',
         transition: 'outline-offset 0.2s ease-in-out',
       },
-      focusStyles: {
+      hoverStyles: {
         outlineOffset: '3px',
       },
+      focusStyles: {
+        backgroundColor: 'transparent',
+      },
       keyframes: `@keyframes pulse {
-        0% { outline: 3px dashed rgba(255, 105, 180, 1); }
-        50% { outline: 3px dashed rgba(255, 105, 180, 0.2); }
-        100% { outline: 3px dashed rgba(255, 105, 180, 1); }
+        0% { outline-color: rgba(255, 105, 180, 1); }
+        50% { outline-color: rgba(255, 105, 180, 0.2); }
+        100% { outline-color: rgba(255, 105, 180, 1); }
       }`,
     });
   },

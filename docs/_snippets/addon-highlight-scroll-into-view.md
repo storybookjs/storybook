@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/angular';
 import { componentWrapperDecorator } from '@storybook/angular';
 
 import { useChannel } from 'storybook/preview-api';
-import { HIGHLIGHT, RESET_HIGHLIGHT } from 'storybook/highlight';
+import { SCROLL_INTO_VIEW } from 'storybook/highlight';
 
 import { MyComponent } from './MyComponent.component';
 
@@ -14,14 +14,11 @@ const meta: Meta<MyComponent> = {
 export default meta;
 type Story = StoryObj<MyComponent>;
 
-export const ResetHighlight: Story = {
+export const ScrollIntoView: Story = {
   decorators: [
     componentWrapperDecorator((story) => {
       const emit = useChannel({});
-      emit(RESET_HIGHLIGHT); //👈 Remove previously highlighted elements
-      emit(HIGHLIGHT, {
-        selectors: ['header', 'section', 'footer'],
-      });
+      emit(SCROLL_INTO_VIEW, '#footer');
       return story;
     }),
   ],
@@ -38,14 +35,11 @@ export default {
   component: MyComponent,
 };
 
-export const ResetHighlight = {
+export const ScrollIntoView = {
   decorators: [
     (storyFn) => {
       const emit = useChannel({});
-      emit(RESET_HIGHLIGHT); //👈 Remove previously highlighted elements
-      emit(HIGHLIGHT, {
-        selectors: ['header', 'section', 'footer'],
-      });
+      emit(SCROLL_INTO_VIEW, '#footer');
       return storyFn();
     },
   ],
@@ -67,14 +61,11 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const ResetHighlight: Story = {
+export const ScrollIntoView: Story = {
   decorators: [
     (storyFn) => {
       const emit = useChannel({});
-      emit(RESET_HIGHLIGHT); //👈 Remove previously highlighted elements
-      emit(HIGHLIGHT, {
-        selectors: ['header', 'section', 'footer'],
-      });
+      emit(SCROLL_INTO_VIEW, '#footer');
       return storyFn();
     },
   ],
@@ -91,14 +82,11 @@ export default {
   component: MyComponent,
 };
 
-export const ResetHighlight = {
+export const ScrollIntoView = {
   decorators: [
     () => {
       const emit = useChannel({});
-      emit(RESET_HIGHLIGHT); //👈 Remove previously highlighted elements
-      emit(HIGHLIGHT, {
-        selectors: ['header', 'section', 'footer'],
-      });
+      emit(SCROLL_INTO_VIEW, '#footer');
       return {
         template: '<story />',
       };
@@ -122,14 +110,11 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const ResetHighlight: Story = {
+export const ScrollIntoView: Story = {
   decorators: [
     () => {
       const emit = useChannel({});
-      emit(RESET_HIGHLIGHT); //👈 Remove previously highlighted elements
-      emit(HIGHLIGHT, {
-        selectors: ['header', 'section', 'footer'],
-      });
+      emit(SCROLL_INTO_VIEW, '#footer');
       return {
         template: '<story />',
       };
@@ -146,14 +131,11 @@ export default {
   component: 'my-component',
 };
 
-export const ResetHighlight = {
+export const ScrollIntoView = {
   decorators: [
     (story) => {
       const emit = useChannel({});
-      emit(RESET_HIGHLIGHT); //👈 Remove previously highlighted elements
-      emit(HIGHLIGHT, {
-        selectors: ['header', 'section', 'footer'],
-      });
+      emit(SCROLL_INTO_VIEW, '#footer');
       return story();
     },
   ],
@@ -173,14 +155,11 @@ const meta: Meta = {
 export default meta;
 type Story = StoryObj;
 
-export const ResetHighlight: Story = {
+export const ScrollIntoView: Story = {
   decorators: [
     (story) => {
       const emit = useChannel({});
-      emit(RESET_HIGHLIGHT); //👈 Remove previously highlighted elements
-      emit(HIGHLIGHT, {
-        selectors: ['header', 'section', 'footer'],
-      });
+      emit(SCROLL_INTO_VIEW, '#footer');
       return story();
     },
   ],

@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/angular';
 import { componentWrapperDecorator } from '@storybook/angular';
 
 import { useChannel } from 'storybook/preview-api';
-import { HIGHLIGHT, RESET_HIGHLIGHT } from 'storybook/highlight';
+import { HIGHLIGHT, REMOVE_HIGHLIGHT } from 'storybook/highlight';
 
 import { MyComponent } from './MyComponent.component';
 
@@ -14,14 +14,15 @@ const meta: Meta<MyComponent> = {
 export default meta;
 type Story = StoryObj<MyComponent>;
 
-export const ResetHighlight: Story = {
+export const RemoveHighlight: Story = {
   decorators: [
     componentWrapperDecorator((story) => {
       const emit = useChannel({});
-      emit(RESET_HIGHLIGHT); //👈 Remove previously highlighted elements
       emit(HIGHLIGHT, {
+        id: 'my-unique-id',
         selectors: ['header', 'section', 'footer'],
       });
+      emit(REMOVE_HIGHLIGHT, 'my-unique-id');
       return story;
     }),
   ],
@@ -30,7 +31,7 @@ export const ResetHighlight: Story = {
 
 ```js filename="MyComponent.stories.js|jsx" renderer="react" language="js"
 import { useChannel } from 'storybook/preview-api';
-import { HIGHLIGHT, RESET_HIGHLIGHT } from 'storybook/highlight';
+import { HIGHLIGHT, REMOVE_HIGHLIGHT } from 'storybook/highlight';
 
 import { MyComponent } from './MyComponent';
 
@@ -38,14 +39,15 @@ export default {
   component: MyComponent,
 };
 
-export const ResetHighlight = {
+export const RemoveHighlight = {
   decorators: [
     (storyFn) => {
       const emit = useChannel({});
-      emit(RESET_HIGHLIGHT); //👈 Remove previously highlighted elements
       emit(HIGHLIGHT, {
+        id: 'my-unique-id',
         selectors: ['header', 'section', 'footer'],
       });
+      emit(REMOVE_HIGHLIGHT, 'my-unique-id');
       return storyFn();
     },
   ],
@@ -56,7 +58,7 @@ export const ResetHighlight = {
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { useChannel } from 'storybook/preview-api';
-import { HIGHLIGHT, RESET_HIGHLIGHT } from 'storybook/highlight';
+import { HIGHLIGHT, REMOVE_HIGHLIGHT } from 'storybook/highlight';
 
 import { MyComponent } from './MyComponent';
 
@@ -67,14 +69,15 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const ResetHighlight: Story = {
+export const RemoveHighlight: Story = {
   decorators: [
     (storyFn) => {
       const emit = useChannel({});
-      emit(RESET_HIGHLIGHT); //👈 Remove previously highlighted elements
       emit(HIGHLIGHT, {
+        id: 'my-unique-id',
         selectors: ['header', 'section', 'footer'],
       });
+      emit(REMOVE_HIGHLIGHT, 'my-unique-id');
       return storyFn();
     },
   ],
@@ -83,7 +86,7 @@ export const ResetHighlight: Story = {
 
 ```js filename="MyComponent.stories.js" renderer="vue" language="js"
 import { useChannel } from 'storybook/preview-api';
-import { HIGHLIGHT, RESET_HIGHLIGHT } from 'storybook/highlight';
+import { HIGHLIGHT, REMOVE_HIGHLIGHT } from 'storybook/highlight';
 
 import MyComponent from './MyComponent.vue';
 
@@ -91,14 +94,15 @@ export default {
   component: MyComponent,
 };
 
-export const ResetHighlight = {
+export const RemoveHighlight = {
   decorators: [
     () => {
       const emit = useChannel({});
-      emit(RESET_HIGHLIGHT); //👈 Remove previously highlighted elements
       emit(HIGHLIGHT, {
+        id: 'my-unique-id',
         selectors: ['header', 'section', 'footer'],
       });
+      emit(REMOVE_HIGHLIGHT, 'my-unique-id');
       return {
         template: '<story />',
       };
@@ -111,7 +115,7 @@ export const ResetHighlight = {
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import { useChannel } from 'storybook/preview-api';
-import { HIGHLIGHT, RESET_HIGHLIGHT } from 'storybook/highlight';
+import { HIGHLIGHT, REMOVE_HIGHLIGHT } from 'storybook/highlight';
 
 import MyComponent from './MyComponent.vue';
 
@@ -122,14 +126,15 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const ResetHighlight: Story = {
+export const RemoveHighlight: Story = {
   decorators: [
     () => {
       const emit = useChannel({});
-      emit(RESET_HIGHLIGHT); //👈 Remove previously highlighted elements
       emit(HIGHLIGHT, {
+        id: 'my-unique-id',
         selectors: ['header', 'section', 'footer'],
       });
+      emit(REMOVE_HIGHLIGHT, 'my-unique-id');
       return {
         template: '<story />',
       };
@@ -140,20 +145,21 @@ export const ResetHighlight: Story = {
 
 ```js filename="MyComponent.stories.js" renderer="web-components" language="js"
 import { useChannel } from 'storybook/preview-api';
-import { HIGHLIGHT, RESET_HIGHLIGHT } from 'storybook/highlight';
+import { HIGHLIGHT, REMOVE_HIGHLIGHT } from 'storybook/highlight';
 
 export default {
   component: 'my-component',
 };
 
-export const ResetHighlight = {
+export const RemoveHighlight = {
   decorators: [
     (story) => {
       const emit = useChannel({});
-      emit(RESET_HIGHLIGHT); //👈 Remove previously highlighted elements
       emit(HIGHLIGHT, {
+        id: 'my-unique-id',
         selectors: ['header', 'section', 'footer'],
       });
+      emit(REMOVE_HIGHLIGHT, 'my-unique-id');
       return story();
     },
   ],
@@ -164,7 +170,7 @@ export const ResetHighlight = {
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import { useChannel } from 'storybook/preview-api';
-import { HIGHLIGHT, RESET_HIGHLIGHT } from 'storybook/highlight';
+import { HIGHLIGHT, REMOVE_HIGHLIGHT } from 'storybook/highlight';
 
 const meta: Meta = {
   component: 'my-component',
@@ -173,14 +179,15 @@ const meta: Meta = {
 export default meta;
 type Story = StoryObj;
 
-export const ResetHighlight: Story = {
+export const RemoveHighlight: Story = {
   decorators: [
     (story) => {
       const emit = useChannel({});
-      emit(RESET_HIGHLIGHT); //👈 Remove previously highlighted elements
       emit(HIGHLIGHT, {
+        id: 'my-unique-id',
         selectors: ['header', 'section', 'footer'],
       });
+      emit(REMOVE_HIGHLIGHT, 'my-unique-id');
       return story();
     },
   ],

@@ -19,9 +19,24 @@ export const StyledHighlight: Story = {
     componentWrapperDecorator((story) => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
-        elements: ['h2', 'a', '.storybook-button'],
-        color: 'blue',
-        style: 'double', // 'dotted' | 'dashed' | 'solid' | 'double'
+        selectors: ['h2', 'a', '.storybook-button'],
+        styles: {
+          backgroundColor: `color-mix(in srgb, hotpink, transparent 90%)`,
+          outline: '3px solid hotpink',
+          animation: 'pulse 3s linear infinite',
+          transition: 'outline-offset 0.2s ease-in-out',
+        },
+        hoverStyles: {
+          outlineOffset: '3px',
+        },
+        focusStyles: {
+          backgroundColor: 'transparent',
+        },
+        keyframes: `@keyframes pulse {
+          0% { outline-color: rgba(255, 105, 180, 1); }
+          50% { outline-color: rgba(255, 105, 180, 0.2); }
+          100% { outline-color: rgba(255, 105, 180, 1); }
+        }`,
       });
       return story;
     }),
@@ -44,9 +59,24 @@ export const StyledHighlight = {
     (storyFn) => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
-        elements: ['h2', 'a', '.storybook-button'],
-        color: 'blue',
-        style: 'double', // 'dotted' | 'dashed' | 'solid' | 'double'
+        selectors: ['h2', 'a', '.storybook-button'],
+        styles: {
+          backgroundColor: `color-mix(in srgb, hotpink, transparent 90%)`,
+          outline: '3px solid hotpink',
+          animation: 'pulse 3s linear infinite',
+          transition: 'outline-offset 0.2s ease-in-out',
+        },
+        hoverStyles: {
+          outlineOffset: '3px',
+        },
+        focusStyles: {
+          backgroundColor: 'transparent',
+        },
+        keyframes: `@keyframes pulse {
+          0% { outline-color: rgba(255, 105, 180, 1); }
+          50% { outline-color: rgba(255, 105, 180, 0.2); }
+          100% { outline-color: rgba(255, 105, 180, 1); }
+        }`,
       });
       return storyFn();
     },
@@ -74,9 +104,24 @@ export const StyledHighlight: Story = {
     (storyFn) => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
-        elements: ['h2', 'a', '.storybook-button'],
-        color: 'blue',
-        style: 'double', // 'dotted' | 'dashed' | 'solid' | 'double'
+        selectors: ['h2', 'a', '.storybook-button'],
+        styles: {
+          backgroundColor: `color-mix(in srgb, hotpink, transparent 90%)`,
+          outline: '3px solid hotpink',
+          animation: 'pulse 3s linear infinite',
+          transition: 'outline-offset 0.2s ease-in-out',
+        },
+        hoverStyles: {
+          outlineOffset: '3px',
+        },
+        focusStyles: {
+          backgroundColor: 'transparent',
+        },
+        keyframes: `@keyframes pulse {
+          0% { outline-color: rgba(255, 105, 180, 1); }
+          50% { outline-color: rgba(255, 105, 180, 0.2); }
+          100% { outline-color: rgba(255, 105, 180, 1); }
+        }`,
       });
       return storyFn();
     },
@@ -99,9 +144,24 @@ export const StyledHighlight = {
     () => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
-        elements: ['h2', 'a', '.storybook-button'],
-        color: 'blue',
-        style: 'double', // 'dotted' | 'dashed' | 'solid' | 'double'
+        selectors: ['h2', 'a', '.storybook-button'],
+        styles: {
+          backgroundColor: `color-mix(in srgb, hotpink, transparent 90%)`,
+          outline: '3px solid hotpink',
+          animation: 'pulse 3s linear infinite',
+          transition: 'outline-offset 0.2s ease-in-out',
+        },
+        hoverStyles: {
+          outlineOffset: '3px',
+        },
+        focusStyles: {
+          backgroundColor: 'transparent',
+        },
+        keyframes: `@keyframes pulse {
+          0% { outline-color: rgba(255, 105, 180, 1); }
+          50% { outline-color: rgba(255, 105, 180, 0.2); }
+          100% { outline-color: rgba(255, 105, 180, 1); }
+        }`,
       });
       return {
         template: '<story />',
@@ -131,9 +191,24 @@ export const StyledHighlight: Story = {
     () => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
-        elements: ['h2', 'a', '.storybook-button'],
-        color: 'blue',
-        style: 'double', // 'dotted' | 'dashed' | 'solid' | 'double'
+        selectors: ['h2', 'a', '.storybook-button'],
+        styles: {
+          backgroundColor: `color-mix(in srgb, hotpink, transparent 90%)`,
+          outline: '3px solid hotpink',
+          animation: 'pulse 3s linear infinite',
+          transition: 'outline-offset 0.2s ease-in-out',
+        },
+        hoverStyles: {
+          outlineOffset: '3px',
+        },
+        focusStyles: {
+          backgroundColor: 'transparent',
+        },
+        keyframes: `@keyframes pulse {
+          0% { outline-color: rgba(255, 105, 180, 1); }
+          50% { outline-color: rgba(255, 105, 180, 0.2); }
+          100% { outline-color: rgba(255, 105, 180, 1); }
+        }`,
       });
       return {
         template: '<story />',
@@ -156,9 +231,24 @@ export const StyledHighlight = {
     (story) => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
-        elements: ['h2', 'a', '.storybook-button'],
-        color: 'blue',
-        style: 'double', // 'dotted' | 'dashed' | 'solid' | 'double'
+        selectors: ['h2', 'a', '.storybook-button'],
+        styles: {
+          backgroundColor: `color-mix(in srgb, hotpink, transparent 90%)`,
+          outline: '3px solid hotpink',
+          animation: 'pulse 3s linear infinite',
+          transition: 'outline-offset 0.2s ease-in-out',
+        },
+        hoverStyles: {
+          outlineOffset: '3px',
+        },
+        focusStyles: {
+          backgroundColor: 'transparent',
+        },
+        keyframes: `@keyframes pulse {
+          0% { outline-color: rgba(255, 105, 180, 1); }
+          50% { outline-color: rgba(255, 105, 180, 0.2); }
+          100% { outline-color: rgba(255, 105, 180, 1); }
+        }`,
       });
       return story();
     },
@@ -184,9 +274,24 @@ export const StyledHighlight: Story = {
     (story) => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
-        elements: ['h2', 'a', '.storybook-button'],
-        color: 'blue',
-        style: 'double', // 'dotted' | 'dashed' | 'solid' | 'double'
+        selectors: ['h2', 'a', '.storybook-button'],
+        styles: {
+          backgroundColor: `color-mix(in srgb, hotpink, transparent 90%)`,
+          outline: '3px solid hotpink',
+          animation: 'pulse 3s linear infinite',
+          transition: 'outline-offset 0.2s ease-in-out',
+        },
+        hoverStyles: {
+          outlineOffset: '3px',
+        },
+        focusStyles: {
+          backgroundColor: 'transparent',
+        },
+        keyframes: `@keyframes pulse {
+          0% { outline-color: rgba(255, 105, 180, 1); }
+          50% { outline-color: rgba(255, 105, 180, 0.2); }
+          100% { outline-color: rgba(255, 105, 180, 1); }
+        }`,
       });
       return story();
     },

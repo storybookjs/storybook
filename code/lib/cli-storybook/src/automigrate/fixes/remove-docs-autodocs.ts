@@ -63,9 +63,10 @@ export const removeDocsAutodocs: Fix<RemoveDocsAutodocsOptions> = {
 
     // Remove autodocs from main config
     logger.log(`🔄 Updating ${picocolors.cyan('docs')} parameter in main config file...`);
-    if (!dryRun) {
-      await updateMainConfig({ mainConfigPath, dryRun: !!dryRun }, async (main) => {
-        const docs = main.getFieldValue(['docs']) || {};
+    await updateMainConfig({ mainConfigPath, dryRun: !!dryRun }, async (main) => {
+      const docs = main.getFieldValue(['docs']) || {};
+
+      if (!dryRun) {
         delete docs.autodocs;
 
         // If docs object is now empty, remove it entirely
@@ -74,8 +75,8 @@ export const removeDocsAutodocs: Fix<RemoveDocsAutodocsOptions> = {
         } else {
           main.setFieldValue(['docs'], docs);
         }
-      });
-    }
+      }
+    });
 
     // If autodocs was true, update preview config to use tags
     if (autodocs === true && previewConfigPath) {
@@ -83,8 +84,9 @@ export const removeDocsAutodocs: Fix<RemoveDocsAutodocsOptions> = {
       const tags = previewConfig.getFieldValue(['tags']) || [];
 
       if (!tags.includes('autodocs')) {
-        logger.log(`🔄 Updating ${picocolors.cyan('tags')} parameter in preview config file...`);
+        // Only add autodocs tag if it's not already present
         if (!dryRun) {
+          logger.log(`🔄 Updating ${picocolors.cyan('tags')} parameter in preview config file...`);
           previewConfig.setFieldValue(['tags'], [...tags, 'autodocs']);
           await writeConfig(previewConfig);
         }

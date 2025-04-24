@@ -190,7 +190,8 @@ describe('run phase', () => {
                     };
                   "
       `);
-    expect(String(vi.mocked(writeFile).mock.calls[1][1]).replace(`"`, `'`)).toMatchInlineSnapshot(`
+    expect(String(vi.mocked(writeFile).mock.calls[1][1]).replaceAll(`"`, `'`))
+      .toMatchInlineSnapshot(`
         "
                     export default {
                       tags: ['existing-tag', 'autodocs']

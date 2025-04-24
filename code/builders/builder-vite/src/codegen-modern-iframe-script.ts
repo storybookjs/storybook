@@ -14,8 +14,8 @@ export async function generateModernIframeScriptCode(options: Options, projectRo
   const frameworkName = await getFrameworkName(options);
 
   const previewOrConfigFile = loadPreviewOrConfigFile({ configDir });
-  const previewConfig = await readConfig(previewOrConfigFile!);
-  const isCsf4 = isCsfFactoryPreview(previewConfig);
+  const previewConfig = previewOrConfigFile ? await readConfig(previewOrConfigFile) : undefined;
+  const isCsf4 = previewConfig ? isCsfFactoryPreview(previewConfig) : false;
 
   const previewAnnotations = await presets.apply<PreviewAnnotation[]>(
     'previewAnnotations',

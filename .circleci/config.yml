@@ -398,11 +398,14 @@ jobs:
       - attach_workspace:
           at: .
       - run:
-          name: Enable Corepack
-          command: sudo corepack enable
-      - run:
-          name: Install Corepack
-          command: sudo corepack install
+          name: Setup Corepack
+          command: |
+            # Enable corepack
+            sudo corepack enable
+
+            # Verify yarn is working
+            which yarn
+            yarn --version
       - run:
           name: Starting Event Collector
           command: yarn jiti ./event-log-collector.ts

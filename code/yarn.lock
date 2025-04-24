@@ -8366,13 +8366,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/uuid@npm:^9.0.1":
-  version: 9.0.7
-  resolution: "@types/uuid@npm:9.0.7"
-  checksum: 10c0/b329ebd4f9d1d8e08d4f2cc211be4922d70d1149f73d5772630e4a3acfb5170c6d37b3d7a39a0412f1a56e86e8a844c7f297c798b082f90380608bf766688787
-  languageName: node
-  linkType: hard
-
 "@types/webpack-env@npm:^1.18.0":
   version: 1.18.4
   resolution: "@types/webpack-env@npm:1.18.4"
@@ -25235,7 +25228,6 @@ __metadata:
     "@types/react-syntax-highlighter": "npm:11.0.5"
     "@types/react-transition-group": "npm:^4"
     "@types/semver": "npm:^7.5.8"
-    "@types/uuid": "npm:^9.0.1"
     "@types/ws": "npm:^8"
     "@vitest/expect": "npm:3.0.9"
     "@vitest/spy": "npm:3.0.9"
@@ -25328,7 +25320,6 @@ __metadata:
     typescript: "npm:^5.7.3"
     unique-string: "npm:^3.0.0"
     use-resize-observer: "npm:^9.1.0"
-    uuid: "npm:^9.0.0"
     watchpack: "npm:^2.2.0"
     ws: "npm:^8.18.0"
   peerDependencies:
@@ -27053,15 +27044,6 @@ __metadata:
   bin:
     uuid: dist/bin/uuid
   checksum: 10c0/bcbb807a917d374a49f475fae2e87fdca7da5e5530820ef53f65ba1d12131bd81a92ecf259cc7ce317cbe0f289e7d79fdfebcef9bfa3087c8c8a2fa304c9be54
-  languageName: node
-  linkType: hard
-
-"uuid@npm:^9.0.0":
-  version: 9.0.1
-  resolution: "uuid@npm:9.0.1"
-  bin:
-    uuid: dist/bin/uuid
-  checksum: 10c0/1607dd32ac7fc22f2d8f77051e6a64845c9bce5cd3dd8aa0070c074ec73e666a1f63c7b4e0f4bf2bc8b9d59dc85a15e17807446d9d2b17c8485fbc2147b27f9b
   languageName: node
   linkType: hard
 

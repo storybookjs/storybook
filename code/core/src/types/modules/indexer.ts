@@ -63,6 +63,32 @@ export type Indexer = BaseIndexer & {
    * @returns A promise that resolves to an array of {@link IndexInput} objects.
    */
   createIndex: (fileName: string, options: IndexerOptions) => Promise<IndexInput[]>;
+  
+  betterCreateStory?: (params: {
+    code: string;
+    sourceStoryId: StoryId;
+    changes: {
+      name: StoryName;
+      args: Record<string, any>;
+    };
+  }) => string;
+  betterUpdateStory?: (params: {
+    code: string;
+    sourceStoryId: StoryId;
+    changes: {
+      args: Record<string, any>;
+    };
+  }) => string;
+  
+  betterGenerateStoriesFile?: (params: {
+    componentFilePath: string;
+    componentExportName: string | 'default';
+  }) => ({
+    code: string;
+    extension: string;
+  });
+  betterComponentTest?: RegExp;
+
   saveStory?: (params: {
     sourceFilePath: string;
     sourceStoryId: StoryId;

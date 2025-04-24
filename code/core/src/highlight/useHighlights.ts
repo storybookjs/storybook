@@ -1,6 +1,6 @@
 /* eslint-env browser */
 import type { Channel } from 'storybook/internal/channels';
-import { STORY_CHANGED } from 'storybook/internal/core-events';
+import { STORY_RENDER_PHASE_CHANGED } from 'storybook/internal/core-events';
 
 import {
   HIGHLIGHT,
@@ -594,6 +594,10 @@ export const useHighlights = ({
   channel.on(HIGHLIGHT, addHighlight);
   channel.on(REMOVE_HIGHLIGHT, removeHighlight);
   channel.on(RESET_HIGHLIGHT, resetState);
-  channel.on(STORY_CHANGED, resetState);
   channel.on(SCROLL_INTO_VIEW, scrollIntoView);
+  channel.on(STORY_RENDER_PHASE_CHANGED, ({ newPhase }: { newPhase: string }) => {
+    if (newPhase === 'loading') {
+      resetState();
+    }
+  });
 };

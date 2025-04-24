@@ -569,7 +569,7 @@ export const useHighlights = ({
         selectable: false,
         styles: {
           outline: '2px solid #1EA7FD',
-          outlineOffset: '2px',
+          outlineOffset: '-1px',
           animation: `${keyframeName} 3s linear forwards`,
         },
         keyframes: `@keyframes ${keyframeName} {

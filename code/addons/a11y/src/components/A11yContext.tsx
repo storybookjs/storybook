@@ -320,7 +320,7 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
 
     const others = results?.[tab as RuleType]
       .flatMap((r) => r.nodes.flatMap((n) => n.target).map(String))
-      .filter((e) => !selected.includes(e));
+      .filter((e) => !['html', 'body', 'main', ...selected].includes(e));
     emit(HIGHLIGHT, {
       id: `${ADDON_ID}/others`,
       selectors: others,

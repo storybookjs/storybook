@@ -4,6 +4,7 @@ import { getStoryContentRawCode } from './content.js';
 
 import { getSvelteAST } from '$lib/parser/ast.js';
 import { extractSvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
+import dedent from 'dedent';
 
 describe(getStoryContentRawCode.name, () => {
   describe('When a `<Story />` is a self-closing tag...', () => {
@@ -153,7 +154,7 @@ describe(getStoryContentRawCode.name, () => {
   });
 
   describe('When a `<Story />` is NOT a self-closing tag...', () => {
-    it('works when a static children content provided', async ({ expect }) => {
+    it('works when a static children content provided with asChild', async ({ expect }) => {
       const code = `
         <script module>
           import { defineMeta } from "@storybook/addon-svelte-csf";
@@ -165,7 +166,7 @@ describe(getStoryContentRawCode.name, () => {
           });
         </script>
 
-        <Story name="Default">
+        <Story name="Default" asChild>
           <h1>Static content</h1>
         </Story>
       `;
@@ -182,6 +183,39 @@ describe(getStoryContentRawCode.name, () => {
       });
 
       expect(rawSource).toBe(`<h1>Static content</h1>`);
+    });
+
+    it('works when a static children content provided as a child to the component', async ({ expect }) => {
+      const code = `
+        <script module>
+          import { defineMeta } from "@storybook/addon-svelte-csf";
+
+          import SampleComponent from "./SampleComponent.svelte";
+
+          const { Story } = defineMeta({
+            component: SampleComponent,
+          });
+        </script>
+
+        <Story name="Default">
+          <h1>Static children content</h1>
+        </Story>
+      `;
+      const ast = getSvelteAST({ code });
+      const svelteASTNodes = await extractSvelteASTNodes({ ast });
+      const { storyComponents } = svelteASTNodes;
+      const component = storyComponents[0].component;
+      const rawSource = getStoryContentRawCode({
+        nodes: {
+          component,
+          svelte: svelteASTNodes,
+        },
+        originalCode: code,
+      });
+
+      expect(rawSource).toBe(dedent`<SampleComponent {...args}>
+          <h1>Static children content</h1>
+        </SampleComponent>`);
     });
 
     it("works when a `template` svelte's snippet block used inside", async ({ expect }) => {

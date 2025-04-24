@@ -8,6 +8,7 @@ import {
   findSetTemplateSnippetBlock,
   findStoryAttributeTemplateSnippetBlock,
 } from '$lib/parser/extract/svelte/snippet-block.js';
+import { extractStoryAttributesNodes } from '../../extract/svelte/story/attributes.js';
 
 interface Params {
   nodes: {
@@ -107,7 +108,32 @@ export function getStoryContentRawCode(params: Params): string {
   }
 
   /**
-   * Case - No inner `children`, just Story with a static content
+   * Case - Inner children used directly with `asChild` attribute
+   *
+   * Example:
+   *
+   * ```svelte
+   * <Story name="Default" asChild>
+   *     <SomeComponent foo="bar" />
+   * </Story>
+   * ```
+   */
+  const { asChild } = extractStoryAttributesNodes({
+    component,
+    attributes: ['asChild'],
+  });
+
+  const { fragment } = component;
+  const firstNode = fragment.nodes[0];
+  const lastNode = fragment.nodes[fragment.nodes.length - 1];
+  const rawCode = dedent(originalCode.slice(firstNode.start, lastNode.end));
+
+  if (asChild) {
+    return rawCode;
+  }
+
+  /**
+   * Case - `children` provided as prop to component or template
    *
    * Example:
    *
@@ -117,12 +143,15 @@ export function getStoryContentRawCode(params: Params): string {
    * </Story>
    * ```
    */
-  const { fragment } = component;
-  const firstNode = fragment.nodes[0];
-  const lastNode = fragment.nodes[fragment.nodes.length - 1];
-  const rawCode = originalCode.slice(firstNode.start, lastNode.end);
+  const defineMetaComponentValue = getDefineMetaComponentValue({
+    nodes: svelte,
+    filename,
+  });
 
-  return dedent(rawCode);
+  // NOTE: It should never be `undefined` in this particular case, otherwise Storybook wouldn't know what to render.
+  return dedent(`<${defineMetaComponentValue?.name} {...args}>
+    ${rawCode}
+  </${defineMetaComponentValue?.name}>`);
 }
 
 /**

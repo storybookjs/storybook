@@ -8366,13 +8366,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/uuid@npm:^9.0.1":
-  version: 9.0.7
-  resolution: "@types/uuid@npm:9.0.7"
-  checksum: 10c0/b329ebd4f9d1d8e08d4f2cc211be4922d70d1149f73d5772630e4a3acfb5170c6d37b3d7a39a0412f1a56e86e8a844c7f297c798b082f90380608bf766688787
-  languageName: node
-  linkType: hard
-
 "@types/webpack-env@npm:^1.18.0":
   version: 1.18.4
   resolution: "@types/webpack-env@npm:1.18.4"
@@ -25235,7 +25228,6 @@ __metadata:
     "@types/react-syntax-highlighter": "npm:11.0.5"
     "@types/react-transition-group": "npm:^4"
     "@types/semver": "npm:^7.5.8"
-    "@types/uuid": "npm:^9.0.1"
     "@types/ws": "npm:^8"
     "@vitest/expect": "npm:3.0.9"
     "@vitest/spy": "npm:3.0.9"

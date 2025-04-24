@@ -646,7 +646,6 @@
     "polished": "^4.2.2",
     "recast": "^0.23.5",
     "semver": "^7.6.2",
-    "uuid": "^9.0.0",
     "ws": "^8.18.0"
   },
   "devDependencies": {

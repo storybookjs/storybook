@@ -278,7 +278,7 @@ export const StyledHighlight: Story = {
         styles: {
           backgroundColor: `color-mix(in srgb, hotpink, transparent 90%)`,
           outline: '3px solid hotpink',
-          animation: 'pulse 3s linear infinite',
+          animation: 'sb-highlight-pulse 3s linear infinite',
           transition: 'outline-offset 0.2s ease-in-out',
         },
         hoverStyles: {
@@ -287,7 +287,7 @@ export const StyledHighlight: Story = {
         focusStyles: {
           backgroundColor: 'transparent',
         },
-        keyframes: `@keyframes pulse {
+        keyframes: `@keyframes sb-highlight-pulse {
           0% { outline-color: rgba(255, 105, 180, 1); }
           50% { outline-color: rgba(255, 105, 180, 0.2); }
           100% { outline-color: rgba(255, 105, 180, 1); }

@@ -701,9 +701,7 @@ The Code Panel can be enabled by adding the following parameter to your stories 
 ```js
 export const parameters = {
   docs: {
-    source: {
-      codePanel: true,
-    },
+    codePanel: true,
   },
 };
 ```
@@ -714,9 +712,7 @@ Or for individual stories:
 export const MyStory = {
   parameters: {
     docs: {
-      source: {
-        codePanel: true,
-      },
+      codePanel: true,
     },
   },
 };

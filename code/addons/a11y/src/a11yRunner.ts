@@ -1,13 +1,12 @@
-import { deprecate } from 'storybook/internal/client-logger';
 import { ElementA11yParameterError } from 'storybook/internal/preview-errors';
 
 import { global } from '@storybook/global';
 
-import type { AxeResults, ContextProp, ContextSpec, Selector, SelectorList } from 'axe-core';
+import type { AxeResults, ContextProp, ContextSpec } from 'axe-core';
 import { addons } from 'storybook/preview-api';
 
 import { EVENTS } from './constants';
-import type { A11yParameters, SelectorWithoutNode } from './params';
+import type { A11yParameters } from './params';
 
 const { document } = global;
 

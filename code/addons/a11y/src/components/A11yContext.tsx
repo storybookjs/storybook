@@ -24,7 +24,13 @@ import type { Report } from 'storybook/preview-api';
 import { convert, themes } from 'storybook/theming';
 
 import { getFriendlySummaryForAxeResult, getTitleForAxeResult } from '../axeRuleMappingHelper';
-import { ADDON_ID, EVENTS, STATUS_TYPE_ID_A11Y, STATUS_TYPE_ID_COMPONENT_TEST } from '../constants';
+import {
+  ADDON_ID,
+  DEFAULT_DELAY,
+  EVENTS,
+  STATUS_TYPE_ID_A11Y,
+  STATUS_TYPE_ID_COMPONENT_TEST,
+} from '../constants';
 import type { A11yParameters } from '../params';
 import type { A11YReport, EnhancedResult, EnhancedResults } from '../types';
 import { RuleType } from '../types';
@@ -83,6 +89,7 @@ type Status = 'initial' | 'manual' | 'running' | 'error' | 'component-test-error
 
 export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
   const parameters = useParameter<A11yParameters>('a11y', {});
+  const { delay = DEFAULT_DELAY } = parameters;
 
   const [globals] = useGlobals() ?? [];
   const api = useStorybookApi();
@@ -234,14 +241,17 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
     ({ newPhase }: { newPhase: string }) => {
       if (newPhase === 'loading') {
         setResults(undefined);
-        if (manual) {
-          setStatus('manual');
+        setStatus(manual ? 'manual' : 'initial');
+      }
+      if (newPhase === 'afterEach' && !manual) {
+        if (typeof delay === 'number') {
+          setTimeout(() => setStatus((s) => (s === 'initial' ? 'running' : s)), delay);
         } else {
           setStatus('running');
         }
       }
     },
-    [manual, setResults]
+    [delay, manual, setResults]
   );
 
   const emit = useChannel(

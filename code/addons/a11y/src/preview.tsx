@@ -4,7 +4,7 @@ import type { AxeResults, Result } from 'axe-core';
 import { expect } from 'storybook/test';
 
 import { run } from './a11yRunner';
-import { PANEL_ID } from './constants';
+import { DEFAULT_DELAY, PANEL_ID } from './constants';
 import type { A11yParameters } from './params';
 import { getIsVitestStandaloneRun } from './utils';
 
@@ -39,15 +39,13 @@ export const experimental_afterEach: AfterEach<any> = async ({
   viewMode,
 }) => {
   const a11yParameter: A11yParameters | undefined = parameters.a11y;
-  const a11yGlobals = globals.a11y;
+  const { delay = DEFAULT_DELAY, disable, test } = a11yParameter ?? {};
+  const { manual } = globals.a11y ?? {};
 
-  const shouldRunEnvironmentIndependent =
-    a11yParameter?.disable !== true &&
-    a11yParameter?.test !== 'off' &&
-    a11yGlobals?.manual !== true;
+  const shouldRunEnvironmentIndependent = disable !== true && test !== 'off' && manual !== true;
 
   const getMode = (): (typeof reporting)['reports'][0]['status'] => {
-    switch (a11yParameter?.test) {
+    switch (test) {
       case 'todo':
         return 'warning';
       case 'error':
@@ -58,6 +56,10 @@ export const experimental_afterEach: AfterEach<any> = async ({
 
   if (shouldRunEnvironmentIndependent && viewMode === 'story') {
     try {
+      if (typeof delay === 'number') {
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+
       const result = await run(a11yParameter);
 
       if (result) {

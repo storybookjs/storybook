@@ -41,4 +41,6 @@ export interface A11yParameters {
   disable?: boolean;
   /** Defines how accessibility violations should be handled: 'off', 'todo', or 'error'. */
   test?: A11yTest;
+  /** Delay in milliseconds before running automatic accessibility tests, or false to disable. */
+  delay?: number | false;
 }

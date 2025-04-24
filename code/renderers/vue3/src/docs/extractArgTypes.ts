@@ -20,7 +20,6 @@ export const extractArgTypes: ArgTypesExtractor = (component): StrictArgTypes | 
   }
 
   const usedDocgenPlugin: VueDocgenPlugin =
-    // eslint-disable-next-line no-underscore-dangle
     'exposed' in component.__docgenInfo ? 'vue-component-meta' : 'vue-docgen-api';
 
   const argTypes: StrictArgTypes = {};

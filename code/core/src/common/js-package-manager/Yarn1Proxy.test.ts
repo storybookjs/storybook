@@ -51,7 +51,10 @@ describe('Yarn 1 Proxy', () => {
       await yarn1Proxy.runPackageCommand('compodoc', ['-e', 'json', '-d', '.']);
 
       expect(executeCommandSpy).toHaveBeenLastCalledWith(
-        expect.objectContaining({ command: 'yarn', args: ['compodoc', '-e', 'json', '-d', '.'] })
+        expect.objectContaining({
+          command: 'yarn',
+          args: ['exec', 'compodoc', '-e', 'json', '-d', '.'],
+        })
       );
     });
   });

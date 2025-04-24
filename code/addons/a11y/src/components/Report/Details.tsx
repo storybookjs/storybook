@@ -5,10 +5,10 @@ import { Button, Link, SyntaxHighlighter } from 'storybook/internal/components';
 import { CheckIcon, CopyIcon, LocationIcon } from '@storybook/icons';
 
 import * as Tabs from '@radix-ui/react-tabs';
-import type { NodeResult, Result } from 'axe-core';
 import { styled } from 'storybook/theming';
 
-import type { RuleType } from '../../types';
+import { getFriendlySummaryForAxeResult } from '../../axeRuleMappingHelper';
+import type { EnhancedNodeResult, EnhancedResult, RuleType } from '../../types';
 import { useA11yContext } from '../A11yContext';
 
 const StyledSyntaxHighlighter = styled(SyntaxHighlighter)(
@@ -128,18 +128,19 @@ const CopyButton = ({ onClick }: { onClick: () => void }) => {
 };
 
 interface DetailsProps {
-  item: Result;
+  id: string;
+  item: EnhancedResult;
   type: RuleType;
   selection: string | undefined;
   handleSelectionChange: (key: string) => void;
 }
 
-export const Details = ({ item, type, selection, handleSelectionChange }: DetailsProps) => (
-  <Wrapper>
+export const Details = ({ id, item, type, selection, handleSelectionChange }: DetailsProps) => (
+  <Wrapper id={id}>
     <Info>
       <RuleId>{item.id}</RuleId>
       <Description>
-        {item.description.endsWith('.') ? item.description : `${item.description}.`}{' '}
+        {getFriendlySummaryForAxeResult(item)}{' '}
         <Link href={item.helpUrl} target="_blank" withArrow>
           How to resolve this
         </Link>
@@ -165,7 +166,7 @@ export const Details = ({ item, type, selection, handleSelectionChange }: Detail
                   </Item>
                 </Tabs.Trigger>
                 <Tabs.Content value={key} asChild>
-                  <Content side="left">{getContent(node, key)}</Content>
+                  <Content side="left">{getContent(node)}</Content>
                 </Tabs.Content>
               </Fragment>
             );
@@ -176,7 +177,7 @@ export const Details = ({ item, type, selection, handleSelectionChange }: Detail
           const key = `${type}.${item.id}.${index + 1}`;
           return (
             <Tabs.Content key={key} value={key} asChild>
-              <Content side="right">{getContent(node, key)}</Content>
+              <Content side="right">{getContent(node)}</Content>
             </Tabs.Content>
           );
         })}
@@ -185,7 +186,7 @@ export const Details = ({ item, type, selection, handleSelectionChange }: Detail
   </Wrapper>
 );
 
-function getContent(node: NodeResult, key: string) {
+function getContent(node: EnhancedNodeResult) {
   const { handleCopyLink, handleJumpToElement } = useA11yContext();
   const { any, all, none, html, target } = node;
   const rules = [...any, ...all, ...none];
@@ -203,7 +204,7 @@ function getContent(node: NodeResult, key: string) {
         <Button onClick={() => handleJumpToElement(node.target.toString())}>
           <LocationIcon /> Jump to element
         </Button>
-        <CopyButton onClick={() => handleCopyLink(key)} />
+        <CopyButton onClick={() => handleCopyLink(node.linkPath)} />
       </Actions>
 
       {/* Technically this is HTML but we use JSX to avoid using an HTML comment */}

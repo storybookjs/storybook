@@ -57,13 +57,10 @@ Type: `ChannelOptions`
 
 ```ts
 {
-  allowClass: boolean;
   allowDate: boolean;
-  allowFunction: boolean;
   allowRegExp: boolean;
   allowSymbol: boolean;
   allowUndefined: boolean;
-  lazyEval: boolean;
   maxDepth: number;
   space: number | undefined;
 }
@@ -73,13 +70,6 @@ Configures the channel used by Storybook to communicate between the manager and 
 
 Only two properties are likely to be used:
 
-### `channelOptions.allowFunction`
-
-Type: `boolean`
-
-Default: `false`
-
-Enables serializing functions across the channel, which can be a security risk.
 
 ### `channelOptions.maxDepth`
 

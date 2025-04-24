@@ -522,8 +522,17 @@ export async function doInitiate(options: CommandOptions): Promise<
   const rootDirectory = getProjectRoot();
   if (foundGitIgnoreFile && foundGitIgnoreFile.includes(rootDirectory)) {
     const contents = await fs.readFile(foundGitIgnoreFile, 'utf-8');
-    if (!contents.includes('*storybook.log')) {
-      await fs.appendFile(foundGitIgnoreFile, '\n*storybook.log\n');
+    const hasStorybookLog = contents.includes('*storybook.log');
+    const hasStorybookStatic = contents.includes('storybook-static');
+    const linesToAdd = [
+      !hasStorybookLog ? '*storybook.log' : '',
+      !hasStorybookStatic ? 'storybook-static' : '',
+    ]
+      .filter(Boolean)
+      .join('\n');
+
+    if (linesToAdd) {
+      await fs.appendFile(foundGitIgnoreFile, `\n${linesToAdd}\n`);
     }
   }
 
@@ -534,10 +543,10 @@ export async function doInitiate(options: CommandOptions): Promise<
 
   if (selectedFeatures.has('test')) {
     logger.log(
-      `> npx storybook@${versions.storybook} add @storybook/addon-test@${versions['@storybook/addon-test']}`
+      `> npx storybook@${versions.storybook} add @storybook/addon-vitest@${versions['@storybook/addon-vitest']}`
     );
     execSync(
-      `npx storybook@${versions.storybook} add @storybook/addon-test@${versions['@storybook/addon-test']}`,
+      `npx storybook@${versions.storybook} add @storybook/addon-vitest@${versions['@storybook/addon-vitest']}`,
       { cwd: process.cwd(), stdio: 'inherit' }
     );
   }

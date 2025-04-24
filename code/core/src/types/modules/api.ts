@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/naming-convention */
 import type { ReactElement } from 'react';
 
 import type { Channel } from '../../channels';

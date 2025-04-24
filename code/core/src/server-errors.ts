@@ -42,7 +42,6 @@ export enum Category {
   FRAMEWORK_REACT_WEBPACK5 = 'FRAMEWORK_REACT-WEBPACK5',
   FRAMEWORK_SERVER_WEBPACK5 = 'FRAMEWORK_SERVER-WEBPACK5',
   FRAMEWORK_SVELTE_VITE = 'FRAMEWORK_SVELTE-VITE',
-  FRAMEWORK_SVELTE_WEBPACK5 = 'FRAMEWORK_SVELTE-WEBPACK5',
   FRAMEWORK_SVELTEKIT = 'FRAMEWORK_SVELTEKIT',
   FRAMEWORK_VUE_VITE = 'FRAMEWORK_VUE-VITE',
   FRAMEWORK_VUE_WEBPACK5 = 'FRAMEWORK_VUE-WEBPACK5',
@@ -316,6 +315,20 @@ export class GoogleFontsLoadingError extends StorybookError {
   }
 }
 
+export class SvelteViteWithSvelteKitError extends StorybookError {
+  constructor() {
+    super({
+      category: Category.FRAMEWORK_SVELTE_VITE,
+      code: 1,
+      documentation:
+        'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#sveltekit-needs-the-storybooksveltekit-framework',
+      message: dedent`
+        We've detected a SvelteKit project using the @storybook/svelte-vite framework, which is not supported.
+        Please use the @storybook/sveltekit framework instead.`,
+    });
+  }
+}
+
 export class NoMatchingExportError extends StorybookError {
   constructor(public data: { error: unknown | Error }) {
     super({
@@ -556,6 +569,36 @@ export class FindPackageVersionsError extends StorybookError {
       message: dedent`
         Unable to find versions of "${data.packageName}" using ${data.packageManager}
         ${data.error && `Reason: ${data.error}`}`,
+    });
+  }
+}
+
+export class IncompatiblePostCssConfigError extends StorybookError {
+  constructor(public data: { error: Error }) {
+    super({
+      category: Category.FRAMEWORK_NEXTJS,
+      code: 3,
+      message: dedent`
+        Incompatible PostCSS configuration format detected.
+
+        Next.js uses an array-based format for plugins which is not compatible with Vite:
+        
+        // ❌ Incompatible format (used by Next.js)
+        const config = {
+          plugins: ["@tailwindcss/postcss"],
+        };
+        
+        Please transform your PostCSS config to use the object-based format, which is compatible with Next.js and Vite:
+        
+        // ✅ Compatible format (works with Next.js and Vite)
+        const config = {
+          plugins: {
+            "@tailwindcss/postcss": {},
+          },
+        };
+        
+        Original error: ${data.error.message}
+      `,
     });
   }
 }

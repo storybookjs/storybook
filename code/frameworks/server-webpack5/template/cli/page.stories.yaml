@@ -1,0 +1,10 @@
+title: "Example/Page"
+parameters:
+  server:
+    url: "https://storybook-server-demo.netlify.app/api"
+    id: "page"
+stories:
+  - name: "LoggedIn"
+    args:
+      user: {}
+  - name: "LoggedOut"

@@ -19,7 +19,6 @@ import testAnnotations from 'storybook/test/preview';
 import viewportAnnotations from 'storybook/viewport/preview';
 
 /** Do not use, use the definePreview exported from the framework instead. */
-// eslint-disable-next-line @typescript-eslint/naming-convention, no-underscore-dangle
 export function __definePreview<TRenderer extends Renderer>(
   input: Preview<TRenderer>['input']
 ): Preview<TRenderer> {

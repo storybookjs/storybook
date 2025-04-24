@@ -1,4 +1,3 @@
-// eslint-disable-next-line import/no-extraneous-dependencies
 import { match } from 'bundle-require';
 import type { Plugin } from 'esbuild';
 

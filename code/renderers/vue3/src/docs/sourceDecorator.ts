@@ -1,9 +1,8 @@
-/* eslint-disable no-underscore-dangle */
-import { SNIPPET_RENDERED, SourceType } from 'storybook/internal/docs-tools';
+import { SourceType } from 'storybook/internal/docs-tools';
 
-import { addons } from 'storybook/preview-api';
+import { emitTransformCode, useEffect, useRef } from 'storybook/preview-api';
 import type { VNode } from 'vue';
-import { isVNode, watch } from 'vue';
+import { isVNode } from 'vue';
 
 import type { Args, Decorator, StoryContext } from '../public-types';
 
@@ -44,26 +43,15 @@ const isProxy = (obj: unknown): obj is TrackingProxy =>
 export const sourceDecorator: Decorator = (storyFn, ctx) => {
   const story = storyFn();
 
-  if (shouldSkipSourceCodeGeneration(ctx)) {
-    return story;
-  }
+  useEffect(() => {
+    const sourceCode = generateSourceCode(ctx);
 
-  const channel = addons.getChannel();
+    if (shouldSkipSourceCodeGeneration(ctx)) {
+      return;
+    }
 
-  watch(
-    () => ctx.args,
-    () => {
-      const sourceCode = generateSourceCode(ctx);
-
-      channel.emit(SNIPPET_RENDERED, {
-        id: ctx.id,
-        args: ctx.args,
-        source: sourceCode,
-        format: 'vue',
-      });
-    },
-    { immediate: true, deep: true }
-  );
+    emitTransformCode(sourceCode, ctx);
+  });
 
   return story;
 };
@@ -593,7 +581,6 @@ const getVNodeName = (vnode: VNode) => {
  *
  * @see Based on https://stackoverflow.com/a/9924463
  */
-// eslint-disable-next-line @typescript-eslint/ban-types
 export const getFunctionParamNames = (func: Function): string[] => {
   const STRIP_COMMENTS = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/gm;
   const ARGUMENT_NAMES = /([^\s,]+)/g;

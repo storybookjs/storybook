@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-shadow */
 import type { MockInstance, Mock as MockV2 } from '@vitest/spy';
 import {
   type MaybeMocked,
@@ -18,9 +17,7 @@ export type * from '@vitest/spy';
 export { isMockFunction, mocks };
 
 type Listener = (mock: MockInstance, args: unknown[]) => void;
-// eslint-disable-next-line no-underscore-dangle
 const listeners = globalThis.__STORYBOOK_TEST_SPY_LISTENERS__ || new Set<Listener>();
-// eslint-disable-next-line no-underscore-dangle
 globalThis.__STORYBOOK_TEST_SPY_LISTENERS__ = listeners;
 
 export function onMockCall(callback: Listener): () => void {

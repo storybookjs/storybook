@@ -2,20 +2,20 @@ import React, { type FC, Fragment, useEffect } from 'react';
 
 import type { Channel } from 'storybook/internal/channels';
 
-import { DocsContext } from '@storybook/blocks';
 import { global } from '@storybook/global';
 
 import type { Decorator, Loader, ReactRenderer } from '@storybook/react-vite';
 // TODO add empty preview
-// import * as storysource from '@storybook/addon-storysource';
 // import * as designs from '@storybook/addon-designs/preview';
 import { definePreview } from '@storybook/react-vite';
 
 import addonA11y from '@storybook/addon-a11y';
 import addonDocs from '@storybook/addon-docs';
-import addonTest from '@storybook/addon-test';
+import { DocsContext } from '@storybook/addon-docs/blocks';
 import addonThemes from '@storybook/addon-themes';
+import addonTest from '@storybook/addon-vitest';
 
+import addonPseudoStates from 'storybook-addon-pseudo-states';
 import { DocsContext as DocsContextProps, useArgs } from 'storybook/preview-api';
 import type { PreviewWeb } from 'storybook/preview-api';
 import {
@@ -28,8 +28,8 @@ import {
   useTheme,
 } from 'storybook/theming';
 
+import { DocsPageWrapper } from '../addons/docs/src/blocks/components';
 import * as templatePreview from '../core/template/stories/preview';
-import { DocsPageWrapper } from '../lib/blocks/src/components';
 import '../renderers/react/template/components/index';
 import { isChromatic } from './isChromatic';
 
@@ -143,7 +143,6 @@ const loaders = [
    * The DocsContext will then be added via the decorator below.
    */
   async ({ parameters: { relativeCsfPaths, attached = true } }) => {
-    // eslint-disable-next-line no-underscore-dangle
     const preview = (window as any).__STORYBOOK_PREVIEW__ as PreviewWeb<ReactRenderer> | undefined;
     const channel = (window as any).__STORYBOOK_ADDONS_CHANNEL__ as Channel | undefined;
     // __STORYBOOK_PREVIEW__ and __STORYBOOK_ADDONS_CHANNEL__ is set in the PreviewWeb constructor
@@ -322,6 +321,24 @@ const decorators = [
 const parameters = {
   docs: {
     theme: themes.light,
+    codePanel: true,
+    source: {
+      transform: async (source) => {
+        try {
+          const prettier = await import('prettier/standalone');
+          const prettierPluginBabel = await import('prettier/plugins/babel');
+          const prettierPluginEstree = (await import('prettier/plugins/estree')).default;
+
+          return await prettier.format(source, {
+            parser: 'babel',
+            plugins: [prettierPluginBabel, prettierPluginEstree],
+          });
+        } catch (error) {
+          console.error(error);
+          return source;
+        }
+      },
+    },
     toc: {},
   },
   controls: {
@@ -369,7 +386,14 @@ const parameters = {
 };
 
 export default definePreview({
-  addons: [addonDocs(), addonThemes(), addonA11y(), addonTest(), templatePreview],
+  addons: [
+    addonDocs(),
+    addonThemes(),
+    addonA11y(),
+    addonTest(),
+    addonPseudoStates(),
+    templatePreview,
+  ],
   decorators,
   loaders,
   tags: ['test', 'vitest'],

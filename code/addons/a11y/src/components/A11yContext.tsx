@@ -209,7 +209,11 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
           ?.find((r) => r.id === id)
           ?.nodes.findIndex((n) => details.selectors.some((s) => s === String(n.target))) ?? -1;
       if (index !== -1) {
-        setSelectedItems(new Map([[`${type}.${id}`, `${type}.${id}.${index + 1}`]]));
+        const key = `${type}.${id}.${index + 1}`;
+        setSelectedItems(new Map([[`${type}.${id}`, key]]));
+        setTimeout(() => {
+          document.getElementById(key)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
       }
     },
     [results]

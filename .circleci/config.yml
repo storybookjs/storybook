@@ -399,7 +399,7 @@ jobs:
           at: .
       - run:
           name: Enable Corepack
-          command: sudo corepack enable yarn
+          command: sudo corepack enable
       - run:
           name: Starting Event Collector
           command: yarn jiti ./event-log-collector.ts

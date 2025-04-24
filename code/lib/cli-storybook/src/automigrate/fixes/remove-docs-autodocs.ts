@@ -1,4 +1,4 @@
-import { loadConfig, writeConfig } from 'storybook/internal/csf-tools';
+import { readConfig } from 'storybook/internal/csf-tools';
 
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
@@ -32,7 +32,7 @@ export const removeDocsAutodocs: Fix<RemoveDocsAutodocsOptions> = {
     }
 
     try {
-      const config = loadConfig(mainConfigPath).parse();
+      const config = await readConfig(mainConfigPath);
       const autodocs = config.getSafeFieldValue(['docs', 'autodocs']);
 
       if (autodocs === undefined) {
@@ -80,17 +80,17 @@ export const removeDocsAutodocs: Fix<RemoveDocsAutodocsOptions> = {
 
     // If autodocs was true, update preview config to use tags
     if (autodocs === true && previewConfigPath) {
-      const previewConfig = loadConfig(previewConfigPath).parse();
-      const tags = previewConfig.getFieldValue(['tags']) || [];
+      logger.log(`🔄 Updating ${picocolors.cyan('tags')} parameter in preview config file...`);
+      await updateMainConfig(
+        { mainConfigPath: previewConfigPath, dryRun: !!dryRun },
+        async (preview) => {
+          const tags = preview.getFieldValue(['tags']) || [];
 
-      if (!tags.includes('autodocs')) {
-        // Only add autodocs tag if it's not already present
-        if (!dryRun) {
-          logger.log(`🔄 Updating ${picocolors.cyan('tags')} parameter in preview config file...`);
-          previewConfig.setFieldValue(['tags'], [...tags, 'autodocs']);
-          await writeConfig(previewConfig);
+          if (!tags.includes('autodocs') && !dryRun) {
+            preview.setFieldValue(['tags'], [...tags, 'autodocs']);
+          }
         }
-      }
+      );
     }
   },
 };

@@ -15,7 +15,7 @@ To highlight DOM elements with the feature, you'll need to emit the `HIGHLIGHT` 
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="component-story-highlight-addon.md" />
+<CodeSnippets path="component-story-highlight.md" />
 
 {/* prettier-ignore-end */}
 
@@ -29,7 +29,7 @@ To be able to remove a highlight, provide an `id` property when creating the hig
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="addon-highlight-remove.md" />
+<CodeSnippets path="highlight-remove.md" />
 
 {/* prettier-ignore-end */}
 
@@ -43,7 +43,7 @@ Out of the box, Storybook automatically removes highlighted elements when transi
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="addon-highlight-reset.md" />
+<CodeSnippets path="highlight-reset.md" />
 
 {/* prettier-ignore-end */}
 
@@ -53,7 +53,7 @@ To scroll an element into view, emit the `SCROLL_INTO_VIEW` event from within a 
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="addon-highlight-scroll-into-view.md" />
+<CodeSnippets path="highlight-scroll-into-view.md" />
 
 {/* prettier-ignore-end */}
 
@@ -65,11 +65,39 @@ By default, highlights receive a basic outline style. However, you can provide c
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="highlight-addon-custom-style.md" />
+<CodeSnippets path="highlight-custom-style.md" />
 
 {/* prettier-ignore-end */}
 
 Each of these are optional. In general, you should use `hoverStyles` and `focusStyles` in conjunction with `selectable: true` or the `menu` property. Note that pseudo-classes and pseudo-elements are not supported.
+
+## Selectable elements and menu items
+
+Highlights can be made selectable, which reveals the element's HTML when clicked. This is useful for debugging. To make a highlight selectable, set the `selectable` property to `true`.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="highlight-selectable.md" />
+
+{/* prettier-ignore-end */}
+
+When multiple highlights are present at the clicked location, a list of targets is shown:
+
+![Menu of selectable targets](../_assets/essentials/highlight-selectable.png)
+
+This menu can be extended with custom menu items. To do so, provide an array of menu items in the `menu` property. Each menu item must at least have an `id` and `title` property. For example:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="highlight-menu.md" />
+
+{/* prettier-ignore-end */}
+
+Menu items are displayed underneath the element's HTML, and can be used to reveal more information about the element or trigger actions. See the API section below for details on handling menu item clicks.
+
+![Menu with custom items](../_assets/essentials/highlight-menu.png)
+
+You can use the `selectors` property to specify which elements the menu item should be shown for. This should be a subset of the `selectors` property used to create the highlight.
 
 ## API
 

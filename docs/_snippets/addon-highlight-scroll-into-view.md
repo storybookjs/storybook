@@ -27,7 +27,7 @@ export const ScrollIntoView: Story = {
 
 ```js filename="MyComponent.stories.js|jsx" renderer="react" language="js"
 import { useChannel } from 'storybook/preview-api';
-import { HIGHLIGHT, RESET_HIGHLIGHT } from 'storybook/highlight';
+import { SCROLL_INTO_VIEW } from 'storybook/highlight';
 
 import { MyComponent } from './MyComponent';
 
@@ -50,7 +50,7 @@ export const ScrollIntoView = {
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { useChannel } from 'storybook/preview-api';
-import { HIGHLIGHT, RESET_HIGHLIGHT } from 'storybook/highlight';
+import { SCROLL_INTO_VIEW } from 'storybook/highlight';
 
 import { MyComponent } from './MyComponent';
 
@@ -74,7 +74,7 @@ export const ScrollIntoView: Story = {
 
 ```js filename="MyComponent.stories.js" renderer="vue" language="js"
 import { useChannel } from 'storybook/preview-api';
-import { HIGHLIGHT, RESET_HIGHLIGHT } from 'storybook/highlight';
+import { SCROLL_INTO_VIEW } from 'storybook/highlight';
 
 import MyComponent from './MyComponent.vue';
 
@@ -99,7 +99,7 @@ export const ScrollIntoView = {
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import { useChannel } from 'storybook/preview-api';
-import { HIGHLIGHT, RESET_HIGHLIGHT } from 'storybook/highlight';
+import { SCROLL_INTO_VIEW } from 'storybook/highlight';
 
 import MyComponent from './MyComponent.vue';
 
@@ -125,7 +125,7 @@ export const ScrollIntoView: Story = {
 
 ```js filename="MyComponent.stories.js" renderer="web-components" language="js"
 import { useChannel } from 'storybook/preview-api';
-import { HIGHLIGHT, RESET_HIGHLIGHT } from 'storybook/highlight';
+import { SCROLL_INTO_VIEW } from 'storybook/highlight';
 
 export default {
   component: 'my-component',
@@ -146,7 +146,7 @@ export const ScrollIntoView = {
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import { useChannel } from 'storybook/preview-api';
-import { HIGHLIGHT, RESET_HIGHLIGHT } from 'storybook/highlight';
+import { SCROLL_INTO_VIEW } from 'storybook/highlight';
 
 const meta: Meta = {
   component: 'my-component',

@@ -120,11 +120,21 @@ export const useStore = <T>(initialValue?: T) => {
 };
 
 export const mapElements = (highlights: HighlightOptions[]): Map<HTMLElement, Highlight> => {
+  const root = document.getElementById('storybook-root');
   const map = new Map();
   for (const highlight of highlights) {
     const { priority = 0, selectable = !!highlight.menu } = highlight;
     for (const selector of highlight.selectors) {
-      for (const element of document.querySelectorAll(selector) || []) {
+      const elements = [
+        ...document.querySelectorAll(
+          // Elements matching the selector, excluding storybook elements and their descendants.
+          // Necessary to find portaled elements (e.g. children of `body`).
+          `:is(${selector}):not([id^="storybook-"], [id^="storybook-"] *, [class^="sb-"], [class^="sb-"] *)`
+        ),
+        // Elements matching the selector inside the storybook root, as these were excluded above.
+        ...(root?.querySelectorAll(selector) || []),
+      ];
+      for (const element of elements) {
         const existing = map.get(element);
         if (!existing || existing.priority < priority) {
           map.set(element, {

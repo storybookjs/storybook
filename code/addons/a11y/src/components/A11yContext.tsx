@@ -195,10 +195,14 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
           if (status === 'ran') {
             setStatus('ready');
           }
+          if (selectedItems.size === 1) {
+            const [key] = selectedItems.values();
+            document.getElementById(key)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
         }, 900);
       }
     },
-    [setResults, status, storyId]
+    [setResults, status, storyId, selectedItems]
   );
 
   const handleSelect = useCallback(

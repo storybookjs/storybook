@@ -6,6 +6,7 @@
     - [Dropped support](#dropped-support)
       - [Vite 4](#vite-4)
       - [TypeScript \< 4.9](#typescript--49)
+      - [Node.js \< 20](#nodejs--20)
       - [Package Managers](#package-managers)
   - [Addon-specific Changes](#addon-specific-changes)
     - [Essentials Addon: Viewport, Controls, Interactions and Actions moved to core](#essentials-addon-viewport-controls-interactions-and-actions-moved-to-core)
@@ -39,6 +40,7 @@
     - [Dropped webpack5 Builder Support in Favor of Vite](#dropped-webpack5-builder-support-in-favor-of-vite)
     - [Next.js = Require v14 and up](#nextjs--require-v14-and-up)
     - [Next.js = Vite builder stabilized](#nextjs--vite-builder-stabilized)
+    - [Lit = Require v3 and up](#lit--require-v3-and-up)
 - [From version 8.5.x to 8.6.x](#from-version-85x-to-86x)
   - [Angular: Support experimental zoneless support](#angular-support-experimental-zoneless-support)
   - [Addon-a11y: Replaced experimental `ally-test` tag behavior with `parameters.a11y.test`](#addon-a11y-replaced-experimental-ally-test-tag-behavior-with-parametersa11ytest)
@@ -590,6 +592,10 @@ For more information on upgrading to Vite 5, see the [Vite Migration Guide](http
 
 Storybook now requires TypeScript 4.9 or later.
 
+##### Node.js < 20
+
+Storybook now requires Node.js 20 or later.
+
 ##### Package Managers
 
 Minimum supported versions:
@@ -1122,6 +1128,10 @@ export default {
   ]
 }
 ```
+
+#### Lit = Require v3 and up
+
+The minimum supported version is now v3.
 
 ## From version 8.5.x to 8.6.x
 

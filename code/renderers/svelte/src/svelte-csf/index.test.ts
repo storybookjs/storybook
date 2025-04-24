@@ -2,8 +2,8 @@
  * @vitest-environment happy-dom
  */
 
-import type { StoryContext as StorybookStoryContext } from '@storybook/types';
 import { createRawSnippet, mount, type ComponentProps, type Snippet } from 'svelte';
+import type { StoryContext as StorybookStoryContext } from 'storybook/internal/types';
 import { describe, expectTypeOf, it } from 'vitest';
 
 import StoryComponent from './runtime/Story.svelte';

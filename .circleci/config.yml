@@ -398,6 +398,9 @@ jobs:
       - attach_workspace:
           at: .
       - run:
+          name: Enable Corepack
+          command: sudo corepack enable yarn
+      - run:
           name: Starting Event Collector
           command: yarn jiti ./event-log-collector.ts
           working_directory: scripts

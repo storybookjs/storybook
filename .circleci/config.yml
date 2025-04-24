@@ -401,6 +401,9 @@ jobs:
           name: Enable Corepack
           command: sudo corepack enable
       - run:
+          name: Install Corepack
+          command: sudo corepack install
+      - run:
           name: Starting Event Collector
           command: yarn jiti ./event-log-collector.ts
           working_directory: scripts

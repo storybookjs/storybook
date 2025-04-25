@@ -4,6 +4,7 @@ import { addonA11yAddonTest } from './addon-a11y-addon-test';
 import { addonA11yParameters } from './addon-a11y-parameters';
 import { addonEssentialsRemoveDocs } from './addon-essentials-remove-docs';
 import { addonExperimentalTest } from './addon-experimental-test';
+import { addonGlobalsApi } from './addon-globals-api';
 import { addonMdxGfmRemove } from './addon-mdx-gfm-remove';
 import { addonStorysourceRemove } from './addon-storysource-remove';
 import { consolidatedImports } from './consolidated-imports';
@@ -24,6 +25,7 @@ export const allFixes: Fix[] = [
   addonStorysourceRemove,
   upgradeStorybookRelatedDependencies,
   initialGlobals,
+  addonGlobalsApi,
   addonA11yAddonTest,
   consolidatedImports,
   addonExperimentalTest,

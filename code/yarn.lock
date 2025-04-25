@@ -6702,7 +6702,6 @@ __metadata:
     svelte-preprocess: "npm:^5.1.1"
     svelte2tsx: "npm:^0.7.35"
     sveltedoc-parser: "npm:^4.2.1"
-    ts-dedent: "npm:^2.2.0"
     typescript: "npm:^5.7.3"
     vite: "npm:^6.2.5"
   peerDependencies:

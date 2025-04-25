@@ -60,7 +60,6 @@
     "svelte-preprocess": "^5.1.1",
     "svelte2tsx": "^0.7.35",
     "sveltedoc-parser": "^4.2.1",
-    "ts-dedent": "^2.2.0",
     "typescript": "^4.9.4 || ^5.0.0"
   },
   "devDependencies": {

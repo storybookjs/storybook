@@ -9,6 +9,7 @@ export type SupportedFrameworks =
   | 'react-native-web-vite'
   | 'react-vite'
   | 'react-webpack5'
+  | 'server-vite'
   | 'server-webpack5'
   | 'svelte-vite'
   | 'sveltekit'

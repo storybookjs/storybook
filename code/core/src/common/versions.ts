@@ -20,6 +20,7 @@ export default {
   '@storybook/react-native-web-vite': '9.0.0-beta.2',
   '@storybook/react-vite': '9.0.0-beta.2',
   '@storybook/react-webpack5': '9.0.0-beta.2',
+  '@storybook/server-vite': '7.1.0-alpha.14',
   '@storybook/server-webpack5': '9.0.0-beta.2',
   '@storybook/svelte-vite': '9.0.0-beta.2',
   '@storybook/sveltekit': '9.0.0-beta.2',

@@ -137,6 +137,7 @@
     "@storybook/react-vite": "workspace:*",
     "@storybook/react-webpack5": "workspace:*",
     "@storybook/server": "workspace:*",
+    "@storybook/server-vite": "workspace:*",
     "@storybook/server-webpack5": "workspace:*",
     "@storybook/source-loader": "workspace:*",
     "@storybook/svelte": "workspace:*",

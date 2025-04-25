@@ -102,7 +102,7 @@ const Pure = memo(function PureTool(props: PureProps) {
             return (
               <TooltipLinkList
                 links={[
-                  ...(!!item
+                  ...(item
                     ? [
                         {
                           id: 'reset',

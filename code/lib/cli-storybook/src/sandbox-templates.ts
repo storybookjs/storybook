@@ -205,7 +205,7 @@ export const baseTemplates = {
     },
     skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },
-  'experimental-nextjs-vite/14-ts': {
+  'nextjs-vite/14-ts': {
     name: 'Next.js Latest (Vite | TypeScript)',
     script:
       'npx create-next-app@^14 {{beforeDir}} --eslint --tailwind --app --import-alias="@/*" --src-dir',
@@ -227,7 +227,7 @@ export const baseTemplates = {
     },
     skipTasks: ['e2e-tests-dev', 'bench'],
   },
-  'experimental-nextjs-vite/default-ts': {
+  'nextjs-vite/default-ts': {
     name: 'Next.js Latest (Vite | TypeScript)',
     script:
       'npx create-next-app {{beforeDir}} --eslint --no-tailwind --app --import-alias="@/*" --src-dir',
@@ -791,7 +791,7 @@ export const normal: TemplateKey[] = [
   'svelte-vite/default-ts',
   'svelte-kit/skeleton-ts',
   'nextjs/default-ts',
-  'experimental-nextjs-vite/default-ts',
+  'nextjs-vite/default-ts',
   'bench/react-vite-default-ts',
   'bench/react-webpack-18-ts',
   'bench/react-vite-default-ts-nodocs',

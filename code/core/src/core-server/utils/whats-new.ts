@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import { writeFile } from 'node:fs/promises';
 
 import type { Channel } from 'storybook/internal/channels';
@@ -54,7 +53,6 @@ export function initializeWhatsNew(
           return response.json();
         }
 
-        // eslint-disable-next-line @typescript-eslint/no-throw-literal
         throw response;
       })) as WhatsNewResponse;
 

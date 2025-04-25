@@ -17,8 +17,7 @@ Storybook for Next.js is a [framework](../../contribute/framework.mdx) that make
 
 ## Requirements
 
-* Next.js ≥ 13.5
-* Storybook ≥ 7.0
+* Next.js ≥ 14.1
 
 ## Getting started
 
@@ -76,13 +75,7 @@ Finally, if you were using Storybook plugins to integrate with Next.js, those ar
 
 #### With Vite
 
-(⚠️ **Experimental**)
-
-You can use our freshly baked, experimental `@storybook/nextjs-vite` framework, which is based on Vite and removes the need for Webpack and Babel. It supports all of the features documented here.
-
-<Callout variant="info">
-  Using the Next.js framework with Vite requires Next.js 14.1.0 or later.
-</Callout>
+Storybook recommends using the `@storybook/nextjs-vite` framework, which is based on Vite and removes the need for Webpack and Babel. It supports all of the features documented here.
 
 {/* prettier-ignore-start */}
 
@@ -901,7 +894,7 @@ You might get this if you're using Yarn v2 or v3. See [Notes for Yarn v2 and v3 
 
 ### What if I'm using the Vite builder?
 
-We have introduced experimental Vite builder support. Just install the experimental framework package `@storybook/nextjs-vite` and replace all instances of `@storybook/nextjs` with `@storybook/nextjs-vite`.
+Storybook provides a Vite-based framework for Next.js. Follow the [installation instructions](#with-vite) and replace all instances of `@storybook/nextjs` with `@storybook/nextjs-vite`.
 
 ### Error: You are importing avif images, but you don't have sharp installed. You have to install sharp in order to use image optimization features in Next.js.
 

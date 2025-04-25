@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import { types as t } from 'storybook/internal/babel';
 import { formatFileContent } from 'storybook/internal/common';
 import { loadConfig, printConfig } from 'storybook/internal/csf-tools';

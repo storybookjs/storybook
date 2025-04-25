@@ -116,9 +116,11 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
 
   global.FEATURES = features;
 
-  await buildOrThrow(async () =>
-    managerBuilder.build({ startTime: process.hrtime(), options: fullOptions })
-  );
+  if (!options.previewOnly) {
+    await buildOrThrow(async () =>
+      managerBuilder.build({ startTime: process.hrtime(), options: fullOptions })
+    );
+  }
 
   if (staticDirs) {
     effects.push(

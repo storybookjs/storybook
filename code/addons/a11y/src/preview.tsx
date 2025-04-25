@@ -31,12 +31,12 @@ export const withLinkPaths = (results: AxeResults, storyId: string) => {
 
 let vitestMatchersExtended = false;
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export const experimental_afterEach: AfterEach<any> = async ({
   id: storyId,
   reporting,
   parameters,
   globals,
+  viewMode,
 }) => {
   const a11yParameter: A11yParameters | undefined = parameters.a11y;
   const a11yGlobals = globals.a11y;
@@ -56,7 +56,7 @@ export const experimental_afterEach: AfterEach<any> = async ({
     }
   };
 
-  if (shouldRunEnvironmentIndependent) {
+  if (shouldRunEnvironmentIndependent && viewMode === 'story') {
     try {
       const result = await run(a11yParameter);
 

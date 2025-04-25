@@ -19,16 +19,17 @@ test.describe('addon-a11y', () => {
     const panel = sbPage.panelContent();
     await panel.getByRole('button', { name: 'Show highlights' }).click();
 
-    // check that the highlight is visible
-    const imageElement = sbPage.previewIframe().getByRole('img');
-    expect(await imageElement.evaluate((el) => getComputedStyle(el).outline)).toBe(
-      'rgba(255, 68, 0, 0.6) dashed 1px'
+    const highlightElement = sbPage
+      .previewIframe()
+      .locator('[data-highlight-dimensions="w350h150"]');
+
+    await expect(highlightElement).toBeVisible();
+    expect(await highlightElement.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(
+      'color(srgb 1 0.266667 0 / 0.4)'
     );
 
     await page.getByRole('button', { name: 'Hide highlights' }).click();
-
-    // check that the highlight is not visible
-    expect(await imageElement.evaluate((el) => getComputedStyle(el).outline)).toMatch(/0px/);
+    await expect(highlightElement).toBeHidden();
   });
 
   test('should rerun a11y checks when clicking the rerun button', async ({ page }) => {
@@ -52,24 +53,25 @@ test.describe('addon-a11y', () => {
 
     const panel = sbPage.panelContent();
     await panel.getByRole('tab', { name: 'Passes' }).click();
-    await panel.getByRole('button', { name: 'ARIA hidden element must not' }).click();
-    await panel.getByRole('tab', { name: '1. <table aria-hidden="true"' }).click();
+    await panel.getByRole('button', { name: 'Hidden body' }).click();
+    await panel.getByRole('tab', { name: '1. <body' }).click();
     await panel.getByRole('button', { name: 'Copy link' }).click();
 
     // test that clipboard contains the correct url
     const clipboard = await page.evaluate(() => navigator.clipboard.readText());
     await expect(clipboard).toContain(
-      'path=/story/addons-a11y-tests--violations&addonPanel=storybook/a11y/panel&a11ySelection=passes.aria-hidden-focus.1'
+      '?path=/story/addons-a11y-tests--violations&addonPanel=storybook/a11y/panel&a11ySelection=passes.aria-hidden-body.1'
     );
 
     // navigate to that url
     await page.goto(clipboard);
     await new SbPage(page, expect).waitUntilLoaded();
     await expect(page.getByRole('tab', { name: 'Passes' })).toHaveAttribute('data-active', 'true');
-    await expect(
-      page.getByRole('button', { name: 'ARIA hidden element must not' })
-    ).toHaveAttribute('data-active', 'true');
-    const element = page.getByRole('tab', { name: '1. <table aria-hidden="true"' });
+    await expect(page.getByRole('button', { name: 'Hidden body' })).toHaveAttribute(
+      'aria-expanded',
+      'true'
+    );
+    const element = page.getByRole('tab', { name: '1. <body' });
     await expect(element).toHaveAttribute('data-state', 'active');
   });
 });

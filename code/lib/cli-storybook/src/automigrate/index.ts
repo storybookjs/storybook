@@ -157,6 +157,7 @@ export const automigrate = async ({
       dryRun,
       mainConfig,
       result: null,
+      storybookVersion,
     });
 
     return null;
@@ -416,6 +417,7 @@ export async function runFixes({
               packageJson,
               mainConfig,
               skipInstall,
+              storybookVersion,
             });
             logger.info(`✅ ran ${picocolors.cyan(f.id)} migration`);
 

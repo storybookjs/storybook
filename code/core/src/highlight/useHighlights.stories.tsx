@@ -26,7 +26,7 @@ const highlight = (
     }[];
   }
 ) => {
-  const emit = useChannel({ click: fn().mockName('click') });
+  const emit = useChannel({ 'my-click-event': fn().mockName('my-click-event') });
   const id = Math.random().toString(36).substring(2, 15);
   React.useEffect(() => {
     emit(HIGHLIGHT, {
@@ -154,16 +154,16 @@ export const Menu = meta.story({
         options: {
           menu: [
             {
-              id: '1',
+              id: 'color-contrast',
               title: 'Insufficient color contrast',
               description: 'Elements must meet minimum color contrast ratio thresholds.',
-              clickEvent: 'click',
+              clickEvent: 'my-click-event',
             },
             {
-              id: '2',
+              id: 'links-need-discernible-text',
               title: 'Links need discernible text',
               description: 'This is where a summary of the violation goes.',
-              clickEvent: 'click',
+              clickEvent: 'my-click-event',
             },
           ],
         },
@@ -174,6 +174,22 @@ export const Menu = meta.story({
     await new Promise((resolve) => setTimeout(resolve, 200));
     await userEvent.pointer({
       coords: { pageX: 470, pageY: 240 },
+      keys: '[MouseLeft]',
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    const elementItem = document.querySelector('#storybook-highlights-menu .element-list button')!;
+    await userEvent.pointer({
+      target: elementItem,
+      coords: { pageX: 470, pageY: 260 },
+      keys: '[MouseLeft]',
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    const menuItem = document.querySelector('#storybook-highlights-menu .menu-list button')!;
+    await userEvent.pointer({
+      target: menuItem,
+      coords: { pageX: 470, pageY: 310 },
       keys: '[MouseLeft]',
     });
   },

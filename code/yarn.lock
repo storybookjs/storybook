@@ -1948,7 +1948,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@babel/preset-react@npm:^7.24.1, @babel/preset-react@npm:^7.26.3":
+"@babel/preset-react@npm:^7.24.1":
   version: 7.26.3
   resolution: "@babel/preset-react@npm:7.26.3"
   dependencies:
@@ -6409,11 +6409,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/react-native-web-vite@workspace:frameworks/react-native-web-vite"
   dependencies:
-    "@babel/plugin-transform-modules-commonjs": "npm:^7.26.3"
-    "@babel/preset-react": "npm:^7.26.3"
     "@bunchtogether/vite-plugin-flow": "npm:^1.0.2"
-    "@joshwooding/vite-plugin-react-docgen-typescript": "npm:0.5.0"
-    "@storybook/builder-vite": "workspace:*"
     "@storybook/react": "workspace:*"
     "@storybook/react-vite": "workspace:*"
     "@types/node": "npm:^22.0.0"

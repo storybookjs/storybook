@@ -59,11 +59,7 @@
     "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@babel/plugin-transform-modules-commonjs": "^7.26.3",
-    "@babel/preset-react": "^7.26.3",
     "@bunchtogether/vite-plugin-flow": "^1.0.2",
-    "@joshwooding/vite-plugin-react-docgen-typescript": "0.5.0",
-    "@storybook/builder-vite": "workspace:*",
     "@storybook/react": "workspace:*",
     "@storybook/react-vite": "workspace:*",
     "@vitejs/plugin-react": "^4.3.2",

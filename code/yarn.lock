@@ -11569,7 +11569,7 @@ __metadata:
     picocolors: "npm:^1.1.0"
     prompts: "npm:^2.4.0"
     react: "npm:^18.2.0"
-    semver: "npm:^7.3.7"
+    semver: "npm:^7.6.2"
     storybook: "workspace:*"
     tiny-invariant: "npm:^1.3.1"
     ts-dedent: "npm:^2.0.0"

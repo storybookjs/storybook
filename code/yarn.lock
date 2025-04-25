@@ -6145,12 +6145,9 @@ __metadata:
     "@testing-library/react": "npm:^14.0.0"
     axe-core: "npm:^4.2.0"
     execa: "npm:^9.5.2"
-    picocolors: "npm:^1.1.0"
-    pretty-format: "npm:^29.7.0"
     react: "npm:^18.2.0"
     react-dom: "npm:^18.2.0"
     react-resize-detector: "npm:^7.1.2"
-    resize-observer-polyfill: "npm:^1.5.1"
     typescript: "npm:^5.7.3"
     vitest-axe: "npm:^0.1.0"
   peerDependencies:
@@ -23630,13 +23627,6 @@ __metadata:
   version: 3.0.1
   resolution: "reselect@npm:3.0.1"
   checksum: 10c0/b4bced93369e33832befc245253e2ce2f64ac007bbdf013a260c7b29e23dff8cf82e0415b0d05b85279bc8fc8af4a5f92bd261d3e0e9cbe4e5c1869f8b0ec5a6
-  languageName: node
-  linkType: hard
-
-"resize-observer-polyfill@npm:^1.5.1":
-  version: 1.5.1
-  resolution: "resize-observer-polyfill@npm:1.5.1"
-  checksum: 10c0/5e882475067f0b97dc07e0f37c3e335ac5bc3520d463f777cec7e894bb273eddbfecb857ae668e6fb6881fd6f6bb7148246967172139302da50fa12ea3a15d95
   languageName: node
   linkType: hard
 

@@ -150,7 +150,7 @@
     "playwright": "1.48.1",
     "playwright-core": "1.48.1",
     "polka": "^1.0.0-next.28",
-    "prettier": "~3.4.0",
+    "prettier": "^3.5.3",
     "prettier-plugin-brace-style": "^0.7.2",
     "prettier-plugin-css-order": "^2.1.2",
     "prettier-plugin-curly": "^0.3.1",

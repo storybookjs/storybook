@@ -1496,7 +1496,7 @@ __metadata:
     playwright: "npm:1.48.1"
     playwright-core: "npm:1.48.1"
     polka: "npm:^1.0.0-next.28"
-    prettier: "npm:~3.4.0"
+    prettier: "npm:^3.5.3"
     prettier-plugin-brace-style: "npm:^0.7.2"
     prettier-plugin-css-order: "npm:^2.1.2"
     prettier-plugin-curly: "npm:^0.3.1"
@@ -10620,12 +10620,21 @@ __metadata:
   languageName: node
   linkType: hard
 
-"prettier@npm:*, prettier@npm:~3.4.0":
+"prettier@npm:*":
   version: 3.4.2
   resolution: "prettier@npm:3.4.2"
   bin:
     prettier: bin/prettier.cjs
   checksum: 10c0/99e076a26ed0aba4ebc043880d0f08bbb8c59a4c6641cdee6cdadf2205bdd87aa1d7823f50c3aea41e015e99878d37c58d7b5f0e663bba0ef047f94e36b96446
+  languageName: node
+  linkType: hard
+
+"prettier@npm:^3.5.3":
+  version: 3.5.3
+  resolution: "prettier@npm:3.5.3"
+  bin:
+    prettier: bin/prettier.cjs
+  checksum: 10c0/3880cb90b9dc0635819ab52ff571518c35bd7f15a6e80a2054c05dbc8a3aa6e74f135519e91197de63705bcb38388ded7e7230e2178432a1468005406238b877
   languageName: node
   linkType: hard
 

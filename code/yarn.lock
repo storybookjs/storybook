@@ -7065,7 +7065,7 @@ __metadata:
     lint-staged: "npm:^13.2.2"
     mock-require: "npm:^3.0.3"
     nx: "npm:^20.4.0"
-    prettier: "npm:~3.4.0"
+    prettier: "npm:^3.5.3"
     prettier-plugin-brace-style: "npm:^0.6.2"
     prettier-plugin-css-order: "npm:^2.1.2"
     prettier-plugin-curly: "npm:^0.2.2"
@@ -7142,7 +7142,7 @@ __metadata:
   dependencies:
     es-toolkit: "npm:^1.22.0"
     estraverse: "npm:^5.2.0"
-    prettier: "npm:~3.4.0"
+    prettier: "npm:^3.5.3"
     typescript: "npm:^5.7.3"
   peerDependencies:
     storybook: "workspace:^"
@@ -14276,7 +14276,7 @@ __metadata:
     eslint: "npm:^8.57.1"
     eslint-plugin-eslint-plugin: "npm:^6.2.0"
     eslint-plugin-node: "npm:^11.1.0"
-    prettier: "npm:~3.4.0"
+    prettier: "npm:^3.5.3"
     prompts: "npm:^2.4.0"
     semver: "npm:^7.3.7"
     ts-dedent: "npm:^2.0.0"
@@ -22274,7 +22274,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"prettier@npm:*":
+"prettier@npm:*, prettier@npm:^3.5.3":
   version: 3.5.3
   resolution: "prettier@npm:3.5.3"
   bin:

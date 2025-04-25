@@ -197,7 +197,7 @@
     "lint-staged": "^13.2.2",
     "mock-require": "^3.0.3",
     "nx": "^20.4.0",
-    "prettier": "~3.4.0",
+    "prettier": "^3.5.3",
     "prettier-plugin-brace-style": "^0.6.2",
     "prettier-plugin-css-order": "^2.1.2",
     "prettier-plugin-curly": "^0.2.2",

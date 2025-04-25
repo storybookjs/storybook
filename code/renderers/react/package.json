@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react",
-  "version": "9.0.0-beta.1",
+  "version": "9.0.0-beta.2",
   "description": "Storybook React renderer",
   "keywords": [
     "storybook"
@@ -76,7 +76,7 @@
   "devDependencies": {
     "@types/babel-plugin-react-docgen": "^4.2.3",
     "@types/escodegen": "^0.0.6",
-    "@types/estree": "^0.0.51",
+    "@types/estree": "^1.0.6",
     "@types/node": "^22.0.0",
     "@types/semver": "^7.3.4",
     "acorn": "^7.4.1",

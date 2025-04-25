@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-docs",
-  "version": "9.0.0-beta.1",
+  "version": "9.0.0-beta.2",
   "description": "Document component usage and properties in Markdown",
   "keywords": [
     "addon",

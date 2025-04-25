@@ -23,6 +23,13 @@ import {
   NoStoryComponentDestructuredError,
 } from '$lib/utils/error/parser/extract/svelte.js';
 import { NoDestructuredDefineMetaCallError } from '$lib/utils/error/parser/analyse/define-meta.js';
+import {
+  StoryTemplateAndChildrenError,
+  StoryTemplateAndAsChildError,
+  StoryAsChildWithoutChildrenError,
+} from '$lib/utils/error/parser/analyse/story.js';
+import { extractStoryTemplateSnippetBlock } from '../parser/extract/svelte/story/template.js';
+
 
 interface Results {
   meta: Pick<IndexInput, 'title' | 'tags'>;
@@ -293,26 +300,46 @@ export async function parseForIndexer(
         // TODO: Remove in the next major version
         (legacyTemplate && name === state.legacyStoryImport?.local.name)
       ) {
-        const attribute = extractStoryAttributesNodes({
+        const storyAttributes = extractStoryAttributesNodes({
           component: node,
-          attributes: ['exportName', 'name', 'tags'],
+          attributes: ['exportName', 'name', 'tags', 'template', 'asChild', 'children'],
         });
+        const templateSnippet = extractStoryTemplateSnippetBlock(node);
 
-        const { exportName, name } = getStoryIdentifiers({
+        const hasChildren = storyAttributes.children || node.fragment.nodes.length > 0;
+        const hasTemplate = storyAttributes.template || templateSnippet;
+        const hasAsChild = storyAttributes.asChild !== undefined;
+
+        // TODO: This could actually work in the future, by supporting referencing a template
+        // and forwarding any children to that.
+        if (storyAttributes.template && hasChildren) {
+          throw new StoryTemplateAndChildrenError({ component: node, filename });
+        }
+
+        if (hasTemplate && hasAsChild) {
+          throw new StoryTemplateAndAsChildError({ component: node, filename });
+        }
+
+        if (hasAsChild && !hasChildren) {
+          throw new StoryAsChildWithoutChildrenError({ component: node, filename });
+        }
+
+
+        const { exportName, name: storyName } = getStoryIdentifiers({
           component: node,
-          nameNode: attribute.name,
-          exportNameNode: attribute.exportName,
+          nameNode: storyAttributes.name,
+          exportNameNode: storyAttributes.exportName,
           filename,
         });
         const tags = getArrayOfStringsValueFromAttribute({
           component: node,
-          node: attribute.tags,
+          node: storyAttributes.tags,
           filename,
         });
 
         state.stories.push({
           exportName,
-          name,
+          name: storyName,
           tags,
         });
       }

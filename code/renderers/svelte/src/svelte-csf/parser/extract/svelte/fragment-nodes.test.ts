@@ -102,7 +102,7 @@ describe(extractFragmentNodes.name, () => {
         <Story name="Example1" />
 
         <Story name="Example2">
-          {#snippet children(args)}
+          {#snippet template(args)}
             <SampleComponent {...args} />
           {/snippet}
         </Story>

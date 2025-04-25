@@ -1,13 +1,14 @@
 import { describe, it } from 'vitest';
 
-import { getStoryChildrenRawCode } from './children.js';
+import { getStoryContentRawCode } from './content.js';
 
 import { getSvelteAST } from '$lib/parser/ast.js';
 import { extractSvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
+import dedent from 'dedent';
 
-describe(getStoryChildrenRawCode.name, () => {
+describe(getStoryContentRawCode.name, () => {
   describe('When a `<Story />` is a self-closing tag...', () => {
-    it('works when `children` attribute was provided with a reference to snippet at the root of fragment', async ({
+    it('works when `template` attribute was provided with a reference to snippet at the root of fragment', async ({
       expect,
     }) => {
       const code = `
@@ -25,13 +26,13 @@ describe(getStoryChildrenRawCode.name, () => {
           <SomeComponent {...args} />
         {/snippet}
 
-        <Story name="Default" children={template} />
+        <Story name="Default" {template} />
       `;
       const ast = getSvelteAST({ code });
       const svelteASTNodes = await extractSvelteASTNodes({ ast });
       const { storyComponents } = svelteASTNodes;
       const component = storyComponents[0].component;
-      const rawSource = getStoryChildrenRawCode({
+      const rawSource = getStoryContentRawCode({
         nodes: {
           component,
           svelte: svelteASTNodes,
@@ -68,7 +69,7 @@ describe(getStoryChildrenRawCode.name, () => {
       const svelteASTNodes = await extractSvelteASTNodes({ ast });
       const { storyComponents } = svelteASTNodes;
       const component = storyComponents[0].component;
-      const rawSource = getStoryChildrenRawCode({
+      const rawSource = getStoryContentRawCode({
         nodes: {
           component,
           svelte: svelteASTNodes,
@@ -79,7 +80,7 @@ describe(getStoryChildrenRawCode.name, () => {
       expect(rawSource).toBe('<SomeComponent {...args} />');
     });
 
-    it('works implicit `children` attribute takes precedence over `setTemplate`', async ({
+    it('works implicit `template` attribute takes precedence over `setTemplate`', async ({
       expect,
     }) => {
       const code = `
@@ -105,13 +106,13 @@ describe(getStoryChildrenRawCode.name, () => {
           <SomeComponent wins="childrenAttribute" {...args} />
         {/snippet}
 
-        <Story name="Default" children={templateForChildren} />
+        <Story name="Default" template={templateForChildren} />
       `;
       const ast = getSvelteAST({ code });
       const svelteASTNodes = await extractSvelteASTNodes({ ast });
       const { storyComponents } = svelteASTNodes;
       const component = storyComponents[0].component;
-      const rawSource = getStoryChildrenRawCode({
+      const rawSource = getStoryContentRawCode({
         nodes: {
           component,
           svelte: svelteASTNodes,
@@ -122,7 +123,7 @@ describe(getStoryChildrenRawCode.name, () => {
       expect(rawSource).toBe(`<SomeComponent wins="childrenAttribute" {...args} />`);
     });
 
-    it('works when no `setTemplate`, no `children` attribute, just a story', async ({ expect }) => {
+    it('works when no `setTemplate`, no `template` attribute, just a story', async ({ expect }) => {
       const code = `
         <script module>
           import { defineMeta } from "@storybook/addon-svelte-csf";
@@ -140,7 +141,7 @@ describe(getStoryChildrenRawCode.name, () => {
       const svelteASTNodes = await extractSvelteASTNodes({ ast });
       const { storyComponents } = svelteASTNodes;
       const component = storyComponents[0].component;
-      const rawSource = getStoryChildrenRawCode({
+      const rawSource = getStoryContentRawCode({
         nodes: {
           component,
           svelte: svelteASTNodes,
@@ -153,7 +154,7 @@ describe(getStoryChildrenRawCode.name, () => {
   });
 
   describe('When a `<Story />` is NOT a self-closing tag...', () => {
-    it('works when a static children content provided', async ({ expect }) => {
+    it('works when a static children content provided with asChild', async ({ expect }) => {
       const code = `
         <script module>
           import { defineMeta } from "@storybook/addon-svelte-csf";
@@ -165,15 +166,15 @@ describe(getStoryChildrenRawCode.name, () => {
           });
         </script>
 
-        <Story name="Default">
-          <SomeComponent foo="bar" />
+        <Story name="Default" asChild>
+          <h1>Static content</h1>
         </Story>
       `;
       const ast = getSvelteAST({ code });
       const svelteASTNodes = await extractSvelteASTNodes({ ast });
       const { storyComponents } = svelteASTNodes;
       const component = storyComponents[0].component;
-      const rawSource = getStoryChildrenRawCode({
+      const rawSource = getStoryContentRawCode({
         nodes: {
           component,
           svelte: svelteASTNodes,
@@ -181,10 +182,12 @@ describe(getStoryChildrenRawCode.name, () => {
         originalCode: code,
       });
 
-      expect(rawSource).toBe(`<SomeComponent foo="bar" />`);
+      expect(rawSource).toBe(`<h1>Static content</h1>`);
     });
 
-    it("works when a `children` svelte's snippet block used inside", async ({ expect }) => {
+    it('works when a static children content provided as a child to the component', async ({
+      expect,
+    }) => {
       const code = `
         <script module>
           import { defineMeta } from "@storybook/addon-svelte-csf";
@@ -197,7 +200,40 @@ describe(getStoryChildrenRawCode.name, () => {
         </script>
 
         <Story name="Default">
-          {#snippet children(args)}
+          <h1>Static children content</h1>
+        </Story>
+      `;
+      const ast = getSvelteAST({ code });
+      const svelteASTNodes = await extractSvelteASTNodes({ ast });
+      const { storyComponents } = svelteASTNodes;
+      const component = storyComponents[0].component;
+      const rawSource = getStoryContentRawCode({
+        nodes: {
+          component,
+          svelte: svelteASTNodes,
+        },
+        originalCode: code,
+      });
+
+      expect(rawSource).toBe(dedent`<SampleComponent {...args}>
+          <h1>Static children content</h1>
+        </SampleComponent>`);
+    });
+
+    it("works when a `template` svelte's snippet block used inside", async ({ expect }) => {
+      const code = `
+        <script module>
+          import { defineMeta } from "@storybook/addon-svelte-csf";
+
+          import SampleComponent from "./SampleComponent.svelte";
+
+          const { Story } = defineMeta({
+            component: SampleComponent,
+          });
+        </script>
+
+        <Story name="Default">
+          {#snippet template(args)}
             <SomeComponent {...args} />
           {/snippet}
         </Story>
@@ -206,7 +242,7 @@ describe(getStoryChildrenRawCode.name, () => {
       const svelteASTNodes = await extractSvelteASTNodes({ ast });
       const { storyComponents } = svelteASTNodes;
       const component = storyComponents[0].component;
-      const rawSource = getStoryChildrenRawCode({
+      const rawSource = getStoryContentRawCode({
         nodes: {
           component,
           svelte: svelteASTNodes,
@@ -217,7 +253,7 @@ describe(getStoryChildrenRawCode.name, () => {
       expect(rawSource).toBe(`<SomeComponent {...args} />`);
     });
 
-    it("inner `<Story>`'s children content takes precedence over `setTemplate`", async ({
+    it("inner `<Story>`'s template content takes precedence over `setTemplate`", async ({
       expect,
     }) => {
       const code = `
@@ -240,8 +276,8 @@ describe(getStoryChildrenRawCode.name, () => {
         {/snippet}
 
         <Story name="Default">
-          {#snippet children(args)}
-            <SomeComponent wins="children" {...args} />
+          {#snippet template(args)}
+            <SomeComponent wins="inner-template" {...args} />
           {/snippet}
         </Story>
       `;
@@ -249,7 +285,7 @@ describe(getStoryChildrenRawCode.name, () => {
       const svelteASTNodes = await extractSvelteASTNodes({ ast });
       const { storyComponents } = svelteASTNodes;
       const component = storyComponents[0].component;
-      const rawSource = getStoryChildrenRawCode({
+      const rawSource = getStoryContentRawCode({
         nodes: {
           component,
           svelte: svelteASTNodes,
@@ -257,7 +293,7 @@ describe(getStoryChildrenRawCode.name, () => {
         originalCode: code,
       });
 
-      expect(rawSource).toBe(`<SomeComponent wins="children" {...args} />`);
+      expect(rawSource).toBe(`<SomeComponent wins="inner-template" {...args} />`);
     });
   });
 });

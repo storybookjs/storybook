@@ -149,32 +149,32 @@ export class GetDefineMetaFirstArgumentError extends StorybookSvelteCSFError {
   }
 }
 
-export class InvalidStoryChildrenAttributeError extends StorybookSvelteCSFError {
+export class InvalidStoryTemplateAttributeError extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.parserExtractSvelte;
   readonly code = 7;
   public documentation = true;
 
-  public childrenAttribute: SvelteAST.Attribute;
+  public templateAttribute: SvelteAST.Attribute;
 
   constructor({
     filename,
     component,
-    childrenAttribute,
+    templateAttribute,
   }: {
     filename?: StorybookSvelteCSFError['filename'];
     component: NonNullable<StorybookSvelteCSFError['component']>;
-    childrenAttribute: InvalidStoryChildrenAttributeError['childrenAttribute'];
+    templateAttribute: InvalidStoryTemplateAttributeError['templateAttribute'];
   }) {
     super({ filename, component });
-    this.childrenAttribute = childrenAttribute;
+    this.templateAttribute = templateAttribute;
   }
 
   template() {
     return dedent`
       Component '${this.quickStoryRawCodeIdentifier}' in the stories file '${this.filepathURL}'
-      has an invalid 'children'-prop.
+      has an invalid 'template'-prop.
 
-      When set, the 'children'-prop must be an expression with reference to a root-level snippet.
+      When set, the 'template'-prop must be an expression with reference to a root-level snippet.
 
       Eg.:
 
@@ -182,7 +182,7 @@ export class InvalidStoryChildrenAttributeError extends StorybookSvelteCSFError 
         ...
       {/snippet}
 
-      <Story name="${this.storyNameFromAttribute}" children={template} />
+      <Story name="${this.storyNameFromAttribute}" template={template} />
     `;
   }
 }

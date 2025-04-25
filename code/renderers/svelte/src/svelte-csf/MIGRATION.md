@@ -161,7 +161,7 @@ After:
 
 ```svelte
 <Story name="Default">
-  {#snippet children(args)}
+  {#snippet template(args)}
     <Button {...args} />
   {/snippet}
 </Story>
@@ -172,7 +172,7 @@ Difference:
 ```diff
 - <Story name="Default" let:args>
 + <Story name="Default">
-+   {#snippet children(args)}
++   {#snippet template(args)}
        <Button {...args} />
 +   {/snippet}
  </Story>
@@ -195,7 +195,7 @@ After:
 
 ```svelte
 <Story name="Context">
-  {#snippet children(_args, context)}
+  {#snippet template(_args, context)}
     <div>StoryContext.name = {context.name}</div>
     <div>StoryContext.id = {context.id}</div>
   {/snippet}
@@ -203,14 +203,14 @@ After:
 ```
 
 > [!NOTE]
-> Snippet `children` second argument `context` is optional.
+> Snippet `template` second argument `context` is optional.
 
 Difference:
 
 ```diff
 - <Story name="Context" let:context>
 + <Story name="Context">
-+    {#snippet children(_args, context)}
++    {#snippet template(_args, context)}
         <div>StoryContext.name = {context.name}</div>
         <div>StoryContext.id = {context.id}</div>
 +    {/snippet}
@@ -227,7 +227,8 @@ We have **new ways of setting a template** for our `<Story>` components:
 1. [Static template](./README.md#static-template)
 1. [Default template](./README.md#default-template)
 
-It’s also no longer required to define a template. Stories without templates will just render the component with args becoming props.
+> [!IMPORTANT]:
+> **It’s also no longer required to define a template.** Stories without templates will just render the component with args becoming props.
 
 ---
 

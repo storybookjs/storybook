@@ -47,5 +47,6 @@ export type StoryAnnotations<TCmp extends Cmp> = BaseStoryAnnotations<
   // 👇 All of the args - combining the component props and the ones from meta - defineMeta
   ComponentProps<TCmp>,
   // NOTE: 👇 This is supposed to set all of the args specified in 'defineMeta' to be optional for Story
-  Partial<Simplify<SetOptional<ComponentProps<TCmp>, keyof Meta<TCmp>['args']>>>
+  // Partial<Simplify<SetOptional<ComponentProps<TCmp>, keyof Meta<TCmp>['args']>>>
+  Partial<ComponentProps<TCmp>>
 >;

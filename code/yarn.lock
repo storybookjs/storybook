@@ -6170,7 +6170,6 @@ __metadata:
     "@storybook/builder-vite": "workspace:*"
     "@storybook/html": "workspace:*"
     "@types/node": "npm:^22.0.0"
-    magic-string: "npm:^0.30.0"
     typescript: "npm:^5.7.3"
   peerDependencies:
     storybook: "workspace:^"

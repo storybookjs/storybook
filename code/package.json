@@ -94,7 +94,7 @@
     "@types/node": "^22.0.0",
     "@types/react": "^18.0.0",
     "@vitest/expect@npm:3.0.9": "patch:@vitest/expect@npm%3A3.0.9#~/.yarn/patches/@vitest-expect-npm-3.0.9-e2a2210fb4.patch",
-    "esbuild": "^0.25.0",
+    "esbuild": "^0.25.3",
     "playwright": "1.48.1",
     "playwright-core": "1.48.1",
     "react": "^18.2.0",

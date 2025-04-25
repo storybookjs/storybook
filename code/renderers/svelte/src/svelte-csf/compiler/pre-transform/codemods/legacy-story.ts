@@ -84,6 +84,10 @@ export function transformLegacyStory(params: Params): SvelteAST.Component {
     );
   }
 
+  if (!tags) {
+    tags = createASTAttribute('tags', createASTExpressionTag(createASTArrayExpression()));
+  }
+
   if (autodocs) {
     transformAutodocs({
       autodocs,
@@ -112,9 +116,22 @@ export function transformLegacyStory(params: Params): SvelteAST.Component {
     newAttributes.push(parameters);
   }
 
-  if (tags) {
-    newAttributes.push(tags);
+
+  // Always add 'legacy' tag to all legacy stories
+  if (
+    typeof tags.value === 'object' &&
+    !Array.isArray(tags.value) &&
+    tags.value.type === 'ExpressionTag' &&
+    tags.value.expression.type === 'ArrayExpression' &&
+    !tags.value.expression.elements.some((el) => el && el.type === 'Literal' && el.value === 'legacy')
+  ) {
+    tags.value.expression.elements.push({
+      type: 'Literal',
+      value: 'legacy',
+    });
   }
+
+  newAttributes.push(tags);
 
   return {
     ...rest,

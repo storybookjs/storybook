@@ -139,13 +139,17 @@
       injectIntoPlayFunction(renderer.storyContext, play);
     }
   });
+
+  const isLegacyStory = $derived(
+    renderer.storyContext.tags?.some((tag) => tag === 'legacy') ?? false
+  );
 </script>
 
 {#if isCurrentlyViewed}
   {#if isSnippet(template)}
     {@render template(renderer.args, renderer.storyContext)}
   {:else if isSnippet(children)}
-    {#if asChild}
+    {#if asChild || isLegacyStory}
       {@render children()}
     {:else if renderer.storyContext.component}
       <renderer.storyContext.component {children} {...renderer.args} />

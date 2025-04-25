@@ -1,10 +1,7 @@
-import type { ComponentProps, ReactNode, SyntheticEvent } from 'react';
-import React from 'react';
-
-import { styled } from '@storybook/core/theming';
+import React, { type ComponentProps, type ReactNode, type SyntheticEvent } from 'react';
 
 import memoize from 'memoizerific';
-import { transparentize } from 'polished';
+import { styled } from 'storybook/theming';
 
 export interface TitleProps {
   children?: ReactNode;
@@ -40,7 +37,7 @@ const Title = styled(({ active, loading, disabled, ...rest }: TitleProps) => <sp
   ({ disabled, theme }) =>
     disabled
       ? {
-          color: transparentize(0.7, theme.color.defaultText),
+          color: theme.textMutedColor,
         }
       : {}
 );
@@ -150,13 +147,25 @@ const Item = styled.div<ItemProps>(
         opacity: 1,
       },
     },
+  ({ theme, as }) =>
+    as === 'label' && {
+      '&:has(input:not(:disabled))': {
+        cursor: 'pointer',
+        '&:hover': {
+          background: theme.background.hoverable,
+        },
+      },
+    },
   ({ disabled }) => disabled && { cursor: 'not-allowed' }
 );
 
-const getItemProps = memoize(100)((onClick, href, LinkWrapper) => ({
+const getItemProps = memoize(100)(({ onClick, input, href, LinkWrapper }) => ({
   ...(onClick && {
     as: 'button',
     onClick,
+  }),
+  ...(input && {
+    as: 'label',
   }),
   ...(href && {
     as: 'a',
@@ -176,6 +185,7 @@ export interface ListItemProps extends Omit<ComponentProps<typeof Item>, 'title'
   center?: ReactNode;
   right?: ReactNode;
   icon?: ReactNode;
+  input?: ReactNode;
   active?: boolean;
   disabled?: boolean;
   href?: string;
@@ -183,30 +193,32 @@ export interface ListItemProps extends Omit<ComponentProps<typeof Item>, 'title'
   isIndented?: boolean;
 }
 
-const ListItem = ({
-  loading = false,
-  title = <span>Loading state</span>,
-  center = null,
-  right = null,
-
-  active = false,
-  disabled = false,
-  isIndented,
-  href = undefined,
-  onClick = undefined,
-  icon,
-  LinkWrapper = undefined,
-  ...rest
-}: ListItemProps) => {
+const ListItem = (props: ListItemProps) => {
+  const {
+    loading = false,
+    title = <span>Loading state</span>,
+    center = null,
+    right = null,
+    active = false,
+    disabled = false,
+    isIndented = false,
+    href = undefined,
+    onClick = undefined,
+    icon,
+    input,
+    LinkWrapper = undefined,
+    ...rest
+  } = props;
   const commonProps = { active, disabled };
-  const itemProps = getItemProps(onClick, href, LinkWrapper);
+  const itemProps = getItemProps(props);
+  const left = icon || input;
 
   return (
     <Item {...rest} {...commonProps} {...itemProps}>
       <>
-        {icon && <Left {...commonProps}>{icon}</Left>}
+        {left && <Left {...commonProps}>{left}</Left>}
         {title || center ? (
-          <Center isIndented={!!(!icon && isIndented)}>
+          <Center isIndented={isIndented && !left}>
             {title && (
               <Title {...commonProps} loading={loading}>
                 {title}

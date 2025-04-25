@@ -92,10 +92,10 @@ export const benchPackage = async (packageName: PackageName) => {
       2
     )
   );
-
   const npmInstallResult = await x(
     'npm',
-    `install --registry http://localhost:6001 --omit peer --json`.split(' '),
+    // --force to ignore peer dependency warnings, we aren't installing peer dependencies anyway
+    `install --registry http://localhost:6001 --omit peer --json --force`.split(' '),
     {
       nodeOptions: { cwd: tmpBenchPackagePath },
     }
@@ -460,16 +460,6 @@ const run = async () => {
   if (options.baseBranch) {
     const comparisonResults = await compareResults({ results, baseBranch: options.baseBranch });
     const resultsAboveThreshold = filterResultsByThresholds(comparisonResults);
-    await saveLocally({
-      filename: `compare-with-${options.baseBranch}.json`,
-      results: comparisonResults,
-      diff: true,
-    });
-    await saveLocally({
-      filename: `comparisons-above-threshold-with-${options.baseBranch}.json`,
-      results: resultsAboveThreshold,
-      diff: true,
-    });
     if (options.pullRequest) {
       await uploadToGithub({
         results: resultsAboveThreshold,

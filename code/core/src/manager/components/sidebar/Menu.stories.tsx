@@ -1,12 +1,14 @@
 import React from 'react';
 
-import { TooltipLinkList } from '@storybook/core/components';
-import { styled } from '@storybook/core/theming';
-import { LinkIcon } from '@storybook/icons';
-import type { Meta, StoryObj } from '@storybook/react';
-import { expect, screen, userEvent, within } from '@storybook/test';
+import { TooltipLinkList } from 'storybook/internal/components';
 
-import type { State } from '@storybook/core/manager-api';
+import { LinkIcon } from '@storybook/icons';
+
+import type { Meta, StoryObj } from '@storybook/react-vite';
+
+import type { State } from 'storybook/manager-api';
+import { expect, screen, userEvent, within } from 'storybook/test';
+import { styled } from 'storybook/theming';
 
 import { useMenu } from '../../container/Menu';
 import { LayoutProvider } from '../layout/LayoutProvider';

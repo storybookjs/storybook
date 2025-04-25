@@ -1,18 +1,15 @@
+import { deprecate, logger } from 'storybook/internal/client-logger';
+import { storyNameFromExport, toId } from 'storybook/internal/csf';
 import type {
   ArgTypes,
-  LegacyStoryAnnotationsOrFn,
-  Renderer,
-  StoryAnnotations,
-  StoryFn,
-  StoryId,
-} from '@storybook/core/types';
-import type {
+  ArgsStoryFn,
   NormalizedComponentAnnotations,
   NormalizedStoryAnnotations,
-} from '@storybook/core/types';
-import { storyNameFromExport, toId } from '@storybook/csf';
-
-import { deprecate, logger } from '@storybook/core/client-logger';
+  Renderer,
+  StoryAnnotations,
+  StoryAnnotationsOrFn,
+  StoryId,
+} from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 
@@ -28,11 +25,11 @@ See https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#hoisted-csf-
 
 export function normalizeStory<TRenderer extends Renderer>(
   key: StoryId,
-  storyAnnotations: LegacyStoryAnnotationsOrFn<TRenderer>,
+  storyAnnotations: StoryAnnotationsOrFn<TRenderer>,
   meta: NormalizedComponentAnnotations<TRenderer>
 ): NormalizedStoryAnnotations<TRenderer> {
   const storyObject: StoryAnnotations<TRenderer> = storyAnnotations;
-  const userStoryFn: StoryFn<TRenderer> | null =
+  const userStoryFn: ArgsStoryFn<TRenderer> | null =
     typeof storyAnnotations === 'function' ? storyAnnotations : null;
 
   const { story } = storyObject;
@@ -60,9 +57,13 @@ export function normalizeStory<TRenderer extends Renderer>(
     ...normalizeArrays(storyObject.beforeEach),
     ...normalizeArrays(story?.beforeEach),
   ];
+
+  const experimental_afterEach = [
+    ...normalizeArrays(storyObject.experimental_afterEach),
+    ...normalizeArrays(story?.experimental_afterEach),
+  ];
   const { render, play, tags = [], globals = {} } = storyObject;
 
-  // eslint-disable-next-line no-underscore-dangle
   const id = parameters.__id || toId(meta.id, exportName);
   return {
     moduleExport: storyAnnotations,
@@ -75,6 +76,7 @@ export function normalizeStory<TRenderer extends Renderer>(
     argTypes: normalizeInputTypes(argTypes),
     loaders,
     beforeEach,
+    experimental_afterEach,
     globals,
     ...(render && { render }),
     ...(userStoryFn && { userStoryFn }),

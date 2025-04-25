@@ -196,7 +196,7 @@ describe('Stories Snapshots', () => {
           await new Promise((resolve) => setTimeout(resolve, 1));
           // Defines the custom snapshot path location and file name
           const customSnapshotPath = `./__snapshots__/${componentName}.spec.js.snap`;
-          expect(document.body.firstChild).toMatchFileSnapshot(customSnapshotPath);
+          await expect(document.body.firstChild).toMatchFileSnapshot(customSnapshotPath);
         });
       });
     });
@@ -267,7 +267,7 @@ describe('Stories Snapshots', () => {
           await new Promise((resolve) => setTimeout(resolve, 1));
           // Defines the custom snapshot path location and file name
           const customSnapshotPath = `./__snapshots__/${componentName}.spec.ts.snap`;
-          expect(document.body.firstChild).toMatchFileSnapshot(customSnapshotPath);
+          await expect(document.body.firstChild).toMatchFileSnapshot(customSnapshotPath);
         });
       });
     });

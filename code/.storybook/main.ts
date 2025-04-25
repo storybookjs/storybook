@@ -1,11 +1,15 @@
 import { join } from 'node:path';
 
-import type { StorybookConfig } from '../frameworks/react-vite';
+import react from '@vitejs/plugin-react';
 
-const componentsPath = join(__dirname, '../core/src/components');
-const managerApiPath = join(__dirname, '../core/src/manager-api');
+import { BROWSER_TARGETS } from '../core/src/builder-manager';
+import { defineMain } from '../frameworks/react-vite/src/node';
 
-const config: StorybookConfig = {
+const componentsPath = join(__dirname, '../core/src/components/index.ts');
+const managerApiPath = join(__dirname, '../core/src/manager-api/index.mock.ts');
+const imageContextPath = join(__dirname, '../frameworks/nextjs/src/image-context.ts');
+
+const config = defineMain({
   stories: [
     './*.stories.@(js|jsx|ts|tsx)',
     {
@@ -21,6 +25,10 @@ const config: StorybookConfig = {
       titlePrefix: 'preview',
     },
     {
+      directory: '../core/src/preview',
+      titlePrefix: 'preview',
+    },
+    {
       directory: '../core/src/components/brand',
       titlePrefix: 'brand',
     },
@@ -29,28 +37,28 @@ const config: StorybookConfig = {
       titlePrefix: 'components',
     },
     {
+      directory: '../core/src/component-testing/components',
+      titlePrefix: 'component-testing',
+    },
+    {
+      directory: '../core/src/controls/components',
+      titlePrefix: 'controls',
+    },
+    {
+      directory: '../core/src/highlight',
+      titlePrefix: 'highlight',
+    },
+    {
       directory: '../lib/blocks/src',
       titlePrefix: 'blocks',
     },
     {
+      directory: '../addons/a11y/src',
+      titlePrefix: 'addons/accessibility',
+    },
+    {
       directory: '../addons/a11y/template/stories',
-      titlePrefix: 'addons/a11y',
-    },
-    {
-      directory: '../addons/actions/template/stories',
-      titlePrefix: 'addons/actions',
-    },
-    {
-      directory: '../addons/backgrounds/template/stories',
-      titlePrefix: 'addons/backgrounds',
-    },
-    {
-      directory: '../addons/controls/src',
-      titlePrefix: 'addons/controls',
-    },
-    {
-      directory: '../addons/controls/template/stories',
-      titlePrefix: 'addons/controls',
+      titlePrefix: 'addons/accessibility',
     },
     {
       directory: '../addons/docs/template/stories',
@@ -61,14 +69,6 @@ const config: StorybookConfig = {
       titlePrefix: 'addons/links',
     },
     {
-      directory: '../addons/viewport/template/stories',
-      titlePrefix: 'addons/viewport',
-    },
-    {
-      directory: '../addons/toolbars/template/stories',
-      titlePrefix: 'addons/toolbars',
-    },
-    {
       directory: '../addons/themes/template/stories',
       titlePrefix: 'addons/themes',
     },
@@ -77,34 +77,29 @@ const config: StorybookConfig = {
       titlePrefix: 'addons/onboarding',
     },
     {
-      directory: '../addons/interactions/src',
-      titlePrefix: 'addons/interactions',
+      directory: '../addons/pseudo-states/src',
+      titlePrefix: 'addons/pseudo-states',
     },
     {
-      directory: '../addons/interactions/template/stories',
-      titlePrefix: 'addons/interactions/tests',
+      directory: '../addons/vitest/src/components',
+      titlePrefix: 'addons/vitest',
     },
     {
-      directory: '../addons/test/src/components',
-      titlePrefix: 'addons/test',
-    },
-    {
-      directory: '../addons/test/template/stories',
-      titlePrefix: 'addons/test',
+      directory: '../addons/vitest/template/stories',
+      titlePrefix: 'addons/vitest',
     },
   ],
   addons: [
     '@storybook/addon-themes',
-    '@storybook/addon-essentials',
-    '@storybook/addon-storysource',
+    '@storybook/addon-docs',
     '@storybook/addon-designs',
-    '@storybook/experimental-addon-test',
+    '@storybook/addon-vitest',
     '@storybook/addon-a11y',
+    'storybook-addon-pseudo-states',
     '@chromatic-com/storybook',
   ],
   previewAnnotations: [
     './core/template/stories/preview.ts',
-    './addons/toolbars/template/stories/preview.ts',
     './renderers/react/template/components/index.js',
   ],
   build: {
@@ -130,8 +125,7 @@ const config: StorybookConfig = {
     disableTelemetry: true,
   },
   features: {
-    viewportStoryGlobals: true,
-    backgroundsStoryGlobals: true,
+    developmentModeForBuild: true,
   },
   viteFinal: async (viteConfig, { configType }) => {
     const { mergeConfig } = await import('vite');
@@ -141,25 +135,30 @@ const config: StorybookConfig = {
         alias: {
           ...(configType === 'DEVELOPMENT'
             ? {
-                '@storybook/components': componentsPath,
                 'storybook/internal/components': componentsPath,
-                '@storybook/manager-api': managerApiPath,
-                'storybook/internal/manager-api': managerApiPath,
+                'storybook/manager-api': managerApiPath,
+                'sb-original/image-context': imageContextPath,
               }
-            : {}),
+            : {
+                'storybook/manager-api': managerApiPath,
+              }),
         },
       },
-      optimizeDeps: {
-        force: true,
-        include: ['@storybook/blocks'],
-      },
+      plugins: [react()],
       build: {
         // disable sourcemaps in CI to not run out of memory
         sourcemap: process.env.CI !== 'true',
+        target: BROWSER_TARGETS,
+      },
+      server: {
+        watch: {
+          // Something odd happens with tsconfig and nx which causes Storybook to keep reloading, so we ignore them
+          ignored: ['**/.nx/cache/**', '**/tsconfig.json'],
+        },
       },
     } satisfies typeof viteConfig);
   },
   // logLevel: 'debug',
-};
+});
 
 export default config;

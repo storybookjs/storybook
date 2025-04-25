@@ -1,3 +1,4 @@
+<!-- prettier-ignore -->
 ```mdx filename="src/components/Select.mdx" renderer="common" language="mdx"
 # Select
 

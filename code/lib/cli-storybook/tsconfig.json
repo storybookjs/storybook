@@ -1,5 +1,11 @@
 {
   "extends": "../../tsconfig.json",
-  "compilerOptions": {},
-  "include": ["src/**/*"]
+  "compilerOptions": {
+    "resolveJsonModule": true
+  },
+  "include": [
+    "src/**/*",
+    "../../core/src/common/utils/get-addon-annotations.test.ts",
+    "../../core/src/common/utils/get-addon-annotations.ts"
+  ]
 }

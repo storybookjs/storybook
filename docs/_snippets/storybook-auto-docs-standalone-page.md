@@ -1,3 +1,4 @@
+<!-- prettier-ignore -->
 ```mdx filename="src/GettingStarted.mdx" renderer="common" language="mdx"
 # Getting Started
 

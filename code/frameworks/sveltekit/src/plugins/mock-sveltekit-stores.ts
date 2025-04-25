@@ -3,11 +3,10 @@ import { fileURLToPath } from 'node:url';
 
 import type { Plugin } from 'vite';
 
-// @ts-expect-error We are building for CJS and ESM, so we have to use import.meta.url for the ESM output
 const filename = __filename ?? fileURLToPath(import.meta.url);
 const dir = dirname(filename);
 
-export async function mockSveltekitStores() {
+export function mockSveltekitStores() {
   return {
     name: 'storybook:sveltekit-mock-stores',
     config: () => ({

@@ -1,0 +1,73 @@
+export type Framework = (typeof supportedFrameworks)[number];
+
+// TODO: sync this/pull this from core
+export const supportedFrameworks = [
+  'angular',
+  'ember',
+  'html-vite',
+  'nextjs',
+  'nextjs-vite',
+  'nuxt',
+  'preact-vite',
+  'qwik',
+  'react-native-web-vite',
+  'react-rsbuild',
+  'react-vite',
+  'react-webpack5',
+  'server-webpack5',
+  'solid',
+  'svelte-vite',
+  'sveltekit',
+  'vue3-rsbuild',
+  'vue3-vite',
+  'react-native',
+  'web-components-vite',
+] as const;
+
+export const supportedFrameworksPackages = {
+  'html-vite': '@storybook/html-vite',
+  'preact-vite': '@storybook/preact-vite',
+  'react-native-web-vite': '@storybook/react-native-web-vite',
+  'react-rsbuild': 'storybook-react-rsbuild',
+  'react-vite': '@storybook/react-vite',
+  'react-webpack5': '@storybook/react-webpack5',
+  'server-webpack5': '@storybook/server-webpack5',
+  'svelte-vite': '@storybook/svelte-vite',
+  'vue3-rsbuild': 'storybook-vue3-rsbuild',
+  'vue3-vite': '@storybook/vue3-vite',
+  'web-components-vite': '@storybook/web-components-vite',
+
+  angular: '@storybook/angular',
+  ember: '@storybook/ember',
+  nextjs: '@storybook/nextjs',
+  'nextjs-vite': '@storybook/nextjs-vite',
+
+  nuxt: '@storybook/vue3-vite',
+  qwik: 'storybook-framework-qwik',
+  solid: 'storybook-solidjs-vite',
+  sveltekit: '@storybook/sveltekit',
+  'react-native': '@storybook/react-native',
+} satisfies Record<Framework, string>;
+
+export const supportedFrameworksNames = {
+  'html-vite': 'HTML with Vite',
+  'preact-vite': 'Preact with Vite',
+  'react-native-web-vite': 'React Native Web with Vite',
+  'react-rsbuild': 'React with Rsbuild',
+  'react-vite': 'React with Vite',
+  'react-webpack5': 'React with Webpack 5',
+  'server-webpack5': 'Server with Webpack 5',
+  'svelte-vite': 'Svelte with Vite',
+  'vue3-rsbuild': 'Vue 3 with Rsbuild',
+  'vue3-vite': 'Vue 3 with Vite',
+  'web-components-vite': 'Web Components with Vite',
+  angular: 'Angular',
+  ember: 'Ember',
+  nextjs: 'NextJS',
+  'nextjs-vite': 'NextJS with Vite',
+  nuxt: 'Nuxt',
+  qwik: 'Qwik',
+  solid: 'Solid',
+  sveltekit: 'SvelteKit',
+  'react-native': 'React Native',
+} satisfies Record<Framework, string>;

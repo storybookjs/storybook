@@ -1,3 +1,11 @@
+import { logger } from 'storybook/internal/client-logger';
+import {
+  FORCE_RE_RENDER,
+  RESET_STORY_ARGS,
+  STORY_RENDERED,
+  UPDATE_GLOBALS,
+  UPDATE_STORY_ARGS,
+} from 'storybook/internal/core-events';
 import type {
   Args,
   DecoratorApplicator,
@@ -6,17 +14,9 @@ import type {
   Renderer,
   StoryContext,
   StoryId,
-} from '@storybook/core/types';
-import { global } from '@storybook/global';
+} from 'storybook/internal/types';
 
-import { logger } from '@storybook/core/client-logger';
-import {
-  FORCE_RE_RENDER,
-  RESET_STORY_ARGS,
-  STORY_RENDERED,
-  UPDATE_GLOBALS,
-  UPDATE_STORY_ARGS,
-} from '@storybook/core/core-events';
+import { global } from '@storybook/global';
 
 import { addons } from './main';
 

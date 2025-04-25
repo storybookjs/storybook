@@ -20,7 +20,7 @@ export const Basic: Story = {
 ```
 
 ```js filename="Button.stories.js|jsx" renderer="common" language="js"
-export const Basic {
+export const Basic = {
   parameters: {
     docs: {
       canvas: { sourceState: 'shown' },

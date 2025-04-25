@@ -12,7 +12,6 @@ type Event = {
   payload?: any;
 };
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export const experimental_serverChannel = async (channel: Channel, options: Options) => {
   const { disableTelemetry } = await options.presets.apply<CoreConfig>('core', {});
 

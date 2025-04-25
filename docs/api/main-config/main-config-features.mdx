@@ -11,14 +11,28 @@ Type:
 
 ```ts
 {
+  actions?: boolean;
   argTypeTargetsV7?: boolean;
-  backgroundsStoryGlobals?: boolean;
+  backgrounds?: boolean;
+  controls?: boolean;
+  developmentModeForBuild?: boolean;
+  highlight?: boolean;
+  interactions?: boolean;
   legacyDecoratorFileOrder?: boolean;
-  viewportStoryGlobals?: boolean;
+  measure?: boolean;
+  outline?: boolean;
+  toolbars?: boolean;
+  viewport?: boolean;
 }
 ```
 
 Enables Storybook's additional features.
+
+## `actions`
+
+Type: `boolean`
+
+Enable the [Actions](../../essentials/actions.mdx) feature.
 
 ## `argTypeTargetsV7`
 
@@ -34,17 +48,41 @@ Filter args with a "target" on the type from the render function.
 
 {/* prettier-ignore-end */}
 
-## `backgroundsStoryGlobals`
+## `backgrounds`
 
 Type: `boolean`
 
-Configures the [Backgrounds addon](../../essentials/backgrounds.mdx) to opt-in to the new story globals API for configuring backgrounds.
+Enable the [Backgrounds](../../essentials/backgrounds.mdx) feature.
+
+## `controls`
+
+Type: `boolean`
+
+Enable the [Controls](../../essentials/controls.mdx) feature.
+
+## `developmentModeForBuild`
+
+Type: `boolean`
+
+Set `NODE_ENV` to `'development'` in built Storybooks for better testing and debugging capabilities.
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="main-config-features-backgrounds-story-globals.md" />
+<CodeSnippets path="main-config-features-development-mode-for-build.md" />
 
 {/* prettier-ignore-end */}
+
+## `highlight`
+
+Type: `boolean`
+
+Enable the [Highlight](../../essentials/highlight.mdx) feature.
+
+## `interactions`
+
+Type: `boolean`
+
+Enable the [Interactions](../../essentials/interactions.mdx) feature.
 
 ## `legacyDecoratorFileOrder`
 
@@ -58,14 +96,26 @@ Apply decorators from preview.js before decorators from addons or frameworks. [M
 
 {/* prettier-ignore-end */}
 
-## `viewportStoryGlobals`
+## `measure`
 
 Type: `boolean`
 
-Configures the [Viewports addon](../../essentials/viewport.mdx) to opt-in to the new story globals API for configuring viewports.
+Enable the [Measure](../../essentials/measure-and-outline.mdx#measure) feature.
 
-{/* prettier-ignore-start */}
+## `outline`
 
-<CodeSnippets path="main-config-features-viewport-story-globals.md" />
+Type: `boolean`
 
-{/* prettier-ignore-end */}
+Enable the [Outline](../../essentials/measure-and-outline.mdx#outline) feature.
+
+## `toolbars`
+
+Type: `boolean`
+
+Enable the [Toolbars](../../essentials/toolbars.mdx) feature.
+
+## `viewport`
+
+Type: `boolean`
+
+Enable the [Viewport](../../essentials/viewport.mdx) feature.

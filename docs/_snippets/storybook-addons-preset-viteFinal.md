@@ -3,7 +3,7 @@ export function ViteFinal(config, options = {}) {
   config.plugins.push(
     new MyCustomPlugin({
       someOption: true,
-    })
+    }),
   );
 
   return config;
@@ -15,7 +15,7 @@ export function ViteFinal(config: any, options: any = {}) {
   config.plugins.push(
     new MyCustomPlugin({
       someOption: true,
-    })
+    }),
   );
 
   return config;

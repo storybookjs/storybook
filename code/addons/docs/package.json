@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-docs",
-  "version": "8.5.0-alpha.10",
+  "version": "9.0.0-beta.2",
   "description": "Document component usage and properties in Markdown",
   "keywords": [
     "addon",
@@ -71,11 +71,35 @@
     "./angular": "./angular/index.js",
     "./angular/index.js": "./angular/index.js",
     "./web-components/index.js": "./web-components/index.js",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./manager": {
+      "types": "./dist/manager.d.ts",
+      "import": "./dist/manager.mjs",
+      "require": "./dist/manager.js"
+    }
   },
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "*": [
+        "dist/index.d.ts"
+      ],
+      "angular": [
+        "angular/index.d.ts"
+      ],
+      "blocks": [
+        "dist/blocks.d.ts"
+      ],
+      "ember": [
+        "ember/index.d.ts"
+      ],
+      "preview": [
+        "dist/preview.d.ts"
+      ]
+    }
+  },
   "files": [
     "dist/**/*",
     "angular/**/*",
@@ -98,23 +122,33 @@
   },
   "dependencies": {
     "@mdx-js/react": "^3.0.0",
-    "@storybook/blocks": "workspace:*",
     "@storybook/csf-plugin": "workspace:*",
+    "@storybook/icons": "^1.2.12",
     "@storybook/react-dom-shim": "workspace:*",
-    "react": "^16.8.0 || ^17.0.0 || ^18.0.0",
-    "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0",
+    "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
+    "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
     "ts-dedent": "^2.0.0"
   },
   "devDependencies": {
     "@mdx-js/mdx": "^3.0.0",
     "@rollup/pluginutils": "^5.0.2",
-    "@types/react": "^16.8.0 || ^17.0.0 || ^18.0.0",
+    "@types/color-convert": "^2.0.0",
+    "@types/react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
+    "color-convert": "^2.0.1",
+    "es-toolkit": "^1.22.0",
+    "github-slugger": "^2.0.0",
+    "markdown-to-jsx": "^7.7.2",
+    "memoizerific": "^1.11.3",
+    "polished": "^4.2.2",
     "react": "^18.2.0",
+    "react-colorful": "^5.1.2",
     "react-dom": "^18.2.0",
     "rehype-external-links": "^3.0.0",
     "rehype-slug": "^6.0.0",
-    "typescript": "^5.3.2",
-    "vite": "^4.0.4"
+    "telejson": "8.0.0",
+    "tocbot": "^4.20.1",
+    "typescript": "^5.7.3",
+    "vite": "^6.2.5"
   },
   "peerDependencies": {
     "storybook": "workspace:^"
@@ -130,6 +164,9 @@
       "./src/blocks.ts",
       "./src/shims/mdx-react-shim.ts",
       "./src/mdx-loader.ts"
+    ],
+    "managerEntries": [
+      "./src/manager.tsx"
     ]
   },
   "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16",

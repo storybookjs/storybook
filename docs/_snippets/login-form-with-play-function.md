@@ -1,7 +1,7 @@
 ```ts filename="LoginForm.stories.ts" renderer="angular" language="ts"
 import type { Meta, StoryObj } from '@storybook/angular';
 
-import { userEvent, within, expect } from '@storybook/test';
+import { userEvent, within, expect } from 'storybook/test';
 
 import { LoginForm } from './LoginForm.component';
 
@@ -41,7 +41,7 @@ export const FilledForm: Story = {
 ```
 
 ```js filename="LoginForm.stories.js|jsx" renderer="react" language="js"
-import { userEvent, within, expect } from '@storybook/test';
+import { userEvent, within, expect } from 'storybook/test';
 
 import { LoginForm } from './LoginForm';
 
@@ -80,7 +80,7 @@ export const FilledForm = {
 ```ts filename="LoginForm.stories.ts|tsx" renderer="react" language="ts-4-9"
 import type { Meta, StoryObj } from '@storybook/react';
 
-import { userEvent, within, expect } from '@storybook/test';
+import { userEvent, within, expect } from 'storybook/test';
 
 import { LoginForm } from './LoginForm';
 
@@ -122,7 +122,7 @@ export const FilledForm: Story = {
 ```ts filename="LoginForm.stories.ts|tsx" renderer="react" language="ts"
 import type { Meta, StoryObj } from '@storybook/react';
 
-import { userEvent, within, expect } from '@storybook/test';
+import { userEvent, within, expect } from 'storybook/test';
 
 import { LoginForm } from './LoginForm';
 
@@ -162,7 +162,7 @@ export const FilledForm: Story = {
 ```
 
 ```js filename="LoginForm.stories.js|jsx" renderer="solid" language="js"
-import { userEvent, within, expect } from '@storybook/test';
+import { userEvent, within, expect } from 'storybook/test';
 
 import { LoginForm } from './LoginForm';
 
@@ -201,9 +201,7 @@ export const FilledForm = {
 ```tsx filename="LoginForm.stories.ts|tsx" renderer="solid" language="ts-4-9"
 import type { Meta, StoryObj } from 'storybook-solidjs';
 
-import { within, userEvent } from '@storybook/testing-library';
-
-import { expect } from '@storybook/test';
+import { expect, within, userEvent } from 'storybook/test';
 
 import { LoginForm } from './LoginForm';
 
@@ -245,9 +243,7 @@ export const FilledForm: Story = {
 ```tsx filename="LoginForm.stories.ts|tsx" renderer="solid" language="ts"
 import type { Meta, StoryObj } from 'storybook-solidjs';
 
-import { within, userEvent } from '@storybook/testing-library';
-
-import { expect } from '@storybook/test';
+import { expect, within, userEvent } from 'storybook/test';
 
 import { LoginForm } from './LoginForm';
 
@@ -289,7 +285,7 @@ export const FilledForm: Story = {
 ```svelte filename="LoginForm.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
-  import { expect, userEvent, within } from '@storybook/test';
+  import { expect, userEvent, within } from 'storybook/test';
 
   import LoginForm from './LoginForm.svelte';
 
@@ -328,7 +324,7 @@ export const FilledForm: Story = {
 ```
 
 ```js filename="LoginForm.stories.js" renderer="svelte" language="js" tabTitle="CSF"
-import { expect, userEvent, within } from '@storybook/test';
+import { expect, userEvent, within } from 'storybook/test';
 
 import LoginForm from './LoginForm.svelte';
 
@@ -367,7 +363,7 @@ export const FilledForm = {
 ```svelte filename="LoginForm.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
-  import { expect, userEvent, within } from '@storybook/test';
+  import { expect, userEvent, within } from 'storybook/test';
 
   import LoginForm from './LoginForm.svelte';
 
@@ -407,7 +403,7 @@ export const FilledForm = {
 
 ```ts filename="LoginForm.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="CSF"
 import type { Meta, StoryObj } from '@storybook/svelte';
-import { expect, userEvent, within } from '@storybook/test';
+import { expect, userEvent, within } from 'storybook/test';
 
 import LoginForm from './LoginForm.svelte';
 
@@ -449,7 +445,7 @@ export const FilledForm: Story = {
 ```svelte filename="LoginForm.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
-  import { expect, userEvent, within } from '@storybook/test';
+  import { expect, userEvent, within } from 'storybook/test';
 
   import LoginForm from './LoginForm.svelte';
 
@@ -490,7 +486,7 @@ export const FilledForm: Story = {
 
 ```ts filename="LoginForm.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
 import type { Meta, StoryObj } from '@storybook/svelte';
-import { expect, userEvent, within } from '@storybook/test';
+import { expect, userEvent, within } from 'storybook/test';
 
 import LoginForm from './LoginForm.svelte';
 
@@ -530,7 +526,7 @@ export const FilledForm: Story = {
 ```
 
 ```js filename="LoginForm.stories.js" renderer="vue" language="js"
-import { userEvent, within, expect } from '@storybook/test';
+import { userEvent, within, expect } from 'storybook/test';
 
 import LoginForm from './LoginForm.vue';
 
@@ -578,7 +574,7 @@ export const FilledForm = {
 ```ts filename="LoginForm.stories.ts" renderer="vue" language="ts-4-9"
 import type { Meta, StoryObj } from '@storybook/vue3';
 
-import { userEvent, within, expect } from '@storybook/test';
+import { userEvent, within, expect } from 'storybook/test';
 
 import LoginForm from './LoginForm.vue';
 
@@ -629,7 +625,7 @@ export const FilledForm: Story = {
 ```ts filename="LoginForm.stories.ts" renderer="vue" language="ts"
 import type { Meta, StoryObj } from '@storybook/vue3';
 
-import { userEvent, within, expect } from '@storybook/test';
+import { userEvent, within, expect } from 'storybook/test';
 
 import LoginForm from './LoginForm.vue';
 
@@ -678,7 +674,7 @@ export const FilledForm: Story = {
 ```
 
 ```js filename="LoginForm.stories.js" renderer="web-components" language="js"
-import { userEvent, within, expect } from '@storybook/test';
+import { userEvent, within, expect } from 'storybook/test';
 
 export default {
   component: 'demo-login-form',
@@ -714,7 +710,7 @@ export const FilledForm = {
 
 ```ts filename="LoginForm.stories.ts" renderer="web-components" language="ts"
 import type { Meta, StoryObj } from '@storybook/web-components';
-import { userEvent, within, expect } from '@storybook/test';
+import { userEvent, within, expect } from 'storybook/test';
 
 const meta: Meta = {
   component: 'demo-login-form',

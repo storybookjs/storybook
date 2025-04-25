@@ -1,5 +1,6 @@
+<!-- prettier-ignore -->
 ```mdx filename="src/components/Button/Button.mdx" renderer="common" language="mdx"
-import { Meta, Story } from '@storybook/blocks';
+import { Meta, Story } from '@storybook/addon-docs/blocks';
 
 {/* 👇 Documentation-only page */}
 

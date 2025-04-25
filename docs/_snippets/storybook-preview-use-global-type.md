@@ -24,9 +24,8 @@ const preview = {
     (story, context) => {
       const selectedTheme = context.globals.theme || 'light';
       const theme = MyThemes[selectedTheme];
-      return (
-        // Your theme provider and other context providers go here
-      )
+      // Your theme provider and other context providers goes in the return statement
+      return;
     },
   ],
 };
@@ -45,9 +44,8 @@ const preview: Preview = {
     (story, context) => {
       const selectedTheme = context.globals.theme || 'light';
       const theme = MyThemes[selectedTheme];
-      return (
-        // Your theme provider and other context providers go here
-      )
+      // Your theme provider and other context providers goes in the return statement
+      return;
     },
   ],
 };
@@ -66,9 +64,8 @@ const preview: Preview = {
     (story, context) => {
       const selectedTheme = context.globals.theme || 'light';
       const theme = MyThemes[selectedTheme];
-      return (
-        // Your theme provider and other context providers go here
-      )
+      // Your theme provider and other context providers goes in the return statement
+      return;
     },
   ],
 };

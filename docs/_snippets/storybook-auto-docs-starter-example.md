@@ -1,5 +1,6 @@
+<!-- prettier-ignore -->
 ```mdx filename="Button.mdx" renderer="common" language="mdx"
-import { Meta, Story } from '@storybook/blocks';
+import { Meta, Story } from '@storybook/addon-docs/blocks';
 
 import * as ButtonStories from './Button.stories';
 
@@ -18,8 +19,9 @@ Buttons are often used for form submissions and to toggle elements into view.
 <Story of={ButtonStories.Basic} />
 ```
 
+<!-- prettier-ignore -->
 ```mdx filename="Button.mdx" renderer="svelte" language="mdx" tabTitle="Svelte CSF"
-import { Meta, Story } from '@storybook/blocks';
+import { Meta, Story } from '@storybook/addon-docs/blocks';
 
 import * as ButtonStories from './Button.stories.svelte';
 
@@ -38,8 +40,9 @@ Buttons are often used for form submissions and to toggle elements into view.
 <Story of={ButtonStories.Basic} />
 ```
 
+<!-- prettier-ignore -->
 ```mdx filename="Button.mdx" renderer="svelte" language="mdx" tabTitle="CSF"
-import { Meta, Story } from '@storybook/blocks';
+import { Meta, Story } from '@storybook/addon-docs/blocks';
 
 import * as ButtonStories from './Button.stories';
 

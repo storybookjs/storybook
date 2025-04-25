@@ -399,7 +399,8 @@
     "./internal/manager/globals-runtime": {
       "import": "./dist/manager/globals-runtime.js"
     },
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./internal/package.json": "./package.json"
   },
   "main": "dist/index.cjs",
   "module": "dist/index.js",

@@ -116,14 +116,15 @@ export function transformLegacyStory(params: Params): SvelteAST.Component {
     newAttributes.push(parameters);
   }
 
-
   // Always add 'legacy' tag to all legacy stories
   if (
     typeof tags.value === 'object' &&
     !Array.isArray(tags.value) &&
     tags.value.type === 'ExpressionTag' &&
     tags.value.expression.type === 'ArrayExpression' &&
-    !tags.value.expression.elements.some((el) => el && el.type === 'Literal' && el.value === 'legacy')
+    !tags.value.expression.elements.some(
+      (el) => el && el.type === 'Literal' && el.value === 'legacy'
+    )
   ) {
     tags.value.expression.elements.push({
       type: 'Literal',

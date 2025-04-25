@@ -207,7 +207,9 @@ describe(transformLegacyStory.name, () => {
           state: { componentIdentifierName: {} },
         })
       )
-    ).toMatchInlineSnapshot(`"<Story name="Default" template={template_r71ke5} tags={["legacy"]} />"`);
+    ).toMatchInlineSnapshot(
+      `"<Story name="Default" template={template_r71ke5} tags={["legacy"]} />"`
+    );
   });
 
   it("when directive 'let:args' is used then it wraps Story fragment with 'template' snippet block", async ({

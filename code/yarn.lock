@@ -10434,6 +10434,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"bundle-require@npm:^5.1.0":
+  version: 5.1.0
+  resolution: "bundle-require@npm:5.1.0"
+  dependencies:
+    load-tsconfig: "npm:^0.2.3"
+  peerDependencies:
+    esbuild: ">=0.18"
+  checksum: 10c0/8bff9df68eb686f05af952003c78e70ffed2817968f92aebb2af620cc0b7428c8154df761d28f1b38508532204278950624ef86ce63644013dc57660a9d1810f
+  languageName: node
+  linkType: hard
+
 "busboy@npm:1.6.0":
   version: 1.6.0
   resolution: "busboy@npm:1.6.0"
@@ -11559,6 +11570,7 @@ __metadata:
     prompts: "npm:^2.4.0"
     react: "npm:^18.2.0"
     semver: "npm:^7.3.7"
+    storybook: "workspace:*"
     tiny-invariant: "npm:^1.3.1"
     ts-dedent: "npm:^2.0.0"
     typescript: "npm:^5.7.3"
@@ -17877,6 +17889,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"load-tsconfig@npm:^0.2.3":
+  version: 0.2.5
+  resolution: "load-tsconfig@npm:0.2.5"
+  checksum: 10c0/bf2823dd26389d3497b6567f07435c5a7a58d9df82e879b0b3892f87d8db26900f84c85bc329ef41c0540c0d6a448d1c23ddc64a80f3ff6838b940f3915a3fcb
+  languageName: node
+  linkType: hard
+
 "loader-runner@npm:^4.2.0":
   version: 4.3.0
   resolution: "loader-runner@npm:4.3.0"
@@ -21924,6 +21943,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"react-inspector@npm:^6.0.0":
+  version: 6.0.2
+  resolution: "react-inspector@npm:6.0.2"
+  peerDependencies:
+    react: ^16.8.4 || ^17.0.0 || ^18.0.0
+  checksum: 10c0/8f9b23c21b4d95722e28c9455c2bf00fd9437347714382594461f98e5b9954d60864d0f4e74e881639b065e752a97ba52a65e39930c234072e5bff291bb02b5e
+  languageName: node
+  linkType: hard
+
 "react-is@npm:18.1.0":
   version: 18.1.0
   resolution: "react-is@npm:18.1.0"
@@ -24065,6 +24093,7 @@ __metadata:
     better-opn: "npm:^3.0.2"
     boxen: "npm:^7.1.1"
     browser-dtector: "npm:^3.4.0"
+    bundle-require: "npm:^5.1.0"
     camelcase: "npm:^8.0.0"
     chai: "npm:^5.1.1"
     cli-table3: "npm:^0.6.1"
@@ -24115,6 +24144,7 @@ __metadata:
     react: "npm:^18.2.0"
     react-dom: "npm:^18.2.0"
     react-helmet-async: "npm:^1.3.0"
+    react-inspector: "npm:^6.0.0"
     react-popper-tooltip: "npm:^4.4.2"
     react-router-dom: "npm:6.0.2"
     react-syntax-highlighter: "npm:^15.4.5"

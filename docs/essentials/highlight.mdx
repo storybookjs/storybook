@@ -126,6 +126,8 @@ import { HIGHLIGHT, REMOVE_HIGHLIGHT, RESET_HIGHLIGHT, SCROLL_INTO_VIEW } from '
 An event that highlights DOM elements. The event payload must contain a `selectors` property assigned to an array of selectors matching the elements you want to highlight. See the [usage example](#highlighting-dom-elements), above.
 
 ```ts
+import { HIGHLIGHT, type HighlightOptions } from 'storybook/highlight';
+
 channel.emit(HIGHLIGHT, /* HighlightOptions */ options);
 ```
 
@@ -193,9 +195,10 @@ const handleClickEvent = (itemId: string, details: ClickEventDetails) => {
   // do things
 }
 
+// When you have a channel instance:
 channel.on('MY_CLICK_EVENT', handleClickEvent)
 
-// Or with `useChannel`:
+// Or from a decorator:
 useChannel({
   MY_CLICK_EVENT: handleClickEvent,
 }, [handleClickEvent])
@@ -206,6 +209,8 @@ useChannel({
 An event to remove a previously created highlight. The event payload must contain an `id` property assigned to the id of the highlight you want to remove. See the [usage example](#remove-highlights), above.
 
 ```ts
+import { REMOVE_HIGHLIGHT } from 'storybook/highlight';
+
 channel.emit(REMOVE_HIGHLIGHT, /* string */ id);
 ```
 
@@ -214,6 +219,8 @@ channel.emit(REMOVE_HIGHLIGHT, /* string */ id);
 An event to clear all highlights from highlighted elements. See the [usage example](#reset-highlighted-elements), above.
 
 ```ts
+import { RESET_HIGHLIGHT } from 'storybook/highlight';
+
 channel.emit(RESET_HIGHLIGHT);
 ```
 
@@ -222,7 +229,13 @@ channel.emit(RESET_HIGHLIGHT);
 An event to scroll a DOM element into view, and briefly highlight it. The event payload must contain a `selector` property assigned to the selector of the element you want to scroll into view. You may optionally provide an `options` object to customize the scroll behavior. See the [usage example](#scroll-into-view), above.
 
 ```ts
-channel.emit(SCROLL_INTO_VIEW, /* string */ selector, /* ScrollIntoViewOptions */ options);
+import { SCROLL_INTO_VIEW } from 'storybook/highlight';
+
+channel.emit(
+  SCROLL_INTO_VIEW,
+  /* string */ selector,
+  /* ScrollIntoViewOptions (optional) */ options
+);
 ```
 
 See the [MDN documentation](https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollIntoView#scrollintoviewoptions) for more information on the `ScrollIntoViewOptions` type.

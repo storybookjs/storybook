@@ -2231,26 +2231,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@digitak/esrun@npm:^3.2.2":
-  version: 3.2.25
-  resolution: "@digitak/esrun@npm:3.2.25"
-  dependencies:
-    "@digitak/grubber": "npm:^3.1.4"
-    chokidar: "npm:^3.5.1"
-    esbuild: "npm:^0.17.4"
-  bin:
-    esrun: bin.js
-  checksum: 10c0/d2d3291a15fae43e3cba875d12a5bea6453dfe625af90ef7835e9071db31b769219401197fe1d5efde57cf7f1eda204ca68c99022fdc0039eb057052c60d15fc
-  languageName: node
-  linkType: hard
-
-"@digitak/grubber@npm:^3.1.4":
-  version: 3.1.4
-  resolution: "@digitak/grubber@npm:3.1.4"
-  checksum: 10c0/f66be839cfb24956b690cc28329d6e02cfa4e071ae68fdbd161823312109376f3c043cb4947c238c8a85ce57e08e0b9fc14db26d3c78168cd5bae9f3490aa860
-  languageName: node
-  linkType: hard
-
 "@discoveryjs/json-ext@npm:0.6.3":
   version: 0.6.3
   resolution: "@discoveryjs/json-ext@npm:0.6.3"
@@ -6753,13 +6733,9 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/vue3@workspace:renderers/vue3"
   dependencies:
-    "@digitak/esrun": "npm:^3.2.2"
     "@storybook/global": "npm:^5.0.0"
     "@testing-library/vue": "npm:^8.0.0"
-    "@types/prettier": "npm:^3.0.0"
     "@vitejs/plugin-vue": "npm:^4.4.0"
-    "@vue/compiler-core": "npm:^3.0.0"
-    ts-dedent: "npm:^2.0.0"
     type-fest: "npm:~2.19"
     typescript: "npm:^5.7.3"
     vue: "npm:^3.2.47"
@@ -8345,7 +8321,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@vue/compiler-core@npm:3.5.13, @vue/compiler-core@npm:^3.0.0":
+"@vue/compiler-core@npm:3.5.13":
   version: 3.5.13
   resolution: "@vue/compiler-core@npm:3.5.13"
   dependencies:
@@ -10778,7 +10754,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"chokidar@npm:^3.5.1, chokidar@npm:^3.5.3, chokidar@npm:^3.6.0":
+"chokidar@npm:^3.5.3, chokidar@npm:^3.6.0":
   version: 3.6.0
   resolution: "chokidar@npm:3.6.0"
   dependencies:

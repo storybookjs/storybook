@@ -6091,7 +6091,6 @@ __metadata:
   resolution: "@storybook/core-webpack@workspace:lib/core-webpack"
   dependencies:
     "@types/node": "npm:^22.0.0"
-    slash: "npm:^5.1.0"
     ts-dedent: "npm:^2.0.0"
     typescript: "npm:^5.7.3"
     webpack: "npm:5"

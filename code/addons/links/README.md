@@ -132,7 +132,7 @@ export const second = () => <LinkTo story="first">Go to First</LinkTo>;
 
 It accepts all the props the `a` element does, plus `story` and `kind`. It the `kind` prop is omitted, the current kind will be preserved.
 
-```js
+```mdx
 <LinkTo
   kind="Toggle"
   story="off"
@@ -141,7 +141,7 @@ It accepts all the props the `a` element does, plus `story` and `kind`. It the `
   style={{ color: '#1474f3' }}
 >
   Go to Second
-</LinkTo>;;;
+</LinkTo>
 ```
 
 To implement such a component for another framework, you need to add special handling for `click` event on native `a` element. See [`RoutedLink` sources](https://github.com/storybookjs/storybook/blob/next/code/addons/links/src/react/components/RoutedLink.tsx) for reference.

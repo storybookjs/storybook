@@ -72,9 +72,8 @@
     (
       | {
           /**
-           * The content to render in the story as **static** markup.
-           *
-           * NOTE: Can be omitted if a default template is set with [`setTemplate()`](https://github.com/storybookjs/addon-svelte-csf/blob/main/README.md#default-snippet)
+           * Children to pass to the story's component
+           * Or if `asChild` is true, the content to render in the story as **static** markup.
            */
           children?: TChildren;
           /**

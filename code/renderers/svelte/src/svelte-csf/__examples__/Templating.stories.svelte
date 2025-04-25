@@ -17,7 +17,7 @@
 <script>
   /**
    * call setTemplate with a reference to any root-level snippet, for that snippet to be the fallback snippet,
-   * that is used in any story without explicit children.
+   * that is used in any story without explicit template.
    */
   setTemplate(defaultTemplate);
 </script>
@@ -130,7 +130,7 @@
 
 <!--
   To set a default template for all stories in the file, call the **`setTemplate()`** function with a reference to a root snippet.
-  Any story without `children` will use this default template.
+  Any story without `template` will use this default template.
 
   Example:
 

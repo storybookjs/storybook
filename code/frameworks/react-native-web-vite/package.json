@@ -60,6 +60,7 @@
   },
   "dependencies": {
     "@bunchtogether/vite-plugin-flow": "^1.0.2",
+    "@storybook/builder-vite": "workspace:*",
     "@storybook/react": "workspace:*",
     "@storybook/react-vite": "workspace:*",
     "@vitejs/plugin-react": "^4.3.2",

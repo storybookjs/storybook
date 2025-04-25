@@ -6371,6 +6371,7 @@ __metadata:
   resolution: "@storybook/react-native-web-vite@workspace:frameworks/react-native-web-vite"
   dependencies:
     "@bunchtogether/vite-plugin-flow": "npm:^1.0.2"
+    "@storybook/builder-vite": "workspace:*"
     "@storybook/react": "workspace:*"
     "@storybook/react-vite": "workspace:*"
     "@types/node": "npm:^22.0.0"

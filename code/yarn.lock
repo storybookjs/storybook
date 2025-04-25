@@ -7720,13 +7720,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/requireindex@npm:^1.2.4":
-  version: 1.2.4
-  resolution: "@types/requireindex@npm:1.2.4"
-  checksum: 10c0/7ad0d1128ad2e091aa76b4cdc4f4b41305a18f890a859358182dfba0a6080fc47ceb0f2a12061ef41b4b98fa9669d99247173f97bf4b1c3a01a4eac94e843f55
-  languageName: node
-  linkType: hard
-
 "@types/resolve@npm:^1.20.2":
   version: 1.20.3
   resolution: "@types/resolve@npm:1.20.3"
@@ -13662,8 +13655,6 @@ __metadata:
     "@types/eslint": "npm:^8.56.2"
     "@types/node": "npm:^22.0.0"
     "@types/prompts": "npm:^2.0.9"
-    "@types/requireindex": "npm:^1.2.4"
-    "@types/semver": "npm:^7.5.8"
     "@typescript-eslint/eslint-plugin": "npm:^8.8.1"
     "@typescript-eslint/parser": "npm:^8.8.1"
     "@typescript-eslint/rule-tester": "npm:^8.8.1"
@@ -13674,7 +13665,6 @@ __metadata:
     eslint-plugin-node: "npm:^11.1.0"
     prettier: "npm:~3.4.0"
     prompts: "npm:^2.4.0"
-    semver: "npm:^7.3.7"
     ts-dedent: "npm:^2.0.0"
     typescript: "npm:^5.7.3"
   peerDependencies:

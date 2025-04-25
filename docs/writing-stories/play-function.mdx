@@ -7,29 +7,9 @@ sidebar:
 
 `Play` functions are small snippets of code executed after the story renders. They enable you to interact with your components and test scenarios that otherwise require user intervention.
 
-## Setup the interactions addon
-
-We recommend installing Storybook's [`addon-interactions`](https://storybook.js.org/addons/@storybook/addon-interactions) before you start writing stories with the `play` function. It's the perfect complement for it, including a handy set of UI controls to allow you command over the execution flow. At any time, you can pause, resume, rewind, and step through each interaction. Also providing you with an easy-to-use debugger for potential issues.
-
-Run the following command to install the addon and the required dependencies.
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="storybook-addon-interactions-addon-full-install.md" />
-
-{/* prettier-ignore-end */}
-
-Update your Storybook configuration (in `.storybook/main.js|ts`) to include the interactions addon.
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="storybook-interactions-addon-registration.md" />
-
-{/* prettier-ignore-end */}
-
 ## Writing stories with the play function
 
-Storybook's `play` functions are small code snippets that run once the story finishes rendering. Aided by the `addon-interactions`, it allows you to build component interactions and test scenarios that were impossible without user intervention. For example, if you were working on a registration form and wanted to validate it, you could write the following story with the `play` function:
+Storybook's `play` functions are small code snippets that run once the story finishes rendering. Aided by the [interactions panel](../essentials/interactions.mdx), it allows you to build component interactions and test scenarios that were impossible without user intervention. For example, if you were working on a registration form and wanted to validate it, you could write the following story with the `play` function:
 
 {/* prettier-ignore-start */}
 
@@ -129,4 +109,4 @@ By default, each interaction you write inside your `play` function will be execu
 
 {/* prettier-ignore-end */}
 
-Applying these changes to your stories can provide a performance boost and improved error handling with [`addon-interactions`](https://storybook.js.org/addons/@storybook/addon-interactions).
+Applying these changes to your stories can provide a performance boost and improved error handling with the interactions panel.

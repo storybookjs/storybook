@@ -25,6 +25,10 @@ const config = defineMain({
       titlePrefix: 'preview',
     },
     {
+      directory: '../core/src/preview',
+      titlePrefix: 'preview',
+    },
+    {
       directory: '../core/src/components/brand',
       titlePrefix: 'brand',
     },

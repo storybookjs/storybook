@@ -25328,7 +25328,6 @@ __metadata:
     typescript: "npm:^5.7.3"
     unique-string: "npm:^3.0.0"
     use-resize-observer: "npm:^9.1.0"
-    uuid: "npm:^9.0.0"
     watchpack: "npm:^2.2.0"
     ws: "npm:^8.18.0"
   peerDependencies:
@@ -27053,15 +27052,6 @@ __metadata:
   bin:
     uuid: dist/bin/uuid
   checksum: 10c0/bcbb807a917d374a49f475fae2e87fdca7da5e5530820ef53f65ba1d12131bd81a92ecf259cc7ce317cbe0f289e7d79fdfebcef9bfa3087c8c8a2fa304c9be54
-  languageName: node
-  linkType: hard
-
-"uuid@npm:^9.0.0":
-  version: 9.0.1
-  resolution: "uuid@npm:9.0.1"
-  bin:
-    uuid: dist/bin/uuid
-  checksum: 10c0/1607dd32ac7fc22f2d8f77051e6a64845c9bce5cd3dd8aa0070c074ec73e666a1f63c7b4e0f4bf2bc8b9d59dc85a15e17807446d9d2b17c8485fbc2147b27f9b
   languageName: node
   linkType: hard
 

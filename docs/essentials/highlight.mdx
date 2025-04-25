@@ -5,13 +5,13 @@ sidebar:
   title: Highlight
 ---
 
-Storybook's Highlight module is a helpful tool for visually debugging your components. It allows you to highlight specific DOM nodes within your story when used as a standalone module or to enhance other addons, such as the [Accessibility addon](https://storybook.js.org/addons/@storybook/addon-a11y/), to inform you of accessibility issues within your components.
+Storybook's Highlight feature is a helpful tool for visually debugging your components, allowing you to highlight specific DOM nodes within your story when used directly or enhancing addons such as the [Accessibility addon](https://storybook.js.org/addons/@storybook/addon-a11y/) to inform you of accessibility issues within your components.
 
 ![Story with highlighted elements](../_assets/essentials/highlight.png)
 
 ## Highlighting DOM Elements
 
-To highlight DOM elements with the module, you'll need to emit the `HIGHLIGHT` event from within a story or an addon. The event payload must contain an `elements` property assigned to an array of selectors matching the elements you want to highlight. For example:
+To highlight DOM elements with the feature, you'll need to emit the `HIGHLIGHT` event from within a story or an addon. The event payload must contain an `elements` property assigned to an array of selectors matching the elements you want to highlight. For example:
 
 {/* prettier-ignore-start */}
 
@@ -20,7 +20,7 @@ To highlight DOM elements with the module, you'll need to emit the `HIGHLIGHT` e
 {/* prettier-ignore-end */}
 
 <Callout variant="info" icon="💡">
-  We recommend choosing the most specific selector possible to avoid highlighting elements other addons use. This is because the module tries to match selectors against the entire DOM tree.
+  We recommend choosing the most specific selector possible to avoid highlighting elements other addons use. This is because the feature tries to match selectors against the entire DOM tree.
 </Callout>
 
 ### Reset highlighted elements
@@ -34,12 +34,12 @@ Out of the box, Storybook automatically removes highlighted elements when transi
 {/* prettier-ignore-end */}
 
 <Callout variant="info">
-  The `emit` function derived from the `useChannel` API hook creates a communication channel in Storybook's UI to listen for events and update the UI accordingly. The Highlight module uses this channel to listen to custom events and update the highlighted elements (if any) accordingly.
+  The `emit` function derived from the `useChannel` API hook creates a communication channel in Storybook's UI to listen for events and update the UI accordingly. The Highlight feature uses this channel to listen to custom events and update the highlighted elements (if any) accordingly.
 </Callout>
 
 ## Customize style
 
-By default, the module applies a standard style to the highlighted elements you've enabled for the story. However, you can enable your custom style by extending the payload object and providing a `color` and/or `style` properties. For example:
+By default, Highlight applies a standard style to the highlighted elements you've enabled for the story. However, you can enable your custom style by extending the payload object and providing a `color` and/or `style` properties. For example:
 
 {/* prettier-ignore-start */}
 
@@ -51,19 +51,19 @@ By default, the module applies a standard style to the highlighted elements you'
 
 ### Parameters
 
-This module contributes the following [parameters](../writing-stories/parameters.mdx) to Storybook, under the `highlight` namespace:
+This feature contributes the following [parameters](../writing-stories/parameters.mdx) to Storybook, under the `highlight` namespace:
 
 #### `disable`
 
 Type: `boolean`
 
-Turn off this module's behavior.
+Disable this feature's behavior. If you wish to disable this feature for the entire Storybook, you should [do so in your main configuration file](./index.mdx#disabling-features).
 
 This parameter is most useful to allow overriding at more specific levels. For example, if this parameter is set to `true` at the project level, it could be re-enabled by setting it to `false` at the meta (component) or story level.
 
 ### Exports
 
-This module contributes the following exports to Storybook:
+This feature contributes the following exports to Storybook:
 
 ```js
 import { HIGHLIGHT, RESET_HIGHLIGHT } from 'storybook/highlight';

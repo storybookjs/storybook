@@ -113,7 +113,7 @@ describe('check phase', () => {
 describe('run phase', () => {
   it('removes docs.autodocs field when present with tag value', async () => {
     vi.mocked(readFile).mockImplementation(async (path) => {
-      if (path === 'main.ts') {
+      if (path === '.storybook/main.ts') {
         return Buffer.from(`
             export default {
               stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],
@@ -131,13 +131,14 @@ describe('run phase', () => {
       result: { autodocs: 'tag' },
       packageManager: mockPackageManager,
       packageJson: mockPackageJson,
-      mainConfigPath: 'main.ts',
+      configDir: '.storybook',
+      mainConfigPath: '.storybook/main.ts',
       storybookVersion: '9.0.0',
       mainConfig: {} as StorybookConfigRaw,
     });
 
     expect(writeFile).toHaveBeenCalledTimes(1);
-    expect(writeFile).toHaveBeenCalledWith('main.ts', expect.any(String));
+    expect(writeFile).toHaveBeenCalledWith('.storybook/main.ts', expect.any(String));
     expect(vi.mocked(writeFile).mock.calls[0][1]).toMatchInlineSnapshot(`
         "
                     export default {
@@ -152,7 +153,7 @@ describe('run phase', () => {
 
   it('removes docs.autodocs field and updates preview.js when autodocs is true', async () => {
     vi.mocked(readFile).mockImplementation(async (path) => {
-      if (path === 'main.ts') {
+      if (path === '.storybook/main.ts') {
         return Buffer.from(`
             export default {
               stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],
@@ -160,7 +161,7 @@ describe('run phase', () => {
             };
           `);
       }
-      if (path === 'preview.ts') {
+      if (path === '.storybook/preview.ts') {
         return Buffer.from(`
             export default {
               tags: ['existing-tag']
@@ -174,15 +175,16 @@ describe('run phase', () => {
       result: { autodocs: true },
       packageManager: mockPackageManager,
       packageJson: mockPackageJson,
-      mainConfigPath: 'main.ts',
-      previewConfigPath: 'preview.ts',
+      configDir: '.storybook',
+      mainConfigPath: '.storybook/main.ts',
+      previewConfigPath: '.storybook/preview.ts',
       storybookVersion: '9.0.0',
       mainConfig: {} as StorybookConfigRaw,
     });
 
     expect(writeFile).toHaveBeenCalledTimes(2);
-    expect(writeFile).toHaveBeenCalledWith('main.ts', expect.any(String));
-    expect(writeFile).toHaveBeenCalledWith('preview.ts', expect.any(String));
+    expect(writeFile).toHaveBeenCalledWith('.storybook/main.ts', expect.any(String));
+    expect(writeFile).toHaveBeenCalledWith('.storybook/preview.ts', expect.any(String));
     expect(vi.mocked(writeFile).mock.calls[0][1]).toMatchInlineSnapshot(`
         "
                     export default {
@@ -202,7 +204,7 @@ describe('run phase', () => {
 
   it('adds autodocs tag to empty tags array in preview.js when autodocs is true', async () => {
     vi.mocked(readFile).mockImplementation(async (path) => {
-      if (path === 'main.ts') {
+      if (path === '.storybook/main.ts') {
         return Buffer.from(`
             export default {
               stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],
@@ -210,7 +212,7 @@ describe('run phase', () => {
             };
           `);
       }
-      if (path === 'preview.ts') {
+      if (path === '.storybook/preview.ts') {
         return Buffer.from(`
             export default {
               tags: []
@@ -224,15 +226,16 @@ describe('run phase', () => {
       result: { autodocs: true },
       packageManager: mockPackageManager,
       packageJson: mockPackageJson,
-      mainConfigPath: 'main.ts',
-      previewConfigPath: 'preview.ts',
+      configDir: '.storybook',
+      mainConfigPath: '.storybook/main.ts',
+      previewConfigPath: '.storybook/preview.ts',
       storybookVersion: '9.0.0',
       mainConfig: {} as StorybookConfigRaw,
     });
 
     expect(writeFile).toHaveBeenCalledTimes(2);
-    expect(writeFile).toHaveBeenCalledWith('main.ts', expect.any(String));
-    expect(writeFile).toHaveBeenCalledWith('preview.ts', expect.any(String));
+    expect(writeFile).toHaveBeenCalledWith('.storybook/main.ts', expect.any(String));
+    expect(writeFile).toHaveBeenCalledWith('.storybook/preview.ts', expect.any(String));
     expect(vi.mocked(writeFile).mock.calls[0][1]).toMatchInlineSnapshot(`
         "
                     export default {
@@ -273,8 +276,9 @@ describe('run phase', () => {
       result: { autodocs: true },
       packageManager: mockPackageManager,
       packageJson: mockPackageJson,
-      mainConfigPath: 'main.ts',
-      previewConfigPath: 'preview.ts',
+      mainConfigPath: '.storybook/main.ts',
+      configDir: '.storybook',
+      previewConfigPath: '.storybook/preview.ts',
       storybookVersion: '9.0.0',
       mainConfig: {} as StorybookConfigRaw,
       dryRun: true,

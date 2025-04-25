@@ -185,7 +185,9 @@ describe(getStoryContentRawCode.name, () => {
       expect(rawSource).toBe(`<h1>Static content</h1>`);
     });
 
-    it('works when a static children content provided as a child to the component', async ({ expect }) => {
+    it('works when a static children content provided as a child to the component', async ({
+      expect,
+    }) => {
       const code = `
         <script module>
           import { defineMeta } from "@storybook/addon-svelte-csf";

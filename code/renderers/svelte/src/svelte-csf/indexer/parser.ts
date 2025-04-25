@@ -30,7 +30,6 @@ import {
 } from '$lib/utils/error/parser/analyse/story.js';
 import { extractStoryTemplateSnippetBlock } from '../parser/extract/svelte/story/template.js';
 
-
 interface Results {
   meta: Pick<IndexInput, 'title' | 'tags'>;
   stories: Array<Pick<IndexInput, 'exportName' | 'name' | 'tags'>>;
@@ -323,7 +322,6 @@ export async function parseForIndexer(
         if (hasAsChild && !hasChildren) {
           throw new StoryAsChildWithoutChildrenError({ component: node, filename });
         }
-
 
         const { exportName, name: storyName } = getStoryIdentifiers({
           component: node,

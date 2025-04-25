@@ -30,23 +30,23 @@ This guide is meant to help you **upgrade from Storybook 8.x to 9.0** successful
 The rest of this guide will help you upgrade successfully, either automatically or manually. But first, there are some [breaking changes][full-migration-notes] in Storybook 9. Here are the most impactful changes you should know about before you go further:
 
 * [Packages have been consolidated/removed](#package-structure-changes)
-* [Essential addons moved to core](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#addon-essentials-has-been-removed)
-* [Test addon renamed from `experimental-addon-test` to `addon-vitest`](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storybookexperimental-addon-test-renamed-to-storybookaddon-vitest)
+* [Essential addons moved to core](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#essentials-addons-viewport-controls-interactions-and-actions-moved-to-core)
+* [Test addon renamed from `experimental-addon-test` to `addon-vitest`](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#experimental-test-addon-stabilized-and-renamed)
 * [`nextjs-vite` framework stabilized](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nextjs--vite-builder-stabilized)
 * [Removed Webpack builder support for Preact, Vue, and Web Components in favor of Vite](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#dropped-webpack5-builder-support-in-favor-of-vite)
 * [Manager builder removed alias for `util`, `assert` and `process`](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#manager-builder-removed-alias-for-util-assert-and-process)
 * Ecosystem updates
-  * [Node 20+ is now required](#TK)
+  * [Node 20+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nodejs--20)
   * [Angular 18+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#angular--require-v18-and-up)
-  * [Lit v3+ is now required](#TK)
+  * [Lit v3+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#lit--require-v3-and-up)
   * [Next.js 14+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nextjs--require-v14-and-up)
   * [Svelte 5+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#svelte-require-v5-and-up)
-  * [Vite 5+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#dropped-support-for-vite-4)
-  * [Vitest 3+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vitest-20-support-is-dropped)
-  * [npm 10+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#package-manager-support)
-  * [pnpm 9+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#package-manager-support)
-  * [yarn 4+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#package-manager-support)
-  * [TypeScript 4.9+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#dropped-support-for-typescript--49)
+  * [Vite 5+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vite-4)
+  * [Vitest 3+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vitest-addon-former-storybookexperimental-addon-test-vitest-20-support-is-dropped)
+  * [npm 10+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#package-managers)
+  * [pnpm 9+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#package-managers)
+  * [yarn 4+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#package-managers)
+  * [TypeScript 4.9+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#typescript--49)
 
 If any of these changes apply to your project, please read through the linked migration notes before continuing.
 
@@ -152,7 +152,7 @@ In addition to the automigrations and manual migrations above, there are also op
 
 ### `test-runner` to `addon-vitest`
 
-`addon-vitest` and the rest of the [Storybook Test experience](https://storybook.js.org/blog/storybook-test-sneak-peek/) is designed to supercede the `test-runner`. It's faster and provides a better experience for writing and running tests. If your project uses React, Vue, or Svelte and is built with Vite, you should consider migrating to `addon-vitest`, by following the [installation instructions](../writing-tests/test-addon.mdx#automatic-setup).
+`addon-vitest` and the rest of the [Storybook Test experience](https://storybook.js.org/blog/storybook-test-sneak-peek/) is designed to supercede the `test-runner`. It's faster and provides a better experience for writing and running tests. If your project uses React, Vue, or Svelte and is built with Vite, you should consider migrating to `addon-vitest`, by following the [installation instructions](../writing-tests/vitest-addon.mdx#automatic-setup).
 
 ### CSF 2 to CSF 3
 

@@ -1,3 +1,10 @@
+## 9.0.0-beta.3
+
+- Automigration: Remove `docs.autodocs` field - [#31203](https://github.com/storybookjs/storybook/pull/31203), thanks @ndelangen!
+- Core: Cleanup dependencies - [#31222](https://github.com/storybookjs/storybook/pull/31222), thanks @JReinhold!
+- Dependencies: Upgrade @types/estree package to version v1.0.6 - [#29477](https://github.com/storybookjs/storybook/pull/29477), thanks @hakshu25!
+- Vite-Builder: Handle undefined previewConfig - [#31216](https://github.com/storybookjs/storybook/pull/31216), thanks @valentinpalkovic!
+
 ## 9.0.0-beta.2
 
 - Addon A11y: Use short titles and friendly summary messages in A11y report - [#31185](https://github.com/storybookjs/storybook/pull/31185), thanks @ghengeveld!

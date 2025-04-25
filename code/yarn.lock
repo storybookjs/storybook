@@ -22309,15 +22309,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"prettier@npm:~3.4.0":
-  version: 3.4.2
-  resolution: "prettier@npm:3.4.2"
-  bin:
-    prettier: bin/prettier.cjs
-  checksum: 10c0/99e076a26ed0aba4ebc043880d0f08bbb8c59a4c6641cdee6cdadf2205bdd87aa1d7823f50c3aea41e015e99878d37c58d7b5f0e663bba0ef047f94e36b96446
-  languageName: node
-  linkType: hard
-
 "pretty-bytes@npm:^5.3.0":
   version: 5.6.0
   resolution: "pretty-bytes@npm:5.6.0"
@@ -25353,7 +25344,7 @@ __metadata:
     picoquery: "npm:^1.4.0"
     polished: "npm:^4.2.2"
     polka: "npm:^1.0.0-next.28"
-    prettier: "npm:~3.4.0"
+    prettier: "npm:^3.5.3"
     pretty-hrtime: "npm:^1.0.3"
     prompts: "npm:^2.4.0"
     react: "npm:^18.2.0"

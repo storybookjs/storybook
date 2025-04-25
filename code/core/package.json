@@ -743,7 +743,7 @@
     "picoquery": "^1.4.0",
     "polished": "^4.2.2",
     "polka": "^1.0.0-next.28",
-    "prettier": "~3.4.0",
+    "prettier": "^3.5.3",
     "pretty-hrtime": "^1.0.3",
     "prompts": "^2.4.0",
     "react": "^18.2.0",

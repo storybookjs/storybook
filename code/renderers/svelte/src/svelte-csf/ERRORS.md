@@ -336,7 +336,7 @@ If you intend to use a snippet, remove the children from the `<Story>` tags:
   </Story>
 ```
 
-If you intend to pass the children to the component (or potentially render as is with [`asChild`](TK)), remove the `template` prop:
+If you intend to pass the children to the component (or potentially render as is with [`asChild`](./README.md#static-template)), remove the `template` prop:
 
 ```diff
 -  <Story name="MyStory" {template}>

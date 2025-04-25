@@ -6034,7 +6034,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/cli@workspace:lib/cli-storybook"
   dependencies:
-    "@babel/core": "npm:^7.24.4"
     "@babel/types": "npm:^7.24.0"
     "@storybook/codemod": "workspace:*"
     "@types/cross-spawn": "npm:^6.0.2"
@@ -6046,10 +6045,7 @@ __metadata:
     cross-spawn: "npm:^7.0.3"
     envinfo: "npm:^7.7.3"
     execa: "npm:^9.5.2"
-    fd-package-json: "npm:^1.2.0"
-    find-up: "npm:^5.0.0"
     giget: "npm:^1.0.0"
-    glob: "npm:^10.0.0"
     globby: "npm:^14.0.1"
     jscodeshift: "npm:^0.15.1"
     leven: "npm:^3.1.0"

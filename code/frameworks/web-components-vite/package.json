@@ -55,8 +55,7 @@
   },
   "dependencies": {
     "@storybook/builder-vite": "workspace:*",
-    "@storybook/web-components": "workspace:*",
-    "magic-string": "^0.30.0"
+    "@storybook/web-components": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

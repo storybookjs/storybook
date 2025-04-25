@@ -242,11 +242,10 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
     ({ newPhase }: { newPhase: string }) => {
       if (newPhase === 'loading') {
         setResults(undefined);
-        if (manual) {
-          setStatus('manual');
-        } else {
-          setStatus('running');
-        }
+        setStatus(manual ? 'manual' : 'initial');
+      }
+      if (newPhase === 'afterEach' && !manual) {
+        setStatus('running');
       }
     },
     [manual, setResults]

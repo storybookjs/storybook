@@ -55,9 +55,7 @@
     "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@storybook/global": "^5.0.0",
     "sveltedoc-parser": "^4.2.1",
-    "ts-dedent": "^2.0.0",
     "type-fest": "~2.19"
   },
   "devDependencies": {

@@ -6345,8 +6345,6 @@ __metadata:
   resolution: "@storybook/preset-server-webpack@workspace:presets/server-webpack"
   dependencies:
     "@storybook/core-webpack": "workspace:*"
-    "@storybook/global": "npm:^5.0.0"
-    "@storybook/server": "workspace:*"
     "@types/node": "npm:^22.0.0"
     safe-identifier: "npm:^0.4.1"
     ts-dedent: "npm:^2.0.0"

@@ -6522,8 +6522,6 @@ __metadata:
     "@types/node": "npm:^22.0.0"
     "@types/react": "npm:^18.0.37"
     "@types/react-dom": "npm:^18.0.11"
-    "@types/semver": "npm:^7.3.4"
-    "@types/serve-static": "npm:^1.13.8"
     "@typescript-eslint/eslint-plugin": "npm:^8.8.1"
     "@typescript-eslint/parser": "npm:^8.8.1"
     "@vitejs/plugin-react": "npm:^4.3.2"
@@ -6557,11 +6555,9 @@ __metadata:
     eslint-plugin-react-hooks: "npm:^4.6.2"
     eslint-plugin-storybook: "workspace:*"
     github-release-from-changelog: "npm:^2.1.1"
-    glob: "npm:^10.0.0"
     happy-dom: "npm:^14.12.0"
     http-server: "npm:^14.1.1"
     husky: "npm:^4.3.7"
-    intl-segmenter-polyfill-rs: "npm:^0.1.7"
     jiti: "npm:^1.21.6"
     lint-staged: "npm:^13.2.2"
     mock-require: "npm:^3.0.3"
@@ -6576,13 +6572,10 @@ __metadata:
     react: "npm:^18.2.0"
     react-dom: "npm:^18.2.0"
     rimraf: "npm:^6.0.1"
-    semver: "npm:^7.3.7"
-    serve-static: "npm:^1.14.1"
     slash: "npm:^5.0.0"
     sort-package-json: "npm:^2.14.0"
     storybook: "workspace:^"
     storybook-addon-pseudo-states: "workspace:*"
-    stream-browserify: "npm:^3.0.0"
     svelte: "npm:^5.0.0-next.268"
     ts-dedent: "npm:^2.0.0"
     typescript: "npm:^5.7.3"
@@ -7741,7 +7734,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/serve-static@npm:*, @types/serve-static@npm:^1.13.8, @types/serve-static@npm:^1.15.5":
+"@types/serve-static@npm:*, @types/serve-static@npm:^1.15.5":
   version: 1.15.7
   resolution: "@types/serve-static@npm:1.15.7"
   dependencies:
@@ -16365,13 +16358,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"intl-segmenter-polyfill-rs@npm:^0.1.7":
-  version: 0.1.7
-  resolution: "intl-segmenter-polyfill-rs@npm:0.1.7"
-  checksum: 10c0/3c2f1ce8953b31ede0b1987a9b8cffadb1d294cb08c66f337b1d47ae72854aded1519cfd2ef2b4d78a727ce90fed3a293e4850eda7e136d0ea519d6fa52ed8ea
-  languageName: node
-  linkType: hard
-
 "invariant@npm:^2.2.4":
   version: 2.2.4
   resolution: "invariant@npm:2.2.4"
@@ -23354,7 +23340,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"serve-static@npm:1.16.2, serve-static@npm:^1.14.1":
+"serve-static@npm:1.16.2":
   version: 1.16.2
   resolution: "serve-static@npm:1.16.2"
   dependencies:

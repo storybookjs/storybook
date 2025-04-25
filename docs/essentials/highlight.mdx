@@ -193,12 +193,12 @@ const handleClickEvent = (itemId: string, details: ClickEventDetails) => {
   // do things
 }
 
-channel.on('MY_CLICK_EVENT', handleSelect)
+channel.on('MY_CLICK_EVENT', handleClickEvent)
 
 // Or with `useChannel`:
 useChannel({
-  MY_CLICK_EVENT: handleSelect,
-}, [handleSelect])
+  MY_CLICK_EVENT: handleClickEvent,
+}, [handleClickEvent])
 ```
 
 #### `REMOVE_HIGHLIGHT`

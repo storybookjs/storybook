@@ -221,6 +221,7 @@
       "./src/export-mocks/headers/index.ts",
       "./src/export-mocks/router/index.ts",
       "./src/export-mocks/navigation/index.ts",
+      "./src/export-mocks/link/index.tsx",
       "./src/compatibility/segment.compat.ts",
       "./src/compatibility/redirect-status-code.compat.ts",
       "./src/compatibility/draft-mode.compat.ts",

@@ -63,9 +63,9 @@ You can also use `mount` to create mock data that you want to pass to the compon
 <CodeSnippets path="mount-advanced.md" />
 
 <Callout variant="info">
-  When you call `mount()` with no arguments, the component is rendered using the story’s render function, whether the [implicit default](../api/csf.mdx#default-render-functions) or the [explicit custom definition](../api/csf.mdx#custom-render-functions).
+  When you call `mount()` with no arguments, the component is rendered using the story's render function, whether the [implicit default](../api/csf.mdx#default-render-functions) or the [explicit custom definition](../api/csf.mdx#custom-render-functions).
 
-  When you mount a specific component inside the `mount` function like in the example above, the story’s render function will be ignored. This is why you must forward the `args` to the component.
+  When you mount a specific component inside the `mount` function like in the example above, the story's render function will be ignored. This is why you must forward the `args` to the component.
 </Callout>
 
 </If>
@@ -161,7 +161,7 @@ You can return a cleanup function from the `beforeEach` function, which will run
 
 ### API for user-events
 
-Under the hood, Storybook’s `storybook/test` package provides Testing Library’s [`user-events`](https://testing-library.com/docs/user-event/intro/) APIs. If you’re familiar with [Testing Library](https://testing-library.com/), you should be at home in Storybook.
+Under the hood, Storybook's `storybook/test` package provides Testing Library's [`user-events`](https://testing-library.com/docs/user-event/intro/) APIs. If you're familiar with [Testing Library](https://testing-library.com/), you should be at home in Storybook.
 
 Below is an abridged API for user-event. For more, check out the [official user-event docs](https://testing-library.com/docs/user-event/utility/).
 
@@ -172,20 +172,33 @@ Below is an abridged API for user-event. For more, check out the [official user-
 | `dblClick`        | Clicks the element twice <br />`userEvent.dblClick(await within(canvasElement).getByText('mycheckbox'));`                                                 |
 | `deselectOptions` | Removes the selection from a specific option of a select element <br />`userEvent.deselectOptions(await within(canvasElement).getByRole('listbox'),'1');` |
 | `hover`           | Hovers an element <br />`userEvent.hover(await within(canvasElement).getByTestId('example-test'));`                                                       |
-| `keyboard`        | Simulates the keyboard events <br />`userEvent.keyboard(‘foo’);`                                                                                          |
+| `keyboard`        | Simulates the keyboard events <br />`userEvent.keyboard('foo');`                                                                                          |
 | `selectOptions`   | Selects the specified option, or options of a select element <br />`userEvent.selectOptions(await within(canvasElement).getByRole('listbox'),['1','2']);` |
 | `type`            | Writes text inside inputs, or textareas <br />`userEvent.type(await within(canvasElement).getByRole('my-input'),'Some text');`                            |
 | `unhover`         | Unhovers out of element <br />`userEvent.unhover(await within(canvasElement).getByLabelText(/Example/i));`                                                |
 
 ### Assert tests with Vitest's APIs
 
-Storybook’s `storybook/test` also provides APIs from [Vitest](https://vitest.dev/), such as [`expect`](https://vitest.dev/api/expect.html#expect) and [`vi.fn`](https://vitest.dev/api/vi.html#vi-fn). These APIs improve your testing experience, helping you assert whether a function has been called, if an element exists in the DOM, and much more. If you are used to `expect` from testing packages such as [Jest](https://jestjs.io/) or [Vitest](https://vitest.dev/), you can write component tests in much the same way.
+Storybook's `storybook/test` also provides APIs from [Vitest](https://vitest.dev/), such as [`expect`](https://vitest.dev/api/expect.html#expect) and [`vi.fn`](https://vitest.dev/api/vi.html#vi-fn). These APIs improve your testing experience, helping you assert whether a function has been called, if an element exists in the DOM, and much more. If you are used to `expect` from testing packages such as [Jest](https://jestjs.io/) or [Vitest](https://vitest.dev/), you can write component tests in much the same way.
 
 {/* prettier-ignore-start */}
 
 <CodeSnippets path="storybook-interactions-play-function.md" />
 
 {/* prettier-ignore-end */}
+
+<Callout variant="info" title="TypeScript Note">
+  If you're using TypeScript, you might encounter an error like `Property 'onSubmit' does not exist on type '{}'` when accessing properties on the `args` object (e.g., `args.onSubmit`). This is because `args` is typed as a generic object (`{}`) by default in this test context.
+
+  To resolve this, you can provide an explicit type for `args` when accessing properties. For example, if your story args type is `LoginFormArgs`, you can use a type assertion:
+
+  ```ts
+  // Assuming LoginFormArgs is defined elsewhere
+  await waitFor(() => expect((args as LoginFormArgs).onSubmit).toHaveBeenCalled());
+  ```
+
+  Alternatively, ensure your test setup correctly infers or defines the type for `args` based on your story or component.
+</Callout>
 
 ### Group interactions with the `step` function
 
@@ -221,7 +234,7 @@ If you check your interactions panel, you'll see the step-by-step flow. It also 
 
 ### Permalinks for reproductions
 
-The `play` function is executed after the story is rendered. If there’s an error, it’ll be shown in the interaction addon panel to help with debugging.
+The `play` function is executed after the story is rendered. If there's an error, it'll be shown in the interaction addon panel to help with debugging.
 
 Since Storybook is a webapp, anyone with the URL can reproduce the error with the same detailed information without any additional environment configuration or tooling required.
 
@@ -251,7 +264,7 @@ Once you're ready to push your code into a pull request, you'll want to automati
 
 ## Troubleshooting
 
-#### What’s the difference between component tests and visual tests?
+#### What's the difference between component tests and visual tests?
 
 Component tests can be expensive to maintain when applied wholesale to every component. We recommend combining them with other methods like visual testing for comprehensive coverage with less maintenance work.
 

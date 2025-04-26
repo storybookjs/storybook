@@ -155,6 +155,8 @@
     {:else}
       {@render children()}
     {/if}
+  {:else if renderer.metaRenderSnippet}
+    {@render renderer.metaRenderSnippet(renderer.args, renderer.storyContext)}
   {:else if storiesTemplate}
     {@render storiesTemplate(renderer.args, renderer.storyContext)}
   {:else if renderer.storyContext.component}

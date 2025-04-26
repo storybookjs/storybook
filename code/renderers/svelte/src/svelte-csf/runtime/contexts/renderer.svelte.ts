@@ -1,4 +1,4 @@
-import { getContext, hasContext, setContext } from 'svelte';
+import { getContext, hasContext, setContext, type Snippet } from 'svelte';
 
 import type { Cmp, StoryAnnotations, StoryContext } from '../../types.js';
 
@@ -8,17 +8,20 @@ interface ContextProps<TCmp extends Cmp> {
   currentStoryExportName: string | undefined;
   args: NonNullable<StoryAnnotations<TCmp>['args']>;
   storyContext: StoryContext<TCmp>;
+  metaRenderSnippet?: Snippet<[StoryAnnotations<TCmp>['args'], StoryContext<TCmp>]>;
 }
 
 function buildContext<TCmp extends Cmp>(props: ContextProps<TCmp>) {
   let currentStoryExportName = $state(props.currentStoryExportName);
   let args = $state(props.args);
   let storyContext = $state(props.storyContext);
+  let metaRenderSnippet = $state(props.metaRenderSnippet);
 
   function set(props: ContextProps<TCmp>) {
     currentStoryExportName = props.currentStoryExportName;
     args = props.args;
     storyContext = props.storyContext;
+    metaRenderSnippet = props.metaRenderSnippet;
   }
 
   return {
@@ -30,6 +33,9 @@ function buildContext<TCmp extends Cmp>(props: ContextProps<TCmp>) {
     },
     get currentStoryExportName() {
       return currentStoryExportName;
+    },
+    get metaRenderSnippet() {
+      return metaRenderSnippet;
     },
     set,
   };

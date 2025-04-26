@@ -6,7 +6,6 @@ import type { extractSvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js'
 import { extractStoryTemplateSnippetBlock } from '$lib/parser/extract/svelte/story/template.js';
 import {
   findMetaRenderSnippetBlock,
-  findSetTemplateSnippetBlock,
   findStoryAttributeTemplateSnippetBlock,
 } from '$lib/parser/extract/svelte/snippet-block.js';
 import { extractStoryAttributesNodes } from '../../extract/svelte/story/attributes.js';
@@ -54,32 +53,6 @@ export function getStoryContentRawCode(params: Params): string {
     }
 
     /**
-     * Case - `setTemplate was used in the instance tag of `*.stories.svelte` file
-     *
-     * Example:
-     *
-     * ```svelte
-     * <script>
-     *     setTemplate(myCustomTemplate);
-     * </script>
-     *
-     * {#snippet myCustomTemplate(args)}
-     *     <SomeComponent {...args} />
-     * {/snippet}
-     *
-     * <Story name="Default" />
-     * ```
-     */
-    const metaRenderSnippetBlock = findMetaRenderSnippetBlock({
-      nodes: svelte,
-      filename,
-    });
-
-    if (metaRenderSnippetBlock) {
-      return getSnippetBlockBodyRawCode(originalCode, metaRenderSnippetBlock);
-    }
-
-    /**
      * Case - `render` was set in `defineMeta`
      *
      * Example:
@@ -100,16 +73,16 @@ export function getStoryContentRawCode(params: Params): string {
      * <Story name="Default" />
      * ```
      */
-    const setTemplateSnippetBlock = findSetTemplateSnippetBlock({
+    const metaRenderSnippetBlock = findMetaRenderSnippetBlock({
       nodes: svelte,
       filename,
     });
 
-    if (setTemplateSnippetBlock) {
-      return getSnippetBlockBodyRawCode(originalCode, setTemplateSnippetBlock);
+    if (metaRenderSnippetBlock) {
+      return getSnippetBlockBodyRawCode(originalCode, metaRenderSnippetBlock);
     }
 
-    /* Case - No `children` attribute provided, no `render` used, no `setTemplate` used, just a Story */
+    /* Case - No `children` attribute provided, no `render` used, just a Story */
     const defineMetaComponentValue = getDefineMetaComponentValue({
       nodes: svelte,
       filename,

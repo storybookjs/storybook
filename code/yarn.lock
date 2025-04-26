@@ -6939,7 +6939,7 @@ __metadata:
     "@storybook/react-dom-shim": "workspace:*"
     "@types/babel-plugin-react-docgen": "npm:^4.2.3"
     "@types/escodegen": "npm:^0.0.6"
-    "@types/estree": "npm:^0.0.51"
+    "@types/estree": "npm:^1.0.6"
     "@types/node": "npm:^22.0.0"
     "@types/semver": "npm:^7.3.4"
     acorn: "npm:^7.4.1"
@@ -7828,13 +7828,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/estree@npm:^0.0.51":
-  version: 0.0.51
-  resolution: "@types/estree@npm:0.0.51"
-  checksum: 10c0/a70c60d5e634e752fcd45b58c9c046ef22ad59ede4bc93ad5193c7e3b736ebd6bcd788ade59d9c3b7da6eeb0939235f011d4c59bb4fc04d8c346b76035099dd1
-  languageName: node
-  linkType: hard
-
 "@types/express-serve-static-core@npm:*, @types/express-serve-static-core@npm:^4.17.33":
   version: 4.17.37
   resolution: "@types/express-serve-static-core@npm:4.17.37"
@@ -8363,13 +8356,6 @@ __metadata:
   version: 1.0.3
   resolution: "@types/util-deprecate@npm:1.0.3"
   checksum: 10c0/901ae94b51c1a5a7e3c88afddf9396ba25c0d0f699ca89ea0e48f121d5880c3996e037f0c83465e8a75263a27bf29347e1a584d51152c637194614a2c15f7742
-  languageName: node
-  linkType: hard
-
-"@types/uuid@npm:^9.0.1":
-  version: 9.0.7
-  resolution: "@types/uuid@npm:9.0.7"
-  checksum: 10c0/b329ebd4f9d1d8e08d4f2cc211be4922d70d1149f73d5772630e4a3acfb5170c6d37b3d7a39a0412f1a56e86e8a844c7f297c798b082f90380608bf766688787
   languageName: node
   linkType: hard
 
@@ -25235,7 +25221,6 @@ __metadata:
     "@types/react-syntax-highlighter": "npm:11.0.5"
     "@types/react-transition-group": "npm:^4"
     "@types/semver": "npm:^7.5.8"
-    "@types/uuid": "npm:^9.0.1"
     "@types/ws": "npm:^8"
     "@vitest/expect": "npm:3.0.9"
     "@vitest/spy": "npm:3.0.9"
@@ -25328,7 +25313,6 @@ __metadata:
     typescript: "npm:^5.7.3"
     unique-string: "npm:^3.0.0"
     use-resize-observer: "npm:^9.1.0"
-    uuid: "npm:^9.0.0"
     watchpack: "npm:^2.2.0"
     ws: "npm:^8.18.0"
   peerDependencies:
@@ -27053,15 +27037,6 @@ __metadata:
   bin:
     uuid: dist/bin/uuid
   checksum: 10c0/bcbb807a917d374a49f475fae2e87fdca7da5e5530820ef53f65ba1d12131bd81a92ecf259cc7ce317cbe0f289e7d79fdfebcef9bfa3087c8c8a2fa304c9be54
-  languageName: node
-  linkType: hard
-
-"uuid@npm:^9.0.0":
-  version: 9.0.1
-  resolution: "uuid@npm:9.0.1"
-  bin:
-    uuid: dist/bin/uuid
-  checksum: 10c0/1607dd32ac7fc22f2d8f77051e6a64845c9bce5cd3dd8aa0070c074ec73e666a1f63c7b4e0f4bf2bc8b9d59dc85a15e17807446d9d2b17c8485fbc2147b27f9b
   languageName: node
   linkType: hard
 

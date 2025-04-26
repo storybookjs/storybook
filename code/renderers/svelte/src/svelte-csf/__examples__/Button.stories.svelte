@@ -1,7 +1,6 @@
 <script module lang="ts">
   import {
     defineMeta,
-    setTemplate,
     type Args,
     type StoryContext,
   } from '@storybook/addon-svelte-csf';
@@ -29,11 +28,9 @@
       },
       children: { control: 'text' },
     },
+    //@ts-expect-error TS does not understand that the snippet is defined before this call
+    render: template,
   });
-</script>
-
-<script lang="ts">
-  setTemplate(template);
 </script>
 
 {#snippet template(args: Args<typeof Story>, context: StoryContext<typeof Story>)}

@@ -2,7 +2,6 @@
   import { action } from '@storybook/addon-actions';
   import {
     defineMeta,
-    setTemplate,
     type Args,
     type StoryContext,
   } from '@storybook/addon-svelte-csf';
@@ -27,6 +26,9 @@
       onmouseenter: action('onmouseenter'),
       onmouseleave: action('onmouseleave'),
     },
+    //@ts-expect-error TS does not understand that the snippet is defined before this call
+
+    render,
   });
 </script>
 
@@ -36,8 +38,6 @@
   function handleClick() {
     count += 1;
   }
-
-  setTemplate(render);
 </script>
 
 <!--

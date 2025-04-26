@@ -43,6 +43,40 @@ describe(getStoryContentRawCode.name, () => {
       expect(rawSource).toBe('<SomeComponent {...args} />');
     });
 
+    it('works when `render` is set in `defineMeta`', async ({ expect }) => {
+      const code = `
+        <script module>
+          import { defineMeta } from "@storybook/addon-svelte-csf";
+
+          import SampleComponent from "./SampleComponent.svelte";
+
+          const { Story } = defineMeta({
+            component: SampleComponent,
+            render: template,
+          });
+        </script>
+
+        {#snippet template(args)}
+          <SomeComponent {...args} />
+        {/snippet}
+
+        <Story name="Default" />
+      `;
+      const ast = getSvelteAST({ code });
+      const svelteASTNodes = await extractSvelteASTNodes({ ast });
+      const { storyComponents } = svelteASTNodes;
+      const component = storyComponents[0].component;
+      const rawSource = getStoryContentRawCode({
+        nodes: {
+          component,
+          svelte: svelteASTNodes,
+        },
+        originalCode: code,
+      });
+
+      expect(rawSource).toBe('<SomeComponent {...args} />');
+    });
+
     it('works when `setTemplate` was used correctly in the instance tag', async ({ expect }) => {
       const code = `
         <script module>
@@ -78,6 +112,46 @@ describe(getStoryContentRawCode.name, () => {
       });
 
       expect(rawSource).toBe('<SomeComponent {...args} />');
+    });
+
+    it('works implicit `template` attribute takes precedence over `render` in `defineMeta`', async ({
+      expect,
+    }) => {
+      const code = `
+        <script module>
+          import { defineMeta, setTemplate } from "@storybook/addon-svelte-csf";
+
+          import SampleComponent from "./SampleComponent.svelte";
+
+          const { Story } = defineMeta({
+            component: SampleComponent,
+            render: templateForRender,
+          });
+        </script>
+
+        {#snippet templateForRender(args)}
+          <SomeComponent wins="render" {...args} />
+        {/snippet}
+
+        {#snippet templateForTemplateAttribute(args)}
+          <SomeComponent wins="templateAttribute" {...args} />
+        {/snippet}
+
+        <Story name="Default" template={templateForTemplateAttribute} />
+      `;
+      const ast = getSvelteAST({ code });
+      const svelteASTNodes = await extractSvelteASTNodes({ ast });
+      const { storyComponents } = svelteASTNodes;
+      const component = storyComponents[0].component;
+      const rawSource = getStoryContentRawCode({
+        nodes: {
+          component,
+          svelte: svelteASTNodes,
+        },
+        originalCode: code,
+      });
+
+      expect(rawSource).toBe(`<SomeComponent wins="templateAttribute" {...args} />`);
     });
 
     it('works implicit `template` attribute takes precedence over `setTemplate`', async ({
@@ -123,7 +197,7 @@ describe(getStoryContentRawCode.name, () => {
       expect(rawSource).toBe(`<SomeComponent wins="childrenAttribute" {...args} />`);
     });
 
-    it('works when no `setTemplate`, no `template` attribute, just a story', async ({ expect }) => {
+    it('works when no `render` in `defineMeta`, no `template` attribute, just a story', async ({ expect }) => {
       const code = `
         <script module>
           import { defineMeta } from "@storybook/addon-svelte-csf";

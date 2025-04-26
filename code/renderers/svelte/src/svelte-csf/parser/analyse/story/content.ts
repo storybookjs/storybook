@@ -5,6 +5,7 @@ import type { SvelteAST } from '$lib/parser/ast.js';
 import type { extractSvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
 import { extractStoryTemplateSnippetBlock } from '$lib/parser/extract/svelte/story/template.js';
 import {
+  findMetaRenderSnippetBlock,
   findSetTemplateSnippetBlock,
   findStoryAttributeTemplateSnippetBlock,
 } from '$lib/parser/extract/svelte/snippet-block.js';
@@ -69,6 +70,36 @@ export function getStoryContentRawCode(params: Params): string {
      * <Story name="Default" />
      * ```
      */
+    const metaRenderSnippetBlock = findMetaRenderSnippetBlock({
+      nodes: svelte,
+      filename,
+    });
+
+    if (metaRenderSnippetBlock) {
+      return getSnippetBlockBodyRawCode(originalCode, metaRenderSnippetBlock);
+    }
+
+    /**
+     * Case - `render` was set in `defineMeta`
+     *
+     * Example:
+     *
+     * ```svelte
+     * <script module>
+     *     import { defineMeta } from "@storybook/addon-svelte-csf";
+     *
+     *     const { Story } = defineMeta({
+     *       render: myCustomTemplate,
+     *     });
+     * </script>
+     *
+     * {#snippet myCustomTemplate(args)}
+     *     <SomeComponent {...args} />
+     * {/snippet}
+     *
+     * <Story name="Default" />
+     * ```
+     */
     const setTemplateSnippetBlock = findSetTemplateSnippetBlock({
       nodes: svelte,
       filename,
@@ -78,7 +109,7 @@ export function getStoryContentRawCode(params: Params): string {
       return getSnippetBlockBodyRawCode(originalCode, setTemplateSnippetBlock);
     }
 
-    /* Case - No `children` attribute provided, no `setTemplate` used, just a Story */
+    /* Case - No `children` attribute provided, no `render` used, no `setTemplate` used, just a Story */
     const defineMetaComponentValue = getDefineMetaComponentValue({
       nodes: svelte,
       filename,

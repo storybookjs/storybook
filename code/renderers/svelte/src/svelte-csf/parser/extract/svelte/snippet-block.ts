@@ -6,6 +6,7 @@ import {
   InvalidSetTemplateFirstArgumentError,
   InvalidStoryTemplateAttributeError,
 } from '$lib/utils/error/parser/extract/svelte.js';
+import { getDefineMetaRenderValue } from '../../analyse/define-meta/render-identifier.js';
 
 /**
  * For example:
@@ -84,6 +85,42 @@ export function findSetTemplateSnippetBlock(options: {
 
   return findSnippetBlockByName({
     name: setTemplateCall.arguments[0].name,
+    nodes: nodes,
+  });
+}
+
+/**
+ * Find and extract the AST node of snippet block used by `setTemplate` call in the instance module.
+ * It uses first argument from `setTemplate` call.
+ *
+ * For example:
+ *
+ * ```js
+ * <script>
+ *   setTemplate(myCustomTemplate);
+ * </script>
+ * ```
+ *
+ * Where `myCustomTemplate` is a identifier with a hoisted reference to the snippet block,
+ * which should exist at the root fragment of `*.svelte` file.
+ */
+export function findMetaRenderSnippetBlock(options: {
+  nodes: SvelteASTNodes;
+  filename?: string;
+}): SvelteAST.SnippetBlock | undefined {
+  const { nodes, filename } = options;
+
+  const defineMetaRenderValue = getDefineMetaRenderValue({
+    nodes,
+    filename,
+  });
+
+  if (!defineMetaRenderValue) {
+    return;
+  }
+
+  return findSnippetBlockByName({
+    name: defineMetaRenderValue.name,
     nodes: nodes,
   });
 }

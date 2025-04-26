@@ -145,3 +145,32 @@ export class ArrayElementNotStringError extends StorybookSvelteCSFError {
     `;
   }
 }
+
+
+export class InvalidRenderValueError extends StorybookSvelteCSFError {
+  readonly category = StorybookSvelteCSFError.CATEGORY.parserAnalyseDefineMeta;
+  readonly code = 6;
+  public documentation = true;
+
+  public renderProperty: ESTreeAST.Property;
+
+  constructor({
+    filename,
+    renderProperty,
+  }: {
+    filename: StorybookSvelteCSFError['filename'];
+    renderProperty: InvalidRenderValueError['renderProperty'];
+  }) {
+    super({ filename });
+    this.renderProperty = renderProperty;
+  }
+
+  template(): string {
+    return dedent`
+      The 'render' property of 'defineMeta' must reference a root-level Svelte snippet.
+      The current type of the property is '${this.renderProperty.value.type}'.
+
+      The issue occurred in Stories file: ${this.filepathURL}
+    `;
+  }
+}

@@ -17,13 +17,13 @@ const TargetContainer = styled.div<{ trigger: ReactPopperTooltipConfig['trigger'
   display: inline-block;
   cursor: ${(props) =>
     // @ts-expect-error (non strict)
-    props.trigger === 'hover' || props.trigger.includes('hover') ? 'default' : 'pointer'};
+    props.trigger === 'hover' || props.trigger?.includes('hover') ? 'default' : 'pointer'};
 `;
 
 const TargetSvgContainer = styled.g<{ trigger: ReactPopperTooltipConfig['trigger'] }>`
   cursor: ${(props) =>
     // @ts-expect-error (non strict)
-    props.trigger === 'hover' || props.trigger.includes('hover') ? 'default' : 'pointer'};
+    props.trigger === 'hover' || props.trigger?.includes('hover') ? 'default' : 'pointer'};
 `;
 
 interface WithHideFn {

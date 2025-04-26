@@ -117,7 +117,9 @@ describe(getStoryContentRawCode.name, () => {
       expect(rawSource).toBe(`<SomeComponent wins="templateAttribute" {...args} />`);
     });
 
-    it('works when no `render` in `defineMeta`, no `template` attribute, just a story', async ({ expect }) => {
+    it('works when no `render` in `defineMeta`, no `template` attribute, just a story', async ({
+      expect,
+    }) => {
       const code = `
         <script module>
           import { defineMeta } from "@storybook/addon-svelte-csf";

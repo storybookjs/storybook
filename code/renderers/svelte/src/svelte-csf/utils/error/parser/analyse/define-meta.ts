@@ -146,7 +146,6 @@ export class ArrayElementNotStringError extends StorybookSvelteCSFError {
   }
 }
 
-
 export class InvalidRenderValueError extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.parserAnalyseDefineMeta;
   readonly code = 6;

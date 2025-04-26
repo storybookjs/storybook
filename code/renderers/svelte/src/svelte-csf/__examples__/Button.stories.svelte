@@ -1,9 +1,5 @@
 <script module lang="ts">
-  import {
-    defineMeta,
-    type Args,
-    type StoryContext,
-  } from '@storybook/addon-svelte-csf';
+  import { defineMeta, type Args, type StoryContext } from '@storybook/addon-svelte-csf';
   import { fn } from '@storybook/test';
 
   import Button from './components/Button.svelte';

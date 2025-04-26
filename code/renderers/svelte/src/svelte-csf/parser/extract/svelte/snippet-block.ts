@@ -47,7 +47,6 @@ export function findStoryAttributeTemplateSnippetBlock(options: {
   });
 }
 
-
 /**
  * Find and extract the AST node of snippet block referenced with `render` in `defineMeta`.
  *

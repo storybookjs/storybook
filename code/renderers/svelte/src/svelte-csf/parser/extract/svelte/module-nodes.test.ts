@@ -125,7 +125,7 @@ describe(extractModuleNodes.name, () => {
     expect(extractModuleNodes({ module })).resolves.not.toThrow();
   });
 
-  it("extracts module nodes", async ({ expect }) => {
+  it('extracts module nodes', async ({ expect }) => {
     const { module } = getSvelteAST({
       code: `
         <script module>
@@ -141,7 +141,8 @@ describe(extractModuleNodes.name, () => {
     expect(nodes.defineMetaImport.imported.name).toBe('defineMeta');
     expect(nodes.defineMetaVariableDeclaration).toBeDefined();
     expect(nodes.storyIdentifier).toBeDefined();
-    expect(nodes.storyIdentifier.name).toBe('Story');  });
+    expect(nodes.storyIdentifier.name).toBe('Story');
+  });
 
   it('extracts module nodes with renamed identifiers', async ({ expect }) => {
     const { module } = getSvelteAST({

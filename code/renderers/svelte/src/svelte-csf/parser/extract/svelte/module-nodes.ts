@@ -103,8 +103,7 @@ export async function extractModuleNodes(options: Params): Promise<Result> {
 
   walk(module.content, state, visitors);
 
-  const { defineMetaImport, defineMetaVariableDeclaration, storyIdentifier } =
-    state;
+  const { defineMetaImport, defineMetaVariableDeclaration, storyIdentifier } = state;
 
   if (!defineMetaImport) {
     throw new MissingDefineMetaImportError(filename);

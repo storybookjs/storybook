@@ -30,6 +30,10 @@ import type { A11YReport, EnhancedResult, EnhancedResults } from '../types';
 import { RuleType } from '../types';
 import type { TestDiscrepancy } from './TestDiscrepancyMessage';
 
+// These elements should not be highlighted because they usually cover the whole page.
+// They may still appear in the results and be selectable though.
+const unhighlightedSelectors = ['html', 'body', 'main'];
+
 export interface A11yContextStore {
   results: EnhancedResults | undefined;
   highlighted: boolean;
@@ -327,7 +331,7 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
 
     const others = results?.[tab as RuleType]
       .flatMap((r) => r.nodes.flatMap((n) => n.target).map(String))
-      .filter((e) => !['html', 'body', 'main', ...selected].includes(e));
+      .filter((e) => ![...unhighlightedSelectors, ...selected].includes(e));
     emit(HIGHLIGHT, {
       id: `${ADDON_ID}/others`,
       selectors: others,

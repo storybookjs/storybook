@@ -41,6 +41,10 @@
       "types": "./dist/export-mocks/headers/index.d.ts",
       "default": "./dist/export-mocks/headers/index.js"
     },
+    "./link.mock": {
+      "types": "./dist/export-mocks/link/index.d.ts",
+      "default": "./dist/export-mocks/link/index.js"
+    },
     "./image-context": "./dist/image-context.js",
     "./images/next-image": "./dist/images/next-image.js",
     "./images/next-legacy-image": "./dist/images/next-legacy-image.js",

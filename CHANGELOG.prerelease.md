@@ -1,3 +1,7 @@
+## 9.0.0-beta.4
+
+- Highlights: Dont run highlights when the feature is disabled - [#31239](https://github.com/storybookjs/storybook/pull/31239), thanks @dannyhw!
+
 ## 9.0.0-beta.3
 
 - Automigration: Remove `docs.autodocs` field - [#31203](https://github.com/storybookjs/storybook/pull/31203), thanks @ndelangen!

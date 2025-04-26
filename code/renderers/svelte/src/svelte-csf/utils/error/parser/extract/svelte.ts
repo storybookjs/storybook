@@ -187,32 +187,6 @@ export class InvalidStoryTemplateAttributeError extends StorybookSvelteCSFError 
   }
 }
 
-export class InvalidSetTemplateFirstArgumentError extends StorybookSvelteCSFError {
-  readonly category = StorybookSvelteCSFError.CATEGORY.parserExtractSvelte;
-  readonly code = 8;
-  public documentation = true;
-
-  public setTemplateCall: SvelteASTNodes['setTemplateCall'];
-
-  constructor({
-    filename,
-    setTemplateCall,
-  }: {
-    filename?: StorybookSvelteCSFError['filename'];
-    setTemplateCall: InvalidSetTemplateFirstArgumentError['setTemplateCall'];
-  }) {
-    super({ filename });
-    this.setTemplateCall = setTemplateCall;
-  }
-
-  template() {
-    return dedent`
-      The file '${this.filepathURL}'
-      has an invalid 'setTemplate' call. The first argument must reference a root-level snippet in the file.
-    `;
-  }
-}
-
 export class IndexerParseError extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.parserExtractSvelte;
   readonly code = 9;

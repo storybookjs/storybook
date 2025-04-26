@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
 import { extractFragmentNodes } from './fragment-nodes.js';
-import { extractInstanceNodes } from './instance-nodes.js';
 import { extractModuleNodes } from './module-nodes.js';
 
 import { getSvelteAST } from '$lib/parser/ast.js';
@@ -22,13 +21,8 @@ describe(extractFragmentNodes.name, () => {
       `,
     });
     const moduleNodes = await extractModuleNodes({ module: ast.module });
-    const instanceNodes = await extractInstanceNodes({
-      instance: ast.instance,
-      moduleNodes,
-    });
     const fragmentNodes = await extractFragmentNodes({
       fragment: ast.fragment,
-      instanceNodes,
       moduleNodes,
     });
 
@@ -59,13 +53,8 @@ describe(extractFragmentNodes.name, () => {
       `,
     });
     const moduleNodes = await extractModuleNodes({ module: ast.module });
-    const instanceNodes = await extractInstanceNodes({
-      instance: ast.instance,
-      moduleNodes,
-    });
     const fragmentNodes = await extractFragmentNodes({
       fragment: ast.fragment,
-      instanceNodes,
       moduleNodes,
     });
 
@@ -79,12 +68,10 @@ describe(extractFragmentNodes.name, () => {
     const ast = getSvelteAST({
       code: `
         <script module>
-          import { defineMeta, setTemplate } from "@storybook/addon-svelte-csf"
-          const { Story } = defineMeta();
-        </script>
-
-        <script>
-          setTemplate(render);
+          import { defineMeta } from "@storybook/addon-svelte-csf"
+          const { Story } = defineMeta({
+            render,
+          });
         </script>
 
         {#snippet render(args)}
@@ -109,13 +96,8 @@ describe(extractFragmentNodes.name, () => {
       `,
     });
     const moduleNodes = await extractModuleNodes({ module: ast.module });
-    const instanceNodes = await extractInstanceNodes({
-      instance: ast.instance,
-      moduleNodes,
-    });
     const fragmentNodes = await extractFragmentNodes({
       fragment: ast.fragment,
-      instanceNodes,
       moduleNodes,
     });
 

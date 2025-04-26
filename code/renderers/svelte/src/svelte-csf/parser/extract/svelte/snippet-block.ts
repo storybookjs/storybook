@@ -2,10 +2,7 @@ import type { SvelteAST } from '$lib/parser/ast.js';
 import type { SvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
 import { extractStoryAttributesNodes } from '$lib/parser/extract/svelte/story/attributes.js';
 
-import {
-  InvalidSetTemplateFirstArgumentError,
-  InvalidStoryTemplateAttributeError,
-} from '$lib/utils/error/parser/extract/svelte.js';
+import { InvalidStoryTemplateAttributeError } from '$lib/utils/error/parser/extract/svelte.js';
 import { getDefineMetaRenderValue } from '../../analyse/define-meta/render-identifier.js';
 
 /**
@@ -50,59 +47,27 @@ export function findStoryAttributeTemplateSnippetBlock(options: {
   });
 }
 
+
 /**
- * Find and extract the AST node of snippet block used by `setTemplate` call in the instance module.
- * It uses first argument from `setTemplate` call.
+ * Find and extract the AST node of snippet block referenced with `render` in `defineMeta`.
  *
  * For example:
  *
- * ```js
+ * ```svelte
  * <script>
- *   setTemplate(myCustomTemplate);
+ *   import { defineMeta } from "@storybook/addon-svelte-csf";
+ *
+ *   const { Story } = defineMeta({
+ *     render: myCustomTemplate,
+ *   });
  * </script>
+ *
+ * {#snippet myCustomTemplate()}
+ *   ...
+ * {/snippet}
+ *
+ * <Story />
  * ```
- *
- * Where `myCustomTemplate` is a identifier with a hoisted reference to the snippet block,
- * which should exist at the root fragment of `*.svelte` file.
- */
-export function findSetTemplateSnippetBlock(options: {
-  nodes: SvelteASTNodes;
-  filename?: string;
-}): SvelteAST.SnippetBlock | undefined {
-  const { nodes, filename } = options;
-  const { setTemplateCall } = nodes;
-
-  if (!setTemplateCall) {
-    return;
-  }
-
-  if (setTemplateCall.arguments[0].type !== 'Identifier') {
-    throw new InvalidSetTemplateFirstArgumentError({
-      setTemplateCall,
-      filename,
-    });
-  }
-
-  return findSnippetBlockByName({
-    name: setTemplateCall.arguments[0].name,
-    nodes: nodes,
-  });
-}
-
-/**
- * Find and extract the AST node of snippet block used by `setTemplate` call in the instance module.
- * It uses first argument from `setTemplate` call.
- *
- * For example:
- *
- * ```js
- * <script>
- *   setTemplate(myCustomTemplate);
- * </script>
- * ```
- *
- * Where `myCustomTemplate` is a identifier with a hoisted reference to the snippet block,
- * which should exist at the root fragment of `*.svelte` file.
  */
 export function findMetaRenderSnippetBlock(options: {
   nodes: SvelteASTNodes;

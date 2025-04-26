@@ -1,11 +1,10 @@
-import "svelte/internal/disclose-version";
+import 'svelte/internal/disclose-version';
 
-$.mark_module_start();
-Example_stories[$.FILENAME] = "tests/stories/Example.stories.svelte";
+Example_stories[$.FILENAME] = 'tests/stories/Example.stories.svelte';
 
-import * as $ from "svelte/internal/client";
+import * as $ from 'svelte/internal/client';
 import { action } from '@storybook/addon-actions';
-import { defineMeta, setTemplate } from '@storybook/addon-svelte-csf';
+import { defineMeta } from '@storybook/addon-svelte-csf';
 import Example from './Example.svelte';
 
 /**
@@ -28,19 +27,21 @@ const { Story } = defineMeta({
 	}
 });
 
-var root_2 = $.add_locations($.template(`<p> </p> <p> </p> <br>`, 1), Example_stories[$.FILENAME], [[43, 2], [44, 2], [44, 44]]);
+var root_2 = $.add_locations($.template(`<p> </p> <p> </p> <br>`, 1), Example_stories[$.FILENAME], [[41, 2], [42, 2], [42, 44]]);
 var root = $.add_locations($.template(`<!> <!> <!> <!> <!>`, 1), Example_stories[$.FILENAME], []);
 
 function Example_stories($$anchor, $$props) {
 	$.check_target(new.target);
 	$.push($$props, true, Example_stories);
 
-	const render = $.wrap_snippet(Example_stories, ($$anchor, $$arg0, context = $.noop) => {
+	const template = $.wrap_snippet(Example_stories, function ($$anchor, $$arg0, context = $.noop) {
+		$.validate_snippet_args(...arguments);
+
 		let _ = () => $$arg0?.().children;
 
 		_();
 
-		let args = () => $.exclude_from_object($$arg0?.(), ["children"]);
+		let args = () => $.exclude_from_object($$arg0?.(), ['children']);
 
 		args();
 
@@ -68,7 +69,7 @@ function Example_stories($$anchor, $$props) {
 				$.template_effect(() => {
 					$.set_text(text, args().id);
 					$.set_text(text_1, context().name);
-					$.set_text(text_2, ` You clicked: ${$.get(count) ?? ""}`);
+					$.set_text(text_2, ` You clicked: ${$.get(count) ?? ''}`);
 				});
 
 				$.append($$anchor, fragment_1);
@@ -79,33 +80,37 @@ function Example_stories($$anchor, $$props) {
 		$.append($$anchor, fragment);
 	});
 
-	$.validate_prop_bindings($$props, [], [], Example_stories);
-
 	let count = $.state(0);
 
 	function handleClick() {
 		$.set(count, $.get(count) + 1);
 	}
 
-	setTemplate(render);
-
 	var fragment_2 = root();
 	var node_1 = $.first_child(fragment_2);
 
-	Story(node_1, { name: "Default" });
+	Story(node_1, { name: 'Default', template });
 
 	var node_2 = $.sibling(node_1, 2);
 
-	Story(node_2, { name: "Rounded", args: { rounded: true } });
+	Story(node_2, {
+		name: 'Rounded',
+		args: { rounded: true },
+		template
+	});
 
 	var node_3 = $.sibling(node_2, 2);
 
-	Story(node_3, { name: "Square", args: { rounded: false } });
+	Story(node_3, {
+		name: 'Square',
+		args: { rounded: false },
+		template
+	});
 
 	var node_4 = $.sibling(node_3, 2);
 
 	Story(node_4, {
-		name: "As child",
+		name: 'As child',
 		asChild: true,
 		children: $.wrap_snippet(Example_stories, ($$anchor, $$slotProps) => {
 			var fragment_3 = $.comment();
@@ -115,7 +120,7 @@ function Example_stories($$anchor, $$props) {
 				children: $.wrap_snippet(Example_stories, ($$anchor, $$slotProps) => {
 					$.next();
 
-					var text_3 = $.text("Label");
+					var text_3 = $.text('Label');
 
 					$.append($$anchor, text_3);
 				}),
@@ -130,11 +135,11 @@ function Example_stories($$anchor, $$props) {
 	var node_6 = $.sibling(node_4, 2);
 
 	Story(node_6, {
-		name: "Children forwared",
+		name: 'Children forwared',
 		children: $.wrap_snippet(Example_stories, ($$anchor, $$slotProps) => {
 			$.next();
 
-			var text_4 = $.text("Forwarded label");
+			var text_4 = $.text('Forwarded label');
 
 			$.append($$anchor, text_4);
 		}),
@@ -155,5 +160,3 @@ if (import.meta.hot) {
 }
 
 export default Example_stories;
-
-$.mark_module_end(Example_stories);

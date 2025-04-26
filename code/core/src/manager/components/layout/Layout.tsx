@@ -148,15 +148,17 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
       showPanel={showPanel}
     >
       {showPages && <PagesContainer>{slots.slotPages}</PagesContainer>}
-      <Match path={/(^\/story|docs|onboarding\/|^\/$)/} startsWith={false}>
-        {({ match }) => <ContentContainer shown={!!match}>{slots.slotMain}</ContentContainer>}
-      </Match>
       {isDesktop && (
         <>
           <SidebarContainer>
             <Drag ref={sidebarResizerRef} />
             {slots.slotSidebar}
           </SidebarContainer>
+
+          <Match path={/(^\/story|docs|onboarding\/|^\/$)/} startsWith={false}>
+            {({ match }) => <ContentContainer shown={!!match}>{slots.slotMain}</ContentContainer>}
+          </Match>
+
           {showPanel && (
             <PanelContainer position={panelPosition}>
               <Drag
@@ -169,8 +171,13 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
           )}
         </>
       )}
+
       {isMobile && (
         <>
+          <Match path={/(^\/story|docs|onboarding\/|^\/$)/} startsWith={false}>
+            {({ match }) => <ContentContainer shown={!!match}>{slots.slotMain}</ContentContainer>}
+          </Match>
+
           <Notifications />
           <MobileNavigation
             menu={slots.slotSidebar}

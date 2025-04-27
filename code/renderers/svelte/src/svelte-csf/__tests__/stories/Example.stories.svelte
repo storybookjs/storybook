@@ -61,6 +61,8 @@
 <!-- Description for the squared story -->
 <Story name="Square" args={{ rounded: false }} />
 
-<Story name="Without template">
+<Story name="As child" asChild>
   <Example>Label</Example>
 </Story>
+
+<Story name="Children forwared">Forwarded label</Story>

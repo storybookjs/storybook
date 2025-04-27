@@ -20,7 +20,7 @@
 </script>
 
 <Story name="Default">
-  {#snippet children(_args, context)}
+  {#snippet template(_args, context)}
     <pre>
       <code>
 {JSON.stringify(context, replacer, 2)}

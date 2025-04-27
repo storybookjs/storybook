@@ -1,12 +1,12 @@
 import { describe, it } from 'vitest';
 
-import { extractStoryChildrenSnippetBlock } from './children.js';
+import { extractStoryTemplateSnippetBlock } from './template.js';
 
 import { getSvelteAST } from '$lib/parser/ast.js';
 import { extractSvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
 
-describe(extractStoryChildrenSnippetBlock.name, () => {
-  it('returns correctly AST node, when a `<Story>` compponent has a snippet block `children` inside', async ({
+describe(extractStoryTemplateSnippetBlock.name, () => {
+  it('returns correctly AST node, when a `<Story>` compponent has a snippet block `template` inside', async ({
     expect,
   }) => {
     const code = `
@@ -20,8 +20,8 @@ describe(extractStoryChildrenSnippetBlock.name, () => {
           });
         </script>
 
-        <Story name="With children">
-          {#snippet children(args)}
+        <Story name="With template">
+          {#snippet template(args)}
             <SomeComponent {...args} />
           {/snippet}
         </Story>
@@ -32,8 +32,8 @@ describe(extractStoryChildrenSnippetBlock.name, () => {
     const { storyComponents } = svelteASTNodes;
     const component = storyComponents[0].component;
 
-    expect(extractStoryChildrenSnippetBlock(component)).toBeDefined();
-    expect(extractStoryChildrenSnippetBlock(component)?.expression.name).toBe('children');
+    expect(extractStoryTemplateSnippetBlock(component)).toBeDefined();
+    expect(extractStoryTemplateSnippetBlock(component)?.expression.name).toBe('template');
   });
 
   it('returns undefined, when a `<Story>` compponent is a self-closing tag', async ({ expect }) => {
@@ -56,6 +56,6 @@ describe(extractStoryChildrenSnippetBlock.name, () => {
     const { storyComponents } = svelteASTNodes;
     const component = storyComponents[0].component;
 
-    expect(extractStoryChildrenSnippetBlock(component)).not.toBeDefined();
+    expect(extractStoryTemplateSnippetBlock(component)).not.toBeDefined();
   });
 });

@@ -8,7 +8,7 @@ import {
   getParametersPropertyValue,
   getDocsPropertyValue,
   getDescriptionPropertyValue,
-} from '$lib/compiler/post-transform/shared/description.js';
+} from '$lib/compiler/post-transform/shared/parameters.js';
 import { createASTObjectExpression, createASTProperty } from '$lib/parser/ast.js';
 
 import type { ESTreeAST } from '$lib/parser/ast.js';

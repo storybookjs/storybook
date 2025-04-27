@@ -97,17 +97,17 @@ It must be a valid **object expression** with the same structure as [the Default
 
 ### `SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0007`
 
-A `<Story>` component received an invalid `children` prop. If set, the `children` prop must be a reference to a [snippet](https://svelte-5-preview.vercel.app/docs/snippets) defined in the root scope file. Eg.:
+A `<Story>` component received an invalid `template` prop. If set, the `template` prop must be a reference to a [snippet](https://svelte.dev/docs/snippets) defined in the root scope file. Eg.:
 
 ```svelte
 {#snippet template()}
   <span>🚀</span>
 {/snippet}
 
-<Story name="Rocket" children={template} />
+<Story name="Rocket" {template} />
 ```
 
-This error indicates that the `children` prop was passed, but it was not correctly referencing a snippet.
+This error indicates that the `template` prop was passed, but it was not correctly referencing a snippet.
 
 ### `SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0008`
 
@@ -320,6 +320,60 @@ eg. `Some story name!!` will be converted to `SomeStoryName`.
 You can fix this collision by providing a unique `exportName` prop with`<Story exportName="SomeUniqueExportName" ... />`.
 
 See more in [the `exportName` API docs](./README.md#custom-export-name).
+
+### `SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0007`
+
+When analysing one of the `<Story />` definitions, both a `template` prop and children elements were found.
+
+The `template` prop uses a [snippet](https://svelte.dev/docs/svelte/snippet) to define the story content, while children are forwarded to the component.
+These two approaches cannot be combined.
+
+If you intend to use a snippet, remove the children from the `<Story>` tags:
+
+```diff
+  <Story name="MyStory" {template}>
+-    <SomeComponent />
+  </Story>
+```
+
+If you intend to pass the children to the component (or potentially render as is with [`asChild`](./README.md#static-template)), remove the `template` prop:
+
+```diff
+-  <Story name="MyStory" {template}>
++  <Story name="MyStory">
+     <SomeComponent />
+  </Story>
+```
+
+If you intend to use a `template` that also uses children, define the `template`-snippet inline and put the children directly in that:
+
+```diff
+-  <Story name="MyStory" {template}>
++  <Story name="MyStory">
++    {#snippet template(args)}
++      <MyComponent>
+         <SomeComponent />
++      </MyComponent>
++    {/snippet}
+  </Story>
+```
+
+### `SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0008`
+
+When analysing one of the `<Story />` definitions, both a `template` prop and the `asChild` prop were found.
+
+The `template` prop uses a [snippet](https://svelte.dev/docs/svelte/snippet) to define the story content, while the `asChild` prop indicates that the children defined within the `<Story>` component should become the entire story content.
+These two approaches are mutually exclusive.
+
+Choose one approach and remove the conflicting prop
+
+### `SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0009`
+
+When analysing one of the `<Story />` definitions, the `asChild` prop was set to true, but no children were found within the `<Story>` component.
+
+The `asChild` prop requires children to be present, as they define the content that replaces the default story rendering.
+
+Either remove the `asChild` prop or provide children for the story.
 
 ## `LEGACY_API`
 

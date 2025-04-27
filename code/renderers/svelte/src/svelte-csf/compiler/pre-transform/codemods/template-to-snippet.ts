@@ -15,7 +15,7 @@ interface Params {
  * @example 1. without provided `id` prop _(attribute)_
  * ```diff
  * - <Template let:args let:context>
- * + {#snippet children(args, context)}
+ * + {#snippet template(args, context)}
  *     <!-- fragment -> body -->
  * + {/snippet}
  * - </Template>

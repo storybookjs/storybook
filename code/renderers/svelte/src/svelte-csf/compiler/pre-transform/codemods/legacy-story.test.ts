@@ -24,7 +24,7 @@ describe(transformLegacyStory.name, () => {
           state: { componentIdentifierName: {} },
         })
       )
-    ).toMatchInlineSnapshot(`"<Story name="Default" tags={["autodocs"]} />"`);
+    ).toMatchInlineSnapshot(`"<Story name="Default" tags={["autodocs", "legacy"]} />"`);
   });
 
   it("moving 'autodocs' prop doesn't break with existing 'tags' prop", async ({ expect }) => {
@@ -44,7 +44,7 @@ describe(transformLegacyStory.name, () => {
           state: { componentIdentifierName: {} },
         })
       )
-    ).toMatchInlineSnapshot(`"<Story name="Default" tags={["!dev", "autodocs"]} />"`);
+    ).toMatchInlineSnapshot(`"<Story name="Default" tags={["!dev", "autodocs", "legacy"]} />"`);
   });
 
   it("'source' prop when is a shorthand gets removed", async ({ expect }) => {
@@ -64,7 +64,7 @@ describe(transformLegacyStory.name, () => {
           state: { componentIdentifierName: {} },
         })
       )
-    ).toMatchInlineSnapshot(`"<Story name="Default" />"`);
+    ).toMatchInlineSnapshot(`"<Story name="Default" tags={["legacy"]} />"`);
   });
 
   it("'source' prop when is a text expression gets moved to 'parameters' prop", async ({
@@ -88,10 +88,10 @@ describe(transformLegacyStory.name, () => {
       )
     ).toMatchInlineSnapshot(
       `
-			"<Story name="Default" parameters={{
-				docs: { source: { code: "'<Button primary />'" } }
-			}} />"
-		`
+      "<Story name="Default" parameters={{
+      	docs: { source: { code: "'<Button primary />'" } }
+      }} tags={["legacy"]} />"
+    `
     );
   });
 
@@ -122,7 +122,7 @@ describe(transformLegacyStory.name, () => {
       	docs: {
       		source: { code: "<LegacyStory>Hi</LegacyStory>" }
       	}
-      }}>
+      }} tags={["legacy"]}>
       	<LegacyStory>{'Hi'}</LegacyStory>
       </Story>"
     `
@@ -157,16 +157,16 @@ describe(transformLegacyStory.name, () => {
       )
     ).toMatchInlineSnapshot(
       `
-			"<Story name="Default" parameters={{
-				controls: { disable: true },
-				interactions: { disable: true },
-				docs: { source: { code: "'<Button primary />'" } }
-			}} />"
-		`
+      "<Story name="Default" parameters={{
+      	controls: { disable: true },
+      	interactions: { disable: true },
+      	docs: { source: { code: "'<Button primary />'" } }
+      }} tags={["legacy"]} />"
+    `
     );
   });
 
-  it("transforms 'template' prop to 'children' and text expression becomes expression tag with identifier to snippet", async ({
+  it("transforms 'template' id prop to 'template' reference prop and text expression becomes expression tag with identifier to snippet", async ({
     expect,
   }) => {
     const code = `
@@ -185,10 +185,10 @@ describe(transformLegacyStory.name, () => {
           state: { componentIdentifierName: {} },
         })
       )
-    ).toMatchInlineSnapshot(`"<Story name="Default" children={someTemplate} />"`);
+    ).toMatchInlineSnapshot(`"<Story name="Default" template={someTemplate} tags={["legacy"]} />"`);
   });
 
-  it("transforms 'template' prop to 'children' and text expression becomes expression tag with identifier to snippet (case with invalid identifier)", async ({
+  it("transforms 'template' id prop to 'template' reference prop and text expression becomes expression tag with identifier to snippet (case with invalid identifier)", async ({
     expect,
   }) => {
     const code = `
@@ -196,7 +196,7 @@ describe(transformLegacyStory.name, () => {
         import { Story } from "@storybook/addon-svelte-csf";
       </script>
 
-      <Story name="Default" template="some template with non valid idenitifier" />
+      <Story name="Default" template="some template with non valid identifier" />
     `;
     const component = await parseAndExtractSvelteNode<SvelteAST.Component>(code, 'Component');
 
@@ -207,10 +207,12 @@ describe(transformLegacyStory.name, () => {
           state: { componentIdentifierName: {} },
         })
       )
-    ).toMatchInlineSnapshot(`"<Story name="Default" children={template_c0gseq} />"`);
+    ).toMatchInlineSnapshot(
+      `"<Story name="Default" template={template_r71ke5} tags={["legacy"]} />"`
+    );
   });
 
-  it("when directive 'let:args' is used then it wraps Story fragment with 'children' snippet block", async ({
+  it("when directive 'let:args' is used then it wraps Story fragment with 'template' snippet block", async ({
     expect,
   }) => {
     const code = `
@@ -232,15 +234,15 @@ describe(transformLegacyStory.name, () => {
         })
       )
     ).toMatchInlineSnapshot(`
-			"<Story name="Default">
-				{#snippet children(args)}
-					<Button {...args} />
-				{/snippet}
-			</Story>"
-		`);
+      "<Story name="Default" tags={["legacy"]}>
+      	{#snippet template(args)}
+      		<Button {...args} />
+      	{/snippet}
+      </Story>"
+    `);
   });
 
-  it("when directive 'let:context' is used then it wraps Story fragment with 'children' snippet block", async ({
+  it("when directive 'let:context' is used then it wraps Story fragment with 'template' snippet block", async ({
     expect,
   }) => {
     const code = `
@@ -262,15 +264,15 @@ describe(transformLegacyStory.name, () => {
         })
       )
     ).toMatchInlineSnapshot(`
-			"<Story name="Default">
-				{#snippet children(_args, context)}
-					<p>{context.id}</p>
-				{/snippet}
-			</Story>"
-		`);
+      "<Story name="Default" tags={["legacy"]}>
+      	{#snippet template(_args, context)}
+      		<p>{context.id}</p>
+      	{/snippet}
+      </Story>"
+    `);
   });
 
-  it("when both directives 'let:args' and 'let:context' is used then it wraps Story fragment with 'children' snippet block", async ({
+  it("when both directives 'let:args' and 'let:context' is used then it wraps Story fragment with 'template' snippet block", async ({
     expect,
   }) => {
     const code = `
@@ -293,8 +295,8 @@ describe(transformLegacyStory.name, () => {
         })
       )
     ).toMatchInlineSnapshot(`
-      "<Story name="Default">
-      	{#snippet children(args, context)}
+      "<Story name="Default" tags={["legacy"]}>
+      	{#snippet template(args, context)}
       		<h1>{args.title}</h1>
       		<p>{context.id}</p>
       	{/snippet}
@@ -349,7 +351,7 @@ describe(transformLegacyStory.name, () => {
       			updated: true
       		}
       	}
-      }}>
+      }} tags={["legacy"]}>
       	<h1>{"Test"}</h1>
       </Story>"
     `);
@@ -384,7 +386,7 @@ describe(transformLegacyStory.name, () => {
     ).toMatchInlineSnapshot(`
       "<Story name="Default" parameters={{
       	docs: { source: { code: "\\n    <Foo bar />\\n  " } }
-      }}>
+      }} tags={["legacy"]}>
       	<h1>{"Test"}</h1>
       </Story>"
     `);

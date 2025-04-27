@@ -56,10 +56,6 @@ describe(transformStoriesCode.name, () => {
       import { defineMeta, setTemplate } from '@storybook/addon-svelte-csf';
       import Example from './Example.svelte';
 
-      var root_2 = $.add_locations($.template(\`<p> </p> <p> </p> <br>\`, 1), Example_stories[$.FILENAME], [[45, 4], [46, 4], [47, 24]]);
-      var root_4 = $.add_locations($.template(\`Label\`, 1), Example_stories[$.FILENAME], []);
-      var root = $.add_locations($.template(\`<!> <!> <!> <!>\`, 1), Example_stories[$.FILENAME], []);
-
       /**
        * Description set explicitly in the comment above \`defineMeta\`.
        *
@@ -88,59 +84,71 @@ describe(transformStoriesCode.name, () => {
       };
       const { Story } = defineMeta(meta);
 
+      var root_2 = $.add_locations($.template(\`<p> </p> <p> </p> <br>\`, 1), Example_stories[$.FILENAME], [[43, 2], [44, 2], [44, 44]]);
+      var root = $.add_locations($.template(\`<!> <!> <!> <!> <!>\`, 1), Example_stories[$.FILENAME], []);
+
       function Example_stories($$anchor, $$props) {
-        $.check_target(new.target);
-        $.push($$props, true, Example_stories);
+      	$.check_target(new.target);
+      	$.push($$props, true, Example_stories);
 
-        const render = $.wrap_snippet(Example_stories, ($$anchor, args = $.noop, context = $.noop) => {
-          var fragment = $.comment();
-          var node = $.first_child(fragment);
+      	const render = $.wrap_snippet(Example_stories, ($$anchor, $$arg0, context = $.noop) => {
+      		let _ = () => $$arg0?.().children;
 
-          Example(node, $.spread_props(args, {
-            onclick: handleClick,
-            children: $.wrap_snippet(Example_stories, ($$anchor, $$slotProps) => {
-              var fragment_1 = root_2();
-              var p = $.first_child(fragment_1);
-              var text = $.child(p);
+      		_();
 
-              $.reset(p);
+      		let args = () => $.exclude_from_object($$arg0?.(), ["children"]);
 
-              var p_1 = $.sibling($.sibling(p, true));
-              var text_1 = $.child(p_1);
+      		args();
 
-              $.reset(p_1);
+      		var fragment = $.comment();
+      		var node = $.first_child(fragment);
 
-              var text_2 = $.sibling(p_1, true);
-              var br = $.sibling(text_2);
+      		Example(node, $.spread_props(args, {
+      			onclick: handleClick,
+      			children: $.wrap_snippet(Example_stories, ($$anchor, $$slotProps) => {
+      				var fragment_1 = root_2();
+      				var p = $.first_child(fragment_1);
+      				var text = $.child(p, true);
 
-              $.template_effect(() => {
-                $.set_text(text, args().id);
-                $.set_text(text_1, context().name);
-                $.set_text(text_2, \` You clicked: \${$.get(count) ?? ""}\`);
-              });
+      				$.reset(p);
 
-              $.append($$anchor, fragment_1);
-            }),
-            $$slots: { default: true }
-          }));
+      				var p_1 = $.sibling(p, 2);
+      				var text_1 = $.child(p_1, true);
 
-          $.append($$anchor, fragment);
-        });
+      				$.reset(p_1);
 
-        $.validate_prop_bindings($$props, [], [], Example_stories);
+      				var text_2 = $.sibling(p_1);
 
-        let count = $.source(0);
+      				$.next();
 
-        function handleClick() {
-          $.set(count, $.get(count) + 1);
-        }
+      				$.template_effect(() => {
+      					$.set_text(text, args().id);
+      					$.set_text(text_1, context().name);
+      					$.set_text(text_2, \` You clicked: \${$.get(count) ?? ""}\`);
+      				});
 
-        setTemplate(render);
+      				$.append($$anchor, fragment_1);
+      			}),
+      			$$slots: { default: true }
+      		}));
 
-        var fragment_2 = root();
-        var node_1 = $.first_child(fragment_2);
+      		$.append($$anchor, fragment);
+      	});
 
-        Story(node_1, {
+      	$.validate_prop_bindings($$props, [], [], Example_stories);
+
+      	let count = $.state(0);
+
+      	function handleClick() {
+      		$.set(count, $.get(count) + 1);
+      	}
+
+      	setTemplate(render);
+
+      	var fragment_2 = root();
+      	var node_1 = $.first_child(fragment_2);
+
+      	Story(node_1, {
       	name: "Default",
       	parameters: {
       		docs: {
@@ -152,9 +160,9 @@ describe(transformStoriesCode.name, () => {
       	}
       });
 
-        var node_2 = $.sibling($.sibling(node_1, true));
+      	var node_2 = $.sibling(node_1, 2);
 
-        Story(node_2, {
+      	Story(node_2, {
       	name: "Rounded",
       	args: { rounded: true },
       	parameters: {
@@ -167,9 +175,9 @@ describe(transformStoriesCode.name, () => {
       	}
       });
 
-        var node_3 = $.sibling($.sibling(node_2, true));
+      	var node_3 = $.sibling(node_2, 2);
 
-        Story(node_3, {
+      	Story(node_3, {
       	name: "Square",
       	args: { rounded: false },
       	parameters: {
@@ -182,10 +190,11 @@ describe(transformStoriesCode.name, () => {
       	}
       });
 
-        var node_4 = $.sibling($.sibling(node_3, true));
+      	var node_4 = $.sibling(node_3, 2);
 
-        Story(node_4, {
-      	name: "Without template",
+      	Story(node_4, {
+      	name: "As child",
+      	asChild: true,
       	children: $.wrap_snippet(Example_stories, ($$anchor, $$slotProps) => {
       		var fragment_3 = $.comment();
       		var node_5 = $.first_child(fragment_3);
@@ -194,9 +203,9 @@ describe(transformStoriesCode.name, () => {
       			children: $.wrap_snippet(Example_stories, ($$anchor, $$slotProps) => {
       				$.next();
 
-      				var fragment_4 = root_4();
+      				var text_3 = $.text("Label");
 
-      				$.append($$anchor, fragment_4);
+      				$.append($$anchor, text_3);
       			}),
       			$$slots: { default: true }
       		});
@@ -209,17 +218,36 @@ describe(transformStoriesCode.name, () => {
       	}
       });
 
-        $.append($$anchor, fragment_2);
-        return $.pop({ ...$.legacy_api() });
+      	var node_6 = $.sibling(node_4, 2);
+
+      	Story(node_6, {
+      	name: "Children forwared",
+      	children: $.wrap_snippet(Example_stories, ($$anchor, $$slotProps) => {
+      		$.next();
+
+      		var text_4 = $.text("Forwarded label");
+
+      		$.append($$anchor, text_4);
+      	}),
+      	$$slots: { default: true },
+      	parameters: {
+      		__svelteCsf: {
+      			rawCode: "<Example {...args}>\\n  Forwarded label\\n</Example>"
+      		}
+      	}
+      });
+
+      	$.append($$anchor, fragment_2);
+      	return $.pop({ ...$.legacy_api() });
       }
 
       if (import.meta.hot) {
-        Example_stories = $.hmr(Example_stories, () => Example_stories[$.HMR].source);
+      	Example_stories = $.hmr(Example_stories, () => Example_stories[$.HMR].source);
 
-        import.meta.hot.acceptExports(["default"], (module) => {
-          module.default[$.HMR].source = Example_stories[$.HMR].source;
-          $.set(Example_stories[$.HMR].source, module.default[$.HMR].original);
-        });
+      	import.meta.hot.acceptExports(["default"],(module) => {
+      		module.default[$.HMR].source = Example_stories[$.HMR].source;
+      		$.set(Example_stories[$.HMR].source, module.default[$.HMR].original);
+      	});
       }
 
 
@@ -236,13 +264,15 @@ describe(transformStoriesCode.name, () => {
       	"Default",
       	"Rounded",
       	"Square",
-      	"WithoutTemplate"
+      	"AsChild",
+      	"ChildrenForwared"
       ];
 
       export const Default = { ...__stories["Default"], tags: [] };
       export const Rounded = { ...__stories["Rounded"], tags: [] };
       export const Square = { ...__stories["Square"], tags: [] };
-      export const WithoutTemplate = { ...__stories["WithoutTemplate"], tags: [] };"
+      export const AsChild = { ...__stories["AsChild"], tags: [] };
+      export const ChildrenForwared = { ...__stories["ChildrenForwared"], tags: [] };"
     `
     );
   });

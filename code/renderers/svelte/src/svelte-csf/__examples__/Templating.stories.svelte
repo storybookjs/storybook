@@ -17,7 +17,7 @@
 <script>
   /**
    * call setTemplate with a reference to any root-level snippet, for that snippet to be the fallback snippet,
-   * that is used in any story without explicit children.
+   * that is used in any story without explicit template.
    */
   setTemplate(defaultTemplate);
 </script>
@@ -56,14 +56,14 @@
 </Story>
 
 <!--
-  Pass a `children` snippet to the story to make it dynamic and react to Storybook's `args` changes.
+  Pass a `template` snippet to the story to make it dynamic and react to Storybook's `args` changes.
   The snippet takes two arguments, `args` and `context`.
 
   Example:
 
   ```svelte
   <Story name="Dynamic story">
-    {#snippet children(args)}
+    {#snippet template(args)}
       <SomeComponent {...args}>
         Dynamic template
       </SomeComponent>
@@ -72,8 +72,8 @@
   ```
 -->
 <Story
-  name="Children snippet"
-  args={{ text: 'This story uses a children snippet' }}
+  name="Template snippet"
+  args={{ text: 'This story uses a template snippet' }}
   play={async (context) => {
     const { args, canvasElement } = context;
     const canvas = within(canvasElement);
@@ -84,8 +84,8 @@
     expect(p).toBeInTheDocument();
   }}
 >
-  {#snippet children(args)}
-    <h2 data-testid="heading">Children snippet</h2>
+  {#snippet template(args)}
+    <h2 data-testid="heading">Template snippet</h2>
     <p>{args?.text}</p>
   {/snippet}
 </Story>
@@ -97,7 +97,7 @@
 
 <!--
   If you want to share the template between multiple stories,
-  you can define the snippet at the root and pass it in as the `children` **prop** to the `<Story>` component.
+  you can define the snippet at the root and pass it in as the `template` **prop** to the `<Story>` component.
 
   Example:
 
@@ -108,14 +108,14 @@
     </SomeComponent>
   {/snippet}
 
-  <Story name="Explicit snippet" children={template} />
+  <Story name="Explicit snippet" {template} />
   ```
 -->
 <Story
   name="Shared template"
-  children={sharedTemplate}
+  template={sharedTemplate}
   args={{
-    text: 'This story uses a shared snippet, which is explicitly set as the `children` prop to the <Story> component',
+    text: 'This story uses a shared snippet, which is explicitly set as the `template` prop to the <Story> component',
   }}
   play={async (context) => {
     const { args, canvasElement } = context;
@@ -130,7 +130,7 @@
 
 <!--
   To set a default template for all stories in the file, call the **`setTemplate()`** function with a reference to a root snippet.
-  Any story without `children` will use this default template.
+  Any story without `template` will use this default template.
 
   Example:
 

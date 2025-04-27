@@ -18,7 +18,7 @@ interface Result {
    * For example:
    * Determining the source code of the `<Story />`.
    * Based on either `setTemplate` call,
-   * or by passing `children` as prop from the outer Svelte snippet block definition - e.g. `Story children={template1} />`.
+   * or by passing `template` as prop from the outer Svelte snippet block definition - e.g. `Story template={template1} />`.
    */
   snippetBlocks: SvelteAST.SnippetBlock[];
 }

@@ -24,6 +24,18 @@ export async function createViteServer(options: Options, devServer: Server) {
       fs: {
         strict: true,
       },
+      // Pass `BROWSER` and `BROWSER_ARGS` env vars to Vite
+      open:
+        process.env.BROWSER === 'none'
+          ? false
+          : process.env.BROWSER
+            ? ({
+                app: {
+                  name: process.env.BROWSER,
+                  arguments: process.env.BROWSER_ARGS?.split(' '),
+                },
+              } as any)
+            : undefined,
     },
     appType: 'custom' as const,
     optimizeDeps: await getOptimizeDeps(commonCfg, options),

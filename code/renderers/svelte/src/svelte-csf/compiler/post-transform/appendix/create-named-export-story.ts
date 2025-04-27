@@ -33,7 +33,7 @@ export function createNamedExportStory(params: Params): ESTreeAST.ExportNamedDec
         elements: [...params.nodes.tags.elements, ...defaultTags.elements],
       }
     : defaultTags;
-  
+
   const declarations = [
     {
       type: 'VariableDeclarator',

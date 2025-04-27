@@ -10,7 +10,7 @@ import {
 import { LegacyTemplateNotEnabledError } from '$lib/utils/error/legacy-api/index.js';
 import { NoDestructuredDefineMetaCallError } from '$lib/utils/error/parser/analyse/define-meta.js';
 import { isStorybookSvelteCSFError } from '$lib/utils/error.js';
-
+import { SVELTE_CSF_TAG } from '$lib/constants.js';
 export const createIndexer = (legacyTemplate: boolean): Indexer => ({
   test: /\.svelte$/,
   createIndex: async (filename, { makeTitle }) => {
@@ -26,7 +26,7 @@ export const createIndexer = (legacyTemplate: boolean): Indexer => ({
           exportName: story.exportName,
           name: story.name,
           title: makeTitle(meta.title),
-          tags: [...(meta.tags ?? []), ...(story.tags ?? [])],
+          tags: [...(meta.tags ?? []), ...(story.tags ?? []), SVELTE_CSF_TAG],
         } satisfies IndexInput;
       });
     } catch (error) {

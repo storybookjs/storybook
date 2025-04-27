@@ -31,7 +31,12 @@ describe(createNamedExportStory.name, () => {
     ).code;
 
     expect(stringified).toMatchInlineSnapshot(
-      `"export const Default = { ...__stories["Default"], tags: [] };"`
+      `
+      "export const Default = {
+      	...__stories["Default"],
+      	tags: ["svelte-csf"]
+      };"
+    `
     );
   });
 
@@ -75,7 +80,7 @@ describe(createNamedExportStory.name, () => {
       `
       "export const Default = {
       	...__stories["Default"],
-      	tags: ["autodocs", "!test"]
+      	tags: ["autodocs", "!test", "svelte-csf"]
       };"
     `
     );

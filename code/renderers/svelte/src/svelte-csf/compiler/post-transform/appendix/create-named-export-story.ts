@@ -1,5 +1,5 @@
 import type { createVariableFromRuntimeStoriesCall } from './create-variable-from-runtime-stories-call.js';
-
+import { SVELTE_CSF_TAG } from '$lib/constants.js';
 import type { ESTreeAST } from '$lib/parser/ast.js';
 
 interface Params {
@@ -17,7 +17,23 @@ export function createNamedExportStory(params: Params): ESTreeAST.ExportNamedDec
     name: params.exportName,
   } as const;
 
-  const tags = params.nodes.tags ?? { type: 'ArrayExpression', elements: [] };
+  const defaultTags: ESTreeAST.ArrayExpression = {
+    type: 'ArrayExpression',
+    elements: [
+      {
+        type: 'Literal',
+        value: SVELTE_CSF_TAG,
+      },
+    ],
+  };
+
+  const tags = params.nodes.tags
+    ? {
+        ...defaultTags,
+        elements: [...params.nodes.tags.elements, ...defaultTags.elements],
+      }
+    : defaultTags;
+  
   const declarations = [
     {
       type: 'VariableDeclarator',

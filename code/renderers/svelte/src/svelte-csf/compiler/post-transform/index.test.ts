@@ -268,11 +268,30 @@ describe(transformStoriesCode.name, () => {
       	"ChildrenForwared"
       ];
 
-      export const Default = { ...__stories["Default"], tags: [] };
-      export const Rounded = { ...__stories["Rounded"], tags: [] };
-      export const Square = { ...__stories["Square"], tags: [] };
-      export const AsChild = { ...__stories["AsChild"], tags: [] };
-      export const ChildrenForwared = { ...__stories["ChildrenForwared"], tags: [] };"
+      export const Default = {
+      	...__stories["Default"],
+      	tags: ["svelte-csf"]
+      };
+
+      export const Rounded = {
+      	...__stories["Rounded"],
+      	tags: ["svelte-csf"]
+      };
+
+      export const Square = {
+      	...__stories["Square"],
+      	tags: ["svelte-csf"]
+      };
+
+      export const AsChild = {
+      	...__stories["AsChild"],
+      	tags: ["svelte-csf"]
+      };
+
+      export const ChildrenForwared = {
+      	...__stories["ChildrenForwared"],
+      	tags: ["svelte-csf"]
+      };"
     `
     );
   });

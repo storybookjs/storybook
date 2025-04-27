@@ -268,11 +268,11 @@ describe(transformStoriesCode.name, () => {
       	"ChildrenForwared"
       ];
 
-      export const Default = __stories["Default"];
-      export const Rounded = __stories["Rounded"];
-      export const Square = __stories["Square"];
-      export const AsChild = __stories["AsChild"];
-      export const ChildrenForwared = __stories["ChildrenForwared"];"
+      export const Default = { ...__stories["Default"], tags: [] };
+      export const Rounded = { ...__stories["Rounded"], tags: [] };
+      export const Square = { ...__stories["Square"], tags: [] };
+      export const AsChild = { ...__stories["AsChild"], tags: [] };
+      export const ChildrenForwared = { ...__stories["ChildrenForwared"], tags: [] };"
     `
     );
   });

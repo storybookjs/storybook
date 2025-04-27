@@ -11,23 +11,73 @@ describe(createNamedExportStory.name, () => {
     const stringified = print(
       createNamedExportStory({
         exportName: 'Default',
-        node: createVariableFromRuntimeStoriesCall({
-          storiesFunctionDeclaration: {
-            type: 'FunctionDeclaration',
-            id: {
-              type: 'Identifier',
-              name: 'Example_stories',
+        nodes: {
+          variable: createVariableFromRuntimeStoriesCall({
+            storiesFunctionDeclaration: {
+              type: 'FunctionDeclaration',
+              id: {
+                type: 'Identifier',
+                name: 'Example_stories',
+              },
+              body: {
+                type: 'BlockStatement',
+                body: [],
+              },
+              params: [],
             },
-            body: {
-              type: 'BlockStatement',
-              body: [],
-            },
-            params: [],
-          },
-        }),
+          }),
+        },
       }) as unknown as ESTreeAST.Program
     ).code;
 
-    expect(stringified).toMatchInlineSnapshot(`"export const Default = __stories["Default"];"`);
+    expect(stringified).toMatchInlineSnapshot(
+      `"export const Default = { ...__stories["Default"], tags: [] };"`
+    );
+  });
+
+  it('allows passing Story-level tags', ({ expect }) => {
+    const stringified = print(
+      createNamedExportStory({
+        exportName: 'Default',
+        nodes: {
+          variable: createVariableFromRuntimeStoriesCall({
+            storiesFunctionDeclaration: {
+              type: 'FunctionDeclaration',
+              id: {
+                type: 'Identifier',
+                name: 'Example_stories',
+              },
+              body: {
+                type: 'BlockStatement',
+                body: [],
+              },
+              params: [],
+            },
+          }),
+          tags: {
+            type: 'ArrayExpression',
+            elements: [
+              {
+                type: 'Literal',
+                value: 'autodocs',
+              },
+              {
+                type: 'Literal',
+                value: '!test',
+              },
+            ],
+          },
+        },
+      }) as unknown as ESTreeAST.Program
+    ).code;
+
+    expect(stringified).toMatchInlineSnapshot(
+      `
+      "export const Default = {
+      	...__stories["Default"],
+      	tags: ["autodocs", "!test"]
+      };"
+    `
+    );
   });
 });

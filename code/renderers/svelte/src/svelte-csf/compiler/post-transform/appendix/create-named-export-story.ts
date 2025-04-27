@@ -5,16 +5,55 @@ import type { ESTreeAST } from '$lib/parser/ast.js';
 interface Params {
   exportName: string;
   filename?: string;
-  node: ReturnType<typeof createVariableFromRuntimeStoriesCall>;
+  nodes: {
+    variable: ReturnType<typeof createVariableFromRuntimeStoriesCall>;
+    tags?: ESTreeAST.ArrayExpression;
+  };
 }
 
 export function createNamedExportStory(params: Params): ESTreeAST.ExportNamedDeclaration {
-  const { exportName, node } = params;
-
   const exported = {
     type: 'Identifier',
-    name: exportName,
+    name: params.exportName,
   } as const;
+
+  const tags = params.nodes.tags ?? { type: 'ArrayExpression', elements: [] };
+  const declarations = [
+    {
+      type: 'VariableDeclarator',
+      id: exported,
+      init: {
+        type: 'ObjectExpression',
+        properties: [
+          {
+            type: 'SpreadElement',
+            argument: {
+              type: 'MemberExpression',
+              computed: true,
+              optional: false,
+              object: {
+                type: 'Identifier',
+                name: getNameFromVariable(params.nodes),
+              },
+              property: { type: 'Literal', value: params.exportName },
+            },
+          },
+          {
+            type: 'Property',
+            kind: 'init',
+            computed: false,
+            method: false,
+            shorthand: false,
+            key: {
+              type: 'Identifier',
+              name: 'tags',
+            },
+            value: tags,
+          },
+        ],
+      },
+    },
+  ] satisfies ESTreeAST.VariableDeclaration['declarations'];
 
   return {
     type: 'ExportNamedDeclaration',
@@ -28,26 +67,11 @@ export function createNamedExportStory(params: Params): ESTreeAST.ExportNamedDec
     declaration: {
       type: 'VariableDeclaration',
       kind: 'const',
-      declarations: [
-        {
-          type: 'VariableDeclarator',
-          id: exported,
-          init: {
-            type: 'MemberExpression',
-            computed: true,
-            optional: false,
-            object: {
-              type: 'Identifier',
-              name: getNameFromVariable(node),
-            },
-            property: { type: 'Literal', value: exportName },
-          },
-        },
-      ],
+      declarations,
     },
   };
 }
 
-function getNameFromVariable(node: Params['node']): string {
-  return (node.declarations[0].id as ESTreeAST.Identifier).name;
+function getNameFromVariable(nodes: Params['nodes']): string {
+  return (nodes.variable.declarations[0].id as ESTreeAST.Identifier).name;
 }

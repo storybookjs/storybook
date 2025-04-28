@@ -1,38 +1,11 @@
-import { readFileSync } from 'node:fs';
 import { basename, relative } from 'node:path';
-
-import { logger } from 'storybook/internal/node-logger';
 
 import type AST from 'estree';
 import MagicString from 'magic-string';
-import { replace, typescript } from 'svelte-preprocess';
-import { preprocess } from 'svelte/compiler';
-import type {
-  JSDocType,
-  SvelteComponentDoc,
-  SvelteDataItem,
-  SvelteParserOptions,
-} from 'sveltedoc-parser';
-import svelteDoc from 'sveltedoc-parser';
+import type { JSDocType, SvelteComponentDoc, SvelteDataItem } from 'sveltedoc-parser';
 import type { PluginOption } from 'vite';
 
 import { type Docgen, type Type, createDocgenCache, generateDocgen } from './generateDocgen';
-
-/*
- * Patch sveltedoc-parser internal options.
- * Waiting for a fix for https://github.com/alexprey/sveltedoc-parser/issues/87
- */
-const svelteDocParserOptions = require('sveltedoc-parser/lib/options.js');
-
-svelteDocParserOptions.getAstDefaultOptions = () => ({
-  range: true,
-  loc: true,
-  comment: true,
-  tokens: true,
-  ecmaVersion: 12,
-  sourceType: 'module',
-  ecmaFeatures: {},
-});
 
 /**
  * It access the AST output of _compiled_ Svelte component file. To read the name of the default
@@ -132,17 +105,14 @@ function transformToSvelteDocParserDataItems(docgen: Docgen): SvelteDataItem[] {
   });
 }
 
-export async function svelteDocgen(svelteOptions: Record<string, any> = {}): Promise<PluginOption> {
+export async function svelteDocgen(): Promise<PluginOption> {
   const cwd = process.cwd();
-  const { preprocess: preprocessOptions, logDocgen = false } = svelteOptions;
   const include = /\.svelte$/;
   const exclude = /node_modules\/.*/;
   const { createFilter } = await import('vite');
 
   const filter = createFilter(include, exclude);
   const sourceFileCache = createDocgenCache();
-
-  let docPreprocessOptions: Parameters<typeof preprocess>[1] | undefined;
 
   return {
     name: 'storybook:svelte-docgen-plugin',
@@ -157,80 +127,10 @@ export async function svelteDocgen(svelteOptions: Record<string, any> = {}): Pro
       const docgen = generateDocgen(resource, sourceFileCache);
       const data = transformToSvelteDocParserDataItems(docgen);
 
-      let componentDoc: SvelteComponentDoc & { keywords?: string[] } = {};
-
-      if (!docgen.propsRuneUsed) {
-        // Retain sveltedoc-parser for backward compatibility, as it can extract slot information from HTML comments.
-        // See: https://github.com/alexprey/sveltedoc-parser/issues/61
-        //
-        // Note: Events are deprecated in Svelte 5, and slots cannot be used in runes mode.
-
-        if (preprocessOptions && !docPreprocessOptions) {
-          /*
-           * We can't use vitePreprocess() for the documentation
-           * because it uses esbuild which removes jsdoc.
-           *
-           * By default, only typescript is transpiled, and style tags are removed.
-           *
-           * Note: these preprocessors are only used to make the component
-           * compatible to sveltedoc-parser (no ts), not to compile
-           * the component.
-           */
-          docPreprocessOptions = [replace([[/<style.+<\/style>/gims, '']])];
-
-          try {
-            const ts = require.resolve('typescript');
-            if (ts) {
-              docPreprocessOptions.unshift(typescript());
-            }
-          } catch {
-            // this will error in JavaScript-only projects, this is okay
-          }
-        }
-
-        let docOptions;
-        if (docPreprocessOptions) {
-          let rawSource;
-          try {
-            rawSource = readFileSync(resource).toString();
-          } catch (_) {
-            // ignore/skip modules that can't be loaded, possibly virtual module
-            return undefined;
-          }
-          const { code: fileContent } = await preprocess(rawSource, docPreprocessOptions, {
-            filename: resource,
-          });
-
-          docOptions = {
-            fileContent,
-          };
-        } else {
-          docOptions = { filename: resource };
-        }
-
-        // set SvelteDoc options
-        const options: SvelteParserOptions = {
-          ...docOptions,
-          version: 3,
-        };
-
-        try {
-          componentDoc = await svelteDoc.parse(options);
-        } catch (error: any) {
-          componentDoc = { keywords: [], data: [] };
-          if (logDocgen) {
-            logger.error(error);
-          }
-        }
-      }
-
-      // Always use props info from generateDocgen
-      componentDoc.data = data;
-
-      // get filename for source content
-      const file = basename(resource);
-
-      componentDoc.name = basename(file);
+      const componentDoc: SvelteComponentDoc & { keywords?: string[] } = {
+        data: data,
+        name: basename(resource),
+      };
 
       const s = new MagicString(src);
       const outputAst = this.parse(src);

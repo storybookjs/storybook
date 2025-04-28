@@ -83,7 +83,7 @@ describe('cleanupTypeImports', () => {
     );
   });
 
-  it.only('retains imports if they are used', () => {
+  it('retains imports if they are used', () => {
     const code = `
       import { Type1, type Type2 } from '@storybook/react';
       import type { Type3, ShouldBeRemoved, Type4 } from '@storybook/react';

@@ -151,7 +151,7 @@ export const addonEssentialsRemoveDocs: Fix<AddonDocsOptions> = {
     `;
   },
 
-  async run({ result, dryRun, packageManager }) {
+  async run({ result, dryRun, packageManager, configDir }) {
     const { hasEssentials, hasDocsDisabled, hasDocsAddon, additionalAddonsToRemove } = result;
 
     if (!hasEssentials && additionalAddonsToRemove.length === 0) {
@@ -166,12 +166,19 @@ export const addonEssentialsRemoveDocs: Fix<AddonDocsOptions> = {
         await packageManager.runPackageCommand('storybook', [
           'remove',
           '@storybook/addon-essentials',
+          '--config-dir',
+          configDir,
         ]);
       }
 
       // Remove additional core addons
       for (const addon of additionalAddonsToRemove) {
-        await packageManager.runPackageCommand('storybook', ['remove', addon]);
+        await packageManager.runPackageCommand('storybook', [
+          'remove',
+          addon,
+          '--config-dir',
+          configDir,
+        ]);
       }
 
       const errors = await scanAndTransformFiles({
@@ -192,7 +199,12 @@ export const addonEssentialsRemoveDocs: Fix<AddonDocsOptions> = {
       // If docs was enabled (not disabled) and not already installed, add it
       if (!hasDocsDisabled && !hasDocsAddon) {
         console.log('Adding @storybook/addon-docs...');
-        await packageManager.runPackageCommand('storybook', ['add', '@storybook/addon-docs']);
+        await packageManager.runPackageCommand('storybook', [
+          'add',
+          '@storybook/addon-docs',
+          '--config-dir',
+          configDir,
+        ]);
       }
     }
   },

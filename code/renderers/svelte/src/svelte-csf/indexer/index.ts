@@ -26,7 +26,11 @@ export const createIndexer = (legacyTemplate: boolean): Indexer => ({
           exportName: story.exportName,
           name: story.name,
           title: makeTitle(meta.title),
-          tags: [...(meta.tags ?? []), ...(story.tags ?? []), isLegacy ? SVELTE_CSF_V4_TAG : SVELTE_CSF_V5_TAG],
+          tags: [
+            ...(meta.tags ?? []),
+            ...(story.tags ?? []),
+            isLegacy ? SVELTE_CSF_V4_TAG : SVELTE_CSF_V5_TAG,
+          ],
         } satisfies IndexInput;
       });
     } catch (error) {

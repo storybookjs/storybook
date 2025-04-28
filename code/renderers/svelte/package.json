@@ -55,7 +55,6 @@
     "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "sveltedoc-parser": "^4.2.1",
     "type-fest": "~2.19"
   },
   "devDependencies": {

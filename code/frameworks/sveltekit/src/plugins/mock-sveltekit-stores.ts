@@ -15,6 +15,7 @@ export function mockSveltekitStores() {
           '$app/forms': resolve(dir, '../src/mocks/app/forms.ts'),
           '$app/navigation': resolve(dir, '../src/mocks/app/navigation.ts'),
           '$app/stores': resolve(dir, '../src/mocks/app/stores.ts'),
+          '$app/state': resolve(dir, '../src/mocks/app/stores.ts'),
         },
       },
     }),

@@ -24,6 +24,10 @@ import {
   useStore,
 } from './utils';
 
+const menuId = 'storybook-highlights-menu';
+const rootId = 'storybook-highlights-root';
+const storybookRootId = 'storybook-root';
+
 const chevronLeft = () =>
   createElement(
     'svg',
@@ -52,17 +56,7 @@ const chevronRight = () =>
     ]
   );
 
-export const useHighlights = ({
-  channel,
-  menuId = `storybook-highlights-menu`,
-  rootId = `storybook-highlights-root`,
-  storybookRootId = 'storybook-root',
-}: {
-  channel: Channel;
-  menuId?: string;
-  rootId?: string;
-  storybookRootId?: string;
-}) => {
+export const useHighlights = (channel: Channel) => {
   if (globalThis.__STORYBOOK_HIGHLIGHT_INITIALIZED) {
     return;
   }
@@ -223,8 +217,8 @@ export const useHighlights = ({
 
   // Handle click events on highlight boxes
   boxes.subscribe((value) => {
-    const selectable = value.filter((box) => box.selectable);
-    if (!selectable.length) {
+    const targetable = value.filter((box) => box.menu);
+    if (!targetable.length) {
       return;
     }
 
@@ -237,7 +231,7 @@ export const useHighlights = ({
         // Don't do anything if the click is within the menu
         if (menu && !isOverMenu(menu, coords)) {
           // Update menu coordinates and clicked target boxes based on the click position
-          const results = selectable.filter((box) => {
+          const results = targetable.filter((box) => {
             const boxElement = boxElementByTargetElement.get(box.element)!;
             return isTargeted(box, boxElement, coords);
           });
@@ -307,8 +301,8 @@ export const useHighlights = ({
           height: `${box.height}px`,
           margin: 0,
           padding: 0,
-          cursor: box.selectable ? 'pointer' : 'default',
-          pointerEvents: box.selectable ? 'auto' : 'none',
+          cursor: box.menu ? 'pointer' : 'default',
+          pointerEvents: box.menu ? 'auto' : 'none',
         });
 
         showPopover(boxElement);
@@ -566,7 +560,6 @@ export const useHighlights = ({
         id,
         priority: 1000,
         selectors: [target],
-        selectable: false,
         styles: {
           outline: '2px solid #1EA7FD',
           outlineOffset: '-1px',

@@ -123,7 +123,7 @@ export const mapElements = (highlights: HighlightOptions[]): Map<HTMLElement, Hi
   const root = document.getElementById('storybook-root');
   const map = new Map();
   for (const highlight of highlights) {
-    const { priority = 0, selectable = !!highlight.menu } = highlight;
+    const { priority = 0 } = highlight;
     for (const selector of highlight.selectors) {
       const elements = [
         ...document.querySelectorAll(
@@ -136,12 +136,11 @@ export const mapElements = (highlights: HighlightOptions[]): Map<HTMLElement, Hi
       ];
       for (const element of elements) {
         const existing = map.get(element);
-        if (!existing || existing.priority < priority) {
+        if (!existing || existing.priority <= priority) {
           map.set(element, {
             ...highlight,
             priority,
             selectors: Array.from(new Set((existing?.selectors || []).concat(selector))),
-            selectable,
           });
         }
       }
@@ -152,13 +151,12 @@ export const mapElements = (highlights: HighlightOptions[]): Map<HTMLElement, Hi
 
 export const mapBoxes = (elements: Map<HTMLElement, Highlight>): Box[] =>
   Array.from(elements.entries())
-    .map<Box>(([element, { selectors, styles, hoverStyles, focusStyles, selectable, menu }]) => {
+    .map<Box>(([element, { selectors, styles, hoverStyles, focusStyles, menu }]) => {
       const { top, left, width, height } = element.getBoundingClientRect();
       const { position } = getComputedStyle(element);
       return {
         element,
         selectors,
-        selectable,
         styles,
         hoverStyles,
         focusStyles,

@@ -11,7 +11,6 @@ import { HIGHLIGHT, REMOVE_HIGHLIGHT, SCROLL_INTO_VIEW } from './constants';
 const highlight = (
   selectors: string[],
   options?: {
-    selectable?: boolean;
     styles?: Record<string, string>;
     hoverStyles?: Record<string, string>;
     focusStyles?: Record<string, string>;
@@ -32,12 +31,11 @@ const highlight = (
     emit(HIGHLIGHT, {
       id,
       selectors,
-      selectable: options?.selectable ?? !!options?.menu?.length,
       styles: {
         backgroundColor: `color-mix(in srgb, teal, transparent 80%)`,
         outline: `1px solid color-mix(in srgb, teal, transparent 30%)`,
       },
-      hoverStyles: options?.selectable || options?.menu?.length ? { outlineWidth: '2px' } : {},
+      hoverStyles: options?.menu ? { outlineWidth: '2px' } : {},
       focusStyles: {
         backgroundColor: 'transparent',
       },
@@ -135,7 +133,7 @@ export const ScrollIntoView = meta.story({
 
 export const Selectable = meta.story({
   parameters: {
-    highlights: [{ selectors: ['div', 'input'], options: { selectable: true } }],
+    highlights: [{ selectors: ['div', 'input'], options: { menu: [] } }],
   },
   play: async () => {
     await new Promise((resolve) => setTimeout(resolve, 200));
@@ -197,7 +195,7 @@ export const Menu = meta.story({
 
 export const OnPopover = meta.story({
   parameters: {
-    highlights: [{ selectors: ['[popover]'], options: { selectable: true } }],
+    highlights: [{ selectors: ['[popover]'], options: { menu: [] } }],
     withPopover: true,
   },
   play: async ({ canvasElement }) => {

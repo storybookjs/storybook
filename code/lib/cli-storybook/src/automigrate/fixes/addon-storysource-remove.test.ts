@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { JsPackageManager, PackageJson } from 'storybook/internal/common';
+import type { JsPackageManager } from 'storybook/internal/common';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import type { CheckOptions, RunOptions } from '../types';
@@ -51,11 +51,6 @@ const mockPackageManager = {
   removeDependencies: vi.fn(),
   runPackageCommand: vi.fn(),
 } as unknown as JsPackageManager;
-
-const mockPackageJson = {
-  dependencies: {},
-  devDependencies: {},
-} as PackageJson;
 
 const baseCheckOptions: CheckOptions = {
   packageManager: mockPackageManager,
@@ -173,11 +168,14 @@ describe('addon-storysource-remove migration', () => {
           hasStorysource: true,
         },
         packageManager: mockPackageManager,
+        configDir: '.storybook',
       } as RunOptions<AddonStorysourceOptions>);
 
       expect(mockPackageManager.runPackageCommand).toHaveBeenCalledWith('storybook', [
         'remove',
         '@storybook/addon-storysource',
+        '--config-dir',
+        '.storybook',
       ]);
     });
   });

@@ -1,5 +1,6 @@
 import Filter from 'ansi-to-html';
 import { type StorybookTheme, useTheme } from 'storybook/theming';
+// eslint-disable-next-line depend/ban-dependencies
 import stripAnsi from 'strip-ansi';
 
 export function isTestAssertionError(error: unknown) {

@@ -229,7 +229,7 @@ describe('configureEslintPlugin', () => {
         import storybook from "eslint-plugin-storybook";
 
         import somePlugin from 'some-plugin';
-        export default [somePlugin, storybook.configs["flat/recommended"]];"
+        export default [somePlugin, ...storybook.configs["flat/recommended"]];"
       `);
     });
 
@@ -290,7 +290,7 @@ describe('configureEslintPlugin', () => {
         import storybook from "eslint-plugin-storybook";
 
         import eslint from "@eslint/js";
-        const options = [eslint.configs.recommended, storybook.configs["flat/recommended"]]
+        const options = [eslint.configs.recommended, ...storybook.configs["flat/recommended"]]
 
         export default options;"
       `);
@@ -322,7 +322,7 @@ describe('configureEslintPlugin', () => {
         import storybook from "eslint-plugin-storybook";
 
         import eslint from "@eslint/js";
-        const options = [eslint.configs.recommended, storybook.configs["flat/recommended"]] as Config
+        const options = [eslint.configs.recommended, ...storybook.configs["flat/recommended"]] as Config
 
         export default options;"
       `);
@@ -352,7 +352,7 @@ describe('configureEslintPlugin', () => {
         import storybook from "eslint-plugin-storybook";
 
         import eslint from "@eslint/js";
-        export default [eslint.configs.recommended, storybook.configs["flat/recommended"]] satisfies Config;"
+        export default [eslint.configs.recommended, ...storybook.configs["flat/recommended"]] satisfies Config;"
       `);
     });
 

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/builder-vite",
-  "version": "9.0.0-alpha.21",
+  "version": "9.0.0-beta.5",
   "description": "A plugin to run and build Storybooks with Vite",
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/builders/builder-vite/#readme",
   "bugs": {
@@ -56,8 +56,6 @@
     "knitwork": "^1.1.0",
     "magic-string": "^0.30.0",
     "pathe": "^1.1.2",
-    "polka": "^1.0.0-next.28",
-    "sirv": "^2.0.4",
     "slash": "^5.0.0",
     "vite": "^6.2.5"
   },

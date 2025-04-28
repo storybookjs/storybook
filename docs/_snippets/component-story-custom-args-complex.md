@@ -234,7 +234,7 @@ export const ExampleStory: Story = {
     propertyB: 'Another Item One',
   }}
 >
-  {#snippet children(args)}
+  {#snippet template(args)}
     <YourComponent
       {...args}
       someProperty={someFunction(args.propertyA, args.propertyB)}
@@ -313,7 +313,7 @@ export const ExampleStory = {
     propertyB: 'Another Item One',
   }}
 >
-  {#snippet children(args)}
+  {#snippet template(args)}
     <YourComponent
       {...args}
       someProperty={someFunction(args.propertyA, args.propertyB)}

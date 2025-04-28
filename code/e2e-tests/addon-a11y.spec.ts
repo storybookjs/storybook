@@ -53,9 +53,7 @@ test.describe('addon-a11y', () => {
 
     const panel = sbPage.panelContent();
     await panel.getByRole('tab', { name: 'Passes' }).click();
-    await panel
-      .getByRole('button', { name: 'aria-hidden="true" must not be present on the document body' })
-      .click();
+    await panel.getByRole('button', { name: 'Hidden body' }).click();
     await panel.getByRole('tab', { name: '1. <body' }).click();
     await panel.getByRole('button', { name: 'Copy link' }).click();
 
@@ -69,11 +67,10 @@ test.describe('addon-a11y', () => {
     await page.goto(clipboard);
     await new SbPage(page, expect).waitUntilLoaded();
     await expect(page.getByRole('tab', { name: 'Passes' })).toHaveAttribute('data-active', 'true');
-    await expect(
-      page.getByRole('button', {
-        name: 'aria-hidden="true" must not be present on the document body',
-      })
-    ).toHaveAttribute('data-active', 'true');
+    await expect(page.getByRole('button', { name: 'Hidden body' })).toHaveAttribute(
+      'aria-expanded',
+      'true'
+    );
     const element = page.getByRole('tab', { name: '1. <body' });
     await expect(element).toHaveAttribute('data-state', 'active');
   });

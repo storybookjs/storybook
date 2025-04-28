@@ -107,7 +107,7 @@ import PropTypes from 'prop-types';
 
 export const Button = ({ label }) => <button>{label}</button>;
 Button.propTypes = {
-  /** demo description */
+  /** Demo description */
   label: PropTypes.string,
 };
 Button.defaultProps = {

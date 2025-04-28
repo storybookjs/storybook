@@ -1,6 +1,6 @@
 {
   "name": "@storybook/preset-server-webpack",
-  "version": "9.0.0-alpha.21",
+  "version": "9.0.0-beta.5",
   "description": "Storybook for Server: View HTML snippets from a server in isolation with Hot Reloading.",
   "keywords": [
     "storybook"
@@ -55,8 +55,6 @@
   },
   "dependencies": {
     "@storybook/core-webpack": "workspace:*",
-    "@storybook/global": "^5.0.0",
-    "@storybook/server": "workspace:*",
     "safe-identifier": "^0.4.1",
     "ts-dedent": "^2.0.0",
     "yaml-loader": "^0.8.0"

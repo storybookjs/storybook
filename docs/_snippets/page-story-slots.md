@@ -131,7 +131,7 @@ export const CustomFooter = {
 </script>
 
 <Story name="CustomFooter" args={{ footer: 'Built with Storybook' }}>
-  {#snippet children(args)}
+  {#snippet template(args)}
     <Page {...args} >
       <footer>{args.footer}</footer>
     </Page>
@@ -151,7 +151,7 @@ export const CustomFooter = {
 </script>
 
 <Story name="CustomFooter" args={{ footer: 'Built with Storybook' }}>
-  {#snippet children(args)}
+  {#snippet template(args)}
     <Page {...args} >
       <footer>{args.footer}</footer>
     </Page>

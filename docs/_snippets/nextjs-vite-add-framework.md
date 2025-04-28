@@ -2,7 +2,7 @@
 export default {
   // ...
   // framework: '@storybook/react-webpack5', 👈 Remove this
-  framework: '@storybook/experimental-nextjs-vite', // 👈 Add this
+  framework: '@storybook/nextjs-vite', // 👈 Add this
 };
 ```
 

@@ -268,9 +268,8 @@ class ShortcutsScreen extends Component<ShortcutsScreenProps, ShortcutsScreenSta
       : undefined;
   };
 
-  displayError = (activeElement: Feature): ValidationStates => {
+  displayError = (activeElement: Feature): ValidationStates | undefined => {
     const { activeFeature, shortcutKeys } = this.state;
-    // @ts-expect-error (non strict)
     return activeElement === activeFeature && shortcutKeys[activeElement].error === true
       ? 'error'
       : undefined;
@@ -286,7 +285,7 @@ class ShortcutsScreen extends Component<ShortcutsScreenProps, ShortcutsScreenSta
 
         <TextInput
           spellCheck="false"
-          valid={this.displayError(feature)}
+          valid={this.displayError(feature) ?? 'valid'}
           className="modalInput"
           onBlur={this.onBlur}
           onFocus={this.onFocus(feature)}

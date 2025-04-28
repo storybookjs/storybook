@@ -24,6 +24,8 @@ import type {
   TeardownRenderToCanvas,
 } from 'storybook/internal/types';
 
+import { global } from '@storybook/global';
+
 import type { UserEventObject } from 'storybook/test';
 
 import type { StoryStore } from '../../store';
@@ -44,6 +46,17 @@ export type RenderPhase =
   | 'finished'
   | 'aborted'
   | 'errored';
+
+const ANIMATION_TIMEOUT = 5000;
+
+function getShadowRoots(doc: Document | ShadowRoot = global.document) {
+  return [doc, ...doc.querySelectorAll('*')].reduce<ShadowRoot[]>((acc, e) => {
+    if ('shadowRoot' in e && e.shadowRoot) {
+      acc.push(e.shadowRoot, ...getShadowRoots(e.shadowRoot));
+    }
+    return acc;
+  }, []);
+}
 
 export function serializeError(error: any) {
   try {
@@ -113,6 +126,42 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
       return true;
     }
     return false;
+  }
+
+  // Use the Web Animations API to wait for any animations and transitions to finish
+  private async waitForAnimations(signal: AbortSignal) {
+    let timedOut = false;
+
+    await Promise.race([
+      // After 50ms, retrieve any running animations and wait for them to finish
+      // If new animations are created while waiting, we'll wait for them too
+      new Promise((resolve) => {
+        setTimeout(() => {
+          const animationRoots = [global.document, ...getShadowRoots()];
+          const checkAnimationsFinished = async () => {
+            if (this.checkIfAborted(signal) || timedOut) {
+              return;
+            }
+            const runningAnimations = animationRoots
+              .flatMap((el) => el?.getAnimations() || [])
+              .filter((a) => a.playState === 'running');
+            if (runningAnimations.length > 0) {
+              await Promise.all(runningAnimations.map((a) => a.finished));
+              await checkAnimationsFinished();
+            }
+          };
+          checkAnimationsFinished().then(resolve);
+        }, 50);
+      }),
+
+      // If animations don't finish within the timeout, continue without waiting
+      new Promise((resolve) =>
+        setTimeout(() => {
+          timedOut = true;
+          resolve(void 0);
+        }, ANIMATION_TIMEOUT)
+      ),
+    ]);
   }
 
   async prepare() {
@@ -357,6 +406,8 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
           return;
         }
       }
+
+      await this.waitForAnimations(abortSignal);
 
       await this.runPhase(abortSignal, 'completed', async () =>
         this.channel.emit(STORY_RENDERED, id)

@@ -10,22 +10,41 @@ const DEFAULT_SETTINGS_PATH = join(homedir(), '.storybook', 'settings.json');
 
 const VERSION = 1;
 
-let settings: Settings;
-export async function globalSettings() {
-  settings = settings || new Settings();
-
-  await settings.ensure();
-
-  return settings;
-}
-
 const userSettingSchema = z.object({
   version: z.number(),
   // NOTE: every key (and subkey) below must be optional, for forwards compatibility reasons
   // (we can remove keys once they are deprecated)
-  userSince: z.string().datetime().optional(),
+  userSince: z.number().optional(),
   init: z.object({ skipOnboarding: z.boolean().optional() }).optional(),
 });
+
+let settings: Settings | undefined;
+export async function globalSettings(filePath = DEFAULT_SETTINGS_PATH) {
+  if (settings) {
+    return settings;
+  }
+
+  try {
+    const content = await fs.readFile(filePath, 'utf8');
+    const settingsValue = userSettingSchema.parse(JSON.parse(content));
+    settings = new Settings(filePath, settingsValue);
+  } catch (err: any) {
+    // We don't currently log the issue we have loading the setting file here, but if it doesn't
+    // yet exist we'll get err.code = 'ENOENT'
+
+    // There is no existing settings file or it has a problem;
+    settings = new Settings(filePath, { version: VERSION, userSince: Date.now() });
+    await settings.save();
+  }
+
+  return settings;
+}
+
+// For testing
+// eslint-disable-next-line no-underscore-dangle, @typescript-eslint/naming-convention
+export function _clearGlobalSettings() {
+  settings = undefined;
+}
 
 /**
  * A class for reading and writing settings from a JSON file. Supports nested settings with dot
@@ -34,21 +53,17 @@ const userSettingSchema = z.object({
 export class Settings {
   private filePath: string;
 
-  private value?: z.infer<typeof userSettingSchema>;
+  public value: z.infer<typeof userSettingSchema>;
 
   /**
    * Create a new Settings instance
    *
    * @param filePath Path to the JSON settings file
+   * @param value Loaded value of settings
    */
-  constructor(filePath: string = DEFAULT_SETTINGS_PATH) {
+  constructor(filePath: string, value: z.infer<typeof userSettingSchema>) {
     this.filePath = filePath;
-  }
-
-  /** Load settings from the file */
-  async load(): Promise<void> {
-    const content = await fs.readFile(this.filePath, 'utf8');
-    this.value = userSettingSchema.parse(JSON.parse(content));
+    this.value = value;
   }
 
   /** Save settings to the file */
@@ -62,95 +77,5 @@ export class Settings {
         error: err,
       });
     }
-  }
-
-  /* Ensure settings file exists and is loaded */
-  async ensure() {
-    if (this.value) {
-      return;
-    }
-
-    try {
-      await this.load();
-    } catch (err: any) {
-      // Settings file does not yet exist.
-      if (err.code === 'ENOENT') {
-        // TODO - log here?
-      }
-
-      // Error parsing existing settings file
-      // TODO  - log here?
-
-      // The existing settings file has a problem so we must overwrite it
-      this.value = { version: VERSION, userSince: new Date().toISOString() };
-      await this.save();
-    }
-  }
-
-  /**
-   * Get a setting value by path
-   *
-   * @param path Dot-notation path to the setting
-   * @returns The setting value or undefined if not found
-   */
-  get(path: string): any {
-    if (!this.value) {
-      // eslint-disable-next-line local-rules/no-uncategorized-errors
-      throw new Error('Cannot call .get() until user settings are loaded');
-    }
-
-    return path.split('.').reduce((obj, key) => obj?.[key], this.value);
-  }
-
-  /**
-   * Set a setting value by path
-   *
-   * @param path Dot-notation path to the setting
-   * @param value Value to set
-   */
-  set(path: string, value: any): void {
-    if (!this.value) {
-      // eslint-disable-next-line local-rules/no-uncategorized-errors
-      throw new Error('Cannot call .set() until user settings are loaded');
-    }
-
-    const keys = path.split('.');
-    const lastKey = keys.pop()!;
-    const target = keys.reduce((obj, key) => {
-      if (!(key in obj)) {
-        obj[key] = {};
-      }
-      return obj[key];
-    }, this.value);
-    target[lastKey] = value;
-  }
-
-  /**
-   * Delete a setting by path
-   *
-   * @param path Dot-notation path to the setting
-   */
-  delete(path: string): void {
-    if (!this.value) {
-      // eslint-disable-next-line local-rules/no-uncategorized-errors
-      throw new Error('Cannot call .delete() until user settings are loaded');
-    }
-
-    const keys = path.split('.');
-    const lastKey = keys.pop()!;
-    const target = keys.reduce((obj, key) => obj?.[key], this.value);
-    if (target) {
-      delete target[lastKey];
-    }
-  }
-
-  /**
-   * Check if a setting exists
-   *
-   * @param path Dot-notation path to the setting
-   * @returns True if the settings has an undefined value
-   */
-  has(path: string): boolean {
-    return this.get(path) !== undefined;
   }
 }

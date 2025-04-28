@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import prompts from 'prompts';
 
-import { Settings } from '../../../core/src/cli/globalSettings';
+import type { Settings } from '../../../core/src/cli/globalSettings';
 import { ProjectType } from '../../../core/src/cli/project_types';
 import { telemetry } from '../../../core/src/telemetry';
 import { promptInstallType, promptNewUser } from './initiate';
@@ -12,12 +12,11 @@ vi.mock('../../../core/src/telemetry');
 
 describe('promptNewUser', () => {
   let settings: Settings;
-
   beforeEach(() => {
-    settings = new Settings();
-    settings.load = vi.fn();
-    settings.save = vi.fn();
-    vi.spyOn(settings, 'set');
+    settings = {
+      value: { version: 1 },
+      save: vi.fn(),
+    } as any as Settings;
     vi.resetAllMocks();
   });
 
@@ -29,7 +28,7 @@ describe('promptNewUser', () => {
     const newUser = await promptNewUser({ settings, skipPrompt: true });
     expect(newUser).toBe(true);
 
-    expect(settings.set).toHaveBeenCalledWith('init.skipOnboarding', false);
+    expect(settings.value.init?.skipOnboarding).toEqual(false);
     expect(prompts).not.toHaveBeenCalled();
     expect(vi.mocked(telemetry).mock.calls[0][1]).toMatchInlineSnapshot(`
       {
@@ -40,11 +39,11 @@ describe('promptNewUser', () => {
   });
 
   it('skips prompt if user set previously opted out', async () => {
-    settings.set('init.skipOnboarding', true);
+    settings.value.init = { skipOnboarding: true };
     const newUser = await promptNewUser({ settings });
 
     expect(newUser).toBe(false);
-    expect(settings.set).toHaveBeenLastCalledWith('init.skipOnboarding', true);
+    expect(settings.value.init?.skipOnboarding).toEqual(true);
     expect(prompts).not.toHaveBeenCalled();
     expect(vi.mocked(telemetry).mock.calls[0][1]).toMatchInlineSnapshot(`
       {
@@ -59,7 +58,7 @@ describe('promptNewUser', () => {
     const newUser = await promptNewUser({ settings });
 
     expect(newUser).toBe(true);
-    expect(settings.set).toHaveBeenCalledWith('init.skipOnboarding', false);
+    expect(settings.value.init?.skipOnboarding).toEqual(false);
     expect(prompts).toHaveBeenCalled();
     expect(vi.mocked(telemetry).mock.calls[0][1]).toMatchInlineSnapshot(`
       {
@@ -74,7 +73,7 @@ describe('promptNewUser', () => {
     const newUser = await promptNewUser({ settings });
     expect(prompts).toHaveBeenCalled();
     expect(newUser).toBeUndefined();
-    expect(settings.set).not.toHaveBeenCalled();
+    expect(settings.value.init).toBeUndefined();
     expect(telemetry).not.toHaveBeenCalled();
   });
 
@@ -84,13 +83,16 @@ describe('promptNewUser', () => {
 
     expect(prompts).toHaveBeenCalled();
     expect(newUser).toBe(false);
-    expect(settings.set).toHaveBeenCalledWith('init.skipOnboarding', true);
+    expect(settings.value.init?.skipOnboarding).toEqual(true);
     expect(telemetry).not.toHaveBeenCalled();
   });
 });
 
 describe('promptInstallType', () => {
-  const settings = new Settings();
+  const settings = {
+    value: { version: 1 },
+    save: vi.fn(),
+  } as any as Settings;
   beforeEach(() => {
     vi.clearAllMocks();
   });

@@ -274,7 +274,9 @@ export const promptNewUser = async ({
   skipPrompt,
   disableTelemetry,
 }: PromptOptions): Promise<boolean | undefined> => {
-  if (!skipPrompt && !settings.get('init.skipOnboarding')) {
+  const { skipOnboarding } = settings.value.init || {};
+
+  if (!skipPrompt && !skipOnboarding) {
     const { newUser } = await prompts({
       type: 'select',
       name: 'newUser',
@@ -295,13 +297,15 @@ export const promptNewUser = async ({
       return newUser;
     }
 
-    settings.set('init.skipOnboarding', !newUser);
+    settings.value.init ||= {};
+    settings.value.init.skipOnboarding = !newUser;
   } else {
     //  true if new user and not interactive, false if interactive
-    settings.set('init.skipOnboarding', !!settings.get('init.skipOnboarding'));
+    settings.value.init ||= {};
+    settings.value.init.skipOnboarding = !!skipOnboarding;
   }
 
-  const newUser = !settings.get('init.skipOnboarding');
+  const newUser = !settings.value.init.skipOnboarding;
   if (!disableTelemetry) {
     await telemetry('init-step', {
       step: 'new-user-check',

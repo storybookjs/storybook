@@ -51,11 +51,16 @@ export const addonStorysourceRemove: Fix<AddonStorysourceOptions> = {
       This package has been removed in Storybook 9.0. We'll remove it from your configuration and dependencies.
 
       For more information, see the migration guide:
-      https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#migration-from-storybookaddon-storysource-to-code-panel
+      https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storysource-addon-removed
     `;
   },
 
-  async run({ result, packageManager }) {
-    await packageManager.runPackageCommand('storybook', ['remove', '@storybook/addon-storysource']);
+  async run({ configDir, packageManager }) {
+    await packageManager.runPackageCommand('storybook', [
+      'remove',
+      '@storybook/addon-storysource',
+      '--config-dir',
+      configDir,
+    ]);
   },
 };

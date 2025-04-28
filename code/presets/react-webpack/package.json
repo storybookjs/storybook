@@ -1,6 +1,6 @@
 {
   "name": "@storybook/preset-react-webpack",
-  "version": "9.0.0-beta.1",
+  "version": "9.0.0-beta.5",
   "description": "Storybook for React: Develop React Component in isolation with Hot Reloading",
   "keywords": [
     "storybook"
@@ -65,7 +65,6 @@
   },
   "dependencies": {
     "@storybook/core-webpack": "workspace:*",
-    "@storybook/react": "workspace:*",
     "@storybook/react-docgen-typescript-plugin": "1.0.6--canary.9.0c3f3b7.0",
     "@types/semver": "^7.3.4",
     "find-up": "^5.0.0",

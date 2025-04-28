@@ -17,5 +17,3 @@ export const EVENTS = { RESULT, REQUEST, RUNNING, ERROR, MANUAL, SELECT };
 
 export const STATUS_TYPE_ID_COMPONENT_TEST = 'storybook/component-test';
 export const STATUS_TYPE_ID_A11Y = 'storybook/a11y';
-
-export const DEFAULT_DELAY = 100;

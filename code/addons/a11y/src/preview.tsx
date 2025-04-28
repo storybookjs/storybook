@@ -4,7 +4,7 @@ import type { AxeResults, Result } from 'axe-core';
 import { expect } from 'storybook/test';
 
 import { run } from './a11yRunner';
-import { DEFAULT_DELAY, PANEL_ID } from './constants';
+import { PANEL_ID } from './constants';
 import type { A11yParameters } from './params';
 import { getIsVitestStandaloneRun } from './utils';
 
@@ -39,7 +39,7 @@ export const experimental_afterEach: AfterEach<any> = async ({
   viewMode,
 }) => {
   const a11yParameter: A11yParameters | undefined = parameters.a11y;
-  const { delay = DEFAULT_DELAY, disable, test } = a11yParameter ?? {};
+  const { delay, disable, test } = a11yParameter ?? {};
   const { manual } = globals.a11y ?? {};
 
   const shouldRunEnvironmentIndependent = disable !== true && test !== 'off' && manual !== true;

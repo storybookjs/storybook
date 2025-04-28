@@ -1,7 +1,8 @@
 import * as fs from 'node:fs/promises';
 import path from 'node:path';
 
-import { type Check, CompatibilityType } from './index';
+import { type Check } from './Check';
+import { CompatibilityType } from './CompatibilityType';
 
 const configPath = '.storybook';
 

@@ -57,7 +57,7 @@ export const computeStorybookMetadata = async ({
   const settings = await globalSettings();
   const metadata: Partial<StorybookMetadata> = {
     generatedAt: new Date().getTime(),
-    userSince: await settings.get('userSince'),
+    userSince: settings.value.userSince,
     hasCustomBabel: false,
     hasCustomWebpack: false,
     hasStaticDirs: false,

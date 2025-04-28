@@ -24,8 +24,6 @@ const mdx = (text: string) =>
   [...text.replace(fencedCodeBlockMatcher, '').matchAll(importMatcher)].join('\n');
 
 const baseConfig = {
-  ignoreWorkspaces: ['renderers/svelte'], // ignored: Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: No "exports" main defined in code/node_modules/@sveltejs/vite-plugin-svelte/package.json
-
   // storybook itself configured (only) in root
   storybook: { entry: ['**/*.@(mdx|stories.@(mdx|js|jsx|mjs|ts|tsx))'] },
 

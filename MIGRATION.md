@@ -8,6 +8,7 @@
       - [TypeScript \< 4.9](#typescript--49)
       - [Node.js \< 20](#nodejs--20)
       - [Package Managers](#package-managers)
+    - [Moving from renderer-based to framework-based configuration](#moving-from-renderer-based-to-framework-based-configuration)
   - [Addon-specific Changes](#addon-specific-changes)
     - [Essentials Addon: Viewport, Controls, Interactions and Actions moved to core](#essentials-addon-viewport-controls-interactions-and-actions-moved-to-core)
     - [A11y Addon: Removed deprecated manual parameter](#a11y-addon-removed-deprecated-manual-parameter)
@@ -605,6 +606,23 @@ yarn v4+
 pnpm v9+
 
 While Storybook may still work with older versions, we recommend upgrading to the latest supported versions for the best experience and to ensure compatibility.
+
+#### Moving from renderer-based to framework-based configuration
+
+Storybook is moving from renderer-based to framework-based configuration. This means you should:
+
+1. Update your source files to use framework-specific imports instead of renderer imports
+2. Remove the renderer packages from your package.json
+
+For example, if you're using `@storybook/react` with `@storybook/react-vite`, you should:
+
+- Import types and functions from `@storybook/react-vite` instead of `@storybook/react`
+- Remove `@storybook/react` from your package.json dependencies
+
+```diff
+- import { Meta, StoryObj } from '@storybook/react';
++ import { Meta, StoryObj } from '@storybook/react-vite';
+```
 
 ### Addon-specific Changes
 

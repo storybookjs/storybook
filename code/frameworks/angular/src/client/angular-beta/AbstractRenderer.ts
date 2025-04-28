@@ -70,7 +70,6 @@ export abstract class AbstractRenderer {
     targetDOMNode: HTMLElement;
   }) {
     const targetSelector = this.generateTargetSelectorFromStoryId(targetDOMNode.id);
-    const testBedInstance = this.getTestBedInstance(component);
 
     if (
       !this.fullRendererRequired({
@@ -80,10 +79,11 @@ export abstract class AbstractRenderer {
           ...storyFnAngular.moduleMetadata,
         },
         forced,
-      }) &&
-      testBedInstance != null
+      })
     ) {
-      testBedInstance.setAndUpdateProps(storyFnAngular.props);
+      // need unique attribute to get testbed instance for specific component
+      // to update props from story
+      // testbedInstance.setAndUpdateProps(...)
       return;
     }
 
@@ -121,7 +121,6 @@ export abstract class AbstractRenderer {
     }
 
     const componentBuilder = await new TestBedComponentBuilder()
-      .initTestBed()
       .setComponent(component)
       .setSelector(componentSelector)
       .setStoryFn(storyFnAngular)
@@ -132,13 +131,6 @@ export abstract class AbstractRenderer {
 
     applicationRefs.set(targetDOMNode, componentBuilder.getApplicationRef());
     componentBuilders.push(componentBuilder);
-  }
-
-  getTestBedInstance(component: Type<any>): TestBedComponentBuilder | null {
-    for (const builder of componentBuilders) {
-      if (builder.isInstanceOf(component)) return builder;
-    }
-    return null;
   }
 
   /**

@@ -7,6 +7,11 @@ import { ApplicationRef, Type } from '@angular/core';
 import { PropertyExtractor } from './PropertyExtractor';
 import { ICollection, StoryFnAngularReturnType } from '../../types';
 import { getWrapperModule } from '../StorybookWrapperComponent';
+import {
+  GenerateComponentMetaData,
+  GenerateModuleMetaData,
+  // eslint-disable-next-line import/namespace
+} from './TestBedOverrideMetaDataGenerator';
 
 export class TestBedComponentBuilder {
   private testBedInstance: TestBed;
@@ -33,15 +38,10 @@ export class TestBedComponentBuilder {
 
   constructor() {
     this.testBedInstance = new TestBed();
-  }
-
-  initTestBed() {
     this.testBedInstance.initTestEnvironment(
       BrowserDynamicTestingModule,
       platformBrowserDynamicTesting()
     );
-    this.testBedInstance.configureTestingModule({});
-    return this;
   }
 
   setComponent(storyComponent: Type<unknown>) {
@@ -52,6 +52,7 @@ export class TestBedComponentBuilder {
   setStoryFn(storyFn: StoryFnAngularReturnType) {
     this.styles = storyFn.styles;
     this.schemas = storyFn.moduleMetadata?.schemas;
+    console.log(this.schemas);
     this.props = storyFn.props;
     return this;
   }
@@ -84,23 +85,21 @@ export class TestBedComponentBuilder {
     this.throwOnRequiredNullProperties();
     const wrapperModule = getWrapperModule();
     this.testBedInstance
-      .overrideComponent(this.component, {
-        add: {
-          schemas: this.schemas ?? [],
-          providers: this.componentProviders ?? [],
-          styles: this.styles ?? [],
-          selector: this.selector,
-          imports: [wrapperModule],
-        },
-      })
-      .overrideModule(wrapperModule, {
-        set: {
-          exports: [...this.declarations, ...this.imports],
-          declarations: this.declarations,
-          imports: this.imports,
-          providers: this.environmentProviders,
-        },
-      });
+      .configureTestingModule({})
+      .overrideComponent(
+        this.component,
+        GenerateComponentMetaData(
+          this.selector,
+          this.componentProviders,
+          this.styles,
+          this.schemas,
+          wrapperModule
+        )
+      )
+      .overrideModule(
+        wrapperModule,
+        GenerateModuleMetaData(this.environmentProviders, this.declarations, this.imports)
+      );
 
     return this;
   }
@@ -116,10 +115,6 @@ export class TestBedComponentBuilder {
     return this.testBedInstance.inject(ApplicationRef);
   }
 
-  isInstanceOf(component: Type<any>) {
-    return this.fixture.componentRef.componentType == component;
-  }
-
   private updateComponentProps() {
     if (this.props != null)
       this.fixture.componentInstance = Object.assign(this.fixture.componentInstance, this.props);
@@ -128,6 +123,7 @@ export class TestBedComponentBuilder {
   }
 
   private throwOnRequiredNullProperties() {
-    if (this.component == null || this.testBedInstance == null) throw new Error('NullReference');
+    if (this.component == null || this.testBedInstance == null)
+      throw new Error('Component attribute or testbed instance is null');
   }
 }

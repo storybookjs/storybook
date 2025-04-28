@@ -58,7 +58,7 @@
     "esbuild": "^0.25.3",
     "serialize-javascript": "^3.1.0",
     "type-fest": "~2.19",
-    "typescript": "^5.7.3"
+    "typescript": "^5.8.3"
   },
   "dependencies": {
     "@actions/core": "^1.11.1",
@@ -178,7 +178,7 @@
     "ts-dedent": "^2.2.0",
     "tsup": "^6.7.0",
     "type-fest": "~2.19",
-    "typescript": "^5.7.3",
+    "typescript": "^5.8.3",
     "util": "^0.12.5",
     "uuid": "^9.0.1",
     "vitest": "^3.1.2",

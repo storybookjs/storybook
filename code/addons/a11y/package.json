@@ -77,7 +77,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-resize-detector": "^7.1.2",
-    "typescript": "^5.7.3",
+    "typescript": "^5.8.3",
     "vitest-axe": "^0.1.0"
   },
   "peerDependencies": {

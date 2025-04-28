@@ -53,7 +53,7 @@
     "prettier": "^3.5.3",
     "prompts": "^2.4.0",
     "ts-dedent": "^2.0.0",
-    "typescript": "^5.7.3"
+    "typescript": "^5.8.3"
   },
   "peerDependencies": {
     "eslint": ">=8",

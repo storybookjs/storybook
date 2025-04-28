@@ -5816,7 +5816,7 @@ __metadata:
     react: "npm:^18.2.0"
     react-dom: "npm:^18.2.0"
     react-resize-detector: "npm:^7.1.2"
-    typescript: "npm:^5.7.3"
+    typescript: "npm:^5.8.3"
     vitest-axe: "npm:^0.1.0"
   peerDependencies:
     storybook: "workspace:^"
@@ -5869,7 +5869,7 @@ __metadata:
     telejson: "npm:8.0.0"
     tocbot: "npm:^4.20.1"
     ts-dedent: "npm:^2.0.0"
-    typescript: "npm:^5.7.3"
+    typescript: "npm:^5.8.3"
     vite: "npm:^6.2.5"
   peerDependencies:
     storybook: "workspace:^"
@@ -5885,7 +5885,7 @@ __metadata:
     react-dom: "npm:^18.2.0"
     react-resize-detector: "npm:^7.1.2"
     tiny-invariant: "npm:^1.3.1"
-    typescript: "npm:^5.7.3"
+    typescript: "npm:^5.8.3"
     upath: "npm:^2.0.1"
   peerDependencies:
     storybook: "workspace:^"
@@ -5897,7 +5897,7 @@ __metadata:
   resolution: "@storybook/addon-links@workspace:addons/links"
   dependencies:
     "@storybook/global": "npm:^5.0.0"
-    typescript: "npm:^5.7.3"
+    typescript: "npm:^5.8.3"
   peerDependencies:
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
     storybook: "workspace:^"
@@ -5916,7 +5916,7 @@ __metadata:
     react: "npm:^18.2.0"
     react-dom: "npm:^18.2.0"
     react-joyride: "npm:^2.8.2"
-    typescript: "npm:^5.7.3"
+    typescript: "npm:^5.8.3"
   peerDependencies:
     storybook: "workspace:^"
   languageName: unknown
@@ -5928,7 +5928,7 @@ __metadata:
   dependencies:
     "@storybook/icons": "npm:^1.4.0"
     ts-dedent: "npm:^2.0.0"
-    typescript: "npm:^5.7.3"
+    typescript: "npm:^5.8.3"
   peerDependencies:
     storybook: "workspace:^"
   languageName: unknown
@@ -5961,7 +5961,7 @@ __metadata:
     tinyglobby: "npm:^0.2.10"
     tree-kill: "npm:^1.2.2"
     ts-dedent: "npm:^2.2.0"
-    typescript: "npm:^5.7.3"
+    typescript: "npm:^5.8.3"
     vitest: "npm:^3.1.1"
   peerDependencies:
     "@vitest/browser": ^3.0.0
@@ -6005,7 +6005,7 @@ __metadata:
     telejson: "npm:8.0.0"
     ts-dedent: "npm:^2.0.0"
     tsconfig-paths-webpack-plugin: "npm:^4.0.1"
-    typescript: "npm:^5.7.3"
+    typescript: "npm:^5.8.3"
     webpack: "npm:5"
     zone.js: "npm:^0.15.0"
   peerDependencies:
@@ -6108,7 +6108,7 @@ __metadata:
     style-loader: "npm:^3.3.1"
     terser-webpack-plugin: "npm:^5.3.1"
     ts-dedent: "npm:^2.0.0"
-    typescript: "npm:^5.7.3"
+    typescript: "npm:^5.8.3"
     url: "npm:^0.11.0"
     util: "npm:^0.12.4"
     webpack: "npm:5"
@@ -6150,7 +6150,7 @@ __metadata:
     storybook: "workspace:*"
     tiny-invariant: "npm:^1.3.1"
     ts-dedent: "npm:^2.0.0"
-    typescript: "npm:^5.7.3"
+    typescript: "npm:^5.8.3"
   bin:
     cli: ./bin/index.cjs
   languageName: unknown
@@ -6174,7 +6174,7 @@ __metadata:
     storybook: "workspace:*"
     tiny-invariant: "npm:^1.3.1"
     ts-dedent: "npm:^2.2.0"
-    typescript: "npm:^5.7.3"
+    typescript: "npm:^5.8.3"
   languageName: unknown
   linkType: soft
 
@@ -6184,7 +6184,7 @@ __metadata:
   dependencies:
     "@types/node": "npm:^22.0.0"
     ts-dedent: "npm:^2.0.0"
-    typescript: "npm:^5.7.3"
+    typescript: "npm:^5.8.3"
     webpack: "npm:5"
   peerDependencies:
     storybook: "workspace:^"
@@ -6195,7 +6195,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/csf-plugin@workspace:lib/csf-plugin"
   dependencies:
-    typescript: "npm:^5.7.3"
+    typescript: "npm:^5.8.3"
     unplugin: "npm:^1.3.1"
   peerDependencies:
     storybook: "workspace:^"
@@ -6220,7 +6220,7 @@ __metadata:
     babel-loader: "npm:9.1.3"
     ember-source: "npm:~3.28.1"
     find-up: "npm:^5.0.0"
-    typescript: "npm:^5.7.3"
+    typescript: "npm:^5.8.3"
   peerDependencies:
     "@babel/core": "*"
     babel-plugin-ember-modules-api-polyfill: ^3.5.0
@@ -6246,7 +6246,7 @@ __metadata:
     "@storybook/builder-vite": "workspace:*"
     "@storybook/html": "workspace:*"
     "@types/node": "npm:^22.0.0"
-    typescript: "npm:^5.7.3"
+    typescript: "npm:^5.8.3"
   peerDependencies:
     storybook: "workspace:^"
   languageName: unknown
@@ -6258,7 +6258,7 @@ __metadata:
   dependencies:
     "@storybook/global": "npm:^5.0.0"
     ts-dedent: "npm:^2.0.0"
-    typescript: "npm:^5.7.3"
+    typescript: "npm:^5.8.3"
   peerDependencies:
     storybook: "workspace:^"
   languageName: unknown
@@ -6285,7 +6285,7 @@ __metadata:
     next: "npm:^15.2.3"
     postcss-load-config: "npm:^6.0.1"
     styled-jsx: "npm:5.1.6"
-    typescript: "npm:^5.7.3"
+    typescript: "npm:^5.8.3"
     vite-plugin-storybook-nextjs: "npm:2.0.0"
   peerDependencies:
     next: ^14.1.0 || ^15.0.0
@@ -6344,7 +6344,7 @@ __metadata:
     styled-jsx: "npm:^5.1.6"
     tsconfig-paths: "npm:^4.0.0"
     tsconfig-paths-webpack-plugin: "npm:^4.0.1"
-    typescript: "npm:^5.7.3"
+    typescript: "npm:^5.8.3"
     webpack: "npm:^5.65.0"
   peerDependencies:
     next: ^14.1.0 || ^15.0.0
@@ -6367,7 +6367,7 @@ __metadata:
     "@storybook/builder-vite": "workspace:*"
     "@storybook/preact": "workspace:*"
     "@types/node": "npm:^22.0.0"
-    typescript: "npm:^5.7.3"
+    typescript: "npm:^5.8.3"
     vite: "npm:^6.2.5"
   peerDependencies:
     preact: ">=10"
@@ -6382,7 +6382,7 @@ __metadata:
     "@storybook/global": "npm:^5.0.0"
     preact: "npm:^10.5.13"
     ts-dedent: "npm:^2.0.0"
-    typescript: "npm:^5.7.3"
+    typescript: "npm:^5.8.3"
   peerDependencies:
     preact: ^8.0.0||^10.0.0
     storybook: "workspace:^"
@@ -6399,7 +6399,7 @@ __metadata:
     "@types/semver": "npm:^7.5.6"
     pnp-webpack-plugin: "npm:^1.7.0"
     semver: "npm:^7.5.4"
-    typescript: "npm:^5.7.3"
+    typescript: "npm:^5.8.3"
   peerDependencies:
     react-scripts: ">=5.0.0"
     storybook: "workspace:^"
@@ -6420,7 +6420,7 @@ __metadata:
     resolve: "npm:^1.22.8"
     semver: "npm:^7.3.7"
     tsconfig-paths: "npm:^4.2.0"
-    typescript: "npm:^5.7.3"
+    typescript: "npm:^5.8.3"
     webpack: "npm:5"
   peerDependencies:
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
@@ -6440,7 +6440,7 @@ __metadata:
     "@types/node": "npm:^22.0.0"
     safe-identifier: "npm:^0.4.1"
     ts-dedent: "npm:^2.0.0"
-    typescript: "npm:^5.7.3"
+    typescript: "npm:^5.8.3"
     yaml: "npm:^2.3.1"
     yaml-loader: "npm:^0.8.0"
   peerDependencies:
@@ -6470,7 +6470,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/react-dom-shim@workspace:lib/react-dom-shim"
   dependencies:
-    typescript: "npm:^5.7.3"
+    typescript: "npm:^5.8.3"
   peerDependencies:
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
     react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
@@ -6488,7 +6488,7 @@ __metadata:
     "@storybook/react-vite": "workspace:*"
     "@types/node": "npm:^22.0.0"
     "@vitejs/plugin-react": "npm:^4.3.2"
-    typescript: "npm:^5.7.3"
+    typescript: "npm:^5.8.3"
     vite-plugin-babel: "npm:^1.3.0"
     vite-plugin-commonjs: "npm:^0.10.4"
     vite-tsconfig-paths: "npm:^5.1.4"
@@ -6516,7 +6516,7 @@ __metadata:
     react-docgen: "npm:^7.1.1"
     resolve: "npm:^1.22.8"
     tsconfig-paths: "npm:^4.2.0"
-    typescript: "npm:^5.7.3"
+    typescript: "npm:^5.8.3"
     vite: "npm:^6.2.5"
   peerDependencies:
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
@@ -6691,7 +6691,7 @@ __metadata:
     storybook-addon-pseudo-states: "workspace:*"
     svelte: "npm:^5.0.0-next.268"
     ts-dedent: "npm:^2.0.0"
-    typescript: "npm:^5.7.3"
+    typescript: "npm:^5.8.3"
     util: "npm:^0.12.4"
     vite: "npm:^6.2.5"
     vite-plugin-inspect: "npm:^11.0.0"
@@ -6724,7 +6724,7 @@ __metadata:
     "@storybook/preset-server-webpack": "workspace:*"
     "@storybook/server": "workspace:*"
     "@types/node": "npm:^22.0.0"
-    typescript: "npm:^5.7.3"
+    typescript: "npm:^5.8.3"
   peerDependencies:
     storybook: "workspace:^"
   languageName: unknown
@@ -6736,7 +6736,7 @@ __metadata:
   dependencies:
     "@storybook/global": "npm:^5.0.0"
     ts-dedent: "npm:^2.0.0"
-    typescript: "npm:^5.7.3"
+    typescript: "npm:^5.8.3"
     yaml: "npm:^2.3.1"
   peerDependencies:
     storybook: "workspace:^"
@@ -6750,7 +6750,7 @@ __metadata:
     es-toolkit: "npm:^1.36.0"
     estraverse: "npm:^5.2.0"
     prettier: "npm:^3.5.3"
-    typescript: "npm:^5.7.3"
+    typescript: "npm:^5.8.3"
   peerDependencies:
     storybook: "workspace:^"
   languageName: unknown
@@ -6769,7 +6769,7 @@ __metadata:
     svelte-preprocess: "npm:^5.1.1"
     svelte2tsx: "npm:^0.7.35"
     sveltedoc-parser: "npm:^4.2.1"
-    typescript: "npm:^5.7.3"
+    typescript: "npm:^5.8.3"
     vite: "npm:^6.2.5"
   peerDependencies:
     "@sveltejs/vite-plugin-svelte": ^2.0.0 || ^3.0.0 || ^4.0.0 || ^5.0.0
@@ -6790,7 +6790,7 @@ __metadata:
     svelte-check: "npm:^4.1.4"
     sveltedoc-parser: "npm:^4.2.1"
     type-fest: "npm:~2.19"
-    typescript: "npm:^5.7.3"
+    typescript: "npm:^5.8.3"
     vite: "npm:^6.2.5"
   peerDependencies:
     storybook: "workspace:^"
@@ -6806,7 +6806,7 @@ __metadata:
     "@storybook/svelte": "workspace:*"
     "@storybook/svelte-vite": "workspace:*"
     "@types/node": "npm:^22.0.0"
-    typescript: "npm:^5.7.3"
+    typescript: "npm:^5.8.3"
     vite: "npm:^6.2.5"
   peerDependencies:
     storybook: "workspace:^"
@@ -6825,7 +6825,7 @@ __metadata:
     "@types/node": "npm:^22.0.0"
     find-package-json: "npm:^1.2.0"
     magic-string: "npm:^0.30.0"
-    typescript: "npm:^5.7.3"
+    typescript: "npm:^5.8.3"
     vite: "npm:^6.2.5"
     vue-component-meta: "npm:^2.0.0"
     vue-docgen-api: "npm:^4.75.1"
@@ -6843,7 +6843,7 @@ __metadata:
     "@testing-library/vue": "npm:^8.0.0"
     "@vitejs/plugin-vue": "npm:^4.4.0"
     type-fest: "npm:~2.19"
-    typescript: "npm:^5.7.3"
+    typescript: "npm:^5.8.3"
     vue: "npm:^3.2.47"
     vue-component-type-helpers: "npm:latest"
     vue-tsc: "npm:latest"
@@ -6860,7 +6860,7 @@ __metadata:
     "@storybook/builder-vite": "workspace:*"
     "@storybook/web-components": "workspace:*"
     "@types/node": "npm:^22.0.0"
-    typescript: "npm:^5.7.3"
+    typescript: "npm:^5.8.3"
   peerDependencies:
     storybook: "workspace:^"
   languageName: unknown
@@ -6879,7 +6879,7 @@ __metadata:
     tiny-invariant: "npm:^1.3.1"
     tmp: "npm:^0.2.3"
     ts-dedent: "npm:^2.0.0"
-    typescript: "npm:^5.7.3"
+    typescript: "npm:^5.8.3"
     web-component-analyzer: "npm:^1.1.6"
   peerDependencies:
     lit: ^2.0.0 || ^3.0.0
@@ -11665,7 +11665,7 @@ __metadata:
     storybook: "workspace:*"
     tiny-invariant: "npm:^1.3.1"
     ts-dedent: "npm:^2.0.0"
-    typescript: "npm:^5.7.3"
+    typescript: "npm:^5.8.3"
   bin:
     create-storybook: ./bin/index.cjs
   languageName: unknown
@@ -13777,7 +13777,7 @@ __metadata:
     prettier: "npm:^3.5.3"
     prompts: "npm:^2.4.0"
     ts-dedent: "npm:^2.0.0"
-    typescript: "npm:^5.7.3"
+    typescript: "npm:^5.8.3"
   peerDependencies:
     eslint: ">=8"
     storybook: "workspace:^"
@@ -24332,7 +24332,7 @@ __metadata:
     "@storybook/icons": "npm:^1.4.0"
     react: "npm:^18.2.0"
     react-dom: "npm:^18.2.0"
-    typescript: "npm:^5.7.3"
+    typescript: "npm:^5.8.3"
   peerDependencies:
     storybook: "workspace:^"
   languageName: unknown
@@ -24468,7 +24468,7 @@ __metadata:
     ts-dedent: "npm:^2.0.0"
     tsconfig-paths: "npm:^4.2.0"
     type-fest: "npm:^4.18.1"
-    typescript: "npm:^5.7.3"
+    typescript: "npm:^5.8.3"
     unique-string: "npm:^3.0.0"
     use-resize-observer: "npm:^9.1.0"
     watchpack: "npm:^2.2.0"
@@ -25672,7 +25672,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typescript@npm:^5.7.3":
+"typescript@npm:^5.8.3":
   version: 5.8.3
   resolution: "typescript@npm:5.8.3"
   bin:
@@ -25682,7 +25682,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typescript@patch:typescript@npm%3A^5.7.3#optional!builtin<compat/typescript>":
+"typescript@patch:typescript@npm%3A^5.8.3#optional!builtin<compat/typescript>":
   version: 5.8.3
   resolution: "typescript@patch:typescript@npm%3A5.8.3#optional!builtin<compat/typescript>::version=5.8.3&hash=5786d5"
   bin:

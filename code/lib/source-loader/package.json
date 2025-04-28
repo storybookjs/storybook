@@ -49,7 +49,7 @@
     "prettier": "^3.5.3"
   },
   "devDependencies": {
-    "typescript": "^5.7.3"
+    "typescript": "^5.8.3"
   },
   "peerDependencies": {
     "storybook": "workspace:^"

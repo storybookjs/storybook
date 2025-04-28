@@ -296,7 +296,7 @@ export const SearchResults: FC<{
   };
 
   return (
-    <ResultsList {...getMenuProps()}>
+    <ResultsList {...getMenuProps()} key="results-list">
       {results.length > 0 && !query && (
         <RecentlyOpenedTitle className="search-result-recentlyOpened">
           Recently opened
@@ -338,7 +338,7 @@ export const SearchResults: FC<{
             {...result}
             {...getItemProps({ key, index, item: result })}
             isHighlighted={highlightedIndex === index}
-            key={item.id}
+            key={key}
             data-id={result.item.id}
             data-refid={result.item.refId}
             onMouseOver={mouseOverHandler}

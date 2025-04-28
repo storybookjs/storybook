@@ -1,5 +1,5 @@
 <script module lang="ts">
-  import { defineMeta, setTemplate, type Args } from '@storybook/addon-svelte-csf';
+  import { defineMeta, type Args } from '@storybook/addon-svelte-csf';
   import { expect, within } from '@storybook/test';
 
   /**
@@ -11,15 +11,14 @@
     argTypes: {
       text: { control: 'text' },
     },
-  });
-</script>
+    /**
+     * reference any root-level snippet, for that snippet to be the fallback snippet,
+     * that is used in any story without explicit template.
+     */
+    //@ts-expect-error TS does not understand that the snippet is defined before this call
 
-<script>
-  /**
-   * call setTemplate with a reference to any root-level snippet, for that snippet to be the fallback snippet,
-   * that is used in any story without explicit template.
-   */
-  setTemplate(defaultTemplate);
+    render: defaultTemplate,
+  });
 </script>
 
 {#snippet defaultTemplate(args: Args<typeof Story>)}
@@ -129,18 +128,19 @@
 />
 
 <!--
-  To set a default template for all stories in the file, call the **`setTemplate()`** function with a reference to a root snippet.
+  To set a default template for all stories in the file, reference the snippet with the **`render`** property in `defineMeta`.
   Any story without `template` will use this default template.
 
   Example:
 
   ```svelte
   <script>
-    import { setTemplate, type Args } from '@storybook/addon-svelte-csf';
-  </script>
+    import { defineMeta, type Args } from '@storybook/addon-svelte-csf';
 
-  <script>
-    setTemplate(defaultTemplate);
+    const { Story } = defineMeta({
+      ...,
+      render: defaultTemplate
+    })
   </script>
 
   {#snippet defaultTemplate(args: Args<typeof Story>)}
@@ -153,9 +153,9 @@
   ```
 -->
 <Story
-  name="setTemplate"
+  name="Default template"
   args={{
-    text: 'This story is based on the snippet passed to the setTemplate() function',
+    text: 'This story is based on the snippet set as render in defineMeta',
   }}
   play={async (context) => {
     const { args, canvasElement } = context;

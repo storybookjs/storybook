@@ -1,7 +1,6 @@
 import type { Visitors } from 'zimmerframe';
 
 import type { extractModuleNodes } from './module-nodes.js';
-import type { extractInstanceNodes } from './instance-nodes.js';
 
 import type { SvelteAST } from '$lib/parser/ast.js';
 
@@ -17,8 +16,7 @@ interface Result {
    *
    * For example:
    * Determining the source code of the `<Story />`.
-   * Based on either `setTemplate` call,
-   * or by passing `template` as prop from the outer Svelte snippet block definition - e.g. `Story template={template1} />`.
+   * Based on the `template` as prop from the outer Svelte snippet block definition - e.g. `Story template={template1} />`.
    */
   snippetBlocks: SvelteAST.SnippetBlock[];
 }
@@ -26,7 +24,6 @@ interface Result {
 interface Params {
   fragment: SvelteAST.Fragment;
   filename?: string;
-  instanceNodes: Awaited<ReturnType<typeof extractInstanceNodes>>;
   moduleNodes: Awaited<ReturnType<typeof extractModuleNodes>>;
 }
 

@@ -1,6 +1,5 @@
 import { extractModuleNodes } from './module-nodes.js';
 import { extractFragmentNodes } from './fragment-nodes.js';
-import { extractInstanceNodes } from './instance-nodes.js';
 
 import type { SvelteAST } from '$lib/parser/ast.js';
 
@@ -9,8 +8,7 @@ import type { SvelteAST } from '$lib/parser/ast.js';
  * needed for further code analysis/transformation.
  */
 export type SvelteASTNodes = Awaited<ReturnType<typeof extractModuleNodes>> &
-  Awaited<ReturnType<typeof extractFragmentNodes>> &
-  Awaited<ReturnType<typeof extractInstanceNodes>>;
+  Awaited<ReturnType<typeof extractFragmentNodes>>;
 
 interface Params {
   ast: SvelteAST.Root;
@@ -22,24 +20,17 @@ interface Params {
  */
 export async function extractSvelteASTNodes(params: Params): Promise<SvelteASTNodes> {
   const { ast, filename } = params;
-  const { module, fragment, instance } = ast;
+  const { module, fragment } = ast;
 
   const moduleNodes = await extractModuleNodes({ module, filename });
-  const instanceNodes = await extractInstanceNodes({
-    instance,
-    filename,
-    moduleNodes,
-  });
   const fragmentNodes = await extractFragmentNodes({
     fragment,
     filename,
     moduleNodes,
-    instanceNodes,
   });
 
   return {
     ...moduleNodes,
-    ...instanceNodes,
     ...fragmentNodes,
   };
 }

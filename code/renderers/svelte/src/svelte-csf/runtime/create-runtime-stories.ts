@@ -24,7 +24,6 @@ const createFragment = document.createDocumentFragment
  * instantiate the main Stories component: Every Story but
  * the one selected is disabled.
  */
-// TODO: I'm not sure the 'meta' is necessary here. As long as it's default exported, SB should internally combine it with the stories. Except for the play logic below, that looks funky, need to ask Pablo about that.
 export const createRuntimeStories = (Stories: Component, meta: Meta<Cmp>) => {
   const repository: StoriesRepository<Cmp> = {
     stories: new Map(),
@@ -57,6 +56,7 @@ export const createRuntimeStories = (Stories: Component, meta: Meta<Cmp>) => {
           Stories,
           storyContext,
           args,
+          metaRenderSnippet: meta.render,
         },
       }),
     };

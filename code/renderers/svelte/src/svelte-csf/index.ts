@@ -6,7 +6,6 @@ import LegacyStoryComponent from './runtime/LegacyStory.svelte';
 // TODO: Remove in next major release
 import LegacyTemplateComponent from './runtime/LegacyTemplate.svelte';
 
-export { setTemplate } from './runtime/contexts/template.svelte';
 import type {
   Meta as MetaType,
   StoryContext as BaseStoryContext,

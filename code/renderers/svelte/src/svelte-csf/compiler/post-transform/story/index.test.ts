@@ -71,7 +71,8 @@ describe(transformStory.name, () => {
 
     expect(print(compiledPostTransformedStories[0]).code).toMatchInlineSnapshot(`
       "Story(node_1, {
-      	name: "Default",
+      	name: 'Default',
+      	template,
       	parameters: {
       		docs: {
       			description: { story: "Description for the default story" }
@@ -85,8 +86,9 @@ describe(transformStory.name, () => {
 
     expect(print(compiledPostTransformedStories[1]).code).toMatchInlineSnapshot(`
       "Story(node_2, {
-      	name: "Rounded",
+      	name: 'Rounded',
       	args: { rounded: true },
+      	template,
       	parameters: {
       		docs: {
       			description: { story: "Description for the rounded story" }
@@ -99,8 +101,9 @@ describe(transformStory.name, () => {
     `);
     expect(print(compiledPostTransformedStories[2]).code).toMatchInlineSnapshot(`
       "Story(node_3, {
-      	name: "Square",
+      	name: 'Square',
       	args: { rounded: false },
+      	template,
       	parameters: {
       		docs: {
       			description: { story: "Description for the squared story" }
@@ -113,7 +116,7 @@ describe(transformStory.name, () => {
     `);
     expect(print(compiledPostTransformedStories[3]).code).toMatchInlineSnapshot(`
       "Story(node_4, {
-      	name: "As child",
+      	name: 'As child',
       	asChild: true,
       	children: $.wrap_snippet(Example_stories, ($$anchor, $$slotProps) => {
       		var fragment_3 = $.comment();
@@ -123,7 +126,7 @@ describe(transformStory.name, () => {
       			children: $.wrap_snippet(Example_stories, ($$anchor, $$slotProps) => {
       				$.next();
 
-      				var text_3 = $.text("Label");
+      				var text_3 = $.text('Label');
 
       				$.append($$anchor, text_3);
       			}),
@@ -140,11 +143,11 @@ describe(transformStory.name, () => {
     `);
     expect(print(compiledPostTransformedStories[4]).code).toMatchInlineSnapshot(`
       "Story(node_6, {
-      	name: "Children forwared",
+      	name: 'Children forwared',
       	children: $.wrap_snippet(Example_stories, ($$anchor, $$slotProps) => {
       		$.next();
 
-      		var text_4 = $.text("Forwarded label");
+      		var text_4 = $.text('Forwarded label');
 
       		$.append($$anchor, text_4);
       	}),

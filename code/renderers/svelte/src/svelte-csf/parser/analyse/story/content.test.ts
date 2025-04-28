@@ -43,20 +43,17 @@ describe(getStoryContentRawCode.name, () => {
       expect(rawSource).toBe('<SomeComponent {...args} />');
     });
 
-    it('works when `setTemplate` was used correctly in the instance tag', async ({ expect }) => {
+    it('works when `render` is set in `defineMeta`', async ({ expect }) => {
       const code = `
         <script module>
-          import { defineMeta, setTemplate } from "@storybook/addon-svelte-csf";
+          import { defineMeta } from "@storybook/addon-svelte-csf";
 
           import SampleComponent from "./SampleComponent.svelte";
 
           const { Story } = defineMeta({
             component: SampleComponent,
+            render: template,
           });
-        </script>
-
-        <script>
-          setTemplate(template);
         </script>
 
         {#snippet template(args)}
@@ -80,33 +77,30 @@ describe(getStoryContentRawCode.name, () => {
       expect(rawSource).toBe('<SomeComponent {...args} />');
     });
 
-    it('works implicit `template` attribute takes precedence over `setTemplate`', async ({
+    it('works implicit `template` attribute takes precedence over `render` in `defineMeta`', async ({
       expect,
     }) => {
       const code = `
         <script module>
-          import { defineMeta, setTemplate } from "@storybook/addon-svelte-csf";
+          import { defineMeta } from "@storybook/addon-svelte-csf";
 
           import SampleComponent from "./SampleComponent.svelte";
 
           const { Story } = defineMeta({
             component: SampleComponent,
+            render: templateForRender,
           });
         </script>
 
-        <script>
-          setTemplate(template);
-        </script>
-
-        {#snippet templateForSetTemplate(args)}
-          <SomeComponent wins="setTemplate" {...args} />
+        {#snippet templateForRender(args)}
+          <SomeComponent wins="render" {...args} />
         {/snippet}
 
-        {#snippet templateForChildren(args)}
-          <SomeComponent wins="childrenAttribute" {...args} />
+        {#snippet templateForTemplateAttribute(args)}
+          <SomeComponent wins="templateAttribute" {...args} />
         {/snippet}
 
-        <Story name="Default" template={templateForChildren} />
+        <Story name="Default" template={templateForTemplateAttribute} />
       `;
       const ast = getSvelteAST({ code });
       const svelteASTNodes = await extractSvelteASTNodes({ ast });
@@ -120,10 +114,12 @@ describe(getStoryContentRawCode.name, () => {
         originalCode: code,
       });
 
-      expect(rawSource).toBe(`<SomeComponent wins="childrenAttribute" {...args} />`);
+      expect(rawSource).toBe(`<SomeComponent wins="templateAttribute" {...args} />`);
     });
 
-    it('works when no `setTemplate`, no `template` attribute, just a story', async ({ expect }) => {
+    it('works when no `render` in `defineMeta`, no `template` attribute, just a story', async ({
+      expect,
+    }) => {
       const code = `
         <script module>
           import { defineMeta } from "@storybook/addon-svelte-csf";
@@ -253,12 +249,12 @@ describe(getStoryContentRawCode.name, () => {
       expect(rawSource).toBe(`<SomeComponent {...args} />`);
     });
 
-    it("inner `<Story>`'s template content takes precedence over `setTemplate`", async ({
+    it("inner `<Story>`'s template content takes precedence over `render` in `defineMeta`", async ({
       expect,
     }) => {
       const code = `
         <script module>
-          import { defineMeta, setTemplate } from "@storybook/addon-svelte-csf";
+          import { defineMeta } from "@storybook/addon-svelte-csf";
 
           import SampleComponent from "./SampleComponent.svelte";
 
@@ -267,12 +263,8 @@ describe(getStoryContentRawCode.name, () => {
           });
         </script>
 
-        <script>
-          setTemplate(template);
-        </script>
-
-        {#snippet templateForSetTemplate(args)}
-          <SomeComponent wins="setTemplate" {...args} />
+        {#snippet templateForRender(args)}
+          <SomeComponent wins="render" {...args} />
         {/snippet}
 
         <Story name="Default">

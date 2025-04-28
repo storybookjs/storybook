@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Component } from 'svelte';
+  import type { Component, Snippet } from 'svelte';
 
   import { useStoryRenderer } from './contexts/renderer.svelte';
   import { emitCode } from './emit-code.js';
@@ -11,9 +11,10 @@
     exportName: string;
     args: NonNullable<StoryAnnotations<Cmp>['args']>;
     storyContext: StoryContext<Cmp>;
+    metaRenderSnippet?: Snippet;
   };
 
-  let { Stories, exportName, args, storyContext }: Props = $props();
+  let { Stories, exportName, args, storyContext, metaRenderSnippet }: Props = $props();
 
   const context = useStoryRenderer<Cmp>();
 
@@ -22,6 +23,7 @@
       currentStoryExportName: exportName,
       args,
       storyContext,
+      metaRenderSnippet,
     });
   });
 

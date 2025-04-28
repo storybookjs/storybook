@@ -38,20 +38,4 @@ describe(transformImportDeclaration.name, () => {
       `"import { defineMeta } from "@storybook/addon-svelte-csf";"`
     );
   });
-
-  it("it doesn't remove existing 'setTemplate'", async ({ expect }) => {
-    const code = `
-      <script context="module" lang="ts">
-        import { defineMeta, setTemplate } from "@storybook/addon-svelte-csf";
-      </script>
-    `;
-    const node = await parseAndExtractSvelteNode<ESTreeAST.ImportDeclaration>(
-      code,
-      'ImportDeclaration'
-    );
-
-    expect(print(transformImportDeclaration({ node }))).toMatchInlineSnapshot(
-      `"import { defineMeta, setTemplate } from "@storybook/addon-svelte-csf";"`
-    );
-  });
 });

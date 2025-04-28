@@ -268,27 +268,27 @@ describe(transformStoriesCode.name, () => {
 
       export const Default = {
       	...__stories["Default"],
-      	tags: ["svelte-csf"]
+      	tags: ["svelte-csf-v5"]
       };
 
       export const Rounded = {
       	...__stories["Rounded"],
-      	tags: ["svelte-csf"]
+      	tags: ["svelte-csf-v5"]
       };
 
       export const Square = {
       	...__stories["Square"],
-      	tags: ["svelte-csf"]
+      	tags: ["svelte-csf-v5"]
       };
 
       export const AsChild = {
       	...__stories["AsChild"],
-      	tags: ["svelte-csf"]
+      	tags: ["svelte-csf-v5"]
       };
 
       export const ChildrenForwared = {
       	...__stories["ChildrenForwared"],
-      	tags: ["svelte-csf"]
+      	tags: ["svelte-csf-v5"]
       };"
     `
     );

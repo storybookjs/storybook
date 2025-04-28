@@ -10,6 +10,7 @@ import {
 import { InvalidTemplateAttribute } from '$lib/utils/error/legacy-api/index.js';
 
 import { hashTemplateName } from '$lib/utils/identifier-utils.js';
+import { SVELTE_CSF_V4_TAG } from '../../../constants.js';
 import type { State } from '../index.js';
 
 interface Params {
@@ -116,19 +117,19 @@ export function transformLegacyStory(params: Params): SvelteAST.Component {
     newAttributes.push(parameters);
   }
 
-  // Always add 'legacy' tag to all legacy stories
+  // Always add SVELTE_CSF_V4_TAG tag to all legacy stories
   if (
     typeof tags.value === 'object' &&
     !Array.isArray(tags.value) &&
     tags.value.type === 'ExpressionTag' &&
     tags.value.expression.type === 'ArrayExpression' &&
     !tags.value.expression.elements.some(
-      (el) => el && el.type === 'Literal' && el.value === 'legacy'
+      (el) => el && el.type === 'Literal' && el.value === SVELTE_CSF_V4_TAG
     )
   ) {
     tags.value.expression.elements.push({
       type: 'Literal',
-      value: 'legacy',
+      value: SVELTE_CSF_V4_TAG,
     });
   }
 

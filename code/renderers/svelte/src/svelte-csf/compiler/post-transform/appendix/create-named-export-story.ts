@@ -1,5 +1,5 @@
 import type { createVariableFromRuntimeStoriesCall } from './create-variable-from-runtime-stories-call.js';
-import { SVELTE_CSF_TAG } from '$lib/constants.js';
+import { SVELTE_CSF_TAG_PREFIX, SVELTE_CSF_V5_TAG } from '$lib/constants.js';
 import type { ESTreeAST } from '$lib/parser/ast.js';
 
 interface Params {
@@ -17,22 +17,22 @@ export function createNamedExportStory(params: Params): ESTreeAST.ExportNamedDec
     name: params.exportName,
   } as const;
 
-  const defaultTags: ESTreeAST.ArrayExpression = {
+  const tags: ESTreeAST.ArrayExpression = {
     type: 'ArrayExpression',
-    elements: [
-      {
-        type: 'Literal',
-        value: SVELTE_CSF_TAG,
-      },
-    ],
+    elements: params.nodes.tags?.elements ?? [],
   };
 
-  const tags = params.nodes.tags
-    ? {
-        ...defaultTags,
-        elements: [...params.nodes.tags.elements, ...defaultTags.elements],
-      }
-    : defaultTags;
+  // In legacy stories, the pre-transform will add a SVELTE_CSF_V4_TAG tag.
+  // if it is not present, we add the SVELTE_CSF_V5_TAG tag.
+  const hasSvelteCsfTag = (tags.elements as ESTreeAST.Literal[]).some((element) =>
+    element.value?.toString().startsWith(SVELTE_CSF_TAG_PREFIX)
+  );
+  if (!hasSvelteCsfTag) {
+    tags.elements.push({
+      type: 'Literal',
+      value: SVELTE_CSF_V5_TAG,
+    });
+  }
 
   const declarations = [
     {

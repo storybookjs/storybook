@@ -48,7 +48,7 @@
     "@types/util-deprecate": "^1.0.0",
     "boxen": "^7.1.1",
     "commander": "^12.1.0",
-    "es-toolkit": "^1.22.0",
+    "es-toolkit": "^1.36.0",
     "execa": "^5.0.0",
     "fast-glob": "^3.3.3",
     "fd-package-json": "^1.2.0",

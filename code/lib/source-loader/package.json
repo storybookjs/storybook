@@ -44,7 +44,7 @@
     "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "es-toolkit": "^1.22.0",
+    "es-toolkit": "^1.36.0",
     "estraverse": "^5.2.0",
     "prettier": "^3.5.3"
   },

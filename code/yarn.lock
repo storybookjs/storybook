@@ -6273,7 +6273,7 @@ __metadata:
     "@types/color-convert": "npm:^2.0.0"
     "@types/react": "npm:^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0"
     color-convert: "npm:^2.0.1"
-    es-toolkit: "npm:^1.22.0"
+    es-toolkit: "npm:^1.36.0"
     github-slugger: "npm:^2.0.0"
     markdown-to-jsx: "npm:^7.7.2"
     memoizerific: "npm:^1.11.3"
@@ -6369,7 +6369,7 @@ __metadata:
     "@vitest/browser": "npm:^3.1.1"
     "@vitest/runner": "npm:^3.1.1"
     boxen: "npm:^8.0.1"
-    es-toolkit: "npm:^1.22.0"
+    es-toolkit: "npm:^1.36.0"
     execa: "npm:^8.0.1"
     find-up: "npm:^7.0.0"
     istanbul-lib-report: "npm:^3.0.1"
@@ -6611,7 +6611,7 @@ __metadata:
     ansi-regex: "npm:^6.0.1"
     camelcase: "npm:^8.0.0"
     cross-spawn: "npm:^7.0.3"
-    es-toolkit: "npm:^1.22.0"
+    es-toolkit: "npm:^1.36.0"
     globby: "npm:^14.0.1"
     jscodeshift: "npm:^0.15.1"
     mdast-util-mdx-jsx: "npm:^3.0.0"
@@ -7027,7 +7027,7 @@ __metadata:
     acorn-jsx: "npm:^5.3.1"
     acorn-walk: "npm:^7.2.0"
     babel-plugin-react-docgen: "npm:^4.2.1"
-    es-toolkit: "npm:^1.22.0"
+    es-toolkit: "npm:^1.36.0"
     escodegen: "npm:^2.1.0"
     expect-type: "npm:^0.15.0"
     html-tags: "npm:^3.1.0"
@@ -7114,7 +7114,7 @@ __metadata:
     create-storybook: "workspace:*"
     cross-env: "npm:^7.0.3"
     danger: "npm:^12.3.3"
-    es-toolkit: "npm:^1.22.0"
+    es-toolkit: "npm:^1.36.0"
     esbuild: "npm:^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0"
     esbuild-loader: "npm:^4.3.0"
     eslint: "npm:8.57.1"
@@ -7221,7 +7221,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/source-loader@workspace:lib/source-loader"
   dependencies:
-    es-toolkit: "npm:^1.22.0"
+    es-toolkit: "npm:^1.36.0"
     estraverse: "npm:^5.2.0"
     prettier: "npm:^3.5.3"
     typescript: "npm:^5.7.3"
@@ -12192,7 +12192,7 @@ __metadata:
     "@types/util-deprecate": "npm:^1.0.0"
     boxen: "npm:^7.1.1"
     commander: "npm:^12.1.0"
-    es-toolkit: "npm:^1.22.0"
+    es-toolkit: "npm:^1.36.0"
     execa: "npm:^5.0.0"
     fast-glob: "npm:^3.3.3"
     fd-package-json: "npm:^1.2.0"
@@ -13773,7 +13773,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"es-toolkit@npm:^1.22.0":
+"es-toolkit@npm:^1.36.0":
   version: 1.36.0
   resolution: "es-toolkit@npm:1.36.0"
   dependenciesMeta:
@@ -25313,7 +25313,7 @@ __metadata:
     diff: "npm:^5.2.0"
     downshift: "npm:^9.0.4"
     ejs: "npm:^3.1.10"
-    es-toolkit: "npm:^1.22.0"
+    es-toolkit: "npm:^1.36.0"
     esbuild: "npm:^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0"
     esbuild-register: "npm:^3.5.0"
     execa: "npm:^8.0.1"

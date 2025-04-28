@@ -1,3 +1,15 @@
+## 9.0.0-beta.5
+
+- All packages: Remove unused dependencies - [#31227](https://github.com/storybookjs/storybook/pull/31227), thanks @webpro!
+- Autoblock: Fix link - [#31236](https://github.com/storybookjs/storybook/pull/31236), thanks @valentinpalkovic!
+- CLI: Update nx docs in Storybook detection error - [#31266](https://github.com/storybookjs/storybook/pull/31266), thanks @yannbf!
+- Core: Fix highlight conflicts - [#31204](https://github.com/storybookjs/storybook/pull/31204), thanks @ghengeveld!
+- Dependencies: Upgrades for security - [#31235](https://github.com/storybookjs/storybook/pull/31235), thanks @ndelangen!
+- Docs: Fix source code panel - [#31245](https://github.com/storybookjs/storybook/pull/31245), thanks @valentinpalkovic!
+- React Native Web: Add RNW to vitest supported frameworks - [#31253](https://github.com/storybookjs/storybook/pull/31253), thanks @dannyhw!
+- Svelte: Remove dependency on `sveltedoc-parser` - [#31246](https://github.com/storybookjs/storybook/pull/31246), thanks @JReinhold!
+- Test: Use @testing-library/dom as devDependency - [#31188](https://github.com/storybookjs/storybook/pull/31188), thanks @valentinpalkovic!
+
 ## 9.0.0-beta.4
 
 - Highlights: Dont run highlights when the feature is disabled - [#31239](https://github.com/storybookjs/storybook/pull/31239), thanks @dannyhw!

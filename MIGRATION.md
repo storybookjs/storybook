@@ -8,6 +8,7 @@
       - [TypeScript \< 4.9](#typescript--49)
       - [Node.js \< 20](#nodejs--20)
       - [Package Managers](#package-managers)
+    - [Moving from renderer-based to framework-based configuration](#moving-from-renderer-based-to-framework-based-configuration)
   - [Addon-specific Changes](#addon-specific-changes)
     - [Essentials Addon: Viewport, Controls, Interactions and Actions moved to core](#essentials-addon-viewport-controls-interactions-and-actions-moved-to-core)
     - [A11y Addon: Removed deprecated manual parameter](#a11y-addon-removed-deprecated-manual-parameter)
@@ -36,6 +37,7 @@
   - [Framework-specific changes](#framework-specific-changes)
     - [Svelte: Require v5 and up](#svelte-require-v5-and-up)
     - [Svelte: Dropped support for @storybook/svelte-webpack5](#svelte-dropped-support-for-storybooksvelte-webpack5)
+    - [Svelte: Dropped automatic docgen for events and slots](#svelte-dropped-automatic-docgen-for-events-and-slots)
     - [Angular = Require v18 and up](#angular--require-v18-and-up)
     - [Dropped webpack5 Builder Support in Favor of Vite](#dropped-webpack5-builder-support-in-favor-of-vite)
     - [Next.js = Require v14 and up](#nextjs--require-v14-and-up)
@@ -605,6 +607,23 @@ pnpm v9+
 
 While Storybook may still work with older versions, we recommend upgrading to the latest supported versions for the best experience and to ensure compatibility.
 
+#### Moving from renderer-based to framework-based configuration
+
+Storybook is moving from renderer-based to framework-based configuration. This means you should:
+
+1. Update your source files to use framework-specific imports instead of renderer imports
+2. Remove the renderer packages from your package.json
+
+For example, if you're using `@storybook/react` with `@storybook/react-vite`, you should:
+
+- Import types and functions from `@storybook/react-vite` instead of `@storybook/react`
+- Remove `@storybook/react` from your package.json dependencies
+
+```diff
+- import { Meta, StoryObj } from '@storybook/react';
++ import { Meta, StoryObj } from '@storybook/react-vite';
+```
+
 ### Addon-specific Changes
 
 #### Essentials Addon: Viewport, Controls, Interactions and Actions moved to core
@@ -1023,6 +1042,12 @@ export default {
 ```
 
 For more details, please refer to the [Svelte & Vite documentation](https://storybook.js.org/docs/get-started/frameworks/svelte-vite).
+
+#### Svelte: Dropped automatic docgen for events and slots
+
+The internal docgen logic for legacy Svelte components have been changed to match what already happened for rune-based components, using the same `svelte2tsx` parsing that the official Svelte tools use.
+
+This means that argTypes are no longer automatically generated for slots and events defined with `on:my-event`.
 
 #### Angular = Require v18 and up
 

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-a11y",
-  "version": "9.0.0-beta.4",
+  "version": "9.0.0-beta.5",
   "description": "Test component compliance with web accessibility standards",
   "keywords": [
     "a11y",
@@ -74,12 +74,9 @@
     "@storybook/icons": "^1.4.0",
     "@testing-library/react": "^14.0.0",
     "execa": "^9.5.2",
-    "picocolors": "^1.1.0",
-    "pretty-format": "^29.7.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-resize-detector": "^7.1.2",
-    "resize-observer-polyfill": "^1.5.1",
     "typescript": "^5.7.3",
     "vitest-axe": "^0.1.0"
   },

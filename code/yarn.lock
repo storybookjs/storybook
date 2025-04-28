@@ -389,20 +389,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@angular/platform-browser-dynamic@npm:^19.1.1":
-  version: 19.1.7
-  resolution: "@angular/platform-browser-dynamic@npm:19.1.7"
-  dependencies:
-    tslib: "npm:^2.3.0"
-  peerDependencies:
-    "@angular/common": 19.1.7
-    "@angular/compiler": 19.1.7
-    "@angular/core": 19.1.7
-    "@angular/platform-browser": 19.1.7
-  checksum: 10c0/f289b8eb65c5c4197483ba1a70e8d3e86d09b988fa7b31d29d4990028567ea58f34086fe9dbf273958a6a99a12a04d5a75b1e32eddc5d31c137c2a61192e4b5f
-  languageName: node
-  linkType: hard
-
 "@angular/platform-browser@npm:^19.1.1":
   version: 19.1.7
   resolution: "@angular/platform-browser@npm:19.1.7"
@@ -7306,7 +7292,6 @@ __metadata:
     "@angular/core": "npm:^19.1.1"
     "@angular/forms": "npm:^19.1.1"
     "@angular/platform-browser": "npm:^19.1.1"
-    "@angular/platform-browser-dynamic": "npm:^19.1.1"
     "@storybook/builder-webpack5": "workspace:*"
     "@storybook/components": "workspace:*"
     "@storybook/core-webpack": "workspace:*"

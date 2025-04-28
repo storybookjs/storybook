@@ -6,6 +6,7 @@ export type SupportedFrameworks =
   | 'html-vite'
   | 'html-webpack5'
   | 'nextjs'
+  | 'nextjs-vite'
   | 'preact-vite'
   | 'preact-webpack5'
   | 'react-native-web-vite'

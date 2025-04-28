@@ -85,7 +85,6 @@
     "@angular/core": "^19.1.1",
     "@angular/forms": "^19.1.1",
     "@angular/platform-browser": "^19.1.1",
-    "@angular/platform-browser-dynamic": "^19.1.1",
     "@types/cross-spawn": "^6.0.2",
     "@types/node": "^22.0.0",
     "@types/tmp": "^0.2.3",

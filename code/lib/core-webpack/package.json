@@ -48,7 +48,6 @@
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "slash": "^5.1.0",
     "typescript": "^5.7.3",
     "webpack": "5"
   },

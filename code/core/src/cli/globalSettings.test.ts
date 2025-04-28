@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';
 import { dirname } from 'node:path';
+import { afterEach } from 'node:test';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -12,13 +13,20 @@ describe('Settings', () => {
   const TEST_SETTINGS_FILE = '/test/settings.json';
   let settings: Settings;
 
-  const userSince = new Date().toString();
-  const baseSettings = { version: 1, userSince };
+  const userSince = new Date();
+  const baseSettings = { version: 1, userSince: userSince.toISOString() };
   const baseSettingsJson = JSON.stringify(baseSettings, null, 2);
 
   beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(userSince);
+
     vi.resetAllMocks();
     settings = new Settings(TEST_SETTINGS_FILE);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   describe('load', () => {
@@ -28,7 +36,7 @@ describe('Settings', () => {
       await settings.load();
 
       expect(fs.readFile).toHaveBeenCalledWith(TEST_SETTINGS_FILE, 'utf8');
-      expect(settings.get('userSince')).toBe(userSince);
+      expect(settings.get('userSince')).toBe(userSince.toISOString());
     });
 
     it('errors if settings file does not exist', async () => {
@@ -52,7 +60,7 @@ describe('Settings', () => {
 
       await settings.ensure();
 
-      expect(settings.get('userSince')).toBe(userSince);
+      expect(settings.get('userSince')).toBe(userSince.toISOString());
     });
 
     it('does nothing if settings are already loaded', async () => {

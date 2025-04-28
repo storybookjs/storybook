@@ -774,7 +774,8 @@
     "typescript": "^5.7.3",
     "unique-string": "^3.0.0",
     "use-resize-observer": "^9.1.0",
-    "watchpack": "^2.2.0"
+    "watchpack": "^2.2.0",
+    "zod": "^3.24.1"
   },
   "peerDependencies": {
     "prettier": "^2 || ^3"

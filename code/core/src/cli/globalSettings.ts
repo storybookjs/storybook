@@ -2,6 +2,8 @@ import fs from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 
+import { z } from 'zod';
+
 import { SavingGlobalSettingsFileError } from '../server-errors';
 
 const DEFAULT_SETTINGS_PATH = join(homedir(), '.storybook', 'settings.json');
@@ -17,12 +19,13 @@ export async function globalSettings() {
   return settings;
 }
 
-// TODO replace this with zod
-export interface UserSettings extends Record<string, any> {
-  version: number;
-  // Every field apart from verson *must* be nullable as we need to be forward-compatible.
-  userSince?: string;
-}
+const userSettingSchema = z.object({
+  version: z.number(),
+  // NOTE: every key (and subkey) below must be optional, for forwards compatibility reasons
+  // (we can remove keys once they are deprecated)
+  userSince: z.string().datetime().optional(),
+  init: z.object({ skipOnboarding: z.boolean().optional() }).optional(),
+});
 
 /**
  * A class for reading and writing settings from a JSON file. Supports nested settings with dot
@@ -31,7 +34,7 @@ export interface UserSettings extends Record<string, any> {
 export class Settings {
   private filePath: string;
 
-  private value?: UserSettings;
+  private value?: z.infer<typeof userSettingSchema>;
 
   /**
    * Create a new Settings instance
@@ -45,7 +48,7 @@ export class Settings {
   /** Load settings from the file */
   async load(): Promise<void> {
     const content = await fs.readFile(this.filePath, 'utf8');
-    this.value = JSON.parse(content);
+    this.value = userSettingSchema.parse(JSON.parse(content));
   }
 
   /** Save settings to the file */
@@ -79,7 +82,7 @@ export class Settings {
       // TODO  - log here?
 
       // The existing settings file has a problem so we must overwrite it
-      this.value = { version: VERSION, userSince: new Date().toString() };
+      this.value = { version: VERSION, userSince: new Date().toISOString() };
       await this.save();
     }
   }

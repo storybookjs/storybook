@@ -6,7 +6,10 @@ import { isNotNil } from 'es-toolkit';
 
 import { dedent, esbuild, getWorkspace, prettier } from '../../../../scripts/prepare/tools';
 import { temporaryFile } from '../../src/common/utils/cli';
-import { BROWSER_TARGETS } from '../../src/shared/constants/environments-support';
+import {
+  BROWSER_TARGETS,
+  SUPPORTED_FEATURES,
+} from '../../src/shared/constants/environments-support';
 
 GlobalRegistrator.register({ url: 'http://localhost:3000', width: 1920, height: 1080 });
 
@@ -114,6 +117,7 @@ async function generateExportsFile(prettierConfig: prettier.Options | null): Pro
     splitting: false,
     platform: 'browser',
     target: BROWSER_TARGETS,
+    supported: SUPPORTED_FEATURES,
   });
 
   const { globalsNameValueMap: data } = await import(outFile);

@@ -7,7 +7,6 @@ import {
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
-import { updateMainConfig } from '../helpers/mainConfigFile';
 import type { Fix } from '../types';
 
 interface AddonDocsOptions {
@@ -61,43 +60,40 @@ export const addonEssentialsRemoveDocs: Fix<AddonDocsOptions> = {
         '@storybook/addon-viewport',
       ];
 
-      await updateMainConfig({ mainConfigPath, dryRun: true }, async (main) => {
-        const addons = main.getFieldValue(['addons']) || [];
-        const addonNames = getAddonNames(mainConfig);
+      const addonNames = getAddonNames(mainConfig);
 
-        // Check if essentials is present
-        hasEssentialsAddon = addonNames.includes('@storybook/addon-essentials');
-        hasDocsAddon = addonNames.includes('@storybook/addon-docs');
+      // Check if essentials is present
+      hasEssentialsAddon = addonNames.includes('@storybook/addon-essentials');
+      hasDocsAddon = addonNames.includes('@storybook/addon-docs');
 
-        const packageJson = await packageManager.retrievePackageJson();
-        const installedAddons = Object.keys({
-          ...packageJson.dependencies,
-          ...packageJson.devDependencies,
+      const packageJson = await packageManager.retrievePackageJson();
+      const installedAddons = Object.keys({
+        ...packageJson.dependencies,
+        ...packageJson.devDependencies,
+      });
+
+      // Check for additional addons that need to be removed
+      for (const addon of CORE_ADDONS) {
+        if (addonNames.includes(addon) || installedAddons.includes(addon)) {
+          additionalAddonsToRemove.push(addon);
+        }
+      }
+
+      if (hasEssentialsAddon) {
+        // Find the essentials entry to check its configuration
+        const essentialsEntry = mainConfig.addons?.find((addon) => {
+          if (typeof addon === 'string') {
+            return addon.includes('@storybook/addon-essentials');
+          }
+          return addon.name.includes('@storybook/addon-essentials');
         });
 
-        // Check for additional addons that need to be removed
-        for (const addon of CORE_ADDONS) {
-          if (addonNames.includes(addon) || installedAddons.includes(addon)) {
-            additionalAddonsToRemove.push(addon);
-          }
+        // Check if docs is explicitly disabled in the options
+        if (typeof essentialsEntry === 'object') {
+          const options = essentialsEntry.options || {};
+          hasDocsDisabled = options.docs === false;
         }
-
-        if (hasEssentialsAddon) {
-          // Find the essentials entry to check its configuration
-          const essentialsEntry = addons.find((addon: any) => {
-            if (typeof addon === 'string') {
-              return addon.includes('@storybook/addon-essentials');
-            }
-            return addon?.name.includes('@storybook/addon-essentials');
-          });
-
-          // Check if docs is explicitly disabled in the options
-          if (typeof essentialsEntry === 'object') {
-            const options = essentialsEntry.options || {};
-            hasDocsDisabled = options.docs === false;
-          }
-        }
-      });
+      }
 
       if (!hasEssentialsAddon && additionalAddonsToRemove.length === 0) {
         return null;

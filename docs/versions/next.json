@@ -1,1 +1,1 @@
-{"version":"9.0.0-beta.1","info":{"plain":"- Addon A11y: Only run checks in story mode - [#30976](https://github.com/storybookjs/storybook/pull/30976), thanks @kroeder!\n- ESLint: Fix flat config setup - [#31192](https://github.com/storybookjs/storybook/pull/31192), thanks @yannbf!"}}
+{"version":"9.0.0-beta.4","info":{"plain":"- Highlights: Dont run highlights when the feature is disabled - [#31239](https://github.com/storybookjs/storybook/pull/31239), thanks @dannyhw!"}}

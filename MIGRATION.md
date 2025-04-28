@@ -1,44 +1,47 @@
 <h1>Migration</h1>
 
 - [From version 8.x to 9.0.0](#from-version-8x-to-900)
-  - [Addon essentials has been removed](#addon-essentials-has-been-removed)
-  - [Consolidate `@storybook/blocks` into addon docs](#consolidate-storybookblocks-into-addon-docs)
-  - [Vitest 2.0 support is dropped](#vitest-20-support-is-dropped)
-  - [Package Manager Support](#package-manager-support)
-  - [A11y addon: Removed deprecated manual parameter](#a11y-addon-removed-deprecated-manual-parameter)
-  - [A11y addon: Replace `element` parameter with `context` parameter](#a11y-addon-replace-element-parameter-with-context-parameter)
-  - [Button Component API Changes](#button-component-api-changes)
-  - [Documentation Generation Changes](#documentation-generation-changes)
-  - [Migration from @storybook/addon-storysource to Code Panel](#migration-from-storybookaddon-storysource-to-code-panel)
-    - [Migration Steps](#migration-steps)
-  - [`parameters.docs.source.format` removal](#parametersdocssourceformat-removal)
-  - [Global State Management](#global-state-management)
-  - [Icon System Updates](#icon-system-updates)
-  - [Sidebar Component Changes](#sidebar-component-changes)
-  - [Testing Module Changes](#testing-module-changes)
-  - [Type System Updates](#type-system-updates)
-  - [Story Store API Changes](#story-store-api-changes)
-  - [CSF File Changes](#csf-file-changes)
-  - [The parameter docs.source.excludeDecorators has no effect in React](#the-parameter-docssourceexcludedecorators-has-no-effect-in-react)
-  - [Addon Viewport is moved to core](#addon-viewport-is-moved-to-core)
-  - [Addon Controls is moved to core](#addon-controls-is-moved-to-core)
-  - [Addon Actions is moved to core](#addon-actions-is-moved-to-core)
-  - [React-Native config dir renamed](#react-native-config-dir-renamed)
-  - [Addon viewport and addon backgrounds synchronized configuration and use globals](#addon-viewport-and-addon-backgrounds-synchronized-configuration-and-use-globals)
-  - [Manager builder removed alias for `util`, `assert` and `process`](#manager-builder-removed-alias-for-util-assert-and-process)
-  - [Interactions addon moved to core](#interactions-addon-moved-to-core)
-  - [Dropped support for legacy packages](#dropped-support-for-legacy-packages)
-  - [Dropped support for TypeScript \< 4.9](#dropped-support-for-typescript--49)
-  - [`@storybook/experimental-addon-test` renamed to `@storybook/addon-vitest`](#storybookexperimental-addon-test-renamed-to-storybookaddon-vitest)
-  - [Experimental Status API has turned into a Status Store](#experimental-status-api-has-turned-into-a-status-store)
-  - [Dropped support for Vite 4](#dropped-support-for-vite-4)
+  - [Core Changes and Removals](#core-changes-and-removals)
+    - [Dropped support for legacy packages](#dropped-support-for-legacy-packages)
+    - [Dropped support](#dropped-support)
+      - [Vite 4](#vite-4)
+      - [TypeScript \< 4.9](#typescript--49)
+      - [Node.js \< 20](#nodejs--20)
+      - [Package Managers](#package-managers)
+  - [Addon-specific Changes](#addon-specific-changes)
+    - [Essentials Addon: Viewport, Controls, Interactions and Actions moved to core](#essentials-addon-viewport-controls-interactions-and-actions-moved-to-core)
+    - [A11y Addon: Removed deprecated manual parameter](#a11y-addon-removed-deprecated-manual-parameter)
+    - [A11y Addon: Replace `element` parameter with `context` parameter](#a11y-addon-replace-element-parameter-with-context-parameter)
+    - [Experimental Test Addon: Stabilized and renamed](#experimental-test-addon-stabilized-and-renamed)
+    - [Vitest Addon (former @storybook/experimental-addon-test): Vitest 2.0 support is dropped](#vitest-addon-former-storybookexperimental-addon-test-vitest-20-support-is-dropped)
+    - [Viewport/Backgrounds Addon synchronized configuration and `globals` usage](#viewportbackgrounds-addon-synchronized-configuration-and-globals-usage)
+    - [Storysource Addon removed](#storysource-addon-removed)
+  - [API and Component Changes](#api-and-component-changes)
+    - [Button Component API Changes](#button-component-api-changes)
+    - [Icon System Updates](#icon-system-updates)
+    - [Sidebar Component Changes](#sidebar-component-changes)
+    - [Story Store API Changes](#story-store-api-changes)
+    - [Global State Management](#global-state-management)
+    - [Experimental Status API has turned into a Status Store](#experimental-status-api-has-turned-into-a-status-store)
+    - [Testing Module Changes](#testing-module-changes)
+    - [Consolidate `@storybook/blocks` into addon docs](#consolidate-storybookblocks-into-addon-docs)
+  - [Configuration and Type Changes](#configuration-and-type-changes)
+    - [Manager builder removed alias for `util`, `assert` and `process`](#manager-builder-removed-alias-for-util-assert-and-process)
+    - [Type System Updates](#type-system-updates)
+    - [CSF File Changes](#csf-file-changes)
+    - [React-Native config dir renamed](#react-native-config-dir-renamed)
+    - [`parameters.docs.source.format` removal](#parametersdocssourceformat-removal)
+    - [`parameter docs.source.excludeDecorators` has no effect in React](#parameter-docssourceexcludedecorators-has-no-effect-in-react)
+    - [Documentation Generation Changes](#documentation-generation-changes)
   - [Framework-specific changes](#framework-specific-changes)
     - [Svelte: Require v5 and up](#svelte-require-v5-and-up)
     - [Svelte: Dropped support for @storybook/svelte-webpack5](#svelte-dropped-support-for-storybooksvelte-webpack5)
+    - [Svelte: Dropped automatic docgen for events and slots](#svelte-dropped-automatic-docgen-for-events-and-slots)
     - [Angular = Require v18 and up](#angular--require-v18-and-up)
     - [Dropped webpack5 Builder Support in Favor of Vite](#dropped-webpack5-builder-support-in-favor-of-vite)
     - [Next.js = Require v14 and up](#nextjs--require-v14-and-up)
     - [Next.js = Vite builder stabilized](#nextjs--vite-builder-stabilized)
+    - [Lit = Require v3 and up](#lit--require-v3-and-up)
 - [From version 8.5.x to 8.6.x](#from-version-85x-to-86x)
   - [Angular: Support experimental zoneless support](#angular-support-experimental-zoneless-support)
   - [Addon-a11y: Replaced experimental `ally-test` tag behavior with `parameters.a11y.test`](#addon-a11y-replaced-experimental-ally-test-tag-behavior-with-parametersa11ytest)
@@ -156,17 +159,17 @@
     - [Tab addons cannot manually route, Tool addons can filter their visibility via tabId](#tab-addons-cannot-manually-route-tool-addons-can-filter-their-visibility-via-tabid)
     - [Removed `config` preset](#removed-config-preset-1)
 - [From version 7.5.0 to 7.6.0](#from-version-750-to-760)
-  - [CommonJS with Vite is deprecated](#commonjs-with-vite-is-deprecated)
-  - [Using implicit actions during rendering is deprecated](#using-implicit-actions-during-rendering-is-deprecated)
-  - [typescript.skipBabel deprecated](#typescriptskipbabel-deprecated)
-  - [Primary doc block accepts of prop](#primary-doc-block-accepts-of-prop)
-  - [Addons no longer need a peer dependency on React](#addons-no-longer-need-a-peer-dependency-on-react)
+    - [CommonJS with Vite is deprecated](#commonjs-with-vite-is-deprecated)
+    - [Using implicit actions during rendering is deprecated](#using-implicit-actions-during-rendering-is-deprecated)
+    - [typescript.skipBabel deprecated](#typescriptskipbabel-deprecated)
+    - [Primary doc block accepts of prop](#primary-doc-block-accepts-of-prop)
+    - [Addons no longer need a peer dependency on React](#addons-no-longer-need-a-peer-dependency-on-react)
 - [From version 7.4.0 to 7.5.0](#from-version-740-to-750)
-  - [`storyStoreV6` and `storiesOf` is deprecated](#storystorev6-and-storiesof-is-deprecated)
-  - [`storyIndexers` is replaced with `experimental_indexers`](#storyindexers-is-replaced-with-experimental_indexers)
+    - [`storyStoreV6` and `storiesOf` is deprecated](#storystorev6-and-storiesof-is-deprecated)
+    - [`storyIndexers` is replaced with `experimental_indexers`](#storyindexers-is-replaced-with-experimental_indexers)
 - [From version 7.0.0 to 7.2.0](#from-version-700-to-720)
-  - [Addon API is more type-strict](#addon-api-is-more-type-strict)
-  - [Addon-controls hideNoControlsWarning parameter is deprecated](#addon-controls-hidenocontrolswarning-parameter-is-deprecated)
+    - [Addon API is more type-strict](#addon-api-is-more-type-strict)
+    - [Addon-controls hideNoControlsWarning parameter is deprecated](#addon-controls-hidenocontrolswarning-parameter-is-deprecated)
 - [From version 6.5.x to 7.0.0](#from-version-65x-to-700)
   - [7.0 breaking changes](#70-breaking-changes)
     - [Dropped support for Node 15 and below](#dropped-support-for-node-15-and-below)
@@ -192,7 +195,7 @@
     - [Deploying build artifacts](#deploying-build-artifacts)
       - [Dropped support for file URLs](#dropped-support-for-file-urls)
       - [Serving with nginx](#serving-with-nginx)
-      - [Ignore story files from node_modules](#ignore-story-files-from-node_modules)
+      - [Ignore story files from node\_modules](#ignore-story-files-from-node_modules)
   - [7.0 Core changes](#70-core-changes)
     - [7.0 feature flags removed](#70-feature-flags-removed)
     - [Story context is prepared before for supporting fine grained updates](#story-context-is-prepared-before-for-supporting-fine-grained-updates)
@@ -206,7 +209,7 @@
     - [Addon-interactions: Interactions debugger is now default](#addon-interactions-interactions-debugger-is-now-default)
   - [7.0 Vite changes](#70-vite-changes)
     - [Vite builder uses Vite config automatically](#vite-builder-uses-vite-config-automatically)
-    - [Vite cache moved to node_modules/.cache/.vite-storybook](#vite-cache-moved-to-node_modulescachevite-storybook)
+    - [Vite cache moved to node\_modules/.cache/.vite-storybook](#vite-cache-moved-to-node_modulescachevite-storybook)
   - [7.0 Webpack changes](#70-webpack-changes)
     - [Webpack4 support discontinued](#webpack4-support-discontinued)
     - [Babel mode v7 exclusively](#babel-mode-v7-exclusively)
@@ -257,7 +260,7 @@
     - [Dropped addon-docs manual babel configuration](#dropped-addon-docs-manual-babel-configuration)
     - [Dropped addon-docs manual configuration](#dropped-addon-docs-manual-configuration)
     - [Autoplay in docs](#autoplay-in-docs)
-    - [Removed STORYBOOK_REACT_CLASSES global](#removed-storybook_react_classes-global)
+    - [Removed STORYBOOK\_REACT\_CLASSES global](#removed-storybook_react_classes-global)
   - [7.0 Deprecations and default changes](#70-deprecations-and-default-changes)
     - [storyStoreV7 enabled by default](#storystorev7-enabled-by-default)
     - [`Story` type deprecated](#story-type-deprecated)
@@ -472,43 +475,150 @@
 
 ## From version 8.x to 9.0.0
 
-### Addon essentials has been removed
+### Core Changes and Removals
 
-We have removed `@storybook/addon-essentials`. Most features/addons encapsulated have been moved to the core, except for `@storybook/addon-docs`.
+Furthermore, we have deprecated the usage of `withActions` from `@storybook/addon-actions` and we will remove it in Storybook v10. Please file an issue if you need this API.
 
-This has been done to reduce the installation size of Storybook.
+#### Dropped support for legacy packages
 
-Please uninstall `@storybook/addon-essentials` and remove it from your `addons`-array in your `.storybook/main.ts` file.
+The following packages are no longer published as part of `9.0.0`:
+The following packages have been consolidated into the main `storybook` package:
 
-If you are using addon-docs via addon-essentials, you will need to add addon-docs to your project by installing it and adding it to your `.storybook/main.ts`’s `addons` field; or run this command: `npx storybook add @storybook/addon-docs`.
+| Old Package                     | New Path                |
+| ------------------------------- | ----------------------- |
+| `@storybook/manager-api`        | `storybook/manager-api` |
+| `@storybook/preview-api`        | `storybook/preview-api` |
+| `@storybook/theming`            | `storybook/theming`     |
+| `@storybook/test`               | `storybook/test`        |
+| `@storybook/addon-actions`      | `storybook/actions`     |
+| `@storybook/addon-backgrounds`  | N/A                     |
+| `@storybook/addon-controls`     | N/A                     |
+| `@storybook/addon-highlight`    | `storybook/highlight`   |
+| `@storybook/addon-interactions` | N/A                     |
+| `@storybook/addon-measure`      | N/A                     |
+| `@storybook/addon-outline`      | N/A                     |
+| `@storybook/addon-toolbars`     | N/A                     |
+| `@storybook/addon-viewport`     | `storybook/viewport`    |
 
-### Consolidate `@storybook/blocks` into addon docs
+Please un-install these packages, and ensure you have the `storybook` package installed.
 
-The package `@storybook/blocks` is no longer published as of Storybook 9.
+Replace any imports with the path listed in the second column.
 
-All exports can now be found in the export `@storybook/addon-docs/blocks`.
+Additionally the following packages were also consolidated and placed under a `/internal` sub-path, to indicate they are for internal usage only.
+If you're depending on these packages, they will continue to work for `9.0`, but they will likely be removed in `10.0`.
 
-### Vitest 2.0 support is dropped
+| Old Package                  | New Path                             |
+| ---------------------------- | ------------------------------------ |
+| `@storybook/channels`        | `storybook/internal/channels`        |
+| `@storybook/client-logger`   | `storybook/internal/client-logger`   |
+| `@storybook/core-common`     | `storybook/internal/common`          |
+| `@storybook/core-events`     | `storybook/internal/core-events`     |
+| `@storybook/csf-tools`       | `storybook/internal/csf-tools`       |
+| `@storybook/docs-tools`      | `storybook/internal/docs-tools`      |
+| `@storybook/node-logger`     | `storybook/internal/node-logger`     |
+| `@storybook/router`          | `storybook/internal/router`          |
+| `@storybook/telemetry`       | `storybook/internal/telemetry`       |
+| `@storybook/types`           | `storybook/internal/types`           |
+| `@storybook/manager`         | `storybook/internal/manager`         |
+| `@storybook/preview`         | `storybook/internal/preview`         |
+| `@storybook/core-server`     | `storybook/internal/core-server`     |
+| `@storybook/builder-manager` | `storybook/internal/builder-manager` |
+| `@storybook/components`      | `storybook/internal/components`      |
 
-The Storybook Test addon now only supports Vitest 3.0 and higher, which is where browser mode was made into a stable state. Please upgrade to Vitest 3.0.
+Addon authors may continue to use the internal packages, there is currently not yet any replacement.
 
-### Package Manager Support
+```bash
+npm uninstall @storybook/experimental-addon-test
+npm install --save-dev @storybook/addon-vitest
+```
 
-Storybook 9.0 drops official support and maintenance for older package manager versions:
+Update your imports in any custom configuration or test files:
 
-- npm v8 and v9 are no longer supported
-- yarn v3 is no longer supported
-- pnpm v7 and v8 are no longer supported
+```diff
+- import { ... } from '@storybook/experimental-addon-test';
++ import { ... } from '@storybook/addon-vitest';
+```
 
-The minimum supported versions are now:
+If you're using the addon in your Storybook configuration, update your `.storybook/main.js` or `.storybook/main.ts`:
 
-- npm v10+
-- yarn v4+
-- pnpm v9+
+```diff
+export default {
+  addons: [
+-   '@storybook/experimental-addon-test',
++   '@storybook/addon-vitest',
+  ],
+};
+```
+
+The public API remains the same, so no additional changes should be needed in your test files or configuration.
+
+#### Dropped support
+
+##### Vite 4
+
+Storybook 9.0 drops support for Vite 4. The minimum supported version is now Vite 5.0.0. This change affects all Vite-based frameworks and builders:
+
+- `@storybook/builder-vite`
+- `@storybook/react-vite`
+- `@storybook/vue-vite`
+- `@storybook/vue3-vite`
+- `@storybook/svelte-vite`
+- `@storybook/web-components-vite`
+- `@storybook/preact-vite`
+- `@storybook/html-vite`
+- `@storybook/experimental-nextjs-vite`
+
+To upgrade:
+
+1. Update your project's Vite version to 5.0.0 or higher
+2. Update your Storybook configuration to use Vite 5:
+   ```js
+   // vite.config.js or vite.config.ts
+   export default {
+     // ... your other config
+     // Make sure you're using Vite 5 compatible plugins
+   };
+   ```
+
+If you're using framework-specific Vite plugins, ensure they are compatible with Vite 5:
+
+- `@vitejs/plugin-react`
+- `@vitejs/plugin-vue`
+- `@sveltejs/vite-plugin-svelte`
+- etc.
+
+For more information on upgrading to Vite 5, see the [Vite Migration Guide](https://vitejs.dev/guide/migration).
+
+##### TypeScript < 4.9
+
+Storybook now requires TypeScript 4.9 or later.
+
+##### Node.js < 20
+
+Storybook now requires Node.js 20 or later.
+
+##### Package Managers
+
+Minimum supported versions:
+npm v10+
+yarn v4+
+pnpm v9+
 
 While Storybook may still work with older versions, we recommend upgrading to the latest supported versions for the best experience and to ensure compatibility.
 
-### A11y addon: Removed deprecated manual parameter
+### Addon-specific Changes
+
+#### Essentials Addon: Viewport, Controls, Interactions and Actions moved to core
+
+The `@storybook/addon-essentials` package has been removed. The viewport, controls, interactions and actions addons have been moved from their respective packages (`@storybook/addon-viewport`, `@storybook/addon-controls`, `@storybook/addon-interactions`, `@storybook/addon-actions`) to Storybook core. You no longer need to install these separately or include them in your addons list.
+
+If you have used `@storybook/addon-docs` as part of essentials, you need to manually install it:
+
+```bash
+$ npx storybook add @storybook/addon-docs
+```
+
+#### A11y Addon: Removed deprecated manual parameter
 
 The deprecated `manual` parameter from the A11y addon's parameters has been removed. Instead, use the `globals.a11y.manual` setting to control manual mode. For example:
 
@@ -544,7 +654,7 @@ export const initialGlobals = {
 };
 ```
 
-### A11y addon: Replace `element` parameter with `context` parameter
+#### A11y Addon: Replace `element` parameter with `context` parameter
 
 The `element` parameter from the A11y addon's parameters has been removed in favor of a new `context` parameter. The `element` parameter could be used with a single CSS selector string to configure which element to target with axe. The new `context` parameter supports the full range that `axe-core`'s Context API supports, _including_ a single selector like the removed `element` parameter did.
 `context` does _not_ support passing in a `Node` or `NodeList` (like `document.getElementById('my-target')`).
@@ -560,7 +670,65 @@ export const MyStory = {
 };
 ```
 
-### Button Component API Changes
+#### Experimental Test Addon: Stabilized and renamed
+
+In Storybook 9.0, we've officially stabilized the Test addon. The package has been renamed from `@storybook/experimental-addon-test` to `@storybook/addon-vitest`, reflecting its production-ready status. If you were using the experimental addon, you'll need to update your dependencies and imports:
+
+#### Vitest Addon (former @storybook/experimental-addon-test): Vitest 2.0 support is dropped
+
+The Storybook Test addon now only supports Vitest 3.0 and higher, which is where browser mode was made into a stable state. Please upgrade to Vitest 3.0.
+
+#### Viewport/Backgrounds Addon synchronized configuration and `globals` usage
+
+The feature flags: `viewportStoryGlobals` and `backgroundsStoryGlobals` have been removed, please remove these from your `.storybook/main.ts` file.
+
+See here for the ways you have to configure addon viewports & backgrounds:
+
+- [New parameters format for addon backgrounds](#new-parameters-format-for-addon-backgrounds)
+- [New parameters format for addon viewport](#new-parameters-format-for-addon-viewport)
+
+#### Storysource Addon removed
+
+The `@storybook/addon-storysource` addon is being removed in Storybook 9.0. Instead, Storybook now provides a Code Panel via `@storybook/addon-docs` that offers similar functionality with improved integration and performance.
+
+**Migration Steps:**
+
+1. Remove the old addon
+
+Remove `@storybook/addon-storysource` from your project:
+
+```bash
+npx storybook remove @storybook/addon-storysource
+```
+
+2. Enable the Code Panel
+
+The Code Panel can be enabled by adding the following parameter to your stories or globally in `.storybook/preview.js`:
+
+```js
+export const parameters = {
+  docs: {
+    codePanel: true,
+  },
+};
+```
+
+Or for individual stories:
+
+```js
+export const MyStory = {
+  parameters: {
+    docs: {
+      codePanel: true,
+    },
+  },
+};
+```
+
+
+### API and Component Changes
+
+#### Button Component API Changes
 
 The Button component has been updated to use a more modern props API. The following props have been removed:
 
@@ -581,65 +749,159 @@ Use the new `variant` and `size` props instead:
 + <Button variant="primary" size="small">Click me</Button>
 ```
 
-### Documentation Generation Changes
+#### Icon System Updates
 
-The `autodocs` configuration option has been removed in favor of using tags:
+Several icon-related exports have been removed:
+
+- `IconButtonSkeleton`
+- `Icons`
+- `Symbols`
+- Legacy icon exports
+
+Use the new icon system from `@storybook/icons` instead:
+
+```diff
+- import { Icons, IconButtonSkeleton } from '@storybook/components';
++ import { ZoomIcon } from '@storybook/icons';
+```
+
+#### Sidebar Component Changes
+
+1. The 'extra' prop has been removed from the Sidebar's Heading component
+2. Experimental sidebar features have been removed:
+   - `experimental_SIDEBAR_BOTTOM`
+   - `experimental_SIDEBAR_TOP`
+
+#### Story Store API Changes
+
+Several deprecated methods have been removed from the StoryStore:
+
+- `getSetStoriesPayload`
+- `getStoriesJsonData`
+- `raw`
+- `fromId`
+
+#### Global State Management
+
+The `globals` field in project annotations has been renamed to `initialGlobals`:
+
+```diff
+export const preview = {
+- globals: {
++ initialGlobals: {
+    theme: 'light'
+  }
+};
+```
+
+Additionally loading the defaultValue from `globalTypes` isn't supported anymore. Use `initialGlobals` instead to define the defaultValue.
 
 ```diff
 // .storybook/preview.js
 export default {
-- docs: { autodocs: true }
-};
-
-// In your CSF files:
-+ export default {
-+   tags: ['autodocs']
-+ };
-```
-
-### Migration from @storybook/addon-storysource to Code Panel
-
-The `@storybook/addon-storysource` addon is being removed in Storybook 9.0. Instead, Storybook now provides a Code Panel via `@storybook/addon-docs` that offers similar functionality with improved integration and performance.
-
-#### Migration Steps
-
-1. Remove the old addon
-
-Remove `@storybook/addon-storysource` from your project:
-
-```bash
-npx storybook remove @storybook/addon-storysource
-```
-
-2. Enable the Code Panel
-
-The Code Panel can be enabled by adding the following parameter to your stories or globally in `.storybook/preview.js`:
-
-```js
-export const parameters = {
-  docs: {
-    source: {
-      codePanel: true,
-    },
-  },
-};
-```
-
-Or for individual stories:
-
-```js
-export const MyStory = {
-  parameters: {
-    docs: {
-      source: {
-        codePanel: true,
++ initialGlobals: {
++   locale: 'en'
++ },
+  globalTypes: {
+    locale: {
+      description: 'Locale for components',
+-     defaultValue: 'en',
+      toolbar: {
+        title: 'Locale',
+        icon: 'circlehollow',
+        items: ['es', 'en'],
       },
     },
   },
-};
+}
 ```
 
-### `parameters.docs.source.format` removal
+#### Experimental Status API has turned into a Status Store
+
+The experimental status API previously available at `api.experimental_updateStatus` and `api.getCurrentStoryStatus` has changed, to a store that works both on the server, in the manager and in the preview.
+
+You can use the new Status Store by importing `experimental_getStatusStore` from either `storybook/internal/core-server`, `storybook/manager-api` or `storybook/preview-api`:
+
+```diff
++ import { experimental_getStatusStore } from 'storybook/manager-api';
++ import { StatusValue } from 'storybook/internal/types';
+
++ const myStatusStore = experimental_getStatusStore(MY_ADDON_ID);
+
+addons.register(MY_ADDON_ID, (api) => {
+-  api.experimental_updateStatus({
+-    someStoryId: {
+-      status: 'success',
+-       title: 'Component tests',
+-       description: 'Works!',
+-    }
+-  });
++  myStatusStore.set([{
++    value: StatusValue.SUCCESS
++    title: 'Component tests',
++    description: 'Works!',
++  }]);
+```
+
+#### Testing Module Changes
+
+The `TESTING_MODULE_RUN_ALL_REQUEST` event has been removed:
+
+```diff
+- import { TESTING_MODULE_RUN_ALL_REQUEST } from '@storybook/core-events';
++ import { TESTING_MODULE_RUN_REQUEST } from '@storybook/core-events';
+```
+
+#### Consolidate `@storybook/blocks` into addon docs
+
+The package `@storybook/blocks` is no longer published as of Storybook 9.
+
+All exports can now be found in the export `@storybook/addon-docs/blocks`.
+
+### Configuration and Type Changes
+
+#### Manager builder removed alias for `util`, `assert` and `process`
+
+These dependencies (often used accidentally) were polyfilled to mocks or browser equivalents by storybook's manager builder.
+
+Starting with Storybook `9.0`, we no longer alias these anymore.
+
+Adding these aliases meant storybook core, had to depend on these packages, which have a deep dependency graph, added to every storybook project.
+
+If you addon fails to load after this change, we recommend looking at implementing the alias at compile time of your addon, or alternatively look at other bundling config to ensure the correct entries/packages/dependencies are used.
+
+
+#### Type System Updates
+
+The following types have been removed:
+
+- `Addon_SidebarBottomType`
+- `Addon_SidebarTopType`
+- `DeprecatedState`
+
+Import paths have been updated:
+
+```diff
+- import { SupportedRenderers } from './project_types';
++ import { SupportedRenderers } from 'storybook/internal/types';
+```
+
+#### CSF File Changes
+
+Deprecated getters have been removed from the CsfFile class:
+
+- `_fileName`
+- `_makeTitle`
+
+
+#### React-Native config dir renamed
+
+In Storybook 9, React Native (RN) projects use the `.rnstorybook` config directory instead of `.storybook`.
+That makes it easier for RN and React Native Web (RNW) storybooks to co-exist in the same project.
+
+To upgrade, either rename your `.storybook` directory to `.rnstorybook` or if you wish to continue using `.storybook` (not recommended), you can use the [`configPath`](https://github.com/storybookjs/react-native#configpath) option to specify `.storybook` manually.
+
+#### `parameters.docs.source.format` removal
 
 The `parameters.docs.source.format` parameter has been removed in favor of using `parameters.docs.source.transform`. If you were using `format` to prettify your code via prettier, you can now use the `transform` parameter with Prettier directly:
 
@@ -698,295 +960,26 @@ export const MyStory = {
 };
 ```
 
-### Global State Management
+#### `parameter docs.source.excludeDecorators` has no effect in React
 
-The `globals` field in project annotations has been renamed to `initialGlobals`:
+#### Documentation Generation Changes
 
-```diff
-export const preview = {
-- globals: {
-+ initialGlobals: {
-    theme: 'light'
-  }
-};
-```
-
-Additionally loading the defaultValue from `globalTypes` isn't supported anymore. Use `initialGlobals` instead to define the defaultValue.
+The `autodocs` configuration option has been removed in favor of using tags:
 
 ```diff
 // .storybook/preview.js
 export default {
-+ initialGlobals: {
-+   locale: 'en'
-+ },
-  globalTypes: {
-    locale: {
-      description: 'Locale for components',
--     defaultValue: 'en',
-      toolbar: {
-        title: 'Locale',
-        icon: 'circlehollow',
-        items: ['es', 'en'],
-      },
-    },
-  },
-}
+- docs: { autodocs: true }
+};
+
+// In your CSF files:
++ export default {
++   tags: ['autodocs']
++ };
 ```
-
-### Icon System Updates
-
-Several icon-related exports have been removed:
-
-- `IconButtonSkeleton`
-- `Icons`
-- `Symbols`
-- Legacy icon exports
-
-Use the new icon system from `@storybook/icons` instead:
-
-```diff
-- import { Icons, IconButtonSkeleton } from '@storybook/components';
-+ import { ZoomIcon } from '@storybook/icons';
-```
-
-### Sidebar Component Changes
-
-1. The 'extra' prop has been removed from the Sidebar's Heading component
-2. Experimental sidebar features have been removed:
-   - `experimental_SIDEBAR_BOTTOM`
-   - `experimental_SIDEBAR_TOP`
-
-### Testing Module Changes
-
-The `TESTING_MODULE_RUN_ALL_REQUEST` event has been removed:
-
-```diff
-- import { TESTING_MODULE_RUN_ALL_REQUEST } from '@storybook/core-events';
-+ import { TESTING_MODULE_RUN_REQUEST } from '@storybook/core-events';
-```
-
-### Type System Updates
-
-The following types have been removed:
-
-- `Addon_SidebarBottomType`
-- `Addon_SidebarTopType`
-- `DeprecatedState`
-
-Import paths have been updated:
-
-```diff
-- import { SupportedRenderers } from './project_types';
-+ import { SupportedRenderers } from 'storybook/internal/types';
-```
-
-### Story Store API Changes
-
-Several deprecated methods have been removed from the StoryStore:
-
-- `getSetStoriesPayload`
-- `getStoriesJsonData`
-- `raw`
-- `fromId`
-
-### CSF File Changes
-
-Deprecated getters have been removed from the CsfFile class:
-
-- `_fileName`
-- `_makeTitle`
-
-### The parameter docs.source.excludeDecorators has no effect in React
 
 In React, the parameter `docs.source.excludeDecorators` option is no longer used.
 Decorators are always excluded as it causes performance issues and doc source snippets not showing the actual component.
-
-### Addon Viewport is moved to core
-
-The viewport addon has been moved from `@storybook/addon-viewport` to Storybook core. You no longer need to install it separately or include it in your addons list. As a consequence, `@storybook/addon-viewport` is not part of `@storybook/addon-essentials` anymore.
-
-### Addon Controls is moved to core
-
-The controls addon has been moved from `@storybook/addon-controls` to Storybook core. You no longer need to install it separately or include it in your addons list. As a consequence, `@storybook/addon-controls` is not part of `@storybook/addon-essentials` anymore.
-
-### Addon Actions is moved to core
-
-The actions addon has been moved from `@storybook/addon-actions` to Storybook core. You no longer need to install it separately or include it in your addons list. As a consequence, `@storybook/addon-actions` is not part of `@storybook/addon-essentials` anymore.
-
-Furthermore, we have deprecated the usage of `withActions` from `@storybook/addon-actions` and we will remove it in Storybook v10. Please file an issue if you need this API.
-
-### React-Native config dir renamed
-
-In Storybook 9, React Native (RN) projects use the `.rnstorybook` config directory instead of `.storybook`.
-That makes it easier for RN and React Native Web (RNW) storybooks to co-exist in the same project.
-
-To upgrade, either rename your `.storybook` directory to `.rnstorybook` or if you wish to continue using `.storybook` (not recommended), you can use the [`configPath`](https://github.com/storybookjs/react-native#configpath) option to specify `.storybook` manually.
-
-### Addon viewport and addon backgrounds synchronized configuration and use globals
-
-The feature flags: `viewportStoryGlobals` and `backgroundsStoryGlobals` have been removed, please remove these from your `.storybook/main.ts` file.
-
-See here for the ways you have to configure addon viewports & backgrounds:
-
-- [New parameters format for addon backgrounds](#new-parameters-format-for-addon-backgrounds)
-- [New parameters format for addon viewport](#new-parameters-format-for-addon-viewport)
-
-### Manager builder removed alias for `util`, `assert` and `process`
-
-These dependencies (often used accidentally) were polyfilled to mocks or browser equivalents by storybook's manager builder.
-
-Starting with Storybook `9.0`, we no longer alias these anymore.
-
-Adding these aliases meant storybook core, had to depend on these packages, which have a deep dependency graph, added to every storybook project.
-
-If you addon fails to load after this change, we recommend looking at implementing the alias at compile time of your addon, or alternatively look at other bundling config to ensure the correct entries/packages/dependencies are used.
-
-### Interactions addon moved to core
-
-The interactions addon has been moved from `@storybook/addon-interactions` to Storybook core. You no longer need to install it separately or include it in your addons list. If you manually migrate to Storybook 9, please ensure to uninstall the addon as a dependency and to remove its registration in your `.storybook/main.ts` file.
-
-### Dropped support for legacy packages
-
-The following packages are no longer published as part of `9.0.0`:
-The following packages have been consolidated into the main `storybook` package:
-
-| Old Package                     | New Path                |
-| ------------------------------- | ----------------------- |
-| `@storybook/manager-api`        | `storybook/manager-api` |
-| `@storybook/preview-api`        | `storybook/preview-api` |
-| `@storybook/theming`            | `storybook/theming`     |
-| `@storybook/test`               | `storybook/test`        |
-| `@storybook/addon-actions`      | `storybook/actions`     |
-| `@storybook/addon-backgrounds`  | N/A                     |
-| `@storybook/addon-controls`     | N/A                     |
-| `@storybook/addon-highlight`    | `storybook/highlight`   |
-| `@storybook/addon-interactions` | N/A                     |
-| `@storybook/addon-measure`      | N/A                     |
-| `@storybook/addon-outline`      | N/A                     |
-| `@storybook/addon-toolbars`     | N/A                     |
-| `@storybook/addon-viewport`     | `storybook/viewport`    |
-
-Please un-install these packages, and ensure you have the `storybook` package installed.
-
-Replace any imports with the path listed in the second column.
-
-Additionally the following packages were also consolidated and placed under a `/internal` sub-path, to indicate they are for internal usage only.
-If you're depending on these packages, they will continue to work for `9.0`, but they will likely be removed in `10.0`.
-
-| Old Package                  | New Path                             |
-| ---------------------------- | ------------------------------------ |
-| `@storybook/channels`        | `storybook/internal/channels`        |
-| `@storybook/client-logger`   | `storybook/internal/client-logger`   |
-| `@storybook/core-common`     | `storybook/internal/common`          |
-| `@storybook/core-events`     | `storybook/internal/core-events`     |
-| `@storybook/csf-tools`       | `storybook/internal/csf-tools`       |
-| `@storybook/docs-tools`      | `storybook/internal/docs-tools`      |
-| `@storybook/node-logger`     | `storybook/internal/node-logger`     |
-| `@storybook/router`          | `storybook/internal/router`          |
-| `@storybook/telemetry`       | `storybook/internal/telemetry`       |
-| `@storybook/types`           | `storybook/internal/types`           |
-| `@storybook/manager`         | `storybook/internal/manager`         |
-| `@storybook/preview`         | `storybook/internal/preview`         |
-| `@storybook/core-server`     | `storybook/internal/core-server`     |
-| `@storybook/builder-manager` | `storybook/internal/builder-manager` |
-| `@storybook/components`      | `storybook/internal/components`      |
-
-Addon authors may continue to use the internal packages, there is currently not yet any replacement.
-
-### Dropped support for TypeScript < 4.9
-
-Storybook now requires TypeScript 4.9 or later. If you're using an older version of TypeScript, you'll need to upgrade to continue using Storybook.
-
-### `@storybook/experimental-addon-test` renamed to `@storybook/addon-vitest`
-
-In Storybook 9.0, we've officially stabilized the Test addon. The package has been renamed from `@storybook/experimental-addon-test` to `@storybook/addon-vitest`, reflecting its production-ready status. If you were using the experimental addon, you'll need to update your dependencies and imports:
-
-```bash
-npm uninstall @storybook/experimental-addon-test
-npm install --save-dev @storybook/addon-vitest
-```
-
-Update your imports in any custom configuration or test files:
-
-```diff
-- import { ... } from '@storybook/experimental-addon-test';
-+ import { ... } from '@storybook/addon-vitest';
-```
-
-If you're using the addon in your Storybook configuration, update your `.storybook/main.js` or `.storybook/main.ts`:
-
-```diff
-export default {
-  addons: [
--   '@storybook/experimental-addon-test',
-+   '@storybook/addon-vitest',
-  ],
-};
-```
-
-The public API remains the same, so no additional changes should be needed in your test files or configuration.
-
-### Experimental Status API has turned into a Status Store
-
-The experimental status API previously available at `api.experimental_updateStatus` and `api.getCurrentStoryStatus` has changed, to a store that works both on the server, in the manager and in the preview.
-
-You can use the new Status Store by importing `experimental_getStatusStore` from either `storybook/internal/core-server`, `storybook/manager-api` or `storybook/preview-api`:
-
-```diff
-+ import { experimental_getStatusStore } from 'storybook/manager-api';
-+ import { StatusValue } from 'storybook/internal/types';
-
-+ const myStatusStore = experimental_getStatusStore(MY_ADDON_ID);
-
-addons.register(MY_ADDON_ID, (api) => {
--  api.experimental_updateStatus({
--    someStoryId: {
--      status: 'success',
--       title: 'Component tests',
--       description: 'Works!',
--    }
--  });
-+  myStatusStore.set([{
-+    value: StatusValue.SUCCESS
-+    title: 'Component tests',
-+    description: 'Works!',
-+  }]);
-```
-
-### Dropped support for Vite 4
-
-Storybook 9.0 drops support for Vite 4. The minimum supported version is now Vite 5.0.0. This change affects all Vite-based frameworks and builders:
-
-- `@storybook/builder-vite`
-- `@storybook/react-vite`
-- `@storybook/vue-vite`
-- `@storybook/vue3-vite`
-- `@storybook/svelte-vite`
-- `@storybook/web-components-vite`
-- `@storybook/preact-vite`
-- `@storybook/html-vite`
-- `@storybook/experimental-nextjs-vite`
-
-To upgrade:
-
-1. Update your project's Vite version to 5.0.0 or higher
-2. Update your Storybook configuration to use Vite 5:
-   ```js
-   // vite.config.js or vite.config.ts
-   export default {
-     // ... your other config
-     // Make sure you're using Vite 5 compatible plugins
-   };
-   ```
-
-If you're using framework-specific Vite plugins, ensure they are compatible with Vite 5:
-
-- `@vitejs/plugin-react`
-- `@vitejs/plugin-vue`
-- `@sveltejs/vite-plugin-svelte`
-- etc.
-
-For more information on upgrading to Vite 5, see the [Vite Migration Guide](https://vitejs.dev/guide/migration).
 
 ### Framework-specific changes
 
@@ -1031,6 +1024,12 @@ export default {
 ```
 
 For more details, please refer to the [Svelte & Vite documentation](https://storybook.js.org/docs/get-started/frameworks/svelte-vite).
+
+#### Svelte: Dropped automatic docgen for events and slots
+
+The internal docgen logic for legacy Svelte components have been changed to match what already happened for rune-based components, using the same `svelte2tsx` parsing that the official Svelte tools use.
+
+This means that argTypes are no longer automatically generated for slots and events defined with `on:my-event`.
 
 #### Angular = Require v18 and up
 
@@ -1136,6 +1135,10 @@ export default {
   ]
 }
 ```
+
+#### Lit = Require v3 and up
+
+The minimum supported version is now v3.
 
 ## From version 8.5.x to 8.6.x
 

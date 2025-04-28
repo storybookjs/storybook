@@ -69,23 +69,15 @@ By default, highlights receive a basic outline style. However, you can provide c
 
 {/* prettier-ignore-end */}
 
-Each of these are optional. In general, you should use `hoverStyles` and `focusStyles` in conjunction with `selectable: true` or the `menu` property. Note that pseudo-classes and pseudo-elements are not supported.
+Each of these are optional. In general, you should use `hoverStyles` and `focusStyles` in conjunction with the `menu` property. Note that pseudo-classes and pseudo-elements are not supported.
 
-## Selectable elements and menu items
+## Highlight menu
 
-Highlights can be made selectable, which reveals the element's HTML when clicked. This is useful for debugging. To make a highlight selectable, set the `selectable` property to `true`.
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="highlight-selectable.md" />
-
-{/* prettier-ignore-end */}
-
-When multiple highlights are present at the clicked location, a list of targets is shown:
+Highlights can be made selectable, which reveals the element's HTML when clicked. When multiple highlights are present at the clicked location, a list of targets is shown:
 
 ![Menu of selectable targets](../_assets/essentials/highlight-selectable.png)
 
-This menu can be extended with custom menu items. To do so, provide an array of menu items in the `menu` property. Each menu item must at least have an `id` and `title` property. For example:
+To make highlights selectable, provide an array of menu items in the `menu` property. Each menu item must at least have an `id` and `title` property. For example:
 
 {/* prettier-ignore-start */}
 
@@ -98,6 +90,8 @@ Menu items are displayed underneath the element's HTML, and can be used to revea
 ![Menu with custom items](../_assets/essentials/highlight-menu.png)
 
 You can use the `selectors` property to specify which elements the menu item should be shown for. This should be a subset of the `selectors` property used to create the highlight.
+
+If you want to make a highlight selectable without providing menu items, you can set an empty array for the `menu` property.
 
 ## API
 
@@ -139,8 +133,6 @@ interface HighlightOptions {
   selectors: string[];
   /** Priority of the highlight, higher takes precedence, defaults to 0 */
   priority?: number;
-  /** Whether the highlight is selectable (reveals the element's HTML) */
-  selectable?: boolean;
   /** CSS styles to apply to the highlight */
   styles?: Record<string, string>;
   /** CSS styles to apply to the highlight when it is hovered */
@@ -149,7 +141,7 @@ interface HighlightOptions {
   focusStyles?: Record<string, string>;
   /** Keyframes required for animations */
   keyframes?: string;
-  /** Menu items to show when the highlight is selected (implies selectable: true) */
+  /** Menu items to show when the highlight is selected */
   menu?: {
     /** Unique identifier for the menu item */
     id: string;

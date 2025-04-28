@@ -274,21 +274,19 @@ export async function parseForIndexer(
             const { name } = attribute;
 
             if (name === 'title') {
-              state.meta.title ===
-                getStringValueFromAttribute({
-                  component: node,
-                  node: attribute,
-                  filename,
-                });
+              state.meta.title = getStringValueFromAttribute({
+                component: node,
+                node: attribute,
+                filename,
+              });
             }
 
             if (name === 'tags') {
-              state.meta.tags ===
-                getArrayOfStringsValueFromAttribute({
-                  component: node,
-                  node: attribute,
-                  filename,
-                });
+              state.meta.tags = getArrayOfStringsValueFromAttribute({
+                component: node,
+                node: attribute,
+                filename,
+              });
             }
           }
         }

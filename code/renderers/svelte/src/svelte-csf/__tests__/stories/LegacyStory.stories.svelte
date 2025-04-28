@@ -60,5 +60,5 @@
   `}
   args={{ rounded: false }}
 >
-  {'Test'}
+  Test
 </Story>

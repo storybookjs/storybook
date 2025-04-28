@@ -68,7 +68,7 @@ export async function extractModuleNodes(options: Params): Promise<Result> {
       }
     },
 
-    ImportSpecifier(node, {}) {
+    ImportSpecifier(node) {
       if (node.imported.name === AST_NODES_NAMES.defineMeta) {
         state.defineMetaImport = node;
       }

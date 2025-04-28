@@ -6,13 +6,12 @@
   const { Story } = defineMeta({
     title: 'RequiredSnippet',
     component: RequiredSnippet,
-    tags: ['autodocs', '!test'],
+    tags: ['autodocs'],
   });
 </script>
 
 <!-- FIXME: Should it throw at runtime, because we don't provide any snippet - attribute (prop) 'children'? -->
-<!-- commenting out until https://github.com/storybookjs/addon-svelte-csf/issues/261 is resolved -->
-<!-- <Story name="Case 1" tags={['!test']} /> -->
+<Story name="Case 1" tags={['!test']} />
 
 {#snippet children()}
   <p>This works</p>

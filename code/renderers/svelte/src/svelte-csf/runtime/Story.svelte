@@ -6,7 +6,7 @@
 
 <script
   lang="ts"
-  generics="const TCmp extends Cmp, TChildren extends Snippet = Snippet, TTemplate extends TemplateSnippet<TCmp> = TemplateSnippet<TCmp>"
+  generics="TCmp extends Cmp, TChildren extends Snippet = Snippet, TTemplate extends TemplateSnippet<TCmp> = TemplateSnippet<TCmp>"
 >
   import type { Snippet } from 'svelte';
 

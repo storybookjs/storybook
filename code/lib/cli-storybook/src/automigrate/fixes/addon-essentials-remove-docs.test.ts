@@ -310,10 +310,14 @@ describe('addon-essentials-remove-docs migration', () => {
       expect(mockPackageManagerLocal.runPackageCommand).toHaveBeenCalledWith('storybook', [
         'remove',
         '@storybook/addon-controls',
+        '--config-dir',
+        '.storybook',
       ]);
       expect(mockPackageManagerLocal.runPackageCommand).toHaveBeenCalledWith('storybook', [
         'add',
         '@storybook/addon-docs',
+        '--config-dir',
+        '.storybook',
       ]);
       expect(mockPackageManagerLocal.runPackageCommand).toHaveBeenCalledTimes(3);
     });

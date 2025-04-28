@@ -35,7 +35,7 @@ describe(codemodLegacyNodes.name, () => {
       </script>
 
       <!-- This is a description for **default** Button. -->
-      <Story name="Default" tags={["legacy"]} />"
+      <Story name="Default" tags={["svelte-csf-v4"]} />"
     `);
   });
 
@@ -130,7 +130,7 @@ describe(codemodLegacyNodes.name, () => {
       	<p>{context.id}</p>
       	<Button {...args} />
        
-      {/snippet} <Story name="Default" template={sample} tags={["autodocs", "legacy"]} parameters={{
+      {/snippet} <Story name="Default" template={sample} tags={["autodocs", "svelte-csf-v4"]} parameters={{
       	docs: { source: { code: "<Button {...args} />" } }
       }}>
       	{#snippet template(args, context)}

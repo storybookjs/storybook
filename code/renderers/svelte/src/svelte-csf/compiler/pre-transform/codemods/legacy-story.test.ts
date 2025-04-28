@@ -24,7 +24,7 @@ describe(transformLegacyStory.name, () => {
           state: { componentIdentifierName: {} },
         })
       )
-    ).toMatchInlineSnapshot(`"<Story name="Default" tags={["autodocs", "legacy"]} />"`);
+    ).toMatchInlineSnapshot(`"<Story name="Default" tags={["autodocs", "svelte-csf-v4"]} />"`);
   });
 
   it("moving 'autodocs' prop doesn't break with existing 'tags' prop", async ({ expect }) => {
@@ -44,7 +44,7 @@ describe(transformLegacyStory.name, () => {
           state: { componentIdentifierName: {} },
         })
       )
-    ).toMatchInlineSnapshot(`"<Story name="Default" tags={["!dev", "autodocs", "legacy"]} />"`);
+    ).toMatchInlineSnapshot(`"<Story name="Default" tags={["!dev", "autodocs", "svelte-csf-v4"]} />"`);
   });
 
   it("'source' prop when is a shorthand gets removed", async ({ expect }) => {
@@ -64,7 +64,7 @@ describe(transformLegacyStory.name, () => {
           state: { componentIdentifierName: {} },
         })
       )
-    ).toMatchInlineSnapshot(`"<Story name="Default" tags={["legacy"]} />"`);
+    ).toMatchInlineSnapshot(`"<Story name="Default" tags={["svelte-csf-v4"]} />"`);
   });
 
   it("'source' prop when is a text expression gets moved to 'parameters' prop", async ({
@@ -90,7 +90,7 @@ describe(transformLegacyStory.name, () => {
       `
       "<Story name="Default" parameters={{
       	docs: { source: { code: "'<Button primary />'" } }
-      }} tags={["legacy"]} />"
+      }} tags={["svelte-csf-v4"]} />"
     `
     );
   });
@@ -122,7 +122,7 @@ describe(transformLegacyStory.name, () => {
       	docs: {
       		source: { code: "<LegacyStory>Hi</LegacyStory>" }
       	}
-      }} tags={["legacy"]}>
+      }} tags={["svelte-csf-v4"]}>
       	<LegacyStory>{'Hi'}</LegacyStory>
       </Story>"
     `
@@ -161,7 +161,7 @@ describe(transformLegacyStory.name, () => {
       	controls: { disable: true },
       	interactions: { disable: true },
       	docs: { source: { code: "'<Button primary />'" } }
-      }} tags={["legacy"]} />"
+      }} tags={["svelte-csf-v4"]} />"
     `
     );
   });
@@ -185,7 +185,7 @@ describe(transformLegacyStory.name, () => {
           state: { componentIdentifierName: {} },
         })
       )
-    ).toMatchInlineSnapshot(`"<Story name="Default" template={someTemplate} tags={["legacy"]} />"`);
+    ).toMatchInlineSnapshot(`"<Story name="Default" template={someTemplate} tags={["svelte-csf-v4"]} />"`);
   });
 
   it("transforms 'template' id prop to 'template' reference prop and text expression becomes expression tag with identifier to snippet (case with invalid identifier)", async ({
@@ -208,7 +208,7 @@ describe(transformLegacyStory.name, () => {
         })
       )
     ).toMatchInlineSnapshot(
-      `"<Story name="Default" template={template_r71ke5} tags={["legacy"]} />"`
+      `"<Story name="Default" template={template_r71ke5} tags={["svelte-csf-v4"]} />"`
     );
   });
 
@@ -234,7 +234,7 @@ describe(transformLegacyStory.name, () => {
         })
       )
     ).toMatchInlineSnapshot(`
-      "<Story name="Default" tags={["legacy"]}>
+      "<Story name="Default" tags={["svelte-csf-v4"]}>
       	{#snippet template(args)}
       		<Button {...args} />
       	{/snippet}
@@ -264,7 +264,7 @@ describe(transformLegacyStory.name, () => {
         })
       )
     ).toMatchInlineSnapshot(`
-      "<Story name="Default" tags={["legacy"]}>
+      "<Story name="Default" tags={["svelte-csf-v4"]}>
       	{#snippet template(_args, context)}
       		<p>{context.id}</p>
       	{/snippet}
@@ -295,7 +295,7 @@ describe(transformLegacyStory.name, () => {
         })
       )
     ).toMatchInlineSnapshot(`
-      "<Story name="Default" tags={["legacy"]}>
+      "<Story name="Default" tags={["svelte-csf-v4"]}>
       	{#snippet template(args, context)}
       		<h1>{args.title}</h1>
       		<p>{context.id}</p>
@@ -351,7 +351,7 @@ describe(transformLegacyStory.name, () => {
       			updated: true
       		}
       	}
-      }} tags={["legacy"]}>
+      }} tags={["svelte-csf-v4"]}>
       	<h1>{"Test"}</h1>
       </Story>"
     `);
@@ -386,7 +386,7 @@ describe(transformLegacyStory.name, () => {
     ).toMatchInlineSnapshot(`
       "<Story name="Default" parameters={{
       	docs: { source: { code: "\\n    <Foo bar />\\n  " } }
-      }} tags={["legacy"]}>
+      }} tags={["svelte-csf-v4"]}>
       	<h1>{"Test"}</h1>
       </Story>"
     `);

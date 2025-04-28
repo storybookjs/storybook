@@ -110,7 +110,6 @@
     "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
   },
   "dependencies": {
-    "@babel/core": "^7.26.9",
     "@mdx-js/react": "^3.0.0",
     "@storybook/csf-plugin": "workspace:*",
     "@storybook/icons": "^1.2.12",
@@ -122,7 +121,6 @@
   "devDependencies": {
     "@mdx-js/mdx": "^3.0.0",
     "@rollup/pluginutils": "^5.0.2",
-    "@types/babel__core": "^7",
     "@types/color-convert": "^2.0.0",
     "@types/react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
     "color-convert": "^2.0.1",

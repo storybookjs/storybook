@@ -2995,12 +2995,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@happy-dom/global-registrator@npm:^14.12.0":
-  version: 14.12.3
-  resolution: "@happy-dom/global-registrator@npm:14.12.3"
+"@happy-dom/global-registrator@npm:^17.4.4":
+  version: 17.4.4
+  resolution: "@happy-dom/global-registrator@npm:17.4.4"
   dependencies:
-    happy-dom: "npm:^14.12.3"
-  checksum: 10c0/017bea87f4cdf67b025b926484197a4a73fdc9bb8eb2dc816b0574ba0d6b58277652bc2f9efb196d4ac8487dee26480cba3b470480d124f1d16b81d97f5b5703
+    happy-dom: "npm:^17.4.4"
+  checksum: 10c0/f63ca714ff52850f11c85a3190f04ea2681e6a02de724cf8ffb40bcc4f3adf46c58c9be5fb5c6ca7d88609958543925f883fbda4e4b2c3ce6c5f1e55303dfeed
   languageName: node
   linkType: hard
 
@@ -6586,7 +6586,7 @@ __metadata:
   resolution: "@storybook/root@workspace:."
   dependencies:
     "@chromatic-com/storybook": "npm:^4.0.0-0"
-    "@happy-dom/global-registrator": "npm:^14.12.0"
+    "@happy-dom/global-registrator": "npm:^17.4.4"
     "@nx/vite": "npm:20.2.2"
     "@nx/workspace": "npm:20.2.2"
     "@playwright/test": "npm:1.48.1"
@@ -6668,7 +6668,7 @@ __metadata:
     eslint-plugin-react-hooks: "npm:^4.6.2"
     eslint-plugin-storybook: "workspace:*"
     github-release-from-changelog: "npm:^2.1.1"
-    happy-dom: "npm:^14.12.0"
+    happy-dom: "npm:^17.4.4"
     http-server: "npm:^14.1.1"
     husky: "npm:^4.3.7"
     jiti: "npm:^1.21.6"
@@ -15648,14 +15648,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"happy-dom@npm:^14.12.0, happy-dom@npm:^14.12.3":
-  version: 14.12.3
-  resolution: "happy-dom@npm:14.12.3"
+"happy-dom@npm:^17.4.4":
+  version: 17.4.4
+  resolution: "happy-dom@npm:17.4.4"
   dependencies:
-    entities: "npm:^4.5.0"
     webidl-conversions: "npm:^7.0.0"
     whatwg-mimetype: "npm:^3.0.0"
-  checksum: 10c0/72e817bc9d03c4c0dbb794f8fb5b69aac4b4dbe0ee789a6b6a02a60298a9aa99bac766967a5c642153e5c95c02489437f878de5641ed64fd13b2271c56805df5
+  checksum: 10c0/a84d36fc633ab5e5a36ae55d82b8955d1e65394242b4dba551ab447579e47f8565de61c361920c248ed2823883715dfa513ce46666800ad53c21dbde858048c2
   languageName: node
   linkType: hard
 

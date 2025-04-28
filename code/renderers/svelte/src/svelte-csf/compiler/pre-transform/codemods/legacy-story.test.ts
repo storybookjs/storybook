@@ -44,7 +44,9 @@ describe(transformLegacyStory.name, () => {
           state: { componentIdentifierName: {} },
         })
       )
-    ).toMatchInlineSnapshot(`"<Story name="Default" tags={["!dev", "autodocs", "svelte-csf-v4"]} />"`);
+    ).toMatchInlineSnapshot(
+      `"<Story name="Default" tags={["!dev", "autodocs", "svelte-csf-v4"]} />"`
+    );
   });
 
   it("'source' prop when is a shorthand gets removed", async ({ expect }) => {
@@ -185,7 +187,9 @@ describe(transformLegacyStory.name, () => {
           state: { componentIdentifierName: {} },
         })
       )
-    ).toMatchInlineSnapshot(`"<Story name="Default" template={someTemplate} tags={["svelte-csf-v4"]} />"`);
+    ).toMatchInlineSnapshot(
+      `"<Story name="Default" template={someTemplate} tags={["svelte-csf-v4"]} />"`
+    );
   });
 
   it("transforms 'template' id prop to 'template' reference prop and text expression becomes expression tag with identifier to snippet (case with invalid identifier)", async ({

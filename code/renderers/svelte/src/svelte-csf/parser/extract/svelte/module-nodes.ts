@@ -12,7 +12,6 @@ import {
 
 const AST_NODES_NAMES = {
   defineMeta: 'defineMeta',
-  setTemplate: 'setTemplate',
   Story: 'Story',
 } as const;
 
@@ -22,11 +21,6 @@ interface Result {
    * Could be renamed - e.g. `import { defineMeta as df } from "@storybook/addon-svelte-csf"`
    */
   defineMetaImport: ESTreeAST.ImportSpecifier;
-  /**
-   * Import specifier for `setTemplate` imported from this addon package.
-   * Could be renamed - e.g. `import { setTemplate as st } from "@storybook/addon-svelte-csf"`
-   */
-  setTemplateImport: ESTreeAST.ImportSpecifier | undefined;
   /**
    * Variable declaration: `const { Story } = defineMeta({ })`
    * Could be destructured with rename - e.g. `const { Story: S } = defineMeta({ ... })`
@@ -78,10 +72,6 @@ export async function extractModuleNodes(options: Params): Promise<Result> {
       if (node.imported.name === AST_NODES_NAMES.defineMeta) {
         state.defineMetaImport = node;
       }
-
-      if (node.imported.name === AST_NODES_NAMES.setTemplate) {
-        state.setTemplateImport = node;
-      }
     },
 
     VariableDeclaration(node, { state }) {
@@ -113,8 +103,7 @@ export async function extractModuleNodes(options: Params): Promise<Result> {
 
   walk(module.content, state, visitors);
 
-  const { defineMetaImport, setTemplateImport, defineMetaVariableDeclaration, storyIdentifier } =
-    state;
+  const { defineMetaImport, defineMetaVariableDeclaration, storyIdentifier } = state;
 
   if (!defineMetaImport) {
     throw new MissingDefineMetaImportError(filename);
@@ -130,7 +119,6 @@ export async function extractModuleNodes(options: Params): Promise<Result> {
 
   return {
     defineMetaImport,
-    setTemplateImport,
     defineMetaVariableDeclaration,
     storyIdentifier,
   };

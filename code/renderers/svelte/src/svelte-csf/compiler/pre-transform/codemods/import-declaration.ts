@@ -31,9 +31,9 @@ export function transformImportDeclaration(params: Params): ESTreeAST.ImportDecl
       throw new DefaultOrNamespaceImportUsedError(filename);
     }
 
-    if (['defineMeta', 'setTemplate'].includes(specifier.imported.name)) {
+    if (specifier.imported.name === 'defineMeta') {
       newSpecifiers.push(specifier);
-      if (specifier.imported.name === 'defineMeta') hasDefineMeta = true;
+      hasDefineMeta = true;
     }
   }
 

@@ -12,7 +12,6 @@
 
   import { useStoriesExtractor } from './contexts/extractor.svelte.js';
   import { useStoryRenderer, type StoryRendererContext } from './contexts/renderer.svelte.js';
-  import { useStoriesTemplate } from './contexts/template.svelte.js';
 
   import { storyNameToExportName } from '../utils/identifier-utils.js';
   import type { Cmp, StoryAnnotations } from '../types.js';
@@ -88,7 +87,7 @@
           /**
            * The content to render in the story with a snippet taking `args` and `storyContext` as parameters
            *
-           * NOTE: Can be omitted if a default template is set with [`setTemplate()`](https://github.com/storybookjs/addon-svelte-csf/blob/main/README.md#default-snippet)
+           * NOTE: Can be omitted if a default template is set with [`render`](https://github.com/storybookjs/addon-svelte-csf/blob/main/README.md#default-snippet)
            */
           template?: TTemplate;
         }
@@ -106,7 +105,6 @@
 
   let extractor = useStoriesExtractor<TCmp>();
   let renderer = useStoryRenderer<TCmp>();
-  let storiesTemplate = useStoriesTemplate<TCmp>();
 
   let isCurrentlyViewed = $derived(
     !extractor.isExtracting && renderer.currentStoryExportName === exportName
@@ -155,8 +153,8 @@
     {:else}
       {@render children()}
     {/if}
-  {:else if storiesTemplate}
-    {@render storiesTemplate(renderer.args, renderer.storyContext)}
+  {:else if renderer.metaRenderSnippet}
+    {@render renderer.metaRenderSnippet(renderer.args, renderer.storyContext)}
   {:else if renderer.storyContext.component}
     <renderer.storyContext.component {...renderer.args} />
   {:else}

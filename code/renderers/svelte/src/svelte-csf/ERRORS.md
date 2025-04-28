@@ -109,22 +109,6 @@ A `<Story>` component received an invalid `template` prop. If set, the `template
 
 This error indicates that the `template` prop was passed, but it was not correctly referencing a snippet.
 
-### `SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0008`
-
-`setTemplate()` was called to set a default snippet, but the argument passed was not a reference to a root-level snippet in the file.
-
-Below is a demonstration of correct usage:
-
-```svelte
-<script>
-  setTemplate(template);
-</script>
-
-{#snippet template()}
-  <!-- ... -->
-{/snippet}
-```
-
 ### SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0009
 
 Storybook stories indexer parser threw an unrecognized error.

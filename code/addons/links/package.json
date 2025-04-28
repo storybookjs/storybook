@@ -68,8 +68,7 @@
     "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
   },
   "dependencies": {
-    "@storybook/global": "^5.0.0",
-    "ts-dedent": "^2.0.0"
+    "@storybook/global": "^5.0.0"
   },
   "devDependencies": {
     "typescript": "^5.7.3"

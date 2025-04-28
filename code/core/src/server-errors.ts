@@ -599,7 +599,7 @@ export class IncompatiblePostCssConfigError extends StorybookError {
         
         Original error: ${data.error.message}
       `,
-          });
+    });
   }
 }
 

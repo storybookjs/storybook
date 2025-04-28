@@ -161,7 +161,7 @@ export const Details = ({ id, item, type, selection, handleSelectionChange }: De
             return (
               <Fragment key={key}>
                 <Tabs.Trigger value={key} asChild>
-                  <Item variant="ghost" size="medium">
+                  <Item variant="ghost" size="medium" id={key}>
                     {index + 1}. {node.html}
                   </Item>
                 </Tabs.Trigger>

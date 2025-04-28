@@ -1,6 +1,6 @@
 {
   "name": "@storybook/cli",
-  "version": "9.0.0-beta.2",
+  "version": "9.0.0-beta.4",
   "description": "Storybook CLI",
   "keywords": [
     "storybook"
@@ -66,7 +66,6 @@
     "boxen": "^7.1.1",
     "picocolors": "^1.1.0",
     "slash": "^5.0.0",
-    "strip-ansi": "^7.1.0",
     "typescript": "^5.7.3"
   },
   "publishConfig": {

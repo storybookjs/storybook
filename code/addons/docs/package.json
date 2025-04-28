@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-docs",
-  "version": "9.0.0-beta.2",
+  "version": "9.0.0-beta.4",
   "description": "Document component usage and properties in Markdown",
   "keywords": [
     "addon",
@@ -35,11 +35,7 @@
       "import": "./dist/preview.mjs",
       "require": "./dist/preview.js"
     },
-    "./preset": {
-      "types": "./dist/preset.d.ts",
-      "import": "./dist/preset.js",
-      "require": "./dist/preset.js"
-    },
+    "./preset": "./dist/preset.js",
     "./blocks": {
       "types": "./dist/blocks.d.ts",
       "import": "./dist/blocks.mjs",
@@ -50,10 +46,7 @@
       "import": "./dist/preview.mjs",
       "require": "./dist/preview.js"
     },
-    "./dist/preset": {
-      "types": "./dist/preset.d.ts",
-      "require": "./dist/preset.js"
-    },
+    "./dist/preset": "./dist/preset.js",
     "./dist/shims/mdx-react-shim": {
       "types": "./dist/shims/mdx-react-shim.d.ts",
       "import": "./dist/shims/mdx-react-shim.mjs",
@@ -72,11 +65,7 @@
     "./angular/index.js": "./angular/index.js",
     "./web-components/index.js": "./web-components/index.js",
     "./package.json": "./package.json",
-    "./manager": {
-      "types": "./dist/manager.d.ts",
-      "import": "./dist/manager.mjs",
-      "require": "./dist/manager.js"
-    }
+    "./manager": "./dist/manager.js"
   },
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -118,7 +107,7 @@
   ],
   "scripts": {
     "check": "jiti ../../../scripts/prepare/check.ts",
-    "prep": "jiti ../../../scripts/prepare/bundle.ts"
+    "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
   },
   "dependencies": {
     "@babel/core": "^7.26.9",
@@ -159,13 +148,17 @@
     "access": "public"
   },
   "bundler": {
-    "entries": [
+    "previewEntries": [
+      "./src/preview.ts"
+    ],
+    "exportEntries": [
       "./src/index.ts",
-      "./src/preset.ts",
-      "./src/preview.ts",
       "./src/blocks.ts",
-      "./src/shims/mdx-react-shim.ts",
-      "./src/mdx-loader.ts"
+      "./src/shims/mdx-react-shim.ts"
+    ],
+    "nodeEntries": [
+      "./src/mdx-loader.ts",
+      "./src/preset.ts"
     ],
     "managerEntries": [
       "./src/manager.tsx"

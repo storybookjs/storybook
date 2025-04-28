@@ -36,6 +36,7 @@
   - [Framework-specific changes](#framework-specific-changes)
     - [Svelte: Require v5 and up](#svelte-require-v5-and-up)
     - [Svelte: Dropped support for @storybook/svelte-webpack5](#svelte-dropped-support-for-storybooksvelte-webpack5)
+    - [Svelte: Dropped automatic docgen for events and slots](#svelte-dropped-automatic-docgen-for-events-and-slots)
     - [Angular = Require v18 and up](#angular--require-v18-and-up)
     - [Dropped webpack5 Builder Support in Favor of Vite](#dropped-webpack5-builder-support-in-favor-of-vite)
     - [Next.js = Require v14 and up](#nextjs--require-v14-and-up)
@@ -1023,6 +1024,12 @@ export default {
 ```
 
 For more details, please refer to the [Svelte & Vite documentation](https://storybook.js.org/docs/get-started/frameworks/svelte-vite).
+
+#### Svelte: Dropped automatic docgen for events and slots
+
+The internal docgen logic for legacy Svelte components have been changed to match what already happened for rune-based components, using the same `svelte2tsx` parsing that the official Svelte tools use.
+
+This means that argTypes are no longer automatically generated for slots and events defined with `on:my-event`.
 
 #### Angular = Require v18 and up
 

@@ -13,7 +13,7 @@ import type { PackageJson, StorybookConfig } from 'storybook/internal/types';
 import { findPackage, findPackagePath } from 'fd-package-json';
 import { detect } from 'package-manager-detector';
 
-import { Settings } from '../cli/globalSettings';
+import { globalSettings } from '../cli/globalSettings';
 import { getApplicationFileCount } from './get-application-file-count';
 import { getChromaticVersionSpecifier } from './get-chromatic-version';
 import { getFrameworkInfo } from './get-framework-info';
@@ -54,10 +54,10 @@ export const computeStorybookMetadata = async ({
   packageJson: PackageJson;
   mainConfig?: StorybookConfig & Record<string, any>;
 }): Promise<StorybookMetadata> => {
-  const settings = new Settings();
+  const settings = await globalSettings();
   const metadata: Partial<StorybookMetadata> = {
     generatedAt: new Date().getTime(),
-    settingsCreatedAt: (await settings.getFileCreationDate())?.getTime(),
+    userSince: await settings.get('userSince'),
     hasCustomBabel: false,
     hasCustomWebpack: false,
     hasStaticDirs: false,

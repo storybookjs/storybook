@@ -16,7 +16,7 @@ import {
   detectPnp,
   isStorybookInstantiated,
 } from '../../../core/src/cli/detect';
-import { Settings } from '../../../core/src/cli/globalSettings';
+import { type Settings, globalSettings } from '../../../core/src/cli/globalSettings';
 import type { Builder } from '../../../core/src/cli/project_types';
 import { ProjectType, installableProjectTypes } from '../../../core/src/cli/project_types';
 import type { JsPackageManager } from '../../../core/src/common/js-package-manager/JsPackageManager';
@@ -400,8 +400,7 @@ export async function doInitiate(options: CommandOptions): Promise<
 
   const isInteractive = process.stdout.isTTY && !process.env.CI;
 
-  const settings = new Settings();
-  await settings.safeLoad();
+  const settings = await globalSettings();
   const promptOptions = {
     ...options,
     settings,
@@ -409,7 +408,12 @@ export async function doInitiate(options: CommandOptions): Promise<
     projectType: options.type,
   };
   const newUser = await promptNewUser(promptOptions);
-  await settings.safeSave();
+
+  try {
+    await settings.save();
+  } catch (err) {
+    // TODO: If settings fail to save, do we log?
+  }
 
   if (typeof newUser === 'undefined') {
     logger.info('canceling');

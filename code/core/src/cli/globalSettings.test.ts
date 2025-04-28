@@ -1,4 +1,3 @@
-import { existsSync } from 'node:fs';
 import fs from 'node:fs/promises';
 import { dirname } from 'node:path';
 
@@ -13,6 +12,10 @@ describe('Settings', () => {
   const TEST_SETTINGS_FILE = '/test/settings.json';
   let settings: Settings;
 
+  const userSince = new Date().toString();
+  const baseSettings = { version: 1, userSince };
+  const baseSettingsJson = JSON.stringify(baseSettings, null, 2);
+
   beforeEach(() => {
     vi.resetAllMocks();
     settings = new Settings(TEST_SETTINGS_FILE);
@@ -20,95 +23,100 @@ describe('Settings', () => {
 
   describe('load', () => {
     it('loads settings from file if it exists', async () => {
-      vi.mocked(existsSync).mockReturnValue(true);
-      vi.mocked(fs.readFile).mockResolvedValue(
-        JSON.stringify({
-          theme: { mode: 'dark' },
-        })
-      );
+      vi.mocked(fs.readFile).mockResolvedValue(baseSettingsJson);
 
       await settings.load();
 
       expect(fs.readFile).toHaveBeenCalledWith(TEST_SETTINGS_FILE, 'utf8');
-      expect(settings.get('theme.mode')).toBe('dark');
+      expect(settings.get('userSince')).toBe(userSince);
     });
 
-    it('initializes empty settings if file does not exist', async () => {
-      vi.mocked(existsSync).mockReturnValue(false);
+    it('errors if settings file does not exist', async () => {
+      const error = new Error() as Error & { code: string };
+      error.code = 'ENOENT';
+      vi.mocked(fs.readFile).mockRejectedValue(error);
 
-      await settings.load();
-
-      expect(fs.readFile).not.toHaveBeenCalled();
-      expect(settings.get('')).toEqual({});
+      await expect(settings.load()).rejects.toThrow();
     });
 
     it('handles JSON parse errors', async () => {
-      vi.mocked(existsSync).mockReturnValue(true);
       vi.mocked(fs.readFile).mockResolvedValue('invalid json');
 
-      await settings.load();
+      await expect(settings.load()).rejects.toThrow();
+    });
+  });
 
-      expect(settings.get('')).toEqual({});
+  describe('ensure', () => {
+    it('loads settings when called for the first time', async () => {
+      vi.mocked(fs.readFile).mockResolvedValue(baseSettingsJson);
+
+      await settings.ensure();
+
+      expect(settings.get('userSince')).toBe(userSince);
     });
 
-    it('handles file read errors', async () => {
-      vi.mocked(existsSync).mockReturnValue(true);
-      vi.mocked(fs.readFile).mockRejectedValue(new Error('Read error'));
+    it('does nothing if settings are already loaded', async () => {
+      await settings.ensure();
+      expect(fs.readFile).toHaveBeenCalledWith(TEST_SETTINGS_FILE, 'utf8');
 
-      await settings.load();
-
-      expect(settings.get('')).toEqual({});
+      vi.mocked(fs.readFile).mockClear();
+      await settings.ensure();
+      expect(fs.readFile).not.toHaveBeenCalled();
     });
 
-    it('preserves existing settings when load fails', async () => {
-      // Set initial settings
-      settings.set('initial', 'value');
+    it('does not save settings if they exist', async () => {
+      vi.mocked(fs.readFile).mockResolvedValue(baseSettingsJson);
 
-      // Mock load failure
-      vi.mocked(existsSync).mockReturnValue(true);
-      vi.mocked(fs.readFile).mockRejectedValue(new Error('Read error'));
+      await settings.ensure();
 
-      await settings.load();
+      expect(fs.writeFile).not.toHaveBeenCalled();
+    });
 
-      // Should still have initial settings
-      expect(settings.get('initial')).toBe('value');
+    it('saves settings and creates directory if they do not exist', async () => {
+      const error = new Error() as Error & { code: string };
+      error.code = 'ENOENT';
+      vi.mocked(fs.readFile).mockRejectedValue(error);
+
+      await settings.ensure();
+
+      expect(fs.mkdir).toHaveBeenCalledWith(dirname(TEST_SETTINGS_FILE), { recursive: true });
+      expect(fs.writeFile).toHaveBeenCalledWith(TEST_SETTINGS_FILE, baseSettingsJson);
     });
   });
 
   describe('save', () => {
-    it('creates directory and saves settings to file', async () => {
-      settings.set('theme.mode', 'dark');
+    it('overwrites existing settings', async () => {
+      vi.mocked(fs.readFile).mockResolvedValue(baseSettingsJson);
+      await settings.ensure();
+      vi.mocked(fs.writeFile).mockClear();
 
+      settings.set('theme.mode', 'dark');
       await settings.save();
 
-      expect(fs.mkdir).toHaveBeenCalledWith(dirname(TEST_SETTINGS_FILE), { recursive: true });
       expect(fs.writeFile).toHaveBeenCalledWith(
         TEST_SETTINGS_FILE,
-        JSON.stringify({ theme: { mode: 'dark' } }, null, 2)
+        JSON.stringify({ ...baseSettings, theme: { mode: 'dark' } }, null, 2)
       );
     });
 
     it('throws error if write fails', async () => {
       vi.mocked(fs.writeFile).mockRejectedValue(new Error('Write error'));
 
-      await expect(settings.save()).rejects.toThrow('Failed to save settings');
+      await expect(settings.save()).rejects.toThrow('Unable to save global settings');
     });
 
     it('throws error if directory creation fails', async () => {
       vi.mocked(fs.mkdir).mockRejectedValue(new Error('Directory creation error'));
 
-      await expect(settings.save()).rejects.toThrow('Failed to save settings');
-    });
-
-    it('saves empty settings object when no settings exist', async () => {
-      await settings.save();
-
-      expect(fs.writeFile).toHaveBeenCalledWith(TEST_SETTINGS_FILE, JSON.stringify({}, null, 2));
+      await expect(settings.save()).rejects.toThrow('Unable to save global settings');
     });
   });
 
   describe('get', () => {
-    beforeEach(() => {
+    beforeEach(async () => {
+      vi.mocked(fs.readFile).mockResolvedValue(baseSettingsJson);
+      await settings.ensure();
+
       // Set up some test data
       settings.set('theme.mode', 'dark');
       settings.set('a.b.c', 'value');
@@ -134,10 +142,6 @@ describe('Settings', () => {
       expect(settings.get('a.x.y')).toBeUndefined();
     });
 
-    it('returns root object when path is empty', () => {
-      expect(settings.get('')).toEqual(settings.get(''));
-    });
-
     it('handles array values', () => {
       expect(settings.get('array')).toEqual([1, 2, 3]);
     });
@@ -156,6 +160,11 @@ describe('Settings', () => {
   });
 
   describe('set', () => {
+    beforeEach(async () => {
+      vi.mocked(fs.readFile).mockResolvedValue(baseSettingsJson);
+      await settings.ensure();
+    });
+
     it('sets value for new setting', () => {
       settings.set('theme.mode', 'dark');
 
@@ -173,13 +182,7 @@ describe('Settings', () => {
       settings.set('a.b.c', 'value');
 
       expect(settings.get('a.b.c')).toBe('value');
-      expect(settings.get('')).toEqual({ a: { b: { c: 'value' } } });
-    });
-
-    it('handles setting root object with empty path', () => {
-      settings.set('', { root: 'value' });
-
-      expect(settings.get('')).toEqual({ root: 'value' });
+      expect(settings.get('a')).toEqual({ b: { c: 'value' } });
     });
 
     it('handles setting array values', () => {
@@ -217,7 +220,10 @@ describe('Settings', () => {
   });
 
   describe('delete', () => {
-    beforeEach(() => {
+    beforeEach(async () => {
+      vi.mocked(fs.readFile).mockResolvedValue(baseSettingsJson);
+      await settings.ensure();
+
       settings.set('theme.mode', 'dark');
       settings.set('theme.color', 'blue');
       settings.set('a.b.c', 'value');
@@ -258,17 +264,13 @@ describe('Settings', () => {
       expect(settings.get('a.b.c')).toBeUndefined();
       expect(settings.get('a.b.d')).toBe('another');
     });
-
-    it('does nothing when path is empty', () => {
-      const before = settings.get('');
-      settings.delete('');
-
-      expect(settings.get('')).toEqual(before);
-    });
   });
 
   describe('has', () => {
-    beforeEach(() => {
+    beforeEach(async () => {
+      vi.mocked(fs.readFile).mockResolvedValue(baseSettingsJson);
+      await settings.ensure();
+
       settings.set('theme.mode', 'dark');
       settings.set('nullValue', null);
       settings.set('falseValue', false);
@@ -308,69 +310,6 @@ describe('Settings', () => {
 
     it('returns true for empty object', () => {
       expect(settings.has('emptyObject')).toBe(true);
-    });
-
-    it('returns true for root path', () => {
-      expect(settings.has('')).toBe(true);
-    });
-  });
-
-  describe('integration tests', () => {
-    it('load, modify, and save workflow', async () => {
-      // Setup initial file content
-      vi.mocked(existsSync).mockReturnValue(true);
-      vi.mocked(fs.readFile).mockResolvedValue(
-        JSON.stringify({
-          existing: 'value',
-        })
-      );
-
-      // Load settings
-      await settings.load();
-      expect(settings.get('existing')).toBe('value');
-
-      // Modify settings
-      settings.set('new', 'setting');
-      settings.set('existing', 'updated');
-      settings.delete('toDelete');
-
-      // Save settings
-      await settings.save();
-
-      // Verify save was called with correct data
-      expect(fs.writeFile).toHaveBeenCalledWith(
-        TEST_SETTINGS_FILE,
-        JSON.stringify(
-          {
-            existing: 'updated',
-            new: 'setting',
-          },
-          null,
-          2
-        )
-      );
-    });
-
-    it('handles complex nested operations', () => {
-      // Set up complex nested structure
-      settings.set('users.admin.name', 'Admin');
-      settings.set('users.admin.permissions', ['read', 'write', 'delete']);
-      settings.set('users.guest.name', 'Guest');
-      settings.set('users.guest.permissions', ['read']);
-
-      // Verify structure
-      expect(settings.get('users.admin.permissions')).toEqual(['read', 'write', 'delete']);
-      expect(settings.get('users.guest.permissions')).toEqual(['read']);
-
-      // Modify nested structure
-      settings.set('users.admin.permissions', ['read', 'write']);
-      settings.delete('users.guest');
-
-      // Verify changes
-      expect(settings.get('users.admin.permissions')).toEqual(['read', 'write']);
-      expect(settings.get('users.guest')).toBeUndefined();
-      expect(settings.has('users.guest')).toBe(false);
-      expect(settings.has('users.admin')).toBe(true);
     });
   });
 });

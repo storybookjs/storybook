@@ -36,8 +36,8 @@
   setTemplate(template);
 </script>
 
-{#snippet template(args: Args<typeof Story>, context: StoryContext<typeof Story>)}
-  <Button {...args}>{'Click me'}</Button>
+{#snippet template(args: Args<typeof Story>, _context: StoryContext<typeof Story>)}
+  <Button {...args}>Click me</Button>
 {/snippet}
 
 <!-- Only use this sparingly as the main CTA. -->

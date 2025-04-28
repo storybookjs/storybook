@@ -81,7 +81,7 @@ export async function extractCompiledASTNodes(params: Params): Promise<CompiledA
       }
     },
 
-    ImportSpecifier(node, {}) {
+    ImportSpecifier(node) {
       if (node.imported.name === AST_NODES_NAMES.defineMeta) {
         state.defineMetaImport = node;
       }

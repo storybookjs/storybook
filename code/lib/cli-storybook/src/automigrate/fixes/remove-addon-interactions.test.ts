@@ -56,13 +56,16 @@ describe('removeAddonInteractions', () => {
         runPackageCommand: vi.fn(),
       };
 
-      await removeAddonInteractions?.run?.({ packageManager: mockPackageManager, configDir: './storybook' } as any);
+      await removeAddonInteractions?.run?.({
+        packageManager: mockPackageManager,
+        configDir: './storybook',
+      } as any);
 
       expect(mockPackageManager.runPackageCommand).toHaveBeenCalledWith('storybook', [
         'remove',
         '@storybook/addon-interactions',
         '--config-dir',
-        './storybook'
+        './storybook',
       ]);
     });
   });

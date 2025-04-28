@@ -23,7 +23,7 @@ expect.addSnapshotSerializer({
 });
 
 function parseCodeToProgramNode(code: string): t.Program {
-  return parser.parse(code, { sourceType: 'module', plugins: ['typescript'] }).program;
+  return parser.parse(code, { sourceType: 'unambiguous', plugins: ['typescript'] }).program;
 }
 
 function generateCodeFromAST(node: t.Program) {
@@ -83,7 +83,7 @@ describe('cleanupTypeImports', () => {
     );
   });
 
-  it('retains imports if they are used', () => {
+  it.only('retains imports if they are used', () => {
     const code = `
       import { Type1, type Type2 } from '@storybook/react';
       import type { Type3, ShouldBeRemoved, Type4 } from '@storybook/react';

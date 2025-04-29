@@ -47,16 +47,6 @@
       "import": "./dist/next-image-loader-stub.mjs",
       "require": "./dist/next-image-loader-stub.js"
     },
-    "./dist/compatibility/segment.compat": {
-      "types": "./dist/compatibility/segment.compat.d.ts",
-      "import": "./dist/compatibility/segment.compat.mjs",
-      "require": "./dist/compatibility/segment.compat.js"
-    },
-    "./dist/compatibility/redirect-status-code.compat": {
-      "types": "./dist/compatibility/redirect-status-code.compat.d.ts",
-      "import": "./dist/compatibility/redirect-status-code.compat.mjs",
-      "require": "./dist/compatibility/redirect-status-code.compat.js"
-    },
     "./dist/compatibility/draft-mode.compat": {
       "types": "./dist/compatibility/draft-mode.compat.d.ts",
       "import": "./dist/compatibility/draft-mode.compat.mjs",
@@ -218,8 +208,6 @@
       "./src/export-mocks/headers/index.ts",
       "./src/export-mocks/router/index.ts",
       "./src/export-mocks/navigation/index.ts",
-      "./src/compatibility/segment.compat.ts",
-      "./src/compatibility/redirect-status-code.compat.ts",
       "./src/compatibility/draft-mode.compat.ts",
       "./src/next-image-loader-stub.ts",
       "./src/images/decorator.tsx",

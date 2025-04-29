@@ -150,7 +150,7 @@
     {#if asChild || isLegacyStory}
       {@render children()}
     {:else if renderer.storyContext.component}
-      <renderer.storyContext.component {children} {...renderer.args} />
+      <renderer.storyContext.component {...renderer.args} {children} />
     {:else}
       {@render children()}
     {/if}

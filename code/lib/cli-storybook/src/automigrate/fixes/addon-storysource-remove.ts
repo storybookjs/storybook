@@ -55,7 +55,12 @@ export const addonStorysourceRemove: Fix<AddonStorysourceOptions> = {
     `;
   },
 
-  async run({ result, packageManager }) {
-    await packageManager.runPackageCommand('storybook', ['remove', '@storybook/addon-storysource']);
+  async run({ configDir, packageManager }) {
+    await packageManager.runPackageCommand('storybook', [
+      'remove',
+      '@storybook/addon-storysource',
+      '--config-dir',
+      configDir,
+    ]);
   },
 };

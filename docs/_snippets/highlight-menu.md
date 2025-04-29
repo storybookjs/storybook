@@ -23,16 +23,15 @@ export const StyledHighlight: Story = {
         menu: [
           {
             id: 'button-name',
-            title: 'Button name',
-            description: 'Every button needs a visible label.',
+            title: 'Login',
+            description: 'Navigate to the login page',
             clickEvent: 'my-menu-click-event',
           },
           {
-            id: 'color-contrast',
-            title: 'Color contrast',
-            description: 'The color contrast must meet WCAG standards.',
-            clickEvent: 'my-menu-click-event',
-          }
+            id: 'h2-home',
+            title: 'Acme',
+            description: 'Navigate to the home page',
+          },
         ],
       });
       return story;
@@ -60,16 +59,15 @@ export const StyledHighlight = {
         menu: [
           {
             id: 'button-name',
-            title: 'Button name',
-            description: 'Every button needs a visible label.',
+            title: 'Login',
+            description: 'Navigate to the login page',
             clickEvent: 'my-menu-click-event',
           },
           {
-            id: 'color-contrast',
-            title: 'Color contrast',
-            description: 'The color contrast must meet WCAG standards.',
-            clickEvent: 'my-menu-click-event',
-          }
+            id: 'h2-home',
+            title: 'Acme',
+            description: 'Navigate to the home page',
+          },
         ],
       });
       return storyFn();
@@ -102,16 +100,15 @@ export const StyledHighlight: Story = {
         menu: [
           {
             id: 'button-name',
-            title: 'Button name',
-            description: 'Every button needs a visible label.',
+            title: 'Login',
+            description: 'Navigate to the login page',
             clickEvent: 'my-menu-click-event',
           },
           {
-            id: 'color-contrast',
-            title: 'Color contrast',
-            description: 'The color contrast must meet WCAG standards.',
-            clickEvent: 'my-menu-click-event',
-          }
+            id: 'h2-home',
+            title: 'Acme',
+            description: 'Navigate to the home page',
+          },
         ],
       });
       return storyFn();
@@ -139,16 +136,15 @@ export const StyledHighlight = {
         menu: [
           {
             id: 'button-name',
-            title: 'Button name',
-            description: 'Every button needs a visible label.',
+            title: 'Login',
+            description: 'Navigate to the login page',
             clickEvent: 'my-menu-click-event',
           },
           {
-            id: 'color-contrast',
-            title: 'Color contrast',
-            description: 'The color contrast must meet WCAG standards.',
-            clickEvent: 'my-menu-click-event',
-          }
+            id: 'h2-home',
+            title: 'Acme',
+            description: 'Navigate to the home page',
+          },
         ],
       });
       return {
@@ -183,16 +179,15 @@ export const StyledHighlight: Story = {
         menu: [
           {
             id: 'button-name',
-            title: 'Button name',
-            description: 'Every button needs a visible label.',
+            title: 'Login',
+            description: 'Navigate to the login page',
             clickEvent: 'my-menu-click-event',
           },
           {
-            id: 'color-contrast',
-            title: 'Color contrast',
-            description: 'The color contrast must meet WCAG standards.',
-            clickEvent: 'my-menu-click-event',
-          }
+            id: 'h2-home',
+            title: 'Acme',
+            description: 'Navigate to the home page',
+          },
         ],
       });
       return {
@@ -220,16 +215,15 @@ export const StyledHighlight = {
         menu: [
           {
             id: 'button-name',
-            title: 'Button name',
-            description: 'Every button needs a visible label.',
+            title: 'Login',
+            description: 'Navigate to the login page',
             clickEvent: 'my-menu-click-event',
           },
           {
-            id: 'color-contrast',
-            title: 'Color contrast',
-            description: 'The color contrast must meet WCAG standards.',
-            clickEvent: 'my-menu-click-event',
-          }
+            id: 'h2-home',
+            title: 'Acme',
+            description: 'Navigate to the home page',
+          },
         ],
       });
       return story();
@@ -260,16 +254,15 @@ export const StyledHighlight: Story = {
         menu: [
           {
             id: 'button-name',
-            title: 'Button name',
-            description: 'Every button needs a visible label.',
+            title: 'Login',
+            description: 'Navigate to the login page',
             clickEvent: 'my-menu-click-event',
           },
           {
-            id: 'color-contrast',
-            title: 'Color contrast',
-            description: 'The color contrast must meet WCAG standards.',
-            clickEvent: 'my-menu-click-event',
-          }
+            id: 'h2-home',
+            title: 'Acme',
+            description: 'Navigate to the home page',
+          },
         ],
       });
       return story();

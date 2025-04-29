@@ -116,9 +116,11 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
 
   global.FEATURES = features;
 
-  await buildOrThrow(async () =>
-    managerBuilder.build({ startTime: process.hrtime(), options: fullOptions })
-  );
+  if (!options.previewOnly) {
+    await buildOrThrow(async () =>
+      managerBuilder.build({ startTime: process.hrtime(), options: fullOptions })
+    );
+  }
 
   if (staticDirs) {
     effects.push(
@@ -127,7 +129,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   }
 
   const coreServerPublicDir = join(
-    dirname(require.resolve('storybook/package.json')),
+    dirname(require.resolve('storybook/internal/package.json')),
     'assets/browser'
   );
   effects.push(cp(coreServerPublicDir, options.outputDir, { recursive: true }));

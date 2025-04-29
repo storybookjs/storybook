@@ -224,6 +224,8 @@ export const rendererToFramework: Fix<MigrationResult> = {
 
     const projectRoot = await getProjectRoot();
 
+    console.log('Scanning for affected files...');
+
     // eslint-disable-next-line depend/ban-dependencies
     const globby = (await import('globby')).globby;
 
@@ -235,12 +237,16 @@ export const rendererToFramework: Fix<MigrationResult> = {
       absolute: true,
     });
 
+    console.log(`Scanning ${sourceFiles.length} files...`);
+
     // Transform imports for each renderer
     await Promise.all(
       result.renderers.map((renderer) =>
         transformSourceFiles(sourceFiles, renderer, selectedFramework, dryRun)
       )
     );
+
+    console.log('Updating package.json files...');
 
     // Update all package.json files to remove renderers
     await Promise.all(
@@ -250,6 +256,8 @@ export const rendererToFramework: Fix<MigrationResult> = {
     );
 
     // Install dependencies
-    await options.packageManager.installDependencies();
+    if (!dryRun) {
+      await options.packageManager.installDependencies();
+    }
   },
 };

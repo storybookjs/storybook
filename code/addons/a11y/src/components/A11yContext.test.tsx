@@ -119,13 +119,13 @@ describe('A11yContext', () => {
       const { results } = useA11yContext();
       return (
         <>
-          {!!results.passes.length && (
+          {!!results?.passes.length && (
             <div data-testid="anyPassesResults">{JSON.stringify(results.passes)}</div>
           )}
-          {!!results.incomplete.length && (
+          {!!results?.incomplete.length && (
             <div data-testid="anyIncompleteResults">{JSON.stringify(results.incomplete)}</div>
           )}
-          {!!results.violations.length && (
+          {!!results?.violations.length && (
             <div data-testid="anyViolationsResults">{JSON.stringify(results.violations)}</div>
           )}
         </>
@@ -237,12 +237,11 @@ describe('A11yContext', () => {
     expect(queryByTestId('status')).toHaveTextContent('initial');
 
     const useChannelArgs = mockedApi.useChannel.mock.calls[0][0];
-    const storyRenderPhaseChangedPayload = {
-      newPhase: 'loading',
-    };
 
-    act(() => useChannelArgs[STORY_RENDER_PHASE_CHANGED](storyRenderPhaseChangedPayload));
+    act(() => useChannelArgs[STORY_RENDER_PHASE_CHANGED]({ newPhase: 'loading' }));
+    expect(queryByTestId('status')).toHaveTextContent('initial');
 
+    act(() => useChannelArgs[STORY_RENDER_PHASE_CHANGED]({ newPhase: 'afterEach' }));
     expect(queryByTestId('status')).toHaveTextContent('running');
   });
 
@@ -266,12 +265,11 @@ describe('A11yContext', () => {
     expect(queryByTestId('status')).toHaveTextContent('manual');
 
     const useChannelArgs = mockedApi.useChannel.mock.calls[0][0];
-    const storyRenderPhaseChangedPayload = {
-      newPhase: 'loading',
-    };
 
-    act(() => useChannelArgs[STORY_RENDER_PHASE_CHANGED](storyRenderPhaseChangedPayload));
+    act(() => useChannelArgs[STORY_RENDER_PHASE_CHANGED]({ newPhase: 'loading' }));
+    expect(queryByTestId('status')).toHaveTextContent('manual');
 
+    act(() => useChannelArgs[STORY_RENDER_PHASE_CHANGED]({ newPhase: 'afterEach' }));
     expect(queryByTestId('status')).toHaveTextContent('manual');
   });
 

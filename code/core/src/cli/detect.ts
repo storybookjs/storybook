@@ -206,7 +206,7 @@ export async function detectLanguage(packageManager: JsPackageManager) {
       (!typescriptEslintParserVersion || semver.gte(typescriptEslintParserVersion, '5.44.0')) &&
       (!eslintPluginStorybookVersion || semver.gte(eslintPluginStorybookVersion, '0.6.8'))
     ) {
-      language = SupportedLanguage.TYPESCRIPT_4_9;
+      language = SupportedLanguage.TYPESCRIPT;
     } else {
       logger.warn(
         'Detected TypeScript < 4.9 or incompatible tooling, populating with JavaScript examples'
@@ -217,7 +217,7 @@ export async function detectLanguage(packageManager: JsPackageManager) {
     // This is eg the case for Nuxt projects, which support a recent version of TypeScript
     // Check for tsconfig.json (https://www.typescriptlang.org/docs/handbook/tsconfig-json.html)
     if (existsSync('tsconfig.json')) {
-      language = SupportedLanguage.TYPESCRIPT_4_9;
+      language = SupportedLanguage.TYPESCRIPT;
     }
   }
 

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react-webpack5",
-  "version": "9.0.0-alpha.14",
+  "version": "9.0.0-beta.5",
   "description": "Storybook for React: Develop React Component in isolation with Hot Reloading.",
   "keywords": [
     "storybook"
@@ -43,6 +43,7 @@
   "types": "dist/index.d.ts",
   "files": [
     "dist/**/*",
+    "template/cli/**/*",
     "README.md",
     "*.js",
     "*.d.ts",

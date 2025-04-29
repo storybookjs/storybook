@@ -67,7 +67,7 @@ export class Yarn1Proxy extends JsPackageManager {
   }
 
   async runPackageCommand(command: string, args: string[], cwd?: string): Promise<string> {
-    return this.executeCommand({ command: `yarn`, args: [command, ...args], cwd });
+    return this.executeCommand({ command: `yarn`, args: ['exec', command, ...args], cwd });
   }
 
   public async getPackageJSON(

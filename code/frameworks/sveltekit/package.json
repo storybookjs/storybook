@@ -1,6 +1,6 @@
 {
   "name": "@storybook/sveltekit",
-  "version": "9.0.0-alpha.14",
+  "version": "9.0.0-beta.5",
   "description": "Storybook for SvelteKit",
   "keywords": [
     "storybook",
@@ -71,8 +71,8 @@
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "typescript": "^5.7.3",
-    "vite": "5.1.6"
+    "typescript": "^5.8.3",
+    "vite": "^6.2.5"
   },
   "peerDependencies": {
     "storybook": "workspace:^",

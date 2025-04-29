@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-shadow */
 import { join } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';

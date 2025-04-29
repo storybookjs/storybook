@@ -57,14 +57,13 @@ export function normalizeStory<TRenderer extends Renderer>(
     ...normalizeArrays(storyObject.beforeEach),
     ...normalizeArrays(story?.beforeEach),
   ];
-  // eslint-disable-next-line @typescript-eslint/naming-convention
+
   const experimental_afterEach = [
     ...normalizeArrays(storyObject.experimental_afterEach),
     ...normalizeArrays(story?.experimental_afterEach),
   ];
   const { render, play, tags = [], globals = {} } = storyObject;
 
-  // eslint-disable-next-line no-underscore-dangle
   const id = parameters.__id || toId(meta.id, exportName);
   return {
     moduleExport: storyAnnotations,

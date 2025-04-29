@@ -1,4 +1,4 @@
-/* eslint-disable local-rules/no-uncategorized-errors,no-underscore-dangle */
+/* eslint-disable local-rules/no-uncategorized-errors */
 import type { Args, ArgsStoryFn, RenderContext, StoryContext } from 'storybook/internal/types';
 
 import type { PreviewWeb } from 'storybook/preview-api';

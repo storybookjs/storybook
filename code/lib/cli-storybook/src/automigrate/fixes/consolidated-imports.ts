@@ -1,9 +1,14 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
-import { commonGlobOptions, getProjectRoot, versions } from 'storybook/internal/common';
+import {
+  commonGlobOptions,
+  getProjectRoot,
+  scanAndTransformFiles,
+  transformImportFiles,
+  versions,
+} from 'storybook/internal/common';
 
 import picocolors from 'picocolors';
-import prompts from 'prompts';
 import { dedent } from 'ts-dedent';
 
 import { consolidatedPackages } from '../helpers/consolidated-packages';
@@ -41,8 +46,8 @@ function transformPackageJson(content: string): string | null {
       for (const [dep] of Object.entries(packageJson[depType])) {
         if (dep in consolidatedPackages) {
           const newPackage = consolidatedPackages[dep as keyof typeof consolidatedPackages];
-          // Only add to packagesToAdd if it's not being consolidated into storybook/*
-          if (!newPackage.startsWith('storybook/')) {
+          // Only add to packagesToAdd if it's not being consolidated into storybook/* or if it's a sub-path of a consolidated package
+          if (!newPackage.startsWith('storybook/') && !newPackage.match(/(?:.*\/){2,}/)) {
             packagesToAdd.add(newPackage);
           }
           delete packageJson[depType][dep];
@@ -66,22 +71,6 @@ function transformPackageJson(content: string): string | null {
   return hasChanges ? JSON.stringify(packageJson, null, 2) : null;
 }
 
-function transformImports(source: string) {
-  let hasChanges = false;
-  let transformed = source;
-
-  for (const [from, to] of Object.entries(consolidatedPackages)) {
-    // Match the package name when it's inside either single or double quotes
-    const regex = new RegExp(`(['"])${from}(\/.*)?\\1`, 'g');
-    if (regex.test(transformed)) {
-      transformed = transformed.replace(regex, `$1${to}$2$1`);
-      hasChanges = true;
-    }
-  }
-
-  return hasChanges ? transformed : null;
-}
-
 export const transformPackageJsonFiles = async (files: string[], dryRun: boolean) => {
   const errors: Array<{ file: string; error: Error }> = [];
 
@@ -95,30 +84,6 @@ export const transformPackageJsonFiles = async (files: string[], dryRun: boolean
         try {
           const contents = await readFile(file, 'utf-8');
           const transformed = transformPackageJson(contents);
-          if (!dryRun && transformed) {
-            await writeFile(file, transformed);
-          }
-        } catch (error) {
-          errors.push({ file, error: error as Error });
-        }
-      })
-    )
-  );
-
-  return errors;
-};
-
-export const transformImportFiles = async (files: string[], dryRun: boolean) => {
-  const errors: Array<{ file: string; error: Error }> = [];
-  const { default: pLimit } = await import('p-limit');
-  const limit = pLimit(10);
-
-  await Promise.all(
-    files.map((file) =>
-      limit(async () => {
-        try {
-          const contents = await readFile(file, 'utf-8');
-          const transformed = transformImports(contents);
           if (!dryRun && transformed) {
             await writeFile(file, transformed);
           }
@@ -216,29 +181,13 @@ export const consolidatedImports: Fix<ConsolidatedOptions> = {
     const packageJsonErrors = await transformPackageJsonFiles(packageJsonFiles, dryRun);
     errors.push(...packageJsonErrors);
 
-    const projectRoot = getProjectRoot();
-
-    const defaultGlob = '**/*.{mjs,cjs,js,jsx,ts,tsx,mdx}';
-    // Find all files matching the glob pattern
-    const { glob } = await prompts({
-      type: 'text',
-      name: 'glob',
-      message: 'Enter a custom glob pattern to scan (or press enter to use default):',
-      initial: defaultGlob,
+    const importErrors = await scanAndTransformFiles({
+      dryRun: !!dryRun,
+      promptMessage: 'Enter a custom glob pattern:',
+      transformFn: transformImportFiles,
+      transformOptions: consolidatedPackages,
     });
 
-    // eslint-disable-next-line depend/ban-dependencies
-    const globby = (await import('globby')).globby;
-
-    const sourceFiles = await globby([glob], {
-      ...commonGlobOptions(''),
-      ignore: ['**/node_modules/**'],
-      dot: true,
-      cwd: projectRoot,
-      absolute: true,
-    });
-
-    const importErrors = await transformImportFiles(sourceFiles, dryRun);
     errors.push(...importErrors);
 
     if (errors.length > 0) {

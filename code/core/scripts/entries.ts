@@ -29,7 +29,7 @@ export const getEntries = (cwd: string) => {
     define('src/outline/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
     define('src/outline/preview.ts', ['browser', 'node'], true, ['react'], [], [], true),
 
-    define('src/highlight/index.ts', ['browser', 'node'], true, ['react'], [], [], false),
+    define('src/highlight/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
     define('src/highlight/preview.ts', ['browser', 'node'], true, ['react'], [], [], true),
 
     define('src/actions/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
@@ -79,7 +79,6 @@ export const getEntries = (cwd: string) => {
       ['util', 'react'],
       [],
       [
-        '@testing-library/dom',
         '@testing-library/jest-dom',
         '@testing-library/user-event',
         'chai',
@@ -96,7 +95,6 @@ export const getEntries = (cwd: string) => {
       ['util', 'react'],
       [],
       [
-        '@testing-library/dom',
         '@testing-library/jest-dom',
         '@testing-library/user-event',
         'chai',
@@ -113,7 +111,6 @@ export const getEntries = (cwd: string) => {
       ['util', 'react'],
       [],
       [
-        '@testing-library/dom',
         '@testing-library/jest-dom',
         '@testing-library/user-event',
         'chai',

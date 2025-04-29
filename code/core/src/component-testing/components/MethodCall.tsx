@@ -1,6 +1,8 @@
 import type { ReactElement } from 'react';
 import React, { Fragment } from 'react';
 
+import { logger } from 'storybook/internal/client-logger';
+
 import { ObjectInspector } from '@devtools-ds/object-inspector';
 import { useTheme } from 'storybook/theming';
 
@@ -122,7 +124,6 @@ export const Node = ({
     case typeof value === 'boolean':
       return <BooleanNode {...props} value={value} />;
 
-    /* eslint-disable no-underscore-dangle */
     case Object.prototype.hasOwnProperty.call(value, '__date__'):
       return <DateNode {...props} {...value.__date__} />;
     case Object.prototype.hasOwnProperty.call(value, '__error__'):
@@ -139,7 +140,6 @@ export const Node = ({
       return <ClassNode {...props} {...value.__class__} />;
     case Object.prototype.hasOwnProperty.call(value, '__callId__'):
       return <MethodCall call={callsById?.get(value.__callId__)} callsById={callsById} />;
-    /* eslint-enable no-underscore-dangle */
 
     case Object.prototype.toString.call(value) === '[object Object]':
       return (
@@ -344,9 +344,18 @@ export const ElementNode = ({
 };
 
 export const DateNode = ({ value }: { value: string | Date }) => {
-  const string = value instanceof Date ? value.toISOString() : value;
-  const [date, time, ms] = string.split(/[T.Z]/);
+  let parsed: Date | null = new Date(value);
+  if (isNaN(Number(parsed))) {
+    logger.warn('Invalid date value:', value);
+    parsed = null;
+  }
+
   const colors = useThemeColors();
+  if (!parsed) {
+    return <span style={{ whiteSpace: 'nowrap', color: colors.date }}>Invalid date</span>;
+  }
+
+  const [date, time, ms] = parsed.toISOString().split(/[T.Z]/);
   return (
     <span style={{ whiteSpace: 'nowrap', color: colors.date }}>
       {date}
@@ -430,7 +439,6 @@ export const MethodCall = ({
   }
 
   const path = call.path?.flatMap((elem, index) => {
-    // eslint-disable-next-line no-underscore-dangle
     const callId = (elem as CallRef).__callId__;
     return [
       callId ? (

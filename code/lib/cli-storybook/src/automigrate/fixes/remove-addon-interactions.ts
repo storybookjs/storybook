@@ -32,10 +32,16 @@ export const removeAddonInteractions: Fix<{}> = {
     `;
   },
 
-  async run({ packageManager }) {
-    await packageManager.runPackageCommand('storybook', [
-      'remove',
-      '@storybook/addon-interactions',
-    ]);
+  async run({ packageManager, dryRun, configDir }) {
+    if (!dryRun) {
+      console.log('Removing @storybook/addon-interactions...');
+
+      await packageManager.runPackageCommand('storybook', [
+        'remove',
+        '@storybook/addon-interactions',
+        '--config-dir',
+        configDir,
+      ]);
+    }
   },
 };

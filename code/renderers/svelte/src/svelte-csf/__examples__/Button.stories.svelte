@@ -16,7 +16,7 @@
     tags: ['autodocs'],
     args: {
       onclick: onclickFn,
-      children: 'Click me' as unknown as Snippet<[]>,
+      children: 'Click me' as any,
     },
     argTypes: {
       backgroundColor: { control: 'color' },

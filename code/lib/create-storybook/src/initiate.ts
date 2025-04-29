@@ -416,7 +416,7 @@ export async function doInitiate(options: CommandOptions): Promise<
   try {
     await settings.save();
   } catch (err) {
-    logger.warn(`Failed to save user settings: ${err}`)
+    logger.warn(`Failed to save user settings: ${err}`);
   }
 
   if (typeof newUser === 'undefined') {

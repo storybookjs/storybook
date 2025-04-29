@@ -138,7 +138,7 @@
     "jiti": "^1.21.7",
     "json5": "^2.2.3",
     "junit-xml": "^1.2.0",
-    "knip": "^5.50.5",
+    "knip": "^5.51.0",
     "lint-staged": "^15.5.1",
     "memoizerific": "^1.11.3",
     "minimatch": "^10.0.1",

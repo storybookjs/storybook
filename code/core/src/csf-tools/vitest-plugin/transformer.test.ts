@@ -56,6 +56,12 @@ describe('transformer', () => {
 
       expect(result.code).toMatchInlineSnapshot(`console.log('Not a story file');`);
     });
+
+    it('should not transform non-story files', async () => {
+      const code = 'foo';
+      const result = await transform({ code, fileName: 'index.js' });
+      expect(result.code).toBe('foo');
+    });
   });
 
   describe('CSF v1/v2/v3', () => {
@@ -174,6 +180,72 @@ describe('transformer', () => {
           const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
             _test("Story", _testStory("Story", Story, meta, []));
+          }
+        `);
+      });
+
+      it('should remove parameters.docs from meta object', async () => {
+        const code = `
+          export default {
+            title: 'Custom/Title',
+            parameters: {
+              docs: {
+                page: someMdx,
+              },
+              layout: 'fullscreen',
+            },
+          };
+          
+          export const Story = {};
+        `;
+
+        const result = await transform({ code });
+
+        expect(result.code).toMatchInlineSnapshot(`
+          import { test as _test, expect as _expect } from "vitest";
+          import { testStory as _testStory } from "@storybook/addon-vitest/internal/test-utils";
+          const _meta = {
+            title: "automatic/calculated/title",
+            parameters: {
+              layout: 'fullscreen'
+            }
+          };
+          export default _meta;
+          export const Story = {};
+          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          if (_isRunningFromThisFile) {
+            _test("Story", _testStory("Story", Story, _meta, []));
+          }
+        `);
+      });
+
+      it('should remove empty parameters object after docs removal', async () => {
+        const code = `
+          export default {
+            title: 'Custom/Title',
+            parameters: {
+              docs: {
+                page: null,
+              },
+            },
+          };
+          
+          export const Story = {};
+        `;
+
+        const result = await transform({ code });
+
+        expect(result.code).toMatchInlineSnapshot(`
+          import { test as _test, expect as _expect } from "vitest";
+          import { testStory as _testStory } from "@storybook/addon-vitest/internal/test-utils";
+          const _meta = {
+            title: "automatic/calculated/title"
+          };
+          export default _meta;
+          export const Story = {};
+          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          if (_isRunningFromThisFile) {
+            _test("Story", _testStory("Story", Story, _meta, []));
           }
         `);
       });
@@ -420,6 +492,71 @@ describe('transformer', () => {
           export default _meta;
           export const Story = {};
           _describe.skip("No valid tests found");
+        `);
+      });
+
+      it('should remove parameters.docs from story objects', async () => {
+        const code = `
+          export default { title: 'Custom/Title' };
+          
+          export const Story = {
+            parameters: {
+              docs: {
+                page: null,
+              },
+              layout: 'fullscreen',
+            },
+          };
+        `;
+
+        const result = await transform({ code });
+
+        expect(result.code).toMatchInlineSnapshot(`
+          import { test as _test, expect as _expect } from "vitest";
+          import { testStory as _testStory } from "@storybook/addon-vitest/internal/test-utils";
+          const _meta = {
+            title: "automatic/calculated/title"
+          };
+          export default _meta;
+          export const Story = {
+            parameters: {
+              layout: 'fullscreen'
+            }
+          };
+          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          if (_isRunningFromThisFile) {
+            _test("Story", _testStory("Story", Story, _meta, []));
+          }
+        `);
+      });
+
+      it('should remove empty parameters object from story after docs removal', async () => {
+        const code = `
+          export default { title: 'Custom/Title' };
+          
+          export const Story = {
+            parameters: {
+              docs: {
+                page: null,
+              },
+            },
+          };
+        `;
+
+        const result = await transform({ code });
+
+        expect(result.code).toMatchInlineSnapshot(`
+          import { test as _test, expect as _expect } from "vitest";
+          import { testStory as _testStory } from "@storybook/addon-vitest/internal/test-utils";
+          const _meta = {
+            title: "automatic/calculated/title"
+          };
+          export default _meta;
+          export const Story = {};
+          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          if (_isRunningFromThisFile) {
+            _test("Story", _testStory("Story", Story, _meta, []));
+          }
         `);
       });
     });

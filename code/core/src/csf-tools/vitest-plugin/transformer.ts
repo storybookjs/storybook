@@ -26,6 +26,42 @@ const isValidTest = (storyTags: string[], tagsFilter: TagsFilter) => {
   // Skipped tests are intentionally included here
   return true;
 };
+
+// Removes parameters which are not useful for portable stories
+const cleanupParameters = (objectExpr: t.ObjectExpression) => {
+  const PARAMETERS_DISALLOW_LIST = ['docs'];
+  // Find the parameters property in the object
+  const parametersProperty = objectExpr.properties.find(
+    (prop) => t.isObjectProperty(prop) && t.isIdentifier(prop.key) && prop.key.name === 'parameters'
+  ) as t.ObjectProperty | undefined;
+
+  if (parametersProperty && t.isObjectExpression(parametersProperty.value)) {
+    // Find the properties that match the disallow list in the parameters object
+    const disallowedPropertyIndex = parametersProperty.value.properties.findIndex(
+      (prop) =>
+        t.isObjectProperty(prop) &&
+        t.isIdentifier(prop.key) &&
+        PARAMETERS_DISALLOW_LIST.includes(prop.key.name)
+    );
+
+    // And remove them if they exist
+    if (disallowedPropertyIndex !== -1) {
+      parametersProperty.value.properties.splice(disallowedPropertyIndex, 1);
+    }
+
+    // If the parameters object then empty, remove it entirely
+    if (parametersProperty.value.properties.length === 0) {
+      const parametersPropIndex = objectExpr.properties.findIndex(
+        (prop) =>
+          t.isObjectProperty(prop) && t.isIdentifier(prop.key) && prop.key.name === 'parameters'
+      );
+      if (parametersPropIndex !== -1) {
+        objectExpr.properties.splice(parametersPropIndex, 1);
+      }
+    }
+  }
+};
+
 /**
  * TODO: the functionality in this file can be moved back to the vitest plugin itself It can use
  * `storybook/internal/babel` for all it's babel needs, without duplicating babel embedding in our
@@ -100,6 +136,9 @@ export async function vitestTransform({
     );
   }
 
+  // Remove parameters.docs from meta object
+  cleanupParameters(metaNode);
+
   // Filter out stories based on the passed tags filter
   const validStories: (typeof parsed)['_storyStatements'] = {};
   Object.keys(parsed._stories).map((key) => {
@@ -113,6 +152,12 @@ export async function vitestTransform({
 
     if (isValidTest(finalTags, tagsFilter)) {
       validStories[key] = parsed._storyStatements[key];
+
+      // Remove parameters.docs from story object if it exists
+      const storyNode = parsed.getStoryExport(key);
+      if (storyNode && t.isObjectExpression(storyNode)) {
+        cleanupParameters(storyNode);
+      }
     }
   });
 

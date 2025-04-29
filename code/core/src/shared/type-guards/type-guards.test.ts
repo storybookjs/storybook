@@ -43,10 +43,10 @@ describe('type-guards - isObject()', () => {
     expect(isObject({ a: 1 })).toBe(true);
   });
 
-  it('should return true for class instances', () => {
+  it('should return false for class instances', () => {
     class TestClass {}
     const instance = new TestClass();
-    expect(isObject(instance)).toBe(true);
+    expect(isObject(instance)).toBe(false);
   });
 
   it('should return false for null and undefined', () => {
@@ -66,13 +66,13 @@ describe('type-guards - isObject()', () => {
     expect(isObject(Symbol('test'))).toBe(false);
   });
 
-  it('should return true for complex objects', () => {
+  it('should return false for complex objects', () => {
     const date = new Date();
     const map = new Map();
     const set = new Set();
 
-    expect(isObject(date)).toBe(true);
-    expect(isObject(map)).toBe(true);
-    expect(isObject(set)).toBe(true);
+    expect(isObject(date)).toBe(false);
+    expect(isObject(map)).toBe(false);
+    expect(isObject(set)).toBe(false);
   });
 });

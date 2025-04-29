@@ -2,12 +2,7 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "module": "ESNext",
-    "verbatimModuleSyntax": true,
-    // outDir and rootDir is just to make Knip understand that the Svelte files in dist maps to the src files
-    // Our build scripts completely ignores this outDir, it doesn't have an effect.
-    // See https://github.com/storybookjs/storybook/pull/31227#discussion_r2065476405
-    "outDir": "./dist",
-    "rootDir": "./src"
+    "verbatimModuleSyntax": true
   },
   "include": ["src/**/*", "src/**/*.svelte", "template/**/*", "template/**/*.svelte"]
 }

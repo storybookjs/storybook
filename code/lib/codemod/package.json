@@ -52,7 +52,7 @@
     "@babel/types": "^7.24.0",
     "@types/cross-spawn": "^6.0.2",
     "cross-spawn": "^7.0.3",
-    "es-toolkit": "^1.22.0",
+    "es-toolkit": "^1.36.0",
     "globby": "^14.0.1",
     "jscodeshift": "^0.15.1",
     "prettier": "^3.5.3",
@@ -63,7 +63,7 @@
     "@types/jscodeshift": "^0.11.10",
     "ansi-regex": "^6.0.1",
     "ts-dedent": "^2.2.0",
-    "typescript": "^5.7.3"
+    "typescript": "^5.8.3"
   },
   "publishConfig": {
     "access": "public"

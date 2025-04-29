@@ -65,7 +65,7 @@
     "svelte": "^5.20.5",
     "svelte-check": "^4.1.4",
     "sveltedoc-parser": "^4.2.1",
-    "typescript": "^5.7.3",
+    "typescript": "^5.8.3",
     "vite": "^6.2.5"
   },
   "peerDependencies": {

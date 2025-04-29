@@ -63,6 +63,7 @@
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^5.0.3",
+    "@types/estree": "^1.0.6",
     "@types/node": "^22.0.0",
     "svelte": "^5.0.5",
     "sveltedoc-parser": "^4.2.1",

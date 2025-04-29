@@ -56,6 +56,7 @@
     "semver": "^7.5.4"
   },
   "devDependencies": {
+    "@babel/core": "^7.26.9",
     "@types/node": "^22.0.0",
     "typescript": "^5.8.3"
   },

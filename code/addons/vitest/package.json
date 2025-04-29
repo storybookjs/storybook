@@ -96,6 +96,7 @@
     "ts-dedent": "^2.2.0"
   },
   "devDependencies": {
+    "@babel/types": "^7.26.8",
     "@types/istanbul-lib-report": "^3.0.3",
     "@types/node": "^22.0.0",
     "@types/semver": "^7",

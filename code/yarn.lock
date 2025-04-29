@@ -6008,6 +6008,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/addon-vitest@workspace:addons/vitest"
   dependencies:
+    "@babel/types": "npm:^7.26.8"
     "@storybook/global": "npm:^5.0.0"
     "@storybook/icons": "npm:^1.4.0"
     "@types/istanbul-lib-report": "npm:^3.0.3"
@@ -6463,6 +6464,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/preset-create-react-app@workspace:presets/create-react-app"
   dependencies:
+    "@babel/core": "npm:^7.26.9"
     "@pmmmwh/react-refresh-webpack-plugin": "npm:^0.5.1"
     "@storybook/react-docgen-typescript-plugin": "npm:1.0.6--canary.9.0c3f3b7.0"
     "@types/node": "npm:^22.0.0"
@@ -6619,6 +6621,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/react@workspace:renderers/react"
   dependencies:
+    "@babel/core": "npm:^7.26.9"
     "@storybook/global": "npm:^5.0.0"
     "@storybook/react-dom-shim": "workspace:*"
     "@types/babel-plugin-react-docgen": "npm:^4.2.3"
@@ -6632,7 +6635,7 @@ __metadata:
     babel-plugin-react-docgen: "npm:^4.2.1"
     es-toolkit: "npm:^1.36.0"
     escodegen: "npm:^2.1.0"
-    expect-type: "npm:^0.15.0"
+    expect-type: "npm:^1.1.0"
     html-tags: "npm:^3.1.0"
     prop-types: "npm:^15.7.2"
     react-element-to-jsx-string: "npm:^15.0.0"
@@ -6833,6 +6836,7 @@ __metadata:
     "@storybook/builder-vite": "workspace:*"
     "@storybook/svelte": "workspace:*"
     "@sveltejs/vite-plugin-svelte": "npm:^5.0.3"
+    "@types/estree": "npm:^1.0.6"
     "@types/node": "npm:^22.0.0"
     magic-string: "npm:^0.30.0"
     svelte: "npm:^5.0.5"
@@ -6913,6 +6917,7 @@ __metadata:
     "@storybook/global": "npm:^5.0.0"
     "@testing-library/vue": "npm:^8.0.0"
     "@vitejs/plugin-vue": "npm:^4.4.0"
+    expect-type: "npm:^1.1.0"
     type-fest: "npm:~2.19"
     typescript: "npm:^5.8.3"
     vue: "npm:^3.2.47"
@@ -24402,6 +24407,7 @@ __metadata:
     ansi-to-html: "npm:^0.7.2"
     better-opn: "npm:^3.0.2"
     boxen: "npm:^7.1.1"
+    browser-assert: "npm:^1.2.1"
     browser-dtector: "npm:^3.4.0"
     bundle-require: "npm:^5.1.0"
     camelcase: "npm:^8.0.0"
@@ -24422,6 +24428,7 @@ __metadata:
     esbuild: "npm:^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0"
     esbuild-register: "npm:^3.5.0"
     execa: "npm:^8.0.1"
+    expect-type: "npm:^0.15.0"
     fd-package-json: "npm:^1.2.0"
     fetch-retry: "npm:^6.0.0"
     find-cache-dir: "npm:^5.0.0"

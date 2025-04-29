@@ -74,6 +74,7 @@
     "@storybook/react-dom-shim": "workspace:*"
   },
   "devDependencies": {
+    "@babel/core": "^7.26.9",
     "@types/babel-plugin-react-docgen": "^4.2.3",
     "@types/escodegen": "^0.0.6",
     "@types/estree": "^1.0.6",
@@ -85,7 +86,7 @@
     "babel-plugin-react-docgen": "^4.2.1",
     "es-toolkit": "^1.36.0",
     "escodegen": "^2.1.0",
-    "expect-type": "^0.15.0",
+    "expect-type": "^1.1.0",
     "html-tags": "^3.1.0",
     "prop-types": "^15.7.2",
     "react-element-to-jsx-string": "^15.0.0",

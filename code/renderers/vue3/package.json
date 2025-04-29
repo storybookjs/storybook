@@ -68,6 +68,7 @@
   "devDependencies": {
     "@testing-library/vue": "^8.0.0",
     "@vitejs/plugin-vue": "^4.4.0",
+    "expect-type": "^1.1.0",
     "typescript": "^5.8.3",
     "vue": "^3.2.47",
     "vue-tsc": "latest"

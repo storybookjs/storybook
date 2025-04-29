@@ -1,14 +1,5 @@
 const ANIMATION_TIMEOUT = 5000;
 
-function getShadowRoots(doc: Document | ShadowRoot) {
-  return [doc, ...doc.querySelectorAll('*')].reduce<ShadowRoot[]>((acc, el) => {
-    if ('shadowRoot' in el && el.shadowRoot) {
-      acc.push(el.shadowRoot, ...getShadowRoots(el.shadowRoot));
-    }
-    return acc;
-  }, []);
-}
-
 // Use the Web Animations API to wait for any animations and transitions to finish
 export async function waitForAnimations(signal: AbortSignal) {
   let timedOut = false;
@@ -24,7 +15,7 @@ export async function waitForAnimations(signal: AbortSignal) {
           }
           const runningAnimations = animationRoots
             .flatMap((el) => el?.getAnimations() || [])
-            .filter((a) => a.playState === 'running');
+            .filter((a) => a.playState === 'running' && !isInfiniteAnimation(a));
           if (runningAnimations.length > 0) {
             await Promise.all(runningAnimations.map((a) => a.finished));
             await checkAnimationsFinished();
@@ -42,4 +33,23 @@ export async function waitForAnimations(signal: AbortSignal) {
       }, ANIMATION_TIMEOUT)
     ),
   ]);
+}
+
+function getShadowRoots(doc: Document | ShadowRoot) {
+  return [doc, ...doc.querySelectorAll('*')].reduce<ShadowRoot[]>((acc, el) => {
+    if ('shadowRoot' in el && el.shadowRoot) {
+      acc.push(el.shadowRoot, ...getShadowRoots(el.shadowRoot));
+    }
+    return acc;
+  }, []);
+}
+
+function isInfiniteAnimation(anim: Animation) {
+  if (anim instanceof CSSAnimation && anim.effect instanceof KeyframeEffect && anim.effect.target) {
+    const style = getComputedStyle(anim.effect.target);
+    const index = style.animationName?.split(', ').indexOf(anim.animationName);
+    const iterations = style.animationIterationCount.split(', ')[index];
+    return iterations === 'infinite';
+  }
+  return false;
 }

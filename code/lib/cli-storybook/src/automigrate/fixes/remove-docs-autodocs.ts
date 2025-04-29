@@ -22,7 +22,7 @@ interface RemoveDocsAutodocsOptions {
  * Migration to remove the docs.autodocs field from main.ts config This field was deprecated in
  * Storybook 7-8 and removed in Storybook 9
  */
-export const removeDocsAutodocs: Fix<RemoveDocsAutodocsOptions> = {
+export const removeDocsAutodocs: Fix<RemoveDocsAutodocsOptions, 'remove-docs-autodocs'> = {
   id: 'remove-docs-autodocs',
   versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
 

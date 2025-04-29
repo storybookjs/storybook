@@ -15,7 +15,7 @@ interface AddonStorysourceOptions {
  *
  * - Remove @storybook/addon-storysource from main.ts and package.json
  */
-export const addonStorysourceRemove: Fix<AddonStorysourceOptions> = {
+export const addonStorysourceRemove: Fix<AddonStorysourceOptions, 'addon-storysource-remove'> = {
   id: 'addon-storysource-remove',
   versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
 

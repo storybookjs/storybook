@@ -138,7 +138,7 @@ const checkPackageJson = async (
   return { frameworks, renderers };
 };
 
-export const rendererToFramework: Fix<MigrationResult> = {
+export const rendererToFramework: Fix<MigrationResult, 'renderer-to-framework'> = {
   id: 'renderer-to-framework',
   versionRange: ['<9.0.0', '^9.0.0-0'],
   promptType: 'auto',

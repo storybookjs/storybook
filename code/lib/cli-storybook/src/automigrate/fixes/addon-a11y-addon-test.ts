@@ -39,7 +39,7 @@ interface AddonA11yAddonTestOptions {
  * - `.storybook/preview.<ts|js>` to set up tags.
  * - If we can't transform the files automatically, we'll prompt the user to do it manually.
  */
-export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
+export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions, 'addonA11yAddonTest'> = {
   id: 'addonA11yAddonTest',
   versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
 

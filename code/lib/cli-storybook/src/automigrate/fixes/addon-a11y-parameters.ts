@@ -21,7 +21,7 @@ interface A11yOptions {
 
 const logger = console;
 
-export const addonA11yParameters: Fix<A11yOptions> = {
+export const addonA11yParameters: Fix<A11yOptions, 'addon-a11y-parameters'> = {
   id: 'addon-a11y-parameters',
   versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
 

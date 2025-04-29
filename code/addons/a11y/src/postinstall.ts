@@ -1,3 +1,5 @@
+import { getAutomigrateCommand } from 'storybook/internal/cli';
+
 // eslint-disable-next-line depend/ban-dependencies
 import { execa } from 'execa';
 
@@ -13,5 +15,9 @@ const $ = execa({
 export default async function postinstall(options: PostinstallOptions) {
   await $({
     stdio: 'inherit',
-  })`storybook automigrate addonA11yAddonTest ${options.yes ? '--yes' : ''}`;
+  })`${getAutomigrateCommand('addonA11yAddonTest', {
+    yes: options.yes,
+    configDir: options.configDir,
+    packageManager: options.packageManager,
+  })}`;
 }

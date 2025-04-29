@@ -34,8 +34,8 @@ export interface RunOptions<ResultType> {
  */
 export type Prompt = 'auto' | 'manual' | 'notification' | 'command';
 
-type BaseFix<ResultType = any> = {
-  id: string;
+type BaseFix<ResultType, Key extends string> = {
+  id: Key;
   /**
    * The from/to version range of Storybook that this fix applies to. The strings are semver ranges.
    * The versionRange will only be checked if the automigration is part of an upgrade. If the
@@ -52,20 +52,20 @@ type PromptType<ResultType = any, T = Prompt> =
   | T
   | ((result: ResultType) => Promise<Prompt> | Prompt);
 
-export type Fix<ResultType = any> =
+export type Fix<ResultType, Key extends string> =
   | ({
       promptType?: PromptType<ResultType, 'auto'>;
       run: (options: RunOptions<ResultType>) => Promise<void>;
-    } & BaseFix<ResultType>)
+    } & BaseFix<ResultType, Key>)
   | ({
       promptType: PromptType<ResultType, 'manual' | 'notification'>;
       run?: never;
-    } & BaseFix<ResultType>);
+    } & BaseFix<ResultType, Key>);
 
-export type CommandFix<ResultType = any> = {
+export type CommandFix<ResultType = any, Key extends string = string> = {
   promptType: PromptType<ResultType, 'command'>;
   run: (options: RunOptions<ResultType>) => Promise<void>;
-} & Omit<BaseFix<ResultType>, 'versionRange' | 'check' | 'prompt'>;
+} & Omit<BaseFix<ResultType, Key>, 'versionRange' | 'check' | 'prompt'>;
 
 export type FixId = string;
 

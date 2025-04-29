@@ -97,7 +97,7 @@ export const transformPackageJsonFiles = async (files: string[], dryRun: boolean
   return errors;
 };
 
-export const consolidatedImports: Fix<ConsolidatedOptions> = {
+export const consolidatedImports: Fix<ConsolidatedOptions, 'consolidated-imports'> = {
   id: 'consolidated-imports',
   versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
   check: async () => {

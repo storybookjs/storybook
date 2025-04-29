@@ -34,7 +34,7 @@ const consolidatedAddons = {
  * - If user had docs enabled (default): Install @storybook/addon-docs and add to main.ts
  * - If user had docs disabled: Skip addon-docs installation
  */
-export const addonEssentialsRemoveDocs: Fix<AddonDocsOptions> = {
+export const addonEssentialsRemoveDocs: Fix<AddonDocsOptions, 'addon-essentials-remove-docs'> = {
   id: 'addon-essentials-remove-docs',
   versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
 

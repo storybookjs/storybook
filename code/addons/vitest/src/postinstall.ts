@@ -3,6 +3,7 @@ import * as fs from 'node:fs/promises';
 import { writeFile } from 'node:fs/promises';
 
 import { babelParse, generate, traverse } from 'storybook/internal/babel';
+import { getAutomigrateCommand } from 'storybook/internal/cli';
 import {
   JsPackageManagerFactory,
   extractProperFrameworkName,
@@ -337,7 +338,11 @@ export default async function postInstall(options: PostinstallOptions) {
       logger.plain(`${step} Setting up ${addonA11yName} for @storybook/addon-vitest:`);
       await $({
         stdio: 'inherit',
-      })`storybook automigrate addonA11yAddonTest ${options.yes ? '--yes' : ''}`;
+      })`${getAutomigrateCommand('addonA11yAddonTest', {
+        yes: options.yes,
+        configDir: options.configDir,
+        packageManager: options.packageManager,
+      })}`;
     } catch (e) {
       printError(
         '🚨 Oh no!',

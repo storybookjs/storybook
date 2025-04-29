@@ -18,7 +18,7 @@ import { wrapRequire } from './wrap-require';
 
 export * from '../types';
 
-export const allFixes: Fix[] = [
+export const allFixes = [
   eslintPlugin,
   wrapRequire,
   addonMdxGfmRemove,
@@ -34,10 +34,12 @@ export const allFixes: Fix[] = [
   addonEssentialsRemoveDocs,
   addonA11yParameters,
   removeDocsAutodocs,
-];
+] satisfies Fix[];
 
-export const initFixes: Fix[] = [eslintPlugin];
+export type FixesIDs<F extends Fix[]> = F[number]['id'];
+
+export const initFixes = [eslintPlugin] satisfies Fix[];
 
 // These are specific fixes that only occur when triggered on command, and are hidden otherwise.
 // e.g. npx storybook automigrate csf-factories
-export const commandFixes: CommandFix[] = [csfFactories];
+export const commandFixes = [csfFactories] satisfies CommandFix[];

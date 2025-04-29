@@ -14,7 +14,7 @@ interface AddonMdxGfmOptions {
  *
  * - Remove @storybook/addon-mdx-gfm from main.ts and package.json
  */
-export const addonMdxGfmRemove: Fix<AddonMdxGfmOptions> = {
+export const addonMdxGfmRemove: Fix<AddonMdxGfmOptions, 'addon-mdx-gfm-remove'> = {
   id: 'addon-mdx-gfm-remove',
   versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
 

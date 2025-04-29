@@ -2,6 +2,7 @@
   import { defineMeta, type Args, type StoryContext } from '@storybook/addon-svelte-csf';
   import { fn } from '@storybook/test';
 
+  import type { Snippet } from 'svelte';
   import Button from './components/Button.svelte';
 
   const onclickFn = fn().mockName('onclick');
@@ -15,6 +16,7 @@
     tags: ['autodocs'],
     args: {
       onclick: onclickFn,
+      children: 'Click me' as any,
     },
     argTypes: {
       backgroundColor: { control: 'color' },
@@ -30,7 +32,7 @@
 </script>
 
 {#snippet template(args: Args<typeof Story>, context: StoryContext<typeof Story>)}
-  <Button {...args}>Click me</Button>
+  <Button {...args}>{args.children}</Button>
 {/snippet}
 
 <!-- Only use this sparingly as the main CTA. -->

@@ -1533,6 +1533,7 @@ __metadata:
     "@types/semver": "npm:^7.7.0"
     "@types/serve-static": "npm:^1.15.7"
     "@types/uuid": "npm:^9.0.8"
+    "@types/wait-on": "npm:^5.3.4"
     "@types/window-size": "npm:^1.1.4"
     "@typescript-eslint/eslint-plugin": "npm:^8.31.0"
     "@typescript-eslint/experimental-utils": "npm:^5.62.0"
@@ -2065,6 +2066,15 @@ __metadata:
   version: 9.0.8
   resolution: "@types/uuid@npm:9.0.8"
   checksum: 10c0/b411b93054cb1d4361919579ef3508a1f12bf15b5fdd97337d3d351bece6c921b52b6daeef89b62340fd73fd60da407878432a1af777f40648cbe53a01723489
+  languageName: node
+  linkType: hard
+
+"@types/wait-on@npm:^5.3.4":
+  version: 5.3.4
+  resolution: "@types/wait-on@npm:5.3.4"
+  dependencies:
+    "@types/node": "npm:*"
+  checksum: 10c0/e366fbfa78fbed4a033aa03072291ba869328dc1a1b715109540af3a328f8f023ec868219f6d2148d5a2ea21f1ce0f12d29e42411f3255ba155da2af978319ee
   languageName: node
   linkType: hard
 

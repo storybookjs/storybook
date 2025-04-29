@@ -88,6 +88,7 @@
     "@types/semver": "^7.7.0",
     "@types/serve-static": "^1.15.7",
     "@types/uuid": "^9.0.8",
+    "@types/wait-on": "^5.3.4",
     "@types/window-size": "^1.1.4",
     "@typescript-eslint/eslint-plugin": "^8.31.0",
     "@typescript-eslint/experimental-utils": "^5.62.0",

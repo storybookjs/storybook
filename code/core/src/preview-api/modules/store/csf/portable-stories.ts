@@ -1,4 +1,4 @@
-import { type CleanupCallback, type Preview, isExportStory } from 'storybook/internal/csf';
+import { type CleanupCallback, isExportStory } from 'storybook/internal/csf';
 import { MountMustBeDestructuredError } from 'storybook/internal/preview-errors';
 import type {
   Args,
@@ -24,6 +24,7 @@ import { dedent } from 'ts-dedent';
 
 import { HooksContext } from '../../../addons';
 import { getCoreAnnotations } from '../../../core-annotations';
+import { waitForAnimations } from '../../preview-web/render/waitForAnimations';
 import { ReporterAPI } from '../reporter-api';
 import { composeConfigs } from './composeConfigs';
 import { getCsfFactoryAnnotations } from './csf-factory-utils';
@@ -413,6 +414,10 @@ async function runStory<TRenderer extends Renderer>(
       };
     }
     await playFunction(context);
+  }
+
+  if ('document' in globalThis && 'querySelectorAll' in globalThis.document) {
+    await waitForAnimations(context.abortSignal);
   }
 
   await story.applyAfterEach(context);

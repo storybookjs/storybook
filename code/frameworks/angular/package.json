@@ -1,6 +1,6 @@
 {
   "name": "@storybook/angular",
-  "version": "9.0.0-beta.4",
+  "version": "9.0.0-beta.5",
   "description": "Storybook for Angular: Develop Angular components in isolation with hot reloading.",
   "keywords": [
     "storybook",
@@ -78,7 +78,7 @@
     "@angular/platform-browser-dynamic": "^19.1.1",
     "@types/node": "^22.0.0",
     "rimraf": "^6.0.1",
-    "typescript": "^5.7.3",
+    "typescript": "^5.8.3",
     "webpack": "5",
     "zone.js": "^0.15.0"
   },

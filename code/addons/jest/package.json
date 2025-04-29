@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-jest",
-  "version": "9.0.0-beta.4",
+  "version": "9.0.0-beta.5",
   "description": "React storybook addon that show component jest report",
   "keywords": [
     "addon",
@@ -60,7 +60,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-resize-detector": "^7.1.2",
-    "typescript": "^5.7.3"
+    "typescript": "^5.8.3"
   },
   "peerDependencies": {
     "storybook": "workspace:^"

@@ -15,6 +15,7 @@
 
   import { storyNameToExportName } from '../utils/identifier-utils.js';
   import type { Cmp, StoryAnnotations } from '../types.js';
+  import { SVELTE_CSF_V4_TAG } from '../constants.js';
 
   type Props = Partial<StoryAnnotations<TCmp>> & {
     /**
@@ -138,7 +139,7 @@
   });
 
   const isLegacyStory = $derived(
-    renderer.storyContext.tags?.some((tag) => tag === 'legacy') ?? false
+    renderer.storyContext.tags?.some((tag) => tag === SVELTE_CSF_V4_TAG) ?? false
   );
 </script>
 

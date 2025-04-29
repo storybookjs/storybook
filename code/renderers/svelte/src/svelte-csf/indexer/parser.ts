@@ -33,6 +33,7 @@ import { extractStoryTemplateSnippetBlock } from '../parser/extract/svelte/story
 interface Results {
   meta: Pick<IndexInput, 'title' | 'tags'>;
   stories: Array<Pick<IndexInput, 'exportName' | 'name' | 'tags'>>;
+  isLegacy: boolean;
 }
 
 export async function parseForIndexer(
@@ -65,6 +66,7 @@ export async function parseForIndexer(
   } = {
     meta: {},
     stories: [],
+    isLegacy: false,
   };
 
   let foundMeta = false;
@@ -146,11 +148,13 @@ export async function parseForIndexer(
         // TODO: Remove it in the next major version
         if (legacyTemplate && specifier.imported.name === 'Meta') {
           state.legacyMetaImport = specifier;
+          state.isLegacy = true;
         }
 
         // TODO: Remove it in the next major version
         if (legacyTemplate && specifier.imported.name === 'Story') {
           state.legacyStoryImport = specifier;
+          state.isLegacy = true;
         }
       }
     },
@@ -342,10 +346,11 @@ export async function parseForIndexer(
     },
   });
 
-  const { meta, stories } = results;
+  const { meta, stories, isLegacy } = results;
 
   return {
     meta,
     stories,
+    isLegacy,
   };
 }

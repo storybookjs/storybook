@@ -66,7 +66,7 @@
     "@types/node": "^22.0.0",
     "svelte": "^5.0.5",
     "sveltedoc-parser": "^4.2.1",
-    "typescript": "^5.7.3",
+    "typescript": "^5.8.3",
     "vite": "^6.2.5"
   },
   "peerDependencies": {

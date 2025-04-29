@@ -1,6 +1,6 @@
 {
   "name": "@storybook/angular",
-  "version": "9.0.0-beta.2",
+  "version": "9.0.0-beta.5",
   "description": "Storybook for Angular: Develop Angular components in isolation with hot reloading.",
   "keywords": [
     "storybook",
@@ -55,17 +55,12 @@
     "@storybook/builder-webpack5": "workspace:*",
     "@storybook/core-webpack": "workspace:*",
     "@storybook/global": "^5.0.0",
-    "@types/react": "^18.0.37",
-    "@types/react-dom": "^18.0.11",
-    "@types/semver": "^7.3.4",
     "@types/webpack-env": "^1.18.0",
     "fd-package-json": "^1.2.0",
     "find-up": "^5.0.0",
-    "semver": "^7.3.7",
     "telejson": "8.0.0",
     "ts-dedent": "^2.0.0",
     "tsconfig-paths-webpack-plugin": "^4.0.1",
-    "util-deprecate": "^1.0.2",
     "webpack": "5"
   },
   "devDependencies": {
@@ -74,7 +69,6 @@
     "@angular-devkit/build-angular": "^19.1.1",
     "@angular-devkit/core": "^19.1.1",
     "@angular/animations": "^19.1.1",
-    "@angular/cli": "^19.1.1",
     "@angular/common": "^19.1.1",
     "@angular/compiler": "^19.1.1",
     "@angular/compiler-cli": "^19.1.1",
@@ -82,13 +76,9 @@
     "@angular/forms": "^19.1.1",
     "@angular/platform-browser": "^19.1.1",
     "@angular/platform-browser-dynamic": "^19.1.1",
-    "@types/cross-spawn": "^6.0.2",
     "@types/node": "^22.0.0",
-    "@types/tmp": "^0.2.3",
-    "cross-spawn": "^7.0.3",
     "rimraf": "^6.0.1",
-    "tmp": "^0.2.1",
-    "typescript": "^5.7.3",
+    "typescript": "^5.8.3",
     "webpack": "5",
     "zone.js": "^0.15.0"
   },

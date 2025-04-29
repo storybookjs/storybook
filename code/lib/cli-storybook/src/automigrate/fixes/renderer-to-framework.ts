@@ -255,8 +255,6 @@ export const rendererToFramework: Fix<MigrationResult> = {
       )
     );
 
-    console.log('Installing dependencies...');
-
     // Install dependencies
     if (!dryRun) {
       await options.packageManager.installDependencies();

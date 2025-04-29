@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-storybook",
-  "version": "9.0.0-beta.2",
+  "version": "9.0.0-beta.5",
   "description": "Best practice rules for Storybook",
   "keywords": [
     "eslint",
@@ -43,8 +43,6 @@
     "@types/eslint": "^8.56.2",
     "@types/node": "^22.0.0",
     "@types/prompts": "^2.0.9",
-    "@types/requireindex": "^1.2.4",
-    "@types/semver": "^7.5.8",
     "@typescript-eslint/eslint-plugin": "^8.8.1",
     "@typescript-eslint/parser": "^8.8.1",
     "@typescript-eslint/rule-tester": "^8.8.1",
@@ -52,11 +50,10 @@
     "eslint": "^8.57.1",
     "eslint-plugin-eslint-plugin": "^6.2.0",
     "eslint-plugin-node": "^11.1.0",
-    "prettier": "~3.4.0",
+    "prettier": "^3.5.3",
     "prompts": "^2.4.0",
-    "semver": "^7.3.7",
     "ts-dedent": "^2.0.0",
-    "typescript": "^5.7.3"
+    "typescript": "^5.8.3"
   },
   "peerDependencies": {
     "eslint": ">=8",

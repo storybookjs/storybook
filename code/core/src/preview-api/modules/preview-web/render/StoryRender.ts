@@ -41,18 +41,19 @@ export type RenderPhase =
   | 'rendering'
   | 'playing'
   | 'played'
-  | 'afterEach'
+  | 'completing'
   | 'completed'
+  | 'afterEach'
   | 'finished'
   | 'aborted'
   | 'errored';
 
 const ANIMATION_TIMEOUT = 5000;
 
-function getShadowRoots(doc: Document | ShadowRoot = global.document) {
-  return [doc, ...doc.querySelectorAll('*')].reduce<ShadowRoot[]>((acc, e) => {
-    if ('shadowRoot' in e && e.shadowRoot) {
-      acc.push(e.shadowRoot, ...getShadowRoots(e.shadowRoot));
+function getShadowRoots(doc: Document | ShadowRoot) {
+  return [doc, ...doc.querySelectorAll('*')].reduce<ShadowRoot[]>((acc, el) => {
+    if ('shadowRoot' in el && el.shadowRoot) {
+      acc.push(el.shadowRoot, ...getShadowRoots(el.shadowRoot));
     }
     return acc;
   }, []);
@@ -131,13 +132,12 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
   // Use the Web Animations API to wait for any animations and transitions to finish
   private async waitForAnimations(signal: AbortSignal) {
     let timedOut = false;
-
     await Promise.race([
       // After 50ms, retrieve any running animations and wait for them to finish
       // If new animations are created while waiting, we'll wait for them too
       new Promise((resolve) => {
         setTimeout(() => {
-          const animationRoots = [global.document, ...getShadowRoots()];
+          const animationRoots = [global.document, ...getShadowRoots(global.document)];
           const checkAnimationsFinished = async () => {
             if (this.checkIfAborted(signal) || timedOut) {
               return;
@@ -407,11 +407,16 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
         }
       }
 
-      await this.waitForAnimations(abortSignal);
+      await this.runPhase(abortSignal, 'completing', async () => {
+        // Avoid issues with React Native
+        if ('document' in global && 'querySelectorAll' in global.document) {
+          await this.waitForAnimations(abortSignal);
+        }
+      });
 
-      await this.runPhase(abortSignal, 'completed', async () =>
-        this.channel.emit(STORY_RENDERED, id)
-      );
+      await this.runPhase(abortSignal, 'completed', async () => {
+        this.channel.emit(STORY_RENDERED, id);
+      });
 
       if (this.phase !== 'errored') {
         await this.runPhase(abortSignal, 'afterEach', async () => {

@@ -3,7 +3,7 @@ import * as fs from 'node:fs/promises';
 import { writeFile } from 'node:fs/promises';
 
 import { babelParse, generate, traverse } from 'storybook/internal/babel';
-import { getAutomigrateCommand } from 'storybook/internal/cli';
+import { runAutomigrate } from 'storybook/internal/cli';
 import {
   JsPackageManagerFactory,
   extractProperFrameworkName,
@@ -19,8 +19,6 @@ import {
 import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
 import { colors, logger } from 'storybook/internal/node-logger';
 
-// eslint-disable-next-line depend/ban-dependencies
-import { $ } from 'execa';
 import { findUp } from 'find-up';
 import { dirname, extname, join, relative, resolve } from 'pathe';
 import picocolors from 'picocolors';
@@ -336,13 +334,7 @@ export default async function postInstall(options: PostinstallOptions) {
   if (a11yAddon) {
     try {
       logger.plain(`${step} Setting up ${addonA11yName} for @storybook/addon-vitest:`);
-      await $({
-        stdio: 'inherit',
-      })`${getAutomigrateCommand('addonA11yAddonTest', {
-        yes: options.yes,
-        configDir: options.configDir,
-        packageManager: options.packageManager,
-      })}`;
+      await runAutomigrate('addonA11yAddonTest', options);
     } catch (e) {
       printError(
         '🚨 Oh no!',

@@ -164,7 +164,7 @@ export const automigrate = async ({
     return null;
   }
 
-  const selectedFixes: Fix[] =
+  const selectedFixes: Fix<any, any>[] =
     inputFixes ||
     allFixes.filter((fix) => {
       // we only allow this automigration when the user explicitly asks for it, or they are upgrading to the latest version of storybook
@@ -178,7 +178,9 @@ export const automigrate = async ({
 
       return true;
     });
-  const fixes: Fix[] = fixId ? selectedFixes.filter((f) => f.id === fixId) : selectedFixes;
+  const fixes: Fix<any, any>[] = fixId
+    ? selectedFixes.filter((f) => f.id === fixId)
+    : selectedFixes;
 
   if (fixId && fixes.length === 0) {
     logger.info(`📭 No migrations found for ${picocolors.magenta(fixId)}.`);
@@ -252,7 +254,7 @@ export async function runFixes({
   beforeVersion,
   isUpgrade,
 }: {
-  fixes: Fix[];
+  fixes: Fix<any, any>[];
   yes?: boolean;
   dryRun?: boolean;
   rendererPackage?: string;
@@ -275,7 +277,7 @@ export async function runFixes({
   const fixSummary: FixSummary = { succeeded: [], failed: {}, manual: [], skipped: [] };
 
   for (let i = 0; i < fixes.length; i += 1) {
-    const f = fixes[i] as Fix;
+    const f = fixes[i] as Fix<any, any>;
     let result;
 
     try {

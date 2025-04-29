@@ -8,6 +8,12 @@ import { getStorybookInfo } from './get-storybook-info';
 
 const logger = console;
 
+export type RemoveAddonOptions = {
+  packageManager?: PackageManagerName;
+  cwd?: string;
+  configDir?: string;
+};
+
 /**
  * Remove the given addon package and remove it from main.js
  *
@@ -17,15 +23,12 @@ const logger = console;
  * sb remove @storybook/addon-links
  * ```
  */
-export async function removeAddon(
-  addon: string,
-  options: { packageManager?: PackageManagerName; cwd?: string; configDir?: string } = {}
-) {
+export async function removeAddon(addon: string, options: RemoveAddonOptions = {}) {
   const { packageManager: pkgMgr } = options;
 
   const packageManager = JsPackageManagerFactory.getPackageManager({ force: pkgMgr }, options.cwd);
   const packageJson = await packageManager.retrievePackageJson();
-  const { mainConfig, configDir, ...rest } = getStorybookInfo(packageJson, options.configDir);
+  const { mainConfig, configDir } = getStorybookInfo(packageJson, options.configDir);
 
   if (typeof configDir === 'undefined') {
     throw new Error(dedent`

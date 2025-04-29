@@ -5,4 +5,4 @@ export * from './dirs';
 export * from './project_types';
 export * from './NpmOptions';
 export * from './eslintPlugin';
-export * from './automigrate';
+export * from './runner';

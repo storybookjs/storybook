@@ -87,15 +87,16 @@ export interface AutofixOptions extends Omit<AutofixOptionsFromCLI, 'packageMana
   /** Whether the migration is part of an upgrade. */
   isUpgrade: boolean;
   isLatest: boolean;
+  configDir: string;
 }
 export interface AutofixOptionsFromCLI {
   fixId?: FixId;
   list?: boolean;
-  fixes?: Fix[];
+  fixes?: Fix<any, any>[];
   yes?: boolean;
   packageManager?: PackageManagerName;
   dryRun?: boolean;
-  configDir: string;
+  configDir?: string;
   renderer?: string;
   skipInstall?: boolean;
   hideMigrationSummary?: boolean;

@@ -44,7 +44,7 @@ const cleanup = () => {
   process.stderr.write = originalStdErrWrite;
 };
 
-type DoctorOptions = {
+export type DoctorOptions = {
   configDir?: string;
   packageManager?: PackageManagerName;
 };

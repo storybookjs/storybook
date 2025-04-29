@@ -2,11 +2,11 @@ import type { FC } from 'react';
 import React, { useEffect } from 'react';
 
 import { IconButton } from 'storybook/internal/components';
-import { color, styled } from 'storybook/internal/theming';
 
 import { CloseAltIcon } from '@storybook/icons';
 
 import type { Step, TooltipRenderProps } from 'react-joyride';
+import { color, styled } from 'storybook/theming';
 
 import { Button } from '../../components/Button/Button';
 

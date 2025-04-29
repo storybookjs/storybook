@@ -5,8 +5,6 @@ sidebar:
   title: IconGallery
 ---
 
-<YouTubeCallout id="tyNIspWhFyU" title="Storybook for Design Systems - IconGallery Doc Block" params="start=131" />
-
 The `IconGallery` block enables you to easily document React icon components associated with your project, displayed in a neat grid.
 
 ![Screenshot of IconGallery and IconItem blocks](../../_assets/api/doc-block-icongallery.png)
@@ -18,7 +16,7 @@ To document a set of icons, use the `IconGallery` block to display them in a gri
 {/* prettier-ignore-start */}
 
 ```md title="Iconography.mdx"
-import { Meta, IconGallery, IconItem } from '@storybook/blocks';
+import { Meta, IconGallery, IconItem } from '@storybook/addon-docs/blocks';
 
 import { Icon as IconExample } from './Icon';
 
@@ -69,7 +67,7 @@ If you're working on a project that contains a large number of icons that you wa
 {/* prettier-ignore-start */}
 
 ```md title="Iconography.mdx"
-import { Meta, IconGallery, IconItem } from '@storybook/blocks';
+import { Meta, IconGallery, IconItem } from '@storybook/addon-docs/blocks';
 
 import { Icon as IconExample } from './Icon';
 import * as icons from './icons';
@@ -90,7 +88,7 @@ import * as icons from './icons';
 ## IconGallery
 
 ```js
-import { IconGallery } from '@storybook/blocks';
+import { IconGallery } from '@storybook/addon-docs/blocks';
 ```
 
 `IconGallery` is configured with the following props:
@@ -104,7 +102,7 @@ Type: `React.ReactNode`
 ## IconItem
 
 ```js
-import { IconItem } from '@storybook/blocks';
+import { IconItem } from '@storybook/addon-docs/blocks';
 ```
 
 `IconItem` is configured with the following props:

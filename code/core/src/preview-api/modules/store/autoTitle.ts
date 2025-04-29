@@ -1,6 +1,5 @@
-import type { NormalizedStoriesSpecifier } from '@storybook/core/types';
-
-import { once } from '@storybook/core/client-logger';
+import { once } from 'storybook/internal/client-logger';
+import type { NormalizedStoriesSpecifier } from 'storybook/internal/types';
 
 import slash from 'slash';
 import { dedent } from 'ts-dedent';

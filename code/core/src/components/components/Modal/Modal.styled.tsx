@@ -1,10 +1,10 @@
 import type { ComponentProps } from 'react';
 import React from 'react';
 
-import { keyframes, styled } from '@storybook/core/theming';
 import { CrossIcon } from '@storybook/icons';
 
 import * as Dialog from '@radix-ui/react-dialog';
+import { keyframes, styled } from 'storybook/theming';
 
 import { IconButton } from '../IconButton/IconButton';
 

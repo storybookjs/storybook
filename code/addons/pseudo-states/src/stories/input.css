@@ -1,0 +1,25 @@
+.input {
+  display: inline-block;
+  border: 1px solid #ccc;
+  border-radius: 3em;
+  background-color: #fff;
+  padding: 11px 20px;
+  color: #888;
+  font-size: 14px;
+  line-height: 1;
+  font-family: 'Nunito Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+.input:hover {
+  box-shadow: 0 0 5px #0005;
+}
+
+.input:focus {
+  outline: 0;
+  border-color: #666;
+  color: #333;
+}
+
+.input:hover:focus {
+  font-weight: bold;
+}

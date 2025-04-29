@@ -5,8 +5,6 @@ sidebar:
   title: Canvas
 ---
 
-<YouTubeCallout id="uAA1JvLcl-w" title="Avoid Documentation Nightmares with Storybook's Canvas Doc Block" params="start=148" />
-
 The `Canvas` block is a wrapper around a [`Story`](./doc-block-story.mdx), featuring a toolbar that allows you to interact with its content while automatically providing the required [`Source`](./doc-block-source.mdx) snippets.
 
 ![Screenshot of Canvas block](../../_assets/api/doc-block-canvas.png)
@@ -16,7 +14,7 @@ When using the Canvas block in MDX, it references a story with the `of` prop:
 {/* prettier-ignore-start */}
 
 ```md title="ButtonDocs.mdx"
-import { Meta, Canvas } from '@storybook/blocks';
+import { Meta, Canvas } from '@storybook/addon-docs/blocks';
 import * as ButtonStories from './Button.stories';
 
 <Meta of={ButtonStories} />
@@ -33,7 +31,7 @@ import * as ButtonStories from './Button.stories';
 ## Canvas
 
 ```js
-import { Canvas } from '@storybook/blocks';
+import { Canvas } from '@storybook/addon-docs/blocks';
 ```
 
 <details>
@@ -84,7 +82,7 @@ Provides any additional custom actions to show in the bottom right corner. These
 {/* prettier-ignore-start */}
 
 ```md title="ButtonDocs.mdx"
-import { Meta, Story, Canvas, SourceState } from '@storybook/blocks';
+import { Meta, Story, Canvas, SourceState } from '@storybook/addon-docs/blocks';
 import * as ButtonStories from './Button.stories';
 
 <Meta of={ButtonStories} />
@@ -141,7 +139,7 @@ You can render a story from a CSF file that you haven’t attached to the MDX fi
 {/* prettier-ignore-start */}
 
 ```md title="ButtonDocs.mdx"
-import { Meta, Canvas } from '@storybook/blocks';
+import { Meta, Canvas } from '@storybook/addon-docs/blocks';
 import * as ButtonStories from './Button.stories';
 import * as HeaderStories from './Header.stories';
 

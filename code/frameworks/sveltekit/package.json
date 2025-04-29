@@ -1,6 +1,6 @@
 {
   "name": "@storybook/sveltekit",
-  "version": "8.6.0-alpha.3",
+  "version": "9.0.0-beta.5",
   "description": "Storybook for SvelteKit",
   "keywords": [
     "storybook",
@@ -41,6 +41,12 @@
       "require": "./dist/vite-plugin.js",
       "import": "./dist/vite-plugin.mjs"
     },
+    "./node": {
+      "types": "./dist/node/index.d.ts",
+      "node": "./dist/node/index.js",
+      "import": "./dist/node/index.mjs",
+      "require": "./dist/node/index.js"
+    },
     "./package.json": "./package.json"
   },
   "main": "dist/index.js",
@@ -48,6 +54,7 @@
   "types": "dist/index.d.ts",
   "files": [
     "dist/**/*",
+    "template/**/*",
     "README.md",
     "*.js",
     "*.d.ts",
@@ -58,23 +65,22 @@
     "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@storybook/addon-actions": "workspace:*",
     "@storybook/builder-vite": "workspace:*",
     "@storybook/svelte": "workspace:*",
     "@storybook/svelte-vite": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "typescript": "^5.7.3",
-    "vite": "^4.0.0"
+    "typescript": "^5.8.3",
+    "vite": "^6.2.5"
   },
   "peerDependencies": {
     "storybook": "workspace:^",
-    "svelte": "^4.0.0 || ^5.0.0",
-    "vite": "^4.0.0 || ^5.0.0 || ^6.0.0"
+    "svelte": "^5.0.0",
+    "vite": "^5.0.0 || ^6.0.0"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   },
   "publishConfig": {
     "access": "public"
@@ -84,7 +90,8 @@
       "./src/index.ts",
       "./src/preview.ts",
       "./src/preset.ts",
-      "./src/vite-plugin.ts"
+      "./src/vite-plugin.ts",
+      "./src/node/index.ts"
     ],
     "platform": "node"
   },

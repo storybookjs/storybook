@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 
-import { keyframes, styled } from 'storybook/internal/theming';
-
 import { ArrowRightIcon } from '@storybook/icons';
+
+import { keyframes, styled } from 'storybook/theming';
 
 const fadeIn = keyframes({
   from: {

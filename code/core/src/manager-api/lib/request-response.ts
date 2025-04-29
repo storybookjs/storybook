@@ -1,6 +1,5 @@
-import type { Channel } from '@storybook/core/channels';
-
-import type { RequestData, ResponseData } from '@storybook/core/core-events';
+import type { Channel } from 'storybook/internal/channels';
+import type { RequestData, ResponseData } from 'storybook/internal/core-events';
 
 export class RequestResponseError<Payload extends Record<string, any> | void> extends Error {
   payload: Payload | undefined = undefined;
@@ -11,7 +10,6 @@ export class RequestResponseError<Payload extends Record<string, any> | void> ex
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export const experimental_requestResponse = <
   RequestPayload,
   ResponsePayload = void,

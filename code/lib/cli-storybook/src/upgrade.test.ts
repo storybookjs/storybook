@@ -35,10 +35,6 @@ vi.mock('storybook/internal/common', async (importOriginal) => {
 describe.each([
   ['│ │ │ ├── @babel/code-frame@7.10.3 deduped', null],
   [
-    '│ ├── "@storybook/core/theming@6.0.0-beta.37 extraneous',
-    { package: '@storybook/core/theming', version: '6.0.0-beta.37' },
-  ],
-  [
     '├─┬ @storybook/preset-create-react-app@3.1.2',
     { package: '@storybook/preset-create-react-app', version: '3.1.2' },
   ],

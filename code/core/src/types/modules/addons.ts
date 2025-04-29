@@ -1,7 +1,5 @@
-/* eslint-disable @typescript-eslint/naming-convention */
 import type { FC, PropsWithChildren, ReactElement, ReactNode } from 'react';
 
-import type { TestProviderConfig, TestingModuleProgressReportProgress } from '../../core-events';
 import type { RenderData as RouterData } from '../../router/types';
 import type { ThemeVars } from '../../theming/types';
 import type { API_SidebarOptions } from './api';
@@ -26,10 +24,7 @@ import type { IndexEntry } from './indexer';
 
 export type Addon_Types = Exclude<
   Addon_TypesEnum,
-  | Addon_TypesEnum.experimental_PAGE
-  | Addon_TypesEnum.experimental_SIDEBAR_BOTTOM
-  | Addon_TypesEnum.experimental_TEST_PROVIDER
-  | Addon_TypesEnum.experimental_SIDEBAR_TOP
+  Addon_TypesEnum.experimental_PAGE | Addon_TypesEnum.experimental_TEST_PROVIDER
 >;
 
 export interface Addon_ArgType<TArg = unknown> extends InputType {
@@ -291,7 +286,6 @@ export interface Addon_BaseMeta<ComponentType> {
    *
    * Used by addons for automatic prop table generation and display of other component metadata.
    *
-   * @deprecated
    * @example
    *
    * ```ts
@@ -328,9 +322,7 @@ export type Addon_Type =
   | Addon_BaseType
   | Addon_PageType
   | Addon_WrapperType
-  | Addon_SidebarBottomType
-  | Addon_SidebarTopType
-  | Addon_TestProviderType<Addon_TestProviderState>;
+  | Addon_TestProviderType;
 export interface Addon_BaseType {
   /**
    * The title of the addon. This can be a simple string, but it can also be a
@@ -350,8 +342,6 @@ export interface Addon_BaseType {
     Addon_Types,
     | Addon_TypesEnum.PREVIEW
     | Addon_TypesEnum.experimental_PAGE
-    | Addon_TypesEnum.experimental_SIDEBAR_BOTTOM
-    | Addon_TypesEnum.experimental_SIDEBAR_TOP
     | Addon_TypesEnum.experimental_TEST_PROVIDER
   >;
   /**
@@ -414,7 +404,7 @@ export interface Addon_PageType {
    * @example
    *
    * ```jsx
-   * import { Route } from '@storybook/core/router';
+   * import { Route } from 'storybook/internal/router';
    *
    * Render: () => {
    *   return (
@@ -448,83 +438,25 @@ export interface Addon_WrapperType {
   >;
 }
 
-/** @deprecated This doesn't do anything anymore and will be removed in Storybook 9.0. */
-export interface Addon_SidebarBottomType {
-  type: Addon_TypesEnum.experimental_SIDEBAR_BOTTOM;
-  /** The unique id of the tool. */
-  id: string;
-  /** A React.FunctionComponent. */
-  render: FC;
-}
-
-/** @deprecated This will be removed in Storybook 9.0. */
-export interface Addon_SidebarTopType {
-  type: Addon_TypesEnum.experimental_SIDEBAR_TOP;
-  /** The unique id of the tool. */
-  id: string;
-  /** A React.FunctionComponent. */
-  render: FC;
-}
-
-export interface Addon_TestProviderType<
-  Details extends { [key: string]: any } = NonNullable<unknown>,
-  Config extends { [key: string]: any } = NonNullable<unknown>,
-> {
+export interface Addon_TestProviderType {
   type: Addon_TypesEnum.experimental_TEST_PROVIDER;
   /** The unique id of the test provider. */
   id: string;
-  name: string;
-  /** @deprecated Use render instead */
-  title?: (state: TestProviderConfig & Addon_TestProviderState<Details, Config>) => ReactNode;
-  /** @deprecated Use render instead */
-  description?: (state: TestProviderConfig & Addon_TestProviderState<Details, Config>) => ReactNode;
-  render?: (state: TestProviderConfig & Addon_TestProviderState<Details, Config>) => ReactNode;
-  sidebarContextMenu?: (options: {
-    context: API_HashEntry;
-    state: TestProviderConfig & Addon_TestProviderState<Details, Config>;
-  }) => ReactNode;
-  stateUpdater?: (
-    state: TestProviderConfig & Addon_TestProviderState<Details, Config>,
-    update: Partial<Addon_TestProviderState<Details, Config>>
-  ) => void | Partial<TestProviderConfig & Addon_TestProviderState<Details, Config>>;
-  runnable?: boolean;
-  watchable?: boolean;
+  render: () => ReactNode;
+  sidebarContextMenu?: (options: { context: API_HashEntry }) => ReactNode;
 }
-
-export type Addon_TestProviderState<
-  Details extends { [key: string]: any } = NonNullable<unknown>,
-  Config extends { [key: string]: any } = NonNullable<unknown>,
-> = Pick<Addon_TestProviderType, 'runnable' | 'watchable'> & {
-  progress?: TestingModuleProgressReportProgress;
-  details: Details;
-  cancellable: boolean;
-  cancelling: boolean;
-  running: boolean;
-  watching: boolean;
-  failed: boolean;
-  crashed: boolean;
-  error?: {
-    name: string;
-    message?: string;
-  };
-  config?: Config;
-};
 
 type Addon_TypeBaseNames = Exclude<
   Addon_TypesEnum,
   | Addon_TypesEnum.PREVIEW
   | Addon_TypesEnum.experimental_PAGE
-  | Addon_TypesEnum.experimental_SIDEBAR_BOTTOM
-  | Addon_TypesEnum.experimental_SIDEBAR_TOP
   | Addon_TypesEnum.experimental_TEST_PROVIDER
 >;
 
 export interface Addon_TypesMapping extends Record<Addon_TypeBaseNames, Addon_BaseType> {
   [Addon_TypesEnum.PREVIEW]: Addon_WrapperType;
   [Addon_TypesEnum.experimental_PAGE]: Addon_PageType;
-  [Addon_TypesEnum.experimental_SIDEBAR_BOTTOM]: Addon_SidebarBottomType;
-  [Addon_TypesEnum.experimental_SIDEBAR_TOP]: Addon_SidebarTopType;
-  [Addon_TypesEnum.experimental_TEST_PROVIDER]: Addon_TestProviderType<Addon_TestProviderState>;
+  [Addon_TypesEnum.experimental_TEST_PROVIDER]: Addon_TestProviderType;
 }
 
 export type Addon_Loader<API> = (api: API) => void;
@@ -576,18 +508,6 @@ export enum Addon_TypesEnum {
    * @unstable
    */
   experimental_PAGE = 'page',
-  /**
-   * This adds items in the bottom of the sidebar.
-   *
-   * @deprecated This doesn't do anything anymore and will be removed in Storybook 9.0.
-   */
-  experimental_SIDEBAR_BOTTOM = 'sidebar-bottom',
-  /**
-   * This adds items in the top of the sidebar.
-   *
-   * @deprecated This will be removed in Storybook 9.0.
-   */
-  experimental_SIDEBAR_TOP = 'sidebar-top',
   /** This adds items to the Testing Module in the sidebar. */
   experimental_TEST_PROVIDER = 'test-provider',
 }

@@ -1,4 +1,5 @@
-import type { ViewMode } from '@storybook/core/types';
+import type { ViewMode } from 'storybook/internal/types';
+
 import { global } from '@storybook/global';
 
 import { parse, stringify } from 'picoquery';

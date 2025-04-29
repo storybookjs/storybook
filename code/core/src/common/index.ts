@@ -41,8 +41,12 @@ export * from './utils/strip-abs-node-modules-path';
 export * from './utils/formatter';
 export * from './utils/get-story-id';
 export * from './utils/posix';
+export * from './utils/get-addon-names';
+export * from './utils/sync-main-preview-addons';
 export * from './js-package-manager';
+export * from './utils/scan-and-transform-files';
+export * from './utils/transform-imports';
 
 export { versions };
 
-export { createFileSystemCache } from './utils/file-cache';
+export { createFileSystemCache, FileSystemCache } from './utils/file-cache';

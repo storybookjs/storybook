@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react-native-web-vite",
-  "version": "8.6.0-alpha.3",
+  "version": "9.0.0-beta.5",
   "description": "Develop react-native components an isolated web environment with hot reloading.",
   "keywords": [
     "storybook"
@@ -35,6 +35,12 @@
       "import": "./dist/vite-plugin.mjs",
       "require": "./dist/vite-plugin.js"
     },
+    "./node": {
+      "types": "./dist/node/index.d.ts",
+      "node": "./dist/node/index.js",
+      "import": "./dist/node/index.mjs",
+      "require": "./dist/node/index.js"
+    },
     "./package.json": "./package.json"
   },
   "main": "dist/index.js",
@@ -53,10 +59,7 @@
     "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@babel/plugin-transform-modules-commonjs": "^7.26.3",
-    "@babel/preset-react": "^7.26.3",
     "@bunchtogether/vite-plugin-flow": "^1.0.2",
-    "@joshwooding/vite-plugin-react-docgen-typescript": "0.4.2",
     "@storybook/builder-vite": "workspace:*",
     "@storybook/react": "workspace:*",
     "@storybook/react-vite": "workspace:*",
@@ -67,7 +70,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "typescript": "^5.7.3"
+    "typescript": "^5.8.3"
   },
   "peerDependencies": {
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
@@ -78,7 +81,7 @@
     "vite": "^5.0.0 || ^6.0.0"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   },
   "publishConfig": {
     "access": "public"
@@ -87,7 +90,8 @@
     "entries": [
       "./src/index.ts",
       "./src/preset.ts",
-      "./src/vite-plugin.ts"
+      "./src/vite-plugin.ts",
+      "./src/node/index.ts"
     ],
     "platform": "node"
   },

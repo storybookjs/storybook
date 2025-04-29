@@ -1,22 +1,20 @@
 import type {
+  ArgsStoryFn,
+  BaseProjectAnnotations,
   BeforeAll,
   Canvas,
   CleanupCallback,
-  ProjectAnnotations as CsfProjectAnnotations,
-  DecoratorFunction,
-  Globals,
-  LoaderFunction,
-  Renderer,
-  StepRunner,
-} from '@storybook/csf';
-
-import type {
   ComponentAnnotations,
   ComponentId,
   ComponentTitle,
+  DecoratorFunction,
+  Globals,
   LegacyStoryFn,
+  LoaderFunction,
   PartialStoryFn,
   Path,
+  Renderer,
+  StepRunner,
   StoryAnnotations,
   StoryContext,
   StoryContextForEnhancers,
@@ -45,11 +43,10 @@ export type RenderToCanvas<TRenderer extends Renderer> = (
 ) => MaybePromise<void | TeardownRenderToCanvas>;
 
 export interface ProjectAnnotations<TRenderer extends Renderer>
-  extends CsfProjectAnnotations<TRenderer> {
+  extends BaseProjectAnnotations<TRenderer> {
+  addons?: ProjectAnnotations<TRenderer>[];
   testingLibraryRender?: (...args: never[]) => { unmount: () => void };
   renderToCanvas?: RenderToCanvas<TRenderer>;
-  /* @deprecated use renderToCanvas */
-  renderToDOM?: RenderToCanvas<TRenderer>;
 }
 
 type NamedExportsOrDefault<TExport> = TExport | { default: TExport };
@@ -90,7 +87,7 @@ export type NormalizedStoryAnnotations<TRenderer extends Renderer = Renderer> = 
   id: StoryId;
   argTypes?: StrictArgTypes;
   name: StoryName;
-  userStoryFn?: StoryFn<TRenderer>;
+  userStoryFn?: ArgsStoryFn<TRenderer>;
   decorators?: DecoratorFunction<TRenderer>[];
   loaders?: LoaderFunction<TRenderer>[];
 };
@@ -98,13 +95,14 @@ export type NormalizedStoryAnnotations<TRenderer extends Renderer = Renderer> = 
 export type CSFFile<TRenderer extends Renderer = Renderer> = {
   meta: NormalizedComponentAnnotations<TRenderer>;
   stories: Record<StoryId, NormalizedStoryAnnotations<TRenderer>>;
+  projectAnnotations?: NormalizedProjectAnnotations<TRenderer>;
   moduleExports: ModuleExports;
 };
 
 export type PreparedStory<TRenderer extends Renderer = Renderer> =
   StoryContextForEnhancers<TRenderer> & {
     moduleExport: ModuleExport;
-    originalStoryFn: StoryFn<TRenderer>;
+    originalStoryFn: ArgsStoryFn<TRenderer>;
     undecoratedStoryFn: LegacyStoryFn<TRenderer>;
     unboundStoryFn: LegacyStoryFn<TRenderer>;
     applyLoaders: (context: StoryContext<TRenderer>) => Promise<StoryContext<TRenderer>['loaded']>;

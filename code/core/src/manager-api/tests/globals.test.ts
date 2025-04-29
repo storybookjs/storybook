@@ -1,14 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { GlobalsUpdatedPayload, SetGlobalsPayload } from '@storybook/core/types';
-
-import { logger as _logger } from '@storybook/core/client-logger';
+import { logger as _logger } from 'storybook/internal/client-logger';
 import {
   GLOBALS_UPDATED,
   SET_GLOBALS,
   SET_STORIES,
   UPDATE_GLOBALS,
-} from '@storybook/core/core-events';
+} from 'storybook/internal/core-events';
+import type { GlobalsUpdatedPayload, SetGlobalsPayload } from 'storybook/internal/types';
 
 import { EventEmitter } from 'events';
 
@@ -21,7 +20,7 @@ import type { API } from '../root';
 const getEventMetadata = vi.mocked(_getEventData, true);
 const logger = vi.mocked(_logger, true);
 
-vi.mock('@storybook/core/client-logger');
+vi.mock('storybook/internal/client-logger');
 vi.mock('../lib/events');
 beforeEach(() => {
   getEventMetadata.mockReset().mockReturnValue({ sourceType: 'local' } as any);

@@ -1,8 +1,9 @@
 import type { FC } from 'react';
 import React from 'react';
 
-import { Link } from '@storybook/core/components';
-import { styled } from '@storybook/core/theming';
+import { Link } from 'storybook/internal/components';
+
+import { styled } from 'storybook/theming';
 
 const Footer = styled.div(({ theme }) => ({
   display: 'flex',

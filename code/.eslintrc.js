@@ -4,21 +4,23 @@ const scriptPath = path.join(__dirname, '..', 'scripts');
 
 module.exports = {
   root: true,
-  extends: [path.join(scriptPath, '.eslintrc.cjs')],
+  extends: [
+    path.join(scriptPath, '.eslintrc.cjs'),
+    'plugin:storybook/recommended',
+    'plugin:compat/recommended',
+  ],
   parserOptions: {
     tsconfigRootDir: __dirname,
     project: ['./tsconfig.json'],
   },
-  plugins: ['local-rules'],
   rules: {
-    'import/no-extraneous-dependencies': [
-      'error',
-      { devDependencies: true, peerDependencies: true },
-    ],
+    'import/no-extraneous-dependencies': 'off',
+    'react/react-in-jsx-scope': 'off',
     'import/no-unresolved': 'off', // covered by typescript
     'eslint-comments/disable-enable-pair': ['error', { allowWholeFile: true }],
     'eslint-comments/no-unused-disable': 'error',
     'react-hooks/rules-of-hooks': 'off',
+    'jsx-a11y/no-autofocus': 'warn',
     'import/extensions': 'off', // for mjs, we sometimes need extensions
     'jsx-a11y/control-has-associated-label': 'off',
     '@typescript-eslint/dot-notation': [
@@ -43,13 +45,6 @@ module.exports = {
   },
   overrides: [
     {
-      files: ['**/templates/virtualModuleModernEntry.js'],
-      rules: {
-        'no-underscore-dangle': 'off',
-        'import/no-extraneous-dependencies': 'off',
-      },
-    },
-    {
       // this package depends on a lot of peerDependencies we don't want to specify, because npm would install them
       files: ['**/frameworks/angular/template/**/*'],
       rules: {
@@ -58,14 +53,22 @@ module.exports = {
       },
     },
     {
-      files: ['*.js', '*.jsx', '*.json', '*.html', '**/.storybook/*.ts', '**/.storybook/*.tsx'],
+      files: [
+        '*.js',
+        '*.jsx',
+        '*.json',
+        '*.html',
+        '**/.storybook/*.ts',
+        '**/.storybook/*.tsx',
+        '**/.storybook/**/*.ts',
+        '**/.storybook/**/*.tsx',
+      ],
       parserOptions: {
         project: null,
       },
       rules: {
         '@typescript-eslint/dot-notation': 'off',
         '@typescript-eslint/no-implied-eval': 'off',
-        '@typescript-eslint/no-throw-literal': 'off',
         '@typescript-eslint/return-await': 'off',
       },
     },
@@ -77,15 +80,6 @@ module.exports = {
       },
     },
     {
-      files: ['**/.storybook/**', '**/scripts/**/*', 'vitest.d.ts', '**/vitest.config.*'],
-      rules: {
-        'import/no-extraneous-dependencies': [
-          'error',
-          { packageDir: [__dirname], devDependencies: true, peerDependencies: true },
-        ],
-      },
-    },
-    {
       files: [
         '*.test.*',
         '*.spec.*',
@@ -93,12 +87,17 @@ module.exports = {
         '**/__tests__/**',
         '**/__testfixtures__/**',
         '**/*.test.*',
+        '**/*.test-d.*',
         '**/*.stories.*',
         '**/*.mockdata.*',
         '**/template/**/*',
       ],
       rules: {
-        'import/no-extraneous-dependencies': 'off',
+        'compat/compat': 'off',
+        'jsx-a11y/click-events-have-key-events': 'off',
+        'jsx-a11y/no-static-element-interactions': 'off',
+        'jsx-a11y/iframe-has-title': 'off',
+        'jsx-a11y/alt-text': 'off',
       },
     },
     {
@@ -132,7 +131,6 @@ module.exports = {
       files: ['**/*.tsx', '**/*.ts'],
       rules: {
         'no-shadow': 'off',
-        '@typescript-eslint/ban-types': 'warn', // should become error, in the future
         'react/require-default-props': 'off',
         'react/prop-types': 'off', // we should use types
         'react/forbid-prop-types': 'off', // we should use types
@@ -205,6 +203,12 @@ module.exports = {
         'playwright/prefer-to-have-length': 'error',
         'playwright/require-to-throw-message': 'error',
         'playwright/require-top-level-describe': 'error',
+      },
+    },
+    {
+      files: ['**/renderers/**/*.stories.*', '**/core/template/**/*.stories.*'],
+      rules: {
+        'storybook/no-renderer-packages': 'off',
       },
     },
   ],

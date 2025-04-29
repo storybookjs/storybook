@@ -12,7 +12,7 @@
 ```
 
 ```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="After"
-<script context>
+<script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
   import MyComponent from './MyComponent.svelte';

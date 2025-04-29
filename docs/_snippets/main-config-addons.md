@@ -4,7 +4,7 @@ export default {
   framework: '@storybook/your-framework',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   addons: [
-    '@storybook/addon-essentials',
+    '@storybook/addon-docs',
     {
       name: '@storybook/addon-styling-webpack',
       options: {
@@ -37,7 +37,7 @@ const config: StorybookConfig = {
   framework: '@storybook/your-framework',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   addons: [
-    '@storybook/addon-essentials',
+    '@storybook/addon-docs',
     {
       name: '@storybook/addon-styling-webpack',
       options: {

@@ -1,12 +1,13 @@
 import type { FC, PropsWithChildren } from 'react';
 import React, { useState } from 'react';
 
-import { LocationProvider } from '@storybook/core/router';
-import { styled } from '@storybook/core/theming';
-import type { Meta, StoryObj } from '@storybook/react';
-import { fn } from '@storybook/test';
+import { LocationProvider } from 'storybook/internal/router';
 
-import { action } from '@storybook/addon-actions';
+import type { Meta, StoryObj } from '@storybook/react-vite';
+
+import { action } from 'storybook/actions';
+import { fn } from 'storybook/test';
+import { styled } from 'storybook/theming';
 
 import MobileNavigationStoriesMeta from '../mobile/navigation/MobileNavigation.stories';
 import { Layout } from './Layout';
@@ -31,7 +32,7 @@ const PlaceholderClock: FC<PropsWithChildren> = ({ children }) => {
   }, [count]);
   return (
     <PlaceholderBlock>
-      <h2>{count}</h2>
+      <h2 data-chromatic="ignore">{count}</h2>
       {children}
     </PlaceholderBlock>
   );

@@ -1,6 +1,6 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import { isFunction, isObject } from '../type-guards';
+import { isFunction, isObject } from './type-guards';
 
 describe('type-guards - isFunction', () => {
   it('should return true for regular functions', () => {

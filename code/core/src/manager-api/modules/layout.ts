@@ -12,7 +12,7 @@ import { isEqual as deepEqual, pick, toMerged } from 'es-toolkit';
 import type { ThemeVars } from 'storybook/theming';
 import { create } from 'storybook/theming/create';
 
-import { isFunction } from '../../common/utils/type-guards';
+import { isFunction } from '../../shared/type-guards/type-guards';
 import merge from '../lib/merge';
 import type { ModuleFn } from '../lib/types';
 import type { State } from '../root';

@@ -11,6 +11,7 @@ import { global } from '@storybook/global';
 
 import { processError } from '@vitest/utils/error';
 
+import { isModule, isObject } from '../shared/type-guards/type-guards';
 import { EVENTS } from './EVENTS';
 import { addons } from './preview-api';
 import type { Call, CallRef, ControlStates, LogItem, Options, State, SyncPayload } from './types';
@@ -33,10 +34,6 @@ const alreadyCompletedException = new Error(
   `This function ran after the play function completed. Did you forget to \`await\` it?`
 );
 
-const isObject = (o: unknown): o is object =>
-  Object.prototype.toString.call(o) === '[object Object]';
-const isModule = (o: unknown): o is NodeModule =>
-  Object.prototype.toString.call(o) === '[object Module]';
 const isInstrumentable = (o: unknown) => {
   if (!isObject(o) && !isModule(o)) {
     return false;

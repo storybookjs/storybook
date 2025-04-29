@@ -16,11 +16,11 @@ import type {
 
 import { dedent } from 'ts-dedent';
 
+import { isFunction, isObject } from '../shared/type-guards/type-guards';
 import { interopRequireDefault } from './utils/interpret-require';
 import { loadCustomPresets } from './utils/load-custom-presets';
 import { safeResolve, safeResolveFrom } from './utils/safeResolve';
 import { stripAbsNodeModulesPath } from './utils/strip-abs-node-modules-path';
-import { isFunction, isObject } from './utils/type-guards';
 
 type InterPresetOptions = Omit<
   CLIOptions &

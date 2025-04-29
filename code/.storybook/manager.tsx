@@ -1,5 +1,5 @@
 import { startCase } from 'es-toolkit/compat';
-import { type State, addons } from 'storybook/manager-api';
+import { addons } from 'storybook/manager-api';
 
 addons.setConfig({
   sidebar: {

@@ -52,7 +52,6 @@ export class TestBedComponentBuilder {
   setStoryFn(storyFn: StoryFnAngularReturnType) {
     this.styles = storyFn.styles;
     this.schemas = storyFn.moduleMetadata?.schemas;
-    console.log(this.schemas);
     this.props = storyFn.props;
     return this;
   }

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/nextjs-vite",
-  "version": "9.0.0-beta.5",
+  "version": "9.0.0-beta.6",
   "description": "Storybook for Next.js and Vite",
   "keywords": [
     "storybook",
@@ -114,7 +114,7 @@
     "@types/node": "^22.0.0",
     "next": "^15.2.3",
     "postcss-load-config": "^6.0.1",
-    "typescript": "^5.7.3"
+    "typescript": "^5.8.3"
   },
   "peerDependencies": {
     "next": "^14.1.0 || ^15.0.0",

@@ -46,19 +46,14 @@ describe(transformStoriesCode.name, () => {
 
     expect(code.toString()).toMatchInlineSnapshot(
       `
-      "import "svelte/internal/disclose-version";
+      "import 'svelte/internal/disclose-version';
 
-      $.mark_module_start();
-      Example_stories[$.FILENAME] = "tests/stories/Example.stories.svelte";
+      Example_stories[$.FILENAME] = 'tests/stories/Example.stories.svelte';
 
-      import * as $ from "svelte/internal/client";
+      import * as $ from 'svelte/internal/client';
       import { action } from '@storybook/addon-actions';
-      import { defineMeta, setTemplate } from '@storybook/addon-svelte-csf';
+      import { defineMeta } from '@storybook/addon-svelte-csf';
       import Example from './Example.svelte';
-
-      var root_2 = $.add_locations($.template(\`<p> </p> <p> </p> <br>\`, 1), Example_stories[$.FILENAME], [[45, 4], [46, 4], [47, 24]]);
-      var root_4 = $.add_locations($.template(\`Label\`, 1), Example_stories[$.FILENAME], []);
-      var root = $.add_locations($.template(\`<!> <!> <!> <!>\`, 1), Example_stories[$.FILENAME], []);
 
       /**
        * Description set explicitly in the comment above \`defineMeta\`.
@@ -88,60 +83,71 @@ describe(transformStoriesCode.name, () => {
       };
       const { Story } = defineMeta(meta);
 
+      var root_2 = $.add_locations($.template(\`<p> </p> <p> </p> <br>\`, 1), Example_stories[$.FILENAME], [[41, 2], [42, 2], [42, 44]]);
+      var root = $.add_locations($.template(\`<!> <!> <!> <!> <!>\`, 1), Example_stories[$.FILENAME], []);
+
       function Example_stories($$anchor, $$props) {
-        $.check_target(new.target);
-        $.push($$props, true, Example_stories);
+      	$.check_target(new.target);
+      	$.push($$props, true, Example_stories);
 
-        const render = $.wrap_snippet(Example_stories, ($$anchor, args = $.noop, context = $.noop) => {
-          var fragment = $.comment();
-          var node = $.first_child(fragment);
+      	const template = $.wrap_snippet(Example_stories, function ($$anchor, $$arg0, context = $.noop) {
+      		$.validate_snippet_args(...arguments);
 
-          Example(node, $.spread_props(args, {
-            onclick: handleClick,
-            children: $.wrap_snippet(Example_stories, ($$anchor, $$slotProps) => {
-              var fragment_1 = root_2();
-              var p = $.first_child(fragment_1);
-              var text = $.child(p);
+      		let _ = () => $$arg0?.().children;
 
-              $.reset(p);
+      		_();
 
-              var p_1 = $.sibling($.sibling(p, true));
-              var text_1 = $.child(p_1);
+      		let args = () => $.exclude_from_object($$arg0?.(), ['children']);
 
-              $.reset(p_1);
+      		args();
 
-              var text_2 = $.sibling(p_1, true);
-              var br = $.sibling(text_2);
+      		var fragment = $.comment();
+      		var node = $.first_child(fragment);
 
-              $.template_effect(() => {
-                $.set_text(text, args().id);
-                $.set_text(text_1, context().name);
-                $.set_text(text_2, \` You clicked: \${$.get(count) ?? ""}\`);
-              });
+      		Example(node, $.spread_props(args, {
+      			onclick: handleClick,
+      			children: $.wrap_snippet(Example_stories, ($$anchor, $$slotProps) => {
+      				var fragment_1 = root_2();
+      				var p = $.first_child(fragment_1);
+      				var text = $.child(p, true);
 
-              $.append($$anchor, fragment_1);
-            }),
-            $$slots: { default: true }
-          }));
+      				$.reset(p);
 
-          $.append($$anchor, fragment);
-        });
+      				var p_1 = $.sibling(p, 2);
+      				var text_1 = $.child(p_1, true);
 
-        $.validate_prop_bindings($$props, [], [], Example_stories);
+      				$.reset(p_1);
 
-        let count = $.source(0);
+      				var text_2 = $.sibling(p_1);
 
-        function handleClick() {
-          $.set(count, $.get(count) + 1);
-        }
+      				$.next();
 
-        setTemplate(render);
+      				$.template_effect(() => {
+      					$.set_text(text, args().id);
+      					$.set_text(text_1, context().name);
+      					$.set_text(text_2, \` You clicked: \${$.get(count) ?? ''}\`);
+      				});
 
-        var fragment_2 = root();
-        var node_1 = $.first_child(fragment_2);
+      				$.append($$anchor, fragment_1);
+      			}),
+      			$$slots: { default: true }
+      		}));
 
-        Story(node_1, {
-      	name: "Default",
+      		$.append($$anchor, fragment);
+      	});
+
+      	let count = $.state(0);
+
+      	function handleClick() {
+      		$.set(count, $.get(count) + 1);
+      	}
+
+      	var fragment_2 = root();
+      	var node_1 = $.first_child(fragment_2);
+
+      	Story(node_1, {
+      	name: 'Default',
+      	template,
       	parameters: {
       		docs: {
       			description: { story: "Description for the default story" }
@@ -152,11 +158,12 @@ describe(transformStoriesCode.name, () => {
       	}
       });
 
-        var node_2 = $.sibling($.sibling(node_1, true));
+      	var node_2 = $.sibling(node_1, 2);
 
-        Story(node_2, {
-      	name: "Rounded",
+      	Story(node_2, {
+      	name: 'Rounded',
       	args: { rounded: true },
+      	template,
       	parameters: {
       		docs: {
       			description: { story: "Description for the rounded story" }
@@ -167,11 +174,12 @@ describe(transformStoriesCode.name, () => {
       	}
       });
 
-        var node_3 = $.sibling($.sibling(node_2, true));
+      	var node_3 = $.sibling(node_2, 2);
 
-        Story(node_3, {
-      	name: "Square",
+      	Story(node_3, {
+      	name: 'Square',
       	args: { rounded: false },
+      	template,
       	parameters: {
       		docs: {
       			description: { story: "Description for the squared story" }
@@ -182,10 +190,11 @@ describe(transformStoriesCode.name, () => {
       	}
       });
 
-        var node_4 = $.sibling($.sibling(node_3, true));
+      	var node_4 = $.sibling(node_3, 2);
 
-        Story(node_4, {
-      	name: "Without template",
+      	Story(node_4, {
+      	name: 'As child',
+      	asChild: true,
       	children: $.wrap_snippet(Example_stories, ($$anchor, $$slotProps) => {
       		var fragment_3 = $.comment();
       		var node_5 = $.first_child(fragment_3);
@@ -194,9 +203,9 @@ describe(transformStoriesCode.name, () => {
       			children: $.wrap_snippet(Example_stories, ($$anchor, $$slotProps) => {
       				$.next();
 
-      				var fragment_4 = root_4();
+      				var text_3 = $.text('Label');
 
-      				$.append($$anchor, fragment_4);
+      				$.append($$anchor, text_3);
       			}),
       			$$slots: { default: true }
       		});
@@ -209,22 +218,39 @@ describe(transformStoriesCode.name, () => {
       	}
       });
 
-        $.append($$anchor, fragment_2);
-        return $.pop({ ...$.legacy_api() });
+      	var node_6 = $.sibling(node_4, 2);
+
+      	Story(node_6, {
+      	name: 'Children forwared',
+      	children: $.wrap_snippet(Example_stories, ($$anchor, $$slotProps) => {
+      		$.next();
+
+      		var text_4 = $.text('Forwarded label');
+
+      		$.append($$anchor, text_4);
+      	}),
+      	$$slots: { default: true },
+      	parameters: {
+      		__svelteCsf: {
+      			rawCode: "<Example {...args}>\\n  Forwarded label\\n</Example>"
+      		}
+      	}
+      });
+
+      	$.append($$anchor, fragment_2);
+      	return $.pop({ ...$.legacy_api() });
       }
 
       if (import.meta.hot) {
-        Example_stories = $.hmr(Example_stories, () => Example_stories[$.HMR].source);
+      	Example_stories = $.hmr(Example_stories, () => Example_stories[$.HMR].source);
 
-        import.meta.hot.acceptExports(["default"], (module) => {
-          module.default[$.HMR].source = Example_stories[$.HMR].source;
-          $.set(Example_stories[$.HMR].source, module.default[$.HMR].original);
-        });
+      	import.meta.hot.acceptExports(["default"],(module) => {
+      		module.default[$.HMR].source = Example_stories[$.HMR].source;
+      		$.set(Example_stories[$.HMR].source, module.default[$.HMR].original);
+      	});
       }
 
 
-
-      $.mark_module_end(Example_stories);
 
       import { createRuntimeStories } from "@storybook/addon-svelte-csf/internal/create-runtime-stories";
 
@@ -236,13 +262,34 @@ describe(transformStoriesCode.name, () => {
       	"Default",
       	"Rounded",
       	"Square",
-      	"WithoutTemplate"
+      	"AsChild",
+      	"ChildrenForwared"
       ];
 
-      export const Default = __stories["Default"];
-      export const Rounded = __stories["Rounded"];
-      export const Square = __stories["Square"];
-      export const WithoutTemplate = __stories["WithoutTemplate"];"
+      export const Default = {
+      	...__stories["Default"],
+      	tags: ["svelte-csf-v5"]
+      };
+
+      export const Rounded = {
+      	...__stories["Rounded"],
+      	tags: ["svelte-csf-v5"]
+      };
+
+      export const Square = {
+      	...__stories["Square"],
+      	tags: ["svelte-csf-v5"]
+      };
+
+      export const AsChild = {
+      	...__stories["AsChild"],
+      	tags: ["svelte-csf-v5"]
+      };
+
+      export const ChildrenForwared = {
+      	...__stories["ChildrenForwared"],
+      	tags: ["svelte-csf-v5"]
+      };"
     `
     );
   });

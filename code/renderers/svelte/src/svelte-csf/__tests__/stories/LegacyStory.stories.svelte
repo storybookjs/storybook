@@ -48,9 +48,10 @@
 
 <Story name="Rounded" args={{ rounded: true }} />
 
-<Story name="Square" source args={{ rounded: false }}>
-  {'Test'}
-</Story>
+<Story name="Square" source args={{ rounded: false }} />
+
+<!-- Dynamic snippet should be disabled for this story -->
+<Story name="As Children">Static story</Story>
 
 <Story
   name="TemplateLiterals"
@@ -59,5 +60,5 @@
   `}
   args={{ rounded: false }}
 >
-  {'Test'}
+  Test
 </Story>

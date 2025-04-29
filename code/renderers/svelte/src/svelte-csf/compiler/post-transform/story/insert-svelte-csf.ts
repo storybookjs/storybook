@@ -1,12 +1,12 @@
 import {
   findPropertyParametersIndex,
   getParametersPropertyValue,
-} from '$lib/compiler/post-transform/shared/description.js';
+} from '$lib/compiler/post-transform/shared/parameters.js';
 
 import type { extractStoriesNodesFromExportDefaultFn } from '$lib/parser/extract/compiled/stories.js';
 import { getStoryPropsObjectExpression } from '$lib/parser/extract/compiled/story.js';
 import type { SvelteASTNodes, extractSvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
-import { getStoryChildrenRawCode } from '$lib/parser/analyse/story/children.js';
+import { getStoryContentRawCode } from '$lib/parser/analyse/story/content.js';
 import { createASTObjectExpression, createASTProperty } from '$lib/parser/ast.js';
 
 interface Params {
@@ -46,7 +46,7 @@ export function insertSvelteCSFToStoryParameters(params: Params) {
     );
   }
 
-  const rawCode = getStoryChildrenRawCode({
+  const rawCode = getStoryContentRawCode({
     nodes: {
       component: component.svelte.component,
       svelte,

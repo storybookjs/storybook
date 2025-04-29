@@ -71,7 +71,8 @@ describe(transformStory.name, () => {
 
     expect(print(compiledPostTransformedStories[0]).code).toMatchInlineSnapshot(`
       "Story(node_1, {
-      	name: "Default",
+      	name: 'Default',
+      	template,
       	parameters: {
       		docs: {
       			description: { story: "Description for the default story" }
@@ -85,8 +86,9 @@ describe(transformStory.name, () => {
 
     expect(print(compiledPostTransformedStories[1]).code).toMatchInlineSnapshot(`
       "Story(node_2, {
-      	name: "Rounded",
+      	name: 'Rounded',
       	args: { rounded: true },
+      	template,
       	parameters: {
       		docs: {
       			description: { story: "Description for the rounded story" }
@@ -99,8 +101,9 @@ describe(transformStory.name, () => {
     `);
     expect(print(compiledPostTransformedStories[2]).code).toMatchInlineSnapshot(`
       "Story(node_3, {
-      	name: "Square",
+      	name: 'Square',
       	args: { rounded: false },
+      	template,
       	parameters: {
       		docs: {
       			description: { story: "Description for the squared story" }
@@ -113,7 +116,8 @@ describe(transformStory.name, () => {
     `);
     expect(print(compiledPostTransformedStories[3]).code).toMatchInlineSnapshot(`
       "Story(node_4, {
-      	name: "Without template",
+      	name: 'As child',
+      	asChild: true,
       	children: $.wrap_snippet(Example_stories, ($$anchor, $$slotProps) => {
       		var fragment_3 = $.comment();
       		var node_5 = $.first_child(fragment_3);
@@ -122,9 +126,9 @@ describe(transformStory.name, () => {
       			children: $.wrap_snippet(Example_stories, ($$anchor, $$slotProps) => {
       				$.next();
 
-      				var fragment_4 = root_4();
+      				var text_3 = $.text('Label');
 
-      				$.append($$anchor, fragment_4);
+      				$.append($$anchor, text_3);
       			}),
       			$$slots: { default: true }
       		});
@@ -134,6 +138,24 @@ describe(transformStory.name, () => {
       	$$slots: { default: true },
       	parameters: {
       		__svelteCsf: { rawCode: "<Example>Label</Example>" }
+      	}
+      })"
+    `);
+    expect(print(compiledPostTransformedStories[4]).code).toMatchInlineSnapshot(`
+      "Story(node_6, {
+      	name: 'Children forwared',
+      	children: $.wrap_snippet(Example_stories, ($$anchor, $$slotProps) => {
+      		$.next();
+
+      		var text_4 = $.text('Forwarded label');
+
+      		$.append($$anchor, text_4);
+      	}),
+      	$$slots: { default: true },
+      	parameters: {
+      		__svelteCsf: {
+      			rawCode: "<Example {...args}>\\n  Forwarded label\\n</Example>"
+      		}
       	}
       })"
     `);

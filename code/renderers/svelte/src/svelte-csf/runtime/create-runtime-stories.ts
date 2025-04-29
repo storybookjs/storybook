@@ -24,7 +24,6 @@ const createFragment = document.createDocumentFragment
  * instantiate the main Stories component: Every Story but
  * the one selected is disabled.
  */
-// TODO: I'm not sure the 'meta' is necessary here. As long as it's default exported, SB should internally combine it with the stories. Except for the play logic below, that looks funky, need to ask Pablo about that.
 export const createRuntimeStories = (Stories: Component, meta: Meta<Cmp>) => {
   const repository: StoriesRepository<Cmp> = {
     stories: new Map(),
@@ -57,6 +56,7 @@ export const createRuntimeStories = (Stories: Component, meta: Meta<Cmp>) => {
           Stories,
           storyContext,
           args,
+          metaRenderSnippet: meta.render,
         },
       }),
     };
@@ -82,6 +82,19 @@ export const createRuntimeStories = (Stories: Component, meta: Meta<Cmp>) => {
 
     stories[exportName] = storyObj;
   }
+
+  if (!meta.parameters) {
+    meta.parameters = {};
+  }
+
+  if (!meta.parameters.controls) {
+    meta.parameters.controls = {};
+  }
+
+  // Inserts https://storybook.js.org/docs/essentials/controls#disablesavefromui
+  // Ref: https://github.com/storybookjs/addon-svelte-csf/issues/240
+  // TODO: Restore this feature
+  meta.parameters.controls.disableSaveFromUI = true;
 
   return stories;
 };

@@ -135,7 +135,7 @@
 </script>
 
 <code>
-  {#each Object.entries(properties) as [name, value]}
+  {#each Object.entries(properties) as [name, value] (name)}
     <strong>{name}</strong>: {JSON.stringify(value)}<br />
   {/each}
 </code>

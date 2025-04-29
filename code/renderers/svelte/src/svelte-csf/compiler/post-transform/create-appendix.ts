@@ -6,7 +6,7 @@ import { createRuntimeStoriesImport } from './appendix/create-import.js';
 import { createVariableFromRuntimeStoriesCall } from './appendix/create-variable-from-runtime-stories-call.js';
 import { createNamedExportStory } from './appendix/create-named-export-story.js';
 
-import { createASTIdentifier, type ESTreeAST } from '$lib/parser/ast.js';
+import { createASTIdentifier, type ESTreeAST, type SvelteAST } from '$lib/parser/ast.js';
 import { getStoriesIdentifiers } from '$lib/parser/analyse/story/attributes/identifiers.js';
 import type { CompiledASTNodes } from '$lib/parser/extract/compiled/nodes.js';
 import type { SvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
@@ -33,11 +33,17 @@ export async function createAppendix(params: Params) {
     storiesFunctionDeclaration,
     filename,
   });
-  const storiesExports = storyIdentifiers.map(({ exportName }) =>
+  const storiesExports = storyIdentifiers.map(({ exportName }, idx) =>
     createNamedExportStory({
       exportName,
       filename,
-      node: variableFromRuntimeStoriesCall,
+      nodes: {
+        variable: variableFromRuntimeStoriesCall,
+        tags: getStoryTags({
+          storyComponents: params.nodes.svelte.storyComponents,
+          idx,
+        }),
+      },
     })
   );
 
@@ -61,4 +67,17 @@ function createExportDefaultMeta(): ESTreeAST.ExportDefaultDeclaration {
     type: 'ExportDefaultDeclaration',
     declaration: createASTIdentifier('meta'),
   };
+}
+
+interface GetStoryTagsParams {
+  storyComponents: SvelteASTNodes['storyComponents'];
+  idx: number;
+}
+function getStoryTags(params: GetStoryTagsParams): ESTreeAST.ArrayExpression | undefined {
+  const storyComponent = params.storyComponents[params.idx];
+  const tags = storyComponent.component.attributes.find((a) => a.name === 'tags');
+
+  if (!tags) return;
+
+  return (tags.value as SvelteAST.ExpressionTag).expression as ESTreeAST.ArrayExpression;
 }

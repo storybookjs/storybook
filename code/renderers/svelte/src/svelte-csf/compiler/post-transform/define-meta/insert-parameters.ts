@@ -6,7 +6,7 @@ import {
   getDescriptionPropertyValue,
   getDocsPropertyValue,
   getParametersPropertyValue,
-} from '$lib/compiler/post-transform/shared/description.js';
+} from '$lib/compiler/post-transform/shared/parameters.js';
 import { createASTObjectExpression, createASTProperty, type ESTreeAST } from '$lib/parser/ast.js';
 import type { SvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
 import type { CompiledASTNodes } from '$lib/parser/extract/compiled/nodes.js';
@@ -21,6 +21,7 @@ interface Params {
 }
 
 /**
+ * This function inserts parameters to `defineMeta()`.
  * Attempt to insert JSDoc comment above the `defineMeta()` call.
  *
  * Before:
@@ -42,18 +43,15 @@ interface Params {
  * });
  * ```
  */
-export function insertDefineMetaJSDocCommentAsDescription(params: Params): void {
+export function insertDefineMetaParameters(params: Params): void {
   const { nodes, filename } = params;
-  const { compiled, svelte } = nodes;
-  const { defineMetaVariableDeclaration } = svelte;
-  const { leadingComments } = defineMetaVariableDeclaration;
 
-  if (!leadingComments) {
+  if (!nodes.svelte.defineMetaVariableDeclaration.leadingComments) {
     return;
   }
 
   const defineMetaFirstArgumentObjectExpression = getDefineMetaFirstArgumentObjectExpression({
-    nodes: compiled,
+    nodes: nodes.compiled,
     filename,
   });
 
@@ -117,7 +115,7 @@ export function insertDefineMetaJSDocCommentAsDescription(params: Params): void 
   }).properties.push(
     createASTProperty('component', {
       type: 'Literal',
-      value: extractDescription(leadingComments),
+      value: extractDescription(nodes.svelte.defineMetaVariableDeclaration.leadingComments),
     })
   );
 }

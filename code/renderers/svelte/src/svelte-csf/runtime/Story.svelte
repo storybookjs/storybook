@@ -1,12 +1,21 @@
-<script lang="ts" generics="const TCmp extends Cmp">
+<script module lang="ts">
+  type TemplateSnippet<T extends Cmp> = Snippet<
+    [StoryRendererContext<T>['args'], StoryRendererContext<T>['storyContext']]
+  >;
+</script>
+
+<script
+  lang="ts"
+  generics="TCmp extends Cmp, TChildren extends Snippet = Snippet, TTemplate extends TemplateSnippet<TCmp> = TemplateSnippet<TCmp>"
+>
   import type { Snippet } from 'svelte';
 
   import { useStoriesExtractor } from './contexts/extractor.svelte.js';
   import { useStoryRenderer, type StoryRendererContext } from './contexts/renderer.svelte.js';
-  import { useStoriesTemplate } from './contexts/template.svelte.js';
 
   import { storyNameToExportName } from '../utils/identifier-utils.js';
   import type { Cmp, StoryAnnotations } from '../types.js';
+  import { SVELTE_CSF_V4_TAG } from '../constants.js';
 
   type Props = Partial<StoryAnnotations<TCmp>> & {
     /**
@@ -14,17 +23,6 @@
      * Use `exportName` instead.
      */
     id?: never;
-    /**
-     * The content to render in the story, either as:
-     * 1. A snippet taking args and storyContext as parameters
-     * 2. Static markup
-     *
-     * Can be omitted if a default template is set with [`setTemplate()`](https://github.com/storybookjs/addon-svelte-csf/blob/main/README.md#default-snippet)
-     */
-    children?: Snippet<
-      /* prettier ignore */
-      [StoryRendererContext<TCmp>['args'], StoryRendererContext<TCmp>['storyContext']]
-    >;
     /**
      * Name of the story. Can be omitted if `exportName` is provided.
      */
@@ -70,16 +68,46 @@
            */
           name: string;
         }
+    ) &
+    (
+      | {
+          /**
+           * Children to pass to the story's component
+           * Or if `asChild` is true, the content to render in the story as **static** markup.
+           */
+          children?: TChildren;
+          /**
+           * Make the children the actual story content. This is useful when you want to create a **static story**.
+           */
+          asChild?: boolean;
+          template?: never;
+        }
+      | {
+          children?: never;
+          asChild?: never;
+          /**
+           * The content to render in the story with a snippet taking `args` and `storyContext` as parameters
+           *
+           * NOTE: Can be omitted if a default template is set with [`render`](https://github.com/storybookjs/addon-svelte-csf/blob/main/README.md#default-snippet)
+           */
+          template?: TTemplate;
+        }
     );
-
-  const { children, name, exportName: exportNameProp, play, ...restProps }: Props = $props();
+  let {
+    children,
+    name,
+    exportName: exportNameProp,
+    play,
+    template,
+    asChild = false,
+    ...restProps
+  }: Props = $props();
   const exportName = exportNameProp ?? storyNameToExportName(name!);
 
-  const extractor = useStoriesExtractor<TCmp>();
-  const renderer = useStoryRenderer<TCmp>();
-  const template = useStoriesTemplate<TCmp>();
+  let extractor = useStoriesExtractor<TCmp>();
+  let renderer = useStoryRenderer<TCmp>();
 
-  const isCurrentlyViewed = $derived(
+  let isCurrentlyViewed = $derived(
     !extractor.isExtracting && renderer.currentStoryExportName === exportName
   );
 
@@ -98,25 +126,43 @@
     }
   }
 
+  // TODO: Svelte maintainers is still discussing internally if they want to implement official typeguard function.
+  // Keep a pulse on this case and then this can be replaced.
+  function isSnippet<T extends unknown[]>(value: unknown): value is Snippet<T> {
+    return typeof value === 'function';
+  }
+
   $effect(() => {
     if (isCurrentlyViewed) {
       injectIntoPlayFunction(renderer.storyContext, play);
     }
   });
+
+  const isLegacyStory = $derived(
+    renderer.storyContext.tags?.some((tag) => tag === SVELTE_CSF_V4_TAG) ?? false
+  );
 </script>
 
 {#if isCurrentlyViewed}
-  {#if children}
-    {@render children(renderer.args, renderer.storyContext)}
-  {:else if template}
+  {#if isSnippet(template)}
     {@render template(renderer.args, renderer.storyContext)}
+  {:else if isSnippet(children)}
+    {#if asChild || isLegacyStory}
+      {@render children()}
+    {:else if renderer.storyContext.component}
+      <renderer.storyContext.component {children} {...renderer.args} />
+    {:else}
+      {@render children()}
+    {/if}
+  {:else if renderer.metaRenderSnippet}
+    {@render renderer.metaRenderSnippet(renderer.args, renderer.storyContext)}
   {:else if renderer.storyContext.component}
     <renderer.storyContext.component {...renderer.args} />
   {:else}
     <p>
-      No story rendered. See <a
-        href="https://github.com/storybookjs/addon-svelte-csf#defining-stories"
-        target="_blank">the docs</a
+      No story rendered. See
+      <a href="https://github.com/storybookjs/addon-svelte-csf#defining-stories" target="_blank"
+        >the docs</a
       > on how to define stories.
     </p>
   {/if}

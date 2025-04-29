@@ -21,7 +21,7 @@ describe(extractSvelteASTNodes.name, () => {
         <Story name="Default" />
 
         <Story name="Playground">
-          {#snippet children(args)}
+          {#snippet template(args)}
             <Button {...args} />
           {/snippet}
         </Story>

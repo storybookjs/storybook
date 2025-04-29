@@ -125,28 +125,7 @@ describe(extractModuleNodes.name, () => {
     expect(extractModuleNodes({ module })).resolves.not.toThrow();
   });
 
-  it("works when 'setTemplate' is used in stories", async ({ expect }) => {
-    const { module } = getSvelteAST({
-      code: `
-        <script module>
-          import { defineMeta, setTemplate } from "@storybook/addon-svelte-csf"
-          const { Story } = defineMeta();
-        </script>
-      `,
-    });
-
-    const nodes = await extractModuleNodes({ module });
-
-    expect(nodes.defineMetaImport).toBeDefined();
-    expect(nodes.defineMetaImport.imported.name).toBe('defineMeta');
-    expect(nodes.setTemplateImport).toBeDefined();
-    expect(nodes.setTemplateImport?.local.name).toBe('setTemplate');
-    expect(nodes.defineMetaVariableDeclaration).toBeDefined();
-    expect(nodes.storyIdentifier).toBeDefined();
-    expect(nodes.storyIdentifier.name).toBe('Story');
-  });
-
-  it("works when 'setTemplate' is NOT used in stories", async ({ expect }) => {
+  it('extracts module nodes', async ({ expect }) => {
     const { module } = getSvelteAST({
       code: `
         <script module>
@@ -159,16 +138,17 @@ describe(extractModuleNodes.name, () => {
     const nodes = await extractModuleNodes({ module });
 
     expect(nodes.defineMetaImport).toBeDefined();
-    expect(nodes.setTemplateImport).toBeUndefined();
+    expect(nodes.defineMetaImport.imported.name).toBe('defineMeta');
     expect(nodes.defineMetaVariableDeclaration).toBeDefined();
     expect(nodes.storyIdentifier).toBeDefined();
+    expect(nodes.storyIdentifier.name).toBe('Story');
   });
 
-  it('works on renamed identifiers', async ({ expect }) => {
+  it('extracts module nodes with renamed identifiers', async ({ expect }) => {
     const { module } = getSvelteAST({
       code: `
         <script module>
-          import { defineMeta as dm, setTemplate as st } from "@storybook/addon-svelte-csf"
+          import { defineMeta as dm } from "@storybook/addon-svelte-csf"
           const { Story: S, meta: m } = dm();
         </script>
       `,
@@ -177,7 +157,6 @@ describe(extractModuleNodes.name, () => {
     const nodes = await extractModuleNodes({ module });
 
     expect(nodes.defineMetaImport.local.name).toBe('dm');
-    expect(nodes.setTemplateImport?.local.name).toBe('st');
     expect(nodes.defineMetaVariableDeclaration).toBeDefined();
     expect(nodes.storyIdentifier.name).toBe('S');
   });

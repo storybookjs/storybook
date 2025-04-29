@@ -10,6 +10,7 @@ import {
 import { InvalidTemplateAttribute } from '$lib/utils/error/legacy-api/index.js';
 
 import { hashTemplateName } from '$lib/utils/identifier-utils.js';
+import { SVELTE_CSF_V4_TAG } from '../../../constants.js';
 import type { State } from '../index.js';
 
 interface Params {
@@ -75,13 +76,17 @@ export function transformLegacyStory(params: Params): SvelteAST.Component {
   if (fragment.nodes.length === 0 && !hasTemplateAttribute && state.unidentifiedTemplateComponent) {
     newAttributes.push(
       createASTAttribute(
-        'children',
+        'template',
         createASTExpressionTag({
           type: 'Identifier',
           name: 'sb_default_template',
         })
       )
     );
+  }
+
+  if (!tags) {
+    tags = createASTAttribute('tags', createASTExpressionTag(createASTArrayExpression()));
   }
 
   if (autodocs) {
@@ -112,9 +117,23 @@ export function transformLegacyStory(params: Params): SvelteAST.Component {
     newAttributes.push(parameters);
   }
 
-  if (tags) {
-    newAttributes.push(tags);
+  // Always add SVELTE_CSF_V4_TAG tag to all legacy stories
+  if (
+    typeof tags.value === 'object' &&
+    !Array.isArray(tags.value) &&
+    tags.value.type === 'ExpressionTag' &&
+    tags.value.expression.type === 'ArrayExpression' &&
+    !tags.value.expression.elements.some(
+      (el) => el && el.type === 'Literal' && el.value === SVELTE_CSF_V4_TAG
+    )
+  ) {
+    tags.value.expression.elements.push({
+      type: 'Literal',
+      value: SVELTE_CSF_V4_TAG,
+    });
   }
+
+  newAttributes.push(tags);
 
   return {
     ...rest,
@@ -248,7 +267,7 @@ function templateToChildren(
 
   return {
     ...rest,
-    name: 'children',
+    name: 'template',
     value: [
       createASTExpressionTag({
         type: 'Identifier',
@@ -289,7 +308,7 @@ function transformFragment(params: TransformFragmentParams): SvelteAST.Fragment 
     body: fragment,
     expression: {
       type: 'Identifier',
-      name: 'children',
+      name: 'template',
     },
     parameters,
   } satisfies SvelteAST.SnippetBlock;

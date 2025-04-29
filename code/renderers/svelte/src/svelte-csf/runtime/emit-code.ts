@@ -1,5 +1,5 @@
-import { SourceType, SNIPPET_RENDERED } from '@storybook/docs-tools';
-import { addons } from '@storybook/preview-api';
+import { SourceType, SNIPPET_RENDERED } from 'storybook/internal/docs-tools';
+import { addons } from 'storybook/internal/preview-api';
 import type { StoryObj } from '@storybook/svelte';
 import { get } from 'es-toolkit/compat';
 import type { ComponentProps } from 'svelte';
@@ -84,7 +84,7 @@ export const generateCodeToEmit = ({ code, args }: { code: string; args: StoryOb
     // replace single arg references with their actual value,
     // eg. myProp={args.something} => myProp={"actual"}
     // or <h1>{args.something}</h1> => <h1>"actual"</h1>
-    .replace(/args(?:[\w\d_$\.\?\[\]"'])+/g, (argPath) => {
+    .replace(/args(?:[\w\d_$.?[\]"'])+/g, (argPath) => {
       const path = argPath.replaceAll('?', ''); // remove optional chaining character
       const value = get({ args }, path);
       return valueToString(value);
@@ -93,7 +93,11 @@ export const generateCodeToEmit = ({ code, args }: { code: string; args: StoryOb
   return codeToEmit;
 };
 
-const getFunctionName = (fn: Function & { getMockName?: () => string }) => {
+type MockableFunction = ((...args: any[]) => any) & {
+  getMockName?: () => string;
+};
+
+const getFunctionName = (fn: MockableFunction) => {
   const name = fn.getMockName?.() ?? fn.name;
   if (name && name !== 'spy') {
     return name;

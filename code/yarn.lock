@@ -6971,6 +6971,7 @@ __metadata:
     svelte: "npm:^5.20.5"
     svelte-check: "npm:^4.1.4"
     sveltedoc-parser: "npm:^4.2.1"
+    ts-dedent: "npm:^2.0.0"
     type-fest: "npm:~2.19"
     typescript: "npm:^5.8.3"
     vite: "npm:^6.2.5"

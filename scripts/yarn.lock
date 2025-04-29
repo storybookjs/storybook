@@ -1584,7 +1584,7 @@ __metadata:
     jiti: "npm:^1.21.7"
     json5: "npm:^2.2.3"
     junit-xml: "npm:^1.2.0"
-    knip: "npm:^5.50.5"
+    knip: "npm:^5.51.0"
     lint-staged: "npm:^15.5.1"
     memoizerific: "npm:^1.11.3"
     minimatch: "npm:^10.0.1"
@@ -8110,9 +8110,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"knip@npm:^5.50.5":
-  version: 5.50.5
-  resolution: "knip@npm:5.50.5"
+"knip@npm:^5.51.0":
+  version: 5.51.0
+  resolution: "knip@npm:5.51.0"
   dependencies:
     "@nodelib/fs.walk": "npm:^1.2.3"
     easy-table: "npm:1.2.0"
@@ -8134,7 +8134,7 @@ __metadata:
   bin:
     knip: bin/knip.js
     knip-bun: bin/knip-bun.js
-  checksum: 10c0/17322b42a5b9aa5b79de9d807cf90ee0937e3e24f53289f58829c3d73700b66f4fb5b336d4579325eb8ff7f0cb82292bcb2af5791437f34ba285dd01a4efc8b2
+  checksum: 10c0/d6f0f658e418ff45f9a1058eb0543854144af8ba6117180d9d32a22284a66cb0ba19204de758d8578639f07fa531b961e7c415f3600aa590eaf03a070320c16e
   languageName: node
   linkType: hard
 

@@ -19,9 +19,20 @@ export const StyledHighlight: Story = {
     componentWrapperDecorator((story) => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
-        elements: ['h2', 'a', '.storybook-button'],
-        color: 'blue',
-        style: 'double', // 'dotted' | 'dashed' | 'solid' | 'double'
+        selectors: ['h2', 'a', '.storybook-button'],
+        menu: [
+          {
+            id: 'button-name',
+            title: 'Login',
+            description: 'Navigate to the login page',
+            clickEvent: 'my-menu-click-event',
+          },
+          {
+            id: 'h2-home',
+            title: 'Acme',
+            description: 'Navigate to the home page',
+          },
+        ],
       });
       return story;
     }),
@@ -44,9 +55,20 @@ export const StyledHighlight = {
     (storyFn) => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
-        elements: ['h2', 'a', '.storybook-button'],
-        color: 'blue',
-        style: 'double', // 'dotted' | 'dashed' | 'solid' | 'double'
+        selectors: ['h2', 'a', '.storybook-button'],
+        menu: [
+          {
+            id: 'button-name',
+            title: 'Login',
+            description: 'Navigate to the login page',
+            clickEvent: 'my-menu-click-event',
+          },
+          {
+            id: 'h2-home',
+            title: 'Acme',
+            description: 'Navigate to the home page',
+          },
+        ],
       });
       return storyFn();
     },
@@ -74,9 +96,20 @@ export const StyledHighlight: Story = {
     (storyFn) => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
-        elements: ['h2', 'a', '.storybook-button'],
-        color: 'blue',
-        style: 'double', // 'dotted' | 'dashed' | 'solid' | 'double'
+        selectors: ['h2', 'a', '.storybook-button'],
+        menu: [
+          {
+            id: 'button-name',
+            title: 'Login',
+            description: 'Navigate to the login page',
+            clickEvent: 'my-menu-click-event',
+          },
+          {
+            id: 'h2-home',
+            title: 'Acme',
+            description: 'Navigate to the home page',
+          },
+        ],
       });
       return storyFn();
     },
@@ -99,9 +132,20 @@ export const StyledHighlight = {
     () => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
-        elements: ['h2', 'a', '.storybook-button'],
-        color: 'blue',
-        style: 'double', // 'dotted' | 'dashed' | 'solid' | 'double'
+        selectors: ['h2', 'a', '.storybook-button'],
+        menu: [
+          {
+            id: 'button-name',
+            title: 'Login',
+            description: 'Navigate to the login page',
+            clickEvent: 'my-menu-click-event',
+          },
+          {
+            id: 'h2-home',
+            title: 'Acme',
+            description: 'Navigate to the home page',
+          },
+        ],
       });
       return {
         template: '<story />',
@@ -131,9 +175,20 @@ export const StyledHighlight: Story = {
     () => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
-        elements: ['h2', 'a', '.storybook-button'],
-        color: 'blue',
-        style: 'double', // 'dotted' | 'dashed' | 'solid' | 'double'
+        selectors: ['h2', 'a', '.storybook-button'],
+        menu: [
+          {
+            id: 'button-name',
+            title: 'Login',
+            description: 'Navigate to the login page',
+            clickEvent: 'my-menu-click-event',
+          },
+          {
+            id: 'h2-home',
+            title: 'Acme',
+            description: 'Navigate to the home page',
+          },
+        ],
       });
       return {
         template: '<story />',
@@ -156,9 +211,20 @@ export const StyledHighlight = {
     (story) => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
-        elements: ['h2', 'a', '.storybook-button'],
-        color: 'blue',
-        style: 'double', // 'dotted' | 'dashed' | 'solid' | 'double'
+        selectors: ['h2', 'a', '.storybook-button'],
+        menu: [
+          {
+            id: 'button-name',
+            title: 'Login',
+            description: 'Navigate to the login page',
+            clickEvent: 'my-menu-click-event',
+          },
+          {
+            id: 'h2-home',
+            title: 'Acme',
+            description: 'Navigate to the home page',
+          },
+        ],
       });
       return story();
     },
@@ -184,9 +250,20 @@ export const StyledHighlight: Story = {
     (story) => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
-        elements: ['h2', 'a', '.storybook-button'],
-        color: 'blue',
-        style: 'double', // 'dotted' | 'dashed' | 'solid' | 'double'
+        selectors: ['h2', 'a', '.storybook-button'],
+        menu: [
+          {
+            id: 'button-name',
+            title: 'Login',
+            description: 'Navigate to the login page',
+            clickEvent: 'my-menu-click-event',
+          },
+          {
+            id: 'h2-home',
+            title: 'Acme',
+            description: 'Navigate to the home page',
+          },
+        ],
       });
       return story();
     },

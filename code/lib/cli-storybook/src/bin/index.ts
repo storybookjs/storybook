@@ -1,8 +1,4 @@
-import {
-  JsPackageManagerFactory,
-  removeAddon as remove,
-  versions,
-} from 'storybook/internal/common';
+import { JsPackageManagerFactory, removeAddon, versions } from 'storybook/internal/common';
 import { withTelemetry } from 'storybook/internal/core-server';
 import { logger } from 'storybook/internal/node-logger';
 import { addToGlobalContext, telemetry } from 'storybook/internal/telemetry';
@@ -67,7 +63,15 @@ command('add <addon>')
   .option('-c, --config-dir <dir-name>', 'Directory where to load Storybook configurations from')
   .option('-s --skip-postinstall', 'Skip package specific postinstall config modifications')
   .option('-y --yes', 'Skip prompting the user')
-  .action((addonName: string, options: any) => add(addonName, options));
+  .action((addonName: string, options: any) => {
+    withTelemetry('add-addon', { cliOptions: options }, async () => {
+      await add(addonName, options));
+      if (!options.disableTelemetry) {
+        await telemetry('add', { addon: addonName, source: 'cli' });
+      }
+    })
+    
+  }
 
 command('remove <addon>')
   .description('Remove an addon from your Storybook')
@@ -78,7 +82,7 @@ command('remove <addon>')
   .option('-c, --config-dir <dir-name>', 'Directory where to load Storybook configurations from')
   .action((addonName: string, options: any) =>
     withTelemetry('remove', { cliOptions: options }, async () => {
-      await remove(addonName, options);
+      await removeAddon(addonName, options);
       if (!options.disableTelemetry) {
         await telemetry('remove', { addon: addonName, source: 'cli' });
       }

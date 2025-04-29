@@ -19,6 +19,7 @@ export type EventType =
   | 'version-update'
   | 'core-config'
   | 'remove'
+  | 'add-addon'
   | 'save-story'
   | 'create-new-story-file'
   | 'create-new-story-file-search'

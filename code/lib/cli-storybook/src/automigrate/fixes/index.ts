@@ -34,11 +34,11 @@ export const allFixes = [
   addonEssentialsRemoveDocs,
   addonA11yParameters,
   removeDocsAutodocs,
-] satisfies Fix[];
+] satisfies Fix<any, any>[];
 
-export type FixesIDs<F extends Fix[]> = F[number]['id'];
+export type FixesIDs<F extends Fix<any, any>[]> = F[number]['id'];
 
-export const initFixes = [eslintPlugin] satisfies Fix[];
+export const initFixes = [eslintPlugin] satisfies Fix<any, any>[];
 
 // These are specific fixes that only occur when triggered on command, and are hidden otherwise.
 // e.g. npx storybook automigrate csf-factories

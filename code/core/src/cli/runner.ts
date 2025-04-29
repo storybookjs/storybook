@@ -3,7 +3,7 @@ import type { AutofixOptionsFromCLI } from '../../../lib/cli-storybook/src/autom
 import type { FixesIDs, allFixes } from '../../../lib/cli-storybook/src/automigrate/fixes';
 import type { DoctorOptions } from '../../../lib/cli-storybook/src/doctor';
 import { JsPackageManagerFactory } from '../common';
-import type { RemoveAddonOptions } from '../common/utils/remove';
+import type { RemoveAddonOptions } from '../common/utils/remove-addon';
 
 // Common options shared across multiple commands
 interface CommonOptions {

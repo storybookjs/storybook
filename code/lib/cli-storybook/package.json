@@ -46,7 +46,7 @@
     "@types/semver": "^7.3.4",
     "commander": "^12.1.0",
     "create-storybook": "workspace:*",
-    "cross-spawn": "^7.0.3",
+    "cross-spawn": "^7.0.6",
     "envinfo": "^7.7.3",
     "execa": "^9.5.2",
     "giget": "^1.0.0",
@@ -61,7 +61,7 @@
     "ts-dedent": "^2.0.0"
   },
   "devDependencies": {
-    "@types/cross-spawn": "^6.0.2",
+    "@types/cross-spawn": "^6.0.6",
     "@types/prompts": "^2.0.9",
     "boxen": "^7.1.1",
     "picocolors": "^1.1.0",

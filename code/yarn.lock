@@ -6075,7 +6075,6 @@ __metadata:
     "@angular/core": ">=18.0.0 < 20.0.0"
     "@angular/forms": ">=18.0.0 < 20.0.0"
     "@angular/platform-browser": ">=18.0.0 < 20.0.0"
-    "@angular/platform-browser-dynamic": ">=18.0.0 < 20.0.0"
     rxjs: ^6.5.3 || ^7.4.0
     storybook: "workspace:^"
     typescript: ^4.9.0 || ^5.0.0

@@ -8,6 +8,8 @@ import {
 import picocolors from 'picocolors';
 import semver from 'semver';
 
+import { consolidatedPackages } from '../automigrate/helpers/consolidated-packages';
+
 export type AnalysedPackage = {
   packageName: string;
   packageVersion?: string;
@@ -16,6 +18,7 @@ export type AnalysedPackage = {
   availableUpdate?: string;
   availableCoreUpdate?: string;
   packageStorybookVersion?: string;
+  isDeprecatedPackage?: boolean;
 };
 
 type Context = {
@@ -44,6 +47,11 @@ export const checkPackageCompatibility = async (
       homepage,
     } = dependencyPackageJson;
 
+    const allStorybookPackages = {
+      ...storybookCorePackages,
+      ...consolidatedPackages,
+    };
+
     const packageStorybookVersion = Object.entries({
       ...dependencies,
       ...peerDependencies,
@@ -60,6 +68,7 @@ export const checkPackageCompatibility = async (
       });
 
     const isCorePackage = storybookCorePackages[name as keyof typeof storybookCorePackages];
+    const isDeprecatedPackage = !!consolidatedPackages[name as keyof typeof consolidatedPackages];
 
     let availableUpdate;
     let availableCoreUpdate;
@@ -83,6 +92,7 @@ export const checkPackageCompatibility = async (
       packageStorybookVersion,
       availableUpdate,
       availableCoreUpdate,
+      isDeprecatedPackage,
     };
   } catch (err) {
     if (!skipErrors) {
@@ -116,7 +126,11 @@ export const getIncompatiblePackagesSummary = (
   const summaryMessage: string[] = [];
 
   const incompatiblePackages = dependencyAnalysis.filter(
-    (dep) => dep.hasIncompatibleDependencies
+    (dep) => dep.hasIncompatibleDependencies && !dep.isDeprecatedPackage
+  ) as AnalysedPackage[];
+
+  const deprecatedPackages = dependencyAnalysis.filter(
+    (dep) => dep.isDeprecatedPackage
   ) as AnalysedPackage[];
 
   if (incompatiblePackages.length > 0) {
@@ -169,6 +183,25 @@ export const getIncompatiblePackagesSummary = (
         picocolors.blue('npx storybook@latest upgrade')
       );
     }
+  }
+
+  if (deprecatedPackages.length > 0) {
+    summaryMessage.push(
+      '\n',
+      picocolors.red(
+        'The following Storybook packages are deprecated and should be removed from your package.json:'
+      ),
+      ...deprecatedPackages.map(({ packageName, packageVersion, homepage }) => {
+        const packageDescription = `${picocolors.cyan(packageName)}@${picocolors.cyan(packageVersion)}`;
+        const packageRepo = homepage ? `\n Repo: ${picocolors.yellow(homepage)}` : '';
+        return `- ${packageDescription}${packageRepo}`;
+      }),
+      '\n',
+      picocolors.yellow('For migration instructions, see the migration guide:'),
+      picocolors.yellow(
+        'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#dropped-support-for-legacy-packages'
+      )
+    );
   }
 
   return summaryMessage.join('\n');

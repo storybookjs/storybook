@@ -56,10 +56,10 @@ export class NxProjectDetectedError extends StorybookError {
     super({
       category: Category.CLI_INIT,
       code: 1,
-      documentation: 'https://nx.dev/packages/storybook',
+      documentation: 'https://nx.dev/nx-api/storybook#generating-storybook-configuration',
       message: dedent`
         We have detected Nx in your project. Nx has its own Storybook initializer, so please use it instead.
-        Run "nx g @nx/storybook:configuration" to add Storybook to your project.`,
+        Run "nx g @nx/storybook:configuration <your-project-name>" to add Storybook to a given Nx app or lib.`,
     });
   }
 }

@@ -34,9 +34,9 @@ export default {
 };
 ```
 
-```ts filename="Example.stories.ts|tsx" renderer="common" language="ts-4-9"
-// Replace your-renderer with the renderer you are using (e.g., react, vue3, angular, etc.)
-import type { Meta } from '@storybook/your-renderer';
+```ts filename="Example.stories.ts|tsx" renderer="common" language="ts"
+// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
+import type { Meta } from '@storybook/your-framework';
 
 import { Example } from './Example';
 
@@ -51,27 +51,6 @@ const meta = {
     },
   },
 } satisfies Meta<typeof Example>;
-
-export default meta;
-```
-
-```ts filename="Example.stories.ts|tsx" renderer="common" language="ts"
-// Replace your-renderer with the renderer you are using (e.g., react, vue3, angular, etc.)
-import type { Meta } from '@storybook/your-renderer';
-
-import { Example } from './Example';
-
-const meta: Meta<typeof Example> = {
-  component: Example,
-  argTypes: {
-    value: {
-      table: {
-        defaultValue: { summary: 0 },
-        type: { summary: 'number' },
-      },
-    },
-  },
-};
 
 export default meta;
 ```
@@ -91,7 +70,7 @@ export default {
 ```
 
 ```ts filename="Example.stories.ts" renderer="web-components" language="ts"
-import type { Meta } from '@storybook/web-components';
+import type { Meta } from '@storybook/web-components-vite';
 
 const meta: Meta = {
   component: 'demo-example',

@@ -31,7 +31,7 @@ export const printDuration = (startTime: [number, number]) =>
     .replace(' s', ' seconds')
     .replace(' min', ' minutes');
 
-const corePath = dirname(require.resolve('storybook/package.json'));
+const corePath = dirname(require.resolve('storybook/internal/package.json'));
 
 let compilation: ReturnType<typeof webpackDevMiddleware> | undefined;
 let reject: (reason?: any) => void;

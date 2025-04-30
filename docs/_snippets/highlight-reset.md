@@ -20,7 +20,7 @@ export const ResetHighlight: Story = {
       const emit = useChannel({});
       emit(RESET_HIGHLIGHT); //👈 Remove previously highlighted elements
       emit(HIGHLIGHT, {
-        elements: ['header', 'section', 'footer'],
+        selectors: ['header', 'section', 'footer'],
       });
       return story;
     }),
@@ -44,7 +44,7 @@ export const ResetHighlight = {
       const emit = useChannel({});
       emit(RESET_HIGHLIGHT); //👈 Remove previously highlighted elements
       emit(HIGHLIGHT, {
-        elements: ['header', 'section', 'footer'],
+        selectors: ['header', 'section', 'footer'],
       });
       return storyFn();
     },
@@ -73,7 +73,7 @@ export const ResetHighlight: Story = {
       const emit = useChannel({});
       emit(RESET_HIGHLIGHT); //👈 Remove previously highlighted elements
       emit(HIGHLIGHT, {
-        elements: ['header', 'section', 'footer'],
+        selectors: ['header', 'section', 'footer'],
       });
       return storyFn();
     },
@@ -97,7 +97,7 @@ export const ResetHighlight = {
       const emit = useChannel({});
       emit(RESET_HIGHLIGHT); //👈 Remove previously highlighted elements
       emit(HIGHLIGHT, {
-        elements: ['header', 'section', 'footer'],
+        selectors: ['header', 'section', 'footer'],
       });
       return {
         template: '<story />',
@@ -128,7 +128,7 @@ export const ResetHighlight: Story = {
       const emit = useChannel({});
       emit(RESET_HIGHLIGHT); //👈 Remove previously highlighted elements
       emit(HIGHLIGHT, {
-        elements: ['header', 'section', 'footer'],
+        selectors: ['header', 'section', 'footer'],
       });
       return {
         template: '<story />',
@@ -152,7 +152,7 @@ export const ResetHighlight = {
       const emit = useChannel({});
       emit(RESET_HIGHLIGHT); //👈 Remove previously highlighted elements
       emit(HIGHLIGHT, {
-        elements: ['header', 'section', 'footer'],
+        selectors: ['header', 'section', 'footer'],
       });
       return story();
     },
@@ -179,7 +179,7 @@ export const ResetHighlight: Story = {
       const emit = useChannel({});
       emit(RESET_HIGHLIGHT); //👈 Remove previously highlighted elements
       emit(HIGHLIGHT, {
-        elements: ['header', 'section', 'footer'],
+        selectors: ['header', 'section', 'footer'],
       });
       return story();
     },

@@ -103,17 +103,21 @@ export const Styles = meta.story({
         selectors: ['div', 'input'],
         options: {
           styles: {
-            outline: '3px dashed hotpink',
-            animation: 'pulse 3s linear infinite',
+            backgroundColor: `color-mix(in srgb, hotpink, transparent 90%)`,
+            outline: '3px solid hotpink',
+            animation: 'highlight-pulse 3s linear infinite',
             transition: 'outline-offset 0.2s ease-in-out',
           },
-          focusStyles: {
+          hoverStyles: {
             outlineOffset: '3px',
           },
-          keyframes: `@keyframes pulse {
-            0% { outline: 3px dashed rgba(255, 105, 180, 1); }
-            50% { outline: 3px dashed rgba(255, 105, 180, 0.2); }
-            100% { outline: 3px dashed rgba(255, 105, 180, 1); }
+          focusStyles: {
+            backgroundColor: 'transparent',
+          },
+          keyframes: `@keyframes highlight-pulse {
+            0% { outline-color: rgba(255, 105, 180, 1); }
+            50% { outline-color: rgba(255, 105, 180, 0.2); }
+            100% { outline-color: rgba(255, 105, 180, 1); }
           }`,
         },
       },

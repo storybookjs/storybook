@@ -159,7 +159,6 @@
     "prompts": "^2.4.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "read-pkg-up": "^7.0.1",
     "recast": "^0.23.9",
     "rollup": "^4.21.0",
     "rollup-plugin-dts": "^6.1.1",

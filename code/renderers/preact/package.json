@@ -1,6 +1,6 @@
 {
   "name": "@storybook/preact",
-  "version": "9.0.0-beta.1",
+  "version": "9.0.0-beta.6",
   "description": "Storybook Preact renderer",
   "keywords": [
     "storybook"
@@ -51,7 +51,7 @@
   },
   "devDependencies": {
     "preact": "^10.5.13",
-    "typescript": "^5.7.3"
+    "typescript": "^5.8.3"
   },
   "peerDependencies": {
     "preact": "^8.0.0||^10.0.0",

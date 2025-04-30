@@ -59,7 +59,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
       options: { ...compilerOptions, module: ts.ModuleKind.ES2020, declaration: false },
     }).emit();
 
-    const files = globSync(join(process.cwd(), 'dist', '*.js'));
+    const files = globSync(join(process.cwd(), 'dist', '**/*.js'));
     await Promise.all(files.map((file) => move(file, file.replace('.js', '.mjs'), {})));
 
     ts.createProgram({

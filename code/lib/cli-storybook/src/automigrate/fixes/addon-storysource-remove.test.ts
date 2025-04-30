@@ -3,180 +3,219 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { JsPackageManager } from 'storybook/internal/common';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
+import dedent from 'ts-dedent';
+
 import type { CheckOptions, RunOptions } from '../types';
-import { addonStorysourceRemove } from './addon-storysource-remove';
+import { addonStorysourceCodePanel } from './addon-storysource-remove';
 
 // Mock modules before any other imports or declarations
-vi.mock('node:fs/promises', async () => {
+vi.mock('node:fs/promises', async (importOriginal) => {
+  const mod = (await importOriginal()) as any;
   return {
-    readFile: vi.fn(),
-    lstat: vi.fn(),
-    readdir: vi.fn(),
-    readlink: vi.fn(),
-    realpath: vi.fn(),
+    ...mod,
+    readFile: vi.fn().mockResolvedValue(
+      Buffer.from(dedent`
+        import React from 'react';
+        import { ThemeProvider, convert, themes } from 'storybook/theming';
+
+        export const parameters = {
+          storySort: {
+            order: ['Examples', 'Docs', 'Demo'],
+          }
+        };
+
+        export const decorators = [
+          (StoryFn) => (
+            <ThemeProvider theme={convert(themes.light)}>
+              <StoryFn />
+            </ThemeProvider>
+          )
+        ];
+      `)
+    ),
+    writeFile: vi.fn(),
   };
 });
 
-vi.mock('../helpers/mainConfigFile', () => {
-  const updateMainConfig = vi.fn().mockImplementation(({ mainConfigPath, dryRun }, callback) => {
-    return callback(mockConfigs.get(mainConfigPath));
-  });
-  return { updateMainConfig };
+vi.mock('picocolors', () => {
+  return {
+    default: {
+      cyan: (str: string) => str,
+      yellow: (str: string) => str,
+      blue: (str: string) => str,
+    },
+  };
 });
 
-vi.mock('storybook/internal/cli', () => ({
-  getStorybookVersionSpecifier: vi.fn(),
-}));
-
-// Mock ConfigFile type
-interface MockConfigFile {
-  getFieldValue: (path: string[]) => any;
-  setFieldValue: (path: string[], value: any) => void;
-  appendValueToArray: (path: string[], value: any) => void;
-  removeField: (path: string[]) => void;
-  _ast: Record<string, unknown>;
-  _code: string;
-  _exports: Record<string, unknown>;
-  _exportDecls: unknown[];
-}
-
-// Store mock configs by path
-const mockConfigs = new Map<string, MockConfigFile>();
-
-// Get reference to mocked readFile
-const readFileMock = vi.mocked(await import('node:fs/promises')).readFile;
-
+// Create mock package manager
 const mockPackageManager = {
   retrievePackageJson: vi.fn(),
   removeDependencies: vi.fn(),
   runPackageCommand: vi.fn(),
 } as unknown as JsPackageManager;
 
+// Set up test data
 const baseCheckOptions: CheckOptions = {
   packageManager: mockPackageManager,
   mainConfig: {
     stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],
     addons: ['@storybook/addon-links'],
   } as StorybookConfigRaw,
-  storybookVersion: '7.0.0',
+  storybookVersion: '8.0.0',
   configDir: '.storybook',
 };
 
-interface AddonStorysourceOptions {
-  hasStorysource: boolean;
-}
-
-// Add type for migration object
-interface Migration {
-  check: (options: CheckOptions) => Promise<AddonStorysourceOptions | null>;
-  run: (options: RunOptions<any>) => Promise<void>;
-}
-
-const typedAddonStorysourceRemove = addonStorysourceRemove as Migration;
-
-describe('addon-storysource-remove migration', () => {
+describe('addon-storysource-remove', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockConfigs.clear();
   });
 
   describe('check phase', () => {
-    it('returns null if no mainConfigPath provided', async () => {
-      const result = await typedAddonStorysourceRemove.check(baseCheckOptions);
-      expect(result).toBeNull();
-    });
-
-    it('returns null if storysource not found in config', async () => {
-      const mainConfig = `
-        export default {
-          stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],
-          addons: ['@storybook/addon-links'],
-        };
-      `;
-      readFileMock.mockResolvedValueOnce(mainConfig);
-
-      const result = await typedAddonStorysourceRemove.check({
+    it('returns null if storysource addon not found', async () => {
+      const result = await addonStorysourceCodePanel.check({
         ...baseCheckOptions,
-        mainConfigPath: 'main.ts',
-        mainConfig: {
-          stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],
-          addons: ['@storybook/addon-links'],
-        } as StorybookConfigRaw,
       });
       expect(result).toBeNull();
     });
 
-    it('detects storysource addon when present as string', async () => {
-      const mockMain: MockConfigFile = {
-        getFieldValue: vi.fn().mockReturnValue(['@storybook/addon-storysource']),
-        setFieldValue: vi.fn(),
-        appendValueToArray: vi.fn(),
-        removeField: vi.fn(),
-        _ast: {},
-        _code: '',
-        _exports: {},
-        _exportDecls: [],
-      };
-
-      mockConfigs.set('main.ts', mockMain);
-
-      const result = await typedAddonStorysourceRemove.check({
+    it('detects storysource addon when present', async () => {
+      const result = await addonStorysourceCodePanel.check({
         ...baseCheckOptions,
-        mainConfigPath: 'main.ts',
         mainConfig: {
           stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],
-          addons: ['@storybook/addon-storysource'],
+          addons: ['@storybook/addon-links', '@storybook/addon-storysource'],
         } as StorybookConfigRaw,
+        mainConfigPath: '.storybook/main.js',
+        previewConfigPath: '.storybook/preview.js',
       });
+
       expect(result).toEqual({
         hasStorysource: true,
       });
     });
 
     it('detects storysource addon when present as object', async () => {
-      const mockMain: MockConfigFile = {
-        getFieldValue: vi.fn().mockReturnValue([{ name: '@storybook/addon-storysource' }]),
-        setFieldValue: vi.fn(),
-        appendValueToArray: vi.fn(),
-        removeField: vi.fn(),
-        _ast: {},
-        _code: '',
-        _exports: {},
-        _exportDecls: [],
-      };
-
-      mockConfigs.set('main.ts', mockMain);
-
-      const result = await typedAddonStorysourceRemove.check({
+      const result = await addonStorysourceCodePanel.check({
         ...baseCheckOptions,
-        mainConfigPath: 'main.ts',
         mainConfig: {
           stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],
-          addons: [{ name: '@storybook/addon-storysource' }],
+          addons: ['@storybook/addon-links', { name: '@storybook/addon-storysource' }],
         } as StorybookConfigRaw,
+        mainConfigPath: '.storybook/main.js',
+        previewConfigPath: '.storybook/preview.js',
       });
+
       expect(result).toEqual({
         hasStorysource: true,
       });
     });
   });
 
+  describe('prompt phase', () => {
+    it('returns the correct prompt message', () => {
+      const promptMessage = addonStorysourceCodePanel.prompt({
+        hasStorysource: true,
+      });
+
+      expect(promptMessage).toMatchInlineSnapshot(dedent`
+        "We've detected that you're using @storybook/addon-storysource.
+
+        The @storybook/addon-storysource addon is being removed in Storybook 9.0. 
+        Instead, Storybook now provides a Code Panel via @storybook/addon-docs 
+        that offers similar functionality with improved integration and performance.
+
+        We'll remove @storybook/addon-storysource from your project and 
+        enable the Code Panel in your preview configuration.
+
+        More info: https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storysource-addon-removed"
+      `);
+    });
+  });
   describe('run phase', () => {
-    it('removes storysource addon using storybook remove command', async () => {
-      await typedAddonStorysourceRemove.run({
+    it('does nothing if storysource addon not found', async () => {
+      await addonStorysourceCodePanel.run?.({
         result: {
-          hasStorysource: true,
+          hasStorysource: false,
+          previewConfigPath: '.storybook/preview.js',
         },
         packageManager: mockPackageManager,
         configDir: '.storybook',
-      } as RunOptions<AddonStorysourceOptions>);
+      } as RunOptions<{
+        hasStorysource: boolean;
+        previewConfigPath: string | undefined;
+      }>);
 
+      expect(mockPackageManager.runPackageCommand).not.toHaveBeenCalled();
+    });
+
+    it('removes storysource addon and updates preview config', async () => {
+      await addonStorysourceCodePanel.run?.({
+        result: {
+          hasStorysource: true,
+          previewConfigPath: '.storybook/preview.js',
+        },
+        packageManager: mockPackageManager,
+        previewConfigPath: '.storybook/preview.js',
+        configDir: '.storybook',
+        dryRun: false,
+      } as RunOptions<{
+        hasStorysource: boolean;
+        previewConfigPath: string | undefined;
+      }>);
+
+      // Verify package manager was called with correct arguments
       expect(mockPackageManager.runPackageCommand).toHaveBeenCalledWith('storybook', [
         'remove',
         '@storybook/addon-storysource',
         '--config-dir',
         '.storybook',
       ]);
+
+      const writeFile = vi.mocked((await import('node:fs/promises')).writeFile);
+
+      expect(writeFile).toHaveBeenCalledWith(
+        '.storybook/preview.js',
+        dedent`
+        import React from 'react';
+        import { ThemeProvider, convert, themes } from 'storybook/theming';
+
+        export const parameters = {
+          storySort: {
+            order: ['Examples', 'Docs', 'Demo'],
+          },
+
+          docs: {
+            codePanel: true
+          }
+        };
+
+        export const decorators = [
+          (StoryFn) => (
+            <ThemeProvider theme={convert(themes.light)}>
+              <StoryFn />
+            </ThemeProvider>
+          )
+        ];
+      `
+      );
+    });
+
+    it('does nothing in dry run mode', async () => {
+      await addonStorysourceCodePanel.run?.({
+        result: {
+          hasStorysource: true,
+          previewConfigPath: '.storybook/preview.js',
+        },
+        packageManager: mockPackageManager,
+        configDir: '.storybook',
+        dryRun: true,
+      } as RunOptions<{
+        hasStorysource: boolean;
+        previewConfigPath: string | undefined;
+      }>);
+
+      // Verify no actual changes were made
+      expect(mockPackageManager.runPackageCommand).not.toHaveBeenCalled();
     });
   });
 });

@@ -1,12 +1,12 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
 
+import type { ProjectAnnotations } from 'storybook/internal/csf';
 import type {
   ComponentAnnotations as Meta,
   Store_CSFExports,
   StoryAnnotationsOrFn as Story,
-} from '@storybook/core/types';
-import type { ProjectAnnotations } from '@storybook/csf';
+} from 'storybook/internal/types';
 
 import * as defaultExportAnnotations from './__mocks__/defaultExportAnnotations.mockfile';
 import * as namedExportAnnotations from './__mocks__/namedExportAnnotations.mockfile';
@@ -197,7 +197,7 @@ describe('composeStory', () => {
     );
     storyPrecedence();
     expect(renderSpy.mock.calls[0][1]).toEqual(
-      expect.objectContaining({ globals: { language: 'pt' } })
+      expect.objectContaining({ globals: expect.objectContaining({ language: 'pt' }) })
     );
 
     renderSpy.mockClear();
@@ -205,7 +205,7 @@ describe('composeStory', () => {
     const metaPrecedence = composeStory(storyAnnotations, metaAnnotations, projectAnnotations);
     metaPrecedence();
     expect(renderSpy.mock.calls[0][1]).toEqual(
-      expect.objectContaining({ globals: { language: 'de' } })
+      expect.objectContaining({ globals: expect.objectContaining({ language: 'de' }) })
     );
 
     renderSpy.mockClear();
@@ -213,7 +213,7 @@ describe('composeStory', () => {
     const projectPrecedence = composeStory(storyAnnotations, {}, projectAnnotations);
     projectPrecedence();
     expect(renderSpy.mock.calls[0][1]).toEqual(
-      expect.objectContaining({ globals: { language: 'nl' } })
+      expect.objectContaining({ globals: expect.objectContaining({ language: 'nl' }) })
     );
 
     renderSpy.mockClear();
@@ -222,7 +222,7 @@ describe('composeStory', () => {
     const setProjectAnnotationsPrecedence = composeStory(storyAnnotations, {}, {});
     setProjectAnnotationsPrecedence();
     expect(renderSpy.mock.calls[0][1]).toEqual(
-      expect.objectContaining({ globals: { language: 'be' } })
+      expect.objectContaining({ globals: expect.objectContaining({ language: 'be' }) })
     );
   });
 

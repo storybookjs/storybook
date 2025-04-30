@@ -1,10 +1,10 @@
 import type { FC } from 'react';
 import React, { useState } from 'react';
 
-import { Link } from '@storybook/core/components';
-import { styled } from '@storybook/core/theming';
+import { Link } from 'storybook/internal/components';
 
-import { useStorybookApi } from '@storybook/core/manager-api';
+import { useStorybookApi } from 'storybook/manager-api';
+import { styled } from 'storybook/theming';
 
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
 
@@ -37,7 +37,6 @@ export const UpgradeBlock: FC<UpgradeBlockProps> = ({ onNavigateToWhatsNew }) =>
           : `${activeTab} dlx storybook@latest upgrade`}
       </Code>
       {onNavigateToWhatsNew && (
-        // eslint-disable-next-line jsx-a11y/anchor-is-valid
         <Link onClick={onNavigateToWhatsNew}>See what's new in Storybook</Link>
       )}
     </Container>

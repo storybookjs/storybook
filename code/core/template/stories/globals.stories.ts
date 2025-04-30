@@ -1,6 +1,8 @@
-import type { PartialStoryFn, PlayFunctionContext, StoryContext } from '@storybook/core/types';
+import type { PartialStoryFn, PlayFunctionContext, StoryContext } from 'storybook/internal/types';
+
 import { global as globalThis } from '@storybook/global';
-import { expect, within } from '@storybook/test';
+
+import { expect, within } from 'storybook/test';
 
 export default {
   component: globalThis.Components.Pre,
@@ -19,7 +21,7 @@ export const Inheritance = {
   play: async ({ canvasElement }: PlayFunctionContext<any>) => {
     await expect(JSON.parse(within(canvasElement).getByTestId('pre').innerText)).toMatchObject({
       foo: 'fooValue',
-      bar: 'barDefaultValue',
+      bar: 'barValue',
       baz: 'bazComponentValue',
     });
   },
@@ -61,7 +63,7 @@ export const Overrides1 = {
   play: async ({ canvasElement }: PlayFunctionContext<any>) => {
     await expect(JSON.parse(within(canvasElement).getByTestId('pre').innerText)).toMatchObject({
       foo: 'fooOverridden1',
-      bar: 'barDefaultValue',
+      bar: 'barValue',
       baz: 'bazOverridden1',
     });
   },
@@ -80,7 +82,7 @@ export const Overrides2 = {
   play: async ({ canvasElement }: PlayFunctionContext<any>) => {
     await expect(JSON.parse(within(canvasElement).getByTestId('pre').innerText)).toMatchObject({
       foo: 'fooOverridden2',
-      bar: 'barDefaultValue',
+      bar: 'barValue',
       baz: 'bazOverridden2',
     });
   },

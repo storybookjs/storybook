@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { applyTransform } from 'jscodeshift/dist/testUtils';
 
-vi.mock('@storybook/core/node-logger');
+vi.mock('storybook/internal/node-logger');
 
 const inputRegExp = /\.input\.js$/;
 

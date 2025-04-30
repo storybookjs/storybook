@@ -1,13 +1,12 @@
-import { expect } from '@storybook/test';
+import { expect, within } from 'storybook/test';
 import { Meta, type StoryObj } from '@storybook/react'
-import { instrument } from '@storybook/instrumenter'
+import { instrument } from 'storybook/internal/instrumenter'
+import { Component } from './AddonTest';
 
 declare global {
   // eslint-disable-next-line no-var
   var __vitest_browser__: boolean;
 }
-
-const Component = () => <button>test</button>
 
 const meta = {
   title: 'Addons/Group/Test',
@@ -37,6 +36,15 @@ export const ExpectedFailure: Story = {
 export const ExpectedSuccess: Story = {
   play: async () => {
     await pass();
+  }
+};
+
+export const ExpectedContent: Story = {
+  play: async ({ canvasElement }) => {
+    const button = within(canvasElement).getByRole('button');
+    await expect(button).toHaveTextContent('test');
+    const decoratorString = within(canvasElement).getByTestId('decorator-string');
+    await expect(decoratorString).toHaveTextContent('Global Decorator');
   }
 };
 

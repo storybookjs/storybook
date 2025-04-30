@@ -5,8 +5,6 @@ sidebar:
   title: Autodocs
 ---
 
-<YouTubeCallout id="BLUmt0j7OLY" title="INSTANT documentation with Storybook 7 AUTODOCS" />
-
 Storybook Autodocs is a powerful tool that can help you quickly generate comprehensive documentation for your UI components. By leveraging Autodocs, you're transforming your stories into living documentation which can be further extended with [MDX](./mdx.mdx) and [Doc Blocks](./doc-blocks.mdx) to provide a clear and concise understanding of your components' functionality.
 
 Storybook infers the relevant metadata (e.g., [`args`](../writing-stories/args.mdx), [`argTypes`](../api/arg-types.mdx), [`parameters`](../writing-stories/parameters.mdx)) and automatically generates a documentation page with this information positioned at the root-level of your component tree in the sidebar.
@@ -64,8 +62,6 @@ In addition to enabling the feature with `tags`, you can extend your Storybook c
 | `defaultName` | Renames the auto-generated documentation page<br /> Default: `docs: { defaultName: 'Documentation' }` |
 
 ### Write a custom template
-
-<YouTubeCallout id="q8SY4yyNE6Q" title="Custom Autodocs with Storybook 7 Docs Page | Quick Tips" />
 
 To replace the default documentation template used by Storybook, you can extend your UI configuration file (i.e., `.storybook/preview.js|ts`) and introduce a `docs` [parameter](./doc-blocks.mdx#customizing-the-automatic-docs-page). This parameter accepts a `page` function that returns a React component, which you can use to generate the required template. For example:
 
@@ -214,6 +210,19 @@ Out of the box, Storybook has a set of components that you can use to customize 
 
   “We now ‘sandbox’ components, for lack of a better name. It means that when you pass a component for h1, it does get used for `# hi` but not for `<h1>hi</h1>`”
 </Callout>
+
+### Addon options
+
+The docs addon accepts options to customize the behavior of the documentation page. You can add them to your Storybook UI configuration file (i.e., `.storybook/main.js|ts`), as part of registering the addon. The following options are available:
+
+| Option             | Description                                                                                                                                                    |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `csfPluginOptions` | Provides additional configuration for Storybook's CSF plugin. Can be disabled with `null`.                                                                     |
+| `mdxPluginOptions` | Provides additional configuration options and plugin configuration for [MDX documentation](../writing-docs/mdx.mdx#markdown-tables-arent-rendering-correctly). |
+
+This example demonstrates how to apply these options.
+
+<CodeSnippets path="addon-docs-options.md" />
 
 ## Troubleshooting
 

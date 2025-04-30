@@ -2,16 +2,7 @@
   "name": "angular-cli/prerelease",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
-  "implicitDependencies": [
-    "storybook",
-    "core",
-    "addon-essentials",
-    "addon-interactions",
-    "addon-links",
-    "addon-onboarding",
-    "blocks",
-    "angular"
-  ],
+  "implicitDependencies": ["core", "addon-links", "addon-onboarding", "angular"],
   "targets": {
     "sandbox": {},
     "sb:dev": {},

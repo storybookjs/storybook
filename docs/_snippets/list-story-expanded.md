@@ -373,7 +373,7 @@ export const ManyItems: Story = {
 <Story name="Empty" />
 
 <Story name="One Item">
-  {#snippet children(args)}
+  {#snippet template(args)}
     <List {...args} >
       <ListItem />
     </List>
@@ -381,7 +381,7 @@ export const ManyItems: Story = {
 </Story>
 
 <Story name="Many Items">
-  {#snippet children(args)}
+  {#snippet template(args)}
     <List {...args} >
       <ListItem />
       <ListItem />
@@ -406,7 +406,7 @@ export const ManyItems: Story = {
 <Story name="Empty" />
 
 <Story name="One Item">
-  {#snippet children(args)}
+  {#snippet template(args)}
     <List {...args} >
       <ListItem />
     </List>
@@ -414,7 +414,7 @@ export const ManyItems: Story = {
 </Story>
 
 <Story name="Many Items">
-  {#snippet children(args)}
+  {#snippet template(args)}
     <List {...args} >
       <ListItem />
       <ListItem />
@@ -439,7 +439,7 @@ export const ManyItems: Story = {
 <Story name="Empty" />
 
 <Story name="One Item">
-  {#snippet children(args)}
+  {#snippet template(args)}
     <List {...args} >
       <ListItem />
     </List>
@@ -447,7 +447,7 @@ export const ManyItems: Story = {
 </Story>
 
 <Story name="Many Items">
-  {#snippet children(args)}
+  {#snippet template(args)}
     <List {...args} >
       <ListItem />
       <ListItem />

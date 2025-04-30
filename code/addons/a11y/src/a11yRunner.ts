@@ -1,23 +1,25 @@
-import { addons } from 'storybook/internal/preview-api';
+import { deprecate } from 'storybook/internal/client-logger';
+import { ElementA11yParameterError } from 'storybook/internal/preview-errors';
 
 import { global } from '@storybook/global';
 
-import type { AxeResults } from 'axe-core';
+import type { AxeResults, ContextProp, ContextSpec, Selector, SelectorList } from 'axe-core';
+import { addons } from 'storybook/preview-api';
 
 import { EVENTS } from './constants';
-import type { A11yParameters } from './params';
+import type { A11yParameters, SelectorWithoutNode } from './params';
 
 const { document } = global;
 
 const channel = addons.getChannel();
 
-const defaultParameters = { config: {}, options: {} };
+const DEFAULT_PARAMETERS = { config: {}, options: {} } as const;
 
-const disabledRules = [
+const DISABLED_RULES = [
   // In component testing, landmarks are not always present
   // and the rule check can cause false positives
   'region',
-];
+] as const;
 
 // A simple queue to run axe-core in sequence
 // This is necessary because axe-core is not designed to run in parallel
@@ -38,21 +40,50 @@ const runNext = async () => {
   runNext();
 };
 
-export const run = async (input: A11yParameters = defaultParameters) => {
+export const run = async (input: A11yParameters = DEFAULT_PARAMETERS) => {
   const { default: axe } = await import('axe-core');
 
-  const { element = 'body', config = {}, options = {} } = input;
-  const htmlElement = document.querySelector(element as string) ?? document.body;
+  const { config = {}, options = {} } = input;
 
-  if (!htmlElement) {
-    return;
+  // @ts-expect-error - the whole point of this is to error if 'element' is passed
+  if (input.element) {
+    throw new ElementA11yParameterError();
+  }
+
+  const context: ContextSpec = {
+    include: document?.body,
+    exclude: ['.sb-wrapper', '#storybook-docs'], // Internal Storybook elements that are always in the document
+  };
+
+  if (input.context) {
+    const hasInclude =
+      typeof input.context === 'object' &&
+      'include' in input.context &&
+      input.context.include !== undefined;
+    const hasExclude =
+      typeof input.context === 'object' &&
+      'exclude' in input.context &&
+      input.context.exclude !== undefined;
+
+    // 1. if context.include exists, use it
+    if (hasInclude) {
+      context.include = (input.context as any).include as ContextProp;
+    } else if (!hasInclude && !hasExclude) {
+      // 2. if context exists, but it's not an object with include or exclude, it's an implicit include to be used directly
+      context.include = input.context as ContextProp;
+    }
+
+    // 3. if context.exclude exists, merge it with the default exclude
+    if (hasExclude) {
+      context.exclude = (context.exclude as any).concat((input.context as any).exclude);
+    }
   }
 
   axe.reset();
 
   const configWithDefault = {
     ...config,
-    rules: [...disabledRules.map((id) => ({ id, enabled: false })), ...(config?.rules ?? [])],
+    rules: [...DISABLED_RULES.map((id) => ({ id, enabled: false })), ...(config?.rules ?? [])],
   };
 
   axe.configure(configWithDefault);
@@ -60,7 +91,7 @@ export const run = async (input: A11yParameters = defaultParameters) => {
   return new Promise<AxeResults>((resolve, reject) => {
     const task = async () => {
       try {
-        const result = await axe.run(htmlElement, options);
+        const result = await axe.run(context, options);
         resolve(result);
       } catch (error) {
         reject(error);
@@ -75,7 +106,7 @@ export const run = async (input: A11yParameters = defaultParameters) => {
   });
 };
 
-channel.on(EVENTS.MANUAL, async (storyId: string, input: A11yParameters = defaultParameters) => {
+channel.on(EVENTS.MANUAL, async (storyId: string, input: A11yParameters = DEFAULT_PARAMETERS) => {
   try {
     const result = await run(input);
     // Axe result contains class instances, which telejson deserializes in a

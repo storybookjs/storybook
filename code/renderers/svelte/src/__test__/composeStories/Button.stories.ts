@@ -1,4 +1,4 @@
-import { expect, fn, userEvent, within } from '@storybook/test';
+import { expect, fn, userEvent, within } from 'storybook/test';
 
 import type { StoryFn as CSF2Story, Meta, StoryObj } from '../..';
 import AddWrapperDecorator from './AddWrapperDecorator.svelte';
@@ -19,7 +19,7 @@ const meta = {
     },
   },
   excludeStories: /.*ImNotAStory$/,
-} satisfies Meta<Button>;
+} satisfies Meta<typeof Button>;
 
 export default meta;
 type CSF3Story = StoryObj<typeof meta>;

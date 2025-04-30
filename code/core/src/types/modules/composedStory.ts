@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/naming-convention */
 import type {
   Globals,
   ProjectAnnotations,
@@ -7,7 +6,7 @@ import type {
   StoryId,
   StrictArgTypes,
   Tag,
-} from '@storybook/csf';
+} from 'storybook/internal/csf';
 
 import type { ReporterAPI } from '../../preview-api';
 import type {

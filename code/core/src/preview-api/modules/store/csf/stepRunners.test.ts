@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import type { StepRunner, StoryContext } from '@storybook/core/types';
+import type { StepRunner, StoryContext } from 'storybook/internal/types';
 
 import { composeStepRunners } from './stepRunners';
 

@@ -1,4 +1,3 @@
-/* eslint-disable import/no-extraneous-dependencies, import/extensions */
 import { execSync } from 'child_process';
 import { danger, fail } from 'danger';
 

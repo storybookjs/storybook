@@ -11,7 +11,7 @@ export default {
 ```
 
 ```ts filename=".storybook/main.ts" renderer="svelte" language="ts"
-import { StorybookConfig } from '@storybook/svelte-vite';
+import type { StorybookConfig } from '@storybook/svelte-vite';
 
 const config: StorybookConfig = {
   // ...

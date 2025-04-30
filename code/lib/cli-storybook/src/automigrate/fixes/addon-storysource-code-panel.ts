@@ -24,10 +24,8 @@ export const addonStorysourceCodePanel: Fix<StorysourceOptions> = {
     try {
       let hasStorysource = false;
 
-      await updateMainConfig({ mainConfigPath, dryRun: true }, () => {
-        const addonNames = getAddonNames(mainConfig);
-        hasStorysource = addonNames.includes('@storybook/addon-storysource');
-      });
+      const addonNames = getAddonNames(mainConfig);
+      hasStorysource = addonNames.includes('@storybook/addon-storysource');
 
       if (!hasStorysource) {
         return null;

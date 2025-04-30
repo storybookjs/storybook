@@ -5,7 +5,7 @@ import { addonA11yParameters } from './addon-a11y-parameters';
 import { addonEssentialsRemoveDocs } from './addon-essentials-remove-docs';
 import { addonExperimentalTest } from './addon-experimental-test';
 import { addonMdxGfmRemove } from './addon-mdx-gfm-remove';
-import { addonStorysourceRemove } from './addon-storysource-remove';
+import { addonStorysourceCodePanel } from './addon-storysource-code-panel';
 import { consolidatedImports } from './consolidated-imports';
 import { eslintPlugin } from './eslint-plugin';
 import { initialGlobals } from './initial-globals';
@@ -22,7 +22,7 @@ export const allFixes: Fix[] = [
   eslintPlugin,
   wrapRequire,
   addonMdxGfmRemove,
-  addonStorysourceRemove,
+  addonStorysourceCodePanel,
   upgradeStorybookRelatedDependencies,
   initialGlobals,
   addonA11yAddonTest,

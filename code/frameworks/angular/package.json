@@ -62,8 +62,7 @@
     "ts-dedent": "^2.0.0",
     "tsconfig-paths-webpack-plugin": "^4.0.1",
     "util-deprecate": "^1.0.2",
-    "webpack": "5",
-    "@angular/animations": "^19.1.1"
+    "webpack": "5"
   },
   "devDependencies": {
     "@analogjs/vite-plugin-angular": "^1.12.1",
@@ -78,6 +77,7 @@
     "@angular/forms": "^19.1.1",
     "@angular/platform-browser": "^19.1.1",
     "@angular/platform-browser-dynamic": "^19.1.1",
+    "@angular/animations": "^19.1.1",
     "@types/node": "^22.0.0",
     "rimraf": "^6.0.1",
     "typescript": "^5.8.3",

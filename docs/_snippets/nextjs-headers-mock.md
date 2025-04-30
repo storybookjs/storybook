@@ -1,8 +1,11 @@
 ```js filename="MyForm.stories.js" renderer="react" language="js"
 import { expect, userEvent, within } from 'storybook/test';
 
-// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-import { cookies, headers } from '@storybook/nextjs-vite/headers.mock';
+/*
+ * Replace your-framework with nextjs or nextjs-vite
+ * 👇 Must include the `.mock` portion of filename to have mocks typed correctly
+ */
+import { cookies, headers } from '@storybook/your-framework/headers.mock';
 
 import MyForm from './my-form';
 
@@ -27,12 +30,13 @@ export const LoggedInEurope = {
 ```
 
 ```ts filename="MyForm.stories.ts" renderer="react" language="ts"
-import type { Meta, StoryObj } from '@storybook/nextjs-vite';
+// Replace your-framework with nextjs or nextjs-vite
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { expect, fireEvent, userEvent, within } from 'storybook/test';
 
 // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-import { cookies, headers } from '@storybook/nextjs-vite/headers.mock';
+import { cookies, headers } from '@storybook/your-framework/headers.mock';
 
 import MyForm from './my-form';
 

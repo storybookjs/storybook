@@ -2,10 +2,10 @@
 export default {
   parameters: {
     backgrounds: {
-      options: [
-        { name: 'light', value: '#fff' },
-        { name: 'dark', value: '#333' },
-      ],
+      options: {
+        light: { name: 'Light', value: '#fff' },
+        dark: { name: 'Dark', value: '#333' },
+      },
     },
   },
 };
@@ -18,10 +18,10 @@ import type { Preview } from '@storybook/your-framework';
 const preview: Preview = {
   parameters: {
     backgrounds: {
-      options: [
-        { name: 'light', value: '#fff' },
-        { name: 'dark', value: '#333' },
-      ],
+      options: {
+        light: { name: 'Light', value: '#fff' },
+        dark: { name: 'Dark', value: '#333' },
+      },
     },
   },
 };

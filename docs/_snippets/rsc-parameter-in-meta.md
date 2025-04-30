@@ -10,7 +10,8 @@ export default {
 ```
 
 ```ts filename="MyServerComponent.stories.ts" renderer="react" language="ts"
-import type { Meta, StoryObj } from '@storybook/nextjs-vite';
+// Replace your-framework with nextjs or nextjs-vite
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import MyServerComponent from './MyServerComponent';
 

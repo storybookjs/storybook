@@ -213,7 +213,7 @@ Occasionally fetching fonts from Google may fail as part of your Storybook build
 For example, using [GitHub Actions](https://www.chromatic.com/docs/github-actions):
 
 ```yaml title=".github/workflows/ci.yml"
-- uses: chromaui/action@v1
+- uses: chromaui/action@latest
   env:
     #👇 the location of mocked fonts to use
     NEXT_FONT_GOOGLE_MOCKED_RESPONSES: ${{ github.workspace }}/mocked-google-fonts.js
@@ -298,9 +298,11 @@ Additionally, the [`router` object](https://nextjs.org/docs/pages/api-reference/
 To override these defaults, you can use [parameters](../../writing-stories/parameters.mdx) and [`beforeEach`](../../writing-stories/mocking-data-and-modules/mocking-modules.mdx#setting-up-and-cleaning-up):
 
 ```ts title=".storybook/preview.js|ts"
-import type { Preview } from '@storybook/nextjs-vite';
+// Replace your-framework with nextjs or nextjs-vite
+import type { Preview } from '@storybook/your-framework';
+
 // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-import { getRouter } from "@storybook/nextjs-vite/router.mock";
+import { getRouter } from "@storybook/your-framework/router.mock";
 
 const preview: Preview = {
   parameters: {
@@ -425,9 +427,11 @@ Additionally, the [`router` object](https://nextjs.org/docs/app/api-reference/fu
 To override these defaults, you can use [parameters](../../writing-stories/parameters.mdx) and [`beforeEach`](../../writing-stories/mocking-data-and-modules/mocking-modules.mdx#setting-up-and-cleaning-up):
 
 ```ts title=".storybook/preview.js|ts"
-import type { Preview } from '@storybook/nextjs-vite';
+// Replace your-framework with nextjs or nextjs-vite
+import type { Preview } from '@storybook/your-framework';
+
 // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-import { getRouter } from "@storybook/nextjs-vite/navigation.mock";
+import { getRouter } from '@storybook/your-framework/navigation.mock';
 
 const preview: Preview = {
   parameters: {
@@ -989,10 +993,11 @@ You can pass an options object for additional configuration if needed:
 ```js title=".storybook/main.js"
 import * as path from 'path';
 
+// Replace your-framework with nextjs or nextjs-vite
 export default {
   // ...
   framework: {
-    name: '@storybook/nextjs',
+    name: '@storybook/your-framework',
     options: {
       image: {
         loading: 'eager',

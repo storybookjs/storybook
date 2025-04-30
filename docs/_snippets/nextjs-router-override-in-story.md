@@ -23,7 +23,8 @@ export const Example = {
 ```
 
 ```ts filename="RouterBasedComponent.stories.ts" renderer="react" language="ts"
-import type { Meta, StoryObj } from '@storybook/nextjs-vite';
+// Replace your-framework with nextjs or nextjs-vite
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import RouterBasedComponent from './RouterBasedComponent';
 

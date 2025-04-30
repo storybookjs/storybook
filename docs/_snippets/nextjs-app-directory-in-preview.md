@@ -11,7 +11,8 @@ export default {
 ```
 
 ```ts filename=".storybook/preview.ts" renderer="react" language="ts"
-import type { Preview } from '@storybook/nextjs-vite';
+// Replace your-framework with nextjs or nextjs-vite
+import type { Preview } from '@storybook/your-framework';
 
 const preview: Preview = {
   // ...

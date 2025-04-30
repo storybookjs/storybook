@@ -14,11 +14,11 @@ export const Primary: Story = {
   // 👇 Story-level parameters
   parameters: {
     backgrounds: {
-      options: [
-        { name: 'red', value: '#f00' },
-        { name: 'green', value: '#0f0' },
-        { name: 'blue', value: '#00f' },
-      ],
+      options: {
+        red: { name: 'Red', value: '#f00' },
+        green: { name: 'Green', value: '#0f0' },
+        blue: { name: 'Blue', value: '#00f' },
+      },
     },
   },
 };
@@ -40,11 +40,11 @@ export const Primary: Story = {
   name="Primary"
   parameters={{
     backgrounds: {
-      options: [
-        { name: 'red', value: '#f00' },
-        { name: 'green', value: '#0f0' },
-        { name: 'blue', value: '#00f' },
-      ],
+      options: {
+        red: { name: 'Red', value: '#f00' },
+        green: { name: 'Green', value: '#0f0' },
+        blue: { name: 'Blue', value: '#00f' },
+      },
     },
   }}
 />
@@ -61,11 +61,11 @@ export const Primary = {
   // 👇 Story-level parameters
   parameters: {
     backgrounds: {
-      options: [
-        { name: 'red', value: '#f00' },
-        { name: 'green', value: '#0f0' },
-        { name: 'blue', value: '#00f' },
-      ],
+      options: {
+        red: { name: 'Red', value: '#f00' },
+        green: { name: 'Green', value: '#0f0' },
+        blue: { name: 'Blue', value: '#00f' },
+      },
     },
   },
 };
@@ -82,11 +82,11 @@ export const Primary = {
   // 👇 Story-level parameters
   parameters: {
     backgrounds: {
-      options: [
-        { name: 'red', value: '#f00' },
-        { name: 'green', value: '#0f0' },
-        { name: 'blue', value: '#00f' },
-      ],
+      options: {
+        red: { name: 'Red', value: '#f00' },
+        green: { name: 'Green', value: '#0f0' },
+        blue: { name: 'Blue', value: '#00f' },
+      },
     },
   },
 };
@@ -108,11 +108,11 @@ export const Primary = {
   name="Primary"
   parameters={{
     backgrounds: {
-      options: [
-        { name: 'red', value: '#f00' },
-        { name: 'green', value: '#0f0' },
-        { name: 'blue', value: '#00f' },
-      ],
+      options: {
+        red: { name: 'Red', value: '#f00' },
+        green: { name: 'Green', value: '#0f0' },
+        blue: { name: 'Blue', value: '#00f' },
+      },
     },
   }}
 />
@@ -134,11 +134,11 @@ export const Primary: Story = {
   // 👇 Story-level parameters
   parameters: {
     backgrounds: {
-      options: [
-        { name: 'red', value: '#f00' },
-        { name: 'green', value: '#0f0' },
-        { name: 'blue', value: '#00f' },
-      ],
+      options: {
+        red: { name: 'Red', value: '#f00' },
+        green: { name: 'Green', value: '#0f0' },
+        blue: { name: 'Blue', value: '#00f' },
+      },
     },
   },
 };
@@ -161,11 +161,11 @@ export const Primary: Story = {
   // 👇 Story-level parameters
   parameters: {
     backgrounds: {
-      options: [
-        { name: 'red', value: '#f00' },
-        { name: 'green', value: '#0f0' },
-        { name: 'blue', value: '#00f' },
-      ],
+      options: {
+        red: { name: 'Red', value: '#f00' },
+        green: { name: 'Green', value: '#0f0' },
+        blue: { name: 'Blue', value: '#00f' },
+      },
     },
   },
 };
@@ -180,11 +180,11 @@ export const Primary = {
   // 👇 Story-level parameters
   parameters: {
     backgrounds: {
-      options: [
-        { name: 'red', value: '#f00' },
-        { name: 'green', value: '#0f0' },
-        { name: 'blue', value: '#00f' },
-      ],
+      options: {
+        red: { name: 'Red', value: '#f00' },
+        green: { name: 'Green', value: '#0f0' },
+        blue: { name: 'Blue', value: '#00f' },
+      },
     },
   },
 };
@@ -204,11 +204,11 @@ export const Primary = {
   // 👇 Story-level parameters
   parameters: {
     backgrounds: {
-      options: [
-        { name: 'red', value: '#f00' },
-        { name: 'green', value: '#0f0' },
-        { name: 'blue', value: '#00f' },
-      ],
+      options: {
+        red: { name: 'Red', value: '#f00' },
+        green: { name: 'Green', value: '#0f0' },
+        blue: { name: 'Blue', value: '#00f' },
+      },
     },
   },
 };

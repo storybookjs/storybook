@@ -47,11 +47,6 @@ export const checkPackageCompatibility = async (
       homepage,
     } = dependencyPackageJson;
 
-    const allStorybookPackages = {
-      ...storybookCorePackages,
-      ...consolidatedPackages,
-    };
-
     const packageStorybookVersion = Object.entries({
       ...dependencies,
       ...peerDependencies,
@@ -88,7 +83,7 @@ export const checkPackageCompatibility = async (
       packageName: name,
       packageVersion,
       homepage,
-      hasIncompatibleDependencies: packageStorybookVersion != null,
+      hasIncompatibleDependencies: packageStorybookVersion != null && !isDeprecatedPackage,
       packageStorybookVersion,
       availableUpdate,
       availableCoreUpdate,

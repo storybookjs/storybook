@@ -6,7 +6,7 @@ import type { StorybookConfigRaw } from 'storybook/internal/types';
 import dedent from 'ts-dedent';
 
 import type { CheckOptions, RunOptions } from '../types';
-import { addonStorysourceCodePanel } from './addon-storysource-remove';
+import { addonStorysourceCodePanel } from './addon-storysource-code-panel';
 
 // Mock modules before any other imports or declarations
 vi.mock('node:fs/promises', async (importOriginal) => {

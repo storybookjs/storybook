@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { readdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
@@ -64,7 +65,9 @@ async function generateFrameworksFile(prettierConfig: prettier.Options | null): 
   const location = join(__dirname, '..', '..', 'src', 'types', 'modules', 'frameworks.ts');
   const frameworksDirectory = join(__dirname, '..', '..', '..', 'frameworks');
 
-  const readFrameworks = await readdir(frameworksDirectory);
+  const readFrameworks = (await readdir(frameworksDirectory)).filter((framework) =>
+    existsSync(join(frameworksDirectory, framework, 'project.json'))
+  );
   const frameworks = [...readFrameworks.sort(), ...thirdPartyFrameworks]
     .map((framework) => `'${framework}'`)
     .join(' | ');

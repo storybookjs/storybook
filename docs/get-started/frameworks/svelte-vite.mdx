@@ -147,7 +147,7 @@ If you used the `Template` component to control how the component renders in the
 
 #### Story slots to snippets
 
-With Svelte's slot deprecation and the introduction of reusable [`snippets`](https://svelte.dev/docs/svelte/v5-migration-guide#Snippets-instead-of-slots), the addon also introduced support for this feature allowing you to extend the `Story` component and provide a custom snippet to provide dynamic content to your stories. This feature extends the built-in `children` support in the `Story` component, allowing you to create dynamic stories without losing reactivity.
+With Svelte's slot deprecation and the introduction of reusable [`snippets`](https://svelte.dev/docs/svelte/v5-migration-guide#Snippets-instead-of-slots), the addon also introduced support for this feature allowing you to extend the `Story` component and provide a custom snippet to provide dynamic content to your stories. `Story` accepts a `template` snippet, allowing you to create dynamic stories without losing reactivity.
 
 ```svelte title="MyComponent.stories.svelte"
 <script>
@@ -161,7 +161,7 @@ With Svelte's slot deprecation and the introduction of reusable [`snippets`](htt
 </script>
 
 <Story name="Default" args={{ exampleProperty: true }}>
-  {#snippet children(args)}
+  {#snippet template(args)}
     <MyComponent {...args}>Reactive component</MyComponent>
   {/snippet}
 </Story>

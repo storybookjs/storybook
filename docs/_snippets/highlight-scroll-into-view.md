@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/angular';
 import { componentWrapperDecorator } from '@storybook/angular';
 
 import { useChannel } from 'storybook/preview-api';
-import { HIGHLIGHT } from 'storybook/highlight';
+import { SCROLL_INTO_VIEW } from 'storybook/highlight';
 
 import { MyComponent } from './MyComponent.component';
 
@@ -14,13 +14,11 @@ const meta: Meta<MyComponent> = {
 export default meta;
 type Story = StoryObj<MyComponent>;
 
-export const Highlighted: Story = {
+export const ScrollIntoView: Story = {
   decorators: [
     componentWrapperDecorator((story) => {
       const emit = useChannel({});
-      emit(HIGHLIGHT, {
-        elements: ['h2', 'a', '.storybook-button'],
-      });
+      emit(SCROLL_INTO_VIEW, '#footer');
       return story;
     }),
   ],
@@ -29,7 +27,7 @@ export const Highlighted: Story = {
 
 ```js filename="MyComponent.stories.js|jsx" renderer="react" language="js"
 import { useChannel } from 'storybook/preview-api';
-import { HIGHLIGHT } from 'storybook/highlight';
+import { SCROLL_INTO_VIEW } from 'storybook/highlight';
 
 import { MyComponent } from './MyComponent';
 
@@ -37,13 +35,11 @@ export default {
   component: MyComponent,
 };
 
-export const Highlighted = {
+export const ScrollIntoView = {
   decorators: [
     (storyFn) => {
       const emit = useChannel({});
-      emit(HIGHLIGHT, {
-        elements: ['h2', 'a', '.storybook-button'],
-      });
+      emit(SCROLL_INTO_VIEW, '#footer');
       return storyFn();
     },
   ],
@@ -54,7 +50,7 @@ export const Highlighted = {
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { useChannel } from 'storybook/preview-api';
-import { HIGHLIGHT } from 'storybook/highlight';
+import { SCROLL_INTO_VIEW } from 'storybook/highlight';
 
 import { MyComponent } from './MyComponent';
 
@@ -65,13 +61,11 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Highlighted: Story = {
+export const ScrollIntoView: Story = {
   decorators: [
     (storyFn) => {
       const emit = useChannel({});
-      emit(HIGHLIGHT, {
-        elements: ['h2', 'a', '.storybook-button'],
-      });
+      emit(SCROLL_INTO_VIEW, '#footer');
       return storyFn();
     },
   ],
@@ -80,7 +74,7 @@ export const Highlighted: Story = {
 
 ```js filename="MyComponent.stories.js" renderer="vue" language="js"
 import { useChannel } from 'storybook/preview-api';
-import { HIGHLIGHT } from 'storybook/highlight';
+import { SCROLL_INTO_VIEW } from 'storybook/highlight';
 
 import MyComponent from './MyComponent.vue';
 
@@ -88,13 +82,11 @@ export default {
   component: MyComponent,
 };
 
-export const Highlighted = {
+export const ScrollIntoView = {
   decorators: [
     () => {
       const emit = useChannel({});
-      emit(HIGHLIGHT, {
-        elements: ['h2', 'a', '.storybook-button'],
-      });
+      emit(SCROLL_INTO_VIEW, '#footer');
       return {
         template: '<story />',
       };
@@ -107,7 +99,7 @@ export const Highlighted = {
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import { useChannel } from 'storybook/preview-api';
-import { HIGHLIGHT } from 'storybook/highlight';
+import { SCROLL_INTO_VIEW } from 'storybook/highlight';
 
 import MyComponent from './MyComponent.vue';
 
@@ -118,13 +110,11 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Highlighted: Story = {
+export const ScrollIntoView: Story = {
   decorators: [
     () => {
       const emit = useChannel({});
-      emit(HIGHLIGHT, {
-        elements: ['h2', 'a', '.storybook-button'],
-      });
+      emit(SCROLL_INTO_VIEW, '#footer');
       return {
         template: '<story />',
       };
@@ -135,19 +125,17 @@ export const Highlighted: Story = {
 
 ```js filename="MyComponent.stories.js" renderer="web-components" language="js"
 import { useChannel } from 'storybook/preview-api';
-import { HIGHLIGHT } from 'storybook/highlight';
+import { SCROLL_INTO_VIEW } from 'storybook/highlight';
 
 export default {
   component: 'my-component',
 };
 
-export const Highlighted = {
+export const ScrollIntoView = {
   decorators: [
     (story) => {
       const emit = useChannel({});
-      emit(HIGHLIGHT, {
-        elements: ['h2', 'a', '.storybook-button'],
-      });
+      emit(SCROLL_INTO_VIEW, '#footer');
       return story();
     },
   ],
@@ -158,7 +146,7 @@ export const Highlighted = {
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import { useChannel } from 'storybook/preview-api';
-import { HIGHLIGHT } from 'storybook/highlight';
+import { SCROLL_INTO_VIEW } from 'storybook/highlight';
 
 const meta: Meta = {
   component: 'my-component',
@@ -167,13 +155,11 @@ const meta: Meta = {
 export default meta;
 type Story = StoryObj;
 
-export const Highlighted: Story = {
+export const ScrollIntoView: Story = {
   decorators: [
     (story) => {
       const emit = useChannel({});
-      emit(HIGHLIGHT, {
-        elements: ['h2', 'a', '.storybook-button'],
-      });
+      emit(SCROLL_INTO_VIEW, '#footer');
       return story();
     },
   ],

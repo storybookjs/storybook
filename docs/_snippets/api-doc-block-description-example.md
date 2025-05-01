@@ -69,8 +69,8 @@ export const Primary = {
 };
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="common" language="ts-4-9"
-// Replace your-framework with the name of your framework
+```ts filename="Button.stories.ts|tsx" renderer="common" language="ts"
+// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { Button } from './Button';
@@ -92,45 +92,6 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-/**
- * Primary Button
- * This is the primary button
- */
-export const Primary: Story = {
-  parameters: {
-    docs: {
-      description: {
-        story: 'Another description on the story, overriding the comments',
-      },
-    },
-  },
-};
-```
-
-```ts filename="Button.stories.ts|tsx" renderer="common" language="ts"
-// Replace your-framework with the name of your framework
-import type { Meta, StoryObj } from '@storybook/your-framework';
-
-import { Button } from './Button';
-
-/**
- * Button stories
- * These stories showcase the button
- */
-const meta: Meta<typeof Button> = {
-  component: Button,
-  parameters: {
-    docs: {
-      description: {
-        component: 'Another description, overriding the comments',
-      },
-    },
-  },
-};
-
-export default meta;
-type Story = StoryObj<typeof Button>;
 
 /**
  * Primary Button
@@ -180,7 +141,7 @@ export const Primary = {
 ```
 
 ```ts filename="Button.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 /**
  * Button stories

@@ -1,21 +1,23 @@
 import React from 'react';
 
-import type { Meta, StoryObj } from '@storybook/react';
 import { styled } from 'storybook/internal/theming';
+
+import type { Meta, StoryObj } from '@storybook/react-vite';
+
 import { expect, userEvent, within } from 'storybook/test';
 
-import { TableOfContents } from '../../../src/blocks/components/TableOfContents';
 import { Heading } from '../../../src/blocks/blocks/Heading';
+import { TableOfContents } from '../../../src/blocks/components/TableOfContents';
 
 const MockPage = styled.div`
   display: flex;
   flex-direction: row;
-`
+`;
 
 const MockContent = styled.div`
   width: 75%;
   border: 1px solid #ccc;
-`
+`;
 
 const meta = {
   title: 'Toc/Component',
@@ -56,22 +58,22 @@ export const Default: StoryObj<typeof meta> = {
   },
   play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement);
-    
-    const toc = canvas.getByRole('navigation')
+
+    const toc = canvas.getByRole('navigation');
     await step('Verify nav presence', async () => {
       expect(toc).toBeInTheDocument();
-      expect(toc.tagName).toBe('NAV')
+      expect(toc.tagName).toBe('NAV');
     });
 
     await step('Verify nav aria-label', async () => {
       expect(toc).toHaveAttribute('aria-label', 'Table of contents');
     });
-    
-    const wrapper = canvas.getByRole('complementary')
+
+    const wrapper = canvas.getByRole('complementary');
     await step('Verify toc is wrapped by an aside', async () => {
       expect(wrapper).toBeInTheDocument();
-      expect(wrapper.tagName).toBe('ASIDE')
-      expect(wrapper.children[0]).toBe(toc)
+      expect(wrapper.tagName).toBe('ASIDE');
+      expect(wrapper.children[0]).toBe(toc);
     });
   },
 };
@@ -85,14 +87,14 @@ export const WithTitle: StoryObj<typeof meta> = {
   },
   play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement);
-    
-    const toc = canvas.getByRole('navigation')
+
+    const toc = canvas.getByRole('navigation');
     await step('Verify nav presence', async () => {
       expect(toc).toBeInTheDocument();
-      expect(toc.tagName).toBe('NAV')
+      expect(toc.tagName).toBe('NAV');
     });
 
-    const title = canvas.getByText('In this page')
+    const title = canvas.getByText('In this page');
     await step('Verify title presence', async () => {
       expect(title).toBeInTheDocument();
     });

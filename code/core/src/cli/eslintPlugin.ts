@@ -5,6 +5,7 @@ import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
 
 import detectIndent from 'detect-indent';
 import { findUp } from 'find-up';
+import json5 from 'json5';
 import picocolors from 'picocolors';
 import prompts from 'prompts';
 import { dedent } from 'ts-dedent';
@@ -207,7 +208,8 @@ export async function configureEslintPlugin({
   if (eslintConfigFile) {
     paddedLog(`Configuring Storybook ESLint plugin at ${eslintConfigFile}`);
     if (eslintConfigFile.endsWith('json')) {
-      const eslintConfig = JSON.parse(await readFile(eslintConfigFile, { encoding: 'utf8' })) as {
+      const eslintFileContents = await readFile(eslintConfigFile, { encoding: 'utf8' });
+      const eslintConfig = json5.parse(eslintFileContents) as {
         extends?: string[];
       };
       const existingExtends = normalizeExtends(eslintConfig.extends).filter(Boolean);
@@ -218,7 +220,6 @@ export async function configureEslintPlugin({
 
       eslintConfig.extends = [...existingExtends, 'plugin:storybook/recommended'] as string[];
 
-      const eslintFileContents = await readFile(eslintConfigFile, { encoding: 'utf8' });
       const spaces = detectIndent(eslintFileContents).amount || 2;
       await writeFile(eslintConfigFile, JSON.stringify(eslintConfig, undefined, spaces));
     } else {

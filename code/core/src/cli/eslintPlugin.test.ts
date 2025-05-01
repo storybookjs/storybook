@@ -149,6 +149,47 @@ describe('configureEslintPlugin', () => {
       }"
     `);
     });
+
+    it('should correctly parse and configure JSON5 .eslintrc.json with comments', async () => {
+      const mockPackageManager = {
+        getAllDependencies: vi.fn(),
+        retrievePackageJson: vi.fn(),
+      } satisfies Partial<JsPackageManager>;
+
+      // Mock file content with JSON5 features (comments, trailing comma)
+      const mockConfigFile = dedent`{
+        // Some comment here
+        "extends": ["plugin:other"],
+        "rules": {
+          "no-unused-vars": "warn", // Another comment
+        },
+      }`;
+
+      vi.mocked(readFile).mockResolvedValue(mockConfigFile);
+
+      await configureEslintPlugin({
+        eslintConfigFile: '.eslintrc.json',
+        packageManager: mockPackageManager as any,
+        isFlatConfig: false,
+      });
+
+      // Expect writeFile to have been called (meaning parsing didn't crash)
+      expect(vi.mocked(writeFile)).toHaveBeenCalledTimes(1);
+      const [filePath, content] = vi.mocked(writeFile).mock.calls[0];
+
+      expect(filePath).toBe('.eslintrc.json');
+      expect(content).toMatchInlineSnapshot(`
+        "{
+          "extends": [
+            "plugin:other",
+            "plugin:storybook/recommended"
+          ],
+          "rules": {
+            "no-unused-vars": "warn"
+          }
+        }"
+      `);
+    });
   });
 
   describe('.eslintrc.js format', () => {

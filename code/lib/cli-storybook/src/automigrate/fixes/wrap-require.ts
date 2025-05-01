@@ -21,7 +21,7 @@ export interface WrapRequireRunOptions {
   isConfigTypescript: boolean;
 }
 
-export const wrapRequire: Fix<WrapRequireRunOptions> = {
+export const wrapRequire: Fix<WrapRequireRunOptions, 'wrap-require'> = {
   id: 'wrap-require',
 
   versionRange: ['*', '*'],

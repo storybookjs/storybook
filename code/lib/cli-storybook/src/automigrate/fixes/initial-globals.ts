@@ -19,7 +19,7 @@ interface Options {
 }
 
 /** Rename preview.js globals to initialGlobals */
-export const initialGlobals: Fix<Options> = {
+export const initialGlobals: Fix<Options, 'initial-globals'> = {
   id: 'initial-globals',
   versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
   async check({ previewConfigPath }) {

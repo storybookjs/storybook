@@ -6,7 +6,7 @@ import { dedent } from 'ts-dedent';
 import type { Fix } from '../types';
 
 /** Remove @storybook/addon-interactions since it's now part of Storybook core. */
-export const removeAddonInteractions: Fix<{}> = {
+export const removeAddonInteractions: Fix<{}, 'removeAddonInteractions'> = {
   id: 'removeAddonInteractions',
   versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
 

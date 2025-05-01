@@ -35,7 +35,7 @@ const getDotStorybookReferences = async () => {
   }
 };
 
-export const rnstorybookConfig: Fix<Options> = {
+export const rnstorybookConfig: Fix<Options, 'rnstorybook-config'> = {
   id: 'rnstorybook-config',
 
   versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],

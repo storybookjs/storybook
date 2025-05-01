@@ -19,7 +19,7 @@ interface AddonExperimentalTestOptions {
  *   project files
  * - Update package.json dependencies if needed
  */
-export const addonExperimentalTest: Fix<AddonExperimentalTestOptions> = {
+export const addonExperimentalTest: Fix<AddonExperimentalTestOptions, 'addon-experimental-test'> = {
   id: 'addon-experimental-test',
 
   versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],

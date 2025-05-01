@@ -24,7 +24,7 @@ interface EslintPluginRunOptions {
  *
  * - Install it, and if possible configure it
  */
-export const eslintPlugin: Fix<EslintPluginRunOptions> = {
+export const eslintPlugin: Fix<EslintPluginRunOptions, 'eslintPlugin'> = {
   id: 'eslintPlugin',
 
   versionRange: ['*', '*'],

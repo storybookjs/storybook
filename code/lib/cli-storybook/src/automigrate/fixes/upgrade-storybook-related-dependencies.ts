@@ -40,7 +40,10 @@ async function getLatestVersions(
  *
  * See: https://github.com/storybookjs/storybook/issues/25731#issuecomment-1977346398
  */
-export const upgradeStorybookRelatedDependencies = {
+export const upgradeStorybookRelatedDependencies: Fix<
+  Options,
+  'upgradeStorybookRelatedDependencies'
+> = {
   id: 'upgradeStorybookRelatedDependencies',
   versionRange: ['*.*.*', '*.*.*'],
   promptType: 'auto',
@@ -149,4 +152,4 @@ export const upgradeStorybookRelatedDependencies = {
     }
     console.log();
   },
-} satisfies Fix<Options>;
+};

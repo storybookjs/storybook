@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useId } from 'react';
 import type { FC, ReactElement } from 'react';
 
 import type { Channel } from 'storybook/internal/channels';
@@ -18,7 +18,7 @@ interface TocbotOptions {
   orderedList?: boolean;
   onClick?: (e: MouseEvent) => void;
   scrollEndCallback?: () => void;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface TocParameters {
@@ -48,7 +48,7 @@ export interface TocParameters {
   unsafeTocbotOptions?: Omit<TocbotOptions, 'onClick' | 'scrollEndCallback'>;
 }
 
-const Wrapper = styled.div(({ theme }) => ({
+const Wrapper = styled.aside(() => ({
   width: '10rem',
 
   '@media (max-width: 768px)': {
@@ -56,7 +56,7 @@ const Wrapper = styled.div(({ theme }) => ({
   },
 }));
 
-const Content = styled.div(({ theme }) => ({
+const Content = styled.nav(({ theme }) => ({
   position: 'fixed',
   bottom: 0,
   top: 0,
@@ -138,12 +138,15 @@ type TableOfContentsProps = React.PropsWithChildren<
   }
 >;
 
-const OptionalTitle: FC<{ title: TableOfContentsProps['title'] }> = ({ title }) => {
+const OptionalTitle: FC<{
+  headingId: string;
+  title: TableOfContentsProps['title'];
+}> = ({ headingId, title }) => {
   if (title === null) {
     return null;
   }
   if (typeof title === 'string') {
-    return <Heading>{title}</Heading>;
+    return <Heading id={headingId}>{title}</Heading>;
   }
   return title;
 };
@@ -193,12 +196,16 @@ export const TableOfContents = ({
     };
   }, [channel, disable, ignoreSelector, contentsSelector, headingSelector, unsafeTocbotOptions]);
 
+  const headingId = useId();
+  const ariaLabel = title ? undefined : 'Table of contents';
+  const ariaLabelledby = title ? headingId : undefined;
+
   return (
     <>
       <Wrapper>
         {!disable ? (
-          <Content>
-            <OptionalTitle title={title || null} />
+          <Content aria-label={ariaLabel} aria-labelledby={ariaLabelledby}>
+            <OptionalTitle headingId={headingId} title={title || null} />
             <div className="toc-wrapper" />
           </Content>
         ) : null}

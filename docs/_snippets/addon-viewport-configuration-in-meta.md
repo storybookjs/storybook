@@ -14,7 +14,7 @@ export default {
 };
 ```
 
-```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts-4-9" tabTitle="Without globals API"
+```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="Without globals API"
 import type { Meta, StoryObj } from 'storybook-solidjs';
 import { INITIAL_VIEWPORTS } from 'storybook/viewport';
 
@@ -29,25 +29,6 @@ const meta = {
     },
   },
 } satisfies Meta<typeof MyComponent>;
-
-export default meta;
-```
-
-```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="Without globals API"
-import type { Meta, StoryObj } from 'storybook-solidjs';
-import { INITIAL_VIEWPORTS } from 'storybook/viewport';
-
-import { MyComponent } from './MyComponent';
-
-const meta: Meta<typeof MyComponent> = {
-  component: MyComponent,
-  parameters: {
-    viewport: {
-      //👇 Set available viewports for every story in the file
-      viewports: INITIAL_VIEWPORTS,
-    },
-  },
-};
 
 export default meta;
 ```

@@ -1,5 +1,6 @@
 ```ts filename="NoteUI.stories.ts" renderer="angular" language="ts"
 import type { Meta, StoryObj } from '@storybook/angular';
+
 import { expect, userEvent, within } from 'storybook/test';
 
 // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
@@ -67,9 +68,10 @@ export const SaveFlow = {
 };
 ```
 
-```ts filename="NoteUI.stories.ts" renderer="common" language="ts-4-9"
-// Replace your-renderer with the name of your renderer (e.g. react, vue3)
-import type { Meta, StoryObj } from '@storybook/your-renderer';
+```ts filename="NoteUI.stories.ts" renderer="common" language="ts"
+// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
+import type { Meta, StoryObj } from '@storybook/your-framework';
+
 import { expect, userEvent, within } from 'storybook/test';
 
 // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
@@ -85,43 +87,6 @@ const meta = {
 export default meta;
 
 type Story = StoryObj<typeof meta>;
-
-const notes = createNotes();
-
-export const SaveFlow: Story = {
-  name: 'Save Flow ▶',
-  args: {
-    isEditing: true,
-    note: notes[0],
-  },
-  play: async ({ canvasElement, step }) => {
-    const canvas = within(canvasElement);
-
-    const saveButton = canvas.getByRole('menuitem', { name: /done/i });
-    await userEvent.click(saveButton);
-    // 👇 This is the mock function, so you can assert its behavior
-    await expect(saveNote).toHaveBeenCalled();
-  },
-};
-```
-
-```ts filename="NoteUI.stories.ts" renderer="common" language="ts"
-// Replace your-renderer with the name of your renderer (e.g. react, vue3)
-import type { Meta, StoryObj } from '@storybook/your-renderer';
-import { expect, userEvent, within } from 'storybook/test';
-
-// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-import { saveNote } from '#app/actions.mock';
-import { createNotes } from '#mocks/notes';
-import NoteUI from './note-ui';
-
-const meta: Meta<typeof NoteUI> = {
-  title: 'Mocked/NoteUI',
-  component: NoteUI,
-};
-export default meta;
-
-type Story = StoryObj<typeof NoteUI>;
 
 const notes = createNotes();
 
@@ -173,7 +138,8 @@ export const SaveFlow = {
 ```
 
 ```ts filename="NoteUI.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
+
 import { expect, userEvent, within } from 'storybook/test';
 
 // 👇 Must include the `.mock` portion of filename to have mocks typed correctly

@@ -223,8 +223,8 @@ export const MockedError = {
 };
 ```
 
-```ts filename="YourPage.stories.ts|tsx" renderer="react" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/react';
+```ts filename="YourPage.stories.ts|tsx" renderer="react" language="ts"
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { ApolloClient, ApolloProvider, InMemoryCache } from '@apollo/client';
 import { graphql, HttpResponse, delay } from 'msw';
@@ -283,105 +283,6 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-export const MockedSuccess: Story = {
-  parameters: {
-    msw: {
-      handlers: [
-        graphql.query('AllInfoQuery', () => {
-          return HttpResponse.json({
-            data: {
-              allInfo: {
-                ...TestData,
-              },
-            },
-          });
-        }),
-      ],
-    },
-  },
-};
-
-export const MockedError: Story = {
-  parameters: {
-    msw: {
-      handlers: [
-        graphql.query('AllInfoQuery', async () => {
-          await delay(800);
-          return HttpResponse.json({
-            errors: [
-              {
-                message: 'Access denied',
-              },
-            ],
-          });
-        }),
-      ],
-    },
-  },
-};
-```
-
-```ts filename="YourPage.stories.ts|tsx" renderer="react" language="ts"
-import type { Meta, StoryObj } from '@storybook/react';
-
-import { ApolloClient, ApolloProvider, InMemoryCache } from '@apollo/client';
-import { graphql, HttpResponse, delay } from 'msw';
-
-import { DocumentScreen } from './YourPage';
-
-const mockedClient = new ApolloClient({
-  uri: 'https://your-graphql-endpoint',
-  cache: new InMemoryCache(),
-  defaultOptions: {
-    watchQuery: {
-      fetchPolicy: 'no-cache',
-      errorPolicy: 'all',
-    },
-    query: {
-      fetchPolicy: 'no-cache',
-      errorPolicy: 'all',
-    },
-  },
-});
-
-//👇The mocked data that will be used in the story
-const TestData = {
-  user: {
-    userID: 1,
-    name: 'Someone',
-  },
-  document: {
-    id: 1,
-    userID: 1,
-    title: 'Something',
-    brief: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-    status: 'approved',
-  },
-  subdocuments: [
-    {
-      id: 1,
-      userID: 1,
-      title: 'Something',
-      content:
-        'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
-      status: 'approved',
-    },
-  ],
-};
-const meta: Meta<typeof DocumentScreen> = {
-  component: DocumentScreen,
-  decorators: [
-    (Story) => (
-      <ApolloProvider client={mockedClient}>
-        <Story />
-      </ApolloProvider>
-    ),
-  ],
-};
-
-export default meta;
-type Story = StoryObj<typeof SampleComponent>;
 
 export const MockedSuccess: Story = {
   parameters: {
@@ -521,8 +422,8 @@ export const MockedError = {
 <slot />
 ```
 
-```ts filename="YourPage.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="story"
-import type { Meta, StoryObj } from '@storybook/svelte';
+```ts filename="YourPage.stories.ts" renderer="svelte" language="ts" tabTitle="story"
+import type { Meta, StoryObj } from '@storybook/svelte-vite';
 
 import { graphql, HttpResponse, delay } from 'msw';
 
@@ -533,111 +434,6 @@ const meta = {
   component: DocumentScreen,
   decorators: [() => MockApolloWrapperClient],
 } satisfies Meta<typeof DocumentScreen>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-//👇The mocked data that will be used in the story
-const TestData = {
-  user: {
-    userID: 1,
-    name: 'Someone',
-  },
-  document: {
-    id: 1,
-    userID: 1,
-    title: 'Something',
-    brief: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-    status: 'approved',
-  },
-  subdocuments: [
-    {
-      id: 1,
-      userID: 1,
-      title: 'Something',
-      content:
-        'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
-      status: 'approved',
-    },
-  ],
-};
-
-export const MockedSuccess: Story = {
-  parameters: {
-    msw: {
-      handlers: [
-        graphql.query('AllInfoQuery', () => {
-          return HttpResponse.json({
-            data: {
-              allInfo: {
-                ...TestData,
-              },
-            },
-          });
-        }),
-      ],
-    },
-  },
-};
-
-export const MockedError: Story = {
-  parameters: {
-    msw: {
-      handlers: [
-        graphql.query('AllInfoQuery', async () => {
-          await delay(800);
-          return HttpResponse.json({
-            errors: [
-              {
-                message: 'Access denied',
-              },
-            ],
-          });
-        }),
-      ],
-    },
-  },
-};
-```
-
-```svelte filename="MockApolloWrapperClient.svelte" renderer="svelte" language="ts-4-9" tabTitle="apollo-wrapper-component"
-<script lang="ts">
-  import { ApolloClient, InMemoryCache } from '@apollo/client';
-
-  import { setClient } from 'svelte-apollo';
-
-  const mockedClient = new ApolloClient({
-    uri: 'https://your-graphql-endpoint',
-    cache: new InMemoryCache(),
-    defaultOptions: {
-      watchQuery: {
-        fetchPolicy: 'no-cache',
-        errorPolicy: 'all',
-      },
-      query: {
-        fetchPolicy: 'no-cache',
-        errorPolicy: 'all',
-      },
-    },
-  });
-  setClient(mockedClient);
-</script>
-
-<slot />
-```
-
-```ts filename="YourPage.stories.ts" renderer="svelte" language="ts" tabTitle="story"
-import type { Meta, StoryObj } from '@storybook/svelte';
-
-import { graphql, HttpResponse, delay } from 'msw';
-
-import MockApolloWrapperClient from './MockApolloWrapperClient.svelte';
-import DocumentScreen from './YourPage.svelte';
-
-const meta: Meta<typeof DocumentScreen> = {
-  component: DocumentScreen,
-  decorators: [() => MockApolloWrapperClient],
-};
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -848,8 +644,8 @@ export const MockedError = {
 </script>
 ```
 
-```ts filename="YourPage.stories.ts" renderer="vue" language="ts-4-9" tabTitle="story"
-import type { Meta, StoryObj } from '@storybook/vue3';
+```ts filename="YourPage.stories.ts" renderer="vue" language="ts" tabTitle="story"
+import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import { graphql, HttpResponse, delay } from 'msw';
 
@@ -891,128 +687,6 @@ const TestData = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-export const MockedSuccess: Story = {
-  parameters: {
-    msw: {
-      handlers: [
-        graphql.query('AllInfoQuery', () => {
-          return HttpResponse.json({
-            data: {
-              allInfo: {
-                ...TestData,
-              },
-            },
-          });
-        }),
-      ],
-    },
-  },
-};
-
-export const MockedError: Story = {
-  parameters: {
-    msw: {
-      handlers: [
-        graphql.query('AllInfoQuery', async () => {
-          await delay(800);
-          return HttpResponse.json({
-            errors: [
-              {
-                message: 'Access denied',
-              },
-            ],
-          });
-        }),
-      ],
-    },
-  },
-};
-```
-
-```html filename="ApolloWrapperClient.vue" renderer="vue" language="ts-4-9" tabTitle="apollo-wrapper-component"
-<template>
-  <div><slot /></div>
-</template>
-
-<script>
-  import { defineComponent, provide } from 'vue';
-  import { DefaultApolloClient } from '@vue/apollo-composable';
-  import { ApolloClient, createHttpLink, InMemoryCache } from '@apollo/client/core';
-
-  // Apollo client wrapper component that can be used within your app and Storybook
-  export default defineComponent({
-    name: 'WrapperComponent',
-    setup() {
-      const httpLink = createHttpLink({
-        // You should use an absolute URL here
-        uri: 'https://your-graphql-endpoint',
-      });
-      const cache = new InMemoryCache();
-
-      const mockedClient = new ApolloClient({
-        link: httpLink,
-        cache,
-        defaultOptions: {
-          watchQuery: {
-            fetchPolicy: 'no-cache',
-            errorPolicy: 'all',
-          },
-          query: {
-            fetchPolicy: 'no-cache',
-            errorPolicy: 'all',
-          },
-        },
-      });
-      provide(DefaultApolloClient, mockedClient);
-    },
-  });
-</script>
-```
-
-```ts filename="YourPage.stories.ts" renderer="vue" language="ts" tabTitle="story"
-import type { Meta, StoryObj } from '@storybook/vue3';
-
-import { graphql, HttpResponse, delay } from 'msw';
-
-import WrapperComponent from './ApolloWrapperClient.vue';
-import DocumentScreen from './YourPage.vue';
-
-const meta: Meta<typeof DocumentScreen> = {
-  component: DocumentScreen,
-  render: () => ({
-    components: { DocumentScreen, WrapperComponent },
-    template: '<WrapperComponent><DocumentScreen /></WrapperComponent>',
-  }),
-};
-
-//👇The mocked data that will be used in the story
-const TestData = {
-  user: {
-    userID: 1,
-    name: 'Someone',
-  },
-  document: {
-    id: 1,
-    userID: 1,
-    title: 'Something',
-    brief: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-    status: 'approved',
-  },
-  subdocuments: [
-    {
-      id: 1,
-      userID: 1,
-      title: 'Something',
-      content:
-        'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
-      status: 'approved',
-    },
-  ],
-};
-
-export default meta;
-type Story = StoryObj<typeof DocumentScreen>;
 
 export const MockedSuccess: Story = {
   parameters: {

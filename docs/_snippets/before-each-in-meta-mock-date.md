@@ -1,5 +1,6 @@
 ```ts filename="Page.stories.ts" renderer="angular" language="ts"
 import type { Meta, StoryObj } from '@storybook/angular';
+
 import MockDate from 'mockdate';
 
 // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
@@ -55,9 +56,10 @@ export const Default = {
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="common" language="ts-4-9"
-// Replace your-renderer with the name of your renderer (e.g. react, vue3)
-import type { Meta, StoryObj } from '@storybook/your-renderer';
+```ts filename="Page.stories.ts" renderer="common" language="ts"
+// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
+import type { Meta, StoryObj } from '@storybook/your-framework';
+
 import MockDate from 'mockdate';
 
 // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
@@ -79,38 +81,6 @@ const meta = {
 export default meta;
 
 type Story = StoryObj<typeof meta>;
-
-export const Default: Story = {
-  async play({ canvasElement }) {
-    // ... This will run with the mocked Date
-  },
-};
-```
-
-```ts filename="Page.stories.ts" renderer="common" language="ts"
-// Replace your-renderer with the name of your renderer (e.g. react, vue3)
-import type { Meta, StoryObj } from '@storybook/your-renderer';
-import MockDate from 'mockdate';
-
-// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-import { getUserFromSession } from '#api/session.mock';
-import { Page } from './Page';
-
-const meta: Meta<typeof Page> = {
-  component: Page,
-  // 👇 Set the value of Date for every story in the file
-  async beforeEach() {
-    MockDate.set('2024-02-14');
-
-    // 👇 Reset the Date after each story
-    return () => {
-      MockDate.reset();
-    };
-  },
-};
-export default meta;
-
-type Story = StoryObj<typeof Page>;
 
 export const Default: Story = {
   async play({ canvasElement }) {
@@ -145,7 +115,8 @@ export const Default = {
 ```
 
 ```ts filename="Page.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
+
 import MockDate from 'mockdate';
 
 // 👇 Must include the `.mock` portion of filename to have mocks typed correctly

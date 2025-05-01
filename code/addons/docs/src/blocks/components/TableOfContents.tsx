@@ -48,7 +48,7 @@ export interface TocParameters {
   unsafeTocbotOptions?: Omit<TocbotOptions, 'onClick' | 'scrollEndCallback'>;
 }
 
-const Wrapper = styled.aside(() => ({
+const Aside = styled.aside(() => ({
   width: '10rem',
 
   '@media (max-width: 768px)': {
@@ -56,7 +56,7 @@ const Wrapper = styled.aside(() => ({
   },
 }));
 
-const Content = styled.nav(({ theme }) => ({
+const Nav = styled.nav(({ theme }) => ({
   position: 'fixed',
   bottom: 0,
   top: 0,
@@ -159,6 +159,7 @@ export const TableOfContents = ({
   ignoreSelector,
   unsafeTocbotOptions,
   channel,
+  className,
 }: TableOfContentsProps) => {
   useEffect(() => {
     // Do not initialize tocbot when we won't be rendering a ToC.
@@ -201,15 +202,13 @@ export const TableOfContents = ({
   const ariaLabelledby = title ? headingId : undefined;
 
   return (
-    <>
-      <Wrapper>
-        {!disable ? (
-          <Content aria-label={ariaLabel} aria-labelledby={ariaLabelledby}>
-            <OptionalTitle headingId={headingId} title={title || null} />
-            <div className="toc-wrapper" />
-          </Content>
-        ) : null}
-      </Wrapper>
-    </>
+    <Aside className={className}>
+      {!disable ? (
+        <Nav aria-label={ariaLabel} aria-labelledby={ariaLabelledby}>
+          <OptionalTitle headingId={headingId} title={title || null} />
+          <div className="toc-wrapper" />
+        </Nav>
+      ) : null}
+    </Aside>
   );
 };

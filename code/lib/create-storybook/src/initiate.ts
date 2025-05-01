@@ -434,7 +434,7 @@ export async function doInitiate(options: CommandOptions): Promise<
     installType = install;
   }
 
-  let selectedFeatures = new Set<GeneratorFeature>();
+  let selectedFeatures = new Set<GeneratorFeature>(options.features || []);
   if (installType === 'recommended') {
     selectedFeatures.add('docs');
     if (isInteractive) {

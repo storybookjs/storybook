@@ -27576,6 +27576,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"zod@npm:^3.24.1":
+  version: 3.24.3
+  resolution: "zod@npm:3.24.3"
+  checksum: 10c0/ab0369810968d0329a1a141e9418e01e5c9c2a4905cbb7cb7f5a131d6e9487596e1400e21eeff24c4a8ee28dacfa5bd6103893765c055b7a98c2006a5a4fc68d
+  languageName: node
+  linkType: hard
+
 "zone.js@npm:^0.15.0":
   version: 0.15.0
   resolution: "zone.js@npm:0.15.0"

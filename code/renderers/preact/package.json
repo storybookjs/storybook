@@ -1,6 +1,6 @@
 {
   "name": "@storybook/preact",
-  "version": "9.0.0-beta.6",
+  "version": "9.0.0-beta.7",
   "description": "Storybook Preact renderer",
   "keywords": [
     "storybook"

@@ -185,14 +185,15 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
 
       {isMobile && (
         <>
+          <div style={{ order: 1 }}>
+            <MobileNavigation
+              menu={slots.slotSidebar}
+              panel={slots.slotPanel}
+              showPanel={showPanel}
+            />
+          </div>
           <MainContentMatcher>{slots.slotMain}</MainContentMatcher>
-
           <Notifications />
-          <MobileNavigation
-            menu={slots.slotSidebar}
-            panel={slots.slotPanel}
-            showPanel={showPanel}
-          />
         </>
       )}
     </LayoutContainer>

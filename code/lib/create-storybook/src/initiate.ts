@@ -649,10 +649,17 @@ export async function doInitiate(options: CommandOptions): Promise<
 
   if (selectedFeatures.has('test')) {
     logger.log(
-      `> npx storybook@${versions.storybook} add @storybook/addon-vitest@${versions['@storybook/addon-vitest']}`
+      `> npx storybook@${versions.storybook} add --yes @storybook/addon-a11y@${versions['@storybook/addon-a11y']}`
     );
     execSync(
-      `npx storybook@${versions.storybook} add @storybook/addon-vitest@${versions['@storybook/addon-vitest']}`,
+      `npx storybook@${versions.storybook} add --yes @storybook/addon-a11y@${versions['@storybook/addon-a11y']}`,
+      { cwd: process.cwd(), stdio: 'inherit' }
+    );
+    logger.log(
+      `> npx storybook@${versions.storybook} add --yes @storybook/addon-vitest@${versions['@storybook/addon-vitest']}`
+    );
+    execSync(
+      `npx storybook@${versions.storybook} add --yes @storybook/addon-vitest@${versions['@storybook/addon-vitest']}`,
       { cwd: process.cwd(), stdio: 'inherit' }
     );
   }

@@ -1,3 +1,25 @@
+## 9.0.0-beta.6
+
+- Automigration: Fix an issue when main.js addons have dynamic values - [#31273](https://github.com/storybookjs/storybook/pull/31273), thanks @valentinpalkovic!
+- Automigration: Respect config-dir option - [#31233](https://github.com/storybookjs/storybook/pull/31233), thanks @valentinpalkovic!
+- Core: Change require.resolve path for storybook/package.json - [#31230](https://github.com/storybookjs/storybook/pull/31230), thanks @valentinpalkovic!
+- Dependencies: Upgrades for security - [#31276](https://github.com/storybookjs/storybook/pull/31276), thanks @ndelangen!
+- Dependencies: Upgrades for security - [#31291](https://github.com/storybookjs/storybook/pull/31291), thanks @ndelangen!
+- Next.js: Remove deprecated compatibility files - [#31295](https://github.com/storybookjs/storybook/pull/31295), thanks @valentinpalkovic!
+- Svelte: Fix missing `ts-dedent` dependency - [#31289](https://github.com/storybookjs/storybook/pull/31289), thanks @JReinhold!
+
+## 9.0.0-beta.5
+
+- All packages: Remove unused dependencies - [#31227](https://github.com/storybookjs/storybook/pull/31227), thanks @webpro!
+- Autoblock: Fix link - [#31236](https://github.com/storybookjs/storybook/pull/31236), thanks @valentinpalkovic!
+- CLI: Update nx docs in Storybook detection error - [#31266](https://github.com/storybookjs/storybook/pull/31266), thanks @yannbf!
+- Core: Fix highlight conflicts - [#31204](https://github.com/storybookjs/storybook/pull/31204), thanks @ghengeveld!
+- Dependencies: Upgrades for security - [#31235](https://github.com/storybookjs/storybook/pull/31235), thanks @ndelangen!
+- Docs: Fix source code panel - [#31245](https://github.com/storybookjs/storybook/pull/31245), thanks @valentinpalkovic!
+- React Native Web: Add RNW to vitest supported frameworks - [#31253](https://github.com/storybookjs/storybook/pull/31253), thanks @dannyhw!
+- Svelte: Remove dependency on `sveltedoc-parser` - [#31246](https://github.com/storybookjs/storybook/pull/31246), thanks @JReinhold!
+- Test: Use @testing-library/dom as devDependency - [#31188](https://github.com/storybookjs/storybook/pull/31188), thanks @valentinpalkovic!
+
 ## 9.0.0-beta.4
 
 - Highlights: Dont run highlights when the feature is disabled - [#31239](https://github.com/storybookjs/storybook/pull/31239), thanks @dannyhw!

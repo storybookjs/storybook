@@ -158,7 +158,11 @@ const starter: StarterFunction = async function* starterGeneratorFn({
 
   yield;
 
-  const coreDirOrigin = join(dirname(require.resolve('storybook/package.json')), 'dist', 'manager');
+  const coreDirOrigin = join(
+    dirname(require.resolve('storybook/internal/package.json')),
+    'dist',
+    'manager'
+  );
 
   router.use(
     '/sb-addons',
@@ -262,7 +266,11 @@ const builder: BuilderFunction = async function* builderGeneratorFn({ startTime,
   yield;
 
   const addonsDir = config.outdir;
-  const coreDirOrigin = join(dirname(require.resolve('storybook/package.json')), 'dist', 'manager');
+  const coreDirOrigin = join(
+    dirname(require.resolve('storybook/internal/package.json')),
+    'dist',
+    'manager'
+  );
   const coreDirTarget = join(options.outputDir, `sb-manager`);
 
   // TODO: this doesn't watch, we should change this to use the esbuild watch API: https://esbuild.github.io/api/#watch

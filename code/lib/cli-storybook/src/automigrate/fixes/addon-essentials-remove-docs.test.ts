@@ -251,9 +251,10 @@ describe('addon-essentials-remove-docs migration', () => {
           hasDocsAddon: false,
           additionalAddonsToRemove: ['@storybook/addon-actions', '@storybook/addon-controls'],
         },
+        configDir: '.storybook',
         packageManager: mockPackageManager,
         packageJson: mockPackageJson,
-        mainConfigPath: 'main.ts',
+        mainConfigPath: '.storybook/main.ts',
         storybookVersion: '8.0.0',
         mainConfig: {} as StorybookConfigRaw,
       });
@@ -261,14 +262,20 @@ describe('addon-essentials-remove-docs migration', () => {
       expect(mockPackageManager.runPackageCommand).toHaveBeenCalledWith('storybook', [
         'remove',
         '@storybook/addon-essentials',
+        '--config-dir',
+        '.storybook',
       ]);
       expect(mockPackageManager.runPackageCommand).toHaveBeenCalledWith('storybook', [
         'remove',
         '@storybook/addon-actions',
+        '--config-dir',
+        '.storybook',
       ]);
       expect(mockPackageManager.runPackageCommand).toHaveBeenCalledWith('storybook', [
         'remove',
         '@storybook/addon-controls',
+        '--config-dir',
+        '.storybook',
       ]);
       expect(mockPackageManager.runPackageCommand).toHaveBeenCalledTimes(3);
     });
@@ -288,7 +295,8 @@ describe('addon-essentials-remove-docs migration', () => {
         },
         packageManager: mockPackageManagerLocal,
         packageJson: mockPackageJson,
-        mainConfigPath: 'main.ts',
+        mainConfigPath: '.storybook/main.ts',
+        configDir: '.storybook',
         storybookVersion: '8.0.0',
         mainConfig: {} as StorybookConfigRaw,
       });
@@ -296,14 +304,20 @@ describe('addon-essentials-remove-docs migration', () => {
       expect(mockPackageManagerLocal.runPackageCommand).toHaveBeenCalledWith('storybook', [
         'remove',
         '@storybook/addon-actions',
+        '--config-dir',
+        '.storybook',
       ]);
       expect(mockPackageManagerLocal.runPackageCommand).toHaveBeenCalledWith('storybook', [
         'remove',
         '@storybook/addon-controls',
+        '--config-dir',
+        '.storybook',
       ]);
       expect(mockPackageManagerLocal.runPackageCommand).toHaveBeenCalledWith('storybook', [
         'add',
         '@storybook/addon-docs',
+        '--config-dir',
+        '.storybook',
       ]);
       expect(mockPackageManagerLocal.runPackageCommand).toHaveBeenCalledTimes(3);
     });
@@ -320,8 +334,9 @@ describe('addon-essentials-remove-docs migration', () => {
         },
         packageManager: mockPackageManager,
         packageJson: mockPackageJson,
+        configDir: '.storybook',
         storybookVersion: '8.0.0',
-        mainConfigPath: 'main.ts',
+        mainConfigPath: '.storybook/main.ts',
         mainConfig: {} as StorybookConfigRaw,
       });
 
@@ -352,8 +367,9 @@ describe('addon-essentials-remove-docs migration', () => {
         },
         packageManager: mockPackageManager,
         packageJson: mockPackageJson,
-        mainConfigPath: 'main.ts',
+        configDir: '.storybook',
         storybookVersion: '8.0.0',
+        mainConfigPath: '.storybook/main.ts',
         mainConfig: {} as StorybookConfigRaw,
         dryRun: true,
       });
@@ -370,6 +386,7 @@ describe('addon-essentials-remove-docs migration', () => {
           additionalAddonsToRemove: [],
         },
         packageManager: mockPackageManager,
+        configDir: '.storybook',
         packageJson: mockPackageJson,
         storybookVersion: '8.0.0',
         mainConfigPath: 'main.ts',

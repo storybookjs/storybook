@@ -1,9 +1,8 @@
-import path, { dirname, isAbsolute, join } from 'node:path';
+import { dirname, isAbsolute, join } from 'node:path';
 
 import { logger } from 'storybook/internal/node-logger';
 import type {
   CLIOptions,
-  DocsOptions,
   Options,
   PresetProperty,
   StorybookConfigRaw,

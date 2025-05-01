@@ -1,7 +1,13 @@
 import path, { dirname, isAbsolute, join } from 'node:path';
 
 import { logger } from 'storybook/internal/node-logger';
-import type { DocsOptions, Options, PresetProperty } from 'storybook/internal/types';
+import type {
+  CLIOptions,
+  DocsOptions,
+  Options,
+  PresetProperty,
+  StorybookConfigRaw,
+} from 'storybook/internal/types';
 
 import type { CsfPluginOptions } from '@storybook/csf-plugin';
 
@@ -129,12 +135,15 @@ async function webpack(
   return result;
 }
 
-const docs = (docsOptions: DocsOptions) => {
-  return {
-    ...docsOptions,
+const docs: PresetProperty<'docs'> = (docsOptions, { docs: docsMode }: CLIOptions) => {
+  const result: StorybookConfigRaw['docs'] = {
     defaultName: 'Docs',
-    autodocs: 'tag',
   };
+
+  if (docsOptions && docsMode) {
+    result.docsMode = docsMode;
+  }
+  return result;
 };
 
 export const addons: PresetProperty<'addons'> = [

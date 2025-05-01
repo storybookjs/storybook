@@ -400,7 +400,7 @@ export class StoryIndexGenerator {
     //  a) autodocs is globally enabled
     //  b) we have autodocs enabled for this file
     const hasAutodocsTag = entries.some((entry) => entry.tags.includes(AUTODOCS_TAG));
-    const createDocEntry = hasAutodocsTag;
+    const createDocEntry = hasAutodocsTag && !!this.options.docs;
 
     if (createDocEntry && this.options.build?.test?.disableAutoDocs !== true) {
       const name = this.options.docs.defaultName ?? 'Docs';

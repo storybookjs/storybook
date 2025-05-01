@@ -6,7 +6,6 @@ import ts from 'typescript';
 
 export type Docgen = {
   name?: string;
-  propsRuneUsed?: boolean;
   props: PropInfo[];
 };
 
@@ -261,7 +260,6 @@ export function generateDocgen(targetFileName: string, cache: DocgenCache): Docg
   if (targetFileName.endsWith('.svelte')) {
     targetFileName = targetFileName + '.tsx';
   }
-  let propsRuneUsed = false;
 
   if (cache.options === undefined || !cache.rootNames?.has(targetFileName)) {
     [cache.options, cache.rootNames] = loadConfig(targetFileName);
@@ -489,7 +487,6 @@ export function generateDocgen(targetFileName: string, cache: DocgenCache): Docg
             declaration.type && propsType === checker.getTypeFromTypeNode(declaration.type);
 
           if (isPropsRune || isPropsType) {
-            propsRuneUsed = true;
             declaration.name.elements.forEach((element) => {
               const name = element.name.getText();
               const prop = propMap.get(name);
@@ -525,6 +522,5 @@ export function generateDocgen(targetFileName: string, cache: DocgenCache): Docg
 
   return {
     props: Array.from(propMap.values()),
-    propsRuneUsed,
   };
 }

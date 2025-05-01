@@ -129,7 +129,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   }
 
   const coreServerPublicDir = join(
-    dirname(require.resolve('storybook/package.json')),
+    dirname(require.resolve('storybook/internal/package.json')),
     'assets/browser'
   );
   effects.push(cp(coreServerPublicDir, options.outputDir, { recursive: true }));

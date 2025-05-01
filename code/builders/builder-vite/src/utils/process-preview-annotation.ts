@@ -13,7 +13,7 @@ export function processPreviewAnnotation(path: PreviewAnnotation, projectRoot: s
     if (path.bare != null && path.absolute === '') {
       return path.bare;
     }
-    return path.absolute;
+    return normalize(path.absolute);
   }
 
   // If it's already an absolute path, return it.

@@ -79,7 +79,6 @@ export const getEntries = (cwd: string) => {
       ['util', 'react'],
       [],
       [
-        '@testing-library/dom',
         '@testing-library/jest-dom',
         '@testing-library/user-event',
         'chai',
@@ -96,7 +95,6 @@ export const getEntries = (cwd: string) => {
       ['util', 'react'],
       [],
       [
-        '@testing-library/dom',
         '@testing-library/jest-dom',
         '@testing-library/user-event',
         'chai',
@@ -113,7 +111,6 @@ export const getEntries = (cwd: string) => {
       ['util', 'react'],
       [],
       [
-        '@testing-library/dom',
         '@testing-library/jest-dom',
         '@testing-library/user-event',
         'chai',

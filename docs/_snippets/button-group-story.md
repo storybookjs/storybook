@@ -50,8 +50,8 @@ export const Pair = {
 };
 ```
 
-```ts filename="ButtonGroup.stories.ts|tsx" renderer="react" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/react';
+```ts filename="ButtonGroup.stories.ts|tsx" renderer="react" language="ts"
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { ButtonGroup } from '../ButtonGroup';
 
@@ -64,29 +64,6 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-export const Pair: Story = {
-  args: {
-    buttons: [{ ...ButtonStories.Primary.args }, { ...ButtonStories.Secondary.args }],
-    orientation: 'horizontal',
-  },
-};
-```
-
-```ts filename="ButtonGroup.stories.ts|tsx" renderer="react" language="ts"
-import type { Meta, StoryObj } from '@storybook/react';
-
-import { ButtonGroup } from '../ButtonGroup';
-
-//👇 Imports the Button stories
-import * as ButtonStories from './Button.stories';
-
-const meta: Meta<typeof ButtonGroup> = {
-  component: ButtonGroup,
-};
-
-export default meta;
-type Story = StoryObj<typeof ButtonGroup>;
 
 export const Pair: Story = {
   args: {
@@ -114,7 +91,7 @@ export const Pair = {
 };
 ```
 
-```tsx filename="ButtonGroup.stories.ts|tsx" renderer="solid" language="ts-4-9"
+```tsx filename="ButtonGroup.stories.ts|tsx" renderer="solid" language="ts"
 import type { Meta, StoryObj } from 'storybook-solidjs';
 
 import { ButtonGroup } from '../ButtonGroup';
@@ -128,29 +105,6 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-export const Pair: Story = {
-  args: {
-    buttons: [{ ...ButtonStories.Primary.args }, { ...ButtonStories.Secondary.args }],
-    orientation: 'horizontal',
-  },
-};
-```
-
-```tsx filename="ButtonGroup.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs';
-
-import { ButtonGroup } from '../ButtonGroup';
-
-//👇 Imports the Button stories
-import * as ButtonStories from './Button.stories';
-
-const meta: Meta<typeof ButtonGroup> = {
-  component: ButtonGroup,
-};
-
-export default meta;
-type Story = StoryObj<typeof ButtonGroup>;
 
 export const Pair: Story = {
   args: {
@@ -201,52 +155,6 @@ export const Pair = {
 };
 ```
 
-```svelte filename="ButtonGroup.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
-<script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
-
-  import ButtonGroup from './ButtonGroup.svelte';
-
-  //👇 Imports the Button stories
-  import * as ButtonStories from './Button.stories.svelte';
-
-  const { Story } = defineMeta({
-    component: ButtonGroup,
-  });
-</script>
-
-<Story
-  name="Pair"
-  args={{
-    buttons: [{ ...ButtonStories.Primary.args }, { ...ButtonStories.Secondary.args }],
-    orientation: 'horizontal',
-  }}
-/>
-```
-
-```ts filename="ButtonGroup.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="CSF"
-import type { Meta, StoryObj } from '@storybook/svelte';
-
-import ButtonGroup from './ButtonGroup.svelte';
-
-//👇 Imports the Button stories
-import * as ButtonStories from './Button.stories';
-
-const meta = {
-  component: ButtonGroup,
-} satisfies Meta<typeof ButtonGroup>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const Pair: Story = {
-  args: {
-    buttons: [{ ...ButtonStories.Primary.args }, { ...ButtonStories.Secondary.args }],
-    orientation: 'horizontal',
-  },
-};
-```
-
 ```svelte filename="ButtonGroup.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
@@ -271,16 +179,16 @@ export const Pair: Story = {
 ```
 
 ```ts filename="ButtonGroup.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
-import type { Meta, StoryObj } from '@storybook/svelte';
+import type { Meta, StoryObj } from '@storybook/svelte-vite';
 
 import ButtonGroup from './ButtonGroup.svelte';
 
 //👇 Imports the Button stories
 import * as ButtonStories from './Button.stories';
 
-const meta: Meta<typeof ButtonGroup> = {
+const meta = {
   component: ButtonGroup,
-};
+} satisfies Meta<typeof ButtonGroup>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -323,8 +231,8 @@ export const Pair = {
 };
 ```
 
-```ts filename="ButtonGroup.stories.ts" renderer="vue" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/vue3';
+```ts filename="ButtonGroup.stories.ts" renderer="vue" language="ts"
+import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import ButtonGroup from './ButtonGroup.vue';
 
@@ -337,36 +245,6 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-export const Pair: Story = {
-  render: (args) => ({
-    components: { ButtonGroup },
-    setup() {
-      return { args };
-    },
-    template: '<ButtonGroup v-bind="args" />',
-  }),
-  args: {
-    buttons: [{ ...ButtonStories.Primary.args }, { ...ButtonStories.Secondary.args }],
-    orientation: 'horizontal',
-  },
-};
-```
-
-```ts filename="ButtonGroup.stories.ts" renderer="vue" language="ts"
-import type { Meta, StoryObj } from '@storybook/vue3';
-
-import ButtonGroup from './ButtonGroup.vue';
-
-//👇 Imports the Button stories
-import * as ButtonStories from './Button.stories';
-
-const meta: Meta<typeof ButtonGroup> = {
-  component: ButtonGroup,
-};
-
-export default meta;
-type Story = StoryObj<typeof ButtonGroup>;
 
 export const Pair: Story = {
   render: (args) => ({
@@ -400,7 +278,7 @@ export const Pair = {
 ```
 
 ```ts filename="ButtonGroup.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 // 👇 Imports the Button stories
 import * as ButtonStories from './Button.stories';

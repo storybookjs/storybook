@@ -150,22 +150,22 @@ jobs:
       - run:
           name: Build Sandbox
           command: |
-            yarn task build -s auto --template react-vite/default-ts --no-link --start-from=sandbox --junit
+            yarn task build -s auto --no-link --junit --template react-vite/default-ts
       - run:
           name: Smoke Test
-          command: yarn task smoke-test -s auto --template react-vite/default-ts
+          command: yarn task smoke-test -s auto --no-link --junit --template react-vite/default-ts
       - run:
           name: Test Runner
-          command: yarn task test-runner -s auto --template react-vite/default-ts
+          command: yarn task test-runner -s auto --no-link --junit --template react-vite/default-ts
       - run:
           name: Vitest Integration
-          command: yarn task vitest-integration -s auto --template react-vite/default-ts
+          command: yarn task vitest-integration -s auto --no-link --junit --template react-vite/default-ts
       - run:
           name: Chromatic
-          command: yarn task chromatic -s auto --template react-vite/default-ts
+          command: yarn task chromatic -s auto --no-link --junit --template react-vite/default-ts
       - run:
           name: E2E Tests
-          command: yarn task e2e-tests -s auto --template react-vite/default-ts
+          command: yarn task e2e-tests -s auto --no-link --junit --template react-vite/default-ts
 
   sandbox-test-angular-cli-default-ts:
     executor: sb_node_22_browsers
@@ -197,19 +197,19 @@ jobs:
       - run:
           name: Build Sandbox
           command: |
-            yarn task build -s auto --template angular-cli/default-ts --no-link --start-from=sandbox --junit
+            yarn task build -s auto --no-link --junit --template angular-cli/default-ts --no-link --junit
       - run:
           name: Smoke Test
-          command: yarn task smoke-test -s auto --template angular-cli/default-ts
+          command: yarn task smoke-test -s auto --no-link --junit --template angular-cli/default-ts
       - run:
           name: Test Runner
-          command: yarn task test-runner -s auto --template angular-cli/default-ts
+          command: yarn task test-runner -s auto --no-link --junit --template angular-cli/default-ts
       - run:
           name: Chromatic
-          command: yarn task chromatic -s auto --template angular-cli/default-ts
+          command: yarn task chromatic -s auto --no-link --junit --template angular-cli/default-ts
       - run:
           name: E2E Tests
-          command: yarn task e2e-tests -s auto --template angular-cli/default-ts
+          command: yarn task e2e-tests -s auto --no-link --junit --template angular-cli/default-ts
 
   sandbox-test-bench-react-vite-default-ts:
     executor: sb_node_22_browsers
@@ -241,7 +241,7 @@ jobs:
       - run:
           name: Build Sandbox
           command: |
-            yarn task build -s auto --template bench/react-vite-default-ts --no-link --start-from=sandbox --junit
+            yarn task build -s auto --no-link --junit --template bench/react-vite-default-ts --no-link --junit
       # No event log checker or test steps for this bench template
 
 workflows:

@@ -104,6 +104,15 @@ jobs:
       - attach_workspace:
           at: /tmp/storybook
       - run:
+          name: Setup Corepack
+          command: |
+            # Enable corepack
+            sudo corepack enable
+
+            # Verify yarn is working
+            which yarn
+            yarn --version
+      - run:
           name: Start Verdaccio (background)
           command: yarn local-registry --open
           working_directory: scripts
@@ -142,6 +151,15 @@ jobs:
       - attach_workspace:
           at: /tmp/storybook
       - run:
+          name: Setup Corepack
+          command: |
+            # Enable corepack
+            sudo corepack enable
+
+            # Verify yarn is working
+            which yarn
+            yarn --version
+      - run:
           name: Start Verdaccio (background)
           command: yarn local-registry --open
           working_directory: scripts
@@ -176,6 +194,15 @@ jobs:
     steps:
       - attach_workspace:
           at: /tmp/storybook
+      - run:
+          name: Setup Corepack
+          command: |
+            # Enable corepack
+            sudo corepack enable
+
+            # Verify yarn is working
+            which yarn
+            yarn --version
       - run:
           name: Start Verdaccio (background)
           command: yarn local-registry --open

@@ -1,4 +1,6 @@
 version: 2.1
+orbs:
+  checkout: circleci/checkout@4
 
 executors:
   sb_node_22_browsers:
@@ -13,7 +15,8 @@ jobs:
   build:
     executor: sb_node_22_browsers
     steps:
-      - checkout
+      - checkout/checkout:
+          fetch-depth: 1
       - run:
           name: Install dependencies (scripts)
           command: yarn install --frozen-lockfile
@@ -40,7 +43,8 @@ jobs:
   lint:
     executor: sb_node_22_browsers
     steps:
-      - checkout
+      - checkout/checkout:
+          fetch-depth: 1
       - run:
           name: Install dependencies (scripts)
           command: yarn install --frozen-lockfile
@@ -61,7 +65,8 @@ jobs:
   docs:
     executor: sb_node_22_browsers
     steps:
-      - checkout
+      - checkout/checkout:
+          fetch-depth: 1
       - run:
           name: Install dependencies (scripts)
           command: yarn install --frozen-lockfile
@@ -74,7 +79,8 @@ jobs:
   sandbox-test-react-vite-default-ts:
     executor: sb_node_22_browsers
     steps:
-      - checkout
+      - checkout/checkout:
+          fetch-depth: 1
       - attach_workspace:
           at: /tmp/storybook
       - run:
@@ -100,7 +106,8 @@ jobs:
   sandbox-test-angular-cli-default-ts:
     executor: sb_node_22_browsers
     steps:
-      - checkout
+      - checkout/checkout:
+          fetch-depth: 1
       - attach_workspace:
           at: /tmp/storybook
       - run:
@@ -123,7 +130,8 @@ jobs:
   sandbox-test-bench-react-vite-default-ts:
     executor: sb_node_22_browsers
     steps:
-      - checkout
+      - checkout/checkout:
+          fetch-depth: 1
       - attach_workspace:
           at: /tmp/storybook
       - run:

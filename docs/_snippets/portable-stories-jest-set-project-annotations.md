@@ -1,6 +1,6 @@
 ```tsx filename="setupTest.ts" renderer="react" language="ts"
 import { beforeAll } from '@jest/globals';
-import { setProjectAnnotations } from '@storybook/react';
+import { setProjectAnnotations } from '@storybook/react-vite';
 // 👇 Import the exported annotations, if any, from the addons you're using; otherwise remove this
 import * as addonAnnotations from 'my-addon/preview';
 import * as previewAnnotations from './.storybook/preview';
@@ -13,7 +13,7 @@ beforeAll(annotations.beforeAll);
 
 ```tsx filename="setupTest.ts" renderer="vue" language="ts"
 import { beforeAll } from '@jest/globals';
-import { setProjectAnnotations } from '@storybook/vue3';
+import { setProjectAnnotations } from '@storybook/vue3-vite';
 // 👇 Import the exported annotations, if any, from the addons you're using; otherwise remove this
 import * as addonAnnotations from 'my-addon/preview';
 import * as previewAnnotations from './.storybook/preview';

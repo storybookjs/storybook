@@ -1,3 +1,11 @@
+## 9.0.0-beta.7
+
+- CLI: Fix get versions utility for NPM - [#29577](https://github.com/storybookjs/storybook/pull/29577), thanks @johnrcui!
+- Telemetry: Add Svelte CSF usage - [#31255](https://github.com/storybookjs/storybook/pull/31255), thanks @shilman!
+- Test: Remove legacy Vitest v2 code - [#31271](https://github.com/storybookjs/storybook/pull/31271), thanks @valentinpalkovic!
+- UI: Add options to hide sidebar and toolbar per story - [#29516](https://github.com/storybookjs/storybook/pull/29516), thanks @Sidnioulz!
+- Vite: Normalize preview annotation paths - [#31238](https://github.com/storybookjs/storybook/pull/31238), thanks @mrginglymus!
+
 ## 9.0.0-beta.6
 
 - Automigration: Fix an issue when main.js addons have dynamic values - [#31273](https://github.com/storybookjs/storybook/pull/31273), thanks @valentinpalkovic!

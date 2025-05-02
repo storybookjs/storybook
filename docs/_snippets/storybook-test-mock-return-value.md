@@ -38,9 +38,9 @@ export const Default = {
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="common" language="ts-4-9"
-// Replace your-renderer with the name of your renderer (e.g. react, vue3)
-import type { Meta, StoryObj } from '@storybook/your-renderer';
+```ts filename="Page.stories.ts" renderer="common" language="ts"
+// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
 import { getUserFromSession } from '#api/session.mock';
@@ -54,30 +54,6 @@ const meta = {
 export default meta;
 
 type Story = StoryObj<typeof meta>;
-
-export const Default: Story = {
-  async beforeEach() {
-    // 👇 Set the return value for the getUserFromSession function
-    getUserFromSession.mockReturnValue({ id: '1', name: 'Alice' });
-  },
-};
-```
-
-```ts filename="Page.stories.ts" renderer="common" language="ts"
-// Replace your-renderer with the name of your renderer (e.g. react, vue3)
-import type { Meta, StoryObj } from '@storybook/your-renderer';
-
-// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-import { getUserFromSession } from '#api/session.mock';
-
-import { Page } from './Page';
-
-const meta: Meta<typeof Page> = {
-  component: Page,
-};
-export default meta;
-
-type Story = StoryObj<typeof Page>;
 
 export const Default: Story = {
   async beforeEach() {
@@ -103,7 +79,7 @@ export const Default = {
 ```
 
 ```ts filename="Page.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
 import { getUserFromSession } from '#api/session.mock';

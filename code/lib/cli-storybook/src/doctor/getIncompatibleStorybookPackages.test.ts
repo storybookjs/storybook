@@ -104,6 +104,31 @@ describe('checkPackageCompatibility', () => {
       })
     );
   });
+
+  it('returns that an addon is incompatible because it uses legacy consolidated packages', async () => {
+    const packageName = '@storybook/addon-designs';
+
+    vi.mocked(packageManagerMock.getPackageJSON).mockResolvedValueOnce({
+      name: packageName,
+      version: '8.0.0',
+      dependencies: {
+        '@storybook/core-common': '8.0.0',
+      },
+    });
+
+    const result = await checkPackageCompatibility(packageName, {
+      currentStorybookVersion: '9.0.0',
+      packageManager: packageManagerMock,
+    });
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        packageName: '@storybook/addon-designs',
+        packageVersion: '8.0.0',
+        hasIncompatibleDependencies: true,
+      })
+    );
+  });
 });
 
 describe('getIncompatibleStorybookPackages', () => {

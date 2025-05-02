@@ -226,6 +226,23 @@ describe('composeStory', () => {
     );
   });
 
+  it('should provide globals based on globalTypes', async () => {
+    const storyAnnotations = { render: () => {} };
+    const metaAnnotations: Meta = { globals: { language: 'de' } };
+    const projectAnnotations: ProjectAnnotations = {
+      initialGlobals: { language: 'nl' },
+      globalTypes: {
+        theme: {
+          name: 'Theme',
+          defaultValue: 'light',
+        },
+      },
+    };
+
+    const composed = composeStory(storyAnnotations, metaAnnotations, projectAnnotations);
+    expect(composed.globals.theme).toEqual('light');
+  });
+
   it('should call and compose loaders data', async () => {
     const loadSpy = vi.fn();
     const args = { story: 'story' };

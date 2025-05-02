@@ -5878,7 +5878,6 @@ __metadata:
   resolution: "@storybook/addon-a11y@workspace:addons/a11y"
   dependencies:
     "@radix-ui/react-tabs": "npm:1.0.4"
-    "@storybook/global": "npm:^5.0.0"
     "@storybook/icons": "npm:^1.4.0"
     "@testing-library/react": "npm:^14.0.0"
     axe-core: "npm:^4.2.0"

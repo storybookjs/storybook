@@ -50,7 +50,6 @@ const INCLUDE_CANDIDATES = [
   'airbnb-js-shims',
   'ansi-to-html',
   'aria-query',
-  'axe-core',
   'axobject-query',
   'chromatic/isChromatic',
   'color-convert',

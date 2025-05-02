@@ -1,15 +1,13 @@
-import { deprecate } from 'storybook/internal/client-logger';
 import { ElementA11yParameterError } from 'storybook/internal/preview-errors';
 
-import { global } from '@storybook/global';
-
-import type { AxeResults, ContextProp, ContextSpec, Selector, SelectorList } from 'axe-core';
+import type { AxeResults, ContextProp, ContextSpec } from 'axe-core';
+import axe from 'axe-core';
 import { addons } from 'storybook/preview-api';
 
 import { EVENTS } from './constants';
-import type { A11yParameters, SelectorWithoutNode } from './params';
+import type { A11yParameters } from './params';
 
-const { document } = global;
+const { document } = globalThis;
 
 const channel = addons.getChannel();
 
@@ -41,8 +39,6 @@ const runNext = async () => {
 };
 
 export const run = async (input: A11yParameters = DEFAULT_PARAMETERS) => {
-  const { default: axe } = await import('axe-core');
-
   const { config = {}, options = {} } = input;
 
   // @ts-expect-error - the whole point of this is to error if 'element' is passed

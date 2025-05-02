@@ -268,6 +268,7 @@ export default {
     'SubtractIcon',
     'SunIcon',
     'SupportIcon',
+    'SweepIcon',
     'SwitchAltIcon',
     'SyncIcon',
     'TabletIcon',

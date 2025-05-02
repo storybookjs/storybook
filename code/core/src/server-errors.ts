@@ -538,3 +538,14 @@ export class FindPackageVersionsError extends StorybookError {
     });
   }
 }
+export class SavingGlobalSettingsFileError extends StorybookError {
+  constructor(public data: { filePath: string; error: Error | unknown }) {
+    super({
+      category: Category.CORE_SERVER,
+      code: 1,
+      message: dedent`
+        Unable to save global settings file to ${data.filePath}
+        ${data.error && `Reason: ${data.error}`}`,
+    });
+  }
+}

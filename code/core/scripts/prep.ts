@@ -139,12 +139,6 @@ async function run() {
       conditions: ['node', 'module', 'import', 'require'],
     } satisfies EsbuildContextOptions;
 
-    const browserAliases = {
-      assert: require.resolve('browser-assert'),
-      process: require.resolve('process/browser.js'),
-      util: require.resolve('util/util.js'),
-    };
-
     const compile = await Promise.all([
       esbuild.context(
         merge<EsbuildContextOptions>(nodeEsbuildOptions, {
@@ -161,7 +155,6 @@ async function run() {
       ),
       esbuild.context(
         merge<EsbuildContextOptions>(browserEsbuildOptions, {
-          alias: browserAliases,
           entryPoints: entries
             .filter(isBrowser)
             .filter(noExternals)
@@ -204,7 +197,6 @@ async function run() {
               entryPoints: [entry.file],
               outExtension: { '.js': '.js' },
               alias: {
-                ...browserAliases,
                 'storybook/preview-api': join(cwd, 'src', 'preview-api'),
                 'storybook/manager-api': join(cwd, 'src', 'manager-api'),
                 'storybook/theming': join(cwd, 'src', 'theming'),

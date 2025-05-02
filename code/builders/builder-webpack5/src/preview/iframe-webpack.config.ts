@@ -240,15 +240,6 @@ export default async (
       modules: ['node_modules'].concat(envs.NODE_PATH || []),
       mainFields: ['browser', 'module', 'main'].filter(Boolean),
       alias: storybookPaths,
-      fallback: {
-        stream: false,
-        path: require.resolve('path-browserify'),
-        assert: require.resolve('browser-assert'),
-        util: require.resolve('util'),
-        url: require.resolve('url'),
-        fs: false,
-        constants: require.resolve('constants-browserify'),
-      },
       // Set webpack to resolve symlinks based on whether the user has asked node to.
       // This feels like it should be default out-of-the-box in webpack :shrug:
       symlinks: !isPreservingSymlinks(),

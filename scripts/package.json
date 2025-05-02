@@ -95,7 +95,6 @@
     "@typescript-eslint/parser": "^8.31.0",
     "@vitest/coverage-v8": "^3.1.2",
     "ansi-regex": "^6.0.1",
-    "browser-assert": "^1.2.1",
     "chromatic": "^11.28.2",
     "codecov": "^3.8.1",
     "commander": "^12.1.0",

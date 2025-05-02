@@ -1541,7 +1541,6 @@ __metadata:
     "@verdaccio/types": "npm:^10.8.0"
     "@vitest/coverage-v8": "npm:^3.1.2"
     ansi-regex: "npm:^6.0.1"
-    browser-assert: "npm:^1.2.1"
     chromatic: "npm:^11.28.2"
     codecov: "npm:^3.8.1"
     commander: "npm:^12.1.0"
@@ -3426,13 +3425,6 @@ __metadata:
   dependencies:
     fill-range: "npm:^7.1.1"
   checksum: 10c0/7c6dfd30c338d2997ba77500539227b9d1f85e388a5f43220865201e407e076783d0881f2d297b9f80951b4c957fcf0b51c1d2d24227631643c3f7c284b0aa04
-  languageName: node
-  linkType: hard
-
-"browser-assert@npm:^1.2.1":
-  version: 1.2.1
-  resolution: "browser-assert@npm:1.2.1"
-  checksum: 10c0/902abf999f92c9c951fdb6d7352c09eea9a84706258699655f7e7906e42daa06a1ae286398a755872740e05a6a71c43c5d1a0c0431d67a8cdb66e5d859a3fc0c
   languageName: node
   linkType: hard
 

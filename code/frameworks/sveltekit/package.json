@@ -67,7 +67,7 @@
   "dependencies": {
     "@storybook/builder-vite": "workspace:*",
     "@storybook/svelte": "workspace:*",
-    "@storybook/svelte-vite": "workspace:*"
+    "@storybook/svelte-vite": "7.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

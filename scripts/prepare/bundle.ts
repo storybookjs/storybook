@@ -15,6 +15,7 @@ import type { PackageJson } from 'type-fest';
 import {
   BROWSER_TARGETS,
   NODE_TARGET,
+  SUPPORTED_FEATURES,
 } from '../../code/core/src/shared/constants/environments-support';
 import { exec } from '../utils/exec';
 import { dedent, esbuild, nodeInternals } from './tools';
@@ -143,6 +144,9 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
         esbuildOptions: (c) => {
           c.conditions = ['module'];
           c.platform = platform || 'browser';
+          if (platform !== 'node') {
+            c.supported = SUPPORTED_FEATURES;
+          }
           Object.assign(c, getESBuildOptions(optimized));
         },
       })

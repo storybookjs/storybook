@@ -6,7 +6,7 @@ import type { StorybookConfigRaw } from 'storybook/internal/types';
 import dedent from 'ts-dedent';
 
 import type { CheckOptions, RunOptions } from '../types';
-import { addonStorysourceCodePanel } from './addon-storysource-code-panel';
+import { type StorysourceOptions, addonStorysourceCodePanel } from './addon-storysource-code-panel';
 
 // Mock modules before any other imports or declarations
 vi.mock('node:fs/promises', async (importOriginal) => {
@@ -91,6 +91,7 @@ describe('addon-storysource-remove', () => {
 
       expect(result).toEqual({
         hasStorysource: true,
+        hasDocs: false,
       });
     });
 
@@ -107,6 +108,24 @@ describe('addon-storysource-remove', () => {
 
       expect(result).toEqual({
         hasStorysource: true,
+        hasDocs: false,
+      });
+    });
+
+    it('detects docs addon when present', async () => {
+      const result = await addonStorysourceCodePanel.check({
+        ...baseCheckOptions,
+        mainConfig: {
+          stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],
+          addons: ['@storybook/addon-storysource', '@storybook/addon-docs'],
+        } as StorybookConfigRaw,
+        mainConfigPath: '.storybook/main.js',
+        previewConfigPath: '.storybook/preview.js',
+      });
+
+      expect(result).toEqual({
+        hasStorysource: true,
+        hasDocs: true,
       });
     });
   });
@@ -115,6 +134,7 @@ describe('addon-storysource-remove', () => {
     it('returns the correct prompt message', () => {
       const promptMessage = addonStorysourceCodePanel.prompt({
         hasStorysource: true,
+        hasDocs: true,
       });
 
       expect(promptMessage).toMatchInlineSnapshot(dedent`
@@ -125,25 +145,43 @@ describe('addon-storysource-remove', () => {
         that offers similar functionality with improved integration and performance.
 
         We'll remove @storybook/addon-storysource from your project and 
-        enable the Code Panel in your preview configuration.
+        enable the Code Panel in your preview configuration. 
+
+        More info: https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storysource-addon-removed"
+      `);
+    });
+
+    it('returns the correct prompt message when docs addon is not present', () => {
+      const promptMessage = addonStorysourceCodePanel.prompt({
+        hasStorysource: true,
+        hasDocs: false,
+      });
+
+      expect(promptMessage).toMatchInlineSnapshot(dedent`
+        "We've detected that you're using @storybook/addon-storysource.
+
+        The @storybook/addon-storysource addon is being removed in Storybook 9.0. 
+        Instead, Storybook now provides a Code Panel via @storybook/addon-docs 
+        that offers similar functionality with improved integration and performance.
+
+        We'll remove @storybook/addon-storysource from your project and 
+        enable the Code Panel in your preview configuration. Additionally, we will install @storybook/addon-docs for you.
 
         More info: https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storysource-addon-removed"
       `);
     });
   });
+
   describe('run phase', () => {
     it('does nothing if storysource addon not found', async () => {
       await addonStorysourceCodePanel.run?.({
         result: {
           hasStorysource: false,
-          previewConfigPath: '.storybook/preview.js',
+          hasDocs: false,
         },
         packageManager: mockPackageManager,
         configDir: '.storybook',
-      } as RunOptions<{
-        hasStorysource: boolean;
-        previewConfigPath: string | undefined;
-      }>);
+      } as RunOptions<StorysourceOptions>);
 
       expect(mockPackageManager.runPackageCommand).not.toHaveBeenCalled();
     });
@@ -152,21 +190,24 @@ describe('addon-storysource-remove', () => {
       await addonStorysourceCodePanel.run?.({
         result: {
           hasStorysource: true,
-          previewConfigPath: '.storybook/preview.js',
+          hasDocs: true,
         },
         packageManager: mockPackageManager,
         previewConfigPath: '.storybook/preview.js',
         configDir: '.storybook',
-        dryRun: false,
-      } as RunOptions<{
-        hasStorysource: boolean;
-        previewConfigPath: string | undefined;
-      }>);
+      } as RunOptions<StorysourceOptions>);
 
       // Verify package manager was called with correct arguments
       expect(mockPackageManager.runPackageCommand).toHaveBeenCalledWith('storybook', [
         'remove',
         '@storybook/addon-storysource',
+        '--config-dir',
+        '.storybook',
+      ]);
+
+      expect(mockPackageManager.runPackageCommand).not.toHaveBeenCalledWith('storybook', [
+        'add',
+        '@storybook/addon-docs',
         '--config-dir',
         '.storybook',
       ]);
@@ -200,19 +241,36 @@ describe('addon-storysource-remove', () => {
       );
     });
 
+    it('should add docs addon if it is not present', async () => {
+      await addonStorysourceCodePanel.run?.({
+        result: {
+          hasStorysource: true,
+          hasDocs: false,
+        },
+        packageManager: mockPackageManager,
+        previewConfigPath: '.storybook/preview.js',
+        configDir: '.storybook',
+      } as RunOptions<StorysourceOptions>);
+
+      expect(mockPackageManager.runPackageCommand).toHaveBeenCalledWith('storybook', [
+        'add',
+        '@storybook/addon-docs',
+        '--config-dir',
+        '.storybook',
+      ]);
+    });
+
     it('does nothing in dry run mode', async () => {
       await addonStorysourceCodePanel.run?.({
         result: {
           hasStorysource: true,
-          previewConfigPath: '.storybook/preview.js',
+          hasDocs: true,
         },
+        previewConfigPath: '.storybook/preview.js',
         packageManager: mockPackageManager,
         configDir: '.storybook',
         dryRun: true,
-      } as RunOptions<{
-        hasStorysource: boolean;
-        previewConfigPath: string | undefined;
-      }>);
+      } as RunOptions<StorysourceOptions>);
 
       // Verify no actual changes were made
       expect(mockPackageManager.runPackageCommand).not.toHaveBeenCalled();

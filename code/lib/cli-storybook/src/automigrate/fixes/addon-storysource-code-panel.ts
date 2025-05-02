@@ -6,8 +6,9 @@ import { dedent } from 'ts-dedent';
 import { updateMainConfig } from '../helpers/mainConfigFile';
 import type { Fix, RunOptions } from '../types';
 
-interface StorysourceOptions {
+export interface StorysourceOptions {
   hasStorysource: boolean;
+  hasDocs: boolean;
 }
 
 const logger = console;
@@ -21,25 +22,21 @@ export const addonStorysourceCodePanel: Fix<StorysourceOptions> = {
       return null;
     }
 
-    try {
-      let hasStorysource = false;
+    const addonNames = getAddonNames(mainConfig);
+    const hasStorysource = addonNames.includes('@storybook/addon-storysource');
+    const hasDocs = addonNames.includes('@storybook/addon-docs');
 
-      const addonNames = getAddonNames(mainConfig);
-      hasStorysource = addonNames.includes('@storybook/addon-storysource');
-
-      if (!hasStorysource) {
-        return null;
-      }
-
-      return {
-        hasStorysource,
-      };
-    } catch (err) {
+    if (!hasStorysource) {
       return null;
     }
+
+    return {
+      hasStorysource,
+      hasDocs,
+    };
   },
 
-  prompt: () => {
+  prompt: ({ hasDocs }) => {
     return dedent`
       We've detected that you're using ${picocolors.yellow('@storybook/addon-storysource')}.
       
@@ -48,7 +45,11 @@ export const addonStorysourceCodePanel: Fix<StorysourceOptions> = {
       that offers similar functionality with improved integration and performance.
       
       We'll remove ${picocolors.yellow('@storybook/addon-storysource')} from your project and 
-      enable the Code Panel in your preview configuration.
+      enable the Code Panel in your preview configuration. ${
+        hasDocs
+          ? ''
+          : `Additionally, we will install ${picocolors.yellow('@storybook/addon-docs')} for you.`
+      }
       
       More info: ${picocolors.cyan('https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storysource-addon-removed')}
     `;
@@ -56,7 +57,7 @@ export const addonStorysourceCodePanel: Fix<StorysourceOptions> = {
 
   run: async (options: RunOptions<StorysourceOptions>) => {
     const { result, dryRun = false, packageManager, configDir, previewConfigPath } = options;
-    const { hasStorysource } = result;
+    const { hasStorysource, hasDocs } = result;
     const errors: Array<{ file: string; error: Error }> = [];
 
     if (!hasStorysource) {
@@ -73,6 +74,17 @@ export const addonStorysourceCodePanel: Fix<StorysourceOptions> = {
         '--config-dir',
         configDir,
       ]);
+
+      if (!hasDocs) {
+        logger.log('Installing @storybook/addon-docs...');
+
+        await packageManager.runPackageCommand('storybook', [
+          'add',
+          '@storybook/addon-docs',
+          '--config-dir',
+          configDir,
+        ]);
+      }
 
       // Update preview config to enable code panel
       if (previewConfigPath) {

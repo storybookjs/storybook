@@ -227,29 +227,29 @@ workflows:
       - lint
       - docs
       - sandbox-test:
-          parameters:
-            template-name: react-vite/default-ts
-            class: xlarge
-            smoke-test: true
-            test-runner: true
-            vitest-integration: true
-            chromatic: true
-            e2e: true
+          requires: [build]
+          template-name: react-vite/default-ts
+          class: xlarge
+          smoke-test: true
+          test-runner: true
+          vitest-integration: true
+          chromatic: true
+          e2e: true
       - sandbox-test:
-          parameters:
-            template-name: angular-cli/default-ts
-            class: xlarge
-            smoke-test: true
-            test-runner: true
-            vitest-integration: true
-            chromatic: true
-            e2e: true
+          requires: [build]
+          template-name: angular-cli/default-ts
+          class: xlarge
+          smoke-test: true
+          test-runner: true
+          vitest-integration: true
+          chromatic: true
+          e2e: true
       - sandbox-test:
-          parameters:
-            template-name: bench/react-vite-default-ts
-            class: xlarge
-            smoke-test: true
-            test-runner: true
-            vitest-integration: true
-            chromatic: true
-            e2e: true
+          requires: [build]
+          template-name: bench/react-vite-default-ts
+          class: xlarge
+          smoke-test: true
+          test-runner: true
+          vitest-integration: true
+          chromatic: true
+          e2e: true

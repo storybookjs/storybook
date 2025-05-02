@@ -24433,6 +24433,7 @@ __metadata:
     use-resize-observer: "npm:^9.1.0"
     watchpack: "npm:^2.2.0"
     ws: "npm:^8.18.0"
+    zod: "npm:^3.24.1"
   peerDependencies:
     prettier: ^2 || ^3
   peerDependenciesMeta:
@@ -27478,6 +27479,13 @@ __metadata:
   version: 1.1.2
   resolution: "zimmerframe@npm:1.1.2"
   checksum: 10c0/8f693609c31cbb4449db223acd61661bc93b73e615f9db6fb8c86d4ceea84ca54cbbeebcf53cf74c22a1f923b92abd18e97988a5e175c76b6ab17238e5593a9d
+  languageName: node
+  linkType: hard
+
+"zod@npm:^3.24.1":
+  version: 3.24.3
+  resolution: "zod@npm:3.24.3"
+  checksum: 10c0/ab0369810968d0329a1a141e9418e01e5c9c2a4905cbb7cb7f5a131d6e9487596e1400e21eeff24c4a8ee28dacfa5bd6103893765c055b7a98c2006a5a4fc68d
   languageName: node
   linkType: hard
 

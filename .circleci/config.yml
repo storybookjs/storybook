@@ -41,6 +41,8 @@ jobs:
             - code
             - scripts
             - .verdaccio-cache
+            - .yarn
+      # creating a production build should not cause git pending changes
       - run:
           name: Check for pending changes
           command: |
@@ -60,8 +62,8 @@ jobs:
           command: yarn install --frozen-lockfile
           working_directory: code
       - run:
-          name: Compile (for lint)
-          command: yarn task compile -s auto
+          name: Compile (non production)
+          command: yarn task compile -s install
           working_directory: code
       - run:
           name: Lint

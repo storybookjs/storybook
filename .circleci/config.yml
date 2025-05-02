@@ -30,16 +30,20 @@ jobs:
           command: |
             yarn task compile -s auto --no-link --debug
       - run:
-          name: Check for pending changes
-          command: |
-            git diff --exit-code
-            yarn dedupe --check
+          name: Publish to Verdaccio
+          command: yarn local-registry --publish
+          working_directory: code
       - persist_to_workspace:
           root: .
           paths:
             - code
             - scripts
             - .verdaccio-cache
+      - run:
+          name: Check for pending changes
+          command: |
+            git diff --exit-code
+            yarn dedupe --check
   lint:
     executor: sb_node_22_browsers
     steps:
@@ -55,7 +59,7 @@ jobs:
           working_directory: code
       - run:
           name: Compile (for lint)
-          command: yarn task compile
+          command: yarn task compile -s auto
           working_directory: code
       - run:
           name: Lint

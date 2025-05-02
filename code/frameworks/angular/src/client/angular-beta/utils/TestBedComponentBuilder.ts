@@ -10,7 +10,6 @@ import { getWrapperModule } from '../StorybookWrapperComponent';
 import {
   GenerateComponentMetaData,
   GenerateModuleMetaData,
-  // eslint-disable-next-line import/namespace
 } from './TestBedOverrideMetaDataGenerator';
 
 export class TestBedComponentBuilder {
@@ -81,7 +80,8 @@ export class TestBedComponentBuilder {
   }
 
   configure() {
-    this.throwOnRequiredNullProperties();
+    this.throwOnMissingTestBedInstance();
+    this.throwOnMissingComponent();
     const wrapperModule = getWrapperModule();
     this.testBedInstance
       .configureTestingModule({})
@@ -115,14 +115,22 @@ export class TestBedComponentBuilder {
   }
 
   private updateComponentProps() {
+    this.throwOnMissingFixture();
     if (this.props != null)
       this.fixture.componentInstance = Object.assign(this.fixture.componentInstance, this.props);
     this.fixture.detectChanges();
     return this;
   }
 
-  private throwOnRequiredNullProperties() {
-    if (this.component == null || this.testBedInstance == null)
-      throw new Error('Component attribute or testbed instance is null');
+  private throwOnMissingComponent() {
+    if (this.component == null) throw new Error('Component attribute is null');
+  }
+
+  private throwOnMissingTestBedInstance() {
+    if (this.testBedInstance == null) throw new Error('Testbed instance is null');
+  }
+
+  private throwOnMissingFixture() {
+    if (this.fixture == null) throw new Error('Fixture is null');
   }
 }

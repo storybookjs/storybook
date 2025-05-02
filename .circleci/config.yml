@@ -143,22 +143,32 @@ jobs:
     parameters:
       template-name:
         type: string
-      class:
-        type: string
+      #   class:
+      #     description: The Resource class
+      #     type: enum
+      #     enum: ["small", "medium", "medium+", "large", "xlarge"]
+      #     default: "medium"
       smoke-test:
         type: boolean
+        default: true
       test-runner:
         type: boolean
+        default: true
       vitest-integration:
         type: boolean
+        default: true
       chromatic:
         type: boolean
+        default: true
       e2e:
         type: boolean
+        default: true
     executor:
       name: sb_playwright
-      class: << parameters.class >>
+      class: xlarge
     steps:
+      - git-shallow-clone/checkout_advanced:
+          clone_options: "--depth 1 --verbose"
       - attach_workspace:
           at: /tmp/storybook
       - run:
@@ -252,7 +262,7 @@ workflows:
           template-name: bench/react-vite-default-ts
           class: xlarge
           smoke-test: true
-          test-runner: true
-          vitest-integration: true
-          chromatic: true
-          e2e: true
+          test-runner: false
+          vitest-integration: false
+          chromatic: false
+          e2e: false

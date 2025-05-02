@@ -1,7 +1,7 @@
 import { expect, it, vi } from 'vitest';
 
-import { Channel } from '@storybook/core/channels';
-import type { DocsIndexEntry, RenderContextCallbacks, Renderer } from '@storybook/core/types';
+import { Channel } from 'storybook/internal/channels';
+import type { DocsIndexEntry, RenderContextCallbacks, Renderer } from 'storybook/internal/types';
 
 import type { StoryStore } from '../../store';
 import { csfFileParts } from '../docs-context/test-utils';

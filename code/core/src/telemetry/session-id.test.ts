@@ -1,14 +1,14 @@
 import type { MockInstance } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { cache } from '@storybook/core/common';
+import { cache } from 'storybook/internal/common';
 
 import { nanoid } from 'nanoid';
 
 import { SESSION_TIMEOUT, getSessionId, resetSessionIdForTest } from './session-id';
 
-vi.mock('@storybook/core/common', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@storybook/core/common')>()),
+vi.mock('storybook/internal/common', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('storybook/internal/common')>()),
   cache: {
     get: vi.fn(),
     set: vi.fn(),

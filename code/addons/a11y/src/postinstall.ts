@@ -1,7 +1,7 @@
-import type { PostinstallOptions } from '@storybook/cli/src/add';
-
 // eslint-disable-next-line depend/ban-dependencies
 import { execa } from 'execa';
+
+import type { PostinstallOptions } from '../../../lib/cli-storybook/src/add';
 
 const $ = execa({
   preferLocal: true,
@@ -11,7 +11,19 @@ const $ = execa({
 });
 
 export default async function postinstall(options: PostinstallOptions) {
-  await $({
-    stdio: 'inherit',
-  })`storybook automigrate addonA11yAddonTest ${options.yes ? '--yes' : ''}`;
+  const command = ['storybook', 'automigrate', 'addonA11yAddonTest'];
+
+  if (options.yes) {
+    command.push('--yes');
+  }
+
+  if (options.packageManager) {
+    command.push('--package-manager', options.packageManager);
+  }
+
+  if (options.configDir) {
+    command.push('--config-dir', options.configDir);
+  }
+
+  await $`${command.join(' ')}`;
 }

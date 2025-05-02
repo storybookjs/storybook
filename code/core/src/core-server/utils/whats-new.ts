@@ -1,21 +1,19 @@
-/* eslint-disable no-underscore-dangle */
 import { writeFile } from 'node:fs/promises';
 
-import type { Channel } from '@storybook/core/channels';
-import { findConfigFile, loadMainConfig } from '@storybook/core/common';
-import { telemetry } from '@storybook/core/telemetry';
-import type { CoreConfig, Options } from '@storybook/core/types';
-
-import type { WhatsNewCache, WhatsNewData } from '@storybook/core/core-events';
+import type { Channel } from 'storybook/internal/channels';
+import { findConfigFile, loadMainConfig } from 'storybook/internal/common';
+import type { WhatsNewCache, WhatsNewData } from 'storybook/internal/core-events';
 import {
   REQUEST_WHATS_NEW_DATA,
   RESULT_WHATS_NEW_DATA,
   SET_WHATS_NEW_CACHE,
   TELEMETRY_ERROR,
   TOGGLE_WHATS_NEW_NOTIFICATIONS,
-} from '@storybook/core/core-events';
-import { printConfig, readConfig } from '@storybook/core/csf-tools';
-import { logger } from '@storybook/core/node-logger';
+} from 'storybook/internal/core-events';
+import { printConfig, readConfig } from 'storybook/internal/csf-tools';
+import { logger } from 'storybook/internal/node-logger';
+import { telemetry } from 'storybook/internal/telemetry';
+import type { CoreConfig, Options } from 'storybook/internal/types';
 
 import invariant from 'tiny-invariant';
 
@@ -55,7 +53,6 @@ export function initializeWhatsNew(
           return response.json();
         }
 
-        // eslint-disable-next-line @typescript-eslint/no-throw-literal
         throw response;
       })) as WhatsNewResponse;
 

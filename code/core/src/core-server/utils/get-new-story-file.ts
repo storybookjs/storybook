@@ -3,16 +3,16 @@ import { readFile } from 'node:fs/promises';
 import { basename, dirname, extname, join } from 'node:path';
 
 import {
+  extractProperFrameworkName,
   extractProperRendererNameFromFramework,
   findConfigFile,
   getFrameworkName,
   getProjectRoot,
   rendererPackages,
-} from '@storybook/core/common';
-import type { Options } from '@storybook/core/types';
-
-import type { CreateNewStoryRequestPayload } from '@storybook/core/core-events';
-import { isCsfFactoryPreview } from '@storybook/core/csf-tools';
+} from 'storybook/internal/common';
+import type { CreateNewStoryRequestPayload } from 'storybook/internal/core-events';
+import { isCsfFactoryPreview } from 'storybook/internal/csf-tools';
+import type { Options } from 'storybook/internal/types';
 
 import { loadConfig } from '../../csf-tools';
 import { getCsfFactoryTemplateForNewStoryFile } from './new-story-templates/csf-factory-template';
@@ -31,10 +31,7 @@ export async function getNewStoryFile(
   const cwd = getProjectRoot();
 
   const frameworkPackageName = await getFrameworkName(options);
-  const rendererName = await extractProperRendererNameFromFramework(frameworkPackageName);
-  const rendererPackage = Object.entries(rendererPackages).find(
-    ([, value]) => value === rendererName
-  )?.[0];
+  const sanitizedFrameworkPackageName = extractProperFrameworkName(frameworkPackageName);
 
   const base = basename(componentFilePath);
   const extension = extname(componentFilePath);
@@ -68,12 +65,12 @@ export async function getNewStoryFile(
     });
   } else {
     storyFileContent =
-      isTypescript && rendererPackage
+      isTypescript && frameworkPackageName
         ? await getTypeScriptTemplateForNewStoryFile({
             basenameWithoutExtension,
             componentExportName,
             componentIsDefaultExport,
-            rendererPackage,
+            frameworkPackage: sanitizedFrameworkPackageName,
             exportedStoryName,
           })
         : await getJavaScriptTemplateForNewStoryFile({

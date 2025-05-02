@@ -115,7 +115,7 @@ jobs:
       - restore_cache:
           name: Restore Yarn cache
           keys:
-            - prettydocs-yarn-2-cache-v7--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}
+            - prettydocs-yarn-2-cache-v8--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}
       - run:
           name: Install
           command: |
@@ -123,7 +123,7 @@ jobs:
             yarn install
       - save_cache:
           name: Save Yarn cache
-          key: prettydocs-yarn-2-cache-v7--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}
+          key: prettydocs-yarn-2-cache-v8--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}
           paths:
             - ~/.yarn/berry/cache
       - run:
@@ -141,7 +141,7 @@ jobs:
       - restore_cache:
           name: Restore Yarn cache
           keys:
-            - build-yarn-2-cache-v4--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}
+            - build-yarn-2-cache-v5--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}
       - run:
           name: Compile
           command: |
@@ -158,7 +158,7 @@ jobs:
           path: code/bench/esbuild-metafiles
       - save_cache:
           name: Save Yarn cache
-          key: build-yarn-2-cache-v4--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}
+          key: build-yarn-2-cache-v5--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}
           paths:
             - ~/.yarn/berry/cache
       - persist_to_workspace:
@@ -170,7 +170,6 @@ jobs:
             - code/bench
             - code/examples
             - code/frameworks
-            - code/deprecated
             - code/lib
             - code/core
             - code/builders
@@ -271,7 +270,7 @@ jobs:
       - restore_cache:
           name: Restore Yarn cache
           keys:
-            - build-yarn-2-cache-v4--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}
+            - build-yarn-2-cache-v5--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}
       - run:
           name: Compile
           command: |
@@ -368,10 +367,10 @@ jobs:
       - report-workflow-on-failure
   chromatic-internal-storybook:
     executor:
-      class: medium
+      class: large
       name: sb_node_22_browsers
     environment:
-      NODE_OPTIONS: --max_old_space_size=6144
+      NODE_OPTIONS: --max_old_space_size=4096
     steps:
       # switched this to the CircleCI helper to get the full git history for TurboSnap
       - checkout
@@ -399,8 +398,14 @@ jobs:
       - attach_workspace:
           at: .
       - run:
-          name: Enable Corepack
-          command: sudo corepack enable yarn
+          name: Setup Corepack
+          command: |
+            # Enable corepack
+            sudo corepack enable
+
+            # Verify yarn is working
+            which yarn
+            yarn --version
       - run:
           name: Starting Event Collector
           command: yarn jiti ./event-log-collector.ts
@@ -475,7 +480,7 @@ jobs:
       parallelism:
         type: integer
     executor:
-      class: large
+      class: xlarge
       name: sb_playwright
     parallelism: << parameters.parallelism >>
     steps:
@@ -635,6 +640,7 @@ jobs:
           command: |
             cd code
             yarn local-registry --open &
+            yarn wait-on tcp:127.0.0.1:6001
             cd ../../
             mkdir features-1
             cd features-1
@@ -835,9 +841,10 @@ workflows:
       - knip:
           requires:
             - build
-      - bench-packages:
-          requires:
-            - build
+      # TODO: don't forget to reenable this
+      #      - bench-packages:
+      #          requires:
+      #            - build
       - check
       - unit-tests:
           requires:
@@ -871,17 +878,18 @@ workflows:
           requires:
             - create-sandboxes
       - test-runner-production:
-          parallelism: 8
+          parallelism: 9
           requires:
             - create-sandboxes
       - vitest-integration:
           parallelism: 5
           requires:
             - create-sandboxes
-      - bench-sandboxes:
-          parallelism: 5
-          requires:
-            - create-sandboxes
+      # TODO: don't forget to reenable this
+      #      - bench-sandboxes:
+      #          parallelism: 5
+      #          requires:
+      #            - create-sandboxes
       - test-ui-testing-module:
           requires:
             - build
@@ -910,9 +918,10 @@ workflows:
       - knip:
           requires:
             - build
-      - bench-packages:
-          requires:
-            - build
+      # TODO: don't forget to reenable this
+      #      - bench-packages:
+      #          requires:
+      #            - build
       - check
       - unit-tests:
           requires:
@@ -930,15 +939,15 @@ workflows:
           requires:
             - unit-tests
       - create-sandboxes:
-          parallelism: 20
+          parallelism: 18
           requires:
             - build
       - chromatic-sandboxes:
-          parallelism: 17
+          parallelism: 15
           requires:
             - create-sandboxes
       - e2e-production:
-          parallelism: 15
+          parallelism: 13
           requires:
             - create-sandboxes
       - e2e-dev:
@@ -946,7 +955,7 @@ workflows:
           requires:
             - create-sandboxes
       - test-runner-production:
-          parallelism: 14
+          parallelism: 13
           requires:
             - create-sandboxes
       - vitest-integration:
@@ -965,15 +974,16 @@ workflows:
       - test-init-features:
           requires:
             - build
-      - bench-sandboxes:
-          parallelism: 5
-          requires:
-            - create-sandboxes
-      # TODO: reenable once we find out the source of flakyness
-      # - test-runner-dev:
-      #     parallelism: 4
-      #     requires:
-      #       - create-sandboxes
+  # TODO: don't forget to reenable this
+  #      - bench-sandboxes:
+  #          parallelism: 5
+  #          requires:
+  #            - create-sandboxes
+  # TODO: reenable once we find out the source of flakyness
+  # - test-runner-dev:
+  #     parallelism: 4
+  #     requires:
+  #       - create-sandboxes
   daily:
     when:
       equal: [daily, << pipeline.parameters.workflow >>]
@@ -986,9 +996,10 @@ workflows:
       - knip:
           requires:
             - build
-      - bench-packages:
-          requires:
-            - build
+      # TODO: don't forget to reenable this
+      #      - bench-packages:
+      #          requires:
+      #            - build
       - check
       - unit-tests:
           requires:
@@ -1003,18 +1014,18 @@ workflows:
           requires:
             - build
       - create-sandboxes:
-          parallelism: 37
+          parallelism: 31
           requires:
             - build
       # - smoke-test-sandboxes: # disabled for now
       #     requires:
       #       - create-sandboxes
       - chromatic-sandboxes:
-          parallelism: 34
+          parallelism: 28
           requires:
             - create-sandboxes
       - e2e-production:
-          parallelism: 32
+          parallelism: 26
           requires:
             - create-sandboxes
       - e2e-dev:
@@ -1022,11 +1033,11 @@ workflows:
           requires:
             - create-sandboxes
       - test-runner-production:
-          parallelism: 30
+          parallelism: 26
           requires:
             - create-sandboxes
       - vitest-integration:
-          parallelism: 11
+          parallelism: 9
           requires:
             - create-sandboxes
       - test-portable-stories:
@@ -1059,13 +1070,14 @@ workflows:
                 # --smoke-test is not supported for the angular builder right now
                 # - "angular-cli"
                 - "lit-vite-ts"
-      - bench-sandboxes:
-          parallelism: 5
-          requires:
-            - create-sandboxes
+# TODO: don't forget to reenable this
+#      - bench-sandboxes:
+#          parallelism: 5
+#          requires:
+#            - create-sandboxes
 
-      # TODO: reenable once we find out the source of flakyness
-      # - test-runner-dev:
-      #     parallelism: 4
-      #     requires:
-      #       - create-sandboxes
+# TODO: reenable once we find out the source of flakyness
+# - test-runner-dev:
+#     parallelism: 4
+#     requires:
+#       - create-sandboxes

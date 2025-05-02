@@ -61,6 +61,7 @@ vi.mock('storybook/internal/common', () => {
     versions: {
       '@storybook/addon-docs': '^8.0.0',
     },
+    frameworkToRenderer: vi.fn(),
   };
 });
 
@@ -111,7 +112,7 @@ describe('add', () => {
     );
 
     expect(MockedPackageManager.addDependencies).toHaveBeenCalledWith(
-      { installAsDevDependencies: true },
+      { installAsDevDependencies: true, writeOutputToFile: false },
       [expected]
     );
   });

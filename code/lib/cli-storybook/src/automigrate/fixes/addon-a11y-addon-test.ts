@@ -1,19 +1,15 @@
 import { formatFileContent, getAddonNames, rendererPackages } from 'storybook/internal/common';
 import { formatConfig, loadConfig } from 'storybook/internal/csf-tools';
 
-import { type ArrayExpression } from '@babel/types';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import * as jscodeshift from 'jscodeshift';
 import path from 'path';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
-// Relative path import to avoid dependency to @storybook/test
-import {
-  SUPPORTED_FRAMEWORKS,
-  SUPPORTED_RENDERERS,
-} from '../../../../../addons/test/src/constants';
-import { getFrameworkPackageName, getRendererName } from '../helpers/mainConfigFile';
+// Relative path import to avoid dependency to storybook/test
+import { SUPPORTED_FRAMEWORKS } from '../../../../../addons/vitest/src/constants';
+import { getFrameworkPackageName } from '../helpers/mainConfigFile';
 import type { Fix } from '../types';
 
 export const fileExtensions = [
@@ -37,7 +33,7 @@ interface AddonA11yAddonTestOptions {
 }
 
 /**
- * If addon-a11y and experimental-addon-test are already installed, we need to update
+ * If addon-a11y and addon-vitest are already installed, we need to update
  *
  * - `.storybook/vitest.setup.<ts|js>` to set up project annotations from addon-a11y.
  * - `.storybook/preview.<ts|js>` to set up tags.
@@ -45,7 +41,7 @@ interface AddonA11yAddonTestOptions {
  */
 export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
   id: 'addonA11yAddonTest',
-  versionRange: ['<8.5.0', '>=8.5.0'],
+  versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
 
   promptType(result) {
     if (result.setupFile === null && result.previewFile === null) {
@@ -59,19 +55,11 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
     const addons = getAddonNames(mainConfig);
 
     const frameworkPackageName = getFrameworkPackageName(mainConfig);
-    const rendererPackageName = getRendererName(mainConfig);
 
     const hasA11yAddon = !!addons.find((addon) => addon.includes('@storybook/addon-a11y'));
-    const hasTestAddon = !!addons.find((addon) =>
-      addon.includes('@storybook/experimental-addon-test')
-    );
+    const hasTestAddon = !!addons.find((addon) => addon.includes('@storybook/addon-vitest'));
 
-    if (
-      !SUPPORTED_FRAMEWORKS.find((framework) => frameworkPackageName?.includes(framework)) &&
-      !SUPPORTED_RENDERERS.find((renderer) =>
-        rendererPackageName?.includes(rendererPackages[renderer])
-      )
-    ) {
+    if (!SUPPORTED_FRAMEWORKS.find((framework) => frameworkPackageName?.includes(framework))) {
       return null;
     }
 
@@ -149,9 +137,9 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
     skipVitestSetupTransformation,
   }) {
     const introduction = dedent`
-      We have detected that you have ${picocolors.magenta(`@storybook/addon-a11y`)} and ${picocolors.magenta(`@storybook/experimental-addon-test`)} installed.
+      We have detected that you have ${picocolors.magenta(`@storybook/addon-a11y`)} and ${picocolors.magenta(`@storybook/addon-vitest`)} installed.
 
-      ${picocolors.magenta(`@storybook/addon-a11y`)} now integrates with ${picocolors.magenta(`@storybook/experimental-addon-test`)} to provide automatic accessibility checks for your stories, powered by Axe and Vitest.
+      ${picocolors.magenta(`@storybook/addon-a11y`)} now integrates with ${picocolors.magenta(`@storybook/addon-vitest`)} to provide automatic accessibility checks for your stories, powered by Axe and Vitest.
     `;
 
     const prompt = [introduction];

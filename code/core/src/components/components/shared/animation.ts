@@ -1,4 +1,4 @@
-import { keyframes } from '@storybook/core/theming';
+import { keyframes } from 'storybook/theming';
 
 export const rotate360 = keyframes`
 	from {

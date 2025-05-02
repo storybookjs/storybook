@@ -40,7 +40,7 @@ import { createOptions, getCommand, getOptionsOrPrompt } from './utils/options';
 
 const sandboxDir = process.env.SANDBOX_ROOT || SANDBOX_DIRECTORY;
 
-export const extraAddons = ['@storybook/addon-a11y', '@storybook/addon-storysource'];
+export const extraAddons = ['@storybook/addon-a11y'];
 
 export type Path = string;
 export type TemplateDetails = {

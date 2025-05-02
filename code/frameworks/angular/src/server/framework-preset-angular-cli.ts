@@ -1,6 +1,6 @@
 import { logger } from 'storybook/internal/node-logger';
 import { AngularLegacyBuildOptionsError } from 'storybook/internal/server-errors';
-import { WebpackDefinePlugin } from '@storybook/builder-webpack5';
+import { WebpackDefinePlugin, WebpackIgnorePlugin } from '@storybook/builder-webpack5';
 
 import { BuilderContext, targetFromTargetString } from '@angular-devkit/architect';
 import { JsonObject, logging } from '@angular-devkit/core';
@@ -39,6 +39,16 @@ export async function webpackFinal(baseConfig: webpack.Configuration, options: P
       }),
     })
   );
+
+  try {
+    require.resolve('@angular/animations');
+  } catch (e) {
+    webpackConfig.plugins.push(
+      new WebpackIgnorePlugin({
+        resourceRegExp: /@angular\/platform-browser\/animations$/,
+      })
+    );
+  }
 
   return webpackConfig;
 }

@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { readdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
@@ -6,6 +7,7 @@ import { isNotNil } from 'es-toolkit';
 
 import { dedent, esbuild, getWorkspace, prettier } from '../../../../scripts/prepare/tools';
 import { temporaryFile } from '../../src/common/utils/cli';
+import { BROWSER_TARGETS } from '../../src/shared/constants/environments-support';
 
 GlobalRegistrator.register({ url: 'http://localhost:3000', width: 1920, height: 1080 });
 
@@ -60,7 +62,9 @@ async function generateFrameworksFile(prettierConfig: prettier.Options | null): 
   const location = join(__dirname, '..', '..', 'src', 'types', 'modules', 'frameworks.ts');
   const frameworksDirectory = join(__dirname, '..', '..', '..', 'frameworks');
 
-  const readFrameworks = await readdir(frameworksDirectory);
+  const readFrameworks = (await readdir(frameworksDirectory)).filter((framework) =>
+    existsSync(join(frameworksDirectory, framework, 'project.json'))
+  );
   const frameworks = [...readFrameworks.sort(), ...thirdPartyFrameworks]
     .map((framework) => `'${framework}'`)
     .join(' | ');
@@ -82,6 +86,14 @@ async function generateFrameworksFile(prettierConfig: prettier.Options | null): 
 
 const localAlias = {
   '@storybook/core': join(__dirname, '..', '..', 'src'),
+  'storybook/internal': join(__dirname, '..', '..', 'src'),
+  'storybook/theming': join(__dirname, '..', '..', 'src', 'theming'),
+  'storybook/test': join(__dirname, '..', '..', 'src', 'test'),
+  'storybook/test/spy': join(__dirname, '..', '..', 'src', 'test', 'spy'),
+  'storybook/test/preview': join(__dirname, '..', '..', 'src', 'test', 'preview'),
+  'storybook/actions': join(__dirname, '..', '..', 'src', 'actions'),
+  'storybook/preview-api': join(__dirname, '..', '..', 'src', 'preview-api'),
+  'storybook/manager-api': join(__dirname, '..', '..', 'src', 'manager-api'),
   storybook: join(__dirname, '..', '..', 'src'),
 };
 async function generateExportsFile(prettierConfig: prettier.Options | null): Promise<void> {
@@ -104,7 +116,7 @@ async function generateExportsFile(prettierConfig: prettier.Options | null): Pro
     legalComments: 'none',
     splitting: false,
     platform: 'browser',
-    target: 'chrome100',
+    target: BROWSER_TARGETS,
   });
 
   const { globalsNameValueMap: data } = await import(outFile);

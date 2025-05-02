@@ -1,6 +1,6 @@
 import React from 'react';
 
-import type { Meta } from '@storybook/react';
+import type { Meta } from '@storybook/react-vite';
 
 // @ts-expect-error - TS doesn't know about import.meta.glob from Vite
 const allMetafiles = import.meta.glob([
@@ -49,7 +49,7 @@ export default {
                 subEntry !== 'metafile' ? `${pkgName} - ${subEntry}` : pkgName,
               ];
             })
-            .concat([['core - core', '@storybook/core - core - TOO BIG PLEASE UPLOAD MANUALLY']])
+            .concat([['core - core', 'core - TOO BIG PLEASE UPLOAD MANUALLY']])
         ),
       },
     },

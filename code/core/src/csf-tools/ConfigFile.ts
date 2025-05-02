@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import { readFile, writeFile } from 'node:fs/promises';
 
 import {
@@ -8,7 +7,7 @@ import {
   recast,
   types as t,
   traverse,
-} from '@storybook/core/babel';
+} from 'storybook/internal/babel';
 
 import { dedent } from 'ts-dedent';
 
@@ -48,7 +47,6 @@ const unwrap = (node: t.Node | undefined | null): any => {
   return node;
 };
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 const _getPath = (path: string[], node: t.Node): t.Node | undefined => {
   if (path.length === 0) {
     return node;
@@ -63,7 +61,6 @@ const _getPath = (path: string[], node: t.Node): t.Node | undefined => {
   return undefined;
 };
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 const _getPathProperties = (path: string[], node: t.Node): t.ObjectProperty[] | undefined => {
   if (path.length === 0) {
     if (t.isObjectExpression(node)) {
@@ -85,7 +82,7 @@ const _getPathProperties = (path: string[], node: t.Node): t.ObjectProperty[] | 
   }
   return undefined;
 };
-// eslint-disable-next-line @typescript-eslint/naming-convention
+
 const _findVarDeclarator = (
   identifier: string,
   program: t.Program
@@ -118,13 +115,11 @@ const _findVarDeclarator = (
   return declarator;
 };
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 const _findVarInitialization = (identifier: string, program: t.Program) => {
   const declarator = _findVarDeclarator(identifier, program);
   return declarator?.init;
 };
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 const _makeObjectExpression = (path: string[], value: t.Expression): t.Expression => {
   if (path.length === 0) {
     return value;
@@ -134,7 +129,6 @@ const _makeObjectExpression = (path: string[], value: t.Expression): t.Expressio
   return t.objectExpression([t.objectProperty(t.identifier(first), innerExpression)]);
 };
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 const _updateExportNode = (path: string[], expr: t.Expression, existing: t.ObjectExpression) => {
   const [first, ...rest] = path;
   const existingField = (existing.properties as t.ObjectProperty[]).find(
@@ -380,18 +374,46 @@ export class ConfigFile {
   setFieldNode(path: string[], expr: t.Expression) {
     const [first, ...rest] = path;
     const exportNode = this._exports[first];
+
+    // First check if we have a direct path in the exports
     if (this._exportsObject) {
+      const properties = this._exportsObject.properties as t.ObjectProperty[];
+      const existingProp = properties.find((p) => propKey(p) === first);
+
+      // If the property exists and is an identifier, follow the reference
+      if (existingProp && t.isIdentifier(existingProp.value)) {
+        const varDecl = _findVarDeclarator(existingProp.value.name, this._ast.program);
+        if (varDecl && t.isObjectExpression(varDecl.init)) {
+          _updateExportNode(rest, expr, varDecl.init);
+          return;
+        }
+      }
+
+      // Otherwise update the export object directly
       _updateExportNode(path, expr, this._exportsObject);
       this._exports[path[0]] = expr;
-    } else if (exportNode && t.isObjectExpression(exportNode) && rest.length > 0) {
+      return;
+    }
+
+    if (exportNode && t.isObjectExpression(exportNode) && rest.length > 0) {
       _updateExportNode(rest, expr, exportNode);
-    } else if (exportNode && rest.length === 0 && this._exportDecls[path[0]]) {
+      return;
+    }
+
+    // If no direct path found, try variable declarations
+    const varDecl = _findVarDeclarator(first, this._ast.program);
+    if (varDecl && t.isObjectExpression(varDecl.init)) {
+      _updateExportNode(rest, expr, varDecl.init);
+      return;
+    }
+
+    if (exportNode && rest.length === 0 && this._exportDecls[path[0]]) {
       const decl = this._exportDecls[path[0]];
       if (t.isVariableDeclarator(decl)) {
         decl.init = _makeObjectExpression([], expr);
       }
     } else if (this.hasDefaultExport) {
-      // This means the main.js of the user has a default export that is not an object expression, therefore we can'types change the AST.
+      // This means the main.js of the user has a default export that is not an object expression, therefore we can't change the AST.
       throw new Error(
         `Could not set the "${path.join(
           '.'
@@ -527,7 +549,7 @@ export class ConfigFile {
         properties.splice(index, 1);
       }
     };
-    // the structure of this._exports doesn'types work for this use case
+    // the structure of this._exports doesn't work for this use case
     // so we have to manually bypass it here
     if (path.length === 1) {
       let removedRootProperty = false;
@@ -777,10 +799,10 @@ export class ConfigFile {
 
       if (requireDeclaration) {
         if (!hasDefaultRequireSpecifier(requireDeclaration, importSpecifier)) {
-          // If the import declaration hasn'types the specified default identifier, we add a new variable declaration
+          // If the import declaration hasn't the specified default identifier, we add a new variable declaration
           addDefaultRequireSpecifier();
         }
-        // If the import declaration with the given source doesn'types exist
+        // If the import declaration with the given source doesn't exist
       } else {
         // Add the import declaration to the top of the file
         addDefaultRequireSpecifier();

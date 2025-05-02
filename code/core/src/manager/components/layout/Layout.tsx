@@ -134,6 +134,10 @@ const MainContentMatcher = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
+const OrderedMobileNavigation = styled(MobileNavigation)({
+  order: 1,
+});
+
 export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...slots }: Props) => {
   const { isDesktop, isMobile } = useLayout();
   const api = useStorybookApi();
@@ -185,13 +189,11 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
 
       {isMobile && (
         <>
-          <div style={{ order: 1 }}>
-            <MobileNavigation
-              menu={slots.slotSidebar}
-              panel={slots.slotPanel}
-              showPanel={showPanel}
-            />
-          </div>
+          <OrderedMobileNavigation
+            menu={slots.slotSidebar}
+            panel={slots.slotPanel}
+            showPanel={showPanel}
+          />
           <MainContentMatcher>{slots.slotMain}</MainContentMatcher>
           <Notifications />
         </>

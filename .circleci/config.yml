@@ -1,7 +1,8 @@
 version: 2.1
 orbs:
-  checkout: circleci/checkout@4
-  git-shallow-clone: guitarrapc/git-shallow-clone@3
+  git-shallow-clone: guitarrapc/git-shallow-clone@2.5.0
+  browser-tools: circleci/browser-tools@1.4.1
+  node: circleci/node@5.2.0
 
 executors:
   sb_node_22_browsers:

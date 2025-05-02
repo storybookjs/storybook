@@ -360,4 +360,4 @@ export const parameters = {
   },
 };
 
-export const tags = ['test', 'vitest', '!a11ytest'];
+export const tags = ['test', 'vitest'];

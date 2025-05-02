@@ -3,8 +3,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ChannelTransport, Listener } from '.';
 import { Channel, WebsocketTransport } from '.';
 
-vi.useFakeTimers();
-
 const MockedWebsocket = vi.hoisted(() => {
   const ref = { current: undefined as unknown as InstanceType<typeof MyMockedWebsocket> };
   class MyMockedWebsocket {

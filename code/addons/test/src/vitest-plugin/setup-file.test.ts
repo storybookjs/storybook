@@ -36,7 +36,7 @@ describe('modifyErrorMessage', () => {
 
   it('should not modify the error message if task type is not "test"', () => {
     const task: Task = {
-      type: 'custom',
+      type: 'suite',
       result: {
         state: 'fail',
         errors: [{ message: 'Original error message' }],

@@ -18,20 +18,20 @@ describe('angular component properties', () => {
           expect(true).toEqual(true);
         });
         // TODO: Fix this test
-        // it(`${testEntry.name}`, () => {
+        // it(`${testEntry.name}`, async () => {
         //   const inputPath = join(testDir, testFile);
 
         //   // snapshot the output of compodoc
         //   const compodocOutput = runCompodoc(inputPath);
         //   const compodocJson = JSON.parse(compodocOutput);
-        //   expect(compodocJson).toMatchFileSnapshot(
+        //   await expect(compodocJson).toMatchFileSnapshot(
         //     join(testDir, `compodoc-${SNAPSHOT_OS}.snapshot`)
         //   );
 
         //   // snapshot the output of addon-docs angular-properties
         //   const componentData = findComponentByName('InputComponent', compodocJson);
         //   const argTypes = extractArgTypesFromData(componentData);
-        //   expect(argTypes).toMatchFileSnapshot(join(testDir, 'argtypes.snapshot'));
+        //   await expect(argTypes).toMatchFileSnapshot(join(testDir, 'argtypes.snapshot'));
         // });
       }
     }

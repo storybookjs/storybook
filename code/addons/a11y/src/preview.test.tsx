@@ -156,7 +156,7 @@ describe('afterEach', () => {
     });
   });
 
-  it('should run accessibility checks if "a11ytest" flag is not available and is not running in Vitest', async () => {
+  it('should run accessibility checks if "a11y-test" flag is not available and is not running in Vitest', async () => {
     const context = createContext({
       tags: [],
     });

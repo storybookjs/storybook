@@ -29,9 +29,9 @@ function toImportPath(relativePath: string) {
  *
  * @param stories An array of absolute story paths.
  */
-export async function toImportFn(root: string, stories: string[]) {
+export async function toImportFn(stories: string[]) {
   const objectEntries = stories.map((file) => {
-    const relativePath = relative(root, file);
+    const relativePath = relative(process.cwd(), file);
 
     return [toImportPath(relativePath), genDynamicImport(normalize(file))] as [string, string];
   });
@@ -51,5 +51,5 @@ export async function generateImportFnScriptCode(options: Options): Promise<stri
 
   // We can then call toImportFn to create a function that can be used to load each story dynamically.
   // eslint-disable-next-line @typescript-eslint/return-await
-  return await toImportFn(options.projectRoot || process.cwd(), stories);
+  return await toImportFn(stories);
 }

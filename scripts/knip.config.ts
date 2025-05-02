@@ -84,7 +84,9 @@ export const addBundlerEntries = async (config: KnipConfig) => {
         const bundler = manifest?.bundler;
         for (const value of Object.values(bundler ?? {})) {
           if (Array.isArray(value)) {
-            configEntries.push(...value);
+            configEntries.push(
+              ...value.map((entry) => (typeof entry === 'string' ? entry : entry.file))
+            );
           }
         }
         config.workspaces[configKey].entry = Array.from(new Set(configEntries));

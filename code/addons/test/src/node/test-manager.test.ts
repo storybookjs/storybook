@@ -19,20 +19,21 @@ const vitest = vi.hoisted(() => ({
   cancelCurrentRun: vi.fn(),
   globTestSpecs: vi.fn(),
   getModuleProjects: vi.fn(() => []),
-  configOverride: {
-    actualTestNamePattern: undefined,
-    get testNamePattern() {
-      return this.actualTestNamePattern!;
+  setGlobalTestNamePattern: setTestNamePattern,
+  vite: {
+    watcher: {
+      removeAllListeners: vi.fn(),
+      on: vi.fn(),
     },
-    set testNamePattern(value: string) {
-      setTestNamePattern(value);
-      // @ts-expect-error Ignore for testing
-      this.actualTestNamePattern = value;
+    moduleGraph: {
+      getModulesByFile: () => [],
+      invalidateModule: vi.fn(),
     },
   },
 }));
 
-vi.mock('vitest/node', () => ({
+vi.mock('vitest/node', async (importOriginal) => ({
+  ...(await importOriginal()),
   createVitest: vi.fn(() => Promise.resolve(vitest)),
 }));
 const createVitest = vi.mocked(actualCreateVitest);
@@ -137,7 +138,6 @@ describe('TestManager', () => {
       storyIds: [],
     });
     expect(vitest.runFiles).toHaveBeenCalledWith([], true);
-    expect(vitest.configOverride.testNamePattern).toBeUndefined();
 
     await testManager.handleRunRequest({
       providerId: TEST_PROVIDER_ID,

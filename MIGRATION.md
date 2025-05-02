@@ -4,8 +4,10 @@
   - [Introducing features.developmentModeForBuild](#introducing-featuresdevelopmentmodeforbuild)
   - [Added source code panel to docs](#added-source-code-panel-to-docs)
   - [Addon-a11y: Component test integration](#addon-a11y-component-test-integration)
+  - [Addon-a11y: Changing the default element selector](#addon-a11y-changing-the-default-element-selector)
   - [Addon-a11y: Deprecated `parameters.a11y.manual`](#addon-a11y-deprecated-parametersa11ymanual)
-  - [Indexing behavior of @storybook/experimental-addon-test is changed](#indexing-behavior-of-storybookexperimental-addon-test-is-changed)
+  - [Addon-test: You should no longer copy the content of `viteFinal` to your configuration](#addon-test-you-should-no-longer-copy-the-content-of-vitefinal-to-your-configuration)
+  - [Addon-test: Indexing behavior of @storybook/experimental-addon-test is changed](#addon-test-indexing-behavior-of-storybookexperimental-addon-test-is-changed)
 - [From version 8.2.x to 8.3.x](#from-version-82x-to-83x)
   - [Removed `experimental_SIDEBAR_BOTTOM` and deprecated `experimental_SIDEBAR_TOP` addon types](#removed-experimental_sidebar_bottom-and-deprecated-experimental_sidebar_top-addon-types)
   - [New parameters format for addon backgrounds](#new-parameters-format-for-addon-backgrounds)
@@ -434,7 +436,7 @@ As part of our ongoing efforts to improve the testability and debuggability of S
 In development mode, React and other libraries often include additional checks and warnings that help catch potential issues early. These checks are usually stripped out in production builds to optimize performance. However, when running tests or debugging issues in a built Storybook, having these additional checks can be incredibly valuable. One such feature is React's `act`, which ensures that all updates related to a test are processed and applied before making assertions. `act` is crucial for reliable and predictable test results, but it only works correctly when `NODE_ENV` is set to `development`.
 
 ```js
-// main.js
+// .storybook/main.js
 export default {
   features: {
     developmentModeForBuild: true,
@@ -444,15 +446,16 @@ export default {
 
 ### Added source code panel to docs
 
-Starting in 8.5, Storybook Docs (`@storybook/addon-docs`) automatically adds a new addon panel to stories that displays a source snippet beneath each story. This works similarly to the existing [source snippet doc block](https://storybook.js.org/docs/writing-docs/doc-blocks#source), but in the story view. It is intended to replace the [Storysource addon](https://storybook.js.org/addons/@storybook/addon-storysource).
+Storybook Docs (`@storybook/addon-docs`) now can automatically add a new addon panel to stories that displays a source snippet beneath each story. This is an experimental feature that works similarly to the existing [source snippet doc block](https://storybook.js.org/docs/writing-docs/doc-blocks#source), but in the story view. It is intended to replace the [Storysource addon](https://storybook.js.org/addons/@storybook/addon-storysource).
 
-If you wish to disable this panel globally, add the following line to your `.storybook/preview.js` project configuration. You can also selectively disable/enable at the story level.
+To enable this globally, add the following line to your project configuration. You can also configure at the component/story level.
 
 ```js
+// .storybook/preview.js
 export default {
   parameters: {
     docs: {
-      codePanel: false,
+      codePanel: true,
     },
   },
 };
@@ -480,11 +483,30 @@ const annotations = setProjectAnnotations([
 beforeAll(annotations.beforeAll);
 ```
 
+### Addon-a11y: Changing the default element selector
+
+In Storybook 8.5, we changed the default element selector used by the Accessibility addon from `#storybook-root` to `body`. This change was made to align with the default element selector used by the Test addon when running accessibility tests via Vitest. Additionally, Tooltips or Popovers that are rendered outside the `#storybook-root` element will now be included in the accessibility tests per default allowing for a more comprehensive test coverage. If you want to fall back to the previous behavior, you can set the `a11y.element` parameter in your `.storybook/preview.<ts|js>` configuration:
+
+```diff
+// .storybook/preview.js
+export const parameters = {
+  a11y: {
++    element: '#storybook-root',
+  },
+};
+```
+
 ### Addon-a11y: Deprecated `parameters.a11y.manual`
 
 We have deprecated `parameters.a11y.manual` in 8.5. Please use `globals.a11y.manual` instead.
 
-### Indexing behavior of @storybook/experimental-addon-test is changed
+### Addon-test: You should no longer copy the content of `viteFinal` to your configuration
+
+In version 8.4 of `@storybook/experimental-addon-test`, it was required to copy any custom configuration you had in `viteFinal` in `main.ts`, to the Vitest Storybook project. This is no longer necessary, as the Storybook Test plugin will automatically include your `viteFinal` configuration. You should remove any configurations you might already have in `viteFinal` to remove duplicates.
+
+This is especially the case for any plugins you might have, as they could now end up being loaded twice, which is likely to cause errors when running tests. In 8.4 we documented and automatically added some Vite plugins from Storybook frameworks like `@storybook/experimental-nextjs-vite` and `@storybook/sveltekit` - **these needs to be removed as well**.
+
+### Addon-test: Indexing behavior of @storybook/experimental-addon-test is changed
 
 The Storybook test addon used to index stories based on the `test.include` field in the Vitest config file. This caused indexing issues with Storybook, because stories could have been indexed by Storybook and not Vitest, and vice versa. Starting in Storybook 8.5.0-alpha.18, we changed the indexing behavior so that it always uses the globs defined in the `stories` field in `.storybook/main.js` for a more consistent experience. It is now discouraged to use `test.include`, please remove it.
 

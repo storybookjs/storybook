@@ -11,7 +11,6 @@ import EventEmitter from 'events';
 import { init as initURL } from '../modules/url';
 
 vi.mock('@storybook/core/client-logger');
-vi.useFakeTimers();
 
 describe('initial state', () => {
   const viewMode = 'story';

@@ -11,5 +11,7 @@ const $ = execa({
 });
 
 export default async function postinstall(options: PostinstallOptions) {
-  await $`storybook automigrate addonA11yAddonTest ${options.yes ? '--yes' : ''}`;
+  await $({
+    stdio: 'inherit',
+  })`storybook automigrate addonA11yAddonTest ${options.yes ? '--yes' : ''}`;
 }

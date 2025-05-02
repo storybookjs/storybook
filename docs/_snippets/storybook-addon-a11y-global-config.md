@@ -3,7 +3,7 @@ export default {
   parameters: {
     a11y: {
       // Optional selector to inspect
-      element: '#storybook-root',
+      element: 'body',
       config: {
         rules: [
           {
@@ -18,7 +18,11 @@ export default {
           },
         ],
       },
-      // Axe's options parameter
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
     },
   },
@@ -39,7 +43,7 @@ const preview: Preview = {
   parameters: {
     a11y: {
       // Optional selector to inspect
-      element: '#storybook-root',
+      element: 'body',
       config: {
         rules: [
           {
@@ -54,7 +58,11 @@ const preview: Preview = {
           },
         ],
       },
-      // Axe's options parameter
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
     },
   },

@@ -1,7 +1,8 @@
 import { ElementA11yParameterError } from 'storybook/internal/preview-errors';
 
+import axe from '@storybook/addon-a11y/axe-core';
+
 import type { AxeResults, ContextProp, ContextSpec } from 'axe-core';
-import axe from 'axe-core';
 import { addons } from 'storybook/preview-api';
 
 import { EVENTS } from './constants';

@@ -40,6 +40,8 @@ type BundlerConfig = {
   nodeEntries: NodeEntry[];
   exportEntries: string[];
   externals: string[];
+  noExternal: string[];
+
   pre: string;
   post: string;
   formats: Formats[];
@@ -70,6 +72,8 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
       nodeEntries = [],
       exportEntries = [],
       externals: extraExternals = [],
+      noExternal: extraNoExternal = [],
+
       pre,
       post,
       formats = ['esm', 'cjs'],
@@ -141,6 +145,8 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
     ...Object.keys(peerDependencies || {}),
   ];
 
+  const noExternal = [...extraNoExternal];
+
   if (exportEntries.length > 0) {
     const { dtsConfig, tsConfigExists } = await getDTSConfigs({
       formats,
@@ -156,6 +162,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
           ...browserOptions,
           entry: exportEntries,
           external: [...commonExternals, ...globalManagerPackages, ...globalPreviewPackages],
+          noExternal,
         }),
         build({
           ...commonOptions,
@@ -165,6 +172,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
           target: browserOptions.target,
           platform: 'neutral',
           external: [...commonExternals, ...globalManagerPackages, ...globalPreviewPackages],
+          noExternal,
           esbuildOptions: (options) => {
             options.platform = 'neutral';
             Object.assign(options, getESBuildOptions(optimized));
@@ -191,6 +199,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
           js: '.js',
         }),
         external: [...commonExternals, ...globalManagerPackages],
+        noExternal,
       });
       if (!watch) {
         await readMetafiles({ formats: ['esm'] });
@@ -212,6 +221,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
         format: ['esm', 'cjs'],
         entry: previewEntries.map((e: string) => slash(join(cwd, e))),
         external: [...commonExternals, ...globalPreviewPackages],
+        noExternal,
       });
       if (!watch) {
         await readMetafiles({ formats: ['esm', 'cjs'] });
@@ -244,6 +254,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
             target: NODE_TARGET,
             platform: 'node',
             external: commonExternals,
+            noExternal,
             esbuildOptions: (c) => {
               c.platform = 'node';
               Object.assign(c, getESBuildOptions(optimized));
@@ -278,6 +289,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
             `,
             },
             external: [...commonExternals, ...nodeInternals],
+            noExternal,
             esbuildOptions: (c) => {
               c.mainFields = ['main', 'module', 'node'];
               c.conditions = ['node', 'module', 'import', 'require'];

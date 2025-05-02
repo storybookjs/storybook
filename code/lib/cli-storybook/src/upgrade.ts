@@ -425,8 +425,6 @@ export const doUpgrade = async (allOptions: UpgradeOptions) => {
     });
   }
 
-  await doctor(allOptions);
-
   // TELEMETRY
   if (!options.disableTelemetry) {
     const { preCheckFailure, fixResults } = results || {};
@@ -441,6 +439,8 @@ export const doUpgrade = async (allOptions: UpgradeOptions) => {
       ...automigrationTelemetry,
     });
   }
+
+  await doctor(allOptions);
 };
 
 export async function upgrade(options: UpgradeOptions): Promise<void> {

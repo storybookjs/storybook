@@ -65,8 +65,8 @@ export const StoryWithLocale = {
 };
 ```
 
-```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/react';
+```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts"
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { MyComponent } from './MyComponent';
 
@@ -76,41 +76,6 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-const getCaptionForLocale = (locale) => {
-  switch (locale) {
-    case 'es':
-      return 'Hola!';
-    case 'fr':
-      return 'Bonjour!';
-    case 'kr':
-      return '안녕하세요!';
-    case 'zh':
-      return '你好!';
-    default:
-      return 'Hello!';
-  }
-};
-
-export const StoryWithLocale = {
-  render: (args, { globals: { locale } }) => {
-    const caption = getCaptionForLocale(locale);
-    return <p>{caption}</p>;
-  },
-};
-```
-
-```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts"
-import type { Meta, StoryObj } from '@storybook/react';
-
-import { MyComponent } from './MyComponent';
-
-const meta: Meta<typeof MyComponent> = {
-  component: MyComponent,
-};
-
-export default meta;
-type Story = StoryObj<typeof MyComponent>;
 
 const getCaptionForLocale = (locale) => {
   switch (locale) {
@@ -165,7 +130,7 @@ export const StoryWithLocale = {
 };
 ```
 
-```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts-4-9"
+```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts"
 import type { Meta, StoryObj } from 'storybook-solidjs';
 
 import { MyComponent } from './MyComponent';
@@ -176,41 +141,6 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-const getCaptionForLocale = (locale) => {
-  switch (locale) {
-    case 'es':
-      return 'Hola!';
-    case 'fr':
-      return 'Bonjour!';
-    case 'kr':
-      return '안녕하세요!';
-    case 'zh':
-      return '你好!';
-    default:
-      return 'Hello!';
-  }
-};
-
-export const StoryWithLocale = {
-  render: (args, { globals: { locale } }) => {
-    const caption = getCaptionForLocale(locale);
-    return <p>{caption}</p>;
-  },
-};
-```
-
-```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs';
-
-import { MyComponent } from './MyComponent';
-
-const meta: Meta<typeof MyComponent> = {
-  component: MyComponent,
-};
-
-export default meta;
-type Story = StoryObj<typeof MyComponent>;
 
 const getCaptionForLocale = (locale) => {
   switch (locale) {
@@ -270,54 +200,14 @@ export const StoryWithLocale = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/svelte';
+```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts"
+import type { Meta, StoryObj } from '@storybook/svelte-vite';
 
-import MyComponent from './YourComponent.svelte';
+import MyComponent from './MyComponent.svelte';
 
 const meta = {
   component: MyComponent,
 } satisfies Meta<typeof MyComponent>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-const getCaptionForLocale = (locale) => {
-  switch (locale) {
-    case 'es':
-      return 'Hola!';
-    case 'fr':
-      return 'Bonjour!';
-    case 'kr':
-      return '안녕하세요!';
-    case 'zh':
-      return '你好!';
-    default:
-      return 'Hello!';
-  }
-};
-
-export const StoryWithLocale: Story = {
-  render: (args, { globals: { locale } }) => {
-    const caption = getCaptionForLocale(locale);
-    return {
-      Component: MyComponent,
-      props: {
-        locale: caption,
-      },
-    };
-  },
-};
-```
-
-```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts"
-import type { Meta, StoryObj } from '@storybook/svelte';
-
-import MyComponent from './YourComponent.svelte';
-
-const meta: Meta<typeof MyComponent> = {
-  component: MyComponent,
-};
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -382,8 +272,8 @@ export const StoryWithLocale = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="vue" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/vue3';
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts"
+import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import MyComponent from './MyComponent.vue';
 
@@ -393,43 +283,6 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-const getCaptionForLocale = (locale) => {
-  switch (locale) {
-    case 'es':
-      return 'Hola!';
-    case 'fr':
-      return 'Bonjour!';
-    case 'kr':
-      return '안녕하세요!';
-    case 'zh':
-      return '你好!';
-    default:
-      return 'Hello!';
-  }
-};
-
-export default meta;
-type Story = StoryObj<typeof MyComponent>;
-
-export const MyStory: Story = {
-  render: (args, { globals: { locale } }) => {
-    const caption = getCaptionForLocale(locale);
-    return {
-      template: `<p>${caption}</p>`,
-    };
-  },
-};
-```
-
-```ts filename="MyComponent.stories.ts" renderer="vue" language="ts"
-import type { Meta, StoryObj } from '@storybook/vue3';
-
-import MyComponent from './MyComponent.vue';
-
-const meta: Meta<typeof MyComponent> = {
-  component: MyComponent,
-};
 
 const getCaptionForLocale = (locale) => {
   switch (locale) {
@@ -490,7 +343,7 @@ export const StoryWithLocale = {
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import { html } from 'lit';
 

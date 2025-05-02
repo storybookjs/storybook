@@ -138,7 +138,7 @@ type TableOfContentsProps = React.PropsWithChildren<
   }
 >;
 
-const OptionalTitle: FC<{
+const Title: FC<{
   headingId: string;
   title: TableOfContentsProps['title'];
 }> = ({ headingId, title }) => {
@@ -146,7 +146,11 @@ const OptionalTitle: FC<{
     return null;
   }
   if (typeof title === 'string') {
-    return <Heading id={headingId}>{title}</Heading>;
+    return (
+      <Heading as="h2" id={headingId} className={title ? '' : 'sb-sr-only'}>
+        {title || 'Table of contents'}
+      </Heading>
+    );
   }
   return title;
 };
@@ -198,14 +202,12 @@ export const TableOfContents = ({
   }, [channel, disable, ignoreSelector, contentsSelector, headingSelector, unsafeTocbotOptions]);
 
   const headingId = useId();
-  const ariaLabel = title ? undefined : 'Table of contents';
-  const ariaLabelledby = title ? headingId : undefined;
 
   return (
     <Aside className={className}>
       {!disable ? (
-        <Nav aria-label={ariaLabel} aria-labelledby={ariaLabelledby}>
-          <OptionalTitle headingId={headingId} title={title || null} />
+        <Nav aria-labelledby={headingId}>
+          <Title headingId={headingId} title={title} />
           <div className="toc-wrapper" />
         </Nav>
       ) : null}

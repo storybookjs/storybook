@@ -763,6 +763,7 @@
     "tinyspy": "^3.0.2",
     "ts-dedent": "^2.0.0",
     "tsconfig-paths": "^4.2.0",
+    "tsup": "^6.7.0",
     "type-fest": "^4.18.1",
     "typescript": "^5.7.3",
     "unique-string": "^3.0.0",

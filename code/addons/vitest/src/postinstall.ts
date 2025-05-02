@@ -335,9 +335,23 @@ export default async function postInstall(options: PostinstallOptions) {
   if (a11yAddon) {
     try {
       logger.plain(`${step} Setting up ${addonA11yName} for @storybook/addon-vitest:`);
+      const command = ['storybook', 'automigrate', 'addonA11yAddonTest'];
+
+      if (options.yes) {
+        command.push('--yes');
+      }
+
+      if (options.packageManager) {
+        command.push('--package-manager', options.packageManager);
+      }
+
+      if (options.configDir) {
+        command.push('--config-dir', options.configDir);
+      }
+
       await $({
         stdio: 'inherit',
-      })`storybook automigrate addonA11yAddonTest ${options.yes ? '--yes' : ''}`;
+      })`${command.join(' ')}`;
     } catch (e) {
       printError(
         '🚨 Oh no!',

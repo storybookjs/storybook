@@ -18,7 +18,7 @@ import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import TerserWebpackPlugin from 'terser-webpack-plugin';
 import { dedent } from 'ts-dedent';
-import { DefinePlugin, HotModuleReplacementPlugin, ProgressPlugin, ProvidePlugin } from 'webpack';
+import { DefinePlugin, HotModuleReplacementPlugin, ProgressPlugin } from 'webpack';
 import type { Configuration } from 'webpack';
 import VirtualModulePlugin from 'webpack-virtual-modules';
 
@@ -199,7 +199,6 @@ export default async (
           features?.developmentModeForBuild && isProd ? 'development' : process.env.NODE_ENV
         ),
       }),
-      new ProvidePlugin({ process: require.resolve('process/browser.js') }),
       isProd ? null : new HotModuleReplacementPlugin(),
       new CaseSensitivePathsPlugin(),
       quiet ? null : new ProgressPlugin({ modulesCount }),

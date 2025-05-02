@@ -142,6 +142,7 @@ jobs:
   sandbox-test-react-vite-default-ts:
     executor:
       name: sb_playwright
+      class: xlarge
     steps:
       - attach_workspace:
           at: /tmp/storybook
@@ -191,7 +192,7 @@ jobs:
   sandbox-test-angular-cli-default-ts:
     executor:
       name: sb_playwright
-      class: large
+      class: xlarge
     steps:
       - attach_workspace:
           at: /tmp/storybook
@@ -238,6 +239,7 @@ jobs:
   sandbox-test-bench-react-vite-default-ts:
     executor:
       name: sb_playwright
+      class: xlarge
     steps:
       - attach_workspace:
           at: /tmp/storybook

@@ -2,9 +2,8 @@ import { hasStorybookDependencies } from 'storybook/internal/cli';
 import type { JsPackageManager, PackageManagerName } from 'storybook/internal/common';
 import {
   JsPackageManagerFactory,
-  getStorybookInfo,
   isCorePackage,
-  loadMainConfig,
+  isSatelliteAddon,
   versions,
 } from 'storybook/internal/common';
 import { withTelemetry } from 'storybook/internal/core-server';
@@ -26,6 +25,7 @@ import { dedent } from 'ts-dedent';
 import { autoblock } from './autoblock/index';
 import { getStorybookData } from './automigrate/helpers/mainConfigFile';
 import { automigrate } from './automigrate/index';
+import { doctor } from './doctor';
 
 type Package = {
   package: string;
@@ -124,14 +124,15 @@ export interface UpgradeOptions {
   configDir?: string;
 }
 
-export const doUpgrade = async ({
-  skipCheck,
-  packageManager: packageManagerName,
-  dryRun,
-  configDir: userSpecifiedConfigDir,
-  yes,
-  ...options
-}: UpgradeOptions) => {
+export const doUpgrade = async (allOptions: UpgradeOptions) => {
+  const {
+    skipCheck,
+    packageManager: packageManagerName,
+    dryRun,
+    configDir: userSpecifiedConfigDir,
+    yes,
+    ...options
+  } = allOptions;
   const packageManager = JsPackageManagerFactory.getPackageManager({ force: packageManagerName });
 
   // If we can't determine the existing version fallback to v0.0.0 to not block the upgrade
@@ -159,10 +160,12 @@ export const doUpgrade = async ({
   }
 
   const latestCLIVersionOnNPM = await packageManager.latestVersion('storybook');
+  const latestPrereleaseCLIVersionOnNPM = await packageManager.latestVersion('storybook@next');
 
   const isCLIOutdated = lt(currentCLIVersion, latestCLIVersionOnNPM);
   const isCLIExactLatest = currentCLIVersion === latestCLIVersionOnNPM;
   const isCLIPrerelease = prerelease(currentCLIVersion) !== null;
+  const isCLIExactPrerelease = currentCLIVersion === latestPrereleaseCLIVersionOnNPM;
 
   const isUpgrade = lt(beforeVersion, currentCLIVersion);
 
@@ -176,8 +179,8 @@ export const doUpgrade = async ({
       This version is behind the latest release, which is: ${picocolors.bold(
         latestCLIVersionOnNPM
       )}!
-      You likely ran the upgrade command through npx, which can use a locally cached version, to upgrade to the latest version please run:
-      ${picocolors.bold('npx storybook@latest upgrade')}
+      You likely ran the upgrade command through a remote command like npx, which can use a locally cached version. To upgrade to the latest version please run:
+      ${picocolors.bold(`${packageManager.getRemoteRunCommand()} storybook@latest upgrade`)}
       
       You may want to CTRL+C to stop, and run with the latest version instead.
     `),
@@ -228,12 +231,12 @@ export const doUpgrade = async ({
 
   // INSTALL UPDATED DEPENDENCIES
   if (!dryRun && !results) {
-    const toUpgradedDependencies = (deps: Record<string, any>) => {
+    const toUpgradedDependencies = async (deps: Record<string, any>) => {
       const monorepoDependencies = Object.keys(deps || {}).filter((dependency) => {
         // only upgrade packages that are in the monorepo
         return dependency in versions;
       }) as Array<keyof typeof versions>;
-      return monorepoDependencies.map((dependency) => {
+      const storybookCoreUpgrades = monorepoDependencies.map((dependency) => {
         let char = '^';
         if (isCLIOutdated) {
           char = '';
@@ -245,10 +248,34 @@ export const doUpgrade = async ({
            example outputs: @storybook/react@^8.0.0 */
         return `${dependency}@${char}${versions[dependency]}`;
       });
+
+      let storybookSatelliteUpgrades: string[] = [];
+      if (isCLIExactPrerelease || isCLIExactLatest) {
+        const satelliteDependencies = Object.keys(packageJson.dependencies).filter(
+          isSatelliteAddon
+        );
+
+        if (satelliteDependencies.length > 0) {
+          try {
+            storybookSatelliteUpgrades = await Promise.all(
+              satelliteDependencies.map(async (dependency) => {
+                const latestVersion = await packageManager.latestVersion(
+                  isCLIPrerelease ? `${dependency}@next` : dependency
+                );
+                return `${dependency}@${latestVersion}`;
+              })
+            );
+          } catch (error) {
+            // If there is an error fetchign satellite dependencies, we don't want to block the upgrade
+          }
+        }
+      }
+
+      return [...storybookCoreUpgrades, ...storybookSatelliteUpgrades];
     };
 
-    const upgradedDependencies = toUpgradedDependencies(packageJson.dependencies);
-    const upgradedDevDependencies = toUpgradedDependencies(packageJson.devDependencies);
+    const upgradedDependencies = await toUpgradedDependencies(packageJson.dependencies);
+    const upgradedDevDependencies = await toUpgradedDependencies(packageJson.devDependencies);
 
     // Add Storybook overrides to package.json when using npm to prevent peer dependency conflicts
     if (packageManager.type === 'npm') {
@@ -340,6 +367,8 @@ export const doUpgrade = async ({
       isLatest: isCLIExactLatest,
     });
   }
+
+  await doctor(allOptions);
 
   // TELEMETRY
   if (!options.disableTelemetry) {

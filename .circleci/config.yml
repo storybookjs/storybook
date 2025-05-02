@@ -215,8 +215,7 @@ jobs:
           working_directory: scripts
       - run:
           name: Create Sandbox
-          command: |
-            yarn task build -s auto --no-link --junit --template angular-cli/default-ts
+          command: yarn task sandbox -s auto --no-link --junit --template angular-cli/default-ts
       - run:
           name: Build static storybook
           command: yarn task build -s auto --no-link --junit --template angular-cli/default-ts
@@ -261,8 +260,7 @@ jobs:
           working_directory: scripts
       - run:
           name: Create Sandbox
-          command: |
-            yarn task build -s auto --no-link --junit --template bench/react-vite-default-ts
+          command: yarn task sandbox -s auto --no-link --junit --template bench/react-vite-default-ts
       - run:
           name: Build static storybook
           command: yarn task build -s auto --no-link --junit --template bench/react-vite-default-ts

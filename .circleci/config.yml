@@ -140,7 +140,8 @@ jobs:
           working_directory: scripts
 
   sandbox-test-react-vite-default-ts:
-    executor: sb_playwright
+    executor:
+      name: sb_playwright
     steps:
       - attach_workspace:
           at: /tmp/storybook
@@ -188,8 +189,9 @@ jobs:
           command: yarn task e2e-tests -s auto --no-link --junit --template react-vite/default-ts
 
   sandbox-test-angular-cli-default-ts:
-    executor: sb_playwright
-    class: large
+    executor:
+      name: sb_playwright
+      class: large
     steps:
       - attach_workspace:
           at: /tmp/storybook
@@ -234,7 +236,8 @@ jobs:
           command: yarn task e2e-tests -s auto --no-link --junit --template angular-cli/default-ts
 
   sandbox-test-bench-react-vite-default-ts:
-    executor: sb_playwright
+    executor:
+      name: sb_playwright
     steps:
       - attach_workspace:
           at: /tmp/storybook

@@ -108,7 +108,6 @@
     "ejs-lint": "^2.0.1",
     "es-toolkit": "^1.36.0",
     "esbuild": "^0.25.3",
-    "esbuild-plugin-alias": "^0.2.1",
     "eslint": "^8.57.0",
     "eslint-config-airbnb-typescript": "^18.0.0",
     "eslint-config-prettier": "^9.1.0",

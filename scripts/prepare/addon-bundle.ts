@@ -2,7 +2,6 @@ import { writeFile } from 'node:fs/promises';
 import { builtinModules } from 'node:module';
 
 import type { Metafile } from 'esbuild';
-import aliasPlugin from 'esbuild-plugin-alias';
 // eslint-disable-next-line depend/ban-dependencies
 import * as fs from 'fs-extra';
 // eslint-disable-next-line depend/ban-dependencies

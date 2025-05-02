@@ -64,8 +64,14 @@ export const Default: StoryObj<typeof meta> = {
       expect(toc.tagName).toBe('NAV');
     });
 
-    await step('Verify nav aria-label', async () => {
-      expect(toc).toHaveAttribute('aria-label', 'Table of contents');
+    const title = canvas.getByRole('heading', { name: 'Table of contents' });
+    await step('Verify title is present but invisible', async () => {
+      expect(title).toBeInTheDocument();
+      expect(title).toHaveClass('sb-sr-only');
+    });
+
+    await step('Verify nav aria-labelledby', async () => {
+      expect(toc).toHaveAttribute('aria-labelledby', title.id);
     });
 
     const wrapper = canvas.getByRole('complementary');
@@ -93,9 +99,41 @@ export const WithTitle: StoryObj<typeof meta> = {
       expect(toc.tagName).toBe('NAV');
     });
 
-    const title = canvas.getByText('In this page');
+    const title = canvas.getByRole('heading', { name: 'In this page' });
     await step('Verify title presence', async () => {
       expect(title).toBeInTheDocument();
+    });
+
+    await step('Verify nav aria-labelledby', async () => {
+      expect(toc).toHaveAttribute('aria-labelledby', title.id);
+    });
+  },
+};
+
+export const WithReactTitle: StoryObj<typeof meta> = {
+  args: {
+    channel: {} as any,
+    headingSelector: 'h1, h2, h3',
+    contentsSelector: '.local-story-docs',
+    title: (
+      <>
+        In <em>this</em> page
+      </>
+    ),
+  },
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement);
+
+    const toc = canvas.getByRole('navigation');
+    await step('Verify nav presence', async () => {
+      expect(toc).toBeInTheDocument();
+      expect(toc.tagName).toBe('NAV');
+    });
+
+    const title = toc.children[0];
+    await step('Verify title presence', async () => {
+      expect(title).toBeInTheDocument();
+      expect(title.innerHTML).toBe('In <em>this</em> page');
     });
 
     await step('Verify nav aria-labelledby', async () => {

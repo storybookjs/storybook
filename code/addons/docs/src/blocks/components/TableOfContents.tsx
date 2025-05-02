@@ -142,17 +142,17 @@ const Title: FC<{
   headingId: string;
   title: TableOfContentsProps['title'];
 }> = ({ headingId, title }) => {
-  if (title === null) {
-    return null;
-  }
-  if (typeof title === 'string') {
+  // General case.
+  if (typeof title === 'string' || !title) {
     return (
       <Heading as="h2" id={headingId} className={title ? '' : 'sb-sr-only'}>
         {title || 'Table of contents'}
       </Heading>
     );
   }
-  return title;
+
+  // Custom JSX title: we must ensure an ID is set for ARIA attributes to work.
+  return <div id={headingId}>{title}</div>;
 };
 
 export const TableOfContents = ({

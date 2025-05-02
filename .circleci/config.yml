@@ -146,7 +146,7 @@ jobs:
           at: /tmp/storybook
       - run:
           name: Setup Corepack
-          command: sudo corepack enable
+          command: corepack enable
       - run:
           name: Verify corepack & yarn install
           command: |
@@ -194,7 +194,7 @@ jobs:
           at: /tmp/storybook
       - run:
           name: Setup Corepack
-          command: sudo corepack enable
+          command: corepack enable
       - run:
           name: Verify corepack & yarn install
           command: |
@@ -240,7 +240,7 @@ jobs:
           at: /tmp/storybook
       - run:
           name: Setup Corepack
-          command: sudo corepack enable
+          command: corepack enable
       - run:
           name: Verify corepack & yarn install
           command: |

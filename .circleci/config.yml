@@ -35,7 +35,7 @@ jobs:
   build:
     executor:
       name: sb_node_22_classic
-      resource_class: large
+      class: large
     steps:
       - git-shallow-clone/checkout_advanced:
           clone_options: "--depth 1 --verbose"
@@ -77,7 +77,7 @@ jobs:
   lint:
     executor:
       name: sb_node_22_classic
-      resource_class: large
+      class: large
     steps:
       - git-shallow-clone/checkout_advanced:
           clone_options: "--depth 1 --verbose"

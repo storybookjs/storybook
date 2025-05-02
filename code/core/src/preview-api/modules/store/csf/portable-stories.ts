@@ -27,6 +27,7 @@ import { getCoreAnnotations } from '../../../core-annotations';
 import { ReporterAPI } from '../reporter-api';
 import { composeConfigs } from './composeConfigs';
 import { getCsfFactoryAnnotations } from './csf-factory-utils';
+import { getValuesFromArgTypes } from './getValuesFromArgTypes';
 import { normalizeComponentAnnotations } from './normalizeComponentAnnotations';
 import { normalizeProjectAnnotations } from './normalizeProjectAnnotations';
 import { normalizeStory } from './normalizeStory';
@@ -132,7 +133,10 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
     normalizedProjectAnnotations
   );
 
+  const globalsFromGlobalTypes = getValuesFromArgTypes(normalizedProjectAnnotations.globalTypes);
+
   const globals = {
+    ...globalsFromGlobalTypes,
     ...normalizedProjectAnnotations.initialGlobals,
     ...story.storyGlobals,
   };

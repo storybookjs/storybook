@@ -1,3 +1,13 @@
+## 9.0.0-beta.8
+
+- Addon-vitest: Remove internal log for `staticDir` - [#31340](https://github.com/storybookjs/storybook/pull/31340), thanks @JReinhold!
+- CLI: Add skip onboarding, recommended/minimal config - [#30930](https://github.com/storybookjs/storybook/pull/30930), thanks @shilman!
+- CLI: Supress npm notice update log messages - [#31334](https://github.com/storybookjs/storybook/pull/31334), thanks @yannbf!
+- CLI: Wrap object addon names in wrap-require migration - [#31285](https://github.com/storybookjs/storybook/pull/31285), thanks @yatishgoel!
+- Core: Bring back loading globals from global types in portable stories - [#31328](https://github.com/storybookjs/storybook/pull/31328), thanks @yannbf!
+- React Native Web: Update `react-native-web` - [#31324](https://github.com/storybookjs/storybook/pull/31324), thanks @ndelangen!
+- Svelte: Remove unused `svelte-preprocess` dependency - [#31332](https://github.com/storybookjs/storybook/pull/31332), thanks @JReinhold!
+
 ## 9.0.0-beta.7
 
 - CLI: Fix get versions utility for NPM - [#29577](https://github.com/storybookjs/storybook/pull/29577), thanks @johnrcui!

@@ -94,17 +94,23 @@ jobs:
           command: yarn task compile -s install
           working_directory: code
       - run:
-          name: Lint:JS
-          command: yarn lint:js
+          name: Lint:Package
+          command: yarn lint:package
           working_directory: code
       - run:
           name: Lint:Other
           command: yarn lint:other
           working_directory: code
       - run:
-          name: Lint:Package
-          command: yarn lint:package
+          name: Lint:JS
+          command: yarn lint:js
           working_directory: code
+      # running linting should not cause git pending changes
+      - run:
+          name: Check for pending changes
+          command: |
+            git diff --exit-code
+            yarn dedupe --check
 
   docs:
     executor: sb_node_22_classic
@@ -127,11 +133,10 @@ jobs:
           at: /tmp/storybook
       - run:
           name: Setup Corepack
+          command: sudo corepack enable
+      - run:
+          name: Verify corepack & yarn install
           command: |
-            # Enable corepack
-            sudo corepack enable
-
-            # Verify yarn is working
             which yarn
             yarn --version
       - run:
@@ -174,11 +179,10 @@ jobs:
           at: /tmp/storybook
       - run:
           name: Setup Corepack
+          command: sudo corepack enable
+      - run:
+          name: Verify corepack & yarn install
           command: |
-            # Enable corepack
-            sudo corepack enable
-
-            # Verify yarn is working
             which yarn
             yarn --version
       - run:
@@ -218,11 +222,10 @@ jobs:
           at: /tmp/storybook
       - run:
           name: Setup Corepack
+          command: sudo corepack enable
+      - run:
+          name: Verify corepack & yarn install
           command: |
-            # Enable corepack
-            sudo corepack enable
-
-            # Verify yarn is working
             which yarn
             yarn --version
       - run:

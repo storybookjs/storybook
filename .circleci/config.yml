@@ -15,25 +15,44 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Install dependencies
-          command: |
-            yarn install --frozen-lockfile
+          name: Install dependencies (scripts)
+          command: yarn install --frozen-lockfile
+          working_directory: scripts
+      - run:
+          name: Install dependencies (code)
+          command: yarn install --frozen-lockfile
+          working_directory: code
       - run:
           name: Compile
           command: |
-            yarn task compile --start-from=auto --no-link --debug
+            yarn task compile -s auto --no-link --debug
       - run:
           name: Check for pending changes
           command: |
             git diff --exit-code
             yarn dedupe --check
-
+      - persist_to_workspace:
+          root: .
+          paths:
+            - code
+            - scripts
+            - .verdaccio-cache
   lint:
     executor: sb_node_22_browsers
     steps:
       - checkout
-      - attach_workspace:
-          at: /tmp/storybook
+      - run:
+          name: Install dependencies (scripts)
+          command: yarn install --frozen-lockfile
+          working_directory: scripts
+      - run:
+          name: Install dependencies (code)
+          command: yarn install --frozen-lockfile
+          working_directory: code
+      - run:
+          name: Compile (for lint)
+          command: yarn task compile
+          working_directory: code
       - run:
           name: Lint
           command: yarn lint
@@ -43,6 +62,10 @@ jobs:
     executor: sb_node_22_browsers
     steps:
       - checkout
+      - run:
+          name: Install dependencies (scripts)
+          command: yarn install --frozen-lockfile
+          working_directory: scripts
       - run:
           name: Docs Prettier Check
           command: yarn docs:prettier:check
@@ -114,8 +137,7 @@ workflows:
   normal:
     jobs:
       - build
-      - lint:
-          requires: [build]
+      - lint
       - docs
       - sandbox-test-react-vite-default-ts:
           requires: [build]

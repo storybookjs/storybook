@@ -311,7 +311,7 @@ export const doUpgrade = async (allOptions: UpgradeOptions) => {
   // INSTALL UPDATED DEPENDENCIES
   if (!dryRun && !results) {
     const upgradedDependencies = await toUpgradedDependencies(
-      packageJson.dependencies || {},
+      packageJson.dependencies as Record<string, string>,
       packageManager,
       {
         isCanary,
@@ -323,7 +323,7 @@ export const doUpgrade = async (allOptions: UpgradeOptions) => {
     );
 
     const upgradedDevDependencies = await toUpgradedDependencies(
-      packageJson.devDependencies || {},
+      packageJson.devDependencies as Record<string, string>,
       packageManager,
       {
         isCanary,

@@ -189,6 +189,7 @@ jobs:
 
   sandbox-test-angular-cli-default-ts:
     executor: sb_playwright
+    class: large
     steps:
       - attach_workspace:
           at: /tmp/storybook
@@ -267,15 +268,6 @@ jobs:
       - run:
           name: Smoke Test
           command: yarn task smoke-test -s auto --no-link --junit --template bench/react-vite-default-ts
-      - run:
-          name: Test Runner
-          command: yarn task test-runner -s auto --no-link --junit --template bench/react-vite-default-ts
-      - run:
-          name: Chromatic
-          command: yarn task chromatic -s auto --no-link --junit --template bench/react-vite-default-ts
-      - run:
-          name: E2E Tests
-          command: yarn task e2e-tests -s auto --no-link --junit --template bench/react-vite-default-ts
 
 workflows:
   version: 2

@@ -240,7 +240,6 @@ workflows:
           name: react-vite/default-ts
           requires: [build]
           template-name: react-vite/default-ts
-          class: xlarge
           smoke-test: true
           test-runner: true
           vitest-integration: true
@@ -250,7 +249,6 @@ workflows:
           name: angular-cli/default-ts
           requires: [build]
           template-name: angular-cli/default-ts
-          class: xlarge
           smoke-test: true
           test-runner: true
           vitest-integration: true
@@ -260,7 +258,6 @@ workflows:
           name: bench/react-vite-default-ts
           requires: [build]
           template-name: bench/react-vite-default-ts
-          class: xlarge
           smoke-test: true
           test-runner: false
           vitest-integration: false

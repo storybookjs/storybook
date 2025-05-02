@@ -91,8 +91,7 @@
       "description": "Global styles to be included in the build.",
       "items": {
         "$ref": "#/definitions/styleElement"
-      },
-      "default": ""
+      }
     },
     "stylePreprocessorOptions": {
       "description": "Options to pass to style preprocessors.",
@@ -106,8 +105,7 @@
           }
         }
       },
-      "additionalProperties": false,
-      "default": ""
+      "additionalProperties": false
     },
     "assets": {
       "type": "array",

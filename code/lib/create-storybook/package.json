@@ -1,6 +1,6 @@
 {
   "name": "create-storybook",
-  "version": "9.0.0-beta.5",
+  "version": "9.0.0-beta.7",
   "description": "Initialize Storybook into your project",
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/lib/create-storybook",
   "bugs": {
@@ -55,7 +55,7 @@
     "storybook": "workspace:*",
     "tiny-invariant": "^1.3.1",
     "ts-dedent": "^2.0.0",
-    "typescript": "^5.7.3"
+    "typescript": "^5.8.3"
   },
   "publishConfig": {
     "access": "public"

@@ -58,8 +58,8 @@ export const ComplexStory = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/react';
+```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts"
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { MyComponent } from './MyComponent';
 
@@ -73,38 +73,6 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-export const simpleData = { foo: 1, bar: 'baz' };
-export const complexData = { foo: 1, foobar: { bar: 'baz', baz: someData } };
-
-export const SimpleStory: Story = {
-  args: {
-    data: simpleData,
-  },
-};
-
-export const ComplexStory: Story = {
-  args: {
-    data: complexData,
-  },
-};
-```
-
-```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts"
-import type { Meta, StoryObj } from '@storybook/react';
-
-import { MyComponent } from './MyComponent';
-
-import someData from './data.json';
-
-const meta: Meta<typeof MyComponent> = {
-  component: MyComponent,
-  includeStories: ['SimpleStory', 'ComplexStory'], // 👈 Storybook loads these stories
-  excludeStories: /.*Data$/, // 👈 Storybook ignores anything that contains Data
-};
-
-export default meta;
-type Story = StoryObj<typeof MyComponent>;
 
 export const simpleData = { foo: 1, bar: 'baz' };
 export const complexData = { foo: 1, foobar: { bar: 'baz', baz: someData } };
@@ -149,7 +117,7 @@ export const ComplexStory = {
 };
 ```
 
-```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts-4-9"
+```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts"
 import type { Meta, StoryObj } from 'storybook-solidjs';
 
 import { MyComponent } from './MyComponent';
@@ -164,38 +132,6 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-export const simpleData = { foo: 1, bar: 'baz' };
-export const complexData = { foo: 1, foobar: { bar: 'baz', baz: someData } };
-
-export const SimpleStory: Story = {
-  args: {
-    data: simpleData,
-  },
-};
-
-export const ComplexStory: Story = {
-  args: {
-    data: complexData,
-  },
-};
-```
-
-```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs';
-
-import { MyComponent } from './MyComponent';
-
-import someData from './data.json';
-
-const meta: Meta<typeof MyComponent> = {
-  component: MyComponent,
-  includeStories: ['SimpleStory', 'ComplexStory'], // 👈 Storybook loads these stories
-  excludeStories: /.*Data$/, // 👈 Storybook ignores anything that contains Data
-};
-
-export default meta;
-type Story = StoryObj<typeof MyComponent>;
 
 export const simpleData = { foo: 1, bar: 'baz' };
 export const complexData = { foo: 1, foobar: { bar: 'baz', baz: someData } };
@@ -240,8 +176,8 @@ export const ComplexStory = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/svelte';
+```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts"
+import type { Meta, StoryObj } from '@storybook/svelte-vite';
 
 import MyComponent from './MyComponent.svelte';
 
@@ -252,38 +188,6 @@ const meta = {
   includeStories: ['SimpleStory', 'ComplexStory'], // 👈 Storybook loads these stories
   excludeStories: /.*Data$/, // 👈 Storybook ignores anything that contains Data
 } satisfies Meta<typeof MyComponent>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const simpleData = { foo: 1, bar: 'baz' };
-export const complexData = { foo: 1, foobar: { bar: 'baz', baz: someData } };
-
-export const SimpleStory: Story = {
-  args: {
-    data: simpleData,
-  },
-};
-
-export const ComplexStory: Story = {
-  args: {
-    data: complexData,
-  },
-};
-```
-
-```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts"
-import type { Meta, StoryObj } from '@storybook/svelte';
-
-import MyComponent from './MyComponent.svelte';
-
-import someData from './data.json';
-
-const meta: Meta<typeof MyComponent> = {
-  component: MyComponent,
-  includeStories: ['SimpleStory', 'ComplexStory'], // 👈 Storybook loads these stories
-  excludeStories: /.*Data$/, // 👈 Storybook ignores anything that contains Data
-};
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -331,8 +235,8 @@ export const ComplexStory = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="vue" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/vue3';
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts"
+import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import MyComponent from './MyComponent.vue';
 
@@ -349,38 +253,6 @@ export const complexData = { foo: 1, foobar: { bar: 'baz', baz: someData } };
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-export const SimpleStory: Story = {
-  args: {
-    data: simpleData,
-  },
-};
-
-export const ComplexStory: Story = {
-  args: {
-    data: complexData,
-  },
-};
-```
-
-```ts filename="MyComponent.stories.ts" renderer="vue" language="ts"
-import type { Meta, StoryObj } from '@storybook/vue3';
-
-import MyComponent from './MyComponent.vue';
-
-import someData from './data.json';
-
-const meta: Meta<typeof MyComponent> = {
-  component: MyComponent,
-  includeStories: ['SimpleStory', 'ComplexStory'],
-  excludeStories: /.*Data$/, // 👈 Storybook ignores anything that contains Data
-};
-
-export const simpleData = { foo: 1, bar: 'baz' };
-export const complexData = { foo: 1, foobar: { bar: 'baz', baz: someData } };
-
-export default meta;
-type Story = StoryObj<typeof MyComponent>;
 
 export const SimpleStory: Story = {
   args: {
@@ -419,7 +291,7 @@ export const ComplexStory = {
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
   component: 'my-component',

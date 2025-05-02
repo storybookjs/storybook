@@ -18,7 +18,6 @@ export type AnalysedPackage = {
   availableUpdate?: string;
   availableCoreUpdate?: string;
   packageStorybookVersion?: string;
-  isDeprecatedPackage?: boolean;
 };
 
 type Context = {
@@ -51,7 +50,11 @@ export const checkPackageCompatibility = async (
       ...dependencies,
       ...peerDependencies,
     })
-      .filter(([dep]) => storybookCorePackages[dep as keyof typeof storybookCorePackages])
+      .filter(
+        ([dep]) =>
+          storybookCorePackages[dep as keyof typeof storybookCorePackages] ||
+          consolidatedPackages[dep as keyof typeof consolidatedPackages]
+      )
       .map(([_, versionRange]) => versionRange)
       .find((versionRange) => {
         // prevent issues with "tag" based versions e.g. "latest" or "next" instead of actual numbers
@@ -63,27 +66,18 @@ export const checkPackageCompatibility = async (
       });
 
     const isCorePackage = storybookCorePackages[name as keyof typeof storybookCorePackages];
-    const isDeprecatedPackage = !!consolidatedPackages[name as keyof typeof consolidatedPackages];
 
     let availableUpdate;
     let availableCoreUpdate;
 
     // For now, we notify about updates only for core packages (which will match the currently installed storybook version)
     // In the future, we can use packageManager.latestVersion(name, constraint) for all packages
-    if (
-      (isCorePackage || isDeprecatedPackage) &&
-      packageVersion &&
-      semver.gt(currentStorybookVersion, packageVersion)
-    ) {
+    if (isCorePackage && packageVersion && semver.gt(currentStorybookVersion, packageVersion)) {
       availableUpdate = currentStorybookVersion;
     }
 
     // If the package is greater than the current version, this means a core update is available.
-    if (
-      (isCorePackage || isDeprecatedPackage) &&
-      packageVersion &&
-      semver.gt(packageVersion, currentStorybookVersion)
-    ) {
+    if (isCorePackage && packageVersion && semver.gt(packageVersion, currentStorybookVersion)) {
       availableCoreUpdate = packageVersion;
     }
 
@@ -91,11 +85,10 @@ export const checkPackageCompatibility = async (
       packageName: name,
       packageVersion,
       homepage,
-      hasIncompatibleDependencies: packageStorybookVersion != null && !isDeprecatedPackage,
+      hasIncompatibleDependencies: packageStorybookVersion != null,
       packageStorybookVersion,
       availableUpdate,
       availableCoreUpdate,
-      isDeprecatedPackage,
     };
   } catch (err) {
     if (!skipErrors) {
@@ -129,11 +122,7 @@ export const getIncompatiblePackagesSummary = (
   const summaryMessage: string[] = [];
 
   const incompatiblePackages = dependencyAnalysis.filter(
-    (dep) => dep.hasIncompatibleDependencies && !dep.isDeprecatedPackage
-  ) as AnalysedPackage[];
-
-  const deprecatedPackages = dependencyAnalysis.filter(
-    (dep) => dep.isDeprecatedPackage
+    (dep) => dep.hasIncompatibleDependencies
   ) as AnalysedPackage[];
 
   if (incompatiblePackages.length > 0) {
@@ -186,25 +175,6 @@ export const getIncompatiblePackagesSummary = (
         picocolors.blue('npx storybook@latest upgrade')
       );
     }
-  }
-
-  if (deprecatedPackages.length > 0) {
-    summaryMessage.push(
-      '\n',
-      picocolors.red(
-        'The following Storybook packages are deprecated and should be removed from your package.json:'
-      ),
-      ...deprecatedPackages.map(({ packageName, packageVersion, homepage }) => {
-        const packageDescription = `${picocolors.cyan(packageName)}@${picocolors.cyan(packageVersion)}`;
-        const packageRepo = homepage ? `\n Repo: ${picocolors.yellow(homepage)}` : '';
-        return `- ${packageDescription}${packageRepo}`;
-      }),
-      '\n',
-      picocolors.yellow('For migration instructions, see the migration guide:'),
-      picocolors.yellow(
-        'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#dropped-support-for-legacy-packages'
-      )
-    );
   }
 
   return summaryMessage.join('\n');

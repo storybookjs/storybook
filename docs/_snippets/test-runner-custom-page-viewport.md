@@ -18,7 +18,7 @@ module.exports = {
           // Converts the viewport size from percentages to numbers
           [screen]: parseInt(size),
         }),
-        {}
+        {},
       );
       // Configures the Playwright page to use the viewport size
       page.setViewportSize(viewportSize);
@@ -51,7 +51,7 @@ const config: TestRunnerConfig = {
           // Converts the viewport size from percentages to numbers
           [screen]: parseInt(size),
         }),
-        {}
+        {},
       );
       // Configures the Playwright page to use the viewport size
       page.setViewportSize(viewportSize);

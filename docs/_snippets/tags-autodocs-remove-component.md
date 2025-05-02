@@ -45,47 +45,6 @@ export default {
 };
 ```
 
-```svelte filename="Page.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
-<script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
-
-  import Page from './Page.svelte';
-
-  const { Story } = defineMeta({
-    component: Page,
-    // 👇 Disable auto-generated documentation for this component
-    tags: ['!autodocs'],
-  });
-</script>
-```
-
-```ts filename="Page.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="CSF"
-import type { Meta } from '@storybook/svelte';
-
-import Page from './Page.svelte';
-
-const meta = {
-  component: Page,
-  // 👇 Disable auto-generated documentation for this component
-  tags: ['!autodocs'],
-} satisfies Meta<typeof Page>;
-export default meta;
-```
-
-```ts filename="Page.stories.ts" renderer="common" language="ts-4-9"
-// Replace your-framework with the framework you are using (e.g., nextjs, vue3-vite)
-import type { Meta } from '@storybook/your-framework';
-
-import { Page } from './Page';
-
-const meta = {
-  component: Page,
-  // 👇 Disable auto-generated documentation for this component
-  tags: ['!autodocs'],
-} satisfies Meta<typeof Page>;
-export default meta;
-```
-
 ```svelte filename="Page.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
@@ -101,29 +60,29 @@ export default meta;
 ```
 
 ```ts filename="Page.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
-import type { Meta } from '@storybook/svelte';
+import type { Meta } from '@storybook/svelte-vite';
 
 import Page from './Page.svelte';
 
-const meta: Meta<typeof Page> = {
+const meta = {
   component: Page,
   // 👇 Disable auto-generated documentation for this component
   tags: ['!autodocs'],
-};
+} satisfies Meta<typeof Page>;
 export default meta;
 ```
 
 ```ts filename="Page.stories.ts" renderer="common" language="ts"
-// Replace your-framework with the framework you are using (e.g., nextjs, vue3-vite)
+// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
 import type { Meta } from '@storybook/your-framework';
 
 import { Page } from './Page';
 
-const meta: Meta<typeof Page> = {
+const meta = {
   component: Page,
   // 👇 Disable auto-generated documentation for this component
   tags: ['!autodocs'],
-};
+} satisfies Meta<typeof Page>;
 export default meta;
 ```
 
@@ -137,7 +96,7 @@ export default {
 ```
 
 ```ts filename="Page.stories.ts" renderer="web-components" language="ts"
-import type { Meta } from '@storybook/web-components';
+import type { Meta } from '@storybook/web-components-vite';
 
 const meta: Meta = {
   title: 'Page',

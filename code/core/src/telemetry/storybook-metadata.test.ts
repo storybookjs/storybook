@@ -420,5 +420,15 @@ describe('storybook-metadata', () => {
         });
       }
     );
+
+    it('should detect userSince info', async () => {
+      const res = await computeStorybookMetadata({
+        packageJson: packageJsonMock,
+        packageJsonPath,
+        mainConfig: mainJsMock,
+      });
+
+      expect(res.userSince).toBeDefined();
+    });
   });
 });

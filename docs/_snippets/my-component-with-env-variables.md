@@ -64,64 +64,6 @@ export const ExampleStory = {
 };
 ```
 
-```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
-<script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
-
-  import MyComponent from './MyComponent.svelte';
-
-  const { Story } = defineMeta({
-    component: MyComponent,
-  });
-</script>
-
-<Story
-  name="ExampleStory"
-  args={{
-    propertyA: process.env.STORYBOOK_DATA_KEY
-  }}
-/>
-```
-
-```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="CSF"
-import type { Meta, StoryObj } from '@storybook/svelte';
-
-import MyComponent from './MyComponent.svelte';
-
-const meta = {
-  component: MyComponent,
-} satisfies Meta<typeof MyComponent>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const ExampleStory: Story = {
-  args: {
-    propertyA: process.env.STORYBOOK_DATA_KEY,
-  },
-};
-```
-
-```ts filename="MyComponent.stories.ts|tsx" renderer="common" language="ts-4-9"
-// Replace your-framework with the name of your framework
-import type { Meta, StoryObj } from '@storybook/your-framework';
-
-import { MyComponent } from './MyComponent';
-
-const meta = {
-  component: MyComponent,
-} satisfies Meta<typeof MyComponent>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const ExampleStory: Story = {
-  args: {
-    propertyA: process.env.STORYBOOK_DATA_KEY,
-  },
-};
-```
-
 ```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
@@ -142,16 +84,16 @@ export const ExampleStory: Story = {
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
-import type { Meta, StoryObj } from '@storybook/svelte';
+import type { Meta, StoryObj } from '@storybook/svelte-vite';
 
 import MyComponent from './MyComponent.svelte';
 
-const meta: Meta<typeof MyComponent> = {
+const meta = {
   component: MyComponent,
-};
+} satisfies Meta<typeof MyComponent>;
 
 export default meta;
-type Story = StoryObj<typeof MyComponent>;
+type Story = StoryObj<typeof meta>;
 
 export const ExampleStory: Story = {
   args: {
@@ -161,17 +103,17 @@ export const ExampleStory: Story = {
 ```
 
 ```ts filename="MyComponent.stories.ts|tsx" renderer="common" language="ts"
-// Replace your-framework with the name of your framework
+// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { MyComponent } from './MyComponent';
 
-const meta: Meta<typeof MyComponent> = {
+const meta = {
   component: MyComponent,
-};
+} satisfies Meta<typeof MyComponent>;
 
 export default meta;
-type Story = StoryObj<typeof MyComponent>;
+type Story = StoryObj<typeof meta>;
 
 export const ExampleStory: Story = {
   args: {
@@ -193,7 +135,7 @@ export const ExampleStory = {
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
   component: 'my-component',

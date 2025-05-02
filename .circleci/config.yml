@@ -87,6 +87,19 @@ jobs:
     steps:
       - git-shallow-clone/checkout_advanced:
           clone_options: "--depth 1 --verbose"
+      - run:
+          name: Start Verdaccio (background)
+          command: yarn local-registry --open
+          working_directory: scripts
+          background: true
+      - run:
+          name: Wait for Proxy (port 6001)
+          command: yarn wait-on tcp:127.0.0.1:6001
+          working_directory: scripts
+      - run:
+          name: Wait for Verdaccio (port 6002)
+          command: yarn wait-on tcp:127.0.0.1:6002
+          working_directory: scripts
       - attach_workspace:
           at: /tmp/storybook
       - run:
@@ -114,6 +127,19 @@ jobs:
     steps:
       - git-shallow-clone/checkout_advanced:
           clone_options: "--depth 1 --verbose"
+      - run:
+          name: Start Verdaccio (background)
+          command: yarn local-registry --open
+          working_directory: scripts
+          background: true
+      - run:
+          name: Wait for Proxy (port 6001)
+          command: yarn wait-on tcp:127.0.0.1:6001
+          working_directory: scripts
+      - run:
+          name: Wait for Verdaccio (port 6002)
+          command: yarn wait-on tcp:127.0.0.1:6002
+          working_directory: scripts
       - attach_workspace:
           at: /tmp/storybook
       - run:
@@ -138,6 +164,19 @@ jobs:
     steps:
       - git-shallow-clone/checkout_advanced:
           clone_options: "--depth 1 --verbose"
+      - run:
+          name: Start Verdaccio (background)
+          command: yarn local-registry --open
+          working_directory: scripts
+          background: true
+      - run:
+          name: Wait for Proxy (port 6001)
+          command: yarn wait-on tcp:127.0.0.1:6001
+          working_directory: scripts
+      - run:
+          name: Wait for Verdaccio (port 6002)
+          command: yarn wait-on tcp:127.0.0.1:6002
+          working_directory: scripts
       - attach_workspace:
           at: /tmp/storybook
       - run:

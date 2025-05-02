@@ -141,13 +141,13 @@ describe('configureEslintPlugin', () => {
       const [filePath, content] = vi.mocked(writeFile).mock.calls[0];
       expect(filePath).toBe('.eslintrc.json');
       expect(content).toMatchInlineSnapshot(`
-      "{
-        "extends": [
-          "plugin:other",
-          "plugin:storybook/recommended"
-        ]
-      }"
-    `);
+        "{
+          extends: [
+            'plugin:other',
+            'plugin:storybook/recommended',
+          ],
+        }"
+      `);
     });
 
     it('should correctly parse and configure JSON5 .eslintrc.json with comments', async () => {
@@ -180,13 +180,13 @@ describe('configureEslintPlugin', () => {
       expect(filePath).toBe('.eslintrc.json');
       expect(content).toMatchInlineSnapshot(`
         "{
-          "extends": [
-            "plugin:other",
-            "plugin:storybook/recommended"
+          extends: [
+            'plugin:other',
+            'plugin:storybook/recommended',
           ],
-          "rules": {
-            "no-unused-vars": "warn"
-          }
+          rules: {
+            'no-unused-vars': 'warn',
+          },
         }"
       `);
     });

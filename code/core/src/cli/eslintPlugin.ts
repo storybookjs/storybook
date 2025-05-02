@@ -221,7 +221,7 @@ export async function configureEslintPlugin({
       eslintConfig.extends = [...existingExtends, 'plugin:storybook/recommended'] as string[];
 
       const spaces = detectIndent(eslintFileContents).amount || 2;
-      await writeFile(eslintConfigFile, JSON.stringify(eslintConfig, undefined, spaces));
+      await writeFile(eslintConfigFile, json5.stringify(eslintConfig, undefined, spaces));
     } else {
       if (isFlatConfig) {
         const code = await readFile(eslintConfigFile, { encoding: 'utf8' });

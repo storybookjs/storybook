@@ -114,6 +114,9 @@ type _UserEvent = typeof _userEvent;
 
 export interface UserEvent extends _UserEvent {}
 
+// @ts-expect-error CJS workaround
+export const uninstrumentedUserEvent = _userEvent.default ?? _userEvent;
+
 export const { userEvent }: { userEvent: UserEvent } = instrument(
   // @ts-expect-error CJS workaround
   { userEvent: _userEvent.default ?? _userEvent },

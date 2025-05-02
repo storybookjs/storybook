@@ -227,6 +227,7 @@ workflows:
       - lint
       - docs
       - sandbox-test:
+          name: react-vite/default-ts
           requires: [build]
           template-name: react-vite/default-ts
           class: xlarge
@@ -236,6 +237,7 @@ workflows:
           chromatic: true
           e2e: true
       - sandbox-test:
+          name: angular-cli/default-ts
           requires: [build]
           template-name: angular-cli/default-ts
           class: xlarge
@@ -245,6 +247,7 @@ workflows:
           chromatic: true
           e2e: true
       - sandbox-test:
+          name: bench/react-vite-default-ts
           requires: [build]
           template-name: bench/react-vite-default-ts
           class: xlarge

@@ -15,6 +15,9 @@ const meta: Meta<ProviderButtonComponent> = {
       providers: [{ provide: ApiService, useValue: mockService }],
     }),
   ],
+  parameters: {
+    useTestBedRenderer: true,
+  },
 };
 
 export default meta;

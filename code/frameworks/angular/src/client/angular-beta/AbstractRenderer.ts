@@ -1,11 +1,15 @@
 import { ApplicationRef, NgModule, Type } from '@angular/core';
-import { Subject } from 'rxjs';
+import { BehaviorSubject, Subject } from 'rxjs';
 import { stringify } from 'telejson';
 
 import { ICollection, StoryFnAngularReturnType } from '../types';
 import { PropertyExtractor } from './utils/PropertyExtractor';
 import { TestBedComponentBuilder } from './utils/TestBedComponentBuilder';
-import { getWrapperComponent } from './StorybookWrapperComponent';
+import { getWrapperComponent } from './TestBedWrapperComponent';
+import { getApplication, storyPropsProvider } from '../../renderer';
+import { queueBootstrapping } from './utils/BootstrapQueue';
+import { bootstrapApplication } from '@angular/platform-browser';
+import { getNextStoryUID } from './utils/StoryUID';
 
 type StoryRenderInfo = {
   storyFnAngular: StoryFnAngularReturnType;
@@ -19,7 +23,7 @@ declare global {
 }
 
 const applicationRefs = new Map<HTMLElement, ApplicationRef>();
-const componentBuilders: TestBedComponentBuilder[] = [];
+let componentBuilders: TestBedComponentBuilder[] = [];
 /**
  * Attribute name for the story UID that may be written to the targetDOMNode.
  *
@@ -36,6 +40,7 @@ export abstract class AbstractRenderer {
         appRef.destroy();
       }
     });
+    componentBuilders = [];
   }
 
   protected previousStoryRenderInfo = new Map<HTMLElement, StoryRenderInfo>();
@@ -71,6 +76,8 @@ export abstract class AbstractRenderer {
   }) {
     const targetSelector = this.generateTargetSelectorFromStoryId(targetDOMNode.id);
 
+    const newStoryProps$ = new BehaviorSubject<ICollection>(storyFnAngular.props);
+
     if (
       !this.fullRendererRequired({
         targetDOMNode,
@@ -81,11 +88,90 @@ export abstract class AbstractRenderer {
         forced,
       })
     ) {
-      // need unique attribute to get testbed instance for specific component
-      // to update props from story
-      // testbedInstance.setAndUpdateProps(...)
+      this.storyProps$.next(storyFnAngular.props);
+
       return;
     }
+
+    await this.beforeFullRender(targetDOMNode);
+
+    // Complete last BehaviorSubject and set a new one for the current module
+    if (this.storyProps$) {
+      this.storyProps$.complete();
+    }
+    this.storyProps$ = newStoryProps$;
+
+    this.initAngularRootElement(targetDOMNode, targetSelector);
+
+    const analyzedMetadata = new PropertyExtractor(storyFnAngular.moduleMetadata, component);
+    await analyzedMetadata.init();
+
+    const storyUid = this.generateStoryUIdFromRawStoryUid(
+      targetDOMNode.getAttribute(STORY_UID_ATTRIBUTE)
+    );
+    const componentSelector = storyUid !== null ? `${targetSelector}[${storyUid}]` : targetSelector;
+    if (storyUid !== null) {
+      const element = targetDOMNode.querySelector(targetSelector);
+      element.toggleAttribute(storyUid, true);
+    }
+
+    const application = getApplication({
+      storyFnAngular,
+      component,
+      targetSelector: componentSelector,
+      analyzedMetadata,
+    });
+
+    const providers = [
+      storyPropsProvider(newStoryProps$),
+      ...analyzedMetadata.applicationProviders,
+      ...(storyFnAngular.applicationConfig?.providers ?? []),
+    ];
+
+    if (STORYBOOK_ANGULAR_OPTIONS?.experimentalZoneless) {
+      const { provideExperimentalZonelessChangeDetection } = await import('@angular/core');
+      if (!provideExperimentalZonelessChangeDetection) {
+        throw new Error('Experimental zoneless change detection requires Angular 18 or higher');
+      } else {
+        providers.unshift(provideExperimentalZonelessChangeDetection());
+      }
+    }
+
+    const applicationRef = await queueBootstrapping(() => {
+      return bootstrapApplication(application, {
+        ...storyFnAngular.applicationConfig,
+        providers,
+      });
+    });
+
+    applicationRefs.set(targetDOMNode, applicationRef);
+  }
+
+  /**
+   * Bootstrap main angular module with main component with testbed api
+   *
+   * @param storyFnAngular {StoryFnAngularReturnType}
+   * @param forced {boolean}
+   * @param component {Component}
+   */
+  public async renderWithTestBed({
+    storyFnAngular,
+    forced,
+    component,
+    targetDOMNode,
+  }: {
+    storyFnAngular: StoryFnAngularReturnType;
+    forced: boolean;
+    component?: any;
+    targetDOMNode: HTMLElement;
+  }) {
+    const targetSelector = this.generateTargetSelectorFromStoryId(targetDOMNode.id);
+
+    // need unique attribute to get testbed instance for specific component
+    // to update props from story
+    // get instance by id
+    // testbedInstance.setAndUpdateProps(...)
+    // return;
 
     await this.beforeFullRender(targetDOMNode);
 

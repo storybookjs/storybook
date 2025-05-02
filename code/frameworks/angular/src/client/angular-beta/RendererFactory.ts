@@ -1,6 +1,7 @@
 import { AbstractRenderer } from './AbstractRenderer';
 import { CanvasRenderer } from './CanvasRenderer';
 import { DocsRenderer } from './DocsRenderer';
+import { TestBedRenderer } from './TestBedRenderer';
 
 type RenderType = 'canvas' | 'docs';
 export class RendererFactory {
@@ -8,8 +9,12 @@ export class RendererFactory {
 
   private rendererMap = new Map<string, AbstractRenderer>();
 
-  public async getRendererInstance(targetDOMNode: HTMLElement): Promise<AbstractRenderer | null> {
+  public async getRendererInstance(
+    targetDOMNode: HTMLElement,
+    useTestBedRenderer: boolean
+  ): Promise<AbstractRenderer | null> {
     const targetId = targetDOMNode.id;
+
     // do nothing if the target node is null
     // fix a problem when the docs asks 2 times the same component at the same time
     // the 1st targetDOMNode of the 1st requested rendering becomes null 🤷‍♂️
@@ -26,16 +31,19 @@ export class RendererFactory {
     }
 
     if (!this.rendererMap.has(targetId)) {
-      this.rendererMap.set(targetId, this.buildRenderer(renderType));
+      this.rendererMap.set(targetId, this.buildRenderer(renderType, useTestBedRenderer));
     }
 
     this.lastRenderType = renderType;
     return this.rendererMap.get(targetId);
   }
 
-  private buildRenderer(renderType: RenderType) {
+  private buildRenderer(renderType: RenderType, useTestBedRenderer: boolean) {
     if (renderType === 'docs') {
       return new DocsRenderer();
+    }
+    if (useTestBedRenderer === true) {
+      return new TestBedRenderer();
     }
     return new CanvasRenderer();
   }

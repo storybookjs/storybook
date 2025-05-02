@@ -6,7 +6,7 @@ import {
 import { ApplicationRef, Type } from '@angular/core';
 import { PropertyExtractor } from './PropertyExtractor';
 import { ICollection, StoryFnAngularReturnType } from '../../types';
-import { getWrapperModule } from '../StorybookWrapperComponent';
+import { getWrapperModule } from '../TestBedWrapperComponent';
 import {
   GenerateComponentMetaData,
   GenerateModuleMetaData,

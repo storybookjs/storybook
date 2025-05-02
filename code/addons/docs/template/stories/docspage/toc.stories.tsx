@@ -4,10 +4,9 @@ import { styled } from 'storybook/internal/theming';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { expect, userEvent, within } from 'storybook/test';
+import { Heading, TableOfContents } from '@storybook/addon-docs/blocks';
 
-import { Heading } from '../../../src/blocks/blocks/Heading';
-import { TableOfContents } from '../../../src/blocks/components/TableOfContents';
+import { expect, within } from 'storybook/test';
 
 const MockPage = styled.div`
   display: flex;

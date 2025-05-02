@@ -139,10 +139,25 @@ jobs:
           command: yarn docs:prettier:check
           working_directory: scripts
 
-  sandbox-test-react-vite-default-ts:
+  sandbox-test:
+    parameters:
+      template-name:
+        type: string
+      class:
+        type: string
+      smoke-test:
+        type: boolean
+      test-runner:
+        type: boolean
+      vitest-integration:
+        type: boolean
+      chromatic:
+        type: boolean
+      e2e:
+        type: boolean
     executor:
       name: sb_playwright
-      class: xlarge
+      class: << parameters.class >>
     steps:
       - attach_workspace:
           at: /tmp/storybook
@@ -169,110 +184,40 @@ jobs:
           working_directory: scripts
       - run:
           name: Create Sandbox
-          command: yarn task sandbox -s auto --no-link --junit --template react-vite/default-ts
+          command: yarn task sandbox -s auto --no-link --junit --template << parameters.template-name >>
       - run:
           name: Build static storybook
-          command: yarn task build -s auto --no-link --junit --template react-vite/default-ts
-      - run:
-          name: Smoke Test
-          command: yarn task smoke-test -s auto --no-link --junit --template react-vite/default-ts
-      - run:
-          name: Test Runner
-          command: yarn task test-runner -s auto --no-link --junit --template react-vite/default-ts
-      - run:
-          name: Vitest Integration
-          command: yarn task vitest-integration -s auto --no-link --junit --template react-vite/default-ts
-      - run:
-          name: Chromatic
-          command: yarn task chromatic -s auto --no-link --junit --template react-vite/default-ts
-      - run:
-          name: E2E Tests
-          command: yarn task e2e-tests -s auto --no-link --junit --template react-vite/default-ts
-
-  sandbox-test-angular-cli-default-ts:
-    executor:
-      name: sb_playwright
-      class: xlarge
-    steps:
-      - attach_workspace:
-          at: /tmp/storybook
-      - run:
-          name: Setup Corepack
-          command: corepack enable
-      - run:
-          name: Verify corepack & yarn install
-          command: |
-            which yarn
-            yarn --version
-      - run:
-          name: Start Verdaccio (background)
-          command: yarn local-registry --open
-          working_directory: scripts
-          background: true
-      - run:
-          name: Wait for Proxy (port 6001)
-          command: yarn wait-on tcp:127.0.0.1:6001
-          working_directory: scripts
-      - run:
-          name: Wait for Verdaccio (port 6002)
-          command: yarn wait-on tcp:127.0.0.1:6002
-          working_directory: scripts
-      - run:
-          name: Create Sandbox
-          command: yarn task sandbox -s auto --no-link --junit --template angular-cli/default-ts
-      - run:
-          name: Build static storybook
-          command: yarn task build -s auto --no-link --junit --template angular-cli/default-ts
-      - run:
-          name: Smoke Test
-          command: yarn task smoke-test -s auto --no-link --junit --template angular-cli/default-ts
-      - run:
-          name: Test Runner
-          command: yarn task test-runner -s auto --no-link --junit --template angular-cli/default-ts
-      - run:
-          name: Chromatic
-          command: yarn task chromatic -s auto --no-link --junit --template angular-cli/default-ts
-      - run:
-          name: E2E Tests
-          command: yarn task e2e-tests -s auto --no-link --junit --template angular-cli/default-ts
-
-  sandbox-test-bench-react-vite-default-ts:
-    executor:
-      name: sb_playwright
-      class: xlarge
-    steps:
-      - attach_workspace:
-          at: /tmp/storybook
-      - run:
-          name: Setup Corepack
-          command: corepack enable
-      - run:
-          name: Verify corepack & yarn install
-          command: |
-            which yarn
-            yarn --version
-      - run:
-          name: Start Verdaccio (background)
-          command: yarn local-registry --open
-          working_directory: scripts
-          background: true
-      - run:
-          name: Wait for Proxy (port 6001)
-          command: yarn wait-on tcp:127.0.0.1:6001
-          working_directory: scripts
-      - run:
-          name: Wait for Verdaccio (port 6002)
-          command: yarn wait-on tcp:127.0.0.1:6002
-          working_directory: scripts
-      - run:
-          name: Create Sandbox
-          command: yarn task sandbox -s auto --no-link --junit --template bench/react-vite-default-ts
-      - run:
-          name: Build static storybook
-          command: yarn task build -s auto --no-link --junit --template bench/react-vite-default-ts
-      - run:
-          name: Smoke Test
-          command: yarn task smoke-test -s auto --no-link --junit --template bench/react-vite-default-ts
+          command: yarn task build -s auto --no-link --junit --template << parameters.template-name >>
+      - when:
+          condition: << parameters.smoke-test >>
+          steps:
+            - run:
+                name: Smoke Test
+                command: yarn task smoke-test -s auto --no-link --junit --template << parameters.template-name >>
+      - when:
+          condition: << parameters.test-runner >>
+          steps:
+            - run:
+                name: Test Runner
+                command: yarn task test-runner -s auto --no-link --junit --template << parameters.template-name >>
+      - when:
+          condition: << parameters.vitest-integration >>
+          steps:
+            - run:
+                name: Vitest Integration
+                command: yarn task vitest-integration -s auto --no-link --junit --template << parameters.template-name >>
+      - when:
+          condition: << parameters.chromatic >>
+          steps:
+            - run:
+                name: Chromatic
+                command: yarn task chromatic -s auto --no-link --junit --template << parameters.template-name >>
+      - when:
+          condition: << parameters.e2e >>
+          steps:
+            - run:
+                name: E2E Tests
+                command: yarn task e2e-tests -s auto --no-link --junit --template << parameters.template-name >>
 
 workflows:
   version: 2
@@ -281,9 +226,30 @@ workflows:
       - build
       - lint
       - docs
-      - sandbox-test-react-vite-default-ts:
-          requires: [build]
-      - sandbox-test-angular-cli-default-ts:
-          requires: [build]
-      - sandbox-test-bench-react-vite-default-ts:
-          requires: [build]
+      - sandbox-test:
+          parameters:
+            template-name: react-vite/default-ts
+            class: xlarge
+            smoke-test: true
+            test-runner: true
+            vitest-integration: true
+            chromatic: true
+            e2e: true
+      - sandbox-test:
+          parameters:
+            template-name: angular-cli/default-ts
+            class: xlarge
+            smoke-test: true
+            test-runner: true
+            vitest-integration: true
+            chromatic: true
+            e2e: true
+      - sandbox-test:
+          parameters:
+            template-name: bench/react-vite-default-ts
+            class: xlarge
+            smoke-test: true
+            test-runner: true
+            vitest-integration: true
+            chromatic: true
+            e2e: true

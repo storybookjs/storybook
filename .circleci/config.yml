@@ -87,8 +87,8 @@ jobs:
   sandbox-test-react-vite-default-ts:
     executor: sb_node_22_browsers
     steps:
-      - git-shallow-clone/checkout_advanced:
-          clone_options: "--depth 1 --verbose"
+      - attach_workspace:
+          at: /tmp/storybook
       - run:
           name: Start Verdaccio (background)
           command: yarn local-registry --open
@@ -102,8 +102,6 @@ jobs:
           name: Wait for Verdaccio (port 6002)
           command: yarn wait-on tcp:127.0.0.1:6002
           working_directory: scripts
-      - attach_workspace:
-          at: /tmp/storybook
       - run:
           name: Build Sandbox
           command: |
@@ -127,8 +125,8 @@ jobs:
   sandbox-test-angular-cli-default-ts:
     executor: sb_node_22_browsers
     steps:
-      - git-shallow-clone/checkout_advanced:
-          clone_options: "--depth 1 --verbose"
+      - attach_workspace:
+          at: /tmp/storybook
       - run:
           name: Start Verdaccio (background)
           command: yarn local-registry --open
@@ -142,8 +140,6 @@ jobs:
           name: Wait for Verdaccio (port 6002)
           command: yarn wait-on tcp:127.0.0.1:6002
           working_directory: scripts
-      - attach_workspace:
-          at: /tmp/storybook
       - run:
           name: Build Sandbox
           command: |
@@ -164,8 +160,8 @@ jobs:
   sandbox-test-bench-react-vite-default-ts:
     executor: sb_node_22_browsers
     steps:
-      - git-shallow-clone/checkout_advanced:
-          clone_options: "--depth 1 --verbose"
+      - attach_workspace:
+          at: /tmp/storybook
       - run:
           name: Start Verdaccio (background)
           command: yarn local-registry --open
@@ -179,8 +175,6 @@ jobs:
           name: Wait for Verdaccio (port 6002)
           command: yarn wait-on tcp:127.0.0.1:6002
           working_directory: scripts
-      - attach_workspace:
-          at: /tmp/storybook
       - run:
           name: Build Sandbox
           command: |

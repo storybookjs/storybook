@@ -42,6 +42,12 @@ jobs:
             - scripts
             - .verdaccio-cache
             - .yarn
+            - node_modules
+            - package.json
+            - yarn.lock
+            - .yarnrc.yml
+            - prettier.config.mjs
+            - .ignore
       # creating a production build should not cause git pending changes
       - run:
           name: Check for pending changes
@@ -66,8 +72,16 @@ jobs:
           command: yarn task compile -s install
           working_directory: code
       - run:
-          name: Lint
-          command: yarn lint
+          name: Lint:JS
+          command: yarn lint:js
+          working_directory: code
+      - run:
+          name: Lint:Other
+          command: yarn lint:other
+          working_directory: code
+      - run:
+          name: Lint:Package
+          command: yarn lint:package
           working_directory: code
 
   docs:

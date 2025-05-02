@@ -20,6 +20,12 @@ export type PackageManagerName = 'npm' | 'yarn1' | 'yarn2' | 'pnpm' | 'bun';
 
 type StorybookPackage = keyof typeof storybookPackagesVersions;
 
+export const COMMON_ENV_VARS = {
+  COREPACK_ENABLE_STRICT: '0',
+  COREPACK_ENABLE_AUTO_PIN: '0',
+  NO_UPDATE_NOTIFIER: 'true',
+};
+
 /**
  * Extract package name and version from input
  *
@@ -533,7 +539,10 @@ export abstract class JsPackageManager {
         stdio: stdio ?? 'pipe',
         shell: true,
         cleanup: true,
-        env,
+        env: {
+          ...COMMON_ENV_VARS,
+          ...env,
+        },
         ...execaOptions,
       });
 
@@ -577,7 +586,10 @@ export abstract class JsPackageManager {
         encoding: 'utf8',
         shell: true,
         cleanup: true,
-        env,
+        env: {
+          ...COMMON_ENV_VARS,
+          ...env,
+        },
         ...execaOptions,
       });
 

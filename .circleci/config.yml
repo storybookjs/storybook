@@ -31,6 +31,19 @@ executors:
         environment:
           NODE_OPTIONS: --max_old_space_size=6144
     resource_class: <<parameters.class>>
+  sb_playwright:
+    parameters:
+      class:
+        description: The Resource class
+        type: enum
+        enum: ["small", "medium", "medium+", "large", "xlarge"]
+        default: "medium"
+    working_directory: /tmp/storybook
+    docker:
+      - image: mcr.microsoft.com/playwright:v1.48.1-jammy
+        environment:
+          NODE_OPTIONS: --max_old_space_size=6144
+
 jobs:
   build:
     executor:
@@ -127,7 +140,7 @@ jobs:
           working_directory: scripts
 
   sandbox-test-react-vite-default-ts:
-    executor: sb_node_22_browsers
+    executor: sb_playwright
     steps:
       - attach_workspace:
           at: /tmp/storybook
@@ -153,9 +166,11 @@ jobs:
           command: yarn wait-on tcp:127.0.0.1:6002
           working_directory: scripts
       - run:
-          name: Build Sandbox
-          command: |
-            yarn task build -s auto --no-link --junit --template react-vite/default-ts
+          name: Create Sandbox
+          command: yarn task sandbox -s auto --no-link --junit --template react-vite/default-ts
+      - run:
+          name: Build static storybook
+          command: yarn task build -s auto --no-link --junit --template react-vite/default-ts
       - run:
           name: Smoke Test
           command: yarn task smoke-test -s auto --no-link --junit --template react-vite/default-ts
@@ -199,9 +214,12 @@ jobs:
           command: yarn wait-on tcp:127.0.0.1:6002
           working_directory: scripts
       - run:
-          name: Build Sandbox
+          name: Create Sandbox
           command: |
-            yarn task build -s auto --no-link --junit --template angular-cli/default-ts --no-link --junit
+            yarn task build -s auto --no-link --junit --template angular-cli/default-ts
+      - run:
+          name: Build static storybook
+          command: yarn task build -s auto --no-link --junit --template angular-cli/default-ts
       - run:
           name: Smoke Test
           command: yarn task smoke-test -s auto --no-link --junit --template angular-cli/default-ts
@@ -242,10 +260,24 @@ jobs:
           command: yarn wait-on tcp:127.0.0.1:6002
           working_directory: scripts
       - run:
-          name: Build Sandbox
+          name: Create Sandbox
           command: |
-            yarn task build -s auto --no-link --junit --template bench/react-vite-default-ts --no-link --junit
-      # No event log checker or test steps for this bench template
+            yarn task build -s auto --no-link --junit --template bench/react-vite-default-ts
+      - run:
+          name: Build static storybook
+          command: yarn task build -s auto --no-link --junit --template bench/react-vite-default-ts
+      - run:
+          name: Smoke Test
+          command: yarn task smoke-test -s auto --no-link --junit --template bench/react-vite-default-ts
+      - run:
+          name: Test Runner
+          command: yarn task test-runner -s auto --no-link --junit --template bench/react-vite-default-ts
+      - run:
+          name: Chromatic
+          command: yarn task chromatic -s auto --no-link --junit --template bench/react-vite-default-ts
+      - run:
+          name: E2E Tests
+          command: yarn task e2e-tests -s auto --no-link --junit --template bench/react-vite-default-ts
 
 workflows:
   version: 2

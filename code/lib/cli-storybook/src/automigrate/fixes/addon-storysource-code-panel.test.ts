@@ -214,10 +214,10 @@ describe('addon-storysource-remove', () => {
 
       const writeFile = vi.mocked((await import('node:fs/promises')).writeFile);
 
-      expect(writeFile).toHaveBeenCalledWith(
-        '.storybook/preview.js',
-        dedent`
-        import React from 'react';
+      const newConfig = writeFile.mock.calls[0][1];
+
+      expect(newConfig).toMatchInlineSnapshot(dedent`
+        "import React from 'react';
         import { ThemeProvider, convert, themes } from 'storybook/theming';
 
         export const parameters = {
@@ -236,9 +236,8 @@ describe('addon-storysource-remove', () => {
               <StoryFn />
             </ThemeProvider>
           )
-        ];
-      `
-      );
+        ];"
+      `);
     });
 
     it('should add docs addon if it is not present', async () => {

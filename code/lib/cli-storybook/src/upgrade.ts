@@ -114,6 +114,85 @@ export const checkVersionConsistency = () => {
   });
 };
 
+function getVersionModifier(versionSpecifier: string) {
+  if (!versionSpecifier || typeof versionSpecifier !== 'string') {
+    return '';
+  }
+
+  // Split in case of complex version strings like "9.0.0 || >= 0.0.0-pr.0"
+  const firstPart = versionSpecifier.split(/\s*\|\|\s*/)[0].trim();
+
+  // Match common modifiers
+  const match = firstPart.match(/^([~^><=]+)/);
+
+  return match ? match[1] : '';
+}
+
+/** Based on a list of dependencies, return a which need upgrades and to which versions */
+export const toUpgradedDependencies = async (
+  deps: Record<string, string> = {},
+  packageManager: JsPackageManager,
+  {
+    isCanary = false,
+    isCLIOutdated = false,
+    isCLIPrerelease = false,
+    isCLIExactPrerelease = false,
+    isCLIExactLatest = false,
+  } = {}
+): Promise<string[]> => {
+  const monorepoDependencies = Object.keys(deps || {}).filter((dependency) => {
+    // only upgrade packages that are in the monorepo
+    return dependency in versions;
+  }) as Array<keyof typeof versions>;
+
+  const storybookCoreUpgrades = monorepoDependencies.map((dependency) => {
+    /**
+     * Respect the modifier that the user set to the dependency, but make it fixed when the CLI is
+     * outdated (e.g. user is downgrading) or when upgrading to a canary version.
+     *
+     * Example outputs:
+     *
+     * - @storybook/react@9.0.0
+     * - @storybook/react@^9.0.0
+     * - @storybook/react@~9.0.0
+     */
+    let char = getVersionModifier(deps[dependency]);
+
+    if (isCLIOutdated) {
+      char = '';
+    }
+    if (isCanary) {
+      char = '';
+    }
+
+    return `${dependency}@${char}${versions[dependency]}`;
+  });
+
+  let storybookSatelliteUpgrades: string[] = [];
+  if (isCLIExactPrerelease || isCLIExactLatest) {
+    const satelliteDependencies = Object.keys(deps).filter(isSatelliteAddon);
+
+    if (satelliteDependencies.length > 0) {
+      try {
+        // respect the existing character here.
+        storybookSatelliteUpgrades = await Promise.all(
+          satelliteDependencies.map(async (dependency) => {
+            const latestVersion = await packageManager.latestVersion(
+              isCLIPrerelease ? `${dependency}@next` : dependency
+            );
+            const modifier = getVersionModifier(deps[dependency]);
+            return `${dependency}@${modifier}${latestVersion}`;
+          })
+        );
+      } catch (error) {
+        // If there is an error fetching satellite dependencies, we don't want to block the upgrade
+      }
+    }
+  }
+
+  return [...storybookCoreUpgrades, ...storybookSatelliteUpgrades];
+};
+
 export interface UpgradeOptions {
   skipCheck: boolean;
   packageManager?: PackageManagerName;
@@ -231,49 +310,29 @@ export const doUpgrade = async (allOptions: UpgradeOptions) => {
 
   // INSTALL UPDATED DEPENDENCIES
   if (!dryRun && !results) {
-    const toUpgradedDependencies = async (deps: Record<string, any>) => {
-      const monorepoDependencies = Object.keys(deps || {}).filter((dependency) => {
-        // only upgrade packages that are in the monorepo
-        return dependency in versions;
-      }) as Array<keyof typeof versions>;
-      const storybookCoreUpgrades = monorepoDependencies.map((dependency) => {
-        let char = '^';
-        if (isCLIOutdated) {
-          char = '';
-        }
-        if (isCanary) {
-          char = '';
-        }
-        /* add ^ modifier to the version if this is the latest stable or prerelease version
-           example outputs: @storybook/react@^8.0.0 */
-        return `${dependency}@${char}${versions[dependency]}`;
-      });
-
-      let storybookSatelliteUpgrades: string[] = [];
-      if (isCLIExactPrerelease || isCLIExactLatest) {
-        const satelliteDependencies = Object.keys(deps).filter(isSatelliteAddon);
-
-        if (satelliteDependencies.length > 0) {
-          try {
-            storybookSatelliteUpgrades = await Promise.all(
-              satelliteDependencies.map(async (dependency) => {
-                const latestVersion = await packageManager.latestVersion(
-                  isCLIPrerelease ? `${dependency}@next` : dependency
-                );
-                return `^${dependency}@${latestVersion}`;
-              })
-            );
-          } catch (error) {
-            // If there is an error fetchign satellite dependencies, we don't want to block the upgrade
-          }
-        }
+    const upgradedDependencies = await toUpgradedDependencies(
+      packageJson.dependencies || {},
+      packageManager,
+      {
+        isCanary,
+        isCLIOutdated,
+        isCLIPrerelease,
+        isCLIExactPrerelease,
+        isCLIExactLatest,
       }
+    );
 
-      return [...storybookCoreUpgrades, ...storybookSatelliteUpgrades];
-    };
-
-    const upgradedDependencies = await toUpgradedDependencies(packageJson.dependencies);
-    const upgradedDevDependencies = await toUpgradedDependencies(packageJson.devDependencies);
+    const upgradedDevDependencies = await toUpgradedDependencies(
+      packageJson.devDependencies || {},
+      packageManager,
+      {
+        isCanary,
+        isCLIOutdated,
+        isCLIPrerelease,
+        isCLIExactPrerelease,
+        isCLIExactLatest,
+      }
+    );
 
     // Add Storybook overrides to package.json when using npm to prevent peer dependency conflicts
     if (packageManager.type === 'npm') {

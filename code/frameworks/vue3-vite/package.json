@@ -59,7 +59,7 @@
     "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@storybook/builder-vite": "workspace:*",
+    "@storybook/builder-vite": "0.1.22",
     "@storybook/vue3": "workspace:*",
     "find-package-json": "^1.2.0",
     "magic-string": "^0.30.0",

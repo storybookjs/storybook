@@ -157,5 +157,6 @@ export const createLogStream = async (
   });
 };
 
-export const isCorePackage = (pkg: string) => Object.keys(storybookPackagesVersions).includes(pkg);
+export const isCorePackage = (pkg: string) =>
+  !!storybookPackagesVersions[pkg as keyof typeof storybookPackagesVersions];
 export const isSatelliteAddon = (pkg: string) => satelliteAddons.includes(pkg);

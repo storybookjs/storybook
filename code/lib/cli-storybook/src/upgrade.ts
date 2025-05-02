@@ -251,9 +251,7 @@ export const doUpgrade = async (allOptions: UpgradeOptions) => {
 
       let storybookSatelliteUpgrades: string[] = [];
       if (isCLIExactPrerelease || isCLIExactLatest) {
-        const satelliteDependencies = Object.keys(packageJson.dependencies).filter(
-          isSatelliteAddon
-        );
+        const satelliteDependencies = Object.keys(deps).filter(isSatelliteAddon);
 
         if (satelliteDependencies.length > 0) {
           try {
@@ -262,7 +260,7 @@ export const doUpgrade = async (allOptions: UpgradeOptions) => {
                 const latestVersion = await packageManager.latestVersion(
                   isCLIPrerelease ? `${dependency}@next` : dependency
                 );
-                return `${dependency}@${latestVersion}`;
+                return `^${dependency}@${latestVersion}`;
               })
             );
           } catch (error) {

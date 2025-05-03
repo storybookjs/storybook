@@ -7,7 +7,7 @@ orbs:
 executors:
   sb_node_22_classic:
     parameters:
-      class:
+      resource-size:
         description: The Resource class
         type: enum
         enum: ["small", "medium", "medium+", "large", "xlarge"]
@@ -17,10 +17,10 @@ executors:
       - image: cimg/node:22.13.1
         environment:
           NODE_OPTIONS: --max_old_space_size=6144
-    resource_class: <<parameters.class>>
+    resource_class: <<parameters.resource-size>>
   sb_node_22_browsers:
     parameters:
-      class:
+      resource-size:
         description: The Resource class
         type: enum
         enum: ["small", "medium", "medium+", "large", "xlarge"]
@@ -30,10 +30,10 @@ executors:
       - image: cimg/node:22.13.1-browsers
         environment:
           NODE_OPTIONS: --max_old_space_size=6144
-    resource_class: <<parameters.class>>
+    resource_class: <<parameters.resource-size>>
   sb_playwright:
     parameters:
-      class:
+      resource-size:
         description: The Resource class
         type: enum
         enum: ["small", "medium", "medium+", "large", "xlarge"]
@@ -43,13 +43,13 @@ executors:
       - image: mcr.microsoft.com/playwright:v1.48.1-jammy
         environment:
           NODE_OPTIONS: --max_old_space_size=6144
-    resource_class: <<parameters.class>>
+    resource_class: <<parameters.resource-size>>
 
 jobs:
   build:
     executor:
       name: sb_node_22_classic
-      class: large
+      resource-size: large
     steps:
       - git-shallow-clone/checkout_advanced:
           clone_options: "--depth 1 --verbose"
@@ -91,7 +91,7 @@ jobs:
   lint:
     executor:
       name: sb_node_22_classic
-      class: large
+      resource-size: large
     steps:
       - git-shallow-clone/checkout_advanced:
           clone_options: "--depth 1 --verbose"
@@ -127,7 +127,9 @@ jobs:
             yarn dedupe --check
 
   docs:
-    executor: sb_node_22_classic
+    executor:
+      name: sb_node_22_classic
+      resource-size: small
     steps:
       - git-shallow-clone/checkout_advanced:
           clone_options: "--depth 1 --verbose"
@@ -142,31 +144,31 @@ jobs:
 
   sandbox-test:
     parameters:
-      template-name:
-        type: string
-      class:
-        description: The Resource class
+      resource-size:
+        description: The Resource size
         type: enum
         enum: ["small", "medium", "medium+", "large", "xlarge"]
         default: "medium"
-      smoke-test:
+      template_id:
+        type: string
+      feature-smoke_test:
         type: boolean
         default: true
-      test-runner:
+      feature-test_runner:
         type: boolean
         default: true
-      vitest-integration:
+      feature-vitest_integration:
         type: boolean
         default: true
-      chromatic:
+      feature-chromatic:
         type: boolean
         default: true
-      e2e:
+      feature-e2e:
         type: boolean
         default: true
     executor:
       name: sb_playwright
-      class: << parameters.class >>
+      resource-size: << parameters.resource-size >>
     steps:
       - git-shallow-clone/checkout_advanced:
           clone_options: "--depth 1 --verbose"
@@ -195,43 +197,42 @@ jobs:
           working_directory: scripts
       - run:
           name: Create Sandbox
-          command: yarn task sandbox -s auto --no-link --junit --template << parameters.template-name >>
+          command: yarn task sandbox -s auto --no-link --junit --template << parameters.template_id >>
       - run:
           name: Build static storybook
-          command: yarn task build -s auto --no-link --junit --template << parameters.template-name >>
+          command: yarn task build -s auto --no-link --junit --template << parameters.template_id >>
       - when:
-          condition: << parameters.smoke-test >>
+          condition: << parameters.feature-smoke_test >>
           steps:
             - run:
                 name: Smoke Test
-                command: yarn task smoke-test -s auto --no-link --junit --template << parameters.template-name >>
+                command: yarn task smoke-test -s auto --no-link --junit --template << parameters.template_id >>
       - when:
-          condition: << parameters.test-runner >>
+          condition: << parameters.feature-test_runner >>
           steps:
             - run:
                 name: Test Runner
-                command: yarn task test-runner -s auto --no-link --junit --template << parameters.template-name >>
+                command: yarn task test-runner -s auto --no-link --junit --template << parameters.template_id >>
       - when:
-          condition: << parameters.vitest-integration >>
+          condition: << parameters.feature-vitest_integration >>
           steps:
             - run:
                 name: Vitest Integration
-                command: yarn task vitest-integration -s auto --no-link --junit --template << parameters.template-name >>
+                command: yarn task vitest-integration -s auto --no-link --junit --template << parameters.template_id >>
       - when:
-          condition: << parameters.chromatic >>
+          condition: << parameters.feature-chromatic >>
           steps:
             - run:
                 name: Chromatic
-                command: yarn task chromatic -s auto --no-link --junit --template << parameters.template-name >>
+                command: yarn task chromatic -s auto --no-link --junit --template << parameters.template_id >>
       - when:
-          condition: << parameters.e2e >>
+          condition: << parameters.feature-e2e >>
           steps:
             - run:
                 name: E2E Tests
-                command: yarn task e2e-tests -s auto --no-link --junit --template << parameters.template-name >>
+                command: yarn task e2e-tests -s auto --no-link --junit --template << parameters.template_id >>
 
 workflows:
-  version: 2
   normal:
     jobs:
       - build
@@ -240,30 +241,30 @@ workflows:
       - sandbox-test:
           name: react-vite/default-ts
           requires: [build]
-          class: large
-          template-name: react-vite/default-ts
-          smoke-test: true
-          test-runner: true
-          vitest-integration: true
-          chromatic: true
-          e2e: true
+          resource-size: large
+          template_id: react-vite/default-ts
+          feature-smoke_test: true
+          feature-test_runner: true
+          feature-vitest_integration: true
+          feature-chromatic: true
+          feature-e2e: true
       - sandbox-test:
           name: angular-cli/default-ts
           requires: [build]
-          class: xlarge
-          template-name: angular-cli/default-ts
-          smoke-test: true
-          test-runner: true
-          vitest-integration: true
-          chromatic: true
-          e2e: true
+          resource-size: xlarge
+          template_id: angular-cli/default-ts
+          feature-smoke_test: true
+          feature-test_runner: true
+          feature-vitest_integration: false
+          feature-chromatic: true
+          feature-e2e: true
       - sandbox-test:
           name: bench/react-vite-default-ts
           requires: [build]
-          class: medium
-          template-name: bench/react-vite-default-ts
-          smoke-test: true
-          test-runner: false
-          vitest-integration: false
-          chromatic: false
-          e2e: false
+          resource-size: medium
+          template_id: bench/react-vite-default-ts
+          feature-smoke_test: true
+          feature-test_runner: false
+          feature-vitest_integration: false
+          feature-chromatic: false
+          feature-e2e: false

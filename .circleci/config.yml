@@ -43,6 +43,7 @@ executors:
       - image: mcr.microsoft.com/playwright:v1.48.1-jammy
         environment:
           NODE_OPTIONS: --max_old_space_size=6144
+    resource_class: <<parameters.class>>
 
 jobs:
   build:
@@ -143,11 +144,11 @@ jobs:
     parameters:
       template-name:
         type: string
-      #   class:
-      #     description: The Resource class
-      #     type: enum
-      #     enum: ["small", "medium", "medium+", "large", "xlarge"]
-      #     default: "medium"
+        class:
+          description: The Resource class
+          type: enum
+          enum: ["small", "medium", "medium+", "large", "xlarge"]
+          default: "medium"
       smoke-test:
         type: boolean
         default: true
@@ -165,7 +166,7 @@ jobs:
         default: true
     executor:
       name: sb_playwright
-      class: xlarge
+      class: << parameters.class >>
     steps:
       - git-shallow-clone/checkout_advanced:
           clone_options: "--depth 1 --verbose"
@@ -239,6 +240,7 @@ workflows:
       - sandbox-test:
           name: react-vite/default-ts
           requires: [build]
+          class: large
           template-name: react-vite/default-ts
           smoke-test: true
           test-runner: true
@@ -248,6 +250,7 @@ workflows:
       - sandbox-test:
           name: angular-cli/default-ts
           requires: [build]
+          class: xlarge
           template-name: angular-cli/default-ts
           smoke-test: true
           test-runner: true
@@ -257,6 +260,7 @@ workflows:
       - sandbox-test:
           name: bench/react-vite-default-ts
           requires: [build]
+          class: medium
           template-name: bench/react-vite-default-ts
           smoke-test: true
           test-runner: false

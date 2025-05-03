@@ -1,15 +1,13 @@
-import { ApplicationRef, NgModule, Type } from '@angular/core';
+import { ApplicationRef, NgModule } from '@angular/core';
 import { BehaviorSubject, Subject } from 'rxjs';
 import { stringify } from 'telejson';
-
 import { ICollection, StoryFnAngularReturnType } from '../types';
 import { PropertyExtractor } from './utils/PropertyExtractor';
 import { TestBedComponentBuilder } from './utils/TestBedComponentBuilder';
-import { getWrapperComponent } from './TestBedWrapperComponent';
 import { getApplication, storyPropsProvider } from '../../renderer';
 import { queueBootstrapping } from './utils/BootstrapQueue';
 import { bootstrapApplication } from '@angular/platform-browser';
-import { getNextStoryUID } from './utils/StoryUID';
+import { getWrapperComponent } from './TestBedWrapperComponent';
 
 type StoryRenderInfo = {
   storyFnAngular: StoryFnAngularReturnType;
@@ -23,7 +21,6 @@ declare global {
 }
 
 const applicationRefs = new Map<HTMLElement, ApplicationRef>();
-let componentBuilders: TestBedComponentBuilder[] = [];
 /**
  * Attribute name for the story UID that may be written to the targetDOMNode.
  *
@@ -40,7 +37,6 @@ export abstract class AbstractRenderer {
         appRef.destroy();
       }
     });
-    componentBuilders = [];
   }
 
   protected previousStoryRenderInfo = new Map<HTMLElement, StoryRenderInfo>();
@@ -144,7 +140,7 @@ export abstract class AbstractRenderer {
       });
     });
 
-    applicationRefs.set(targetDOMNode, applicationRef);
+    this.setApplicationRef(targetDOMNode, applicationRef);
   }
 
   /**
@@ -167,13 +163,7 @@ export abstract class AbstractRenderer {
   }) {
     const targetSelector = this.generateTargetSelectorFromStoryId(targetDOMNode.id);
 
-    // need unique attribute to get testbed instance for specific component
-    // to update props from story
-    // get instance by id
-    // testbedInstance.setAndUpdateProps(...)
-    // return;
-
-    await this.beforeFullRender(targetDOMNode);
+    await this.beforeFullRender();
 
     this.initAngularRootElement(targetDOMNode, targetSelector);
 
@@ -212,12 +202,18 @@ export abstract class AbstractRenderer {
       .setSelector(componentSelector)
       .setStoryFn(storyFnAngular)
       .setMetaData(analyzedMetadata)
+      .setTargetNode(targetDOMNode)
       .setEnvironmentProviders(environmentProviders)
       .configure()
       .compileComponents();
 
-    applicationRefs.set(targetDOMNode, componentBuilder.getApplicationRef());
-    componentBuilders.push(componentBuilder);
+    componentBuilder.copyComponentIntoTargetNode();
+
+    this.setApplicationRef(targetDOMNode, componentBuilder.getApplicationRef());
+  }
+
+  public setApplicationRef(targetDOMNode: HTMLElement, applicationRef: ApplicationRef) {
+    applicationRefs.set(targetDOMNode, applicationRef);
   }
 
   /**

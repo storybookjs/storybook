@@ -2,6 +2,7 @@ import { AbstractRenderer } from './AbstractRenderer';
 import { CanvasRenderer } from './CanvasRenderer';
 import { DocsRenderer } from './DocsRenderer';
 import { TestBedRenderer } from './TestBedRenderer';
+import { TestBedDocsRenderer } from './TestBedDocsRenderer';
 
 type RenderType = 'canvas' | 'docs';
 export class RendererFactory {
@@ -39,11 +40,14 @@ export class RendererFactory {
   }
 
   private buildRenderer(renderType: RenderType, useTestBedRenderer: boolean) {
+    if (useTestBedRenderer === true) {
+      if (renderType === 'docs') {
+        return new TestBedDocsRenderer();
+      }
+      return new TestBedRenderer();
+    }
     if (renderType === 'docs') {
       return new DocsRenderer();
-    }
-    if (useTestBedRenderer === true) {
-      return new TestBedRenderer();
     }
     return new CanvasRenderer();
   }
@@ -54,13 +58,16 @@ export const getRenderType = (targetDOMNode: HTMLElement): RenderType => {
 };
 
 export function clearRootHTMLElement(renderType: RenderType) {
+  let element;
   switch (renderType) {
     case 'canvas':
-      global.document.getElementById('storybook-docs').innerHTML = '';
+      element = global.document.getElementById('storybook-docs');
+      if (element !== null) element.innerHTML = '';
       break;
 
     case 'docs':
-      global.document.getElementById('storybook-root').innerHTML = '';
+      element = global.document.getElementById('storybook-root');
+      if (element !== null) element.innerHTML = '';
       break;
     default:
       break;

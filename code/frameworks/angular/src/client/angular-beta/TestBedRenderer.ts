@@ -9,7 +9,7 @@ export class TestBedRenderer extends AbstractRenderer {
     component: any;
     targetDOMNode: HTMLElement;
   }) {
-    await super.renderWithTestBed(options);
+    await this.renderWithTestBed({ ...options });
   }
 
   async beforeFullRender(): Promise<void> {

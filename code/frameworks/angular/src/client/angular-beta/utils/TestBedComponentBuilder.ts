@@ -35,6 +35,8 @@ export class TestBedComponentBuilder {
 
   private styles: string[];
 
+  private targetNode: HTMLElement | null = null;
+
   constructor() {
     this.testBedInstance = new TestBed();
     this.testBedInstance.initTestEnvironment(
@@ -43,8 +45,17 @@ export class TestBedComponentBuilder {
     );
   }
 
+  getFixture() {
+    return this.fixture;
+  }
+
   setComponent(storyComponent: Type<unknown>) {
     this.component = storyComponent;
+    return this;
+  }
+
+  setTargetNode(targetNode: HTMLElement) {
+    this.targetNode = targetNode;
     return this;
   }
 
@@ -114,6 +125,13 @@ export class TestBedComponentBuilder {
     return this.testBedInstance.inject(ApplicationRef);
   }
 
+  copyComponentIntoTargetNode() {
+    this.throwOnMissingFixture();
+    this.throwOnMissingTargetNode();
+    this.targetNode.appendChild(this.fixture.nativeElement);
+    this.fixture.detectChanges();
+  }
+
   private updateComponentProps() {
     this.throwOnMissingFixture();
     if (this.props != null)
@@ -132,5 +150,9 @@ export class TestBedComponentBuilder {
 
   private throwOnMissingFixture() {
     if (this.fixture == null) throw new Error('Fixture is null');
+  }
+
+  private throwOnMissingTargetNode() {
+    if (this.targetNode == null) throw new Error('TargetNode is null');
   }
 }

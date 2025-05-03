@@ -30,7 +30,7 @@ export const GenerateModuleMetaData = (
   imports: any[]
 ) => {
   return {
-    set: {
+    add: {
       exports: [...declarations, ...imports],
       declarations: declarations,
       imports: imports,

@@ -163,6 +163,12 @@ export class PropertyExtractor implements NgModuleMetadata {
     return [false];
   };
 
+  static getTemplate = (component: any) => {
+    const decorators = reflectionCapabilities.annotations(component);
+    console.log(decorators);
+    return decorators[0].template;
+  };
+
   static analyzeDecorators = (component: any) => {
     const decorators = reflectionCapabilities.annotations(component);
 

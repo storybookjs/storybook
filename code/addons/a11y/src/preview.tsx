@@ -1,33 +1,10 @@
 import type { AfterEach } from 'storybook/internal/types';
 
-import type { AxeResults, Result } from 'axe-core';
 import { expect } from 'storybook/test';
 
 import { run } from './a11yRunner';
-import { PANEL_ID } from './constants';
 import type { A11yParameters } from './params';
 import { getIsVitestStandaloneRun } from './utils';
-
-export const withLinkPaths = (results: AxeResults, storyId: string) => {
-  const pathname = document.location.pathname.replace(/iframe\.html$/, '');
-  return Object.fromEntries(
-    Object.entries(results).map(([key, value]) =>
-      ['incomplete', 'passes', 'violations'].includes(key)
-        ? [
-            key,
-            value.map((result: Result) => ({
-              ...result,
-              nodes: result.nodes.map((node, index) => {
-                const id = `${key}.${result.id}.${index + 1}`;
-                const linkPath = `${pathname}?path=/story/${storyId}&addonPanel=${PANEL_ID}&a11ySelection=${id}`;
-                return { id, ...node, linkPath };
-              }),
-            })),
-          ]
-        : [key, value]
-    )
-  );
-};
 
 let vitestMatchersExtended = false;
 
@@ -58,7 +35,7 @@ export const experimental_afterEach: AfterEach<any> = async ({
 
   if (shouldRunEnvironmentIndependent && viewMode === 'story') {
     try {
-      const result = await run(a11yParameter);
+      const result = await run(a11yParameter, storyId);
 
       if (result) {
         const hasViolations = (result?.violations.length ?? 0) > 0;
@@ -66,7 +43,7 @@ export const experimental_afterEach: AfterEach<any> = async ({
         reporting.addReport({
           type: 'a11y',
           version: 1,
-          result: withLinkPaths(result, storyId),
+          result,
           status: hasViolations ? getMode() : 'passed',
         });
 

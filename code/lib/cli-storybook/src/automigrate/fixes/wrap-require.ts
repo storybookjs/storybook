@@ -14,7 +14,7 @@ import {
   wrapValueWithRequireWrapper,
 } from './wrap-require-utils';
 
-interface WrapRequireRunOptions {
+export interface WrapRequireRunOptions {
   storybookVersion: string;
   isStorybookInMonorepo: boolean;
   isPnp: boolean;
@@ -61,34 +61,24 @@ export const wrapRequire: Fix<WrapRequireRunOptions> = {
   },
 
   async run({ dryRun, mainConfigPath, result }) {
-    return new Promise((resolve, reject) => {
-      updateMainConfig({ dryRun: !!dryRun, mainConfigPath }, (mainConfig) => {
-        try {
-          getFieldsForRequireWrapper(mainConfig).forEach((node) => {
-            wrapValueWithRequireWrapper(mainConfig, node);
-          });
-
-          if (getRequireWrapperName(mainConfig) === null) {
-            if (
-              mainConfig?.fileName?.endsWith('.cjs') ||
-              mainConfig?.fileName?.endsWith('.cts') ||
-              mainConfig?.fileName?.endsWith('.cjsx') ||
-              mainConfig?.fileName?.endsWith('.ctsx')
-            ) {
-              mainConfig.setRequireImport(['dirname', 'join'], 'path');
-            } else {
-              mainConfig.setImport(['dirname', 'join'], 'path');
-            }
-            mainConfig.setBodyDeclaration(
-              getRequireWrapperAsCallExpression(result.isConfigTypescript)
-            );
-          }
-
-          resolve();
-        } catch (e) {
-          reject(e);
-        }
+    await updateMainConfig({ dryRun: !!dryRun, mainConfigPath }, (mainConfig) => {
+      getFieldsForRequireWrapper(mainConfig).forEach((node) => {
+        wrapValueWithRequireWrapper(mainConfig, node);
       });
+
+      if (getRequireWrapperName(mainConfig) === null) {
+        if (
+          mainConfig?.fileName?.endsWith('.cjs') ||
+          mainConfig?.fileName?.endsWith('.cts') ||
+          mainConfig?.fileName?.endsWith('.cjsx') ||
+          mainConfig?.fileName?.endsWith('.ctsx')
+        ) {
+          mainConfig.setRequireImport(['dirname', 'join'], 'path');
+        } else {
+          mainConfig.setImport(['dirname', 'join'], 'path');
+        }
+        mainConfig.setBodyDeclaration(getRequireWrapperAsCallExpression(result.isConfigTypescript));
+      }
     });
   },
 };

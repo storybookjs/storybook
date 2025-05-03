@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "9.0.0-beta.6",
+  "version": "9.0.0-beta.9",
   "description": "Storybook framework-agnostic API",
   "keywords": [
     "storybook"
@@ -763,11 +763,13 @@
     "tinyspy": "^3.0.2",
     "ts-dedent": "^2.0.0",
     "tsconfig-paths": "^4.2.0",
+    "tsup": "^6.7.0",
     "type-fest": "^4.18.1",
     "typescript": "^5.8.3",
     "unique-string": "^3.0.0",
     "use-resize-observer": "^9.1.0",
-    "watchpack": "^2.2.0"
+    "watchpack": "^2.2.0",
+    "zod": "^3.24.1"
   },
   "peerDependencies": {
     "prettier": "^2 || ^3"

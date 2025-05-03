@@ -40,12 +40,12 @@ describe('RendererFactory', () => {
 
   describe('CanvasRenderer', () => {
     it('should get CanvasRenderer instance', async () => {
-      const render = await rendererFactory.getRendererInstance(rootTargetDOMNode);
+      const render = await rendererFactory.getRendererInstance(rootTargetDOMNode, false);
       expect(render).toBeInstanceOf(CanvasRenderer);
     });
 
     it('should render my-story for story template', async () => {
-      const render = await rendererFactory.getRendererInstance(rootTargetDOMNode);
+      const render = await rendererFactory.getRendererInstance(rootTargetDOMNode, false);
       await render?.render({
         storyFnAngular: {
           template: '🦊',
@@ -62,7 +62,7 @@ describe('RendererFactory', () => {
       @Component({ selector: 'foo', template: '🦊' })
       class FooComponent {}
 
-      const render = await rendererFactory.getRendererInstance(rootTargetDOMNode);
+      const render = await rendererFactory.getRendererInstance(rootTargetDOMNode, false);
       await render?.render({
         storyFnAngular: {
           props: {},
@@ -87,7 +87,7 @@ describe('RendererFactory', () => {
       }
       const token = new Thing();
 
-      const render = await rendererFactory.getRendererInstance(rootTargetDOMNode);
+      const render = await rendererFactory.getRendererInstance(rootTargetDOMNode, false);
 
       await render?.render({
         storyFnAngular: {
@@ -105,7 +105,7 @@ describe('RendererFactory', () => {
     describe('when forced=true', () => {
       beforeEach(async () => {
         // Init first render
-        const render = await rendererFactory.getRendererInstance(rootTargetDOMNode);
+        const render = await rendererFactory.getRendererInstance(rootTargetDOMNode, false);
         await render?.render({
           storyFnAngular: {
             template: '{{ logo }}: {{ name }}',
@@ -125,7 +125,7 @@ describe('RendererFactory', () => {
 
       it('should not be re-rendered when only props change', async () => {
         // only props change
-        const render = await rendererFactory.getRendererInstance(rootTargetDOMNode);
+        const render = await rendererFactory.getRendererInstance(rootTargetDOMNode, false);
         await render?.render({
           storyFnAngular: {
             props: {
@@ -140,7 +140,7 @@ describe('RendererFactory', () => {
       });
 
       it('should be re-rendered when template change', async () => {
-        const render = await rendererFactory.getRendererInstance(rootTargetDOMNode);
+        const render = await rendererFactory.getRendererInstance(rootTargetDOMNode, false);
         await render?.render({
           storyFnAngular: {
             template: '{{ beer }}',
@@ -161,7 +161,7 @@ describe('RendererFactory', () => {
     describe('when canvas render is done before', () => {
       beforeEach(async () => {
         // Init first Canvas render
-        const render = await rendererFactory.getRendererInstance(rootTargetDOMNode);
+        const render = await rendererFactory.getRendererInstance(rootTargetDOMNode, false);
         await render?.render({
           storyFnAngular: {
             template: 'Canvas 🖼',
@@ -177,13 +177,13 @@ describe('RendererFactory', () => {
           .appendChild(global.document.createElement('👾'));
 
         expect(global.document.getElementById('storybook-root').innerHTML).toContain('Canvas 🖼');
-        await rendererFactory.getRendererInstance(rootDocstargetDOMNode);
+        await rendererFactory.getRendererInstance(rootDocstargetDOMNode, false);
         expect(global.document.getElementById('storybook-root').innerHTML).toBe('');
       });
     });
 
     it('should get DocsRenderer instance', async () => {
-      const render = await rendererFactory.getRendererInstance(rootDocstargetDOMNode);
+      const render = await rendererFactory.getRendererInstance(rootDocstargetDOMNode, false);
       expect(render).toBeInstanceOf(DocsRenderer);
     });
 
@@ -193,7 +193,8 @@ describe('RendererFactory', () => {
         class FooComponent {}
 
         const render = await rendererFactory.getRendererInstance(
-          global.document.getElementById('storybook-docs')
+          global.document.getElementById('storybook-docs'),
+          false
         );
 
         const targetDOMNode1 = global.document.createElement('div');
@@ -235,7 +236,8 @@ describe('RendererFactory', () => {
         class FooComponent {}
 
         const render = await rendererFactory.getRendererInstance(
-          global.document.getElementById('storybook-docs')
+          global.document.getElementById('storybook-docs'),
+          false
         );
 
         const targetDOMNode1 = global.document.createElement('div');

@@ -144,11 +144,11 @@ jobs:
     parameters:
       template-name:
         type: string
-        class:
-          description: The Resource class
-          type: enum
-          enum: ["small", "medium", "medium+", "large", "xlarge"]
-          default: "medium"
+      class:
+        description: The Resource class
+        type: enum
+        enum: ["small", "medium", "medium+", "large", "xlarge"]
+        default: "medium"
       smoke-test:
         type: boolean
         default: true

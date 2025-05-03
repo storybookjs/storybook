@@ -14,6 +14,7 @@ export function mockSveltekitStores() {
         alias: {
           '$app/forms': resolve(dir, '../src/mocks/app/forms.ts'),
           '$app/navigation': resolve(dir, '../src/mocks/app/navigation.ts'),
+          '$app/state': resolve(dir, '../src/mocks/app/state.svelte.ts'),
           '$app/stores': resolve(dir, '../src/mocks/app/stores.ts'),
         },
       },

@@ -70,8 +70,6 @@ export abstract class AbstractRenderer {
     component?: any;
     targetDOMNode: HTMLElement;
   }) {
-    const targetSelector = this.generateTargetSelectorFromStoryId(targetDOMNode.id);
-
     const newStoryProps$ = new BehaviorSubject<ICollection>(storyFnAngular.props);
 
     if (
@@ -89,27 +87,15 @@ export abstract class AbstractRenderer {
       return;
     }
 
-    await this.beforeFullRender(targetDOMNode);
+    const { environmentProviders, componentSelector, analyzedMetadata } =
+      await this.prepareMetaData(storyFnAngular, targetDOMNode, component);
+    environmentProviders.push(storyPropsProvider(newStoryProps$));
 
     // Complete last BehaviorSubject and set a new one for the current module
     if (this.storyProps$) {
       this.storyProps$.complete();
     }
     this.storyProps$ = newStoryProps$;
-
-    this.initAngularRootElement(targetDOMNode, targetSelector);
-
-    const analyzedMetadata = new PropertyExtractor(storyFnAngular.moduleMetadata, component);
-    await analyzedMetadata.init();
-
-    const storyUid = this.generateStoryUIdFromRawStoryUid(
-      targetDOMNode.getAttribute(STORY_UID_ATTRIBUTE)
-    );
-    const componentSelector = storyUid !== null ? `${targetSelector}[${storyUid}]` : targetSelector;
-    if (storyUid !== null) {
-      const element = targetDOMNode.querySelector(targetSelector);
-      element.toggleAttribute(storyUid, true);
-    }
 
     const application = getApplication({
       storyFnAngular,
@@ -118,25 +104,10 @@ export abstract class AbstractRenderer {
       analyzedMetadata,
     });
 
-    const providers = [
-      storyPropsProvider(newStoryProps$),
-      ...analyzedMetadata.applicationProviders,
-      ...(storyFnAngular.applicationConfig?.providers ?? []),
-    ];
-
-    if (STORYBOOK_ANGULAR_OPTIONS?.experimentalZoneless) {
-      const { provideExperimentalZonelessChangeDetection } = await import('@angular/core');
-      if (!provideExperimentalZonelessChangeDetection) {
-        throw new Error('Experimental zoneless change detection requires Angular 18 or higher');
-      } else {
-        providers.unshift(provideExperimentalZonelessChangeDetection());
-      }
-    }
-
     const applicationRef = await queueBootstrapping(() => {
       return bootstrapApplication(application, {
         ...storyFnAngular.applicationConfig,
-        providers,
+        providers: environmentProviders,
       });
     });
 
@@ -161,6 +132,37 @@ export abstract class AbstractRenderer {
     component?: any;
     targetDOMNode: HTMLElement;
   }) {
+    const { environmentProviders, componentSelector, analyzedMetadata } =
+      await this.prepareMetaData(storyFnAngular, targetDOMNode, component);
+
+    if (storyFnAngular.userDefinedTemplate) {
+      component = getWrapperComponent(storyFnAngular.template);
+    }
+
+    const componentBuilder = await new TestBedComponentBuilder()
+      .setComponent(component)
+      .setSelector(componentSelector)
+      .setStoryFn(storyFnAngular)
+      .setMetaData(analyzedMetadata)
+      .setTargetNode(targetDOMNode)
+      .setEnvironmentProviders(environmentProviders)
+      .configure()
+      .compileComponents();
+
+    componentBuilder.copyComponentIntoTargetNode();
+
+    this.setApplicationRef(targetDOMNode, componentBuilder.getApplicationRef());
+  }
+
+  public setApplicationRef(targetDOMNode: HTMLElement, applicationRef: ApplicationRef) {
+    applicationRefs.set(targetDOMNode, applicationRef);
+  }
+
+  private async prepareMetaData(
+    storyFnAngular: StoryFnAngularReturnType,
+    targetDOMNode: HTMLElement,
+    component?: any
+  ) {
     const targetSelector = this.generateTargetSelectorFromStoryId(targetDOMNode.id);
 
     await this.beforeFullRender();
@@ -193,27 +195,11 @@ export abstract class AbstractRenderer {
       }
     }
 
-    if (storyFnAngular.userDefinedTemplate) {
-      component = getWrapperComponent(storyFnAngular.template);
-    }
-
-    const componentBuilder = await new TestBedComponentBuilder()
-      .setComponent(component)
-      .setSelector(componentSelector)
-      .setStoryFn(storyFnAngular)
-      .setMetaData(analyzedMetadata)
-      .setTargetNode(targetDOMNode)
-      .setEnvironmentProviders(environmentProviders)
-      .configure()
-      .compileComponents();
-
-    componentBuilder.copyComponentIntoTargetNode();
-
-    this.setApplicationRef(targetDOMNode, componentBuilder.getApplicationRef());
-  }
-
-  public setApplicationRef(targetDOMNode: HTMLElement, applicationRef: ApplicationRef) {
-    applicationRefs.set(targetDOMNode, applicationRef);
+    return {
+      environmentProviders,
+      componentSelector,
+      analyzedMetadata,
+    };
   }
 
   /**

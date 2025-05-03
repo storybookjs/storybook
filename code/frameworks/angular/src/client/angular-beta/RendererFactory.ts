@@ -40,7 +40,7 @@ export class RendererFactory {
   }
 
   private buildRenderer(renderType: RenderType, useTestBedRenderer: boolean) {
-    if (useTestBedRenderer === true) {
+    if (useTestBedRenderer == true) {
       if (renderType === 'docs') {
         return new TestBedDocsRenderer();
       }

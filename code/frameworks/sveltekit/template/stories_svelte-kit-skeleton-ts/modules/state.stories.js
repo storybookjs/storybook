@@ -10,9 +10,11 @@ export const AllUndefined = {};
 export const Page = {
   parameters: {
     sveltekit_experimental: {
-      page: {
-        data: {
-          test: 'passed',
+      state: {
+        page: {
+          data: {
+            test: 'passed',
+          },
         },
       },
     },

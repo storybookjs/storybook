@@ -4,6 +4,11 @@ import { action } from 'storybook/actions';
 import { onMount } from 'svelte';
 
 import { setAfterNavigateArgument } from './mocks/app/navigation';
+import {
+  navigating as appStateNavigating,
+  page as appStatePage,
+  updated as appStateUpdated,
+} from './mocks/app/state.svelte';
 import { setNavigating, setPage, setUpdated } from './mocks/app/stores';
 import type { HrefConfig, NormalizedHrefConfig, SvelteKitParameters } from './types';
 
@@ -20,6 +25,70 @@ const svelteKitMocksDecorator: Decorator = (Story, ctx) => {
   setNavigating(svelteKitParameters?.stores?.navigating);
   setUpdated(svelteKitParameters?.stores?.updated);
   setAfterNavigateArgument(svelteKitParameters?.navigation?.afterNavigate);
+
+  const svelteKitParametersStatePage = svelteKitParameters.state?.page;
+
+  if (svelteKitParametersStatePage?.data) {
+    appStatePage.data = svelteKitParametersStatePage.data;
+  }
+
+  if (svelteKitParametersStatePage?.form) {
+    appStatePage.form = svelteKitParametersStatePage.form;
+  }
+
+  if (svelteKitParametersStatePage?.error) {
+    appStatePage.error = svelteKitParametersStatePage.error;
+  }
+
+  if (svelteKitParametersStatePage?.params) {
+    appStatePage.params = svelteKitParametersStatePage.params;
+  }
+
+  if (svelteKitParametersStatePage?.route) {
+    appStatePage.route = svelteKitParametersStatePage.route;
+  }
+
+  if (svelteKitParametersStatePage?.state) {
+    appStatePage.state = svelteKitParametersStatePage.state;
+  }
+
+  if (svelteKitParametersStatePage?.status) {
+    appStatePage.status = svelteKitParametersStatePage.status;
+  }
+
+  if (svelteKitParametersStatePage?.url) {
+    appStatePage.url = svelteKitParametersStatePage.url;
+  }
+
+  const svelteKitParametersStateNavigating = svelteKitParameters.state?.navigating;
+
+  if (svelteKitParametersStateNavigating?.from) {
+    appStateNavigating.from = svelteKitParametersStateNavigating.from;
+  }
+
+  if (svelteKitParametersStateNavigating?.to) {
+    appStateNavigating.to = svelteKitParametersStateNavigating.to;
+  }
+
+  if (svelteKitParametersStateNavigating?.type) {
+    appStateNavigating.type = svelteKitParametersStateNavigating.type;
+  }
+
+  if (svelteKitParametersStateNavigating?.willUnload) {
+    appStateNavigating.willUnload = svelteKitParametersStateNavigating.willUnload;
+  }
+
+  if (svelteKitParametersStateNavigating?.delta) {
+    appStateNavigating.delta = svelteKitParametersStateNavigating.delta;
+  }
+
+  if (svelteKitParametersStateNavigating?.complete) {
+    appStateNavigating.complete = svelteKitParametersStateNavigating.complete;
+  }
+
+  if (typeof svelteKitParameters.state?.updated?.current === 'boolean') {
+    appStateUpdated.current = svelteKitParameters.state?.updated?.current;
+  }
 
   onMount(() => {
     const globalClickListener = (e: MouseEvent) => {

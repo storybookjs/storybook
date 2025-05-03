@@ -5,6 +5,8 @@ import type {
 
 import type { BuilderOptions, StorybookConfigVite } from '@storybook/builder-vite';
 
+import type { Navigation, Page } from '@sveltejs/kit';
+
 import type { enhance } from './mocks/app/forms';
 import type { goto, invalidate, invalidateAll } from './mocks/app/navigation';
 
@@ -48,6 +50,15 @@ export type HrefConfig = NormalizedHrefConfig | NormalizedHrefConfig['callback']
 
 export type SvelteKitParameters = Partial<{
   hrefs: Record<string, HrefConfig>;
+  state: {
+    page: Partial<Page>;
+    navigating: Partial<Navigation>;
+    updated: { current: boolean };
+  };
+  /**
+   * @deprecated
+   * @see {@link https://svelte.dev/docs/kit/$app-stores}
+   */
   stores: {
     page: Record<string, any>;
     navigating: Record<string, any>;

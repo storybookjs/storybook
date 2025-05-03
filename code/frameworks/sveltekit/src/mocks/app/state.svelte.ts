@@ -13,14 +13,14 @@
 /* eslint-disable prefer-const */
 import type { Navigation, Page } from '@sveltejs/kit';
 
-let pageData = $state.raw({});
-let pageForm = $state.raw(null);
-let pageError = $state.raw(null);
-let pageParams = $state.raw({});
-let pageRoute = $state.raw({ id: null });
-let pageState = $state.raw({});
-let pageStatus = $state.raw(-1);
-let pageUrl = $state.raw(new URL('https://example.com'));
+let pageData = $state.raw<Page['data']>({});
+let pageForm = $state.raw<Page['form']>(null);
+let pageError = $state.raw<Page['error']>(null);
+let pageParams = $state.raw<Page['params']>({});
+let pageRoute = $state.raw<Page['route']>({ id: null });
+let pageState = $state.raw<Page['state']>({});
+let pageStatus = $state.raw<Page['status']>(-1);
+let pageUrl = $state.raw<Page['url']>(new URL('https://example.com'));
 
 export let page = {
   data: pageData,
@@ -44,13 +44,17 @@ export let navigating = {
   from: navigatingFrom,
   to: navigatingTo,
   type: navigatingType,
-  unload: navigatingWillUnload,
+  willUnload: navigatingWillUnload,
   delta: navigatingDelta,
   complete: navigatingComplete,
 };
 
-export let updated = $state.raw(false);
+let updatedCurrent = $state.raw(false);
 
-Object.assign(updated, {
-  check: () => new Promise<boolean>((resolve) => resolve(updated)),
-});
+export let updated = {
+  current: updatedCurrent,
+  check: () =>
+    new Promise<boolean>((resolve) => {
+      resolve(updatedCurrent);
+    }),
+};

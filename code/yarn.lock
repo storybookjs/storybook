@@ -6880,7 +6880,6 @@ __metadata:
     typescript: "npm:^5.8.3"
     vite: "npm:^6.2.5"
   peerDependencies:
-    "@sveltejs/kit": ^2.0.0
     storybook: "workspace:^"
     svelte: ^5.0.0
     vite: ^5.0.0 || ^6.0.0

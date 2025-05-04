@@ -239,7 +239,7 @@ workflows:
       - lint
       - docs
       - sandbox-test:
-          name: React Vite (TS)
+          name: sandbox - React Vite (TS)
           requires: [build]
           resource-size: large
           template_id: react-vite/default-ts
@@ -249,7 +249,7 @@ workflows:
           feature-chromatic: true
           feature-e2e: true
       - sandbox-test:
-          name: Angular CLI (TS)
+          name: sandbox - Angular CLI (TS)
           requires: [build]
           resource-size: xlarge
           template_id: angular-cli/default-ts
@@ -259,7 +259,7 @@ workflows:
           feature-chromatic: true
           feature-e2e: true
       - sandbox-test:
-          name: Bench (React Vite)
+          name: bench - React Vite
           requires: [build]
           resource-size: medium
           template_id: bench/react-vite-default-ts

@@ -49,7 +49,7 @@ let pageState = $state.raw({});
 /** @type {Page['status']} */
 let pageStatus = $state.raw(-1);
 /** @type {Page['url']} */
-let pageUrl = $state.raw(new URL('https://example.com'));
+let pageUrl = $state.raw(new URL(location.origin));
 
 /** @type {Page} */
 export let page = {

@@ -22,7 +22,7 @@ import type {
 import { omitBy, pick } from 'es-toolkit';
 import memoize from 'memoizerific';
 
-import { getCoreAnnotations } from '../../core-annotations';
+import { getCoreAnnotations } from '../../../shared/preview/core-annotations';
 import { HooksContext } from '../addons';
 import { ArgsStore } from './ArgsStore';
 import { GlobalsStore } from './GlobalsStore';

@@ -1,13 +1,13 @@
-import { deprecate } from 'storybook/internal/client-logger';
 import { ElementA11yParameterError } from 'storybook/internal/preview-errors';
 
 import { global } from '@storybook/global';
 
-import type { AxeResults, ContextProp, ContextSpec, Selector, SelectorList } from 'axe-core';
+import type { AxeResults, ContextProp, ContextSpec } from 'axe-core';
 import { addons } from 'storybook/preview-api';
 
+import { withLinkPaths } from './a11yRunnerUtils';
 import { EVENTS } from './constants';
-import type { A11yParameters, SelectorWithoutNode } from './params';
+import type { A11yParameters } from './params';
 
 const { document } = global;
 
@@ -40,7 +40,7 @@ const runNext = async () => {
   runNext();
 };
 
-export const run = async (input: A11yParameters = DEFAULT_PARAMETERS) => {
+export const run = async (input: A11yParameters = DEFAULT_PARAMETERS, storyId: string) => {
   const { default: axe } = await import('axe-core');
 
   const { config = {}, options = {} } = input;
@@ -92,7 +92,8 @@ export const run = async (input: A11yParameters = DEFAULT_PARAMETERS) => {
     const task = async () => {
       try {
         const result = await axe.run(context, options);
-        resolve(result);
+        const resultWithLinks = withLinkPaths(result, storyId);
+        resolve(resultWithLinks);
       } catch (error) {
         reject(error);
       }
@@ -108,7 +109,7 @@ export const run = async (input: A11yParameters = DEFAULT_PARAMETERS) => {
 
 channel.on(EVENTS.MANUAL, async (storyId: string, input: A11yParameters = DEFAULT_PARAMETERS) => {
   try {
-    const result = await run(input);
+    const result = await run(input, storyId);
     // Axe result contains class instances, which telejson deserializes in a
     // way that violates:
     //  Content Security Policy directive: "script-src 'self' 'unsafe-inline'".

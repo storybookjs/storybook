@@ -125,14 +125,14 @@ describe('PNPM Proxy', () => {
     it('without constraint it returns the latest version', async () => {
       const executeCommandSpy = vi
         .spyOn(pnpmProxy, 'executeCommand')
-        .mockResolvedValueOnce('"5.3.19"');
+        .mockResolvedValueOnce('5.3.19');
 
       const version = await pnpmProxy.latestVersion('storybook');
 
       expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           command: 'pnpm',
-          args: ['info', 'storybook', 'version', '--json'],
+          args: ['info', 'storybook', 'version'],
         })
       );
       expect(version).toEqual('5.3.19');
@@ -154,10 +154,10 @@ describe('PNPM Proxy', () => {
       expect(version).toEqual('5.3.19');
     });
 
-    it('throws an error if command output is not a valid JSON', async () => {
+    it('with constraint it throws an error if command output is not a valid JSON', async () => {
       vi.spyOn(pnpmProxy, 'executeCommand').mockResolvedValueOnce('NOT A JSON');
 
-      await expect(pnpmProxy.latestVersion('storybook')).rejects.toThrow();
+      await expect(pnpmProxy.latestVersion('storybook', '5.X')).rejects.toThrow();
     });
   });
 
@@ -166,14 +166,14 @@ describe('PNPM Proxy', () => {
       const storybookAngularVersion = (await import('../versions')).default['@storybook/angular'];
       const executeCommandSpy = vi
         .spyOn(pnpmProxy, 'executeCommand')
-        .mockResolvedValueOnce('"5.3.19"');
+        .mockResolvedValueOnce('5.3.19');
 
       const version = await pnpmProxy.getVersion('@storybook/angular');
 
       expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           command: 'pnpm',
-          args: ['info', '@storybook/angular', 'version', '--json'],
+          args: ['info', '@storybook/angular', 'version'],
         })
       );
       expect(version).toEqual(`^${storybookAngularVersion}`);
@@ -183,14 +183,14 @@ describe('PNPM Proxy', () => {
       const packageVersion = '5.3.19';
       const executeCommandSpy = vi
         .spyOn(pnpmProxy, 'executeCommand')
-        .mockResolvedValueOnce(`"${packageVersion}"`);
+        .mockResolvedValueOnce(`${packageVersion}`);
 
       const version = await pnpmProxy.getVersion('@storybook/react-native');
 
       expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           command: 'pnpm',
-          args: ['info', '@storybook/react-native', 'version', '--json'],
+          args: ['info', '@storybook/react-native', 'version'],
         })
       );
       expect(version).toEqual(`^${packageVersion}`);

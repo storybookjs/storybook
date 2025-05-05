@@ -47,6 +47,22 @@
       "import": "./dist/node/index.mjs",
       "require": "./dist/node/index.js"
     },
+    "./internal/mocks/app/forms": {
+      "types": "./dist/mocks/app/forms.d.ts",
+      "import": "./dist/mocks/app/forms.mjs"
+    },
+    "./internal/mocks/app/navigation": {
+      "types": "./dist/mocks/app/navigation.d.ts",
+      "import": "./dist/mocks/app/navigation.mjs"
+    },
+    "./internal/mocks/app/state.svelte.js": {
+      "types": "./dist/mocks/app/state.d.ts",
+      "import": "./dist/mocks/app/state.svelte.mjs"
+    },
+    "./internal/mocks/app/stores": {
+      "types": "./dist/mocks/app/stores.d.ts",
+      "import": "./dist/mocks/app/stores.mjs"
+    },
     "./package.json": "./package.json"
   },
   "main": "dist/index.js",
@@ -86,12 +102,16 @@
     "access": "public"
   },
   "bundler": {
+    "post": "./scripts/copy-unbundled-to-dist.ts",
     "entries": [
       "./src/index.ts",
       "./src/preview.ts",
       "./src/preset.ts",
       "./src/vite-plugin.ts",
-      "./src/node/index.ts"
+      "./src/node/index.ts",
+      "./src/mocks/app/forms.ts",
+      "./src/mocks/app/navigation.ts",
+      "./src/mocks/app/stores.ts"
     ],
     "platform": "node"
   },

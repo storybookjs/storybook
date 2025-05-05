@@ -1,15 +1,18 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import type { Decorator } from '@storybook/svelte';
+// @ts-ignore -- TS doesn't understand importing from its own package
+import { setAfterNavigateArgument } from '@storybook/sveltekit/internal/mocks/app/navigation';
+import {
+  navigating as appStateNavigating,
+  page as appStatePage,
+  updated as appStateUpdated, // @ts-ignore -- TS doesn't understand importing from its own package
+} from '@storybook/sveltekit/internal/mocks/app/state.svelte.js';
+// @ts-ignore -- TS doesn't understand importing from its own package
+import { setNavigating, setPage, setUpdated } from '@storybook/sveltekit/internal/mocks/app/stores';
 
 import { action } from 'storybook/actions';
 import { onMount } from 'svelte';
 
-import { setAfterNavigateArgument } from './mocks/app/navigation';
-import {
-  navigating as appStateNavigating,
-  page as appStatePage,
-  updated as appStateUpdated,
-} from './mocks/app/state.svelte';
-import { setNavigating, setPage, setUpdated } from './mocks/app/stores';
 import type { HrefConfig, NormalizedHrefConfig, SvelteKitParameters } from './types';
 
 const normalizeHrefConfig = (hrefConfig: HrefConfig): NormalizedHrefConfig => {

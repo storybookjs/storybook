@@ -142,15 +142,15 @@ describe('configureEslintPlugin', () => {
       expect(filePath).toBe('.eslintrc.json');
       expect(content).toMatchInlineSnapshot(`
         "{
-          extends: [
-            'plugin:other',
-            'plugin:storybook/recommended',
-          ],
+          "extends": [
+            "plugin:other",
+            "plugin:storybook/recommended"
+          ]
         }"
       `);
     });
 
-    it('should correctly parse and configure JSON5 .eslintrc.json with comments', async () => {
+    it('should correctly parse, configure, and preserve comments in comment-json .eslintrc.json', async () => {
       const mockPackageManager = {
         getAllDependencies: vi.fn(),
         retrievePackageJson: vi.fn(),
@@ -160,9 +160,16 @@ describe('configureEslintPlugin', () => {
       const mockConfigFile = dedent`{
         // Some comment here
         "extends": ["plugin:other"],
+        // Top-level comment
+        "extends": [
+          // Comment before existing item
+          "plugin:other", // Inline comment for existing item
+        ],
         "rules": {
+          // Comment for rules object
           "no-unused-vars": "warn", // Another comment
         },
+        // Trailing comment
       }`;
 
       vi.mocked(readFile).mockResolvedValue(mockConfigFile);
@@ -180,13 +187,39 @@ describe('configureEslintPlugin', () => {
       expect(filePath).toBe('.eslintrc.json');
       expect(content).toMatchInlineSnapshot(`
         "{
-          extends: [
-            'plugin:other',
-            'plugin:storybook/recommended',
+          // Top-level comment
+          "extends": [
+            // Comment before existing item
+            "plugin:other", // Inline comment for existing item
+            "plugin:storybook/recommended"
           ],
-          rules: {
-            'no-unused-vars': 'warn',
-          },
+          "rules": {
+            // Comment for rules object
+            "no-unused-vars": "warn" // Another comment
+          }
+          // Trailing comment
+        }"
+      `);
+      // Check that the output contains the new extend AND the original comments
+      expect(content).toContain('// Top-level comment');
+      expect(content).toContain('plugin:storybook/recommended');
+      expect(content).toContain('// Trailing comment');
+
+      // Optionally, check the full snapshot if formatting needs to be precise
+      // Note: comment-json might slightly alter whitespace/placement vs original
+      expect(content).toMatchInlineSnapshot(`
+        "{
+          // Top-level comment
+          "extends": [
+            // Comment before existing item
+            "plugin:other", // Inline comment for existing item
+            "plugin:storybook/recommended"
+          ],
+          "rules": {
+            // Comment for rules object
+            "no-unused-vars": "warn" // Another comment
+          }
+          // Trailing comment
         }"
       `);
     });

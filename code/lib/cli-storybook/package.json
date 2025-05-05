@@ -52,7 +52,6 @@
     "giget": "^1.0.0",
     "globby": "^14.0.1",
     "jscodeshift": "^0.15.1",
-    "json5": "^2.2.3",
     "leven": "^3.1.0",
     "p-limit": "^6.2.0",
     "prompts": "^2.4.0",
@@ -65,6 +64,7 @@
     "@types/cross-spawn": "^6.0.6",
     "@types/prompts": "^2.0.9",
     "boxen": "^7.1.1",
+    "comment-json": "^4.2.5",
     "picocolors": "^1.1.0",
     "slash": "^5.0.0",
     "typescript": "^5.8.3"

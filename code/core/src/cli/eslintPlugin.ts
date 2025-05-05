@@ -3,9 +3,9 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { paddedLog } from 'storybook/internal/common';
 import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
 
+import commentJson from 'comment-json';
 import detectIndent from 'detect-indent';
 import { findUp } from 'find-up';
-import json5 from 'json5';
 import picocolors from 'picocolors';
 import prompts from 'prompts';
 import { dedent } from 'ts-dedent';
@@ -209,7 +209,7 @@ export async function configureEslintPlugin({
     paddedLog(`Configuring Storybook ESLint plugin at ${eslintConfigFile}`);
     if (eslintConfigFile.endsWith('json')) {
       const eslintFileContents = await readFile(eslintConfigFile, { encoding: 'utf8' });
-      const eslintConfig = json5.parse(eslintFileContents) as {
+      const eslintConfig = commentJson.parse(eslintFileContents) as {
         extends?: string[];
       };
       const existingExtends = normalizeExtends(eslintConfig.extends).filter(Boolean);
@@ -218,10 +218,13 @@ export async function configureEslintPlugin({
         return;
       }
 
-      eslintConfig.extends = [...existingExtends, 'plugin:storybook/recommended'] as string[];
+      if (!Array.isArray(eslintConfig.extends)) {
+        eslintConfig.extends = eslintConfig.extends ? [eslintConfig.extends] : [];
+      }
+      eslintConfig.extends.push('plugin:storybook/recommended');
 
       const spaces = detectIndent(eslintFileContents).amount || 2;
-      await writeFile(eslintConfigFile, json5.stringify(eslintConfig, undefined, spaces));
+      await writeFile(eslintConfigFile, commentJson.stringify(eslintConfig, null, spaces));
     } else {
       if (isFlatConfig) {
         const code = await readFile(eslintConfigFile, { encoding: 'utf8' });

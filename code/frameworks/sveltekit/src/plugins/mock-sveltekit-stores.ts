@@ -1,10 +1,4 @@
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
 import type { Plugin } from 'vite';
-
-const filename = __filename ?? fileURLToPath(import.meta.url);
-const dir = dirname(filename);
 
 export function mockSveltekitStores() {
   return {

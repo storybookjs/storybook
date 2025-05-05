@@ -11,8 +11,48 @@
  */
 
 /* eslint-disable prefer-const */
-import type { Navigation, Page } from '@sveltejs/kit';
 import { fn } from 'storybook/test';
+
+/**
+ * Copied from:
+ * {@link https://github.com/sveltejs/kit/blob/7bb41aa4263b057a8912f4cdd35db03755d37342/packages/kit/types/index.d.ts#L2552-L2581}
+ * There were build issues after adding `@sveltejs/kit` as `devDependency`: Error: namespace child
+ * (hoisting) not supported yet
+ */
+// eslint-disable-next-line @typescript-eslint/no-namespace
+declare namespace App {
+  export interface Error {
+    message: string;
+  }
+
+  export interface Locals {}
+
+  export interface PageData {}
+
+  export interface PageState {}
+
+  export interface Platform {}
+}
+
+/**
+ * Copied from:
+ * {@link https://github.com/sveltejs/kit/blob/7bb41aa4263b057a8912f4cdd35db03755d37342/packages/kit/types/index.d.ts#L1102-L1143}
+ */
+export interface Page<
+  Params extends Record<string, string> = Record<string, string>,
+  RouteId extends string | null = string | null,
+> {
+  url: URL;
+  params: Params;
+  route: {
+    id: RouteId;
+  };
+  status: number;
+  error: App.Error | null;
+  data: App.PageData & Record<string, any>;
+  state: App.PageState;
+  form: any;
+}
 
 let pageData = $state.raw<Page['data']>({});
 let pageForm = $state.raw<Page['form']>(null);
@@ -33,6 +73,37 @@ export let page = {
   status: pageStatus,
   url: pageUrl,
 } satisfies Page;
+
+/**
+ * Copied from:
+ * {@link https://github.com/sveltejs/kit/blob/7bb41aa4263b057a8912f4cdd35db03755d37342/packages/kit/types/index.d.ts#L988}
+ */
+interface NavigationTarget {
+  params: Record<string, string> | null;
+  route: {
+    id: string | null;
+  };
+  url: URL;
+}
+
+/**
+ * Copied from:
+ * {@link https://github.com/sveltejs/kit/blob/7bb41aa4263b057a8912f4cdd35db03755d37342/packages/kit/types/index.d.ts#L1017C9-L1017C89}
+ */
+type NavigationType = 'enter' | 'form' | 'leave' | 'link' | 'goto' | 'popstate';
+
+/**
+ * Copied from:
+ * {@link @link https://github.com/sveltejs/kit/blob/7bb41aa4263b057a8912f4cdd35db03755d37342/packages/kit/types/index.d.ts#L1017C9-L1017C89}
+ */
+export interface Navigation {
+  from: NavigationTarget | null;
+  to: NavigationTarget | null;
+  type: Exclude<NavigationType, 'enter'>;
+  willUnload: boolean;
+  delta?: number;
+  complete: Promise<void>;
+}
 
 let navigatingFrom = $state.raw<Navigation['from'] | null>(null);
 let navigatingTo = $state.raw<Navigation['to'] | null>(null);

@@ -5,10 +5,9 @@ import type {
 
 import type { BuilderOptions, StorybookConfigVite } from '@storybook/builder-vite';
 
-import type { Navigation, Page } from '@sveltejs/kit';
-
 import type { enhance } from './mocks/app/forms';
 import type { goto, invalidate, invalidateAll } from './mocks/app/navigation';
+import type { Navigation, Page } from './mocks/app/state.svelte';
 
 type FrameworkName = CompatibleString<'@storybook/sveltekit'>;
 type BuilderName = CompatibleString<'@storybook/builder-vite'>;

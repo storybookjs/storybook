@@ -70,7 +70,6 @@
     "@storybook/svelte-vite": "workspace:*"
   },
   "devDependencies": {
-    "@sveltejs/kit": "^2.0.0",
     "@types/node": "^22.0.0",
     "typescript": "^5.8.3",
     "vite": "^6.2.5"

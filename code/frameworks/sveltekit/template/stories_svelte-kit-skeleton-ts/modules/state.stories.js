@@ -24,9 +24,11 @@ export const Page = {
 export const Navigating = {
   parameters: {
     sveltekit_experimental: {
-      navigating: {
-        route: {
-          id: '/storybook',
+      state: {
+        navigating: {
+          route: {
+            id: '/storybook',
+          },
         },
       },
     },
@@ -36,7 +38,9 @@ export const Navigating = {
 export const Updated = {
   parameters: {
     sveltekit_experimental: {
-      updated: true,
+      state: {
+        updated: true,
+      },
     },
   },
 };
@@ -44,14 +48,16 @@ export const Updated = {
 export const PageAndNavigating = {
   parameters: {
     sveltekit_experimental: {
-      page: {
-        data: {
-          test: 'passed',
+      state: {
+        page: {
+          data: {
+            test: 'passed',
+          },
         },
-      },
-      navigating: {
-        route: {
-          id: '/storybook',
+        navigating: {
+          route: {
+            id: '/storybook',
+          },
         },
       },
     },
@@ -61,12 +67,14 @@ export const PageAndNavigating = {
 export const PageAndUpdated = {
   parameters: {
     sveltekit_experimental: {
-      page: {
-        data: {
-          test: 'passed',
+      state: {
+        page: {
+          data: {
+            test: 'passed',
+          },
         },
+        updated: true,
       },
-      updated: true,
     },
   },
 };
@@ -74,12 +82,14 @@ export const PageAndUpdated = {
 export const NavigatingAndUpdated = {
   parameters: {
     sveltekit_experimental: {
-      navigating: {
-        route: {
-          id: '/storybook',
+      state: {
+        navigating: {
+          route: {
+            id: '/storybook',
+          },
         },
+        updated: true,
       },
-      updated: true,
     },
   },
 };
@@ -87,17 +97,19 @@ export const NavigatingAndUpdated = {
 export const AllThree = {
   parameters: {
     sveltekit_experimental: {
-      page: {
-        data: {
-          test: 'passed',
+      state: {
+        page: {
+          data: {
+            test: 'passed',
+          },
         },
-      },
-      navigating: {
-        route: {
-          id: '/storybook',
+        navigating: {
+          route: {
+            id: '/storybook',
+          },
         },
+        updated: true,
       },
-      updated: true,
     },
   },
 };

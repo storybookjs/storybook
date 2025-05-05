@@ -22,6 +22,7 @@ import type {
 import { omitBy, pick } from 'es-toolkit';
 import memoize from 'memoizerific';
 
+import { getCoreAnnotations } from '../../../shared/preview/core-annotations';
 import { HooksContext } from '../addons';
 import { ArgsStore } from './ArgsStore';
 import { GlobalsStore } from './GlobalsStore';
@@ -77,7 +78,9 @@ export class StoryStore<TRenderer extends Renderer> {
   ) {
     this.storyIndex = new StoryIndexStore(storyIndex);
 
-    this.projectAnnotations = normalizeProjectAnnotations(composeConfigs([projectAnnotations]));
+    this.projectAnnotations = normalizeProjectAnnotations(
+      composeConfigs([...getCoreAnnotations(), projectAnnotations])
+    );
     const { initialGlobals, globalTypes } = this.projectAnnotations;
 
     this.args = new ArgsStore();

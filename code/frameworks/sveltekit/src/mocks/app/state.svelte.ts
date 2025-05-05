@@ -12,6 +12,7 @@
 
 /* eslint-disable prefer-const */
 import type { Navigation, Page } from '@sveltejs/kit';
+import { fn } from 'storybook/test';
 
 let pageData = $state.raw<Page['data']>({});
 let pageForm = $state.raw<Page['form']>(null);
@@ -34,7 +35,7 @@ export let page = {
 } satisfies Page;
 
 let navigatingFrom = $state.raw<Navigation['from'] | null>(null);
-let navigatingTo = $state.raw<Navigation['from'] | null>(null);
+let navigatingTo = $state.raw<Navigation['to'] | null>(null);
 let navigatingType = $state.raw<Navigation['type'] | null>(null);
 let navigatingWillUnload = $state.raw<Navigation['willUnload'] | null>(null);
 let navigatingDelta = $state.raw<Navigation['delta'] | null>(null);
@@ -53,8 +54,5 @@ let updatedCurrent = $state.raw(false);
 
 export let updated = {
   current: updatedCurrent,
-  check: () =>
-    new Promise<boolean>((resolve) => {
-      resolve(updatedCurrent);
-    }),
+  check: fn(() => Promise.resolve(updatedCurrent)),
 };

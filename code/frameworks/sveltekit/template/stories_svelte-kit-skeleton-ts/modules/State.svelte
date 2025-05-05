@@ -1,9 +1,7 @@
 <script>
-import { onMount} from "svelte";
 	import { page, navigating, updated } from '$app/state';
 
 	updated.check();
-
 </script>
 
 <h1>$app/state</h1>

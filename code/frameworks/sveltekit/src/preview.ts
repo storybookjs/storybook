@@ -26,65 +26,27 @@ const svelteKitMocksDecorator: Decorator = (Story, ctx) => {
   setUpdated(svelteKitParameters?.stores?.updated);
   setAfterNavigateArgument(svelteKitParameters?.navigation?.afterNavigate);
 
-  const svelteKitParametersStatePage = svelteKitParameters.state?.page;
+  assignStateProperties(svelteKitParameters.state?.page, appStatePage, [
+    'data',
+    'form',
+    'error',
+    'params',
+    'route',
+    'state',
+    'status',
+    'url',
+  ]);
 
-  if (svelteKitParametersStatePage?.data) {
-    appStatePage.data = svelteKitParametersStatePage.data;
-  }
+  assignStateProperties(svelteKitParameters.state?.navigating, appStateNavigating, [
+    'from',
+    'to',
+    'type',
+    'willUnload',
+    'delta',
+    'complete',
+  ]);
 
-  if (svelteKitParametersStatePage?.form) {
-    appStatePage.form = svelteKitParametersStatePage.form;
-  }
-
-  if (svelteKitParametersStatePage?.error) {
-    appStatePage.error = svelteKitParametersStatePage.error;
-  }
-
-  if (svelteKitParametersStatePage?.params) {
-    appStatePage.params = svelteKitParametersStatePage.params;
-  }
-
-  if (svelteKitParametersStatePage?.route) {
-    appStatePage.route = svelteKitParametersStatePage.route;
-  }
-
-  if (svelteKitParametersStatePage?.state) {
-    appStatePage.state = svelteKitParametersStatePage.state;
-  }
-
-  if (svelteKitParametersStatePage?.status) {
-    appStatePage.status = svelteKitParametersStatePage.status;
-  }
-
-  if (svelteKitParametersStatePage?.url) {
-    appStatePage.url = svelteKitParametersStatePage.url;
-  }
-
-  const svelteKitParametersStateNavigating = svelteKitParameters.state?.navigating;
-
-  if (svelteKitParametersStateNavigating?.from) {
-    appStateNavigating.from = svelteKitParametersStateNavigating.from;
-  }
-
-  if (svelteKitParametersStateNavigating?.to) {
-    appStateNavigating.to = svelteKitParametersStateNavigating.to;
-  }
-
-  if (svelteKitParametersStateNavigating?.type) {
-    appStateNavigating.type = svelteKitParametersStateNavigating.type;
-  }
-
-  if (svelteKitParametersStateNavigating?.willUnload) {
-    appStateNavigating.willUnload = svelteKitParametersStateNavigating.willUnload;
-  }
-
-  if (svelteKitParametersStateNavigating?.delta) {
-    appStateNavigating.delta = svelteKitParametersStateNavigating.delta;
-  }
-
-  if (svelteKitParametersStateNavigating?.complete) {
-    appStateNavigating.complete = svelteKitParametersStateNavigating.complete;
-  }
+  console.log({ svelteKitParameters });
 
   if (typeof svelteKitParameters.state?.updated?.current === 'boolean') {
     appStateUpdated.current = svelteKitParameters.state?.updated?.current;
@@ -203,5 +165,13 @@ const svelteKitMocksDecorator: Decorator = (Story, ctx) => {
 
   return Story();
 };
+
+function assignStateProperties(source: any, target: any, properties: string[]) {
+  for (const property of properties) {
+    if (source?.[property] !== undefined) {
+      target[property] = source[property];
+    }
+  }
+}
 
 export const decorators: Decorator[] = [svelteKitMocksDecorator];

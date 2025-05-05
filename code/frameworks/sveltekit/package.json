@@ -57,7 +57,7 @@
     },
     "./internal/mocks/app/state.svelte.js": {
       "types": "./dist/mocks/app/state.d.ts",
-      "import": "./dist/mocks/app/state.svelte.mjs"
+      "import": "./dist/mocks/app/state.svelte.js"
     },
     "./internal/mocks/app/stores": {
       "types": "./dist/mocks/app/stores.d.ts",

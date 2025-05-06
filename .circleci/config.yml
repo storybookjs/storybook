@@ -841,10 +841,9 @@ workflows:
       - knip:
           requires:
             - build
-      # TODO: don't forget to reenable this
-      #      - bench-packages:
-      #          requires:
-      #            - build
+      - bench-packages:
+          requires:
+            - build
       - check
       - unit-tests:
           requires:
@@ -918,10 +917,9 @@ workflows:
       - knip:
           requires:
             - build
-      # TODO: don't forget to reenable this
-      #      - bench-packages:
-      #          requires:
-      #            - build
+      - bench-packages:
+          requires:
+            - build
       - check
       - unit-tests:
           requires:
@@ -996,10 +994,9 @@ workflows:
       - knip:
           requires:
             - build
-      # TODO: don't forget to reenable this
-      #      - bench-packages:
-      #          requires:
-      #            - build
+      - bench-packages:
+          requires:
+            - build
       - check
       - unit-tests:
           requires:

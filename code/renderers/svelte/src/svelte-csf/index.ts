@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import StoryComponent from './runtime/Story.svelte';
 // TODO: Remove in next major release
 import LegacyMetaComponent from './runtime/LegacyMeta.svelte';
@@ -6,16 +7,38 @@ import LegacyStoryComponent from './runtime/LegacyStory.svelte';
 // TODO: Remove in next major release
 import LegacyTemplateComponent from './runtime/LegacyTemplate.svelte';
 
-import type {
-  Meta as MetaType,
-  StoryContext as BaseStoryContext,
-  StoryAnnotations,
-  Cmp,
-} from './types.js';
+import type { Cmp, ComponentAnnotations } from './types.js';
+export type { StoryContext } from './types.js';
+import type { ComponentProps, Snippet } from 'svelte';
 
-export function defineMeta<const TCmp extends Cmp>(_meta: MetaType<TCmp>) {
+export function defineMeta<TSnippet, TCmp extends Cmp>(
+  _meta: {
+    render?: TSnippet;
+    component?: TCmp;
+    args?: Partial<
+      TSnippet extends Snippet<[infer TArgs extends Record<string, any>, any]>
+        ? TArgs
+        : ComponentProps<TCmp>
+    >;
+  } & Omit<
+    ComponentAnnotations<
+      TCmp,
+      TSnippet extends Snippet<[infer TArgs extends Record<string, any>, any]>
+        ? TArgs
+        : ComponentProps<TCmp>
+    >,
+    'render' | 'component' | 'args'
+  >
+): {
+  Story: typeof StoryComponent<
+    TSnippet extends Snippet<[infer TArgs extends Record<string, any>, any]>
+      ? TArgs
+      : ComponentProps<TCmp>,
+    TCmp
+  >;
+} {
   return {
-    Story: StoryComponent as typeof StoryComponent<TCmp>,
+    Story: StoryComponent as any,
   };
 }
 
@@ -30,33 +53,12 @@ export function defineMeta<const TCmp extends Cmp>(_meta: MetaType<TCmp>) {
  * {/snippet}
  * ```
  */
-export type Args<TStoryCmp> = TStoryCmp extends typeof StoryComponent<infer TCmp extends Cmp>
-  ? NonNullable<StoryAnnotations<TCmp>['args']>
-  : never;
-
-/**
- * Infer **second** parameter type `storyContext` in template snippet specified at the root of fragment _(a shared one)_.
- * @template TStoryCmp destructured `Story` property from the {@link defineMeta} call.
- *
- * @example
- * ```svelte
- * {#snippet template(args: Args<typeof Story>, context: StoryContext<typeof Story>)}
- *   <!--                                       👆 second parameter ->
- * {/snippet}
- * ```
- */
-export type StoryContext<TStoryCmp> = TStoryCmp extends typeof StoryComponent<
-  infer TCmp extends Cmp
+export type Args<TStoryCmp> = TStoryCmp extends typeof StoryComponent<
+  infer TArgs extends Record<string, any>,
+  Cmp
 >
-  ? BaseStoryContext<TCmp>
+  ? TArgs
   : never;
-
-/**
- * Fill the generic type parameter for [`createRawSnippet()`](https://svelte.dev/docs/svelte/svelte#createRawSnippet)
- * to get better type-safety experience.
- * @template TStoryCmp destructured `Story` property from the {@link defineMeta} call.
- */
-export type TemplateSnippet<TStoryCmp> = [Args<TStoryCmp>, StoryContext<TStoryCmp>];
 
 // TODO: Remove in next major release
 export {

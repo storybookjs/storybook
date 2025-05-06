@@ -6,9 +6,11 @@ const CONTEXT_KEY = 'storybook-story-renderer-context';
 
 interface ContextProps<TCmp extends Cmp> {
   currentStoryExportName: string | undefined;
-  args: NonNullable<StoryAnnotations<TCmp>['args']>;
+  args: NonNullable<StoryAnnotations<Record<string, any>, TCmp>['args']>;
   storyContext: StoryContext<TCmp>;
-  metaRenderSnippet?: Snippet<[StoryAnnotations<TCmp>['args'], StoryContext<TCmp>]>;
+  metaRenderSnippet?: Snippet<
+    [StoryAnnotations<Record<string, any>, TCmp>['args'], StoryContext<TCmp>]
+  >;
 }
 
 function buildContext<TCmp extends Cmp>(props: ContextProps<TCmp>) {

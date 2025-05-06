@@ -41,6 +41,9 @@
     flex-direction: column;
     height: 100%;
   }
+  .layout > * {
+    padding: 1rem;
+  }
 
   .header,
   .footer {

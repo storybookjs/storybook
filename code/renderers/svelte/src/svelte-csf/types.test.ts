@@ -1,8 +1,8 @@
 import type { StoryContext } from 'storybook/internal/types';
-import { createRawSnippet, type Component } from 'svelte';
+import { createRawSnippet, type Component, type ComponentProps } from 'svelte';
 import { describe, expectTypeOf, it } from 'vitest';
 
-import type { Meta, SvelteRenderer, ComponentAnnotations } from '$lib/types.js';
+import type { SvelteRenderer, ComponentAnnotations } from '$lib/types.js';
 
 import Button from '../examples/components/Button.svelte';
 
@@ -12,10 +12,11 @@ describe('Meta', () => {
       args: {
         sample: 0,
       },
-    } satisfies Meta<Component<{ sample: 0 }>>;
+    } satisfies ComponentAnnotations<Component<{ sample: 0 }>, { sample: number }>;
 
-    expectTypeOf(meta).toMatchTypeOf<Meta<Component<{ sample: 0 }>>>();
-    expectTypeOf(meta).toMatchTypeOf<ComponentAnnotations<Component<{ sample?: 0 }>>>();
+    expectTypeOf(meta).toMatchTypeOf<
+      ComponentAnnotations<Component<{ sample?: 0 }>, { sample?: number }>
+    >();
   });
 
   it('generic parameter can be a Svelte component', () => {
@@ -35,9 +36,10 @@ describe('Meta', () => {
       play(context) {
         expectTypeOf(context).toMatchTypeOf<StoryContext<SvelteRenderer<typeof Button>>>();
       },
-    } satisfies Meta<typeof Button>;
+    } satisfies ComponentAnnotations<typeof Button, ComponentProps<typeof Button>>;
 
-    expectTypeOf(meta).toMatchTypeOf<Meta<typeof Button>>();
-    expectTypeOf(meta).toMatchTypeOf<ComponentAnnotations<typeof Button>>();
+    expectTypeOf(meta).toMatchTypeOf<
+      ComponentAnnotations<typeof Button, ComponentProps<typeof Button>>
+    >();
   });
 });

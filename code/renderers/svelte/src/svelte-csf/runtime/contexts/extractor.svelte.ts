@@ -9,7 +9,7 @@ const CONTEXT_KEY = 'storybook-stories-extractor-context';
 
 export interface StoriesExtractorContextProps<TCmp extends Cmp> {
   isExtracting: boolean;
-  register: (storyCmpProps: ComponentProps<typeof Story<TCmp>>) => void;
+  register: (storyCmpProps: ComponentProps<typeof Story<Record<string, any>, TCmp>>) => void;
 }
 
 function buildContext<TCmp extends Cmp>(storyCmpProps: StoriesExtractorContextProps<TCmp>) {
@@ -29,7 +29,7 @@ function buildContext<TCmp extends Cmp>(storyCmpProps: StoriesExtractorContextPr
 export type StoriesExtractorContext<TCmp extends Cmp> = ReturnType<typeof buildContext<TCmp>>;
 
 export type StoriesRepository<TCmp extends Cmp> = {
-  stories: Map<string, ComponentProps<typeof Story<TCmp>>>;
+  stories: Map<string, ComponentProps<typeof Story<Record<string, any>, TCmp>>>;
 };
 
 export function createStoriesExtractorContext<TCmp extends Cmp>(

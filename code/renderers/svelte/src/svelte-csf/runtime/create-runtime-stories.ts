@@ -3,7 +3,7 @@ import type { StoryObj } from '@storybook/svelte';
 import { mount, unmount, type Component } from 'svelte';
 
 import type { StoriesRepository } from '$lib/runtime/contexts/extractor.svelte';
-import type { Cmp, Meta } from '$lib/types.js';
+import type { Cmp, ComponentAnnotations } from '$lib/types.js';
 
 import StoriesExtractor from './StoriesExtractor.svelte';
 import StoryRenderer from './StoryRenderer.svelte';
@@ -24,7 +24,7 @@ const createFragment = document.createDocumentFragment
  * instantiate the main Stories component: Every Story but
  * the one selected is disabled.
  */
-export const createRuntimeStories = (Stories: Component, meta: Meta<Cmp>) => {
+export const createRuntimeStories = (Stories: Component, meta: ComponentAnnotations<Cmp>) => {
   const repository: StoriesRepository<Cmp> = {
     stories: new Map(),
   };

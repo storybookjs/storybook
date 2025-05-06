@@ -1,5 +1,5 @@
 <script module lang="ts">
-  import { defineMeta, type Args } from '@storybook/addon-svelte-csf';
+  import { defineMeta } from '@storybook/addon-svelte-csf';
   import { expect, within } from '@storybook/test';
 
   /**
@@ -19,7 +19,7 @@
   });
 </script>
 
-{#snippet defaultTemplate(args: Args<typeof Story>)}
+{#snippet defaultTemplate(args: { text: string })}
   <h2 data-testid="heading">Default template</h2>
   <p>{args?.text}</p>
 {/snippet}
@@ -87,7 +87,7 @@
   {/snippet}
 </Story>
 
-{#snippet sharedTemplate(args: Args<typeof Story>)}
+{#snippet sharedTemplate(args: { text: string })}
   <h2 data-testid="heading">Shared template</h2>
   <p>{args?.text}</p>
 {/snippet}
@@ -99,7 +99,7 @@
   Example:
 
   ```svelte
-  {#snippet template(args: Args<typeof Story>)}
+  {#snippet template(args: { text: string })}
     <SomeComponent {...args}>
       My custom template to reuse across several stories
     </SomeComponent>
@@ -133,7 +133,7 @@
 
   ```svelte
   <script>
-    import { defineMeta, type Args } from '@storybook/addon-svelte-csf';
+    import { defineMeta } from '@storybook/addon-svelte-csf';
 
     const { Story } = defineMeta({
       ...,
@@ -141,7 +141,7 @@
     })
   </script>
 
-  {#snippet defaultTemplate(args: Args<typeof Story>)}
+  {#snippet defaultTemplate(args: { text: string })}
     <SomeComponent {...args}>
       A default template to be used in <Story> components which doesn't have an explicit template set
     </SomeComponent>

@@ -6,12 +6,12 @@ import { getSvelteAST } from '$lib/parser/ast.js';
 import { StorybookSvelteCSFError } from '$lib/utils/error.js';
 
 describe(extractModuleNodes.name, () => {
-  it('fails when module tag not found', ({ expect }) => {
+  it('fails when module tag not found', async ({ expect }) => {
     const { module } = getSvelteAST({
       code: `<script></script>`,
     });
 
-    expect(extractModuleNodes({ module })).rejects.toThrowErrorMatchingInlineSnapshot(`
+    await expect(extractModuleNodes({ module })).rejects.toThrowErrorMatchingInlineSnapshot(`
       [SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0001 (MissingModuleTagError): The file '<path not specified>'
       does not have a module context (<script module> ... </script>).
 
@@ -28,12 +28,12 @@ describe(extractModuleNodes.name, () => {
     `);
   });
 
-  it("fails when 'defineMeta' not imported", ({ expect }) => {
+  it("fails when 'defineMeta' not imported", async ({ expect }) => {
     const { module } = getSvelteAST({
       code: `<script module></script>`,
     });
 
-    expect(extractModuleNodes({ module })).rejects.toThrowErrorMatchingInlineSnapshot(`
+    await expect(extractModuleNodes({ module })).rejects.toThrowErrorMatchingInlineSnapshot(`
       [SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0003 (MissingDefineMetaImportError): The file '<path not specified>'
       does not import defineMeta from "@storybook/addon-svelte-csf" inside the module context.
 
@@ -50,7 +50,7 @@ describe(extractModuleNodes.name, () => {
     `);
   });
 
-  it("fails when 'defineMeta' not used", ({ expect }) => {
+  it("fails when 'defineMeta' not used", async ({ expect }) => {
     const { module } = getSvelteAST({
       code: `
         <script module>
@@ -59,7 +59,7 @@ describe(extractModuleNodes.name, () => {
       `,
     });
 
-    expect(extractModuleNodes({ module })).rejects.toThrowErrorMatchingInlineSnapshot(`
+    await expect(extractModuleNodes({ module })).rejects.toThrowErrorMatchingInlineSnapshot(`
       [SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004 (MissingDefineMetaVariableDeclarationError): The file '<path not specified>'
       does not store the result of calling defineMeta(). While defineMeta() might have been called,
       it's return value needs to be stored and destructured for the parsing to succeed, eg.:
@@ -75,7 +75,7 @@ describe(extractModuleNodes.name, () => {
     `);
   });
 
-  it("fails when 'Story' is not destructured", ({ expect }) => {
+  it("fails when 'Story' is not destructured", async ({ expect }) => {
     const { module } = getSvelteAST({
       code: `
         <script module>
@@ -84,7 +84,7 @@ describe(extractModuleNodes.name, () => {
         </script>`,
     });
 
-    expect(extractModuleNodes({ module })).rejects.toThrowErrorMatchingInlineSnapshot(`
+    await expect(extractModuleNodes({ module })).rejects.toThrowErrorMatchingInlineSnapshot(`
       [SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004 (MissingDefineMetaVariableDeclarationError): The file '<path not specified>'
       does not store the result of calling defineMeta(). While defineMeta() might have been called,
       it's return value needs to be stored and destructured for the parsing to succeed, eg.:
@@ -100,7 +100,7 @@ describe(extractModuleNodes.name, () => {
     `);
   });
 
-  it('works when it has valid required entry snippet', ({ expect }) => {
+  it('works when it has valid required entry snippet', async ({ expect }) => {
     const { module } = getSvelteAST({
       code: `
         <script module>
@@ -109,10 +109,10 @@ describe(extractModuleNodes.name, () => {
         </script>`,
     });
 
-    expect(extractModuleNodes({ module })).resolves.not.toThrow();
+    await expect(extractModuleNodes({ module })).resolves.not.toThrow();
   });
 
-  it('works when meta was destructured too', ({ expect }) => {
+  it('works when meta was destructured too', async ({ expect }) => {
     const { module } = getSvelteAST({
       code: `
         <script module>
@@ -122,7 +122,7 @@ describe(extractModuleNodes.name, () => {
       `,
     });
 
-    expect(extractModuleNodes({ module })).resolves.not.toThrow();
+    await expect(extractModuleNodes({ module })).resolves.not.toThrow();
   });
 
   it('extracts module nodes', async ({ expect }) => {

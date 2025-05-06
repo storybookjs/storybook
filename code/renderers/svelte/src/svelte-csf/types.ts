@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type {
   ComponentAnnotations as BaseComponentAnnotations,
   StoryAnnotations as BaseStoryAnnotations,
@@ -5,22 +6,17 @@ import type {
   WebRenderer,
 } from 'storybook/internal/types';
 import type { Component, ComponentProps } from 'svelte';
-import type { SetOptional, Simplify } from 'type-fest';
 
 export type Cmp = Component<any>;
 
-/**
- * Metadata to configure the stories for a component.
- *
- * @see [Default export](https://storybook.js.org/docs/formats/component-story-format/#default-export)
- */
-export type Meta<TCmp extends Cmp> = ComponentAnnotations<TCmp>;
-
-export type ComponentAnnotations<TCmp extends Cmp> = BaseComponentAnnotations<
+export type ComponentAnnotations<
+  TCmp extends Cmp,
+  TArgs extends Record<string, any> = Record<string, any>,
+> = BaseComponentAnnotations<
   // 👇 Renderer
   SvelteRenderer<TCmp>,
   // 👇 Args
-  ComponentProps<TCmp>
+  TArgs
 >;
 
 export interface SvelteRenderer<TCmp extends Cmp> extends WebRenderer {
@@ -34,19 +30,22 @@ export interface SvelteStoryResult<TCmp extends Cmp> {
   decorator?: TCmp;
 }
 
-export type StoryContext<TCmp extends Cmp> = BaseStoryContext<
+export type StoryContext<TArgs extends Record<string, any>> = BaseStoryContext<
   // Renderer
-  SvelteRenderer<TCmp>,
+  SvelteRenderer<Component<TArgs>>,
   // Args
-  Simplify<TCmp>
+  TArgs
 >;
 
-export type StoryAnnotations<TCmp extends Cmp> = BaseStoryAnnotations<
+export type StoryAnnotations<
+  TArgs extends Record<string, any>,
+  TCmp extends Cmp,
+> = BaseStoryAnnotations<
   // 👇 Renderer
   SvelteRenderer<TCmp>,
   // 👇 All of the args - combining the component props and the ones from meta - defineMeta
-  ComponentProps<TCmp>,
+  TArgs,
   // NOTE: 👇 This is supposed to set all of the args specified in 'defineMeta' to be optional for Story
   // Partial<Simplify<SetOptional<ComponentProps<TCmp>, keyof Meta<TCmp>['args']>>>
-  Partial<ComponentProps<TCmp>>
+  Partial<TArgs>
 >;

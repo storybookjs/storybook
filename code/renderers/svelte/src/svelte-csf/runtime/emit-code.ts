@@ -2,14 +2,11 @@ import { SourceType, SNIPPET_RENDERED } from 'storybook/internal/docs-tools';
 import { addons } from 'storybook/internal/preview-api';
 import type { StoryObj } from '@storybook/svelte';
 import { get } from 'es-toolkit/compat';
-import type { ComponentProps } from 'svelte';
-
-import type Story from './Story.svelte';
 
 import type { Cmp, StoryContext } from '../types.js';
 
 type Params = {
-  args: ComponentProps<Story<Cmp>>['args'];
+  args: Record<string, any>;
   storyContext: StoryContext<Cmp>;
 };
 

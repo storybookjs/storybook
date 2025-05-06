@@ -4,12 +4,12 @@
   import { useStoryRenderer } from './contexts/renderer.svelte';
   import { emitCode } from './emit-code.js';
 
-  import type { Cmp, StoryAnnotations, StoryContext } from '../types.js';
+  import type { Cmp, StoryContext } from '../types.js';
 
   type Props = {
     Stories: Component;
     exportName: string;
-    args: NonNullable<StoryAnnotations<Cmp>['args']>;
+    args: Record<string, any>;
     storyContext: StoryContext<Cmp>;
     metaRenderSnippet?: Snippet;
   };

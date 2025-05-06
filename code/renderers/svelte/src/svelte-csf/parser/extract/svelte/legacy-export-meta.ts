@@ -4,15 +4,15 @@ import type { SvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
 import type { CompiledASTNodes } from '$lib/parser/extract/compiled/nodes.js';
 
 import { GetDefineMetaFirstArgumentError } from '$lib/utils/error/parser/extract/svelte.js';
-import type { Cmp, Meta } from '$lib/types.js';
+import type { Cmp, ComponentAnnotations } from '$lib/types.js';
 
-interface Options<Properties extends Array<keyof Meta<Cmp>>> {
+interface Options<Properties extends Array<keyof ComponentAnnotations<Cmp>>> {
   nodes: SvelteASTNodes | CompiledASTNodes;
   properties: Properties;
   filename?: string;
 }
 
-type Result<Properties extends Array<keyof Meta<Cmp>>> = Partial<{
+type Result<Properties extends Array<keyof ComponentAnnotations<Cmp>>> = Partial<{
   [Key in Properties[number]]: Property;
 }>;
 
@@ -22,7 +22,7 @@ type Result<Properties extends Array<keyof Meta<Cmp>>> = Partial<{
  * because in both cases, the AST structure is the same _(or should be!)_.
  */
 export function extractLegacyExportMetaPropertiesNodes<
-  const Properties extends Array<keyof Meta<Cmp>>,
+  const Properties extends Array<keyof ComponentAnnotations<Cmp>>,
 >(options: Options<Properties>): Result<Properties> {
   const { properties } = options;
   const objectExpression = getLegacyExportMetaObjectExpression(options);
@@ -46,7 +46,7 @@ export function extractLegacyExportMetaPropertiesNodes<
  * which should satisfy `@storybook/svelte`'s interface {@link Meta}.
  */
 export function getLegacyExportMetaObjectExpression(
-  options: Pick<Options<Array<keyof Meta<Cmp>>>, 'filename' | 'nodes'>
+  options: Pick<Options<Array<keyof ComponentAnnotations<Cmp>>>, 'filename' | 'nodes'>
 ): ObjectExpression {
   const { nodes, filename } = options;
   const { defineMetaVariableDeclaration, defineMetaImport } = nodes;

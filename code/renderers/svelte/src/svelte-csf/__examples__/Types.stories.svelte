@@ -22,6 +22,7 @@
         control: 'text',
       },
     },
+    tags: ['autodocs'],
   });
 
   type Args = Omit<ComponentProps<typeof Layout>, 'footer' | 'children' | 'header'> & {

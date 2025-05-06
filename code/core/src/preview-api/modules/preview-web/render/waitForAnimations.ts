@@ -2,6 +2,11 @@ const ANIMATION_TIMEOUT = 5000;
 
 // Use the Web Animations API to wait for any animations and transitions to finish
 export async function waitForAnimations(signal: AbortSignal) {
+  if (!('document' in globalThis && 'querySelectorAll' in globalThis.document)) {
+    // Don't run in React Native
+    return;
+  }
+
   let timedOut = false;
   await Promise.race([
     // After 50ms, retrieve any running animations and wait for them to finish

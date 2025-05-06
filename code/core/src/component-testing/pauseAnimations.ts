@@ -18,6 +18,11 @@ export function isTestEnvironment() {
 
 // Pause all animations and transitions by overriding the CSS properties
 export function pauseAnimations(atEnd = true) {
+  if (!('document' in globalThis && 'createElement' in globalThis.document)) {
+    // Don't run in React Native
+    return;
+  }
+
   const pauseStyle = document.createElement('style');
   pauseStyle.textContent = `*, *:before, *:after {
     animation-delay: 0s !important;

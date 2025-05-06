@@ -361,10 +361,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
       }
 
       await this.runPhase(abortSignal, 'completing', async () => {
-        // Avoid issues with React Native
-        if ('document' in globalThis && 'querySelectorAll' in globalThis.document) {
-          await waitForAnimations(abortSignal);
-        }
+        await waitForAnimations(abortSignal);
       });
 
       await this.runPhase(abortSignal, 'completed', async () => {

@@ -8,25 +8,6 @@ import type { ComponentConstructorOptions, ComponentEvents, SvelteComponent } fr
 
 export type StoryContext = StoryContextBase<SvelteRenderer>;
 
-export interface ShowErrorArgs {
-  title: string;
-  description: string;
-}
-
-export interface MountViewArgs {
-  Component: any;
-  target: any;
-  props: MountProps;
-  on: any;
-  Wrapper: any;
-  WrapperData: any;
-}
-
-interface MountProps {
-  rounded: boolean;
-  text: string;
-}
-
 type ComponentType<
   Props extends Record<string, any> = any,
   Events extends Record<string, any> = any,

@@ -6,12 +6,8 @@ import LegacyStoryComponent from './runtime/LegacyStory.svelte';
 // TODO: Remove in next major release
 import LegacyTemplateComponent from './runtime/LegacyTemplate.svelte';
 
-import type {
-  Meta as MetaType,
-  StoryContext as BaseStoryContext,
-  StoryAnnotations,
-  Cmp,
-} from './types.js';
+import type { Meta as MetaType, StoryContext as BaseStoryContext, Cmp } from './types.js';
+import type { ComponentProps } from 'svelte';
 
 export function defineMeta<const TCmp extends Cmp>(_meta: MetaType<TCmp>) {
   return {
@@ -31,9 +27,8 @@ export function defineMeta<const TCmp extends Cmp>(_meta: MetaType<TCmp>) {
  * ```
  */
 export type Args<TStoryCmp> = TStoryCmp extends typeof StoryComponent<infer TCmp extends Cmp>
-  ? NonNullable<StoryAnnotations<TCmp>['args']>
+  ? ComponentProps<TCmp>
   : never;
-
 /**
  * Infer **second** parameter type `storyContext` in template snippet specified at the root of fragment _(a shared one)_.
  * @template TStoryCmp destructured `Story` property from the {@link defineMeta} call.

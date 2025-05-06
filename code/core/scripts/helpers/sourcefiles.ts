@@ -7,7 +7,10 @@ import { isNotNil } from 'es-toolkit';
 
 import { dedent, esbuild, getWorkspace, prettier } from '../../../../scripts/prepare/tools';
 import { temporaryFile } from '../../src/common/utils/cli';
-import { BROWSER_TARGETS } from '../../src/shared/constants/environments-support';
+import {
+  BROWSER_TARGETS,
+  SUPPORTED_FEATURES,
+} from '../../src/shared/constants/environments-support';
 
 GlobalRegistrator.register({ url: 'http://localhost:3000', width: 1920, height: 1080 });
 
@@ -89,7 +92,6 @@ const localAlias = {
   'storybook/internal': join(__dirname, '..', '..', 'src'),
   'storybook/theming': join(__dirname, '..', '..', 'src', 'theming'),
   'storybook/test': join(__dirname, '..', '..', 'src', 'test'),
-  'storybook/test/spy': join(__dirname, '..', '..', 'src', 'test', 'spy'),
   'storybook/test/preview': join(__dirname, '..', '..', 'src', 'test', 'preview'),
   'storybook/actions': join(__dirname, '..', '..', 'src', 'actions'),
   'storybook/preview-api': join(__dirname, '..', '..', 'src', 'preview-api'),
@@ -117,6 +119,7 @@ async function generateExportsFile(prettierConfig: prettier.Options | null): Pro
     splitting: false,
     platform: 'browser',
     target: BROWSER_TARGETS,
+    supported: SUPPORTED_FEATURES,
   });
 
   const { globalsNameValueMap: data } = await import(outFile);

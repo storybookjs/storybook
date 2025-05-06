@@ -49,12 +49,15 @@ export const addonA11yParameters: Fix<A11yOptions> = {
       absolute: true,
     });
 
+    const maybeHasA11yParameter = (content: string) =>
+      content.includes('a11y:') && content.includes('element:');
+
     // Filter files that contain both 'a11y' and 'element' in their content
     const storyFilesWithA11y = (
       await Promise.all(
         storyFiles.map(async (file) => {
           const content = await readFile(file, 'utf-8');
-          return content.includes('a11y') && content.includes('element') ? file : null;
+          return maybeHasA11yParameter(content) ? file : null;
         })
       )
     ).filter((file): file is string => file !== null);
@@ -63,7 +66,7 @@ export const addonA11yParameters: Fix<A11yOptions> = {
 
     if (previewConfigPath) {
       const content = await readFile(previewConfigPath, 'utf-8');
-      hasA11yConfigInPreview = content.includes('a11y') && content.includes('element');
+      hasA11yConfigInPreview = maybeHasA11yParameter(content);
     }
 
     if (storyFilesWithA11y.length === 0 && !hasA11yConfigInPreview) {

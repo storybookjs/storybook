@@ -5,7 +5,6 @@
   import type { Merge } from 'type-fest';
   const { Story } = defineMeta({
     component: Layout,
-    // @ts-expect-error TS does not understand that the snippet is defined before this call
     render: template,
     args: {
       mainFontSize: 'large',

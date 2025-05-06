@@ -139,11 +139,12 @@
 
 {#if isCurrentlyViewed}
   {#if isSnippet(template)}
-    {@render template(renderer.args, renderer.storyContext)}
+    {@render template(renderer.args as TArgs, renderer.storyContext as any)}
   {:else if isSnippet(children)}
     {#if asChild || isLegacyStory}
       {@render children()}
     {:else if renderer.storyContext.component}
+      {/* @ts-ignore */ null}
       <renderer.storyContext.component {...renderer.args} {children} />
     {:else}
       {@render children()}
@@ -151,6 +152,7 @@
   {:else if renderer.metaRenderSnippet}
     {@render renderer.metaRenderSnippet(renderer.args, renderer.storyContext)}
   {:else if renderer.storyContext.component}
+    {/* @ts-ignore */ null}
     <renderer.storyContext.component {...renderer.args} />
   {:else}
     <p>

@@ -1,8 +1,9 @@
 <script module lang="ts">
-  import { defineMeta, type Args, type StoryContext } from '@storybook/addon-svelte-csf';
+  import { defineMeta, type StoryContext } from '@storybook/addon-svelte-csf';
   import { fn } from '@storybook/test';
 
   import Button from './components/Button.svelte';
+  import type { ComponentProps } from 'svelte';
 
   const onclickFn = fn().mockName('onclick');
 
@@ -25,12 +26,11 @@
       },
       children: { control: 'text' },
     },
-    //@ts-expect-error TS does not understand that the snippet is defined before this call
     render: template,
   });
 </script>
 
-{#snippet template(args: Args<typeof Story>, context: StoryContext<typeof Story>)}
+{#snippet template(args, context)}
   <Button {...args}>{args.children}</Button>
 {/snippet}
 

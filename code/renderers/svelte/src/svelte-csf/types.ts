@@ -11,7 +11,7 @@ export type Cmp = Component<any>;
 
 export type ComponentAnnotations<
   TCmp extends Cmp,
-  TArgs extends Record<string, any>,
+  TArgs extends Record<string, any> = Record<string, any>,
 > = BaseComponentAnnotations<
   // 👇 Renderer
   SvelteRenderer<TCmp>,

@@ -60,10 +60,10 @@ const config = defineMain({
       directory: '../addons/a11y/template/stories',
       titlePrefix: 'addons/accessibility',
     },
-    // {
-    //   directory: '../addons/docs/template/stories',
-    //   titlePrefix: 'addons/docs',
-    // },
+    {
+      directory: '../addons/docs/template/stories',
+      titlePrefix: 'addons/docs',
+    },
     {
       directory: '../addons/links/template/stories',
       titlePrefix: 'addons/links',
@@ -91,7 +91,7 @@ const config = defineMain({
   ],
   addons: [
     '@storybook/addon-themes',
-    // '@storybook/addon-docs',
+    '@storybook/addon-docs',
     '@storybook/addon-designs',
     '@storybook/addon-vitest',
     '@storybook/addon-a11y',

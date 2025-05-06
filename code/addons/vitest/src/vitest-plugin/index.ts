@@ -77,6 +77,29 @@ const getStoryGlobsAndFiles = async (
   };
 };
 
+/**
+ * Plugin to stub MDX imports during testing This prevents the need to process MDX files in the test
+ * environment
+ */
+const mdxStubPlugin = (shouldStub: boolean): Plugin => {
+  return {
+    name: 'vite-plugin-stub-mdx',
+    enforce: 'pre',
+    resolveId(id) {
+      if (id.endsWith('.mdx')) {
+        return id;
+      }
+      return null;
+    },
+    load(id) {
+      if (id.endsWith('.mdx') && shouldStub) {
+        return `export default {};`;
+      }
+      return null;
+    },
+  };
+};
+
 const PACKAGE_DIR = dirname(require.resolve('@storybook/addon-vitest/package.json'));
 
 export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> => {
@@ -122,21 +145,30 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     getStoryGlobsAndFiles(presets, directories),
     presets.apply('framework', undefined),
     presets.apply('env', {}),
-    presets.apply<{ plugins?: Plugin[] }>('viteFinal', {}),
+    presets.apply<{ plugins?: Plugin[] }>('viteFinal', {
+      plugins: [mdxStubPlugin(finalOptions.disableAddonDocs) as Plugin],
+    }),
     presets.apply('staticDirs', []),
     extractTagsFromPreview(finalOptions.configDir),
   ]);
 
-  // filter out plugins that we know are unnecesary for tests, eg. docgen plugins
-  const plugins = (await withoutVitePlugins(viteConfigFromStorybook.plugins ?? [], [
+  const pluginsToIgnore = [
     'storybook:package-deduplication', // addon-docs
-    'storybook:mdx-plugin', // addon-docs
     'storybook:react-docgen-plugin',
     'vite:react-docgen-typescript', // aka @joshwooding/vite-plugin-react-docgen-typescript
     'storybook:svelte-docgen-plugin',
     'storybook:vue-component-meta-plugin',
-    'storybook:vue-docgen-plugin',
-  ])) as unknown as Plugin[];
+  ];
+
+  if (!finalOptions.disableAddonDocs) {
+    pluginsToIgnore.push('storybook:mdx-plugin');
+  }
+
+  // filter out plugins that we know are unnecesary for tests, eg. docgen plugins
+  const plugins = (await withoutVitePlugins(
+    viteConfigFromStorybook.plugins ?? [],
+    pluginsToIgnore
+  )) as unknown as Plugin[];
 
   const storybookTestPlugin: Plugin = {
     name: 'vite-plugin-storybook-test',

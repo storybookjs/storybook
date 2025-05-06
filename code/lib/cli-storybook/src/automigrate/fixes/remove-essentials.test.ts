@@ -418,34 +418,40 @@ describe('remove-essentials migration', () => {
       );
     });
 
-    it('does install docs addon as dependency if essentials is present and docs is configured in main config', async () => {
-      await typedAddonDocsEssentials.run({
-        result: {
-          hasEssentials: true,
-          hasDocsDisabled: false,
-          hasDocsAddon: true,
-          additionalAddonsToRemove: [],
-          allDeps: {
-            storybook: '^9.0.0',
+    it.each([
+      { type: 'devDependencies', asDevDependency: true },
+      { type: 'dependencies', asDevDependency: false },
+    ])(
+      'does install docs addon as $type if essentials is present and docs is configured in main config',
+      async ({ type, asDevDependency }) => {
+        await typedAddonDocsEssentials.run({
+          result: {
+            hasEssentials: true,
+            hasDocsDisabled: false,
+            hasDocsAddon: true,
+            additionalAddonsToRemove: [],
+            allDeps: {
+              storybook: '^9.0.0',
+            },
           },
-        },
-        packageManager: mockPackageManager,
-        packageJson: {
-          dependencies: {
-            storybook: '^9.1.0',
+          packageManager: mockPackageManager,
+          packageJson: {
+            [type]: {
+              storybook: '^9.1.0',
+            },
           },
-        },
-        mainConfigPath: '.storybook/main.ts',
-        configDir: '.storybook',
-        storybookVersion: '8.0.0',
-        mainConfig: {} as StorybookConfigRaw,
-      });
+          mainConfigPath: '.storybook/main.ts',
+          configDir: '.storybook',
+          storybookVersion: '8.0.0',
+          mainConfig: {} as StorybookConfigRaw,
+        });
 
-      expect(mockPackageManager.addDependencies).toHaveBeenCalledWith(
-        { installAsDevDependencies: false },
-        ['@storybook/addon-docs@^9.0.0']
-      );
-    });
+        expect(mockPackageManager.addDependencies).toHaveBeenCalledWith(
+          { installAsDevDependencies: asDevDependency },
+          ['@storybook/addon-docs@^9.0.0']
+        );
+      }
+    );
 
     it('handles import transformations', async () => {
       const { scanAndTransformFiles } = await import('storybook/internal/common');

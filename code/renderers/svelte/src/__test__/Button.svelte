@@ -1,12 +1,15 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  interface Props {
+    disabled: boolean;
+    label: string;
+    clicked?: (e: MouseEvent) => void;
+  }
 
-  export let disabled: boolean;
-  export let label: string;
-
-  const dispatch = createEventDispatcher();
+  // When a Svelte 5 component only uses runes, it is typed as a function component.
+  // Others are typed as class components. Hence we need to have tests for both shapes.
+  let { disabled, label, clicked}: Props = $props();
 </script>
 
-<button on:click={(e) => dispatch('clicked', e)} on:dblclick on:mousemove {disabled}>
+<button onclick={clicked} {disabled}>
   {label}
 </button>

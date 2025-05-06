@@ -19,12 +19,6 @@ vi.mock('picocolors', () => {
   };
 });
 
-vi.mock('./utils', () => ({
-  getPackageJsonPath: vi.fn(() => Promise.resolve('package.json')),
-  getPackageJsonOfDependency: vi.fn(() => Promise.resolve({})),
-  PackageJsonNotFoundError: Error,
-}));
-
 const packageManagerMock = {
   getAllDependencies: () =>
     Promise.resolve({

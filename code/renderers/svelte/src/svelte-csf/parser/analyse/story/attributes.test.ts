@@ -39,7 +39,7 @@ describe(getStringValueFromAttribute.name, () => {
 
         A '<Story name="undefined" />' has a prop 'name' whose value must be a static literal string.
 
-        More info: https://github.com/storybookjs/addon-svelte-csf/blob/v4.1.2/ERRORS.md#SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0001
+        More info: https://github.com/storybookjs/addon-svelte-csf/blob/v${StorybookSvelteCSFError.packageVersion}/ERRORS.md#SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0001
         ]
       `);
   });

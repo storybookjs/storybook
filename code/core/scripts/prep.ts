@@ -18,7 +18,11 @@ import {
 } from '../../../scripts/prepare/tools';
 import pkg from '../package.json';
 import { globalsModuleInfoMap } from '../src/manager/globals-module-info';
-import { BROWSER_TARGETS, NODE_TARGET } from '../src/shared/constants/environments-support';
+import {
+  BROWSER_TARGETS,
+  NODE_TARGET,
+  SUPPORTED_FEATURES,
+} from '../src/shared/constants/environments-support';
 import { getBundles, getEntries, getFinals } from './entries';
 import { generatePackageJsonFile } from './helpers/generatePackageJsonFile';
 import { generateTypesFiles } from './helpers/generateTypesFiles';
@@ -124,6 +128,7 @@ async function run() {
       ...esbuildDefaultOptions,
       format: 'esm',
       target: BROWSER_TARGETS,
+      supported: SUPPORTED_FEATURES,
       splitting: false,
       platform: 'browser',
 

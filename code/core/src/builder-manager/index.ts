@@ -9,7 +9,7 @@ import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
 import { pnpPlugin } from '@yarnpkg/esbuild-plugin-pnp';
 import sirv from 'sirv';
 
-import { BROWSER_TARGETS } from '../shared/constants/environments-support';
+import { BROWSER_TARGETS, SUPPORTED_FEATURES } from '../shared/constants/environments-support';
 import type {
   BuilderBuildResult,
   BuilderFunction,
@@ -68,6 +68,7 @@ export const getConfig: ManagerBuilder['getConfig'] = async (options) => {
       '.ttf': 'dataurl',
     },
     target: BROWSER_TARGETS,
+    supported: SUPPORTED_FEATURES,
     platform: 'browser',
     bundle: true,
     minify: false,

@@ -34,8 +34,8 @@ const consolidatedAddons = {
  * - If user had docs enabled (default): Install @storybook/addon-docs and add to main.ts
  * - If user had docs disabled: Skip addon-docs installation
  */
-export const addonEssentialsRemoveDocs: Fix<AddonDocsOptions> = {
-  id: 'addon-essentials-remove-docs',
+export const removeEssentials: Fix<AddonDocsOptions> = {
+  id: 'remove-essentials',
   versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
 
   async check({ mainConfigPath, mainConfig, packageManager }) {
@@ -197,7 +197,7 @@ export const addonEssentialsRemoveDocs: Fix<AddonDocsOptions> = {
       }
 
       // If docs was enabled (not disabled) and not already installed, add it
-      if (!hasDocsDisabled && !hasDocsAddon) {
+      if (!hasDocsDisabled && !hasDocsAddon && hasEssentials) {
         console.log('Adding @storybook/addon-docs...');
         await packageManager.runPackageCommand('storybook', [
           'add',

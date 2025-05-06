@@ -1,4 +1,4 @@
-import { type CleanupCallback, type Preview, isExportStory } from 'storybook/internal/csf';
+import { type CleanupCallback, isExportStory } from 'storybook/internal/csf';
 import { MountMustBeDestructuredError } from 'storybook/internal/preview-errors';
 import type {
   Args,
@@ -22,8 +22,8 @@ import type {
 import type { UserEventObject } from 'storybook/test';
 import { dedent } from 'ts-dedent';
 
+import { getCoreAnnotations } from '../../../../shared/preview/core-annotations';
 import { HooksContext } from '../../../addons';
-import { getCoreAnnotations } from '../../../core-annotations';
 import { ReporterAPI } from '../reporter-api';
 import { composeConfigs } from './composeConfigs';
 import { getCsfFactoryAnnotations } from './csf-factory-utils';
@@ -72,6 +72,7 @@ export function setProjectAnnotations<TRenderer extends Renderer = Renderer>(
 ): NormalizedProjectAnnotations<TRenderer> {
   const annotations = Array.isArray(projectAnnotations) ? projectAnnotations : [projectAnnotations];
   globalThis.globalProjectAnnotations = composeConfigs([
+    ...getCoreAnnotations(),
     globalThis.defaultProjectAnnotations ?? {},
     composeConfigs(annotations.map(extractAnnotation)),
   ]);
@@ -121,7 +122,6 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
 
   const normalizedProjectAnnotations = normalizeProjectAnnotations<TRenderer>(
     composeConfigs([
-      ...getCoreAnnotations(),
       defaultConfig ?? globalThis.globalProjectAnnotations ?? {},
       projectAnnotations ?? {},
     ])

@@ -1,3 +1,28 @@
+## 9.0.0-beta.10
+
+- CLI: Improve CLI upgrade process for @latest and @next - [#31356](https://github.com/storybookjs/storybook/pull/31356), thanks @yannbf!
+- SvelteKit: Forward form events when mocking `enhance` - [#31360](https://github.com/storybookjs/storybook/pull/31360), thanks @JReinhold!
+
+## 9.0.0-beta.9
+
+- Addon A11y: Provide full report in a11y manual runs - [#31325](https://github.com/storybookjs/storybook/pull/31325), thanks @yannbf!
+- Angular: remove invalid defaults for start-storybook - [#31337](https://github.com/storybookjs/storybook/pull/31337), thanks @AgentEnder!
+- Automigration: Adjust addon-docs install condition - [#31343](https://github.com/storybookjs/storybook/pull/31343), thanks @valentinpalkovic!
+- Automigration: Migrate users to codePanel - [#31313](https://github.com/storybookjs/storybook/pull/31313), thanks @valentinpalkovic!
+- Automigration: Pass over flags when calling automigrations - [#31342](https://github.com/storybookjs/storybook/pull/31342), thanks @valentinpalkovic!
+- CLI: Enhance compatibility check: deprecated detection - [#31317](https://github.com/storybookjs/storybook/pull/31317), thanks @ndelangen!
+- Core: Support React Native environment without static class blocks - [#31282](https://github.com/storybookjs/storybook/pull/31282), thanks @JReinhold!
+
+## 9.0.0-beta.8
+
+- Addon-vitest: Remove internal log for `staticDir` - [#31340](https://github.com/storybookjs/storybook/pull/31340), thanks @JReinhold!
+- CLI: Add skip onboarding, recommended/minimal config - [#30930](https://github.com/storybookjs/storybook/pull/30930), thanks @shilman!
+- CLI: Supress npm notice update log messages - [#31334](https://github.com/storybookjs/storybook/pull/31334), thanks @yannbf!
+- CLI: Wrap object addon names in wrap-require migration - [#31285](https://github.com/storybookjs/storybook/pull/31285), thanks @yatishgoel!
+- Core: Bring back loading globals from global types in portable stories - [#31328](https://github.com/storybookjs/storybook/pull/31328), thanks @yannbf!
+- React Native Web: Update `react-native-web` - [#31324](https://github.com/storybookjs/storybook/pull/31324), thanks @ndelangen!
+- Svelte: Remove unused `svelte-preprocess` dependency - [#31332](https://github.com/storybookjs/storybook/pull/31332), thanks @JReinhold!
+
 ## 9.0.0-beta.7
 
 - CLI: Fix get versions utility for NPM - [#29577](https://github.com/storybookjs/storybook/pull/29577), thanks @johnrcui!

@@ -1,5 +1,5 @@
 import type { JsPackageManager } from 'storybook/internal/common';
-import { isCorePackage } from 'storybook/internal/common';
+import { isCorePackage, isSatelliteAddon } from 'storybook/internal/common';
 
 import { cyan, yellow } from 'picocolors';
 import { gt } from 'semver';
@@ -56,7 +56,7 @@ export const upgradeStorybookRelatedDependencies = {
     const allDependencies = (await packageManager.getAllDependencies()) as Record<string, string>;
     const storybookDependencies = Object.keys(allDependencies)
       .filter((dep) => dep.includes('storybook'))
-      .filter((dep) => !isCorePackage(dep));
+      .filter((dep) => !isCorePackage(dep) && !isSatelliteAddon(dep));
     const incompatibleDependencies = analyzedPackages
       .filter((pkg) => pkg.hasIncompatibleDependencies)
       .map((pkg) => pkg.packageName);
@@ -80,7 +80,7 @@ export const upgradeStorybookRelatedDependencies = {
 
   prompt({ upgradable }) {
     return dedent`
-      You're upgrading to the latest version of Storybook. We recommend upgrading the following packages:
+      You're upgrading Storybook, but you are using community packages that might need to be upgraded as well. We recommend upgrading them:
       ${upgradable
         .map(({ packageName, afterVersion, beforeVersion }) => {
           return `- ${cyan(packageName)}: ${cyan(beforeVersion)} => ${cyan(afterVersion)}`;
@@ -89,6 +89,8 @@ export const upgradeStorybookRelatedDependencies = {
 
       After upgrading, we will run the dedupe command, which could possibly have effects on dependencies that are not Storybook related.
       see: https://docs.npmjs.com/cli/commands/npm-dedupe
+
+      Attention: As these packages are maintained by the community, we cannot guarantee that they are compatible with the new version of Storybook. If you encounter any issues, please report them to the package maintainers.
 
       Do you want to proceed (upgrade the detected packages)?
     `;

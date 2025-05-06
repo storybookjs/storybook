@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "9.0.0-beta.7",
+  "version": "9.0.0-beta.10",
   "description": "Storybook framework-agnostic API",
   "keywords": [
     "storybook"
@@ -373,16 +373,6 @@
       "import": "./dist/test/preview.js",
       "require": "./dist/test/preview.cjs"
     },
-    "./internal/test/spy": {
-      "types": "./dist/test/spy.d.ts",
-      "import": "./dist/test/spy.js",
-      "require": "./dist/test/spy.cjs"
-    },
-    "./test/spy": {
-      "types": "./dist/test/spy.d.ts",
-      "import": "./dist/test/spy.js",
-      "require": "./dist/test/spy.cjs"
-    },
     "./internal/test": {
       "types": "./dist/test/index.d.ts",
       "import": "./dist/test/index.js",
@@ -605,12 +595,6 @@
       "test/preview": [
         "./dist/test/preview.d.ts"
       ],
-      "internal/test/spy": [
-        "./dist/test/spy.d.ts"
-      ],
-      "test/spy": [
-        "./dist/test/spy.d.ts"
-      ],
       "internal/test": [
         "./dist/test/index.d.ts"
       ],
@@ -763,6 +747,7 @@
     "tinyspy": "^3.0.2",
     "ts-dedent": "^2.0.0",
     "tsconfig-paths": "^4.2.0",
+    "tsup": "^6.7.0",
     "type-fest": "^4.18.1",
     "typescript": "^5.8.3",
     "unique-string": "^3.0.0",

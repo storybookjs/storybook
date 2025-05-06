@@ -17,8 +17,7 @@ export type * from '@vitest/spy';
 export { isMockFunction, mocks };
 
 type Listener = (mock: MockInstance, args: unknown[]) => void;
-const listeners = globalThis.__STORYBOOK_TEST_SPY_LISTENERS__ || new Set<Listener>();
-globalThis.__STORYBOOK_TEST_SPY_LISTENERS__ = listeners;
+const listeners = new Set<Listener>();
 
 export function onMockCall(callback: Listener): () => void {
   listeners.add(callback);

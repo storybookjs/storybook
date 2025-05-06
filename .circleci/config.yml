@@ -1,11 +1,9 @@
 version: 2.1
 orbs:
   git-shallow-clone: guitarrapc/git-shallow-clone@2.5.0
-  browser-tools: circleci/browser-tools@1.4.1
-  node: circleci/node@5.2.0
 
 executors:
-  sb_node_22_classic:
+  sb_node:
     parameters:
       resource-size:
         description: The Resource class
@@ -15,19 +13,6 @@ executors:
     working_directory: /tmp/storybook
     docker:
       - image: cimg/node:22.13.1
-        environment:
-          NODE_OPTIONS: --max_old_space_size=6144
-    resource_class: <<parameters.resource-size>>
-  sb_node_22_browsers:
-    parameters:
-      resource-size:
-        description: The Resource class
-        type: enum
-        enum: ["small", "medium", "medium+", "large", "xlarge"]
-        default: "medium"
-    working_directory: /tmp/storybook
-    docker:
-      - image: cimg/node:22.13.1-browsers
         environment:
           NODE_OPTIONS: --max_old_space_size=6144
     resource_class: <<parameters.resource-size>>
@@ -48,7 +33,7 @@ executors:
 jobs:
   build:
     executor:
-      name: sb_node_22_classic
+      name: sb_node
       resource-size: large
     steps:
       - git-shallow-clone/checkout_advanced:
@@ -90,7 +75,7 @@ jobs:
             yarn dedupe --check
   lint:
     executor:
-      name: sb_node_22_classic
+      name: sb_node
       resource-size: large
     steps:
       - git-shallow-clone/checkout_advanced:
@@ -128,7 +113,7 @@ jobs:
 
   docs:
     executor:
-      name: sb_node_22_classic
+      name: sb_node
       resource-size: small
     steps:
       - git-shallow-clone/checkout_advanced:
@@ -142,7 +127,7 @@ jobs:
           command: yarn docs:prettier:check
           working_directory: scripts
 
-  sandbox-test:
+  sandbox:
     parameters:
       resource-size:
         description: The Resource size
@@ -238,7 +223,7 @@ workflows:
       - build
       - lint
       - docs
-      - sandbox-test:
+      - sandbox:
           name: sandbox - React Vite (TS)
           requires: [build]
           resource-size: large
@@ -248,7 +233,7 @@ workflows:
           feature-vitest_integration: true
           feature-chromatic: true
           feature-e2e: true
-      - sandbox-test:
+      - sandbox:
           name: sandbox - Angular CLI (TS)
           requires: [build]
           resource-size: xlarge
@@ -258,7 +243,7 @@ workflows:
           feature-vitest_integration: false
           feature-chromatic: true
           feature-e2e: true
-      - sandbox-test:
+      - sandbox:
           name: bench - React Vite
           requires: [build]
           resource-size: medium

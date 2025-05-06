@@ -15,8 +15,6 @@
      * reference any root-level snippet, for that snippet to be the fallback snippet,
      * that is used in any story without explicit template.
      */
-    //@ts-expect-error TS does not understand that the snippet is defined before this call
-
     render: defaultTemplate,
   });
 </script>

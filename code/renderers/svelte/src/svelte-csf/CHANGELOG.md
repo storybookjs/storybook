@@ -1,3 +1,232 @@
+# v5.0.0 (Tue May 06 2025)
+
+### Release Notes
+
+#### Breaking: Add support for `render` in `defineMeta`, replacing `setTemplate`-function ([#295](https://github.com/storybookjs/addon-svelte-csf/pull/295))
+
+### `setTemplate`-function removed in favor of `render` in `defineMeta`
+
+The `setTemplate`-function has been removed. Instead reference your default snippet with the `render`-property in `defineMeta`:
+
+```diff
+<script module>
+- import { defineMeta, setTemplate } from '@storybook/addon-svelte-csf';
++ import { defineMeta } from '@storybook/addon-svelte-csf';
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    /* ... */
++   render: template
+  });
+</script>
+
+-<script>
+-  setTemplate(template);
+-</script>
+
+{#snippet template(args)}
+  <MyComponent {...args}>
+    ...
+  </MyComponent>
+{/snippet}
+
+<Story name="With Default Template" />
+```
+
+This new API achieves the same thing, but in a less verbose way, and is closer aligned with Storybook's regular CSF. 🎉
+
+> [!IMPORTANT]
+> There is currently a bug in the Svelte language tools, which causes TypeScript to error with `TS(2448): Block-scoped variable 'SNIPPET_NAMAE' used before its declaration.`. Until that is fixed, you have to silent it with `//@ts-ignore` or `//@ts-expect-error`. See https://github.com/sveltejs/language-tools/issues/2653
+
+#### Breaking: Rename `children` prop to `template`, require `asChild` for static stories ([#228](https://github.com/storybookjs/addon-svelte-csf/pull/228))
+
+This release contains breaking changes related to the `children`-API. The legacy API stays as-is to maintain backwards compatibility.
+
+### `children` renamed to `template`
+
+The `children`-prop and `children`-snippet on `Story` has been renamed to `template`, to align better with Svelte's API and not be confused with Svelte's default `children`-snippet. If you have any stories using the `children` prop or snippet, you need to migrate them:
+
+```diff
+
+{#snippet template()}
+  ...
+{/snippet}
+
+-<Story name="MyStory" children={template} />
++<Story name="MyStory" template={template} />
+
+<Story name="MyStory">
+-  {#snippet children(args)}
++  {#snippet template(args)}
+    <MyComponent />
+  {/snippet}
+</Story>
+```
+
+### `Story` children are now forwarded to components
+
+Previously, to define static stories, you would just add children to a `Story`, and they would be the full story. To make it easier to pass `children` to your components in stories, the children are now instead forwarded to the component instead of replacing it completely.
+
+**Previously**:
+
+```svelte
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+  });
+</script>
+
+<!--
+This story renders:
+
+This would be the full story, ignoring the MyComponent in the meta
+-->
+<Story name="Static Story">
+  This would be the full story, ignoring the MyComponent in the meta
+</Story>
+```
+
+**Now**:
+
+```svelte
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+  });
+</script>
+
+<!--
+This story renders:
+
+<MyComponent>
+  This is now forwarded to the component
+</MyComponent>
+-->
+<Story name="MyComponent children">
+  This is now forwarded to the component
+</Story>
+```
+
+To get the same behavior as previously, a new `asChild` boolean prop has been introduced on the `Story` component. `asChild` is a common prop in UI libraries, where you want the `children` to _be_ the output, instead of just being children of the Component. By adding that you can get the old behavior back, when you need more control over what the story renders:
+
+```svelte
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+  });
+</script>
+
+<!--
+This story renders:
+
+This is the full story, ignoring the MyComponent in the meta
+-->
+<Story name="Static Story" asChild>
+  This is the full story, ignoring the MyComponent in the meta
+</Story>
+```
+
+#### Require Storybook 8.2.0 and above, support Storybook 9.0.0 prereleases ([#284](https://github.com/storybookjs/addon-svelte-csf/pull/284))
+
+The addon now requires Storybook `8.2.0` and upwards (was previously 8.0.0), and has a peer dependency on the `storybook`-package. That package should always be in your project anyway though.
+
+---
+
+#### 💥 Breaking Change
+
+- Breaking: Add support for `render` in `defineMeta`, replacing `setTemplate`-function [#295](https://github.com/storybookjs/addon-svelte-csf/pull/295) ([@JReinhold](https://github.com/JReinhold))
+- Breaking: Rename `children` prop to `template`, require `asChild` for static stories [#228](https://github.com/storybookjs/addon-svelte-csf/pull/228) ([@xeho91](https://github.com/xeho91) [@JReinhold](https://github.com/JReinhold))
+- Require Storybook 8.2.0 and above, support Storybook 9.0.0 prereleases [#284](https://github.com/storybookjs/addon-svelte-csf/pull/284) ([@ndelangen](https://github.com/ndelangen))
+- Fix missing `@storybook/docs-tools` dependency [#190](https://github.com/storybookjs/addon-svelte-csf/pull/190) ([@JReinhold](https://github.com/JReinhold))
+- Experimental support for Svelte 5 [#181](https://github.com/storybookjs/addon-svelte-csf/pull/181) ([@tsar-boomba](https://github.com/tsar-boomba) [@xeho91](https://github.com/xeho91) [@JReinhold](https://github.com/JReinhold) [@benoitf](https://github.com/benoitf))
+
+#### 🚀 Enhancement
+
+- Add `'svelte-csf'` tag to all Svelte CSF stories [#297](https://github.com/storybookjs/addon-svelte-csf/pull/297) ([@JReinhold](https://github.com/JReinhold))
+- Dependencies: Support canaries and Storybook 9 prereleases [#281](https://github.com/storybookjs/addon-svelte-csf/pull/281) ([@ndelangen](https://github.com/ndelangen))
+- Restore & add support for legacy syntax [#186](https://github.com/storybookjs/addon-svelte-csf/pull/186) ([@xeho91](https://github.com/xeho91) [@JReinhold](https://github.com/JReinhold))
+
+#### 🐛 Bug Fix
+
+- Fix types [#302](https://github.com/storybookjs/addon-svelte-csf/pull/302) ([@JReinhold](https://github.com/JReinhold) [@xeho91](https://github.com/xeho91))
+- Cleanup button example [#299](https://github.com/storybookjs/addon-svelte-csf/pull/299) ([@JReinhold](https://github.com/JReinhold))
+- Fix Story `children` not overriding `args.children` [#298](https://github.com/storybookjs/addon-svelte-csf/pull/298) ([@JReinhold](https://github.com/JReinhold))
+- Fix not working with `getAbsolutePath` [#296](https://github.com/storybookjs/addon-svelte-csf/pull/296) ([@JReinhold](https://github.com/JReinhold))
+- Fix tags Story-level tags not having an effect in Vitest integration [#266](https://github.com/storybookjs/addon-svelte-csf/pull/266) ([@xeho91](https://github.com/xeho91) [@JReinhold](https://github.com/JReinhold))
+- fix: Temporarily disable save from UI feature [#285](https://github.com/storybookjs/addon-svelte-csf/pull/285) ([@xeho91](https://github.com/xeho91))
+- Revert "upgrade to sb9 alpha" [#283](https://github.com/storybookjs/addon-svelte-csf/pull/283) ([@ndelangen](https://github.com/ndelangen))
+- upgrade to sb9 alpha [#282](https://github.com/storybookjs/addon-svelte-csf/pull/282) ([@ndelangen](https://github.com/ndelangen))
+- Internal: Add Visual Tests addon [#269](https://github.com/storybookjs/addon-svelte-csf/pull/269) ([@JReinhold](https://github.com/JReinhold))
+- Fix legacy API template hook not running before Svelte in Vitest [#264](https://github.com/storybookjs/addon-svelte-csf/pull/264) ([@JReinhold](https://github.com/JReinhold))
+- Fix badly formatted ESM that was breaking Node 22 and 23 [#260](https://github.com/storybookjs/addon-svelte-csf/pull/260) ([@JReinhold](https://github.com/JReinhold))
+- fix: properly transform invalid identifiers [#246](https://github.com/storybookjs/addon-svelte-csf/pull/246) ([@paoloricciuti](https://github.com/paoloricciuti))
+- Pre-optimize internal modules [#248](https://github.com/storybookjs/addon-svelte-csf/pull/248) ([@JReinhold](https://github.com/JReinhold))
+- refactor: Stop using @storybook/client-logger [#247](https://github.com/storybookjs/addon-svelte-csf/pull/247) ([@JReinhold](https://github.com/JReinhold))
+- refactor(transform)!: `meta` no longer destructurable from `defineMeta()` call [#244](https://github.com/storybookjs/addon-svelte-csf/pull/244) ([@xeho91](https://github.com/xeho91) [@JReinhold](https://github.com/JReinhold))
+- fix: Support for legacy `source` prop when value is `TemplateLiteral` [#245](https://github.com/storybookjs/addon-svelte-csf/pull/245) ([@xeho91](https://github.com/xeho91))
+- Simplify imports [#243](https://github.com/storybookjs/addon-svelte-csf/pull/243) ([@JReinhold](https://github.com/JReinhold))
+- fix: Prevent parser indexer not letting other addon errors to throw [#242](https://github.com/storybookjs/addon-svelte-csf/pull/242) ([@xeho91](https://github.com/xeho91))
+- chore: Remove Vite plugin `post` enforcement [#241](https://github.com/storybookjs/addon-svelte-csf/pull/241) ([@xeho91](https://github.com/xeho91))
+- Support `@sveltejs/vite-plugin-svelte` v5 [#237](https://github.com/storybookjs/addon-svelte-csf/pull/237) ([@JReinhold](https://github.com/JReinhold))
+- Support Vite 6 [#236](https://github.com/storybookjs/addon-svelte-csf/pull/236) ([@yannbf](https://github.com/yannbf))
+- fix: Resolve existing type issues [#219](https://github.com/storybookjs/addon-svelte-csf/pull/219) ([@xeho91](https://github.com/xeho91))
+- Upgrade version ranges - drop support for Svelte 5 prereleases [#225](https://github.com/storybookjs/addon-svelte-csf/pull/225) ([@xeho91](https://github.com/xeho91))
+- fix: `parameters` attribute from legacy `<Story>` being removed [#224](https://github.com/storybookjs/addon-svelte-csf/pull/224) ([@xeho91](https://github.com/xeho91))
+- Fix errors at `enhanceRollupError` in Vite [#222](https://github.com/storybookjs/addon-svelte-csf/pull/222) ([@JReinhold](https://github.com/JReinhold))
+- refactor: Replace deprecated `context="module"` with `module` [#217](https://github.com/storybookjs/addon-svelte-csf/pull/217) ([@xeho91](https://github.com/xeho91))
+- fix(pre-transform): Move stories target component import declaration from instance to module tag [#218](https://github.com/storybookjs/addon-svelte-csf/pull/218) ([@xeho91](https://github.com/xeho91))
+- v5: Fix tags being ignored [#206](https://github.com/storybookjs/addon-svelte-csf/pull/206) ([@JReinhold](https://github.com/JReinhold))
+- fix(parser): Resolve `autodocs` tag issue and extracting `rawCode` [#201](https://github.com/storybookjs/addon-svelte-csf/pull/201) ([@xeho91](https://github.com/xeho91))
+- Replace lodash usage with es-toolkit [#192](https://github.com/storybookjs/addon-svelte-csf/pull/192) ([@JReinhold](https://github.com/JReinhold))
+- chore: use dist folder to load the files [#185](https://github.com/storybookjs/addon-svelte-csf/pull/185) ([@benoitf](https://github.com/benoitf))
+
+#### 🏠 Internal
+
+- Resolve merge conflicts between `main` and `next` [#305](https://github.com/storybookjs/addon-svelte-csf/pull/305) ([@xeho91](https://github.com/xeho91) [@JReinhold](https://github.com/JReinhold) [@ndelangen](https://github.com/ndelangen) [@storybook-bot](https://github.com/storybook-bot) [@valentinpalkovic](https://github.com/valentinpalkovic) [@bichikim](https://github.com/bichikim) [@rChaoz](https://github.com/rChaoz) [@yannbf](https://github.com/yannbf))
+- chore(deps): Remove unused `svelte-preprocess` [#300](https://github.com/storybookjs/addon-svelte-csf/pull/300) ([@xeho91](https://github.com/xeho91))
+- ci(ESLint): Migrate to flat config & reconfigure [#291](https://github.com/storybookjs/addon-svelte-csf/pull/291) ([@xeho91](https://github.com/xeho91) [@JReinhold](https://github.com/JReinhold))
+- Add formatting check to CI [#293](https://github.com/storybookjs/addon-svelte-csf/pull/293) ([@JReinhold](https://github.com/JReinhold))
+- Add `@storybook/experimental-addon-test` to repo (internal) [#263](https://github.com/storybookjs/addon-svelte-csf/pull/263) ([@JReinhold](https://github.com/JReinhold))
+- refactor: Improve AST-related types readability & fix existing issues [#209](https://github.com/storybookjs/addon-svelte-csf/pull/209) ([@xeho91](https://github.com/xeho91))
+
+#### 📝 Documentation
+
+- Remove workarounds for Svelte TS snippet bug [#303](https://github.com/storybookjs/addon-svelte-csf/pull/303) ([@JReinhold](https://github.com/JReinhold))
+- Fix `asChild` link in ERRORS.md [#292](https://github.com/storybookjs/addon-svelte-csf/pull/292) ([@JReinhold](https://github.com/JReinhold))
+
+#### 🧪 Tests
+
+- chore: Upgrade `vitest` and `vite` dependencies & `jsdom` -> `happy-dom` [#230](https://github.com/storybookjs/addon-svelte-csf/pull/230) ([@xeho91](https://github.com/xeho91) [@JReinhold](https://github.com/JReinhold))
+
+#### Authors: 12
+
+- Bichi Kim ([@bichikim](https://github.com/bichikim))
+- Florent BENOIT ([@benoitf](https://github.com/benoitf))
+- Isaiah Gamble ([@tsar-boomba](https://github.com/tsar-boomba))
+- Jeppe Reinhold ([@JReinhold](https://github.com/JReinhold))
+- Matei Trandafir ([@rChaoz](https://github.com/rChaoz))
+- Mateusz Kadlubowski ([@xeho91](https://github.com/xeho91))
+- Norbert de Langen ([@ndelangen](https://github.com/ndelangen))
+- Paolo Ricciuti ([@paoloricciuti](https://github.com/paoloricciuti))
+- Steve Lee ([@SteveALee](https://github.com/SteveALee))
+- Storybook Bot ([@storybook-bot](https://github.com/storybook-bot))
+- Valentin Palkovic ([@valentinpalkovic](https://github.com/valentinpalkovic))
+- Yann Braga ([@yannbf](https://github.com/yannbf))
+
+---
+
 # v4.2.0 (Thu Nov 28 2024)
 
 #### 🚀 Enhancement

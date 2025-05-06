@@ -51,7 +51,7 @@ function getShadowRoots(doc: Document | ShadowRoot) {
 
 function isInfiniteAnimation(anim: Animation) {
   if (anim instanceof CSSAnimation && anim.effect instanceof KeyframeEffect && anim.effect.target) {
-    const style = getComputedStyle(anim.effect.target);
+    const style = getComputedStyle(anim.effect.target, anim.effect.pseudoElement);
     const index = style.animationName?.split(', ').indexOf(anim.animationName);
     const iterations = style.animationIterationCount.split(', ')[index];
     return iterations === 'infinite';

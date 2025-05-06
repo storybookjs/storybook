@@ -114,7 +114,7 @@ export let page = {
   },
 };
 
-export function setStatePage(params = {}) {
+export function setAppStatePage(params = {}) {
   page.data = params.data ?? defaultStatePageValues.data;
   page.form = params.form ?? defaultStatePageValues.form;
   page.error = params.error ?? defaultStatePageValues.error;
@@ -207,7 +207,7 @@ export let navigating = {
   },
 };
 
-export function setStateNavigating(params = {}) {
+export function setAppStateNavigating(params = {}) {
   navigating.from = params.from ?? defaultStateNavigatingValues.from;
   navigating.to = params.to ?? defaultStateNavigatingValues.to;
   navigating.type = params.type ?? defaultStateNavigatingValues.type;
@@ -229,6 +229,6 @@ export let updated = {
   check: fn(() => Promise.resolve(updatedCurrent)),
 };
 
-export function setStateUpdated(params = {}) {
+export function setAppStateUpdated(params = {}) {
   updated.current = params.current ?? false;
 }

@@ -15,6 +15,36 @@ const meta: Meta<Checkbox> = {
 export default meta;
 ```
 
+```svelte filename="Checkbox.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import CheckBox from './Checkbox.svelte';
+
+  const { Story } = defineMeta({
+    /* 👇 The title prop is optional.
+     * See https://storybook.js.org/docs/configure/#configure-story-loading
+     * to learn how to generate automatic titles
+     */
+    title: 'Design System/Atoms/Checkbox',
+    component: CheckBox,
+  });
+</script>
+```
+
+```js filename="Checkbox.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+import CheckBox from './Checkbox.svelte';
+
+export default {
+  /* 👇 The title prop is optional.
+   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * to learn how to generate automatic titles
+   */
+  title: 'Design System/Atoms/Checkbox',
+  component: CheckBox,
+};
+```
+
 ```js filename="Checkbox.stories.js|jsx" renderer="common" language="js"
 import { CheckBox } from './Checkbox';
 
@@ -26,6 +56,41 @@ export default {
   title: 'Design System/Atoms/Checkbox',
   component: CheckBox,
 };
+```
+
+```svelte filename="Checkbox.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import CheckBox from './Checkbox.svelte';
+
+  const { Story } = defineMeta({
+    /* 👇 The title prop is optional.
+     * See https://storybook.js.org/docs/configure/#configure-story-loading
+     * to learn how to generate automatic titles
+     */
+    title: 'Design System/Atoms/Checkbox',
+    component: CheckBox,
+  });
+</script>
+```
+
+```ts filename="CheckBox.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+// Replace your-framework with svelte-vite or sveltekit
+import type { Meta } from '@storybook/your-framework';
+
+import CheckBox from './Checkbox.svelte';
+
+const meta = {
+  /* 👇 The title prop is optional.
+   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * to learn how to generate automatic titles
+   */
+  title: 'Design System/Atoms/Checkbox',
+  component: CheckBox,
+} satisfies Meta<typeof CheckBox>;
+
+export default meta;
 ```
 
 ```ts filename="CheckBox.stories.ts|tsx" renderer="common" language="ts"

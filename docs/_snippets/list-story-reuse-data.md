@@ -191,6 +191,58 @@ export const ManyItems: Story = {
 };
 ```
 
+```svelte filename="List.stories.svelte" renderer="svelte" language="js"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import List from './List.svelte';
+  import ListItem from './ListItem.svelte';
+
+  //👇 We're importing the necessary stories from ListItem
+  import { Selected, Unselected } from './ListItem.stories.svelte';
+
+  const { Story } = defineMeta({
+    component: List,
+  });
+</script>
+
+<Story name="Many Items">
+  {#snippet children(args)}
+    <List {...args}>
+      <ListItem {...Selected.args} />
+      <ListItem {...Unselected.args} />
+      <ListItem {...Unselected.args} />
+    </List>
+  {/snippet}
+</Story>
+```
+
+```svelte filename="List.stories.svelte" renderer="svelte" language="ts"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import List from './List.svelte';
+  import ListItem from './ListItem.svelte';
+
+  //👇 We're importing the necessary stories from ListItem
+  import { Selected, Unselected } from './ListItem.stories.svelte';
+
+  const { Story } = defineMeta({
+    component: List,
+  });
+</script>
+
+<Story name="Many Items">
+  {#snippet children(args)}
+    <List {...args}>
+      <ListItem {...Selected.args} />
+      <ListItem {...Unselected.args} />
+      <ListItem {...Unselected.args} />
+    </List>
+  {/snippet}
+</Story>
+```
+
 ```js filename="List.stories.js" renderer="vue" language="js"
 import List from './ListComponent.vue';
 import ListItem from './ListItem.vue';

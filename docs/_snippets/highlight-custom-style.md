@@ -129,6 +129,182 @@ export const StyledHighlight: Story = {
 };
 ```
 
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import { useChannel } from 'storybook/preview-api';
+  import { HIGHLIGHT } from 'storybook/highlight';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+  });
+</script>
+
+<Story
+  name="StyledHighlight"
+  decorators={[
+    (storyFn) => {
+      const emit = useChannel({});
+      emit(HIGHLIGHT, {
+        selectors: ['h2', 'a', '.storybook-button'],
+        styles: {
+          backgroundColor: `color-mix(in srgb, hotpink, transparent 90%)`,
+          outline: '3px solid hotpink',
+          animation: 'pulse 3s linear infinite',
+          transition: 'outline-offset 0.2s ease-in-out',
+        },
+        hoverStyles: {
+          outlineOffset: '3px',
+        },
+        focusStyles: {
+          backgroundColor: 'transparent',
+        },
+         keyframes: `@keyframes pulse {
+          0% { outline-color: rgba(255, 105, 180, 1); }
+          50% { outline-color: rgba(255, 105, 180, 0.2); }
+          100% { outline-color: rgba(255, 105, 180, 1); }
+        }`,
+      });
+      return storyFn();
+    },
+  ]}
+/>
+```
+
+```js filename="MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+import { useChannel } from 'storybook/preview-api';
+import { HIGHLIGHT } from 'storybook/highlight';
+
+import MyComponent from './MyComponent.svelte';
+
+export default {
+  component: MyComponent,
+};
+
+export const StyledHighlight = {
+  decorators: [
+    (storyFn) => {
+      const emit = useChannel({});
+      emit(HIGHLIGHT, {
+        selectors: ['h2', 'a', '.storybook-button'],
+        styles: {
+          backgroundColor: `color-mix(in srgb, hotpink, transparent 90%)`,
+          outline: '3px solid hotpink',
+          animation: 'pulse 3s linear infinite',
+          transition: 'outline-offset 0.2s ease-in-out',
+        },
+        hoverStyles: {
+          outlineOffset: '3px',
+        },
+        focusStyles: {
+          backgroundColor: 'transparent',
+        },
+        keyframes: `@keyframes pulse {
+          0% { outline-color: rgba(255, 105, 180, 1); }
+          50% { outline-color: rgba(255, 105, 180, 0.2); }
+          100% { outline-color: rgba(255, 105, 180, 1); }
+        }`,
+      });
+      return storyFn();
+    },
+  ],
+};
+```
+
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import { useChannel } from 'storybook/preview-api';
+  import { HIGHLIGHT } from 'storybook/highlight';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+  });
+</script>
+
+<Story
+  name="StyledHighlight"
+  decorators={[
+    (storyFn) => {
+      const emit = useChannel({});
+      emit(HIGHLIGHT, {
+        selectors: ['h2', 'a', '.storybook-button'],
+        styles: {
+          backgroundColor: `color-mix(in srgb, hotpink, transparent 90%)`,
+          outline: '3px solid hotpink',
+          animation: 'pulse 3s linear infinite',
+          transition: 'outline-offset 0.2s ease-in-out',
+        },
+        hoverStyles: {
+          outlineOffset: '3px',
+        },
+        focusStyles: {
+          backgroundColor: 'transparent',
+        },
+         keyframes: `@keyframes pulse {
+          0% { outline-color: rgba(255, 105, 180, 1); }
+          50% { outline-color: rgba(255, 105, 180, 0.2); }
+          100% { outline-color: rgba(255, 105, 180, 1); }
+        }`,
+      });
+      return storyFn();
+    },
+  ]}
+/>
+```
+
+```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+// Replace your-framework with svelte-vite or sveltekit
+import type { Meta, StoryObj } from '@storybook/your-framework';
+
+import { useChannel } from 'storybook/preview-api';
+import { HIGHLIGHT } from 'storybook/highlight';
+
+import MyComponent from './MyComponent.svelte';
+
+const meta = {
+  component: MyComponent,
+} satisfies Meta<typeof MyComponent>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const StyledHighlight: Story = {
+  decorators: [
+    (storyFn) => {
+      const emit = useChannel({});
+      emit(HIGHLIGHT, {
+        selectors: ['h2', 'a', '.storybook-button'],
+        styles: {
+          backgroundColor: `color-mix(in srgb, hotpink, transparent 90%)`,
+          outline: '3px solid hotpink',
+          animation: 'pulse 3s linear infinite',
+          transition: 'outline-offset 0.2s ease-in-out',
+        },
+        hoverStyles: {
+          outlineOffset: '3px',
+        },
+        focusStyles: {
+          backgroundColor: 'transparent',
+        },
+        keyframes: `@keyframes pulse {
+          0% { outline-color: rgba(255, 105, 180, 1); }
+          50% { outline-color: rgba(255, 105, 180, 0.2); }
+          100% { outline-color: rgba(255, 105, 180, 1); }
+        }`,
+      });
+      return storyFn();
+    },
+  ],
+};
+```
+
 ```js filename="MyComponent.stories.js" renderer="vue" language="js"
 import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT } from 'storybook/highlight';

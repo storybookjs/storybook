@@ -34,98 +34,104 @@ import { fn } from 'storybook/test';
  * @property {any} form
  */
 
+const defaultStatePageValues = {
+  data: {},
+  form: null,
+  error: null,
+  params: {},
+  route: { id: null },
+  state: {},
+  status: -1,
+  url: new URL(location.origin),
+};
+
 /** @type {Page['data']} */
-let pageData = $state.raw({});
+let pageData = $state.raw(defaultStatePageValues.data);
 /** @type {Page['form']} */
-let pageForm = $state.raw(null);
+let pageForm = $state.raw(defaultStatePageValues.form);
 /** @type {Page['error']} */
-let pageError = $state.raw(null);
+let pageError = $state.raw(defaultStatePageValues.error);
 /** @type {Page['params']} */
-let pageParams = $state.raw({});
+let pageParams = $state.raw(defaultStatePageValues.params);
 /** @type {Page['route']} */
-let pageRoute = $state.raw({ id: null });
+let pageRoute = $state.raw(defaultStatePageValues.route);
 /** @type {Page['state']} */
-let pageState = $state.raw({});
+let pageState = $state.raw(defaultStatePageValues.state);
 /** @type {Page['status']} */
-let pageStatus = $state.raw(-1);
+let pageStatus = $state.raw(defaultStatePageValues.status);
 /** @type {Page['url']} */
-let pageUrl = $state.raw(new URL(location.origin));
+let pageUrl = $state.raw(defaultStatePageValues.url);
 
 /** @type {Page} */
 export let page = {
   get data() {
     return pageData;
   },
-  /**
-   * @type {(newPageData: typeof pageData)=>void}
-   */
+  /** @type {(newPageData: typeof pageData) => void} */
   set data(newPageData) {
     pageData = newPageData;
   },
   get form() {
     return pageForm;
   },
-  /**
-   * @type {(newPageForm: typeof pageForm)=>void}
-   */
+  /** @type {(newPageForm: typeof pageForm) => void} */
   set form(newPageForm) {
     pageForm = newPageForm;
   },
   get error() {
     return pageError;
   },
-  /**
-   * @type {(newPageError: typeof pageError)=>void}
-   */
+  /** @type {(newPageError: typeof pageError) => void} */
   set error(newPageError) {
     pageError = newPageError;
   },
   get params() {
     return pageParams;
   },
-  /**
-   * @type {(newPageParams: typeof pageParams)=>void}
-   */
+  /** @type {(newPageParams: typeof pageParams) => void} */
   set params(newPageParams) {
     pageParams = newPageParams;
   },
   get route() {
     return pageRoute;
   },
-  /**
-   * @type {(newPageRoute: typeof pageRoute)=>void}
-   */
+  /** @type {(newPageRoute: typeof pageRoute) => void} */
   set route(newPageRoute) {
     pageRoute = newPageRoute;
   },
   get state() {
     return pageState;
   },
-  /**
-   * @type {(newPageState: typeof pageState)=>void}
-   */
+  /** @type {(newPageState: typeof pageState) => void} */
   set state(newPageState) {
     pageState = newPageState;
   },
   get status() {
     return pageStatus;
   },
-  /**
-   * @type {(newPageStatus: typeof pageStatus)=>void}
-   */
+  /** @type {(newPageStatus: typeof pageStatus) => void} */
   set status(newPageStatus) {
     pageStatus = newPageStatus;
   },
   get url() {
     return pageUrl;
   },
-  /**
-   * @type {(newPageUrl: typeof pageUrl)=>void}
-   */
+  /** @type {(newPageUrl: typeof pageUrl) => void} */
   set url(newPageUrl) {
     pageUrl = newPageUrl;
   },
-  };
+};
+
+export function setStatePage(params = {}) {
+  page.data = params.data ?? defaultStatePageValues.data;
+  page.form = params.form ?? defaultStatePageValues.form;
+  page.error = params.error ?? defaultStatePageValues.error;
+  page.params = params.params ?? defaultStatePageValues.params;
+  page.route = params.route ?? defaultStatePageValues.route;
+  page.state = params.state ?? defaultStatePageValues.state;
+  page.status = params.status ?? defaultStatePageValues.status;
+  page.url = params.url ?? defaultStatePageValues.url;
+}
 
 /**
  * @typedef {Object} NavigationTarget
@@ -147,82 +153,96 @@ export let page = {
  * @property {Promise<void>} complete
  */
 
+const defaultStateNavigatingValues = {
+  from: null,
+  to: null,
+  type: null,
+  willUnload: null,
+  delta: null,
+  complete: null,
+};
+
 /** @type {Navigation['from'] | null} */
-let navigatingFrom = $state.raw(null);
+let navigatingFrom = $state.raw(defaultStateNavigatingValues.from);
 /** @type {Navigation['to'] | null} */
-let navigatingTo = $state.raw(null);
+let navigatingTo = $state.raw(defaultStatePageValues.to);
 /** @type {Navigation['type'] | null} */
-let navigatingType = $state.raw(null);
+let navigatingType = $state.raw(defaultStatePageValues.type);
 /** @type {Navigation['willUnload'] | null} */
-let navigatingWillUnload = $state.raw(null);
+let navigatingWillUnload = $state.raw(defaultStatePageValues.willUnload);
 /** @type {Navigation['delta'] | null} */
-let navigatingDelta = $state.raw(null);
+let navigatingDelta = $state.raw(defaultStatePageValues.delta);
 /** @type {Navigation['complete'] | null} */
-let navigatingComplete = $state.raw(null);
+let navigatingComplete = $state.raw(defaultStatePageValues.complete);
 
 /** @type {Navigation} */
 export let navigating = {
   get from() {
     return navigatingFrom;
   },
-  /**
-   * @type {(newNavigatingFrom: typeof navigatingFrom)=>void}
-   */
+  /** @type {(newNavigatingFrom: typeof navigatingFrom) => void} */
   set from(newNavigatingFrom) {
     navigatingFrom = newNavigatingFrom;
   },
   get to() {
     return navigatingTo;
   },
-  /**
-   * @type {(newNavigatingTo: typeof navigatingTo)=>void}
-   */
+  /** @type {(newNavigatingTo: typeof navigatingTo) => void} */
   set to(newNavigatingTo) {
     navigatingTo = newNavigatingTo;
   },
   get type() {
     return navigatingType;
   },
-  /**
-   * @type {(newNavigatingType: typeof navigatingType)=>void}
-   */
+  /** @type {(newNavigatingType: typeof navigatingType) => void} */
   set type(newNavigatingType) {
     navigatingType = newNavigatingType;
   },
   get willUnload() {
     return navigatingWillUnload;
   },
-  /**
-   * @type {(newNavigatingWillUnload: typeof navigatingWillUnload)=>void}
-   */
+  /** @type {(newNavigatingWillUnload: typeof navigatingWillUnload) => void} */
   set willUnload(newNavigatingWillUnload) {
     navigatingWillUnload = newNavigatingWillUnload;
   },
   get delta() {
     return navigatingDelta;
   },
-  /**
-   * @type {(newNavigatingDelta: typeof navigatingDelta)=>void}
-   */
+  /** @type {(newNavigatingDelta: typeof navigatingDelta) => void} */
   set delta(newNavigatingDelta) {
     navigatingDelta = newNavigatingDelta;
   },
   get complete() {
     return navigatingComplete;
   },
-  /**
-   * @type {(newNavigatingComplete: typeof navigatingComplete)=>void}
-   */
+  /** @type {(newNavigatingComplete: typeof navigatingComplete) => void} */
   set complete(newNavigatingComplete) {
     navigatingComplete = newNavigatingComplete;
   },
 };
 
+export function setStateNavigating(params = {}) {
+  navigating.from = params.from;
+  navigating.to = params.to;
+  navigating.type = params.type;
+  navigating.willUnload = params.willUnload;
+  navigating.delta = params.delta;
+  navigating.complete = params.complete;
+}
 
 /** @type {boolean} */
 let updatedCurrent = $state.raw(false);
 
 export let updated = {
-  current: updatedCurrent,
+  get current() {
+    return updatedCurrent;
+  },
+  set current(newCurrent) {
+    updatedCurrent = newCurrent;
+  },
   check: fn(() => Promise.resolve(updatedCurrent)),
 };
+
+export function setStateUpdated(updated = false) {
+  updatedCurrent = updated;
+}

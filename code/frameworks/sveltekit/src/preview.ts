@@ -3,9 +3,9 @@ import type { Decorator } from '@storybook/svelte';
 // @ts-ignore -- TS doesn't understand importing from its own package
 import { setAfterNavigateArgument } from '@storybook/sveltekit/internal/mocks/app/navigation';
 import {
-  navigating as appStateNavigating,
-  page as appStatePage,
-  updated as appStateUpdated, // @ts-ignore -- TS doesn't understand importing from its own package
+  setStateNavigating,
+  setStatePage,
+  setStateUpdated, // @ts-ignore -- TS doesn't understand importing from its own package
 } from '@storybook/sveltekit/internal/mocks/app/state.svelte.js';
 // @ts-ignore -- TS doesn't understand importing from its own package
 import { setNavigating, setPage, setUpdated } from '@storybook/sveltekit/internal/mocks/app/stores';
@@ -29,31 +29,9 @@ const svelteKitMocksDecorator: Decorator = (Story, ctx) => {
   setUpdated(svelteKitParameters?.stores?.updated);
   setAfterNavigateArgument(svelteKitParameters?.navigation?.afterNavigate);
 
-  assignStateProperties(svelteKitParameters.state?.page, appStatePage, [
-    'data',
-    'form',
-    'error',
-    'params',
-    'route',
-    'state',
-    'status',
-    'url',
-  ]);
-
-  assignStateProperties(svelteKitParameters.state?.navigating, appStateNavigating, [
-    'from',
-    'to',
-    'type',
-    'willUnload',
-    'delta',
-    'complete',
-  ]);
-
-  console.log({ svelteKitParameters });
-
-  if (typeof svelteKitParameters.state?.updated?.current === 'boolean') {
-    appStateUpdated.current = svelteKitParameters.state?.updated?.current;
-  }
+  setStatePage(svelteKitParameters?.state?.page);
+  setStateNavigating(svelteKitParameters?.state?.navigating);
+  setStateUpdated(svelteKitParameters?.state?.updated?.current);
 
   onMount(() => {
     const globalClickListener = (e: MouseEvent) => {
@@ -168,13 +146,5 @@ const svelteKitMocksDecorator: Decorator = (Story, ctx) => {
 
   return Story();
 };
-
-function assignStateProperties(source: any, target: any, properties: string[]) {
-  for (const property of properties) {
-    if (source?.[property] !== undefined) {
-      target[property] = source[property];
-    }
-  }
-}
 
 export const decorators: Decorator[] = [svelteKitMocksDecorator];

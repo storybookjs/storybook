@@ -209,6 +209,11 @@ export let navigating = {
 
 export function setStateNavigating(params = {}) {
   navigating.from = params.from ?? defaultStateNavigatingValues.from;
+  navigating.to = params.to ?? defaultStateNavigatingValues.to;
+  navigating.type = params.type ?? defaultStateNavigatingValues.type;
+  navigating.willUnload = params.willUnload ?? defaultStateNavigatingValues.willUnload;
+  navigating.delta = params.delta ?? defaultStateNavigatingValues.delta;
+  navigating.complete = params.complete ?? defaultStateNavigatingValues.complete;
 }
 
 /** @type {boolean} */

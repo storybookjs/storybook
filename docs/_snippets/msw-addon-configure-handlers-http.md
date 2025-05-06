@@ -96,7 +96,7 @@ export const MockedError: Story = {
         userID: 1,
         title: 'Something',
         content:
-          'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.,
+          'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
         status: "approved",
       },
     ],
@@ -288,7 +288,7 @@ export const MockedError = {
         userID: 1,
         title: 'Something',
         content:
-          'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.,
+          'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
         status: "approved",
       },
     ],
@@ -335,7 +335,7 @@ import DocumentScreen from './YourPage.svelte';
 
 const meta = {
   component: DocumentScreen,
-} satisfies Meta<typeof MyComponent>;
+} satisfies Meta<typeof DocumentScreen>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -403,7 +403,7 @@ import { DocumentScreen } from './YourPage';
 
 const meta = {
   component: DocumentScreen,
-} satisfies Meta<typeof MyComponent>;
+} satisfies Meta<typeof DocumentScreen>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;

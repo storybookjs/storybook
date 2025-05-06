@@ -22,7 +22,7 @@ export const Baz: Story = {};
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
-  import Foo  from './Foo.svelte';
+  import Foo from './Foo.svelte';
 
   const { Story } = defineMeta({
     /* 👇 The title prop is optional.
@@ -71,7 +71,7 @@ export const Baz = {};
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
-  import Foo  from './Foo.svelte';
+  import Foo from './Foo.svelte';
 
   const { Story } = defineMeta({
     /* 👇 The title prop is optional.

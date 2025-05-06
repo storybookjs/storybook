@@ -162,7 +162,7 @@ export const StyledHighlight: Story = {
         focusStyles: {
           backgroundColor: 'transparent',
         },
-         keyframes: `@keyframes pulse {
+        keyframes: `@keyframes pulse {
           0% { outline-color: rgba(255, 105, 180, 1); }
           50% { outline-color: rgba(255, 105, 180, 0.2); }
           100% { outline-color: rgba(255, 105, 180, 1); }
@@ -247,7 +247,7 @@ export const StyledHighlight = {
         focusStyles: {
           backgroundColor: 'transparent',
         },
-         keyframes: `@keyframes pulse {
+        keyframes: `@keyframes pulse {
           0% { outline-color: rgba(255, 105, 180, 1); }
           50% { outline-color: rgba(255, 105, 180, 0.2); }
           100% { outline-color: rgba(255, 105, 180, 1); }

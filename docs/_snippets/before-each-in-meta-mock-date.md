@@ -39,7 +39,7 @@ export const Default: Story = {
   // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
   import { getUserFromSession } from '#api/session.mock';
 
-  import { Page } from './Page.svelte';
+  import Page from './Page.svelte';
 
   const meta = defineMeta({
     component: Page,
@@ -123,7 +123,7 @@ export const Default = {
   // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
   import { getUserFromSession } from '#api/session.mock';
 
-  import { Page } from './Page.svelte';
+  import Page from './Page.svelte';
 
   const meta = defineMeta({
     component: Page,
@@ -153,7 +153,7 @@ import MockDate from 'mockdate';
 
 // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
 import { getUserFromSession } from '#api/session.mock';
-import { Page } from './Page';
+import Page from './Page.svelte';
 
 const meta = {
   component: Page,

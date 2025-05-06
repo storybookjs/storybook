@@ -112,16 +112,6 @@ const meta = {
 export default meta;
 ```
 
-```js filename="Button.stories.js" renderer="web-components" language="js"
-export default {
-  component: 'demo-button',
-  // Sets the layout parameter component wide.
-  parameters: {
-    layout: 'centered',
-  },
-};
-```
-
 ```ts filename="Button.stories.ts" renderer="web-components" language="ts"
 import type { Meta } from '@storybook/web-components-vite';
 

@@ -98,7 +98,7 @@ export const Basic = {
 
 ```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
 // Replace your-framework with svelte-vite or sveltekit
-import type { Meta } from '@storybook/your-framework';
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import Button from './Button.svelte';
 
@@ -107,7 +107,6 @@ const meta = {
 } satisfies Meta<typeof Button>;
 
 export default meta;
-
 type Story = StoryObj<typeof meta>;
 
 export const Basic = {
@@ -123,7 +122,7 @@ export const Basic = {
 
 ```ts filename="Button.stories.ts|tsx" renderer="common" language="ts"
 // Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
-import type { Meta } from '@storybook/your-framework';
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { Button } from './Button';
 
@@ -132,10 +131,9 @@ const meta = {
 } satisfies Meta<typeof Button>;
 
 export default meta;
-
 type Story = StoryObj<typeof meta>;
 
-export const Basic = {
+export const Basic: Story = {
   argTypes: {
     // 👇 This story expects a label arg
     label: {

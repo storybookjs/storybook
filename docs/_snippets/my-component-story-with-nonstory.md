@@ -159,7 +159,7 @@ export const ComplexStory: Story = {
 
   const { Story } = defineMeta({
     component: MyComponent,
-    includeStories: ['SimpleStory", "ComplexStory'], // 👈 Storybook loads these stories
+    includeStories: ['SimpleStory', 'ComplexStory'], // 👈 Storybook loads these stories
     excludeStories: /.*Data$/, // 👈 Storybook ignores anything that contains Data
   });
 
@@ -168,9 +168,9 @@ export const ComplexStory: Story = {
   export const complexData = { foo: 1, foobar: { bar: 'baz', baz: someData } };
 </script>
 
-<Story name="Simple Story" args={{ data: simpleData }} />
+<Story name="SimpleStory" args={{ data: simpleData }} />
 
-<Story name="Complex Story" args={{ data: complexData }} />
+<Story name="ComplexStory" args={{ data: complexData }} />
 ```
 
 ```js filename="MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF"
@@ -210,7 +210,7 @@ export const ComplexStory = {
 
   const { Story } = defineMeta({
     component: MyComponent,
-    includeStories: ['SimpleStory", "ComplexStory'], // 👈 Storybook loads these stories
+    includeStories: ['SimpleStory', 'ComplexStory'], // 👈 Storybook loads these stories
     excludeStories: /.*Data$/, // 👈 Storybook ignores anything that contains Data
   });
 
@@ -219,9 +219,9 @@ export const ComplexStory = {
   export const complexData = { foo: 1, foobar: { bar: 'baz', baz: someData } };
 </script>
 
-<Story name="Simple Story" args={{ data: simpleData }} />
+<Story name="SimpleStory" args={{ data: simpleData }} />
 
-<Story name="Complex Story" args={{ data: complexData }} />
+<Story name="ComplexStory" args={{ data: complexData }} />
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"

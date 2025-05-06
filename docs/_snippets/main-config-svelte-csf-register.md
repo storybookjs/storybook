@@ -1,5 +1,3 @@
-<!-- Vet and test this -->
-
 ```js filename=".storybook/main.js" renderer="svelte" language="js"
 export default {
   stories: ['../src/**/*.stories.@(js|jsx|ts|tsx|svelte)'],

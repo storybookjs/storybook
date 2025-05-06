@@ -25,7 +25,7 @@ export const Basic: Story = {
 
   import Button from './Button.svelte';
 
-  const meta = defineMeta({
+  const { Story } = defineMeta({
     component: Button,
   });
 </script>
@@ -77,7 +77,7 @@ export const Basic = {
 
   import Button from './Button.svelte';
 
-  const meta = defineMeta({
+  const { Story } = defineMeta({
     component: Button,
   });
 </script>

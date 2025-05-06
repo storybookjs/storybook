@@ -45,7 +45,7 @@ export const OnPhone: Story = {
 />
 ```
 
-```js filename="Button.stories.js"renderer="svelte" language="js" tabTitle="CSF"
+```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF"
 import Button from './Button.svelte';
 
 export default {
@@ -88,7 +88,7 @@ export const OnPhone = {
 ```
 
 ```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
-// Replace your-framework with nextjs or nextjs-vite
+// Replace your-framework with svelte-vite or sveltekit
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { Button } from './Button';

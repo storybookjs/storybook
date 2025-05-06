@@ -291,7 +291,7 @@ export const OneItem = {
 <Story
   name="One Item"
   args={{
-    items: [{ ...Unselected.args }],
+    items: [{ ...Unchecked.args }],
   }}
   {template}
 />
@@ -334,7 +334,7 @@ export const OneItem = {
 <Story
   name="One Item"
   args={{
-    items: [{ ...Unselected.args }],
+    items: [{ ...Unchecked.args }],
   }}
   {template}
 />

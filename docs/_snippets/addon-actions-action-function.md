@@ -20,7 +20,7 @@ export default meta;
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
-  import { action } from 'storybook/actions/decorator';
+  import { action } from 'storybook/actions';
 
   import Button from './Button.svelte';
 
@@ -66,7 +66,7 @@ export default {
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
-  import { action } from 'storybook/actions/decorator';
+  import { action } from 'storybook/actions';
 
   import Button from './Button.svelte';
 

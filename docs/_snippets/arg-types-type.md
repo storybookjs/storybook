@@ -81,15 +81,6 @@ const meta = {
 export default meta;
 ```
 
-```js filename="Example.stories.js" renderer="web-components" language="js"
-export default {
-  component: 'demo-example',
-  argTypes: {
-    value: { type: 'number' },
-  },
-};
-```
-
 ```ts filename="Example.stories.ts|tsx" renderer="common" language="ts"
 // Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
 import type { Meta } from '@storybook/your-framework';

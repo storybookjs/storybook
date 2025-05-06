@@ -75,7 +75,7 @@ export default {
 </script>
 ```
 
-```ts filename="Example.stories.ts" renderer="svelte" language="ts" tabTitle="CSF
+```ts filename="Example.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta } from '@storybook/your-framework';
 

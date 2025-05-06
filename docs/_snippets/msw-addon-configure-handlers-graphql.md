@@ -332,7 +332,7 @@ export const MockedError: Story = {
   import DocumentScreen from './YourPage.svelte';
 
   const { Story } = defineMeta({
-    component: SamplePage,
+    component: DocumentScreen,
     decorators: [() => MockApolloWrapperClient],
   });
 
@@ -510,7 +510,7 @@ export const MockedError = {
   import DocumentScreen from './YourPage.svelte';
 
   const { Story } = defineMeta({
-    component: SamplePage,
+    component: DocumentScreen,
     decorators: [() => MockApolloWrapperClient],
   });
 

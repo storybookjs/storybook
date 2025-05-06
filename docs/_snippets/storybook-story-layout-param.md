@@ -31,7 +31,7 @@ export const WithLayout: Story = {
 <Story
   name="WithLayout"
   parameters={{
-    layout: "centered",
+    layout: 'centered',
   }}
 />
 ```
@@ -78,7 +78,7 @@ export const WithLayout = {
 <Story
   name="WithLayout"
   parameters={{
-    layout: "centered",
+    layout: 'centered',
   }}
 />
 ```

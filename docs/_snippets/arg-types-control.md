@@ -24,7 +24,7 @@ export default meta;
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
-  import Example  from './Example.svelte';
+  import Example from './Example.svelte';
 
   const { Story } = defineMeta({
     component: Example,
@@ -82,7 +82,7 @@ export default {
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
-  import Example  from './Example.svelte';
+  import Example from './Example.svelte';
 
   const { Story } = defineMeta({
     component: Example,

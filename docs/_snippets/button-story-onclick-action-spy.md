@@ -64,7 +64,7 @@ export default {
 
   const { Story } = defineMeta({
     component: Button,
-     // 👇 Use `fn` to spy on the onClick arg, which will appear in the actions panel once invoked
+    // 👇 Use `fn` to spy on the onClick arg, which will appear in the actions panel once invoked
     args: { onClick: fn() },
   });
 </script>

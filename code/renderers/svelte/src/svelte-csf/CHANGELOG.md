@@ -228,7 +228,7 @@
 
 #### 🐛 Bug Fix
 
-- Allow configuration of filename patterns besides *.stories.svelte [#140](https://github.com/storybookjs/addon-svelte-csf/pull/140) ([@j3rem1e](https://github.com/j3rem1e))
+- Allow configuration of filename patterns besides \*.stories.svelte [#140](https://github.com/storybookjs/addon-svelte-csf/pull/140) ([@j3rem1e](https://github.com/j3rem1e))
 
 #### Authors: 1
 

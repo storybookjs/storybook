@@ -3,6 +3,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import {
   commonGlobOptions,
   frameworkPackages,
+  frameworkToRenderer,
   getProjectRoot,
   rendererPackages,
 } from 'storybook/internal/common';
@@ -30,7 +31,9 @@ const detectFrameworks = (dependencies: string[]): string[] => {
 };
 
 const detectRenderers = (dependencies: string[]): string[] => {
-  return Object.keys(rendererPackages).filter((pkg) => dependencies.includes(pkg));
+  return Object.keys(rendererPackages)
+    .filter((pkg) => dependencies.includes(pkg))
+    .filter((pkg) => !Object.keys(frameworkPackages).includes(pkg));
 };
 
 const replaceImports = (source: string, renderer: string, framework: string) => {
@@ -67,9 +70,9 @@ export const transformSourceFiles = async (
   return errors;
 };
 
-export const removeRenderersInPackageJson = async (
+export const removeRendererInPackageJson = async (
   packageJsonPath: string,
-  renderers: string[],
+  renderer: string,
   dryRun: boolean
 ) => {
   try {
@@ -77,16 +80,14 @@ export const removeRenderersInPackageJson = async (
     const packageJson = JSON.parse(content);
     let hasChanges = false;
 
-    renderers.forEach((renderer) => {
-      if (packageJson.dependencies?.[renderer]) {
-        delete packageJson.dependencies[renderer];
-        hasChanges = true;
-      }
-      if (packageJson.devDependencies?.[renderer]) {
-        delete packageJson.devDependencies[renderer];
-        hasChanges = true;
-      }
-    });
+    if (packageJson.dependencies?.[renderer]) {
+      delete packageJson.dependencies[renderer];
+      hasChanges = true;
+    }
+    if (packageJson.devDependencies?.[renderer]) {
+      delete packageJson.devDependencies[renderer];
+      hasChanges = true;
+    }
 
     if (!dryRun && hasChanges) {
       await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
@@ -97,24 +98,6 @@ export const removeRenderersInPackageJson = async (
     // eslint-disable-next-line local-rules/no-uncategorized-errors
     throw new Error(`Failed to update package.json: ${error}`);
   }
-};
-
-const selectFramework = async (frameworks: string[]): Promise<string | null> => {
-  if (frameworks.length === 1) {
-    return frameworks[0];
-  }
-
-  const response = await prompts({
-    type: 'select',
-    name: 'framework',
-    message: 'Which framework would you like to use?',
-    choices: frameworks.map((framework) => ({
-      title: framework,
-      value: framework,
-    })),
-  });
-
-  return response.framework || null;
 };
 
 // Helper to check if a package.json needs migration
@@ -182,20 +165,9 @@ export const rendererToFramework: Fix<MigrationResult> = {
     };
   },
 
-  prompt(result: MigrationResult): string {
-    if (result.frameworks.length > 1) {
-      return dedent`
-        As part of Storybook's evolution, we're moving from renderer-based to framework-based configuration.
-        We've detected multiple framework packages in your project: ${result.frameworks.join(', ')}.
-        You will be prompted to select which framework to use for your Storybook configuration.
-        This will update your imports and dependencies to use the framework-specific package.
-        Would you like to proceed with the migration?
-      `;
-    }
-
+  prompt(): string {
     return dedent`
       As part of Storybook's evolution, we're moving from renderer-based to framework-based configuration.
-      We've detected renderer packages (${result.renderers.join(', ')}) that can be replaced with the framework package "${result.frameworks[0]}".
       
       This migration will:
       1. Update your source files to use framework-specific imports
@@ -207,56 +179,64 @@ export const rendererToFramework: Fix<MigrationResult> = {
 
   async run(options: RunOptions<MigrationResult>) {
     const { result, dryRun = false } = options;
-    const selectedFramework = await selectFramework(result.frameworks);
-
-    if (!selectedFramework) {
-      console.log('Migration cancelled: No framework selected');
-      return;
-    }
-
     const defaultGlob = '**/*.{mjs,cjs,js,jsx,ts,tsx}';
     const { glob } = await prompts({
       type: 'text',
       name: 'glob',
-      message: 'Enter a custom glob pattern to scan (or press enter to use default):',
+      message:
+        'Enter a custom glob pattern to scan for story files (or press enter to use default):',
       initial: defaultGlob,
     });
 
-    const projectRoot = await getProjectRoot();
-
-    console.log('Scanning for affected files...');
-
+    const projectRoot = getProjectRoot();
     // eslint-disable-next-line depend/ban-dependencies
     const globby = (await import('globby')).globby;
 
-    const sourceFiles = await globby([glob], {
-      ...commonGlobOptions(''),
-      ignore: ['**/node_modules/**'],
-      dot: true,
-      cwd: projectRoot,
-      absolute: true,
-    });
+    let didMigrate = false;
 
-    console.log(`Scanning ${sourceFiles.length} files...`);
+    for (const selectedFramework of result.frameworks) {
+      const frameworkName = frameworkPackages[selectedFramework];
+      if (!frameworkName) {
+        console.log(`Framework name not found for ${selectedFramework}, skipping.`);
+        continue;
+      }
+      const rendererName = frameworkToRenderer[frameworkPackages[selectedFramework]];
+      const [rendererPackage] =
+        Object.entries(rendererPackages).find(([, renderer]) => renderer === rendererName) ?? [];
 
-    // Transform imports for each renderer
-    await Promise.all(
-      result.renderers.map((renderer) =>
-        transformSourceFiles(sourceFiles, renderer, selectedFramework, dryRun)
-      )
-    );
+      if (!rendererPackage) {
+        console.log(`Renderer package not found for ${selectedFramework}, skipping.`);
+        continue;
+      }
 
-    console.log('Updating package.json files...');
+      console.log(`\nMigrating ${rendererPackage} to ${selectedFramework}`);
+      console.log('Scanning for affected files...');
 
-    // Update all package.json files to remove renderers
-    await Promise.all(
-      result.packageJsonFiles.map((file: string) =>
-        removeRenderersInPackageJson(file, result.renderers, dryRun)
-      )
-    );
+      const sourceFiles = await globby([glob], {
+        ...commonGlobOptions(''),
+        ignore: ['**/node_modules/**'],
+        dot: true,
+        cwd: projectRoot,
+        absolute: true,
+      });
 
-    // Install dependencies
-    if (!dryRun) {
+      console.log(`Scanning ${sourceFiles.length} files...`);
+
+      await transformSourceFiles(sourceFiles, rendererPackage, selectedFramework, dryRun);
+
+      console.log('Updating package.json files...');
+
+      // Update all package.json files to remove renderers
+      await Promise.all(
+        result.packageJsonFiles.map((file: string) =>
+          removeRendererInPackageJson(file, rendererPackage, dryRun)
+        )
+      );
+      didMigrate = true;
+    }
+
+    // Install dependencies once if any migration was performed
+    if (didMigrate && !dryRun) {
       await options.packageManager.installDependencies();
     }
   },

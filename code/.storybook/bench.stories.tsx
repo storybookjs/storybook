@@ -26,26 +26,24 @@ export default {
   },
   argTypes: {
     metafile: {
-      options: Object.keys(allMetafiles).concat('core - core').map(safeMetafileArg).sort(),
+      options: Object.keys(allMetafiles).map(safeMetafileArg).sort(),
       mapping: Object.fromEntries(
         Object.keys(allMetafiles).map((path) => [safeMetafileArg(path), path])
       ),
       control: {
         type: 'select',
         labels: Object.fromEntries(
-          Object.keys(allMetafiles)
-            .map((path) => {
-              const [, dirName, subEntry] = /esbuild-metafiles\/(.+)\/(.+).json/.exec(path)!;
-              const pkgName = PACKAGES_WITHOUT_ORG.includes(dirName)
-                ? dirName
-                : `@storybook/${dirName}`;
+          Object.keys(allMetafiles).map((path) => {
+            const [, dirName, subEntry] = /esbuild-metafiles\/(.+)\/(.+).json/.exec(path)!;
+            const pkgName = PACKAGES_WITHOUT_ORG.includes(dirName)
+              ? dirName
+              : `@storybook/${dirName}`;
 
-              return [
-                safeMetafileArg(path),
-                subEntry !== 'metafile' ? `${pkgName} - ${subEntry}` : pkgName,
-              ];
-            })
-            .concat([['core - core', 'core - TOO BIG PLEASE UPLOAD MANUALLY']])
+            return [
+              safeMetafileArg(path),
+              subEntry !== 'metafile' ? `${pkgName} - ${subEntry}` : pkgName,
+            ];
+          })
         ),
       },
     },

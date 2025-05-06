@@ -19,6 +19,7 @@ import { globalPackages as globalPreviewPackages } from '../../code/core/src/pre
 import {
   BROWSER_TARGETS,
   NODE_TARGET,
+  SUPPORTED_FEATURES,
 } from '../../code/core/src/shared/constants/environments-support';
 import { exec } from '../utils/exec';
 import { esbuild } from './tools';
@@ -133,6 +134,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
         ...options.loader,
         '.png': 'dataurl',
       };
+      options.supported = SUPPORTED_FEATURES;
       Object.assign(options, getESBuildOptions(optimized));
     },
   };

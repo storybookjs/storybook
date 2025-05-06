@@ -80,7 +80,7 @@ export async function renderToCanvas(
   const content = isPortableStory ? (
     <Story {...storyContext} />
   ) : (
-    <ErrorBoundary showMain={showMain} showException={showException}>
+    <ErrorBoundary key={storyContext.id} showMain={showMain} showException={showException}>
       <Story {...storyContext} />
     </ErrorBoundary>
   );

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import type { Decorator } from '@storybook/svelte';
+import type { Decorator, Preview } from '@storybook/svelte';
 // @ts-ignore -- TS doesn't understand importing from its own package
 import { setAfterNavigateArgument } from '@storybook/sveltekit/internal/mocks/app/navigation';
 import {
@@ -28,10 +28,6 @@ const svelteKitMocksDecorator: Decorator = (Story, ctx) => {
   setNavigating(svelteKitParameters?.stores?.navigating);
   setUpdated(svelteKitParameters?.stores?.updated);
   setAfterNavigateArgument(svelteKitParameters?.navigation?.afterNavigate);
-
-  setStatePage(svelteKitParameters?.state?.page);
-  setStateNavigating(svelteKitParameters?.state?.navigating);
-  setStateUpdated(svelteKitParameters?.state?.updated?.current);
 
   onMount(() => {
     const globalClickListener = (e: MouseEvent) => {
@@ -148,3 +144,11 @@ const svelteKitMocksDecorator: Decorator = (Story, ctx) => {
 };
 
 export const decorators: Decorator[] = [svelteKitMocksDecorator];
+
+export const beforeEach: Preview['beforeEach'] = async (ctx) => {
+  const svelteKitParameters: SvelteKitParameters = ctx.parameters?.sveltekit_experimental ?? {};
+
+  setStatePage(svelteKitParameters?.state?.page);
+  setStateNavigating(svelteKitParameters?.state?.navigating);
+  setStateUpdated(svelteKitParameters?.state?.updated);
+};

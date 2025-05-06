@@ -203,14 +203,14 @@ describe('NPM Proxy', () => {
     it('without constraint it returns the latest version', async () => {
       const executeCommandSpy = vi
         .spyOn(npmProxy, 'executeCommand')
-        .mockResolvedValueOnce('"5.3.19"');
+        .mockResolvedValueOnce('5.3.19');
 
       const version = await npmProxy.latestVersion('storybook');
 
       expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           command: 'npm',
-          args: ['info', 'storybook', 'version', '--json'],
+          args: ['info', 'storybook', 'version'],
         })
       );
       expect(version).toEqual('5.3.19');
@@ -232,10 +232,10 @@ describe('NPM Proxy', () => {
       expect(version).toEqual('5.3.19');
     });
 
-    it('throws an error if command output is not a valid JSON', async () => {
+    it('with constraint it throws an error if command output is not a valid JSON', async () => {
       vi.spyOn(npmProxy, 'executeCommand').mockResolvedValueOnce('NOT A JSON');
 
-      await expect(npmProxy.latestVersion('storybook')).rejects.toThrow();
+      await expect(npmProxy.latestVersion('storybook', '5.X')).rejects.toThrow();
     });
   });
 
@@ -244,14 +244,14 @@ describe('NPM Proxy', () => {
       const storybookAngularVersion = (await import('../versions')).default['@storybook/angular'];
       const executeCommandSpy = vi
         .spyOn(npmProxy, 'executeCommand')
-        .mockResolvedValueOnce('"5.3.19"');
+        .mockResolvedValueOnce('5.3.19');
 
       const version = await npmProxy.getVersion('@storybook/angular');
 
       expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           command: 'npm',
-          args: ['info', '@storybook/angular', 'version', '--json'],
+          args: ['info', '@storybook/angular', 'version'],
         })
       );
       expect(version).toEqual(`^${storybookAngularVersion}`);
@@ -261,14 +261,14 @@ describe('NPM Proxy', () => {
       const packageVersion = '5.3.19';
       const executeCommandSpy = vi
         .spyOn(npmProxy, 'executeCommand')
-        .mockResolvedValueOnce(`"${packageVersion}"`);
+        .mockResolvedValueOnce(`${packageVersion}`);
 
       const version = await npmProxy.getVersion('@storybook/react-native');
 
       expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           command: 'npm',
-          args: ['info', '@storybook/react-native', 'version', '--json'],
+          args: ['info', '@storybook/react-native', 'version'],
         })
       );
       expect(version).toEqual(`^${packageVersion}`);
@@ -316,23 +316,6 @@ describe('NPM Proxy', () => {
             "unrelated-and-should-be-filtered": {
               "version": "1.0.0"
             },
-            "@storybook/addon-interactions": {
-              "version": "7.0.0-rc.7",
-              "resolved": "https://registry.npmjs.org/@storybook/addon-interactions/-/addon-interactions-7.0.0-rc.7.tgz",
-              "overridden": false,
-              "dependencies": {
-                "@storybook/package": {
-                  "version": "6.0.0",
-                  "resolved": "https://registry.npmjs.org/@storybook/package/-/core-7.0.0-rc.7.tgz",
-                  "overridden": false,
-                  "dependencies": {
-                    "@storybook/channels": {
-                      "version": "7.0.0-rc.7"
-                    }
-                  }
-                }
-              }
-            },
             "@storybook/package": {
               "version": "7.0.0-beta.11",
               "resolved": "https://registry.npmjs.org/@storybook/package/-/core-7.0.0-beta.11.tgz",
@@ -369,18 +352,6 @@ describe('NPM Proxy', () => {
         {
           "dedupeCommand": "npm dedupe",
           "dependencies": {
-            "@storybook/addon-interactions": [
-              {
-                "location": "",
-                "version": "7.0.0-rc.7",
-              },
-            ],
-            "@storybook/channels": [
-              {
-                "location": "",
-                "version": "7.0.0-rc.7",
-              },
-            ],
             "@storybook/jest": [
               {
                 "location": "",
@@ -388,10 +359,6 @@ describe('NPM Proxy', () => {
               },
             ],
             "@storybook/package": [
-              {
-                "location": "",
-                "version": "6.0.0",
-              },
               {
                 "location": "",
                 "version": "7.0.0-beta.11",
@@ -415,7 +382,6 @@ describe('NPM Proxy', () => {
           "duplicatedDependencies": {
             "@storybook/package": [
               "5.4.2-alpha.0",
-              "6.0.0",
               "7.0.0-alpha.21",
               "7.0.0-beta.11",
             ],

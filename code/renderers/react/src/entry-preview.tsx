@@ -2,13 +2,14 @@ import * as React from 'react';
 
 import semver from 'semver';
 
-import { act, getReactActEnvironment, setReactActEnvironment } from './act-compat';
+import { getAct, getReactActEnvironment, setReactActEnvironment } from './act-compat';
 import type { Decorator } from './public-types';
 
 export const parameters = { renderer: 'react' };
 export { render } from './render';
 export { renderToCanvas } from './renderToCanvas';
 export { mount } from './mount';
+export { applyDecorators } from './applyDecorators';
 
 export const decorators: Decorator[] = [
   (story, context) => {
@@ -31,6 +32,8 @@ export const beforeAll = async () => {
     // copied from
     // https://github.com/testing-library/react-testing-library/blob/3dcd8a9649e25054c0e650d95fca2317b7008576/src/pure.js
     const { configure } = await import('storybook/test');
+
+    const act = await getAct();
 
     configure({
       unstable_advanceTimersWrapper: (cb) => {
@@ -84,7 +87,6 @@ function jestFakeTimersAreEnabled() {
     return (
       // legacy timers
 
-      // eslint-disable-next-line no-underscore-dangle
       (setTimeout as any)._isMockFunction === true || // modern timers
       Object.prototype.hasOwnProperty.call(setTimeout, 'clock')
     );

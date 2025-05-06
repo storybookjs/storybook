@@ -20,7 +20,7 @@ const { document, location } = global;
 
 export const KEY = 'storybook-channel';
 
-const defaultEventOptions = { allowFunction: false, maxDepth: 25 };
+const defaultEventOptions = { maxDepth: 25 };
 
 // TODO: we should export a method for opening child windows here and keep track of em.
 // that way we can send postMessage to child windows as well, not just iframe
@@ -69,29 +69,23 @@ export class PostMessageTransport implements ChannelTransport {
 
       // telejson options
       allowRegExp,
-      allowFunction,
       allowSymbol,
       allowDate,
       allowError,
       allowUndefined,
-      allowClass,
       maxDepth,
       space,
-      lazyEval,
     } = options || {};
 
     const eventOptions = Object.fromEntries(
       Object.entries({
         allowRegExp,
-        allowFunction,
         allowSymbol,
         allowDate,
         allowError,
         allowUndefined,
-        allowClass,
         maxDepth,
         space,
-        lazyEval,
       }).filter(([k, v]) => typeof v !== 'undefined')
     );
 

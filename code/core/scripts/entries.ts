@@ -12,15 +12,38 @@ export const getEntries = (cwd: string) => {
     define('src/theming/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
     define('src/theming/create.ts', ['browser', 'node'], true, ['react'], [], [], true),
 
-    define('src/core-server/index.ts', ['node'], true),
+    define('src/core-server/index.ts', ['node'], true, ['react']),
     define('src/core-server/presets/common-preset.ts', ['node'], false),
-    define('src/core-server/presets/common-manager.ts', ['browser'], false),
+    define('src/core-server/presets/common-manager.ts', ['browser'], false, [
+      'react',
+      '@storybook/icons',
+    ]),
     define('src/core-server/presets/common-override-preset.ts', ['node'], false),
+
+    define('src/backgrounds/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
+    define('src/backgrounds/preview.ts', ['browser', 'node'], true, ['react'], [], [], true),
+
+    define('src/measure/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
+    define('src/measure/preview.ts', ['browser', 'node'], true, ['react'], [], [], true),
+
+    define('src/outline/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
+    define('src/outline/preview.ts', ['browser', 'node'], true, ['react'], [], [], true),
+
+    define('src/highlight/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
+    define('src/highlight/preview.ts', ['browser', 'node'], true, ['react'], [], [], true),
 
     define('src/actions/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
     define('src/actions/preview.ts', ['browser', 'node'], true, ['react'], [], [], true),
-    define('src/actions/manager.tsx', ['browser'], false, ['react'], [], [], true),
     define('src/actions/decorator.ts', ['browser'], true, ['react'], [], [], true),
+
+    define('src/component-testing/index.ts', ['browser', 'node'], true, ['react'], [], []),
+    define('src/component-testing/preview.ts', ['browser', 'node'], true, ['react'], [], []),
+    define('src/viewport/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
+    define('src/viewport/preview.ts', ['browser', 'node'], true, ['react'], [], [], true),
+
+    define('src/controls/index.ts', ['browser', 'node'], true, ['react']),
+    define('src/controls/preview.ts', ['browser', 'node'], true, ['react']),
+    define('src/controls/decorator.ts', ['browser'], true, ['react']),
 
     define('src/core-events/index.ts', ['browser', 'node'], true),
     define('src/manager-errors.ts', ['browser'], true),
@@ -37,13 +60,7 @@ export const getEntries = (cwd: string) => {
     define('src/preview-api/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
     define('src/manager-api/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
     define('src/router/index.ts', ['browser', 'node'], true, ['react']),
-    define(
-      'src/components/index.ts',
-      ['browser', 'node'],
-      true,
-      ['react', 'react-dom'],
-      ['prettier'] // the syntax highlighter uses prettier/standalone to format the code
-    ),
+    define('src/components/index.ts', ['browser', 'node'], true, ['react', 'react-dom'], []),
     define('src/docs-tools/index.ts', ['browser', 'node'], true),
 
     define('src/manager/globals-module-info.ts', ['node'], true),
@@ -62,24 +79,6 @@ export const getEntries = (cwd: string) => {
       ['util', 'react'],
       [],
       [
-        '@testing-library/dom',
-        '@testing-library/jest-dom',
-        '@testing-library/user-event',
-        'chai',
-        '@vitest/expect',
-        '@vitest/spy',
-        '@vitest/utils',
-      ],
-      true
-    ),
-    define(
-      'src/test/spy.ts',
-      ['browser', 'node'],
-      true,
-      ['util', 'react'],
-      [],
-      [
-        '@testing-library/dom',
         '@testing-library/jest-dom',
         '@testing-library/user-event',
         'chai',
@@ -96,7 +95,6 @@ export const getEntries = (cwd: string) => {
       ['util', 'react'],
       [],
       [
-        '@testing-library/dom',
         '@testing-library/jest-dom',
         '@testing-library/user-event',
         'chai',

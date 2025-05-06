@@ -5,8 +5,6 @@ sidebar:
   title: Title
 ---
 
-<YouTubeCallout id="uAA1JvLcl-w" title="Avoid Documentation Nightmares with Storybook's Title Doc Block" params="start=57" />
-
 The `Title` block serves as the primary heading for your docs entry. It is typically used to provide the component or page name.
 
 ![Screenshot of Title block](../../_assets/api/doc-block-title-subtitle-description.png)
@@ -14,7 +12,7 @@ The `Title` block serves as the primary heading for your docs entry. It is typic
 {/* prettier-ignore-start */}
 
 ```md title="ButtonDocs.mdx"
-import { Title } from '@storybook/blocks';
+import { Title } from '@storybook/addon-docs/blocks';
 
 <Title>This is the title</Title>
 ```
@@ -24,7 +22,7 @@ import { Title } from '@storybook/blocks';
 ## Title
 
 ```js
-import { Title } from '@storybook/blocks';
+import { Title } from '@storybook/addon-docs/blocks';
 ```
 
 `Title` is configured with the following props:

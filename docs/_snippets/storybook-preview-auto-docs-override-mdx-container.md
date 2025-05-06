@@ -1,7 +1,7 @@
 ```js filename=".storybook/preview.js" renderer="common" language="js"
 import { MDXProvider } from '@mdx-js/react';
 
-import { DocsContainer } from '@storybook/blocks';
+import { DocsContainer } from '@storybook/addon-docs/blocks';
 
 import * as DesignSystem from 'your-design-system';
 
@@ -32,12 +32,12 @@ export default {
 ```
 
 ```ts filename=".storybook/preview.ts" renderer="common" language="ts"
-// Replace your-framework with the framework you are using (e.g., react, vue3)
-import { Preview } from '@storybook/your-framework';
+// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
+import type { Preview } from '@storybook/your-framework';
 
 import { MDXProvider } from '@mdx-js/react';
 
-import { DocsContainer } from '@storybook/blocks';
+import { DocsContainer } from '@storybook/addon-docs/blocks';
 
 import * as DesignSystem from 'your-design-system';
 

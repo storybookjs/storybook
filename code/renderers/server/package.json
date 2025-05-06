@@ -1,6 +1,6 @@
 {
   "name": "@storybook/server",
-  "version": "9.0.0-alpha.3",
+  "version": "9.0.0-beta.10",
   "description": "Storybook Server renderer",
   "keywords": [
     "storybook"
@@ -50,13 +50,13 @@
     "yaml": "^2.3.1"
   },
   "devDependencies": {
-    "typescript": "^5.7.3"
+    "typescript": "^5.8.3"
   },
   "peerDependencies": {
     "storybook": "workspace:^"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   },
   "publishConfig": {
     "access": "public"

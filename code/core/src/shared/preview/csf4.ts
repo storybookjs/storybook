@@ -8,12 +8,13 @@ import type {
 } from 'storybook/internal/csf';
 import type { NormalizedProjectAnnotations } from 'storybook/internal/types';
 
-import actionAnnotations from 'storybook/actions/preview';
-import { composeConfigs, normalizeProjectAnnotations } from 'storybook/preview-api';
-import testAnnotations from 'storybook/test/preview';
+import {
+  composeConfigs,
+  getCoreAnnotations,
+  normalizeProjectAnnotations,
+} from 'storybook/preview-api';
 
 /** Do not use, use the definePreview exported from the framework instead. */
-// eslint-disable-next-line @typescript-eslint/naming-convention, no-underscore-dangle
 export function __definePreview<TRenderer extends Renderer>(
   input: Preview<TRenderer>['input']
 ): Preview<TRenderer> {
@@ -27,15 +28,7 @@ export function __definePreview<TRenderer extends Renderer>(
       }
       const { addons, ...rest } = input;
       composed = normalizeProjectAnnotations<TRenderer>(
-        // TODO: Remove coreAnnotations once csf-factories use prepareStory (as core annotations already come from it)
-        composeConfigs([
-          // @ts-expect-error CJS fallback
-          (actionAnnotations.default ?? actionAnnotations)(),
-          // @ts-expect-error CJS fallback
-          (testAnnotations.default ?? testAnnotations)(),
-          ...(addons ?? []),
-          rest,
-        ])
+        composeConfigs([...getCoreAnnotations(), ...(addons ?? []), rest])
       );
       return composed;
     },

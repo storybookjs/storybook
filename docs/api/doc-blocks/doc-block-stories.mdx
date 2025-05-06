@@ -5,8 +5,6 @@ sidebar:
   title: Stories
 ---
 
-<YouTubeCallout id="uAA1JvLcl-w" title="Avoid Documentation Nightmares with Storybook's Stories Doc Block" params="start=185" />
-
 The `Stories` block renders the full collection of stories in a stories file.
 
 ![Screenshot of Stories block](../../_assets/api/doc-block-stories.png)
@@ -14,7 +12,7 @@ The `Stories` block renders the full collection of stories in a stories file.
 {/* prettier-ignore-start */}
 
 ```md title="ButtonDocs.mdx"
-import { Meta, Stories } from '@storybook/blocks';
+import { Meta, Stories } from '@storybook/addon-docs/blocks';
 import * as ButtonStories from './Button.stories';
 
 <Meta of={ButtonStories} />
@@ -27,7 +25,7 @@ import * as ButtonStories from './Button.stories';
 ## Stories
 
 ```js
-import { Stories } from '@storybook/blocks';
+import { Stories } from '@storybook/addon-docs/blocks';
 ```
 
 `Stories` is configured with the following props:

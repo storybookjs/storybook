@@ -1,4 +1,5 @@
-import { type Check, CompatibilityType } from './index';
+import { type Check } from './Check';
+import { CompatibilityType } from './CompatibilityType';
 
 /**
  * Check for presence of nextjs when using @storybook/nextjs, prompt if there's a mismatch

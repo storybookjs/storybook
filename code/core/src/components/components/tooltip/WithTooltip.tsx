@@ -16,14 +16,12 @@ const { document } = global;
 const TargetContainer = styled.div<{ trigger: ReactPopperTooltipConfig['trigger'] }>`
   display: inline-block;
   cursor: ${(props) =>
-    // @ts-expect-error (non strict)
-    props.trigger === 'hover' || props.trigger.includes('hover') ? 'default' : 'pointer'};
+    props.trigger === 'hover' || props.trigger?.includes('hover') ? 'default' : 'pointer'};
 `;
 
 const TargetSvgContainer = styled.g<{ trigger: ReactPopperTooltipConfig['trigger'] }>`
   cursor: ${(props) =>
-    // @ts-expect-error (non strict)
-    props.trigger === 'hover' || props.trigger.includes('hover') ? 'default' : 'pointer'};
+    props.trigger === 'hover' || props.trigger?.includes('hover') ? 'default' : 'pointer'};
 `;
 
 interface WithHideFn {
@@ -82,10 +80,10 @@ const WithTooltipPure = ({
   children,
   closeOnTriggerHidden,
   mutationObserverOptions,
-  delayHide,
+  delayHide = trigger === 'hover' ? 200 : 0,
   visible,
   interactive,
-  delayShow,
+  delayShow = trigger === 'hover' ? 400 : 0,
   strategy,
   followCursor,
   onVisibleChange,

@@ -194,7 +194,11 @@ export class BUNProxy extends JsPackageManager {
     return url === 'undefined' ? undefined : url;
   }
 
-  protected async runAddDeps(dependencies: string[], installAsDevDependencies: boolean) {
+  protected async runAddDeps(
+    dependencies: string[],
+    installAsDevDependencies: boolean,
+    writeOutputToFile = true
+  ) {
     const { logStream, readLogFile, moveLogFile, removeLogFile } = await createLogStream();
     let args = [...dependencies];
 
@@ -206,15 +210,15 @@ export class BUNProxy extends JsPackageManager {
       await this.executeCommand({
         command: 'bun',
         args: ['add', ...args, ...this.getInstallArgs()],
-        stdio: process.env.CI ? 'inherit' : ['ignore', logStream, logStream],
+        stdio: process.env.CI || !writeOutputToFile ? 'inherit' : ['ignore', logStream, logStream],
       });
     } catch (err) {
+      if (!writeOutputToFile) {
+        throw err;
+      }
       const stdout = await readLogFile();
-
       const errorMessage = this.parseErrorFromLogs(stdout);
-
       await moveLogFile();
-
       throw new Error(
         dedent`${errorMessage}
         
@@ -239,14 +243,14 @@ export class BUNProxy extends JsPackageManager {
     packageName: string,
     fetchAllVersions: T
   ): Promise<T extends true ? string[] : string> {
-    const args = [fetchAllVersions ? 'versions' : 'version', '--json'];
+    const args = fetchAllVersions ? ['versions', '--json'] : ['version'];
     try {
       const commandResult = await this.executeCommand({
         command: 'npm',
         args: ['info', packageName, ...args],
       });
 
-      const parsedOutput = JSON.parse(commandResult);
+      const parsedOutput = fetchAllVersions ? JSON.parse(commandResult) : commandResult.trim();
 
       if (parsedOutput.error?.summary) {
         // this will be handled in the catch block below

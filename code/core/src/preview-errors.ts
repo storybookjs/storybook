@@ -1,5 +1,7 @@
 import { dedent } from 'ts-dedent';
 
+import type { Status } from './shared/status-store';
+import type { StatusTypeId } from './shared/status-store';
 import { StorybookError } from './storybook-error';
 
 /**
@@ -31,6 +33,7 @@ export enum Category {
   RENDERER_WEB_COMPONENTS = 'RENDERER_WEB-COMPONENTS',
   FRAMEWORK_NEXTJS = 'FRAMEWORK_NEXTJS',
   ADDON_VITEST = 'ADDON_VITEST',
+  ADDON_A11Y = 'ADDON_A11Y',
 }
 
 export class MissingStoryAfterHmrError extends StorybookError {
@@ -273,6 +276,25 @@ export class NoStoryMountedError extends StorybookError {
   }
 }
 
+export class StatusTypeIdMismatchError extends StorybookError {
+  constructor(
+    public data: {
+      status: Status;
+      typeId: StatusTypeId;
+    }
+  ) {
+    super({
+      category: Category.PREVIEW_API,
+      code: 16,
+      message: `Status has typeId "${data.status.typeId}" but was added to store with typeId "${data.typeId}". Full status: ${JSON.stringify(
+        data.status,
+        null,
+        2
+      )}`,
+    });
+  }
+}
+
 export class NextJsSharpError extends StorybookError {
   constructor() {
     super({
@@ -334,6 +356,19 @@ export class UnsupportedViewportDimensionError extends StorybookError {
         
         You can either change the viewport for this story to use one of the supported units or skip the test by adding '!test' to the story's tags per https://storybook.js.org/docs/writing-stories/tags
       `,
+    });
+  }
+}
+
+export class ElementA11yParameterError extends StorybookError {
+  constructor() {
+    super({
+      category: Category.ADDON_A11Y,
+      code: 1,
+      documentation:
+        'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#a11y-addon-replace-element-parameter-with-context-parameter',
+      message:
+        'The "element" parameter in parameters.a11y has been removed. Use "context" instead.',
     });
   }
 }

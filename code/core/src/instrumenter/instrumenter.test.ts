@@ -1,30 +1,55 @@
 // @vitest-environment happy-dom
-
-/* eslint-disable no-underscore-dangle */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  FORCE_REMOUNT,
-  SET_CURRENT_STORY,
-  STORY_RENDER_PHASE_CHANGED,
-} from 'storybook/internal/core-events';
+import { SET_CURRENT_STORY, STORY_RENDER_PHASE_CHANGED } from 'storybook/internal/core-events';
 
 import { global } from '@storybook/global';
 
-import { addons, mockChannel } from 'storybook/preview-api';
-
-import { EVENTS, Instrumenter } from './instrumenter';
+import { EVENTS } from './EVENTS';
+import { Instrumenter, isClass } from './instrumenter';
+import { addons } from './preview-api';
 import type { Options } from './types';
 
-vi.mock('storybook/internal/client-logger');
+const mocks = await vi.hoisted(async () => {
+  const { Channel } = await import('storybook/internal/channels');
+  const { EVENTS: INSTRUMENTER_EVENTS } = await import('./EVENTS');
+  const { FORCE_REMOUNT } = await import('storybook/internal/core-events');
 
-const callSpy = vi.fn();
-const syncSpy = vi.fn();
-const forceRemountSpy = vi.fn();
-addons.setChannel(mockChannel());
-addons.getChannel().on(EVENTS.CALL, callSpy);
-addons.getChannel().on(EVENTS.SYNC, syncSpy);
-addons.getChannel().on(FORCE_REMOUNT, forceRemountSpy);
+  const transport = {
+    setHandler: () => {},
+    send: () => {},
+  };
+
+  const channel = new Channel({ transport });
+
+  const callSpy = vi.fn();
+  const syncSpy = vi.fn();
+  const forceRemountSpy = vi.fn();
+
+  channel.on(INSTRUMENTER_EVENTS.CALL, callSpy);
+  channel.on(INSTRUMENTER_EVENTS.SYNC, syncSpy);
+  channel.on(FORCE_REMOUNT, forceRemountSpy);
+
+  return {
+    callSpy,
+    syncSpy,
+    forceRemountSpy,
+    ready: vi.fn().mockResolvedValue(Promise.resolve(true)),
+    channel,
+  };
+});
+
+vi.mock('storybook/internal/client-logger');
+vi.mock('./preview-api', () => {
+  return {
+    addons: {
+      ready: mocks.ready,
+      getChannel: vi.fn().mockImplementation(() => {
+        return mocks.channel;
+      }),
+    },
+  };
+});
 
 class HTMLElement {
   constructor(props: any) {
@@ -53,12 +78,18 @@ const instrument = <TObj extends Record<string, any>>(obj: TObj, options: Option
 
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 
-beforeEach(() => {
+beforeEach(async () => {
   vi.useRealTimers();
-  callSpy.mockClear();
-  syncSpy.mockClear();
-  forceRemountSpy.mockClear();
+  global.window.parent = {
+    // @ts-expect-error (global scope)
+    __STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__: {},
+  };
+  mocks.callSpy.mockClear();
+  mocks.syncSpy.mockClear();
+  mocks.forceRemountSpy.mockClear();
+  mocks.ready.mockClear();
   instrumenter = new Instrumenter();
+  await tick();
   setRenderPhase('loading');
 });
 
@@ -162,17 +193,18 @@ describe('Instrumenter', () => {
     expect(fn.__originalFn__).toHaveBeenCalledWith('foo', obj);
   });
 
-  it('emits a "call" event every time a patched function is invoked', () => {
+  it('emits a "call" event every time a patched function is invoked', async () => {
     const { fn } = instrument({ fn: (...args: any) => {} });
+
     fn('foo', 'bar');
     fn('baz');
-    expect(callSpy).toHaveBeenCalledWith(
+    expect(mocks.callSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         id: 'kind--story [0] fn',
         args: ['foo', 'bar'],
       })
     );
-    expect(callSpy).toHaveBeenCalledWith(
+    expect(mocks.callSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         id: 'kind--story [1] fn',
         args: ['baz'],
@@ -188,7 +220,7 @@ describe('Instrumenter', () => {
 
     expect(() => fn(obj)).not.toThrow();
 
-    expect(callSpy.mock.calls[0][0].args).toMatchInlineSnapshot(`
+    expect(mocks.callSpy.mock.calls[0][0].args).toMatchInlineSnapshot(`
       [
         {
           "array": [
@@ -204,7 +236,7 @@ describe('Instrumenter', () => {
   it('provides metadata about the call in the event', () => {
     const { obj } = instrument({ obj: { fn: () => {} } });
     obj.fn();
-    expect(callSpy).toHaveBeenCalledWith(
+    expect(mocks.callSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         path: ['obj'],
         method: 'fn',
@@ -221,10 +253,10 @@ describe('Instrumenter', () => {
       fn2: (arg: any) => {},
     });
     fn2(fn1({}));
-    expect(callSpy).toHaveBeenLastCalledWith(
+    expect(mocks.callSpy).toHaveBeenLastCalledWith(
       expect.objectContaining({
         method: 'fn2',
-        args: [{ __callId__: callSpy.mock.calls[0][0].id, retain: false }],
+        args: [{ __callId__: mocks.callSpy.mock.calls[0][0].id, retain: false }],
       })
     );
   });
@@ -247,7 +279,7 @@ describe('Instrumenter', () => {
       fn1(Symbol('hi')),
       fn1(new Error('Oops'))
     );
-    expect(callSpy).toHaveBeenLastCalledWith(
+    expect(mocks.callSpy).toHaveBeenLastCalledWith(
       expect.objectContaining({
         method: 'fn2',
         args: [
@@ -257,11 +289,11 @@ describe('Instrumenter', () => {
           /* call 3 */ 'foo',
           /* call 4 */ 1,
           /* call 5 */ BigInt(1),
-          { __callId__: callSpy.mock.calls[6][0].id, retain: false },
-          { __callId__: callSpy.mock.calls[7][0].id, retain: false },
-          { __callId__: callSpy.mock.calls[8][0].id, retain: false },
-          { __callId__: callSpy.mock.calls[9][0].id, retain: false },
-          { __callId__: callSpy.mock.calls[10][0].id, retain: false },
+          { __callId__: mocks.callSpy.mock.calls[6][0].id, retain: false },
+          { __callId__: mocks.callSpy.mock.calls[7][0].id, retain: false },
+          { __callId__: mocks.callSpy.mock.calls[8][0].id, retain: false },
+          { __callId__: mocks.callSpy.mock.calls[9][0].id, retain: false },
+          { __callId__: mocks.callSpy.mock.calls[10][0].id, retain: false },
         ],
       })
     );
@@ -270,7 +302,7 @@ describe('Instrumenter', () => {
   it('maps HTML Elements in event args to an element ref', () => {
     const { fn } = instrument({ fn: (...args: any) => {} });
     fn(new HTMLElement({ prefix: '', localName: 'div', id: 'root', classList: [] }));
-    expect(callSpy).toHaveBeenLastCalledWith(
+    expect(mocks.callSpy).toHaveBeenLastCalledWith(
       expect.objectContaining({
         args: [{ __element__: { prefix: '', localName: 'div', id: 'root', classNames: [] } }],
       })
@@ -285,28 +317,28 @@ describe('Instrumenter', () => {
       fn4();
     });
     fn5();
-    expect(callSpy).toHaveBeenCalledWith(
+    expect(mocks.callSpy).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'kind--story [0] fn1', ancestors: [] })
     );
-    expect(callSpy).toHaveBeenCalledWith(
+    expect(mocks.callSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         id: 'kind--story [0] fn1 [0] fn2',
         ancestors: ['kind--story [0] fn1'],
       })
     );
-    expect(callSpy).toHaveBeenCalledWith(
+    expect(mocks.callSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         id: 'kind--story [0] fn1 [0] fn2 [0] fn3',
         ancestors: ['kind--story [0] fn1', 'kind--story [0] fn1 [0] fn2'],
       })
     );
-    expect(callSpy).toHaveBeenCalledWith(
+    expect(mocks.callSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         id: 'kind--story [0] fn1 [1] fn4',
         ancestors: ['kind--story [0] fn1'],
       })
     );
-    expect(callSpy).toHaveBeenCalledWith(
+    expect(mocks.callSpy).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'kind--story [1] fn5', ancestors: [] })
     );
   });
@@ -330,17 +362,17 @@ describe('Instrumenter', () => {
       }
       fn3();
     });
-    expect(callSpy).toHaveBeenCalledWith(
+    expect(mocks.callSpy).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'kind--story [0] fn1', ancestors: [] })
     );
-    expect(callSpy).toHaveBeenCalledWith(
+    expect(mocks.callSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         id: 'kind--story [0] fn1 [0] fn2',
         ancestors: ['kind--story [0] fn1'],
       })
     );
     expect(thrownError).toBe(error);
-    expect(callSpy).toHaveBeenCalledWith(
+    expect(mocks.callSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         id: 'kind--story [0] fn1 [1] fn3',
         ancestors: ['kind--story [0] fn1'],
@@ -353,16 +385,16 @@ describe('Instrumenter', () => {
     const { fn1, fn2, fn3 } = instrument({ fn1: fn, fn2: fn, fn3: fn });
     await fn1(() => fn2());
     await fn3();
-    expect(callSpy).toHaveBeenCalledWith(
+    expect(mocks.callSpy).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'kind--story [0] fn1', ancestors: [] })
     );
-    expect(callSpy).toHaveBeenCalledWith(
+    expect(mocks.callSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         id: 'kind--story [0] fn1 [0] fn2',
         ancestors: ['kind--story [0] fn1'],
       })
     );
-    expect(callSpy).toHaveBeenCalledWith(
+    expect(mocks.callSpy).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'kind--story [1] fn3', ancestors: [] })
     );
   });
@@ -374,10 +406,10 @@ describe('Instrumenter', () => {
       }),
     });
     fn1().fn2();
-    expect(callSpy).toHaveBeenLastCalledWith(
+    expect(mocks.callSpy).toHaveBeenLastCalledWith(
       expect.objectContaining({
         method: 'fn2',
-        path: [{ __callId__: callSpy.mock.calls[0][0].id }],
+        path: [{ __callId__: mocks.callSpy.mock.calls[0][0].id }],
       })
     );
   });
@@ -401,17 +433,17 @@ describe('Instrumenter', () => {
       }
       await fn3();
     });
-    expect(callSpy).toHaveBeenCalledWith(
+    expect(mocks.callSpy).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'kind--story [0] fn1', ancestors: [] })
     );
-    expect(callSpy).toHaveBeenCalledWith(
+    expect(mocks.callSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         id: 'kind--story [0] fn1 [0] fn2',
         ancestors: ['kind--story [0] fn1'],
       })
     );
     expect(thrownError).toBe(error);
-    expect(callSpy).toHaveBeenCalledWith(
+    expect(mocks.callSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         id: 'kind--story [0] fn1 [1] fn3',
         ancestors: ['kind--story [0] fn1'],
@@ -422,11 +454,11 @@ describe('Instrumenter', () => {
   it('emits a "sync" event with debounce after a patched function is invoked', () => {
     const { fn } = instrument({ fn: (...args: any) => {} }, { intercept: true });
     vi.useFakeTimers();
-    syncSpy.mockClear();
+    mocks.syncSpy.mockClear();
     fn('foo');
     fn('bar');
     vi.runAllTimers();
-    expect(syncSpy).toHaveBeenCalledTimes(1);
+    expect(mocks.syncSpy).toHaveBeenCalledTimes(1);
   });
 
   it('sends a folded log with the "sync" event', () => {
@@ -435,7 +467,7 @@ describe('Instrumenter', () => {
     fn('foo', fn('bar')).fn2();
     fn('baz');
     vi.runAllTimers();
-    expect(syncSpy).toHaveBeenCalledWith(
+    expect(mocks.syncSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         logItems: [
           { callId: 'kind--story [2] fn2', status: 'done', ancestors: [] },
@@ -493,12 +525,11 @@ describe('Instrumenter', () => {
   it("re-throws anything that isn't an error", () => {
     const { fn } = instrument({
       fn: () => {
-        // eslint-disable-next-line @typescript-eslint/no-throw-literal
         throw 'Boom!';
       },
     });
     expect(fn).toThrow('Boom!');
-    expect(callSpy).not.toHaveBeenCalled();
+    expect(mocks.callSpy).not.toHaveBeenCalled();
   });
 
   it('does not affect intercepted methods', () => {
@@ -539,7 +570,7 @@ describe('Instrumenter', () => {
       fn2();
       fn3();
       await tick();
-      expect(syncSpy).toHaveBeenCalledWith(
+      expect(mocks.syncSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           logItems: [
             { callId: 'kind--story [0] fn1', status: 'done', ancestors: [] },
@@ -556,7 +587,7 @@ describe('Instrumenter', () => {
         fn2();
       });
       await tick();
-      expect(syncSpy).toHaveBeenCalledWith(
+      expect(mocks.syncSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           logItems: [
             { callId: 'kind--story [0] fn1', status: 'done', ancestors: [] },
@@ -580,7 +611,7 @@ describe('Instrumenter', () => {
         options
       );
       expect(fn).toThrow();
-      expect(callSpy).toHaveBeenCalledWith(
+      expect(mocks.callSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           id: 'kind--story [0] fn',
           exception: expect.objectContaining({
@@ -601,7 +632,7 @@ describe('Instrumenter', () => {
 
     it('remounts on the "start" event', async () => {
       addons.getChannel().emit(EVENTS.START, { storyId });
-      expect(forceRemountSpy).toHaveBeenCalled();
+      expect(mocks.forceRemountSpy).toHaveBeenCalled();
     });
 
     it('defers calls to intercepted functions', () => {
@@ -678,6 +709,52 @@ describe('Instrumenter', () => {
       expect(fn).toHaveBeenCalledTimes(3);
 
       await p;
+    });
+  });
+
+  describe('isClass', () => {
+    it('returns true for class declarations', () => {
+      class TestClass {}
+      expect(isClass(TestClass)).toBe(true);
+    });
+
+    it('returns true for class expressions', () => {
+      const TestClass = class {};
+      expect(isClass(TestClass)).toBe(true);
+    });
+
+    it('returns false for regular functions', () => {
+      function testFunction() {}
+      expect(isClass(testFunction)).toBe(false);
+    });
+
+    it('returns false for arrow functions', () => {
+      const arrowFunction = () => {};
+      expect(isClass(arrowFunction)).toBe(false);
+    });
+
+    it('returns false for function expressions', () => {
+      const functionExpression = function () {};
+      expect(isClass(functionExpression)).toBe(false);
+    });
+
+    it('returns false for functions without prototype', () => {
+      expect(isClass(Promise.resolve)).toBe(false);
+    });
+
+    it('returns false for method shorthand', () => {
+      expect(isClass({ method() {} })).toBe(false);
+    });
+
+    it('returns false for non-function values', () => {
+      expect(isClass(null)).toBe(false);
+      expect(isClass(undefined)).toBe(false);
+      expect(isClass(123)).toBe(false);
+      expect(isClass('string')).toBe(false);
+      expect(isClass({})).toBe(false);
+      expect(isClass([])).toBe(false);
+      expect(isClass(true)).toBe(false);
+      expect(isClass(Symbol('test'))).toBe(false);
     });
   });
 });

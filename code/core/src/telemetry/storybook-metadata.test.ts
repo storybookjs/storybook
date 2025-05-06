@@ -3,9 +3,23 @@ import path from 'node:path';
 import type { MockInstance } from 'vitest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { getProjectRoot } from 'storybook/internal/common';
 import type { PackageJson, StorybookConfig } from 'storybook/internal/types';
 
+import { detect } from 'package-manager-detector';
+
+import { getMonorepoType } from '../telemetry/get-monorepo-type';
+import {
+  getActualPackageJson,
+  getActualPackageVersion,
+  getActualPackageVersions,
+} from './package-json';
 import { computeStorybookMetadata, metaFrameworks, sanitizeAddonName } from './storybook-metadata';
+
+vi.mock(import('./package-json'), { spy: true });
+vi.mock(import('./get-monorepo-type'), { spy: true });
+vi.mock(import('package-manager-detector'), { spy: true });
+vi.mock(import('storybook/internal/common'), { spy: true });
 
 const packageJsonMock: PackageJson = {
   name: 'some-user-project',
@@ -18,46 +32,32 @@ const mainJsMock: StorybookConfig = {
   stories: [],
 };
 
-vi.mock('./package-json', () => {
-  const getActualPackageVersion = vi.fn((name) =>
-    Promise.resolve({
-      name,
-      version: 'x.x.x',
-    })
-  );
+beforeEach(() => {
+  vi.mocked(detect).mockImplementation(async () => ({
+    name: 'yarn',
+    version: '3.1.1',
+    agent: 'yarn@berry',
+  }));
 
-  const getActualPackageVersions = vi.fn((packages) =>
-    Promise.all(Object.keys(packages).map(getActualPackageVersion))
-  );
+  vi.mocked(getProjectRoot).mockImplementation(() => process.cwd());
 
-  const getActualPackageJson = vi.fn(() => ({
+  vi.mocked(getMonorepoType).mockImplementation(() => 'Nx');
+
+  vi.mocked(getActualPackageJson).mockImplementation(async () => ({
     dependencies: {
       '@storybook/react': 'x.x.x',
       '@storybook/builder-vite': 'x.x.x',
     },
   }));
 
-  return {
-    getActualPackageVersions,
-    getActualPackageVersion,
-    getActualPackageJson,
-  };
-});
+  vi.mocked(getActualPackageVersion).mockImplementation(async (name) => ({
+    name,
+    version: 'x.x.x',
+  }));
 
-vi.mock('./get-monorepo-type', () => ({
-  getMonorepoType: () => 'Nx',
-}));
-
-vi.mock('detect-package-manager', () => ({
-  detect: () => 'Yarn',
-  getNpmVersion: () => '3.1.1',
-}));
-
-vi.mock('storybook/internal/common', async (importOriginal) => {
-  return {
-    ...(await importOriginal<typeof import('storybook/internal/common')>()),
-    getProjectRoot: () => process.cwd(),
-  };
+  vi.mocked(getActualPackageVersions).mockImplementation((packages) =>
+    Promise.all(Object.keys(packages).map(getActualPackageVersion))
+  );
 });
 
 const originalSep = path.sep;
@@ -420,5 +420,15 @@ describe('storybook-metadata', () => {
         });
       }
     );
+
+    it('should detect userSince info', async () => {
+      const res = await computeStorybookMetadata({
+        packageJson: packageJsonMock,
+        packageJsonPath,
+        mainConfig: mainJsMock,
+      });
+
+      expect(res.userSince).toBeDefined();
+    });
   });
 });

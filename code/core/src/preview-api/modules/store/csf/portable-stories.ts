@@ -1,7 +1,4 @@
-/* eslint-disable no-underscore-dangle */
-
-/* eslint-disable @typescript-eslint/naming-convention */
-import { type CleanupCallback, type Preview, isExportStory } from 'storybook/internal/csf';
+import { type CleanupCallback, isExportStory } from 'storybook/internal/csf';
 import { MountMustBeDestructuredError } from 'storybook/internal/preview-errors';
 import type {
   Args,
@@ -25,6 +22,7 @@ import type {
 import type { UserEventObject } from 'storybook/test';
 import { dedent } from 'ts-dedent';
 
+import { getCoreAnnotations } from '../../../../shared/preview/core-annotations';
 import { HooksContext } from '../../../addons';
 import { ReporterAPI } from '../reporter-api';
 import { composeConfigs } from './composeConfigs';
@@ -74,6 +72,7 @@ export function setProjectAnnotations<TRenderer extends Renderer = Renderer>(
 ): NormalizedProjectAnnotations<TRenderer> {
   const annotations = Array.isArray(projectAnnotations) ? projectAnnotations : [projectAnnotations];
   globalThis.globalProjectAnnotations = composeConfigs([
+    ...getCoreAnnotations(),
     globalThis.defaultProjectAnnotations ?? {},
     composeConfigs(annotations.map(extractAnnotation)),
   ]);
@@ -135,8 +134,8 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
   );
 
   const globalsFromGlobalTypes = getValuesFromArgTypes(normalizedProjectAnnotations.globalTypes);
+
   const globals = {
-    // TODO: remove loading from globalTypes in 9.0
     ...globalsFromGlobalTypes,
     ...normalizedProjectAnnotations.initialGlobals,
     ...story.storyGlobals,
@@ -169,7 +168,10 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
 
     if (story.renderToCanvas) {
       context.renderToCanvas = async () => {
-        // Consolidate this renderContext with Context in SB 9.0
+        // TODO: Consolidate this renderContext with Context in SB 10.0
+        // Change renderToCanvas function to only use the context object
+        // and to make the renderContext an internal implementation detail
+        // wasnt'possible so far because showError and showException are not part of the story context (yet)
         const unmount = await story.renderToCanvas?.(
           {
             componentId: story.componentId,

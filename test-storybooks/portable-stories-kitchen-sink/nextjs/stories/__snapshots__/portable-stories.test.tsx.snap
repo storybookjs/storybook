@@ -520,20 +520,6 @@ exports[`renders linkStories stories renders Default 1`] = `
         </li>
         <li>
           <a
-            href="/legacy-behaviour"
-          >
-            Legacy behavior
-          </a>
-        </li>
-        <li>
-          <a
-            href="/child-is-functional-component"
-          >
-            child is a functional component
-          </a>
-        </li>
-        <li>
-          <a
             href="/#hashid"
           >
             Disables scrolling to the top
@@ -596,20 +582,6 @@ exports[`renders linkStories stories renders InAppDir 1`] = `
             href="/replace-url"
           >
             Replace the URL instead of push
-          </a>
-        </li>
-        <li>
-          <a
-            href="/legacy-behaviour"
-          >
-            Legacy behavior
-          </a>
-        </li>
-        <li>
-          <a
-            href="/child-is-functional-component"
-          >
-            child is a functional component
           </a>
         </li>
         <li>

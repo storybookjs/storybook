@@ -1,6 +1,6 @@
 ```ts filename="vitest.config.ts" renderer="react"
 import { defineConfig, mergeConfig } from 'vitest/config';
-import { storybookTest } from '@storybook/addon-test/vitest-plugin';
+import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -25,20 +25,20 @@ export default mergeConfig(
       // Enable browser mode
       browser: {
         enabled: true,
-        name: 'chromium',
         // Make sure to install Playwright
         provider: 'playwright',
         headless: true,
+        instances: [{ browser: 'chromium' }],
       },
       setupFiles: ['./.storybook/vitest.setup.ts'],
     },
-  })
+  }),
 );
 ```
 
 ```ts filename="vitest.config.ts" renderer="vue"
 import { defineConfig, mergeConfig } from 'vitest/config';
-import { storybookTest } from '@storybook/addon-test/vitest-plugin';
+import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
 import { storybookVuePlugin } from '@storybook/vue3-vite/vite-plugin';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -65,20 +65,20 @@ export default mergeConfig(
       // Enable browser mode
       browser: {
         enabled: true,
-        name: 'chromium',
         // Make sure to install Playwright
         provider: 'playwright',
         headless: true,
+        instances: [{ browser: 'chromium' }],
       },
       setupFiles: ['./.storybook/vitest.setup.ts'],
     },
-  })
+  }),
 );
 ```
 
 ```ts filename="vitest.config.ts" renderer="svelte"
 import { defineConfig, mergeConfig } from 'vitest/config';
-import { storybookTest } from '@storybook/addon-test/vitest-plugin';
+import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -103,13 +103,13 @@ export default mergeConfig(
       // Enable browser mode
       browser: {
         enabled: true,
-        name: 'chromium',
         // Make sure to install Playwright
         provider: 'playwright',
         headless: true,
+        instances: [{ browser: 'chromium' }],
       },
       setupFiles: ['./.storybook/vitest.setup.ts'],
     },
-  })
+  }),
 );
 ```

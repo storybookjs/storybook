@@ -1,7 +1,6 @@
-/* eslint-disable @typescript-eslint/ban-types */
 import * as domTestingLibrary from '@testing-library/dom';
 import type { FireFunction, FireObject } from '@testing-library/dom/types/events';
-import _userEvent from '@testing-library/user-event';
+import * as _userEvent from '@testing-library/user-event';
 
 import { once } from 'storybook/internal/client-logger';
 import { instrument } from 'storybook/internal/instrumenter';
@@ -110,13 +109,14 @@ export const {
 
 // This lines below are to prevent tsup doing stupid (not working) inline stuff, see:
 // https://github.com/storybookjs/storybook/issues/25258
-// eslint-disable-next-line @typescript-eslint/naming-convention
+
 type _UserEvent = typeof _userEvent;
 
 export interface UserEvent extends _UserEvent {}
 
-export const { userEvent }: { userEvent: UserEvent } = instrument(
-  // @ts-expect-error CJS workaround
-  { userEvent: _userEvent.default ?? _userEvent },
+export const uninstrumentedUserEvent = _userEvent.userEvent;
+
+export const { userEvent }: { userEvent: UserEvent['userEvent'] } = instrument(
+  { userEvent: _userEvent.userEvent },
   { intercept: true }
 );

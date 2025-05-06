@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/naming-convention */
 import { resolve } from 'node:path';
 
 import type { PluginItem, TransformOptions } from '@babel/core';

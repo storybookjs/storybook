@@ -1,0 +1,36 @@
+{
+  "title": "Example/Button",
+  "parameters": {
+    "server": {
+      "url": "https://storybook-server-demo.netlify.app/api",
+      "id": "button"
+    }
+  },
+  "args": { "label": "Button" },
+  "argTypes": {
+    "label": { "control": "text" },
+    "primary": { "control": "boolean" },
+    "backgroundColor": { "control": "color" },
+    "size": {
+      "control": { "type": "select", "options": ["small", "medium", "large"] }
+    }
+  },
+  "tags": ["autodocs"],
+  "stories": [
+    {
+      "name": "Primary",
+      "args": { "primary": true }
+    },
+    {
+      "name": "Secondary"
+    },
+    {
+      "name": "Large",
+      "args": { "size": "large" }
+    },
+    {
+      "name": "Small",
+      "args": { "size": "small" }
+    }
+  ]
+}

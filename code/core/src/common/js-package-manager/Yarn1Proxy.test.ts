@@ -51,7 +51,10 @@ describe('Yarn 1 Proxy', () => {
       await yarn1Proxy.runPackageCommand('compodoc', ['-e', 'json', '-d', '.']);
 
       expect(executeCommandSpy).toHaveBeenLastCalledWith(
-        expect.objectContaining({ command: 'yarn', args: ['compodoc', '-e', 'json', '-d', '.'] })
+        expect.objectContaining({
+          command: 'yarn',
+          args: ['exec', 'compodoc', '-e', 'json', '-d', '.'],
+        })
       );
     });
   });
@@ -210,7 +213,7 @@ describe('Yarn 1 Proxy', () => {
                 ]
               },
               {
-                "name": "@storybook/addon-interactions@7.0.0-beta.19",
+                "name": "@storybook/addon-example@7.0.0-beta.19",
                 "children": [
                   {
                     "name": "@storybook/package@7.0.0-beta.19",
@@ -229,7 +232,7 @@ describe('Yarn 1 Proxy', () => {
         {
           "dedupeCommand": "yarn dedupe",
           "dependencies": {
-            "@storybook/addon-interactions": [
+            "@storybook/addon-example": [
               {
                 "location": "",
                 "version": "7.0.0-beta.19",

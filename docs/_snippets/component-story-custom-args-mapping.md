@@ -118,103 +118,6 @@ export default {
 };
 ```
 
-```svelte filename="Button.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
-<script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
-
-  import Button from './Button.svelte';
-
-  import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from './icons';
-
-  const arrows = { ArrowUp, ArrowDown, ArrowLeft, ArrowRight };
-
-  const { Story } = defineMeta({
-    component: Button,
-    argTypes: {
-      arrow: {
-        options: Object.keys(arrows), // An array of serializable values
-        mapping: arrows, // Maps serializable option values to complex arg values
-        control: {
-          type: 'select', // Type 'select' is automatically inferred when 'options' is defined
-          labels: {
-            // 'labels' maps option values to string labels
-            ArrowUp: 'Up',
-            ArrowDown: 'Down',
-            ArrowLeft: 'Left',
-            ArrowRight: 'Right',
-          },
-        },
-      },
-    },
-  });
-</script>
-```
-
-```ts filename="Button.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="CSF"
-import type { Meta } from '@storybook/svelte';
-
-import Button from './Button.svelte';
-
-import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from './icons';
-
-const arrows = { ArrowUp, ArrowDown, ArrowLeft, ArrowRight };
-
-const meta = {
-  component: Button,
-  argTypes: {
-    arrow: {
-      options: Object.keys(arrows), // An array of serializable values
-      mapping: arrows, // Maps serializable option values to complex arg values
-      control: {
-        type: 'select', // Type 'select' is automatically inferred when 'options' is defined
-        labels: {
-          // 'labels' maps option values to string labels
-          ArrowUp: 'Up',
-          ArrowDown: 'Down',
-          ArrowLeft: 'Left',
-          ArrowRight: 'Right',
-        },
-      },
-    },
-  },
-} satisfies Meta<typeof Button>;
-
-export default meta;
-```
-
-```ts filename="Button.stories.ts|tsx" renderer="common" language="ts-4-9"
-// Replace your-framework with the name of your framework
-import type { Meta } from '@storybook/your-framework';
-
-import { Button } from './Button';
-
-import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from './icons';
-
-const arrows = { ArrowUp, ArrowDown, ArrowLeft, ArrowRight };
-
-const meta = {
-  component: Button,
-  argTypes: {
-    arrow: {
-      options: Object.keys(arrows), // An array of serializable values
-      mapping: arrows, // Maps serializable option values to complex arg values
-      control: {
-        type: 'select', // Type 'select' is automatically inferred when 'options' is defined
-        labels: {
-          // 'labels' maps option values to string labels
-          ArrowUp: 'Up',
-          ArrowDown: 'Down',
-          ArrowLeft: 'Left',
-          ArrowRight: 'Right',
-        },
-      },
-    },
-  },
-} satisfies Meta<typeof Button>;
-
-export default meta;
-```
-
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
@@ -248,7 +151,7 @@ export default meta;
 ```
 
 ```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
-import type { Meta } from '@storybook/svelte';
+import type { Meta } from '@storybook/svelte-vite';
 
 import Button from './Button.svelte';
 
@@ -256,7 +159,7 @@ import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from './icons';
 
 const arrows = { ArrowUp, ArrowDown, ArrowLeft, ArrowRight };
 
-const meta: Meta<typeof Button> = {
+const meta = {
   component: Button,
   argTypes: {
     arrow: {
@@ -274,13 +177,13 @@ const meta: Meta<typeof Button> = {
       },
     },
   },
-};
+} satisfies Meta<typeof Button>;
 
 export default meta;
 ```
 
 ```ts filename="Button.stories.ts|tsx" renderer="common" language="ts"
-// Replace your-framework with the name of your framework
+// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
 import type { Meta } from '@storybook/your-framework';
 
 import { Button } from './Button';
@@ -289,7 +192,7 @@ import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from './icons';
 
 const arrows = { ArrowUp, ArrowDown, ArrowLeft, ArrowRight };
 
-const meta: Meta<typeof Button> = {
+const meta = {
   component: Button,
   argTypes: {
     arrow: {
@@ -307,7 +210,7 @@ const meta: Meta<typeof Button> = {
       },
     },
   },
-};
+} satisfies Meta<typeof Button>;
 
 export default meta;
 ```
@@ -339,7 +242,7 @@ export default {
 ```
 
 ```ts filename="Button.stories.ts" renderer="web-components" language="ts"
-import type { Meta } from '@storybook/web-components';
+import type { Meta } from '@storybook/web-components-vite';
 
 import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from './icons';
 

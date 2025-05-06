@@ -1242,7 +1242,7 @@ describe('Refs API', () => {
         provider: provider as any,
         docsOptions: {},
         filters: {},
-        status: {},
+        allStatuses: {},
       };
       const initialState: Partial<State> = {
         refs: {
@@ -1256,7 +1256,7 @@ describe('Refs API', () => {
           },
         },
       };
-      // eslint-disable-next-line @typescript-eslint/no-shadow
+
       const store = createMockStore(initialState);
       const { api } = initRefs({ provider, store } as any, { runCheck: false });
 

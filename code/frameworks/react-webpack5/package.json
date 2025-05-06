@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react-webpack5",
-  "version": "9.0.0-alpha.3",
+  "version": "9.0.0-beta.10",
   "description": "Storybook for React: Develop React Component in isolation with Hot Reloading.",
   "keywords": [
     "storybook"
@@ -43,6 +43,7 @@
   "types": "dist/index.d.ts",
   "files": [
     "dist/**/*",
+    "template/cli/**/*",
     "README.md",
     "*.js",
     "*.d.ts",
@@ -72,7 +73,7 @@
     }
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   },
   "publishConfig": {
     "access": "public"

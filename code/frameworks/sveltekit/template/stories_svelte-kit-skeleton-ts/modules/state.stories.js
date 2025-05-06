@@ -5,7 +5,7 @@ export default {
   component: State,
 };
 
-export const AllUndefined = {};
+export const Default = {};
 
 export const Page = {
   parameters: {
@@ -15,6 +15,18 @@ export const Page = {
           data: {
             test: 'passed',
           },
+          form: {
+            framework: 'SvelteKit',
+            rating: 5,
+          },
+          params: {
+            referrer: 'storybook',
+          },
+          route: {
+            id: '/framework/sveltekit',
+          },
+          status: 200,
+          url: new URL('https://svelte.dev/docs/kit/'),
         },
       },
     },
@@ -26,9 +38,22 @@ export const Navigating = {
     sveltekit_experimental: {
       state: {
         navigating: {
+          from: {
+            params: {
+              framework: 'SvelteKit',
+            },
+            route: {
+              id: '/framework/sveltekit',
+            },
+            url: new URL('https://svelte.dev'),
+          },
           route: {
             id: '/storybook',
           },
+          type: 'enter',
+          willUnload: true,
+          delta: 3,
+          complete: Promise.resolve(true),
         },
       },
     },

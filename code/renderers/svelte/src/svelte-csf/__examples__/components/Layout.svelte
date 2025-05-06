@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
 
-  type Props = {
+  type LayoutProps = {
     children: Snippet;
     header: Snippet;
     footer?: Snippet;
@@ -9,7 +9,7 @@
     emphasizeHeader?: boolean;
   };
 
-  let { children, header, footer, emphasizeHeader = false, mainFontSize }: Props = $props();
+  let { children, header, footer, emphasizeHeader = false, mainFontSize }: LayoutProps = $props();
 </script>
 
 <div class="layout">

@@ -1,21 +1,32 @@
 <script lang="ts" module>
-  import { defineMeta, type Args, type StoryContext } from '@storybook/addon-svelte-csf';
+  import { defineMeta, type StoryContext } from '../src/index.js';
   import Layout from './components/Layout.svelte';
+  import type { ComponentProps } from 'svelte';
 
-  const { Story } = defineMeta<{ header: string }>({
-    component: Layout,
+  const { Story } = defineMeta({
+    render: template,
+    // component: Layout,
     args: {
-      mainFontSize: 'medium',
+      mainFontSize: 'large',
+      footer: 'a string',
+      children: 'asdf',
+      header: 'a string',
     },
   });
+
+  type Args = Omit<ComponentProps<typeof Layout>, 'footer' | 'children' | 'header'> & {
+    footer?: string;
+    children: string;
+    header: string;
+  };
 </script>
 
-{#snippet template(args: Args<typeof Story>, context: StoryContext<typeof Story>)}
+{#snippet template({ children, ...args }: Args, context: StoryContext<typeof Layout>)}
   <Layout {...args}>
     {#snippet header()}
       {args.header}
     {/snippet}
-    {args.children}
+    {children}
     {#snippet footer()}
       {args.footer}
     {/snippet}
@@ -28,13 +39,13 @@
 
 <Story name="With Header string" args={{ header: 'Header' }} />
 
-<Story name="With Header and Footer snippet" parameters={{ customParameter: 'customValue' }}>
-  {#snippet template(args, context)}
+<Story name="With Header and Footer snippet" args={{ mainFontSize: 'small' }}>
+  {#snippet template({ children, ...args })}
     <Layout {...args}>
       {#snippet header()}
-        This is a header: {context.parameters.customParameter}
+        This is a header
       {/snippet}
-      {args.children}
+      {children}
       {#snippet footer()}
         This is a footer
       {/snippet}

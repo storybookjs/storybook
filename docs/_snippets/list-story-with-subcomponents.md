@@ -142,6 +142,54 @@ export const OneItem: Story = {
 };
 ```
 
+```svelte filename="List.stories.svelte" renderer="svelte" language="js"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import List from './List.svelte';
+  import ListItem from './ListItem.svelte';
+
+  const { Story } = defineMeta({
+    component: List,
+    subcomponents: { ListItem },
+  });
+</script>
+
+<Story name="Empty" />
+
+<Story name="One Item">
+  {#snippet children(args)}
+    <List {...args}>
+      <ListItem />
+    </List>
+  {/snippet}
+</Story>
+```
+
+```svelte filename="List.stories.svelte" renderer="svelte" language="ts"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import List from './List.svelte';
+  import ListItem from './ListItem.svelte';
+
+  const { Story } = defineMeta({
+    component: List,
+    subcomponents: { ListItem },
+  });
+</script>
+
+<Story name="Empty" />
+
+<Story name="One Item">
+  {#snippet children(args)}
+    <List {...args}>
+      <ListItem />
+    </List>
+  {/snippet}
+</Story>
+```
+
 ```js filename="List.stories.js" renderer="web-components" language="js"
 import { html } from 'lit';
 

@@ -2,7 +2,13 @@ const ANIMATION_TIMEOUT = 5000;
 
 // Use the Web Animations API to wait for any animations and transitions to finish
 export async function waitForAnimations(signal: AbortSignal) {
-  if (!('document' in globalThis && 'querySelectorAll' in globalThis.document)) {
+  if (
+    !(
+      'document' in globalThis &&
+      'getAnimations' in globalThis.document &&
+      'querySelectorAll' in globalThis.document
+    )
+  ) {
     // Don't run in React Native
     return;
   }
@@ -19,7 +25,7 @@ export async function waitForAnimations(signal: AbortSignal) {
             return;
           }
           const runningAnimations = animationRoots
-            .flatMap((el) => el?.getAnimations() || [])
+            .flatMap((el) => el?.getAnimations?.() || [])
             .filter((a) => a.playState === 'running' && !isInfiniteAnimation(a));
           if (runningAnimations.length > 0) {
             await Promise.all(runningAnimations.map((a) => a.finished));

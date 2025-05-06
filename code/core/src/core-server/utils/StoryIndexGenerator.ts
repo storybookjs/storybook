@@ -402,8 +402,11 @@ export class StoryIndexGenerator {
     const hasAutodocsTag = entries.some((entry) => entry.tags.includes(AUTODOCS_TAG));
     const createDocEntry = hasAutodocsTag && !!this.options.docs;
 
+    console.log({ createDocEntry, hasAutodocsTag, docs: this.options.docs });
+
     if (createDocEntry && this.options.build?.test?.disableAutoDocs !== true) {
-      const name = this.options.docs.defaultName ?? 'Docs';
+      const docsName = this.options.docs?.defaultName ?? 'Docs';
+      const name = docsName;
       const { metaId } = indexInputs[0];
       const { title } = entries[0];
       const id = toId(metaId ?? title, name);
@@ -505,7 +508,7 @@ export class StoryIndexGenerator {
         title,
         "makeTitle created an undefined title. This happens when a specifier's doesn't have any matches in its fileName"
       );
-      const defaultName = this.options.docs.defaultName ?? 'Docs';
+      const defaultName = this.options.docs?.defaultName ?? 'Docs';
 
       const name =
         result.name ||
@@ -571,7 +574,8 @@ export class StoryIndexGenerator {
       const worseDescriptor = isMdxEntry(worseEntry)
         ? `component docs page`
         : `automatically generated docs page`;
-      if (betterEntry.name === this.options.docs.defaultName) {
+      const docsName = this.options.docs?.defaultName ?? 'Docs';
+      if (betterEntry.name === docsName) {
         throw new IndexingError(
           `You have a story for ${betterEntry.title} with the same name as your default docs entry name (${betterEntry.name}), so the docs page is being dropped. Consider changing the story name.`,
           [firstEntry.importPath, secondEntry.importPath]

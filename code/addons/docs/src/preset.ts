@@ -134,12 +134,18 @@ async function webpack(
   return result;
 }
 
-const docs: PresetProperty<'docs'> = (docsOptions, { docs: docsMode }: CLIOptions) => {
+const docs: PresetProperty<'docs'> = (input = {}, options) => {
+  if (options?.build?.test?.disableAutoDocs) {
+    return undefined;
+  }
+
   const result: StorybookConfigRaw['docs'] = {
+    ...input,
     defaultName: 'Docs',
   };
 
-  if (docsOptions && docsMode) {
+  const docsMode = options.docs;
+  if (docsMode) {
     result.docsMode = docsMode;
   }
   return result;

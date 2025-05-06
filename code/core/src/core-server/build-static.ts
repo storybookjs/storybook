@@ -102,7 +102,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     presets.apply('staticDirs'),
     presets.apply('experimental_indexers', []),
     presets.apply('stories'),
-    presets.apply('docs', {}),
+    presets.apply('docs'),
   ]);
 
   const fullOptions: Options = {
@@ -143,6 +143,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
       workingDir,
     };
     const normalizedStories = normalizeStories(stories, directories);
+    console.log({ docsOptions });
     const generator = new StoryIndexGenerator(normalizedStories, {
       ...directories,
       indexers,

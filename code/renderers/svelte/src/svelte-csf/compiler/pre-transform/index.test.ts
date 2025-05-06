@@ -246,7 +246,7 @@ describe(codemodLegacyNodes.name, () => {
       Please provide an 'id' to one of them.
       And for the '<Story />' component(s) which are supposed to use it, add the 'template' prop with the same 'id' value.
 
-      More info: https://github.com/storybookjs/addon-svelte-csf/blob/v4.1.2/ERRORS.md#SB_SVELTE_CSF_LEGACY_API_0003
+      More info: https://github.com/storybookjs/addon-svelte-csf/blob/v${pkg.version}/ERRORS.md#SB_SVELTE_CSF_LEGACY_API_0003
       ]
     `);
   });

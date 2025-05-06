@@ -6,7 +6,6 @@ import type {
   WebRenderer,
 } from 'storybook/internal/types';
 import type { Component, ComponentProps } from 'svelte';
-import type { Simplify } from 'type-fest';
 
 export type Cmp = Component<any>;
 
@@ -31,11 +30,11 @@ export interface SvelteStoryResult<TCmp extends Cmp> {
   decorator?: TCmp;
 }
 
-export type StoryContext<TCmp extends Cmp> = BaseStoryContext<
+export type StoryContext<TArgs extends Record<string, any>> = BaseStoryContext<
   // Renderer
-  SvelteRenderer<TCmp>,
+  SvelteRenderer<Component<TArgs>>,
   // Args
-  Simplify<TCmp>
+  TArgs
 >;
 
 export type StoryAnnotations<

@@ -84,7 +84,7 @@
            *
            * NOTE: Can be omitted if a default template is set with [`render`](https://github.com/storybookjs/addon-svelte-csf/blob/main/README.md#default-snippet)
            */
-          template?: Snippet<[TArgs, StoryContext<TCmp>]>;
+          template?: Snippet<[TArgs, StoryContext<TArgs>]>;
         }
     );
   let {

@@ -11,11 +11,11 @@ import type { Cmp, ComponentAnnotations } from './types.js';
 export type { StoryContext } from './types.js';
 import type { ComponentProps, Snippet } from 'svelte';
 
-export function defineMeta<TSnippet extends Snippet<[any, any]>, TCmp extends Cmp>(
+export function defineMeta<TSnippet, TCmp extends Cmp>(
   _meta: {
     render?: TSnippet;
     component?: TCmp;
-    args: Partial<
+    args?: Partial<
       TSnippet extends Snippet<[infer TArgs extends Record<string, any>, any]>
         ? TArgs
         : ComponentProps<TCmp>

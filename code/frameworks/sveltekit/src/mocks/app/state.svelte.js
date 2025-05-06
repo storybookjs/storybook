@@ -229,6 +229,6 @@ export let updated = {
   check: fn(() => Promise.resolve(updatedCurrent)),
 };
 
-export function setStateUpdated(updated = false) {
-  updatedCurrent = updated;
+export function setStateUpdated(params = {}) {
+  updated.current = params.current ?? false;
 }

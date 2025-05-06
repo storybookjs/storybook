@@ -208,12 +208,7 @@ export let navigating = {
 };
 
 export function setStateNavigating(params = {}) {
-  navigating.from = params.from;
-  navigating.to = params.to;
-  navigating.type = params.type;
-  navigating.willUnload = params.willUnload;
-  navigating.delta = params.delta;
-  navigating.complete = params.complete;
+  navigating.from = params.from ?? defaultStateNavigatingValues.from;
 }
 
 /** @type {boolean} */

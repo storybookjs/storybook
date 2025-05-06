@@ -64,7 +64,9 @@ export const Updated = {
   parameters: {
     sveltekit_experimental: {
       state: {
-        updated: true,
+        updated: {
+          current: true,
+        },
       },
     },
   },
@@ -98,7 +100,9 @@ export const PageAndUpdated = {
             test: 'passed',
           },
         },
-        updated: true,
+        updated: {
+          current: true,
+        },
       },
     },
   },
@@ -113,7 +117,9 @@ export const NavigatingAndUpdated = {
             id: '/storybook',
           },
         },
-        updated: true,
+        updated: {
+          current: true,
+        },
       },
     },
   },
@@ -133,7 +139,9 @@ export const AllThree = {
             id: '/storybook',
           },
         },
-        updated: true,
+        updated: {
+          current: true,
+        },
       },
     },
   },

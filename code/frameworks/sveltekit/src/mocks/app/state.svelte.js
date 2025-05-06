@@ -53,15 +53,79 @@ let pageUrl = $state.raw(new URL(location.origin));
 
 /** @type {Page} */
 export let page = {
-  data: pageData,
-  form: pageForm,
-  error: pageError,
-  params: pageParams,
-  route: pageRoute,
-  state: pageState,
-  status: pageStatus,
-  url: pageUrl,
-};
+  get data() {
+    return pageData;
+  },
+  /**
+   * @type {(newPageData: typeof pageData)=>void}
+   */
+  set data(newPageData) {
+    pageData = newPageData;
+  },
+  get form() {
+    return pageForm;
+  },
+  /**
+   * @type {(newPageForm: typeof pageForm)=>void}
+   */
+  set form(newPageForm) {
+    pageForm = newPageForm;
+  },
+  get error() {
+    return pageError;
+  },
+  /**
+   * @type {(newPageError: typeof pageError)=>void}
+   */
+  set error(newPageError) {
+    pageError = newPageError;
+  },
+  get params() {
+    return pageParams;
+  },
+  /**
+   * @type {(newPageParams: typeof pageParams)=>void}
+   */
+  set params(newPageParams) {
+    pageParams = newPageParams;
+  },
+  get route() {
+    return pageRoute;
+  },
+  /**
+   * @type {(newPageRoute: typeof pageRoute)=>void}
+   */
+  set route(newPageRoute) {
+    pageRoute = newPageRoute;
+  },
+  get state() {
+    return pageState;
+  },
+  /**
+   * @type {(newPageState: typeof pageState)=>void}
+   */
+  set state(newPageState) {
+    pageState = newPageState;
+  },
+  get status() {
+    return pageStatus;
+  },
+  /**
+   * @type {(newPageStatus: typeof pageStatus)=>void}
+   */
+  set status(newPageStatus) {
+    pageStatus = newPageStatus;
+  },
+  get url() {
+    return pageUrl;
+  },
+  /**
+   * @type {(newPageUrl: typeof pageUrl)=>void}
+   */
+  set url(newPageUrl) {
+    pageUrl = newPageUrl;
+  },
+  };
 
 /**
  * @typedef {Object} NavigationTarget
@@ -98,13 +162,62 @@ let navigatingComplete = $state.raw(null);
 
 /** @type {Navigation} */
 export let navigating = {
-  from: navigatingFrom,
-  to: navigatingTo,
-  type: navigatingType,
-  willUnload: navigatingWillUnload,
-  delta: navigatingDelta,
-  complete: navigatingComplete,
+  get from() {
+    return navigatingFrom;
+  },
+  /**
+   * @type {(newNavigatingFrom: typeof navigatingFrom)=>void}
+   */
+  set from(newNavigatingFrom) {
+    navigatingFrom = newNavigatingFrom;
+  },
+  get to() {
+    return navigatingTo;
+  },
+  /**
+   * @type {(newNavigatingTo: typeof navigatingTo)=>void}
+   */
+  set to(newNavigatingTo) {
+    navigatingTo = newNavigatingTo;
+  },
+  get type() {
+    return navigatingType;
+  },
+  /**
+   * @type {(newNavigatingType: typeof navigatingType)=>void}
+   */
+  set type(newNavigatingType) {
+    navigatingType = newNavigatingType;
+  },
+  get willUnload() {
+    return navigatingWillUnload;
+  },
+  /**
+   * @type {(newNavigatingWillUnload: typeof navigatingWillUnload)=>void}
+   */
+  set willUnload(newNavigatingWillUnload) {
+    navigatingWillUnload = newNavigatingWillUnload;
+  },
+  get delta() {
+    return navigatingDelta;
+  },
+  /**
+   * @type {(newNavigatingDelta: typeof navigatingDelta)=>void}
+   */
+  set delta(newNavigatingDelta) {
+    navigatingDelta = newNavigatingDelta;
+  },
+  get complete() {
+    return navigatingComplete;
+  },
+  /**
+   * @type {(newNavigatingComplete: typeof navigatingComplete)=>void}
+   */
+  set complete(newNavigatingComplete) {
+    navigatingComplete = newNavigatingComplete;
+  },
 };
+
 
 /** @type {boolean} */
 let updatedCurrent = $state.raw(false);

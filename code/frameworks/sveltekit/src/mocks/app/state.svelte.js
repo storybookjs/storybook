@@ -157,15 +157,15 @@ const defaultStateNavigatingValues = {
 /** @type {Navigation['from'] | null} */
 let navigatingFrom = $state.raw(defaultStateNavigatingValues.from);
 /** @type {Navigation['to'] | null} */
-let navigatingTo = $state.raw(defaultStatePageValues.to);
+let navigatingTo = $state.raw(defaultStateNavigatingValues.to);
 /** @type {Navigation['type'] | null} */
-let navigatingType = $state.raw(defaultStatePageValues.type);
+let navigatingType = $state.raw(defaultStateNavigatingValues.type);
 /** @type {Navigation['willUnload'] | null} */
-let navigatingWillUnload = $state.raw(defaultStatePageValues.willUnload);
+let navigatingWillUnload = $state.raw(defaultStateNavigatingValues.willUnload);
 /** @type {Navigation['delta'] | null} */
-let navigatingDelta = $state.raw(defaultStatePageValues.delta);
+let navigatingDelta = $state.raw(defaultStateNavigatingValues.delta);
 /** @type {Navigation['complete'] | null} */
-let navigatingComplete = $state.raw(defaultStatePageValues.complete);
+let navigatingComplete = $state.raw(defaultStateNavigatingValues.complete);
 
 /** @type {Navigation} */
 export let navigating = {

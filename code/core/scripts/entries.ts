@@ -89,22 +89,6 @@ export const getEntries = (cwd: string) => {
       true
     ),
     define(
-      'src/test/spy.ts',
-      ['browser', 'node'],
-      true,
-      ['util', 'react'],
-      [],
-      [
-        '@testing-library/jest-dom',
-        '@testing-library/user-event',
-        'chai',
-        '@vitest/expect',
-        '@vitest/spy',
-        '@vitest/utils',
-      ],
-      true
-    ),
-    define(
       'src/test/index.ts',
       ['browser', 'node'],
       true,

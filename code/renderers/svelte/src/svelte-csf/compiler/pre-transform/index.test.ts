@@ -239,7 +239,7 @@ describe(codemodLegacyNodes.name, () => {
       <Story name="NextOne" />
     `;
     const ast = getSvelteAST({ code });
-    expect(codemodLegacyNodes({ ast })).rejects.toThrowErrorMatchingInlineSnapshot(`
+    await expect(codemodLegacyNodes({ ast })).rejects.toThrowErrorMatchingInlineSnapshot(`
       [SB_SVELTE_CSF_LEGACY_API_0003 (DuplicatedUnidentifiedTemplateError): Stories file: undefined
       has two '<Template />' components without provided prop 'id'. This leads to unwanted runtime behavior.
 

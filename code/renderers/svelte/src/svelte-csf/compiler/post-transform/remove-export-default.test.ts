@@ -29,7 +29,7 @@ describe(removeExportDefault.name, () => {
       nodes: compiledASTNodes,
     });
 
-    expect(
+    await expect(
       extractCompiledASTNodes({
         ast: parseAst(code.toString()),
       })

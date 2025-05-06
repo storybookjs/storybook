@@ -1,11 +1,9 @@
 <script lang="ts">
-  import type { Snippet } from 'svelte';
   import type { HTMLButtonAttributes } from 'svelte/elements';
 
-  type Props = {
+  interface Props extends HTMLButtonAttributes {
     rounded?: boolean;
-    children?: Snippet;
-  } & Pick<HTMLButtonAttributes, 'onclick' | 'onmouseenter' | 'onmouseleave'>;
+  }
 
   let { children, rounded = true, ...restProps }: Props = $props();
 </script>

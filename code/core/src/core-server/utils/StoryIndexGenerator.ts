@@ -402,8 +402,6 @@ export class StoryIndexGenerator {
     const hasAutodocsTag = entries.some((entry) => entry.tags.includes(AUTODOCS_TAG));
     const createDocEntry = hasAutodocsTag && !!this.options.docs;
 
-    console.log({ createDocEntry, hasAutodocsTag, docs: this.options.docs });
-
     if (createDocEntry && this.options.build?.test?.disableAutoDocs !== true) {
       const docsName = this.options.docs?.defaultName ?? 'Docs';
       const name = docsName;

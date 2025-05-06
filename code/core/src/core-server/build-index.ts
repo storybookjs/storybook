@@ -25,8 +25,6 @@ export const buildIndex = async (options: BuildIndexOptions) => {
   };
   const normalizedStories = normalizeStories(stories, directories);
 
-  console.log({ docsOptions });
-
   const generator = new StoryIndexGenerator(normalizedStories, {
     ...directories,
     indexers,

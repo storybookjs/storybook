@@ -18,9 +18,9 @@ import {
 import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
 import { colors, logger } from 'storybook/internal/node-logger';
 
+import { any as findUp } from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import { $ } from 'execa';
-import { findUp } from 'find-up';
 import { dirname, extname, join, relative, resolve } from 'pathe';
 import picocolors from 'picocolors';
 import prompts from 'prompts';

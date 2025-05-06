@@ -6023,9 +6023,9 @@ __metadata:
     "@vitest/browser": "npm:^3.1.1"
     "@vitest/runner": "npm:^3.1.1"
     boxen: "npm:^8.0.1"
+    empathic: "npm:^1.1.0"
     es-toolkit: "npm:^1.36.0"
     execa: "npm:^8.0.1"
-    find-up: "npm:^7.0.0"
     istanbul-lib-report: "npm:^3.0.1"
     pathe: "npm:^1.1.2"
     picocolors: "npm:^1.1.0"
@@ -12963,6 +12963,13 @@ __metadata:
   version: 3.0.0
   resolution: "emojis-list@npm:3.0.0"
   checksum: 10c0/7dc4394b7b910444910ad64b812392159a21e1a7ecc637c775a440227dcb4f80eff7fe61f4453a7d7603fa23d23d30cc93fe9e4b5ed985b88d6441cd4a35117b
+  languageName: node
+  linkType: hard
+
+"empathic@npm:^1.1.0":
+  version: 1.1.0
+  resolution: "empathic@npm:1.1.0"
+  checksum: 10c0/ed906c4ad6dabe1477ed00d6420f79eff8ac72e2eb580aab42406f50160fd34d66e8381e92b405e96d75a826a840706af261fd397c3e7db4d1a293d23e2e72f7
   languageName: node
   linkType: hard
 

@@ -74,7 +74,7 @@ export const getConfig: ManagerBuilder['getConfig'] = async (options) => {
     minify: false,
     minifyWhitespace: false,
     minifyIdentifiers: false,
-    minifySyntax: false,
+    minifySyntax: true,
     metafile: true,
 
     // treeShaking: true,
@@ -185,6 +185,7 @@ const starter: StarterFunction = async function* starterGeneratorFn({
   const { cssFiles, jsFiles } = await readOrderedFiles(addonsDir, compilation?.outputFiles);
 
   if (compilation.metafile && options.outputDir) {
+    console.log('writing metafile:', join(options.outputDir, 'metafile.json'));
     await writeFile(
       join(options.outputDir, 'metafile.json'),
       JSON.stringify(compilation.metafile, null, 2)

@@ -179,16 +179,21 @@ export const toUpgradedDependencies = async (
 
     if (satelliteDependencies.length > 0) {
       try {
-        // respect the existing character here.
-        storybookSatelliteUpgrades = await Promise.all(
-          satelliteDependencies.map(async (dependency) => {
-            const latestVersion = await packageManager.latestVersion(
-              isCLIPrerelease ? `${dependency}@next` : dependency
-            );
-            const modifier = getVersionModifier(deps[dependency]);
-            return `${dependency}@${modifier}${latestVersion}`;
-          })
-        );
+        storybookSatelliteUpgrades = (
+          await Promise.all(
+            satelliteDependencies.map(async (dependency) => {
+              try {
+                const mostRecentVersion = await packageManager.latestVersion(
+                  isCLIPrerelease ? `${dependency}@next` : dependency
+                );
+                const modifier = getVersionModifier(deps[dependency]);
+                return `${dependency}@${modifier}${mostRecentVersion}`;
+              } catch (err) {
+                return null;
+              }
+            })
+          )
+        ).filter(Boolean) as string[];
       } catch (error) {
         // If there is an error fetching satellite dependencies, we don't want to block the upgrade
       }

@@ -80,7 +80,7 @@ async function run() {
 
     test(`main event should contain a userSince value`, () => {
       assert.ok(typeof mainEvent.metadata.userSince === 'number');
-    })
+    });
 
     const {
       expected: { renderer, builder, framework },

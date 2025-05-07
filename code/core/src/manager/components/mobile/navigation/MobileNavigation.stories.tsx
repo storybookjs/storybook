@@ -61,7 +61,12 @@ const meta = {
   decorators: [
     (storyFn) => (
       <ManagerContext.Provider value={mockManagerStore}>
-        <LayoutProvider>{storyFn()}</LayoutProvider>
+        <LayoutProvider>
+          <div style={{ display: 'flex', flexDirection: 'column', height: '100svh' }}>
+            <div style={{ flex: 1 }} />
+            {storyFn()}
+          </div>
+        </LayoutProvider>
       </ManagerContext.Provider>
     ),
   ],

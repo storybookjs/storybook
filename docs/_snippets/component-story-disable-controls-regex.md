@@ -180,7 +180,8 @@ export const RegexExclude = {
 ```
 
 ```ts filename="YourComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
-import type { Meta, StoryObj } from '@storybook/svelte-vite';
+// Replace your-framework with svelte-vite or sveltekit
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import YourComponent from './YourComponent.svelte';
 

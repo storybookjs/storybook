@@ -250,14 +250,6 @@ export const frameworkOptions = async (
   return config.options;
 };
 
-export const docs: PresetProperty<'docs'> = (docsOptions, { docs: docsMode }: CLIOptions) =>
-  docsOptions && docsMode !== undefined
-    ? {
-        ...docsOptions,
-        docsMode,
-      }
-    : docsOptions;
-
 export const managerHead = async (_: any, options: Options) => {
   const location = join(options.configDir, 'manager-head.html');
   if (existsSync(location)) {

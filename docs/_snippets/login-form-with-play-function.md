@@ -320,7 +320,8 @@ export const FilledForm = {
 ```
 
 ```ts filename="LoginForm.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
-import type { Meta, StoryObj } from '@storybook/svelte-vite';
+// Replace your-framework with svelte-vite or sveltekit
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { expect, userEvent, within } from 'storybook/test';
 

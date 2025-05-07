@@ -19,8 +19,6 @@ export function useFocusTrap(isActive: boolean, onEscape?: () => void) {
         previousActiveElementRef.current = document.activeElement;
       }
 
-      // Make all potentially custom interactive elements inside the drawer focusable
-      // if they don't already have a tabindex.
       const interactiveRoleElements = container.querySelectorAll<HTMLElement>(
         'div[role="button"], span[role="button"], [role="link"]'
       );
@@ -48,7 +46,7 @@ export function useFocusTrap(isActive: boolean, onEscape?: () => void) {
       previousActiveElementRef.current.focus();
       previousActiveElementRef.current = null; // Clear ref after returning focus
     }
-  }, [isActive]); // Removed 'onEscape' from deps as it's stable or should be memoized if not
+  }, [isActive]);
 
   // Set up the keyboard event listeners for the focus trap
   useEffect(() => {
@@ -66,15 +64,16 @@ export function useFocusTrap(isActive: boolean, onEscape?: () => void) {
         e.preventDefault();
         return;
       }
-      
+
       if (e.key === 'Escape' && onEscape) {
         e.preventDefault();
         onEscape();
-        return; // Escape should work even if no other focusable elements
+        return;
       }
 
-      // If only Escape is relevant and no other focusable elements, exit early
-      if (focusableElements.length === 0) return;
+      if (focusableElements.length === 0) {
+        return;
+      }
 
       const firstElement = focusableElements[0];
       const lastElement = focusableElements[focusableElements.length - 1];
@@ -96,35 +95,14 @@ export function useFocusTrap(isActive: boolean, onEscape?: () => void) {
 
     container.addEventListener('keydown', handleKeyDown);
 
-    // The 'focusout' listener on document can be problematic and overly aggressive.
-    // Robust Tab/Shift+Tab handling within the container's keydown event is generally preferred.
-    // If focus escaping is still an issue, this might be revisited, but test thoroughly.
-    /*
-    const handleFocusOut = (e: FocusEvent) => {
-      if (container.contains(e.target as Node) && !container.contains(e.relatedTarget as Node)) {
-        e.preventDefault();
-        const elements = getFocusableElements(container);
-        if (elements.length > 0) {
-          elements[0].focus();
-        } else {
-          container.focus(); // Ensure container itself is focusable (e.g., tabIndex = -1)
-        }
-      }
-    };
-    document.addEventListener('focusout', handleFocusOut);
-    */
-
     return () => {
       container.removeEventListener('keydown', handleKeyDown);
-      // document.removeEventListener('focusout', handleFocusOut);
     };
-  }, [isActive, onEscape]); // onEscape dependency for keydown handler
+  }, [isActive, onEscape]);
 
   return containerRef;
 }
 
-// Helper function to get focusable elements
-// Moved out of the hook for clarity, could also be memoized if container reference changes often (not typical for a trap)
 const getFocusableElements = (container: HTMLElement): HTMLElement[] => {
   return Array.from(
     container.querySelectorAll<HTMLElement>(

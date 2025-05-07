@@ -76,11 +76,11 @@
 
     <script type="module">
       import './sb-manager/globals-runtime.js';
-      
+
       <% files.js.forEach(file => { %>
         import '<%= file %>';
       <% }); %>
-      
+
       import './sb-manager/runtime.js';
     </script>
   </body>

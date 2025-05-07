@@ -1,4 +1,4 @@
-import type { ArgType } from '../components/ArgsTable';
+import type { ArgType } from '../components/ArgsTable/types';
 
 export interface ControlProps<T> {
   name: string;

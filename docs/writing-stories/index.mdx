@@ -60,12 +60,6 @@ components/
 
   {/* prettier-ignore-end */}
 
-  <Callout variant="info">
-
-    Starting with Storybook version 7.0, story titles are analyzed statically as part of the build process. With Svelte, the `defineMeta` function or *default* export must contain a `title` property that can be read statically. Using the `id` property to customize your story URL must also be statically readable.
-
-  </Callout>
-
 </If>
 
 <If notRenderer="svelte">
@@ -140,6 +134,7 @@ You can rename any particular story you need. For instance, to give it a more ac
 
 {/* prettier-ignore-end */}
 
+
 Your story will now be shown in the sidebar with the given text.
 
 {/* Maintaining a prior heading */}
@@ -160,7 +155,6 @@ Your story will now be shown in the sidebar with the given text.
   A story is an object that describes how to render a component. You can have multiple stories per component, and those stories can build upon one another. For example, we can add Secondary and Tertiary stories based on our Primary story from above.
 
 </If>
-
 
 {/* prettier-ignore-start */}
 

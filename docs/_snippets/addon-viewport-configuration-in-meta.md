@@ -89,7 +89,7 @@ const meta = {
 export default meta;
 ```
 
-```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js"
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
@@ -109,7 +109,23 @@ export default meta;
 </script>
 ```
 
-```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts"
+```js filename="MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+import { INITIAL_VIEWPORTS } from 'storybook/viewport';
+
+import MyComponent from './MyComponent.svelte';
+
+export default {
+  component: MyComponent,
+  parameters: {
+    viewport: {
+      //👇 Set available viewports for every story in the file
+      options: INITIAL_VIEWPORTS,
+    },
+  },
+};
+```
+
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
@@ -127,6 +143,27 @@ export default meta;
     },
   });
 </script>
+```
+
+```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+// Replace your-framework with svelte-vite or sveltekit
+import type { Meta, StoryObj } from '@storybook/your-framework';
+
+import { INITIAL_VIEWPORTS } from 'storybook/viewport';
+
+import MyComponent from './MyComponent.svelte';
+
+const meta = {
+  component: MyComponent,
+  parameters: {
+    viewport: {
+      //👇 Set available viewports for every story in the file
+      options: INITIAL_VIEWPORTS,
+    },
+  },
+} satisfies Meta<typeof MyComponent>;
+
+export default meta;
 ```
 
 ```js filename="MyComponent.stories.js" renderer="vue" language="js"

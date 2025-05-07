@@ -49,6 +49,11 @@ export const getStorybookVersion = (line: string) => {
 };
 
 const getInstalledStorybookVersion = async (packageManager: JsPackageManager) => {
+  const storybookCliVersion = await packageManager.getInstalledVersion('storybook');
+  if (storybookCliVersion) {
+    return storybookCliVersion;
+  }
+
   const installations = await packageManager.findInstallations(Object.keys(versions));
   if (!installations) {
     return;

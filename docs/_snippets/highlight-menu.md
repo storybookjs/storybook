@@ -117,6 +117,166 @@ export const StyledHighlight: Story = {
 };
 ```
 
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import { useChannel } from 'storybook/preview-api';
+  import { HIGHLIGHT } from 'storybook/highlight';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+  });
+</script>
+
+<Story
+  name="StyledHighlight"
+  decorators={[
+    (storyFn) => {
+      const emit = useChannel({});
+      emit(HIGHLIGHT, {
+        selectors: ['h2', 'a', '.storybook-button'],
+        menu: [
+          {
+            id: 'button-name',
+            title: 'Login',
+            description: 'Navigate to the login page',
+            clickEvent: 'my-menu-click-event',
+          },
+          {
+            id: 'h2-home',
+            title: 'Acme',
+            description: 'Navigate to the home page',
+          },
+        ],
+      });
+      return storyFn();
+    },
+  ]}
+/>
+```
+
+```js filename="MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+import { useChannel } from 'storybook/preview-api';
+import { HIGHLIGHT } from 'storybook/highlight';
+
+import MyComponent from './MyComponent.svelte';
+
+export default {
+  component: MyComponent,
+};
+
+export const StyledHighlight = {
+  decorators: [
+    (storyFn) => {
+      const emit = useChannel({});
+      emit(HIGHLIGHT, {
+        selectors: ['h2', 'a', '.storybook-button'],
+        menu: [
+          {
+            id: 'button-name',
+            title: 'Login',
+            description: 'Navigate to the login page',
+            clickEvent: 'my-menu-click-event',
+          },
+          {
+            id: 'h2-home',
+            title: 'Acme',
+            description: 'Navigate to the home page',
+          },
+        ],
+      });
+      return storyFn();
+    },
+  ],
+};
+```
+
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import { useChannel } from 'storybook/preview-api';
+  import { HIGHLIGHT } from 'storybook/highlight';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+  });
+</script>
+
+<Story
+  name="StyledHighlight"
+  decorators={[
+    (storyFn) => {
+      const emit = useChannel({});
+      emit(HIGHLIGHT, {
+        selectors: ['h2', 'a', '.storybook-button'],
+        menu: [
+          {
+            id: 'button-name',
+            title: 'Login',
+            description: 'Navigate to the login page',
+            clickEvent: 'my-menu-click-event',
+          },
+          {
+            id: 'h2-home',
+            title: 'Acme',
+            description: 'Navigate to the home page',
+          },
+        ],
+      });
+      return storyFn();
+    },
+  ]}
+/>
+```
+
+```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+// Replace your-framework with svelte-vite or sveltekit
+import type { Meta, StoryObj } from '@storybook/your-framework';
+
+import { useChannel } from 'storybook/preview-api';
+import { HIGHLIGHT } from 'storybook/highlight';
+
+import MyComponent from './MyComponent.svelte';
+
+const meta = {
+  component: MyComponent,
+} satisfies Meta<typeof MyComponent>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const StyledHighlight: Story = {
+  decorators: [
+    (storyFn) => {
+      const emit = useChannel({});
+      emit(HIGHLIGHT, {
+        selectors: ['h2', 'a', '.storybook-button'],
+        menu: [
+          {
+            id: 'button-name',
+            title: 'Login',
+            description: 'Navigate to the login page',
+            clickEvent: 'my-menu-click-event',
+          },
+          {
+            id: 'h2-home',
+            title: 'Acme',
+            description: 'Navigate to the home page',
+          },
+        ],
+      });
+      return storyFn();
+    },
+  ],
+};
+```
+
 ```js filename="MyComponent.stories.js" renderer="vue" language="js"
 import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT } from 'storybook/highlight';

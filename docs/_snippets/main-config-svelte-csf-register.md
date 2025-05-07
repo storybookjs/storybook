@@ -9,7 +9,7 @@ export default {
 ```
 
 ```ts filename=".storybook/main.ts" renderer="svelte" language="ts"
-// Replace your-framework with the name of your Svelte framework
+// Replace your-framework with svelte-vite or sveltekit
 import type { StorybookConfig } from '@storybook/your-framework';
 
 const config: StorybookConfig = {

@@ -50,7 +50,7 @@ const config = defineMain({
     },
     {
       directory: '../addons/docs/src/blocks',
-      titlePrefix: 'blocks',
+      titlePrefix: 'addons/docs/blocks',
     },
     {
       directory: '../addons/a11y/src',

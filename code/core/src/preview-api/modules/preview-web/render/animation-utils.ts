@@ -1,3 +1,5 @@
+import type { CleanupCallback } from 'storybook/internal/csf';
+
 const ANIMATION_TIMEOUT = 5000;
 
 export function isTestEnvironment() {
@@ -19,10 +21,10 @@ export function isTestEnvironment() {
 }
 
 // Pause all animations and transitions by overriding the CSS properties
-export function pauseAnimations(atEnd = true) {
+export function pauseAnimations(atEnd = true): CleanupCallback {
   if (!('document' in globalThis && 'createElement' in globalThis.document)) {
     // Don't run in React Native
-    return;
+    return () => {};
   }
 
   // Remove all animations
@@ -48,6 +50,10 @@ export function pauseAnimations(atEnd = true) {
 
   // Now recreate all animations, getting paused in their initial state
   document.head.removeChild(disableStyle);
+
+  return () => {
+    pauseStyle.parentNode?.removeChild(pauseStyle);
+  };
 }
 
 // Use the Web Animations API to wait for any animations and transitions to finish

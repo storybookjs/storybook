@@ -424,11 +424,14 @@ async function runStory<TRenderer extends Renderer>(
     await playFunction(context);
   }
 
+  let cleanUp: CleanupCallback | undefined;
   if (isTestEnvironment()) {
-    pauseAnimations();
+    cleanUp = pauseAnimations();
   } else {
     await waitForAnimations(context.abortSignal);
   }
 
   await story.applyAfterEach(context);
+
+  await cleanUp?.();
 }

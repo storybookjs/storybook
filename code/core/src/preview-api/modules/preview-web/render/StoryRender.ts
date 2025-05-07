@@ -283,7 +283,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
       }
 
       const cleanupCallbacks = await applyBeforeEach(context);
-      this.store.addCleanupCallbacks(story, cleanupCallbacks);
+      this.store.addCleanupCallbacks(story, ...cleanupCallbacks);
 
       if (this.checkIfAborted(abortSignal)) {
         return;
@@ -362,7 +362,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
 
       await this.runPhase(abortSignal, 'completing', async () => {
         if (isTestEnvironment()) {
-          pauseAnimations();
+          this.store.addCleanupCallbacks(story, pauseAnimations());
         } else {
           await waitForAnimations(abortSignal);
         }

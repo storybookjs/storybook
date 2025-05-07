@@ -9,6 +9,7 @@ import {
 } from 'storybook/internal/common';
 import type { PackageJson } from 'storybook/internal/types';
 
+import picocolors from 'picocolors';
 import prompts from 'prompts';
 import { dedent } from 'ts-dedent';
 
@@ -174,6 +175,8 @@ export const rendererToFramework: Fix<MigrationResult> = {
       2. Remove the renderer packages from your package.json
       3. Install the necessary framework dependencies
       Would you like to proceed with these changes?
+
+      More info: ${picocolors.yellow('https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#moving-from-renderer-based-to-framework-based-configuration')}
     `;
   },
 
@@ -214,7 +217,6 @@ export const rendererToFramework: Fix<MigrationResult> = {
       }
 
       console.log(`\nMigrating ${rendererPackage} to ${selectedFramework}`);
-      console.log('Scanning for affected files...');
 
       const sourceFiles = await globby([glob], {
         ...commonGlobOptions(''),

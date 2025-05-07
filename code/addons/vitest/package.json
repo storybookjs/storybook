@@ -103,7 +103,6 @@
     "@vitest/runner": "^3.1.1",
     "boxen": "^8.0.1",
     "es-toolkit": "^1.36.0",
-    "execa": "^8.0.1",
     "find-up": "^7.0.0",
     "istanbul-lib-report": "^3.0.1",
     "pathe": "^1.1.2",

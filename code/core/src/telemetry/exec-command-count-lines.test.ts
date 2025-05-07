@@ -3,12 +3,11 @@ import { PassThrough } from 'node:stream';
 
 import { beforeEach, describe, expect, it, vitest } from 'vitest';
 
-// eslint-disable-next-line depend/ban-dependencies
-import { execaCommand as rawExecaCommand } from 'execa';
+import { execaCommand as rawExecaCommand } from 'storybook/internal/execa';
 
 import { execCommandCountLines } from './exec-command-count-lines';
 
-vitest.mock('execa');
+vitest.mock('storybook/internal/execa');
 
 const execaCommand = vitest.mocked(rawExecaCommand);
 beforeEach(() => {

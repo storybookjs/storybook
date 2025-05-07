@@ -1,9 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Channel, type ChannelTransport } from 'storybook/internal/channels';
-
-// eslint-disable-next-line depend/ban-dependencies
-import { execaNode } from 'execa';
+import { execaNode } from 'storybook/internal/execa';
 
 import { storeOptions } from '../constants';
 import { log } from '../logger';
@@ -33,7 +31,7 @@ const child = vi.hoisted(() => ({
   kill: vi.fn(),
 }));
 
-vi.mock('execa', () => ({
+vi.mock('storybook/internal/execa', () => ({
   execaNode: vi.fn().mockReturnValue(child),
 }));
 

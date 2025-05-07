@@ -16,10 +16,9 @@ import {
   versions,
 } from 'storybook/internal/common';
 import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
+import { execa } from 'storybook/internal/execa';
 import { colors, logger } from 'storybook/internal/node-logger';
 
-// eslint-disable-next-line depend/ban-dependencies
-import { execa } from 'execa';
 import { findUp } from 'find-up';
 import { dirname, extname, join, relative, resolve } from 'pathe';
 import picocolors from 'picocolors';

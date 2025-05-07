@@ -349,6 +349,11 @@
       "import": "./dist/babel/index.js",
       "require": "./dist/babel/index.cjs"
     },
+    "./internal/execa": {
+      "types": "./dist/execa/index.d.ts",
+      "import": "./dist/execa/index.js",
+      "require": "./dist/execa/index.cjs"
+    },
     "./internal/cli/bin": {
       "types": "./dist/cli/bin/index.d.ts",
       "import": "./dist/cli/bin/index.js",
@@ -583,6 +588,9 @@
       "internal/babel": [
         "./dist/babel/index.d.ts"
       ],
+      "internal/execa": [
+        "./dist/execa/index.d.ts"
+      ],
       "internal/cli/bin": [
         "./dist/cli/bin/index.d.ts"
       ],
@@ -695,7 +703,7 @@
     "ejs": "^3.1.10",
     "es-toolkit": "^1.36.0",
     "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0",
-    "execa": "^8.0.1",
+    "execa": "^9.5.2",
     "fd-package-json": "^1.2.0",
     "fetch-retry": "^6.0.0",
     "find-cache-dir": "^5.0.0",

@@ -1,7 +1,6 @@
 import { createInterface } from 'node:readline';
 
-// eslint-disable-next-line depend/ban-dependencies
-import { execaCommand } from 'execa';
+import { execaCommand } from 'storybook/internal/execa';
 
 /**
  * Execute a command in the local terminal and count the lines in the result

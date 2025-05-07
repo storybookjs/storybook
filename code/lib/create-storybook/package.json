@@ -46,7 +46,6 @@
     "@types/semver": "^7.3.4",
     "boxen": "^7.1.1",
     "commander": "^12.1.0",
-    "execa": "^5.0.0",
     "find-up": "^7.0.0",
     "ora": "^5.4.1",
     "picocolors": "^1.1.0",

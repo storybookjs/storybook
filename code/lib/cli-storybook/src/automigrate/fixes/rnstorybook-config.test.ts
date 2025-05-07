@@ -2,10 +2,9 @@ import { existsSync } from 'node:fs';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { $ } from 'storybook/internal/execa';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
-// eslint-disable-next-line depend/ban-dependencies
-import { $ } from 'execa';
 // eslint-disable-next-line depend/ban-dependencies
 import { globby } from 'globby';
 
@@ -19,7 +18,7 @@ const mockMainConfig: StorybookConfigRaw = {
 };
 
 vi.mock('node:fs');
-vi.mock('execa');
+vi.mock('storybook/internal/execa');
 vi.mock('globby');
 
 describe('react-native-config fix', () => {

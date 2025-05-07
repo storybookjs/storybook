@@ -5,10 +5,9 @@ import {
   internal_universalStatusStore,
   internal_universalTestProviderStore,
 } from 'storybook/internal/core-server';
+import { execaNode } from 'storybook/internal/execa';
 import type { EventInfo } from 'storybook/internal/types';
 
-// eslint-disable-next-line depend/ban-dependencies
-import { execaNode } from 'execa';
 import { join } from 'pathe';
 
 import {

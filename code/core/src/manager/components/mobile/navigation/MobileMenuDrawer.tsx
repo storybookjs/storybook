@@ -1,5 +1,5 @@
 import type { FC } from 'react';
-import React, { useRef } from 'react';
+import React, { useCallback, useRef } from 'react';
 
 import { Transition } from 'react-transition-group';
 import type { TransitionStatus } from 'react-transition-group/Transition';
@@ -8,22 +8,30 @@ import { styled } from 'storybook/theming';
 import { MOBILE_TRANSITION_DURATION } from '../../../constants';
 import { useLayout } from '../../layout/LayoutProvider';
 import { MobileAbout } from '../about/MobileAbout';
+import { useFocusTrap } from './useFocusTrap';
 
 interface MobileMenuDrawerProps {
   children?: React.ReactNode;
+  id?: string;
 }
 
-export const MobileMenuDrawer: FC<MobileMenuDrawerProps> = ({ children }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
+export const MobileMenuDrawer: FC<MobileMenuDrawerProps> = ({ children, id }) => {
   const sidebarRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const { isMobileMenuOpen, setMobileMenuOpen, isMobileAboutOpen, setMobileAboutOpen } =
     useLayout();
 
+  // Handler to close the menu
+  const handleClose = useCallback(() => {
+    setMobileMenuOpen(false);
+  }, [setMobileMenuOpen]);
+
+  const containerRef = useFocusTrap(isMobileMenuOpen, handleClose);
+
   return (
     <>
       <Transition
-        nodeRef={containerRef}
+        nodeRef={containerRef} // Ensure this ref is correctly passed if Transition needs it
         in={isMobileMenuOpen}
         timeout={MOBILE_TRANSITION_DURATION}
         mountOnEnter
@@ -31,14 +39,21 @@ export const MobileMenuDrawer: FC<MobileMenuDrawerProps> = ({ children }) => {
         onExited={() => setMobileAboutOpen(false)}
       >
         {(state) => (
-          <Container ref={containerRef} state={state}>
+          <Container
+            ref={containerRef as React.RefObject<HTMLDivElement>}
+            state={state}
+            id={id}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Navigation menu"
+          >
             <Transition
               nodeRef={sidebarRef}
               in={!isMobileAboutOpen}
               timeout={MOBILE_TRANSITION_DURATION}
             >
               {(sidebarState) => (
-                <SidebarContainer ref={sidebarRef} state={sidebarState}>
+                <SidebarContainer ref={sidebarRef} state={sidebarState} role="navigation">
                   {children}
                 </SidebarContainer>
               )}
@@ -58,9 +73,9 @@ export const MobileMenuDrawer: FC<MobileMenuDrawerProps> = ({ children }) => {
           <Overlay
             ref={overlayRef}
             state={state}
-            onClick={() => setMobileMenuOpen(false)}
+            onClick={handleClose}
             aria-label="Close navigation menu"
-          />
+            />
         )}
       </Transition>
     </>

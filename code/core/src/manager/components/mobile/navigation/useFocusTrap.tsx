@@ -3,12 +3,16 @@ import { useEffect, useRef } from 'react';
 /**
  * Hook to trap focus within a container when active
  *
+ * @template T The type of the HTML element the ref will be attached to.
  * @param isActive Whether the focus trap should be active
  * @param onEscape Optional callback to run when Escape key is pressed
  * @returns A ref to attach to the container element
  */
-export function useFocusTrap(isActive: boolean, onEscape?: () => void) {
-  const containerRef = useRef<HTMLElement | null>(null);
+export function useFocusTrap<T extends HTMLElement = HTMLElement>(
+  isActive: boolean,
+  onEscape?: () => void
+): React.RefObject<T> {
+  const containerRef = useRef<T>(null);
   const previousActiveElementRef = useRef<HTMLElement | null>(null);
 
   // Store the active element when the trap becomes active and focus the container/first element
@@ -59,26 +63,27 @@ export function useFocusTrap(isActive: boolean, onEscape?: () => void) {
     const handleKeyDown = (e: KeyboardEvent) => {
       const focusableElements = getFocusableElements(container);
 
+      // If no focusable elements and not Escape, prevent default and exit
       if (focusableElements.length === 0 && e.key !== 'Escape') {
-        // If no focusable elements, only allow Escape to function
         e.preventDefault();
         return;
       }
 
+      // Handle Escape key
       if (e.key === 'Escape' && onEscape) {
         e.preventDefault();
         onEscape();
         return;
       }
 
-      if (focusableElements.length === 0) {
-        return;
-      }
+      // By this point, if it wasn't Escape, focusableElements.length must be > 0
+      // (or the first check would have returned). The redundant check is removed.
 
-      const firstElement = focusableElements[0];
-      const lastElement = focusableElements[focusableElements.length - 1];
+      // Proceed with Tab logic only if there are focusable elements
+      if (focusableElements.length > 0 && e.key === 'Tab') {
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
 
-      if (e.key === 'Tab') {
         if (e.shiftKey) {
           if (document.activeElement === firstElement) {
             e.preventDefault();

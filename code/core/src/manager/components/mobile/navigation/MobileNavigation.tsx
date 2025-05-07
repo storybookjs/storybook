@@ -19,7 +19,6 @@ interface MobileNavigationProps {
   showPanel: boolean;
 }
 
-
 // Function to combine all indexes
 function combineIndexes(rootIndex: API_IndexHash | undefined, refs: API_Refs) {
   // Create a copy of the root index to avoid mutation
@@ -92,7 +91,7 @@ export const MobileNavigation: FC<MobileNavigationProps> = ({ menu, panel, showP
               onClick={() => setMobilePanelOpen(true)}
               aria-label="Open addon panel"
               aria-expanded={isMobilePanelOpen}
-              aria-controls={"storybook-mobile-addon-panel"}
+              aria-controls="storybook-mobile-addon-panel"
             >
               <BottomBarToggleIcon />
             </IconButton>

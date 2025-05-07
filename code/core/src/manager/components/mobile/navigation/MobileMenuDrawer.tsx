@@ -26,12 +26,12 @@ export const MobileMenuDrawer: FC<MobileMenuDrawerProps> = ({ children, id }) =>
     setMobileMenuOpen(false);
   }, [setMobileMenuOpen]);
 
-  const containerRef = useFocusTrap(isMobileMenuOpen, handleClose);
+  const containerRef = useFocusTrap<HTMLDivElement>(isMobileMenuOpen, handleClose);
 
   return (
     <>
       <Transition
-        nodeRef={containerRef} // Ensure this ref is correctly passed if Transition needs it
+        nodeRef={containerRef}
         in={isMobileMenuOpen}
         timeout={MOBILE_TRANSITION_DURATION}
         mountOnEnter
@@ -40,7 +40,7 @@ export const MobileMenuDrawer: FC<MobileMenuDrawerProps> = ({ children, id }) =>
       >
         {(state) => (
           <Container
-            ref={containerRef as React.RefObject<HTMLDivElement>}
+            ref={containerRef}
             state={state}
             id={id}
             role="dialog"
@@ -75,7 +75,7 @@ export const MobileMenuDrawer: FC<MobileMenuDrawerProps> = ({ children, id }) =>
             state={state}
             onClick={handleClose}
             aria-label="Close navigation menu"
-            />
+          />
         )}
       </Transition>
     </>

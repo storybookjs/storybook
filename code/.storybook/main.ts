@@ -2,7 +2,7 @@ import { join } from 'node:path';
 
 import react from '@vitejs/plugin-react';
 
-import { BROWSER_TARGETS } from '../core/src/builder-manager';
+import { BROWSER_TARGETS } from '../core/src/shared/constants/environments-support';
 import { defineMain } from '../frameworks/react-vite/src/node';
 
 const componentsPath = join(__dirname, '../core/src/components/index.ts');

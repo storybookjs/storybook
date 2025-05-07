@@ -10,6 +10,7 @@ import { action } from 'storybook/actions';
 import { fn } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
+import { isChromatic } from '../../../../../.storybook/isChromatic';
 import MobileNavigationStoriesMeta from '../mobile/navigation/MobileNavigation.stories';
 import { Layout } from './Layout';
 import { LayoutProvider } from './LayoutProvider';
@@ -26,6 +27,9 @@ const PlaceholderBlock = styled.div({
 const PlaceholderClock: FC<PropsWithChildren> = ({ children }) => {
   const [count, setCount] = React.useState(0);
   React.useEffect(() => {
+    if (isChromatic()) {
+      return;
+    }
     const interval = setInterval(() => {
       setCount(count + 1);
     }, 1000);

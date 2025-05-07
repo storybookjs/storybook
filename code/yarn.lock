@@ -5526,6 +5526,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@remix-run/router@npm:1.8.0":
+  version: 1.8.0
+  resolution: "@remix-run/router@npm:1.8.0"
+  checksum: 10c0/19412054e6d5e2e77e57735b2d937372f9ac164187180fe211c79bee04f1f5db91b859ef72f92055bffee3eb3eaa1aebe5033e366415cc386b4f345b08607eee
+  languageName: node
+  linkType: hard
+
 "@rollup/pluginutils@npm:^5.0.2":
   version: 5.1.4
   resolution: "@rollup/pluginutils@npm:5.1.4"
@@ -6204,6 +6211,7 @@ __metadata:
     "@types/semver": "npm:^7.3.4"
     boxen: "npm:^7.1.1"
     commander: "npm:^12.1.0"
+    comment-json: "npm:^4.2.5"
     create-storybook: "workspace:*"
     cross-spawn: "npm:^7.0.6"
     envinfo: "npm:^7.7.3"
@@ -9424,6 +9432,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"array-timsort@npm:^1.0.3":
+  version: 1.0.3
+  resolution: "array-timsort@npm:1.0.3"
+  checksum: 10c0/bd3a1707b621947265c89867e67c9102b9b9f4c50f5b3974220112290d8b60d26ce60595edec5deed3325207b759d70b758bed3cd310b5ddadb835657ffb6d12
+  languageName: node
+  linkType: hard
+
 "array-union@npm:^2.1.0":
   version: 2.1.0
   resolution: "array-union@npm:2.1.0"
@@ -11384,6 +11399,19 @@ __metadata:
   languageName: node
   linkType: hard
 
+"comment-json@npm:^4.2.5":
+  version: 4.2.5
+  resolution: "comment-json@npm:4.2.5"
+  dependencies:
+    array-timsort: "npm:^1.0.3"
+    core-util-is: "npm:^1.0.3"
+    esprima: "npm:^4.0.1"
+    has-own-prop: "npm:^2.0.0"
+    repeat-string: "npm:^1.6.1"
+  checksum: 10c0/e22f13f18fcc484ac33c8bc02a3d69c3f9467ae5063fdfb3df7735f83a8d9a2cab6a32b7d4a0c53123413a9577de8e17c8cc88369c433326799558febb34ef9c
+  languageName: node
+  linkType: hard
+
 "comment-parser@npm:^1.4.0, comment-parser@npm:^1.4.1":
   version: 1.4.1
   resolution: "comment-parser@npm:1.4.1"
@@ -11627,7 +11655,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"core-util-is@npm:~1.0.0":
+"core-util-is@npm:^1.0.3, core-util-is@npm:~1.0.0":
   version: 1.0.3
   resolution: "core-util-is@npm:1.0.3"
   checksum: 10c0/90a0e40abbddfd7618f8ccd63a74d88deea94e77d0e8dbbea059fa7ebebb8fbb4e2909667fe26f3a467073de1a542ebe6ae4c73a73745ac5833786759cd906c9
@@ -15738,6 +15766,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"has-own-prop@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "has-own-prop@npm:2.0.0"
+  checksum: 10c0/2745497283d80228b5c5fbb8c63ab1029e604bce7db8d4b36255e427b3695b2153dc978b176674d0dd2a23f132809e04d7ef41fefc0ab85870a5caa918c5c0d9
+  languageName: node
+  linkType: hard
+
 "has-property-descriptors@npm:^1.0.0, has-property-descriptors@npm:^1.0.2":
   version: 1.0.2
   resolution: "has-property-descriptors@npm:1.0.2"
@@ -15998,15 +16033,6 @@ __metadata:
   version: 1.0.0
   resolution: "highlightjs-vue@npm:1.0.0"
   checksum: 10c0/9be378c70b864ca5eee87b07859222e31c946a8ad176227e54f7006a498223974ebe19fcce6e38ad5eb3c1ed0e16a580c4edefdf2cb882b6dfab1c3866cc047a
-  languageName: node
-  linkType: hard
-
-"history@npm:^5.1.0":
-  version: 5.3.0
-  resolution: "history@npm:5.3.0"
-  dependencies:
-    "@babel/runtime": "npm:^7.7.6"
-  checksum: 10c0/812ec839386222d6437bd78d9f05db32e47d105ada0ad8834b32626919dd2fee7a10001bc489510f93a8069d02f118214bd8d42a82f7cf9daf8e84fbcbbb2016
   languageName: node
   linkType: hard
 
@@ -22391,27 +22417,27 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-router-dom@npm:6.0.2":
-  version: 6.0.2
-  resolution: "react-router-dom@npm:6.0.2"
+"react-router-dom@npm:6.15.0":
+  version: 6.15.0
+  resolution: "react-router-dom@npm:6.15.0"
   dependencies:
-    history: "npm:^5.1.0"
-    react-router: "npm:6.0.2"
+    "@remix-run/router": "npm:1.8.0"
+    react-router: "npm:6.15.0"
   peerDependencies:
     react: ">=16.8"
     react-dom: ">=16.8"
-  checksum: 10c0/f34d30742631813ff5a9bff2dc20adc0ae3932c956cf5b1ecaeeb5287f41c4dcb612e2eb2a98244ee5cc6f6c6827ebc91c771ebb3beb7eca103c5e4b8d251f24
+  checksum: 10c0/2555468ab38468c7449d617ed2f60f07a310078b71a1a8db907bc354064f6d34e03f5d9d273d3d8528c04dbb51c27bfa40eb2167cff9df4a19438003c4b04280
   languageName: node
   linkType: hard
 
-"react-router@npm:6.0.2":
-  version: 6.0.2
-  resolution: "react-router@npm:6.0.2"
+"react-router@npm:6.15.0":
+  version: 6.15.0
+  resolution: "react-router@npm:6.15.0"
   dependencies:
-    history: "npm:^5.1.0"
+    "@remix-run/router": "npm:1.8.0"
   peerDependencies:
     react: ">=16.8"
-  checksum: 10c0/60f9b079c03b6d213740cda937ba7265c2b6ce31d3e9cd9155fa64fb5b62fa5b15cfa9a487fb272809d935e4238697833d5910bb9aaed89b948c0071e3e5c399
+  checksum: 10c0/19be638294926e2d6b1ca6de753d3b69ac9cd3e295158f933a2c5d9befe2d6dd84f2b15d45d904ac5009f813901183b0a92d50f9d4c2f496c974192b0b8fb2ec
   languageName: node
   linkType: hard
 
@@ -22900,6 +22926,13 @@ __metadata:
     lodash: "npm:^4.17.21"
     strip-ansi: "npm:^6.0.1"
   checksum: 10c0/24a9fae4cc50e731d059742d1b3eec163dc9e3872b12010d120c3fcbd622765d9cda41f79a1bbb4bf63c1d3442f18a08f6e1642cb5d7ebf092a0ce3f7a3bd143
+  languageName: node
+  linkType: hard
+
+"repeat-string@npm:^1.6.1":
+  version: 1.6.1
+  resolution: "repeat-string@npm:1.6.1"
+  checksum: 10c0/87fa21bfdb2fbdedc44b9a5b118b7c1239bdd2c2c1e42742ef9119b7d412a5137a1d23f1a83dc6bb686f4f27429ac6f542e3d923090b44181bafa41e8ac0174d
   languageName: node
   linkType: hard
 
@@ -24513,7 +24546,7 @@ __metadata:
     react-helmet-async: "npm:^1.3.0"
     react-inspector: "npm:^6.0.0"
     react-popper-tooltip: "npm:^4.4.2"
-    react-router-dom: "npm:6.0.2"
+    react-router-dom: "npm:6.15.0"
     react-syntax-highlighter: "npm:^15.4.5"
     react-textarea-autosize: "npm:^8.3.0"
     react-transition-group: "npm:^4.4.5"

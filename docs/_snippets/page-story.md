@@ -160,7 +160,8 @@ export const LoggedIn = {
 ```
 
 ```ts filename="Page.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
-import type { Meta, StoryObj } from '@storybook/svelte-vite';
+// Replace your-framework with svelte-vite or sveltekit
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import Page from './Page.svelte';
 

@@ -13,6 +13,8 @@ const project = [
   '!**/__testfixtures__/**',
   '!**/__mocks-ng-workspace__/**',
   '!**/__mockdata__/**',
+  '!**/__mocks__/**',
+  '!**/__for-testing__/**',
 ];
 
 // Adding an explicit MDX "compiler", as the dependency knip looks for isn't listed (@mdx-js/mdx or astro)
@@ -38,16 +40,28 @@ const baseConfig = {
       project,
     },
     core: {
-      entry: ['src/index.ts', 'src/cli/bin/index.ts', 'src/*/{globals*,index,runtime}.ts'],
+      entry: [
+        'src/manager-api/index.mock.ts',
+        // candidates for removal:
+        'src/controls/preset/checkDocsLoaded.ts',
+        'src/shared/preview/csf4.ts',
+        // with srcDir → outDir in tsconfig.json we could omit all of these:
+        'src/index.ts',
+        'src/cli/bin/index.ts',
+        'src/*/{globals*,index,decorator,manager,preview,runtime}.{ts,tsx}',
+        'src/core-server/presets/*.ts',
+      ],
+      project,
+    },
+    'frameworks/{angular,ember}': {
+      entry: ['src/builders/{build,start}-storybook/index.ts', 'src/**/{index,config}.{js,ts}'],
       project,
     },
     'frameworks/*': {
-      entry: [
-        // these extra entries we only need for frameworks/angular and frameworks/ember it seems
-        'src/index.ts',
-        'src/builders/{build,start}-storybook/index.ts',
-        'src/**/docs/{index,config}.{js,ts}',
-      ],
+      project,
+    },
+    'lib/create-storybook': {
+      entry: ['src/index.ts', 'src/ink/steps/checks/index.tsx'],
       project,
     },
     'lib/*': {
@@ -66,6 +80,7 @@ const baseConfig = {
 } satisfies KnipConfig;
 
 // Adds package.json#bundler.entries etc. to each workspace config `entry: []`
+// Knip maps package.json#export to source files but the entries are incomplete
 export const addBundlerEntries = async (config: KnipConfig) => {
   const baseDir = join(__dirname, '../code');
   const rootManifest = await import(join(baseDir, 'package.json'));

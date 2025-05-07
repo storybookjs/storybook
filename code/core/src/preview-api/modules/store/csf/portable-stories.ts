@@ -24,7 +24,11 @@ import { dedent } from 'ts-dedent';
 
 import { getCoreAnnotations } from '../../../../shared/preview/core-annotations';
 import { HooksContext } from '../../../addons';
-import { waitForAnimations } from '../../preview-web/render/waitForAnimations';
+import {
+  isTestEnvironment,
+  pauseAnimations,
+  waitForAnimations,
+} from '../../preview-web/render/animation-utils';
 import { ReporterAPI } from '../reporter-api';
 import { composeConfigs } from './composeConfigs';
 import { getCsfFactoryAnnotations } from './csf-factory-utils';
@@ -420,7 +424,9 @@ async function runStory<TRenderer extends Renderer>(
     await playFunction(context);
   }
 
-  if ('document' in globalThis && 'querySelectorAll' in globalThis.document) {
+  if (isTestEnvironment()) {
+    pauseAnimations();
+  } else {
     await waitForAnimations(context.abortSignal);
   }
 

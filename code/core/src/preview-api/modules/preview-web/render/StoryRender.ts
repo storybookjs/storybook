@@ -29,7 +29,7 @@ import type { UserEventObject } from 'storybook/test';
 import type { StoryStore } from '../../store';
 import type { Render, RenderType } from './Render';
 import { PREPARE_ABORTED } from './Render';
-import { waitForAnimations } from './waitForAnimations';
+import { isTestEnvironment, pauseAnimations, waitForAnimations } from './animation-utils';
 
 const { AbortController } = globalThis;
 
@@ -361,7 +361,11 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
       }
 
       await this.runPhase(abortSignal, 'completing', async () => {
-        await waitForAnimations(abortSignal);
+        if (isTestEnvironment()) {
+          pauseAnimations();
+        } else {
+          await waitForAnimations(abortSignal);
+        }
       });
 
       await this.runPhase(abortSignal, 'completed', async () => {

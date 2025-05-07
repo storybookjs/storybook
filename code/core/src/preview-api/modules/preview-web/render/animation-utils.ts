@@ -1,5 +1,55 @@
 const ANIMATION_TIMEOUT = 5000;
 
+export function isTestEnvironment() {
+  try {
+    return (
+      // @ts-expect-error this property exists in certain environments
+      !!globalThis.__vitest_browser__ ||
+      // @ts-expect-error this property exists in certain environments
+      !!globalThis.__playwright__binding__ ||
+      // @ts-expect-error this property exists in certain environments
+      !!import.meta.vitest ||
+      // @ts-expect-error this property exists in certain environments
+      import.meta.env.MODE === 'test'
+    );
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (e) {
+    return false;
+  }
+}
+
+// Pause all animations and transitions by overriding the CSS properties
+export function pauseAnimations(atEnd = true) {
+  if (!('document' in globalThis && 'createElement' in globalThis.document)) {
+    // Don't run in React Native
+    return;
+  }
+
+  // Remove all animations
+  const disableStyle = document.createElement('style');
+  disableStyle.textContent = `*, *:before, *:after {
+    animation: none !important;
+  }`;
+  document.head.appendChild(disableStyle);
+
+  // Pause any new animations
+  const pauseStyle = document.createElement('style');
+  pauseStyle.textContent = `*, *:before, *:after {
+    animation-delay: 0s !important;
+    animation-direction: ${atEnd ? 'reverse' : 'normal'} !important;
+    animation-play-state: paused !important;
+    transition: none !important;
+  }`;
+  document.head.appendChild(pauseStyle);
+
+  // Force a reflow
+  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+  document.body.clientHeight;
+
+  // Now recreate all animations, getting paused in their initial state
+  document.head.removeChild(disableStyle);
+}
+
 // Use the Web Animations API to wait for any animations and transitions to finish
 export async function waitForAnimations(signal: AbortSignal) {
   if (

@@ -3,8 +3,6 @@ import type { PlayFunction, StepLabel, StoryContext } from 'storybook/internal/t
 
 import { definePreview } from 'storybook/preview-api';
 
-import { isTestEnvironment, pauseAnimations } from './pauseAnimations';
-
 const { step } = instrument(
   {
     // It seems like the label is unused, but the instrumenter has access to it
@@ -19,11 +17,6 @@ const { step } = instrument(
 
 export default () =>
   definePreview({
-    beforeEach: () => {
-      if (isTestEnvironment()) {
-        pauseAnimations();
-      }
-    },
     parameters: {
       throwPlayFunctionExceptions: false,
     },

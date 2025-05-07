@@ -209,6 +209,10 @@ export const rendererToFramework: Fix<MigrationResult> = {
         continue;
       }
 
+      if (rendererPackage === selectedFramework) {
+        continue;
+      }
+
       console.log(`\nMigrating ${rendererPackage} to ${selectedFramework}`);
       console.log('Scanning for affected files...');
 

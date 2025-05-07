@@ -1,13 +1,17 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
-import { commonGlobOptions, getProjectRoot, versions } from 'storybook/internal/common';
+import {
+  commonGlobOptions,
+  getProjectRoot,
+  scanAndTransformFiles,
+  transformImportFiles,
+  versions,
+} from 'storybook/internal/common';
 
 import picocolors from 'picocolors';
-import prompts from 'prompts';
 import { dedent } from 'ts-dedent';
 
 import { consolidatedPackages } from '../helpers/consolidated-packages';
-import { transformImportFiles } from '../helpers/transformImports';
 import type { Fix, RunOptions } from '../types';
 
 export interface ConsolidatedOptions {
@@ -42,8 +46,8 @@ function transformPackageJson(content: string): string | null {
       for (const [dep] of Object.entries(packageJson[depType])) {
         if (dep in consolidatedPackages) {
           const newPackage = consolidatedPackages[dep as keyof typeof consolidatedPackages];
-          // Only add to packagesToAdd if it's not being consolidated into storybook/*
-          if (!newPackage.startsWith('storybook/')) {
+          // Only add to packagesToAdd if it's not being consolidated into storybook/* or if it's a sub-path of a consolidated package
+          if (!newPackage.startsWith('storybook/') && !newPackage.match(/(?:.*\/){2,}/)) {
             packagesToAdd.add(newPackage);
           }
           delete packageJson[depType][dep];
@@ -177,34 +181,13 @@ export const consolidatedImports: Fix<ConsolidatedOptions> = {
     const packageJsonErrors = await transformPackageJsonFiles(packageJsonFiles, dryRun);
     errors.push(...packageJsonErrors);
 
-    const projectRoot = getProjectRoot();
-
-    const defaultGlob = '**/*.{mjs,cjs,js,jsx,ts,tsx,mdx}';
-    // Find all files matching the glob pattern
-    const { glob } = await prompts({
-      type: 'text',
-      name: 'glob',
-      message:
-        'Enter a custom glob pattern (relative to the project root) to scan (or press enter to use default):',
-      initial: defaultGlob,
+    const importErrors = await scanAndTransformFiles({
+      dryRun: !!dryRun,
+      promptMessage: 'Enter a custom glob pattern:',
+      transformFn: transformImportFiles,
+      transformOptions: consolidatedPackages,
     });
 
-    console.log('Scanning for affected files...');
-
-    // eslint-disable-next-line depend/ban-dependencies
-    const globby = (await import('globby')).globby;
-
-    const sourceFiles = await globby([glob], {
-      ...commonGlobOptions(''),
-      ignore: ['**/node_modules/**'],
-      dot: true,
-      cwd: projectRoot,
-      absolute: true,
-    });
-
-    console.log(`Scanning ${sourceFiles.length} files...`);
-
-    const importErrors = await transformImportFiles(sourceFiles, consolidatedPackages, dryRun);
     errors.push(...importErrors);
 
     if (errors.length > 0) {

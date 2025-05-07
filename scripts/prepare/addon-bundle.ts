@@ -16,6 +16,11 @@ import type { PackageJson } from 'type-fest';
 
 import { globalPackages as globalManagerPackages } from '../../code/core/src/manager/globals/globals';
 import { globalPackages as globalPreviewPackages } from '../../code/core/src/preview/globals/globals';
+import {
+  BROWSER_TARGETS,
+  NODE_TARGET,
+  SUPPORTED_FEATURES,
+} from '../../code/core/src/shared/constants/environments-support';
 import { exec } from '../utils/exec';
 import { esbuild } from './tools';
 
@@ -108,7 +113,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
   };
 
   const browserOptions: Options = {
-    target: ['chrome100', 'safari15', 'firefox91'],
+    target: BROWSER_TARGETS as Options['target'],
     platform: 'browser',
     esbuildPlugins: [
       aliasPlugin({
@@ -125,6 +130,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
         ...options.loader,
         '.png': 'dataurl',
       };
+      options.supported = SUPPORTED_FEATURES;
       Object.assign(options, getESBuildOptions(optimized));
     },
   };
@@ -237,7 +243,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
             ...commonOptions,
             entry: cjsEntries.map((e) => slash(join(cwd, typeof e === 'string' ? e : e.file))),
             format: ['cjs'],
-            target: 'node18',
+            target: NODE_TARGET,
             platform: 'node',
             external: commonExternals,
             esbuildOptions: (c) => {
@@ -261,7 +267,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
             ...(optimized ? dtsConfig : {}),
             entry: esmEntries.map((e) => slash(join(cwd, e.file))),
             format: ['esm'],
-            target: 'node18',
+            target: NODE_TARGET,
             platform: 'neutral',
             banner: {
               js: dedent`

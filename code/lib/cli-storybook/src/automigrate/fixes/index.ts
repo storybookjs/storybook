@@ -1,14 +1,16 @@
 import { csfFactories } from '../../codemod/csf-factories';
 import type { CommandFix, Fix } from '../types';
 import { addonA11yAddonTest } from './addon-a11y-addon-test';
-import { addonEssentialsRemoveDocs } from './addon-essentials-remove-docs';
+import { addonA11yParameters } from './addon-a11y-parameters';
 import { addonExperimentalTest } from './addon-experimental-test';
 import { addonMdxGfmRemove } from './addon-mdx-gfm-remove';
-import { addonStorysourceRemove } from './addon-storysource-remove';
+import { addonStorysourceCodePanel } from './addon-storysource-code-panel';
 import { consolidatedImports } from './consolidated-imports';
 import { eslintPlugin } from './eslint-plugin';
 import { initialGlobals } from './initial-globals';
 import { removeAddonInteractions } from './remove-addon-interactions';
+import { removeDocsAutodocs } from './remove-docs-autodocs';
+import { removeEssentials } from './remove-essentials';
 import { rendererToFramework } from './renderer-to-framework';
 import { rnstorybookConfig } from './rnstorybook-config';
 import { upgradeStorybookRelatedDependencies } from './upgrade-storybook-related-dependencies';
@@ -20,7 +22,7 @@ export const allFixes: Fix[] = [
   eslintPlugin,
   wrapRequire,
   addonMdxGfmRemove,
-  addonStorysourceRemove,
+  addonStorysourceCodePanel,
   upgradeStorybookRelatedDependencies,
   initialGlobals,
   addonA11yAddonTest,
@@ -29,7 +31,9 @@ export const allFixes: Fix[] = [
   rnstorybookConfig,
   removeAddonInteractions,
   rendererToFramework,
-  addonEssentialsRemoveDocs,
+  removeEssentials,
+  addonA11yParameters,
+  removeDocsAutodocs,
 ];
 
 export const initFixes: Fix[] = [eslintPlugin];

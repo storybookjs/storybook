@@ -26,6 +26,7 @@
     "@storybook/builder-vite": "file:../../../code/builders/builder-vite",
     "@storybook/builder-webpack5": "file:../../../code/builders/builder-webpack5",
     "@storybook/codemod": "file:../../../code/lib/codemod",
+    "eslint-plugin-storybook": "file:../../../code/lib/eslint-plugin",
     "storybook": "portal:../../../code/core",
     "@storybook/core-webpack": "portal:../../../code/lib/core-webpack",
     "@storybook/csf-plugin": "portal:../../../code/lib/csf-plugin",
@@ -87,7 +88,7 @@
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
     "storybook": "^8.0.0",
-    "typescript": "^5.7.3",
+    "typescript": "^5.8.3",
     "vite": "^5.1.1",
     "vitest": "^3.0.8"
   }

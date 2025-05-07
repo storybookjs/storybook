@@ -2,7 +2,6 @@ import React from 'react';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { action } from 'storybook/actions';
 import { expect, fireEvent, fn, within } from 'storybook/test';
 
 import { SaveStory } from './SaveStory';
@@ -10,9 +9,9 @@ import { SaveStory } from './SaveStory';
 const meta = {
   component: SaveStory,
   args: {
-    saveStory: fn((...args) => Promise.resolve(action('saveStory')(...args))),
-    createStory: fn((...args) => Promise.resolve(action('createStory')(...args))),
-    resetArgs: fn(action('resetArgs')),
+    saveStory: fn(),
+    createStory: fn(),
+    resetArgs: fn(),
   },
   parameters: {
     layout: 'fullscreen',
@@ -41,7 +40,6 @@ export const Creating = {
 
 export const Created: Story = {
   play: async ({ context, userEvent }) => {
-    // eslint-disable-next-line storybook/context-in-play-function
     await Creating.play(context);
 
     const dialog = await within(document.body).findByRole('dialog');

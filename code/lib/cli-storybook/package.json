@@ -1,6 +1,6 @@
 {
   "name": "@storybook/cli",
-  "version": "9.0.0-alpha.19",
+  "version": "9.0.0-beta.11",
   "description": "Storybook CLI",
   "keywords": [
     "storybook"
@@ -41,19 +41,15 @@
     "prep": "jiti  ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@babel/core": "^7.24.4",
     "@babel/types": "^7.24.0",
     "@storybook/codemod": "workspace:*",
     "@types/semver": "^7.3.4",
     "commander": "^12.1.0",
     "create-storybook": "workspace:*",
-    "cross-spawn": "^7.0.3",
+    "cross-spawn": "^7.0.6",
     "envinfo": "^7.7.3",
     "execa": "^9.5.2",
-    "fd-package-json": "^1.2.0",
-    "find-up": "^5.0.0",
     "giget": "^1.0.0",
-    "glob": "^10.0.0",
     "globby": "^14.0.1",
     "jscodeshift": "^0.15.1",
     "leven": "^3.1.0",
@@ -65,13 +61,13 @@
     "ts-dedent": "^2.0.0"
   },
   "devDependencies": {
-    "@types/cross-spawn": "^6.0.2",
+    "@types/cross-spawn": "^6.0.6",
     "@types/prompts": "^2.0.9",
     "boxen": "^7.1.1",
+    "comment-json": "^4.2.5",
     "picocolors": "^1.1.0",
     "slash": "^5.0.0",
-    "strip-ansi": "^7.1.0",
-    "typescript": "^5.7.3"
+    "typescript": "^5.8.3"
   },
   "publishConfig": {
     "access": "public"

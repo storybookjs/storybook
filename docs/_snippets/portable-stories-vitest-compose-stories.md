@@ -2,7 +2,7 @@
 import { test, expect } from 'vitest';
 import { screen } from '@testing-library/react';
 // 👉 Using Next.js? Import from @storybook/nextjs instead
-import { composeStories } from '@storybook/react';
+import { composeStories } from '@storybook/react-vite';
 
 // Import all stories and the component annotations from the stories file
 import * as stories from './Button.stories';
@@ -28,7 +28,7 @@ test('renders primary button with overridden props', async () => {
 ```ts filename="Button.test.ts" renderer="svelte" language="ts"
 import { test, expect } from 'vitest';
 import { screen } from '@testing-library/svelte';
-import { composeStories } from '@storybook/svelte';
+import { composeStories } from '@storybook/svelte-vite';
 
 // Import all stories and the component annotations from the stories file
 import * as stories from './Button.stories';
@@ -54,7 +54,7 @@ test('renders primary button with overridden props', async () => {
 ```ts filename="Button.test.ts" renderer="vue" language="ts"
 import { test, expect } from 'vitest';
 import { screen } from '@testing-library/vue';
-import { composeStories } from '@storybook/vue3';
+import { composeStories } from '@storybook/vue3-vite';
 
 // Import all stories and the component annotations from the stories file
 import * as stories from './Button.stories';

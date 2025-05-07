@@ -56,10 +56,10 @@ export class NxProjectDetectedError extends StorybookError {
     super({
       category: Category.CLI_INIT,
       code: 1,
-      documentation: 'https://nx.dev/packages/storybook',
+      documentation: 'https://nx.dev/nx-api/storybook#generating-storybook-configuration',
       message: dedent`
         We have detected Nx in your project. Nx has its own Storybook initializer, so please use it instead.
-        Run "nx g @nx/storybook:configuration" to add Storybook to your project.`,
+        Run "nx g @nx/storybook:configuration <your-project-name>" to add Storybook to a given Nx app or lib.`,
     });
   }
 }
@@ -568,6 +568,48 @@ export class FindPackageVersionsError extends StorybookError {
       code: 1,
       message: dedent`
         Unable to find versions of "${data.packageName}" using ${data.packageManager}
+        ${data.error && `Reason: ${data.error}`}`,
+    });
+  }
+}
+
+export class IncompatiblePostCssConfigError extends StorybookError {
+  constructor(public data: { error: Error }) {
+    super({
+      category: Category.FRAMEWORK_NEXTJS,
+      code: 3,
+      message: dedent`
+        Incompatible PostCSS configuration format detected.
+
+        Next.js uses an array-based format for plugins which is not compatible with Vite:
+        
+        // ❌ Incompatible format (used by Next.js)
+        const config = {
+          plugins: ["@tailwindcss/postcss"],
+        };
+        
+        Please transform your PostCSS config to use the object-based format, which is compatible with Next.js and Vite:
+        
+        // ✅ Compatible format (works with Next.js and Vite)
+        const config = {
+          plugins: {
+            "@tailwindcss/postcss": {},
+          },
+        };
+        
+        Original error: ${data.error.message}
+      `,
+    });
+  }
+}
+
+export class SavingGlobalSettingsFileError extends StorybookError {
+  constructor(public data: { filePath: string; error: Error | unknown }) {
+    super({
+      category: Category.CORE_SERVER,
+      code: 1,
+      message: dedent`
+        Unable to save global settings file to ${data.filePath}
         ${data.error && `Reason: ${data.error}`}`,
     });
   }

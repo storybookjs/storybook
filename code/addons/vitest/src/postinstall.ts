@@ -9,7 +9,9 @@ import {
   formatFileContent,
   loadAllPresets,
   loadMainConfig,
+  scanAndTransformFiles,
   serverResolve,
+  transformImportFiles,
   validateFrameworkName,
   versions,
 } from 'storybook/internal/common';
@@ -17,7 +19,7 @@ import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
 import { colors, logger } from 'storybook/internal/node-logger';
 
 // eslint-disable-next-line depend/ban-dependencies
-import { $ } from 'execa';
+import { execa } from 'execa';
 import { findUp } from 'find-up';
 import { dirname, extname, join, relative, resolve } from 'pathe';
 import picocolors from 'picocolors';
@@ -26,7 +28,7 @@ import { coerce, satisfies } from 'semver';
 import { dedent } from 'ts-dedent';
 
 import { type PostinstallOptions } from '../../../lib/cli-storybook/src/add';
-import { SUPPORTED_FRAMEWORKS, SUPPORTED_RENDERERS } from './constants';
+import { SUPPORTED_FRAMEWORKS } from './constants';
 import { printError, printInfo, printSuccess, printWarning, step } from './postinstall-logger';
 import { loadTemplate, updateConfigFile, updateWorkspaceFile } from './updateVitestFile';
 import { getAddonNames } from './utils';
@@ -92,7 +94,6 @@ export default async function postInstall(options: PostinstallOptions) {
 
       await packageManager.removeDependencies({}, ['@storybook/nextjs']);
 
-      // eslint-disable-next-line no-underscore-dangle
       traverse(config._ast, {
         StringLiteral(path) {
           if (path.node.value === '@storybook/nextjs') {
@@ -105,6 +106,17 @@ export default async function postInstall(options: PostinstallOptions) {
 
       info.frameworkPackageName = '@storybook/nextjs-vite';
       info.builderPackageName = '@storybook/builder-vite';
+
+      await scanAndTransformFiles({
+        promptMessage:
+          'Enter a glob to scan for all @storybook/nextjs imports to substitute with @storybook/nextjs-vite:',
+        force: options.yes,
+        dryRun: false,
+        transformFn: (files, options, dryRun) => transformImportFiles(files, options, dryRun),
+        transformOptions: {
+          '@storybook/nextjs': '@storybook/nextjs-vite',
+        },
+      });
     }
   }
 
@@ -112,9 +124,7 @@ export default async function postInstall(options: PostinstallOptions) {
     ? info.frameworkPackageName === '@storybook/nextjs'
       ? '@storybook/nextjs-vite'
       : info.frameworkPackageName
-    : info.rendererPackageName && SUPPORTED_RENDERERS.includes(info.rendererPackageName)
-      ? info.rendererPackageName
-      : null;
+    : null;
 
   const isRendererSupported = !!annotationsImport;
 
@@ -169,7 +179,7 @@ export default async function postInstall(options: PostinstallOptions) {
 
     if (reasons.length > 0) {
       reasons.unshift(
-        `Storybook Test's automated setup failed due to the following package incompatibilities:`
+        `@storybook/addon-vitest's automated setup failed due to the following package incompatibilities:`
       );
       reasons.push('--------------------------------');
       reasons.push(
@@ -320,27 +330,6 @@ export default async function postInstall(options: PostinstallOptions) {
     `
   );
 
-  const a11yAddon = info.addons.find((addon) => addon.includes(addonA11yName));
-
-  if (a11yAddon) {
-    try {
-      logger.plain(`${step} Setting up ${addonA11yName} for @storybook/addon-vitest:`);
-      await $({
-        stdio: 'inherit',
-      })`storybook automigrate addonA11yAddonTest ${options.yes ? '--yes' : ''}`;
-    } catch (e) {
-      printError(
-        '🚨 Oh no!',
-        dedent`
-        We have detected that you have ${addonA11yName} installed but could not automatically set it up for @storybook/addon-vitest.
-
-        Please refer to the documentation to complete the setup manually:
-        ${picocolors.cyan(`https://storybook.js.org/docs/writing-tests/accessibility-testing#test-addon-integration`)}
-      `
-      );
-    }
-  }
-
   const vitestWorkspaceFile = await findFile('vitest.workspace', ['.ts', '.js', '.json']);
   const viteConfigFile = await findFile('vite.config');
   const vitestConfigFile = await findFile('vitest.config');
@@ -361,7 +350,7 @@ export default async function postInstall(options: PostinstallOptions) {
     );
   }
 
-  // If there's an existing workspace file, we update that file to include the Storybook test plugin.
+  // If there's an existing workspace file, we update that file to include the Storybook Addon Vitest plugin.
   // We assume the existing workspaces include the Vite(st) config, so we won't add it.
   if (vitestWorkspaceFile) {
     const workspaceTemplate = await loadTemplate('vitest.workspace.template.ts', {
@@ -402,7 +391,7 @@ export default async function postInstall(options: PostinstallOptions) {
       return;
     }
   }
-  // If there's an existing Vite/Vitest config with workspaces, we update it to include the Storybook test plugin.
+  // If there's an existing Vite/Vitest config with workspaces, we update it to include the Storybook Addon Vitest plugin.
   else if (rootConfig) {
     let target, updated;
     const configFile = await fs.readFile(rootConfig, 'utf8');
@@ -481,12 +470,49 @@ export default async function postInstall(options: PostinstallOptions) {
     await writeFile(newConfigFile, formattedContent);
   }
 
+  const a11yAddon = info.addons.find((addon) => addon.includes(addonA11yName));
+
+  if (a11yAddon) {
+    try {
+      logger.plain(`${step} Setting up ${addonA11yName} for @storybook/addon-vitest:`);
+      const command = ['automigrate', 'addonA11yAddonTest'];
+
+      if (options.yes) {
+        command.push('--yes');
+      }
+
+      if (options.packageManager) {
+        command.push('--package-manager', options.packageManager);
+      }
+
+      if (options.configDir !== '.storybook') {
+        command.push('--config-dir', options.configDir);
+      }
+
+      await execa('storybook', command, {
+        stdio: 'inherit',
+      });
+    } catch (e: unknown) {
+      printError(
+        '🚨 Oh no!',
+        dedent`
+        We have detected that you have ${addonA11yName} installed but could not automatically set it up for @storybook/addon-vitest:
+
+        ${e instanceof Error ? e.message : String(e)}
+
+        Please refer to the documentation to complete the setup manually:
+        ${picocolors.cyan(`https://storybook.js.org/docs/writing-tests/accessibility-testing#test-addon-integration`)}
+      `
+      );
+    }
+  }
+
   const runCommand = rootConfig ? `npx vitest --project=storybook` : `npx vitest`;
 
   printSuccess(
     '🎉 All done!',
     dedent`
-      The Storybook Test addon is now configured and you're ready to run your tests!
+      @storybook/addon-vitest is now configured and you're ready to run your tests!
 
       Here are a couple of tips to get you started:
       • You can run tests with ${colors.gray(runCommand)}

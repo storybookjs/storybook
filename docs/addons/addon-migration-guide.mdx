@@ -5,17 +5,17 @@ sidebar:
   title: Migrate addons to 9.0
 ---
 
-We sincerely appreciate the dedication and effort addon creators put into keeping the Storybook ecosystem vibrant and up-to-date. As Storybook evolves to version 9.0, bringing new features and improvements, this guide is here to assist you in migrating your addons from 8.x to 9.0. If you need to migrate your addon from an earlier version of Storybook, please first refer to the [Addon migration guide for Storybook 8.0](https://storybook.js.org/docs/8.0/addons/addon-migration-guide).
+We sincerely appreciate the dedication and effort addon creators put into keeping the Storybook ecosystem vibrant and up-to-date. As Storybook evolves to version 9.0, bringing new features and improvements, this guide is here to assist you in migrating your addons from 8.x to 9.0. If you need to migrate your addon from an earlier version of Storybook, please first refer to the [Addon migration guide for Storybook 8.0](../../../release-8-6/docs/addons/addon-migration-guide.mdx).
 
 <Callout variant="info">
   As we gather feedback from the community, we'll update this page. We also have a general [Storybook migration guide](../migration-guide/index.mdx) if you're looking for that.
 </Callout>
 
-## Updating dependencies
+## Replacing dependencies
 
-Begin by updating your Storybook dependencies. Use the `next` tag for pre-release versions, `latest` for the most recent stable release, or specify the version directly.
+Many previously-published packages have [moved to be part of Storybook's core](../migration-guide/index.mdx#package-structure-changes). If your addon depends on any of these packages, you should remove them from your `package.json` and update your addon to import from the new location. If your addon does not already depend on the `storybook` package, you should add it to your `package.json` as a dependency.
 
-```jsonc title="package.json"
+```diff title="package.json"
 {
   "devDependencies": {
     "storybook": "next" // or "latest", or "^9.0.0"
@@ -71,24 +71,32 @@ Here are the essential changes in version 9.0 that impact addon development.
 
 Several packages have been consolidated into the main `storybook` package. Update your imports to use the new paths:
 
-| Old Package              | New Path              |
-| ------------------------ | --------------------- |
-| @storybook/manager-api   | storybook/manager-api |
-| @storybook/preview-api   | storybook/preview-api |
-| @storybook/theming       | storybook/theming     |
-| @storybook/test          | storybook/test        |
-| @storybook/addon-actions | storybook/actions     |
+| Old Package                     | New Path                |
+| ------------------------------- | ----------------------- |
+| `@storybook/manager-api`        | `storybook/manager-api` |
+| `@storybook/preview-api`        | `storybook/preview-api` |
+| `@storybook/theming`            | `storybook/theming`     |
+| `@storybook/test`               | `storybook/test`        |
+| `@storybook/addon-actions`      | `storybook/actions`     |
+| `@storybook/addon-backgrounds`  | N/A                     |
+| `@storybook/addon-controls`     | N/A                     |
+| `@storybook/addon-highlight`    | `storybook/highlight`   |
+| `@storybook/addon-interactions` | N/A                     |
+| `@storybook/addon-measure`      | N/A                     |
+| `@storybook/addon-outline`      | N/A                     |
+| `@storybook/addon-toolbars`     | N/A                     |
+| `@storybook/addon-viewport`     | `storybook/viewport`    |
 
 Additionally, several internal packages have been moved under the `/internal` sub-path. 
 These paths are not part of our public API, so they may change without following semver. While you can use them for a quick upgrade, we strongly encourage finding replacements as they could break in future minor versions:
 
-| Old Package                | New Path                           |
-| -------------------------- | ---------------------------------- |
-| @storybook/channels        | storybook/internal/channels        |
-| @storybook/client-logger   | storybook/internal/client-logger   |
-| @storybook/core-events     | storybook/internal/core-events     |
-| @storybook/types           | storybook/internal/types           |
-| @storybook/components      | storybook/internal/components      |
+| Old Package                  | New Path                             |
+| ---------------------------- | ------------------------------------ |
+| `@storybook/channels`        | `storybook/internal/channels`        |
+| `@storybook/client-logger`   | `storybook/internal/client-logger`   |
+| `@storybook/core-events`     | `storybook/internal/core-events`     |
+| `@storybook/types`           | `storybook/internal/types`           |
+| `@storybook/components`      | `storybook/internal/components`      |
 
 Please visit the [full list of consolidated packages](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#dropped-support-for-legacy-packages) in our `Migration.md` file.
 
@@ -107,6 +115,10 @@ The manager builder no longer aliases `util`, `assert`, and `process`. If your a
 
 1. Implement the alias at compile time in your addon
 2. Update your bundling configuration to ensure correct dependencies are used
+
+### Node.js 18 support dropped
+
+Please upgrade your addon to Node.js 20, as support for Node.js 18 has ended.
 
 ### TypeScript Requirements
 

@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import { logger } from 'storybook/internal/client-logger';
 import { ArgTypes, InputType, SBType } from 'storybook/internal/types';
 
@@ -16,6 +15,8 @@ import {
   Pipe,
   Property,
 } from './types';
+
+const { FEATURES } = global;
 
 export const isMethod = (methodOrProp: Method | Property): methodOrProp is Method => {
   return (methodOrProp as Method).args !== undefined;
@@ -223,10 +224,13 @@ const resolveTypealias = (compodocType: string): string => {
 
 export const extractArgTypesFromData = (componentData: Class | Directive | Injectable | Pipe) => {
   const sectionToItems: Record<string, InputType[]> = {};
+  const componentClasses = FEATURES.angularFilterNonInputControls
+    ? ['inputsClass']
+    : ['propertiesClass', 'methodsClass', 'inputsClass', 'outputsClass'];
   const compodocClasses = ['component', 'directive'].includes(componentData.type)
-    ? ['propertiesClass', 'methodsClass', 'inputsClass', 'outputsClass']
+    ? componentClasses
     : ['properties', 'methods'];
-  // eslint-disable-next-line @typescript-eslint/naming-convention
+
   type COMPODOC_CLASS =
     | 'properties'
     | 'methods'

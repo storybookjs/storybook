@@ -11,15 +11,35 @@ Type:
 
 ```ts
 {
+  actions?: boolean;
+  angularFilterNonInputControls?: boolean;
   argTypeTargetsV7?: boolean;
-  backgroundsStoryGlobals?: boolean;
-  legacyDecoratorFileOrder?: boolean;
-  viewportStoryGlobals?: boolean;
+  backgrounds?: boolean;
+  controls?: boolean;
   developmentModeForBuild?: boolean;
+  highlight?: boolean;
+  interactions?: boolean;
+  legacyDecoratorFileOrder?: boolean;
+  measure?: boolean;
+  outline?: boolean;
+  toolbars?: boolean;
+  viewport?: boolean;
 }
 ```
 
 Enables Storybook's additional features.
+
+## `actions`
+
+Type: `boolean`
+
+Enable the [Actions](../../essentials/actions.mdx) feature.
+
+## `angularFilterNonInputControls`
+
+Type: `boolean`
+
+Filter non-input controls in Angular.
 
 ## `argTypeTargetsV7`
 
@@ -35,17 +55,17 @@ Filter args with a "target" on the type from the render function.
 
 {/* prettier-ignore-end */}
 
-## `legacyDecoratorFileOrder`
+## `backgrounds`
 
 Type: `boolean`
 
-Apply decorators from preview.js before decorators from addons or frameworks. [More information](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#changed-decorator-order-between-previewjs-and-addonsframeworks).
+Enable the [Backgrounds](../../essentials/backgrounds.mdx) feature.
 
-{/* prettier-ignore-start */}
+## `controls`
 
-<CodeSnippets path="main-config-features-legacy-decorator-file-order.md" />
+Type: `boolean`
 
-{/* prettier-ignore-end */}
+Enable the [Controls](../../essentials/controls.mdx) feature.
 
 ## `developmentModeForBuild`
 
@@ -58,3 +78,51 @@ Set `NODE_ENV` to `'development'` in built Storybooks for better testing and deb
 <CodeSnippets path="main-config-features-development-mode-for-build.md" />
 
 {/* prettier-ignore-end */}
+
+## `highlight`
+
+Type: `boolean`
+
+Enable the [Highlight](../../essentials/highlight.mdx) feature.
+
+## `interactions`
+
+Type: `boolean`
+
+Enable the [Interactions](../../essentials/interactions.mdx) feature.
+
+## `legacyDecoratorFileOrder`
+
+Type: `boolean`
+
+Apply decorators from preview.js before decorators from addons or frameworks. [More information](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#changed-decorator-order-between-previewjs-and-addonsframeworks).
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="main-config-features-legacy-decorator-file-order.md" />
+
+{/* prettier-ignore-end */}
+
+## `measure`
+
+Type: `boolean`
+
+Enable the [Measure](../../essentials/measure-and-outline.mdx#measure) feature.
+
+## `outline`
+
+Type: `boolean`
+
+Enable the [Outline](../../essentials/measure-and-outline.mdx#outline) feature.
+
+## `toolbars`
+
+Type: `boolean`
+
+Enable the [Toolbars](../../essentials/toolbars.mdx) feature.
+
+## `viewport`
+
+Type: `boolean`
+
+Enable the [Viewport](../../essentials/viewport.mdx) feature.

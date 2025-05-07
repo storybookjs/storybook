@@ -15,13 +15,13 @@ Coverage tests examine the instrumented code against a set of industry-accepted 
 
 ## With Storybook Test
 
-When you run component tests with the [Test addon](./test-addon.mdx), which is powered by [Vitest](https://vitest.dev), it can generate a coverage report. The result is summarized in the testing module, showing the percentage of statements covered by your tested stories.
+When you run component tests with the [Vitest addon](./vitest-addon.mdx), it can generate a coverage report. The result is summarized in the testing module, showing the percentage of statements covered by your tested stories.
 
 ![Screenshot of test module, expanded, showing coverage result](../_assets/writing-tests/addon-test-module-coverage-summary.png)
 
 ### Set up
 
-Coverage is included in the Test addon and, when enabled, will be calculated when running component tests for your project. To enable coverage, press the edit button (pencil icon) in the testing module and toggle coverage on:
+Coverage is included in the Vitest addon and, when enabled, will be calculated when running component tests for your project. To enable coverage, press the edit button (pencil icon) in the testing module and toggle coverage on:
 
 ![Screenshot of test module, expanded, showing coverage toggle](../_assets/writing-tests/addon-test-module-edit-coverage.png)
 
@@ -36,7 +36,7 @@ Before coverage can be calculated, you may need to install a support package cor
 
 ### Usage
 
-Because coverage is built into the Test addon, you can use it everywhere you run your tests.
+Because coverage is built into the Vitest addon, you can use it everywhere you run your tests.
 
 #### Storybook UI
 
@@ -124,7 +124,7 @@ jobs:
         run: yarn test-storybook --coverage
 ```
 
-For more on testing in CI, see the [Test addon docs](./test-addon.mdx#ci).
+For more on testing in CI, see the [Vitest addon docs](./vitest-addon.mdx#ci).
 
 ### Configuration
 
@@ -191,8 +191,6 @@ When calculating coverage in the Storybook UI, the following options are always 
 </If>
 
 ## With the coverage addon
-
-<YouTubeCallout id="wEa6W8uUGSA" title="These tests use NO CODE | component testing in Storybook" />
 
 Storybook also provides a [coverage addon](https://storybook.js.org/addons/@storybook/addon-coverage). It is powered by [Istanbul](https://istanbul.js.org/), which allows out-of-the-box code instrumentation for the most commonly used frameworks and builders in the JavaScript ecosystem.
 

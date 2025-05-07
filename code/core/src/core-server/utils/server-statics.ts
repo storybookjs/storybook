@@ -1,7 +1,7 @@
 import { existsSync, statSync } from 'node:fs';
 import { basename, isAbsolute, posix, resolve, sep, win32 } from 'node:path';
 
-import { getDirectoryFromWorkingDir } from 'storybook/internal/common';
+import { getDirectoryFromWorkingDir, resolvePathInStorybookCache } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import type { Options, StorybookConfigRaw } from 'storybook/internal/types';
 
@@ -9,6 +9,8 @@ import picocolors from 'picocolors';
 import type { Polka } from 'polka';
 import sirv from 'sirv';
 import { dedent } from 'ts-dedent';
+
+const cacheDir = resolvePathInStorybookCache('', 'ignored-sub').split('ignored-sub')[0];
 
 export async function useStatics(app: Polka, options: Options): Promise<void> {
   const staticDirs = (await options.presets.apply('staticDirs')) ?? [];
@@ -18,8 +20,8 @@ export async function useStatics(app: Polka, options: Options): Promise<void> {
     try {
       const { staticDir, staticPath, targetEndpoint } = mapStaticDir(dir, options.configDir);
 
-      // Don't log for the internal static dir
-      if (!targetEndpoint.startsWith('/sb-')) {
+      // Don't log for internal static dirs
+      if (!targetEndpoint.startsWith('/sb-') && !staticDir.startsWith(cacheDir)) {
         logger.info(
           `=> Serving static files from ${picocolors.cyan(staticDir)} at ${picocolors.cyan(targetEndpoint)}`
         );
@@ -82,12 +84,10 @@ const sirvWorkaround: typeof sirv =
   (req, res, next) => {
     // polka+sirv will modify the request URL, so we need to restore it after sirv is done
     // req._parsedUrl is an internal construct used by both polka and sirv
-    // eslint-disable-next-line no-underscore-dangle
     const originalParsedUrl = (req as any)._parsedUrl;
 
     const maybeNext = next
       ? () => {
-          // eslint-disable-next-line no-underscore-dangle
           (req as any)._parsedUrl = originalParsedUrl;
           next();
         }

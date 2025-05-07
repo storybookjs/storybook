@@ -2,7 +2,12 @@ import { existsSync, readFileSync } from 'node:fs';
 import { readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 
-import { type CommonOptions, execaCommand, execaCommandSync } from 'storybook/internal/execa';
+import {
+  type Options,
+  type SyncOptions,
+  execaCommand,
+  execaCommandSync,
+} from 'storybook/internal/execa';
 
 import picocolors from 'picocolors';
 import { gt, satisfies } from 'semver';
@@ -527,7 +532,7 @@ export abstract class JsPackageManager {
     ignoreError = false,
     env,
     ...execaOptions
-  }: CommonOptions<'utf8'> & {
+  }: SyncOptions & {
     command: string;
     args: string[];
     cwd?: string;
@@ -538,7 +543,6 @@ export abstract class JsPackageManager {
         cwd: cwd ?? this.cwd,
         stdio: stdio ?? 'pipe',
         shell: true,
-        cleanup: true,
         env: {
           ...COMMON_ENV_VARS,
           ...env,
@@ -546,7 +550,7 @@ export abstract class JsPackageManager {
         ...execaOptions,
       });
 
-      return commandResult.stdout ?? '';
+      return commandResult.stdout?.toString() ?? '';
     } catch (err) {
       if (ignoreError !== true) {
         throw err;
@@ -573,7 +577,7 @@ export abstract class JsPackageManager {
     ignoreError = false,
     env,
     ...execaOptions
-  }: CommonOptions<'utf8'> & {
+  }: Options & {
     command: string;
     args: string[];
     cwd?: string;
@@ -585,7 +589,6 @@ export abstract class JsPackageManager {
         stdio: stdio ?? 'pipe',
         encoding: 'utf8',
         shell: true,
-        cleanup: true,
         env: {
           ...COMMON_ENV_VARS,
           ...env,
@@ -593,7 +596,7 @@ export abstract class JsPackageManager {
         ...execaOptions,
       });
 
-      return commandResult.stdout ?? '';
+      return commandResult.stdout?.toString() ?? '';
     } catch (err) {
       if (ignoreError !== true) {
         throw err;

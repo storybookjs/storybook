@@ -126,17 +126,6 @@ const useLayoutSyncingState = ({
     isDragging: internalDraggingSizeState.isDragging,
   };
 };
-const MainContentMatcher = ({ children }: { children: React.ReactNode }) => {
-  return (
-    <Match path={/(^\/story|docs|onboarding\/|^\/$)/} startsWith={false}>
-      {({ match }) => <ContentContainer shown={!!match}>{children}</ContentContainer>}
-    </Match>
-  );
-};
-
-const OrderedMobileNavigation = styled(MobileNavigation)({
-  order: 1,
-});
 
 const MainContentMatcher = ({ children }: { children: React.ReactNode }) => {
   const { isMobileMenuOpen } = useLayout();

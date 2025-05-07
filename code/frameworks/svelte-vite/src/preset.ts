@@ -16,13 +16,8 @@ export const core: PresetProperty<'core'> = {
 
 export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (config, options) => {
   const { plugins = [] } = config;
-  // TODO: set up eslint import to use typescript resolver
 
-  const { loadSvelteConfig } = await import('@sveltejs/vite-plugin-svelte');
-  const svelteConfig = await loadSvelteConfig();
-
-  // Add docgen plugin
-  plugins.push(await svelteDocgen(svelteConfig));
+  plugins.push(await svelteDocgen());
 
   await handleSvelteKit(plugins, options);
 

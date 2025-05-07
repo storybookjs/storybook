@@ -3,6 +3,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { paddedLog } from 'storybook/internal/common';
 import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
 
+import commentJson from 'comment-json';
 import detectIndent from 'detect-indent';
 import { findUp } from 'find-up';
 import picocolors from 'picocolors';
@@ -207,7 +208,8 @@ export async function configureEslintPlugin({
   if (eslintConfigFile) {
     paddedLog(`Configuring Storybook ESLint plugin at ${eslintConfigFile}`);
     if (eslintConfigFile.endsWith('json')) {
-      const eslintConfig = JSON.parse(await readFile(eslintConfigFile, { encoding: 'utf8' })) as {
+      const eslintFileContents = await readFile(eslintConfigFile, { encoding: 'utf8' });
+      const eslintConfig = commentJson.parse(eslintFileContents) as {
         extends?: string[];
       };
       const existingExtends = normalizeExtends(eslintConfig.extends).filter(Boolean);
@@ -216,11 +218,13 @@ export async function configureEslintPlugin({
         return;
       }
 
-      eslintConfig.extends = [...existingExtends, 'plugin:storybook/recommended'] as string[];
+      if (!Array.isArray(eslintConfig.extends)) {
+        eslintConfig.extends = eslintConfig.extends ? [eslintConfig.extends] : [];
+      }
+      eslintConfig.extends.push('plugin:storybook/recommended');
 
-      const eslintFileContents = await readFile(eslintConfigFile, { encoding: 'utf8' });
       const spaces = detectIndent(eslintFileContents).amount || 2;
-      await writeFile(eslintConfigFile, JSON.stringify(eslintConfig, undefined, spaces));
+      await writeFile(eslintConfigFile, commentJson.stringify(eslintConfig, null, spaces));
     } else {
       if (isFlatConfig) {
         const code = await readFile(eslintConfigFile, { encoding: 'utf8' });
@@ -260,7 +264,7 @@ export const suggestESLintPlugin = async (): Promise<boolean> => {
     name: 'shouldInstall',
     message: dedent`
         We have detected that you're using ESLint. Storybook provides a plugin that gives the best experience with Storybook and helps follow best practices: ${picocolors.yellow(
-          'https://storybook.js.org/docs/configure/integration/eslint-plugin'
+          'https://storybook.js.org/docs/9/configure/integration/eslint-plugin'
         )}
 
         Would you like to install it?

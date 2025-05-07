@@ -85,4 +85,4 @@ export {
   emitTransformCode,
 } from './preview-web';
 export type { SelectionStore, View } from './preview-web';
-export { getCoreAnnotations } from './core-annotations';
+export { getCoreAnnotations } from '../shared/preview/core-annotations';

@@ -135,7 +135,7 @@ You can configure accessibility tests with the `parameters.a11y.test` [parameter
 | Value     | Description                                                                                             |
 | --------- | ------------------------------------------------------------------------------------------------------- |
 | `'off'`   | Do not run accessibility tests (you can still manually verify via the addon panel)                     |
-| `'todo'`  | Run accessibility tests; violations return a warning in the Storybook UI and a summary count in CLI/CI |
+| `'todo'`  | Run accessibility tests; violations return a warning in the Storybook UI |
 | `'error'` | Run accessibility tests; violations return a failing test in the Storybook UI and CLI/CI               |
 
 Like other parameters, you can define it at the project level in `.storybook/preview.js|ts`, the component level in the default export of the story file, or the individual story level. For example, to fail on accessibility tests for all stories in a file except one:

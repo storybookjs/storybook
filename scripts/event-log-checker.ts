@@ -78,6 +78,10 @@ async function run() {
       assert.equal(mainEvent.context.anonymousId, oneWayHash(unhashedId));
     });
 
+    test(`main event should contain a userSince value`, () => {
+      assert.ok(typeof mainEvent.metadata.userSince === 'number');
+    })
+
     const {
       expected: { renderer, builder, framework },
     } = template;

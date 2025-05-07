@@ -146,6 +146,8 @@ describe('summarizeIndex', () => {
         "pageStoryCount": 0,
         "playStoryCount": 0,
         "storyCount": 0,
+        "svelteCsfV4Count": 0,
+        "svelteCsfV5Count": 0,
         "version": 5,
       }
     `);
@@ -186,7 +188,7 @@ describe('summarizeIndex', () => {
             title: 'Example/Button',
             name: 'Warning',
             importPath: './src/stories/Button.stories.ts',
-            tags: ['autodocs', 'story'],
+            tags: ['autodocs', 'story', 'svelte-csf-v4'],
             type: 'story',
           },
         },
@@ -203,6 +205,8 @@ describe('summarizeIndex', () => {
         "pageStoryCount": 0,
         "playStoryCount": 0,
         "storyCount": 0,
+        "svelteCsfV4Count": 0,
+        "svelteCsfV5Count": 0,
         "version": 5,
       }
     `);
@@ -233,7 +237,7 @@ describe('summarizeIndex', () => {
             title: 'stories/renderers/react/js-argtypes',
             name: 'Js Class Component',
             importPath: './src/stories/renderers/react/js-argtypes.stories.jsx',
-            tags: ['story'],
+            tags: ['story', 'svelte-csf-v5'],
             type: 'story',
           },
           'stories-renderers-react-js-argtypes--js-function-component': {
@@ -241,7 +245,7 @@ describe('summarizeIndex', () => {
             title: 'stories/renderers/react/js-argtypes',
             name: 'Js Function Component',
             importPath: './src/stories/renderers/react/js-argtypes.stories.jsx',
-            tags: ['story'],
+            tags: ['story', 'svelte-csf-v4'],
             type: 'story',
           },
         },
@@ -258,6 +262,8 @@ describe('summarizeIndex', () => {
         "pageStoryCount": 0,
         "playStoryCount": 0,
         "storyCount": 4,
+        "svelteCsfV4Count": 1,
+        "svelteCsfV5Count": 1,
         "version": 5,
       }
     `);
@@ -314,6 +320,8 @@ describe('summarizeIndex', () => {
         "pageStoryCount": 1,
         "playStoryCount": 1,
         "storyCount": 1,
+        "svelteCsfV4Count": 0,
+        "svelteCsfV5Count": 0,
         "version": 5,
       }
     `);
@@ -371,6 +379,8 @@ describe('summarizeIndex', () => {
         "pageStoryCount": 0,
         "playStoryCount": 0,
         "storyCount": 0,
+        "svelteCsfV4Count": 0,
+        "svelteCsfV5Count": 0,
         "version": 5,
       }
     `);
@@ -421,6 +431,8 @@ describe('summarizeIndex', () => {
         "pageStoryCount": 0,
         "playStoryCount": 0,
         "storyCount": 0,
+        "svelteCsfV4Count": 0,
+        "svelteCsfV5Count": 0,
         "version": 5,
       }
     `);

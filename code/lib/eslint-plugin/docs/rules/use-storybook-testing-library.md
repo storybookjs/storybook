@@ -26,13 +26,13 @@ Examples of **correct** code for this rule:
 
 ```js
 // correct import.
-import { within } from '@storybook/test'
+import { within } from '@storybook/test';
 // or this, which is now considered legacy
-import { within } from '@storybook/testing-library'
+import { within } from '@storybook/testing-library';
 
 Default.play = async (context) => {
-  const canvas = within(context.canvasElement)
-}
+  const canvas = within(context.canvasElement);
+};
 ```
 
 ## When Not To Use It

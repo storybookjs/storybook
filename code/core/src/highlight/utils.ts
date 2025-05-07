@@ -62,7 +62,12 @@ export const convertLegacy = (highlight: RawHighlightOptions): HighlightOptions 
       },
     };
   }
-  return highlight;
+  return {
+    styles: {
+      outline: '2px dashed #029cfd',
+    },
+    ...highlight,
+  };
 };
 
 export const isFunction = (obj: unknown): obj is (...args: any[]) => any => obj instanceof Function;
@@ -118,16 +123,24 @@ export const mapElements = (highlights: HighlightOptions[]): Map<HTMLElement, Hi
   const root = document.getElementById('storybook-root');
   const map = new Map();
   for (const highlight of highlights) {
-    const { priority = 0, selectable = !!highlight.menu } = highlight;
+    const { priority = 0 } = highlight;
     for (const selector of highlight.selectors) {
-      for (const element of root?.querySelectorAll(selector) || []) {
+      const elements = [
+        ...document.querySelectorAll(
+          // Elements matching the selector, excluding storybook elements and their descendants.
+          // Necessary to find portaled elements (e.g. children of `body`).
+          `:is(${selector}):not([id^="storybook-"], [id^="storybook-"] *, [class^="sb-"], [class^="sb-"] *)`
+        ),
+        // Elements matching the selector inside the storybook root, as these were excluded above.
+        ...(root?.querySelectorAll(selector) || []),
+      ];
+      for (const element of elements) {
         const existing = map.get(element);
-        if (!existing || existing.priority < priority) {
+        if (!existing || existing.priority <= priority) {
           map.set(element, {
             ...highlight,
             priority,
-            selectors: (existing?.selectors || []).concat(selector),
-            selectable,
+            selectors: Array.from(new Set((existing?.selectors || []).concat(selector))),
           });
         }
       }
@@ -138,13 +151,12 @@ export const mapElements = (highlights: HighlightOptions[]): Map<HTMLElement, Hi
 
 export const mapBoxes = (elements: Map<HTMLElement, Highlight>): Box[] =>
   Array.from(elements.entries())
-    .map<Box>(([element, { selectors, styles, hoverStyles, focusStyles, selectable, menu }]) => {
+    .map<Box>(([element, { selectors, styles, hoverStyles, focusStyles, menu }]) => {
       const { top, left, width, height } = element.getBoundingClientRect();
       const { position } = getComputedStyle(element);
       return {
         element,
         selectors,
-        selectable,
         styles,
         hoverStyles,
         focusStyles,
@@ -175,7 +187,7 @@ export const isTargeted = (
   boxElement: HTMLElement,
   coordinates: { x: number; y: number }
 ) => {
-  if (!coordinates) {
+  if (!boxElement || !coordinates) {
     return false;
   }
   let { left, top, width, height } = box;

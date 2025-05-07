@@ -1,8 +1,9 @@
 ```js filename=".storybook/main.js" renderer="common" language="js"
 import path from 'path';
 
+const _require = typeof require === 'undefined' ? import.meta : require;
 const getAbsolutePath = (packageName) =>
-  path.dirname(require.resolve(path.join(packageName, 'package.json')));
+  path.dirname(_require.resolve(path.join(packageName, 'package.json'))).replace(/^file:\/\//, '');
 
 export default {
   framework: {
@@ -24,8 +25,9 @@ import type { StorybookConfig } from '@storybook/your-framework';
 
 import path from 'path';
 
+const _require = typeof require === 'undefined' ? import.meta : require;
 const getAbsolutePath = (packageName: string): any =>
-  path.dirname(require.resolve(path.join(packageName, 'package.json')));
+  path.dirname(_require.resolve(path.join(packageName, 'package.json'))).replace(/^file:\/\//, '');
 
 const config: StorybookConfig = {
   framework: {

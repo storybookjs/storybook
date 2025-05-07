@@ -106,7 +106,7 @@ test.describe('addon-docs', () => {
     for (let i = 0; i < codeCount; i += 1) {
       const code = codes.nth(i);
       const text = await code.innerText();
-      await expect(text).not.toMatch(/^\(args\) => /);
+      expect(text).not.toMatch(/^\(args\) => /);
     }
   });
 
@@ -209,7 +209,6 @@ test.describe('addon-docs', () => {
       templateName.includes('internal/react18-webpack-babel') ||
       templateName.includes('preact-vite/default-js') ||
       templateName.includes('preact-vite/default-ts') ||
-      templateName.includes('react-native-web-vite/expo-ts') ||
       templateName.includes('react-webpack/18-ts')
     ) {
       expectedReactVersionRange = /^18/;

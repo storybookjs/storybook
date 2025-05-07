@@ -36,9 +36,9 @@ describe('mdx3', () => {
       function _createMdxContent(props) {
         return _jsx("style", {
           children: \`
-        h1 {
-          color: blue;
-        }
+      h1 {
+        color: blue;
+      }
       \`
         });
       }
@@ -645,23 +645,23 @@ describe('docs-mdx-compiler-plugin', () => {
             title: "Example/Introduction"
           }), "\\n", _jsx("style", {
             children: \`
-        .subheading {
-          --mediumdark: '#999999';
-          font-weight: 900;
-          font-size: 13px;
-          color: #999;
-          letter-spacing: 6px;
-          line-height: 24px;
-          text-transform: uppercase;
-          margin-bottom: 12px;
-          margin-top: 40px;
-        }
-        .link-list {
-          display: grid;
-          grid-template-columns: 1fr;
-          grid-template-rows: 1fr 1fr;
-          row-gap: 10px;
-        }
+      .subheading {
+        --mediumdark: '#999999';
+        font-weight: 900;
+        font-size: 13px;
+        color: #999;
+        letter-spacing: 6px;
+        line-height: 24px;
+        text-transform: uppercase;
+        margin-bottom: 12px;
+        margin-top: 40px;
+      }
+      .link-list {
+        display: grid;
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr 1fr;
+        row-gap: 10px;
+      }
       \`
           })]
         });

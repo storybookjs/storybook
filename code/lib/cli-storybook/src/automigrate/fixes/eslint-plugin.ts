@@ -58,7 +58,7 @@ export const eslintPlugin: Fix<EslintPluginRunOptions> = {
       We can set it up automatically for you.
 
       More info: ${picocolors.yellow(
-        'https://storybook.js.org/docs/configure/integration/eslint-plugin'
+        'https://storybook.js.org/docs/9/configure/integration/eslint-plugin'
       )}
     `;
   },

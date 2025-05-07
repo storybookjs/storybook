@@ -6,7 +6,7 @@ export default {
 ```
 
 ```ts filename=".storybook/main.ts" renderer="react" language="ts"
-import { StorybookConfig } from '@storybook/react-webpack5';
+import type { StorybookConfig } from '@storybook/react-webpack5';
 
 const config: StorybookConfig = {
   // ...

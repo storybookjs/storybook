@@ -34,8 +34,8 @@ const Primary = {
 };
 ```
 
-```ts filename="src/components/Button/Button.stories.ts|tsx" renderer="common" language="ts-4-9"
-// Replace your-framework with the name of your framework
+```ts filename="src/components/Button/Button.stories.ts|tsx" renderer="common" language="ts"
+// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { Button } from './Button';
@@ -49,32 +49,6 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-// The story variable name will be used if `name` is not set
-const Primary: Story = {
-  // Sets the name for that particular story
-  name: 'Primary',
-  args: {
-    label: 'Button',
-  },
-};
-```
-
-```ts filename="src/components/Button/Button.stories.ts|tsx" renderer="common" language="ts"
-// Replace your-framework with the name of your framework
-import type { Meta, StoryObj } from '@storybook/your-framework';
-
-import { Button } from './Button';
-
-const meta: Meta<Button> = {
-  // Sets the name for the stories container
-  title: 'components/Button',
-  // The component name will be used if `title` is not set
-  component: Button,
-};
-
-export default meta;
-type Story = StoryObj<typeof Button>;
 
 // The story variable name will be used if `name` is not set
 const Primary: Story = {

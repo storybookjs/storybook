@@ -1,4 +1,5 @@
-import { relative } from 'node:path';
+import { existsSync } from 'node:fs';
+import { relative, sep } from 'node:path';
 
 import { logger } from 'storybook/internal/node-logger';
 
@@ -109,6 +110,17 @@ export function getReactDocgenImporter(matchPath: TsconfigPaths.MatchPath | unde
 
     const result = defaultLookupModule(mappedFilenameByPaths, basedir);
 
+    if (result.includes(`${sep}react-native${sep}index.js`)) {
+      const replaced = result.replace(
+        `${sep}react-native${sep}index.js`,
+        `${sep}react-native-web${sep}dist${sep}index.js`
+      );
+      if (existsSync(replaced)) {
+        if (RESOLVE_EXTENSIONS.find((ext) => result.endsWith(ext))) {
+          return replaced;
+        }
+      }
+    }
     if (RESOLVE_EXTENSIONS.find((ext) => result.endsWith(ext))) {
       return result;
     }

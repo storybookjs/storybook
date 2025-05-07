@@ -1,12 +1,16 @@
-import { within } from '@testing-library/dom';
-import { userEvent } from '@testing-library/user-event';
-
 import type { LoaderFunction } from 'storybook/internal/csf';
 import { instrument } from 'storybook/internal/instrumenter';
 
 import { definePreview } from 'storybook/preview-api';
-
-import { clearAllMocks, fn, isMockFunction, resetAllMocks, restoreAllMocks } from './spy';
+import {
+  clearAllMocks,
+  fn,
+  isMockFunction,
+  resetAllMocks,
+  restoreAllMocks,
+  uninstrumentedUserEvent,
+  within,
+} from 'storybook/test';
 
 const resetAllMocksLoader: LoaderFunction = ({ parameters }) => {
   if (parameters?.test?.mockReset === true) {
@@ -80,7 +84,10 @@ const enhanceContext: LoaderFunction = async (context) => {
   // userEvent.setup() cannot be called in non browser environment and will attempt to access window.navigator.clipboard
   // which will throw an error in react native for example.
   if (globalThis.window?.navigator?.clipboard) {
-    context.userEvent = instrument({ userEvent: userEvent.setup() }, { intercept: true }).userEvent;
+    context.userEvent = instrument(
+      { userEvent: uninstrumentedUserEvent.setup() },
+      { intercept: true }
+    ).userEvent;
   }
 };
 

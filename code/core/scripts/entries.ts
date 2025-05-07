@@ -79,24 +79,6 @@ export const getEntries = (cwd: string) => {
       ['util', 'react'],
       [],
       [
-        '@testing-library/dom',
-        '@testing-library/jest-dom',
-        '@testing-library/user-event',
-        'chai',
-        '@vitest/expect',
-        '@vitest/spy',
-        '@vitest/utils',
-      ],
-      true
-    ),
-    define(
-      'src/test/spy.ts',
-      ['browser', 'node'],
-      true,
-      ['util', 'react'],
-      [],
-      [
-        '@testing-library/dom',
         '@testing-library/jest-dom',
         '@testing-library/user-event',
         'chai',
@@ -113,7 +95,6 @@ export const getEntries = (cwd: string) => {
       ['util', 'react'],
       [],
       [
-        '@testing-library/dom',
         '@testing-library/jest-dom',
         '@testing-library/user-event',
         'chai',

@@ -179,7 +179,7 @@ If an addon provides annotations (i.e. it distributes a `./preview` export), it 
 ```diff title=".storybook/preview.js|ts"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 + import { definePreview } from '@storybook/your-framework';
-- import { Preview } from '@storybook/your-renderer';
+- import type { Preview } from '@storybook/your-framework';
 // 👇 Import the addons you are using
 + import addonA11y from '@storybook/addon-a11y';
 
@@ -208,7 +208,7 @@ The examples below show the changes needed to upgrade a story file from CSF 3 to
 ```diff title="Button.stories.js|ts"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 + import preview from '#.storybook/preview';
-- import { Meta, StoryObj } from '@storybook/your-renderer';
+- import { Meta, StoryObj } from '@storybook/your-framework';
 
 import { Button } from './Button';
 
@@ -273,7 +273,7 @@ Note that this only applies if you use CSF Factories for all your tested stories
 ```diff title="vitest.setup.js|ts"
 import { beforeAll } from 'vitest';
 // 👇 No longer necessary
-- import { setProjectAnnotations } from '@storybook/react';
+- import { setProjectAnnotations } from '@storybook/react-vite';
 - import * as addonAnnotations from 'my-addon/preview';
 + import preview from './.storybook/preview';
 - import * as previewAnnotations from './.storybook/preview';
@@ -295,7 +295,7 @@ If you cannot use Storybook Test, you can still reuse the stories in your test f
 ```diff title="Button.test.js|ts"
 import { test, expect } from 'vitest';
 import { screen } from '@testing-library/react';
-- import { composeStories } from '@storybook/react';
+- import { composeStories } from '@storybook/react-vite';
  
 // Import all stories from the stories file
 import * as stories from './Button.stories';

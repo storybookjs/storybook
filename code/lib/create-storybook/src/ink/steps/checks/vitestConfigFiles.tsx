@@ -3,7 +3,8 @@ import * as fs from 'node:fs/promises';
 import { findUp } from 'find-up';
 
 import * as babel from '../../../../../../core/src/babel';
-import { type Check, CompatibilityType } from './index';
+import type { Check } from './Check';
+import { CompatibilityType } from './CompatibilityType';
 
 interface Declaration {
   type: string;

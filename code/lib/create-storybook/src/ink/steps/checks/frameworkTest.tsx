@@ -1,6 +1,7 @@
 import type { Framework } from '../../../bin/modernInputs';
 import { supportedFrameworksNames } from '../../../bin/modernInputs';
-import { type Check, CompatibilityType } from './index';
+import { type Check } from './Check';
+import { CompatibilityType } from './CompatibilityType';
 
 const FOUND_NEXTJS = `Found Next.js with test intent`;
 

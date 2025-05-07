@@ -35,8 +35,8 @@ npx storybook add storybook-addon-pseudo-states@4.0.3
 You can have your stories automatically use a specific set of pseudo states, by setting the `pseudo` property on `parameters`:
 
 ```jsx
-export const Hover = () => <Button>Label</Button>
-Hover.parameters = { pseudo: { hover: true } }
+export const Hover = () => <Button>Label</Button>;
+Hover.parameters = { pseudo: { hover: true } };
 ```
 
 This is what enables snapshot testing your pseudo states in [Chromatic](https://www.chromatic.com/).
@@ -52,14 +52,14 @@ export const Buttons = () => (
     <Button id="two">Hover focus</Button>
     <Button id="three">Hover focus active</Button>
   </>
-)
+);
 Buttons.parameters = {
   pseudo: {
-    hover: ["#one", "#two", "#three"],
-    focus: ["#two", "#three"],
-    active: "#three",
+    hover: ['#one', '#two', '#three'],
+    focus: ['#two', '#three'],
+    active: '#three',
   },
-}
+};
 ```
 
 This accepts a single CSS selector (string), or an array of CSS selectors on which to enable that pseudo style.
@@ -75,9 +75,9 @@ export const DialogButton = () => (
   <Dialog>
     <Button>Hover</Button>
   </Dialog>
-)
+);
 
 DialogButton.parameters = {
-  pseudo: { hover: true, rootSelector: "body" },
-}
+  pseudo: { hover: true, rootSelector: 'body' },
+};
 ```

@@ -27,6 +27,7 @@ export const SUPPORTED_FRAMEWORKS = [
   '@storybook/html-vite',
   '@storybook/web-components-vite',
   '@storybook/sveltekit',
+  '@storybook/react-native-web-vite',
 ];
 
 export const storeOptions = {

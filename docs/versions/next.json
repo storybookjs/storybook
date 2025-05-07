@@ -1,1 +1,1 @@
-{"version":"9.0.0-beta.4","info":{"plain":"- Highlights: Dont run highlights when the feature is disabled - [#31239](https://github.com/storybookjs/storybook/pull/31239), thanks @dannyhw!"}}
+{"version":"9.0.0-beta.10","info":{"plain":"- CLI: Improve CLI upgrade process for @latest and @next - [#31356](https://github.com/storybookjs/storybook/pull/31356), thanks @yannbf!\n- SvelteKit: Forward form events when mocking `enhance` - [#31360](https://github.com/storybookjs/storybook/pull/31360), thanks @JReinhold!"}}

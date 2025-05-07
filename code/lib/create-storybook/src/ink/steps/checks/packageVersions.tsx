@@ -1,6 +1,7 @@
 import { coerce, satisfies } from 'semver';
 
-import { type Check, CompatibilityType } from './index';
+import { type Check } from './Check';
+import { CompatibilityType } from './CompatibilityType';
 
 /**
  * Detect existing Vitest/MSW version, if mismatch prompt for ignoring test intent

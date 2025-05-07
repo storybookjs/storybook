@@ -1,3 +1,4 @@
+import { globalSettings } from 'storybook/internal/cli';
 import {
   JsPackageManagerFactory,
   removeAddon as remove,
@@ -35,7 +36,14 @@ const command = (name: string) =>
       process.env.STORYBOOK_DISABLE_TELEMETRY && process.env.STORYBOOK_DISABLE_TELEMETRY !== 'false'
     )
     .option('--debug', 'Get more logs in debug mode', false)
-    .option('--enable-crash-reports', 'Enable sending crash reports to telemetry data');
+    .option('--enable-crash-reports', 'Enable sending crash reports to telemetry data')
+    .hook('preAction', async () => {
+      try {
+        await globalSettings();
+      } catch (e) {
+        consoleLogger.info('Error loading global settings', e);
+      }
+    });
 
 command('init')
   .description('Initialize Storybook into your project')

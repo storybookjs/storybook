@@ -9,7 +9,7 @@ import {
 } from 'storybook/internal/core-events';
 
 import type { ClickEventDetails } from 'storybook/highlight';
-import { HIGHLIGHT, RESET_HIGHLIGHT, SCROLL_INTO_VIEW } from 'storybook/highlight';
+import { HIGHLIGHT, REMOVE_HIGHLIGHT, SCROLL_INTO_VIEW } from 'storybook/highlight';
 import {
   experimental_getStatusStore,
   experimental_useStatusStore,
@@ -29,6 +29,10 @@ import type { A11yParameters } from '../params';
 import type { A11YReport, EnhancedResult, EnhancedResults } from '../types';
 import { RuleType } from '../types';
 import type { TestDiscrepancy } from './TestDiscrepancyMessage';
+
+// These elements should not be highlighted because they usually cover the whole page.
+// They may still appear in the results and be selectable though.
+const unhighlightedSelectors = ['html', 'body', 'main'];
 
 export interface A11yContextStore {
   results: EnhancedResults | undefined;
@@ -195,10 +199,14 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
           if (status === 'ran') {
             setStatus('ready');
           }
+          if (selectedItems.size === 1) {
+            const [key] = selectedItems.values();
+            document.getElementById(key)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
         }, 900);
       }
     },
-    [setResults, status, storyId]
+    [setResults, status, storyId, selectedItems]
   );
 
   const handleSelect = useCallback(
@@ -209,7 +217,11 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
           ?.find((r) => r.id === id)
           ?.nodes.findIndex((n) => details.selectors.some((s) => s === String(n.target))) ?? -1;
       if (index !== -1) {
-        setSelectedItems(new Map([[`${type}.${id}`, `${type}.${id}.${index + 1}`]]));
+        const key = `${type}.${id}.${index + 1}`;
+        setSelectedItems(new Map([[`${type}.${id}`, key]]));
+        setTimeout(() => {
+          document.getElementById(key)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
       }
     },
     [results]
@@ -234,11 +246,10 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
     ({ newPhase }: { newPhase: string }) => {
       if (newPhase === 'loading') {
         setResults(undefined);
-        if (manual) {
-          setStatus('manual');
-        } else {
-          setStatus('running');
-        }
+        setStatus(manual ? 'manual' : 'initial');
+      }
+      if (newPhase === 'afterEach' && !manual) {
+        setStatus('running');
       }
     },
     [manual, setResults]
@@ -276,7 +287,9 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
   }, [getInitialStatus, manual]);
 
   useEffect(() => {
-    emit(RESET_HIGHLIGHT);
+    emit(REMOVE_HIGHLIGHT, `${ADDON_ID}/selected`);
+    emit(REMOVE_HIGHLIGHT, `${ADDON_ID}/others`);
+
     if (!highlighted) {
       return;
     }
@@ -291,6 +304,7 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
       return target ? [String(target)] : [];
     });
     emit(HIGHLIGHT, {
+      id: `${ADDON_ID}/selected`,
       priority: 1,
       selectors: selected,
       styles: {
@@ -317,8 +331,9 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
 
     const others = results?.[tab as RuleType]
       .flatMap((r) => r.nodes.flatMap((n) => n.target).map(String))
-      .filter((e) => !selected.includes(e));
+      .filter((e) => ![...unhighlightedSelectors, ...selected].includes(e));
     emit(HIGHLIGHT, {
+      id: `${ADDON_ID}/others`,
       selectors: others,
       styles: {
         outline: `1px solid color-mix(in srgb, ${colorsByType[tab]}, transparent 30%)`,

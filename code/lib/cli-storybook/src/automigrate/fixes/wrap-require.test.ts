@@ -3,11 +3,17 @@ import { describe, expect, it, vi } from 'vitest';
 
 import * as detect from 'storybook/internal/cli';
 
-import { wrapRequire } from './wrap-require';
+import type { RunOptions } from '../types';
+import { type WrapRequireRunOptions, wrapRequire } from './wrap-require';
 
 vi.mock('storybook/internal/cli', async (importOriginal) => ({
   ...(await importOriginal<typeof import('storybook/internal/cli')>()),
   detectPnp: vi.fn(),
+}));
+
+vi.mock('node:fs/promises', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('node:fs/promises')>()),
+  writeFile: vi.fn(),
 }));
 
 describe('wrapRequire', () => {
@@ -21,7 +27,7 @@ describe('wrapRequire', () => {
         },
         storybookVersion: '7.0.0',
         mainConfigPath: require.resolve('./__test__/main-config-without-wrappers.js'),
-      } as any);
+      } as RunOptions<WrapRequireRunOptions>);
 
       await expect(check).resolves.toBeNull();
     });
@@ -35,7 +41,7 @@ describe('wrapRequire', () => {
         },
         storybookVersion: '7.0.0',
         mainConfigPath: require.resolve('./__test__/main-config-without-wrappers.js'),
-      } as any);
+      } as RunOptions<WrapRequireRunOptions>);
 
       await expect(check).resolves.toEqual({
         isConfigTypescript: false,
@@ -54,7 +60,7 @@ describe('wrapRequire', () => {
         },
         storybookVersion: '7.0.0',
         mainConfigPath: require.resolve('./__test__/main-config-without-wrappers.js'),
-      } as any);
+      } as RunOptions<WrapRequireRunOptions>);
 
       await expect(check).resolves.toEqual({
         isConfigTypescript: false,
@@ -73,9 +79,51 @@ describe('wrapRequire', () => {
         },
         storybookVersion: '7.0.0',
         mainConfigPath: require.resolve('./__test__/main-config-with-wrappers.js'),
-      } as any);
+      } as RunOptions<WrapRequireRunOptions>);
 
       await expect(check).resolves.toBeNull();
+    });
+  });
+
+  describe('run', () => {
+    it('should wrap the require wrapper', async () => {
+      await wrapRequire.run?.({
+        mainConfigPath: require.resolve('./__test__/main-config-without-wrappers.js'),
+        result: {
+          isConfigTypescript: false,
+        },
+      } as RunOptions<WrapRequireRunOptions>);
+
+      const writeFile = vi.mocked((await import('node:fs/promises')).writeFile);
+
+      const call = writeFile.mock.calls[0];
+
+      expect(call[1]).toMatchInlineSnapshot(`
+  "import { dirname, join } from "path";
+  const config = {
+    stories: ['../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+    addons: [
+      {
+        name: getAbsolutePath("@chromatic-com/storybook"),
+        options: {},
+      },
+      getAbsolutePath("@storybook/addon-vitest"),
+    ],
+    framework: {
+      name: getAbsolutePath("@storybook/angular"),
+      options: {},
+    },
+    docs: {
+      autodocs: 'tag',
+    },
+  };
+  export default config;
+
+  function getAbsolutePath(value) {
+    return dirname(require.resolve(join(value, "package.json")));
+  }
+  "
+`);
     });
   });
 });

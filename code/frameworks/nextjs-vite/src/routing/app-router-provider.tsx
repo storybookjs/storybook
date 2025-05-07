@@ -97,6 +97,8 @@ export const AppRouterProvider: React.FC<React.PropsWithChildren<AppRouterProvid
         <SearchParamsContext.Provider value={new URLSearchParams(query)}>
           <GlobalLayoutRouterContext.Provider
             value={{
+              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+              // @ts-ignore (Only available in Next.js >= v15.1.1)
               changeByServerResponse() {
                 // NOOP
               },
@@ -120,8 +122,11 @@ export const AppRouterProvider: React.FC<React.PropsWithChildren<AppRouterProvid
                   // TODO END
 
                   // START Next.js v15.2 support
-                  // @ts-expect-error Only available in Next.js >= v15.1.1
+                  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                  // @ts-ignore Only available in Next.js >= v15.1.1
                   parentTree: tree,
+                  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                  // @ts-ignore Only available in Next.js >= v15.1.1
                   parentCacheNode: newLazyCacheNode,
                   // END
                   url: pathname,

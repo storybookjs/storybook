@@ -7,7 +7,7 @@ sidebar:
 
 ArgTypes specify the behavior of [args](../writing-stories/args.mdx). By specifying the type of an arg, you constrain the values that it can accept and provide information about args that are not explicitly set (i.e., [description](#description)).
 
-You can also use argTypes to “annotate” args with information used by addons that make use of those args. For instance, to instruct the [controls addon](../essentials/controls.mdx) to render a color picker, you could specify the `'color'` [control type](#control).
+You can also use argTypes to “annotate” args with information used by addons that make use of those args. For instance, to instruct the [controls panel](../essentials/controls.mdx) to render a color picker, you could specify the `'color'` [control type](#control).
 
 The most concrete realization of argTypes is the [`ArgTypes` doc block](./doc-blocks/doc-block-argtypes.mdx) ([`Controls`](./doc-blocks/doc-block-controls.mdx) is similar). Each row in the table corresponds to a single argType and the current value of that arg.
 
@@ -108,7 +108,7 @@ Default:
 2. Else, inferred from [`type`](#type)
 3. Else, `'object'`
 
-Specify the behavior of the [controls addon](../essentials/controls.mdx) for the arg. If you specify a string, it's used as the [`type`](#controltype) of the control. If you specify an object, you can provide additional configuration. Specifying `false` will prevent the control from rendering.
+Specify the behavior of the [controls panel](../essentials/controls.mdx) for the arg. If you specify a string, it's used as the [`type`](#controltype) of the control. If you specify an object, you can provide additional configuration. Specifying `false` will prevent the control from rendering.
 
 {/* prettier-ignore-start */}
 
@@ -122,7 +122,7 @@ Type: `ControlType | null`
 
 Default: [Inferred](#automatic-argtype-inference); `'select'`, if [`options`](#options) are specified; falling back to `'object'`
 
-Specifies the type of control used to change the arg value with the [controls addon](../essentials/controls.mdx). Here are the available types, `ControlType`, grouped by the type of data they handle:
+Specifies the type of control used to change the arg value with the [controls panel](../essentials/controls.mdx). Here are the available types, `ControlType`, grouped by the type of data they handle:
 
 | Data type      | ControlType      | Description                                                                                                                                                                             |
 | -------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -224,7 +224,7 @@ Type: `{ [key: string]: { [option: string]: any } }`
 
 Map [`options`](#options) to values.
 
-When dealing with non-primitive values, you'll notice that you'll run into some limitations. The most obvious issue is that not every value can be represented as part of the `args` param in the URL, losing the ability to share and deeplink to such a state. Beyond that, complex values such as JSX cannot be synchronized between the manager (e.g., Controls addon) and the preview (your story).
+When dealing with non-primitive values, you'll notice that you'll run into some limitations. The most obvious issue is that not every value can be represented as part of the `args` param in the URL, losing the ability to share and deeplink to such a state. Beyond that, complex values such as JSX cannot be synchronized between the manager (e.g., Controls panel) and the preview (your story).
 
 `mapping` doesn't have to be exhaustive. If the currently selected option is not listed, it's used verbatim. Can be used with [`control.labels`](#labels).
 
@@ -288,7 +288,7 @@ Type:
 
 Default: [Inferred](#automatic-argtype-inference)
 
-Specify how the arg is documented in the [`ArgTypes` doc block](./doc-blocks/doc-block-argtypes.mdx), [`Controls` doc block](./doc-blocks/doc-block-controls.mdx), and [Controls addon panel](../essentials/controls.mdx).
+Specify how the arg is documented in the [`ArgTypes` doc block](./doc-blocks/doc-block-argtypes.mdx), [`Controls` doc block](./doc-blocks/doc-block-controls.mdx), and [Controls panel](../essentials/controls.mdx).
 
 {/* prettier-ignore-start */}
 

@@ -59,59 +59,6 @@ export const Primary = {
 };
 ```
 
-```svelte filename="Button.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
-<script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
-
-  import Button from './Button.svelte';
-
-  const { Story } = defineMeta({
-    component: Button,
-  });
-</script>
-
-<Story name="Primary" args={{ variant: 'primary' }} />
-```
-
-```ts filename="Button.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="CSF"
-import type { Meta, StoryObj } from '@storybook/svelte';
-
-import Button from './Button.svelte';
-
-const meta = {
-  component: Button,
-} satisfies Meta<typeof Button>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const Primary: Story = {
-  args: {
-    variant: 'primary',
-  },
-};
-```
-
-```ts filename="Button.stories.ts|tsx" renderer="common" language="ts-4-9"
-// Replace your-framework with the name of your framework
-import type { Meta, StoryObj } from '@storybook/your-framework';
-
-import { Button } from './Button';
-
-const meta = {
-  component: Button,
-} satisfies Meta<typeof Button>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const Primary: Story = {
-  args: {
-    variant: 'primary',
-  },
-};
-```
-
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
@@ -127,16 +74,17 @@ export const Primary: Story = {
 ```
 
 ```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
-import type { Meta, StoryObj } from '@storybook/svelte';
+// Replace your-framework with svelte-vite or sveltekit
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import Button from './Button.svelte';
 
-const meta: Meta<typeof Button> = {
+const meta = {
   component: Button,
-};
+} satisfies Meta<typeof Button>;
 
 export default meta;
-type Story = StoryObj<typeof Button>;
+type Story = StoryObj<typeof meta>;
 
 export const Primary: Story = {
   args: {
@@ -146,17 +94,17 @@ export const Primary: Story = {
 ```
 
 ```ts filename="Button.stories.ts|tsx" renderer="common" language="ts"
-// Replace your-framework with the name of your framework
+// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { Button } from './Button';
 
-const meta: Meta<typeof Button> = {
+const meta = {
   component: Button,
-};
+} satisfies Meta<typeof Button>;
 
 export default meta;
-type Story = StoryObj<typeof Button>;
+type Story = StoryObj<typeof meta>;
 
 export const Primary: Story = {
   args: {
@@ -178,7 +126,7 @@ export const Success = {
 ```
 
 ```ts filename="Button.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
   component: 'demo-button',

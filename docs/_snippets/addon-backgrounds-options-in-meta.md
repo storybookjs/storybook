@@ -136,7 +136,7 @@ const meta = {
 export default meta;
 ```
 
-```svelte filename="Button.stories.svelte" renderer="svelte" language="js"
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
@@ -158,7 +158,25 @@ export default meta;
 </script>
 ```
 
-```svelte filename="Button.stories.svelte" renderer="svelte" language="ts"
+```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+import Button from './Button.svelte';
+
+export default {
+  component: Button,
+  parameters: {
+    backgrounds: {
+      options: {
+        // 👇 Override the default `dark` option
+        dark: { name: 'Dark', value: '#000' },
+        // 👇 Add a new option
+        gray: { name: 'Gray', value: '#CCC' },
+      },
+    },
+  },
+};
+```
+
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
@@ -178,4 +196,27 @@ export default meta;
     },
   });
 </script>
+```
+
+```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+// Replace your-framework with svelte-vite or sveltekit
+import type { Meta } from '@storybook/your-framework';
+
+import Button from './Button.svelte';
+
+const meta = {
+  component: Button,
+  parameters: {
+    backgrounds: {
+      options: {
+        // 👇 Override the default `dark` option
+        dark: { name: 'Dark', value: '#000' },
+        // 👇 Add a new option
+        gray: { name: 'Gray', value: '#CCC' },
+      },
+    },
+  },
+} satisfies Meta<typeof Button>;
+
+export default meta;
 ```

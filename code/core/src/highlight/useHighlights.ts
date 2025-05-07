@@ -1,6 +1,6 @@
 /* eslint-env browser */
 import type { Channel } from 'storybook/internal/channels';
-import { STORY_CHANGED } from 'storybook/internal/core-events';
+import { STORY_RENDER_PHASE_CHANGED } from 'storybook/internal/core-events';
 
 import {
   HIGHLIGHT,
@@ -23,6 +23,10 @@ import {
   showPopover,
   useStore,
 } from './utils';
+
+const menuId = 'storybook-highlights-menu';
+const rootId = 'storybook-highlights-root';
+const storybookRootId = 'storybook-root';
 
 const chevronLeft = () =>
   createElement(
@@ -52,20 +56,12 @@ const chevronRight = () =>
     ]
   );
 
-export const useHighlights = ({
-  channel,
-  menuId = `storybook-highlights-menu`,
-  rootId = `storybook-highlights-root`,
-  storybookRootId = 'storybook-root',
-}: {
-  channel: Channel;
-  menuId?: string;
-  rootId?: string;
-  storybookRootId?: string;
-}) => {
-  // Clean up any existing instance of useHighlights
+export const useHighlights = (channel: Channel) => {
+  if (globalThis.__STORYBOOK_HIGHLIGHT_INITIALIZED) {
+    return;
+  }
 
-  (globalThis as any).__STORYBOOK_HIGHLIGHT_TEARDOWN?.();
+  globalThis.__STORYBOOK_HIGHLIGHT_INITIALIZED = true;
 
   const { document } = globalThis;
 
@@ -221,8 +217,8 @@ export const useHighlights = ({
 
   // Handle click events on highlight boxes
   boxes.subscribe((value) => {
-    const selectable = value.filter((box) => box.selectable);
-    if (!selectable.length) {
+    const targetable = value.filter((box) => box.menu);
+    if (!targetable.length) {
       return;
     }
 
@@ -235,7 +231,7 @@ export const useHighlights = ({
         // Don't do anything if the click is within the menu
         if (menu && !isOverMenu(menu, coords)) {
           // Update menu coordinates and clicked target boxes based on the click position
-          const results = selectable.filter((box) => {
+          const results = targetable.filter((box) => {
             const boxElement = boxElementByTargetElement.get(box.element)!;
             return isTargeted(box, boxElement, coords);
           });
@@ -305,8 +301,8 @@ export const useHighlights = ({
           height: `${box.height}px`,
           margin: 0,
           padding: 0,
-          cursor: box.selectable ? 'pointer' : 'default',
-          pointerEvents: box.selectable ? 'auto' : 'none',
+          cursor: box.menu ? 'pointer' : 'default',
+          pointerEvents: box.menu ? 'auto' : 'none',
         });
 
         showPopover(boxElement);
@@ -522,17 +518,26 @@ export const useHighlights = ({
 
   const addHighlight = (highlight: RawHighlightOptions) => {
     const info = convertLegacy(highlight);
-    if (info.selectors?.length) {
-      highlights.set((value) => [...value, info]);
-    }
+    highlights.set((value) => {
+      const others = info.id ? value.filter((h) => h.id !== info.id) : value;
+      return info.selectors?.length ? [...others, info] : others;
+    });
   };
 
   const removeHighlight = (id: string) => {
     highlights.set((value) => value.filter((h) => h.id !== id));
   };
 
-  const clearHighlights = () => {
+  const resetState = () => {
     highlights.set([]);
+    elements.set(new Map());
+    boxes.set([]);
+    clickCoords.set(undefined);
+    hoverCoords.set(undefined);
+    targets.set([]);
+    hovered.set([]);
+    focused.set(undefined);
+    selected.set(undefined);
   };
 
   let removeTimeout: NodeJS.Timeout;
@@ -555,10 +560,9 @@ export const useHighlights = ({
         id,
         priority: 1000,
         selectors: [target],
-        selectable: false,
         styles: {
           outline: '2px solid #1EA7FD',
-          outlineOffset: '2px',
+          outlineOffset: '-1px',
           animation: `${keyframeName} 3s linear forwards`,
         },
         keyframes: `@keyframes ${keyframeName} {
@@ -582,37 +586,11 @@ export const useHighlights = ({
 
   channel.on(HIGHLIGHT, addHighlight);
   channel.on(REMOVE_HIGHLIGHT, removeHighlight);
-  channel.on(RESET_HIGHLIGHT, clearHighlights);
-  channel.on(STORY_CHANGED, clearHighlights);
+  channel.on(RESET_HIGHLIGHT, resetState);
   channel.on(SCROLL_INTO_VIEW, scrollIntoView);
-
-  const teardown = () => {
-    clearTimeout(removeTimeout);
-
-    document.body.removeEventListener('mousemove', onMouseMove);
-
-    channel.off(HIGHLIGHT, addHighlight);
-    channel.off(RESET_HIGHLIGHT, clearHighlights);
-    channel.off(STORY_CHANGED, clearHighlights);
-    channel.off(SCROLL_INTO_VIEW, scrollIntoView);
-
-    highlights.teardown();
-    elements.teardown();
-    boxes.teardown();
-    targets.teardown();
-    clickCoords.teardown();
-    hoverCoords.teardown();
-    hovered.teardown();
-    focused.teardown();
-    selected.teardown();
-
-    styleElementByHighlight.forEach((style) => style.remove());
-    boxElementByTargetElement.forEach((box) => box.remove());
-    document.getElementById(menuId)?.remove();
-    document.getElementById(rootId)?.remove();
-  };
-
-  (globalThis as any).__STORYBOOK_HIGHLIGHT_TEARDOWN = teardown;
-
-  return teardown;
+  channel.on(STORY_RENDER_PHASE_CHANGED, ({ newPhase }: { newPhase: string }) => {
+    if (newPhase === 'loading') {
+      resetState();
+    }
+  });
 };

@@ -32,19 +32,19 @@ The following code block demonstrates how to structure a code snippet in the Sto
 
 ````md title="docs/_snippets/button-group-story.md"
 ```ts filename="ButtonGroup.stories.ts" renderer="vue" language="ts" tabTitle="3"
-import type { Meta, StoryObj } from '@storybook/vue3';
+import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import ButtonGroup from './ButtonGroup.vue';
 
 //👇 Imports the Button stories
 import * as ButtonStories from './Button.stories';
 
-const meta: Meta<typeof ButtonGroup> = {
+const meta = {
   component: ButtonGroup,
-};
+}} satisfies Meta<typeof ButtonGroup>;
 
 export default meta;
-type Story = StoryObj<typeof ButtonGroup>;
+type Story = StoryObj<typeof meta>;
 
 export const Pair: Story = {
   render: (args) => ({
@@ -182,7 +182,7 @@ Open the file inside the `docs/_snippets` directory and adjust the content to ma
 {/* prettier-ignore-start */}
 
 ````md title="docs/_snippets/your-component.md"
-```ts filename="YourComponent.stories.ts" renderer="qwik" language="ts-4-9"
+```ts filename="YourComponent.stories.ts" renderer="qwik" language="ts"
 import type { Meta, StoryObj } from 'storybook-framework-qwik';
 
 import type { YourComponentProps } from './YourComponent';

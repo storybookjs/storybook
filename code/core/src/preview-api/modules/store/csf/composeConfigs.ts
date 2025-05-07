@@ -3,7 +3,6 @@ import type { Renderer } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
-import { getCoreAnnotations } from '../../..';
 import { combineParameters } from '../parameters';
 import { composeBeforeAllHooks } from './beforeAll';
 import { normalizeArrays } from './normalizeArrays';
@@ -42,9 +41,8 @@ export function getSingletonField<TFieldType = any>(
 }
 
 export function composeConfigs<TRenderer extends Renderer>(
-  input: ModuleExports[]
+  moduleExportList: ModuleExports[]
 ): NormalizedProjectAnnotations<TRenderer> {
-  const moduleExportList = [getCoreAnnotations(), ...input];
   const allArgTypeEnhancers = getArrayField(moduleExportList, 'argTypesEnhancers');
   const stepRunners = getField(moduleExportList, 'runStep');
   const beforeAllHooks = getArrayField(moduleExportList, 'beforeAll');

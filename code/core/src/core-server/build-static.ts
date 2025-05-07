@@ -102,7 +102,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     presets.apply('staticDirs'),
     presets.apply('experimental_indexers', []),
     presets.apply('stories'),
-    presets.apply('docs', {}),
+    presets.apply('docs'),
   ]);
 
   const fullOptions: Options = {
@@ -129,7 +129,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   }
 
   const coreServerPublicDir = join(
-    dirname(require.resolve('storybook/package.json')),
+    dirname(require.resolve('storybook/internal/package.json')),
     'assets/browser'
   );
   effects.push(cp(coreServerPublicDir, options.outputDir, { recursive: true }));
@@ -143,6 +143,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
       workingDir,
     };
     const normalizedStories = normalizeStories(stories, directories);
+
     const generator = new StoryIndexGenerator(normalizedStories, {
       ...directories,
       indexers,

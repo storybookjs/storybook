@@ -8,6 +8,7 @@
       - [TypeScript \< 4.9](#typescript--49)
       - [Node.js \< 20](#nodejs--20)
       - [Package Managers](#package-managers)
+    - [Moving from renderer-based to framework-based configuration](#moving-from-renderer-based-to-framework-based-configuration)
   - [Addon-specific Changes](#addon-specific-changes)
     - [Essentials Addon: Viewport, Controls, Interactions and Actions moved to core](#essentials-addon-viewport-controls-interactions-and-actions-moved-to-core)
     - [A11y Addon: Removed deprecated manual parameter](#a11y-addon-removed-deprecated-manual-parameter)
@@ -36,10 +37,12 @@
   - [Framework-specific changes](#framework-specific-changes)
     - [Svelte: Require v5 and up](#svelte-require-v5-and-up)
     - [Svelte: Dropped support for @storybook/svelte-webpack5](#svelte-dropped-support-for-storybooksvelte-webpack5)
-    - [Angular = Require v18 and up](#angular--require-v18-and-up)
+    - [Svelte: Dropped automatic docgen for events and slots](#svelte-dropped-automatic-docgen-for-events-and-slots)
+    - [Angular: Require v18 and up](#angular-require-v18-and-up)
+    - [Angular: Introduce `features.angularFilterNonInputControls`](#angular-introduce-featuresangularfilternoninputcontrols)
     - [Dropped webpack5 Builder Support in Favor of Vite](#dropped-webpack5-builder-support-in-favor-of-vite)
-    - [Next.js = Require v14 and up](#nextjs--require-v14-and-up)
-    - [Next.js = Vite builder stabilized](#nextjs--vite-builder-stabilized)
+    - [Next.js: Require v14 and up](#nextjs-require-v14-and-up)
+    - [Next.js: Vite builder stabilized](#nextjs-vite-builder-stabilized)
     - [Lit = Require v3 and up](#lit--require-v3-and-up)
 - [From version 8.5.x to 8.6.x](#from-version-85x-to-86x)
   - [Angular: Support experimental zoneless support](#angular-support-experimental-zoneless-support)
@@ -605,6 +608,23 @@ pnpm v9+
 
 While Storybook may still work with older versions, we recommend upgrading to the latest supported versions for the best experience and to ensure compatibility.
 
+#### Moving from renderer-based to framework-based configuration
+
+Storybook is moving from renderer-based to framework-based configuration. This means you should:
+
+1. Update your source files to use framework-specific imports instead of renderer imports
+2. Remove the renderer packages from your package.json
+
+For example, if you're using `@storybook/react` with `@storybook/react-vite`, you should:
+
+- Import types and functions from `@storybook/react-vite` instead of `@storybook/react`
+- Remove `@storybook/react` from your package.json dependencies
+
+```diff
+- import { Meta, StoryObj } from '@storybook/react';
++ import { Meta, StoryObj } from '@storybook/react-vite';
+```
+
 ### Addon-specific Changes
 
 #### Essentials Addon: Viewport, Controls, Interactions and Actions moved to core
@@ -1024,7 +1044,13 @@ export default {
 
 For more details, please refer to the [Svelte & Vite documentation](https://storybook.js.org/docs/get-started/frameworks/svelte-vite).
 
-#### Angular = Require v18 and up
+#### Svelte: Dropped automatic docgen for events and slots
+
+The internal docgen logic for legacy Svelte components have been changed to match what already happened for rune-based components, using the same `svelte2tsx` parsing that the official Svelte tools use.
+
+This means that argTypes are no longer automatically generated for slots and events defined with `on:my-event`.
+
+#### Angular: Require v18 and up
 
 Storybook has dropped support for Angular versions 15-17. The minimum supported version is now Angular 18.
 
@@ -1038,6 +1064,21 @@ Key changes:
 - Updated RxJS requirement to `^7.4.0`
 - Updated TypeScript requirement to `^4.9.0 || ^5.0.0`
 - Updated Zone.js requirement to `^0.14.0 || ^0.15.0`
+
+#### Angular: Introduce `features.angularFilterNonInputControls`
+
+Storybook has added a new feature flag `angularFilterNonInputControls` which filters out non-input controls from Angular compoennts in Storybook's controls panel.
+
+To enable it, just set the feature flag in your `.storybook/main.<js|ts> file.
+
+```tsx
+export default {
+  features: {
+    angularFilterNonInputControls: true
+  },
+  // ... other configurations
+};
+```
 
 #### Dropped webpack5 Builder Support in Favor of Vite
 
@@ -1097,7 +1138,7 @@ export default {
 
 This change consolidates our builder support around Vite, which offers better performance and a more streamlined development experience. The webpack5 builders for these frameworks have been deprecated in favor of the more modern Vite-based solution.
 
-#### Next.js = Require v14 and up
+#### Next.js: Require v14 and up
 
 Storybook has dropped support for Next.js versions below 14.1. The minimum supported version is now Next.js 14.1.
 
@@ -1105,7 +1146,7 @@ If you're using an older version of Next.js, you'll need to upgrade to Next.js 1
 
 For help upgrading your Next.js application, see the [Next.js upgrade guide](https://nextjs.org/docs/app/building-your-application/upgrading).
 
-#### Next.js = Vite builder stabilized
+#### Next.js: Vite builder stabilized
 
 The experimental Next.js Vite builder (`@storybook/experimental-nextjs-vite`) has been stabilized and renamed to `@storybook/nextjs-vite`. If you were using the experimental package, you should update your dependencies to use the new stable package name.
 

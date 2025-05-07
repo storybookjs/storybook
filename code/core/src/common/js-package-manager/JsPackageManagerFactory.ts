@@ -5,6 +5,7 @@ import { findUpSync } from 'find-up';
 
 import { BUNProxy } from './BUNProxy';
 import type { JsPackageManager, PackageManagerName } from './JsPackageManager';
+import { COMMON_ENV_VARS } from './JsPackageManager';
 import { NPMProxy } from './NPMProxy';
 import { PNPMProxy } from './PNPMProxy';
 import { Yarn1Proxy } from './Yarn1Proxy';
@@ -145,8 +146,7 @@ function hasNPM(cwd?: string) {
     shell: true,
     env: {
       ...process.env,
-      COREPACK_ENABLE_STRICT: '0',
-      COREPACK_ENABLE_AUTO_PIN: '0',
+      ...COMMON_ENV_VARS,
     },
   });
   return npmVersionCommand.status === 0;
@@ -158,8 +158,7 @@ function hasBun(cwd?: string) {
     shell: true,
     env: {
       ...process.env,
-      COREPACK_ENABLE_STRICT: '0',
-      COREPACK_ENABLE_AUTO_PIN: '0',
+      ...COMMON_ENV_VARS,
     },
   });
   return pnpmVersionCommand.status === 0;
@@ -171,8 +170,7 @@ function hasPNPM(cwd?: string) {
     shell: true,
     env: {
       ...process.env,
-      COREPACK_ENABLE_STRICT: '0',
-      COREPACK_ENABLE_AUTO_PIN: '0',
+      ...COMMON_ENV_VARS,
     },
   });
   return pnpmVersionCommand.status === 0;
@@ -184,8 +182,7 @@ function getYarnVersion(cwd?: string): 1 | 2 | undefined {
     shell: true,
     env: {
       ...process.env,
-      COREPACK_ENABLE_STRICT: '0',
-      COREPACK_ENABLE_AUTO_PIN: '0',
+      ...COMMON_ENV_VARS,
     },
   });
 

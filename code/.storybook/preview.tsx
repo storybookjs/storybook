@@ -152,7 +152,7 @@ const loaders = [
     }
     const csfFiles = await Promise.all(
       (relativeCsfPaths as string[]).map(async (blocksRelativePath) => {
-        const projectRelativePath = `./lib/blocks/src/${blocksRelativePath.replace(
+        const projectRelativePath = `./addons/docs/src/blocks/src/${blocksRelativePath.replace(
           /^..\//,
           ''
         )}.tsx`;

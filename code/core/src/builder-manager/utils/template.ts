@@ -6,7 +6,11 @@ import type { DocsOptions, Options, Ref, TagsOptions } from 'storybook/internal/
 import { render } from 'ejs';
 
 export const getTemplatePath = async (template: string) => {
-  return join(dirname(require.resolve('storybook/package.json')), 'assets/server', template);
+  return join(
+    dirname(require.resolve('storybook/internal/package.json')),
+    'assets/server',
+    template
+  );
 };
 
 export const readTemplate = async (template: string) => {

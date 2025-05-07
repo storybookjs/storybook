@@ -62,24 +62,25 @@ export type ValidationStates = 'valid' | 'error' | 'warn';
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore-error (this only errors during compilation for production)
-export const TextInput: FC<ComponentProps<typeof Form.Input> & { valid: ValidationStates }> =
-  styled(Form.Input)<{ valid: ValidationStates }>(
-    ({ valid, theme }) =>
-      valid === 'error'
-        ? {
-            animation: `${theme.animation.jiggle} 700ms ease-out`,
-          }
-        : {},
-    {
-      display: 'flex',
-      width: 80,
-      flexDirection: 'column',
-      justifySelf: 'flex-end',
-      paddingLeft: 4,
-      paddingRight: 4,
-      textAlign: 'center',
-    }
-  );
+export const TextInput: FC<
+  ComponentProps<typeof Form.Input> & { valid: ValidationStates | undefined }
+> = styled(Form.Input)<{ valid: ValidationStates }>(
+  ({ valid, theme }) =>
+    valid === 'error'
+      ? {
+          animation: `${theme.animation.jiggle} 700ms ease-out`,
+        }
+      : {},
+  {
+    display: 'flex',
+    width: 80,
+    flexDirection: 'column',
+    justifySelf: 'flex-end',
+    paddingLeft: 4,
+    paddingRight: 4,
+    textAlign: 'center',
+  }
+);
 
 export const Fade = keyframes`
 0%,100% { opacity: 0; }
@@ -268,9 +269,8 @@ class ShortcutsScreen extends Component<ShortcutsScreenProps, ShortcutsScreenSta
       : undefined;
   };
 
-  displayError = (activeElement: Feature): ValidationStates => {
+  displayError = (activeElement: Feature): ValidationStates | undefined => {
     const { activeFeature, shortcutKeys } = this.state;
-    // @ts-expect-error (non strict)
     return activeElement === activeFeature && shortcutKeys[activeElement].error === true
       ? 'error'
       : undefined;

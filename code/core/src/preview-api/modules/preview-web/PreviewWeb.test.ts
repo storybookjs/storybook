@@ -2349,11 +2349,15 @@ describe('PreviewWeb', () => {
         beforeEach(() => {
           originalLocation = window.location;
           delete (window as Partial<Window>).location;
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore-error
           window.location = { ...originalLocation, reload: vi.fn() };
         });
 
         afterEach(() => {
           delete (window as Partial<Window>).location;
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore-error
           window.location = { ...originalLocation, reload: originalLocation.reload };
         });
 

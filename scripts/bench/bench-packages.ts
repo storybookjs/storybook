@@ -344,8 +344,7 @@ const uploadToGithub = async ({
   pullRequest: number;
 }) => {
   console.log('Uploading results to GitHub...');
-  // const response = await fetch('http://localhost:3000/package-bench', {
-  const response = await fetch('https://storybook-benchmark-bot.vercel.app/package-bench', {
+  const response = await fetch('https://storybook-benchmark-bot.netlify.app/package-bench', {
     method: 'POST',
     body: JSON.stringify({
       owner: 'storybookjs',

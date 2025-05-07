@@ -1,13 +1,18 @@
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { defineMain } from '@storybook/react-vite/node';
 
 import react from '@vitejs/plugin-react';
 
-import { BROWSER_TARGETS } from '../core/src/shared/constants/environments-support';
-import { defineMain } from '../frameworks/react-vite/src/node';
+import { BROWSER_TARGETS } from '../core/src/shared/constants/environments-support.ts';
 
-const componentsPath = join(__dirname, '../core/src/components/index.ts');
-const managerApiPath = join(__dirname, '../core/src/manager-api/index.mock.ts');
-const imageContextPath = join(__dirname, '../frameworks/nextjs/src/image-context.ts');
+const currentFilePath = fileURLToPath(import.meta.url);
+const currentDirPath = dirname(currentFilePath);
+
+const componentsPath = join(currentDirPath, '../core/src/components/index.ts');
+const managerApiPath = join(currentDirPath, '../core/src/manager-api/index.mock.ts');
+const imageContextPath = join(currentDirPath, '../frameworks/nextjs/src/image-context.ts');
 
 const config = defineMain({
   stories: [

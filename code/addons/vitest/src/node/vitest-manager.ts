@@ -17,7 +17,7 @@ import type {
   StoryIndexEntry,
 } from 'storybook/internal/types';
 
-import { findUp } from 'find-up';
+import { any as findUp } from 'empathic/find';
 import path, { dirname, join, normalize } from 'pathe';
 import slash from 'slash';
 
@@ -76,7 +76,7 @@ export class VitestManager {
         : { enabled: false }
     ) as CoverageOptions;
 
-    const vitestWorkspaceConfig = await findUp([
+    const vitestWorkspaceConfig = findUp([
       ...VITEST_WORKSPACE_FILE_EXTENSION.map((ext) => `vitest.workspace.${ext}`),
       ...VITEST_CONFIG_FILE_EXTENSIONS.map((ext) => `vitest.config.${ext}`),
     ]);

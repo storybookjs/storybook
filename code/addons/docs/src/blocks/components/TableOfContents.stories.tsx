@@ -4,9 +4,10 @@ import { styled } from 'storybook/internal/theming';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { Heading, TableOfContents } from '@storybook/addon-docs/blocks';
-
 import { expect, within } from 'storybook/test';
+
+import { Heading } from '../blocks/Heading';
+import { TableOfContents } from './TableOfContents';
 
 const MockPage = styled.div`
   display: flex;
@@ -19,7 +20,6 @@ const MockContent = styled.div`
 `;
 
 const meta = {
-  title: 'Toc/Component',
   component: TableOfContents,
   parameters: {
     docs: {

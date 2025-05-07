@@ -49,7 +49,7 @@ const config = defineMain({
       titlePrefix: 'highlight',
     },
     {
-      directory: '../lib/blocks/src',
+      directory: '../addons/docs/src/blocks',
       titlePrefix: 'blocks',
     },
     {

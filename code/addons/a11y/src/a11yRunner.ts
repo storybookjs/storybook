@@ -41,7 +41,11 @@ const runNext = async () => {
 };
 
 export const run = async (input: A11yParameters = DEFAULT_PARAMETERS, storyId: string) => {
-  const { default: axe } = await import('axe-core');
+  const axeCore = await import('axe-core');
+  // We do this workaround when Vite projects can't optimize deps in pnpm projects
+  // as axe-core is UMD and therefore won't resolve.
+  // In that case, we just use the global axe (which will be there as a side effect of UMD import).
+  const axe = axeCore?.default || (globalThis as any).axe;
 
   const { config = {}, options = {} } = input;
 

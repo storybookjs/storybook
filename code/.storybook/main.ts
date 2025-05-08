@@ -54,8 +54,8 @@ const config = defineMain({
       titlePrefix: 'highlight',
     },
     {
-      directory: '../lib/blocks/src',
-      titlePrefix: 'blocks',
+      directory: '../addons/docs/src/blocks',
+      titlePrefix: 'addons/docs/blocks',
     },
     {
       directory: '../addons/a11y/src',

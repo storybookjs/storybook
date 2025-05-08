@@ -153,7 +153,7 @@ export const Sidebar = React.memo(function Sidebar({
   const api = useStorybookApi();
 
   return (
-    <Container className="container sidebar-container">
+    <Container className="container sidebar-container" aria-label="Global">
       <ScrollArea vertical offset={3} scrollbarSize={6}>
         <Top row={1.6}>
           <Heading

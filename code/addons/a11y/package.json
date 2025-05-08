@@ -36,8 +36,12 @@
       "import": "./dist/preview.mjs",
       "require": "./dist/preview.js"
     },
+    "./axe-core": {
+      "types": "./dist/axe-core.d.ts",
+      "import": "./dist/axe-core.mjs",
+      "require": "./dist/axe-core.js"
+    },
     "./manager": "./dist/manager.js",
-    "./axe-core": "./dist/axe-core.js",
     "./register": "./dist/manager.js",
     "./package.json": "./package.json",
     "./postinstall": "./dist/postinstall.js"

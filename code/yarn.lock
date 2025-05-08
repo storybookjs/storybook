@@ -6749,7 +6749,7 @@ __metadata:
     happy-dom: "npm:^17.4.4"
     http-server: "npm:^14.1.1"
     husky: "npm:^4.3.7"
-    jiti: "npm:^1.21.6"
+    jiti: "npm:^2.4.2"
     lint-staged: "npm:^13.2.2"
     mock-require: "npm:^3.0.3"
     nx: "npm:^20.4.0"
@@ -17405,6 +17405,15 @@ __metadata:
   bin:
     jiti: bin/jiti.js
   checksum: 10c0/77b61989c758ff32407cdae8ddc77f85e18e1a13fc4977110dbd2e05fc761842f5f71bce684d9a01316e1c4263971315a111385759951080bbfe17cbb5de8f7a
+  languageName: node
+  linkType: hard
+
+"jiti@npm:^2.4.2":
+  version: 2.4.2
+  resolution: "jiti@npm:2.4.2"
+  bin:
+    jiti: lib/jiti-cli.mjs
+  checksum: 10c0/4ceac133a08c8faff7eac84aabb917e85e8257f5ad659e843004ce76e981c457c390a220881748ac67ba1b940b9b729b30fb85cbaf6e7989f04b6002c94da331
   languageName: node
   linkType: hard
 

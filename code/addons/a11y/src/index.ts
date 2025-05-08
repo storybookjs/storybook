@@ -1,6 +1,6 @@
-import { definePreview } from 'storybook/preview-api';
+import * as addonAnnotations from '@storybook/addon-a11y/preview';
 
-import * as addonAnnotations from './preview';
+import { definePreview } from 'storybook/preview-api';
 
 export { PARAM_KEY } from './constants';
 export * from './params';

@@ -54,6 +54,9 @@
       "*": [
         "dist/index.d.ts"
       ],
+      "axe-core": [
+        "dist/axe-core.d.ts"
+      ],
       "preview": [
         "dist/preview.d.ts"
       ]

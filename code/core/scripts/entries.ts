@@ -58,7 +58,15 @@ export const getEntries = (cwd: string) => {
     define('src/builder-manager/index.ts', ['node'], true),
     define('src/telemetry/index.ts', ['node'], true),
     define('src/preview-api/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
-    define('src/manager-api/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
+    define(
+      'src/manager-api/index.ts',
+      ['browser', 'node'],
+      true,
+      ['react', '@storybook/icons', 'react-dom'],
+      [],
+      [],
+      true
+    ),
     define('src/router/index.ts', ['browser', 'node'], true, ['react']),
     define('src/components/index.ts', ['browser', 'node'], true, ['react', 'react-dom'], []),
     define('src/docs-tools/index.ts', ['browser', 'node'], true),
@@ -79,24 +87,6 @@ export const getEntries = (cwd: string) => {
       ['util', 'react'],
       [],
       [
-        '@testing-library/dom',
-        '@testing-library/jest-dom',
-        '@testing-library/user-event',
-        'chai',
-        '@vitest/expect',
-        '@vitest/spy',
-        '@vitest/utils',
-      ],
-      true
-    ),
-    define(
-      'src/test/spy.ts',
-      ['browser', 'node'],
-      true,
-      ['util', 'react'],
-      [],
-      [
-        '@testing-library/dom',
         '@testing-library/jest-dom',
         '@testing-library/user-event',
         'chai',
@@ -113,7 +103,6 @@ export const getEntries = (cwd: string) => {
       ['util', 'react'],
       [],
       [
-        '@testing-library/dom',
         '@testing-library/jest-dom',
         '@testing-library/user-event',
         'chai',

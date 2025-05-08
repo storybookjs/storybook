@@ -39,8 +39,6 @@ This framework is designed to work with Storybook 7+. If you’re not already us
 
 #### Automatic migration
 
-{/* TK: Vet this for accuracy, the migration never prompted me to opt-in to the @storybook/sveltekit package, instead it updated the package version. Additionally the example refers to svelte-vite, not sveltekit */}
-
 When running the `upgrade` command above, you should get a prompt asking you to migrate to `@storybook/svelte-vite`, which should handle everything for you. In case that auto-migration does not work for your project, refer to the manual migration below.
 
 #### Manual migration
@@ -147,7 +145,7 @@ If you used the `Template` component to control how the component renders in the
 
 #### Story slots to snippets
 
-With Svelte's slot deprecation and the introduction of reusable [`snippets`](https://svelte.dev/docs/svelte/v5-migration-guide#Snippets-instead-of-slots), the addon also introduced support for this feature allowing you to extend the `Story` component and provide a custom snippet to provide dynamic content to your stories. This feature extends the built-in `children` support in the `Story` component, allowing you to create dynamic stories without losing reactivity.
+With Svelte's slot deprecation and the introduction of reusable [`snippets`](https://svelte.dev/docs/svelte/v5-migration-guide#Snippets-instead-of-slots), the addon also introduced support for this feature allowing you to extend the `Story` component and provide a custom snippet to provide dynamic content to your stories. `Story` accepts a `template` snippet, allowing you to create dynamic stories without losing reactivity.
 
 ```svelte title="MyComponent.stories.svelte"
 <script>
@@ -161,7 +159,7 @@ With Svelte's slot deprecation and the introduction of reusable [`snippets`](htt
 </script>
 
 <Story name="Default" args={{ exampleProperty: true }}>
-  {#snippet children(args)}
+  {#snippet template(args)}
     <MyComponent {...args}>Reactive component</MyComponent>
   {/snippet}
 </Story>

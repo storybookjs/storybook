@@ -16,6 +16,19 @@ parameters:
     default: "next"
 
 executors:
+  sb_node_22_classic:
+    parameters:
+      class:
+        description: The Resource class
+        type: enum
+        enum: ["small", "medium", "medium+", "large", "xlarge"]
+        default: "small"
+    working_directory: /tmp/storybook
+    docker:
+      - image: cimg/node:22.13.1
+        environment:
+          NODE_OPTIONS: --max_old_space_size=6144
+    resource_class: <<parameters.class>>
   sb_node_24_classic:
     parameters:
       class:
@@ -134,7 +147,7 @@ jobs:
   build:
     executor:
       class: large
-      name: sb_node_24_classic
+      name: sb_node_22_classic
     steps:
       - git-shallow-clone/checkout_advanced:
           clone_options: "--depth 1 --verbose"

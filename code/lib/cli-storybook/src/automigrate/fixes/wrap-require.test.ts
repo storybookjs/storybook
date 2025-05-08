@@ -99,7 +99,8 @@ describe('wrapRequire', () => {
       const call = writeFile.mock.calls[0];
 
       expect(call[1]).toMatchInlineSnapshot(`
-  "import { dirname, join } from "path";
+  "import { createRequire } from "node:module";
+  import { dirname, join } from "path";
   const config = {
     stories: ['../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
     addons: [
@@ -118,6 +119,7 @@ describe('wrapRequire', () => {
     },
   };
   export default config;
+  const require = createRequire(import.meta, url);
 
   function getAbsolutePath(value) {
     return dirname(require.resolve(join(value, "package.json")));

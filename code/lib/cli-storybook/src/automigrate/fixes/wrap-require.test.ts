@@ -100,7 +100,7 @@ describe('wrapRequire', () => {
 
       expect(call[1]).toMatchInlineSnapshot(`
   "import { createRequire } from "node:module";
-  import { dirname, join } from "path";
+  import { dirname, join } from "node:path";
   const config = {
     stories: ['../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
     addons: [

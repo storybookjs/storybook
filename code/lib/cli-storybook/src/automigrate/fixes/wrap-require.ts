@@ -75,9 +75,9 @@ export const wrapRequire: Fix<WrapRequireRunOptions> = {
           mainConfig?.fileName?.endsWith('.cjsx') ||
           mainConfig?.fileName?.endsWith('.ctsx')
         ) {
-          mainConfig.setRequireImport(['dirname', 'join'], 'path');
+          mainConfig.setRequireImport(['dirname', 'join'], 'node:path');
         } else {
-          mainConfig.setImport(['dirname', 'join'], 'path');
+          mainConfig.setImport(['dirname', 'join'], 'node:path');
           mainConfig.setImport(['createRequire'], 'node:module');
 
           // Continue here

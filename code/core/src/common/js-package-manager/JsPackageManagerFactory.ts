@@ -5,6 +5,7 @@ import { findUpSync } from 'find-up';
 
 import { BUNProxy } from './BUNProxy';
 import type { JsPackageManager, PackageManagerName } from './JsPackageManager';
+import { COMMON_ENV_VARS } from './JsPackageManager';
 import { NPMProxy } from './NPMProxy';
 import { PNPMProxy } from './PNPMProxy';
 import { Yarn1Proxy } from './Yarn1Proxy';
@@ -13,7 +14,8 @@ import { Yarn2Proxy } from './Yarn2Proxy';
 const NPM_LOCKFILE = 'package-lock.json';
 const PNPM_LOCKFILE = 'pnpm-lock.yaml';
 const YARN_LOCKFILE = 'yarn.lock';
-const BUN_LOCKFILE = 'bun.lockb';
+const BUN_LOCKFILE = 'bun.lock';
+const BUN_LOCKFILE_BINARY = 'bun.lockb';
 
 type PackageManagerProxy =
   | typeof NPMProxy
@@ -37,6 +39,7 @@ export class JsPackageManagerFactory {
       findUpSync(PNPM_LOCKFILE, { cwd }),
       findUpSync(NPM_LOCKFILE, { cwd }),
       findUpSync(BUN_LOCKFILE, { cwd }),
+      findUpSync(BUN_LOCKFILE_BINARY, { cwd }),
     ]
       .filter(Boolean)
       .sort((a, b) => {
@@ -78,7 +81,10 @@ export class JsPackageManagerFactory {
       return new NPMProxy({ cwd });
     }
 
-    if (hasBunCommand && closestLockfile === BUN_LOCKFILE) {
+    if (
+      hasBunCommand &&
+      (closestLockfile === BUN_LOCKFILE || closestLockfile === BUN_LOCKFILE_BINARY)
+    ) {
       return new BUNProxy({ cwd });
     }
 
@@ -140,7 +146,7 @@ function hasNPM(cwd?: string) {
     shell: true,
     env: {
       ...process.env,
-      COREPACK_ENABLE_STRICT: '0',
+      ...COMMON_ENV_VARS,
     },
   });
   return npmVersionCommand.status === 0;
@@ -152,7 +158,7 @@ function hasBun(cwd?: string) {
     shell: true,
     env: {
       ...process.env,
-      COREPACK_ENABLE_STRICT: '0',
+      ...COMMON_ENV_VARS,
     },
   });
   return pnpmVersionCommand.status === 0;
@@ -164,7 +170,7 @@ function hasPNPM(cwd?: string) {
     shell: true,
     env: {
       ...process.env,
-      COREPACK_ENABLE_STRICT: '0',
+      ...COMMON_ENV_VARS,
     },
   });
   return pnpmVersionCommand.status === 0;
@@ -176,7 +182,7 @@ function getYarnVersion(cwd?: string): 1 | 2 | undefined {
     shell: true,
     env: {
       ...process.env,
-      COREPACK_ENABLE_STRICT: '0',
+      ...COMMON_ENV_VARS,
     },
   });
 

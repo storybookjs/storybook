@@ -1,4 +1,4 @@
-import { sanitize, storyNameFromExport } from '@storybook/csf';
+import { sanitize, storyNameFromExport } from 'storybook/internal/csf';
 
 import { mapKeys } from 'es-toolkit/compat';
 

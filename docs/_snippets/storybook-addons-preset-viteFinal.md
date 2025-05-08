@@ -21,4 +21,3 @@ export function ViteFinal(config: any, options: any = {}) {
   return config;
 }
 ```
-

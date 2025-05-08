@@ -47,7 +47,11 @@ export const useNavigate = () => {
 
   return useCallback((to: R.To | number, { plain, ...options } = {} as NavigateOptions) => {
     if (typeof to === 'string' && to.startsWith('#')) {
-      document.location.hash = to;
+      if (to === '#') {
+        navigate(document.location.search);
+      } else {
+        document.location.hash = to;
+      }
       return undefined;
     }
     if (typeof to === 'string') {
@@ -72,7 +76,7 @@ Link.displayName = 'QueryLink';
 
 /**
  * A render-prop component where children is called with a location and will be called whenever it
- * changes when it changes
+ * changes
  */
 export const Location = ({ children }: LocationProps) => {
   const location = R.useLocation();

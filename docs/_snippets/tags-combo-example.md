@@ -22,17 +22,14 @@ export const Variant2: Story = {
   args: { variant: 2 },
 };
 
-// Etc...
-
 export const Combo: Story = {
   // 👇 This story should not be tested, but will appear in the sidebar and docs page
   tags: ['!test'],
   render: () => ({
     template: `
       <div>
-        <demo-button variant={1}>
-        <demo-button variant={2}>
-        {/* Etc... */}
+        <demo-button [variant]="1"></demo-button>
+        <demo-button [variant]="2"></demo-button>
       </div>
     `,
   }),
@@ -58,23 +55,20 @@ export const Variant2 = {
   args: { variant: 2 },
 };
 
-// Etc...
-
 export const Combo = {
   // 👇 This story should not be tested, but will appear in the sidebar and docs page
   tags: ['!test'],
   render: () => (
     <>
-      <Button variant={1}>
-      <Button variant={2}>
-      {/* Etc... */}
+      <Button variant={1} />
+      <Button variant={2} />
     </>
   ),
 };
 ```
 
-```tsx filename="Button.stories.tsx" renderer="react" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/react';
+```tsx filename="Button.stories.tsx" renderer="react" language="ts"
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { Button } from './Button';
 
@@ -97,55 +91,13 @@ export const Variant2: Story = {
   args: { variant: 2 },
 };
 
-// Etc...
-
 export const Combo: Story = {
   // 👇 This story should not be tested, but will appear in the sidebar and docs page
   tags: ['!test'],
   render: () => (
     <>
-      <Button variant={1}>
-      <Button variant={2}>
-      {/* Etc... */}
-    </>
-  ),
-};
-```
-
-```tsx filename="Button.stories.tsx" renderer="react" language="ts"
-import type { Meta, StoryObj } from '@storybook/react';
-
-import { Button } from './Button';
-
-const meta: Meta<typeof Button> = {
-  component: Button,
-};
-export default meta;
-
-type Story = StoryObj<typeof Button>;
-
-export const Variant1: Story = {
-  // 👇 This story will not appear in Storybook's sidebar or docs page
-  tags: ['!dev', '!autodocs'],
-  args: { variant: 1 },
-};
-
-export const Variant2: Story = {
-  // 👇 This story will not appear in Storybook's sidebar or docs page
-  tags: ['!dev', '!autodocs'],
-  args: { variant: 2 },
-};
-
-// Etc...
-
-export const Combo: Story = {
-  // 👇 This story should not be tested, but will appear in the sidebar and docs page
-  tags: ['!test'],
-  render: () => (
-    <>
-      <Button variant={1}>
-      <Button variant={2}>
-      {/* Etc... */}
+      <Button variant={1} />
+      <Button variant={2} />
     </>
   ),
 };
@@ -170,22 +122,19 @@ export const Variant2 = {
   args: { variant: 2 },
 };
 
-// Etc...
-
 export const Combo = {
   // 👇 This story should not be tested, but will appear in the sidebar and docs page
   tags: ['!test'],
   render: () => (
     <>
-      <Button variant={1}>
-      <Button variant={2}>
-      {/* Etc... */}
+      <Button variant={1} />
+      <Button variant={2} />
     </>
   ),
 };
 ```
 
-```tsx filename="Button.stories.tsx" renderer="solid" language="ts-4-9"
+```tsx filename="Button.stories.tsx" renderer="solid" language="ts"
 import type { Meta, StoryObj } from 'storybook-solidjs';
 
 import { Button } from './Button';
@@ -209,58 +158,78 @@ export const Variant2: Story = {
   args: { variant: 2 },
 };
 
-// Etc...
-
 export const Combo: Story = {
   // 👇 This story should not be tested, but will appear in the sidebar and docs page
   tags: ['!test'],
   render: () => (
     <>
-      <Button variant={1}>
-      <Button variant={2}>
-      {/* Etc... */}
+      <Button variant={1} />
+      <Button variant={2} />
     </>
   ),
 };
 ```
 
-```tsx filename="Button.stories.tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs';
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import { Button } from './Button.svelte';
 
-import { Button } from './Button';
+  const { Story } = defineMeta({
+    component: Button,
+  });
+</script>
 
-const meta: Meta<typeof Button> = {
-  component: Button,
-};
-export default meta;
+<!-- 👇 This story will not appear in Storybook's sidebar or docs page -->
+<Story
+  name="Variant1"
+  tags={['!dev', '!autodocs']}
+  args={{ variant: 1 }}
+/>
 
-type Story = StoryObj<typeof Button>;
+<!-- 👇 This story will not appear in Storybook's sidebar or docs page -->
+<Story
+  name="Variant2"
+  tags={['!dev', '!autodocs']}
+  args={{ variant: 2 }}
+/>
 
-export const Variant1: Story = {
-  // 👇 This story will not appear in Storybook's sidebar or docs page
-  tags: ['!dev', '!autodocs'],
-  args: { variant: 1 },
-};
+<!-- 👇 This story should not be tested, but will appear in the sidebar and docs page -->
+<Story name="Combo" tags={['!test']}>
+  <Button variant={1}>
+  <Button variant={2}>
+</Story>
+```
 
-export const Variant2: Story = {
-  // 👇 This story will not appear in Storybook's sidebar or docs page
-  tags: ['!dev', '!autodocs'],
-  args: { variant: 2 },
-};
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import { Button } from './Button.svelte';
 
-// Etc...
+  const { Story } = defineMeta({
+    component: Button,
+  });
+</script>
 
-export const Combo: Story = {
-  // 👇 This story should not be tested, but will appear in the sidebar and docs page
-  tags: ['!test'],
-  render: () => (
-    <>
-      <Button variant={1}>
-      <Button variant={2}>
-      {/* Etc... */}
-    </>
-  ),
-};
+<!-- 👇 This story will not appear in Storybook's sidebar or docs page -->
+<Story
+  name="Variant1"
+  tags={['!dev', '!autodocs']}
+  args={{ variant: 1 }}
+/>
+
+<!-- 👇 This story will not appear in Storybook's sidebar or docs page -->
+<Story
+  name="Variant2"
+  tags={['!dev', '!autodocs']}
+  args={{ variant: 2 }}
+/>
+
+<!-- 👇 This story should not be tested, but will appear in the sidebar and docs page -->
+<Story name="Combo" tags={['!test']}>
+  <Button variant={1} />
+  <Button variant={2} />
+</Story>
 ```
 
 ```js filename="Button.stories.js" renderer="vue" language="js"
@@ -282,8 +251,6 @@ export const Variant2 = {
   args: { variant: 2 },
 };
 
-// Etc...
-
 export const Combo = {
   // 👇 This story should not be tested, but will appear in the sidebar and docs page
   tags: ['!test'],
@@ -291,17 +258,16 @@ export const Combo = {
     components: { Button },
     template: `
       <div>
-        <Button variant={1}>
-        <Button variant={2}>
-        {/* Etc... */}
+        <Button :variant="1" />
+        <Button :variant="2" />
       </div>
     `,
   }),
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="vue" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/vue3';
+```ts filename="Button.stories.ts" renderer="vue" language="ts"
+import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import { Button } from './Button';
 
@@ -324,8 +290,6 @@ export const Variant2: Story = {
   args: { variant: 2 },
 };
 
-// Etc...
-
 export const Combo: Story = {
   // 👇 This story should not be tested, but will appear in the sidebar and docs page
   tags: ['!test'],
@@ -333,58 +297,15 @@ export const Combo: Story = {
     components: { Button },
     template: `
       <div>
-        <Button variant={1}>
-        <Button variant={2}>
-        {/* Etc... */}
+        <Button :variant="1" />
+        <Button :variant="2" />
       </div>
     `,
   }),
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="vue" language="ts"
-import type { Meta, StoryObj } from '@storybook/vue3';
-
-import { Button } from './Button';
-
-const meta: Meta<typeof Button> = {
-  component: Button,
-};
-export default meta;
-
-type Story = StoryObj<typeof Button>;
-
-export const Variant1: Story = {
-  // 👇 This story will not appear in Storybook's sidebar or docs page
-  tags: ['!dev', '!autodocs'],
-  args: { variant: 1 },
-};
-
-export const Variant2: Story = {
-  // 👇 This story will not appear in Storybook's sidebar or docs page
-  tags: ['!dev', '!autodocs'],
-  args: { variant: 2 },
-};
-
-// Etc...
-
-export const Combo: Story = {
-  // 👇 This story should not be tested, but will appear in the sidebar and docs page
-  tags: ['!test'],
-  render: () => ({
-    components: { Button },
-    template: `
-      <div>
-        <Button variant={1}>
-        <Button variant={2}>
-        {/* Etc... */}
-      </div>
-    `,
-  }),
-};
-```
-
-```ts filename="Button.stories.ts" renderer="web-components" language="js"
+```ts filename="Button.stories.js" renderer="web-components" language="js"
 import { html } from 'lit';
 
 export default {
@@ -404,23 +325,21 @@ export const Variant2 = {
   args: { variant: 2 },
 };
 
-// Etc...
-
 export const Combo = {
   // 👇 This story should not be tested, but will appear in the sidebar and docs page
   tags: ['!test'],
   render: () => html`
     <div>
-      <demo-button variant="1">
-      <demo-button variant="2">
-      {/* Etc... */}
+      <demo-button variant="1" />
+      <demo-button variant="2" />
     </div>
   `,
 };
 ```
 
 ```ts filename="Button.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
+
 import { html } from 'lit';
 
 const meta: Meta = {
@@ -443,18 +362,14 @@ export const Variant2: Story = {
   args: { variant: 2 },
 };
 
-// Etc...
-
 export const Combo: Story = {
   // 👇 This story should not be tested, but will appear in the sidebar and docs page
   tags: ['!test'],
   render: () => html`
     <div>
-      <demo-button variant="1">
-      <demo-button variant="2">
-      {/* Etc... */}
+      <demo-button variant="1" />
+      <demo-button variant="2" />
     </div>
   `,
 };
 ```
-

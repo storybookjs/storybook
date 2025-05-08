@@ -1,9 +1,9 @@
 import React, { useEffect } from 'react';
 
-import type { Meta, StoryObj } from '@storybook/react';
-import { within } from '@storybook/test';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { ManagerContext } from '@storybook/core/manager-api';
+import { ManagerContext } from 'storybook/manager-api';
+import { within } from 'storybook/test';
 
 import { LayoutProvider, useLayout } from '../../layout/LayoutProvider';
 import { MobileAbout } from './MobileAbout';

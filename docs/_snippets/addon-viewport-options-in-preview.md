@@ -1,10 +1,10 @@
 ```js filename=".storybook/preview.js" renderer="common" language="js"
-import { INITIAL_VIEWPORTS } from '@storybook/addon-viewport';
+import { INITIAL_VIEWPORTS } from 'storybook/viewport';
 
 export default {
   parameters: {
     viewport: {
-      viewports: INITIAL_VIEWPORTS,
+      options: INITIAL_VIEWPORTS,
     },
   },
   initialGlobals: {
@@ -14,13 +14,15 @@ export default {
 ```
 
 ```ts filename=".storybook/preview.ts" renderer="common" language="ts"
-// Replace your-renderer with the renderer you are using (e.g., react, vue3, angular, etc.)
-import { Preview } from '@storybook/your-renderer';
+// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
+import { Preview } from '@storybook/your-framework';
+
+import { INITIAL_VIEWPORTS } from 'storybook/viewport';
 
 const preview: Preview = {
   parameters: {
     viewport: {
-      viewports: INITIAL_VIEWPORTS,
+      options: INITIAL_VIEWPORTS,
     },
   },
   initialGlobals: {

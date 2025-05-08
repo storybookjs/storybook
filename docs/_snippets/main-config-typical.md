@@ -5,7 +5,7 @@ const config = {
   framework: '@storybook/your-framework',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   // Optional
-  addons: ['@storybook/addon-essentials'],
+  addons: ['@storybook/addon-docs'],
   docs: {
     autodocs: 'tag',
   },
@@ -23,7 +23,7 @@ const config: StorybookConfig = {
   framework: '@storybook/your-framework',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   // Optional
-  addons: ['@storybook/addon-essentials'],
+  addons: ['@storybook/addon-docs'],
   docs: {
     autodocs: 'tag',
   },
@@ -32,4 +32,3 @@ const config: StorybookConfig = {
 
 export default config;
 ```
-

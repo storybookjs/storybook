@@ -1,4 +1,4 @@
-import { logger } from '@storybook/core/node-logger';
+import { logger } from 'storybook/internal/node-logger';
 
 import getDefaultBrowser from '@aw-web-design/x-default-browser';
 import betterOpn from 'better-opn';

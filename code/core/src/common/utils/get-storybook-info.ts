@@ -1,8 +1,8 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
-import type { SupportedFrameworks } from '@storybook/core/types';
-import type { CoreCommon_StorybookInfo, PackageJson } from '@storybook/core/types';
+import type { SupportedFrameworks } from 'storybook/internal/types';
+import type { CoreCommon_StorybookInfo, PackageJson } from 'storybook/internal/types';
 
 import { getStorybookConfiguration } from './get-storybook-configuration';
 
@@ -30,20 +30,17 @@ export const frameworkPackages: Record<string, SupportedFrameworks> = {
   '@storybook/angular': 'angular',
   '@storybook/ember': 'ember',
   '@storybook/html-vite': 'html-vite',
-  '@storybook/html-webpack5': 'html-webpack5',
   '@storybook/nextjs': 'nextjs',
   '@storybook/preact-vite': 'preact-vite',
-  '@storybook/preact-webpack5': 'preact-webpack5',
   '@storybook/react-vite': 'react-vite',
   '@storybook/react-webpack5': 'react-webpack5',
   '@storybook/server-webpack5': 'server-webpack5',
   '@storybook/svelte-vite': 'svelte-vite',
-  '@storybook/svelte-webpack5': 'svelte-webpack5',
   '@storybook/sveltekit': 'sveltekit',
   '@storybook/vue3-vite': 'vue3-vite',
-  '@storybook/vue3-webpack5': 'vue3-webpack5',
+  '@storybook/nextjs-vite': 'nextjs-vite',
+  '@storybook/react-native-web-vite': 'react-native-web-vite',
   '@storybook/web-components-vite': 'web-components-vite',
-  '@storybook/web-components-webpack5': 'web-components-webpack5',
   // community (outside of monorepo)
   'storybook-framework-qwik': 'qwik',
   'storybook-solidjs-vite': 'solid',

@@ -1,5 +1,6 @@
-import type { ModuleExports, NormalizedProjectAnnotations } from '@storybook/core/types';
-import type { Renderer } from '@storybook/core/types';
+import type { ModuleExports, NormalizedProjectAnnotations } from 'storybook/internal/types';
+import type { Renderer } from 'storybook/internal/types';
+
 import { global } from '@storybook/global';
 
 import { combineParameters } from '../parameters';
@@ -58,15 +59,14 @@ export function composeConfigs<TRenderer extends Renderer>(
       ...allArgTypeEnhancers.filter((e) => !e.secondPass),
       ...allArgTypeEnhancers.filter((e) => e.secondPass),
     ],
-    globals: getObjectField(moduleExportList, 'globals'),
     initialGlobals: getObjectField(moduleExportList, 'initialGlobals'),
     globalTypes: getObjectField(moduleExportList, 'globalTypes'),
     loaders: getArrayField(moduleExportList, 'loaders'),
     beforeAll: composeBeforeAllHooks(beforeAllHooks),
     beforeEach: getArrayField(moduleExportList, 'beforeEach'),
+    experimental_afterEach: getArrayField(moduleExportList, 'experimental_afterEach'),
     render: getSingletonField(moduleExportList, 'render'),
     renderToCanvas: getSingletonField(moduleExportList, 'renderToCanvas'),
-    renderToDOM: getSingletonField(moduleExportList, 'renderToDOM'), // deprecated
     applyDecorators: getSingletonField(moduleExportList, 'applyDecorators'),
     runStep: composeStepRunners<TRenderer>(stepRunners),
     tags: getArrayField(moduleExportList, 'tags'),

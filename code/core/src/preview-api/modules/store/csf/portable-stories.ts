@@ -1,6 +1,5 @@
-/* eslint-disable no-underscore-dangle */
-
-/* eslint-disable @typescript-eslint/naming-convention */
+import { type CleanupCallback, isExportStory } from 'storybook/internal/csf';
+import { MountMustBeDestructuredError } from 'storybook/internal/preview-errors';
 import type {
   Args,
   Canvas,
@@ -18,15 +17,21 @@ import type {
   Store_CSFExports,
   StoryContext,
   StrictArgTypes,
-} from '@storybook/core/types';
-import { type CleanupCallback, isExportStory } from '@storybook/csf';
+} from 'storybook/internal/types';
 
-import { MountMustBeDestructuredError } from '@storybook/core/preview-errors';
-
+import type { UserEventObject } from 'storybook/test';
 import { dedent } from 'ts-dedent';
 
+import { getCoreAnnotations } from '../../../../shared/preview/core-annotations';
 import { HooksContext } from '../../../addons';
+import {
+  isTestEnvironment,
+  pauseAnimations,
+  waitForAnimations,
+} from '../../preview-web/render/animation-utils';
+import { ReporterAPI } from '../reporter-api';
 import { composeConfigs } from './composeConfigs';
+import { getCsfFactoryAnnotations } from './csf-factory-utils';
 import { getValuesFromArgTypes } from './getValuesFromArgTypes';
 import { normalizeComponentAnnotations } from './normalizeComponentAnnotations';
 import { normalizeProjectAnnotations } from './normalizeProjectAnnotations';
@@ -61,11 +66,8 @@ function extractAnnotation<TRenderer extends Renderer = Renderer>(
   // import * as annotations from '.storybook/preview'
   // import annotations from '.storybook/preview'
   // in both cases: 1 - the file has a default export; 2 - named exports only
-  // support imports such as
-  // import * as annotations from '.storybook/preview'
-  // import annotations from '.storybook/preview'
-  // in both cases: 1 - the file has a default export; 2 - named exports only
-  return 'default' in annotation ? annotation.default : annotation;
+  // also support when the file has both annotations coming from default and named exports
+  return composeConfigs([annotation]);
 }
 
 export function setProjectAnnotations<TRenderer extends Renderer = Renderer>(
@@ -74,7 +76,11 @@ export function setProjectAnnotations<TRenderer extends Renderer = Renderer>(
     | NamedOrDefaultProjectAnnotations<TRenderer>[]
 ): NormalizedProjectAnnotations<TRenderer> {
   const annotations = Array.isArray(projectAnnotations) ? projectAnnotations : [projectAnnotations];
-  globalThis.globalProjectAnnotations = composeConfigs(annotations.map(extractAnnotation));
+  globalThis.globalProjectAnnotations = composeConfigs([
+    ...getCoreAnnotations(),
+    globalThis.defaultProjectAnnotations ?? {},
+    composeConfigs(annotations.map(extractAnnotation)),
+  ]);
 
   /*
     We must return the composition of default and global annotations here
@@ -83,10 +89,7 @@ export function setProjectAnnotations<TRenderer extends Renderer = Renderer>(
     const projectAnnotations = setProjectAnnotations(...);
     beforeAll(projectAnnotations.beforeAll)
   */
-  return composeConfigs([
-    globalThis.defaultProjectAnnotations ?? {},
-    globalThis.globalProjectAnnotations ?? {},
-  ]);
+  return globalThis.globalProjectAnnotations ?? {};
 }
 
 const cleanups: CleanupCallback[] = [];
@@ -124,10 +127,7 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
 
   const normalizedProjectAnnotations = normalizeProjectAnnotations<TRenderer>(
     composeConfigs([
-      defaultConfig && Object.keys(defaultConfig).length > 0
-        ? defaultConfig
-        : (globalThis.defaultProjectAnnotations ?? {}),
-      globalThis.globalProjectAnnotations ?? {},
+      defaultConfig ?? globalThis.globalProjectAnnotations ?? {},
       projectAnnotations ?? {},
     ])
   );
@@ -139,12 +139,14 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
   );
 
   const globalsFromGlobalTypes = getValuesFromArgTypes(normalizedProjectAnnotations.globalTypes);
+
   const globals = {
-    // TODO: remove loading from globalTypes in 9.0
     ...globalsFromGlobalTypes,
     ...normalizedProjectAnnotations.initialGlobals,
     ...story.storyGlobals,
   };
+
+  const reporting = new ReporterAPI();
 
   const initializeContext = () => {
     const context: StoryContext<TRenderer> = prepareContext({
@@ -152,22 +154,29 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
       globals,
       args: { ...story.initialArgs },
       viewMode: 'story',
+      reporting,
       loaded: {},
       abortSignal: new AbortController().signal,
       step: (label, play) => story.runStep(label, play, context),
       canvasElement: null!,
       canvas: {} as Canvas,
+      userEvent: {} as UserEventObject,
       globalTypes: normalizedProjectAnnotations.globalTypes,
       ...story,
       context: null!,
       mount: null!,
     });
 
+    context.parameters.__isPortableStory = true;
+
     context.context = context;
 
     if (story.renderToCanvas) {
       context.renderToCanvas = async () => {
-        // Consolidate this renderContext with Context in SB 9.0
+        // TODO: Consolidate this renderContext with Context in SB 10.0
+        // Change renderToCanvas function to only use the context object
+        // and to make the renderContext an internal implementation detail
+        // wasnt'possible so far because showError and showException are not part of the story context (yet)
         const unmount = await story.renderToCanvas?.(
           {
             componentId: story.componentId,
@@ -258,6 +267,7 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
       argTypes: story.argTypes as StrictArgTypes<TArgs>,
       play: playFunction!,
       run,
+      reporting,
       tags: story.tags,
     }
   );
@@ -273,22 +283,27 @@ export function composeStories<TModule extends Store_CSFExports>(
   globalConfig: ProjectAnnotations<Renderer>,
   composeStoryFn: ComposeStoryFn = defaultComposeStory
 ) {
-  const { default: meta, __esModule, __namedExportsOrder, ...stories } = storiesImport;
-  const composedStories = Object.entries(stories).reduce((storiesMap, [exportsName, story]) => {
-    if (!isExportStory(exportsName, meta)) {
-      return storiesMap;
-    }
+  const { default: metaExport, __esModule, __namedExportsOrder, ...stories } = storiesImport;
+  let meta = metaExport;
 
-    const result = Object.assign(storiesMap, {
-      [exportsName]: composeStoryFn(
-        story as LegacyStoryAnnotationsOrFn,
-        meta,
-        globalConfig,
-        exportsName
-      ),
-    });
-    return result;
-  }, {});
+  const composedStories = Object.entries(stories).reduce(
+    (storiesMap, [exportsName, story]: [string, any]) => {
+      const { story: storyAnnotations, meta: componentAnnotations } =
+        getCsfFactoryAnnotations(story);
+      if (!meta && componentAnnotations) {
+        meta = componentAnnotations;
+      }
+
+      if (!isExportStory(exportsName, meta)) {
+        return storiesMap;
+      }
+      const result = Object.assign(storiesMap, {
+        [exportsName]: composeStoryFn(storyAnnotations, meta, globalConfig, exportsName),
+      });
+      return result;
+    },
+    {}
+  );
 
   return composedStories;
 }
@@ -408,4 +423,15 @@ async function runStory<TRenderer extends Renderer>(
     }
     await playFunction(context);
   }
+
+  let cleanUp: CleanupCallback | undefined;
+  if (isTestEnvironment()) {
+    cleanUp = pauseAnimations();
+  } else {
+    await waitForAnimations(context.abortSignal);
+  }
+
+  await story.applyAfterEach(context);
+
+  await cleanUp?.();
 }

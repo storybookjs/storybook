@@ -1,13 +1,13 @@
 import type { ReactElement } from 'react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
-import { styled } from '@storybook/core/theming';
-
+import { styled } from 'storybook/theming';
 import type { ResizeHandler } from 'use-resize-observer';
 import useResizeObserver from 'use-resize-observer';
 
 const ZoomElementWrapper = styled.div<{ scale: number; elementHeight: number }>(
   ({ scale = 1, elementHeight }) => ({
+    width: '100%',
     height: elementHeight || 'auto',
     transformOrigin: 'top left',
     transform: `scale(${1 / scale})`,

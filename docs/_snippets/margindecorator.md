@@ -1,8 +1,10 @@
-```html renderer="svelte" language="js" tabTitle="with-margin-component"
-{/* MarginDecorator.svelte */}
+```svelte filename="MarginDecorator.svelte" renderer="svelte" language="js"
+<script>
+  let { children } = $props();
+</script>
 
 <div>
-  <slot />
+  {@render children()}
 </div>
 
 <style>
@@ -12,11 +14,15 @@
 </style>
 ```
 
-```html renderer="svelte" language="ts" tabTitle="with-margin-component"
-{/* MarginDecorator.svelte */}
+```svelte filename="MarginDecorator.svelte" renderer="svelte" language="ts"
+<script>
+  import type { Snippet } from 'svelte';
+
+  let { children }: { children: Snippet } = $props();
+</script>
 
 <div>
-  <slot />
+  {@render children()}
 </div>
 
 <style>
@@ -25,4 +31,3 @@
   }
 </style>
 ```
-

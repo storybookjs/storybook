@@ -4,4 +4,3 @@ const Component = styled.div`
   width: 0;
 `;
 ```
-

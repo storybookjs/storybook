@@ -10,7 +10,7 @@ module.exports = {
     await injectAxe(page);
   },
   async postVisit(page) {
-    await checkA11y(page, '#storybook-root', {
+    await checkA11y(page, 'body', {
       detailedReport: true,
       detailedReportOptions: {
         html: true,
@@ -33,7 +33,7 @@ const config: TestRunnerConfig = {
     await injectAxe(page);
   },
   async postVisit(page) {
-    await checkA11y(page, '#storybook-root', {
+    await checkA11y(page, 'body', {
       detailedReport: true,
       detailedReportOptions: {
         html: true,
@@ -44,4 +44,3 @@ const config: TestRunnerConfig = {
 
 export default config;
 ```
-

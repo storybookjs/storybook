@@ -1,6 +1,4 @@
 // @vitest-environment happy-dom
-
-/* eslint-disable import/namespace */
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -8,17 +6,14 @@ import React from 'react';
 
 import type { Meta } from '@storybook/react';
 
-import { addons } from '@storybook/preview-api';
-
-import * as addonActionsPreview from '@storybook/addon-actions/preview';
-
 import { expectTypeOf } from 'expect-type';
+import { addons } from 'storybook/preview-api';
 
 import { composeStories, composeStory, setProjectAnnotations } from '..';
 import type { Button } from './Button';
 import * as stories from './Button.stories';
 
-// TODO: Potentially remove this in Storybook 9.0 once we fully move users to the new portable stories API
+// TODO: Potentially remove this in Storybook 9.0 once we fully move users to the new portable stories API (with CSF4)
 describe('Legacy Portable Stories API', () => {
   // example with composeStories, returns an object with all stories composed with args/decorators
   const { CSF3Primary, LoaderStory } = composeStories(stories);
@@ -75,9 +70,7 @@ describe('Legacy Portable Stories API', () => {
       setProjectAnnotations([
         {
           parameters: { injected: true },
-          globalTypes: {
-            locale: { defaultValue: 'en' },
-          },
+          initialGlobals: { locale: 'en' },
         },
       ]);
       const WithEnglishText = composeStory(stories.CSF2StoryWithLocale, stories.default);
@@ -111,8 +104,7 @@ describe('Legacy Portable Stories API', () => {
     });
 
     it('has action arg from argTypes when addon-actions annotations are added', () => {
-      //@ts-expect-error our tsconfig.jsn#moduleResulution is set to 'node', which doesn't support this import
-      const Story = composeStory(stories.WithActionArgType, stories.default, addonActionsPreview);
+      const Story = composeStory(stories.WithActionArgType, stories.default);
       expect(Story.args.someActionArg).toHaveProperty('isAction', true);
     });
   });

@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 
-import type { Meta, StoryObj } from '@storybook/react';
-import { expect, findByText, fireEvent, fn } from '@storybook/test';
+import type { Meta, StoryObj } from '@storybook/react-vite';
+
+import { expect, findByText, fireEvent, fn } from 'storybook/test';
 
 import { WithResults } from './FileSearchList.stories';
 import { FileSearchModal } from './FileSearchModal';
 
 const meta = {
   component: FileSearchModal,
+  title: 'Sidebar/FileSearchModal',
   args: {
     open: true,
     setError: fn(),

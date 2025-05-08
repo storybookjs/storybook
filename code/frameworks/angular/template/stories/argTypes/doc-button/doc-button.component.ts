@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import {
   Component,
   EventEmitter,
@@ -38,6 +37,7 @@ export enum ButtonAccent {
  * @html <span class="badge">aaa</span>
  */
 @Component({
+  standalone: false,
   selector: 'my-button',
   templateUrl: './doc-button.component.html',
   styleUrls: ['./doc-button.component.scss'],

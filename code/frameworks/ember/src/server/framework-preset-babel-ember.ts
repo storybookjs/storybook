@@ -1,7 +1,7 @@
 import type { PresetProperty, PresetPropertyFn } from 'storybook/internal/types';
 
 import type { TransformOptions } from '@babel/core';
-import { precompile } from 'ember-source/dist/ember-template-compiler';
+import { precompile } from 'ember-source/dist/ember-template-compiler.js';
 
 import { findDistFile } from '../util';
 

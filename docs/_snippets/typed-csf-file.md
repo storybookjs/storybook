@@ -19,9 +19,9 @@ export const Primary: Story = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="common" language="ts-4-9"
-// Replace your-renderer with the renderer you are using (e.g., react, vue3, etc.)
-import type { Meta, StoryObj } from '@storybook/your-renderer';
+```ts filename="Button.stories.ts" renderer="common" language="ts"
+// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { Button } from './Button';
 
@@ -41,18 +41,16 @@ export const Primary = {
 } satisfies Story;
 ```
 
-```ts filename="Button.stories.ts" renderer="common" language="ts"
-// Replace your-renderer with the renderer you are using (e.g., react, vue3, etc.)
-import type { Meta, StoryObj } from '@storybook/your-renderer';
+```ts filename="Button.stories.ts" renderer="web-components" language="ts"
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
-import { Button } from './Button';
-
-const meta: Meta<typeof Button> = {
-  component: Button,
+const meta: Meta = {
+  title: 'Button',
+  component: 'demo-button',
 };
-export default meta;
 
-type Story = StoryObj<typeof Button>;
+export default meta;
+type Story = StoryObj;
 
 export const Basic: Story = {};
 
@@ -62,23 +60,3 @@ export const Primary: Story = {
   },
 };
 ```
-
-```ts filename="Button.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components';
-
-const meta: Meta = {
-  title: 'Button',
-  component: 'demo-button',
-};
-
-export default meta;
-
-export const Basic: StoryObj = {};
-
-export const Primary: StoryObj = {
-  args: {
-    primary: true,
-  },
-};
-```
-

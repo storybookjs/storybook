@@ -49,8 +49,8 @@ export const LoggedIn = {
 };
 ```
 
-```ts filename="Page.stories.ts|tsx" renderer="react" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/react';
+```ts filename="Page.stories.ts|tsx" renderer="react" language="ts"
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { Page } from './Page';
 
@@ -63,28 +63,6 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-export const LoggedIn: Story = {
-  args: {
-    ...HeaderStories.LoggedIn.args,
-  },
-};
-```
-
-```ts filename="Page.stories.ts|tsx" renderer="react" language="ts"
-import type { Meta, StoryObj } from '@storybook/react';
-
-import { Page } from './Page';
-
-//👇 Imports all Header stories
-import * as HeaderStories from './Header.stories';
-
-const meta: Meta<typeof Page> = {
-  component: Page,
-};
-
-export default meta;
-type Story = StoryObj<typeof Page>;
 
 export const LoggedIn: Story = {
   args: {
@@ -110,28 +88,6 @@ export const LoggedIn = {
 };
 ```
 
-```tsx filename="Page.stories.ts|tsx" renderer="solid" language="ts-4-9"
-import type { Meta, StoryObj } from 'storybook-solidjs';
-
-import { Page } from './Page';
-
-//👇 Imports all Header stories
-import * as HeaderStories from './Header.stories';
-
-const meta = {
-  component: Page,
-} satisfies Meta<typeof Page>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const LoggedIn: Story = {
-  args: {
-    ...HeaderStories.LoggedIn.args,
-  },
-};
-```
-
 ```tsx filename="Page.stories.ts|tsx" renderer="solid" language="ts"
 import type { Meta, StoryObj } from 'storybook-solidjs';
 
@@ -140,12 +96,12 @@ import { Page } from './Page';
 //👇 Imports all Header stories
 import * as HeaderStories from './Header.stories';
 
-const meta: Meta<typeof Page> = {
+const meta = {
   component: Page,
-};
+} satisfies Meta<typeof Page>;
 
 export default meta;
-type Story = StoryObj<typeof Page>;
+type Story = StoryObj<typeof meta>;
 
 export const LoggedIn: Story = {
   args: {
@@ -154,7 +110,23 @@ export const LoggedIn: Story = {
 };
 ```
 
-```js filename="Page.stories.js" renderer="svelte" language="js"
+```svelte filename="Page.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import Page from './Page.svelte';
+  //👇 Imports all Header stories
+  import * as HeaderStories from './Header.stories.svelte';
+
+  const { Story } = defineMeta({
+    component: Page,
+  });
+</script>
+
+<Story name="LoggedIn" args={{ ...HeaderStories.LoggedIn.args }} />
+```
+
+```js filename="Page.stories.js" renderer="svelte" language="js" tabTitle="CSF"
 import Page from './Page.svelte';
 
 //👇 Imports all Header stories
@@ -171,8 +143,25 @@ export const LoggedIn = {
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="svelte" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/svelte';
+```svelte filename="Page.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import Page from './Page.svelte';
+  //👇 Imports all Header stories
+  import * as HeaderStories from './Header.stories.svelte';
+
+  const { Story } = defineMeta({
+    component: Page,
+  });
+</script>
+
+<Story name="LoggedIn" args={{ ...HeaderStories.LoggedIn.args }} />
+```
+
+```ts filename="Page.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+// Replace your-framework with svelte-vite or sveltekit
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import Page from './Page.svelte';
 
@@ -193,29 +182,7 @@ export const LoggedIn: Story = {
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="svelte" language="ts"
-import type { Meta, StoryObj } from '@storybook/svelte';
-
-import Page from './Page.svelte';
-
-//👇 Imports all Header stories
-import * as HeaderStories from './Header.stories';
-
-const meta: Meta<typeof Page> = {
-  component: Page,
-};
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const LoggedIn: Story = {
-  args: {
-    ...HeaderStories.LoggedIn.args,
-  },
-};
-```
-
-```js filename="Page.stories.js" renderer="vue" language="js" tabTitle="3"
+```js filename="Page.stories.js" renderer="vue" language="js"
 import Page from './Page.vue';
 
 //👇 Imports all Header stories
@@ -244,8 +211,8 @@ export const LoggedIn = {
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="vue" language="ts-4-9" tabTitle="3"
-import type { Meta, StoryObj } from '@storybook/vue3';
+```ts filename="Page.stories.ts" renderer="vue" language="ts"
+import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import Page from './Page.vue';
 
@@ -258,40 +225,6 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-/*
- *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
- * to learn how to use render functions.
- */
-export const Primary: Story = {
-  render: (args) => ({
-    components: { Page },
-    setup() {
-      return { args };
-    },
-    template: '<page v-bind="args" />',
-  }),
-  args: {
-    ...HeaderStories.LoggedIn.args,
-  },
-};
-```
-
-```ts filename="Page.stories.ts" renderer="vue" language="ts" tabTitle="3"
-import type { Meta, StoryObj } from '@storybook/vue3';
-
-import Page from './Page.vue';
-
-//👇 Imports all Header stories
-import * as HeaderStories from './Header.stories';
-
-const meta: Meta<typeof Page> = {
-  component: Page,
-};
-
-export default meta;
-type Story = StoryObj<typeof Page>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
@@ -328,7 +261,7 @@ export const LoggedIn = {
 ```
 
 ```ts filename="Page.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 // 👇 Imports all Header stories
 import * as HeaderStories from './Header.stories';
@@ -346,4 +279,3 @@ export const LoggedIn: Story = {
   },
 };
 ```
-

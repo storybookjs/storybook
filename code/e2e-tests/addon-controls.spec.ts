@@ -4,9 +4,12 @@ import process from 'process';
 import { SbPage } from './util';
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
+const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
 
 test.describe('addon-controls', () => {
   test('should change component when changing controls', async ({ page }) => {
+    test.skip(templateName.includes('react-native-web'), 'React Native CSS behaves differently');
+
     await page.goto(storybookUrl);
     const sbPage = new SbPage(page, expect);
     await sbPage.waitUntilLoaded();
@@ -26,7 +29,7 @@ test.describe('addon-controls', () => {
     // Boolean toggle: Primary/secondary
     await expect(sbPage.previewRoot().locator('button')).toHaveCSS(
       'background-color',
-      'rgb(30, 167, 253)'
+      'rgb(85, 90, 185)'
     );
     const toggle = sbPage.panelContent().locator('input[name=primary]');
     await toggle.click();
@@ -58,7 +61,7 @@ test.describe('addon-controls', () => {
     await reset.click();
     const button = sbPage.previewRoot().locator('button');
     await expect(button).toHaveCSS('font-size', '14px');
-    await expect(button).toHaveCSS('background-color', 'rgb(30, 167, 253)');
+    await expect(button).toHaveCSS('background-color', 'rgb(85, 90, 185)');
     await expect(button).toContainText('Button');
   });
 
@@ -75,7 +78,7 @@ test.describe('addon-controls', () => {
   });
 
   test('should set select option when value contains double spaces', async ({ page }) => {
-    await page.goto(`${storybookUrl}?path=/story/addons-controls-basics--undefined`);
+    await page.goto(`${storybookUrl}?path=/story/core-controls-basics--undefined`);
 
     const sbPage = new SbPage(page, expect);
     await sbPage.waitUntilLoaded();
@@ -87,7 +90,7 @@ test.describe('addon-controls', () => {
   });
 
   test('should set multiselect option when value contains double spaces', async ({ page }) => {
-    await page.goto(`${storybookUrl}?path=/story/addons-controls-basics--undefined`);
+    await page.goto(`${storybookUrl}?path=/story/core-controls-basics--undefined`);
 
     const sbPage = new SbPage(page, expect);
     await sbPage.waitUntilLoaded();

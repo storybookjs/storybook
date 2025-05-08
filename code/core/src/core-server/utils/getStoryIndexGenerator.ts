@@ -1,14 +1,14 @@
-import { normalizeStories } from '@storybook/core/common';
-import type { DocsOptions, Options } from '@storybook/core/types';
+import { normalizeStories } from 'storybook/internal/common';
+import type { Options } from 'storybook/internal/types';
 
-import type Polka from 'polka';
+import type { Polka } from 'polka';
 
 import { StoryIndexGenerator } from './StoryIndexGenerator';
 import type { ServerChannel } from './get-server-channel';
 import { useStoriesJson } from './stories-json';
 
 export async function getStoryIndexGenerator(
-  app: Polka.Polka,
+  app: Polka,
   options: Options,
   serverChannel: ServerChannel
 ): Promise<StoryIndexGenerator | undefined> {
@@ -20,7 +20,7 @@ export async function getStoryIndexGenerator(
   };
   const stories = options.presets.apply('stories');
   const indexers = options.presets.apply('experimental_indexers', []);
-  const docsOptions = options.presets.apply<DocsOptions>('docs', {});
+  const docsOptions = options.presets.apply('docs');
   const normalizedStories = normalizeStories(await stories, directories);
 
   const generator = new StoryIndexGenerator(normalizedStories, {

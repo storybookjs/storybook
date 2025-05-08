@@ -1,11 +1,10 @@
 ```js filename="my-addon/src/manager.js|ts" renderer="common" language="js"
 import React, { useCallback } from 'react';
-
-import { FORCE_RE_RENDER } from '@storybook/core-events';
-import { addons } from '@storybook/preview-api';
-import { useGlobals } from '@storybook/manager-api';
-import { IconButton } from '@storybook/components';
 import { OutlineIcon } from '@storybook/icons';
+import { useGlobals } from 'storybook/manager-api';
+import { addons } from 'storybook/preview-api';
+import { IconButton } from 'storybook/internal/components';
+import { FORCE_RE_RENDER } from 'storybook/internal/core-events';
 
 const ExampleToolbar = () => {
   const [globals, updateGlobals] = useGlobals();
@@ -35,4 +34,3 @@ const ExampleToolbar = () => {
   );
 };
 ```
-

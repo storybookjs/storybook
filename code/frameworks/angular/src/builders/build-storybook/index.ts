@@ -11,6 +11,7 @@ import {
   Target,
   createBuilder,
   targetFromTargetString,
+  Builder as DevkitBuilder,
 } from '@angular-devkit/architect';
 import { BrowserBuilderOptions, StylePreprocessorOptions } from '@angular-devkit/build-angular';
 import {
@@ -43,6 +44,7 @@ export type StorybookBuilderOptions = JsonObject & {
   preserveSymlinks?: boolean;
   assets?: AssetPattern[];
   sourceMap?: SourceMapUnion;
+  experimentalZoneless?: boolean;
 } & Pick<
     // makes sure the option exists
     CLIOptions,
@@ -104,6 +106,7 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
         previewUrl,
         sourceMap = false,
         preserveSymlinks = false,
+        experimentalZoneless = false,
       } = options;
 
       const standaloneOptions: StandaloneBuildOptions = {
@@ -124,6 +127,7 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
           ...(assets ? { assets } : {}),
           sourceMap,
           preserveSymlinks,
+          experimentalZoneless,
         },
         tsConfig,
         webpackStatsJson,
@@ -143,7 +147,7 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
   return builder as any as BuilderOutput;
 };
 
-export default createBuilder(commandBuilder);
+export default createBuilder(commandBuilder) as DevkitBuilder<StorybookBuilderOptions & JsonObject>;
 
 async function setup(options: StorybookBuilderOptions, context: BuilderContext) {
   let browserOptions: (JsonObject & BrowserBuilderOptions) | undefined;

@@ -25,7 +25,8 @@ export default {
 ```tsx filename=".storybook/preview.tsx" renderer="react" language="ts"
 import React from 'react';
 
-import type { Preview } from '@storybook/react';
+import type { Preview } from '@storybook/react-vite';
+
 import { ThemeProvider } from 'styled-components';
 
 // themes = { light, dark }
@@ -48,4 +49,3 @@ const preview: Preview = {
 
 export default preview;
 ```
-

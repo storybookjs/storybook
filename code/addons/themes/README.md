@@ -36,7 +36,7 @@ Don't see your favorite tool listed? Don't worry! That doesn't mean this addon i
 
 ### ❗️ Overriding theme
 
-If you want to override your theme for a particular component or story, you can use the `themes.themeOverride` parameter.
+If you want to override your theme for a particular component or story, you can use the `globals.theme` parameter.
 
 ```js
 import React from 'react';

@@ -21,7 +21,6 @@ export const extractArgTypes: ArgTypesExtractor = (
   component: ComponentWithDocgen
 ): StrictArgTypes | null => {
   try {
-    // eslint-disable-next-line no-underscore-dangle
     const docgen = component.__docgen;
     if (docgen) {
       return createArgTypes(docgen);

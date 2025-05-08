@@ -32,13 +32,13 @@ export type PluginConfigType = 'build' | 'development';
 const configEnvServe: ConfigEnv = {
   mode: 'development',
   command: 'serve',
-  ssrBuild: false,
+  isSsrBuild: false,
 };
 
 const configEnvBuild: ConfigEnv = {
   mode: 'production',
   command: 'build',
-  ssrBuild: false,
+  isSsrBuild: false,
 };
 
 // Vite config that is common to development and production mode
@@ -47,7 +47,7 @@ export async function commonConfig(
   _type: PluginConfigType
 ): Promise<ViteInlineConfig> {
   const configEnv = _type === 'development' ? configEnvServe : configEnvBuild;
-  const { loadConfigFromFile, mergeConfig } = await import('vite');
+  const { loadConfigFromFile, mergeConfig, defaultClientConditions = [] } = await import('vite');
 
   const { viteConfigPath } = await getBuilderOptions<BuilderOptions>(options);
 
@@ -67,7 +67,7 @@ export async function commonConfig(
     base: './',
     plugins: await pluginConfig(options),
     resolve: {
-      conditions: ['storybook', 'stories', 'test'],
+      conditions: ['storybook', 'stories', 'test', ...defaultClientConditions],
       preserveSymlinks: isPreservingSymlinks(),
       alias: {
         assert: require.resolve('browser-assert'),
@@ -94,7 +94,7 @@ export async function pluginConfig(options: Options) {
   const externals: Record<string, string> = globalsNameReferenceMap;
 
   if (build?.test?.disableBlocks) {
-    externals['@storybook/blocks'] = '__STORYBOOK_BLOCKS_EMPTY_MODULE__';
+    externals['@storybook/addon-docs/blocks'] = '__STORYBOOK_BLOCKS_EMPTY_MODULE__';
   }
 
   const plugins = [

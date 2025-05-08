@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 
-import { useTheme } from 'storybook/internal/theming';
-
 import type { CallBackProps } from 'react-joyride';
 import Joyride, { ACTIONS } from 'react-joyride';
+import { useTheme } from 'storybook/theming';
 
 import type { StepDefinition, StepKey } from '../../Onboarding';
 import { Tooltip } from './Tooltip';
@@ -23,7 +22,7 @@ export function GuidedTour({
   const theme = useTheme();
 
   useEffect(() => {
-    let timeout: NodeJS.Timeout;
+    let timeout: ReturnType<typeof setTimeout>;
     setStepIndex((current) => {
       const index = steps.findIndex(({ key }) => key === step);
 

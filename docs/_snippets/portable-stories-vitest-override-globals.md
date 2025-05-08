@@ -1,7 +1,7 @@
 ```tsx filename="Button.test.tsx" renderer="react" language="ts"
 import { test } from 'vitest';
 import { render } from '@testing-library/react';
-import { composeStory } from '@storybook/react';
+import { composeStory } from '@storybook/react-vite';
 
 import meta, { Primary as PrimaryStory } from './Button.stories';
 
@@ -25,7 +25,7 @@ test('renders in Spanish', async () => {
 ```ts filename="Button.test.ts" renderer="svelte" language="ts"
 import { test } from 'vitest';
 import { render } from '@testing-library/svelte';
-import { composeStory } from '@storybook/svelte';
+import { composeStory } from '@storybook/svelte-vite';
 
 import meta, { Primary as PrimaryStory } from './Button.stories';
 
@@ -49,7 +49,7 @@ test('renders in Spanish', async () => {
 ```ts filename="Button.test.ts" renderer="vue" language="ts"
 import { test } from 'vitest';
 import { render } from '@testing-library/vue';
-import { composeStory } from '@storybook/vue3';
+import { composeStory } from '@storybook/vue3-vite';
 
 import meta, { Primary as PrimaryStory } from './Button.stories';
 

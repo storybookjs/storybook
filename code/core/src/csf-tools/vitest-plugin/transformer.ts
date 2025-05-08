@@ -1,10 +1,8 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
-
-/* eslint-disable no-underscore-dangle */
-import { types as t } from '@storybook/core/babel';
-import { getStoryTitle } from '@storybook/core/common';
-import type { StoriesEntry, Tag } from '@storybook/core/types';
-import { combineTags } from '@storybook/csf';
+import { types as t } from 'storybook/internal/babel';
+import { getStoryTitle } from 'storybook/internal/common';
+import { combineTags } from 'storybook/internal/csf';
+import type { StoriesEntry, Tag } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 
@@ -19,11 +17,14 @@ type TagsFilter = {
 };
 
 const isValidTest = (storyTags: string[], tagsFilter: TagsFilter) => {
-  const isIncluded =
-    tagsFilter?.include.length === 0 || tagsFilter?.include.some((tag) => storyTags.includes(tag));
-  const isNotExcluded = tagsFilter?.exclude.every((tag) => !storyTags.includes(tag));
-
-  return isIncluded && isNotExcluded;
+  if (tagsFilter.include.length && !tagsFilter.include.some((tag) => storyTags?.includes(tag))) {
+    return false;
+  }
+  if (tagsFilter.exclude.some((tag) => storyTags?.includes(tag))) {
+    return false;
+  }
+  // Skipped tests are intentionally included here
+  return true;
 };
 /**
  * TODO: the functionality in this file can be moved back to the vitest plugin itself It can use
@@ -264,7 +265,7 @@ export async function vitestTransform({
       ),
       t.importDeclaration(
         [t.importSpecifier(testStoryId, t.identifier('testStory'))],
-        t.stringLiteral('@storybook/experimental-addon-test/internal/test-utils')
+        t.stringLiteral('@storybook/addon-vitest/internal/test-utils')
       ),
     ];
 

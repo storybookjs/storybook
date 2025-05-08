@@ -1,7 +1,7 @@
 ```ts filename="MyComponent.stories.ts" renderer="angular" language="ts"
 import type { Meta, StoryObj } from '@storybook/angular';
 
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/test';
 
 import { MyComponent } from './MyComponent.component';
 
@@ -45,7 +45,7 @@ export const CombinedStories: Story = {
 ```
 
 ```js filename="MyComponent.stories.js|jsx" renderer="common" language="js"
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/test';
 
 import { MyComponent } from './MyComponent';
 
@@ -85,11 +85,11 @@ export const CombinedStories = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts|tsx" renderer="common" language="ts-4-9"
-// Replace your-framework with the name of your framework
+```ts filename="MyComponent.stories.ts|tsx" renderer="common" language="ts"
+// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/test';
 
 import { MyComponent } from './MyComponent';
 
@@ -132,55 +132,8 @@ export const CombinedStories: Story = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts|tsx" renderer="common" language="ts"
-// Replace your-framework with the name of your framework
-import type { Meta, StoryObj } from '@storybook/your-framework';
-
-import { userEvent, within } from '@storybook/test';
-
-import { MyComponent } from './MyComponent';
-
-const meta: Meta<typeof MyComponent> = {
-  component: MyComponent,
-};
-
-export default meta;
-type Story = StoryObj<typeof MyComponent>;
-
-/*
- * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
- * to learn more about using the canvasElement to query the DOM
- */
-export const FirstStory: Story = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-
-    await userEvent.type(canvas.getByTestId('an-element'), 'example-value');
-  },
-};
-
-export const SecondStory: Story = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-
-    await userEvent.type(canvas.getByTestId('other-element'), 'another value');
-  },
-};
-
-export const CombinedStories: Story = {
-  play: async ({ context, canvasElement }) => {
-    const canvas = within(canvasElement);
-
-    // Runs the FirstStory and Second story play function before running this story's play function
-    await FirstStory.play(context);
-    await SecondStory.play(context);
-    await userEvent.type(canvas.getByTestId('another-element'), 'random value');
-  },
-};
-```
-
 ```js filename="MyComponent.stories.js" renderer="web-components" language="js"
-import { userEvent, within } from '@storybook/test';
+import { userEvent, within } from 'storybook/test';
 
 export default {
   component: 'demo-my-component',
@@ -219,8 +172,8 @@ export const CombinedStories = {
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components';
-import { userEvent, within } from '@storybook/test';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
+import { userEvent, within } from 'storybook/test';
 
 const meta: Meta = {
   component: 'demo-my-component',
@@ -260,4 +213,3 @@ export const CombinedStories: Story = {
   },
 };
 ```
-

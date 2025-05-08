@@ -8,7 +8,7 @@ const meta: Meta<MyComponent> = {
   parameters: {
     a11y: {
       // Optional selector to inspect
-      element: '#storybook-root',
+      element: 'body',
       config: {
         rules: [
           {
@@ -23,13 +23,104 @@ const meta: Meta<MyComponent> = {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
       manual: true,
     },
   },
 };
 
 export default meta;
+```
+
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+    parameters: {
+      a11y: {
+        // Optional selector to inspect
+        element: 'body',
+        config: {
+          rules: [
+            {
+              // The autocomplete rule will not run based on the CSS selector provided
+              id: 'autocomplete-valid',
+              selector: '*:not([autocomplete="nope"])',
+            },
+            {
+              // Setting the enabled option to false will disable checks for this particular rule on all stories.
+              id: 'image-alt',
+              enabled: false,
+            },
+          ],
+        },
+        /*
+         * Axe's options parameter
+         * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+         * to learn more about the available options.
+        */
+        options: {}
+      },
+    },
+    globals: {
+      a11y: {
+        manual: true,
+      },
+    },
+  });
+</script>
+```
+
+```js filename="MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+import MyComponent from './MyComponent.svelte';
+
+export default {
+  component: MyComponent,
+  parameters: {
+    a11y: {
+      // Optional selector to inspect
+      element: 'body',
+      config: {
+        rules: [
+          {
+            // The autocomplete rule will not run based on the CSS selector provided
+            id: 'autocomplete-valid',
+            selector: '*:not([autocomplete="nope"])',
+          },
+          {
+            // Setting the enabled option to false will disable checks for this particular rule on all stories.
+            id: 'image-alt',
+            enabled: false,
+          },
+        ],
+      },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
+      options: {},
+    },
+  },
+  globals: {
+    a11y: {
+      manual: true,
+    },
+  },
+};
 ```
 
 ```js filename="MyComponent.stories.js|jsx" renderer="common" language="js"
@@ -40,7 +131,7 @@ export default {
   parameters: {
     a11y: {
       // Optional selector to inspect
-      element: '#storybook-root',
+      element: 'body',
       config: {
         rules: [
           {
@@ -55,11 +146,106 @@ export default {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
       manual: true,
     },
   },
 };
+```
+
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+    parameters: {
+      a11y: {
+        // Optional selector to inspect
+        element: 'body',
+        config: {
+          rules: [
+            {
+              // The autocomplete rule will not run based on the CSS selector provided
+              id: 'autocomplete-valid',
+              selector: '*:not([autocomplete="nope"])',
+            },
+            {
+              // Setting the enabled option to false will disable checks for this particular rule on all stories.
+              id: 'image-alt',
+              enabled: false,
+            },
+          ],
+        },
+        /*
+         * Axe's options parameter
+         * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+         * to learn more about the available options.
+        */
+        options: {},
+      },
+    },
+    globals: {
+      a11y: {
+        manual: true,
+      },
+    },
+  });
+</script>
+```
+
+```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="CSF"
+import type { Meta } from '@storybook/svelte';
+
+import MyComponent from './MyComponent.svelte';
+
+const meta = {
+  component: MyComponent,
+  parameters: {
+    a11y: {
+      // Optional selector to inspect
+      element: 'body',
+      config: {
+        rules: [
+          {
+            // The autocomplete rule will not run based on the CSS selector provided
+            id: 'autocomplete-valid',
+            selector: '*:not([autocomplete="nope"])',
+          },
+          {
+            // Setting the enabled option to false will disable checks for this particular rule on all stories.
+            id: 'image-alt',
+            enabled: false,
+          },
+        ],
+      },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
+      options: {},
+    },
+  },
+  globals: {
+    a11y: {
+      manual: true,
+    },
+  },
+} satisfies Meta<typeof MyComponent>;
+
+export default meta;
 ```
 
 ```ts filename="MyComponent.stories.ts|tsx" renderer="common" language="ts-4-9"
@@ -73,7 +259,7 @@ const meta = {
   parameters: {
     a11y: {
       // Optional selector to inspect
-      element: '#storybook-root',
+      element: 'body',
       config: {
         rules: [
           {
@@ -88,11 +274,106 @@ const meta = {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
       manual: true,
     },
   },
 } satisfies Meta<typeof MyComponent>;
+
+export default meta;
+```
+
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+    parameters: {
+      a11y: {
+        // Optional selector to inspect
+        element: 'body',
+        config: {
+          rules: [
+            {
+              // The autocomplete rule will not run based on the CSS selector provided
+              id: 'autocomplete-valid',
+              selector: '*:not([autocomplete="nope"])',
+            },
+            {
+              // Setting the enabled option to false will disable checks for this particular rule on all stories.
+              id: 'image-alt',
+              enabled: false,
+            },
+          ],
+        },
+        /*
+         * Axe's options parameter
+         * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+         * to learn more about the available options.
+        */
+        options: {},
+      },
+    },
+    globals: {
+      a11y: {
+        manual: true,
+      },
+    },
+  });
+</script>
+```
+
+```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+import type { Meta } from '@storybook/svelte';
+
+import MyComponent from './MyComponent.svelte';
+
+const meta: Meta<typeof MyComponent> = {
+  component: MyComponent,
+  parameters: {
+    a11y: {
+      // Optional selector to inspect
+      element: 'body',
+      config: {
+        rules: [
+          {
+            // The autocomplete rule will not run based on the CSS selector provided
+            id: 'autocomplete-valid',
+            selector: '*:not([autocomplete="nope"])',
+          },
+          {
+            // Setting the enabled option to false will disable checks for this particular rule on all stories.
+            id: 'image-alt',
+            enabled: false,
+          },
+        ],
+      },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
+      options: {},
+    },
+  },
+  globals: {
+    a11y: {
+      manual: true,
+    },
+  },
+};
 
 export default meta;
 ```
@@ -108,7 +389,7 @@ const meta: Meta<typeof MyComponent> = {
   parameters: {
     a11y: {
       // Optional selector to inspect
-      element: '#storybook-root',
+      element: 'body',
       config: {
         rules: [
           {
@@ -123,7 +404,16 @@ const meta: Meta<typeof MyComponent> = {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
       manual: true,
     },
   },
@@ -138,7 +428,7 @@ export default {
   parameters: {
     a11y: {
       // Optional selector to inspect
-      element: '#storybook-root',
+      element: 'body',
       config: {
         rules: [
           {
@@ -153,7 +443,16 @@ export default {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
       manual: true,
     },
   },
@@ -168,7 +467,7 @@ const meta: Meta = {
   parameters: {
     a11y: {
       // Optional selector to inspect
-      element: '#storybook-root',
+      element: 'body',
       config: {
         rules: [
           {
@@ -183,7 +482,16 @@ const meta: Meta = {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
       manual: true,
     },
   },
@@ -191,4 +499,3 @@ const meta: Meta = {
 
 export default meta;
 ```
-

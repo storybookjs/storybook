@@ -1,7 +1,9 @@
-import { deprecate } from 'storybook/internal/client-logger';
+// FIXME: sort this out, maybe with package.json exports map
+// https://medium.com/swlh/npm-new-package-json-exports-field-1a7d1f489ccf
+export { ArgsTable as PureArgsTable } from './blocks/components/ArgsTable/ArgsTable';
+export { TableOfContents } from './blocks/components';
 
-deprecate(
-  "Import from '@storybook/addon-docs/blocks' is deprecated. Please import from '@storybook/blocks' instead."
-);
+export type { SortType } from './blocks/components';
 
-export * from '@storybook/blocks';
+export * from './blocks/blocks';
+export * from './blocks/controls';

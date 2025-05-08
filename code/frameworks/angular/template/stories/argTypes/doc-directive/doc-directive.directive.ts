@@ -2,6 +2,7 @@ import { ElementRef, AfterViewInit, Directive, Input } from '@angular/core';
 
 /** This is an Angular Directive example that has a Prop Table. */
 @Directive({
+  standalone: false,
   selector: '[docDirective]',
 })
 export class DocDirective implements AfterViewInit {

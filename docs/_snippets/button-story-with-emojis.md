@@ -130,93 +130,8 @@ export const Tertiary = {
 };
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="react" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/react';
-
-import { Button } from './Button';
-
-const meta = {
-  component: Button,
-} satisfies Meta<typeof Button>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-/*
- *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
- * to learn how to use render functions.
- */
-export const Primary: Story = {
-  render: () => <Button backgroundColor="#ff0" label="Button" />,
-};
-
-export const Secondary: Story = {
-  render: () => <Button backgroundColor="#ff0" label="😄👍😍💯" />,
-};
-
-export const Tertiary: Story = {
-  render: () => <Button backgroundColor="#ff0" label="📚📕📈🤓" />,
-};
-```
-
 ```ts filename="Button.stories.ts|tsx" renderer="react" language="ts"
-import type { Meta, StoryObj } from '@storybook/react';
-
-import { Button } from './Button';
-
-const meta: Meta<typeof Button> = {
-  component: Button,
-};
-
-export default meta;
-type Story = StoryObj<typeof Button>;
-
-/*
- *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
- * to learn how to use render functions.
- */
-export const Primary: Story = {
-  render: () => <Button backgroundColor="#ff0" label="Button" />,
-};
-
-export const Secondary: Story = {
-  render: () => <Button backgroundColor="#ff0" label="😄👍😍💯" />,
-};
-
-export const Tertiary: Story = {
-  render: () => <Button backgroundColor="#ff0" label="📚📕📈🤓" />,
-};
-```
-
-```ts filename="Button.stories.js|jsx" renderer="solid" language="js"
-import { Button } from './Button';
-
-export default {
-  component: Button,
-};
-
-/*
- *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
- * to learn how to use render functions.
- */
-export const Primary = {
-  render: () => <Button backgroundColor="#ff0" label="Button" />,
-};
-
-export const Secondary = {
-  render: () => <Button backgroundColor="#ff0" label="😄👍😍💯" />,
-};
-
-export const Tertiary = {
-  render: () => <Button backgroundColor="#ff0" label="📚📕📈🤓" />,
-};
-```
-
-```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts-4-9"
-import type { Meta, StoryObj } from 'storybook-solidjs';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { Button } from './Button';
 
@@ -250,12 +165,12 @@ import type { Meta, StoryObj } from 'storybook-solidjs';
 
 import { Button } from './Button';
 
-const meta: Meta<typeof Button> = {
+const meta = {
   component: Button,
-};
+} satisfies Meta<typeof Button>;
 
 export default meta;
-type Story = StoryObj<typeof Button>;
+type Story = StoryObj<typeof meta>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
@@ -275,7 +190,31 @@ export const Tertiary: Story = {
 };
 ```
 
-```js filename="Button.stories.js" renderer="svelte" language="js"
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import Button from './Button.svelte';
+
+	const { Story } = defineMeta({
+		component: Button,
+	});
+</script>
+
+<Story name="Primary">
+  <Button backgroundColor="#ff0" label="Button" />
+</Story>
+
+<Story name="Secondary">
+  <Button backgroundColor="#ff0" label="😄👍😍💯" />
+</Story>
+
+<Story name="Tertiary">
+  <Button backgroundColor="#ff0" label="📚📕📈🤓" />
+</Story>
+```
+
+```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF"
 import Button from './Button.svelte';
 
 export default {
@@ -318,84 +257,39 @@ export const Tertiary = {
 };
 ```
 
-```html renderer="svelte" language="ts" tabTitle="native-format"
-<script>
-  import { Meta, Story } from '@storybook/addon-svelte-csf';
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
 
   import Button from './Button.svelte';
+
+	const { Story } = defineMeta({
+		component: Button,
+	});
 </script>
 
-<meta title="Button" component="{Button}" />
-
 <Story name="Primary">
-  <button background="#ff0" label="Button" />
+  <Button backgroundColor="#ff0" label="Button" />
 </Story>
 
 <Story name="Secondary">
-  <button background="#ff0" label="😄👍😍💯" />
+  <Button backgroundColor="#ff0" label="😄👍😍💯" />
 </Story>
 
 <Story name="Tertiary">
-  <button background="#ff0" label="📚📕📈🤓" />
+  <Button backgroundColor="#ff0" label="📚📕📈🤓" />
 </Story>
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/svelte';
+```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+// Replace your-framework with svelte-vite or sveltekit
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import Button from './Button.svelte';
 
 const meta = {
   component: Button,
 } satisfies Meta<typeof Button>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-/*
- *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/svelte/api/csf
- * to learn how to use render functions.
- */
-export const Primary: Story = {
-  render: () => ({
-    Component: Button,
-    props: {
-      backgroundColor: '#ff0',
-      label: 'Button',
-    },
-  }),
-};
-
-export const Secondary: Story = {
-  render: () => ({
-    Component: Button,
-    props: {
-      backgroundColor: '#ff0',
-      label: '😄👍😍💯',
-    },
-  }),
-};
-
-export const Tertiary: Story = {
-  render: () => ({
-    Component: Button,
-    props: {
-      backgroundColor: '#ff0',
-      label: '📚📕📈🤓',
-    },
-  }),
-};
-```
-
-```ts filename="Button.stories.ts" renderer="svelte" language="ts"
-import type { Meta, StoryObj } from '@storybook/svelte';
-
-import Button from './Button.svelte';
-
-const meta: Meta<typeof Button> = {
-  component: Button,
-};
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -467,10 +361,11 @@ export const Tertiary = {
     components: { Button },
     template: '<Button backgroundColor="#ff0" label="📚📕📈🤓" />',
   }),
+};
 ```
 
-```ts filename="Button.stories.ts" renderer="vue" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/vue3';
+```ts filename="Button.stories.ts" renderer="vue" language="ts"
+import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import Button from './Button.vue';
 
@@ -489,60 +384,21 @@ type Story = StoryObj<typeof Button>;
 export const Primary: Story = {
   render: () => ({
     components: { Button },
-    template: '<Button background="#ff0" label="Button" />',
+    template: '<Button backgroundColor="#ff0" label="Button" />',
   }),
 };
 
 export const Secondary: Story = {
   render: () => ({
     components: { Button },
-    template: '<Button background="#ff0" label="😄👍😍💯" />',
+    template: '<Button backgroundColor="#ff0" label="😄👍😍💯" />',
   }),
 };
 
 export const Tertiary: Story = {
   render: () => ({
     components: { Button },
-    template: '<Button background="#ff0" label="📚📕📈🤓" />',
-  }),
-};
-```
-
-```ts filename="Button.stories.ts" renderer="vue" language="ts"
-import type { Meta, StoryObj } from '@storybook/vue3';
-
-import Button from './Button.vue';
-
-const meta: Meta<typeof Button> = {
-  component: Button,
-};
-
-export default meta;
-type Story = StoryObj<typeof Button>;
-
-/*
- *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
- * to learn how to use render functions.
- */
-export const Primary: Story = {
-  render: () => ({
-    components: { Button },
-    template: '<Button background="#ff0" label="Button" />',
-  }),
-};
-
-export const Secondary: Story = {
-  render: () => ({
-    components: { Button },
-    template: '<Button background="#ff0" label="😄👍😍💯" />',
-  }),
-};
-
-export const Tertiary: Story = {
-  render: () => ({
-    components: { Button },
-    template: '<Button background="#ff0" label="📚📕📈🤓" />',
+    template: '<Button backgroundColor="#ff0" label="📚📕📈🤓" />',
   }),
 };
 ```
@@ -560,20 +416,20 @@ export default {
  * to learn how to use render functions.
  */
 export const Primary = {
-  render: () => html`<demo-button .background="#ff0" .label="Button"></demo-button>`,
+  render: () => html`<demo-button .backgroundColor="#ff0" .label="Button"></demo-button>`,
 };
 
 export const Secondary = {
-  render: () => html`<demo-button .background="#ff0" .label="😄👍😍💯"></demo-button>`,
+  render: () => html`<demo-button .backgroundColor="#ff0" .label="😄👍😍💯"></demo-button>`,
 };
 
 export const Tertiary = {
-  render: () => html`<demo-button .background="#ff0" .label="📚📕📈🤓"></demo-button>`,
+  render: () => html`<demo-button .backgroundColor="#ff0" .label="📚📕📈🤓"></demo-button>`,
 };
 ```
 
 ```ts filename="Button.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import { html } from 'lit';
 
@@ -590,15 +446,14 @@ type Story = StoryObj;
  * to learn how to use render functions.
  */
 export const Primary: Story = {
-  render: () => html`<demo-button .background="#ff0" .label="Button"></demo-button>`,
+  render: () => html`<demo-button .backgroundColor="#ff0" .label="Button"></demo-button>`,
 };
 
 export const Secondary: Story = {
-  render: () => html`<demo-button .background="#ff0" .label="😄👍😍💯"></demo-button>`,
+  render: () => html`<demo-button .backgroundColor="#ff0" .label="😄👍😍💯"></demo-button>`,
 };
 
 export const Tertiary: Story = {
-  render: () => html`<demo-button .background="#ff0" .label="📚📕📈🤓"></demo-button>`,
+  render: () => html`<demo-button .backgroundColor="#ff0" .label="📚📕📈🤓"></demo-button>`,
 };
 ```
-

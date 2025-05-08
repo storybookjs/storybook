@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react",
-  "version": "8.5.0-alpha.1",
+  "version": "9.0.0-beta.11",
   "description": "Storybook React renderer",
   "keywords": [
     "storybook"
@@ -25,6 +25,11 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
     },
+    "./preview": {
+      "types": "./dist/preview.d.ts",
+      "import": "./dist/preview.mjs",
+      "require": "./dist/preview.js"
+    },
     "./experimental-playwright": {
       "types": "./dist/playwright.d.ts",
       "import": "./dist/playwright.mjs",
@@ -44,6 +49,9 @@
       "*": [
         "dist/index.d.ts"
       ],
+      "preview": [
+        "dist/preview.d.ts"
+      ],
       "experimental-playwright": [
         "dist/playwright.d.ts"
       ]
@@ -62,25 +70,20 @@
     "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@storybook/components": "workspace:*",
     "@storybook/global": "^5.0.0",
-    "@storybook/manager-api": "workspace:*",
-    "@storybook/preview-api": "workspace:*",
-    "@storybook/react-dom-shim": "workspace:*",
-    "@storybook/theming": "workspace:*"
+    "@storybook/react-dom-shim": "workspace:*"
   },
   "devDependencies": {
-    "@storybook/test": "workspace:*",
-    "@types/babel-plugin-react-docgen": "^4",
+    "@types/babel-plugin-react-docgen": "^4.2.3",
     "@types/escodegen": "^0.0.6",
-    "@types/estree": "^0.0.51",
+    "@types/estree": "^1.0.6",
     "@types/node": "^22.0.0",
     "@types/semver": "^7.3.4",
     "acorn": "^7.4.1",
     "acorn-jsx": "^5.3.1",
     "acorn-walk": "^7.2.0",
     "babel-plugin-react-docgen": "^4.2.1",
-    "es-toolkit": "^1.22.0",
+    "es-toolkit": "^1.36.0",
     "escodegen": "^2.1.0",
     "expect-type": "^0.15.0",
     "html-tags": "^3.1.0",
@@ -92,22 +95,18 @@
     "type-fest": "~2.19"
   },
   "peerDependencies": {
-    "@storybook/test": "workspace:*",
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
     "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
     "storybook": "workspace:^",
-    "typescript": ">= 4.2.x"
+    "typescript": ">= 4.9.x"
   },
   "peerDependenciesMeta": {
-    "@storybook/test": {
-      "optional": true
-    },
     "typescript": {
       "optional": true
     }
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   },
   "publishConfig": {
     "access": "public"
@@ -116,6 +115,7 @@
     "entries": [
       "./src/index.ts",
       "./src/preset.ts",
+      "./src/preview.tsx",
       "./src/entry-preview.tsx",
       "./src/entry-preview-docs.ts",
       "./src/entry-preview-rsc.tsx",

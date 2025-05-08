@@ -1,72 +1,46 @@
-import { readFileSync } from 'node:fs';
 import { basename, relative } from 'node:path';
 
-import { logger } from 'storybook/internal/node-logger';
-
+import type AST from 'estree';
 import MagicString from 'magic-string';
-import { replace, typescript } from 'svelte-preprocess';
-import { preprocess } from 'svelte/compiler';
-import type {
-  JSDocType,
-  SvelteComponentDoc,
-  SvelteDataItem,
-  SvelteParserOptions,
-} from 'sveltedoc-parser';
-import svelteDoc from 'sveltedoc-parser';
+import type { JSDocType, SvelteComponentDoc, SvelteDataItem } from 'sveltedoc-parser';
 import type { PluginOption } from 'vite';
 
 import { type Docgen, type Type, createDocgenCache, generateDocgen } from './generateDocgen';
 
-/*
- * Patch sveltedoc-parser internal options.
- * Waiting for a fix for https://github.com/alexprey/sveltedoc-parser/issues/87
+/**
+ * It access the AST output of _compiled_ Svelte component file. To read the name of the default
+ * export - which is source of truth.
+ *
+ * In Svelte prior to `v4` component is a class. From `v5` is a function.
  */
-const svelteDocParserOptions = require('sveltedoc-parser/lib/options.js');
+function getComponentName(ast: AST.Program): string {
+  // NOTE: Assertion, because rollup returns a type `AcornNode` for some reason, which doesn't overlap with `Program` from estree
+  const exportDefaultDeclaration = ast.body.find((n) => n.type === 'ExportDefaultDeclaration') as
+    | AST.ExportDefaultDeclaration
+    | undefined;
 
-svelteDocParserOptions.getAstDefaultOptions = () => ({
-  range: true,
-  loc: true,
-  comment: true,
-  tokens: true,
-  ecmaVersion: 12,
-  sourceType: 'module',
-  ecmaFeatures: {},
-});
-
-// Most of the code here should probably be exported by @storybook/svelte and reused here.
-// See: https://github.com/storybookjs/storybook/blob/next/app/svelte/src/server/svelte-docgen-loader.ts
-
-// From https://github.com/sveltejs/svelte/blob/8db3e8d0297e052556f0b6dde310ef6e197b8d18/src/compiler/compile/utils/get_name_from_filename.ts
-// Copied because it is not exported from the compiler
-function getNameFromFilename(filename: string) {
-  if (!filename) {
-    return null;
+  if (!exportDefaultDeclaration) {
+    throw new Error('Unreachable - no default export found');
   }
 
-  const parts = filename.split(/[/\\]/).map(encodeURI);
+  // NOTE: Output differs based on svelte version and dev/prod mode
 
-  if (parts.length > 1) {
-    const indexMatch = parts[parts.length - 1].match(/^index(\.\w+)/);
-    if (indexMatch) {
-      parts.pop();
-      parts[parts.length - 1] += indexMatch[1];
-    }
+  if (exportDefaultDeclaration.declaration.type === 'Identifier') {
+    return exportDefaultDeclaration.declaration.name;
   }
 
-  const base = parts
-    .pop()
-    ?.replace(/%/g, 'u')
-    .replace(/\.[^.]+$/, '')
-    .replace(/[^a-zA-Z_$0-9]+/g, '_')
-    .replace(/^_/, '')
-    .replace(/_$/, '')
-    .replace(/^(\d)/, '_$1');
-
-  if (!base) {
-    throw new Error(`Could not derive component name from file ${filename}`);
+  if (
+    exportDefaultDeclaration.declaration.type !== 'ClassDeclaration' &&
+    exportDefaultDeclaration.declaration.type !== 'FunctionDeclaration'
+  ) {
+    throw new Error('Unreachable - not a class or a function');
   }
 
-  return base[0].toUpperCase() + base.slice(1);
+  if (!exportDefaultDeclaration.declaration.id) {
+    throw new Error('Unreachable - unnamed class/function');
+  }
+
+  return exportDefaultDeclaration.declaration.id.name;
 }
 
 function transformToSvelteDocParserType(type: Type): JSDocType {
@@ -131,21 +105,19 @@ function transformToSvelteDocParserDataItems(docgen: Docgen): SvelteDataItem[] {
   });
 }
 
-export async function svelteDocgen(svelteOptions: Record<string, any> = {}): Promise<PluginOption> {
+export async function svelteDocgen(): Promise<PluginOption> {
   const cwd = process.cwd();
-  const { preprocess: preprocessOptions, logDocgen = false } = svelteOptions;
-  const include = /\.(svelte)$/;
+  const include = /\.svelte$/;
+  const exclude = /node_modules\/.*/;
   const { createFilter } = await import('vite');
 
-  const filter = createFilter(include);
+  const filter = createFilter(include, exclude);
   const sourceFileCache = createDocgenCache();
-
-  let docPreprocessOptions: Parameters<typeof preprocess>[1] | undefined;
 
   return {
     name: 'storybook:svelte-docgen-plugin',
     async transform(src: string, id: string) {
-      if (!filter(id)) {
+      if (id.startsWith('\0') || !filter(id)) {
         return undefined;
       }
 
@@ -155,78 +127,15 @@ export async function svelteDocgen(svelteOptions: Record<string, any> = {}): Pro
       const docgen = generateDocgen(resource, sourceFileCache);
       const data = transformToSvelteDocParserDataItems(docgen);
 
-      let componentDoc: SvelteComponentDoc & { keywords?: string[] } = {};
-
-      if (!docgen.propsRuneUsed) {
-        // Retain sveltedoc-parser for backward compatibility, as it can extract slot information from HTML comments.
-        // See: https://github.com/alexprey/sveltedoc-parser/issues/61
-        //
-        // Note: Events are deprecated in Svelte 5, and slots cannot be used in runes mode.
-
-        if (preprocessOptions && !docPreprocessOptions) {
-          /*
-           * We can't use vitePreprocess() for the documentation
-           * because it uses esbuild which removes jsdoc.
-           *
-           * By default, only typescript is transpiled, and style tags are removed.
-           *
-           * Note: these preprocessors are only used to make the component
-           * compatible to sveltedoc-parser (no ts), not to compile
-           * the component.
-           */
-          docPreprocessOptions = [replace([[/<style.+<\/style>/gims, '']])];
-
-          try {
-            const ts = require.resolve('typescript');
-            if (ts) {
-              docPreprocessOptions.unshift(typescript());
-            }
-          } catch {
-            // this will error in JavaScript-only projects, this is okay
-          }
-        }
-
-        let docOptions;
-        if (docPreprocessOptions) {
-          const rawSource = readFileSync(resource).toString();
-          const { code: fileContent } = await preprocess(rawSource, docPreprocessOptions, {
-            filename: resource,
-          });
-
-          docOptions = {
-            fileContent,
-          };
-        } else {
-          docOptions = { filename: resource };
-        }
-
-        // set SvelteDoc options
-        const options: SvelteParserOptions = {
-          ...docOptions,
-          version: 3,
-        };
-
-        try {
-          componentDoc = await svelteDoc.parse(options);
-        } catch (error: any) {
-          componentDoc = { keywords: [], data: [] };
-          if (logDocgen) {
-            logger.error(error);
-          }
-        }
-      }
-
-      // Always use props info from generateDocgen
-      componentDoc.data = data;
-
-      // get filename for source content
-      const file = basename(resource);
-
-      componentDoc.name = basename(file);
+      const componentDoc: SvelteComponentDoc & { keywords?: string[] } = {
+        data: data,
+        name: basename(resource),
+      };
 
       const s = new MagicString(src);
-      const componentName = getNameFromFilename(resource);
-      s.append(`;${componentName}.__docgen = ${JSON.stringify(componentDoc)}`);
+      const outputAst = this.parse(src);
+      const componentName = getComponentName(outputAst as unknown as AST.Program);
+      s.append(`\n;${componentName}.__docgen = ${JSON.stringify(componentDoc)}`);
 
       return {
         code: s.toString(),

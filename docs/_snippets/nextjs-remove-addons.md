@@ -11,7 +11,7 @@ export default {
 ```
 
 ```ts filename=".storybook/main.ts" renderer="react" language="ts"
-import { StorybookConfig } from '@storybook/nextjs';
+import type { StorybookConfig } from '@storybook/nextjs';
 
 const config: StorybookConfig = {
   // ...
@@ -25,4 +25,3 @@ const config: StorybookConfig = {
 
 export default config;
 ```
-

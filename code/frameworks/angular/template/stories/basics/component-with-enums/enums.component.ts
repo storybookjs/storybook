@@ -2,6 +2,7 @@ import { Component, Input } from '@angular/core';
 
 /** This component is used for testing the various forms of enum types */
 @Component({
+  standalone: false,
   selector: 'app-enums',
   templateUrl: './enums.component.html',
 })

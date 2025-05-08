@@ -24,30 +24,8 @@ const preview = {
     (story, context) => {
       const selectedTheme = context.globals.theme || 'light';
       const theme = MyThemes[selectedTheme];
-      return (
-        // Your theme provider and other context providers go here
-      )
-    },
-  ],
-};
-
-export default preview;
-```
-
-```ts filename=".storybook/preview.ts" renderer="common" language="ts-4-9"
-// Replace your-framework with the framework you are using (e.g., solid, qwik)
-import { Preview } from '@storybook/your-framework';
-
-import { MyThemes } from '../my-theme-folder/my-theme-file';
-
-const preview: Preview = {
-  decorators: [
-    (story, context) => {
-      const selectedTheme = context.globals.theme || 'light';
-      const theme = MyThemes[selectedTheme];
-      return (
-        // Your theme provider and other context providers go here
-      )
+      // Your theme provider and other context providers goes in the return statement
+      return;
     },
   ],
 };
@@ -56,8 +34,8 @@ export default preview;
 ```
 
 ```ts filename=".storybook/preview.ts" renderer="common" language="ts"
-// Replace your-framework with the framework you are using (e.g., solid, qwik)
-import { Preview } from '@storybook/your-framework';
+// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
+import type { Preview } from '@storybook/your-framework';
 
 import { MyThemes } from '../my-theme-folder/my-theme-file';
 
@@ -66,9 +44,8 @@ const preview: Preview = {
     (story, context) => {
       const selectedTheme = context.globals.theme || 'light';
       const theme = MyThemes[selectedTheme];
-      return (
-        // Your theme provider and other context providers go here
-      )
+      // Your theme provider and other context providers goes in the return statement
+      return;
     },
   ],
 };
@@ -97,31 +74,8 @@ const preview = {
 export default preview;
 ```
 
-```tsx filename=".storybook/preview.ts|tsx" renderer="react" language="ts-4-9"
-import type { Preview } from '@storybook/react';
-
-import { ThemeProvider } from 'styled-components';
-
-import { MyThemes } from '../my-theme-folder/my-theme-file';
-
-const preview: Preview = {
-  decorators: [
-    (Story, context) => {
-      const theme = MyThemes[context.globals.theme];
-      return (
-        <ThemeProvider theme={theme}>
-          <Story />
-        </ThemeProvider>
-      );
-    },
-  ],
-};
-
-export default preview;
-```
-
 ```tsx filename=".storybook/preview.ts|tsx" renderer="react" language="ts"
-import type { Preview } from '@storybook/react';
+import type { Preview } from '@storybook/react-vite';
 
 import { ThemeProvider } from 'styled-components';
 
@@ -143,8 +97,8 @@ const preview: Preview = {
 export default preview;
 ```
 
-```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="3"
-import { setup } from '@storybook/vue3';
+```js filename=".storybook/preview.js" renderer="vue" language="js"
+import { setup } from '@storybook/vue3-vite';
 
 import { VApp } from 'vuetify/components';
 
@@ -176,9 +130,10 @@ const preview = {
 export default preview;
 ```
 
-```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="3"
-import type { Preview } from '@storybook/vue3';
-import { setup } from '@storybook/vue3';
+```ts filename=".storybook/preview.ts" renderer="vue" language="ts"
+import type { Preview } from '@storybook/vue3-vite';
+
+import { setup } from '@storybook/vue3-vite';
 
 import { VApp } from 'vuetify/components';
 
@@ -209,38 +164,3 @@ const preview: Preview = {
 
 export default preview;
 ```
-
-```ts filename=".storybook/preview.ts" renderer="vue" language="ts-4-9"
-import type { Preview } from '@storybook/vue3';
-import { setup } from '@storybook/vue3';
-
-import { VApp } from 'vuetify/components';
-
-import { registerPlugins } from '../src/plugins';
-
-setup((app) => {
-  // Registers your app's plugins including Vuetify into Storybook
-  registerPlugins(app);
-});
-
-const preview: Preview = {
-  decorators: [
-    (story, context) => {
-      const theme = context.globals.theme || 'light';
-      return {
-        components: { story, VApp },
-        template: `
-          <v-app theme="${theme}">
-            <div class="d-flex">
-              <story/>
-            </div>
-          </v-app>
-      `,
-      };
-    },
-  ],
-};
-
-export default preview;
-```
-

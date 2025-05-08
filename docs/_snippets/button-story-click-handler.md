@@ -1,9 +1,9 @@
 ```ts filename="Button.stories.ts" renderer="angular" language="ts"
 import type { Meta, StoryObj } from '@storybook/angular';
 
-import { Button } from './button.component';
+import { action } from 'storybook/actions';
 
-import { action } from '@storybook/addon-actions';
+import { Button } from './button.component';
 
 const meta: Meta<Button> = {
   component: Button,
@@ -24,7 +24,7 @@ export const Text: Story = {
 ```
 
 ```js filename="Button.stories.js|jsx" renderer="react" language="js"
-import { action } from '@storybook/addon-actions';
+import { action } from 'storybook/actions';
 
 import { Button } from './Button';
 
@@ -37,10 +37,10 @@ export const Text = {
 };
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="react" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/react';
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts"
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { action } from '@storybook/addon-actions';
+import { action } from 'storybook/actions';
 
 import { Button } from './Button';
 
@@ -50,25 +50,6 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-export const Basic: Story = {
-  render: () => <Button label="Hello" onClick={action('clicked')} />,
-};
-```
-
-```ts filename="Button.stories.ts|tsx" renderer="react" language="ts"
-import type { Meta, StoryObj } from '@storybook/react';
-
-import { action } from '@storybook/addon-actions';
-
-import { Button } from './Button';
-
-const meta: Meta<typeof Button> = {
-  component: Button,
-};
-
-export default meta;
-type Story = StoryObj<typeof Button>;
 
 export const Basic: Story = {
   render: () => <Button label="Hello" onClick={action('clicked')} />,
@@ -76,7 +57,7 @@ export const Basic: Story = {
 ```
 
 ```js filename="Button.stories.js|jsx" renderer="solid" language="js"
-import { action } from '@storybook/addon-actions';
+import { action } from 'storybook/actions';
 
 import { Button } from './Button';
 
@@ -89,10 +70,10 @@ export const Text = {
 };
 ```
 
-```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts-4-9"
+```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts"
 import type { Meta, StoryObj } from 'storybook-solidjs';
 
-import { action } from '@storybook/addon-actions';
+import { action } from 'storybook/actions';
 
 import { Button } from './Button';
 
@@ -108,27 +89,8 @@ export const Basic: Story = {
 };
 ```
 
-```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs';
-
-import { action } from '@storybook/addon-actions';
-
-import { Button } from './Button';
-
-const meta: Meta<typeof Button> = {
-  component: Button,
-};
-
-export default meta;
-type Story = StoryObj<typeof Button>;
-
-export const Basic: Story = {
-  render: () => <Button label="Hello" onClick={action('clicked')} />,
-};
-```
-
 ```js filename="Button.stories.js" renderer="svelte" language="js"
-import { action } from '@storybook/addon-actions';
+import { action } from 'storybook/actions';
 
 import Button from './Button.svelte';
 
@@ -149,25 +111,10 @@ export const Text = {
 };
 ```
 
-```html renderer="svelte" language="ts" tabTitle="native-format"
-{/* Button.stories.svelte */}
+```ts filename="Button.stories.ts" renderer="svelte" language="ts"
+import type { Meta, StoryObj } from '@storybook/svelte-vite';
 
-<script>
-  import { Meta, Story } from '@storybook/addon-svelte-csf';
-
-  import { action } from '@storybook/addon-actions';
-
-  import Button from './Button.svelte';
-</script>
-
-<meta title="Button" component="{Button}" />
-
-<Story name="Text"> <Button text="Hello" on:click={action('clicked')}/> </Story>
-```
-
-```ts filename="Button.stories.ts" renderer="svelte" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/svelte';
-import { action } from '@storybook/addon-actions';
+import { action } from 'storybook/actions';
 
 import Button from './Button.svelte';
 
@@ -190,36 +137,10 @@ export const Primary: Story = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts"
-import type { Meta, StoryObj } from '@storybook/svelte';
-import { action } from '@storybook/addon-actions';
+```js filename="Button.stories.js" renderer="vue" language="js"
+import { action } from 'storybook/actions';
 
-import Button from './Button.svelte';
-
-const meta: Meta<typeof Button> = {
-  component: Button,
-};
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const Text: Story = {
-  render: () => ({
-    Component: Button,
-    props: {
-      label: 'Hello',
-    },
-    on: {
-      click: action('clicked'),
-    },
-  }),
-};
-```
-
-```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="3"
 import Button from './Button.vue';
-
-import { action } from '@storybook/addon-actions';
 
 export default {
   component: Button,
@@ -238,12 +159,12 @@ export const Text = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="vue" language="ts-4-9" tabTitle="3"
-import type { Meta, StoryObj } from '@storybook/vue3';
+```ts filename="Button.stories.ts" renderer="vue" language="ts"
+import type { Meta, StoryObj } from '@storybook/vue3-vite';
+
+import { action } from 'storybook/actions';
 
 import Button from './Button.vue';
-
-import { action } from '@storybook/addon-actions';
 
 const meta = {
   component: Button,
@@ -265,37 +186,10 @@ export const Text: Story = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="3"
-import type { Meta, StoryObj } from '@storybook/vue3';
-
-import Button from './Button.vue';
-
-import { action } from '@storybook/addon-actions';
-
-const meta: Meta<typeof Button> = {
-  component: Button,
-};
-
-export default meta;
-type Story = StoryObj<typeof Button>;
-
-export const Text: Story = {
-  render: () => ({
-    components: { Button },
-    setup() {
-      return {
-        onClick: action('clicked'),
-      };
-    },
-    template: '<Button label="Hello" @click="onClick" />',
-  }),
-};
-```
-
 ```js filename="Button.stories.js" renderer="web-components" language="js"
 import { html } from 'lit';
 
-import { action } from '@storybook/addon-actions';
+import { action } from 'storybook/actions';
 
 export default {
   component: 'custom-button',
@@ -307,8 +201,9 @@ export const Text = {
 ```
 
 ```ts filename="Button.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components';
-import { action } from '@storybook/addon-actions';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
+
+import { action } from 'storybook/actions';
 
 import { html } from 'lit';
 
@@ -323,4 +218,3 @@ export const Text: Story = {
   render: () => html`<custom-button label="Hello" @click=${action('clicked')}></custom-button>`,
 };
 ```
-

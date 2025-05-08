@@ -8,12 +8,16 @@ import {
 import picocolors from 'picocolors';
 import semver from 'semver';
 
+import { consolidatedPackages } from '../automigrate/helpers/consolidated-packages';
+
 export type AnalysedPackage = {
   packageName: string;
   packageVersion?: string;
   homepage?: string;
   hasIncompatibleDependencies?: boolean;
   availableUpdate?: string;
+  availableCoreUpdate?: string;
+  packageStorybookVersion?: string;
 };
 
 type Context = {
@@ -23,7 +27,10 @@ type Context = {
   skipErrors?: boolean;
 };
 
-export const checkPackageCompatibility = async (dependency: string, context: Context) => {
+export const checkPackageCompatibility = async (
+  dependency: string,
+  context: Context
+): Promise<AnalysedPackage> => {
   const { currentStorybookVersion, skipErrors, packageManager } = context;
   try {
     const dependencyPackageJson = await packageManager.getPackageJSON(dependency);
@@ -39,12 +46,17 @@ export const checkPackageCompatibility = async (dependency: string, context: Con
       homepage,
     } = dependencyPackageJson;
 
-    const hasIncompatibleDependencies = !!Object.entries({
+    const packageStorybookVersion = Object.entries({
       ...dependencies,
       ...peerDependencies,
     })
-      .filter(([dep]) => storybookCorePackages[dep as keyof typeof storybookCorePackages])
-      .find(([_, versionRange]) => {
+      .filter(
+        ([dep]) =>
+          storybookCorePackages[dep as keyof typeof storybookCorePackages] ||
+          consolidatedPackages[dep as keyof typeof consolidatedPackages]
+      )
+      .map(([_, versionRange]) => versionRange)
+      .find((versionRange) => {
         // prevent issues with "tag" based versions e.g. "latest" or "next" instead of actual numbers
         return (
           versionRange &&
@@ -56,19 +68,27 @@ export const checkPackageCompatibility = async (dependency: string, context: Con
     const isCorePackage = storybookCorePackages[name as keyof typeof storybookCorePackages];
 
     let availableUpdate;
+    let availableCoreUpdate;
 
     // For now, we notify about updates only for core packages (which will match the currently installed storybook version)
     // In the future, we can use packageManager.latestVersion(name, constraint) for all packages
-    if (isCorePackage && semver.gt(currentStorybookVersion, packageVersion!)) {
+    if (isCorePackage && packageVersion && semver.gt(currentStorybookVersion, packageVersion)) {
       availableUpdate = currentStorybookVersion;
+    }
+
+    // If the package is greater than the current version, this means a core update is available.
+    if (isCorePackage && packageVersion && semver.gt(packageVersion, currentStorybookVersion)) {
+      availableCoreUpdate = packageVersion;
     }
 
     return {
       packageName: name,
       packageVersion,
       homepage,
-      hasIncompatibleDependencies,
+      hasIncompatibleDependencies: packageStorybookVersion != null,
+      packageStorybookVersion,
       availableUpdate,
+      availableCoreUpdate,
     };
   } catch (err) {
     if (!skipErrors) {
@@ -107,26 +127,54 @@ export const getIncompatiblePackagesSummary = (
 
   if (incompatiblePackages.length > 0) {
     summaryMessage.push(
-      `The following packages are incompatible with Storybook ${picocolors.bold(
+      `You are currently using Storybook ${picocolors.bold(
         currentStorybookVersion
-      )} as they depend on different major versions of Storybook packages:`
+      )} but you have packages which are incompatible with it:`
     );
     incompatiblePackages.forEach(
-      ({ packageName: addonName, packageVersion: addonVersion, homepage, availableUpdate }) => {
+      ({
+        packageName: addonName,
+        packageVersion: addonVersion,
+        homepage,
+        availableUpdate,
+        packageStorybookVersion,
+      }) => {
         const packageDescription = `${picocolors.cyan(addonName)}@${picocolors.cyan(addonVersion)}`;
         const updateMessage = availableUpdate ? ` (${availableUpdate} available!)` : '';
+        const dependsOnStorybook =
+          packageStorybookVersion != null
+            ? ` which depends on ${picocolors.red(packageStorybookVersion)}`
+            : '';
         const packageRepo = homepage ? `\n Repo: ${picocolors.yellow(homepage)}` : '';
 
-        summaryMessage.push(`- ${packageDescription}${updateMessage}${packageRepo}`);
+        summaryMessage.push(
+          `- ${packageDescription}${updateMessage}${dependsOnStorybook}${packageRepo}`
+        );
       }
     );
 
     summaryMessage.push(
       '\n',
       'Please consider updating your packages or contacting the maintainers for compatibility details.',
-      'For more on Storybook 8 compatibility, see the linked GitHub issue:',
-      picocolors.yellow('https://github.com/storybookjs/storybook/issues/26031')
+      'For more on Storybook 9 compatibility, see the linked GitHub issue:',
+      picocolors.yellow('https://github.com/storybookjs/storybook/issues/30944')
     );
+
+    if (incompatiblePackages.some((dep) => dep.availableCoreUpdate)) {
+      summaryMessage.push(
+        '\n',
+        `The version of ${picocolors.blue(`storybook@${currentStorybookVersion}`)} is behind the following core packages:`,
+        `${incompatiblePackages
+          .filter((dep) => dep.availableCoreUpdate)
+          .map(
+            ({ packageName, packageVersion }) =>
+              `- ${picocolors.blue(`${packageName}@${packageVersion}`)}`
+          )
+          .join('\n')}`,
+        `Upgrade Storybook with:`,
+        picocolors.blue('npx storybook@latest upgrade')
+      );
+    }
   }
 
   return summaryMessage.join('\n');

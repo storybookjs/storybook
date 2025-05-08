@@ -1,10 +1,9 @@
 import React, { Fragment, useState } from 'react';
 
-import { convert, styled, themes } from 'storybook/internal/theming';
-
 import { ChevronSmallDownIcon } from '@storybook/icons';
 
-// eslint-disable-next-line import/no-named-as-default
+import { convert, styled, themes } from 'storybook/theming';
+
 import Message from './Message';
 
 const Wrapper = styled.div<{ status: string }>(({ theme, status }) => ({

@@ -1,6 +1,5 @@
 import { normalize } from 'node:path';
 
-import { frameworkToRenderer } from 'storybook/internal/cli';
 import {
   builderPackages,
   extractProperFrameworkName,
@@ -10,10 +9,10 @@ import {
   rendererPackages,
 } from 'storybook/internal/common';
 import type { JsPackageManager } from 'storybook/internal/common';
-import { getCoercedStorybookVersion } from 'storybook/internal/common';
+import { frameworkToRenderer, getCoercedStorybookVersion } from 'storybook/internal/common';
 import type { ConfigFile } from 'storybook/internal/csf-tools';
 import { readConfig, writeConfig as writeConfigFile } from 'storybook/internal/csf-tools';
-import type { StorybookConfig, StorybookConfigRaw } from 'storybook/internal/types';
+import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
@@ -157,6 +156,7 @@ export const getStorybookData = async ({
     storybookVersion,
     mainConfigPath,
     previewConfigPath,
+    packageJson,
   };
 };
 export type GetStorybookData = typeof getStorybookData;
@@ -200,29 +200,4 @@ export const updateMainConfig = async (
       )} file contains a non-standard format (e.g. your export is not an object) or that there was an error when parsing dynamic values (e.g. "require" calls, or usage of environment variables). When your main config is non-standard, automigrations are unfortunately not possible. Please follow the instructions given previously and follow the documentation to make the updates manually.`
     );
   }
-};
-
-export const getAddonNames = (mainConfig: StorybookConfig): string[] => {
-  const addons = mainConfig.addons || [];
-  const addonList = addons.map((addon) => {
-    let name = '';
-    if (typeof addon === 'string') {
-      name = addon;
-    } else if (typeof addon === 'object') {
-      name = addon.name;
-    }
-
-    if (name.startsWith('.')) {
-      return undefined;
-    }
-
-    return name
-      .replace(/\/dist\/.*/, '')
-      .replace(/\.[mc]?[tj]?s[x]?$/, '')
-      .replace(/\/register$/, '')
-      .replace(/\/manager$/, '')
-      .replace(/\/preset$/, '');
-  });
-
-  return addonList.filter((item): item is NonNullable<typeof item> => item != null);
 };

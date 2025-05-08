@@ -115,8 +115,8 @@ export const ManyItems = {
 };
 ```
 
-```tsx filename="List.stories.ts|tsx" renderer="react" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/react';
+```tsx filename="List.stories.ts|tsx" renderer="react" language="ts"
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { List } from './List';
 import { ListItem } from './ListItem';
@@ -130,33 +130,6 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-export const ManyItems: Story = {
-  render: (args) => (
-    <List {...args}>
-      <ListItem {...Selected.args} />
-      <ListItem {...Unselected.args} />
-      <ListItem {...Unselected.args} />
-    </List>
-  ),
-};
-```
-
-```tsx filename="List.stories.ts|tsx" renderer="react" language="ts"
-import type { Meta, StoryObj } from '@storybook/react';
-
-import { List } from './List';
-import { ListItem } from './ListItem';
-
-//👇 We're importing the necessary stories from ListItem
-import { Selected, Unselected } from './ListItem.stories';
-
-const meta: Meta<typeof List> = {
-  component: List,
-};
-
-export default meta;
-type Story = StoryObj<typeof List>;
 
 export const ManyItems: Story = {
   render: (args) => (
@@ -191,7 +164,7 @@ export const ManyItems = {
 };
 ```
 
-```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts-4-9"
+```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts"
 import type { Meta, StoryObj } from 'storybook-solidjs';
 
 import { List } from './List';
@@ -218,34 +191,59 @@ export const ManyItems: Story = {
 };
 ```
 
-```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs';
+```svelte filename="List.stories.svelte" renderer="svelte" language="js"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
 
-import { List } from './List';
-import { ListItem } from './ListItem';
+  import List from './List.svelte';
+  import ListItem from './ListItem.svelte';
 
-//👇 All ListItem stories are imported
-import { Selected, Unselected } from './ListItem.stories';
+  //👇 We're importing the necessary stories from ListItem
+  import { Selected, Unselected } from './ListItem.stories.svelte';
 
-const meta: Meta<typeof List> = {
-  component: List,
-};
+  const { Story } = defineMeta({
+    component: List,
+  });
+</script>
 
-export default meta;
-type Story = StoryObj<typeof List>;
-
-export const ManyItems: Story = {
-  render: (args) => (
+<Story name="Many Items">
+  {#snippet children(args)}
     <List {...args}>
       <ListItem {...Selected.args} />
       <ListItem {...Unselected.args} />
       <ListItem {...Unselected.args} />
     </List>
-  ),
-};
+  {/snippet}
+</Story>
 ```
 
-```js filename="List.stories.js" renderer="vue" language="js" tabTitle="3"
+```svelte filename="List.stories.svelte" renderer="svelte" language="ts"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import List from './List.svelte';
+  import ListItem from './ListItem.svelte';
+
+  //👇 We're importing the necessary stories from ListItem
+  import { Selected, Unselected } from './ListItem.stories.svelte';
+
+  const { Story } = defineMeta({
+    component: List,
+  });
+</script>
+
+<Story name="Many Items">
+  {#snippet children(args)}
+    <List {...args}>
+      <ListItem {...Selected.args} />
+      <ListItem {...Unselected.args} />
+      <ListItem {...Unselected.args} />
+    </List>
+  {/snippet}
+</Story>
+```
+
+```js filename="List.stories.js" renderer="vue" language="js"
 import List from './ListComponent.vue';
 import ListItem from './ListItem.vue';
 
@@ -276,8 +274,8 @@ export const ManyItems = {
 };
 ```
 
-```ts filename="List.stories.ts" renderer="vue" language="ts-4-9" tabTitle="3"
-import type { Meta, StoryObj } from '@storybook/vue3';
+```ts filename="List.stories.ts" renderer="vue" language="ts"
+import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import List from './ListComponent.vue';
 import ListItem from './ListItem.vue';
@@ -291,42 +289,6 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-export const ManyItems: Story = {
-  render: (args) => ({
-    components: { List, ListItem },
-    setup() {
-      return { ...args };
-    },
-    template: `
-      <List v-bind="args">
-        <list-item :isSelected="Selected"/>
-        <list-item :isSelected="Unselected"/>
-        <list-item :isSelected="Unselected"/>
-      </List>`,
-  }),
-  args: {
-    Selected: Selected.args.isSelected,
-    Unselected: Unselected.args.isSelected,
-  },
-};
-```
-
-```ts filename="List.stories.ts" renderer="vue" language="ts" tabTitle="3"
-import type { Meta, StoryObj } from '@storybook/vue3';
-
-import List from './ListComponent.vue';
-import ListItem from './ListItem.vue';
-
-//👇 We're importing the necessary stories from ListItem
-import { Selected, Unselected } from './ListItem.stories';
-
-const meta: Meta<typeof List> = {
-  component: List,
-};
-
-export default meta;
-type Story = StoryObj<typeof List>;
 
 export const ManyItems: Story = {
   render: (args) => ({
@@ -369,7 +331,7 @@ export const ManyItems = {
 ```
 
 ```ts filename="List.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import { html } from 'lit';
 
@@ -392,4 +354,3 @@ export const ManyItems: Story = {
   `,
 };
 ```
-

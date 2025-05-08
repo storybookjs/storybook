@@ -1,27 +1,15 @@
 {
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
   "extends": "nx/presets/npm.json",
-  "cacheDirectory": "../.nx/cache",
   "nxCloudAccessToken": "NGVmYTkxMmItYzY3OS00MjkxLTk1ZDktZDFmYTFmNmVlNGY4fHJlYWQ=",
   "defaultBase": "next",
+  "useLegacyCache": true,
   "parallel": 8,
-  "affected": {
-    "defaultBase": "next"
-  },
-  "cli": {
-    "packageManager": "yarn"
-  },
   "plugins": [
     {
       "plugin": "@nx/vite/plugin",
       "options": {
         "testTargetName": "test"
-      }
-    },
-    {
-      "plugin": "@nx/eslint/plugin",
-      "options": {
-        "targetName": "lint"
       }
     }
   ],
@@ -77,17 +65,6 @@
       "dependsOn": ["build"],
       "cache": true
     },
-    "lint": {
-      "executor": "nx:run-commands",
-      "options": {
-        "cwd": "{workspaceRoot}",
-        "command": "yarn lint:js:cmd {projectRoot}",
-        "args": "--quiet"
-      },
-      "dependsOn": ["build"],
-      "inputs": ["default", "{workspaceRoot}/{.eslintignore,.eslintrc.js}"],
-      "cache": true
-    },
     "sandbox": {
       "executor": "nx:run-commands",
       "inputs": [
@@ -138,7 +115,7 @@
     "sharedGlobals": ["{workspaceRoot}/tsconfig.json"],
     "production": [
       "default",
-      "!{projectRoot}/src/**/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap),",
+      "!{projectRoot}/src/**/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)",
       "!{projectRoot}/vitest.config.[jt]s",
       "!{projectRoot}/README.md",
       "!{projectRoot}/.eslintrc.{json,js}",

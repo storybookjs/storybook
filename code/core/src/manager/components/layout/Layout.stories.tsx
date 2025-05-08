@@ -1,13 +1,16 @@
 import type { FC, PropsWithChildren } from 'react';
 import React, { useState } from 'react';
 
-import { LocationProvider } from '@storybook/core/router';
-import { styled } from '@storybook/core/theming';
-import type { Meta, StoryObj } from '@storybook/react';
-import { fn } from '@storybook/test';
+import { ManagerContext } from 'storybook/internal/manager-api';
+import { LocationProvider } from 'storybook/internal/router';
 
-import { action } from '@storybook/addon-actions';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
+import { action } from 'storybook/actions';
+import { fn } from 'storybook/test';
+import { styled } from 'storybook/theming';
+
+import { isChromatic } from '../../../../../.storybook/isChromatic';
 import MobileNavigationStoriesMeta from '../mobile/navigation/MobileNavigation.stories';
 import { Layout } from './Layout';
 import { LayoutProvider } from './LayoutProvider';
@@ -24,6 +27,9 @@ const PlaceholderBlock = styled.div({
 const PlaceholderClock: FC<PropsWithChildren> = ({ children }) => {
   const [count, setCount] = React.useState(0);
   React.useEffect(() => {
+    if (isChromatic()) {
+      return;
+    }
     const interval = setInterval(() => {
       setCount(count + 1);
     }, 1000);
@@ -31,7 +37,7 @@ const PlaceholderClock: FC<PropsWithChildren> = ({ children }) => {
   }, [count]);
   return (
     <PlaceholderBlock>
-      <h2>{count}</h2>
+      <h2 data-chromatic="ignore">{count}</h2>
       {children}
     </PlaceholderBlock>
   );
@@ -53,6 +59,16 @@ const defaultState = {
   viewMode: 'story',
 } as const;
 
+const managerContext: any = {
+  state: {},
+  api: {
+    foo: 'bar',
+    getNavSizeWithCustomisations: fn()
+      .mockName('api::getNavSizeWithCustomisations')
+      .mockImplementation((size: number) => size),
+  },
+};
+
 const meta = {
   title: 'Layout',
   component: Layout,
@@ -68,6 +84,9 @@ const meta = {
   globals: { sb_theme: 'light' },
   parameters: { layout: 'fullscreen' },
   decorators: [
+    (storyFn) => (
+      <ManagerContext.Provider value={managerContext}>{storyFn()}</ManagerContext.Provider>
+    ),
     MobileNavigationStoriesMeta.decorators[0] as any,
     (storyFn) => (
       <LocationProvider>

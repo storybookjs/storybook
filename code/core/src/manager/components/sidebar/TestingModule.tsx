@@ -1,18 +1,18 @@
-import React, { type SyntheticEvent, useEffect, useRef, useState } from 'react';
+import React, { type SyntheticEvent, useCallback, useEffect, useRef, useState } from 'react';
 
-import { Button, TooltipNote } from '@storybook/core/components';
-import { keyframes, styled } from '@storybook/core/theming';
-import {
-  ChevronSmallUpIcon,
-  EyeIcon,
-  PlayAllHollowIcon,
-  PlayHollowIcon,
-  StopAltHollowIcon,
-} from '@storybook/icons';
+import { once } from 'storybook/internal/client-logger';
+import { Button, IconButton, TooltipNote } from 'storybook/internal/components';
+import { WithTooltip } from 'storybook/internal/components';
+import type {
+  Addon_Collection,
+  Addon_TestProviderType,
+  TestProviderStateByProviderId,
+} from 'storybook/internal/types';
 
-import type { TestProviders } from '@storybook/core/core-events';
+import { ChevronSmallUpIcon, PlayAllHollowIcon, SweepIcon } from '@storybook/icons';
 
-import { WithTooltip } from '../../../components/components/tooltip/WithTooltip';
+import { internal_fullTestProviderStore } from '#manager-stores';
+import { keyframes, styled } from 'storybook/theming';
 
 const DEFAULT_HEIGHT = 500;
 
@@ -26,42 +26,42 @@ const spin = keyframes({
   '100%': { transform: 'rotate(360deg)' },
 });
 
-const Outline = styled.div<{ crashed: boolean; failed: boolean; running: boolean }>(
-  ({ crashed, running, theme, failed }) => ({
-    position: 'relative',
-    lineHeight: '20px',
-    width: '100%',
-    padding: 1,
-    overflow: 'hidden',
-    background: `var(--sb-sidebar-bottom-card-background, ${theme.background.content})`,
-    borderRadius:
-      `var(--sb-sidebar-bottom-card-border-radius, ${theme.appBorderRadius + 1}px)` as any,
-    boxShadow: `inset 0 0 0 1px ${crashed && !running ? theme.color.negative : theme.appBorderColor}, var(--sb-sidebar-bottom-card-box-shadow, 0 1px 2px 0 rgba(0, 0, 0, 0.05), 0px -5px 20px 10px ${theme.background.app})`,
-    transitionProperty:
-      'color, background-color, border-color, text-decoration-color, fill, stroke',
-    transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
-    transitionDuration: '0.15s',
+const Outline = styled.div<{
+  crashed: boolean;
+  failed: boolean;
+  running: boolean;
+  updated: boolean;
+}>(({ crashed, failed, running, updated, theme }) => ({
+  position: 'relative',
+  lineHeight: '16px',
+  width: '100%',
+  padding: 1,
+  overflow: 'hidden',
+  backgroundColor: `var(--sb-sidebar-bottom-card-background, ${theme.background.content})`,
+  borderRadius:
+    `var(--sb-sidebar-bottom-card-border-radius, ${theme.appBorderRadius + 1}px)` as any,
+  boxShadow: `inset 0 0 0 1px ${crashed && !running ? theme.color.negative : updated ? theme.color.positive : theme.appBorderColor}, var(--sb-sidebar-bottom-card-box-shadow, 0 1px 2px 0 rgba(0, 0, 0, 0.05), 0px -5px 20px 10px ${theme.background.app})`,
+  transition: 'box-shadow 1s',
 
-    '&:after': {
-      content: '""',
-      display: running ? 'block' : 'none',
-      position: 'absolute',
-      left: '50%',
-      top: '50%',
-      marginLeft: 'calc(max(100vw, 100vh) * -0.5)',
-      marginTop: 'calc(max(100vw, 100vh) * -0.5)',
-      height: 'max(100vw, 100vh)',
-      width: 'max(100vw, 100vh)',
-      animation: `${spin} 3s linear infinite`,
-      background: failed
-        ? // Hardcoded colors to prevent themes from messing with them (orange+gold, secondary+seafoam)
-          `conic-gradient(transparent 90deg, #FC521F 150deg, #FFAE00 210deg, transparent 270deg)`
-        : `conic-gradient(transparent 90deg, #029CFD 150deg, #37D5D3 210deg, transparent 270deg)`,
-      opacity: 1,
-      willChange: 'auto',
-    },
-  })
-);
+  '&:after': {
+    content: '""',
+    display: running ? 'block' : 'none',
+    position: 'absolute',
+    left: '50%',
+    top: '50%',
+    marginLeft: 'calc(max(100vw, 100vh) * -0.5)',
+    marginTop: 'calc(max(100vw, 100vh) * -0.5)',
+    height: 'max(100vw, 100vh)',
+    width: 'max(100vw, 100vh)',
+    animation: `${spin} 3s linear infinite`,
+    background: failed
+      ? // Hardcoded colors to prevent themes from messing with them (orange+gold, secondary+seafoam)
+        `conic-gradient(transparent 90deg, #FC521F 150deg, #FFAE00 210deg, transparent 270deg)`
+      : `conic-gradient(transparent 90deg, #029CFD 150deg, #37D5D3 210deg, transparent 270deg)`,
+    opacity: 1,
+    willChange: 'auto',
+  },
+}));
 
 const Card = styled.div(({ theme }) => ({
   position: 'relative',
@@ -76,16 +76,14 @@ const Card = styled.div(({ theme }) => ({
 
 const Collapsible = styled.div(({ theme }) => ({
   overflow: 'hidden',
-  transition: 'max-height 250ms',
+
   willChange: 'auto',
   boxShadow: `inset 0 -1px 0 ${theme.appBorderColor}`,
 }));
 
 const Content = styled.div({
-  padding: '12px 6px',
   display: 'flex',
   flexDirection: 'column',
-  gap: '12px',
 });
 
 const Bar = styled.div<{ onClick?: (e: SyntheticEvent) => void }>(({ onClick }) => ({
@@ -96,14 +94,20 @@ const Bar = styled.div<{ onClick?: (e: SyntheticEvent) => void }>(({ onClick }) 
   alignItems: 'center',
   justifyContent: 'space-between',
   overflow: 'hidden',
-  padding: '6px',
+  padding: 4,
+  gap: 4,
 }));
+
+const Action = styled.div({
+  display: 'flex',
+  flexBasis: '100%',
+  containerType: 'inline-size',
+});
 
 const Filters = styled.div({
   display: 'flex',
-  flexBasis: '100%',
   justifyContent: 'flex-end',
-  gap: 6,
+  gap: 4,
 });
 
 const CollapseToggle = styled(Button)({
@@ -112,6 +116,15 @@ const CollapseToggle = styled(Button)({
   willChange: 'auto',
   '&:focus, &:hover': {
     opacity: 1,
+  },
+});
+
+const RunButton = styled(Button)({
+  // 90px is the width of the button when the label is visible
+  '@container (max-width: 90px)': {
+    span: {
+      display: 'none',
+    },
   },
 });
 
@@ -142,183 +155,200 @@ const StatusButton = styled(Button)<{ status: 'negative' | 'warning' }>(
         })
 );
 
-const TestProvider = styled.div({
-  display: 'flex',
-  justifyContent: 'space-between',
-  gap: 6,
-});
+const TestProvider = styled.div(({ theme }) => ({
+  padding: 4,
 
-const Info = styled.div({
-  display: 'flex',
-  flexDirection: 'column',
-  marginLeft: 6,
-});
-
-const Actions = styled.div({
-  display: 'flex',
-  gap: 6,
-});
-
-const TitleWrapper = styled.div<{ crashed?: boolean }>(({ crashed, theme }) => ({
-  fontSize: theme.typography.size.s1,
-  fontWeight: crashed ? 'bold' : 'normal',
-  color: crashed ? theme.color.negativeText : theme.color.defaultText,
+  '&:not(:last-child)': {
+    boxShadow: `inset 0 -1px 0 ${theme.appBorderColor}`,
+  },
 }));
-
-const DescriptionWrapper = styled.div(({ theme }) => ({
-  fontSize: theme.typography.size.s1,
-  color: theme.barTextColor,
-}));
-
-const DynamicInfo = ({ state }: { state: TestProviders[keyof TestProviders] }) => {
-  const Description = state.description;
-  const Title = state.title;
-  return (
-    <Info>
-      <TitleWrapper crashed={state.crashed}>
-        <Title {...state} />
-      </TitleWrapper>
-      <DescriptionWrapper>
-        <Description {...state} />
-      </DescriptionWrapper>
-    </Info>
-  );
-};
 
 interface TestingModuleProps {
-  testProviders: TestProviders[keyof TestProviders][];
+  registeredTestProviders: Addon_Collection<Addon_TestProviderType>;
+  testProviderStates: TestProviderStateByProviderId;
+  hasStatuses: boolean;
+  clearStatuses: () => void;
+  onRunAll: () => void;
   errorCount: number;
   errorsActive: boolean;
   setErrorsActive: (active: boolean) => void;
   warningCount: number;
   warningsActive: boolean;
   setWarningsActive: (active: boolean) => void;
-  onRunTests: (providerId: string) => void;
-  onCancelTests: (providerId: string) => void;
-  onSetWatchMode: (providerId: string, watchMode: boolean) => void;
 }
 
 export const TestingModule = ({
-  testProviders,
+  registeredTestProviders,
+  testProviderStates,
+  hasStatuses,
+  clearStatuses,
+  onRunAll,
   errorCount,
   errorsActive,
   setErrorsActive,
   warningCount,
   warningsActive,
   setWarningsActive,
-  onRunTests,
-  onCancelTests,
-  onSetWatchMode,
 }: TestingModuleProps) => {
+  const timeoutRef = useRef<null | ReturnType<typeof setTimeout>>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  const [collapsed, setCollapsed] = useState(false);
   const [maxHeight, setMaxHeight] = useState(DEFAULT_HEIGHT);
+  const [isCollapsed, setCollapsed] = useState(true);
+  const [isChangingCollapse, setChangingCollapse] = useState(false);
+  const [isUpdated, setIsUpdated] = useState(false);
+  const settingsUpdatedTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
-    setMaxHeight(contentRef.current?.offsetHeight || DEFAULT_HEIGHT);
+    const unsubscribe = internal_fullTestProviderStore.onSettingsChanged(() => {
+      setIsUpdated(true);
+      clearTimeout(settingsUpdatedTimeoutRef.current);
+      settingsUpdatedTimeoutRef.current = setTimeout(() => {
+        setIsUpdated(false);
+      }, 1000);
+    });
+    return () => {
+      unsubscribe();
+      clearTimeout(settingsUpdatedTimeoutRef.current);
+    };
   }, []);
 
-  const toggleCollapsed = () => {
-    setMaxHeight(contentRef.current?.offsetHeight || DEFAULT_HEIGHT);
-    setCollapsed(!collapsed);
-  };
+  useEffect(() => {
+    if (contentRef.current) {
+      setMaxHeight(contentRef.current?.getBoundingClientRect().height || DEFAULT_HEIGHT);
 
-  const running = testProviders.some((tp) => tp.running);
-  const crashed = testProviders.some((tp) => tp.crashed);
-  const failed = testProviders.some((tp) => tp.failed);
-  const testing = testProviders.length > 0;
+      const resizeObserver = new ResizeObserver(() => {
+        requestAnimationFrame(() => {
+          if (contentRef.current && !isCollapsed) {
+            const height = contentRef.current?.getBoundingClientRect().height || DEFAULT_HEIGHT;
+
+            setMaxHeight(height);
+          }
+        });
+      });
+      resizeObserver.observe(contentRef.current);
+      return () => resizeObserver.disconnect();
+    }
+  }, [isCollapsed]);
+
+  const toggleCollapsed = useCallback((event?: SyntheticEvent, value?: boolean) => {
+    event?.stopPropagation();
+    setChangingCollapse(true);
+    setCollapsed((s) => value ?? !s);
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    timeoutRef.current = setTimeout(() => {
+      setChangingCollapse(false);
+    }, 250);
+  }, []);
+
+  const isRunning = Object.values(testProviderStates).some(
+    (testProviderState) => testProviderState === 'test-provider-state:running'
+  );
+  const isCrashed = Object.values(testProviderStates).some(
+    (testProviderState) => testProviderState === 'test-provider-state:crashed'
+  );
+  const hasTestProviders = Object.values(registeredTestProviders).length > 0;
+
+  useEffect(() => {
+    if (isCrashed && isCollapsed) {
+      toggleCollapsed(undefined, false);
+    }
+  }, [isCrashed, isCollapsed, toggleCollapsed]);
+
+  if (!hasTestProviders && (!errorCount || !warningCount)) {
+    return null;
+  }
 
   return (
-    <Outline running={running} crashed={crashed} failed={failed || errorCount > 0}>
+    <Outline
+      id="storybook-testing-module"
+      running={isRunning}
+      crashed={isCrashed}
+      failed={errorCount > 0}
+      updated={isUpdated}
+    >
       <Card>
-        <Collapsible
-          style={{
-            display: testing ? 'block' : 'none',
-            maxHeight: collapsed ? 0 : maxHeight,
-          }}
-        >
-          <Content ref={contentRef}>
-            {testProviders.map((state) => (
-              <TestProvider key={state.id}>
-                <DynamicInfo state={state} />
-                <Actions>
-                  {state.watchable && (
-                    <Button
-                      aria-label={`${state.watching ? 'Disable' : 'Enable'} watch mode for ${state.name}`}
-                      variant="ghost"
-                      padding="small"
-                      active={state.watching}
-                      onClick={() => onSetWatchMode(state.id, !state.watching)}
-                      disabled={state.crashed || state.running}
-                    >
-                      <EyeIcon />
-                    </Button>
-                  )}
-                  {state.runnable && (
-                    <>
-                      {state.running && state.cancellable ? (
-                        <Button
-                          aria-label={`Stop ${state.name}`}
-                          variant="ghost"
-                          padding="small"
-                          onClick={() => onCancelTests(state.id)}
-                          disabled={state.cancelling}
-                        >
-                          <StopAltHollowIcon />
-                        </Button>
-                      ) : (
-                        <Button
-                          aria-label={`Start ${state.name}`}
-                          variant="ghost"
-                          padding="small"
-                          onClick={() => onRunTests(state.id)}
-                          disabled={state.crashed || state.running}
-                        >
-                          <PlayHollowIcon />
-                        </Button>
-                      )}
-                    </>
-                  )}
-                </Actions>
-              </TestProvider>
-            ))}
-          </Content>
-        </Collapsible>
+        {hasTestProviders && (
+          <Collapsible
+            data-testid="collapse"
+            style={{
+              transition: isChangingCollapse ? 'max-height 250ms' : 'max-height 0ms',
+              display: hasTestProviders ? 'block' : 'none',
+              maxHeight: isCollapsed ? 0 : maxHeight,
+            }}
+          >
+            <Content ref={contentRef}>
+              {Object.values(registeredTestProviders).map((registeredTestProvider) => {
+                const { render: Render, id } = registeredTestProvider;
+                if (!Render) {
+                  once.warn(
+                    `No render function found for test provider with id '${id}', skipping...`
+                  );
+                  return null;
+                }
+                return (
+                  <TestProvider key={id} data-module-id={id}>
+                    <Render />
+                  </TestProvider>
+                );
+              })}
+            </Content>
+          </Collapsible>
+        )}
 
-        <Bar onClick={testing ? toggleCollapsed : undefined}>
-          {testing && (
-            <Button
-              variant="ghost"
-              padding="small"
-              onClick={(e: SyntheticEvent) => {
-                e.stopPropagation();
-                testProviders
-                  .filter((state) => !state.crashed && !state.running && state.runnable)
-                  .forEach(({ id }) => onRunTests(id));
-              }}
-              disabled={running}
-            >
-              <PlayAllHollowIcon />
-              {running ? 'Running...' : 'Run tests'}
-            </Button>
-          )}
-          <Filters>
-            {testing && (
-              <CollapseToggle
-                variant="ghost"
-                padding="small"
-                onClick={toggleCollapsed}
-                id="testing-module-collapse-toggle"
-                aria-label={collapsed ? 'Expand testing module' : 'Collapse testing module'}
+        <Bar {...(hasTestProviders ? { onClick: (e) => toggleCollapsed(e) } : {})}>
+          <Action>
+            {hasTestProviders && (
+              <WithTooltip
+                hasChrome={false}
+                tooltip={<TooltipNote note={isRunning ? 'Running tests...' : 'Start all tests'} />}
+                trigger="hover"
               >
-                <ChevronSmallUpIcon
-                  style={{
-                    transform: collapsed ? 'none' : 'rotate(180deg)',
-                    transition: 'transform 250ms',
-                    willChange: 'auto',
+                <RunButton
+                  size="medium"
+                  variant="ghost"
+                  padding="small"
+                  onClick={(e: SyntheticEvent) => {
+                    e.stopPropagation();
+                    onRunAll();
                   }}
-                />
-              </CollapseToggle>
+                  disabled={isRunning}
+                >
+                  <PlayAllHollowIcon />
+                  <span>{isRunning ? 'Running...' : 'Run tests'}</span>
+                </RunButton>
+              </WithTooltip>
+            )}
+          </Action>
+          <Filters>
+            {hasTestProviders && (
+              <WithTooltip
+                hasChrome={false}
+                tooltip={
+                  <TooltipNote
+                    note={isCollapsed ? 'Expand testing module' : 'Collapse testing module'}
+                  />
+                }
+                trigger="hover"
+              >
+                <CollapseToggle
+                  size="medium"
+                  variant="ghost"
+                  padding="small"
+                  onClick={(e) => toggleCollapsed(e)}
+                  id="testing-module-collapse-toggle"
+                  aria-label={isCollapsed ? 'Expand testing module' : 'Collapse testing module'}
+                >
+                  <ChevronSmallUpIcon
+                    style={{
+                      transform: isCollapsed ? 'none' : 'rotate(180deg)',
+                      transition: 'transform 250ms',
+                      willChange: 'auto',
+                    }}
+                  />
+                </CollapseToggle>
+              </WithTooltip>
             )}
 
             {errorCount > 0 && (
@@ -329,6 +359,7 @@ export const TestingModule = ({
               >
                 <StatusButton
                   id="errors-found-filter"
+                  size="medium"
                   variant="ghost"
                   padding={errorCount < 10 ? 'medium' : 'small'}
                   status="negative"
@@ -339,7 +370,7 @@ export const TestingModule = ({
                   }}
                   aria-label="Toggle errors"
                 >
-                  {errorCount < 100 ? errorCount : '99+'}
+                  {errorCount < 1000 ? errorCount : '999+'}
                 </StatusButton>
               </WithTooltip>
             )}
@@ -351,6 +382,7 @@ export const TestingModule = ({
               >
                 <StatusButton
                   id="warnings-found-filter"
+                  size="medium"
                   variant="ghost"
                   padding={warningCount < 10 ? 'medium' : 'small'}
                   status="warning"
@@ -361,8 +393,40 @@ export const TestingModule = ({
                   }}
                   aria-label="Toggle warnings"
                 >
-                  {warningCount < 100 ? warningCount : '99+'}
+                  {warningCount < 1000 ? warningCount : '999+'}
                 </StatusButton>
+              </WithTooltip>
+            )}
+            {hasStatuses && (
+              <WithTooltip
+                hasChrome={false}
+                tooltip={
+                  <TooltipNote
+                    note={
+                      isRunning
+                        ? "Can't clear statuses while tests are running"
+                        : 'Clear all statuses'
+                    }
+                  />
+                }
+                trigger="hover"
+              >
+                <IconButton
+                  id="clear-statuses"
+                  size="medium"
+                  onClick={(e: SyntheticEvent) => {
+                    e.stopPropagation();
+                    clearStatuses();
+                  }}
+                  disabled={isRunning}
+                  aria-label={
+                    isRunning
+                      ? "Can't clear statuses while tests are running"
+                      : 'Clear all statuses'
+                  }
+                >
+                  <SweepIcon />
+                </IconButton>
               </WithTooltip>
             )}
           </Filters>

@@ -9,4 +9,3 @@ pnpm add --save-dev @compodoc/compodoc
 ```shell renderer="angular" language="js" packageManager="yarn"
 yarn add --dev @compodoc/compodoc
 ```
-

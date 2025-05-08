@@ -1,4 +1,4 @@
-import type { SBType } from '@storybook/core/types';
+import type { SBType } from 'storybook/internal/types';
 
 import { mapValues } from 'es-toolkit';
 

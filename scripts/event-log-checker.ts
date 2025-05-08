@@ -41,7 +41,7 @@ async function run() {
       throw new Error(`Unexpected template '${templateName}'`);
     }
 
-    const events = await (await fetch(`http://localhost:${PORT}/event-log`)).json();
+    const events: any = await (await fetch(`http://localhost:${PORT}/event-log`)).json();
 
     test('Should log 2 events', () => {
       assert.equal(
@@ -76,6 +76,10 @@ async function run() {
       const templateDir = `sandbox/${templateName.replace('/', '-')}`;
       const unhashedId = `github.com/storybookjs/storybook.git${templateDir}`;
       assert.equal(mainEvent.context.anonymousId, oneWayHash(unhashedId));
+    });
+
+    test(`main event should contain a userSince value`, () => {
+      assert.ok(typeof mainEvent.metadata.userSince === 'number');
     });
 
     const {

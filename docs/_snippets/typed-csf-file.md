@@ -50,10 +50,11 @@ const meta: Meta = {
 };
 
 export default meta;
+type Story = StoryObj;
 
-export const Basic: StoryObj = {};
+export const Basic: Story = {};
 
-export const Primary: StoryObj = {
+export const Primary: Story = {
   args: {
     primary: true,
   },

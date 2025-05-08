@@ -92,20 +92,24 @@ Sometimes stories need to define args that aren’t included in the component's 
 
   Svelte offers excellent TypeScript support for .svelte files. For example, consider the following component. You can run type checks using svelte-check and add VSCode editor support with the [Svelte for VSCode extension](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode).
 
-  ```html
+  ```svelte
   <script lang="ts">
-    import { createEventDispatcher } from 'svelte';
+    let count: number = $state(0);
+    let disabled: boolean = $state(false);
 
-    export let count: number;
-    export let disabled: boolean;
-
-    const dispatch = createEventDispatcher();
+    const increaseBy = () => {
+      count += 1
+    };
+    
+    const decreaseBy = () => {
+      count -= 1
+    };
   </script>
 
   <div class="card">
     {count}
-    <button on:click={() => dispatch('increaseBy', 1)} {disabled}> Increase by 1 </button>
-    <button on:click={() => dispatch('decreaseBy', 1)} {disabled}> Decrease by 1 </button>
+    <button onclick={increaseBy} {disabled}> Increase by 1 </button>
+    <button onclick={decreaseBy} {disabled}> Decrease by 1 </button>
   </div>
   ```
 

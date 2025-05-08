@@ -14,7 +14,7 @@ export const buildIndex = async (options: BuildIndexOptions) => {
   const [indexers, stories, docsOptions] = await Promise.all([
     presets.apply('experimental_indexers', []),
     presets.apply('stories', []),
-    presets.apply('docs', {}),
+    presets.apply('docs'),
   ]);
 
   const { configDir } = options;
@@ -24,6 +24,7 @@ export const buildIndex = async (options: BuildIndexOptions) => {
     workingDir,
   };
   const normalizedStories = normalizeStories(stories, directories);
+
   const generator = new StoryIndexGenerator(normalizedStories, {
     ...directories,
     indexers,

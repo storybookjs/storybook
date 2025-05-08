@@ -172,7 +172,8 @@ export const DelayedStory = {
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
-import type { Meta, StoryObj } from '@storybook/svelte-vite';
+// Replace your-framework with svelte-vite or sveltekit
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { userEvent, within } from 'storybook/test';
 

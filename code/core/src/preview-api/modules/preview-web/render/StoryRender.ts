@@ -29,6 +29,7 @@ import type { UserEventObject } from 'storybook/test';
 import type { StoryStore } from '../../store';
 import type { Render, RenderType } from './Render';
 import { PREPARE_ABORTED } from './Render';
+import { isTestEnvironment, pauseAnimations, waitForAnimations } from './animation-utils';
 
 const { AbortController } = globalThis;
 
@@ -39,8 +40,9 @@ export type RenderPhase =
   | 'rendering'
   | 'playing'
   | 'played'
-  | 'afterEach'
+  | 'completing'
   | 'completed'
+  | 'afterEach'
   | 'finished'
   | 'aborted'
   | 'errored';
@@ -281,7 +283,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
       }
 
       const cleanupCallbacks = await applyBeforeEach(context);
-      this.store.addCleanupCallbacks(story, cleanupCallbacks);
+      this.store.addCleanupCallbacks(story, ...cleanupCallbacks);
 
       if (this.checkIfAborted(abortSignal)) {
         return;
@@ -358,9 +360,17 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
         }
       }
 
-      await this.runPhase(abortSignal, 'completed', async () =>
-        this.channel.emit(STORY_RENDERED, id)
-      );
+      await this.runPhase(abortSignal, 'completing', async () => {
+        if (isTestEnvironment()) {
+          this.store.addCleanupCallbacks(story, pauseAnimations());
+        } else {
+          await waitForAnimations(abortSignal);
+        }
+      });
+
+      await this.runPhase(abortSignal, 'completed', async () => {
+        this.channel.emit(STORY_RENDERED, id);
+      });
 
       if (this.phase !== 'errored') {
         await this.runPhase(abortSignal, 'afterEach', async () => {

@@ -262,8 +262,8 @@ export class StoryStore<TRenderer extends Renderer> {
     });
   }
 
-  addCleanupCallbacks(story: PreparedStory<TRenderer>, callbacks: CleanupCallback[]) {
-    this.cleanupCallbacks[story.id] = callbacks;
+  addCleanupCallbacks(story: PreparedStory<TRenderer>, ...callbacks: CleanupCallback[]) {
+    this.cleanupCallbacks[story.id] = (this.cleanupCallbacks[story.id] || []).concat(callbacks);
   }
 
   async cleanupStory(story: PreparedStory<TRenderer>): Promise<void> {

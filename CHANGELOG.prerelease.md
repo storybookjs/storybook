@@ -1,3 +1,19 @@
+## 9.0.0-beta.11
+
+- Addon A11y: Fix setup as part of storybook create - [#31403](https://github.com/storybookjs/storybook/pull/31403), thanks @yannbf!
+- Addon Docs: Reset error boundary when story changes to recover from erros - [#31242](https://github.com/storybookjs/storybook/pull/31242), thanks @yatishgoel!
+- Angular: Filter non-inputs from controls - [#30550](https://github.com/storybookjs/storybook/pull/30550), thanks @robertIsaac!
+- Backgrounds/Viewport: Fix resetting - [#31386](https://github.com/storybookjs/storybook/pull/31386), thanks @valentinpalkovic!
+- CLI: Detect correct storybook version on upgrade - [#31393](https://github.com/storybookjs/storybook/pull/31393), thanks @yannbf!
+- Core: Fix core annotations applied twice - [#31361](https://github.com/storybookjs/storybook/pull/31361), thanks @valentinpalkovic!
+- Core: Fix sidebar accessibility order for screen readers - [#31250](https://github.com/storybookjs/storybook/pull/31250), thanks @yatishgoel!
+- Eslint-plugin: Handle JSON5 format - [#31336](https://github.com/storybookjs/storybook/pull/31336), thanks @yatishgoel!
+- Indexer: Do not create autodocs entries unless addon-docs installed - [#31331](https://github.com/storybookjs/storybook/pull/31331), thanks @ndelangen!
+- Svelte: Install `latest` version of `@storybook/addon-svelte-csf` - [#31398](https://github.com/storybookjs/storybook/pull/31398), thanks @JReinhold!
+- Test: Allow generics in expect matchers - [#31395](https://github.com/storybookjs/storybook/pull/31395), thanks @yannbf!
+- Update react-router-dom to lowest React19 type-compatible version - [#31358](https://github.com/storybookjs/storybook/pull/31358), thanks @mrginglymus!
+- Viewport: Fix globals type - [#31374](https://github.com/storybookjs/storybook/pull/31374), thanks @flaval!
+
 ## 9.0.0-beta.10
 
 - CLI: Improve CLI upgrade process for @latest and @next - [#31356](https://github.com/storybookjs/storybook/pull/31356), thanks @yannbf!

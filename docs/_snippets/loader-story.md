@@ -138,7 +138,35 @@ export const Primary: Story = {
 };
 ```
 
-```js filename="TodoItem.stories.js" renderer="svelte" language="js"
+```svelte filename="TodoItem.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import TodoItem from './TodoItem.svelte';
+
+  const { Story } = defineMeta({
+    component: TodoItem,
+    render: template,
+  });
+</script>
+
+{#snippet template(args, { loaded: { todo } })}
+  <TodoItem {...args} {...todo} />
+{/snippet}
+
+<Story
+  name="Primary"
+  loaders={[
+    async () => ({
+      todo: await (
+        await fetch('https://jsonplaceholder.typicode.com/todos/1')
+      ).json(),
+    }),
+  ]}
+/>
+```
+
+```js filename="TodoItem.stories.js" renderer="svelte" language="js" tabTitle="CSF"
 import TodoItem from './TodoItem.svelte';
 
 export default {
@@ -166,8 +194,37 @@ export const Primary = {
 };
 ```
 
-```ts filename="TodoItem.stories.ts" renderer="svelte" language="ts"
-import type { Meta, StoryObj } from '@storybook/svelte-vite';
+```svelte filename="TodoItem.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import TodoItem from './TodoItem.svelte';
+
+  const { Story } = defineMeta({
+    component: TodoItem,
+    render: template,
+  });
+</script>
+
+{#snippet template(args, { loaded: { todo } })}
+  <TodoItem {...args} {...todo} />
+{/snippet}
+
+<Story
+  name="Primary"
+  loaders={[
+    async () => ({
+      todo: await (
+        await fetch('https://jsonplaceholder.typicode.com/todos/1')
+      ).json(),
+    }),
+  ]}
+/>
+```
+
+```ts filename="TodoItem.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+// Replace your-framework with svelte-vite or sveltekit
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import TodoItem from './TodoItem.svelte';
 

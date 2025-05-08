@@ -119,7 +119,7 @@ describe('wrapRequire', () => {
     },
   };
   export default config;
-  const require = createRequire(import.meta, url);
+  const require = createRequire(import.meta.url);
 
   function getAbsolutePath(value) {
     return dirname(require.resolve(join(value, "package.json")));

@@ -90,10 +90,7 @@ export const wrapRequire: Fix<WrapRequireRunOptions> = {
               t.variableDeclaration('const', [
                 t.variableDeclarator(
                   t.identifier('require'),
-                  t.callExpression(t.identifier('createRequire'), [
-                    t.memberExpression(t.identifier('import'), t.identifier('meta')),
-                    t.identifier('url'),
-                  ])
+                  t.callExpression(t.identifier('createRequire'), [t.identifier('import.meta.url')])
                 ),
               ])
             );

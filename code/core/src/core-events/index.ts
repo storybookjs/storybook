@@ -37,6 +37,8 @@ enum events {
   STORY_THREW_EXCEPTION = 'storyThrewException',
   // Emitted at various times during rendering
   STORY_RENDER_PHASE_CHANGED = 'storyRenderPhaseChanged',
+  // Emitted when the story/component is hot updated (without rerendering)
+  STORY_HOT_UPDATED = 'storyHotUpdated',
   // Emitted when the play function throws
   PLAY_FUNCTION_THREW_EXCEPTION = 'playFunctionThrewException',
   // Emitted when there were unhandled errors while playing the story
@@ -136,6 +138,7 @@ export const {
   STORY_SPECIFIED,
   STORY_THREW_EXCEPTION,
   STORY_UNCHANGED,
+  STORY_HOT_UPDATED,
   UPDATE_GLOBALS,
   UPDATE_QUERY_PARAMS,
   UPDATE_STORY_ARGS,

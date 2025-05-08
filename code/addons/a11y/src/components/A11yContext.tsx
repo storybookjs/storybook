@@ -4,6 +4,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import {
   STORY_CHANGED,
   STORY_FINISHED,
+  STORY_HOT_UPDATED,
   STORY_RENDER_PHASE_CHANGED,
   type StoryFinishedPayload,
 } from 'storybook/internal/core-events';
@@ -263,8 +264,12 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
       [STORY_CHANGED]: () => setSelectedItems(new Map()),
       [STORY_RENDER_PHASE_CHANGED]: handleReset,
       [STORY_FINISHED]: handleReport,
+      [STORY_HOT_UPDATED]: () => {
+        setStatus('running');
+        emit(EVENTS.MANUAL, storyId, parameters);
+      },
     },
-    [handleReset, handleReport, handleSelect, handleError, handleResult]
+    [handleReset, handleReport, handleSelect, handleError, handleResult, parameters, storyId]
   );
 
   const handleManual = useCallback(() => {

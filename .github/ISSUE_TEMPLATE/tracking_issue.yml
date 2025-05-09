@@ -1,0 +1,29 @@
+name: Tracking Issue
+about: 'For tracking a large body of work. For internal use only. '
+title: '[Tracking]: '
+type: 'Tracking'
+body:
+  - type: textarea
+    attributes:
+      label: Problem statement 
+      description: A brief description of the problem we're trying to solve.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Milestones
+      description: >-
+        A good milestone is a unit of work that is *shippable and usable*. This should be done in two weeks.
+        Milestone definitions should have:
+          * a clear goal (the title of the milestone)
+          * a specific person responsible for seeing through the milestone (the owner)
+          * the target completion date (complete by)
+          * a list of tasks to get the *one piece done*
+      placeholder: >-
+        ### M1: milestone 1
+        **Owner: `@mention`**
+        **Complete by: `@date`**
+        - [ ] task1
+        - [ ] task2
+    validations:
+      required: true

@@ -47,13 +47,13 @@ const ChildrenContainer = styled.div<PreviewProps & { layout: Layout }>(
           display: 'inline-block',
         },
   }),
-  ({ layout = 'padded' }) =>
+  ({ layout = 'padded', inline }) =>
     layout === 'centered' || layout === 'padded'
       ? {
-          padding: '30px 20px',
+          padding: inline ? '32px 22px' : '0px',
           '& .innerZoomElementWrapper > *': {
             width: 'auto',
-            border: '10px solid transparent!important',
+            border: '8px solid transparent!important',
           },
         }
       : {},
@@ -264,7 +264,7 @@ export const Preview: FC<PreviewProps> = ({
             layout={layout}
             inline={inline}
           >
-            <Zoom.Element scale={inline ? scale : 1}>
+            <Zoom.Element centered={layout === 'centered'} scale={inline ? scale : 1}>
               {Array.isArray(children) ? (
                 children.map((child, i) => <div key={i}>{child}</div>)
               ) : (

@@ -22,7 +22,7 @@ import type {
 import { omitBy, pick } from 'es-toolkit';
 import memoize from 'memoizerific';
 
-import { getCoreAnnotations } from '../../core-annotations';
+import { getCoreAnnotations } from '../../../shared/preview/core-annotations';
 import { HooksContext } from '../addons';
 import { ArgsStore } from './ArgsStore';
 import { GlobalsStore } from './GlobalsStore';
@@ -262,8 +262,8 @@ export class StoryStore<TRenderer extends Renderer> {
     });
   }
 
-  addCleanupCallbacks(story: PreparedStory<TRenderer>, callbacks: CleanupCallback[]) {
-    this.cleanupCallbacks[story.id] = callbacks;
+  addCleanupCallbacks(story: PreparedStory<TRenderer>, ...callbacks: CleanupCallback[]) {
+    this.cleanupCallbacks[story.id] = (this.cleanupCallbacks[story.id] || []).concat(callbacks);
   }
 
   async cleanupStory(story: PreparedStory<TRenderer>): Promise<void> {

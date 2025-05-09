@@ -1,5 +1,7 @@
 import React from 'react';
 
+import { AddonPanel } from 'storybook/internal/components';
+
 import { addons, types } from 'storybook/manager-api';
 
 import { Title } from './components/Title';
@@ -11,7 +13,11 @@ export default addons.register(ADDON_ID, (api) => {
     addons.add(PANEL_ID, {
       title: Title,
       type: types.PANEL,
-      render: ({ active }) => <ActionLogger api={api} active={!!active} />,
+      render: ({ active }) => (
+        <AddonPanel active={active} allowError={false}>
+          {active && <ActionLogger api={api} active={!!active} />}
+        </AddonPanel>
+      ),
       paramKey: PARAM_KEY,
     });
   }

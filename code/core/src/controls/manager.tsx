@@ -117,16 +117,11 @@ export default addons.register(ADDON_ID, (api) => {
       title: Title,
       type: types.PANEL,
       paramKey: PARAM_KEY,
-      render: ({ active }) => {
-        if (!active || !api.getCurrentStoryData()) {
-          return null;
-        }
-        return (
-          <AddonPanel active={active}>
-            <ControlsPanel saveStory={saveStory} createStory={createStory} />
-          </AddonPanel>
-        );
-      },
+      render: ({ active }) => (
+        <AddonPanel active={active}>
+          {active && <ControlsPanel saveStory={saveStory} createStory={createStory} />}
+        </AddonPanel>
+      ),
     });
 
     channel.on(SAVE_STORY_RESPONSE, (data: ResponseData<SaveStoryResponsePayload>) => {

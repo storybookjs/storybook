@@ -62,7 +62,7 @@ addons.register(ADDON_ID, (api) => {
       const isDark = theme.base !== 'light';
 
       return (
-        <AddonPanel active={!!active}>
+        <AddonPanel active={active}>
           <SourceStyles>
             <Source
               {...parameter.source}

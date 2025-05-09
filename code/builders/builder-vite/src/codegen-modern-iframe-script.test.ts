@@ -15,37 +15,41 @@ describe('generateModernIframeScriptCodeFromPreviews', () => {
     expect(result).toMatchInlineSnapshot(`
       "import { setup } from 'storybook/internal/preview/runtime';
 
-       import 'virtual:/@storybook/builder-vite/setup-addons.js';
+      import 'virtual:/@storybook/builder-vite/setup-addons.js';
 
-       setup();
+      setup();
 
-       import { composeConfigs, PreviewWeb } from 'storybook/preview-api';
-       import { isPreview } from 'storybook/internal/csf';
-       import { importFn } from 'virtual:/@storybook/builder-vite/storybook-stories.js';
-       
-       import * as preview_2408 from "/user/.storybook/preview";
-       const getProjectAnnotations = (hmrPreviewAnnotationModules = []) => {
-         const configs = [
-           hmrPreviewAnnotationModules[0] ?? preview_2408
-         ]
-         return composeConfigs(configs);
-       }
+      import { composeConfigs, PreviewWeb } from 'storybook/preview-api';
+      import { isPreview } from 'storybook/internal/csf';
+      import { importFn } from 'virtual:/@storybook/builder-vite/storybook-stories.js';
 
-       window.__STORYBOOK_PREVIEW__ = window.__STORYBOOK_PREVIEW__ || new PreviewWeb(importFn, getProjectAnnotations);
-       
-       window.__STORYBOOK_STORY_STORE__ = window.__STORYBOOK_STORY_STORE__ || window.__STORYBOOK_PREVIEW__.storyStore;
-       
-       if (import.meta.hot) {
-         import.meta.hot.accept('virtual:/@storybook/builder-vite/storybook-stories.js', (newModule) => {
-           // importFn has changed so we need to patch the new one in
-           window.__STORYBOOK_PREVIEW__.onStoriesChanged({ importFn: newModule.importFn });
-         });
-       
-         import.meta.hot.accept(["/user/.storybook/preview"], (previewAnnotationModules) => {
-           // getProjectAnnotations has changed so we need to patch the new one in
-           window.__STORYBOOK_PREVIEW__.onGetProjectAnnotationsChanged({ getProjectAnnotations: () => getProjectAnnotations(previewAnnotationModules) });
-         });
-       };"
+      import * as preview_2408 from "/user/.storybook/preview";
+      const getProjectAnnotations = (hmrPreviewAnnotationModules = []) => {
+        const configs = [
+          hmrPreviewAnnotationModules[0] ?? preview_2408
+        ]
+        return composeConfigs(configs);
+      }
+
+      window.__STORYBOOK_PREVIEW__ = window.__STORYBOOK_PREVIEW__ || new PreviewWeb(importFn, getProjectAnnotations);
+
+      window.__STORYBOOK_STORY_STORE__ = window.__STORYBOOK_STORY_STORE__ || window.__STORYBOOK_PREVIEW__.storyStore;
+
+      if (import.meta.hot) {
+        import.meta.hot.on('vite:afterUpdate', () => {
+          window.__STORYBOOK_PREVIEW__.channel.emit('storyHotUpdated');
+        });
+
+        import.meta.hot.accept('virtual:/@storybook/builder-vite/storybook-stories.js', (newModule) => {
+          // importFn has changed so we need to patch the new one in
+          window.__STORYBOOK_PREVIEW__.onStoriesChanged({ importFn: newModule.importFn });
+        });
+
+        import.meta.hot.accept(["/user/.storybook/preview"], (previewAnnotationModules) => {
+          // getProjectAnnotations has changed so we need to patch the new one in
+          window.__STORYBOOK_PREVIEW__.onGetProjectAnnotationsChanged({ getProjectAnnotations: () => getProjectAnnotations(previewAnnotationModules) });
+        });
+      };"
     `);
   });
 
@@ -59,35 +63,39 @@ describe('generateModernIframeScriptCodeFromPreviews', () => {
     expect(result).toMatchInlineSnapshot(`
       "import { setup } from 'storybook/internal/preview/runtime';
 
-       import 'virtual:/@storybook/builder-vite/setup-addons.js';
+      import 'virtual:/@storybook/builder-vite/setup-addons.js';
 
-       setup();
+      setup();
 
-       import { composeConfigs, PreviewWeb } from 'storybook/preview-api';
-       import { isPreview } from 'storybook/internal/csf';
-       import { importFn } from 'virtual:/@storybook/builder-vite/storybook-stories.js';
-       
-       import * as preview_2408 from "/user/.storybook/preview";
-       const getProjectAnnotations = (hmrPreviewAnnotationModules = []) => {
-         const preview = hmrPreviewAnnotationModules[0] ?? preview_2408;
-         return preview.default.composed;
-       }
+      import { composeConfigs, PreviewWeb } from 'storybook/preview-api';
+      import { isPreview } from 'storybook/internal/csf';
+      import { importFn } from 'virtual:/@storybook/builder-vite/storybook-stories.js';
 
-       window.__STORYBOOK_PREVIEW__ = window.__STORYBOOK_PREVIEW__ || new PreviewWeb(importFn, getProjectAnnotations);
-       
-       window.__STORYBOOK_STORY_STORE__ = window.__STORYBOOK_STORY_STORE__ || window.__STORYBOOK_PREVIEW__.storyStore;
-       
-       if (import.meta.hot) {
-         import.meta.hot.accept('virtual:/@storybook/builder-vite/storybook-stories.js', (newModule) => {
-           // importFn has changed so we need to patch the new one in
-           window.__STORYBOOK_PREVIEW__.onStoriesChanged({ importFn: newModule.importFn });
-         });
-       
-         import.meta.hot.accept(["/user/.storybook/preview"], (previewAnnotationModules) => {
-           // getProjectAnnotations has changed so we need to patch the new one in
-           window.__STORYBOOK_PREVIEW__.onGetProjectAnnotationsChanged({ getProjectAnnotations: () => getProjectAnnotations(previewAnnotationModules) });
-         });
-       };"
+      import * as preview_2408 from "/user/.storybook/preview";
+      const getProjectAnnotations = (hmrPreviewAnnotationModules = []) => {
+        const preview = hmrPreviewAnnotationModules[0] ?? preview_2408;
+        return preview.default.composed;
+      }
+
+      window.__STORYBOOK_PREVIEW__ = window.__STORYBOOK_PREVIEW__ || new PreviewWeb(importFn, getProjectAnnotations);
+
+      window.__STORYBOOK_STORY_STORE__ = window.__STORYBOOK_STORY_STORE__ || window.__STORYBOOK_PREVIEW__.storyStore;
+
+      if (import.meta.hot) {
+        import.meta.hot.on('vite:afterUpdate', () => {
+          window.__STORYBOOK_PREVIEW__.channel.emit('storyHotUpdated');
+        });
+
+        import.meta.hot.accept('virtual:/@storybook/builder-vite/storybook-stories.js', (newModule) => {
+          // importFn has changed so we need to patch the new one in
+          window.__STORYBOOK_PREVIEW__.onStoriesChanged({ importFn: newModule.importFn });
+        });
+
+        import.meta.hot.accept(["/user/.storybook/preview"], (previewAnnotationModules) => {
+          // getProjectAnnotations has changed so we need to patch the new one in
+          window.__STORYBOOK_PREVIEW__.onGetProjectAnnotationsChanged({ getProjectAnnotations: () => getProjectAnnotations(previewAnnotationModules) });
+        });
+      };"
     `);
   });
 
@@ -101,39 +109,43 @@ describe('generateModernIframeScriptCodeFromPreviews', () => {
     expect(result).toMatchInlineSnapshot(`
       "import { setup } from 'storybook/internal/preview/runtime';
 
-       import 'virtual:/@storybook/builder-vite/setup-addons.js';
+      import 'virtual:/@storybook/builder-vite/setup-addons.js';
 
-       setup();
+      setup();
 
-       import { composeConfigs, PreviewWeb } from 'storybook/preview-api';
-       import { isPreview } from 'storybook/internal/csf';
-       import { importFn } from 'virtual:/@storybook/builder-vite/storybook-stories.js';
-       
-       import * as previewAnnotations1_2526 from "/user/previewAnnotations1";
-       import * as preview_2408 from "/user/.storybook/preview";
-       const getProjectAnnotations = (hmrPreviewAnnotationModules = []) => {
-         const configs = [
-           hmrPreviewAnnotationModules[0] ?? previewAnnotations1_2526,
-           hmrPreviewAnnotationModules[1] ?? preview_2408
-         ]
-         return composeConfigs(configs);
-       }
+      import { composeConfigs, PreviewWeb } from 'storybook/preview-api';
+      import { isPreview } from 'storybook/internal/csf';
+      import { importFn } from 'virtual:/@storybook/builder-vite/storybook-stories.js';
 
-       window.__STORYBOOK_PREVIEW__ = window.__STORYBOOK_PREVIEW__ || new PreviewWeb(importFn, getProjectAnnotations);
-       
-       window.__STORYBOOK_STORY_STORE__ = window.__STORYBOOK_STORY_STORE__ || window.__STORYBOOK_PREVIEW__.storyStore;
-       
-       if (import.meta.hot) {
-         import.meta.hot.accept('virtual:/@storybook/builder-vite/storybook-stories.js', (newModule) => {
-           // importFn has changed so we need to patch the new one in
-           window.__STORYBOOK_PREVIEW__.onStoriesChanged({ importFn: newModule.importFn });
-         });
-       
-         import.meta.hot.accept(["/user/previewAnnotations1","/user/.storybook/preview"], (previewAnnotationModules) => {
-           // getProjectAnnotations has changed so we need to patch the new one in
-           window.__STORYBOOK_PREVIEW__.onGetProjectAnnotationsChanged({ getProjectAnnotations: () => getProjectAnnotations(previewAnnotationModules) });
-         });
-       };"
+      import * as previewAnnotations1_2526 from "/user/previewAnnotations1";
+      import * as preview_2408 from "/user/.storybook/preview";
+      const getProjectAnnotations = (hmrPreviewAnnotationModules = []) => {
+        const configs = [
+          hmrPreviewAnnotationModules[0] ?? previewAnnotations1_2526,
+          hmrPreviewAnnotationModules[1] ?? preview_2408
+        ]
+        return composeConfigs(configs);
+      }
+
+      window.__STORYBOOK_PREVIEW__ = window.__STORYBOOK_PREVIEW__ || new PreviewWeb(importFn, getProjectAnnotations);
+
+      window.__STORYBOOK_STORY_STORE__ = window.__STORYBOOK_STORY_STORE__ || window.__STORYBOOK_PREVIEW__.storyStore;
+
+      if (import.meta.hot) {
+        import.meta.hot.on('vite:afterUpdate', () => {
+          window.__STORYBOOK_PREVIEW__.channel.emit('storyHotUpdated');
+        });
+
+        import.meta.hot.accept('virtual:/@storybook/builder-vite/storybook-stories.js', (newModule) => {
+          // importFn has changed so we need to patch the new one in
+          window.__STORYBOOK_PREVIEW__.onStoriesChanged({ importFn: newModule.importFn });
+        });
+
+        import.meta.hot.accept(["/user/previewAnnotations1","/user/.storybook/preview"], (previewAnnotationModules) => {
+          // getProjectAnnotations has changed so we need to patch the new one in
+          window.__STORYBOOK_PREVIEW__.onGetProjectAnnotationsChanged({ getProjectAnnotations: () => getProjectAnnotations(previewAnnotationModules) });
+        });
+      };"
     `);
   });
 
@@ -147,35 +159,39 @@ describe('generateModernIframeScriptCodeFromPreviews', () => {
     expect(result).toMatchInlineSnapshot(`
       "import { setup } from 'storybook/internal/preview/runtime';
 
-       import 'virtual:/@storybook/builder-vite/setup-addons.js';
+      import 'virtual:/@storybook/builder-vite/setup-addons.js';
 
-       setup();
+      setup();
 
-       import { composeConfigs, PreviewWeb } from 'storybook/preview-api';
-       import { isPreview } from 'storybook/internal/csf';
-       import { importFn } from 'virtual:/@storybook/builder-vite/storybook-stories.js';
-       
-       import * as preview_2408 from "/user/.storybook/preview";
-       const getProjectAnnotations = (hmrPreviewAnnotationModules = []) => {
-         const preview = hmrPreviewAnnotationModules[0] ?? preview_2408;
-         return preview.default.composed;
-       }
+      import { composeConfigs, PreviewWeb } from 'storybook/preview-api';
+      import { isPreview } from 'storybook/internal/csf';
+      import { importFn } from 'virtual:/@storybook/builder-vite/storybook-stories.js';
 
-       window.__STORYBOOK_PREVIEW__ = window.__STORYBOOK_PREVIEW__ || new PreviewWeb(importFn, getProjectAnnotations);
-       
-       window.__STORYBOOK_STORY_STORE__ = window.__STORYBOOK_STORY_STORE__ || window.__STORYBOOK_PREVIEW__.storyStore;
-       
-       if (import.meta.hot) {
-         import.meta.hot.accept('virtual:/@storybook/builder-vite/storybook-stories.js', (newModule) => {
-           // importFn has changed so we need to patch the new one in
-           window.__STORYBOOK_PREVIEW__.onStoriesChanged({ importFn: newModule.importFn });
-         });
-       
-         import.meta.hot.accept(["/user/.storybook/preview"], (previewAnnotationModules) => {
-           // getProjectAnnotations has changed so we need to patch the new one in
-           window.__STORYBOOK_PREVIEW__.onGetProjectAnnotationsChanged({ getProjectAnnotations: () => getProjectAnnotations(previewAnnotationModules) });
-         });
-       };"
+      import * as preview_2408 from "/user/.storybook/preview";
+      const getProjectAnnotations = (hmrPreviewAnnotationModules = []) => {
+        const preview = hmrPreviewAnnotationModules[0] ?? preview_2408;
+        return preview.default.composed;
+      }
+
+      window.__STORYBOOK_PREVIEW__ = window.__STORYBOOK_PREVIEW__ || new PreviewWeb(importFn, getProjectAnnotations);
+
+      window.__STORYBOOK_STORY_STORE__ = window.__STORYBOOK_STORY_STORE__ || window.__STORYBOOK_PREVIEW__.storyStore;
+
+      if (import.meta.hot) {
+        import.meta.hot.on('vite:afterUpdate', () => {
+          window.__STORYBOOK_PREVIEW__.channel.emit('storyHotUpdated');
+        });
+
+        import.meta.hot.accept('virtual:/@storybook/builder-vite/storybook-stories.js', (newModule) => {
+          // importFn has changed so we need to patch the new one in
+          window.__STORYBOOK_PREVIEW__.onStoriesChanged({ importFn: newModule.importFn });
+        });
+
+        import.meta.hot.accept(["/user/.storybook/preview"], (previewAnnotationModules) => {
+          // getProjectAnnotations has changed so we need to patch the new one in
+          window.__STORYBOOK_PREVIEW__.onGetProjectAnnotationsChanged({ getProjectAnnotations: () => getProjectAnnotations(previewAnnotationModules) });
+        });
+      };"
     `);
   });
 });

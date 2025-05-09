@@ -78,6 +78,7 @@ export const Canvas: FC<CanvasProps> = (props) => {
     props.additionalActions ?? story.parameters.docs?.canvas?.additionalActions;
   const sourceState = props.sourceState ?? story.parameters.docs?.canvas?.sourceState ?? 'hidden';
   const className = props.className ?? story.parameters.docs?.canvas?.className;
+  // By default, stories will be iframed, but most frameworks support inline rendering and override that in a docs entry file
   const inline = props.story?.inline ?? story.parameters?.docs?.story?.inline ?? false;
 
   return (

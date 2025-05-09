@@ -70,7 +70,7 @@ const handlers = [...defaultHandlers, actualNameHandler];
 let tsconfigPathsInitialized = false;
 let matchPath: TsconfigPaths.MatchPath | undefined;
 
-export default function reactDocgenLoader(
+export default async function reactDocgenLoader(
   this: LoaderContext<{ debug: boolean }>,
   source: string,
   map: any

@@ -24,7 +24,6 @@ import picocolors from 'picocolors';
 import sirv from 'sirv';
 import { convertPathToPattern } from 'tinyglobby';
 import { dedent } from 'ts-dedent';
-import type { PluginOption } from 'vite';
 
 // ! Relative import to prebundle it without needing to depend on the Vite builder
 import { withoutVitePlugins } from '../../../../builders/builder-vite/src/utils/without-vite-plugins';

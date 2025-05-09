@@ -264,7 +264,7 @@ export const Preview: FC<PreviewProps> = ({
             layout={layout}
             inline={inline}
           >
-            <Zoom.Element scale={scale}>
+            <Zoom.Element scale={inline ? scale : 1}>
               {Array.isArray(children) ? (
                 children.map((child, i) => <div key={i}>{child}</div>)
               ) : (

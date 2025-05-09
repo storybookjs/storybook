@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { FindPackageVersionsError } from 'storybook/internal/server-errors';
@@ -6,7 +6,6 @@ import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 import { PosixFS, VirtualFS, ZipOpenFS } from '@yarnpkg/fslib';
 import { getLibzipSync } from '@yarnpkg/libzip';
 import * as find from 'empathic/find';
-import * as walk from 'empathic/walk';
 import { dedent } from 'ts-dedent';
 
 import { createLogStream } from '../utils/cli';
@@ -168,12 +167,8 @@ export class Yarn2Proxy extends JsPackageManager {
       }
     }
 
-    const dirs = walk.up(basePath ?? '.');
-    const packageJsonPath = dirs.find((dir) => {
-      const possiblePath = join(dir, 'node_modules', packageName, 'package.json');
-      return existsSync(possiblePath);
-    });
-
+    const wantedPath = join('node_modules', packageName, 'package.json');
+    const packageJsonPath = find.up(wantedPath, { cwd: basePath });
     if (!packageJsonPath) {
       return null;
     }

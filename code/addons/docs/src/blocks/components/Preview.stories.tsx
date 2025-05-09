@@ -204,10 +204,24 @@ export const WithCenteredSingle = (
   <Preview inline withToolbar layout="centered">
     <Story
       inline
-      story={getPreparedStory(docsContext, ButtonStories.Primary)}
+      story={getPreparedStory(docsContext, ButtonStories.Centered)}
       renderStoryToElement={renderStoryToElement}
       autoplay={false}
       forceInitialArgs={false}
+      primary={false}
+      height="100px"
+    />
+  </Preview>
+);
+
+export const WithCenteredIframe = (
+  args: any,
+  { loaded: { docsContext } }: { loaded: { docsContext: DocsContextProps } }
+) => (
+  <Preview inline={false} withToolbar layout="centered">
+    <Story
+      inline={false}
+      story={getPreparedStory(docsContext, ButtonStories.Centered)}
       primary={false}
       height="100px"
     />
@@ -221,7 +235,7 @@ export const WithCenteredMulti = (
   <Preview inline withToolbar layout="centered">
     <Story
       inline
-      story={getPreparedStory(docsContext, ButtonStories.Primary)}
+      story={getPreparedStory(docsContext, ButtonStories.Centered)}
       renderStoryToElement={renderStoryToElement}
       autoplay={false}
       forceInitialArgs={false}
@@ -230,7 +244,7 @@ export const WithCenteredMulti = (
     />
     <Story
       inline
-      story={getPreparedStory(docsContext, ButtonStories.Primary)}
+      story={getPreparedStory(docsContext, ButtonStories.Centered)}
       renderStoryToElement={renderStoryToElement}
       autoplay={false}
       forceInitialArgs={false}

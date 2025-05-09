@@ -259,16 +259,21 @@ export class Yarn2Proxy extends JsPackageManager {
     packageName: string,
     fetchAllVersions: T
   ): Promise<T extends true ? string[] : string> {
-    const field = fetchAllVersions ? 'versions' : 'version';
-    const args = ['--fields', field, '--json'];
+    const args = fetchAllVersions ? ['versions', '--json'] : ['version'];
     try {
       const commandResult = await this.executeCommand({
-        command: 'yarn',
-        args: ['npm', 'info', packageName, ...args],
+        command: 'npm',
+        args: ['info', packageName, ...args],
       });
 
-      const parsedOutput = JSON.parse(commandResult);
-      return parsedOutput[field];
+      const parsedOutput = fetchAllVersions ? JSON.parse(commandResult) : commandResult.trim();
+
+      if (parsedOutput.error?.summary) {
+        // this will be handled in the catch block below
+        throw parsedOutput.error.summary;
+      }
+
+      return parsedOutput;
     } catch (error) {
       throw new FindPackageVersionsError({
         error,

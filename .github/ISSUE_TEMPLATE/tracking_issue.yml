@@ -12,14 +12,14 @@ body:
   - type: textarea
     attributes:
       label: Milestones
-      description: >-
+      description: |
         A good milestone is a unit of work that is *shippable and usable*. This should be done in two weeks.
         Milestone definitions should have:
           * a clear goal (the title of the milestone)
           * a specific person responsible for seeing through the milestone (the owner)
           * the target completion date (complete by)
           * a list of tasks to get the *one piece done*
-      placeholder: >-
+      value: |
         ### M1: milestone 1
         **Owner: `@mention`**
         **Complete by: `@date`**

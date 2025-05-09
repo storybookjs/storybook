@@ -5,6 +5,8 @@ export { decorateStory as applyDecorators } from './decorateStory';
 
 export const parameters = { renderer: 'angular' as const };
 
-export const experimental_afterEach = () => {
-  console.log('afterEach');
+export const beforeEach = () => {
+  return () => {
+    console.log('Will run when switching/reloading stories');
+  };
 };

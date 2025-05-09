@@ -49,7 +49,7 @@ describe('paths - normalizeStoryPath()', () => {
 describe('getProjectRoot', () => {
   it('should return the root directory containing a .git directory', () => {
     vi.mocked(find.up).mockImplementation((name) =>
-      name === ('.git' as any) ? '/path/to/root' : undefined
+      name === '.git' ? '/path/to/root' : undefined
     );
 
     expect(slash(getProjectRoot())).toBe('/path/to');

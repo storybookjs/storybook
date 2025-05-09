@@ -82,7 +82,6 @@ export const resolveAddonName = (
   const resolveFn = name.startsWith('/')
     ? (input: string) => resolve.cwd(input, true)
     : (input: string) => resolve.from(configDir, input, true);
-  // safeResolveFrom.bind(null, configDir);
   const resolved = resolveFn(name);
 
   if (resolved) {

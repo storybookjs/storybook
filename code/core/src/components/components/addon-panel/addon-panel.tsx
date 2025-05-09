@@ -5,9 +5,14 @@ import { STORY_RENDER_PHASE_CHANGED } from 'storybook/internal/core-events';
 import { useChannel } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
+const PanelWrapper = styled.div({
+  minHeight: '100%',
+});
+
 const ErrorWrapper = styled.div(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
+  justifyContent: 'center',
   alignItems: 'center',
   height: '100%',
   padding: 30,
@@ -73,12 +78,12 @@ export interface AddonPanelProps {
 export const AddonPanel = ({ active = false, allowError = true, children }: AddonPanelProps) => {
   return (
     // the hidden attribute is an valid html element that's both accessible and works to visually hide content
-    <div hidden={!active}>
+    <PanelWrapper hidden={!active}>
       {allowError ? (
         useUpdate(active, children)
       ) : (
         <ErrorHandler>{useUpdate(active, children)}</ErrorHandler>
       )}
-    </div>
+    </PanelWrapper>
   );
 };

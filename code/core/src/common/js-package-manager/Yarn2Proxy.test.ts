@@ -117,14 +117,14 @@ describe('Yarn 2 Proxy', () => {
     it('without constraint it returns the latest version', async () => {
       const executeCommandSpy = vi
         .spyOn(yarn2Proxy, 'executeCommand')
-        .mockResolvedValueOnce('{"name":"storybook","version":"5.3.19"}');
+        .mockResolvedValueOnce('5.3.19');
 
       const version = await yarn2Proxy.latestVersion('storybook');
 
       expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({
-          command: 'yarn',
-          args: ['npm', 'info', 'storybook', '--fields', 'version', '--json'],
+          command: 'npm',
+          args: ['info', 'storybook', 'version'],
         })
       );
       expect(version).toEqual('5.3.19');
@@ -133,16 +133,14 @@ describe('Yarn 2 Proxy', () => {
     it('with constraint it returns the latest version satisfying the constraint', async () => {
       const executeCommandSpy = vi
         .spyOn(yarn2Proxy, 'executeCommand')
-        .mockResolvedValueOnce(
-          '{"name":"storybook","versions":["4.25.3","5.3.19","6.0.0-beta.23"]}'
-        );
+        .mockResolvedValueOnce('["4.25.3","5.3.19","6.0.0-beta.23"]');
 
       const version = await yarn2Proxy.latestVersion('storybook', '5.X');
 
       expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({
-          command: 'yarn',
-          args: ['npm', 'info', 'storybook', '--fields', 'versions', '--json'],
+          command: 'npm',
+          args: ['info', 'storybook', 'versions', '--json'],
         })
       );
       expect(version).toEqual('5.3.19');
@@ -151,7 +149,7 @@ describe('Yarn 2 Proxy', () => {
     it('throws an error if command output is not a valid JSON', async () => {
       vi.spyOn(yarn2Proxy, 'executeCommand').mockResolvedValueOnce('NOT A JSON');
 
-      await expect(yarn2Proxy.latestVersion('storybook')).rejects.toThrow();
+      await expect(yarn2Proxy.latestVersion('storybook', '5.X')).rejects.toThrow();
     });
   });
 

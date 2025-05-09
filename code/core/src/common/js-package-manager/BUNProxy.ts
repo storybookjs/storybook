@@ -85,10 +85,7 @@ export class BUNProxy extends JsPackageManager {
     return 'bunx';
   }
 
-  public async getPackageJSON(
-    packageName: string,
-    basePath = this.cwd
-  ): Promise<PackageJson | null> {
+  public getPackageJSON(packageName: string, basePath = this.cwd): PackageJson | null {
     const dirs = walk.up(basePath ?? '.');
     const packageJsonPath = dirs.find((dir) => {
       const possiblePath = join(dir, 'node_modules', packageName, 'package.json');

@@ -15,7 +15,7 @@ export default addons.register(ADDON_ID, (api) => {
       type: types.PANEL,
       render: ({ active }) => (
         <AddonPanel active={active} allowError={false}>
-          {active && <ActionLogger api={api} active={!!active} />}
+          <ActionLogger api={api} active={!!active} />
         </AddonPanel>
       ),
       paramKey: PARAM_KEY,

@@ -78,6 +78,7 @@ export const Canvas: FC<CanvasProps> = (props) => {
     props.additionalActions ?? story.parameters.docs?.canvas?.additionalActions;
   const sourceState = props.sourceState ?? story.parameters.docs?.canvas?.sourceState ?? 'hidden';
   const className = props.className ?? story.parameters.docs?.canvas?.className;
+  const inline = props.story?.inline ?? story.parameters?.docs?.story?.inline ?? false;
 
   return (
     <PurePreview
@@ -87,6 +88,7 @@ export const Canvas: FC<CanvasProps> = (props) => {
       additionalActions={additionalActions}
       className={className}
       layout={layout}
+      inline={inline}
     >
       <Story of={of || story.moduleExport} meta={props.meta} {...props.story} />
     </PurePreview>

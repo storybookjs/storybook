@@ -7,7 +7,6 @@ import useResizeObserver from 'use-resize-observer';
 
 const ZoomElementWrapper = styled.div<{ scale: number; elementHeight: number }>(
   ({ scale = 1, elementHeight }) => ({
-    width: '100%',
     height: elementHeight || 'auto',
     transformOrigin: 'top left',
     transform: `scale(${1 / scale})`,

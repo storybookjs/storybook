@@ -17,6 +17,7 @@ import { ZoomContext } from './ZoomContext';
 export type PreviewProps = PropsWithChildren<{
   isLoading?: true;
   layout?: Layout;
+  inline?: boolean;
   isColumn?: boolean;
   columns?: number;
   withSource?: SourceProps;
@@ -56,8 +57,8 @@ const ChildrenContainer = styled.div<PreviewProps & { layout: Layout }>(
           },
         }
       : {},
-  ({ layout = 'padded' }) =>
-    layout === 'centered'
+  ({ layout = 'padded', inline }) =>
+    layout === 'centered' && inline
       ? {
           display: 'flex',
           justifyContent: 'center',
@@ -188,6 +189,7 @@ export const Preview: FC<PreviewProps> = ({
   additionalActions,
   className,
   layout = 'padded',
+  inline = false,
   ...props
 }) => {
   const [expanded, setExpanded] = useState(isExpanded);
@@ -260,6 +262,7 @@ export const Preview: FC<PreviewProps> = ({
             isColumn={isColumn || !Array.isArray(children)}
             columns={columns}
             layout={layout}
+            inline={inline}
           >
             <Zoom.Element scale={scale}>
               {Array.isArray(children) ? (

@@ -108,7 +108,7 @@ export const WithToolbar = (
       autoplay={false}
       forceInitialArgs={false}
       primary={false}
-      height="100px"
+      height="36px"
     />
   </Preview>
 );
@@ -140,7 +140,7 @@ export const WithToolbarMulti = (
       autoplay={false}
       forceInitialArgs={false}
       primary={false}
-      height="100px"
+      height="36px"
     />
     <Story
       inline
@@ -149,7 +149,7 @@ export const WithToolbarMulti = (
       autoplay={false}
       forceInitialArgs={false}
       primary={false}
-      height="100px"
+      height="36px"
     />
   </Preview>
 );
@@ -166,7 +166,7 @@ export const WithFullscreenSingle = (
       autoplay={false}
       forceInitialArgs={false}
       primary={false}
-      height="100px"
+      height="36px"
     />
   </Preview>
 );
@@ -183,7 +183,7 @@ export const WithFullscreenMulti = (
       autoplay={false}
       forceInitialArgs={false}
       primary={false}
-      height="100px"
+      height="36px"
     />
     <Story
       inline
@@ -192,7 +192,7 @@ export const WithFullscreenMulti = (
       autoplay={false}
       forceInitialArgs={false}
       primary={false}
-      height="100px"
+      height="36px"
     />
   </Preview>
 );
@@ -209,7 +209,7 @@ export const WithCenteredSingle = (
       autoplay={false}
       forceInitialArgs={false}
       primary={false}
-      height="100px"
+      height="36px"
     />
   </Preview>
 );
@@ -240,7 +240,7 @@ export const WithCenteredMulti = (
       autoplay={false}
       forceInitialArgs={false}
       primary={false}
-      height="100px"
+      height="36px"
     />
     <Story
       inline
@@ -249,7 +249,7 @@ export const WithCenteredMulti = (
       autoplay={false}
       forceInitialArgs={false}
       primary={false}
-      height="100px"
+      height="36px"
     />
   </Preview>
 );

@@ -5,28 +5,19 @@ import { STORY_RENDER_PHASE_CHANGED } from 'storybook/internal/core-events';
 import { useChannel } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
+import { EmptyTabContent } from '../tabs/EmptyTabContent';
+
 const PanelWrapper = styled.div({
-  minHeight: '100%',
+  height: '100%',
 });
 
-const ErrorWrapper = styled.div(({ theme }) => ({
-  display: 'flex',
-  flexDirection: 'column',
-  justifyContent: 'center',
-  alignItems: 'center',
-  height: '100%',
-  padding: 30,
-  gap: 4,
-  '& > *': {
-    margin: 0,
-    maxWidth: 415,
-  },
-  p: {
-    color: theme.textMutedColor,
-  },
-}));
-
-export const ErrorHandler = ({ children }: { children: React.ReactNode }) => {
+export const ErrorHandler = ({
+  children,
+  hidden,
+}: {
+  children: React.ReactNode;
+  hidden: boolean;
+}) => {
   const [hasError, setHasError] = useState(false);
 
   useChannel(
@@ -43,12 +34,13 @@ export const ErrorHandler = ({ children }: { children: React.ReactNode }) => {
   );
 
   return hasError ? (
-    <ErrorWrapper>
-      <strong>Story failed to render</strong>
-      <p>Resolve issues in your story to continue.</p>
-    </ErrorWrapper>
+    <EmptyTabContent
+      title="Story failed to render"
+      description="Resolve issues in your story to continue."
+      hidden={hidden}
+    />
   ) : (
-    children
+    <PanelWrapper hidden={hidden}>{children}</PanelWrapper>
   );
 };
 
@@ -76,14 +68,10 @@ export interface AddonPanelProps {
 }
 
 export const AddonPanel = ({ active = false, allowError = true, children }: AddonPanelProps) => {
-  return (
+  return allowError ? (
     // the hidden attribute is an valid html element that's both accessible and works to visually hide content
-    <PanelWrapper hidden={!active}>
-      {allowError ? (
-        useUpdate(active, children)
-      ) : (
-        <ErrorHandler>{useUpdate(active, children)}</ErrorHandler>
-      )}
-    </PanelWrapper>
+    <PanelWrapper hidden={!active}>{useUpdate(active, children)}</PanelWrapper>
+  ) : (
+    <ErrorHandler hidden={!active}>{useUpdate(active, children)}</ErrorHandler>
   );
 };

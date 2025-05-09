@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { type ComponentProps } from 'react';
 
 import { styled } from 'storybook/theming';
 
-const Wrapper = styled.div(({ theme }) => ({
+const Wrapper = styled.div(({ hidden, theme }) => ({
   height: '100%',
-  display: 'flex',
+  display: hidden ? 'none' : 'flex',
   padding: 30,
   alignItems: 'center',
   justifyContent: 'center',
@@ -40,9 +40,14 @@ interface Props {
   footer?: React.ReactNode;
 }
 
-export const EmptyTabContent = ({ title, description, footer }: Props) => {
+export const EmptyTabContent = ({
+  title,
+  description,
+  footer,
+  ...props
+}: Props & ComponentProps<typeof Wrapper>) => {
   return (
-    <Wrapper>
+    <Wrapper {...props}>
       <Content>
         <Title>{title}</Title>
         {description && <Description>{description}</Description>}

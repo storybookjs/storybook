@@ -144,7 +144,7 @@ export const Details = ({ id, item, type, selection, handleSelectionChange }: De
       <Description>
         {getFriendlySummaryForAxeResult(item)}{' '}
         <Link href={item.helpUrl} target="_blank" withArrow>
-          How to resolve this
+          Learn how to resolve this violation
         </Link>
       </Description>
     </Info>

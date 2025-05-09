@@ -57,7 +57,7 @@ export function pauseAnimations(atEnd = true): CleanupCallback {
 }
 
 // Use the Web Animations API to wait for any animations and transitions to finish
-export async function waitForAnimations(signal: AbortSignal) {
+export async function waitForAnimations(signal?: AbortSignal) {
   if (
     !(
       'document' in globalThis &&
@@ -77,7 +77,7 @@ export async function waitForAnimations(signal: AbortSignal) {
       setTimeout(() => {
         const animationRoots = [globalThis.document, ...getShadowRoots(globalThis.document)];
         const checkAnimationsFinished = async () => {
-          if (timedOut || signal.aborted) {
+          if (timedOut || signal?.aborted) {
             return;
           }
           const runningAnimations = animationRoots
@@ -89,7 +89,7 @@ export async function waitForAnimations(signal: AbortSignal) {
           }
         };
         checkAnimationsFinished().then(resolve);
-      }, 50);
+      }, 100);
     }),
 
     // If animations don't finish within the timeout, continue without waiting

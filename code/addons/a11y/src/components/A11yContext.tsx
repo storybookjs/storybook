@@ -35,6 +35,7 @@ import type { TestDiscrepancy } from './TestDiscrepancyMessage';
 const unhighlightedSelectors = ['html', 'body', 'main'];
 
 export interface A11yContextStore {
+  parameters: A11yParameters;
   results: EnhancedResults | undefined;
   highlighted: boolean;
   toggleHighlight: () => void;
@@ -63,6 +64,7 @@ const colorsByType = {
 };
 
 export const A11yContext = createContext<A11yContextStore>({
+  parameters: {},
   results: undefined,
   highlighted: false,
   toggleHighlight: () => {},
@@ -381,6 +383,7 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
   return (
     <A11yContext.Provider
       value={{
+        parameters,
         results,
         highlighted,
         toggleHighlight: handleToggleHighlight,

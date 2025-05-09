@@ -22,7 +22,7 @@ export default addons.register(ADDON_ID, () => {
       match: ({ viewMode }) => viewMode === 'story',
       render: ({ active }) => {
         return (
-          <AddonPanel active={active} allowError={false}>
+          <AddonPanel active={active}>
             <Consumer filter={filter}>{({ storyId }) => <Panel storyId={storyId} />}</Consumer>
           </AddonPanel>
         );

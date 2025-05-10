@@ -59,9 +59,7 @@ describe('extractEslintInfo', () => {
       return '.eslintrc.yaml';
     });
 
-    expect(() => findEslintFile()).toThrowError(
-      'Unsupported ESLint config extension: .yaml'
-    );
+    expect(() => findEslintFile()).toThrowError('Unsupported ESLint config extension: .yaml');
   });
 
   it('should handle missing ESLint config and no dependencies correctly', async () => {

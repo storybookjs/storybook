@@ -97,7 +97,11 @@ export const traverseArgs = (value: unknown, depth = 0, key?: string): unknown =
 
   if (Array.isArray(value)) {
     depth++;
-    return value.map((item) => traverseArgs(item, depth));
+    // we loop instead of map to prevent this lit issue:
+    // https://github.com/storybookjs/storybook/issues/25651
+    for (let i = 0; i < value.length; i++) {
+      value[i] = traverseArgs(value[i], depth);
+    }
   }
 
   if (typeof value === 'object' && value.constructor === Object) {

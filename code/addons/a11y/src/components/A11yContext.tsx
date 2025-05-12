@@ -4,6 +4,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import {
   STORY_CHANGED,
   STORY_FINISHED,
+  STORY_HOT_UPDATED,
   STORY_RENDER_PHASE_CHANGED,
   type StoryFinishedPayload,
 } from 'storybook/internal/core-events';
@@ -35,6 +36,7 @@ import type { TestDiscrepancy } from './TestDiscrepancyMessage';
 const unhighlightedSelectors = ['html', 'body', 'main'];
 
 export interface A11yContextStore {
+  parameters: A11yParameters;
   results: EnhancedResults | undefined;
   highlighted: boolean;
   toggleHighlight: () => void;
@@ -63,6 +65,7 @@ const colorsByType = {
 };
 
 export const A11yContext = createContext<A11yContextStore>({
+  parameters: {},
   results: undefined,
   highlighted: false,
   toggleHighlight: () => {},
@@ -263,8 +266,12 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
       [STORY_CHANGED]: () => setSelectedItems(new Map()),
       [STORY_RENDER_PHASE_CHANGED]: handleReset,
       [STORY_FINISHED]: handleReport,
+      [STORY_HOT_UPDATED]: () => {
+        setStatus('running');
+        emit(EVENTS.MANUAL, storyId, parameters);
+      },
     },
-    [handleReset, handleReport, handleSelect, handleError, handleResult]
+    [handleReset, handleReport, handleSelect, handleError, handleResult, parameters, storyId]
   );
 
   const handleManual = useCallback(() => {
@@ -381,6 +388,7 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
   return (
     <A11yContext.Provider
       value={{
+        parameters,
         results,
         highlighted,
         toggleHighlight: handleToggleHighlight,

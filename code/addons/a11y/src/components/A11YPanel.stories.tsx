@@ -54,6 +54,7 @@ const meta = preview.meta({
 });
 
 const context = {
+  parameters: {},
   handleManual: fn(),
   highlighted: false,
   toggleHighlight: fn(),
@@ -70,7 +71,8 @@ const context = {
 };
 
 const Template = (
-  args: Pick<A11yContextStore, 'results' | 'error' | 'status' | 'discrepancy' | 'selectedItems'>
+  args: Pick<A11yContextStore, 'results' | 'error' | 'status' | 'discrepancy' | 'selectedItems'> &
+    Pick<Partial<A11yContextStore>, 'parameters'>
 ) => (
   <A11yContext.Provider value={{ ...context, ...args }}>
     <ManagerContext.Provider value={managerContext}>
@@ -90,6 +92,21 @@ export const Initializing = meta.story({
         error={null}
         discrepancy={null}
         selectedItems={new Map()}
+      />
+    );
+  },
+});
+
+export const Disabled = meta.story({
+  render: () => {
+    return (
+      <Template
+        results={emptyResults}
+        status="initial"
+        error={null}
+        discrepancy={null}
+        selectedItems={new Map()}
+        parameters={{ disable: true }}
       />
     );
   },

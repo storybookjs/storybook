@@ -34,8 +34,10 @@ const Info = styled.div({
 const RuleId = styled.div(({ theme }) => ({
   display: 'block',
   color: theme.textMutedColor,
-  marginTop: -10,
-  marginBottom: 10,
+  fontFamily: theme.typography.fonts.mono,
+  fontSize: theme.typography.size.s1,
+  marginTop: -8,
+  marginBottom: 12,
 
   '@container (min-width: 800px)': {
     display: 'none',
@@ -142,7 +144,7 @@ export const Details = ({ id, item, type, selection, handleSelectionChange }: De
       <Description>
         {getFriendlySummaryForAxeResult(item)}{' '}
         <Link href={item.helpUrl} target="_blank" withArrow>
-          How to resolve this
+          Learn how to resolve this violation
         </Link>
       </Description>
     </Info>

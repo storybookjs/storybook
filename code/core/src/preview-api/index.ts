@@ -83,6 +83,8 @@ export {
   UrlStore,
   WebView,
   emitTransformCode,
+  pauseAnimations,
+  waitForAnimations,
 } from './preview-web';
 export type { SelectionStore, View } from './preview-web';
 export { getCoreAnnotations } from '../shared/preview/core-annotations';

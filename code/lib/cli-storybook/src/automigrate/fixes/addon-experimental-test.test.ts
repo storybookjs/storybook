@@ -240,7 +240,6 @@ describe('addon-experimental-test fix', () => {
     import * as projectAnnotations from './preview'
     
     const project = setProjectAnnotations([a11yAddonAnnotations, projectAnnotations])
-    
   `,
         'utf-8'
       );

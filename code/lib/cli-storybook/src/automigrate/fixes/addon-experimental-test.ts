@@ -93,10 +93,7 @@ export const addonExperimentalTest: Fix<AddonExperimentalTestOptions> = {
       );
 
       if (file.includes('vitest.setup')) {
-        updatedContent = updatedContent
-          .split('\n')
-          .filter((line) => !line.trim().startsWith('beforeAll'))
-          .join('\n');
+        updatedContent = updatedContent.replace(/^\s*beforeAll.*\n?/gm, '');
       }
 
       if (!dryRun) {

@@ -35,7 +35,7 @@ const SUPPORTED_PROJECTS: Record<string, SupportedProject> = {
     },
     createScript: {
       npm: 'npm create vite@latest . -- --template react-ts',
-      yarn: 'yarn create vite@latest . --template react-ts',
+      yarn: 'yarn create vite . --template react-ts',
       pnpm: 'pnpm create vite@latest . --template react-ts',
     },
   },
@@ -59,7 +59,7 @@ const SUPPORTED_PROJECTS: Record<string, SupportedProject> = {
     },
     createScript: {
       npm: 'npm create vite@latest . -- --template vue-ts',
-      yarn: 'yarn create vite@latest . --template vue-ts',
+      yarn: 'yarn create vite . --template vue-ts',
       pnpm: 'pnpm create vite@latest . --template vue-ts',
     },
   },
@@ -82,7 +82,7 @@ const SUPPORTED_PROJECTS: Record<string, SupportedProject> = {
     },
     createScript: {
       npm: 'npm create vite@latest . -- --template lit-ts',
-      yarn: 'yarn create vite@latest . --template lit-ts && touch yarn.lock && yarn set version berry && yarn config set nodeLinker pnp',
+      yarn: 'yarn create vite . --template lit-ts && touch yarn.lock && yarn set version berry && yarn config set nodeLinker pnp',
       pnpm: 'pnpm create vite@latest . --template lit-ts',
     },
   },

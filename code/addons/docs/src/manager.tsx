@@ -43,7 +43,7 @@ addons.register(ADDON_ID, (api) => {
         source: string;
         format: SyntaxHighlighterFormatTypes;
       }>({
-        source: lastEvent?.source ?? '',
+        source: lastEvent?.source,
         format: lastEvent?.format ?? undefined,
       });
 
@@ -66,7 +66,7 @@ addons.register(ADDON_ID, (api) => {
           <SourceStyles>
             <Source
               {...parameter.source}
-              code={parameter.source?.code || codeSnippet.source}
+              code={parameter.source?.code || codeSnippet.source || parameter.source.originalSource}
               format={codeSnippet.format}
               dark={isDark}
             />

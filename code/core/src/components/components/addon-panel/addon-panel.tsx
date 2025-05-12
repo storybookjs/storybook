@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 
 import { STORY_RENDER_PHASE_CHANGED } from 'storybook/internal/core-events';
 
-import { useChannel } from 'storybook/manager-api';
+import { addons } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import { EmptyTabContent } from '../tabs/EmptyTabContent';
@@ -20,18 +20,14 @@ export const ErrorHandler = ({
 }) => {
   const [hasError, setHasError] = useState(false);
 
-  useChannel(
-    {
-      [STORY_RENDER_PHASE_CHANGED]: ({ newPhase }) => {
-        if (newPhase === 'rendering') {
-          setHasError(false);
-        } else if (newPhase === 'errored') {
-          setHasError(true);
-        }
-      },
-    },
-    []
-  );
+  const channel = addons.getChannel();
+  channel.on(STORY_RENDER_PHASE_CHANGED, ({ newPhase }) => {
+    if (newPhase === 'rendering') {
+      setHasError(false);
+    } else if (newPhase === 'errored') {
+      setHasError(true);
+    }
+  });
 
   return hasError ? (
     <EmptyTabContent

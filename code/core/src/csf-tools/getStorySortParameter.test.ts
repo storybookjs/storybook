@@ -1,5 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import { dedent } from 'ts-dedent';
+
 import { getStorySortParameter } from './getStorySortParameter';
 
 describe('getStorySortParameter', () => {
@@ -474,6 +476,51 @@ export default {
             ],
           }
         `);
+      });
+      describe('csf factories', () => {
+        it('inline storysort in default export', () => {
+          expect(
+            getStorySortParameter(dedent`
+              export default definePreview({
+                parameters: {
+                  options: {
+                    storySort: {
+                      order: ['General']
+                    }
+                  },
+                },
+              });
+          `)
+          ).toMatchInlineSnapshot(`
+            {
+              "order": [
+                "General",
+              ],
+            }
+          `);
+        });
+        it('variable reference in default export', () => {
+          expect(
+            getStorySortParameter(dedent`
+              const parameters = {
+                options: {
+                  storySort: {
+                    order: ['General']
+                  }
+                },
+              };
+              export default definePreview({
+                parameters,
+              });
+          `)
+          ).toMatchInlineSnapshot(`
+            {
+              "order": [
+                "General",
+              ],
+            }
+          `);
+        });
       });
     });
     describe('unsupported', () => {

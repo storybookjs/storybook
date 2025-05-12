@@ -7,4 +7,3 @@ console.log(process.env.STORYBOOK_DATA_KEY);
 console.log(import.meta.env.STORYBOOK_THEME);
 console.log(import.meta.env.STORYBOOK_DATA_KEY);
 ```
-

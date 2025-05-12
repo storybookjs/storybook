@@ -12,4 +12,3 @@ pnpm dlx storybook@latest migrate mdx-to-csf --glob "src/**/*.stories.mdx"
 # Convert stories in MDX to CSF
 yarn dlx storybook@latest migrate mdx-to-csf --glob "src/**/*.stories.mdx"
 ```
-

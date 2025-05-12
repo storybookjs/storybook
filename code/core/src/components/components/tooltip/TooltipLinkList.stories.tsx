@@ -1,33 +1,16 @@
-import type { FunctionComponent, MouseEvent, PropsWithChildren, ReactElement } from 'react';
-import React, { Children, cloneElement } from 'react';
-import { action } from '@storybook/addon-actions';
-import type { Meta, StoryObj } from '@storybook/react';
+import React from 'react';
+
 import { LinkIcon, LinuxIcon } from '@storybook/icons';
-import { WithTooltip } from './WithTooltip';
+
+import type { Meta, StoryObj } from '@storybook/react-vite';
+
+import { action } from 'storybook/actions';
+
 import { TooltipLinkList } from './TooltipLinkList';
+import { WithTooltip } from './WithTooltip';
 import ellipseUrl from './assets/ellipse.png';
 
 const onLinkClick = action('onLinkClick');
-
-interface StoryLinkWrapperProps {
-  href: string;
-  passHref?: boolean;
-}
-
-const StoryLinkWrapper: FunctionComponent<PropsWithChildren<StoryLinkWrapperProps>> = ({
-  href,
-  passHref = false,
-  children,
-}) => {
-  const child = Children.only(children) as ReactElement;
-  return cloneElement(child, {
-    href: passHref && href,
-    onClick: (e: MouseEvent) => {
-      e.preventDefault();
-      onLinkClick(href);
-    },
-  });
-};
 
 export default {
   component: TooltipLinkList,
@@ -57,15 +40,16 @@ export const WithoutIcons = {
         title: 'Link 1',
         center: 'This is an addition description',
         href: 'http://google.com',
+        onClick: onLinkClick,
       },
       {
         id: '2',
         title: 'Link 2',
         center: 'This is an addition description',
         href: 'http://google.com',
+        onClick: onLinkClick,
       },
     ],
-    LinkWrapper: StoryLinkWrapper,
   },
 } satisfies Story;
 
@@ -78,15 +62,16 @@ export const WithOneIcon = {
         center: 'This is an addition description',
         icon: <LinkIcon />,
         href: 'http://google.com',
+        onClick: onLinkClick,
       },
       {
         id: '2',
         title: 'Link 2',
         center: 'This is an addition description',
         href: 'http://google.com',
+        onClick: onLinkClick,
       },
     ],
-    LinkWrapper: StoryLinkWrapper,
   },
 } satisfies Story;
 
@@ -99,15 +84,16 @@ export const ActiveWithoutAnyIcons = {
         active: true,
         center: 'This is an addition description',
         href: 'http://google.com',
+        onClick: onLinkClick,
       },
       {
         id: '2',
         title: 'Link 2',
         center: 'This is an addition description',
         href: 'http://google.com',
+        onClick: onLinkClick,
       },
     ],
-    LinkWrapper: StoryLinkWrapper,
   },
 } satisfies Story;
 
@@ -120,6 +106,7 @@ export const ActiveWithSeparateIcon = {
         icon: <LinkIcon />,
         center: 'This is an addition description',
         href: 'http://google.com',
+        onClick: onLinkClick,
       },
       {
         id: '2',
@@ -127,9 +114,9 @@ export const ActiveWithSeparateIcon = {
         active: true,
         center: 'This is an addition description',
         href: 'http://google.com',
+        onClick: onLinkClick,
       },
     ],
-    LinkWrapper: StoryLinkWrapper,
   },
 } satisfies Story;
 
@@ -143,15 +130,16 @@ export const ActiveAndIcon = {
         icon: <LinkIcon />,
         center: 'This is an addition description',
         href: 'http://google.com',
+        onClick: onLinkClick,
       },
       {
         id: '2',
         title: 'Link 2',
         center: 'This is an addition description',
         href: 'http://google.com',
+        onClick: onLinkClick,
       },
     ],
-    LinkWrapper: StoryLinkWrapper,
   },
 } satisfies Story;
 
@@ -166,6 +154,7 @@ export const WithIllustration = {
         right: <img src={ellipseUrl} width="16" height="16" alt="ellipse" />,
         center: 'This is an addition description',
         href: 'http://google.com',
+        onClick: onLinkClick,
       },
       {
         id: '2',
@@ -173,9 +162,9 @@ export const WithIllustration = {
         center: 'This is an addition description',
         right: <img src={ellipseUrl} width="16" height="16" alt="ellipse" />,
         href: 'http://google.com',
+        onClick: onLinkClick,
       },
     ],
-    LinkWrapper: StoryLinkWrapper,
   },
 } satisfies Story;
 
@@ -190,6 +179,7 @@ export const WithCustomIcon = {
         right: <img src={ellipseUrl} width="16" height="16" alt="ellipse" />,
         center: 'This is an addition description',
         href: 'http://google.com',
+        onClick: onLinkClick,
       },
       {
         id: '2',
@@ -197,8 +187,50 @@ export const WithCustomIcon = {
         center: 'This is an addition description',
         right: <img src={ellipseUrl} width="16" height="16" alt="ellipse" />,
         href: 'http://google.com',
+        onClick: onLinkClick,
       },
     ],
-    LinkWrapper: StoryLinkWrapper,
+  },
+} satisfies Story;
+
+export const WithGroups = {
+  args: {
+    links: [
+      [
+        {
+          id: '1',
+          title: 'Link 1',
+          center: 'This is an addition description',
+          href: 'http://google.com',
+          onClick: onLinkClick,
+        },
+      ],
+      [
+        {
+          id: '1',
+          title: 'Link 1',
+          center: 'This is an addition description',
+          icon: <LinkIcon />,
+          href: 'http://google.com',
+          onClick: onLinkClick,
+        },
+        {
+          id: '2',
+          title: 'Link 2',
+          center: 'This is an addition description',
+          href: 'http://google.com',
+          onClick: onLinkClick,
+        },
+      ],
+      [
+        {
+          id: '2',
+          title: 'Link 2',
+          center: 'This is an addition description',
+          href: 'http://google.com',
+          onClick: onLinkClick,
+        },
+      ],
+    ],
   },
 } satisfies Story;

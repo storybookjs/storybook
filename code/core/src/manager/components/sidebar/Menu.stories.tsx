@@ -1,19 +1,24 @@
-import type { ComponentProps } from 'react';
 import React from 'react';
-import type { Meta, StoryObj } from '@storybook/react';
 
-import { TooltipLinkList } from '@storybook/core/components';
-import { styled } from '@storybook/core/theming';
-import { screen, userEvent, within, expect } from '@storybook/test';
-import type { State } from '@storybook/core/manager-api';
+import { TooltipLinkList } from 'storybook/internal/components';
+
 import { LinkIcon } from '@storybook/icons';
-import { SidebarMenu } from './Menu';
+
+import type { Meta, StoryObj } from '@storybook/react-vite';
+
+import type { State } from 'storybook/manager-api';
+import { expect, screen, userEvent, within } from 'storybook/test';
+import { styled } from 'storybook/theming';
+
 import { useMenu } from '../../container/Menu';
 import { LayoutProvider } from '../layout/LayoutProvider';
+import { type MenuList, SidebarMenu } from './Menu';
 
-const fakemenu: ComponentProps<typeof TooltipLinkList>['links'] = [
-  { title: 'has icon', icon: <LinkIcon />, id: 'icon' },
-  { title: 'has no icon', id: 'non' },
+const fakemenu: MenuList = [
+  [
+    { title: 'has icon', icon: <LinkIcon />, id: 'icon' },
+    { title: 'has no icon', id: 'non' },
+  ],
 ];
 
 const meta = {

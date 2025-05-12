@@ -147,7 +147,7 @@ export const Inaccessible = {
 };
 ```
 
-```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts-4-9"
+```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts"
 import type { Meta, StoryObj } from 'storybook-solidjs';
 
 import { Button } from './Button';
@@ -179,39 +179,28 @@ export const Inaccessible: Story = {
 };
 ```
 
-```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs';
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
 
-import { Button } from './Button';
+  import Button from './Button.svelte';
 
-const meta: Meta<typeof Button> = {
-  component: Button,
-  argTypes: {
-    backgroundColor: { control: 'color' },
-  },
-};
+  const { Story } = defineMeta({
+    component: Button,
+    argTypes: {
+      backgroundColor: { control: 'color' },
+    },
+  });
+</script>
 
-export default meta;
-type Story = StoryObj<typeof Button>;
+<!-- This is an accessible story -->
+<Story name="Accessible" args={{ primary: false, label: 'Button' }} />
 
-// This is an accessible story
-export const Accessible: Story = {
-  args: {
-    primary: false,
-    label: 'Button',
-  },
-};
-
-// This is not
-export const Inaccessible: Story = {
-  args: {
-    ...Accessible.args,
-    backgroundColor: 'red',
-  },
-};
+<!-- This is not -->
+<Story name="Inaccessible" args={{ primary: false, label: 'Button', backgroundColor: 'red' }} />
 ```
 
-```js filename="Button.stories.js" renderer="svelte" language="js"
+```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF"
 import Button from './Button.svelte';
 
 export default {
@@ -223,10 +212,6 @@ export default {
 
 // This is an accessible story
 export const Accessible = {
-  render: (args) => ({
-    Component: Button,
-    props: args,
-  }),
   args: {
     primary: false,
     label: 'Button',
@@ -235,10 +220,6 @@ export const Accessible = {
 
 // This is not
 export const Inaccessible = {
-  render: (args) => ({
-    Component: Button,
-    props: args,
-  }),
   args: {
     ...Accessible.args,
     backgroundColor: 'red',
@@ -246,7 +227,28 @@ export const Inaccessible = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts-4-9"
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import Button from './Button.svelte';
+
+  const { Story } = defineMeta({
+    component: Button,
+    argTypes: {
+      backgroundColor: { control: 'color' },
+    },
+  });
+</script>
+
+<!-- This is an accessible story -->
+<Story name="Accessible" args={{ primary: false, label: 'Button' }} />
+
+<!-- This is not -->
+<Story name="Inaccessible" args={{ primary: false, label: 'Button', backgroundColor: 'red' }} />
+```
+
+```ts filename="Button.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="CSF"
 import type { Meta, StoryObj } from '@storybook/svelte';
 
 import Button from './Button.svelte';
@@ -278,7 +280,28 @@ export const Inaccessible: Story = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts"
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import Button from './Button.svelte';
+
+  const { Story } = defineMeta({
+    component: Button,
+    argTypes: {
+      backgroundColor: { control: 'color' },
+    },
+  });
+</script>
+
+<!-- This is an accessible story -->
+<Story name="Accessible" args={{ primary: false, label: 'Button' }} />
+
+<!-- This is not -->
+<Story name="Inaccessible" args={{ primary: false, label: 'Button', backgroundColor: 'red' }} />
+```
+
+```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
 import type { Meta, StoryObj } from '@storybook/svelte';
 
 import Button from './Button.svelte';
@@ -310,7 +333,7 @@ export const Inaccessible: Story = {
 };
 ```
 
-```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="3"
+```js filename="Button.stories.js" renderer="vue" language="js"
 import Button from './Button.vue';
 
 export default {
@@ -337,7 +360,7 @@ export const Inaccessible = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="vue" language="ts-4-9" tabTitle="3"
+```ts filename="Button.stories.ts" renderer="vue" language="ts-4-9"
 import type { Meta, StoryObj } from '@storybook/vue3';
 
 import Button from './Button.vue';
@@ -368,7 +391,7 @@ export const Inaccessible: Story = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="3"
+```ts filename="Button.stories.ts" renderer="vue" language="ts"
 import type { Meta, StoryObj } from '@storybook/vue3';
 
 import Button from './Button.vue';
@@ -467,4 +490,3 @@ export const Inaccessible: Story = {
   },
 };
 ```
-

@@ -1,4 +1,4 @@
-import { EOL } from 'os';
+import { EOL } from 'node:os';
 
 // copied from https://github.com/chalk/ansi-regex
 // the package is ESM only so not compatible with jest
@@ -13,7 +13,7 @@ export const ansiRegex = ({ onlyFirst = false } = {}) => {
 
 export const cleanLog = (str: string) =>
   str
-    // remove chalk ANSI colors
+    // remove picocolors ANSI colors
     .replace(ansiRegex(), '')
     // fix boxen output
     .replace(/╮│/g, '╮\n│')

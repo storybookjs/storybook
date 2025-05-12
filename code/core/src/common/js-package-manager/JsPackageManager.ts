@@ -1,29 +1,36 @@
-import chalk from 'chalk';
-import { gt, satisfies } from 'semver';
-import type { CommonOptions } from 'execa';
-import { execaCommand, execaCommandSync } from 'execa';
-import path from 'node:path';
-
-import { dedent } from 'ts-dedent';
 import { existsSync, readFileSync } from 'node:fs';
 import { readFile, writeFile } from 'node:fs/promises';
+import { dirname, resolve } from 'node:path';
+
+// eslint-disable-next-line depend/ban-dependencies
+import { type CommonOptions, execaCommand, execaCommandSync } from 'execa';
+import picocolors from 'picocolors';
+import { gt, satisfies } from 'semver';
 import invariant from 'tiny-invariant';
-import type { PackageJson, PackageJsonWithDepsAndDevDeps } from './PackageJson';
-import storybookPackagesVersions from '../versions';
-import type { InstallationMetadata } from './types';
+import { dedent } from 'ts-dedent';
+
 import { HandledError } from '../utils/HandledError';
+import storybookPackagesVersions from '../versions';
+import type { PackageJson, PackageJsonWithDepsAndDevDeps } from './PackageJson';
+import type { InstallationMetadata } from './types';
 
 const logger = console;
 
-export type PackageManagerName = 'npm' | 'yarn1' | 'yarn2' | 'pnpm';
+export type PackageManagerName = 'npm' | 'yarn1' | 'yarn2' | 'pnpm' | 'bun';
 
 type StorybookPackage = keyof typeof storybookPackagesVersions;
+
+export const COMMON_ENV_VARS = {
+  COREPACK_ENABLE_STRICT: '0',
+  COREPACK_ENABLE_AUTO_PIN: '0',
+  NO_UPDATE_NOTIFIER: 'true',
+};
 
 /**
  * Extract package name and version from input
  *
  * @param pkg A string like `@storybook/cli`, `react` or `react@^16`
- * @return A tuple of 2 elements: [packageName, packageVersion]
+ * @returns A tuple of 2 elements: [packageName, packageVersion]
  */
 export function getPackageDetails(pkg: string): [string, string?] {
   const idx = pkg.lastIndexOf('@');
@@ -49,6 +56,8 @@ export abstract class JsPackageManager {
 
   public abstract getRunCommand(command: string): string;
 
+  public abstract getRemoteRunCommand(): string;
+
   public readonly cwd?: string;
 
   public abstract getPackageJSON(
@@ -56,21 +65,21 @@ export abstract class JsPackageManager {
     basePath?: string
   ): Promise<PackageJson | null>;
 
-  /**
-   * Get the INSTALLED version of a package from the package.json file
-   */
+  /** Get the INSTALLED version of a package from the package.json file */
   async getPackageVersion(packageName: string, basePath = this.cwd): Promise<string | null> {
     const packageJSON = await this.getPackageJSON(packageName, basePath);
-    return packageJSON ? packageJSON.version ?? null : null;
+    return packageJSON ? (packageJSON.version ?? null) : null;
   }
 
   constructor(options?: JsPackageManagerOptions) {
     this.cwd = options?.cwd || process.cwd();
   }
 
-  /** Detect whether Storybook gets initialized in a monorepository/workspace environment
-   * The cwd doesn't have to be the root of the monorepo, it can be a subdirectory
-   * @returns true, if Storybook is initialized inside a monorepository/workspace
+  /**
+   * Detect whether Storybook gets initialized in a mono-repository/workspace environment The cwd
+   * doesn't have to be the root of the monorepo, it can be a subdirectory
+   *
+   * @returns `true`, if Storybook is initialized inside a mono-repository/workspace
    */
   public isStorybookInMonorepo() {
     let cwd = process.cwd();
@@ -98,7 +107,7 @@ export abstract class JsPackageManager {
       }
 
       // Move up to the parent directory
-      const parentDir = path.dirname(cwd);
+      const parentDir = dirname(cwd);
 
       // Check if we have reached the root of the filesystem
       if (parentDir === cwd) {
@@ -112,9 +121,7 @@ export abstract class JsPackageManager {
     return false;
   }
 
-  /**
-   * Install dependencies listed in `package.json`
-   */
+  /** Install dependencies listed in `package.json` */
   public async installDependencies() {
     logger.log('Installing dependencies...');
     logger.log();
@@ -131,7 +138,7 @@ export abstract class JsPackageManager {
     if (!this.cwd) {
       throw new Error('Missing cwd');
     }
-    return path.resolve(this.cwd, 'package.json');
+    return resolve(this.cwd, 'package.json');
   }
 
   async readPackageJson(): Promise<PackageJson> {
@@ -171,8 +178,8 @@ export abstract class JsPackageManager {
   }
 
   /**
-   * Read the `package.json` file available in the directory the command was call from
-   * If there is no `package.json` it will create one.
+   * Read the `package.json` file available in the directory the command was call from If there is
+   * no `package.json` it will create one.
    */
   public async retrievePackageJson(): Promise<PackageJsonWithDepsAndDevDeps> {
     let packageJson;
@@ -214,25 +221,29 @@ export abstract class JsPackageManager {
   /**
    * Add dependencies to a project using `yarn add` or `npm install`.
    *
-   * @param {Object} options contains `skipInstall`, `packageJson` and `installAsDevDependencies` which we use to determine how we install packages.
-   * @param {Array} dependencies contains a list of packages to add.
    * @example
+   *
+   * ```ts
    * addDependencies(options, [
    *   `@storybook/react@${storybookVersion}`,
-   *   `@storybook/addon-actions@${actionsVersion}`,
    *   `@storybook/addon-links@${linksVersion}`,
-   *   `@storybook/preview-api@${addonsVersion}`,
    * ]);
+   * ```
+   *
+   * @param {Object} options Contains `skipInstall`, `packageJson` and `installAsDevDependencies`
+   *   which we use to determine how we install packages.
+   * @param {Array} dependencies Contains a list of packages to add.
    */
   public async addDependencies(
     options: {
       skipInstall?: boolean;
       installAsDevDependencies?: boolean;
       packageJson?: PackageJson;
+      writeOutputToFile?: boolean;
     },
     dependencies: string[]
   ) {
-    const { skipInstall } = options;
+    const { skipInstall, writeOutputToFile = true } = options;
 
     if (skipInstall) {
       const { packageJson } = options;
@@ -257,7 +268,11 @@ export abstract class JsPackageManager {
       await this.writePackageJson(packageJson);
     } else {
       try {
-        await this.runAddDeps(dependencies, Boolean(options.installAsDevDependencies));
+        await this.runAddDeps(
+          dependencies,
+          Boolean(options.installAsDevDependencies),
+          writeOutputToFile
+        );
       } catch (e: any) {
         logger.error('\nAn error occurred while installing dependencies:');
         logger.log(e.message);
@@ -269,13 +284,15 @@ export abstract class JsPackageManager {
   /**
    * Remove dependencies from a project using `yarn remove` or `npm uninstall`.
    *
-   * @param {Object} options contains `skipInstall`, `packageJson` and `installAsDevDependencies` which we use to determine how we install packages.
-   * @param {Array} dependencies contains a list of packages to remove.
    * @example
-   * removeDependencies(options, [
-   *   `@storybook/react`,
-   *   `@storybook/addon-actions`,
-   * ]);
+   *
+   * ```ts
+   * removeDependencies(options, [`@storybook/react`]);
+   * ```
+   *
+   * @param {Object} options Contains `skipInstall`, `packageJson` and `installAsDevDependencies`
+   *   which we use to determine how we install packages.
+   * @param {Array} dependencies Contains a list of packages to remove.
    */
   public async removeDependencies(
     options: {
@@ -314,10 +331,11 @@ export abstract class JsPackageManager {
   /**
    * Return an array of strings matching following format: `<package_name>@<package_latest_version>`
    *
-   * For packages in the storybook monorepo, when the latest version is equal to the version of the current CLI
-   * the version is not added to the string.
+   * For packages in the storybook monorepo, when the latest version is equal to the version of the
+   * current CLI the version is not added to the string.
    *
-   * When a package is in the monorepo, and the version is not equal to the CLI version, the version is taken from the versions.ts file and added to the string.
+   * When a package is in the monorepo, and the version is not equal to the CLI version, the version
+   * is taken from the versions.ts file and added to the string.
    *
    * @param packages
    */
@@ -325,25 +343,32 @@ export abstract class JsPackageManager {
     return Promise.all(
       packages.map(async (pkg) => {
         const [packageName, packageVersion] = getPackageDetails(pkg);
+
+        // If the packageVersion is specified and we are not dealing with a storybook package,
+        // just return the requested version.
+        if (packageVersion && !(packageName in storybookPackagesVersions)) {
+          return pkg;
+        }
+
         const latestInRange = await this.latestVersion(packageName, packageVersion);
 
         const k = packageName as keyof typeof storybookPackagesVersions;
         const currentVersion = storybookPackagesVersions[k];
 
-        if (currentVersion === latestInRange) {
-          return `${packageName}`;
+        const isLatestStableRelease = currentVersion === latestInRange;
+
+        if (isLatestStableRelease || !currentVersion) {
+          return `${packageName}@^${latestInRange}`;
         }
-        if (currentVersion) {
-          return `${packageName}@${currentVersion}`;
-        }
-        return `${packageName}@^${latestInRange}`;
+
+        return `${packageName}@${currentVersion}`;
       })
     );
   }
 
   /**
-   * Return an array of string standing for the latest version of the input packages.
-   * To be able to identify which version goes with which package the order of the input array is keep.
+   * Return an array of string standing for the latest version of the input packages. To be able to
+   * identify which version goes with which package the order of the input array is keep.
    *
    * @param packageNames
    */
@@ -356,10 +381,11 @@ export abstract class JsPackageManager {
   }
 
   /**
-   * Return the latest version of the input package available on npmjs registry.
-   * If constraint are provided it return the latest version matching the constraints.
+   * Return the latest version of the input package available on npmjs registry. If constraint are
+   * provided it return the latest version matching the constraints.
    *
-   * For `@storybook/*` packages the latest version is retrieved from `cli/src/versions.json` file directly
+   * For `@storybook/*` packages the latest version is retrieved from `cli/src/versions.json` file
+   * directly
    *
    * @param packageName The name of the package
    * @param constraint A valid semver constraint, example: '1.x || >=2.5.0 || 5.0.0 - 7.2.3'
@@ -376,11 +402,11 @@ export abstract class JsPackageManager {
       latest = await this.latestVersion(packageName, constraint);
     } catch (e) {
       if (current) {
-        logger.warn(`\n     ${chalk.yellow(String(e))}`);
+        logger.warn(`\n     ${picocolors.yellow(String(e))}`);
         return current;
       }
 
-      logger.error(`\n     ${chalk.red(String(e))}`);
+      logger.error(`\n     ${picocolors.red(String(e))}`);
       throw new HandledError(e);
     }
 
@@ -392,8 +418,8 @@ export abstract class JsPackageManager {
   }
 
   /**
-   * Get the latest version of the package available on npmjs.com.
-   * If constraint is set then it returns a version satisfying it, otherwise the latest version available is returned.
+   * Get the latest version of the package available on npmjs.com. If constraint is set then it
+   * returns a version satisfying it, otherwise the latest version available is returned.
    *
    * @param packageName Name of the package
    * @param constraint Version range to use to constraint the returned version
@@ -410,7 +436,7 @@ export abstract class JsPackageManager {
       .find((version) => satisfies(version, constraint));
     invariant(
       latestVersionSatisfyingTheConstraint != null,
-      'No version satisfying the constraint.'
+      `No version satisfying the constraint: ${packageName}${constraint}`
     );
     return latestVersionSatisfyingTheConstraint;
   }
@@ -449,7 +475,8 @@ export abstract class JsPackageManager {
 
   protected abstract runAddDeps(
     dependencies: string[],
-    installAsDevDependencies: boolean
+    installAsDevDependencies: boolean,
+    writeOutputToFile?: boolean
   ): Promise<void>;
 
   protected abstract runRemoveDeps(dependencies: string[]): Promise<void>;
@@ -512,7 +539,10 @@ export abstract class JsPackageManager {
         stdio: stdio ?? 'pipe',
         shell: true,
         cleanup: true,
-        env,
+        env: {
+          ...COMMON_ENV_VARS,
+          ...env,
+        },
         ...execaOptions,
       });
 
@@ -525,9 +555,7 @@ export abstract class JsPackageManager {
     }
   }
 
-  /**
-   * Returns the installed (within node_modules or pnp zip) version of a specified package
-   */
+  /** Returns the installed (within node_modules or pnp zip) version of a specified package */
   public async getInstalledVersion(packageName: string): Promise<string | null> {
     const installations = await this.findInstallations([packageName]);
     if (!installations) {
@@ -558,7 +586,10 @@ export abstract class JsPackageManager {
         encoding: 'utf8',
         shell: true,
         cleanup: true,
-        env,
+        env: {
+          ...COMMON_ENV_VARS,
+          ...env,
+        },
         ...execaOptions,
       });
 

@@ -1,13 +1,15 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { cache, loadAllPresets } from 'storybook/internal/common';
+import { oneWayHash, telemetry } from 'storybook/internal/telemetry';
+
 import prompts from 'prompts';
-import { describe, beforeEach, it, expect, vi } from 'vitest';
-import { loadAllPresets, cache } from '@storybook/core/common';
-import { telemetry, oneWayHash } from '@storybook/core/telemetry';
 
 import { getErrorLevel, sendTelemetryError, withTelemetry } from './withTelemetry';
 
 vi.mock('prompts');
-vi.mock('@storybook/core/common');
-vi.mock('@storybook/core/telemetry');
+vi.mock('storybook/internal/common');
+vi.mock('storybook/internal/telemetry');
 
 const cliOptions = {};
 

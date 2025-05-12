@@ -1,6 +1,7 @@
 import React, { forwardRef } from 'react';
-import { styled } from '@storybook/core/theming';
+
 import * as ScrollAreaPrimitive from '@radix-ui/react-scroll-area';
+import { styled } from 'storybook/theming';
 
 export interface ScrollAreaProps {
   children?: React.ReactNode;
@@ -37,6 +38,7 @@ const ScrollAreaScrollbar = styled(ScrollAreaPrimitive.Scrollbar)<{
   background: 'transparent',
   transition: 'all 0.2s ease-out',
   borderRadius: 'var(--scrollbar-size)',
+  zIndex: 1,
 
   '&[data-orientation="vertical"]': {
     width: 'var(--scrollbar-size)',

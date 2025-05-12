@@ -1,10 +1,11 @@
-// @TODO: use addon-interactions and remove the rule disable above
 import React from 'react';
-import type { Meta, StoryObj, StoryFn } from '@storybook/react';
-import { ThemeProvider, useTheme } from '@storybook/core/theming';
-import type { Theme } from '@storybook/core/theming';
-import { action } from '@storybook/addon-actions';
-import { screen } from '@storybook/test';
+
+import type { Meta, StoryFn, StoryObj } from '@storybook/react-vite';
+
+import { action } from 'storybook/actions';
+import { screen } from 'storybook/test';
+import { ThemeProvider, useTheme } from 'storybook/theming';
+import type { Theme } from 'storybook/theming';
 
 import { Heading } from './Heading';
 
@@ -22,13 +23,15 @@ export default {
 } as Meta<typeof Heading>;
 
 const menuItems = [
-  { title: 'Menu Item 1', onClick: action('onActivateMenuItem'), id: '1' },
-  { title: 'Menu Item 2', onClick: action('onActivateMenuItem'), id: '2' },
-  { title: 'Menu Item 3', onClick: action('onActivateMenuItem'), id: '3' },
+  [
+    { title: 'Menu Item 1', onClick: action('onActivateMenuItem'), id: '1' },
+    { title: 'Menu Item 2', onClick: action('onActivateMenuItem'), id: '2' },
+    { title: 'Menu Item 3', onClick: action('onActivateMenuItem'), id: '3' },
+  ],
 ];
 
 export const MenuHighlighted: Story = () => (
-  <Heading menuHighlighted menu={menuItems} isLoading={false} extra={[]} />
+  <Heading menuHighlighted menu={menuItems} isLoading={false} />
 );
 
 export const standardData = { menu: menuItems };
@@ -47,7 +50,7 @@ export const Standard: Story = () => {
         },
       }}
     >
-      <Heading menu={menuItems} isLoading={false} extra={[]} />
+      <Heading menu={menuItems} isLoading={false} />
     </ThemeProvider>
   );
 };
@@ -66,7 +69,7 @@ export const StandardNoLink: Story = () => {
         },
       }}
     >
-      <Heading menu={menuItems} isLoading={false} extra={[]} />
+      <Heading menu={menuItems} isLoading={false} />
     </ThemeProvider>
   );
 };
@@ -85,7 +88,7 @@ export const LinkAndText: Story = () => {
         },
       }}
     >
-      <Heading menu={menuItems} isLoading={false} extra={[]} />
+      <Heading menu={menuItems} isLoading={false} />
     </ThemeProvider>
   );
 };
@@ -104,7 +107,7 @@ export const OnlyText: Story = () => {
         },
       }}
     >
-      <Heading menu={menuItems} isLoading={false} extra={[]} />
+      <Heading menu={menuItems} isLoading={false} />
     </ThemeProvider>
   );
 };
@@ -123,7 +126,7 @@ export const LongText: Story = () => {
         },
       }}
     >
-      <Heading menu={menuItems} isLoading={false} extra={[]} />
+      <Heading menu={menuItems} isLoading={false} />
     </ThemeProvider>
   );
 };
@@ -142,7 +145,7 @@ export const CustomTitle: Story = () => {
         },
       }}
     >
-      <Heading menu={menuItems} isLoading={false} extra={[]} />
+      <Heading menu={menuItems} isLoading={false} />
     </ThemeProvider>
   );
 };
@@ -161,7 +164,7 @@ export const CustomBrandImage: Story = () => {
         },
       }}
     >
-      <Heading menu={menuItems} isLoading={false} extra={[]} />
+      <Heading menu={menuItems} isLoading={false} />
     </ThemeProvider>
   );
 };
@@ -180,7 +183,7 @@ export const CustomBrandImageTall: Story = () => {
         },
       }}
     >
-      <Heading menu={menuItems} isLoading={false} extra={[]} />
+      <Heading menu={menuItems} isLoading={false} />
     </ThemeProvider>
   );
 };
@@ -199,7 +202,7 @@ export const CustomBrandImageUnsizedSVG: Story = () => {
         },
       }}
     >
-      <Heading menu={menuItems} isLoading={false} extra={[]} />
+      <Heading menu={menuItems} isLoading={false} />
     </ThemeProvider>
   );
 };
@@ -218,7 +221,7 @@ export const NoBrand: Story = () => {
         },
       }}
     >
-      <Heading menu={menuItems} isLoading={false} extra={[]} />
+      <Heading menu={menuItems} isLoading={false} />
     </ThemeProvider>
   );
 };
@@ -227,7 +230,6 @@ export const SkipToCanvasLinkFocused: StoryObj<typeof Heading> = {
   args: {
     menu: menuItems,
     skipLinkHref: '#storybook-preview-wrapper',
-    extra: [],
     isLoading: false,
   },
   globals: { sb_theme: 'light' },

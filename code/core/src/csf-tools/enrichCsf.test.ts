@@ -1,6 +1,7 @@
-/* eslint-disable no-underscore-dangle */
+import { describe, expect, it } from 'vitest';
+
 import { dedent } from 'ts-dedent';
-import { describe, it, expect } from 'vitest';
+
 import { formatCsf, loadCsf } from './CsfFile';
 import type { EnrichCsfOptions } from './enrichCsf';
 import { enrichCsf, extractSource } from './enrichCsf';
@@ -142,6 +143,51 @@ describe('enrichCsf', () => {
             source: {
               originalSource: "{\\n  parameters: {\\n    foo: 'bar'\\n  }\\n}",
               ...Basic.parameters?.docs?.source
+            }
+          }
+        };
+      `);
+    });
+    it('csf factories', () => {
+      expect(
+        enrich(
+          dedent`
+          // compiled code
+          import {config} from "/.storybook/preview.ts";
+          const meta = config.meta({
+              args: {
+                label: "Hello world!"
+              }
+          });
+          export const Story = meta.story({});
+        `,
+          dedent`
+          // original code
+          import {config} from "#.storybook/preview.ts";
+          const meta = config.meta({
+              args: {
+                label: "Hello world!"
+              }
+          });
+          export const Story = meta.story({});
+        `
+        )
+      ).toMatchInlineSnapshot(`
+        // compiled code
+        import { config } from "/.storybook/preview.ts";
+        const meta = config.meta({
+          args: {
+            label: "Hello world!"
+          }
+        });
+        export const Story = meta.story({});
+        Story.input.parameters = {
+          ...Story.input.parameters,
+          docs: {
+            ...Story.input.parameters?.docs,
+            source: {
+              originalSource: "meta.story({})",
+              ...Story.input.parameters?.docs?.source
             }
           }
         };

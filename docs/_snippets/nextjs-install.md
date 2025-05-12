@@ -9,4 +9,3 @@ pnpm add --save-dev @storybook/nextjs
 ```shell renderer="react" language="js" packageManager="yarn"
 yarn add --dev @storybook/nextjs
 ```
-

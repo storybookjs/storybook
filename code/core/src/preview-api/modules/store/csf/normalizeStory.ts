@@ -1,20 +1,20 @@
+import { deprecate, logger } from 'storybook/internal/client-logger';
+import { storyNameFromExport, toId } from 'storybook/internal/csf';
 import type {
-  Renderer,
   ArgTypes,
-  LegacyStoryAnnotationsOrFn,
-  StoryAnnotations,
-  StoryFn,
-  StoryId,
-} from '@storybook/core/types';
-import { storyNameFromExport, toId } from '@storybook/csf';
-import { dedent } from 'ts-dedent';
-import { logger, deprecate } from '@storybook/core/client-logger';
-import { normalizeInputTypes } from './normalizeInputTypes';
-import { normalizeArrays } from './normalizeArrays';
-import type {
+  ArgsStoryFn,
   NormalizedComponentAnnotations,
   NormalizedStoryAnnotations,
-} from '@storybook/core/types';
+  Renderer,
+  StoryAnnotations,
+  StoryAnnotationsOrFn,
+  StoryId,
+} from 'storybook/internal/types';
+
+import { dedent } from 'ts-dedent';
+
+import { normalizeArrays } from './normalizeArrays';
+import { normalizeInputTypes } from './normalizeInputTypes';
 
 const deprecatedStoryAnnotation = dedent`
 CSF .story annotations deprecated; annotate story functions directly:
@@ -25,11 +25,11 @@ See https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#hoisted-csf-
 
 export function normalizeStory<TRenderer extends Renderer>(
   key: StoryId,
-  storyAnnotations: LegacyStoryAnnotationsOrFn<TRenderer>,
+  storyAnnotations: StoryAnnotationsOrFn<TRenderer>,
   meta: NormalizedComponentAnnotations<TRenderer>
 ): NormalizedStoryAnnotations<TRenderer> {
   const storyObject: StoryAnnotations<TRenderer> = storyAnnotations;
-  const userStoryFn: StoryFn<TRenderer> | null =
+  const userStoryFn: ArgsStoryFn<TRenderer> | null =
     typeof storyAnnotations === 'function' ? storyAnnotations : null;
 
   const { story } = storyObject;
@@ -57,9 +57,13 @@ export function normalizeStory<TRenderer extends Renderer>(
     ...normalizeArrays(storyObject.beforeEach),
     ...normalizeArrays(story?.beforeEach),
   ];
+
+  const afterEach = [
+    ...normalizeArrays(storyObject.afterEach),
+    ...normalizeArrays(story?.afterEach),
+  ];
   const { render, play, tags = [], globals = {} } = storyObject;
 
-  // eslint-disable-next-line no-underscore-dangle
   const id = parameters.__id || toId(meta.id, exportName);
   return {
     moduleExport: storyAnnotations,
@@ -72,6 +76,7 @@ export function normalizeStory<TRenderer extends Renderer>(
     argTypes: normalizeInputTypes(argTypes),
     loaders,
     beforeEach,
+    afterEach,
     globals,
     ...(render && { render }),
     ...(userStoryFn && { userStoryFn }),

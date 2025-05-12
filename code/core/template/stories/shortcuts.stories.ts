@@ -1,11 +1,17 @@
+import { PREVIEW_KEYDOWN } from 'storybook/internal/core-events';
+import type { PlayFunctionContext } from 'storybook/internal/csf';
+
 import { global as globalThis } from '@storybook/global';
-import { userEvent, within, expect, fn } from '@storybook/test';
-import { PREVIEW_KEYDOWN } from '@storybook/core/core-events';
-import type { PlayFunctionContext } from '@storybook/csf';
+
+import { expect, fn, userEvent, within } from 'storybook/test';
 
 export default {
   component: globalThis.Components.Form,
   tags: ['autodocs'],
+  args: {
+    onSubmit: fn(),
+    onSuccess: fn(),
+  },
 };
 
 export const KeydownDuringPlay = {

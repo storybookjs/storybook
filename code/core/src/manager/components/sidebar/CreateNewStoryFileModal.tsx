@@ -1,5 +1,15 @@
 import React, { useCallback, useDeferredValue, useEffect, useRef, useState } from 'react';
-import { CheckIcon } from '@storybook/icons';
+
+import {
+  ARGTYPES_INFO_REQUEST,
+  ARGTYPES_INFO_RESPONSE,
+  CREATE_NEW_STORYFILE_REQUEST,
+  CREATE_NEW_STORYFILE_RESPONSE,
+  FILE_COMPONENT_SEARCH_REQUEST,
+  FILE_COMPONENT_SEARCH_RESPONSE,
+  SAVE_STORY_REQUEST,
+  SAVE_STORY_RESPONSE,
+} from 'storybook/internal/core-events';
 import type {
   ArgTypesRequestPayload,
   ArgTypesResponsePayload,
@@ -12,24 +22,17 @@ import type {
   ResponseData,
   SaveStoryRequestPayload,
   SaveStoryResponsePayload,
-} from '@storybook/core/core-events';
-import {
-  ARGTYPES_INFO_REQUEST,
-  ARGTYPES_INFO_RESPONSE,
-  CREATE_NEW_STORYFILE_REQUEST,
-  CREATE_NEW_STORYFILE_RESPONSE,
-  FILE_COMPONENT_SEARCH_REQUEST,
-  FILE_COMPONENT_SEARCH_RESPONSE,
-  SAVE_STORY_REQUEST,
-  SAVE_STORY_RESPONSE,
-} from '@storybook/core/core-events';
-import type { RequestResponseError } from '@storybook/core/manager-api';
-import { addons, experimental_requestResponse, useStorybookApi } from '@storybook/core/manager-api';
+} from 'storybook/internal/core-events';
+
+import { CheckIcon } from '@storybook/icons';
+
+import type { RequestResponseError } from 'storybook/manager-api';
+import { addons, experimental_requestResponse, useStorybookApi } from 'storybook/manager-api';
 
 import { useDebounce } from '../../hooks/useDebounce';
 import type { NewStoryPayload, SearchResult } from './FileSearchList';
-import { extractSeededRequiredArgs, trySelectNewStory } from './FileSearchModal.utils';
 import { FileSearchModal } from './FileSearchModal';
+import { extractSeededRequiredArgs, trySelectNewStory } from './FileSearchModal.utils';
 
 interface CreateNewStoryFileModalProps {
   open: boolean;
@@ -38,7 +41,9 @@ interface CreateNewStoryFileModalProps {
 
 const stringifyArgs = (args: Record<string, any>) =>
   JSON.stringify(args, (_, value) => {
-    if (typeof value === 'function') return '__sb_empty_function_arg__';
+    if (typeof value === 'function') {
+      return '__sb_empty_function_arg__';
+    }
     return value;
   });
 

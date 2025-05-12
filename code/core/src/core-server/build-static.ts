@@ -1,26 +1,30 @@
-import chalk from 'chalk';
-import { copy, emptyDir, ensureDir } from 'fs-extra';
+import { cp, mkdir } from 'node:fs/promises';
+import { rm } from 'node:fs/promises';
 import { dirname, join, relative, resolve } from 'node:path';
-import { global } from '@storybook/global';
-import { logger } from '@storybook/core/node-logger';
-import { getPrecedingUpgrade, telemetry } from '@storybook/core/telemetry';
-import type { BuilderOptions, CLIOptions, LoadOptions, Options } from '@storybook/core/types';
+
 import {
   loadAllPresets,
   loadMainConfig,
   logConfig,
   normalizeStories,
   resolveAddonName,
-} from '@storybook/core/common';
+} from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
+import { getPrecedingUpgrade, telemetry } from 'storybook/internal/telemetry';
+import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
 
-import { outputStats } from './utils/output-stats';
+import { global } from '@storybook/global';
+
+import picocolors from 'picocolors';
+
+import { StoryIndexGenerator } from './utils/StoryIndexGenerator';
+import { buildOrThrow } from './utils/build-or-throw';
 import { copyAllStaticFilesRelativeToMain } from './utils/copy-all-static-files';
 import { getBuilders } from './utils/get-builders';
-import { extractStoriesJson } from './utils/stories-json';
 import { extractStorybookMetadata } from './utils/metadata';
-import { StoryIndexGenerator } from './utils/StoryIndexGenerator';
+import { outputStats } from './utils/output-stats';
+import { extractStoriesJson } from './utils/stories-json';
 import { summarizeIndex } from './utils/summarizeIndex';
-import { buildOrThrow } from './utils/build-or-throw';
 
 export type BuildStaticStandaloneOptions = CLIOptions &
   LoadOptions &
@@ -36,12 +40,14 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   options.outputDir = resolve(options.outputDir);
   options.configDir = resolve(options.configDir);
 
-  logger.info(`=> Cleaning outputDir: ${chalk.cyan(relative(process.cwd(), options.outputDir))}`);
+  logger.info(
+    `=> Cleaning outputDir: ${picocolors.cyan(relative(process.cwd(), options.outputDir))}`
+  );
   if (options.outputDir === '/') {
     throw new Error("Won't remove directory '/'. Check your outputDir!");
   }
-  await emptyDir(options.outputDir);
-  await ensureDir(options.outputDir);
+  await rm(options.outputDir, { recursive: true, force: true }).catch(() => {});
+  await mkdir(options.outputDir, { recursive: true });
 
   const config = await loadMainConfig(options);
   const { framework } = config;
@@ -57,11 +63,11 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   logger.info('=> Loading presets');
   let presets = await loadAllPresets({
     corePresets: [
-      require.resolve('@storybook/core/core-server/presets/common-preset'),
+      require.resolve('storybook/internal/core-server/presets/common-preset'),
       ...corePresets,
     ],
     overridePresets: [
-      require.resolve('@storybook/core/core-server/presets/common-override-preset'),
+      require.resolve('storybook/internal/core-server/presets/common-override-preset'),
     ],
     isCritical: true,
     ...options,
@@ -76,7 +82,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     : undefined;
   presets = await loadAllPresets({
     corePresets: [
-      require.resolve('@storybook/core/core-server/presets/common-preset'),
+      require.resolve('storybook/internal/core-server/presets/common-preset'),
       ...(managerBuilder.corePresets || []),
       ...(previewBuilder.corePresets || []),
       ...(resolvedRenderer ? [resolvedRenderer] : []),
@@ -84,7 +90,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     ],
     overridePresets: [
       ...(previewBuilder.overridePresets || []),
-      require.resolve('@storybook/core/core-server/presets/common-override-preset'),
+      require.resolve('storybook/internal/core-server/presets/common-override-preset'),
     ],
     ...options,
     build,
@@ -96,7 +102,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     presets.apply('staticDirs'),
     presets.apply('experimental_indexers', []),
     presets.apply('stories'),
-    presets.apply('docs', {}),
+    presets.apply('docs'),
   ]);
 
   const fullOptions: Options = {
@@ -110,9 +116,11 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
 
   global.FEATURES = features;
 
-  await buildOrThrow(async () =>
-    managerBuilder.build({ startTime: process.hrtime(), options: fullOptions })
-  );
+  if (!options.previewOnly) {
+    await buildOrThrow(async () =>
+      managerBuilder.build({ startTime: process.hrtime(), options: fullOptions })
+    );
+  }
 
   if (staticDirs) {
     effects.push(
@@ -121,10 +129,10 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   }
 
   const coreServerPublicDir = join(
-    dirname(require.resolve('@storybook/core/package.json')),
+    dirname(require.resolve('storybook/internal/package.json')),
     'assets/browser'
   );
-  effects.push(copy(coreServerPublicDir, options.outputDir));
+  effects.push(cp(coreServerPublicDir, options.outputDir, { recursive: true }));
 
   let initializedStoryIndexGenerator: Promise<StoryIndexGenerator | undefined> =
     Promise.resolve(undefined);
@@ -135,6 +143,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
       workingDir,
     };
     const normalizedStories = normalizeStories(stories, directories);
+
     const generator = new StoryIndexGenerator(normalizedStories, {
       ...directories,
       indexers,

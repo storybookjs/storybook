@@ -1,7 +1,18 @@
 import React, { memo, useCallback, useMemo, useState } from 'react';
+
+import { TooltipNote, WithTooltip } from 'storybook/internal/components';
+import type {
+  CreateNewStoryRequestPayload,
+  FileComponentSearchResponsePayload,
+} from 'storybook/internal/core-events';
+
 import { ChevronDownIcon, ChevronRightIcon, ComponentIcon } from '@storybook/icons';
-import { styled } from '@storybook/core/theming';
-import { FileSearchListLoadingSkeleton } from './FileSearchListSkeleton';
+
+import type { VirtualItem } from '@tanstack/react-virtual';
+import { useVirtualizer } from '@tanstack/react-virtual';
+import { styled } from 'storybook/theming';
+
+import { useArrowKeyNavigation } from './FIleSearchList.utils';
 import {
   DefaultExport,
   FileList,
@@ -21,14 +32,7 @@ import {
   NoResults,
   NoResultsDescription,
 } from './FileList';
-import type { VirtualItem } from '@tanstack/react-virtual';
-import { useVirtualizer } from '@tanstack/react-virtual';
-import type {
-  CreateNewStoryRequestPayload,
-  FileComponentSearchResponsePayload,
-} from '@storybook/core/core-events';
-import { WithTooltip, TooltipNote } from '@storybook/core/components';
-import { useArrowKeyNavigation } from './FIleSearchList.utils';
+import { FileSearchListLoadingSkeleton } from './FileSearchListSkeleton';
 
 export type SearchResult = NonNullable<FileComponentSearchResponsePayload['files']>[0];
 

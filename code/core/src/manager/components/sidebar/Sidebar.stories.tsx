@@ -1,18 +1,20 @@
 import React from 'react';
 
-import type { IndexHash, State } from '@storybook/core/manager-api';
-import { ManagerContext, types } from '@storybook/core/manager-api';
-import type { StoryObj, Meta } from '@storybook/react';
-import { within, userEvent, expect, fn } from '@storybook/test';
-import type { Addon_SidebarTopType } from '@storybook/core/types';
-import { Button, IconButton } from '@storybook/core/components';
-import { FaceHappyIcon } from '@storybook/icons';
-import { Sidebar, DEFAULT_REF_ID } from './Sidebar';
+import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
+
+import type { Meta, StoryObj } from '@storybook/react-vite';
+
+import type { IndexHash } from 'storybook/manager-api';
+import { ManagerContext } from 'storybook/manager-api';
+import { expect, fn, userEvent, within } from 'storybook/test';
+
+import { internal_fullStatusStore } from '../../manager-stores.mock';
+import { LayoutProvider } from '../layout/LayoutProvider';
 import { standardData as standardHeaderData } from './Heading.stories';
+import { IconSymbols } from './IconSymbols';
+import { DEFAULT_REF_ID, Sidebar } from './Sidebar';
 import { mockDataset } from './mockdata';
 import type { RefType } from './types';
-import { LayoutProvider } from '../layout/LayoutProvider';
-import { IconSymbols } from './IconSymbols';
 
 const wait = (ms: number) =>
   new Promise<void>((resolve) => {
@@ -26,6 +28,36 @@ const storyId = 'root-1-child-a2--grandchild-a1-1';
 export const simpleData = { menu, index, storyId };
 export const loadingData = { menu };
 
+const managerContext: any = {
+  state: {
+    docsOptions: {
+      defaultName: 'Docs',
+      autodocs: 'tag',
+      docsMode: false,
+    },
+  },
+  api: {
+    emit: fn().mockName('api::emit'),
+    on: fn().mockName('api::on'),
+    off: fn().mockName('api::off'),
+    getShortcutKeys: fn(() => ({ search: ['control', 'shift', 's'] })).mockName(
+      'api::getShortcutKeys'
+    ),
+    getChannel: fn().mockName('api::getChannel'),
+    getElements: fn(() => ({})),
+    selectStory: fn().mockName('api::selectStory'),
+    experimental_setFilter: fn().mockName('api::experimental_setFilter'),
+    getDocsUrl: () => 'https://storybook.js.org/docs/',
+    getUrlState: () => ({
+      queryParams: {},
+      path: '',
+      viewMode: 'story',
+      url: 'http://localhost:6006/',
+    }),
+    applyQueryParams: fn().mockName('api::applyQueryParams'),
+  },
+};
+
 const meta = {
   component: Sidebar,
   title: 'Sidebar/Sidebar',
@@ -34,38 +66,31 @@ const meta = {
   args: {
     previewInitialized: true,
     menu,
-    extra: [] as Addon_SidebarTopType[],
     index: index,
+    indexJson: {
+      entries: {
+        // force the tags filter menu to show in production
+        ['dummy--dummyId']: {
+          id: 'dummy--dummyId',
+          name: 'Dummy story',
+          title: 'dummy',
+          importPath: './dummy.stories.js',
+          type: 'story',
+          tags: ['A', 'B', 'C', 'dev'],
+        },
+      },
+      v: 6,
+    },
     storyId,
     refId: DEFAULT_REF_ID,
     refs: {},
-    status: {},
+    allStatuses: {},
     showCreateStoryButton: true,
+    isDevelopment: true,
   },
   decorators: [
     (storyFn) => (
-      <ManagerContext.Provider
-        value={
-          {
-            state: {
-              docsOptions: {
-                defaultName: 'Docs',
-                autodocs: 'tag',
-                docsMode: false,
-              },
-            },
-            api: {
-              emit: fn().mockName('api::emit'),
-              on: fn().mockName('api::on'),
-              off: fn().mockName('api::off'),
-              getShortcutKeys: fn(() => ({ search: ['control', 'shift', 's'] })).mockName(
-                'api::getShortcutKeys'
-              ),
-              selectStory: fn().mockName('api::selectStory'),
-            },
-          } as any
-        }
-      >
+      <ManagerContext.Provider value={managerContext}>
         <LayoutProvider>
           <IconSymbols />
           {storyFn()}
@@ -74,6 +99,9 @@ const meta = {
     ),
   ],
   globals: { sb_theme: 'side-by-side' },
+  beforeEach: () => {
+    internal_fullStatusStore.unset();
+  },
 } satisfies Meta<typeof Sidebar>;
 
 export default meta;
@@ -86,8 +114,9 @@ const refs: Record<string, RefType> = {
     title: 'This is a ref',
     url: 'https://example.com',
     type: 'lazy',
-    index,
+    filteredIndex: index,
     previewInitialized: true,
+    allStatuses: {},
   },
 };
 
@@ -98,7 +127,7 @@ const refsError = {
   optimized: {
     ...refs.optimized,
     // @ts-expect-error (non strict)
-    index: undefined as IndexHash,
+    filteredIndex: undefined as IndexHash,
     indexError,
   },
 };
@@ -107,7 +136,7 @@ const refsEmpty = {
   optimized: {
     ...refs.optimized,
     // type: 'auto-inject',
-    index: {} as IndexHash,
+    filteredIndex: {} as IndexHash,
   },
 };
 
@@ -144,6 +173,42 @@ export const WithRefs: Story = {
   },
 };
 
+export const WithRefsNarrow: Story = {
+  args: {
+    refs: {
+      wide: {
+        ...refs.optimized,
+        title: 'This is a ref with a very long title',
+      },
+    },
+  },
+  parameters: {
+    viewport: {
+      options: {
+        narrow: {
+          name: 'narrow',
+          styles: {
+            width: '400px',
+            height: '800px',
+          },
+        },
+      },
+    },
+    chromatic: {
+      modes: {
+        narrow: {
+          viewport: 400,
+        },
+      },
+    },
+  },
+  globals: {
+    viewport: {
+      value: 'narrow',
+    },
+  },
+};
+
 export const LoadingWithRefs: Story = {
   args: {
     ...Loading.args,
@@ -167,7 +232,7 @@ export const WithRefEmpty: Story = {
 
 export const StatusesCollapsed: Story = {
   args: {
-    status: Object.entries(index).reduce<State['status']>((acc, [id, item]) => {
+    allStatuses: Object.entries(index).reduce((acc, [id, item]) => {
       if (item.type !== 'story') {
         return acc;
       }
@@ -176,21 +241,32 @@ export const StatusesCollapsed: Story = {
         return {
           ...acc,
           [id]: {
-            addonA: { status: 'warn', title: 'Addon A', description: 'We just wanted you to know' },
-            addonB: { status: 'error', title: 'Addon B', description: 'This is a big deal!' },
+            addonA: {
+              typeId: 'addonA',
+              storyId: id,
+              value: 'status-value:warning',
+              title: 'Addon A',
+              description: 'We just wanted you to know',
+            },
+            addonB: {
+              typeId: 'addonB',
+              storyId: id,
+              value: 'status-value:error',
+              title: 'Addon B',
+              description: 'This is a big deal!',
+            },
           },
-        };
+        } satisfies StatusesByStoryIdAndTypeId;
       }
       return acc;
-    }, {}),
+    }, {} as StatusesByStoryIdAndTypeId),
   },
 };
 
 export const StatusesOpen: Story = {
   ...StatusesCollapsed,
   args: {
-    ...StatusesCollapsed.args,
-    status: Object.entries(index).reduce<State['status']>((acc, [id, item]) => {
+    allStatuses: Object.entries(index).reduce((acc, [id, item]) => {
       if (item.type !== 'story') {
         return acc;
       }
@@ -198,11 +274,23 @@ export const StatusesOpen: Story = {
       return {
         ...acc,
         [id]: {
-          addonA: { status: 'warn', title: 'Addon A', description: 'We just wanted you to know' },
-          addonB: { status: 'error', title: 'Addon B', description: 'This is a big deal!' },
+          addonA: {
+            typeId: 'addonA',
+            storyId: id,
+            value: 'status-value:warning',
+            title: 'Addon A',
+            description: 'We just wanted you to know',
+          },
+          addonB: {
+            typeId: 'addonB',
+            storyId: id,
+            value: 'status-value:error',
+            title: 'Addon B',
+            description: 'This is a big deal!',
+          },
         },
-      };
-    }, {}),
+      } satisfies StatusesByStoryIdAndTypeId;
+    }, {} as StatusesByStoryIdAndTypeId),
   },
 };
 
@@ -227,49 +315,40 @@ export const Searching: Story = {
 };
 
 export const Bottom: Story = {
-  args: {
-    bottom: [
+  beforeEach: () => {
+    internal_fullStatusStore.set([
       {
-        id: '1',
-        type: types.experimental_SIDEBAR_BOTTOM,
-        render: () => (
-          <Button>
-            <FaceHappyIcon />
-            Custom addon A
-          </Button>
-        ),
+        storyId,
+        typeId: 'vitest',
+        value: 'status-value:warning',
+        title: 'Vitest',
+        description: 'Vitest',
       },
       {
-        id: '2',
-        type: types.experimental_SIDEBAR_BOTTOM,
-        render: () => (
-          <Button>
-            {' '}
-            <FaceHappyIcon />
-            Custom addon B
-          </Button>
-        ),
+        storyId,
+        typeId: 'vta',
+        value: 'status-value:error',
+        title: 'VTA',
+        description: 'VTA',
       },
       {
-        id: '3',
-        type: types.experimental_SIDEBAR_BOTTOM,
-        render: () => (
-          <IconButton>
-            {' '}
-            <FaceHappyIcon />
-          </IconButton>
-        ),
+        storyId: 'root-1-child-a2--grandchild-a1-2',
+        typeId: 'vitest',
+        value: 'status-value:warning',
+        title: 'Vitest',
+        description: 'Vitest',
       },
-    ],
+    ]);
   },
 };
 
 /**
  * Given the following sequence of events:
+ *
  * 1. Story is selected at the top of the sidebar
  * 2. The sidebar is scrolled to the bottom
- * 3. Some re-rendering happens because of a changed state/prop
- * The sidebar should remain scrolled to the bottom
+ * 3. Some re-rendering happens because of a changed state/prop The sidebar should remain scrolled to
+ *    the bottom
  */
 export const Scrolled: Story = {
   parameters: {

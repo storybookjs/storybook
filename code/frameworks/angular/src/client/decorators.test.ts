@@ -20,6 +20,10 @@ const defaultContext: Addon_StoryContext<AngularRenderer> = {
   globals: {},
   globalTypes: {},
   storyGlobals: {},
+  reporting: {
+    reports: [],
+    addReport: vi.fn(),
+  },
   hooks: {},
   loaded: {},
   originalStoryFn: vi.fn(),
@@ -29,6 +33,7 @@ const defaultContext: Addon_StoryContext<AngularRenderer> = {
   step: undefined,
   context: undefined,
   canvas: undefined,
+  userEvent: undefined,
   mount: undefined,
 };
 

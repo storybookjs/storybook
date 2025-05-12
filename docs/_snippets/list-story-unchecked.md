@@ -73,8 +73,8 @@ export const OneItem = {
 };
 ```
 
-```ts filename="List.stories.ts|tsx" renderer="react" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/react';
+```ts filename="List.stories.ts|tsx" renderer="react" language="ts"
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { List } from './List';
 
@@ -92,35 +92,6 @@ export const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-export const OneItem: Story = {
-  render: (args) => (
-    <List {...args}>
-      <Unchecked {...Unchecked.args} />
-    </List>
-  ),
-};
-```
-
-```tsx filename="List.stories.ts|tsx" renderer="react" language="ts"
-import type { Meta, StoryObj } from '@storybook/react';
-
-import { List } from './List';
-
-//👇 Instead of importing ListItem, we import the stories
-import { Unchecked } from './ListItem.stories';
-
-export const meta: Meta<typeof List> = {
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
-  component: List,
-};
-
-export default meta;
-type Story = StoryObj<typeof List>;
 
 export const OneItem: Story = {
   render: (args) => (
@@ -155,7 +126,7 @@ export const OneItem = {
 };
 ```
 
-```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts-4-9"
+```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts"
 import type { Meta, StoryObj } from 'storybook-solidjs';
 
 import { List } from './List';
@@ -184,36 +155,7 @@ export const OneItem: Story = {
 };
 ```
 
-```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs';
-
-import { List } from './List';
-
-//👇 Instead of importing ListItem, we import the stories
-import { Unchecked } from './ListItem.stories';
-
-export const meta: Meta<typeof List> = {
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
-  component: List,
-};
-
-export default meta;
-type Story = StoryObj<typeof List>;
-
-export const OneItem: Story = {
-  render: (args) => (
-    <List {...args}>
-      <Unchecked {...Unchecked.args} />
-    </List>
-  ),
-};
-```
-
-```js filename="List.stories.js" renderer="vue" language="js" tabTitle="3"
+```js filename="List.stories.js" renderer="vue" language="js"
 import List from './List.vue';
 import ListItem from './ListItem.vue';
 
@@ -249,8 +191,8 @@ export const OneItem = {
 };
 ```
 
-```ts filename="List.stories.js" renderer="vue" language="ts-4-9" tabTitle="3"
-import type { Meta, StoryObj } from '@storybook/vue3';
+```ts filename="List.stories.js" renderer="vue" language="ts"
+import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import List from './List.vue';
 import ListItem from './ListItem.vue';
@@ -290,47 +232,6 @@ export const OneItem: Story = {
 };
 ```
 
-```ts filename="List.stories.js" renderer="vue" language="ts" tabTitle="3"
-import type { Meta, StoryObj } from '@storybook/vue3';
-
-import List from './List.vue';
-import ListItem from './ListItem.vue';
-
-//👇 Imports a specific story from ListItem stories
-import { Unchecked } from './ListItem.stories';
-
-const meta: Meta<typeof List> = {
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
-  component: List,
-};
-
-export default meta;
-type Story = StoryObj<typeof List>;
-
-/*
- *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
- * to learn how to use render functions.
- */
-export const OneItem: Story = {
-  render: (args) => ({
-    components: { List, ListItem },
-    setup() {
-      //👇 The args will now be passed down to the template
-      return { args };
-    },
-    template: '<List v-bind="args"><ListItem v-bind="args"/></List>',
-  }),
-  args: {
-    ...Unchecked.args,
-  },
-};
-```
-
 ```js filename="MyList.stories.js" renderer="web-components" language="js"
 import { html } from 'lit';
 
@@ -348,7 +249,7 @@ export const OneItem = {
 ```
 
 ```ts filename="MyList.stories.ts" renderer="web-components" language="ts"
-import { Meta, StoryObj } from '@storybook/web-components';
+import { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import { html } from 'lit';
 
@@ -367,4 +268,3 @@ export const OneItem: Story = {
   render: () => html` <List> ${Unchecked({ ...Unchecked.args })} </List> `,
 };
 ```
-

@@ -1,9 +1,10 @@
 import React from 'react';
-import { styled } from '@storybook/core/theming';
-import { action } from '@storybook/addon-actions';
 
-import * as InputComponents from './input/input';
+import { action } from 'storybook/actions';
+import { styled } from 'storybook/theming';
+
 import { Field as FieldComponent } from './field/field';
+import * as InputComponents from './input/input';
 
 const Flexed = styled(FieldComponent)({ display: 'flex' });
 

@@ -1,11 +1,12 @@
-import { global } from '@storybook/global';
-import semver from 'semver';
-import memoize from 'memoizerific';
+import type { API_UnknownEntries, API_Version, API_Versions } from 'storybook/internal/types';
 
-import type { API_UnknownEntries, API_Version, API_Versions } from '@storybook/core/types';
-import { version as currentVersion } from '../version';
+import { global } from '@storybook/global';
+
+import memoize from 'memoizerific';
+import semver from 'semver';
 
 import type { ModuleFn } from '../lib/types';
+import { version as currentVersion } from '../version';
 
 const { VERSIONCHECK } = global;
 
@@ -97,15 +98,21 @@ export const init: ModuleFn = ({ store }) => {
 
       if (versioned && current?.version && latest?.version) {
         const versionDiff = semver.diff(latest.version, current.version);
-        const isLatestDocs = versionDiff === 'patch' || versionDiff === null;
+        const isLatestDocs =
+          versionDiff === 'patch' ||
+          versionDiff === null ||
+          // assume latest version when current version is a 0.0.0 canary
+          semver.satisfies(current.version, '0.0.0', { includePrerelease: true });
 
         if (!isLatestDocs) {
           url += `${semver.major(current.version)}.${semver.minor(current.version)}/`;
         }
       }
 
-      if (subpath) {
-        url += `${subpath}/`;
+      const [cleanedSubpath, hash] = subpath?.split('#') || [];
+
+      if (cleanedSubpath) {
+        url += `${cleanedSubpath}/`;
       }
 
       if (renderer && typeof global.STORYBOOK_RENDERER !== 'undefined') {
@@ -114,6 +121,10 @@ export const init: ModuleFn = ({ store }) => {
         if (rendererName) {
           url += `?renderer=${normalizeRendererName(rendererName)}`;
         }
+      }
+
+      if (hash) {
+        url += `#${hash}`;
       }
 
       return url;

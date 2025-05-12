@@ -1,29 +1,32 @@
+import { sanitize } from 'storybook/internal/csf';
+import type {
+  API_ComponentEntry,
+  API_DocsEntry,
+  API_GroupEntry,
+  API_HashEntry,
+  API_IndexHash,
+  API_PreparedStoryIndex,
+  API_Provider,
+  API_RootEntry,
+  API_StoryEntry,
+  DocsOptions,
+  IndexEntry,
+  Parameters,
+  SetStoriesPayload,
+  SetStoriesStoryData,
+  StatusesByStoryIdAndTypeId,
+  StoryId,
+  StoryIndexV2,
+  StoryIndexV3,
+  Tag,
+} from 'storybook/internal/types';
+
+import { countBy, mapValues } from 'es-toolkit';
 import memoize from 'memoizerific';
 import { dedent } from 'ts-dedent';
-import countBy from 'lodash/countBy.js';
-import mapValues from 'lodash/mapValues.js';
-import { sanitize } from '@storybook/csf';
-import type {
-  StoryId,
-  Parameters,
-  DocsOptions,
-  API_Provider,
-  SetStoriesStoryData,
-  API_PreparedStoryIndex,
-  StoryIndexV3,
-  IndexEntry,
-  API_RootEntry,
-  API_GroupEntry,
-  API_ComponentEntry,
-  API_IndexHash,
-  API_DocsEntry,
-  API_StoryEntry,
-  API_HashEntry,
-  SetStoriesPayload,
-  StoryIndexV2,
-} from '@storybook/core/types';
 
-import { type API, combineParameters, type State } from '../root';
+import { type API, type State, combineParameters } from '../root';
+import intersect from './intersect';
 import merge from './merge';
 
 const TITLE_PATH_SEPARATOR = /\s*\/\s*/;
@@ -40,21 +43,17 @@ export const denormalizeStoryParameters = ({
       kindParameters[storyData.kind],
       storyData.parameters as unknown as Parameters
     ),
-  }));
+  })) as SetStoriesStoryData;
 };
-
-export const transformSetStoriesStoryDataToStoriesHash = (
-  data: SetStoriesStoryData,
-  options: ToStoriesHashOptions
-) =>
-  transformStoryIndexToStoriesHash(transformSetStoriesStoryDataToPreparedStoryIndex(data), options);
 
 export const transformSetStoriesStoryDataToPreparedStoryIndex = (
   stories: SetStoriesStoryData
 ): API_PreparedStoryIndex => {
   const entries: API_PreparedStoryIndex['entries'] = Object.entries(stories).reduce(
     (acc, [id, story]) => {
-      if (!story) return acc;
+      if (!story) {
+        return acc;
+      }
 
       const { docsOnly, fileName, ...parameters } = story.parameters;
       const base = {
@@ -109,7 +108,7 @@ export const transformStoryIndexV2toV3 = (index: StoryIndexV2): StoryIndexV3 => 
 };
 
 export const transformStoryIndexV3toV4 = (index: StoryIndexV3): API_PreparedStoryIndex => {
-  const countByTitle = countBy(Object.values(index.stories), 'title');
+  const countByTitle = countBy(Object.values(index.stories), (item) => item.title);
   return {
     v: 4,
     entries: Object.values(index.stories).reduce(
@@ -140,9 +139,9 @@ export const transformStoryIndexV3toV4 = (index: StoryIndexV3): API_PreparedStor
 };
 
 /**
- * Storybook 8.0 and below did not automatically tag stories with 'dev'.
- * Therefore Storybook 8.1 and above would not show composed 8.0 stories by default.
- * This function adds the 'dev' tag to all stories in the index to workaround this issue.
+ * Storybook 8.0 and below did not automatically tag stories with 'dev'. Therefore Storybook 8.1 and
+ * above would not show composed 8.0 stories by default. This function adds the 'dev' tag to all
+ * stories in the index to workaround this issue.
  */
 export const transformStoryIndexV4toV5 = (
   index: API_PreparedStoryIndex
@@ -167,12 +166,12 @@ type ToStoriesHashOptions = {
   provider: API_Provider<API>;
   docsOptions: DocsOptions;
   filters: State['filters'];
-  status: State['status'];
+  allStatuses: StatusesByStoryIdAndTypeId;
 };
 
 export const transformStoryIndexToStoriesHash = (
   input: API_PreparedStoryIndex | StoryIndexV2 | StoryIndexV3,
-  { provider, docsOptions, filters, status }: ToStoriesHashOptions
+  { provider, docsOptions, filters, allStatuses }: ToStoriesHashOptions
 ): API_IndexHash | any => {
   if (!input.v) {
     throw new Error('Composition: Missing stories.json version');
@@ -187,11 +186,17 @@ export const transformStoryIndexToStoriesHash = (
   const entryValues = Object.values(index.entries).filter((entry: any) => {
     let result = true;
 
-    Object.values(filters).forEach((filter: any) => {
+    // All stories with a failing status should always show up, regardless of the applied filters
+    const storyStatuses = allStatuses[entry.id] ?? {};
+    if (Object.values(storyStatuses).some(({ value }) => value === 'status-value:error')) {
+      return result;
+    }
+
+    Object.values(filters).forEach((filter) => {
       if (result === false) {
         return;
       }
-      result = filter({ ...entry, status: status[entry.id] });
+      result = filter({ ...entry, statuses: storyStatuses });
     });
 
     return result;
@@ -245,6 +250,7 @@ export const transformStoryIndexToStoriesHash = (
           type: 'root',
           id,
           name: names[idx],
+          tags: [],
           depth: idx,
           renderLabel,
           startCollapsed: collapsedRoots.includes(id),
@@ -264,6 +270,7 @@ export const transformStoryIndexToStoriesHash = (
           type: 'component',
           id,
           name: names[idx],
+          tags: [],
           parent: paths[idx - 1],
           depth: idx,
           renderLabel,
@@ -276,6 +283,7 @@ export const transformStoryIndexToStoriesHash = (
           type: 'group',
           id,
           name: names[idx],
+          tags: [],
           parent: paths[idx - 1],
           depth: idx,
           renderLabel,
@@ -289,6 +297,7 @@ export const transformStoryIndexToStoriesHash = (
     // Finally add an entry for the docs/story itself
     acc[item.id] = {
       type: 'story',
+      tags: [],
       ...item,
       depth: paths.length,
       parent: paths[paths.length - 1],
@@ -307,9 +316,18 @@ export const transformStoryIndexToStoriesHash = (
     }
 
     acc[item.id] = item;
-    // Ensure we add the children depth-first *before* inserting any other entries
+    // Ensure we add the children depth-first *before* inserting any other entries,
+    // and compute tags from the children put in the accumulator afterwards, once
+    // they're all known and we can compute a sound intersection.
     if (item.type === 'root' || item.type === 'group' || item.type === 'component') {
       item.children.forEach((childId: any) => addItem(acc, storiesHashOutOfOrder[childId]));
+
+      item.tags = item.children.reduce((currentTags: Tag[] | null, childId: any): Tag[] => {
+        const child = acc[childId];
+
+        // On the first child, we have nothing to intersect against so we use it as a source of data.
+        return currentTags === null ? child.tags : intersect(currentTags, child.tags);
+      }, null);
     }
     return acc;
   }
@@ -324,8 +342,11 @@ export const transformStoryIndexToStoriesHash = (
     .reduce(addItem, orphanHash);
 };
 
+/** Now we need to patch in the existing prepared stories */
 export const addPreparedStories = (newHash: API_IndexHash, oldHash?: API_IndexHash) => {
-  if (!oldHash) return newHash;
+  if (!oldHash) {
+    return newHash;
+  }
 
   return Object.fromEntries(
     Object.entries(newHash).map(([id, newEntry]) => {

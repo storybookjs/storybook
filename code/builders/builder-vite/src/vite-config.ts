@@ -1,28 +1,30 @@
-import * as path from 'path';
-import type {
-  ConfigEnv,
-  InlineConfig as ViteInlineConfig,
-  PluginOption,
-  UserConfig as ViteConfig,
-  InlineConfig,
-} from 'vite';
+import { resolve } from 'node:path';
+
 import {
-  isPreservingSymlinks,
-  getFrameworkName,
   getBuilderOptions,
+  getFrameworkName,
+  isPreservingSymlinks,
   resolvePathInStorybookCache,
 } from 'storybook/internal/common';
 import { globalsNameReferenceMap } from 'storybook/internal/preview/globals';
 import type { Options } from 'storybook/internal/types';
+
+import type {
+  ConfigEnv,
+  InlineConfig,
+  PluginOption,
+  UserConfig as ViteConfig,
+  InlineConfig as ViteInlineConfig,
+} from 'vite';
+
 import {
   codeGeneratorPlugin,
   csfPlugin,
-  injectExportOrderPlugin,
-  stripStoryHMRBoundary,
   externalGlobalsPlugin,
+  injectExportOrderPlugin,
   pluginWebpackStats,
+  stripStoryHMRBoundary,
 } from './plugins';
-
 import type { BuilderOptions } from './types';
 
 export type PluginConfigType = 'build' | 'development';
@@ -30,13 +32,13 @@ export type PluginConfigType = 'build' | 'development';
 const configEnvServe: ConfigEnv = {
   mode: 'development',
   command: 'serve',
-  ssrBuild: false,
+  isSsrBuild: false,
 };
 
 const configEnvBuild: ConfigEnv = {
   mode: 'production',
   command: 'build',
-  ssrBuild: false,
+  isSsrBuild: false,
 };
 
 // Vite config that is common to development and production mode
@@ -45,11 +47,11 @@ export async function commonConfig(
   _type: PluginConfigType
 ): Promise<ViteInlineConfig> {
   const configEnv = _type === 'development' ? configEnvServe : configEnvBuild;
-  const { loadConfigFromFile, mergeConfig } = await import('vite');
+  const { loadConfigFromFile, mergeConfig, defaultClientConditions = [] } = await import('vite');
 
   const { viteConfigPath } = await getBuilderOptions<BuilderOptions>(options);
 
-  const projectRoot = path.resolve(options.configDir, '..');
+  const projectRoot = resolve(options.configDir, '..');
 
   // I destructure away the `build` property from the user's config object
   // I do this because I can contain config that breaks storybook, such as we had in a lit project.
@@ -65,11 +67,8 @@ export async function commonConfig(
     base: './',
     plugins: await pluginConfig(options),
     resolve: {
-      conditions: ['storybook', 'stories', 'test'],
+      conditions: ['storybook', 'stories', 'test', ...defaultClientConditions],
       preserveSymlinks: isPreservingSymlinks(),
-      alias: {
-        assert: require.resolve('browser-assert'),
-      },
     },
     // If an envPrefix is specified in the vite config, add STORYBOOK_ to it,
     // otherwise, add VITE_ and STORYBOOK_ so that vite doesn't lose its default.
@@ -92,7 +91,7 @@ export async function pluginConfig(options: Options) {
   const externals: Record<string, string> = globalsNameReferenceMap;
 
   if (build?.test?.disableBlocks) {
-    externals['@storybook/blocks'] = '__STORYBOOK_BLOCKS_EMPTY_MODULE__';
+    externals['@storybook/addon-docs/blocks'] = '__STORYBOOK_BLOCKS_EMPTY_MODULE__';
   }
 
   const plugins = [
@@ -116,12 +115,6 @@ export async function pluginConfig(options: Options) {
     await externalGlobalsPlugin(externals),
     pluginWebpackStats({ workingDir: process.cwd() }),
   ] as PluginOption[];
-
-  // TODO: framework doesn't exist, should move into framework when/if built
-  if (frameworkName === '@storybook/glimmerx-vite') {
-    const plugin = require('vite-plugin-glimmerx/index.cjs');
-    plugins.push(plugin.default());
-  }
 
   return plugins;
 }

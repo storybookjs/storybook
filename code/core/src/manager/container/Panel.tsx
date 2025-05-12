@@ -1,50 +1,70 @@
 import type { FC } from 'react';
-import React from 'react';
-import memoize from 'memoizerific';
-import { Consumer } from '@storybook/core/manager-api';
-import type { API, Combo } from '@storybook/core/manager-api';
-import { Addon_TypesEnum } from '@storybook/core/types';
+import React, { useMemo, useState } from 'react';
 
+import { Addon_TypesEnum } from 'storybook/internal/types';
+
+import { useChannel, useStorybookApi, useStorybookState } from 'storybook/manager-api';
+
+import { STORY_PREPARED } from '../../core-events';
 import { AddonPanel } from '../components/panel/Panel';
 
-const createPanelActions = memoize(1)((api) => ({
-  onSelect: (panel: string) => api.setSelectedPanel(panel),
-  toggleVisibility: () => api.togglePanel(),
-  togglePosition: () => api.togglePanelPosition(),
-}));
+const Panel: FC<any> = (props) => {
+  const api = useStorybookApi();
+  const state = useStorybookState();
+  const [story, setStory] = useState(api.getCurrentStoryData());
 
-const getPanels = (api: API) => {
-  const allPanels = api.getElements(Addon_TypesEnum.PANEL);
-  const story = api.getCurrentStoryData();
+  useChannel(
+    {
+      [STORY_PREPARED]: () => {
+        setStory(api.getCurrentStoryData());
+      },
+    },
+    []
+  );
 
-  if (!allPanels || !story || story.type !== 'story') {
-    return allPanels;
-  }
+  const { parameters, type } = story ?? {};
 
-  const { parameters } = story;
+  const panelActions = useMemo(
+    () => ({
+      onSelect: (panel: string) => api.setSelectedPanel(panel),
+      toggleVisibility: () => api.togglePanel(),
+      togglePosition: () => api.togglePanelPosition(),
+    }),
+    [api]
+  );
 
-  const filteredPanels: typeof allPanels = {};
-  Object.entries(allPanels).forEach(([id, panel]) => {
-    const { paramKey }: any = panel;
-    if (paramKey && parameters && parameters[paramKey] && parameters[paramKey].disable) {
-      return;
+  const panels = useMemo(() => {
+    const allPanels = api.getElements(Addon_TypesEnum.PANEL);
+
+    if (!allPanels || type !== 'story') {
+      return allPanels;
     }
-    filteredPanels[id] = panel;
-  });
 
-  return filteredPanels;
+    const filteredPanels: typeof allPanels = {};
+    Object.entries(allPanels).forEach(([id, p]) => {
+      const { paramKey }: any = p;
+      if (paramKey && parameters && parameters[paramKey] && parameters[paramKey].disable) {
+        return;
+      }
+      if (p.disabled === true || (typeof p.disabled === 'function' && p.disabled(parameters))) {
+        return;
+      }
+      filteredPanels[id] = p;
+    });
+
+    return filteredPanels;
+  }, [api, type, parameters]);
+
+  return (
+    <AddonPanel
+      panels={panels}
+      selectedPanel={api.getSelectedPanel()}
+      panelPosition={state.layout.panelPosition}
+      actions={panelActions}
+      shortcuts={api.getShortcutKeys()}
+      {...props}
+    />
+  );
 };
-
-const mapper = ({ state, api }: Combo) => ({
-  panels: getPanels(api),
-  selectedPanel: api.getSelectedPanel(),
-  panelPosition: state.layout.panelPosition,
-  actions: createPanelActions(api),
-  shortcuts: api.getShortcutKeys(),
-});
-
-const Panel: FC<any> = (props) => (
-  <Consumer filter={mapper}>{(customProps) => <AddonPanel {...props} {...customProps} />}</Consumer>
-);
 
 export default Panel;

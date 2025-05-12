@@ -1,6 +1,6 @@
 {
   "name": "create-storybook",
-  "version": "8.3.0-alpha.3",
+  "version": "9.0.0-rc.0",
   "description": "Initialize Storybook into your project",
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/lib/create-storybook",
   "bugs": {
@@ -19,28 +19,12 @@
   "author": "Storybook Team",
   "type": "module",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "node": "./dist/index.cjs",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    },
-    "./bin/index.cjs": {
-      "node": "./bin/index.cjs",
-      "require": "./bin/index.cjs"
-    },
+    ".": "./dist/index.js",
+    "./bin/index.cjs": "./bin/index.cjs",
     "./package.json": "./package.json"
   },
   "main": "dist/index.cjs",
   "module": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "typesVersions": {
-    "*": {
-      "*": [
-        "./dist/index.d.ts"
-      ]
-    }
-  },
   "bin": "./bin/index.cjs",
   "files": [
     "bin/**/*",
@@ -51,30 +35,27 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/check.ts",
-    "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts"
+    "check": "jiti  ../../../scripts/prepare/check.ts",
+    "prep": "jiti  ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@types/semver": "^7.3.4",
-    "chalk": "^4.1.0",
-    "commander": "^6.2.1",
-    "execa": "^5.0.0",
-    "fd-package-json": "^1.2.0",
-    "find-up": "^5.0.0",
-    "fs-extra": "^11.1.0",
-    "ora": "^5.4.1",
-    "prettier": "^3.1.1",
-    "prompts": "^2.4.0",
-    "semver": "^7.3.7",
-    "storybook": "workspace:*",
-    "tiny-invariant": "^1.3.1",
-    "ts-dedent": "^2.0.0"
+    "semver": "^7.6.2"
   },
   "devDependencies": {
     "@types/prompts": "^2.0.9",
-    "@types/util-deprecate": "^1.0.0",
+    "@types/semver": "^7.3.4",
     "boxen": "^7.1.1",
-    "typescript": "^5.3.2"
+    "commander": "^12.1.0",
+    "execa": "^5.0.0",
+    "find-up": "^7.0.0",
+    "ora": "^5.4.1",
+    "picocolors": "^1.1.0",
+    "prompts": "^2.4.0",
+    "react": "^18.2.0",
+    "storybook": "workspace:*",
+    "tiny-invariant": "^1.3.1",
+    "ts-dedent": "^2.0.0",
+    "typescript": "^5.8.3"
   },
   "publishConfig": {
     "access": "public"
@@ -84,7 +65,10 @@
       "./src/index.ts",
       "./src/bin/index.ts"
     ],
-    "platform": "node"
+    "formats": [
+      "node-esm"
+    ],
+    "types": false
   },
   "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
 }

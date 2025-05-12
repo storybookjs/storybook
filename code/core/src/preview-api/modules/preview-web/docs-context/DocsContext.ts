@@ -1,8 +1,5 @@
-import type { Channel } from '@storybook/core/channels';
-
-import { dedent } from 'ts-dedent';
-import type { StoryStore } from '../../store';
-import type { DocsContextProps } from './DocsContextProps';
+import type { Channel } from 'storybook/internal/channels';
+import { isStory } from 'storybook/internal/csf';
 import type {
   CSFFile,
   ModuleExport,
@@ -13,7 +10,12 @@ import type {
   ResolvedModuleExportType,
   StoryId,
   StoryName,
-} from '@storybook/core/types';
+} from 'storybook/internal/types';
+
+import { dedent } from 'ts-dedent';
+
+import { type StoryStore } from '../../store';
+import type { DocsContextProps } from './DocsContextProps';
 
 export class DocsContext<TRenderer extends Renderer> implements DocsContextProps<TRenderer> {
   private componentStoriesValue: PreparedStory<TRenderer>[];
@@ -83,18 +85,25 @@ export class DocsContext<TRenderer extends Renderer> implements DocsContextProps
     stories.forEach((story) => {
       this.nameToStoryId.set(story.name, story.id);
       this.componentStoriesValue.push(story);
-      if (!this.primaryStory) this.primaryStory = story;
+
+      if (!this.primaryStory) {
+        this.primaryStory = story;
+      }
     });
   }
 
   referenceMeta(metaExports: ModuleExports, attach: boolean) {
     const resolved = this.resolveModuleExport(metaExports);
-    if (resolved.type !== 'meta')
+
+    if (resolved.type !== 'meta') {
       throw new Error(
         '<Meta of={} /> must reference a CSF file module export or meta export. Did you mistakenly reference your component instead of your CSF file?'
       );
+    }
 
-    if (attach) this.attachCSFFile(resolved.csfFile);
+    if (attach) {
+      this.attachCSFFile(resolved.csfFile);
+    }
   }
 
   get projectAnnotations() {
@@ -112,18 +121,20 @@ export class DocsContext<TRenderer extends Renderer> implements DocsContextProps
 
     if (moduleExportType === 'story') {
       // If passed a type, we return the attached file, component or primary story
-      if (!this.primaryStory)
+      if (!this.primaryStory) {
         throw new Error(
           `No primary story attached to this docs file, did you forget to use <Meta of={} />?`
         );
+      }
 
       return { type: 'story', story: this.primaryStory } as TResolvedExport;
     }
 
-    if (this.attachedCSFFiles.size === 0)
+    if (this.attachedCSFFiles.size === 0) {
       throw new Error(
         `No CSF file attached to this docs file, did you forget to use <Meta of={} />?`
       );
+    }
 
     const firstAttachedCSFFile = Array.from(this.attachedCSFFiles)[0];
 
@@ -132,10 +143,12 @@ export class DocsContext<TRenderer extends Renderer> implements DocsContextProps
     }
 
     const { component } = firstAttachedCSFFile.meta;
-    if (!component)
+
+    if (!component) {
       throw new Error(
         `Attached CSF file does not defined a component, did you forget to export one?`
       );
+    }
     return { type: 'component', component } as TResolvedExport;
   }
 
@@ -145,10 +158,18 @@ export class DocsContext<TRenderer extends Renderer> implements DocsContextProps
     type TResolvedExport = ResolvedModuleExportFromType<TType, TRenderer>;
 
     const csfFile = this.exportsToCSFFile.get(moduleExportOrType);
-    if (csfFile) return { type: 'meta', csfFile } as TResolvedExport;
 
-    const story = this.exportToStory.get(moduleExportOrType);
-    if (story) return { type: 'story', story } as TResolvedExport;
+    if (csfFile) {
+      return { type: 'meta', csfFile } as TResolvedExport;
+    }
+
+    const story = this.exportToStory.get(
+      isStory(moduleExportOrType) ? moduleExportOrType.input : moduleExportOrType
+    );
+
+    if (story) {
+      return { type: 'story', story } as TResolvedExport;
+    }
 
     // If the export isn't a module, default or story export, we assume it is a component
     return { type: 'component', component: moduleExportOrType } as TResolvedExport;
@@ -200,7 +221,10 @@ export class DocsContext<TRenderer extends Renderer> implements DocsContextProps
 
   storyIdByName = (storyName: StoryName) => {
     const storyId = this.nameToStoryId.get(storyName);
-    if (storyId) return storyId;
+
+    if (storyId) {
+      return storyId;
+    }
 
     throw new Error(`No story found with that name: ${storyName}`);
   };
@@ -215,16 +239,19 @@ export class DocsContext<TRenderer extends Renderer> implements DocsContextProps
 
   storyById = (storyId?: StoryId) => {
     if (!storyId) {
-      if (!this.primaryStory)
+      if (!this.primaryStory) {
         throw new Error(
           `No primary story defined for docs entry. Did you forget to use \`<Meta>\`?`
         );
+      }
 
       return this.primaryStory;
     }
     const csfFile = this.storyIdToCSFFile.get(storyId);
-    if (!csfFile)
+
+    if (!csfFile) {
       throw new Error(`Called \`storyById\` for story that was never loaded: ${storyId}`);
+    }
     return this.store.storyFromCSFFile({ storyId, csfFile });
   };
 

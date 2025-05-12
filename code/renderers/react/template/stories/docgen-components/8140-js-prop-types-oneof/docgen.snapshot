@@ -9,13 +9,9 @@ Alert.propTypes = {
   mode: PropTypes.oneOf(['static', 'timed']),
   type: PropTypes.oneOf(['success', 'warning', 'error', 'primary']),
   message: PropTypes.string.isRequired,
-  /**
-   * No background or border if static alert
-   */
+  /** No background or border if static alert */
   blank: PropTypes.bool,
-  /**
-   * Allows icon override, accepts material icon name
-   */
+  /** Allows icon override, accepts material icon name */
   icon: PropTypes.string
 };
 export const component = Alert;

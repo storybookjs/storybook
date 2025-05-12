@@ -1,8 +1,9 @@
+import type { Path } from 'storybook/internal/types';
+
 import Watchpack from 'watchpack';
-import type { Path } from '@storybook/core/types';
 
 // copied from './watch-story-specifiers.ts'
-/** Watch the .storybook dir for changes */
+/** Watch the `.storybook` dir for changes */
 export function watchConfig(
   configDir: Path,
   onInvalidate: (path: Path, removed: boolean) => Promise<void>

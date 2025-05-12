@@ -1,7 +1,8 @@
-import { describe, it, expect, vi } from 'vitest';
-import { buildArgsParam, deepDiff, DEEPLY_EQUAL, getMatch, parsePath } from './utils';
+import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('@storybook/core/client-logger', () => ({
+import { DEEPLY_EQUAL, buildArgsParam, deepDiff, getMatch, parsePath } from './utils';
+
+vi.mock('storybook/internal/client-logger', () => ({
   once: { warn: vi.fn() },
 }));
 

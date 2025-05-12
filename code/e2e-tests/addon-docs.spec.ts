@@ -1,6 +1,10 @@
-import { test, expect } from '@playwright/test';
+/* eslint-disable playwright/no-conditional-expect */
+
+/* eslint-disable playwright/no-conditional-in-test */
+import { expect, test } from '@playwright/test';
 import process from 'process';
 import { dedent } from 'ts-dedent';
+
 import { SbPage } from './util';
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
@@ -9,7 +13,7 @@ const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
 test.describe('addon-docs', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(storybookUrl);
-    await new SbPage(page).waitUntilLoaded();
+    await new SbPage(page, expect).waitUntilLoaded();
   });
 
   test('should show descriptions for stories', async ({ page }) => {
@@ -22,7 +26,7 @@ test.describe('addon-docs', () => {
       `Skipping ${templateName}, because of wrong ordering of stories on docs page`
     );
 
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
     await sbPage.navigateToStory('addons/docs/docspage/basic', 'docs');
     const root = sbPage.previewRoot();
 
@@ -44,7 +48,7 @@ test.describe('addon-docs', () => {
       `Skipping ${templateName}, because of wrong ordering of stories on docs page`
     );
 
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
     await sbPage.navigateToStory('addons/docs/docspage/basic', 'docs');
     const root = sbPage.previewRoot();
 
@@ -71,7 +75,7 @@ test.describe('addon-docs', () => {
   });
 
   test('should render errors', async ({ page }) => {
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
     await sbPage.navigateToStory('addons/docs/docspage/error', 'docs');
     const root = sbPage.previewRoot();
 
@@ -86,23 +90,23 @@ test.describe('addon-docs', () => {
       `Skipping ${templateName}, which does not support dynamic source snippets`
     );
 
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
     await sbPage.navigateToStory('addons/docs/docspage/basic', 'docs');
     const root = sbPage.previewRoot();
     const toggles = root.locator('.docblock-code-toggle');
 
     const toggleCount = await toggles.count();
     for (let i = 0; i < toggleCount; i += 1) {
-      const toggle = await toggles.nth(i);
-      await toggle.click({ force: true });
+      const toggle = toggles.nth(i);
+      await toggle.click();
     }
 
     const codes = root.locator('pre.prismjs');
     const codeCount = await codes.count();
     for (let i = 0; i < codeCount; i += 1) {
-      const code = await codes.nth(i);
+      const code = codes.nth(i);
       const text = await code.innerText();
-      await expect(text).not.toMatch(/^\(args\) => /);
+      expect(text).not.toMatch(/^\(args\) => /);
     }
   });
 
@@ -119,25 +123,26 @@ test.describe('addon-docs', () => {
       //   - template: https://638db567ed97c3fb3e21cc22-ulhjwkqzzj.chromatic.com/?path=/docs/addons-docs-docspage-basic--docs
       //   - real: https://638db567ed97c3fb3e21cc22-ulhjwkqzzj.chromatic.com/?path=/docs/example-button--docs
       'lit-vite',
+      'react-native-web',
     ];
     test.skip(
       new RegExp(`^${skipped.join('|')}`, 'i').test(`${templateName}`),
       `Skipping ${templateName}, which does not support dynamic source snippets`
     );
 
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
     await sbPage.navigateToStory('addons/docs/docspage/basic', 'docs');
     const root = sbPage.previewRoot();
     const toggles = root.locator('.docblock-code-toggle');
 
     // Open up the first and second code toggle (i.e the "Basic" story outside and inside the Stories block)
-    await (await toggles.nth(0)).click({ force: true });
-    await (await toggles.nth(1)).click({ force: true });
+    await toggles.nth(0).click();
+    await toggles.nth(1).click();
 
     // Check they both say "Basic"
     const codes = root.locator('pre.prismjs');
-    const primaryCode = await codes.nth(0);
-    const storiesCode = await codes.nth(1);
+    const primaryCode = codes.nth(0);
+    const storiesCode = codes.nth(1);
     await expect(primaryCode).toContainText('Basic');
     await expect(storiesCode).toContainText('Basic');
 
@@ -152,7 +157,7 @@ test.describe('addon-docs', () => {
   });
 
   test('should not run autoplay stories without parameter', async ({ page }) => {
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
     await sbPage.navigateToStory('addons/docs/docspage/autoplay', 'docs');
 
     const root = sbPage.previewRoot();
@@ -170,7 +175,7 @@ test.describe('addon-docs', () => {
       `${templateName} fails because of a known issue: https://github.com/storybookjs/storybook/issues/20941`
     );
 
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
     await sbPage.navigateToStory('addons/docs/docspage/basic', 'docs');
 
     // The `<Primary>` block should render the "Basic" story, and the `<Stories/>` block should
@@ -178,43 +183,44 @@ test.describe('addon-docs', () => {
     const root = sbPage.previewRoot();
     const stories = root.locator('.sb-story button');
 
-    await expect(await stories.count()).toBe(3);
+    await expect(stories).toHaveCount(3);
     await expect(stories.first()).toHaveText('Basic');
     await expect(stories.nth(1)).toHaveText('Basic');
     await expect(stories.last()).toHaveText('Another');
   });
 
   test('should resolve react to the correct version', async ({ page }) => {
+    test.skip(
+      templateName?.includes('nextjs') || templateName?.includes('nuxt'),
+      'TODO: remove this once sandboxes are synced (SOON!!)'
+    );
     // Arrange - Navigate to MDX docs
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
     await sbPage.navigateToStory('addons/docs/docs2/resolvedreact', 'mdx', 'docs');
     const root = sbPage.previewRoot();
 
     // Arrange - Setup expectations
-    let expectedReactVersionRange = /^18/;
-    if (
-      templateName.includes('preact') ||
-      templateName.includes('react-webpack/17') ||
-      templateName.includes('react-vite/17')
-    ) {
+    let expectedReactVersionRange = /^19/;
+    if (templateName.includes('react-webpack/17') || templateName.includes('react-vite/17')) {
       expectedReactVersionRange = /^17/;
     } else if (templateName.includes('react16')) {
       expectedReactVersionRange = /^16/;
     } else if (
-      templateName.includes('nextjs/prerelease') ||
-      templateName.includes('react-vite/prerelease') ||
-      templateName.includes('react-webpack/prerelease')
+      templateName.includes('internal/react18-webpack-babel') ||
+      templateName.includes('preact-vite/default-js') ||
+      templateName.includes('preact-vite/default-ts') ||
+      templateName.includes('react-webpack/18-ts')
     ) {
-      expectedReactVersionRange = /^19/;
+      expectedReactVersionRange = /^18/;
     }
 
     // Arrange - Get the actual versions
-    const mdxReactVersion = await root.getByTestId('mdx-react');
-    const mdxReactDomVersion = await root.getByTestId('mdx-react-dom');
-    const mdxReactDomServerVersion = await root.getByTestId('mdx-react-dom-server');
-    const componentReactVersion = await root.getByTestId('component-react');
-    const componentReactDomVersion = await root.getByTestId('component-react-dom');
-    const componentReactDomServerVersion = await root.getByTestId('component-react-dom-server');
+    const mdxReactVersion = root.getByTestId('mdx-react');
+    const mdxReactDomVersion = root.getByTestId('mdx-react-dom');
+    const mdxReactDomServerVersion = root.getByTestId('mdx-react-dom-server');
+    const componentReactVersion = root.getByTestId('component-react');
+    const componentReactDomVersion = root.getByTestId('component-react-dom');
+    const componentReactDomServerVersion = root.getByTestId('component-react-dom-server');
 
     // Assert - The versions are in the expected range
     await expect(mdxReactVersion).toHaveText(expectedReactVersionRange);
@@ -231,9 +237,9 @@ test.describe('addon-docs', () => {
     await sbPage.navigateToStory('addons/docs/docs2/resolvedreact', 'docs');
 
     // Arrange - Get the actual versions
-    const autodocsReactVersion = await root.getByTestId('react');
-    const autodocsReactDomVersion = await root.getByTestId('react-dom');
-    const autodocsReactDomServerVersion = await root.getByTestId('react-dom-server');
+    const autodocsReactVersion = root.getByTestId('react');
+    const autodocsReactDomVersion = root.getByTestId('react-dom');
+    const autodocsReactDomServerVersion = root.getByTestId('react-dom-server');
 
     // Assert - The versions are in the expected range
     await expect(autodocsReactVersion).toHaveText(expectedReactVersionRange);
@@ -246,9 +252,9 @@ test.describe('addon-docs', () => {
     await sbPage.navigateToStory('addons/docs/docs2/resolvedreact', 'story');
 
     // Arrange - Get the actual versions
-    const storyReactVersion = await root.getByTestId('react');
-    const storyReactDomVersion = await root.getByTestId('react-dom');
-    const storyReactDomServerVersion = await root.getByTestId('react-dom-server');
+    const storyReactVersion = root.getByTestId('react');
+    const storyReactDomVersion = root.getByTestId('react-dom');
+    const storyReactDomServerVersion = root.getByTestId('react-dom-server');
 
     // Assert - The versions are in the expected range
     await expect(storyReactVersion).toHaveText(expectedReactVersionRange);
@@ -259,17 +265,19 @@ test.describe('addon-docs', () => {
   });
 
   test('should have stories from multiple CSF files in autodocs', async ({ page }) => {
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
     await sbPage.navigateToStory('/addons/docs/multiple-csf-files-same-title', 'docs');
     const root = sbPage.previewRoot();
 
     const storyHeadings = root.locator('.sb-anchor > h3');
-    await expect(await storyHeadings.count()).toBe(6);
-    await expect(storyHeadings.nth(0)).toHaveText('Default A');
-    await expect(storyHeadings.nth(1)).toHaveText('Span Content');
-    await expect(storyHeadings.nth(2)).toHaveText('Code Content');
-    await expect(storyHeadings.nth(3)).toHaveText('Default B');
-    await expect(storyHeadings.nth(4)).toHaveText('H 1 Content');
-    await expect(storyHeadings.nth(5)).toHaveText('H 2 Content');
+    await expect(storyHeadings).toHaveCount(6);
+    await expect(storyHeadings).toHaveText([
+      'Default A',
+      'Span Content',
+      'Code Content',
+      'Default B',
+      'H 1 Content',
+      'H 2 Content',
+    ]);
   });
 });

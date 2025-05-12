@@ -1,23 +1,23 @@
-import { global } from '@storybook/global';
-
-import type { Channel } from '@storybook/core/channels';
-import { SET_CONFIG } from '@storybook/core/core-events';
+import type { Channel } from 'storybook/internal/channels';
+import { logger } from 'storybook/internal/client-logger';
+import { SET_CONFIG } from 'storybook/internal/core-events';
 import type {
+  Addon_BaseType,
   Addon_Collection,
   Addon_Config,
   Addon_Elements,
   Addon_Loaders,
-  Addon_Type,
-  Addon_BaseType,
   Addon_PageType,
+  Addon_TestProviderType,
+  Addon_Type,
   Addon_Types,
   Addon_TypesMapping,
   Addon_WrapperType,
-  Addon_SidebarBottomType,
-  Addon_SidebarTopType,
-} from '@storybook/core/types';
-import { Addon_TypesEnum } from '@storybook/core/types';
-import { logger } from '@storybook/core/client-logger';
+} from 'storybook/internal/types';
+import { Addon_TypesEnum } from 'storybook/internal/types';
+
+import { global } from '@storybook/global';
+
 import type { API } from '../root';
 import { mockChannel } from './storybook-channel-mock';
 
@@ -68,8 +68,7 @@ export class AddonStore {
     T extends
       | Addon_Types
       | Addon_TypesEnum.experimental_PAGE
-      | Addon_TypesEnum.experimental_SIDEBAR_BOTTOM
-      | Addon_TypesEnum.experimental_SIDEBAR_TOP,
+      | Addon_TypesEnum.experimental_TEST_PROVIDER,
   >(type: T): Addon_Collection<Addon_TypesMapping[T]> | any {
     if (!this.elements[type]) {
       this.elements[type] = {};
@@ -79,6 +78,7 @@ export class AddonStore {
 
   /**
    * Adds an addon to the addon store.
+   *
    * @param {string} id - The id of the addon.
    * @param {Addon_Type} addon - The addon to add.
    * @returns {void}
@@ -87,8 +87,7 @@ export class AddonStore {
     id: string,
     addon:
       | Addon_BaseType
-      | Omit<Addon_SidebarTopType, 'id'>
-      | Omit<Addon_SidebarBottomType, 'id'>
+      | Omit<Addon_TestProviderType, 'id'>
       | Omit<Addon_PageType, 'id'>
       | Omit<Addon_WrapperType, 'id'>
   ): void {
@@ -127,6 +126,10 @@ export class AddonStore {
   loadAddons = (api: any) => {
     Object.values(this.loaders).forEach((value: any) => value(api));
   };
+
+  experimental_getRegisteredAddons() {
+    return Object.keys(this.loaders);
+  }
 }
 
 // Enforce addons store to be a singleton

@@ -1,12 +1,26 @@
-import { addons } from '@storybook/core/manager-api';
+/* these imports are in the exact order in which the panels need to be registered */
 import { global } from '@storybook/global';
 
+import { addons } from 'storybook/manager-api';
+
+/* eslint-disable prettier/prettier */
+// THE ORDER OF THESE IMPORTS MATTERS! IT DEFINES THE ORDER OF PANELS AND TOOLS!
+import controlsManager from '../../controls/manager';
+import actionsManager from '../../actions/manager';
+import componentTestingManager from '../../component-testing/manager';
+import backgroundsManager from '../../backgrounds/manager';
+import measureManager from '../../measure/manager';
+import outlineManager from '../../outline/manager';
+import viewportManager from '../../viewport/manager';
+/* eslint-enable prettier/prettier */
+
+const TAG_FILTERS = 'tag-filters';
 const STATIC_FILTER = 'static-filter';
 
-addons.register(STATIC_FILTER, (api) => {
+const tagFiltersManager = addons.register(TAG_FILTERS, (api) => {
   // FIXME: this ensures the filter is applied after the first render
   //        to avoid a strange race condition in Webkit only.
-  const excludeTags = Object.entries(global.TAGS_OPTIONS ?? {}).reduce(
+  const staticExcludeTags = Object.entries(global.TAGS_OPTIONS ?? {}).reduce(
     (acc, entry) => {
       const [tag, option] = entry;
       if ((option as any).excludeFromSidebar) {
@@ -22,7 +36,18 @@ addons.register(STATIC_FILTER, (api) => {
     return (
       // we can filter out the primary story, but we still want to show autodocs
       (tags.includes('dev') || item.type === 'docs') &&
-      tags.filter((tag) => excludeTags[tag]).length === 0
+      tags.filter((tag) => staticExcludeTags[tag]).length === 0
     );
   });
 });
+
+export default [
+  measureManager,
+  tagFiltersManager,
+  actionsManager,
+  backgroundsManager,
+  componentTestingManager,
+  controlsManager,
+  viewportManager,
+  outlineManager,
+];

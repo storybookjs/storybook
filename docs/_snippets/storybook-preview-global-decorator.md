@@ -27,7 +27,7 @@ export default {
 ```tsx filename=".storybook/preview.tsx" renderer="react" language="ts"
 import React from 'react';
 
-import { Preview } from '@storybook/react';
+import type { Preview } from '@storybook/react-vite';
 
 const preview: Preview = {
   decorators: [
@@ -56,7 +56,7 @@ export default {
 ```
 
 ```js filename=".storybook/preview.tsx" renderer="solid" language="ts"
-import { Preview } from 'storybook-solidjs';
+import type { Preview } from 'storybook-solidjs';
 
 const preview: Preview = {
   decorators: [
@@ -78,7 +78,7 @@ export default { decorators: [() => MarginDecorator] };
 ```
 
 ```ts filename=".storybook/preview.ts" renderer="svelte" language="ts"
-import type { Preview } from '@storybook/svelte';
+import type { Preview } from '@storybook/svelte-vite';
 
 import MarginDecorator from './MarginDecorator.svelte';
 
@@ -101,7 +101,7 @@ export default {
 ```
 
 ```ts filename=".storybook/preview.ts" renderer="vue" language="ts"
-import { Preview } from '@storybook/vue3';
+import type { Preview } from '@storybook/vue3-vite';
 
 const preview: Preview = {
   decorators: [
@@ -122,3 +122,14 @@ export default {
 };
 ```
 
+```js filename=".storybook/preview.js" renderer="web-components" language="ts"
+import type { Preview } from '@storybook/web-components-vite';
+
+import { html } from 'lit';
+
+const preview: Preview = {
+  decorators: [(story) => html`<div style="margin: 3em">${story()}</div>`],
+};
+
+export default preview;
+```

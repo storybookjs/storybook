@@ -1,13 +1,15 @@
-import chalk from 'chalk';
+import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
+
+import type { Status } from './shared/status-store';
+import type { StatusTypeId } from './shared/status-store';
 import { StorybookError } from './storybook-error';
 
 /**
- * If you can't find a suitable category for your error, create one
- * based on the package name/file path of which the error is thrown.
- * For instance:
- * If it's from @storybook/node-logger, then NODE-LOGGER
- * If it's from a package that is too broad, e.g. @storybook/cli in the init command, then use a combination like CLI_INIT
+ * If you can't find a suitable category for your error, create one based on the package name/file
+ * path of which the error is thrown. For instance: If it's from `@storybook/node-logger`, then
+ * NODE-LOGGER If it's from a package that is too broad, e.g. @storybook/cli in the init command,
+ * then use a combination like CLI_INIT
  */
 export enum Category {
   CLI = 'CLI',
@@ -40,7 +42,6 @@ export enum Category {
   FRAMEWORK_REACT_WEBPACK5 = 'FRAMEWORK_REACT-WEBPACK5',
   FRAMEWORK_SERVER_WEBPACK5 = 'FRAMEWORK_SERVER-WEBPACK5',
   FRAMEWORK_SVELTE_VITE = 'FRAMEWORK_SVELTE-VITE',
-  FRAMEWORK_SVELTE_WEBPACK5 = 'FRAMEWORK_SVELTE-WEBPACK5',
   FRAMEWORK_SVELTEKIT = 'FRAMEWORK_SVELTEKIT',
   FRAMEWORK_VUE_VITE = 'FRAMEWORK_VUE-VITE',
   FRAMEWORK_VUE_WEBPACK5 = 'FRAMEWORK_VUE-WEBPACK5',
@@ -55,10 +56,10 @@ export class NxProjectDetectedError extends StorybookError {
     super({
       category: Category.CLI_INIT,
       code: 1,
-      documentation: 'https://nx.dev/packages/storybook',
+      documentation: 'https://nx.dev/nx-api/storybook#generating-storybook-configuration',
       message: dedent`
         We have detected Nx in your project. Nx has its own Storybook initializer, so please use it instead.
-        Run "nx g @nx/storybook:configuration" to add Storybook to your project.`,
+        Run "nx g @nx/storybook:configuration <your-project-name>" to add Storybook to a given Nx app or lib.`,
     });
   }
 }
@@ -116,7 +117,7 @@ export class ConflictingStaticDirConfigError extends StorybookError {
       category: Category.CORE_SERVER,
       code: 1,
       documentation:
-        'https://storybook.js.org/docs/react/configure/images-and-assets#serving-static-files-via-storybook-configuration',
+        'https://storybook.js.org/docs/configure/integration/images-and-assets#serving-static-files-via-storybook-configuration',
       message: dedent`
         Storybook encountered a conflict when trying to serve statics. You have configured both:
         * Storybook's option in the config file: 'staticDirs'
@@ -133,7 +134,7 @@ export class InvalidStoriesEntryError extends StorybookError {
       category: Category.CORE_COMMON,
       code: 4,
       documentation:
-        'https://storybook.js.org/docs/react/faq#can-i-have-a-storybook-with-no-local-stories',
+        'https://storybook.js.org/docs/faq#can-i-have-a-storybook-with-no-local-stories',
       message: dedent`
         Storybook could not index your stories.
         Your main configuration somehow does not contain a 'stories' field, or it resolved to an empty array.
@@ -150,7 +151,7 @@ export class WebpackMissingStatsError extends StorybookError {
       code: 1,
       documentation: [
         'https://webpack.js.org/configuration/stats/',
-        'https://storybook.js.org/docs/react/builders/webpack#configure',
+        'https://storybook.js.org/docs/builders/webpack#configure',
       ],
       message: dedent`
         No Webpack stats found. Did you turn off stats reporting in your Webpack config?
@@ -217,7 +218,7 @@ export class MissingAngularJsonError extends StorybookError {
     super({
       category: Category.CLI_INIT,
       code: 2,
-      documentation: 'https://storybook.js.org/docs/angular/faq#error-no-angularjson-file-found',
+      documentation: 'https://storybook.js.org/docs/faq#error-no-angularjson-file-found',
       message: dedent`
         An angular.json file was not found in the current working directory: ${data.path}
         Storybook needs it to work properly, so please rerun the command at the root of your project, where the angular.json file is located.`,
@@ -314,6 +315,20 @@ export class GoogleFontsLoadingError extends StorybookError {
   }
 }
 
+export class SvelteViteWithSvelteKitError extends StorybookError {
+  constructor() {
+    super({
+      category: Category.FRAMEWORK_SVELTE_VITE,
+      code: 1,
+      documentation:
+        'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#sveltekit-needs-the-storybooksveltekit-framework',
+      message: dedent`
+        We've detected a SvelteKit project using the @storybook/svelte-vite framework, which is not supported.
+        Please use the @storybook/sveltekit framework instead.`,
+    });
+  }
+}
+
 export class NoMatchingExportError extends StorybookError {
   constructor(public data: { error: unknown | Error }) {
     super({
@@ -349,21 +364,21 @@ export class MainFileESMOnlyImportError extends StorybookError {
     ];
     if (data.line) {
       message.push(
-        chalk.white(
-          `In your ${chalk.yellow(data.location)} file, line ${chalk.bold.cyan(
-            data.num
+        picocolors.white(
+          `In your ${picocolors.yellow(data.location)} file, line ${picocolors.bold(
+            picocolors.cyan(data.num)
           )} threw an error:`
         ),
-        chalk.grey(data.line)
+        picocolors.gray(data.line)
       );
     }
 
     message.push(
       '',
-      chalk.white(
-        `Convert the static import to a dynamic import ${chalk.underline('where they are used')}.`
+      picocolors.white(
+        `Convert the static import to a dynamic import ${picocolors.underline('where they are used')}.`
       ),
-      chalk.white(`Example:`) + ' ' + chalk.gray(`await import(<your ESM only module>);`),
+      picocolors.white(`Example:`) + ' ' + picocolors.gray(`await import(<your ESM only module>);`),
       ''
     );
 
@@ -378,23 +393,37 @@ export class MainFileESMOnlyImportError extends StorybookError {
 }
 
 export class MainFileMissingError extends StorybookError {
-  constructor(public data: { location: string }) {
+  constructor(public data: { location: string; source?: 'storybook' | 'vitest' }) {
+    const map = {
+      storybook: {
+        helperMessage:
+          'You can pass a --config-dir flag to tell Storybook, where your main.js file is located at.',
+        documentation: 'https://storybook.js.org/docs/configure',
+      },
+      vitest: {
+        helperMessage:
+          'You can pass a configDir plugin option to tell where your main.js file is located at.',
+        // TODO: add proper docs once available
+        documentation: 'https://storybook.js.org/docs/configure',
+      },
+    };
+    const { documentation, helperMessage } = map[data.source || 'storybook'];
     super({
       category: Category.CORE_SERVER,
       code: 6,
-      documentation: 'https://storybook.js.org/docs/configure',
+      documentation,
       message: dedent`
-        No configuration files have been found in your configDir: ${chalk.yellow(data.location)}.
+        No configuration files have been found in your configDir: ${picocolors.yellow(data.location)}.
         Storybook needs a "main.js" file, please add it.
         
-        You can pass a --config-dir flag to tell Storybook, where your main.js file is located at).`,
+        ${helperMessage}`,
     });
   }
 }
 
 export class MainFileEvaluationError extends StorybookError {
   constructor(public data: { location: string; error: Error }) {
-    const errorText = chalk.white(
+    const errorText = picocolors.white(
       (data.error.stack || data.error.message).replaceAll(process.cwd(), '')
     );
 
@@ -402,10 +431,29 @@ export class MainFileEvaluationError extends StorybookError {
       category: Category.CORE_SERVER,
       code: 7,
       message: dedent`
-        Storybook couldn't evaluate your ${chalk.yellow(data.location)} file.
+        Storybook couldn't evaluate your ${picocolors.yellow(data.location)} file.
         
         Original error:
         ${errorText}`,
+    });
+  }
+}
+
+export class StatusTypeIdMismatchError extends StorybookError {
+  constructor(
+    public data: {
+      status: Status;
+      typeId: StatusTypeId;
+    }
+  ) {
+    super({
+      category: Category.CORE_SERVER,
+      code: 16,
+      message: `Status has typeId "${data.status.typeId}" but was added to store with typeId "${data.typeId}". Full status: ${JSON.stringify(
+        data.status,
+        null,
+        2
+      )}`,
     });
   }
 }
@@ -520,6 +568,48 @@ export class FindPackageVersionsError extends StorybookError {
       code: 1,
       message: dedent`
         Unable to find versions of "${data.packageName}" using ${data.packageManager}
+        ${data.error && `Reason: ${data.error}`}`,
+    });
+  }
+}
+
+export class IncompatiblePostCssConfigError extends StorybookError {
+  constructor(public data: { error: Error }) {
+    super({
+      category: Category.FRAMEWORK_NEXTJS,
+      code: 3,
+      message: dedent`
+        Incompatible PostCSS configuration format detected.
+
+        Next.js uses an array-based format for plugins which is not compatible with Vite:
+        
+        // ❌ Incompatible format (used by Next.js)
+        const config = {
+          plugins: ["@tailwindcss/postcss"],
+        };
+        
+        Please transform your PostCSS config to use the object-based format, which is compatible with Next.js and Vite:
+        
+        // ✅ Compatible format (works with Next.js and Vite)
+        const config = {
+          plugins: {
+            "@tailwindcss/postcss": {},
+          },
+        };
+        
+        Original error: ${data.error.message}
+      `,
+    });
+  }
+}
+
+export class SavingGlobalSettingsFileError extends StorybookError {
+  constructor(public data: { filePath: string; error: Error | unknown }) {
+    super({
+      category: Category.CORE_SERVER,
+      code: 1,
+      message: dedent`
+        Unable to save global settings file to ${data.filePath}
         ${data.error && `Reason: ${data.error}`}`,
     });
   }

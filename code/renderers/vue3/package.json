@@ -1,6 +1,6 @@
 {
   "name": "@storybook/vue3",
-  "version": "8.3.0-alpha.3",
+  "version": "9.0.0-rc.0",
   "description": "Storybook Vue 3 renderer",
   "keywords": [
     "storybook"
@@ -22,13 +22,11 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "node": "./dist/index.js",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
     },
     "./experimental-playwright": {
       "types": "./dist/playwright.d.ts",
-      "node": "./dist/playwright.js",
       "import": "./dist/playwright.mjs",
       "require": "./dist/playwright.js"
     },
@@ -60,26 +58,17 @@
   ],
   "scripts": {
     "check": "vue-tsc --noEmit",
-    "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts"
+    "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@storybook/components": "workspace:^",
     "@storybook/global": "^5.0.0",
-    "@storybook/manager-api": "workspace:^",
-    "@storybook/preview-api": "workspace:^",
-    "@storybook/theming": "workspace:^",
-    "@vue/compiler-core": "^3.0.0",
-    "lodash": "^4.17.21",
-    "ts-dedent": "^2.0.0",
     "type-fest": "~2.19",
     "vue-component-type-helpers": "latest"
   },
   "devDependencies": {
-    "@digitak/esrun": "^3.2.2",
     "@testing-library/vue": "^8.0.0",
-    "@types/prettier": "^3.0.0",
     "@vitejs/plugin-vue": "^4.4.0",
-    "typescript": "^5.3.2",
+    "typescript": "^5.8.3",
     "vue": "^3.2.47",
     "vue-tsc": "latest"
   },
@@ -88,7 +77,7 @@
     "vue": "^3.0.0"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   },
   "publishConfig": {
     "access": "public"

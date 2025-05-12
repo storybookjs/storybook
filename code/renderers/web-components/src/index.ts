@@ -1,5 +1,4 @@
 /// <reference types="webpack-env" />
-
 import { global } from '@storybook/global';
 
 import './globals';
@@ -8,6 +7,7 @@ const { window, EventSource } = global;
 
 export * from './public-types';
 export * from './framework-api';
+export * from './portable-stories';
 
 // TODO: disable HMR and do full page loads because of customElements.define
 if (typeof module !== 'undefined' && module?.hot?.decline) {

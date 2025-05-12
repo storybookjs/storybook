@@ -1,11 +1,6 @@
-/* eslint-disable no-underscore-dangle */
-import * as t from '@babel/types';
+import { generate, types as t } from 'storybook/internal/babel';
 
-import bg from '@babel/generator';
 import type { CsfFile } from './CsfFile';
-
-// @ts-expect-error (needed due to it's use of `exports.default`)
-const generate = (bg.default || bg) as typeof bg;
 
 export interface EnrichCsfOptions {
   disableSource?: boolean;
@@ -19,11 +14,20 @@ export const enrichCsfStory = (
   options?: EnrichCsfOptions
 ) => {
   const storyExport = csfSource.getStoryExport(key);
+  const isCsfFactory =
+    t.isCallExpression(storyExport) &&
+    t.isMemberExpression(storyExport.callee) &&
+    t.isIdentifier(storyExport.callee.object) &&
+    storyExport.callee.object.name === 'meta';
   const source = !options?.disableSource && extractSource(storyExport);
   const description =
     !options?.disableDescription && extractDescription(csfSource._storyStatements[key]);
   const parameters = [];
-  const originalParameters = t.memberExpression(t.identifier(key), t.identifier('parameters'));
+  // in csf 1/2/3 use Story.parameters; CSF factories use Story.input.parameters
+  const baseStoryObject = isCsfFactory
+    ? t.memberExpression(t.identifier(key), t.identifier('input'))
+    : t.identifier(key);
+  const originalParameters = t.memberExpression(baseStoryObject, t.identifier('parameters'));
   parameters.push(t.spreadElement(originalParameters));
   const optionalDocs = t.optionalMemberExpression(
     originalParameters,
@@ -149,10 +153,14 @@ export const extractSource = (node: t.Node) => {
 };
 
 export const extractDescription = (node?: t.Node) => {
-  if (!node?.leadingComments) return '';
+  if (!node?.leadingComments) {
+    return '';
+  }
   const comments = node.leadingComments
     .map((comment) => {
-      if (comment.type === 'CommentLine' || !comment.value.startsWith('*')) return null;
+      if (comment.type === 'CommentLine' || !comment.value.startsWith('*')) {
+        return null;
+      }
       return (
         comment.value
           .split('\n')

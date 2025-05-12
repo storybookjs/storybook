@@ -22,8 +22,19 @@ To help ease the pain of keeping Storybook up-to-date, we provide a command-line
 The `upgrade` command will use whichever version you specify. For example:
 
 * `storybook@latest upgrade` will upgrade to the latest version
-* `storybook@7.6.10 upgrade` will upgrade to `7.6.10`
-* `storybook@7 upgrade` will upgrade to the newest `7.x.x` version
+* `storybook@8.6.1 upgrade` will upgrade to `8.6.1`
+* `storybook@9 upgrade` will upgrade to the newest `9.x.x` version
+
+<Callout variant="warning">
+  The `upgrade` command is designed to upgrade from one major version to the next.
+
+  - ✅ OK: Using Storybook 8 and running `storybook@9 upgrade`
+  - ❌ Not OK: Using Storybook 7 and running `storybook@9 upgrade`
+
+  If you want to upgrade across more than major version, run the command multiple times. For example, to upgrade from Storybook 7 to Storybook 9, you first need to upgrade to the latest version of Storybook 8 with `storybook@8 upgrade`, and then run `storybook@9 upgrade` to upgrade to the latest version of Storybook 9.
+
+  The only exception to this is when upgrading from 6 to 8, where you can run `storybook@8 upgrade` directly to upgrade from 6.x.x to 8.x.x.
+</Callout>
 
 After running the command, the script will:
 
@@ -31,7 +42,7 @@ After running the command, the script will:
 * Run the relevant [automigrations](../migration-guide/index.mdx#automatic-upgrade) factoring in the [breaking changes](../migration-guide/index.mdx#major-breaking-changes) between your current version and the specified version
 
 <Callout variant="info">
-  In addition to running the command, we also recommend checking the [MIGRATION.md file](https://github.com/storybookjs/storybook/blob/next/MIGRATION.mdx), for the detailed log of relevant changes and deprecations that might affect your upgrade.
+  In addition to running the command, we also recommend checking the [MIGRATION.md file](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md), for the detailed log of relevant changes and deprecations that might affect your upgrade.
 </Callout>
 
 ### Verifying the upgrade

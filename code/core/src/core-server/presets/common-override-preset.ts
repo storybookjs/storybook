@@ -1,4 +1,5 @@
-import type { PresetProperty, TestBuildFlags } from '@storybook/core/types';
+import type { PresetProperty, TestBuildFlags } from 'storybook/internal/types';
+
 import { removeMDXEntries } from '../utils/remove-mdx-entries';
 
 export const framework: PresetProperty<'framework'> = async (config) => {
@@ -24,13 +25,6 @@ export const stories: PresetProperty<'stories'> = async (entries, options) => {
 export const typescript: PresetProperty<'typescript'> = async (input, options) => {
   if (options?.build?.test?.disableDocgen) {
     return { ...(input ?? {}), reactDocgen: false, check: false };
-  }
-  return input;
-};
-
-export const docs: PresetProperty<'docs'> = async (input, options) => {
-  if (options?.build?.test?.disableAutoDocs) {
-    return {};
   }
   return input;
 };

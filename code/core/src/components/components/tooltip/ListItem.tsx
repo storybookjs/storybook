@@ -1,8 +1,7 @@
-import type { ReactNode, ComponentProps } from 'react';
-import React from 'react';
-import { styled } from '@storybook/core/theming';
+import React, { type ComponentProps, type ReactNode, type SyntheticEvent } from 'react';
+
 import memoize from 'memoizerific';
-import { transparentize } from 'polished';
+import { styled } from 'storybook/theming';
 
 export interface TitleProps {
   children?: ReactNode;
@@ -38,7 +37,7 @@ const Title = styled(({ active, loading, disabled, ...rest }: TitleProps) => <sp
   ({ disabled, theme }) =>
     disabled
       ? {
-          color: transparentize(0.7, theme.color.defaultText),
+          color: theme.textMutedColor,
         }
       : {}
 );
@@ -113,15 +112,20 @@ const Left = styled.span<LeftProps>(
 
 export interface ItemProps {
   disabled?: boolean;
+  href?: string;
+  onClick?: (event: SyntheticEvent, ...args: any[]) => any;
 }
 
-const Item = styled.a<ItemProps>(
+const Item = styled.div<ItemProps>(
   ({ theme }) => ({
+    width: '100%',
+    border: 'none',
+    borderRadius: theme.appBorderRadius,
+    background: 'none',
     fontSize: theme.typography.size.s1,
     transition: 'all 150ms ease-out',
     color: theme.color.dark,
     textDecoration: 'none',
-    cursor: 'pointer',
     justifyContent: 'space-between',
 
     lineHeight: '18px',
@@ -132,52 +136,56 @@ const Item = styled.a<ItemProps>(
     '& > * + *': {
       paddingLeft: 10,
     },
-
-    '&:hover': {
-      background: theme.background.hoverable,
-    },
-    '&:hover svg': {
-      opacity: 1,
-    },
   }),
-  ({ disabled }) =>
-    disabled
-      ? {
-          cursor: 'not-allowed',
-        }
-      : {}
+  ({ theme, href, onClick }) =>
+    (href || onClick) && {
+      cursor: 'pointer',
+      '&:hover': {
+        background: theme.background.hoverable,
+      },
+      '&:hover svg': {
+        opacity: 1,
+      },
+    },
+  ({ theme, as }) =>
+    as === 'label' && {
+      '&:has(input:not(:disabled))': {
+        cursor: 'pointer',
+        '&:hover': {
+          background: theme.background.hoverable,
+        },
+      },
+    },
+  ({ disabled }) => disabled && { cursor: 'not-allowed' }
 );
 
-const getItemProps = memoize(100)((onClick, href, LinkWrapper) => {
-  const result = {};
-
-  if (onClick) {
-    Object.assign(result, {
-      onClick,
-    });
-  }
-  if (href) {
-    Object.assign(result, {
-      href,
-    });
-  }
-  if (LinkWrapper && href) {
-    Object.assign(result, {
-      to: href,
+const getItemProps = memoize(100)(({ onClick, input, href, LinkWrapper }) => ({
+  ...(onClick && {
+    as: 'button',
+    onClick,
+  }),
+  ...(input && {
+    as: 'label',
+  }),
+  ...(href && {
+    as: 'a',
+    href,
+    ...(LinkWrapper && {
       as: LinkWrapper,
-    });
-  }
-  return result;
-});
+      to: href,
+    }),
+  }),
+}));
 
 export type LinkWrapperType = (props: any) => ReactNode;
 
-export interface ListItemProps extends Omit<ComponentProps<typeof Item>, 'href' | 'title'> {
+export interface ListItemProps extends Omit<ComponentProps<typeof Item>, 'title'> {
   loading?: boolean;
   title?: ReactNode;
   center?: ReactNode;
   right?: ReactNode;
   icon?: ReactNode;
+  input?: ReactNode;
   active?: boolean;
   disabled?: boolean;
   href?: string;
@@ -185,38 +193,42 @@ export interface ListItemProps extends Omit<ComponentProps<typeof Item>, 'href' 
   isIndented?: boolean;
 }
 
-const ListItem = ({
-  loading = false,
-  title = <span>Loading state</span>,
-  center = null,
-  right = null,
-
-  active = false,
-  disabled = false,
-  isIndented,
-  href = undefined,
-  onClick = undefined,
-  icon,
-  LinkWrapper = undefined,
-  ...rest
-}: ListItemProps) => {
-  const itemProps = getItemProps(onClick, href, LinkWrapper);
+const ListItem = (props: ListItemProps) => {
+  const {
+    loading = false,
+    title = <span>Loading state</span>,
+    center = null,
+    right = null,
+    active = false,
+    disabled = false,
+    isIndented = false,
+    href = undefined,
+    onClick = undefined,
+    icon,
+    input,
+    LinkWrapper = undefined,
+    ...rest
+  } = props;
   const commonProps = { active, disabled };
+  const itemProps = getItemProps(props);
+  const left = icon || input;
 
   return (
-    <Item {...commonProps} {...rest} {...itemProps}>
-      {icon && <Left {...commonProps}>{icon}</Left>}
-      {title || center ? (
-        <Center isIndented={!!(!icon && isIndented)}>
-          {title && (
-            <Title {...commonProps} loading={loading}>
-              {title}
-            </Title>
-          )}
-          {center && <CenterText {...commonProps}>{center}</CenterText>}
-        </Center>
-      ) : null}
-      {right && <Right {...commonProps}>{right}</Right>}
+    <Item {...rest} {...commonProps} {...itemProps}>
+      <>
+        {left && <Left {...commonProps}>{left}</Left>}
+        {title || center ? (
+          <Center isIndented={isIndented && !left}>
+            {title && (
+              <Title {...commonProps} loading={loading}>
+                {title}
+              </Title>
+            )}
+            {center && <CenterText {...commonProps}>{center}</CenterText>}
+          </Center>
+        ) : null}
+        {right && <Right {...commonProps}>{right}</Right>}
+      </>
     </Item>
   );
 };

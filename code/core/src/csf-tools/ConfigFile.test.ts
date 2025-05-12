@@ -1,7 +1,10 @@
+import { describe, expect, it } from 'vitest';
+
+import { babelPrint } from 'storybook/internal/babel';
+
 import { dedent } from 'ts-dedent';
-import { describe, it, expect } from 'vitest';
+
 import { loadConfig, printConfig } from './ConfigFile';
-import { babelPrint } from './babelParse';
 
 expect.addSnapshotSerializer({
   serialize: (val: any) => (typeof val === 'string' ? val : val.toString()),
@@ -239,6 +242,47 @@ describe('ConfigFile', () => {
         ).toEqual('bar');
       });
     });
+
+    describe('factory config', () => {
+      it('parses correctly', () => {
+        const source = dedent`
+          import { definePreview } from '@storybook/react-vite';
+
+          const config = definePreview({
+            framework: 'foo',
+          });
+          export default config;
+        `;
+        const config = loadConfig(source).parse();
+        expect(config.getNameFromPath(['framework'])).toEqual('foo');
+      });
+      it('found scalar', () => {
+        expect(
+          getField(
+            ['core', 'builder'],
+            dedent`
+            import { definePreview } from '@storybook/react-vite';
+            export const foo = definePreview({ core: { builder: 'webpack5' } });
+            `
+          )
+        ).toEqual('webpack5');
+      });
+      it('tags', () => {
+        expect(
+          getField(
+            ['tags'],
+            dedent`
+              import { definePreview } from '@storybook/react-vite';
+              const parameters = {};
+              export const config = definePreview({
+                parameters,
+                tags: ['test', 'vitest', '!a11ytest'],
+              });
+            `
+          )
+        ).toEqual(['test', 'vitest', '!a11ytest']);
+      });
+    });
   });
 
   describe('setField', () => {
@@ -472,6 +516,122 @@ describe('ConfigFile', () => {
         ).toMatchInlineSnapshot(`
           const core = { builder: 'webpack5' };
           export { core };
+        `);
+      });
+
+      it('sets nested field in parameters variable', () => {
+        expect(
+          setField(
+            ['parameters', 'a11y'],
+            'todo',
+            dedent`
+              const parameters = { foo: 'bar' };
+              const preview = {
+                parameters,
+              }
+              export default preview;
+            `
+          )
+        ).toMatchInlineSnapshot(`
+          const parameters = {
+            foo: 'bar',
+            a11y: 'todo'
+          };
+          const preview = {
+            parameters,
+          }
+          export default preview;
+        `);
+      });
+
+      it('sets nested field when parameters exists as both variable and direct object', () => {
+        expect(
+          setField(
+            ['parameters', 'a11y'],
+            'todo',
+            dedent`
+              const parameters = { foo: 'bar' };
+              const preview = {
+                parameters: {},
+              }
+              export default preview;
+            `
+          )
+        ).toMatchInlineSnapshot(`
+          const parameters = { foo: 'bar' };
+          const preview = {
+            parameters: {
+              a11y: 'todo'
+            },
+          }
+          export default preview;
+        `);
+      });
+    });
+
+    describe('factory config', () => {
+      it('missing export', () => {
+        expect(
+          setField(
+            ['core', 'builder'],
+            'webpack5',
+            dedent`
+              import { definePreview } from '@storybook/react-vite';
+              export const foo = definePreview({
+                addons: [],
+              });
+            `
+          )
+        ).toMatchInlineSnapshot(`
+          import { definePreview } from '@storybook/react-vite';
+          export const foo = definePreview({
+            addons: [],
+
+            core: {
+              builder: 'webpack5'
+            }
+          });
+        `);
+      });
+      it('missing field', () => {
+        expect(
+          setField(
+            ['core', 'builder'],
+            'webpack5',
+            dedent`
+              import { definePreview } from '@storybook/react-vite';
+              export const foo = definePreview({
+                core: { foo: 'bar' },
+              });
+            `
+          )
+        ).toMatchInlineSnapshot(`
+          import { definePreview } from '@storybook/react-vite';
+          export const foo = definePreview({
+            core: {
+              foo: 'bar',
+              builder: 'webpack5'
+            },
+          });
+        `);
+      });
+      it('found scalar', () => {
+        expect(
+          setField(
+            ['core', 'builder'],
+            'webpack5',
+            dedent`
+              import { definePreview } from '@storybook/react-vite';
+              export const foo = definePreview({
+                core: { builder: 'webpack4' },
+              });
+            `
+          )
+        ).toMatchInlineSnapshot(`
+          import { definePreview } from '@storybook/react-vite';
+          export const foo = definePreview({
+            core: { builder: 'webpack5' },
+          });
         `);
       });
     });
@@ -792,6 +952,26 @@ describe('ConfigFile', () => {
           export default preview;
         `);
       });
+
+      it('root globals as const satisfies as variable', () => {
+        expect(
+          removeField(
+            ['globals'],
+            dedent`
+              const preview = {
+                globals: { a: 1 },
+                bar: { a: 1 }
+              } as const satisfies Foo;
+              export default preview;
+            `
+          )
+        ).toMatchInlineSnapshot(`
+          const preview = {
+            bar: { a: 1 }
+          } as const satisfies Foo;
+          export default preview;
+        `);
+      });
     });
 
     describe('quotes', () => {
@@ -895,6 +1075,19 @@ describe('ConfigFile', () => {
         const config = loadConfig(source).parse();
         expect(config.getNameFromPath(['framework'])).toEqual('foo');
         expect(config.getNameFromPath(['otherField'])).toEqual('foo');
+      });
+
+      it(`supports pnp wrapped names`, () => {
+        const source = dedent`
+          import type { StorybookConfig } from '@storybook/react-webpack5';
+
+          const config: StorybookConfig = {
+            framework: getAbsolutePath('foo'),
+          }
+          export default config;
+        `;
+        const config = loadConfig(source).parse();
+        expect(config.getNameFromPath(['framework'])).toEqual('foo');
       });
 
       it(`returns undefined when accessing a field that does not exist`, () => {
@@ -1057,7 +1250,6 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
       config.setImport('path', 'path');
 
-      // eslint-disable-next-line no-underscore-dangle
       const parsed = babelPrint(config._ast);
 
       expect(parsed).toMatchInlineSnapshot(`
@@ -1076,7 +1268,6 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
       config.setImport('path', 'path');
 
-      // eslint-disable-next-line no-underscore-dangle
       const parsed = babelPrint(config._ast);
 
       expect(parsed).toMatchInlineSnapshot(`
@@ -1095,7 +1286,6 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
       config.setImport(['dirname'], 'path');
 
-      // eslint-disable-next-line no-underscore-dangle
       const parsed = babelPrint(config._ast);
 
       expect(parsed).toMatchInlineSnapshot(`
@@ -1116,7 +1306,6 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
       config.setImport(['dirname'], 'path');
 
-      // eslint-disable-next-line no-underscore-dangle
       const parsed = babelPrint(config._ast);
 
       expect(parsed).toMatchInlineSnapshot(`
@@ -1125,6 +1314,24 @@ describe('ConfigFile', () => {
         const config: StorybookConfig = { };
         export default config;
       `);
+    });
+
+    it(`supports setting a namespaced import`, () => {
+      const config = loadConfig('').parse();
+      config.setImport({ namespace: 'path' }, 'path');
+
+      const parsed = babelPrint(config._ast);
+
+      expect(parsed).toMatchInlineSnapshot(`import * as path from 'path';`);
+    });
+
+    it(`supports setting import without specifier`, () => {
+      const config = loadConfig('').parse();
+      config.setImport(null, 'path');
+
+      const parsed = babelPrint(config._ast);
+
+      expect(parsed).toMatchInlineSnapshot(`import 'path';`);
     });
   });
 
@@ -1138,7 +1345,6 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
       config.setRequireImport('path', 'path');
 
-      // eslint-disable-next-line no-underscore-dangle
       const parsed = babelPrint(config._ast);
 
       expect(parsed).toMatchInlineSnapshot(`
@@ -1158,7 +1364,6 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
       config.setRequireImport('path', 'path');
 
-      // eslint-disable-next-line no-underscore-dangle
       const parsed = babelPrint(config._ast);
 
       expect(parsed).toMatchInlineSnapshot(`
@@ -1177,7 +1382,6 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
       config.setRequireImport(['dirname'], 'path');
 
-      // eslint-disable-next-line no-underscore-dangle
       const parsed = babelPrint(config._ast);
 
       expect(parsed).toMatchInlineSnapshot(`
@@ -1201,7 +1405,6 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
       config.setRequireImport(['dirname', 'basename'], 'path');
 
-      // eslint-disable-next-line no-underscore-dangle
       const parsed = babelPrint(config._ast);
 
       expect(parsed).toMatchInlineSnapshot(`
@@ -1283,6 +1486,44 @@ describe('ConfigFile', () => {
       expect(() => config.removeEntryFromArray(['addons'], 'x')).toThrowErrorMatchingInlineSnapshot(
         `Error: Expected array at 'addons', got 'ObjectExpression'`
       );
+    });
+  });
+
+  describe('parse', () => {
+    it("export { X } with X is import { X } from 'another-file'", () => {
+      const source = dedent`
+          import type { StorybookConfig } from '@storybook/react-webpack5';
+          import { path } from 'path';
+
+          export { path };
+
+          const config: StorybookConfig = {
+            addons: [
+              'foo',
+              { name: 'bar', options: {} },
+            ],
+            "otherField": [
+              "foo",
+              { "name": 'bar', options: {} },
+            ],
+          }
+          export default config;
+        `;
+      const config = loadConfig(source).parse();
+
+      expect(config._exportDecls['path']).toBe(undefined);
+      expect(config._exports['path']).toBe(undefined);
+    });
+
+    it('detects const and function export declarations', () => {
+      const source = dedent`
+        export function normalFunction() { };
+        export const value = ['@storybook/addon-essentials'];
+        export async function asyncFunction() { };
+        `;
+      const config = loadConfig(source).parse();
+
+      expect(Object.keys(config._exportDecls)).toHaveLength(3);
     });
   });
 });

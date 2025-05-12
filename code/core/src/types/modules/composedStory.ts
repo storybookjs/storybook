@@ -1,14 +1,14 @@
-/* eslint-disable @typescript-eslint/naming-convention */
-
 import type {
+  Globals,
   ProjectAnnotations,
   Renderer,
   StoryContext,
   StoryId,
   StrictArgTypes,
   Tag,
-} from '@storybook/csf';
+} from 'storybook/internal/csf';
 
+import type { ReporterAPI } from '../../preview-api';
 import type {
   AnnotatedStoryFn,
   Args,
@@ -26,9 +26,7 @@ export type Store_CSFExports<TRenderer extends Renderer = Renderer, TArgs extend
   __namedExportsOrder?: string[];
 };
 
-/**
- * A story function with partial args, used internally by composeStory
- */
+/** A story function with partial args, used internally by composeStory */
 export type PartialArgsStoryFn<TRenderer extends Renderer = Renderer, TArgs = Args> = (
   args?: TArgs
 ) => (TRenderer & {
@@ -36,7 +34,8 @@ export type PartialArgsStoryFn<TRenderer extends Renderer = Renderer, TArgs = Ar
 })['storyResult'];
 
 /**
- * A story that got recomposed for portable stories, containing all the necessary data to be rendered in external environments
+ * A story that got recomposed for portable stories, containing all the necessary data to be
+ * rendered in external environments
  */
 export type ComposedStoryFn<
   TRenderer extends Renderer = Renderer,
@@ -50,11 +49,13 @@ export type ComposedStoryFn<
   storyName: string;
   parameters: Parameters;
   argTypes: StrictArgTypes<TArgs>;
+  reporting: ReporterAPI;
   tags: Tag[];
+  globals: Globals;
 };
 /**
- * Based on a module of stories, it returns all stories within it, filtering non-stories
- * Each story will have partial props, as their props should be handled when composing stories
+ * Based on a module of stories, it returns all stories within it, filtering non-stories Each story
+ * will have partial props, as their props should be handled when composing stories
  */
 export type StoriesWithPartialProps<TRenderer extends Renderer, TModule> = {
   // T represents the whole ES module of a stories file. K of T means named exports (basically the Story type)
@@ -69,7 +70,8 @@ export type StoriesWithPartialProps<TRenderer extends Renderer, TModule> = {
 };
 
 /**
- * Type used for integrators of portable stories, as reference when creating their own composeStory function
+ * Type used for integrators of portable stories, as reference when creating their own composeStory
+ * function
  */
 export interface ComposeStoryFn<TRenderer extends Renderer = Renderer, TArgs extends Args = Args> {
   (

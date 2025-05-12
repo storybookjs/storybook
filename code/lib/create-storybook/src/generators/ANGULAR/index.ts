@@ -1,10 +1,15 @@
-import { join } from 'path';
-import { commandLog } from 'storybook/internal/common';
+import { join } from 'node:path';
+
+import {
+  AngularJSON,
+  compoDocPreviewPrefix,
+  promptForCompoDocs,
+} from '../../../../../core/src/cli/angular/helpers';
+import { copyTemplate } from '../../../../../core/src/cli/helpers';
+import { CoreBuilder } from '../../../../../core/src/cli/project_types';
+import { commandLog } from '../../../../../core/src/common/utils/log';
 import { baseGenerator, getCliDir } from '../baseGenerator';
 import type { Generator } from '../types';
-import { CoreBuilder } from 'storybook/internal/cli';
-import { AngularJSON, compoDocPreviewPrefix, promptForCompoDocs } from 'storybook/internal/cli';
-import { copyTemplate } from 'storybook/internal/cli';
 
 const generator: Generator<{ projectName: string }> = async (
   packageManager,
@@ -53,6 +58,10 @@ const generator: Generator<{ projectName: string }> = async (
   });
   angularJSON.write();
 
+  const packageJson = await packageManager.retrievePackageJson();
+  const angularVersion =
+    packageJson.dependencies['@angular/core'] ?? packageJson.devDependencies['@angular/core'];
+
   await baseGenerator(
     packageManager,
     npmOptions,
@@ -68,7 +77,12 @@ const generator: Generator<{ projectName: string }> = async (
     'angular',
     {
       extraAddons: [`@storybook/addon-onboarding`],
-      ...(useCompodoc && { extraPackages: ['@compodoc/compodoc', '@storybook/addon-docs'] }),
+      extraPackages: [
+        angularVersion
+          ? `@angular-devkit/build-angular@${angularVersion}`
+          : '@angular-devkit/build-angular',
+        ...(useCompodoc ? ['@compodoc/compodoc', '@storybook/addon-docs'] : []),
+      ],
       addScripts: false,
       componentsDestinationPath: root ? `${root}/src/stories` : undefined,
       storybookConfigFolder: storybookFolder,

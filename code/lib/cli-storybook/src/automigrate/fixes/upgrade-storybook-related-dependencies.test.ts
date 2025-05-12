@@ -1,8 +1,9 @@
-import { describe, afterEach, it, expect, vi } from 'vitest';
-import type { StorybookConfig } from 'storybook/internal/types';
-import type { JsPackageManager } from 'storybook/internal/common';
-import * as docsUtils from '../../doctor/getIncompatibleStorybookPackages';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import type { JsPackageManager } from 'storybook/internal/common';
+import type { StorybookConfig } from 'storybook/internal/types';
+
+import * as docsUtils from '../../doctor/getIncompatibleStorybookPackages';
 import { upgradeStorybookRelatedDependencies } from './upgrade-storybook-related-dependencies';
 
 vi.mock('../../doctor/getIncompatibleStorybookPackages');
@@ -10,7 +11,7 @@ vi.mock('../../doctor/getIncompatibleStorybookPackages');
 const check = async ({
   packageManager,
   main: mainConfig = {},
-  storybookVersion = '8.0.0',
+  storybookVersion = '9.0.0',
 }: {
   packageManager: Partial<JsPackageManager>;
   main?: Partial<StorybookConfig> & Record<string, unknown>;
@@ -77,11 +78,6 @@ describe('upgrade-storybook-related-dependencies fix', () => {
     ).resolves.toMatchInlineSnapshot(`
       {
         "upgradable": [
-          {
-            "afterVersion": "2.0.0",
-            "beforeVersion": "1.2.9",
-            "packageName": "@chromatic-com/storybook",
-          },
           {
             "afterVersion": "1.0.0",
             "beforeVersion": "0.2.3",

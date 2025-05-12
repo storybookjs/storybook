@@ -1,20 +1,28 @@
-import { findPackage } from 'fd-package-json';
-import { detect, getNpmVersion } from 'detect-package-manager';
-import {
-  loadMainConfig,
-  getStorybookInfo,
-  getStorybookConfiguration,
-  getProjectRoot,
-} from '@storybook/core/common';
-import type { StorybookConfig, PackageJson } from '@storybook/core/types';
-import { readConfig } from '@storybook/core/csf-tools';
+import { dirname } from 'node:path';
 
-import type { StorybookMetadata, Dependency, StorybookAddon } from './types';
-import { getActualPackageVersion, getActualPackageVersions } from './package-json';
-import { getMonorepoType } from './get-monorepo-type';
-import { cleanPaths } from './sanitize';
-import { getFrameworkInfo } from './get-framework-info';
+import {
+  getProjectRoot,
+  getStorybookConfiguration,
+  getStorybookInfo,
+  loadMainConfig,
+  versions,
+} from 'storybook/internal/common';
+import { readConfig } from 'storybook/internal/csf-tools';
+import type { PackageJson, StorybookConfig } from 'storybook/internal/types';
+
+import { findPackage, findPackagePath } from 'fd-package-json';
+import { detect } from 'package-manager-detector';
+
+import { globalSettings } from '../cli/globalSettings';
+import { getApplicationFileCount } from './get-application-file-count';
 import { getChromaticVersionSpecifier } from './get-chromatic-version';
+import { getFrameworkInfo } from './get-framework-info';
+import { getHasRouterPackage } from './get-has-router-package';
+import { getMonorepoType } from './get-monorepo-type';
+import { getPortableStoriesFileCount } from './get-portable-stories-usage';
+import { getActualPackageVersion, getActualPackageVersions } from './package-json';
+import { cleanPaths } from './sanitize';
+import type { Dependency, StorybookAddon, StorybookMetadata } from './types';
 
 export const metaFrameworks = {
   next: 'Next',
@@ -38,14 +46,18 @@ export const sanitizeAddonName = (name: string) => {
 // Analyze a combination of information from main.js and package.json
 // to provide telemetry over a Storybook project
 export const computeStorybookMetadata = async ({
+  packageJsonPath,
   packageJson,
   mainConfig,
 }: {
+  packageJsonPath: string;
   packageJson: PackageJson;
-  mainConfig: StorybookConfig & Record<string, any>;
+  mainConfig?: StorybookConfig & Record<string, any>;
 }): Promise<StorybookMetadata> => {
+  const settings = await globalSettings();
   const metadata: Partial<StorybookMetadata> = {
     generatedAt: new Date().getTime(),
+    userSince: settings.value.userSince,
     hasCustomBabel: false,
     hasCustomWebpack: false,
     hasStaticDirs: false,
@@ -97,6 +109,8 @@ export const computeStorybookMetadata = async ({
     )
   );
 
+  metadata.hasRouterPackage = getHasRouterPackage(packageJson);
+
   const monorepoType = getMonorepoType();
   if (monorepoType) {
     metadata.monorepo = monorepoType;
@@ -104,16 +118,27 @@ export const computeStorybookMetadata = async ({
 
   try {
     const packageManagerType = await detect({ cwd: getProjectRoot() });
-    const packageManagerVersion = await getNpmVersion(packageManagerType);
+    if (packageManagerType) {
+      metadata.packageManager = {
+        type: packageManagerType.name,
+        version: packageManagerType.version,
+        agent: packageManagerType.agent,
+      };
+    }
 
-    metadata.packageManager = {
-      type: packageManagerType,
-      version: packageManagerVersion,
-    };
     // Better be safe than sorry, some codebases/paths might end up breaking with something like "spawn pnpm ENOENT"
     // so we just set the package manager if the detection is successful
   } catch (err) {}
 
+  const language = allDependencies.typescript ? 'typescript' : 'javascript';
+
+  if (!mainConfig) {
+    return {
+      ...metadata,
+      storybookVersionSpecifier: versions.storybook,
+      language,
+    };
+  }
   metadata.hasCustomBabel = !!mainConfig.babel;
   metadata.hasCustomWebpack = !!mainConfig.webpackFinal;
   metadata.hasStaticDirs = !!mainConfig.staticDirs;
@@ -185,8 +210,6 @@ export const computeStorybookMetadata = async ({
     storybookPackages[name].version = version;
   });
 
-  const language = allDependencies.typescript ? 'typescript' : 'javascript';
-
   const hasStorybookEslint = !!allDependencies['eslint-plugin-storybook'];
 
   const storybookInfo = getStorybookInfo(packageJson);
@@ -205,10 +228,14 @@ export const computeStorybookMetadata = async ({
   }
 
   const storybookVersion = storybookPackages[storybookInfo.frameworkPackage]?.version;
+  const portableStoriesFileCount = await getPortableStoriesFileCount();
+  const applicationFileCount = await getApplicationFileCount(dirname(packageJsonPath));
 
   return {
     ...metadata,
     ...frameworkInfo,
+    portableStoriesFileCount,
+    applicationFileCount,
     storybookVersion,
     storybookVersionSpecifier: storybookInfo.version,
     language,
@@ -218,13 +245,29 @@ export const computeStorybookMetadata = async ({
   };
 };
 
+async function getPackageJsonDetails() {
+  const packageJsonPath = await findPackagePath(process.cwd());
+  if (packageJsonPath) {
+    return {
+      packageJsonPath,
+      packageJson: (await findPackage(packageJsonPath)) || {},
+    };
+  }
+
+  // If we don't find a `package.json`, we assume it "would have" been in the current working directory
+  return {
+    packageJsonPath: process.cwd(),
+    packageJson: {},
+  };
+}
+
 let cachedMetadata: StorybookMetadata;
 export const getStorybookMetadata = async (_configDir?: string) => {
   if (cachedMetadata) {
     return cachedMetadata;
   }
 
-  const packageJson = (await findPackage(process.cwd())) || {};
+  const { packageJson, packageJsonPath } = await getPackageJsonDetails();
   // TODO: improve the way configDir is extracted, as a "storybook" script might not be present
   // Scenarios:
   // 1. user changed it to something else e.g. "storybook:dev"
@@ -237,7 +280,7 @@ export const getStorybookMetadata = async (_configDir?: string) => {
         '--config-dir'
       ) as string)) ??
     '.storybook';
-  const mainConfig = await loadMainConfig({ configDir });
-  cachedMetadata = await computeStorybookMetadata({ mainConfig, packageJson });
+  const mainConfig = await loadMainConfig({ configDir }).catch(() => undefined);
+  cachedMetadata = await computeStorybookMetadata({ mainConfig, packageJson, packageJsonPath });
   return cachedMetadata;
 };

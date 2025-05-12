@@ -1,6 +1,6 @@
 {
   "name": "@storybook/preact",
-  "version": "8.3.0-alpha.3",
+  "version": "9.0.0-rc.0",
   "description": "Storybook Preact renderer",
   "keywords": [
     "storybook"
@@ -22,7 +22,6 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "node": "./dist/index.js",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
     },
@@ -43,27 +42,23 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/check.ts",
-    "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts"
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@storybook/components": "workspace:^",
     "@storybook/global": "^5.0.0",
-    "@storybook/manager-api": "workspace:^",
-    "@storybook/preview-api": "workspace:^",
-    "@storybook/theming": "workspace:^",
     "ts-dedent": "^2.0.0"
   },
   "devDependencies": {
     "preact": "^10.5.13",
-    "typescript": "^5.3.2"
+    "typescript": "^5.8.3"
   },
   "peerDependencies": {
     "preact": "^8.0.0||^10.0.0",
     "storybook": "workspace:^"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   },
   "publishConfig": {
     "access": "public"

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { getJavaScriptTemplateForNewStoryFile } from './javascript';
 
 describe('javascript', () => {

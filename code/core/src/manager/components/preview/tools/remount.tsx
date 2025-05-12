@@ -1,12 +1,15 @@
 import type { ComponentProps } from 'react';
 import React, { useState } from 'react';
-import { IconButton } from '@storybook/core/components';
-import { Consumer, types } from '@storybook/core/manager-api';
-import type { Combo } from '@storybook/core/manager-api';
-import { styled } from '@storybook/core/theming';
-import { FORCE_REMOUNT } from '@storybook/core/core-events';
-import type { Addon_BaseType } from '@storybook/core/types';
+
+import { IconButton } from 'storybook/internal/components';
+import { FORCE_REMOUNT } from 'storybook/internal/core-events';
+import type { Addon_BaseType } from 'storybook/internal/types';
+
 import { SyncIcon } from '@storybook/icons';
+
+import { Consumer, types } from 'storybook/manager-api';
+import type { Combo } from 'storybook/manager-api';
+import { styled } from 'storybook/theming';
 
 interface AnimatedButtonProps {
   animating?: boolean;
@@ -40,7 +43,9 @@ export const remountTool: Addon_BaseType = {
       {({ remount, storyId, api }) => {
         const [isAnimating, setIsAnimating] = useState(false);
         const remountComponent = () => {
-          if (!storyId) return;
+          if (!storyId) {
+            return;
+          }
           remount();
         };
 

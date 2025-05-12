@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import { IndexingError, MultipleIndexingError } from '../IndexingError';
 
 it('formats single file errors', () => {

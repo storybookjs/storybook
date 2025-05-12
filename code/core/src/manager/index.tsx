@@ -1,23 +1,23 @@
-import { global } from '@storybook/global';
 import type { ComponentProps, FC } from 'react';
-import { createRoot } from 'react-dom/client';
 import React, { useCallback, useMemo } from 'react';
+import { createRoot } from 'react-dom/client';
 
-import { Location, LocationProvider, useNavigate } from '@storybook/core/router';
-import { Provider as ManagerProvider, types } from '@storybook/core/manager-api';
-import type { Combo } from '@storybook/core/manager-api';
-import { ThemeProvider, ensure as ensureTheme } from '@storybook/core/theming';
-import { ProviderDoesNotExtendBaseProviderError } from '@storybook/core/manager-errors';
+import { ProviderDoesNotExtendBaseProviderError } from 'storybook/internal/manager-errors';
+import { Location, LocationProvider, useNavigate } from 'storybook/internal/router';
+import type { Addon_PageType } from 'storybook/internal/types';
+
+import { global } from '@storybook/global';
 
 import { HelmetProvider } from 'react-helmet-async';
+import { Provider as ManagerProvider, types } from 'storybook/manager-api';
+import type { Combo } from 'storybook/manager-api';
+import { ThemeProvider, ensure as ensureTheme } from 'storybook/theming';
 
-import type { Addon_PageType } from '@storybook/core/types';
 import { App } from './App';
-
+import type { Layout } from './components/layout/Layout';
+import { LayoutProvider } from './components/layout/LayoutProvider';
 import Provider from './provider';
 import { settingsPageAddon } from './settings/index';
-import { LayoutProvider } from './components/layout/LayoutProvider';
-import type { Layout } from './components/layout/Layout';
 
 // @ts-expect-error (Converted from ts-ignore)
 ThemeProvider.displayName = 'ThemeProvider';

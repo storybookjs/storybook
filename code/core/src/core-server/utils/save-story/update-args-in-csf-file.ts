@@ -1,10 +1,7 @@
-import * as t from '@babel/types';
-import bt from '@babel/traverse';
-import { valueToAST } from './valueToAST';
-import { SaveStoryError } from './utils';
+import { types as t, traverse } from 'storybook/internal/babel';
 
-// @ts-expect-error (needed due to it's use of `exports.default`)
-const traverse = (bt.default || bt) as typeof bt;
+import { SaveStoryError } from './utils';
+import { valueToAST } from './valueToAST';
 
 export const updateArgsInCsfFile = async (node: t.Node, input: Record<string, any>) => {
   let found = false;
@@ -14,8 +11,14 @@ export const updateArgsInCsfFile = async (node: t.Node, input: Record<string, an
     })
   );
 
+  const isCsf4Story =
+    t.isCallExpression(node) &&
+    t.isMemberExpression(node.callee) &&
+    t.isIdentifier(node.callee.property) &&
+    node.callee.property.name === 'story';
+
   // detect CSF2 and throw
-  if (t.isArrowFunctionExpression(node) || t.isCallExpression(node)) {
+  if (!isCsf4Story && (t.isArrowFunctionExpression(node) || t.isCallExpression(node))) {
     throw new SaveStoryError(`Updating a CSF2 story is not supported`);
   }
 
@@ -92,7 +95,6 @@ export const updateArgsInCsfFile = async (node: t.Node, input: Record<string, an
                   delete args[key.node.name];
                 }
               },
-              // @ts-expect-error noScope works but is not typed properly
               noScope: true,
             });
 

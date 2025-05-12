@@ -1,30 +1,30 @@
 import React, { Fragment } from 'react';
 
-import { styled } from '@storybook/core/theming';
+import { IconButton, Separator, TabBar, TabButton } from 'storybook/internal/components';
+import { type Addon_BaseType, Addon_TypesEnum } from 'storybook/internal/types';
 
-import { IconButton, Separator, TabButton, TabBar } from '@storybook/core/components';
-import {
-  shortcutToHumanString,
-  Consumer,
-  type Combo,
-  type API,
-  type State,
-  merge,
-  type LeafEntry,
-  addons,
-  types,
-} from '@storybook/core/manager-api';
-
-import { Addon_TypesEnum, type Addon_BaseType } from '@storybook/core/types';
 import { CloseIcon, ExpandIcon } from '@storybook/icons';
-import { zoomTool } from './tools/zoom';
 
-import type { PreviewProps } from './utils/types';
+import {
+  type API,
+  type Combo,
+  Consumer,
+  type LeafEntry,
+  type State,
+  addons,
+  merge,
+  shortcutToHumanString,
+  types,
+} from 'storybook/manager-api';
+import { styled } from 'storybook/theming';
+
+import { useLayout } from '../layout/LayoutProvider';
+import { addonsTool } from './tools/addons';
 import { copyTool } from './tools/copy';
 import { ejectTool } from './tools/eject';
-import { addonsTool } from './tools/addons';
 import { remountTool } from './tools/remount';
-import { useLayout } from '../layout/LayoutProvider';
+import { zoomTool } from './tools/zoom';
+import type { PreviewProps } from './utils/types';
 
 export const getTools = (getFn: API['getElements']) => Object.values(getFn(types.TOOL));
 export const getToolsExtra = (getFn: API['getElements']) => Object.values(getFn(types.TOOLEXTRA));
@@ -48,7 +48,9 @@ export const fullScreenTool: Addon_BaseType = {
   render: () => {
     const { isMobile } = useLayout();
 
-    if (isMobile) return null;
+    if (isMobile) {
+      return null;
+    }
 
     return (
       <Consumer filter={fullScreenMapper}>
@@ -91,7 +93,7 @@ export const createTabsTool = (tabs: Addon_BaseType[]): Addon_BaseType => ({
                 const isActive = rp.path.includes(`tab=${tab.id}`);
                 return (
                   <TabButton
-                    disabled={tab.disabled}
+                    disabled={!!tab.disabled}
                     active={isActive}
                     onClick={() => {
                       rp.applyQueryParams({ tab: tabIdToApply });
@@ -145,7 +147,7 @@ export const ToolbarComp = React.memo<ToolData>(function ToolbarComp({
                 {tabs.map((tab, index) => {
                   return (
                     <TabButton
-                      disabled={tab.disabled}
+                      disabled={!!tab.disabled}
                       active={tab.id === tabId || (tab.id === 'canvas' && !tabId)}
                       onClick={() => {
                         api.applyQueryParams({ tab: tab.id === 'canvas' ? undefined : tab.id });
@@ -187,7 +189,10 @@ function toolbarItemHasBeenExcluded(item: Partial<Addon_BaseType>, entry: LeafEn
   const toolbarItemsFromStoryParameters = 'toolbar' in parameters ? parameters.toolbar : undefined;
   const { toolbar: toolbarItemsFromAddonsConfig } = addons.getConfig();
 
-  const toolbarItems = merge(toolbarItemsFromAddonsConfig, toolbarItemsFromStoryParameters);
+  const toolbarItems = merge(
+    toolbarItemsFromAddonsConfig || {},
+    toolbarItemsFromStoryParameters || {}
+  );
 
   // @ts-expect-error (non strict)
   return toolbarItems ? !!toolbarItems[item?.id]?.hidden : false;

@@ -1,14 +1,16 @@
-import path from 'path';
-import fs from 'fs';
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import semver from 'semver';
 import { dedent } from 'ts-dedent';
 
+import { CoreBuilder } from '../../../../../core/src/cli/project_types';
 import { baseGenerator } from '../baseGenerator';
 import type { Generator } from '../types';
-import { CoreBuilder } from 'storybook/internal/cli';
 
 const generator: Generator = async (packageManager, npmOptions, options) => {
-  const monorepoRootPath = path.join(__dirname, '..', '..', '..', '..', '..', '..');
+  const monorepoRootPath = fileURLToPath(new URL('../../../../../../..', import.meta.url));
   const extraMain = options.linkable
     ? {
         webpackFinal: `%%(config) => {
@@ -57,7 +59,7 @@ const generator: Generator = async (packageManager, npmOptions, options) => {
       webpackCompiler: () => undefined,
       extraAddons,
       extraPackages,
-      staticDir: fs.existsSync(path.resolve('./public')) ? 'public' : undefined,
+      staticDir: existsSync(resolve('./public')) ? 'public' : undefined,
       extraMain,
     }
   );

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import React from 'react';
-import { styled } from '@storybook/core/theming';
+
+import { styled } from 'storybook/theming';
 
 const Wrapper = styled.label(({ theme }) => ({
   display: 'flex',

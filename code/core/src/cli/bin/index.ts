@@ -1,20 +1,21 @@
-import program from 'commander';
-import chalk from 'chalk';
+import { getEnvConfig, parseList, versions } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
+import { addToGlobalContext } from 'storybook/internal/telemetry';
+
+import { program } from 'commander';
+import { findPackage } from 'fd-package-json';
 import leven from 'leven';
-import { findPackageSync } from 'fd-package-json';
+import picocolors from 'picocolors';
 import invariant from 'tiny-invariant';
 
-import { logger } from '@storybook/core/node-logger';
-import { addToGlobalContext } from '@storybook/core/telemetry';
-import { parseList, getEnvConfig, versions } from '@storybook/core/common';
-
-import { dev } from '../dev';
+import { version } from '../../../package.json';
 import { build } from '../build';
+import { buildIndex as index } from '../buildIndex';
+import { dev } from '../dev';
+import { globalSettings } from '../globalSettings';
 
 addToGlobalContext('cliVersion', versions.storybook);
 
-const pkg = findPackageSync(__dirname);
-invariant(pkg, 'Failed to find the closest package.json file.');
 const consoleLogger = console;
 
 const command = (name: string) =>
@@ -27,7 +28,14 @@ const command = (name: string) =>
       process.env.STORYBOOK_DISABLE_TELEMETRY && process.env.STORYBOOK_DISABLE_TELEMETRY !== 'false'
     )
     .option('--debug', 'Get more logs in debug mode', false)
-    .option('--enable-crash-reports', 'Enable sending crash reports to telemetry data');
+    .option('--enable-crash-reports', 'Enable sending crash reports to telemetry data')
+    .hook('preAction', async () => {
+      try {
+        await globalSettings();
+      } catch (e) {
+        consoleLogger.error('Error loading global settings', e);
+      }
+    });
 
 command('dev')
   .option('-p, --port <number>', 'Port to run Storybook', (str) => parseInt(str, 10))
@@ -67,9 +75,13 @@ command('dev')
     '--initial-path [path]',
     'URL path to be appended when visiting Storybook for the first time'
   )
+  .option('--preview-only', 'Use the preview without the manager UI')
   .action(async (options) => {
-    logger.setLevel(program.loglevel);
-    consoleLogger.log(chalk.bold(`${pkg.name} v${pkg.version}`) + chalk.reset('\n'));
+    logger.setLevel(options.loglevel);
+    const pkg = await findPackage(__dirname);
+    invariant(pkg, 'Failed to find the closest package.json file.');
+
+    consoleLogger.log(picocolors.bold(`${pkg.name} v${pkg.version}`) + picocolors.reset('\n'));
 
     // The key is the field created in `options` variable for
     // each command line argument. Value is the env variable.
@@ -106,10 +118,16 @@ command('build')
   .option('--force-build-preview', 'Build the preview iframe even if you are using --preview-url')
   .option('--docs', 'Build a documentation-only site using addon-docs')
   .option('--test', 'Build stories optimized for testing purposes.')
+  .option('--preview-only', 'Use the preview without the manager UI')
   .action(async (options) => {
-    process.env.NODE_ENV = process.env.NODE_ENV || 'production';
-    logger.setLevel(program.loglevel);
-    consoleLogger.log(chalk.bold(`${pkg.name} v${pkg.version}\n`));
+    const { env } = process;
+    env.NODE_ENV = env.NODE_ENV || 'production';
+
+    const pkg = await findPackage(__dirname);
+    invariant(pkg, 'Failed to find the closest package.json file.');
+
+    logger.setLevel(options.loglevel);
+    consoleLogger.log(picocolors.bold(`${pkg.name} v${pkg.version}\n`));
 
     // The key is the field created in `options` variable for
     // each command line argument. Value is the env variable.
@@ -126,13 +144,40 @@ command('build')
     }).catch(() => process.exit(1));
   });
 
+command('index')
+  .option('-o, --output-file <file-name>', 'JSON file to output index')
+  .option('-c, --config-dir <dir-name>', 'Directory where to load Storybook configurations from')
+  .option('--quiet', 'Suppress verbose build output')
+  .option('--loglevel <level>', 'Control level of logging during build')
+  .action(async (options) => {
+    const { env } = process;
+    env.NODE_ENV = env.NODE_ENV || 'production';
+
+    const pkg = await findPackage(__dirname);
+    invariant(pkg, 'Failed to find the closest package.json file.');
+
+    logger.setLevel(options.loglevel);
+    consoleLogger.log(picocolors.bold(`${pkg.name} v${pkg.version}\n`));
+
+    // The key is the field created in `options` variable for
+    // each command line argument. Value is the env variable.
+    getEnvConfig(options, {
+      configDir: 'SBCONFIG_CONFIG_DIR',
+      outputFile: 'SBCONFIG_OUTPUT_FILE',
+    });
+
+    await index({
+      ...options,
+      packageJson: pkg,
+    }).catch(() => process.exit(1));
+  });
+
 program.on('command:*', ([invalidCmd]) => {
   consoleLogger.error(
     ' Invalid command: %s.\n See --help for a list of available commands.',
     invalidCmd
   );
-  // eslint-disable-next-line no-underscore-dangle
-  const availableCommands = program.commands.map((cmd) => cmd._name);
+  const availableCommands = program.commands.map((cmd) => cmd.name());
   const suggestion = availableCommands.find((cmd) => leven(cmd, invalidCmd) < 3);
   if (suggestion) {
     consoleLogger.info(`\n Did you mean ${suggestion}?`);
@@ -140,4 +185,4 @@ program.on('command:*', ([invalidCmd]) => {
   process.exit(1);
 });
 
-program.usage('<command> [options]').version(String(pkg.version)).parse(process.argv);
+program.usage('<command> [options]').version(String(version)).parse(process.argv);

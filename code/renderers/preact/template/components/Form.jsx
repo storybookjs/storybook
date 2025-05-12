@@ -2,6 +2,7 @@ import { useState } from 'preact/hooks';
 
 /**
  * Header component
+ *
  * @param {object} props
  * @param {object} [props.user]
  * @param {string} props.user.name

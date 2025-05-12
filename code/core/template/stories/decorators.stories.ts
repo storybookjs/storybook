@@ -1,17 +1,19 @@
-import { global as globalThis } from '@storybook/global';
+import {
+  RESET_STORY_ARGS,
+  STORY_ARGS_UPDATED,
+  UPDATE_STORY_ARGS,
+} from 'storybook/internal/core-events';
 import type {
   ArgsStoryFn,
   PartialStoryFn,
   PlayFunctionContext,
   StoryContext,
-} from '@storybook/core/types';
-import { within, expect } from '@storybook/test';
-import { useEffect } from '@storybook/core/preview-api';
-import {
-  STORY_ARGS_UPDATED,
-  UPDATE_STORY_ARGS,
-  RESET_STORY_ARGS,
-} from '@storybook/core/core-events';
+} from 'storybook/internal/types';
+
+import { global as globalThis } from '@storybook/global';
+
+import { useEffect } from 'storybook/preview-api';
+import { expect, within } from 'storybook/test';
 
 export default {
   component: globalThis.Components.Pre,
@@ -66,4 +68,6 @@ export const Hooks = {
     });
     await new Promise((resolve) => channel.once(STORY_ARGS_UPDATED, resolve));
   },
+  // this story can't be reliably tested because the args changes results in renderPhases disrupting test runs
+  tags: ['!vitest', '!test'],
 };

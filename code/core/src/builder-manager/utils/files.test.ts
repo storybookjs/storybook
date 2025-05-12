@@ -1,6 +1,9 @@
-import { it, expect } from 'vitest';
+import { platform } from 'node:os';
+
+import { expect, it } from 'vitest';
+
 import type { OutputFile } from 'esbuild';
-import { platform } from 'os';
+
 import { sanitizePath } from './files';
 
 const os = platform();

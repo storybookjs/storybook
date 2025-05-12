@@ -1,71 +1,43 @@
-import type { Fix } from '../types';
-
-import { cra5 } from './cra5';
-import { webpack5 } from './webpack5';
-import { vue3 } from './vue3';
-import { mdxgfm } from './mdx-gfm';
-import { removeLegacyMDX1 } from './remove-legacymdx1';
+import { csfFactories } from '../../codemod/csf-factories';
+import type { CommandFix, Fix } from '../types';
+import { addonA11yAddonTest } from './addon-a11y-addon-test';
+import { addonA11yParameters } from './addon-a11y-parameters';
+import { addonExperimentalTest } from './addon-experimental-test';
+import { addonMdxGfmRemove } from './addon-mdx-gfm-remove';
+import { addonStorysourceCodePanel } from './addon-storysource-code-panel';
+import { consolidatedImports } from './consolidated-imports';
 import { eslintPlugin } from './eslint-plugin';
-import { builderVite } from './builder-vite';
-import { viteConfigFile } from './vite-config-file';
-import { sbScripts } from './sb-scripts';
-import { sbBinary } from './sb-binary';
-import { newFrameworks } from './new-frameworks';
-import { removedGlobalClientAPIs } from './remove-global-client-apis';
-import { autodocsTrue } from './autodocs-true';
-import { angularBuilders } from './angular-builders';
-import { angularBuildersMultiproject } from './angular-builders-multiproject';
-import { wrapRequire } from './wrap-require';
-import { reactDocgen } from './react-docgen';
-import { mdxToCSF } from './mdx-to-csf';
-import { removeReactDependency } from './prompt-remove-react';
-import { storyshotsMigration } from './storyshots-migration';
-import { removeArgtypesRegex } from './remove-argtypes-regex';
-import { webpack5CompilerSetup } from './webpack5-compiler-setup';
-import { removeJestTestingLibrary } from './remove-jest-testing-library';
-import { addonsAPI } from './addons-api';
-import { mdx1to3 } from './mdx-1-to-3';
-import { addonPostCSS } from './addon-postcss';
-import { vta } from './vta';
-import { upgradeStorybookRelatedDependencies } from './upgrade-storybook-related-dependencies';
-import { autodocsTags } from './autodocs-tags';
 import { initialGlobals } from './initial-globals';
-import { missingStorybookDependencies } from './missing-storybook-dependencies';
+import { removeAddonInteractions } from './remove-addon-interactions';
+import { removeDocsAutodocs } from './remove-docs-autodocs';
+import { removeEssentials } from './remove-essentials';
+import { rendererToFramework } from './renderer-to-framework';
+import { rnstorybookConfig } from './rnstorybook-config';
+import { upgradeStorybookRelatedDependencies } from './upgrade-storybook-related-dependencies';
+import { wrapRequire } from './wrap-require';
 
 export * from '../types';
 
 export const allFixes: Fix[] = [
-  missingStorybookDependencies,
-  addonsAPI,
-  newFrameworks,
-  cra5,
-  webpack5,
-  vue3,
-  addonPostCSS,
-  viteConfigFile,
   eslintPlugin,
-  builderVite,
-  sbBinary,
-  sbScripts,
-  removeJestTestingLibrary,
-  removeArgtypesRegex,
-  removedGlobalClientAPIs,
-  mdxgfm,
-  mdxToCSF,
-  autodocsTrue,
-  angularBuildersMultiproject,
-  angularBuilders,
   wrapRequire,
-  reactDocgen,
-  storyshotsMigration,
-  removeReactDependency,
-  removeLegacyMDX1,
-  webpack5CompilerSetup,
-  mdx1to3,
+  addonMdxGfmRemove,
+  addonStorysourceCodePanel,
   upgradeStorybookRelatedDependencies,
-  vta,
-  autodocsTags,
   initialGlobals,
+  addonA11yAddonTest,
+  consolidatedImports,
+  addonExperimentalTest,
+  rnstorybookConfig,
+  removeAddonInteractions,
+  rendererToFramework,
+  removeEssentials,
+  addonA11yParameters,
+  removeDocsAutodocs,
 ];
 
 export const initFixes: Fix[] = [eslintPlugin];
+
+// These are specific fixes that only occur when triggered on command, and are hidden otherwise.
+// e.g. npx storybook automigrate csf-factories
+export const commandFixes: CommandFix[] = [csfFactories];

@@ -1,13 +1,15 @@
 import type { ComponentProps } from 'react';
 import React from 'react';
-import { Global, createGlobal } from '@storybook/core/theming';
-import type { Addon_PageType } from '@storybook/core/types';
-import Sidebar from './container/Sidebar';
-import Preview from './container/Preview';
-import Panel from './container/Panel';
+
+import type { Addon_PageType } from 'storybook/internal/types';
+
+import { Global, createGlobal } from 'storybook/theming';
 
 import { Layout } from './components/layout/Layout';
 import { useLayout } from './components/layout/LayoutProvider';
+import Panel from './container/Panel';
+import Preview from './container/Preview';
+import Sidebar from './container/Sidebar';
 
 type Props = {
   managerLayoutState: ComponentProps<typeof Layout>['managerLayoutState'];

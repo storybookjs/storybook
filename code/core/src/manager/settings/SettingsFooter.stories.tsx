@@ -1,6 +1,7 @@
 import React from 'react';
 
-import type { Decorator } from '@storybook/react';
+import type { Decorator } from '@storybook/react-vite';
+
 import SettingsFooter from './SettingsFooter';
 
 export default {

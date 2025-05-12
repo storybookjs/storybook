@@ -1,4 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { global } from '@storybook/global';
 
 import { init as initVersions } from '../modules/versions';
@@ -24,7 +25,7 @@ vi.mock('@storybook/global', () => ({
   },
 }));
 
-vi.mock('@storybook/core/client-logger');
+vi.mock('storybook/internal/client-logger');
 
 function createMockStore() {
   let state = {
@@ -45,7 +46,7 @@ function createMockStore() {
   };
 }
 
-vi.mock('@storybook/core/client-logger');
+vi.mock('storybook/internal/client-logger');
 
 describe('versions API', () => {
   it('sets initial state with current version', async () => {

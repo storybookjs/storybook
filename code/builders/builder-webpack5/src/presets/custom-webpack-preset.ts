@@ -1,8 +1,11 @@
-import * as webpackReal from 'webpack';
 import { logger } from 'storybook/internal/node-logger';
 import type { Options, PresetProperty } from 'storybook/internal/types';
-import type { Configuration } from 'webpack';
+
 import { loadCustomWebpackConfig } from '@storybook/core-webpack';
+
+import * as webpackReal from 'webpack';
+import type { Configuration } from 'webpack';
+
 import { createDefaultWebpackConfig } from '../preview/base-webpack.config';
 
 export const swc: PresetProperty<'swc'> = (config: Record<string, any>): Record<string, any> => {

@@ -1,32 +1,51 @@
-import { global } from '@storybook/global';
-import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
+import type { Dispatch, MutableRefObject, RefObject, SetStateAction } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useStorybookApi } from '@storybook/core/manager-api';
-import { PRELOAD_ENTRIES } from '@storybook/core/core-events';
+
+import { PRELOAD_ENTRIES } from 'storybook/internal/core-events';
+
+import { global } from '@storybook/global';
+
+import { useStorybookApi } from 'storybook/manager-api';
+
 import { matchesKeyCode, matchesModifiers } from '../../keybinding';
-
-import type { CombinedDataset, Highlight, Selection } from './types';
-
 import { cycle, isAncestor, scrollIntoView } from '../../utils/tree';
+import type { Highlight, Selection } from './types';
 
 const { document, window: globalWindow } = global;
 
 export interface HighlightedProps {
-  containerRef: MutableRefObject<HTMLElement>;
+  containerRef: RefObject<HTMLElement | null>;
   isLoading: boolean;
   isBrowsing: boolean;
-  dataset: CombinedDataset;
   selected: Selection;
 }
 
 const fromSelection = (selection: Selection): Highlight =>
   selection ? { itemId: selection.storyId, refId: selection.refId } : null;
 
+const scrollToSelector = (
+  selector: string,
+  options: {
+    containerRef?: RefObject<Element | null>;
+    center?: boolean;
+    attempts?: number;
+    delay?: number;
+  } = {},
+  _attempt = 1
+) => {
+  const { containerRef, center = false, attempts = 3, delay = 500 } = options;
+  const element = (containerRef ? containerRef.current : document)?.querySelector(selector);
+  if (element) {
+    scrollIntoView(element, center);
+  } else if (_attempt <= attempts) {
+    setTimeout(scrollToSelector, delay, selector, options, _attempt + 1);
+  }
+};
+
 export const useHighlighted = ({
   containerRef,
   isLoading,
   isBrowsing,
-  dataset,
   selected,
 }: HighlightedProps): [
   Highlight,
@@ -51,7 +70,10 @@ export const useHighlighted = ({
     (element: Element, center = false) => {
       const itemId = element.getAttribute('data-item-id');
       const refId = element.getAttribute('data-ref-id');
-      if (!itemId || !refId) return;
+
+      if (!itemId || !refId) {
+        return;
+      }
       updateHighlighted({ itemId, refId });
       scrollIntoView(element, center);
     },
@@ -63,16 +85,12 @@ export const useHighlighted = ({
     const highlight = fromSelection(selected);
     updateHighlighted(highlight);
     if (highlight) {
-      const { itemId, refId } = highlight;
-      setTimeout(() => {
-        scrollIntoView(
-          // @ts-expect-error (non strict)
-          containerRef.current?.querySelector(`[data-item-id="${itemId}"][data-ref-id="${refId}"]`),
-          true // make sure it's clearly visible by centering it
-        );
-      }, 0);
+      scrollToSelector(`[data-item-id="${highlight.itemId}"][data-ref-id="${highlight.refId}"]`, {
+        containerRef,
+        center: true,
+      });
     }
-  }, [dataset, highlightedRef, containerRef, selected]);
+  }, [containerRef, selected, updateHighlighted]);
 
   // Highlight nodes up/down the tree using arrow keys
   useEffect(() => {
@@ -80,24 +98,38 @@ export const useHighlighted = ({
 
     let lastRequestId: number;
     const navigateTree = (event: KeyboardEvent) => {
-      if (isLoading || !isBrowsing || !containerRef.current) return; // allow event.repeat
-      if (!matchesModifiers(false, event)) return;
+      if (isLoading || !isBrowsing || !containerRef.current) {
+        return; // allow event.repeat
+      }
+
+      if (!matchesModifiers(false, event)) {
+        return;
+      }
 
       const isArrowUp = matchesKeyCode('ArrowUp', event);
       const isArrowDown = matchesKeyCode('ArrowDown', event);
-      if (!(isArrowUp || isArrowDown)) return;
+
+      if (!(isArrowUp || isArrowDown)) {
+        return;
+      }
 
       const requestId = globalWindow.requestAnimationFrame(() => {
         globalWindow.cancelAnimationFrame(lastRequestId);
         lastRequestId = requestId;
 
         const target = event.target as Element;
+
         // @ts-expect-error (non strict)
-        if (!isAncestor(menuElement, target) && !isAncestor(target, menuElement)) return;
-        if (target.hasAttribute('data-action')) (target as HTMLButtonElement).blur();
+        if (!isAncestor(menuElement, target) && !isAncestor(target, menuElement)) {
+          return;
+        }
+
+        if (target.hasAttribute('data-action')) {
+          (target as HTMLButtonElement).blur();
+        }
 
         const highlightable = Array.from(
-          containerRef.current.querySelectorAll('[data-highlightable=true]')
+          containerRef.current?.querySelectorAll('[data-highlightable=true]') || []
         );
         const currentIndex = highlightable.findIndex(
           (el) =>

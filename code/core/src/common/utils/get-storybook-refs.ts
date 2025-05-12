@@ -1,10 +1,11 @@
-import { readJSON } from 'fs-extra';
+import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
-import { findUp } from 'find-up';
 
+import { logger } from 'storybook/internal/node-logger';
+import type { Options, Ref } from 'storybook/internal/types';
+
+import { findUp } from 'find-up';
 import resolveFrom from 'resolve-from';
-import { logger } from '@storybook/core/node-logger';
-import type { Options, Ref } from '@storybook/core/types';
 
 export const getAutoRefs = async (options: Options): Promise<Record<string, Ref>> => {
   const location = await findUp('package.json', { cwd: options.configDir });
@@ -13,7 +14,8 @@ export const getAutoRefs = async (options: Options): Promise<Record<string, Ref>
   }
   const directory = dirname(location);
 
-  const { dependencies = [], devDependencies = [] } = (await readJSON(location)) || {};
+  const { dependencies = [], devDependencies = [] } =
+    JSON.parse(await readFile(location, { encoding: 'utf8' })) || {};
   const deps = Object.keys({ ...dependencies, ...devDependencies });
 
   const list = await Promise.all(
@@ -21,7 +23,8 @@ export const getAutoRefs = async (options: Options): Promise<Record<string, Ref>
       try {
         const l = resolveFrom(directory, join(d, 'package.json'));
 
-        const { storybook, name, version } = (await readJSON(l)) || {};
+        const { storybook, name, version } =
+          JSON.parse(await readFile(l, { encoding: 'utf8' })) || {};
 
         if (storybook?.url) {
           return { id: name, ...storybook, version };

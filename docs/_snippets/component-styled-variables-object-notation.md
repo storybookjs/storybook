@@ -4,4 +4,3 @@ const Component = styled.div(({ theme }) => ({
   width: 0,
 }));
 ```
-

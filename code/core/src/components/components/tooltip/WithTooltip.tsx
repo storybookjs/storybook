@@ -1,11 +1,13 @@
 import type { ComponentProps, ReactNode } from 'react';
-import React, { useCallback, useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
-import { styled } from '@storybook/core/theming';
+
 import { global } from '@storybook/global';
 
-import type { Config as ReactPopperTooltipConfig, PopperOptions } from 'react-popper-tooltip';
+import type { PopperOptions, Config as ReactPopperTooltipConfig } from 'react-popper-tooltip';
 import { usePopperTooltip } from 'react-popper-tooltip';
+import { styled } from 'storybook/theming';
+
 import { Tooltip } from './Tooltip';
 
 const { document } = global;
@@ -14,14 +16,12 @@ const { document } = global;
 const TargetContainer = styled.div<{ trigger: ReactPopperTooltipConfig['trigger'] }>`
   display: inline-block;
   cursor: ${(props) =>
-    // @ts-expect-error (non strict)
-    props.trigger === 'hover' || props.trigger.includes('hover') ? 'default' : 'pointer'};
+    props.trigger === 'hover' || props.trigger?.includes('hover') ? 'default' : 'pointer'};
 `;
 
 const TargetSvgContainer = styled.g<{ trigger: ReactPopperTooltipConfig['trigger'] }>`
   cursor: ${(props) =>
-    // @ts-expect-error (non strict)
-    props.trigger === 'hover' || props.trigger.includes('hover') ? 'default' : 'pointer'};
+    props.trigger === 'hover' || props.trigger?.includes('hover') ? 'default' : 'pointer'};
 `;
 
 interface WithHideFn {
@@ -40,6 +40,7 @@ export interface WithTooltipPureProps
   onDoubleClick?: () => void;
   /**
    * If `true`, a click outside the trigger element closes the tooltip
+   *
    * @default false
    */
   closeOnOutsideClick?: boolean;
@@ -79,10 +80,10 @@ const WithTooltipPure = ({
   children,
   closeOnTriggerHidden,
   mutationObserverOptions,
-  delayHide,
+  delayHide = trigger === 'hover' ? 200 : 0,
   visible,
   interactive,
-  delayShow,
+  delayShow = trigger === 'hover' ? 400 : 0,
   strategy,
   followCursor,
   onVisibleChange,
@@ -118,7 +119,7 @@ const WithTooltipPure = ({
     }
   );
 
-  const tooltipComponent = (
+  const tooltipComponent = isVisible ? (
     <Tooltip
       placement={state?.placement}
       ref={setTooltipRef}
@@ -130,7 +131,7 @@ const WithTooltipPure = ({
       {/* @ts-expect-error (non strict) */}
       {typeof tooltip === 'function' ? tooltip({ onHide: () => onVisibleChange(false) }) : tooltip}
     </Tooltip>
-  );
+  ) : null;
 
   return (
     <>
@@ -155,7 +156,9 @@ const WithToolTipState = ({
   const [tooltipShown, setTooltipShown] = useState(startOpen);
   const onVisibilityChange = useCallback(
     (visibility: boolean) => {
-      if (onChange && onChange(visibility) === false) return;
+      if (onChange && onChange(visibility) === false) {
+        return;
+      }
       setTooltipShown(visibility);
     },
     [onChange]

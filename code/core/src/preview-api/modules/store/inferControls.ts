@@ -1,13 +1,15 @@
-import mapValues from 'lodash/mapValues.js';
-import { logger } from '@storybook/core/client-logger';
-import { filterArgTypes } from './filterArgTypes';
-import { combineParameters } from './parameters';
+import { logger } from 'storybook/internal/client-logger';
 import type {
   ArgTypesEnhancer,
   Renderer,
   SBEnumType,
   StrictInputType,
-} from '@storybook/core/types';
+} from 'storybook/internal/types';
+
+import { mapValues } from 'es-toolkit';
+
+import { filterArgTypes } from './filterArgTypes';
+import { combineParameters } from './parameters';
 
 export type ControlsMatchers = {
   date: RegExp;
@@ -64,14 +66,16 @@ const inferControl = (argType: StrictInputType, name: string, matchers: Controls
 export const inferControls: ArgTypesEnhancer<Renderer> = (context) => {
   const {
     argTypes,
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     parameters: { __isArgsStory, controls: { include = null, exclude = null, matchers = {} } = {} },
   } = context;
-  if (!__isArgsStory) return argTypes;
+
+  if (!__isArgsStory) {
+    return argTypes;
+  }
 
   const filteredArgTypes = filterArgTypes(argTypes, include, exclude);
   const withControls = mapValues(filteredArgTypes, (argType, name) => {
-    return argType?.type && inferControl(argType, name, matchers);
+    return argType?.type && inferControl(argType, name.toString(), matchers);
   });
 
   return combineParameters(withControls, filteredArgTypes);

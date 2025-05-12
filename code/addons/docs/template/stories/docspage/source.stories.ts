@@ -1,5 +1,5 @@
-import { global as globalThis } from '@storybook/global';
 import type { StoryContext } from 'storybook/internal/types';
+
 import { dedent } from 'ts-dedent';
 
 export default {
@@ -44,6 +44,25 @@ export const Transform = {
           // The current args are: ${JSON.stringify(storyContext.args)}
           const example = (${src});
           `;
+        },
+      },
+    },
+  },
+};
+
+export const AsyncTransform = {
+  parameters: {
+    docs: {
+      source: {
+        async transform(src: string, storyContext: StoryContext) {
+          return new Promise<string>((res) =>
+            setTimeout(() => {
+              res(dedent`// We transformed this asynchronously!
+                // The current args are: ${JSON.stringify(storyContext.args)}
+                const example = (${src});
+                `);
+            }, 500)
+          );
         },
       },
     },

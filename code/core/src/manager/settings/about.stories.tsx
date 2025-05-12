@@ -1,8 +1,11 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import React from 'react';
-import { AboutScreen } from './About';
+
+import type { Meta, StoryObj } from '@storybook/react-vite';
+
+import { fn } from 'storybook/test';
+
 import UpgradeBlockStoriesMeta from '../components/upgrade/UpgradeBlock.stories';
-import { fn } from '@storybook/test';
+import { AboutScreen } from './About';
 
 const meta = {
   component: AboutScreen,

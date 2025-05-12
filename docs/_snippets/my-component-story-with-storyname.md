@@ -11,9 +11,8 @@ export default meta;
 type Story = StoryObj<MyComponent>;
 
 export const Simple: Story = {
-  decorators: [],
   name: 'So simple!',
-  parameters: {},
+  // ...
 };
 ```
 
@@ -25,14 +24,13 @@ export default {
 };
 
 export const Simple = {
-  decorators: [...],
   name: 'So simple!',
-  parameters: {...},
-}
+  // ...
+};
 ```
 
-```ts filename="MyComponent.stories.ts|tsx" renderer="common" language="ts-4-9"
-// Replace your-framework with the name of your framework
+```ts filename="MyComponent.stories.ts|tsx" renderer="common" language="ts"
+// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { MyComponent } from './MyComponent';
@@ -45,29 +43,8 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Simple: Story = {
-  decorators: [],
   name: 'So simple!',
-  parameters: {},
-};
-```
-
-```ts filename="MyComponent.stories.ts|tsx" renderer="common" language="ts"
-// Replace your-framework with the name of your framework
-import type { Meta, StoryObj } from '@storybook/your-framework';
-
-import { MyComponent } from './MyComponent';
-
-const meta: Meta<typeof MyComponent> = {
-  component: MyComponent,
-};
-
-export default meta;
-type Story = StoryObj<typeof MyComponent>;
-
-export const Simple: Story = {
-  decorators: [],
-  name: 'So simple!',
-  parameters: {},
+  // ...
 };
 ```
 
@@ -77,14 +54,13 @@ export default {
 };
 
 export const Simple = {
-  decorators: [],
   name: 'So simple!',
-  parameters: {},
+  // ...
 };
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
   component: 'my-component',
@@ -94,9 +70,7 @@ export default meta;
 type Story = StoryObj;
 
 export const Simple: Story = {
-  decorators: [],
   name: 'So simple!',
-  parameters: {},
+  // ...
 };
 ```
-

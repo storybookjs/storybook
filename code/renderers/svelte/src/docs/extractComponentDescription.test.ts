@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { extractComponentDescription } from './extractComponentDescription';
 
 describe('extractComponentDescription', () => {

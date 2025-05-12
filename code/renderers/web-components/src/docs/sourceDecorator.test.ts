@@ -1,122 +1,138 @@
-// @vitest-environment happy-dom
+/** @vitest-environment happy-dom */
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { html, render } from 'lit';
-import type { Mock } from 'vitest';
-import { describe, beforeEach, it, vi, expect } from 'vitest';
-import { styleMap } from 'lit/directives/style-map.js';
-import { addons, useEffect } from 'storybook/internal/preview-api';
-import { SNIPPET_RENDERED } from 'storybook/internal/docs-tools';
-import type { StoryContext } from '../types';
+import { SourceType } from 'storybook/internal/docs-tools';
+
+import { render } from 'lit';
+import { addons, emitTransformCode, useEffect, useRef } from 'storybook/preview-api';
+
 import { sourceDecorator } from './sourceDecorator';
 
-vi.mock('storybook/internal/preview-api');
-const mockedAddons = vi.mocked(addons);
-const mockedUseEffect = vi.mocked(useEffect);
+vi.mock('storybook/preview-api', () => ({
+  addons: {
+    getChannel: vi.fn(),
+  },
+  useEffect: vi.fn((cb) => cb()),
+  useRef: vi.fn(),
+  emitTransformCode: vi.fn((code) => code),
+}));
 
-expect.addSnapshotSerializer({
-  print: (val: any) => val,
-  test: (val) => typeof val === 'string',
-});
+vi.mock('lit', () => ({
+  render: vi.fn(),
+}));
 
 const tick = () => new Promise((r) => setTimeout(r, 0));
 
-const makeContext = (name: string, parameters: any, args: any, extra?: Partial<StoryContext>) =>
-  ({
-    id: `lit-test--${name}`,
-    kind: 'js-text',
-    name,
-    parameters,
-    unmappedArgs: args,
-    args,
-    argTypes: {},
-    globals: {},
-    ...extra,
-  }) as StoryContext;
-
 describe('sourceDecorator', () => {
-  let mockChannel: { on: Mock; emit?: Mock };
+  const mockChannel = {
+    emit: vi.fn(),
+  };
+
+  const mockContext = {
+    id: 'test-story',
+    args: { foo: 'bar' },
+    unmappedArgs: { foo: 'bar' },
+    parameters: {
+      docs: {
+        source: {},
+      },
+      __isArgsStory: true,
+    },
+    originalStoryFn: vi.fn(),
+  };
+
   beforeEach(() => {
-    mockedAddons.getChannel.mockReset();
-    mockedUseEffect.mockImplementation((cb) => setTimeout(() => cb(), 0));
-
-    mockChannel = { on: vi.fn(), emit: vi.fn() };
-    mockedAddons.getChannel.mockReturnValue(mockChannel as any);
+    vi.clearAllMocks();
+    vi.mocked(useRef).mockReturnValue({ current: undefined });
+    vi.mocked(addons.getChannel).mockReturnValue(mockChannel as any);
+    vi.mocked(useEffect).mockImplementation((cb) => setTimeout(() => cb(), 0));
   });
 
-  it('should render dynamically for args stories', async () => {
-    const storyFn = (args: any) => html`<div>args story</div>`;
-    const context = makeContext('args', { __isArgsStory: true }, {});
-    sourceDecorator(storyFn, context);
-    await tick();
-    expect(mockChannel.emit).toHaveBeenCalledWith(SNIPPET_RENDERED, {
-      id: 'lit-test--args',
-      args: {},
-      source: '<div>args story</div>',
+  it('should render source for a basic story', () => {
+    const storyFn = () => document.createElement('div');
+    const mockDiv = document.createElement('div');
+    mockDiv.innerHTML = '<test-element>content</test-element>';
+    vi.mocked(render).mockImplementation((_, container): any => {
+      if (container instanceof HTMLElement) {
+        container.innerHTML = '<test-element>content</test-element>';
+      }
     });
+
+    sourceDecorator(storyFn, mockContext as any);
+
+    expect(render).toHaveBeenCalled();
   });
 
-  it('should skip dynamic rendering for no-args stories', async () => {
-    const storyFn = () => html`<div>classic story</div>`;
-    const context = makeContext('classic', {}, {});
-    sourceDecorator(storyFn, context);
-    await tick();
-    expect(mockChannel.emit).not.toHaveBeenCalled();
-  });
-
-  it('should use the originalStoryFn if excludeDecorators is set', async () => {
-    const storyFn = (args: any) => html`<div>args story</div>`;
-    const decoratedStoryFn = (args: any) => html`
-      <div style=${styleMap({ padding: `${25}px`, border: '3px solid red' })}>${storyFn(args)}</div>
-    `;
-    const context = makeContext(
-      'args',
-      {
-        __isArgsStory: true,
+  it('should skip source rendering when type is CODE', () => {
+    const storyFn = () => document.createElement('div');
+    const contextWithCode = {
+      ...mockContext,
+      parameters: {
         docs: {
           source: {
-            excludeDecorators: true,
+            type: SourceType.CODE,
           },
         },
       },
-      {},
-      { originalStoryFn: storyFn }
-    );
-    sourceDecorator(decoratedStoryFn, context);
-    await tick();
-    expect(mockChannel.emit).toHaveBeenCalledWith(SNIPPET_RENDERED, {
-      id: 'lit-test--args',
-      args: {},
-      source: '<div>args story</div>',
-    });
+    };
+
+    sourceDecorator(storyFn, contextWithCode as any);
+
+    expect(render).not.toHaveBeenCalled();
+    expect(mockChannel.emit).not.toHaveBeenCalled();
   });
 
-  it('should handle document fragment without removing its child nodes', async () => {
-    const storyFn = () =>
-      html`my
-        <div>args story</div>`;
-    const decoratedStoryFn = () => {
-      const fragment = document.createDocumentFragment();
-      render(storyFn(), fragment);
-      return fragment;
-    };
-    const context = makeContext('args', { __isArgsStory: true }, {});
-    const story = sourceDecorator(decoratedStoryFn, context);
-    await tick();
-    expect(mockChannel.emit).toHaveBeenCalledWith(SNIPPET_RENDERED, {
-      id: 'lit-test--args',
-      args: {},
-      source: `my
-        <div>args story</div>`,
+  it('should handle DocumentFragment stories', async () => {
+    const fragment = document.createDocumentFragment();
+    const element = document.createElement('test-element');
+    element.textContent = 'fragment content';
+    fragment.appendChild(element);
+
+    const storyFn = () => fragment;
+    vi.mocked(render).mockImplementation((_, container): any => {
+      if (container instanceof HTMLElement) {
+        container.innerHTML = '<test-element>fragment content</test-element>';
+      }
     });
-    expect(story).toMatchInlineSnapshot(`
-      <DocumentFragment>
-        <!---->
-        my
-              
-        <div>
-          args story
-        </div>
-      </DocumentFragment>
-    `);
+
+    sourceDecorator(storyFn, mockContext as any);
+    await tick();
+
+    expect(render).toHaveBeenCalled();
+    expect(emitTransformCode).toHaveBeenCalledWith(
+      '<test-element>fragment content</test-element>',
+      mockContext
+    );
+  });
+
+  it('should force render when type is DYNAMIC', async () => {
+    const storyFn = () => document.createElement('div');
+    const contextWithDynamic = {
+      ...mockContext,
+      parameters: {
+        docs: {
+          source: {
+            type: SourceType.DYNAMIC,
+          },
+        },
+        __isArgsStory: false, // This would normally prevent rendering
+      },
+    };
+
+    vi.mocked(render).mockImplementation((_, container): any => {
+      if (container instanceof HTMLElement) {
+        container.innerHTML = '<test-element>dynamic content</test-element>';
+      }
+    });
+
+    sourceDecorator(storyFn, contextWithDynamic as any);
+
+    await tick();
+
+    expect(render).toHaveBeenCalled();
+    expect(emitTransformCode).toHaveBeenCalledWith(
+      '<test-element>dynamic content</test-element>',
+      contextWithDynamic
+    );
   });
 });

@@ -1,15 +1,14 @@
 /**
- * This file needs to be run before any other script to ensure dependencies are installed
- * Therefore, we cannot transform this file to Typescript, because it would require esbuild to be installed
+ * This file needs to be run before any other script to ensure dependencies are installed Therefore,
+ * we cannot transform this file to Typescript, because it would require esbuild to be installed
  */
-import { spawn } from 'child_process';
-import { join } from 'path';
-import { existsSync } from 'fs';
-import * as url from 'url';
+import { spawn } from 'node:child_process';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+import * as url from 'node:url';
 
 const logger = console;
 
-const filename = url.fileURLToPath(import.meta.url);
 const dirname = url.fileURLToPath(new URL('.', import.meta.url));
 
 const checkDependencies = async () => {

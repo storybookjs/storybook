@@ -1,19 +1,22 @@
-import fs from 'fs-extra';
-import { logger } from '@storybook/core/node-logger';
-import { telemetry } from '@storybook/core/telemetry';
-import { findConfigFile } from '@storybook/core/common';
-import type { CoreConfig, Options } from '@storybook/core/types';
-import { printConfig, readConfig } from '@storybook/core/csf-tools';
-import type { Channel } from '@storybook/core/channels';
-import type { WhatsNewCache, WhatsNewData } from '@storybook/core/core-events';
+import { writeFile } from 'node:fs/promises';
+
+import type { Channel } from 'storybook/internal/channels';
+import { findConfigFile, loadMainConfig } from 'storybook/internal/common';
+import type { WhatsNewCache, WhatsNewData } from 'storybook/internal/core-events';
 import {
   REQUEST_WHATS_NEW_DATA,
   RESULT_WHATS_NEW_DATA,
-  TELEMETRY_ERROR,
   SET_WHATS_NEW_CACHE,
+  TELEMETRY_ERROR,
   TOGGLE_WHATS_NEW_NOTIFICATIONS,
-} from '@storybook/core/core-events';
+} from 'storybook/internal/core-events';
+import { printConfig, readConfig } from 'storybook/internal/csf-tools';
+import { logger } from 'storybook/internal/node-logger';
+import { telemetry } from 'storybook/internal/telemetry';
+import type { CoreConfig, Options } from 'storybook/internal/types';
+
 import invariant from 'tiny-invariant';
+
 import { sendTelemetryError } from '../withTelemetry';
 
 export type OptionsWithRequiredCache = Exclude<Options, 'cache'> & Required<Pick<Options, 'cache'>>;
@@ -46,20 +49,16 @@ export function initializeWhatsNew(
   channel.on(REQUEST_WHATS_NEW_DATA, async () => {
     try {
       const post = (await fetch(WHATS_NEW_URL).then(async (response) => {
-        if (response.ok) return response.json();
-        // eslint-disable-next-line @typescript-eslint/no-throw-literal
+        if (response.ok) {
+          return response.json();
+        }
+
         throw response;
       })) as WhatsNewResponse;
 
-      const configFileName = findConfigFile('main', options.configDir);
-      if (!configFileName) {
-        throw new Error(`unable to find storybook main file in ${options.configDir}`);
-      }
-      const main = await readConfig(configFileName);
-      const disableWhatsNewNotifications = main.getFieldValue([
-        'core',
-        'disableWhatsNewNotifications',
-      ]);
+      const main = await loadMainConfig({ configDir: options.configDir, noCache: true });
+      const disableWhatsNewNotifications =
+        (main.core as CoreConfig)?.disableWhatsNewNotifications === true;
 
       const cache: WhatsNewCache = (await options.cache.get(WHATS_NEW_CACHE)) ?? {};
       const data = {
@@ -84,10 +83,16 @@ export function initializeWhatsNew(
       const isTelemetryEnabled = coreOptions.disableTelemetry !== true;
       try {
         const mainPath = findConfigFile('main', options.configDir);
-        invariant(mainPath, `unable to find storybook main file in ${options.configDir}`);
+        invariant(mainPath, `unable to find Storybook main file in ${options.configDir}`);
         const main = await readConfig(mainPath);
+        if (!main._exportsObject) {
+          // eslint-disable-next-line local-rules/no-uncategorized-errors
+          throw new Error(
+            `Unable to parse Storybook main file while trying to read 'core' property`
+          );
+        }
         main.setFieldValue(['core', 'disableWhatsNewNotifications'], disableWhatsNewNotifications);
-        await fs.writeFile(mainPath, printConfig(main).code);
+        await writeFile(mainPath, printConfig(main).code);
         if (isTelemetryEnabled) {
           await telemetry('core-config', { disableWhatsNewNotifications });
         }

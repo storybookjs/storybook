@@ -1,9 +1,10 @@
-import { describe, it, expect, vi } from 'vitest';
-import { logger } from '@storybook/core/client-logger';
+import { describe, expect, it, vi } from 'vitest';
+
+import { logger } from 'storybook/internal/client-logger';
 
 import { inferArgTypes } from './inferArgTypes';
 
-vi.mock('@storybook/core/client-logger');
+vi.mock('storybook/internal/client-logger');
 
 describe('inferArgTypes', () => {
   it('infers scalar types', () => {

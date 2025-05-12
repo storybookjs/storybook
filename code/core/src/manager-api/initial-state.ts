@@ -1,5 +1,4 @@
 import merge from './lib/merge';
-
 import type { State } from './root';
 
 interface Addition {

@@ -1,7 +1,7 @@
 ```ts filename="Button.stories.ts" renderer="angular" language="ts"
 import type { Meta } from '@storybook/angular';
 
-import { withActions } from '@storybook/addon-actions/decorator';
+import { withActions } from 'storybook/actions/decorator';
 
 import { Button } from './button.component';
 
@@ -18,10 +18,30 @@ const meta: Meta<Button> = {
 export default meta;
 ```
 
-```js filename="Button.stories.js|jsx" renderer="common" language="js"
-import { Button } from './Button';
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
 
-import { withActions } from '@storybook/addon-actions/decorator';
+  import Button from './Button.svelte';
+
+  import { withActions } from 'storybook/actions/decorator';
+
+  const { Story } = defineMeta({
+    component: Button,
+    parameters: {
+      actions: {
+        handles: ['mouseover', 'click .btn'],
+      },
+    },
+    decorators: [withActions],
+  });
+</script>
+```
+
+```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+import Button from './Button.svelte';
+
+import { withActions } from 'storybook/actions/decorator';
 
 export default {
   component: Button,
@@ -34,11 +54,68 @@ export default {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="common" language="ts-4-9"
-// Replace your-framework with the name of your framework
+```js filename="Button.stories.js|jsx" renderer="common" language="js"
+import { Button } from './Button';
+
+import { withActions } from 'storybook/actions/decorator';
+
+export default {
+  component: Button,
+  parameters: {
+    actions: {
+      handles: ['mouseover', 'click .btn'],
+    },
+  },
+  decorators: [withActions],
+};
+```
+
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import Button from './Button.svelte';
+
+  import { withActions } from 'storybook/actions/decorator';
+
+  const { Story } = defineMeta({
+    component: Button,
+    parameters: {
+      actions: {
+        handles: ['mouseover', 'click .btn'],
+      },
+    },
+    decorators: [withActions],
+  });
+</script>
+```
+
+```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+// Replace your-framework with svelte-vite or sveltekit
 import type { Meta } from '@storybook/your-framework';
 
-import { withActions } from '@storybook/addon-actions/decorator';
+import Button from './Button.svelte';
+
+import { withActions } from 'storybook/actions/decorator';
+
+const meta = {
+  component: Button,
+  parameters: {
+    actions: {
+      handles: ['mouseover', 'click .btn'],
+    },
+  },
+  decorators: [withActions],
+} satisfies Meta<typeof Button>;
+
+export default meta;
+```
+
+```ts filename="Button.stories.ts" renderer="common" language="ts"
+// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
+import type { Meta } from '@storybook/your-framework';
+
+import { withActions } from 'storybook/actions/decorator';
 
 import { Button } from './Button';
 
@@ -55,29 +132,8 @@ const meta = {
 export default meta;
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="common" language="ts"
-// Replace your-framework with the name of your framework
-import type { Meta } from '@storybook/your-framework';
-
-import { withActions } from '@storybook/addon-actions/decorator';
-
-import { Button } from './Button';
-
-const meta: Meta<typeof Button> = {
-  component: Button,
-  parameters: {
-    actions: {
-      handles: ['mouseover', 'click .btn'],
-    },
-  },
-  decorators: [withActions],
-};
-
-export default meta;
-```
-
 ```js filename="Button.stories.js" renderer="web-components" language="js"
-import { withActions } from '@storybook/addon-actions/decorator';
+import { withActions } from 'storybook/actions/decorator';
 
 export default {
   component: 'demo-button',
@@ -91,8 +147,9 @@ export default {
 ```
 
 ```ts filename="Button.stories.ts" renderer="web-components" language="ts"
-import type { Meta } from '@storybook/web-components';
-import { withActions } from '@storybook/addon-actions/decorator';
+import type { Meta } from '@storybook/web-components-vite';
+
+import { withActions } from 'storybook/actions/decorator';
 
 const meta: Meta = {
   component: 'demo-button',
@@ -106,4 +163,3 @@ const meta: Meta = {
 
 export default meta;
 ```
-

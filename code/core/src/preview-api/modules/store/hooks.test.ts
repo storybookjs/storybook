@@ -1,32 +1,33 @@
-import { describe, beforeEach, it, expect, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import {
   FORCE_RE_RENDER,
-  STORY_RENDERED,
-  UPDATE_STORY_ARGS,
   RESET_STORY_ARGS,
+  STORY_RENDERED,
   UPDATE_GLOBALS,
-} from '@storybook/core/core-events';
-import type { DecoratorFunction, StoryContext } from '@storybook/core/types';
+  UPDATE_STORY_ARGS,
+} from 'storybook/internal/core-events';
+import type { DecoratorFunction, StoryContext } from 'storybook/internal/types';
+
 import {
+  HooksContext,
   addons,
   applyHooks,
-  useEffect,
-  useMemo,
+  useArgs,
   useCallback,
+  useChannel,
+  useEffect,
+  useGlobals,
+  useMemo,
+  useParameter,
+  useReducer,
   useRef,
   useState,
-  useReducer,
-  useChannel,
-  useParameter,
   useStoryContext,
-  HooksContext,
-  useArgs,
-  useGlobals,
 } from '../addons';
-
 import { defaultDecorateStory } from './decorators';
 
-vi.mock('@storybook/core/client-logger', () => ({
+vi.mock('storybook/internal/client-logger', () => ({
   logger: { warn: vi.fn(), log: vi.fn() },
 }));
 
@@ -157,7 +158,10 @@ describe('Preview hooks', () => {
         useEffect(() => {
           setCounter((prevCounter) => prevCounter + 1);
         }, [counter]);
-        if (counter % 2 === 1) storyFn();
+
+        if (counter % 2 === 1) {
+          storyFn();
+        }
         return 'placeholder while waiting';
       };
       run(story, [decorator]);

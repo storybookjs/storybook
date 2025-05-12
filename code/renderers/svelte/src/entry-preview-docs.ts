@@ -1,6 +1,7 @@
-import type { ArgTypesEnhancer, DecoratorFunction } from 'storybook/internal/types';
 import type { ArgTypesExtractor } from 'storybook/internal/docs-tools';
 import { enhanceArgTypes } from 'storybook/internal/docs-tools';
+import type { ArgTypesEnhancer, DecoratorFunction } from 'storybook/internal/types';
+
 import { extractArgTypes } from './docs/extractArgTypes';
 import { extractComponentDescription } from './docs/extractComponentDescription';
 import { sourceDecorator } from './docs/sourceDecorator';

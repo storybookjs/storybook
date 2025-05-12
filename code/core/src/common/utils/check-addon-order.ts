@@ -1,9 +1,9 @@
-import { logger } from '@storybook/core/node-logger';
+import { logger } from 'storybook/internal/node-logger';
 import type {
   CoreCommon_AddonEntry,
   CoreCommon_AddonInfo,
   CoreCommon_OptionsEntry,
-} from '@storybook/core/types';
+} from 'storybook/internal/types';
 
 interface Options {
   before: CoreCommon_AddonInfo;
@@ -25,8 +25,14 @@ const isCorrectOrder = (
   const essentialsIndex = addons.findIndex(predicateFor('@storybook/addon-essentials'));
   let beforeIndex = addons.findIndex(predicateFor(before.name));
   let afterIndex = addons.findIndex(predicateFor(after.name));
-  if (beforeIndex === -1 && before.inEssentials) beforeIndex = essentialsIndex;
-  if (afterIndex === -1 && after.inEssentials) afterIndex = essentialsIndex;
+
+  if (beforeIndex === -1 && before.inEssentials) {
+    beforeIndex = essentialsIndex;
+  }
+
+  if (afterIndex === -1 && after.inEssentials) {
+    afterIndex = essentialsIndex;
+  }
   return beforeIndex !== -1 && afterIndex !== -1 && beforeIndex <= afterIndex;
 };
 

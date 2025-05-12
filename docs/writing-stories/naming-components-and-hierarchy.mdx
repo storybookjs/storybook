@@ -29,7 +29,7 @@ When creating your stories, you can explicitly use the `title` parameter to defi
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="button-story-default-export.md" usesCsf3 csf2Path="writing-stories/naming-components-and-hierarchy#snippet-button-story-default-export" />
+<CodeSnippets path="button-story-default-export.md" />
 
 {/* prettier-ignore-end */}
 
@@ -43,13 +43,13 @@ It is also possible to group related components in an expandable interface to he
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="button-story-grouped.md" usesCsf3 csf2Path="writing-stories/naming-components-and-hierarchy#snippet-button-story-grouped" />
+<CodeSnippets path="button-story-grouped.md" />
 
 {/* prettier-ignore-end */}
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="checkbox-story-grouped.md" usesCsf3 csf2Path="writing-stories/naming-components-and-hierarchy#snippet-checkbox-story-grouped" />
+<CodeSnippets path="checkbox-story-grouped.md" />
 
 {/* prettier-ignore-end */}
 
@@ -61,19 +61,23 @@ Yields this:
 
 By default, the top-level grouping will be displayed as “root” in the Storybook UI (i.e., the uppercased, non-expandable items). If you need, you can [configure Storybook](../configure/user-interface/sidebar-and-urls.mdx#roots) and disable this behavior. Useful if you need to provide a streamlined experience for your users; nevertheless, if you have a large Storybook composed of multiple component stories, we recommend naming your components according to the file hierarchy.
 
-## Single-story hoisting
+<If notRenderer="svelte">
 
-Single-story components (i.e., component stories without **siblings**) whose **display name** exactly matches the component's name (last part of `title`) are automatically hoisted up to replace their parent component in the UI. For example:
+  ## Single-story hoisting
 
-{/* prettier-ignore-start */}
+  Single-story components (i.e., component stories without **siblings**) whose **display name** exactly matches the component's name (last part of `title`) are automatically hoisted up to replace their parent component in the UI. For example:
 
-<CodeSnippets path="button-story-hoisted.md" usesCsf3 csf2Path="writing-stories/naming-components-and-hierarchy#snippet-button-story-hoisted" />
+  {/* prettier-ignore-start */}
 
-{/* prettier-ignore-end */}
+  <CodeSnippets path="button-story-hoisted.md" />
 
-![Stories hierarchy with single story hoisting](../_assets/writing-stories/naming-hierarchy-single-story-hoisting.png)
+  {/* prettier-ignore-end */}
 
-Because story exports are automatically "start cased" (`myStory` becomes `"My Story"`), your component name should match that. Alternatively, you can override the story name using `myStory.storyName = '...'` to match the component name.
+  ![Stories hierarchy with single story hoisting](../_assets/writing-stories/naming-hierarchy-single-story-hoisting.png)
+
+  Because story exports are automatically "start cased" (`myStory` becomes `"My Story"`), your component name should match that. Alternatively, you can override the story name using `myStory.storyName = '...'` to match the component name.
+
+</If>
 
 ## Sorting stories
 

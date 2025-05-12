@@ -3,9 +3,10 @@ import { Component } from '@angular/core';
 import { Meta, StoryObj } from '@storybook/angular';
 
 @Component({
+  standalone: false,
   selector: 'storybook-with-ng-content',
   template: `Content value:
-    <div style="color: #1e88e5;"><ng-content></ng-content></div>`,
+<div style="color: #1e88e5"><ng-content></ng-content></div>`,
 })
 class WithNgContentComponent {}
 

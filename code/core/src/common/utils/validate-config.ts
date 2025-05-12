@@ -1,9 +1,11 @@
 import { join } from 'node:path';
+
 import {
   CouldNotEvaluateFrameworkError,
-  MissingFrameworkFieldError,
   InvalidFrameworkNameError,
-} from '@storybook/core/server-errors';
+  MissingFrameworkFieldError,
+} from 'storybook/internal/server-errors';
+
 import { frameworkPackages } from './get-storybook-info';
 
 const renderers = ['html', 'preact', 'react', 'server', 'svelte', 'vue', 'vue3', 'web-components'];

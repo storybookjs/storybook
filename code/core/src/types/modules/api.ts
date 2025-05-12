@@ -1,13 +1,13 @@
-/* eslint-disable @typescript-eslint/naming-convention */
-
 import type { ReactElement } from 'react';
-import type { RenderData } from '../../router/types';
+
 import type { Channel } from '../../channels';
+import type { State } from '../../manager-api';
+import type { RenderData } from '../../router/types';
 import type { ThemeVars } from '../../theming/types';
-import type { DocsOptions } from './core-common';
+import type { Addon_RenderOptions } from './addons';
 import type { API_FilterFunction, API_HashEntry, API_IndexHash } from './api-stories';
 import type { SetStoriesStory, SetStoriesStoryData } from './channelApi';
-import type { Addon_RenderOptions } from './addons';
+import type { DocsOptions } from './core-common';
 import type { StoryIndex } from './indexer';
 
 type OrString<T extends string> = T | (string & {});
@@ -38,10 +38,6 @@ export interface API_ProviderData<API> {
 
 export interface API_Provider<API> {
   channel?: Channel;
-  /**
-   * @deprecated will be removed in 8.0, please use channel instead
-   */
-  serverChannel?: Channel;
   renderPreview?: API_IframeRenderer;
   handleAPI(api: API): void;
   getConfig(): {
@@ -79,9 +75,8 @@ export interface API_Layout {
   bottomPanelHeight: number;
   rightPanelWidth: number;
   /**
-   * the sizes of the panels when they were last visible
-   * used to restore the sizes when the panels are shown again
-   * eg. when toggling fullscreen, panels, etc.
+   * The sizes of the panels when they were last visible used to restore the sizes when the panels
+   * are shown again eg. when toggling fullscreen, panels, etc.
    */
   recentVisibleSizes: {
     navSize: number;
@@ -91,10 +86,11 @@ export interface API_Layout {
   panelPosition: API_PanelPositions;
   showTabs: boolean;
   showToolbar: boolean;
-  /**
-   * @deprecated, will be removed in 8.0 - this API no longer works
-   */
-  isToolshown?: boolean;
+}
+
+export interface API_LayoutCustomisations {
+  showSidebar?: (state: State, defaultValue: boolean) => boolean | undefined;
+  showToolbar?: (state: State, defaultValue: boolean) => boolean | undefined;
 }
 
 export interface API_UI {
@@ -114,31 +110,17 @@ export interface API_SidebarOptions<API = any> {
 }
 
 interface OnClearOptions {
-  /**
-   *  True when the user manually dismissed the notification.
-   */
+  /** `true` when the user manually dismissed the notification. */
   dismissed: boolean;
-  /**
-   *  True when the notification timed out after the set duration.
-   */
+  /** `true` when the notification timed out after the set duration. */
   timeout: boolean;
 }
 
 interface OnClickOptions {
-  /**
-   *  Function to dismiss the notification.
-   */
+  /** Function to dismiss the notification. */
   onDismiss: () => void;
 }
 
-/**
- * @deprecated Use ReactNode for the icon instead.
- * @see https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#icons-is-deprecated
- */
-interface DeprecatedIconType {
-  name: string;
-  color?: string;
-}
 export interface API_Notification {
   id: string;
   content: {
@@ -147,8 +129,7 @@ export interface API_Notification {
   };
   duration?: number;
   link?: string;
-  // TODO: Remove DeprecatedIconType in 9.0
-  icon?: React.ReactNode | DeprecatedIconType;
+  icon?: React.ReactNode;
   onClear?: (options: OnClearOptions) => void;
   onClick?: (options: OnClickOptions) => void;
 }
@@ -166,6 +147,7 @@ export type API_StoryMapper = (ref: API_ComposedRef, story: SetStoriesStory) => 
 
 export interface API_LoadedRefData {
   index?: API_IndexHash;
+  filteredIndex?: API_IndexHash;
   indexError?: Error;
   previewInitialized: boolean;
 }
@@ -191,6 +173,7 @@ export type API_ComposedRefUpdate = Partial<
     | 'type'
     | 'expanded'
     | 'index'
+    | 'filteredIndex'
     | 'versions'
     | 'loginUrl'
     | 'version'

@@ -1,5 +1,7 @@
 ---
 title: 'Storyshots migration guide'
+sidebar:
+  order: 2
 ---
 
 <Callout variant="info" style={{ marginBottom: "2rem" }}>
@@ -25,7 +27,7 @@ Before you begin the migration process, ensure that you have:
 
 ### With the test-runner
 
-Storybook test-runner turns all of your stories into executable tests. Powered by [Jest](https://jestjs.io/) and [Playwright](https://playwright.dev/). It's a standalone, framework-agnostic utility that runs parallel to your Storybook. It enables you to run multiple testing patterns in a multi-browser environment, including interaction testing with the [play function](../interaction-testing.mdx), DOM snapshot, and [accessibility testing](../accessibility-testing.mdx).
+Storybook test-runner turns all of your stories into executable tests. Powered by [Jest](https://jestjs.io/) and [Playwright](https://playwright.dev/). It's a standalone, framework-agnostic utility that runs parallel to your Storybook. It enables you to run multiple testing patterns in a multi-browser environment, including component testing with the [play function](../component-testing.mdx), DOM snapshot, and [accessibility testing](../accessibility-testing.mdx).
 
 #### Setup
 
@@ -77,12 +79,6 @@ By default, the test-runner provides you with the option to run multiple testing
   <CodeSnippets path="portable-stories-vitest-set-project-annotations.md" />
 
   {/* prettier-ignore-end */}
-
-  <Callout variant="warning">
-
-  You **must** provide `testingLibraryRenderer` to use portable stories with Vitest or Jest.
-
-  </Callout>
 
   #### Configure the testing framework for portable stories
 

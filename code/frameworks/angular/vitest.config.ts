@@ -1,4 +1,5 @@
 import { defineConfig, mergeConfig } from 'vitest/config';
+
 import { vitestCommonConfig } from '../../vitest.workspace';
 
 export default mergeConfig(
@@ -6,6 +7,7 @@ export default mergeConfig(
   defineConfig({
     // Add custom config here
     test: {
+      globals: true,
       setupFiles: ['src/test-setup.ts'],
     },
   })

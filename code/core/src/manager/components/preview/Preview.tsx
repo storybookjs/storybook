@@ -1,20 +1,20 @@
 import type { FC } from 'react';
 import React, { Fragment, useEffect, useRef, useState } from 'react';
-import { Helmet } from 'react-helmet-async';
+
+import { Loader } from 'storybook/internal/components';
+import { PREVIEW_BUILDER_PROGRESS, SET_CURRENT_STORY } from 'storybook/internal/core-events';
+import type { Addon_BaseType, Addon_WrapperType } from 'storybook/internal/types';
+
 import { global } from '@storybook/global';
 
-import { Consumer, type Combo, merge, addons, types } from '@storybook/core/manager-api';
-import type { Addon_BaseType, Addon_WrapperType } from '@storybook/core/types';
-import { PREVIEW_BUILDER_PROGRESS, SET_CURRENT_STORY } from '@storybook/core/core-events';
+import { Helmet } from 'react-helmet-async';
+import { type Combo, Consumer, addons, merge, types } from 'storybook/manager-api';
 
-import { Loader } from '@storybook/core/components';
-
-import * as S from './utils/components';
-import { ZoomProvider, ZoomConsumer } from './tools/zoom';
-import { ApplyWrappers } from './Wrappers';
-import { ToolbarComp } from './Toolbar';
 import { FramesRenderer } from './FramesRenderer';
-
+import { ToolbarComp } from './Toolbar';
+import { ApplyWrappers } from './Wrappers';
+import { ZoomConsumer, ZoomProvider } from './tools/zoom';
+import * as S from './utils/components';
 import type { PreviewProps } from './utils/types';
 
 const canvasMapper = ({ state, api }: Combo) => ({
@@ -60,6 +60,7 @@ const Preview = React.memo<PreviewProps>(function Preview(props) {
 
   const shouldScale = viewMode === 'story';
   const { showToolbar } = options;
+  const customisedShowToolbar = api.getShowToolbarWithCustomisations(showToolbar);
 
   const previousStoryId = useRef(storyId);
 
@@ -94,7 +95,7 @@ const Preview = React.memo<PreviewProps>(function Preview(props) {
         <S.PreviewContainer>
           <ToolbarComp
             key="tools"
-            isShown={showToolbar}
+            isShown={customisedShowToolbar}
             // @ts-expect-error (non strict)
             tabId={tabId}
             tabs={tabs}
@@ -202,7 +203,7 @@ export function filterTabs(panels: Addon_BaseType[], parameters?: Record<string,
 
   if (previewTabs || parametersTabs) {
     // deep merge global and local settings
-    const tabs = merge(previewTabs, parametersTabs);
+    const tabs = merge(previewTabs || {}, parametersTabs || {});
     const arrTabs = Object.keys(tabs).map((key, index) => ({
       index,
       ...(typeof tabs[key] === 'string' ? { title: tabs[key] } : tabs[key]),
@@ -215,7 +216,6 @@ export function filterTabs(panels: Addon_BaseType[], parameters?: Record<string,
       })
       .map((panel, index) => ({ ...panel, index }) as Addon_BaseType)
       .sort((p1, p2) => {
-        /* eslint-disable @typescript-eslint/naming-convention */
         const tab_1 = arrTabs.find((tab) => tab.id === p1.id);
         // @ts-expect-error (Converted from ts-ignore)
         const index_1 = tab_1 ? tab_1.index : arrTabs.length + p1.index;
@@ -223,7 +223,6 @@ export function filterTabs(panels: Addon_BaseType[], parameters?: Record<string,
         // @ts-expect-error (Converted from ts-ignore)
         const index_2 = tab_2 ? tab_2.index : arrTabs.length + p2.index;
         return index_1 - index_2;
-        /* eslint-enable @typescript-eslint/naming-convention */
       })
       .map((panel) => {
         const t = arrTabs.find((tab) => tab.id === panel.id);

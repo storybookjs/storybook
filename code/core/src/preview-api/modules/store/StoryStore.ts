@@ -1,49 +1,48 @@
-import memoize from 'memoizerific';
-import type {
-  Renderer,
-  ComponentTitle,
-  Parameters,
-  Path,
-  StoryContext,
-  StoryContextForEnhancers,
-  StoryId,
-} from '@storybook/core/types';
-import mapValues from 'lodash/mapValues.js';
-import pick from 'lodash/pick.js';
-
+import type { CleanupCallback } from 'storybook/internal/csf';
 import {
   CalledExtractOnStoreError,
   MissingStoryFromCsfFileError,
-} from '@storybook/core/preview-errors';
-import { deprecate } from '@storybook/core/client-logger';
-import { HooksContext } from '../addons';
-import { StoryIndexStore } from './StoryIndexStore';
-import { ArgsStore } from './ArgsStore';
-import { GlobalsStore } from './GlobalsStore';
-import {
-  processCSFFile,
-  prepareStory,
-  prepareMeta,
-  normalizeProjectAnnotations,
-  prepareContext,
-} from './csf';
-import type { Canvas, CleanupCallback } from '@storybook/csf';
+} from 'storybook/internal/preview-errors';
 import type {
-  BoundStory,
   CSFFile,
+  IndexEntry,
   ModuleExports,
   ModuleImportFn,
   NormalizedProjectAnnotations,
+  Path,
   PreparedMeta,
   PreparedStory,
   ProjectAnnotations,
-} from '@storybook/core/types';
-import type {
-  IndexEntry,
+  Renderer,
+  StoryContextForEnhancers,
+  StoryId,
   StoryIndex,
-  StoryIndexV3,
-  V3CompatIndexEntry,
-} from '@storybook/core/types';
+} from 'storybook/internal/types';
+
+import { omitBy, pick } from 'es-toolkit';
+import memoize from 'memoizerific';
+
+import { getCoreAnnotations } from '../../../shared/preview/core-annotations';
+import { HooksContext } from '../addons';
+import { ArgsStore } from './ArgsStore';
+import { GlobalsStore } from './GlobalsStore';
+import { StoryIndexStore } from './StoryIndexStore';
+import {
+  composeConfigs,
+  normalizeProjectAnnotations,
+  prepareContext,
+  prepareMeta,
+  prepareStory,
+  processCSFFile,
+} from './csf';
+import { ReporterAPI } from './reporter-api';
+
+export function picky<T extends Record<string, any>, K extends keyof T>(
+  obj: T,
+  keys: K[]
+): Partial<Pick<T, K>> {
+  return omitBy(pick(obj, keys), (v) => v === undefined);
+}
 
 // TODO -- what are reasonable values for these?
 const CSF_CACHE_SIZE = 1000;
@@ -79,7 +78,9 @@ export class StoryStore<TRenderer extends Renderer> {
   ) {
     this.storyIndex = new StoryIndexStore(storyIndex);
 
-    this.projectAnnotations = normalizeProjectAnnotations(projectAnnotations);
+    this.projectAnnotations = normalizeProjectAnnotations(
+      composeConfigs([...getCoreAnnotations(), projectAnnotations])
+    );
     const { initialGlobals, globalTypes } = this.projectAnnotations;
 
     this.args = new ArgsStore();
@@ -113,10 +114,20 @@ export class StoryStore<TRenderer extends Renderer> {
     importFn?: ModuleImportFn;
     storyIndex?: StoryIndex;
   }) {
-    if (importFn) this.importFn = importFn;
+    if (importFn) {
+      this.importFn = importFn;
+    }
     // The index will always be set before the initialization promise returns
-    if (storyIndex) this.storyIndex.entries = storyIndex.entries;
-    if (this.cachedCSFFiles) await this.cacheAllCSFFiles();
+    // The index will always be set before the initialization promise returns
+
+    // The index will always be set before the initialization promise returns
+    if (storyIndex) {
+      this.storyIndex.entries = storyIndex.entries;
+    }
+
+    if (this.cachedCSFFiles) {
+      await this.cacheAllCSFFiles();
+    }
   }
 
   // Get an entry from the index, waiting on initialization if necessary
@@ -186,14 +197,17 @@ export class StoryStore<TRenderer extends Renderer> {
     csfFile: CSFFile<TRenderer>;
   }): PreparedStory<TRenderer> {
     const storyAnnotations = csfFile.stories[storyId];
-    if (!storyAnnotations) throw new MissingStoryFromCsfFileError({ storyId });
+
+    if (!storyAnnotations) {
+      throw new MissingStoryFromCsfFileError({ storyId });
+    }
 
     const componentAnnotations = csfFile.meta;
 
     const story = this.prepareStoryWithCache(
       storyAnnotations,
       componentAnnotations,
-      this.projectAnnotations
+      csfFile.projectAnnotations ?? this.projectAnnotations
     );
     this.args.setInitial(story);
     this.hooks[story.id] = this.hooks[story.id] || new HooksContext();
@@ -232,12 +246,14 @@ export class StoryStore<TRenderer extends Renderer> {
   getStoryContext(story: PreparedStory<TRenderer>, { forceInitialArgs = false } = {}) {
     const userGlobals = this.userGlobals.get();
     const { initialGlobals } = this.userGlobals;
+    const reporting = new ReporterAPI();
     return prepareContext({
       ...story,
       args: forceInitialArgs ? story.initialArgs : this.args.get(story.id),
       initialGlobals,
       globalTypes: this.projectAnnotations.globalTypes,
       userGlobals,
+      reporting,
       globals: {
         ...userGlobals,
         ...story.storyGlobals,
@@ -246,15 +262,20 @@ export class StoryStore<TRenderer extends Renderer> {
     });
   }
 
-  addCleanupCallbacks(story: PreparedStory<TRenderer>, callbacks: CleanupCallback[]) {
-    this.cleanupCallbacks[story.id] = callbacks;
+  addCleanupCallbacks(story: PreparedStory<TRenderer>, ...callbacks: CleanupCallback[]) {
+    this.cleanupCallbacks[story.id] = (this.cleanupCallbacks[story.id] || []).concat(callbacks);
   }
 
   async cleanupStory(story: PreparedStory<TRenderer>): Promise<void> {
     this.hooks[story.id].clean();
 
     const callbacks = this.cleanupCallbacks[story.id];
-    if (callbacks) for (const callback of [...callbacks].reverse()) await callback();
+
+    if (callbacks) {
+      for (const callback of [...callbacks].reverse()) {
+        await callback();
+      }
+    }
 
     delete this.cleanupCallbacks[story.id];
   }
@@ -263,11 +284,16 @@ export class StoryStore<TRenderer extends Renderer> {
     options: { includeDocsOnly?: boolean } = { includeDocsOnly: false }
   ): Record<StoryId, StoryContextForEnhancers<TRenderer>> {
     const { cachedCSFFiles } = this;
-    if (!cachedCSFFiles) throw new CalledExtractOnStoreError();
+
+    if (!cachedCSFFiles) {
+      throw new CalledExtractOnStoreError();
+    }
 
     return Object.entries(this.storyIndex.entries).reduce(
       (acc, [storyId, { type, importPath }]) => {
-        if (type === 'docs') return acc;
+        if (type === 'docs') {
+          return acc;
+        }
 
         const csfFile = cachedCSFFiles[importPath];
         const story = this.storyFromCSFFile({ storyId, csfFile });
@@ -278,7 +304,9 @@ export class StoryStore<TRenderer extends Renderer> {
 
         acc[storyId] = Object.entries(story).reduce(
           (storyAcc, [key, value]) => {
-            if (key === 'moduleExport') return storyAcc;
+            if (key === 'moduleExport') {
+              return storyAcc;
+            }
             if (typeof value === 'function') {
               return storyAcc;
             }
@@ -287,110 +315,19 @@ export class StoryStore<TRenderer extends Renderer> {
             }
             return Object.assign(storyAcc, { [key]: value });
           },
-          { args: story.initialArgs }
+          {
+            //
+            args: story.initialArgs,
+            globals: {
+              ...this.userGlobals.initialGlobals,
+              ...this.userGlobals.globals,
+              ...story.storyGlobals,
+            },
+          }
         );
         return acc;
       },
       {} as Record<string, any>
     );
-  }
-
-  // TODO: Remove in 9.0
-  getSetStoriesPayload() {
-    const stories = this.extract({ includeDocsOnly: true });
-
-    const kindParameters: Parameters = Object.values(stories).reduce(
-      (acc: Parameters, { title }: { title: ComponentTitle }) => {
-        acc[title] = {};
-        return acc;
-      },
-      {} as Parameters
-    );
-
-    return {
-      v: 2,
-      globals: this.userGlobals.get(),
-      globalParameters: {},
-      kindParameters,
-      stories,
-    };
-  }
-
-  // TODO: Remove in 9.0
-  // NOTE: this is legacy `stories.json` data for the `extract` script.
-  // It is used to allow v7 Storybooks to be composed in v6 Storybooks, which expect a
-  // `stories.json` file with legacy fields (`kind` etc).
-  getStoriesJsonData = (): StoryIndexV3 => {
-    const value = this.getSetStoriesPayload();
-    const allowedParameters = ['fileName', 'docsOnly', 'framework', '__id', '__isArgsStory'];
-
-    const stories: Record<StoryId, V3CompatIndexEntry> = mapValues(value.stories, (story) => {
-      const { importPath } = this.storyIndex.entries[story.id];
-      return {
-        ...pick(story, ['id', 'name', 'title']),
-        importPath,
-        // These 3 fields were going to be dropped in v7, but instead we will keep them for the
-        // 7.x cycle so that v7 Storybooks can be composed successfully in v6 Storybook.
-        // In v8 we will (likely) completely drop support for `extract` and `getStoriesJsonData`
-        kind: story.title,
-        story: story.name,
-        parameters: {
-          ...pick(story.parameters, allowedParameters),
-          fileName: importPath,
-        },
-      };
-    });
-
-    return {
-      v: 3,
-      stories,
-    };
-  };
-
-  raw(): BoundStory<TRenderer>[] {
-    deprecate(
-      'StoryStore.raw() is deprecated and will be removed in 9.0, please use extract() instead'
-    );
-    return Object.values(this.extract())
-      .map(({ id }: { id: StoryId }) => this.fromId(id))
-      .filter(Boolean) as BoundStory<TRenderer>[];
-  }
-
-  fromId(storyId: StoryId): BoundStory<TRenderer> | null {
-    deprecate(
-      'StoryStore.fromId() is deprecated and will be removed in 9.0, please use loadStory() instead'
-    );
-
-    // Deprecated so won't make a proper error for this
-    if (!this.cachedCSFFiles)
-      // eslint-disable-next-line local-rules/no-uncategorized-errors
-      throw new Error('Cannot call fromId/raw() unless you call cacheAllCSFFiles() first.');
-
-    let importPath;
-    try {
-      ({ importPath } = this.storyIndex.storyIdToEntry(storyId));
-    } catch (err) {
-      return null;
-    }
-    const csfFile = this.cachedCSFFiles[importPath];
-    const story = this.storyFromCSFFile({ storyId, csfFile });
-    return {
-      ...story,
-      storyFn: (update) => {
-        const context = {
-          ...this.getStoryContext(story),
-          abortSignal: new AbortController().signal,
-          canvasElement: null!,
-          loaded: {},
-          step: (label, play) => story.runStep(label, play, context),
-          context: null!,
-          mount: null!,
-          canvas: {} as Canvas,
-          viewMode: 'story',
-        } as StoryContext<TRenderer>;
-
-        return story.unboundStoryFn({ ...context, ...update });
-      },
-    };
   }
 }

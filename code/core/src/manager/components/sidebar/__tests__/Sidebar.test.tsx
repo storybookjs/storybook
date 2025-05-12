@@ -1,14 +1,16 @@
 // @vitest-environment happy-dom
-
-import { afterEach, describe, test, expect } from 'vitest';
-import React from 'react';
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
-import { ThemeProvider, ensure, themes } from '@storybook/core/theming';
-
-import type { HashEntry, Refs } from '@storybook/core/manager-api';
-import type { Theme } from '@storybook/core/theming';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { RenderResult } from '@testing-library/react';
-import type { API_IndexHash } from '@storybook/core/types';
+import { afterEach, describe, expect, test } from 'vitest';
+
+import React from 'react';
+
+import type { API_IndexHash } from 'storybook/internal/types';
+
+import type { HashEntry, Refs } from 'storybook/manager-api';
+import type { Theme } from 'storybook/theming';
+import { ThemeProvider, ensure, themes } from 'storybook/theming';
+
 import { Sidebar } from '../Sidebar';
 import type { SidebarProps } from '../Sidebar';
 
@@ -19,15 +21,7 @@ const factory = (props: Partial<SidebarProps>): RenderResult => {
 
   return render(
     <ThemeProvider theme={theme}>
-      <Sidebar
-        menu={[]}
-        index={{}}
-        previewInitialized
-        refs={{}}
-        status={{}}
-        extra={[]}
-        {...props}
-      />
+      <Sidebar menu={[]} index={{}} previewInitialized refs={{}} allStatuses={{}} {...props} />
     </ThemeProvider>
   );
 };
@@ -48,6 +42,7 @@ const generateStories = ({ title, refId }: { title: string; refId?: string }): A
       name: root,
       children: [componentId],
       startCollapsed: false,
+      tags: [],
     },
     {
       type: 'component',
@@ -57,6 +52,7 @@ const generateStories = ({ title, refId }: { title: string; refId?: string }): A
       name: componentName,
       children: [docsId],
       parent: rootId,
+      tags: [],
     },
     // @ts-expect-error the missing fields are deprecated and replaced by the type prop
     {

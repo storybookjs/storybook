@@ -1,17 +1,13 @@
 ```tsx filename="setupTest.ts" renderer="react" language="ts"
 import { beforeAll } from 'vitest';
-import { render as testingLibraryRender } from '@testing-library/react';
-import { setProjectAnnotations } from '@storybook/react';
+// 👇 If you're using Next.js, import from @storybook/nextjs
+//   If you're using Next.js with Vite, import from @storybook/experimental-nextjs-vite
+import { setProjectAnnotations } from '@storybook/react-vite';
 // 👇 Import the exported annotations, if any, from the addons you're using; otherwise remove this
 import * as addonAnnotations from 'my-addon/preview';
 import * as previewAnnotations from './.storybook/preview';
 
-const annotations = setProjectAnnotations([
-  previewAnnotations,
-  addonAnnotations,
-  // You MUST provide this option to use portable stories with vitest
-  { testingLibraryRender },
-]);
+const annotations = setProjectAnnotations([previewAnnotations, addonAnnotations]);
 
 // Run Storybook's beforeAll hook
 beforeAll(annotations.beforeAll);
@@ -19,18 +15,13 @@ beforeAll(annotations.beforeAll);
 
 ```tsx filename="setupTest.ts" renderer="svelte" language="ts"
 import { beforeAll } from 'vitest';
-import { render as testingLibraryRender } from '@testing-library/svelte';
-import { setProjectAnnotations } from '@storybook/svelte';
+// 👇 If you're using Sveltekit, import from @storybook/sveltekit
+import { setProjectAnnotations } from '@storybook/svelte-vite';
 // 👇 Import the exported annotations, if any, from the addons you're using; otherwise remove this
 import * as addonAnnotations from 'my-addon/preview';
 import * as previewAnnotations from './.storybook/preview';
 
-const annotations = setProjectAnnotations([
-  previewAnnotations,
-  addonAnnotations,
-  // You MUST provide this option to use portable stories with vitest
-  { testingLibraryRender },
-]);
+const annotations = setProjectAnnotations([previewAnnotations, addonAnnotations]);
 
 // Run Storybook's beforeAll hook
 beforeAll(annotations.beforeAll);
@@ -38,18 +29,12 @@ beforeAll(annotations.beforeAll);
 
 ```tsx filename="setupTest.ts" renderer="vue" language="ts"
 import { beforeAll } from 'vitest';
-import { render as testingLibraryRender } from '@testing-library/vue';
-import { setProjectAnnotations } from '@storybook/vue3';
+import { setProjectAnnotations } from '@storybook/vue3-vite';
 // 👇 Import the exported annotations, if any, from the addons you're using; otherwise remove this
 import * as addonAnnotations from 'my-addon/preview';
 import * as previewAnnotations from './.storybook/preview';
 
-const annotations = setProjectAnnotations([
-  previewAnnotations,
-  addonAnnotations,
-  // You MUST provide this option to use portable stories with vitest
-  { testingLibraryRender },
-]);
+const annotations = setProjectAnnotations([previewAnnotations, addonAnnotations]);
 
 // Run Storybook's beforeAll hook
 beforeAll(annotations.beforeAll);

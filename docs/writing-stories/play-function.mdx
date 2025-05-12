@@ -5,42 +5,20 @@ sidebar:
   title: Play function
 ---
 
-<YouTubeCallout id="dcuzwCHI940" title="Component testing in Storybook with play functions" />
-
-`Play` functions are small snippets of code executed after the story renders. Enabling you to interact with your components and test scenarios that otherwise required user intervention.
-
-## Setup the interactions addon
-
-We recommend installing Storybook's [`addon-interactions`](https://storybook.js.org/addons/@storybook/addon-interactions) before you start writing stories with the `play` function. It's the perfect complement for it, including a handy set of UI controls to allow you command over the execution flow. At any time, you can pause, resume, rewind, and step through each interaction. Also providing you with an easy-to-use debugger for potential issues.
-
-Run the following command to install the addon and the required dependencies.
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="storybook-addon-interactions-addon-full-install.md" />
-
-{/* prettier-ignore-end */}
-
-Update your Storybook configuration (in `.storybook/main.js|ts`) to include the interactions addon.
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="storybook-interactions-addon-registration.md" />
-
-{/* prettier-ignore-end */}
+`Play` functions are small snippets of code executed after the story renders. They enable you to interact with your components and test scenarios that otherwise require user intervention.
 
 ## Writing stories with the play function
 
-Storybook's `play` functions are small code snippets that run once the story finishes rendering. Aided by the `addon-interactions`, it allows you to build component interactions and test scenarios that were impossible without user intervention. For example, if you were working on a registration form and wanted to validate it, you could write the following story with the `play` function:
+Storybook's `play` functions are small code snippets that run once the story finishes rendering. Aided by the [interactions panel](../essentials/interactions.mdx), it allows you to build component interactions and test scenarios that were impossible without user intervention. For example, if you were working on a registration form and wanted to validate it, you could write the following story with the `play` function:
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="register-component-with-play-function.md" usesCsf3 csf2Path="writing-stories/play-function#snippet-register-component-with-play-function" />
+<CodeSnippets path="register-component-with-play-function.md" />
 
 {/* prettier-ignore-end */}
 
 <Callout variant="info" icon="💡">
-  See the [Interaction testing documentation](../writing-tests/interaction-testing.mdx#api-for-user-events) for an overview of the available API events.
+  See the [component testing documentation](../writing-tests/component-testing.mdx#api-for-user-events) for an overview of the available API events.
 </Callout>
 
 When Storybook finishes rendering the story, it executes the steps defined within the `play` function, interacting with the component and filling the form's information. All of this without the need for user intervention. If you check your `Interactions` panel, you'll see the step-by-step flow.
@@ -51,7 +29,7 @@ Thanks to the [Component Story Format](../api/csf.mdx), an ES6 module based file
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="my-component-play-function-composition.md" usesCsf3 csf2Path="writing-stories/play-function#snippet-my-component-play-function-composition" />
+<CodeSnippets path="my-component-play-function-composition.md" />
 
 {/* prettier-ignore-end */}
 
@@ -65,7 +43,7 @@ A common type of component interaction is a button click. If you need to reprodu
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="my-component-play-function-with-clickevent.md" usesCsf3 csf2Path="writing-stories/play-function#snippet-my-component-play-function-with-clickevent" />
+<CodeSnippets path="my-component-play-function-with-clickevent.md" />
 
 {/* prettier-ignore-end */}
 
@@ -75,7 +53,7 @@ Asides from click events, you can also script additional events with the `play` 
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="my-component-play-function-with-selectevent.md" usesCsf3 csf2Path="writing-stories/play-function#snippet-my-component-play-function-with-selectevent" />
+<CodeSnippets path="my-component-play-function-with-selectevent.md" />
 
 {/* prettier-ignore-end */}
 
@@ -83,7 +61,7 @@ In addition to events, you can also create interactions with the `play` function
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="my-component-play-function-with-delay.md" usesCsf3 csf2Path="writing-stories/play-function#snippet-my-component-play-function-with-delay" />
+<CodeSnippets path="my-component-play-function-with-delay.md" />
 
 {/* prettier-ignore-end */}
 
@@ -93,7 +71,7 @@ You can also use the `play` function to verify the existence of an element based
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="my-component-play-function-waitfor.md" usesCsf3 csf2Path="writing-stories/play-function#snippet-my-component-play-function-waitfor" />
+<CodeSnippets path="my-component-play-function-waitfor.md" />
 
 {/* prettier-ignore-end */}
 
@@ -103,7 +81,7 @@ If you need, you can also adjust your `play` function to find elements based on 
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="my-component-play-function-alt-queries.md" usesCsf3 csf2Path="writing-stories/play-function#snippet-my-component-play-function-alt-queries" />
+<CodeSnippets path="my-component-play-function-alt-queries.md" />
 
 {/* prettier-ignore-end */}
 
@@ -117,7 +95,7 @@ Otherwise, if the component is not immediately available, for instance, due to a
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="my-component-play-function-query-findby.md" usesCsf3 csf2Path="writing-stories/play-function#snippet-my-component-play-function-query-findby" />
+<CodeSnippets path="my-component-play-function-query-findby.md" />
 
 {/* prettier-ignore-end */}
 
@@ -127,8 +105,8 @@ By default, each interaction you write inside your `play` function will be execu
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="my-component-play-function-with-canvas.md" usesCsf3 csf2Path="writing-stories/play-function#snippet-my-component-play-function-with-canvas" />
+<CodeSnippets path="my-component-play-function-with-canvas.md" />
 
 {/* prettier-ignore-end */}
 
-Applying these changes to your stories can provide a performance boost and improved error handling with [`addon-interactions`](https://storybook.js.org/addons/@storybook/addon-interactions).
+Applying these changes to your stories can provide a performance boost and improved error handling with the interactions panel.

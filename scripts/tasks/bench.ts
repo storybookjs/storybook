@@ -1,11 +1,9 @@
-/* eslint-disable import/extensions */
 import prettyBytes from 'pretty-bytes';
 import prettyTime from 'pretty-ms';
 
 import type { Task } from '../task';
-
-import { PORT as devPort, dev } from './dev';
-import { PORT as servePort, serve } from './serve';
+import { dev, PORT as devPort } from './dev';
+import { serve, PORT as servePort } from './serve';
 
 const logger = console;
 
@@ -20,10 +18,8 @@ export const bench: Task = {
     const controllers: AbortController[] = [];
     try {
       const { disableDocs } = options;
-      // @ts-expect-error Default import required for dynamic import processed by esbuild
-      const { browse } = (await import('../bench/browse.ts')).default;
-      // @ts-expect-error Default import required for dynamic import processed by esbuild
-      const { saveBench, loadBench } = (await import('../bench/utils.ts')).default;
+      const { browse } = await import('../bench/browse');
+      const { saveBench, loadBench } = await import('../bench/utils');
 
       const devController = await dev.run(details, { ...options, debug: false });
       if (!devController) {

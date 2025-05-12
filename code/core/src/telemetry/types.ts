@@ -1,5 +1,6 @@
-import type { StorybookConfig, TypescriptOptions } from '@storybook/core/types';
-import type { PM } from 'detect-package-manager';
+import type { StorybookConfig, TypescriptOptions } from 'storybook/internal/types';
+
+import type { DetectResult } from 'package-manager-detector';
 
 import type { MonorepoType } from './get-monorepo-type';
 
@@ -7,8 +8,10 @@ export type EventType =
   | 'boot'
   | 'dev'
   | 'build'
+  | 'index'
   | 'upgrade'
   | 'init'
+  | 'init-step'
   | 'scaffolded-empty'
   | 'browser'
   | 'canceled'
@@ -19,7 +22,11 @@ export type EventType =
   | 'remove'
   | 'save-story'
   | 'create-new-story-file'
-  | 'create-new-story-file-search';
+  | 'create-new-story-file-search'
+  | 'testing-module-watch-mode'
+  | 'testing-module-completed-report'
+  | 'testing-module-crash-report'
+  | 'addon-test';
 
 export interface Dependency {
   version: string | undefined;
@@ -34,6 +41,7 @@ export type StorybookMetadata = {
   storybookVersion?: string;
   storybookVersionSpecifier: string;
   generatedAt?: number;
+  userSince?: number;
   language: 'typescript' | 'javascript';
   framework?: {
     name: string;
@@ -43,8 +51,9 @@ export type StorybookMetadata = {
   renderer?: string;
   monorepo?: MonorepoType;
   packageManager?: {
-    type: PM;
-    version: string;
+    type: DetectResult['name'];
+    version: DetectResult['version'];
+    agent: DetectResult['agent'];
   };
   typescriptOptions?: Partial<TypescriptOptions>;
   addons?: Record<string, StorybookAddon>;
@@ -55,6 +64,7 @@ export type StorybookMetadata = {
     version: string;
   };
   testPackages?: Record<string, string | undefined>;
+  hasRouterPackage?: boolean;
   hasStorybookEslint?: boolean;
   hasStaticDirs?: boolean;
   hasCustomWebpack?: boolean;
@@ -64,6 +74,8 @@ export type StorybookMetadata = {
   preview?: {
     usesGlobals?: boolean;
   };
+  portableStoriesFileCount?: number;
+  applicationFileCount?: number;
 };
 
 export interface Payload {
@@ -76,6 +88,7 @@ export interface Options {
   configDir?: string;
   enableCrashReports?: boolean;
   stripMetadata?: boolean;
+  notify?: boolean;
 }
 
 export interface TelemetryData {

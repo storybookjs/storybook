@@ -1,13 +1,14 @@
-import chalk from 'chalk';
-import program from 'commander';
-import { z } from 'zod';
-import { dedent } from 'ts-dedent';
-import semver from 'semver';
 import { setOutput } from '@actions/core';
+import { program } from 'commander';
+import picocolors from 'picocolors';
+import semver from 'semver';
+import { dedent } from 'ts-dedent';
+import { z } from 'zod';
+
 import { esMain } from '../utils/esmain';
-import type { Change } from './utils/get-changes';
-import { getChanges, LABELS_BY_IMPORTANCE, RELEASED_LABELS } from './utils/get-changes';
 import { getCurrentVersion } from './get-current-version';
+import type { Change } from './utils/get-changes';
+import { LABELS_BY_IMPORTANCE, RELEASED_LABELS, getChanges } from './utils/get-changes';
 import type { PullRequestInfo } from './utils/get-github-info';
 
 program
@@ -245,9 +246,9 @@ export const run = async (rawOptions: unknown) => {
   const currentVersion = options.currentVersion || (await getCurrentVersion());
 
   console.log(
-    `💬 Generating PR description for ${chalk.blue(nextVersion)} between ${chalk.green(
+    `💬 Generating PR description for ${picocolors.blue(nextVersion)} between ${picocolors.green(
       currentVersion
-    )} and ${chalk.green('HEAD')}`
+    )} and ${picocolors.green('HEAD')}`
   );
 
   const { changes, changelogText } = await getChanges({
@@ -288,7 +289,7 @@ export const run = async (rawOptions: unknown) => {
   if (process.env.GITHUB_ACTIONS === 'true') {
     setOutput('description', description);
   }
-  console.log(`✅ Generated PR description for ${chalk.blue(nextVersion)}`);
+  console.log(`✅ Generated PR description for ${picocolors.blue(nextVersion)}`);
   if (verbose) {
     console.log(description);
   }

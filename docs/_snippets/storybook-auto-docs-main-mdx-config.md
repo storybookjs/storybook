@@ -7,7 +7,7 @@ export default {
     '../src/**/*.mdx',
     '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)',
   ],
-  addons: ['@storybook/addon-essentials'],
+  addons: ['@storybook/addon-docs'],
 };
 ```
 
@@ -23,9 +23,8 @@ const config: StorybookConfig = {
     '../src/**/*.mdx',
     '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)',
   ],
-  addons: ['@storybook/addon-essentials'],
+  addons: ['@storybook/addon-docs'],
 };
 
 export default config;
 ```
-

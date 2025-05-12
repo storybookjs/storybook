@@ -1,4 +1,4 @@
-import { type BeforeAll, type CleanupCallback } from '@storybook/csf';
+import { type BeforeAll, type CleanupCallback } from 'storybook/internal/csf';
 
 // Execute all the hooks in sequence, and return a function that will execute cleanups in reverse order
 export const composeBeforeAllHooks = (hooks: BeforeAll[]): BeforeAll => {
@@ -6,7 +6,10 @@ export const composeBeforeAllHooks = (hooks: BeforeAll[]): BeforeAll => {
     const cleanups: CleanupCallback[] = [];
     for (const hook of hooks) {
       const cleanup = await hook();
-      if (cleanup) cleanups.unshift(cleanup);
+
+      if (cleanup) {
+        cleanups.unshift(cleanup);
+      }
     }
     return async () => {
       for (const cleanup of cleanups) {

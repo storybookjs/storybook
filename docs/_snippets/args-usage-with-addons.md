@@ -1,5 +1,5 @@
 ```js filename="my-addon/src/manager.js|ts" renderer="common" language="js"
-import { useArgs } from '@storybook/manager-api';
+import { useArgs } from 'storybook/manager-api';
 
 const [args, updateArgs, resetArgs] = useArgs();
 
@@ -12,4 +12,3 @@ resetArgs((argNames: ['key']));
 // To reset all args
 resetArgs();
 ```
-

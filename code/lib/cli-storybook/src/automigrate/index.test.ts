@@ -1,7 +1,9 @@
-import { vi, it, expect, describe, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import type { JsPackageManager, PackageJsonWithDepsAndDevDeps } from 'storybook/internal/common';
+
 import { runFixes } from './index';
 import type { Fix } from './types';
-import type { JsPackageManager, PackageJsonWithDepsAndDevDeps } from '@storybook/core/common';
 
 const check1 = vi.fn();
 const run1 = vi.fn();
@@ -76,7 +78,6 @@ const beforeVersion = '6.5.15';
 const isUpgrade = true;
 
 const runFixWrapper = async ({
-  // eslint-disable-next-line @typescript-eslint/no-shadow
   beforeVersion,
   storybookVersion,
 }: {
@@ -87,6 +88,8 @@ const runFixWrapper = async ({
     fixes,
     dryRun,
     yes,
+    packageJson: {},
+    mainConfig: { stories: [] },
     rendererPackage,
     skipInstall,
     configDir,
@@ -132,15 +135,17 @@ describe('runFixes', () => {
     expect(fixResults).toEqual({
       'fix-1': 'succeeded',
     });
-    expect(run1).toHaveBeenCalledWith({
-      dryRun,
-      mainConfigPath,
-      packageManager,
-      result: {
-        some: 'result',
-      },
-      skipInstall,
-    });
+    expect(run1).toHaveBeenCalledWith(
+      expect.objectContaining({
+        dryRun,
+        mainConfigPath,
+        packageManager,
+        result: {
+          some: 'result',
+        },
+        skipInstall,
+      })
+    );
   });
 
   it('should fail if an error is thrown', async () => {

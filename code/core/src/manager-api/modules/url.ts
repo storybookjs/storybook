@@ -1,16 +1,18 @@
 import {
-  NAVIGATE_URL,
-  STORY_ARGS_UPDATED,
-  SET_CURRENT_STORY,
   GLOBALS_UPDATED,
+  NAVIGATE_URL,
+  SET_CURRENT_STORY,
+  STORY_ARGS_UPDATED,
   UPDATE_QUERY_PARAMS,
-} from '@storybook/core/core-events';
-import type { NavigateOptions } from '@storybook/core/router';
-import { queryFromLocation, buildArgsParam } from '@storybook/core/router';
-import { dequal as deepEqual } from 'dequal';
+} from 'storybook/internal/core-events';
+import { buildArgsParam, queryFromLocation } from 'storybook/internal/router';
+import type { NavigateOptions } from 'storybook/internal/router';
+import type { API_Layout, API_UI, Args } from 'storybook/internal/types';
+
 import { global } from '@storybook/global';
 
-import type { API_Layout, API_UI, Args } from '@storybook/core/types';
+import { dequal as deepEqual } from 'dequal';
+
 import type { ModuleArgs, ModuleFn } from '../lib/types';
 import { defaultLayoutState } from './layout';
 
@@ -21,8 +23,13 @@ export interface SubState {
 }
 
 const parseBoolean = (value: string) => {
-  if (value === 'true' || value === '1') return true;
-  if (value === 'false' || value === '0') return false;
+  if (value === 'true' || value === '1') {
+    return true;
+  }
+
+  if (value === 'false' || value === '0') {
+    return false;
+  }
   return undefined;
 };
 
@@ -104,12 +111,11 @@ export interface QueryParams {
   [key: string]: string | undefined;
 }
 
-/**
- * SubAPI for managing URL navigation and state.
- */
+/** SubAPI for managing URL navigation and state. */
 export interface SubAPI {
   /**
    * Navigate to a new URL.
+   *
    * @param {string} url - The URL to navigate to.
    * @param {NavigateOptions} options - Options for the navigation.
    * @returns {void}
@@ -117,39 +123,47 @@ export interface SubAPI {
   navigateUrl: (url: string, options: NavigateOptions) => void;
   /**
    * Get the value of a query parameter from the current URL.
+   *
    * @param {string} key - The key of the query parameter to get.
-   * @returns {string | undefined} The value of the query parameter, or undefined if it does not exist.
+   * @returns {string | undefined} The value of the query parameter, or undefined if it does not
+   *   exist.
    */
   getQueryParam: (key: string) => string | undefined;
   /**
    * Returns an object containing the current state of the URL.
+   *
    * @returns {{
-   *   queryParams: QueryParams,
-   *   path: string,
-   *   viewMode?: string,
-   *   storyId?: string,
-   *   url: string
-   * }} An object containing the current state of the URL.
+   *   queryParams: QueryParams;
+   *   path: string;
+   *   viewMode?: string;
+   *   storyId?: string;
+   *   url: string;
+   * }}
+   *   An object containing the current state of the URL.
    */
   getUrlState: () => {
     queryParams: QueryParams;
     path: string;
+    hash: string;
     viewMode?: string;
     storyId?: string;
     url: string;
   };
   /**
    * Set the query parameters for the current URL.
+   *
    * @param {QueryParams} input - An object containing the query parameters to set.
    * @returns {void}
    */
   setQueryParams: (input: QueryParams) => void;
   /**
    * Set the query parameters for the current URL & navigates.
+   *
    * @param {QueryParams} input - An object containing the query parameters to set.
+   * @param {NavigateOptions} options - Options for the navigation.
    * @returns {void}
    */
-  applyQueryParams: (input: QueryParams) => void;
+  applyQueryParams: (input: QueryParams, options?: NavigateOptions) => void;
 }
 
 export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
@@ -174,8 +188,15 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
       return customQueryParams ? customQueryParams[key] : undefined;
     },
     getUrlState() {
-      const { path, customQueryParams, storyId, url, viewMode } = store.getState();
-      return { path, queryParams: customQueryParams, storyId, url, viewMode };
+      const { location, path, customQueryParams, storyId, url, viewMode } = store.getState();
+      return {
+        path,
+        hash: location.hash ?? '',
+        queryParams: customQueryParams,
+        storyId,
+        url,
+        viewMode,
+      };
     },
     setQueryParams(input) {
       const { customQueryParams } = store.getState();
@@ -194,10 +215,10 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
         provider.channel?.emit(UPDATE_QUERY_PARAMS, update);
       }
     },
-    applyQueryParams(input) {
-      const { path, queryParams } = api.getUrlState();
+    applyQueryParams(input, options) {
+      const { path, hash = '', queryParams } = api.getUrlState();
 
-      navigateTo(path, { ...queryParams, ...input } as any);
+      navigateTo(`${path}${hash}`, { ...queryParams, ...input } as any, options);
       api.setQueryParams(input);
     },
     navigateUrl(url, options) {
@@ -206,18 +227,25 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
   };
 
   /**
-   * Sets `args` parameter in URL, omitting any args that have their initial value or cannot be unserialized safely.
+   * Sets `args` parameter in URL, omitting any args that have their initial value or cannot be
+   * unserialized safely.
    */
   const updateArgsParam = () => {
-    const { path, queryParams, viewMode } = api.getUrlState();
-    if (viewMode !== 'story') return;
+    const { path, hash = '', queryParams, viewMode } = api.getUrlState();
+
+    if (viewMode !== 'story') {
+      return;
+    }
 
     const currentStory = fullAPI.getCurrentStoryData();
-    if (currentStory?.type !== 'story') return;
+
+    if (currentStory?.type !== 'story') {
+      return;
+    }
 
     const { args, initialArgs } = currentStory;
     const argsString = buildArgsParam(initialArgs, args as Args);
-    navigateTo(path, { ...queryParams, args: argsString }, { replace: true });
+    navigateTo(`${path}${hash}`, { ...queryParams, args: argsString }, { replace: true });
     api.setQueryParams({ args: argsString });
   };
 
@@ -226,18 +254,22 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
   let handleOrId: any;
   provider.channel?.on(STORY_ARGS_UPDATED, () => {
     if ('requestIdleCallback' in globalWindow) {
-      if (handleOrId) globalWindow.cancelIdleCallback(handleOrId);
+      if (handleOrId) {
+        globalWindow.cancelIdleCallback(handleOrId);
+      }
       handleOrId = globalWindow.requestIdleCallback(updateArgsParam, { timeout: 1000 });
     } else {
-      if (handleOrId) clearTimeout(handleOrId);
+      if (handleOrId) {
+        clearTimeout(handleOrId);
+      }
       setTimeout(updateArgsParam, 100);
     }
   });
 
   provider.channel?.on(GLOBALS_UPDATED, ({ userGlobals, initialGlobals }: any) => {
-    const { path, queryParams } = api.getUrlState();
+    const { path, hash = '', queryParams } = api.getUrlState();
     const globalsString = buildArgsParam(initialGlobals, userGlobals);
-    navigateTo(path, { ...queryParams, globals: globalsString }, { replace: true });
+    navigateTo(`${path}${hash}`, { ...queryParams, globals: globalsString }, { replace: true });
     api.setQueryParams({ globals: globalsString });
   });
 

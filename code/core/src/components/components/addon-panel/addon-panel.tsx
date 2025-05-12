@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
-import React, { useRef, useEffect } from 'react';
+import type { ReactElement } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 const usePrevious = (value: any) => {
   const ref = useRef();
@@ -20,7 +20,7 @@ const useUpdate = (update: boolean, value: any) => {
 
 export interface AddonPanelProps {
   active: boolean;
-  children: ReactNode;
+  children: ReactElement;
 }
 
 export const AddonPanel = ({ active, children }: AddonPanelProps) => {

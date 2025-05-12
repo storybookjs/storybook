@@ -1,61 +1,60 @@
-import { global } from '@storybook/global';
-import { toId, sanitize } from '@storybook/csf';
-import type {
-  StoryKind,
-  ComponentTitle,
-  StoryName,
-  StoryId,
-  Args,
-  API_ComposedRef,
-  API_HashEntry,
-  API_LeafEntry,
-  API_PreparedStoryIndex,
-  SetStoriesPayload,
-  API_StoryEntry,
-  StoryIndex,
-  API_LoadedRefData,
-  API_IndexHash,
-  StoryPreparedPayload,
-  DocsPreparedPayload,
-  API_DocsEntry,
-  API_ViewMode,
-  API_StatusState,
-  API_StatusUpdate,
-  API_FilterFunction,
-} from '@storybook/core/types';
+import { logger } from 'storybook/internal/client-logger';
 import {
-  PRELOAD_ENTRIES,
-  STORY_PREPARED,
-  UPDATE_STORY_ARGS,
-  RESET_STORY_ARGS,
-  STORY_ARGS_UPDATED,
-  STORY_CHANGED,
-  SELECT_STORY,
-  SET_STORIES,
-  SET_INDEX,
-  STORY_SPECIFIED,
-  STORY_INDEX_INVALIDATED,
   CONFIG_ERROR,
   CURRENT_STORY_WAS_SET,
-  STORY_MISSING,
   DOCS_PREPARED,
-  SET_CURRENT_STORY,
+  PRELOAD_ENTRIES,
+  RESET_STORY_ARGS,
+  SELECT_STORY,
   SET_CONFIG,
-} from '@storybook/core/core-events';
-import { logger } from '@storybook/core/client-logger';
+  SET_CURRENT_STORY,
+  SET_FILTER,
+  SET_INDEX,
+  SET_STORIES,
+  STORY_ARGS_UPDATED,
+  STORY_CHANGED,
+  STORY_INDEX_INVALIDATED,
+  STORY_MISSING,
+  STORY_PREPARED,
+  STORY_SPECIFIED,
+  UPDATE_STORY_ARGS,
+} from 'storybook/internal/core-events';
+import { sanitize, toId } from 'storybook/internal/csf';
+import type {
+  API_ComposedRef,
+  API_DocsEntry,
+  API_FilterFunction,
+  API_HashEntry,
+  API_IndexHash,
+  API_LeafEntry,
+  API_LoadedRefData,
+  API_PreparedStoryIndex,
+  API_StoryEntry,
+  API_ViewMode,
+  Args,
+  ComponentTitle,
+  DocsPreparedPayload,
+  SetStoriesPayload,
+  StoryId,
+  StoryIndex,
+  StoryKind,
+  StoryName,
+  StoryPreparedPayload,
+} from 'storybook/internal/types';
+
+import { global } from '@storybook/global';
 
 import { getEventMetadata } from '../lib/events';
-
 import {
+  addPreparedStories,
   denormalizeStoryParameters,
-  transformStoryIndexToStoriesHash,
   getComponentLookupList,
   getStoriesLookupList,
-  addPreparedStories,
+  transformStoryIndexToStoriesHash,
 } from '../lib/stories';
-
-import type { ComposedRef } from '../root';
 import type { ModuleFn } from '../lib/types';
+import type { ComposedRef } from '../root';
+import { fullStatusStore } from '../stores/status';
 
 const { fetch } = global;
 const STORY_INDEX_PATH = './index.json';
@@ -73,14 +72,14 @@ export interface SubState extends API_LoadedRefData {
   storyId: StoryId;
   internal_index?: API_PreparedStoryIndex;
   viewMode: API_ViewMode;
-  status: API_StatusState;
   filters: Record<string, API_FilterFunction>;
 }
 
 export interface SubAPI {
   /**
-   * The `storyId` method is a reference to the `toId` function from `@storybook/csf`, which is used to generate a unique ID for a story.
-   * This ID is used to identify a specific story in the Storybook index.
+   * The `storyId` method is a reference to the `toId` function from `@storybook/csf`, which is used
+   * to generate a unique ID for a story. This ID is used to identify a specific story in the
+   * Storybook index.
    *
    * @type {typeof toId}
    */
@@ -131,14 +130,16 @@ export interface SubAPI {
   /**
    * Jumps to the next or previous component in the index.
    *
-   * @param {Direction} direction - The direction to jump. Use -1 to jump to the previous component, and 1 to jump to the next component.
+   * @param {Direction} direction - The direction to jump. Use -1 to jump to the previous component,
+   *   and 1 to jump to the next component.
    * @returns {void}
    */
   jumpToComponent: (direction: Direction) => void;
   /**
    * Jumps to the next or previous story in the story index.
    *
-   * @param {Direction} direction - The direction to jump. Use -1 to jump to the previous story, and 1 to jump to the next story.
+   * @param {Direction} direction - The direction to jump. Use -1 to jump to the previous story, and
+   *   1 to jump to the next story.
    * @returns {void}
    */
   jumpToStory: (direction: Direction) => void;
@@ -146,7 +147,8 @@ export interface SubAPI {
    * Returns the data for the given story ID and optional ref ID.
    *
    * @param {StoryId} storyId - The ID of the story to retrieve data for.
-   * @param {string} [refId] - The ID of the ref to retrieve data for. If not provided, retrieves data for the default ref.
+   * @param {string} [refId] - The ID of the ref to retrieve data for. If not provided, retrieves
+   *   data for the default ref.
    * @returns {API_LeafEntry} The data for the given story ID and optional ref ID.
    */
   getData: (storyId: StoryId, refId?: string) => API_LeafEntry;
@@ -154,16 +156,21 @@ export interface SubAPI {
    * Returns a boolean indicating whether the given story ID and optional ref ID have been prepared.
    *
    * @param {StoryId} storyId - The ID of the story to check.
-   * @param {string} [refId] - The ID of the ref to check. If not provided, checks all refs for the given story ID.
-   * @returns {boolean} A boolean indicating whether the given story ID and optional ref ID have been prepared.
+   * @param {string} [refId] - The ID of the ref to check. If not provided, checks all refs for the
+   *   given story ID.
+   * @returns {boolean} A boolean indicating whether the given story ID and optional ref ID have
+   *   been prepared.
    */
   isPrepared: (storyId: StoryId, refId?: string) => boolean;
   /**
    * Returns the parameters for the given story ID and optional ref ID.
    *
-   * @param {StoryId | { storyId: StoryId; refId: string }} storyId - The ID of the story to retrieve parameters for, or an object containing the story ID and ref ID.
-   * @param {ParameterName} [parameterName] - The name of the parameter to retrieve. If not provided, returns all parameters.
-   * @returns {API_StoryEntry['parameters'] | any} The parameters for the given story ID and optional ref ID.
+   * @param {StoryId | { storyId: StoryId; refId: string }} storyId - The ID of the story to
+   *   retrieve parameters for, or an object containing the story ID and ref ID.
+   * @param {ParameterName} [parameterName] - The name of the parameter to retrieve. If not
+   *   provided, returns all parameters.
+   * @returns {API_StoryEntry['parameters'] | any} The parameters for the given story ID and
+   *   optional ref ID.
    */
   getParameters: (
     storyId: StoryId | { storyId: StoryId; refId: string },
@@ -173,7 +180,8 @@ export interface SubAPI {
    * Returns the current value of the specified parameter for the currently selected story.
    *
    * @template S - The type of the parameter value.
-   * @param {ParameterName} [parameterName] - The name of the parameter to retrieve. If not provided, returns all parameters.
+   * @param {ParameterName} [parameterName] - The name of the parameter to retrieve. If not
+   *   provided, returns all parameters.
    * @returns {S} The value of the specified parameter for the currently selected story.
    */
   getCurrentParameter<S>(parameterName?: ParameterName): S;
@@ -189,7 +197,8 @@ export interface SubAPI {
    * Resets the arguments for the given story to their initial values.
    *
    * @param {API_StoryEntry} story - The story to reset the arguments for.
-   * @param {string[]} [argNames] - An optional array of argument names to reset. If not provided, all arguments will be reset.
+   * @param {string[]} [argNames] - An optional array of argument names to reset. If not provided,
+   *   all arguments will be reset.
    * @returns {void}
    */
   resetStoryArgs: (story: API_StoryEntry, argNames?: string[]) => void;
@@ -198,7 +207,8 @@ export interface SubAPI {
    *
    * @param {API_IndexHash} index - The story index to search for the leaf entry in.
    * @param {StoryId} storyId - The ID of the story to find the leaf entry for.
-   * @returns {API_LeafEntry} The leaf entry for the given story ID, or null if no leaf entry was found.
+   * @returns {API_LeafEntry} The leaf entry for the given story ID, or null if no leaf entry was
+   *   found.
    */
   findLeafEntry(index: API_IndexHash, storyId: StoryId): API_LeafEntry;
   /**
@@ -210,7 +220,16 @@ export interface SubAPI {
    */
   findLeafStoryId(index: API_IndexHash, storyId: StoryId): StoryId;
   /**
-   * Finds the ID of the sibling story in the given direction for the given story ID in the given story index.
+   * Finds all the leaf story IDs for the given entry ID in the given index.
+   *
+   * @param {StoryId} entryId - The ID of the entry to find the leaf story IDs for.
+   * @returns {StoryId[]} The IDs of all the leaf stories, or an empty array if no leaf stories were
+   *   found.
+   */
+  findAllLeafStoryIds(entryId: string): StoryId[];
+  /**
+   * Finds the ID of the sibling story in the given direction for the given story ID in the given
+   * story index.
    *
    * @param {StoryId} storyId - The ID of the story to find the sibling of.
    * @param {API_IndexHash} index - The story index to search for the sibling in.
@@ -256,21 +275,11 @@ export interface SubAPI {
    */
   setPreviewInitialized: (ref?: ComposedRef) => Promise<void>;
   /**
-   * Updates the status of a collection of stories.
-   *
-   * @param {string} addonId - The ID of the addon to update.
-   * @param {StatusUpdate} update - An object containing the updated status information.
-   * @returns {Promise<void>} A promise that resolves when the status has been updated.
-   */
-  experimental_updateStatus: (
-    addonId: string,
-    update: API_StatusUpdate | ((state: API_StatusState) => API_StatusUpdate)
-  ) => Promise<void>;
-  /**
    * Updates the filtering of the index.
    *
    * @param {string} addonId - The ID of the addon to update.
-   * @param {API_FilterFunction} filterFunction - A function that returns a boolean based on the story, index and status.
+   * @param {API_FilterFunction} filterFunction - A function that returns a boolean based on the
+   *   story, index and status.
    * @returns {Promise<void>} A promise that resolves when the state has been updated.
    */
   experimental_setFilter: (addonId: string, filterFunction: API_FilterFunction) => Promise<void>;
@@ -324,8 +333,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         return undefined;
       }
       if (refId) {
-        // @ts-expect-error (possibly undefined)
-        return refs[refId].index ? refs[refId].index[storyId] : undefined;
+        return refs?.[refId]?.index?.[storyId] ?? undefined;
       }
       return index ? index[storyId] : undefined;
     },
@@ -430,7 +438,9 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         // Find the entry (group, component or story) that is referred to
         const entry = titleOrId ? hash[titleOrId] || hash[sanitize(titleOrId)] : hash[kindSlug];
 
-        if (!entry) throw new Error(`Unknown id or title: '${titleOrId}'`);
+        if (!entry) {
+          throw new Error(`Unknown id or title: '${titleOrId}'`);
+        }
 
         store.setState({
           settings: { ...store.getState().settings, lastTrackedStoryId: entry.id },
@@ -472,6 +482,25 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     },
     findLeafStoryId(index, storyId) {
       return api.findLeafEntry(index, storyId)?.id;
+    },
+    findAllLeafStoryIds(entryId) {
+      const { index } = store.getState();
+      if (!index) {
+        return [];
+      }
+      const findChildEntriesRecursively = (currentEntryId: StoryId, results: StoryId[] = []) => {
+        const node = index[currentEntryId];
+        if (!node) {
+          return results;
+        }
+        if (node.type === 'story') {
+          results.push(node.id);
+        } else if ('children' in node) {
+          node.children.forEach((childId) => findChildEntriesRecursively(childId, results));
+        }
+        return results;
+      };
+      return findChildEntriesRecursively(entryId, []);
     },
     findSiblingStoryId(storyId, index, direction, toSiblingGroup): any {
       if (toSiblingGroup) {
@@ -523,7 +552,10 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     fetchIndex: async () => {
       try {
         const result = await fetch(STORY_INDEX_PATH);
-        if (result.status !== 200) throw new Error(await result.text());
+
+        if (result.status !== 200) {
+          throw new Error(await result.text());
+        }
 
         const storyIndex = (await result.json()) as StoryIndex;
 
@@ -542,41 +574,62 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     // The story index we receive on fetchStoryIndex is not, but all the prepared fields are optional
     // so we can cast one to the other easily enough
     setIndex: async (input) => {
-      const { index: oldHash, status, filters } = store.getState();
+      const { filteredIndex: oldFilteredHash, index: oldHash, filters } = store.getState();
+      const allStatuses = fullStatusStore.getAll();
+      const newFilteredHash = transformStoryIndexToStoriesHash(input, {
+        provider,
+        docsOptions,
+        filters,
+        allStatuses,
+      });
       const newHash = transformStoryIndexToStoriesHash(input, {
         provider,
         docsOptions,
-        status,
-        filters,
+        filters: {},
+        allStatuses,
       });
 
-      // Now we need to patch in the existing prepared stories
-      const output = addPreparedStories(newHash, oldHash);
-
-      await store.setState({ internal_index: input, index: output, indexError: undefined });
+      await store.setState({
+        internal_index: input,
+        filteredIndex: addPreparedStories(newFilteredHash, oldFilteredHash),
+        index: addPreparedStories(newHash, oldHash),
+        indexError: undefined,
+      });
     },
+    // FIXME: is there a bug where filtered stories get added back in on updateStory???
     updateStory: async (
       storyId: StoryId,
       update: StoryUpdate,
       ref?: API_ComposedRef
     ): Promise<void> => {
       if (!ref) {
-        const { index } = store.getState();
-        if (!index) {
-          return;
+        const { index, filteredIndex } = store.getState();
+        if (index) {
+          index[storyId] = {
+            ...index[storyId],
+            ...update,
+          } as API_StoryEntry;
         }
-        index[storyId] = {
-          ...index[storyId],
-          ...update,
-        } as API_StoryEntry;
-        await store.setState({ index });
+        if (filteredIndex) {
+          filteredIndex[storyId] = {
+            ...filteredIndex[storyId],
+            ...update,
+          } as API_StoryEntry;
+        }
+        if (index || filteredIndex) {
+          await store.setState({ index, filteredIndex });
+        }
       } else {
-        const { id: refId, index }: any = ref;
+        const { id: refId, index, filteredIndex }: any = ref;
         index[storyId] = {
           ...index[storyId],
           ...update,
         } as API_StoryEntry;
-        await fullAPI.updateRef(refId, { index });
+        filteredIndex[storyId] = {
+          ...filteredIndex[storyId],
+          ...update,
+        } as API_StoryEntry;
+        await fullAPI.updateRef(refId, { index, filteredIndex });
       }
     },
     updateDocs: async (
@@ -585,22 +638,33 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       ref?: API_ComposedRef
     ): Promise<void> => {
       if (!ref) {
-        const { index } = store.getState();
-        if (!index) {
-          return;
+        const { index, filteredIndex } = store.getState();
+        if (index) {
+          index[docsId] = {
+            ...index[docsId],
+            ...update,
+          } as API_DocsEntry;
         }
-        index[docsId] = {
-          ...index[docsId],
-          ...update,
-        } as API_DocsEntry;
-        await store.setState({ index });
+        if (filteredIndex) {
+          filteredIndex[docsId] = {
+            ...filteredIndex[docsId],
+            ...update,
+          } as API_DocsEntry;
+        }
+        if (index || filteredIndex) {
+          await store.setState({ index, filteredIndex });
+        }
       } else {
-        const { id: refId, index }: any = ref;
+        const { id: refId, index, filteredIndex }: any = ref;
         index[docsId] = {
           ...index[docsId],
           ...update,
         } as API_DocsEntry;
-        await fullAPI.updateRef(refId, { index });
+        filteredIndex[docsId] = {
+          ...filteredIndex[docsId],
+          ...update,
+        } as API_DocsEntry;
+        await fullAPI.updateRef(refId, { index, filteredIndex });
       }
     },
     setPreviewInitialized: async (ref) => {
@@ -611,42 +675,6 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       }
     },
 
-    /* EXPERIMENTAL APIs */
-    experimental_updateStatus: async (id, input) => {
-      const { status, internal_index: index } = store.getState();
-      const newStatus = { ...status };
-
-      const update = typeof input === 'function' ? input(status) : input;
-
-      if (Object.keys(update).length === 0) {
-        return;
-      }
-
-      Object.entries(update).forEach(([storyId, value]) => {
-        newStatus[storyId] = { ...(newStatus[storyId] || {}) };
-        if (value === null) {
-          delete newStatus[storyId][id];
-        } else {
-          newStatus[storyId][id] = value;
-        }
-
-        if (Object.keys(newStatus[storyId]).length === 0) {
-          delete newStatus[storyId];
-        }
-      });
-
-      await store.setState({ status: newStatus }, { persistence: 'session' });
-
-      if (index) {
-        // We need to re-prepare the index
-        await api.setIndex(index);
-
-        const refs = await fullAPI.getRefs();
-        Object.entries(refs).forEach(([refId, { internal_index, ...ref }]) => {
-          fullAPI.setRef(refId, { ...ref, storyIndex: internal_index }, true);
-        });
-      }
-    },
     experimental_setFilter: async (id, filterFunction) => {
       await store.setState({ filters: { ...store.getState().filters, [id]: filterFunction } });
 
@@ -662,6 +690,8 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       Object.entries(refs).forEach(([refId, { internal_index, ...ref }]) => {
         fullAPI.setRef(refId, { ...ref, storyIndex: internal_index }, true);
       });
+
+      provider.channel?.emit(SET_FILTER, { id });
     },
   };
 
@@ -692,9 +722,11 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         const isStory = !(type === 'root' || type === 'component' || type === 'group');
 
         /**
-         * When storybook starts, we want to navigate to the first story.
-         * But there are a few exceptions:
-         * - If the current storyId and viewMode are already set/correct AND the url section is a leaf-type.
+         * When storybook starts, we want to navigate to the first story. But there are a few
+         * exceptions:
+         *
+         * - If the current storyId and viewMode are already set/correct AND the url section is a
+         *   leaf-type.
          * - If the user has navigated away already.
          * - If the user started storybook with a specific page-URL like "/settings/about"
          */
@@ -868,6 +900,23 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     }
   });
 
+  fullStatusStore.onAllStatusChange(async () => {
+    // re-apply the filters when the statuses change
+
+    const { internal_index: index } = store.getState();
+
+    if (!index) {
+      return;
+    }
+    // apply new filters by setting the index again
+    await api.setIndex(index);
+
+    const refs = await fullAPI.getRefs();
+    Object.entries(refs).forEach(([refId, { internal_index, ...ref }]) => {
+      fullAPI.setRef(refId, { ...ref, storyIndex: internal_index }, true);
+    });
+  });
+
   const config = provider.getConfig();
 
   return {
@@ -877,7 +926,6 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       viewMode: initialViewMode,
       hasCalledSetOptions: false,
       previewInitialized: false,
-      status: {},
       filters: config?.sidebar?.filters || {},
     },
     init: async () => {

@@ -1,16 +1,17 @@
+import { readdirSync } from 'node:fs';
+import { rm } from 'node:fs/promises';
+
 import boxen from 'boxen';
-import chalk from 'chalk';
+// eslint-disable-next-line depend/ban-dependencies
 import execa from 'execa';
-import { readdirSync, remove } from 'fs-extra';
+import picocolors from 'picocolors';
 import prompts from 'prompts';
 import { dedent } from 'ts-dedent';
 
-import { telemetry } from 'storybook/internal/telemetry';
-
-import { GenerateNewProjectOnInitError } from 'storybook/internal/server-errors';
-import { logger } from 'storybook/internal/node-logger';
-
-import type { PackageManagerName } from 'storybook/internal/common';
+import type { PackageManagerName } from '../../../core/src/common/js-package-manager/JsPackageManager';
+import { logger } from '../../../core/src/node-logger';
+import { GenerateNewProjectOnInitError } from '../../../core/src/server-errors';
+import { telemetry } from '../../../core/src/telemetry';
 import type { CommandOptions } from './generators/types';
 
 type CoercedPackageManagerName = 'npm' | 'yarn' | 'pnpm';
@@ -24,9 +25,7 @@ interface SupportedProject {
   createScript: Record<CoercedPackageManagerName, string>;
 }
 
-/**
- * The supported projects.
- */
+/** The supported projects. */
 const SUPPORTED_PROJECTS: Record<string, SupportedProject> = {
   'react-vite-ts': {
     displayName: {
@@ -36,7 +35,7 @@ const SUPPORTED_PROJECTS: Record<string, SupportedProject> = {
     },
     createScript: {
       npm: 'npm create vite@latest . -- --template react-ts',
-      yarn: 'yarn create vite@latest . --template react-ts',
+      yarn: 'yarn create vite . --template react-ts',
       pnpm: 'pnpm create vite@latest . --template react-ts',
     },
   },
@@ -46,9 +45,10 @@ const SUPPORTED_PROJECTS: Record<string, SupportedProject> = {
       language: 'TS',
     },
     createScript: {
-      npm: 'npm create next-app . -- --typescript --use-npm --eslint --tailwind --no-app --import-alias="@/*" --src-dir',
-      yarn: 'yarn create next-app . --typescript --use-yarn --eslint --tailwind --no-app --import-alias="@/*" --src-dir',
-      pnpm: 'pnpm create next-app . --typescript --use-pnpm --eslint --tailwind --no-app --import-alias="@/*" --src-dir',
+      npm: 'npm create next-app . -- --turbopack --typescript --use-npm --eslint --tailwind --no-app --import-alias="@/*" --src-dir',
+      // yarn doesn't support version ranges, so we have to use npx
+      yarn: 'npx create-next-app . --turbopack --typescript --use-yarn --eslint --tailwind --no-app --import-alias="@/*" --src-dir',
+      pnpm: 'pnpm create next-app . --turbopack --typescript --use-pnpm --eslint --tailwind --no-app --import-alias="@/*" --src-dir',
     },
   },
   'vue-vite-ts': {
@@ -59,7 +59,7 @@ const SUPPORTED_PROJECTS: Record<string, SupportedProject> = {
     },
     createScript: {
       npm: 'npm create vite@latest . -- --template vue-ts',
-      yarn: 'yarn create vite@latest . --template vue-ts',
+      yarn: 'yarn create vite . --template vue-ts',
       pnpm: 'pnpm create vite@latest . --template vue-ts',
     },
   },
@@ -82,7 +82,7 @@ const SUPPORTED_PROJECTS: Record<string, SupportedProject> = {
     },
     createScript: {
       npm: 'npm create vite@latest . -- --template lit-ts',
-      yarn: 'yarn create vite@latest . --template lit-ts && touch yarn.lock && yarn set version berry && yarn config set nodeLinker pnp',
+      yarn: 'yarn create vite . --template lit-ts && touch yarn.lock && yarn set version berry && yarn config set nodeLinker pnp',
       pnpm: 'pnpm create vite@latest . --template lit-ts',
     },
   },
@@ -103,7 +103,7 @@ const packageManagerToCoercedName = (
 
 const buildProjectDisplayNameForPrint = ({ displayName }: SupportedProject) => {
   const { type, builder, language } = displayName;
-  return `${chalk.bold.blue(type)} ${builder ? `+ ${builder} ` : ''}(${language})`;
+  return `${picocolors.bold(picocolors.blue(type))} ${builder ? `+ ${builder} ` : ''}(${language})`;
 };
 
 /**
@@ -122,14 +122,14 @@ export const scaffoldNewProject = async (
       dedent`
         Would you like to generate a new project from the following list?
 
-        ${chalk.bold('Note:')}
+        ${picocolors.bold('Note:')}
         Storybook supports many more frameworks and bundlers than listed below. If you don't see your
         preferred setup, you can still generate a project then rerun this command to add Storybook.
 
-        ${chalk.bold('Press ^C at any time to quit.')}
+        ${picocolors.bold('Press ^C at any time to quit.')}
       `,
       {
-        title: chalk.bold('🔎 Empty directory detected'),
+        title: picocolors.bold('🔎 Empty directory detected'),
         padding: 1,
         borderStyle: 'double',
         borderColor: 'yellow',
@@ -167,7 +167,7 @@ export const scaffoldNewProject = async (
 
   logger.line(1);
   logger.plain(
-    `Creating a new "${projectDisplayName}" project with ${chalk.bold(packageManagerName)}...`
+    `Creating a new "${projectDisplayName}" project with ${picocolors.bold(packageManagerName)}...`
   );
   logger.line(1);
 
@@ -176,8 +176,19 @@ export const scaffoldNewProject = async (
   try {
     // If target directory has a .cache folder, remove it
     // so that it does not block the creation of the new project
-    await remove(`${targetDir}/.cache`);
+    await rm(`${targetDir}/.cache`, { recursive: true, force: true });
+  } catch (e) {
+    //
+  }
+  try {
+    // If target directory has a node_modules folder, remove it
+    // so that it does not block the creation of the new project
+    await rm(`${targetDir}/node_modules`, { recursive: true, force: true });
+  } catch (e) {
+    //
+  }
 
+  try {
     // Create new project in temp directory
     await execa.command(createScript, {
       stdio: 'pipe',
@@ -203,12 +214,14 @@ export const scaffoldNewProject = async (
   logger.plain(
     boxen(
       dedent`
-      "${projectDisplayName}" project with ${chalk.bold(packageManagerName)} created successfully!
+      "${projectDisplayName}" project with ${picocolors.bold(
+        packageManagerName
+      )} created successfully!
 
       Continuing with Storybook installation...
     `,
       {
-        title: chalk.bold('✅ Success!'),
+        title: picocolors.bold('✅ Success!'),
         padding: 1,
         borderStyle: 'double',
         borderColor: 'green',
@@ -218,7 +231,7 @@ export const scaffoldNewProject = async (
   logger.line(1);
 };
 
-const BASE_IGNORED_FILES = ['.git', '.gitignore', '.DS_Store', '.cache'];
+const BASE_IGNORED_FILES = ['.git', '.gitignore', '.DS_Store', '.cache', 'node_modules'];
 
 const IGNORED_FILES_BY_PACKAGE_MANAGER: Record<CoercedPackageManagerName, string[]> = {
   npm: [...BASE_IGNORED_FILES],

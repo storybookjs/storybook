@@ -1,12 +1,13 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import { parse } from './acornParser';
 import type {
-  InspectionElement,
-  InspectionObject,
   InspectionArray,
+  InspectionElement,
+  InspectionFunction,
   InspectionIdentifier,
   InspectionLiteral,
-  InspectionFunction,
+  InspectionObject,
   InspectionUnknown,
 } from './types';
 import { InspectionType } from './types';

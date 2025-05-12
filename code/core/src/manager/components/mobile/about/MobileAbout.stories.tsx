@@ -1,13 +1,14 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { ManagerContext } from '@storybook/core/manager-api';
 import React, { useEffect } from 'react';
-import { within } from '@storybook/test';
-import { MobileAbout } from './MobileAbout';
-import { LayoutProvider, useLayout } from '../../layout/LayoutProvider';
 
-/**
- * A helper component to open the about page via the MobileLayoutContext
- */
+import type { Meta, StoryObj } from '@storybook/react-vite';
+
+import { ManagerContext } from 'storybook/manager-api';
+import { within } from 'storybook/test';
+
+import { LayoutProvider, useLayout } from '../../layout/LayoutProvider';
+import { MobileAbout } from './MobileAbout';
+
+/** A helper component to open the about page via the MobileLayoutContext */
 const OpenAboutHelper = ({ children }: { children: any }) => {
   const { setMobileAboutOpen } = useLayout();
   useEffect(() => {

@@ -1,7 +1,7 @@
 ```js filename="addon-tab/manager.js" renderer="common" language="js"
 import React from 'react';
 
-import { addons, types } from '@storybook/manager-api';
+import { addons, types } from 'storybook/manager-api';
 
 addons.register('my-addon', () => {
   addons.add('my-addon/tab', {
@@ -15,4 +15,3 @@ addons.register('my-addon', () => {
   });
 });
 ```
-

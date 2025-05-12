@@ -2,16 +2,12 @@ import { defineComponent, h } from 'vue';
 
 export default defineComponent({
   props: {
-    /**
-     * string foo
-     */
+    /** String foo */
     foo: {
       type: String,
       required: true,
     },
-    /**
-     * optional number bar
-     */
+    /** Optional number bar */
     bar: {
       type: Number,
     },

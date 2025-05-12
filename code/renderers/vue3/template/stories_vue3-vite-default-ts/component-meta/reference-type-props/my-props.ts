@@ -1,7 +1,5 @@
 export interface MyNestedProps {
-  /**
-   * nested prop documentation
-   */
+  /** Nested prop documentation */
   nestedProp: string;
 }
 
@@ -32,67 +30,45 @@ type MyCategories = (typeof categories)[number];
 
 export interface MyProps {
   /**
-   * string foo
+   * String foo
    *
-   * @default "rounded"
-   * @since v1.0.0
-   * @see https://vuejs.org/
+   * @since V1.0.0
    * @example
+   *
    * ```vue
    * <template>
    *   <component foo="straight" />
-   * </template>
+   * </template>;
    * ```
+   *
+   * @default 'rounded'
+   * @see https://vuejs.org/
    */
   foo: string;
-  /**
-   * optional number bar
-   */
+  /** Optional number bar */
   bar?: number;
-  /**
-   * string array baz
-   */
+  /** String array baz */
   baz?: string[];
-  /**
-   * required union type
-   */
+  /** Required union type */
   union: string | number;
-  /**
-   * optional union type
-   */
+  /** Optional union type */
   unionOptional?: string | number;
-  /**
-   * required nested object
-   */
+  /** Required nested object */
   nested: MyNestedProps;
-  /**
-   * required nested object with intersection
-   */
+  /** Required nested object with intersection */
   nestedIntersection: MyNestedProps & {
-    /**
-     * required additional property
-     */
+    /** Required additional property */
     additionalProp: string;
   };
-  /**
-   * optional nested object
-   */
+  /** Optional nested object */
   nestedOptional?: MyNestedProps | MyIgnoredNestedProps;
-  /**
-   * required array object
-   */
+  /** Required array object */
   array: MyNestedProps[];
-  /**
-   * optional array object
-   */
+  /** Optional array object */
   arrayOptional?: MyNestedProps[];
-  /**
-   * enum value
-   */
+  /** Enum value */
   enumValue: MyEnum;
-  /**
-   * literal type alias that require context
-   */
+  /** Literal type alias that require context */
   literalFromContext: MyCategories;
   inlined: { foo: string };
   recursive: MyNestedRecursiveProps;

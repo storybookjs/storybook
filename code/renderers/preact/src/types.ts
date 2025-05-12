@@ -1,4 +1,5 @@
 import type { WebRenderer } from 'storybook/internal/types';
+
 import type { AnyComponent } from 'preact';
 
 export type { RenderContext } from 'storybook/internal/types';

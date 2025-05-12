@@ -1,15 +1,16 @@
 // @vitest-environment happy-dom
-import { describe, beforeEach, afterEach, it, expect, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { global } from '@storybook/global';
-import merge from 'lodash/merge.js';
+import { logger } from 'storybook/internal/client-logger';
 import {
   CONFIG_ERROR,
   CURRENT_STORY_WAS_SET,
+  DOCS_PREPARED,
   DOCS_RENDERED,
   FORCE_REMOUNT,
   FORCE_RE_RENDER,
   GLOBALS_UPDATED,
+  PLAY_FUNCTION_THREW_EXCEPTION,
   PREVIEW_KEYDOWN,
   RESET_STORY_ARGS,
   SET_CURRENT_STORY,
@@ -22,36 +23,37 @@ import {
   STORY_RENDERED,
   STORY_SPECIFIED,
   STORY_THREW_EXCEPTION,
-  PLAY_FUNCTION_THREW_EXCEPTION,
   STORY_UNCHANGED,
   UPDATE_GLOBALS,
   UPDATE_STORY_ARGS,
-  DOCS_PREPARED,
-} from '@storybook/core/core-events';
-import { logger } from '@storybook/core/client-logger';
-import type { Renderer, ModuleImportFn, ProjectAnnotations } from '@storybook/core/types';
-import { addons } from '../addons';
+} from 'storybook/internal/core-events';
+import type { ModuleImportFn, ProjectAnnotations, Renderer } from 'storybook/internal/types';
 
+import { global } from '@storybook/global';
+
+import { toMerged } from 'es-toolkit';
+
+import { addons } from '../addons';
+import type { StoryStore } from '../store';
 import { PreviewWeb } from './PreviewWeb';
 import {
   componentOneExports,
   componentTwoExports,
-  importFn,
-  projectAnnotations,
-  getProjectAnnotations,
-  storyIndex,
-  emitter,
-  mockChannel,
-  waitForEvents,
-  waitForRender,
-  waitForQuiescence,
-  waitForRenderPhase,
   docsRenderer,
-  unattachedDocsExports,
+  emitter,
+  getProjectAnnotations,
+  importFn,
+  mockChannel,
+  projectAnnotations,
+  storyIndex,
   teardownrenderToCanvas,
+  unattachedDocsExports,
+  waitForEvents,
+  waitForQuiescence,
+  waitForRender,
+  waitForRenderPhase,
 } from './PreviewWeb.mockdata';
 import { WebView } from './WebView';
-import type { StoryStore } from '../store';
 
 const { history, document } = global;
 
@@ -72,7 +74,7 @@ vi.mock('@storybook/global', async (importOriginal) => ({
   },
 }));
 
-vi.mock('@storybook/core/client-logger');
+vi.mock('storybook/internal/client-logger');
 vi.mock('react-dom');
 vi.mock('./WebView');
 
@@ -162,7 +164,12 @@ describe('PreviewWeb', () => {
 
       const preview = await createAndRenderPreview();
 
-      expect((preview.storyStore as StoryStore<Renderer>)!.userGlobals.get()).toEqual({ a: 'c' });
+      // @ts-expect-error Ignore protected property
+      expect((preview.storyStoreValue as StoryStore<Renderer>)!.userGlobals.get()).toEqual(
+        expect.objectContaining({
+          a: 'c',
+        })
+      );
     });
 
     it('emits the SET_GLOBALS event', async () => {
@@ -174,7 +181,7 @@ describe('PreviewWeb', () => {
       });
 
       expect(mockChannel.emit).toHaveBeenCalledWith(SET_GLOBALS, {
-        globals: { a: 'b' },
+        globals: expect.objectContaining({ a: 'b' }),
         globalTypes: {},
       });
     });
@@ -185,7 +192,7 @@ describe('PreviewWeb', () => {
       });
 
       expect(mockChannel.emit).toHaveBeenCalledWith(SET_GLOBALS, {
-        globals: {},
+        globals: expect.objectContaining({}),
         globalTypes: {},
       });
     });
@@ -196,7 +203,7 @@ describe('PreviewWeb', () => {
       await createAndRenderPreview();
 
       expect(mockChannel.emit).toHaveBeenCalledWith(SET_GLOBALS, {
-        globals: { a: 'c' },
+        globals: expect.objectContaining({ a: 'c' }),
         globalTypes: {},
       });
     });
@@ -206,7 +213,10 @@ describe('PreviewWeb', () => {
 
       const preview = await createAndRenderPreview();
 
-      expect((preview.storyStore as StoryStore<Renderer>)?.args.get('component-one--a')).toEqual({
+      expect(
+        // @ts-expect-error Ignore protected property
+        (preview.storyStoreValue as StoryStore<Renderer>)?.args.get('component-one--a')
+      ).toEqual({
         foo: 'url',
         one: 1,
       });
@@ -232,7 +242,12 @@ describe('PreviewWeb', () => {
       });
       await preview.ready();
 
-      expect((preview.storyStore as StoryStore<Renderer>)!.userGlobals.get()).toEqual({ a: 'b' });
+      // @ts-expect-error Ignore protected property
+      expect((preview.storyStoreValue as StoryStore<Renderer>)!.userGlobals.get()).toEqual(
+        expect.objectContaining({
+          a: 'b',
+        })
+      );
     });
   });
 
@@ -306,7 +321,7 @@ describe('PreviewWeb', () => {
         expect(mockChannel.emit).toHaveBeenCalledWith(STORY_MISSING, 'component-one--missing');
 
         mockChannel.emit.mockClear();
-        const newComponentOneExports = merge({}, componentOneExports, {
+        const newComponentOneExports = toMerged(componentOneExports, {
           d: { args: { foo: 'd' }, play: vi.fn() },
         });
         const newImportFn = vi.fn(async (path) => {
@@ -360,7 +375,7 @@ describe('PreviewWeb', () => {
           });
           await waitForSetCurrentStory();
 
-          const newComponentOneExports = merge({}, componentOneExports, {
+          const newComponentOneExports = toMerged(componentOneExports, {
             d: { args: { foo: 'd' }, play: vi.fn() },
           });
           const newImportFn = vi.fn(async (path) => {
@@ -422,7 +437,9 @@ describe('PreviewWeb', () => {
           parameters: {
             __isArgsStory: false,
             docs: expect.any(Object),
+            backgrounds: expect.any(Object),
             fileName: './src/ComponentOne.stories.js',
+            throwPlayFunctionExceptions: false,
           },
           initialArgs: { foo: 'a', one: 1 },
           argTypes: {
@@ -439,10 +456,10 @@ describe('PreviewWeb', () => {
 
         await waitForEvents([GLOBALS_UPDATED]);
         expect(mockChannel.emit).toHaveBeenCalledWith(GLOBALS_UPDATED, {
-          initialGlobals: { a: 'b' },
-          userGlobals: { a: 'b' },
-          storyGlobals: {},
-          globals: { a: 'b' },
+          initialGlobals: expect.objectContaining({ a: 'b' }),
+          userGlobals: expect.objectContaining({ a: 'b' }),
+          storyGlobals: expect.objectContaining({}),
+          globals: expect.objectContaining({ a: 'b' }),
         });
       });
 
@@ -462,10 +479,10 @@ describe('PreviewWeb', () => {
 
           await waitForEvents([GLOBALS_UPDATED]);
           expect(mockChannel.emit).toHaveBeenCalledWith(GLOBALS_UPDATED, {
-            initialGlobals: { a: 'b' },
-            userGlobals: { a: 'b' },
-            storyGlobals: { a: 'c' },
-            globals: { a: 'c' },
+            initialGlobals: expect.objectContaining({ a: 'b' }),
+            userGlobals: expect.objectContaining({ a: 'b' }),
+            storyGlobals: expect.objectContaining({ a: 'c' }),
+            globals: expect.objectContaining({ a: 'c' }),
           });
         });
       });
@@ -480,7 +497,9 @@ describe('PreviewWeb', () => {
             parameters: {
               __isArgsStory: false,
               docs: expect.any(Object),
+              backgrounds: expect.any(Object),
               fileName: './src/ComponentOne.stories.js',
+              throwPlayFunctionExceptions: false,
             },
             initialArgs: { foo: 'a', one: 1 },
             argTypes: {
@@ -501,12 +520,12 @@ describe('PreviewWeb', () => {
             forceRemount: true,
             storyContext: expect.objectContaining({
               id: 'component-one--a',
-              parameters: {
+              parameters: expect.objectContaining({
                 __isArgsStory: false,
                 docs: expect.any(Object),
                 fileName: './src/ComponentOne.stories.js',
-              },
-              globals: { a: 'b' },
+              }),
+              globals: expect.objectContaining({ a: 'b' }),
               initialArgs: { foo: 'a', one: 1 },
               argTypes: {
                 foo: { name: 'foo', type: { name: 'string' } },
@@ -567,7 +586,7 @@ describe('PreviewWeb', () => {
         `);
       });
 
-      describe('when `throwPlayFunctionExceptions` is set', () => {
+      describe('when `throwPlayFunctionExceptions` is set to false', () => {
         it('emits but does not render exception if the play function throws', async () => {
           const error = new Error('error');
           componentOneExports.a.play.mockImplementationOnce(() => {
@@ -597,11 +616,19 @@ describe('PreviewWeb', () => {
         });
       });
 
-      describe('when `throwPlayFunctionExceptions` is unset', () => {
+      describe('when `throwPlayFunctionExceptions` is set to true', () => {
         it('emits AND renders exception if the play function throws', async () => {
           const error = new Error('error');
           componentOneExports.a.play.mockImplementationOnce(() => {
             throw error;
+          });
+
+          getProjectAnnotations.mockReturnValueOnce({
+            ...projectAnnotations,
+            parameters: {
+              ...projectAnnotations.parameters,
+              throwPlayFunctionExceptions: true,
+            },
           });
 
           document.location.search = '?id=component-one--a';
@@ -668,10 +695,10 @@ describe('PreviewWeb', () => {
 
         expect(mockChannel.emit).toHaveBeenCalledWith(DOCS_PREPARED, {
           id: 'component-one--docs',
-          parameters: {
+          parameters: expect.objectContaining({
             docs: expect.any(Object),
             fileName: './src/ComponentOne.stories.js',
-          },
+          }),
         });
       });
 
@@ -746,9 +773,9 @@ describe('PreviewWeb', () => {
 
         expect(mockChannel.emit).toHaveBeenCalledWith(DOCS_PREPARED, {
           id: 'introduction--docs',
-          parameters: {
+          parameters: expect.objectContaining({
             docs: expect.any(Object),
-          },
+          }),
         });
       });
 
@@ -759,10 +786,10 @@ describe('PreviewWeb', () => {
 
           expect(mockChannel.emit).toHaveBeenCalledWith(DOCS_PREPARED, {
             id: 'component-one--attached-docs',
-            parameters: {
+            parameters: expect.objectContaining({
               docs: expect.any(Object),
               fileName: './src/ComponentOne.stories.js',
-            },
+            }),
           });
         });
       });
@@ -806,6 +833,11 @@ describe('PreviewWeb', () => {
   });
 
   describe('onUpdateGlobals', () => {
+    beforeEach(() => {
+      mockChannel.emit.mockClear();
+      projectAnnotations.renderToCanvas.mockClear();
+    });
+
     it('emits GLOBALS_UPDATED', async () => {
       document.location.search = '?id=component-one--a';
       await createAndRenderPreview();
@@ -814,10 +846,10 @@ describe('PreviewWeb', () => {
 
       await waitForEvents([GLOBALS_UPDATED]);
       expect(mockChannel.emit).toHaveBeenCalledWith(GLOBALS_UPDATED, {
-        initialGlobals: { a: 'b' },
-        userGlobals: { a: 'c' },
-        storyGlobals: {},
-        globals: { a: 'c' },
+        initialGlobals: expect.objectContaining({ a: 'b' }),
+        userGlobals: expect.objectContaining({ a: 'c' }),
+        storyGlobals: expect.objectContaining({}),
+        globals: expect.objectContaining({ a: 'c' }),
       });
     });
 
@@ -848,10 +880,10 @@ describe('PreviewWeb', () => {
 
         await waitForEvents([GLOBALS_UPDATED]);
         expect(mockChannel.emit).toHaveBeenCalledWith(GLOBALS_UPDATED, {
-          initialGlobals: { a: 'b', c: 'd' },
-          userGlobals: { a: 'b', c: 'e' },
-          storyGlobals: { a: 'c' },
-          globals: { a: 'c', c: 'e' },
+          initialGlobals: expect.objectContaining({ a: 'b', c: 'd' }),
+          userGlobals: expect.objectContaining({ a: 'b', c: 'e' }),
+          storyGlobals: expect.objectContaining({ a: 'c' }),
+          globals: expect.objectContaining({ a: 'c', c: 'e' }),
         });
       });
 
@@ -867,10 +899,10 @@ describe('PreviewWeb', () => {
 
         await waitForEvents([GLOBALS_UPDATED]);
         expect(mockChannel.emit).toHaveBeenCalledWith(GLOBALS_UPDATED, {
-          initialGlobals: { a: 'b', c: 'd' },
-          userGlobals: { a: 'e', c: 'd' },
-          storyGlobals: { a: 'c' },
-          globals: { a: 'c', c: 'd' },
+          initialGlobals: expect.objectContaining({ a: 'b', c: 'd' }),
+          userGlobals: expect.objectContaining({ a: 'e', c: 'd' }),
+          storyGlobals: expect.objectContaining({ a: 'c' }),
+          globals: expect.objectContaining({ a: 'c', c: 'd' }),
         });
       });
     });
@@ -881,7 +913,12 @@ describe('PreviewWeb', () => {
 
       emitter.emit(UPDATE_GLOBALS, { globals: { foo: 'bar' } });
 
-      expect((preview.storyStore as StoryStore<Renderer>)!.userGlobals.get()).toEqual({ a: 'b' });
+      // @ts-expect-error Ignore protected property
+      expect((preview.storyStoreValue as StoryStore<Renderer>)!.userGlobals.get()).toEqual(
+        expect.objectContaining({
+          a: 'b',
+        })
+      );
     });
 
     it('passes globals in context to renderToCanvas', async () => {
@@ -897,7 +934,7 @@ describe('PreviewWeb', () => {
         expect.objectContaining({
           forceRemount: false,
           storyContext: expect.objectContaining({
-            globals: { a: 'd' },
+            globals: expect.objectContaining({ a: 'd' }),
           }),
         }),
         'story-element'
@@ -932,6 +969,11 @@ describe('PreviewWeb', () => {
   });
 
   describe('onUpdateArgs', () => {
+    beforeEach(() => {
+      mockChannel.emit.mockClear();
+      projectAnnotations.renderToCanvas.mockClear();
+    });
+
     it('emits STORY_ARGS_UPDATED', async () => {
       document.location.search = '?id=component-one--a';
       await createAndRenderPreview();
@@ -958,7 +1000,8 @@ describe('PreviewWeb', () => {
       });
 
       expect(
-        (preview.storyStore as StoryStore<Renderer> as StoryStore<Renderer>)?.args.get(
+        // @ts-expect-error Ignore protected property
+        (preview.storyStoreValue as StoryStore<Renderer> as StoryStore<Renderer>)?.args.get(
           'component-one--a'
         )
       ).toEqual({
@@ -1242,7 +1285,8 @@ describe('PreviewWeb', () => {
           await waitForRender();
 
           mockChannel.emit.mockClear();
-          const story = await (preview.storyStore as StoryStore<Renderer>)?.loadStory({
+          // @ts-expect-error Ignore protected property
+          const story = await (preview.storyStoreValue as StoryStore<Renderer>)?.loadStory({
             storyId: 'component-one--a',
           });
           preview.renderStoryToElement(story, 'story-element' as any, callbacks, {});
@@ -1282,7 +1326,8 @@ describe('PreviewWeb', () => {
           await waitForRender();
 
           mockChannel.emit.mockClear();
-          const story = await (preview.storyStore as StoryStore<Renderer>)?.loadStory({
+          // @ts-expect-error Ignore protected property
+          const story = await (preview.storyStoreValue as StoryStore<Renderer>)?.loadStory({
             storyId: 'component-one--a',
           });
           preview.renderStoryToElement(story, 'story-element' as any, callbacks, {
@@ -2035,11 +2080,11 @@ describe('PreviewWeb', () => {
         await waitForEvents([STORY_PREPARED]);
         expect(mockChannel.emit).toHaveBeenCalledWith(STORY_PREPARED, {
           id: 'component-one--b',
-          parameters: {
+          parameters: expect.objectContaining({
             __isArgsStory: false,
             docs: expect.any(Object),
             fileName: './src/ComponentOne.stories.js',
-          },
+          }),
           initialArgs: { foo: 'b', one: 1 },
           argTypes: {
             foo: { name: 'foo', type: { name: 'string' } },
@@ -2062,10 +2107,10 @@ describe('PreviewWeb', () => {
 
         await waitForEvents([GLOBALS_UPDATED]);
         expect(mockChannel.emit).toHaveBeenCalledWith(GLOBALS_UPDATED, {
-          initialGlobals: { a: 'b' },
-          userGlobals: { a: 'b' },
-          storyGlobals: {},
-          globals: { a: 'b' },
+          initialGlobals: expect.objectContaining({ a: 'b' }),
+          userGlobals: expect.objectContaining({ a: 'b' }),
+          storyGlobals: expect.objectContaining({}),
+          globals: expect.objectContaining({ a: 'b' }),
         });
       });
 
@@ -2092,10 +2137,10 @@ describe('PreviewWeb', () => {
 
           await waitForEvents([GLOBALS_UPDATED]);
           expect(mockChannel.emit).toHaveBeenCalledWith(GLOBALS_UPDATED, {
-            initialGlobals: { a: 'b' },
-            userGlobals: { a: 'b' },
-            storyGlobals: { a: 'c' },
-            globals: { a: 'c' },
+            initialGlobals: expect.objectContaining({ a: 'b' }),
+            userGlobals: expect.objectContaining({ a: 'b' }),
+            storyGlobals: expect.objectContaining({ a: 'c' }),
+            globals: expect.objectContaining({ a: 'c' }),
           });
         });
       });
@@ -2115,11 +2160,11 @@ describe('PreviewWeb', () => {
         expect(componentOneExports.default.loaders[0]).toHaveBeenCalledWith(
           expect.objectContaining({
             id: 'component-one--b',
-            parameters: {
+            parameters: expect.objectContaining({
               __isArgsStory: false,
               docs: expect.any(Object),
               fileName: './src/ComponentOne.stories.js',
-            },
+            }),
             initialArgs: { foo: 'b', one: 1 },
             argTypes: {
               foo: { name: 'foo', type: { name: 'string' } },
@@ -2147,12 +2192,12 @@ describe('PreviewWeb', () => {
             forceRemount: true,
             storyContext: expect.objectContaining({
               id: 'component-one--b',
-              parameters: {
+              parameters: expect.objectContaining({
                 __isArgsStory: false,
                 docs: expect.any(Object),
                 fileName: './src/ComponentOne.stories.js',
-              },
-              globals: { a: 'b' },
+              }),
+              globals: expect.objectContaining({ a: 'b' }),
               initialArgs: { foo: 'b', one: 1 },
               argTypes: {
                 foo: { name: 'foo', type: { name: 'string' } },
@@ -2270,7 +2315,10 @@ describe('PreviewWeb', () => {
           updatedArgs: { foo: 'updated' },
         });
         await waitForRender();
-        expect((preview.storyStore as StoryStore<Renderer>)?.args.get('component-one--a')).toEqual({
+        expect(
+          // @ts-expect-error Ignore protected property
+          (preview.storyStoreValue as StoryStore<Renderer>)?.args.get('component-one--a')
+        ).toEqual({
           foo: 'updated',
           one: 1,
         });
@@ -2282,7 +2330,10 @@ describe('PreviewWeb', () => {
         });
         await waitForSetCurrentStory();
         await waitForRender();
-        expect((preview.storyStore as StoryStore<Renderer>)?.args.get('component-one--a')).toEqual({
+        expect(
+          // @ts-expect-error Ignore protected property
+          (preview.storyStoreValue as StoryStore<Renderer>)?.args.get('component-one--a')
+        ).toEqual({
           foo: 'updated',
           one: 1,
         });
@@ -2294,7 +2345,10 @@ describe('PreviewWeb', () => {
         });
         await waitForSetCurrentStory();
         await waitForRender();
-        expect((preview.storyStore as StoryStore<Renderer>)?.args.get('component-one--a')).toEqual({
+        expect(
+          // @ts-expect-error Ignore protected property
+          (preview.storyStoreValue as StoryStore<Renderer>)?.args.get('component-one--a')
+        ).toEqual({
           foo: 'updated',
           one: 1,
         });
@@ -2305,11 +2359,15 @@ describe('PreviewWeb', () => {
         beforeEach(() => {
           originalLocation = window.location;
           delete (window as Partial<Window>).location;
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore-error
           window.location = { ...originalLocation, reload: vi.fn() };
         });
 
         afterEach(() => {
           delete (window as Partial<Window>).location;
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore-error
           window.location = { ...originalLocation, reload: originalLocation.reload };
         });
 
@@ -2455,10 +2513,10 @@ describe('PreviewWeb', () => {
 
         expect(mockChannel.emit).toHaveBeenCalledWith(DOCS_PREPARED, {
           id: 'component-one--docs',
-          parameters: {
+          parameters: expect.objectContaining({
             docs: expect.any(Object),
             fileName: './src/ComponentOne.stories.js',
-          },
+          }),
         });
       });
 
@@ -2652,11 +2710,11 @@ describe('PreviewWeb', () => {
         await waitForEvents([STORY_PREPARED]);
         expect(mockChannel.emit).toHaveBeenCalledWith(STORY_PREPARED, {
           id: 'component-one--a',
-          parameters: {
+          parameters: expect.objectContaining({
             __isArgsStory: false,
             docs: expect.any(Object),
             fileName: './src/ComponentOne.stories.js',
-          },
+          }),
           initialArgs: { foo: 'a', one: 1 },
           argTypes: {
             foo: { name: 'foo', type: { name: 'string' } },
@@ -2681,11 +2739,11 @@ describe('PreviewWeb', () => {
         expect(componentOneExports.default.loaders[0]).toHaveBeenCalledWith(
           expect.objectContaining({
             id: 'component-one--a',
-            parameters: {
+            parameters: expect.objectContaining({
               __isArgsStory: false,
               docs: expect.any(Object),
               fileName: './src/ComponentOne.stories.js',
-            },
+            }),
             initialArgs: { foo: 'a', one: 1 },
             argTypes: {
               foo: { name: 'foo', type: { name: 'string' } },
@@ -2713,12 +2771,12 @@ describe('PreviewWeb', () => {
             forceRemount: true,
             storyContext: expect.objectContaining({
               id: 'component-one--a',
-              parameters: {
+              parameters: expect.objectContaining({
                 __isArgsStory: false,
                 docs: expect.any(Object),
                 fileName: './src/ComponentOne.stories.js',
-              },
-              globals: { a: 'b' },
+              }),
+              globals: expect.objectContaining({ a: 'b' }),
               initialArgs: { foo: 'a', one: 1 },
               argTypes: {
                 foo: { name: 'foo', type: { name: 'string' } },
@@ -2863,7 +2921,10 @@ describe('PreviewWeb', () => {
         mockFetchResult = { status: 200, json: mockStoryIndex, text: () => 'error text' };
         preview.onStoryIndexChanged();
         await waitForRender();
-        expect((preview.storyStore as StoryStore<Renderer>)?.args.get('component-one--a')).toEqual({
+        expect(
+          // @ts-expect-error Ignore protected property
+          (preview.storyStoreValue as StoryStore<Renderer>)?.args.get('component-one--a')
+        ).toEqual({
           foo: 'url',
           one: 1,
         });
@@ -2925,7 +2986,7 @@ describe('PreviewWeb', () => {
     });
 
     describe('when the current story changes', () => {
-      const newComponentOneExports = merge({}, componentOneExports, {
+      const newComponentOneExports = toMerged(componentOneExports, {
         a: { args: { foo: 'edited' } },
       });
       const newImportFn = vi.fn(async (path) => {
@@ -2977,11 +3038,11 @@ describe('PreviewWeb', () => {
 
         expect(mockChannel.emit).toHaveBeenCalledWith(STORY_PREPARED, {
           id: 'component-one--a',
-          parameters: {
+          parameters: expect.objectContaining({
             __isArgsStory: false,
             docs: expect.any(Object),
             fileName: './src/ComponentOne.stories.js',
-          },
+          }),
           initialArgs: { foo: 'edited', one: 1 },
           argTypes: {
             foo: { name: 'foo', type: { name: 'string' } },
@@ -3006,7 +3067,9 @@ describe('PreviewWeb', () => {
             parameters: {
               __isArgsStory: false,
               docs: expect.any(Object),
+              backgrounds: expect.any(Object),
               fileName: './src/ComponentOne.stories.js',
+              throwPlayFunctionExceptions: false,
             },
             initialArgs: { foo: 'edited', one: 1 },
             argTypes: {
@@ -3035,9 +3098,11 @@ describe('PreviewWeb', () => {
               parameters: {
                 __isArgsStory: false,
                 docs: expect.any(Object),
+                backgrounds: expect.any(Object),
                 fileName: './src/ComponentOne.stories.js',
+                throwPlayFunctionExceptions: false,
               },
-              globals: { a: 'b' },
+              globals: expect.objectContaining({ a: 'b' }),
               initialArgs: { foo: 'edited', one: 1 },
               argTypes: {
                 foo: { name: 'foo', type: { name: 'string' } },
@@ -3280,7 +3345,7 @@ describe('PreviewWeb', () => {
       afterEach(() => {
         vi.useRealTimers();
       });
-      const newComponentOneExports = merge({}, componentOneExports, {
+      const newComponentOneExports = toMerged(componentOneExports, {
         a: { args: { bar: 'edited' }, argTypes: { bar: { type: { name: 'string' } } } },
       });
       const newImportFn = vi.fn(async (path) => {
@@ -3309,7 +3374,10 @@ describe('PreviewWeb', () => {
         });
         await waitForSetCurrentStory();
         await waitForRender();
-        expect((preview.storyStore as StoryStore<Renderer>)?.args.get('component-one--a')).toEqual({
+        expect(
+          // @ts-expect-error Ignore protected property
+          (preview.storyStoreValue as StoryStore<Renderer>)?.args.get('component-one--a')
+        ).toEqual({
           foo: 'updated',
           one: 1,
         });
@@ -3328,7 +3396,10 @@ describe('PreviewWeb', () => {
         });
         await waitForSetCurrentStory();
         await waitForRender();
-        expect((preview.storyStore as StoryStore<Renderer>)?.args.get('component-one--a')).toEqual({
+        expect(
+          // @ts-expect-error Ignore protected property
+          (preview.storyStoreValue as StoryStore<Renderer>)?.args.get('component-one--a')
+        ).toEqual({
           foo: 'updated',
           bar: 'edited',
           one: 1,
@@ -3432,9 +3503,9 @@ describe('PreviewWeb', () => {
 
         expect(mockChannel.emit).toHaveBeenCalledWith(DOCS_PREPARED, {
           id: 'introduction--docs',
-          parameters: {
+          parameters: expect.objectContaining({
             docs: expect.any(Object),
-          },
+          }),
         });
       });
 
@@ -3499,7 +3570,12 @@ describe('PreviewWeb', () => {
         preview.onGetProjectAnnotationsChanged({ getProjectAnnotations });
         await waitForRender();
 
-        expect((preview.storyStore as StoryStore<Renderer>)!.userGlobals.get()).toEqual({ a: 'c' });
+        // @ts-expect-error Ignore protected property
+        expect((preview.storyStoreValue as StoryStore<Renderer>)!.userGlobals.get()).toEqual(
+          expect.objectContaining({
+            a: 'c',
+          })
+        );
       });
     });
 
@@ -3548,7 +3624,8 @@ describe('PreviewWeb', () => {
       preview.onGetProjectAnnotationsChanged({ getProjectAnnotations: newGetProjectAnnotations });
       await waitForRender();
 
-      expect((preview.storyStore as StoryStore<Renderer>)!.userGlobals.get()).toEqual({
+      // @ts-expect-error Ignore protected property
+      expect((preview.storyStoreValue as StoryStore<Renderer>)!.userGlobals.get()).toEqual({
         a: 'edited',
       });
     });
@@ -3576,7 +3653,10 @@ describe('PreviewWeb', () => {
       preview.onGetProjectAnnotationsChanged({ getProjectAnnotations: newGetProjectAnnotations });
       await waitForRender();
 
-      expect((preview.storyStore as StoryStore<Renderer>)?.args.get('component-one--a')).toEqual({
+      expect(
+        // @ts-expect-error Ignore protected property
+        (preview.storyStoreValue as StoryStore<Renderer>)?.args.get('component-one--a')
+      ).toEqual({
         foo: 'a',
         one: 1,
         global: 'added',
@@ -3704,7 +3784,8 @@ describe('PreviewWeb', () => {
       componentOneExports.b.play.mockImplementationOnce(async () => gate);
       // @ts-expect-error (not strict)
       preview.renderStoryToElement(
-        await (preview.storyStore as StoryStore<Renderer>)?.loadStory({
+        // @ts-expect-error Ignore protected property
+        await (preview.storyStoreValue as StoryStore<Renderer>)?.loadStory({
           storyId: 'component-one--b',
         }),
         {} as any,
@@ -3766,179 +3847,267 @@ describe('PreviewWeb', () => {
       expect(extracted).toBe(true);
 
       expect(await preview.extract()).toMatchInlineSnapshot(`
-        {
-          "component-one--a": {
-            "argTypes": {
-              "foo": {
-                "name": "foo",
-                "type": {
-                  "name": "string",
-                },
-              },
-              "one": {
-                "mapping": {
-                  "1": "mapped-1",
-                },
-                "name": "one",
-                "type": {
-                  "name": "string",
-                },
-              },
-            },
-            "args": {
-              "foo": "a",
-              "one": 1,
-            },
-            "component": undefined,
-            "componentId": "component-one",
-            "id": "component-one--a",
-            "initialArgs": {
-              "foo": "a",
-              "one": 1,
-            },
-            "kind": "Component One",
-            "name": "A",
-            "parameters": {
-              "__isArgsStory": false,
-              "docs": {
-                "container": [MockFunction spy],
-                "page": [MockFunction spy],
-                "renderer": [Function],
-              },
-              "fileName": "./src/ComponentOne.stories.js",
-            },
-            "story": "A",
-            "storyGlobals": {},
-            "subcomponents": undefined,
-            "tags": [
-              "dev",
-              "test",
-            ],
-            "testingLibraryRender": undefined,
-            "title": "Component One",
-            "usesMount": false,
+  {
+    "component-one--a": {
+      "argTypes": {
+        "foo": {
+          "name": "foo",
+          "type": {
+            "name": "string",
           },
-          "component-one--b": {
-            "argTypes": {
-              "foo": {
-                "name": "foo",
-                "type": {
-                  "name": "string",
-                },
-              },
-              "one": {
-                "mapping": {
-                  "1": "mapped-1",
-                },
-                "name": "one",
-                "type": {
-                  "name": "string",
-                },
-              },
-            },
-            "args": {
-              "foo": "b",
-              "one": 1,
-            },
-            "component": undefined,
-            "componentId": "component-one",
-            "id": "component-one--b",
-            "initialArgs": {
-              "foo": "b",
-              "one": 1,
-            },
-            "kind": "Component One",
-            "name": "B",
-            "parameters": {
-              "__isArgsStory": false,
-              "docs": {
-                "container": [MockFunction spy],
-                "page": [MockFunction spy],
-                "renderer": [Function],
-              },
-              "fileName": "./src/ComponentOne.stories.js",
-            },
-            "story": "B",
-            "storyGlobals": {},
-            "subcomponents": undefined,
-            "tags": [
-              "dev",
-              "test",
-            ],
-            "testingLibraryRender": undefined,
-            "title": "Component One",
-            "usesMount": false,
+        },
+        "one": {
+          "mapping": {
+            "1": "mapped-1",
           },
-          "component-one--e": {
-            "argTypes": {},
-            "args": {},
-            "component": undefined,
-            "componentId": "component-one",
-            "id": "component-one--e",
-            "initialArgs": {},
-            "kind": "Component One",
-            "name": "E",
-            "parameters": {
-              "__isArgsStory": false,
-              "docs": {
-                "page": [MockFunction spy],
-                "renderer": [Function],
-              },
-              "fileName": "./src/ExtraComponentOne.stories.js",
-            },
-            "playFunction": undefined,
-            "story": "E",
-            "storyGlobals": {},
-            "subcomponents": undefined,
-            "tags": [
-              "dev",
-              "test",
-            ],
-            "testingLibraryRender": undefined,
-            "title": "Component One",
-            "usesMount": false,
+          "name": "one",
+          "type": {
+            "name": "string",
           },
-          "component-two--c": {
-            "argTypes": {
-              "foo": {
-                "name": "foo",
-                "type": {
-                  "name": "string",
-                },
-              },
-            },
-            "args": {
-              "foo": "c",
-            },
-            "component": undefined,
-            "componentId": "component-two",
-            "id": "component-two--c",
-            "initialArgs": {
-              "foo": "c",
-            },
-            "kind": "Component Two",
-            "name": "C",
-            "parameters": {
-              "__isArgsStory": false,
-              "docs": {
-                "renderer": [Function],
-              },
-              "fileName": "./src/ComponentTwo.stories.js",
-            },
-            "playFunction": undefined,
-            "story": "C",
-            "storyGlobals": {},
-            "subcomponents": undefined,
-            "tags": [
-              "dev",
-              "test",
-            ],
-            "testingLibraryRender": undefined,
-            "title": "Component Two",
-            "usesMount": false,
+        },
+      },
+      "args": {
+        "foo": "a",
+        "one": 1,
+      },
+      "component": undefined,
+      "componentId": "component-one",
+      "globals": {
+        "a": "b",
+        "backgrounds": {
+          "grid": false,
+          "value": undefined,
+        },
+        "measureEnabled": false,
+        "outline": false,
+        "viewport": {
+          "isRotated": false,
+          "value": undefined,
+        },
+      },
+      "id": "component-one--a",
+      "initialArgs": {
+        "foo": "a",
+        "one": 1,
+      },
+      "kind": "Component One",
+      "name": "A",
+      "parameters": {
+        "__isArgsStory": false,
+        "backgrounds": {
+          "disable": false,
+          "grid": {
+            "cellAmount": 5,
+            "cellSize": 20,
+            "opacity": 0.5,
           },
-        }
-      `);
+        },
+        "docs": {
+          "container": [MockFunction spy],
+          "page": [MockFunction spy],
+          "renderer": [Function],
+        },
+        "fileName": "./src/ComponentOne.stories.js",
+        "throwPlayFunctionExceptions": false,
+      },
+      "story": "A",
+      "storyGlobals": {},
+      "subcomponents": undefined,
+      "tags": [
+        "dev",
+        "test",
+      ],
+      "testingLibraryRender": undefined,
+      "title": "Component One",
+      "usesMount": false,
+    },
+    "component-one--b": {
+      "argTypes": {
+        "foo": {
+          "name": "foo",
+          "type": {
+            "name": "string",
+          },
+        },
+        "one": {
+          "mapping": {
+            "1": "mapped-1",
+          },
+          "name": "one",
+          "type": {
+            "name": "string",
+          },
+        },
+      },
+      "args": {
+        "foo": "b",
+        "one": 1,
+      },
+      "component": undefined,
+      "componentId": "component-one",
+      "globals": {
+        "a": "b",
+        "backgrounds": {
+          "grid": false,
+          "value": undefined,
+        },
+        "measureEnabled": false,
+        "outline": false,
+        "viewport": {
+          "isRotated": false,
+          "value": undefined,
+        },
+      },
+      "id": "component-one--b",
+      "initialArgs": {
+        "foo": "b",
+        "one": 1,
+      },
+      "kind": "Component One",
+      "name": "B",
+      "parameters": {
+        "__isArgsStory": false,
+        "backgrounds": {
+          "disable": false,
+          "grid": {
+            "cellAmount": 5,
+            "cellSize": 20,
+            "opacity": 0.5,
+          },
+        },
+        "docs": {
+          "container": [MockFunction spy],
+          "page": [MockFunction spy],
+          "renderer": [Function],
+        },
+        "fileName": "./src/ComponentOne.stories.js",
+        "throwPlayFunctionExceptions": false,
+      },
+      "story": "B",
+      "storyGlobals": {},
+      "subcomponents": undefined,
+      "tags": [
+        "dev",
+        "test",
+      ],
+      "testingLibraryRender": undefined,
+      "title": "Component One",
+      "usesMount": false,
+    },
+    "component-one--e": {
+      "argTypes": {},
+      "args": {},
+      "component": undefined,
+      "componentId": "component-one",
+      "globals": {
+        "a": "b",
+        "backgrounds": {
+          "grid": false,
+          "value": undefined,
+        },
+        "measureEnabled": false,
+        "outline": false,
+        "viewport": {
+          "isRotated": false,
+          "value": undefined,
+        },
+      },
+      "id": "component-one--e",
+      "initialArgs": {},
+      "kind": "Component One",
+      "name": "E",
+      "parameters": {
+        "__isArgsStory": false,
+        "backgrounds": {
+          "disable": false,
+          "grid": {
+            "cellAmount": 5,
+            "cellSize": 20,
+            "opacity": 0.5,
+          },
+        },
+        "docs": {
+          "page": [MockFunction spy],
+          "renderer": [Function],
+        },
+        "fileName": "./src/ExtraComponentOne.stories.js",
+        "throwPlayFunctionExceptions": false,
+      },
+      "playFunction": undefined,
+      "story": "E",
+      "storyGlobals": {},
+      "subcomponents": undefined,
+      "tags": [
+        "dev",
+        "test",
+      ],
+      "testingLibraryRender": undefined,
+      "title": "Component One",
+      "usesMount": false,
+    },
+    "component-two--c": {
+      "argTypes": {
+        "foo": {
+          "name": "foo",
+          "type": {
+            "name": "string",
+          },
+        },
+      },
+      "args": {
+        "foo": "c",
+      },
+      "component": undefined,
+      "componentId": "component-two",
+      "globals": {
+        "a": "b",
+        "backgrounds": {
+          "grid": false,
+          "value": undefined,
+        },
+        "measureEnabled": false,
+        "outline": false,
+        "viewport": {
+          "isRotated": false,
+          "value": undefined,
+        },
+      },
+      "id": "component-two--c",
+      "initialArgs": {
+        "foo": "c",
+      },
+      "kind": "Component Two",
+      "name": "C",
+      "parameters": {
+        "__isArgsStory": false,
+        "backgrounds": {
+          "disable": false,
+          "grid": {
+            "cellAmount": 5,
+            "cellSize": 20,
+            "opacity": 0.5,
+          },
+        },
+        "docs": {
+          "renderer": [Function],
+        },
+        "fileName": "./src/ComponentTwo.stories.js",
+        "throwPlayFunctionExceptions": false,
+      },
+      "playFunction": undefined,
+      "story": "C",
+      "storyGlobals": {},
+      "subcomponents": undefined,
+      "tags": [
+        "dev",
+        "test",
+      ],
+      "testingLibraryRender": undefined,
+      "title": "Component Two",
+      "usesMount": false,
+    },
+  }
+`);
     });
   });
 });

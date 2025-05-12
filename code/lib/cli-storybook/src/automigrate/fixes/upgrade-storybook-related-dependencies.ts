@@ -1,10 +1,12 @@
-import { dedent } from 'ts-dedent';
-import { cyan, yellow } from 'chalk';
-import { gt } from 'semver';
 import type { JsPackageManager } from 'storybook/internal/common';
-import { isCorePackage } from 'storybook/internal/common';
-import type { Fix } from '../types';
+import { isCorePackage, isSatelliteAddon } from 'storybook/internal/common';
+
+import { cyan, yellow } from 'picocolors';
+import { gt } from 'semver';
+import { dedent } from 'ts-dedent';
+
 import { getIncompatibleStorybookPackages } from '../../doctor/getIncompatibleStorybookPackages';
+import type { Fix } from '../types';
 
 type PackageMetadata = {
   packageName: string;
@@ -30,13 +32,13 @@ async function getLatestVersions(
 }
 
 /**
- * Is the user upgrading to the `latest` version of Storybook?
- * Let's try to pull along some of the storybook related dependencies to `latest` as well!
+ * Is the user upgrading to the `latest` version of Storybook? Let's try to pull along some of the
+ * storybook related dependencies to `latest` as well!
  *
- * We communicate clearly that this migration is a helping hand, but not a complete solution.
- * The user should still manually check for other dependencies that might be incompatible.
+ * We communicate clearly that this migration is a helping hand, but not a complete solution. The
+ * user should still manually check for other dependencies that might be incompatible.
  *
- * see: https://github.com/storybookjs/storybook/issues/25731#issuecomment-1977346398
+ * See: https://github.com/storybookjs/storybook/issues/25731#issuecomment-1977346398
  */
 export const upgradeStorybookRelatedDependencies = {
   id: 'upgradeStorybookRelatedDependencies',
@@ -54,7 +56,7 @@ export const upgradeStorybookRelatedDependencies = {
     const allDependencies = (await packageManager.getAllDependencies()) as Record<string, string>;
     const storybookDependencies = Object.keys(allDependencies)
       .filter((dep) => dep.includes('storybook'))
-      .filter((dep) => !isCorePackage(dep));
+      .filter((dep) => !isCorePackage(dep) && !isSatelliteAddon(dep));
     const incompatibleDependencies = analyzedPackages
       .filter((pkg) => pkg.hasIncompatibleDependencies)
       .map((pkg) => pkg.packageName);
@@ -78,7 +80,7 @@ export const upgradeStorybookRelatedDependencies = {
 
   prompt({ upgradable }) {
     return dedent`
-      You're upgrading to the latest version of Storybook. We recommend upgrading the following packages:
+      You're upgrading Storybook, but you are using community packages that might need to be upgraded as well. We recommend upgrading them:
       ${upgradable
         .map(({ packageName, afterVersion, beforeVersion }) => {
           return `- ${cyan(packageName)}: ${cyan(beforeVersion)} => ${cyan(afterVersion)}`;
@@ -87,6 +89,8 @@ export const upgradeStorybookRelatedDependencies = {
 
       After upgrading, we will run the dedupe command, which could possibly have effects on dependencies that are not Storybook related.
       see: https://docs.npmjs.com/cli/commands/npm-dedupe
+
+      Attention: As these packages are maintained by the community, we cannot guarantee that they are compatible with the new version of Storybook. If you encounter any issues, please report them to the package maintainers.
 
       Do you want to proceed (upgrade the detected packages)?
     `;

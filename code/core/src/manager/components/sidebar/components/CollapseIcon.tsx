@@ -1,7 +1,8 @@
-import { styled } from '@storybook/core/theming';
 import type { FC } from 'react';
 import React from 'react';
+
 import { transparentize } from 'polished';
+import { styled } from 'storybook/theming';
 
 interface CollapseIconProps {
   isExpanded: boolean;

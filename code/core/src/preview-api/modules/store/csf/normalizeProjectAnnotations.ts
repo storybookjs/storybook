@@ -1,17 +1,14 @@
 import type {
-  Renderer,
   ArgTypes,
-  ProjectAnnotations,
   NormalizedProjectAnnotations,
-} from '@storybook/core/types';
-import { deprecate } from '@storybook/core/client-logger';
-import { dedent } from 'ts-dedent';
+  ProjectAnnotations,
+  Renderer,
+} from 'storybook/internal/types';
 
 import { inferArgTypes } from '../inferArgTypes';
 import { inferControls } from '../inferControls';
-import { normalizeInputTypes } from './normalizeInputTypes';
 import { normalizeArrays } from './normalizeArrays';
-import { combineParameters } from '../parameters';
+import { normalizeInputTypes } from './normalizeInputTypes';
 
 // TODO(kasperpeulen) Consolidate this function with composeConfigs
 // As composeConfigs is the real normalizer, and always run before normalizeProjectAnnotations
@@ -24,34 +21,38 @@ export function normalizeProjectAnnotations<TRenderer extends Renderer>({
   decorators,
   loaders,
   beforeEach,
-  globals,
+  afterEach,
   initialGlobals,
   ...annotations
 }: ProjectAnnotations<TRenderer>): NormalizedProjectAnnotations<TRenderer> {
-  if (globals && Object.keys(globals).length > 0) {
-    deprecate(dedent`
-      The preview.js 'globals' field is deprecated and will be removed in Storybook 9.0.
-      Please use 'initialGlobals' instead. Learn more:
-
-      https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#previewjs-globals-renamed-to-initialglobals
-    `);
-  }
   return {
     ...(argTypes && { argTypes: normalizeInputTypes(argTypes as ArgTypes) }),
     ...(globalTypes && { globalTypes: normalizeInputTypes(globalTypes) }),
     decorators: normalizeArrays(decorators),
     loaders: normalizeArrays(loaders),
     beforeEach: normalizeArrays(beforeEach),
+    afterEach: normalizeArrays(afterEach),
     argTypesEnhancers: [
       ...(argTypesEnhancers || []),
       inferArgTypes,
-      // inferControls technically should only run if the user is using the controls addon,
-      // and so should be added by a preset there. However, as it seems some code relies on controls
-      // annotations (in particular the angular implementation's `cleanArgsDecorator`), for backwards
-      // compatibility reasons, we will leave this in the store until 7.0
+      // There's an architectural decision to be made regarding embedded addons in core:
+      //
+      // Option 1: Keep embedded addons but ensure consistency by moving addon-specific code
+      // (like inferControls) to live alongside the addon code itself. This maintains the
+      // concept of core addons while improving code organization.
+      //
+      // Option 2: Fully integrate these addons into core, potentially moving UI components
+      // into the manager and treating them as core features rather than addons. This is a
+      // bigger architectural change requiring careful consideration.
+      //
+      // For now, we're keeping inferControls here as we need time to properly evaluate
+      // these options and their implications. Some features (like Angular's cleanArgsDecorator)
+      // currently rely on this behavior.
+      //
+      // TODO: Make an architectural decision on the handling of core addons
       inferControls,
     ],
-    initialGlobals: combineParameters(initialGlobals, globals),
+    initialGlobals,
     ...(annotations as NormalizedProjectAnnotations<TRenderer>),
   };
 }

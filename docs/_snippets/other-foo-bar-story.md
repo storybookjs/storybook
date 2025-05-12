@@ -39,8 +39,8 @@ export const Baz = {
 };
 ```
 
-```ts filename="FooBar.stories.ts|tsx" renderer="common" language="ts-4-9"
-// Replace your-framework with the name of your framework
+```ts filename="FooBar.stories.ts|tsx" renderer="common" language="ts"
+// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { Foo } from './Foo';
@@ -63,30 +63,6 @@ export const Baz: Story = {
 };
 ```
 
-```ts filename="FooBar.stories.ts|tsx" renderer="common" language="ts"
-// Replace your-framework with the name of your framework
-import type { Meta, StoryObj } from '@storybook/your-framework';
-
-import { Foo } from './Foo';
-
-const meta: Meta<typeof Foo> = {
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'OtherFoo/Bar',
-  component: Foo,
-  id: 'Foo/Bar', // Or 'foo-bar' if you prefer
-};
-
-export default meta;
-type Story = StoryObj<typeof Foo>;
-
-export const Baz: Story = {
-  name: 'Insert name here',
-};
-```
-
 ```js filename="FooBar.stories.js" renderer="web-components" language="js"
 export default {
   title: 'OtherFoo/Bar',
@@ -100,7 +76,7 @@ export const Baz = {
 ```
 
 ```ts filename="FooBar.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
   title: 'OtherFoo/Bar',
@@ -115,4 +91,3 @@ export const Baz: Story = {
   name: 'Insert name here',
 };
 ```
-

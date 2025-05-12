@@ -1,5 +1,5 @@
 import { render, screen, cleanup } from '@testing-library/react';
-import { addons } from 'storybook/internal/preview-api';
+import { addons } from 'storybook/preview-api';
 
 import { setProjectAnnotations, composeStories, composeStory } from '@storybook/react';
 import * as stories from './Button.stories';
@@ -55,7 +55,7 @@ describe('projectAnnotations', () => {
 
   it('renders with custom projectAnnotations via composeStory params', () => {
     const WithPortugueseText = composeStory(stories.CSF2StoryWithLocale, stories.default, {
-      globalTypes: { locale: { defaultValue: 'pt' } },
+      initialGlobals: { locale: 'pt' },
     });
     const { getByText } = render(<WithPortugueseText />);
     const buttonElement = getByText('Olá!');
@@ -63,7 +63,7 @@ describe('projectAnnotations', () => {
   });
 
   it('renders with custom projectAnnotations via setProjectAnnotations', () => {
-    setProjectAnnotations([{ parameters: { injected: true }, testingLibraryRender: render }]);
+    setProjectAnnotations([{ parameters: { injected: true } }]);
     const Story = composeStory(stories.CSF2StoryWithLocale, stories.default);
     expect(Story.parameters?.injected).toBe(true);
   });
@@ -87,15 +87,6 @@ describe('CSF3', () => {
 
     render(<Primary />);
     expect(screen.getByTestId('custom-render')).not.toBeNull();
-  });
-
-  it('renders with play function', async () => {
-    const CSF3InputFieldFilled = composeStory(stories.CSF3InputFieldFilled, stories.default);
-
-    await CSF3InputFieldFilled.run();
-
-    const input = screen.getByTestId('input') as HTMLInputElement;
-    expect(input.value).toEqual('Hello world!');
   });
 });
 

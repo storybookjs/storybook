@@ -1,9 +1,13 @@
-import { describe, expect, test, vi } from 'vitest';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
+
 import { add, getVersionSpecifier } from './add';
 
 const MockedConfig = vi.hoisted(() => {
   return {
     appendValueToArray: vi.fn(),
+    getFieldNode: vi.fn(),
+    valueToNode: vi.fn(),
+    appendNodeToArray: vi.fn(),
   };
 });
 const MockedPackageManager = vi.hoisted(() => {
@@ -17,6 +21,12 @@ const MockedPackageManager = vi.hoisted(() => {
 const MockedPostInstall = vi.hoisted(() => {
   return {
     postinstallAddon: vi.fn(),
+  };
+});
+const MockWrapRequireUtils = vi.hoisted(() => {
+  return {
+    getRequireWrapperName: vi.fn(),
+    wrapValueWithRequireWrapper: vi.fn(),
   };
 });
 const MockedConsole = {
@@ -34,17 +44,24 @@ vi.mock('storybook/internal/csf-tools', () => {
 vi.mock('./postinstallAddon', () => {
   return MockedPostInstall;
 });
+vi.mock('./automigrate/fixes/wrap-require-utils', () => {
+  return MockWrapRequireUtils;
+});
+vi.mock('./codemod/helpers/csf-factories-utils');
 vi.mock('storybook/internal/common', () => {
   return {
     getStorybookInfo: vi.fn(() => ({ mainConfig: {}, configDir: '' })),
     serverRequire: vi.fn(() => ({})),
+    loadMainConfig: vi.fn(() => ({})),
     JsPackageManagerFactory: {
       getPackageManager: vi.fn(() => MockedPackageManager),
     },
+    syncStorybookAddons: vi.fn(),
     getCoercedStorybookVersion: vi.fn(() => '8.0.0'),
     versions: {
       '@storybook/addon-docs': '^8.0.0',
     },
+    frameworkToRenderer: vi.fn(),
   };
 });
 
@@ -95,13 +112,42 @@ describe('add', () => {
     );
 
     expect(MockedPackageManager.addDependencies).toHaveBeenCalledWith(
-      { installAsDevDependencies: true },
+      { installAsDevDependencies: true, writeOutputToFile: false },
       [expected]
     );
   });
 });
 
 describe('add (extra)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+  test('should not add a "wrap require" to the addon when not needed', async () => {
+    MockedConfig.getFieldNode.mockReturnValue({});
+    MockWrapRequireUtils.getRequireWrapperName.mockReturnValue(null);
+    await add(
+      '@storybook/addon-docs',
+      { packageManager: 'npm', skipPostinstall: true },
+      MockedConsole
+    );
+
+    expect(MockWrapRequireUtils.wrapValueWithRequireWrapper).not.toHaveBeenCalled();
+    expect(MockedConfig.appendValueToArray).toHaveBeenCalled();
+    expect(MockedConfig.appendNodeToArray).not.toHaveBeenCalled();
+  });
+  test('should add a "wrap require" to the addon when applicable', async () => {
+    MockedConfig.getFieldNode.mockReturnValue({});
+    MockWrapRequireUtils.getRequireWrapperName.mockReturnValue('require');
+    await add(
+      '@storybook/addon-docs',
+      { packageManager: 'npm', skipPostinstall: true },
+      MockedConsole
+    );
+
+    expect(MockWrapRequireUtils.wrapValueWithRequireWrapper).toHaveBeenCalled();
+    expect(MockedConfig.appendValueToArray).not.toHaveBeenCalled();
+    expect(MockedConfig.appendNodeToArray).toHaveBeenCalled();
+  });
   test('not warning when installing the correct version of storybook', async () => {
     await add(
       '@storybook/addon-docs',
@@ -129,7 +175,7 @@ describe('add (extra)', () => {
 
     expect(MockedConsole.warn).toHaveBeenCalledWith(
       expect.stringContaining(
-        `The version of @storybook/addon-docs you are installing is not the same as the version of Storybook you are using. This may lead to unexpected behavior.`
+        `The version of @storybook/addon-docs (2.0.0) you are installing is not the same as the version of Storybook you are using (8.0.0). This may lead to unexpected behavior.`
       )
     );
   });
@@ -143,6 +189,7 @@ describe('add (extra)', () => {
 
     expect(MockedPostInstall.postinstallAddon).toHaveBeenCalledWith('@storybook/addon-docs', {
       packageManager: 'npm',
+      configDir: '.storybook',
     });
   });
 });

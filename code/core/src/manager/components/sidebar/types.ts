@@ -1,9 +1,10 @@
-import type { StoriesHash, State } from '@storybook/core/manager-api';
+import type { StatusValue, StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
+
 import type { ControllerStateAndHelpers } from 'downshift';
-import type { API_StatusState, API_StatusValue } from '@storybook/core/types';
+import type { State, StoriesHash } from 'storybook/manager-api';
 
 export type Refs = State['refs'];
-export type RefType = Refs[keyof Refs] & { status?: API_StatusState };
+export type RefType = Refs[keyof Refs] & { allStatuses?: StatusesByStoryIdAndTypeId };
 export type Item = StoriesHash[keyof StoriesHash];
 export type Dataset = Record<string, Item>;
 
@@ -43,7 +44,7 @@ export interface ExpandType {
   moreCount: number;
 }
 
-export type SearchItem = Item & { refId: string; path: string[]; status?: API_StatusValue };
+export type SearchItem = Item & { refId: string; path: string[]; status?: StatusValue };
 
 export type SearchResult = Fuse.FuseResultWithMatches<SearchItem> &
   Fuse.FuseResultWithScore<SearchItem>;

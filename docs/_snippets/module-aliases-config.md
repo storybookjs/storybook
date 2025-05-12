@@ -1,6 +1,6 @@
 ```js filename=".storybook/main.js" renderer="common" language="js" tabTitle="vite"
 export default {
-  // Replace your-framework with the framework you are using (e.g., react-webpack5, vue3-vite)
+  // Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite)
   framework: '@storybook/your-framework',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   viteFinal: async (config) => {
@@ -23,7 +23,7 @@ export default {
 ```
 
 ```ts filename=".storybook/main.ts" renderer="common" language="ts" tabTitle="vite"
-// Replace your-framework with the framework you are using (e.g., react-webpack5, vue3-vite)
+// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite)
 import type { StorybookConfig } from '@storybook/your-framework';
 
 const config: StorybookConfig = {
@@ -52,7 +52,7 @@ export default config;
 
 ```js filename=".storybook/main.js" renderer="common" language="js" tabTitle="webpack"
 export default {
-  // Replace your-framework with the framework you are using (e.g., nextjs, vue3-vite)
+  // Replace your-framework with the framework you are using (e.g., nextjs, react-webpack5)
   framework: '@storybook/your-framework',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   webpackFinal: async (config) => {
@@ -75,7 +75,7 @@ export default {
 ```
 
 ```ts filename=".storybook/main.ts" renderer="common" language="ts" tabTitle="webpack"
-// Replace your-framework with the framework you are using (e.g., nextjs, vue3-vite)
+// Replace your-framework with the framework you are using (e.g., nextjs, react-webpack5)
 import type { StorybookConfig } from '@storybook/your-framework';
 
 const config: StorybookConfig = {
@@ -101,4 +101,3 @@ const config: StorybookConfig = {
 
 export default config;
 ```
-

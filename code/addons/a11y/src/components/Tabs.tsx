@@ -1,14 +1,15 @@
 import * as React from 'react';
 
-import { styled } from 'storybook/internal/theming';
-import type { NodeResult, Result } from 'axe-core';
+import { IconButton, ScrollArea, TooltipNote, WithTooltip } from 'storybook/internal/components';
+
+import { CollapseIcon, ExpandAltIcon, EyeCloseIcon, EyeIcon, SyncIcon } from '@storybook/icons';
+
+import type { Result } from 'axe-core';
 import { useResizeDetector } from 'react-resize-detector';
-import HighlightToggle from './Report/HighlightToggle';
+import { styled } from 'storybook/theming';
 
-import type { RuleType } from './A11YPanel';
+import type { RuleType } from '../types';
 import { useA11yContext } from './A11yContext';
-
-// TODO: reuse the Tabs component from @storybook/theming instead of re-building identical functionality
 
 const Container = styled.div({
   width: '100%',
@@ -16,74 +17,68 @@ const Container = styled.div({
   minHeight: '100%',
 });
 
-const HighlightToggleLabel = styled.label(({ theme }) => ({
-  cursor: 'pointer',
-  userSelect: 'none',
-  color: theme.color.dark,
-}));
-
-const GlobalToggle = styled.div<{ elementWidth: number }>(({ elementWidth, theme }) => {
-  const maxWidthBeforeBreak = 450;
-  return {
-    cursor: 'pointer',
-    fontSize: 13,
-    lineHeight: '20px',
-    padding: elementWidth > maxWidthBeforeBreak ? '10px 15px 10px 0' : '10px 0px 10px 15px',
-    height: '40px',
-    border: 'none',
-    marginTop: elementWidth > maxWidthBeforeBreak ? -40 : 0,
-    float: elementWidth > maxWidthBeforeBreak ? 'right' : 'left',
-    display: 'flex',
-    alignItems: 'center',
-    width: elementWidth > maxWidthBeforeBreak ? 'auto' : '100%',
-    borderBottom: elementWidth > maxWidthBeforeBreak ? 'none' : `1px solid ${theme.appBorderColor}`,
-
-    input: {
-      marginLeft: 10,
-      marginRight: 0,
-      marginTop: -1,
-      marginBottom: 0,
-    },
-  };
-});
-
 const Item = styled.button<{ active?: boolean }>(
   ({ theme }) => ({
     textDecoration: 'none',
     padding: '10px 15px',
     cursor: 'pointer',
+    color: theme.textMutedColor,
     fontWeight: theme.typography.weight.bold,
     fontSize: theme.typography.size.s2 - 1,
     lineHeight: 1,
     height: 40,
     border: 'none',
-    borderTop: '3px solid transparent',
     borderBottom: '3px solid transparent',
     background: 'transparent',
 
     '&:focus': {
       outline: '0 none',
-      borderBottom: `3px solid ${theme.color.secondary}`,
+      borderColor: theme.color.secondary,
     },
   }),
   ({ active, theme }) =>
     active
       ? {
           opacity: 1,
-          borderBottom: `3px solid ${theme.color.secondary}`,
+          color: theme.color.secondary,
+          borderColor: theme.color.secondary,
         }
       : {}
 );
 
-const TabsWrapper = styled.div({});
-
-const List = styled.div(({ theme }) => ({
+const Subnav = styled.div(({ theme }) => ({
   boxShadow: `${theme.appBorderColor} 0 -1px 0 0 inset`,
   background: theme.background.app,
+  position: 'sticky',
+  top: 0,
+  zIndex: 1,
   display: 'flex',
-  justifyContent: 'space-between',
+  alignItems: 'center',
   whiteSpace: 'nowrap',
+  overflow: 'auto',
+  paddingRight: 10,
+  gap: 6,
 }));
+
+const TabsWrapper = styled.div({});
+const ActionsWrapper = styled.div({
+  display: 'flex',
+  flexBasis: '100%',
+  justifyContent: 'flex-end',
+  containerType: 'inline-size',
+  // 96px is the total width of the buttons without labels
+  minWidth: 96,
+  gap: 6,
+});
+
+const ToggleButton = styled(IconButton)({
+  // 193px is the total width of the action buttons when the label is visible
+  '@container (max-width: 193px)': {
+    span: {
+      display: 'none',
+    },
+  },
+});
 
 interface TabsProps {
   tabs: {
@@ -94,53 +89,91 @@ interface TabsProps {
   }[];
 }
 
-function retrieveAllNodesFromResults(items: Result[]): NodeResult[] {
-  return items.reduce((acc, item) => acc.concat(item.nodes), [] as NodeResult[]);
-}
-
 export const Tabs: React.FC<TabsProps> = ({ tabs }) => {
-  const { ref, width } = useResizeDetector({
+  const { ref } = useResizeDetector({
     refreshMode: 'debounce',
     handleHeight: false,
     handleWidth: true,
   });
-  const { tab: activeTab, setTab } = useA11yContext();
+  const {
+    tab: activeTab,
+    setTab,
+    toggleHighlight,
+    highlighted,
+    handleManual,
+    allExpanded,
+    handleCollapseAll,
+    handleExpandAll,
+  } = useA11yContext();
 
   const handleToggle = React.useCallback(
     (event: React.SyntheticEvent) => {
-      setTab(parseInt(event.currentTarget.getAttribute('data-index') || '', 10));
+      setTab(event.currentTarget.getAttribute('data-type') as RuleType);
     },
     [setTab]
   );
 
-  const highlightToggleId = `${tabs[activeTab].type}-global-checkbox`;
-  const highlightLabel = `Highlight results`;
   return (
     <Container ref={ref}>
-      <List>
-        <TabsWrapper>
+      <Subnav>
+        <TabsWrapper role="tablist">
           {tabs.map((tab, index) => (
             <Item
+              role="tab"
               key={index}
-              data-index={index}
-              active={activeTab === index}
+              data-type={tab.type}
+              data-active={activeTab === tab.type}
+              aria-selected={activeTab === tab.type}
+              active={activeTab === tab.type}
               onClick={handleToggle}
             >
               {tab.label}
             </Item>
           ))}
         </TabsWrapper>
-      </List>
-      {tabs[activeTab].items.length > 0 ? (
-        <GlobalToggle elementWidth={width || 0}>
-          <HighlightToggleLabel htmlFor={highlightToggleId}>{highlightLabel}</HighlightToggleLabel>
-          <HighlightToggle
-            toggleId={highlightToggleId}
-            elementsToHighlight={retrieveAllNodesFromResults(tabs[activeTab].items)}
-          />
-        </GlobalToggle>
-      ) : null}
-      {tabs[activeTab].panel}
+        <ActionsWrapper>
+          <WithTooltip
+            as="div"
+            hasChrome={false}
+            placement="top"
+            tooltip={<TooltipNote note="Highlight elements with accessibility violations" />}
+            trigger="hover"
+          >
+            <ToggleButton onClick={toggleHighlight} active={highlighted}>
+              {highlighted ? <EyeCloseIcon /> : <EyeIcon />}
+              <span>{highlighted ? 'Hide highlights' : 'Show highlights'}</span>
+            </ToggleButton>
+          </WithTooltip>
+          <WithTooltip
+            as="div"
+            hasChrome={false}
+            placement="top"
+            tooltip={<TooltipNote note={allExpanded ? 'Collapse all' : 'Expand all'} />}
+            trigger="hover"
+          >
+            <IconButton
+              onClick={allExpanded ? handleCollapseAll : handleExpandAll}
+              aria-label={allExpanded ? 'Collapse all' : 'Expand all'}
+            >
+              {allExpanded ? <CollapseIcon /> : <ExpandAltIcon />}
+            </IconButton>
+          </WithTooltip>
+          <WithTooltip
+            as="div"
+            hasChrome={false}
+            placement="top"
+            tooltip={<TooltipNote note="Rerun the accessibility scan" />}
+            trigger="hover"
+          >
+            <IconButton onClick={handleManual} aria-label="Rerun accessibility scan">
+              <SyncIcon />
+            </IconButton>
+          </WithTooltip>
+        </ActionsWrapper>
+      </Subnav>
+      <ScrollArea vertical horizontal>
+        {tabs.find((t) => t.type === activeTab)?.panel}
+      </ScrollArea>
     </Container>
   );
 };

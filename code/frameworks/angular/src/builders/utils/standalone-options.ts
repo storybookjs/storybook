@@ -1,3 +1,5 @@
+import { BuilderOptions, CLIOptions, LoadOptions } from 'storybook/internal/types';
+
 import { BuilderContext } from '@angular-devkit/architect';
 import {
   AssetPattern,
@@ -5,7 +7,6 @@ import {
   StyleElement,
   StylePreprocessorOptions,
 } from '@angular-devkit/build-angular/src/builders/browser/schema';
-import { LoadOptions, CLIOptions, BuilderOptions } from 'storybook/internal/types';
 
 export type StandaloneOptions = CLIOptions &
   LoadOptions &
@@ -19,6 +20,7 @@ export type StandaloneOptions = CLIOptions &
       assets?: AssetPattern[];
       sourceMap?: SourceMapUnion;
       preserveSymlinks?: boolean;
+      experimentalZoneless?: boolean;
     };
     angularBuilderContext?: BuilderContext | null;
     tsConfig?: string;

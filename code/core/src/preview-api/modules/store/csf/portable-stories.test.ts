@@ -1,15 +1,16 @@
 // @vitest-environment node
-import { describe, expect, vi, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+import type { ProjectAnnotations } from 'storybook/internal/csf';
 import type {
   ComponentAnnotations as Meta,
-  StoryAnnotationsOrFn as Story,
   Store_CSFExports,
-} from '@storybook/core/types';
+  StoryAnnotationsOrFn as Story,
+} from 'storybook/internal/types';
 
-import { composeStory, composeStories, setProjectAnnotations } from './portable-stories';
 import * as defaultExportAnnotations from './__mocks__/defaultExportAnnotations.mockfile';
 import * as namedExportAnnotations from './__mocks__/namedExportAnnotations.mockfile';
-import type { ProjectAnnotations } from '@storybook/csf';
+import { composeStories, composeStory, setProjectAnnotations } from './portable-stories';
 
 type StoriesModule = Store_CSFExports & Record<string, any>;
 
@@ -57,7 +58,7 @@ describe('composeStory', () => {
     const finalAnnotations = setProjectAnnotations([firstAnnotations, secondAnnotations]);
     expect(finalAnnotations).toEqual(
       expect.objectContaining({
-        parameters: { foo: 'bar' },
+        parameters: expect.objectContaining({ foo: 'bar' }),
         args: { foo: 'bar' },
         tags: ['autodocs'],
       })
@@ -74,6 +75,25 @@ describe('composeStory', () => {
     const composedStory = composeStory(Story, meta);
     expect(composedStory.parameters.fromAnnotations.asObjectImport).toEqual(true);
     expect(composedStory.parameters.fromAnnotations.asDefaultImport).toEqual(true);
+  });
+
+  it('should compose project annotations when used in named and default exports from the same module', () => {
+    setProjectAnnotations([
+      {
+        initialGlobals: { namedExportAnnotation: true },
+        default: {
+          parameters: { defaultExportAnnotation: true },
+        },
+      },
+    ]);
+
+    const Story: Story = {
+      render: () => {},
+    };
+
+    const composedStory = composeStory(Story, meta);
+    expect(composedStory.parameters.defaultExportAnnotation).toEqual(true);
+    expect(composedStory.globals.namedExportAnnotation).toEqual(true);
   });
 
   it('should return story with composed annotations from story, meta and project', () => {
@@ -177,7 +197,7 @@ describe('composeStory', () => {
     );
     storyPrecedence();
     expect(renderSpy.mock.calls[0][1]).toEqual(
-      expect.objectContaining({ globals: { language: 'pt' } })
+      expect.objectContaining({ globals: expect.objectContaining({ language: 'pt' }) })
     );
 
     renderSpy.mockClear();
@@ -185,7 +205,7 @@ describe('composeStory', () => {
     const metaPrecedence = composeStory(storyAnnotations, metaAnnotations, projectAnnotations);
     metaPrecedence();
     expect(renderSpy.mock.calls[0][1]).toEqual(
-      expect.objectContaining({ globals: { language: 'de' } })
+      expect.objectContaining({ globals: expect.objectContaining({ language: 'de' }) })
     );
 
     renderSpy.mockClear();
@@ -193,7 +213,7 @@ describe('composeStory', () => {
     const projectPrecedence = composeStory(storyAnnotations, {}, projectAnnotations);
     projectPrecedence();
     expect(renderSpy.mock.calls[0][1]).toEqual(
-      expect.objectContaining({ globals: { language: 'nl' } })
+      expect.objectContaining({ globals: expect.objectContaining({ language: 'nl' }) })
     );
 
     renderSpy.mockClear();
@@ -202,8 +222,25 @@ describe('composeStory', () => {
     const setProjectAnnotationsPrecedence = composeStory(storyAnnotations, {}, {});
     setProjectAnnotationsPrecedence();
     expect(renderSpy.mock.calls[0][1]).toEqual(
-      expect.objectContaining({ globals: { language: 'be' } })
+      expect.objectContaining({ globals: expect.objectContaining({ language: 'be' }) })
     );
+  });
+
+  it('should provide globals based on globalTypes', async () => {
+    const storyAnnotations = { render: () => {} };
+    const metaAnnotations: Meta = { globals: { language: 'de' } };
+    const projectAnnotations: ProjectAnnotations = {
+      initialGlobals: { language: 'nl' },
+      globalTypes: {
+        theme: {
+          name: 'Theme',
+          defaultValue: 'light',
+        },
+      },
+    };
+
+    const composed = composeStory(storyAnnotations, metaAnnotations, projectAnnotations);
+    expect(composed.globals.theme).toEqual('light');
   });
 
   it('should call and compose loaders data', async () => {

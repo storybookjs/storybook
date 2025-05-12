@@ -1,9 +1,8 @@
-import type { transformAsync } from '@babel/core';
 import type { compile as mdxCompile } from '@mdx-js/mdx';
+
 import { compile } from './compiler';
 
 export type MdxCompileOptions = Parameters<typeof mdxCompile>[1];
-export type BabelOptions = Parameters<typeof transformAsync>[1];
 
 export interface CompileOptions {
   mdxCompileOptions?: MdxCompileOptions;

@@ -1,4 +1,4 @@
-/* eslint-disable no-underscore-dangle, @typescript-eslint/naming-convention */
+/// <reference path="../typings.d.ts" />
 
 declare var CONFIG_TYPE: 'DEVELOPMENT' | 'PRODUCTION';
 declare var FEATURES: import('./types/modules/core-common').StorybookConfigRaw['features'];
@@ -16,9 +16,12 @@ declare var __STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER__: any;
 declare var __STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__: any;
 declare var __STORYBOOK_ADDONS_CHANNEL__: any;
 declare var __STORYBOOK_ADDONS_MANAGER: any;
-declare var __STORYBOOK_ADDONS_PREVIEW: any;
+declare var __STORYBOOK_ADDONS_PREVIEW: import('./preview-api/modules/addons/main').AddonStore;
 declare var __STORYBOOK_PREVIEW__: import('./preview-api/modules/preview-web/PreviewWeb').PreviewWeb<any>;
 declare var __STORYBOOK_STORY_STORE__: any;
+declare var __STORYBOOK_TEST__: any;
+declare var __STORYBOOK_TEST_SPY_LISTENERS__: Set<any>;
+declare var __STORYBOOK_ACTIONS__: any;
 
 declare module '@aw-web-design/x-default-browser';
 declare module 'ansi-to-html';
@@ -27,23 +30,6 @@ declare module 'lazy-universal-dotenv';
 declare module 'open';
 declare module 'pnp-webpack-plugin';
 declare module 'react-inspector';
-// declare module 'detect-package-manager' {
-//   // copied from https://www.npmjs.com/package/detect-package-manager?activeTab=code
-//   // because
-//   declare type PM = 'npm' | 'yarn' | 'pnpm' | 'bun';
-//   declare const detect: ({
-//     cwd,
-//     includeGlobalBun,
-//   }?: {
-//     cwd?: string | undefined;
-//     includeGlobalBun?: boolean | undefined;
-//   }) => Promise<PM>;
-
-//   declare function getNpmVersion(pm: PM): Promise<string>;
-//   declare function clearCache(): void;
-
-//   export { PM, clearCache, detect, getNpmVersion };
-// }
 
 declare var STORIES: any;
 

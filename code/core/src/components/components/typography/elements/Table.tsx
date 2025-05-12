@@ -1,5 +1,6 @@
-import { styled } from '@storybook/core/theming';
-import { withReset, withMargin } from '../lib/common';
+import { styled } from 'storybook/theming';
+
+import { withMargin, withReset } from '../lib/common';
 
 export const Table = styled.table(withReset, withMargin, ({ theme }) => ({
   fontSize: theme.typography.size.s2,

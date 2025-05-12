@@ -1,5 +1,6 @@
-import { addons } from 'storybook/internal/preview-api';
+import { addons } from 'storybook/preview-api';
 import { normalize, sep } from 'upath';
+
 import { ADD_TESTS, defineJestParameter } from './shared';
 
 const findTestResults = (

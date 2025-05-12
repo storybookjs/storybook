@@ -47,8 +47,8 @@ export const WithAnImage = {
 };
 ```
 
-```tsx filename=" MyComponent.stories.ts|tsx" renderer="react" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/react';
+```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts"
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import imageFile from './static/image.png';
 
@@ -60,30 +60,6 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-const image = {
-  src: imageFile,
-  alt: 'my image',
-};
-
-export const WithAnImage: Story = {
-  render: () => <img src={image.src} alt={image.alt} />,
-};
-```
-
-```tsx filename=" MyComponent.stories.ts|tsx" renderer="react" language="ts"
-import type { Meta, StoryObj } from '@storybook/react';
-
-import imageFile from './static/image.png';
-
-import { MyComponent } from './MyComponent';
-
-const meta: Meta<typeof MyComponent> = {
-  component: MyComponent,
-};
-
-export default meta;
-type Story = StoryObj<typeof MyComponent>;
 
 const image = {
   src: imageFile,
@@ -114,7 +90,7 @@ export const WithAnImage = {
 };
 ```
 
-```tsx filename=" MyComponent.stories.ts|tsx" renderer="solid" language="ts-4-9"
+```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts"
 import type { Meta, StoryObj } from 'storybook-solidjs';
 
 import imageFile from './static/image.png';
@@ -138,59 +114,9 @@ export const WithAnImage: Story = {
 };
 ```
 
-```tsx filename=" MyComponent.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs';
-
-import imageFile from './static/image.png';
-
-import { MyComponent } from './MyComponent';
-
-const meta: Meta<typeof MyComponent> = {
-  component: MyComponent,
-};
-
-export default meta;
-type Story = StoryObj<typeof MyComponent>;
-
-const image = {
-  src: imageFile,
-  alt: 'my image',
-};
-
-export const WithAnImage: Story = {
-  render: () => <img src={image.src} alt={image.alt} />,
-};
-```
-
-```js renderer="svelte" language="js"
-//MyComponent.stories.js
-
-import MyComponent from './MyComponent.svelte';
-
-import imageFile from './static/image.png';
-
-export default {
-  component: MyComponent,
-};
-
-const image = {
-  src: imageFile,
-  alt: 'my image',
-};
-
-export const WithAnImage = {
-  render: () => ({
-    Component: MyComponent,
-    props: image,
-  }),
-};
-```
-
-```html renderer="svelte" language="ts" tabTitle="native-format"
-{/* MyComponent.stories.svelte */}
-
-<script>
-  import { Meta, Template, Story } from '@storybook/addon-svelte-csf';
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
 
   import MyComponent from './MyComponent.svelte';
 
@@ -200,19 +126,65 @@ export const WithAnImage = {
     src: imageFile,
     alt: 'my image',
   };
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+  });
 </script>
 
-<meta title="img" component="{MyComponent}" />
-
-<template>
+<Story name="WithAnImage">
   <MyComponent {image} />
-</template>
-
-<Story name="WithAnImage" />
+</Story>
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/svelte';
+```js filename="MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+import MyComponent from './MyComponent.svelte';
+
+import imageFile from './static/image.png';
+
+export default {
+  component: MyComponent,
+};
+
+const image = {
+  src: imageFile,
+  alt: 'my image',
+};
+
+export const WithAnImage = {
+  render: () => ({
+    Component: MyComponent,
+    props: image,
+  }),
+};
+```
+
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import MyComponent from './MyComponent.svelte';
+
+  import imageFile from './static/image.png';
+
+  let image = {
+    src: imageFile,
+    alt: 'my image',
+  };
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+  });
+</script>
+
+<Story name="WithAnImage">
+	<MyComponent {image} />
+</Story>
+```
+
+```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+// Replace your-framework with svelte-vite or sveltekit
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import MyComponent from './MyComponent.svelte';
 
@@ -238,34 +210,7 @@ export const WithAnImage: Story = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts"
-import type { Meta, StoryObj } from '@storybook/svelte';
-
-import MyComponent from './MyComponent.svelte';
-
-import imageFile from './static/image.png';
-
-const meta: Meta<typeof MyComponent> = {
-  component: MyComponent,
-};
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-const image = {
-  src: imageFile,
-  alt: 'my image',
-};
-
-export const WithAnImage: Story = {
-  render: () => ({
-    Component: MyComponent,
-    props: image,
-  }),
-};
-```
-
-```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="3"
+```js filename="MyComponent.stories.js" renderer="vue" language="js"
 import MyComponent from './MyComponent.vue';
 
 import imageFile from './static/image.png';
@@ -290,8 +235,8 @@ export const WithAnImage = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="vue" language="ts-4-9" tabTitle="3"
-import type { Meta, StoryObj } from '@storybook/vue3';
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts"
+import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import MyComponent from './MyComponent.vue';
 
@@ -308,36 +253,6 @@ const image = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-export const WithAnImage: Story = {
-  render: () => ({
-    setup() {
-      //👇 Returns the content of the image object create above.
-      return { image };
-    },
-    template: `<img v-bind="image"/>`,
-  }),
-};
-```
-
-```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="3"
-import type { Meta, StoryObj } from '@storybook/vue3';
-
-import MyComponent from './MyComponent.vue';
-
-import imageFile from './static/image.png';
-
-const meta: Meta<typeof MyComponent> = {
-  component: MyComponent,
-};
-
-const image = {
-  src: imageFile,
-  alt: 'my image',
-};
-
-export default meta;
-type Story = StoryObj<typeof MyComponent>;
 
 export const WithAnImage: Story = {
   render: () => ({
@@ -370,7 +285,7 @@ export const WithAnImage = {
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import { html } from 'lit';
 
@@ -392,4 +307,3 @@ export const WithAnImage: Story = {
   render: () => html`<img src="${image.src}" alt="${image.alt}" />`,
 };
 ```
-

@@ -1,5 +1,6 @@
 import memoize from 'memoizerific';
-import type { Color, Background, Typography } from './types';
+
+import type { Background, Color, Typography } from './types';
 
 type Value = string | number;
 interface Return {
@@ -106,6 +107,26 @@ export const createGlobal = memoize(1)(({
     hr: {
       ...resetStyles.hr,
       borderTop: `1px solid ${color.border}`,
+    },
+
+    '.sb-sr-only, .sb-hidden-until-focus:not(:focus)': {
+      position: 'absolute',
+      width: 1,
+      height: 1,
+      padding: 0,
+      margin: -1,
+      overflow: 'hidden',
+      clip: 'rect(0, 0, 0, 0)',
+      border: 0,
+    },
+
+    '.sb-hidden-until-focus': {
+      opacity: 0,
+      transition: 'opacity 150ms ease-out',
+    },
+
+    '.sb-hidden-until-focus:focus': {
+      opacity: 1,
     },
   };
 });

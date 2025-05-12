@@ -1,6 +1,8 @@
 import { global as globalThis } from '@storybook/global';
+
 import { withThemeByClassName } from '@storybook/addon-themes';
-import { useEffect } from 'storybook/internal/preview-api';
+
+import { useEffect } from 'storybook/preview-api';
 
 const cleanup = () => {
   const existing = globalThis.document.querySelector('style[data-theme-css]');

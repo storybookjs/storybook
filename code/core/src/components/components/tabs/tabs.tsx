@@ -1,14 +1,17 @@
+/* eslint-disable react/destructuring-assignment */
 import type { FC, PropsWithChildren, ReactElement, ReactNode, SyntheticEvent } from 'react';
-import React, { useMemo, Component, memo } from 'react';
-import { styled } from '@storybook/core/theming';
-import { sanitize } from '@storybook/csf';
+import React, { Component, memo, useMemo } from 'react';
 
-import type { Addon_RenderOptions } from '@storybook/core/types';
-import { TabButton } from '../bar/button';
+import { sanitize } from 'storybook/internal/csf';
+import type { Addon_RenderOptions } from 'storybook/internal/types';
+
+import { styled } from 'storybook/theming';
+
 import { FlexBar } from '../bar/bar';
-import { childrenToList, VisuallyHidden } from './tabs.helpers';
-import { useList } from './tabs.hooks';
+import { TabButton } from '../bar/button';
 import { EmptyTabContent } from './EmptyTabContent';
+import { VisuallyHidden, childrenToList } from './tabs.helpers';
+import { useList } from './tabs.hooks';
 
 const ignoreSsrWarning =
   '/* emotion-disable-server-rendering-unsafe-selector-warning-please-do-not-use-this-the-warning-exists-for-a-reason */';
@@ -131,6 +134,41 @@ export interface TabsProps {
   menuName?: string;
 }
 
+interface ErrorBoundaryProps {
+  children: ReactNode;
+  active: boolean;
+}
+
+class TabErrorBoundary extends Component<ErrorBoundaryProps, { hasError: boolean }> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    console.error('Error rendering addon panel');
+    console.error(error);
+    console.error(info.componentStack);
+  }
+
+  render() {
+    if (this.state.hasError && this.props.active) {
+      return (
+        <EmptyTabContent
+          title="This addon has errors"
+          description="Check your browser logs and addon code to pinpoint what went wrong. This issue was not caused by Storybook."
+        />
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
 export const Tabs: FC<TabsProps> = memo(
   ({
     children,
@@ -200,7 +238,11 @@ export const Tabs: FC<TabsProps> = memo(
         <Content id="panel-tab-content" bordered={bordered} absolute={absolute}>
           {list.length
             ? list.map(({ id, active, render }) => {
-                return React.createElement(render, { key: id, active }, null);
+                return (
+                  <TabErrorBoundary key={id} active={active}>
+                    {React.createElement(render, { active }, null)}
+                  </TabErrorBoundary>
+                );
               })
             : EmptyContent}
         </Content>

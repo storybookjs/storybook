@@ -1,12 +1,16 @@
-import { expect } from '@storybook/test';
 import React from 'react';
-import { action } from '@storybook/addon-actions';
-import type { Meta, StoryObj } from '@storybook/react';
-import { within, fireEvent, waitFor, screen, userEvent, findByText } from '@storybook/test';
+
 import { BottomBarIcon, CloseIcon } from '@storybook/icons';
-import { Tabs, TabsState, TabWrapper } from './tabs';
-import type { ChildrenList } from './tabs.helpers';
+
+import type { Meta, StoryObj } from '@storybook/react-vite';
+
+import { action } from 'storybook/actions';
+import { expect, spyOn } from 'storybook/test';
+import { findByText, fireEvent, screen, userEvent, waitFor, within } from 'storybook/test';
+
 import { IconButton } from '../IconButton/IconButton';
+import { TabWrapper, Tabs, TabsState } from './tabs';
+import type { ChildrenList } from './tabs.helpers';
 
 const colours = Array.from(new Array(15), (val, index) => index).map((i) =>
   Math.floor((1 / 15) * i * 16777215)
@@ -36,6 +40,13 @@ function fibonacci(num: number, memo?: FibonacciMap): number {
 
   memo[num] = fibonacci(num - 1, memo) + fibonacci(num - 2, memo);
   return memo[num];
+}
+
+// Component that throws an error when rendered
+function ErrorComponent() {
+  throw new Error('This is a test error thrown by ErrorComponent');
+  // The code below will never execute
+  return <div>This component throws an error</div>;
 }
 
 type Panels = Record<string, Omit<ChildrenList[0], 'id'>>;
@@ -88,6 +99,10 @@ const panels: Panels = {
   test6: {
     title: 'Tab title #6',
     render: ({ active }) => <TabWrapper active={active} render={() => <div>CONTENT 6</div>} />,
+  },
+  errorTab: {
+    title: 'Error Tab',
+    render: ({ active }) => (active ? <ErrorComponent /> : null),
   },
 };
 
@@ -177,11 +192,11 @@ const customViewports = {
 export const StatefulDynamicWithOpenTooltip = {
   parameters: {
     viewport: {
-      viewports: customViewports,
+      options: customViewports,
     },
     chromatic: { viewports: [380] },
   },
-  globals: { sb_theme: 'light', viewport: 'sized' },
+  globals: { sb_theme: 'light', viewport: { value: 'sized' } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
@@ -400,5 +415,39 @@ export const StatefulWithStatefulPanel = {
         </TabsState>
       </div>
     );
+  },
+} satisfies Story;
+
+// Story that demonstrates the error boundary functionality
+export const WithErrorBoundary = {
+  parameters: {
+    test: {
+      dangerouslyIgnoreUnhandledErrors: true,
+    },
+  },
+  play: async ({ mount, args, canvas }) => {
+    spyOn(console, 'error').mockImplementation(() => {});
+    await mount(
+      <TabsState {...args} initial="test1">
+        <div id="test1" title="Normal Tab">
+          {
+            (({ active }: { active: boolean }) =>
+              active ? <div>This tab renders normally</div> : null) as any
+          }
+        </div>
+        <div id="errorTab" title="Error Tab">
+          {(({ active }: { active: boolean }) => (active ? <ErrorComponent /> : null)) as any}
+        </div>
+      </TabsState>
+    );
+    // Check that the normal tab renders correctly
+    await expect(canvas.getByText('This tab renders normally')).toBeInTheDocument();
+
+    // Find and click the error tab to trigger the error
+    const errorTab = canvas.getByRole('tab', { name: 'Error Tab' });
+    await userEvent.click(errorTab);
+
+    // Check that the error boundary message is displayed
+    await expect(await canvas.findByText('This addon has errors')).toBeInTheDocument();
   },
 } satisfies Story;

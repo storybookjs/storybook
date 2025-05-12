@@ -1,14 +1,19 @@
 import React from 'react';
-import { action } from '@storybook/addon-actions';
-import { LocationProvider } from '@storybook/core/router';
-import type { Meta, StoryObj } from '@storybook/react';
-import NotificationItem from './NotificationItem';
+
+import { LocationProvider } from 'storybook/internal/router';
+
 import {
   AccessibilityIcon as AccessibilityIconIcon,
   BookIcon as BookIconIcon,
   FaceHappyIcon,
 } from '@storybook/icons';
-import { expect, fn, userEvent, waitFor, within } from '@storybook/test';
+
+import type { Meta, StoryObj } from '@storybook/react-vite';
+
+import { action } from 'storybook/actions';
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
+
+import NotificationItem from './NotificationItem';
 
 const meta = {
   component: NotificationItem,
@@ -20,7 +25,7 @@ const meta = {
       </LocationProvider>
     ),
     (Story) => (
-      <div style={{ width: '240px', margin: '1rem' }}>
+      <div style={{ width: '240px' }}>
         <Story />
       </div>
     ),
@@ -265,23 +270,6 @@ export const AccessibilityGoldIconLongHeadLineNoSubHeadline: Story = {
         headline: 'Storybook notifications has a accessibility icon it can be any color!',
       },
       icon: <AccessibilityIconIcon color="gold" />,
-      link: undefined,
-    },
-  },
-};
-
-export const WithOldIconFormat: Story = {
-  args: {
-    notification: {
-      id: '13',
-      onClear,
-      content: {
-        headline: 'Storybook notifications has a accessibility icon it can be any color!',
-      },
-      icon: {
-        name: 'accessibility',
-        color: 'gold',
-      },
       link: undefined,
     },
   },

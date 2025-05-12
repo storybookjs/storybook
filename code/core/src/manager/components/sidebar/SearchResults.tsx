@@ -1,21 +1,24 @@
-import { styled } from '@storybook/core/theming';
-import { Button, IconButton } from '@storybook/core/components';
-import { global } from '@storybook/global';
 import type { FC, MouseEventHandler, PropsWithChildren, ReactNode } from 'react';
 import React, { useCallback, useEffect } from 'react';
-import type { ControllerStateAndHelpers } from 'downshift';
 
-import { useStorybookApi } from '@storybook/core/manager-api';
-import { PRELOAD_ENTRIES } from '@storybook/core/core-events';
-import { transparentize } from 'polished';
+import { Button, IconButton } from 'storybook/internal/components';
+import { PRELOAD_ENTRIES } from 'storybook/internal/core-events';
+
+import { global } from '@storybook/global';
 import { TrashIcon } from '@storybook/icons';
-import { TypeIcon } from './TreeNode';
-import type { Match, DownshiftItem, SearchResult } from './types';
-import { isExpandType } from './types';
-import { matchesKeyCode, matchesModifiers } from '../../keybinding';
 
+import type { ControllerStateAndHelpers } from 'downshift';
+import { transparentize } from 'polished';
+import { useStorybookApi } from 'storybook/manager-api';
+import { styled } from 'storybook/theming';
+
+import { matchesKeyCode, matchesModifiers } from '../../keybinding';
 import { statusMapping } from '../../utils/status';
 import { UseSymbol } from './IconSymbols';
+import { StatusLabel } from './StatusButton';
+import { TypeIcon } from './TreeNode';
+import type { DownshiftItem, Match, SearchResult } from './types';
+import { isExpandType } from './types';
 
 const { document } = global;
 
@@ -31,6 +34,7 @@ const ResultRow = styled.li<{ isHighlighted: boolean }>(({ theme, isHighlighted 
   cursor: 'pointer',
   display: 'flex',
   alignItems: 'start',
+  justifyContent: 'space-between',
   textAlign: 'left',
   color: 'inherit',
   fontSize: `${theme.typography.size.s2}px`,
@@ -54,6 +58,7 @@ const IconWrapper = styled.div({
 });
 
 const ResultRowContent = styled.div({
+  flex: 1,
   display: 'flex',
   flexDirection: 'column',
 });
@@ -65,7 +70,7 @@ const NoResults = styled.div(({ theme }) => ({
   lineHeight: `18px`,
   color: theme.color.defaultText,
   small: {
-    color: theme.barTextColor,
+    color: theme.textMutedColor,
     fontSize: `${theme.typography.size.s1}px`,
   },
 }));
@@ -107,7 +112,9 @@ const Highlight: FC<PropsWithChildren<{ match?: Match }>> = React.memo(function 
   children,
   match,
 }) {
-  if (!match) return children;
+  if (!match) {
+    return children;
+  }
   const { value, indices } = match;
   const { nodes: result } = indices.reduce<{ cursor: number; nodes: ReactNode[] }>(
     ({ cursor, nodes }, [start, end], index, { length }) => {
@@ -181,7 +188,7 @@ const Result: FC<
   const nameMatch = matches.find((match: Match) => match.key === 'name');
   const pathMatches = matches.filter((match: Match) => match.key === 'path');
 
-  const [i] = item.status ? statusMapping[item.status] : [];
+  const [icon] = item.status ? statusMapping[item.status] : [];
 
   return (
     <ResultRow {...props} onClick={click}>
@@ -216,7 +223,7 @@ const Result: FC<
           ))}
         </Path>
       </ResultRowContent>
-      {item.status ? i : null}
+      {item.status ? <StatusLabel status={item.status}>{icon}</StatusLabel> : null}
     </ResultRow>
   );
 });
@@ -245,10 +252,15 @@ export const SearchResults: FC<{
   const api = useStorybookApi();
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
-      if (!enableShortcuts || isLoading || event.repeat) return;
+      if (!enableShortcuts || isLoading || event.repeat) {
+        return;
+      }
       if (matchesModifiers(false, event) && matchesKeyCode('Escape', event)) {
         const target = event.target as Element;
-        if (target?.id === 'storybook-explorer-searchfield') return; // handled by downshift
+
+        if (target?.id === 'storybook-explorer-searchfield') {
+          return; // handled by downshift
+        }
         event.preventDefault();
         closeMenu();
       }
@@ -284,7 +296,7 @@ export const SearchResults: FC<{
   };
 
   return (
-    <ResultsList {...getMenuProps()}>
+    <ResultsList {...getMenuProps()} key="results-list">
       {results.length > 0 && !query && (
         <RecentlyOpenedTitle className="search-result-recentlyOpened">
           Recently opened
@@ -307,14 +319,12 @@ export const SearchResults: FC<{
       )}
       {results.map((result: DownshiftItem, index) => {
         if (isExpandType(result)) {
+          const props = { ...results, ...getItemProps({ key: index, index, item: result }) };
+          const { key, ...rest } = props;
           return (
             <MoreWrapper key="search-result-expand">
               {/* @ts-expect-error (non strict) */}
-              <Button
-                {...result}
-                {...getItemProps({ key: index, index, item: result })}
-                size="small"
-              >
+              <Button key={key} {...rest} size="small">
                 Show {result.moreCount} more results
               </Button>
             </MoreWrapper>
@@ -325,11 +335,10 @@ export const SearchResults: FC<{
         const key = `${item.refId}::${item.id}`;
         return (
           <Result
-            // @ts-expect-error (non strict)
-            key={item.id}
             {...result}
             {...getItemProps({ key, index, item: result })}
             isHighlighted={highlightedIndex === index}
+            key={key}
             data-id={result.item.id}
             data-refid={result.item.refId}
             onMouseOver={mouseOverHandler}

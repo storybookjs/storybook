@@ -8,7 +8,7 @@ export default {
   parameters: {
     chromatic: { disable: true },
   },
-  tags: ['!test'],
+  tags: ['!test', '!vitest'],
 };
 
 export const RenderThrows = {

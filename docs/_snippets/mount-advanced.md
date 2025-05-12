@@ -8,7 +8,7 @@ export const Default: Story = {
     const canvas = await mount(
       // 👇 Pass data that is created inside of the play function to the component
       //   For example, a just-generated UUID
-      <Page {...args} params={{ id: String(note.id) }} />
+      <Page {...args} params={{ id: String(note.id) }} />,
     );
 
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
@@ -16,7 +16,7 @@ export const Default: Story = {
   argTypes: {
     // 👇 Make the params prop un-controllable, as the value is always overriden in the play function.
     params: { control: { disable: true } },
-  }
+  },
 };
 ```
 
@@ -30,7 +30,7 @@ export const Default = {
     const canvas = await mount(
       // 👇 Pass data that is created inside of the play function to the component
       //   For example, a just-generated UUID
-      <Page {...args} params={{ id: String(note.id) }} />
+      <Page {...args} params={{ id: String(note.id) }} />,
     );
 
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
@@ -38,7 +38,7 @@ export const Default = {
   argTypes: {
     // 👇 Make the params prop un-controllable, as the value is always overriden in the play function.
     params: { control: { disable: true } },
-  }
+  },
 };
 ```
 
@@ -53,7 +53,7 @@ export const Default: Story = {
       Page,
       // 👇 Pass data that is created inside of the play function to the component
       //   For example, a just-generated UUID
-      { props: { ...args, params: { id: String(note.id) } } }
+      { props: { ...args, params: { id: String(note.id) } } },
     );
 
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
@@ -61,7 +61,7 @@ export const Default: Story = {
   argTypes: {
     // 👇 Make the params prop un-controllable, as the value is always overriden in the play function.
     params: { control: { disable: true } },
-  }
+  },
 };
 ```
 
@@ -76,7 +76,7 @@ export const Default = {
       Page,
       // 👇 Pass data that is created inside of the play function to the component
       //   For example, a just-generated UUID
-      { props: { ...args, params: { id: String(note.id) } } }
+      { props: { ...args, params: { id: String(note.id) } } },
     );
 
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
@@ -84,7 +84,7 @@ export const Default = {
   argTypes: {
     // 👇 Make the params prop un-controllable, as the value is always overriden in the play function.
     params: { control: { disable: true } },
-  }
+  },
 };
 ```
 
@@ -99,7 +99,7 @@ export const Default: Story = {
       Page,
       // 👇 Pass data that is created inside of the play function to the component
       //   For example, a just-generated UUID
-      { props: { ...args, params: { id: String(note.id) } } }
+      { props: { ...args, params: { id: String(note.id) } } },
     );
 
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
@@ -107,7 +107,7 @@ export const Default: Story = {
   argTypes: {
     // 👇 Make the params prop un-controllable, as the value is always overriden in the play function.
     params: { control: { disable: true } },
-  }
+  },
 };
 ```
 
@@ -122,7 +122,7 @@ export const Default = {
       Page,
       // 👇 Pass data that is created inside of the play function to the component
       //   For example, a just-generated UUID
-      { props: { ...args, params: { id: String(note.id) } } }
+      { props: { ...args, params: { id: String(note.id) } } },
     );
 
     await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
@@ -130,6 +130,6 @@ export const Default = {
   argTypes: {
     // 👇 Make the params prop un-controllable, as the value is always overriden in the play function.
     params: { control: { disable: true } },
-  }
+  },
 };
 ```

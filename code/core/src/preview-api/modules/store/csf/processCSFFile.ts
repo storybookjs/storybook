@@ -1,10 +1,14 @@
-import type { Renderer, ComponentTitle, Parameters, Path } from '@storybook/core/types';
-import { isExportStory } from '@storybook/csf';
-import { logger } from '@storybook/core/client-logger';
+import { logger } from 'storybook/internal/client-logger';
+import { isExportStory, isStory } from 'storybook/internal/csf';
+import type { ComponentTitle, Parameters, Path, Renderer } from 'storybook/internal/types';
+import type {
+  CSFFile,
+  ModuleExports,
+  NormalizedComponentAnnotations,
+} from 'storybook/internal/types';
 
-import { normalizeStory } from './normalizeStory';
 import { normalizeComponentAnnotations } from './normalizeComponentAnnotations';
-import type { CSFFile, ModuleExports, NormalizedComponentAnnotations } from '@storybook/core/types';
+import { normalizeStory } from './normalizeStory';
 
 const checkGlobals = (parameters: Parameters) => {
   const { globals, globalTypes } = parameters;
@@ -21,11 +25,16 @@ const checkGlobals = (parameters: Parameters) => {
 
 const checkStorySort = (parameters: Parameters) => {
   const { options } = parameters;
-  if (options?.storySort) logger.error('The storySort option parameter can only be set globally');
+
+  if (options?.storySort) {
+    logger.error('The storySort option parameter can only be set globally');
+  }
 };
 
 const checkDisallowedParameters = (parameters?: Parameters) => {
-  if (!parameters) return;
+  if (!parameters) {
+    return;
+  }
 
   checkGlobals(parameters);
   checkStorySort(parameters);
@@ -37,8 +46,29 @@ export function processCSFFile<TRenderer extends Renderer>(
   importPath: Path,
   title: ComponentTitle
 ): CSFFile<TRenderer> {
-  // eslint-disable-next-line @typescript-eslint/naming-convention
   const { default: defaultExport, __namedExportsOrder, ...namedExports } = moduleExports;
+
+  const firstStory = Object.values(namedExports)[0];
+  if (isStory<TRenderer>(firstStory)) {
+    const meta: NormalizedComponentAnnotations<TRenderer> =
+      normalizeComponentAnnotations<TRenderer>(firstStory.meta.input, title, importPath);
+    checkDisallowedParameters(meta.parameters);
+
+    const csfFile: CSFFile<TRenderer> = { meta, stories: {}, moduleExports };
+
+    Object.keys(namedExports).forEach((key) => {
+      if (isExportStory(key, meta)) {
+        const storyMeta = normalizeStory(key, namedExports[key].input, meta);
+        checkDisallowedParameters(storyMeta.parameters);
+
+        csfFile.stories[storyMeta.id] = storyMeta;
+      }
+    });
+
+    csfFile.projectAnnotations = firstStory.meta.preview.composed;
+
+    return csfFile;
+  }
 
   const meta: NormalizedComponentAnnotations<TRenderer> = normalizeComponentAnnotations<TRenderer>(
     defaultExport,

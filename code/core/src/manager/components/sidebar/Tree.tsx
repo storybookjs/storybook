@@ -1,86 +1,64 @@
-import { useStorybookApi } from '@storybook/core/manager-api';
-import type {
-  StoriesHash,
-  GroupEntry,
-  ComponentEntry,
-  StoryEntry,
-  State,
-  API,
-} from '@storybook/core/manager-api';
-import { styled } from '@storybook/core/theming';
-import { Button, IconButton, TooltipLinkList, WithTooltip } from '@storybook/core/components';
-import { transparentize } from 'polished';
-import type { MutableRefObject } from 'react';
+import type { ComponentProps, FC, MutableRefObject } from 'react';
 import React, { useCallback, useMemo, useRef } from 'react';
 
-import { PRELOAD_ENTRIES } from '@storybook/core/core-events';
-import { ExpandAltIcon, CollapseIcon as CollapseIconSvg } from '@storybook/icons';
-import { ComponentNode, DocumentNode, GroupNode, RootNode, StoryNode } from './TreeNode';
-
-import type { ExpandAction, ExpandedState } from './useExpanded';
-
-import { useExpanded } from './useExpanded';
-import type { Highlight, Item } from './types';
+import { Button, IconButton, ListItem } from 'storybook/internal/components';
+import { PRELOAD_ENTRIES } from 'storybook/internal/core-events';
+import type { StatusValue } from 'storybook/internal/types';
+import {
+  type API_HashEntry,
+  type StatusByTypeId,
+  type StatusesByStoryIdAndTypeId,
+  type StoryId,
+} from 'storybook/internal/types';
 
 import {
-  isStoryHoistable,
+  CollapseIcon as CollapseIconSvg,
+  ExpandAltIcon,
+  StatusFailIcon,
+  StatusPassIcon,
+  StatusWarnIcon,
+  SyncIcon,
+} from '@storybook/icons';
+
+import { internal_fullStatusStore as fullStatusStore } from '#manager-stores';
+import { darken, lighten } from 'polished';
+import { useStorybookApi } from 'storybook/manager-api';
+import type {
+  API,
+  ComponentEntry,
+  GroupEntry,
+  StoriesHash,
+  StoryEntry,
+} from 'storybook/manager-api';
+import { styled, useTheme } from 'storybook/theming';
+
+import type { Link } from '../../../components/components/tooltip/TooltipLinkList';
+import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
+import { getGroupStatus, getMostCriticalStatusValue, statusMapping } from '../../utils/status';
+import {
   createId,
   getAncestorIds,
   getDescendantIds,
   getLink,
+  isStoryHoistable,
 } from '../../utils/tree';
-import { statusMapping, getHighestStatus, getGroupStatus } from '../../utils/status';
 import { useLayout } from '../layout/LayoutProvider';
-import { IconSymbols } from './IconSymbols';
+import { useContextMenu } from './ContextMenu';
+import { IconSymbols, UseSymbol } from './IconSymbols';
+import { StatusButton } from './StatusButton';
+import { StatusContext, useStatusSummary } from './StatusContext';
+import { ComponentNode, DocumentNode, GroupNode, RootNode, StoryNode } from './TreeNode';
 import { CollapseIcon } from './components/CollapseIcon';
+import type { Highlight, Item } from './types';
+import type { ExpandAction, ExpandedState } from './useExpanded';
+import { useExpanded } from './useExpanded';
+
+export type ExcludesNull = <T>(x: T | null) => x is T;
 
 const Container = styled.div<{ hasOrphans: boolean }>((props) => ({
   marginTop: props.hasOrphans ? 20 : 0,
   marginBottom: 20,
 }));
-
-export const Action = styled.button<{ height?: number; width?: number }>(
-  ({ theme, height, width }) => ({
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: width || 20,
-    height: height || 20,
-    boxSizing: 'border-box',
-    margin: 0,
-    marginLeft: 'auto',
-    padding: 0,
-    outline: 0,
-    lineHeight: 'normal',
-    background: 'none',
-    border: `1px solid transparent`,
-    borderRadius: '100%',
-    cursor: 'pointer',
-    transition: 'all 150ms ease-out',
-    color:
-      theme.base === 'light'
-        ? transparentize(0.3, theme.color.defaultText)
-        : transparentize(0.6, theme.color.defaultText),
-
-    '&:hover': {
-      color: theme.color.secondary,
-    },
-
-    '&:focus': {
-      color: theme.color.secondary,
-      borderColor: theme.color.secondary,
-
-      '&:not(:focus-visible)': {
-        borderColor: 'transparent',
-      },
-    },
-
-    svg: {
-      width: 10,
-      height: 10,
-    },
-  })
-);
 
 const CollapseButton = styled.button(({ theme }) => ({
   all: 'unset',
@@ -95,7 +73,7 @@ const CollapseButton = styled.button(({ theme }) => ({
 
   '&:hover, &:focus': {
     outline: 'none',
-    background: transparentize(0.93, theme.color.secondary),
+    background: 'var(--tree-node-background-hover)',
   },
 }));
 
@@ -103,16 +81,41 @@ export const LeafNodeStyleWrapper = styled.div(({ theme }) => ({
   position: 'relative',
   display: 'flex',
   justifyContent: 'space-between',
-  alignItems: 'center',
-  paddingRight: 20,
+  alignItems: 'flex-start',
   color: theme.color.defaultText,
   background: 'transparent',
   minHeight: 28,
   borderRadius: 4,
+  overflow: 'hidden',
+  '--tree-node-background-hover': theme.background.content,
+
+  [MEDIA_DESKTOP_BREAKPOINT]: {
+    '--tree-node-background-hover': theme.background.app,
+  },
 
   '&:hover, &:focus': {
+    '--tree-node-background-hover':
+      theme.base === 'dark'
+        ? darken(0.35, theme.color.secondary)
+        : lighten(0.45, theme.color.secondary),
+    background: 'var(--tree-node-background-hover)',
     outline: 'none',
-    background: transparentize(0.93, theme.color.secondary),
+  },
+
+  '& [data-displayed="off"]': {
+    visibility: 'hidden',
+  },
+
+  '&:hover [data-displayed="off"]': {
+    visibility: 'visible',
+  },
+
+  '& [data-displayed="on"] + *': {
+    visibility: 'hidden',
+  },
+
+  '&:hover [data-displayed="off"] + *': {
+    visibility: 'hidden',
   },
 
   '&[data-selected="true"]': {
@@ -120,8 +123,9 @@ export const LeafNodeStyleWrapper = styled.div(({ theme }) => ({
     background: theme.color.secondary,
     fontWeight: theme.typography.weight.bold,
 
-    '&:hover, &:focus': {
-      background: theme.color.secondary,
+    '&&:hover, &&:focus': {
+      '--tree-node-background-hover': theme.color.secondary,
+      background: 'var(--tree-node-background-hover)',
     },
     svg: { color: theme.color.lightest },
   },
@@ -157,27 +161,68 @@ interface NodeProps {
   docsMode: boolean;
   isOrphan: boolean;
   isDisplayed: boolean;
-  color: string | undefined;
   isSelected: boolean;
   isFullyExpanded?: boolean;
   isExpanded: boolean;
   setExpanded: (action: ExpandAction) => void;
   setFullyExpanded?: () => void;
   onSelectStoryId: (itemId: string) => void;
-  status: State['status'][keyof State['status']];
+  statuses: StatusByTypeId;
+  groupStatus: Record<StoryId, StatusValue>;
   api: API;
+  collapsedData: Record<string, API_HashEntry>;
 }
+
+const SuccessStatusIcon: FC<ComponentProps<typeof StatusPassIcon>> = (props) => {
+  const theme = useTheme();
+  return <StatusPassIcon {...props} color={theme.color.positive} />;
+};
+
+const ErrorStatusIcon: FC<ComponentProps<typeof StatusFailIcon>> = (props) => {
+  const theme = useTheme();
+  return <StatusFailIcon {...props} color={theme.color.negative} />;
+};
+
+const WarnStatusIcon: FC<ComponentProps<typeof StatusWarnIcon>> = (props) => {
+  const theme = useTheme();
+  return <StatusWarnIcon {...props} color={theme.color.warning} />;
+};
+
+const PendingStatusIcon: FC<ComponentProps<typeof SyncIcon>> = (props) => {
+  const theme = useTheme();
+  return <SyncIcon {...props} size={12} color={theme.color.defaultText} />;
+};
+
+const StatusIconMap: Record<StatusValue, React.ReactNode | null> = {
+  'status-value:success': <SuccessStatusIcon />,
+  'status-value:error': <ErrorStatusIcon />,
+  'status-value:warning': <WarnStatusIcon />,
+  'status-value:pending': <PendingStatusIcon />,
+  'status-value:unknown': null,
+};
+
+export const ContextMenu = {
+  ListItem,
+};
+
+const statusOrder: StatusValue[] = [
+  'status-value:success',
+  'status-value:error',
+  'status-value:warning',
+  'status-value:pending',
+  'status-value:unknown',
+];
 
 const Node = React.memo<NodeProps>(function Node({
   item,
-  status,
+  statuses,
+  groupStatus,
   refId,
   docsMode,
   isOrphan,
   isDisplayed,
   isSelected,
   isFullyExpanded,
-  color,
   setFullyExpanded,
   isExpanded,
   setExpanded,
@@ -185,39 +230,105 @@ const Node = React.memo<NodeProps>(function Node({
   api,
 }) {
   const { isDesktop, isMobile, setMobileMenuOpen } = useLayout();
+  const { counts, statusesByValue } = useStatusSummary(item);
 
   if (!isDisplayed) {
     return null;
   }
 
+  const statusLinks = useMemo<Link[]>(() => {
+    if (item.type === 'story' || item.type === 'docs') {
+      return Object.entries(statuses)
+        .filter(([, status]) => status.sidebarContextMenu !== false)
+        .sort((a, b) => statusOrder.indexOf(a[1].value) - statusOrder.indexOf(b[1].value))
+        .map(([typeId, status]) => ({
+          id: typeId,
+          title: status.title,
+          description: status.description,
+          'aria-label': `Test status for ${status.title}: ${status.value}`,
+          icon: StatusIconMap[status.value],
+          onClick: () => {
+            onSelectStoryId(item.id);
+            fullStatusStore.selectStatuses([status]);
+          },
+        }));
+    }
+
+    if (item.type === 'component' || item.type === 'group') {
+      const links: Link[] = [];
+      const errorCount = counts['status-value:error'];
+      const warningCount = counts['status-value:warning'];
+      if (errorCount) {
+        links.push({
+          id: 'errors',
+          icon: StatusIconMap['status-value:error'],
+          title: `${errorCount} ${errorCount === 1 ? 'story' : 'stories'} with errors`,
+          onClick: () => {
+            const [firstStoryId] = Object.entries(statusesByValue['status-value:error'])[0];
+            onSelectStoryId(firstStoryId);
+            const errorStatuses = Object.values(statusesByValue['status-value:error']).flat();
+            fullStatusStore.selectStatuses(errorStatuses);
+          },
+        });
+      }
+      if (warningCount) {
+        links.push({
+          id: 'warnings',
+          icon: StatusIconMap['status-value:warning'],
+          title: `${warningCount} ${warningCount === 1 ? 'story' : 'stories'} with warnings`,
+          onClick: () => {
+            const [firstStoryId] = Object.entries(statusesByValue['status-value:warning'])[0];
+            onSelectStoryId(firstStoryId);
+            const warningStatuses = Object.values(statusesByValue['status-value:warning']).flat();
+            fullStatusStore.selectStatuses(warningStatuses);
+          },
+        });
+      }
+      return links;
+    }
+
+    return [];
+  }, [counts, item.id, item.type, onSelectStoryId, statuses, statusesByValue]);
+
   const id = createId(item.id, refId);
+  const contextMenu =
+    refId === 'storybook_internal'
+      ? useContextMenu(item, statusLinks, api)
+      : { node: null, onMouseEnter: () => {} };
+
   if (item.type === 'story' || item.type === 'docs') {
     const LeafNode = item.type === 'docs' ? DocumentNode : StoryNode;
 
-    const statusValue = getHighestStatus(Object.values(status || {}).map((s) => s.status));
+    const statusValue = getMostCriticalStatusValue(
+      Object.values(statuses || {}).map((s) => s.value)
+    );
     const [icon, textColor] = statusMapping[statusValue];
 
     return (
       <LeafNodeStyleWrapper
+        key={id}
+        className="sidebar-item"
         data-selected={isSelected}
         data-ref-id={refId}
         data-item-id={item.id}
         data-parent-id={item.parent}
         data-nodetype={item.type === 'docs' ? 'document' : 'story'}
         data-highlightable={isDisplayed}
-        className="sidebar-item"
+        onMouseEnter={contextMenu.onMouseEnter}
       >
         <LeafNode
           // @ts-expect-error (non strict)
           style={isSelected ? {} : { color: textColor }}
-          key={id}
           href={getLink(item, refId)}
           id={id}
           depth={isOrphan ? item.depth : item.depth - 1}
           onClick={(event) => {
             event.preventDefault();
             onSelectStoryId(item.id);
-            if (isMobile) setMobileMenuOpen(false);
+
+            if (isMobile) {
+              setMobileMenuOpen(false);
+            }
           }}
           {...(item.type === 'docs' && { docsMode })}
         >
@@ -229,26 +340,17 @@ const Node = React.memo<NodeProps>(function Node({
             <a href="#storybook-preview-wrapper">Skip to canvas</a>
           </SkipToContentLink>
         )}
+        {contextMenu.node}
         {icon ? (
-          <WithTooltip
-            placement="top"
-            style={{ display: 'flex' }}
-            tooltip={() => (
-              <TooltipLinkList
-                links={Object.entries(status || {}).map(([k, v]) => ({
-                  id: k,
-                  title: v.title,
-                  description: v.description,
-                  right: statusMapping[v.status][0],
-                }))}
-              />
-            )}
-            closeOnOutsideClick
+          <StatusButton
+            aria-label={`Test status: ${statusValue.replace('status-value:', '')}`}
+            role="status"
+            type="button"
+            status={statusValue}
+            selectedItem={isSelected}
           >
-            <Action type="button" height={22}>
-              {icon}
-            </Action>
-          </WithTooltip>
+            {icon}
+          </StatusButton>
         ) : null}
       </LeafNodeStyleWrapper>
     );
@@ -296,41 +398,59 @@ const Node = React.memo<NodeProps>(function Node({
   }
 
   if (item.type === 'component' || item.type === 'group') {
+    const itemStatus = groupStatus?.[item.id];
+    const color = itemStatus ? statusMapping[itemStatus][1] : null;
     const BranchNode = item.type === 'component' ? ComponentNode : GroupNode;
+
     return (
-      <BranchNode
+      <LeafNodeStyleWrapper
         key={id}
-        id={id}
-        style={color ? { color } : {}}
         className="sidebar-item"
         data-ref-id={refId}
         data-item-id={item.id}
         data-parent-id={item.parent}
-        data-nodetype={item.type === 'component' ? 'component' : 'group'}
+        data-nodetype={item.type}
         data-highlightable={isDisplayed}
-        aria-controls={item.children && item.children[0]}
-        aria-expanded={isExpanded}
-        depth={isOrphan ? item.depth : item.depth - 1}
-        isComponent={item.type === 'component'}
-        isExpandable={item.children && item.children.length > 0}
-        isExpanded={isExpanded}
-        onClick={(event) => {
-          event.preventDefault();
-          setExpanded({ ids: [item.id], value: !isExpanded });
-          if (item.type === 'component' && !isExpanded && isDesktop) onSelectStoryId(item.id);
-        }}
-        onMouseEnter={() => {
-          if (item.type === 'component') {
-            api.emit(PRELOAD_ENTRIES, {
-              ids: [item.children[0]],
-              options: { target: refId },
-            });
-          }
-        }}
+        onMouseEnter={contextMenu.onMouseEnter}
       >
-        {(item.renderLabel as (i: typeof item, api: API) => React.ReactNode)?.(item, api) ||
-          item.name}
-      </BranchNode>
+        <BranchNode
+          id={id}
+          style={color ? { color } : {}}
+          aria-controls={item.children && item.children[0]}
+          aria-expanded={isExpanded}
+          depth={isOrphan ? item.depth : item.depth - 1}
+          isComponent={item.type === 'component'}
+          isExpandable={item.children && item.children.length > 0}
+          isExpanded={isExpanded}
+          onClick={(event) => {
+            event.preventDefault();
+            setExpanded({ ids: [item.id], value: !isExpanded });
+
+            if (item.type === 'component' && !isExpanded && isDesktop) {
+              onSelectStoryId(item.id);
+            }
+          }}
+          onMouseEnter={() => {
+            if (item.type === 'component') {
+              api.emit(PRELOAD_ENTRIES, {
+                ids: [item.children[0]],
+                options: { target: refId },
+              });
+            }
+          }}
+        >
+          {(item.renderLabel as (i: typeof item, api: API) => React.ReactNode)?.(item, api) ||
+            item.name}
+        </BranchNode>
+        {contextMenu.node}
+        {(['status-value:error', 'status-value:warning'] as StatusValue[]).includes(itemStatus) && (
+          <StatusButton type="button" status={itemStatus}>
+            <svg key="icon" viewBox="0 0 6 6" width="6" height="6" type="dot">
+              <UseSymbol type="dot" />
+            </svg>
+          </StatusButton>
+        )}
+      </LeafNodeStyleWrapper>
     );
   }
 
@@ -360,7 +480,7 @@ const Root = React.memo<NodeProps & { expandableDescendants: string[] }>(functio
 export const Tree = React.memo<{
   isBrowsing: boolean;
   isMain: boolean;
-  status?: State['status'];
+  allStatuses?: StatusesByStoryIdAndTypeId;
   refId: string;
   data: StoriesHash;
   docsMode: boolean;
@@ -373,7 +493,7 @@ export const Tree = React.memo<{
   isMain,
   refId,
   data,
-  status,
+  allStatuses,
   docsMode,
   highlightedRef,
   setHighlightedItemId,
@@ -389,9 +509,16 @@ export const Tree = React.memo<{
       Object.keys(data).reduce<[string[], string[], ExpandedState]>(
         (acc, id) => {
           const item = data[id];
-          if (item.type === 'root') acc[0].push(id);
-          else if (!item.parent) acc[1].push(id);
-          if (item.type === 'root' && item.startCollapsed) acc[2][id] = false;
+
+          if (item.type === 'root') {
+            acc[0].push(id);
+          } else if (!item.parent) {
+            acc[1].push(id);
+          }
+
+          if (item.type === 'root' && item.startCollapsed) {
+            acc[2][id] = false;
+          }
           return acc;
         },
         [[], [], {}]
@@ -420,15 +547,26 @@ export const Tree = React.memo<{
   const singleStoryComponentIds = useMemo(() => {
     return Object.keys(data).filter((id) => {
       const entry = data[id];
-      if (entry.type !== 'component') return false;
+
+      if (entry.type !== 'component') {
+        return false;
+      }
 
       const { children = [], name } = entry;
-      if (children.length !== 1) return false;
+
+      if (children.length !== 1) {
+        return false;
+      }
 
       const onlyChild = data[children[0]];
 
-      if (onlyChild.type === 'docs') return true;
-      if (onlyChild.type === 'story') return isStoryHoistable(onlyChild.name, name);
+      if (onlyChild.type === 'docs') {
+        return true;
+      }
+
+      if (onlyChild.type === 'story') {
+        return isStoryHoistable(onlyChild.name, name);
+      }
       return false;
     });
   }, [data]);
@@ -484,8 +622,10 @@ export const Tree = React.memo<{
     onSelectStoryId,
   });
 
-  // @ts-expect-error (non strict)
-  const groupStatus = useMemo(() => getGroupStatus(collapsedData, status), [collapsedData, status]);
+  const groupStatus = useMemo(
+    () => getGroupStatus(collapsedData, allStatuses ?? {}),
+    [collapsedData, allStatuses]
+  );
 
   const treeItems = useMemo(() => {
     return collapsedItems.map((itemId) => {
@@ -498,9 +638,11 @@ export const Tree = React.memo<{
         return (
           // @ts-expect-error (TODO)
           <Root
+            api={api}
             key={id}
             item={item}
             refId={refId}
+            collapsedData={collapsedData}
             isOrphan={false}
             isDisplayed
             isSelected={selectedStoryId === itemId}
@@ -514,19 +656,20 @@ export const Tree = React.memo<{
       }
 
       const isDisplayed = !item.parent || ancestry[itemId].every((a: string) => expanded[a]);
-      const color = groupStatus[itemId] ? statusMapping[groupStatus[itemId]][1] : null;
+
+      if (isDisplayed === false) {
+        return null;
+      }
 
       return (
         <Node
           api={api}
+          collapsedData={collapsedData}
           key={id}
           item={item}
-          // @ts-expect-error (non strict)
-
-          status={status?.[itemId]}
+          statuses={allStatuses?.[itemId] ?? {}}
+          groupStatus={groupStatus}
           refId={refId}
-          // @ts-expect-error (non strict)
-          color={color}
           docsMode={docsMode}
           isOrphan={orphanIds.some((oid) => itemId === oid || itemId.startsWith(`${oid}-`))}
           isDisplayed={isDisplayed}
@@ -551,12 +694,14 @@ export const Tree = React.memo<{
     refId,
     selectedStoryId,
     setExpanded,
-    status,
+    allStatuses,
   ]);
   return (
-    <Container ref={containerRef} hasOrphans={isMain && orphanIds.length > 0}>
-      <IconSymbols />
-      {treeItems}
-    </Container>
+    <StatusContext.Provider value={{ data, allStatuses, groupStatus }}>
+      <Container ref={containerRef} hasOrphans={isMain && orphanIds.length > 0}>
+        <IconSymbols />
+        {treeItems}
+      </Container>
+    </StatusContext.Provider>
   );
 });

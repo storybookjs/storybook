@@ -1,4 +1,5 @@
 import type { ModuleInfo } from '@fal-works/esbuild-plugin-global-externals';
+
 import Exports from './exports';
 import { globalPackages, globalsNameReferenceMap } from './globals';
 

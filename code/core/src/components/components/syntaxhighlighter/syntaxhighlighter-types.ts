@@ -1,5 +1,5 @@
-import type { BuiltInParserName } from 'prettier';
 import type { ReactNode } from 'react';
+
 import type { supportedLanguages } from './syntaxhighlighter';
 
 export interface SyntaxHighlighterRendererProps {
@@ -21,7 +21,7 @@ export interface SyntaxHighlighterCustomProps {
   renderer?: SyntaxHighlighterRenderer;
 }
 
-export type SyntaxHighlighterFormatTypes = boolean | 'dedent' | BuiltInParserName;
+export type SyntaxHighlighterFormatTypes = boolean | 'dedent';
 
 // these are copied from the `react-syntax-highlighter` package
 // the reason these a COPIED is the types for this package are defining modules by filename

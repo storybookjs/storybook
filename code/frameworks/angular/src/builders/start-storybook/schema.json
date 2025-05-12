@@ -7,8 +7,7 @@
     "browserTarget": {
       "type": "string",
       "description": "Build target to be served in project-name:builder:config format. Should generally target on the builder: '@angular-devkit/build-angular:browser'. Useful for Storybook to use options (styles, assets, ...).",
-      "pattern": "^[^:\\s]+:[^:\\s]+(:[^\\s]+)?$",
-      "default": null
+      "pattern": "^[^:\\s]+:[^:\\s]+(:[^\\s]+)?$"
     },
     "debugWebpack": {
       "type": "boolean",
@@ -83,7 +82,7 @@
     },
     "docs": {
       "type": "boolean",
-      "description": "Starts Storybook in documentation mode. Learn more about it : https://storybook.js.org/docs/react/writing-docs/build-documentation#preview-storybooks-documentation.",
+      "description": "Starts Storybook in documentation mode. Learn more about it : https://storybook.js.org/docs/writing-docs/build-documentation#preview-storybooks-documentation.",
       "default": false
     },
     "compodoc": {
@@ -104,8 +103,7 @@
       "description": "Global styles to be included in the build.",
       "items": {
         "$ref": "#/definitions/styleElement"
-      },
-      "default": ""
+      }    
     },
     "stylePreprocessorOptions": {
       "description": "Options to pass to style preprocessors.",
@@ -119,8 +117,7 @@
           }
         }
       },
-      "additionalProperties": false,
-      "default": ""
+      "additionalProperties": false    
     },
     "assets": {
       "type": "array",
@@ -139,6 +136,11 @@
       "description": "Write Webpack Stats JSON to disk",
       "default": false
     },
+    "statsJson": {
+      "type": ["boolean", "string"],
+      "description": "Write stats JSON to disk",
+      "default": false
+    },
     "previewUrl": {
       "type": "string",
       "description": "Disables the default storybook preview and lets you use your own"
@@ -151,6 +153,11 @@
     "sourceMap": {
       "type": ["boolean", "object"],
       "description": "Configure sourcemaps. See: https://angular.io/guide/workspace-config#source-map-configuration",
+      "default": false
+    },
+    "experimentalZoneless": {
+      "type": "boolean",
+      "description": "Experimental: Use zoneless change detection.",
       "default": false
     }
   },

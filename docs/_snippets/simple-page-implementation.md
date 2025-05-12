@@ -100,9 +100,7 @@ function DocumentScreen({ user, document, subdocuments }) {
 }
 ```
 
-```html renderer="svelte" language="js"
-{/* YourPage.svelte */}
-
+```svelte filename="YourPage.svelte" renderer="svelte" language="js"
 <script>
   import PageLayout from './PageLayout.svelte';
   import DocumentHeader from './DocumentHeader.svelte';
@@ -121,9 +119,7 @@ function DocumentScreen({ user, document, subdocuments }) {
 </div>
 ```
 
-```html renderer="svelte" language="ts"
-{/* YourPage.svelte */}
-
+```svelte filename="YourPage.svelte" renderer="svelte" language="ts"
 <script lang="ts">
   import PageLayout from './PageLayout.svelte';
   import DocumentHeader from './DocumentHeader.svelte';
@@ -142,9 +138,7 @@ function DocumentScreen({ user, document, subdocuments }) {
 </div>
 ```
 
-```html renderer="vue" language="js" tabTitle="3"
-{/* YourPage.vue */}
-
+```html filename="YourPage.vue" renderer="vue" language="js"
 <template>
   <PageLayout :user="user">
     <DocumentHeader :document="document" />
@@ -254,4 +248,3 @@ declare global {
   }
 }
 ```
-

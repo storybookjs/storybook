@@ -1,3 +1,5 @@
+import type { ComponentProps, ComponentType } from 'react';
+
 import type {
   AnnotatedStoryFn,
   Args,
@@ -5,14 +7,15 @@ import type {
   ArgsStoryFn,
   ComponentAnnotations,
   DecoratorFunction,
-  LoaderFunction,
-  StoryAnnotations,
   StoryContext as GenericStoryContext,
-  StrictArgs,
+  LoaderFunction,
   ProjectAnnotations,
+  StoryAnnotations,
+  StrictArgs,
 } from 'storybook/internal/types';
-import type { ComponentProps, ComponentType } from 'react';
+
 import type { SetOptional, Simplify } from 'type-fest';
+
 import type { ReactRenderer } from './types';
 
 export type { Args, ArgTypes, Parameters, StrictArgs } from 'storybook/internal/types';
@@ -21,7 +24,7 @@ export type { ReactRenderer };
 /**
  * Metadata to configure the stories for a component.
  *
- * @see [Default export](https://storybook.js.org/docs/formats/component-story-format/#default-export)
+ * @see [Default export](https://storybook.js.org/docs/api/csf#default-export)
  */
 export type Meta<TCmpOrArgs = Args> = [TCmpOrArgs] extends [ComponentType<any>]
   ? ComponentAnnotations<ReactRenderer, ComponentProps<TCmpOrArgs>>
@@ -30,7 +33,7 @@ export type Meta<TCmpOrArgs = Args> = [TCmpOrArgs] extends [ComponentType<any>]
 /**
  * Story function that represents a CSFv2 component example.
  *
- * @see [Named Story exports](https://storybook.js.org/docs/formats/component-story-format/#named-story-exports)
+ * @see [Named Story exports](https://storybook.js.org/docs/api/csf#named-story-exports)
  */
 export type StoryFn<TCmpOrArgs = Args> = [TCmpOrArgs] extends [ComponentType<any>]
   ? AnnotatedStoryFn<ReactRenderer, ComponentProps<TCmpOrArgs>>
@@ -39,7 +42,7 @@ export type StoryFn<TCmpOrArgs = Args> = [TCmpOrArgs] extends [ComponentType<any
 /**
  * Story object that represents a CSFv3 component example.
  *
- * @see [Named Story exports](https://storybook.js.org/docs/formats/component-story-format/#named-story-exports)
+ * @see [Named Story exports](https://storybook.js.org/docs/api/csf#named-story-exports)
  */
 export type StoryObj<TMetaOrCmpOrArgs = Args> = [TMetaOrCmpOrArgs] extends [
   {
@@ -63,10 +66,9 @@ export type StoryObj<TMetaOrCmpOrArgs = Args> = [TMetaOrCmpOrArgs] extends [
     : StoryAnnotations<ReactRenderer, TMetaOrCmpOrArgs>;
 
 // This performs a downcast to function types that are mocks, when a mock fn is given to meta args.
-type AddMocks<TArgs, DefaultArgs> = Simplify<{
+export type AddMocks<TArgs, DefaultArgs> = Simplify<{
   [T in keyof TArgs]: T extends keyof DefaultArgs
-    ? // eslint-disable-next-line @typescript-eslint/ban-types
-      DefaultArgs[T] extends (...args: any) => any & { mock: {} } // allow any function with a mock object
+    ? DefaultArgs[T] extends (...args: any) => any & { mock: {} } // allow any function with a mock object
       ? DefaultArgs[T]
       : TArgs[T]
     : TArgs[T];

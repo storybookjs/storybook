@@ -1,14 +1,16 @@
 import { dedent } from 'ts-dedent';
+
+import type { Status } from './shared/status-store';
+import type { StatusTypeId } from './shared/status-store';
 import { StorybookError } from './storybook-error';
 
 /**
- * If you can't find a suitable category for your error, create one
- * based on the package name/file path of which the error is thrown.
- * For instance:
- * If it's from @storybook/client-logger, then CLIENT-LOGGER
+ * If you can't find a suitable category for your error, create one based on the package name/file
+ * path of which the error is thrown. For instance: If it's from `storybook/internal/client-logger`,
+ * then CLIENT-LOGGER
  *
- * Categories are prefixed by a logical grouping, e.g. PREVIEW_ or FRAMEWORK_
- * to prevent manager and preview errors from having the same category and error code.
+ * Categories are prefixed by a logical grouping, e.g. PREVIEW_ or FRAMEWORK_ to prevent manager and
+ * preview errors from having the same category and error code.
  */
 export enum Category {
   BLOCKS = 'BLOCKS',
@@ -30,6 +32,8 @@ export enum Category {
   RENDERER_VUE3 = 'RENDERER_VUE3',
   RENDERER_WEB_COMPONENTS = 'RENDERER_WEB-COMPONENTS',
   FRAMEWORK_NEXTJS = 'FRAMEWORK_NEXTJS',
+  ADDON_VITEST = 'ADDON_VITEST',
+  ADDON_A11Y = 'ADDON_A11Y',
 }
 
 export class MissingStoryAfterHmrError extends StorybookError {
@@ -59,7 +63,7 @@ export class ImplicitActionsDuringRendering extends StorybookError {
         We detected that you use an implicit action arg while ${data.phase} of your story.  
         ${data.deprecated ? `\nThis is deprecated and won't work in Storybook 8 anymore.\n` : ``}
         Please provide an explicit spy to your args like this:
-          import { fn } from '@storybook/test';
+          import { fn } from 'storybook/test';
           ... 
           args: {
            ${data.name}: fn()
@@ -235,42 +239,6 @@ export class MountMustBeDestructuredError extends StorybookError {
   }
 }
 
-export class TestingLibraryMustBeConfiguredError extends StorybookError {
-  constructor() {
-    super({
-      category: Category.PREVIEW_API,
-      code: 13,
-      message: dedent`
-        You must configure testingLibraryRender to use play in portable stories.
-        
-        import { render } from '@testing-library/[renderer]';
-        
-        setProjectAnnotations({
-          testingLibraryRender: render,
-        });
-        
-        For other testing renderers, you can configure \`renderToCanvas\` like so:
-        
-        import { render } from 'your-test-renderer';
-        
-        setProjectAnnotations({
-          renderToCanvas: ({ storyFn }) => {
-            const Story = storyFn();
-            
-            // Svelte
-            render(Story.Component, Story.props);
-            
-            // Vue
-            render(Story);
-            
-            // or for React
-            render(<Story/>);
-          },
-        });`,
-    });
-  }
-}
-
 export class NoRenderFunctionError extends StorybookError {
   constructor(public data: { id: string }) {
     super({
@@ -304,6 +272,25 @@ export class NoStoryMountedError extends StorybookError {
 
         Make sure to either remove it or call mount in your play function.
       `,
+    });
+  }
+}
+
+export class StatusTypeIdMismatchError extends StorybookError {
+  constructor(
+    public data: {
+      status: Status;
+      typeId: StatusTypeId;
+    }
+  ) {
+    super({
+      category: Category.PREVIEW_API,
+      code: 16,
+      message: `Status has typeId "${data.status.typeId}" but was added to store with typeId "${data.typeId}". Full status: ${JSON.stringify(
+        data.status,
+        null,
+        2
+      )}`,
     });
   }
 }
@@ -350,6 +337,38 @@ export class UnknownArgTypesError extends StorybookError {
         This type is either not supported or it is a bug in the docgen generation in Storybook.
         If you think this is a bug, please detail it as much as possible in the Github issue.
       `,
+    });
+  }
+}
+
+export class UnsupportedViewportDimensionError extends StorybookError {
+  constructor(public data: { dimension: string; value: string }) {
+    super({
+      category: Category.ADDON_VITEST,
+      code: 1,
+      // TODO: Add documentation about viewports support
+      // documentation: '',
+      message: dedent`
+        Encountered an unsupported value "${data.value}" when setting the viewport ${data.dimension} dimension.
+        
+        The Storybook plugin only supports values in the following units:
+        - px, vh, vw, em, rem and %.
+        
+        You can either change the viewport for this story to use one of the supported units or skip the test by adding '!test' to the story's tags per https://storybook.js.org/docs/writing-stories/tags
+      `,
+    });
+  }
+}
+
+export class ElementA11yParameterError extends StorybookError {
+  constructor() {
+    super({
+      category: Category.ADDON_A11Y,
+      code: 1,
+      documentation:
+        'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#a11y-addon-replace-element-parameter-with-context-parameter',
+      message:
+        'The "element" parameter in parameters.a11y has been removed. Use "context" instead.',
     });
   }
 }

@@ -1,8 +1,11 @@
-import chalk from 'chalk';
-import fs from 'fs-extra';
+import { cp } from 'node:fs/promises';
 import { join, relative } from 'node:path';
-import { logger } from '@storybook/core/node-logger';
-import { getDirectoryFromWorkingDir } from '@storybook/core/common';
+
+import { getDirectoryFromWorkingDir } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
+
+import picocolors from 'picocolors';
+
 import { parseStaticDir } from './server-statics';
 
 export async function copyAllStaticFiles(staticDirs: any[] | undefined, outputDir: string) {
@@ -10,25 +13,28 @@ export async function copyAllStaticFiles(staticDirs: any[] | undefined, outputDi
     await Promise.all(
       staticDirs.map(async (dir) => {
         try {
-          const { staticDir, staticPath, targetDir } = await parseStaticDir(dir);
+          const { staticDir, staticPath, targetDir } = parseStaticDir(dir);
           const targetPath = join(outputDir, targetDir);
 
-          // we copy prebuild static files from node_modules/@storybook/manager & preview
+          // we copy prebuild static files from node_modules/storybook/internal/manager & preview
           if (!staticDir.includes('node_modules')) {
-            const from = chalk.cyan(print(staticDir));
-            const to = chalk.cyan(print(targetDir));
+            const from = picocolors.cyan(print(staticDir));
+            const to = picocolors.cyan(print(targetDir));
             logger.info(`=> Copying static files: ${from} => ${to}`);
           }
 
           // Storybook's own files should not be overwritten, so we skip such files if we find them
           const skipPaths = ['index.html', 'iframe.html'].map((f) => join(targetPath, f));
-          await fs.copy(staticPath, targetPath, {
+          await cp(staticPath, targetPath, {
             dereference: true,
             preserveTimestamps: true,
             filter: (_, dest) => !skipPaths.includes(dest),
+            recursive: true,
           });
         } catch (e) {
-          if (e instanceof Error) logger.error(e.message);
+          if (e instanceof Error) {
+            logger.error(e.message);
+          }
           process.exit(-1);
         }
       })
@@ -47,7 +53,7 @@ export async function copyAllStaticFilesRelativeToMain(
     await acc;
 
     const staticDirAndTarget = typeof dir === 'string' ? dir : `${dir.from}:${dir.to}`;
-    const { staticPath: from, targetEndpoint: to } = await parseStaticDir(
+    const { staticPath: from, targetEndpoint: to } = parseStaticDir(
       getDirectoryFromWorkingDir({
         configDir,
         workingDir,
@@ -59,13 +65,14 @@ export async function copyAllStaticFilesRelativeToMain(
     const skipPaths = ['index.html', 'iframe.html'].map((f) => join(targetPath, f));
     if (!from.includes('node_modules')) {
       logger.info(
-        `=> Copying static files: ${chalk.cyan(print(from))} at ${chalk.cyan(print(targetPath))}`
+        `=> Copying static files: ${picocolors.cyan(print(from))} at ${picocolors.cyan(print(targetPath))}`
       );
     }
-    await fs.copy(from, targetPath, {
+    await cp(from, targetPath, {
       dereference: true,
       preserveTimestamps: true,
       filter: (_, dest) => !skipPaths.includes(dest),
+      recursive: true,
     });
   }, Promise.resolve());
 }

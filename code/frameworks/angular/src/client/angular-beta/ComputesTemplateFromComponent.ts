@@ -1,5 +1,7 @@
-import { Type } from '@angular/core';
 import { ArgTypes } from 'storybook/internal/types';
+
+import { Type } from '@angular/core';
+
 import { ICollection } from '../types';
 import {
   ComponentInputsOutputs,
@@ -8,15 +10,14 @@ import {
 } from './utils/NgComponentAnalyzer';
 
 /**
- * Check if the name matches the criteria for a valid identifier.
- * A valid identifier can only contain letters, digits, underscores, or dollar signs.
- * It cannot start with a digit.
+ * Check if the name matches the criteria for a valid identifier. A valid identifier can only
+ * contain letters, digits, underscores, or dollar signs. It cannot start with a digit.
  */
 const isValidIdentifier = (name: string): boolean => /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(name);
 
 /**
- * Returns the property name, if it can be accessed with dot notation. If not,
- * it returns `this['propertyName']`.
+ * Returns the property name, if it can be accessed with dot notation. If not, it returns
+ * `this['propertyName']`.
  */
 export const formatPropInTemplate = (propertyName: string) =>
   isValidIdentifier(propertyName) ? propertyName : `this['${propertyName}']`;
@@ -41,6 +42,7 @@ const separateInputsOutputsAttributes = (
 
 /**
  * Converts a component into a template with inputs/outputs present in initial props
+ *
  * @param component
  * @param initialProps
  * @param innerTemplate
@@ -80,9 +82,7 @@ export const computesTemplateFromComponent = (
   );
 };
 
-/**
- * Stringify an object with a placholder in the circular references.
- */
+/** Stringify an object with a placholder in the circular references. */
 function stringifyCircular(obj: any) {
   const seen = new Set();
   return JSON.stringify(obj, (key, value) => {
@@ -130,6 +130,7 @@ const createAngularInputProperty = ({
 
 /**
  * Converts a component into a template with inputs/outputs present in initial props
+ *
  * @param component
  * @param initialProps
  * @param innerTemplate

@@ -1,8 +1,11 @@
 import React from 'react';
-import { useMemo } from 'storybook/internal/preview-api';
+
 import type { DecoratorFunction, Renderer } from 'storybook/internal/types';
 
-import { initializeThemeState, pluckThemeFromContext, useThemeParameters } from './helpers';
+import { useMemo } from 'storybook/preview-api';
+
+import { PARAM_KEY } from '../constants';
+import { initializeThemeState, pluckThemeFromContext } from './helpers';
 
 type Theme = Record<string, any>;
 type ThemeMap = Record<string, Theme>;
@@ -30,7 +33,8 @@ export const withThemeFromJSXProvider = <TRenderer extends Renderer = any>({
 
   // eslint-disable-next-line react/display-name
   return (storyFn, context) => {
-    const { themeOverride } = useThemeParameters();
+    // eslint-disable-next-line react/destructuring-assignment
+    const { themeOverride } = context.parameters[PARAM_KEY] ?? {};
     const selected = pluckThemeFromContext(context);
 
     const theme = useMemo(() => {

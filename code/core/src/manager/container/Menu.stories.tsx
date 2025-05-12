@@ -1,31 +1,14 @@
-import type { FC, MouseEvent, PropsWithChildren, ReactElement } from 'react';
-import React, { Children, cloneElement } from 'react';
-import { action } from '@storybook/addon-actions';
-import type { Meta, StoryObj } from '@storybook/react';
-import { TooltipLinkList, WithTooltip } from '@storybook/core/components';
+import React from 'react';
+
+import { TooltipLinkList, WithTooltip } from 'storybook/internal/components';
+
+import type { Meta, StoryObj } from '@storybook/react-vite';
+
+import { action } from 'storybook/actions';
+
 import { Shortcut } from './Menu';
 
 const onLinkClick = action('onLinkClick');
-
-interface StoryLinkWrapperProps {
-  href: string;
-  passHref?: boolean;
-}
-
-const StoryLinkWrapper: FC<PropsWithChildren<StoryLinkWrapperProps>> = ({
-  href,
-  passHref = false,
-  children,
-}) => {
-  const child = Children.only(children) as ReactElement;
-  return cloneElement(child, {
-    href: passHref && href,
-    onClick: (e: MouseEvent) => {
-      e.preventDefault();
-      onLinkClick(href);
-    },
-  });
-};
 
 export default {
   component: TooltipLinkList,
@@ -56,6 +39,7 @@ export const WithShortcuts = {
         center: 'This is an addition description',
         right: <Shortcut keys={['⌘']} />,
         href: 'http://google.com',
+        onClick: onLinkClick,
       },
       {
         id: '2',
@@ -63,9 +47,9 @@ export const WithShortcuts = {
         center: 'This is an addition description',
         right: <Shortcut keys={['⌘', 'K']} />,
         href: 'http://google.com',
+        onClick: onLinkClick,
       },
     ],
-    LinkWrapper: StoryLinkWrapper,
   },
 } satisfies Story;
 
@@ -79,6 +63,7 @@ export const WithShortcutsActive = {
         active: true,
         right: <Shortcut keys={['⌘']} />,
         href: 'http://google.com',
+        onClick: onLinkClick,
       },
       {
         id: '2',
@@ -86,8 +71,8 @@ export const WithShortcutsActive = {
         center: 'This is an addition description',
         right: <Shortcut keys={['⌘', 'K']} />,
         href: 'http://google.com',
+        onClick: onLinkClick,
       },
     ],
-    LinkWrapper: StoryLinkWrapper,
   },
 } satisfies Story;

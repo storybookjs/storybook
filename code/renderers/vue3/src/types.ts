@@ -3,6 +3,7 @@ import {
   type StoryContext as StoryContextBase,
   type WebRenderer,
 } from 'storybook/internal/types';
+
 import type { App, ConcreteComponent } from 'vue';
 
 export type { RenderContext } from 'storybook/internal/types';

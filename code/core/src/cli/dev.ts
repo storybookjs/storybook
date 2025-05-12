@@ -1,10 +1,11 @@
-import { dedent } from 'ts-dedent';
+import { cache } from 'storybook/internal/common';
+import { buildDevStandalone, withTelemetry } from 'storybook/internal/core-server';
+import { logger, instance as npmLog } from 'storybook/internal/node-logger';
+import type { CLIOptions } from 'storybook/internal/types';
+
 import { findPackage } from 'fd-package-json';
-import { logger, instance as npmLog } from '@storybook/core/node-logger';
-import { buildDevStandalone, withTelemetry } from '@storybook/core/core-server';
-import { cache } from '@storybook/core/common';
-import type { CLIOptions } from '@storybook/core/types';
 import invariant from 'tiny-invariant';
+import { dedent } from 'ts-dedent';
 
 function printError(error: any) {
   // this is a weird bugfix, somehow 'node-pre-gyp' is polluting the npmLog header
@@ -38,18 +39,21 @@ function printError(error: any) {
 }
 
 export const dev = async (cliOptions: CLIOptions) => {
-  process.env.NODE_ENV = process.env.NODE_ENV || 'development';
+  const { env } = process;
+  env.NODE_ENV = env.NODE_ENV || 'development';
 
   const packageJson = await findPackage(__dirname);
   invariant(packageJson, 'Failed to find the closest package.json file.');
+  type Options = Parameters<typeof buildDevStandalone>[0];
+
   const options = {
     ...cliOptions,
     configDir: cliOptions.configDir || './.storybook',
     configType: 'DEVELOPMENT',
     ignorePreview: !!cliOptions.previewUrl && !cliOptions.forceBuildPreview,
-    cache,
+    cache: cache as any,
     packageJson,
-  } as Parameters<typeof buildDevStandalone>[0];
+  } as Options;
 
   await withTelemetry(
     'dev',

@@ -5,18 +5,14 @@ sidebar:
   title: Description
 ---
 
-<YouTubeCallout id="uAA1JvLcl-w" title="Avoid Documentation Nightmares with Storybook's Description Doc Block" params="start=84" />
-
 The `Description` block displays the description for a component, story, or meta, obtained from their respective JSDoc comments.
 
 ![Screenshot of Description block](../../_assets/api/doc-block-title-subtitle-description.png)
 
 {/* prettier-ignore-start */}
 
-```md
-{/* ButtonDocs.mdx */}
-
-import { Meta, Description } from '@storybook/blocks';
+```md title="ButtonDocs.mdx"
+import { Meta, Description } from '@storybook/addon-docs/blocks';
 import * as ButtonStories from './Button.stories';
 
 <Meta of={ButtonStories} />
@@ -29,7 +25,7 @@ import * as ButtonStories from './Button.stories';
 ## Description
 
 ```js
-import { Description } from '@storybook/blocks';
+import { Description } from '@storybook/addon-docs/blocks';
 ```
 
 `Description` is configured with the following props:
@@ -63,12 +59,9 @@ When documenting a component, reference a meta export in the `of` prop (see belo
 
 This flow gives you powerful ways to override the description for each scenario. Take the following example:
 
-```jsx
-// Button.jsx
-
+```jsx title="Button.jsx"
 /**
- * # The Button component
- * Shows a button
+ * The Button component shows a button
  */
 export const Button = () => <button>Click me</button>;
 ```
@@ -81,10 +74,8 @@ export const Button = () => <button>Click me</button>;
 
 {/* prettier-ignore-start */}
 
-```md
-{/* ButtonDocs.mdx */}
-
-import { Meta, Description } from '@storybook/blocks';
+```md title="ButtonDocs.mdx"
+import { Meta, Description } from '@storybook/addon-docs/blocks';
 import * as ButtonStories from './Button.stories';
 
 <Meta of={ButtonStories} />

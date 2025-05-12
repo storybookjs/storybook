@@ -1,15 +1,17 @@
 import type { Mock } from 'vitest';
-import { expect, describe, beforeEach, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { themes } from '@storybook/core/theming';
-import type { API_Provider } from '@storybook/core/types';
+import type { API_Provider } from 'storybook/internal/types';
+
 import EventEmitter from 'events';
-import type { SubAPI, SubState } from '../modules/layout';
-import type { SubState as AddonsSubState } from '../modules/addons';
-import { defaultLayoutState, init as initLayout } from '../modules/layout';
-import type Store from '../store';
-import type { API, State } from '../root';
+import { themes } from 'storybook/theming';
+
 import type { ModuleArgs } from '../lib/types';
+import type { SubState as AddonsSubState } from '../modules/addons';
+import type { SubAPI, SubState } from '../modules/layout';
+import { defaultLayoutState, init as initLayout } from '../modules/layout';
+import type { API, State } from '../root';
+import type Store from '../store';
 
 describe('layout API', () => {
   let layoutApi: SubAPI;
@@ -23,7 +25,7 @@ describe('layout API', () => {
   beforeEach(() => {
     currentState = {
       ...defaultLayoutState,
-      selectedPanel: '@storybook/core/actions/panel',
+      selectedPanel: 'storybook/internal/action/panel',
       theme: themes.light,
       singleStory: false,
     };

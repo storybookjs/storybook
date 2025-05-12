@@ -1,9 +1,12 @@
-import { describe, afterEach, it, expect, vi } from 'vitest';
-import * as fs from 'fs';
-import { logger } from '@storybook/core/node-logger';
+import { existsSync } from 'node:fs';
+
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
+import type { JsPackageManager, PackageJsonWithMaybeDeps } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
+
 import { detect, detectFrameworkPreset, detectLanguage } from './detect';
 import { ProjectType, SupportedLanguage } from './project_types';
-import type { JsPackageManager, PackageJsonWithMaybeDeps } from '@storybook/core/common';
 
 vi.mock('./helpers', () => ({
   isNxProject: vi.fn(),
@@ -20,13 +23,10 @@ vi.mock('fs', () => ({
   readdirSync: vi.fn(),
   readlinkSync: vi.fn(),
   default: vi.fn(),
+  mkdirSync: vi.fn(),
 }));
 
-vi.mock('fs-extra', () => ({
-  pathExistsSync: vi.fn(() => true),
-}));
-
-vi.mock('@storybook/core/node-logger');
+vi.mock('storybook/internal/node-logger');
 
 const MOCK_FRAMEWORK_FILES: {
   name: string;
@@ -37,6 +37,28 @@ const MOCK_FRAMEWORK_FILES: {
     files: {
       'package.json': {
         dependencies: {
+          vue: '^3.0.0',
+        },
+      },
+    },
+  },
+  {
+    name: ProjectType.NUXT,
+    files: {
+      'package.json': {
+        dependencies: {
+          nuxt: '^3.11.2',
+        },
+      },
+    },
+  },
+  {
+    name: ProjectType.NUXT,
+    files: {
+      'package.json': {
+        dependencies: {
+          // Nuxt projects may have Vue 3 as an explicit dependency
+          nuxt: '^3.11.2',
           vue: '^3.0.0',
         },
       },
@@ -249,35 +271,11 @@ describe('Detect', () => {
 
     await expect(detectLanguage(packageManager as any)).resolves.toBe(SupportedLanguage.JAVASCRIPT);
     expect(logger.warn).toHaveBeenCalledWith(
-      'Detected TypeScript < 3.8, populating with JavaScript examples'
+      'Detected TypeScript < 4.9 or incompatible tooling, populating with JavaScript examples'
     );
   });
 
-  it(`should return language typescript-3-8 if the TS dependency is >=3.8 and <4.9`, async () => {
-    await expect(
-      detectLanguage({
-        retrievePackageJson: () =>
-          Promise.resolve({
-            dependencies: {},
-            devDependencies: {
-              typescript: '3.8.0',
-            },
-          }),
-        getAllDependencies: () =>
-          Promise.resolve({
-            typescript: '3.8.0',
-          }),
-        getPackageVersion: (packageName: string) => {
-          switch (packageName) {
-            case 'typescript':
-              return Promise.resolve('3.8.0');
-            default:
-              return Promise.resolve(null);
-          }
-        },
-      } as Partial<JsPackageManager> as JsPackageManager)
-    ).resolves.toBe(SupportedLanguage.TYPESCRIPT_3_8);
-
+  it(`should return language javascript if the TS dependency is <4.9`, async () => {
     await expect(
       detectLanguage({
         retrievePackageJson: () =>
@@ -300,7 +298,7 @@ describe('Detect', () => {
           }
         },
       } as Partial<JsPackageManager> as JsPackageManager)
-    ).resolves.toBe(SupportedLanguage.TYPESCRIPT_3_8);
+    ).resolves.toBe(SupportedLanguage.JAVASCRIPT);
   });
 
   it(`should return language typescript-4-9 if the dependency is >TS4.9`, async () => {
@@ -326,7 +324,7 @@ describe('Detect', () => {
           }
         },
       } as Partial<JsPackageManager> as JsPackageManager)
-    ).resolves.toBe(SupportedLanguage.TYPESCRIPT_4_9);
+    ).resolves.toBe(SupportedLanguage.TYPESCRIPT);
   });
 
   it(`should return language typescript if the dependency is =TS4.9`, async () => {
@@ -352,10 +350,10 @@ describe('Detect', () => {
           }
         },
       } as Partial<JsPackageManager> as JsPackageManager)
-    ).resolves.toBe(SupportedLanguage.TYPESCRIPT_4_9);
+    ).resolves.toBe(SupportedLanguage.TYPESCRIPT);
   });
 
-  it(`should return language typescript if the dependency is =TS4.9beta`, async () => {
+  it(`should return language JavaScript if the dependency is =TS4.9beta`, async () => {
     await expect(
       detectLanguage({
         retrievePackageJson: () =>
@@ -378,7 +376,7 @@ describe('Detect', () => {
           }
         },
       } as Partial<JsPackageManager> as JsPackageManager)
-    ).resolves.toBe(SupportedLanguage.TYPESCRIPT_3_8);
+    ).resolves.toBe(SupportedLanguage.JAVASCRIPT);
   });
 
   it(`should return language javascript by default`, async () => {
@@ -417,7 +415,7 @@ describe('Detect', () => {
 
     MOCK_FRAMEWORK_FILES.forEach((structure) => {
       it(`${structure.name}`, () => {
-        vi.mocked(fs.existsSync).mockImplementation((filePath) => {
+        vi.mocked(existsSync).mockImplementation((filePath) => {
           return typeof filePath === 'string' && Object.keys(structure.files).includes(filePath);
         });
 
@@ -434,23 +432,13 @@ describe('Detect', () => {
       expect(result).toBe(ProjectType.UNDETECTED);
     });
 
-    // TODO(blaine): Remove once Nuxt3 is supported
-    it(`UNSUPPORTED for Nuxt framework above version 3.0.0`, () => {
-      const result = detectFrameworkPreset({
-        dependencies: {
-          nuxt: '3.0.0',
-        },
-      });
-      expect(result).toBe(ProjectType.UNSUPPORTED);
-    });
-
     // TODO: The mocking in this test causes tests after it to fail
     it('REACT_SCRIPTS for custom react scripts config', () => {
       const forkedReactScriptsConfig = {
         '/node_modules/.bin/react-scripts': 'file content',
       };
 
-      vi.mocked(fs.existsSync).mockImplementation((filePath) => {
+      vi.mocked(existsSync).mockImplementation((filePath) => {
         return (
           typeof filePath === 'string' && Object.keys(forkedReactScriptsConfig).includes(filePath)
         );

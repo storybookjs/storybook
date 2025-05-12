@@ -1,4 +1,5 @@
-import { describe, afterEach, it, expect, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
 import { validateFrameworkName } from './validate-config';
 
 describe('validateFrameworkName', () => {

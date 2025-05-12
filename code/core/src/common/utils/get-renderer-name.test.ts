@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest';
+
 import { extractProperRendererNameFromFramework } from './get-renderer-name';
 
 describe('get-renderer-name', () => {

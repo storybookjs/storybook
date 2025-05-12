@@ -5,8 +5,6 @@ sidebar:
   title: MDX
 ---
 
-<YouTubeCallout id="YeIvFke5_5Y" title="MDX Storybook Quick Tips" />
-
 [MDX](https://mdxjs.com/) files mix Markdown and Javascript/JSX to create rich interactive documentation. You can use Markdown’s readable syntax (such as `# heading`) for your documentation, include stories defined in [Component Story Format (CSF)](../api/csf.mdx), and freely embed JSX component blocks at any point in the file. All at once.
 
 In addition, you can write pure documentation pages in MDX and add them to Storybook alongside your stories.
@@ -33,7 +31,7 @@ This MDX file references a story file, `Checkbox.stories.js|ts`, that is written
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="checkbox-story-csf.md" usesCsf3 csf2Path="writing-docs/mdx#snippet-checkbox-story-csf" />
+<CodeSnippets path="checkbox-story-csf.md" />
 
 {/* prettier-ignore-end */}
 
@@ -294,7 +292,7 @@ Additionally, if you're working with VSCode, you can add the [MDX extension](htt
 
 ```json
 {
-  "mdx.experimentalLanguageServer": true
+  "mdx.server.enable": true
 }
 ```
 

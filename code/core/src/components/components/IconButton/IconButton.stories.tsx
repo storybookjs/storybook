@@ -1,6 +1,9 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import React from 'react';
+
 import { FaceHappyIcon } from '@storybook/icons';
+
+import type { Meta, StoryObj } from '@storybook/react-vite';
+
 import { IconButton } from './IconButton';
 
 const meta = {

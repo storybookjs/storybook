@@ -1,5 +1,7 @@
-import { describe, it, expect, vi } from 'vitest';
-import type { Addon_StoryContext } from '@storybook/core/types';
+import { describe, expect, it, vi } from 'vitest';
+
+import type { Addon_StoryContext } from 'storybook/internal/types';
+
 import { makeDecorator } from './make-decorator';
 
 // Copy & paste from internal api: client-api/src/client_api

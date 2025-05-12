@@ -1,17 +1,19 @@
-import { global as globalThis } from '@storybook/global';
 import type { Channel } from 'storybook/internal/channels';
-import { within, expect } from '@storybook/test';
 import {
-  UPDATE_STORY_ARGS,
-  STORY_ARGS_UPDATED,
   RESET_STORY_ARGS,
+  STORY_ARGS_UPDATED,
+  UPDATE_STORY_ARGS,
 } from 'storybook/internal/core-events';
 
+import { global as globalThis } from '@storybook/global';
 import type { Meta, StoryObj } from '@storybook/vue3';
+
+import { expect, within } from 'storybook/test';
+
 import MySlotComponent from './MySlotComponent.vue';
 
 declare global {
-  // eslint-disable-next-line no-var,@typescript-eslint/naming-convention
+  // eslint-disable-next-line no-var
   var __STORYBOOK_ADDONS_CHANNEL__: Channel;
 }
 
@@ -22,7 +24,7 @@ const meta = {
     year: 2022,
     default: ({ text, year }) => `${text}, ${year}`,
   },
-  tags: ['autodocs'],
+  tags: ['autodocs', '!vitest'],
 } satisfies Meta<typeof MySlotComponent>;
 
 export default meta;

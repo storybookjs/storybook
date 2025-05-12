@@ -1,6 +1,7 @@
-import { dirname, join } from 'path';
 import { PresetProperty } from 'storybook/internal/types';
-import { StorybookConfig } from './types';
+
+import { dirname, join } from 'node:path';
+
 import { StandaloneOptions } from './builders/utils/standalone-options';
 
 const getAbsolutePath = <I extends string>(input: I): I =>

@@ -9,13 +9,13 @@ Here are some answers to frequently asked questions. If you have a question, you
 
 ## Error: No angular.json file found
 
-Storybook can be set up for both single-project and multi-project Angular workspaces. To set up Storybook for a project, run `npx storybook@latest init` at the root of the workspace where the `angular.json` file is located. During initialization, the `.storybook` folder will be created and the `angular.json` file will be edited to add the Storybook configuration for the selected project. It's important to run the command at the root level to ensure that Storybook detects all projects correctly.
+Storybook can be set up for both single-project and multi-project Angular workspaces. To set up Storybook for a project, run [the install command](./get-started/install) at the root of the workspace where the `angular.json` file is located. During initialization, the `.storybook` folder will be created and the `angular.json` file will be edited to add the Storybook configuration for the selected project. It's important to run the command at the root level to ensure that Storybook detects all projects correctly.
 
 ## How can I opt-out of Angular Ivy?
 
-In case you are having trouble with Angular Ivy you can deactivate it in your `main.js`:
+In case you are having trouble with Angular Ivy you can deactivate it in your `main.js|ts`:
 
-```javascript
+```js title=".storybook/main.js|ts"
 export default {
   stories: [
     /* ... */
@@ -36,7 +36,7 @@ export default {
 
 In case you postinstall ngcc, you can disable it:
 
-```javascript
+```js title=".storybook/main.js|ts"
 export default {
   stories: [
     /* ... */
@@ -66,14 +66,14 @@ npm test -- --coverage --collectCoverageFrom='["src/**/*.{js,jsx}","!src/**/stor
 <Callout variant="info" icon="💡">
 
   If you're using [`Yarn`](https://yarnpkg.com/) as a package manager, you'll need to adjust the command accordingly.
-  
+
 </Callout>
 
 ## How do I setup Storybook to share Webpack configuration with Next.js?
 
-You can generally reuse Webpack rules by placing them in a file that is `require()`-ed from both your `next.config.js` and your `.storybook/main.js` files. For example:
+You can generally reuse Webpack rules by placing them in a file that is `require()`-ed from both your `next.config.js` and your `.storybook/main.js|ts` files. For example:
 
-```js
+```js title=".storybook/main.js|ts"
 export default {
   webpackFinal: async (baseConfig) => {
     const nextConfig = require('/path/to/next.config.js');
@@ -105,9 +105,9 @@ To fix this, you can wrap the package name inside your Storybook configuration f
 
 If your installed React Version equals or is higher than 18.0.0, the new React Root API is automatically used and the newest React [concurrent features](https://reactjs.org/docs/concurrent-mode-intro.html) can be used.
 
-You can opt-out from the new React Root API by setting the following property in your `.storybook/main.js` file:
+You can opt-out from the new React Root API by setting the following property in your `.storybook/main.js|ts` file:
 
-```js
+```js title=".storybook/main.js|ts"
 export default {
   framework: {
     name: '@storybook/react-webpack5',
@@ -125,24 +125,12 @@ A common error is that an addon tries to access the "channel", but the channel i
 1. You're trying to access addon channel (e.g., by calling `setOptions`) in a non-browser environment like Jest. You may need to add a channel mock:
 
    ```js
-   import { addons, mockChannel } from '@storybook/preview-api';
+   import { addons, mockChannel } from 'storybook/preview-api';
 
    addons.setChannel(mockChannel());
    ```
 
 2. In React Native, it's a special case documented in [#1192](https://github.com/storybookjs/storybook/issues/1192)
-
-## Why aren't Controls visible in the Canvas panel but visible in Docs?
-
-If you're adding Storybook's dependencies manually, make sure you include the [`@storybook/addon-controls`](https://www.npmjs.com/package/@storybook/addon-controls) dependency in your project and reference it in your `.storybook/main.js` as follows:
-
-```js
-// .storybook/main.js
-
-export default {
-  addons: ['@storybook/addon-controls'],
-};
-```
 
 ## Why aren't the addons working in a composed Storybook?
 
@@ -158,11 +146,9 @@ Storybook does not work unless you have at least one local story (or docs page) 
 
 If you're in a [Storybook composition](./sharing/storybook-composition.mdx) scenario, where you have multiple Storybooks, and want to have an extra Storybook with no stories of its own, that serves as a "glue" for all the other Storybooks in a project for demo/documentation purposes, you can do the following steps:
 
-Introduce a single `.mdx` docs page (addon-essentials or addon-docs required), that serves as an Introduction page, like so:
+Introduce a single `.mdx` docs page (addon-docs required), that serves as an Introduction page, like so:
 
-```mdx
-{/* Introduction.mdx */}
-
+```mdx title="Introduction.mdx"
 # Welcome
 
 Some description here
@@ -170,8 +156,7 @@ Some description here
 
 And then refer to it in your Storybook config file:
 
-```ts
-// .storybook/main.js
+```ts title=".storybook/main.js|ts"
 const config = {
   // define at least one local story/page here
   stories: ['../Introduction.mdx'],
@@ -195,7 +180,7 @@ We're actively working to provide a better way to address this situation, but in
 
 ## Is it possible to browse the documentation for past versions of Storybook?
 
-With the release of version 6.0, we updated our documentation as well. That doesn't mean that the old documentation was removed. We kept it to help you with your Storybook migration process. Use the content from the table below in conjunction with our [migration guide](https://github.com/storybookjs/storybook/blob/next/MIGRATION.mdx).
+With the release of version 6.0, we updated our documentation as well. That doesn't mean that the old documentation was removed. We kept it to help you with your Storybook migration process. Use the content from the table below in conjunction with our [migration guide](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md).
 
 We're only covering versions 5.3 and 5.0 as they were important milestones for Storybook. If you want to go back in time a little more, you'll have to check the specific release in the monorepo.
 
@@ -218,7 +203,7 @@ We're only covering versions 5.3 and 5.0 as they were important milestones for S
 |                  | Preview and build docs                          | [See current documentation](./writing-docs/build-documentation.mdx)                                  | Non existing feature or undocumented                                                                                                                                                                                                                                 | Non existing feature or undocumented                                                                                                                     |
 | Testing          | Visual tests                                    | [See current documentation](./writing-tests/visual-testing.mdx)                                      | [See versioned documentation](https://github.com/storybookjs/storybook/tree/release/5.3/docs/src/pages/testing/automated-visual-testing)                                                                                                                             | [See versioned documentation](https://github.com/storybookjs/storybook/tree/release/5.0/docs/src/pages/testing/automated-visual-testing)                 |
 |                  | Accessibility tests                             | [See current documentation](./writing-tests/accessibility-testing.mdx)                               | Non existing feature or undocumented                                                                                                                                                                                                                                 | Non existing feature or undocumented                                                                                                                     |
-|                  | Interaction tests                               | [See current documentation](./writing-tests/interaction-testing.mdx)                                 | [See versioned documentation](https://github.com/storybookjs/storybook/tree/release/5.3/docs/src/pages/testing/interaction-testing)                                                                                                                                  | [See versioned documentation](https://github.com/storybookjs/storybook/tree/release/5.0/docs/src/pages/testing/interaction-testing)                      |
+|                  | Component tests                                 | [See current documentation](./writing-tests/component-testing.mdx)                                   | [See versioned documentation](https://github.com/storybookjs/storybook/tree/release/5.3/docs/src/pages/testing/interaction-testing)                                                                                                                                  | [See versioned documentation](https://github.com/storybookjs/storybook/tree/release/5.0/docs/src/pages/testing/interaction-testing)                      |
 |                  | Snapshot tests                                  | [See current documentation](./writing-tests/snapshot-testing/snapshot-testing.mdx)                   | [See versioned documentation](https://github.com/storybookjs/storybook/tree/release/5.3/docs/src/pages/testing/structural-testing)                                                                                                                                   | [See versioned documentation](https://github.com/storybookjs/storybook/tree/release/5.0/docs/src/pages/testing/structural-testing)                       |
 |                  | Import stories in tests/Unit tests              | [See current documentation](./writing-tests/import-stories-in-tests/stories-in-unit-tests.mdx)       | [See versioned documentation](https://github.com/storybookjs/storybook/tree/release/5.3/docs/src/pages/testing/react-ui-testing)                                                                                                                                     | [See versioned documentation](https://github.com/storybookjs/storybook/tree/release/5.0/docs/src/pages/testing/react-ui-testing)                         |
 |                  | Import stories in tests/End-to-end testing      | [See current documentation](./writing-tests/import-stories-in-tests/stories-in-end-to-end-tests.mdx) | [See versioned documentation](https://github.com/storybookjs/storybook/tree/release/5.3/docs/src/pages/testing/react-ui-testing)                                                                                                                                     | [See versioned documentation](https://github.com/storybookjs/storybook/tree/release/5.0/docs/src/pages/testing/react-ui-testing)                         |
@@ -226,7 +211,7 @@ We're only covering versions 5.3 and 5.0 as they were important milestones for S
 |                  | Embed                                           | [See current documentation](./sharing/embed.mdx)                                                     | Non existing feature or undocumented                                                                                                                                                                                                                                 | Non existing feature or undocumented                                                                                                                     |
 |                  | Composition                                     | [See current documentation](./sharing/storybook-composition.mdx)                                     | Non existing feature or undocumented                                                                                                                                                                                                                                 | Non existing feature or undocumented                                                                                                                     |
 |                  | Package Composition                             | [See current documentation](./sharing/package-composition.mdx)                                       | Non existing feature or undocumented                                                                                                                                                                                                                                 | Non existing feature or undocumented                                                                                                                     |
-| Essential addons | Controls                                        | [See current documentation](./essentials/controls.mdx)                                               | Controls are specific to version 6.0 see [Knobs versioned documentation](https://github.com/storybookjs/storybook/tree/release/5.3/addons/knobs)                                                                                                                     | Controls are specific to version 6.0 see [Knobs versioned documentation](https://github.com/storybookjs/storybook/tree/release/5.0/addons/knobs)         |
+| Essentials       | Controls                                        | [See current documentation](./essentials/controls.mdx)                                               | Controls are specific to version 6.0 see [Knobs versioned documentation](https://github.com/storybookjs/storybook/tree/release/5.3/addons/knobs)                                                                                                                     | Controls are specific to version 6.0 see [Knobs versioned documentation](https://github.com/storybookjs/storybook/tree/release/5.0/addons/knobs)         |
 |                  | Actions                                         | [See current documentation](./essentials/actions.mdx)                                                | [See addon versioned documentation](https://github.com/storybookjs/storybook/tree/release/5.3/addons/actions)                                                                                                                                                        | [See addon versioned documentation](https://github.com/storybookjs/storybook/tree/release/5.0/addons/actions)                                            |
 |                  | Viewport                                        | [See current documentation](./essentials/viewport.mdx)                                               | [See addon versioned documentation](https://github.com/storybookjs/storybook/tree/release/5.3/addons/viewport)                                                                                                                                                       | [See addon versioned documentation](https://github.com/storybookjs/storybook/tree/release/5.0/addons/viewport)                                           |
 |                  | Backgrounds                                     | [See current documentation](./essentials/backgrounds.mdx)                                            | [See addon versioned documentation](https://github.com/storybookjs/storybook/tree/release/5.3/addons/backgrounds)                                                                                                                                                    | [See addon versioned documentation](https://github.com/storybookjs/storybook/tree/release/5.0/addons/backgrounds)                                        |
@@ -246,7 +231,7 @@ We're only covering versions 5.3 and 5.0 as they were important milestones for S
 |                  | Environment variables                           | [See current documentation](./configure/environment-variables.mdx)                                   | [See versioned documentation](https://github.com/storybookjs/storybook/tree/release/5.3/docs/src/pages/configurations/env-vars)                                                                                                                                      | [See versioned documentation](https://github.com/storybookjs/storybook/tree/release/5.0/docs/src/pages/configurations/env-vars)                          |
 | Builders         | Introduction                                    | [See current documentation](./builders/index.mdx)                                                    | Non existing feature or undocumented                                                                                                                                                                                                                                 | Non existing feature or undocumented                                                                                                                     |
 |                  | Vite                                            | [See current documentation](./builders/vite.mdx)                                                     | Non existing feature or undocumented                                                                                                                                                                                                                                 | Non existing feature or undocumented                                                                                                                     |
-|                  | Webpack                                         | [See current documentation](./builders/webpack.mdx)                                                  | [See versioned documentation](https://github.com/storybookjs/storybook/tree/release/5.3/docs/src/pages/configurations/custom-webpack-config/index.mdx)                                                                                                               | [See versioned documentation](https://github.com/storybookjs/storybook/tree/release/5.0/docs/src/pages/configurations/custom-webpack-config/index.mdx)   |
+|                  | Webpack                                         | [See current documentation](./builders/webpack.mdx)                                                  | [See versioned documentation](https://github.com/storybookjs/storybook/tree/release/5.3/docs/src/pages/configurations/custom-webpack-config/index.md)                                                                                                               | [See versioned documentation](https://github.com/storybookjs/storybook/tree/release/5.0/docs/src/pages/configurations/custom-webpack-config/index.md)   |
 |                  | Builder API                                     | [See current documentation](./builders/builder-api.mdx)                                              | Non existing feature or undocumented                                                                                                                                                                                                                                 | Non existing feature or undocumented                                                                                                                     |
 | Addons           | Introduction                                    | [See current documentation](./addons/index.mdx)                                                      | [See versioned documentation](https://github.com/storybookjs/storybook/tree/release/5.3/docs/src/pages/addons/writing-addons)                                                                                                                                        | [See versioned documentation](https://github.com/storybookjs/storybook/tree/release/5.0/docs/src/pages/addons/writing-addons)                            |
 |                  | Install addons                                  | [See current documentation](./addons/install-addons.mdx)                                             | [See versioned documentation](https://github.com/storybookjs/storybook/tree/release/5.3/docs/src/pages/addons/using-addons/)                                                                                                                                         | [See versioned documentation](https://github.com/storybookjs/storybook/tree/release/5.0/docs/src/pages/addons/using-addons/)                             |
@@ -301,15 +286,12 @@ We're only covering versions 5.3 and 5.0 as they were important milestones for S
 |                  | CLI options                                     | [See current documentation](./api/cli-options.mdx)                                                   | [See versioned documentation](https://github.com/storybookjs/storybook/tree/release/5.3/docs/src/pages/configurations/cli-options)                                                                                                                                   | [See versioned documentation](https://github.com/storybookjs/storybook/tree/release/5.0/docs/src/pages/configurations/cli-options)                       |
 
 <Callout variant="info">
-  If you have stories written with the older `storiesOf` format, it was removed in Storybook 8.0 and is no longer maintained. We recommend that you migrate your stories to CSF. See the [migration guide](./migration-guide/index.mdx#storiesof-to-csf) for more information. However, if you need, you can still access the old `storiesOf` [documentation](https://github.com/storybookjs/storybook/blob/release/5.3/docs/src/pages/formats/storiesof-api/index.mdx) for reference.
+  If you have stories written with the older `storiesOf` format, it was removed in Storybook 8.0 and is no longer maintained. We recommend that you migrate your stories to CSF. See the [migration guide](./migration-guide/index.mdx#major-breaking-changes) for more information. However, if you need, you can still access the old `storiesOf` [documentation](https://github.com/storybookjs/storybook/blob/release/5.3/docs/src/pages/formats/storiesof-api/index.md) for reference.
 </Callout>
 
 ## What icons are available for my toolbar or my addon?
 
-With the [`@storybook/components`](https://www.npmjs.com/package/@storybook/components) package, you get a set of icons that you can use to customize your UI. Use the table below as a reference while writing your addon or defining your Storybook global types.
-Go through this [story](https://main--5a375b97f4b14f0020b0cda3.chromatic.com/?path=/story/basics-icon--labels) to see how the icons look.
-
-<iframe src="https://main--5a375b97f4b14f0020b0cda3.chromatic.com/iframe.html?args=&id=basics-icon--labels&viewMode=story&shortcuts=false&singleStory=true" width="100%" height="600" />
+With the [`@storybook/icons`](https://www.npmjs.com/package/@storybook/icons) package, you get a set of icons that you can use to customize your UI. Go through the [documentation](https://main--64b56e737c0aeefed9d5e675.chromatic.com/?path=/docs/introduction--docs) to see how the icons look and use it as a reference when writing your addon or defining your Storybook global types.
 
 ## I see a "No Preview" error with a Storybook production build
 
@@ -345,7 +327,7 @@ Writing documentation with MDX can be troublesome, especially regarding how your
 
 {/* prettier-ignore-start */}
 
-```mdx
+```mdx title="Example.mdx"
 <style>{`
   .class1 {
     ...
@@ -363,7 +345,7 @@ But this will work:
 
 {/* prettier-ignore-start */}
 
-```mdx
+```mdx title="Example.mdx"
 <style>
   {`
     .class1 {
@@ -385,9 +367,7 @@ See the following [issue](https://github.com/mdx-js/mdx/issues/1945) for more in
 
 If you're working with Vue 3, you'll need to install [`@vue/apollo-composable`](https://www.npmjs.com/package/@vue/apollo-composable). With Svelte, you'll need to install [`@rollup/plugin-replace`](https://www.npmjs.com/package/@rollup/plugin-replace) and update your `rollup.config` file to the following:
 
-```js
-// rollup.config
-
+```js title="rollup.config.js"
 // Boilerplate imports
 
 import replace from '@rollup/plugin-replace';
@@ -424,10 +404,6 @@ Yes, check the [addon's examples](https://github.com/mswjs/msw-storybook-addon/t
 
 No, currently, the MSW addon only has support for GraphQL queries. If you're interested in including this feature, open an issue in the [MSW addon repository](https://github.com/mswjs/msw-storybook-addon) and follow up with the maintainer.
 
-## How can my code detect if it is running in Storybook?
-
-You can do this by checking for the `IS_STORYBOOK` global variable, which will equal `true` when running in Storybook. The environment variable `process.env.STORYBOOK` is also set to `true`.
-
 ## Why are my stories not showing up correctly when using certain characters?
 
 Storybook allows you to use most characters while naming your stories. Still, specific characters (e.g., `#`) can lead to issues when Storybook generates the internal identifier for the story, leading to collisions and incorrectly outputting the correct story. We recommend using such characters sparsely.
@@ -444,9 +420,7 @@ If you are using `argTypes.defaultValue` to fix the above, you no longer need to
 
 Additionally, suppose you were using `argTypes.defaultValue` or relying on inference to set a default value for an arg. In that case, you should define the arg's value at the component level instead:
 
-```js
-// MyComponent.stories.js
-
+```js title="MyComponent.stories.js"
 export default {
   component: MyComponent,
   args: {
@@ -458,9 +432,7 @@ export default {
 
 For Storybook's Docs, you can manually configure the displayed value by configuring the `table.defaultValue` setting:
 
-```js
-// MyComponent.stories.js
-
+```js title="MyComponent.stories.js"
 export default {
   component: MyComponent,
   argTypes: {

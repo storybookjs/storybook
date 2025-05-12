@@ -1,36 +1,37 @@
-import prompts from 'prompts';
-import chalk from 'chalk';
-import boxen from 'boxen';
-import { createWriteStream, move, remove } from 'fs-extra';
-import { join } from 'path';
-import invariant from 'tiny-invariant';
-import semver from 'semver';
+import { createWriteStream } from 'node:fs';
+import { rename, rm } from 'node:fs/promises';
+import { join } from 'node:path';
 
+import type { PackageJson } from 'storybook/internal/common';
 import {
-  JsPackageManagerFactory,
   type JsPackageManager,
-  getCoercedStorybookVersion,
-  getStorybookInfo,
+  JsPackageManagerFactory,
   temporaryFile,
 } from 'storybook/internal/common';
+import type { StorybookConfigRaw } from 'storybook/internal/types';
 
+import boxen from 'boxen';
+import picocolors from 'picocolors';
+import prompts from 'prompts';
+import semver from 'semver';
+import invariant from 'tiny-invariant';
+import { dedent } from 'ts-dedent';
+
+import { doctor } from '../doctor';
 import type {
+  AutofixOptions,
+  AutofixOptionsFromCLI,
   Fix,
   FixId,
-  AutofixOptions,
   FixSummary,
   PreCheckFailure,
-  AutofixOptionsFromCLI,
   Prompt,
 } from './fixes';
-import { FixStatus, allFixes } from './fixes';
+import { FixStatus, allFixes, commandFixes } from './fixes';
+import { upgradeStorybookRelatedDependencies } from './fixes/upgrade-storybook-related-dependencies';
 import { cleanLog } from './helpers/cleanLog';
 import { getMigrationSummary } from './helpers/getMigrationSummary';
 import { getStorybookData } from './helpers/mainConfigFile';
-import { doctor } from '../doctor';
-
-import { upgradeStorybookRelatedDependencies } from './fixes/upgrade-storybook-related-dependencies';
-import { dedent } from 'ts-dedent';
 
 const logger = console;
 const LOG_FILE_NAME = 'migration-storybook.log';
@@ -59,8 +60,8 @@ const cleanup = () => {
 };
 
 const logAvailableMigrations = () => {
-  const availableFixes = allFixes
-    .map((f) => chalk.yellow(f.id))
+  const availableFixes = [...allFixes, ...commandFixes]
+    .map((f) => picocolors.yellow(f.id))
     .map((x) => `- ${x}`)
     .join('\n');
 
@@ -76,16 +77,17 @@ export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
     force: options.packageManager,
   });
 
-  const [packageJson, storybookVersion] = await Promise.all([
-    packageManager.retrievePackageJson(),
-    getCoercedStorybookVersion(packageManager),
-  ]);
-
-  const { configDir: inferredConfigDir, mainConfig: mainConfigPath } = getStorybookInfo(
+  const {
+    mainConfig,
+    mainConfigPath,
+    previewConfigPath,
+    storybookVersion,
+    configDir,
     packageJson,
-    options.configDir
-  );
-  const configDir = options.configDir || inferredConfigDir || '.storybook';
+  } = await getStorybookData({
+    configDir: options.configDir,
+    packageManager,
+  });
 
   if (!storybookVersion) {
     throw new Error('Could not determine Storybook version');
@@ -97,10 +99,13 @@ export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
 
   const outcome = await automigrate({
     ...options,
+    packageJson,
     packageManager,
     storybookVersion,
     beforeVersion: storybookVersion,
     mainConfigPath,
+    mainConfig,
+    previewConfigPath,
     configDir,
     isUpgrade: false,
     isLatest: false,
@@ -117,9 +122,12 @@ export const automigrate = async ({
   dryRun,
   yes,
   packageManager,
+  packageJson,
   list,
   configDir,
+  mainConfig,
   mainConfigPath,
+  previewConfigPath,
   storybookVersion,
   beforeVersion,
   renderer: rendererPackage,
@@ -133,6 +141,26 @@ export const automigrate = async ({
 } | null> => {
   if (list) {
     logAvailableMigrations();
+    return null;
+  }
+
+  // if an on-command migration is triggered, run it and bail
+  const commandFix = commandFixes.find((f) => f.id === fixId);
+  if (commandFix) {
+    logger.info(`🔎 Running migration ${picocolors.magenta(fixId)}..`);
+
+    await commandFix.run({
+      mainConfigPath,
+      previewConfigPath,
+      packageManager,
+      packageJson,
+      configDir,
+      dryRun,
+      mainConfig,
+      result: null,
+      storybookVersion,
+    });
+
     return null;
   }
 
@@ -153,7 +181,7 @@ export const automigrate = async ({
   const fixes: Fix[] = fixId ? selectedFixes.filter((f) => f.id === fixId) : selectedFixes;
 
   if (fixId && fixes.length === 0) {
-    logger.info(`📭 No migrations found for ${chalk.magenta(fixId)}.`);
+    logger.info(`📭 No migrations found for ${picocolors.magenta(fixId)}.`);
     logAvailableMigrations();
     return null;
   }
@@ -165,9 +193,12 @@ export const automigrate = async ({
   const { fixResults, fixSummary, preCheckFailure } = await runFixes({
     fixes,
     packageManager,
+    packageJson,
     rendererPackage,
     skipInstall,
     configDir,
+    previewConfigPath,
+    mainConfig,
     mainConfigPath,
     storybookVersion,
     beforeVersion,
@@ -182,9 +213,9 @@ export const automigrate = async ({
 
   // if migration failed, display a log file in the users cwd
   if (hasFailures) {
-    await move(TEMP_LOG_FILE_PATH, join(process.cwd(), LOG_FILE_NAME), { overwrite: true });
+    await rename(TEMP_LOG_FILE_PATH, join(process.cwd(), LOG_FILE_NAME));
   } else {
-    await remove(TEMP_LOG_FILE_PATH);
+    await rm(TEMP_LOG_FILE_PATH, { recursive: true, force: true });
   }
 
   if (!hideMigrationSummary) {
@@ -213,7 +244,10 @@ export async function runFixes({
   skipInstall,
   configDir,
   packageManager,
+  packageJson,
+  mainConfig,
   mainConfigPath,
+  previewConfigPath,
   storybookVersion,
   beforeVersion,
   isUpgrade,
@@ -225,7 +259,10 @@ export async function runFixes({
   skipInstall?: boolean;
   configDir: string;
   packageManager: JsPackageManager;
+  packageJson: PackageJson;
   mainConfigPath: string;
+  previewConfigPath?: string;
+  mainConfig: StorybookConfigRaw;
   storybookVersion: string;
   beforeVersion: string;
   isUpgrade?: boolean;
@@ -242,11 +279,6 @@ export async function runFixes({
     let result;
 
     try {
-      const { mainConfig, previewConfigPath } = await getStorybookData({
-        configDir,
-        packageManager,
-      });
-
       if (
         (isUpgrade &&
           semver.satisfies(beforeVersion, f.versionRange[0], { includePrerelease: true }) &&
@@ -264,7 +296,7 @@ export async function runFixes({
         });
       }
     } catch (error) {
-      logger.info(`⚠️  failed to check fix ${chalk.bold(f.id)}`);
+      logger.info(`⚠️  failed to check fix ${picocolors.bold(f.id)}`);
       if (error instanceof Error) {
         logger.error(`\n${error.stack}`);
         fixSummary.failed[f.id] = error.message;
@@ -274,9 +306,9 @@ export async function runFixes({
 
     if (result) {
       const promptType: Prompt =
-        typeof f.promptType === 'function' ? await f.promptType(result) : f.promptType ?? 'auto';
+        typeof f.promptType === 'function' ? await f.promptType(result) : (f.promptType ?? 'auto');
 
-      logger.info(`\n🔎 found a '${chalk.cyan(f.id)}' migration:`);
+      logger.info(`\n🔎 found a '${picocolors.cyan(f.id)}' migration:`);
       const message = f.prompt(result);
 
       const getTitle = () => {
@@ -341,7 +373,9 @@ export async function runFixes({
             {
               type: 'confirm',
               name: 'fix',
-              message: `Do you want to run the '${chalk.cyan(f.id)}' migration on your project?`,
+              message: `Do you want to run the '${picocolors.cyan(
+                f.id
+              )}' migration on your project?`,
               initial: f.promptDefaultValue ?? true,
             },
             {
@@ -380,9 +414,14 @@ export async function runFixes({
               packageManager,
               dryRun,
               mainConfigPath,
+              configDir,
+              previewConfigPath,
+              packageJson,
+              mainConfig,
               skipInstall,
+              storybookVersion,
             });
-            logger.info(`✅ ran ${chalk.cyan(f.id)} migration`);
+            logger.info(`✅ ran ${picocolors.cyan(f.id)} migration`);
 
             fixResults[f.id] = FixStatus.SUCCEEDED;
             fixSummary.succeeded.push(f.id);
@@ -391,7 +430,7 @@ export async function runFixes({
             fixSummary.failed[f.id] =
               error instanceof Error ? error.message : 'Failed to run migration';
 
-            logger.info(`❌ error when running ${chalk.cyan(f.id)} migration`);
+            logger.info(`❌ error when running ${picocolors.cyan(f.id)} migration`);
             logger.info(error);
             logger.info();
           }

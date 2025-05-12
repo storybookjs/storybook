@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-docs",
-  "version": "8.3.0-alpha.3",
+  "version": "9.0.0-rc.0",
   "description": "Document component usage and properties in Markdown",
   "keywords": [
     "addon",
@@ -27,7 +27,6 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "node": "./dist/index.js",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
     },
@@ -36,11 +35,7 @@
       "import": "./dist/preview.mjs",
       "require": "./dist/preview.js"
     },
-    "./preset": {
-      "types": "./dist/preset.d.ts",
-      "import": "./dist/preset.js",
-      "require": "./dist/preset.js"
-    },
+    "./preset": "./dist/preset.js",
     "./blocks": {
       "types": "./dist/blocks.d.ts",
       "import": "./dist/blocks.mjs",
@@ -51,10 +46,7 @@
       "import": "./dist/preview.mjs",
       "require": "./dist/preview.js"
     },
-    "./dist/preset": {
-      "types": "./dist/preset.d.ts",
-      "require": "./dist/preset.js"
-    },
+    "./dist/preset": "./dist/preset.js",
     "./dist/shims/mdx-react-shim": {
       "types": "./dist/shims/mdx-react-shim.d.ts",
       "import": "./dist/shims/mdx-react-shim.mjs",
@@ -72,11 +64,31 @@
     "./angular": "./angular/index.js",
     "./angular/index.js": "./angular/index.js",
     "./web-components/index.js": "./web-components/index.js",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./manager": "./dist/manager.js"
   },
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "*": [
+        "dist/index.d.ts"
+      ],
+      "angular": [
+        "angular/index.d.ts"
+      ],
+      "blocks": [
+        "dist/blocks.d.ts"
+      ],
+      "ember": [
+        "ember/index.d.ts"
+      ],
+      "preview": [
+        "dist/preview.d.ts"
+      ]
+    }
+  },
   "files": [
     "dist/**/*",
     "angular/**/*",
@@ -94,31 +106,38 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/check.ts",
-    "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts"
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
   },
   "dependencies": {
-    "@babel/core": "^7.24.4",
     "@mdx-js/react": "^3.0.0",
-    "@storybook/blocks": "workspace:*",
     "@storybook/csf-plugin": "workspace:*",
-    "@storybook/global": "^5.0.0",
+    "@storybook/icons": "^1.2.12",
     "@storybook/react-dom-shim": "workspace:*",
-    "@types/react": "^16.8.0 || ^17.0.0 || ^18.0.0",
-    "fs-extra": "^11.1.0",
-    "react": "^16.8.0 || ^17.0.0 || ^18.0.0",
-    "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0",
-    "rehype-external-links": "^3.0.0",
-    "rehype-slug": "^6.0.0",
+    "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
+    "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
     "ts-dedent": "^2.0.0"
   },
   "devDependencies": {
     "@mdx-js/mdx": "^3.0.0",
     "@rollup/pluginutils": "^5.0.2",
+    "@types/color-convert": "^2.0.0",
+    "@types/react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
+    "color-convert": "^2.0.1",
+    "es-toolkit": "^1.36.0",
+    "github-slugger": "^2.0.0",
+    "markdown-to-jsx": "^7.7.2",
+    "memoizerific": "^1.11.3",
+    "polished": "^4.2.2",
     "react": "^18.2.0",
+    "react-colorful": "^5.1.2",
     "react-dom": "^18.2.0",
-    "typescript": "^5.3.2",
-    "vite": "^4.0.4"
+    "rehype-external-links": "^3.0.0",
+    "rehype-slug": "^6.0.0",
+    "telejson": "8.0.0",
+    "tocbot": "^4.20.1",
+    "typescript": "^5.8.3",
+    "vite": "^6.2.5"
   },
   "peerDependencies": {
     "storybook": "workspace:^"
@@ -127,13 +146,20 @@
     "access": "public"
   },
   "bundler": {
-    "entries": [
+    "previewEntries": [
+      "./src/preview.ts"
+    ],
+    "exportEntries": [
       "./src/index.ts",
-      "./src/preset.ts",
-      "./src/preview.ts",
       "./src/blocks.ts",
-      "./src/shims/mdx-react-shim.ts",
-      "./src/mdx-loader.ts"
+      "./src/shims/mdx-react-shim.ts"
+    ],
+    "nodeEntries": [
+      "./src/mdx-loader.ts",
+      "./src/preset.ts"
+    ],
+    "managerEntries": [
+      "./src/manager.tsx"
     ]
   },
   "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16",

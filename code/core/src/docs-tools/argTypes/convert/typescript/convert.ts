@@ -1,7 +1,8 @@
-import { UnknownArgTypesError } from '@storybook/core/preview-errors';
-import type { SBType } from '@storybook/core/types';
-import type { TSType, TSSigType } from './types';
+import { UnknownArgTypesError } from 'storybook/internal/preview-errors';
+import type { SBType } from 'storybook/internal/types';
+
 import { parseLiteral } from '../utils';
+import type { TSSigType, TSType } from './types';
 
 const convertSig = (type: TSSigType) => {
   switch (type.type) {
@@ -24,7 +25,10 @@ const convertSig = (type: TSSigType) => {
 export const convert = (type: TSType): SBType | void => {
   const { name, raw } = type;
   const base: any = {};
-  if (typeof raw !== 'undefined') base.raw = raw;
+
+  if (typeof raw !== 'undefined') {
+    base.raw = raw;
+  }
   switch (type.name) {
     case 'string':
     case 'number':

@@ -1,9 +1,11 @@
 import type { Mock } from 'vitest';
-import { describe, beforeEach, it, expect, vi } from 'vitest';
-import { addons } from 'storybook/internal/preview-api';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { addons } from 'storybook/preview-api';
+
 import { EVENTS } from './constants';
 
-vi.mock('storybook/internal/preview-api');
+vi.mock('storybook/preview-api');
 const mockedAddons = vi.mocked(addons);
 
 describe('a11yRunner', () => {
@@ -20,7 +22,6 @@ describe('a11yRunner', () => {
     await import('./a11yRunner');
 
     expect(mockedAddons.getChannel).toHaveBeenCalled();
-    expect(mockChannel.on).toHaveBeenCalledWith(EVENTS.REQUEST, expect.any(Function));
     expect(mockChannel.on).toHaveBeenCalledWith(EVENTS.MANUAL, expect.any(Function));
   });
 });

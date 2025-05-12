@@ -1,5 +1,6 @@
 import type { StoryContext as StoryContextBase, WebRenderer } from 'storybook/internal/types';
-import type { TemplateResult, SVGTemplateResult } from 'lit';
+
+import type { SVGTemplateResult, TemplateResult } from 'lit';
 
 export type StoryFnHtmlReturnType =
   | string

@@ -35,8 +35,8 @@ export const WithProp = {
 };
 ```
 
-```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/react';
+```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts"
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { MyComponent } from './MyComponent';
 
@@ -46,25 +46,6 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-export const Basic: Story = {};
-
-export const WithProp: Story = {
-  render: () => <MyComponent prop="value" />,
-};
-```
-
-```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts"
-import type { Meta, StoryObj } from '@storybook/react';
-
-import { MyComponent } from './MyComponent';
-
-const meta: Meta<typeof MyComponent> = {
-  component: MyComponent,
-};
-
-export default meta;
-type Story = StoryObj<typeof MyComponent>;
 
 export const Basic: Story = {};
 
@@ -87,7 +68,7 @@ export const WithProp = {
 };
 ```
 
-```tsx filename="MyComponent.story.ts|tsx" renderer="solid" language="ts-4-9"
+```tsx filename="MyComponent.story.ts|tsx" renderer="solid" language="ts"
 import type { Meta, StoryObj } from 'storybook-solidjs';
 
 import { MyComponent } from './MyComponent';
@@ -106,26 +87,27 @@ export const WithProp: Story = {
 };
 ```
 
-```tsx filename="MyComponent.story.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs';
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
 
-import { MyComponent } from './MyComponent';
+  import MyComponent from './MyComponent.svelte';
 
-const meta: Meta<typeof MyComponent> = {
-  component: MyComponent,
-};
+  const { Story } = defineMeta({
+    component: MyComponent,
+  });
+</script>
 
-export default meta;
-type Story = StoryObj<typeof MyComponent>;
+<Story name="Basic">
+  <MyComponent />
+</Story>
 
-export const Basic: Story = {};
-
-export const WithProp: Story = {
-  render: () => <MyComponent prop="value" />,
-};
+<Story name="WithProp">
+  <MyComponent prop="value" />
+</Story>
 ```
 
-```js filename="MyComponent.stories.js" renderer="svelte" language="js"
+```js filename="MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF"
 import MyComponent from './MyComponent.svelte';
 
 export default {
@@ -149,12 +131,15 @@ export const WithProp = {
 };
 ```
 
-```html renderer="svelte" language="ts" tabTitle="native-format"
-{/* MyComponent.stories.svelte */}
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
 
-<script>
-  import { Meta, Story } from '@storybook/addon-svelte-csf';
   import MyComponent from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+  });
 </script>
 
 <Story name="Basic">
@@ -166,43 +151,15 @@ export const WithProp = {
 </Story>
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/svelte';
+```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+// Replace your-framework with svelte-vite or sveltekit
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import MyComponent from './MyComponent.svelte';
 
 const meta = {
   component: MyComponent,
 } satisfies Meta<typeof MyComponent>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const Basic: Story = {};
-
-/*
- *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
- * to learn how to use render functions.
- */
-export const WithProp: Story = {
-  render: () => ({
-    Component: MyComponent,
-    props: {
-      prop: 'value',
-    },
-  }),
-};
-```
-
-```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts"
-import type { Meta, StoryObj } from '@storybook/svelte';
-
-import MyComponent from './MyComponent.svelte';
-
-const meta: Meta<typeof MyComponent> = {
-  component: MyComponent,
-};
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -246,8 +203,8 @@ export const WithProp = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="vue" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/vue3';
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts"
+import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import MyComponent from './MyComponent.vue';
 
@@ -257,33 +214,6 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-export const Basic: Story = {
-  render: () => ({
-    components: { MyComponent },
-    template: '<MyComponent />',
-  }),
-};
-
-export const WithProp: Story = {
-  render: () => ({
-    components: { MyComponent },
-    template: '<MyComponent prop="value"/>',
-  }),
-};
-```
-
-```ts filename="MyComponent.stories.ts" renderer="vue" language="ts"
-import type { Meta, StoryObj } from '@storybook/vue3';
-
-import MyComponent from './MyComponent.vue';
-
-const meta: Meta<typeof MyComponent> = {
-  component: MyComponent,
-};
-
-export default meta;
-type Story = StoryObj<typeof MyComponent>;
 
 export const Basic: Story = {
   render: () => ({
@@ -316,7 +246,7 @@ export const WithProp = {
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import { html } from 'lit';
 
@@ -333,4 +263,3 @@ export const WithProp: Story = {
   render: () => html`<my-component prop="value" />`,
 };
 ```
-

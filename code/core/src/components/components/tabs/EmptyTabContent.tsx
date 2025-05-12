@@ -1,5 +1,6 @@
 import React from 'react';
-import { styled } from '@storybook/core/theming';
+
+import { styled } from 'storybook/theming';
 
 const Wrapper = styled.div(({ theme }) => ({
   height: '100%',

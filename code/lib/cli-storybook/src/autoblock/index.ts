@@ -1,7 +1,9 @@
-import type { AutoblockOptions, Blocker } from './types';
 import { logger } from 'storybook/internal/node-logger';
-import chalk from 'chalk';
+
 import boxen from 'boxen';
+import picocolors from 'picocolors';
+
+import type { AutoblockOptions, Blocker } from './types';
 
 const excludesFalse = <T>(x: T | false): x is T => x !== false;
 
@@ -10,6 +12,9 @@ const blockers: () => BlockerModule<any>[] = () => [
   import('./block-storystorev6'),
   import('./block-dependencies-versions'),
   import('./block-node-version'),
+  import('./block-svelte-webpack5'),
+  import('./block-major-version'),
+  import('./block-experimental-addon-test'),
 ];
 
 type BlockerModule<T> = Promise<{ blocker: Blocker<T> }>;
@@ -47,7 +52,9 @@ export const autoblock = async (
   if (faults.length > 0) {
     const messages = {
       welcome: `Storybook has found potential blockers in your project that need to be resolved before upgrading:`,
-      reminder: chalk.yellow('Fix the above issues and try running the upgrade command again.'),
+      reminder: picocolors.yellow(
+        'Fix the above issues and try running the upgrade command again.'
+      ),
     };
     const borderColor = '#FC521F';
 

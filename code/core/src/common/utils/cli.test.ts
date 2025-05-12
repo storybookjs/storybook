@@ -1,11 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import { isCorePackage } from './cli';
 
 describe('UTILS', () => {
   describe.each([
     ['@storybook/react', true],
-    ['@storybook/node-logger', true],
-    ['@storybook/core', true],
+    ['storybook', true],
     ['@storybook/linter-config', false],
     ['@storybook/design-system', false],
     ['@storybook/addon-styling', false],

@@ -1,9 +1,9 @@
 import type {
   Builder,
-  Builder_WithRequiredProperty,
   BuilderStats,
   Builder_Unpromise,
-} from '@storybook/core/types';
+  Builder_WithRequiredProperty,
+} from 'storybook/internal/types';
 
 import type { BuildOptions, BuildResult } from 'esbuild';
 

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/preact-vite",
-  "version": "8.3.0-alpha.3",
+  "version": "9.0.0-rc.0",
   "description": "Storybook for Preact and Vite: Develop Preact components in isolation with Hot Reloading.",
   "keywords": [
     "storybook"
@@ -29,6 +29,12 @@
       "types": "./dist/preset.d.ts",
       "require": "./dist/preset.js"
     },
+    "./node": {
+      "types": "./dist/node/index.d.ts",
+      "node": "./dist/node/index.js",
+      "import": "./dist/node/index.mjs",
+      "require": "./dist/node/index.js"
+    },
     "./package.json": "./package.json"
   },
   "main": "dist/index.js",
@@ -36,6 +42,7 @@
   "types": "dist/index.d.ts",
   "files": [
     "dist/**/*",
+    "template/cli/**/*",
     "types/**/*",
     "README.md",
     "*.js",
@@ -43,24 +50,24 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/check.ts",
-    "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts"
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
     "@storybook/builder-vite": "workspace:*",
     "@storybook/preact": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^18.0.0",
-    "typescript": "^5.3.2",
-    "vite": "^4.0.0"
+    "@types/node": "^22.0.0",
+    "typescript": "^5.8.3",
+    "vite": "^6.2.5"
   },
   "peerDependencies": {
     "preact": ">=10",
     "storybook": "workspace:^"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   },
   "publishConfig": {
     "access": "public"

@@ -1,7 +1,7 @@
 import React from 'react';
-import memoize from 'memoizerific';
 
-import { styled, type Color, lighten } from '@storybook/core/theming';
+import memoize from 'memoizerific';
+import { type Color, lighten, styled } from 'storybook/theming';
 
 const match = memoize(1000)((requests, actual, value, fallback = 0) =>
   actual.split('-')[0] === requests ? value : fallback
@@ -109,7 +109,7 @@ const Wrapper = styled.div<WrapperProps>(
             drop-shadow(0px 5px 5px rgba(0,0,0,0.05))
             drop-shadow(0 1px 3px rgba(0,0,0,0.1))
           `,
-          borderRadius: theme.appBorderRadius,
+          borderRadius: theme.appBorderRadius + 2,
           fontSize: theme.typography.size.s1,
         }
       : {}

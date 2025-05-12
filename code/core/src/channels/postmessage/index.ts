@@ -1,16 +1,18 @@
 /// <reference path="../../typings.d.ts" />
+import { logger, pretty } from 'storybook/internal/client-logger';
+import * as EVENTS from 'storybook/internal/core-events';
 
 import { global } from '@storybook/global';
-import * as EVENTS from '@storybook/core/core-events';
-import { logger, pretty } from '@storybook/core/client-logger';
+
 import { isJSON, parse, stringify } from 'telejson';
 import invariant from 'tiny-invariant';
+
 import type {
-  ChannelTransport,
   BufferedEvent,
-  ChannelHandler,
-  Config,
   ChannelEvent,
+  ChannelHandler,
+  ChannelTransport,
+  Config,
 } from '../types';
 import { getEventSourceUrl } from './getEventSourceUrl';
 
@@ -18,7 +20,7 @@ const { document, location } = global;
 
 export const KEY = 'storybook-channel';
 
-const defaultEventOptions = { allowFunction: false, maxDepth: 25 };
+const defaultEventOptions = { maxDepth: 25 };
 
 // TODO: we should export a method for opening child windows here and keep track of em.
 // that way we can send postMessage to child windows as well, not just iframe
@@ -56,8 +58,9 @@ export class PostMessageTransport implements ChannelTransport {
   }
 
   /**
-   * Sends `event` to the associated window. If the window does not yet exist
-   * the event will be stored in a buffer and sent when the window exists.
+   * Sends `event` to the associated window. If the window does not yet exist the event will be
+   * stored in a buffer and sent when the window exists.
+   *
    * @param event
    */
   send(event: ChannelEvent, options?: any): Promise<any> {
@@ -66,29 +69,23 @@ export class PostMessageTransport implements ChannelTransport {
 
       // telejson options
       allowRegExp,
-      allowFunction,
       allowSymbol,
       allowDate,
       allowError,
       allowUndefined,
-      allowClass,
       maxDepth,
       space,
-      lazyEval,
     } = options || {};
 
     const eventOptions = Object.fromEntries(
       Object.entries({
         allowRegExp,
-        allowFunction,
         allowSymbol,
         allowDate,
         allowError,
         allowUndefined,
-        allowClass,
         maxDepth,
         space,
-        lazyEval,
       }).filter(([k, v]) => typeof v !== 'undefined')
     );
 

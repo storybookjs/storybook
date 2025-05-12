@@ -1,26 +1,27 @@
-import type { Channel } from '@storybook/core/channels';
-import { DOCS_RENDERED } from '@storybook/core/core-events';
-import type { StoryStore } from '../../../store';
+import type { Channel } from 'storybook/internal/channels';
+import { DOCS_RENDERED } from 'storybook/internal/core-events';
+import type { Renderer, StoryId } from 'storybook/internal/types';
+import type { CSFFile, PreparedStory } from 'storybook/internal/types';
+import type { IndexEntry } from 'storybook/internal/types';
+import type { RenderContextCallbacks } from 'storybook/internal/types';
 
-import type { Render, RenderType } from './Render';
-import { PREPARE_ABORTED } from './Render';
+import type { StoryStore } from '../../../store';
+import { DocsContext } from '../docs-context/DocsContext';
 import type { DocsContextProps } from '../docs-context/DocsContextProps';
 import type { DocsRenderFunction } from '../docs-context/DocsRenderFunction';
-import { DocsContext } from '../docs-context/DocsContext';
-import type { Renderer, StoryId } from '@storybook/core/types';
-import type { CSFFile, PreparedStory } from '@storybook/core/types';
-import type { IndexEntry } from '@storybook/core/types';
-import type { RenderContextCallbacks } from '@storybook/core/types';
+import type { Render, RenderType } from './Render';
+import { PREPARE_ABORTED } from './Render';
 
 /**
  * A CsfDocsRender is a render of a docs entry that is rendered based on a CSF file.
  *
- * The expectation is the primary CSF file which is the `importPath` for the entry will
- * define a story which may contain the actual rendered JSX code for the template in the
- * `docs.page` parameter.
+ * The expectation is the primary CSF file which is the `importPath` for the entry will define a
+ * story which may contain the actual rendered JSX code for the template in the `docs.page`
+ * parameter.
  *
  * Use cases:
- *  - Autodocs, where there is no story, and we fall back to the globally defined template.
+ *
+ * - Autodocs, where there is no story, and we fall back to the globally defined template.
  */
 export class CsfDocsRender<TRenderer extends Renderer> implements Render<TRenderer> {
   public readonly type: RenderType = 'docs';
@@ -59,7 +60,10 @@ export class CsfDocsRender<TRenderer extends Renderer> implements Render<TRender
   async prepare() {
     this.preparing = true;
     const { entryExports, csfFiles = [] } = await this.store.loadEntry(this.id);
-    if (this.torndown) throw PREPARE_ABORTED;
+
+    if (this.torndown) {
+      throw PREPARE_ABORTED;
+    }
 
     const { importPath, title } = this.entry;
     const primaryCsfFile = this.store.processCSFFileWithCache<TRenderer>(
@@ -90,7 +94,9 @@ export class CsfDocsRender<TRenderer extends Renderer> implements Render<TRender
   }
 
   docsContext(renderStoryToElement: DocsContextProps<TRenderer>['renderStoryToElement']) {
-    if (!this.csfFiles) throw new Error('Cannot render docs before preparing');
+    if (!this.csfFiles) {
+      throw new Error('Cannot render docs before preparing');
+    }
     const docsContext = new DocsContext<TRenderer>(
       this.channel,
       this.store,
@@ -108,16 +114,19 @@ export class CsfDocsRender<TRenderer extends Renderer> implements Render<TRender
     canvasElement: TRenderer['canvasElement'],
     renderStoryToElement: DocsContextProps<TRenderer>['renderStoryToElement']
   ) {
-    if (!this.story || !this.csfFiles) throw new Error('Cannot render docs before preparing');
+    if (!this.story || !this.csfFiles) {
+      throw new Error('Cannot render docs before preparing');
+    }
 
     const docsContext = this.docsContext(renderStoryToElement);
 
     const { docs: docsParameter } = this.story.parameters || {};
 
-    if (!docsParameter)
+    if (!docsParameter) {
       throw new Error(
         `Cannot render a story in viewMode=docs if \`@storybook/addon-docs\` is not installed`
       );
+    }
 
     const renderer = await docsParameter.renderer();
     const { render } = renderer as { render: DocsRenderFunction<TRenderer> };
@@ -133,7 +142,9 @@ export class CsfDocsRender<TRenderer extends Renderer> implements Render<TRender
 
     this.rerender = async () => renderDocs();
     this.teardownRender = async ({ viewModeChanged }: { viewModeChanged?: boolean }) => {
-      if (!viewModeChanged || !canvasElement) return;
+      if (!viewModeChanged || !canvasElement) {
+        return;
+      }
       renderer.unmount(canvasElement);
     };
 

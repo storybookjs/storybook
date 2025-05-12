@@ -1,16 +1,18 @@
-import sort from 'semver/functions/sort.js';
-import { platform } from 'os';
-import dedent from 'ts-dedent';
-import { findUpSync } from 'find-up';
 import { existsSync, readFileSync } from 'node:fs';
-import path from 'node:path';
-import { logger } from '@storybook/core/node-logger';
-import { FindPackageVersionsError } from '@storybook/core/server-errors';
+import { platform } from 'node:os';
+import { join } from 'node:path';
 
+import { logger } from 'storybook/internal/node-logger';
+import { FindPackageVersionsError } from 'storybook/internal/server-errors';
+
+import { findUp } from 'find-up';
+import sort from 'semver/functions/sort.js';
+import { dedent } from 'ts-dedent';
+
+import { createLogStream } from '../utils/cli';
 import { JsPackageManager } from './JsPackageManager';
 import type { PackageJson } from './PackageJson';
 import type { InstallationMetadata, PackageMetadata } from './types';
-import { createLogStream } from '../utils/cli';
 
 type NpmDependency = {
   version: string;
@@ -26,8 +28,8 @@ type NpmDependencies = {
 export type NpmListOutput = {
   dependencies: NpmDependencies;
 };
+const NPM_ERROR_REGEX = /npm (ERR!|error) (code|errno) (\w+)/i;
 
-const NPM_ERROR_REGEX = /npm ERR! code (\w+)/;
 const NPM_ERROR_CODES = {
   E401: 'Authentication failed or is required.',
   E403: 'Access to the resource is forbidden.',
@@ -79,17 +81,17 @@ export class NPMProxy extends JsPackageManager {
     return `npm run ${command}`;
   }
 
-  async getNpmVersion(): Promise<string> {
-    return this.executeCommand({ command: 'npm', args: ['--version'] });
+  getRemoteRunCommand(): string {
+    return 'npx';
   }
 
   public async getPackageJSON(
     packageName: string,
     basePath = this.cwd
   ): Promise<PackageJson | null> {
-    const packageJsonPath = await findUpSync(
+    const packageJsonPath = await findUp(
       (dir) => {
-        const possiblePath = path.join(dir, 'node_modules', packageName, 'package.json');
+        const possiblePath = join(dir, 'node_modules', packageName, 'package.json');
         return existsSync(possiblePath) ? possiblePath : undefined;
       },
       { cwd: basePath }
@@ -192,7 +194,11 @@ export class NPMProxy extends JsPackageManager {
     return url === 'undefined' ? undefined : url;
   }
 
-  protected async runAddDeps(dependencies: string[], installAsDevDependencies: boolean) {
+  protected async runAddDeps(
+    dependencies: string[],
+    installAsDevDependencies: boolean,
+    writeOutputToFile = true
+  ) {
     const { logStream, readLogFile, moveLogFile, removeLogFile } = await createLogStream();
     let args = [...dependencies];
 
@@ -204,15 +210,15 @@ export class NPMProxy extends JsPackageManager {
       await this.executeCommand({
         command: 'npm',
         args: ['install', ...args, ...this.getInstallArgs()],
-        stdio: process.env.CI ? 'inherit' : ['ignore', logStream, logStream],
+        stdio: process.env.CI || !writeOutputToFile ? 'inherit' : ['ignore', logStream, logStream],
       });
     } catch (err) {
+      if (!writeOutputToFile) {
+        throw err;
+      }
       const stdout = await readLogFile();
-
       const errorMessage = this.parseErrorFromLogs(stdout);
-
       await moveLogFile();
-
       throw new Error(
         dedent`${errorMessage}
         
@@ -237,14 +243,14 @@ export class NPMProxy extends JsPackageManager {
     packageName: string,
     fetchAllVersions: T
   ): Promise<T extends true ? string[] : string> {
-    const args = [fetchAllVersions ? 'versions' : 'version', '--json'];
+    const args = fetchAllVersions ? ['versions', '--json'] : ['version'];
     try {
       const commandResult = await this.executeCommand({
         command: 'npm',
         args: ['info', packageName, ...args],
       });
 
-      const parsedOutput = JSON.parse(commandResult);
+      const parsedOutput = fetchAllVersions ? JSON.parse(commandResult) : commandResult.trim();
 
       if (parsedOutput.error?.summary) {
         // this will be handled in the catch block below
@@ -262,7 +268,6 @@ export class NPMProxy extends JsPackageManager {
   }
 
   /**
-   *
    * @param input The output of `npm ls --json`
    * @param pattern A list of package names to filter the result. * can be used as a placeholder
    */
@@ -315,7 +320,7 @@ export class NPMProxy extends JsPackageManager {
     const match = logs.match(NPM_ERROR_REGEX);
 
     if (match) {
-      const errorCode = match[1] as keyof typeof NPM_ERROR_CODES;
+      const errorCode = match[3] as keyof typeof NPM_ERROR_CODES;
       if (errorCode) {
         finalMessage = `${finalMessage} ${errorCode}`;
       }

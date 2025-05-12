@@ -74,7 +74,7 @@ addons.register(ADDON_ID, (api) => {
           <SourceStyles>
             <Source
               {...parameter.source}
-              code={parameter.source?.code || codeSnippet.source || parameter.source.originalSource}
+              code={parameter.source?.code || codeSnippet.source || parameter.source?.originalSource}
               format={codeSnippet.format}
               dark={isDark}
             />

@@ -1,5 +1,6 @@
 import { Component, NgModule, Type } from '@angular/core';
 import { MetadataOverride } from '@angular/core/testing';
+import { Router } from '@angular/router';
 
 export const GenerateComponentMetaData = (
   selector: string,
@@ -17,7 +18,7 @@ export const GenerateComponentMetaData = (
     },
   } as MetadataOverride<Component>;
 
-  if (schemas !== null && schemas.length !== 0) {
+  if (schemas !== null && schemas !== undefined && schemas.length !== 0) {
     overrideMetadata.add.schemas = schemas;
   }
 

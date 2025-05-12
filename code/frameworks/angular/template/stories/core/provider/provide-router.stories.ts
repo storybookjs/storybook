@@ -1,11 +1,10 @@
-
-import { Meta, StoryObj, applicationConfig, moduleMetadata } from "@storybook/angular";
-import { RouterModule } from "@angular/router";
-import { Component, importProvidersFrom } from "@angular/core";
-import ProvideRouterComponent from "./router-component/router-component";
+import { Meta, StoryObj, applicationConfig, moduleMetadata } from '@storybook/angular';
+import { RouterModule } from '@angular/router';
+import { Component, importProvidersFrom } from '@angular/core';
+import ProvideRouterComponent from './router-component/router-component';
 
 @Component({
-  template: "",
+  template: '',
 })
 class EmptyComponent {}
 
@@ -19,11 +18,14 @@ const meta: Meta<ProvideRouterComponent> = {
     applicationConfig({
       providers: [
         importProvidersFrom(
-          RouterModule.forRoot([{ path: "**", component: EmptyComponent }], { useHash: true }),
+          RouterModule.forRoot([{ path: '**', component: EmptyComponent }], { useHash: true })
         ),
       ],
     }),
   ],
+  parameters: {
+    useTestBedRenderer: true,
+  },
 };
 
 export default meta;

@@ -9,7 +9,7 @@ const meta = {
   beforeEach() {
     console.log('2 - [from meta beforeEach]');
   },
-  async experimental_afterEach() {
+  async afterEach() {
     console.log('9 - [from meta afterEach]');
 
     await expect(mocked(console.log).mock.calls).toEqual([
@@ -48,7 +48,7 @@ export const OrderOfHooks = {
     console.log('6 - [after mount]');
     await userEvent.click(getByRole(canvasElement, 'button'));
   },
-  async experimental_afterEach() {
+  async afterEach() {
     console.log('8 - [from story afterEach]');
   },
 };

@@ -146,7 +146,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     getStoryGlobsAndFiles(presets, directories),
     presets.apply('framework', undefined),
     presets.apply('env', {}),
-    presets.apply<{ plugins?: Plugin[] }>('viteFinal'),
+    presets.apply<{ plugins?: Plugin[] }>('viteFinal', {}),
     presets.apply('staticDirs', []),
     extractTagsFromPreview(finalOptions.configDir),
   ]);

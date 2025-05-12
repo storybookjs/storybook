@@ -1,3 +1,4 @@
+import { types as t } from 'storybook/internal/babel';
 import { detectPnp } from 'storybook/internal/cli';
 import { readConfig } from 'storybook/internal/csf-tools';
 
@@ -7,6 +8,7 @@ import { dedent } from 'ts-dedent';
 import { updateMainConfig } from '../helpers/mainConfigFile';
 import type { Fix } from '../types';
 import {
+  doesVariableOrFunctionDeclarationExist,
   getFieldsForRequireWrapper,
   getRequireWrapperAsCallExpression,
   getRequireWrapperName,
@@ -73,9 +75,26 @@ export const wrapRequire: Fix<WrapRequireRunOptions> = {
           mainConfig?.fileName?.endsWith('.cjsx') ||
           mainConfig?.fileName?.endsWith('.ctsx')
         ) {
-          mainConfig.setRequireImport(['dirname', 'join'], 'path');
+          mainConfig.setRequireImport(['dirname', 'join'], 'node:path');
         } else {
-          mainConfig.setImport(['dirname', 'join'], 'path');
+          mainConfig.setImport(['dirname', 'join'], 'node:path');
+          mainConfig.setImport(['createRequire'], 'node:module');
+
+          // Continue here
+          const hasRequire = mainConfig
+            .getBodyDeclarations()
+            .some((node) => doesVariableOrFunctionDeclarationExist(node, 'require'));
+
+          if (!hasRequire) {
+            mainConfig.setBodyDeclaration(
+              t.variableDeclaration('const', [
+                t.variableDeclarator(
+                  t.identifier('require'),
+                  t.callExpression(t.identifier('createRequire'), [t.identifier('import.meta.url')])
+                ),
+              ])
+            );
+          }
         }
         mainConfig.setBodyDeclaration(getRequireWrapperAsCallExpression(result.isConfigTypescript));
       }

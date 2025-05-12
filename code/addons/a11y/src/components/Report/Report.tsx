@@ -1,15 +1,30 @@
-import type { FC } from 'react';
+import type { ComponentProps, FC } from 'react';
 import React from 'react';
 
-import { EmptyTabContent, IconButton } from 'storybook/internal/components';
+import { Badge, EmptyTabContent, IconButton } from 'storybook/internal/components';
 
 import { ChevronSmallDownIcon } from '@storybook/icons';
 
+import type { ImpactValue } from 'axe-core';
 import { styled } from 'storybook/theming';
 
 import { getTitleForAxeResult } from '../../axeRuleMappingHelper';
-import type { EnhancedResult, RuleType } from '../../types';
+import { type EnhancedResult, RuleType } from '../../types';
 import { Details } from './Details';
+
+const impactStatus: Record<NonNullable<ImpactValue>, ComponentProps<typeof Badge>['status']> = {
+  minor: 'neutral',
+  moderate: 'warning',
+  serious: 'negative',
+  critical: 'critical',
+};
+
+const impactLabels: Record<NonNullable<ImpactValue>, string> = {
+  minor: 'Minor',
+  moderate: 'Moderate',
+  serious: 'Serious',
+  critical: 'Critical',
+};
 
 const Wrapper = styled.div(({ theme }) => ({
   display: 'flex',
@@ -17,6 +32,7 @@ const Wrapper = styled.div(({ theme }) => ({
   width: '100%',
   borderBottom: `1px solid ${theme.appBorderColor}`,
   containerType: 'inline-size',
+  fontSize: theme.typography.size.s2,
 }));
 
 const Icon = styled(ChevronSmallDownIcon)({
@@ -40,11 +56,24 @@ const HeaderBar = styled.div(({ theme }) => ({
   },
 }));
 
-const Title = styled.div({
+const Title = styled.div(({ theme }) => ({
   display: 'flex',
+  alignItems: 'baseline',
   flexGrow: 1,
-  gap: 6,
-});
+  fontSize: theme.typography.size.s2,
+  gap: 8,
+}));
+
+const RuleId = styled.div(({ theme }) => ({
+  display: 'none',
+  color: theme.textMutedColor,
+  fontFamily: theme.typography.fonts.mono,
+  fontSize: theme.typography.size.s1,
+
+  '@container (min-width: 800px)': {
+    display: 'block',
+  },
+}));
 
 const Count = styled.div(({ theme }) => ({
   display: 'flex',
@@ -84,7 +113,13 @@ export const Report: FC<ReportProps> = ({
             <HeaderBar onClick={(event) => toggleOpen(event, type, item)} data-active={!!selection}>
               <Title>
                 <strong>{title}</strong>
+                <RuleId>{item.id}</RuleId>
               </Title>
+              {item.impact && (
+                <Badge status={type === RuleType.PASS ? 'neutral' : impactStatus[item.impact]}>
+                  {impactLabels[item.impact]}
+                </Badge>
+              )}
               <Count>{item.nodes.length}</Count>
               <IconButton
                 onClick={(event) => toggleOpen(event, type, item)}

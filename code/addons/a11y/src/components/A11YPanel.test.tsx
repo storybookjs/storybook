@@ -37,6 +37,7 @@ const emptyResults: EnhancedResults = {
 describe('A11YPanel', () => {
   it('should render initializing state', () => {
     mockedUseA11yContext.mockReturnValue({
+      parameters: {},
       results: emptyResults,
       status: 'initial',
       handleManual: vi.fn(),
@@ -55,6 +56,7 @@ describe('A11YPanel', () => {
   it('should render manual state', () => {
     const handleManual = vi.fn();
     mockedUseA11yContext.mockReturnValue({
+      parameters: {},
       results: emptyResults,
       status: 'manual',
       handleManual,
@@ -76,6 +78,7 @@ describe('A11YPanel', () => {
 
   it('should render running state', () => {
     mockedUseA11yContext.mockReturnValue({
+      parameters: {},
       results: emptyResults,
       status: 'running',
       handleManual: vi.fn(),
@@ -95,6 +98,7 @@ describe('A11YPanel', () => {
 
   it('should render error state', () => {
     mockedUseA11yContext.mockReturnValue({
+      parameters: {},
       results: emptyResults,
       status: 'error',
       handleManual: vi.fn(),
@@ -113,6 +117,7 @@ describe('A11YPanel', () => {
 
   it('should render error state with object error', () => {
     mockedUseA11yContext.mockReturnValue({
+      parameters: {},
       results: emptyResults,
       status: 'error',
       handleManual: vi.fn(),

@@ -342,7 +342,7 @@ export const promptInstallType = async ({
           value: 'recommended',
         },
         {
-          title: `${picocolors.bold('Minimal:')} Dev only`,
+          title: `${picocolors.bold('Minimal:')} Component dev only`,
           value: 'light',
         },
       ],

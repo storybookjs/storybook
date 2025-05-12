@@ -1,6 +1,6 @@
 {
   "name": "@storybook/builder-webpack5",
-  "version": "9.0.0-beta.10",
+  "version": "9.0.0-rc.0",
   "description": "Storybook framework-agnostic API",
   "keywords": [
     "storybook"
@@ -64,22 +64,16 @@
   },
   "dependencies": {
     "@storybook/core-webpack": "workspace:*",
-    "browser-assert": "^1.2.1",
     "case-sensitive-paths-webpack-plugin": "^2.4.0",
     "cjs-module-lexer": "^1.2.3",
-    "constants-browserify": "^1.0.0",
     "css-loader": "^6.7.1",
     "es-module-lexer": "^1.5.0",
     "fork-ts-checker-webpack-plugin": "^8.0.0",
     "html-webpack-plugin": "^5.5.0",
     "magic-string": "^0.30.5",
-    "path-browserify": "^1.0.1",
-    "process": "^0.11.10",
     "style-loader": "^3.3.1",
     "terser-webpack-plugin": "^5.3.1",
     "ts-dedent": "^2.0.0",
-    "url": "^0.11.0",
-    "util": "^0.12.4",
     "webpack": "5",
     "webpack-dev-middleware": "^6.1.2",
     "webpack-hot-middleware": "^2.25.1",

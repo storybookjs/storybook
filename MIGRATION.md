@@ -24,6 +24,7 @@
     - [Story Store API Changes](#story-store-api-changes)
     - [Global State Management](#global-state-management)
     - [Experimental Status API has turned into a Status Store](#experimental-status-api-has-turned-into-a-status-store)
+    - [`experimental_afterEach` has been stabilized](#experimental_aftereach-has-been-stabilized)
     - [Testing Module Changes](#testing-module-changes)
     - [Consolidate `@storybook/blocks` into addon docs](#consolidate-storybookblocks-into-addon-docs)
   - [Configuration and Type Changes](#configuration-and-type-changes)
@@ -860,6 +861,21 @@ addons.register(MY_ADDON_ID, (api) => {
 +    title: 'Component tests',
 +    description: 'Works!',
 +  }]);
+```
+
+#### `experimental_afterEach` has been stabilized
+
+The experimental_afterEach hook has been promoted to a stable API and renamed to afterEach.
+
+To migrate, simply replace all instances of experimental_afterEach with afterEach in your stories, preview files, and configuration.
+
+```diff
+ export const MyStory = {
+-   experimental_afterEach: async ({ canvasElement }) => {
++   afterEach: async ({ canvasElement }) => {
+     // cleanup logic
+   },
+ };
 ```
 
 #### Testing Module Changes

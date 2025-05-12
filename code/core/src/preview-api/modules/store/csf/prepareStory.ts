@@ -88,9 +88,9 @@ export function prepareStory<TRenderer extends Renderer>(
 
   const applyAfterEach = async (context: StoryContext<TRenderer>): Promise<void> => {
     const reversedFinalizers = [
-      ...normalizeArrays(projectAnnotations.experimental_afterEach),
-      ...normalizeArrays(componentAnnotations.experimental_afterEach),
-      ...normalizeArrays(storyAnnotations.experimental_afterEach),
+      ...normalizeArrays(projectAnnotations.afterEach),
+      ...normalizeArrays(componentAnnotations.afterEach),
+      ...normalizeArrays(storyAnnotations.afterEach),
     ].reverse();
     for (const finalizer of reversedFinalizers) {
       if (context.abortSignal.aborted) {

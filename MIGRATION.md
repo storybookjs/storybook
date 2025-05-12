@@ -691,7 +691,22 @@ export const MyStory = {
 
 #### Experimental Test Addon: Stabilized and renamed
 
-In Storybook 9.0, we've officially stabilized the Test addon. The package has been renamed from `@storybook/experimental-addon-test` to `@storybook/addon-vitest`, reflecting its production-ready status. If you were using the experimental addon, you'll need to update your dependencies and imports:
+In Storybook 9.0, we've officially stabilized the Test addon. The package has been renamed from `@storybook/experimental-addon-test` to `@storybook/addon-vitest`, reflecting its production-ready status. If you were using the experimental addon, you'll need to update your dependencies and imports.
+
+The vitest addon automatically loads storybook's beforeAll, so that you can remove the following line in your vitest.setup.ts file:
+
+```diff
+// .storybook/vitest.setup.ts
+import { setProjectAnnotations } from '@storybook/react-vite';
+import * as addonAnnotations from 'my-addon/preview';
+import * as previewAnnotations from './.storybook/preview';
+
+- const project = setProjectAnnotations([previewAnnotations, addonAnnotations]);
++ setProjectAnnotations([previewAnnotations, addonAnnotations]);
+
+// the vitest addon automatically loads beforeAll
+- beforeAll(project.beforeAll);
+```
 
 #### Vitest Addon (former @storybook/experimental-addon-test): Vitest 2.0 support is dropped
 

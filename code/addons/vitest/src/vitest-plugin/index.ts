@@ -8,6 +8,7 @@ import type { ViteUserConfig } from 'vitest/config';
 import {
   getInterpretedFile,
   normalizeStories,
+  resolvePathInStorybookCache,
   validateConfigurationFiles,
 } from 'storybook/internal/common';
 import type {
@@ -17,6 +18,7 @@ import type {
 } from 'storybook/internal/core-server';
 import { readConfig, vitestTransform } from 'storybook/internal/csf-tools';
 import { MainFileMissingError } from 'storybook/internal/server-errors';
+import { oneWayHash } from 'storybook/internal/telemetry';
 import type { Presets } from 'storybook/internal/types';
 
 import { join, resolve } from 'pathe';
@@ -173,7 +175,10 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       // We are overriding the environment variable to 'true' if vitest runs via @storybook/addon-vitest's backend
       const vitestStorybook = process.env.VITEST_STORYBOOK ?? 'false';
 
+      const projectId = oneWayHash(finalOptions.configDir);
+
       const baseConfig: Omit<ViteUserConfig, 'plugins'> = {
+        cacheDir: resolvePathInStorybookCache('sb-vitest', projectId),
         test: {
           setupFiles: [
             join(PACKAGE_DIR, 'dist/vitest-plugin/setup-file.mjs'),

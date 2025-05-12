@@ -45,13 +45,13 @@ export const statusMapping: Record<StatusValue, [ReactElement | null, string | n
     <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
       <UseSymbol type="warning" />
     </svg>,
-    '#A15C20',
+    'var(--status-value-warning, #A15C20)',
   ],
   ['status-value:error']: [
     <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
       <UseSymbol type="error" />
     </svg>,
-    'brown',
+    'var(--status-value-error, brown)',
   ],
 };
 

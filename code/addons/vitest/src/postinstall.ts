@@ -305,9 +305,7 @@ export default async function postInstall(options: PostinstallOptions) {
     existsSync
   );
 
-  const imports = [
-    `import { setProjectAnnotations } from '${annotationsImport}';`,
-  ];
+  const imports = [`import { setProjectAnnotations } from '${annotationsImport}';`];
 
   const projectAnnotations = [];
 

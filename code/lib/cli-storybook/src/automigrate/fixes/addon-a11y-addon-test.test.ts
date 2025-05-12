@@ -374,7 +374,7 @@ describe('addonA11yAddonTest', () => {
         ...   
         + import * as a11yAddonAnnotations from "@storybook/addon-a11y/preview";
 
-        const annotations = setProjectAnnotations([
+        setProjectAnnotations([
           ...
         + a11yAddonAnnotations,
         ]);
@@ -604,22 +604,18 @@ describe('addonA11yAddonTest', () => {
           import { setProjectAnnotations } from 'storybook';
           import * as projectAnnotations from './preview';
 
-          const project = setProjectAnnotations([a11yAddonAnnotations, projectAnnotations]);
-
-          beforeAll(project.beforeAll);"
+          setProjectAnnotations([a11yAddonAnnotations, projectAnnotations]);
+          "
         `);
     });
 
     it('should transform setup file correctly - project annotation is not an array', () => {
       const setupFile = '/path/to/vitest.setup.ts';
       const source = dedent`
-        import { beforeAll } from 'vitest';
         import { setProjectAnnotations } from 'storybook';
         import * as projectAnnotations from './preview';
 
-        const project = setProjectAnnotations(projectAnnotations);
-
-        beforeAll(project.beforeAll);
+        setProjectAnnotations(projectAnnotations);
       `;
       vi.mocked(readFileSync).mockReturnValue(source);
 
@@ -627,13 +623,10 @@ describe('addonA11yAddonTest', () => {
       const transformedCode = transformSetupFile(s);
       expect(transformedCode).toMatchInlineSnapshot(dedent`
         "import * as a11yAddonAnnotations from "@storybook/addon-a11y/preview";
-        import { beforeAll } from 'vitest';
         import { setProjectAnnotations } from 'storybook';
         import * as projectAnnotations from './preview';
 
-        const project = setProjectAnnotations([a11yAddonAnnotations, projectAnnotations]);
-
-        beforeAll(project.beforeAll);"
+        setProjectAnnotations([a11yAddonAnnotations, projectAnnotations]);
       `);
     });
   });

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useId } from 'react';
 import type { FC, ReactElement } from 'react';
 
 import type { Channel } from 'storybook/internal/channels';
@@ -18,7 +18,7 @@ interface TocbotOptions {
   orderedList?: boolean;
   onClick?: (e: MouseEvent) => void;
   scrollEndCallback?: () => void;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface TocParameters {
@@ -48,7 +48,7 @@ export interface TocParameters {
   unsafeTocbotOptions?: Omit<TocbotOptions, 'onClick' | 'scrollEndCallback'>;
 }
 
-const Wrapper = styled.div(({ theme }) => ({
+const Aside = styled.aside(() => ({
   width: '10rem',
 
   '@media (max-width: 768px)': {
@@ -56,7 +56,7 @@ const Wrapper = styled.div(({ theme }) => ({
   },
 }));
 
-const Content = styled.div(({ theme }) => ({
+const Nav = styled.nav(({ theme }) => ({
   position: 'fixed',
   bottom: 0,
   top: 0,
@@ -138,14 +138,21 @@ type TableOfContentsProps = React.PropsWithChildren<
   }
 >;
 
-const OptionalTitle: FC<{ title: TableOfContentsProps['title'] }> = ({ title }) => {
-  if (title === null) {
-    return null;
+const Title: FC<{
+  headingId: string;
+  title: TableOfContentsProps['title'];
+}> = ({ headingId, title }) => {
+  // General case.
+  if (typeof title === 'string' || !title) {
+    return (
+      <Heading as="h2" id={headingId} className={title ? '' : 'sb-sr-only'}>
+        {title || 'Table of contents'}
+      </Heading>
+    );
   }
-  if (typeof title === 'string') {
-    return <Heading>{title}</Heading>;
-  }
-  return title;
+
+  // Custom JSX title: we must ensure an ID is set for ARIA attributes to work.
+  return <div id={headingId}>{title}</div>;
 };
 
 export const TableOfContents = ({
@@ -156,6 +163,7 @@ export const TableOfContents = ({
   ignoreSelector,
   unsafeTocbotOptions,
   channel,
+  className,
 }: TableOfContentsProps) => {
   useEffect(() => {
     // Do not initialize tocbot when we won't be rendering a ToC.
@@ -193,16 +201,16 @@ export const TableOfContents = ({
     };
   }, [channel, disable, ignoreSelector, contentsSelector, headingSelector, unsafeTocbotOptions]);
 
+  const headingId = useId();
+
   return (
-    <>
-      <Wrapper>
-        {!disable ? (
-          <Content>
-            <OptionalTitle title={title || null} />
-            <div className="toc-wrapper" />
-          </Content>
-        ) : null}
-      </Wrapper>
-    </>
+    <Aside className={className}>
+      {!disable ? (
+        <Nav aria-labelledby={headingId}>
+          <Title headingId={headingId} title={title} />
+          <div className="toc-wrapper" />
+        </Nav>
+      ) : null}
+    </Aside>
   );
 };

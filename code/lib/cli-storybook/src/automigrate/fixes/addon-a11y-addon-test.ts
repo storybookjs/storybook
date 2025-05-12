@@ -155,12 +155,10 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
           ${picocolors.gray('...')}   
           ${picocolors.green('+ import * as a11yAddonAnnotations from "@storybook/addon-a11y/preview";')}
 
-          ${picocolors.gray('const annotations = setProjectAnnotations([')}
+          ${picocolors.gray('setProjectAnnotations([')}
           ${picocolors.gray('  ...')}
           ${picocolors.green('+ a11yAddonAnnotations,')}
           ${picocolors.gray(']);')}
-
-          ${picocolors.gray('beforeAll(annotations.beforeAll);')}
         `);
       } else {
         const fileExtensionSetupFile = path.extname(setupFile!);

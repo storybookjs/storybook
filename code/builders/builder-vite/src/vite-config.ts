@@ -69,9 +69,6 @@ export async function commonConfig(
     resolve: {
       conditions: ['storybook', 'stories', 'test', ...defaultClientConditions],
       preserveSymlinks: isPreservingSymlinks(),
-      alias: {
-        assert: require.resolve('browser-assert'),
-      },
     },
     // If an envPrefix is specified in the vite config, add STORYBOOK_ to it,
     // otherwise, add VITE_ and STORYBOOK_ so that vite doesn't lose its default.

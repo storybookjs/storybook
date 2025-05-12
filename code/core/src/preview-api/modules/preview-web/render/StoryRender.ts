@@ -29,6 +29,7 @@ import type { UserEventObject } from 'storybook/test';
 import type { StoryStore } from '../../store';
 import type { Render, RenderType } from './Render';
 import { PREPARE_ABORTED } from './Render';
+import { isTestEnvironment, pauseAnimations, waitForAnimations } from './animation-utils';
 
 const { AbortController } = globalThis;
 
@@ -39,8 +40,9 @@ export type RenderPhase =
   | 'rendering'
   | 'playing'
   | 'played'
-  | 'afterEach'
+  | 'completing'
   | 'completed'
+  | 'afterEach'
   | 'finished'
   | 'aborted'
   | 'errored';
@@ -281,7 +283,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
       }
 
       const cleanupCallbacks = await applyBeforeEach(context);
-      this.store.addCleanupCallbacks(story, cleanupCallbacks);
+      this.store.addCleanupCallbacks(story, ...cleanupCallbacks);
 
       if (this.checkIfAborted(abortSignal)) {
         return;
@@ -301,13 +303,21 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
         this.story.parameters?.test?.dangerouslyIgnoreUnhandledErrors === true;
 
       const unhandledErrors: Set<unknown> = new Set<unknown>();
-      const onError = (event: ErrorEvent | PromiseRejectionEvent) =>
-        unhandledErrors.add('error' in event ? event.error : event.reason);
+      const onError = (event: ErrorEvent) => {
+        if (event.error) {
+          unhandledErrors.add(event.error);
+        }
+      };
+      const onUnhandledRejection = (event: PromiseRejectionEvent) => {
+        if (event.reason) {
+          unhandledErrors.add(event.reason);
+        }
+      };
 
       // The phase should be 'rendering' but it might be set to 'aborted' by another render cycle
       if (this.renderOptions.autoplay && forceRemount && playFunction && this.phase !== 'errored') {
         window.addEventListener('error', onError);
-        window.addEventListener('unhandledrejection', onError);
+        window.addEventListener('unhandledrejection', onUnhandledRejection);
         this.disableKeyListeners = true;
         try {
           if (!isMountDestructured) {
@@ -350,7 +360,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
           );
         }
         this.disableKeyListeners = false;
-        window.removeEventListener('unhandledrejection', onError);
+        window.removeEventListener('unhandledrejection', onUnhandledRejection);
         window.removeEventListener('error', onError);
 
         if (abortSignal.aborted) {
@@ -358,9 +368,17 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
         }
       }
 
-      await this.runPhase(abortSignal, 'completed', async () =>
-        this.channel.emit(STORY_RENDERED, id)
-      );
+      await this.runPhase(abortSignal, 'completing', async () => {
+        if (isTestEnvironment()) {
+          this.store.addCleanupCallbacks(story, pauseAnimations());
+        } else {
+          await waitForAnimations(abortSignal);
+        }
+      });
+
+      await this.runPhase(abortSignal, 'completed', async () => {
+        this.channel.emit(STORY_RENDERED, id);
+      });
 
       if (this.phase !== 'errored') {
         await this.runPhase(abortSignal, 'afterEach', async () => {

@@ -24,6 +24,7 @@
     - [Story Store API Changes](#story-store-api-changes)
     - [Global State Management](#global-state-management)
     - [Experimental Status API has turned into a Status Store](#experimental-status-api-has-turned-into-a-status-store)
+    - [`experimental_afterEach` has been stabilized](#experimental_aftereach-has-been-stabilized)
     - [Testing Module Changes](#testing-module-changes)
     - [Consolidate `@storybook/blocks` into addon docs](#consolidate-storybookblocks-into-addon-docs)
   - [Configuration and Type Changes](#configuration-and-type-changes)
@@ -479,8 +480,6 @@
 
 ### Core Changes and Removals
 
-Furthermore, we have deprecated the usage of `withActions` from `@storybook/addon-actions` and we will remove it in Storybook v10. Please file an issue if you need this API.
-
 #### Dropped support for legacy packages
 
 The following packages are no longer published as part of `9.0.0`:
@@ -553,6 +552,8 @@ export default {
 ```
 
 The public API remains the same, so no additional changes should be needed in your test files or configuration.
+
+Additionally, we have deprecated the usage of `withActions` from `@storybook/addon-actions` and we will remove it in Storybook v10. Please file an issue if you need this API.
 
 #### Dropped support
 
@@ -691,7 +692,22 @@ export const MyStory = {
 
 #### Experimental Test Addon: Stabilized and renamed
 
-In Storybook 9.0, we've officially stabilized the Test addon. The package has been renamed from `@storybook/experimental-addon-test` to `@storybook/addon-vitest`, reflecting its production-ready status. If you were using the experimental addon, you'll need to update your dependencies and imports:
+In Storybook 9.0, we've officially stabilized the Test addon. The package has been renamed from `@storybook/experimental-addon-test` to `@storybook/addon-vitest`, reflecting its production-ready status. If you were using the experimental addon, you'll need to update your dependencies and imports.
+
+The vitest addon automatically loads Storybook's `beforeAll` hook, so that you can remove the following line in your vitest.setup.ts file:
+
+```diff
+// .storybook/vitest.setup.ts
+import { setProjectAnnotations } from '@storybook/react-vite';
+import * as addonAnnotations from 'my-addon/preview';
+import * as previewAnnotations from './.storybook/preview';
+
+- const project = setProjectAnnotations([previewAnnotations, addonAnnotations]);
++ setProjectAnnotations([previewAnnotations, addonAnnotations]);
+
+// the vitest addon automatically loads beforeAll
+- beforeAll(project.beforeAll);
+```
 
 #### Vitest Addon (former @storybook/experimental-addon-test): Vitest 2.0 support is dropped
 
@@ -860,6 +876,21 @@ addons.register(MY_ADDON_ID, (api) => {
 +    title: 'Component tests',
 +    description: 'Works!',
 +  }]);
+```
+
+#### `experimental_afterEach` has been stabilized
+
+The experimental_afterEach hook has been promoted to a stable API and renamed to afterEach.
+
+To migrate, simply replace all instances of experimental_afterEach with afterEach in your stories, preview files, and configuration.
+
+```diff
+ export const MyStory = {
+-   experimental_afterEach: async ({ canvasElement }) => {
++   afterEach: async ({ canvasElement }) => {
+     // cleanup logic
+   },
+ };
 ```
 
 #### Testing Module Changes

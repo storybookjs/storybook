@@ -35,13 +35,13 @@ test.describe('composition', () => {
     ).toBeVisible({ timeout: 15000 });
 
     // Expect composed stories `to be available in the search
-    await page.getByPlaceholder('Find components').fill('Button');
+    await page.getByPlaceholder('Find components').fill('Button primary');
     await expect(
-      page.getByRole('option', { name: 'Button Storybook 7.6.18 / @blocks / examples' })
+      page.getByRole('option', { name: 'Primary Storybook 7.6.18 / @components / Button' })
     ).toBeVisible();
 
     const buttonStory = page.getByRole('option', {
-      name: 'Button Storybook 8.0.0 / @blocks / examples',
+      name: 'Primary Storybook 8.0.0 / @blocks / examples / Button',
     });
     await expect(buttonStory).toBeVisible();
     await buttonStory.click();
@@ -51,7 +51,7 @@ test.describe('composition', () => {
       page
         .locator('iframe[title="storybook-ref-storybook\\@8\\.0\\.0"]')
         .contentFrame()
-        .getByRole('heading', { name: 'Example button component' })
+        .getByRole('button')
     ).toBeVisible({ timeout: 15000 });
   });
 
@@ -62,29 +62,41 @@ test.describe('composition', () => {
 
     await page.click('button[title="Open navigation menu"]');
 
+    // scroll down to the bottom of the element getByText('Skip to canvasStorybookSearch')
+
+    await page.getByTitle('Storybook 7.6.18').scrollIntoViewIfNeeded();
+
     // Expect that composed Storybooks are visible
     await expect(page.getByTitle('Storybook 8.0.0')).toBeVisible();
     await expect(page.getByTitle('Storybook 7.6.18')).toBeVisible();
 
     // Expect composed stories to be available in the sidebar
+    await expect(page.locator('[id="storybook\\@8\\.0\\.0_components-badge"]')).toBeVisible();
     await page.locator('[id="storybook\\@8\\.0\\.0_components-badge"]').click();
     await expect(
       page.locator('[id="storybook\\@8\\.0\\.0_components-badge--default"]')
     ).toBeVisible();
 
     await page.locator('[id="storybook\\@7\\.6\\.18_components-badge"]').click();
+    await page.locator('[id="storybook\\@7\\.6\\.18_components-badge--default"]').click();
     await expect(
-      page.locator('[id="storybook\\@7\\.6\\.18_components-badge--default"]')
-    ).toBeVisible();
+      page
+        .locator('iframe[title="storybook-ref-storybook\\@7\\.6\\.18"]')
+        .contentFrame()
+        .locator('#storybook-root')
+        .getByText('Default')
+    ).toBeVisible({ timeout: 15000 });
+
+    await page.click('button[title="Open navigation menu"]');
 
     // Expect composed stories `to be available in the search
-    await page.getByPlaceholder('Find components').fill('Button');
+    await page.getByPlaceholder('Find components').fill('Button primary');
     await expect(
-      page.getByRole('option', { name: 'Button Storybook 7.6.18 / @blocks / examples' })
+      page.getByRole('option', { name: 'Primary Storybook 7.6.18 / @components / Button' })
     ).toBeVisible();
 
     const buttonStory = page.getByRole('option', {
-      name: 'Button Storybook 8.0.0 / @blocks / examples',
+      name: 'Primary Storybook 8.0.0 / @blocks / examples / Button',
     });
     await expect(buttonStory).toBeVisible();
     await buttonStory.click();
@@ -94,7 +106,7 @@ test.describe('composition', () => {
       page
         .locator('iframe[title="storybook-ref-storybook\\@8\\.0\\.0"]')
         .contentFrame()
-        .getByRole('heading', { name: 'Example button component' })
+        .getByRole('button')
     ).toBeVisible({ timeout: 15000 });
   });
 });

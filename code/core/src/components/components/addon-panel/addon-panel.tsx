@@ -21,13 +21,17 @@ export const ErrorHandler = ({
   const [hasError, setHasError] = useState(false);
 
   const channel = addons.getChannel();
-  channel.on(STORY_RENDER_PHASE_CHANGED, ({ newPhase }) => {
-    if (newPhase === 'rendering') {
-      setHasError(false);
-    } else if (newPhase === 'errored') {
-      setHasError(true);
-    }
-  });
+  useEffect(() => {
+    const callback = ({ newPhase }: { newPhase: string }) => {
+      if (newPhase === 'rendering') {
+        setHasError(false);
+      } else if (newPhase === 'errored') {
+        setHasError(true);
+      }
+    };
+    channel.on(STORY_RENDER_PHASE_CHANGED, callback);
+    return () => channel.off(STORY_RENDER_PHASE_CHANGED, callback);
+  }, [channel]);
 
   return hasError ? (
     <EmptyTabContent

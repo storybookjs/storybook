@@ -4,8 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { StoryContext } from 'storybook/internal/csf';
 
 import { run } from './a11yRunner';
-import { withLinkPaths } from './a11yRunnerUtils';
-import { experimental_afterEach } from './preview';
+import { afterEach } from './preview';
 import { getIsVitestRunning, getIsVitestStandaloneRun } from './utils';
 
 const mocks = vi.hoisted(() => {
@@ -107,7 +106,7 @@ describe('afterEach', () => {
 
     mockedRun.mockResolvedValue(result as any);
 
-    await expect(() => experimental_afterEach(context)).rejects.toThrow();
+    await expect(() => afterEach(context)).rejects.toThrow();
 
     expect(mockedRun).toHaveBeenCalledWith(context.parameters.a11y, context.id);
 
@@ -128,7 +127,7 @@ describe('afterEach', () => {
     mockedRun.mockResolvedValue(result as any);
     mocks.getIsVitestStandaloneRun.mockReturnValue(false);
 
-    await experimental_afterEach(context);
+    await afterEach(context);
 
     expect(mockedRun).toHaveBeenCalledWith(context.parameters.a11y, context.id);
 
@@ -155,7 +154,7 @@ describe('afterEach', () => {
     mockedRun.mockResolvedValue(result as any);
     mocks.getIsVitestStandaloneRun.mockReturnValue(false);
 
-    await experimental_afterEach(context);
+    await afterEach(context);
 
     expect(mockedRun).toHaveBeenCalledWith(context.parameters.a11y, context.id);
 
@@ -174,7 +173,7 @@ describe('afterEach', () => {
     };
     mockedRun.mockResolvedValue(result as any);
 
-    await experimental_afterEach(context);
+    await afterEach(context);
 
     expect(mockedRun).toHaveBeenCalledWith(context.parameters.a11y, context.id);
     expect(context.reporting.addReport).toHaveBeenCalledWith({
@@ -194,7 +193,7 @@ describe('afterEach', () => {
       },
     });
 
-    await experimental_afterEach(context);
+    await afterEach(context);
 
     expect(mockedRun).not.toHaveBeenCalled();
     expect(context.reporting.addReport).not.toHaveBeenCalled();
@@ -209,7 +208,7 @@ describe('afterEach', () => {
       },
     });
 
-    await experimental_afterEach(context);
+    await afterEach(context);
 
     expect(mockedRun).not.toHaveBeenCalled();
     expect(context.reporting.addReport).not.toHaveBeenCalled();
@@ -224,7 +223,7 @@ describe('afterEach', () => {
       },
     });
 
-    await experimental_afterEach(context);
+    await afterEach(context);
 
     expect(mockedRun).not.toHaveBeenCalled();
     expect(context.reporting.addReport).not.toHaveBeenCalled();
@@ -235,7 +234,7 @@ describe('afterEach', () => {
     const error = new Error('Test error');
     mockedRun.mockRejectedValue(error);
 
-    await expect(() => experimental_afterEach(context)).rejects.toThrow();
+    await expect(() => afterEach(context)).rejects.toThrow();
 
     expect(mockedRun).toHaveBeenCalledWith(context.parameters.a11y, context.id);
     expect(context.reporting.addReport).toHaveBeenCalledWith({
@@ -253,7 +252,7 @@ describe('afterEach', () => {
       viewMode: 'docs',
     });
 
-    await experimental_afterEach(context);
+    await afterEach(context);
 
     expect(mockedRun).not.toHaveBeenCalled();
     expect(context.reporting.addReport).not.toHaveBeenCalled();

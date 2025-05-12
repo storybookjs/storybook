@@ -480,8 +480,6 @@
 
 ### Core Changes and Removals
 
-Furthermore, we have deprecated the usage of `withActions` from `@storybook/addon-actions` and we will remove it in Storybook v10. Please file an issue if you need this API.
-
 #### Dropped support for legacy packages
 
 The following packages are no longer published as part of `9.0.0`:
@@ -554,6 +552,8 @@ export default {
 ```
 
 The public API remains the same, so no additional changes should be needed in your test files or configuration.
+
+Additionally, we have deprecated the usage of `withActions` from `@storybook/addon-actions` and we will remove it in Storybook v10. Please file an issue if you need this API.
 
 #### Dropped support
 

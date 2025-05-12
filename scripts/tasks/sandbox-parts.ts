@@ -428,8 +428,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
       import projectAnnotations from './preview'
 
       // setProjectAnnotations still kept to support non-CSF4 story tests
-      const annotations = setProjectAnnotations(projectAnnotations.composed)
-      beforeAll(annotations.beforeAll)
+      setProjectAnnotations(projectAnnotations.composed)
       `
     );
   } else {
@@ -444,15 +443,13 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
       import * as projectAnnotations from './preview'
       ${isVue ? 'import * as vueAnnotations from "../src/stories/renderers/vue3/preview.js"' : ''}
   
-      const annotations = setProjectAnnotations([
+      setProjectAnnotations([
         ${isVue ? 'vueAnnotations,' : ''}
         rendererDocsAnnotations,
         templateAnnotations,
         addonA11yAnnotations,
         projectAnnotations,
       ])
-  
-      beforeAll(annotations.beforeAll)`
     );
   }
 

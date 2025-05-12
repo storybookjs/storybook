@@ -1,6 +1,6 @@
 {
   "name": "@storybook/builder-vite",
-  "version": "9.0.0-beta.6",
+  "version": "9.0.0-beta.11",
   "description": "A plugin to run and build Storybooks with Vite",
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/builders/builder-vite/#readme",
   "bugs": {
@@ -44,7 +44,6 @@
   },
   "dependencies": {
     "@storybook/csf-plugin": "workspace:*",
-    "browser-assert": "^1.2.1",
     "ts-dedent": "^2.0.0"
   },
   "devDependencies": {

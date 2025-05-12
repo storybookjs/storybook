@@ -18,7 +18,11 @@ import {
 } from '../../../scripts/prepare/tools';
 import pkg from '../package.json';
 import { globalsModuleInfoMap } from '../src/manager/globals-module-info';
-import { BROWSER_TARGETS, NODE_TARGET } from '../src/shared/constants/environments-support';
+import {
+  BROWSER_TARGETS,
+  NODE_TARGET,
+  SUPPORTED_FEATURES,
+} from '../src/shared/constants/environments-support';
 import { getBundles, getEntries, getFinals } from './entries';
 import { generatePackageJsonFile } from './helpers/generatePackageJsonFile';
 import { generateTypesFiles } from './helpers/generateTypesFiles';
@@ -124,6 +128,7 @@ async function run() {
       ...esbuildDefaultOptions,
       format: 'esm',
       target: BROWSER_TARGETS,
+      supported: SUPPORTED_FEATURES,
       splitting: false,
       platform: 'browser',
 
@@ -138,12 +143,6 @@ async function run() {
       mainFields: ['main', 'module', 'node'],
       conditions: ['node', 'module', 'import', 'require'],
     } satisfies EsbuildContextOptions;
-
-    const browserAliases = {
-      assert: require.resolve('browser-assert'),
-      process: require.resolve('process/browser.js'),
-      util: require.resolve('util/util.js'),
-    };
 
     const compile = await Promise.all([
       esbuild.context(
@@ -161,7 +160,6 @@ async function run() {
       ),
       esbuild.context(
         merge<EsbuildContextOptions>(browserEsbuildOptions, {
-          alias: browserAliases,
           entryPoints: entries
             .filter(isBrowser)
             .filter(noExternals)
@@ -204,7 +202,6 @@ async function run() {
               entryPoints: [entry.file],
               outExtension: { '.js': '.js' },
               alias: {
-                ...browserAliases,
                 'storybook/preview-api': join(cwd, 'src', 'preview-api'),
                 'storybook/manager-api': join(cwd, 'src', 'manager-api'),
                 'storybook/theming': join(cwd, 'src', 'theming'),
@@ -385,26 +382,30 @@ async function run() {
         if (!currentOutput.metafile) {
           continue;
         }
-        const keys = Object.keys(currentOutput.metafile.outputs);
-        const moduleName = keys.length === 1 ? dirname(keys[0]).replace('dist/', '') : 'core';
-        const existingMetafile = metafileByModule[moduleName];
-        if (existingMetafile) {
-          existingMetafile.inputs = {
-            ...existingMetafile.inputs,
-            ...currentOutput.metafile.inputs,
-          };
-          existingMetafile.outputs = {
-            ...existingMetafile.outputs,
-            ...currentOutput.metafile.outputs,
-          };
-        } else {
-          metafileByModule[moduleName] = currentOutput.metafile;
+        for (const key of Object.keys(currentOutput.metafile.outputs)) {
+          const moduleName = dirname(key).replace('dist/', '');
+          const existingMetafile = metafileByModule[moduleName];
+          if (existingMetafile) {
+            existingMetafile.inputs = {
+              ...existingMetafile.inputs,
+              ...currentOutput.metafile.inputs,
+            };
+            existingMetafile.outputs = {
+              ...existingMetafile.outputs,
+              [key]: currentOutput.metafile.outputs[key],
+            };
+          } else {
+            metafileByModule[moduleName] = {
+              ...currentOutput.metafile,
+              outputs: { [key]: currentOutput.metafile.outputs[key] },
+            };
+          }
         }
       }
       await Promise.all(
         Object.entries(metafileByModule).map(async ([moduleName, metafile]) => {
           console.log('saving metafiles', moduleName);
-          const sanitizedModuleName = moduleName.replace('/', '-');
+          const sanitizedModuleName = moduleName.replaceAll('/', '-');
           await writeFile(
             join(metafilesDir, `${sanitizedModuleName}.json`),
             JSON.stringify(metafile, null, 2)

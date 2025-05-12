@@ -456,6 +456,7 @@ export default {
     'restoreAllMocks',
     'screen',
     'spyOn',
+    'uninstrumentedUserEvent',
     'userEvent',
     'waitFor',
     'waitForElementToBeRemoved',

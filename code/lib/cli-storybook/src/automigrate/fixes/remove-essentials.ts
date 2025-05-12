@@ -1,4 +1,5 @@
 import {
+  type PackageJson,
   getAddonNames,
   scanAndTransformFiles,
   transformImportFiles,
@@ -14,6 +15,8 @@ interface AddonDocsOptions {
   hasDocsDisabled: boolean;
   hasDocsAddon: boolean;
   additionalAddonsToRemove: string[];
+  allDeps: Record<string, string>;
+  packageJson: PackageJson;
 }
 
 const consolidatedAddons = {
@@ -34,8 +37,8 @@ const consolidatedAddons = {
  * - If user had docs enabled (default): Install @storybook/addon-docs and add to main.ts
  * - If user had docs disabled: Skip addon-docs installation
  */
-export const addonEssentialsRemoveDocs: Fix<AddonDocsOptions> = {
-  id: 'addon-essentials-remove-docs',
+export const removeEssentials: Fix<AddonDocsOptions> = {
+  id: 'remove-essentials',
   versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
 
   async check({ mainConfigPath, mainConfig, packageManager }) {
@@ -67,10 +70,13 @@ export const addonEssentialsRemoveDocs: Fix<AddonDocsOptions> = {
       hasDocsAddon = addonNames.includes('@storybook/addon-docs');
 
       const packageJson = await packageManager.retrievePackageJson();
-      const installedAddons = Object.keys({
+
+      const allDeps = {
         ...packageJson.dependencies,
         ...packageJson.devDependencies,
-      });
+      } as Record<string, string>;
+
+      const installedAddons = Object.keys(allDeps);
 
       // Check for additional addons that need to be removed
       for (const addon of CORE_ADDONS) {
@@ -104,6 +110,8 @@ export const addonEssentialsRemoveDocs: Fix<AddonDocsOptions> = {
         hasDocsDisabled,
         hasDocsAddon,
         additionalAddonsToRemove,
+        allDeps,
+        packageJson,
       };
     } catch (err) {
       return null;
@@ -147,11 +155,11 @@ export const addonEssentialsRemoveDocs: Fix<AddonDocsOptions> = {
       ${message}${additionalAddonsMessage}
       
       Since you were using the docs feature, we'll install ${picocolors.yellow('@storybook/addon-docs')} 
-      separately and add it to your configuration.
+      separately and add it to your configuration if it's not already present.
     `;
   },
 
-  async run({ result, dryRun, packageManager, configDir }) {
+  async run({ result, dryRun, packageManager, configDir, packageJson }) {
     const { hasEssentials, hasDocsDisabled, hasDocsAddon, additionalAddonsToRemove } = result;
 
     if (!hasEssentials && additionalAddonsToRemove.length === 0) {
@@ -197,14 +205,29 @@ export const addonEssentialsRemoveDocs: Fix<AddonDocsOptions> = {
       }
 
       // If docs was enabled (not disabled) and not already installed, add it
-      if (!hasDocsDisabled && !hasDocsAddon) {
-        console.log('Adding @storybook/addon-docs...');
-        await packageManager.runPackageCommand('storybook', [
-          'add',
-          '@storybook/addon-docs',
-          '--config-dir',
-          configDir,
-        ]);
+      if (!hasDocsDisabled && hasEssentials) {
+        if (!hasDocsAddon) {
+          console.log('Adding @storybook/addon-docs...');
+          await packageManager.runPackageCommand('storybook', [
+            'add',
+            '@storybook/addon-docs',
+            '--config-dir',
+            configDir,
+          ]);
+        } else {
+          const allDeps = result.allDeps;
+          const isDocsInstalled = allDeps['@storybook/addon-docs'] !== undefined;
+
+          if (!isDocsInstalled) {
+            const storybookVersion = allDeps.storybook;
+            const isStorybookDevDependency = packageJson.devDependencies?.storybook !== undefined;
+
+            await packageManager.addDependencies(
+              { installAsDevDependencies: isStorybookDevDependency },
+              ['@storybook/addon-docs@' + storybookVersion]
+            );
+          }
+        }
       }
     }
   },

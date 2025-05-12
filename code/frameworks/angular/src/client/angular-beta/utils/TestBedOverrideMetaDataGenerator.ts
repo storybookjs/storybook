@@ -17,7 +17,7 @@ export const GenerateComponentMetaData = (
     },
   } as MetadataOverride<Component>;
 
-  if (schemas != null && schemas.length != 0) {
+  if (schemas !== null && schemas.length !== 0) {
     overrideMetadata.add.schemas = schemas;
   }
 

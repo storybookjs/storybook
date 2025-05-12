@@ -34,8 +34,8 @@ export default {
 };
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="react" language="ts-4-9"
-import type { Meta } from '@storybook/react';
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts"
+import type { Meta } from '@storybook/react-vite';
 
 import { Button } from './Button';
 
@@ -52,27 +52,6 @@ const meta = {
 } satisfies Meta<typeof Button>;
 
 export default meta;
-```
-
-```ts filename="Button.stories.ts|tsx" renderer="react" language="ts"
-import type { Meta } from '@storybook/react';
-
-import { Button } from './Button';
-
-const meta: Meta<typeof Button> = {
-  component: Button,
-  //👇 Creates specific argTypes
-  argTypes: {
-    backgroundColor: { control: 'color' },
-  },
-  args: {
-    //👇 Now all Button stories will be primary.
-    primary: true,
-  },
-};
-
-export default meta;
-type Story = StoryObj<typeof Button>;
 ```
 
 ```js filename="Button.stories.js|jsx" renderer="solid" language="js"
@@ -91,7 +70,7 @@ export default {
 };
 ```
 
-```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts-4-9"
+```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts"
 import type { Meta } from 'storybook-solidjs';
 
 import { Button } from './Button';
@@ -109,27 +88,6 @@ const meta = {
 } satisfies Meta<typeof Button>;
 
 export default meta;
-```
-
-```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs';
-
-import { Button } from './Button';
-
-const meta: Meta<typeof Button> = {
-  component: Button,
-  //👇 Creates specific argTypes
-  argTypes: {
-    backgroundColor: { control: 'color' },
-  },
-  args: {
-    //👇 Now all Button stories will be primary.
-    primary: true,
-  },
-};
-
-export default meta;
-type Story = StoryObj<typeof Button>;
 ```
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
@@ -168,46 +126,6 @@ export default {
 };
 ```
 
-```svelte filename="Button.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
-<script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
-
-  import Button from './Button.svelte';
-
-  const { Story } = defineMeta({
-    component: Button,
-    //👇 Creates specific argTypes
-    argTypes: {
-      backgroundColor: { control: 'color' },
-    },
-    args: {
-      //👇 Now all Button stories will be primary.
-      primary: true,
-    },
-  });
-</script>
-```
-
-```ts filename="Button.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="CSF"
-import type { Meta } from '@storybook/svelte';
-
-import Button from './Button.svelte';
-
-const meta = {
-  component: Button,
-  //👇 Creates specific argTypes
-  argTypes: {
-    backgroundColor: { control: 'color' },
-  },
-  args: {
-    //👇 Now all Button stories will be primary.
-    primary: true,
-  },
-} satisfies Meta<typeof Button>;
-
-export default meta;
-```
-
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
@@ -229,11 +147,12 @@ export default meta;
 ```
 
 ```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
-import type { Meta } from '@storybook/svelte';
+// Replace your-framework with svelte-vite or sveltekit
+import type { Meta } from '@storybook/your-framework';
 
 import Button from './Button.svelte';
 
-const meta: Meta<typeof Button> = {
+const meta = {
   component: Button,
   //👇 Creates specific argTypes
   argTypes: {
@@ -243,7 +162,7 @@ const meta: Meta<typeof Button> = {
     //👇 Now all Button stories will be primary.
     primary: true,
   },
-};
+} satisfies Meta<typeof Button>;
 
 export default meta;
 ```
@@ -264,8 +183,8 @@ export default {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="vue" language="ts-4-9"
-import type { Meta } from '@storybook/vue3';
+```ts filename="Button.stories.ts" renderer="vue" language="ts"
+import type { Meta } from '@storybook/vue3-vite';
 
 import Button from './Button.vue';
 
@@ -280,26 +199,6 @@ const meta = {
     primary: true,
   },
 } satisfies Meta<typeof Button>;
-
-export default meta;
-```
-
-```ts filename="Button.stories.ts" renderer="vue" language="ts"
-import type { Meta } from '@storybook/vue3';
-
-import Button from './Button.vue';
-
-const meta: Meta<typeof Button> = {
-  component: Button,
-  //👇 Creates specific argTypes
-  argTypes: {
-    backgroundColor: { control: 'color' },
-  },
-  args: {
-    //👇 Now all Button stories will be primary.
-    primary: true,
-  },
-};
 
 export default meta;
 ```
@@ -319,7 +218,7 @@ export default {
 ```
 
 ```js filename="Button.stories.js" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
   component: 'demo-button',

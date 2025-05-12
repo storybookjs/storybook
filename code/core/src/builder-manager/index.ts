@@ -9,7 +9,7 @@ import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
 import { pnpPlugin } from '@yarnpkg/esbuild-plugin-pnp';
 import sirv from 'sirv';
 
-import { BROWSER_TARGETS } from '../shared/constants/environments-support';
+import { BROWSER_TARGETS, SUPPORTED_FEATURES } from '../shared/constants/environments-support';
 import type {
   BuilderBuildResult,
   BuilderFunction,
@@ -68,12 +68,13 @@ export const getConfig: ManagerBuilder['getConfig'] = async (options) => {
       '.ttf': 'dataurl',
     },
     target: BROWSER_TARGETS,
+    supported: SUPPORTED_FEATURES,
     platform: 'browser',
     bundle: true,
     minify: false,
     minifyWhitespace: false,
     minifyIdentifiers: false,
-    minifySyntax: false,
+    minifySyntax: true,
     metafile: true,
 
     // treeShaking: true,
@@ -184,6 +185,7 @@ const starter: StarterFunction = async function* starterGeneratorFn({
   const { cssFiles, jsFiles } = await readOrderedFiles(addonsDir, compilation?.outputFiles);
 
   if (compilation.metafile && options.outputDir) {
+    console.log('writing metafile:', join(options.outputDir, 'metafile.json'));
     await writeFile(
       join(options.outputDir, 'metafile.json'),
       JSON.stringify(compilation.metafile, null, 2)

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/root",
-  "version": "9.0.0-beta.6",
+  "version": "9.0.0-beta.11",
   "private": true,
   "description": "Storybook root",
   "homepage": "https://storybook.js.org/",
@@ -209,7 +209,6 @@
     "svelte": "^5.0.0-next.268",
     "ts-dedent": "^2.0.0",
     "typescript": "^5.8.3",
-    "util": "^0.12.4",
     "vite": "^6.2.5",
     "vite-plugin-inspect": "^11.0.0",
     "vitest": "^3.1.1",

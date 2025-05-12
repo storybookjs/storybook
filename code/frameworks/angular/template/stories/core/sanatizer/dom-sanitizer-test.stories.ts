@@ -1,0 +1,14 @@
+import { Meta, StoryObj } from '@storybook/angular';
+import SanitizerTestComponent from "./test-component/sanitizer-test-component";
+
+
+const meta: Meta<SanitizerTestComponent> = {
+  component: SanitizerTestComponent,
+  tags: ['autodocs'],
+};
+
+export default meta;
+
+type Story = StoryObj<SanitizerTestComponent>;
+
+export const TestSanitizerWithoutArgs: Story = {};

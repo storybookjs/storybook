@@ -416,7 +416,7 @@ describe('addonA11yAddonTest', () => {
         ...   
         + import * as a11yAddonAnnotations from "@storybook/addon-a11y/preview";
 
-        const annotations = setProjectAnnotations([
+        setProjectAnnotations([
           ...
         + a11yAddonAnnotations,
         ]);

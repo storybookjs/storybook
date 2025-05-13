@@ -13,11 +13,11 @@ export class ApiModule {}
 @Component({
   template: `<span>{{ testForProvider }}</span>`,
   selector: 'not-standalone-component',
+  imports: [ApiModule],
 })
 export default class NotStandaloneComponent {
-  
-  testForProvider = "";
-  
+  testForProvider = '';
+
   constructor(private service: ApiService) {
     this.testForProvider = service.data;
   }

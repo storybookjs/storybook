@@ -13,4 +13,8 @@ export default meta;
 
 type Story = StoryObj<SanitizerTestComponent>;
 
-export const TestSanitizerWithoutArgs: Story = {};
+export const TestSanitizer: Story = {
+  args: {
+    caption: "Here's my caption",
+  },
+};

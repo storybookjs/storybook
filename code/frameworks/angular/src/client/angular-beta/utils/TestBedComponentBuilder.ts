@@ -3,7 +3,7 @@ import {
   BrowserDynamicTestingModule,
   platformBrowserDynamicTesting,
 } from '@angular/platform-browser-dynamic/testing';
-import { ApplicationRef, Type } from '@angular/core';
+import { ApplicationRef, ComponentFactoryResolver, Type } from '@angular/core';
 import { PropertyExtractor } from './PropertyExtractor';
 import { ICollection, StoryFnAngularReturnType } from '../../types';
 import { getWrapperModule } from '../TestBedWrapperComponent';
@@ -16,6 +16,8 @@ export class TestBedComponentBuilder {
   private testBedInstance: TestBed;
 
   private component: Type<unknown> | undefined;
+
+  private componentInputs: string[] = [];
 
   private fixture: ComponentFixture<unknown>;
 
@@ -84,12 +86,6 @@ export class TestBedComponentBuilder {
     return this;
   }
 
-  setAndUpdateProps(props: ICollection) {
-    this.props = props;
-    this.updateComponentProps();
-    return this;
-  }
-
   configure() {
     this.throwOnMissingTestBedInstance();
     this.throwOnMissingComponent();
@@ -129,13 +125,28 @@ export class TestBedComponentBuilder {
     this.throwOnMissingFixture();
     this.throwOnMissingTargetNode();
     this.targetNode.appendChild(this.fixture.nativeElement);
-    this.fixture.detectChanges();
+    this.fixture.autoDetectChanges(true);
+  }
+
+  private calculateComponentInputs() {
+    if (this.props == null) return;
+    const componentResolver = this.testBedInstance.inject(ComponentFactoryResolver);
+    this.componentInputs = componentResolver
+      .resolveComponentFactory(this.component)
+      .inputs.map((input) => input.propName);
   }
 
   private updateComponentProps() {
     this.throwOnMissingFixture();
-    if (this.props != null)
+    this.calculateComponentInputs();
+    if (this.props != null) {
       this.fixture.componentInstance = Object.assign(this.fixture.componentInstance, this.props);
+      for (const key in this.props) {
+        if (!this.componentInputs.includes(key)) continue;
+        // had to be done to trigger angular's lifecycle hook like ngOnchange
+        this.fixture.componentRef.setInput(key, this.props[key]);
+      }
+    }
     this.fixture.detectChanges();
     return this;
   }

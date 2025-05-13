@@ -225,7 +225,10 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
           const root = testConfig?.dir || testConfig?.root || config.root || process.cwd();
           return relative(root, story);
         })
-        .filter((story) => story.replace(/(mdx\|stories)|((\.mdx)$)/g, 'stories'));
+        .map((story) => story.replace(/mdx\|stories/g, 'stories'))
+        .filter((story) => !story.endsWith('.mdx'));
+
+      console.log({ includeStories });
 
       finalOptions.includeStories = includeStories;
       const projectId = oneWayHash(finalOptions.configDir);

@@ -48,6 +48,7 @@ const defaultOptions: UserOptions = {
   storybookScript: undefined,
   configDir: resolve(join(WORKING_DIR, '.storybook')),
   storybookUrl: 'http://localhost:6006',
+  disableAddonDocs: true,
 };
 
 const extractTagsFromPreview = async (configDir: string) => {
@@ -77,6 +78,27 @@ const getStoryGlobsAndFiles = async (
     storiesGlobs: stories,
     storiesFiles: generator.storyFileNames(),
   };
+};
+
+/**
+ * Plugin to stub MDX imports during testing This prevents the need to process MDX files in the test
+ * environment
+ */
+const mdxStubPlugin: Plugin = {
+  name: 'storybook:stub-mdx-plugin',
+  enforce: 'pre',
+  resolveId(id) {
+    if (id.endsWith('.mdx')) {
+      return id;
+    }
+    return null;
+  },
+  load(id) {
+    if (id.endsWith('.mdx')) {
+      return `export default {};`;
+    }
+    return null;
+  },
 };
 
 const PACKAGE_DIR = dirname(require.resolve('@storybook/addon-vitest/package.json'));
@@ -129,16 +151,23 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     extractTagsFromPreview(finalOptions.configDir),
   ]);
 
-  // filter out plugins that we know are unnecesary for tests, eg. docgen plugins
-  const plugins = (await withoutVitePlugins(viteConfigFromStorybook.plugins ?? [], [
-    'storybook:package-deduplication', // addon-docs
-    'storybook:mdx-plugin', // addon-docs
+  const pluginsToIgnore = [
     'storybook:react-docgen-plugin',
     'vite:react-docgen-typescript', // aka @joshwooding/vite-plugin-react-docgen-typescript
     'storybook:svelte-docgen-plugin',
     'storybook:vue-component-meta-plugin',
-    'storybook:vue-docgen-plugin',
-  ])) as unknown as Plugin[];
+  ];
+
+  if (finalOptions.disableAddonDocs) {
+    pluginsToIgnore.push('storybook:package-deduplication', 'storybook:mdx-plugin');
+  }
+
+  // filter out plugins that we know are unnecesary for tests, eg. docgen plugins
+  const plugins = await withoutVitePlugins(viteConfigFromStorybook.plugins ?? [], pluginsToIgnore);
+
+  if (finalOptions.disableAddonDocs) {
+    plugins.push(mdxStubPlugin);
+  }
 
   const storybookTestPlugin: Plugin = {
     name: 'vite-plugin-storybook-test',

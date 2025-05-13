@@ -6691,7 +6691,6 @@ __metadata:
     "@storybook/react-webpack5": "workspace:*"
     "@storybook/server": "workspace:*"
     "@storybook/server-webpack5": "workspace:*"
-    "@storybook/source-loader": "workspace:*"
     "@storybook/svelte": "workspace:*"
     "@storybook/vue3": "workspace:*"
     "@storybook/vue3-vite": "workspace:*"
@@ -6808,19 +6807,6 @@ __metadata:
     ts-dedent: "npm:^2.0.0"
     typescript: "npm:^5.8.3"
     yaml: "npm:^2.3.1"
-  peerDependencies:
-    storybook: "workspace:^"
-  languageName: unknown
-  linkType: soft
-
-"@storybook/source-loader@workspace:*, @storybook/source-loader@workspace:lib/source-loader":
-  version: 0.0.0-use.local
-  resolution: "@storybook/source-loader@workspace:lib/source-loader"
-  dependencies:
-    es-toolkit: "npm:^1.36.0"
-    estraverse: "npm:^5.2.0"
-    prettier: "npm:^3.5.3"
-    typescript: "npm:^5.8.3"
   peerDependencies:
     storybook: "workspace:^"
   languageName: unknown

@@ -17,7 +17,7 @@ export enum SourceType {
    */
   AUTO = 'auto',
 
-  /** Render the code extracted by source-loader */
+  /** Render the code extracted by csf-plugin */
   CODE = 'code',
 
   /** Render dynamically-rendered source snippet from the story's virtual DOM (currently React only) */

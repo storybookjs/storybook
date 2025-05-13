@@ -1,5 +1,4 @@
 import { createRequire } from 'node:module';
-import { dirname, relative } from 'node:path';
 
 import type { Plugin } from 'vitest/config';
 import { mergeConfig } from 'vitest/config';
@@ -23,7 +22,7 @@ import { oneWayHash } from 'storybook/internal/telemetry';
 import type { Presets } from 'storybook/internal/types';
 
 import { match } from 'micromatch';
-import { join, resolve } from 'pathe';
+import { dirname, join, relative, resolve } from 'pathe';
 import picocolors from 'picocolors';
 import sirv from 'sirv';
 import { dedent } from 'ts-dedent';
@@ -207,6 +206,10 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       // We are overriding the environment variable to 'true' if vitest runs via @storybook/addon-vitest's backend
       const vitestStorybook = process.env.VITEST_STORYBOOK ?? 'false';
 
+      const testConfig = nonMutableInputConfig.test;
+      finalOptions.vitestRoot =
+        testConfig?.dir || testConfig?.root || nonMutableInputConfig.root || process.cwd();
+
       const includeStories = stories
         .map((story) => {
           let storyPath;
@@ -220,7 +223,6 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
           return join(finalOptions.configDir, storyPath);
         })
         .map((story) => {
-          const testConfig = nonMutableInputConfig.test;
           const root =
             testConfig?.dir || testConfig?.root || nonMutableInputConfig.root || process.cwd();
           return relative(root, story);
@@ -384,7 +386,9 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
         return code;
       }
 
-      if (match([id], finalOptions.includeStories)) {
+      const relativeId = relative(finalOptions.vitestRoot, id);
+
+      if (match([relativeId], finalOptions.includeStories).length > 0) {
         return vitestTransform({
           code,
           fileName: id,

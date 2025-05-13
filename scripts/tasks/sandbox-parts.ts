@@ -408,7 +408,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
   // const isAngular = template.expected.framework === '@storybook/angular';
 
   const portableStoriesFrameworks = [
-    '@storybook/nextjs',
+    '@storybook/nextjs-vite',
     '@storybook/nextjs-vite',
     '@storybook/sveltekit',
     // TODO: add angular once we enable their sandboxes
@@ -908,6 +908,9 @@ export const runMigrations: Task['run'] = async ({ sandboxDir, template }, { dry
       argument: 'csf-factories',
       dryRun,
       debug,
+      env: {
+        STORYBOOK_PROJECT_ROOT: sandboxDir,
+      },
     });
   }
 };

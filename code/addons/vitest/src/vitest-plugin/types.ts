@@ -43,4 +43,6 @@ export type InternalOptions = Required<UserOptions> & {
   debug: boolean;
   tags: Required<UserOptions['tags']>;
   includeStories: string[];
+  // This is the root of the vitest config where the `storybookTest` plugin is applied
+  vitestRoot: string;
 };

@@ -25,11 +25,11 @@ jobs:
           node-version-file: ".nvmrc"
 
       - name: install scripts
-        run: | 
+        run: |
           cd scripts && yarn install
 
       - name: install code
-        run: | 
+        run: |
           cd code && yarn install
 
       - name: compile
@@ -39,4 +39,4 @@ jobs:
         run: cd code && yarn exec playwright install chromium --with-deps
 
       - name: test
-        run: yarn test
+        run: yarn test --max-workers=2

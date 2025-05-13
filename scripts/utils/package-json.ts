@@ -1,3 +1,4 @@
+// eslint-disable-next-line depend/ban-dependencies
 import { readJSON, writeJSON } from 'fs-extra';
 import { join } from 'path';
 

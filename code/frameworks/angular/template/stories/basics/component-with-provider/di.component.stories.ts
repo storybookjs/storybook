@@ -1,4 +1,5 @@
 import { Args, Meta, StoryObj } from '@storybook/angular';
+
 import { DiComponent } from './di.component';
 
 const meta: Meta<DiComponent> = {

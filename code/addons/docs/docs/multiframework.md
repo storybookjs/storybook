@@ -106,14 +106,14 @@ The input is the story function and the story context (id, parameters, args, etc
 
 ## Dynamic source rendering
 
-With the release of Storybook 6.0, we've improved how stories are rendered in the [`Source` doc block](https://storybook.js.org/docs/react/api/doc-block-source). One of such improvements is the `dynamic` source type, which renders a snippet based on the output the story function.
+With the release of Storybook 6.0, we've improved how stories are rendered in the [`Source` doc block](https://storybook.js.org/docs/api/doc-blocks/doc-block-source). One of such improvements is the `dynamic` source type, which renders a snippet based on the output the story function.
 
 This dynamic rendering is framework-specific, meaning it needs a custom implementation for each framework.
 
 Let's take a look at the React framework implementation of `dynamic` snippets as a reference for implementing this feature in other frameworks:
 
 ```tsx
-import { addons, StoryContext } from '@storybook/preview-api';
+import { StoryContext, addons } from '@storybook/preview-api';
 import { SNIPPET_RENDERED } from '../../shared';
 
 export const jsxDecorator = (storyFn: any, context: StoryContext) => {
@@ -150,6 +150,7 @@ Now we need a way to configure how it's displayed in the UI:
 
 ```tsx
 import { jsxDecorator } from './jsxDecorator';
+
 export const decorators = [jsxDecorator];
 ```
 

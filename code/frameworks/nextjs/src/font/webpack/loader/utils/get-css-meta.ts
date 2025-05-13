@@ -57,9 +57,8 @@ function isNextCSSPropertyValid(prop: string[]) {
 }
 
 /**
- * This step is necessary, because otherwise the font-display: optional; property
- * blocks Storybook from rendering the font, because the @font-face declaration
- * is not loaded in time.
+ * This step is necessary, because otherwise the font-display: optional; property blocks Storybook
+ * from rendering the font, because the @font-face declaration is not loaded in time.
  */
 function changeFontDisplayToSwap(css: string) {
   return css.replaceAll('font-display: optional;', 'font-display: block;');

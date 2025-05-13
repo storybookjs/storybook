@@ -1,0 +1,40 @@
+---
+title: Essentials
+hideRendererSelector: true
+sidebar:
+  order: 6
+  title: Essentials
+---
+
+Storybook essentials is a set of tools that help you build, test, and document your components within Storybook. It includes the following:
+
+* [Actions](./actions.mdx)
+* [Backgrounds](./backgrounds.mdx)
+* [Controls](./controls.mdx)
+* [Highlight](./highlight.mdx)
+* [Interactions](./interactions.mdx)
+* [Measure & outline](./measure-and-outline.mdx)
+* [Toolbars & globals](./toolbars-and-globals.mdx)
+* [Viewport](./viewport.mdx)
+
+### Configuration
+
+Essentials is "zero-config”. It comes with a recommended configuration out of the box.
+
+Many of the features above can be configured via [parameters](../writing-stories/parameters.mdx). See each feature's documentation (linked above) for more details.
+
+### Disabling features
+
+If you need to disable any of the essential features, you can do it by changing your [`.storybook/main.js|ts`](../configure/index.mdx#configure-your-storybook-project) file.
+
+For example, if you wanted to disable the [backgrounds feature](./backgrounds.mdx), you would apply the following change to your Storybook configuration:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="essential-feature-disable.md" />
+
+{/* prettier-ignore-end */}
+
+<Callout variant="info" icon="💡">
+  You can use the following keys for each individual feature: `actions`, `backgrounds`, `controls`, `highlight`, `interactions`, `measure`, `outline`, `toolbars`, and `viewport`.
+</Callout>

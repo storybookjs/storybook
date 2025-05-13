@@ -1,7 +1,9 @@
 import { beforeEach, expect, test, vi } from 'vitest';
-import transform from '../find-implicit-spies';
-import dedent from 'ts-dedent';
+
 import ansiRegex from 'ansi-regex';
+import { dedent } from 'ts-dedent';
+
+import transform from '../find-implicit-spies';
 
 expect.addSnapshotSerializer({
   print: (val, print) => print((val as string).replace(ansiRegex(), '')),

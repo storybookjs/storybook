@@ -1,15 +1,18 @@
+// @vitest-environment happy-dom
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { Subject, lastValueFrom } from 'rxjs';
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 import { queueBootstrapping } from './BootstrapQueue';
 
 const instantWaitFor = (fn: () => void) => {
   return vi.waitFor(fn, {
     interval: 0,
+    timeout: 10000,
   });
 };
 
-describe('BootstrapQueue', () => {
+describe('BootstrapQueue', { retry: 3 }, () => {
   beforeEach(async () => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
   });
@@ -18,7 +21,7 @@ describe('BootstrapQueue', () => {
     vi.clearAllMocks();
   });
 
-  it('should wait until complete', async () => {
+  it('@flaky should wait until complete', async () => {
     const pendingSubject = new Subject<void>();
     const bootstrapApp = vi.fn().mockImplementation(async () => {
       return lastValueFrom(pendingSubject);

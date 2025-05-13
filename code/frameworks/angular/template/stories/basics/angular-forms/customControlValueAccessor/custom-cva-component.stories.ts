@@ -1,5 +1,7 @@
-import { FormsModule } from '@angular/forms';
 import { Meta, StoryFn, StoryObj, moduleMetadata } from '@storybook/angular';
+
+import { FormsModule } from '@angular/forms';
+
 import { CustomCvaComponent } from './custom-cva.component';
 
 const meta: Meta<CustomCvaComponent> = {

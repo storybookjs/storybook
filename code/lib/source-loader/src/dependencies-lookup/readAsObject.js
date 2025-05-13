@@ -1,5 +1,5 @@
-import injectDecorator from '../abstract-syntax-tree/inject-decorator';
 import { sanitizeSource } from '../abstract-syntax-tree/generate-helpers';
+import injectDecorator from '../abstract-syntax-tree/inject-decorator';
 
 function readAsObject(classLoader, inputSource, mainFile) {
   const options = classLoader.getOptions();

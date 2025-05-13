@@ -20,13 +20,13 @@ For more information visit: [storybook.js.org](https://storybook.js.org)
 ---
 
 Storybook also comes with a lot of [addons](https://storybook.js.org/addons) and a great API to customize as you wish.
-You can also build a [static version](https://storybook.js.org/docs/ember/sharing/publish-storybook) of your Storybook and deploy it anywhere you want.
+You can also build a [static version](https://storybook.js.org/docs/sharing/publish-storybook?renderer=ember) of your Storybook and deploy it anywhere you want.
 
 ## Docs
 
-- [Basics](https://storybook.js.org/docs/ember/get-started)
-- [Configurations](https://storybook.js.org/docs/ember/configure)
-- [Addons](https://storybook.js.org/docs/ember/configure/storybook-addons)
+- [Basics](https://storybook.js.org/docs/get-started/install?renderer=ember)
+- [Configurations](https://storybook.js.org/docs/configure?renderer=ember)
+- [Addons](https://storybook.js.org/docs/configure/user-interface/storybook-addons?renderer=ember)
 
 ## Working with polyfills
 

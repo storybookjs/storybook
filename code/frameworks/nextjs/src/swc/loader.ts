@@ -1,8 +1,11 @@
-import { getProjectRoot } from '@storybook/core-common';
+import { join } from 'node:path';
+
+import { getProjectRoot } from 'storybook/internal/common';
+import type { Options } from 'storybook/internal/types';
+
 import { getVirtualModules } from '@storybook/builder-webpack5';
-import type { Options } from '@storybook/types';
+
 import type { NextConfig } from 'next';
-import path from 'path';
 import loadJsConfig from 'next/dist/build/load-jsconfig';
 import type { Configuration as WebpackConfig } from 'webpack';
 
@@ -24,14 +27,13 @@ export const configureSWCLoader = async (
   );
 
   if (rawRule && typeof rawRule === 'object') {
-    rawRule.test = /^(?!__barrel_optimize__)/;
+    rawRule.exclude = /^__barrel_optimize__/;
   }
 
   baseConfig.module?.rules?.push({
     test: /\.((c|m)?(j|t)sx?)$/,
     include: [getProjectRoot()],
     exclude: [/(node_modules)/, ...Object.keys(virtualModules)],
-    enforce: 'post',
     use: {
       // we use our own patch because we need to remove tracing from the original code
       // which is not possible otherwise
@@ -48,7 +50,7 @@ export const configureSWCLoader = async (
           dir,
           isDevelopment
         ),
-        swcCacheDir: path.join(dir, nextConfig?.distDir ?? '.next', 'cache', 'swc'),
+        swcCacheDir: join(dir, nextConfig?.distDir ?? '.next', 'cache', 'swc'),
         bundleTarget: 'default',
       },
     },

@@ -2,6 +2,14 @@
 
 Storybook is developed against a specific node version which is defined in an `.nvmrc` file. You can use any Node version manager that uses the `.nvmrc` configuration file (we recommend [fnm](https://fnm.vercel.app/)).
 
+## Ensure you have the required system utilities
+
+You will need to have the following installed:
+
+- git
+- node
+- yarn
+
 ## Using fnm as a Node version manager
 
 - Install fnm [as per instructions](https://github.com/Schniz/fnm/tree/master#installation)
@@ -13,7 +21,7 @@ Storybook is developed against a specific node version which is defined in an `.
 
 ## Running the local development environment
 
-- Ensure if you are using Windows to use the Windows Subsystem for Linux (WSL).
+- All commands should be run in a terminal with administrator privileges in Windows environments.
 - Run `yarn start` in the root directory to run a basic test Storybook "sandbox".
 
 The `yarn start` script will generate a React Vite TypeScript sandbox with a set of test stories inside it, as well as taking all steps required to get it running (building the various packages we need etc). There is no need to run `yarn` or `yarn install` as `yarn start` will do this for you.
@@ -50,7 +58,7 @@ If you want to make code changes to Storybook packages while running a sandbox, 
 
 ```bash
 cd code
-yarn build --watch react core-server api addon-docs
+yarn build --watch react core addon-docs
 ```
 
 2. If you are running the sandbox in "linked" mode (the default), you should see the changes reflected on a refresh (you may need to restart it if changing server packages)
@@ -59,6 +67,19 @@ yarn build --watch react core-server api addon-docs
 
 ```sh
 yarn task --task dev --template <your template> --start-from=publish
+```
+
+### Making code changes when working on Angular-specific code
+
+If you are working on Angular-specific code, you will need to append `--prod` to the above mentioned commands to ensure that the Angular compiler is able to pick up the changes appropriately and doesn't fail. This will build all the packages in production mode.
+
+```sh
+yarn task --prod
+```
+
+```bash
+cd code
+yarn build --prod --watch angular core addon-docs
 ```
 
 ## Contributing to Storybook

@@ -1,7 +1,7 @@
 import React from 'react';
 
 interface AvatarProps {
-  /** specify icon="search" or icon={IconComponent} */
+  /** Specify icon="search" or icon={IconComponent} */
   icon: React.ReactNode | string;
 }
 

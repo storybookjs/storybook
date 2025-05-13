@@ -1,11 +1,11 @@
 {
-  "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "rootDir": "./src",
-    "types": ["node"],
-    "skipLibCheck": true,
-    "resolveJsonModule": true,
-    "strict": true
+    "baseUrl": ".",
+    "paths": {
+      "storybook/internal/*": ["../../lib/cli/core/*"]
+    },
+    "rootDir": "./src"
   },
+  "extends": "../../tsconfig.json",
   "include": ["src/**/*"]
 }

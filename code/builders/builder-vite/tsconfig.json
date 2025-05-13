@@ -1,9 +1,5 @@
 {
   "extends": "../../tsconfig.json",
-  "compilerOptions": {
-    "strict": true,
-    "resolveJsonModule": true,
-    "skipLibCheck": true
-  },
+  "compilerOptions": {},
   "include": ["src/**/*"]
 }

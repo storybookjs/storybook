@@ -1,7 +1,10 @@
+import type { RenderContext } from 'storybook/internal/types';
+
 import { global } from '@storybook/global';
+
 import { dedent } from 'ts-dedent';
-import type { RenderContext } from '@storybook/types';
-import type { OptionsArgs, EmberRenderer } from './types';
+
+import type { EmberRenderer, OptionsArgs } from './types';
 
 const { document } = global;
 
@@ -24,7 +27,9 @@ let hasRendered = false;
 let isRendering = false;
 
 function render(options: OptionsArgs, el: EmberRenderer['canvasElement']) {
-  if (isRendering) return;
+  if (isRendering) {
+    return;
+  }
   isRendering = true;
 
   const { template, context = {}, element } = options;

@@ -1,0 +1,16 @@
+{
+  "rules": {
+    "no-undef": "off",
+    "react/prop-types": "off",
+    "react/react-in-jsx-scope": "off",
+    "import/extensions": "off"
+  },
+  "overrides": [
+    {
+      "files": ["nextjs/**/*.@(jsx|tsx)"],
+      "rules": {
+        "react/no-unknown-property": "off"
+      }
+    }
+  ]
+}

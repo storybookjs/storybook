@@ -159,89 +159,89 @@ module.exports = {
         {
           name: 'Doc Blocks - ArgTypes',
           unsupported: [],
-          path: 'api/doc-block-argtypes',
+          path: 'api/doc-blocks/doc-block-argtypes',
         },
         {
           name: 'Doc Blocks - Canvas',
           unsupported: [],
-          path: 'api/doc-block-canvas',
+          path: 'api/doc-blocks/doc-block-canvas',
         },
         {
           name: 'Doc Blocks - ColorPalette',
           unsupported: [],
-          path: 'api/doc-block-colorpalette',
+          path: 'api/doc-blocks/doc-block-colorpalette',
         },
         {
           name: 'Doc Blocks - Controls',
           unsupported: [],
-          path: 'api/doc-block-controls',
+          path: 'api/doc-blocks/doc-block-controls',
         },
         {
           name: 'Doc Blocks - Description',
           unsupported: [],
-          path: 'api/doc-block-description',
+          path: 'api/doc-blocks/doc-block-description',
         },
         {
           name: 'Doc Blocks - IconGallery',
           unsupported: [],
-          path: 'api/doc-block-icongallery',
+          path: 'api/doc-blocks/doc-block-icongallery',
         },
         {
           name: 'Doc Blocks - Markdown',
           unsupported: [''],
-          path: 'api/doc-block-markdown',
+          path: 'api/doc-blocks/doc-block-markdown',
         },
         {
           name: 'Doc Blocks - Meta',
 
           unsupported: [''],
-          path: 'api/doc-block-meta',
+          path: 'api/doc-blocks/doc-block-meta',
         },
         {
           name: 'Doc Blocks - Primary',
 
           unsupported: [''],
-          path: 'api/doc-block-primary',
+          path: 'api/doc-blocks/doc-block-primary',
         },
         {
           name: 'Doc Blocks - Source',
           unsupported: [],
-          path: 'api/doc-block-source',
+          path: 'api/doc-blocks/doc-block-source',
         },
         {
           name: 'Doc Blocks - Story',
           unsupported: [],
-          path: 'api/doc-block-story',
+          path: 'api/doc-blocks/doc-block-story',
         },
         {
           name: 'Doc Blocks - Stories',
           unsupported: [],
-          path: 'api/doc-block-stories',
+          path: 'api/doc-blocks/doc-block-stories',
         },
         {
           name: 'Doc Blocks - Subtitle',
           unsupported: [],
-          path: 'api/doc-block-subtitle',
+          path: 'api/doc-blocks/doc-block-subtitle',
         },
         {
           name: 'Doc Blocks - Title',
           unsupported: [],
-          path: 'api/doc-block-title',
+          path: 'api/doc-blocks/doc-block-title',
         },
         {
           name: 'Doc Blocks - Typeset',
           unsupported: [],
-          path: 'api/doc-block-typeset',
+          path: 'api/doc-blocks/doc-block-typeset',
         },
         {
           name: 'Doc Blocks - Unstyled',
           unsupported: [],
-          path: 'api/doc-block-unstyled',
+          path: 'api/doc-blocks/doc-block-unstyled',
         },
         {
           name: 'Doc Blocks - UseOf',
           unsupported: [],
-          path: 'api/doc-block-useof',
+          path: 'api/doc-blocks/doc-block-useof',
         },
         {
           name: 'storiesOf stories',

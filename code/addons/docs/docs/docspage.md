@@ -34,7 +34,7 @@ However, `DocsPage` brings the following improvements:
 
 Storybook uses `component` to extract the component's description and props, and will rely on it further in future releases. We encourage you to add it to existing stories and use it in all new stories.
 
-Here's how to set the component in [Component Story Format (CSF)](https://storybook.js.org/docs/react/api/csf):
+Here's how to set the component in [Component Story Format (CSF)](https://storybook.js.org/docs/api/csf):
 
 ```js
 import { Badge } from './Badge';
@@ -70,6 +70,7 @@ You can replace DocsPage at any level by overriding the `docs.page` parameter:
 
 ```js
 import { addParameters } from '@storybook/react';
+
 addParameters({ docs: { page: null } });
 ```
 
@@ -77,6 +78,7 @@ addParameters({ docs: { page: null } });
 
 ```js
 import { Button } from './Button';
+
 export default {
   title: 'Demo/Button',
   component: Button,
@@ -101,7 +103,7 @@ Here's an example of rebuilding `DocsPage` out of doc blocks:
 
 ```js
 import React from 'react';
-import { Title, Subtitle, Description, Primary, ArgsTable, Stories } from '@storybook/addon-docs';
+import { ArgsTable, Description, Primary, Stories, Subtitle, Title } from '@storybook/addon-docs';
 import { DocgenButton } from '../../components/DocgenButton';
 
 export default {
@@ -141,8 +143,8 @@ That being said, there is a system in place to remove the necessity of this trad
 ```js
 import React from 'react';
 import { render } from 'react-dom';
-import toReact from '@egoist/vue-to-react';
 import { addParameters } from '@storybook/vue';
+import toReact from '@egoist/vue-to-react';
 
 addParameters({
   docs: {

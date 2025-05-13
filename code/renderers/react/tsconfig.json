@@ -1,10 +1,10 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "strict": true,
-    "skipLibCheck": true,
-    "resolveJsonModule": true,
-    "allowJs": true
+    "baseUrl": ".",
+    "paths": {
+      "@storybook/react": ["./src"]
+    }
   },
   "include": ["src/**/*", "template/**/*"]
 }

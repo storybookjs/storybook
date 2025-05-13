@@ -1,15 +1,18 @@
+// @vitest-environment happy-dom
 // this file tests Typescript types that's why there are no assertions
 import { describe, it } from 'vitest';
 
-import { satisfies } from '@storybook/core-common';
-import type { Args, StoryAnnotations, StrictArgs } from '@storybook/types';
-import { expectTypeOf } from 'expect-type';
 import type { KeyboardEventHandler, ReactElement, ReactNode } from 'react';
 import React from 'react';
 
+import { satisfies } from 'storybook/internal/common';
+import type { Canvas } from 'storybook/internal/csf';
+import type { Args, StoryAnnotations, StrictArgs } from 'storybook/internal/types';
+
+import { expectTypeOf } from 'expect-type';
+import { fn } from 'storybook/test';
+import type { Mock } from 'storybook/test';
 import type { SetOptional } from 'type-fest';
-import type { Mock } from '@storybook/test';
-import { fn } from '@storybook/test';
 
 import type { Decorator, Meta, StoryObj } from './public-types';
 import type { ReactRenderer } from './types';
@@ -313,16 +316,14 @@ it('Infer mock function given to args in meta.', () => {
   type Story = StoryObj<typeof meta>;
 
   const Basic: Story = {
-    play: async ({ args }) => {
-      expectTypeOf(args.onClick).toEqualTypeOf<Mock<[], void>>();
+    play: async ({ args, mount }) => {
+      const canvas = await mount(<TestButton {...args} />);
+      expectTypeOf(canvas).toEqualTypeOf<Canvas>();
+      expectTypeOf(args.onClick).toEqualTypeOf<Mock>();
       expectTypeOf(args.onRender).toEqualTypeOf<() => JSX.Element>();
     },
   };
-  type Expected = StoryAnnotations<
-    ReactRenderer,
-    Props & { onClick: Mock<[], void> },
-    Partial<Props>
-  >;
+  type Expected = StoryAnnotations<ReactRenderer, Props & { onClick: Mock }, Partial<Props>>;
 
   expectTypeOf(Basic).toEqualTypeOf<Expected>();
 });

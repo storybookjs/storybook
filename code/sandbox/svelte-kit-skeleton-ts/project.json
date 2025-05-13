@@ -1,17 +1,8 @@
-// auto-generated from scripts/create-nx-sandbox-projects.ts
 {
   "name": "svelte-kit/skeleton-ts",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
-  "implicitDependencies": [
-    "cli",
-    "test",
-    "essentials",
-    "interactions",
-    "links",
-    "onboarding",
-    "blocks",
-    "sveltekit"
-  ],
+  "implicitDependencies": ["core", "addon-links", "addon-onboarding", "sveltekit"],
   "targets": {
     "sandbox": {},
     "sb:dev": {},

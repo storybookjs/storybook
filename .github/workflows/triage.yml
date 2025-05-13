@@ -25,6 +25,6 @@ jobs:
             }
           reproduction-comment: ".github/comments/invalid-link.md"
           reproduction-hosts: "github.com,codesandbox.io,stackblitz.com"
-          reproduction-link-section: "### To Reproduce(.*)### System"
+          reproduction-link-section: "### Reproduction link(.*)### Reproduction steps"
           reproduction-invalid-label: "needs reproduction"
           reproduction-issue-labels: "bug,needs triage"

@@ -1,12 +1,14 @@
-import type { PluginOption } from 'vite';
-import type { Options } from '@storybook/types';
-import dedent from 'ts-dedent';
+import { SvelteViteWithSvelteKitError } from 'storybook/internal/server-errors';
+import type { Options } from 'storybook/internal/types';
+
 import { hasVitePlugins } from '@storybook/builder-vite';
 
+import type { PluginOption } from 'vite';
+
 /**
- * A migration step that ensures the svelte-vite framework still supports SvelteKit,
- * but warns the user that they should use the sveltekit framework instead.
- * Should be removed when we decide to remove support completely for SvelteKit in svelte-vite
+ * A migration step that ensures the svelte-vite framework still supports SvelteKit, but warns the
+ * user that they should use the sveltekit framework instead. Should be removed when we decide to
+ * remove support completely for SvelteKit in svelte-vite
  */
 export async function handleSvelteKit(plugins: PluginOption[], options: Options) {
   /*
@@ -24,14 +26,6 @@ export async function handleSvelteKit(plugins: PluginOption[], options: Options)
   ]);
 
   if (hasSvelteKitPlugins && !framework.includes('@storybook/sveltekit')) {
-    throw new Error(dedent`
-      We've detected a SvelteKit project using the @storybook/svelte-vite framework, which is not supported in Storybook 7.0
-      Please use the @storybook/sveltekit framework instead.
-      You can migrate automatically by running
-      
-      npx storybook@latest automigrate
-
-      See https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#sveltekit-needs-the-storybooksveltekit-framework
-    `);
+    throw new SvelteViteWithSvelteKitError();
   }
 }

@@ -2,7 +2,7 @@
 
 The Storybook Links addon can be used to create links that navigate between stories in [Storybook](https://storybook.js.org).
 
-[Framework Support](https://storybook.js.org/docs/react/api/frameworks-feature-support)
+[Framework Support](https://storybook.js.org/docs/configure/integration/frameworks-feature-support)
 
 ## Getting Started
 
@@ -81,7 +81,7 @@ If you want to get an URL for a particular story, you may use `hrefTo` function.
 
 ```js
 import { hrefTo } from '@storybook/addon-links';
-import { action } from '@storybook/addon-actions';
+import { action } from 'storybook/actions';
 
 export default {
   title: 'Href',
@@ -132,7 +132,7 @@ export const second = () => <LinkTo story="first">Go to First</LinkTo>;
 
 It accepts all the props the `a` element does, plus `story` and `kind`. It the `kind` prop is omitted, the current kind will be preserved.
 
-```js
+```mdx
 <LinkTo
   kind="Toggle"
   story="off"

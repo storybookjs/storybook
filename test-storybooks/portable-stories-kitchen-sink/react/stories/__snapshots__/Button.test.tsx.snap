@@ -6,7 +6,11 @@ exports[`Renders CSF2Secondary story 1`] = `
     <div
       data-testid="global-decorator"
     >
-      Global Decorator
+      <div
+        data-testid="decorator-string"
+      >
+        Global Decorator
+      </div>
       <br />
       <button
         class="storybook-button storybook-button--medium storybook-button--secondary"
@@ -25,7 +29,11 @@ exports[`Renders CSF2StoryWithLocale story 1`] = `
     <div
       data-testid="global-decorator"
     >
-      Global Decorator
+      <div
+        data-testid="decorator-string"
+      >
+        Global Decorator
+      </div>
       <br />
       <p>
         locale: 
@@ -48,7 +56,11 @@ exports[`Renders CSF2StoryWithParamsAndDecorator story 1`] = `
     <div
       data-testid="global-decorator"
     >
-      Global Decorator
+      <div
+        data-testid="decorator-string"
+      >
+        Global Decorator
+      </div>
       <br />
       <button
         class="storybook-button storybook-button--medium storybook-button--secondary"
@@ -67,7 +79,11 @@ exports[`Renders CSF3Button story 1`] = `
     <div
       data-testid="global-decorator"
     >
-      Global Decorator
+      <div
+        data-testid="decorator-string"
+      >
+        Global Decorator
+      </div>
       <br />
       <button
         class="storybook-button storybook-button--medium storybook-button--secondary"
@@ -86,7 +102,11 @@ exports[`Renders CSF3ButtonWithRender story 1`] = `
     <div
       data-testid="global-decorator"
     >
-      Global Decorator
+      <div
+        data-testid="decorator-string"
+      >
+        Global Decorator
+      </div>
       <br />
       <div>
         <p
@@ -106,34 +126,17 @@ exports[`Renders CSF3ButtonWithRender story 1`] = `
 </body>
 `;
 
-exports[`Renders CSF3InputFieldFilled story 1`] = `
-<body>
-  <div>
-    <div
-      data-testid="global-decorator"
-    >
-      Global Decorator
-      <br />
-      <input
-        data-testid="input"
-      />
-      <br />
-      <button>
-        I am 
-        clicked
-      </button>
-    </div>
-  </div>
-</body>
-`;
-
 exports[`Renders CSF3Primary story 1`] = `
 <body>
   <div>
     <div
       data-testid="global-decorator"
     >
-      Global Decorator
+      <div
+        data-testid="decorator-string"
+      >
+        Global Decorator
+      </div>
       <br />
       <button
         class="storybook-button storybook-button--large storybook-button--primary"
@@ -146,50 +149,17 @@ exports[`Renders CSF3Primary story 1`] = `
 </body>
 `;
 
-exports[`Renders Modal story 1`] = `
-<body>
-  <div>
-    <div
-      data-testid="global-decorator"
-    >
-      Global Decorator
-      <br />
-      <button
-        id="openModalButton"
-      >
-        Open Modal
-      </button>
-    </div>
-  </div>
-  <div
-    id="modal-root"
-  >
-    <div
-      role="dialog"
-      style="position: fixed; top: 20%; left: 50%; transform: translate(-50%, -20%); background-color: white; padding: 20px; z-index: 1000; border: 2px solid black; border-radius: 5px;"
-    >
-      <div
-        style="margin-bottom: 10px;"
-      >
-        <p>
-          This is a modal!
-        </p>
-      </div>
-      <button>
-        Close
-      </button>
-    </div>
-  </div>
-</body>
-`;
-
 exports[`Renders WithLoader story 1`] = `
 <body>
   <div>
     <div
       data-testid="global-decorator"
     >
-      Global Decorator
+      <div
+        data-testid="decorator-string"
+      >
+        Global Decorator
+      </div>
       <br />
       <div>
         <div

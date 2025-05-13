@@ -93,4 +93,4 @@ export const notFound = fn(actual.notFound).mockName('next/navigation::notFound'
 interface Params {
   [key: string]: string | string[];
 }
-export const useParams = fn<[], Params>(actual.useParams).mockName('next/navigation::useParams');
+export const useParams = fn<() => Params>(actual.useParams).mockName('next/navigation::useParams');

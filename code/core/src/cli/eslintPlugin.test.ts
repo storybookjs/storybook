@@ -141,13 +141,87 @@ describe('configureEslintPlugin', () => {
       const [filePath, content] = vi.mocked(writeFile).mock.calls[0];
       expect(filePath).toBe('.eslintrc.json');
       expect(content).toMatchInlineSnapshot(`
-      "{
+        "{
+          "extends": [
+            "plugin:other",
+            "plugin:storybook/recommended"
+          ]
+        }"
+      `);
+    });
+
+    it('should correctly parse, configure, and preserve comments in comment-json .eslintrc.json', async () => {
+      const mockPackageManager = {
+        getAllDependencies: vi.fn(),
+        retrievePackageJson: vi.fn(),
+      } satisfies Partial<JsPackageManager>;
+
+      // Mock file content with JSON5 features (comments, trailing comma)
+      const mockConfigFile = dedent`{
+        // Some comment here
+        "extends": ["plugin:other"],
+        // Top-level comment
         "extends": [
-          "plugin:other",
-          "plugin:storybook/recommended"
-        ]
-      }"
-    `);
+          // Comment before existing item
+          "plugin:other", // Inline comment for existing item
+        ],
+        "rules": {
+          // Comment for rules object
+          "no-unused-vars": "warn", // Another comment
+        },
+        // Trailing comment
+      }`;
+
+      vi.mocked(readFile).mockResolvedValue(mockConfigFile);
+
+      await configureEslintPlugin({
+        eslintConfigFile: '.eslintrc.json',
+        packageManager: mockPackageManager as any,
+        isFlatConfig: false,
+      });
+
+      // Expect writeFile to have been called (meaning parsing didn't crash)
+      expect(vi.mocked(writeFile)).toHaveBeenCalledTimes(1);
+      const [filePath, content] = vi.mocked(writeFile).mock.calls[0];
+
+      expect(filePath).toBe('.eslintrc.json');
+      expect(content).toMatchInlineSnapshot(`
+        "{
+          // Top-level comment
+          "extends": [
+            // Comment before existing item
+            "plugin:other", // Inline comment for existing item
+            "plugin:storybook/recommended"
+          ],
+          "rules": {
+            // Comment for rules object
+            "no-unused-vars": "warn" // Another comment
+          }
+          // Trailing comment
+        }"
+      `);
+      // Check that the output contains the new extend AND the original comments
+      expect(content).toContain('// Top-level comment');
+      expect(content).toContain('plugin:storybook/recommended');
+      expect(content).toContain('// Trailing comment');
+
+      // Optionally, check the full snapshot if formatting needs to be precise
+      // Note: comment-json might slightly alter whitespace/placement vs original
+      expect(content).toMatchInlineSnapshot(`
+        "{
+          // Top-level comment
+          "extends": [
+            // Comment before existing item
+            "plugin:other", // Inline comment for existing item
+            "plugin:storybook/recommended"
+          ],
+          "rules": {
+            // Comment for rules object
+            "no-unused-vars": "warn" // Another comment
+          }
+          // Trailing comment
+        }"
+      `);
     });
   });
 
@@ -229,7 +303,7 @@ describe('configureEslintPlugin', () => {
         import storybook from "eslint-plugin-storybook";
 
         import somePlugin from 'some-plugin';
-        export default [somePlugin, storybook.configs["flat/recommended"]];"
+        export default [somePlugin, ...storybook.configs["flat/recommended"]];"
       `);
     });
 
@@ -290,7 +364,7 @@ describe('configureEslintPlugin', () => {
         import storybook from "eslint-plugin-storybook";
 
         import eslint from "@eslint/js";
-        const options = [eslint.configs.recommended, storybook.configs["flat/recommended"]]
+        const options = [eslint.configs.recommended, ...storybook.configs["flat/recommended"]]
 
         export default options;"
       `);
@@ -322,7 +396,7 @@ describe('configureEslintPlugin', () => {
         import storybook from "eslint-plugin-storybook";
 
         import eslint from "@eslint/js";
-        const options = [eslint.configs.recommended, storybook.configs["flat/recommended"]] as Config
+        const options = [eslint.configs.recommended, ...storybook.configs["flat/recommended"]] as Config
 
         export default options;"
       `);
@@ -352,7 +426,7 @@ describe('configureEslintPlugin', () => {
         import storybook from "eslint-plugin-storybook";
 
         import eslint from "@eslint/js";
-        export default [eslint.configs.recommended, storybook.configs["flat/recommended"]] satisfies Config;"
+        export default [eslint.configs.recommended, ...storybook.configs["flat/recommended"]] satisfies Config;"
       `);
     });
 

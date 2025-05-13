@@ -17,6 +17,39 @@ export const WithLayout: Story = {
 };
 ```
 
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import Button from './Button.svelte';
+
+  const { Story } = defineMeta({
+    component: Button,
+  });
+</script>
+
+<Story
+  name="WithLayout"
+  parameters={{
+    layout: 'centered',
+  }}
+/>
+```
+
+```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+import Button from './Button.svelte';
+
+export default {
+  component: Button,
+};
+
+export const WithLayout = {
+  parameters: {
+    layout: 'centered',
+  },
+};
+```
+
 ```js filename="Button.stories.js|jsx" renderer="common" language="js"
 import { Button } from './Button';
 
@@ -31,11 +64,30 @@ export const WithLayout = {
 };
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="common" language="ts-4-9"
-// Replace your-framework with the name of your framework
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import Button from './Button.svelte';
+
+  const { Story } = defineMeta({
+    component: Button,
+  });
+</script>
+
+<Story
+  name="WithLayout"
+  parameters={{
+    layout: 'centered',
+  }}
+/>
+```
+
+```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+// Replace your-framework with svelte-vite or sveltekit
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
-import { Button } from './Button';
+import Button from './Button.svelte';
 
 const meta = {
   component: Button,
@@ -52,17 +104,17 @@ export const WithLayout: Story = {
 ```
 
 ```ts filename="Button.stories.ts|tsx" renderer="common" language="ts"
-// Replace your-framework with the name of your framework
+// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { Button } from './Button';
 
-const meta: Meta<typeof Button> = {
+const meta = {
   component: Button,
-};
+} satisfies Meta<typeof Button>;
 
 export default meta;
-type Story = StoryObj<typeof Button>;
+type Story = StoryObj<typeof meta>;
 
 export const WithLayout: Story = {
   parameters: {
@@ -84,7 +136,7 @@ export const WithLayout = {
 ```
 
 ```ts filename="Button.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
   component: 'demo-button',

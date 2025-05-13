@@ -5,20 +5,21 @@ import { styled } from 'storybook/theming';
 import type { ResizeHandler } from 'use-resize-observer';
 import useResizeObserver from 'use-resize-observer';
 
-const ZoomElementWrapper = styled.div<{ scale: number; elementHeight: number }>(
-  ({ scale = 1, elementHeight }) => ({
+const ZoomElementWrapper = styled.div<{ centered?: boolean; scale: number; elementHeight: number }>(
+  ({ centered = false, scale = 1, elementHeight }) => ({
     height: elementHeight || 'auto',
-    transformOrigin: 'top left',
+    transformOrigin: centered ? 'center top' : 'left top',
     transform: `scale(${1 / scale})`,
   })
 );
 
 type ZoomProps = {
+  centered?: boolean;
   scale: number;
   children: ReactElement | ReactElement[];
 };
 
-export function ZoomElement({ scale, children }: ZoomProps) {
+export function ZoomElement({ centered, scale, children }: ZoomProps) {
   const componentWrapperRef = useRef<HTMLDivElement>(null);
   const [elementHeight, setElementHeight] = useState(0);
 
@@ -43,7 +44,7 @@ export function ZoomElement({ scale, children }: ZoomProps) {
   });
 
   return (
-    <ZoomElementWrapper scale={scale} elementHeight={elementHeight}>
+    <ZoomElementWrapper centered={centered} scale={scale} elementHeight={elementHeight}>
       <div ref={componentWrapperRef} className="innerZoomElementWrapper">
         {children}
       </div>

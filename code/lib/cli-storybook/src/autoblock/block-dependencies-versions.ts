@@ -104,7 +104,7 @@ export const blocker = createBlocker({
         return dedent`
           Support for Angular < 18 has been removed.
           Please see the migration guide for more information:
-          ${picocolors.yellow('https://angular.io/guide/update-to-version-15')}
+          ${picocolors.yellow('https://angular.dev/update-guide')}
 
           Please upgrade to the latest version of Angular.
         `;

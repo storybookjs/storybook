@@ -25,7 +25,7 @@ executors:
         default: "small"
     working_directory: /tmp/storybook
     docker:
-      - image: cimg/node:22.13.1
+      - image: cimg/node:22.15.0
         environment:
           NODE_OPTIONS: --max_old_space_size=6144
     resource_class: <<parameters.class>>
@@ -51,7 +51,7 @@ executors:
         default: "small"
     working_directory: /tmp/storybook
     docker:
-      - image: cimg/node:22.13.1-browsers
+      - image: cimg/node:22.15.0-browsers
         environment:
           NODE_OPTIONS: --max_old_space_size=6144
     resource_class: <<parameters.class>>
@@ -115,7 +115,7 @@ jobs:
       - restore_cache:
           name: Restore Yarn cache
           keys:
-            - prettydocs-yarn-2-cache-v7--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}
+            - prettydocs-yarn-2-cache-v8--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}
       - run:
           name: Install
           command: |
@@ -123,7 +123,7 @@ jobs:
             yarn install
       - save_cache:
           name: Save Yarn cache
-          key: prettydocs-yarn-2-cache-v7--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}
+          key: prettydocs-yarn-2-cache-v8--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}
           paths:
             - ~/.yarn/berry/cache
       - run:
@@ -141,7 +141,7 @@ jobs:
       - restore_cache:
           name: Restore Yarn cache
           keys:
-            - build-yarn-2-cache-v4--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}
+            - build-yarn-2-cache-v5--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}
       - run:
           name: Compile
           command: |
@@ -158,7 +158,7 @@ jobs:
           path: code/bench/esbuild-metafiles
       - save_cache:
           name: Save Yarn cache
-          key: build-yarn-2-cache-v4--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}
+          key: build-yarn-2-cache-v5--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}
           paths:
             - ~/.yarn/berry/cache
       - persist_to_workspace:
@@ -270,7 +270,7 @@ jobs:
       - restore_cache:
           name: Restore Yarn cache
           keys:
-            - build-yarn-2-cache-v4--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}
+            - build-yarn-2-cache-v5--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}
       - run:
           name: Compile
           command: |
@@ -398,8 +398,14 @@ jobs:
       - attach_workspace:
           at: .
       - run:
-          name: Enable Corepack
-          command: sudo corepack enable yarn
+          name: Setup Corepack
+          command: |
+            # Enable corepack
+            sudo corepack enable
+
+            # Verify yarn is working
+            which yarn
+            yarn --version
       - run:
           name: Starting Event Collector
           command: yarn jiti ./event-log-collector.ts
@@ -835,10 +841,9 @@ workflows:
       - knip:
           requires:
             - build
-      # TODO: don't forget to reenable this
-      #      - bench-packages:
-      #          requires:
-      #            - build
+      - bench-packages:
+          requires:
+            - build
       - check
       - unit-tests:
           requires:
@@ -912,10 +917,9 @@ workflows:
       - knip:
           requires:
             - build
-      # TODO: don't forget to reenable this
-      #      - bench-packages:
-      #          requires:
-      #            - build
+      - bench-packages:
+          requires:
+            - build
       - check
       - unit-tests:
           requires:
@@ -990,10 +994,9 @@ workflows:
       - knip:
           requires:
             - build
-      # TODO: don't forget to reenable this
-      #      - bench-packages:
-      #          requires:
-      #            - build
+      - bench-packages:
+          requires:
+            - build
       - check
       - unit-tests:
           requires:

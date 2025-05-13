@@ -12,6 +12,7 @@ import { version } from '../../../package.json';
 import { build } from '../build';
 import { buildIndex as index } from '../buildIndex';
 import { dev } from '../dev';
+import { globalSettings } from '../globalSettings';
 
 addToGlobalContext('cliVersion', versions.storybook);
 
@@ -27,7 +28,14 @@ const command = (name: string) =>
       process.env.STORYBOOK_DISABLE_TELEMETRY && process.env.STORYBOOK_DISABLE_TELEMETRY !== 'false'
     )
     .option('--debug', 'Get more logs in debug mode', false)
-    .option('--enable-crash-reports', 'Enable sending crash reports to telemetry data');
+    .option('--enable-crash-reports', 'Enable sending crash reports to telemetry data')
+    .hook('preAction', async () => {
+      try {
+        await globalSettings();
+      } catch (e) {
+        consoleLogger.error('Error loading global settings', e);
+      }
+    });
 
 command('dev')
   .option('-p, --port <number>', 'Port to run Storybook', (str) => parseInt(str, 10))
@@ -67,6 +75,7 @@ command('dev')
     '--initial-path [path]',
     'URL path to be appended when visiting Storybook for the first time'
   )
+  .option('--preview-only', 'Use the preview without the manager UI')
   .action(async (options) => {
     logger.setLevel(options.loglevel);
     const pkg = await findPackage(__dirname);
@@ -109,6 +118,7 @@ command('build')
   .option('--force-build-preview', 'Build the preview iframe even if you are using --preview-url')
   .option('--docs', 'Build a documentation-only site using addon-docs')
   .option('--test', 'Build stories optimized for testing purposes.')
+  .option('--preview-only', 'Use the preview without the manager UI')
   .action(async (options) => {
     const { env } = process;
     env.NODE_ENV = env.NODE_ENV || 'production';

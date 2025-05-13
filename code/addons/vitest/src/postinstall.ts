@@ -19,7 +19,7 @@ import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
 import { colors, logger } from 'storybook/internal/node-logger';
 
 // eslint-disable-next-line depend/ban-dependencies
-import { $ } from 'execa';
+import { execa } from 'execa';
 import { findUp } from 'find-up';
 import { dirname, extname, join, relative, resolve } from 'pathe';
 import picocolors from 'picocolors';
@@ -305,10 +305,7 @@ export default async function postInstall(options: PostinstallOptions) {
     existsSync
   );
 
-  const imports = [
-    `import { beforeAll } from 'vitest';`,
-    `import { setProjectAnnotations } from '${annotationsImport}';`,
-  ];
+  const imports = [`import { setProjectAnnotations } from '${annotationsImport}';`];
 
   const projectAnnotations = [];
 
@@ -324,32 +321,9 @@ export default async function postInstall(options: PostinstallOptions) {
 
       // This is an important step to apply the right configuration when testing your stories.
       // More info at: https://storybook.js.org/docs/api/portable-stories/portable-stories-vitest#setprojectannotations
-      const project = setProjectAnnotations([${projectAnnotations.join(', ')}]);
-
-      beforeAll(project.beforeAll);
+      setProjectAnnotations([${projectAnnotations.join(', ')}]);
     `
   );
-
-  const a11yAddon = info.addons.find((addon) => addon.includes(addonA11yName));
-
-  if (a11yAddon) {
-    try {
-      logger.plain(`${step} Setting up ${addonA11yName} for @storybook/addon-vitest:`);
-      await $({
-        stdio: 'inherit',
-      })`storybook automigrate addonA11yAddonTest ${options.yes ? '--yes' : ''}`;
-    } catch (e) {
-      printError(
-        '🚨 Oh no!',
-        dedent`
-        We have detected that you have ${addonA11yName} installed but could not automatically set it up for @storybook/addon-vitest.
-
-        Please refer to the documentation to complete the setup manually:
-        ${picocolors.cyan(`https://storybook.js.org/docs/writing-tests/accessibility-testing#test-addon-integration`)}
-      `
-      );
-    }
-  }
 
   const vitestWorkspaceFile = await findFile('vitest.workspace', ['.ts', '.js', '.json']);
   const viteConfigFile = await findFile('vite.config');
@@ -489,6 +463,43 @@ export default async function postInstall(options: PostinstallOptions) {
 
     const formattedContent = await formatFileContent(newConfigFile, configTemplate);
     await writeFile(newConfigFile, formattedContent);
+  }
+
+  const a11yAddon = info.addons.find((addon) => addon.includes(addonA11yName));
+
+  if (a11yAddon) {
+    try {
+      logger.plain(`${step} Setting up ${addonA11yName} for @storybook/addon-vitest:`);
+      const command = ['automigrate', 'addonA11yAddonTest'];
+
+      if (options.yes) {
+        command.push('--yes');
+      }
+
+      if (options.packageManager) {
+        command.push('--package-manager', options.packageManager);
+      }
+
+      if (options.configDir !== '.storybook') {
+        command.push('--config-dir', options.configDir);
+      }
+
+      await execa('storybook', command, {
+        stdio: 'inherit',
+      });
+    } catch (e: unknown) {
+      printError(
+        '🚨 Oh no!',
+        dedent`
+        We have detected that you have ${addonA11yName} installed but could not automatically set it up for @storybook/addon-vitest:
+
+        ${e instanceof Error ? e.message : String(e)}
+
+        Please refer to the documentation to complete the setup manually:
+        ${picocolors.cyan(`https://storybook.js.org/docs/writing-tests/accessibility-testing#test-addon-integration`)}
+      `
+      );
+    }
   }
 
   const runCommand = rootConfig ? `npx vitest --project=storybook` : `npx vitest`;

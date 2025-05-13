@@ -45,7 +45,6 @@
     "@storybook/react-webpack5": "file:../../../code/frameworks/react-webpack5",
     "@storybook/server": "file:../../../code/renderers/server",
     "@storybook/server-webpack5": "file:../../../code/frameworks/server-webpack5",
-    "@storybook/source-loader": "file:../../../code/lib/source-loader",
     "@storybook/svelte": "file:../../../code/renderers/svelte",
     "@storybook/svelte-vite": "file:../../../code/frameworks/svelte-vite",
     "@storybook/sveltekit": "file:../../../code/frameworks/sveltekit",
@@ -88,7 +87,7 @@
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
     "storybook": "^8.0.0",
-    "typescript": "^5.7.3",
+    "typescript": "^5.8.3",
     "vite": "^5.1.1",
     "vitest": "^3.0.8"
   }

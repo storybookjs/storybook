@@ -179,13 +179,15 @@ export async function vitestTransform({
         testPathProperty
       );
 
-      // Create the final expression: import.meta.url.includes(...)
+      // Create the final expression: convertToFilePath(import.meta.url).includes(...)
       const includesCall = t.callExpression(
         t.memberExpression(
-          t.memberExpression(
-            t.memberExpression(t.identifier('import'), t.identifier('meta')),
-            t.identifier('url')
-          ),
+          t.callExpression(t.identifier('convertToFilePath'), [
+            t.memberExpression(
+              t.memberExpression(t.identifier('import'), t.identifier('meta')),
+              t.identifier('url')
+            ),
+          ]),
           t.identifier('includes')
         ),
         [nullishCoalescingExpression]
@@ -264,7 +266,10 @@ export async function vitestTransform({
         t.stringLiteral('vitest')
       ),
       t.importDeclaration(
-        [t.importSpecifier(testStoryId, t.identifier('testStory'))],
+        [
+          t.importSpecifier(testStoryId, t.identifier('testStory')),
+          t.importSpecifier(t.identifier('convertToFilePath'), t.identifier('convertToFilePath')),
+        ],
         t.stringLiteral('@storybook/addon-vitest/internal/test-utils')
       ),
     ];

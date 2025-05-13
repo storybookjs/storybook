@@ -139,121 +139,6 @@ export const RegexExclude = {
 };
 ```
 
-```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
-<script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
-
-  import YourComponent from './YourComponent.svelte';
-
-  const { Story } = defineMeta({
-    component: YourComponent,
-  });
-</script>
-
-<Story
-  name="ArrayInclude"
-  parameters={{
-    controls: { include: ['foo', 'bar'] },
-  }}
-/>
-
-<Story
-  name="RegexInclude"
-  parameters={{
-    controls: { include: /^hello*/ },
-  }}
-/>
-
-<Story
-  name="ArrayExclude"
-  parameters={{
-    controls: { exclude: ['foo', 'bar'] },
-  }}
-/>
-
-<Story
-  name="RegexExclude"
-  parameters={{
-    controls: { exclude: /^hello*/ },
-  }}
-/>
-```
-
-```ts filename="YourComponent.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="CSF"
-import type { Meta, StoryObj } from '@storybook/svelte';
-
-import YourComponent from './YourComponent.svelte';
-
-const meta = {
-  component: YourComponent,
-} satisfies Meta<typeof YourComponent>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const ArrayInclude: Story = {
-  parameters: {
-    controls: { include: ['foo', 'bar'] },
-  },
-};
-
-export const RegexInclude: Story = {
-  parameters: {
-    controls: { include: /^hello*/ },
-  },
-};
-
-export const ArrayExclude: Story = {
-  parameters: {
-    controls: { exclude: ['foo', 'bar'] },
-  },
-};
-
-export const RegexExclude: Story = {
-  parameters: {
-    controls: { exclude: /^hello*/ },
-  },
-};
-```
-
-```ts filename="YourComponent.stories.ts|tsx" renderer="common" language="ts-4-9"
-// Replace your-framework with the name of your framework
-import type { Meta, StoryObj } from '@storybook/your-framework';
-
-import { YourComponent } from './YourComponent';
-
-const meta = {
-  component: YourComponent,
-} satisfies Meta<typeof YourComponent>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const ArrayInclude: Story = {
-  parameters: {
-    controls: { include: ['foo', 'bar'] },
-  },
-};
-
-export const RegexInclude: Story = {
-  parameters: {
-    controls: { include: /^hello*/ },
-  },
-};
-
-export const ArrayExclude: Story = {
-  parameters: {
-    controls: { exclude: ['foo', 'bar'] },
-  },
-};
-
-export const RegexExclude: Story = {
-  parameters: {
-    controls: { exclude: /^hello*/ },
-  },
-};
-```
-
 ```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
@@ -295,16 +180,17 @@ export const RegexExclude: Story = {
 ```
 
 ```ts filename="YourComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
-import type { Meta, StoryObj } from '@storybook/svelte';
+// Replace your-framework with svelte-vite or sveltekit
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import YourComponent from './YourComponent.svelte';
 
-const meta: Meta<typeof YourComponent> = {
+const meta = {
   component: YourComponent,
-};
+} satisfies Meta<typeof YourComponent>;
 
 export default meta;
-type Story = StoryObj<typeof YourComponent>;
+type Story = StoryObj<typeof meta>;
 
 export const ArrayInclude: Story = {
   parameters: {
@@ -332,17 +218,17 @@ export const RegexExclude: Story = {
 ```
 
 ```ts filename="YourComponent.stories.ts|tsx" renderer="common" language="ts"
-// Replace your-framework with the name of your framework
+// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { YourComponent } from './YourComponent';
 
-const meta: Meta<typeof YourComponent> = {
+const meta = {
   component: YourComponent,
-};
+} satisfies Meta<typeof YourComponent>;
 
 export default meta;
-type Story = StoryObj<typeof YourComponent>;
+type Story = StoryObj<typeof meta>;
 
 export const ArrayInclude: Story = {
   parameters: {
@@ -400,7 +286,7 @@ export const RegexExclude = {
 ```
 
 ```ts filename="YourComponent.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
   component: 'your-component',

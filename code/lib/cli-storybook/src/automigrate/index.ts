@@ -154,6 +154,7 @@ export const automigrate = async ({
       previewConfigPath,
       packageManager,
       packageJson,
+      configDir,
       dryRun,
       mainConfig,
       result: null,
@@ -189,10 +190,6 @@ export const automigrate = async ({
 
   logger.info('🔎 checking possible migrations..');
 
-  console.log({
-    storybookVersion,
-    beforeVersion,
-  });
   const { fixResults, fixSummary, preCheckFailure } = await runFixes({
     fixes,
     packageManager,
@@ -417,6 +414,7 @@ export async function runFixes({
               packageManager,
               dryRun,
               mainConfigPath,
+              configDir,
               previewConfigPath,
               packageJson,
               mainConfig,

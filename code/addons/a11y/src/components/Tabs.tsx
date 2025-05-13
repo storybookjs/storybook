@@ -116,7 +116,7 @@ export const Tabs: React.FC<TabsProps> = ({ tabs }) => {
   return (
     <Container ref={ref}>
       <Subnav>
-        <TabsWrapper>
+        <TabsWrapper role="tablist">
           {tabs.map((tab, index) => (
             <Item
               role="tab"

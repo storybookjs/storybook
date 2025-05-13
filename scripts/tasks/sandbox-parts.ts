@@ -449,7 +449,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
         templateAnnotations,
         addonA11yAnnotations,
         projectAnnotations,
-      ])
+      ])`
     );
   }
 

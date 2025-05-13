@@ -1,5 +1,5 @@
 import { createRequire } from 'node:module';
-import { dirname } from 'node:path';
+import { dirname, relative } from 'node:path';
 
 import type { Plugin } from 'vitest/config';
 import { mergeConfig } from 'vitest/config';
@@ -218,6 +218,12 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
           }
 
           return join(finalOptions.configDir, storyPath);
+        })
+        .map((story) => {
+          const config = inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED;
+          const testConfig = config.test;
+          const root = testConfig?.dir || testConfig?.root || config.root || process.cwd();
+          return relative(root, story);
         })
         .filter((story) => story.replace(/mdx\|stories/g, 'stories'));
 

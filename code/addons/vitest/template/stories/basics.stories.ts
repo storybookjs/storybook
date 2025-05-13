@@ -11,7 +11,7 @@ import {
 } from 'storybook/test';
 
 export default {
-  component: globalThis.Components.Form,
+  component: globalThis.__TEMPLATE_COMPONENTS__.Form,
   args: {
     onSuccess: fn(),
   },

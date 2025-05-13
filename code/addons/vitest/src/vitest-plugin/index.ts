@@ -184,7 +184,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
         .replace('</head>', `${headHtmlSnippet ?? ''}</head>`)
         .replace('<body>', `<body>${bodyHtmlSnippet ?? ''}`);
     },
-    async config(inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED) {
+    async config(nonMutableInputConfig) {
       // ! We're not mutating the input config, instead we're returning a new partial config
       // ! see https://vite.dev/guide/api-plugin.html#config
       try {
@@ -220,15 +220,11 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
           return join(finalOptions.configDir, storyPath);
         })
         .map((story) => {
-          const config = inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED;
-          const testConfig = config.test;
-          const root = testConfig?.dir || testConfig?.root || config.root || process.cwd();
+          const testConfig = nonMutableInputConfig.test;
+          const root =
+            testConfig?.dir || testConfig?.root || nonMutableInputConfig.root || process.cwd();
           return relative(root, story);
-        })
-        .map((story) => story.replace(/mdx\|stories/g, 'stories'))
-        .filter((story) => !story.endsWith('.mdx'));
-
-      console.log({ includeStories });
+        });
 
       finalOptions.includeStories = includeStories;
       const projectId = oneWayHash(finalOptions.configDir);
@@ -239,9 +235,8 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
           setupFiles: [
             join(PACKAGE_DIR, 'dist/vitest-plugin/setup-file.mjs'),
             // if the existing setupFiles is a string, we have to include it otherwise we're overwriting it
-            typeof inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED.test
-              ?.setupFiles === 'string' &&
-              inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED.test?.setupFiles,
+            typeof nonMutableInputConfig.test?.setupFiles === 'string' &&
+              nonMutableInputConfig.test?.setupFiles,
           ].filter(Boolean) as string[],
 
           ...(finalOptions.storybookScript
@@ -262,10 +257,10 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
           },
 
           include: includeStories,
+          exclude: [...(nonMutableInputConfig.test?.exclude ?? []), '**/*.mdx'],
 
           // if the existing deps.inline is true, we keep it as-is, because it will inline everything
-          ...(inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED.test?.server?.deps
-            ?.inline !== true
+          ...(nonMutableInputConfig.test?.server?.deps?.inline !== true
             ? {
                 server: {
                   deps: {
@@ -292,9 +287,8 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
               },
             },
             // if there is a test.browser config AND test.browser.screenshotFailures is not explicitly set, we set it to false
-            ...(inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED.test?.browser &&
-            inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED.test.browser
-              .screenshotFailures === undefined
+            ...(nonMutableInputConfig.test?.browser &&
+            nonMutableInputConfig.test.browser.screenshotFailures === undefined
               ? {
                   screenshotFailures: false,
                 }
@@ -303,11 +297,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
         },
 
         envPrefix: Array.from(
-          new Set([
-            ...(inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED.envPrefix || []),
-            'STORYBOOK_',
-            'VITE_',
-          ])
+          new Set([...(nonMutableInputConfig.envPrefix || []), 'STORYBOOK_', 'VITE_'])
         ),
 
         resolve: {
@@ -348,13 +338,10 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       );
 
       // alert the user of problems
-      if (
-        (inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED.test?.include?.length ??
-          0) > 0
-      ) {
+      if ((nonMutableInputConfig.test?.include?.length ?? 0) > 0) {
         // remove the user's existing include, because we're replacing it with our own heuristic based on main.ts#stories
         // @ts-expect-error: Ignore
-        inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED.test.include = [];
+        nonMutableInputConfig.test.include = [];
         console.log(
           picocolors.yellow(dedent`
             Warning: Starting in Storybook 8.5.0-alpha.18, the "test.include" option in Vitest is discouraged in favor of just using the "stories" field in your Storybook configuration.
@@ -391,6 +378,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
         }
       }
     },
+    // component.stories.tsx -> component.tsx -> component.mdx
     async transform(code, id) {
       if (process.env.VITEST !== 'true') {
         return code;

@@ -111,23 +111,3 @@ export const WithLoader: CSF3Story<{ mockFn: (val: string) => string }> = {
     expect(mockFn).toHaveBeenCalledWith('render');
   },
 };
-
-export const ClonedStoryfmgwkg: CSF3Story<ButtonProps> = {
-  args: {
-    children: "foo Copied",
-    size: "large",
-    primary: true
-  },
-
-  tags: ["fail-on-purpose"]
-};
-
-export const ClonedStoryvp8059: CSF3Story<ButtonProps> = {
-  args: {
-    children: "foo Updated fmgwkg Copied",
-    size: "large",
-    primary: true
-  },
-
-  tags: ["fail-on-purpose"]
-};

@@ -28,7 +28,7 @@ test.describe("save-from-controls", () => {
     const sbPage = new SbPage(page, expect);
     await sbPage.waitUntilLoaded();
 
-    await sbPage.navigateToStory("example/button", "csf-3-primary");
+    await sbPage.navigateToStory("example/my-button", "csf-3-primary");
     await sbPage.viewAddonPanel("Controls");
 
     // Update an arg

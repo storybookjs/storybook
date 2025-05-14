@@ -12,7 +12,7 @@ env:
 
 jobs:
   build:
-    name: Core Unit Tests, ${{ matrix.os }}
+    name: Core Unit Tests, windows-latest
     strategy:
       fail-fast: false
     runs-on: windows-11-arm

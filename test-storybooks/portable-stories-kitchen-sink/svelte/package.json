@@ -41,7 +41,6 @@
     "@storybook/react-webpack5": "portal:../../../code/frameworks/react-webpack5",
     "@storybook/server": "portal:../../../code/renderers/server",
     "@storybook/server-webpack5": "portal:../../../code/frameworks/server-webpack5",
-    "@storybook/source-loader": "portal:../../../code/lib/source-loader",
     "@storybook/svelte": "portal:../../../code/renderers/svelte",
     "@storybook/svelte-vite": "portal:../../../code/frameworks/svelte-vite",
     "@storybook/sveltekit": "portal:../../../code/frameworks/sveltekit",

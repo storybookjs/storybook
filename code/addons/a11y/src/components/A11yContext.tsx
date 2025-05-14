@@ -215,10 +215,9 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
   const handleSelect = useCallback(
     (itemId: string, details: ClickEventDetails) => {
       const [type, id] = itemId.split('.');
+      const result = results?.[type as RuleType]?.find((r) => r.id === id);
       const index =
-        results?.[type as RuleType]
-          ?.find((r) => r.id === id)
-          ?.nodes.findIndex((n) => details.selectors.some((s) => s === String(n.target))) ?? -1;
+        result?.nodes.findIndex((n) => details.selectors.some((s) => s === String(n.target))) ?? -1;
       if (index !== -1) {
         const key = `${type}.${id}.${index + 1}`;
         setSelectedItems(new Map([[`${type}.${id}`, key]]));
@@ -338,6 +337,7 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
           },
           {
             id: `${tab}.${result.id}`,
+            icon: 'info',
             title: 'View more details',
             clickEvent: EVENTS.SELECT,
             selectors,
@@ -376,6 +376,7 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
           },
           {
             id: `${tab}.${result.id}`,
+            icon: 'info',
             title: 'View more details',
             clickEvent: EVENTS.SELECT,
             selectors,

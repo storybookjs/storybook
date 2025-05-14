@@ -24,11 +24,10 @@ test.describe("save-from-controls", () => {
       `Skipping save-from-controls tests for ${browserName}`
     );
 
-    await page.goto(STORYBOOK_URL);
+    await page.goto(STORYBOOK_URL + "/?path=/story/example-mybutton--primary");
     const sbPage = new SbPage(page, expect);
     await sbPage.waitUntilLoaded();
 
-    await sbPage.navigateToStory("example/my-button", "csf-3-primary");
     await sbPage.viewAddonPanel("Controls");
 
     // Update an arg

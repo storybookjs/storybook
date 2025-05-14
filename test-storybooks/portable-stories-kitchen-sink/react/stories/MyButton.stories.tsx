@@ -14,6 +14,6 @@ const meta = {
 
 export default meta;
 
-export const CSF3Button: CSF3Story<ButtonProps> = {
+export const Primary: CSF3Story<ButtonProps> = {
   args: { children: 'foo' },
 };

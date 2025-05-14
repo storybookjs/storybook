@@ -163,9 +163,7 @@ export const Menu = meta.story({
             },
             {
               id: 'links-need-discernible-text',
-              title: 'Links need discernible text',
-              description: 'This is where a summary of the violation goes.',
-              clickEvent: 'my-click-event',
+              title: 'This is where a summary goes.',
             },
           ],
         },
@@ -192,6 +190,70 @@ export const Menu = meta.story({
     await userEvent.pointer({
       target: menuItem,
       coords: { pageX: 470, pageY: 310 },
+      keys: '[MouseLeft]',
+    });
+  },
+});
+
+export const MenuGroups = meta.story({
+  parameters: {
+    highlights: [
+      {
+        selectors: ['div', 'input'],
+        options: {
+          menu: [
+            [
+              {
+                id: 'color-contrast',
+                title: 'Insufficient color contrast',
+                description: 'Elements must meet minimum color contrast ratio thresholds.',
+              },
+              {
+                id: 'color-contrast-details',
+                title: 'View more details',
+                icon: 'info',
+                clickEvent: 'my-click-event',
+              },
+            ],
+            [
+              {
+                id: 'links-need-discernible-text',
+                title: 'Links need discernible text',
+                description: 'This is where a summary of the violation goes.',
+              },
+              {
+                id: 'links-need-discernible-text-details',
+                title: 'Important stuff',
+                description: 'Click here to view more details.',
+                icon: 'info',
+                clickEvent: 'my-click-event',
+              },
+            ],
+          ],
+        },
+      },
+    ],
+  },
+  play: async () => {
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    await userEvent.pointer({
+      coords: { pageX: 470, pageY: 240 },
+      keys: '[MouseLeft]',
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    const elementItem = document.querySelector('#storybook-highlights-menu .element-list button')!;
+    await userEvent.pointer({
+      target: elementItem,
+      coords: { pageX: 470, pageY: 260 },
+      keys: '[MouseLeft]',
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    const menuItem = document.querySelector('#storybook-highlights-menu .menu-list button')!;
+    await userEvent.pointer({
+      target: menuItem,
+      coords: { pageX: 470, pageY: 370 },
       keys: '[MouseLeft]',
     });
   },

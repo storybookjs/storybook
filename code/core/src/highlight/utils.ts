@@ -50,23 +50,32 @@ export const createElement = (type: string, props: Record<string, any>, children
   return element;
 };
 
-export const convertLegacy = (highlight: RawHighlightOptions): HighlightOptions => {
-  if ('elements' in highlight) {
-    const { elements, color, style } = highlight;
+export const normalizeOptions = (options: RawHighlightOptions): Highlight => {
+  if ('elements' in options) {
+    // Legacy format
+    const { elements, color, style } = options;
     return {
+      id: undefined,
+      priority: 0,
       selectors: elements,
       styles: {
         outline: `2px ${style} ${color}`,
         outlineOffset: '2px',
         boxShadow: '0 0 0 6px rgba(255,255,255,0.6)',
       },
+      menuGroups: undefined,
     };
   }
+
+  const { menu, ...rest } = options;
   return {
+    id: undefined,
+    priority: 0,
     styles: {
       outline: '2px dashed #029cfd',
     },
-    ...highlight,
+    ...rest,
+    menuGroups: Array.isArray(menu) ? (menu.every(Array.isArray) ? menu : [menu]) : undefined,
   };
 };
 
@@ -151,7 +160,7 @@ export const mapElements = (highlights: HighlightOptions[]): Map<HTMLElement, Hi
 
 export const mapBoxes = (elements: Map<HTMLElement, Highlight>): Box[] =>
   Array.from(elements.entries())
-    .map<Box>(([element, { selectors, styles, hoverStyles, focusStyles, menu }]) => {
+    .map<Box>(([element, { selectors, styles, hoverStyles, focusStyles, menuGroups }]) => {
       const { top, left, width, height } = element.getBoundingClientRect();
       const { position } = getComputedStyle(element);
       return {
@@ -160,7 +169,7 @@ export const mapBoxes = (elements: Map<HTMLElement, Highlight>): Box[] =>
         styles,
         hoverStyles,
         focusStyles,
-        menu,
+        menuGroups,
         top: position === 'fixed' ? top : top + window.scrollY,
         left: position === 'fixed' ? left : left + window.scrollX,
         width,

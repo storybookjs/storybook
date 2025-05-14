@@ -10,6 +10,21 @@ export interface HighlightParameters {
   };
 }
 
+export interface HighlightMenuItem {
+  /** Unique identifier for the menu item */
+  id: string;
+  /** Title of the menu item */
+  title: string;
+  /** Description of the menu item */
+  description?: string;
+  /** Icon for the menu item */
+  icon?: 'info';
+  /** Name for a channel event to trigger when the menu item is clicked */
+  clickEvent?: string;
+  /** HTML selectors for which this menu item should show (subset of `selectors`) */
+  selectors?: string[];
+}
+
 export interface HighlightOptions {
   /** Unique identifier for the highlight, required if you want to remove the highlight later */
   id?: string;
@@ -26,18 +41,7 @@ export interface HighlightOptions {
   /** Keyframes required for animations */
   keyframes?: string;
   /** Menu items to show when the highlight is selected */
-  menu?: {
-    /** Unique identifier for the menu item */
-    id: string;
-    /** Title of the menu item */
-    title: string;
-    /** Description of the menu item */
-    description?: string;
-    /** Name for a channel event to trigger when the menu item is clicked */
-    clickEvent?: string;
-    /** HTML selectors for which this menu item should show (subset of `selectors`) */
-    selectors?: string[];
-  }[];
+  menu?: HighlightMenuItem[] | HighlightMenuItem[][];
 }
 
 export interface ClickEventDetails {
@@ -67,13 +71,13 @@ export interface LegacyHighlightOptions {
 export type RawHighlightOptions = HighlightOptions | LegacyHighlightOptions;
 
 export type Highlight = {
-  id: string;
+  id?: string;
   priority: number;
   selectors: string[];
   styles: Record<string, string>;
   hoverStyles?: Record<string, string>;
   focusStyles?: Record<string, string>;
-  menu?: HighlightOptions['menu'];
+  menuGroups?: HighlightMenuItem[][];
 };
 
 export type Box = {
@@ -82,7 +86,7 @@ export type Box = {
   styles: Highlight['styles'];
   hoverStyles?: Highlight['hoverStyles'];
   focusStyles?: Highlight['focusStyles'];
-  menu?: Highlight['menu'];
+  menuGroups?: Highlight['menuGroups'];
   top: number;
   left: number;
   width: number;

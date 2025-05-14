@@ -22,7 +22,8 @@ export function errorToErrorLike(error: Error): ErrorLike {
   return {
     message: error.message,
     name: error.name,
-    stack: error.stack,
+    // avoid duplicating the error message in the stack trace
+    stack: error.stack?.replace(error.message, ''),
     cause: error.cause && error.cause instanceof Error ? errorToErrorLike(error.cause) : undefined,
   };
 }

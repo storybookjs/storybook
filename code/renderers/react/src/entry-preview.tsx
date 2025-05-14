@@ -28,6 +28,9 @@ export const decorators: Decorator[] = [
 ];
 
 export const beforeAll = async () => {
+  // Needed to make sure docs updates are also rendered in a react act environment:
+  // https://github.com/storybookjs/storybook/issues/30356
+  setReactActEnvironment(true);
   try {
     // copied from
     // https://github.com/testing-library/react-testing-library/blob/3dcd8a9649e25054c0e650d95fca2317b7008576/src/pure.js
@@ -78,6 +81,10 @@ export const beforeAll = async () => {
     // no-op
     // storybook/test might not be available
   }
+
+  return () => {
+    setReactActEnvironment(false);
+  };
 };
 
 /** The function is used to configure jest's fake timers in environments where React's act is enabled */

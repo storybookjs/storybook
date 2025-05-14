@@ -1,3 +1,5 @@
+import type { IconName } from './icons';
+
 export interface HighlightParameters {
   /**
    * Highlight configuration
@@ -17,8 +19,10 @@ export interface HighlightMenuItem {
   title: string;
   /** Description of the menu item */
   description?: string;
-  /** Icon for the menu item */
-  icon?: 'info';
+  /** Icon for the menu item, left side */
+  iconLeft?: IconName;
+  /** Icon for the menu item, right side */
+  iconRight?: IconName;
   /** Name for a channel event to trigger when the menu item is clicked */
   clickEvent?: string;
   /** HTML selectors for which this menu item should show (subset of `selectors`) */

@@ -1,4 +1,5 @@
 /* eslint-env browser */
+import { type IconName, iconPaths } from './icons';
 import type {
   Box,
   ClickEventDetails,
@@ -49,6 +50,21 @@ export const createElement = (type: string, props: Record<string, any>, children
 
   return element;
 };
+
+export const createIcon = (name: IconName) =>
+  iconPaths[name] &&
+  createElement(
+    'svg',
+    { width: '14', height: '14', viewBox: '0 0 14 14', xmlns: 'http://www.w3.org/2000/svg' },
+    iconPaths[name].map((d) =>
+      createElement('path', {
+        fill: 'currentColor',
+        'fill-rule': 'evenodd',
+        'clip-rule': 'evenodd',
+        d,
+      })
+    )
+  );
 
 export const normalizeOptions = (options: RawHighlightOptions): Highlight => {
   if ('elements' in options) {

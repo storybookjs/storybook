@@ -12,6 +12,7 @@ import {
 import type { Box, Highlight, HighlightOptions, RawHighlightOptions } from './types';
 import {
   createElement,
+  createIcon,
   getEventDetails,
   hidePopover,
   isOverMenu,
@@ -27,54 +28,6 @@ import {
 const menuId = 'storybook-highlights-menu';
 const rootId = 'storybook-highlights-root';
 const storybookRootId = 'storybook-root';
-
-const chevronLeft = () =>
-  createElement(
-    'svg',
-    { width: '14', height: '14', viewBox: '0 0 14 14', xmlns: 'http://www.w3.org/2000/svg' },
-    [
-      createElement('path', {
-        'fill-rule': 'evenodd',
-        'clip-rule': 'evenodd',
-        d: 'M9.10355 10.1464C9.29882 10.3417 9.29882 10.6583 9.10355 10.8536C8.90829 11.0488 8.59171 11.0488 8.39645 10.8536L4.89645 7.35355C4.70118 7.15829 4.70118 6.84171 4.89645 6.64645L8.39645 3.14645C8.59171 2.95118 8.90829 2.95118 9.10355 3.14645C9.29882 3.34171 9.29882 3.65829 9.10355 3.85355L5.95711 7L9.10355 10.1464Z',
-        fill: 'currentColor',
-      }),
-    ]
-  );
-
-const chevronRight = () =>
-  createElement(
-    'svg',
-    { width: '14', height: '14', viewBox: '0 0 14 14', xmlns: 'http://www.w3.org/2000/svg' },
-    [
-      createElement('path', {
-        'fill-rule': 'evenodd',
-        'clip-rule': 'evenodd',
-        d: 'M4.89645 10.1464C4.70118 10.3417 4.70118 10.6583 4.89645 10.8536C5.09171 11.0488 5.40829 11.0488 5.60355 10.8536L9.10355 7.35355C9.29882 7.15829 9.29882 6.84171 9.10355 6.64645L5.60355 3.14645C5.40829 2.95118 5.09171 2.95118 4.89645 3.14645C4.70118 3.34171 4.70118 3.65829 4.89645 3.85355L8.04289 7L4.89645 10.1464Z',
-        fill: 'currentColor',
-      }),
-    ]
-  );
-
-const info = () =>
-  createElement(
-    'svg',
-    { width: '14', height: '14', viewBox: '0 0 14 14', xmlns: 'http://www.w3.org/2000/svg' },
-    [
-      createElement('path', {
-        'fill-rule': 'evenodd',
-        'clip-rule': 'evenodd',
-        d: 'M7 5.5a.5.5 0 01.5.5v4a.5.5 0 01-1 0V6a.5.5 0 01.5-.5zM7 4.5A.75.75 0 107 3a.75.75 0 000 1.5z',
-        fill: 'currentColor',
-      }),
-      createElement('path', {
-        'fill-rule': 'evenodd',
-        'clip-rule': 'evenodd',
-        d: 'M7 14A7 7 0 107 0a7 7 0 000 14zm0-1A6 6 0 107 1a6 6 0 000 12z',
-        fill: 'currentColor',
-      }),
-    ]
-  );
 
 export const useHighlights = (channel: Channel) => {
   if (globalThis.__STORYBOOK_HIGHLIGHT_INITIALIZED) {
@@ -395,7 +348,7 @@ export const useHighlights = (channel: Channel) => {
               font-family: inherit;
               font-size: inherit;
             }
-            #${menuId} button:focus {
+            #${menuId} button:focus-visible {
               outline-color: #029CFD;
             }
             #${menuId} button:hover {
@@ -415,7 +368,7 @@ export const useHighlights = (channel: Channel) => {
               margin: 1px;
               color: #73828C;
             }
-            #${menuId} li > button:hover svg, #${menuId} li > button:focus svg {
+            #${menuId} li > button:hover svg, #${menuId} li > button:focus-visible svg {
               color: #029CFD;
             }
             #${menuId} .element-list li svg {
@@ -441,6 +394,7 @@ export const useHighlights = (channel: Channel) => {
             #${menuId} .menu-item-content {
               display: flex;
               flex-direction: column;
+              flex-grow: 1;
             }
           `,
         ])
@@ -480,9 +434,9 @@ export const useHighlights = (channel: Channel) => {
             const asButton = selectable || selectedElement;
             return createElement('li', props, [
               createElement(asButton ? 'button' : 'div', asButton ? { type: 'button' } : {}, [
-                selectedElement ? chevronLeft() : null,
+                selectedElement ? createIcon('chevronLeft') : null,
                 createElement('code', {}, [target.element.outerHTML]),
-                selectable ? chevronRight() : null,
+                selectable ? createIcon('chevronRight') : null,
               ]),
             ]);
           })
@@ -507,25 +461,28 @@ export const useHighlights = (channel: Channel) => {
                 createElement(
                   'ul',
                   { class: 'menu-items' },
-                  menuItems.map(({ id, title, description, icon, clickEvent: event }) => {
-                    const onClick =
-                      event && (() => channel.emit(event, id, getEventDetails(target)));
-                    return createElement('li', {}, [
-                      createElement(
-                        onClick ? 'button' : 'div',
-                        onClick
-                          ? { class: 'menu-item', type: 'button', onClick }
-                          : { class: 'menu-item' },
-                        [
-                          icon === 'info' ? info() : null,
-                          createElement('div', { class: 'menu-item-content' }, [
-                            createElement(description ? 'strong' : 'span', {}, [title]),
-                            description && createElement('span', {}, [description]),
-                          ]),
-                        ]
-                      ),
-                    ]);
-                  })
+                  menuItems.map(
+                    ({ id, title, description, iconLeft, iconRight, clickEvent: event }) => {
+                      const onClick =
+                        event && (() => channel.emit(event, id, getEventDetails(target)));
+                      return createElement('li', {}, [
+                        createElement(
+                          onClick ? 'button' : 'div',
+                          onClick
+                            ? { class: 'menu-item', type: 'button', onClick }
+                            : { class: 'menu-item' },
+                          [
+                            iconLeft ? createIcon(iconLeft) : null,
+                            createElement('div', { class: 'menu-item-content' }, [
+                              createElement(description ? 'strong' : 'span', {}, [title]),
+                              description && createElement('span', {}, [description]),
+                            ]),
+                            iconRight ? createIcon(iconRight) : null,
+                          ]
+                        ),
+                      ]);
+                    }
+                  )
                 ),
               ])
             )

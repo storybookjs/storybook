@@ -6018,7 +6018,7 @@ __metadata:
     "@storybook/global": "npm:^5.0.0"
     "@storybook/icons": "npm:^1.4.0"
     "@types/istanbul-lib-report": "npm:^3.0.3"
-    "@types/micromatch": "npm:^4"
+    "@types/micromatch": "npm:^4.0.0"
     "@types/node": "npm:^22.0.0"
     "@types/semver": "npm:^7"
     "@vitest/browser": "npm:^3.1.1"
@@ -7714,7 +7714,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/micromatch@npm:^4":
+"@types/micromatch@npm:^4.0.0":
   version: 4.0.9
   resolution: "@types/micromatch@npm:4.0.9"
   dependencies:

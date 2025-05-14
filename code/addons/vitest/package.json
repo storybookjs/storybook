@@ -97,7 +97,7 @@
   },
   "devDependencies": {
     "@types/istanbul-lib-report": "^3.0.3",
-    "@types/micromatch": "^4",
+    "@types/micromatch": "^4.0.0",
     "@types/node": "^22.0.0",
     "@types/semver": "^7",
     "@vitest/browser": "^3.1.1",

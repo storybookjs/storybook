@@ -63,7 +63,7 @@ CSF2StoryWithParamsAndDecorator.decorators = [(StoryFn) => <StoryFn />];
 
 export const CSF3Primary: CSF3Story<ButtonProps> = {
   args: {
-    children: 'foo',
+    children: "foo Updated fmgwkg Updated vp8059",
     size: 'large',
     primary: true,
   },
@@ -110,4 +110,24 @@ export const WithLoader: CSF3Story<{ mockFn: (val: string) => string }> = {
   play: async () => {
     expect(mockFn).toHaveBeenCalledWith('render');
   },
+};
+
+export const ClonedStoryfmgwkg: CSF3Story<ButtonProps> = {
+  args: {
+    children: "foo Copied",
+    size: "large",
+    primary: true
+  },
+
+  tags: ["fail-on-purpose"]
+};
+
+export const ClonedStoryvp8059: CSF3Story<ButtonProps> = {
+  args: {
+    children: "foo Updated fmgwkg Copied",
+    size: "large",
+    primary: true
+  },
+
+  tags: ["fail-on-purpose"]
 };

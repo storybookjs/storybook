@@ -49,7 +49,14 @@ const mockFiles: Record<string, string> = {
   `,
   'vitest.setup.ts': `
     import { setup } from '@storybook/experimental-addon-test';
-    // Vitest setup
+    import * as a11yAddonAnnotations from "@storybook/addon-a11y/preview";
+    import { beforeAll } from 'vitest'
+    import { setProjectAnnotations } from '@storybook/nextjs-vite'
+    import * as projectAnnotations from './preview'
+    
+    const project = setProjectAnnotations([a11yAddonAnnotations, projectAnnotations])
+    
+    beforeAll(project.beforeAll)
   `,
   'vite.config.ts': `
     import { defineConfig } from 'vite';
@@ -222,6 +229,20 @@ describe('addon-experimental-test fix', () => {
           'utf-8'
         );
       });
+
+      expect(writeFileSync).toHaveBeenCalledWith(
+        'vitest.setup.ts',
+        `
+    import { setup } from '@storybook/addon-vitest';
+    import * as a11yAddonAnnotations from "@storybook/addon-a11y/preview";
+    import { beforeAll } from 'vitest'
+    import { setProjectAnnotations } from '@storybook/nextjs-vite'
+    import * as projectAnnotations from './preview'
+    
+    const project = setProjectAnnotations([a11yAddonAnnotations, projectAnnotations])
+  `,
+        'utf-8'
+      );
 
       // Verify package dependencies were updated
       expect(packageManager.removeDependencies).toHaveBeenCalledWith({}, [

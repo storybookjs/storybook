@@ -1,5 +1,5 @@
 import { expect, fn } from 'storybook/test';
-import type { Meta, StoryFn as CSF2Story, StoryObj as CSF3Story } from '@storybook/react';
+import type { Meta, StoryFn as CSF2Story, StoryObj as CSF3Story } from '@storybook/react-vite';
 
 import type { ButtonProps } from './Button';
 import { Button } from './Button';
@@ -63,7 +63,7 @@ CSF2StoryWithParamsAndDecorator.decorators = [(StoryFn) => <StoryFn />];
 
 export const CSF3Primary: CSF3Story<ButtonProps> = {
   args: {
-    children: 'foo',
+    children: "foo",
     size: 'large',
     primary: true,
   },

@@ -5,7 +5,7 @@ import { global as globalThis } from '@storybook/global';
 import { expect, within } from 'storybook/test';
 
 export default {
-  component: globalThis.Components.Pre,
+  component: globalThis.__TEMPLATE_COMPONENTS__.Pre,
   play: async ({ canvasElement, name }: PlayFunctionContext) => {
     await expect(
       JSON.parse(within(canvasElement as HTMLPreElement).getByTestId('pre').innerText)

@@ -305,23 +305,6 @@ function addStoriesEntry(mainConfig: ConfigFile, path: string, disableDocs: bool
   mainConfig.setFieldValue(['stories'], [...stories, entry]);
 }
 
-// Add refs to older versions of storybook to test out composition
-function addRefs(mainConfig: ConfigFile) {
-  const refs = mainConfig.getFieldValue(['refs']) as Record<string, string>;
-
-  mainConfig.setFieldValue(['refs'], {
-    ...refs,
-    'storybook@8.0.0': {
-      title: 'Storybook 8.0.0',
-      url: 'https://635781f3500dd2c49e189caf-gckybvsekn.chromatic.com/',
-    },
-    'storybook@7.6.18': {
-      title: 'Storybook 7.6.18',
-      url: 'https://635781f3500dd2c49e189caf-oljwjdrftz.chromatic.com/',
-    },
-  } as Record<string, any>);
-}
-
 function getStoriesFolderWithVariant(variant?: string, folder = 'stories') {
   return variant ? `${folder}_${variant}` : folder;
 }
@@ -801,10 +784,6 @@ export const extendMain: Task['run'] = async ({ template, sandboxDir, key }, { d
   logger.log('📝 Extending main.js');
   const mainConfig = await readConfig({ fileName: 'main', cwd: sandboxDir });
 
-  if (key === 'react-vite/default-ts') {
-    addRefs(mainConfig);
-  }
-
   const templateConfig: any = isFunction(template.modifications?.mainConfig)
     ? template.modifications?.mainConfig(mainConfig)
     : template.modifications?.mainConfig || {};
@@ -972,7 +951,7 @@ async function prepareAngularSandbox(cwd: string, templateName: string) {
   tsConfigJson.include = [
     ...tsConfigJson.include,
     '../template-stories/**/*.stories.ts',
-    // This is necessary since template stories depend on globalThis.components, which Typescript can't look up automatically
+    // This is necessary since template stories depend on globalThis.__TEMPLATE_COMPONENTS__, which Typescript can't look up automatically
     '../src/stories/**/*',
   ];
 

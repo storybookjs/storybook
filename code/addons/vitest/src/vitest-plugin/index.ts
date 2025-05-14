@@ -380,7 +380,6 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
         }
       }
     },
-    // component.stories.tsx -> component.tsx -> component.mdx
     async transform(code, id) {
       if (process.env.VITEST !== 'true') {
         return code;

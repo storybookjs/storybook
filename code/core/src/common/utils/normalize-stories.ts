@@ -11,7 +11,7 @@ import { globToRegexp } from './glob-to-regexp';
 import { normalizeStoryPath } from './paths';
 
 const DEFAULT_TITLE_PREFIX = '';
-export const DEFAULT_FILES_PATTERN = '**/*.@(mdx|stories.@(js|jsx|mjs|ts|tsx))';
+export const DEFAULT_FILES_PATTERN = '**/*.@(mdx|stories|story.@(js|jsx|mjs|ts|tsx))';
 
 const isDirectory = (configDir: string, entry: string) => {
   try {

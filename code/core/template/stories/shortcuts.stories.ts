@@ -6,7 +6,7 @@ import { global as globalThis } from '@storybook/global';
 import { expect, fn, userEvent, within } from 'storybook/test';
 
 export default {
-  component: globalThis.Components.Form,
+  component: globalThis.__TEMPLATE_COMPONENTS__.Form,
   tags: ['autodocs'],
   args: {
     onSubmit: fn(),

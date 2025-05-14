@@ -1,11 +1,18 @@
 import * as React from 'react';
 
+import {
+  type ArgTypesExtractor,
+  enhanceArgTypes,
+  extractComponentDescription,
+} from 'storybook/internal/docs-tools';
+import type { ArgTypesEnhancer } from 'storybook/internal/types';
+
 import semver from 'semver';
 
 import { getAct, getReactActEnvironment, setReactActEnvironment } from './act-compat';
-import type { Decorator } from './public-types';
+import { extractArgTypes } from './extractArgTypes';
+import type { Decorator, ReactRenderer } from './public-types';
 
-export const parameters = { renderer: 'react' };
 export { render } from './render';
 export { renderToCanvas } from './renderToCanvas';
 export { mount } from './mount';
@@ -26,6 +33,26 @@ export const decorators: Decorator[] = [
     return <React.Suspense>{story()}</React.Suspense>;
   },
 ];
+
+export const parameters: {
+  renderer: 'react';
+  docs: {
+    story: {
+      inline: boolean;
+    };
+    extractArgTypes: ArgTypesExtractor;
+    extractComponentDescription: (component?: any) => string;
+  };
+} = {
+  renderer: 'react',
+  docs: {
+    story: { inline: true },
+    extractArgTypes,
+    extractComponentDescription,
+  },
+};
+
+export const argTypesEnhancers: ArgTypesEnhancer<ReactRenderer>[] = [enhanceArgTypes];
 
 export const beforeAll = async () => {
   try {

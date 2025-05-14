@@ -324,16 +324,26 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
       focusStyles: {
         backgroundColor: 'transparent',
       },
-      menu: results?.[tab as RuleType].map((result) => ({
-        id: `${tab}.${result.id}`,
-        title: getTitleForAxeResult(result),
-        description: getFriendlySummaryForAxeResult(result),
-        clickEvent: EVENTS.SELECT,
-        selectors: result.nodes
+      menu: results?.[tab as RuleType].map((result) => {
+        const selectors = result.nodes
           .flatMap((n) => n.target)
           .map(String)
-          .filter((e) => selected.includes(e)),
-      })),
+          .filter((e) => selected.includes(e));
+        return [
+          {
+            id: `${tab}.${result.id}:info`,
+            title: getTitleForAxeResult(result),
+            description: getFriendlySummaryForAxeResult(result),
+            selectors,
+          },
+          {
+            id: `${tab}.${result.id}`,
+            title: 'View more details',
+            clickEvent: EVENTS.SELECT,
+            selectors,
+          },
+        ];
+      }),
     });
 
     const others = results?.[tab as RuleType]
@@ -352,16 +362,26 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
       focusStyles: {
         backgroundColor: 'transparent',
       },
-      menu: results?.[tab as RuleType].map((result) => ({
-        id: `${tab}.${result.id}`,
-        title: getTitleForAxeResult(result),
-        description: getFriendlySummaryForAxeResult(result),
-        clickEvent: EVENTS.SELECT,
-        selectors: result.nodes
+      menu: results?.[tab as RuleType].map((result) => {
+        const selectors = result.nodes
           .flatMap((n) => n.target)
           .map(String)
-          .filter((e) => !selected.includes(e)),
-      })),
+          .filter((e) => !selected.includes(e));
+        return [
+          {
+            id: `${tab}.${result.id}:info`,
+            title: getTitleForAxeResult(result),
+            description: getFriendlySummaryForAxeResult(result),
+            selectors,
+          },
+          {
+            id: `${tab}.${result.id}`,
+            title: 'View more details',
+            clickEvent: EVENTS.SELECT,
+            selectors,
+          },
+        ];
+      }),
     });
   }, [emit, highlighted, results, tab, selectedItems]);
 

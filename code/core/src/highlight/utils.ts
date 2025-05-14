@@ -63,7 +63,7 @@ export const normalizeOptions = (options: RawHighlightOptions): Highlight => {
         outlineOffset: '2px',
         boxShadow: '0 0 0 6px rgba(255,255,255,0.6)',
       },
-      menuGroups: undefined,
+      menu: undefined,
     };
   }
 
@@ -75,7 +75,7 @@ export const normalizeOptions = (options: RawHighlightOptions): Highlight => {
       outline: '2px dashed #029cfd',
     },
     ...rest,
-    menuGroups: Array.isArray(menu) ? (menu.every(Array.isArray) ? menu : [menu]) : undefined,
+    menu: Array.isArray(menu) ? (menu.every(Array.isArray) ? menu : [menu]) : undefined,
   };
 };
 
@@ -160,7 +160,7 @@ export const mapElements = (highlights: HighlightOptions[]): Map<HTMLElement, Hi
 
 export const mapBoxes = (elements: Map<HTMLElement, Highlight>): Box[] =>
   Array.from(elements.entries())
-    .map<Box>(([element, { selectors, styles, hoverStyles, focusStyles, menuGroups }]) => {
+    .map<Box>(([element, { selectors, styles, hoverStyles, focusStyles, menu }]) => {
       const { top, left, width, height } = element.getBoundingClientRect();
       const { position } = getComputedStyle(element);
       return {
@@ -169,7 +169,7 @@ export const mapBoxes = (elements: Map<HTMLElement, Highlight>): Box[] =>
         styles,
         hoverStyles,
         focusStyles,
-        menuGroups,
+        menu,
         top: position === 'fixed' ? top : top + window.scrollY,
         left: position === 'fixed' ? left : left + window.scrollX,
         width,

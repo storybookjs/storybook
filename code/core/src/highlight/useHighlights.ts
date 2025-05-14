@@ -237,7 +237,7 @@ export const useHighlights = (channel: Channel) => {
 
   // Handle click events on highlight boxes
   boxes.subscribe((value) => {
-    const targetable = value.filter((box) => box.menuGroups);
+    const targetable = value.filter((box) => box.menu);
     if (!targetable.length) {
       return;
     }
@@ -321,8 +321,8 @@ export const useHighlights = (channel: Channel) => {
           height: `${box.height}px`,
           margin: 0,
           padding: 0,
-          cursor: box.menuGroups ? 'pointer' : 'default',
-          pointerEvents: box.menuGroups ? 'auto' : 'none',
+          cursor: box.menu ? 'pointer' : 'default',
+          pointerEvents: box.menu ? 'auto' : 'none',
         });
 
         showPopover(boxElement);
@@ -461,7 +461,7 @@ export const useHighlights = (channel: Channel) => {
           elementList.map((target) => {
             const selectable =
               elementList.length > 1 &&
-              !!target.menuGroups?.some((group) =>
+              !!target.menu?.some((group) =>
                 group.some(
                   (item) =>
                     !item.selectors || item.selectors.some((s) => target.selectors.includes(s))
@@ -492,7 +492,7 @@ export const useHighlights = (channel: Channel) => {
 
     if (selected.get() || targets.get().length === 1) {
       const target = selected.get() || targets.get()[0];
-      const menuGroups = target.menuGroups?.filter((group) =>
+      const menuGroups = target.menu?.filter((group) =>
         group.some(
           (item) => !item.selectors || item.selectors.some((s) => target.selectors.includes(s))
         )

@@ -40,8 +40,8 @@ export interface HighlightOptions {
   focusStyles?: Record<string, string>;
   /** Keyframes required for animations */
   keyframes?: string;
-  /** Menu items to show when the highlight is selected */
-  menu?: HighlightMenuItem[] | HighlightMenuItem[][];
+  /** Groups of menu items to show when the highlight is selected */
+  menu?: HighlightMenuItem[][];
 }
 
 export interface ClickEventDetails {
@@ -77,7 +77,7 @@ export type Highlight = {
   styles: Record<string, string>;
   hoverStyles?: Record<string, string>;
   focusStyles?: Record<string, string>;
-  menuGroups?: HighlightMenuItem[][];
+  menu?: HighlightMenuItem[][];
 };
 
 export type Box = {
@@ -86,7 +86,7 @@ export type Box = {
   styles: Highlight['styles'];
   hoverStyles?: Highlight['hoverStyles'];
   focusStyles?: Highlight['focusStyles'];
-  menuGroups?: Highlight['menuGroups'];
+  menu?: Highlight['menu'];
   top: number;
   left: number;
   width: number;

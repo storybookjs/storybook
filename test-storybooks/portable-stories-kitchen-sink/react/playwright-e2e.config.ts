@@ -1,13 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 import path from "node:path";
 
-// Downloading Firefox 137.0 (playwright build v1482) from https://cdn.playwright.dev/dbazure/download/playwright/builds/firefox/1482/firefox-mac-arm64.zip
-// 85 MiB [====================] 100% 0.0s
-// Firefox 137.0 (playwright build v1482) downloaded to /Users/me/Library/Caches/ms-playwright/firefox-1482
-// Downloading Webkit 18.4 (playwright build v2158) from https://cdn.playwright.dev/dbazure/download/playwright/builds/webkit/2158/webkit-mac-15-arm64.zip
-// 66.8 MiB [====================] 100% 0.0s
-// Webkit 18.4 (playwright build v2158) downloaded to /Users/me/Library/Caches/ms-playwright/webkit-2158
-
 /**
  * See https://playwright.dev/docs/test-configuration.
  */

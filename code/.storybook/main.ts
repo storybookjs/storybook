@@ -16,7 +16,10 @@ const imageContextPath = join(currentDirPath, '../frameworks/nextjs/src/image-co
 
 const config = defineMain({
   stories: [
-    './*.stories.@(js|jsx|ts|tsx)',
+    {
+      directory: '../core/bench',
+      titlePrefix: 'bench',
+    },
     {
       directory: '../core/template/stories',
       titlePrefix: 'core',
@@ -102,6 +105,13 @@ const config = defineMain({
     '@storybook/addon-a11y',
     'storybook-addon-pseudo-states',
     '@chromatic-com/storybook',
+  ],
+  staticDirs: [
+    { from: '../core/bench/bundle-analyzer', to: '/bundle-analyzer' },
+    {
+      from: '../bench/esbuild-metafiles',
+      to: '/esbuild-metafiles',
+    },
   ],
   previewAnnotations: [
     './core/template/stories/preview.ts',

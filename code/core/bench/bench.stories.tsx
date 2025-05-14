@@ -3,7 +3,7 @@ import React from 'react';
 import type { Meta } from '@storybook/react-vite';
 
 // @ts-expect-error - TS doesn't know about import.meta.glob from Vite
-const allMetafiles = import.meta.glob(['../bench/esbuild-metafiles/**/*.json']);
+const allMetafiles = import.meta.glob(['../../bench/esbuild-metafiles/**/*.json']);
 
 const METAFILES_DIR = '../bench/esbuild-metafiles/';
 const PACKAGES_WITHOUT_ORG = ['storybook', 'sb', 'create-storybook'];

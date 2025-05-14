@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en" data-theme="null">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+
+    <title>esbuild - Bundle Size Analyzer</title>
+    <link rel="stylesheet" href="./index.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  </head>
+
+  <body>
+    <div id="dragTarget" hidden></div>
+    <div id="startPanel">
+      <section>
+        <div class="center">
+          <div id="logo">
+            <h1>esbuild</h1>
+            <blockquote>Bundle Size Analyzer</blockquote>
+          </div>
+        </div>
+        <p>
+          This is a modified version of the esbuild bundle analyzer, for storybook's purpose we
+          added a postMessage listener to receive the metafile from the parent window.
+        </p>
+        <p>
+          If you see this message, it means that the iframe hasn't received the metafile yet. It can
+          take a little while to load, for large meta-files, but check the browser console for any
+          errors, if it persists.
+        </p>
+        <p class="center" hidden>
+          <button id="importButton">Import your metafile...</button>
+        </p>
+        <p hidden>
+          Or you can <a href="javascript:void 0" id="loadExample">load an example</a> to play around
+          with the visualization.
+        </p>
+        <noscript>
+          <p class="noscript">
+            &#x274C; This page requires JavaScript. Please enable JavaScript and reload the page.
+          </p>
+        </noscript>
+      </section>
+    </div>
+    <div id="resultsPanel">
+      <div id="summaryPanel"></div>
+      <div id="warningsPanel"></div>
+      <div id="settingsPanel">
+        <div class="chartSwitcher">
+          <span><a id="useTreemap" href="javascript:void 0">Treemap Chart</a></span>
+          <span><a id="useSunburst" href="javascript:void 0">Sunburst Chart</a></span>
+          <span><a id="useFlame" href="javascript:void 0">Flame Chart</a></span>
+        </div>
+      </div>
+      <div id="chartPanel"></div>
+    </div>
+    <script src="./index.js"></script>
+  </body>
+</html>

@@ -1,10 +1,6 @@
 import * as React from 'react';
 
-import {
-  type ArgTypesExtractor,
-  enhanceArgTypes,
-  extractComponentDescription,
-} from 'storybook/internal/docs-tools';
+import { enhanceArgTypes, extractComponentDescription } from 'storybook/internal/docs-tools';
 import type { ArgTypesEnhancer } from 'storybook/internal/types';
 
 import semver from 'semver';
@@ -34,16 +30,7 @@ export const decorators: Decorator[] = [
   },
 ];
 
-export const parameters: {
-  renderer: 'react';
-  docs: {
-    story: {
-      inline: boolean;
-    };
-    extractArgTypes: ArgTypesExtractor;
-    extractComponentDescription: (component?: any) => string;
-  };
-} = {
+export const parameters = {
   renderer: 'react',
   docs: {
     story: { inline: true },

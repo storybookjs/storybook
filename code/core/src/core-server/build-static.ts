@@ -217,15 +217,19 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
             storyIndex: summarizeIndex(storyIndex),
           });
         }
-        await telemetry('build', payload, { configDir: options.configDir });
+
+        const telemetryJobs = [telemetry('build', payload, { configDir: options.configDir })];
 
         if (process.env.BUILD_ENV_FOR_TESTING) {
-          telemetry(
-            'test-run',
-            { runner: process.env.BUILD_ENV_FOR_TESTING, watch: false },
-            { configDir: options.configDir }
+          telemetryJobs.push(
+            telemetry(
+              'test-run',
+              { runner: process.env.BUILD_ENV_FOR_TESTING, watch: false },
+              { configDir: options.configDir }
+            )
           );
         }
+        await Promise.all(telemetryJobs);
       })
     );
   }

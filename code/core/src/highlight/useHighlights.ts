@@ -5,6 +5,7 @@ import { STORY_RENDER_PHASE_CHANGED } from 'storybook/internal/core-events';
 import {
   HIGHLIGHT,
   MAX_Z_INDEX,
+  MIN_TOUCH_AREA_SIZE,
   REMOVE_HIGHLIGHT,
   RESET_HIGHLIGHT,
   SCROLL_INTO_VIEW,
@@ -174,7 +175,9 @@ export const useHighlights = (channel: Channel) => {
           'data-highlight-dimensions': `w${box.width.toFixed(0)}h${box.height.toFixed(0)}`,
           'data-highlight-coordinates': `x${box.left.toFixed(0)}y${box.top.toFixed(0)}`,
         };
-        boxElement = root.appendChild(createElement('div', props) as HTMLDivElement);
+        boxElement = root.appendChild(
+          createElement('div', props, [createElement('div')]) as HTMLDivElement
+        );
         boxElementByTargetElement.set(box.element, boxElement);
       }
     });
@@ -274,8 +277,20 @@ export const useHighlights = (channel: Channel) => {
           height: `${box.height}px`,
           margin: 0,
           padding: 0,
-          cursor: box.menu ? 'pointer' : 'default',
+          cursor: box.menu && isHovered ? 'pointer' : 'default',
           pointerEvents: box.menu ? 'auto' : 'none',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'visible',
+        });
+        Object.assign((boxElement.children[0] as HTMLDivElement).style, {
+          width: '100%',
+          height: '100%',
+          minHeight: `${MIN_TOUCH_AREA_SIZE}px`,
+          minWidth: `${MIN_TOUCH_AREA_SIZE}px`,
+          boxSizing: 'content-box',
+          padding: boxElement.style.outlineWidth || '0px',
         });
 
         showPopover(boxElement);

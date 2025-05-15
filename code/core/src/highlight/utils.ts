@@ -1,4 +1,5 @@
 /* eslint-env browser */
+import { MIN_TOUCH_AREA_SIZE } from './constants';
 import { type IconName, iconPaths } from './icons';
 import type {
   Box,
@@ -216,13 +217,13 @@ export const isTargeted = (
     return false;
   }
   let { left, top, width, height } = box;
-  if (height < 28) {
-    top = top - Math.round((28 - height) / 2);
-    height = 28;
+  if (height < MIN_TOUCH_AREA_SIZE) {
+    top = top - Math.round((MIN_TOUCH_AREA_SIZE - height) / 2);
+    height = MIN_TOUCH_AREA_SIZE;
   }
-  if (width < 28) {
-    left = left - Math.round((28 - width) / 2);
-    width = 28;
+  if (width < MIN_TOUCH_AREA_SIZE) {
+    left = left - Math.round((MIN_TOUCH_AREA_SIZE - width) / 2);
+    width = MIN_TOUCH_AREA_SIZE;
   }
   if (boxElement.style.position === 'fixed') {
     left += window.scrollX;

@@ -5,6 +5,7 @@ import { STORY_RENDER_PHASE_CHANGED } from 'storybook/internal/core-events';
 import {
   HIGHLIGHT,
   MAX_Z_INDEX,
+  MIN_TOUCH_AREA_SIZE,
   REMOVE_HIGHLIGHT,
   RESET_HIGHLIGHT,
   SCROLL_INTO_VIEW,
@@ -286,8 +287,8 @@ export const useHighlights = (channel: Channel) => {
         Object.assign((boxElement.children[0] as HTMLDivElement).style, {
           width: '100%',
           height: '100%',
-          minHeight: '28px',
-          minWidth: '28px',
+          minHeight: `${MIN_TOUCH_AREA_SIZE}px`,
+          minWidth: `${MIN_TOUCH_AREA_SIZE}px`,
           boxSizing: 'content-box',
           padding: boxElement.style.outlineWidth || '0px',
         });

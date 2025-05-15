@@ -434,7 +434,7 @@ jobs:
       parallelism:
         type: integer
     executor:
-      class: medium+
+      class: large
       name: sb_playwright
     parallelism: << parameters.parallelism >>
     steps:
@@ -447,6 +447,10 @@ jobs:
           command: |
             TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner)
             cd sandbox/$(yarn get-sandbox-dir --template $TEMPLATE) && yarn
+      - store_artifacts:
+          when: on_fail
+          path: sandbox/$(yarn get-sandbox-dir --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner))/storybook-static
+          destination: storybook-static
       - run:
           name: Running Test Runner
           command: yarn task --task test-runner --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner) --no-link --start-from=never --junit
@@ -817,10 +821,10 @@ workflows:
       - lint:
           requires:
             - build
-# TODO: don't forget to reenable this
-#      - bench-packages:
-#          requires:
-#            - build
+      # TODO: don't forget to reenable this
+      #      - bench-packages:
+      #          requires:
+      #            - build
       - check
       - unit-tests:
           requires:
@@ -861,11 +865,11 @@ workflows:
           parallelism: 5
           requires:
             - create-sandboxes
-# TODO: don't forget to reenable this
-#      - bench-sandboxes:
-#          parallelism: 5
-#          requires:
-#            - create-sandboxes
+      # TODO: don't forget to reenable this
+      #      - bench-sandboxes:
+      #          parallelism: 5
+      #          requires:
+      #            - create-sandboxes
       - test-ui-testing-module:
           requires:
             - build
@@ -891,10 +895,10 @@ workflows:
       - lint:
           requires:
             - build
-# TODO: don't forget to reenable this
-#      - bench-packages:
-#          requires:
-#            - build
+      # TODO: don't forget to reenable this
+      #      - bench-packages:
+      #          requires:
+      #            - build
       - check
       - unit-tests:
           requires:
@@ -947,16 +951,16 @@ workflows:
       - test-init-features:
           requires:
             - build
-# TODO: don't forget to reenable this
-#      - bench-sandboxes:
-#          parallelism: 5
-#          requires:
-#            - create-sandboxes
-      # TODO: reenable once we find out the source of flakyness
-      # - test-runner-dev:
-      #     parallelism: 4
-      #     requires:
-      #       - create-sandboxes
+  # TODO: don't forget to reenable this
+  #      - bench-sandboxes:
+  #          parallelism: 5
+  #          requires:
+  #            - create-sandboxes
+  # TODO: reenable once we find out the source of flakyness
+  # - test-runner-dev:
+  #     parallelism: 4
+  #     requires:
+  #       - create-sandboxes
   daily:
     when:
       equal: [daily, << pipeline.parameters.workflow >>]
@@ -966,10 +970,10 @@ workflows:
       - lint:
           requires:
             - build
-# TODO: don't forget to reenable this
-#      - bench-packages:
-#          requires:
-#            - build
+      # TODO: don't forget to reenable this
+      #      - bench-packages:
+      #          requires:
+      #            - build
       - check
       - unit-tests:
           requires:
@@ -1046,8 +1050,8 @@ workflows:
 #          requires:
 #            - create-sandboxes
 
-      # TODO: reenable once we find out the source of flakyness
-      # - test-runner-dev:
-      #     parallelism: 4
-      #     requires:
-      #       - create-sandboxes
+# TODO: reenable once we find out the source of flakyness
+# - test-runner-dev:
+#     parallelism: 4
+#     requires:
+#       - create-sandboxes

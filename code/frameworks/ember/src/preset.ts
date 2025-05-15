@@ -12,7 +12,6 @@ const getAbsolutePath = <I extends string>(input: I): I =>
 
 export const addons: PresetProperty<'addons'> = [
   require.resolve('./server/framework-preset-babel-ember'),
-  require.resolve('./server/framework-preset-ember-docs'),
 ];
 
 export const webpackFinal: StorybookConfig['webpackFinal'] = async (baseConfig, options) => {

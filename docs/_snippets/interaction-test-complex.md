@@ -23,7 +23,7 @@ export const Submits: Story = {
     // Manipulate `getUsers` mock to return mocked value
     args.getUsers.mockResolvedValue(users);
   },
-  play: async ({ canvas, userEvent }) => {
+  play: async ({ args, canvas, userEvent }) => {
     const usersList = canvas.getAllByRole('listitem');
     await expect(usersList).toHaveLength(4);
     await expect(canvas.getAllByText('VIP')).toHaveLength(2);
@@ -35,7 +35,7 @@ export const Submits: Story = {
     await userEvent.click(submitButton);
 
     // Spy on `onSubmit` to verify that it is called correctly
-    await expect(onSubmit).toHaveBeenCalledWith({
+    await expect(args.onSubmit).toHaveBeenCalledWith({
       name: 'Holiday party',
       userCount: 4,
       data: expect.anything(),
@@ -64,7 +64,7 @@ export const Submits = {
     // Manipulate `getUsers` mock to return mocked value
     args.getUsers.mockResolvedValue(users);
   },
-  play: async ({ canvas, userEvent }) => {
+  play: async ({ args, canvas, userEvent }) => {
     const usersList = canvas.getAllByRole('listitem');
     await expect(usersList).toHaveLength(4);
     await expect(canvas.getAllByText('VIP')).toHaveLength(2);
@@ -76,7 +76,7 @@ export const Submits = {
     await userEvent.click(submitButton);
 
     // Spy on `onSubmit` to verify that it is called correctly
-    await expect(onSubmit).toHaveBeenCalledWith({
+    await expect(args.onSubmit).toHaveBeenCalledWith({
       name: 'Holiday party',
       userCount: 4,
       data: expect.anything(),

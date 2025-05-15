@@ -22,7 +22,7 @@ export const SaveFlow: Story = {
     isEditing: true,
     note: notes[0],
   },
-  play: async ({ canvas }) => {
+  play: async ({ canvas, userEvent }) => {
     const saveButton = canvas.getByRole('menuitem', { name: /done/i });
     await userEvent.click(saveButton);
     // 👇 This is the mock function, so you can assert its behavior
@@ -35,7 +35,7 @@ export const SaveFlow: Story = {
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
-  import { expect, userEvent, within } from 'storybook/test';
+  import { expect } from 'storybook/test';
 
   // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
   import { saveNote } from '#app/actions.mock';
@@ -55,9 +55,7 @@ export const SaveFlow: Story = {
 
 <Story name="Save Flow ▶"
   args={{ isEditing: true, note: notes[0] }}
-  play={async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-
+  play={async ({ canvas, userEvent }) => {
     const saveButton = canvas.getByRole('menuitem', { name: /done/i });
     await userEvent.click(saveButton);
     // 👇 This is the mock function, so you can assert its behavior
@@ -66,7 +64,7 @@ export const SaveFlow: Story = {
 ```
 
 ```js filename="NoteUI.stories.js" renderer="svelte" language="js" tabTitle="CSF"
-import { expect, userEvent, within } from 'storybook/test';
+import { expect } from 'storybook/test';
 
 import { saveNote } from '#app/actions.mock';
 import { createNotes } from '#mocks/notes';
@@ -86,9 +84,7 @@ export const SaveFlow = {
     isEditing: true,
     note: notes[0],
   },
-  play: async ({ canvasElement, step }) => {
-    const canvas = within(canvasElement);
-
+  play: async ({ canvas, userEvent }) => {
     const saveButton = canvas.getByRole('menuitem', { name: /done/i });
     await userEvent.click(saveButton);
     // 👇 This is the mock function, so you can assert its behavior
@@ -128,7 +124,7 @@ export const SaveFlow = {
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
-  import { expect, userEvent, within } from 'storybook/test';
+  import { expect } from 'storybook/test';
 
   // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
   import { saveNote } from '#app/actions.mock';
@@ -148,9 +144,7 @@ export const SaveFlow = {
 
 <Story name="Save Flow ▶"
   args={{ isEditing: true, note: notes[0] }}
-  play={async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-
+  play={async ({ canvas, userEvent }) => {
     const saveButton = canvas.getByRole('menuitem', { name: /done/i });
     await userEvent.click(saveButton);
     // 👇 This is the mock function, so you can assert its behavior
@@ -162,7 +156,7 @@ export const SaveFlow = {
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
-import { expect, userEvent, within } from 'storybook/test';
+import { expect } from 'storybook/test';
 
 // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
 import { saveNote } from '#app/actions.mock';
@@ -186,7 +180,7 @@ export const SaveFlow: Story = {
     isEditing: true,
     note: notes[0],
   },
-  play: async ({ canvasElement, step }) => {
+  play: async ({ canvas, userEvent }) => {
     const canvas = within(canvasElement);
 
     const saveButton = canvas.getByRole('menuitem', { name: /done/i });
@@ -222,7 +216,7 @@ export const SaveFlow: Story = {
     isEditing: true,
     note: notes[0],
   },
-  play: async ({ canvas }) => {
+  play: async ({ canvas, userEvent }) => {
     const saveButton = canvas.getByRole('menuitem', { name: /done/i });
     await userEvent.click(saveButton);
     // 👇 This is the mock function, so you can assert its behavior
@@ -249,7 +243,7 @@ export const SaveFlow = {
     isEditing: true,
     note: notes[0],
   },
-  play: async ({ canvas }) => {
+  play: async ({ canvas, userEvent }) => {
     const saveButton = canvas.getByRole('menuitem', { name: /done/i });
     await userEvent.click(saveButton);
     // 👇 This is the mock function, so you can assert its behavior
@@ -282,7 +276,7 @@ export const SaveFlow: Story = {
     isEditing: true,
     note: notes[0],
   },
-  play: async ({ canvas }) => {
+  play: async ({ canvas, userEvent }) => {
     const saveButton = canvas.getByRole('menuitem', { name: /done/i });
     await userEvent.click(saveButton);
     // 👇 This is the mock function, so you can assert its behavior

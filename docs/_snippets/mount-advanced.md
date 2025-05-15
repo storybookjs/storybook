@@ -1,5 +1,5 @@
 ```tsx filename="Page.stories.tsx" renderer="react" language="ts"
-// Replace your-frame with the framework you are using, e.g., react-vite, nextjs, nextjs-vite, etc.
+// Replace your-framework with the framework you are using, e.g., react-vite, nextjs, nextjs-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
 // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
@@ -61,7 +61,7 @@ export const Default = {
 ```
 
 ```ts filename="Page.stories.ts" renderer="svelte" language="ts"
-// Replace your-frame with the framework you are using, e.g., svelte-vite, sveltekit, etc.
+// Replace your-framework with the framework you are using, e.g., svelte-vite, sveltekit, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
 // 👇 Must include the `.mock` portion of filename to have mocks typed correctly

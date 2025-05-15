@@ -75,7 +75,7 @@ Putting that altogether, some typical queries might look like:
 
 ```js
 // Find the first element with a role of button with the accessible name "Submit"
-await canvas.findByRole('button', { name: 'Submit' };
+await canvas.findByRole('button', { name: 'Submit' });
 
 // Get the first element with the text "An example heading"
 canvas.getByText('An example heading');
@@ -94,8 +94,8 @@ There are many methods available on `userEvent`, which are detailed in the [`use
 | ----------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | `click`           | Clicks the element, calling a click() function<br />`await userEvent.click(<element>)`                                   |
 | `dblClick`        | Clicks the element twice<br />`await userEvent.dblClick(<element>)`                                                      |
-| `hover`           | Hovers an element<br />`await serEvent.hover(<element>)`                                                                 |
-| `unhover`         | Unhovers out of element<br />`await serEvent.unhover(<element>)`                                                         |
+| `hover`           | Hovers an element<br />`await userEvent.hover(<element>)`                                                                 |
+| `unhover`         | Unhovers out of element<br />`await userEvent.unhover(<element>)`                                                         |
 | `tab`             | Presses the tab key<br />`await userEvent.tab()`                                                                         |
 | `type`            | Writes text inside inputs or textareas<br />`await userEvent.type(<element>, 'Some text');`                              |
 | `keyboard`        | Simulates keyboard events<br />`await userEvent.keyboard('{Shift}');`                                                    |
@@ -286,7 +286,7 @@ Streamline interaction testing further by automatically [publishing Storybook](.
 
 ## Automate
 
-When you run your tests with the Vitest addon, automating those tests is as simple as running your tests in your CI environment. Please see the [testing in CI guide](./ci.mdx) for more information.
+When you run your tests with the Vitest addon, automating those tests is as simple as running your tests in your CI environment. Please see the [testing in CI guide](./in-ci.mdx) for more information.
 
 If you cannot use the Vitest addon, you can still run your tests in CI using the [test-runner](./integrations/test-runner.mdx).
 
@@ -307,7 +307,7 @@ Interaction tests integrate Vitest and Testing Library into Storybook. The bigge
 * [Visual testing](./visual-testing.mdx) for appearance
 * [Snapshot testing](./snapshot-testing.mdx) for rendering errors and warnings
 * [Test coverage](./test-coverage.mdx) for measuring code coverage
-* [CI](./ci.mdx) for running tests in your CI/CD pipeline
+* [CI](./in-ci.mdx) for running tests in your CI/CD pipeline
 * [End-to-end testing](./integrations/stories-in-end-to-end-tests.mdx) for simulating real user scenarios
 * [Unit testing](./integrations/stories-in-unit-tests.mdx) for functionality
 * [Test runner](./integrations/test-runner.mdx) to automate test execution

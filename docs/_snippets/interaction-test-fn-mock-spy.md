@@ -11,7 +11,7 @@ const meta = {
     // 👇 Use `fn` to spy on the onSubmit arg
     onSubmit: fn(),
   },
-} satisfies Meta<typeof Form>;
+} satisfies Meta<typeof LoginForm>;
 export default meta;
 
 type Story = StoryObj<typeof meta>;

@@ -416,7 +416,7 @@ const Node = React.memo<NodeProps>(function Node({
         <BranchNode
           id={id}
           style={color ? { color } : {}}
-          aria-controls={item.children && item.children[0]}
+          aria-controls={item.children.join(' ')}
           aria-expanded={isExpanded}
           depth={isOrphan ? item.depth : item.depth - 1}
           isComponent={item.type === 'component'}

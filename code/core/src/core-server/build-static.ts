@@ -218,6 +218,14 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
           });
         }
         await telemetry('build', payload, { configDir: options.configDir });
+
+        if (process.env.BUILD_ENV_FOR_TESTING) {
+          telemetry(
+            'test-run',
+            { runner: process.env.BUILD_ENV_FOR_TESTING, watch: false },
+            { configDir: options.configDir }
+          );
+        }
       })
     );
   }

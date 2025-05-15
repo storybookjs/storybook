@@ -10,7 +10,7 @@ import type {
 
 const svgElements = 'svg,path,rect,circle,line,polyline,polygon,ellipse,text'.split(',');
 
-export const createElement = (type: string, props: Record<string, any>, children?: any[]) => {
+export const createElement = (type: string, props: Record<string, any> = {}, children?: any[]) => {
   const element = svgElements.includes(type)
     ? document.createElementNS('http://www.w3.org/2000/svg', type)
     : document.createElement(type);
@@ -216,11 +216,13 @@ export const isTargeted = (
     return false;
   }
   let { left, top, width, height } = box;
-  if (height === 0 || width === 0) {
-    left -= 10;
-    top -= 10;
-    width += 20;
-    height += 20;
+  if (height < 28) {
+    top = top - Math.round((28 - height) / 2);
+    height = 28;
+  }
+  if (width < 28) {
+    left = left - Math.round((28 - width) / 2);
+    width = 28;
   }
   if (boxElement.style.position === 'fixed') {
     left += window.scrollX;

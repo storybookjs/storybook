@@ -5,7 +5,8 @@ import { SbPage } from "../../../../code/e2e-tests/util";
 const STORYBOOK_URL = "http://localhost:6006";
 
 test.describe("composition", () => {
-  test.describe.configure({ mode: "serial" });
+  // the composed storybook can be slow to load, so we need to increase the timeout
+  test.describe.configure({ mode: "serial", timeout: 60000, retries: 2 });
   test("should filter and render composed stories", async ({ page }) => {
     await page.goto(STORYBOOK_URL);
     await new SbPage(page, expect).waitUntilLoaded();

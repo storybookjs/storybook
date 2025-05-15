@@ -181,8 +181,6 @@ export const SaveFlow: Story = {
     note: notes[0],
   },
   play: async ({ canvas, userEvent }) => {
-    const canvas = within(canvasElement);
-
     const saveButton = canvas.getByRole('menuitem', { name: /done/i });
     await userEvent.click(saveButton);
     // 👇 This is the mock function, so you can assert its behavior

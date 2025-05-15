@@ -41,7 +41,7 @@ export const Submitted: Story = {
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
-  import { userEvent, waitFor, within, expect, fn } from 'storybook/test';
+  import { expect, fn, waitFor } from 'storybook/test';
 
   import Form from './Form.svelte';
 
@@ -56,13 +56,11 @@ export const Submitted: Story = {
 
 <!--
   See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
-  to learn more about using the canvasElement to query the DOM
+  to learn more about using the canvas to query the DOM
  -->
 <Story
   name="Submitted"
-  play={async ({ args, canvasElement, step }) => {
-    const canvas = within(canvasElement);
-
+  play={async ({ args, canvas, step, userEvent }) => {
     await step('Enter credentials', async () => {
       await userEvent.type(canvas.getByTestId('email'), 'hi@example.com');
       await userEvent.type(canvas.getByTestId('password'), 'supersecret');
@@ -79,7 +77,7 @@ export const Submitted: Story = {
 ```
 
 ```js filename="Form.stories.js" renderer="svelte" language="js" tabTitle="CSF"
-import { userEvent, waitFor, within, expect, fn } from 'storybook/test';
+import { expect, fn, waitFor } from 'storybook/test';
 
 import Form from './Form.svelte';
 
@@ -93,13 +91,11 @@ export default {
 
 /*
  * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
- * to learn more about using the canvasElement to query the DOM
+ * to learn more about using the canvas to query the DOM
  */
 export const Submitted = {
-  play: async ({ args, canvasElement, step }) => {
+  play: async ({ args, canvas, step, userEvent }) => {
     // Starts querying the component from its root element
-    const canvas = within(canvasElement);
-
     await step('Enter credentials', async () => {
       await userEvent.type(canvas.getByTestId('email'), 'hi@example.com');
       await userEvent.type(canvas.getByTestId('password'), 'supersecret');
@@ -154,7 +150,7 @@ export const Submitted = {
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
-  import { userEvent, waitFor, within, expect, fn } from 'storybook/test';
+  import { expect, fn, waitFor } from 'storybook/test';
 
   import Form from './Form.svelte';
 
@@ -169,13 +165,11 @@ export const Submitted = {
 
 <!--
   See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
-  to learn more about using the canvasElement to query the DOM
+  to learn more about using the canvas to query the DOM
  -->
 <Story
   name="Submitted"
-  play={async ({ args, canvasElement, step }) => {
-    const canvas = within(canvasElement);
-
+  play={async ({ args, canvas, step, userEvent }) => {
     await step('Enter credentials', async () => {
       await userEvent.type(canvas.getByTestId('email'), 'hi@example.com');
       await userEvent.type(canvas.getByTestId('password'), 'supersecret');
@@ -195,7 +189,7 @@ export const Submitted = {
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
-import { userEvent, waitFor, within, expect, fn } from 'storybook/test';
+import { expect, fn, waitFor } from 'storybook/test';
 
 import Form from './Form.svelte';
 
@@ -212,12 +206,10 @@ type Story = StoryObj<typeof meta>;
 
 /*
  * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
- * to learn more about using the canvasElement to query the DOM
+ * to learn more about using the canvas to query the DOM
  */
 export const Submitted: Story = {
-  play: async ({ args, canvasElement, step }) => {
-    const canvas = within(canvasElement);
-
+  play: async ({ args, canvas, step, userEvent }) => {
     await step('Enter credentials', async () => {
       await userEvent.type(canvas.getByTestId('email'), 'hi@example.com');
       await userEvent.type(canvas.getByTestId('password'), 'supersecret');

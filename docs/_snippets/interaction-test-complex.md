@@ -1,7 +1,7 @@
 ```ts filename="EventForm.stories.ts" renderer="common" language="ts"
 // Replace your-framework with the name of your framework (e.g. react-vite, vue3-vite, angular, etc.)
 import type { Meta, StoryObj } from '@storybook/your-framework';
-import { fn, expect } from '@storybook/test';
+import { fn, expect } from 'storybook/test';
 
 import { users } from '#mocks';
 import { EventForm } from './EventForm';

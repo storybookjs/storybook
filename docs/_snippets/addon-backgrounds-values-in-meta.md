@@ -70,28 +70,7 @@ export default {
 };
 ```
 
-```ts filename="Button.stories.tsx" renderer="react" language="ts"
-import type { Meta } from '@storybook/react';
-
-import { Button } from './Button';
-
-const meta: Meta<typeof Button> = {
-  component: Button,
-  parameters: {
-    backgrounds: {
-      default: 'Light',
-      values: [
-        // 👇 Add a new value
-        { name: 'Gray', value: '#CCC' },
-      ],
-    },
-  },
-};
-
-export default meta;
-```
-
-```ts filename="Button.stories.ts|tsx" renderer="react" language="ts-4-9"
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts"
 import type { Meta } from '@storybook/react';
 
 import { Button } from './Button';
@@ -134,27 +113,6 @@ import type { Meta } from '@storybook/vue3';
 
 import Button from './Button.vue';
 
-const meta: Meta<typeof Button> = {
-  component: Button,
-  parameters: {
-    backgrounds: {
-      default: 'Light',
-      values: [
-        // 👇 Add a new value
-        { name: 'Gray', value: '#CCC' },
-      ],
-    },
-  },
-};
-
-export default meta;
-```
-
-```ts filename="Button.stories.ts" renderer="vue" language="ts-4-9"
-import type { Meta } from '@storybook/vue3';
-
-import Button from './Button.vue';
-
 const meta = {
   component: Button,
   parameters: {
@@ -189,27 +147,6 @@ export default {
 ```
 
 ```ts filename="Button.stories.ts" renderer="svelte" language="ts"
-import type { Meta } from '@storybook/svelte';
-
-import Button from './Button.svelte';
-
-const meta: Meta<typeof Button> = {
-  component: Button,
-  parameters: {
-    backgrounds: {
-      default: 'Light',
-      values: [
-        // 👇 Add a new value
-        { name: 'Gray', value: '#CCC' },
-      ],
-    },
-  },
-};
-
-export default meta;
-```
-
-```ts filename="Button.stories.ts" renderer="svelte" language="ts-4-9"
 import type { Meta } from '@storybook/svelte';
 
 import Button from './Button.svelte';

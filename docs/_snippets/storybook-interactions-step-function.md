@@ -28,21 +28,6 @@ export const Submitted = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="common" language="ts-4-9"
-export const Submitted: Story = {
-  play: async ({ args, canvas, step }) => {
-    await step('Enter email and password', async () => {
-      await userEvent.type(canvas.getByTestId('email'), 'hi@example.com');
-      await userEvent.type(canvas.getByTestId('password'), 'supersecret');
-    });
-
-    await step('Submit form', async () => {
-      await userEvent.click(canvas.getByRole('button'));
-    });
-  },
-};
-```
-
 ```ts filename="MyComponent.stories.ts" renderer="common" language="ts"
 export const Submitted: Story = {
   play: async ({ args, canvas, step }) => {

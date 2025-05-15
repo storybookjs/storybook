@@ -3,15 +3,15 @@
 
 import { describe, expect, test } from 'vitest';
 
-// Replace your-renderer with the renderer you are using (e.g., react, vue3, svelte, etc.)
-import { composeStories } from '@storybook/your-renderer';
+// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
+import { composeStories } from '@storybook/your-framework';
 
 const compose = (entry) => {
   try {
     return composeStories(entry);
   } catch (e) {
     throw new Error(
-      `There was an issue composing stories for the module: ${JSON.stringify(entry)}, ${e}`,
+      `There was an issue composing stories for the module: ${JSON.stringify(entry)}, ${e}`
     );
   }
 };
@@ -21,7 +21,7 @@ function getAllStoryFiles() {
   const storyFiles = Object.entries(
     import.meta.glob('./stories/**/*.(stories|story).@(js|jsx|mjs|ts|tsx)', {
       eager: true,
-    }),
+    })
   );
 
   return storyFiles.map(([filePath, storyFile]) => {
@@ -60,7 +60,7 @@ describe(options.suite, () => {
 
       if (stories.length <= 0) {
         throw new Error(
-          `No stories found for this module: ${title}. Make sure there is at least one valid story for this module, without a disable parameter, or add parameters.storyshots.disable in the default export of this file.`,
+          `No stories found for this module: ${title}. Make sure there is at least one valid story for this module, without a disable parameter, or add parameters.storyshots.disable in the default export of this file.`
         );
       }
 
@@ -89,8 +89,8 @@ import type { Meta, StoryFn } from '@storybook/your-framework';
 
 import { describe, expect, test } from 'vitest';
 
-// Replace your-renderer with the renderer you are using (e.g., react, vue3, svelte, etc.)
-import { composeStories } from '@storybook/your-renderer';
+// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
+import { composeStories } from '@storybook/your-framework';
 
 type StoryFile = {
   default: Meta;
@@ -102,7 +102,7 @@ const compose = (entry: StoryFile): ReturnType<typeof composeStories<StoryFile>>
     return composeStories(entry);
   } catch (e) {
     throw new Error(
-      `There was an issue composing stories for the module: ${JSON.stringify(entry)}, ${e}`,
+      `There was an issue composing stories for the module: ${JSON.stringify(entry)}, ${e}`
     );
   }
 };
@@ -112,7 +112,7 @@ function getAllStoryFiles() {
   const storyFiles = Object.entries(
     import.meta.glob<StoryFile>('./stories/**/*.(stories|story).@(js|jsx|mjs|ts|tsx)', {
       eager: true,
-    }),
+    })
   );
 
   return storyFiles.map(([filePath, storyFile]) => {
@@ -151,7 +151,7 @@ describe(options.suite, () => {
 
       if (stories.length <= 0) {
         throw new Error(
-          `No stories found for this module: ${title}. Make sure there is at least one valid story for this module, without a disable parameter, or add parameters.storyshots.disable in the default export of this file.`,
+          `No stories found for this module: ${title}. Make sure there is at least one valid story for this module, without a disable parameter, or add parameters.storyshots.disable in the default export of this file.`
         );
       }
 

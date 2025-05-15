@@ -37,7 +37,7 @@ export const NonA11yStory = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts-4-9"
+```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts"
 import type { Meta, StoryObj } from '@storybook/react';
 
 import { MyComponent } from './MyComponent';
@@ -48,28 +48,6 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-export const NonA11yStory: Story = {
-  globals: {
-    a11y: {
-      // This option disables all automatic a11y checks on this story
-      manual: true,
-    },
-  },
-};
-```
-
-```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts"
-import type { Meta, StoryObj } from '@storybook/react';
-
-import { MyComponent } from './MyComponent';
-
-const meta: Meta<typeof MyComponent> = {
-  component: MyComponent,
-};
-
-export default meta;
-type Story = StoryObj<typeof MyComponent>;
 
 export const NonA11yStory: Story = {
   globals: {
@@ -120,50 +98,6 @@ export const NonA11yStory = {
 };
 ```
 
-```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
-<script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
-
-  import MyComponent from './MyComponent.svelte';
-
-  const { Story } = defineMeta({
-    component: MyComponent,
-  });
-</script>
-
-<Story
-  name="NonA11yStory"
-  globals={{
-    a11y: {
-      // This option disables all automatic a11y checks on this story
-      manual: true,
-    },
-  }}
-/>
-```
-
-```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="CSF"
-import type { Meta, StoryObj } from '@storybook/svelte';
-
-import MyComponent from './MyComponent.svelte';
-
-const meta = {
-  component: MyComponent,
-} satisfies Meta<typeof MyComponent>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const NonA11yStory: Story = {
-  globals: {
-    a11y: {
-      // This option disables all automatic a11y checks on this story
-      manual: true,
-    },
-  },
-};
-```
-
 ```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
@@ -191,9 +125,9 @@ import type { Meta, StoryObj } from '@storybook/svelte';
 
 import MyComponent from './MyComponent.svelte';
 
-const meta: Meta<typeof MyComponent> = {
+const meta = {
   component: MyComponent,
-};
+} satisfies Meta<typeof MyComponent>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -225,7 +159,7 @@ export const NonA11yStory = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="vue" language="ts-4-9"
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts"
 import type { Meta, StoryObj } from '@storybook/vue3';
 
 import MyComponent from './MyComponent.vue';
@@ -236,28 +170,6 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-export const NonA11yStory: Story = {
-  globals: {
-    a11y: {
-      // This option disables all automatic a11y checks on this story
-      manual: true,
-    },
-  },
-};
-```
-
-```ts filename="MyComponent.stories.ts" renderer="vue" language="ts"
-import type { Meta, StoryObj } from '@storybook/vue3';
-
-import MyComponent from './MyComponent.vue';
-
-const meta: Meta<typeof MyComponent> = {
-  component: MyComponent,
-};
-
-export default meta;
-type Story = StoryObj<typeof MyComponent>;
 
 export const NonA11yStory: Story = {
   globals: {

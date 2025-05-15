@@ -185,7 +185,7 @@ export const FilledForm: Story = {
 
 <!--
   See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
-  to learn more about using the canvasElement to query the DOM
+  to learn more about using the canvas to query the DOM
 -->
 <Story
   name="FilledForm"
@@ -256,7 +256,7 @@ export const FilledForm = {
 
 <!--
   See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
-  to learn more about using the canvasElement to query the DOM
+  to learn more about using the canvas to query the DOM
 -->
 <Story
   name="FilledForm"

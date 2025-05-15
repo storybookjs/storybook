@@ -23,7 +23,7 @@ export const IndividualA11yRulesExample: Story = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="common" language="ts-4-9"
+```js filename="Button.stories.js" renderer="common" language="js"
 // ...rest of story file
 
 export const IndividualA11yRulesExample = {

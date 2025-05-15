@@ -1,7 +1,7 @@
 ```ts filename="Dialog.stories.ts" renderer="common" language="ts"
 // Replace your-framework with the name of your framework (e.g. react-vite, vue3-vite, angular, etc.)
 import type { Meta, StoryObj } from '@storybook/your-framework';
-import { expect } from '@storybook/test';
+import { expect } from 'storybook/test';
 
 import { Dialog } from './Dialog';
 

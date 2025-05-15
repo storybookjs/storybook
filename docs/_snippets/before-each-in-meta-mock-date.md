@@ -55,7 +55,7 @@ export const Default: Story = {
   });
 </script>
 
-<Story name="Default" play={async ({ canvasElement }) => {
+<Story name="Default" play={async ({ canvas }) => {
   // ... This will run with the mocked Date
   }}
 />
@@ -82,7 +82,7 @@ export default {
 };
 
 export const Default = {
-  async play({ canvasElement }) {
+  async play({ canvas }) {
     // ... This will run with the mocked Date
   },
 };
@@ -139,7 +139,7 @@ export const Default = {
   });
 </script>
 
-<Story name="Default" play={async ({ canvasElement }) => {
+<Story name="Default" play={async ({ canvas }) => {
   // ... This will run with the mocked Date
   }}
 />
@@ -172,7 +172,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
-  async play({ canvasElement }) {
+  async play({ canvas }) {
     // ... This will run with the mocked Date
   },
 };

@@ -12,5 +12,6 @@ export const parameters = {
       type: SourceType.DYNAMIC,
       language: 'html',
     },
+    story: { inline: true },
   },
 };

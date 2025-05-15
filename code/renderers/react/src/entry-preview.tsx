@@ -1,13 +1,9 @@
 import * as React from 'react';
 
-import { enhanceArgTypes, extractComponentDescription } from 'storybook/internal/docs-tools';
-import type { ArgTypesEnhancer } from 'storybook/internal/types';
-
 import semver from 'semver';
 
 import { getAct, getReactActEnvironment, setReactActEnvironment } from './act-compat';
-import { extractArgTypes } from './extractArgTypes';
-import type { Decorator, ReactRenderer } from './public-types';
+import type { Decorator } from './public-types';
 
 export { render } from './render';
 export { renderToCanvas } from './renderToCanvas';
@@ -30,16 +26,10 @@ export const decorators: Decorator[] = [
   },
 ];
 
+console.log('entry-preview.tsx');
 export const parameters = {
   renderer: 'react',
-  docs: {
-    story: { inline: true },
-    extractArgTypes,
-    extractComponentDescription,
-  },
 };
-
-export const argTypesEnhancers: ArgTypesEnhancer<ReactRenderer>[] = [enhanceArgTypes];
 
 export const beforeAll = async () => {
   try {

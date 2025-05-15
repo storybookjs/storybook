@@ -1,25 +1,21 @@
 ```ts filename="RegistrationForm.stories.ts" renderer="angular" language="ts"
 import type { Meta, StoryObj } from '@storybook/angular';
 
-import { userEvent, within } from 'storybook/test';
-
 import { RegistrationForm } from './RegistrationForm.component';
 
 const meta: Meta<RegistrationForm> = {
   component: RegistrationForm,
 };
-
 export default meta;
+
 type Story = StoryObj<RegistrationForm>;
 
 /*
  * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
- * to learn more about using the canvasElement to query the DOM
+ * to learn more about using the canvas to query the DOM
  */
 export const FilledForm: Story = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-
+  play: async ({ canvas, userEvent }) => {
     const emailInput = canvas.getByLabelText('email', {
       selector: 'input',
     });
@@ -35,9 +31,8 @@ export const FilledForm: Story = {
     await userEvent.type(passwordInput, 'ExamplePassword', {
       delay: 100,
     });
-    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
-    const submitButton = canvas.getByRole('button');
 
+    const submitButton = canvas.getByRole('button');
     await userEvent.click(submitButton);
   },
 };
@@ -47,8 +42,6 @@ export const FilledForm: Story = {
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
-  import { userEvent, within } from 'storybook/test';
-
   import RegistrationForm from './RegistrationForm.svelte';
 
   const { Story } = defineMeta({
@@ -58,13 +51,11 @@ export const FilledForm: Story = {
 
 <!--
   See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
-  to learn more about using the canvasElement to query the DOM
+  to learn more about using the canvas to query the DOM
 -->
 <Story
   name="FilledForm"
-  play={async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-
+  play={async ({ canvas, userEvent }) => {
     const emailInput = canvas.getByLabelText('email', {
       selector: 'input',
     });
@@ -81,17 +72,13 @@ export const FilledForm: Story = {
       delay: 100,
     });
 
-    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
     const submitButton = canvas.getByRole('button');
-
     await userEvent.click(submitButton);
   }}
 />
 ```
 
 ```js filename="RegistrationForm.stories.js" renderer="svelte" language="js" tabTitle="CSF"
-import { userEvent, within } from 'storybook/test';
-
 import RegistrationForm from './RegistrationForm.svelte';
 
 export default {
@@ -100,12 +87,10 @@ export default {
 
 /*
  * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
- * to learn more about using the canvasElement to query the DOM
+ * to learn more about using the canvas to query the DOM
  */
 export const FilledForm = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-
+  play: async ({ canvas, userEvent }) => {
     const emailInput = canvas.getByLabelText('email', {
       selector: 'input',
     });
@@ -121,17 +106,14 @@ export const FilledForm = {
     await userEvent.type(passwordInput, 'ExamplePassword', {
       delay: 100,
     });
-    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
-    const submitButton = canvas.getByRole('button');
 
+    const submitButton = canvas.getByRole('button');
     await userEvent.click(submitButton);
   },
 };
 ```
 
 ```js filename="RegistrationForm.stories.js|jsx" renderer="common" language="js"
-import { userEvent, within } from 'storybook/test';
-
 import { RegistrationForm } from './RegistrationForm';
 
 export default {
@@ -140,12 +122,10 @@ export default {
 
 /*
  * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
- * to learn more about using the canvasElement to query the DOM
+ * to learn more about using the canvas to query the DOM
  */
 export const FilledForm = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-
+  play: async ({ canvas, userEvent }) => {
     const emailInput = canvas.getByLabelText('email', {
       selector: 'input',
     });
@@ -161,9 +141,8 @@ export const FilledForm = {
     await userEvent.type(passwordInput, 'ExamplePassword', {
       delay: 100,
     });
-    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
-    const submitButton = canvas.getByRole('button');
 
+    const submitButton = canvas.getByRole('button');
     await userEvent.click(submitButton);
   },
 };
@@ -173,8 +152,6 @@ export const FilledForm = {
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
-  import { userEvent, within } from 'storybook/test';
-
   import RegistrationForm from './RegistrationForm.svelte';
 
   const { Story } = defineMeta({
@@ -184,13 +161,11 @@ export const FilledForm = {
 
 <!--
   See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
-  to learn more about using the canvasElement to query the DOM
+  to learn more about using the canvas to query the DOM
 -->
 <Story
   name="FilledForm"
-  play={async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-
+  play={async ({ canvas, userEvent }) => {
     const emailInput = canvas.getByLabelText('email', {
       selector: 'input',
     });
@@ -207,9 +182,7 @@ export const FilledForm = {
       delay: 100,
     });
 
-    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
     const submitButton = canvas.getByRole('button');
-
     await userEvent.click(submitButton);
   }}
 />
@@ -219,25 +192,21 @@ export const FilledForm = {
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
-import { userEvent, within } from 'storybook/test';
-
 import RegistrationForm from './RegistrationForm.svelte';
 
 const meta = {
   component: RegistrationForm,
 } satisfies Meta<typeof RegistrationForm>;
-
 export default meta;
+
 type Story = StoryObj<typeof meta>;
 
 /*
  * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
- * to learn more about using the canvasElement to query the DOM
+ * to learn more about using the canvas to query the DOM
  */
 export const FilledForm: Story = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-
+  play: async ({ canvas, userEvent }) => {
     const emailInput = canvas.getByLabelText('email', {
       selector: 'input',
     });
@@ -253,9 +222,8 @@ export const FilledForm: Story = {
     await userEvent.type(passwordInput, 'ExamplePassword', {
       delay: 100,
     });
-    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
-    const submitButton = canvas.getByRole('button');
 
+    const submitButton = canvas.getByRole('button');
     await userEvent.click(submitButton);
   },
 };
@@ -265,25 +233,21 @@ export const FilledForm: Story = {
 // Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
-import { userEvent, within } from 'storybook/test';
-
 import { RegistrationForm } from './RegistrationForm';
 
 const meta: Meta<typeof RegistrationForm> = {
   component: RegistrationForm,
 };
-
 export default meta;
+
 type Story = StoryObj<typeof RegistrationForm>;
 
 /*
  * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
- * to learn more about using the canvasElement to query the DOM
+ * to learn more about using the canvas to query the DOM
  */
 export const FilledForm: Story = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-
+  play: async ({ canvas, userEvent }) => {
     const emailInput = canvas.getByLabelText('email', {
       selector: 'input',
     });
@@ -299,29 +263,24 @@ export const FilledForm: Story = {
     await userEvent.type(passwordInput, 'ExamplePassword', {
       delay: 100,
     });
-    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
-    const submitButton = canvas.getByRole('button');
 
+    const submitButton = canvas.getByRole('button');
     await userEvent.click(submitButton);
   },
 };
 ```
 
 ```js filename="RegistrationForm.stories.js" renderer="web-components" language="js"
-import { userEvent, within } from 'storybook/test';
-
 export default {
   component: 'demo-registration-form',
 };
 
 /*
  * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
- * to learn more about using the canvasElement to query the DOM
+ * to learn more about using the canvas to query the DOM
  */
 export const FilledForm = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-
+  play: async ({ canvas, userEvent }) => {
     const emailInput = canvas.getByLabelText('email', {
       selector: 'input',
     });
@@ -337,9 +296,8 @@ export const FilledForm = {
     await userEvent.type(passwordInput, 'ExamplePassword', {
       delay: 100,
     });
-    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
-    const submitButton = canvas.getByRole('button');
 
+    const submitButton = canvas.getByRole('button');
     await userEvent.click(submitButton);
   },
 };
@@ -348,23 +306,19 @@ export const FilledForm = {
 ```ts filename="RegistrationForm.stories.ts" renderer="web-components" language="ts"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
-import { userEvent, within } from 'storybook/test';
-
 const meta: Meta = {
   component: 'demo-registration-form',
 };
-
 export default meta;
+
 type Story = StoryObj;
 
 /*
  * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
- * to learn more about using the canvasElement to query the DOM
+ * to learn more about using the canvas to query the DOM
  */
 export const FilledForm: Story = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-
+  play: async ({ canvas, userEvent }) => {
     const emailInput = canvas.getByLabelText('email', {
       selector: 'input',
     });
@@ -380,9 +334,8 @@ export const FilledForm: Story = {
     await userEvent.type(passwordInput, 'ExamplePassword', {
       delay: 100,
     });
-    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
-    const submitButton = canvas.getByRole('button');
 
+    const submitButton = canvas.getByRole('button');
     await userEvent.click(submitButton);
   },
 };

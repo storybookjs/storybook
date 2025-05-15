@@ -7,6 +7,7 @@ import { Button } from './Button';
 const meta: Meta<typeof Button> = {
   component: Button,
   parameters: {
+    // 👇 Applies to all stories in this file
     a11y: { test: 'error' },
   },
 };
@@ -37,6 +38,7 @@ import { Button } from './Button';
 const meta = {
   component: Button,
   parameters: {
+    // 👇 Applies to all stories in this file
     a11y: { test: 'error' },
   },
 } satisfies Meta<typeof Button>;
@@ -64,6 +66,7 @@ import { Button } from './Button';
 export default {
   component: Button,
   parameters: {
+    // 👇 Applies to all stories in this file
     a11y: { test: 'error' },
   },
 };

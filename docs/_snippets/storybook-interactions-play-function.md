@@ -1,7 +1,7 @@
 ```ts filename="Form.stories.ts" renderer="angular" language="ts"
 import type { Meta, StoryObj } from '@storybook/angular';
 
-import { userEvent, waitFor, within, expect, fn } from 'storybook/test';
+import { expect, fn, waitFor } from 'storybook/test';
 
 import { Form } from './Form.component';
 
@@ -12,18 +12,16 @@ const meta: Meta<Form> = {
     submit: fn(),
   },
 };
-
 export default meta;
+
 type Story = StoryObj<Form>;
 
 /*
  * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
- * to learn more about using the canvasElement to query the DOM
+ * to learn more about using the canvas to query the DOM
  */
 export const Submitted: Story = {
-  play: async ({ args, canvasElement, step }) => {
-    const canvas = within(canvasElement);
-
+  play: async ({ args, canvas, step, userEvent }) => {
     await step('Enter credentials', async () => {
       await userEvent.type(canvas.getByTestId('email'), 'hi@example.com');
       await userEvent.type(canvas.getByTestId('password'), 'supersecret');
@@ -118,7 +116,7 @@ export const Submitted = {
 ```
 
 ```js filename="Form.stories.js|jsx" renderer="common" language="js"
-import { userEvent, waitFor, within, expect, fn } from 'storybook/test';
+import { expect, fn, waitFor } from 'storybook/test';
 
 import { Form } from './Form';
 
@@ -132,13 +130,11 @@ export default {
 
 /*
  * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
- * to learn more about using the canvasElement to query the DOM
+ * to learn more about using the canvas to query the DOM
  */
 export const Submitted = {
-  play: async ({ args, canvasElement, step }) => {
+  play: async ({ args, canvas, step, userEvent }) => {
     // Starts querying the component from its root element
-    const canvas = within(canvasElement);
-
     await step('Enter credentials', async () => {
       await userEvent.type(canvas.getByTestId('email'), 'hi@example.com');
       await userEvent.type(canvas.getByTestId('password'), 'supersecret');
@@ -241,7 +237,7 @@ export const Submitted: Story = {
 // Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
-import { userEvent, waitFor, within, expect, fn } from 'storybook/test';
+import { expect, fn, waitFor } from 'storybook/test';
 
 import { Form } from './Form';
 
@@ -252,18 +248,16 @@ const meta = {
     onSubmit: fn(),
   },
 } satisfies Meta<typeof Form>;
-
 export default meta;
+
 type Story = StoryObj<typeof meta>;
 
 /*
  * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
- * to learn more about using the canvasElement to query the DOM
+ * to learn more about using the canvas to query the DOM
  */
 export const Submitted: Story = {
-  play: async ({ args, canvasElement, step }) => {
-    const canvas = within(canvasElement);
-
+  play: async ({ args, canvas, step, userEvent }) => {
     await step('Enter credentials', async () => {
       await userEvent.type(canvas.getByTestId('email'), 'hi@example.com');
       await userEvent.type(canvas.getByTestId('password'), 'supersecret');
@@ -280,7 +274,7 @@ export const Submitted: Story = {
 ```
 
 ```js filename="Form.stories.js" renderer="web-components" language="js"
-import { userEvent, waitFor, within, expect, fn } from 'storybook/test';
+import { expect, fn, waitFor } from 'storybook/test';
 
 export default {
   component: 'my-form-element',
@@ -292,12 +286,10 @@ export default {
 
 /*
  * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
- * to learn more about using the canvasElement to query the DOM
+ * to learn more about using the canvas to query the DOM
  */
 export const Submitted = {
-  play: async ({ args, canvasElement, step }) => {
-    const canvas = within(canvasElement);
-
+  play: async ({ args, canvas, step, userEvent }) => {
     await step('Enter credentials', async () => {
       await userEvent.type(canvas.getByTestId('email'), 'hi@example.com');
       await userEvent.type(canvas.getByTestId('password'), 'supersecret');
@@ -316,7 +308,7 @@ export const Submitted = {
 ```ts filename="Form.stories.ts" renderer="web-components" language="ts"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
-import { userEvent, waitFor, within, expect, fn } from 'storybook/test';
+import { expect, fn, waitFor } from 'storybook/test';
 
 const meta: Meta = {
   component: 'my-form-element',
@@ -325,18 +317,16 @@ const meta: Meta = {
     onSubmit: fn(),
   },
 };
-
 export default meta;
+
 type Story = StoryObj;
 
 /*
  * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
- * to learn more about using the canvasElement to query the DOM
+ * to learn more about using the canvas to query the DOM
  */
 export const Submitted: Story = {
-  play: async ({ args, canvasElement, step }) => {
-    const canvas = within(canvasElement);
-
+  play: async ({ args, canvas, step, userEvent }) => {
     await step('Enter credentials', async () => {
       await userEvent.type(canvas.getByTestId('email'), 'hi@example.com');
       await userEvent.type(canvas.getByTestId('password'), 'supersecret');

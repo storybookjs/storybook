@@ -2,7 +2,7 @@
 title: 'Stories in end-to-end tests'
 sidebar:
   title: End-to-end tests
-  order: 2
+  order: 4
 ---
 
 Storybook seamlessly integrates with additional testing frameworks like [Cypress](https://www.cypress.io/) and [Playwright](https://playwright.dev/) to provide a comprehensive testing solution. By leveraging the Component Story Format (CSF), developers can write test cases that simulate user interactions and verify the behavior of individual components within the Storybook environment. This approach enables developers to thoroughly test their components' functionality, responsiveness, and visual appearance across different scenarios, resulting in more robust and reliable applications.
@@ -61,13 +61,14 @@ With Playwright, you can write a test to check if the inputs are filled and matc
 
 Once you execute Playwright, it opens a new browser window, loads Storybook's isolated iframe, asserts if the inputs contain the specified values, and displays the test results in the terminal.
 
-**Learn about other UI tests**
+**More testing resources**
 
-* [Component tests](../component-testing.mdx) for user behavior simulation
-* [Visual tests](../visual-testing.mdx) for appearance
-* [Accessibility tests](../accessibility-testing.mdx) for accessibility
-* [Snapshot tests](../snapshot-testing/snapshot-testing.mdx) for rendering errors and warnings
-* [Test runner](../test-runner.mdx) to automate test execution
+* [Interaction testing](../interaction-testing.mdx) for user behavior simulation
+* [Accessibility testing](../accessibility-testing.mdx) for accessibility
+* [Visual testing](../visual-testing.mdx) for appearance
+* [Snapshot testing](../snapshot-testing.mdx) for rendering errors and warnings
 * [Test coverage](../test-coverage.mdx) for measuring code coverage
-* End-to-end tests for simulating real user scenarios
-* [Unit tests](./stories-in-unit-tests.mdx) for functionality
+* [CI](../ci.mdx) for running tests in your CI/CD pipeline
+* [Vitest addon](./vitest-addon.mdx) for running tests in Storybook
+* [Test runner](./test-runner.mdx) to automate test execution
+* [Unit testing](./stories-in-unit-tests.mdx) for functionality

@@ -264,7 +264,7 @@ All of the story properties are now contained within a new property called `comp
 
 ### 5. Update your Vitest setup file
 
-If you're using the [Storybook's Vitest addon](../../writing-tests/vitest-addon.mdx) you can remove your vitest setup file.
+If you're using [Storybook's Vitest addon](../../writing-tests/integrations/vitest-addon.mdx), you can remove your Vitest setup file.
 
 If you are using [portable stories in Vitest](../portable-stories/portable-stories-vitest.mdx), you may use a Vitest setup file to configure your stories. This file must be updated to use the new CSF Factories format.
 
@@ -290,7 +290,7 @@ import { beforeAll } from 'vitest';
 
 ### 6. Reusing stories in test files
 
-[Storybook's Vitest addon](../../writing-tests/vitest-addon.mdx) allows you to test your components directly inside Storybook. All the stories are automatically turned into Vitest tests, making integration seamless in your testing suite.
+[Storybook's Vitest addon](../../writing-tests/integrations/vitest-addon.mdx) allows you to test your components directly inside Storybook. All the stories are automatically turned into Vitest tests, making integration seamless in your testing suite.
 
 If you cannot use Storybook Test, you can still reuse the stories in your test files using [portable stories](../portable-stories/portable-stories-vitest.mdx). In prior story formats, you had to compose the stories before rendering them in your test files. With CSF Factories, you can now reuse the stories directly.
 

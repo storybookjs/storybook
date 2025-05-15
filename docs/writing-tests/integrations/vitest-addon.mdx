@@ -1,29 +1,32 @@
 ---
 title: 'Vitest addon'
 sidebar:
-  order: 6
+  order: 1
   title: Vitest addon
 ---
 
-<If notRenderer={['react', 'vue', 'svelte']}>
-  <Callout variant="info">
-    The Vitest addon is currently only supported in [React](?renderer=react), [Vue](?renderer=vue) and [Svelte](?renderer=svelte) projects, which use the [Vite builder](../builders/vite.mdx) (or the [Next.js framework with Vite](../get-started/frameworks/nextjs.mdx#with-vite)).
+<If notRenderer={['react', 'vue', 'svelte', 'web-components']}>
+  
+<Callout variant="info">
 
-    If you are using a different renderer (such as Angular) or the Webpack builder, you can use the [Storyboook test runner](./test-runner.mdx) to test your stories.
-  </Callout>
+The Vitest addon is currently only supported in [React](?renderer=react), [Vue](?renderer=vue), [Svelte](?renderer=svelte), and [Web Components](?renderer=web-components) projects, which use the [Vite builder](../builders/vite.mdx) (or the [Next.js framework with Vite](../get-started/frameworks/nextjs.mdx#with-vite)).
 
-  {/* End non-supported renderers */}
+If you are using a different renderer (such as Angular) or the Webpack builder, you can use the [Storyboook test runner](./test-runner.mdx) to test your stories.
+
+</Callout>
+
 </If>
+{/* End non-supported renderers */}
 
-<If renderer={['react', 'vue', 'svelte']}>
+<If renderer={['react', 'vue', 'svelte', 'web-components']}>
 
-Storybook's Vitest addon allows you to test your components directly inside Storybook. On its own, it transforms your [stories](../writing-stories/index.mdx) into [component tests](./component-testing.mdx), which test the rendering and behavior of your components in a real browser environment. It can also calculate project [coverage](./test-coverage.mdx) provided by your stories.
+Storybook's Vitest addon allows you to test your components directly inside Storybook. On its own, it transforms your [stories](../writing-stories/index.mdx) into component tests, which test the rendering and behavior of your components in a real browser environment. It can also calculate project [coverage](./test-coverage.mdx) provided by your stories.
 
 If your project is using other testing addons, such as the [Visual tests addon](./visual-testing.mdx) or the [Accessibility addon](./accessibility-testing.mdx), you can run those tests alongside your component tests.
 
-When tests are run for a story, the status is shown in the sidebar. The sidebar can be filtered to only show failing stories, and you can press the menu button on a failing story to see debugging options.
+When component tests are run for a story, the status is shown in the sidebar. The sidebar can be filtered to only show failing stories, and you can press the menu button on a failing story to see debugging options.
 
-You can also run tests in watch mode, which will automatically re-run tests when you make changes to your components or stories. To activate, press the watch mode toggle (the eye icon) in the test module.
+You can also run tests in watch mode, which will automatically re-run tests when you make changes to your components or stories. To activate, press the watch mode toggle (the eye icon) in the testing widget.
 
 <Video src="../_assets/writing-tests/addon-test-overview.mp4" />
 
@@ -31,8 +34,7 @@ You can also run tests in watch mode, which will automatically re-run tests when
 
 Before installing, make sure your project meets the following requirements:
 
-- Storybook ≥ 8.5
-- A Storybook framework that uses Vite (e.g. [`vue3-vite`](../get-started/frameworks/vue3-vite.mdx), [`react-vite`](../get-started/frameworks/react-vite.mdx), ['sveltekit`](../get-started/frameworks/sveltekit.mdx), etc.), or the [Storybook Next.js framework with Vite](../get-started/frameworks/nextjs.mdx#with-vite)
+- A Storybook framework that uses Vite (e.g. [`vue3-vite`](../get-started/frameworks/vue3-vite.mdx), [`react-vite`](../get-started/frameworks/react-vite.mdx), [`nextjs-vite`](../get-started/frameworks/nextjs.mdx#with-vite), [`sveltekit`](../get-started/frameworks/sveltekit.mdx), etc.)
 - Vitest ≥ 3.0
     - If you're not yet using Vitest, it will be installed and configured for you when you install the addon
 - (optional) MSW ≥ 2.0
@@ -43,10 +45,6 @@ Before installing, make sure your project meets the following requirements:
     **Using with Next.js** — The Vitest addon is supported in Next.js ≥ 14.1 projects, but you must be using the [`@storybook/nextjs-vite` framework](../get-started/frameworks/nextjs.mdx#with-vite). When you run the setup command below, you will be prompted to install and use the framework if you haven't already.
   </Callout>
 </If>
-
-If you're not yet using Storybook 8.5, you can [upgrade your Storybook](../configure/upgrading.mdx):
-
-<CodeSnippets path="storybook-upgrade.md" />
 
 ### Automatic setup
 
@@ -62,7 +60,7 @@ For some project setups, the `add` command may be unable to automate the addon a
 
 1. Make sure Vite and Vitest are configured in your project.
 1. Configure Vitest to use [browser mode](https://vitest.dev/guide/browser/).
-1. Install the addon, `@storybook/addon-vitest`, in your project and [register it in your Storybook configuration](http://storybook.js.org/docs/addons/install-addons#manual-installation).
+1. Install the addon, `@storybook/addon-vitest`, in your project and [register it in your Storybook configuration](../addons/install-addons.mdx#manual-installation).
 1. Create a test setup file, `.storybook/vitest.setup.ts`. You can use the [example setup file](#example-vitest-setup) as a guide.
 1. Adjust your Vitest configuration to include the plugin and reference the setup file. You can use the [example configuration files](#example-configuration-files) as a guide.
 
@@ -120,21 +118,21 @@ We recommend (and configure, by default) running Vitest in [browser mode](https:
 
 The easiest way to run tests is through the Storybook UI. With a click, you can run multiple types of tests for all stories in your project, a group of stories, or a single story.
 
-To run all tests for your whole project, press the Run tests button in the test module at the bottom of the sidebar.
+To run all tests for your whole project, press the Run tests button in the testing widget at the bottom of the sidebar.
 
 <Video src="../_assets/writing-tests/addon-test-run-all-tests.mp4" />
 
-Alternatively, you can expand the test module to run specific types of tests individually. For those test types which have a watch mode (which will automatically re-run relevant tests upon code changes), you can toggle that on or off.
+Alternatively, you can expand the testing widget to run specific types of tests individually. For those test types which have a watch mode (which will automatically re-run relevant tests upon code changes), you can toggle that on or off.
 
-![Screenshot of test module, expanded, showing test types and watch mode toggle](../_assets/writing-tests/addon-test-module-expanded.png)
+![Screenshot of testing widget, expanded, showing test types and watch mode toggle](../_assets/writing-tests/addon-test-module-expanded.png)
 
 <Callout variant="info" icon="ℹ️">
 
-If you have the [Visual tests addon](./visual-testing.mdx) installed, you'll see an option to run Visual tests alongside [Component tests](./component-testing.mdx).
+If you have the [Visual tests addon](./visual-testing.mdx) installed, you'll see an option to run Visual tests alongside Component tests.
 
-![Screenshot of test module, expanded, showing Visual tests](../_assets/writing-tests/addon-test-module-expanded-with-vta.png)
+![Screenshot of testing widget, expanded, showing Visual tests](../_assets/writing-tests/addon-test-module-expanded-with-vta.png)
 
-Other addons, such as [a11y](./accessibility-testing.mdx#vitest-addon-integration), may also provide test types that can be run from the test module and affect the status indicators on stories and components.
+Other addons, such as [a11y](./accessibility-testing.mdx#run-accessibility-tests), may also provide test types that can be run from the testing widget and affect the status indicators on stories and components.
 
 </Callout>
 
@@ -142,9 +140,9 @@ To run tests for a specific story or group of stories, press the menu button (th
 
 ![Screenshot of story sidebar item with open menu](../_assets/writing-tests/addon-test-sidebar-item-menu.png)
 
-After running your tests, you will now see status indicators on stories and components for their pass, fail, or error state. You can press on the menu button when hovering a story to see the test results for that story. Selecting a result in the menu will navigate you to that story and open the appropriate debugging panel. For example, if a component test fails, you can jump straight to the failure in the Interactions panel. That panel provides an interactive debugger for your component test, allowing you to step through each simulated behavior or assertion.
+After running your tests, you will now see status indicators on stories and components for their pass, fail, or error state. You can press on the menu button when hovering a story to see the test results for that story. Selecting a result in the menu will navigate you to that story and open the appropriate debugging panel. For example, if an interaction test fails, you can jump straight to the failure in the Interactions panel. That panel provides an interactive debugger for your test, allowing you to step through each simulated behavior or assertion.
 
-The test module will also show you the total number of tests run, the number of tests that passed, and the number of tests that failed or errored. You can press the failure number to filter the sidebar to only those stories that failed.
+The testing widget will also show you the total number of tests run, the number of tests that passed, and the number of tests that failed or errored. You can press the failure number to filter the sidebar to only those stories that failed.
 
 <Video src="../_assets/writing-tests/addon-test-filter-sidebar.mp4" />
 
@@ -185,56 +183,15 @@ This screenshot shows how you can run your Vitest tests in VSCode using the [Vit
 
 ### In CI
 
-For the most part, running your Storybook tests in CI is done [via the CLI](#cli). However, to have the test output link to your published Storybook on test failures, you need to provide the [`storybookUrl` option](#storybookurl) in the plugin configuration.
+For the most part, running your Storybook tests in CI is done [via the CLI](#cli).
 
-Here's an example using GitHub Actions. The steps are similar for other CI providers, though details in the syntax or configuration may vary.
-
-When actions for services like Vercel, Netlify and others run a deployment job, they follow a pattern of emitting a `deployment_status` event containing the newly generated URL under `deployment_status.target_url`. This is the URL to the published Storybook instance. We then pass that URL to the plugin configuration using an environment variable, `SB_URL`. Finally, we update the plugin configuration to use that environment variable in the `storybookUrl` option.
-
-```yaml title=".github/workflows/test-storybook.yml"
-name: Storybook Tests
-on: deployment_status
-jobs:
-  test:
-    timeout-minutes: 60
-    runs-on: ubuntu-latest
-    if: github.event.deployment_status.state == 'success'
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '18.x'
-      - name: Install dependencies
-        run: yarn
-      - name: Run Storybook tests
-        run: yarn test-storybook
-        env:
-          SB_URL: '${{ github.event.deployment_status.target_url }}'
-```
-
-```js title="vitest.workspace.ts"
-export default defineWorkspace([
-  // ...
-  {
-    // ...
-    {
-      plugins: [
-        storybookTest({
-          // ...
-          storybookScript: 'yarn storybook --ci',
-          storybookUrl: process.env.SB_URL
-        }),
-      ],
-    },
-  },
-])
-```
+However, to have the test output link to your published Storybook on test failures, you need to provide the [`storybookUrl` option](#storybookurl) in the plugin configuration. Please reference the [detailed example in the Testing in CI guide](./ci.mdx#21-debugging-test-failures-in-ci).
 
 ## How it works
 
 The Vitest addon works by using a Vitest plugin to transform your stories into [Vitest](https://vitest.dev) tests using [portable stories](../api/portable-stories/portable-stories-vitest.mdx). It also configures Vitest to run those tests in [browser mode](https://vitest.dev/guide/browser/), using Playwright's Chromium browser. Because it is built on top of Vitest, the addon requires a Vite-based Storybook framework.
 
-Stories are tested in two ways: a smoke test to ensure it renders and, if a [play function](../writing-tests/component-testing#write-a-component-test) is defined, that function is run and any [assertions made](../writing-tests/component-testing.mdx#assert-tests-with-vitests-apis) within it are validated.
+Stories are tested in two ways: a smoke test to ensure it renders and, if a [play function](./interaction-testing.mdx#writing-interaction-tests) is defined, that function is run and any [assertions made](./interaction-testing.mdx#asserting-with-expect) within it are validated.
 
 When you run tests in the [Storybook UI](#storybook-ui), the addon runs Vitest in the background and reports the results in the sidebar. 
 
@@ -244,9 +201,9 @@ The tests run by the addon can be configured in two ways. You can toggle which t
 
 ### Toggling test types
 
-In addition to component tests, the Vitest addon supports multiple types of tests, depending on which other addons you are using in your project. Some test types, like [visual tests](./visual-testing.mdx), are run independently. Others, like [accessibility](./accessibility-testing.mdx), must be run alongside component tests. For these dependent test types, you can toggle them on or off in the test module by pressing the edit button (pencil icon) and checking or unchecking the test types you want to run.
+In addition to component tests, the Vitest addon supports multiple types of tests, depending on which other addons you are using in your project. Some test types, like [visual tests](./visual-testing.mdx), are run independently. Others, like [accessibility](./accessibility-testing.mdx), must be run alongside component tests. For these dependent test types, you can toggle them on or off in the testing widget by checking or unchecking the test types you want to run.
 
-![Screenshot of test module, expanded, edit mode, everything is checked](../_assets/writing-tests/addon-test-module-edit.png)
+![Screenshot of testing widget, expanded, edit mode, everything is checked](../_assets/writing-tests/addon-test-module-edit.png)
 
 Note that you may not have all of the test types pictured, depending on which addons you have installed.
 
@@ -298,7 +255,25 @@ If the same tag is in both the `include` and `exclude` arrays, the `exclude` beh
 
 The [test runner](./test-runner.mdx) requires a running Storybook instance to test your stories, because it visits each one, executes the play function, and listens for results. The Vitest plugin, however, transforms your stories into tests using Vite and portable stories, so it does not need to run Storybook to test your stories. Because of this reliance on Vite, the plugin can only be used with Storybook frameworks that use Vite (and [Next.js](../get-started/frameworks/nextjs.mdx#with-vite)). The test runner, on the other hand, can be used with any Storybook framework.
 
-The test runner is only a CLI tool. It did not have a UI for running tests, nor did it have an editor extension. The addon, however, provides a UI in Storybook for running tests, and it enables you to run and debug tests using Vitest IDE integrations.
+| Feature                                               | Vitest addon       | test-runner              |
+| ----------------------------------------------------- | ------------------ | ------------------------ |
+| **Test types**                                                                                        |
+| - [Interaction tests](../interaction-testing.mdx)     | ✅                 | ✅                       |
+| - [Accessibility tests](../accessibility-testing.mdx) | ✅                 | ✅                       |
+| - [Visual tests](../visual-testing.mdx)               | ✅                 | ❌                       |
+| - [Snapshot tests](../snapshot-testing.mdx)           | ❌                 | ✅                       |
+| **Testing contexts**                                                                                  |
+| - Storybook UI                                        | ✅                 | ❌                       |
+| - Editor extensions                                   | ✅                 | ❌                       |
+| - CLI                                                 | ✅                 | ✅                       |
+| - In CI                                               | ✅                 | ✅                       |
+| Works with all Storybook frameworks                   | ❌ (requires Vite) | ✅                       |
+| Runs tests in a real browser environment              | ✅                 | ✅                       |
+| Calculates code coverage                              | ✅                 | ✅ (with addon-coverage) |
+| Requires a running or published Storybook             | ❌                 | ✅                       |
+| Extensible to other addons                            | ✅                 | ❌                       |
+
+The test runner is only a CLI tool. It does not have a UI for running tests, nor does it have an editor extension. The addon, however, provides a UI in Storybook for running tests, and it enables you to run and debug tests using Vitest IDE integrations.
 
 Additionally, the test runner ran your stories as orchestrated tests in Jest, and that orchestration came with some complexity. By comparison, this plugin transforms your stories into real tests and then runs them using Vitest, which is simpler and more configurable.
 
@@ -308,9 +283,9 @@ Finally, because of the simpler architecture and the use of Vitest, this plugin 
 
 ### What happens if Vitest itself has an error?
 
-Sometimes tests can fail because of errors within Vitest itself. When this happens, the test module in the Storybook UI will alert you to the error, and you can click a link to view it in full. The error will also be logged to the console.
+Sometimes tests can fail because of errors within Vitest itself. When this happens, the testing widget in the Storybook UI will alert you to the error, and you can click a link to view it in full. The error will also be logged to the console.
 
-![Screenshot of test module, expanded, showing Vitest error](../_assets/writing-tests/addon-test-vitest-error.png)
+![Screenshot of testing widget, expanded, showing Vitest error](../_assets/writing-tests/addon-test-vitest-error.png)
 
 Vitest offers [troubleshooting help for common errors](https://vitest.dev/guide/common-errors.html).
 
@@ -479,3 +454,16 @@ Whether to disable addon docs MDX parsing while running tests.
 When either the preview config or stories import mdx files, they are mocked as normally they are not needed for tests.
 You might set `disableAddonDocs` to `false` only in case your stories actually need to read and parse MDX files as part of rendering your components.
 </If>
+{/* End supported renderers */}
+
+**More testing resources**
+
+* [Interaction testing](../interaction-testing.mdx) for user behavior simulation
+* [Accessibility testing](../accessibility-testing.mdx) for accessibility
+* [Visual testing](../visual-testing.mdx) for appearance
+* [Snapshot testing](../snapshot-testing.mdx) for rendering errors and warnings
+* [Test coverage](../test-coverage.mdx) for measuring code coverage
+* [CI](../ci.mdx) for running tests in your CI/CD pipeline
+* [Test runner](./test-runner.mdx) to automate test execution
+* [End-to-end testing](./stories-in-end-to-end-tests.mdx) for simulating real user scenarios
+* [Unit testing](./stories-in-unit-tests.mdx) for functionality

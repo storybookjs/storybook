@@ -3,7 +3,6 @@ import { type ChildProcess, spawn } from 'node:child_process';
 import type { TestProject } from 'vitest/node';
 
 import { logger } from 'storybook/internal/node-logger';
-import { telemetry } from 'storybook/internal/telemetry';
 
 import treeKill from 'tree-kill';
 
@@ -62,13 +61,6 @@ const startStorybookIfNotRunning = async () => {
 };
 
 export const setup = async ({ config }: TestProject) => {
-  telemetry('test-run', {
-    runner: 'vitest',
-    // NOTE: this is always true for some reason.
-    watch: config.watch,
-    coverage: !!config.coverage?.enabled,
-  });
-
   if (config.watch && isVitestStandaloneRun) {
     await startStorybookIfNotRunning();
   }

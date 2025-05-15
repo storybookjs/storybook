@@ -26,7 +26,7 @@ export interface HighlightMenuItem {
   /** Name for a channel event to trigger when the menu item is clicked */
   clickEvent?: string;
   /** HTML selectors for which this menu item should show (subset of `selectors`) */
-  selectors?: string[];
+  selectors?: HighlightOptions['selectors'];
 }
 
 export interface HighlightOptions {

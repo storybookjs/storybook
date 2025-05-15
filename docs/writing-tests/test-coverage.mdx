@@ -127,9 +127,18 @@ jobs:
           node-version: '20.x'
       - name: Install dependencies
         run: yarn
-      - name: Run Storybook tests
-        run: yarn test-storybook --coverage
+        # 👇 This will run all Vitest tests, including Storybook tests
+      - name: Run tests
+        run: yarn test --coverage
 ```
+
+<Callout variant="info" icon="💡">
+
+Why are we running all tests (`yarn test`) instead of just the Storybook tests (`yarn test-storybook`)? Because a coverage report is most accurate when accounting for all tests in your project, not just the stories you've written.
+
+Seeing [Storybook-specific coverage](#storybook-ui) can be helpful, but in CI output, you want to see the comprehensive coverage of your project.
+
+</Callout>
 
 For more on testing in CI, see the [dedicated guide](./in-ci.mdx).
 

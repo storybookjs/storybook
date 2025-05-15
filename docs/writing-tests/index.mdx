@@ -142,9 +142,17 @@ Running coverage analysis can slow down your test runs, so it is turned off by d
 And while we’re looking at coverage, update your CI workflow to include it:
 
 ```diff
-- yarn test-storybook
-+ yarn test-storybook --coverage
+- yarn test
++ yarn test --coverage
 ```
+
+<Callout variant="info" icon="💡">
+
+Why are we running all tests (`yarn test`) instead of just the Storybook tests (`yarn test-storybook`)? Because a coverage report is most accurate when accounting for all tests in your project, not just the stories you've written.
+
+Seeing [Storybook-specific coverage](./test-coverage.mdx#storybook-ui) can be helpful, but in CI output, you want to see the comprehensive coverage of your project.
+
+</Callout>
 
 This way we can track the coverage change in every PR.
 

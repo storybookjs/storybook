@@ -359,9 +359,22 @@ For more details on code coverage, check the [full guide](./test-coverage.mdx).
 
 </Callout>
 
-You can calculate code coverage of your Storybook tests by passing the `--coverage` flag to the `vitest` command.
+You can calculate code coverage of your Storybook tests by passing the `--coverage` flag to the `vitest` command. Coverage is most useful when calculated comprehensively across all tests in your project, but you can also calculate it for just the Storybook tests.
 
 You can either adjust the command in your `package.json` scripts:
+
+**For all tests:**
+
+```diff title="package.json"
+{ 
+  "scripts": {
++   "test": "vitest --coverage"
+-   "test": "vitest"
+  }
+}
+```
+
+**For only Storybook tests:**
 
 ```diff title="package.json"
 { 
@@ -373,6 +386,15 @@ You can either adjust the command in your `package.json` scripts:
 ```
 
 Or, if you only want to calculate coverage when running tests in CI, adjust your CI configuration like so:
+
+**For all tests:**
+
+```diff title="CI workflow file"
++ npm run test -- --coverage
+- npm run test
+```
+
+**For only Storybook tests:**
 
 ```diff title="CI workflow file"
 + npm run test-storybook -- --coverage

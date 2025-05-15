@@ -1,11 +1,11 @@
 import { createRequire } from 'node:module';
-import { dirname } from 'node:path';
 
 import type { Plugin } from 'vitest/config';
 import { mergeConfig } from 'vitest/config';
 import type { ViteUserConfig } from 'vitest/config';
 
 import {
+  DEFAULT_FILES_PATTERN,
   getInterpretedFile,
   normalizeStories,
   resolvePathInStorybookCache,
@@ -21,10 +21,10 @@ import { MainFileMissingError } from 'storybook/internal/server-errors';
 import { oneWayHash } from 'storybook/internal/telemetry';
 import type { Presets } from 'storybook/internal/types';
 
-import { join, resolve } from 'pathe';
+import { match } from 'micromatch';
+import { dirname, join, relative, resolve } from 'pathe';
 import picocolors from 'picocolors';
 import sirv from 'sirv';
-import { convertPathToPattern } from 'tinyglobby';
 import { dedent } from 'ts-dedent';
 
 // ! Relative import to prebundle it without needing to depend on the Vite builder
@@ -135,8 +135,10 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     packageJson: {},
   });
 
+  const stories = await presets.apply('stories', []);
+
   const [
-    { storiesGlobs, storiesFiles },
+    { storiesGlobs },
     framework,
     storybookEnv,
     viteConfigFromStorybook,
@@ -181,7 +183,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
         .replace('</head>', `${headHtmlSnippet ?? ''}</head>`)
         .replace('<body>', `<body>${bodyHtmlSnippet ?? ''}`);
     },
-    async config(inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED) {
+    async config(nonMutableInputConfig) {
       // ! We're not mutating the input config, instead we're returning a new partial config
       // ! see https://vite.dev/guide/api-plugin.html#config
       try {
@@ -204,6 +206,29 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       // We are overriding the environment variable to 'true' if vitest runs via @storybook/addon-vitest's backend
       const vitestStorybook = process.env.VITEST_STORYBOOK ?? 'false';
 
+      const testConfig = nonMutableInputConfig.test;
+      finalOptions.vitestRoot =
+        testConfig?.dir || testConfig?.root || nonMutableInputConfig.root || process.cwd();
+
+      const includeStories = stories
+        .map((story) => {
+          let storyPath;
+
+          if (typeof story === 'string') {
+            storyPath = story;
+          } else {
+            storyPath = `${story.directory}/${story.files ?? DEFAULT_FILES_PATTERN}`;
+          }
+
+          return join(finalOptions.configDir, storyPath);
+        })
+        .map((story) => {
+          const root =
+            testConfig?.dir || testConfig?.root || nonMutableInputConfig.root || process.cwd();
+          return relative(root, story);
+        });
+
+      finalOptions.includeStories = includeStories;
       const projectId = oneWayHash(finalOptions.configDir);
 
       const baseConfig: Omit<ViteUserConfig, 'plugins'> = {
@@ -212,9 +237,8 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
           setupFiles: [
             join(PACKAGE_DIR, 'dist/vitest-plugin/setup-file.mjs'),
             // if the existing setupFiles is a string, we have to include it otherwise we're overwriting it
-            typeof inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED.test
-              ?.setupFiles === 'string' &&
-              inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED.test?.setupFiles,
+            typeof nonMutableInputConfig.test?.setupFiles === 'string' &&
+              nonMutableInputConfig.test?.setupFiles,
           ].filter(Boolean) as string[],
 
           ...(finalOptions.storybookScript
@@ -234,13 +258,11 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
             __VITEST_SKIP_TAGS__: finalOptions.tags.skip.join(','),
           },
 
-          include: storiesFiles
-            .filter((path) => !path.endsWith('.mdx'))
-            .map((path) => convertPathToPattern(path)),
+          include: includeStories,
+          exclude: [...(nonMutableInputConfig.test?.exclude ?? []), '**/*.mdx'],
 
           // if the existing deps.inline is true, we keep it as-is, because it will inline everything
-          ...(inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED.test?.server?.deps
-            ?.inline !== true
+          ...(nonMutableInputConfig.test?.server?.deps?.inline !== true
             ? {
                 server: {
                   deps: {
@@ -267,9 +289,8 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
               },
             },
             // if there is a test.browser config AND test.browser.screenshotFailures is not explicitly set, we set it to false
-            ...(inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED.test?.browser &&
-            inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED.test.browser
-              .screenshotFailures === undefined
+            ...(nonMutableInputConfig.test?.browser &&
+            nonMutableInputConfig.test.browser.screenshotFailures === undefined
               ? {
                   screenshotFailures: false,
                 }
@@ -278,11 +299,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
         },
 
         envPrefix: Array.from(
-          new Set([
-            ...(inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED.envPrefix || []),
-            'STORYBOOK_',
-            'VITE_',
-          ])
+          new Set([...(nonMutableInputConfig.envPrefix || []), 'STORYBOOK_', 'VITE_'])
         ),
 
         resolve: {
@@ -323,13 +340,10 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       );
 
       // alert the user of problems
-      if (
-        (inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED.test?.include?.length ??
-          0) > 0
-      ) {
+      if ((nonMutableInputConfig.test?.include?.length ?? 0) > 0) {
         // remove the user's existing include, because we're replacing it with our own heuristic based on main.ts#stories
         // @ts-expect-error: Ignore
-        inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED.test.include = [];
+        nonMutableInputConfig.test.include = [];
         console.log(
           picocolors.yellow(dedent`
             Warning: Starting in Storybook 8.5.0-alpha.18, the "test.include" option in Vitest is discouraged in favor of just using the "stories" field in your Storybook configuration.
@@ -371,7 +385,9 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
         return code;
       }
 
-      if (storiesFiles.includes(id)) {
+      const relativeId = relative(finalOptions.vitestRoot, id);
+
+      if (match([relativeId], finalOptions.includeStories).length > 0) {
         return vitestTransform({
           code,
           fileName: id,

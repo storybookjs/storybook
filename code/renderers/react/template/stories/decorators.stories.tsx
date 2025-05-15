@@ -62,7 +62,7 @@ export const Context: StoryObj<typeof Component> = {
 export const AllowUseStateInRender: StoryObj = {
   render: () => {
     const [count, setCount] = useState(0);
-    const Button = (globalThis as any).Components.Button;
+    const Button = (globalThis as any).__TEMPLATE_COMPONENTS__.Button;
     return <Button onClick={() => setCount(count + 1)} label={`Clicked ${count} times`} />;
   },
   decorators: [

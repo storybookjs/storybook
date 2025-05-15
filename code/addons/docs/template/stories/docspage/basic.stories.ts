@@ -1,7 +1,7 @@
 import { fn } from 'storybook/test';
 
 export default {
-  component: globalThis.Components.Button,
+  component: globalThis.__TEMPLATE_COMPONENTS__.Button,
   tags: ['autodocs'],
   args: { label: 'Click Me!', onClick: fn() },
   parameters: { chromatic: { disable: true } },

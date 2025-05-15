@@ -1,4 +1,5 @@
 /* eslint-env browser */
+import { type IconName, iconPaths } from './icons';
 import type {
   Box,
   ClickEventDetails,
@@ -50,23 +51,47 @@ export const createElement = (type: string, props: Record<string, any>, children
   return element;
 };
 
-export const convertLegacy = (highlight: RawHighlightOptions): HighlightOptions => {
-  if ('elements' in highlight) {
-    const { elements, color, style } = highlight;
+export const createIcon = (name: IconName) =>
+  iconPaths[name] &&
+  createElement(
+    'svg',
+    { width: '14', height: '14', viewBox: '0 0 14 14', xmlns: 'http://www.w3.org/2000/svg' },
+    iconPaths[name].map((d) =>
+      createElement('path', {
+        fill: 'currentColor',
+        'fill-rule': 'evenodd',
+        'clip-rule': 'evenodd',
+        d,
+      })
+    )
+  );
+
+export const normalizeOptions = (options: RawHighlightOptions): Highlight => {
+  if ('elements' in options) {
+    // Legacy format
+    const { elements, color, style } = options;
     return {
+      id: undefined,
+      priority: 0,
       selectors: elements,
       styles: {
         outline: `2px ${style} ${color}`,
         outlineOffset: '2px',
         boxShadow: '0 0 0 6px rgba(255,255,255,0.6)',
       },
+      menu: undefined,
     };
   }
+
+  const { menu, ...rest } = options;
   return {
+    id: undefined,
+    priority: 0,
     styles: {
       outline: '2px dashed #029cfd',
     },
-    ...highlight,
+    ...rest,
+    menu: Array.isArray(menu) ? (menu.every(Array.isArray) ? menu : [menu]) : undefined,
   };
 };
 

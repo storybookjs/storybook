@@ -1,7 +1,7 @@
 import { expect, getByRole, mocked, spyOn, userEvent } from 'storybook/test';
 
 const meta = {
-  component: globalThis.Components.Button,
+  component: globalThis.__TEMPLATE_COMPONENTS__.Button,
   loaders() {
     spyOn(console, 'log').mockName('console.log');
     console.log('1 - [from loaders]');

@@ -11,8 +11,8 @@ import {
 } from './constants';
 import type { Box, Highlight, HighlightOptions, RawHighlightOptions } from './types';
 import {
-  convertLegacy,
   createElement,
+  createIcon,
   getEventDetails,
   hidePopover,
   isOverMenu,
@@ -20,6 +20,7 @@ import {
   keepInViewport,
   mapBoxes,
   mapElements,
+  normalizeOptions,
   showPopover,
   useStore,
 } from './utils';
@@ -27,34 +28,6 @@ import {
 const menuId = 'storybook-highlights-menu';
 const rootId = 'storybook-highlights-root';
 const storybookRootId = 'storybook-root';
-
-const chevronLeft = () =>
-  createElement(
-    'svg',
-    { width: '14', height: '14', viewBox: '0 0 14 14', xmlns: 'http://www.w3.org/2000/svg' },
-    [
-      createElement('path', {
-        fillRule: 'evenodd',
-        clipRule: 'evenodd',
-        d: 'M9.10355 10.1464C9.29882 10.3417 9.29882 10.6583 9.10355 10.8536C8.90829 11.0488 8.59171 11.0488 8.39645 10.8536L4.89645 7.35355C4.70118 7.15829 4.70118 6.84171 4.89645 6.64645L8.39645 3.14645C8.59171 2.95118 8.90829 2.95118 9.10355 3.14645C9.29882 3.34171 9.29882 3.65829 9.10355 3.85355L5.95711 7L9.10355 10.1464Z',
-        fill: 'currentColor',
-      }),
-    ]
-  );
-
-const chevronRight = () =>
-  createElement(
-    'svg',
-    { width: '14', height: '14', viewBox: '0 0 14 14', xmlns: 'http://www.w3.org/2000/svg' },
-    [
-      createElement('path', {
-        fillRule: 'evenodd',
-        clipRule: 'evenodd',
-        d: 'M4.89645 10.1464C4.70118 10.3417 4.70118 10.6583 4.89645 10.8536C5.09171 11.0488 5.40829 11.0488 5.60355 10.8536L9.10355 7.35355C9.29882 7.15829 9.29882 6.84171 9.10355 6.64645L5.60355 3.14645C5.40829 2.95118 5.09171 2.95118 4.89645 3.14645C4.70118 3.34171 4.70118 3.65829 4.89645 3.85355L8.04289 7L4.89645 10.1464Z',
-        fill: 'currentColor',
-      }),
-    ]
-  );
 
 export const useHighlights = (channel: Channel) => {
   if (globalThis.__STORYBOOK_HIGHLIGHT_INITIALIZED) {
@@ -346,16 +319,19 @@ export const useHighlights = (channel: Channel) => {
             }
             #${menuId} ul {
               list-style: none;
-              padding: 4px 0;
               margin: 0;
+              padding: 0;
+            }
+            #${menuId} > ul {
               max-height: 300px;
               overflow-y: auto;
+              padding: 4px 0;
             }
             #${menuId} li {
               padding: 0 4px;
               margin: 0;
             }
-            #${menuId} li > * {
+            #${menuId} li > :not(ul) {
               display: flex;
               padding: 8px;
               margin: 0;
@@ -372,7 +348,7 @@ export const useHighlights = (channel: Channel) => {
               font-family: inherit;
               font-size: inherit;
             }
-            #${menuId} button:focus {
+            #${menuId} button:focus-visible {
               outline-color: #029CFD;
             }
             #${menuId} button:hover {
@@ -388,13 +364,15 @@ export const useHighlights = (channel: Channel) => {
               font-size: 11px;
             }
             #${menuId} li svg {
-              display: none;
               flex-shrink: 0;
               margin: 1px;
               color: #73828C;
             }
-            #${menuId} li > button:hover svg, #${menuId} li > button:focus svg {
+            #${menuId} li > button:hover svg, #${menuId} li > button:focus-visible svg {
               color: #029CFD;
+            }
+            #${menuId} .element-list li svg {
+              display: none;
             }
             #${menuId} li.selectable svg, #${menuId} li.selected svg {
               display: block;
@@ -402,20 +380,21 @@ export const useHighlights = (channel: Channel) => {
             #${menuId} .menu-list {
               border-top: 1px solid rgba(38, 85, 115, 0.15);
             }
-            #${menuId} .menu-list li:not(:last-child) {
+            #${menuId} .menu-list > li:not(:last-child) {
               padding-bottom: 4px;
               margin-bottom: 4px;
               border-bottom: 1px solid rgba(38, 85, 115, 0.15);
             }
-            #${menuId} .menu-list li div {
+            #${menuId} .menu-items, #${menuId} .menu-items li {
+              padding: 0;
+            }
+            #${menuId} .menu-item {
+              display: flex;
+            }
+            #${menuId} .menu-item-content {
               display: flex;
               flex-direction: column;
-              align-items: flex-start;
-              gap: 0;
-            }
-            #${menuId} .menu-list li small {
-              color: #5C6870;
-              font-size: 11px;
+              flex-grow: 1;
             }
           `,
         ])
@@ -434,10 +413,14 @@ export const useHighlights = (channel: Channel) => {
           'ul',
           { class: 'element-list' },
           elementList.map((target) => {
-            const menuItems = target.menu?.filter(
-              (item) => !item.selectors || item.selectors.some((s) => target.selectors.includes(s))
-            );
-            const selectable = elementList.length > 1 && !!menuItems?.length;
+            const selectable =
+              elementList.length > 1 &&
+              !!target.menu?.some((group) =>
+                group.some(
+                  (item) =>
+                    !item.selectors || item.selectors.some((s) => target.selectors.includes(s))
+                )
+              );
             const props = selectable
               ? {
                   class: 'selectable',
@@ -451,9 +434,9 @@ export const useHighlights = (channel: Channel) => {
             const asButton = selectable || selectedElement;
             return createElement('li', props, [
               createElement(asButton ? 'button' : 'div', asButton ? { type: 'button' } : {}, [
-                selectedElement ? chevronLeft() : null,
+                selectedElement ? createIcon('chevronLeft') : null,
                 createElement('code', {}, [target.element.outerHTML]),
-                selectable ? chevronRight() : null,
+                selectable ? createIcon('chevronRight') : null,
               ]),
             ]);
           })
@@ -463,29 +446,46 @@ export const useHighlights = (channel: Channel) => {
 
     if (selected.get() || targets.get().length === 1) {
       const target = selected.get() || targets.get()[0];
-      const menuItems = target.menu?.filter(
-        (item) => !item.selectors || item.selectors.some((s) => target.selectors.includes(s))
+      const menuGroups = target.menu?.filter((group) =>
+        group.some(
+          (item) => !item.selectors || item.selectors.some((s) => target.selectors.includes(s))
+        )
       );
-      if (menuItems?.length) {
+      if (menuGroups?.length) {
         menu.appendChild(
           createElement(
             'ul',
             { class: 'menu-list' },
-            menuItems.map(({ id, title, description, clickEvent: event }) => {
-              const onClick = event && (() => channel.emit(event, id, getEventDetails(target)));
-              return createElement('li', {}, [
+            menuGroups.map((menuItems) =>
+              createElement('li', {}, [
                 createElement(
-                  onClick ? 'button' : 'div',
-                  onClick ? { type: 'button', onClick } : {},
-                  [
-                    createElement('div', {}, [
-                      createElement('strong', {}, [title]),
-                      description && createElement('small', {}, [description]),
-                    ]),
-                  ]
+                  'ul',
+                  { class: 'menu-items' },
+                  menuItems.map(
+                    ({ id, title, description, iconLeft, iconRight, clickEvent: event }) => {
+                      const onClick =
+                        event && (() => channel.emit(event, id, getEventDetails(target)));
+                      return createElement('li', {}, [
+                        createElement(
+                          onClick ? 'button' : 'div',
+                          onClick
+                            ? { class: 'menu-item', type: 'button', onClick }
+                            : { class: 'menu-item' },
+                          [
+                            iconLeft ? createIcon(iconLeft) : null,
+                            createElement('div', { class: 'menu-item-content' }, [
+                              createElement(description ? 'strong' : 'span', {}, [title]),
+                              description && createElement('span', {}, [description]),
+                            ]),
+                            iconRight ? createIcon(iconRight) : null,
+                          ]
+                        ),
+                      ]);
+                    }
+                  )
                 ),
-              ]);
-            })
+              ])
+            )
           )
         );
       }
@@ -517,7 +517,7 @@ export const useHighlights = (channel: Channel) => {
   //
 
   const addHighlight = (highlight: RawHighlightOptions) => {
-    const info = convertLegacy(highlight);
+    const info = normalizeOptions(highlight);
     highlights.set((value) => {
       const others = info.id ? value.filter((h) => h.id !== info.id) : value;
       return info.selectors?.length ? [...others, info] : others;
@@ -525,7 +525,9 @@ export const useHighlights = (channel: Channel) => {
   };
 
   const removeHighlight = (id: string) => {
-    highlights.set((value) => value.filter((h) => h.id !== id));
+    if (id) {
+      highlights.set((value) => value.filter((h) => h.id !== id));
+    }
   };
 
   const resetState = () => {

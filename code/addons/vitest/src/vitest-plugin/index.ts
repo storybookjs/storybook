@@ -251,6 +251,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
             ...storybookEnv,
             // To be accessed by the setup file
             __STORYBOOK_URL__: finalOptions.storybookUrl,
+            __STORYBOOK_CONFIG_DIR__: finalOptions.configDir,
 
             VITEST_STORYBOOK: vitestStorybook,
             __VITEST_INCLUDE_TAGS__: finalOptions.tags.include.join(','),
@@ -258,6 +259,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
             __VITEST_SKIP_TAGS__: finalOptions.tags.skip.join(','),
           },
 
+          forceRerunTriggers: [finalOptions.configDir],
           include: includeStories,
           exclude: [...(nonMutableInputConfig.test?.exclude ?? []), '**/*.mdx'],
 
@@ -360,6 +362,12 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     },
     configureVitest(context) {
       context.vitest.config.coverage.exclude.push('storybook-static');
+
+      // TODO:
+      // From Vitest 3.2 (unreleased so far) there will be a better API we can use: watchTriggerPatterns
+      context.vitest.onFilterWatchedSpecification((spec) => {
+        return spec.project.config.env?.__STORYBOOK_CONFIG_DIR__ === finalOptions.configDir;
+      });
     },
     async configureServer(server) {
       if (staticDirs) {

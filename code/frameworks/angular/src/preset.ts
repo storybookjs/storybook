@@ -10,16 +10,23 @@ const getAbsolutePath = <I extends string>(input: I): I =>
 export const addons: PresetProperty<'addons'> = [
   require.resolve('./server/framework-preset-angular-cli'),
   require.resolve('./server/framework-preset-angular-ivy'),
-  require.resolve('./server/framework-preset-angular-docs'),
 ];
 
-export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entries = [], options) => {
+export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
+  entries = [],
+  options
+) => {
   const annotations = [...entries, require.resolve('./client/config')];
 
   if ((options as any as StandaloneOptions).enableProdMode) {
     annotations.unshift(require.resolve('./client/preview-prod'));
   }
 
+  const docsConfig = await options.presets.apply('docs', {}, options);
+  const docsEnabled = Object.keys(docsConfig).length > 0;
+  if (docsEnabled) {
+    annotations.push(require.resolve('./client/docs/config'));
+  }
   return annotations;
 };
 

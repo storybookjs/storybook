@@ -374,7 +374,6 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       ) {
         telemetry('test-run', {
           runner: 'vitest',
-          // NOTE: this is always true for some reason.
           watch: context.vitest.config.watch,
           coverage: !!context.vitest.config.coverage?.enabled,
         });

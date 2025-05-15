@@ -449,7 +449,7 @@ jobs:
             cd sandbox/$(yarn get-sandbox-dir --template $TEMPLATE) && yarn
       - run:
           name: Serving static storybook
-          command: yarn task --task serve --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner) --no-link --start-from=never --junit
+          command: yarn task --task serve --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner) --no-link --start-from=serve --junit
           background: true
       - run:
           name: Waiting for storybook to be ready

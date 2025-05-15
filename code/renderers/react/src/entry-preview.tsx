@@ -26,7 +26,6 @@ export const decorators: Decorator[] = [
   },
 ];
 
-console.log('entry-preview.tsx');
 export const parameters = {
   renderer: 'react',
 };

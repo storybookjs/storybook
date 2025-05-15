@@ -448,6 +448,13 @@ jobs:
             TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner)
             cd sandbox/$(yarn get-sandbox-dir --template $TEMPLATE) && yarn
       - run:
+          name: Serving static storybook
+          command: yarn task --task serve --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner) --no-link --start-from=never --junit
+          background: true
+      - run:
+          name: Waiting for storybook to be ready
+          command: npx wait-on http://127.0.0.1:8001
+      - run:
           name: Running Test Runner
           command: yarn task --task test-runner --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner) --no-link --start-from=never --junit
       - store_artifacts:

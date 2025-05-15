@@ -1,4 +1,4 @@
-import { type enhanceArgTypes } from 'storybook/internal/docs-tools';
+import { enhanceArgTypes } from 'storybook/internal/docs-tools';
 import type { ArgTypesEnhancer } from 'storybook/internal/types';
 
 import { extractArgTypes } from './extractArgTypes';

@@ -18,10 +18,7 @@ export const build = async (cliOptions: any) => {
     cache,
     packageJson,
   };
-  await withTelemetry('build', { cliOptions, presetOptions: options }, () => {
-    if (process.env.BUILD_ENV_FOR_TESTING) {
-      telemetry('test-run', { runner: process.env.BUILD_ENV_FOR_TESTING, watch: false });
-    }
-    return buildStaticStandalone(options);
-  });
+  await withTelemetry('build', { cliOptions, presetOptions: options }, () =>
+    buildStaticStandalone(options)
+  );
 };

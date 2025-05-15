@@ -58,7 +58,7 @@ addons.register(ADDON_ID, (api) => {
           source: undefined,
           format: undefined,
         });
-      }, [currentStory.id]);
+      }, [currentStory?.id]);
 
       useChannel({
         [SNIPPET_RENDERED]: ({ source, format }) => {

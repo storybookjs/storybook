@@ -2,11 +2,11 @@ import type { FC } from 'react';
 import React, { useCallback, useEffect, useState } from 'react';
 
 import { Link } from 'storybook/internal/components';
+import type { StrictInputType } from 'storybook/internal/csf';
 
 import {
   BooleanControl,
   ColorControl,
-  type ControlProps,
   DateControl,
   FilesControl,
   NumberControl,
@@ -14,11 +14,12 @@ import {
   OptionsControl,
   RangeControl,
   TextControl,
+  isControlObject,
 } from '../../controls';
-import type { ArgType, Args } from './types';
+import type { Args } from './types';
 
 export interface ArgControlProps {
-  row: ArgType;
+  row: StrictInputType;
   arg: any;
   updateArgs: (args: Args) => void;
   isHovered: boolean;
@@ -69,8 +70,10 @@ export const ArgControl: FC<ArgControlProps> = ({ row, arg, updateArgs, isHovere
   const onBlur = useCallback(() => setFocused(false), []);
   const onFocus = useCallback(() => setFocused(true), []);
 
-  if (!control || control.disable) {
-    const canBeSetup = control?.disable !== true && row?.type?.name !== 'function';
+  if (!control || (isControlObject(control) && control.disable)) {
+    const canBeSetup = isControlObject(control)
+      ? control.disable !== true && row?.type?.name !== 'function'
+      : false;
     return isHovered && canBeSetup ? (
       <Link href="https://storybook.js.org/docs/essentials/controls" target="_blank" withArrow>
         Setup controls
@@ -82,6 +85,11 @@ export const ArgControl: FC<ArgControlProps> = ({ row, arg, updateArgs, isHovere
   // row.name is a display name and not a suitable DOM input id or name - i might contain whitespace etc.
   // row.key is a hash key and therefore a much safer choice
   const props = { name: key, argType: row, value: boxedValue.value, onChange, onBlur, onFocus };
-  const Control = Controls[control.type] || NoControl;
-  return <Control {...props} {...control} controlType={control.type} />;
+  const Control = typeof control !== 'string' ? (Controls[control.type] ?? NoControl) : NoControl;
+
+  if (typeof control === 'string') {
+    return <Control {...props} />;
+  } else {
+    return <Control {...props} {...control} controlType={control.type} />;
+  }
 };

@@ -1,3 +1,10 @@
+## 8.6.14
+
+- CLI: Add skip onboarding, recommended/minimal config - [#30930](https://github.com/storybookjs/storybook/pull/30930), thanks @shilman!
+- Core: Fix using dates in expect statements - [#28413](https://github.com/storybookjs/storybook/pull/28413), thanks @yann-combarnous!
+- React Native Web: Fix expo router by setting JSX to automatic - [#31484](https://github.com/storybookjs/storybook/pull/31484), thanks @dannyhw!
+- Test: Make sure that lit arrays are not cloned - [#31435](https://github.com/storybookjs/storybook/pull/31435), thanks @kasperpeulen!
+
 ## 8.6.13
 
 - CLI: Add skip onboarding, recommended/minimal config - [#30930](https://github.com/storybookjs/storybook/pull/30930), thanks @shilman!

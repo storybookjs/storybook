@@ -6,7 +6,7 @@ export interface TestParameters {
   /**
    * Test addon configuration
    *
-   * @see https://storybook.js.org/docs/writing-tests/test-addon
+   * @see https://storybook.js.org/docs/next/writing-tests/vitest-addon
    */
   test: {
     /** Ignore unhandled errors during test execution */

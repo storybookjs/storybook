@@ -1,6 +1,6 @@
 {
   "name": "@storybook/sveltekit",
-  "version": "9.0.0-rc.1",
+  "version": "9.0.0-rc.2",
   "description": "Storybook for SvelteKit",
   "keywords": [
     "storybook",

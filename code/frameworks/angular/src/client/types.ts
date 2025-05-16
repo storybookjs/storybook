@@ -45,6 +45,7 @@ export interface AngularRenderer extends WebRenderer {
 
 export type Parameters = DefaultParameters & {
   bootstrapModuleOptions?: unknown;
+  useTestBedRenderer?: boolean;
 };
 
 export type StoryContext = DefaultStoryContext<AngularRenderer> & { parameters: Parameters };

@@ -88,7 +88,7 @@
     "expect-type": "^0.15.0",
     "html-tags": "^3.1.0",
     "prop-types": "^15.7.2",
-    "react-element-to-jsx-string": "^15.0.0",
+    "react-element-to-jsx-string": "npm:@7rulnik/react-element-to-jsx-string@15.0.1",
     "require-from-string": "^2.0.2",
     "semver": "^7.3.7",
     "ts-dedent": "^2.0.0",

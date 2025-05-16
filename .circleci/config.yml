@@ -434,7 +434,7 @@ jobs:
       parallelism:
         type: integer
     executor:
-      class: medium+
+      class: large
       name: sb_playwright
     parallelism: << parameters.parallelism >>
     steps:
@@ -447,6 +447,13 @@ jobs:
           command: |
             TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner)
             cd sandbox/$(yarn get-sandbox-dir --template $TEMPLATE) && yarn
+      - run:
+          name: Serving static storybook
+          command: yarn task --task serve --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner) --no-link --start-from=serve --junit
+          background: true
+      - run:
+          name: Waiting for storybook to be ready
+          command: npx wait-on http://127.0.0.1:8001
       - run:
           name: Running Test Runner
           command: yarn task --task test-runner --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner) --no-link --start-from=never --junit
@@ -817,10 +824,10 @@ workflows:
       - lint:
           requires:
             - build
-# TODO: don't forget to reenable this
-#      - bench-packages:
-#          requires:
-#            - build
+      # TODO: don't forget to reenable this
+      #      - bench-packages:
+      #          requires:
+      #            - build
       - check
       - unit-tests:
           requires:
@@ -854,18 +861,18 @@ workflows:
           requires:
             - create-sandboxes
       - test-runner-production:
-          parallelism: 8
+          parallelism: 5
           requires:
             - create-sandboxes
       - vitest-integration:
           parallelism: 5
           requires:
             - create-sandboxes
-# TODO: don't forget to reenable this
-#      - bench-sandboxes:
-#          parallelism: 5
-#          requires:
-#            - create-sandboxes
+      # TODO: don't forget to reenable this
+      #      - bench-sandboxes:
+      #          parallelism: 5
+      #          requires:
+      #            - create-sandboxes
       - test-ui-testing-module:
           requires:
             - build
@@ -891,10 +898,10 @@ workflows:
       - lint:
           requires:
             - build
-# TODO: don't forget to reenable this
-#      - bench-packages:
-#          requires:
-#            - build
+      # TODO: don't forget to reenable this
+      #      - bench-packages:
+      #          requires:
+      #            - build
       - check
       - unit-tests:
           requires:
@@ -928,7 +935,7 @@ workflows:
           requires:
             - create-sandboxes
       - test-runner-production:
-          parallelism: 14
+          parallelism: 11
           requires:
             - create-sandboxes
       - vitest-integration:
@@ -947,16 +954,16 @@ workflows:
       - test-init-features:
           requires:
             - build
-# TODO: don't forget to reenable this
-#      - bench-sandboxes:
-#          parallelism: 5
-#          requires:
-#            - create-sandboxes
-      # TODO: reenable once we find out the source of flakyness
-      # - test-runner-dev:
-      #     parallelism: 4
-      #     requires:
-      #       - create-sandboxes
+  # TODO: don't forget to reenable this
+  #      - bench-sandboxes:
+  #          parallelism: 5
+  #          requires:
+  #            - create-sandboxes
+  # TODO: reenable once we find out the source of flakyness
+  # - test-runner-dev:
+  #     parallelism: 4
+  #     requires:
+  #       - create-sandboxes
   daily:
     when:
       equal: [daily, << pipeline.parameters.workflow >>]
@@ -966,10 +973,10 @@ workflows:
       - lint:
           requires:
             - build
-# TODO: don't forget to reenable this
-#      - bench-packages:
-#          requires:
-#            - build
+      # TODO: don't forget to reenable this
+      #      - bench-packages:
+      #          requires:
+      #            - build
       - check
       - unit-tests:
           requires:
@@ -1003,7 +1010,7 @@ workflows:
           requires:
             - create-sandboxes
       - test-runner-production:
-          parallelism: 29
+          parallelism: 21
           requires:
             - create-sandboxes
       - vitest-integration:
@@ -1046,8 +1053,8 @@ workflows:
 #          requires:
 #            - create-sandboxes
 
-      # TODO: reenable once we find out the source of flakyness
-      # - test-runner-dev:
-      #     parallelism: 4
-      #     requires:
-      #       - create-sandboxes
+# TODO: reenable once we find out the source of flakyness
+# - test-runner-dev:
+#     parallelism: 4
+#     requires:
+#       - create-sandboxes

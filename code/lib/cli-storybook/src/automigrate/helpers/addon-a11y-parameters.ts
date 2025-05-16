@@ -38,7 +38,7 @@ function migrateA11yParameters(obj: t.ObjectExpression): boolean {
 }
 
 export function transformStoryA11yParameters(code: string): CsfFile | null {
-  const parsed = loadCsf(code, { makeTitle: (title) => title }).parse();
+  const parsed = loadCsf(code, { makeTitle: (title?: string) => title || 'default' }).parse();
 
   let hasChanges = false;
 

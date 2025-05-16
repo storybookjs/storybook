@@ -865,11 +865,17 @@ export class ConfigFile {
    * @param fromImport - The module to import from
    */
   setImport(importSpecifier: string[] | string | { namespace: string } | null, fromImport: string) {
-    this._ast.program.body.forEach((node) => {
-      if (t.isImportDeclaration(node) && node.source.value === fromImport.split('node:')[1]) {
+    const importDeclaration = this._ast.program.body.find((node) => {
+      const hasDeclaration =
+        t.isImportDeclaration(node) &&
+        (node.source.value === fromImport || node.source.value === fromImport.split('node:')[1]);
+
+      if (hasDeclaration) {
         fromImport = node.source.value;
       }
-    });
+
+      return hasDeclaration;
+    }) as t.ImportDeclaration | undefined;
 
     const getNewImportSpecifier = (specifier: string) =>
       t.importSpecifier(t.identifier(specifier), t.identifier(specifier));
@@ -917,10 +923,6 @@ export class ConfigFile {
           t.isIdentifier(specifier.local) &&
           specifier.local.name === name
       );
-
-    const importDeclaration = this._ast.program.body.find(
-      (node) => t.isImportDeclaration(node) && node.source.value === fromImport
-    ) as t.ImportDeclaration | undefined;
 
     // Handle side-effect imports (e.g., import 'foo')
     if (importSpecifier === null) {

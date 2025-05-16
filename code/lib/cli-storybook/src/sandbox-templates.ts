@@ -276,7 +276,7 @@ export const baseTemplates = {
         },
       },
     },
-    skipTasks: ['e2e-tests-dev', 'bench'],
+    skipTasks: ['e2e-tests-dev', 'bench', 'test-runner'],
   },
   'react-vite/default-ts': {
     name: 'React Latest (Vite | TypeScript)',
@@ -295,7 +295,7 @@ export const baseTemplates = {
         },
       },
     },
-    skipTasks: ['bench'],
+    skipTasks: ['bench', 'test-runner'],
   },
   'react-vite/prerelease-ts': {
     name: 'React Prerelease (Vite | TypeScript)',
@@ -327,7 +327,7 @@ export const baseTemplates = {
         },
       },
     },
-    skipTasks: ['e2e-tests-dev', 'bench'],
+    skipTasks: ['e2e-tests-dev', 'bench', 'test-runner'],
   },
   'react-webpack/18-ts': {
     name: 'React Latest (Webpack | TypeScript)',
@@ -415,7 +415,7 @@ export const baseTemplates = {
       renderer: '@storybook/vue3',
       builder: '@storybook/builder-vite',
     },
-    skipTasks: ['e2e-tests-dev', 'bench'],
+    skipTasks: ['e2e-tests-dev', 'bench', 'test-runner'],
   },
   'vue3-vite/default-ts': {
     name: 'Vue v3 (Vite | TypeScript)',
@@ -425,7 +425,7 @@ export const baseTemplates = {
       renderer: '@storybook/vue3',
       builder: '@storybook/builder-vite',
     },
-    skipTasks: ['e2e-tests-dev', 'bench'],
+    skipTasks: ['e2e-tests-dev', 'bench', 'test-runner'],
   },
   'nuxt-vite/default-ts': {
     name: 'Nuxt v3 (Vite | TypeScript)',
@@ -477,7 +477,7 @@ export const baseTemplates = {
       renderer: '@storybook/svelte',
       builder: '@storybook/builder-vite',
     },
-    skipTasks: ['e2e-tests-dev', 'bench'],
+    skipTasks: ['e2e-tests-dev', 'bench', 'test-runner'],
   },
   'svelte-vite/default-ts': {
     name: 'Svelte Latest (Vite | TypeScript)',
@@ -488,7 +488,7 @@ export const baseTemplates = {
       builder: '@storybook/builder-vite',
     },
     // Remove smoke-test from the list once https://github.com/storybookjs/storybook/issues/19351 is fixed.
-    skipTasks: ['smoke-test', 'e2e-tests-dev', 'bench'],
+    skipTasks: ['smoke-test', 'e2e-tests-dev', 'bench', 'test-runner'],
   },
   'angular-cli/prerelease': {
     name: 'Angular CLI Prerelease (Webpack | TypeScript)',
@@ -557,7 +557,7 @@ export const baseTemplates = {
       renderer: '@storybook/svelte',
       builder: '@storybook/builder-vite',
     },
-    skipTasks: ['e2e-tests-dev', 'bench'],
+    skipTasks: ['e2e-tests-dev', 'bench', 'test-runner'],
   },
   'lit-vite/default-js': {
     name: 'Lit Latest (Vite | JavaScript)',

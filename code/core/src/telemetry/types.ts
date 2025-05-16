@@ -10,6 +10,7 @@ export type EventType =
   | 'build'
   | 'upgrade'
   | 'init'
+  | 'init-step'
   | 'scaffolded-empty'
   | 'browser'
   | 'canceled'
@@ -38,6 +39,7 @@ export type StorybookMetadata = {
   storybookVersion?: string;
   storybookVersionSpecifier: string;
   generatedAt?: number;
+  userSince?: number;
   language: 'typescript' | 'javascript';
   framework?: {
     name: string;

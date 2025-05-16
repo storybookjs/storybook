@@ -4,9 +4,6 @@ sidebar:
   order: 2
   title: Interaction tests
 ---
-{/* TODO
-    - Cannot run locally because of sticky redirect?
-*/}
 
 In Storybook, interaction tests are built as part of a [story](../writing-stories/index.mdx). That story renders the component with the necessary props and context to place it in an initial state. You then use a [play function](../writing-stories/play-function.mdx) to simulate user behavior like clicks, typing, and submitting a form and then assert on the end result.
 
@@ -32,8 +29,7 @@ In this example, the EmptyForm story tests the render of the LoginForm component
 
 <CodeSnippets path="login-form-with-play-function.md" />
 
-[TK - Replace]
-<Video src="../_assets/writing-tests/addon-interaction-example-optimized.mp4" />
+![Storybook with a LoginForm component and passing interactions in the Interactions panel](../_assets/writing-tests/interaction-test-pass.png)
 
 There’s a lot going on in that code sample, so let’s walk through the APIs one-by-one.
 
@@ -262,7 +258,7 @@ If you're using the [Vitest addon](./integrations/vitest-addon.mdx), you can run
 
 In the Storybook UI, you can run interaction tests by clicking the **Run component tests** button in the expanded testing widget in the sidebar or by opening the context menu (three dots) on a story or folder and selecting **Run component tests**.
 
-![TK - SB Test widget, expanded, hovering run component tests button](https://placecats.com/300/200)
+![Test widget, expanded, hovering run component tests button](../_assets/writing-tests/test-widget-run-component-tests.png)
 
 If you're using the [test-runner](./integrations/test-runner.mdx), you can run your interaction tests in the terminal or in CI environments.
 
@@ -277,10 +273,9 @@ Any test failures will also show up here, making it easy to quickly pinpoint the
 
 ### Permalinks for reproductions
 
-Because Storybook is a webapp, anyone with the URL can reproduce the error with the same detailed information without any additional environment configuration or tooling required.
+Because Storybook is a webapp, anyone with the URL can reproduce the failure with the same detailed information without any additional environment configuration or tooling required.
 
-[TK - Replace]
-![Component testing with an error](../_assets/writing-tests/storybook-addon-interactions-error-optimized.png)
+![Interaction testing with a failure](../_assets/writing-tests/interactions-failure.png)
 
 Streamline interaction testing further by automatically [publishing Storybook](../sharing/publish-storybook.mdx) in pull requests. That gives teams a universal reference point to test and debug stories.
 

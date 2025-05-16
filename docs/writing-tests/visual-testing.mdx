@@ -28,7 +28,7 @@ When you start Storybook, you'll see a new addon panel for Visual Tests where yo
 
 Already using the [Vitest addon](./integrations/vitest-addon.mdx)? In the expanded testing widget, you’ll now see a Visual tests section:
 
-![TK - Expanded testing widget, showing the Visual tests section](https://placecats.com/300/200)
+![Expanded testing widget, showing the Visual tests section](../_assets/writing-tests/test-widget-expanded-with-vta.png)
 
 Clicking the Run tests button at the bottom will run *all* tests, both component and visual.
 
@@ -42,7 +42,7 @@ Once signed in, you will see your Chromatic account(s) and their projects. Eithe
 
 Now that you have linked your project to the addon, you can press the “Catch a UI change” button to run your first build of visual tests.
 
-![TK - Catch a UI change button](https://placecats.com/300/200)
+![Visual test panel showing the Catch a UI change button](../_assets/writing-tests/vta-project-linked.png)
 
 That first build will create the baseline snapshots for your stories, which will be compared against when you run visual tests again.
 
@@ -52,11 +52,13 @@ After you have made a code change, there are two ways to run visual tests in Sto
 
 In the expanded testing widget in the sidebar, press the run button in the Visual tests section.
 
+![Test widget showing the Run visual tests button](../_assets/writing-tests/test-widget-expanded-with-vta.png)
+
 Or, in the Visual tests addon panel, press the run button in the top right corner of the panel.
 
-Either method will send your stories to the cloud to take snapshots and detect visual changes.
+![Visual tests addon panel showing the Run visual tests button](../_assets/writing-tests/vta-run-from-panel.png)
 
-![TK - Storybook with both run visual tests buttons highlighted](https://placecats.com/300/200)
+Either method will send your stories to the cloud to take snapshots and detect visual changes.
 
 ## Review changes
 
@@ -64,11 +66,11 @@ If there are visual changes in your stories, they will be 🟡 highlighted in th
 
 If the changes are intentional, ✅ accept them as baselines locally. If the changes aren't intentional, fix the story and rerun the tests using the rerun button.
 
-![TK - Visual test panel with diff](../_assets/writing-tests/vta-changes-found.png)
+![Visual test panel with diff](../_assets/writing-tests/vta-changes-found.png)
 
 When you finish accepting changes as baselines in the addon, you're ready to push the code to your remote repository. This will sync baselines to the cloud for anyone who checks out your branch.
 
-![TK - Visual test panel with accepted baselines](../_assets/writing-tests/vta-changes-accepted.png)
+![Visual test panel with accepted baselines](../_assets/writing-tests/vta-changes-accepted.png)
 
 ## Automate with CI
 

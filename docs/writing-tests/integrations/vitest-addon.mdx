@@ -122,15 +122,15 @@ To run all tests for your whole project, press the Run tests button in the testi
 
 <Video src="../_assets/writing-tests/addon-test-run-all-tests.mp4" />
 
-Alternatively, you can expand the testing widget to run specific types of tests individually. For those test types which have a watch mode (which will automatically re-run relevant tests upon code changes), you can toggle that on or off.
+Alternatively, you can expand the testing widget to run specific types of tests individually. The sub-types listed under component tests will all run together, including when watch mode (which will automatically re-run relevant tests upon code changes) is enabled (with the eye icon).
 
-![Screenshot of testing widget, expanded, showing test types and watch mode toggle](../_assets/writing-tests/addon-test-module-expanded.png)
+![Screenshot of testing widget, expanded, showing test types and watch mode toggle](../_assets/writing-tests/test-widget-expanded.png)
 
 <Callout variant="info" icon="ℹ️">
 
 If you have the [Visual tests addon](./visual-testing.mdx) installed, you'll see an option to run Visual tests alongside Component tests.
 
-![Screenshot of testing widget, expanded, showing Visual tests](../_assets/writing-tests/addon-test-module-expanded-with-vta.png)
+![Screenshot of testing widget, expanded, showing Visual tests](../_assets/writing-tests/test-widget-expanded-with-vta.png)
 
 Other addons, such as [a11y](./accessibility-testing.mdx#run-accessibility-tests), may also provide test types that can be run from the testing widget and affect the status indicators on stories and components.
 
@@ -138,7 +138,7 @@ Other addons, such as [a11y](./accessibility-testing.mdx#run-accessibility-tests
 
 To run tests for a specific story or group of stories, press the menu button (three dots) that appears on hover of a sidebar item. You can then select the test type you want to run.
 
-![Screenshot of story sidebar item with open menu](../_assets/writing-tests/addon-test-sidebar-item-menu.png)
+![Screenshot of story sidebar item with open menu](../_assets/writing-tests/context-menu.png)
 
 After running your tests, you will now see status indicators on stories and components for their pass, fail, or error state. You can press on the menu button when hovering a story to see the test results for that story. Selecting a result in the menu will navigate you to that story and open the appropriate debugging panel. For example, if an interaction test fails, you can jump straight to the failure in the Interactions panel. That panel provides an interactive debugger for your test, allowing you to step through each simulated behavior or assertion.
 
@@ -203,15 +203,9 @@ The tests run by the addon can be configured in two ways. You can toggle which t
 
 In addition to component tests, the Vitest addon supports multiple types of tests, depending on which other addons you are using in your project. Some test types, like [visual tests](./visual-testing.mdx), are run independently. Others, like [accessibility](./accessibility-testing.mdx), must be run alongside component tests. For these dependent test types, you can toggle them on or off in the testing widget by checking or unchecking the test types you want to run.
 
-![Screenshot of testing widget, expanded, edit mode, everything is checked](../_assets/writing-tests/addon-test-module-edit.png)
+![Screenshot of testing widget, expanded, everything is checked](../_assets/writing-tests/test-widget-expanded-all-enabled.png)
 
 Note that you may not have all of the test types pictured, depending on which addons you have installed.
-
-You can also access edit mode in the sidebar item menu for a story or group of stories:
-
-![Screenshot of story sidebar item with open menu, edit mode](../_assets/writing-tests/addon-test-sidebar-item-menu-edit.png)
-
-Note that toggling test types in the menu's edit mode affects all tests, not only those for the selected story or group of stories. It is intended as a convenience for quickly toggling test types on or off.
 
 ### Including, excluding, or skipping tests
 
@@ -285,7 +279,7 @@ Finally, because of the simpler architecture and the use of Vitest, this plugin 
 
 Sometimes tests can fail because of errors within Vitest itself. When this happens, the testing widget in the Storybook UI will alert you to the error, and you can click a link to view it in full. The error will also be logged to the console.
 
-![Screenshot of testing widget, expanded, showing Vitest error](../_assets/writing-tests/addon-test-vitest-error.png)
+![Screenshot of testing widget, expanded, showing Vitest error](../_assets/writing-tests/test-widget-vitest-error.png)
 
 Vitest offers [troubleshooting help for common errors](https://vitest.dev/guide/common-errors.html).
 

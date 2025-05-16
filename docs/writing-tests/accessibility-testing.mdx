@@ -31,8 +31,7 @@ Storybook's [`add`](../api/cli-options.mdx#add) command automates the addon's in
 
 Your Storybook will now include some features to check the accessibility of your components, including a button in the toolbar to simulate different vision impairments and an Accessibility addon panel to check for violations.
 
-[TK - Replace]
-![TK](../_assets/writing-tests/addon-a11y-annotated.png)
+![Storybook UI with accessibility features annotated](../_assets/writing-tests/addon-a11y-annotated.png)
 
 ## Check for violations
 
@@ -161,14 +160,21 @@ If you're using the [Vitest addon](./integrations/vitest-addon.mdx), you can run
 
 In the Storybook UI, you can run accessibility tests by checking the Accessibility option in the expanded testing widget in the sidebar, then clicking the **Run component tests** button. Once Accessibility is checked, you can also open the context menu (three dots) on a story or folder and selecting **Run component tests**.
 
-![TK - SB Test widget, expanded, hovering run component tests button with accessibility checked](https://placecats.com/300/200)
+![Test widget, expanded, with accessibility checked](../_assets/writing-tests/test-widget-a11y-enabled.png)
 
-[TK - Replace]
-<Video src="../_assets/writing-tests/sb-test-a11y-run.mp4" />
+![Storybook showing a failing accessibility test in both the sidebar story menu and the Accessibility panel](../_assets/writing-tests/test-a11y-overview.png)
 
 If you're using the [test-runner](./integrations/test-runner.mdx), you can run your accessibility tests in the terminal or in CI environments.
 
 Accessibility tests are included in your test run when you have the Accessibility addon installed and [`parameters.a11y.test`](#test-behavior) is set to a value other than `'off'`.
+
+## Debug accessibility violations
+
+When you run accessibility tests, the results are reported in the Storybook UI. You can click on a violation to see more details about it, including the rule that was violated and suggestions for how to fix it.
+
+You can also toggle on highlighting in the Storybook UI to see which elements are causing the violation, and click on a highlighted element to see the violations details in a popover menu.
+
+![Storybook UI with a highlighted element with a popover menu showing accessbility violation details](../_assets/writing-tests/addon-a11y-debug-violations.png)
 
 ## Recommended workflow
 

@@ -5,8 +5,8 @@ import { styled } from 'storybook/theming';
 
 interface MobileAddonsDrawerProps {
   children: ReactNode;
+  id?: string;
 }
-
 const Container = styled.div(({ theme }) => ({
   position: 'relative',
   boxSizing: 'border-box',
@@ -17,6 +17,15 @@ const Container = styled.div(({ theme }) => ({
   overflow: 'hidden',
 }));
 
-export const MobileAddonsDrawer: FC<MobileAddonsDrawerProps> = ({ children }) => {
-  return <Container>{children}</Container>;
+export const MobileAddonsDrawer: FC<MobileAddonsDrawerProps> = ({ children, id }) => {
+  return (
+    <Container
+      id={id}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Addon panel"
+    >
+      {children}
+    </Container>
+  );
 };

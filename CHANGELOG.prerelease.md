@@ -1,3 +1,12 @@
+## 9.0.0-rc.1
+
+- Addon Docs: Fix docs-content overflow with TOC - [#27167](https://github.com/storybookjs/storybook/pull/27167), thanks @njsokol!
+- Addon Vitest: Ignore mdx files as part of tests - [#31457](https://github.com/storybookjs/storybook/pull/31457), thanks @yannbf!
+- Core: Do not show 'Render story' step in interactions - [#31452](https://github.com/storybookjs/storybook/pull/31452), thanks @ghengeveld!
+- Dependencies: Update docgen - [#31465](https://github.com/storybookjs/storybook/pull/31465), thanks @ndelangen!
+- Source Loader: Remove package - [#31466](https://github.com/storybookjs/storybook/pull/31466), thanks @valentinpalkovic!
+- Vitest: Remove beforeAll in vitest.setup.ts in automigration - [#31460](https://github.com/storybookjs/storybook/pull/31460), thanks @kasperpeulen!
+
 ## 9.0.0-rc.0
 
 - Addon A11y: Fix usage of axe-core in pnpm projects - [#31422](https://github.com/storybookjs/storybook/pull/31422), thanks @yannbf!

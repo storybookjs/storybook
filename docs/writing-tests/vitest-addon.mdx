@@ -468,4 +468,14 @@ Default:
 - **`exclude`**: Stories with these tags will not be tested, and will not be counted in the test results
 - **`skip`**: Stories with these tags will not be tested, and will be counted in the test results
 
+#### `disableAddonDocs`
+
+Type: `boolean`
+
+Default: `true`
+
+Whether to disable addon docs MDX parsing while running tests.
+
+When either the preview config or stories import mdx files, they are mocked as normally they are not needed for tests.
+You might set `disableAddonDocs` to `false` only in case your stories actually need to read and parse MDX files as part of rendering your components.
 </If>

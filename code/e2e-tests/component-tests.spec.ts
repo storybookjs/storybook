@@ -36,8 +36,6 @@ test.describe('interactions', () => {
     await expect(interactionsTab).toBeVisible();
 
     const panel = sbPage.panelContent();
-    const renderStep = panel.locator('[aria-label="Render step"]');
-    await expect(renderStep).toContainText(/Render story/);
     await expect(panel).toContainText(/Pass/);
     await expect(panel).toContainText(/userEvent.click/);
     await expect(panel).toBeVisible();

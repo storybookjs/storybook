@@ -1,9 +1,10 @@
 import type { ReactElement } from 'react';
 import React, { Fragment } from 'react';
 
-import type { Call, CallRef, ElementRef } from '@storybook/instrumenter';
-import { useTheme } from 'storybook/internal/theming';
 import { logger } from 'storybook/internal/client-logger';
+import { useTheme } from 'storybook/internal/theming';
+
+import type { Call, CallRef, ElementRef } from '@storybook/instrumenter';
 
 import { ObjectInspector } from '@devtools-ds/object-inspector';
 

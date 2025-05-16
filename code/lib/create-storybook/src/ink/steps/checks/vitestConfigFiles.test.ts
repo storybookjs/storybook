@@ -1,11 +1,15 @@
 import * as fs from 'node:fs/promises';
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { findUp } from 'find-up';
 
 import * as babel from '../../../../../../core/src/babel';
 import { vitestConfigFiles } from './vitestConfigFiles';
+
+vi.mock('./vitestConfigFiles', () => ({
+  vitestConfigFiles: {},
+}));
 
 const liveContext: any = { babel, findUp, fs };
 

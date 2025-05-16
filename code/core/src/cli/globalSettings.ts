@@ -41,6 +41,7 @@ export async function globalSettings(filePath = DEFAULT_SETTINGS_PATH) {
 }
 
 // For testing
+// eslint-disable-next-line @typescript-eslint/naming-convention, no-underscore-dangle
 export function _clearGlobalSettings() {
   settings = undefined;
 }

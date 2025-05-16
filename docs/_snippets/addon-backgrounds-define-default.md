@@ -49,7 +49,7 @@ export const OnDark = {
 };
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="common" language="ts-4-9"
+```ts filename="Button.stories.ts|tsx" renderer="common" language="ts"
 // Replace your-framework with the name of your framework
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -67,35 +67,6 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-export const OnDark: Story = {
-  parameters: {
-    backgrounds: {
-      // 👇 Override default background value for this story
-      default: 'Dark',
-    },
-  },
-};
-```
-
-```ts filename="Button.stories.ts|tsx" renderer="common" language="ts"
-// Replace your-framework with the name of your framework
-import type { Meta, StoryObj } from '@storybook/your-framework';
-
-import { Button } from './Button';
-
-const meta: Meta<typeof Button> = {
-  component: Button,
-  parameters: {
-    backgrounds: {
-      // 👇 Set default background value for all component stories
-      default: 'Gray',
-    },
-  },
-};
-
-export default meta;
-type Story = StoryObj<typeof Button>;
 
 export const OnDark: Story = {
   parameters: {

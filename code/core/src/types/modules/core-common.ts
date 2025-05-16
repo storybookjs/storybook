@@ -191,6 +191,7 @@ export interface CLIOptions extends CLIBaseOptions {
   webpackStatsJson?: string | boolean;
   statsJson?: string | boolean;
   outputDir?: string;
+  previewOnly?: boolean;
 }
 
 export interface BuilderOptions {
@@ -447,6 +448,8 @@ export interface StorybookConfigRaw {
      * Set NODE_ENV to development in built Storybooks for better testability and debuggability
      */
     developmentModeForBuild?: boolean;
+    /** Only show input controls in Angular */
+    angularFilterNonInputControls?: boolean;
   };
 
   build?: TestBuildConfig;

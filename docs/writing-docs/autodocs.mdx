@@ -211,6 +211,19 @@ Out of the box, Storybook has a set of components that you can use to customize 
   “We now ‘sandbox’ components, for lack of a better name. It means that when you pass a component for h1, it does get used for `# hi` but not for `<h1>hi</h1>`”
 </Callout>
 
+### Addon options
+
+The docs addon accepts options to customize the behavior of the documentation page. You can add them to your Storybook UI configuration file (i.e., `.storybook/main.js|ts`), as part of registering the addon. The following options are available:
+
+| Option             | Description                                                                                                                                                    |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `csfPluginOptions` | Provides additional configuration for Storybook's CSF plugin. Can be disabled with `null`.                                                                     |
+| `mdxPluginOptions` | Provides additional configuration options and plugin configuration for [MDX documentation](../writing-docs/mdx.mdx#markdown-tables-arent-rendering-correctly). |
+
+This example demonstrates how to apply these options.
+
+<CodeSnippets path="addon-docs-options.md" />
+
 ## Troubleshooting
 
 ### The table of contents doesn't render as expected

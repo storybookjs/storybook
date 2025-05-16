@@ -60,12 +60,6 @@ components/
 
   {/* prettier-ignore-end */}
 
-  <Callout variant="info">
-
-    Starting with Storybook version 7.0, story titles are analyzed statically as part of the build process. With Svelte, the `defineMeta` function or *default* export must contain a `title` property that can be read statically. Using the `id` property to customize your story URL must also be statically readable.
-
-  </Callout>
-
 </If>
 
 <If notRenderer="svelte">
@@ -140,6 +134,7 @@ You can rename any particular story you need. For instance, to give it a more ac
 
 {/* prettier-ignore-end */}
 
+
 Your story will now be shown in the sidebar with the given text.
 
 {/* Maintaining a prior heading */}
@@ -160,7 +155,6 @@ Your story will now be shown in the sidebar with the given text.
   A story is an object that describes how to render a component. You can have multiple stories per component, and those stories can build upon one another. For example, we can add Secondary and Tertiary stories based on our Primary story from above.
 
 </If>
-
 
 {/* prettier-ignore-start */}
 
@@ -202,13 +196,13 @@ Addons can enhance args. For instance, [Actions](../essentials/actions.mdx) auto
 
 ### Using the play function
 
-Storybook's `play` function and the [`@storybook/addon-interactions`](https://storybook.js.org/addons/@storybook/addon-interactions) are convenient helper methods to test component scenarios that otherwise require user intervention. They're small code snippets that execute once your story renders. For example, suppose you wanted to validate a form component, you could write the following story using the `play` function to check how the component responds when filling in the inputs with information:
+Storybook's `play` function is a convenient helper methods to test component scenarios that otherwise require user intervention. They're small code snippets that execute once your story renders. For example, suppose you wanted to validate a form component, you could write the following story using the `play` function to check how the component responds when filling in the inputs with information:
 
 {/* prettier-ignore-start */}
 
 <CodeSnippets path="login-form-with-play-function.md" />
 
-Without the help of the `play` function and the `@storybook/addon-interactions`, you had to write your own stories and manually interact with the component to test out each use case scenario possible.
+You can interact with and debug your story's play function in the [interactions panel](../essentials/interactions.mdx).
 
 ### Using parameters
 

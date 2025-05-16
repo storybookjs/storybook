@@ -833,6 +833,11 @@ describe('PreviewWeb', () => {
   });
 
   describe('onUpdateGlobals', () => {
+    beforeEach(() => {
+      mockChannel.emit.mockClear();
+      projectAnnotations.renderToCanvas.mockClear();
+    });
+
     it('emits GLOBALS_UPDATED', async () => {
       document.location.search = '?id=component-one--a';
       await createAndRenderPreview();
@@ -964,6 +969,11 @@ describe('PreviewWeb', () => {
   });
 
   describe('onUpdateArgs', () => {
+    beforeEach(() => {
+      mockChannel.emit.mockClear();
+      projectAnnotations.renderToCanvas.mockClear();
+    });
+
     it('emits STORY_ARGS_UPDATED', async () => {
       document.location.search = '?id=component-one--a';
       await createAndRenderPreview();
@@ -2349,11 +2359,15 @@ describe('PreviewWeb', () => {
         beforeEach(() => {
           originalLocation = window.location;
           delete (window as Partial<Window>).location;
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore-error
           window.location = { ...originalLocation, reload: vi.fn() };
         });
 
         afterEach(() => {
           delete (window as Partial<Window>).location;
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore-error
           window.location = { ...originalLocation, reload: originalLocation.reload };
         });
 

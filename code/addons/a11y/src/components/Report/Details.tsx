@@ -7,6 +7,7 @@ import { CheckIcon, CopyIcon, LocationIcon } from '@storybook/icons';
 import * as Tabs from '@radix-ui/react-tabs';
 import { styled } from 'storybook/theming';
 
+import { getFriendlySummaryForAxeResult } from '../../axeRuleMappingHelper';
 import type { EnhancedNodeResult, EnhancedResult, RuleType } from '../../types';
 import { useA11yContext } from '../A11yContext';
 
@@ -33,8 +34,10 @@ const Info = styled.div({
 const RuleId = styled.div(({ theme }) => ({
   display: 'block',
   color: theme.textMutedColor,
-  marginTop: -10,
-  marginBottom: 10,
+  fontFamily: theme.typography.fonts.mono,
+  fontSize: theme.typography.size.s1,
+  marginTop: -8,
+  marginBottom: 12,
 
   '@container (min-width: 800px)': {
     display: 'none',
@@ -127,20 +130,21 @@ const CopyButton = ({ onClick }: { onClick: () => void }) => {
 };
 
 interface DetailsProps {
+  id: string;
   item: EnhancedResult;
   type: RuleType;
   selection: string | undefined;
   handleSelectionChange: (key: string) => void;
 }
 
-export const Details = ({ item, type, selection, handleSelectionChange }: DetailsProps) => (
-  <Wrapper>
+export const Details = ({ id, item, type, selection, handleSelectionChange }: DetailsProps) => (
+  <Wrapper id={id}>
     <Info>
       <RuleId>{item.id}</RuleId>
       <Description>
-        {item.description.endsWith('.') ? item.description : `${item.description}.`}{' '}
-        <Link href={item.helpUrl} target="_blank" withArrow>
-          How to resolve this
+        {getFriendlySummaryForAxeResult(item)}{' '}
+        <Link href={item.helpUrl} target="_blank" rel="noopener noreferrer" withArrow>
+          Learn how to resolve this violation
         </Link>
       </Description>
     </Info>
@@ -159,7 +163,7 @@ export const Details = ({ item, type, selection, handleSelectionChange }: Detail
             return (
               <Fragment key={key}>
                 <Tabs.Trigger value={key} asChild>
-                  <Item variant="ghost" size="medium">
+                  <Item variant="ghost" size="medium" id={key}>
                     {index + 1}. {node.html}
                   </Item>
                 </Tabs.Trigger>

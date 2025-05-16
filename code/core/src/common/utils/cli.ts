@@ -8,7 +8,8 @@ import { type MergeExclusive } from 'type-fest';
 import uniqueString from 'unique-string';
 
 import type { JsPackageManager } from '../js-package-manager';
-import versions from '../versions';
+import satelliteAddons from '../satellite-addons';
+import storybookPackagesVersions from '../versions';
 import { rendererPackages } from './get-storybook-info';
 
 const tempDir = () => realpath(os.tmpdir());
@@ -82,7 +83,7 @@ export async function getCoercedStorybookVersion(packageManager: JsPackageManage
     )
   ).filter(({ version }) => !!version);
 
-  return packages[0]?.version || versions.storybook;
+  return packages[0]?.version || storybookPackagesVersions.storybook;
 }
 
 export function getEnvConfig(program: Record<string, any>, configEnv: Record<string, any>): void {
@@ -156,4 +157,6 @@ export const createLogStream = async (
   });
 };
 
-export const isCorePackage = (pkg: string) => Object.keys(versions).includes(pkg);
+export const isCorePackage = (pkg: string) =>
+  !!storybookPackagesVersions[pkg as keyof typeof storybookPackagesVersions];
+export const isSatelliteAddon = (pkg: string) => satelliteAddons.includes(pkg);

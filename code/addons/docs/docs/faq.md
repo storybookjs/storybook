@@ -27,7 +27,7 @@ The original MDX gets compiled to Javascript, and the easiest way to debug your 
 
 For example, the following MDX story:
 
-```jsx
+```mdx
 <Story name="solo story">
   <Button onClick={action('clicked')}>solo</Button>
 </Story>

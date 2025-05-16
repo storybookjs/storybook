@@ -1,6 +1,6 @@
 import type { LoaderFunction } from 'storybook/internal/types';
 
-import { onMockCall } from 'storybook/test/spy';
+import { onMockCall } from 'storybook/test';
 
 import { action } from './runtime';
 

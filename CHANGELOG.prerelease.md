@@ -1,3 +1,136 @@
+## 9.0.0-rc.1
+
+- Addon Docs: Fix docs-content overflow with TOC - [#27167](https://github.com/storybookjs/storybook/pull/27167), thanks @njsokol!
+- Addon Vitest: Ignore mdx files as part of tests - [#31457](https://github.com/storybookjs/storybook/pull/31457), thanks @yannbf!
+- Core: Do not show 'Render story' step in interactions - [#31452](https://github.com/storybookjs/storybook/pull/31452), thanks @ghengeveld!
+- Dependencies: Update docgen - [#31465](https://github.com/storybookjs/storybook/pull/31465), thanks @ndelangen!
+- Source Loader: Remove package - [#31466](https://github.com/storybookjs/storybook/pull/31466), thanks @valentinpalkovic!
+- Vitest: Remove beforeAll in vitest.setup.ts in automigration - [#31460](https://github.com/storybookjs/storybook/pull/31460), thanks @kasperpeulen!
+
+## 9.0.0-rc.0
+
+- Addon A11y: Fix usage of axe-core in pnpm projects - [#31422](https://github.com/storybookjs/storybook/pull/31422), thanks @yannbf!
+- Addon A11y: Fix various issues and inconsistencies - [#31432](https://github.com/storybookjs/storybook/pull/31432), thanks @ghengeveld!
+- Addon Docs: Fix `layout: centered` in conjunction with `inline: false` - [#31430](https://github.com/storybookjs/storybook/pull/31430), thanks @ghengeveld!
+- Addon Docs: Fix iframe content width in centered layout - [#31320](https://github.com/storybookjs/storybook/pull/31320), thanks @Audie80!
+- Addon Docs: Improve TableOfContents HTML structure and a11y - [#31327](https://github.com/storybookjs/storybook/pull/31327), thanks @Sidnioulz!
+- Addon Vitest: Use its own cache directory - [#31439](https://github.com/storybookjs/storybook/pull/31439), thanks @yannbf!
+- Addon-Test: Automatically load before all - [#30584](https://github.com/storybookjs/storybook/pull/30584), thanks @kasperpeulen!
+- Addon-vitest: Support paths with spaces - [#31437](https://github.com/storybookjs/storybook/pull/31437), thanks @ndelangen!
+- Automigration: Correctly apply the wrap-require automigration in ESM modules - [#31420](https://github.com/storybookjs/storybook/pull/31420), thanks @valentinpalkovic!
+- Automigration: Improve renderer to framework automigration - [#31397](https://github.com/storybookjs/storybook/pull/31397), thanks @valentinpalkovic!
+- Automigrations: Fix installation of addon-docs - [#31399](https://github.com/storybookjs/storybook/pull/31399), thanks @valentinpalkovic!
+- Build: Update import paths and enable syntax minification - [#31390](https://github.com/storybookjs/storybook/pull/31390), thanks @ndelangen!
+- CLI: Improve package upgrade logic - [#31406](https://github.com/storybookjs/storybook/pull/31406), thanks @yannbf!
+- CLI: Remove `@latest` from `yarn create` commands - [#31458](https://github.com/storybookjs/storybook/pull/31458), thanks @ndelangen!
+- CLI: Tweak init prompt - [#31376](https://github.com/storybookjs/storybook/pull/31376), thanks @shilman!
+- Core / Addon A11y: Emit `STORY_HOT_UPDATED` and rerun A11y tests on HMR - [#31423](https://github.com/storybookjs/storybook/pull/31423), thanks @ghengeveld!
+- Core: Avoid pre-bundling of preview-api in manager entries - [#31385](https://github.com/storybookjs/storybook/pull/31385), thanks @valentinpalkovic!
+- Core: Improve unhandled error detection - [#31440](https://github.com/storybookjs/storybook/pull/31440), thanks @kasperpeulen!
+- Core: Remove maximum-scale=1 from viewport meta tag - [#31283](https://github.com/storybookjs/storybook/pull/31283), thanks @yatishgoel!
+- Core: Wait for animations before completing render cycle - [#31287](https://github.com/storybookjs/storybook/pull/31287), thanks @ghengeveld!
+- Hooks: Stabilize experimental afterEach hook - [#31438](https://github.com/storybookjs/storybook/pull/31438), thanks @valentinpalkovic!
+- Maintenance: Remove aliasses in builder configurations & scripts - [#31344](https://github.com/storybookjs/storybook/pull/31344), thanks @ndelangen!
+- Test: Make sure that lit arrays are not cloned - [#31435](https://github.com/storybookjs/storybook/pull/31435), thanks @kasperpeulen!
+
+## 9.0.0-beta.11
+
+- Addon A11y: Fix setup as part of storybook create - [#31403](https://github.com/storybookjs/storybook/pull/31403), thanks @yannbf!
+- Addon Docs: Reset error boundary when story changes to recover from erros - [#31242](https://github.com/storybookjs/storybook/pull/31242), thanks @yatishgoel!
+- Angular: Filter non-inputs from controls - [#30550](https://github.com/storybookjs/storybook/pull/30550), thanks @robertIsaac!
+- Backgrounds/Viewport: Fix resetting - [#31386](https://github.com/storybookjs/storybook/pull/31386), thanks @valentinpalkovic!
+- CLI: Detect correct storybook version on upgrade - [#31393](https://github.com/storybookjs/storybook/pull/31393), thanks @yannbf!
+- Core: Fix core annotations applied twice - [#31361](https://github.com/storybookjs/storybook/pull/31361), thanks @valentinpalkovic!
+- Core: Fix sidebar accessibility order for screen readers - [#31250](https://github.com/storybookjs/storybook/pull/31250), thanks @yatishgoel!
+- Eslint-plugin: Handle JSON5 format - [#31336](https://github.com/storybookjs/storybook/pull/31336), thanks @yatishgoel!
+- Indexer: Do not create autodocs entries unless addon-docs installed - [#31331](https://github.com/storybookjs/storybook/pull/31331), thanks @ndelangen!
+- Svelte: Install `latest` version of `@storybook/addon-svelte-csf` - [#31398](https://github.com/storybookjs/storybook/pull/31398), thanks @JReinhold!
+- Test: Allow generics in expect matchers - [#31395](https://github.com/storybookjs/storybook/pull/31395), thanks @yannbf!
+- Update react-router-dom to lowest React19 type-compatible version - [#31358](https://github.com/storybookjs/storybook/pull/31358), thanks @mrginglymus!
+- Viewport: Fix globals type - [#31374](https://github.com/storybookjs/storybook/pull/31374), thanks @flaval!
+
+## 9.0.0-beta.10
+
+- CLI: Improve CLI upgrade process for @latest and @next - [#31356](https://github.com/storybookjs/storybook/pull/31356), thanks @yannbf!
+- SvelteKit: Forward form events when mocking `enhance` - [#31360](https://github.com/storybookjs/storybook/pull/31360), thanks @JReinhold!
+
+## 9.0.0-beta.9
+
+- Addon A11y: Provide full report in a11y manual runs - [#31325](https://github.com/storybookjs/storybook/pull/31325), thanks @yannbf!
+- Angular: remove invalid defaults for start-storybook - [#31337](https://github.com/storybookjs/storybook/pull/31337), thanks @AgentEnder!
+- Automigration: Adjust addon-docs install condition - [#31343](https://github.com/storybookjs/storybook/pull/31343), thanks @valentinpalkovic!
+- Automigration: Migrate users to codePanel - [#31313](https://github.com/storybookjs/storybook/pull/31313), thanks @valentinpalkovic!
+- Automigration: Pass over flags when calling automigrations - [#31342](https://github.com/storybookjs/storybook/pull/31342), thanks @valentinpalkovic!
+- CLI: Enhance compatibility check: deprecated detection - [#31317](https://github.com/storybookjs/storybook/pull/31317), thanks @ndelangen!
+- Core: Support React Native environment without static class blocks - [#31282](https://github.com/storybookjs/storybook/pull/31282), thanks @JReinhold!
+
+## 9.0.0-beta.8
+
+- Addon-vitest: Remove internal log for `staticDir` - [#31340](https://github.com/storybookjs/storybook/pull/31340), thanks @JReinhold!
+- CLI: Add skip onboarding, recommended/minimal config - [#30930](https://github.com/storybookjs/storybook/pull/30930), thanks @shilman!
+- CLI: Supress npm notice update log messages - [#31334](https://github.com/storybookjs/storybook/pull/31334), thanks @yannbf!
+- CLI: Wrap object addon names in wrap-require migration - [#31285](https://github.com/storybookjs/storybook/pull/31285), thanks @yatishgoel!
+- Core: Bring back loading globals from global types in portable stories - [#31328](https://github.com/storybookjs/storybook/pull/31328), thanks @yannbf!
+- React Native Web: Update `react-native-web` - [#31324](https://github.com/storybookjs/storybook/pull/31324), thanks @ndelangen!
+- Svelte: Remove unused `svelte-preprocess` dependency - [#31332](https://github.com/storybookjs/storybook/pull/31332), thanks @JReinhold!
+
+## 9.0.0-beta.7
+
+- CLI: Fix get versions utility for NPM - [#29577](https://github.com/storybookjs/storybook/pull/29577), thanks @johnrcui!
+- Telemetry: Add Svelte CSF usage - [#31255](https://github.com/storybookjs/storybook/pull/31255), thanks @shilman!
+- Test: Remove legacy Vitest v2 code - [#31271](https://github.com/storybookjs/storybook/pull/31271), thanks @valentinpalkovic!
+- UI: Add options to hide sidebar and toolbar per story - [#29516](https://github.com/storybookjs/storybook/pull/29516), thanks @Sidnioulz!
+- Vite: Normalize preview annotation paths - [#31238](https://github.com/storybookjs/storybook/pull/31238), thanks @mrginglymus!
+
+## 9.0.0-beta.6
+
+- Automigration: Fix an issue when main.js addons have dynamic values - [#31273](https://github.com/storybookjs/storybook/pull/31273), thanks @valentinpalkovic!
+- Automigration: Respect config-dir option - [#31233](https://github.com/storybookjs/storybook/pull/31233), thanks @valentinpalkovic!
+- Core: Change require.resolve path for storybook/package.json - [#31230](https://github.com/storybookjs/storybook/pull/31230), thanks @valentinpalkovic!
+- Dependencies: Upgrades for security - [#31276](https://github.com/storybookjs/storybook/pull/31276), thanks @ndelangen!
+- Dependencies: Upgrades for security - [#31291](https://github.com/storybookjs/storybook/pull/31291), thanks @ndelangen!
+- Next.js: Remove deprecated compatibility files - [#31295](https://github.com/storybookjs/storybook/pull/31295), thanks @valentinpalkovic!
+- Svelte: Fix missing `ts-dedent` dependency - [#31289](https://github.com/storybookjs/storybook/pull/31289), thanks @JReinhold!
+
+## 9.0.0-beta.5
+
+- All packages: Remove unused dependencies - [#31227](https://github.com/storybookjs/storybook/pull/31227), thanks @webpro!
+- Autoblock: Fix link - [#31236](https://github.com/storybookjs/storybook/pull/31236), thanks @valentinpalkovic!
+- CLI: Update nx docs in Storybook detection error - [#31266](https://github.com/storybookjs/storybook/pull/31266), thanks @yannbf!
+- Core: Fix highlight conflicts - [#31204](https://github.com/storybookjs/storybook/pull/31204), thanks @ghengeveld!
+- Dependencies: Upgrades for security - [#31235](https://github.com/storybookjs/storybook/pull/31235), thanks @ndelangen!
+- Docs: Fix source code panel - [#31245](https://github.com/storybookjs/storybook/pull/31245), thanks @valentinpalkovic!
+- React Native Web: Add RNW to vitest supported frameworks - [#31253](https://github.com/storybookjs/storybook/pull/31253), thanks @dannyhw!
+- Svelte: Remove dependency on `sveltedoc-parser` - [#31246](https://github.com/storybookjs/storybook/pull/31246), thanks @JReinhold!
+- Test: Use @testing-library/dom as devDependency - [#31188](https://github.com/storybookjs/storybook/pull/31188), thanks @valentinpalkovic!
+
+## 9.0.0-beta.4
+
+- Highlights: Dont run highlights when the feature is disabled - [#31239](https://github.com/storybookjs/storybook/pull/31239), thanks @dannyhw!
+
+## 9.0.0-beta.3
+
+- Automigration: Remove `docs.autodocs` field - [#31203](https://github.com/storybookjs/storybook/pull/31203), thanks @ndelangen!
+- Core: Cleanup dependencies - [#31222](https://github.com/storybookjs/storybook/pull/31222), thanks @JReinhold!
+- Dependencies: Upgrade @types/estree package to version v1.0.6 - [#29477](https://github.com/storybookjs/storybook/pull/29477), thanks @hakshu25!
+- Vite-Builder: Handle undefined previewConfig - [#31216](https://github.com/storybookjs/storybook/pull/31216), thanks @valentinpalkovic!
+
+## 9.0.0-beta.2
+
+- Addon A11y: Use short titles and friendly summary messages in A11y report - [#31185](https://github.com/storybookjs/storybook/pull/31185), thanks @ghengeveld!
+- CLI: Add `storybook-static` to `.gitignore` on init - [#31201](https://github.com/storybookjs/storybook/pull/31201), thanks @JReinhold!
+- Core: Add preview navigator and `--preview-only` CLI flag - [#31102](https://github.com/storybookjs/storybook/pull/31102), thanks @JReinhold!
+- Core: Remove `uuid` package from core - [#31219](https://github.com/storybookjs/storybook/pull/31219), thanks @JReinhold!
+
+## 9.0.0-beta.1
+
+- Addon A11y: Only run checks in story mode - [#30976](https://github.com/storybookjs/storybook/pull/30976), thanks @kroeder!
+- ESLint: Fix flat config setup - [#31192](https://github.com/storybookjs/storybook/pull/31192), thanks @yannbf!
+
+## 9.0.0-beta.0
+
+- Addon-vitest: Fix coverage being disabled with Run All button - [#31074](https://github.com/storybookjs/storybook/pull/31074), thanks @JReinhold!
+
 ## 9.0.0-alpha.21
 
 - Addon Controls: Fix loading state UI in addon panel - [#31168](https://github.com/storybookjs/storybook/pull/31168), thanks @iineineno03k!

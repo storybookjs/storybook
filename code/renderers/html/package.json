@@ -1,6 +1,6 @@
 {
   "name": "@storybook/html",
-  "version": "9.0.0-alpha.21",
+  "version": "9.0.0-rc.1",
   "description": "Storybook HTML renderer",
   "keywords": [
     "storybook"
@@ -50,7 +50,7 @@
     "ts-dedent": "^2.0.0"
   },
   "devDependencies": {
-    "typescript": "^5.7.3"
+    "typescript": "^5.8.3"
   },
   "peerDependencies": {
     "storybook": "workspace:^"

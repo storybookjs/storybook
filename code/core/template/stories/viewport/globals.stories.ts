@@ -5,7 +5,7 @@ import { MINIMAL_VIEWPORTS } from 'storybook/viewport';
 const first = Object.keys(MINIMAL_VIEWPORTS)[0];
 
 export default {
-  component: globalThis.Components.Pre,
+  component: globalThis.__TEMPLATE_COMPONENTS__.Pre,
   args: {
     text: 'Testing the viewport',
   },

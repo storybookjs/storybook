@@ -74,7 +74,7 @@ export default definePreview({
 
 ### `preview.meta`
 
-The `meta` function on the `preview` object is used to define the [metadata for your stories](./index.mdx#default-export). It accepts an object containing the `component`, `title`, `parameters`, and other story properties. 
+The `meta` function on the `preview` object is used to define the [metadata for your stories](./index.mdx#default-export). It accepts an object containing the `component`, `title`, `parameters`, and other story properties.
 
 ```ts title="Button.stories.js|ts"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
@@ -164,7 +164,7 @@ Update your `.storybook/preview.js|ts` file to use the new [`definePreview`](#de
 <details>
 <summary>Which addons should be specified in `preview`?</summary>
 
-The ability for an addon to provide annotation types (`parameters`, `globals`, etc.) is new and not all addons support it yet. 
+The ability for an addon to provide annotation types (`parameters`, `globals`, etc.) is new and not all addons support it yet.
 
 If an addon provides annotations (i.e. it distributes a `./preview` export), it can be imported in two ways:
 
@@ -179,7 +179,7 @@ If an addon provides annotations (i.e. it distributes a `./preview` export), it 
 ```diff title=".storybook/preview.js|ts"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 + import { definePreview } from '@storybook/your-framework';
-- import { Preview } from '@storybook/your-renderer';
+- import type { Preview } from '@storybook/your-framework';
 // 👇 Import the addons you are using
 + import addonA11y from '@storybook/addon-a11y';
 
@@ -208,7 +208,7 @@ The examples below show the changes needed to upgrade a story file from CSF 3 to
 ```diff title="Button.stories.js|ts"
 // Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports
 + import preview from '#.storybook/preview';
-- import { Meta, StoryObj } from '@storybook/your-renderer';
+- import { Meta, StoryObj } from '@storybook/your-framework';
 
 import { Button } from './Button';
 
@@ -264,7 +264,9 @@ All of the story properties are now contained within a new property called `comp
 
 ### 5. Update your Vitest setup file
 
-Whether you're using [Storybook's Test addon](../../writing-tests/test-addon.mdx) or [portable stories in Vitest](../portable-stories/portable-stories-vitest.mdx), you may use a Vitest setup file to configure your stories. This file must be updated to use the new CSF Factories format.
+If you're using the [Storybook's Vitest addon](../../writing-tests/vitest-addon.mdx) you can remove your vitest setup file.
+
+If you are using [portable stories in Vitest](../portable-stories/portable-stories-vitest.mdx), you may use a Vitest setup file to configure your stories. This file must be updated to use the new CSF Factories format.
 
 <Callout variant="warning">
 Note that this only applies if you use CSF Factories for all your tested stories. If you use a mix of CSF 1, 2, or 3 and CSF Factories, you must maintain two separate setup files.
@@ -273,14 +275,14 @@ Note that this only applies if you use CSF Factories for all your tested stories
 ```diff title="vitest.setup.js|ts"
 import { beforeAll } from 'vitest';
 // 👇 No longer necessary
-- import { setProjectAnnotations } from '@storybook/react';
+- import { setProjectAnnotations } from '@storybook/react-vite';
 - import * as addonAnnotations from 'my-addon/preview';
 + import preview from './.storybook/preview';
 - import * as previewAnnotations from './.storybook/preview';
 
 // No longer necessary
 - const annotations = setProjectAnnotations([previewAnnotations, addonAnnotations]);
- 
+
 // Run Storybook's beforeAll hook
 + beforeAll(preview.composed.beforeAll);
 - beforeAll(annotations.beforeAll);
@@ -288,21 +290,21 @@ import { beforeAll } from 'vitest';
 
 ### 6. Reusing stories in test files
 
-[Storybook's Test addon](../../writing-tests/test-addon.mdx) allows you to test your components directly inside Storybook. All the stories are automatically turned into Vitest tests, making integration seamless in your testing suite.
+[Storybook's Vitest addon](../../writing-tests/vitest-addon.mdx) allows you to test your components directly inside Storybook. All the stories are automatically turned into Vitest tests, making integration seamless in your testing suite.
 
 If you cannot use Storybook Test, you can still reuse the stories in your test files using [portable stories](../portable-stories/portable-stories-vitest.mdx). In prior story formats, you had to compose the stories before rendering them in your test files. With CSF Factories, you can now reuse the stories directly.
 
 ```diff title="Button.test.js|ts"
 import { test, expect } from 'vitest';
 import { screen } from '@testing-library/react';
-- import { composeStories } from '@storybook/react';
- 
+- import { composeStories } from '@storybook/react-vite';
+
 // Import all stories from the stories file
 import * as stories from './Button.stories';
- 
+
 + const { Primary } = stories;
 - const { Primary } = composeStories(stories);
- 
+
 test('renders primary button with default args', async () => {
   // The run function will mount the component and run all of Storybook's lifecycle hooks
   await Primary.run();

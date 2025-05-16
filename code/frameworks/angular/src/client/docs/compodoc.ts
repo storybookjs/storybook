@@ -16,6 +16,8 @@ import {
   Property,
 } from './types';
 
+const { FEATURES } = global;
+
 export const isMethod = (methodOrProp: Method | Property): methodOrProp is Method => {
   return (methodOrProp as Method).args !== undefined;
 };
@@ -222,8 +224,11 @@ const resolveTypealias = (compodocType: string): string => {
 
 export const extractArgTypesFromData = (componentData: Class | Directive | Injectable | Pipe) => {
   const sectionToItems: Record<string, InputType[]> = {};
+  const componentClasses = FEATURES.angularFilterNonInputControls
+    ? ['inputsClass']
+    : ['propertiesClass', 'methodsClass', 'inputsClass', 'outputsClass'];
   const compodocClasses = ['component', 'directive'].includes(componentData.type)
-    ? ['propertiesClass', 'methodsClass', 'inputsClass', 'outputsClass']
+    ? componentClasses
     : ['properties', 'methods'];
 
   type COMPODOC_CLASS =

@@ -12,7 +12,7 @@ import reactElementToJSXStringRaw from 'react-element-to-jsx-string/dist/esm/ind
 import { emitTransformCode, useEffect, useRef } from 'storybook/preview-api';
 
 import type { ReactRenderer } from '../types';
-import { isForwardRef, isMemo } from './lib';
+import { isForwardRef, isMemo } from './lib/componentTypes';
 
 const reactElementToJSXString = reactElementToJSXStringRaw as typeof reactElementToJSXStringType;
 

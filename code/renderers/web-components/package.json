@@ -30,6 +30,7 @@
     },
     "./preset": "./preset.js",
     "./dist/entry-preview.mjs": "./dist/entry-preview.mjs",
+    "./dist/entry-preview-argtypes.mjs": "./dist/entry-preview-argtypes.mjs",
     "./dist/entry-preview-docs.mjs": "./dist/entry-preview-docs.mjs",
     "./package.json": "./package.json"
   },
@@ -78,6 +79,7 @@
       "./src/index.ts",
       "./src/preset.ts",
       "./src/entry-preview.ts",
+      "./src/entry-preview-argtypes.ts",
       "./src/entry-preview-docs.ts"
     ],
     "platform": "browser"

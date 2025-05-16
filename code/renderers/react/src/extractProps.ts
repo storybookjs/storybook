@@ -5,11 +5,9 @@ import {
   hasDocgen,
 } from 'storybook/internal/docs-tools';
 
-import PropTypes from 'prop-types';
-
-import { isMemo } from './lib';
-import { enhancePropTypesProps } from './propTypes/handleProp';
-import { enhanceTypeScriptProps } from './typeScript/handleProp';
+import { isMemo } from './docs/lib/componentTypes';
+import { enhancePropTypesProps } from './docs/propTypes/handleProp';
+import { enhanceTypeScriptProps } from './docs/typeScript/handleProp';
 
 // FIXME
 type Component = any;
@@ -17,16 +15,6 @@ type Component = any;
 export interface PropDefMap {
   [p: string]: PropDef;
 }
-
-const propTypesMap = new Map();
-
-Object.keys(PropTypes).forEach((typeName) => {
-  // @ts-expect-error (Converted from ts-ignore)
-  const type = PropTypes[typeName];
-
-  propTypesMap.set(type, typeName);
-  propTypesMap.set(type.isRequired, typeName);
-});
 
 function getPropDefs(component: Component, section: string): PropDef[] {
   let processedComponent = component;

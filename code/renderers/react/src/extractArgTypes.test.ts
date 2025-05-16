@@ -11,9 +11,9 @@ import { transformFileSync, transformSync } from '@babel/core';
 import requireFromString from 'require-from-string';
 import { inferControls } from 'storybook/preview-api';
 
-import type { StoryContext } from '../types';
 import { extractArgTypes } from './extractArgTypes';
 import { extractProps } from './extractProps';
+import type { StoryContext } from './types';
 
 // File hierarchy:
 // __testfixtures__ / some-test-case / input.*

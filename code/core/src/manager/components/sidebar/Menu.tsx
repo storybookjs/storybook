@@ -83,8 +83,7 @@ export const SidebarMenu: FC<SidebarMenuProps> = ({ menu, isHighlighted, onClick
         <SidebarIconButton
           title="About Storybook"
           aria-label="About Storybook"
-          // @ts-expect-error (non strict)
-          highlighted={isHighlighted}
+          highlighted={!!isHighlighted}
           active={false}
           // @ts-expect-error (non strict)
           onClick={onClick}
@@ -95,8 +94,7 @@ export const SidebarMenu: FC<SidebarMenuProps> = ({ menu, isHighlighted, onClick
         <SidebarIconButton
           title="Close menu"
           aria-label="Close menu"
-          // @ts-expect-error (non strict)
-          highlighted={isHighlighted}
+          highlighted={false}
           active={false}
           onClick={() => setMobileMenuOpen(false)}
           isMobile={true}
@@ -117,10 +115,10 @@ export const SidebarMenu: FC<SidebarMenuProps> = ({ menu, isHighlighted, onClick
       <SidebarIconButton
         title="Shortcuts"
         aria-label="Shortcuts"
-        // @ts-expect-error (non strict)
-        highlighted={isHighlighted}
+        highlighted={!!isHighlighted}
         active={isTooltipVisible}
         size="medium"
+        isMobile={false}
       >
         <CogIcon />
       </SidebarIconButton>

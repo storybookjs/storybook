@@ -117,7 +117,7 @@ An event to highlight DOM elements. The event payload must contain a `selectors`
 import { HIGHLIGHT, type HighlightOptions } from 'storybook/highlight';
 
 channel.emit(
-  HIGHLIGHT, 
+  HIGHLIGHT,
   options // The available configuration options inheriting from the HighlightOptions API
 );
 ```
@@ -140,19 +140,25 @@ interface HighlightOptions {
   focusStyles?: Record<string, string>;
   /** Keyframes required for animations */
   keyframes?: string;
-  /** Menu items to show when the highlight is selected */
-  menu?: {
-    /** Unique identifier for the menu item */
-    id: string;
-    /** Title of the menu item */
-    title: string;
-    /** Description of the menu item */
-    description?: string;
-    /** Name for a channel event to trigger when the menu item is clicked */
-    clickEvent?: string;
-    /** HTML selectors for which this menu item should show (subset of `selectors`) */
-    selectors?: string[];
-  }[];
+  /** Groups of menu items to show when the highlight is selected */
+  menu?: HighlightMenuItem[][];
+}
+
+interface HighlightMenuItem {
+  /** Unique identifier for the menu item */
+  id: string;
+  /** Title of the menu item */
+  title: string;
+  /** Description of the menu item */
+  description?: string;
+  /** Icon for the menu item, left side */
+  iconLeft?: "chevronLeft" | "chevronRight" | "info" | "shareAlt";
+  /** Icon for the menu item, right side */
+  iconRight?: "chevronLeft" | "chevronRight" | "info" | "shareAlt";
+  /** Name for a channel event to trigger when the menu item is clicked */
+  clickEvent?: string;
+  /** HTML selectors for which this menu item should show (subset of HighlightOptions['selectors']) */
+  selectors?: HighlightOptions['selectors'];
 }
 ```
 
@@ -203,7 +209,7 @@ An event that removes a previously created highlight. The event payload must con
 import { REMOVE_HIGHLIGHT } from 'storybook/highlight';
 
 channel.emit(
-  REMOVE_HIGHLIGHT, 
+  REMOVE_HIGHLIGHT,
   id // The id of the previously created highlight to be removed
 );
 ```

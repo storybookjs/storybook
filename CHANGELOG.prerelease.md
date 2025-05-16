@@ -1,3 +1,16 @@
+## 9.0.0-rc.2
+
+- Addon Docs: Simplify color parsing and color cycling logic - [#29840](https://github.com/storybookjs/storybook/pull/29840), thanks @leyvae!
+- Addon Vitest: Fix watch mode for new files - [#31156](https://github.com/storybookjs/storybook/pull/31156), thanks @valentinpalkovic!
+- CodePanel: Show originalSource code - [#31456](https://github.com/storybookjs/storybook/pull/31456), thanks @valentinpalkovic!
+- Core: Builder-manager disable metafile - [#31467](https://github.com/storybookjs/storybook/pull/31467), thanks @ndelangen!
+- Core: Remove duplicate notification dot on sidebar buttons on mobile - [#31485](https://github.com/storybookjs/storybook/pull/31485), thanks @ghengeveld!
+- Core: Set a minimum height/width for the targetable area of highlights - [#31486](https://github.com/storybookjs/storybook/pull/31486), thanks @ghengeveld!
+- Core: Support groups and info icon in highlight popover menu - [#31475](https://github.com/storybookjs/storybook/pull/31475), thanks @ghengeveld!
+- React Native Web: Fix expo router by setting JSX to automatic - [#31484](https://github.com/storybookjs/storybook/pull/31484), thanks @dannyhw!
+- React: Don't use Act wrapper in Storybook when rendering in docs - [#31483](https://github.com/storybookjs/storybook/pull/31483), thanks @kasperpeulen!
+- Test: Patch HTMLElement.prototype.focus method for settable focus in tests - [#31487](https://github.com/storybookjs/storybook/pull/31487), thanks @valentinpalkovic!
+
 ## 9.0.0-rc.1
 
 - Addon Docs: Fix docs-content overflow with TOC - [#27167](https://github.com/storybookjs/storybook/pull/27167), thanks @njsokol!

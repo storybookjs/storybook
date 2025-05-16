@@ -155,18 +155,29 @@ export const Menu = meta.story({
         selectors: ['div', 'input'],
         options: {
           menu: [
-            {
-              id: 'color-contrast',
-              title: 'Insufficient color contrast',
-              description: 'Elements must meet minimum color contrast ratio thresholds.',
-              clickEvent: 'my-click-event',
-            },
-            {
-              id: 'links-need-discernible-text',
-              title: 'Links need discernible text',
-              description: 'This is where a summary of the violation goes.',
-              clickEvent: 'my-click-event',
-            },
+            [
+              {
+                id: 'color-contrast',
+                title: 'Insufficient color contrast',
+                description: 'Elements must meet minimum color contrast ratio thresholds.',
+                clickEvent: 'my-click-event',
+              },
+            ],
+            [
+              {
+                id: 'links-need-discernible-text',
+                title: 'Links need discernible text',
+                description: 'This is where a summary of the violation goes.',
+              },
+              {
+                id: 'links-need-discernible-text-details',
+                title: 'Important stuff',
+                description: 'Click here to view more details.',
+                iconLeft: 'info',
+                iconRight: 'shareAlt',
+                clickEvent: 'my-click-event',
+              },
+            ],
           ],
         },
       },

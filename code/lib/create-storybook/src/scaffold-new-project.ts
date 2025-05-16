@@ -1,9 +1,9 @@
 import { readdirSync } from 'node:fs';
 import { rm } from 'node:fs/promises';
 
+import { execaCommand } from 'storybook/internal/execa';
+
 import boxen from 'boxen';
-// eslint-disable-next-line depend/ban-dependencies
-import execa from 'execa';
 import picocolors from 'picocolors';
 import prompts from 'prompts';
 import { dedent } from 'ts-dedent';
@@ -190,7 +190,7 @@ export const scaffoldNewProject = async (
 
   try {
     // Create new project in temp directory
-    await execa.command(createScript, {
+    await execaCommand(createScript, {
       stdio: 'pipe',
       shell: true,
       cwd: targetDir,

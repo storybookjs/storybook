@@ -1,5 +1,4 @@
-// eslint-disable-next-line depend/ban-dependencies
-import { execa } from 'execa';
+import { execa } from 'storybook/internal/execa';
 
 import type { PostinstallOptions } from '../../../lib/cli-storybook/src/add';
 

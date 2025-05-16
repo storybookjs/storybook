@@ -7,6 +7,14 @@ import { ProjectType } from '../../../core/src/cli/project_types';
 import { telemetry } from '../../../core/src/telemetry';
 import { promptInstallType, promptNewUser } from './initiate';
 
+vi.mock('./ink/steps/checks/packageVersions', () => ({
+  packageVersions: {},
+}));
+
+vi.mock('./ink/steps/checks/vitestConfigFiles', () => ({
+  vitestConfigFiles: {},
+}));
+
 vi.mock('prompts', { spy: true });
 vi.mock('../../../core/src/telemetry');
 

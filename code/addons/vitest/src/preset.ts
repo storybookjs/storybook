@@ -168,11 +168,6 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
 
   if (!core.disableTelemetry) {
     const enableCrashReports = core.enableCrashReports || options.enableCrashReports;
-    const packageJsonPath = require.resolve('@storybook/addon-vitest/package.json');
-
-    const { version: addonVersion } = JSON.parse(
-      readFileSync(packageJsonPath, { encoding: 'utf-8' })
-    );
 
     channel.on(STORYBOOK_ADDON_TEST_CHANNEL, (event: Event) => {
       telemetry('addon-test', {
@@ -181,14 +176,12 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
           ...event.payload,
           storyId: oneWayHash(event.payload.storyId),
         },
-        addonVersion,
       });
     });
 
     store.subscribe('TOGGLE_WATCHING', async (event) => {
       await telemetry('addon-test', {
         watchMode: event.payload.to,
-        addonVersion,
       });
     });
     store.subscribe('TEST_RUN_COMPLETED', async (event) => {
@@ -205,7 +198,6 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
               return sanitizeError(errorWithoutStacks);
             }),
           }),
-        addonVersion,
       });
     });
 
@@ -213,7 +205,6 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
       store.subscribe('FATAL_ERROR', async (event) => {
         await telemetry('addon-test', {
           fatalError: cleanPaths(event.payload.error.message),
-          addonVersion,
         });
       });
     }

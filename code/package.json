@@ -283,5 +283,6 @@
         "Dependency Upgrades"
       ]
     ]
-  }
+  },
+  "deferredNextVersion": "9.0.0-rc.2"
 }

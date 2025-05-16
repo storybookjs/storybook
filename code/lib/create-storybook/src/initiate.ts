@@ -2,7 +2,7 @@ import { execSync } from 'node:child_process';
 import fs from 'node:fs/promises';
 
 import boxen from 'boxen';
-import { findUp } from 'find-up';
+import * as find from 'empathic/find';
 import picocolors from 'picocolors';
 import prompts from 'prompts';
 import { lt, prerelease } from 'semver';
@@ -553,7 +553,7 @@ export async function doInitiate(options: CommandOptions): Promise<
 
   if (selectedFeatures.has('test')) {
     const vitestConfigFilesData = await vitestConfigFiles.condition(
-      { babel, findUp, fs } as any,
+      { babel, empathic: find, fs } as any,
       { directory: process.cwd() } as any
     );
     if (vitestConfigFilesData.type === 'incompatible') {
@@ -624,7 +624,7 @@ export async function doInitiate(options: CommandOptions): Promise<
     return { shouldRunDev: false };
   }
 
-  const foundGitIgnoreFile = await findUp('.gitignore');
+  const foundGitIgnoreFile = find.up('.gitignore');
   const rootDirectory = getProjectRoot();
   if (foundGitIgnoreFile && foundGitIgnoreFile.includes(rootDirectory)) {
     const contents = await fs.readFile(foundGitIgnoreFile, 'utf-8');

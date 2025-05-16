@@ -1,6 +1,6 @@
 import * as fs from 'node:fs/promises';
 
-import { findUp } from 'find-up';
+import * as find from 'empathic/find';
 
 import * as babel from '../../../../../../core/src/babel';
 import type { Check } from './Check';
@@ -88,11 +88,11 @@ export const isValidWorkspaceConfigFile: (fileContents: string, babel: any) => b
 const name = 'Vitest configuration';
 export const vitestConfigFiles: Check = {
   condition: async (context, state) => {
-    const deps = ['babel', 'findUp', 'fs'];
-    if (babel && findUp && fs) {
+    const deps = ['babel', 'empathic', 'fs'];
+    if (babel && find && fs) {
       const reasons = [];
 
-      const vitestWorkspaceFile = await findUp(
+      const vitestWorkspaceFile = find.any(
         ['ts', 'js', 'json'].flatMap((ex) => [`vitest.workspace.${ex}`, `vitest.projects.${ex}`]),
         { cwd: state.directory }
       );
@@ -105,7 +105,7 @@ export const vitestConfigFiles: Check = {
         }
       }
 
-      const vitestConfigFile = await findUp(
+      const vitestConfigFile = find.any(
         ['ts', 'js', 'tsx', 'jsx', 'cts', 'cjs', 'mts', 'mjs'].map((ex) => `vitest.config.${ex}`),
         { cwd: state.directory }
       );

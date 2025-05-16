@@ -7,6 +7,7 @@ import { logger } from 'storybook/internal/node-logger';
 
 import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
 import { pnpPlugin } from '@yarnpkg/esbuild-plugin-pnp';
+import * as resolve from 'empathic/resolve';
 import sirv from 'sirv';
 
 import { BROWSER_TARGETS, SUPPORTED_FEATURES } from '../shared/constants/environments-support';
@@ -22,7 +23,6 @@ import { getData } from './utils/data';
 import { readOrderedFiles } from './utils/files';
 import { buildFrameworkGlobalsFromOptions } from './utils/framework';
 import { wrapManagerEntries } from './utils/managerEntries';
-import { safeResolve } from './utils/safeResolve';
 import { getTemplatePath, renderHTML } from './utils/template';
 
 const isRootPath = /^\/($|\?)/;
@@ -32,7 +32,7 @@ let asyncIterator: ReturnType<StarterFunction> | ReturnType<BuilderFunction>;
 export const getConfig: ManagerBuilder['getConfig'] = async (options) => {
   const [addonsEntryPoints, customManagerEntryPoint, tsconfigPath, envs] = await Promise.all([
     options.presets.apply('managerEntries', []),
-    safeResolve(join(options.configDir, 'manager')),
+    resolve.cwd(join(options.configDir, 'manager'), true),
     getTemplatePath('addon.tsconfig.json'),
     options.presets.apply<Record<string, string>>('env'),
   ]);

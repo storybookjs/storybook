@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 
-import { findUpSync } from 'find-up';
+import * as find from 'empathic/find';
 import { dedent } from 'ts-dedent';
 
 import { createLogStream } from '../utils/cli';
@@ -133,7 +133,7 @@ export class PNPMProxy extends JsPackageManager {
     packageName: string,
     basePath = this.cwd
   ): Promise<PackageJson | null> {
-    const pnpapiPath = findUpSync(['.pnp.js', '.pnp.cjs'], { cwd: basePath });
+    const pnpapiPath = find.any(['.pnp.js', '.pnp.cjs'], { cwd: basePath });
 
     if (pnpapiPath) {
       try {
@@ -159,14 +159,8 @@ export class PNPMProxy extends JsPackageManager {
       }
     }
 
-    const packageJsonPath = await findUpSync(
-      (dir) => {
-        const possiblePath = join(dir, 'node_modules', packageName, 'package.json');
-        return existsSync(possiblePath) ? possiblePath : undefined;
-      },
-      { cwd: basePath }
-    );
-
+    const wantedPath = join('node_modules', packageName, 'package.json');
+    const packageJsonPath = find.up(wantedPath, { cwd: basePath });
     if (!packageJsonPath) {
       return null;
     }

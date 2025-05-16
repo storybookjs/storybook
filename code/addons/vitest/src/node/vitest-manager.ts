@@ -10,14 +10,9 @@ import type {
 } from 'vitest/node';
 
 import { resolvePathInStorybookCache } from 'storybook/internal/common';
-import type {
-  DocsIndexEntry,
-  StoryId,
-  StoryIndex,
-  StoryIndexEntry,
-} from 'storybook/internal/types';
+import type { StoryId, StoryIndex, StoryIndexEntry } from 'storybook/internal/types';
 
-import { findUp } from 'find-up';
+import * as find from 'empathic/find';
 import path, { dirname, join, normalize } from 'pathe';
 import slash from 'slash';
 
@@ -30,12 +25,6 @@ import type { TestManager } from './test-manager';
 
 const VITEST_CONFIG_FILE_EXTENSIONS = ['mts', 'mjs', 'cts', 'cjs', 'ts', 'tsx', 'js', 'jsx'];
 const VITEST_WORKSPACE_FILE_EXTENSION = ['ts', 'js', 'json'];
-
-type TagsFilter = {
-  include: string[];
-  exclude: string[];
-  skip: string[];
-};
 
 const packageDir = dirname(require.resolve('@storybook/addon-vitest/package.json'));
 
@@ -76,7 +65,7 @@ export class VitestManager {
         : { enabled: false }
     ) as CoverageOptions;
 
-    const vitestWorkspaceConfig = await findUp([
+    const vitestWorkspaceConfig = find.any([
       ...VITEST_WORKSPACE_FILE_EXTENSION.map((ext) => `vitest.workspace.${ext}`),
       ...VITEST_CONFIG_FILE_EXTENSIONS.map((ext) => `vitest.config.${ext}`),
     ]);

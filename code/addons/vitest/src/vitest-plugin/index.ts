@@ -1,7 +1,7 @@
 import { createRequire } from 'node:module';
 
 import type { Plugin } from 'vitest/config';
-import { mergeConfig } from 'vitest/config';
+import { configDefaults, mergeConfig } from 'vitest/config';
 import type { ViteUserConfig } from 'vitest/config';
 
 import {
@@ -251,13 +251,13 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
             ...storybookEnv,
             // To be accessed by the setup file
             __STORYBOOK_URL__: finalOptions.storybookUrl,
+            __STORYBOOK_CONFIG_DIR__: finalOptions.configDir,
 
             VITEST_STORYBOOK: vitestStorybook,
             __VITEST_INCLUDE_TAGS__: finalOptions.tags.include.join(','),
             __VITEST_EXCLUDE_TAGS__: finalOptions.tags.exclude.join(','),
             __VITEST_SKIP_TAGS__: finalOptions.tags.skip.join(','),
           },
-
           include: includeStories,
           exclude: [...(nonMutableInputConfig.test?.exclude ?? []), '**/*.mdx'],
 
@@ -360,6 +360,17 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     },
     configureVitest(context) {
       context.vitest.config.coverage.exclude.push('storybook-static');
+
+      // TODO:
+      // Instead of using forceRerunTriggers + onFilterWatchedSpecification,
+      // From Vitest 3.2 (unreleased so far) there will be a better API we can use: watchTriggerPatterns
+      context.vitest.config.forceRerunTriggers = [
+        ...configDefaults.forceRerunTriggers,
+        join(finalOptions.configDir, '*'),
+      ];
+      context.vitest.onFilterWatchedSpecification((spec) => {
+        return spec.project.config.env?.__STORYBOOK_CONFIG_DIR__ === finalOptions.configDir;
+      });
     },
     async configureServer(server) {
       if (staticDirs) {

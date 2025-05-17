@@ -15,6 +15,7 @@ import { parseConfigFile, runServer } from 'verdaccio';
 
 import { maxConcurrentTasks } from './utils/concurrency';
 import { PACKS_DIRECTORY } from './utils/constants';
+import { killPort } from './utils/kill-port';
 import { getWorkspaces } from './utils/workspace';
 
 program
@@ -154,8 +155,17 @@ const publish = async (packages: { name: string; location: string }[], url: stri
   );
 };
 
+const VERDACCIO_SERVER_PORT = 6001;
+const VERDACCIO_REGISTRY_PORT = 6002;
+
+const cleanupVerdaccioProcesses = async () => {
+  await killPort([VERDACCIO_SERVER_PORT, VERDACCIO_REGISTRY_PORT]);
+};
+
 const run = async () => {
-  const verdaccioUrl = `http://localhost:6001`;
+  await cleanupVerdaccioProcesses();
+
+  const verdaccioUrl = `http://localhost:${VERDACCIO_SERVER_PORT}`;
 
   logger.log(`📐 reading version of storybook`);
   logger.log(`🚛 listing storybook packages`);
@@ -192,7 +202,7 @@ const run = async () => {
       '-e',
       'test@test.com',
       '-r',
-      'http://localhost:6002',
+      `http://localhost:${VERDACCIO_REGISTRY_PORT}`,
     ],
     {
       cwd: root,
@@ -204,7 +214,7 @@ const run = async () => {
   );
 
   if (opts.publish) {
-    await publish(packages, 'http://localhost:6002');
+    await publish(packages, `http://localhost:${VERDACCIO_REGISTRY_PORT}`);
   }
 
   await rm(join(root, '.npmrc'), { force: true });
@@ -218,6 +228,8 @@ const run = async () => {
 run().catch((e) => {
   logger.error(e);
   rm(join(root, '.npmrc'), { force: true }).then(() => {
-    process.exit(1);
+    cleanupVerdaccioProcesses().then(() => {
+      process.exit(1);
+    });
   });
 });

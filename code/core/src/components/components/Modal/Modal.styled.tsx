@@ -37,6 +37,8 @@ export const Overlay = styled.div({
   height: '100%',
   zIndex: 10,
   animation: `${fadeIn} 200ms`,
+  opacity: 1,
+  transition: 'none',
 });
 
 export const Container = styled.div<{ width?: number; height?: number }>(
@@ -55,7 +57,8 @@ export const Container = styled.div<{ width?: number; height?: number }>(
     overflow: 'hidden',
     zIndex: 11,
     animation: `${zoomIn} 200ms`,
-
+    opacity: 1,
+    transition: 'none',
     '&:focus-visible': {
       outline: 'none',
     },
@@ -118,7 +121,7 @@ export const Actions = styled.div({
 export const ErrorWrapper = styled.div(({ theme }) => ({
   maxHeight: 100,
   overflow: 'auto',
-  animation: `${expand} 300ms, ${fadeIn} 300ms`,
+  animation: `${expand} 300ms`,
   backgroundColor: theme.background.critical,
   color: theme.color.lightest,
   fontSize: theme.typography.size.s2,

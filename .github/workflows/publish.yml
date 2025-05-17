@@ -37,18 +37,18 @@ jobs:
           gh run watch ${{ github.run_id }}
 
       - name: Checkout ${{ github.ref_name }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 100
           token: ${{ secrets.GH_TOKEN }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
         with:
           node-version-file: ".nvmrc"
 
       - name: Cache dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@d4323d4df104b026a6aa633fdb11d772146be0bf # v4.2.2
         with:
           path: |
             ~/.yarn/berry/cache

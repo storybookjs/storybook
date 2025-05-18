@@ -254,7 +254,7 @@ describe(transformStoriesCode.name, () => {
 
       import { createRuntimeStories } from "@storybook/addon-svelte-csf/internal/create-runtime-stories";
 
-      const __stories = createRuntimeStories(Example_stories, $__meta);
+      const $__stories = createRuntimeStories(Example_stories, $__meta);
 
       export default $__meta;
 
@@ -266,29 +266,37 @@ describe(transformStoriesCode.name, () => {
       	"ChildrenForwared"
       ];
 
-      export const Default = {
-      	...__stories["Default"],
+      const $__Default = {
+      	...$__stories["Default"],
       	tags: ["svelte-csf-v5"]
       };
 
-      export const Rounded = {
-      	...__stories["Rounded"],
+      const $__Rounded = {
+      	...$__stories["Rounded"],
       	tags: ["svelte-csf-v5"]
       };
 
-      export const Square = {
-      	...__stories["Square"],
+      const $__Square = {
+      	...$__stories["Square"],
       	tags: ["svelte-csf-v5"]
       };
 
-      export const AsChild = {
-      	...__stories["AsChild"],
+      const $__AsChild = {
+      	...$__stories["AsChild"],
       	tags: ["svelte-csf-v5"]
       };
 
-      export const ChildrenForwared = {
-      	...__stories["ChildrenForwared"],
+      const $__ChildrenForwared = {
+      	...$__stories["ChildrenForwared"],
       	tags: ["svelte-csf-v5"]
+      };
+
+      export {
+      	$__Default as Default,
+      	$__Rounded as Rounded,
+      	$__Square as Square,
+      	$__AsChild as AsChild,
+      	$__ChildrenForwared as ChildrenForwared
       };"
     `
     );

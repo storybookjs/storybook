@@ -1,25 +1,22 @@
 import { print } from 'esrap';
 import { describe, it } from 'vitest';
 
-import { createNamedExportStory } from './create-named-export-story.js';
+import { createASTArrayExpression, createASTIdentifier } from '$lib/parser/ast.js';
+import { SVELTE_CSF_V4_TAG } from '$lib/constants.js';
+
+import { createRuntimeStoryVariableDeclaration } from './create-runtime-story-variable-declaration.js';
 import { createVariableFromRuntimeStoriesCall } from './create-variable-from-runtime-stories-call.js';
 
-import type { ESTreeAST } from '$lib/parser/ast.js';
-import { SVELTE_CSF_V4_TAG } from '../../../constants.js';
-
-describe(createNamedExportStory.name, () => {
-  it('correctly creates a variable with named exports order', ({ expect }) => {
+describe(createRuntimeStoryVariableDeclaration, () => {
+  it('correctly creates a runtime story variable', ({ expect }) => {
     const stringified = print(
-      createNamedExportStory({
+      createRuntimeStoryVariableDeclaration({
         exportName: 'Default',
         nodes: {
           variable: createVariableFromRuntimeStoriesCall({
             storiesFunctionDeclaration: {
               type: 'FunctionDeclaration',
-              id: {
-                type: 'Identifier',
-                name: 'Example_stories',
-              },
+              id: createASTIdentifier('Example_stories'),
               body: {
                 type: 'BlockStatement',
                 body: [],
@@ -28,13 +25,13 @@ describe(createNamedExportStory.name, () => {
             },
           }),
         },
-      }) as unknown as ESTreeAST.Program
+      })
     ).code;
 
     expect(stringified).toMatchInlineSnapshot(
       `
-      "export const Default = {
-      	...__stories["Default"],
+      "const $__Default = {
+      	...$__stories["Default"],
       	tags: ["svelte-csf-v5"]
       };"
     `
@@ -43,16 +40,13 @@ describe(createNamedExportStory.name, () => {
 
   it('allows passing Story-level tags', ({ expect }) => {
     const stringified = print(
-      createNamedExportStory({
+      createRuntimeStoryVariableDeclaration({
         exportName: 'Default',
         nodes: {
           variable: createVariableFromRuntimeStoriesCall({
             storiesFunctionDeclaration: {
               type: 'FunctionDeclaration',
-              id: {
-                type: 'Identifier',
-                name: 'Example_stories',
-              },
+              id: createASTIdentifier('Example_stories'),
               body: {
                 type: 'BlockStatement',
                 body: [],
@@ -60,27 +54,24 @@ describe(createNamedExportStory.name, () => {
               params: [],
             },
           }),
-          tags: {
-            type: 'ArrayExpression',
-            elements: [
-              {
-                type: 'Literal',
-                value: 'autodocs',
-              },
-              {
-                type: 'Literal',
-                value: '!test',
-              },
-            ],
-          },
+          tags: createASTArrayExpression([
+            {
+              type: 'Literal',
+              value: 'autodocs',
+            },
+            {
+              type: 'Literal',
+              value: '!test',
+            },
+          ]),
         },
-      }) as unknown as ESTreeAST.Program
+      })
     ).code;
 
     expect(stringified).toMatchInlineSnapshot(
       `
-      "export const Default = {
-      	...__stories["Default"],
+      "const $__Default = {
+      	...$__stories["Default"],
       	tags: ["autodocs", "!test", "svelte-csf-v5"]
       };"
     `
@@ -89,16 +80,13 @@ describe(createNamedExportStory.name, () => {
 
   it('keeps Svelte CSF v4 tag if present, and does not add Svelte CSF v5 tag', ({ expect }) => {
     const stringified = print(
-      createNamedExportStory({
+      createRuntimeStoryVariableDeclaration({
         exportName: 'Default',
         nodes: {
           variable: createVariableFromRuntimeStoriesCall({
             storiesFunctionDeclaration: {
               type: 'FunctionDeclaration',
-              id: {
-                type: 'Identifier',
-                name: 'Example_stories',
-              },
+              id: createASTIdentifier('Example_stories'),
               body: {
                 type: 'BlockStatement',
                 body: [],
@@ -106,27 +94,24 @@ describe(createNamedExportStory.name, () => {
               params: [],
             },
           }),
-          tags: {
-            type: 'ArrayExpression',
-            elements: [
-              {
-                type: 'Literal',
-                value: 'autodocs',
-              },
-              {
-                type: 'Literal',
-                value: SVELTE_CSF_V4_TAG,
-              },
-            ],
-          },
+          tags: createASTArrayExpression([
+            {
+              type: 'Literal',
+              value: 'autodocs',
+            },
+            {
+              type: 'Literal',
+              value: SVELTE_CSF_V4_TAG,
+            },
+          ]),
         },
-      }) as unknown as ESTreeAST.Program
+      })
     ).code;
 
     expect(stringified).toMatchInlineSnapshot(
       `
-      "export const Default = {
-      	...__stories["Default"],
+      "const $__Default = {
+      	...$__stories["Default"],
       	tags: ["autodocs", "svelte-csf-v4"]
       };"
     `

@@ -23,7 +23,7 @@ describe(createVariableFromRuntimeStoriesCall.name, () => {
     ).code;
 
     expect(stringified).toMatchInlineSnapshot(
-      `"const __stories = createRuntimeStories(Example_stories, $__meta);"`
+      `"const $__stories = createRuntimeStories(Example_stories, $__meta);"`
     );
   });
 });

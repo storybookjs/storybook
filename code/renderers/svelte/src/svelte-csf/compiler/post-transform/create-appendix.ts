@@ -1,16 +1,17 @@
 import { print } from 'esrap';
 import MagicString from 'magic-string';
 
-import { createExportOrderVariable } from './appendix/create-export-order.js';
+import { createExportOrderVariableDeclaration } from './appendix/create-export-order.js';
 import { createRuntimeStoriesImport } from './appendix/create-import.js';
 import { createVariableFromRuntimeStoriesCall } from './appendix/create-variable-from-runtime-stories-call.js';
-import { createNamedExportStory } from './appendix/create-named-export-story.js';
+import { createNamedExportStories } from './appendix/create-named-export-stories.js';
 
 import { STORYBOOK_META_IDENTIFIER } from '$lib/constants.js';
 import { createASTIdentifier, type ESTreeAST, type SvelteAST } from '$lib/parser/ast.js';
 import { getStoriesIdentifiers } from '$lib/parser/analyse/story/attributes/identifiers.js';
 import type { CompiledASTNodes } from '$lib/parser/extract/compiled/nodes.js';
 import type { SvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
+import { createRuntimeStoryVariableDeclaration } from './appendix/create-runtime-story-variable-declaration.js';
 
 interface Params {
   code: MagicString;
@@ -26,7 +27,7 @@ export async function createAppendix(params: Params) {
   const { compiled, svelte } = nodes;
   const { storiesFunctionDeclaration } = compiled;
 
-  const storyIdentifiers = getStoriesIdentifiers({
+  const storiesIdentifiers = getStoriesIdentifiers({
     nodes: svelte,
     filename,
   });
@@ -34,8 +35,8 @@ export async function createAppendix(params: Params) {
     storiesFunctionDeclaration,
     filename,
   });
-  const storiesExports = storyIdentifiers.map(({ exportName }, idx) =>
-    createNamedExportStory({
+  const storiesVariableDeclarations = storiesIdentifiers.map(({ exportName }, idx) =>
+    createRuntimeStoryVariableDeclaration({
       exportName,
       filename,
       nodes: {
@@ -55,8 +56,9 @@ export async function createAppendix(params: Params) {
       createRuntimeStoriesImport(),
       variableFromRuntimeStoriesCall,
       createExportDefaultMeta(),
-      createExportOrderVariable({ storyIdentifiers, filename }),
-      ...storiesExports,
+      createExportOrderVariableDeclaration({ storiesIdentifiers, filename }),
+      ...storiesVariableDeclarations,
+      createNamedExportStories({ storiesIdentifiers }),
     ],
   });
 

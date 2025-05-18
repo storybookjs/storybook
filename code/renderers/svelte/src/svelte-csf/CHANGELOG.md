@@ -110,9 +110,7 @@ This story renders:
   This is now forwarded to the component
 </MyComponent>
 -->
-<Story name="MyComponent children">
-  This is now forwarded to the component
-</Story>
+<Story name="MyComponent children">This is now forwarded to the component</Story>
 ```
 
 To get the same behavior as previously, a new `asChild` boolean prop has been introduced on the `Story` component. `asChild` is a common prop in UI libraries, where you want the `children` to _be_ the output, instead of just being children of the Component. By adding that you can get the old behavior back, when you need more control over what the story renders:

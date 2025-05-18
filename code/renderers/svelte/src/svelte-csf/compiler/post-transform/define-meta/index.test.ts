@@ -54,7 +54,7 @@ describe(transformDefineMeta.name, () => {
     });
 
     expect(print(defineMetaVariableDeclaration).code).toMatchInlineSnapshot(
-      `"const { Story } = defineMeta(meta);"`
+      `"const { Story } = defineMeta($__meta);"`
     );
   });
 });
@@ -97,7 +97,7 @@ describe(createMetaVariableDeclaration.name, () => {
     const metaVariableDeclaration = createMetaVariableDeclaration({ init: metaObjectExpression });
 
     expect(print(metaVariableDeclaration).code).toMatchInlineSnapshot(`
-      "const meta = {
+      "const $__meta = {
       	title: 'Example',
       	component: Example,
       	tags: ['autodocs'],

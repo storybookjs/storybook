@@ -1,3 +1,4 @@
+import { STORYBOOK_META_IDENTIFIER } from '$lib/constants.js';
 import { createASTIdentifier, type ESTreeAST } from '$lib/parser/ast.js';
 
 interface Params {
@@ -34,7 +35,7 @@ export function createVariableFromRuntimeStoriesCall(
               type: 'Identifier',
               name: storiesFunctionDeclaration.id.name,
             },
-            createASTIdentifier('meta'),
+            createASTIdentifier(STORYBOOK_META_IDENTIFIER),
           ],
         },
       },

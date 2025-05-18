@@ -64,7 +64,7 @@ describe(transformStoriesCode.name, () => {
        * * _Italic_,
        * * \`Code\`.
        */
-      const meta = {
+      const $__meta = {
       	title: 'Example',
       	component: Example,
       	tags: ['autodocs'],
@@ -81,7 +81,7 @@ describe(transformStoriesCode.name, () => {
       		}
       	}
       };
-      const { Story } = defineMeta(meta);
+      const { Story } = defineMeta($__meta);
 
       var root_2 = $.add_locations($.template(\`<p> </p> <p> </p> <br>\`, 1), Example_stories[$.FILENAME], [[41, 2], [42, 2], [42, 44]]);
       var root = $.add_locations($.template(\`<!> <!> <!> <!> <!>\`, 1), Example_stories[$.FILENAME], []);
@@ -254,9 +254,9 @@ describe(transformStoriesCode.name, () => {
 
       import { createRuntimeStories } from "@storybook/addon-svelte-csf/internal/create-runtime-stories";
 
-      const __stories = createRuntimeStories(Example_stories, meta);
+      const __stories = createRuntimeStories(Example_stories, $__meta);
 
-      export default meta;
+      export default $__meta;
 
       export const __namedExportsOrder = [
       	"Default",

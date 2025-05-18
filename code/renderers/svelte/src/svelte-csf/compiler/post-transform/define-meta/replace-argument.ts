@@ -4,6 +4,8 @@ import type { SvelteASTNodes } from '../../../parser/extract/svelte/nodes.js';
 import { getDefineMetaFirstArgumentObjectExpression } from '../../../parser/extract/svelte/define-meta.js';
 import { NoDestructuredDefineMetaCallError } from '../../../utils/error/parser/analyse/define-meta.js';
 
+import { STORYBOOK_META_IDENTIFIER } from '$lib/constants.js';
+
 interface Params {
   nodes: {
     compiled: CompiledASTNodes;
@@ -36,7 +38,7 @@ export function replaceDefineMetaArgument(params: Params): ESTreeAST.ObjectExpre
     });
   }
 
-  declaration.init.arguments[0] = createASTIdentifier('meta');
+  declaration.init.arguments[0] = createASTIdentifier(STORYBOOK_META_IDENTIFIER);
   params.nodes.compiled.defineMetaVariableDeclaration.declarations[0] = declaration;
 
   return defineMetaFirstArgumentObjectExpression;

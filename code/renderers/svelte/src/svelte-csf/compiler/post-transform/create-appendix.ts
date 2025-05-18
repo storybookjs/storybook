@@ -6,6 +6,7 @@ import { createRuntimeStoriesImport } from './appendix/create-import.js';
 import { createVariableFromRuntimeStoriesCall } from './appendix/create-variable-from-runtime-stories-call.js';
 import { createNamedExportStory } from './appendix/create-named-export-story.js';
 
+import { STORYBOOK_META_IDENTIFIER } from '$lib/constants.js';
 import { createASTIdentifier, type ESTreeAST, type SvelteAST } from '$lib/parser/ast.js';
 import { getStoriesIdentifiers } from '$lib/parser/analyse/story/attributes/identifiers.js';
 import type { CompiledASTNodes } from '$lib/parser/extract/compiled/nodes.js';
@@ -65,7 +66,7 @@ export async function createAppendix(params: Params) {
 function createExportDefaultMeta(): ESTreeAST.ExportDefaultDeclaration {
   return {
     type: 'ExportDefaultDeclaration',
-    declaration: createASTIdentifier('meta'),
+    declaration: createASTIdentifier(STORYBOOK_META_IDENTIFIER),
   };
 }
 

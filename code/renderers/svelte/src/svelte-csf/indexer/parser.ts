@@ -209,16 +209,8 @@ export async function parseForIndexer(
       if (legacyTemplate && !foundMeta && id.type === 'Identifier') {
         const { name } = id;
 
-        if (name === 'meta') {
+        if (name === 'meta' && init?.type === 'ObjectExpression') {
           foundMeta = true;
-
-          if (init?.type !== 'ObjectExpression') {
-            throw new GetDefineMetaFirstArgumentError({
-              filename,
-              defineMetaVariableDeclaration: node,
-            });
-          }
-
           visit(init, state);
         }
       }

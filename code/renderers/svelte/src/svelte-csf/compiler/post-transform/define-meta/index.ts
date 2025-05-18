@@ -4,6 +4,7 @@ import type MagicString from 'magic-string';
 import { replaceDefineMetaArgument } from './replace-argument.js';
 import { insertDefineMetaParameters } from './insert-parameters.js';
 
+import { STORYBOOK_META_IDENTIFIER } from '$lib/constants.js';
 import { createASTIdentifier, type ESTreeAST } from '$lib/parser/ast.js';
 import type { CompiledASTNodes } from '$lib/parser/extract/compiled/nodes.js';
 import type { SvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
@@ -47,7 +48,7 @@ export function createMetaVariableDeclaration({
     declarations: [
       {
         type: 'VariableDeclarator',
-        id: createASTIdentifier('meta'),
+        id: createASTIdentifier(STORYBOOK_META_IDENTIFIER),
         init,
       },
     ],

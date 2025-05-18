@@ -1,3 +1,15 @@
+# v5.0.1 (Sun May 18 2025)
+
+#### 🐛 Bug Fix
+
+- fix: Allow user-defined local variable `meta` in stories [#309](https://github.com/storybookjs/addon-svelte-csf/pull/309) ([@xeho91](https://github.com/xeho91))
+
+#### Authors: 1
+
+- Mateusz Kadlubowski ([@xeho91](https://github.com/xeho91))
+
+---
+
 # v5.0.0 (Tue May 06 2025)
 
 ### Release Notes

@@ -121,4 +121,19 @@ export function createASTIdentifier(name: string): ESTreeAST.Identifier {
   };
 }
 
+interface ExportSpecifierOptions {
+  local: string;
+  exported?: string;
+}
+export function createASTExportSpecifier({
+  local,
+  exported,
+}: ExportSpecifierOptions): ESTreeAST.ExportSpecifier {
+  return {
+    type: 'ExportSpecifier',
+    local: createASTIdentifier(local),
+    exported: createASTIdentifier(exported ?? local),
+  };
+}
+
 export type { ESTreeAST, SvelteAST };

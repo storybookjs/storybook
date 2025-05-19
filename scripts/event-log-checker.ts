@@ -75,13 +75,14 @@ async function run() {
 
     const storybookVersion = versions.storybook;
     if (bootEvent) {
-      test('boot event should have cliVersion in context', () => {
+      test('boot event should have cliVersion and storybookVersion in context', () => {
         assert.equal(bootEvent.context.cliVersion, storybookVersion);
+        assert.equal(bootEvent.context.storybookVersion, storybookVersion);
       });
     }
 
-    test(`all events should have storybookVersion in metadata`, () => {
-      assert.equal(mainEvent.metadata.storybookVersion, storybookVersion);
+    test(`all events should have storybookVersion in context`, () => {
+      assert.equal(mainEvent.context.storybookVersion, storybookVersion);
     });
 
     if (bootEvent) {

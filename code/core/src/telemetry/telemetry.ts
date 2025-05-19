@@ -4,6 +4,7 @@ import * as os from 'node:os';
 import retry from 'fetch-retry';
 import { nanoid } from 'nanoid';
 
+import { version } from '../../package.json';
 import { getAnonymousProjectId } from './anonymous-id';
 import { set as saveToCache } from './event-cache';
 import { fetch } from './fetch';
@@ -48,6 +49,7 @@ const globalContext = {
   isTTY: process.stdout.isTTY,
   platform: getOperatingSystem(),
   nodeVersion: process.versions.node,
+  storybookVersion: version,
 } as Record<string, any>;
 
 const prepareRequest = async (data: TelemetryData, context: Record<string, any>, options: any) => {

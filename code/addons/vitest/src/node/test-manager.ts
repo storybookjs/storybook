@@ -2,6 +2,7 @@ import type { TestResult, TestState } from 'vitest/dist/node.js';
 
 import type { experimental_UniversalStore } from 'storybook/internal/core-server';
 import type {
+  Options,
   StatusStoreByTypeId,
   StatusValue,
   TestProviderStoreById,
@@ -16,6 +17,7 @@ import { errorToErrorLike } from '../utils';
 import { VitestManager } from './vitest-manager';
 
 export type TestManagerOptions = {
+  storybookOptions: Options;
   store: experimental_UniversalStore<StoreState, StoreEvent>;
   componentTestStatusStore: StatusStoreByTypeId;
   a11yStatusStore: StatusStoreByTypeId;
@@ -45,6 +47,8 @@ export class TestManager {
 
   private onReady?: TestManagerOptions['onReady'];
 
+  public storybookOptions: Options;
+
   private batchedTestCaseResults: {
     storyId: string;
     testResult: TestResult;
@@ -57,6 +61,7 @@ export class TestManager {
     this.a11yStatusStore = options.a11yStatusStore;
     this.testProviderStore = options.testProviderStore;
     this.onReady = options.onReady;
+    this.storybookOptions = options.storybookOptions;
 
     this.vitestManager = new VitestManager(this);
 

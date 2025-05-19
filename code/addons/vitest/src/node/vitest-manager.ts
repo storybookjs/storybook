@@ -10,12 +10,7 @@ import type {
 } from 'vitest/node';
 
 import { resolvePathInStorybookCache } from 'storybook/internal/common';
-import type {
-  DocsIndexEntry,
-  StoryId,
-  StoryIndex,
-  StoryIndexEntry,
-} from 'storybook/internal/types';
+import type { StoryId, StoryIndex, StoryIndexEntry } from 'storybook/internal/types';
 
 import { findUp } from 'find-up';
 import path, { dirname, join, normalize } from 'pathe';
@@ -30,12 +25,6 @@ import type { TestManager } from './test-manager';
 
 const VITEST_CONFIG_FILE_EXTENSIONS = ['mts', 'mjs', 'cts', 'cjs', 'ts', 'tsx', 'js', 'jsx'];
 const VITEST_WORKSPACE_FILE_EXTENSION = ['ts', 'js', 'json'];
-
-type TagsFilter = {
-  include: string[];
-  exclude: string[];
-  skip: string[];
-};
 
 const packageDir = dirname(require.resolve('@storybook/addon-vitest/package.json'));
 
@@ -81,11 +70,15 @@ export class VitestManager {
       ...VITEST_CONFIG_FILE_EXTENSIONS.map((ext) => `vitest.config.${ext}`),
     ]);
 
+    const projectName = 'storybook:' + process.env.STORYBOOK_CONFIG_DIR;
+    console.log('Filtering with projectName', projectName);
+
     try {
       this.vitest = await createVitest('test', {
         root: vitestWorkspaceConfig ? dirname(vitestWorkspaceConfig) : process.cwd(),
         watch: true,
         passWithNoTests: false,
+        project: [projectName],
         // TODO:
         // Do we want to enable Vite's default reporter?
         // The output in the terminal might be too spamy and it might be better to

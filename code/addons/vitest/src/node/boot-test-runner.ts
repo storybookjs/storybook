@@ -5,7 +5,7 @@ import {
   internal_universalStatusStore,
   internal_universalTestProviderStore,
 } from 'storybook/internal/core-server';
-import type { EventInfo } from 'storybook/internal/types';
+import type { EventInfo, Options } from 'storybook/internal/types';
 
 // eslint-disable-next-line depend/ban-dependencies
 import { execaNode } from 'execa';
@@ -43,9 +43,16 @@ const forwardUniversalStoreEvent =
     });
   };
 
-const bootTestRunner = async (channel: Channel, store: Store) => {
+const bootTestRunner = async ({
+  channel,
+  store,
+  options,
+}: {
+  channel: Channel;
+  store: Store;
+  options: Options;
+}) => {
   let stderr: string[] = [];
-
   const killChild = () => {
     unsubscribeStore?.();
     unsubscribeStatusStore?.();
@@ -74,6 +81,7 @@ const bootTestRunner = async (channel: Channel, store: Store) => {
           TEST: 'true',
           VITEST_CHILD_PROCESS: 'true',
           NODE_ENV: process.env.NODE_ENV ?? 'test',
+          STORYBOOK_CONFIG_DIR: options.configDir,
         },
         extendEnv: true,
       });
@@ -145,18 +153,25 @@ const bootTestRunner = async (channel: Channel, store: Store) => {
   });
 };
 
-export const runTestRunner = async (
-  channel: Channel,
-  store: Store,
-  initEvent?: string,
-  initArgs?: any[]
-) => {
+export const runTestRunner = async ({
+  channel,
+  store,
+  initEvent,
+  initArgs,
+  options,
+}: {
+  channel: Channel;
+  store: Store;
+  initEvent?: string;
+  initArgs?: any[];
+  options: Options;
+}) => {
   if (!ready && initEvent) {
     eventQueue.push({ type: initEvent, args: initArgs });
   }
   if (!child) {
     ready = false;
-    await bootTestRunner(channel, store);
+    await bootTestRunner({ channel, store, options });
     ready = true;
   }
 };

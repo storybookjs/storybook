@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
+// findup-sync
 import { findUp } from 'find-up';
 
 import type { Dependency } from './types';
@@ -23,7 +24,15 @@ export const getActualPackageVersion = async (packageName: string) => {
 };
 
 export const getActualPackageJson = async (packageName: string) => {
-  const resolvedPackageJson = await findUp('package.json', { cwd: options.configDir });
+  let resolvedPackageJson = await findUp('package.json', { cwd: packageName });
+
+  if (!resolvedPackageJson) {
+    // fallback to require.resolve
+    resolvedPackageJson = require.resolve(join(packageName, 'package.json'), {
+      paths: [process.cwd()],
+    });
+  }
+
   const packageJson = JSON.parse(await readFile(resolvedPackageJson, { encoding: 'utf8' }));
   return packageJson;
 };

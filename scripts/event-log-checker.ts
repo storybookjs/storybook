@@ -8,14 +8,14 @@ import { esMain } from './utils/esmain';
 
 const PORT = process.env.PORT || 6007;
 
-type EventType = 'build' | 'run-tests';
+type EventType = 'build' | 'test-run';
 type EventDefinition = {
   noInit?: boolean;
 };
 
 const eventTypeDefinitions: Record<EventType, EventDefinition> = {
   build: {},
-  'run-tests': { noInit: true },
+  'test-run': { noInit: true },
 };
 
 async function run() {

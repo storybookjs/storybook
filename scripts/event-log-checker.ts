@@ -10,12 +10,12 @@ const PORT = process.env.PORT || 6007;
 
 type EventType = 'build' | 'test-run';
 type EventDefinition = {
-  noInit?: boolean;
+  noBoot?: boolean;
 };
 
 const eventTypeDefinitions: Record<EventType, EventDefinition> = {
   build: {},
-  'test-run': { noInit: true },
+  'test-run': { noBoot: true },
 };
 
 async function run() {
@@ -49,7 +49,7 @@ async function run() {
 
     const events: any = await (await fetch(`http://localhost:${PORT}/event-log`)).json();
 
-    if (definition.noInit) {
+    if (definition.noBoot) {
       test('Should log 1 event', () => {
         assert.equal(
           events.length,
@@ -71,7 +71,7 @@ async function run() {
       });
     }
 
-    const [bootEvent, mainEvent] = definition.noInit ? [null, events[0]] : events;
+    const [bootEvent, mainEvent] = definition.noBoot ? [null, events[0]] : events;
 
     const storybookVersion = versions.storybook;
     if (bootEvent) {
@@ -98,8 +98,12 @@ async function run() {
 
     test(`main event should be ${eventType} and contain correct id and session id`, () => {
       assert.equal(mainEvent.eventType, eventType);
-      assert.notEqual(mainEvent.eventId, bootEvent.eventId);
-      assert.equal(mainEvent.sessionId, bootEvent.sessionId);
+      assert.ok(typeof mainEvent.eventId === 'string');
+      assert.ok(typeof mainEvent.sessionId === 'string');
+      if (bootEvent) {
+        assert.notEqual(mainEvent.eventId, bootEvent.eventId);
+        assert.equal(mainEvent.sessionId, bootEvent.sessionId);
+      }
     });
 
     test(`main event should contain anonymousId properly hashed`, () => {

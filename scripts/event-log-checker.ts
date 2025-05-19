@@ -10,6 +10,7 @@ const PORT = process.env.PORT || 6007;
 
 const eventTypeExpectations = {
   build: {},
+  'run-tests': {},
 };
 
 async function run() {

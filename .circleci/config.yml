@@ -425,6 +425,7 @@ jobs:
             fi
             cd sandbox/$(yarn get-sandbox-dir --template $TEMPLATE) && rm -rf node_modules
           environment:
+            STORYBOOK_TELEMETRY_DEBUG: 1
             STORYBOOK_TELEMETRY_URL: 'http://localhost:6007/event-log'
       - report-workflow-on-failure:
           template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task sandbox)

@@ -74,8 +74,8 @@ export const getConfig: ManagerBuilder['getConfig'] = async (options) => {
     minify: false,
     minifyWhitespace: false,
     minifyIdentifiers: false,
-    minifySyntax: false,
-    metafile: true,
+    minifySyntax: true,
+    metafile: false, // turn this on to assist with debugging the bundling of managerEntries
 
     // treeShaking: true,
 

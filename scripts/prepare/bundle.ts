@@ -1,8 +1,7 @@
 import { writeFile } from 'node:fs/promises';
-import { dirname, join, parse, posix, relative, resolve, sep } from 'node:path';
+import { dirname, join, parse, posix, relative, sep } from 'node:path';
 
 import type { Metafile } from 'esbuild';
-import aliasPlugin from 'esbuild-plugin-alias';
 // eslint-disable-next-line depend/ban-dependencies
 import * as fs from 'fs-extra';
 // eslint-disable-next-line depend/ban-dependencies
@@ -130,15 +129,6 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
           'process.env.NODE_ENV': 'process.env.NODE_ENV',
         },
 
-        esbuildPlugins:
-          platform === 'node'
-            ? []
-            : [
-                aliasPlugin({
-                  process: resolve('../node_modules/process/browser.js'),
-                  util: resolve('../node_modules/util/util.js'),
-                }),
-              ],
         external: externals,
 
         esbuildOptions: (c) => {

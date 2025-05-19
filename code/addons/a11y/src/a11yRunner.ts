@@ -3,7 +3,7 @@ import { ElementA11yParameterError } from 'storybook/internal/preview-errors';
 import { global } from '@storybook/global';
 
 import type { AxeResults, ContextProp, ContextSpec } from 'axe-core';
-import { addons } from 'storybook/preview-api';
+import { addons, waitForAnimations } from 'storybook/preview-api';
 
 import { withLinkPaths } from './a11yRunnerUtils';
 import { EVENTS } from './constants';
@@ -41,7 +41,11 @@ const runNext = async () => {
 };
 
 export const run = async (input: A11yParameters = DEFAULT_PARAMETERS, storyId: string) => {
-  const { default: axe } = await import('axe-core');
+  const axeCore = await import('axe-core');
+  // We do this workaround when Vite projects can't optimize deps in pnpm projects
+  // as axe-core is UMD and therefore won't resolve.
+  // In that case, we just use the global axe (which will be there as a side effect of UMD import).
+  const axe = axeCore?.default || (globalThis as any).axe;
 
   const { config = {}, options = {} } = input;
 
@@ -109,6 +113,7 @@ export const run = async (input: A11yParameters = DEFAULT_PARAMETERS, storyId: s
 
 channel.on(EVENTS.MANUAL, async (storyId: string, input: A11yParameters = DEFAULT_PARAMETERS) => {
   try {
+    await waitForAnimations();
     const result = await run(input, storyId);
     // Axe result contains class instances, which telejson deserializes in a
     // way that violates:

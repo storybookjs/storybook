@@ -9,6 +9,7 @@ import { doUpgrade, getStorybookVersion, toUpgradedDependencies } from './upgrad
 
 const findInstallationsMock =
   vi.fn<(arg: string[]) => Promise<sbcc.InstallationMetadata | undefined>>();
+const getInstalledVersionMock = vi.fn<(arg: string) => Promise<string | undefined>>();
 
 vi.mock('storybook/internal/telemetry');
 vi.mock('storybook/internal/common', async (importOriginal) => {
@@ -18,6 +19,7 @@ vi.mock('storybook/internal/common', async (importOriginal) => {
     JsPackageManagerFactory: {
       getPackageManager: () => ({
         findInstallations: findInstallationsMock,
+        getInstalledVersion: getInstalledVersionMock,
         latestVersion: async () => '8.0.0',
         retrievePackageJson: async () => {},
         getAllDependencies: async () => ({ storybook: '8.0.0' }),
@@ -69,6 +71,18 @@ describe('Upgrade errors', () => {
     expect(findInstallationsMock).toHaveBeenCalledWith(Object.keys(sbcc.versions));
   });
   it('should show a warning when upgrading to the same version number', async () => {
+    findInstallationsMock.mockResolvedValue({
+      dependencies: {
+        storybook: [
+          {
+            version: '9.0.0',
+          },
+        ],
+      },
+      duplicatedDependencies: {},
+      infoCommand: '',
+      dedupeCommand: '',
+    });
     findInstallationsMock.mockResolvedValue({
       dependencies: {
         storybook: [

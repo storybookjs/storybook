@@ -21,6 +21,48 @@ const meta: Meta<MyComponent> = {
 export default meta;
 ```
 
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const meta = defineMeta({
+    /* 👇 The title prop is optional.
+     * See https://storybook.js.org/docs/configure/#configure-story-loading
+     * to learn how to generate automatic titles
+     */
+    title: 'Path/To/MyComponent',
+    component: MyComponent,
+    decorators: [
+      /* ... */
+    ],
+    parameters: {
+      /* ... */
+    },
+  });
+</script>
+```
+
+```js filename="MyComponent.story.js" renderer="svelte" language="js" tabTitle="CSF"
+import { MyComponent } from './MyComponent';
+
+export default {
+  /* 👇 The title prop is optional.
+   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * to learn how to generate automatic titles
+   */
+  title: 'Path/To/MyComponent',
+  component: MyComponent,
+  decorators: [
+    /* ... */
+  ],
+  parameters: {
+    /* ... */
+  },
+};
+```
+
 ```js filename="MyComponent.story.js|jsx" renderer="common" language="js"
 import { MyComponent } from './MyComponent';
 
@@ -38,6 +80,53 @@ export default {
     /* ... */
   },
 };
+```
+
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const meta = defineMeta({
+    /* 👇 The title prop is optional.
+     * See https://storybook.js.org/docs/configure/#configure-story-loading
+     * to learn how to generate automatic titles
+     */
+    title: 'Path/To/MyComponent',
+    component: MyComponent,
+    decorators: [
+      /* ... */
+    ],
+    parameters: {
+      /* ... */
+    },
+  });
+</script>
+```
+
+```ts filename="MyComponent.stories.ts|tsx" renderer="svelte" language="ts" tabTitle="CSF"
+// Replace your-framework with svelte-vite or sveltekit
+import type { Meta } from '@storybook/your-framework';
+
+import MyComponent from './MyComponent.svelte';
+
+const meta = {
+  /* 👇 The title prop is optional.
+   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * to learn how to generate automatic titles
+   */
+  title: 'Path/To/MyComponent',
+  component: MyComponent,
+  decorators: [
+    /* ... */
+  ],
+  parameters: {
+    /* ... */
+  },
+} satisfies Meta<typeof MyComponent>;
+
+export default meta;
 ```
 
 ```ts filename="MyComponent.stories.ts|tsx" renderer="common" language="ts"

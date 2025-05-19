@@ -20,7 +20,7 @@ import { expect, within } from 'storybook/test';
  */
 export default {
   title: 'Docs2/ResolvedReact',
-  component: globalThis.Components.Html,
+  component: globalThis.__TEMPLATE_COMPONENTS__.Html,
   tags: ['autodocs'],
   argTypes: {
     content: { table: { disable: true } },

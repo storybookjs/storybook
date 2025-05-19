@@ -24,6 +24,7 @@
     - [Story Store API Changes](#story-store-api-changes)
     - [Global State Management](#global-state-management)
     - [Experimental Status API has turned into a Status Store](#experimental-status-api-has-turned-into-a-status-store)
+    - [`experimental_afterEach` has been stabilized](#experimental_aftereach-has-been-stabilized)
     - [Testing Module Changes](#testing-module-changes)
     - [Consolidate `@storybook/blocks` into addon docs](#consolidate-storybookblocks-into-addon-docs)
   - [Configuration and Type Changes](#configuration-and-type-changes)
@@ -38,10 +39,11 @@
     - [Svelte: Require v5 and up](#svelte-require-v5-and-up)
     - [Svelte: Dropped support for @storybook/svelte-webpack5](#svelte-dropped-support-for-storybooksvelte-webpack5)
     - [Svelte: Dropped automatic docgen for events and slots](#svelte-dropped-automatic-docgen-for-events-and-slots)
-    - [Angular = Require v18 and up](#angular--require-v18-and-up)
+    - [Angular: Require v18 and up](#angular-require-v18-and-up)
+    - [Angular: Introduce `features.angularFilterNonInputControls`](#angular-introduce-featuresangularfilternoninputcontrols)
     - [Dropped webpack5 Builder Support in Favor of Vite](#dropped-webpack5-builder-support-in-favor-of-vite)
-    - [Next.js = Require v14 and up](#nextjs--require-v14-and-up)
-    - [Next.js = Vite builder stabilized](#nextjs--vite-builder-stabilized)
+    - [Next.js: Require v14 and up](#nextjs-require-v14-and-up)
+    - [Next.js: Vite builder stabilized](#nextjs-vite-builder-stabilized)
     - [Lit = Require v3 and up](#lit--require-v3-and-up)
 - [From version 8.5.x to 8.6.x](#from-version-85x-to-86x)
   - [Angular: Support experimental zoneless support](#angular-support-experimental-zoneless-support)
@@ -478,8 +480,6 @@
 
 ### Core Changes and Removals
 
-Furthermore, we have deprecated the usage of `withActions` from `@storybook/addon-actions` and we will remove it in Storybook v10. Please file an issue if you need this API.
-
 #### Dropped support for legacy packages
 
 The following packages are no longer published as part of `9.0.0`:
@@ -552,6 +552,8 @@ export default {
 ```
 
 The public API remains the same, so no additional changes should be needed in your test files or configuration.
+
+Additionally, we have deprecated the usage of `withActions` from `@storybook/addon-actions` and we will remove it in Storybook v10. Please file an issue if you need this API.
 
 #### Dropped support
 
@@ -690,7 +692,22 @@ export const MyStory = {
 
 #### Experimental Test Addon: Stabilized and renamed
 
-In Storybook 9.0, we've officially stabilized the Test addon. The package has been renamed from `@storybook/experimental-addon-test` to `@storybook/addon-vitest`, reflecting its production-ready status. If you were using the experimental addon, you'll need to update your dependencies and imports:
+In Storybook 9.0, we've officially stabilized the Test addon. The package has been renamed from `@storybook/experimental-addon-test` to `@storybook/addon-vitest`, reflecting its production-ready status. If you were using the experimental addon, you'll need to update your dependencies and imports.
+
+The vitest addon automatically loads Storybook's `beforeAll` hook, so that you can remove the following line in your vitest.setup.ts file:
+
+```diff
+// .storybook/vitest.setup.ts
+import { setProjectAnnotations } from '@storybook/react-vite';
+import * as addonAnnotations from 'my-addon/preview';
+import * as previewAnnotations from './.storybook/preview';
+
+- const project = setProjectAnnotations([previewAnnotations, addonAnnotations]);
++ setProjectAnnotations([previewAnnotations, addonAnnotations]);
+
+// the vitest addon automatically loads beforeAll
+- beforeAll(project.beforeAll);
+```
 
 #### Vitest Addon (former @storybook/experimental-addon-test): Vitest 2.0 support is dropped
 
@@ -707,7 +724,7 @@ See here for the ways you have to configure addon viewports & backgrounds:
 
 #### Storysource Addon removed
 
-The `@storybook/addon-storysource` addon is being removed in Storybook 9.0. Instead, Storybook now provides a Code Panel via `@storybook/addon-docs` that offers similar functionality with improved integration and performance.
+The `@storybook/addon-storysource` addon and the `@storybook/source-loader` package are removed in Storybook 9.0. Instead, Storybook now provides a Code Panel via `@storybook/addon-docs` that offers similar functionality with improved integration and performance.
 
 **Migration Steps:**
 
@@ -859,6 +876,21 @@ addons.register(MY_ADDON_ID, (api) => {
 +    title: 'Component tests',
 +    description: 'Works!',
 +  }]);
+```
+
+#### `experimental_afterEach` has been stabilized
+
+The experimental_afterEach hook has been promoted to a stable API and renamed to afterEach.
+
+To migrate, simply replace all instances of experimental_afterEach with afterEach in your stories, preview files, and configuration.
+
+```diff
+ export const MyStory = {
+-   experimental_afterEach: async ({ canvasElement }) => {
++   afterEach: async ({ canvasElement }) => {
+     // cleanup logic
+   },
+ };
 ```
 
 #### Testing Module Changes
@@ -1049,7 +1081,7 @@ The internal docgen logic for legacy Svelte components have been changed to matc
 
 This means that argTypes are no longer automatically generated for slots and events defined with `on:my-event`.
 
-#### Angular = Require v18 and up
+#### Angular: Require v18 and up
 
 Storybook has dropped support for Angular versions 15-17. The minimum supported version is now Angular 18.
 
@@ -1063,6 +1095,21 @@ Key changes:
 - Updated RxJS requirement to `^7.4.0`
 - Updated TypeScript requirement to `^4.9.0 || ^5.0.0`
 - Updated Zone.js requirement to `^0.14.0 || ^0.15.0`
+
+#### Angular: Introduce `features.angularFilterNonInputControls`
+
+Storybook has added a new feature flag `angularFilterNonInputControls` which filters out non-input controls from Angular compoennts in Storybook's controls panel.
+
+To enable it, just set the feature flag in your `.storybook/main.<js|ts> file.
+
+```tsx
+export default {
+  features: {
+    angularFilterNonInputControls: true
+  },
+  // ... other configurations
+};
+```
 
 #### Dropped webpack5 Builder Support in Favor of Vite
 
@@ -1122,7 +1169,7 @@ export default {
 
 This change consolidates our builder support around Vite, which offers better performance and a more streamlined development experience. The webpack5 builders for these frameworks have been deprecated in favor of the more modern Vite-based solution.
 
-#### Next.js = Require v14 and up
+#### Next.js: Require v14 and up
 
 Storybook has dropped support for Next.js versions below 14.1. The minimum supported version is now Next.js 14.1.
 
@@ -1130,7 +1177,7 @@ If you're using an older version of Next.js, you'll need to upgrade to Next.js 1
 
 For help upgrading your Next.js application, see the [Next.js upgrade guide](https://nextjs.org/docs/app/building-your-application/upgrading).
 
-#### Next.js = Vite builder stabilized
+#### Next.js: Vite builder stabilized
 
 The experimental Next.js Vite builder (`@storybook/experimental-nextjs-vite`) has been stabilized and renamed to `@storybook/nextjs-vite`. If you were using the experimental package, you should update your dependencies to use the new stable package name.
 

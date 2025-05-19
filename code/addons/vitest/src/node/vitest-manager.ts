@@ -294,10 +294,17 @@ export class VitestManager {
     );
   }
 
-  async runAffectedTestsAfterChange(changedFilePath: string) {
+  async runAffectedTestsAfterChange(changedFilePath: string, event: 'change' | 'add') {
     const id = slash(changedFilePath);
     this.vitest?.logger.clearHighlightCache(id);
     this.updateLastChanged(id);
+
+    if (event === 'add') {
+      const project = this.vitest?.projects.find(this.isStorybookProject.bind(this));
+      // This function not only tests whether a file matches the test globs, but it also
+      // adds the file to the project's internal testFilesList
+      project?.matchesTestGlob(id);
+    }
 
     // when watch mode is disabled, don't trigger any tests (below)
     // but still invalidate the cache for the changed file, which is handled above
@@ -439,8 +446,12 @@ export class VitestManager {
     this.resetGlobalTestNamePattern();
     this.vitest!.vite.watcher.removeAllListeners('change');
     this.vitest!.vite.watcher.removeAllListeners('add');
-    this.vitest!.vite.watcher.on('change', this.runAffectedTestsAfterChange.bind(this));
-    this.vitest!.vite.watcher.on('add', this.runAffectedTestsAfterChange.bind(this));
+    this.vitest!.vite.watcher.on('change', (file) =>
+      this.runAffectedTestsAfterChange(file, 'change')
+    );
+    this.vitest!.vite.watcher.on('add', (file) => {
+      this.runAffectedTestsAfterChange(file, 'add');
+    });
     this.registerVitestConfigListener();
   }
 

@@ -6,7 +6,7 @@ import { useEffect, useState } from 'storybook/preview-api';
 import { userEvent, within } from 'storybook/test';
 
 export default {
-  component: globalThis.Components.Button,
+  component: globalThis.__TEMPLATE_COMPONENTS__.Button,
   tags: ['!vitest'],
 };
 

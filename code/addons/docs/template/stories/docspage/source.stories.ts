@@ -3,7 +3,7 @@ import type { StoryContext } from 'storybook/internal/types';
 import { dedent } from 'ts-dedent';
 
 export default {
-  component: globalThis.Components.Button,
+  component: globalThis.__TEMPLATE_COMPONENTS__.Button,
   tags: ['autodocs'],
   args: { label: 'Click Me!' },
   parameters: { chromatic: { disable: true } },

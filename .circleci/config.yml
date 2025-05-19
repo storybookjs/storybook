@@ -504,7 +504,7 @@ jobs:
       - start-event-collector
       - run:
           name: Running story tests in Vitest
-          command: yarn task --task vitest-integration --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task vitest-integration) --no-link --start-from=never --junit
+          command: STORYBOOK_TELEMETRY_DEBUG=1 yarn task --task vitest-integration --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task vitest-integration) --no-link --start-from=never --junit
       - run:
           name: 'Check Telemetry'
           command: yarn --cwd scripts jiti ./event-log-checker.ts run-tests $(yarn get-template --cadence << pipeline.parameters.workflow >> --task vitest-integration)

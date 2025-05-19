@@ -476,6 +476,9 @@ jobs:
       - run:
           name: Running Test Runner
           command: yarn task --task test-runner --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner) --no-link --start-from=never --junit
+          environment:
+            STORYBOOK_TELEMETRY_DEBUG: 1
+            STORYBOOK_TELEMETRY_URL: 'http://localhost:6007/event-log'
       - run:
           name: 'Check Telemetry'
           command: yarn --cwd scripts jiti ./event-log-checker.ts run-tests $(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner)
@@ -531,9 +534,6 @@ jobs:
       - run:
           name: Running Test Runner in Dev mode
           command: yarn task --task test-runner-dev --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner-dev) --no-link --start-from=never --junit
-          environment:
-            STORYBOOK_TELEMETRY_DEBUG: 1
-            STORYBOOK_TELEMETRY_URL: 'http://localhost:6007/event-log'
       - report-workflow-on-failure:
           template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner-dev)
       - store_test_results:

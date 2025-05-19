@@ -32,8 +32,7 @@ test.describe("save-from-controls", () => {
 
     // Update an arg
     const label = sbPage.panelContent().locator("textarea[name=children]");
-    const value = await label.inputValue();
-    await label.fill(value + " Updated " + id);
+    await label.fill(`"Updated ${id}"`);
     await label.blur();
 
     // Assert the footer is shown
@@ -58,7 +57,8 @@ test.describe("save-from-controls", () => {
     await notification1.isHidden();
 
     // Update an arg
-    await label.fill(value + " Copied");
+    const newStoryValue = `"Copied ${id}"`;
+    await label.fill(newStoryValue);
     await label.blur();
 
     // Assert the footer is shown
@@ -85,6 +85,6 @@ test.describe("save-from-controls", () => {
     await notification2.click();
 
     // Assert the Button components is rendered in the preview
-    await expect(sbPage.previewRoot()).toContainText(value);
+    await expect(sbPage.previewRoot()).toContainText(newStoryValue.replace(/"/g, ''));
   });
 });

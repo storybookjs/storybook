@@ -12,7 +12,7 @@
 const Override = () => 'overridden';
 
 export default {
-  component: globalThis.Components.Button,
+  component: globalThis.__TEMPLATE_COMPONENTS__.Button,
   tags: ['autodocs'],
   args: { label: 'Click Me!' },
   parameters: {

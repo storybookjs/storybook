@@ -27,9 +27,22 @@ export type UserOptions = {
     exclude?: string[];
     skip?: string[];
   };
+
+  /**
+   * Whether to disable addon docs features while running tests.
+   *
+   * Most users don't need addon docs for tests, the only scenario where you might need it is if you
+   * need to read and parse MDX files as part of rendering your components.
+   *
+   * @default true
+   */
+  disableAddonDocs?: boolean;
 };
 
 export type InternalOptions = Required<UserOptions> & {
   debug: boolean;
   tags: Required<UserOptions['tags']>;
+  includeStories: string[];
+  /** This is the root of the vitest config where the `storybookTest` plugin is applied */
+  vitestRoot: string;
 };

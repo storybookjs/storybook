@@ -73,12 +73,12 @@ async function run() {
 
     const [bootEvent, mainEvent] = definition.noInit ? [null, events[0]] : events;
 
-    test(`all events should have cliVersion in context`, () => {
-      const cliVersion = versions.storybook;
+    test(`all events should have storybookVersion in context`, () => {
+      const storybookVersion = versions.storybook;
       if (bootEvent) {
-        assert.equal(bootEvent.context.cliVersion, cliVersion);
+        assert.equal(bootEvent.context.storybookVersion, storybookVersion);
       }
-      assert.equal(mainEvent.context.cliVersion, cliVersion);
+      assert.equal(mainEvent.context.storybookVersion, storybookVersion);
     });
 
     if (bootEvent) {

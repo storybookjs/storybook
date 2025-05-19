@@ -1,4 +1,4 @@
-import { getEnvConfig, parseList, versions } from 'storybook/internal/common';
+import { getEnvConfig, parseList } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import { addToGlobalContext } from 'storybook/internal/telemetry';
 
@@ -14,7 +14,7 @@ import { buildIndex as index } from '../buildIndex';
 import { dev } from '../dev';
 import { globalSettings } from '../globalSettings';
 
-addToGlobalContext('cliVersion', versions.storybook);
+addToGlobalContext('cliVersion', version);
 
 const consoleLogger = console;
 

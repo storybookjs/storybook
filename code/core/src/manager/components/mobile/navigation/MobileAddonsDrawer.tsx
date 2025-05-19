@@ -1,13 +1,16 @@
 import type { FC, ReactNode } from 'react';
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 
 import { styled } from 'storybook/theming';
 
 interface MobileAddonsDrawerProps {
   children: ReactNode;
   id?: string;
+  isOpen: boolean;
+  onClose: () => void;
 }
-const Container = styled.div(({ theme }) => ({
+
+const Container = styled.dialog(({ theme }) => ({
   position: 'relative',
   boxSizing: 'border-box',
   width: '100%',
@@ -15,16 +18,51 @@ const Container = styled.div(({ theme }) => ({
   height: '42vh',
   zIndex: 11,
   overflow: 'hidden',
+  border: 'none',
+  padding: 0,
 }));
 
-export const MobileAddonsDrawer: FC<MobileAddonsDrawerProps> = ({ children, id }) => {
+export const MobileAddonsDrawer: FC<MobileAddonsDrawerProps> = ({
+  children,
+  id,
+  isOpen,
+  onClose,
+}) => {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const dialogNode = dialogRef.current;
+    if (dialogNode) {
+      if (isOpen) {
+        if (!dialogNode.hasAttribute('open')) {
+          dialogNode.showModal();
+        }
+      } else {
+        if (dialogNode.hasAttribute('open')) {
+          dialogNode.close();
+        }
+      }
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    const dialogNode = dialogRef.current;
+    if (dialogNode) {
+      const handleDialogCloseEvent = () => {
+        if (isOpen) {
+          onClose();
+        }
+      };
+      dialogNode.addEventListener('close', handleDialogCloseEvent);
+      return () => {
+        dialogNode.removeEventListener('close', handleDialogCloseEvent);
+      };
+    }
+    return undefined;
+  }, [isOpen, onClose]);
+
   return (
-    <Container
-      id={id}
-      role="dialog"
-      aria-modal="true"
-      aria-label="Addon panel"
-    >
+    <Container ref={dialogRef} id={id} aria-label="Addon panel">
       {children}
     </Container>
   );

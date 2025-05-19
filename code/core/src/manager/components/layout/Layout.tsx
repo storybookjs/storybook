@@ -128,19 +128,9 @@ const useLayoutSyncingState = ({
 };
 
 const MainContentMatcher = ({ children }: { children: React.ReactNode }) => {
-  const { isMobileMenuOpen } = useLayout();
-
   return (
     <Match path={/(^\/story|docs|onboarding\/|^\/$)/} startsWith={false}>
-      {({ match }) => (
-        <ContentContainer
-          shown={!!match}
-          aria-hidden={isMobileMenuOpen}
-          tabIndex={isMobileMenuOpen ? -1 : undefined}
-        >
-          {children}
-        </ContentContainer>
-      )}
+      {({ match }) => <ContentContainer shown={!!match}>{children}</ContentContainer>}
     </Match>
   );
 };

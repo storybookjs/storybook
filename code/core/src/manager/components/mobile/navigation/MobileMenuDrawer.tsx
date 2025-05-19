@@ -1,5 +1,5 @@
 import type { FC } from 'react';
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 
 import { Transition } from 'react-transition-group';
 import type { TransitionStatus } from 'react-transition-group/Transition';
@@ -8,7 +8,6 @@ import { styled } from 'storybook/theming';
 import { MOBILE_TRANSITION_DURATION } from '../../../constants';
 import { useLayout } from '../../layout/LayoutProvider';
 import { MobileAbout } from '../about/MobileAbout';
-import { useFocusTrap } from './useFocusTrap';
 
 interface MobileMenuDrawerProps {
   children?: React.ReactNode;
@@ -16,37 +15,64 @@ interface MobileMenuDrawerProps {
 }
 
 export const MobileMenuDrawer: FC<MobileMenuDrawerProps> = ({ children, id }) => {
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const { isMobileMenuOpen, setMobileMenuOpen, isMobileAboutOpen, setMobileAboutOpen } =
     useLayout();
 
-  // Handler to close the menu
   const handleClose = useCallback(() => {
     setMobileMenuOpen(false);
   }, [setMobileMenuOpen]);
 
-  const containerRef = useFocusTrap<HTMLDivElement>(isMobileMenuOpen, handleClose);
+  useEffect(() => {
+    const dialogNode = dialogRef.current;
+    if (dialogNode) {
+      if (isMobileMenuOpen) {
+        if (!dialogNode.hasAttribute('open')) {
+          dialogNode.showModal();
+        }
+      } else {
+        if (dialogNode.hasAttribute('open')) {
+          dialogNode.close();
+        }
+      }
+    }
+  }, [isMobileMenuOpen]);
+
+  useEffect(() => {
+    const dialogNode = dialogRef.current;
+    if (dialogNode) {
+      const handleDialogCloseEvent = () => {
+        if (isMobileMenuOpen) {
+          setMobileMenuOpen(false);
+        }
+      };
+      dialogNode.addEventListener('close', handleDialogCloseEvent);
+      return () => {
+        dialogNode.removeEventListener('close', handleDialogCloseEvent);
+      };
+    }
+    return undefined;
+  }, [isMobileMenuOpen, setMobileMenuOpen]);
 
   return (
     <>
       <Transition
-        nodeRef={containerRef}
+        nodeRef={dialogRef}
         in={isMobileMenuOpen}
         timeout={MOBILE_TRANSITION_DURATION}
         mountOnEnter
         unmountOnExit
-        onExited={() => setMobileAboutOpen(false)}
+        onExited={() => {
+          setMobileAboutOpen(false);
+          if (dialogRef.current && dialogRef.current.hasAttribute('open')) {
+            dialogRef.current.close();
+          }
+        }}
       >
         {(state) => (
-          <Container
-            ref={containerRef}
-            state={state}
-            id={id}
-            role="dialog"
-            aria-modal="true"
-            aria-label="Navigation menu"
-          >
+          <Container ref={dialogRef} state={state} id={id} aria-label="Navigation menu">
             <Transition
               nodeRef={sidebarRef}
               in={!isMobileAboutOpen}
@@ -82,7 +108,7 @@ export const MobileMenuDrawer: FC<MobileMenuDrawerProps> = ({ children, id }) =>
   );
 };
 
-const Container = styled.div<{ state: TransitionStatus }>(({ theme, state }) => ({
+const Container = styled.dialog<{ state: TransitionStatus }>(({ theme, state }) => ({
   position: 'fixed',
   boxSizing: 'border-box',
   width: '100%',
@@ -112,6 +138,8 @@ const Container = styled.div<{ state: TransitionStatus }>(({ theme, state }) => 
     }
     return 'translateY(0)';
   })()}`,
+  border: 'none',
+  padding: 0,
 }));
 
 const SidebarContainer = styled.div<{ state: TransitionStatus }>(({ theme, state }) => ({

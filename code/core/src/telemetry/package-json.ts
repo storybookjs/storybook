@@ -1,6 +1,8 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
+import { findUp } from 'find-up';
+
 import type { Dependency } from './types';
 
 export const getActualPackageVersions = async (packages: Record<string, Partial<Dependency>>) => {
@@ -21,9 +23,7 @@ export const getActualPackageVersion = async (packageName: string) => {
 };
 
 export const getActualPackageJson = async (packageName: string) => {
-  const resolvedPackageJson = require.resolve(join(packageName, 'package.json'), {
-    paths: [process.cwd()],
-  });
+  const resolvedPackageJson = await findUp('package.json', { cwd: options.configDir });
   const packageJson = JSON.parse(await readFile(resolvedPackageJson, { encoding: 'utf8' }));
   return packageJson;
 };

@@ -220,11 +220,11 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
 
         const telemetryJobs = [telemetry('build', payload, { configDir: options.configDir })];
 
-        if (process.env.BUILD_ENV_FOR_TESTING) {
+        if (process.env.STORYBOOK_INVOKED_BY) {
           telemetryJobs.push(
             telemetry(
               'test-run',
-              { runner: process.env.BUILD_ENV_FOR_TESTING, watch: false },
+              { runner: process.env.STORYBOOK_INVOKED_BY, watch: false },
               { configDir: options.configDir }
             )
           );

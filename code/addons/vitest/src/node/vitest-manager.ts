@@ -71,7 +71,6 @@ export class VitestManager {
     ]);
 
     const projectName = 'storybook:' + process.env.STORYBOOK_CONFIG_DIR;
-    console.log('Filtering with projectName', projectName);
 
     try {
       this.vitest = await createVitest('test', {
@@ -91,8 +90,8 @@ export class VitestManager {
       const originalMessage = String(err.message);
       if (originalMessage.includes('Found multiple projects')) {
         const custom = [
-          'Storybook was unable to start the test run because you have multiple Vitest projects in headed browser mode.',
-          'Please set `headless: true` in your Storybook vitest config, or if you want to run Storybook tests in headed browser mode, set `headless: true` to all other browser mode projects.\n\n',
+          'Storybook was unable to start the test run because you have multiple Vitest projects (or browsers) in headed mode.',
+          'Please set `headless: true` in your Storybook vitest config.\n\n',
         ].join('\n');
 
         if (!originalMessage.startsWith(custom)) {

@@ -8,9 +8,14 @@ import { esMain } from './utils/esmain';
 
 const PORT = process.env.PORT || 6007;
 
-const eventTypeExpectations = {
+type EventType = 'build' | 'run-tests';
+type EventDefinition = {
+  noInit?: boolean;
+};
+
+const eventTypeDefinitions: Record<EventType, EventDefinition> = {
   build: {},
-  'run-tests': {},
+  'run-tests': { noInit: true },
 };
 
 async function run() {
@@ -30,9 +35,9 @@ async function run() {
       );
     }
 
-    const expectation = eventTypeExpectations[eventType as keyof typeof eventTypeExpectations];
+    const definition = eventTypeDefinitions[eventType as EventType];
 
-    if (!expectation) {
+    if (!definition) {
       throw new Error(`Unexpected eventType '${eventType}'`);
     }
 
@@ -44,28 +49,44 @@ async function run() {
 
     const events: any = await (await fetch(`http://localhost:${PORT}/event-log`)).json();
 
-    test('Should log 2 events', () => {
-      assert.equal(
-        events.length,
-        2,
-        `Expected 2 events but received ${
-          events.length
-        } instead. The following events were logged: ${JSON.stringify(events)}`
-      );
-    });
+    if (definition.noInit) {
+      test('Should log 1 event', () => {
+        assert.equal(
+          events.length,
+          1,
+          `Expected 1 event but received ${
+            events.length
+          } instead. The following events were logged: ${JSON.stringify(events)}`
+        );
+      });
+    } else {
+      test('Should log 2 events', () => {
+        assert.equal(
+          events.length,
+          2,
+          `Expected 2 events but received ${
+            events.length
+          } instead. The following events were logged: ${JSON.stringify(events)}`
+        );
+      });
+    }
 
-    const [bootEvent, mainEvent] = events;
+    const [bootEvent, mainEvent] = definition.noInit ? [null, events[0]] : events;
 
-    test(`both events should have cliVersion in context`, () => {
+    test(`all events should have cliVersion in context`, () => {
       const cliVersion = versions.storybook;
-      assert.equal(bootEvent.context.cliVersion, cliVersion);
+      if (bootEvent) {
+        assert.equal(bootEvent.context.cliVersion, cliVersion);
+      }
       assert.equal(mainEvent.context.cliVersion, cliVersion);
     });
 
-    test(`Should log a boot event with a payload of type ${eventType}`, () => {
-      assert.equal(bootEvent.eventType, 'boot');
-      assert.equal(bootEvent.payload?.eventType, eventType);
-    });
+    if (bootEvent) {
+      test(`Should log a boot event with a payload of type ${eventType}`, () => {
+        assert.equal(bootEvent.eventType, 'boot');
+        assert.equal(bootEvent.payload?.eventType, eventType);
+      });
+    }
 
     test(`main event should be ${eventType} and contain correct id and session id`, () => {
       assert.equal(mainEvent.eventType, eventType);

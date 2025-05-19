@@ -73,7 +73,7 @@ async function run() {
 
     const [bootEvent, mainEvent] = definition.noInit ? [null, events[0]] : events;
 
-    test(`all events should have storybookVersion in context`, () => {
+    test(`all events should have storybookVersion in metadata`, () => {
       const storybookVersion = versions.storybook;
       if (bootEvent) {
         assert.equal(bootEvent.metadata.storybookVersion, storybookVersion);

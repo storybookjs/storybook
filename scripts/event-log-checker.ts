@@ -55,10 +55,12 @@ async function run() {
 
     const [bootEvent, mainEvent] = events;
 
-    test(`both events should have storybookVersion in metadata`, () => {
-      const cliVersion = versions.storybook;
-      assert.equal(bootEvent.metadata.storybookVersion, cliVersion);
-      assert.equal(mainEvent.metadata.storybookVersion, cliVersion);
+    test('boot event should have cliVersion in context', () => {
+      assert.equal(bootEvent.context.cliVersion, versions.storybook);
+    });
+
+    test(`main event should have storybookVersion in metadata`, () => {
+      assert.equal(mainEvent.metadata.storybookVersion, versions.storybook);
     });
 
     test(`Should log a boot event with a payload of type ${eventType}`, () => {

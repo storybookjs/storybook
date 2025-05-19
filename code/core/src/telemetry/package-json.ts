@@ -15,7 +15,7 @@ export const getActualPackageVersion = async (packageName: string) => {
   try {
     const packageJson = await getActualPackageJson(packageName);
     return {
-      name: packageName,
+      name: packageJson.name || packageName,
       version: packageJson.version,
     };
   } catch (err) {

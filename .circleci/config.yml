@@ -482,7 +482,7 @@ jobs:
             STORYBOOK_TELEMETRY_URL: 'http://localhost:6007/event-log'
       - run:
           name: 'Check Telemetry'
-          command: yarn --cwd scripts jiti ./event-log-checker.ts run-tests $(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner)
+          command: yarn --cwd scripts jiti ./event-log-checker.ts test-run $(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner)
       - report-workflow-on-failure:
           template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner)
       - store_test_results:
@@ -514,7 +514,7 @@ jobs:
             STORYBOOK_TELEMETRY_URL: 'http://localhost:6007/event-log'
       - run:
           name: 'Check Telemetry'
-          command: yarn --cwd scripts jiti ./event-log-checker.ts run-tests $(yarn get-template --cadence << pipeline.parameters.workflow >> --task vitest-integration)
+          command: yarn --cwd scripts jiti ./event-log-checker.ts test-run $(yarn get-template --cadence << pipeline.parameters.workflow >> --task vitest-integration)
       - report-workflow-on-failure:
           template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task vitest-integration)
       - store_test_results:

@@ -233,16 +233,9 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
         finalOptions.includeStories = includeStories;
         const projectId = oneWayHash(finalOptions.configDir);
 
-        let projectName;
-        if (process.env.VITEST_STORYBOOK) {
-          projectName = join('storybook:', finalOptions.configDir);
-        }
-
-        console.log('projectName', projectName);
         const baseConfig: Omit<ViteUserConfig, 'plugins'> = {
           cacheDir: resolvePathInStorybookCache('sb-vitest', projectId),
           test: {
-            ...(projectName ? { name: projectName } : {}),
             setupFiles: [
               join(PACKAGE_DIR, 'dist/vitest-plugin/setup-file.mjs'),
               // if the existing setupFiles is a string, we have to include it otherwise we're overwriting it
@@ -411,6 +404,24 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
   };
 
   plugins.push(storybookTestPlugin);
+
+  // When running tests via the Storybook UI, we need
+  // to find the right project to run, thus we override
+  // with a unique identifier using the path to the config dir
+  if (process.env.VITEST_STORYBOOK) {
+    const projectName = join('storybook:', finalOptions.configDir);
+    plugins.push({
+      name: 'storybook:workspace-name-override',
+      config: {
+        order: 'pre',
+        handler: (config) => {
+          config.test ??= {};
+          config.test.name = projectName;
+          return config;
+        },
+      },
+    });
+  }
   return plugins;
 };
 

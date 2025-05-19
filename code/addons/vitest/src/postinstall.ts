@@ -28,7 +28,7 @@ import { coerce, satisfies } from 'semver';
 import { dedent } from 'ts-dedent';
 
 import { type PostinstallOptions } from '../../../lib/cli-storybook/src/add';
-import { SUPPORTED_FRAMEWORKS } from './constants';
+import { DOCUMENTATION_LINK, SUPPORTED_FRAMEWORKS } from './constants';
 import { printError, printInfo, printSuccess, printWarning, step } from './postinstall-logger';
 import { loadTemplate, updateConfigFile, updateWorkspaceFile } from './updateVitestFile';
 import { getAddonNames } from './utils';
@@ -80,7 +80,7 @@ export default async function postInstall(options: PostinstallOptions) {
             name: 'migrateToNextjsVite',
             message: dedent`
             The addon requires the use of @storybook/nextjs-vite to work with Next.js.
-            https://storybook.js.org/docs/writing-tests/test-addon#install-and-set-up
+            https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}#install-and-set-up
 
             Do you want to migrate?
           `,
@@ -193,14 +193,14 @@ export default async function postInstall(options: PostinstallOptions) {
         reasons.push(
           dedent`
             Please check the documentation for more information about its requirements and installation:
-            ${picocolors.cyan(`https://storybook.js.org/docs/writing-tests/test-addon`)}
+            ${picocolors.cyan(`https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}`)}
           `
         );
       } else {
         reasons.push(
           dedent`
             Fear not, however, you can follow the manual installation process instead at:
-            ${picocolors.cyan(`https://storybook.js.org/docs/writing-tests/test-addon#manual-setup`)}
+            ${picocolors.cyan(`https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}#manual-setup`)}
           `
         );
       }
@@ -290,7 +290,7 @@ export default async function postInstall(options: PostinstallOptions) {
         ${colors.gray(vitestSetupFile)}
 
         Please refer to the documentation to complete the setup manually:
-        ${picocolors.cyan(`https://storybook.js.org/docs/writing-tests/test-addon#manual-setup`)}
+        ${picocolors.cyan(`https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}#manual-setup`)}
       `
     );
     logger.line(1);
@@ -379,7 +379,7 @@ export default async function postInstall(options: PostinstallOptions) {
           your existing workspace file automatically, you must do it yourself.
 
           Please refer to the documentation to complete the setup manually:
-          ${picocolors.cyan(`https://storybook.js.org/docs/writing-tests/test-addon#manual-setup`)}
+          ${picocolors.cyan(`https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}#manual-setup`)}
         `
       );
       logger.line(1);
@@ -514,7 +514,7 @@ export default async function postInstall(options: PostinstallOptions) {
       • When using the Vitest extension in your editor, all of your stories will be shown as tests!
 
       Check the documentation for more information about its features and options at:
-      ${picocolors.cyan(`https://storybook.js.org/docs/writing-tests/test-addon`)}
+      ${picocolors.cyan(`https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}`)}
     `
   );
   logger.line(1);

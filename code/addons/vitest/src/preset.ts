@@ -192,11 +192,10 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
       });
     });
     store.subscribe('TEST_RUN_COMPLETED', async (event) => {
-      const { unhandledErrors, startedAt, finishedAt, storyIds, ...currentRun } = event.payload;
+      const { unhandledErrors, startedAt, finishedAt, ...currentRun } = event.payload;
       await telemetry('addon-test', {
         ...currentRun,
         duration: (finishedAt ?? 0) - (startedAt ?? 0),
-        selectedStoryCount: storyIds?.length ?? 0,
         unhandledErrorCount: unhandledErrors.length,
         ...(enableCrashReports &&
           unhandledErrors.length > 0 && {

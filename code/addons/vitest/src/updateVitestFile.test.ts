@@ -43,7 +43,7 @@ describe('updateConfigFile', () => {
       import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
 
-      // More info at: https://storybook.js.org/docs/writing-tests/test-addon
+      // More info at: https://storybook.js.org/docs/next/writing-tests/vitest-addon
       export default defineConfig({
         plugins: [react()],
         test: {
@@ -52,7 +52,7 @@ describe('updateConfigFile', () => {
             extends: true,
             plugins: [
             // The plugin will run tests for the stories defined in your Storybook config
-            // See options at: https://storybook.js.org/docs/writing-tests/test-addon#storybooktest
+            // See options at: https://storybook.js.org/docs/next/writing-tests/vitest-addon#storybooktest
             storybookTest({
               configDir: path.join(dirname, '.storybook')
             })],
@@ -106,7 +106,7 @@ describe('updateConfigFile', () => {
       import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
 
-      // More info at: https://storybook.js.org/docs/writing-tests/test-addon
+      // More info at: https://storybook.js.org/docs/next/writing-tests/vitest-addon
       export default {
         plugins: [react()],
         test: {
@@ -115,7 +115,7 @@ describe('updateConfigFile', () => {
             extends: true,
             plugins: [
             // The plugin will run tests for the stories defined in your Storybook config
-            // See options at: https://storybook.js.org/docs/writing-tests/test-addon#storybooktest
+            // See options at: https://storybook.js.org/docs/next/writing-tests/vitest-addon#storybooktest
             storybookTest({
               configDir: path.join(dirname, '.storybook')
             })],
@@ -195,7 +195,7 @@ describe('updateConfigFile', () => {
       import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
 
-      // More info at: https://storybook.js.org/docs/writing-tests/test-addon
+      // More info at: https://storybook.js.org/docs/next/writing-tests/vitest-addon
       export default defineConfig({
         plugins: [react()],
         test: {
@@ -204,7 +204,7 @@ describe('updateConfigFile', () => {
             extends: true,
             plugins: [
             // The plugin will run tests for the stories defined in your Storybook config
-            // See options at: https://storybook.js.org/docs/writing-tests/test-addon#storybooktest
+            // See options at: https://storybook.js.org/docs/next/writing-tests/vitest-addon#storybooktest
             storybookTest({
               configDir: path.join(dirname, '.storybook')
             })],
@@ -255,7 +255,7 @@ describe('updateConfigFile', () => {
       import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
 
-      // More info at: https://storybook.js.org/docs/writing-tests/test-addon
+      // More info at: https://storybook.js.org/docs/next/writing-tests/vitest-addon
       export default defineConfig({
         plugins: [react()],
         test: {
@@ -263,7 +263,7 @@ describe('updateConfigFile', () => {
             extends: true,
             plugins: [
             // The plugin will run tests for the stories defined in your Storybook config
-            // See options at: https://storybook.js.org/docs/writing-tests/test-addon#storybooktest
+            // See options at: https://storybook.js.org/docs/next/writing-tests/vitest-addon#storybooktest
             storybookTest({
               configDir: path.join(dirname, '.storybook')
             })],
@@ -306,12 +306,12 @@ describe('updateWorkspaceFile', () => {
       import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
 
-      // More info at: https://storybook.js.org/docs/writing-tests/test-addon
+      // More info at: https://storybook.js.org/docs/next/writing-tests/vitest-addon
       export default ['packages/*', 'ROOT_CONFIG', {
         extends: '',
         plugins: [
         // The plugin will run tests for the stories defined in your Storybook config
-        // See options at: https://storybook.js.org/docs/writing-tests/test-addon#storybooktest
+        // See options at: https://storybook.js.org/docs/next/writing-tests/vitest-addon#storybooktest
         storybookTest({
           configDir: path.join(dirname, '.storybook')
         })],
@@ -352,12 +352,12 @@ describe('updateWorkspaceFile', () => {
       import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
 
-      // More info at: https://storybook.js.org/docs/writing-tests/test-addon
+      // More info at: https://storybook.js.org/docs/next/writing-tests/vitest-addon
       export default defineWorkspace(['packages/*', 'ROOT_CONFIG', {
         extends: '',
         plugins: [
         // The plugin will run tests for the stories defined in your Storybook config
-        // See options at: https://storybook.js.org/docs/writing-tests/test-addon#storybooktest
+        // See options at: https://storybook.js.org/docs/next/writing-tests/vitest-addon#storybooktest
         storybookTest({
           configDir: path.join(dirname, '.storybook')
         })],

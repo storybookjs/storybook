@@ -76,9 +76,9 @@ async function run() {
     test(`all events should have storybookVersion in context`, () => {
       const storybookVersion = versions.storybook;
       if (bootEvent) {
-        assert.equal(bootEvent.context.storybookVersion, storybookVersion);
+        assert.equal(bootEvent.metadata.storybookVersion, storybookVersion);
       }
-      assert.equal(mainEvent.context.storybookVersion, storybookVersion);
+      assert.equal(mainEvent.metadata.storybookVersion, storybookVersion);
     });
 
     if (bootEvent) {

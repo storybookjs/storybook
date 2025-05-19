@@ -6,7 +6,7 @@ import { Form } from 'storybook/internal/components';
 import { styled } from 'storybook/theming';
 
 import { getControlId } from './helpers';
-import type { ControlProps } from './types';
+import { type ControlProps, isControlObject } from './types';
 
 export interface FilesControlProps extends ControlProps<string[]> {
   /**
@@ -45,7 +45,8 @@ export const FilesControl: FC<FilesControlProps> = ({
   argType,
 }) => {
   const inputElement = useRef<HTMLInputElement>(null);
-  const readonly = argType?.control?.readOnly;
+  const control = argType?.control;
+  const readonly = isControlObject(control) ? control.readOnly : false;
 
   function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
     if (!e.target.files) {

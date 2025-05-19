@@ -35,7 +35,9 @@ const meta = {
   args: {
     name: 'select',
     type: 'select',
-    argType: { options: arrayOptions },
+    argType: {
+      options: arrayOptions,
+    },
     onChange: fn(),
   },
   argTypes: {
@@ -98,7 +100,7 @@ export const Object: Story = {
   name: 'DEPRECATED: Object',
   args: {
     value: objectOptions.B,
-    argType: { options: objectOptions },
+    argType: { options: objectOptions as any },
   },
   argTypes: { value: { control: { type: 'object' } } },
 };
@@ -108,7 +110,6 @@ export const ObjectMulti: Story = {
   args: {
     type: 'multi-select',
     value: [objectOptions.A, objectOptions.B],
-    argType: { options: objectOptions },
   },
   argTypes: { value: { control: { type: 'object' } } },
 };
@@ -117,7 +118,6 @@ export const ObjectUndefined: Story = {
   name: 'DEPRECATED: Object Undefined',
   args: {
     value: undefined,
-    argType: { options: objectOptions },
   },
   argTypes: { value: { control: { type: 'object' } } },
 };
@@ -127,7 +127,6 @@ export const ObjectMultiUndefined: Story = {
   args: {
     type: 'multi-select',
     value: undefined,
-    argType: { options: objectOptions },
   },
   argTypes: { value: { control: { type: 'object' } } },
 };
@@ -136,7 +135,6 @@ export const ArrayReadonly: Story = {
   args: {
     value: arrayOptions[0],
     argType: {
-      options: arrayOptions,
       table: {
         readonly: true,
       },
@@ -155,7 +153,6 @@ export const ArrayMultiReadonly: Story = {
     type: 'multi-select',
     value: [arrayOptions[1], arrayOptions[2]],
     argType: {
-      options: arrayOptions,
       table: {
         readonly: true,
       },

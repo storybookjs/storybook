@@ -3,16 +3,15 @@ import React, { useState } from 'react';
 
 import { SyntaxHighlighter, WithTooltipPure, codeCommon } from 'storybook/internal/components';
 
+import type { InputType, SBType } from '@storybook/csf';
 import { ChevronSmallDownIcon, ChevronSmallUpIcon } from '@storybook/icons';
 
 import { uniq } from 'es-toolkit/compat';
 import memoize from 'memoizerific';
 import { styled } from 'storybook/theming';
 
-import type { PropSummaryValue } from './types';
-
 interface ArgValueProps {
-  value?: PropSummaryValue;
+  value?: InputType['table']['type'];
   initialExpandedArgs?: boolean;
 }
 
@@ -22,7 +21,7 @@ interface ArgTextProps {
 }
 
 interface ArgSummaryProps {
-  value: PropSummaryValue;
+  value: InputType['table']['type'];
   initialExpandedArgs?: boolean;
 }
 

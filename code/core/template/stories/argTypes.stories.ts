@@ -5,7 +5,7 @@ import { global as globalThis } from '@storybook/global';
 import { expect, within } from 'storybook/test';
 
 export default {
-  component: globalThis.Components.Pre,
+  component: globalThis.__TEMPLATE_COMPONENTS__.Pre,
   // Compose all the argTypes into `object`, so the pre component only needs a single prop
   decorators: [
     (storyFn: PartialStoryFn, context: StoryContext) =>

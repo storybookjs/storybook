@@ -3,7 +3,7 @@ import { global as globalThis } from '@storybook/global';
 import './import';
 
 export default {
-  component: globalThis.Components.Pre,
+  component: globalThis.__TEMPLATE_COMPONENTS__.Pre,
   args: { text: 'Check that stories are processed OK' },
 };
 

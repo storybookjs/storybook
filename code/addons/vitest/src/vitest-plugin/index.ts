@@ -183,180 +183,190 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
         .replace('</head>', `${headHtmlSnippet ?? ''}</head>`)
         .replace('<body>', `<body>${bodyHtmlSnippet ?? ''}`);
     },
-    async config(nonMutableInputConfig) {
-      // ! We're not mutating the input config, instead we're returning a new partial config
-      // ! see https://vite.dev/guide/api-plugin.html#config
-      try {
-        await validateConfigurationFiles(finalOptions.configDir);
-      } catch (err) {
-        throw new MainFileMissingError({
-          location: finalOptions.configDir,
-          source: 'vitest',
-        });
-      }
+    config: {
+      order: 'pre',
+      async handler(nonMutableInputConfig: ViteUserConfig) {
+        // ! We're not mutating the input config, instead we're returning a new partial config
+        // ! see https://vite.dev/guide/api-plugin.html#config
+        try {
+          await validateConfigurationFiles(finalOptions.configDir);
+        } catch (err) {
+          throw new MainFileMissingError({
+            location: finalOptions.configDir,
+            source: 'vitest',
+          });
+        }
 
-      const frameworkName = typeof framework === 'string' ? framework : framework.name;
+        const frameworkName = typeof framework === 'string' ? framework : framework.name;
 
-      // If we end up needing to know if we are running in browser mode later
-      // const isRunningInBrowserMode = config.plugins.find((plugin: Plugin) =>
-      //   plugin.name?.startsWith('vitest:browser')
-      // )
+        // If we end up needing to know if we are running in browser mode later
+        // const isRunningInBrowserMode = config.plugins.find((plugin: Plugin) =>
+        //   plugin.name?.startsWith('vitest:browser')
+        // )
 
-      // We signal the test runner that we are not running it via Storybook
-      // We are overriding the environment variable to 'true' if vitest runs via @storybook/addon-vitest's backend
-      const vitestStorybook = process.env.VITEST_STORYBOOK ?? 'false';
+        // We signal the test runner that we are not running it via Storybook
+        // We are overriding the environment variable to 'true' if vitest runs via @storybook/addon-vitest's backend
+        const vitestStorybook = process.env.VITEST_STORYBOOK ?? 'false';
 
-      const testConfig = nonMutableInputConfig.test;
-      finalOptions.vitestRoot =
-        testConfig?.dir || testConfig?.root || nonMutableInputConfig.root || process.cwd();
+        const testConfig = nonMutableInputConfig.test;
+        finalOptions.vitestRoot =
+          testConfig?.dir || testConfig?.root || nonMutableInputConfig.root || process.cwd();
 
-      const includeStories = stories
-        .map((story) => {
-          let storyPath;
+        const includeStories = stories
+          .map((story) => {
+            let storyPath;
 
-          if (typeof story === 'string') {
-            storyPath = story;
-          } else {
-            storyPath = `${story.directory}/${story.files ?? DEFAULT_FILES_PATTERN}`;
-          }
+            if (typeof story === 'string') {
+              storyPath = story;
+            } else {
+              storyPath = `${story.directory}/${story.files ?? DEFAULT_FILES_PATTERN}`;
+            }
 
-          return join(finalOptions.configDir, storyPath);
-        })
-        .map((story) => {
-          const root =
-            testConfig?.dir || testConfig?.root || nonMutableInputConfig.root || process.cwd();
-          return relative(root, story);
-        });
+            return join(finalOptions.configDir, storyPath);
+          })
+          .map((story) => {
+            const root =
+              testConfig?.dir || testConfig?.root || nonMutableInputConfig.root || process.cwd();
+            return relative(root, story);
+          });
 
-      finalOptions.includeStories = includeStories;
-      const projectId = oneWayHash(finalOptions.configDir);
+        finalOptions.includeStories = includeStories;
+        const projectId = oneWayHash(finalOptions.configDir);
 
-      const baseConfig: Omit<ViteUserConfig, 'plugins'> = {
-        cacheDir: resolvePathInStorybookCache('sb-vitest', projectId),
-        test: {
-          setupFiles: [
-            join(PACKAGE_DIR, 'dist/vitest-plugin/setup-file.mjs'),
-            // if the existing setupFiles is a string, we have to include it otherwise we're overwriting it
-            typeof nonMutableInputConfig.test?.setupFiles === 'string' &&
-              nonMutableInputConfig.test?.setupFiles,
-          ].filter(Boolean) as string[],
+        let projectName;
+        if (process.env.VITEST_STORYBOOK) {
+          projectName = join('storybook:', finalOptions.configDir);
+        }
 
-          ...(finalOptions.storybookScript
-            ? {
-                globalSetup: [join(PACKAGE_DIR, 'dist/vitest-plugin/global-setup.mjs')],
-              }
-            : {}),
+        console.log('projectName', projectName);
+        const baseConfig: Omit<ViteUserConfig, 'plugins'> = {
+          cacheDir: resolvePathInStorybookCache('sb-vitest', projectId),
+          test: {
+            ...(projectName ? { name: projectName } : {}),
+            setupFiles: [
+              join(PACKAGE_DIR, 'dist/vitest-plugin/setup-file.mjs'),
+              // if the existing setupFiles is a string, we have to include it otherwise we're overwriting it
+              typeof nonMutableInputConfig.test?.setupFiles === 'string' &&
+                nonMutableInputConfig.test?.setupFiles,
+            ].filter(Boolean) as string[],
 
-          env: {
-            ...storybookEnv,
-            // To be accessed by the setup file
-            __STORYBOOK_URL__: finalOptions.storybookUrl,
-
-            VITEST_STORYBOOK: vitestStorybook,
-            __VITEST_INCLUDE_TAGS__: finalOptions.tags.include.join(','),
-            __VITEST_EXCLUDE_TAGS__: finalOptions.tags.exclude.join(','),
-            __VITEST_SKIP_TAGS__: finalOptions.tags.skip.join(','),
-          },
-
-          include: includeStories,
-          exclude: [...(nonMutableInputConfig.test?.exclude ?? []), '**/*.mdx'],
-
-          // if the existing deps.inline is true, we keep it as-is, because it will inline everything
-          ...(nonMutableInputConfig.test?.server?.deps?.inline !== true
-            ? {
-                server: {
-                  deps: {
-                    inline: ['@storybook/addon-vitest'],
-                  },
-                },
-              }
-            : {}),
-
-          browser: {
-            commands: {
-              getInitialGlobals: () => {
-                const envConfig = JSON.parse(process.env.VITEST_STORYBOOK_CONFIG ?? '{}');
-
-                const shouldRunA11yTests = process.env.VITEST_STORYBOOK
-                  ? (envConfig.a11y ?? false)
-                  : true;
-
-                return {
-                  a11y: {
-                    manual: !shouldRunA11yTests,
-                  },
-                };
-              },
-            },
-            // if there is a test.browser config AND test.browser.screenshotFailures is not explicitly set, we set it to false
-            ...(nonMutableInputConfig.test?.browser &&
-            nonMutableInputConfig.test.browser.screenshotFailures === undefined
+            ...(finalOptions.storybookScript
               ? {
-                  screenshotFailures: false,
+                  globalSetup: [join(PACKAGE_DIR, 'dist/vitest-plugin/global-setup.mjs')],
                 }
               : {}),
+
+            env: {
+              ...storybookEnv,
+              // To be accessed by the setup file
+              __STORYBOOK_URL__: finalOptions.storybookUrl,
+
+              VITEST_STORYBOOK: vitestStorybook,
+              __VITEST_INCLUDE_TAGS__: finalOptions.tags.include.join(','),
+              __VITEST_EXCLUDE_TAGS__: finalOptions.tags.exclude.join(','),
+              __VITEST_SKIP_TAGS__: finalOptions.tags.skip.join(','),
+            },
+
+            include: includeStories,
+            exclude: [...(nonMutableInputConfig.test?.exclude ?? []), '**/*.mdx'],
+
+            // if the existing deps.inline is true, we keep it as-is, because it will inline everything
+            ...(nonMutableInputConfig.test?.server?.deps?.inline !== true
+              ? {
+                  server: {
+                    deps: {
+                      inline: ['@storybook/addon-vitest'],
+                    },
+                  },
+                }
+              : {}),
+
+            browser: {
+              commands: {
+                getInitialGlobals: () => {
+                  const envConfig = JSON.parse(process.env.VITEST_STORYBOOK_CONFIG ?? '{}');
+
+                  const shouldRunA11yTests = process.env.VITEST_STORYBOOK
+                    ? (envConfig.a11y ?? false)
+                    : true;
+
+                  return {
+                    a11y: {
+                      manual: !shouldRunA11yTests,
+                    },
+                  };
+                },
+              },
+              // if there is a test.browser config AND test.browser.screenshotFailures is not explicitly set, we set it to false
+              ...(nonMutableInputConfig.test?.browser &&
+              nonMutableInputConfig.test.browser.screenshotFailures === undefined
+                ? {
+                    screenshotFailures: false,
+                  }
+                : {}),
+            },
           },
-        },
 
-        envPrefix: Array.from(
-          new Set([...(nonMutableInputConfig.envPrefix || []), 'STORYBOOK_', 'VITE_'])
-        ),
+          envPrefix: Array.from(
+            new Set([...(nonMutableInputConfig.envPrefix || []), 'STORYBOOK_', 'VITE_'])
+          ),
 
-        resolve: {
-          conditions: [
-            'storybook',
-            'stories',
-            'test',
-            // copying straight from https://github.com/vitejs/vite/blob/main/packages/vite/src/node/constants.ts#L60
-            // to avoid having to maintain Vite as a dependency just for this
-            'module',
-            'browser',
-            'development|production',
-          ],
-        },
+          resolve: {
+            conditions: [
+              'storybook',
+              'stories',
+              'test',
+              // copying straight from https://github.com/vitejs/vite/blob/main/packages/vite/src/node/constants.ts#L60
+              // to avoid having to maintain Vite as a dependency just for this
+              'module',
+              'browser',
+              'development|production',
+            ],
+          },
 
-        optimizeDeps: {
-          include: [
-            '@storybook/addon-vitest/internal/setup-file',
-            '@storybook/addon-vitest/internal/global-setup',
-            '@storybook/addon-vitest/internal/test-utils',
-            ...(frameworkName?.includes('react') || frameworkName?.includes('nextjs')
-              ? ['react-dom/test-utils']
-              : []),
-          ],
-        },
+          optimizeDeps: {
+            include: [
+              '@storybook/addon-vitest/internal/setup-file',
+              '@storybook/addon-vitest/internal/global-setup',
+              '@storybook/addon-vitest/internal/test-utils',
+              ...(frameworkName?.includes('react') || frameworkName?.includes('nextjs')
+                ? ['react-dom/test-utils']
+                : []),
+            ],
+          },
 
-        define: {
-          ...(frameworkName?.includes('vue3')
-            ? { __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: 'false' }
-            : {}),
-        },
-      };
+          define: {
+            ...(frameworkName?.includes('vue3')
+              ? { __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: 'false' }
+              : {}),
+          },
+        };
 
-      // Merge config from storybook with the plugin config
-      const config: Omit<ViteUserConfig, 'plugins'> = mergeConfig(
-        baseConfig,
-        viteConfigFromStorybook
-      );
-
-      // alert the user of problems
-      if ((nonMutableInputConfig.test?.include?.length ?? 0) > 0) {
-        // remove the user's existing include, because we're replacing it with our own heuristic based on main.ts#stories
-        // @ts-expect-error: Ignore
-        nonMutableInputConfig.test.include = [];
-        console.log(
-          picocolors.yellow(dedent`
-            Warning: Starting in Storybook 8.5.0-alpha.18, the "test.include" option in Vitest is discouraged in favor of just using the "stories" field in your Storybook configuration.
-
-            The values you passed to "test.include" will be ignored, please remove them from your Vitest configuration where the Storybook plugin is applied.
-            
-            More info: https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#addon-test-indexing-behavior-of-storybookaddon-test-is-changed
-          `)
+        // Merge config from storybook with the plugin config
+        const config: Omit<ViteUserConfig, 'plugins'> = mergeConfig(
+          baseConfig,
+          viteConfigFromStorybook
         );
-      }
 
-      // return the new config, it will be deep-merged by vite
-      return config;
+        // alert the user of problems
+        if ((nonMutableInputConfig.test?.include?.length ?? 0) > 0) {
+          // remove the user's existing include, because we're replacing it with our own heuristic based on main.ts#stories
+          // @ts-expect-error: Ignore
+          nonMutableInputConfig.test.include = [];
+          console.log(
+            picocolors.yellow(dedent`
+              Warning: Starting in Storybook 8.5.0-alpha.18, the "test.include" option in Vitest is discouraged in favor of just using the "stories" field in your Storybook configuration.
+
+              The values you passed to "test.include" will be ignored, please remove them from your Vitest configuration where the Storybook plugin is applied.
+              
+              More info: https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#addon-test-indexing-behavior-of-storybookaddon-test-is-changed
+            `)
+          );
+        }
+
+        // return the new config, it will be deep-merged by vite
+        return config;
+      },
     },
     configureVitest(context) {
       context.vitest.config.coverage.exclude.push('storybook-static');

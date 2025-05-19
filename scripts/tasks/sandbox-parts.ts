@@ -499,9 +499,11 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
               testNamePattern: /^(?!.*(UseState)).*$/,
               browser: {
                 enabled: true,
-                name: "chromium",
                 provider: "playwright",
                 headless: true,
+                instances: [{
+                  browser: 'chromium'
+                }]
               },
               setupFiles: ["./.storybook/vitest.setup.ts"],
               environment: "happy-dom",
@@ -570,10 +572,12 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
             // @ts-expect-error this type does not exist but the property does!
             testNamePattern: /^(?!.*(UseState)).*$/,
             browser: {
-              enabled: true,
-              name: "chromium",
+              enabled: true,  
               provider: "playwright",
               headless: true,
+              instances: [{
+                browser: 'chromium'
+              }]
             },
             setupFiles: ["./.storybook/vitest.setup.ts"],
             environment: "happy-dom",

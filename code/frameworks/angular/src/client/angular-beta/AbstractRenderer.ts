@@ -1,13 +1,13 @@
 import { ApplicationRef, NgModule } from '@angular/core';
-import { bootstrapApplication } from '@angular/platform-browser';
 import { BehaviorSubject, Subject } from 'rxjs';
 import { stringify } from 'telejson';
-
 import { ICollection, StoryFnAngularReturnType } from '../types';
-import { getApplication } from './StorybookModule';
-import { storyPropsProvider } from './StorybookProvider';
-import { queueBootstrapping } from './utils/BootstrapQueue';
 import { PropertyExtractor } from './utils/PropertyExtractor';
+import { TestBedComponentBuilder } from './utils/TestBedComponentBuilder';
+import { getApplication, storyPropsProvider } from '../../renderer';
+import { queueBootstrapping } from './utils/BootstrapQueue';
+import { bootstrapApplication } from '@angular/platform-browser';
+import { getWrapperComponent } from './TestBedWrapperComponent';
 
 type StoryRenderInfo = {
   storyFnAngular: StoryFnAngularReturnType;
@@ -21,7 +21,6 @@ declare global {
 }
 
 const applicationRefs = new Map<HTMLElement, ApplicationRef>();
-
 /**
  * Attribute name for the story UID that may be written to the targetDOMNode.
  *
@@ -71,8 +70,6 @@ export abstract class AbstractRenderer {
     component?: any;
     targetDOMNode: HTMLElement;
   }) {
-    const targetSelector = this.generateTargetSelectorFromStoryId(targetDOMNode.id);
-
     const newStoryProps$ = new BehaviorSubject<ICollection>(storyFnAngular.props);
 
     if (
@@ -90,13 +87,85 @@ export abstract class AbstractRenderer {
       return;
     }
 
-    await this.beforeFullRender(targetDOMNode);
+    const { environmentProviders, componentSelector, analyzedMetadata } =
+      await this.prepareMetaData(storyFnAngular, targetDOMNode, component);
+    environmentProviders.push(storyPropsProvider(newStoryProps$));
 
     // Complete last BehaviorSubject and set a new one for the current module
     if (this.storyProps$) {
       this.storyProps$.complete();
     }
     this.storyProps$ = newStoryProps$;
+
+    const application = getApplication({
+      storyFnAngular,
+      component,
+      targetSelector: componentSelector,
+      analyzedMetadata,
+    });
+
+    const applicationRef = await queueBootstrapping(() => {
+      return bootstrapApplication(application, {
+        ...storyFnAngular.applicationConfig,
+        providers: environmentProviders,
+      });
+    });
+
+    this.setApplicationRef(targetDOMNode, applicationRef);
+  }
+
+  /**
+   * Bootstrap main angular module with main component with testbed api
+   *
+   * @param storyFnAngular {StoryFnAngularReturnType}
+   * @param forced {boolean}
+   * @param component {Component}
+   */
+  public async renderWithTestBed({
+    storyFnAngular,
+    forced,
+    component,
+    targetDOMNode,
+  }: {
+    storyFnAngular: StoryFnAngularReturnType;
+    forced: boolean;
+    component?: any;
+    targetDOMNode: HTMLElement;
+  }) {
+    const { environmentProviders, componentSelector, analyzedMetadata } =
+      await this.prepareMetaData(storyFnAngular, targetDOMNode, component);
+
+    if (storyFnAngular.userDefinedTemplate) {
+      component = getWrapperComponent(storyFnAngular.template);
+    }
+
+    const componentBuilder = await new TestBedComponentBuilder()
+      .setComponent(component)
+      .setSelector(componentSelector)
+      .setStoryFn(storyFnAngular)
+      .setMetaData(analyzedMetadata)
+      .setTargetNode(targetDOMNode)
+      .setEnvironmentProviders(environmentProviders)
+      .configure()
+      .compileComponents();
+
+    componentBuilder.copyComponentIntoTargetNode();
+
+    this.setApplicationRef(targetDOMNode, componentBuilder.getApplicationRef());
+  }
+
+  public setApplicationRef(targetDOMNode: HTMLElement, applicationRef: ApplicationRef) {
+    applicationRefs.set(targetDOMNode, applicationRef);
+  }
+
+  private async prepareMetaData(
+    storyFnAngular: StoryFnAngularReturnType,
+    targetDOMNode: HTMLElement,
+    component?: any
+  ) {
+    const targetSelector = this.generateTargetSelectorFromStoryId(targetDOMNode.id);
+
+    await this.beforeFullRender();
 
     this.initAngularRootElement(targetDOMNode, targetSelector);
 
@@ -112,15 +181,7 @@ export abstract class AbstractRenderer {
       element.toggleAttribute(storyUid, true);
     }
 
-    const application = getApplication({
-      storyFnAngular,
-      component,
-      targetSelector: componentSelector,
-      analyzedMetadata,
-    });
-
-    const providers = [
-      storyPropsProvider(newStoryProps$),
+    const environmentProviders = [
       ...analyzedMetadata.applicationProviders,
       ...(storyFnAngular.applicationConfig?.providers ?? []),
     ];
@@ -130,18 +191,15 @@ export abstract class AbstractRenderer {
       if (!provideExperimentalZonelessChangeDetection) {
         throw new Error('Experimental zoneless change detection requires Angular 18 or higher');
       } else {
-        providers.unshift(provideExperimentalZonelessChangeDetection());
+        environmentProviders.unshift(provideExperimentalZonelessChangeDetection());
       }
     }
 
-    const applicationRef = await queueBootstrapping(() => {
-      return bootstrapApplication(application, {
-        ...storyFnAngular.applicationConfig,
-        providers,
-      });
-    });
-
-    applicationRefs.set(targetDOMNode, applicationRef);
+    return {
+      environmentProviders,
+      componentSelector,
+      analyzedMetadata,
+    };
   }
 
   /**
@@ -202,7 +260,6 @@ export abstract class AbstractRenderer {
     forced: boolean;
   }) {
     const previousStoryRenderInfo = this.previousStoryRenderInfo.get(targetDOMNode);
-
     const currentStoryRender = {
       storyFnAngular,
       moduleMetadataSnapshot: stringify(moduleMetadata, { maxDepth: 50 }),

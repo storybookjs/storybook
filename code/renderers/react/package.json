@@ -35,6 +35,11 @@
       "import": "./dist/playwright.mjs",
       "require": "./dist/playwright.js"
     },
+    "./alias/react-element-to-jsx-string-17": {
+      "types": "./src/alias/react-element-to-jsx-string-17.d.ts",
+      "import": "./dist/alias/react-element-to-jsx-string-17.mjs",
+      "require": "./dist/alias/react-element-to-jsx-string-17.js"
+    },
     "./preset": "./preset.js",
     "./dist/entry-preview.mjs": "./dist/entry-preview.mjs",
     "./dist/entry-preview-docs.mjs": "./dist/entry-preview-docs.mjs",
@@ -89,6 +94,7 @@
     "html-tags": "^3.1.0",
     "prop-types": "^15.7.2",
     "react-element-to-jsx-string": "^15.0.0",
+    "react-element-to-jsx-string-17": "npm:react-element-to-jsx-string@^17.0.0",
     "require-from-string": "^2.0.2",
     "semver": "^7.3.7",
     "ts-dedent": "^2.0.0",
@@ -119,7 +125,8 @@
       "./src/entry-preview.tsx",
       "./src/entry-preview-docs.ts",
       "./src/entry-preview-rsc.tsx",
-      "./src/playwright.ts"
+      "./src/playwright.ts",
+      "./src/alias/react-element-to-jsx-string-17.tsx"
     ],
     "platform": "browser"
   },

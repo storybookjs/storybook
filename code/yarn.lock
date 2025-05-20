@@ -1973,6 +1973,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@base2/pretty-print-object@npm:1.0.2":
+  version: 1.0.2
+  resolution: "@base2/pretty-print-object@npm:1.0.2"
+  checksum: 10c0/2f8d20487b4d5573f0202351a551e45fe22dfdc9fb40ce80941053fdb0418a1f712e1d6f1d3c418675cbe82ca973364927a7b43220d8177eba3ecf22e9595286
+  languageName: node
+  linkType: hard
+
 "@bcoe/v8-coverage@npm:^0.2.3":
   version: 0.2.3
   resolution: "@bcoe/v8-coverage@npm:0.2.3"
@@ -6639,6 +6646,7 @@ __metadata:
     html-tags: "npm:^3.1.0"
     prop-types: "npm:^15.7.2"
     react-element-to-jsx-string: "npm:^15.0.0"
+    react-element-to-jsx-string-17: "npm:react-element-to-jsx-string@^17.0.0"
     require-from-string: "npm:^2.0.2"
     semver: "npm:^7.3.7"
     ts-dedent: "npm:^2.0.0"
@@ -22187,6 +22195,20 @@ __metadata:
   peerDependencies:
     react: ^18.3.1
   checksum: 10c0/a752496c1941f958f2e8ac56239172296fcddce1365ce45222d04a1947e0cc5547df3e8447f855a81d6d39f008d7c32eab43db3712077f09e3f67c4874973e85
+  languageName: node
+  linkType: hard
+
+"react-element-to-jsx-string-17@npm:react-element-to-jsx-string@^17.0.0":
+  version: 17.0.1
+  resolution: "react-element-to-jsx-string@npm:17.0.1"
+  dependencies:
+    "@base2/pretty-print-object": "npm:1.0.2"
+    is-plain-object: "npm:5.0.0"
+  peerDependencies:
+    react: ^19.0.0
+    react-dom: ^19.0.0
+    react-is: ^19.0.0
+  checksum: 10c0/e5232fc0300b6143930fa6ce94bf71ddbd8f494e41868d504601dafe2e6f7c35f0bf1db534d80a4a8b2469a8f44fa436a80d09386e607ffed4cb20af55bb80a5
   languageName: node
   linkType: hard
 

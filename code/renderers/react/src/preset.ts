@@ -1,5 +1,7 @@
 import { dirname, join } from 'node:path';
 
+import React from 'react';
+
 import type { PresetProperty } from 'storybook/internal/types';
 
 export const addons: PresetProperty<'addons'> = [
@@ -20,6 +22,41 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
     .concat([join(__dirname, 'entry-preview.mjs')])
     .concat(docsEnabled ? [join(__dirname, 'entry-preview-docs.mjs')] : [])
     .concat(features?.experimentalRSC ? [join(__dirname, 'entry-preview-rsc.mjs')] : []);
+};
+
+export const webpackFinal: PresetProperty<'webpackFinal'> = async (config: any) => {
+  // if react version is 19 and higher, alias react-element-to-jsx-string to react-element-to-jsx-string-17
+  if (parseInt(React.version.split('.')[0], 10) < 19) {
+    return config;
+  }
+
+  return {
+    ...config,
+    resolve: {
+      ...config.resolve,
+      alias: {
+        ...config.resolve.alias,
+        'react-element-to-jsx-string': join(__dirname, 'alias/react-element-to-jsx-string-17.mjs'),
+      },
+    },
+  };
+};
+
+export const viteFinal: PresetProperty<'viteFinal'> = async (config: any) => {
+  if (parseInt(React.version.split('.')[0], 10) < 19) {
+    return config;
+  }
+
+  return {
+    ...config,
+    resolve: {
+      ...config.resolve,
+      alias: {
+        ...config.resolve.alias,
+        'react-element-to-jsx-string': join(__dirname, 'alias/react-element-to-jsx-string-17.mjs'),
+      },
+    },
+  };
 };
 
 /**

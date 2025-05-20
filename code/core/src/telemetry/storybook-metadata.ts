@@ -211,7 +211,7 @@ export const computeStorybookMetadata = async ({
 
   const storybookPackageVersions = await getActualPackageVersions(storybookPackages);
   storybookPackageVersions.forEach(({ name, version }) => {
-    storybookPackages[name] = addons[name] || {
+    storybookPackages[name] = storybookPackages[name] || {
       name,
       version,
     };

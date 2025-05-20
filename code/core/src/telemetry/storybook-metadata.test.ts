@@ -319,6 +319,7 @@ describe('storybook-metadata', () => {
       expect(result.storybookPackages).toMatchInlineSnapshot(`
         {
           "@storybook/react": {
+            "name": "@storybook/react",
             "version": "x.x.x",
           },
         }

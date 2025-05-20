@@ -37,6 +37,7 @@
     },
     "./preset": "./preset.js",
     "./dist/entry-preview.mjs": "./dist/entry-preview.mjs",
+    "./dist/entry-preview-argtypes.mjs": "./dist/entry-preview-argtypes.mjs",
     "./dist/entry-preview-docs.mjs": "./dist/entry-preview-docs.mjs",
     "./dist/entry-preview-rsc.mjs": "./dist/entry-preview-rsc.mjs",
     "./package.json": "./package.json"
@@ -117,6 +118,7 @@
       "./src/preset.ts",
       "./src/preview.tsx",
       "./src/entry-preview.tsx",
+      "./src/entry-preview-argtypes.ts",
       "./src/entry-preview-docs.ts",
       "./src/entry-preview-rsc.tsx",
       "./src/playwright.ts"

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { extractType, setCompodocJson } from './compodoc';
-import { CompodocJson, Decorator } from './types';
+import { CompodocJson, Decorator } from './compodoc-types';
 
 const makeProperty = (compodocType?: string) => ({
   type: compodocType,

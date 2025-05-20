@@ -47,16 +47,6 @@ If you need more granular control over which `argTypes` are matched, you can adj
 
 {/* prettier-ignore-end */}
 
-## Action event handlers
-
-It is also possible to detect if your component is emitting the correct HTML events using the `parameters.actions.handles` [parameter](../writing-stories/parameters.mdx).
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="button-story-action-event-handle.md" />
-
-{/* prettier-ignore-end */}
-
 This will bind a standard HTML event handler to the outermost HTML element rendered by your component and trigger an action when the event is called for a given selector. The format is `<eventname> <selector>`. The selector is optional; it defaults to all elements.
 
 ## API
@@ -78,14 +68,6 @@ Type: `boolean`
 Disable the action panel.
 
 This parameter is most useful to allow overriding at more specific levels. For example, if this parameter is set to `true` at the project level, it could then be re-enabled by setting it to `false` at the meta (component) or story level.
-
-#### `handles`
-
-Type: `string[]`
-
-Binds a standard HTML event handler to the outermost HTML element rendered by your component and triggers an action when the event is called for a given selector. The format is `<eventname> <selector>`. The selector is optional; it defaults to all elements.
-
-See the [action event handlers](#action-event-handlers) section, above, for more information.
 
 ### Exports
 

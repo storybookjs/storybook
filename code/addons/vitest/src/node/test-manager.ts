@@ -255,6 +255,7 @@ export class TestManager {
   }, 500);
 
   onTestRunEnd(endResult: { totalTestCount: number; unhandledErrors: VitestError[] }) {
+    this.throttledFlushTestCaseResults.flush();
     this.store.setState((s) => ({
       ...s,
       currentRun: {

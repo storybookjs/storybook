@@ -1,3 +1,4 @@
+import * as clack from '@clack/prompts';
 import prompts from 'prompts';
 
 type Option = {
@@ -276,7 +277,9 @@ const taskLog = (options: { title: string }) => {
   };
 };
 
-export const prompt = {
+export const prompt = clack;
+
+export const prompt_ = {
   confirm,
   text,
   select,

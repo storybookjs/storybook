@@ -103,6 +103,7 @@
   },
   "dependencies": {
     "@chromatic-com/storybook": "^4.0.0-0",
+    "@clack/prompts": "^0.10.1",
     "@happy-dom/global-registrator": "^17.4.4",
     "@nx/vite": "20.2.2",
     "@nx/workspace": "20.2.2",

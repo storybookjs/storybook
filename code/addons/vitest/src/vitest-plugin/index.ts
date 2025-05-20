@@ -210,9 +210,6 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       finalOptions.vitestRoot =
         testConfig?.dir || testConfig?.root || nonMutableInputConfig.root || process.cwd();
 
-      const root =
-        testConfig?.dir || testConfig?.root || nonMutableInputConfig.root || process.cwd();
-
       const includeStories = stories
         .map((story) => {
           let storyPath;
@@ -226,7 +223,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
           return join(finalOptions.configDir, storyPath);
         })
         .map((story) => {
-          return relative(root, story);
+          return relative(finalOptions.vitestRoot, story);
         });
 
       finalOptions.includeStories = includeStories;
@@ -262,7 +259,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
           include: includeStories,
           exclude: [
             ...(nonMutableInputConfig.test?.exclude ?? []),
-            join(relative(root, process.cwd()), '**/*.mdx').replaceAll(sep, '/'),
+            join(relative(finalOptions.vitestRoot, process.cwd()), '**/*.mdx').replaceAll(sep, '/'),
           ],
 
           // if the existing deps.inline is true, we keep it as-is, because it will inline everything

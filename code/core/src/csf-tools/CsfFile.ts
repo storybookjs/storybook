@@ -562,8 +562,6 @@ export class CsfFile {
                           parameters.__id = (idProperty.value as t.StringLiteral).value;
                         }
                       }
-
-                      // TODO: THIS IS IT!
                       self._storyAnnotations[exportName][p.key.name] = p.value;
                     }
                   });
@@ -587,7 +585,7 @@ export class CsfFile {
                 const { name: exportName } = specifier.exported;
                 const { name: localName } = specifier.local;
                 const decl = t.isProgram(parent)
-                  ? findVarInitialization(specifier.local.name, parent)
+                  ? findVarInitialization(localName, parent)
                   : specifier.local;
 
                 if (exportName === 'default') {
@@ -608,8 +606,16 @@ export class CsfFile {
                     self._parseMeta(metaNode, parent);
                   }
                 } else {
-                  // TODO: THIS IS IT!
-                  self._storyAnnotations[exportName] = {};
+                  const annotations = {} as Record<string, t.Node>;
+                  let storyNode = decl;
+                  if (t.isObjectExpression(storyNode)) {
+                    (storyNode.properties as t.ObjectProperty[]).forEach((p) => {
+                      if (t.isIdentifier(p.key)) {
+                        annotations[p.key.name] = p.value;
+                      }
+                    });
+                  }
+                  self._storyAnnotations[exportName] = annotations;
                   self._storyStatements[exportName] = decl;
                   self._storyPaths[exportName] = path;
                   self._stories[exportName] = {

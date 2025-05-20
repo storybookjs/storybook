@@ -1432,6 +1432,7 @@ describe('CsfFile', () => {
           export default { title: 'foo/bar', tags: ['X'] };
 
           const localName = {
+            render: () => {},
             tags: ['Y']
           };
           export {
@@ -1440,7 +1441,30 @@ describe('CsfFile', () => {
         `,
           true
         )
-      ).toMatchInlineSnapshot();
+      ).toMatchInlineSnapshot(`
+        meta:
+          title: foo/bar
+          tags:
+            - X
+        stories:
+          - id: foo-bar--exported-name
+            name: exportedName
+            localName: localName
+            parameters:
+              __id: foo-bar--exported-name
+            __stats:
+              play: false
+              render: true
+              loaders: false
+              beforeEach: false
+              globals: false
+              tags: true
+              storyFn: false
+              mount: false
+              moduleMock: false
+            tags:
+              - 'Y'
+      `);
     });
 
     it('variables', () => {

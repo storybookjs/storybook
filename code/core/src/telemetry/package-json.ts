@@ -1,8 +1,8 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-// findup-sync
 import { findUp } from 'find-up';
+import type { PackageJson } from 'type-fest';
 
 import type { Dependency } from './types';
 
@@ -15,16 +15,21 @@ export const getActualPackageVersion = async (packageName: string) => {
   try {
     const packageJson = await getActualPackageJson(packageName);
     return {
-      name: packageJson.name || packageName,
-      version: packageJson.version,
+      name: packageJson?.name || packageName,
+      version: packageJson?.version || null,
     };
   } catch (err) {
-    return { name: packageName, version: null };
+    return {
+      name: packageName,
+      version: null,
+    };
   }
 };
 
-export const getActualPackageJson = async (packageName: string) => {
-  let resolvedPackageJson = await findUp('package.json', { cwd: packageName });
+export const getActualPackageJson = async (
+  packageName: string
+): Promise<PackageJson | undefined> => {
+  let resolvedPackageJson = await findUp('package.json', { cwd: require.resolve(packageName) });
 
   if (!resolvedPackageJson) {
     // fallback to require.resolve

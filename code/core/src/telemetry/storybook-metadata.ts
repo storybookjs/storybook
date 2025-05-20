@@ -77,7 +77,7 @@ export const computeStorybookMetadata = async ({
     metadata.metaFramework = {
       name: metaFrameworks[metaFramework],
       packageName: metaFramework,
-      version,
+      version: version || 'unknown',
     };
   }
 
@@ -190,7 +190,11 @@ export const computeStorybookMetadata = async ({
 
   const addonVersions = await getActualPackageVersions(addons);
   addonVersions.forEach(({ name, version }) => {
-    addons[name].version = version;
+    addons[name] = addons[name] || {
+      name,
+      version,
+    };
+    addons[name].version = version || undefined;
   });
 
   const addonNames = Object.keys(addons);
@@ -207,7 +211,12 @@ export const computeStorybookMetadata = async ({
 
   const storybookPackageVersions = await getActualPackageVersions(storybookPackages);
   storybookPackageVersions.forEach(({ name, version }) => {
-    storybookPackages[name].version = version;
+    storybookPackages[name] = addons[name] || {
+      name,
+      version,
+    };
+
+    storybookPackages[name].version = version || undefined;
   });
 
   const hasStorybookEslint = !!allDependencies['eslint-plugin-storybook'];

@@ -11,9 +11,9 @@ import { transformFileSync, transformSync } from '@babel/core';
 import requireFromString from 'require-from-string';
 import { inferControls } from 'storybook/preview-api';
 
-import type { StoryContext } from '../types';
 import { extractArgTypes } from './extractArgTypes';
 import { extractProps } from './extractProps';
+import type { StoryContext } from './types';
 
 // File hierarchy:
 // __testfixtures__ / some-test-case / input.*
@@ -62,7 +62,7 @@ const skippedTests = [
 
 describe('react component properties', () => {
   // Fixture files are in template/stories
-  const fixturesDir = resolve(__dirname, '../../template/stories/docgen-components');
+  const fixturesDir = resolve(__dirname, '../template/stories/docgen-components');
   readdirSync(fixturesDir, { withFileTypes: true }).forEach((testEntry) => {
     if (testEntry.isDirectory()) {
       const testDir = join(fixturesDir, testEntry.name);

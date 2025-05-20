@@ -607,7 +607,7 @@ export class CsfFile {
                   }
                 } else {
                   const annotations = {} as Record<string, t.Node>;
-                  let storyNode = decl;
+                  const storyNode = decl;
                   if (t.isObjectExpression(storyNode)) {
                     (storyNode.properties as t.ObjectProperty[]).forEach((p) => {
                       if (t.isIdentifier(p.key)) {

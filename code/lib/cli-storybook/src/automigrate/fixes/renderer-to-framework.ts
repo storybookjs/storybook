@@ -5,12 +5,12 @@ import {
   frameworkPackages,
   frameworkToRenderer,
   getProjectRoot,
+  prompt,
   rendererPackages,
 } from 'storybook/internal/common';
 import type { PackageJson } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
-import prompts from 'prompts';
 import { dedent } from 'ts-dedent';
 
 import type { Fix, RunOptions } from '../types';
@@ -183,12 +183,10 @@ export const rendererToFramework: Fix<MigrationResult> = {
   async run(options: RunOptions<MigrationResult>) {
     const { result, dryRun = false } = options;
     const defaultGlob = '**/*.{mjs,cjs,js,jsx,ts,tsx}';
-    const { glob } = await prompts({
-      type: 'text',
-      name: 'glob',
+    const glob = await prompt.text({
       message:
         'Enter a custom glob pattern to scan for story files (or press enter to use default):',
-      initial: defaultGlob,
+      initialValue: defaultGlob,
     });
 
     const projectRoot = getProjectRoot();

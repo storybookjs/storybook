@@ -3,13 +3,12 @@ import { readdir, rm } from 'node:fs/promises';
 import { isAbsolute, join } from 'node:path';
 
 import type { PackageManagerName } from 'storybook/internal/common';
-import { JsPackageManagerFactory } from 'storybook/internal/common';
+import { JsPackageManagerFactory, prompt } from 'storybook/internal/common';
 import { versions } from 'storybook/internal/common';
 
 import boxen from 'boxen';
 import { downloadTemplate } from 'giget';
 import picocolors from 'picocolors';
-import prompts from 'prompts';
 import { lt, prerelease } from 'semver';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
@@ -28,7 +27,7 @@ interface SandboxOptions {
 }
 type Choice = keyof typeof TEMPLATES;
 
-const toChoices = (c: Choice): prompts.Choice => ({ title: TEMPLATES[c].name, value: c });
+const toChoices = (c: Choice) => ({ label: TEMPLATES[c].name, value: c });
 
 export const sandbox = async ({
   output: outputDirectory,
@@ -170,12 +169,10 @@ export const sandbox = async ({
   }
 
   if (!selectedDirectory) {
-    const { directory } = await prompts(
+    const directory = await prompt.text(
       {
-        type: 'text',
         message: 'Enter the output directory',
-        name: 'directory',
-        initial: outputDirectoryName ?? undefined,
+        initialValue: outputDirectoryName ?? undefined,
         validate: async (directoryName) =>
           existsSync(directoryName)
             ? `${directoryName} already exists. Please choose another name.`
@@ -272,12 +269,10 @@ export const sandbox = async ({
 };
 
 async function promptSelectedTemplate(choices: Choice[]): Promise<Choice | null> {
-  const { template } = await prompts(
+  const selected = await prompt.select(
     {
-      type: 'select',
-      message: '🌈 Select the template',
-      name: 'template',
-      choices: choices.map(toChoices),
+      message: 'Select a template',
+      options: choices.map(toChoices),
     },
     {
       onCancel: () => {
@@ -286,6 +281,5 @@ async function promptSelectedTemplate(choices: Choice[]): Promise<Choice | null>
       },
     }
   );
-
-  return template || null;
+  return selected as Choice;
 }

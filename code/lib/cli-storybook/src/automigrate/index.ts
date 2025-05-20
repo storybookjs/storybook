@@ -6,13 +6,13 @@ import type { PackageJson } from 'storybook/internal/common';
 import {
   type JsPackageManager,
   JsPackageManagerFactory,
+  prompt,
   temporaryFile,
 } from 'storybook/internal/common';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import boxen from 'boxen';
 import picocolors from 'picocolors';
-import prompts from 'prompts';
 import semver from 'semver';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
@@ -347,13 +347,11 @@ export async function runFixes({
           fixSummary.manual.push(f.id);
 
           logger.info();
-          const { shouldContinue } = await prompts(
+          const shouldContinue = await prompt.confirm(
             {
-              type: 'toggle',
-              name: 'shouldContinue',
               message:
                 'Select continue once you have made the required changes, or quit to exit the migration process',
-              initial: true,
+              initialValue: true,
               active: 'continue',
               inactive: 'quit',
             },
@@ -369,14 +367,10 @@ export async function runFixes({
             break;
           }
         } else if (promptType === 'auto') {
-          runAnswer = await prompts(
+          const shouldRun = await prompt.confirm(
             {
-              type: 'confirm',
-              name: 'fix',
-              message: `Do you want to run the '${picocolors.cyan(
-                f.id
-              )}' migration on your project?`,
-              initial: f.promptDefaultValue ?? true,
+              message: `Do you want to run the '${picocolors.cyan(f.id)}' migration on your project?`,
+              initialValue: f.promptDefaultValue ?? true,
             },
             {
               onCancel: () => {
@@ -384,13 +378,11 @@ export async function runFixes({
               },
             }
           );
+          runAnswer = { fix: shouldRun };
         } else if (promptType === 'notification') {
-          runAnswer = await prompts(
+          const shouldContinue = await prompt.confirm(
             {
-              type: 'confirm',
-              name: 'fix',
               message: `Do you want to continue?`,
-              initial: true,
             },
             {
               onCancel: () => {
@@ -398,6 +390,7 @@ export async function runFixes({
               },
             }
           );
+          runAnswer = { fix: shouldContinue };
         }
       } catch (err) {
         break;

@@ -3,6 +3,7 @@ import { isAbsolute, join } from 'node:path';
 import {
   JsPackageManagerFactory,
   type PackageManagerName,
+  prompt,
   serverRequire,
   syncStorybookAddons,
   versions,
@@ -10,7 +11,6 @@ import {
 import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
-import prompts from 'prompts';
 import SemVer from 'semver';
 import { dedent } from 'ts-dedent';
 
@@ -114,9 +114,7 @@ export async function add(
     shouldAddToMain = false;
     if (!yes) {
       logger.log(`The Storybook addon "${addonName}" is already present in ${mainConfigPath}.`);
-      const { shouldForceInstall } = await prompts({
-        type: 'confirm',
-        name: 'shouldForceInstall',
+      const shouldForceInstall = await prompt.confirm({
         message: `Do you wish to install it again?`,
       });
 

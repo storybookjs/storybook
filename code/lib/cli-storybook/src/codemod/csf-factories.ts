@@ -1,7 +1,6 @@
-import { type JsPackageManager, syncStorybookAddons } from 'storybook/internal/common';
+import { type JsPackageManager, prompt, syncStorybookAddons } from 'storybook/internal/common';
 
 import picocolors from 'picocolors';
-import prompts from 'prompts';
 import { dedent } from 'ts-dedent';
 
 import { runCodemod } from '../automigrate/codemod';
@@ -24,19 +23,15 @@ async function runStoriesCodemod(options: {
     let globString = '{stories,src}/**/{Button,Header,Page}.stories.*';
     if (!process.env.IN_STORYBOOK_SANDBOX) {
       logger.log('Please enter the glob for your stories to migrate');
-      globString = (
-        await prompts(
-          {
-            type: 'text',
-            name: 'glob',
-            message: 'glob',
-            initial: 'src/**/*.stories.*',
-          },
-          {
-            onCancel: () => process.exit(0),
-          }
-        )
-      ).glob;
+      globString = await prompt.text(
+        {
+          message: 'glob',
+          initialValue: 'src/**/*.stories.*',
+        },
+        {
+          onCancel: () => process.exit(0),
+        }
+      );
     }
 
     logger.log('\n🛠️  Applying codemod on your stories, this might take some time...');
@@ -89,23 +84,18 @@ export const csfFactories: CommandFix = {
         - ${picocolors.bold('Relative imports:')} ${picocolors.cyan("`import preview from '../../.storybook/preview'`")}
       `)
       );
-      useSubPathImports = (
-        await prompts(
-          {
-            type: 'select',
-            name: 'useSubPathImports',
-            message: 'Which would you like to use?',
-            choices: [
-              { title: 'Subpath imports', value: true },
-              { title: 'Relative imports', value: false },
-            ],
-            initial: 0,
-          },
-          {
-            onCancel: () => process.exit(0),
-          }
-        )
-      ).useSubPathImports;
+      useSubPathImports = await prompt.select<boolean>(
+        {
+          message: 'Which would you like to use?',
+          options: [
+            { label: 'Subpath imports', value: true },
+            { label: 'Relative imports', value: false },
+          ],
+        },
+        {
+          onCancel: () => process.exit(0),
+        }
+      );
     }
 
     if (useSubPathImports && !packageJson.imports?.['#*']) {

@@ -320,9 +320,6 @@ export async function runFixes({
       };
 
       prompt.logBox(message, {
-        borderStyle: 'round',
-        padding: 1,
-        borderColor: '#F1618C',
         title: getTitle(),
       });
 

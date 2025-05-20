@@ -89,8 +89,6 @@ export function logMigrationSummary({
       : 'Migration check ran successfully';
 
   return prompt.logBox(messages.filter(Boolean).join(segmentDivider), {
-    borderStyle: 'round',
-    padding: 1,
     title,
     borderColor: hasFailures ? 'red' : 'green',
   });

@@ -58,10 +58,7 @@ export const doctor = async ({
   const logDiagnostic = (title: string, message: string) => {
     foundIssues = true;
     prompt.logBox(message, {
-      borderStyle: 'round',
-      padding: 1,
       title,
-      borderColor: '#F1618C',
     });
   };
 

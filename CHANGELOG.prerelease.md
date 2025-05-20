@@ -1,3 +1,12 @@
+## 9.0.0-rc.3
+
+- Addon Vitest: Ensure vitest exclusions are relative to the project root, not cwd - [#31514](https://github.com/storybookjs/storybook/pull/31514), thanks @mrginglymus!
+- Addon Vitest: Fix broken docs links - [#31445](https://github.com/storybookjs/storybook/pull/31445), thanks @kylegach!
+- Addon-vitest: Fix wrong test count in telemetry - [#31504](https://github.com/storybookjs/storybook/pull/31504), thanks @JReinhold!
+- ArgTypes: Always extract argTypes, even without `addon-docs` - [#31488](https://github.com/storybookjs/storybook/pull/31488), thanks @JReinhold!
+- CSF-Tools: Add support for existing node imports and improve import handling - [#31497](https://github.com/storybookjs/storybook/pull/31497), thanks @valentinpalkovic!
+- CSF: Fix handling of renamed story exports - [#31519](https://github.com/storybookjs/storybook/pull/31519), thanks @JReinhold!
+
 ## 9.0.0-rc.2
 
 - Addon Docs: Simplify color parsing and color cycling logic - [#29840](https://github.com/storybookjs/storybook/pull/29840), thanks @leyvae!

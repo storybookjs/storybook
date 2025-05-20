@@ -74,6 +74,17 @@ This will:
    * Explain the necessary changes with links to more information
    * Ask for approval, then perform the task automatically on your behalf
 
+<Callout variant="info">
+
+Migrating a monorepo project? Be sure to run the command in the current working directory (`cwd`) that contains the `storybook` package.
+
+Some helpful commands for monorepos:
+
+- For NX projects, you can use the `nx migrate` command
+- The [`--config-dir` CLI flag](../api/cli-options.mdx#upgrade) can be used to specify a different config directory than the default `./.storybook` directory
+
+</Callout>
+
 ## New projects
 
 To add Storybook to a project that isn’t currently using Storybook:

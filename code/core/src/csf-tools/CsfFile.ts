@@ -750,7 +750,6 @@ export class CsfFile {
           parameters.docsOnly = true;
         }
         acc[key] = { ...story, id, parameters };
-        // TODO: THIS IS IT!
         const storyAnnotations = self._storyAnnotations[key];
         const { tags, play } = storyAnnotations;
         if (tags) {

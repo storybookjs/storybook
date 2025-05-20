@@ -22,7 +22,7 @@ import { oneWayHash } from 'storybook/internal/telemetry';
 import type { Presets } from 'storybook/internal/types';
 
 import { match } from 'micromatch';
-import { dirname, join, relative, resolve } from 'pathe';
+import { dirname, join, relative, resolve, sep } from 'pathe';
 import picocolors from 'picocolors';
 import sirv from 'sirv';
 import { dedent } from 'ts-dedent';
@@ -210,6 +210,9 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       finalOptions.vitestRoot =
         testConfig?.dir || testConfig?.root || nonMutableInputConfig.root || process.cwd();
 
+      const root =
+        testConfig?.dir || testConfig?.root || nonMutableInputConfig.root || process.cwd();
+
       const includeStories = stories
         .map((story) => {
           let storyPath;
@@ -223,8 +226,6 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
           return join(finalOptions.configDir, storyPath);
         })
         .map((story) => {
-          const root =
-            testConfig?.dir || testConfig?.root || nonMutableInputConfig.root || process.cwd();
           return relative(root, story);
         });
 
@@ -259,7 +260,10 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
           },
 
           include: includeStories,
-          exclude: [...(nonMutableInputConfig.test?.exclude ?? []), '**/*.mdx'],
+          exclude: [
+            ...(nonMutableInputConfig.test?.exclude ?? []),
+            join(relative(root, process.cwd()), '**/*.mdx').replaceAll(sep, '/'),
+          ],
 
           // if the existing deps.inline is true, we keep it as-is, because it will inline everything
           ...(nonMutableInputConfig.test?.server?.deps?.inline !== true

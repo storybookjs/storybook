@@ -26,8 +26,7 @@ async function renameInFile(filePath: string, oldText: string, newText: string):
 
 const getDotStorybookReferences = async () => {
   try {
-    // eslint-disable-next-line depend/ban-dependencies
-    const { $ } = await import('execa');
+    const { $ } = await import('storybook/internal/execa');
     const { stdout } = await $`git grep -l \\.storybook`;
     return stdout.split('\n').filter(Boolean);
   } catch (error) {

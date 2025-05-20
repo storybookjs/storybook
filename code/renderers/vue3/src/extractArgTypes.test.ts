@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, it, vi, vitest } from 'vitest';
 
 import { extractComponentProps, hasDocgen } from 'storybook/internal/docs-tools';
 
-import { extractArgTypes } from './extractArgTypes';
 import {
   mockExtractComponentEventsReturn,
   mockExtractComponentPropsReturn,
@@ -12,7 +11,8 @@ import {
   referenceTypeProps,
   templateSlots,
   vueDocgenMocks,
-} from './tests-meta-components/meta-components';
+} from './docs/tests-meta-components/meta-components';
+import { extractArgTypes } from './extractArgTypes';
 
 vitest.mock('storybook/internal/docs-tools', async (importOriginal) => {
   const module: Record<string, unknown> = await importOriginal();

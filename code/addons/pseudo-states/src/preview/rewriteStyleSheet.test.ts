@@ -390,7 +390,7 @@ describe('rewriteStyleSheet', () => {
     );
   });
 
-  it('skips escaped pseduo-selectors "\\:hover"', () => {
+  it('skips escaped pseudo-selectors "\\:hover"', () => {
     const sheet = new Sheet('a\\:hover { color: red }');
     rewriteStyleSheet(sheet as any);
     expect(sheet.cssRules.length).toEqual(1);

@@ -8,7 +8,8 @@ export const EXCLUDED_PSEUDO_ELEMENT_PATTERNS = ['::-(webkit|moz|ms)-[a-z-]+', '
 
 /**
  * This lookbehind ensures we don't match escaped pseudo-states commonly used in Tailwind (e.g.
- * `.foo\:hover:hover`). We do this by skipping odd numbers of `\` escapes.
+ * `.foo\:hover\:bar:hover`). We do this by skipping pseudo-states preceded by an odd number of `\`
+ * escapes.
  *
  * @example
  *

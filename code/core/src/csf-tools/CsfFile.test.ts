@@ -1425,6 +1425,24 @@ describe('CsfFile', () => {
       `);
     });
 
+    it('csf3 as renamed export', () => {
+      expect(
+        parse(
+          dedent`
+          export default { title: 'foo/bar', tags: ['X'] };
+
+          const localName = {
+            tags: ['Y']
+          };
+          export {
+            localName as exportedName,
+          };
+        `,
+          true
+        )
+      ).toMatchInlineSnapshot();
+    });
+
     it('variables', () => {
       expect(
         parse(

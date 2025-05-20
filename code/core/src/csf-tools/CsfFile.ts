@@ -563,6 +563,7 @@ export class CsfFile {
                         }
                       }
 
+                      // TODO: THIS IS IT!
                       self._storyAnnotations[exportName][p.key.name] = p.value;
                     }
                   });
@@ -607,6 +608,7 @@ export class CsfFile {
                     self._parseMeta(metaNode, parent);
                   }
                 } else {
+                  // TODO: THIS IS IT!
                   self._storyAnnotations[exportName] = {};
                   self._storyStatements[exportName] = decl;
                   self._storyPaths[exportName] = path;
@@ -742,6 +744,7 @@ export class CsfFile {
           parameters.docsOnly = true;
         }
         acc[key] = { ...story, id, parameters };
+        // TODO: THIS IS IT!
         const storyAnnotations = self._storyAnnotations[key];
         const { tags, play } = storyAnnotations;
         if (tags) {

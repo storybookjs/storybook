@@ -6,7 +6,6 @@ import { dedent } from 'ts-dedent';
 import { runCodemod } from '../automigrate/codemod';
 import { getFrameworkPackageName } from '../automigrate/helpers/mainConfigFile';
 import type { CommandFix } from '../automigrate/types';
-import { printBoxedMessage } from '../util';
 import { configToCsfFactory } from './helpers/config-to-csf-factory';
 import { storyToCsfFactory } from './helpers/story-to-csf-factory';
 
@@ -70,8 +69,7 @@ export const csfFactories: CommandFix = {
     let useSubPathImports = true;
     if (!process.env.IN_STORYBOOK_SANDBOX) {
       // prompt whether the user wants to use imports map
-      logger.log(
-        printBoxedMessage(dedent`
+      prompt.logBox(dedent`
         The CSF factories format benefits from subpath imports (the imports property in your \`package.json\`), which is a node standard for module resolution. This makes it more convenient to import the preview config in your story files.
       
         However, please note that this might not work if you have an outdated tsconfig, use custom paths, or have type alias plugins configured in your project. You can always rerun this codemod and select another option to update your code later.
@@ -82,8 +80,8 @@ export const csfFactories: CommandFix = {
       
         - ${picocolors.bold('Subpath imports (recommended):')} ${picocolors.cyan("`import preview from '#.storybook/preview'`")}
         - ${picocolors.bold('Relative imports:')} ${picocolors.cyan("`import preview from '../../.storybook/preview'`")}
-      `)
-      );
+      `);
+
       useSubPathImports = await prompt.select<boolean>(
         {
           message: 'Which would you like to use?',
@@ -129,15 +127,13 @@ export const csfFactories: CommandFix = {
 
     await syncStorybookAddons(mainConfig, previewConfigPath!);
 
-    logger.log(
-      printBoxedMessage(
-        dedent`
+    prompt.logBox(
+      dedent`
           You can now run Storybook with the new CSF factories format.
           
           For more info, check out the docs:
           ${picocolors.yellow('https://storybook.js.org/docs/api/csf/csf-factories')}
         `
-      )
     );
   },
 };

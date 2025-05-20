@@ -1,4 +1,5 @@
 import * as clack from '@clack/prompts';
+import boxen, { type Options as BoxenOptions } from 'boxen';
 import prompts from 'prompts';
 
 type Option = {
@@ -65,11 +66,6 @@ const outro = (message: string) => {
   console.log(`\n${message}\n`);
 };
 
-const cancel = (message: string) => {
-  console.log(`\n❌ ${message}\n`);
-  process.exit(0);
-};
-
 const text = async (options: TextPromptOptions, promptOptions?: PromptOptions): Promise<string> => {
   const result = await prompts(
     {
@@ -125,6 +121,13 @@ const select = async <T>(
   return result.value as T;
 };
 
+const logBox = (message: string, style?: BoxenOptions) => {
+  console.log(
+    boxen(message, { borderStyle: 'round', padding: 1, borderColor: '#F1618C', ...style })
+  );
+};
+
+// THE UTILITIES BELOW ARE NOT USED
 const multiselect = async <T extends string | number>(
   options: MultiSelectPromptOptions,
   promptOptions?: PromptOptions
@@ -277,13 +280,13 @@ const taskLog = (options: { title: string }) => {
   };
 };
 
-export const prompt = clack;
-
-export const prompt_ = {
+export const prompt = {
   confirm,
   text,
   select,
   multiselect,
+  logBox,
+  // these below not really used
   groupMultiselect,
   spinner,
   progress,
@@ -292,3 +295,6 @@ export const prompt_ = {
   stream,
   taskLog,
 };
+
+// TODO: drop-in replacement, just rename to prompt later
+export const prompt2 = clack;

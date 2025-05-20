@@ -11,7 +11,6 @@ import {
 } from 'storybook/internal/common';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
-import boxen from 'boxen';
 import picocolors from 'picocolors';
 import semver from 'semver';
 import invariant from 'tiny-invariant';
@@ -30,7 +29,7 @@ import type {
 import { FixStatus, allFixes, commandFixes } from './fixes';
 import { upgradeStorybookRelatedDependencies } from './fixes/upgrade-storybook-related-dependencies';
 import { cleanLog } from './helpers/cleanLog';
-import { getMigrationSummary } from './helpers/getMigrationSummary';
+import { logMigrationSummary } from './helpers/logMigrationSummary';
 import { getStorybookData } from './helpers/mainConfigFile';
 
 const logger = console;
@@ -225,9 +224,7 @@ export const automigrate = async ({
     ]);
 
     logger.info();
-    logger.info(
-      getMigrationSummary({ fixResults, fixSummary, logFile: LOG_FILE_PATH, installationMetadata })
-    );
+    logMigrationSummary({ fixResults, fixSummary, logFile: LOG_FILE_PATH, installationMetadata });
     logger.info();
   }
 
@@ -322,14 +319,12 @@ export async function runFixes({
         }
       };
 
-      logger.info(
-        boxen(message, {
-          borderStyle: 'round',
-          padding: 1,
-          borderColor: '#F1618C',
-          title: getTitle(),
-        })
-      );
+      prompt.logBox(message, {
+        borderStyle: 'round',
+        padding: 1,
+        borderColor: '#F1618C',
+        title: getTitle(),
+      });
 
       let runAnswer: { fix: boolean } | undefined;
 

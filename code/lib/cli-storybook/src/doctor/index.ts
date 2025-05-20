@@ -2,10 +2,9 @@ import { createWriteStream } from 'node:fs';
 import { rename, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { JsPackageManagerFactory, temporaryFile } from 'storybook/internal/common';
+import { JsPackageManagerFactory, prompt, temporaryFile } from 'storybook/internal/common';
 import type { PackageManagerName } from 'storybook/internal/common';
 
-import boxen from 'boxen';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
@@ -58,14 +57,12 @@ export const doctor = async ({
   let foundIssues = false;
   const logDiagnostic = (title: string, message: string) => {
     foundIssues = true;
-    logger.info(
-      boxen(message, {
-        borderStyle: 'round',
-        padding: 1,
-        title,
-        borderColor: '#F1618C',
-      })
-    );
+    prompt.logBox(message, {
+      borderStyle: 'round',
+      padding: 1,
+      title,
+      borderColor: '#F1618C',
+    });
   };
 
   logger.info('🩺 The doctor is checking the health of your Storybook..');

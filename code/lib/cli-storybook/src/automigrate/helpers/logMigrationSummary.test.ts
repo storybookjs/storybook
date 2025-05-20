@@ -1,15 +1,17 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import type { InstallationMetadata } from 'storybook/internal/common';
+import { type InstallationMetadata, prompt } from 'storybook/internal/common';
 
 import { FixStatus } from '../types';
-import { getMigrationSummary } from './getMigrationSummary';
+import { logMigrationSummary } from './logMigrationSummary';
 
-vi.mock('boxen', () => ({
-  default: vi.fn((str, { title = '' }) => `${title}\n\n${str.replace(/\x1b\[[0-9;]*[mG]/g, '')}`),
+vi.mock('storybook/internal/common', () => ({
+  prompt: {
+    logBox: vi.fn(),
+  },
 }));
 
-describe('getMigrationSummary', () => {
+describe('logMigrationSummary', () => {
   const fixResults = {
     'foo-package': FixStatus.SUCCEEDED,
     'bar-package': FixStatus.MANUAL_SUCCEEDED,
@@ -37,7 +39,7 @@ describe('getMigrationSummary', () => {
   const logFile = '/path/to/log/file';
 
   it('renders a summary with a "no migrations" message if all migrations were unnecessary', () => {
-    const summary = getMigrationSummary({
+    logMigrationSummary({
       fixResults: { 'foo-package': FixStatus.UNNECESSARY },
       fixSummary: {
         succeeded: [],
@@ -49,11 +51,15 @@ describe('getMigrationSummary', () => {
       logFile,
     });
 
-    expect(summary).toContain('No migrations were applicable to your project');
+    expect(vi.mocked(prompt.logBox).mock.calls[0][1]).toEqual(
+      expect.objectContaining({
+        title: 'No migrations were applicable to your project',
+      })
+    );
   });
 
   it('renders a summary with a "check failed" message if at least one migration completely failed', () => {
-    const summary = getMigrationSummary({
+    logMigrationSummary({
       fixResults: {
         'foo-package': FixStatus.SUCCEEDED,
         'bar-package': FixStatus.MANUAL_SUCCEEDED,
@@ -69,21 +75,28 @@ describe('getMigrationSummary', () => {
       logFile,
     });
 
-    expect(summary).toContain('Migration check ran with failures');
+    expect(vi.mocked(prompt.logBox).mock.calls[0][1]).toEqual(
+      expect.objectContaining({
+        title: 'Migration check ran with failures',
+      })
+    );
   });
 
   it('renders a summary with successful, manual, failed, and skipped migrations', () => {
-    const summary = getMigrationSummary({
+    logMigrationSummary({
       fixResults,
       fixSummary,
       installationMetadata: null,
       logFile,
     });
 
-    expect(summary).toMatchInlineSnapshot(`
-      "Migration check ran with failures
-
-      Successful migrations:
+    expect(vi.mocked(prompt.logBox).mock.calls[0][1]).toEqual(
+      expect.objectContaining({
+        title: 'Migration check ran with failures',
+      })
+    );
+    expect(vi.mocked(prompt.logBox).mock.calls[0][0]).toMatchInlineSnapshot(`
+      "Successful migrations:
 
       foo-package
 
@@ -114,17 +127,20 @@ describe('getMigrationSummary', () => {
   });
 
   it('renders a summary with a warning if there are duplicated dependencies outside the allow list', () => {
-    const summary = getMigrationSummary({
+    logMigrationSummary({
       fixResults: {},
       fixSummary: { succeeded: [], failed: {}, manual: [], skipped: [] },
       installationMetadata,
       logFile,
     });
 
-    expect(summary).toMatchInlineSnapshot(`
-      "No migrations were applicable to your project
-
-      If you'd like to run the migrations again, you can do so by running 'npx storybook automigrate'
+    expect(vi.mocked(prompt.logBox).mock.calls[0][1]).toEqual(
+      expect.objectContaining({
+        title: 'No migrations were applicable to your project',
+      })
+    );
+    expect(vi.mocked(prompt.logBox).mock.calls[0][0]).toMatchInlineSnapshot(`
+      "If you'd like to run the migrations again, you can do so by running 'npx storybook automigrate'
 
       The automigrations try to migrate common patterns in your project, but might not contain everything needed to migrate to the latest version of Storybook.
 
@@ -134,17 +150,20 @@ describe('getMigrationSummary', () => {
   });
 
   it('renders a basic summary if there are no duplicated dependencies or migrations', () => {
-    const summary = getMigrationSummary({
+    logMigrationSummary({
       fixResults: {},
       fixSummary: { succeeded: [], failed: {}, manual: [], skipped: [] },
       installationMetadata: undefined,
       logFile,
     });
 
-    expect(summary).toMatchInlineSnapshot(`
-      "No migrations were applicable to your project
-
-      If you'd like to run the migrations again, you can do so by running 'npx storybook automigrate'
+    expect(vi.mocked(prompt.logBox).mock.calls[0][1]).toEqual(
+      expect.objectContaining({
+        title: 'No migrations were applicable to your project',
+      })
+    );
+    expect(vi.mocked(prompt.logBox).mock.calls[0][0]).toMatchInlineSnapshot(`
+      "If you'd like to run the migrations again, you can do so by running 'npx storybook automigrate'
 
       The automigrations try to migrate common patterns in your project, but might not contain everything needed to migrate to the latest version of Storybook.
 

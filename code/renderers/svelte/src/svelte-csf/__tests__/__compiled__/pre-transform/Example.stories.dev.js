@@ -3,7 +3,7 @@ import 'svelte/internal/disclose-version';
 Example_stories[$.FILENAME] = 'tests/stories/Example.stories.svelte';
 
 import * as $ from 'svelte/internal/client';
-import { action } from '@storybook/addon-actions';
+import { fn } from 'storybook/test';
 import { defineMeta } from '@storybook/addon-svelte-csf';
 import Example from './Example.svelte';
 
@@ -21,29 +21,21 @@ const { Story } = defineMeta({
 	component: Example,
 	tags: ['autodocs'],
 	args: {
-		onclick: action('onclick'),
-		onmouseenter: action('onmouseenter'),
-		onmouseleave: action('onmouseleave')
+		onclick: fn(),
+		onmouseenter: fn(),
+		onmouseleave: fn()
 	}
 });
 
-var root_2 = $.add_locations($.template(`<p> </p> <p> </p> <br>`, 1), Example_stories[$.FILENAME], [[41, 2], [42, 2], [42, 44]]);
+var root_2 = $.add_locations($.template(`<p> </p> <br>`, 1), Example_stories[$.FILENAME], [[37, 2], [37, 44]]);
 var root = $.add_locations($.template(`<!> <!> <!> <!> <!>`, 1), Example_stories[$.FILENAME], []);
 
 function Example_stories($$anchor, $$props) {
 	$.check_target(new.target);
 	$.push($$props, true, Example_stories);
 
-	const template = $.wrap_snippet(Example_stories, function ($$anchor, $$arg0, context = $.noop) {
+	const template = $.wrap_snippet(Example_stories, function ($$anchor, args = $.noop, context = $.noop) {
 		$.validate_snippet_args(...arguments);
-
-		let _ = () => $$arg0?.().children;
-
-		_();
-
-		let args = () => $.exclude_from_object($$arg0?.(), ['children']);
-
-		args();
 
 		var fragment = $.comment();
 		var node = $.first_child(fragment);
@@ -57,19 +49,13 @@ function Example_stories($$anchor, $$props) {
 
 				$.reset(p);
 
-				var p_1 = $.sibling(p, 2);
-				var text_1 = $.child(p_1, true);
-
-				$.reset(p_1);
-
-				var text_2 = $.sibling(p_1);
+				var text_1 = $.sibling(p);
 
 				$.next();
 
 				$.template_effect(() => {
-					$.set_text(text, args().id);
-					$.set_text(text_1, context().name);
-					$.set_text(text_2, ` You clicked: ${$.get(count) ?? ''}`);
+					$.set_text(text, context().name);
+					$.set_text(text_1, ` You clicked: ${$.get(count) ?? ''}`);
 				});
 
 				$.append($$anchor, fragment_1);
@@ -120,9 +106,9 @@ function Example_stories($$anchor, $$props) {
 				children: $.wrap_snippet(Example_stories, ($$anchor, $$slotProps) => {
 					$.next();
 
-					var text_3 = $.text('Label');
+					var text_2 = $.text('Label');
 
-					$.append($$anchor, text_3);
+					$.append($$anchor, text_2);
 				}),
 				$$slots: { default: true }
 			});
@@ -139,9 +125,9 @@ function Example_stories($$anchor, $$props) {
 		children: $.wrap_snippet(Example_stories, ($$anchor, $$slotProps) => {
 			$.next();
 
-			var text_4 = $.text('Forwarded label');
+			var text_3 = $.text('Forwarded label');
 
-			$.append($$anchor, text_4);
+			$.append($$anchor, text_3);
 		}),
 		$$slots: { default: true }
 	});

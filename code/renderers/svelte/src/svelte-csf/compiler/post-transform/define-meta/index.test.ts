@@ -102,9 +102,9 @@ describe(createMetaVariableDeclaration.name, () => {
       	component: Example,
       	tags: ['autodocs'],
       	args: {
-      		onclick: action('onclick'),
-      		onmouseenter: action('onmouseenter'),
-      		onmouseleave: action('onmouseleave')
+      		onclick: fn(),
+      		onmouseenter: fn(),
+      		onmouseleave: fn()
       	},
       	parameters: {
       		docs: {

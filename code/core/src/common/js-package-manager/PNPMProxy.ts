@@ -183,31 +183,39 @@ export class PNPMProxy extends JsPackageManager {
     };
   }
 
-  protected async runInstall() {
+  protected async runInstall(cwd?: string) {
+    const operationDir = cwd || this.cwd;
     await this.executeCommand({
       command: 'pnpm',
       args: ['install', ...this.getInstallArgs()],
       stdio: 'inherit',
+      cwd: operationDir,
     });
   }
 
   protected async runAddDeps(
     dependencies: string[],
     installAsDevDependencies: boolean,
-    writeOutputToFile = true
+    writeOutputToFile = true,
+    cwd?: string
   ) {
     let args = [...dependencies];
+    const operationDir = cwd || this.cwd;
 
     if (installAsDevDependencies) {
       args = ['-D', ...args];
     }
+
+    const commandArgs = ['add', ...args, ...this.getInstallArgs()];
+
     const { logStream, readLogFile, moveLogFile, removeLogFile } = await createLogStream();
 
     try {
       await this.executeCommand({
         command: 'pnpm',
-        args: ['add', ...args, ...this.getInstallArgs()],
+        args: commandArgs,
         stdio: process.env.CI || !writeOutputToFile ? 'inherit' : ['ignore', logStream, logStream],
+        cwd: operationDir,
       });
     } catch (err) {
       if (!writeOutputToFile) {
@@ -226,13 +234,19 @@ export class PNPMProxy extends JsPackageManager {
     await removeLogFile();
   }
 
-  protected async runRemoveDeps(dependencies: string[]) {
-    const args = [...dependencies];
+  protected async runRemoveDeps(dependencies: string[], cwd?: string) {
+    const operationDir = cwd || this.cwd;
+    const commandArgs = ['remove', ...dependencies];
+
+    if (operationDir === this.projectRoot && this.detectWorkspaceRoot()) {
+      commandArgs.push('-r');
+    }
 
     await this.executeCommand({
       command: 'pnpm',
-      args: ['remove', ...args, ...this.getInstallArgs()],
+      args: commandArgs,
       stdio: 'inherit',
+      cwd: operationDir,
     });
   }
 

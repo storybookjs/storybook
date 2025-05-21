@@ -175,11 +175,12 @@ export class BUNProxy extends JsPackageManager {
     };
   }
 
-  protected async runInstall() {
+  protected async runInstall(cwd?: string) {
     await this.executeCommand({
       command: 'bun',
       args: ['install', ...this.getInstallArgs()],
       stdio: 'inherit',
+      cwd: cwd || this.cwd,
     });
   }
 
@@ -197,7 +198,8 @@ export class BUNProxy extends JsPackageManager {
   protected async runAddDeps(
     dependencies: string[],
     installAsDevDependencies: boolean,
-    writeOutputToFile = true
+    writeOutputToFile = true,
+    cwd?: string
   ) {
     const { logStream, readLogFile, moveLogFile, removeLogFile } = await createLogStream();
     let args = [...dependencies];
@@ -211,6 +213,7 @@ export class BUNProxy extends JsPackageManager {
         command: 'bun',
         args: ['add', ...args, ...this.getInstallArgs()],
         stdio: process.env.CI || !writeOutputToFile ? 'inherit' : ['ignore', logStream, logStream],
+        cwd: cwd || this.cwd,
       });
     } catch (err) {
       if (!writeOutputToFile) {
@@ -229,13 +232,14 @@ export class BUNProxy extends JsPackageManager {
     await removeLogFile();
   }
 
-  protected async runRemoveDeps(dependencies: string[]) {
+  protected async runRemoveDeps(dependencies: string[], cwd?: string) {
     const args = [...dependencies];
 
     await this.executeCommand({
       command: 'bun',
       args: ['remove', ...args, ...this.getInstallArgs()],
       stdio: 'inherit',
+      cwd: cwd || this.cwd,
     });
   }
 

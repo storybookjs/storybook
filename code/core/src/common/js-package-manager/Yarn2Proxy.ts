@@ -192,18 +192,20 @@ export class Yarn2Proxy extends JsPackageManager {
     };
   }
 
-  protected async runInstall() {
+  protected async runInstall(cwd?: string) {
     await this.executeCommand({
       command: 'yarn',
       args: ['install', ...this.getInstallArgs()],
       stdio: 'inherit',
+      cwd: cwd || this.cwd,
     });
   }
 
   protected async runAddDeps(
     dependencies: string[],
     installAsDevDependencies: boolean,
-    writeOutputToFile = true
+    writeOutputToFile = true,
+    cwd?: string
   ) {
     let args = [...dependencies];
 
@@ -218,6 +220,7 @@ export class Yarn2Proxy extends JsPackageManager {
         command: 'yarn',
         args: ['add', ...this.getInstallArgs(), ...args],
         stdio: process.env.CI || !writeOutputToFile ? 'inherit' : ['ignore', logStream, logStream],
+        cwd: cwd || this.cwd,
       });
     } catch (err) {
       if (!writeOutputToFile) {
@@ -245,13 +248,14 @@ export class Yarn2Proxy extends JsPackageManager {
     return url === 'undefined' ? undefined : url;
   }
 
-  protected async runRemoveDeps(dependencies: string[]) {
+  protected async runRemoveDeps(dependencies: string[], cwd?: string) {
     const args = [...dependencies];
 
     await this.executeCommand({
       command: 'yarn',
       args: ['remove', ...this.getInstallArgs(), ...args],
       stdio: 'inherit',
+      cwd: cwd || this.cwd,
     });
   }
 

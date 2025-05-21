@@ -22,7 +22,7 @@ import { oneWayHash } from 'storybook/internal/telemetry';
 import type { Presets } from 'storybook/internal/types';
 
 import { match } from 'micromatch';
-import { dirname, join, relative, resolve } from 'pathe';
+import { dirname, join, relative, resolve, sep } from 'pathe';
 import picocolors from 'picocolors';
 import sirv from 'sirv';
 import { dedent } from 'ts-dedent';
@@ -223,9 +223,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
           return join(finalOptions.configDir, storyPath);
         })
         .map((story) => {
-          const root =
-            testConfig?.dir || testConfig?.root || nonMutableInputConfig.root || process.cwd();
-          return relative(root, story);
+          return relative(finalOptions.vitestRoot, story);
         });
 
       finalOptions.includeStories = includeStories;
@@ -259,7 +257,10 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
           },
 
           include: includeStories,
-          exclude: [...(nonMutableInputConfig.test?.exclude ?? []), '**/*.mdx'],
+          exclude: [
+            ...(nonMutableInputConfig.test?.exclude ?? []),
+            join(relative(finalOptions.vitestRoot, process.cwd()), '**/*.mdx').replaceAll(sep, '/'),
+          ],
 
           // if the existing deps.inline is true, we keep it as-is, because it will inline everything
           ...(nonMutableInputConfig.test?.server?.deps?.inline !== true
@@ -401,6 +402,24 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
   };
 
   plugins.push(storybookTestPlugin);
+
+  // When running tests via the Storybook UI, we need
+  // to find the right project to run, thus we override
+  // with a unique identifier using the path to the config dir
+  if (process.env.VITEST_STORYBOOK) {
+    const projectName = join('storybook:', finalOptions.configDir);
+    plugins.push({
+      name: 'storybook:workspace-name-override',
+      config: {
+        order: 'pre',
+        handler: (config) => {
+          config.test ??= {};
+          config.test.name = projectName;
+          return config;
+        },
+      },
+    });
+  }
   return plugins;
 };
 

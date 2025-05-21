@@ -1,4 +1,6 @@
-import type { Channel } from '@storybook/core/channels';
+import type { Channel } from 'storybook/internal/channels';
+import { logger } from 'storybook/internal/client-logger';
+import { SET_CONFIG } from 'storybook/internal/core-events';
 import type {
   Addon_BaseType,
   Addon_Collection,
@@ -6,19 +8,15 @@ import type {
   Addon_Elements,
   Addon_Loaders,
   Addon_PageType,
-  Addon_SidebarBottomType,
-  Addon_SidebarTopType,
   Addon_TestProviderType,
   Addon_Type,
   Addon_Types,
   Addon_TypesMapping,
   Addon_WrapperType,
-} from '@storybook/core/types';
-import { Addon_TypesEnum } from '@storybook/core/types';
-import { global } from '@storybook/global';
+} from 'storybook/internal/types';
+import { Addon_TypesEnum } from 'storybook/internal/types';
 
-import { logger } from '@storybook/core/client-logger';
-import { SET_CONFIG } from '@storybook/core/core-events';
+import { global } from '@storybook/global';
 
 import type { API } from '../root';
 import { mockChannel } from './storybook-channel-mock';
@@ -70,8 +68,6 @@ export class AddonStore {
     T extends
       | Addon_Types
       | Addon_TypesEnum.experimental_PAGE
-      | Addon_TypesEnum.experimental_SIDEBAR_BOTTOM
-      | Addon_TypesEnum.experimental_SIDEBAR_TOP
       | Addon_TypesEnum.experimental_TEST_PROVIDER,
   >(type: T): Addon_Collection<Addon_TypesMapping[T]> | any {
     if (!this.elements[type]) {
@@ -91,8 +87,6 @@ export class AddonStore {
     id: string,
     addon:
       | Addon_BaseType
-      | Omit<Addon_SidebarTopType, 'id'>
-      | Omit<Addon_SidebarBottomType, 'id'>
       | Omit<Addon_TestProviderType, 'id'>
       | Omit<Addon_PageType, 'id'>
       | Omit<Addon_WrapperType, 'id'>

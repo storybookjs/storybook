@@ -1,11 +1,5 @@
 import * as React from 'react';
 
-import {
-  composeStories as originalComposeStories,
-  composeStory as originalComposeStory,
-  setProjectAnnotations as originalSetProjectAnnotations,
-  setDefaultProjectAnnotations,
-} from 'storybook/internal/preview-api';
 import type {
   Args,
   ComposedStoryFn,
@@ -16,6 +10,13 @@ import type {
   StoriesWithPartialProps,
   StoryAnnotationsOrFn,
 } from 'storybook/internal/types';
+
+import {
+  composeStories as originalComposeStories,
+  composeStory as originalComposeStory,
+  setProjectAnnotations as originalSetProjectAnnotations,
+  setDefaultProjectAnnotations,
+} from 'storybook/preview-api';
 
 import * as reactProjectAnnotations from './entry-preview';
 import type { Meta } from './public-types';
@@ -54,15 +55,10 @@ export function setProjectAnnotations(
 // This will not be necessary once we have auto preset loading
 export const INTERNAL_DEFAULT_PROJECT_ANNOTATIONS: ProjectAnnotations<ReactRenderer> = {
   ...reactProjectAnnotations,
+  /** @deprecated */
   renderToCanvas: async (renderContext, canvasElement) => {
     if (renderContext.storyContext.testingLibraryRender == null) {
-      // eslint-disable-next-line no-underscore-dangle
-      renderContext.storyContext.parameters.__isPortableStory = true;
-      const unmount = await reactProjectAnnotations.renderToCanvas(renderContext, canvasElement);
-
-      return async () => {
-        await unmount();
-      };
+      return reactProjectAnnotations.renderToCanvas(renderContext, canvasElement);
     }
     const {
       storyContext: { context, unboundStoryFn: Story, testingLibraryRender: render },
@@ -111,7 +107,7 @@ export function composeStory<TArgs extends Args = Args>(
     story as StoryAnnotationsOrFn<ReactRenderer, Args>,
     componentAnnotations,
     projectAnnotations,
-    INTERNAL_DEFAULT_PROJECT_ANNOTATIONS,
+    globalThis.globalProjectAnnotations ?? INTERNAL_DEFAULT_PROJECT_ANNOTATIONS,
     exportsName
   );
 }

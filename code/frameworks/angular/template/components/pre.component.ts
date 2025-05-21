@@ -8,11 +8,11 @@ import { Component, Input } from '@angular/core';
 export default class PreComponent {
   /** Styles to apply to the component */
   @Input()
-  style?: Object;
+  style?: object;
 
   /** An object to render */
   @Input()
-  object?: Object;
+  object?: object;
 
   /** The code to render */
   @Input()

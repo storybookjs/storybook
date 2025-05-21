@@ -17,24 +17,50 @@ async function run() {
     ...Object.keys((pkg as any).peerDependencies || {}),
     ...nodeInternals,
     'typescript',
-    '@storybook/core',
+    'storybook',
 
-    '@storybook/core/builder-manager',
-    '@storybook/core/channels',
-    '@storybook/core/client-logger',
-    '@storybook/core/common',
-    '@storybook/core/components',
-    '@storybook/core/core-events',
-    '@storybook/core/core-server',
-    '@storybook/core/csf-tools',
-    '@storybook/core/docs-tools',
-    '@storybook/core/manager-api',
-    '@storybook/core/node-logger',
-    '@storybook/core/preview-api',
-    '@storybook/core/router',
-    '@storybook/core/telemetry',
-    '@storybook/core/theming',
-    '@storybook/core/types',
+    'storybook/manager-api',
+    'storybook/preview-api',
+    'storybook/theming',
+
+    'storybook/test',
+    'storybook/test/preview',
+
+    'storybook/measure',
+    'storybook/measure/preview',
+
+    'storybook/highlight',
+    'storybook/highlight/preview',
+
+    'storybook/outline',
+    'storybook/outline/preview',
+
+    'storybook/backgrounds',
+    'storybook/backgrounds/preview',
+
+    'storybook/actions',
+    'storybook/actions/preview',
+    'storybook/actions/decorator',
+
+    'storybook/viewport',
+    'storybook/viewport/preview',
+
+    'storybook/internal/builder-manager',
+    'storybook/internal/channels',
+    'storybook/internal/client-logger',
+    'storybook/internal/common',
+    'storybook/internal/component-testing',
+    'storybook/internal/component-testing/preview',
+    'storybook/internal/components',
+    'storybook/internal/core-events',
+    'storybook/internal/core-server',
+    'storybook/internal/csf-tools',
+    'storybook/internal/docs-tools',
+    'storybook/internal/node-logger',
+    'storybook/internal/router',
+    'storybook/internal/telemetry',
+    'storybook/internal/types',
+    'storybook/internal/instrumenter',
   ];
 
   const all = entries.filter((e) => e.dts);

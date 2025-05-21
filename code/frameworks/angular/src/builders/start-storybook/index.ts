@@ -10,6 +10,7 @@ import {
   Target,
   createBuilder,
   targetFromTargetString,
+  Builder as DevkitBuilder,
 } from '@angular-devkit/architect';
 import { BrowserBuilderOptions, StylePreprocessorOptions } from '@angular-devkit/build-angular';
 import {
@@ -171,7 +172,7 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (options, cont
   return builder as any as BuilderOutput;
 };
 
-export default createBuilder(commandBuilder);
+export default createBuilder(commandBuilder) as DevkitBuilder<StorybookBuilderOptions & JsonObject>;
 
 async function setup(options: StorybookBuilderOptions, context: BuilderContext) {
   let browserOptions: (JsonObject & BrowserBuilderOptions) | undefined;

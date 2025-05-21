@@ -5,13 +5,20 @@ import { dedent } from 'ts-dedent';
 import { createBlocker } from './types';
 
 const minimalVersionsMap = {
-  '@angular/core': '15.0.0',
+  '@angular/core': '18.0.0',
   'react-scripts': '5.0.0',
-  next: '13.5.0',
+  '@storybook/preact-webpack5': '9.0.0',
+  '@storybook/preset-preact-webpack': '9.0.0',
+  '@storybook/vue3-webpack5': '9.0.0',
+  '@storybook/preset-vue3-webpack': '9.0.0',
+  '@storybook/html-webpack5': '9.0.0',
+  '@storybook/preset-html-webpack': '9.0.0',
+  '@storybook/web-components-webpack5': '9.0.0',
+  next: '14.1.0',
   preact: '10.0.0',
-  svelte: '4.0.0',
+  svelte: '5.0.0',
   vue: '3.0.0',
-  vite: '4.0.0',
+  vite: '5.0.0',
 };
 
 type Result = {
@@ -58,6 +65,33 @@ export const blocker = createBlocker({
           
           Upgrade to the latest version of react-scripts.
         `;
+      case '@storybook/preact-webpack5':
+      case '@storybook/preset-preact-webpack':
+        return dedent`
+          Support for Preact Webpack5 has been removed.
+          Please see the migration guide for more information:
+          ${picocolors.yellow('https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#dropped-webpack5-builder-support-in-favor-of-vite')}
+        `;
+      case '@storybook/vue3-webpack5':
+      case '@storybook/preset-vue3-webpack':
+        return dedent`
+          Support for Vue3 Webpack5 has been removed.
+          Please see the migration guide for more information:
+          ${picocolors.yellow('https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#dropped-webpack5-builder-support-in-favor-of-vite')}
+        `;
+      case '@storybook/html-webpack5':
+      case '@storybook/preset-html-webpack':
+        return dedent`
+          Support for HTML Webpack5 has been removed.
+          Please see the migration guide for more information:
+          ${picocolors.yellow('https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#dropped-webpack5-builder-support-in-favor-of-vite')}
+        `;
+      case '@storybook/web-components-webpack5':
+        return dedent`
+          Support for Web Components Webpack5 has been removed.
+          Please see the migration guide for more information:
+          ${picocolors.yellow('https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#dropped-webpack5-builder-support-in-favor-of-vite')}
+        `;
       case 'vue':
         return dedent`
           Support for Vue 2 has been removed.
@@ -68,15 +102,15 @@ export const blocker = createBlocker({
         `;
       case '@angular/core':
         return dedent`
-          Support for Angular < 15 has been removed.
+          Support for Angular < 18 has been removed.
           Please see the migration guide for more information:
-          ${picocolors.yellow('https://angular.io/guide/update-to-version-15')}
+          ${picocolors.yellow('https://angular.dev/update-guide')}
 
           Please upgrade to the latest version of Angular.
         `;
       case 'next':
         return dedent`
-          Support for Next.js < 13.5 has been removed.
+          Support for Next.js < 14.1 has been removed.
           Please see the migration guide for more information:
           ${picocolors.yellow(
             'https://nextjs.org/docs/pages/building-your-application/upgrading/version-13'

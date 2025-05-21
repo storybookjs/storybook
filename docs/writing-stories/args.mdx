@@ -138,7 +138,7 @@ Args specified through the URL will extend and override any default values of ar
 <IfRenderer renderer="react">
   ## Setting args from within a story
 
-  Interactive components often need to be controlled by their containing component or page to respond to events, modify their state and reflect those changes in the UI. For example, when a user toggles a switch component, the switch should be checked, and the arg shown in Storybook should reflect the change. To enable this, you can use the `useArgs` API exported by `@storybook/preview-api`:
+  Interactive components often need to be controlled by their containing component or page to respond to events, modify their state and reflect those changes in the UI. For example, when a user toggles a switch component, the switch should be checked, and the arg shown in Storybook should reflect the change. To enable this, you can use the `useArgs` API exported by `storybook/preview-api`:
 
   {/* prettier-ignore-start */}
 
@@ -149,7 +149,7 @@ Args specified through the URL will extend and override any default values of ar
 
 ## Mapping to complex arg values
 
-Complex values such as JSX elements cannot be serialized to the manager (e.g., the Controls addon) or synced with the URL. Arg values can be "mapped" from a simple string to a complex type using the `mapping` property in `argTypes` to work around this limitation. It works in any arg but makes the most sense when used with the `select` control type.
+Complex values such as JSX elements cannot be serialized to the manager (e.g., the Controls panel) or synced with the URL. Arg values can be "mapped" from a simple string to a complex type using the `mapping` property in `argTypes` to work around this limitation. It works in any arg but makes the most sense when used with the `select` control type.
 
 {/* prettier-ignore-start */}
 
@@ -162,7 +162,7 @@ Note that `mapping` does not have to be exhaustive. If the arg value is not a pr
 <details>
   <summary>Using args in addons</summary>
 
-  If you are [writing an addon](../addons/writing-addons.mdx) that wants to read or update args, use the `useArgs` hook exported by `@storybook/manager-api`:
+  If you are [writing an addon](../addons/writing-addons.mdx) that wants to read or update args, use the `useArgs` hook exported by `storybook/manager-api`:
 
   {/* prettier-ignore-start */}
 

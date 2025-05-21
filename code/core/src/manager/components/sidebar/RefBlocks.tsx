@@ -1,12 +1,13 @@
 import type { FC } from 'react';
 import React, { Fragment, useCallback, useState } from 'react';
 
-import { Button, ErrorFormatter, Link, Spaced, WithTooltip } from '@storybook/core/components';
-import { styled } from '@storybook/core/theming';
+import { logger } from 'storybook/internal/client-logger';
+import { Button, ErrorFormatter, Link, Spaced, WithTooltip } from 'storybook/internal/components';
+
 import { global } from '@storybook/global';
 import { ChevronDownIcon, LockIcon, SyncIcon } from '@storybook/icons';
 
-import { logger } from '@storybook/core/client-logger';
+import { styled } from 'storybook/theming';
 
 import { Contained, Loader } from './Loader';
 
@@ -79,8 +80,7 @@ export const AuthBlock: FC<{ loginUrl: string; id: string }> = ({ loginUrl, id }
               this Storybook.
             </Text>
             <div>
-              {/* TODO: Make sure this button is working without the deprecated props */}
-              <Button small gray onClick={refresh}>
+              <Button size="small" variant="outline" onClick={refresh}>
                 <SyncIcon />
                 Refresh now
               </Button>
@@ -91,7 +91,7 @@ export const AuthBlock: FC<{ loginUrl: string; id: string }> = ({ loginUrl, id }
             <Text>Sign in to browse this Storybook.</Text>
             <div>
               {/* @ts-expect-error (non strict) */}
-              <Button small gray onClick={open}>
+              <Button size="small" variant="outline" onClick={open}>
                 <LockIcon />
                 Sign in
               </Button>
@@ -116,7 +116,6 @@ export const ErrorBlock: FC<{ error: Error }> = ({ error }) => (
             </ErrorDisplay>
           }
         >
-          {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
           <Link isButton>
             View error <ChevronDownIcon />
           </Link>

@@ -1,5 +1,5 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
-import { toId } from '@storybook/csf';
+import { toId } from 'storybook/internal/csf';
 
 import type { Expect, Page } from '@playwright/test';
 

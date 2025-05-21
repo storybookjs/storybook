@@ -1,11 +1,11 @@
-import { isStory } from '@storybook/core/csf';
+import { isStory } from 'storybook/internal/csf';
 import type {
   Args,
   ComponentAnnotations,
   LegacyStoryAnnotationsOrFn,
   ProjectAnnotations,
   Renderer,
-} from '@storybook/core/types';
+} from 'storybook/internal/types';
 
 export function getCsfFactoryAnnotations<
   TRenderer extends Renderer = Renderer,

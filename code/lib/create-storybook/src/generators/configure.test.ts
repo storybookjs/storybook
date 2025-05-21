@@ -3,10 +3,9 @@ import * as fsp from 'node:fs/promises';
 
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { SupportedLanguage } from 'storybook/internal/cli';
-
 import { dedent } from 'ts-dedent';
 
+import { SupportedLanguage } from '../../../../core/src/cli/project_types';
 import { configureMain, configurePreview } from './configure';
 
 vi.mock('node:fs/promises');
@@ -34,22 +33,26 @@ describe('configureMain', () => {
 
     expect(mainConfigPath).toEqual('./.storybook/main.js');
     expect(mainConfigContent).toMatchInlineSnapshot(`
-      "/** @type {import('@storybook/react-vite').StorybookConfig} */
-      const config = {
-        stories: ['../stories/**/*.mdx', '../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
-        addons: [],
-        framework: {
-          name: '@storybook/react-vite',
-        },
-      };
-      export default config;
       "
+
+      /** @type { import('@storybook/react-vite').StorybookConfig } */
+      const config = {
+        "stories": [
+          "../stories/**/*.mdx",
+          "../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)"
+        ],
+        "addons": [],
+        "framework": {
+          "name": "@storybook/react-vite"
+        }
+      };
+      export default config;"
     `);
   });
 
   it('should generate main.ts', async () => {
     await configureMain({
-      language: SupportedLanguage.TYPESCRIPT_4_9,
+      language: SupportedLanguage.TYPESCRIPT,
       addons: [],
       prefixes: [],
       storybookConfigFolder: '.storybook',
@@ -67,14 +70,16 @@ describe('configureMain', () => {
       "import type { StorybookConfig } from '@storybook/react-vite';
 
       const config: StorybookConfig = {
-        stories: ['../stories/**/*.mdx', '../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
-        addons: [],
-        framework: {
-          name: '@storybook/react-vite',
-        },
+        "stories": [
+          "../stories/**/*.mdx",
+          "../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)"
+        ],
+        "addons": [],
+        "framework": {
+          "name": "@storybook/react-vite"
+        }
       };
-      export default config;
-      "
+      export default config;"
     `);
   });
 
@@ -85,7 +90,6 @@ describe('configureMain', () => {
       addons: [
         "%%path.dirname(require.resolve(path.join('@storybook/addon-essentials', 'package.json')))%%",
         "%%path.dirname(require.resolve(path.join('@storybook/preset-create-react-app', 'package.json')))%%",
-        "%%path.dirname(require.resolve(path.join('@storybook/addon-interactions', 'package.json')))%%",
       ],
       storybookConfigFolder: '.storybook',
       framework: {
@@ -101,20 +105,21 @@ describe('configureMain', () => {
     expect(mainConfigContent).toMatchInlineSnapshot(`
       "import path from 'node:path';
 
-      /** @type {import('@storybook/react-webpack5').StorybookConfig} */
+      /** @type { import('@storybook/react-webpack5').StorybookConfig } */
       const config = {
-        stories: ['../stories/**/*.mdx', '../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
-        addons: [
-          path.dirname(require.resolve(path.join('@storybook/addon-essentials', 'package.json'))),
-          path.dirname(require.resolve(path.join('@storybook/preset-create-react-app', 'package.json'))),
-          path.dirname(require.resolve(path.join('@storybook/addon-interactions', 'package.json'))),
+        "stories": [
+          "../stories/**/*.mdx",
+          "../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)"
         ],
-        framework: {
-          name: path.dirname(require.resolve(path.join('@storybook/react-webpack5', 'package.json'))),
-        },
+        "addons": [
+          path.dirname(require.resolve(path.join('@storybook/addon-essentials', 'package.json'))),
+          path.dirname(require.resolve(path.join('@storybook/preset-create-react-app', 'package.json')))
+        ],
+        "framework": {
+          "name": path.dirname(require.resolve(path.join('@storybook/react-webpack5', 'package.json')))
+        }
       };
-      export default config;
-      "
+      export default config;"
     `);
   });
 });
@@ -124,7 +129,7 @@ describe('configurePreview', () => {
     await configurePreview({
       language: SupportedLanguage.JAVASCRIPT,
       storybookConfigFolder: '.storybook',
-      rendererId: 'react',
+      frameworkPackage: '@storybook/react-vite',
     });
 
     const { calls } = vi.mocked(fsp.writeFile).mock;
@@ -132,28 +137,27 @@ describe('configurePreview', () => {
 
     expect(previewConfigPath).toEqual('./.storybook/preview.js');
     expect(previewConfigContent).toMatchInlineSnapshot(`
-      "/** @type {import('@storybook/react').Preview} */
+      "/** @type { import('@storybook/react-vite').Preview } */
       const preview = {
         parameters: {
           controls: {
             matchers: {
-              color: /(background|color)$/i,
-              date: /Date$/i,
+             color: /(background|color)$/i,
+             date: /Date$/i,
             },
           },
         },
       };
 
-      export default preview;
-      "
+      export default preview;"
     `);
   });
 
   it('should generate preview.ts', async () => {
     await configurePreview({
-      language: SupportedLanguage.TYPESCRIPT_4_9,
+      language: SupportedLanguage.TYPESCRIPT,
       storybookConfigFolder: '.storybook',
-      rendererId: 'react',
+      frameworkPackage: '@storybook/react-vite',
     });
 
     const { calls } = vi.mocked(fsp.writeFile).mock;
@@ -161,39 +165,38 @@ describe('configurePreview', () => {
 
     expect(previewConfigPath).toEqual('./.storybook/preview.ts');
     expect(previewConfigContent).toMatchInlineSnapshot(`
-      "import type { Preview } from '@storybook/react';
+      "import type { Preview } from '@storybook/react-vite'
 
       const preview: Preview = {
         parameters: {
           controls: {
             matchers: {
-              color: /(background|color)$/i,
-              date: /Date$/i,
+             color: /(background|color)$/i,
+             date: /Date$/i,
             },
           },
         },
       };
 
-      export default preview;
-      "
+      export default preview;"
     `);
   });
 
   it('should not do anything if the framework template already included a preview', async () => {
     vi.mocked(fsp.stat).mockResolvedValueOnce({} as Stats);
     await configurePreview({
-      language: SupportedLanguage.TYPESCRIPT_4_9,
+      language: SupportedLanguage.TYPESCRIPT,
       storybookConfigFolder: '.storybook',
-      rendererId: 'react',
+      frameworkPackage: '@storybook/react-vite',
     });
     expect(fsp.writeFile).not.toHaveBeenCalled();
   });
 
   it('should add prefix if frameworkParts are passed', async () => {
     await configurePreview({
-      language: SupportedLanguage.TYPESCRIPT_4_9,
+      language: SupportedLanguage.TYPESCRIPT,
       storybookConfigFolder: '.storybook',
-      rendererId: 'angular',
+      frameworkPackage: '@storybook/angular',
       frameworkPreviewParts: {
         prefix: dedent`
         import { setCompodocJson } from "@storybook/addon-docs/angular";
@@ -208,27 +211,23 @@ describe('configurePreview', () => {
 
     expect(previewConfigPath).toEqual('./.storybook/preview.ts');
     expect(previewConfigContent).toMatchInlineSnapshot(`
-      "import type { Preview } from '@storybook/angular';
-
-      import { setCompodocJson } from '@storybook/addon-docs/angular';
-
-      import docJson from '../documentation.json';
-
+      "import type { Preview } from '@storybook/angular'
+      import { setCompodocJson } from "@storybook/addon-docs/angular";
+      import docJson from "../documentation.json";
       setCompodocJson(docJson);
 
       const preview: Preview = {
         parameters: {
           controls: {
             matchers: {
-              color: /(background|color)$/i,
-              date: /Date$/i,
+             color: /(background|color)$/i,
+             date: /Date$/i,
             },
           },
         },
       };
 
-      export default preview;
-      "
+      export default preview;"
     `);
   });
 });

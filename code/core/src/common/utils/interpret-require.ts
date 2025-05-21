@@ -3,7 +3,6 @@ import { getInterpretedFileWithExt } from './interpret-files';
 let registered = false;
 
 export function interopRequireDefault(filePath: string) {
-  // eslint-disable-next-line no-underscore-dangle
   const hasEsbuildBeenRegistered = !!require('module')._extensions['.ts'];
 
   if (registered === false && !hasEsbuildBeenRegistered) {

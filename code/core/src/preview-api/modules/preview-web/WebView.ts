@@ -1,7 +1,7 @@
-import type { PreparedStory } from '@storybook/core/types';
-import { global } from '@storybook/global';
+import { logger } from 'storybook/internal/client-logger';
+import type { PreparedStory } from 'storybook/internal/types';
 
-import { logger } from '@storybook/core/client-logger';
+import { global } from '@storybook/global';
 
 import AnsiToHtml from 'ansi-to-html';
 import { parse } from 'picoquery';
@@ -49,7 +49,6 @@ export class WebView implements View<HTMLElement> {
   constructor() {
     // Special code for testing situations
     if (typeof document !== 'undefined') {
-      // eslint-disable-next-line @typescript-eslint/naming-convention
       const { __SPECIAL_TEST_PARAMETER__ } = parse(document.location.search.slice(1));
       switch (__SPECIAL_TEST_PARAMETER__) {
         case 'preparing-story': {

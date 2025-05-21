@@ -1,8 +1,10 @@
 import React from 'react';
 
-import { Link } from '@storybook/core/components';
+import { Link } from 'storybook/internal/components';
+
 import { DocumentIcon } from '@storybook/icons';
-import type { Meta, StoryObj } from '@storybook/react';
+
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { EmptyTabContent } from './EmptyTabContent';
 

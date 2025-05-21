@@ -20,6 +20,12 @@ export type PackageManagerName = 'npm' | 'yarn1' | 'yarn2' | 'pnpm' | 'bun';
 
 type StorybookPackage = keyof typeof storybookPackagesVersions;
 
+export const COMMON_ENV_VARS = {
+  COREPACK_ENABLE_STRICT: '0',
+  COREPACK_ENABLE_AUTO_PIN: '0',
+  NO_UPDATE_NOTIFIER: 'true',
+};
+
 /**
  * Extract package name and version from input
  *
@@ -220,9 +226,7 @@ export abstract class JsPackageManager {
    * ```ts
    * addDependencies(options, [
    *   `@storybook/react@${storybookVersion}`,
-   *   `@storybook/addon-actions@${actionsVersion}`,
    *   `@storybook/addon-links@${linksVersion}`,
-   *   `@storybook/preview-api@${addonsVersion}`,
    * ]);
    * ```
    *
@@ -235,10 +239,11 @@ export abstract class JsPackageManager {
       skipInstall?: boolean;
       installAsDevDependencies?: boolean;
       packageJson?: PackageJson;
+      writeOutputToFile?: boolean;
     },
     dependencies: string[]
   ) {
-    const { skipInstall } = options;
+    const { skipInstall, writeOutputToFile = true } = options;
 
     if (skipInstall) {
       const { packageJson } = options;
@@ -263,7 +268,11 @@ export abstract class JsPackageManager {
       await this.writePackageJson(packageJson);
     } else {
       try {
-        await this.runAddDeps(dependencies, Boolean(options.installAsDevDependencies));
+        await this.runAddDeps(
+          dependencies,
+          Boolean(options.installAsDevDependencies),
+          writeOutputToFile
+        );
       } catch (e: any) {
         logger.error('\nAn error occurred while installing dependencies:');
         logger.log(e.message);
@@ -278,7 +287,7 @@ export abstract class JsPackageManager {
    * @example
    *
    * ```ts
-   * removeDependencies(options, [`@storybook/react`, `@storybook/addon-actions`]);
+   * removeDependencies(options, [`@storybook/react`]);
    * ```
    *
    * @param {Object} options Contains `skipInstall`, `packageJson` and `installAsDevDependencies`
@@ -334,6 +343,13 @@ export abstract class JsPackageManager {
     return Promise.all(
       packages.map(async (pkg) => {
         const [packageName, packageVersion] = getPackageDetails(pkg);
+
+        // If the packageVersion is specified and we are not dealing with a storybook package,
+        // just return the requested version.
+        if (packageVersion && !(packageName in storybookPackagesVersions)) {
+          return pkg;
+        }
+
         const latestInRange = await this.latestVersion(packageName, packageVersion);
 
         const k = packageName as keyof typeof storybookPackagesVersions;
@@ -459,7 +475,8 @@ export abstract class JsPackageManager {
 
   protected abstract runAddDeps(
     dependencies: string[],
-    installAsDevDependencies: boolean
+    installAsDevDependencies: boolean,
+    writeOutputToFile?: boolean
   ): Promise<void>;
 
   protected abstract runRemoveDeps(dependencies: string[]): Promise<void>;
@@ -522,7 +539,10 @@ export abstract class JsPackageManager {
         stdio: stdio ?? 'pipe',
         shell: true,
         cleanup: true,
-        env,
+        env: {
+          ...COMMON_ENV_VARS,
+          ...env,
+        },
         ...execaOptions,
       });
 
@@ -566,7 +586,10 @@ export abstract class JsPackageManager {
         encoding: 'utf8',
         shell: true,
         cleanup: true,
-        env,
+        env: {
+          ...COMMON_ENV_VARS,
+          ...env,
+        },
         ...execaOptions,
       });
 

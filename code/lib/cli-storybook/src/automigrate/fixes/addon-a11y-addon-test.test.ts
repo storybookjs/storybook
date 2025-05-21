@@ -41,6 +41,7 @@ vi.mock('picocolors', async (importOriginal) => {
       green: (s: string) => s,
       cyan: (s: string) => s,
       magenta: (s: string) => s,
+      yellow: (s: string) => s,
     },
   };
 });
@@ -76,7 +77,7 @@ describe('addonA11yAddonTest', () => {
     it('should return null if provided framework is not supported', async () => {
       vi.mocked(getAddonNames).mockReturnValue([
         '@storybook/addon-a11y',
-        '@storybook/experimental-addon-test',
+        '@storybook/addon-vitest',
       ]);
       const result = await addonA11yAddonTest.check({
         mainConfig: {
@@ -90,25 +91,26 @@ describe('addonA11yAddonTest', () => {
     it('should return null if vitest.setup file and preview file have the necessary transformations', async () => {
       vi.mocked(getAddonNames).mockReturnValue([
         '@storybook/addon-a11y',
-        '@storybook/experimental-addon-test',
+        '@storybook/addon-vitest',
       ]);
       vi.mocked(existsSync).mockReturnValue(true);
       vi.mocked(readFileSync).mockImplementation((p) => {
         if (p.toString().includes('vitest.setup')) {
           return `
             import * as a11yAddonAnnotations from "@storybook/addon-a11y/preview";
-            import { beforeAll } from 'vitest';
             import { setProjectAnnotations } from 'storybook';
             import * as projectAnnotations from './preview';
 
-            const project = setProjectAnnotations([a11yAddonAnnotations, projectAnnotations]);
-
-            beforeAll(project.beforeAll);
+            setProjectAnnotations([a11yAddonAnnotations, projectAnnotations]);
           `;
         } else {
           return `
             export default {
-              tags: ['a11y-test'],
+              parameters: {
+                a11y: {
+                  test: 'todo'
+                }
+              }
             }
           `;
         }
@@ -126,7 +128,7 @@ describe('addonA11yAddonTest', () => {
     it('should return setupFile and transformedSetupCode if vitest.setup file exists', async () => {
       vi.mocked(getAddonNames).mockReturnValue([
         '@storybook/addon-a11y',
-        '@storybook/experimental-addon-test',
+        '@storybook/addon-vitest',
       ]);
       vi.mocked(existsSync).mockImplementation((p) => {
         if (p.toString().includes('vitest.setup')) {
@@ -154,7 +156,7 @@ describe('addonA11yAddonTest', () => {
         previewFile: null,
         transformedPreviewCode: null,
         transformedSetupCode: expect.any(String),
-        skipPreviewTransformation: true,
+        skipPreviewTransformation: false,
         skipVitestSetupTransformation: false,
       });
     });
@@ -162,7 +164,7 @@ describe('addonA11yAddonTest', () => {
     it.skip('should return previewFile and transformedPreviewCode if preview file exists', async () => {
       vi.mocked(getAddonNames).mockReturnValue([
         '@storybook/addon-a11y',
-        '@storybook/experimental-addon-test',
+        '@storybook/addon-vitest',
       ]);
       vi.mocked(existsSync).mockImplementation((p) => {
         if (p.toString().includes('preview')) {
@@ -198,7 +200,7 @@ describe('addonA11yAddonTest', () => {
     it('should return setupFile and null transformedSetupCode if transformation fails', async () => {
       vi.mocked(getAddonNames).mockReturnValue([
         '@storybook/addon-a11y',
-        '@storybook/experimental-addon-test',
+        '@storybook/addon-vitest',
       ]);
       vi.mocked(existsSync).mockImplementation((p) => {
         if (p.toString().includes('vitest.setup')) {
@@ -226,7 +228,7 @@ describe('addonA11yAddonTest', () => {
         previewFile: null,
         transformedPreviewCode: null,
         transformedSetupCode: null,
-        skipPreviewTransformation: true,
+        skipPreviewTransformation: false,
         skipVitestSetupTransformation: false,
       });
     });
@@ -234,7 +236,7 @@ describe('addonA11yAddonTest', () => {
     it('should return previewFile and null transformedPreviewCode if transformation fails', async () => {
       vi.mocked(getAddonNames).mockReturnValue([
         '@storybook/addon-a11y',
-        '@storybook/experimental-addon-test',
+        '@storybook/addon-vitest',
       ]);
       vi.mocked(existsSync).mockImplementation((p) => {
         if (p.toString().includes('preview')) {
@@ -262,7 +264,7 @@ describe('addonA11yAddonTest', () => {
         previewFile: path.join(configDir, 'preview.js'),
         transformedPreviewCode: null,
         transformedSetupCode: null,
-        skipPreviewTransformation: true,
+        skipPreviewTransformation: false,
         skipVitestSetupTransformation: false,
       });
     });
@@ -270,24 +272,25 @@ describe('addonA11yAddonTest', () => {
     it('should return skipPreviewTransformation=true if preview file has the necessary change', async () => {
       vi.mocked(getAddonNames).mockReturnValue([
         '@storybook/addon-a11y',
-        '@storybook/experimental-addon-test',
+        '@storybook/addon-vitest',
       ]);
       vi.mocked(existsSync).mockReturnValue(true);
       vi.mocked(readFileSync).mockImplementation((p) => {
         if (p.toString().includes('vitest.setup')) {
           return `
-            import { beforeAll } from 'vitest';
             import { setProjectAnnotations } from 'storybook';
             import * as projectAnnotations from './preview';
 
-            const project = setProjectAnnotations([projectAnnotations]);
-
-            beforeAll(project.beforeAll);
+            setProjectAnnotations([projectAnnotations]);
           `;
         } else {
           return `
             export default {
-              tags: ['a11y-test'],
+              parameters: {
+                a11y: {
+                  test: 'todo'
+                }
+              }
             }
           `;
         }
@@ -312,20 +315,17 @@ describe('addonA11yAddonTest', () => {
     it('should return skipVitestSetupTransformation=true if setup file has the necessary change', async () => {
       vi.mocked(getAddonNames).mockReturnValue([
         '@storybook/addon-a11y',
-        '@storybook/experimental-addon-test',
+        '@storybook/addon-vitest',
       ]);
       vi.mocked(existsSync).mockReturnValue(true);
       vi.mocked(readFileSync).mockImplementation((p) => {
         if (p.toString().includes('vitest.setup')) {
           return `
             import * as a11yAddonAnnotations from "@storybook/addon-a11y/preview";
-            import { beforeAll } from 'vitest';
             import { setProjectAnnotations } from 'storybook';
             import * as projectAnnotations from './preview';
 
-            const project = setProjectAnnotations([a11yAddonAnnotations, projectAnnotations]);
-
-            beforeAll(project.beforeAll);
+            setProjectAnnotations([a11yAddonAnnotations, projectAnnotations]);
           `;
         } else {
           return `
@@ -342,7 +342,14 @@ describe('addonA11yAddonTest', () => {
         },
         configDir,
       } as any);
-      expect(result).toEqual(null);
+      expect(result).toEqual({
+        setupFile: path.join(configDir, 'vitest.setup.js'),
+        previewFile: path.join(configDir, 'preview.js'),
+        transformedPreviewCode: expect.any(String),
+        transformedSetupCode: null,
+        skipPreviewTransformation: false,
+        skipVitestSetupTransformation: true,
+      });
     });
   });
 
@@ -357,9 +364,9 @@ describe('addonA11yAddonTest', () => {
         skipVitestSetupTransformation: false,
       });
       expect(result).toMatchInlineSnapshot(`
-        "We have detected that you have @storybook/addon-a11y and @storybook/experimental-addon-test installed.
+        "We have detected that you have @storybook/addon-a11y and @storybook/addon-vitest installed.
 
-        @storybook/addon-a11y now integrates with @storybook/experimental-addon-test to provide automatic accessibility checks for your stories, powered by Axe and Vitest.
+        @storybook/addon-a11y now integrates with @storybook/addon-vitest to provide automatic accessibility checks for your stories, powered by Axe and Vitest.
 
         1) We couldn't find or automatically update .storybook/vitest.setup.<ts|js> in your project to smoothly set up project annotations from @storybook/addon-a11y. 
         Please manually update your vitest.setup.ts file to include the following:
@@ -367,19 +374,21 @@ describe('addonA11yAddonTest', () => {
         ...   
         + import * as a11yAddonAnnotations from "@storybook/addon-a11y/preview";
 
-        const annotations = setProjectAnnotations([
+        setProjectAnnotations([
           ...
         + a11yAddonAnnotations,
         ]);
 
-        beforeAll(annotations.beforeAll);
-
-        2) We couldn't find or automatically update your .storybook/preview.<ts|js> in your project to smoothly set up tags from @storybook/addon-a11y. 
+        2) We couldn't find or automatically update your .storybook/preview.<ts|js> in your project to smoothly set up parameters.a11y.test from @storybook/addon-a11y. 
         Please manually update your .storybook/preview.<ts|js> file to include the following:
 
         export default {
-        ...
-        + tags: ["a11y-test"],
+          ...
+          parameters: {
+        +   a11y: {
+        +      test: "todo"
+        +   }
+          }
         }
 
         For more information, please refer to the accessibility addon documentation: 
@@ -397,9 +406,9 @@ describe('addonA11yAddonTest', () => {
         skipVitestSetupTransformation: false,
       });
       expect(result).toMatchInlineSnapshot(`
-        "We have detected that you have @storybook/addon-a11y and @storybook/experimental-addon-test installed.
+        "We have detected that you have @storybook/addon-a11y and @storybook/addon-vitest installed.
 
-        @storybook/addon-a11y now integrates with @storybook/experimental-addon-test to provide automatic accessibility checks for your stories, powered by Axe and Vitest.
+        @storybook/addon-a11y now integrates with @storybook/addon-vitest to provide automatic accessibility checks for your stories, powered by Axe and Vitest.
 
         1) We couldn't find or automatically update .storybook/vitest.setup.<ts|js> in your project to smoothly set up project annotations from @storybook/addon-a11y. 
         Please manually update your vitest.setup.ts file to include the following:
@@ -407,14 +416,12 @@ describe('addonA11yAddonTest', () => {
         ...   
         + import * as a11yAddonAnnotations from "@storybook/addon-a11y/preview";
 
-        const annotations = setProjectAnnotations([
+        setProjectAnnotations([
           ...
         + a11yAddonAnnotations,
         ]);
 
-        beforeAll(annotations.beforeAll);
-
-        2) We have to update your .storybook/preview.js file to set up tags from @storybook/addon-a11y.
+        2) We have to update your .storybook/preview.js file to set up parameters.a11y.test from @storybook/addon-a11y.
 
         For more information, please refer to the accessibility addon documentation: 
         https://storybook.js.org/docs/writing-tests/accessibility-testing#test-addon-integration"
@@ -431,18 +438,22 @@ describe('addonA11yAddonTest', () => {
         skipVitestSetupTransformation: false,
       });
       expect(result).toMatchInlineSnapshot(`
-        "We have detected that you have @storybook/addon-a11y and @storybook/experimental-addon-test installed.
+        "We have detected that you have @storybook/addon-a11y and @storybook/addon-vitest installed.
 
-        @storybook/addon-a11y now integrates with @storybook/experimental-addon-test to provide automatic accessibility checks for your stories, powered by Axe and Vitest.
+        @storybook/addon-a11y now integrates with @storybook/addon-vitest to provide automatic accessibility checks for your stories, powered by Axe and Vitest.
 
         1) We have to update your .storybook/vitest.setup.ts file to set up project annotations from @storybook/addon-a11y.
 
-        2) We couldn't find or automatically update your .storybook/preview.<ts|js> in your project to smoothly set up tags from @storybook/addon-a11y. 
+        2) We couldn't find or automatically update your .storybook/preview.<ts|js> in your project to smoothly set up parameters.a11y.test from @storybook/addon-a11y. 
         Please manually update your .storybook/preview.<ts|js> file to include the following:
 
         export default {
-        ...
-        + tags: ["a11y-test"],
+          ...
+          parameters: {
+        +   a11y: {
+        +      test: "todo"
+        +   }
+          }
         }
 
         For more information, please refer to the accessibility addon documentation: 
@@ -460,9 +471,9 @@ describe('addonA11yAddonTest', () => {
         skipVitestSetupTransformation: false,
       });
       expect(result).toMatchInlineSnapshot(`
-        "We have detected that you have @storybook/addon-a11y and @storybook/experimental-addon-test installed.
+        "We have detected that you have @storybook/addon-a11y and @storybook/addon-vitest installed.
 
-        @storybook/addon-a11y now integrates with @storybook/experimental-addon-test to provide automatic accessibility checks for your stories, powered by Axe and Vitest.
+        @storybook/addon-a11y now integrates with @storybook/addon-vitest to provide automatic accessibility checks for your stories, powered by Axe and Vitest.
 
         1) We have to update your .storybook/vitest.setup.ts file to set up project annotations from @storybook/addon-a11y.
 
@@ -481,11 +492,11 @@ describe('addonA11yAddonTest', () => {
         skipVitestSetupTransformation: true,
       });
       expect(result).toMatchInlineSnapshot(`
-        "We have detected that you have @storybook/addon-a11y and @storybook/experimental-addon-test installed.
+        "We have detected that you have @storybook/addon-a11y and @storybook/addon-vitest installed.
 
-        @storybook/addon-a11y now integrates with @storybook/experimental-addon-test to provide automatic accessibility checks for your stories, powered by Axe and Vitest.
+        @storybook/addon-a11y now integrates with @storybook/addon-vitest to provide automatic accessibility checks for your stories, powered by Axe and Vitest.
 
-        1) We have to update your .storybook/preview.js file to set up tags from @storybook/addon-a11y.
+        1) We have to update your .storybook/preview.js file to set up parameters.a11y.test from @storybook/addon-a11y.
 
         For more information, please refer to the accessibility addon documentation: 
         https://storybook.js.org/docs/writing-tests/accessibility-testing#test-addon-integration"
@@ -539,10 +550,7 @@ describe('addonA11yAddonTest', () => {
     it('should throw', async () => {
       const setupFile = '/path/to/vitest.setup.ts';
       const source = dedent`
-        import { beforeAll } from 'vitest';
         import { setProjectAnnotations } from 'storybook';
-
-        beforeAll(project.beforeAll);
       `;
 
       vi.mocked(readFileSync).mockReturnValue(source);
@@ -553,13 +561,10 @@ describe('addonA11yAddonTest', () => {
     it('should transform setup file correctly - 1', () => {
       const setupFile = '/path/to/vitest.setup.ts';
       const source = dedent`
-        import { beforeAll } from 'vitest';
         import { setProjectAnnotations } from 'storybook';
         import * as projectAnnotations from './preview';
 
-        const project = setProjectAnnotations([projectAnnotations]);
-
-        beforeAll(project.beforeAll);
+        setProjectAnnotations([projectAnnotations]);
       `;
       vi.mocked(readFileSync).mockReturnValue(source);
 
@@ -567,55 +572,43 @@ describe('addonA11yAddonTest', () => {
       const transformedCode = transformSetupFile(s);
       expect(transformedCode).toMatchInlineSnapshot(`
         "import * as a11yAddonAnnotations from "@storybook/addon-a11y/preview";
-        import { beforeAll } from 'vitest';
         import { setProjectAnnotations } from 'storybook';
         import * as projectAnnotations from './preview';
 
-        const project = setProjectAnnotations([a11yAddonAnnotations, projectAnnotations]);
-
-        beforeAll(project.beforeAll);"
+        setProjectAnnotations([a11yAddonAnnotations, projectAnnotations]);"
       `);
     });
 
     it('should transform setup file correctly - 2 (different format)', () => {
       const setupFile = '/path/to/vitest.setup.ts';
       const source = dedent`
-        import { beforeAll } from 'vitest';
         import { setProjectAnnotations } from 'storybook';
         import * as projectAnnotations from './preview';
 
-        const project = setProjectAnnotations([
+        setProjectAnnotations([
           projectAnnotations
         ]);
-
-        beforeAll(project.beforeAll);
       `;
       vi.mocked(readFileSync).mockReturnValue(source);
 
       const s = readFileSync(setupFile, 'utf8');
       const transformedCode = transformSetupFile(s);
       expect(transformedCode).toMatchInlineSnapshot(`
-          "import * as a11yAddonAnnotations from "@storybook/addon-a11y/preview";
-          import { beforeAll } from 'vitest';
-          import { setProjectAnnotations } from 'storybook';
-          import * as projectAnnotations from './preview';
+        "import * as a11yAddonAnnotations from "@storybook/addon-a11y/preview";
+        import { setProjectAnnotations } from 'storybook';
+        import * as projectAnnotations from './preview';
 
-          const project = setProjectAnnotations([a11yAddonAnnotations, projectAnnotations]);
-
-          beforeAll(project.beforeAll);"
-        `);
+        setProjectAnnotations([a11yAddonAnnotations, projectAnnotations]);"
+      `);
     });
 
     it('should transform setup file correctly - project annotation is not an array', () => {
       const setupFile = '/path/to/vitest.setup.ts';
       const source = dedent`
-        import { beforeAll } from 'vitest';
         import { setProjectAnnotations } from 'storybook';
         import * as projectAnnotations from './preview';
 
-        const project = setProjectAnnotations(projectAnnotations);
-
-        beforeAll(project.beforeAll);
+        setProjectAnnotations(projectAnnotations);
       `;
       vi.mocked(readFileSync).mockReturnValue(source);
 
@@ -623,32 +616,20 @@ describe('addonA11yAddonTest', () => {
       const transformedCode = transformSetupFile(s);
       expect(transformedCode).toMatchInlineSnapshot(dedent`
         "import * as a11yAddonAnnotations from "@storybook/addon-a11y/preview";
-        import { beforeAll } from 'vitest';
         import { setProjectAnnotations } from 'storybook';
         import * as projectAnnotations from './preview';
 
-        const project = setProjectAnnotations([a11yAddonAnnotations, projectAnnotations]);
-
-        beforeAll(project.beforeAll);"
+        setProjectAnnotations([a11yAddonAnnotations, projectAnnotations]);"
       `);
     });
   });
 
   describe('transformPreviewFile', () => {
-    it('should add a new tags property if it does not exist', async () => {
+    it('should add a new parameter property if it does not exist', async () => {
       const source = dedent`
         import type { Preview } from '@storybook/react';
 
-        const preview: Preview = {
-          parameters: {
-            controls: {
-              matchers: {
-                color: /(background|color)$/i,
-                date: /Date$/i,
-              },
-            },
-          },
-        };
+        const preview: Preview = {};
 
         export default preview;
       `;
@@ -660,25 +641,37 @@ describe('addonA11yAddonTest', () => {
 
         const preview: Preview = {
           parameters: {
-            controls: {
-              matchers: {
-                color: /(background|color)$/i,
-                date: /Date$/i,
-              },
-            },
-          },
-
-          // The \`a11y-test\` tag controls whether accessibility tests are run as part of a standalone Vitest test run
-          // The tag and its behavior are experimental and subject to change.
-          // For more information please see: https://storybook.js.org/docs/writing-tests/accessibility-testing#configure-accessibility-tests-with-the-test-addon
-          tags: [/*'a11y-test'*/]
+            a11y: {
+              // 'todo' - show a11y violations in the test UI only
+              // 'error' - fail CI on a11y violations
+              // 'off' - skip a11y checks entirely
+              test: 'todo'
+            }
+          }
         };
 
         export default preview;"
       `);
     });
 
-    it('should add a new tags property if it does not exist and a default export does not exist', async () => {
+    it('should add a new parameter property if it does not exist and a default export does not exist', async () => {
+      const source = dedent``;
+
+      const transformed = await transformPreviewFile(source, process.cwd());
+
+      expect(transformed).toMatchInlineSnapshot(`
+        "export const parameters = {
+          a11y: {
+            // 'todo' - show a11y violations in the test UI only
+            // 'error' - fail CI on a11y violations
+            // 'off' - skip a11y checks entirely
+            test: "todo"
+          }
+        };"
+        `);
+    });
+
+    it('should extend the existing parameters property', async () => {
       const source = dedent`
         export const parameters = {
           controls: {
@@ -700,24 +693,26 @@ describe('addonA11yAddonTest', () => {
               date: /Date$/i,
             },
           },
-        }
-        export const tags = ["a11y-test"];"
-      `);
+
+          a11y: {
+            // 'todo' - show a11y violations in the test UI only
+            // 'error' - fail CI on a11y violations
+            // 'off' - skip a11y checks entirely
+            test: "todo"
+          }
+        }"
+        `);
     });
 
-    it('should extend the existing tags property', async () => {
+    it('should not add the test parameter if it already exists', async () => {
       const source = dedent`
         import type { Preview } from "@storybook/react";
 
         const preview: Preview = {
-          tags: ["existingTag"],
           parameters: {
-            controls: {
-              matchers: {
-                color: /(background|color)$/i,
-                date: /Date$/i,
-              },
-            },
+            a11y: {
+              test: "off"
+            }
           },
         };
 
@@ -730,57 +725,10 @@ describe('addonA11yAddonTest', () => {
         "import type { Preview } from "@storybook/react";
 
         const preview: Preview = {
-          // The \`a11y-test\` tag controls whether accessibility tests are run as part of a standalone Vitest test run
-          // The tag and its behavior are experimental and subject to change.
-          // For more information please see: https://storybook.js.org/docs/writing-tests/accessibility-testing#configure-accessibility-tests-with-the-test-addon
-          tags: ["existingTag"/*, "a11y-test"*/],
           parameters: {
-            controls: {
-              matchers: {
-                color: /(background|color)$/i,
-                date: /Date$/i,
-              },
-            },
-          },
-        };
-
-        export default preview;"
-      `);
-    });
-
-    it('should not add a11y-test if it already exists in the tags property', async () => {
-      const source = dedent`
-        import type { Preview } from "@storybook/react";
-
-        const preview: Preview = {
-          tags: ["a11y-test"],
-          parameters: {
-            controls: {
-              matchers: {
-                color: /(background|color)$/i,
-                date: /Date$/i,
-              },
-            },
-          },
-        };
-
-        export default preview;
-      `;
-
-      const transformed = await transformPreviewFile(source, process.cwd());
-
-      expect(transformed).toMatchInlineSnapshot(`
-        "import type { Preview } from "@storybook/react";
-
-        const preview: Preview = {
-          tags: ["a11y-test"],
-          parameters: {
-            controls: {
-              matchers: {
-                color: /(background|color)$/i,
-                date: /Date$/i,
-              },
-            },
+            a11y: {
+              test: "off"
+            }
           },
         };
 
@@ -790,16 +738,7 @@ describe('addonA11yAddonTest', () => {
 
     it('should handle the default export without type annotations', async () => {
       const source = dedent`
-        export default {
-          parameters: {
-            controls: {
-              matchers: {
-                color: /(background|color)$/i,
-                date: /Date$/i,
-              },
-            },
-          },
-        };
+        export default {};
       `;
 
       const transformed = await transformPreviewFile(source, process.cwd());
@@ -807,54 +746,41 @@ describe('addonA11yAddonTest', () => {
       expect(transformed).toMatchInlineSnapshot(`
         "export default {
           parameters: {
-            controls: {
-              matchers: {
-                color: /(background|color)$/i,
-                date: /Date$/i,
-              },
-            },
-          },
-
-          // The \`a11y-test\` tag controls whether accessibility tests are run as part of a standalone Vitest test run
-          // The tag and its behavior are experimental and subject to change.
-          // For more information please see: https://storybook.js.org/docs/writing-tests/accessibility-testing#configure-accessibility-tests-with-the-test-addon
-          tags: [/*"a11y-test"*/]
+            a11y: {
+              // 'todo' - show a11y violations in the test UI only
+              // 'error' - fail CI on a11y violations
+              // 'off' - skip a11y checks entirely
+              test: "todo"
+            }
+          }
         };"
       `);
     });
 
-    it('should extend the existing tags property without type annotations', async () => {
+    it('should handle const parameters with preview object', async () => {
       const source = dedent`
-        export default {
-          tags: ["existingTag"],
-          parameters: {
-            controls: {
-              matchers: {
-                color: /(background|color)$/i,
-                date: /Date$/i,
-              },
-            },
-          },
+        const parameters = {};
+        const preview = {
+          parameters,
         };
+        export default preview;
       `;
 
       const transformed = await transformPreviewFile(source, process.cwd());
 
       expect(transformed).toMatchInlineSnapshot(`
-        "export default {
-          // The \`a11y-test\` tag controls whether accessibility tests are run as part of a standalone Vitest test run
-          // The tag and its behavior are experimental and subject to change.
-          // For more information please see: https://storybook.js.org/docs/writing-tests/accessibility-testing#configure-accessibility-tests-with-the-test-addon
-          tags: ["existingTag"/*, "a11y-test"*/],
-          parameters: {
-            controls: {
-              matchers: {
-                color: /(background|color)$/i,
-                date: /Date$/i,
-              },
-            },
-          },
-        };"
+        "const parameters = {
+          a11y: {
+            // 'todo' - show a11y violations in the test UI only
+            // 'error' - fail CI on a11y violations
+            // 'off' - skip a11y checks entirely
+            test: "todo"
+          }
+        };
+        const preview = {
+          parameters,
+        };
+        export default preview;"
       `);
     });
   });

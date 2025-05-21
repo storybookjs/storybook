@@ -19,8 +19,8 @@ export default { component: Button };
 export const Primary = { args: { primary: true } };
 ```
 
-```ts filename="CSF 3 - Button.stories.ts|tsx" renderer="react" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/react';
+```ts filename="CSF 3 - Button.stories.ts|tsx" renderer="react" language="ts"
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { Button } from './Button';
 
@@ -34,20 +34,7 @@ type Story = StoryObj<typeof meta>;
 export const Primary: Story = { args: { primary: true } };
 ```
 
-```ts filename="CSF 3 - Button.stories.ts|tsx" renderer="react" language="ts"
-import type { Meta, StoryObj } from '@storybook/react';
-
-import { Button } from './Button';
-
-const meta: Meta<typeof Button> = { component: Button };
-
-export default meta;
-type Story = StoryObj<typeof Button>;
-
-export const Primary: Story = { args: { primary: true } };
-```
-
-```ts filename="CSF 3 - Button.stories.ts|tsx" renderer="solid" language="ts-4-9"
+```ts filename="CSF 3 - Button.stories.ts|tsx" renderer="solid" language="ts"
 import type { Meta, StoryObj } from 'storybook-solidjs';
 
 import { Button } from './Button';
@@ -70,19 +57,6 @@ export default { component: Button };
 export const Primary = { args: { primary: true } };
 ```
 
-```ts filename="CSF 3 - Button.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs';
-
-import { Button } from './Button';
-
-const meta: Meta<typeof Button> = { component: Button };
-
-export default meta;
-type Story = StoryObj<typeof Button>;
-
-export const Primary: Story = { args: { primary: true } };
-```
-
 ```js filename="CSF 3 - Button.stories.js" renderer="svelte" language="js"
 import Button from './Button.svelte';
 
@@ -92,11 +66,13 @@ export const Primary = { args: { primary: true } };
 ```
 
 ```ts filename="CSF 3 - Button.stories.ts" renderer="svelte" language="ts"
-import type { Meta, StoryObj } from '@storybook/svelte';
+import type { Meta, StoryObj } from '@storybook/svelte-vite';
 
 import Button from './Button.svelte';
 
-const meta: Meta<typeof Button> = { component: Button };
+const meta = {
+  component: Button,
+} satisfies Meta<typeof Button>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -112,8 +88,8 @@ export default { component: Button };
 export const Primary = { args: { primary: true } };
 ```
 
-```ts filename="CSF 3 - Button.stories.ts" renderer="vue" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/vue3';
+```ts filename="CSF 3 - Button.stories.ts" renderer="vue" language="ts"
+import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import Button from './Button.vue';
 
@@ -121,19 +97,6 @@ const meta = { component: Button } satisfies Meta<typeof Button>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-export const Primary: Story = { args: { primary: true } };
-```
-
-```ts filename="CSF 3 - Button.stories.ts" renderer="vue" language="ts"
-import type { Meta, StoryObj } from '@storybook/vue3';
-
-import Button from './Button.vue';
-
-const meta: Meta<typeof Button> = { component: Button };
-
-export default meta;
-type Story = StoryObj<typeof Button>;
 
 export const Primary: Story = { args: { primary: true } };
 ```
@@ -148,7 +111,7 @@ export const Primary = { args: { primary: true } };
 ```
 
 ```ts filename="CSF 3 - Button.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
   title: 'components/Button',

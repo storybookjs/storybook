@@ -11,8 +11,8 @@ Storybook's API allows developers to interact programmatically with Storybook. W
 
 Our API is exposed via two distinct packages, each one with a different purpose:
 
-* `@storybook/manager-api` used to interact with the Storybook manager UI or access the Storybook API.
-* `@storybook/preview-api` used to control and configure the addon's behavior.
+* `storybook/manager-api` used to interact with the Storybook manager UI or access the Storybook API.
+* `storybook/preview-api` used to control and configure the addon's behavior.
 
 {/* prettier-ignore-start */}
 
@@ -201,15 +201,15 @@ The following options are configurable under the `sidebar` namespace:
 
 The following options are configurable under the `toolbar` namespace:
 
-| Name   | Type   | Description                        | Example Value       |
-| ------ | ------ | ---------------------------------- | ------------------- |
-| **id** | String | Toggle visibility for toolbar item | `{ hidden: false }` |
+| Name      | Type   | Description                                                          | Example Value       |
+| --------- | ------ | -------------------------------------------------------------------- | ------------------- |
+| **[id]**  | String | Toggle visibility for a specific toolbar item (e.g. `title`, `zoom`) | `{ hidden: false }` |
 
 ***
 
 ## Storybook hooks
 
-To help streamline addon development and reduce boilerplate code, the API exposes a set of hooks to access Storybook's internals. These hooks are an extension of the `@storybook/manager-api` package.
+To help streamline addon development and reduce boilerplate code, the API exposes a set of hooks to access Storybook's internals. These hooks are an extension of the `storybook/manager-api` module.
 
 ### useStorybookState
 

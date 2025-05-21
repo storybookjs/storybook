@@ -1,5 +1,6 @@
-import type { ReactNode } from 'react';
 import React from 'react';
+
+import { styled } from 'storybook/internal/theming';
 
 import { FaceHappyIcon } from '@storybook/icons';
 
@@ -13,13 +14,9 @@ const meta = preview.meta({
   args: { children: 'Button' },
 });
 
-const Stack = ({ children }: { children: ReactNode }) => (
-  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>{children}</div>
-);
+const Stack = styled.div({ display: 'flex', flexDirection: 'column', gap: '1rem' });
 
-const Row = ({ children }: { children: ReactNode }) => (
-  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>{children}</div>
-);
+const Row = styled.div({ display: 'flex', alignItems: 'center', gap: '1rem' });
 
 export const Base = meta.story({});
 
@@ -61,6 +58,40 @@ export const Variants = meta.story({
       </Row>
     </Stack>
   ),
+});
+
+export const PseudoStates = meta.story({
+  render: () => (
+    <Stack>
+      <Row>
+        <Button variant="solid">Button</Button>
+        <Button variant="outline">Button</Button>
+        <Button variant="ghost">Button</Button>
+      </Row>
+      <Row id="hover">
+        <Button variant="solid">Hover</Button>
+        <Button variant="outline">Hover</Button>
+        <Button variant="ghost">Hover</Button>
+      </Row>
+      <Row id="focus">
+        <Button variant="solid">Focus</Button>
+        <Button variant="outline">Focus</Button>
+        <Button variant="ghost">Focus</Button>
+      </Row>
+      <Row id="active">
+        <Button variant="solid">Active</Button>
+        <Button variant="outline">Active</Button>
+        <Button variant="ghost">Active</Button>
+      </Row>
+    </Stack>
+  ),
+  parameters: {
+    pseudo: {
+      hover: '#hover button',
+      focus: '#focus button',
+      active: '#active button',
+    },
+  },
 });
 
 export const Active = meta.story({

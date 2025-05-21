@@ -1,9 +1,8 @@
 import { cp } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 
-import { getDirectoryFromWorkingDir } from '@storybook/core/common';
-
-import { logger } from '@storybook/core/node-logger';
+import { getDirectoryFromWorkingDir } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
 
@@ -17,7 +16,7 @@ export async function copyAllStaticFiles(staticDirs: any[] | undefined, outputDi
           const { staticDir, staticPath, targetDir } = parseStaticDir(dir);
           const targetPath = join(outputDir, targetDir);
 
-          // we copy prebuild static files from node_modules/@storybook/manager & preview
+          // we copy prebuild static files from node_modules/storybook/internal/manager & preview
           if (!staticDir.includes('node_modules')) {
             const from = picocolors.cyan(print(staticDir));
             const to = picocolors.cyan(print(targetDir));

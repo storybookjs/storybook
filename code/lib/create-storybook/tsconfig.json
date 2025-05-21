@@ -1,5 +1,8 @@
 {
   "extends": "../../tsconfig.json",
-  "compilerOptions": {},
-  "include": ["src/**/*"]
+  "compilerOptions": {
+    "moduleResolution": "bundler",
+    "module": "ES2022"
+  },
+  "include": ["src/**/*", "./src/typings.d.ts"]
 }

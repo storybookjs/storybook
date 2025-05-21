@@ -36,7 +36,7 @@ If you don’t want to use Emotion, you can use inline styles or another css-in-
 
 ## Storybook components
 
-Addon authors can develop their UIs using any React library. But we recommend using Storybook’s UI components in `@storybook/components` to build addons faster. When you use Storybook components, you get:
+Addon authors can develop their UIs using any React library. But we recommend using Storybook’s UI components in `storybook/internal/components` to build addons faster. When you use Storybook components, you get:
 
 * Battle-tested off-the-shelf components
 * Storybook native look and feel
@@ -71,7 +71,7 @@ Complementing the components, also included is a set of UI primitives. Use the c
 
 <Callout variant="info">
 
-  The color palette implemented by `@storybook/components` is a high-level abstraction of the [`@storybook/theming`](https://github.com/storybookjs/storybook/tree/next/code/lib/theming/src) package.
+  The color palette implemented by `storybook/internal/components` is a high-level abstraction of the [`storybook/theming`](https://github.com/storybookjs/storybook/tree/next/code/core/src/theming) module.
   
 </Callout>
 
@@ -121,4 +121,4 @@ If you're working on a preset that loads third-party addons, which you don't hav
 
 {/* prettier-ignore-end */}
 
-If you have control over the addons you want to customize. In that case, you can update your preset and implement a custom function to load any additional presets and provide the necessary configuration, similar to how it's implemented in the [Essentials](../essentials/index.mdx) addon.
+If you have control over the addons you want to customize. In that case, you can update your preset and implement a custom function to load any additional presets and provide the necessary configuration.

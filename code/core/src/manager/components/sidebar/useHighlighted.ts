@@ -1,10 +1,11 @@
 import type { Dispatch, MutableRefObject, RefObject, SetStateAction } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { PRELOAD_ENTRIES } from 'storybook/internal/core-events';
+
 import { global } from '@storybook/global';
 
-import { PRELOAD_ENTRIES } from '@storybook/core/core-events';
-import { useStorybookApi } from '@storybook/core/manager-api';
+import { useStorybookApi } from 'storybook/manager-api';
 
 import { matchesKeyCode, matchesModifiers } from '../../keybinding';
 import { cycle, isAncestor, scrollIntoView } from '../../utils/tree';

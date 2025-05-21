@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { Addon_TypesEnum as types } from '@storybook/core/types';
+import { Addon_TypesEnum as types } from 'storybook/internal/types';
 
 import { init as initAddons } from '../modules/addons';
 

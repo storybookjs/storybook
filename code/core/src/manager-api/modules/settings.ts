@@ -1,4 +1,4 @@
-import type { API_Settings, StoryId } from '@storybook/core/types';
+import type { API_Settings, StoryId } from 'storybook/internal/types';
 
 import type { ModuleFn } from '../lib/types';
 

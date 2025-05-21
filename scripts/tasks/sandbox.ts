@@ -1,8 +1,10 @@
+import path from 'node:path';
+import { join } from 'node:path';
+import { promisify } from 'node:util';
+
 import dirSize from 'fast-folder-size';
 // eslint-disable-next-line depend/ban-dependencies
 import { pathExists, remove } from 'fs-extra';
-import { join } from 'path';
-import { promisify } from 'util';
 
 import { now, saveBench } from '../bench/utils';
 import type { Task, TaskKey } from '../task';
@@ -49,7 +51,8 @@ export const sandbox: Task = {
 
       options.link = false;
     }
-    if (await this.ready(details, options)) {
+
+    if (!(await this.ready(details, options))) {
       logger.info('🗑  Removing old sandbox dir');
       await remove(details.sandboxDir);
     }
@@ -76,11 +79,13 @@ export const sandbox: Task = {
 
     const shouldAddVitestIntegration = !details.template.skipTasks?.includes('vitest-integration');
 
+    options.addon.push('@storybook/addon-a11y');
+
     if (shouldAddVitestIntegration) {
       extraDeps.push('happy-dom', 'vitest', 'playwright', '@vitest/browser');
 
       if (details.template.expected.framework.includes('nextjs')) {
-        extraDeps.push('@storybook/experimental-nextjs-vite', 'jsdom');
+        extraDeps.push('@storybook/nextjs-vite', 'jsdom');
       }
 
       // if (details.template.expected.renderer === '@storybook/svelte') {
@@ -91,11 +96,7 @@ export const sandbox: Task = {
       //   extraDeps.push('@testing-library/angular', '@analogjs/vitest-angular');
       // }
 
-      options.addon = [
-        ...options.addon,
-        '@storybook/experimental-addon-test',
-        '@storybook/addon-a11y',
-      ];
+      options.addon.push('@storybook/addon-vitest');
     }
 
     let startTime = now();
@@ -145,6 +146,13 @@ export const sandbox: Task = {
     await extendMain(details, options);
 
     await setImportMap(details.sandboxDir);
+
+    const { JsPackageManagerFactory } = await import('../../code/core/src/common');
+
+    const packageManager = JsPackageManagerFactory.getPackageManager({}, details.sandboxDir);
+
+    await remove(path.join(details.sandboxDir, 'node_modules'));
+    await packageManager.installDependencies();
 
     await runMigrations(details, options);
 

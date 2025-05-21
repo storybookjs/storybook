@@ -25,7 +25,7 @@ export function reactNativeWeb(): PluginOption {
         optimizeDeps: {
           include: [],
           esbuildOptions: {
-            jsx: 'transform',
+            jsx: 'automatic',
             resolveExtensions: [
               '.web.js',
               '.web.ts',

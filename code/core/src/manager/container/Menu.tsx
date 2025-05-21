@@ -1,13 +1,14 @@
 import type { FC } from 'react';
 import React, { useCallback, useMemo } from 'react';
 
-import { Badge } from '@storybook/core/components';
-import { styled, useTheme } from '@storybook/core/theming';
+import { Badge } from 'storybook/internal/components';
+import { STORIES_COLLAPSE_ALL } from 'storybook/internal/core-events';
+
 import { CheckIcon, InfoIcon, ShareAltIcon, WandIcon } from '@storybook/icons';
 
-import { STORIES_COLLAPSE_ALL } from '@storybook/core/core-events';
-import type { API, State } from '@storybook/core/manager-api';
-import { shortcutToHumanString } from '@storybook/core/manager-api';
+import type { API, State } from 'storybook/manager-api';
+import { shortcutToHumanString } from 'storybook/manager-api';
+import { styled, useTheme } from 'storybook/theming';
 
 import type { Link } from '../../components/components/tooltip/TooltipLinkList';
 

@@ -33,7 +33,6 @@ export const getVirtualModules = async (options: Options) => {
         // If entry is an object, use the absolute import specifier.
         // This is to maintain back-compat with community addons that bundle other addons
         // and package managers that "hide" sub dependencies (e.g. pnpm / yarn pnp)
-        // The vite builder uses the bare import specifier.
         if (typeof entry === 'object') {
           return entry.absolute;
         }

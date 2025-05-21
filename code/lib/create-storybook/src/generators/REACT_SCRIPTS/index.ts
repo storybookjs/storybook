@@ -1,16 +1,16 @@
 import { existsSync } from 'node:fs';
-import { join, resolve } from 'node:path';
-
-import { CoreBuilder } from 'storybook/internal/cli';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import semver from 'semver';
 import { dedent } from 'ts-dedent';
 
+import { CoreBuilder } from '../../../../../core/src/cli/project_types';
 import { baseGenerator } from '../baseGenerator';
 import type { Generator } from '../types';
 
 const generator: Generator = async (packageManager, npmOptions, options) => {
-  const monorepoRootPath = join(__dirname, '..', '..', '..', '..', '..', '..');
+  const monorepoRootPath = fileURLToPath(new URL('../../../../../../..', import.meta.url));
   const extraMain = options.linkable
     ? {
         webpackFinal: `%%(config) => {

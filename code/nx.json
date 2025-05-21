@@ -11,12 +11,6 @@
       "options": {
         "testTargetName": "test"
       }
-    },
-    {
-      "plugin": "@nx/eslint/plugin",
-      "options": {
-        "targetName": "lint"
-      }
     }
   ],
   "tasksRunnerOptions": {
@@ -69,17 +63,6 @@
       },
       "inputs": ["default", "^production", "{workspaceRoot}/../scripts/prepare/check.ts"],
       "dependsOn": ["build"],
-      "cache": true
-    },
-    "lint": {
-      "executor": "nx:run-commands",
-      "options": {
-        "cwd": "{workspaceRoot}",
-        "command": "yarn lint:js:cmd {projectRoot}",
-        "args": "--quiet"
-      },
-      "dependsOn": ["build"],
-      "inputs": ["default", "{workspaceRoot}/{.eslintignore,.eslintrc.js}"],
       "cache": true
     },
     "sandbox": {

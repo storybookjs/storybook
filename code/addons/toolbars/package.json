@@ -1,17 +1,9 @@
 {
   "name": "@storybook/addon-toolbars",
-  "version": "8.6.0-alpha.4",
-  "description": "Create your own toolbar items that control story rendering",
-  "keywords": [
-    "addon",
-    "storybook",
-    "theming",
-    "i18n",
-    "internationalization",
-    "test",
-    "essentials"
-  ],
-  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/addons/toolbars",
+  "version": "9.0.0-rc.3",
+  "description": "Empty package - please don't use it anymore",
+  "keywords": [],
+  "homepage": "https://github.com/storybookjs/storybook",
   "bugs": {
     "url": "https://github.com/storybookjs/storybook/issues"
   },
@@ -31,6 +23,11 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
     },
+    "./preview": {
+      "types": "./dist/preview.d.ts",
+      "import": "./dist/preview.mjs",
+      "require": "./dist/preview.js"
+    },
     "./manager": "./dist/manager.js",
     "./register": "./dist/manager.js",
     "./package.json": "./package.json"
@@ -38,6 +35,16 @@
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "*": [
+        "dist/index.d.ts"
+      ],
+      "preview": [
+        "dist/preview.d.ts"
+      ]
+    }
+  },
   "files": [
     "dist/**/*",
     "README.md",
@@ -49,14 +56,6 @@
     "check": "jiti ../../../scripts/prepare/check.ts",
     "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
   },
-  "devDependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "typescript": "^5.7.3"
-  },
-  "peerDependencies": {
-    "storybook": "workspace:^"
-  },
   "publishConfig": {
     "access": "public"
   },
@@ -66,14 +65,10 @@
     ],
     "managerEntries": [
       "./src/manager.tsx"
+    ],
+    "previewEntries": [
+      "./src/preview.tsx"
     ]
   },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16",
-  "storybook": {
-    "displayName": "Toolbars",
-    "icon": "https://user-images.githubusercontent.com/263385/101991677-48cdf300-3c7c-11eb-93b4-19b0e3366959.png",
-    "unsupportedFrameworks": [
-      "react-native"
-    ]
-  }
+  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
 }

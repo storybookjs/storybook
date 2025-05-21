@@ -1,96 +1,91 @@
-/* eslint-disable no-underscore-dangle */
-import type {
-  Args,
-  ComponentAnnotations,
-  NormalizedComponentAnnotations,
-  NormalizedProjectAnnotations,
-  NormalizedStoryAnnotations,
-  ProjectAnnotations,
-  Renderer,
-  StoryAnnotations,
-} from '@storybook/core/types';
+import { toStartCaseStr } from './toStartCaseStr';
 
-import { composeConfigs, normalizeProjectAnnotations } from '@storybook/core/preview-api';
+/**
+ * Remove punctuation and illegal characters from a story ID.
+ *
+ * See https://gist.github.com/davidjrice/9d2af51100e41c6c4b4a
+ */
+export const sanitize = (string: string) => {
+  return string
+    .toLowerCase()
 
-export interface Preview<TRenderer extends Renderer = Renderer> {
-  readonly _tag: 'Preview';
-  input: ProjectAnnotations<TRenderer>;
-  composed: NormalizedProjectAnnotations<TRenderer>;
+    .replace(/[ ’–—―′¿'`~!@#$%^&*()_|+\-=?;:'",.<>\{\}\[\]\\\/]/gi, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+/, '')
+    .replace(/-+$/, '');
+};
 
-  meta(input: ComponentAnnotations<TRenderer>): Meta<TRenderer>;
+const sanitizeSafe = (string: string, part: string) => {
+  const sanitized = sanitize(string);
+  if (sanitized === '') {
+    throw new Error(`Invalid ${part} '${string}', must include alphanumeric characters`);
+  }
+  return sanitized;
+};
+
+/** Generate a storybook ID from a component/kind and story name. */
+export const toId = (kind: string, name?: string) =>
+  `${sanitizeSafe(kind, 'kind')}${name ? `--${sanitizeSafe(name, 'name')}` : ''}`;
+
+/** Transform a CSF named export into a readable story name */
+export const storyNameFromExport = (key: string) => toStartCaseStr(key);
+
+type StoryDescriptor = string[] | RegExp;
+export interface IncludeExcludeOptions {
+  includeStories?: StoryDescriptor;
+  excludeStories?: StoryDescriptor;
 }
 
-export function definePreview<TRenderer extends Renderer>(
-  preview: Preview<TRenderer>['input']
-): Preview<TRenderer> {
+function matches(storyKey: string, arrayOrRegex: StoryDescriptor) {
+  if (Array.isArray(arrayOrRegex)) {
+    return arrayOrRegex.includes(storyKey);
+  }
+  return storyKey.match(arrayOrRegex);
+}
+
+/** Does a named export match CSF inclusion/exclusion options? */
+export function isExportStory(
+  key: string,
+  { includeStories, excludeStories }: IncludeExcludeOptions
+) {
+  return (
+    // https://babeljs.io/docs/en/babel-plugin-transform-modules-commonjs
+    key !== '__esModule' &&
+    (!includeStories || matches(key, includeStories)) &&
+    (!excludeStories || !matches(key, excludeStories))
+  );
+}
+
+export interface SeparatorOptions {
+  rootSeparator: string | RegExp;
+  groupSeparator: string | RegExp;
+}
+
+/** Parse out the component/kind name from a path, using the given separator config. */
+export const parseKind = (kind: string, { rootSeparator, groupSeparator }: SeparatorOptions) => {
+  const [root, remainder] = kind.split(rootSeparator, 2);
+  const groups = (remainder || kind).split(groupSeparator).filter((i) => !!i);
+
+  // when there's no remainder, it means the root wasn't found/split
   return {
-    _tag: 'Preview',
-    input: preview,
-    get composed() {
-      const { addons, ...rest } = preview;
-      return normalizeProjectAnnotations<TRenderer>(composeConfigs([...(addons ?? []), rest]));
-    },
-    meta(meta: ComponentAnnotations<TRenderer>) {
-      return defineMeta(meta, this);
-    },
+    root: remainder ? root : null,
+    groups,
   };
-}
+};
 
-export function isPreview(input: unknown): input is Preview<Renderer> {
-  return input != null && typeof input === 'object' && '_tag' in input && input?._tag === 'Preview';
-}
+/** Combine a set of project / meta / story tags, removing duplicates and handling negations. */
+export const combineTags = (...tags: string[]): string[] => {
+  const result = tags.reduce((acc, tag) => {
+    if (tag.startsWith('!')) {
+      acc.delete(tag.slice(1));
+    } else {
+      acc.add(tag);
+    }
+    return acc;
+  }, new Set<string>());
+  return Array.from(result);
+};
 
-export interface Meta<TRenderer extends Renderer, TArgs extends Args = Args> {
-  readonly _tag: 'Meta';
-  input: ComponentAnnotations<TRenderer, TArgs>;
-  composed: NormalizedComponentAnnotations<TRenderer>;
-  preview: Preview<TRenderer>;
-
-  story(input: ComponentAnnotations<TRenderer, TArgs>): Story<TRenderer, TArgs>;
-}
-
-export function isMeta(input: unknown): input is Meta<Renderer> {
-  return input != null && typeof input === 'object' && '_tag' in input && input?._tag === 'Meta';
-}
-
-function defineMeta<TRenderer extends Renderer>(
-  input: ComponentAnnotations<TRenderer>,
-  preview: Preview<TRenderer>
-): Meta<TRenderer> {
-  return {
-    _tag: 'Meta',
-    input,
-    preview,
-    get composed(): never {
-      throw new Error('Not implemented');
-    },
-    story(story: StoryAnnotations<TRenderer>) {
-      return defineStory(story, this);
-    },
-  };
-}
-
-export interface Story<TRenderer extends Renderer, TArgs extends Args = Args> {
-  readonly _tag: 'Story';
-  input: StoryAnnotations<TRenderer, TArgs>;
-  composed: NormalizedStoryAnnotations<TRenderer>;
-  meta: Meta<TRenderer, TArgs>;
-}
-
-function defineStory<TRenderer extends Renderer>(
-  input: ComponentAnnotations<TRenderer>,
-  meta: Meta<TRenderer>
-): Story<TRenderer> {
-  return {
-    _tag: 'Story',
-    input,
-    meta,
-    get composed(): never {
-      throw new Error('Not implemented');
-    },
-  };
-}
-
-export function isStory<TRenderer extends Renderer>(input: unknown): input is Story<TRenderer> {
-  return input != null && typeof input === 'object' && '_tag' in input && input?._tag === 'Story';
-}
+export { includeConditionalArg } from './includeConditionalArg';
+export * from './story';
+export * from './csf-factories';

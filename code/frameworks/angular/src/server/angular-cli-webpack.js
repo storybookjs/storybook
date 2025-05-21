@@ -8,39 +8,12 @@ const {
   default: StorybookNormalizeAngularEntryPlugin,
 } = require('./plugins/storybook-normalize-angular-entry-plugin');
 
-const getAngularWebpackUtils = () => {
-  try {
-    // Angular < 16.1.0
-    const {
-      getCommonConfig,
-      getStylesConfig,
-      getDevServerConfig,
-      getTypeScriptConfig,
-    } = require('@angular-devkit/build-angular/src/webpack/configs');
-
-    return {
-      getCommonConfig,
-      getStylesConfig,
-      getDevServerConfig,
-      getTypeScriptConfig,
-    };
-  } catch (e) {
-    // Angular > 16.1.0
-    const {
-      getCommonConfig,
-      getStylesConfig,
-      getDevServerConfig,
-      getTypeScriptConfig,
-    } = require('@angular-devkit/build-angular/src/tools/webpack/configs');
-
-    return {
-      getCommonConfig,
-      getStylesConfig,
-      getDevServerConfig,
-      getTypeScriptConfig,
-    };
-  }
-};
+const {
+  getCommonConfig,
+  getStylesConfig,
+  getDevServerConfig,
+  getTypeScriptConfig,
+} = require('@angular-devkit/build-angular/src/tools/webpack/configs');
 
 /**
  * Extract webpack config from angular-cli 13.x.x ⚠️ This file is in JavaScript to not use
@@ -52,8 +25,6 @@ const getAngularWebpackUtils = () => {
  */
 exports.getWebpackConfig = async (baseConfig, { builderOptions, builderContext }) => {
   /** Get angular-cli Webpack config */
-  const { getCommonConfig, getStylesConfig, getDevServerConfig, getTypeScriptConfig } =
-    getAngularWebpackUtils();
   const { config: cliConfig } = await generateI18nBrowserWebpackConfigFromContext(
     {
       // Default options
@@ -85,11 +56,15 @@ exports.getWebpackConfig = async (baseConfig, { builderOptions, builderContext }
     ]
   );
 
+  if (!builderOptions.experimentalZoneless && !cliConfig.entry.polyfills?.includes('zone.js')) {
+    cliConfig.entry.polyfills.push('zone.js');
+  }
+
   /** Merge baseConfig Webpack with angular-cli Webpack */
   const entry = [
+    ...(cliConfig.entry.polyfills ?? []),
     ...baseConfig.entry,
     ...(cliConfig.entry.styles ?? []),
-    ...(cliConfig.entry.polyfills ?? []),
   ];
 
   // Don't use storybooks styling rules because we have to use rules created by @angular-devkit/build-angular

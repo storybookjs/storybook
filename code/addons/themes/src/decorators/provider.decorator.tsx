@@ -1,8 +1,8 @@
-// eslint-disable-next-line import/no-extraneous-dependencies
 import React from 'react';
 
-import { useMemo } from 'storybook/internal/preview-api';
 import type { DecoratorFunction, Renderer } from 'storybook/internal/types';
+
+import { useMemo } from 'storybook/preview-api';
 
 import { PARAM_KEY } from '../constants';
 import { initializeThemeState, pluckThemeFromContext } from './helpers';

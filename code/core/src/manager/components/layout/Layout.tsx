@@ -1,8 +1,10 @@
 import React, { useEffect, useLayoutEffect, useState } from 'react';
 
-import { Match } from '@storybook/core/router';
-import { styled } from '@storybook/core/theming';
-import type { API_Layout, API_ViewMode } from '@storybook/core/types';
+import { Match } from 'storybook/internal/router';
+import type { API_Layout, API_ViewMode } from 'storybook/internal/types';
+
+import { type API, useStorybookApi } from 'storybook/manager-api';
+import { styled } from 'storybook/theming';
 
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
 import { Notifications } from '../../container/Notifications';
@@ -44,11 +46,13 @@ const layoutStateIsEqual = (state: ManagerLayoutState, other: ManagerLayoutState
  * manager store to the internal state here when necessary
  */
 const useLayoutSyncingState = ({
+  api,
   managerLayoutState,
   setManagerLayoutState,
   isDesktop,
   hasTab,
 }: {
+  api: API;
   managerLayoutState: Props['managerLayoutState'];
   setManagerLayoutState: Props['setManagerLayoutState'];
   isDesktop: boolean;
@@ -108,8 +112,10 @@ const useLayoutSyncingState = ({
     ? internalDraggingSizeState
     : managerLayoutState;
 
+  const customisedNavSize = api.getNavSizeWithCustomisations?.(navSize) ?? navSize;
+
   return {
-    navSize,
+    navSize: customisedNavSize,
     rightPanelWidth,
     bottomPanelHeight,
     panelPosition: managerLayoutState.panelPosition,
@@ -120,9 +126,21 @@ const useLayoutSyncingState = ({
     isDragging: internalDraggingSizeState.isDragging,
   };
 };
+const MainContentMatcher = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <Match path={/(^\/story|docs|onboarding\/|^\/$)/} startsWith={false}>
+      {({ match }) => <ContentContainer shown={!!match}>{children}</ContentContainer>}
+    </Match>
+  );
+};
+
+const OrderedMobileNavigation = styled(MobileNavigation)({
+  order: 1,
+});
 
 export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...slots }: Props) => {
   const { isDesktop, isMobile } = useLayout();
+  const api = useStorybookApi();
 
   const {
     navSize,
@@ -134,7 +152,7 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
     showPages,
     showPanel,
     isDragging,
-  } = useLayoutSyncingState({ managerLayoutState, setManagerLayoutState, isDesktop, hasTab });
+  } = useLayoutSyncingState({ api, managerLayoutState, setManagerLayoutState, isDesktop, hasTab });
 
   return (
     <LayoutContainer
@@ -147,15 +165,15 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
       showPanel={showPanel}
     >
       {showPages && <PagesContainer>{slots.slotPages}</PagesContainer>}
-      <Match path={/(^\/story|docs|onboarding\/|^\/$)/} startsWith={false}>
-        {({ match }) => <ContentContainer shown={!!match}>{slots.slotMain}</ContentContainer>}
-      </Match>
       {isDesktop && (
         <>
           <SidebarContainer>
             <Drag ref={sidebarResizerRef} />
             {slots.slotSidebar}
           </SidebarContainer>
+
+          <MainContentMatcher>{slots.slotMain}</MainContentMatcher>
+
           {showPanel && (
             <PanelContainer position={panelPosition}>
               <Drag
@@ -168,14 +186,16 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
           )}
         </>
       )}
+
       {isMobile && (
         <>
-          <Notifications />
-          <MobileNavigation
+          <OrderedMobileNavigation
             menu={slots.slotSidebar}
             panel={slots.slotPanel}
             showPanel={showPanel}
           />
+          <MainContentMatcher>{slots.slotMain}</MainContentMatcher>
+          <Notifications />
         </>
       )}
     </LayoutContainer>

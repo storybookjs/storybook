@@ -9,7 +9,7 @@ export default {
 ```
 
 ```ts filename=".storybook/main.ts" renderer="react-native-web" language="ts"
-import { StorybookConfig } from '@storybook/react-native-web-vite';
+import type { StorybookConfig } from '@storybook/react-native-web-vite';
 
 const config: StorybookConfig = {
   addons: [

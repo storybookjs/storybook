@@ -12,7 +12,6 @@ import { fileURLToPath } from 'node:url';
 import { execaCommand } from 'execa';
 
 const filename = fileURLToPath(import.meta.url);
-// eslint-disable-next-line no-underscore-dangle, @typescript-eslint/naming-convention
 const __dirname = dirname(filename);
 
 const rootPackageJsonPath = resolve(__dirname, '../../package.json');

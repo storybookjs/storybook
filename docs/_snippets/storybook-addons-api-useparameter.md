@@ -1,9 +1,9 @@
 ```js filename="my-addon/manager.js|ts" renderer="common" language="js"
 import React from 'react';
 
-import { AddonPanel } from '@storybook/components';
+import { AddonPanel } from 'storybook/internal/components';
 
-import { useParameter } from '@storybook/manager-api';
+import { useParameter } from 'storybook/manager-api';
 
 export const Panel = () => {
   // Connects to Storybook's API and retrieves the value of the custom parameter for the current story

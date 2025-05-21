@@ -5,8 +5,9 @@ import {
 } from 'storybook/internal/core-events';
 
 import { global as globalThis } from '@storybook/global';
-import { expect, userEvent, within } from '@storybook/test';
 import type { Meta, StoryFn, StoryObj } from '@storybook/vue3';
+
+import { expect, userEvent, within } from 'storybook/test';
 
 import ReactiveArgs from './ReactiveArgs.vue';
 
@@ -102,6 +103,8 @@ const ReactiveCSF2WrapperTempl: StoryFn = (args) => ({
 });
 
 export const ReactiveCSF2Wrapper = ReactiveCSF2WrapperTempl.bind({});
+
+ReactiveCSF2Wrapper.tags = ['!test'];
 
 ReactiveCSF2Wrapper.args = {
   label: 'CSF2 Wrapped Button',

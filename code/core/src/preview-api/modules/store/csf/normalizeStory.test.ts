@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import type { Renderer, StoryAnnotationsOrFn } from '@storybook/core/types';
+import type { Renderer, StoryAnnotationsOrFn } from 'storybook/internal/types';
 
 import { normalizeStory } from './normalizeStory';
 
-vi.mock('@storybook/core/client-logger');
+vi.mock('storybook/internal/client-logger');
 
 describe('normalizeStory', () => {
   describe('id generation', () => {
@@ -52,11 +52,11 @@ describe('normalizeStory', () => {
       const meta = { id: 'title', title: 'title' };
       expect(normalizeStory('storyExport', storyFn, meta)).toMatchInlineSnapshot(`
         {
+          "afterEach": [],
           "argTypes": {},
           "args": {},
           "beforeEach": [],
           "decorators": [],
-          "experimental_afterEach": [],
           "globals": {},
           "id": "title--story-export",
           "loaders": [],
@@ -124,11 +124,11 @@ describe('normalizeStory', () => {
         const normalized = normalizeStory('storyExport', storyObj, meta);
         expect(normalized).toMatchInlineSnapshot(`
           {
+            "afterEach": [],
             "argTypes": {},
             "args": {},
             "beforeEach": [],
             "decorators": [],
-            "experimental_afterEach": [],
             "globals": {},
             "id": "title--story-export",
             "loaders": [],
@@ -154,6 +154,7 @@ describe('normalizeStory', () => {
         const { moduleExport, ...normalized } = normalizeStory('storyExport', storyObj, meta);
         expect(normalized).toMatchInlineSnapshot(`
           {
+            "afterEach": [],
             "argTypes": {
               "storyArgType": {
                 "name": "storyArgType",
@@ -169,7 +170,6 @@ describe('normalizeStory', () => {
             "decorators": [
               [Function],
             ],
-            "experimental_afterEach": [],
             "globals": {},
             "id": "title--story-export",
             "loaders": [
@@ -205,6 +205,7 @@ describe('normalizeStory', () => {
         const { moduleExport, ...normalized } = normalizeStory('storyExport', storyObj, meta);
         expect(normalized).toMatchInlineSnapshot(`
           {
+            "afterEach": [],
             "argTypes": {
               "storyArgType": {
                 "name": "storyArgType",
@@ -228,7 +229,6 @@ describe('normalizeStory', () => {
               [Function],
               [Function],
             ],
-            "experimental_afterEach": [],
             "globals": {},
             "id": "title--story-export",
             "loaders": [

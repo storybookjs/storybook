@@ -1,6 +1,6 @@
 <script module>
   import { defineMeta as d } from '@storybook/addon-svelte-csf';
-  import { expect, within } from '@storybook/test';
+  import { expect, within } from 'storybook/test';
 
   /**
    * Testing if **overriding identifier names** of the addon important AST nodes does work.

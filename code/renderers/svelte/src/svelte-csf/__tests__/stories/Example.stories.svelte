@@ -1,5 +1,5 @@
 <script module lang="ts">
-  import { action } from '@storybook/addon-actions';
+  import { fn } from 'storybook/test';
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
   import Example from './Example.svelte';
@@ -18,9 +18,9 @@
     component: Example,
     tags: ['autodocs'],
     args: {
-      onclick: action('onclick'),
-      onmouseenter: action('onmouseenter'),
-      onmouseleave: action('onmouseleave'),
+      onclick: fn(),
+      onmouseenter: fn(),
+      onmouseleave: fn(),
     },
   });
 </script>

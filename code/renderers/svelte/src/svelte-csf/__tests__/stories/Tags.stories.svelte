@@ -25,6 +25,9 @@
   play={() => {
     throw new Error('This error is on purpose');
   }}
+  parameters={{
+    chromatic: { disableSnapshot: true },
+  }}
 >
   This story fails interaction testing, but should not run in Vitest because it has the
   <code>"!test"</code> tag.

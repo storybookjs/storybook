@@ -1,4 +1,4 @@
-import boxen, { type Options as BoxenOptions } from 'boxen';
+import boxen from 'boxen';
 import prompts from 'prompts';
 
 type Option = {
@@ -84,6 +84,15 @@ const select = async <T>(
   );
 
   return result.value as T;
+};
+
+type BoxenOptions = {
+  borderStyle?: 'round' | 'none';
+  padding?: number;
+  title?: string;
+  titleAlignment?: 'left' | 'center' | 'right';
+  borderColor?: string;
+  backgroundColor?: string;
 };
 
 const logBox = (message: string, style?: BoxenOptions) => {

@@ -1,15 +1,19 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { readFile, writeFile } from 'node:fs/promises';
-import { dirname, resolve } from 'node:path';
+import { dirname, join as pathJoin, resolve } from 'node:path';
 
 // eslint-disable-next-line depend/ban-dependencies
 import { type CommonOptions, execaCommand, execaCommandSync } from 'execa';
+import { findUpSync } from 'find-up';
+// eslint-disable-next-line depend/ban-dependencies
+import { globby } from 'globby';
 import picocolors from 'picocolors';
 import { gt, satisfies } from 'semver';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 
 import { HandledError } from '../utils/HandledError';
+import { getProjectRoot } from '../utils/paths';
 import storybookPackagesVersions from '../versions';
 import type { PackageJson, PackageJsonWithDepsAndDevDeps } from './PackageJson';
 import type { InstallationMetadata } from './types';
@@ -50,6 +54,10 @@ interface JsPackageManagerOptions {
 export abstract class JsPackageManager {
   public abstract readonly type: PackageManagerName;
 
+  public readonly projectRoot: string;
+  private monorepoRootPackageJsonPath: string | null = null;
+  public storybookInstanceDirs: string[];
+
   public abstract initPackageJson(): Promise<void>;
 
   public abstract getRunStorybookCommand(): string;
@@ -73,6 +81,13 @@ export abstract class JsPackageManager {
 
   constructor(options?: JsPackageManagerOptions) {
     this.cwd = options?.cwd || process.cwd();
+    this.projectRoot = getProjectRoot();
+    this.storybookInstanceDirs = [];
+  }
+
+  public async init() {
+    this.monorepoRootPackageJsonPath = await this._getMonorepoRootPackageJsonPath(this.projectRoot);
+    this.storybookInstanceDirs = await this.getAllStorybookInstances(this.projectRoot);
   }
 
   /**
@@ -122,27 +137,29 @@ export abstract class JsPackageManager {
   }
 
   /** Install dependencies listed in `package.json` */
-  public async installDependencies() {
+  public async installDependencies(installInDir?: string) {
     logger.log('Installing dependencies...');
     logger.log();
+    const targetDir = installInDir || this.projectRoot;
 
     try {
-      await this.runInstall();
+      await this.runInstall(targetDir);
     } catch (e) {
       logger.error('An error occurred while installing dependencies.');
       throw new HandledError(e);
     }
   }
 
-  packageJsonPath(): string {
-    if (!this.cwd) {
-      throw new Error('Missing cwd');
+  packageJsonPath(directory?: string): string {
+    const targetDir = directory || this.cwd;
+    if (!targetDir) {
+      throw new Error('Missing directory for package.json path');
     }
-    return resolve(this.cwd, 'package.json');
+    return resolve(targetDir, 'package.json');
   }
 
-  async readPackageJson(): Promise<PackageJson> {
-    const packageJsonPath = this.packageJsonPath();
+  async readPackageJson(directory?: string): Promise<PackageJson> {
+    const packageJsonPath = this.packageJsonPath(directory);
     if (!existsSync(packageJsonPath)) {
       throw new Error(`Could not read package.json file at ${packageJsonPath}`);
     }
@@ -151,7 +168,7 @@ export abstract class JsPackageManager {
     return JSON.parse(jsonContent);
   }
 
-  async writePackageJson(packageJson: PackageJson) {
+  async writePackageJson(packageJson: PackageJson, directory?: string) {
     const packageJsonToWrite = { ...packageJson };
     // make sure to not accidentally add empty fields
     if (
@@ -174,26 +191,30 @@ export abstract class JsPackageManager {
     }
 
     const content = `${JSON.stringify(packageJsonToWrite, null, 2)}\n`;
-    await writeFile(this.packageJsonPath(), content, 'utf8');
+    await writeFile(this.packageJsonPath(directory), content, 'utf8');
   }
 
   /**
    * Read the `package.json` file available in the directory the command was call from If there is
    * no `package.json` it will create one.
    */
-  public async retrievePackageJson(): Promise<PackageJsonWithDepsAndDevDeps> {
+  public async retrievePackageJson(directory?: string): Promise<PackageJsonWithDepsAndDevDeps> {
     let packageJson;
     try {
-      packageJson = await this.readPackageJson();
+      packageJson = await this.readPackageJson(directory);
     } catch (err) {
       const errMessage = String(err);
       if (errMessage.includes('Could not read package.json')) {
-        await this.initPackageJson();
-        packageJson = await this.readPackageJson();
+        if (!directory) {
+          await this.initPackageJson();
+          packageJson = await this.readPackageJson(directory);
+        } else {
+          throw new Error(`Package.json not found in specified directory: ${directory}`);
+        }
       } else {
         throw new Error(
           dedent`
-            There was an error while reading the package.json file at ${this.packageJsonPath()}: ${errMessage}
+            There was an error while reading the package.json file at ${this.packageJsonPath(directory)}: ${errMessage}
             Please fix the error and try again.
           `
         );
@@ -239,14 +260,50 @@ export abstract class JsPackageManager {
       skipInstall?: boolean;
       installAsDevDependencies?: boolean;
       packageJson?: PackageJson;
+      targetPackageJsonPath?: string;
+      instanceDirForTargeting?: string;
       writeOutputToFile?: boolean;
     },
     dependencies: string[]
   ) {
-    const { skipInstall, writeOutputToFile = true } = options;
+    const {
+      skipInstall,
+      writeOutputToFile = true,
+      targetPackageJsonPath: directTargetPath,
+      instanceDirForTargeting,
+    } = options;
+    let { packageJson } = options;
+
+    let finalTargetPackageJsonPath: string | null = directTargetPath ?? null;
+    if (!finalTargetPackageJsonPath) {
+      const dirToUse =
+        instanceDirForTargeting ||
+        (this.storybookInstanceDirs.length > 0 ? this.storybookInstanceDirs[0] : null);
+      if (dirToUse) {
+        finalTargetPackageJsonPath = await this.findPrimaryPackageJsonPath(
+          dirToUse,
+          this.projectRoot,
+          this.monorepoRootPackageJsonPath
+        );
+      } else {
+        finalTargetPackageJsonPath = this.monorepoRootPackageJsonPath;
+      }
+
+      if (!finalTargetPackageJsonPath) {
+        finalTargetPackageJsonPath = this.packageJsonPath();
+      }
+    }
+
+    if (!finalTargetPackageJsonPath) {
+      throw new Error('Could not determine target package.json for addDependencies');
+    }
+
+    const operationDir = dirname(finalTargetPackageJsonPath);
 
     if (skipInstall) {
-      const { packageJson } = options;
+      if (!packageJson) {
+        packageJson = await this.retrievePackageJson(operationDir);
+      }
       invariant(packageJson, 'Missing packageJson.');
 
       const dependenciesMap = dependencies.reduce((acc, dep) => {
@@ -265,13 +322,14 @@ export abstract class JsPackageManager {
           ...dependenciesMap,
         };
       }
-      await this.writePackageJson(packageJson);
+      await this.writePackageJson(packageJson, operationDir);
     } else {
       try {
         await this.runAddDeps(
           dependencies,
           Boolean(options.installAsDevDependencies),
-          writeOutputToFile
+          writeOutputToFile,
+          operationDir
         );
       } catch (e: any) {
         logger.error('\nAn error occurred while installing dependencies:');
@@ -298,32 +356,96 @@ export abstract class JsPackageManager {
     options: {
       skipInstall?: boolean;
       packageJson?: PackageJson;
+      targetPackageJsonPath?: string;
+      removeGloballyIfNoTarget?: boolean;
     },
     dependencies: string[]
   ): Promise<void> {
-    const { skipInstall } = options;
+    const { skipInstall, targetPackageJsonPath, removeGloballyIfNoTarget = true } = options;
+    let { packageJson } = options;
 
-    if (skipInstall) {
-      const { packageJson } = options;
-
-      invariant(packageJson, 'Missing packageJson.');
-      dependencies.forEach((dep) => {
-        if (packageJson.devDependencies) {
-          delete packageJson.devDependencies[dep];
+    if (targetPackageJsonPath) {
+      // If a specific target is provided, behave like before but on that target
+      const operationDir = dirname(targetPackageJsonPath);
+      if (skipInstall) {
+        if (!packageJson) {
+          packageJson = await this.retrievePackageJson(operationDir);
         }
-        if (packageJson.dependencies) {
-          delete packageJson.dependencies[dep];
-        }
-      });
+        invariant(packageJson, 'Missing packageJson for removeDependencies with skipInstall.');
 
-      await this.writePackageJson(packageJson);
-    } else {
-      try {
-        await this.runRemoveDeps(dependencies);
-      } catch (e) {
-        logger.error('An error occurred while removing dependencies.');
-        logger.log(String(e));
-        throw new HandledError(e);
+        dependencies.forEach((dep) => {
+          if (packageJson.devDependencies) {
+            delete packageJson.devDependencies[dep];
+          }
+          if (packageJson.dependencies) {
+            delete packageJson.dependencies[dep];
+          }
+          // Also check peerDependencies as per plan
+          if (packageJson.peerDependencies) {
+            delete packageJson.peerDependencies[dep];
+          }
+        });
+        await this.writePackageJson(packageJson, operationDir);
+      } else {
+        try {
+          await this.runRemoveDeps(dependencies, operationDir);
+        } catch (e) {
+          logger.error(
+            `An error occurred while removing dependencies from ${targetPackageJsonPath}.`
+          );
+          logger.log(String(e));
+          throw new HandledError(e);
+        }
+      }
+    } else if (removeGloballyIfNoTarget) {
+      // Global removal only if flag is true
+      // New behavior: remove from ALL package.jsons in the project root
+      const allPackageJsonPaths = await this.listAllPackageJsonPaths(this.projectRoot);
+
+      if (skipInstall) {
+        for (const pjPath of allPackageJsonPaths) {
+          try {
+            const currentPackageJson = await this.retrievePackageJson(dirname(pjPath));
+            let modified = false;
+            dependencies.forEach((dep) => {
+              if (currentPackageJson.dependencies && currentPackageJson.dependencies[dep]) {
+                delete currentPackageJson.dependencies[dep];
+                modified = true;
+              }
+              if (currentPackageJson.devDependencies && currentPackageJson.devDependencies[dep]) {
+                delete currentPackageJson.devDependencies[dep];
+                modified = true;
+              }
+              if (currentPackageJson.peerDependencies && currentPackageJson.peerDependencies[dep]) {
+                delete currentPackageJson.peerDependencies[dep];
+                modified = true;
+              }
+            });
+            if (modified) {
+              await this.writePackageJson(currentPackageJson, dirname(pjPath));
+            }
+          } catch (e) {
+            logger.warn(`Could not process ${pjPath} for dependency removal: ${String(e)}`);
+          }
+        }
+      } else {
+        // If not skipInstall, and no targetPackageJsonPath, this implies a global uninstall.
+        // Package managers like pnpm handle this with workspace commands (`pnpm -r remove X`).
+        // For others, it might only affect the root/cwd. This part needs PM-specific logic.
+        // For now, we make it explicit that this will run from projectRoot, and PMs need to implement `runRemoveDeps` accordingly.
+        // This is a significant change from old behavior (this.cwd).
+        try {
+          // This will require PMs to implement runRemoveDeps to support workspace-wide removal if possible,
+          // or document that it only affects the root if not.
+          logger.info(
+            `Attempting to remove dependencies [${dependencies.join(', ')}] from all relevant package.json files using package manager commands.`
+          );
+          await this.runRemoveDeps(dependencies, this.projectRoot);
+        } catch (e) {
+          logger.error('An error occurred while removing dependencies globally.');
+          logger.log(String(e));
+          throw new HandledError(e);
+        }
       }
     }
   }
@@ -454,32 +576,93 @@ export abstract class JsPackageManager {
     });
   }
 
-  public async addScripts(scripts: Record<string, string>) {
-    const packageJson = await this.retrievePackageJson();
-    await this.writePackageJson({
-      ...packageJson,
-      scripts: {
-        ...packageJson.scripts,
-        ...scripts,
+  public async addScripts(
+    scripts: Record<string, string>,
+    targetOptions?: { targetPackageJsonPath?: string; instanceDirForTargeting?: string }
+  ) {
+    let finalTargetPackageJsonPath: string | null = targetOptions?.targetPackageJsonPath ?? null;
+
+    if (!finalTargetPackageJsonPath) {
+      const dirToUse =
+        targetOptions?.instanceDirForTargeting ||
+        (this.storybookInstanceDirs.length > 0 ? this.storybookInstanceDirs[0] : null);
+      if (dirToUse) {
+        finalTargetPackageJsonPath = await this.findPrimaryPackageJsonPath(
+          dirToUse,
+          this.projectRoot,
+          this.monorepoRootPackageJsonPath
+        );
+      } else {
+        finalTargetPackageJsonPath = this.monorepoRootPackageJsonPath;
+      }
+
+      if (!finalTargetPackageJsonPath) {
+        finalTargetPackageJsonPath = this.packageJsonPath();
+      }
+    }
+
+    if (!finalTargetPackageJsonPath) {
+      throw new Error('Could not determine target package.json for addScripts');
+    }
+    const operationDir = dirname(finalTargetPackageJsonPath);
+    const packageJson = await this.retrievePackageJson(operationDir);
+
+    await this.writePackageJson(
+      {
+        ...packageJson,
+        scripts: {
+          ...packageJson.scripts,
+          ...scripts,
+        },
       },
-    });
+      operationDir
+    );
   }
 
-  public async addPackageResolutions(versions: Record<string, string>) {
-    const packageJson = await this.retrievePackageJson();
+  public async addPackageResolutions(
+    versions: Record<string, string>,
+    targetOptions?: { targetPackageJsonPath?: string; instanceDirForTargeting?: string }
+  ) {
+    let finalTargetPackageJsonPath: string | null = targetOptions?.targetPackageJsonPath ?? null;
+
+    if (!finalTargetPackageJsonPath) {
+      const dirToUse =
+        targetOptions?.instanceDirForTargeting ||
+        (this.storybookInstanceDirs.length > 0 ? this.storybookInstanceDirs[0] : null);
+      if (dirToUse) {
+        finalTargetPackageJsonPath = await this.findPrimaryPackageJsonPath(
+          dirToUse,
+          this.projectRoot,
+          this.monorepoRootPackageJsonPath
+        );
+      } else {
+        finalTargetPackageJsonPath = this.monorepoRootPackageJsonPath;
+      }
+
+      if (!finalTargetPackageJsonPath) {
+        finalTargetPackageJsonPath = this.packageJsonPath();
+      }
+    }
+
+    if (!finalTargetPackageJsonPath) {
+      throw new Error('Could not determine target package.json for addPackageResolutions');
+    }
+    const operationDir = dirname(finalTargetPackageJsonPath);
+    const packageJson = await this.retrievePackageJson(operationDir);
     const resolutions = this.getResolutions(packageJson, versions);
-    this.writePackageJson({ ...packageJson, ...resolutions });
+    await this.writePackageJson({ ...packageJson, ...resolutions }, operationDir);
   }
 
-  protected abstract runInstall(): Promise<void>;
+  protected abstract runInstall(cwd?: string): Promise<void>;
 
   protected abstract runAddDeps(
     dependencies: string[],
     installAsDevDependencies: boolean,
-    writeOutputToFile?: boolean
+    writeOutputToFile?: boolean,
+    cwd?: string
   ): Promise<void>;
 
-  protected abstract runRemoveDeps(dependencies: string[]): Promise<void>;
+  protected abstract runRemoveDeps(dependencies: string[], cwd?: string): Promise<void>;
 
   protected abstract getResolutions(
     packageJson: PackageJson,
@@ -601,4 +784,298 @@ export abstract class JsPackageManager {
       return '';
     }
   }
+
+  private async _getMonorepoRootPackageJsonPath(projectRootDir: string): Promise<string | null> {
+    if (!projectRootDir) {
+      return null;
+    }
+    const packageJsonPath = pathJoin(projectRootDir, 'package.json');
+    try {
+      await readFile(packageJsonPath, 'utf-8');
+      return packageJsonPath;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  // Helper to read and check a package.json for storybook dependency
+  private async _readAndCheckStorybookDependency(packageJsonPath: string): Promise<boolean> {
+    try {
+      const content = await readFile(packageJsonPath, 'utf-8');
+      const packageJson = JSON.parse(content) as PackageJsonWithDepsAndDevDeps;
+      return !!(
+        (packageJson.dependencies && packageJson.dependencies['storybook']) ||
+        (packageJson.devDependencies && packageJson.devDependencies['storybook'])
+      );
+    } catch (error) {
+      return false; // If file doesn't exist or is unreadable, or JSON is invalid
+    }
+  }
+
+  public async findPrimaryPackageJsonPath(
+    instanceDir: string,
+    projectRootDir: string,
+    monorepoRootPackageJsonPath: string | null
+  ): Promise<string | null> {
+    if (!projectRootDir) {
+      throw new Error('projectRootDir is required for findPrimaryPackageJsonPath');
+    }
+
+    // Scenario A: Centralized Management
+
+    // Scenario A: Centralized Management
+    if (monorepoRootPackageJsonPath) {
+      const hasStorybookDep = await this._readAndCheckStorybookDependency(
+        monorepoRootPackageJsonPath
+      );
+      if (hasStorybookDep) {
+        return monorepoRootPackageJsonPath;
+      }
+    }
+
+    // Scenario B: Decentralized or Localized Management
+    let currentDir = instanceDir;
+    const projectRootSegments = projectRootDir.replace(/\\$/, '').split(/[\\/]/).length;
+
+    while (currentDir && currentDir.startsWith(projectRootDir)) {
+      const currentDirSegments = currentDir.replace(/\\$/, '').split(/[\\/]/).length;
+
+      if (currentDirSegments < projectRootSegments) {
+        break;
+      }
+
+      const packageJsonPath = pathJoin(currentDir, 'package.json');
+      try {
+        await readFile(packageJsonPath, 'utf-8');
+        const hasStorybookDep = await this._readAndCheckStorybookDependency(packageJsonPath);
+        if (hasStorybookDep) {
+          return packageJsonPath;
+        }
+      } catch (e) {
+        /* ignore */
+      }
+
+      if (currentDir === projectRootDir) {
+        break;
+      }
+      currentDir = dirname(currentDir);
+    }
+
+    if (monorepoRootPackageJsonPath) {
+      return monorepoRootPackageJsonPath;
+    }
+
+    const instancePackageJsonPath = pathJoin(instanceDir, 'package.json');
+    try {
+      await readFile(instancePackageJsonPath, 'utf-8');
+      return instancePackageJsonPath;
+    } catch (error) {
+      /* ignore */
+    }
+
+    return null;
+  }
+
+  // Added method to list all package.json paths in the project root
+  private async listAllPackageJsonPaths(projectRootDir: string): Promise<string[]> {
+    const rootDir = projectRootDir || this.projectRoot;
+
+    if (!rootDir) {
+      throw new Error('Project root not determined for listAllPackageJsonPaths');
+    }
+
+    const packageJsonPattern = '**/package.json';
+    const ignoreDirPattern = '**/node_modules/**';
+    const ensurePosixPath = (p: string) => p.split('\\').join('/');
+    const posixRootDir = ensurePosixPath(rootDir);
+    const posixIgnorePattern = ensurePosixPath(pathJoin(posixRootDir, ignoreDirPattern));
+
+    const files = await globby(ensurePosixPath(packageJsonPattern), {
+      cwd: posixRootDir,
+      ignore: [posixIgnorePattern],
+      absolute: true,
+    });
+    return files;
+  }
+
+  // --- Start of Public API methods for Monorepo Support ---
+
+  public async getAllStorybookInstances(projectRootDir: string): Promise<string[]> {
+    const rootDir = projectRootDir || this.projectRoot;
+
+    if (!rootDir) {
+      throw new Error('Project root not determined for getAllStorybookInstances');
+    }
+
+    const storybookDirPattern = '**/.storybook';
+    const ignoreDirPattern = '**/node_modules/**';
+    const ensurePosixPath = (p: string) => p.split('\\').join('/');
+    const posixRootDir = ensurePosixPath(rootDir);
+    const posixIgnorePattern = ensurePosixPath(pathJoin(posixRootDir, ignoreDirPattern));
+
+    const files = await globby(ensurePosixPath(storybookDirPattern), {
+      cwd: posixRootDir,
+      ignore: [posixIgnorePattern],
+      onlyDirectories: true,
+      absolute: true,
+    });
+    return files.map((dir) => dirname(dir));
+  }
+
+  public async getMonorepoRootPackageJson(projectRootDir?: string): Promise<PackageJson | null> {
+    const rootDir = projectRootDir || this.projectRoot;
+
+    if (!rootDir) {
+      return null;
+    }
+    const rootPackageJsonPath = await this._getMonorepoRootPackageJsonPath(rootDir);
+    if (!rootPackageJsonPath) {
+      return null;
+    }
+    try {
+      return await this.readPackageJson(dirname(rootPackageJsonPath));
+    } catch (e) {
+      return null;
+    }
+  }
+
+  public async getPrimaryPackageJsonForInstance(
+    instanceDir: string,
+    projectRootDir?: string
+  ): Promise<PackageJson | null> {
+    const rootDir = projectRootDir || this.projectRoot;
+
+    if (!rootDir) {
+      return null;
+    }
+    const monorepoRootPkgPath = await this._getMonorepoRootPackageJsonPath(rootDir);
+    const primaryPath = await this.findPrimaryPackageJsonPath(
+      instanceDir,
+      rootDir,
+      monorepoRootPkgPath
+    );
+    if (!primaryPath) {
+      return null;
+    }
+    try {
+      return await this.readPackageJson(dirname(primaryPath));
+    } catch (e) {
+      return null;
+    }
+  }
+
+  public async listAllPackageJsonPaths(projectRootDir: string): Promise<string[]> {
+    const rootDir = projectRootDir || this.projectRoot;
+
+    if (!rootDir) {
+      throw new Error('Project root not determined for listAllPackageJsonPaths');
+    }
+
+    const packageJsonPattern = '**/package.json';
+    const ignoreDirPattern = '**/node_modules/**';
+    const ensurePosixPath = (p: string) => p.split('\\').join('/');
+    const posixRootDir = ensurePosixPath(rootDir);
+    const posixIgnorePattern = ensurePosixPath(pathJoin(posixRootDir, ignoreDirPattern));
+
+    const files = await globby(ensurePosixPath(packageJsonPattern), {
+      cwd: posixRootDir,
+      ignore: [posixIgnorePattern],
+      absolute: true,
+    });
+    return files;
+  }
+
+  public async findPrimaryPackageJsonPath(
+    instanceDir: string,
+    projectRootDir: string,
+    monorepoRootPackageJsonPath: string | null
+  ): Promise<string | null> {
+    if (!projectRootDir) {
+      throw new Error('projectRootDir is required for findPrimaryPackageJsonPath');
+    }
+
+    // Scenario A: Centralized Management
+
+    // Scenario A: Centralized Management
+    if (monorepoRootPackageJsonPath) {
+      const hasStorybookDep = await this._readAndCheckStorybookDependency(
+        monorepoRootPackageJsonPath
+      );
+      if (hasStorybookDep) {
+        return monorepoRootPackageJsonPath;
+      }
+    }
+
+    // Scenario B: Decentralized or Localized Management
+    let currentDir = instanceDir;
+    const projectRootSegments = projectRootDir.replace(/\\$/, '').split(/[\\/]/).length;
+
+    while (currentDir && currentDir.startsWith(projectRootDir)) {
+      const currentDirSegments = currentDir.replace(/\\$/, '').split(/[\\/]/).length;
+
+      if (currentDirSegments < projectRootSegments) {
+        break;
+      }
+
+      const packageJsonPath = pathJoin(currentDir, 'package.json');
+      try {
+        await readFile(packageJsonPath, 'utf-8');
+        const hasStorybookDep = await this._readAndCheckStorybookDependency(packageJsonPath);
+        if (hasStorybookDep) {
+          return packageJsonPath;
+        }
+      } catch (e) {
+        /* ignore */
+      }
+
+      if (currentDir === projectRootDir) {
+        break;
+      }
+      currentDir = dirname(currentDir);
+    }
+
+    if (monorepoRootPackageJsonPath) {
+      return monorepoRootPackageJsonPath;
+    }
+
+    const instancePackageJsonPath = pathJoin(instanceDir, 'package.json');
+    try {
+      await readFile(instancePackageJsonPath, 'utf-8');
+      return instancePackageJsonPath;
+    } catch (error) {
+      /* ignore */
+    }
+
+    return null;
+  }
+
+  // --- End of Public API methods for Monorepo Support ---
+
+  // --- Start of Private Helper Methods ---
+  private async _readAndCheckStorybookDependency(packageJsonPath: string): Promise<boolean> {
+    try {
+      const content = await readFile(packageJsonPath, 'utf-8');
+      const packageJson = JSON.parse(content) as PackageJsonWithDepsAndDevDeps;
+      return !!(
+        (packageJson.dependencies && packageJson.dependencies['storybook']) ||
+        (packageJson.devDependencies && packageJson.devDependencies['storybook'])
+      );
+    } catch (error) {
+      return false;
+    }
+  }
+
+  private async _getMonorepoRootPackageJsonPath(projectRootDir: string): Promise<string | null> {
+    if (!projectRootDir) {
+      return null;
+    }
+    const packageJsonPath = pathJoin(projectRootDir, 'package.json');
+    try {
+      await readFile(packageJsonPath, 'utf-8');
+      return packageJsonPath;
+    } catch (error) {
+      return null;
+    }
+  }
+  // --- End of Private Helper Methods ---
 }

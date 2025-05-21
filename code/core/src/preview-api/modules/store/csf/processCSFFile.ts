@@ -1,8 +1,11 @@
-import { isExportStory, isStory } from '@storybook/core/csf';
-import type { ComponentTitle, Parameters, Path, Renderer } from '@storybook/core/types';
-import type { CSFFile, ModuleExports, NormalizedComponentAnnotations } from '@storybook/core/types';
-
-import { logger } from '@storybook/core/client-logger';
+import { logger } from 'storybook/internal/client-logger';
+import { isExportStory, isStory } from 'storybook/internal/csf';
+import type { ComponentTitle, Parameters, Path, Renderer } from 'storybook/internal/types';
+import type {
+  CSFFile,
+  ModuleExports,
+  NormalizedComponentAnnotations,
+} from 'storybook/internal/types';
 
 import { normalizeComponentAnnotations } from './normalizeComponentAnnotations';
 import { normalizeStory } from './normalizeStory';
@@ -43,7 +46,6 @@ export function processCSFFile<TRenderer extends Renderer>(
   importPath: Path,
   title: ComponentTitle
 ): CSFFile<TRenderer> {
-  // eslint-disable-next-line @typescript-eslint/naming-convention
   const { default: defaultExport, __namedExportsOrder, ...namedExports } = moduleExports;
 
   const firstStory = Object.values(namedExports)[0];

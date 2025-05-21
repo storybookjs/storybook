@@ -25,5 +25,5 @@
     "resolveJsonModule": true
   },
   "exclude": ["dist", "**/dist", "node_modules", "**/node_modules"],
-  "include": ["./**/*", "./.eslintrc.js"]
+  "include": ["./**/*", "./.eslintrc.cjs"]
 }

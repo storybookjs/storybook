@@ -1,8 +1,7 @@
 import { writeFile } from 'node:fs/promises';
-import { dirname, join, parse, posix, relative, resolve, sep } from 'node:path';
+import { dirname, join, parse, posix, relative, sep } from 'node:path';
 
 import type { Metafile } from 'esbuild';
-import aliasPlugin from 'esbuild-plugin-alias';
 // eslint-disable-next-line depend/ban-dependencies
 import * as fs from 'fs-extra';
 // eslint-disable-next-line depend/ban-dependencies
@@ -12,6 +11,11 @@ import type { Options } from 'tsup';
 import { build } from 'tsup';
 import type { PackageJson } from 'type-fest';
 
+import {
+  BROWSER_TARGETS,
+  NODE_TARGET,
+  SUPPORTED_FEATURES,
+} from '../../code/core/src/shared/constants/environments-support';
 import { exec } from '../utils/exec';
 import { dedent, esbuild, nodeInternals } from './tools';
 
@@ -115,7 +119,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
         sourcemap: false,
         metafile: true,
         format: ['esm'],
-        target: platform === 'node' ? ['node18'] : ['chrome100', 'safari15', 'firefox91'],
+        target: platform === 'node' ? NODE_TARGET : (BROWSER_TARGETS as Options['target']),
         clean: false,
         ...(dtsBuild === 'esm' ? dtsConfig : {}),
         platform: platform || 'browser',
@@ -125,20 +129,14 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
           'process.env.NODE_ENV': 'process.env.NODE_ENV',
         },
 
-        esbuildPlugins:
-          platform === 'node'
-            ? []
-            : [
-                aliasPlugin({
-                  process: resolve('../node_modules/process/browser.js'),
-                  util: resolve('../node_modules/util/util.js'),
-                }),
-              ],
         external: externals,
 
         esbuildOptions: (c) => {
           c.conditions = ['module'];
           c.platform = platform || 'browser';
+          if (platform !== 'node') {
+            c.supported = SUPPORTED_FEATURES;
+          }
           Object.assign(c, getESBuildOptions(optimized));
         },
       })
@@ -157,7 +155,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
         sourcemap: false,
         metafile: true,
         format: ['esm'],
-        target: ['node18'],
+        target: NODE_TARGET,
         clean: false,
         ...(dtsBuild === 'node-esm' ? dtsConfig : {}),
         platform: 'neutral',
@@ -198,7 +196,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
         sourcemap: false,
         metafile: true,
         format: ['cjs'],
-        target: 'node18',
+        target: NODE_TARGET,
         ...(dtsBuild === 'cjs' ? dtsConfig : {}),
         platform: 'node',
         clean: false,

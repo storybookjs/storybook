@@ -2,16 +2,7 @@
   "name": "ember/default-js",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
-  "implicitDependencies": [
-    "storybook",
-    "core",
-    "addon-essentials",
-    "addon-interactions",
-    "addon-links",
-    "addon-onboarding",
-    "blocks",
-    "ember"
-  ],
+  "implicitDependencies": ["core", "addon-links", "addon-onboarding", "ember"],
   "targets": {
     "sandbox": {},
     "sb:dev": {},

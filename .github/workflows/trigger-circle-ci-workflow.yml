@@ -39,13 +39,13 @@ jobs:
   get-parameters:
     runs-on: ubuntu-latest
     steps:
-      - if: github.event_name == 'pull_request_target' && ((github.event.action == 'labeled' && github.event.label.name == 'ci:normal') || (github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'ci:normal')))
+      - if: github.event_name == 'pull_request_target' && (contains(github.event.pull_request.labels.*.name, 'ci:normal'))
         run: echo "workflow=normal" >> $GITHUB_ENV
-      - if: github.event_name == 'pull_request_target' && ((github.event.action == 'labeled' && github.event.label.name == 'ci:docs') || (github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'ci:docs')))
+      - if: github.event_name == 'pull_request_target' && (contains(github.event.pull_request.labels.*.name, 'ci:docs'))
         run: echo "workflow=docs" >> $GITHUB_ENV
-      - if: github.event_name == 'push' || (github.event.action == 'labeled' && github.event.label.name == 'ci:merged') || (github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'ci:merged'))
+      - if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'ci:merged')
         run: echo "workflow=merged" >> $GITHUB_ENV
-      - if: github.event_name == 'pull_request_target' && ((github.event.action == 'labeled' && github.event.label.name == 'ci:daily') || (github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'ci:daily')))
+      - if: github.event_name == 'pull_request_target' && (contains(github.event.pull_request.labels.*.name, 'ci:daily'))
         run: echo "workflow=daily" >> $GITHUB_ENV
     outputs:
       workflow: ${{ env.workflow }}

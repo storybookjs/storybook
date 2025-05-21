@@ -17,7 +17,7 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
 
   return result
     .concat(input)
-    .concat([join(__dirname, 'entry-preview.mjs')])
+    .concat(join(__dirname, 'entry-preview.mjs'), join(__dirname, 'entry-preview-argtypes.mjs'))
     .concat(docsEnabled ? [join(__dirname, 'entry-preview-docs.mjs')] : [])
     .concat(features?.experimentalRSC ? [join(__dirname, 'entry-preview-rsc.mjs')] : []);
 };
@@ -30,8 +30,9 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
  *
  * We do the exact same thing in the common preset, but that will fail in Yarn PnP because
  *
- * @storybook/core-server doesn't have a peer dependency on react
- * This will make @storybook/react projects work in Yarn PnP
+ * Storybook/internal/core-server doesn't have a peer dependency on react This will make
+ *
+ * @storybook/react projects work in Yarn PnP
  */
 export const resolvedReact = async (existing: any) => {
   try {

@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import { readFile, writeFile } from 'node:fs/promises';
 
 import {
@@ -11,8 +10,8 @@ import {
   recast,
   types as t,
   traverse,
-} from '@storybook/core/babel';
-import { isExportStory, storyNameFromExport, toId } from '@storybook/core/csf';
+} from 'storybook/internal/babel';
+import { isExportStory, storyNameFromExport, toId } from 'storybook/internal/csf';
 import type {
   ComponentAnnotations,
   IndexInput,
@@ -20,7 +19,7 @@ import type {
   IndexedCSFFile,
   StoryAnnotations,
   Tag,
-} from '@storybook/core/types';
+} from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 
@@ -277,16 +276,6 @@ export class CsfFile {
   _namedExportsOrder?: string[];
 
   imports: string[];
-
-  /** @deprecated Use `_options.fileName` instead */
-  get _fileName() {
-    return this._options.fileName;
-  }
-
-  /** @deprecated Use `_options.makeTitle` instead */
-  get _makeTitle() {
-    return this._options.makeTitle;
-  }
 
   constructor(ast: t.File, options: CsfOptions, file: BabelFile) {
     this._ast = ast;
@@ -573,7 +562,6 @@ export class CsfFile {
                           parameters.__id = (idProperty.value as t.StringLiteral).value;
                         }
                       }
-
                       self._storyAnnotations[exportName][p.key.name] = p.value;
                     }
                   });
@@ -597,7 +585,7 @@ export class CsfFile {
                 const { name: exportName } = specifier.exported;
                 const { name: localName } = specifier.local;
                 const decl = t.isProgram(parent)
-                  ? findVarInitialization(specifier.local.name, parent)
+                  ? findVarInitialization(localName, parent)
                   : specifier.local;
 
                 if (exportName === 'default') {
@@ -618,7 +606,16 @@ export class CsfFile {
                     self._parseMeta(metaNode, parent);
                   }
                 } else {
-                  self._storyAnnotations[exportName] = {};
+                  const annotations = {} as Record<string, t.Node>;
+                  const storyNode = decl;
+                  if (t.isObjectExpression(storyNode)) {
+                    (storyNode.properties as t.ObjectProperty[]).forEach((p) => {
+                      if (t.isIdentifier(p.key)) {
+                        annotations[p.key.name] = p.value;
+                      }
+                    });
+                  }
+                  self._storyAnnotations[exportName] = annotations;
                   self._storyStatements[exportName] = decl;
                   self._storyPaths[exportName] = path;
                   self._stories[exportName] = {

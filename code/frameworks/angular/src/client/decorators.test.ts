@@ -33,6 +33,7 @@ const defaultContext: Addon_StoryContext<AngularRenderer> = {
   step: undefined,
   context: undefined,
   canvas: undefined,
+  userEvent: undefined,
   mount: undefined,
 };
 

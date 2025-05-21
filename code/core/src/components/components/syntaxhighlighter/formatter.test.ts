@@ -92,19 +92,3 @@ it('handles empty string', () => {
 console.log("world");`);
   });
 });
-
-describe('prettier (babel)', () => {
-  it('handles empty string', async () => {
-    const input = '';
-    const result = formatter('angular', input);
-
-    await expect(result).resolves.toBe(input);
-  });
-
-  it('handles single line', async () => {
-    const input = 'console.log("hello world")';
-    const result = formatter('angular', input);
-
-    await expect(result).resolves.toBe(input);
-  });
-});

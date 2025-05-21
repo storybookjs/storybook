@@ -1,8 +1,8 @@
 ```tsx filename="src/Tool.tsx" renderer="common" language="ts" tabTitle="Toolbar"
 import React, { memo, useCallback, useEffect } from 'react';
 
-import { useGlobals, useStorybookApi } from '@storybook/manager-api';
-import { IconButton } from '@storybook/components';
+import { useGlobals, useStorybookApi } from 'storybook/manager-api';
+import { IconButton } from 'storybook/internal/components';
 import { LightningIcon } from '@storybook/icons';
 
 import { ADDON_ID, PARAM_KEY, TOOL_ID } from './constants';
@@ -40,8 +40,8 @@ export const Tool = memo(function MyAddonSelector() {
 ```tsx filename="src/Panel.tsx" renderer="common" language="ts" tabTitle="Panel"
 import React from 'react';
 
-import { useAddonState, useChannel } from '@storybook/manager-api';
-import { AddonPanel } from '@storybook/components';
+import { useAddonState, useChannel } from 'storybook/manager-api';
+import { AddonPanel } from 'storybook/internal/components';
 
 import { ADDON_ID, EVENTS } from './constants';
 
@@ -83,7 +83,7 @@ export const Panel: React.FC<PanelProps> = (props) => {
 ```tsx filename="src/Tab.tsx" renderer="common" language="ts" tabTitle="Tab"
 import React from 'react';
 
-import { useParameter } from '@storybook/manager-api';
+import { useParameter } from 'storybook/manager-api';
 
 import { PARAM_KEY } from './constants';
 

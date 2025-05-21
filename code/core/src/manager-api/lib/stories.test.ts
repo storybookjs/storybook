@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import type { API_PreparedStoryIndex, StoryIndexV2, StoryIndexV3 } from '@storybook/core/types';
+import {
+  type API_PreparedStoryIndex,
+  type StatusesByStoryIdAndTypeId,
+  type StoryIndexV2,
+  type StoryIndexV3,
+} from 'storybook/internal/types';
 
 import type { State } from '../root';
 import { mockEntries } from '../tests/mockStoriesEntries';
@@ -250,9 +255,25 @@ describe('transformStoryIndexToStoriesHash', () => {
       someFilter: () => false,
     };
 
-    const status: State['status'] = {
-      '1': { someStatus: { status: 'error', title: 'broken', description: 'very bad' } },
-      '2': { someStatus: { status: 'success', title: 'perfect', description: 'nice' } },
+    const allStatuses: StatusesByStoryIdAndTypeId = {
+      '1': {
+        someStatus: {
+          typeId: 'someStatus',
+          storyId: '1',
+          value: 'status-value:error',
+          title: 'broken',
+          description: 'very bad',
+        },
+      },
+      '2': {
+        someStatus: {
+          typeId: 'someStatus',
+          storyId: '2',
+          value: 'status-value:success',
+          title: 'perfect',
+          description: 'nice',
+        },
+      },
     };
 
     const options = {
@@ -261,7 +282,7 @@ describe('transformStoryIndexToStoriesHash', () => {
       } as any,
       docsOptions: { docsMode: false },
       filters,
-      status,
+      allStatuses,
     };
 
     // Act - transform the index to hashes

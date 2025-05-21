@@ -1,8 +1,7 @@
-import { logConfig } from '@storybook/core/common';
-import type { Options } from '@storybook/core/types';
-
-import { logger } from '@storybook/core/node-logger';
-import { MissingBuilderError } from '@storybook/core/server-errors';
+import { logConfig } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
+import { MissingBuilderError } from 'storybook/internal/server-errors';
+import type { Options } from 'storybook/internal/types';
 
 import compression from '@polka/compression';
 import polka from 'polka';
@@ -70,13 +69,15 @@ export async function storybookDevServer(options: Options) {
     logConfig('Preview webpack config', await previewBuilder.getConfig(options));
   }
 
-  const managerResult = await managerBuilder.start({
-    startTime: process.hrtime(),
-    options,
-    router: app,
-    server,
-    channel: serverChannel,
-  });
+  const managerResult = options.previewOnly
+    ? undefined
+    : await managerBuilder.start({
+        startTime: process.hrtime(),
+        options,
+        router: app,
+        server,
+        channel: serverChannel,
+      });
 
   let previewResult: Awaited<ReturnType<(typeof previewBuilder)['start']>> =
     await Promise.resolve();
@@ -116,7 +117,8 @@ export async function storybookDevServer(options: Options) {
 
   await Promise.all([initializedStoryIndexGenerator, listening]).then(async ([indexGenerator]) => {
     if (indexGenerator && !options.ci && !options.smokeTest && options.open) {
-      openInBrowser(host ? networkAddress : address);
+      const url = host ? networkAddress : address;
+      openInBrowser(options.previewOnly ? `${url}iframe.html?navigator=true` : url);
     }
   });
   if (indexError) {

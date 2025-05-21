@@ -1,6 +1,7 @@
 import type { Framework } from '../../../bin/modernInputs';
 import { supportedFrameworksNames } from '../../../bin/modernInputs';
-import { type Check, CompatibilityType } from './index';
+import { type Check } from './Check';
+import { CompatibilityType } from './CompatibilityType';
 
 const FOUND_NEXTJS = `Found Next.js with test intent`;
 
@@ -12,13 +13,13 @@ export const SUPPORTED_FRAMEWORKS: Framework[] = [
   'svelte-vite',
   'web-components-vite',
   'nextjs',
-  'experimental-nextjs-vite',
+  'nextjs-vite',
   'sveltekit',
 ];
 
 /**
- * When selecting framework nextjs & intent includes test, prompt for experimental-nextjs-vite. When
- * selecting another framework that doesn't support test addon, prompt for ignoring test intent.
+ * When selecting framework nextjs & intent includes test, prompt for nextjs-vite. When selecting
+ * another framework that doesn't support test addon, prompt for ignoring test intent.
  */
 const name = 'Framework test compatibility';
 export const frameworkTest: Check = {

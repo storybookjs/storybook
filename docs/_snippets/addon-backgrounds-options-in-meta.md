@@ -37,7 +37,7 @@ export default {
 ```
 
 ```ts filename="Button.stories.ts" renderer="web-components" language="ts"
-import type { Meta } from '@storybook/web-components';
+import type { Meta } from '@storybook/web-components-vite';
 
 const meta: Meta = {
   component: 'demo-button',
@@ -74,30 +74,8 @@ export default {
 };
 ```
 
-```ts filename="Button.stories.tsx" renderer="react" language="ts"
-import type { Meta } from '@storybook/react';
-
-import { Button } from './Button';
-
-const meta: Meta<typeof Button> = {
-  component: Button,
-  parameters: {
-    backgrounds: {
-      options: {
-        // 👇 Override the default `dark` option
-        dark: { name: 'Dark', value: '#000' },
-        // 👇 Add a new option
-        gray: { name: 'Gray', value: '#CCC' },
-      },
-    },
-  },
-};
-
-export default meta;
-```
-
-```ts filename="Button.stories.ts|tsx" renderer="react" language="ts-4-9"
-import type { Meta } from '@storybook/react';
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts"
+import type { Meta } from '@storybook/react-vite';
 
 import { Button } from './Button';
 
@@ -137,29 +115,7 @@ export default {
 ```
 
 ```ts filename="Button.stories.ts" renderer="vue" language="ts"
-import type { Meta } from '@storybook/vue3';
-
-import Button from './Button.vue';
-
-const meta: Meta<typeof Button> = {
-  component: Button,
-  parameters: {
-    backgrounds: {
-      options: {
-        // 👇 Override the default `dark` option
-        dark: { name: 'Dark', value: '#000' },
-        // 👇 Add a new option
-        gray: { name: 'Gray', value: '#CCC' },
-      },
-    },
-  },
-};
-
-export default meta;
-```
-
-```ts filename="Button.stories.ts" renderer="vue" language="ts-4-9"
-import type { Meta } from '@storybook/vue3';
+import type { Meta } from '@storybook/vue3-vite';
 
 import Button from './Button.vue';
 
@@ -180,7 +136,29 @@ const meta = {
 export default meta;
 ```
 
-```js filename="Button.stories.js" renderer="svelte" language="js"
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import Button from './Button.svelte';
+
+  const { Story } = defineMeta({
+    component: Button,
+    parameters: {
+      backgrounds: {
+        options: {
+          // 👇 Override the default `dark` option
+          dark: { name: 'Dark', value: '#000' },
+          // 👇 Add a new option
+          gray: { name: 'Gray', value: '#CCC' },
+        },
+      },
+    },
+  });
+</script>
+```
+
+```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF"
 import Button from './Button.svelte';
 
 export default {
@@ -198,30 +176,31 @@ export default {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts"
-import type { Meta } from '@storybook/svelte';
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
 
-import Button from './Button.svelte';
+  import Button from './Button.svelte';
 
-const meta: Meta<typeof Button> = {
-  component: Button,
-  parameters: {
-    backgrounds: {
-      options: {
-        // 👇 Override the default `dark` option
-        dark: { name: 'Dark', value: '#000' },
-        // 👇 Add a new option
-        gray: { name: 'Gray', value: '#CCC' },
+  const { Story } = defineMeta({
+    component: Button,
+    parameters: {
+      backgrounds: {
+        options: {
+          // 👇 Override the default `dark` option
+          dark: { name: 'Dark', value: '#000' },
+          // 👇 Add a new option
+          gray: { name: 'Gray', value: '#CCC' },
+        },
       },
     },
-  },
-};
-
-export default meta;
+  });
+</script>
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts-4-9"
-import type { Meta } from '@storybook/svelte';
+```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+// Replace your-framework with svelte-vite or sveltekit
+import type { Meta } from '@storybook/your-framework';
 
 import Button from './Button.svelte';
 

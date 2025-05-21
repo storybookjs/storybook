@@ -1,11 +1,10 @@
 import { pathToFileURL } from 'node:url';
 
-import type { Builder, Options } from '@storybook/core/types';
-
-import { MissingBuilderError } from '@storybook/core/server-errors';
+import { MissingBuilderError } from 'storybook/internal/server-errors';
+import type { Builder, Options } from 'storybook/internal/types';
 
 export async function getManagerBuilder(): Promise<Builder<unknown>> {
-  return import('@storybook/core/builder-manager');
+  return import('storybook/internal/builder-manager');
 }
 
 export async function getPreviewBuilder(

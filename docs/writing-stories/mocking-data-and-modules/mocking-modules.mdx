@@ -40,8 +40,7 @@ When you use the `fn` utility to mock a module, you create full [Vitest mock fun
 
 You can't directly mock an external module like [`uuid`](https://github.com/uuidjs/uuid) or `node:fs`. Instead, you must wrap it in your own module, which you can mock like any other internal one. For example, with `uuid`, you could do the following:
 
-```ts
-// lib/uuid.ts
+```ts title="lib/uuid.ts"
 import { v4 } from 'uuid';
 
 export const uuidv4 = v4;
@@ -49,9 +48,8 @@ export const uuidv4 = v4;
 
 And create a mock for the wrapper:
 
-```ts
-// lib/uuid.mock.ts
-import { fn } from '@storybook/test';
+```ts title="lib/uuid.mock.ts"
+import { fn } from 'storybook/test';
 
 import * as actual from './uuid';
 
@@ -80,8 +78,7 @@ Third, note the **`storybook`, `test`, and `default` keys** in each module's ent
 
 With the package configuration in place, you can then update your component file to use the subpath import:
 
-```ts
-// AuthButton.ts
+```ts title="AuthButton.ts"
 // ➖ Remove this line
 // import { getUserFromSession } from '../../lib/session';
 // ➕ Add this line

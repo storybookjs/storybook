@@ -335,7 +335,7 @@ export default meta;
 </script>
 ```
 
-```ts filename="MyComponent.stories.ts|tsx" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
 import type { Meta } from '@storybook/svelte';
 
 import MyComponent from './MyComponent.svelte';

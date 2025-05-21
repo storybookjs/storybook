@@ -205,7 +205,7 @@ foo.parameters = { docs: { disable: true } };
 
 User writes documentation & stories side-by-side in a single MDX file, and wants those stories to show up in the canvas but not in the docs themselves. They want something similar to the recipe "CSF stories with MDX docs" but want to do everything in MDX:
 
-```js
+```mdx
 <Story name="foo" parameters={{ docs: { disable: true } }}>
   <Button>foo</Button>
 </Story>
@@ -260,7 +260,7 @@ Example.parameters = {
 };
 ```
 
-Alternatively, you can provide a function in the `docs.source.transform` parameter. For example, the following snippet in `.storybook/preview.js` globally removes the arrow at the beginning of a function that returns a string:
+Alternatively, you can provide a function or an async function in the `docs.source.transform` parameter. For example, the following snippet in `.storybook/preview.js` globally removes the arrow at the beginning of a function that returns a string:
 
 ```js
 const SOURCE_REGEX = /^\(\) => `(.*)`$/;

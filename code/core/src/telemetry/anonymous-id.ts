@@ -1,6 +1,6 @@
 import { relative } from 'node:path';
 
-import { getProjectRoot } from '@storybook/core/common';
+import { getProjectRoot } from 'storybook/internal/common';
 
 import { execSync } from 'child_process';
 import slash from 'slash';

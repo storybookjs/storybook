@@ -1,9 +1,8 @@
 import { createWriteStream } from 'node:fs';
 import { join } from 'node:path';
 
-import type { Stats } from '@storybook/core/types';
-
-import { logger } from '@storybook/core/node-logger';
+import { logger } from 'storybook/internal/node-logger';
+import type { Stats } from 'storybook/internal/types';
 
 import { stringifyStream } from '@discoveryjs/json-ext';
 import picocolors from 'picocolors';
@@ -27,7 +26,7 @@ export const writeStats = async (directory: string, name: string, stats: Stats) 
       .on('error', reject)
       .pipe(createWriteStream(filePath))
       .on('error', reject)
-      .on('finish', resolve);
+      .on('finish', resolve as any);
   });
   return filePath;
 };

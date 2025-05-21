@@ -8,7 +8,7 @@ vi.mock('node:os', () => ({
   default: { release: () => '' },
 }));
 vi.mock('detect-port');
-vi.mock('@storybook/core/node-logger');
+vi.mock('storybook/internal/node-logger');
 
 describe('getServerAddresses', () => {
   const port = 3000;

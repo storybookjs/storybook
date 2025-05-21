@@ -1,4 +1,4 @@
-import type { StorybookConfig } from '@storybook/types';
+import type { StorybookConfig } from 'storybook/internal/types';
 
 export const getAddonNames = (mainConfig: StorybookConfig): string[] => {
   const addons = mainConfig.addons || [];

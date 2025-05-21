@@ -2,7 +2,7 @@
 import { beforeAll } from 'vitest';
 // 👇 If you're using Next.js, import from @storybook/nextjs
 //   If you're using Next.js with Vite, import from @storybook/experimental-nextjs-vite
-import { setProjectAnnotations } from '@storybook/react';
+import { setProjectAnnotations } from '@storybook/react-vite';
 // 👇 Import the exported annotations, if any, from the addons you're using; otherwise remove this
 import * as addonAnnotations from 'my-addon/preview';
 import * as previewAnnotations from './.storybook/preview';
@@ -16,7 +16,7 @@ beforeAll(annotations.beforeAll);
 ```tsx filename="setupTest.ts" renderer="svelte" language="ts"
 import { beforeAll } from 'vitest';
 // 👇 If you're using Sveltekit, import from @storybook/sveltekit
-import { setProjectAnnotations } from '@storybook/svelte';
+import { setProjectAnnotations } from '@storybook/svelte-vite';
 // 👇 Import the exported annotations, if any, from the addons you're using; otherwise remove this
 import * as addonAnnotations from 'my-addon/preview';
 import * as previewAnnotations from './.storybook/preview';
@@ -29,7 +29,7 @@ beforeAll(annotations.beforeAll);
 
 ```tsx filename="setupTest.ts" renderer="vue" language="ts"
 import { beforeAll } from 'vitest';
-import { setProjectAnnotations } from '@storybook/vue3';
+import { setProjectAnnotations } from '@storybook/vue3-vite';
 // 👇 Import the exported annotations, if any, from the addons you're using; otherwise remove this
 import * as addonAnnotations from 'my-addon/preview';
 import * as previewAnnotations from './.storybook/preview';

@@ -1,4 +1,4 @@
-import { cache } from '@storybook/core/common';
+import { cache } from 'storybook/internal/common';
 
 import picocolors from 'picocolors';
 

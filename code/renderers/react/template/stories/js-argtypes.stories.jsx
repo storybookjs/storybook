@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 
-import { inferControls } from 'storybook/internal/preview-api';
-import { ThemeProvider, convert, themes } from 'storybook/internal/theming';
-
-import { PureArgsTable as ArgsTable } from '@storybook/blocks';
+import { PureArgsTable as ArgsTable } from '@storybook/addon-docs/blocks';
 
 import { mapValues } from 'es-toolkit/compat';
 import PropTypes from 'prop-types';
+import { inferControls } from 'storybook/preview-api';
+import { ThemeProvider, convert, themes } from 'storybook/theming';
 
 // import { component as JsStyledDocgenComponent } from './__testfixtures__/8279-js-styled-docgen/input';
 import { component as JsPropTypesOneofComponent } from './docgen-components/8140-js-prop-types-oneof/input.jsx';

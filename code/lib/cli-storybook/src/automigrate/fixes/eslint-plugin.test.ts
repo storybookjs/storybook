@@ -1,51 +1,20 @@
-/* eslint-disable no-underscore-dangle */
-import * as fs from 'node:fs';
-import * as fsp from 'node:fs/promises';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { describe, expect, it, vi } from 'vitest';
-
+import * as cliImports from 'storybook/internal/cli';
 import type { PackageJson } from 'storybook/internal/common';
-
-import { dedent } from 'ts-dedent';
 
 import { makePackageManager } from '../helpers/testing-helpers';
 import { eslintPlugin } from './eslint-plugin';
 
-vi.mock('node:fs/promises', async () => import('../../../../../__mocks__/fs/promises'));
-vi.mock('fs');
+const defaultHasEslintValues = {
+  hasEslint: false,
+  eslintConfigFile: undefined,
+  isStorybookPluginInstalled: false,
+  isFlatConfig: false,
+  unsupportedExtension: undefined,
+};
 
-const checkEslint = async ({
-  packageJson,
-  hasEslint = true,
-  eslintExtension = 'js',
-}: {
-  packageJson: PackageJson;
-  hasEslint?: boolean;
-  eslintExtension?: string;
-}) => {
-  vi.mocked<typeof import('../../../../../__mocks__/fs/promises')>(fsp as any).__setMockFiles({
-    [`.eslintrc.${eslintExtension}`]: !hasEslint
-      ? null
-      : dedent(`
-      module.exports = {
-        extends: ['plugin:react/recommended', 'airbnb-typescript', 'plugin:prettier/recommended'],
-        parser: '@typescript-eslint/parser',
-        parserOptions: {
-          ecmaFeatures: {
-            jsx: true,
-          },
-          ecmaVersion: 12,
-          sourceType: 'module',
-          project: 'tsconfig.eslint.json',
-        },
-        plugins: ['react', '@typescript-eslint'],
-        rules: {
-          'some/rule': 'warn',
-        },
-      }
-    `),
-  });
-  vi.mocked(fs).existsSync.mockImplementation(() => true);
+const checkEslint = async ({ packageJson }: { packageJson: PackageJson }) => {
   return eslintPlugin.check({
     packageManager: makePackageManager(packageJson),
     mainConfig: {} as any,
@@ -54,20 +23,30 @@ const checkEslint = async ({
 };
 
 describe('eslint-plugin fix', () => {
+  beforeEach(() => {
+    vi.spyOn(cliImports, 'extractEslintInfo').mockClear();
+  });
+
   describe('should skip migration when', () => {
     it('project does not have eslint installed', async () => {
       const packageJson = { dependencies: {} };
+      vi.spyOn(cliImports, 'extractEslintInfo').mockImplementation(async () => {
+        return { ...defaultHasEslintValues, hasEslint: false };
+      });
 
       await expect(
         checkEslint({
           packageJson,
-          hasEslint: false,
         })
       ).resolves.toBeFalsy();
     });
 
     it('project already contains eslint-plugin-storybook dependency', async () => {
       const packageJson = { dependencies: { 'eslint-plugin-storybook': '^0.0.0' } };
+
+      vi.spyOn(cliImports, 'extractEslintInfo').mockImplementation(async () => {
+        return { ...defaultHasEslintValues, hasEslint: true, isStorybookPluginInstalled: true };
+      });
 
       await expect(
         checkEslint({
@@ -83,38 +62,19 @@ describe('eslint-plugin fix', () => {
     describe('should no-op and warn when', () => {
       it('.eslintrc is not found', async () => {
         const loggerSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-        const result = await checkEslint({
-          packageJson,
-          hasEslint: false,
+
+        vi.spyOn(cliImports, 'extractEslintInfo').mockImplementation(async () => {
+          return { ...defaultHasEslintValues, hasEslint: true, eslintConfigFile: undefined };
         });
 
-        expect(loggerSpy).toHaveBeenCalledWith('Unable to find .eslintrc config file, skipping');
+        const result = await checkEslint({
+          packageJson,
+        });
+
+        expect(loggerSpy).toHaveBeenCalledWith('Unable to find eslint config file, skipping');
 
         await expect(result).toBeFalsy();
         loggerSpy.mockRestore();
-      });
-    });
-
-    describe('should install eslint plugin', () => {
-      it.skip('when .eslintrc is using a supported extension', async () => {
-        await expect(
-          checkEslint({
-            packageJson,
-          })
-        ).rejects.toThrowErrorMatchingInlineSnapshot(
-          `[Error: warn: Unable to find .eslintrc config file, skipping]`
-        );
-      });
-
-      it.skip('when .eslintrc is using unsupported extension', async () => {
-        await expect(
-          checkEslint({
-            packageJson,
-            eslintExtension: 'yml',
-          })
-        ).rejects.toThrowErrorMatchingInlineSnapshot(
-          `[Error: warn: Unable to find .eslintrc config file, skipping]`
-        );
       });
     });
   });

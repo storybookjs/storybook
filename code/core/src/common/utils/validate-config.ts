@@ -4,7 +4,7 @@ import {
   CouldNotEvaluateFrameworkError,
   InvalidFrameworkNameError,
   MissingFrameworkFieldError,
-} from '@storybook/core/server-errors';
+} from 'storybook/internal/server-errors';
 
 import { frameworkPackages } from './get-storybook-info';
 

@@ -1,5 +1,7 @@
 import { join, parse } from 'node:path';
 
+import { logger } from 'storybook/internal/node-logger';
+import { CriticalPresetLoadError } from 'storybook/internal/server-errors';
 import type {
   BuilderOptions,
   CLIOptions,
@@ -10,10 +12,7 @@ import type {
   PresetConfig,
   Presets,
   StorybookConfigRaw,
-} from '@storybook/core/types';
-
-import { logger } from '@storybook/core/node-logger';
-import { CriticalPresetLoadError } from '@storybook/core/server-errors';
+} from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 
@@ -69,7 +68,6 @@ function resolvePresetFunction<T = any>(
  *
  * Valid inputs:
  *
- * - `'@storybook/addon-actions/manager' => { type: 'virtual', item }`
  * - `'@storybook/addon-docs/preset' => { type: 'presets', item }`
  * - `'@storybook/addon-docs' => { type: 'presets', item: '@storybook/addon-docs/preset' }`
  * - `{ name: '@storybook/addon-docs(/preset)?', options: { } } => { type: 'presets', item: { name:

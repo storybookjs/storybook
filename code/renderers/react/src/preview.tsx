@@ -15,17 +15,24 @@ import type {
 
 import type { RemoveIndexSignature, SetOptional, Simplify, UnionToIntersection } from 'type-fest';
 
+import { __definePreview as definePreviewBase } from '../../../core/src/shared/preview/csf4';
 import * as reactAnnotations from './entry-preview';
+import * as reactArgTypesAnnotations from './entry-preview-argtypes';
 import * as reactDocsAnnotations from './entry-preview-docs';
 import type { AddMocks } from './public-types';
 import type { ReactRenderer } from './types';
 
-export function definePreview<Addons extends PreviewAddon<never>[]>(
+export function __definePreview<Addons extends PreviewAddon<never>[]>(
   preview: ProjectAnnotations<ReactRenderer> & { addons: Addons }
 ): ReactPreview<InferTypes<Addons>> {
   return definePreviewBase({
     ...preview,
-    addons: [reactAnnotations, reactDocsAnnotations, ...(preview.addons ?? [])],
+    addons: [
+      reactAnnotations,
+      reactArgTypesAnnotations,
+      reactDocsAnnotations,
+      ...(preview.addons ?? []),
+    ],
   }) as unknown as ReactPreview<InferTypes<Addons>>;
 }
 
@@ -71,7 +78,7 @@ interface ReactMeta<
   ): ReactStory<T>;
 
   story<
-    const TInput extends Simplify<
+    TInput extends Simplify<
       StoryAnnotations<
         ReactRenderer & T,
         // TODO: infer mocks from story itself as well
@@ -84,4 +91,4 @@ interface ReactMeta<
   ): ReactStory<T>;
 }
 
-interface ReactStory<T extends Types> extends Story<ReactRenderer & T> {}
+export interface ReactStory<T extends Types> extends Story<ReactRenderer & T> {}

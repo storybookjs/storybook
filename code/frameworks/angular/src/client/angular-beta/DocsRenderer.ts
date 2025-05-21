@@ -1,5 +1,5 @@
 import { DOCS_RENDERED, STORY_CHANGED } from 'storybook/internal/core-events';
-import { addons } from 'storybook/internal/preview-api';
+import { addons } from 'storybook/preview-api';
 
 import { Parameters, StoryFnAngularReturnType } from '../types';
 import { AbstractRenderer, STORY_UID_ATTRIBUTE } from './AbstractRenderer';

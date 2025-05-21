@@ -1,12 +1,13 @@
 <script>
-  export let mockFn;
-  export let loaded;
-
-  let data;
+  const { mockFn, loaded } = $props();
   
-  $: if (mockFn && loaded) {
-    data = mockFn('render');
-  }
+  let data = $state();
+  
+  $effect(() => {
+    if (mockFn && loaded) {
+      data = mockFn('render');
+    }
+  });
 </script>
 
 <div>

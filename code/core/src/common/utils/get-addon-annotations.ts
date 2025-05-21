@@ -32,9 +32,11 @@ export async function getAddonAnnotations(addon: string) {
       isCoreAddon: isCorePackage(addon),
     };
 
-    // for backwards compatibility, if it's not a core addon we use /preview entrypoint
-    if (!data.isCoreAddon) {
-      data.importPath = `@storybook/${addon}/preview`;
+    if (addon === '@storybook/addon-essentials') {
+      return data;
+    } else if (!data.isCoreAddon) {
+      // for backwards compatibility, if it's not a core addon we use /preview entrypoint
+      data.importPath = `${addon}/preview`;
     }
 
     require.resolve(path.join(addon, 'preview'));

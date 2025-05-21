@@ -1,7 +1,7 @@
 import type { ComponentProps, ReactNode, SyntheticEvent } from 'react';
 import React, { Fragment, useCallback } from 'react';
 
-import { styled } from '@storybook/core/theming';
+import { styled } from 'storybook/theming';
 
 import type { LinkWrapperType, ListItemProps } from './ListItem';
 import ListItem from './ListItem';
@@ -67,7 +67,9 @@ export interface TooltipLinkListProps extends ComponentProps<typeof List> {
 
 export const TooltipLinkList = ({ links, LinkWrapper, ...props }: TooltipLinkListProps) => {
   const groups = Array.isArray(links[0]) ? (links as Link[][]) : [links as Link[]];
-  const isIndented = groups.some((group) => group.some((link) => 'icon' in link && link.icon));
+  const isIndented = groups.some((group) =>
+    group.some((link) => ('icon' in link && link.icon) || ('input' in link && link.input))
+  );
   return (
     <List {...props}>
       {groups

@@ -1,10 +1,8 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
-
-/* eslint-disable no-underscore-dangle */
-import { types as t } from '@storybook/core/babel';
-import { getStoryTitle } from '@storybook/core/common';
-import { combineTags } from '@storybook/core/csf';
-import type { StoriesEntry, Tag } from '@storybook/core/types';
+import { types as t } from 'storybook/internal/babel';
+import { getStoryTitle } from 'storybook/internal/common';
+import { combineTags } from 'storybook/internal/csf';
+import type { StoriesEntry, Tag } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 
@@ -181,13 +179,15 @@ export async function vitestTransform({
         testPathProperty
       );
 
-      // Create the final expression: import.meta.url.includes(...)
+      // Create the final expression: convertToFilePath(import.meta.url).includes(...)
       const includesCall = t.callExpression(
         t.memberExpression(
-          t.memberExpression(
-            t.memberExpression(t.identifier('import'), t.identifier('meta')),
-            t.identifier('url')
-          ),
+          t.callExpression(t.identifier('convertToFilePath'), [
+            t.memberExpression(
+              t.memberExpression(t.identifier('import'), t.identifier('meta')),
+              t.identifier('url')
+            ),
+          ]),
           t.identifier('includes')
         ),
         [nullishCoalescingExpression]
@@ -266,8 +266,11 @@ export async function vitestTransform({
         t.stringLiteral('vitest')
       ),
       t.importDeclaration(
-        [t.importSpecifier(testStoryId, t.identifier('testStory'))],
-        t.stringLiteral('@storybook/experimental-addon-test/internal/test-utils')
+        [
+          t.importSpecifier(testStoryId, t.identifier('testStory')),
+          t.importSpecifier(t.identifier('convertToFilePath'), t.identifier('convertToFilePath')),
+        ],
+        t.stringLiteral('@storybook/addon-vitest/internal/test-utils')
       ),
     ];
 

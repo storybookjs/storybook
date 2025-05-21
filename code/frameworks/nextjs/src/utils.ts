@@ -83,15 +83,7 @@ export const addScopedAlias = (baseConfig: WebpackConfig, name: string, alias?: 
  * that to just include the path to the module folder when the id provided is a package or named export.
  */
 export const scopedResolve = (id: string): string => {
-  let scopedModulePath;
-
-  try {
-    // TODO: Remove in next major release (SB 9.0) and use the statement in the catch block per default instead
-    scopedModulePath = require.resolve(id, { paths: [resolve()] });
-  } catch (e) {
-    scopedModulePath = require.resolve(id);
-  }
-
+  const scopedModulePath = require.resolve(id);
   const idWithNativePathSep = id.replace(/\//g /* all '/' occurrences */, sep);
 
   // If the id referenced the file specifically, return the full module path & filename

@@ -1,12 +1,13 @@
-import type { FC } from 'react';
+import type { ComponentProps, FC } from 'react';
 import React from 'react';
 
-import { IconButton } from '@storybook/core/components';
-import { styled } from '@storybook/core/theming';
-import { BottomBarToggleIcon, MenuIcon } from '@storybook/icons';
-import type { API_IndexHash, API_Refs } from '@storybook/types';
+import { IconButton } from 'storybook/internal/components';
+import type { API_IndexHash, API_Refs } from 'storybook/internal/types';
 
-import { useStorybookApi, useStorybookState } from '@storybook/core/manager-api';
+import { BottomBarToggleIcon, MenuIcon } from '@storybook/icons';
+
+import { useStorybookApi, useStorybookState } from 'storybook/manager-api';
+import { styled } from 'storybook/theming';
 
 import { useLayout } from '../../layout/LayoutProvider';
 import { MobileAddonsDrawer } from './MobileAddonsDrawer';
@@ -64,13 +65,18 @@ const useFullStoryName = () => {
   return fullStoryName;
 };
 
-export const MobileNavigation: FC<MobileNavigationProps> = ({ menu, panel, showPanel }) => {
+export const MobileNavigation: FC<MobileNavigationProps & ComponentProps<typeof Container>> = ({
+  menu,
+  panel,
+  showPanel,
+  ...props
+}) => {
   const { isMobileMenuOpen, isMobilePanelOpen, setMobileMenuOpen, setMobilePanelOpen } =
     useLayout();
   const fullStoryName = useFullStoryName();
 
   return (
-    <Container>
+    <Container {...props}>
       <MobileMenuDrawer>{menu}</MobileMenuDrawer>
       {isMobilePanelOpen ? (
         <MobileAddonsDrawer>{panel}</MobileAddonsDrawer>

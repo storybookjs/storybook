@@ -1,6 +1,6 @@
 ```js filename=".storybook/test-runner.js" renderer="common" language="js"
 const { getStoryContext } = require('@storybook/test-runner');
-const { MINIMAL_VIEWPORTS } = require('@storybook/addon-viewport');
+const { MINIMAL_VIEWPORTS } = require('storybook/viewport');
 
 const DEFAULT_VIEWPORT_SIZE = { width: 1280, height: 720 };
 
@@ -33,7 +33,7 @@ module.exports = {
 import type { TestRunnerConfig } from '@storybook/test-runner';
 import { getStoryContext } from '@storybook/test-runner';
 
-const { MINIMAL_VIEWPORTS } = require('@storybook/addon-viewport');
+const { MINIMAL_VIEWPORTS } = require('storybook/viewport');
 
 const DEFAULT_VIEWPORT_SIZE = { width: 1280, height: 720 };
 

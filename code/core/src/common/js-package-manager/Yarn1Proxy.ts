@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { FindPackageVersionsError } from '@storybook/core/server-errors';
+import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 
 import { findUp } from 'find-up';
 import { dedent } from 'ts-dedent';
@@ -67,7 +67,7 @@ export class Yarn1Proxy extends JsPackageManager {
   }
 
   async runPackageCommand(command: string, args: string[], cwd?: string): Promise<string> {
-    return this.executeCommand({ command: `yarn`, args: [command, ...args], cwd });
+    return this.executeCommand({ command: `yarn`, args: ['exec', command, ...args], cwd });
   }
 
   public async getPackageJSON(
@@ -138,7 +138,11 @@ export class Yarn1Proxy extends JsPackageManager {
     });
   }
 
-  protected async runAddDeps(dependencies: string[], installAsDevDependencies: boolean) {
+  protected async runAddDeps(
+    dependencies: string[],
+    installAsDevDependencies: boolean,
+    writeOutputToFile = true
+  ) {
     let args = [...dependencies];
 
     if (installAsDevDependencies) {
@@ -151,15 +155,15 @@ export class Yarn1Proxy extends JsPackageManager {
       await this.executeCommand({
         command: 'yarn',
         args: ['add', ...this.getInstallArgs(), ...args],
-        stdio: process.env.CI ? 'inherit' : ['ignore', logStream, logStream],
+        stdio: process.env.CI || !writeOutputToFile ? 'inherit' : ['ignore', logStream, logStream],
       });
     } catch (err) {
+      if (!writeOutputToFile) {
+        throw err;
+      }
       const stdout = await readLogFile();
-
       const errorMessage = this.parseErrorFromLogs(stdout);
-
       await moveLogFile();
-
       throw new Error(
         dedent`${errorMessage}
         

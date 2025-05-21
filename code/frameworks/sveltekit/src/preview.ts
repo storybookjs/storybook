@@ -1,7 +1,6 @@
 import type { Decorator } from '@storybook/svelte';
 
-import { action } from '@storybook/addon-actions';
-
+import { action } from 'storybook/actions';
 import { onMount } from 'svelte';
 
 import { setAfterNavigateArgument } from './mocks/app/navigation';

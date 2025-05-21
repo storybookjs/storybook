@@ -1,8 +1,4 @@
-import type { DocsIndexEntry, StoryIndex } from '@storybook/core/types';
-import type { Args, Globals, Renderer, StoryId, ViewMode } from '@storybook/core/types';
-import type { ModuleImportFn, ProjectAnnotations } from '@storybook/core/types';
-
-import { logger } from '@storybook/core/client-logger';
+import { logger } from 'storybook/internal/client-logger';
 import {
   CURRENT_STORY_WAS_SET,
   DOCS_PREPARED,
@@ -19,13 +15,16 @@ import {
   STORY_THREW_EXCEPTION,
   STORY_UNCHANGED,
   UPDATE_QUERY_PARAMS,
-} from '@storybook/core/core-events';
+} from 'storybook/internal/core-events';
 import {
   CalledPreviewMethodBeforeInitializationError,
   EmptyIndexError,
   MdxFileWithNoCsfReferencesError,
   NoStoryMatchError,
-} from '@storybook/core/preview-errors';
+} from 'storybook/internal/preview-errors';
+import type { DocsIndexEntry, StoryIndex } from 'storybook/internal/types';
+import type { Args, Globals, Renderer, StoryId, ViewMode } from 'storybook/internal/types';
+import type { ModuleImportFn, ProjectAnnotations } from 'storybook/internal/types';
 
 import invariant from 'tiny-invariant';
 

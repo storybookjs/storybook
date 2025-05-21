@@ -250,7 +250,7 @@ export interface StoryContext<TRenderer extends Renderer = Renderer, TArgs = Arg
   abortSignal: AbortSignal;
   canvasElement: TRenderer['canvasElement'];
   hooks: unknown;
-  originalStoryFn: StoryFn<TRenderer>;
+  originalStoryFn: ArgsStoryFn<TRenderer>;
   viewMode: ViewMode;
   step: StepFunction<TRenderer, TArgs>;
   context: this;
@@ -374,7 +374,7 @@ export interface BaseAnnotations<TRenderer extends Renderer = Renderer, TArgs = 
    * `afterEach` can be added to preview, the default export and to a specific story. They are run
    * (and awaited) reverse order: preview, default export, story
    */
-  experimental_afterEach?: AfterEach<TRenderer, TArgs>[] | AfterEach<TRenderer, TArgs>;
+  afterEach?: AfterEach<TRenderer, TArgs>[] | AfterEach<TRenderer, TArgs>;
 
   /**
    * Define a custom render function for the story(ies). If not passed, a default render function by
@@ -409,8 +409,6 @@ export interface ProjectAnnotations<TRenderer extends Renderer = Renderer, TArgs
    */
   beforeAll?: BeforeAll;
 
-  /** @deprecated Project `globals` renamed to `initiaGlobals` */
-  globals?: Globals;
   initialGlobals?: Globals;
   globalTypes?: GlobalTypes;
   applyDecorators?: DecoratorApplicator<TRenderer, Args>;
@@ -525,7 +523,6 @@ export type StoryAnnotations<
 
   /** @deprecated */
   story?: Omit<StoryAnnotations<TRenderer, TArgs>, 'story'>;
-  // eslint-disable-next-line @typescript-eslint/ban-types
 } & ({} extends TRequiredArgs ? { args?: TRequiredArgs } : { args: TRequiredArgs });
 
 export type LegacyAnnotatedStoryFn<TRenderer extends Renderer = Renderer, TArgs = Args> = StoryFn<

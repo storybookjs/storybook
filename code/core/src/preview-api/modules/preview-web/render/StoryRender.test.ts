@@ -1,10 +1,14 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { Channel } from 'storybook/internal/channels';
 import { STORY_FINISHED } from 'storybook/internal/core-events';
-
-import { Channel } from '@storybook/core/channels';
-import type { PreparedStory, Renderer, StoryContext, StoryIndexEntry } from '@storybook/core/types';
+import type {
+  PreparedStory,
+  Renderer,
+  StoryContext,
+  StoryIndexEntry,
+} from 'storybook/internal/types';
 
 import { ReporterAPI, type StoryStore } from '../../store';
 import { PREPARE_ABORTED } from './Render';
@@ -41,7 +45,7 @@ const buildStory = (overrides: Partial<PreparedStory> = {}): PreparedStory =>
     name: 'name',
     tags: [],
     applyLoaders: vi.fn(),
-    applyBeforeEach: vi.fn(),
+    applyBeforeEach: vi.fn(() => []),
     applyAfterEach: vi.fn(),
     unboundStoryFn: vi.fn(),
     playFunction: vi.fn(),

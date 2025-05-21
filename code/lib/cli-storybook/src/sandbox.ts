@@ -228,8 +228,9 @@ export const sandbox = async ({
         // @ts-expect-error (no types for this)
         const { initiate } = await import('create-storybook');
         await initiate({
-          dev: process.env.CI !== 'true' && process.env.IN_STORYBOOK_SANBOX !== 'true',
+          dev: process.env.CI !== 'true' && process.env.IN_STORYBOOK_SANDBOX !== 'true',
           ...options,
+          features: ['docs', 'test'],
         });
         process.chdir(before);
       }

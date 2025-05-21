@@ -1,14 +1,19 @@
 import type { ComponentProps, FC, SyntheticEvent } from 'react';
 import React, { useMemo, useState } from 'react';
 
-import { TooltipLinkList, WithTooltip } from '@storybook/core/components';
-import { styled } from '@storybook/core/theming';
-import { type API_HashEntry, Addon_TypesEnum } from '@storybook/core/types';
+import { TooltipLinkList, WithTooltip } from 'storybook/internal/components';
+import {
+  type API_HashEntry,
+  type Addon_Collection,
+  type Addon_TestProviderType,
+  Addon_TypesEnum,
+} from 'storybook/internal/types';
+
 import { EllipsisIcon } from '@storybook/icons';
 
-import { type TestProviders } from '@storybook/core/core-events';
-import { useStorybookState } from '@storybook/core/manager-api';
-import type { API } from '@storybook/core/manager-api';
+import { useStorybookApi } from 'storybook/manager-api';
+import type { API } from 'storybook/manager-api';
+import { styled } from 'storybook/theming';
 
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList';
 import { StatusButton } from './StatusButton';
@@ -54,12 +59,10 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
    * instead of a simple boolean to ensure that the links are recalculated
    */
   const providerLinks = useMemo(() => {
-    const testProviders = api.getElements(
-      Addon_TypesEnum.experimental_TEST_PROVIDER
-    ) as any as TestProviders;
+    const registeredTestProviders = api.getElements(Addon_TypesEnum.experimental_TEST_PROVIDER);
 
     if (hoverCount) {
-      return generateTestProviderLinks(testProviders, context);
+      return generateTestProviderLinks(registeredTestProviders, context);
     }
     return [];
   }, [api, context, hoverCount]);
@@ -89,7 +92,7 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
           }}
           tooltip={<LiveContextMenu context={context} links={links} />}
         >
-          <FloatingStatusButton type="button" status={'pending'}>
+          <FloatingStatusButton type="button" status="status-value:pending">
             <EllipsisIcon />
           </FloatingStatusButton>
         </PositionedWithTooltip>
@@ -108,8 +111,10 @@ const LiveContextMenu: FC<{ context: API_HashEntry } & ComponentProps<typeof Too
   links,
   ...rest
 }) => {
-  const { testProviders } = useStorybookState();
-  const providerLinks: Link[] = generateTestProviderLinks(testProviders, context);
+  const registeredTestProviders = useStorybookApi().getElements(
+    Addon_TypesEnum.experimental_TEST_PROVIDER
+  );
+  const providerLinks: Link[] = generateTestProviderLinks(registeredTestProviders, context);
   const groups = Array.isArray(links[0]) ? (links as Link[][]) : [links as Link[]];
   const all = groups.concat([providerLinks]);
 
@@ -117,15 +122,15 @@ const LiveContextMenu: FC<{ context: API_HashEntry } & ComponentProps<typeof Too
 };
 
 export function generateTestProviderLinks(
-  testProviders: TestProviders,
+  registeredTestProviders: Addon_Collection<Addon_TestProviderType>,
   context: API_HashEntry
 ): Link[] {
-  return Object.entries(testProviders)
+  return Object.entries(registeredTestProviders)
     .map(([testProviderId, state]) => {
       if (!state) {
         return null;
       }
-      const content = state.sidebarContextMenu?.({ context, state });
+      const content = state.sidebarContextMenu?.({ context });
 
       if (!content) {
         return null;

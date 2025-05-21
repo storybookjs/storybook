@@ -1,18 +1,9 @@
 {
   "name": "@storybook/addon-outline",
-  "version": "8.6.0-beta.4",
-  "description": "Outline all elements with CSS to help with layout placement and alignment",
-  "keywords": [
-    "storybook-addons",
-    "essentials",
-    "outline",
-    "css",
-    "layout",
-    "debug",
-    "storybook-addon",
-    "style"
-  ],
-  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/addons/outline",
+  "version": "9.0.0-rc.3",
+  "description": "Empty package - please don't use it anymore",
+  "keywords": [],
+  "homepage": "https://github.com/storybookjs/storybook",
   "bugs": {
     "url": "https://github.com/storybookjs/storybook/issues"
   },
@@ -26,7 +17,6 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
-  "author": "winkerVSbecks",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -66,19 +56,6 @@
     "check": "jiti ../../../scripts/prepare/check.ts",
     "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
   },
-  "dependencies": {
-    "@storybook/global": "^5.0.0",
-    "ts-dedent": "^2.0.0"
-  },
-  "devDependencies": {
-    "@storybook/icons": "^1.2.12",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "typescript": "^5.7.3"
-  },
-  "peerDependencies": {
-    "storybook": "workspace:^"
-  },
   "publishConfig": {
     "access": "public"
   },
@@ -90,15 +67,8 @@
       "./src/manager.tsx"
     ],
     "previewEntries": [
-      "./src/preview.ts"
+      "./src/preview.tsx"
     ]
   },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16",
-  "storybook": {
-    "displayName": "Outline",
-    "unsupportedFrameworks": [
-      "react-native"
-    ],
-    "icon": "https://user-images.githubusercontent.com/263385/101991674-48355c80-3c7c-11eb-9686-f684e755fcdd.png"
-  }
+  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
 }

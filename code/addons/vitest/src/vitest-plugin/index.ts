@@ -402,6 +402,24 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
   };
 
   plugins.push(storybookTestPlugin);
+
+  // When running tests via the Storybook UI, we need
+  // to find the right project to run, thus we override
+  // with a unique identifier using the path to the config dir
+  if (process.env.VITEST_STORYBOOK) {
+    const projectName = join('storybook:', finalOptions.configDir);
+    plugins.push({
+      name: 'storybook:workspace-name-override',
+      config: {
+        order: 'pre',
+        handler: (config) => {
+          config.test ??= {};
+          config.test.name = projectName;
+          return config;
+        },
+      },
+    });
+  }
   return plugins;
 };
 

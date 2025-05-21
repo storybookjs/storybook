@@ -4,6 +4,7 @@ import { createVitest as actualCreateVitest } from 'vitest/node';
 import { Channel, type ChannelTransport } from 'storybook/internal/channels';
 import { experimental_MockUniversalStore } from 'storybook/internal/core-server';
 import type {
+  Options,
   StatusStoreByTypeId,
   StoryIndex,
   TestProviderStoreById,
@@ -129,6 +130,9 @@ const options: TestManagerOptions = {
     throw error;
   },
   onReady: vi.fn(),
+  storybookOptions: {
+    configDir: '.storybook',
+  } as Options,
 };
 
 describe('TestManager', () => {

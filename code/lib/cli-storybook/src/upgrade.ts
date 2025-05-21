@@ -1,7 +1,10 @@
+import { dirname } from 'node:path';
+
 import { hasStorybookDependencies } from 'storybook/internal/cli';
 import type { JsPackageManager, PackageManagerName } from 'storybook/internal/common';
 import {
   JsPackageManagerFactory,
+  getProjectRoot,
   isCorePackage,
   isSatelliteAddon,
   prompt,
@@ -18,6 +21,7 @@ import {
 import { telemetry } from 'storybook/internal/telemetry';
 
 import { sync as spawnSync } from 'cross-spawn';
+import findUp from 'find-up';
 import picocolors from 'picocolors';
 import semver, { clean, eq, lt, prerelease } from 'semver';
 import { dedent } from 'ts-dedent';
@@ -26,6 +30,7 @@ import { autoblock } from './autoblock/index';
 import { getStorybookData } from './automigrate/helpers/mainConfigFile';
 import { automigrate } from './automigrate/index';
 import { doctor } from './doctor';
+import { findStorybookProjects, getStorybookProjectData, selectStorybookProjects } from './util';
 
 type Package = {
   package: string;
@@ -210,7 +215,7 @@ export interface UpgradeOptions {
   yes: boolean;
   force: boolean;
   disableTelemetry: boolean;
-  configDir?: string;
+  configDir?: string[];
 }
 
 export const doUpgrade = async (allOptions: UpgradeOptions) => {
@@ -452,5 +457,57 @@ export const doUpgrade = async (allOptions: UpgradeOptions) => {
 };
 
 export async function upgrade(options: UpgradeOptions): Promise<void> {
-  await withTelemetry('upgrade', { cliOptions: options }, () => doUpgrade(options));
+  // TODO: fix the type error below, it's a bit more involved
+  await withTelemetry('upgrade', { cliOptions: options }, async () => {
+    let configDirs = options.configDir;
+    if (!configDirs) {
+      configDirs = await findStorybookProjects();
+      if (configDirs.length > 1) {
+        configDirs = await selectStorybookProjects(configDirs);
+      }
+
+      if (configDirs.length === 0) {
+        return;
+      }
+    }
+
+    const gitRoot = getProjectRoot();
+
+    // Migrate each selected project
+    for (let i = 0; i < configDirs.length; i++) {
+      const storybookProject = configDirs[i];
+      const projectName = storybookProject.replace(gitRoot, '');
+
+      logger.info(
+        `\nMigrating project ${i + 1}/${configDirs.length}:\n\t${picocolors.cyan(projectName)}`
+      );
+
+      // TODO: Valentin will work on the package.json stuff
+      const nearestPackageJson = await findUp('package.json', { cwd: storybookProject });
+      if (!nearestPackageJson) {
+        logger.error(`No package.json found for project ${projectName}, skipping...`);
+        continue;
+      }
+
+      const packageManager = JsPackageManagerFactory.getPackageManager(
+        {
+          force: options.packageManager,
+        },
+        dirname(nearestPackageJson)
+      );
+
+      const projectData = await getStorybookData({
+        configDir: storybookProject,
+        packageManager,
+        cwd: dirname(storybookProject),
+      });
+
+      console.log({ projectData });
+    }
+
+    console.log('end of execution');
+
+    // The real code:
+    //doUpgrade(options);
+  });
 }

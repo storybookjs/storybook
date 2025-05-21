@@ -103,7 +103,10 @@ command('upgrade')
   .option('-f --force', 'force the upgrade, skipping autoblockers')
   .option('-n --dry-run', 'Only check for upgrades, do not install')
   .option('-s --skip-check', 'Skip postinstall version and automigration checks')
-  .option('-c, --config-dir <dir-name>', 'Directory where to load Storybook configurations from')
+  .option(
+    '-c, --config-dir <dir-name...>',
+    'Directory(ies) where to load Storybook configurations from'
+  )
   .action(async (options: UpgradeOptions) => upgrade(options).catch(() => process.exit(1)));
 
 command('info')

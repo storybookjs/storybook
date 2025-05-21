@@ -8,11 +8,7 @@ export function isTestEnvironment() {
       // @ts-expect-error this property exists in certain environments
       !!globalThis.__vitest_browser__ ||
       // @ts-expect-error this property exists in certain environments
-      !!globalThis.__playwright__binding__ ||
-      // @ts-expect-error this property exists in certain environments
-      !!import.meta.vitest ||
-      // @ts-expect-error this property exists in certain environments
-      import.meta.env.MODE === 'test'
+      !!globalThis.__playwright__binding__
     );
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (e) {

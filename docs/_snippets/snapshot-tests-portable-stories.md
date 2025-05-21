@@ -4,7 +4,7 @@ import * as glob from 'glob';
 
 import { describe, test, expect } from '@jest/globals';
 
-// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import { composeStories } from '@storybook/your-framework';
 
 const compose = (entry) => {
@@ -68,7 +68,7 @@ import * as glob from 'glob';
 
 import { describe, test, expect } from '@jest/globals';
 
-// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import { composeStories } from '@storybook/your-framework';
 
 type StoryFile = {
@@ -134,7 +134,7 @@ describe('Stories Snapshots', () => {
 import path from 'path';
 import { describe, expect, test } from 'vitest';
 
-// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import { composeStories } from '@storybook/your-framework';
 
 const compose = (entry) => {
@@ -196,7 +196,7 @@ import type { Meta, StoryFn } from '@storybook/your-framework';
 import path from 'path';
 import { describe, expect, test } from 'vitest';
 
-// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import { composeStories } from '@storybook/your-framework';
 
 type StoryFile = {

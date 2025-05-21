@@ -11,14 +11,6 @@ You can preview and debug your interaction tests using the Interactions panel in
 
 <Video src="../_assets/writing-tests/component-interaction-testing.mp4" />
 
-## Get started
-
-Run this command, which will install and configure the Vitest and the addon:
-
-<CodeSnippets path="addon-test-install.md" />
-
-*The full installation instructions, including project requirements, are available in the [Vitest addon documentation](./integrations/vitest-addon.mdx#install-and-set-up).*
-
 ## Writing interaction tests
 
 Every story you write can be render tested. A **render test** is a simple version of an interaction test that only tests the ability of a component to render successfully in a given state. That works fine for relatively simple, static components like a Button. But for more complex, interactive components, you can go farther.
@@ -196,7 +188,7 @@ You can return a cleanup function from the `beforeEach` function, which will run
 
 <Callout variant="info">
 
-Generally, you should reset component and module state in the [preview file's `beforeAll` or `beforeEach` functions](#setup-or-reset-state-for-all-tests), to ensure it applies to your entire project. However, if a component's needs are particularly unique, you can use the returned cleanup function in the component meta `beforeEach` to reset the state as needed.
+Generally, you should reset component and module state in the [preview file's `beforeAll` or `beforeEach` functions](#set-up-or-reset-state-for-all-tests), to ensure it applies to your entire project. However, if a component's needs are particularly unique, you can use the returned cleanup function in the component meta `beforeEach` to reset the state as needed.
 
 </Callout>
 
@@ -268,8 +260,7 @@ If you check the Interactions panel, you'll see the step-by-step flow defined in
 
 Any test failures will also show up here, making it easy to quickly pinpoint the exact point of failure. In this example, the logic is missing to set the `submitted` state after pressing the Log in button.
 
-[TK - Replace]
-<Video src="../_assets/writing-tests/addon-interactions-playback-controls-optimized.mp4" />
+<Video src="../_assets/writing-tests/interactions-debug.mp4" />
 
 ### Permalinks for reproductions
 

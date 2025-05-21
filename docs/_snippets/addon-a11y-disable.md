@@ -38,7 +38,8 @@ export const NonA11yStory = {
 ```
 
 ```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts"
-import type { Meta, StoryObj } from '@storybook/react';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { MyComponent } from './MyComponent';
 
@@ -121,7 +122,8 @@ export const NonA11yStory = {
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
-import type { Meta, StoryObj } from '@storybook/svelte';
+// Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import MyComponent from './MyComponent.svelte';
 
@@ -160,7 +162,7 @@ export const NonA11yStory = {
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="vue" language="ts"
-import type { Meta, StoryObj } from '@storybook/vue3';
+import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import MyComponent from './MyComponent.vue';
 
@@ -196,8 +198,8 @@ export const ExampleStory = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components';
+```js filename="MyComponent.stories.js" renderer="web-components" language="js"
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
   component: 'my-component',

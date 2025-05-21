@@ -75,8 +75,7 @@ Now that we know how to do general snapshot testing, let’s apply it to a commo
 
 In this example, we have a simple Button React component which for some reason accepts a prop, `doNotUseThisItWillThrowAnError`, which will (unsurprisingly) throw an error if it is used.
 
-```tsx
-// Button.tsx
+```tsx title="Button.tsx"
 function Button(props) {
   if (props.doNotUseThisItWillThrowAnError) {
     throw new Error("I tried to tell you...")
@@ -86,7 +85,7 @@ function Button(props) {
 }
 ```
 
-We then have a story which applies that prop via `args`. It also removes the default `dev` and `test` tags to prevent the story from displaying in the Storybook sidebar and prevent it from being tested as a story (by Storybook Test), respectively.
+We then have a story which applies that prop via `args`. It also removes the default `dev` and `test` tags to prevent the story from displaying in the Storybook sidebar and from being tested as a story (by Storybook Test), respectively.
 
 ```js title="Button.stories.js"
 export const ThrowError = {
@@ -97,7 +96,7 @@ export const ThrowError = {
 }
 ```
 
-Finally, in the test file, we write a test which asserts that an error is thrown with a particular message.
+Finally, we write a test in the test file which asserts that an error is thrown with a particular message.
 
 ```ts title="Button.test.ts"
 // @vitest-environment jsdom

@@ -50,7 +50,7 @@ Because the addon is built on top of `axe-core`, much of the configuration avail
 | Property                  | Default     | Description                                                                                                                                                                         |
 | ------------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `parameters.a11y.context` | `'body'`    | [Context](https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#context-parameter) passed to `axe.run`. Defines which elements to run checks against.                       |
-| `parameters.a11y.config`  | (see below) | Configuration passed to [`axe.configure()`](https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#api-name-axeconfigure). Most commonly used to configure individual rules. |
+| `parameters.a11y.config`  | (see below) | Configuration passed to [`axe.configure()`](https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#api-name-axeconfigure). Most commonly used to [configure individual rules](#individual-rules). |
 | `parameters.a11y.options` | `{}`        | [Options](https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter) passed to `axe.run`. Can be used to adjust the rulesets checked against.                 |
 | `parameters.a11y.test`    | `undefined` | Determines test behavior when run with the Vitest addon. [More details below](#test-behavior).                                                                                      |
 | `globals.a11y.manual`     | `undefined` | Set to `true` to prevent stories from being automatically analyzed when visited. [More details below](#disable-automated-checks)                                                    |
@@ -153,16 +153,26 @@ When you disable automated accessibility checks, the addon will not run any test
 
 ## Run accessibility tests
 
+### With the Vitest addon
+
 If you're using the [Vitest addon](./integrations/vitest-addon.mdx), you can run your accessibility tests, as part of component tests, in these ways:
 
 - [In the Storybook UI](./integrations/vitest-addon.mdx#storybook-ui)
 - [In CI environments](./integrations/vitest-addon.mdx#in-ci)
 
-In the Storybook UI, you can run accessibility tests by checking the Accessibility option in the expanded testing widget in the sidebar, then clicking the **Run component tests** button. Once Accessibility is checked, you can also open the context menu (three dots) on a story or folder and selecting **Run component tests**.
+To run accessibility tests in the Storybook UI, first expand the testing widget in the sidebar and check the Accessibility checkbox. Now, when you press the Run component tests button, the accessibility tests will be run along with any other tests you have configured.
 
 ![Test widget, expanded, with accessibility checked](../_assets/writing-tests/test-widget-a11y-enabled.png)
 
+After running the tests, you will see the results in the sidebar, which will add a test status indicator next to each story that was tested. You can press on these indicators to open a menu with the Accessibility test result. Pressing on that result will navigate to that story and open the Accessibility panel, where you view details about each violation and suggestions toward how to fix them.
+
 ![Storybook showing a failing accessibility test in both the sidebar story menu and the Accessibility panel](../_assets/writing-tests/test-a11y-overview.png)
+
+If any of your tests have warnings or failures, the testing widget will show the number of warnings and failures. You can press on these to filter the stories in the sidebar to only show those with warnings or failures.
+
+In CI, accessibility tests are run automatically for stories with [`parameters.a11y.test = 'error'`](#test-behavior) when you run the Vitest tests.
+
+### With the test-runner
 
 If you're using the [test-runner](./integrations/test-runner.mdx), you can run your accessibility tests in the terminal or in CI environments.
 

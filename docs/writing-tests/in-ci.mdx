@@ -58,7 +58,7 @@ jobs:
     container:
       # Make sure to grab the latest version of the Playwright image
       # https://playwright.dev/docs/docker#pull-the-image
-      image: mcr.microsoft.com/playwright:v1.50.1-noble
+      image: mcr.microsoft.com/playwright:v1.52.0-noble
     steps:
       - uses: actions/checkout@v4
       
@@ -98,7 +98,7 @@ Test:
   stage: UI_Tests
   # Make sure to grab the latest version of the Playwright image
   # https://playwright.dev/docs/docker#pull-the-image
-  image: mcr.microsoft.com/playwright:v1.50.1-noble
+  image: mcr.microsoft.com/playwright:v1.52.0-noble
   script:
     - npm run test-storybook
 ```
@@ -125,7 +125,7 @@ pipelines:
               name: "Run Tests"
               # Make sure to grab the latest version of the Playwright image
               # https://playwright.dev/docs/docker#pull-the-image
-              image: mcr.microsoft.com/playwright:v1.50.1-noble
+              image: mcr.microsoft.com/playwright:v1.52.0-noble
               caches:
                 - npm
                 - node
@@ -149,7 +149,7 @@ executors:
     docker:
       # Make sure to grab the latest version of the Playwright image
       # https://playwright.dev/docs/docker#pull-the-image
-      - image: mcr.microsoft.com/playwright:v1.50.1-noble
+      - image: mcr.microsoft.com/playwright:v1.52.0-noble
     working_directory: ~/repo
 
 jobs:
@@ -222,7 +222,7 @@ pipeline {
            * Make sure to grab the latest version of the Playwright image
            * https://playwright.dev/docs/docker#pull-the-image
            */
-          image 'mcr.microsoft.com/playwright:v1.50.1-noble'
+          image 'mcr.microsoft.com/playwright:v1.52.0-noble'
           reuseNode true
         }
       }
@@ -257,7 +257,7 @@ stages:
         displayName: "Storybook tests"
         # Make sure to grab the latest version of the Playwright image
         # https://playwright.dev/docs/docker#pull-the-image
-        container: mcr.microsoft.com/playwright:v1.50.1-noble
+        container: mcr.microsoft.com/playwright:v1.52.0-noble
         variables:
           npm_config_cache: $(Pipeline.Workspace)/.npm
         steps:
@@ -308,7 +308,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     container:
-      image: mcr.microsoft.com/playwright:v1.50.1-noble
+      image: mcr.microsoft.com/playwright:v1.52.0-noble
 +   # 👇 Only run on successful deployments
 +   if: github.event_name == 'deployment_status' && github.event.deployment_status.state == 'success'
     steps:
@@ -407,8 +407,11 @@ Assuming your CI is configured to run when you push your work to a pull request,
 
 When you do so, you should see the test result as a status check on the pull request screen. For example, in GitHub, a failing test run would look something like this:
 
-[TK - Screenshot of GitHub PR status check]
-![TK](https://placecats.com/300/200)
+![GitHub pull request status checks, with a failing "UI Tests / test" check](../_assets/writing-tests/test-ci-workflow-pr-status-checks.png)
+
+Clicking on the failure will take you to the full test output, including the link to the failing story (if you've [set up the `SB_URL` environment variable](#21-debug-test-failures)).
+
+![Test failure output in CI environment, with a link to the Storybook to debug](../_assets/writing-tests/test-ci-workflow-failure.png)
 
 ## FAQs
 

@@ -106,7 +106,8 @@ export const Open = {
 ```
 
 ```ts filename="Dialog.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
-import type { Meta, StoryObj } from '@storybook/svelte-vite';
+// Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+import type { Meta, StoryObj } from '@storybook/your-framework';
 import { screen } from 'storybook/test';
 
 import Dialog from './Dialog.svelte';
@@ -130,7 +131,7 @@ export const Open: Story = {
 ```
 
 ```ts filename="Dialog.stories.ts|tsx" renderer="common" language="ts"
-// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 import { screen } from 'storybook/test';
 

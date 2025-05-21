@@ -8,7 +8,7 @@ sidebar:
 <If renderer={['react', 'vue', 'svelte']}>
 <Callout variant="warning">
 
-The test runner has been superceded by the [Vitest addon](./vitest-addon.mdx), which offers the same functionality, powered by the faster and more modern [Vitest](https://vitest.dev/) browser mode. It also enables the full Storybook Test experience, allowing you to run interaction, accessibility, and visual tests from your Storybook app.
+The test runner has been superseded by the [Vitest addon](./vitest-addon.mdx), which offers the same functionality, powered by the faster and more modern [Vitest](https://vitest.dev/) browser mode. It also enables the full Storybook Test experience, allowing you to run interaction, accessibility, and visual tests from your Storybook app.
 
 If you are using a Vite-powered Storybook framework, we recommend using the Vitest addon instead of the test runner.
 
@@ -17,8 +17,8 @@ If you are using a Vite-powered Storybook framework, we recommend using the Vite
 
 Storybook test runner turns all of your stories into executable tests. It is powered by [Jest](https://jestjs.io/) and [Playwright](https://playwright.dev/).
 
-* For those [without a play function](../writing-stories/index.mdx): it verifies whether the story renders without any errors.
-* For those [with a play function](../writing-stories/play-function.mdx): it also checks for errors in the play function and that all assertions passed.
+* For those [without a play function](../../writing-stories/index.mdx): it verifies whether the story renders without any errors.
+* For those [with a play function](../../writing-stories/play-function.mdx): it also checks for errors in the play function and that all assertions passed.
 
 These tests run in a live browser and can be executed via the [command line](#cli-options) or your [CI server](#set-up-ci-to-run-tests).
 
@@ -81,7 +81,7 @@ If you're already using any of those flags in your project, you should be able t
 | `-c`, `--config-dir [dir-name]` | Directory where to load Storybook configurations from <br />`test-storybook -c .storybook`                                                                                                               |
 | `--watch`                       | Run in watch mode <br />`test-storybook --watch`                                                                                                                                                         |
 | `--watchAll`                    | Watch files for changes and rerun all tests when something changes.<br />`test-storybook --watchAll`                                                                                                     |
-| `--coverage`                    | Runs [coverage tests](./test-coverage.mdx) on your stories and components <br /> `test-storybook --coverage`                                                                                              |
+| `--coverage`                    | Runs [coverage tests](#generate-code-coverage) on your stories and components <br /> `test-storybook --coverage`                                                                                              |
 | `--coverageDirectory`           | Directory where to write coverage report output <br />`test-storybook --coverage --coverageDirectory coverage/ui/storybook`                                                                              |
 | `--url`                         | Define the URL to run tests in. Useful for custom Storybook URLs <br />`test-storybook --url http://the-storybook-url-here.com`                                                                          |
 | `--browsers`                    | Define browsers to run tests in. One or multiple of: chromium, firefox, webkit <br />`test-storybook --browsers firefox chromium`                                                                        |
@@ -153,14 +153,14 @@ You can use your CI provider (for example, [GitHub Actions](https://github.com/f
 {/* prettier-ignore-end */}
 
 <Callout variant="info" icon="💡">
-  By default, Storybook outputs the [build](../sharing/publish-storybook.mdx#build-storybook-as-a-static-web-application) to the `storybook-static` directory. If you're using a different build directory, you'll need to adjust the recipe accordingly.
+  By default, Storybook outputs the [build](../../sharing/publish-storybook.mdx#build-storybook-as-a-static-web-application) to the `storybook-static` directory. If you're using a different build directory, you'll need to adjust the recipe accordingly.
 </Callout>
 
 ### What's the difference between Chromatic and Test runner?
 
 The test-runner is a generic testing tool that can run locally or on CI and be configured or extended to run all kinds of tests.
 
-[Chromatic](https://www.chromatic.com/?utm_source=storybook_website\&utm_medium=link\&utm_campaign=storybook) is a cloud-based service that runs [visual](./visual-testing.mdx) and [interaction tests](./interaction-testing.mdx) (and soon [accessibility tests](./accessibility-testing.mdx)) without setting up the test runner. It also syncs with your git provider and manages access control for private projects.
+[Chromatic](https://www.chromatic.com/?utm_source=storybook_website\&utm_medium=link\&utm_campaign=storybook) is a cloud-based service that runs [visual](../visual-testing.mdx) and [interaction tests](../interaction-testing.mdx) (and soon [accessibility tests](../accessibility-testing.mdx)) without setting up the test runner. It also syncs with your git provider and manages access control for private projects.
 
 However, you might want to pair the test runner and Chromatic in some cases.
 
@@ -179,9 +179,9 @@ For more details, including configuration options, see the [Accessibility testin
 
 ### Set up
 
-To enable snapshot testing with the test-runner, you'll need to take additional steps to set it up properly. We recommend you go through the [test-runner documentation](../test-runner.mdx) before proceeding with the rest of the required configuration to learn more about the available options and APIs.
+To enable snapshot testing with the test-runner, you'll need to take additional steps to set it up properly.
 
-Add a new [configuration file](../test-runner.mdx#test-hook-api) inside your Storybook directory with the following inside:
+Add a new [configuration file](#test-hook-api) inside your Storybook directory with the following inside:
 
 {/* prettier-ignore-start */}
 
@@ -190,7 +190,7 @@ Add a new [configuration file](../test-runner.mdx#test-hook-api) inside your Sto
 {/* prettier-ignore-end */}
 
 <Callout variant="info" icon="💡">
-  The `postVisit` hook allows you to extend the test runner's default configuration. Read more about them [here](../test-runner.mdx#test-hook-api).
+  The `postVisit` hook allows you to extend the test runner's default configuration. Read more about them [here](#test-hook-api).
 </Callout>
 
 When you execute the test-runner (for example, with `yarn test-storybook`), it will run through all of your stories and run the snapshot tests, generating a snapshot file for each story in your project located in the `__snapshots__` directory.
@@ -249,7 +249,7 @@ Storybook also provides a [coverage addon](https://storybook.js.org/addons/@stor
 
 ### Set up
 
-Engineered to work alongside modern testing tools (e.g., [Playwright](https://playwright.dev/)), the coverage addon automatically instruments your code and generates code coverage data. For an optimal experience, we recommend using the [test runner](./test-runner.mdx) alongside the coverage addon to run your tests.
+Engineered to work alongside modern testing tools (e.g., [Playwright](https://playwright.dev/)), the coverage addon automatically instruments your code and generates code coverage data. For an optimal experience, we recommend using the test-runner alongside the coverage addon to run your tests.
 
 Run the following command to install the addon.
 
@@ -259,7 +259,7 @@ Run the following command to install the addon.
 
 <Callout variant="info">
 
-The CLI's [`add`](../api/cli-options.mdx#add) command automates the addon's installation and setup. To install it manually, see our [documentation](../addons/install-addons.mdx#manual-installation) on how to install addons.
+The CLI's [`add`](../../api/cli-options.mdx#add) command automates the addon's installation and setup. To install it manually, see our [documentation](../../addons/install-addons.mdx#manual-installation) on how to install addons.
 
 </Callout>
 
@@ -279,7 +279,7 @@ Finally, open a new terminal window and run the test-runner with:
 
 {/* prettier-ignore-end */}
 
-![Coverage test output](../_assets/writing-tests/integrations/test-runner-coverage-result.png)
+![Coverage test output](../../_assets/writing-tests/integrations/test-runner-coverage-result.png)
 
 ### Configure
 
@@ -355,7 +355,7 @@ If you intend on running coverage tests in frameworks with special files like Vu
 
 #### The coverage addon doesn't support optimized builds
 
-If you generated a production build optimized for performance with the [`--test`](../sharing/publish-storybook.mdx#customizing-the-build-for-performance) flag, and you're using the coverage addon to run tests against your Storybook, you may run into a situation where the coverage addon doesn't instrument your code. This is due to how the flag works, as it removes addons that have an impact on performance (e.g., [`Docs`](../writing-docs/index.mdx), [coverage addon](https://storybook.js.org/addons/@storybook/addon-coverage)). To resolve this issue, you'll need to adjust your Storybook configuration file (i.e., `.storybook/main.js|ts`) and include the [`disabledAddons`](../api/main-config/main-config-build.mdx#testdisabledaddons) option to allow the addon to run tests at the expense of a slower build.
+If you generated a production build optimized for performance with the [`--test`](../../sharing/publish-storybook.mdx#customizing-the-build-for-performance) flag, and you're using the coverage addon to run tests against your Storybook, you may run into a situation where the coverage addon doesn't instrument your code. This is due to how the flag works, as it removes addons that have an impact on performance (e.g., [`Docs`](../../writing-docs/index.mdx), [coverage addon](https://storybook.js.org/addons/@storybook/addon-coverage)). To resolve this issue, you'll need to adjust your Storybook configuration file (i.e., `.storybook/main.js|ts`) and include the [`disabledAddons`](../../api/main-config/main-config-build.mdx#testdisabledaddons) option to allow the addon to run tests at the expense of a slower build.
 
 {/* prettier-ignore-start */}
 
@@ -371,7 +371,7 @@ As the [coverage addon](https://storybook.js.org/addons/@storybook/addon-coverag
 
 ### Test hook API
 
-The test-runner renders a story and executes its [play function](../writing-stories/play-function.mdx) if one exists. However, certain behaviors are impossible to achieve via the play function, which executes in the browser. For example, if you want the test-runner to take visual snapshots for you, this is possible via Playwright/Jest but must be executed in Node.
+The test-runner renders a story and executes its [play function](../../writing-stories/play-function.mdx) if one exists. However, certain behaviors are impossible to achieve via the play function, which executes in the browser. For example, if you want the test-runner to take visual snapshots for you, this is possible via Playwright/Jest but must be executed in Node.
 
 The test-runner exports test hooks that can be overridden globally to enable use cases like visual or DOM snapshots. These hooks give you access to the test lifecycle *before* and *after* the story is rendered.
 Listed below are the available hooks and an overview of how to use them.
@@ -384,7 +384,7 @@ Listed below are the available hooks and an overview of how to use them.
 | `postVisit` | Executes after the story is visited and fully rendered<br />`async postVisit(page, context) {}`                  |
 
 <Callout variant="info" icon="💡">
-  These test hooks are experimental and may be subject to breaking changes. We encourage you to test as much as possible within the story's [play function](../writing-stories/play-function.mdx).
+  These test hooks are experimental and may be subject to breaking changes. We encourage you to test as much as possible within the story's [play function](../../writing-stories/play-function.mdx).
 </Callout>
 
 To enable the hooks API, you'll need to add a new configuration file inside your Storybook directory and set them up as follows:
@@ -410,7 +410,7 @@ When the test-runner executes, your existing tests will go through the following
 
 ### (Experimental) Filter tests
 
-When you run the test-runner on Storybook, it tests every story by default. However, if you want to filter the tests, you can use the `tags` configuration option. Storybook originally introduced this feature to generate [automatic documentation](../writing-docs/autodocs.mdx) for stories. But it can be further extended to configure the test-runner to run tests according to the provided tags using a similar configuration option or via CLI flags (e.g., `--includeTags`, `--excludeTags`, `--skipTags`), only available with the latest stable release (`0.15` or higher). Listed below are the available options and an overview of how to use them.
+When you run the test-runner on Storybook, it tests every story by default. However, if you want to filter the tests, you can use the `tags` configuration option. Storybook originally introduced this feature to generate [automatic documentation](../../writing-docs/autodocs.mdx) for stories. But it can be further extended to configure the test-runner to run tests according to the provided tags using a similar configuration option or via CLI flags (e.g., `--includeTags`, `--excludeTags`, `--skipTags`), only available with the latest stable release (`0.15` or higher). Listed below are the available options and an overview of how to use them.
 
 | Option    | Description                                                                   |
 | --------- | ----------------------------------------------------------------------------- |
@@ -504,7 +504,7 @@ If you're running a specific set of tests (e.g., image snapshot testing), the te
 
 ### Index.json mode
 
-The test-runner transforms your story files into tests when testing a local Storybook. For a remote Storybook, it uses the Storybook's [index.json](../configure/index.mdx#feature-flags) (formerly `stories.json`) file (a static index of all the stories) to run the tests.
+The test-runner transforms your story files into tests when testing a local Storybook. For a remote Storybook, it uses the Storybook's [index.json](../../configure/index.mdx#feature-flags) (formerly `stories.json`) file (a static index of all the stories) to run the tests.
 
 #### Why?
 
@@ -530,7 +530,7 @@ If you need to disable it, use the `--no-index-json` flag:
 
 #### How do I check if my Storybook has a `index.json` file?
 
-Index.json mode requires a `index.json` file. Open a browser window and navigate to your deployed Storybook instance (for example, `https://your-storybook-url-here.com/index.json`). You should see a JSON file that starts with a `"v": 3` key, immediately followed by another key called "stories", which contains a map of story IDs to JSON objects. If that is the case, your Storybook supports [index.json mode](../configure/index.mdx#feature-flags).
+Index.json mode requires a `index.json` file. Open a browser window and navigate to your deployed Storybook instance (for example, `https://your-storybook-url-here.com/index.json`). You should see a JSON file that starts with a `"v": 3` key, immediately followed by another key called "stories", which contains a map of story IDs to JSON objects. If that is the case, your Storybook supports [index.json mode](../../configure/index.mdx#feature-flags).
 
 ***
 

@@ -18,7 +18,7 @@ Run this command, which will install and configure the Vitest addon and Vitest:
 
 <CodeSnippets path="addon-test-install.md" />
 
-_The full installation instructions, including project requirements, are available in the [Vitest addon documentation](./integrations/vitest-addon.mdx#install-and-set-up)._
+The full installation instructions, including project requirements, are available in the [Vitest addon documentation](./integrations/vitest-addon.mdx#install-and-set-up).
 
 Once your project is set up, you will see a testing widget in the bottom of your sidebar. After running tests, you will also see test status indicators on sidebar items. Additionally, many tests can be debugged with an addon panel.
 
@@ -77,7 +77,7 @@ Note that this assumes you have a Vitest project called “storybook” for your
 Next, add a new CI workflow. 
 
 <details>
-<summary>If you use Github actions that would look like:</summary>
+<summary>If you use Github Actions that would look like:</summary>
     
   ```yaml title=".github/workflows/test-storybook.yml"
   name: Storybook Tests
@@ -88,7 +88,9 @@ Next, add a new CI workflow.
     test:
       runs-on: ubuntu-latest
       container:
-        image: mcr.microsoft.com/playwright:v1.50.1-noble
+        # Make sure to grab the latest version of the Playwright image
+        # https://playwright.dev/docs/docker#pull-the-image
+        image: mcr.microsoft.com/playwright:v1.52.0-noble
       steps:
         - uses: actions/checkout@v4
         
@@ -103,9 +105,9 @@ Next, add a new CI workflow.
         - name: Run tests
           run: npm run test-storybook
   ```
-</details>   
+</details>
 
-If you are using a different CI provider, please consult your provider’s documentation.
+If you are using a different CI provider, please consult our full [CI guide](./in-ci.mdx) for more information.
 
 Storybook Test uses Playwright to render your stories by default. For the fastest experience, you should use [a machine image that has Playwright already installed](https://playwright.dev/docs/docker#pull-the-image) (as in the snippet above).
 
@@ -205,8 +207,7 @@ Visual tests are the most efficient way to test your components. With the click 
 
 Storybook supports cross-browser visual testing natively using [Chromatic](https://www.chromatic.com/storybook/?ref=storybook_site), a cloud service made by the Storybook team. When you enable visual testing, every story is automatically turned into a test. This gives you instant feedback on UI bugs directly in Storybook.
 
-[TK - Replace]
-<Video src="../_assets/writing-tests/vta-run.mp4" />
+![Visual test panel with diff](../_assets/writing-tests/vta-changes-found.png)
 
 ### [Snapshot tests](./snapshot-testing.mdx)
 

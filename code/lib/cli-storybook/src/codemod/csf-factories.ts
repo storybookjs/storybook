@@ -22,15 +22,10 @@ async function runStoriesCodemod(options: {
     let globString = '{stories,src}/**/{Button,Header,Page}.stories.*';
     if (!process.env.IN_STORYBOOK_SANDBOX) {
       logger.log('Please enter the glob for your stories to migrate');
-      globString = await prompt.text(
-        {
-          message: 'glob',
-          initialValue: 'src/**/*.stories.*',
-        },
-        {
-          onCancel: () => process.exit(0),
-        }
-      );
+      globString = await prompt.text({
+        message: 'glob',
+        initialValue: 'src/**/*.stories.*',
+      });
     }
 
     logger.log('\n🛠️  Applying codemod on your stories, this might take some time...');
@@ -82,18 +77,13 @@ export const csfFactories: CommandFix = {
         - ${picocolors.bold('Relative imports:')} ${picocolors.cyan("`import preview from '../../.storybook/preview'`")}
       `);
 
-      useSubPathImports = await prompt.select<boolean>(
-        {
-          message: 'Which would you like to use?',
-          options: [
-            { label: 'Subpath imports', value: true },
-            { label: 'Relative imports', value: false },
-          ],
-        },
-        {
-          onCancel: () => process.exit(0),
-        }
-      );
+      useSubPathImports = await prompt.select<boolean>({
+        message: 'Which would you like to use?',
+        options: [
+          { label: 'Subpath imports', value: true },
+          { label: 'Relative imports', value: false },
+        ],
+      });
     }
 
     if (useSubPathImports && !packageJson.imports?.['#*']) {

@@ -31,6 +31,10 @@ interface PromptOptions {
   onCancel?: () => void;
 }
 
+const baseOptions: PromptOptions = {
+  onCancel: () => process.exit(0),
+};
+
 const text = async (options: TextPromptOptions, promptOptions?: PromptOptions): Promise<string> => {
   const result = await prompts(
     {
@@ -40,7 +44,7 @@ const text = async (options: TextPromptOptions, promptOptions?: PromptOptions): 
       initial: options.initialValue,
       validate: options.validate,
     },
-    promptOptions
+    { ...baseOptions, ...promptOptions }
   );
 
   return result.value;
@@ -59,7 +63,7 @@ const confirm = async (
       active: options.active,
       inactive: options.inactive,
     },
-    promptOptions
+    { ...baseOptions, ...promptOptions }
   );
 
   return result.value;
@@ -80,7 +84,7 @@ const select = async <T>(
         description: opt.hint,
       })),
     },
-    promptOptions
+    { ...baseOptions, ...promptOptions }
   );
 
   return result.value as T;

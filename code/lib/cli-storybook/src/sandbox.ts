@@ -260,17 +260,9 @@ export const sandbox = async ({
 };
 
 async function promptSelectedTemplate(choices: Choice[]): Promise<Choice | null> {
-  const selected = await prompt.select(
-    {
-      message: 'Select a template',
-      options: choices.map(toChoices),
-    },
-    {
-      onCancel: () => {
-        logger.log('Command cancelled by the user. Exiting...');
-        process.exit(1);
-      },
-    }
-  );
+  const selected = await prompt.select({
+    message: 'Select a template',
+    options: choices.map(toChoices),
+  });
   return selected as Choice;
 }

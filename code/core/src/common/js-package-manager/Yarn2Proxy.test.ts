@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { JsPackageManager } from './JsPackageManager';
 import { Yarn2Proxy } from './Yarn2Proxy';
 
 describe('Yarn 2 Proxy', () => {
@@ -7,22 +8,11 @@ describe('Yarn 2 Proxy', () => {
 
   beforeEach(() => {
     yarn2Proxy = new Yarn2Proxy();
+    vi.spyOn(yarn2Proxy, 'writePackageJson').mockImplementation(vi.fn());
   });
 
   it('type should be yarn2', () => {
     expect(yarn2Proxy.type).toEqual('yarn2');
-  });
-
-  describe('initPackageJson', () => {
-    it('should run `yarn init`', async () => {
-      const executeCommandSpy = vi.spyOn(yarn2Proxy, 'executeCommand').mockResolvedValueOnce('');
-
-      await yarn2Proxy.initPackageJson();
-
-      expect(executeCommandSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ command: 'yarn', args: ['init'] })
-      );
-    });
   });
 
   describe('installDependencies', () => {
@@ -70,45 +60,33 @@ describe('Yarn 2 Proxy', () => {
   });
 
   describe('removeDependencies', () => {
-    it('should run `yarn remove storybook`', async () => {
-      const executeCommandSpy = vi.spyOn(yarn2Proxy, 'executeCommand').mockResolvedValueOnce('');
-
-      await yarn2Proxy.removeDependencies({}, ['storybook']);
-
-      expect(executeCommandSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          command: 'yarn',
-          args: ['remove', 'storybook'],
-        })
-      );
-    });
-
     it('skipInstall should only change package.json without running install', async () => {
       const executeCommandSpy = vi
         .spyOn(yarn2Proxy, 'executeCommand')
         .mockResolvedValueOnce('7.0.0');
-      const writePackageSpy = vi
-        .spyOn(yarn2Proxy, 'writePackageJson')
-        .mockImplementation(vi.fn<any>());
+      const writePackageSpy = vi.spyOn(yarn2Proxy, 'writePackageJson').mockImplementation(vi.fn());
 
-      await yarn2Proxy.removeDependencies(
+      vi.spyOn(JsPackageManager, 'getPackageJson').mockImplementation(() => {
+        return {
+          dependencies: {},
+          devDependencies: {
+            '@storybook/manager-webpack5': 'x.x.x',
+            '@storybook/react': 'x.x.x',
+          },
+        };
+      });
+
+      await yarn2Proxy.removeDependencies(['@storybook/manager-webpack5']);
+
+      expect(writePackageSpy).toHaveBeenCalledWith(
         {
-          skipInstall: true,
-          packageJson: {
-            devDependencies: {
-              '@storybook/manager-webpack5': 'x.x.x',
-              '@storybook/react': 'x.x.x',
-            },
+          dependencies: {},
+          devDependencies: {
+            '@storybook/react': 'x.x.x',
           },
         },
-        ['@storybook/manager-webpack5']
+        expect.any(String)
       );
-
-      expect(writePackageSpy).toHaveBeenCalledWith({
-        devDependencies: {
-          '@storybook/react': 'x.x.x',
-        },
-      });
       expect(executeCommandSpy).not.toHaveBeenCalled();
     });
   });
@@ -157,34 +135,33 @@ describe('Yarn 2 Proxy', () => {
 
   describe('addPackageResolutions', () => {
     it('adds resolutions to package.json and account for existing resolutions', async () => {
-      const writePackageSpy = vi
-        .spyOn(yarn2Proxy, 'writePackageJson')
-        .mockImplementation(vi.fn<any>());
+      const writePackageSpy = vi.spyOn(yarn2Proxy, 'writePackageJson').mockImplementation(vi.fn());
 
-      vi.spyOn(yarn2Proxy, 'retrievePackageJson').mockImplementation(
-        vi.fn(async () => ({
-          dependencies: {},
-          devDependencies: {},
-          resolutions: {
-            bar: 'x.x.x',
-          },
-        }))
-      );
+      vi.spyOn(JsPackageManager, 'getPackageJson').mockImplementation(() => ({
+        dependencies: {},
+        devDependencies: {},
+        resolutions: {
+          bar: 'x.x.x',
+        },
+      }));
 
       const versions = {
         foo: 'x.x.x',
       };
 
-      await yarn2Proxy.addPackageResolutions(versions);
+      yarn2Proxy.addPackageResolutions(versions);
 
-      expect(writePackageSpy).toHaveBeenCalledWith({
-        dependencies: {},
-        devDependencies: {},
-        resolutions: {
-          ...versions,
-          bar: 'x.x.x',
+      expect(writePackageSpy).toHaveBeenCalledWith(
+        {
+          dependencies: {},
+          devDependencies: {},
+          resolutions: {
+            ...versions,
+            bar: 'x.x.x',
+          },
         },
-      });
+        expect.any(String)
+      );
     });
   });
 

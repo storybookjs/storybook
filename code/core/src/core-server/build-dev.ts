@@ -50,7 +50,7 @@ export async function buildDevStandalone(
       `Expected package.json#version to be defined in the "${packageJson.name}" package}`
     );
     storybookVersion = packageJson.version;
-    previewConfigPath = getConfigInfo(packageJson, configDir).previewConfig ?? undefined;
+    previewConfigPath = getConfigInfo(configDir).previewConfigPath ?? undefined;
   } else {
     if (!storybookVersion) {
       storybookVersion = versions.storybook;

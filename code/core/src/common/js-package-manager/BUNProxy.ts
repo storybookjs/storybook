@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { logger } from 'storybook/internal/node-logger';
 import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 
-import { findUp } from 'find-up';
+import { findUpSync } from 'find-up';
 import sort from 'semver/functions/sort.js';
 import { dedent } from 'ts-dedent';
 
@@ -81,20 +81,17 @@ export class BUNProxy extends JsPackageManager {
     return `bun run ${command}`;
   }
 
-  getRemoteRunCommand(): string {
-    return 'bunx';
+  getRemoteRunCommand(pkg: string, args: string[], specifier?: string): string {
+    return `bunx ${pkg}${specifier ? `@${specifier}` : ''} ${args.join(' ')}`;
   }
 
-  public async getPackageJSON(
-    packageName: string,
-    basePath = this.cwd
-  ): Promise<PackageJson | null> {
-    const packageJsonPath = await findUp(
+  public getModulePackageJSON(packageName: string, basePath = this.cwd): PackageJson | null {
+    const packageJsonPath = findUpSync(
       (dir) => {
         const possiblePath = join(dir, 'node_modules', packageName, 'package.json');
         return existsSync(possiblePath) ? possiblePath : undefined;
       },
-      { cwd: basePath }
+      { cwd: basePath, stopAt: JsPackageManager.projectRoot }
     );
 
     if (!packageJsonPath) {
@@ -180,6 +177,7 @@ export class BUNProxy extends JsPackageManager {
       command: 'bun',
       args: ['install', ...this.getInstallArgs()],
       stdio: 'inherit',
+      cwd: this.cwd,
     });
   }
 
@@ -211,6 +209,7 @@ export class BUNProxy extends JsPackageManager {
         command: 'bun',
         args: ['add', ...args, ...this.getInstallArgs()],
         stdio: process.env.CI || !writeOutputToFile ? 'inherit' : ['ignore', logStream, logStream],
+        cwd: this.primaryPackageJson.operationDir,
       });
     } catch (err) {
       if (!writeOutputToFile) {
@@ -229,13 +228,14 @@ export class BUNProxy extends JsPackageManager {
     await removeLogFile();
   }
 
-  protected async runRemoveDeps(dependencies: string[]) {
+  protected async runRemoveDeps(dependencies: string[], cwd = this.cwd) {
     const args = [...dependencies];
 
     await this.executeCommand({
       command: 'bun',
       args: ['remove', ...args, ...this.getInstallArgs()],
       stdio: 'inherit',
+      cwd,
     });
   }
 

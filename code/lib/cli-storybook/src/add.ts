@@ -1,7 +1,6 @@
 import { isAbsolute, join } from 'node:path';
 
 import {
-  JsPackageManagerFactory,
   type PackageManagerName,
   prompt,
   serverRequire,
@@ -67,6 +66,7 @@ const isCoreAddon = (addonName: string) => Object.hasOwn(versions, addonName);
 type CLIOptions = {
   packageManager?: PackageManagerName;
   configDir?: string;
+  skipInstall?: boolean;
   skipPostinstall: boolean;
   yes?: boolean;
 };
@@ -86,17 +86,28 @@ type CLIOptions = {
  */
 export async function add(
   addon: string,
-  { packageManager: pkgMgr, skipPostinstall, configDir: userSpecifiedConfigDir, yes }: CLIOptions,
+  {
+    packageManager: pkgMgr,
+    skipPostinstall,
+    configDir: userSpecifiedConfigDir,
+    yes,
+    skipInstall,
+  }: CLIOptions,
   logger = console
 ) {
   const [addonName, inputVersion] = getVersionSpecifier(addon);
 
-  const packageManager = JsPackageManagerFactory.getPackageManager({ force: pkgMgr });
-  const { mainConfig, mainConfigPath, configDir, previewConfigPath, storybookVersion } =
-    await getStorybookData({
-      packageManager,
-      configDir: userSpecifiedConfigDir,
-    });
+  const {
+    mainConfig,
+    mainConfigPath,
+    configDir,
+    previewConfigPath,
+    storybookVersion,
+    packageManager,
+  } = await getStorybookData({
+    configDir: userSpecifiedConfigDir,
+    packageManagerName: pkgMgr,
+  });
 
   if (typeof configDir === 'undefined') {
     throw new Error(dedent`
@@ -148,8 +159,9 @@ export async function add(
       : `${addonName}@${version}`;
 
   logger.log(`Installing ${addonWithVersion}`);
+
   await packageManager.addDependencies(
-    { installAsDevDependencies: true, writeOutputToFile: false },
+    { installAsDevDependencies: true, writeOutputToFile: false, skipInstall },
     [addonWithVersion]
   );
 

@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import type { JsPackageManager, PackageJsonWithMaybeDeps } from 'storybook/internal/common';
-import { HandledError, commandLog } from 'storybook/internal/common';
+import { HandledError, commandLog, getProjectRoot } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import { findUpSync } from 'find-up';
@@ -112,9 +112,10 @@ export function detectFrameworkPreset(
  * @returns CoreBuilder
  */
 export async function detectBuilder(packageManager: JsPackageManager, projectType: ProjectType) {
-  const viteConfig = findUpSync(viteConfigFiles);
-  const webpackConfig = findUpSync(webpackConfigFiles);
-  const dependencies = await packageManager.getAllDependencies();
+  const projectRoot = getProjectRoot();
+  const viteConfig = findUpSync(viteConfigFiles, { stopAt: projectRoot });
+  const webpackConfig = findUpSync(webpackConfigFiles, { stopAt: projectRoot });
+  const dependencies = packageManager.getAllDependencies();
 
   if (viteConfig || (dependencies.vite && dependencies.webpack === undefined)) {
     commandLog('Detected Vite project. Setting builder to Vite')();
@@ -181,21 +182,19 @@ export async function detectLanguage(packageManager: JsPackageManager) {
     return language;
   }
 
-  const isTypescriptDirectDependency = await packageManager
-    .getAllDependencies()
-    .then((deps) => Boolean(deps.typescript));
+  const isTypescriptDirectDependency = !!packageManager.getAllDependencies().typescript;
 
-  const typescriptVersion = await packageManager.getPackageVersion('typescript');
-  const prettierVersion = await packageManager.getPackageVersion('prettier');
-  const babelPluginTransformTypescriptVersion = await packageManager.getPackageVersion(
+  const getModulePackageJSONVersion = (pkg: string) => {
+    return packageManager.getModulePackageJSON(pkg)?.version ?? null;
+  };
+
+  const typescriptVersion = getModulePackageJSONVersion('typescript');
+  const prettierVersion = getModulePackageJSONVersion('prettier');
+  const babelPluginTransformTypescriptVersion = getModulePackageJSONVersion(
     '@babel/plugin-transform-typescript'
   );
-  const typescriptEslintParserVersion = await packageManager.getPackageVersion(
-    '@typescript-eslint/parser'
-  );
-
-  const eslintPluginStorybookVersion =
-    await packageManager.getPackageVersion('eslint-plugin-storybook');
+  const typescriptEslintParserVersion = getModulePackageJSONVersion('@typescript-eslint/parser');
+  const eslintPluginStorybookVersion = getModulePackageJSONVersion('eslint-plugin-storybook');
 
   if (isTypescriptDirectDependency && typescriptVersion) {
     if (
@@ -228,7 +227,7 @@ export async function detect(
   packageManager: JsPackageManager,
   options: { force?: boolean; html?: boolean } = {}
 ) {
-  const packageJson = await packageManager.retrievePackageJson();
+  const { packageJson } = packageManager.primaryPackageJson;
 
   if (!packageJson) {
     return ProjectType.UNDETECTED;

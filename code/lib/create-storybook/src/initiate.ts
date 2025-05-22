@@ -645,7 +645,7 @@ export async function doInitiate(options: CommandOptions): Promise<
   const storybookCommand =
     projectType === ProjectType.ANGULAR
       ? `ng run ${installResult.projectName}:storybook`
-      : packageManager.getRunStorybookCommand();
+      : packageManager.getRunCommand('storybook');
 
   if (selectedFeatures.has('test')) {
     logger.log(

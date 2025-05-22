@@ -48,11 +48,7 @@ vi.mock('picocolors', () => {
 });
 
 // Create mock package manager
-const mockPackageManager = {
-  retrievePackageJson: vi.fn(),
-  removeDependencies: vi.fn(),
-  runPackageCommand: vi.fn(),
-} as unknown as JsPackageManager;
+const mockPackageManager = {} as JsPackageManager;
 
 // Set up test data
 const baseCheckOptions: CheckOptions = {
@@ -67,6 +63,7 @@ const baseCheckOptions: CheckOptions = {
 
 describe('addon-storysource-remove', () => {
   beforeEach(() => {
+    mockPackageManager.runPackageCommand = vi.fn();
     vi.clearAllMocks();
   });
 
@@ -179,7 +176,7 @@ describe('addon-storysource-remove', () => {
           hasStorysource: false,
           hasDocs: false,
         },
-        packageManager: mockPackageManager,
+        packageManager: mockPackageManager as JsPackageManager,
         configDir: '.storybook',
       } as RunOptions<StorysourceOptions>);
 
@@ -192,7 +189,7 @@ describe('addon-storysource-remove', () => {
           hasStorysource: true,
           hasDocs: true,
         },
-        packageManager: mockPackageManager,
+        packageManager: mockPackageManager as JsPackageManager,
         previewConfigPath: '.storybook/preview.js',
         configDir: '.storybook',
       } as RunOptions<StorysourceOptions>);
@@ -203,6 +200,7 @@ describe('addon-storysource-remove', () => {
         '@storybook/addon-storysource',
         '--config-dir',
         '.storybook',
+        '--skip-install',
       ]);
 
       expect(mockPackageManager.runPackageCommand).not.toHaveBeenCalledWith('storybook', [
@@ -246,7 +244,7 @@ describe('addon-storysource-remove', () => {
           hasStorysource: true,
           hasDocs: false,
         },
-        packageManager: mockPackageManager,
+        packageManager: mockPackageManager as JsPackageManager,
         previewConfigPath: '.storybook/preview.js',
         configDir: '.storybook',
       } as RunOptions<StorysourceOptions>);
@@ -266,7 +264,7 @@ describe('addon-storysource-remove', () => {
           hasDocs: true,
         },
         previewConfigPath: '.storybook/preview.js',
-        packageManager: mockPackageManager,
+        packageManager: mockPackageManager as JsPackageManager,
         configDir: '.storybook',
         dryRun: true,
       } as RunOptions<StorysourceOptions>);

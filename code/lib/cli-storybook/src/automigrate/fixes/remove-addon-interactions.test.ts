@@ -66,6 +66,7 @@ describe('removeAddonInteractions', () => {
         '@storybook/addon-interactions',
         '--config-dir',
         './storybook',
+        '--skip-install',
       ]);
     });
   });

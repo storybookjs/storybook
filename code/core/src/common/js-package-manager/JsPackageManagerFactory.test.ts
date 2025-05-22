@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { sync as spawnSync } from 'cross-spawn';
-import { findUpSync } from 'find-up';
+import { findUpMultipleSync, findUpSync } from 'find-up';
 
 import { BUNProxy } from './BUNProxy';
 import { JsPackageManagerFactory } from './JsPackageManagerFactory';
@@ -17,10 +17,11 @@ const spawnSyncMock = vi.mocked(spawnSync);
 
 vi.mock('find-up');
 const findUpSyncMock = vi.mocked(findUpSync);
-
+const findUpMultipleSyncMock = vi.mocked(findUpMultipleSync);
 describe('CLASS: JsPackageManagerFactory', () => {
   beforeEach(() => {
     findUpSyncMock.mockReturnValue(undefined);
+    findUpMultipleSyncMock.mockReturnValue([]);
     spawnSyncMock.mockReturnValue({ status: 1 } as any);
     delete process.env.npm_config_user_agent;
   });

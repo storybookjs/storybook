@@ -193,8 +193,6 @@ export const rendererToFramework: Fix<MigrationResult> = {
     // eslint-disable-next-line depend/ban-dependencies
     const globby = (await import('globby')).globby;
 
-    let didMigrate = false;
-
     for (const selectedFramework of result.frameworks) {
       const frameworkName = frameworkPackages[selectedFramework];
       if (!frameworkName) {
@@ -236,12 +234,6 @@ export const rendererToFramework: Fix<MigrationResult> = {
           removeRendererInPackageJson(file, rendererPackage, dryRun)
         )
       );
-      didMigrate = true;
-    }
-
-    // Install dependencies once if any migration was performed
-    if (didMigrate && !dryRun) {
-      await options.packageManager.installDependencies();
     }
   },
 };

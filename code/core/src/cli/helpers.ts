@@ -67,21 +67,17 @@ export const writeFileAsJson = (jsonPath: string, content: unknown) => {
  * ]);
  * ```
  *
- * @param {Object} packageJson The current package.json so we can inspect its contents
- * @returns {Array} Contains the packages and versions that need to be installed
+ * @param packageJson The current package.json so we can inspect its contents
+ * @returns Contains the packages and versions that need to be installed
  */
-export async function getBabelDependencies(
-  packageManager: JsPackageManager,
-  packageJson: PackageJsonWithDepsAndDevDeps
-) {
+export async function getBabelDependencies(packageManager: JsPackageManager) {
   const dependenciesToAdd = [];
   let babelLoaderVersion = '^8.0.0-0';
 
-  const babelCoreVersion =
-    packageJson.dependencies['babel-core'] || packageJson.devDependencies['babel-core'];
+  const babelCoreVersion = packageManager.getDependencyVersion('babel-core');
 
   if (!babelCoreVersion) {
-    if (!packageJson.dependencies['@babel/core'] && !packageJson.devDependencies['@babel/core']) {
+    if (!packageManager.getDependencyVersion('@babel/core')) {
       const babelCoreInstallVersion = await packageManager.getVersion('@babel/core');
       dependenciesToAdd.push(`@babel/core@${babelCoreInstallVersion}`);
     }
@@ -96,7 +92,7 @@ export async function getBabelDependencies(
     }
   }
 
-  if (!packageJson.dependencies['babel-loader'] && !packageJson.devDependencies['babel-loader']) {
+  if (!packageManager.getDependencyVersion('babel-loader')) {
     const babelLoaderInstallVersion = await packageManager.getVersion(
       'babel-loader',
       babelLoaderVersion
@@ -176,7 +172,7 @@ export async function getVersionSafe(packageManager: JsPackageManager, packageNa
   try {
     let version = await packageManager.getInstalledVersion(packageName);
     if (!version) {
-      const deps = await packageManager.getAllDependencies();
+      const deps = packageManager.getAllDependencies();
       const versionSpecifier = deps[packageName];
       version = versionSpecifier ?? '';
     }
@@ -293,8 +289,8 @@ export function coerceSemver(version: string) {
   return coercedSemver;
 }
 
-export async function hasStorybookDependencies(packageManager: JsPackageManager) {
-  const currentPackageDeps = await packageManager.getAllDependencies();
+export function hasStorybookDependencies(packageManager: JsPackageManager) {
+  const currentPackageDeps = packageManager.getAllDependencies();
 
   return Object.keys(currentPackageDeps).some((dep) => dep.includes('storybook'));
 }

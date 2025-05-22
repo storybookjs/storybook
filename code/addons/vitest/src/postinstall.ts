@@ -56,7 +56,7 @@ export default async function postInstall(options: PostinstallOptions) {
   });
 
   const info = await getStorybookInfo(options);
-  const allDeps = await packageManager.getAllDependencies();
+  const allDeps = packageManager.getAllDependencies();
   // only install these dependencies if they are not already installed
   const dependencies = ['vitest', '@vitest/browser', 'playwright'].filter((p) => !allDeps[p]);
   const vitestVersionSpecifier = await packageManager.getInstalledVersion('vitest');
@@ -92,7 +92,7 @@ export default async function postInstall(options: PostinstallOptions) {
         `@storybook/nextjs-vite@${versions['@storybook/nextjs-vite']}`,
       ]);
 
-      await packageManager.removeDependencies({}, ['@storybook/nextjs']);
+      await packageManager.removeDependencies(['@storybook/nextjs']);
 
       traverse(config._ast, {
         StringLiteral(path) {
@@ -266,7 +266,10 @@ export default async function postInstall(options: PostinstallOptions) {
     logger.plain(`${step} Installing dependencies:`);
     logger.plain(colors.gray('  ' + versionedDependencies.join(', ')));
 
-    await packageManager.addDependencies({ installAsDevDependencies: true }, versionedDependencies);
+    await packageManager.addDependencies(
+      { installAsDevDependencies: true, skipInstall: true },
+      versionedDependencies
+    );
   }
 
   logger.line(1);
@@ -502,6 +505,8 @@ export default async function postInstall(options: PostinstallOptions) {
     }
   }
 
+  await packageManager.installDependencies();
+
   const runCommand = rootConfig ? `npx vitest --project=storybook` : `npx vitest`;
 
   printSuccess(
@@ -521,8 +526,8 @@ export default async function postInstall(options: PostinstallOptions) {
 }
 
 async function getStorybookInfo({ configDir, packageManager: pkgMgr }: PostinstallOptions) {
-  const packageManager = JsPackageManagerFactory.getPackageManager({ force: pkgMgr });
-  const packageJson = await packageManager.retrievePackageJson();
+  const packageManager = JsPackageManagerFactory.getPackageManager({ force: pkgMgr, configDir });
+  const { packageJson } = packageManager.primaryPackageJson;
 
   const config = await loadMainConfig({ configDir, noCache: true });
   const { framework } = config;
@@ -536,8 +541,8 @@ async function getStorybookInfo({ configDir, packageManager: pkgMgr }: Postinsta
     overridePresets: [
       require.resolve('storybook/internal/core-server/presets/common-override-preset'),
     ],
-    configDir,
     packageJson,
+    configDir,
     isCritical: true,
   });
 

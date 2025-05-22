@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 
-import { findUp } from 'find-up';
+import { findUpSync } from 'find-up';
 import { dedent } from 'ts-dedent';
 
 import { createLogStream } from '../utils/cli';
@@ -41,20 +41,12 @@ export class Yarn1Proxy extends JsPackageManager {
     return this.installArgs;
   }
 
-  async initPackageJson() {
-    await this.executeCommand({ command: 'yarn', args: ['init', '-y'] });
-  }
-
-  getRunStorybookCommand(): string {
-    return 'yarn storybook';
-  }
-
   getRunCommand(command: string): string {
     return `yarn ${command}`;
   }
 
-  getRemoteRunCommand(): string {
-    return 'npx';
+  getRemoteRunCommand(pkg: string, args: string[], specifier?: string): string {
+    return `npx ${pkg}${specifier ? `@${specifier}` : ''} ${args.join(' ')}`;
   }
 
   public runPackageCommandSync(
@@ -70,16 +62,13 @@ export class Yarn1Proxy extends JsPackageManager {
     return this.executeCommand({ command: `yarn`, args: ['exec', command, ...args], cwd });
   }
 
-  public async getPackageJSON(
-    packageName: string,
-    basePath = this.cwd
-  ): Promise<PackageJson | null> {
-    const packageJsonPath = await findUp(
+  public getModulePackageJSON(packageName: string, basePath = this.cwd): PackageJson | null {
+    const packageJsonPath = findUpSync(
       (dir) => {
         const possiblePath = join(dir, 'node_modules', packageName, 'package.json');
         return existsSync(possiblePath) ? possiblePath : undefined;
       },
-      { cwd: basePath }
+      { cwd: basePath, stopAt: JsPackageManager.projectRoot }
     );
 
     if (!packageJsonPath) {
@@ -135,6 +124,7 @@ export class Yarn1Proxy extends JsPackageManager {
       command: 'yarn',
       args: ['install', ...this.getInstallArgs()],
       stdio: 'inherit',
+      cwd: this.cwd,
     });
   }
 
@@ -156,6 +146,7 @@ export class Yarn1Proxy extends JsPackageManager {
         command: 'yarn',
         args: ['add', ...this.getInstallArgs(), ...args],
         stdio: process.env.CI || !writeOutputToFile ? 'inherit' : ['ignore', logStream, logStream],
+        cwd: this.primaryPackageJson.operationDir,
       });
     } catch (err) {
       if (!writeOutputToFile) {
@@ -174,13 +165,14 @@ export class Yarn1Proxy extends JsPackageManager {
     await removeLogFile();
   }
 
-  protected async runRemoveDeps(dependencies: string[]) {
+  protected async runRemoveDeps(dependencies: string[], cwd = this.cwd) {
     const args = [...dependencies];
 
     await this.executeCommand({
       command: 'yarn',
       args: ['remove', ...this.getInstallArgs(), ...args],
       stdio: 'inherit',
+      cwd,
     });
   }
 

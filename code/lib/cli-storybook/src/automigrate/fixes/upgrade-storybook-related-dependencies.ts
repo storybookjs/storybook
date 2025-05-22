@@ -53,7 +53,7 @@ export const upgradeStorybookRelatedDependencies = {
       skipErrors: true,
     });
 
-    const allDependencies = (await packageManager.getAllDependencies()) as Record<string, string>;
+    const allDependencies = packageManager.getAllDependencies();
     const storybookDependencies = Object.keys(allDependencies)
       .filter((dep) => dep.includes('storybook'))
       .filter((dep) => !isCorePackage(dep) && !isSatelliteAddon(dep));
@@ -111,7 +111,7 @@ export const upgradeStorybookRelatedDependencies = {
     }
 
     if (upgradable.length > 0) {
-      const packageJson = await packageManager.readPackageJson();
+      const { packageJson } = packageManager.primaryPackageJson;
 
       upgradable.forEach((item) => {
         if (!item) {
@@ -132,8 +132,7 @@ export const upgradeStorybookRelatedDependencies = {
         }
       });
 
-      await packageManager.writePackageJson(packageJson);
-      await packageManager.installDependencies();
+      packageManager.writePackageJson(packageJson);
 
       await packageManager
         .executeCommand({ command: 'dedupe', args: [], stdio: 'ignore' })

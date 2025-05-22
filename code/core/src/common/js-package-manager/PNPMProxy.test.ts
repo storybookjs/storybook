@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { JsPackageManager } from './JsPackageManager';
 import { PNPMProxy } from './PNPMProxy';
 
 describe('PNPM Proxy', () => {
@@ -7,22 +8,11 @@ describe('PNPM Proxy', () => {
 
   beforeEach(() => {
     pnpmProxy = new PNPMProxy();
+    vi.spyOn(pnpmProxy, 'writePackageJson').mockImplementation(vi.fn());
   });
 
   it('type should be pnpm', () => {
     expect(pnpmProxy.type).toEqual('pnpm');
-  });
-
-  describe('initPackageJson', () => {
-    it('should run `pnpm init`', async () => {
-      const executeCommandSpy = vi.spyOn(pnpmProxy, 'executeCommand').mockResolvedValueOnce('');
-
-      await pnpmProxy.initPackageJson();
-
-      expect(executeCommandSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ command: 'pnpm', args: ['init'] })
-      );
-    });
   });
 
   describe('installDependencies', () => {
@@ -74,50 +64,34 @@ describe('PNPM Proxy', () => {
   });
 
   describe('removeDependencies', () => {
-    it('with devDep it should run `npm uninstall storybook`', async () => {
+    it('should only change package.json without running install', async () => {
       const executeCommandSpy = vi
         .spyOn(pnpmProxy, 'executeCommand')
-        .mockResolvedValueOnce('6.0.0');
+        .mockResolvedValueOnce('7.0.0');
+      const writePackageSpy = vi.spyOn(pnpmProxy, 'writePackageJson').mockImplementation(vi.fn());
 
-      await pnpmProxy.removeDependencies({}, ['storybook']);
-
-      expect(executeCommandSpy).toHaveBeenLastCalledWith(
-        expect.objectContaining({
-          command: 'pnpm',
-          args: ['remove', 'storybook'],
-        })
-      );
-    });
-
-    describe('skipInstall', () => {
-      it('should only change package.json without running install', async () => {
-        const executeCommandSpy = vi
-          .spyOn(pnpmProxy, 'executeCommand')
-          .mockResolvedValueOnce('7.0.0');
-        const writePackageSpy = vi
-          .spyOn(pnpmProxy, 'writePackageJson')
-          .mockImplementation(vi.fn<any>());
-
-        await pnpmProxy.removeDependencies(
-          {
-            skipInstall: true,
-            packageJson: {
-              devDependencies: {
-                '@storybook/manager-webpack5': 'x.x.x',
-                '@storybook/react': 'x.x.x',
-              },
-            },
+      vi.spyOn(JsPackageManager, 'getPackageJson').mockImplementation((args) => {
+        return {
+          dependencies: {},
+          devDependencies: {
+            '@storybook/manager-webpack5': 'x.x.x',
+            '@storybook/react': 'x.x.x',
           },
-          ['@storybook/manager-webpack5']
-        );
+        };
+      });
 
-        expect(writePackageSpy).toHaveBeenCalledWith({
+      await pnpmProxy.removeDependencies(['@storybook/manager-webpack5']);
+
+      expect(writePackageSpy).toHaveBeenCalledWith(
+        {
+          dependencies: {},
           devDependencies: {
             '@storybook/react': 'x.x.x',
           },
-        });
-        expect(executeCommandSpy).not.toHaveBeenCalled();
-      });
+        },
+        expect.any(String)
+      );
+      expect(executeCommandSpy).not.toHaveBeenCalled();
     });
   });
 
@@ -199,36 +173,36 @@ describe('PNPM Proxy', () => {
 
   describe('addPackageResolutions', () => {
     it('adds resolutions to package.json and account for existing resolutions', async () => {
-      const writePackageSpy = vi
-        .spyOn(pnpmProxy, 'writePackageJson')
-        .mockImplementation(vi.fn<any>());
-
       const basePackageAttributes = {
         dependencies: {},
         devDependencies: {},
       };
 
-      vi.spyOn(pnpmProxy, 'retrievePackageJson').mockImplementation(
-        vi.fn(async () => ({
-          ...basePackageAttributes,
-          overrides: {
-            bar: 'x.x.x',
-          },
-        }))
-      );
+      const writePackageSpy = vi.spyOn(pnpmProxy, 'writePackageJson').mockImplementation(vi.fn());
+
+      vi.spyOn(JsPackageManager, 'getPackageJson').mockImplementation(() => ({
+        dependencies: {},
+        devDependencies: {},
+        overrides: {
+          bar: 'x.x.x',
+        },
+      }));
 
       const versions = {
         foo: 'x.x.x',
       };
-      await pnpmProxy.addPackageResolutions(versions);
+      pnpmProxy.addPackageResolutions(versions);
 
-      expect(writePackageSpy).toHaveBeenCalledWith({
-        ...basePackageAttributes,
-        overrides: {
-          ...versions,
-          bar: 'x.x.x',
+      expect(writePackageSpy).toHaveBeenCalledWith(
+        {
+          ...basePackageAttributes,
+          overrides: {
+            ...versions,
+            bar: 'x.x.x',
+          },
         },
-      });
+        expect.any(String)
+      );
     });
   });
 

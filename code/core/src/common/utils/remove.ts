@@ -4,7 +4,7 @@ import { dedent } from 'ts-dedent';
 
 import type { PackageManagerName } from '../js-package-manager';
 import { JsPackageManagerFactory } from '../js-package-manager';
-import { getStorybookInfo } from './get-storybook-info';
+import { getConfigInfo } from './get-storybook-info';
 
 const logger = console;
 
@@ -19,13 +19,18 @@ const logger = console;
  */
 export async function removeAddon(
   addon: string,
-  options: { packageManager?: PackageManagerName; cwd?: string; configDir?: string } = {}
+  options: {
+    packageManager?: PackageManagerName;
+    cwd?: string;
+    configDir?: string;
+    skipInstall?: boolean;
+  } = {}
 ) {
-  const { packageManager: pkgMgr } = options;
+  const { packageManager: pkgMgr, skipInstall } = options;
 
   const packageManager = JsPackageManagerFactory.getPackageManager({ force: pkgMgr }, options.cwd);
-  const packageJson = await packageManager.retrievePackageJson();
-  const { mainConfig, configDir, ...rest } = getStorybookInfo(packageJson, options.configDir);
+
+  const { mainConfigPath, configDir } = getConfigInfo(options.configDir);
 
   if (typeof configDir === 'undefined') {
     throw new Error(dedent`
@@ -33,15 +38,16 @@ export async function removeAddon(
     `);
   }
 
-  if (!mainConfig) {
+  if (!mainConfigPath) {
     logger.error('Unable to find storybook main.js config');
     return;
   }
-  const main = await readConfig(mainConfig);
+  const main = await readConfig(mainConfigPath);
 
   // remove from package.json
   logger.log(`Uninstalling ${addon}`);
-  await packageManager.removeDependencies({ packageJson }, [addon]);
+  await packageManager.removeDependencies([addon]);
+  await packageManager.installDependencies();
 
   // add to main.js
   logger.log(`Removing '${addon}' from main.js addons field.`);

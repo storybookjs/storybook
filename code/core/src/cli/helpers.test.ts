@@ -67,7 +67,11 @@ vi.mock('path', async (importOriginal) => {
 });
 
 const packageManagerMock = {
-  retrievePackageJson: async () => ({ dependencies: {}, devDependencies: {} }),
+  primaryPackageJson: {
+    packageJson: { dependencies: {}, devDependencies: {} },
+    packageJsonPath: '/some/path',
+    operationDir: '/some/path',
+  },
 } as JsPackageManager;
 
 describe('Helpers', () => {
@@ -88,7 +92,7 @@ describe('Helpers', () => {
         const packageManager = {
           getInstalledVersion: async (pkg: string) =>
             pkg === 'svelte' ? svelteVersion : undefined,
-          getAllDependencies: async () => ({ svelte: `^${svelteVersion}` }),
+          getAllDependencies: () => ({ svelte: `^${svelteVersion}` }),
         } as any as JsPackageManager;
         await expect(helpers.getVersionSafe(packageManager, 'svelte')).resolves.toBe(
           expectedAddonSpecifier
@@ -107,7 +111,7 @@ describe('Helpers', () => {
       ])('svelte %s => %s', async (svelteSpecifier, expectedAddonSpecifier) => {
         const packageManager = {
           getInstalledVersion: async (pkg: string) => undefined,
-          getAllDependencies: async () => ({ svelte: svelteSpecifier }),
+          getAllDependencies: () => ({ svelte: svelteSpecifier }),
         } as any as JsPackageManager;
         await expect(helpers.getVersionSafe(packageManager, 'svelte')).resolves.toBe(
           expectedAddonSpecifier
@@ -251,15 +255,15 @@ describe('Helpers', () => {
 
   describe('hasStorybookDependencies', () => {
     it(`should return true when any storybook dependency exists`, async () => {
-      const result = await helpers.hasStorybookDependencies({
-        getAllDependencies: async () => ({ storybook: 'x.y.z' }),
+      const result = helpers.hasStorybookDependencies({
+        getAllDependencies: () => ({ storybook: 'x.y.z' }),
       } as unknown as JsPackageManager);
       expect(result).toEqual(true);
     });
 
     it(`should return false when no storybook dependency exists`, async () => {
-      const result = await helpers.hasStorybookDependencies({
-        getAllDependencies: async () => ({ axios: 'x.y.z' }),
+      const result = helpers.hasStorybookDependencies({
+        getAllDependencies: () => ({ axios: 'x.y.z' }),
       } as unknown as JsPackageManager);
       expect(result).toEqual(false);
     });

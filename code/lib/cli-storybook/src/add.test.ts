@@ -12,7 +12,14 @@ const MockedConfig = vi.hoisted(() => {
 });
 const MockedPackageManager = vi.hoisted(() => {
   return {
-    retrievePackageJson: vi.fn(() => ({})),
+    getPrimaryPackageJson: vi.fn(() => ({
+      packageJson: {
+        devDependencies: {},
+        dependencies: {},
+      },
+      packageJsonPath: 'some/path',
+      operationDir: 'some/path',
+    })),
     latestVersion: vi.fn(() => '1.0.0'),
     addDependencies: vi.fn(() => {}),
     type: 'npm',

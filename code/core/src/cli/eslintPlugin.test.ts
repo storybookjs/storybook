@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { findUp } from 'find-up';
 import { dedent } from 'ts-dedent';
 
+import type { PackageJsonWithDepsAndDevDeps } from '../common';
 import type { JsPackageManager } from '../common/js-package-manager/JsPackageManager';
 import {
   configureEslintPlugin,
@@ -29,13 +30,16 @@ vi.mock(import('node:fs/promises'), async (importOriginal) => {
 describe('extractEslintInfo', () => {
   const mockPackageManager = {
     getAllDependencies: vi.fn(),
-    retrievePackageJson: vi.fn(),
+    primaryPackageJson: {
+      packageJson: { dependencies: {}, devDependencies: {} } as PackageJsonWithDepsAndDevDeps,
+      packageJsonPath: '/some/path',
+      operationDir: '/some/path',
+    },
   } satisfies Partial<JsPackageManager>;
 
   beforeEach(() => {
     vi.mocked(findUp).mockClear();
     mockPackageManager.getAllDependencies.mockClear();
-    mockPackageManager.retrievePackageJson.mockClear();
   });
 
   it('should find ESLint config file with supported extension', async () => {
@@ -65,8 +69,8 @@ describe('extractEslintInfo', () => {
   });
 
   it('should handle missing ESLint config and no dependencies correctly', async () => {
-    mockPackageManager.getAllDependencies.mockResolvedValue({});
-    mockPackageManager.retrievePackageJson.mockResolvedValue({});
+    mockPackageManager.getAllDependencies.mockReturnValue({});
+    mockPackageManager.primaryPackageJson.packageJson = { dependencies: {}, devDependencies: {} };
 
     vi.mocked(findUp).mockImplementation(async () => undefined);
 
@@ -78,13 +82,19 @@ describe('extractEslintInfo', () => {
   });
 
   it('should extract ESLint info and detect ESLint config and Storybook plugin', async () => {
-    mockPackageManager.getAllDependencies.mockResolvedValue({
+    mockPackageManager.getAllDependencies.mockReturnValue({
       'eslint-plugin-storybook': '1.0.0',
       eslint: '7.0.0',
     });
-    mockPackageManager.retrievePackageJson.mockResolvedValue({
-      eslintConfig: '.eslintrc.js',
-    });
+    mockPackageManager.primaryPackageJson = {
+      packageJson: {
+        devDependencies: {},
+        dependencies: {},
+        eslintConfig: '.eslintrc.js',
+      },
+      packageJsonPath: '/some/path',
+      operationDir: '/some/path',
+    };
 
     vi.mocked(findUp).mockImplementation(async (fileName) =>
       String(fileName) === '.eslintrc.js' ? String(fileName) : undefined
@@ -104,7 +114,6 @@ describe('configureEslintPlugin', () => {
     it('should not configure ESLint plugin if it is already configured', async () => {
       const mockPackageManager = {
         getAllDependencies: vi.fn(),
-        retrievePackageJson: vi.fn(),
       } satisfies Partial<JsPackageManager>;
 
       const mockConfigFile = dedent`{
@@ -124,7 +133,6 @@ describe('configureEslintPlugin', () => {
     it('should configure ESLint plugin correctly', async () => {
       const mockPackageManager = {
         getAllDependencies: vi.fn(),
-        retrievePackageJson: vi.fn(),
       } satisfies Partial<JsPackageManager>;
 
       const mockConfigFile = dedent`{
@@ -153,7 +161,6 @@ describe('configureEslintPlugin', () => {
     it('should correctly parse, configure, and preserve comments in comment-json .eslintrc.json', async () => {
       const mockPackageManager = {
         getAllDependencies: vi.fn(),
-        retrievePackageJson: vi.fn(),
       } satisfies Partial<JsPackageManager>;
 
       // Mock file content with JSON5 features (comments, trailing comma)
@@ -229,7 +236,6 @@ describe('configureEslintPlugin', () => {
     it('should not configure ESLint plugin if it is already configured', async () => {
       const mockPackageManager = {
         getAllDependencies: vi.fn(),
-        retrievePackageJson: vi.fn(),
       } satisfies Partial<JsPackageManager>;
 
       const mockConfigFile = dedent`
@@ -251,7 +257,6 @@ describe('configureEslintPlugin', () => {
     it('should configure ESLint plugin correctly', async () => {
       const mockPackageManager = {
         getAllDependencies: vi.fn(),
-        retrievePackageJson: vi.fn(),
       } satisfies Partial<JsPackageManager>;
 
       const mockConfigFile = dedent`
@@ -280,7 +285,6 @@ describe('configureEslintPlugin', () => {
     it('should configure ESLint plugin correctly with default JS flat config', async () => {
       const mockPackageManager = {
         getAllDependencies: vi.fn(),
-        retrievePackageJson: vi.fn(),
       } satisfies Partial<JsPackageManager>;
 
       const mockConfigFile = dedent`
@@ -310,7 +314,6 @@ describe('configureEslintPlugin', () => {
     it('should configure ESLint plugin correctly with typescript-eslint flat config', async () => {
       const mockPackageManager = {
         getAllDependencies: vi.fn(),
-        retrievePackageJson: vi.fn(),
       } satisfies Partial<JsPackageManager>;
 
       const mockConfigFile = dedent`
@@ -340,7 +343,6 @@ describe('configureEslintPlugin', () => {
     it('should configure ESLint plugin correctly with reexported const declaration', async () => {
       const mockPackageManager = {
         getAllDependencies: vi.fn(),
-        retrievePackageJson: vi.fn(),
       } satisfies Partial<JsPackageManager>;
 
       const mockConfigFile = dedent`import eslint from "@eslint/js";
@@ -373,7 +375,6 @@ describe('configureEslintPlugin', () => {
     it('should configure ESLint plugin correctly with TS aliased config', async () => {
       const mockPackageManager = {
         getAllDependencies: vi.fn(),
-        retrievePackageJson: vi.fn(),
       } satisfies Partial<JsPackageManager>;
 
       const mockConfigFile = dedent`import eslint from "@eslint/js";
@@ -405,7 +406,6 @@ describe('configureEslintPlugin', () => {
     it('should configure ESLint plugin correctly with TS satisfies config', async () => {
       const mockPackageManager = {
         getAllDependencies: vi.fn(),
-        retrievePackageJson: vi.fn(),
       } satisfies Partial<JsPackageManager>;
 
       const mockConfigFile = dedent`import eslint from "@eslint/js";
@@ -433,7 +433,6 @@ describe('configureEslintPlugin', () => {
     it('should just add an import if config is of custom unknown format', async () => {
       const mockPackageManager = {
         getAllDependencies: vi.fn(),
-        retrievePackageJson: vi.fn(),
       } satisfies Partial<JsPackageManager>;
 
       const mockConfigFile = dedent`import someCustomConfig from 'my-eslint-config';

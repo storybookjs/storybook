@@ -124,49 +124,6 @@ Alternatively, you can set the `TARGET_URL` environment variable and run the tes
 TARGET_URL=https://the-storybook-url-here.com yarn test-storybook
 ```
 
-## Set up CI to run tests
-
-You can also configure the test-runner to run tests on a CI environment. Documented below are some recipes to help you get started.
-
-### Run against deployed Storybooks via Github Actions deployment
-
-If you're publishing your Storybook with services such as [Vercel](https://vercel.com/) or [Netlify](https://docs.netlify.com/site-deploys/notifications/#github-commit-statuses), they emit a `deployment_status` event in GitHub Actions. You can use it and set the `deployment_status.target_url` as the `TARGET_URL` environment variable. Here's how:
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="test-runner-with-deploy-event-workflow.md" />
-
-{/* prettier-ignore-end */}
-
-<Callout variant="info" icon="💡">
-  The published Storybook must be publicly available for this example to work. We recommend running the test server using the recipe [below](#run-against-non-deployed-storybooks) if it requires authentication.
-</Callout>
-
-### Run against non-deployed Storybooks
-
-You can use your CI provider (for example, [GitHub Actions](https://github.com/features/actions), [GitLab Pipelines](https://docs.gitlab.com/ee/ci/pipelines/), [CircleCI](https://circleci.com/)) to build and run the test runner against your built Storybook. Here's a recipe that relies on third-party libraries, that is to say, [concurrently](https://www.npmjs.com/package/concurrently), [http-server](https://www.npmjs.com/package/http-server), and [wait-on](https://www.npmjs.com/package/wait-on) to build Storybook and run tests with the test-runner.
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="test-runner-local-build-workflow.md" />
-
-{/* prettier-ignore-end */}
-
-<Callout variant="info" icon="💡">
-  By default, Storybook outputs the [build](../../sharing/publish-storybook.mdx#build-storybook-as-a-static-web-application) to the `storybook-static` directory. If you're using a different build directory, you'll need to adjust the recipe accordingly.
-</Callout>
-
-### What's the difference between Chromatic and Test runner?
-
-The test-runner is a generic testing tool that can run locally or on CI and be configured or extended to run all kinds of tests.
-
-[Chromatic](https://www.chromatic.com/?utm_source=storybook_website\&utm_medium=link\&utm_campaign=storybook) is a cloud-based service that runs [visual](../visual-testing.mdx) and [interaction tests](../interaction-testing.mdx) (and soon [accessibility tests](../accessibility-testing.mdx)) without setting up the test runner. It also syncs with your git provider and manages access control for private projects.
-
-However, you might want to pair the test runner and Chromatic in some cases.
-
-* Use it locally and Chromatic on your CI.
-* Use Chromatic for visual and component tests and run other custom tests using the test runner.
-
 ## Run accessibility tests
 
 When you have the [Accessibility addon](https://storybook.js.org/addons/@storybook/addon-a11y) installed, you can run accessibility tests alongside your interaction tests, using the test-runner.
@@ -339,33 +296,37 @@ Out of the box, code coverage tests work seamlessly with Storybook's test-runner
 
 {/* prettier-ignore-end */}
 
-***
+## Set up CI to run tests
 
-### Troubleshooting
+You can also configure the test-runner to run tests on a CI environment. Documented below are some recipes to help you get started.
 
-#### Run test coverage in other frameworks
+### Run against deployed Storybooks via Github Actions deployment
 
-If you intend on running coverage tests in frameworks with special files like Vue 3 or Svelte, you'll need to adjust your configuration and enable the required file extensions. For example, if you're using Vue, you'll need to add the following to your nyc configuration file (i.e., `.nycrc.json` or `nyc.config.js`):
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="storybook-coverage-report-vue.md" />
-
-{/* prettier-ignore-end */}
-
-#### The coverage addon doesn't support optimized builds
-
-If you generated a production build optimized for performance with the [`--test`](../../sharing/publish-storybook.mdx#customizing-the-build-for-performance) flag, and you're using the coverage addon to run tests against your Storybook, you may run into a situation where the coverage addon doesn't instrument your code. This is due to how the flag works, as it removes addons that have an impact on performance (e.g., [`Docs`](../../writing-docs/index.mdx), [coverage addon](https://storybook.js.org/addons/@storybook/addon-coverage)). To resolve this issue, you'll need to adjust your Storybook configuration file (i.e., `.storybook/main.js|ts`) and include the [`disabledAddons`](../../api/main-config/main-config-build.mdx#testdisabledaddons) option to allow the addon to run tests at the expense of a slower build.
+If you're publishing your Storybook with services such as [Vercel](https://vercel.com/) or [Netlify](https://docs.netlify.com/site-deploys/notifications/#github-commit-statuses), they emit a `deployment_status` event in GitHub Actions. You can use it and set the `deployment_status.target_url` as the `TARGET_URL` environment variable. Here's how:
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="storybook-coverage-addon-optimized-config.md" />
+<CodeSnippets path="test-runner-with-deploy-event-workflow.md" />
 
 {/* prettier-ignore-end */}
 
-#### The coverage addon doesn't support instrumented code
+<Callout variant="info" icon="💡">
+  The published Storybook must be publicly available for this example to work. We recommend running the test server using the recipe [below](#run-against-non-deployed-storybooks) if it requires authentication.
+</Callout>
 
-As the [coverage addon](https://storybook.js.org/addons/@storybook/addon-coverage) is based on Webpack5 loaders and Vite plugins for code instrumentation, frameworks that don't rely upon these libraries (e.g., Angular configured with Webpack), will require additional configuration to enable code instrumentation. In that case, you can refer to the following [repository](https://github.com/yannbf/storybook-coverage-recipes) for more information.
+### Run against non-deployed Storybooks
+
+You can use your CI provider (for example, [GitHub Actions](https://github.com/features/actions), [GitLab Pipelines](https://docs.gitlab.com/ee/ci/pipelines/), [CircleCI](https://circleci.com/)) to build and run the test runner against your built Storybook. Here's a recipe that relies on third-party libraries, that is to say, [concurrently](https://www.npmjs.com/package/concurrently), [http-server](https://www.npmjs.com/package/http-server), and [wait-on](https://www.npmjs.com/package/wait-on) to build Storybook and run tests with the test-runner.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="test-runner-local-build-workflow.md" />
+
+{/* prettier-ignore-end */}
+
+<Callout variant="info" icon="💡">
+  By default, Storybook outputs the [build](../../sharing/publish-storybook.mdx#build-storybook-as-a-static-web-application) to the `storybook-static` directory. If you're using a different build directory, you'll need to adjust the recipe accordingly.
+</Callout>
 
 ## Advanced configuration
 
@@ -532,7 +493,16 @@ If you need to disable it, use the `--no-index-json` flag:
 
 Index.json mode requires a `index.json` file. Open a browser window and navigate to your deployed Storybook instance (for example, `https://your-storybook-url-here.com/index.json`). You should see a JSON file that starts with a `"v": 3` key, immediately followed by another key called "stories", which contains a map of story IDs to JSON objects. If that is the case, your Storybook supports [index.json mode](../../configure/index.mdx#feature-flags).
 
-***
+## What's the difference between Chromatic and Test runner?
+
+The test-runner is a generic testing tool that can run locally or on CI and be configured or extended to run all kinds of tests.
+
+[Chromatic](https://www.chromatic.com/?utm_source=storybook_website\&utm_medium=link\&utm_campaign=storybook) is a cloud-based service that runs [visual](../visual-testing.mdx) and [interaction tests](../interaction-testing.mdx) (and soon [accessibility tests](../accessibility-testing.mdx)) without setting up the test runner. It also syncs with your git provider and manages access control for private projects.
+
+However, you might want to pair the test runner and Chromatic in some cases.
+
+* Use it locally and Chromatic on your CI.
+* Use Chromatic for visual and component tests and run other custom tests using the test runner.
 
 ## Troubleshooting
 
@@ -575,6 +545,30 @@ PlaywrightError: jest-playwright-preset: Cannot find playwright package to use c
 ```
 
 This is due to the test-runner using the community-maintained package [jest-playwright-preset](https://github.com/playwright-community/jest-playwright) that still needs to support this feature. To solve this, you can either switch the [`nodeLinker`](https://yarnpkg.com/features/linkers) setting to `node-modules` or install Playwright as a direct dependency in your project, followed by adding the browser binaries via the [`install`](https://playwright.dev/docs/browsers#install-browsers) command.
+
+### Run test coverage in other frameworks
+
+If you intend on running coverage tests in frameworks with special files like Vue 3 or Svelte, you'll need to adjust your configuration and enable the required file extensions. For example, if you're using Vue, you'll need to add the following to your nyc configuration file (i.e., `.nycrc.json` or `nyc.config.js`):
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-coverage-report-vue.md" />
+
+{/* prettier-ignore-end */}
+
+### The coverage addon doesn't support optimized builds
+
+If you generated a production build optimized for performance with the [`--test`](../../sharing/publish-storybook.mdx#customizing-the-build-for-performance) flag, and you're using the coverage addon to run tests against your Storybook, you may run into a situation where the coverage addon doesn't instrument your code. This is due to how the flag works, as it removes addons that have an impact on performance (e.g., [`Docs`](../../writing-docs/index.mdx), [coverage addon](https://storybook.js.org/addons/@storybook/addon-coverage)). To resolve this issue, you'll need to adjust your Storybook configuration file (i.e., `.storybook/main.js|ts`) and include the [`disabledAddons`](../../api/main-config/main-config-build.mdx#testdisabledaddons) option to allow the addon to run tests at the expense of a slower build.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-coverage-addon-optimized-config.md" />
+
+{/* prettier-ignore-end */}
+
+### The coverage addon doesn't support instrumented code
+
+As the [coverage addon](https://storybook.js.org/addons/@storybook/addon-coverage) is based on Webpack5 loaders and Vite plugins for code instrumentation, frameworks that don't rely upon these libraries (e.g., Angular configured with Webpack), will require additional configuration to enable code instrumentation. In that case, you can refer to the following [repository](https://github.com/yannbf/storybook-coverage-recipes) for more information.
 
 **More testing resources**
 

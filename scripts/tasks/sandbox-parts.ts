@@ -13,7 +13,6 @@ import {
   writeFile,
   writeJson,
 } from 'fs-extra';
-import { readFile } from 'fs/promises';
 import JSON5 from 'json5';
 import { createRequire } from 'module';
 import { join, relative, resolve, sep } from 'path';

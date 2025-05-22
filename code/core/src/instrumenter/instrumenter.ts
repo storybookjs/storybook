@@ -298,13 +298,15 @@ export class Instrumenter {
   }
 
   setState(storyId: StoryId, update: Partial<State> | ((state: State) => Partial<State>)) {
-    const state = this.getState(storyId);
-    const patch = typeof update === 'function' ? update(state) : update;
-    this.state = { ...this.state, [storyId]: { ...state, ...patch } };
-    // Track state on the parent window so we can reload the iframe without losing state.
-    if (global.window?.parent) {
-      // @ts-expect-error fix this later in d.ts file
-      global.window.parent.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__ = this.state;
+    if (storyId) {
+      const state = this.getState(storyId);
+      const patch = typeof update === 'function' ? update(state) : update;
+      this.state = { ...this.state, [storyId]: { ...state, ...patch } };
+      // Track state on the parent window so we can reload the iframe without losing state.
+      if (global.window?.parent) {
+        // @ts-expect-error fix this later in d.ts file
+        global.window.parent.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__ = this.state;
+      }
     }
   }
 

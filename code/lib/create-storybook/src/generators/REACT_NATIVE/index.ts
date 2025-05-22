@@ -29,7 +29,8 @@ const generator: Generator = async (packageManager, npmOptions, options) => {
 
   const versionedPackages = await packageManager.getVersionedPackages(packagesToResolve);
 
-  const babelDependencies = await getBabelDependencies(packageManager);
+  // TODO: Investigate why packageManager type does not match on CI
+  const babelDependencies = await getBabelDependencies(packageManager as any);
 
   const packages: string[] = [];
 

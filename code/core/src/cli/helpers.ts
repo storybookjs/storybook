@@ -13,7 +13,7 @@ import type { SupportedFrameworks, SupportedRenderers } from 'storybook/internal
 
 import { findUpSync } from 'find-up';
 import picocolors from 'picocolors';
-import { coerce, major, satisfies } from 'semver';
+import { coerce, satisfies } from 'semver';
 import stripJsonComments from 'strip-json-comments';
 import invariant from 'tiny-invariant';
 

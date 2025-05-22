@@ -14,6 +14,9 @@ vi.mock('storybook/internal/common', () => ({
 
 const prompt = vi.mocked(promptRaw);
 
+// necessary for windows and unix output to match in the assertions
+const normalizeLineBreaks = (str: string) => str.replace(/\r/g, '').trim();
+
 describe('logMigrationSummary', () => {
   const fixResults = {
     'foo-package': FixStatus.SUCCEEDED,
@@ -98,7 +101,7 @@ describe('logMigrationSummary', () => {
         title: 'Migration check ran with failures',
       })
     );
-    expect(prompt.logBox.mock.calls[0][0]).toMatchInlineSnapshot(`
+    expect(normalizeLineBreaks(prompt.logBox.mock.calls[0][0])).toMatchInlineSnapshot(`
       "Successful migrations:
 
       foo-package
@@ -142,7 +145,7 @@ describe('logMigrationSummary', () => {
         title: 'No migrations were applicable to your project',
       })
     );
-    expect(prompt.logBox.mock.calls[0][0]).toMatchInlineSnapshot(`
+    expect(normalizeLineBreaks(prompt.logBox.mock.calls[0][0])).toMatchInlineSnapshot(`
       "If you'd like to run the migrations again, you can do so by running 'npx storybook automigrate'
 
       The automigrations try to migrate common patterns in your project, but might not contain everything needed to migrate to the latest version of Storybook.
@@ -165,7 +168,7 @@ describe('logMigrationSummary', () => {
         title: 'No migrations were applicable to your project',
       })
     );
-    expect(prompt.logBox.mock.calls[0][0]).toMatchInlineSnapshot(`
+    expect(normalizeLineBreaks(prompt.logBox.mock.calls[0][0])).toMatchInlineSnapshot(`
       "If you'd like to run the migrations again, you can do so by running 'npx storybook automigrate'
 
       The automigrations try to migrate common patterns in your project, but might not contain everything needed to migrate to the latest version of Storybook.

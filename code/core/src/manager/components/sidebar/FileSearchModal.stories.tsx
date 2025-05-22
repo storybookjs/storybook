@@ -102,7 +102,7 @@ export const WithSearchResults: Story = {
     const moduleSingleExport = await findByText(parent, 'module-single-export.js');
     await fireEvent.click(moduleSingleExport);
 
-    expect(args.onCreateNewStory).toHaveBeenCalledWith({
+    await expect(args.onCreateNewStory).toHaveBeenCalledWith({
       componentExportCount: 1,
       componentExportName: 'default',
       componentFilePath: 'src/module-single-export.js',

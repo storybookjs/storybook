@@ -273,7 +273,7 @@ describe('addon-experimental-test fix', () => {
       ]);
 
       expect(packageManager.addDependencies).toHaveBeenCalledWith(
-        { installAsDevDependencies: true },
+        { installAsDevDependencies: true, skipInstall: true },
         ['@storybook/addon-vitest@9.0.0']
       );
     });
@@ -317,7 +317,7 @@ describe('addon-experimental-test fix', () => {
       } as any);
 
       expect(packageManager.addDependencies).toHaveBeenCalledWith(
-        { installAsDevDependencies: false },
+        { installAsDevDependencies: false, skipInstall: true },
         ['@storybook/addon-vitest@9.0.0']
       );
     });

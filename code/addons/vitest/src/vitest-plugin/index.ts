@@ -365,13 +365,10 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     configureVitest(context) {
       context.vitest.config.coverage.exclude.push('storybook-static');
 
-      if (
-        !core?.disableTelemetry &&
-        !(
-          process.env.STORYBOOK_DISABLE_TELEMETRY &&
-          process.env.STORYBOOK_DISABLE_TELEMETRY !== 'false'
-        )
-      ) {
+      const disableTelemetryVar =
+        process.env.STORYBOOK_DISABLE_TELEMETRY &&
+        process.env.STORYBOOK_DISABLE_TELEMETRY !== 'false';
+      if (!core?.disableTelemetry && !disableTelemetryVar) {
         // NOTE: we start telemetry immediately but do not wait on it. Typically it should complete
         // before the tests do. If not we may miss the event, we are OK with that.
         telemetry(
@@ -381,10 +378,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
             watch: context.vitest.config.watch,
             coverage: !!context.vitest.config.coverage?.enabled,
           },
-          {
-            configDir: finalOptions.configDir,
-            enableCrashReports: core.enableCrashReports,
-          }
+          { configDir: finalOptions.configDir }
         );
       }
     },

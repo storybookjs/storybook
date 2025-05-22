@@ -4,8 +4,6 @@ import { buildStaticStandalone, withTelemetry } from 'storybook/internal/core-se
 import { findPackage } from 'fd-package-json';
 import invariant from 'tiny-invariant';
 
-import { telemetry } from '../telemetry';
-
 export const build = async (cliOptions: any) => {
   const packageJson = await findPackage(__dirname);
   invariant(packageJson, 'Failed to find the closest package.json file.');

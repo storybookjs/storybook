@@ -1,5 +1,4 @@
-/* eslint-disable local-rules/no-uncategorized-errors */
-import { getProjectRoot } from 'storybook/internal/common';
+import { getProjectRoot, prompt } from 'storybook/internal/common';
 
 import boxen, { type Options } from 'boxen';
 // eslint-disable-next-line depend/ban-dependencies
@@ -15,12 +14,18 @@ export const findStorybookProjects = async (): Promise<string[]> => {
   // Find all .storybook directories, though we need to later on account for custom config dirs
   const storybookDirs = await globby('**/.storybook', {
     cwd: gitRootDir,
+    dot: true,
     gitignore: true,
     absolute: true,
+    onlyDirectories: true,
   });
 
   if (storybookDirs.length === 0) {
-    throw new Error('No Storybook projects found in the repository');
+    const answer = await prompt.text({
+      message:
+        'No Storybook projects were found. Please enter the path to the .storybook directory for the project you want to upgrade.',
+    });
+    return [answer];
   }
 
   return storybookDirs;

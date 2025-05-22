@@ -131,12 +131,7 @@ export abstract class JsPackageManager {
   }
 
   /** Read the `package.json` file available in the provided directory */
-  static getPackageJson(directory: string): PackageJsonWithDepsAndDevDeps {
-    const packageJsonPath = resolve(directory, 'package.json');
-    if (!existsSync(packageJsonPath)) {
-      throw new Error(`Could not read package.json file at ${packageJsonPath}`);
-    }
-
+  static getPackageJson(packageJsonPath: string): PackageJsonWithDepsAndDevDeps {
     const jsonContent = readFileSync(packageJsonPath, 'utf8');
     const packageJSON = JSON.parse(jsonContent);
 
@@ -251,7 +246,7 @@ export abstract class JsPackageManager {
   async removeDependencies(dependencies: string[]): Promise<void> {
     for (const pjPath of this.packageJsonPaths) {
       try {
-        const currentPackageJson = JsPackageManager.getPackageJson(dirname(pjPath));
+        const currentPackageJson = JsPackageManager.getPackageJson(pjPath);
         let modified = false;
         dependencies.forEach((dep) => {
           if (currentPackageJson.dependencies && currentPackageJson.dependencies[dep]) {
@@ -633,7 +628,7 @@ export abstract class JsPackageManager {
       packageJsonPath: finalTargetPackageJsonPath,
       operationDir,
       get packageJson() {
-        return JsPackageManager.getPackageJson(operationDir);
+        return JsPackageManager.getPackageJson(finalTargetPackageJsonPath);
       },
     };
   }

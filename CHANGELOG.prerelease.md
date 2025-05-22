@@ -1,3 +1,9 @@
+## 9.0.0-rc.4
+
+- Addon Vitest: Improve handling multiple browser mode projects - [#31508](https://github.com/storybookjs/storybook/pull/31508), thanks @yannbf!
+- Addons: Add shim Storybook addons for previously removed addons - [#31520](https://github.com/storybookjs/storybook/pull/31520), thanks @valentinpalkovic!
+- React Native: Fix support for 9.0 - [#31518](https://github.com/storybookjs/storybook/pull/31518), thanks @JReinhold!
+
 ## 9.0.0-rc.3
 
 - Addon Vitest: Ensure vitest exclusions are relative to the project root, not cwd - [#31514](https://github.com/storybookjs/storybook/pull/31514), thanks @mrginglymus!

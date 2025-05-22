@@ -2,6 +2,7 @@ import { hasStorybookDependencies } from 'storybook/internal/cli';
 import type { JsPackageManager, PackageManagerName } from 'storybook/internal/common';
 import {
   JsPackageManagerFactory,
+  getProjectRoot,
   isCorePackage,
   isSatelliteAddon,
   prompt,
@@ -19,6 +20,7 @@ import { telemetry } from 'storybook/internal/telemetry';
 
 import { sync as spawnSync } from 'cross-spawn';
 import picocolors from 'picocolors';
+import prompts from 'prompts';
 import semver, { clean, eq, lt, prerelease } from 'semver';
 import { dedent } from 'ts-dedent';
 
@@ -26,6 +28,7 @@ import { autoblock } from './autoblock/index';
 import { getStorybookData } from './automigrate/helpers/mainConfigFile';
 import { automigrate } from './automigrate/index';
 import { doctor } from './doctor';
+import { findStorybookProjects } from './util';
 
 type Package = {
   package: string;
@@ -203,7 +206,7 @@ export const toUpgradedDependencies = async (
   return [...storybookCoreUpgrades, ...storybookSatelliteUpgrades];
 };
 
-export interface UpgradeOptions {
+interface InternalUpgradeOptions {
   skipCheck: boolean;
   packageManager?: PackageManagerName;
   dryRun: boolean;
@@ -213,7 +216,7 @@ export interface UpgradeOptions {
   configDir?: string;
 }
 
-export const doUpgrade = async (allOptions: UpgradeOptions) => {
+export const doUpgrade = async (allOptions: InternalUpgradeOptions) => {
   const {
     skipCheck,
     packageManager: packageManagerName,
@@ -451,6 +454,104 @@ export const doUpgrade = async (allOptions: UpgradeOptions) => {
   await doctor(allOptions);
 };
 
+export type UpgradeOptions = Omit<InternalUpgradeOptions, 'configDir'> & { configDir?: string[] };
 export async function upgrade(options: UpgradeOptions): Promise<void> {
-  await withTelemetry('upgrade', { cliOptions: options }, () => doUpgrade(options));
+  // TODO: telemetry for upgrade start
+  const gitRoot = getProjectRoot();
+  let configDirs = options.configDir;
+
+  if (configDirs === undefined || configDirs.length === 0) {
+    configDirs = await findStorybookProjects();
+    if (configDirs.length > 1) {
+      logger.plain(
+        `Multiple Storybook projects found. Storybook can only upgrade all projects at once: ${configDirs
+          .map((dir) => '\t' + picocolors.cyan(dir.replace(gitRoot, '')))
+          .join('\n')}. Continue?`
+      );
+      const continueUpgrade = await prompt.confirm({
+        message: `Continue with the upgrade?`,
+        initialValue: true,
+      });
+
+      if (!continueUpgrade) {
+        process.exit(0);
+      }
+    }
+  }
+
+  // Single project upgrade scenario
+  if (configDirs.length === 1) {
+    await withTelemetry(
+      'upgrade',
+      { cliOptions: { ...options, configDir: configDirs[0] } },
+      async () => doUpgrade({ ...options, configDir: configDirs[0] })
+    );
+    return;
+  }
+
+  // Multi upgrade scenario
+  const upgradeStatus: {
+    projectName: string;
+    status: 'incomplete' | 'complete' | 'failed';
+    error?: any;
+  }[] = configDirs.map((dir) => {
+    const projectName = dir.replace(gitRoot, '');
+    return {
+      projectName,
+      status: 'incomplete',
+      error: null,
+    };
+  });
+
+  // Migrate each selected project
+  for (let i = 0; i < configDirs.length; i++) {
+    const storybookProject = configDirs[i];
+    const projectName = storybookProject.replace(gitRoot, '');
+
+    logger.plain(
+      `\nUpgrading project ${i + 1}/${configDirs.length}:\n\t${picocolors.cyan(projectName)}`
+    );
+
+    try {
+      await withTelemetry(
+        'upgrade',
+        { cliOptions: { ...options, configDir: storybookProject } },
+        async () => doUpgrade({ ...options, configDir: storybookProject })
+      );
+      upgradeStatus[i].status = 'complete';
+    } catch (error) {
+      logger.error(`Error upgrading project ${projectName}. Skipping...`);
+      upgradeStatus[i].status = 'failed';
+      upgradeStatus[i].error = error;
+    }
+  }
+
+  const failedProjects = upgradeStatus.filter((status) => status.status === 'failed');
+
+  if (failedProjects.length > 0) {
+    logger.plain('\nUpgrade Summary:');
+    const successfulProjects = upgradeStatus.filter((status) => status.status === 'complete');
+    if (successfulProjects.length > 0) {
+      logger.plain('\nSuccessfully upgraded:');
+      successfulProjects.forEach((status) => {
+        logger.plain(`  ${picocolors.green('✓')} ${status.projectName}`);
+      });
+    }
+
+    logger.plain('\nFailed to upgrade:');
+    failedProjects.forEach((status) => {
+      logger.plain(`  ${picocolors.red('✕')} ${status.projectName}`);
+      if (status.error) {
+        logger.plain(`    ${picocolors.dim(status.error.message || String(status.error))}`);
+      }
+    });
+
+    logger.plain(
+      `\n${picocolors.red('Some projects failed to upgrade. See error details above.')}`
+    );
+  } else {
+    logger.plain(`\n${picocolors.green('Your project(s) have been upgraded successfully! 🎉')}`);
+  }
+  // TODO: if multiple projects, multi-upgrade telemetry with e.g.
+  // { success: X, fail: Y, incomplete: Z }
 }

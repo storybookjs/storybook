@@ -1,6 +1,5 @@
 import { action } from 'storybook/actions';
 
-import { CallStates } from '../../instrumenter/types';
 import { Subnav } from './Subnav';
 
 export default {
@@ -31,27 +30,49 @@ export default {
   },
 };
 
-export const Pass = {
-  args: {
-    status: CallStates.DONE,
-  },
+const controlsDisabled = {
+  start: false,
+  back: false,
+  goto: false,
+  next: false,
+  end: false,
 };
 
-export const Fail = {
+export const Wait = {
   args: {
-    status: CallStates.ERROR,
+    status: 'rendering',
+    controlStates: controlsDisabled,
   },
 };
 
 export const Runs = {
   args: {
-    status: CallStates.WAITING,
+    status: 'playing',
+  },
+};
+
+export const Pass = {
+  args: {
+    status: 'completed',
+  },
+};
+
+export const Fail = {
+  args: {
+    status: 'errored',
+  },
+};
+
+export const Bail = {
+  args: {
+    status: 'aborted',
+    controlStates: controlsDisabled,
   },
 };
 
 export const AtStart = {
   args: {
-    status: CallStates.WAITING,
+    status: 'playing',
     controlStates: {
       start: false,
       back: false,
@@ -64,7 +85,7 @@ export const AtStart = {
 
 export const Midway = {
   args: {
-    status: CallStates.WAITING,
+    status: 'playing',
     controlStates: {
       start: true,
       back: true,
@@ -77,13 +98,7 @@ export const Midway = {
 
 export const Locked = {
   args: {
-    status: CallStates.ACTIVE,
-    controlStates: {
-      start: false,
-      back: false,
-      goto: false,
-      next: false,
-      end: false,
-    },
+    status: 'playing',
+    controlStates: controlsDisabled,
   },
 };

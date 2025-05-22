@@ -8,6 +8,7 @@ import { INTERNAL_RENDER_CALL_ID } from '../constants';
 import { isTestAssertionError, useAnsiToHtmlFilter } from '../utils';
 import { Empty } from './EmptyState';
 import { Interaction } from './Interaction';
+import type { PlayStatus } from './StatusBadge';
 import { Subnav } from './Subnav';
 import { TestDiscrepancyMessage } from './TestDiscrepancyMessage';
 
@@ -21,6 +22,7 @@ export interface Controls {
 }
 
 interface InteractionsPanelProps {
+  status: PlayStatus;
   controls: Controls;
   controlStates: ControlStates;
   interactions: (Call & {
@@ -86,6 +88,7 @@ const CaughtExceptionStack = styled.pre(({ theme }) => ({
 
 export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
   function InteractionsPanel({
+    status,
     calls,
     controls,
     controlStates,
@@ -110,7 +113,7 @@ export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
           <Subnav
             controls={controls}
             controlStates={controlStates}
-            status={browserTestStatus}
+            status={status}
             storyFileName={fileName}
             onScrollToEnd={onScrollToEnd}
           />

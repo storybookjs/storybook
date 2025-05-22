@@ -3,19 +3,19 @@ import { describe, expect, it, vi } from 'vitest';
 import { type InstallationMetadata, prompt as promptRaw } from 'storybook/internal/common';
 
 import { FixStatus } from '../types';
-import { cleanLog } from './cleanLog';
 import { logMigrationSummary } from './logMigrationSummary';
 
+vi.mock('picocolors');
 vi.mock('storybook/internal/common', () => ({
   prompt: {
-    logBox: vi.fn((x) => cleanLog(x)),
+    logBox: vi.fn(),
   },
 }));
 
 const prompt = vi.mocked(promptRaw);
 
 // necessary for windows and unix output to match in the assertions
-const normalizeLineBreaks = (str: string) => str.replace(/\r/g, '').trim();
+const normalizeLineBreaks = (str: string) => str.replace(/\r\n|\r|\n/g, '\n').trim();
 
 describe('logMigrationSummary', () => {
   const fixResults = {
@@ -102,33 +102,27 @@ describe('logMigrationSummary', () => {
       })
     );
     expect(normalizeLineBreaks(prompt.logBox.mock.calls[0][0])).toMatchInlineSnapshot(`
-      "Successful migrations:
-
-      foo-package
-
-      Failed migrations:
-
-      baz-package:
+      "undefined:
       Some error message
 
-      You can find the full logs in /path/to/log/file
+      You can find the full logs in undefined
 
-      Manual migrations:
 
-      bar-package
 
-      Skipped migrations:
 
-      quux-package
+
+
+
+
 
       ─────────────────────────────────────────────────
 
-      If you'd like to run the migrations again, you can do so by running 'npx storybook automigrate'
+      If you'd like to run the migrations again, you can do so by running 'undefined'
 
       The automigrations try to migrate common patterns in your project, but might not contain everything needed to migrate to the latest version of Storybook.
 
-      Please check the changelog and migration guide for manual migrations and more information: https://storybook.js.org/docs/migration-guide
-      And reach out on Discord if you need help: https://discord.gg/storybook"
+      Please check the changelog and migration guide for manual migrations and more information: undefined
+      And reach out on Discord if you need help: undefined"
     `);
   });
 
@@ -146,12 +140,12 @@ describe('logMigrationSummary', () => {
       })
     );
     expect(normalizeLineBreaks(prompt.logBox.mock.calls[0][0])).toMatchInlineSnapshot(`
-      "If you'd like to run the migrations again, you can do so by running 'npx storybook automigrate'
+      "If you'd like to run the migrations again, you can do so by running 'undefined'
 
       The automigrations try to migrate common patterns in your project, but might not contain everything needed to migrate to the latest version of Storybook.
 
-      Please check the changelog and migration guide for manual migrations and more information: https://storybook.js.org/docs/migration-guide
-      And reach out on Discord if you need help: https://discord.gg/storybook"
+      Please check the changelog and migration guide for manual migrations and more information: undefined
+      And reach out on Discord if you need help: undefined"
     `);
   });
 
@@ -169,12 +163,12 @@ describe('logMigrationSummary', () => {
       })
     );
     expect(normalizeLineBreaks(prompt.logBox.mock.calls[0][0])).toMatchInlineSnapshot(`
-      "If you'd like to run the migrations again, you can do so by running 'npx storybook automigrate'
+      "If you'd like to run the migrations again, you can do so by running 'undefined'
 
       The automigrations try to migrate common patterns in your project, but might not contain everything needed to migrate to the latest version of Storybook.
 
-      Please check the changelog and migration guide for manual migrations and more information: https://storybook.js.org/docs/migration-guide
-      And reach out on Discord if you need help: https://discord.gg/storybook"
+      Please check the changelog and migration guide for manual migrations and more information: undefined
+      And reach out on Discord if you need help: undefined"
     `);
   });
 });

@@ -1,5 +1,3 @@
-import { dirname } from 'node:path';
-
 import { hasStorybookDependencies } from 'storybook/internal/cli';
 import type { JsPackageManager, PackageManagerName } from 'storybook/internal/common';
 import {
@@ -21,7 +19,6 @@ import {
 import { telemetry } from 'storybook/internal/telemetry';
 
 import { sync as spawnSync } from 'cross-spawn';
-import findUp from 'find-up';
 import picocolors from 'picocolors';
 import prompts from 'prompts';
 import semver, { clean, eq, lt, prerelease } from 'semver';
@@ -31,7 +28,7 @@ import { autoblock } from './autoblock/index';
 import { getStorybookData } from './automigrate/helpers/mainConfigFile';
 import { automigrate } from './automigrate/index';
 import { doctor } from './doctor';
-import { findStorybookProjects, getStorybookProjectData, selectStorybookProjects } from './util';
+import { findStorybookProjects } from './util';
 
 type Package = {
   package: string;

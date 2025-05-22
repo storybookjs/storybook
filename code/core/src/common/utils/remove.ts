@@ -47,7 +47,10 @@ export async function removeAddon(
   // remove from package.json
   logger.log(`Uninstalling ${addon}`);
   await packageManager.removeDependencies([addon]);
-  await packageManager.installDependencies();
+
+  if (!skipInstall) {
+    await packageManager.installDependencies();
+  }
 
   // add to main.js
   logger.log(`Removing '${addon}' from main.js addons field.`);

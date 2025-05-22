@@ -4,11 +4,9 @@ import { basename, dirname, extname, join } from 'node:path';
 
 import {
   extractProperFrameworkName,
-  extractProperRendererNameFromFramework,
   findConfigFile,
   getFrameworkName,
   getProjectRoot,
-  rendererPackages,
 } from 'storybook/internal/common';
 import type { CreateNewStoryRequestPayload } from 'storybook/internal/core-events';
 import { isCsfFactoryPreview } from 'storybook/internal/csf-tools';

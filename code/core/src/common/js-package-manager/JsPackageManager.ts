@@ -78,7 +78,7 @@ export abstract class JsPackageManager {
     this.cwd = options?.cwd || process.cwd();
     this.#instanceDir = options?.configDir ? dirname(join(this.cwd, options.configDir)) : this.cwd;
     this.primaryPackageJson = this.#getPrimaryPackageJson();
-    this.packageJsonPaths = JsPackageManager.listAllPackageJsonPaths(this.#instanceDir);
+    this.packageJsonPaths = JsPackageManager.listAllPackageJsonPaths(this.#instanceDir, this.cwd);
   }
 
   /** Runs arbitrary package scripts. */
@@ -602,10 +602,10 @@ export abstract class JsPackageManager {
   }
 
   /** List all package.json files starting from the given directory and stopping at the project root. */
-  static listAllPackageJsonPaths(directory: string): string[] {
+  static listAllPackageJsonPaths(instanceDir: string, cwd = process.cwd()): string[] {
     return findUpMultipleSync('package.json', {
-      cwd: directory,
-      stopAt: JsPackageManager.projectRoot,
+      cwd: instanceDir,
+      stopAt: cwd,
     });
   }
 

@@ -198,9 +198,5 @@ export const consolidatedImports: Fix<ConsolidatedOptions> = {
           .join('\n')}`
       );
     }
-
-    if (!dryRun && result.packageJsonFiles.length > 0) {
-      await options.packageManager.installDependencies();
-    }
   },
 };

@@ -174,7 +174,7 @@
     "tinyexec": "^0.3.0",
     "trash": "^7.2.0",
     "ts-dedent": "^2.2.0",
-    "tsup": "^6.7.0",
+    "tsup": "^8.5.0",
     "type-fest": "~2.19",
     "typescript": "^5.8.3",
     "uuid": "^9.0.1",

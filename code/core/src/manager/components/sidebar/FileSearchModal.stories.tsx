@@ -37,8 +37,7 @@ const meta = {
             transform: 'translateZ(0)',
           }}
         >
-          {/* @ts-expect-error (non strict) */}
-          {Story({ args: { ...context.args, container } })}
+          <Story {...context.args} container={container} />
         </div>
       );
     },

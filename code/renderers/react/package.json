@@ -21,21 +21,24 @@
   "license": "MIT",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
+      "types": "./dist/index.d.mts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
     },
     "./preview": {
-      "types": "./dist/preview.d.ts",
+      "types": "./dist/preview.d.mts",
       "import": "./dist/preview.mjs",
       "require": "./dist/preview.js"
     },
     "./experimental-playwright": {
-      "types": "./dist/playwright.d.ts",
+      "types": "./dist/playwright.d.mts",
       "import": "./dist/playwright.mjs",
       "require": "./dist/playwright.js"
     },
-    "./preset": "./preset.js",
+    "./preset": {
+      "types": "./dist/preset.d.mts",
+      "default": "./preset.js"
+    },
     "./dist/entry-preview.mjs": "./dist/entry-preview.mjs",
     "./dist/entry-preview-argtypes.mjs": "./dist/entry-preview-argtypes.mjs",
     "./dist/entry-preview-docs.mjs": "./dist/entry-preview-docs.mjs",
@@ -44,17 +47,17 @@
   },
   "main": "dist/index.js",
   "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
+  "types": "dist/index.d.mts",
   "typesVersions": {
     "*": {
       "*": [
-        "dist/index.d.ts"
+        "dist/index.d.mts"
       ],
       "preview": [
-        "dist/preview.d.ts"
+        "dist/preview.d.mts"
       ],
       "experimental-playwright": [
-        "dist/playwright.d.ts"
+        "dist/playwright.d.mts"
       ]
     }
   },
@@ -68,7 +71,7 @@
   ],
   "scripts": {
     "check": "jiti ../../../scripts/prepare/check.ts",
-    "prep": "jiti ../../../scripts/prepare/bundle.ts"
+    "prep": "jiti ../../../scripts/prepare/bundle.ts --experimental-dts"
   },
   "dependencies": {
     "@storybook/global": "^5.0.0",

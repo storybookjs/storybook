@@ -454,6 +454,8 @@ export const doUpgrade = async (allOptions: UpgradeOptions) => {
     });
   }
 
+  await packageManager.installDependencies();
+
   await doctor(allOptions);
 };
 

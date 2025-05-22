@@ -108,6 +108,8 @@ export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
     isLatest: false,
   });
 
+  packageManager.installDependencies();
+
   if (outcome) {
     await doctor({ configDir, packageManager: options.packageManager });
   }

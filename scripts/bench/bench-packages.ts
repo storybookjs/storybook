@@ -404,6 +404,11 @@ const run = async () => {
   ) as PackageName[];
   const options = program.opts<{ pullRequest?: number; baseBranch?: string; upload?: boolean }>();
 
+  if (options.baseBranch !== 'main' && options.baseBranch !== 'next') {
+    console.warn('Base branch must be main or next, skipping...');
+    process.exit(0);
+  }
+
   if (options.upload || options.baseBranch) {
     if (!GCP_CREDENTIALS.project_id) {
       throw new Error(

@@ -209,7 +209,7 @@ export const toUpgradedDependencies = async (
   return [...storybookCoreUpgrades, ...storybookSatelliteUpgrades];
 };
 
-export interface UpgradeOptions {
+interface InternalUpgradeOptions {
   skipCheck: boolean;
   packageManager?: PackageManagerName;
   dryRun: boolean;
@@ -219,7 +219,7 @@ export interface UpgradeOptions {
   configDir?: string;
 }
 
-export const doUpgrade = async (allOptions: UpgradeOptions) => {
+export const doUpgrade = async (allOptions: InternalUpgradeOptions) => {
   const {
     skipCheck,
     packageManager: packageManagerName,
@@ -457,9 +457,8 @@ export const doUpgrade = async (allOptions: UpgradeOptions) => {
   await doctor(allOptions);
 };
 
-export async function upgrade(
-  options: Omit<UpgradeOptions, 'configDir'> & { configDir?: string[] }
-): Promise<void> {
+export type UpgradeOptions = Omit<InternalUpgradeOptions, 'configDir'> & { configDir?: string[] };
+export async function upgrade(options: UpgradeOptions): Promise<void> {
   const gitRoot = getProjectRoot();
   let configDirs = options.configDir;
   if (!configDirs) {

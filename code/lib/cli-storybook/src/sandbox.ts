@@ -3,13 +3,11 @@ import { readdir, rm } from 'node:fs/promises';
 import { isAbsolute, join } from 'node:path';
 
 import type { PackageManagerName } from 'storybook/internal/common';
-import { JsPackageManagerFactory } from 'storybook/internal/common';
+import { JsPackageManagerFactory, prompt } from 'storybook/internal/common';
 import { versions } from 'storybook/internal/common';
 
-import boxen from 'boxen';
 import { downloadTemplate } from 'giget';
 import picocolors from 'picocolors';
-import prompts from 'prompts';
 import { lt, prerelease } from 'semver';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
@@ -28,7 +26,7 @@ interface SandboxOptions {
 }
 type Choice = keyof typeof TEMPLATES;
 
-const toChoices = (c: Choice): prompts.Choice => ({ title: TEMPLATES[c].name, value: c });
+const toChoices = (c: Choice) => ({ label: TEMPLATES[c].name, value: c });
 
 export const sandbox = async ({
   output: outputDirectory,
@@ -70,15 +68,13 @@ export const sandbox = async ({
     prerelease: picocolors.yellow('This is a pre-release version.'),
   };
 
-  logger.log(
-    boxen(
-      [messages.welcome]
-        .concat(isOutdated && !isPrerelease ? [messages.notLatest] : [])
-        .concat(init && (isOutdated || isPrerelease) ? [messages.longInitTime] : [])
-        .concat(isPrerelease ? [messages.prerelease] : [])
-        .join('\n'),
-      { borderStyle: 'round', padding: 1, borderColor }
-    )
+  prompt.logBox(
+    [messages.welcome]
+      .concat(isOutdated && !isPrerelease ? [messages.notLatest] : [])
+      .concat(init && (isOutdated || isPrerelease) ? [messages.longInitTime] : [])
+      .concat(isPrerelease ? [messages.prerelease] : [])
+      .join('\n'),
+    { borderStyle: 'round', padding: 1, borderColor }
   );
 
   if (!selectedConfig) {
@@ -109,9 +105,8 @@ export const sandbox = async ({
     }, []);
 
     if (choices.length === 0) {
-      logger.info(
-        boxen(
-          dedent`
+      prompt.logBox(
+        dedent`
             🔎 You filtered out all templates. 🔍
 
             After filtering all the templates with "${picocolors.yellow(
@@ -121,8 +116,7 @@ export const sandbox = async ({
             Available templates:
             ${keys.map((key) => picocolors.blue(`- ${key}`)).join('\n')}
             `.trim(),
-          { borderStyle: 'round', padding: 1, borderColor: '#F1618C' } as any
-        )
+        { borderStyle: 'round', padding: 1, borderColor: '#F1618C' } as any
       );
       process.exit(1);
     }
@@ -130,9 +124,8 @@ export const sandbox = async ({
     if (choices.length === 1) {
       [templateId] = choices;
     } else {
-      logger.info(
-        boxen(
-          dedent`
+      prompt.logBox(
+        dedent`
             🤗 Welcome to ${picocolors.yellow('sb sandbox')}! 🤗
 
             Create a ${picocolors.green('new project')} to minimally reproduce Storybook issues.
@@ -142,8 +135,7 @@ export const sandbox = async ({
 
             After the reproduction is ready, we'll guide you through the next steps.
             `.trim(),
-          { borderStyle: 'round', padding: 1, borderColor: '#F1618C' } as any
-        )
+        { borderStyle: 'round', padding: 1, borderColor: '#F1618C' } as any
       );
 
       templateId = await promptSelectedTemplate(choices);
@@ -170,12 +162,10 @@ export const sandbox = async ({
   }
 
   if (!selectedDirectory) {
-    const { directory } = await prompts(
+    const directory = await prompt.text(
       {
-        type: 'text',
         message: 'Enter the output directory',
-        name: 'directory',
-        initial: outputDirectoryName ?? undefined,
+        initialValue: outputDirectoryName ?? undefined,
         validate: async (directoryName) =>
           existsSync(directoryName)
             ? `${directoryName} already exists. Please choose another name.`
@@ -246,9 +236,8 @@ export const sandbox = async ({
         `)
       : `Recreate your setup, then ${picocolors.yellow(`npx storybook@latest init`)}`;
 
-    logger.info(
-      boxen(
-        dedent`
+    prompt.logBox(
+      dedent`
         🎉 Your Storybook reproduction project is ready to use! 🎉
 
         ${picocolors.yellow(`cd ${selectedDirectory}`)}
@@ -262,8 +251,7 @@ export const sandbox = async ({
 
         Having a clean repro helps us solve your issue faster! 🙏
       `.trim(),
-        { borderStyle: 'round', padding: 1, borderColor: '#F1618C' } as any
-      )
+      { borderStyle: 'round', padding: 1, borderColor: '#F1618C' }
     );
   } catch (error) {
     logger.error('🚨 Failed to create sandbox');
@@ -272,20 +260,9 @@ export const sandbox = async ({
 };
 
 async function promptSelectedTemplate(choices: Choice[]): Promise<Choice | null> {
-  const { template } = await prompts(
-    {
-      type: 'select',
-      message: '🌈 Select the template',
-      name: 'template',
-      choices: choices.map(toChoices),
-    },
-    {
-      onCancel: () => {
-        logger.log('Command cancelled by the user. Exiting...');
-        process.exit(1);
-      },
-    }
-  );
-
-  return template || null;
+  const selected = await prompt.select({
+    message: 'Select a template',
+    options: choices.map(toChoices),
+  });
+  return selected as Choice;
 }

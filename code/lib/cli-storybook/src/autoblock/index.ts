@@ -1,6 +1,6 @@
+import { prompt } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
-import boxen from 'boxen';
 import picocolors from 'picocolors';
 
 import type { AutoblockOptions, Blocker } from './types';
@@ -58,15 +58,13 @@ export const autoblock = async (
     };
     const borderColor = '#FC521F';
 
-    logger.plain(
-      boxen(
-        [messages.welcome]
-          .concat(['\n\n'])
-          .concat([faults.map((i) => i.log).join(segmentDivider)])
-          .concat([segmentDivider, messages.reminder])
-          .join(''),
-        { borderStyle: 'round', padding: 1, borderColor }
-      )
+    prompt.logBox(
+      [messages.welcome]
+        .concat(['\n\n'])
+        .concat([faults.map((i) => i.log).join(segmentDivider)])
+        .concat([segmentDivider, messages.reminder])
+        .join(''),
+      { borderStyle: 'round', padding: 1, borderColor }
     );
 
     return faults[0].id;

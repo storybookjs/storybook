@@ -4,6 +4,7 @@ import {
   JsPackageManagerFactory,
   isCorePackage,
   isSatelliteAddon,
+  prompt,
   versions,
 } from 'storybook/internal/common';
 import { withTelemetry } from 'storybook/internal/core-server';
@@ -16,7 +17,6 @@ import {
 } from 'storybook/internal/server-errors';
 import { telemetry } from 'storybook/internal/telemetry';
 
-import boxen from 'boxen';
 import { sync as spawnSync } from 'cross-spawn';
 import picocolors from 'picocolors';
 import semver, { clean, eq, lt, prerelease } from 'semver';
@@ -276,14 +276,12 @@ export const doUpgrade = async (allOptions: UpgradeOptions) => {
     prerelease: picocolors.yellow('This is a pre-release version.'),
   };
 
-  logger.plain(
-    boxen(
-      [messages.welcome]
-        .concat(isCLIOutdated && !isCLIPrerelease ? [messages.notLatest] : [])
-        .concat(isCLIPrerelease ? [messages.prerelease] : [])
-        .join('\n'),
-      { borderStyle: 'round', padding: 1, borderColor }
-    )
+  prompt.logBox(
+    [messages.welcome]
+      .concat(isCLIOutdated && !isCLIPrerelease ? [messages.notLatest] : [])
+      .concat(isCLIPrerelease ? [messages.prerelease] : [])
+      .join('\n'),
+    { borderStyle: 'round', padding: 1, borderColor }
   );
 
   let results;

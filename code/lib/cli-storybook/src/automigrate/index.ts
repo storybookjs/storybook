@@ -6,13 +6,12 @@ import type { PackageJson } from 'storybook/internal/common';
 import {
   type JsPackageManager,
   JsPackageManagerFactory,
+  prompt,
   temporaryFile,
 } from 'storybook/internal/common';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
-import boxen from 'boxen';
 import picocolors from 'picocolors';
-import prompts from 'prompts';
 import semver from 'semver';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
@@ -30,7 +29,7 @@ import type {
 import { FixStatus, allFixes, commandFixes } from './fixes';
 import { upgradeStorybookRelatedDependencies } from './fixes/upgrade-storybook-related-dependencies';
 import { cleanLog } from './helpers/cleanLog';
-import { getMigrationSummary } from './helpers/getMigrationSummary';
+import { logMigrationSummary } from './helpers/logMigrationSummary';
 import { getStorybookData } from './helpers/mainConfigFile';
 
 const logger = console;
@@ -225,9 +224,7 @@ export const automigrate = async ({
     ]);
 
     logger.info();
-    logger.info(
-      getMigrationSummary({ fixResults, fixSummary, logFile: LOG_FILE_PATH, installationMetadata })
-    );
+    logMigrationSummary({ fixResults, fixSummary, logFile: LOG_FILE_PATH, installationMetadata });
     logger.info();
   }
 
@@ -322,14 +319,9 @@ export async function runFixes({
         }
       };
 
-      logger.info(
-        boxen(message, {
-          borderStyle: 'round',
-          padding: 1,
-          borderColor: '#F1618C',
-          title: getTitle(),
-        })
-      );
+      prompt.logBox(message, {
+        title: getTitle(),
+      });
 
       let runAnswer: { fix: boolean } | undefined;
 
@@ -347,13 +339,11 @@ export async function runFixes({
           fixSummary.manual.push(f.id);
 
           logger.info();
-          const { shouldContinue } = await prompts(
+          const shouldContinue = await prompt.confirm(
             {
-              type: 'toggle',
-              name: 'shouldContinue',
               message:
                 'Select continue once you have made the required changes, or quit to exit the migration process',
-              initial: true,
+              initialValue: true,
               active: 'continue',
               inactive: 'quit',
             },
@@ -369,14 +359,10 @@ export async function runFixes({
             break;
           }
         } else if (promptType === 'auto') {
-          runAnswer = await prompts(
+          const shouldRun = await prompt.confirm(
             {
-              type: 'confirm',
-              name: 'fix',
-              message: `Do you want to run the '${picocolors.cyan(
-                f.id
-              )}' migration on your project?`,
-              initial: f.promptDefaultValue ?? true,
+              message: `Do you want to run the '${picocolors.cyan(f.id)}' migration on your project?`,
+              initialValue: f.promptDefaultValue ?? true,
             },
             {
               onCancel: () => {
@@ -384,13 +370,11 @@ export async function runFixes({
               },
             }
           );
+          runAnswer = { fix: shouldRun };
         } else if (promptType === 'notification') {
-          runAnswer = await prompts(
+          const shouldContinue = await prompt.confirm(
             {
-              type: 'confirm',
-              name: 'fix',
               message: `Do you want to continue?`,
-              initial: true,
             },
             {
               onCancel: () => {
@@ -398,6 +382,7 @@ export async function runFixes({
               },
             }
           );
+          runAnswer = { fix: shouldContinue };
         }
       } catch (err) {
         break;

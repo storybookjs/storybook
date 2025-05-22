@@ -1,15 +1,18 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { type InstallationMetadata, prompt } from 'storybook/internal/common';
+import { type InstallationMetadata, prompt as promptRaw } from 'storybook/internal/common';
 
 import { FixStatus } from '../types';
+import { cleanLog } from './cleanLog';
 import { logMigrationSummary } from './logMigrationSummary';
 
 vi.mock('storybook/internal/common', () => ({
   prompt: {
-    logBox: vi.fn(),
+    logBox: vi.fn((x) => cleanLog(x)),
   },
 }));
+
+const prompt = vi.mocked(promptRaw);
 
 describe('logMigrationSummary', () => {
   const fixResults = {
@@ -51,7 +54,7 @@ describe('logMigrationSummary', () => {
       logFile,
     });
 
-    expect(vi.mocked(prompt.logBox).mock.calls[0][1]).toEqual(
+    expect(prompt.logBox.mock.calls[0][1]).toEqual(
       expect.objectContaining({
         title: 'No migrations were applicable to your project',
       })
@@ -75,7 +78,7 @@ describe('logMigrationSummary', () => {
       logFile,
     });
 
-    expect(vi.mocked(prompt.logBox).mock.calls[0][1]).toEqual(
+    expect(prompt.logBox.mock.calls[0][1]).toEqual(
       expect.objectContaining({
         title: 'Migration check ran with failures',
       })
@@ -90,12 +93,12 @@ describe('logMigrationSummary', () => {
       logFile,
     });
 
-    expect(vi.mocked(prompt.logBox).mock.calls[0][1]).toEqual(
+    expect(prompt.logBox.mock.calls[0][1]).toEqual(
       expect.objectContaining({
         title: 'Migration check ran with failures',
       })
     );
-    expect(vi.mocked(prompt.logBox).mock.calls[0][0]).toMatchInlineSnapshot(`
+    expect(prompt.logBox.mock.calls[0][0]).toMatchInlineSnapshot(`
       "Successful migrations:
 
       foo-package
@@ -134,12 +137,12 @@ describe('logMigrationSummary', () => {
       logFile,
     });
 
-    expect(vi.mocked(prompt.logBox).mock.calls[0][1]).toEqual(
+    expect(prompt.logBox.mock.calls[0][1]).toEqual(
       expect.objectContaining({
         title: 'No migrations were applicable to your project',
       })
     );
-    expect(vi.mocked(prompt.logBox).mock.calls[0][0]).toMatchInlineSnapshot(`
+    expect(prompt.logBox.mock.calls[0][0]).toMatchInlineSnapshot(`
       "If you'd like to run the migrations again, you can do so by running 'npx storybook automigrate'
 
       The automigrations try to migrate common patterns in your project, but might not contain everything needed to migrate to the latest version of Storybook.
@@ -157,12 +160,12 @@ describe('logMigrationSummary', () => {
       logFile,
     });
 
-    expect(vi.mocked(prompt.logBox).mock.calls[0][1]).toEqual(
+    expect(prompt.logBox.mock.calls[0][1]).toEqual(
       expect.objectContaining({
         title: 'No migrations were applicable to your project',
       })
     );
-    expect(vi.mocked(prompt.logBox).mock.calls[0][0]).toMatchInlineSnapshot(`
+    expect(prompt.logBox.mock.calls[0][0]).toMatchInlineSnapshot(`
       "If you'd like to run the migrations again, you can do so by running 'npx storybook automigrate'
 
       The automigrations try to migrate common patterns in your project, but might not contain everything needed to migrate to the latest version of Storybook.

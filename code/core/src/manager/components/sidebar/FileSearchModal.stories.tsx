@@ -23,13 +23,11 @@ const meta = {
   // This decorator is used to show the modal in the side by side view
   decorators: [
     (Story, context) => {
-      const [container, setContainer] = useState<HTMLElement | null>(null);
+      const [container, setContainer] = useState<HTMLElement | undefined>(undefined);
 
       return (
         <div
-          ref={(element) => {
-            setContainer(element);
-          }}
+          ref={(element) => setContainer(element ?? undefined)}
           style={{
             width: '100%',
             height: '100%',
@@ -37,7 +35,7 @@ const meta = {
             transform: 'translateZ(0)',
           }}
         >
-          <Story {...context.args} container={container} />
+          <Story args={{ ...context.args, container }} />
         </div>
       );
     },

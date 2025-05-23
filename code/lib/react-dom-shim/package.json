@@ -22,31 +22,31 @@
   "sideEffects": false,
   "exports": {
     ".": {
-      "types": "./dist/react-18.d.ts",
+      "types": "./dist/react-18.d.mts",
       "import": "./dist/react-18.mjs",
       "require": "./dist/react-18.js",
       "node": "./dist/react-18.js"
     },
     "./dist/react-16": {
-      "types": "./dist/react-16.d.ts",
+      "types": "./dist/react-16.d.mts",
       "import": "./dist/react-16.mjs",
       "require": "./dist/react-16.js",
       "node": "./dist/react-16.js"
     },
     "./dist/preset": {
-      "types": "./dist/preset.d.ts",
+      "types": "./dist/preset.d.mts",
       "require": "./dist/preset.js"
     },
     "./package.json": "./package.json"
   },
   "main": "dist/react-18.js",
   "module": "dist/react-18.mjs",
-  "types": "dist/react-18.d.ts",
+  "types": "dist/react-18.d.mts",
   "files": [
     "dist/**/*",
     "README.md",
     "*.js",
-    "*.d.ts",
+    "*.d.mts",
     "!src/**/*"
   ],
   "scripts": {

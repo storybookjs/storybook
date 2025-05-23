@@ -29,13 +29,13 @@
   },
   "main": "dist/index.js",
   "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
+  "types": "dist/index.d.mts",
   "files": [
     "dist/**/*",
     "input/**/*",
     "README.md",
     "*.js",
-    "*.d.ts",
+    "*.d.mts",
     "!src/**/*"
   ],
   "scripts": {

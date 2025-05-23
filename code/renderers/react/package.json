@@ -37,7 +37,7 @@
     },
     "./preset": {
       "types": "./dist/preset.d.mts",
-      "default": "./preset.js"
+      "require": "./preset.js"
     },
     "./dist/entry-preview.mjs": "./dist/entry-preview.mjs",
     "./dist/entry-preview-argtypes.mjs": "./dist/entry-preview-argtypes.mjs",

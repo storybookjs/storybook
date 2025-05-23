@@ -276,6 +276,8 @@ export default async function postInstall(options: PostinstallOptions) {
     );
   }
 
+  await packageManager.installDependencies();
+
   logger.line(1);
   logger.plain(`${step} Configuring Playwright with Chromium (this might take some time):`);
   logger.plain(colors.gray('  npx playwright install chromium --with-deps'));
@@ -508,8 +510,6 @@ export default async function postInstall(options: PostinstallOptions) {
       );
     }
   }
-
-  await packageManager.installDependencies();
 
   const runCommand = rootConfig ? `npx vitest --project=storybook` : `npx vitest`;
 

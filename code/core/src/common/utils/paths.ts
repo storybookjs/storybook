@@ -5,10 +5,9 @@ import { findUpSync } from 'find-up';
 import { LOCK_FILES } from '../js-package-manager/constants';
 
 let projectRoot: string | undefined;
-let projectRootNeedsRefresh = false;
 
 export const getProjectRoot = () => {
-  if (projectRoot && !projectRootNeedsRefresh) {
+  if (projectRoot) {
     return projectRoot;
   }
 
@@ -71,13 +70,12 @@ export const getProjectRoot = () => {
   }
 
   projectRoot = result || process.cwd();
-  projectRootNeedsRefresh = false;
 
   return projectRoot;
 };
 
 export const invalidateProjectRootCache = () => {
-  projectRootNeedsRefresh = true;
+  projectRoot = undefined;
 };
 
 export const nodePathsToArray = (nodePath: string) =>

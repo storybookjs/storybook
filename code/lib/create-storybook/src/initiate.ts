@@ -555,9 +555,7 @@ export async function doInitiate(options: CommandOptions): Promise<
         process.exit(0);
       }
     }
-  }
 
-  if (selectedFeatures.has('test')) {
     const vitestConfigFilesData = await vitestConfigFiles.condition(
       { babel, findUp, fs } as any,
       { directory: process.cwd() } as any

@@ -188,14 +188,11 @@ export const CustomFooter = {
 ```
 
 ```ts filename="Page.stories.ts" renderer="vue" language="ts"
-// https://www.npmjs.com/package/vue-component-type-helpers
-import type { ComponentProps } from 'vue-component-type-helpers';
-
-import type { Meta, StoryObj } from '@storybook/vue3-vite';
+import type { ComponentPropsAndSlots, Meta, StoryObj } from '@storybook/vue3-vite';
 
 import Page from './Page.vue';
 
-type PagePropsAndCustomArgs = ComponentProps<typeof Page> & { footer?: string };
+type PagePropsAndCustomArgs = ComponentPropsAndSlots<typeof Page> & { footer?: string };
 
 const meta = {
   component: Page,

@@ -1,22 +1,30 @@
 // eslint-disable-next-line depend/ban-dependencies
 import fs from 'fs-extra';
-import { join } from 'path';
+import { join, sep } from 'path';
 import ts from 'typescript';
 
-const run = async ({ cwd }: { cwd: string }) => {
+const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
   const {
     bundler: { tsConfig: tsconfigPath = 'tsconfig.json' },
   } = await fs.readJson(join(cwd, 'package.json'));
 
-  const { options, fileNames } = getTSFilesAndConfig(tsconfigPath);
-  const { program, host } = getTSProgramAndHost(fileNames, options);
+  const check = async (production: boolean) => {
+    const { fileNames, options } = await getTSFilesAndConfig(tsconfigPath, production);
+    const { program, host } = getTSProgramAndHost(fileNames, options);
 
-  const tsDiagnostics = getTSDiagnostics(program, cwd, host);
-  if (tsDiagnostics.length > 0) {
-    console.log(tsDiagnostics);
-    process.exit(1);
-  } else {
-    console.log('no type errors');
+    const tsDiagnostics = getTSDiagnostics(program, cwd, host);
+    if (tsDiagnostics.length > 0) {
+      console.log(tsDiagnostics);
+      process.exit(1);
+    } else {
+      console.log(`no type errors in ${production ? 'dist' : 'src'} files`);
+    }
+  };
+
+  await check(false);
+
+  if (hasFlag(flags, 'production')) {
+    await check(true);
   }
 
   // TODO, add more package checks here, like:
@@ -28,7 +36,12 @@ const run = async ({ cwd }: { cwd: string }) => {
   }
 };
 
-run({ cwd: process.cwd() }).catch((err: unknown) => {
+const hasFlag = (flags: string[], name: string) => !!flags.find((s) => s.startsWith(`--${name}`));
+
+const flags = process.argv.slice(2);
+const cwd = process.cwd().replaceAll(sep, '/');
+
+run({ cwd, flags }).catch((err: unknown) => {
   // We can't let the stack try to print, it crashes in a way that sets the exit code to 0.
   // Seems to have something to do with running JSON.parse() on binary / base64 encoded sourcemaps
   // in @cspotcode/source-map-support
@@ -60,9 +73,15 @@ function getTSProgramAndHost(fileNames: string[], options: ts.CompilerOptions) {
   return { program, host };
 }
 
-function getTSFilesAndConfig(tsconfigPath: string) {
-  const content = ts.readJsonConfigFile(tsconfigPath, ts.sys.readFile);
-  return ts.parseJsonSourceFileConfigFileContent(
+async function getTSFilesAndConfig(tsconfigPath: string, production = false) {
+  const content = await fs.readJson(tsconfigPath);
+  if (production) {
+    content.compilerOptions.skipLibCheck = false;
+    delete content.compilerOptions.paths;
+    content.include = ['dist/**/*'];
+    content.exclude = ['**/node_modules'];
+  }
+  return ts.parseJsonConfigFileContent(
     content,
     {
       useCaseSensitiveFileNames: true,

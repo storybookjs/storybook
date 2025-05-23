@@ -225,7 +225,11 @@ export const doUpgrade = async (allOptions: InternalUpgradeOptions) => {
     yes,
     ...options
   } = allOptions;
-  const packageManager = JsPackageManagerFactory.getPackageManager({ force: packageManagerName });
+  const { configDir, mainConfig, mainConfigPath, previewConfigPath, packageManager } =
+    await getStorybookData({
+      configDir: userSpecifiedConfigDir,
+      packageManagerName,
+    });
 
   // If we can't determine the existing version fallback to v0.0.0 to not block the upgrade
   const beforeVersion = (await getInstalledStorybookVersion(packageManager)) ?? '0.0.0';
@@ -236,7 +240,7 @@ export const doUpgrade = async (allOptions: InternalUpgradeOptions) => {
     beforeVersion.startsWith('portal:') ||
     beforeVersion.startsWith('workspace:');
 
-  if (!(await hasStorybookDependencies(packageManager))) {
+  if (!hasStorybookDependencies(packageManager)) {
     throw new UpgradeStorybookInWrongWorkingDirectory();
   }
   if (!isCanary && lt(currentCLIVersion, beforeVersion)) {
@@ -272,7 +276,7 @@ export const doUpgrade = async (allOptions: InternalUpgradeOptions) => {
         latestCLIVersionOnNPM
       )}!
       You likely ran the upgrade command through a remote command like npx, which can use a locally cached version. To upgrade to the latest version please run:
-      ${picocolors.bold(`${packageManager.getRemoteRunCommand()} storybook@latest upgrade`)}
+      ${picocolors.bold(`${packageManager.getRemoteRunCommand('storybook', ['upgrade'], 'latest')}`)}
       
       You may want to CTRL+C to stop, and run with the latest version instead.
     `),
@@ -289,11 +293,7 @@ export const doUpgrade = async (allOptions: InternalUpgradeOptions) => {
 
   let results;
 
-  const { configDir, mainConfig, mainConfigPath, previewConfigPath, packageJson } =
-    await getStorybookData({
-      packageManager,
-      configDir: userSpecifiedConfigDir,
-    });
+  const { packageJson } = packageManager.primaryPackageJson;
 
   // GUARDS
   if (!beforeVersion) {
@@ -357,7 +357,7 @@ export const doUpgrade = async (allOptions: InternalUpgradeOptions) => {
         packageJson.overrides.storybook = `$storybook`;
 
         if (!dryRun) {
-          await packageManager.writePackageJson(packageJson);
+          packageManager.writePackageJson(packageJson);
           logger.info(
             `Added Storybook overrides to ${picocolors.cyan(
               'package.json'
@@ -372,6 +372,7 @@ export const doUpgrade = async (allOptions: InternalUpgradeOptions) => {
     // Users struggle to upgrade Storybook with npm because of conflicting peer-dependencies
     // GitHub Issue: https://github.com/storybookjs/storybook/issues/30306
     // Solution: Remove all Storybook packages (except 'storybook') from the package.json and install them again
+    // TODO: Check if this is still needed due to the resolution fix for the `storybook` package
     if (packageManager.type === 'npm') {
       const getPackageName = (dep: string) => {
         const lastAtIndex = dep.lastIndexOf('@');
@@ -380,7 +381,6 @@ export const doUpgrade = async (allOptions: InternalUpgradeOptions) => {
 
       // Remove all Storybook packages except 'storybook'
       await packageManager.removeDependencies(
-        { skipInstall: false },
         [...upgradedDependencies, ...upgradedDevDependencies]
           .map(getPackageName)
           .filter((dep) => dep !== 'storybook')
@@ -394,10 +394,16 @@ export const doUpgrade = async (allOptions: InternalUpgradeOptions) => {
       const storybookDevDep = findStorybookPackage(upgradedDevDependencies);
 
       if (storybookDep) {
-        await packageManager.addDependencies({ installAsDevDependencies: false }, [storybookDep]);
+        await packageManager.addDependencies(
+          { installAsDevDependencies: false, skipInstall: true },
+          [storybookDep]
+        );
       }
       if (storybookDevDep) {
-        await packageManager.addDependencies({ installAsDevDependencies: true }, [storybookDevDep]);
+        await packageManager.addDependencies(
+          { installAsDevDependencies: true, skipInstall: true },
+          [storybookDevDep]
+        );
       }
     }
 
@@ -406,7 +412,7 @@ export const doUpgrade = async (allOptions: InternalUpgradeOptions) => {
     const addDeps = async (deps: string[], isDev: boolean) => {
       if (deps.length > 0) {
         await packageManager.addDependencies(
-          { installAsDevDependencies: isDev, skipInstall: true, packageJson },
+          { installAsDevDependencies: isDev, skipInstall: true },
           deps
         );
       }
@@ -450,6 +456,8 @@ export const doUpgrade = async (allOptions: InternalUpgradeOptions) => {
       ...automigrationTelemetry,
     });
   }
+
+  await packageManager.installDependencies();
 
   await doctor(allOptions);
 };

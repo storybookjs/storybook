@@ -73,6 +73,7 @@ command('add <addon>')
     'Force package manager for installing dependencies'
   )
   .option('-c, --config-dir <dir-name>', 'Directory where to load Storybook configurations from')
+  .option('--skip-install', 'Skip installing deps')
   .option('-s --skip-postinstall', 'Skip package specific postinstall config modifications')
   .option('-y --yes', 'Skip prompting the user')
   .action((addonName: string, options: any) => add(addonName, options));
@@ -84,6 +85,7 @@ command('remove <addon>')
     'Force package manager for installing dependencies'
   )
   .option('-c, --config-dir <dir-name>', 'Directory where to load Storybook configurations from')
+  .option('-s --skip-install', 'Skip installing deps')
   .action((addonName: string, options: any) =>
     withTelemetry('remove', { cliOptions: options }, async () => {
       await remove(addonName, options);
@@ -113,7 +115,7 @@ command('info')
   .description('Prints debugging information about the local environment')
   .action(async () => {
     consoleLogger.log(picocolors.bold('\nStorybook Environment Info:'));
-    const pkgManager = await JsPackageManagerFactory.getPackageManager();
+    const pkgManager = JsPackageManagerFactory.getPackageManager();
     const activePackageManager = pkgManager.type.replace(/\d/, ''); // 'yarn1' -> 'yarn'
     const output = await envinfo.run({
       System: ['OS', 'CPU', 'Shell'],

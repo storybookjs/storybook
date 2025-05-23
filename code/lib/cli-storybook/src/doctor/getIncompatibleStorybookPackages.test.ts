@@ -20,18 +20,17 @@ vi.mock('picocolors', () => {
 });
 
 const packageManagerMock = {
-  getAllDependencies: () =>
-    Promise.resolve({
-      '@storybook/addon-docs': '8.0.0',
-    }),
+  getAllDependencies: () => ({
+    '@storybook/addon-docs': '8.0.0',
+  }),
   latestVersion: vi.fn(() => Promise.resolve('9.0.0')),
-  getPackageJSON: vi.fn(() => Promise.resolve('9.0.0')),
-} as any as JsPackageManager;
+  getModulePackageJSON: vi.fn(() => ({ version: '9.0.0' })),
+} as Partial<JsPackageManager> as JsPackageManager;
 
 describe('checkPackageCompatibility', () => {
   it('returns that a package is incompatible', async () => {
     const packageName = 'my-storybook-package';
-    vi.mocked(packageManagerMock.getPackageJSON).mockResolvedValueOnce({
+    vi.mocked(packageManagerMock.getModulePackageJSON).mockReturnValueOnce({
       name: packageName,
       version: '1.0.0',
       dependencies: {
@@ -53,7 +52,7 @@ describe('checkPackageCompatibility', () => {
 
   it('returns that a package is compatible', async () => {
     const packageName = 'my-storybook-package';
-    vi.mocked(packageManagerMock.getPackageJSON).mockResolvedValueOnce({
+    vi.mocked(packageManagerMock.getModulePackageJSON).mockReturnValueOnce({
       name: packageName,
       version: '1.0.0',
       dependencies: {
@@ -76,7 +75,7 @@ describe('checkPackageCompatibility', () => {
   it('returns that a package is incompatible and because it is core, can be upgraded', async () => {
     const packageName = '@storybook/addon-docs';
 
-    vi.mocked(packageManagerMock.getPackageJSON).mockResolvedValueOnce({
+    vi.mocked(packageManagerMock.getModulePackageJSON).mockReturnValueOnce({
       name: packageName,
       version: '8.0.0',
       dependencies: {
@@ -102,7 +101,7 @@ describe('checkPackageCompatibility', () => {
   it('returns that an addon is incompatible because it uses legacy consolidated packages', async () => {
     const packageName = '@storybook/addon-designs';
 
-    vi.mocked(packageManagerMock.getPackageJSON).mockResolvedValueOnce({
+    vi.mocked(packageManagerMock.getModulePackageJSON).mockReturnValueOnce({
       name: packageName,
       version: '8.0.0',
       dependencies: {
@@ -127,7 +126,7 @@ describe('checkPackageCompatibility', () => {
 
 describe('getIncompatibleStorybookPackages', () => {
   it('returns an array of incompatible packages', async () => {
-    vi.mocked(packageManagerMock.getPackageJSON).mockResolvedValueOnce({
+    vi.mocked(packageManagerMock.getModulePackageJSON).mockReturnValueOnce({
       name: '@storybook/addon-docs',
       version: '8.0.0',
       dependencies: {

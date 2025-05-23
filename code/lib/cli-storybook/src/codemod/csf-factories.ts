@@ -32,7 +32,12 @@ async function runStoriesCodemod(options: {
 
     // TODO: Move the csf-2-to-3 codemod into automigrations
     await packageManager.executeCommand({
-      command: `${packageManager.getRemoteRunCommand()} storybook migrate csf-2-to-3 --glob=${globString}`,
+      command: packageManager.getRemoteRunCommand('storybook', [
+        'migrate',
+        'csf-2-to-3',
+        '--glob',
+        globString,
+      ]),
       args: [],
       stdio: 'ignore',
       ignoreError: true,
@@ -74,7 +79,7 @@ export const csfFactories: CommandFix = {
         As we modify your story files, we can create two types of imports:
       
         - ${picocolors.bold('Subpath imports (recommended):')} ${picocolors.cyan("`import preview from '#.storybook/preview'`")}
-        - ${picocolors.bold('Relative imports:')} ${picocolors.cyan("`import preview from '../../.storybook/preview'`")}
+        - ${picocolors.bold('Relative imports (suitable for mono repos):')} ${picocolors.cyan("`import preview from '../../.storybook/preview'`")}
       `);
 
       useSubPathImports = await prompt.select<boolean>({
@@ -87,13 +92,15 @@ export const csfFactories: CommandFix = {
     }
 
     if (useSubPathImports && !packageJson.imports?.['#*']) {
-      logger.log(`🗺️ Adding imports map in ${picocolors.cyan(packageManager.packageJsonPath())}`);
+      logger.log(
+        `🗺️ Adding imports map in ${picocolors.cyan(packageManager.primaryPackageJson.packageJsonPath)}`
+      );
       packageJson.imports = {
         ...packageJson.imports,
         // @ts-expect-error we need to upgrade type-fest
         '#*': ['./*', './*.ts', './*.tsx', './*.js', './*.jsx'],
       };
-      await packageManager.writePackageJson(packageJson);
+      packageManager.writePackageJson(packageJson);
     }
 
     await runStoriesCodemod({

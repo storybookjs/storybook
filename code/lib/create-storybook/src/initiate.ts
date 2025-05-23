@@ -23,7 +23,7 @@ import type { JsPackageManager } from '../../../core/src/common/js-package-manag
 import { JsPackageManagerFactory } from '../../../core/src/common/js-package-manager/JsPackageManagerFactory';
 import { HandledError } from '../../../core/src/common/utils/HandledError';
 import { commandLog, paddedLog } from '../../../core/src/common/utils/log';
-import { getProjectRoot } from '../../../core/src/common/utils/paths';
+import { getProjectRoot, invalidateProjectRootCache } from '../../../core/src/common/utils/paths';
 import versions from '../../../core/src/common/versions';
 import { withTelemetry } from '../../../core/src/core-server/withTelemetry';
 import { NxProjectDetectedError } from '../../../core/src/server-errors';
@@ -374,6 +374,24 @@ export async function doInitiate(options: CommandOptions): Promise<
     force: pkgMgr,
   });
 
+  // Check if the current directory is empty.
+  if (options.force !== true && currentDirectoryIsEmpty(packageManager.type)) {
+    // Initializing Storybook in an empty directory with yarn1
+    // will very likely fail due to different kind of hoisting issues
+    // which doesn't get fixed anymore in yarn1.
+    // We will fallback to npm in this case.
+    if (packageManager.type === 'yarn1') {
+      packageManager = JsPackageManagerFactory.getPackageManager({ force: 'npm' });
+    }
+    // Prompt the user to create a new project from our list.
+    await scaffoldNewProject(packageManager.type, options);
+    invalidateProjectRootCache();
+  }
+
+  if (!options.skipInstall) {
+    await packageManager.installDependencies();
+  }
+
   const latestVersion = await packageManager.latestVersion('storybook');
   const currentVersion = versions.storybook;
   const isPrerelease = prerelease(currentVersion);
@@ -448,19 +466,6 @@ export async function doInitiate(options: CommandOptions): Promise<
     test: selectedFeatures.has('test'),
   };
 
-  // Check if the current directory is empty.
-  if (options.force !== true && currentDirectoryIsEmpty(packageManager.type)) {
-    // Initializing Storybook in an empty directory with yarn1
-    // will very likely fail due to different kind of hoisting issues
-    // which doesn't get fixed anymore in yarn1.
-    // We will fallback to npm in this case.
-    if (packageManager.type === 'yarn1') {
-      packageManager = JsPackageManagerFactory.getPackageManager({ force: 'npm' });
-    }
-    // Prompt the user to create a new project from our list.
-    await scaffoldNewProject(packageManager.type, options);
-  }
-
   let projectType: ProjectType;
   const projectTypeProvided = options.type;
   const infoText = projectTypeProvided
@@ -501,6 +506,7 @@ export async function doInitiate(options: CommandOptions): Promise<
         projectType = manualType;
       }
     } catch (err) {
+      console.log(err);
       done(String(err));
       throw new HandledError(err);
     }
@@ -549,9 +555,7 @@ export async function doInitiate(options: CommandOptions): Promise<
         process.exit(0);
       }
     }
-  }
 
-  if (selectedFeatures.has('test')) {
     const vitestConfigFilesData = await vitestConfigFiles.condition(
       { babel, findUp, fs } as any,
       { directory: process.cwd() } as any
@@ -576,11 +580,6 @@ export async function doInitiate(options: CommandOptions): Promise<
       }
     }
   }
-
-  if (!options.skipInstall) {
-    await packageManager.installDependencies();
-  }
-
   // Update the options object with the selected features before passing it down to the generator
   options.features = Array.from(selectedFeatures);
 
@@ -645,7 +644,7 @@ export async function doInitiate(options: CommandOptions): Promise<
   const storybookCommand =
     projectType === ProjectType.ANGULAR
       ? `ng run ${installResult.projectName}:storybook`
-      : packageManager.getRunStorybookCommand();
+      : packageManager.getRunCommand('storybook');
 
   if (selectedFeatures.has('test')) {
     logger.log(

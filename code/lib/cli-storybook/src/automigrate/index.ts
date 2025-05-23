@@ -72,21 +72,19 @@ const logAvailableMigrations = () => {
 };
 
 export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
-  const packageManager = JsPackageManagerFactory.getPackageManager({
-    force: options.packageManager,
-  });
-
   const {
     mainConfig,
     mainConfigPath,
     previewConfigPath,
     storybookVersion,
     configDir,
-    packageJson,
+    packageManager,
   } = await getStorybookData({
     configDir: options.configDir,
-    packageManager,
+    packageManagerName: options.packageManager,
   });
+
+  const { packageJson } = packageManager.primaryPackageJson;
 
   if (!storybookVersion) {
     throw new Error('Could not determine Storybook version');
@@ -109,6 +107,8 @@ export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
     isUpgrade: false,
     isLatest: false,
   });
+
+  packageManager.installDependencies();
 
   if (outcome) {
     await doctor({ configDir, packageManager: options.packageManager });

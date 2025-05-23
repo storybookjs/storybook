@@ -61,7 +61,7 @@ describe('upgrade-storybook-related-dependencies fix', () => {
     await expect(
       check({
         packageManager: {
-          getAllDependencies: async () =>
+          getAllDependencies: () =>
             analyzedPackages.reduce(
               (acc, { packageName, packageVersion }) => {
                 acc[packageName] = packageVersion;

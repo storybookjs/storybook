@@ -41,6 +41,7 @@ export const removeAddonInteractions: Fix<{}> = {
         '@storybook/addon-interactions',
         '--config-dir',
         configDir,
+        '--skip-install',
       ]);
     }
   },

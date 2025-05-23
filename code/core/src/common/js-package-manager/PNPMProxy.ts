@@ -7,6 +7,7 @@ import { findUpSync } from 'find-up';
 import { dedent } from 'ts-dedent';
 
 import { createLogStream } from '../utils/cli';
+import { getProjectRoot } from '../utils/paths';
 import { JsPackageManager } from './JsPackageManager';
 import type { PackageJson } from './PackageJson';
 import type { InstallationMetadata, PackageMetadata } from './types';
@@ -44,23 +45,12 @@ export class PNPMProxy extends JsPackageManager {
     return existsSync(pnpmWorkspaceYaml);
   }
 
-  async initPackageJson() {
-    await this.executeCommand({
-      command: 'pnpm',
-      args: ['init'],
-    });
-  }
-
-  getRunStorybookCommand(): string {
-    return 'pnpm run storybook';
-  }
-
   getRunCommand(command: string): string {
     return `pnpm run ${command}`;
   }
 
-  getRemoteRunCommand(): string {
-    return 'pnpm dlx';
+  getRemoteRunCommand(pkg: string, args: string[], specifier?: string): string {
+    return `pnpm dlx ${pkg}${specifier ? `@${specifier}` : ''} ${args.join(' ')}`;
   }
 
   async getPnpmVersion(): Promise<string> {
@@ -129,17 +119,17 @@ export class PNPMProxy extends JsPackageManager {
     }
   }
 
-  public async getPackageJSON(
-    packageName: string,
-    basePath = this.cwd
-  ): Promise<PackageJson | null> {
-    const pnpapiPath = findUpSync(['.pnp.js', '.pnp.cjs'], { cwd: basePath });
+  public getModulePackageJSON(packageName: string): PackageJson | null {
+    const pnpapiPath = findUpSync(['.pnp.js', '.pnp.cjs'], {
+      cwd: this.cwd,
+      stopAt: getProjectRoot(),
+    });
 
     if (pnpapiPath) {
       try {
         const pnpApi = require(pnpapiPath);
 
-        const resolvedPath = await pnpApi.resolveToUnqualified(packageName, basePath, {
+        const resolvedPath = pnpApi.resolveToUnqualified(packageName, this.cwd, {
           considerBuiltins: false,
         });
 
@@ -159,12 +149,12 @@ export class PNPMProxy extends JsPackageManager {
       }
     }
 
-    const packageJsonPath = await findUpSync(
+    const packageJsonPath = findUpSync(
       (dir) => {
         const possiblePath = join(dir, 'node_modules', packageName, 'package.json');
         return existsSync(possiblePath) ? possiblePath : undefined;
       },
-      { cwd: basePath }
+      { cwd: this.cwd, stopAt: getProjectRoot() }
     );
 
     if (!packageJsonPath) {
@@ -188,6 +178,7 @@ export class PNPMProxy extends JsPackageManager {
       command: 'pnpm',
       args: ['install', ...this.getInstallArgs()],
       stdio: 'inherit',
+      cwd: this.cwd,
     });
   }
 
@@ -201,13 +192,17 @@ export class PNPMProxy extends JsPackageManager {
     if (installAsDevDependencies) {
       args = ['-D', ...args];
     }
+
+    const commandArgs = ['add', ...args, ...this.getInstallArgs()];
+
     const { logStream, readLogFile, moveLogFile, removeLogFile } = await createLogStream();
 
     try {
       await this.executeCommand({
         command: 'pnpm',
-        args: ['add', ...args, ...this.getInstallArgs()],
+        args: commandArgs,
         stdio: process.env.CI || !writeOutputToFile ? 'inherit' : ['ignore', logStream, logStream],
+        cwd: this.primaryPackageJson.operationDir,
       });
     } catch (err) {
       if (!writeOutputToFile) {
@@ -226,13 +221,12 @@ export class PNPMProxy extends JsPackageManager {
     await removeLogFile();
   }
 
-  protected async runRemoveDeps(dependencies: string[]) {
-    const args = [...dependencies];
-
+  protected async runRemoveDeps(dependencies: string[], cwd = this.cwd) {
     await this.executeCommand({
       command: 'pnpm',
-      args: ['remove', ...args, ...this.getInstallArgs()],
+      args: ['remove', ...dependencies, ...this.getInstallArgs()],
       stdio: 'inherit',
+      cwd,
     });
   }
 

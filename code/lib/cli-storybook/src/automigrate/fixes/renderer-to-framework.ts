@@ -128,14 +128,13 @@ export const rendererToFramework: Fix<MigrationResult> = {
   promptType: 'auto',
 
   async check(): Promise<MigrationResult | null> {
-    const projectRoot = await getProjectRoot();
     // eslint-disable-next-line depend/ban-dependencies
     const { globby } = await import('globby');
 
     const packageJsonFiles = await globby(['**/package.json'], {
       ...commonGlobOptions(''),
       ignore: ['**/node_modules/**'],
-      cwd: projectRoot,
+      cwd: getProjectRoot(),
       gitignore: true,
       absolute: true,
     });
@@ -189,11 +188,8 @@ export const rendererToFramework: Fix<MigrationResult> = {
       initialValue: defaultGlob,
     });
 
-    const projectRoot = getProjectRoot();
     // eslint-disable-next-line depend/ban-dependencies
     const globby = (await import('globby')).globby;
-
-    let didMigrate = false;
 
     for (const selectedFramework of result.frameworks) {
       const frameworkName = frameworkPackages[selectedFramework];
@@ -220,7 +216,7 @@ export const rendererToFramework: Fix<MigrationResult> = {
         ...commonGlobOptions(''),
         ignore: ['**/node_modules/**'],
         dot: true,
-        cwd: projectRoot,
+        cwd: getProjectRoot(),
         absolute: true,
       });
 
@@ -236,12 +232,6 @@ export const rendererToFramework: Fix<MigrationResult> = {
           removeRendererInPackageJson(file, rendererPackage, dryRun)
         )
       );
-      didMigrate = true;
-    }
-
-    // Install dependencies once if any migration was performed
-    if (didMigrate && !dryRun) {
-      await options.packageManager.installDependencies();
     }
   },
 };

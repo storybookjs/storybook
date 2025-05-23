@@ -5,10 +5,11 @@ import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 
 import { PosixFS, VirtualFS, ZipOpenFS } from '@yarnpkg/fslib';
 import { getLibzipSync } from '@yarnpkg/libzip';
-import { findUp, findUpSync } from 'find-up';
+import { findUpSync } from 'find-up';
 import { dedent } from 'ts-dedent';
 
 import { createLogStream } from '../utils/cli';
+import { getProjectRoot } from '../utils/paths';
 import { JsPackageManager } from './JsPackageManager';
 import type { PackageJson } from './PackageJson';
 import type { InstallationMetadata, PackageMetadata } from './types';
@@ -84,20 +85,12 @@ export class Yarn2Proxy extends JsPackageManager {
     return this.installArgs;
   }
 
-  async initPackageJson() {
-    await this.executeCommand({ command: 'yarn', args: ['init'] });
-  }
-
-  getRunStorybookCommand(): string {
-    return 'yarn storybook';
-  }
-
   getRunCommand(command: string): string {
     return `yarn ${command}`;
   }
 
-  getRemoteRunCommand(): string {
-    return 'yarn dlx';
+  getRemoteRunCommand(pkg: string, args: string[], specifier?: string): string {
+    return `yarn dlx ${pkg}${specifier ? `@${specifier}` : ''} ${args.join(' ')}`;
   }
 
   public runPackageCommandSync(
@@ -135,14 +128,17 @@ export class Yarn2Proxy extends JsPackageManager {
     }
   }
 
-  async getPackageJSON(packageName: string, basePath = this.cwd): Promise<PackageJson | null> {
-    const pnpapiPath = findUpSync(['.pnp.js', '.pnp.cjs'], { cwd: basePath });
+  getModulePackageJSON(packageName: string): PackageJson | null {
+    const pnpapiPath = findUpSync(['.pnp.js', '.pnp.cjs'], {
+      cwd: this.cwd,
+      stopAt: getProjectRoot(),
+    });
 
     if (pnpapiPath) {
       try {
         const pnpApi = require(pnpapiPath);
 
-        const resolvedPath = await pnpApi.resolveToUnqualified(packageName, basePath, {
+        const resolvedPath = pnpApi.resolveToUnqualified(packageName, this.cwd, {
           considerBuiltins: false,
         });
 
@@ -167,12 +163,12 @@ export class Yarn2Proxy extends JsPackageManager {
       }
     }
 
-    const packageJsonPath = await findUp(
+    const packageJsonPath = findUpSync(
       (dir) => {
         const possiblePath = join(dir, 'node_modules', packageName, 'package.json');
         return existsSync(possiblePath) ? possiblePath : undefined;
       },
-      { cwd: basePath }
+      { cwd: this.cwd, stopAt: getProjectRoot() }
     );
 
     if (!packageJsonPath) {
@@ -197,6 +193,7 @@ export class Yarn2Proxy extends JsPackageManager {
       command: 'yarn',
       args: ['install', ...this.getInstallArgs()],
       stdio: 'inherit',
+      cwd: this.cwd,
     });
   }
 
@@ -218,6 +215,7 @@ export class Yarn2Proxy extends JsPackageManager {
         command: 'yarn',
         args: ['add', ...this.getInstallArgs(), ...args],
         stdio: process.env.CI || !writeOutputToFile ? 'inherit' : ['ignore', logStream, logStream],
+        cwd: this.primaryPackageJson.operationDir,
       });
     } catch (err) {
       if (!writeOutputToFile) {
@@ -245,13 +243,14 @@ export class Yarn2Proxy extends JsPackageManager {
     return url === 'undefined' ? undefined : url;
   }
 
-  protected async runRemoveDeps(dependencies: string[]) {
+  protected async runRemoveDeps(dependencies: string[], cwd = this.cwd) {
     const args = [...dependencies];
 
     await this.executeCommand({
       command: 'yarn',
       args: ['remove', ...this.getInstallArgs(), ...args],
       stdio: 'inherit',
+      cwd,
     });
   }
 

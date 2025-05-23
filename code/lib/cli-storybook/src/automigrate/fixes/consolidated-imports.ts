@@ -101,14 +101,13 @@ export const consolidatedImports: Fix<ConsolidatedOptions> = {
   id: 'consolidated-imports',
   versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
   check: async () => {
-    const projectRoot = getProjectRoot();
     // eslint-disable-next-line depend/ban-dependencies
     const globby = (await import('globby')).globby;
 
     const packageJsonFiles = await globby(['**/package.json'], {
       ...commonGlobOptions(''),
       ignore: ['**/node_modules/**'],
-      cwd: projectRoot,
+      cwd: getProjectRoot(),
       gitignore: true,
       absolute: true,
     });
@@ -197,10 +196,6 @@ export const consolidatedImports: Fix<ConsolidatedOptions> = {
           .map(({ file, error }) => `- ${file}: ${error.message}`)
           .join('\n')}`
       );
-    }
-
-    if (!dryRun && result.packageJsonFiles.length > 0) {
-      await options.packageManager.installDependencies();
     }
   },
 };

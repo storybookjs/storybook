@@ -13,7 +13,6 @@ import {
   writeFile,
   writeJson,
 } from 'fs-extra';
-import { readFile } from 'fs/promises';
 import JSON5 from 'json5';
 import { createRequire } from 'module';
 import { join, relative, resolve, sep } from 'path';
@@ -609,11 +608,10 @@ export async function addExtraDependencies({
     return;
   }
 
-  const packageJson = JSON.parse(await readFile(join(cwd, 'package.json'), { encoding: 'utf8' }));
-
   const packageManager = JsPackageManagerFactory.getPackageManager({}, cwd);
+
   await packageManager.addDependencies(
-    { installAsDevDependencies: true, skipInstall: true, packageJson },
+    { installAsDevDependencies: true, skipInstall: true },
     extraDevDeps
   );
 
@@ -623,7 +621,7 @@ export async function addExtraDependencies({
       logger.log('\uD83C\uDF81 Adding extra deps', versionedExtraDeps);
     }
     await packageManager.addDependencies(
-      { installAsDevDependencies: true, skipInstall: true, packageJson },
+      { installAsDevDependencies: true, skipInstall: true },
       versionedExtraDeps
     );
   }

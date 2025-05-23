@@ -3,6 +3,7 @@ import { basename, parse, relative } from 'node:path';
 import { sync as spawnSync } from 'cross-spawn';
 import { findUpSync } from 'find-up';
 
+import { getProjectRoot } from '../utils/paths';
 import { BUNProxy } from './BUNProxy';
 import type { JsPackageManager, PackageManagerName } from './JsPackageManager';
 import { COMMON_ENV_VARS } from './JsPackageManager';
@@ -10,12 +11,13 @@ import { NPMProxy } from './NPMProxy';
 import { PNPMProxy } from './PNPMProxy';
 import { Yarn1Proxy } from './Yarn1Proxy';
 import { Yarn2Proxy } from './Yarn2Proxy';
-
-const NPM_LOCKFILE = 'package-lock.json';
-const PNPM_LOCKFILE = 'pnpm-lock.yaml';
-const YARN_LOCKFILE = 'yarn.lock';
-const BUN_LOCKFILE = 'bun.lock';
-const BUN_LOCKFILE_BINARY = 'bun.lockb';
+import {
+  BUN_LOCKFILE,
+  BUN_LOCKFILE_BINARY,
+  NPM_LOCKFILE,
+  PNPM_LOCKFILE,
+  YARN_LOCKFILE,
+} from './constants';
 
 type PackageManagerProxy =
   | typeof NPMProxy
@@ -26,20 +28,20 @@ type PackageManagerProxy =
 
 export class JsPackageManagerFactory {
   public static getPackageManager(
-    { force }: { force?: PackageManagerName } = {},
+    { force, configDir = '.storybook' }: { force?: PackageManagerName; configDir?: string } = {},
     cwd?: string
   ): JsPackageManager {
     // Option 1: If the user has provided a forcing flag, we use it
     if (force && force in this.PROXY_MAP) {
-      return new this.PROXY_MAP[force]({ cwd });
+      return new this.PROXY_MAP[force]({ cwd, configDir });
     }
 
     const lockFiles = [
-      findUpSync(YARN_LOCKFILE, { cwd }),
-      findUpSync(PNPM_LOCKFILE, { cwd }),
-      findUpSync(NPM_LOCKFILE, { cwd }),
-      findUpSync(BUN_LOCKFILE, { cwd }),
-      findUpSync(BUN_LOCKFILE_BINARY, { cwd }),
+      findUpSync(YARN_LOCKFILE, { cwd, stopAt: getProjectRoot() }),
+      findUpSync(PNPM_LOCKFILE, { cwd, stopAt: getProjectRoot() }),
+      findUpSync(NPM_LOCKFILE, { cwd, stopAt: getProjectRoot() }),
+      findUpSync(BUN_LOCKFILE, { cwd, stopAt: getProjectRoot() }),
+      findUpSync(BUN_LOCKFILE_BINARY, { cwd, stopAt: getProjectRoot() }),
     ]
       .filter(Boolean)
       .sort((a, b) => {
@@ -70,22 +72,24 @@ export class JsPackageManagerFactory {
     const yarnVersion = getYarnVersion(cwd);
 
     if (yarnVersion && (closestLockfile === YARN_LOCKFILE || (!hasNPMCommand && !hasPNPMCommand))) {
-      return yarnVersion === 1 ? new Yarn1Proxy({ cwd }) : new Yarn2Proxy({ cwd });
+      return yarnVersion === 1
+        ? new Yarn1Proxy({ cwd, configDir })
+        : new Yarn2Proxy({ cwd, configDir });
     }
 
     if (hasPNPMCommand && closestLockfile === PNPM_LOCKFILE) {
-      return new PNPMProxy({ cwd });
+      return new PNPMProxy({ cwd, configDir });
     }
 
     if (hasNPMCommand && closestLockfile === NPM_LOCKFILE) {
-      return new NPMProxy({ cwd });
+      return new NPMProxy({ cwd, configDir });
     }
 
     if (
       hasBunCommand &&
       (closestLockfile === BUN_LOCKFILE || closestLockfile === BUN_LOCKFILE_BINARY)
     ) {
-      return new BUNProxy({ cwd });
+      return new BUNProxy({ cwd, configDir });
     }
 
     // Option 3: If the user is running a command via npx/pnpx/yarn create/etc, we infer the package manager from the command
@@ -97,7 +101,7 @@ export class JsPackageManagerFactory {
     // Default fallback, whenever users try to use something different than NPM, PNPM, Yarn,
     // but still have NPM installed
     if (hasNPMCommand) {
-      return new NPMProxy({ cwd });
+      return new NPMProxy({ cwd, configDir });
     }
 
     throw new Error('Unable to find a usable package manager within NPM, PNPM, Yarn and Yarn 2');

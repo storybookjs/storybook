@@ -52,7 +52,7 @@ export const blocker = createBlocker<MajorVersionData>({
   async check(options) {
     const { packageManager } = options;
 
-    const packageJson = await packageManager.retrievePackageJson();
+    const { packageJson } = packageManager.primaryPackageJson;
     try {
       const current = getStorybookVersionSpecifier(packageJson);
       if (!current) {

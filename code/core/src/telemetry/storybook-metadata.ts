@@ -49,10 +49,12 @@ export const computeStorybookMetadata = async ({
   packageJsonPath,
   packageJson,
   mainConfig,
+  configDir,
 }: {
   packageJsonPath: string;
   packageJson: PackageJson;
   mainConfig?: StorybookConfig & Record<string, any>;
+  configDir: string;
 }): Promise<StorybookMetadata> => {
   const settings = await globalSettings();
   const metadata: Partial<StorybookMetadata> = {
@@ -212,10 +214,10 @@ export const computeStorybookMetadata = async ({
 
   const hasStorybookEslint = !!allDependencies['eslint-plugin-storybook'];
 
-  const storybookInfo = getStorybookInfo(packageJson);
+  const storybookInfo = getStorybookInfo(configDir);
 
   try {
-    const { previewConfig } = storybookInfo;
+    const { previewConfigPath: previewConfig } = storybookInfo;
     if (previewConfig) {
       const config = await readConfig(previewConfig);
       const usesGlobals = !!(
@@ -281,6 +283,11 @@ export const getStorybookMetadata = async (_configDir?: string) => {
       ) as string)) ??
     '.storybook';
   const mainConfig = await loadMainConfig({ configDir }).catch(() => undefined);
-  cachedMetadata = await computeStorybookMetadata({ mainConfig, packageJson, packageJsonPath });
+  cachedMetadata = await computeStorybookMetadata({
+    mainConfig,
+    packageJson,
+    packageJsonPath,
+    configDir,
+  });
   return cachedMetadata;
 };

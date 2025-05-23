@@ -9,7 +9,7 @@ const preview: Preview = {
       <div data-testid="global-decorator">
         Global Decorator
         <br />
-        {StoryFn()}
+        <StoryFn />
       </div>
     ),
   ],

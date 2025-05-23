@@ -1,8 +1,8 @@
 ```tsx filename="Button.test.tsx" renderer="react" language="ts"
 import { test, expect } from '@jest/globals';
 import { render, screen } from '@testing-library/react';
-// 👉 Using Next.js? Import from @storybook/nextjs instead
-import { composeStories } from '@storybook/react-vite';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import { composeStories } from '@storybook/your-framework';
 
 // Import all stories and the component annotations from the stories file
 import * as stories from './Button.stories';

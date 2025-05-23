@@ -134,7 +134,7 @@ export const OnDark = {
 ```
 
 ```ts filename="Button.stories.ts|tsx" renderer="common" language="ts"
-// Replace your-framework with the name of your framework (e.g., react-vite, vue3-vite, angular, etc.)
+// Replace your-framework with the name of your framework (e.g., react-vite, vue3-vite, etc.)
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { Button } from './Button';

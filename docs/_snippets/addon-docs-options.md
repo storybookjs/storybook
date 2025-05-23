@@ -1,5 +1,5 @@
 ```ts filename=".storybook/main.ts" renderer="common"
-// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { StorybookConfig } from '@storybook/your-framework';
 
 const config: StorybookConfig = {
@@ -24,7 +24,7 @@ export default config;
 ```
 
 ```js filename=".storybook/main.js" renderer="common"
-// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 
 export default {
   framework: '@storybook/your-framework',

@@ -7,7 +7,7 @@ const getAbsolutePath = (packageName) =>
 
 export default {
   framework: {
-    // Replace your-framework with the framework you are using (e.g., react-webpack5, vue3-vite)
+    // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
     name: getAbsolutePath('@storybook/your-framework'),
     options: {},
   },
@@ -20,7 +20,7 @@ export default {
 ```
 
 ```ts filename=".storybook/main.ts" renderer="common" language="ts"
-// Replace your-framework with the framework you are using (e.g., react-webpack5, vue3-vite)
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { StorybookConfig } from '@storybook/your-framework';
 
 import path from 'path';

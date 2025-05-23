@@ -1,6 +1,7 @@
 ```tsx filename="playwright/index.tsx" renderer="react" language="ts"
 import { test } from '@playwright/experimental-ct-react';
-import { setProjectAnnotations } from '@storybook/react-vite';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import { setProjectAnnotations } from '@storybook/your-framework';
 // 👇 Import the exported annotations, if any, from the addons you're using; otherwise remove this
 import * as addonAnnotations from 'my-addon/preview';
 import * as previewAnnotations from './.storybook/preview';

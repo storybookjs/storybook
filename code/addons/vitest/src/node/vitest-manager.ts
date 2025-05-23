@@ -56,8 +56,8 @@ export class VitestManager {
       coverage
         ? {
             enabled: true,
-            clean: false,
-            cleanOnRerun: false,
+            clean: true,
+            cleanOnRerun: true,
             reportOnFailure: true,
             reporter: [['html', {}], storybookCoverageReporter],
             reportsDirectory: resolvePathInStorybookCache(COVERAGE_DIRECTORY),

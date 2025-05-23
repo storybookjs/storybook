@@ -1,5 +1,5 @@
 ```js filename="MyForm.stories.js" renderer="react" language="js"
-import { expect, userEvent, within } from 'storybook/test';
+import { expect } from 'storybook/test';
 
 /*
  * Replace your-framework with nextjs or nextjs-vite
@@ -33,7 +33,7 @@ export const LoggedInEurope = {
 // Replace your-framework with nextjs or nextjs-vite
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
-import { expect, fireEvent, userEvent, within } from 'storybook/test';
+import { expect } from 'storybook/test';
 
 // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
 import { cookies, headers } from '@storybook/your-framework/headers.mock';

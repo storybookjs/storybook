@@ -1,3 +1,9 @@
+## 9.0.0-rc.5
+
+- Addon-Vitest: Always clean coverage before (re)running - [#31540](https://github.com/storybookjs/storybook/pull/31540), thanks @JReinhold!
+- Controls: Remove empty state video link - [#31539](https://github.com/storybookjs/storybook/pull/31539), thanks @kylegach!
+- Pseudo States: Ignore escaped pseudo-class names - [#31515](https://github.com/storybookjs/storybook/pull/31515), thanks @sentience!
+
 ## 9.0.0-rc.4
 
 - Addon Vitest: Improve handling multiple browser mode projects - [#31508](https://github.com/storybookjs/storybook/pull/31508), thanks @yannbf!

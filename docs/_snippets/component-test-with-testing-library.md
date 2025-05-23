@@ -39,7 +39,8 @@ it('Checks if the form is valid', async () => {
 ```js filename="Form.test.js|jsx" renderer="react" language="js"
 import { fireEvent, render, screen } from '@testing-library/react';
 
-import { composeStories } from '@storybook/react';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import { composeStories } from '@storybook/your-framework';
 
 import * as stories from './LoginForm.stories'; // 👈 Our stories imported here.
 
@@ -63,7 +64,8 @@ test('Checks if the form is valid', async () => {
 ```ts filename="Form.test.ts|tsx" renderer="react" language="ts"
 import { fireEvent, render, screen } from '@testing-library/react';
 
-import { composeStories } from '@storybook/react';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import { composeStories } from '@storybook/your-framework';
 
 import * as stories from './LoginForm.stories'; // 👈 Our stories imported here.
 
@@ -87,7 +89,8 @@ test('Checks if the form is valid', async () => {
 ```js filename="Form.test.js" renderer="svelte" language="js"
 import { fireEvent, render, screen } from '@testing-library/svelte';
 
-import { composeStories } from '@storybook/svelte';
+// Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+import { composeStories } from '@storybook/your-framework';
 
 import * as stories from './LoginForm.stories'; // 👈 Our stories imported here.
 
@@ -107,7 +110,7 @@ it('Checks if the form is valid', async () => {
 ```js filename="tests/Form.test.js" renderer="vue" language="js"
 import { fireEvent, render, screen } from '@testing-library/vue';
 
-import { composeStories } from '@storybook/vue3';
+import { composeStories } from '@storybook/vue3-vite';
 
 import * as stories from './LoginForm.stories'; // 👈 Our stories imported here.
 
@@ -131,7 +134,7 @@ test('Checks if the form is valid', async () => {
 ```ts filename="tests/Form.test.ts" renderer="vue" language="ts"
 import { fireEvent, render, screen } from '@testing-library/vue';
 
-import { composeStories } from '@storybook/vue3';
+import { composeStories } from '@storybook/vue3-vite';
 
 import * as stories from './LoginForm.stories'; // 👈 Our stories imported here.
 

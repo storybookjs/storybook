@@ -267,6 +267,7 @@ export const TestingModule = ({
       crashed={isCrashed}
       failed={errorCount > 0}
       updated={isUpdated}
+      data-updated={isUpdated}
     >
       <Card>
         {hasTestProviders && (

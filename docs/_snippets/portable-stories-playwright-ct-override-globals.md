@@ -1,5 +1,6 @@
 ```tsx filename="Button.stories.portable.ts" renderer="react" language="ts"
-import { composeStory } from '@storybook/react-vite';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import { composeStory } from '@storybook/your-framework';
 
 import meta, { Primary } from './Button.stories';
 

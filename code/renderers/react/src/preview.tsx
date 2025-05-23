@@ -15,7 +15,6 @@ import type {
 
 import type { RemoveIndexSignature, SetOptional, Simplify, UnionToIntersection } from 'type-fest';
 
-import { __definePreview as definePreviewBase } from '../../../core/src/shared/preview/csf4';
 import * as reactAnnotations from './entry-preview';
 import * as reactArgTypesAnnotations from './entry-preview-argtypes';
 import * as reactDocsAnnotations from './entry-preview-docs';

@@ -1,16 +1,17 @@
 import type { Types } from 'storybook/internal/csf';
-import type { InferTypes, Preview, PreviewAddon } from 'storybook/internal/csf';
+import type { InferTypes, PreviewAddon } from 'storybook/internal/csf';
 import type { ProjectAnnotations } from 'storybook/internal/types';
 
 import type { ReactPreview } from '@storybook/react';
 import { __definePreview } from '@storybook/react';
-import type { ReactRenderer } from '@storybook/react/src';
+import type { ReactRenderer } from '@storybook/react';
 
 import * as nextPreview from './preview';
 import type { NextJsTypes } from './types';
 
 export * from '@storybook/react';
 export * from './types';
+// @ts-expect-error (double exports)
 export * from './portable-stories';
 
 export function definePreview<Addons extends PreviewAddon<never>[]>(

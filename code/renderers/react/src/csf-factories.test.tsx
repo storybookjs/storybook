@@ -19,7 +19,9 @@ import type { Decorator } from './public-types';
 type ButtonProps = { label: string; disabled: boolean };
 const Button: (props: ButtonProps) => ReactElement = () => <></>;
 
-const preview = __definePreview({});
+const preview = __definePreview({
+  addons: [],
+});
 
 test('csf factories', () => {
   const config = __definePreview({

@@ -1,26 +1,29 @@
 import type { ComponentType } from 'react';
 
-import type { Meta, Preview, Story } from 'storybook/internal/csf';
+import { definePreview as definePreviewBase } from 'storybook/internal/csf';
+import type { InferTypes, Meta, Preview, Story, Types } from 'storybook/internal/csf';
+import type { PreviewAddon } from 'storybook/internal/csf';
 import type {
   Args,
   ArgsStoryFn,
   ComponentAnnotations,
   DecoratorFunction,
+  ProjectAnnotations,
   Renderer,
   StoryAnnotations,
 } from 'storybook/internal/types';
 
 import type { RemoveIndexSignature, SetOptional, Simplify, UnionToIntersection } from 'type-fest';
 
-import { __definePreview as definePreviewBase } from '../../../core/src/shared/preview/csf4';
 import * as reactAnnotations from './entry-preview';
 import * as reactArgTypesAnnotations from './entry-preview-argtypes';
 import * as reactDocsAnnotations from './entry-preview-docs';
 import type { AddMocks } from './public-types';
 import type { ReactRenderer } from './types';
 
-/** Do not use, use the definePreview exported from the framework instead */
-export function __definePreview(preview: ReactPreview['input']) {
+export function __definePreview<Addons extends PreviewAddon<never>[]>(
+  preview: ProjectAnnotations<ReactRenderer> & { addons: Addons }
+): ReactPreview<InferTypes<Addons>> {
   return definePreviewBase({
     ...preview,
     addons: [
@@ -29,28 +32,29 @@ export function __definePreview(preview: ReactPreview['input']) {
       reactDocsAnnotations,
       ...(preview.addons ?? []),
     ],
-  }) as ReactPreview;
+  }) as unknown as ReactPreview<InferTypes<Addons>>;
 }
 
-export interface ReactPreview extends Preview<ReactRenderer> {
+// @ts-expect-error hard
+export interface ReactPreview<T extends Types> extends Preview<ReactRenderer & T> {
   meta<
     TArgs extends Args,
-    Decorators extends DecoratorFunction<ReactRenderer, any>,
+    Decorators extends DecoratorFunction<ReactRenderer & T, any>,
     // Try to make Exact<Partial<TArgs>, TMetaArgs> work
     TMetaArgs extends Partial<TArgs>,
   >(
     meta: {
-      render?: ArgsStoryFn<ReactRenderer, TArgs>;
+      render?: ArgsStoryFn<ReactRenderer & T, TArgs>;
       component?: ComponentType<TArgs>;
       decorators?: Decorators | Decorators[];
       args?: TMetaArgs;
-    } & Omit<ComponentAnnotations<ReactRenderer, TArgs>, 'decorators'>
+    } & Omit<ComponentAnnotations<ReactRenderer & T, TArgs>, 'decorators'>
   ): ReactMeta<
     {
       args: Simplify<
-        TArgs & Simplify<RemoveIndexSignature<DecoratorsArgs<ReactRenderer, Decorators>>>
+        TArgs & Simplify<RemoveIndexSignature<DecoratorsArgs<ReactRenderer & T, Decorators>>>
       >;
-    },
+    } & T,
     { args: Partial<TArgs> extends TMetaArgs ? {} : TMetaArgs }
   >;
 }
@@ -58,30 +62,32 @@ export interface ReactPreview extends Preview<ReactRenderer> {
 type DecoratorsArgs<TRenderer extends Renderer, Decorators> = UnionToIntersection<
   Decorators extends DecoratorFunction<TRenderer, infer TArgs> ? TArgs : unknown
 >;
+
+// @ts-expect-error hard
 interface ReactMeta<
-  Context extends { args: Args },
+  T extends Types & { args: Args },
   MetaInput extends ComponentAnnotations<ReactRenderer>,
-> extends Meta<ReactRenderer, Context['args']> {
+> extends Meta<ReactRenderer, T['args']> {
   story<
-    TInput extends StoryAnnotations<ReactRenderer, Context['args']> & {
+    TInput extends StoryAnnotations<ReactRenderer & T, T['args']> & {
       render: () => ReactRenderer['storyResult'];
     },
   >(
     story: TInput
-  ): ReactStory;
+  ): ReactStory<T>;
 
   story<
     TInput extends Simplify<
       StoryAnnotations<
-        ReactRenderer,
+        ReactRenderer & T,
         // TODO: infer mocks from story itself as well
-        AddMocks<Context['args'], MetaInput['args']>,
-        SetOptional<Context['args'], keyof Context['args'] & keyof MetaInput['args']>
+        AddMocks<T['args'], MetaInput['args']>,
+        SetOptional<T['args'], keyof T['args'] & keyof MetaInput['args']>
       >
     >,
   >(
     story: TInput
-  ): ReactStory;
+  ): ReactStory<T>;
 }
 
-export interface ReactStory extends Story<ReactRenderer> {}
+export interface ReactStory<T extends Types> extends Story<ReactRenderer & T> {}

@@ -19,7 +19,15 @@ export type GlobalState = { value: string | undefined; grid: boolean };
 export type GlobalStateUpdate = Partial<GlobalState>;
 
 export interface BackgroundsParameters {
-  [PARAM_KEY]: {
+  /**
+   * Backgrounds configuration
+   *
+   * @see https://storybook.js.org/docs/essentials/backgrounds#parameters
+   */
+  backgrounds?: {
+    /** Default background color */
+    default?: string;
+
     /** Remove the addon panel and disable the addon's behavior */
     disable?: boolean;
 
@@ -38,4 +46,9 @@ export interface BackgroundsGlobals {
    * @see https://storybook.js.org/docs/essentials/backgrounds#globals
    */
   [PARAM_KEY]: GlobalState | GlobalState['value'];
+}
+
+export interface BackgroundTypes {
+  parameters: BackgroundsParameters;
+  globals: BackgroundsGlobals;
 }

@@ -51,3 +51,8 @@ export type EnhancedResults = Omit<AxeResults, 'incomplete' | 'passes' | 'violat
   passes: EnhancedResult[];
   violations: EnhancedResult[];
 };
+
+export interface A11yTypes {
+  parameters: A11yParameters;
+  globals: A11yGlobals;
+}

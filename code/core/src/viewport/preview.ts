@@ -1,13 +1,13 @@
-import { definePreview } from 'storybook/preview-api';
+import { definePreviewAddon } from 'storybook/internal/csf';
 
 import { PARAM_KEY } from './constants';
-import type { GlobalState } from './types';
+import type { GlobalState, ViewportTypes } from './types';
 
 export const initialGlobals: Record<string, GlobalState> = {
   [PARAM_KEY]: { value: undefined, isRotated: false },
 };
 
 export default () =>
-  definePreview({
+  definePreviewAddon<ViewportTypes>({
     initialGlobals,
   });

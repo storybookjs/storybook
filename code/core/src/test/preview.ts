@@ -1,7 +1,7 @@
 import type { LoaderFunction } from 'storybook/internal/csf';
+import { definePreviewAddon } from 'storybook/internal/csf';
 import { instrument } from 'storybook/internal/instrumenter';
 
-import { definePreview } from 'storybook/preview-api';
 import {
   clearAllMocks,
   fn,
@@ -120,7 +120,21 @@ const enhanceContext: LoaderFunction = async (context) => {
   }
 };
 
+interface TestParameters {
+  test?: {
+    /** Ignore unhandled errors during test execution */
+    dangerouslyIgnoreUnhandledErrors?: boolean;
+
+    /** Whether to throw exceptions coming from the play function */
+    throwPlayFunctionExceptions?: boolean;
+  };
+}
+
+export interface TestTypes {
+  parameters: TestParameters;
+}
+
 export default () =>
-  definePreview({
+  definePreviewAddon<TestTypes>({
     loaders: [resetAllMocksLoader, nameSpiesAndWrapActionsInSpies, enhanceContext],
   });

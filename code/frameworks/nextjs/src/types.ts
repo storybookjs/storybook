@@ -73,3 +73,7 @@ export interface NextJsParameters {
     router?: NextRouter;
   };
 }
+
+export interface NextJsTypes {
+  parameters: NextJsParameters;
+}

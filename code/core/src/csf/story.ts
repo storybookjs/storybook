@@ -170,7 +170,11 @@ export interface StrictGlobalTypes {
   [name: string]: StrictInputType;
 }
 
-export interface Renderer {
+export interface Types {
+  parameters?: {};
+}
+
+export interface Renderer extends Types {
   /** What is the type of the `component` annotation in this renderer? */
   component: any;
 
@@ -328,7 +332,7 @@ export interface BaseAnnotations<TRenderer extends Renderer = Renderer, TArgs = 
    *
    * @see [Parameters](https://storybook.js.org/docs/writing-stories/parameters)
    */
-  parameters?: Parameters;
+  parameters?: Parameters & TRenderer['parameters'];
 
   /**
    * Dynamic data that are provided (and possibly updated by) Storybook and its addons.

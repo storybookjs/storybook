@@ -217,3 +217,7 @@ export interface DocsParameters {
     title?: string;
   };
 }
+
+export interface DocsTypes {
+  parameters: DocsParameters;
+}

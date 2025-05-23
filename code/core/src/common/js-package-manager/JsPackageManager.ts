@@ -74,8 +74,8 @@ export abstract class JsPackageManager {
   constructor(options?: JsPackageManagerOptions) {
     this.cwd = options?.cwd || process.cwd();
     this.#instanceDir = options?.configDir ? dirname(join(this.cwd, options.configDir)) : this.cwd;
+    this.packageJsonPaths = JsPackageManager.listAllPackageJsonPaths(this.#instanceDir);
     this.primaryPackageJson = this.#getPrimaryPackageJson();
-    this.packageJsonPaths = JsPackageManager.listAllPackageJsonPaths(this.#instanceDir, this.cwd);
   }
 
   /** Runs arbitrary package scripts. */
@@ -228,9 +228,8 @@ export abstract class JsPackageManager {
   }
 
   /**
-   * Remove dependencies from all package.json files starting from the instance root traversing up
-   * to the project root by updating the package.json files. The method does not run a package
-   * manager install like `npm install`.
+   * Removing dependencies from the package.json file, which is found first starting from the
+   * instance root. The method does not run a package manager install like `npm install`.
    *
    * @example
    *
@@ -261,6 +260,7 @@ export abstract class JsPackageManager {
         });
         if (modified) {
           this.writePackageJson(currentPackageJson, dirname(pjPath));
+          break;
         }
       } catch (e) {
         logger.warn(`Could not process ${pjPath} for dependency removal: ${String(e)}`);
@@ -580,29 +580,23 @@ export abstract class JsPackageManager {
    * one that contains the `storybook` dependency. If no primary package.json file is found, the
    * function will return the package.json file in the project root.
    */
-  #findPrimaryPackageJsonPath(): string | null {
-    // Check instance directory package.json
-    const packageJsonPaths = findUpMultipleSync('package.json', {
-      cwd: this.#instanceDir,
-      stopAt: getProjectRoot(),
-    });
-
-    for (const packageJsonPath of packageJsonPaths) {
+  #findPrimaryPackageJsonPath(): string {
+    for (const packageJsonPath of this.packageJsonPaths) {
       const hasStorybook = JsPackageManager.hasStorybookDependency(packageJsonPath);
       if (hasStorybook) {
         return packageJsonPath;
       }
     }
 
-    // Fall back to root or instance package.json
-    return resolve(getProjectRoot(), 'package.json');
+    // Fall back to cwd package.json
+    return this.packageJsonPaths[0] ?? resolve(this.cwd, 'package.json');
   }
 
   /** List all package.json files starting from the given directory and stopping at the project root. */
-  static listAllPackageJsonPaths(instanceDir: string, cwd = process.cwd()): string[] {
+  static listAllPackageJsonPaths(instanceDir: string): string[] {
     return findUpMultipleSync('package.json', {
       cwd: instanceDir,
-      stopAt: cwd,
+      stopAt: getProjectRoot(),
     });
   }
 
@@ -617,8 +611,6 @@ export abstract class JsPackageManager {
     packageJson: PackageJsonWithDepsAndDevDeps;
   } {
     const finalTargetPackageJsonPath = this.#findPrimaryPackageJsonPath();
-
-    invariant(finalTargetPackageJsonPath, 'Could not determine target package.json');
 
     const operationDir = dirname(finalTargetPackageJsonPath);
     return {

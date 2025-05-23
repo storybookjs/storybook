@@ -388,6 +388,10 @@ export async function doInitiate(options: CommandOptions): Promise<
     invalidateProjectRootCache();
   }
 
+  if (!options.skipInstall) {
+    await packageManager.installDependencies();
+  }
+
   const latestVersion = await packageManager.latestVersion('storybook');
   const currentVersion = versions.storybook;
   const isPrerelease = prerelease(currentVersion);
@@ -578,11 +582,6 @@ export async function doInitiate(options: CommandOptions): Promise<
       }
     }
   }
-
-  if (!options.skipInstall) {
-    await packageManager.installDependencies();
-  }
-
   // Update the options object with the selected features before passing it down to the generator
   options.features = Array.from(selectedFeatures);
 

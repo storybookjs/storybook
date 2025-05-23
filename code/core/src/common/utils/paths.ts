@@ -1,6 +1,8 @@
-import { join, resolve, sep } from 'node:path';
+import { join, relative, resolve, sep } from 'node:path';
 
 import { findUpSync } from 'find-up';
+
+import { LOCK_FILES } from '../js-package-manager/constants';
 
 let projectRoot: string | undefined;
 let projectRootNeedsRefresh = false;
@@ -43,13 +45,21 @@ export const getProjectRoot = () => {
 
   try {
     const splitDirname = __dirname.split('node_modules');
-    result = result || (splitDirname.length >= 2 ? splitDirname[0] : undefined);
+    const isSplitDirnameReachable = !relative(splitDirname[0], process.cwd()).startsWith('..');
+    result =
+      result || isSplitDirnameReachable
+        ? splitDirname.length >= 2
+          ? splitDirname[0]
+          : undefined
+        : undefined;
   } catch (e) {
     //
   }
 
   try {
-    const found = findUpSync('.yarn', { type: 'directory' });
+    const found = findUpSync(LOCK_FILES, {
+      type: 'file',
+    });
     if (found) {
       result = result || join(found, '..');
     }

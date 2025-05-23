@@ -227,8 +227,6 @@ export async function detect(
   options: { force?: boolean; html?: boolean } = {}
 ) {
   try {
-    const { packageJson } = packageManager.primaryPackageJson;
-
     if (await isNxProject()) {
       return ProjectType.NX;
     }
@@ -236,6 +234,8 @@ export async function detect(
     if (options.html) {
       return ProjectType.HTML;
     }
+
+    const { packageJson } = packageManager.primaryPackageJson;
 
     return detectFrameworkPreset(packageJson);
   } catch (e) {

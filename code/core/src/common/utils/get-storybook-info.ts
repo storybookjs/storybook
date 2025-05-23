@@ -62,7 +62,7 @@ const findDependency = (
   ] as const;
 
 const getRendererInfo = (configDir: string) => {
-  const packageJsonPaths = JsPackageManager.listAllPackageJsonPaths(configDir, process.cwd());
+  const packageJsonPaths = JsPackageManager.listAllPackageJsonPaths(configDir);
 
   for (const packageJsonPath of packageJsonPaths) {
     const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));

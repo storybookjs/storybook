@@ -11,12 +11,13 @@ import { NPMProxy } from './NPMProxy';
 import { PNPMProxy } from './PNPMProxy';
 import { Yarn1Proxy } from './Yarn1Proxy';
 import { Yarn2Proxy } from './Yarn2Proxy';
-
-const NPM_LOCKFILE = 'package-lock.json';
-const PNPM_LOCKFILE = 'pnpm-lock.yaml';
-const YARN_LOCKFILE = 'yarn.lock';
-const BUN_LOCKFILE = 'bun.lock';
-const BUN_LOCKFILE_BINARY = 'bun.lockb';
+import {
+  BUN_LOCKFILE,
+  BUN_LOCKFILE_BINARY,
+  NPM_LOCKFILE,
+  PNPM_LOCKFILE,
+  YARN_LOCKFILE,
+} from './constants';
 
 type PackageManagerProxy =
   | typeof NPMProxy

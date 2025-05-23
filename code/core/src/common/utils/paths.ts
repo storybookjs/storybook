@@ -26,6 +26,7 @@ export const getProjectRoot = () => {
   } catch (e) {
     //
   }
+
   try {
     const found = findUpSync('.svn', { type: 'directory' });
     if (found) {
@@ -34,6 +35,7 @@ export const getProjectRoot = () => {
   } catch (e) {
     //
   }
+
   try {
     const found = findUpSync('.hg', { type: 'directory' });
     if (found) {
@@ -47,11 +49,12 @@ export const getProjectRoot = () => {
     const splitDirname = __dirname.split('node_modules');
     const isSplitDirnameReachable = !relative(splitDirname[0], process.cwd()).startsWith('..');
     result =
-      result || isSplitDirnameReachable
+      result ||
+      (isSplitDirnameReachable
         ? splitDirname.length >= 2
           ? splitDirname[0]
           : undefined
-        : undefined;
+        : undefined);
   } catch (e) {
     //
   }

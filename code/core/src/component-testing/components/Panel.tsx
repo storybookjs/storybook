@@ -37,7 +37,18 @@ const INITIAL_CONTROL_STATES = {
   end: false,
 };
 
-const statusMap: Record<CallStates, StatusValue> = {
+const playStatusMap: Record<
+  Extract<RenderPhase, 'rendering' | 'playing' | 'completed' | 'errored' | 'aborted'>,
+  PlayStatus
+> = {
+  rendering: 'rendering',
+  playing: 'playing',
+  completed: 'completed',
+  errored: 'errored',
+  aborted: 'aborted',
+};
+
+const storyStatusMap: Record<CallStates, StatusValue> = {
   [CallStates.DONE]: 'status-value:success',
   [CallStates.ERROR]: 'status-value:error',
   [CallStates.ACTIVE]: 'status-value:pending',
@@ -228,23 +239,13 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
           const interactionsCount = interactionsList.filter(
             ({ id, method }) => id !== INTERNAL_RENDER_CALL_ID && method !== 'step'
           ).length;
-          const statusMap: Record<
-            Extract<RenderPhase, 'rendering' | 'playing' | 'completed' | 'errored' | 'aborted'>,
-            PlayStatus
-          > = {
-            rendering: 'rendering',
-            playing: 'playing',
-            completed: 'completed',
-            errored: 'errored',
-            aborted: 'aborted',
-          };
           set(
             (s) =>
               ({
                 ...s,
                 status:
-                  event.newPhase in statusMap
-                    ? statusMap[event.newPhase as keyof typeof statusMap]
+                  event.newPhase in playStatusMap
+                    ? playStatusMap[event.newPhase as keyof typeof playStatusMap]
                     : s.status,
                 interactions: interactionsList,
                 interactionsCount,
@@ -342,7 +343,7 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
       browserTestStatus &&
       statusValue &&
       statusValue !== 'status-value:pending' &&
-      statusValue !== statusMap[browserTestStatus];
+      statusValue !== storyStatusMap[browserTestStatus];
 
     if (isMismatch) {
       const timeout = setTimeout(

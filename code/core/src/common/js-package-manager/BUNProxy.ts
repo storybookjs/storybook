@@ -1,11 +1,11 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { platform } from 'node:os';
 import { join } from 'node:path';
 
 import { logger } from 'storybook/internal/node-logger';
 import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 
-import { findUp } from 'find-up';
+import * as find from 'empathic/find';
 import sort from 'semver/functions/sort.js';
 import { dedent } from 'ts-dedent';
 
@@ -85,18 +85,9 @@ export class BUNProxy extends JsPackageManager {
     return 'bunx';
   }
 
-  public async getPackageJSON(
-    packageName: string,
-    basePath = this.cwd
-  ): Promise<PackageJson | null> {
-    const packageJsonPath = await findUp(
-      (dir) => {
-        const possiblePath = join(dir, 'node_modules', packageName, 'package.json');
-        return existsSync(possiblePath) ? possiblePath : undefined;
-      },
-      { cwd: basePath }
-    );
-
+  public getPackageJSON(packageName: string, basePath = this.cwd): PackageJson | null {
+    const wantedPath = join('node_modules', packageName, 'package.json');
+    const packageJsonPath = find.up(wantedPath, { cwd: basePath });
     if (!packageJsonPath) {
       return null;
     }

@@ -20,7 +20,7 @@ import {
 } from '@angular-devkit/build-angular/src/builders/browser/schema';
 import { JsonObject } from '@angular-devkit/core';
 import { findPackageSync } from 'fd-package-json';
-import { sync as findUpSync } from 'find-up';
+import * as find from 'empathic/find';
 import { Observable, from, of } from 'rxjs';
 import { map, mapTo, switchMap } from 'rxjs/operators';
 
@@ -71,7 +71,7 @@ export type StorybookBuilderOutput = JsonObject & BuilderOutput & {};
 const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (options, context) => {
   const builder = from(setup(options, context)).pipe(
     switchMap(({ tsConfig }) => {
-      const docTSConfig = findUpSync('tsconfig.doc.json', { cwd: options.configDir });
+      const docTSConfig = find.up('tsconfig.doc.json', { cwd: options.configDir });
 
       const runCompodoc$ = options.compodoc
         ? runCompodoc(
@@ -189,7 +189,7 @@ async function setup(options: StorybookBuilderOptions, context: BuilderContext) 
   return {
     tsConfig:
       options.tsConfig ??
-      findUpSync('tsconfig.json', { cwd: options.configDir }) ??
+      find.up('tsconfig.json', { cwd: options.configDir }) ??
       browserOptions.tsConfig,
   };
 }

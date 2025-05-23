@@ -25,7 +25,7 @@ vi.doMock('storybook/internal/common', () => ({
     storybook: 'x.x.x',
   },
 }));
-vi.doMock('find-up', () => ({ sync: () => './storybook/tsconfig.ts' }));
+vi.doMock('empathic/find', () => ({ up: () => './storybook/tsconfig.ts' }));
 
 const mockRunScript = vi.fn();
 

@@ -1,9 +1,9 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 
-import { findUp } from 'find-up';
+import * as find from 'empathic/find';
 import { dedent } from 'ts-dedent';
 
 import { createLogStream } from '../utils/cli';
@@ -70,18 +70,9 @@ export class Yarn1Proxy extends JsPackageManager {
     return this.executeCommand({ command: `yarn`, args: ['exec', command, ...args], cwd });
   }
 
-  public async getPackageJSON(
-    packageName: string,
-    basePath = this.cwd
-  ): Promise<PackageJson | null> {
-    const packageJsonPath = await findUp(
-      (dir) => {
-        const possiblePath = join(dir, 'node_modules', packageName, 'package.json');
-        return existsSync(possiblePath) ? possiblePath : undefined;
-      },
-      { cwd: basePath }
-    );
-
+  public getPackageJSON(packageName: string, basePath = this.cwd): PackageJson | null {
+    const wantedPath = join('node_modules', packageName, 'package.json');
+    const packageJsonPath = find.up(wantedPath, { cwd: basePath });
     if (!packageJsonPath) {
       return null;
     }

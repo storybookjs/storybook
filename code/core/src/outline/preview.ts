@@ -1,6 +1,7 @@
-import { definePreview } from 'storybook/preview-api';
+import { definePreviewAddon } from 'storybook/internal/csf';
 
 import { PARAM_KEY } from './constants';
+import type { OutlineTypes } from './types';
 import { withOutline } from './withOutline';
 
 export const decorators = globalThis.FEATURES?.outline ? [withOutline] : [];
@@ -9,4 +10,4 @@ export const initialGlobals = {
   [PARAM_KEY]: false,
 };
 
-export default () => definePreview({ decorators, initialGlobals });
+export default () => definePreviewAddon<OutlineTypes>({ decorators, initialGlobals });

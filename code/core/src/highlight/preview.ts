@@ -1,10 +1,13 @@
 /* eslint-env browser */
-import { addons, definePreview } from 'storybook/preview-api';
+import { definePreviewAddon } from 'storybook/internal/csf';
 
+import { addons } from 'storybook/preview-api';
+
+import type { HighLightTypes } from './types';
 import { useHighlights } from './useHighlights';
 
 if (globalThis?.FEATURES?.highlight && addons?.ready) {
   addons.ready().then(useHighlights);
 }
 
-export default () => definePreview({});
+export default () => definePreviewAddon<HighLightTypes>({});

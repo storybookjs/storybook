@@ -51,7 +51,11 @@ export const FilledParent: Story = {
     fill: true,
   },
   decorators: [
-    (Story) => <div style={{ width: 500, height: 500, position: 'relative' }}>{Story()}</div>,
+    (Story) => (
+      <div style={{ width: 500, height: 500, position: 'relative' }}>
+        <Story />
+      </div>
+    ),
   ],
 };
 
@@ -61,7 +65,11 @@ export const Sized: Story = {
     sizes: '(max-width: 600px) 100vw, 600px',
   },
   decorators: [
-    (Story) => <div style={{ width: 800, height: 800, position: 'relative' }}>{Story()}</div>,
+    (Story) => (
+      <div style={{ width: 800, height: 800, position: 'relative' }}>
+        <Story />
+      </div>
+    ),
   ],
 };
 
@@ -75,7 +83,7 @@ export const Lazy: Story = {
     (Story) => (
       <>
         <div style={{ height: '200vh' }} />
-        {Story()}
+        <Story />
       </>
     ),
   ],

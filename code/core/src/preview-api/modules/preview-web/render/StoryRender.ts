@@ -447,14 +447,12 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
   // happens inside the user's code.
   cancelRender() {
     this.abortController.abort();
-    if (this.phase !== 'aborted') {
-      this.runPhase(this.abortController.signal, 'aborted');
-    }
   }
 
   cancelPlayFunction() {
     if (this.phase === 'playing') {
-      this.cancelRender();
+      this.abortController.abort();
+      this.runPhase(this.abortController.signal, 'aborted');
     }
   }
 

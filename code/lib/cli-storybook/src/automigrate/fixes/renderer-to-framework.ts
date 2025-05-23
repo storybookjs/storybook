@@ -216,7 +216,7 @@ export const rendererToFramework: Fix<MigrationResult> = {
         ...commonGlobOptions(''),
         ignore: ['**/node_modules/**'],
         dot: true,
-        cwd: projectRoot,
+        cwd: getProjectRoot(),
         absolute: true,
       });
 

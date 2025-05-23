@@ -52,8 +52,8 @@ type ControlType =
   | 'text';
 
 type ConditionalTest = { truthy?: boolean } | { exists: boolean } | { eq: any } | { neq: any };
-type ConditionalValue = { arg: string } | { global: string };
-export type Conditional = ConditionalValue & ConditionalTest;
+type ConditionalValue<TArgs = Args> = { arg: keyof TArgs } | { global: string };
+export type Conditional<TArgs = Args> = ConditionalValue<TArgs> & ConditionalTest;
 
 interface ControlBase {
   [key: string]: any;
@@ -106,13 +106,13 @@ type Control =
           }
       ));
 
-export interface InputType {
+export interface InputType<TArgs = Args> {
   /** @see https://storybook.js.org/docs/api/arg-types#control */
   control?: Control;
   /** @see https://storybook.js.org/docs/api/arg-types#description */
   description?: string;
   /** @see https://storybook.js.org/docs/api/arg-types#if */
-  if?: Conditional;
+  if?: Conditional<TArgs>;
   /** @see https://storybook.js.org/docs/api/arg-types#mapping */
   mapping?: { [key: string]: any };
   /** @see https://storybook.js.org/docs/api/arg-types#name */
@@ -157,7 +157,7 @@ export interface StrictArgs {
 }
 
 /** @see https://storybook.js.org/docs/api/arg-types#argtypes */
-export type ArgTypes<TArgs = Args> = { [name in keyof TArgs]: InputType };
+export type ArgTypes<TArgs = Args> = { [name in keyof TArgs]: InputType<TArgs> };
 export type StrictArgTypes<TArgs = Args> = { [name in keyof TArgs]: StrictInputType };
 
 export interface Globals {

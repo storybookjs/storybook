@@ -42,6 +42,19 @@ const MockedConsole = {
   error: vi.fn(),
 } as any as Console;
 
+const MockedMainConfigFileHelper = vi.hoisted(() => {
+  return {
+    getStorybookData: vi.fn(() => ({
+      mainConfig: {},
+      mainConfigPath: '.storybook/main.ts',
+      configDir: '.storybook',
+      previewConfigPath: '.storybook/preview.ts',
+      storybookVersion: '8.0.0',
+      packageManager: MockedPackageManager,
+    })),
+  };
+});
+
 vi.mock('storybook/internal/csf-tools', () => {
   return {
     readConfig: vi.fn(() => MockedConfig),
@@ -53,6 +66,9 @@ vi.mock('./postinstallAddon', () => {
 });
 vi.mock('./automigrate/fixes/wrap-require-utils', () => {
   return MockWrapRequireUtils;
+});
+vi.mock('./automigrate/helpers/mainConfigFile', () => {
+  return MockedMainConfigFileHelper;
 });
 vi.mock('./codemod/helpers/csf-factories-utils');
 vi.mock('storybook/internal/common', () => {

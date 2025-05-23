@@ -5,8 +5,11 @@ import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import dedent from 'ts-dedent';
 
+import { add } from '../../add';
 import type { CheckOptions, RunOptions } from '../types';
 import { type StorysourceOptions, addonStorysourceCodePanel } from './addon-storysource-code-panel';
+
+vi.mock('../../add');
 
 // Mock modules before any other imports or declarations
 vi.mock('node:fs/promises', async (importOriginal) => {
@@ -249,12 +252,11 @@ describe('addon-storysource-remove', () => {
         configDir: '.storybook',
       } as RunOptions<StorysourceOptions>);
 
-      expect(mockPackageManager.runPackageCommand).toHaveBeenCalledWith('storybook', [
-        'add',
-        '@storybook/addon-docs',
-        '--config-dir',
-        '.storybook',
-      ]);
+      expect(vi.mocked(add)).toHaveBeenCalledWith('@storybook/addon-docs', {
+        configDir: '.storybook',
+        skipInstall: true,
+        skipPostinstall: true,
+      });
     });
 
     it('does nothing in dry run mode', async () => {

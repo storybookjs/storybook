@@ -3,6 +3,7 @@ import path from 'node:path';
 import type { MockInstance } from 'vitest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { getStorybookInfo } from 'storybook/internal/common';
 import type { PackageJson, StorybookConfig } from 'storybook/internal/types';
 
 import { detect } from 'package-manager-detector';
@@ -32,6 +33,14 @@ const mainJsMock: StorybookConfig = {
 };
 
 beforeEach(() => {
+  vi.mocked(getStorybookInfo).mockImplementation(() => ({
+    version: '9.0.0',
+    framework: 'react',
+    frameworkPackage: '@storybook/react',
+    renderer: 'react',
+    rendererPackage: '@storybook/react',
+  }));
+
   vi.mocked(detect).mockImplementation(async () => ({
     name: 'yarn',
     version: '3.1.1',
@@ -59,8 +68,7 @@ beforeEach(() => {
 
 const originalSep = path.sep;
 
-// TODO: Fix this test
-describe.skip('storybook-metadata', () => {
+describe('storybook-metadata', () => {
   let cwdSpy: MockInstance;
   beforeEach(() => {
     // @ts-expect-error the property is read only but we can change it for testing purposes

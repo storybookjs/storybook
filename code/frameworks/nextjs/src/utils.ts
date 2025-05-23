@@ -96,3 +96,20 @@ export const scopedResolve = (id: string): string => {
   const beginningOfMainScriptPath = moduleFolderStrPosition + id.length;
   return scopedModulePath.substring(0, beginningOfMainScriptPath);
 };
+
+/**
+ * Returns a RegExp that matches node_modules except for the given transpilePackages.
+ *
+ * @param transpilePackages Array of package names to NOT exclude (i.e., to include for
+ *   transpilation)
+ * @returns RegExp for use in Webpack's exclude
+ */
+export function getNodeModulesExcludeRegex(transpilePackages: string[]): RegExp {
+  if (!transpilePackages || transpilePackages.length === 0) {
+    return /node_modules/;
+  }
+  const escaped = transpilePackages
+    .map((pkg) => pkg.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+    .join('|');
+  return new RegExp(`node_modules/(?!(${escaped})/)`);
+}

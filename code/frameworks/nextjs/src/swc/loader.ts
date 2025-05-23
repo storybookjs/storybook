@@ -9,6 +9,8 @@ import type { NextConfig } from 'next';
 import loadJsConfig from 'next/dist/build/load-jsconfig';
 import type { Configuration as WebpackConfig } from 'webpack';
 
+import { getNodeModulesExcludeRegex } from '../utils';
+
 export const configureSWCLoader = async (
   baseConfig: WebpackConfig,
   options: Options,
@@ -30,10 +32,12 @@ export const configureSWCLoader = async (
     rawRule.exclude = /^__barrel_optimize__/;
   }
 
+  const transpilePackages = nextConfig.transpilePackages ?? [];
+
   baseConfig.module?.rules?.push({
     test: /\.((c|m)?(j|t)sx?)$/,
     include: [getProjectRoot()],
-    exclude: [/(node_modules)/, ...Object.keys(virtualModules)],
+    exclude: [getNodeModulesExcludeRegex(transpilePackages), ...Object.keys(virtualModules)],
     use: {
       // we use our own patch because we need to remove tracing from the original code
       // which is not possible otherwise

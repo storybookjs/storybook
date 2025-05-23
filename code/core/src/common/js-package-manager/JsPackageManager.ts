@@ -195,22 +195,19 @@ export abstract class JsPackageManager {
     const { operationDir, packageJson } = this.primaryPackageJson;
 
     if (skipInstall) {
-      const dependenciesMap = dependencies.reduce((acc, dep) => {
-        const [packageName, packageVersion] = getPackageDetails(dep);
-        return { ...acc, [packageName]: packageVersion };
-      }, {});
+      const dependenciesMap: Record<string, string> = {};
 
-      if (options.installAsDevDependencies) {
-        packageJson.devDependencies = {
-          ...packageJson.devDependencies,
-          ...dependenciesMap,
-        };
-      } else {
-        packageJson.dependencies = {
-          ...packageJson.dependencies,
-          ...dependenciesMap,
-        };
+      for (const dep of dependencies) {
+        const [packageName, packageVersion] = getPackageDetails(dep);
+        const latestVersion = await this.getVersion(packageName);
+        dependenciesMap[packageName] = packageVersion ?? latestVersion;
       }
+
+      const targetDeps = options.installAsDevDependencies
+        ? packageJson.devDependencies
+        : packageJson.dependencies;
+
+      Object.assign(targetDeps, dependenciesMap);
       this.writePackageJson(packageJson, operationDir);
     } else {
       try {

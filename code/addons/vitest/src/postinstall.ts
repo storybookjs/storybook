@@ -65,8 +65,6 @@ export default async function postInstall(options: PostinstallOptions) {
   const dependencies = ['vitest', '@vitest/browser', 'playwright'].filter((p) => !allDeps[p]);
   const vitestVersionSpecifier = await packageManager.getInstalledVersion('vitest');
   const coercedVitestVersion = vitestVersionSpecifier ? coerce(vitestVersionSpecifier) : null;
-  // if Vitest is installed, we use the same version to keep consistency across Vitest packages
-  const vitestVersionToInstall = vitestVersionSpecifier ?? 'latest';
 
   const mainJsPath = serverResolve(resolve(options.configDir, 'main')) as string;
   const config = await readConfig(mainJsPath);
@@ -92,7 +90,7 @@ export default async function postInstall(options: PostinstallOptions) {
           });
 
     if (out.migrateToNextjsVite) {
-      await packageManager.addDependencies({ installAsDevDependencies: true }, [
+      await packageManager.addDependencies({ installAsDevDependencies: true, skipInstall: true }, [
         `@storybook/nextjs-vite@${versions['@storybook/nextjs-vite']}`,
       ]);
 
@@ -259,21 +257,20 @@ export default async function postInstall(options: PostinstallOptions) {
 
   const versionedDependencies = dependencies.map((p) => {
     if (p.includes('vitest')) {
-      return `${p}@${vitestVersionToInstall ?? 'latest'}`;
+      return vitestVersionSpecifier ? `${p}@${vitestVersionSpecifier}` : p;
     }
 
     return p;
   });
 
   if (versionedDependencies.length > 0) {
-    logger.line(1);
-    logger.plain(`${step} Installing dependencies:`);
-    logger.plain(colors.gray('  ' + versionedDependencies.join(', ')));
-
     await packageManager.addDependencies(
       { installAsDevDependencies: true, skipInstall: true },
       versionedDependencies
     );
+    logger.line(1);
+    logger.plain(`${step} Installing dependencies:`);
+    logger.plain(colors.gray('  ' + versionedDependencies.join(', ')));
   }
 
   await packageManager.installDependencies();

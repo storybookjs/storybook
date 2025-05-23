@@ -1,4 +1,4 @@
-import { getEnvConfig, projectRoot, versions } from 'storybook/internal/common';
+import { getEnvConfig, getProjectRoot, versions } from 'storybook/internal/common';
 import { buildDevStandalone, withTelemetry } from 'storybook/internal/core-server';
 import { addToGlobalContext } from 'storybook/internal/telemetry';
 import { CLIOptions } from 'storybook/internal/types';
@@ -73,7 +73,7 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (options, cont
     switchMap(({ tsConfig }) => {
       const docTSConfig = findUpSync('tsconfig.doc.json', {
         cwd: options.configDir,
-        stopAt: projectRoot,
+        stopAt: getProjectRoot(),
       });
 
       const runCompodoc$ = options.compodoc

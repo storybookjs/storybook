@@ -3,7 +3,7 @@ import { basename, parse, relative } from 'node:path';
 import { sync as spawnSync } from 'cross-spawn';
 import { findUpSync } from 'find-up';
 
-import { projectRoot } from '../utils/paths';
+import { getProjectRoot } from '../utils/paths';
 import { BUNProxy } from './BUNProxy';
 import type { JsPackageManager, PackageManagerName } from './JsPackageManager';
 import { COMMON_ENV_VARS } from './JsPackageManager';
@@ -36,11 +36,11 @@ export class JsPackageManagerFactory {
     }
 
     const lockFiles = [
-      findUpSync(YARN_LOCKFILE, { cwd, stopAt: projectRoot }),
-      findUpSync(PNPM_LOCKFILE, { cwd, stopAt: projectRoot }),
-      findUpSync(NPM_LOCKFILE, { cwd, stopAt: projectRoot }),
-      findUpSync(BUN_LOCKFILE, { cwd, stopAt: projectRoot }),
-      findUpSync(BUN_LOCKFILE_BINARY, { cwd, stopAt: projectRoot }),
+      findUpSync(YARN_LOCKFILE, { cwd, stopAt: getProjectRoot() }),
+      findUpSync(PNPM_LOCKFILE, { cwd, stopAt: getProjectRoot() }),
+      findUpSync(NPM_LOCKFILE, { cwd, stopAt: getProjectRoot() }),
+      findUpSync(BUN_LOCKFILE, { cwd, stopAt: getProjectRoot() }),
+      findUpSync(BUN_LOCKFILE_BINARY, { cwd, stopAt: getProjectRoot() }),
     ]
       .filter(Boolean)
       .sort((a, b) => {

@@ -7,9 +7,9 @@ import {
   JsPackageManagerFactory,
   extractProperFrameworkName,
   formatFileContent,
+  getProjectRoot,
   loadAllPresets,
   loadMainConfig,
-  projectRoot,
   scanAndTransformFiles,
   serverResolve,
   transformImportFiles,
@@ -42,7 +42,7 @@ const addonA11yName = '@storybook/addon-a11y';
 const findFile = async (basename: string, extensions = EXTENSIONS) =>
   findUp(
     extensions.map((ext) => basename + ext),
-    { stopAt: projectRoot }
+    { stopAt: getProjectRoot() }
   );
 
 export default async function postInstall(options: PostinstallOptions) {

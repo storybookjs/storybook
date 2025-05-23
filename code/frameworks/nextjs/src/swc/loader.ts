@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 
-import { projectRoot } from 'storybook/internal/common';
+import { getProjectRoot } from 'storybook/internal/common';
 import type { Options } from 'storybook/internal/types';
 
 import { getVirtualModules } from '@storybook/builder-webpack5';
@@ -17,6 +17,7 @@ export const configureSWCLoader = async (
   const isDevelopment = options.configType !== 'PRODUCTION';
 
   const { virtualModules } = await getVirtualModules(options);
+  const projectRoot = getProjectRoot();
 
   const { jsConfig } = await loadJsConfig(projectRoot, nextConfig as any);
 

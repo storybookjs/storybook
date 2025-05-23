@@ -7,10 +7,13 @@ import type { Options, Ref } from 'storybook/internal/types';
 import { findUp } from 'find-up';
 import resolveFrom from 'resolve-from';
 
-import { projectRoot } from './paths';
+import { getProjectRoot } from './paths';
 
 export const getAutoRefs = async (options: Options): Promise<Record<string, Ref>> => {
-  const location = await findUp('package.json', { cwd: options.configDir, stopAt: projectRoot });
+  const location = await findUp('package.json', {
+    cwd: options.configDir,
+    stopAt: getProjectRoot(),
+  });
   if (!location) {
     return {};
   }

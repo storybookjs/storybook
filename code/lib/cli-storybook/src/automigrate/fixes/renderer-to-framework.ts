@@ -4,7 +4,7 @@ import {
   commonGlobOptions,
   frameworkPackages,
   frameworkToRenderer,
-  projectRoot,
+  getProjectRoot,
   prompt,
   rendererPackages,
 } from 'storybook/internal/common';
@@ -134,7 +134,7 @@ export const rendererToFramework: Fix<MigrationResult> = {
     const packageJsonFiles = await globby(['**/package.json'], {
       ...commonGlobOptions(''),
       ignore: ['**/node_modules/**'],
-      cwd: projectRoot,
+      cwd: getProjectRoot(),
       gitignore: true,
       absolute: true,
     });

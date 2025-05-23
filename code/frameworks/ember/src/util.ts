@@ -1,11 +1,11 @@
 import { dirname, join } from 'node:path';
 
-import { projectRoot } from 'storybook/internal/common';
+import { getProjectRoot } from 'storybook/internal/common';
 
 import { findUpSync } from 'find-up';
 
 export const findDistFile = (cwd: string, relativePath: string) => {
-  const nearestPackageJson = findUpSync('package.json', { cwd, stopAt: projectRoot });
+  const nearestPackageJson = findUpSync('package.json', { cwd, stopAt: getProjectRoot() });
   if (!nearestPackageJson) {
     throw new Error(`Could not find package.json in: ${cwd}`);
   }

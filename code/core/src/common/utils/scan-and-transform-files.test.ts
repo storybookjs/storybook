@@ -33,7 +33,7 @@ describe('scanAndTransformFiles', () => {
     vi.resetAllMocks();
 
     // Import the mocked modules
-    vi.spyOn(paths, 'projectRoot', 'get').mockReturnValue('/mock/project/root');
+    vi.spyOn(paths, 'getProjectRoot').mockReturnValue('/mock/project/root');
 
     // Setup mock implementations
     mocks.prompts.mockResolvedValue({ glob: '**/*.{js,ts}' });

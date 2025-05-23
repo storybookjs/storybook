@@ -8,7 +8,7 @@ vi.mock('storybook/internal/common', async (importOriginal) => {
   const actual = await importOriginal<typeof import('storybook/internal/common')>();
   return {
     ...actual,
-    projectRoot: require('path').join(__dirname),
+    getProjectRoot: () => require('path').join(__dirname),
   };
 });
 

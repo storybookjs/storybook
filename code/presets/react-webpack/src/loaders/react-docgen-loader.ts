@@ -1,4 +1,4 @@
-import { projectRoot } from 'storybook/internal/common';
+import { getProjectRoot } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import { findUp } from 'find-up';
@@ -83,7 +83,7 @@ export default async function reactDocgenLoader(
   if (!tsconfigPathsInitialized) {
     const tsconfigPath = await findUp('tsconfig.json', {
       cwd: process.cwd(),
-      stopAt: projectRoot,
+      stopAt: getProjectRoot(),
     });
     const tsconfig = TsconfigPaths.loadConfig(tsconfigPath);
 

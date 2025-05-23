@@ -2,11 +2,14 @@ import { join, resolve, sep } from 'node:path';
 
 import { findUpSync } from 'find-up';
 
-/**
- * @deprecated For performance reasons, use the evaluated `projectRoot` variable instead.
- * @returns
- */
+let projectRoot: string | undefined;
+let projectRootNeedsRefresh = false;
+
 export const getProjectRoot = () => {
+  if (projectRoot && !projectRootNeedsRefresh) {
+    return projectRoot;
+  }
+
   let result;
   // Allow manual override in cases where auto-detect doesn't work
   if (process.env.STORYBOOK_PROJECT_ROOT) {
@@ -54,7 +57,14 @@ export const getProjectRoot = () => {
     //
   }
 
-  return result || process.cwd();
+  projectRoot = result || process.cwd();
+  projectRootNeedsRefresh = false;
+
+  return projectRoot;
+};
+
+export const invalidateProjectRootCache = () => {
+  projectRootNeedsRefresh = true;
 };
 
 export const nodePathsToArray = (nodePath: string) =>
@@ -64,6 +74,7 @@ export const nodePathsToArray = (nodePath: string) =>
     .map((p) => resolve('./', p));
 
 const relativePattern = /^\.{1,2}([/\\]|$)/;
+
 /** Ensures that a path starts with `./` or `../`, or is entirely `.` or `..` */
 export function normalizeStoryPath(filename: string) {
   if (relativePattern.test(filename)) {
@@ -72,5 +83,3 @@ export function normalizeStoryPath(filename: string) {
 
   return `.${sep}${filename}`;
 }
-
-export const projectRoot = getProjectRoot();

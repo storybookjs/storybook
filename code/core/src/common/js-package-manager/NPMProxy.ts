@@ -10,7 +10,7 @@ import sort from 'semver/functions/sort.js';
 import { dedent } from 'ts-dedent';
 
 import { createLogStream } from '../utils/cli';
-import { projectRoot } from '../utils/paths';
+import { getProjectRoot } from '../utils/paths';
 import { JsPackageManager } from './JsPackageManager';
 import type { PackageJson } from './PackageJson';
 import type { InstallationMetadata, PackageMetadata } from './types';
@@ -84,7 +84,7 @@ export class NPMProxy extends JsPackageManager {
         const possiblePath = join(dir, 'node_modules', packageName, 'package.json');
         return existsSync(possiblePath) ? possiblePath : undefined;
       },
-      { cwd: this.cwd, stopAt: projectRoot }
+      { cwd: this.cwd, stopAt: getProjectRoot() }
     );
 
     if (!packageJsonPath) {

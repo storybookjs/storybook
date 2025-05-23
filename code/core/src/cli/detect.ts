@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import type { JsPackageManager, PackageJsonWithMaybeDeps } from 'storybook/internal/common';
-import { HandledError, commandLog, projectRoot } from 'storybook/internal/common';
+import { HandledError, commandLog, getProjectRoot } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import { findUpSync } from 'find-up';
@@ -112,8 +112,8 @@ export function detectFrameworkPreset(
  * @returns CoreBuilder
  */
 export async function detectBuilder(packageManager: JsPackageManager, projectType: ProjectType) {
-  const viteConfig = findUpSync(viteConfigFiles, { stopAt: projectRoot });
-  const webpackConfig = findUpSync(webpackConfigFiles, { stopAt: projectRoot });
+  const viteConfig = findUpSync(viteConfigFiles, { stopAt: getProjectRoot() });
+  const webpackConfig = findUpSync(webpackConfigFiles, { stopAt: getProjectRoot() });
   const dependencies = packageManager.getAllDependencies();
 
   if (viteConfig || (dependencies.vite && dependencies.webpack === undefined)) {
@@ -226,19 +226,19 @@ export async function detect(
   packageManager: JsPackageManager,
   options: { force?: boolean; html?: boolean } = {}
 ) {
-  const { packageJson } = packageManager.primaryPackageJson;
+  try {
+    const { packageJson } = packageManager.primaryPackageJson;
 
-  if (!packageJson) {
+    if (await isNxProject()) {
+      return ProjectType.NX;
+    }
+
+    if (options.html) {
+      return ProjectType.HTML;
+    }
+
+    return detectFrameworkPreset(packageJson);
+  } catch (e) {
     return ProjectType.UNDETECTED;
   }
-
-  if (await isNxProject()) {
-    return ProjectType.NX;
-  }
-
-  if (options.html) {
-    return ProjectType.HTML;
-  }
-
-  return detectFrameworkPreset(packageJson);
 }

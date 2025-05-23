@@ -1,6 +1,6 @@
 import { dirname, join } from 'node:path';
 
-import { projectRoot, resolvePathInStorybookCache } from 'storybook/internal/common';
+import { getProjectRoot, resolvePathInStorybookCache } from 'storybook/internal/common';
 import type { PresetProperty } from 'storybook/internal/types';
 
 import { getVirtualModules } from '@storybook/builder-webpack5';
@@ -37,7 +37,7 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (baseConfig, 
               },
             },
           ],
-          include: [projectRoot],
+          include: [getProjectRoot()],
           exclude: [/node_modules/, ...Object.keys(virtualModules)],
         },
       ],

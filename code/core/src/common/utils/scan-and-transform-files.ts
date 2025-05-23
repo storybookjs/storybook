@@ -1,7 +1,7 @@
 import prompts from 'prompts';
 
 import { commonGlobOptions } from './common-glob-options';
-import { projectRoot } from './paths';
+import { getProjectRoot } from './paths';
 
 /**
  * Helper function to scan for files matching a glob pattern and transform them
@@ -48,7 +48,7 @@ export async function scanAndTransformFiles<T extends Record<string, unknown>>({
     ...commonGlobOptions(''),
     ignore: ['**/node_modules/**'],
     dot: true,
-    cwd: projectRoot,
+    cwd: getProjectRoot(),
     absolute: true,
   });
 

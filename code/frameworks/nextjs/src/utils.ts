@@ -1,6 +1,6 @@
 import { dirname, sep } from 'node:path';
 
-import { projectRoot } from 'storybook/internal/common';
+import { getProjectRoot } from 'storybook/internal/common';
 
 import type { NextConfig } from 'next';
 import { PHASE_DEVELOPMENT_SERVER } from 'next/constants';
@@ -23,7 +23,7 @@ export const resolveNextConfig = async ({
 }: {
   nextConfigPath?: string;
 }): Promise<NextConfig> => {
-  const dir = nextConfigPath ? dirname(nextConfigPath) : projectRoot;
+  const dir = nextConfigPath ? dirname(nextConfigPath) : getProjectRoot();
   return loadConfig(PHASE_DEVELOPMENT_SERVER, dir, undefined);
 };
 

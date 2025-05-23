@@ -2,7 +2,7 @@
 import { existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
-import { projectRoot } from 'storybook/internal/common';
+import { getProjectRoot } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import type { PresetProperty } from 'storybook/internal/types';
 
@@ -57,7 +57,7 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entry =
 export const babel: PresetProperty<'babel'> = async (baseConfig: TransformOptions) => {
   const configPartial = loadPartialConfig({
     ...baseConfig,
-    filename: `${projectRoot}/__fake__.js`,
+    filename: `${getProjectRoot()}/__fake__.js`,
   });
 
   const options = configPartial?.options;
@@ -155,8 +155,8 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (baseConfig, 
   const { configureSWCLoader } = await import('./swc/loader');
   const { configureBabelLoader } = await import('./babel/loader');
 
-  const babelRCPath = join(projectRoot, '.babelrc');
-  const babelConfigPath = join(projectRoot, 'babel.config.js');
+  const babelRCPath = join(getProjectRoot(), '.babelrc');
+  const babelConfigPath = join(getProjectRoot(), 'babel.config.js');
   const hasBabelConfig = existsSync(babelRCPath) || existsSync(babelConfigPath);
   const nextjsVersion = getNextjsVersion();
   const isDevelopment = options.configType !== 'PRODUCTION';

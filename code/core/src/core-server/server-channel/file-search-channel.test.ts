@@ -26,7 +26,7 @@ beforeEach(() => {
   vi.restoreAllMocks();
   vi.mocked(common.getFrameworkName).mockResolvedValue('@storybook/react');
   vi.mocked(common.extractProperRendererNameFromFramework).mockResolvedValue('react');
-  vi.spyOn(common, 'projectRoot', 'get').mockReturnValue(
+  vi.spyOn(common, 'getProjectRoot').mockReturnValue(
     require('path').join(__dirname, '..', 'utils', '__search-files-tests__')
   );
 });

@@ -15,7 +15,7 @@ vi.mock('globby', () => ({
 vi.mock('storybook/internal/common', async (importOriginal) => ({
   ...(await importOriginal()),
   commonGlobOptions: () => ({}),
-  projectRoot: '/project/root',
+  getProjectRoot: () => '/project/root',
 }));
 
 const mockPackageJson = {

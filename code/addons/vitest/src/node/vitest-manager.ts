@@ -9,7 +9,7 @@ import type {
   WorkspaceProject,
 } from 'vitest/node';
 
-import { projectRoot, resolvePathInStorybookCache } from 'storybook/internal/common';
+import { getProjectRoot, resolvePathInStorybookCache } from 'storybook/internal/common';
 import type { StoryId, StoryIndex, StoryIndexEntry } from 'storybook/internal/types';
 
 import { findUp } from 'find-up';
@@ -70,7 +70,7 @@ export class VitestManager {
         ...VITEST_WORKSPACE_FILE_EXTENSION.map((ext) => `vitest.workspace.${ext}`),
         ...VITEST_CONFIG_FILE_EXTENSIONS.map((ext) => `vitest.config.${ext}`),
       ],
-      { stopAt: projectRoot }
+      { stopAt: getProjectRoot() }
     );
 
     const projectName = 'storybook:' + process.env.STORYBOOK_CONFIG_DIR;

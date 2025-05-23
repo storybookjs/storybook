@@ -1,6 +1,6 @@
 import { dirname, join } from 'node:path';
 
-import { projectRoot } from 'storybook/internal/common';
+import { getProjectRoot } from 'storybook/internal/common';
 
 import { validateLocalFontFunctionCall } from 'next/dist/compiled/@next/font/dist/local/validate-local-font-function-call';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -20,7 +20,7 @@ export async function getFontFaceDeclarations(
 
   // Parent folder relative to the root context
   const parentFolder = swcMode
-    ? dirname(join(projectRoot, options.filename)).replace(rootContext, '')
+    ? dirname(join(getProjectRoot(), options.filename)).replace(rootContext, '')
     : dirname(options.filename).replace(rootContext, '');
 
   const {

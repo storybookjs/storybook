@@ -3,7 +3,7 @@ import * as fs from 'node:fs/promises';
 import { findUp } from 'find-up';
 
 import * as babel from '../../../../../../core/src/babel';
-import { projectRoot } from '../../../../../../core/src/common/utils/paths';
+import { getProjectRoot } from '../../../../../../core/src/common/utils/paths';
 import type { Check } from './Check';
 import { CompatibilityType } from './CompatibilityType';
 
@@ -91,6 +91,8 @@ export const vitestConfigFiles: Check = {
     const deps = ['babel', 'findUp', 'fs'];
     if (babel && findUp && fs) {
       const reasons = [];
+
+      const projectRoot = getProjectRoot();
 
       const vitestWorkspaceFile = await findUp(
         ['ts', 'js', 'json'].flatMap((ex) => [`vitest.workspace.${ex}`, `vitest.projects.${ex}`]),

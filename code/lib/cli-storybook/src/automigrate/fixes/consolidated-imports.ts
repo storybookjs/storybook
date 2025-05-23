@@ -2,7 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 
 import {
   commonGlobOptions,
-  projectRoot,
+  getProjectRoot,
   scanAndTransformFiles,
   transformImportFiles,
   versions,
@@ -107,7 +107,7 @@ export const consolidatedImports: Fix<ConsolidatedOptions> = {
     const packageJsonFiles = await globby(['**/package.json'], {
       ...commonGlobOptions(''),
       ignore: ['**/node_modules/**'],
-      cwd: projectRoot,
+      cwd: getProjectRoot(),
       gitignore: true,
       absolute: true,
     });

@@ -7,7 +7,7 @@ import {
   type PackageJson,
   type PackageJsonWithDepsAndDevDeps,
   frameworkToRenderer,
-  projectRoot,
+  getProjectRoot,
 } from 'storybook/internal/common';
 import { versions as storybookMonorepoPackages } from 'storybook/internal/common';
 import type { SupportedFrameworks, SupportedRenderers } from 'storybook/internal/types';
@@ -281,7 +281,7 @@ export function getStorybookVersionSpecifier(packageJson: PackageJsonWithDepsAnd
 }
 
 export async function isNxProject() {
-  return findUpSync('nx.json', { stopAt: projectRoot });
+  return findUpSync('nx.json', { stopAt: getProjectRoot() });
 }
 
 export function coerceSemver(version: string) {

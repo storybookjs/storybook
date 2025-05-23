@@ -34,7 +34,7 @@ vi.mock('storybook/internal/common', async (importOriginal) => {
   return {
     ...(await importOriginal<typeof import('storybook/internal/common')>()),
     getAddonNames: vi.fn(),
-    projectRoot: '/fake/project/root',
+    getProjectRoot: () => '/fake/project/root',
     commonGlobOptions: vi.fn().mockReturnValue({}),
     scanAndTransformFiles: vi.fn().mockResolvedValue([]),
   };

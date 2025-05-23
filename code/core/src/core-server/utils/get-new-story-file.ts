@@ -6,7 +6,7 @@ import {
   extractProperFrameworkName,
   findConfigFile,
   getFrameworkName,
-  projectRoot,
+  getProjectRoot,
 } from 'storybook/internal/common';
 import type { CreateNewStoryRequestPayload } from 'storybook/internal/core-events';
 import { isCsfFactoryPreview } from 'storybook/internal/csf-tools';
@@ -78,9 +78,9 @@ export async function getNewStoryFile(
   }
 
   const storyFilePath =
-    doesStoryFileExist(join(projectRoot, dir), storyFileName) && componentExportCount > 1
-      ? join(projectRoot, dir, alternativeStoryFileNameWithExtension)
-      : join(projectRoot, dir, storyFileNameWithExtension);
+    doesStoryFileExist(join(getProjectRoot(), dir), storyFileName) && componentExportCount > 1
+      ? join(getProjectRoot(), dir, alternativeStoryFileNameWithExtension)
+      : join(getProjectRoot(), dir, storyFileNameWithExtension);
 
   return { storyFilePath, exportedStoryName, storyFileContent, dirname };
 }

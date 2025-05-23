@@ -14,7 +14,7 @@ vi.mock('globby', () => ({
 
 vi.mock('storybook/internal/common', () => ({
   commonGlobOptions: vi.fn(),
-  projectRoot: '/mock/project/root',
+  getProjectRoot: () => '/mock/project/root',
 }));
 
 vi.mock('storybook/internal/csf-tools', () => ({

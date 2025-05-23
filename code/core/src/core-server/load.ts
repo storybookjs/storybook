@@ -1,9 +1,9 @@
 import { join, relative, resolve } from 'node:path';
 
 import {
+  getProjectRoot,
   loadAllPresets,
   loadMainConfig,
-  projectRoot,
   resolveAddonName,
   validateFrameworkName,
 } from 'storybook/internal/common';
@@ -22,7 +22,7 @@ export async function loadStorybook(
 ): Promise<Options> {
   const configDir = resolve(options.configDir);
 
-  const cacheKey = oneWayHash(relative(projectRoot, configDir));
+  const cacheKey = oneWayHash(relative(getProjectRoot(), configDir));
 
   options.configType = 'DEVELOPMENT';
   options.configDir = configDir;

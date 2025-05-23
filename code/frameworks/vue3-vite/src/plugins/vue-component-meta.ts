@@ -1,7 +1,7 @@
 import { readFile, stat } from 'node:fs/promises';
 import { join, parse } from 'node:path';
 
-import { projectRoot } from 'storybook/internal/common';
+import { getProjectRoot } from 'storybook/internal/common';
 
 import MagicString from 'magic-string';
 import type { ModuleNode, Plugin } from 'vite';
@@ -173,6 +173,8 @@ async function createVueComponentMetaChecker(tsconfigPath = 'tsconfig.json') {
     noDeclarations: true,
     printer: { newLine: 1 },
   };
+
+  const projectRoot = getProjectRoot();
 
   const projectTsConfigPath = join(projectRoot, tsconfigPath);
 

@@ -10,7 +10,7 @@ vi.mock('node:fs', async () => import('../../../__mocks__/fs'));
 vi.mock('storybook/internal/common', async (importOriginal) => {
   return {
     ...(await importOriginal<typeof import('storybook/internal/common')>()),
-    projectRoot: 'root',
+    getProjectRoot: () => 'root',
   };
 });
 

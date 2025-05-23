@@ -9,7 +9,7 @@ import { gt, satisfies } from 'semver';
 import invariant from 'tiny-invariant';
 
 import { HandledError } from '../utils/HandledError';
-import { projectRoot } from '../utils/paths';
+import { getProjectRoot } from '../utils/paths';
 import storybookPackagesVersions from '../versions';
 import type { PackageJson, PackageJsonWithDepsAndDevDeps } from './PackageJson';
 import type { InstallationMetadata } from './types';
@@ -90,15 +90,15 @@ export abstract class JsPackageManager {
   abstract getModulePackageJSON(packageName: string): PackageJson | null;
 
   isStorybookInMonorepo() {
-    const turboJsonPath = findUpSync(`turbo.json`, { stopAt: projectRoot });
-    const rushJsonPath = findUpSync(`rush.json`, { stopAt: projectRoot });
-    const nxJsonPath = findUpSync(`nx.json`, { stopAt: projectRoot });
+    const turboJsonPath = findUpSync(`turbo.json`, { stopAt: getProjectRoot() });
+    const rushJsonPath = findUpSync(`rush.json`, { stopAt: getProjectRoot() });
+    const nxJsonPath = findUpSync(`nx.json`, { stopAt: getProjectRoot() });
 
     if (turboJsonPath || rushJsonPath || nxJsonPath) {
       return true;
     }
 
-    const packageJsonPaths = findUpMultipleSync(`package.json`, { stopAt: projectRoot });
+    const packageJsonPaths = findUpMultipleSync(`package.json`, { stopAt: getProjectRoot() });
     if (packageJsonPaths.length === 0) {
       return false;
     }
@@ -584,7 +584,7 @@ export abstract class JsPackageManager {
     // Check instance directory package.json
     const packageJsonPaths = findUpMultipleSync('package.json', {
       cwd: this.#instanceDir,
-      stopAt: projectRoot,
+      stopAt: getProjectRoot(),
     });
 
     for (const packageJsonPath of packageJsonPaths) {
@@ -595,7 +595,7 @@ export abstract class JsPackageManager {
     }
 
     // Fall back to root or instance package.json
-    return resolve(projectRoot, 'package.json');
+    return resolve(getProjectRoot(), 'package.json');
   }
 
   /** List all package.json files starting from the given directory and stopping at the project root. */

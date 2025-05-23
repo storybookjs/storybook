@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { commonGlobOptions, projectRoot } from 'storybook/internal/common';
+import { commonGlobOptions, getProjectRoot } from 'storybook/internal/common';
 import { writeConfig, writeCsf } from 'storybook/internal/csf-tools';
 
 import picocolors from 'picocolors';
@@ -38,6 +38,8 @@ export const addonA11yParameters: Fix<A11yOptions> = {
 
     // eslint-disable-next-line depend/ban-dependencies
     const globby = (await import('globby')).globby;
+
+    const projectRoot = getProjectRoot();
 
     // Get story files from main config patterns
     const storyFiles = await globby([join(projectRoot, '**/*.stor(y|ies).@(js|jsx|mjs|ts|tsx)')], {

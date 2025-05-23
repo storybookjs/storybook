@@ -197,7 +197,8 @@
     line-height: 19px;
     border-radius: 4px;
 
-    font-family: 'Operator Mono', 'Fira Code Retina', 'Fira Code', 'FiraCode-Retina', 'Andale Mono',
+    font-family:
+      'Operator Mono', 'Fira Code Retina', 'Fira Code', 'FiraCode-Retina', 'Andale Mono',
       'Lucida Console', Consolas, Monaco, monospace;
     margin: 0;
     overflow: auto;
@@ -431,6 +432,27 @@
     margin-right: 4px;
     margin-bottom: 4px;
     padding: 2px 5px;
+  }
+
+  .sb-sr-only,
+  .sb-hidden-until-focus:not(:focus) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: none;
+  }
+
+  .sb-hidden-until-focus {
+    opacity: 0;
+    transition: opacity 150ms ease-out;
+  }
+
+  .sb-hidden-until-focus:focus {
+    opacity: 1;
   }
 </style>
 

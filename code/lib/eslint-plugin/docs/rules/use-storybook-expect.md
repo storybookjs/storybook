@@ -24,14 +24,14 @@ Examples of **correct** code for this rule:
 
 ```js
 // correct import.
-import { expect } from '@storybook/test'
+import { expect } from '@storybook/test';
 // or this, which is now considered legacy
-import { expect } from '@storybook/jest'
+import { expect } from '@storybook/jest';
 
 Default.play = async () => {
   // using imported expect from storybook package
-  await expect(123).toEqual(123)
-}
+  await expect(123).toEqual(123);
+};
 ```
 
 ## When Not To Use It

@@ -1,4 +1,4 @@
-import { type CleanupCallback, type Preview, isExportStory } from 'storybook/internal/csf';
+import { type CleanupCallback, isExportStory } from 'storybook/internal/csf';
 import { MountMustBeDestructuredError } from 'storybook/internal/preview-errors';
 import type {
   Args,
@@ -22,11 +22,17 @@ import type {
 import type { UserEventObject } from 'storybook/test';
 import { dedent } from 'ts-dedent';
 
+import { getCoreAnnotations } from '../../../../shared/preview/core-annotations';
 import { HooksContext } from '../../../addons';
-import { getCoreAnnotations } from '../../../core-annotations';
+import {
+  isTestEnvironment,
+  pauseAnimations,
+  waitForAnimations,
+} from '../../preview-web/render/animation-utils';
 import { ReporterAPI } from '../reporter-api';
 import { composeConfigs } from './composeConfigs';
 import { getCsfFactoryAnnotations } from './csf-factory-utils';
+import { getValuesFromArgTypes } from './getValuesFromArgTypes';
 import { normalizeComponentAnnotations } from './normalizeComponentAnnotations';
 import { normalizeProjectAnnotations } from './normalizeProjectAnnotations';
 import { normalizeStory } from './normalizeStory';
@@ -71,17 +77,11 @@ export function setProjectAnnotations<TRenderer extends Renderer = Renderer>(
 ): NormalizedProjectAnnotations<TRenderer> {
   const annotations = Array.isArray(projectAnnotations) ? projectAnnotations : [projectAnnotations];
   globalThis.globalProjectAnnotations = composeConfigs([
+    ...getCoreAnnotations(),
     globalThis.defaultProjectAnnotations ?? {},
     composeConfigs(annotations.map(extractAnnotation)),
   ]);
 
-  /*
-    We must return the composition of default and global annotations here
-    To ensure that the user has the full project annotations, eg. when running
-
-    const projectAnnotations = setProjectAnnotations(...);
-    beforeAll(projectAnnotations.beforeAll)
-  */
   return globalThis.globalProjectAnnotations ?? {};
 }
 
@@ -120,7 +120,6 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
 
   const normalizedProjectAnnotations = normalizeProjectAnnotations<TRenderer>(
     composeConfigs([
-      ...getCoreAnnotations(),
       defaultConfig ?? globalThis.globalProjectAnnotations ?? {},
       projectAnnotations ?? {},
     ])
@@ -132,7 +131,10 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
     normalizedProjectAnnotations
   );
 
+  const globalsFromGlobalTypes = getValuesFromArgTypes(normalizedProjectAnnotations.globalTypes);
+
   const globals = {
+    ...globalsFromGlobalTypes,
     ...normalizedProjectAnnotations.initialGlobals,
     ...story.storyGlobals,
   };
@@ -415,5 +417,14 @@ async function runStory<TRenderer extends Renderer>(
     await playFunction(context);
   }
 
+  let cleanUp: CleanupCallback | undefined;
+  if (isTestEnvironment()) {
+    cleanUp = pauseAnimations();
+  } else {
+    await waitForAnimations(context.abortSignal);
+  }
+
   await story.applyAfterEach(context);
+
+  await cleanUp?.();
 }

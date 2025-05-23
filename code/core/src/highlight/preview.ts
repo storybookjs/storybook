@@ -3,11 +3,8 @@ import { addons, definePreview } from 'storybook/preview-api';
 
 import { useHighlights } from './useHighlights';
 
-if (addons && addons.ready) {
-  addons.ready().then(() => {
-    const channel = addons.getChannel();
-    useHighlights({ channel });
-  });
+if (globalThis?.FEATURES?.highlight && addons?.ready) {
+  addons.ready().then(useHighlights);
 }
 
 export default () => definePreview({});

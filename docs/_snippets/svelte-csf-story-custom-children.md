@@ -18,7 +18,6 @@
 ```
 
 ```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="After"
-
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 

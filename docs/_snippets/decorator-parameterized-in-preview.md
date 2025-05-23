@@ -60,7 +60,7 @@ export default {
 ```tsx filename=".storybook/preview.tsx" renderer="react" language="ts"
 import React from 'react';
 
-import type { Preview } from '@storybook/react';
+import type { Preview } from '@storybook/react-vite';
 
 const preview: Preview = {
   decorators: [
@@ -124,7 +124,7 @@ export default {
 ```
 
 ```tsx filename=".storybook/preview.tsx" renderer="solid" language="ts"
-import { Preview } from 'storybook-solidjs';
+import type { Preview } from 'storybook-solidjs';
 
 const preview: Preview = {
   decorators: [
@@ -180,7 +180,7 @@ export default {
 ```
 
 ```ts filename=".storybook/preview.ts" renderer="vue" language="ts"
-import type { Preview } from '@storybook/vue3';
+import type { Preview } from '@storybook/vue3-vite';
 
 const preview: Preview = {
   decorators: [

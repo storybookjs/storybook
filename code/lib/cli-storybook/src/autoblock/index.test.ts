@@ -1,9 +1,9 @@
+import { stripVTControlCharacters } from 'node:util';
+
 import { expect, test, vi } from 'vitest';
 
 import { JsPackageManagerFactory } from 'storybook/internal/common';
 import { logger as loggerRaw } from 'storybook/internal/node-logger';
-
-import stripAnsi from 'strip-ansi';
 
 import { autoblock } from './index';
 import { createBlocker } from './types';
@@ -78,7 +78,7 @@ test('1 fail', async () => {
   ]);
 
   expect(result).toBe('alwaysFail');
-  expect(stripAnsi(logger.plain.mock.calls[0][0])).toMatchInlineSnapshot(`
+  expect(stripVTControlCharacters(logger.plain.mock.calls[0][0])).toMatchInlineSnapshot(`
     "Storybook has found potential blockers in your project that need to be resolved before upgrading:
 
     Always fail
@@ -95,7 +95,7 @@ test('multiple fails', async () => {
     Promise.resolve({ blocker: blockers.alwaysFail }),
     Promise.resolve({ blocker: blockers.alwaysFail2 }),
   ]);
-  expect(stripAnsi(logger.plain.mock.calls[0][0])).toMatchInlineSnapshot(`
+  expect(stripVTControlCharacters(logger.plain.mock.calls[0][0])).toMatchInlineSnapshot(`
     "Storybook has found potential blockers in your project that need to be resolved before upgrading:
 
     Always fail

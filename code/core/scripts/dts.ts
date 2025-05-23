@@ -24,7 +24,6 @@ async function run() {
     'storybook/theming',
 
     'storybook/test',
-    'storybook/test/spy',
     'storybook/test/preview',
 
     'storybook/measure',

@@ -104,6 +104,8 @@ const ReactiveCSF2WrapperTempl: StoryFn = (args) => ({
 
 export const ReactiveCSF2Wrapper = ReactiveCSF2WrapperTempl.bind({});
 
+ReactiveCSF2Wrapper.tags = ['!test'];
+
 ReactiveCSF2Wrapper.args = {
   label: 'CSF2 Wrapped Button',
 };

@@ -205,7 +205,7 @@ foo.parameters = { docs: { disable: true } };
 
 User writes documentation & stories side-by-side in a single MDX file, and wants those stories to show up in the canvas but not in the docs themselves. They want something similar to the recipe "CSF stories with MDX docs" but want to do everything in MDX:
 
-```js
+```mdx
 <Story name="foo" parameters={{ docs: { disable: true } }}>
   <Button>foo</Button>
 </Story>

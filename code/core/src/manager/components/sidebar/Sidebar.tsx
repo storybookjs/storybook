@@ -61,10 +61,10 @@ const TooltipNoteWrapper = styled(TooltipNote)({
   margin: 0,
 });
 
-const CreateNewStoryButton = styled(IconButton)(({ theme }) => ({
+const CreateNewStoryButton = styled(IconButton)<{ isMobile: boolean }>(({ theme, isMobile }) => ({
   color: theme.color.mediumdark,
-  width: 32,
-  height: 32,
+  width: isMobile ? 36 : 32,
+  height: isMobile ? 36 : 32,
   borderRadius: theme.appBorderRadius + 2,
 }));
 
@@ -153,7 +153,7 @@ export const Sidebar = React.memo(function Sidebar({
   const api = useStorybookApi();
 
   return (
-    <Container className="container sidebar-container">
+    <Container className="container sidebar-container" aria-label="Global">
       <ScrollArea vertical offset={3} scrollbarSize={6}>
         <Top row={1.6}>
           <Heading
@@ -176,6 +176,7 @@ export const Sidebar = React.memo(function Sidebar({
                     tooltip={<TooltipNoteWrapper note="Create a new story" />}
                   >
                     <CreateNewStoryButton
+                      isMobile={isMobile}
                       onClick={() => {
                         setIsFileSearchModalOpen(true);
                       }}

@@ -71,7 +71,7 @@ Storybook creates a [Vue 3 application](https://vuejs.org/api/application.html#a
 Therefore, Storybook provides you with a `setup` function exported from this package. This function receives your Storybook instance as a callback, which you can interact with and add your custom configuration.
 
 ```js title=".storybook/preview.js|ts"
-import { setup } from '@storybook/vue3';
+import { setup } from '@storybook/vue3-vite';
 
 setup((app) => {
   app.use(MyPlugin);

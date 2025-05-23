@@ -12,6 +12,7 @@ export function cleanupTypeImports(programNode: t.Program, disallowList: string[
           usedIdentifiers.add(path.node.name);
         }
       },
+      noScope: true,
     });
   } catch (err) {
     // traversing could fail if the code isn't supported by

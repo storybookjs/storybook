@@ -8,6 +8,8 @@ import {
 import picocolors from 'picocolors';
 import semver from 'semver';
 
+import { consolidatedPackages } from '../automigrate/helpers/consolidated-packages';
+
 export type AnalysedPackage = {
   packageName: string;
   packageVersion?: string;
@@ -48,7 +50,11 @@ export const checkPackageCompatibility = async (
       ...dependencies,
       ...peerDependencies,
     })
-      .filter(([dep]) => storybookCorePackages[dep as keyof typeof storybookCorePackages])
+      .filter(
+        ([dep]) =>
+          storybookCorePackages[dep as keyof typeof storybookCorePackages] ||
+          consolidatedPackages[dep as keyof typeof consolidatedPackages]
+      )
       .map(([_, versionRange]) => versionRange)
       .find((versionRange) => {
         // prevent issues with "tag" based versions e.g. "latest" or "next" instead of actual numbers

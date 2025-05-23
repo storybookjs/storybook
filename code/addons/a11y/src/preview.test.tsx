@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { StoryContext } from 'storybook/internal/csf';
 
 import { run } from './a11yRunner';
-import { experimental_afterEach, withLinkPaths } from './preview';
+import { afterEach } from './preview';
 import { getIsVitestRunning, getIsVitestStandaloneRun } from './utils';
 
 const mocks = vi.hoisted(() => {
@@ -106,14 +106,14 @@ describe('afterEach', () => {
 
     mockedRun.mockResolvedValue(result as any);
 
-    await expect(() => experimental_afterEach(context)).rejects.toThrow();
+    await expect(() => afterEach(context)).rejects.toThrow();
 
-    expect(mockedRun).toHaveBeenCalledWith(context.parameters.a11y);
+    expect(mockedRun).toHaveBeenCalledWith(context.parameters.a11y, context.id);
 
     expect(context.reporting.addReport).toHaveBeenCalledWith({
       type: 'a11y',
       version: 1,
-      result: withLinkPaths(result as any, context.id),
+      result,
       status: 'failed',
     });
   });
@@ -127,14 +127,14 @@ describe('afterEach', () => {
     mockedRun.mockResolvedValue(result as any);
     mocks.getIsVitestStandaloneRun.mockReturnValue(false);
 
-    await experimental_afterEach(context);
+    await afterEach(context);
 
-    expect(mockedRun).toHaveBeenCalledWith(context.parameters.a11y);
+    expect(mockedRun).toHaveBeenCalledWith(context.parameters.a11y, context.id);
 
     expect(context.reporting.addReport).toHaveBeenCalledWith({
       type: 'a11y',
       version: 1,
-      result: withLinkPaths(result as any, context.id),
+      result,
       status: 'failed',
     });
   });
@@ -154,14 +154,14 @@ describe('afterEach', () => {
     mockedRun.mockResolvedValue(result as any);
     mocks.getIsVitestStandaloneRun.mockReturnValue(false);
 
-    await experimental_afterEach(context);
+    await afterEach(context);
 
-    expect(mockedRun).toHaveBeenCalledWith(context.parameters.a11y);
+    expect(mockedRun).toHaveBeenCalledWith(context.parameters.a11y, context.id);
 
     expect(context.reporting.addReport).toHaveBeenCalledWith({
       type: 'a11y',
       version: 1,
-      result: withLinkPaths(result as any, context.id),
+      result,
       status: 'warning',
     });
   });
@@ -173,13 +173,13 @@ describe('afterEach', () => {
     };
     mockedRun.mockResolvedValue(result as any);
 
-    await experimental_afterEach(context);
+    await afterEach(context);
 
-    expect(mockedRun).toHaveBeenCalledWith(context.parameters.a11y);
+    expect(mockedRun).toHaveBeenCalledWith(context.parameters.a11y, context.id);
     expect(context.reporting.addReport).toHaveBeenCalledWith({
       type: 'a11y',
       version: 1,
-      result: withLinkPaths(result as any, context.id),
+      result,
       status: 'passed',
     });
   });
@@ -193,7 +193,7 @@ describe('afterEach', () => {
       },
     });
 
-    await experimental_afterEach(context);
+    await afterEach(context);
 
     expect(mockedRun).not.toHaveBeenCalled();
     expect(context.reporting.addReport).not.toHaveBeenCalled();
@@ -208,7 +208,7 @@ describe('afterEach', () => {
       },
     });
 
-    await experimental_afterEach(context);
+    await afterEach(context);
 
     expect(mockedRun).not.toHaveBeenCalled();
     expect(context.reporting.addReport).not.toHaveBeenCalled();
@@ -223,7 +223,7 @@ describe('afterEach', () => {
       },
     });
 
-    await experimental_afterEach(context);
+    await afterEach(context);
 
     expect(mockedRun).not.toHaveBeenCalled();
     expect(context.reporting.addReport).not.toHaveBeenCalled();
@@ -234,27 +234,9 @@ describe('afterEach', () => {
     const error = new Error('Test error');
     mockedRun.mockRejectedValue(error);
 
-    await expect(() => experimental_afterEach(context)).rejects.toThrow();
+    await expect(() => afterEach(context)).rejects.toThrow();
 
-    expect(mockedRun).toHaveBeenCalledWith(context.parameters.a11y);
-    expect(context.reporting.addReport).toHaveBeenCalledWith({
-      type: 'a11y',
-      version: 1,
-      result: {
-        error,
-      },
-      status: 'failed',
-    });
-  });
-
-  it('should report error when run throws an error', async () => {
-    const context = createContext();
-    const error = new Error('Test error');
-    mockedRun.mockRejectedValue(error);
-
-    await expect(() => experimental_afterEach(context)).rejects.toThrow();
-
-    expect(mockedRun).toHaveBeenCalledWith(context.parameters.a11y);
+    expect(mockedRun).toHaveBeenCalledWith(context.parameters.a11y, context.id);
     expect(context.reporting.addReport).toHaveBeenCalledWith({
       type: 'a11y',
       version: 1,
@@ -270,23 +252,9 @@ describe('afterEach', () => {
       viewMode: 'docs',
     });
 
-    await experimental_afterEach(context);
+    await afterEach(context);
 
     expect(mockedRun).not.toHaveBeenCalled();
     expect(context.reporting.addReport).not.toHaveBeenCalled();
-  });
-});
-
-describe('withLinkPaths', () => {
-  it('should add link paths to the result', () => {
-    const result = { violations };
-    // @ts-expect-error - linkPath doesn't exist here
-    expect(result.violations[0].nodes[0].linkPath).toBeUndefined();
-
-    const linkPaths = withLinkPaths(result as any, 'test-story');
-
-    expect(linkPaths.violations[0].nodes[0].linkPath).toEqual(
-      '/?path=/story/test-story&addonPanel=storybook/a11y/panel&a11ySelection=violations.color-contrast.1'
-    );
   });
 });

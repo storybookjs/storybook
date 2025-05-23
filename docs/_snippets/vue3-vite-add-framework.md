@@ -6,7 +6,7 @@ export default {
 ```
 
 ```ts filename=".storybook/main.ts" renderer="vue" language="ts"
-import { StorybookConfig } from '@storybook/vue3-vite';
+import type { StorybookConfig } from '@storybook/vue3-vite';
 
 const config: StorybookConfig = {
   // ...

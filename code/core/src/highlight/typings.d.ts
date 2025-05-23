@@ -1,0 +1,1 @@
+declare var __STORYBOOK_HIGHLIGHT_INITIALIZED: boolean;

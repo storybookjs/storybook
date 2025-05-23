@@ -23,7 +23,7 @@ expect.addSnapshotSerializer({
 });
 
 function parseCodeToProgramNode(code: string): t.Program {
-  return parser.parse(code, { sourceType: 'module', plugins: ['typescript'] }).program;
+  return parser.parse(code, { sourceType: 'unambiguous', plugins: ['typescript'] }).program;
 }
 
 function generateCodeFromAST(node: t.Program) {

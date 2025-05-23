@@ -1,4 +1,4 @@
-import type { FC } from 'react';
+import type { ComponentProps, FC } from 'react';
 import React from 'react';
 
 import { IconButton } from 'storybook/internal/components';
@@ -65,13 +65,18 @@ const useFullStoryName = () => {
   return fullStoryName;
 };
 
-export const MobileNavigation: FC<MobileNavigationProps> = ({ menu, panel, showPanel }) => {
+export const MobileNavigation: FC<MobileNavigationProps & ComponentProps<typeof Container>> = ({
+  menu,
+  panel,
+  showPanel,
+  ...props
+}) => {
   const { isMobileMenuOpen, isMobilePanelOpen, setMobileMenuOpen, setMobilePanelOpen } =
     useLayout();
   const fullStoryName = useFullStoryName();
 
   return (
-    <Container>
+    <Container {...props}>
       <MobileMenuDrawer>{menu}</MobileMenuDrawer>
       {isMobilePanelOpen ? (
         <MobileAddonsDrawer>{panel}</MobileAddonsDrawer>

@@ -147,7 +147,7 @@ export const Inaccessible = {
 };
 ```
 
-```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts-4-9"
+```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts"
 import type { Meta, StoryObj } from 'storybook-solidjs';
 
 import { Button } from './Button';
@@ -161,38 +161,6 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-// This is an accessible story
-export const Accessible: Story = {
-  args: {
-    primary: false,
-    label: 'Button',
-  },
-};
-
-// This is not
-export const Inaccessible: Story = {
-  args: {
-    ...Accessible.args,
-    backgroundColor: 'red',
-  },
-};
-```
-
-```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs';
-
-import { Button } from './Button';
-
-const meta: Meta<typeof Button> = {
-  component: Button,
-  argTypes: {
-    backgroundColor: { control: 'color' },
-  },
-};
-
-export default meta;
-type Story = StoryObj<typeof Button>;
 
 // This is an accessible story
 export const Accessible: Story = {

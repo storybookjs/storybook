@@ -1,3 +1,5 @@
+import type { IconName } from './icons';
+
 export interface HighlightParameters {
   /**
    * Highlight configuration
@@ -10,6 +12,23 @@ export interface HighlightParameters {
   };
 }
 
+export interface HighlightMenuItem {
+  /** Unique identifier for the menu item */
+  id: string;
+  /** Title of the menu item */
+  title: string;
+  /** Description of the menu item */
+  description?: string;
+  /** Icon for the menu item, left side */
+  iconLeft?: IconName;
+  /** Icon for the menu item, right side */
+  iconRight?: IconName;
+  /** Name for a channel event to trigger when the menu item is clicked */
+  clickEvent?: string;
+  /** HTML selectors for which this menu item should show (subset of `selectors`) */
+  selectors?: HighlightOptions['selectors'];
+}
+
 export interface HighlightOptions {
   /** Unique identifier for the highlight, required if you want to remove the highlight later */
   id?: string;
@@ -17,29 +36,16 @@ export interface HighlightOptions {
   selectors: string[];
   /** Priority of the highlight, higher takes precedence, defaults to 0 */
   priority?: number;
-  /** Whether the highlight is selectable (reveals the element's HTML) */
-  selectable?: boolean;
   /** CSS styles to apply to the highlight */
-  styles: Record<string, string>;
+  styles?: Record<string, string>;
   /** CSS styles to apply to the highlight when it is hovered */
   hoverStyles?: Record<string, string>;
   /** CSS styles to apply to the highlight when it is focused or selected */
   focusStyles?: Record<string, string>;
   /** Keyframes required for animations */
   keyframes?: string;
-  /** Menu items to show when the highlight is selected (implies selectable: true) */
-  menu?: {
-    /** Unique identifier for the menu item */
-    id: string;
-    /** Title of the menu item */
-    title: string;
-    /** Description of the menu item */
-    description?: string;
-    /** Name for a channel event to trigger when the menu item is clicked */
-    clickEvent?: string;
-    /** HTML selectors for which this menu item should show (subset of `selectors`) */
-    selectors?: string[];
-  }[];
+  /** Groups of menu items to show when the highlight is selected */
+  menu?: HighlightMenuItem[][];
 }
 
 export interface ClickEventDetails {
@@ -69,20 +75,18 @@ export interface LegacyHighlightOptions {
 export type RawHighlightOptions = HighlightOptions | LegacyHighlightOptions;
 
 export type Highlight = {
-  id: string;
+  id?: string;
   priority: number;
   selectors: string[];
-  selectable: boolean;
-  styles: HighlightOptions['styles'];
-  hoverStyles?: HighlightOptions['hoverStyles'];
-  focusStyles?: HighlightOptions['focusStyles'];
-  menu?: HighlightOptions['menu'];
+  styles: Record<string, string>;
+  hoverStyles?: Record<string, string>;
+  focusStyles?: Record<string, string>;
+  menu?: HighlightMenuItem[][];
 };
 
 export type Box = {
   element: HTMLElement;
   selectors: Highlight['selectors'];
-  selectable?: Highlight['selectable'];
   styles: Highlight['styles'];
   hoverStyles?: Highlight['hoverStyles'];
   focusStyles?: Highlight['focusStyles'];

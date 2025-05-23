@@ -7,8 +7,7 @@
     "browserTarget": {
       "type": "string",
       "description": "Build target to be served in project-name:builder:config format. Should generally target on the builder: '@angular-devkit/build-angular:browser'. Useful for Storybook to use options (styles, assets, ...).",
-      "pattern": "^[^:\\s]+:[^:\\s]+(:[^\\s]+)?$",
-      "default": null
+      "pattern": "^[^:\\s]+:[^:\\s]+(:[^\\s]+)?$"
     },
     "debugWebpack": {
       "type": "boolean",
@@ -104,8 +103,7 @@
       "description": "Global styles to be included in the build.",
       "items": {
         "$ref": "#/definitions/styleElement"
-      },
-      "default": ""
+      }    
     },
     "stylePreprocessorOptions": {
       "description": "Options to pass to style preprocessors.",
@@ -119,8 +117,7 @@
           }
         }
       },
-      "additionalProperties": false,
-      "default": ""
+      "additionalProperties": false    
     },
     "assets": {
       "type": "array",

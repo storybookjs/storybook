@@ -3,9 +3,9 @@ import { join, relative, resolve } from 'node:path';
 
 import {
   getConfigInfo,
-  getProjectRoot,
   loadAllPresets,
   loadMainConfig,
+  projectRoot,
   resolveAddonName,
   resolvePathInStorybookCache,
   serverResolve,
@@ -76,8 +76,7 @@ export async function buildDevStandalone(
     }
   }
 
-  const rootDir = getProjectRoot();
-  const cacheKey = oneWayHash(relative(rootDir, configDir));
+  const cacheKey = oneWayHash(relative(projectRoot, configDir));
 
   const cacheOutputDir = resolvePathInStorybookCache('public', cacheKey);
   let outputDir = resolve(options.outputDir || cacheOutputDir);

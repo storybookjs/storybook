@@ -2,7 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 
 import {
   commonGlobOptions,
-  getProjectRoot,
+  projectRoot,
   scanAndTransformFiles,
   transformImportFiles,
   versions,
@@ -101,7 +101,6 @@ export const consolidatedImports: Fix<ConsolidatedOptions> = {
   id: 'consolidated-imports',
   versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
   check: async () => {
-    const projectRoot = getProjectRoot();
     // eslint-disable-next-line depend/ban-dependencies
     const globby = (await import('globby')).globby;
 

@@ -1,7 +1,7 @@
 import prompts from 'prompts';
 
 import { commonGlobOptions } from './common-glob-options';
-import { getProjectRoot } from './paths';
+import { projectRoot } from './paths';
 
 /**
  * Helper function to scan for files matching a glob pattern and transform them
@@ -38,8 +38,6 @@ export async function scanAndTransformFiles<T extends Record<string, unknown>>({
         message: promptMessage,
         initial: defaultGlob,
       });
-
-  const projectRoot = getProjectRoot();
 
   console.log('Scanning for affected files...');
 

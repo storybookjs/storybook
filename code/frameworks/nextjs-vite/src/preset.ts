@@ -1,7 +1,7 @@
 // https://storybook.js.org/docs/react/addons/writing-presets
 import path from 'node:path';
 
-import { getProjectRoot } from 'storybook/internal/common';
+import { projectRoot } from 'storybook/internal/common';
 import { IncompatiblePostCssConfigError } from 'storybook/internal/server-errors';
 import type { PresetProperty } from 'storybook/internal/types';
 
@@ -48,7 +48,7 @@ export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, option
   try {
     const inlineOptions = config.css?.postcss;
     const searchPath = typeof inlineOptions === 'string' ? inlineOptions : config.root;
-    await postCssLoadConfig({}, searchPath, { stopDir: getProjectRoot() });
+    await postCssLoadConfig({}, searchPath, { stopDir: projectRoot });
   } catch (e: any) {
     if (!e.message.includes('No PostCSS Config found')) {
       // This is a custom error that we throw when the PostCSS config is invalid

@@ -2,7 +2,7 @@
 import { existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
-import { getProjectRoot } from 'storybook/internal/common';
+import { projectRoot } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import type { PresetProperty } from 'storybook/internal/types';
 
@@ -48,10 +48,7 @@ export const core: PresetProperty<'core'> = async (config, options) => {
   };
 };
 
-export const previewAnnotations: PresetProperty<'previewAnnotations'> = (
-  entry = [],
-  { features }
-) => {
+export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entry = []) => {
   const nextDir = dirname(require.resolve('@storybook/nextjs/package.json'));
   const result = [...entry, join(nextDir, 'dist/preview.mjs')];
   return result;
@@ -60,7 +57,7 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = (
 export const babel: PresetProperty<'babel'> = async (baseConfig: TransformOptions) => {
   const configPartial = loadPartialConfig({
     ...baseConfig,
-    filename: `${getProjectRoot()}/__fake__.js`,
+    filename: `${projectRoot}/__fake__.js`,
   });
 
   const options = configPartial?.options;
@@ -158,8 +155,8 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (baseConfig, 
   const { configureSWCLoader } = await import('./swc/loader');
   const { configureBabelLoader } = await import('./babel/loader');
 
-  const babelRCPath = join(getProjectRoot(), '.babelrc');
-  const babelConfigPath = join(getProjectRoot(), 'babel.config.js');
+  const babelRCPath = join(projectRoot, '.babelrc');
+  const babelConfigPath = join(projectRoot, 'babel.config.js');
   const hasBabelConfig = existsSync(babelRCPath) || existsSync(babelConfigPath);
   const nextjsVersion = getNextjsVersion();
   const isDevelopment = options.configType !== 'PRODUCTION';

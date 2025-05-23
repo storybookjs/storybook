@@ -1,7 +1,5 @@
 /* eslint-disable depend/ban-dependencies */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
-import { getProjectRoot } from 'storybook/internal/common';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { addonA11yParameters } from './addon-a11y-parameters';
 
@@ -16,7 +14,7 @@ vi.mock('globby', () => ({
 
 vi.mock('storybook/internal/common', () => ({
   commonGlobOptions: vi.fn(),
-  getProjectRoot: vi.fn(),
+  projectRoot: '/mock/project/root',
 }));
 
 vi.mock('storybook/internal/csf-tools', () => ({
@@ -25,16 +23,11 @@ vi.mock('storybook/internal/csf-tools', () => ({
 }));
 
 describe('addon-a11y-parameters', () => {
-  const mockProjectRoot = '/mock/project/root';
   const mockPreviewFile = '/mock/project/root/.storybook/preview.ts';
   const mockStoryFiles = [
     '/mock/project/root/src/components/Button.stories.ts',
     '/mock/project/root/src/components/Input.stories.ts',
   ];
-
-  beforeEach(() => {
-    (getProjectRoot as unknown as ReturnType<typeof vi.fn>).mockReturnValue(mockProjectRoot);
-  });
 
   afterEach(() => {
     vi.clearAllMocks();

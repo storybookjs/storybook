@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 
 // eslint-disable-next-line depend/ban-dependencies
@@ -9,7 +9,7 @@ import { gt, satisfies } from 'semver';
 import invariant from 'tiny-invariant';
 
 import { HandledError } from '../utils/HandledError';
-import { getProjectRoot } from '../utils/paths';
+import { projectRoot } from '../utils/paths';
 import storybookPackagesVersions from '../versions';
 import type { PackageJson, PackageJsonWithDepsAndDevDeps } from './PackageJson';
 import type { InstallationMetadata } from './types';
@@ -52,9 +52,6 @@ interface JsPackageManagerOptions {
 export abstract class JsPackageManager {
   abstract readonly type: PackageManagerName;
 
-  /** The path to the project root. */
-  static readonly projectRoot = getProjectRoot();
-
   /** The path to the primary package.json file (contains the `storybook` dependency). */
   readonly primaryPackageJson: {
     packageJsonPath: string;
@@ -90,18 +87,18 @@ export abstract class JsPackageManager {
   abstract getRemoteRunCommand(pkg: string, args: string[], specifier?: string): string;
 
   /** Get the package.json file for a given module. */
-  abstract getModulePackageJSON(packageName: string, basePath?: string): PackageJson | null;
+  abstract getModulePackageJSON(packageName: string): PackageJson | null;
 
   isStorybookInMonorepo() {
-    const turboJsonPath = findUpSync(`turbo.json`, { stopAt: this.cwd });
-    const rushJsonPath = findUpSync(`rush.json`, { stopAt: this.cwd });
-    const nxJsonPath = findUpSync(`nx.json`, { stopAt: this.cwd });
+    const turboJsonPath = findUpSync(`turbo.json`, { stopAt: projectRoot });
+    const rushJsonPath = findUpSync(`rush.json`, { stopAt: projectRoot });
+    const nxJsonPath = findUpSync(`nx.json`, { stopAt: projectRoot });
 
     if (turboJsonPath || rushJsonPath || nxJsonPath) {
       return true;
     }
 
-    const packageJsonPaths = findUpMultipleSync(`package.json`, { stopAt: this.cwd });
+    const packageJsonPaths = findUpMultipleSync(`package.json`, { stopAt: projectRoot });
     if (packageJsonPaths.length === 0) {
       return false;
     }
@@ -587,7 +584,7 @@ export abstract class JsPackageManager {
     // Check instance directory package.json
     const packageJsonPaths = findUpMultipleSync('package.json', {
       cwd: this.#instanceDir,
-      stopAt: JsPackageManager.projectRoot,
+      stopAt: projectRoot,
     });
 
     for (const packageJsonPath of packageJsonPaths) {
@@ -598,7 +595,7 @@ export abstract class JsPackageManager {
     }
 
     // Fall back to root or instance package.json
-    return resolve(JsPackageManager.projectRoot, 'package.json');
+    return resolve(projectRoot, 'package.json');
   }
 
   /** List all package.json files starting from the given directory and stopping at the project root. */

@@ -1,10 +1,11 @@
 import { existsSync } from 'node:fs';
 import { relative, sep } from 'node:path';
 
+import { projectRoot } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import { createFilter } from '@rollup/pluginutils';
-import findUp from 'find-up';
+import { findUp } from 'find-up';
 import MagicString from 'magic-string';
 import type { Documentation } from 'react-docgen';
 import {
@@ -43,7 +44,7 @@ export async function reactDocgen({
   const cwd = process.cwd();
   const filter = createFilter(include, exclude);
 
-  const tsconfigPath = await findUp('tsconfig.json', { cwd });
+  const tsconfigPath = await findUp('tsconfig.json', { cwd, stopAt: projectRoot });
   const tsconfig = TsconfigPaths.loadConfig(tsconfigPath);
 
   let matchPath: TsconfigPaths.MatchPath | undefined;

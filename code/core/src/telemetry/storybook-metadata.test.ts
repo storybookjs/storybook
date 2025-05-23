@@ -3,7 +3,6 @@ import path from 'node:path';
 import type { MockInstance } from 'vitest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getProjectRoot } from 'storybook/internal/common';
 import type { PackageJson, StorybookConfig } from 'storybook/internal/types';
 
 import { detect } from 'package-manager-detector';
@@ -38,8 +37,6 @@ beforeEach(() => {
     version: '3.1.1',
     agent: 'yarn@berry',
   }));
-
-  vi.mocked(getProjectRoot).mockImplementation(() => process.cwd());
 
   vi.mocked(getMonorepoType).mockImplementation(() => 'Nx');
 

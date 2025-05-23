@@ -5,7 +5,7 @@ import type { Channel } from 'storybook/internal/channels';
 import {
   extractProperRendererNameFromFramework,
   getFrameworkName,
-  getProjectRoot,
+  projectRoot,
 } from 'storybook/internal/common';
 import type {
   FileComponentSearchRequestPayload,
@@ -44,8 +44,6 @@ export async function initFileSearchChannel(
         const rendererName = (await extractProperRendererNameFromFramework(
           frameworkName
         )) as SupportedRenderers;
-
-        const projectRoot = getProjectRoot();
 
         const files = await searchFiles({
           searchQuery,

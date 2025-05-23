@@ -7,6 +7,7 @@ import { findUpSync } from 'find-up';
 import { dedent } from 'ts-dedent';
 
 import { createLogStream } from '../utils/cli';
+import { projectRoot } from '../utils/paths';
 import { JsPackageManager } from './JsPackageManager';
 import type { PackageJson } from './PackageJson';
 import type { InstallationMetadata, PackageMetadata } from './types';
@@ -118,14 +119,17 @@ export class PNPMProxy extends JsPackageManager {
     }
   }
 
-  public getModulePackageJSON(packageName: string, basePath = this.cwd): PackageJson | null {
-    const pnpapiPath = findUpSync(['.pnp.js', '.pnp.cjs'], { cwd: basePath });
+  public getModulePackageJSON(packageName: string): PackageJson | null {
+    const pnpapiPath = findUpSync(['.pnp.js', '.pnp.cjs'], {
+      cwd: this.cwd,
+      stopAt: projectRoot,
+    });
 
     if (pnpapiPath) {
       try {
         const pnpApi = require(pnpapiPath);
 
-        const resolvedPath = pnpApi.resolveToUnqualified(packageName, basePath, {
+        const resolvedPath = pnpApi.resolveToUnqualified(packageName, this.cwd, {
           considerBuiltins: false,
         });
 
@@ -150,7 +154,7 @@ export class PNPMProxy extends JsPackageManager {
         const possiblePath = join(dir, 'node_modules', packageName, 'package.json');
         return existsSync(possiblePath) ? possiblePath : undefined;
       },
-      { cwd: basePath }
+      { cwd: this.cwd, stopAt: projectRoot }
     );
 
     if (!packageJsonPath) {

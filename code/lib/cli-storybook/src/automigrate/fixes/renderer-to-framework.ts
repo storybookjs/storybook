@@ -4,7 +4,7 @@ import {
   commonGlobOptions,
   frameworkPackages,
   frameworkToRenderer,
-  getProjectRoot,
+  projectRoot,
   prompt,
   rendererPackages,
 } from 'storybook/internal/common';
@@ -128,7 +128,6 @@ export const rendererToFramework: Fix<MigrationResult> = {
   promptType: 'auto',
 
   async check(): Promise<MigrationResult | null> {
-    const projectRoot = await getProjectRoot();
     // eslint-disable-next-line depend/ban-dependencies
     const { globby } = await import('globby');
 
@@ -189,7 +188,6 @@ export const rendererToFramework: Fix<MigrationResult> = {
       initialValue: defaultGlob,
     });
 
-    const projectRoot = getProjectRoot();
     // eslint-disable-next-line depend/ban-dependencies
     const globby = (await import('globby')).globby;
 

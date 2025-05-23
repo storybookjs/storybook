@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 
-import { getProjectRoot } from 'storybook/internal/common';
+import { projectRoot } from 'storybook/internal/common';
 import type { Options } from 'storybook/internal/types';
 
 import { getVirtualModules } from '@storybook/builder-webpack5';
@@ -16,11 +16,9 @@ export const configureSWCLoader = async (
 ) => {
   const isDevelopment = options.configType !== 'PRODUCTION';
 
-  const dir = getProjectRoot();
-
   const { virtualModules } = await getVirtualModules(options);
 
-  const { jsConfig } = await loadJsConfig(dir, nextConfig as any);
+  const { jsConfig } = await loadJsConfig(projectRoot, nextConfig as any);
 
   const rawRule = baseConfig.module?.rules?.find(
     (rule) => typeof rule === 'object' && rule?.resourceQuery?.toString() === '/raw/'
@@ -32,7 +30,7 @@ export const configureSWCLoader = async (
 
   baseConfig.module?.rules?.push({
     test: /\.((c|m)?(j|t)sx?)$/,
-    include: [getProjectRoot()],
+    include: [projectRoot],
     exclude: [/(node_modules)/, ...Object.keys(virtualModules)],
     use: {
       // we use our own patch because we need to remove tracing from the original code
@@ -40,17 +38,17 @@ export const configureSWCLoader = async (
       loader: require.resolve('./swc/next-swc-loader-patch.js'),
       options: {
         isServer: false,
-        rootDir: dir,
-        pagesDir: `${dir}/pages`,
-        appDir: `${dir}/apps`,
+        rootDir: projectRoot,
+        pagesDir: `${projectRoot}/pages`,
+        appDir: `${projectRoot}/apps`,
         hasReactRefresh: isDevelopment,
         jsConfig,
         nextConfig,
         supportedBrowsers: require('next/dist/build/utils').getSupportedBrowsers(
-          dir,
+          projectRoot,
           isDevelopment
         ),
-        swcCacheDir: join(dir, nextConfig?.distDir ?? '.next', 'cache', 'swc'),
+        swcCacheDir: join(projectRoot, nextConfig?.distDir ?? '.next', 'cache', 'swc'),
         bundleTarget: 'default',
       },
     },

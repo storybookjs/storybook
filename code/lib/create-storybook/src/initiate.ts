@@ -23,7 +23,7 @@ import type { JsPackageManager } from '../../../core/src/common/js-package-manag
 import { JsPackageManagerFactory } from '../../../core/src/common/js-package-manager/JsPackageManagerFactory';
 import { HandledError } from '../../../core/src/common/utils/HandledError';
 import { commandLog, paddedLog } from '../../../core/src/common/utils/log';
-import { getProjectRoot } from '../../../core/src/common/utils/paths';
+import { projectRoot } from '../../../core/src/common/utils/paths';
 import versions from '../../../core/src/common/versions';
 import { withTelemetry } from '../../../core/src/core-server/withTelemetry';
 import { NxProjectDetectedError } from '../../../core/src/server-errors';
@@ -625,7 +625,7 @@ export async function doInitiate(options: CommandOptions): Promise<
   }
 
   const foundGitIgnoreFile = await findUp('.gitignore');
-  const rootDirectory = getProjectRoot();
+  const rootDirectory = projectRoot;
   if (foundGitIgnoreFile && foundGitIgnoreFile.includes(rootDirectory)) {
     const contents = await fs.readFile(foundGitIgnoreFile, 'utf-8');
     const hasStorybookLog = contents.includes('*storybook.log');

@@ -1,10 +1,10 @@
 import { dirname } from 'node:path';
 
 import {
-  getProjectRoot,
   getStorybookConfiguration,
   getStorybookInfo,
   loadMainConfig,
+  projectRoot,
   versions,
 } from 'storybook/internal/common';
 import { readConfig } from 'storybook/internal/csf-tools';
@@ -119,7 +119,7 @@ export const computeStorybookMetadata = async ({
   }
 
   try {
-    const packageManagerType = await detect({ cwd: getProjectRoot() });
+    const packageManagerType = await detect({ cwd: projectRoot });
     if (packageManagerType) {
       metadata.packageManager = {
         type: packageManagerType.name,

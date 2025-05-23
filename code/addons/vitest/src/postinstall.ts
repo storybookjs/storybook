@@ -9,6 +9,7 @@ import {
   formatFileContent,
   loadAllPresets,
   loadMainConfig,
+  projectRoot,
   scanAndTransformFiles,
   serverResolve,
   transformImportFiles,
@@ -39,7 +40,10 @@ const EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.cts', '.mts', '.cjs', '.mjs'
 const addonA11yName = '@storybook/addon-a11y';
 
 const findFile = async (basename: string, extensions = EXTENSIONS) =>
-  findUp(extensions.map((ext) => basename + ext));
+  findUp(
+    extensions.map((ext) => basename + ext),
+    { stopAt: projectRoot }
+  );
 
 export default async function postInstall(options: PostinstallOptions) {
   printSuccess(

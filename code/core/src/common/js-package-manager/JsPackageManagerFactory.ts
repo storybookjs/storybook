@@ -3,7 +3,7 @@ import { basename, parse, relative } from 'node:path';
 import { sync as spawnSync } from 'cross-spawn';
 import { findUpSync } from 'find-up';
 
-import { getProjectRoot } from '../utils/paths';
+import { projectRoot } from '../utils/paths';
 import { BUNProxy } from './BUNProxy';
 import type { JsPackageManager, PackageManagerName } from './JsPackageManager';
 import { COMMON_ENV_VARS } from './JsPackageManager';
@@ -34,8 +34,6 @@ export class JsPackageManagerFactory {
     if (force && force in this.PROXY_MAP) {
       return new this.PROXY_MAP[force]({ cwd, configDir });
     }
-
-    const projectRoot = getProjectRoot();
 
     const lockFiles = [
       findUpSync(YARN_LOCKFILE, { cwd, stopAt: projectRoot }),

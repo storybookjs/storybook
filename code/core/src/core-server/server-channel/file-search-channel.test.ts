@@ -3,11 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Channel } from 'storybook/internal/channels';
 import type { ChannelTransport } from 'storybook/internal/channels';
-import {
-  extractProperRendererNameFromFramework,
-  getFrameworkName,
-  getProjectRoot,
-} from 'storybook/internal/common';
+import * as common from 'storybook/internal/common';
 import type {
   FileComponentSearchRequestPayload,
   RequestData,
@@ -28,9 +24,9 @@ vi.mock('storybook/internal/common');
 
 beforeEach(() => {
   vi.restoreAllMocks();
-  vi.mocked(getFrameworkName).mockResolvedValue('@storybook/react');
-  vi.mocked(extractProperRendererNameFromFramework).mockResolvedValue('react');
-  vi.mocked(getProjectRoot).mockReturnValue(
+  vi.mocked(common.getFrameworkName).mockResolvedValue('@storybook/react');
+  vi.mocked(common.extractProperRendererNameFromFramework).mockResolvedValue('react');
+  vi.spyOn(common, 'projectRoot', 'get').mockReturnValue(
     require('path').join(__dirname, '..', 'utils', '__search-files-tests__')
   );
 });

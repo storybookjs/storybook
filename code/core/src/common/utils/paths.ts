@@ -2,6 +2,10 @@ import { join, resolve, sep } from 'node:path';
 
 import { findUpSync } from 'find-up';
 
+/**
+ * @deprecated For performance reasons, use the evaluated `projectRoot` variable instead.
+ * @returns
+ */
 export const getProjectRoot = () => {
   let result;
   // Allow manual override in cases where auto-detect doesn't work
@@ -68,3 +72,5 @@ export function normalizeStoryPath(filename: string) {
 
   return `.${sep}${filename}`;
 }
+
+export const projectRoot = getProjectRoot();

@@ -40,7 +40,7 @@ export function webpackIncludeRegexp(specifier: NormalizedStoriesSpecifier) {
 }
 
 export function toImportFnPart(specifier: NormalizedStoriesSpecifier) {
-  const { directory, importPathMatcher } = specifier;
+  const { directory, importPathMatcher, files } = specifier;
 
   return dedent`
       async (path) => {
@@ -48,11 +48,10 @@ export function toImportFnPart(specifier: NormalizedStoriesSpecifier) {
           return;
         }
 
-        const pathRemainder = path.substring(${directory.length + 1});
         return import(
           /* webpackChunkName: "[request]" */
           /* webpackInclude: ${webpackIncludeRegexp(specifier)} */
-          '${directory}/' + pathRemainder
+          '${directory + '/' + files}'
         );
       }
 

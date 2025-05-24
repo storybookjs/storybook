@@ -1,5 +1,9 @@
 import { hasStorybookDependencies } from 'storybook/internal/cli';
-import type { JsPackageManager, PackageManagerName } from 'storybook/internal/common';
+import type {
+  JsPackageManager,
+  PackageJsonWithDepsAndDevDeps,
+  PackageManagerName,
+} from 'storybook/internal/common';
 import {
   JsPackageManagerFactory,
   getProjectRoot,
@@ -216,7 +220,125 @@ interface InternalUpgradeOptions {
   configDir?: string;
 }
 
-export const doUpgrade = async (allOptions: InternalUpgradeOptions) => {
+const collectUpgradeData = async (options: UpgradeOptions, configDirs: string[]) => {
+  const currentCLIVersion = versions.storybook;
+
+  console.log('collecting...');
+  const upgradeData = configDirs.map(async (_configDir) => {
+    const { configDir, mainConfig, mainConfigPath, packageManager } = await getStorybookData({
+      configDir: _configDir,
+    });
+
+    const beforeVersion = (await getInstalledStorybookVersion(packageManager)) ?? '0.0.0';
+
+    // GUARDS
+    if (!beforeVersion) {
+      throw new UpgradeStorybookUnknownCurrentVersionError();
+    }
+
+    const isCanary =
+      currentCLIVersion.startsWith('0.0.0') ||
+      beforeVersion.startsWith('portal:') ||
+      beforeVersion.startsWith('workspace:');
+
+    if (!isCanary && lt(currentCLIVersion, beforeVersion)) {
+      throw new UpgradeStorybookToLowerVersionError({
+        beforeVersion,
+        currentVersion: currentCLIVersion,
+      });
+    }
+
+    const latestCLIVersionOnNPM = await packageManager.latestVersion('storybook');
+    const latestPrereleaseCLIVersionOnNPM = await packageManager.latestVersion('storybook@next');
+
+    const isCLIOutdated = lt(currentCLIVersion, latestCLIVersionOnNPM);
+    const isCLIExactLatest = currentCLIVersion === latestCLIVersionOnNPM;
+    const isCLIPrerelease = prerelease(currentCLIVersion) !== null;
+    const isCLIExactPrerelease = currentCLIVersion === latestPrereleaseCLIVersionOnNPM;
+
+    const isUpgrade = lt(beforeVersion, currentCLIVersion);
+
+    console.log({
+      configDir,
+      mainConfig,
+      mainConfigPath,
+      packageManager,
+      isCanary,
+      isCLIOutdated,
+      isCLIPrerelease,
+      isCLIExactLatest,
+      isUpgrade,
+      beforeVersion,
+      currentCLIVersion,
+      latestCLIVersionOnNPM,
+      isCLIExactPrerelease,
+    });
+    let blockResult;
+
+    // BLOCKERS
+    if (
+      typeof mainConfig !== 'boolean' &&
+      typeof mainConfigPath !== 'undefined' &&
+      !options.force
+    ) {
+      // TODO: Perhaps offer a --force prompt
+      blockResult = await autoblock({
+        packageManager,
+        configDir,
+        // TODO: rework the autoblock to account for multi-package.json
+        packageJson: packageManager.primaryPackageJson.packageJson,
+        mainConfig,
+        mainConfigPath,
+      });
+    }
+
+    console.log({ blockResult });
+
+    return {
+      configDir,
+      mainConfig,
+      mainConfigPath,
+      packageManager,
+      isCanary,
+      isCLIOutdated,
+      isCLIPrerelease,
+      isCLIExactLatest,
+      isUpgrade,
+      beforeVersion,
+      currentCLIVersion,
+      latestCLIVersionOnNPM,
+      isCLIExactPrerelease,
+      blockers: blockResult,
+    };
+  });
+
+  return Promise.all(upgradeData);
+};
+
+export const doUpgrade = async (
+  allOptions: InternalUpgradeOptions,
+  {
+    isCLIOutdated,
+    isCLIPrerelease,
+    isCLIExactLatest,
+    isUpgrade,
+    beforeVersion,
+    currentCLIVersion,
+    latestCLIVersionOnNPM,
+    isCanary,
+    isCLIExactPrerelease,
+  }: {
+    isCLIOutdated: boolean;
+    isCLIPrerelease: boolean;
+    isCLIExactLatest: boolean;
+    isUpgrade: boolean;
+    beforeVersion: string;
+    currentCLIVersion: string;
+    latestCLIVersionOnNPM: string;
+    isCanary: boolean;
+    isCLIExactPrerelease: boolean;
+  }
+) => {
   const {
     skipCheck,
     packageManager: packageManagerName,
@@ -230,40 +352,6 @@ export const doUpgrade = async (allOptions: InternalUpgradeOptions) => {
       configDir: userSpecifiedConfigDir,
       packageManagerName,
     });
-
-  // If we can't determine the existing version fallback to v0.0.0 to not block the upgrade
-  const beforeVersion = (await getInstalledStorybookVersion(packageManager)) ?? '0.0.0';
-
-  const currentCLIVersion = versions.storybook;
-  const isCanary =
-    currentCLIVersion.startsWith('0.0.0') ||
-    beforeVersion.startsWith('portal:') ||
-    beforeVersion.startsWith('workspace:');
-
-  if (!hasStorybookDependencies(packageManager)) {
-    throw new UpgradeStorybookInWrongWorkingDirectory();
-  }
-  if (!isCanary && lt(currentCLIVersion, beforeVersion)) {
-    throw new UpgradeStorybookToLowerVersionError({
-      beforeVersion,
-      currentVersion: currentCLIVersion,
-    });
-  }
-
-  if (!isCanary && eq(currentCLIVersion, beforeVersion)) {
-    // Not throwing, as the beforeVersion calculation doesn't always work in monorepos.
-    logger.warn(new UpgradeStorybookToSameVersionError({ beforeVersion }).message);
-  }
-
-  const latestCLIVersionOnNPM = await packageManager.latestVersion('storybook');
-  const latestPrereleaseCLIVersionOnNPM = await packageManager.latestVersion('storybook@next');
-
-  const isCLIOutdated = lt(currentCLIVersion, latestCLIVersionOnNPM);
-  const isCLIExactLatest = currentCLIVersion === latestCLIVersionOnNPM;
-  const isCLIPrerelease = prerelease(currentCLIVersion) !== null;
-  const isCLIExactPrerelease = currentCLIVersion === latestPrereleaseCLIVersionOnNPM;
-
-  const isUpgrade = lt(beforeVersion, currentCLIVersion);
 
   const borderColor = isCLIOutdated ? '#FC521F' : '#F1618C';
 
@@ -295,132 +383,17 @@ export const doUpgrade = async (allOptions: InternalUpgradeOptions) => {
 
   const { packageJson } = packageManager.primaryPackageJson;
 
-  // GUARDS
-  if (!beforeVersion) {
-    throw new UpgradeStorybookUnknownCurrentVersionError();
-  }
-
-  // BLOCKERS
-  if (
-    !results &&
-    typeof mainConfig !== 'boolean' &&
-    typeof mainConfigPath !== 'undefined' &&
-    !options.force
-  ) {
-    const blockResult = await autoblock({
-      packageManager,
-      configDir,
-      packageJson,
-      mainConfig,
-      mainConfigPath,
-    });
-    if (blockResult) {
-      results = { preCheckFailure: blockResult };
-    }
-  }
-
   // INSTALL UPDATED DEPENDENCIES
   if (!dryRun && !results) {
-    const upgradedDependencies = await toUpgradedDependencies(
-      packageJson.dependencies as Record<string, string>,
+    await upgradeStorybookDependencies({
       packageManager,
-      {
-        isCanary,
-        isCLIOutdated,
-        isCLIPrerelease,
-        isCLIExactPrerelease,
-        isCLIExactLatest,
-      }
-    );
-
-    const upgradedDevDependencies = await toUpgradedDependencies(
-      packageJson.devDependencies as Record<string, string>,
-      packageManager,
-      {
-        isCanary,
-        isCLIOutdated,
-        isCLIPrerelease,
-        isCLIExactPrerelease,
-        isCLIExactLatest,
-      }
-    );
-
-    // Add Storybook overrides to package.json when using npm to prevent peer dependency conflicts
-    if (packageManager.type === 'npm') {
-      try {
-        // Add overrides section if it doesn't exist
-        if (!packageJson.overrides) {
-          packageJson.overrides = {};
-        }
-
-        // Add Storybook overrides
-        packageJson.overrides.storybook = `$storybook`;
-
-        if (!dryRun) {
-          packageManager.writePackageJson(packageJson);
-          logger.info(
-            `Added Storybook overrides to ${picocolors.cyan(
-              'package.json'
-            )} to ensure consistent dependency resolution`
-          );
-        }
-      } catch (err) {
-        logger.warn('Failed to add Storybook overrides to package.json');
-      }
-    }
-
-    // Users struggle to upgrade Storybook with npm because of conflicting peer-dependencies
-    // GitHub Issue: https://github.com/storybookjs/storybook/issues/30306
-    // Solution: Remove all Storybook packages (except 'storybook') from the package.json and install them again
-    // TODO: Check if this is still needed due to the resolution fix for the `storybook` package
-    if (packageManager.type === 'npm') {
-      const getPackageName = (dep: string) => {
-        const lastAtIndex = dep.lastIndexOf('@');
-        return lastAtIndex > 0 ? dep.slice(0, lastAtIndex) : dep;
-      };
-
-      // Remove all Storybook packages except 'storybook'
-      await packageManager.removeDependencies(
-        [...upgradedDependencies, ...upgradedDevDependencies]
-          .map(getPackageName)
-          .filter((dep) => dep !== 'storybook')
-      );
-
-      // Handle 'storybook' package separately to maintain peer dependencies
-      const findStorybookPackage = (deps: string[]) =>
-        deps.find((dep) => getPackageName(dep) === 'storybook');
-
-      const storybookDep = findStorybookPackage(upgradedDependencies);
-      const storybookDevDep = findStorybookPackage(upgradedDevDependencies);
-
-      if (storybookDep) {
-        await packageManager.addDependencies(
-          { installAsDevDependencies: false, skipInstall: true },
-          [storybookDep]
-        );
-      }
-      if (storybookDevDep) {
-        await packageManager.addDependencies(
-          { installAsDevDependencies: true, skipInstall: true },
-          [storybookDevDep]
-        );
-      }
-    }
-
-    // Update all dependencies
-    logger.info(`Updating dependencies in ${picocolors.cyan('package.json')}..`);
-    const addDeps = async (deps: string[], isDev: boolean) => {
-      if (deps.length > 0) {
-        await packageManager.addDependencies(
-          { installAsDevDependencies: isDev, skipInstall: true },
-          deps
-        );
-      }
-    };
-
-    await addDeps(upgradedDependencies, false);
-    await addDeps(upgradedDevDependencies, true);
-    await packageManager.installDependencies();
+      packageJson,
+      isCanary,
+      isCLIOutdated,
+      isCLIPrerelease,
+      isCLIExactLatest,
+      isCLIExactPrerelease,
+    });
   }
 
   // AUTOMIGRATIONS
@@ -463,6 +436,63 @@ export const doUpgrade = async (allOptions: InternalUpgradeOptions) => {
 };
 
 export type UpgradeOptions = Omit<InternalUpgradeOptions, 'configDir'> & { configDir?: string[] };
+async function upgradeStorybookDependencies({
+  packageManager,
+  isCanary,
+  isCLIOutdated,
+  isCLIPrerelease,
+  isCLIExactPrerelease,
+  isCLIExactLatest,
+}: {
+  packageJson: PackageJsonWithDepsAndDevDeps;
+  packageManager: JsPackageManager;
+  isCanary: boolean;
+  isCLIOutdated: boolean;
+  isCLIPrerelease: boolean;
+  isCLIExactPrerelease: boolean;
+  isCLIExactLatest: boolean;
+}) {
+  const packageJson = packageManager.primaryPackageJson.packageJson;
+  const upgradedDependencies = await toUpgradedDependencies(
+    packageJson.dependencies as Record<string, string>,
+    packageManager,
+    {
+      isCanary,
+      isCLIOutdated,
+      isCLIPrerelease,
+      isCLIExactPrerelease,
+      isCLIExactLatest,
+    }
+  );
+
+  const upgradedDevDependencies = await toUpgradedDependencies(
+    packageJson.devDependencies as Record<string, string>,
+    packageManager,
+    {
+      isCanary,
+      isCLIOutdated,
+      isCLIPrerelease,
+      isCLIExactPrerelease,
+      isCLIExactLatest,
+    }
+  );
+
+  // Update all dependencies
+  logger.info(`Updating dependencies in ${picocolors.cyan('package.json')}..`);
+  const addDeps = async (deps: string[], isDev: boolean) => {
+    if (deps.length > 0) {
+      await packageManager.addDependencies(
+        { installAsDevDependencies: isDev, skipInstall: true },
+        deps
+      );
+    }
+  };
+
+  await addDeps(upgradedDependencies, false);
+  await addDeps(upgradedDevDependencies, true);
+  await packageManager.installDependencies();
+}
+
 export async function upgrade(options: UpgradeOptions): Promise<void> {
   // TODO: telemetry for upgrade start
   const gitRoot = getProjectRoot();
@@ -472,9 +502,9 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     configDirs = await findStorybookProjects();
     if (configDirs.length > 1) {
       logger.plain(
-        `Multiple Storybook projects found. Storybook can only upgrade all projects at once: ${configDirs
-          .map((dir) => '\t' + picocolors.cyan(dir.replace(gitRoot, '')))
-          .join('\n')}. Continue?`
+        `Multiple Storybook projects found. Storybook can only upgrade all projects at once:\n${configDirs
+          .map((dir) => ' - ' + picocolors.cyan(dir.replace(gitRoot, '')))
+          .join('\n')}`
       );
       const continueUpgrade = await prompt.confirm({
         message: `Continue with the upgrade?`,
@@ -487,6 +517,10 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     }
   }
 
+  const upgradeData = await collectUpgradeData(options, configDirs);
+
+  console.log({ upgradeData });
+  return;
   // Single project upgrade scenario
   if (configDirs.length === 1) {
     await withTelemetry(

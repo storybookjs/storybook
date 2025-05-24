@@ -1,4 +1,3 @@
-import { CallStates } from '../../instrumenter/types';
 import { StatusBadge } from './StatusBadge';
 
 export default {
@@ -7,18 +6,22 @@ export default {
   parameters: { layout: 'padded' },
 };
 
+export const Wait = {
+  args: { status: 'rendering' },
+};
+
+export const Runs = {
+  args: { status: 'playing' },
+};
+
 export const Pass = {
-  args: { status: CallStates.DONE },
-};
-
-export const Active = {
-  args: { status: CallStates.ACTIVE },
-};
-
-export const Waiting = {
-  args: { status: CallStates.WAITING },
+  args: { status: 'completed' },
 };
 
 export const Fail = {
-  args: { status: CallStates.ERROR },
+  args: { status: 'errored' },
+};
+
+export const Bail = {
+  args: { status: 'aborted' },
 };

@@ -309,7 +309,7 @@ export async function baseGenerator(
     ...extraAddons,
   ].filter(Boolean);
 
-  const packageJson = await packageManager.retrievePackageJson();
+  const { packageJson } = packageManager.primaryPackageJson;
   const installedDependencies = new Set(
     Object.keys({ ...packageJson.dependencies, ...packageJson.devDependencies })
   );
@@ -354,13 +354,15 @@ export async function baseGenerator(
   try {
     if (process.env.CI !== 'true') {
       const { hasEslint, isStorybookPluginInstalled, isFlatConfig, eslintConfigFile } =
-        await extractEslintInfo(packageManager);
+        // TODO: Investigate why packageManager type does not match on CI
+        await extractEslintInfo(packageManager as any);
 
       if (hasEslint && !isStorybookPluginInstalled) {
         packagesToInstall.push('eslint-plugin-storybook');
         await configureEslintPlugin({
           eslintConfigFile,
-          packageManager,
+          // TODO: Investigate why packageManager type does not match on CI
+          packageManager: packageManager as any,
           isFlatConfig,
         });
       }
@@ -380,7 +382,7 @@ export async function baseGenerator(
       text: 'Installing Storybook dependencies',
     }).start();
 
-    await packageManager.addDependencies({ ...npmOptions, packageJson }, versionedPackages);
+    await packageManager.addDependencies({ ...npmOptions }, versionedPackages);
     addDependenciesSpinner.succeed();
   }
 
@@ -445,7 +447,7 @@ export async function baseGenerator(
   }
 
   if (addScripts) {
-    await packageManager.addStorybookCommandInScripts({
+    packageManager.addStorybookCommandInScripts({
       port: 6006,
     });
   }

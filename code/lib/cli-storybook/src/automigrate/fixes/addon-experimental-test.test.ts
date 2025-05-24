@@ -1,8 +1,8 @@
 /* eslint-disable depend/ban-dependencies */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { JsPackageManager } from 'storybook/internal/common';
-import type { StorybookConfig } from 'storybook/internal/types';
+import { JsPackageManager } from 'storybook/internal/common';
+import type { PackageJson, StorybookConfig } from 'storybook/internal/types';
 
 import { readFileSync, writeFileSync } from 'fs';
 import dedent from 'ts-dedent';
@@ -90,8 +90,22 @@ const checkAddonExperimentalTest = async ({
   });
 };
 
+const packageManager = vi.mocked(JsPackageManager.prototype);
+
 describe('addon-experimental-test fix', () => {
   beforeEach(() => {
+    packageManager.getModulePackageJSON = vi.fn();
+    // @ts-expect-error Ignore readonly property
+    packageManager.primaryPackageJson = {
+      packageJson: { devDependencies: {}, dependencies: {} },
+      packageJsonPath: 'some/path',
+      operationDir: 'some/path',
+    };
+    packageManager.runPackageCommand = vi.fn();
+    packageManager.getAllDependencies = vi.fn();
+    packageManager.addDependencies = vi.fn();
+    packageManager.removeDependencies = vi.fn();
+
     vi.clearAllMocks();
     // @ts-expect-error Ignore
     vi.mocked(readFileSync).mockImplementation((file: string) => {
@@ -109,21 +123,25 @@ describe('addon-experimental-test fix', () => {
   describe('check function', () => {
     it('should return null if @storybook/experimental-addon-test is not installed', async () => {
       const packageManager = {
-        getPackageVersion: () => Promise.resolve(null),
+        getModulePackageJSON: () => null,
       };
       await expect(checkAddonExperimentalTest({ packageManager })).resolves.toBeNull();
     });
 
     it('should find files containing @storybook/experimental-addon-test', async () => {
       const packageManager = {
-        getPackageVersion: (packageName: string) => {
+        getModulePackageJSON: (packageName: string) => {
           if (packageName === '@storybook/experimental-addon-test') {
-            return Promise.resolve('8.6.0');
+            return {
+              version: '8.6.0',
+            };
           }
           if (packageName === 'storybook') {
-            return Promise.resolve('9.0.0');
+            return {
+              version: '9.0.0',
+            };
           }
-          return Promise.resolve(null);
+          return null;
         },
       };
 
@@ -185,25 +203,30 @@ describe('addon-experimental-test fix', () => {
 
   describe('run function', () => {
     it('should replace @storybook/experimental-addon-test in files', async () => {
-      const packageManager = {
-        getPackageVersion: (packageName: string) => {
-          if (packageName === '@storybook/experimental-addon-test') {
-            return Promise.resolve('8.6.0');
-          }
-          if (packageName === 'storybook') {
-            return Promise.resolve('9.0.0');
-          }
-          return Promise.resolve(null);
+      packageManager.getModulePackageJSON.mockImplementation((packageName: string) => {
+        if (packageName === '@storybook/experimental-addon-test') {
+          return {
+            version: '8.6.0',
+          };
+        }
+        if (packageName === 'storybook') {
+          return {
+            version: '9.0.0',
+          };
+        }
+        return null;
+      });
+
+      // @ts-expect-error Ignore readonly property
+      packageManager.primaryPackageJson = {
+        packageJson: {
+          dependencies: {},
+          devDependencies: {
+            '@storybook/experimental-addon-test': '8.6.0',
+          },
         },
-        retrievePackageJson: () =>
-          Promise.resolve({
-            dependencies: {},
-            devDependencies: {
-              '@storybook/experimental-addon-test': '8.6.0',
-            },
-          }),
-        removeDependencies: vi.fn(() => Promise.resolve()),
-        addDependencies: vi.fn(() => Promise.resolve()),
+        packageJsonPath: '/some/path',
+        operationDir: '/some/path',
       };
 
       const matchingFiles = ['.storybook/test-setup.ts', '.storybook/main.ts', 'vitest.setup.ts'];
@@ -213,7 +236,7 @@ describe('addon-experimental-test fix', () => {
           matchingFiles,
           hasPackageJsonDependency: true,
         },
-        packageManager: packageManager as any,
+        packageManager: packageManager as JsPackageManager,
         dryRun: false,
       } as any);
 
@@ -245,36 +268,41 @@ describe('addon-experimental-test fix', () => {
       );
 
       // Verify package dependencies were updated
-      expect(packageManager.removeDependencies).toHaveBeenCalledWith({}, [
+      expect(packageManager.removeDependencies).toHaveBeenCalledWith([
         '@storybook/experimental-addon-test',
       ]);
 
       expect(packageManager.addDependencies).toHaveBeenCalledWith(
-        { installAsDevDependencies: true },
+        { installAsDevDependencies: true, skipInstall: true },
         ['@storybook/addon-vitest@9.0.0']
       );
     });
 
     it('should replace @storybook/experimental-addon-test in files (dependency)', async () => {
-      const packageManager = {
-        getPackageVersion: (packageName: string) => {
-          if (packageName === '@storybook/experimental-addon-test') {
-            return Promise.resolve('8.6.0');
-          }
-          if (packageName === 'storybook') {
-            return Promise.resolve('9.0.0');
-          }
-          return Promise.resolve(null);
+      packageManager.getModulePackageJSON.mockImplementation((packageName: string) => {
+        if (packageName === '@storybook/experimental-addon-test') {
+          return {
+            version: '8.6.0',
+          };
+        }
+        if (packageName === 'storybook') {
+          return {
+            version: '9.0.0',
+          };
+        }
+        return null;
+      });
+
+      // @ts-expect-error Ignore readonly property
+      packageManager.primaryPackageJson = {
+        packageJson: {
+          dependencies: {
+            '@storybook/experimental-addon-test': '8.6.0',
+          },
+          devDependencies: {},
         },
-        retrievePackageJson: () =>
-          Promise.resolve({
-            dependencies: {
-              '@storybook/experimental-addon-test': '8.6.0',
-            },
-            devDependencies: {},
-          }),
-        removeDependencies: vi.fn(() => Promise.resolve()),
-        addDependencies: vi.fn(() => Promise.resolve()),
+        packageJsonPath: '/some/path',
+        operationDir: '/some/path',
       };
 
       const matchingFiles = ['.storybook/test-setup.ts', '.storybook/main.ts', 'vitest.setup.ts'];
@@ -289,14 +317,17 @@ describe('addon-experimental-test fix', () => {
       } as any);
 
       expect(packageManager.addDependencies).toHaveBeenCalledWith(
-        { installAsDevDependencies: false },
+        { installAsDevDependencies: false, skipInstall: true },
         ['@storybook/addon-vitest@9.0.0']
       );
     });
 
     it('should not modify files or dependencies in dry run mode', async () => {
       const packageManager = {
-        getPackageVersion: () => Promise.resolve('0.2.0'),
+        getModulePackageJSON: () =>
+          ({
+            version: '0.2.0',
+          }) as PackageJson,
         removeDependencies: vi.fn(),
         addDependencies: vi.fn(),
       };

@@ -5,12 +5,12 @@ import {
   frameworkPackages,
   frameworkToRenderer,
   getProjectRoot,
+  prompt,
   rendererPackages,
 } from 'storybook/internal/common';
 import type { PackageJson } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
-import prompts from 'prompts';
 import { dedent } from 'ts-dedent';
 
 import type { Fix, RunOptions } from '../types';
@@ -128,14 +128,13 @@ export const rendererToFramework: Fix<MigrationResult> = {
   promptType: 'auto',
 
   async check(): Promise<MigrationResult | null> {
-    const projectRoot = await getProjectRoot();
     // eslint-disable-next-line depend/ban-dependencies
     const { globby } = await import('globby');
 
     const packageJsonFiles = await globby(['**/package.json'], {
       ...commonGlobOptions(''),
       ignore: ['**/node_modules/**'],
-      cwd: projectRoot,
+      cwd: getProjectRoot(),
       gitignore: true,
       absolute: true,
     });
@@ -183,19 +182,14 @@ export const rendererToFramework: Fix<MigrationResult> = {
   async run(options: RunOptions<MigrationResult>) {
     const { result, dryRun = false } = options;
     const defaultGlob = '**/*.{mjs,cjs,js,jsx,ts,tsx}';
-    const { glob } = await prompts({
-      type: 'text',
-      name: 'glob',
+    const glob = await prompt.text({
       message:
         'Enter a custom glob pattern to scan for story files (or press enter to use default):',
-      initial: defaultGlob,
+      initialValue: defaultGlob,
     });
 
-    const projectRoot = getProjectRoot();
     // eslint-disable-next-line depend/ban-dependencies
     const globby = (await import('globby')).globby;
-
-    let didMigrate = false;
 
     for (const selectedFramework of result.frameworks) {
       const frameworkName = frameworkPackages[selectedFramework];
@@ -222,7 +216,7 @@ export const rendererToFramework: Fix<MigrationResult> = {
         ...commonGlobOptions(''),
         ignore: ['**/node_modules/**'],
         dot: true,
-        cwd: projectRoot,
+        cwd: getProjectRoot(),
         absolute: true,
       });
 
@@ -238,12 +232,6 @@ export const rendererToFramework: Fix<MigrationResult> = {
           removeRendererInPackageJson(file, rendererPackage, dryRun)
         )
       );
-      didMigrate = true;
-    }
-
-    // Install dependencies once if any migration was performed
-    if (didMigrate && !dryRun) {
-      await options.packageManager.installDependencies();
     }
   },
 };

@@ -3,6 +3,7 @@ import { getAddonNames } from 'storybook/internal/common';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
+import { add } from '../../add';
 import { updateMainConfig } from '../helpers/mainConfigFile';
 import type { Fix, RunOptions } from '../types';
 
@@ -73,17 +74,18 @@ export const addonStorysourceCodePanel: Fix<StorysourceOptions> = {
         '@storybook/addon-storysource',
         '--config-dir',
         configDir,
+        '--skip-install',
       ]);
 
       if (!hasDocs) {
         logger.log('Installing @storybook/addon-docs...');
 
-        await packageManager.runPackageCommand('storybook', [
-          'add',
-          '@storybook/addon-docs',
-          '--config-dir',
+        await add('@storybook/addon-docs', {
           configDir,
-        ]);
+          packageManager: packageManager.type,
+          skipInstall: true,
+          skipPostinstall: true,
+        });
       }
 
       // Update preview config to enable code panel

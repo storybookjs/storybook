@@ -1,5 +1,4 @@
 import {
-  type PackageJson,
   getAddonNames,
   scanAndTransformFiles,
   transformImportFiles,
@@ -8,6 +7,7 @@ import {
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
+import { add } from '../../add';
 import type { Fix } from '../types';
 
 interface AddonDocsOptions {
@@ -16,7 +16,6 @@ interface AddonDocsOptions {
   hasDocsAddon: boolean;
   additionalAddonsToRemove: string[];
   allDeps: Record<string, string>;
-  packageJson: PackageJson;
 }
 
 const consolidatedAddons = {
@@ -69,12 +68,7 @@ export const removeEssentials: Fix<AddonDocsOptions> = {
       hasEssentialsAddon = addonNames.includes('@storybook/addon-essentials');
       hasDocsAddon = addonNames.includes('@storybook/addon-docs');
 
-      const packageJson = await packageManager.retrievePackageJson();
-
-      const allDeps = {
-        ...packageJson.dependencies,
-        ...packageJson.devDependencies,
-      } as Record<string, string>;
+      const allDeps = packageManager.getAllDependencies();
 
       const installedAddons = Object.keys(allDeps);
 
@@ -111,7 +105,6 @@ export const removeEssentials: Fix<AddonDocsOptions> = {
         hasDocsAddon,
         additionalAddonsToRemove,
         allDeps,
-        packageJson,
       };
     } catch (err) {
       return null;
@@ -176,6 +169,7 @@ export const removeEssentials: Fix<AddonDocsOptions> = {
           '@storybook/addon-essentials',
           '--config-dir',
           configDir,
+          '--skip-install',
         ]);
       }
 
@@ -186,6 +180,7 @@ export const removeEssentials: Fix<AddonDocsOptions> = {
           addon,
           '--config-dir',
           configDir,
+          '--skip-install',
         ]);
       }
 
@@ -208,12 +203,12 @@ export const removeEssentials: Fix<AddonDocsOptions> = {
       if (!hasDocsDisabled && hasEssentials) {
         if (!hasDocsAddon) {
           console.log('Adding @storybook/addon-docs...');
-          await packageManager.runPackageCommand('storybook', [
-            'add',
-            '@storybook/addon-docs',
-            '--config-dir',
+          await add('@storybook/addon-docs', {
             configDir,
-          ]);
+            packageManager: packageManager.type,
+            skipInstall: true,
+            skipPostinstall: true,
+          });
         } else {
           const allDeps = result.allDeps;
           const isDocsInstalled = allDeps['@storybook/addon-docs'] !== undefined;
@@ -223,7 +218,7 @@ export const removeEssentials: Fix<AddonDocsOptions> = {
             const isStorybookDevDependency = packageJson.devDependencies?.storybook !== undefined;
 
             await packageManager.addDependencies(
-              { installAsDevDependencies: isStorybookDevDependency },
+              { installAsDevDependencies: isStorybookDevDependency, skipInstall: true },
               ['@storybook/addon-docs@' + storybookVersion]
             );
           }

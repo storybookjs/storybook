@@ -1,7 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { types as t } from 'storybook/internal/babel';
 import { commonGlobOptions, getProjectRoot } from 'storybook/internal/common';
 import { writeConfig, writeCsf } from 'storybook/internal/csf-tools';
 
@@ -37,9 +36,10 @@ export const addonA11yParameters: Fix<A11yOptions> = {
       return null;
     }
 
-    const projectRoot = getProjectRoot();
     // eslint-disable-next-line depend/ban-dependencies
     const globby = (await import('globby')).globby;
+
+    const projectRoot = getProjectRoot();
 
     // Get story files from main config patterns
     const storyFiles = await globby([join(projectRoot, '**/*.stor(y|ies).@(js|jsx|mjs|ts|tsx)')], {

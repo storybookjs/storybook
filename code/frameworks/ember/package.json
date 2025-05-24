@@ -52,7 +52,7 @@
     "@storybook/builder-webpack5": "workspace:*",
     "@storybook/global": "^5.0.0",
     "babel-loader": "9.1.3",
-    "find-up": "^5.0.0"
+    "find-up": "^7.0.0"
   },
   "devDependencies": {
     "ember-source": "~3.28.1",

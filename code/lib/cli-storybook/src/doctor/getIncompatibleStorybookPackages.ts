@@ -33,7 +33,7 @@ export const checkPackageCompatibility = async (
 ): Promise<AnalysedPackage> => {
   const { currentStorybookVersion, skipErrors, packageManager } = context;
   try {
-    const dependencyPackageJson = await packageManager.getPackageJSON(dependency);
+    const dependencyPackageJson = packageManager.getModulePackageJSON(dependency);
     if (dependencyPackageJson === null) {
       return { packageName: dependency };
     }
@@ -103,7 +103,7 @@ export const getIncompatibleStorybookPackages = async (
 ): Promise<AnalysedPackage[]> => {
   const packageManager = context.packageManager ?? JsPackageManagerFactory.getPackageManager();
 
-  const allDeps = await packageManager.getAllDependencies();
+  const allDeps = packageManager.getAllDependencies();
   const storybookLikeDeps = Object.keys(allDeps).filter((dep) => dep.includes('storybook'));
 
   if (storybookLikeDeps.length === 0 && !context.skipErrors) {

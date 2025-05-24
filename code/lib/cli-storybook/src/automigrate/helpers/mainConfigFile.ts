@@ -1,6 +1,7 @@
 import { normalize } from 'node:path';
 
 import {
+  JsPackageManagerFactory,
   builderPackages,
   extractProperFrameworkName,
   frameworkPackages,
@@ -8,7 +9,7 @@ import {
   loadMainConfig,
   rendererPackages,
 } from 'storybook/internal/common';
-import type { JsPackageManager } from 'storybook/internal/common';
+import type { PackageManagerName } from 'storybook/internal/common';
 import { frameworkToRenderer, getCoercedStorybookVersion } from 'storybook/internal/common';
 import type { ConfigFile } from 'storybook/internal/csf-tools';
 import { readConfig, writeConfig as writeConfigFile } from 'storybook/internal/csf-tools';
@@ -123,22 +124,27 @@ export const getRendererPackageNameFromFramework = (frameworkPackageName: string
 };
 
 export const getStorybookData = async ({
-  packageManager,
   configDir: userDefinedConfigDir,
+  packageManagerName,
 }: {
-  packageManager: JsPackageManager;
   configDir?: string;
+  packageManagerName?: PackageManagerName;
 }) => {
-  const packageJson = await packageManager.retrievePackageJson();
   const {
-    mainConfig: mainConfigPath,
+    mainConfigPath: mainConfigPath,
     version: storybookVersionSpecifier,
     configDir: configDirFromScript,
-    previewConfig: previewConfigPath,
-  } = getStorybookInfo(packageJson, userDefinedConfigDir);
-  const storybookVersion = await getCoercedStorybookVersion(packageManager);
+    previewConfigPath,
+  } = getStorybookInfo(userDefinedConfigDir);
 
   const configDir = userDefinedConfigDir || configDirFromScript || '.storybook';
+
+  const packageManager = JsPackageManagerFactory.getPackageManager({
+    force: packageManagerName,
+    configDir,
+  });
+
+  const storybookVersion = await getCoercedStorybookVersion(packageManager);
 
   let mainConfig: StorybookConfigRaw;
   try {
@@ -156,7 +162,7 @@ export const getStorybookData = async ({
     storybookVersion,
     mainConfigPath,
     previewConfigPath,
-    packageJson,
+    packageManager,
   };
 };
 export type GetStorybookData = typeof getStorybookData;

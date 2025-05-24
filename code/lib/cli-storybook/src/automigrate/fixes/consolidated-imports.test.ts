@@ -2,7 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 
 import { describe, expect, it, vi } from 'vitest';
 
-import { versions } from 'storybook/internal/common';
+import { JsPackageManager, versions } from 'storybook/internal/common';
 
 import { consolidatedImports, transformPackageJsonFiles } from './consolidated-imports';
 
@@ -34,10 +34,10 @@ const mockPackageJson = {
   },
 };
 
+const mockPackageManager = vi.mocked(JsPackageManager.prototype);
+
 const mockRunOptions = {
-  packageManager: {
-    retrievePackageJson: async () => mockPackageJson,
-  } as any,
+  packageManager: mockPackageManager,
   mainConfig: {} as any,
   mainConfigPath: 'main.ts',
   packageJson: mockPackageJson,

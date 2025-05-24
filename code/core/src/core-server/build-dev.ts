@@ -50,7 +50,7 @@ export async function buildDevStandalone(
       `Expected package.json#version to be defined in the "${packageJson.name}" package}`
     );
     storybookVersion = packageJson.version;
-    previewConfigPath = getConfigInfo(packageJson, configDir).previewConfig ?? undefined;
+    previewConfigPath = getConfigInfo(configDir).previewConfigPath ?? undefined;
   } else {
     if (!storybookVersion) {
       storybookVersion = versions.storybook;
@@ -76,8 +76,7 @@ export async function buildDevStandalone(
     }
   }
 
-  const rootDir = getProjectRoot();
-  const cacheKey = oneWayHash(relative(rootDir, configDir));
+  const cacheKey = oneWayHash(relative(getProjectRoot(), configDir));
 
   const cacheOutputDir = resolvePathInStorybookCache('public', cacheKey);
   let outputDir = resolve(options.outputDir || cacheOutputDir);

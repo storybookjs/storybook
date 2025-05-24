@@ -21,8 +21,8 @@ vi.mock('storybook/internal/common', async (importOriginal) => {
         findInstallations: findInstallationsMock,
         getInstalledVersion: getInstalledVersionMock,
         latestVersion: async () => '8.0.0',
-        retrievePackageJson: async () => {},
-        getAllDependencies: async () => ({ storybook: '8.0.0' }),
+        getAllDependencies: () => ({ storybook: '8.0.0' }),
+        getModulePackageJSON: vi.fn(),
       }),
     },
     versions: Object.keys(originalModule.versions).reduce(

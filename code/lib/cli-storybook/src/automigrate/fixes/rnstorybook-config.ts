@@ -41,7 +41,7 @@ export const rnstorybookConfig: Fix<Options> = {
   versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
 
   async check({ packageManager, mainConfigPath }) {
-    const allDependencies = await packageManager.getAllDependencies();
+    const allDependencies = packageManager.getAllDependencies();
 
     if (!allDependencies['@storybook/react-native']) {
       return null;

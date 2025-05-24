@@ -1,6 +1,6 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
-import { paddedLog } from 'storybook/internal/common';
+import { type JsPackageManager, paddedLog } from 'storybook/internal/common';
 import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
 
 import commentJson from 'comment-json';
@@ -11,10 +11,6 @@ import prompts from 'prompts';
 import { dedent } from 'ts-dedent';
 
 import { babelParse, recast, types as t, traverse } from '../babel';
-
-// TODO: @kasperpeulen check how to use the JSPackageManager type from common later
-// Right now there is a mismatch issue with the types because conflicts with baseGenerator.ts
-type JsPackageManager = any;
 
 export const SUPPORTED_ESLINT_EXTENSIONS = ['ts', 'mts', 'cts', 'mjs', 'js', 'cjs', 'json'];
 const UNSUPPORTED_ESLINT_EXTENSIONS = ['yaml', 'yml'];
@@ -156,8 +152,8 @@ export async function extractEslintInfo(packageManager: JsPackageManager): Promi
   isFlatConfig: boolean;
 }> {
   let unsupportedExtension = undefined;
-  const allDependencies = await packageManager.getAllDependencies();
-  const packageJson = await packageManager.retrievePackageJson();
+  const allDependencies = packageManager.getAllDependencies();
+  const { packageJson } = packageManager.primaryPackageJson;
   let eslintConfigFile: string | undefined = undefined;
 
   try {
@@ -245,10 +241,10 @@ export async function configureEslintPlugin({
     }
   } else {
     paddedLog(`Configuring eslint-plugin-storybook in your package.json`);
-    const packageJson = await packageManager.retrievePackageJson();
+    const { packageJson } = packageManager.primaryPackageJson;
     const existingExtends = normalizeExtends(packageJson.eslintConfig?.extends).filter(Boolean);
 
-    await packageManager.writePackageJson({
+    packageManager.writePackageJson({
       ...packageJson,
       eslintConfig: {
         ...packageJson.eslintConfig,

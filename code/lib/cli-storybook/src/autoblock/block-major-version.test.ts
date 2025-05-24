@@ -1,4 +1,6 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { JsPackageManager } from 'storybook/internal/common';
 
 import { blocker, checkUpgrade } from './block-major-version';
 
@@ -106,28 +108,41 @@ describe('checkUpgrade', () => {
 });
 
 describe('blocker', () => {
-  const mockPackageManager = {
-    retrievePackageJson: vi.fn(),
-  };
+  const mockPackageManager = vi.mocked(JsPackageManager.prototype);
+
+  beforeEach(() => {
+    // @ts-expect-error Ignore readonly property
+    mockPackageManager.primaryPackageJson = {
+      packageJson: { devDependencies: {}, dependencies: {} },
+      packageJsonPath: 'some/path',
+      operationDir: 'some/path',
+    };
+    vi.clearAllMocks();
+  });
 
   it('check - returns false if no version found', async () => {
-    mockPackageManager.retrievePackageJson.mockResolvedValue({});
     const result = await blocker.check({ packageManager: mockPackageManager } as any);
     expect(result).toBe(false);
   });
 
   it('check - returns false if version check fails', async () => {
-    mockPackageManager.retrievePackageJson.mockResolvedValue({});
     const result = await blocker.check({ packageManager: mockPackageManager } as any);
     expect(result).toBe(false);
   });
 
   it('check - returns version data with reason if upgrade should be blocked', async () => {
-    mockPackageManager.retrievePackageJson.mockResolvedValue({
-      dependencies: {
-        '@storybook/react': '6.0.0',
+    // @ts-expect-error Ignore readonly property
+    mockPackageManager.primaryPackageJson = {
+      packageJson: {
+        devDependencies: {},
+        dependencies: {
+          '@storybook/react': '6.0.0',
+        },
       },
-    });
+      packageJsonPath: 'some/path',
+      operationDir: 'some/path',
+    };
+
     const result = await blocker.check({ packageManager: mockPackageManager } as any);
     expect(result).toEqual({
       currentVersion: '6.0.0',

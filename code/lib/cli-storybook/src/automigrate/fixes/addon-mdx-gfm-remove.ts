@@ -53,6 +53,7 @@ export const addonMdxGfmRemove: Fix<AddonMdxGfmOptions> = {
       '@storybook/addon-mdx-gfm',
       '--config-dir',
       configDir,
+      '--skip-install',
     ]);
   },
 };

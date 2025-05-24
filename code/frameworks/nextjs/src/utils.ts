@@ -1,4 +1,4 @@
-import { dirname, resolve, sep } from 'node:path';
+import { dirname, sep } from 'node:path';
 
 import { getProjectRoot } from 'storybook/internal/common';
 

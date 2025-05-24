@@ -3,7 +3,8 @@ import type * as fs from 'node:fs/promises';
 
 import { describe, expect, it, vi } from 'vitest';
 
-import type { JsPackageManager, PackageJson } from 'storybook/internal/common';
+import type { PackageJson } from 'storybook/internal/common';
+import { JsPackageManager } from 'storybook/internal/common';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import type { CheckOptions, Fix } from '../types';
@@ -22,13 +23,7 @@ vi.mock('node:fs/promises', async (importOriginal) => {
   };
 });
 
-const mockPackageManager = {
-  retrievePackageJson: vi.fn().mockResolvedValue({
-    dependencies: {},
-    devDependencies: {},
-  }),
-  runPackageCommand: vi.fn(),
-} as unknown as JsPackageManager;
+const mockPackageManager = vi.mocked(JsPackageManager.prototype);
 
 const mockPackageJson = {
   dependencies: {},

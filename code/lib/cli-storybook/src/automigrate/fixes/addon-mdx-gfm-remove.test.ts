@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { JsPackageManager } from 'storybook/internal/common';
+import { JsPackageManager } from 'storybook/internal/common';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import type { CheckOptions, RunOptions } from '../types';
@@ -46,11 +46,7 @@ const mockConfigs = new Map<string, MockConfigFile>();
 // Get reference to mocked readFile
 const readFileMock = vi.mocked(await import('node:fs/promises')).readFile;
 
-const mockPackageManager = {
-  retrievePackageJson: vi.fn(),
-  removeDependencies: vi.fn(),
-  runPackageCommand: vi.fn(),
-} as unknown as JsPackageManager;
+const mockPackageManager = vi.mocked(JsPackageManager.prototype);
 
 const baseCheckOptions: CheckOptions = {
   packageManager: mockPackageManager,
@@ -77,6 +73,7 @@ const typedAddonMdxGfmRemove = addonMdxGfmRemove as Migration;
 describe('addon-mdx-gfm-remove migration', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockPackageManager.runPackageCommand = vi.fn();
     mockConfigs.clear();
   });
 
@@ -167,7 +164,7 @@ describe('addon-mdx-gfm-remove migration', () => {
         result: {
           hasMdxGfm: true,
         },
-        packageManager: mockPackageManager,
+        packageManager: mockPackageManager as JsPackageManager,
         configDir: '.storybook',
       } as RunOptions<AddonMdxGfmOptions>);
 
@@ -176,6 +173,7 @@ describe('addon-mdx-gfm-remove migration', () => {
         '@storybook/addon-mdx-gfm',
         '--config-dir',
         '.storybook',
+        '--skip-install',
       ]);
     });
   });

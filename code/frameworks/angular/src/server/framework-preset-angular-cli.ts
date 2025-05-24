@@ -4,12 +4,13 @@ import { WebpackDefinePlugin, WebpackIgnorePlugin } from '@storybook/builder-web
 
 import { BuilderContext, targetFromTargetString } from '@angular-devkit/architect';
 import { JsonObject, logging } from '@angular-devkit/core';
-import { sync as findUpSync } from 'find-up';
+import { findUpSync } from 'find-up';
 import webpack from 'webpack';
 
 import { getWebpackConfig as getCustomWebpackConfig } from './angular-cli-webpack';
 import { PresetOptions } from './preset-options';
 import { moduleIsAvailable } from './utils/module-is-available';
+import { getProjectRoot } from 'storybook/internal/common';
 
 export async function webpackFinal(baseConfig: webpack.Configuration, options: PresetOptions) {
   if (!moduleIsAvailable('@angular-devkit/build-angular')) {
@@ -88,7 +89,7 @@ async function getBuilderOptions(options: PresetOptions, builderContext: Builder
     ...options.angularBuilderOptions,
     tsConfig:
       options.tsConfig ??
-      findUpSync('tsconfig.json', { cwd: options.configDir }) ??
+      findUpSync('tsconfig.json', { cwd: options.configDir, stopAt: getProjectRoot() }) ??
       browserTargetOptions.tsConfig,
   };
   logger.info(`=> Using angular project with "tsConfig:${builderOptions.tsConfig}"`);

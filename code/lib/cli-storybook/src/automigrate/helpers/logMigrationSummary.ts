@@ -1,6 +1,5 @@
-import { type InstallationMetadata } from 'storybook/internal/common';
+import { type InstallationMetadata, prompt } from 'storybook/internal/common';
 
-import boxen from 'boxen';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
@@ -52,7 +51,7 @@ function getGlossaryMessages(
   return messages;
 }
 
-export function getMigrationSummary({
+export function logMigrationSummary({
   fixResults,
   fixSummary,
   logFile,
@@ -89,9 +88,7 @@ export function getMigrationSummary({
       ? 'Migration check ran with failures'
       : 'Migration check ran successfully';
 
-  return boxen(messages.filter(Boolean).join(segmentDivider), {
-    borderStyle: 'round',
-    padding: 1,
+  return prompt.logBox(messages.filter(Boolean).join(segmentDivider), {
     title,
     borderColor: hasFailures ? 'red' : 'green',
   });

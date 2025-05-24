@@ -1,15 +1,15 @@
-import { existsSync, readFileSync } from 'node:fs';
-import { readFile, writeFile } from 'node:fs/promises';
-import { dirname, resolve } from 'node:path';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 
 // eslint-disable-next-line depend/ban-dependencies
 import { type CommonOptions, execaCommand, execaCommandSync } from 'execa';
+import { findUpMultipleSync, findUpSync } from 'find-up';
 import picocolors from 'picocolors';
 import { gt, satisfies } from 'semver';
 import invariant from 'tiny-invariant';
-import { dedent } from 'ts-dedent';
 
 import { HandledError } from '../utils/HandledError';
+import { getProjectRoot } from '../utils/paths';
 import storybookPackagesVersions from '../versions';
 import type { PackageJson, PackageJsonWithDepsAndDevDeps } from './PackageJson';
 import type { InstallationMetadata } from './types';
@@ -46,83 +46,76 @@ export function getPackageDetails(pkg: string): [string, string?] {
 
 interface JsPackageManagerOptions {
   cwd?: string;
+  configDir?: string;
 }
+
 export abstract class JsPackageManager {
-  public abstract readonly type: PackageManagerName;
+  abstract readonly type: PackageManagerName;
 
-  public abstract initPackageJson(): Promise<void>;
+  /** The path to the primary package.json file (contains the `storybook` dependency). */
+  readonly primaryPackageJson: {
+    packageJsonPath: string;
+    operationDir: string;
+    packageJson: PackageJsonWithDepsAndDevDeps;
+  };
 
-  public abstract getRunStorybookCommand(): string;
+  /** The paths to all package.json files in the project root. */
+  readonly packageJsonPaths: string[];
 
-  public abstract getRunCommand(command: string): string;
+  /**
+   * The path to the Storybook instance directory. This is used to find the primary package.json
+   * file in a repository.
+   */
+  readonly #instanceDir: string;
 
-  public abstract getRemoteRunCommand(): string;
-
-  public readonly cwd?: string;
-
-  public abstract getPackageJSON(
-    packageName: string,
-    basePath?: string
-  ): Promise<PackageJson | null>;
-
-  /** Get the INSTALLED version of a package from the package.json file */
-  async getPackageVersion(packageName: string, basePath = this.cwd): Promise<string | null> {
-    const packageJSON = await this.getPackageJSON(packageName, basePath);
-    return packageJSON ? (packageJSON.version ?? null) : null;
-  }
+  /** The current working directory. */
+  protected readonly cwd: string;
 
   constructor(options?: JsPackageManagerOptions) {
     this.cwd = options?.cwd || process.cwd();
+    this.#instanceDir = options?.configDir ? dirname(join(this.cwd, options.configDir)) : this.cwd;
+    this.packageJsonPaths = JsPackageManager.listAllPackageJsonPaths(this.#instanceDir);
+    this.primaryPackageJson = this.#getPrimaryPackageJson();
   }
 
+  /** Runs arbitrary package scripts. */
+  abstract getRunCommand(command: string): string;
   /**
-   * Detect whether Storybook gets initialized in a mono-repository/workspace environment The cwd
-   * doesn't have to be the root of the monorepo, it can be a subdirectory
-   *
-   * @returns `true`, if Storybook is initialized inside a mono-repository/workspace
+   * Run a command from a local or remote. Fetches a package from the registry without installing it
+   * as a dependency, hotloads it, and runs whatever default command binary it exposes.
    */
-  public isStorybookInMonorepo() {
-    let cwd = process.cwd();
+  abstract getRemoteRunCommand(pkg: string, args: string[], specifier?: string): string;
 
-    while (true) {
-      try {
-        const turboJsonPath = `${cwd}/turbo.json`;
-        const rushJsonPath = `${cwd}/rush.json`;
+  /** Get the package.json file for a given module. */
+  abstract getModulePackageJSON(packageName: string): PackageJson | null;
 
-        if (existsSync(turboJsonPath) || existsSync(rushJsonPath)) {
-          return true;
-        }
+  isStorybookInMonorepo() {
+    const turboJsonPath = findUpSync(`turbo.json`, { stopAt: getProjectRoot() });
+    const rushJsonPath = findUpSync(`rush.json`, { stopAt: getProjectRoot() });
+    const nxJsonPath = findUpSync(`nx.json`, { stopAt: getProjectRoot() });
 
-        const packageJsonPath = require.resolve(`${cwd}/package.json`);
+    if (turboJsonPath || rushJsonPath || nxJsonPath) {
+      return true;
+    }
 
-        // read packagejson with readFileSync
-        const packageJsonFile = readFileSync(packageJsonPath, 'utf8');
-        const packageJson = JSON.parse(packageJsonFile) as PackageJsonWithDepsAndDevDeps;
+    const packageJsonPaths = findUpMultipleSync(`package.json`, { stopAt: getProjectRoot() });
+    if (packageJsonPaths.length === 0) {
+      return false;
+    }
 
-        if (packageJson.workspaces) {
-          return true;
-        }
-      } catch (err) {
-        // Package.json not found or invalid in current directory
+    for (const packageJsonPath of packageJsonPaths) {
+      const packageJsonFile = readFileSync(packageJsonPath, 'utf8');
+      const packageJson = JSON.parse(packageJsonFile) as PackageJsonWithDepsAndDevDeps;
+
+      if (packageJson.workspaces) {
+        return true;
       }
-
-      // Move up to the parent directory
-      const parentDir = dirname(cwd);
-
-      // Check if we have reached the root of the filesystem
-      if (parentDir === cwd) {
-        break;
-      }
-
-      // Update cwd to the parent directory
-      cwd = parentDir;
     }
 
     return false;
   }
 
-  /** Install dependencies listed in `package.json` */
-  public async installDependencies() {
+  async installDependencies() {
     logger.log('Installing dependencies...');
     logger.log();
 
@@ -134,88 +127,43 @@ export abstract class JsPackageManager {
     }
   }
 
-  packageJsonPath(): string {
-    if (!this.cwd) {
-      throw new Error('Missing cwd');
-    }
-    return resolve(this.cwd, 'package.json');
-  }
-
-  async readPackageJson(): Promise<PackageJson> {
-    const packageJsonPath = this.packageJsonPath();
-    if (!existsSync(packageJsonPath)) {
-      throw new Error(`Could not read package.json file at ${packageJsonPath}`);
-    }
-
-    const jsonContent = await readFile(packageJsonPath, 'utf8');
-    return JSON.parse(jsonContent);
-  }
-
-  async writePackageJson(packageJson: PackageJson) {
-    const packageJsonToWrite = { ...packageJson };
-    // make sure to not accidentally add empty fields
-    if (
-      packageJsonToWrite.dependencies &&
-      Object.keys(packageJsonToWrite.dependencies).length === 0
-    ) {
-      delete packageJsonToWrite.dependencies;
-    }
-    if (
-      packageJsonToWrite.devDependencies &&
-      Object.keys(packageJsonToWrite.devDependencies).length === 0
-    ) {
-      delete packageJsonToWrite.devDependencies;
-    }
-    if (
-      packageJsonToWrite.peerDependencies &&
-      Object.keys(packageJsonToWrite.peerDependencies).length === 0
-    ) {
-      delete packageJsonToWrite.peerDependencies;
-    }
-
-    const content = `${JSON.stringify(packageJsonToWrite, null, 2)}\n`;
-    await writeFile(this.packageJsonPath(), content, 'utf8');
-  }
-
-  /**
-   * Read the `package.json` file available in the directory the command was call from If there is
-   * no `package.json` it will create one.
-   */
-  public async retrievePackageJson(): Promise<PackageJsonWithDepsAndDevDeps> {
-    let packageJson;
-    try {
-      packageJson = await this.readPackageJson();
-    } catch (err) {
-      const errMessage = String(err);
-      if (errMessage.includes('Could not read package.json')) {
-        await this.initPackageJson();
-        packageJson = await this.readPackageJson();
-      } else {
-        throw new Error(
-          dedent`
-            There was an error while reading the package.json file at ${this.packageJsonPath()}: ${errMessage}
-            Please fix the error and try again.
-          `
-        );
-      }
-    }
+  /** Read the `package.json` file available in the provided directory */
+  static getPackageJson(packageJsonPath: string): PackageJsonWithDepsAndDevDeps {
+    const jsonContent = readFileSync(packageJsonPath, 'utf8');
+    const packageJSON = JSON.parse(jsonContent);
 
     return {
-      ...packageJson,
-      dependencies: { ...packageJson.dependencies },
-      devDependencies: { ...packageJson.devDependencies },
-      peerDependencies: { ...packageJson.peerDependencies },
+      ...packageJSON,
+      dependencies: { ...packageJSON.dependencies },
+      devDependencies: { ...packageJSON.devDependencies },
+      peerDependencies: { ...packageJSON.peerDependencies },
     };
   }
 
-  public async getAllDependencies(): Promise<Partial<Record<string, string>>> {
-    const { dependencies, devDependencies, peerDependencies } = await this.retrievePackageJson();
+  writePackageJson(packageJson: PackageJson, directory = this.cwd) {
+    const packageJsonToWrite = { ...packageJson };
+    const dependencyTypes = ['dependencies', 'devDependencies', 'peerDependencies'] as const;
+
+    // Remove empty dependency objects
+    dependencyTypes.forEach((type) => {
+      if (packageJsonToWrite[type] && Object.keys(packageJsonToWrite[type]).length === 0) {
+        delete packageJsonToWrite[type];
+      }
+    });
+
+    const content = `${JSON.stringify(packageJsonToWrite, null, 2)}\n`;
+    writeFileSync(resolve(directory, 'package.json'), content, 'utf8');
+  }
+
+  getAllDependencies() {
+    const { packageJson } = this.primaryPackageJson;
+    const { dependencies, devDependencies, peerDependencies } = packageJson;
 
     return {
       ...dependencies,
       ...devDependencies,
       ...peerDependencies,
-    };
+    } as Record<string, string>;
   }
 
   /**
@@ -238,34 +186,29 @@ export abstract class JsPackageManager {
     options: {
       skipInstall?: boolean;
       installAsDevDependencies?: boolean;
-      packageJson?: PackageJson;
       writeOutputToFile?: boolean;
     },
     dependencies: string[]
   ) {
     const { skipInstall, writeOutputToFile = true } = options;
 
+    const { operationDir, packageJson } = this.primaryPackageJson;
+
     if (skipInstall) {
-      const { packageJson } = options;
-      invariant(packageJson, 'Missing packageJson.');
+      const dependenciesMap: Record<string, string> = {};
 
-      const dependenciesMap = dependencies.reduce((acc, dep) => {
+      for (const dep of dependencies) {
         const [packageName, packageVersion] = getPackageDetails(dep);
-        return { ...acc, [packageName]: packageVersion };
-      }, {});
-
-      if (options.installAsDevDependencies) {
-        packageJson.devDependencies = {
-          ...packageJson.devDependencies,
-          ...dependenciesMap,
-        };
-      } else {
-        packageJson.dependencies = {
-          ...packageJson.dependencies,
-          ...dependenciesMap,
-        };
+        const latestVersion = await this.getVersion(packageName);
+        dependenciesMap[packageName] = packageVersion ?? latestVersion;
       }
-      await this.writePackageJson(packageJson);
+
+      const targetDeps = options.installAsDevDependencies
+        ? packageJson.devDependencies
+        : packageJson.dependencies;
+
+      Object.assign(targetDeps, dependenciesMap);
+      this.writePackageJson(packageJson, operationDir);
     } else {
       try {
         await this.runAddDeps(
@@ -282,48 +225,42 @@ export abstract class JsPackageManager {
   }
 
   /**
-   * Remove dependencies from a project using `yarn remove` or `npm uninstall`.
+   * Removing dependencies from the package.json file, which is found first starting from the
+   * instance root. The method does not run a package manager install like `npm install`.
    *
    * @example
    *
    * ```ts
-   * removeDependencies(options, [`@storybook/react`]);
+   * removeDependencies([`@storybook/react`]);
    * ```
    *
-   * @param {Object} options Contains `skipInstall`, `packageJson` and `installAsDevDependencies`
-   *   which we use to determine how we install packages.
-   * @param {Array} dependencies Contains a list of packages to remove.
+   * @param dependencies Contains a list of packages to remove.
    */
-  public async removeDependencies(
-    options: {
-      skipInstall?: boolean;
-      packageJson?: PackageJson;
-    },
-    dependencies: string[]
-  ): Promise<void> {
-    const { skipInstall } = options;
-
-    if (skipInstall) {
-      const { packageJson } = options;
-
-      invariant(packageJson, 'Missing packageJson.');
-      dependencies.forEach((dep) => {
-        if (packageJson.devDependencies) {
-          delete packageJson.devDependencies[dep];
-        }
-        if (packageJson.dependencies) {
-          delete packageJson.dependencies[dep];
-        }
-      });
-
-      await this.writePackageJson(packageJson);
-    } else {
+  async removeDependencies(dependencies: string[]): Promise<void> {
+    for (const pjPath of this.packageJsonPaths) {
       try {
-        await this.runRemoveDeps(dependencies);
+        const currentPackageJson = JsPackageManager.getPackageJson(pjPath);
+        let modified = false;
+        dependencies.forEach((dep) => {
+          if (currentPackageJson.dependencies && currentPackageJson.dependencies[dep]) {
+            delete currentPackageJson.dependencies[dep];
+            modified = true;
+          }
+          if (currentPackageJson.devDependencies && currentPackageJson.devDependencies[dep]) {
+            delete currentPackageJson.devDependencies[dep];
+            modified = true;
+          }
+          if (currentPackageJson.peerDependencies && currentPackageJson.peerDependencies[dep]) {
+            delete currentPackageJson.peerDependencies[dep];
+            modified = true;
+          }
+        });
+        if (modified) {
+          this.writePackageJson(currentPackageJson, dirname(pjPath));
+          break;
+        }
       } catch (e) {
-        logger.error('An error occurred while removing dependencies.');
-        logger.log(String(e));
-        throw new HandledError(e);
+        logger.warn(`Could not process ${pjPath} for dependency removal: ${String(e)}`);
       }
     }
   }
@@ -434,6 +371,7 @@ export abstract class JsPackageManager {
     const latestVersionSatisfyingTheConstraint = versions
       .reverse()
       .find((version) => satisfies(version, constraint));
+
     invariant(
       latestVersionSatisfyingTheConstraint != null,
       `No version satisfying the constraint: ${packageName}${constraint}`
@@ -441,36 +379,40 @@ export abstract class JsPackageManager {
     return latestVersionSatisfyingTheConstraint;
   }
 
-  public async addStorybookCommandInScripts(options?: { port: number; preCommand?: string }) {
+  public addStorybookCommandInScripts(options?: { port: number; preCommand?: string }) {
     const sbPort = options?.port ?? 6006;
     const storybookCmd = `storybook dev -p ${sbPort}`;
-
     const buildStorybookCmd = `storybook build`;
 
     const preCommand = options?.preCommand ? this.getRunCommand(options.preCommand) : undefined;
-    await this.addScripts({
+
+    this.addScripts({
       storybook: [preCommand, storybookCmd].filter(Boolean).join(' && '),
       'build-storybook': [preCommand, buildStorybookCmd].filter(Boolean).join(' && '),
     });
   }
 
-  public async addScripts(scripts: Record<string, string>) {
-    const packageJson = await this.retrievePackageJson();
-    await this.writePackageJson({
-      ...packageJson,
-      scripts: {
-        ...packageJson.scripts,
-        ...scripts,
+  public addScripts(scripts: Record<string, string>) {
+    const { operationDir, packageJson } = this.#getPrimaryPackageJson();
+
+    this.writePackageJson(
+      {
+        ...packageJson,
+        scripts: {
+          ...packageJson.scripts,
+          ...scripts,
+        },
       },
-    });
+      operationDir
+    );
   }
 
-  public async addPackageResolutions(versions: Record<string, string>) {
-    const packageJson = await this.retrievePackageJson();
+  public addPackageResolutions(versions: Record<string, string>) {
+    const { operationDir, packageJson } = this.#getPrimaryPackageJson();
+
     const resolutions = this.getResolutions(packageJson, versions);
-    this.writePackageJson({ ...packageJson, ...resolutions });
+    this.writePackageJson({ ...packageJson, ...resolutions }, operationDir);
   }
-
   protected abstract runInstall(): Promise<void>;
 
   protected abstract runAddDeps(
@@ -479,7 +421,7 @@ export abstract class JsPackageManager {
     writeOutputToFile?: boolean
   ): Promise<void>;
 
-  protected abstract runRemoveDeps(dependencies: string[]): Promise<void>;
+  protected abstract runRemoveDeps(dependencies: string[], cwd?: string): Promise<void>;
 
   protected abstract getResolutions(
     packageJson: PackageJson,
@@ -600,5 +542,80 @@ export abstract class JsPackageManager {
       }
       return '';
     }
+  }
+
+  /**
+   * Searches for a dependency/devDependency in all package.json files and returns the version of
+   * the dependency.
+   */
+  public getDependencyVersion(dependency: string): string | null {
+    const dependencyVersion = this.packageJsonPaths
+      .map((path) => {
+        const packageJson = JsPackageManager.getPackageJson(path);
+        return packageJson.dependencies?.[dependency] ?? packageJson.devDependencies?.[dependency];
+      })
+      .filter(Boolean);
+    return dependencyVersion[0] ?? null;
+  }
+
+  // Helper to read and check a package.json for storybook dependency
+  static hasStorybookDependency(packageJsonPath: string): boolean {
+    try {
+      const content = readFileSync(packageJsonPath, 'utf-8');
+      const packageJson = JSON.parse(content) as PackageJsonWithDepsAndDevDeps;
+      return !!(
+        (packageJson.dependencies && packageJson.dependencies['storybook']) ||
+        (packageJson.devDependencies && packageJson.devDependencies['storybook'])
+      );
+    } catch (error) {
+      return false; // If file doesn't exist or is unreadable, or JSON is invalid
+    }
+  }
+
+  /**
+   * Find the primary package.json file in the project root. The primary package.json file is the
+   * one that contains the `storybook` dependency. If no primary package.json file is found, the
+   * function will return the package.json file in the project root.
+   */
+  #findPrimaryPackageJsonPath(): string {
+    for (const packageJsonPath of this.packageJsonPaths) {
+      const hasStorybook = JsPackageManager.hasStorybookDependency(packageJsonPath);
+      if (hasStorybook) {
+        return packageJsonPath;
+      }
+    }
+
+    // Fall back to cwd package.json
+    return this.packageJsonPaths[0] ?? resolve(this.cwd, 'package.json');
+  }
+
+  /** List all package.json files starting from the given directory and stopping at the project root. */
+  static listAllPackageJsonPaths(instanceDir: string): string[] {
+    return findUpMultipleSync('package.json', {
+      cwd: instanceDir,
+      stopAt: getProjectRoot(),
+    });
+  }
+
+  /**
+   * Get the primary package.json file and its operation directory. The primary package.json file is
+   * the one that contains the storybook dependency. If the primary package.json file is not found,
+   * the function returns information about thepackage.json file in the current working directory.
+   */
+  #getPrimaryPackageJson(): {
+    packageJsonPath: string;
+    operationDir: string;
+    packageJson: PackageJsonWithDepsAndDevDeps;
+  } {
+    const finalTargetPackageJsonPath = this.#findPrimaryPackageJsonPath();
+
+    const operationDir = dirname(finalTargetPackageJsonPath);
+    return {
+      packageJsonPath: finalTargetPackageJsonPath,
+      operationDir,
+      get packageJson() {
+        return JsPackageManager.getPackageJson(finalTargetPackageJsonPath);
+      },
+    };
   }
 }

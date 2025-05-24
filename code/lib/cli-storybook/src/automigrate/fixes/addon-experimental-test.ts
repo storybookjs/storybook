@@ -27,9 +27,8 @@ export const addonExperimentalTest: Fix<AddonExperimentalTestOptions> = {
   promptType: 'auto',
 
   async check({ packageManager }) {
-    const experimentalAddonTestVersion = await packageManager.getPackageVersion(
-      '@storybook/experimental-addon-test'
-    );
+    const experimentalAddonTestVersion =
+      packageManager.getModulePackageJSON('@storybook/experimental-addon-test')?.version ?? null;
 
     if (!experimentalAddonTestVersion) {
       return null;
@@ -103,16 +102,16 @@ export const addonExperimentalTest: Fix<AddonExperimentalTestOptions> = {
 
     // Update package.json if needed
     if (!dryRun) {
-      const packageJson = await packageManager.retrievePackageJson();
+      const { packageJson } = packageManager.primaryPackageJson;
       const devDependencies = packageJson.devDependencies ?? {};
-      const storybookVersion = await packageManager.getPackageVersion('storybook');
+      const storybookVersion = packageManager.getModulePackageJSON('storybook')?.version ?? null;
       const isExperimentalAddonTestDevDependency = Object.keys(devDependencies).includes(
         '@storybook/experimental-addon-test'
       );
 
-      await packageManager.removeDependencies({}, ['@storybook/experimental-addon-test']);
+      await packageManager.removeDependencies(['@storybook/experimental-addon-test']);
       await packageManager.addDependencies(
-        { installAsDevDependencies: isExperimentalAddonTestDevDependency },
+        { installAsDevDependencies: isExperimentalAddonTestDevDependency, skipInstall: true },
         [`@storybook/addon-vitest@${storybookVersion}`]
       );
     }

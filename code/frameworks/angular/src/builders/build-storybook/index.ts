@@ -1,4 +1,4 @@
-import { getEnvConfig, versions } from 'storybook/internal/common';
+import { getEnvConfig, getProjectRoot, versions } from 'storybook/internal/common';
 import { buildStaticStandalone, withTelemetry } from 'storybook/internal/core-server';
 import { addToGlobalContext } from 'storybook/internal/telemetry';
 import { CLIOptions } from 'storybook/internal/types';
@@ -21,7 +21,7 @@ import {
 } from '@angular-devkit/build-angular/src/builders/browser/schema';
 import { JsonObject } from '@angular-devkit/core';
 import { findPackageSync } from 'fd-package-json';
-import { sync as findUpSync } from 'find-up';
+import { findUpSync } from 'find-up';
 import { from, of, throwError } from 'rxjs';
 import { catchError, map, mapTo, switchMap } from 'rxjs/operators';
 
@@ -70,7 +70,10 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
 ): BuilderOutputLike => {
   const builder = from(setup(options, context)).pipe(
     switchMap(({ tsConfig }) => {
-      const docTSConfig = findUpSync('tsconfig.doc.json', { cwd: options.configDir });
+      const docTSConfig = findUpSync('tsconfig.doc.json', {
+        cwd: options.configDir,
+        stopAt: getProjectRoot(),
+      });
       const runCompodoc$ = options.compodoc
         ? runCompodoc(
             { compodocArgs: options.compodocArgs, tsconfig: docTSConfig ?? tsConfig },

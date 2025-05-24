@@ -2,7 +2,7 @@ import { stripVTControlCharacters } from 'node:util';
 
 import { expect, test, vi } from 'vitest';
 
-import { JsPackageManagerFactory } from 'storybook/internal/common';
+import { JsPackageManagerFactory, prompt as promptRaw } from 'storybook/internal/common';
 import { logger as loggerRaw } from 'storybook/internal/node-logger';
 
 import { autoblock } from './index';
@@ -12,8 +12,11 @@ vi.mock('node:fs/promises', async (importOriginal) => ({
   ...(await importOriginal<any>()),
   writeFile: vi.fn(),
 }));
-vi.mock('boxen', () => ({
-  default: vi.fn((x) => x),
+vi.mock('storybook/internal/common', async (importOriginal) => ({
+  ...(await importOriginal<any>()),
+  prompt: {
+    logBox: vi.fn((x) => x),
+  },
 }));
 vi.mock('storybook/internal/node-logger', () => ({
   logger: {
@@ -24,6 +27,7 @@ vi.mock('storybook/internal/node-logger', () => ({
 }));
 
 const logger = vi.mocked(loggerRaw);
+const prompt = vi.mocked(promptRaw);
 
 const blockers = {
   alwaysPass: createBlocker({
@@ -78,7 +82,7 @@ test('1 fail', async () => {
   ]);
 
   expect(result).toBe('alwaysFail');
-  expect(stripVTControlCharacters(logger.plain.mock.calls[0][0])).toMatchInlineSnapshot(`
+  expect(stripVTControlCharacters(prompt.logBox.mock.calls[0][0])).toMatchInlineSnapshot(`
     "Storybook has found potential blockers in your project that need to be resolved before upgrading:
 
     Always fail
@@ -95,7 +99,7 @@ test('multiple fails', async () => {
     Promise.resolve({ blocker: blockers.alwaysFail }),
     Promise.resolve({ blocker: blockers.alwaysFail2 }),
   ]);
-  expect(stripVTControlCharacters(logger.plain.mock.calls[0][0])).toMatchInlineSnapshot(`
+  expect(stripVTControlCharacters(prompt.logBox.mock.calls[0][0])).toMatchInlineSnapshot(`
     "Storybook has found potential blockers in your project that need to be resolved before upgrading:
 
     Always fail

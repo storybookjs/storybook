@@ -14,7 +14,6 @@ import { readCsf } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 import type {
-  CLIOptions,
   CoreConfig,
   Indexer,
   Options,

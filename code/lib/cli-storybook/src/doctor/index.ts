@@ -2,10 +2,10 @@ import { createWriteStream } from 'node:fs';
 import { rename, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { JsPackageManagerFactory, temporaryFile } from 'storybook/internal/common';
-import type { PackageManagerName } from 'storybook/internal/common';
+import { prompt, temporaryFile } from 'storybook/internal/common';
+import type { JsPackageManager, PackageManagerName } from 'storybook/internal/common';
+import type { StorybookConfigRaw } from 'storybook/internal/types';
 
-import boxen from 'boxen';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
@@ -58,29 +58,22 @@ export const doctor = async ({
   let foundIssues = false;
   const logDiagnostic = (title: string, message: string) => {
     foundIssues = true;
-    logger.info(
-      boxen(message, {
-        borderStyle: 'round',
-        padding: 1,
-        title,
-        borderColor: '#F1618C',
-      })
-    );
+    prompt.logBox(message, {
+      title,
+    });
   };
 
   logger.info('🩺 The doctor is checking the health of your Storybook..');
 
-  const packageManager = JsPackageManagerFactory.getPackageManager({ force: pkgMgr });
-  let storybookVersion;
-  let mainConfig;
+  let storybookVersion: string | undefined;
+  let mainConfig: StorybookConfigRaw | undefined;
+  let packageManager!: JsPackageManager;
 
   try {
-    const storybookData = await getStorybookData({
+    ({ storybookVersion, mainConfig, packageManager } = await getStorybookData({
       configDir: userSpecifiedConfigDir,
-      packageManager,
-    });
-    storybookVersion = storybookData.storybookVersion;
-    mainConfig = storybookData.mainConfig;
+      packageManagerName: pkgMgr,
+    }));
   } catch (err: any) {
     if (err.message.includes('No configuration files have been found')) {
       logger.info(
@@ -105,7 +98,7 @@ export const doctor = async ({
     throw new Error('mainConfig is undefined');
   }
 
-  const allDependencies = (await packageManager.getAllDependencies()) as Record<string, string>;
+  const allDependencies = packageManager.getAllDependencies() as Record<string, string>;
 
   if (!('storybook' in allDependencies)) {
     logDiagnostic(

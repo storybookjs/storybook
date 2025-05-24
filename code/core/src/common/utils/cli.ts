@@ -78,7 +78,7 @@ export async function getCoercedStorybookVersion(packageManager: JsPackageManage
     await Promise.all(
       Object.keys(rendererPackages).map(async (pkg) => ({
         name: pkg,
-        version: await packageManager.getPackageVersion(pkg),
+        version: packageManager.getModulePackageJSON(pkg)?.version ?? null,
       }))
     )
   ).filter(({ version }) => !!version);

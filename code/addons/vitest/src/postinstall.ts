@@ -7,6 +7,7 @@ import {
   JsPackageManagerFactory,
   extractProperFrameworkName,
   formatFileContent,
+  getProjectRoot,
   loadAllPresets,
   loadMainConfig,
   scanAndTransformFiles,
@@ -39,7 +40,10 @@ const EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.cts', '.mts', '.cjs', '.mjs'
 const addonA11yName = '@storybook/addon-a11y';
 
 const findFile = async (basename: string, extensions = EXTENSIONS) =>
-  findUp(extensions.map((ext) => basename + ext));
+  findUp(
+    extensions.map((ext) => basename + ext),
+    { stopAt: getProjectRoot() }
+  );
 
 export default async function postInstall(options: PostinstallOptions) {
   printSuccess(
@@ -56,13 +60,11 @@ export default async function postInstall(options: PostinstallOptions) {
   });
 
   const info = await getStorybookInfo(options);
-  const allDeps = await packageManager.getAllDependencies();
+  const allDeps = packageManager.getAllDependencies();
   // only install these dependencies if they are not already installed
   const dependencies = ['vitest', '@vitest/browser', 'playwright'].filter((p) => !allDeps[p]);
   const vitestVersionSpecifier = await packageManager.getInstalledVersion('vitest');
   const coercedVitestVersion = vitestVersionSpecifier ? coerce(vitestVersionSpecifier) : null;
-  // if Vitest is installed, we use the same version to keep consistency across Vitest packages
-  const vitestVersionToInstall = vitestVersionSpecifier ?? 'latest';
 
   const mainJsPath = serverResolve(resolve(options.configDir, 'main')) as string;
   const config = await readConfig(mainJsPath);
@@ -88,11 +90,11 @@ export default async function postInstall(options: PostinstallOptions) {
           });
 
     if (out.migrateToNextjsVite) {
-      await packageManager.addDependencies({ installAsDevDependencies: true }, [
+      await packageManager.addDependencies({ installAsDevDependencies: true, skipInstall: true }, [
         `@storybook/nextjs-vite@${versions['@storybook/nextjs-vite']}`,
       ]);
 
-      await packageManager.removeDependencies({}, ['@storybook/nextjs']);
+      await packageManager.removeDependencies(['@storybook/nextjs']);
 
       traverse(config._ast, {
         StringLiteral(path) {
@@ -255,19 +257,23 @@ export default async function postInstall(options: PostinstallOptions) {
 
   const versionedDependencies = dependencies.map((p) => {
     if (p.includes('vitest')) {
-      return `${p}@${vitestVersionToInstall ?? 'latest'}`;
+      return vitestVersionSpecifier ? `${p}@${vitestVersionSpecifier}` : p;
     }
 
     return p;
   });
 
   if (versionedDependencies.length > 0) {
+    await packageManager.addDependencies(
+      { installAsDevDependencies: true, skipInstall: true },
+      versionedDependencies
+    );
     logger.line(1);
     logger.plain(`${step} Installing dependencies:`);
     logger.plain(colors.gray('  ' + versionedDependencies.join(', ')));
-
-    await packageManager.addDependencies({ installAsDevDependencies: true }, versionedDependencies);
   }
+
+  await packageManager.installDependencies();
 
   logger.line(1);
   logger.plain(`${step} Configuring Playwright with Chromium (this might take some time):`);
@@ -521,8 +527,8 @@ export default async function postInstall(options: PostinstallOptions) {
 }
 
 async function getStorybookInfo({ configDir, packageManager: pkgMgr }: PostinstallOptions) {
-  const packageManager = JsPackageManagerFactory.getPackageManager({ force: pkgMgr });
-  const packageJson = await packageManager.retrievePackageJson();
+  const packageManager = JsPackageManagerFactory.getPackageManager({ force: pkgMgr, configDir });
+  const { packageJson } = packageManager.primaryPackageJson;
 
   const config = await loadMainConfig({ configDir, noCache: true });
   const { framework } = config;
@@ -536,8 +542,8 @@ async function getStorybookInfo({ configDir, packageManager: pkgMgr }: Postinsta
     overridePresets: [
       require.resolve('storybook/internal/core-server/presets/common-override-preset'),
     ],
-    configDir,
     packageJson,
+    configDir,
     isCritical: true,
   });
 

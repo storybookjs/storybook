@@ -21,19 +21,19 @@
   "license": "MIT",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
+      "types": "./dist/index.d.mts",
       "node": "./dist/index.js",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
     },
     "./preset": {
-      "types": "./dist/index.d.ts",
+      "types": "./dist/index.d.mts",
       "node": "./dist/index.js",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
     },
     "./dist/loader": {
-      "types": "./dist/loader.d.ts",
+      "types": "./dist/loader.d.mts",
       "import": "./dist/loader.mjs",
       "require": "./dist/loader.js"
     },
@@ -41,12 +41,12 @@
   },
   "main": "dist/index.js",
   "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
+  "types": "dist/index.d.mts",
   "files": [
     "dist/**/*",
     "README.md",
     "*.js",
-    "*.d.ts",
+    "*.d.mts",
     "!src/**/*"
   ],
   "scripts": {

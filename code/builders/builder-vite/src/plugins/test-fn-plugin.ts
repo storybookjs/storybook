@@ -8,7 +8,7 @@ export async function storybookTestFn(): Promise<Plugin> {
 
   return {
     name: 'storybook:test-function',
-    enforce: 'pre',
+    enforce: 'post',
     async transform(src, id) {
       if (!storiesRegex.test(id)) {
         return undefined;

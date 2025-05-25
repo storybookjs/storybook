@@ -35,7 +35,7 @@ describe('test fn', () => {
     `);
   });
 
-  it.only('indexes test functions', () => {
+  it('indexes test functions', () => {
     const { entries } = getIndex(
       `
           import { config } from '#.storybook/preview'

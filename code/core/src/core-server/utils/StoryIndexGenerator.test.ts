@@ -102,6 +102,7 @@ describe('StoryIndexGenerator', () => {
             "render": 0,
             "storyFn": 0,
             "tags": 1,
+            "test": 0,
           }
         `);
       });
@@ -550,6 +551,7 @@ describe('StoryIndexGenerator', () => {
             "render": 1,
             "storyFn": 1,
             "tags": 5,
+            "test": 0,
           }
         `);
       });
@@ -830,6 +832,7 @@ describe('StoryIndexGenerator', () => {
             "render": 1,
             "storyFn": 1,
             "tags": 5,
+            "test": 0,
           }
         `);
       });

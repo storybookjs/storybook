@@ -10,7 +10,7 @@ export default async function loader(
   meta: any
 ) {
   const callback = this.async();
-  const storiesRegex = /\.stories\.(tsx?|jsx?|svelte|vue)$/;
+  const storiesRegex = /\.stories\.(tsx?|jsx?)$/;
 
   try {
     // Only process story files

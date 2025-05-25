@@ -4,7 +4,7 @@ import type { Plugin } from 'vite';
 
 /** This transforms the test function of a story into another story */
 export async function storybookTestFn(): Promise<Plugin> {
-  const storiesRegex = /\.stories\.(tsx?|jsx?|svelte|vue)$/;
+  const storiesRegex = /\.stories\.(tsx?|jsx?)$/;
 
   return {
     name: 'storybook:test-function',

@@ -219,7 +219,7 @@ export default async (
           ],
         },
         {
-          test: /\.stories\.(tsx?|jsx?|svelte|vue)$/,
+          test: /\.stories\.(tsx?|jsx?)$/,
           exclude: /node_modules/,
           enforce: 'post',
           use: [

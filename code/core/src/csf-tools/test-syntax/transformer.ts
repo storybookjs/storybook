@@ -29,6 +29,10 @@ export async function testTransform({
     makeTitle: (title) => title || 'unknown',
   }).parse();
 
+  if (!parsed._metaIsFactory) {
+    return code;
+  }
+
   const ast = parsed._ast;
 
   const metaExportName = parsed._metaVariableName ?? 'meta';

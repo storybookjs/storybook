@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import dedent from 'ts-dedent';
+
 import { testTransform as originalTransform } from './transformer';
 
 vi.mock('storybook/internal/common', async (importOriginal) => {
@@ -29,6 +31,19 @@ const transform = async ({ code = '', fileName = 'src/components/Button.stories.
 
 describe('transformer', () => {
   describe('test syntax', () => {
+    it('should no-op in non-CSF4 stories', async () => {
+      const code = dedent`
+        export default {};
+        export const Primary = {};
+      `;
+
+      const result = await transform({ code });
+
+      expect(result.code).toMatchInlineSnapshot(`
+        export default {};
+        export const Primary = {};
+      `);
+    });
     it('should add test statement to const declared exported stories', async () => {
       const code = `
         import preview from '#.storybook/preview';

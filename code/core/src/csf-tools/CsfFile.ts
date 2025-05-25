@@ -277,6 +277,17 @@ export class CsfFile {
 
   imports: string[];
 
+  _storyTests: Record<
+    string,
+    Array<{
+      node: t.Node;
+      function: t.FunctionExpression | t.ArrowFunctionExpression;
+      name: string;
+      id: string;
+      options: any;
+    }>
+  > = {};
+
   constructor(ast: t.File, options: CsfOptions, file: BabelFile) {
     this._ast = ast;
     this._file = file;
@@ -671,6 +682,39 @@ export class CsfFile {
               story.name = storyName;
             }
           }
+          // B.test('foo', () => {}, options)
+          if (
+            t.isCallExpression(expression) &&
+            t.isMemberExpression(expression.callee) &&
+            t.isIdentifier(expression.callee.object) &&
+            t.isIdentifier(expression.callee.property) &&
+            expression.callee.property.name === 'test' &&
+            expression.arguments.length >= 2 &&
+            t.isStringLiteral(expression.arguments[0]) &&
+            (t.isFunctionExpression(expression.arguments[1]) ||
+              t.isArrowFunctionExpression(expression.arguments[1]))
+          ) {
+            const exportName = expression.callee.object.name;
+            const testName = expression.arguments[0].value;
+            const testFunction = expression.arguments[1];
+            const testOptions = expression.arguments[2] || null;
+
+            if (!self._storyTests[exportName]) {
+              self._storyTests[exportName] = [];
+            }
+
+            self._storyTests[exportName].push({
+              function: testFunction,
+              name: testName,
+              options: testOptions,
+              node: expression,
+              // can't set id because meta title isn't available yet
+              // so it's set later on
+              id: '',
+            });
+
+            self._stories[exportName].__stats.tests = true;
+          }
         },
       },
       CallExpression: {
@@ -695,9 +739,18 @@ export class CsfFile {
             const configParent = configCandidate?.path?.parentPath?.node;
             if (t.isImportDeclaration(configParent)) {
               if (isValidPreviewPath(configParent.source.value)) {
-                const metaNode = node.arguments[0] as t.ObjectExpression;
-                self._metaVariableName = callee.property.name;
                 self._metaIsFactory = true;
+                const metaDeclarator = path.findParent((p) =>
+                  p.isVariableDeclarator()
+                ) as NodePath<t.VariableDeclarator>;
+
+                // find the name of the meta variable declaration
+                // e.g. const foo = preview.meta({ ... });
+                // otherwise fallback to meta
+                self._metaVariableName = t.isIdentifier(metaDeclarator.node.id)
+                  ? metaDeclarator.node.id.name
+                  : callee.property.name;
+                const metaNode = node.arguments[0] as t.ObjectExpression;
                 self._parseMeta(metaNode, self._ast.program);
               } else {
                 throw new BadMetaError(
@@ -762,16 +815,25 @@ export class CsfFile {
           acc[key].tags = [...(acc[key].tags || []), 'play-fn'];
         }
         const stats = acc[key].__stats;
-        ['play', 'render', 'loaders', 'beforeEach', 'globals', 'tags'].forEach((annotation) => {
-          stats[annotation as keyof IndexInputStats] =
-            !!storyAnnotations[annotation] || !!self._metaAnnotations[annotation];
-        });
+        ['play', 'render', 'loaders', 'beforeEach', 'globals', 'tags', 'test'].forEach(
+          (annotation) => {
+            stats[annotation as keyof IndexInputStats] =
+              !!storyAnnotations[annotation] || !!self._metaAnnotations[annotation];
+          }
+        );
         const storyExport = self.getStoryExport(key);
         stats.storyFn = !!(
           t.isArrowFunctionExpression(storyExport) || t.isFunctionDeclaration(storyExport)
         );
         stats.mount = hasMount(storyAnnotations.play ?? self._metaAnnotations.play);
         stats.moduleMock = !!self.imports.find((fname) => isModuleMock(fname));
+
+        if (self._storyTests[key]) {
+          self._storyTests[key].forEach((test) => {
+            const testStoryName = `${story.name}: ${test.name}`;
+            test.id = toId((self._meta?.id || self._meta?.title) as string, testStoryName);
+          });
+        }
 
         return acc;
       },
@@ -821,10 +883,12 @@ export class CsfFile {
       );
     }
 
-    return Object.entries(this._stories).map(([exportName, story]) => {
+    const index: IndexInput[] = [];
+
+    Object.entries(this._stories).map(([exportName, story]) => {
       // don't remove any duplicates or negations -- tags will be combined in the index
       const tags = [...(this._meta?.tags ?? []), ...(story.tags ?? [])];
-      return {
+      index.push({
         type: 'story',
         importPath: fileName,
         rawComponentPath: this._rawComponentPath,
@@ -835,8 +899,27 @@ export class CsfFile {
         tags,
         __id: story.id,
         __stats: story.__stats,
-      };
+      });
+
+      if (this._storyTests[exportName]) {
+        this._storyTests[exportName].forEach((test) => {
+          index.push({
+            type: 'story', // perhaps this becomes type 'test'?
+            importPath: fileName,
+            rawComponentPath: this._rawComponentPath,
+            exportName,
+            name: `${story.name}: ${test.name}`,
+            title: this.meta?.title,
+            metaId: this.meta?.id,
+            tags: [...tags, 'test-fn'],
+            __id: test.id,
+            __stats: story.__stats,
+          });
+        });
+      }
     });
+
+    return index;
   }
 }
 

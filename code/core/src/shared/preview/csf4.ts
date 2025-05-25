@@ -6,10 +6,15 @@ import type {
   Story,
   StoryAnnotations,
 } from 'storybook/internal/csf';
-import type { NormalizedProjectAnnotations } from 'storybook/internal/types';
+import type {
+  ComposedStoryFn,
+  NormalizedProjectAnnotations,
+  NormalizedStoryAnnotations,
+} from 'storybook/internal/types';
 
 import {
   composeConfigs,
+  composeStory,
   getCoreAnnotations,
   normalizeProjectAnnotations,
 } from 'storybook/preview-api';
@@ -61,12 +66,31 @@ function defineStory<TRenderer extends Renderer>(
   input: ComponentAnnotations<TRenderer>,
   meta: Meta<TRenderer>
 ): Story<TRenderer> {
+  let composed: ComposedStoryFn<TRenderer>;
+
+  const compose = () => {
+    if (!composed) {
+      composed = composeStory(input, meta.input, meta.preview.composed);
+    }
+    return composed;
+  };
+
   return {
     _tag: 'Story',
     input,
     meta,
-    get composed(): never {
-      throw new Error('Not implemented');
+    get composed() {
+      return compose() as unknown as NormalizedStoryAnnotations<TRenderer>;
+    },
+    get play() {
+      return composed.play ?? (async () => {});
+    },
+    get run() {
+      return compose().run || (async () => {});
+    },
+    test(name: string, fn) {
+      // TODO: figure this out later
+      return fn(composed as any);
     },
   };
 }

@@ -15,17 +15,10 @@ expect.addSnapshotSerializer({
   test: (val) => true,
 });
 
-const transform = async ({
-  code = '',
-  fileName = 'src/components/Button.stories.js',
-  configDir = '.storybook',
-  stories = [],
-}) => {
+const transform = async ({ code = '', fileName = 'src/components/Button.stories.js' }) => {
   const transformed = await originalTransform({
     code,
     fileName,
-    configDir,
-    stories,
   });
   if (typeof transformed === 'string') {
     return { code: transformed, map: null };
@@ -38,53 +31,67 @@ describe('transformer', () => {
   describe('test syntax', () => {
     it('should add test statement to const declared exported stories', async () => {
       const code = `
-        import { config } from '#.storybook/preview';
-        const meta = config.meta({ component: Button });
+        import preview from '#.storybook/preview';
+        const meta = preview.meta({ component: Button });
         export const Primary = meta.story({ 
           args: {
             label: 'Primary Button',
           }
         });
         
-        Primary.test('some test name here', () => {
+        Primary.test('just a log', () => {
           console.log('test');
         });
-        Primary.test('something else here too', () => {
-          console.log('test');
+        Primary.test('using context', (context) => {
+          const button = context.canvas.getByRole('button');
+        });
+        Primary.test('destructuring context', async ({ canvas }) => {
+          const button = await canvas.findByRole('button');
         });
       `;
 
       const result = await transform({ code });
 
       expect(result.code).toMatchInlineSnapshot(`
-        import { config } from '#.storybook/preview';
-        const meta = config.meta({
-          component: Button,
-          title: "automatic/calculated/title"
+        import preview from '#.storybook/preview';
+        const meta = preview.meta({
+          component: Button
         });
         export const Primary = meta.story({
           args: {
             label: 'Primary Button'
           }
         });
-        export const _test = {
-          ...Primary,
-          tags: [...Primary?.tags, "test-fn"],
+        export const PrimaryJustALog = meta.story({
+          ...Primary.composed,
+          tags: ["test-fn"],
           play: async context => {
-            await (Primary?.play)();
+            await Primary.play(context);
             console.log('test');
           },
-          storyName: "Primary: some test name here"
-        };
-        export const _test2 = {
-          ...Primary,
-          tags: [...Primary?.tags, "test-fn"],
+          name: "Primary: just a log"
+        });
+        export const PrimaryUsingContext = meta.story({
+          ...Primary.composed,
+          tags: ["test-fn"],
           play: async context => {
-            await (Primary?.play)();
-            console.log('test');
+            await Primary.play(context);
+            const button = context.canvas.getByRole('button');
           },
-          storyName: "Primary: something else here too"
-        };
+          name: "Primary: using context"
+        });
+        export const PrimaryDestructuringContext = meta.story({
+          ...Primary.composed,
+          tags: ["test-fn"],
+          play: async context => {
+            await Primary.play(context);
+            const {
+              canvas
+            } = context;
+            const button = await canvas.findByRole('button');
+          },
+          name: "Primary: destructuring context"
+        });
       `);
     });
   });

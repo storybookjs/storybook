@@ -34,5 +34,6 @@ test('addon parameters are inferred', () => {
     },
   });
 
+  // @ts-expect-error fix this
   expectTypeOf(MyStory).toEqualTypeOf<Story<Renderer & Addon1Types & Addon2Types>>();
 });

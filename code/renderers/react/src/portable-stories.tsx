@@ -2,6 +2,7 @@ import * as React from 'react';
 
 import type {
   Args,
+  ComponentAnnotations,
   ComposedStoryFn,
   NamedOrDefaultProjectAnnotations,
   NormalizedProjectAnnotations,
@@ -98,14 +99,14 @@ export const INTERNAL_DEFAULT_PROJECT_ANNOTATIONS: ProjectAnnotations<ReactRende
  * @param [exportsName] - In case your story does not contain a name and you want it to have a name.
  */
 export function composeStory<TArgs extends Args = Args>(
-  story: StoryAnnotationsOrFn<ReactRenderer, TArgs>,
-  componentAnnotations: Meta<TArgs | any>,
+  story: StoryAnnotationsOrFn<any, TArgs>,
+  componentAnnotations: ComponentAnnotations<any, Args>,
   projectAnnotations?: ProjectAnnotations<ReactRenderer>,
   exportsName?: string
 ): ComposedStoryFn<ReactRenderer, Partial<TArgs>> {
   return originalComposeStory<ReactRenderer, TArgs>(
     story as StoryAnnotationsOrFn<ReactRenderer, Args>,
-    componentAnnotations,
+    componentAnnotations as ComponentAnnotations<ReactRenderer, TArgs>,
     projectAnnotations,
     globalThis.globalProjectAnnotations ?? INTERNAL_DEFAULT_PROJECT_ANNOTATIONS,
     exportsName

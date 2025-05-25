@@ -10,4 +10,6 @@ if (globalThis?.FEATURES?.highlight && addons?.ready) {
   addons.ready().then(useHighlights);
 }
 
+export type { HighLightTypes };
+
 export default () => definePreviewAddon<HighLightTypes>({});

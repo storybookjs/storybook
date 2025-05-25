@@ -87,4 +87,4 @@ export {
   waitForAnimations,
 } from './preview-web';
 export type { SelectionStore, View } from './preview-web';
-export { getCoreAnnotations } from '../shared/preview/core-annotations';
+export { getCoreAnnotations, type CoreTypes } from '../shared/preview/core-annotations';

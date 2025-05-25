@@ -10,6 +10,8 @@ export const initialGlobals = {
   [PARAM_KEY]: false,
 };
 
+export type { MeasureTypes };
+
 export default () =>
   definePreviewAddon<MeasureTypes>({
     decorators,

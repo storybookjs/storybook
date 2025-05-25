@@ -7,7 +7,9 @@ import { expect, fn, mocked, userEvent, within } from 'storybook/test';
 import { __definePreview } from '../preview';
 import { Button } from './Button';
 
-const preview = __definePreview({});
+const preview = __definePreview({
+  addons: [],
+});
 
 const meta = preview.meta({
   id: 'button-component',

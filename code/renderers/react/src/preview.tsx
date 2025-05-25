@@ -13,6 +13,7 @@ import type {
   StoryAnnotations,
 } from 'storybook/internal/types';
 
+import type { CoreTypes } from 'storybook/preview-api';
 import type { RemoveIndexSignature, SetOptional, Simplify, UnionToIntersection } from 'type-fest';
 
 import * as reactAnnotations from './entry-preview';
@@ -23,7 +24,7 @@ import type { ReactRenderer } from './types';
 
 export function __definePreview<Addons extends PreviewAddon<never>[]>(
   preview: ProjectAnnotations<ReactRenderer> & { addons: Addons }
-): ReactPreview<InferTypes<Addons>> {
+): ReactPreview<CoreTypes & InferTypes<Addons>> {
   return definePreviewBase({
     ...preview,
     addons: [
@@ -32,7 +33,7 @@ export function __definePreview<Addons extends PreviewAddon<never>[]>(
       reactDocsAnnotations,
       ...(preview.addons ?? []),
     ],
-  }) as unknown as ReactPreview<InferTypes<Addons>>;
+  }) as unknown as ReactPreview<CoreTypes & InferTypes<Addons>>;
 }
 
 // @ts-expect-error hard

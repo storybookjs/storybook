@@ -21,6 +21,8 @@ const initialGlobals: Record<string, GlobalState> = {
   [PARAM_KEY]: { value: undefined, grid: false },
 };
 
+export type { BackgroundTypes };
+
 export default () =>
   definePreviewAddon<BackgroundTypes>({
     decorators,

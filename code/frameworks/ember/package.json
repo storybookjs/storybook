@@ -45,8 +45,8 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "jiti ../../../scripts/prepare/check.ts",
-    "prep": "jiti ../../../scripts/prepare/tsc.ts"
+    "prep": "jiti ../../../scripts/prepare/tsc.ts",
+    "typecheck": "jiti ../../../scripts/prepare/check.ts"
   },
   "dependencies": {
     "@storybook/builder-webpack5": "workspace:*",

@@ -31,9 +31,9 @@
     "README.md"
   ],
   "scripts": {
-    "check": "jiti ../../../scripts/prepare/check.ts",
     "generate-rule": "jiti ./scripts/generate-rule",
     "prep": "jiti ../../../scripts/prepare/bundle.ts",
+    "typecheck": "jiti ../../../scripts/prepare/check.ts",
     "update-rules": "jiti ./scripts/update-all.ts"
   },
   "dependencies": {

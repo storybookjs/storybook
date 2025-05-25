@@ -53,8 +53,8 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "jiti ../../../scripts/prepare/check.ts",
-    "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
+    "prep": "jiti ../../../scripts/prepare/addon-bundle.ts",
+    "typecheck": "jiti ../../../scripts/prepare/check.ts"
   },
   "publishConfig": {
     "access": "public"

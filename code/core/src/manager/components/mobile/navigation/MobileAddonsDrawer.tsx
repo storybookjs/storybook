@@ -1,7 +1,9 @@
 import type { FC, ReactNode } from 'react';
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 
 import { styled } from 'storybook/theming';
+
+import { useModalDialog } from '../../../hooks/useModalDialog';
 
 interface MobileAddonsDrawerProps {
   children: ReactNode;
@@ -28,38 +30,7 @@ export const MobileAddonsDrawer: FC<MobileAddonsDrawerProps> = ({
   isOpen,
   onClose,
 }) => {
-  const dialogRef = useRef<HTMLDialogElement>(null);
-
-  useEffect(() => {
-    const dialogNode = dialogRef.current;
-    if (dialogNode) {
-      if (isOpen) {
-        if (!dialogNode.hasAttribute('open')) {
-          dialogNode.showModal();
-        }
-      } else {
-        if (dialogNode.hasAttribute('open')) {
-          dialogNode.close();
-        }
-      }
-    }
-  }, [isOpen]);
-
-  useEffect(() => {
-    const dialogNode = dialogRef.current;
-    if (dialogNode) {
-      const handleDialogCloseEvent = () => {
-        if (isOpen) {
-          onClose();
-        }
-      };
-      dialogNode.addEventListener('close', handleDialogCloseEvent);
-      return () => {
-        dialogNode.removeEventListener('close', handleDialogCloseEvent);
-      };
-    }
-    return undefined;
-  }, [isOpen, onClose]);
+  const dialogRef = useModalDialog({ isOpen, onClose });
 
   return (
     <Container ref={dialogRef} id={id} aria-label="Addon panel">

@@ -1,11 +1,12 @@
 import type { FC } from 'react';
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useRef } from 'react';
 
 import { Transition } from 'react-transition-group';
 import type { TransitionStatus } from 'react-transition-group/Transition';
 import { styled } from 'storybook/theming';
 
 import { MOBILE_TRANSITION_DURATION } from '../../../constants';
+import { useModalDialog } from '../../../hooks/useModalDialog';
 import { useLayout } from '../../layout/LayoutProvider';
 import { MobileAbout } from '../about/MobileAbout';
 
@@ -15,7 +16,6 @@ interface MobileMenuDrawerProps {
 }
 
 export const MobileMenuDrawer: FC<MobileMenuDrawerProps> = ({ children, id }) => {
-  const dialogRef = useRef<HTMLDialogElement>(null);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const { isMobileMenuOpen, setMobileMenuOpen, isMobileAboutOpen, setMobileAboutOpen } =
@@ -25,36 +25,10 @@ export const MobileMenuDrawer: FC<MobileMenuDrawerProps> = ({ children, id }) =>
     setMobileMenuOpen(false);
   }, [setMobileMenuOpen]);
 
-  useEffect(() => {
-    const dialogNode = dialogRef.current;
-    if (dialogNode) {
-      if (isMobileMenuOpen) {
-        if (!dialogNode.hasAttribute('open')) {
-          dialogNode.showModal();
-        }
-      } else {
-        if (dialogNode.hasAttribute('open')) {
-          dialogNode.close();
-        }
-      }
-    }
-  }, [isMobileMenuOpen]);
-
-  useEffect(() => {
-    const dialogNode = dialogRef.current;
-    if (dialogNode) {
-      const handleDialogCloseEvent = () => {
-        if (isMobileMenuOpen) {
-          setMobileMenuOpen(false);
-        }
-      };
-      dialogNode.addEventListener('close', handleDialogCloseEvent);
-      return () => {
-        dialogNode.removeEventListener('close', handleDialogCloseEvent);
-      };
-    }
-    return undefined;
-  }, [isMobileMenuOpen, setMobileMenuOpen]);
+  const dialogRef = useModalDialog({
+    isOpen: isMobileMenuOpen,
+    onClose: handleClose,
+  });
 
   return (
     <>

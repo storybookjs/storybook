@@ -33,7 +33,8 @@ export default {
 ```
 
 ```ts filename="Button.stories.ts|tsx" renderer="react" language="ts"
-import type { Meta } from '@storybook/react-vite';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { Meta } from '@storybook/your-framework';
 
 import { Button } from './Button';
 

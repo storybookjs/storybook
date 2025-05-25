@@ -274,11 +274,11 @@ jobs:
       - run:
           name: Compile
           command: |
-            yarn task --task compile --start-from=auto --no-link --debug
+            yarn task --task compile --prod --start-from=auto --no-link --debug
       - run:
           name: Check
           command: |
-            yarn task --task check --start-from=auto --no-link --debug
+            yarn task --task check --prod --start-from=auto --no-link --debug
       - run:
           name: Ensure no changes pending
           command: |

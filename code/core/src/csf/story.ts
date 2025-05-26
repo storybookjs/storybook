@@ -1,6 +1,7 @@
 import type { RemoveIndexSignature, Simplify, UnionToIntersection } from 'type-fest';
 
 import type { SBScalarType, SBType } from './SBType';
+import type { CoreTypes } from './core-annotations';
 
 export * from './SBType';
 export type StoryId = string;
@@ -174,7 +175,7 @@ export interface Types {
   parameters?: {};
 }
 
-export interface Renderer extends Types {
+export interface Renderer extends CoreTypes {
   /** What is the type of the `component` annotation in this renderer? */
   component: any;
 

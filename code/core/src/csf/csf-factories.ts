@@ -9,13 +9,9 @@ import type {
   StoryAnnotations,
 } from 'storybook/internal/types';
 
-import type { CoreTypes } from 'storybook/preview-api';
-import {
-  composeConfigs,
-  getCoreAnnotations,
-  normalizeProjectAnnotations,
-} from 'storybook/preview-api';
+import { composeConfigs, normalizeProjectAnnotations } from 'storybook/preview-api';
 
+import { getCoreAnnotations } from './core-annotations';
 import type { Types } from './story';
 
 export interface Preview<TRenderer extends Renderer = Renderer> {
@@ -32,8 +28,8 @@ export type InferTypes<T extends PreviewAddon<never>[]> = T extends PreviewAddon
 
 export function definePreview<TRenderer extends Renderer, Addons extends PreviewAddon<never>[]>(
   input: ProjectAnnotations<TRenderer> & { addons?: Addons }
-): Preview<TRenderer & CoreTypes & InferTypes<Addons>> {
-  let composed: NormalizedProjectAnnotations<TRenderer & CoreTypes & InferTypes<Addons>>;
+): Preview<TRenderer & InferTypes<Addons>> {
+  let composed: NormalizedProjectAnnotations<TRenderer & InferTypes<Addons>>;
   const preview = {
     _tag: 'Preview',
     input: input,
@@ -42,15 +38,15 @@ export function definePreview<TRenderer extends Renderer, Addons extends Preview
         return composed;
       }
       const { addons, ...rest } = input;
-      composed = normalizeProjectAnnotations<TRenderer & CoreTypes & InferTypes<Addons>>(
+      composed = normalizeProjectAnnotations<TRenderer & InferTypes<Addons>>(
         composeConfigs([...getCoreAnnotations(), ...(addons ?? []), rest])
       );
       return composed;
     },
-    meta(meta: ComponentAnnotations<TRenderer & CoreTypes & InferTypes<Addons>>) {
+    meta(meta: ComponentAnnotations<TRenderer & InferTypes<Addons>>) {
       return defineMeta(meta, this);
     },
-  } as Preview<TRenderer & CoreTypes & InferTypes<Addons>>;
+  } as Preview<TRenderer & InferTypes<Addons>>;
   globalThis.globalProjectAnnotations = preview.composed;
   return preview;
 }

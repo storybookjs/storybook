@@ -63,7 +63,7 @@ export abstract class JsPackageManager {
   public abstract getPackageJSON(
     packageName: string,
     basePath?: string
-  ): Promise<PackageJson | null>;
+  ): PromiseLike<PackageJson | null> | PackageJson | null;
 
   /** Get the INSTALLED version of a package from the package.json file */
   async getPackageVersion(packageName: string, basePath = this.cwd): Promise<string | null> {

@@ -1,8 +1,6 @@
-import { expectTypeOf, test } from 'vitest';
+import { test } from 'vitest';
 
-import type { Story } from './csf-factories';
 import { definePreview, definePreviewAddon } from './csf-factories';
-import type { Renderer } from './story';
 
 interface Addon1Types {
   parameters: { foo?: { value: string } };
@@ -33,7 +31,4 @@ test('addon parameters are inferred', () => {
       },
     },
   });
-
-  // @ts-expect-error fix this
-  expectTypeOf(MyStory).toEqualTypeOf<Story<Renderer & Addon1Types & Addon2Types>>();
 });

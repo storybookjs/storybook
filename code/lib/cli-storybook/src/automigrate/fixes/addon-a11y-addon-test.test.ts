@@ -98,13 +98,10 @@ describe('addonA11yAddonTest', () => {
         if (p.toString().includes('vitest.setup')) {
           return `
             import * as a11yAddonAnnotations from "@storybook/addon-a11y/preview";
-            import { beforeAll } from 'vitest';
             import { setProjectAnnotations } from 'storybook';
             import * as projectAnnotations from './preview';
 
-            const project = setProjectAnnotations([a11yAddonAnnotations, projectAnnotations]);
-
-            beforeAll(project.beforeAll);
+            setProjectAnnotations([a11yAddonAnnotations, projectAnnotations]);
           `;
         } else {
           return `
@@ -281,13 +278,10 @@ describe('addonA11yAddonTest', () => {
       vi.mocked(readFileSync).mockImplementation((p) => {
         if (p.toString().includes('vitest.setup')) {
           return `
-            import { beforeAll } from 'vitest';
             import { setProjectAnnotations } from 'storybook';
             import * as projectAnnotations from './preview';
 
-            const project = setProjectAnnotations([projectAnnotations]);
-
-            beforeAll(project.beforeAll);
+            setProjectAnnotations([projectAnnotations]);
           `;
         } else {
           return `
@@ -328,13 +322,10 @@ describe('addonA11yAddonTest', () => {
         if (p.toString().includes('vitest.setup')) {
           return `
             import * as a11yAddonAnnotations from "@storybook/addon-a11y/preview";
-            import { beforeAll } from 'vitest';
             import { setProjectAnnotations } from 'storybook';
             import * as projectAnnotations from './preview';
 
-            const project = setProjectAnnotations([a11yAddonAnnotations, projectAnnotations]);
-
-            beforeAll(project.beforeAll);
+            setProjectAnnotations([a11yAddonAnnotations, projectAnnotations]);
           `;
         } else {
           return `
@@ -383,12 +374,10 @@ describe('addonA11yAddonTest', () => {
         ...   
         + import * as a11yAddonAnnotations from "@storybook/addon-a11y/preview";
 
-        const annotations = setProjectAnnotations([
+        setProjectAnnotations([
           ...
         + a11yAddonAnnotations,
         ]);
-
-        beforeAll(annotations.beforeAll);
 
         2) We couldn't find or automatically update your .storybook/preview.<ts|js> in your project to smoothly set up parameters.a11y.test from @storybook/addon-a11y. 
         Please manually update your .storybook/preview.<ts|js> file to include the following:
@@ -427,12 +416,10 @@ describe('addonA11yAddonTest', () => {
         ...   
         + import * as a11yAddonAnnotations from "@storybook/addon-a11y/preview";
 
-        const annotations = setProjectAnnotations([
+        setProjectAnnotations([
           ...
         + a11yAddonAnnotations,
         ]);
-
-        beforeAll(annotations.beforeAll);
 
         2) We have to update your .storybook/preview.js file to set up parameters.a11y.test from @storybook/addon-a11y.
 
@@ -563,10 +550,7 @@ describe('addonA11yAddonTest', () => {
     it('should throw', async () => {
       const setupFile = '/path/to/vitest.setup.ts';
       const source = dedent`
-        import { beforeAll } from 'vitest';
         import { setProjectAnnotations } from 'storybook';
-
-        beforeAll(project.beforeAll);
       `;
 
       vi.mocked(readFileSync).mockReturnValue(source);
@@ -577,13 +561,10 @@ describe('addonA11yAddonTest', () => {
     it('should transform setup file correctly - 1', () => {
       const setupFile = '/path/to/vitest.setup.ts';
       const source = dedent`
-        import { beforeAll } from 'vitest';
         import { setProjectAnnotations } from 'storybook';
         import * as projectAnnotations from './preview';
 
-        const project = setProjectAnnotations([projectAnnotations]);
-
-        beforeAll(project.beforeAll);
+        setProjectAnnotations([projectAnnotations]);
       `;
       vi.mocked(readFileSync).mockReturnValue(source);
 
@@ -591,55 +572,43 @@ describe('addonA11yAddonTest', () => {
       const transformedCode = transformSetupFile(s);
       expect(transformedCode).toMatchInlineSnapshot(`
         "import * as a11yAddonAnnotations from "@storybook/addon-a11y/preview";
-        import { beforeAll } from 'vitest';
         import { setProjectAnnotations } from 'storybook';
         import * as projectAnnotations from './preview';
 
-        const project = setProjectAnnotations([a11yAddonAnnotations, projectAnnotations]);
-
-        beforeAll(project.beforeAll);"
+        setProjectAnnotations([a11yAddonAnnotations, projectAnnotations]);"
       `);
     });
 
     it('should transform setup file correctly - 2 (different format)', () => {
       const setupFile = '/path/to/vitest.setup.ts';
       const source = dedent`
-        import { beforeAll } from 'vitest';
         import { setProjectAnnotations } from 'storybook';
         import * as projectAnnotations from './preview';
 
-        const project = setProjectAnnotations([
+        setProjectAnnotations([
           projectAnnotations
         ]);
-
-        beforeAll(project.beforeAll);
       `;
       vi.mocked(readFileSync).mockReturnValue(source);
 
       const s = readFileSync(setupFile, 'utf8');
       const transformedCode = transformSetupFile(s);
       expect(transformedCode).toMatchInlineSnapshot(`
-          "import * as a11yAddonAnnotations from "@storybook/addon-a11y/preview";
-          import { beforeAll } from 'vitest';
-          import { setProjectAnnotations } from 'storybook';
-          import * as projectAnnotations from './preview';
+        "import * as a11yAddonAnnotations from "@storybook/addon-a11y/preview";
+        import { setProjectAnnotations } from 'storybook';
+        import * as projectAnnotations from './preview';
 
-          const project = setProjectAnnotations([a11yAddonAnnotations, projectAnnotations]);
-
-          beforeAll(project.beforeAll);"
-        `);
+        setProjectAnnotations([a11yAddonAnnotations, projectAnnotations]);"
+      `);
     });
 
     it('should transform setup file correctly - project annotation is not an array', () => {
       const setupFile = '/path/to/vitest.setup.ts';
       const source = dedent`
-        import { beforeAll } from 'vitest';
         import { setProjectAnnotations } from 'storybook';
         import * as projectAnnotations from './preview';
 
-        const project = setProjectAnnotations(projectAnnotations);
-
-        beforeAll(project.beforeAll);
+        setProjectAnnotations(projectAnnotations);
       `;
       vi.mocked(readFileSync).mockReturnValue(source);
 
@@ -647,13 +616,10 @@ describe('addonA11yAddonTest', () => {
       const transformedCode = transformSetupFile(s);
       expect(transformedCode).toMatchInlineSnapshot(dedent`
         "import * as a11yAddonAnnotations from "@storybook/addon-a11y/preview";
-        import { beforeAll } from 'vitest';
         import { setProjectAnnotations } from 'storybook';
         import * as projectAnnotations from './preview';
 
-        const project = setProjectAnnotations([a11yAddonAnnotations, projectAnnotations]);
-
-        beforeAll(project.beforeAll);"
+        setProjectAnnotations([a11yAddonAnnotations, projectAnnotations]);"
       `);
     });
   });

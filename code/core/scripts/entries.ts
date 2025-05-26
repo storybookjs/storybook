@@ -62,7 +62,7 @@ export const getEntries = (cwd: string) => {
       'src/manager-api/index.ts',
       ['browser', 'node'],
       true,
-      ['react', '@storybook/icons', 'react-dom'],
+      ['react', 'react-dom'],
       [],
       [],
       true

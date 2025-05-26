@@ -105,7 +105,13 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
       ...s,
       fatalError: undefined,
     }));
-    runTestRunner(channel, store, STORE_CHANNEL_EVENT_NAME, [{ event, eventInfo }]);
+    runTestRunner({
+      channel,
+      store,
+      initEvent: STORE_CHANNEL_EVENT_NAME,
+      initArgs: [{ event, eventInfo }],
+      options,
+    });
   });
   store.subscribe('TOGGLE_WATCHING', (event, eventInfo) => {
     store.setState((s) => ({
@@ -120,7 +126,13 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
       },
     }));
     if (event.payload.to) {
-      runTestRunner(channel, store, STORE_CHANNEL_EVENT_NAME, [{ event, eventInfo }]);
+      runTestRunner({
+        channel,
+        store,
+        initEvent: STORE_CHANNEL_EVENT_NAME,
+        initArgs: [{ event, eventInfo }],
+        options,
+      });
     }
   });
   store.subscribe('FATAL_ERROR', (event) => {
@@ -192,11 +204,10 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
       });
     });
     store.subscribe('TEST_RUN_COMPLETED', async (event) => {
-      const { unhandledErrors, startedAt, finishedAt, storyIds, ...currentRun } = event.payload;
+      const { unhandledErrors, startedAt, finishedAt, ...currentRun } = event.payload;
       await telemetry('addon-test', {
         ...currentRun,
         duration: (finishedAt ?? 0) - (startedAt ?? 0),
-        selectedStoryCount: storyIds?.length ?? 0,
         unhandledErrorCount: unhandledErrors.length,
         ...(enableCrashReports &&
           unhandledErrors.length > 0 && {

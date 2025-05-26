@@ -228,11 +228,6 @@ describe('ComposeStories types', () => {
       ...ButtonStories,
       default: ButtonStories.CSF3Primary.meta.input as Meta<typeof Button>,
     }).toMatchTypeOf<ComposeStoriesParam>();
-
-    // expectTypeOf({
-    //   ...ButtonStories,
-    //   default: ButtonStories.CSF3Primary.meta.input satisfies Meta<typeof Button>,
-    // }).toMatchTypeOf<ComposeStoriesParam>();
   });
 });
 

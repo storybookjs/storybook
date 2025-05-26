@@ -101,6 +101,7 @@ describe('wrapRequire', () => {
       expect(call[1]).toMatchInlineSnapshot(`
   "import { createRequire } from "node:module";
   import { dirname, join } from "node:path";
+  const require = createRequire(import.meta.url);
   const config = {
     stories: ['../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
     addons: [
@@ -119,7 +120,6 @@ describe('wrapRequire', () => {
     },
   };
   export default config;
-  const require = createRequire(import.meta.url);
 
   function getAbsolutePath(value) {
     return dirname(require.resolve(join(value, "package.json")));

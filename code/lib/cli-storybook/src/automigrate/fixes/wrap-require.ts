@@ -86,7 +86,8 @@ export const wrapRequire: Fix<WrapRequireRunOptions> = {
             .some((node) => doesVariableOrFunctionDeclarationExist(node, 'require'));
 
           if (!hasRequire) {
-            const lastImportIndex = body.findLastIndex(node => t.isImportDeclaration(node));
+            const body = mainConfig._ast.program.body;
+            const lastImportIndex = body.findLastIndex((node) => t.isImportDeclaration(node));
             const requireDeclaration = t.variableDeclaration('const', [
               t.variableDeclarator(
                 t.identifier('require'),

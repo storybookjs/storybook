@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 
 import type { SupportedFrameworks } from 'storybook/internal/types';
 import type { CoreCommon_StorybookInfo, PackageJson } from 'storybook/internal/types';
@@ -62,7 +62,7 @@ const findDependency = (
   ] as const;
 
 const getRendererInfo = (configDir: string) => {
-  const packageJsonPaths = JsPackageManager.listAllPackageJsonPaths(configDir);
+  const packageJsonPaths = JsPackageManager.listAllPackageJsonPaths(dirname(configDir));
 
   for (const packageJsonPath of packageJsonPaths) {
     const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));

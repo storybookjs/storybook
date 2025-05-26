@@ -1,9 +1,8 @@
+import { readFileSync } from 'node:fs';
+
 import { hasStorybookDependencies } from 'storybook/internal/cli';
-import type {
-  JsPackageManager,
-  PackageJsonWithDepsAndDevDeps,
-  PackageManagerName,
-} from 'storybook/internal/common';
+import type { PackageJsonWithDepsAndDevDeps, PackageManagerName } from 'storybook/internal/common';
+import { JsPackageManager } from 'storybook/internal/common';
 import {
   JsPackageManagerFactory,
   getProjectRoot,
@@ -32,7 +31,14 @@ import { autoblock } from './autoblock/index';
 import { getStorybookData } from './automigrate/helpers/mainConfigFile';
 import { automigrate } from './automigrate/index';
 import { doctor } from './doctor';
-import { findStorybookProjects } from './util';
+import {
+  type CollectProjectsResult,
+  type CollectProjectsSuccessResult,
+  collectProjects,
+  findStorybookProjects,
+  isErrorResult,
+  isSuccessResult,
+} from './util';
 
 type Package = {
   package: string;
@@ -53,20 +59,6 @@ export const getStorybookVersion = (line: string) => {
     package: match[1],
     version: match[2],
   };
-};
-
-const getInstalledStorybookVersion = async (packageManager: JsPackageManager) => {
-  const storybookCliVersion = await packageManager.getInstalledVersion('storybook');
-  if (storybookCliVersion) {
-    return storybookCliVersion;
-  }
-
-  const installations = await packageManager.findInstallations(Object.keys(versions));
-  if (!installations) {
-    return;
-  }
-
-  return Object.entries(installations.dependencies)[0]?.[1]?.[0].version;
 };
 
 const deprecatedPackages = [
@@ -219,101 +211,6 @@ interface InternalUpgradeOptions {
   disableTelemetry: boolean;
   configDir?: string;
 }
-
-const collectUpgradeData = async (options: UpgradeOptions, configDirs: string[]) => {
-  const currentCLIVersion = versions.storybook;
-
-  console.log('collecting...');
-  const upgradeData = configDirs.map(async (_configDir) => {
-    const { configDir, mainConfig, mainConfigPath, packageManager } = await getStorybookData({
-      configDir: _configDir,
-    });
-
-    const beforeVersion = (await getInstalledStorybookVersion(packageManager)) ?? '0.0.0';
-
-    // GUARDS
-    if (!beforeVersion) {
-      throw new UpgradeStorybookUnknownCurrentVersionError();
-    }
-
-    const isCanary =
-      currentCLIVersion.startsWith('0.0.0') ||
-      beforeVersion.startsWith('portal:') ||
-      beforeVersion.startsWith('workspace:');
-
-    if (!isCanary && lt(currentCLIVersion, beforeVersion)) {
-      throw new UpgradeStorybookToLowerVersionError({
-        beforeVersion,
-        currentVersion: currentCLIVersion,
-      });
-    }
-
-    const latestCLIVersionOnNPM = await packageManager.latestVersion('storybook');
-    const latestPrereleaseCLIVersionOnNPM = await packageManager.latestVersion('storybook@next');
-
-    const isCLIOutdated = lt(currentCLIVersion, latestCLIVersionOnNPM);
-    const isCLIExactLatest = currentCLIVersion === latestCLIVersionOnNPM;
-    const isCLIPrerelease = prerelease(currentCLIVersion) !== null;
-    const isCLIExactPrerelease = currentCLIVersion === latestPrereleaseCLIVersionOnNPM;
-
-    const isUpgrade = lt(beforeVersion, currentCLIVersion);
-
-    console.log({
-      configDir,
-      mainConfig,
-      mainConfigPath,
-      packageManager,
-      isCanary,
-      isCLIOutdated,
-      isCLIPrerelease,
-      isCLIExactLatest,
-      isUpgrade,
-      beforeVersion,
-      currentCLIVersion,
-      latestCLIVersionOnNPM,
-      isCLIExactPrerelease,
-    });
-    let blockResult;
-
-    // BLOCKERS
-    if (
-      typeof mainConfig !== 'boolean' &&
-      typeof mainConfigPath !== 'undefined' &&
-      !options.force
-    ) {
-      // TODO: Perhaps offer a --force prompt
-      blockResult = await autoblock({
-        packageManager,
-        configDir,
-        // TODO: rework the autoblock to account for multi-package.json
-        packageJson: packageManager.primaryPackageJson.packageJson,
-        mainConfig,
-        mainConfigPath,
-      });
-    }
-
-    console.log({ blockResult });
-
-    return {
-      configDir,
-      mainConfig,
-      mainConfigPath,
-      packageManager,
-      isCanary,
-      isCLIOutdated,
-      isCLIPrerelease,
-      isCLIExactLatest,
-      isUpgrade,
-      beforeVersion,
-      currentCLIVersion,
-      latestCLIVersionOnNPM,
-      isCLIExactPrerelease,
-      blockers: blockResult,
-    };
-  });
-
-  return Promise.all(upgradeData);
-};
 
 export const doUpgrade = async (
   allOptions: InternalUpgradeOptions,
@@ -493,40 +390,103 @@ async function upgradeStorybookDependencies({
   await packageManager.installDependencies();
 }
 
-export async function upgrade(options: UpgradeOptions): Promise<void> {
-  // TODO: telemetry for upgrade start
+export async function getProjects(
+  options: UpgradeOptions
+): Promise<CollectProjectsSuccessResult[] | undefined> {
   const gitRoot = getProjectRoot();
-  let configDirs = options.configDir;
 
-  if (configDirs === undefined || configDirs.length === 0) {
-    configDirs = await findStorybookProjects();
-    if (configDirs.length > 1) {
-      logger.plain(
-        `Multiple Storybook projects found. Storybook can only upgrade all projects at once:\n${configDirs
-          .map((dir) => ' - ' + picocolors.cyan(dir.replace(gitRoot, '')))
-          .join('\n')}`
-      );
-      const continueUpgrade = await prompt.confirm({
-        message: `Continue with the upgrade?`,
-        initialValue: true,
-      });
-
-      if (!continueUpgrade) {
-        process.exit(0);
-      }
-    }
+  let detectedConfigDirs: string[] = options.configDir ?? [];
+  if (options.configDir === undefined || options.configDir.length === 0) {
+    detectedConfigDirs = await findStorybookProjects();
   }
 
-  const upgradeData = await collectUpgradeData(options, configDirs);
+  const projects = await collectProjects(options, detectedConfigDirs.slice(0, 4));
 
-  console.log({ upgradeData });
-  return;
+  const validProjects = projects.filter(isSuccessResult);
+  const errorProjects = projects.filter(isErrorResult);
+
+  if (validProjects.length === 1) {
+    return validProjects;
+  }
+
+  if (validProjects.length === 0 && errorProjects.length > 0) {
+    logger.plain(
+      `❌ Storybook found errors while collecting data for the following projects:\n${errorProjects
+        .map((p) => {
+          const error = p.error;
+          return `${picocolors.cyan(p.configDir.replace(gitRoot, ''))}:\n${error.message}`;
+        })
+        .join('\n')}`
+    );
+    logger.plain('Please fix the errors and run the upgrade command again.');
+    return [];
+  }
+
+  const allPackageJsonPathsWithStorybookDependencies = validProjects
+    .flatMap((data) => data.packageManager.packageJsonPaths)
+    .filter(JsPackageManager.hasAnyStorybookDependency);
+  const uniquePackageJsonPathsWithStorybookDependencies = new Set(
+    allPackageJsonPathsWithStorybookDependencies
+  );
+
+  const hasOverlappingStorybooks =
+    uniquePackageJsonPathsWithStorybookDependencies.size !==
+    allPackageJsonPathsWithStorybookDependencies.length;
+
+  if (hasOverlappingStorybooks) {
+    const getConfigDirsMessage = (projectData: CollectProjectsResult[], modifier: string = '✔') =>
+      projectData.length > 0
+        ? `${projectData
+            .map((p) => p.configDir)
+            .map((dir) => `${modifier} ` + picocolors.cyan(dir.replace(gitRoot, '')))
+            .join('\n')}`
+        : '';
+
+    const invalidProjectsMessage =
+      errorProjects.length > 0
+        ? `\nThere were some errors while collecting data for the following projects:\n${getConfigDirsMessage(errorProjects, '✕')}`
+        : '';
+
+    logger.plain(
+      `Multiple Storybook projects found. Storybook can only upgrade all projects at once:\n${getConfigDirsMessage(validProjects)}${invalidProjectsMessage}`
+    );
+    const continueUpgrade = await prompt.confirm({
+      message: `Continue with the upgrade?`,
+      initialValue: true,
+    });
+
+    if (!continueUpgrade) {
+      process.exit(0);
+    }
+
+    return validProjects;
+  } else if (detectedConfigDirs.length > 1) {
+    const selectedConfigDirs = await prompt.multiselect({
+      message: 'Select which projects to upgrade',
+      options: detectedConfigDirs.map((configDir) => ({
+        label: configDir.replace(gitRoot, ''),
+        value: configDir,
+      })),
+    });
+
+    return validProjects.filter((data) => selectedConfigDirs.includes(data.configDir));
+  }
+}
+
+export async function upgrade(options: UpgradeOptions): Promise<void> {
+  const gitRoot = getProjectRoot();
+  // TODO: telemetry for upgrade start
+  const upgradeData = await getProjects(options);
+  if (upgradeData === undefined || upgradeData.length === 0) {
+    // nothing to upgrade
+    return;
+  }
+
   // Single project upgrade scenario
-  if (configDirs.length === 1) {
-    await withTelemetry(
-      'upgrade',
-      { cliOptions: { ...options, configDir: configDirs[0] } },
-      async () => doUpgrade({ ...options, configDir: configDirs[0] })
+  if (upgradeData.length === 1) {
+    const cliOptions = { ...options, configDir: upgradeData[0].configDir };
+    await withTelemetry('upgrade', { cliOptions }, async () =>
+      doUpgrade(cliOptions, upgradeData[0])
     );
     return;
   }
@@ -536,8 +496,8 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     projectName: string;
     status: 'incomplete' | 'complete' | 'failed';
     error?: any;
-  }[] = configDirs.map((dir) => {
-    const projectName = dir.replace(gitRoot, '');
+  }[] = upgradeData.map((data) => {
+    const projectName = data.configDir.replace(gitRoot, '');
     return {
       projectName,
       status: 'incomplete',
@@ -546,19 +506,19 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
   });
 
   // Migrate each selected project
-  for (let i = 0; i < configDirs.length; i++) {
-    const storybookProject = configDirs[i];
+  for (let i = 0; i < upgradeData.length; i++) {
+    const storybookProject = upgradeData[i].configDir;
     const projectName = storybookProject.replace(gitRoot, '');
 
     logger.plain(
-      `\nUpgrading project ${i + 1}/${configDirs.length}:\n\t${picocolors.cyan(projectName)}`
+      `\nUpgrading project ${i + 1}/${upgradeData.length}:\n\t${picocolors.cyan(projectName)}`
     );
 
     try {
       await withTelemetry(
         'upgrade',
         { cliOptions: { ...options, configDir: storybookProject } },
-        async () => doUpgrade({ ...options, configDir: storybookProject })
+        async () => doUpgrade({ ...options, configDir: storybookProject }, upgradeData[i])
       );
       upgradeStatus[i].status = 'complete';
     } catch (error) {

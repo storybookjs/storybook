@@ -1,5 +1,5 @@
 import { readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, isAbsolute, join, resolve } from 'node:path';
 
 // eslint-disable-next-line depend/ban-dependencies
 import { type CommonOptions, execaCommand, execaCommandSync } from 'execa';
@@ -24,6 +24,21 @@ export const COMMON_ENV_VARS = {
   COREPACK_ENABLE_STRICT: '0',
   COREPACK_ENABLE_AUTO_PIN: '0',
   NO_UPDATE_NOTIFIER: 'true',
+};
+
+const getResolvedConfigDir = ({
+  configDir,
+  cwd = process.cwd(),
+}: {
+  configDir?: string;
+  cwd?: string;
+}) => {
+  const instanceDir = configDir ? dirname(configDir) : undefined;
+  return instanceDir
+    ? isAbsolute(instanceDir)
+      ? instanceDir
+      : dirname(join(cwd, instanceDir))
+    : cwd;
 };
 
 /**
@@ -73,7 +88,7 @@ export abstract class JsPackageManager {
 
   constructor(options?: JsPackageManagerOptions) {
     this.cwd = options?.cwd || process.cwd();
-    this.#instanceDir = options?.configDir ? dirname(join(this.cwd, options.configDir)) : this.cwd;
+    this.#instanceDir = getResolvedConfigDir({ configDir: options?.configDir, cwd: this.cwd });
     this.packageJsonPaths = JsPackageManager.listAllPackageJsonPaths(this.#instanceDir);
     this.primaryPackageJson = this.#getPrimaryPackageJson();
   }
@@ -564,9 +579,25 @@ export abstract class JsPackageManager {
       const content = readFileSync(packageJsonPath, 'utf-8');
       const packageJson = JSON.parse(content) as PackageJsonWithDepsAndDevDeps;
       return !!(
-        (packageJson.dependencies && packageJson.dependencies['storybook']) ||
-        (packageJson.devDependencies && packageJson.devDependencies['storybook'])
+        (packageJson.dependencies && packageJson.dependencies.storybook) ||
+        (packageJson.devDependencies && packageJson.devDependencies.storybook)
       );
+    } catch (error) {
+      return false; // If file doesn't exist or is unreadable, or JSON is invalid
+    }
+  }
+
+  // Helper to read and check a package.json for storybook dependency
+  static hasAnyStorybookDependency(packageJsonPath: string): boolean {
+    try {
+      const content = readFileSync(packageJsonPath, 'utf-8');
+      const packageJson = JSON.parse(content) as PackageJsonWithDepsAndDevDeps;
+      const allDeps = {
+        ...packageJson.dependencies,
+        ...packageJson.devDependencies,
+      };
+
+      return Object.keys(allDeps).some((dep) => dep.includes('storybook'));
     } catch (error) {
       return false; // If file doesn't exist or is unreadable, or JSON is invalid
     }

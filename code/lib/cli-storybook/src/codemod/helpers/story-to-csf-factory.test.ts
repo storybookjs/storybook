@@ -203,6 +203,57 @@ describe('stories codemod', () => {
       `);
     });
 
+    it.todo(
+      'migrate reused properties of other IMPORTED stories from `Story.xyz` to `Story.input.xyz`',
+      async () => {
+        await expect(
+          transform(dedent`
+            import { OtherStory } from './Other.stories';
+
+            export default { title: 'Component' };
+            
+            export const A = {
+              args: OtherStory.args,
+            };
+
+            export const B = {
+              ...A,
+              args: {
+                ...OtherStory.args,
+              },
+            };
+
+            export const C = {
+              render: () => <Button {...OtherStory.args} />
+            };
+          `)
+        ).resolves.toMatchInlineSnapshot(`
+        import preview from '#.storybook/preview';
+
+        import { OtherStory } from './Other.stories';
+
+        const meta = preview.meta({
+          title: 'Component',
+        });
+
+        export const A = meta.story({
+          args: OtherStory.input.args,
+        });
+
+        export const B = meta.story({
+          ...A.input,
+          args: {
+            ...OtherStory.input.args,
+          },
+        });
+
+        export const C = meta.story({
+          render: () => <Button {...OtherStory.input.args} />,
+        });
+      `);
+      }
+    );
+
     it('migrate reused properties of meta from `meta.xyz` to `meta.input.xyz`', async () => {
       await expect(
         transform(dedent`
@@ -308,12 +359,16 @@ describe('stories codemod', () => {
         // not supported yet (story redeclared)
         const C = { ...A, args: data, };
         export { C };
+        // not supported yet (export renamed)
+        const D = { ...C, args: data, };
+        export { D as E };
         `);
 
       expect(transformed).toContain('A = meta.story');
       // @TODO: when we support these, uncomment these lines
       // expect(transformed).toContain('B = meta.story');
       // expect(transformed).toContain('C = meta.story');
+      // expect(transformed).toContain('D = meta.story');
     });
 
     it('converts the preview import path based on useSubPathImports flag', async () => {
@@ -377,6 +432,99 @@ describe('stories codemod', () => {
         const meta = preview.meta({ title: 'Component' });
         export const CSF1Story = meta.story({
           render: () => <div>Hello</div>,
+        });
+      `);
+    });
+
+    it.todo('preserves original newlines', async () => {
+      await expect(
+        transform(dedent`
+          import { fn } from 'storybook/test';
+          import { Button } from './Button';
+
+          export default {
+            title: 'Design System/Atoms/Button',
+            component: Button,
+            parameters: {
+              // 👇 Remove this once all stories pass accessibility tests
+              // a11y: { test: 'todo' },
+            },
+            argTypes: {
+              value: {
+                // ⛔️ Deprecated, do not use
+                defaultValue: 0,
+              },
+            },
+            // ✅ Do this instead
+            args: {
+              value: 0,
+            }
+          };
+
+          export const Primary = {
+            name: 'Primary',
+            parameters: {
+              param: true,
+            },
+            args: {
+                value: 1,
+              },
+          };
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        import preview from '#.storybook/preview';
+        import { fn } from 'storybook/test';
+        import { Button } from './Button';
+
+        const meta = preview.meta({
+          title: 'Design System/Atoms/Button',
+          component: Button,
+          parameters: {
+            // 👇 Remove this once all stories pass accessibility tests
+            // a11y: { test: 'todo' },
+          },
+          argTypes: {
+            value: {
+              // ⛔️ Deprecated, do not use
+              defaultValue: 0,
+            },
+          },
+          // ✅ Do this instead
+          args: {
+            value: 0,
+          },
+        });
+
+        export const Primary = meta.story({
+          name: 'Primary',
+          parameters: {
+            param: true,
+          },
+          args: {
+            value: 1,
+          },
+        });
+      `);
+    });
+
+    it.todo('preserves comment location', async () => {
+      await expect(
+        transform(dedent`
+          export default {
+            // before title
+            title: 'Component',
+            // between title and component
+            component: Component, // next to component
+          };
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        import preview from '#.storybook/preview';
+
+        const meta = preview.meta({
+          // before title
+          title: 'Component',
+          // between title and component
+          component: Component, // next to component
         });
       `);
     });

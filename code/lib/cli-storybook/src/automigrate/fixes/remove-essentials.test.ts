@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { PackageJson } from 'storybook/internal/common';
-import { JsPackageManager } from 'storybook/internal/common';
+import { JsPackageManager, removeAddon } from 'storybook/internal/common';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import { add } from '../../add';
@@ -37,6 +37,7 @@ vi.mock('storybook/internal/common', async (importOriginal) => {
     getProjectRoot: () => '/fake/project/root',
     commonGlobOptions: vi.fn().mockReturnValue({}),
     scanAndTransformFiles: vi.fn().mockResolvedValue([]),
+    removeAddon: vi.fn().mockResolvedValue(undefined),
   };
 });
 
@@ -71,6 +72,7 @@ const mockConfigs = new Map<string, MockConfigFile>();
 const readFileMock = vi.mocked(await import('node:fs/promises')).readFile;
 
 const mockPackageManager = vi.mocked(JsPackageManager.prototype);
+const mockRemoveAddon = vi.mocked(removeAddon);
 
 const mockedAdd = vi.mocked(add);
 
@@ -112,6 +114,8 @@ describe('remove-essentials migration', () => {
       packageJsonPath: 'some/path',
       operationDir: 'some/path',
     };
+    // @ts-expect-error readonly
+    mockPackageManager.packageJsonPaths = ['some/path'];
     mockPackageManager.runPackageCommand = vi.fn();
     mockPackageManager.getAllDependencies = vi.fn();
     mockPackageManager.addDependencies = vi.fn();
@@ -294,34 +298,38 @@ describe('remove-essentials migration', () => {
         mainConfig: {} as StorybookConfigRaw,
       });
 
-      expect(mockPackageManager.runPackageCommand).toHaveBeenCalledWith('storybook', [
-        'remove',
+      expect(mockRemoveAddon).toHaveBeenCalledWith(
         '@storybook/addon-essentials',
-        '--config-dir',
-        '.storybook',
-        '--skip-install',
-      ]);
-      expect(mockPackageManager.runPackageCommand).toHaveBeenCalledWith('storybook', [
-        'remove',
-        '@storybook/addon-actions',
-        '--config-dir',
-        '.storybook',
-        '--skip-install',
-      ]);
-      expect(mockPackageManager.runPackageCommand).toHaveBeenCalledWith('storybook', [
-        'remove',
-        '@storybook/addon-controls',
-        '--config-dir',
-        '.storybook',
-        '--skip-install',
-      ]);
-      expect(mockPackageManager.runPackageCommand).toHaveBeenCalledTimes(3);
+        expect.any(Object)
+      );
+      expect(mockRemoveAddon).toHaveBeenCalledWith('@storybook/addon-actions', expect.any(Object));
+      expect(mockRemoveAddon).toHaveBeenCalledWith('@storybook/addon-controls', expect.any(Object));
+      expect(mockRemoveAddon).toHaveBeenCalledTimes(3);
+    });
+
+    it('does not add docs addon if essentials is not present', async () => {
+      await typedAddonDocsEssentials.run({
+        result: {
+          hasEssentials: false,
+          hasDocsDisabled: false,
+          hasDocsAddon: false,
+          additionalAddonsToRemove: [],
+        },
+        packageManager: mockPackageManager,
+        packageJson: mockPackageJson,
+        mainConfigPath: '.storybook/main.ts',
+        configDir: '.storybook',
+        storybookVersion: '8.0.0',
+        mainConfig: {} as StorybookConfigRaw,
+      });
+
+      expect(mockRemoveAddon).not.toHaveBeenCalledWith('@storybook/addon-docs', expect.any(Object));
     });
 
     it('removes core addons without essentials', async () => {
       await typedAddonDocsEssentials.run({
         result: {
-          hasEssentials: true,
+          hasEssentials: false,
           hasDocsDisabled: false,
           hasDocsAddon: false,
           additionalAddonsToRemove: ['@storybook/addon-actions', '@storybook/addon-controls'],
@@ -334,26 +342,9 @@ describe('remove-essentials migration', () => {
         mainConfig: {} as StorybookConfigRaw,
       });
 
-      expect(mockPackageManager.runPackageCommand).toHaveBeenCalledWith('storybook', [
-        'remove',
-        '@storybook/addon-actions',
-        '--config-dir',
-        '.storybook',
-        '--skip-install',
-      ]);
-      expect(mockPackageManager.runPackageCommand).toHaveBeenCalledWith('storybook', [
-        'remove',
-        '@storybook/addon-controls',
-        '--config-dir',
-        '.storybook',
-        '--skip-install',
-      ]);
-      expect(mockedAdd).toHaveBeenCalledWith('@storybook/addon-docs', {
-        configDir: '.storybook',
-        packageManager: mockPackageManager.type,
-        skipInstall: true,
-        skipPostinstall: true,
-      });
+      expect(mockRemoveAddon).toHaveBeenCalledWith('@storybook/addon-actions', expect.any(Object));
+      expect(mockRemoveAddon).toHaveBeenCalledWith('@storybook/addon-controls', expect.any(Object));
+      expect(mockRemoveAddon).toHaveBeenCalledTimes(2);
     });
 
     it('does not add docs addon if essentials is not present', async () => {

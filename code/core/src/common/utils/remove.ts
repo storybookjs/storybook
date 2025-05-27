@@ -2,11 +2,16 @@ import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
 
 import { dedent } from 'ts-dedent';
 
-import type { PackageManagerName } from '../js-package-manager';
-import { JsPackageManagerFactory } from '../js-package-manager';
+import type { JsPackageManager } from '../js-package-manager';
 import { getConfigInfo } from './get-storybook-info';
 
 const logger = console;
+
+export type RemoveAddonOptions = {
+  packageManager: JsPackageManager;
+  configDir?: string;
+  skipInstall?: boolean;
+};
 
 /**
  * Remove the given addon package and remove it from main.js
@@ -17,18 +22,8 @@ const logger = console;
  * sb remove @storybook/addon-links
  * ```
  */
-export async function removeAddon(
-  addon: string,
-  options: {
-    packageManager?: PackageManagerName;
-    cwd?: string;
-    configDir?: string;
-    skipInstall?: boolean;
-  } = {}
-) {
-  const { packageManager: pkgMgr, skipInstall } = options;
-
-  const packageManager = JsPackageManagerFactory.getPackageManager({ force: pkgMgr }, options.cwd);
+export async function removeAddon(addon: string, options: RemoveAddonOptions) {
+  const { packageManager, skipInstall } = options;
 
   const { mainConfigPath, configDir } = getConfigInfo(options.configDir);
 

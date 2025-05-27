@@ -112,7 +112,7 @@ describe('experimentalAddonTestVitest blocker', () => {
   });
 
   test('log should return correct message', () => {
-    const message = blocker.log({} as any, true);
+    const message = blocker.log(true);
     expect(message).toMatchInlineSnapshot(dedent`
       "@storybook/experimental-addon-test is being stabilized in Storybook 9.
 

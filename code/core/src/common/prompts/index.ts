@@ -27,6 +27,11 @@ interface SelectPromptOptions extends BasePromptOptions {
   options: Option[];
 }
 
+interface MultiSelectPromptOptions extends BasePromptOptions {
+  options: Option[];
+  required?: boolean;
+}
+
 interface PromptOptions {
   onCancel?: () => void;
 }
@@ -90,6 +95,26 @@ const select = async <T>(
   return result.value as T;
 };
 
+const multiselect = async <T extends string | number>(
+  options: MultiSelectPromptOptions,
+  promptOptions?: PromptOptions
+): Promise<T[]> => {
+  const result = await prompts(
+    {
+      type: 'multiselect',
+      name: 'value',
+      message: options.message,
+      choices: options.options.map((opt) => ({
+        title: opt.label,
+        value: opt.value,
+        description: opt.hint,
+      })),
+    },
+    promptOptions
+  );
+  return result.value as T[];
+};
+
 type BoxenOptions = {
   borderStyle?: 'round' | 'none';
   padding?: number;
@@ -105,9 +130,25 @@ const logBox = (message: string, style?: BoxenOptions) => {
   );
 };
 
+const log = (message: string) => {
+  console.log(message);
+};
+
+const warn = (message: string) => {
+  console.warn(message);
+};
+
+const error = (message: string) => {
+  console.error(message);
+};
+
 export const prompt = {
   confirm,
   text,
   select,
+  multiselect,
   logBox,
+  log,
+  warn,
+  error,
 };

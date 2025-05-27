@@ -88,7 +88,15 @@ command('remove <addon>')
   .option('-s --skip-install', 'Skip installing deps')
   .action((addonName: string, options: any) =>
     withTelemetry('remove', { cliOptions: options }, async () => {
-      await remove(addonName, options);
+      const packageManager = JsPackageManagerFactory.getPackageManager({
+        configDir: options.configDir,
+        force: options.packageManager,
+      });
+      await remove(addonName, {
+        configDir: options.configDir,
+        packageManager,
+        skipInstall: options.skipInstall,
+      });
       if (!options.disableTelemetry) {
         await telemetry('remove', { addon: addonName, source: 'cli' });
       }
@@ -105,7 +113,10 @@ command('upgrade')
   .option('-f --force', 'force the upgrade, skipping autoblockers')
   .option('-n --dry-run', 'Only check for upgrades, do not install')
   .option('-s --skip-check', 'Skip postinstall version and automigration checks')
-  .option('-c, --config-dir <dir-name>', 'Directory where to load Storybook configurations from')
+  .option(
+    '-c, --config-dir <dir-name...>',
+    'Directory(ies) where to load Storybook configurations from'
+  )
   .action(async (options: UpgradeOptions) => upgrade(options).catch(() => process.exit(1)));
 
 command('info')

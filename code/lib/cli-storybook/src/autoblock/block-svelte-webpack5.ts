@@ -5,6 +5,7 @@ import { createBlocker } from './types';
 
 export const blocker = createBlocker({
   id: 'svelteWebpack5Removal',
+  link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#svelte-dropped-support-for-storybooksvelte-webpack5',
   async check({ packageJson }) {
     const dependencies = {
       ...packageJson.dependencies,
@@ -16,14 +17,9 @@ export const blocker = createBlocker({
   },
   log() {
     return dedent`
-      ${picocolors.bold('@storybook/svelte-webpack5')} is no longer supported in Storybook 9.
+      ${picocolors.bold('@storybook/svelte-webpack5')} is no longer supported.
       
       You need to migrate to ${picocolors.bold('@storybook/svelte-vite')} instead.
-      
-      Please follow the setup guide for @storybook/svelte-vite:
-      ${picocolors.yellow('https://storybook.js.org/docs/get-started/frameworks/svelte-vite')}
-      
-      After migrating, you can remove @storybook/svelte-webpack5 from your project and try running the upgrade command again.
     `;
   },
 });

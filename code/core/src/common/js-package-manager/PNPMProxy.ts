@@ -121,7 +121,7 @@ export class PNPMProxy extends JsPackageManager {
 
   public getModulePackageJSON(packageName: string): PackageJson | null {
     const pnpapiPath = findUpSync(['.pnp.js', '.pnp.cjs'], {
-      cwd: this.cwd,
+      cwd: this.primaryPackageJson.operationDir,
       stopAt: getProjectRoot(),
     });
 

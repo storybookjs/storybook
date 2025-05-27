@@ -1,5 +1,6 @@
 import {
   getAddonNames,
+  removeAddon,
   scanAndTransformFiles,
   transformImportFiles,
 } from 'storybook/internal/common';
@@ -164,24 +165,20 @@ export const removeEssentials: Fix<AddonDocsOptions> = {
       if (hasEssentials) {
         console.log('Removing @storybook/addon-essentials...');
 
-        await packageManager.runPackageCommand('storybook', [
-          'remove',
-          '@storybook/addon-essentials',
-          '--config-dir',
+        await removeAddon('@storybook/addon-essentials', {
           configDir,
-          '--skip-install',
-        ]);
+          packageManager,
+          skipInstall: true,
+        });
       }
 
       // Remove additional core addons
       for (const addon of additionalAddonsToRemove) {
-        await packageManager.runPackageCommand('storybook', [
-          'remove',
-          addon,
-          '--config-dir',
+        await removeAddon(addon, {
           configDir,
-          '--skip-install',
-        ]);
+          packageManager,
+          skipInstall: true,
+        });
       }
 
       const errors = await scanAndTransformFiles({

@@ -29,19 +29,23 @@ type PackageManagerProxy =
 export class JsPackageManagerFactory {
   public static getPackageManager(
     { force, configDir = '.storybook' }: { force?: PackageManagerName; configDir?: string } = {},
-    cwd?: string
+    cwd = process.cwd()
   ): JsPackageManager {
     // Option 1: If the user has provided a forcing flag, we use it
     if (force && force in this.PROXY_MAP) {
       return new this.PROXY_MAP[force]({ cwd, configDir });
     }
 
+    const root = getProjectRoot();
+    console.log('root', root);
+    console.log('cwd', cwd);
+
     const lockFiles = [
-      findUpSync(YARN_LOCKFILE, { cwd, stopAt: getProjectRoot() }),
-      findUpSync(PNPM_LOCKFILE, { cwd, stopAt: getProjectRoot() }),
-      findUpSync(NPM_LOCKFILE, { cwd, stopAt: getProjectRoot() }),
-      findUpSync(BUN_LOCKFILE, { cwd, stopAt: getProjectRoot() }),
-      findUpSync(BUN_LOCKFILE_BINARY, { cwd, stopAt: getProjectRoot() }),
+      findUpSync(YARN_LOCKFILE, { cwd, stopAt: root }),
+      findUpSync(PNPM_LOCKFILE, { cwd, stopAt: root }),
+      findUpSync(NPM_LOCKFILE, { cwd, stopAt: root }),
+      findUpSync(BUN_LOCKFILE, { cwd, stopAt: root }),
+      findUpSync(BUN_LOCKFILE_BINARY, { cwd, stopAt: root }),
     ]
       .filter(Boolean)
       .sort((a, b) => {
@@ -61,8 +65,12 @@ export class JsPackageManagerFactory {
         return 1;
       });
 
+    console.log('lockFiless', lockFiles);
+
     // Option 2: We try to infer the package manager from the closest lockfile
     const closestLockfilePath = lockFiles[0];
+
+    console.log('closestLockfilePath', closestLockfilePath);
 
     const closestLockfile = closestLockfilePath && basename(closestLockfilePath);
 
@@ -71,6 +79,7 @@ export class JsPackageManagerFactory {
     const hasBunCommand = hasBun(cwd);
     const yarnVersion = getYarnVersion(cwd);
 
+    console.log('closestLockfile', closestLockfile);
     if (yarnVersion && (closestLockfile === YARN_LOCKFILE || (!hasNPMCommand && !hasPNPMCommand))) {
       return yarnVersion === 1
         ? new Yarn1Proxy({ cwd, configDir })

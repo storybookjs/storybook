@@ -1,12 +1,9 @@
-import { stripVTControlCharacters } from 'node:util';
-
 import { expect, test, vi } from 'vitest';
 
 import { JsPackageManagerFactory, prompt as promptRaw } from 'storybook/internal/common';
-import { logger as loggerRaw } from 'storybook/internal/node-logger';
 
 import { autoblock } from './index';
-import { createBlocker } from './types';
+import { type BlockerModule, createBlocker } from './types';
 
 vi.mock('node:fs/promises', async (importOriginal) => ({
   ...(await importOriginal<any>()),
@@ -26,7 +23,6 @@ vi.mock('storybook/internal/node-logger', () => ({
   },
 }));
 
-const logger = vi.mocked(loggerRaw);
 const prompt = vi.mocked(promptRaw);
 
 const blockers = {
@@ -63,57 +59,25 @@ const baseOptions: Parameters<typeof autoblock>[0] = {
 test('with empty list', async () => {
   const result = await autoblock({ ...baseOptions }, []);
   expect(result).toBe(null);
-  expect(logger.plain).not.toHaveBeenCalledWith(expect.stringContaining('No blockers found'));
 });
 
 test('all passing', async () => {
   const result = await autoblock({ ...baseOptions }, [
     Promise.resolve({ blocker: blockers.alwaysPass }),
     Promise.resolve({ blocker: blockers.alwaysPass }),
-  ]);
-  expect(result).toBe(null);
-  expect(logger.plain).toHaveBeenCalledWith(expect.stringContaining('No blockers found'));
+  ] as BlockerModule<any>[]);
+  expect(result?.[0].result).toEqual(false);
+  expect(result?.[1].result).toEqual(false);
 });
 
 test('1 fail', async () => {
   const result = await autoblock({ ...baseOptions }, [
     Promise.resolve({ blocker: blockers.alwaysPass }),
     Promise.resolve({ blocker: blockers.alwaysFail }),
-  ]);
+  ] as BlockerModule<any>[]);
 
-  expect(result).toBe('alwaysFail');
-  expect(stripVTControlCharacters(prompt.logBox.mock.calls[0][0])).toMatchInlineSnapshot(`
-    "Storybook has found potential blockers in your project that need to be resolved before upgrading:
-
-    Always fail
-
-    ─────────────────────────────────────────────────
-
-    Fix the above issues and try running the upgrade command again."
-  `);
-});
-
-test('multiple fails', async () => {
-  const result = await autoblock({ ...baseOptions }, [
-    Promise.resolve({ blocker: blockers.alwaysPass }),
-    Promise.resolve({ blocker: blockers.alwaysFail }),
-    Promise.resolve({ blocker: blockers.alwaysFail2 }),
-  ]);
-  expect(stripVTControlCharacters(prompt.logBox.mock.calls[0][0])).toMatchInlineSnapshot(`
-    "Storybook has found potential blockers in your project that need to be resolved before upgrading:
-
-    Always fail
-
-    ─────────────────────────────────────────────────
-
-    Always fail 2
-
-    ─────────────────────────────────────────────────
-
-    Fix the above issues and try running the upgrade command again."
-  `);
-
-  expect(result).toBe('alwaysFail');
+  expect(result?.[0].result).toEqual(false);
+  expect(result?.[1].result).toEqual({ bad: true });
 });
 
 test('detects svelte-webpack5 usage', async () => {
@@ -128,10 +92,10 @@ test('detects svelte-webpack5 usage', async () => {
         devDependencies: {},
       },
     },
-    [import('./block-svelte-webpack5')]
+    [import('./block-svelte-webpack5')] as BlockerModule<any>[]
   );
 
-  expect(result).toBe('svelteWebpack5Removal');
+  expect(result?.[0].result).toEqual(true);
 });
 
 test('allows non-svelte-webpack5 projects', async () => {
@@ -146,8 +110,8 @@ test('allows non-svelte-webpack5 projects', async () => {
         devDependencies: {},
       },
     },
-    [import('./block-svelte-webpack5')]
+    [import('./block-svelte-webpack5')] as BlockerModule<any>[]
   );
 
-  expect(result).toBeNull();
+  expect(result?.[0].result).toEqual(false);
 });

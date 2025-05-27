@@ -99,7 +99,6 @@ export const doctor = async ({
   }
 
   const allDependencies = packageManager.getAllDependencies() as Record<string, string>;
-
   if (!('storybook' in allDependencies)) {
     logDiagnostic(
       `Package ${picocolors.cyan('storybook')} not found`,
@@ -111,6 +110,7 @@ export const doctor = async ({
   }
   const incompatibleStorybookPackagesList = await getIncompatibleStorybookPackages({
     currentStorybookVersion: storybookVersion,
+    packageManager,
   });
   const incompatiblePackagesMessage = getIncompatiblePackagesSummary(
     incompatibleStorybookPackagesList,
@@ -119,12 +119,10 @@ export const doctor = async ({
   if (incompatiblePackagesMessage) {
     logDiagnostic('Incompatible packages found', incompatiblePackagesMessage);
   }
-
   const installationMetadata = await packageManager.findInstallations([
     '@storybook/*',
     'storybook',
   ]);
-
   // If we found incompatible packages, we let the users fix that first
   // If they run doctor again and there are still issues, we show the other warnings
   if (!incompatiblePackagesMessage) {
@@ -143,7 +141,6 @@ export const doctor = async ({
       }
     }
   }
-
   const commandMessage = `You can always recheck the health of your project by running:\n${picocolors.cyan(
     'npx storybook doctor'
   )}`;
@@ -162,6 +159,5 @@ export const doctor = async ({
     await rm(TEMP_LOG_FILE_PATH, { recursive: true, force: true });
   }
   logger.info();
-
   cleanup();
 };

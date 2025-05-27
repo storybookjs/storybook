@@ -125,9 +125,11 @@ export const getRendererPackageNameFromFramework = (frameworkPackageName: string
 
 export const getStorybookData = async ({
   configDir: userDefinedConfigDir,
+  cwd,
   packageManagerName,
 }: {
   configDir?: string;
+  cwd?: string;
   packageManagerName?: PackageManagerName;
 }) => {
   const {
@@ -148,7 +150,7 @@ export const getStorybookData = async ({
 
   let mainConfig: StorybookConfigRaw;
   try {
-    mainConfig = (await loadMainConfig({ configDir, noCache: true })) as StorybookConfigRaw;
+    mainConfig = (await loadMainConfig({ configDir, noCache: true, cwd })) as StorybookConfigRaw;
   } catch (err) {
     throw new Error(
       dedent`Unable to find or evaluate ${picocolors.blue(mainConfigPath)}: ${String(err)}`

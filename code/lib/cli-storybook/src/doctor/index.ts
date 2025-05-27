@@ -145,20 +145,17 @@ export const doctor = async ({
   const commandMessage = `You can always recheck the health of your project by running:\n${picocolors.cyan(
     'npx storybook doctor'
   )}`;
-  logger.info();
 
   if (foundIssues) {
-    logger.info(commandMessage);
-    logger.info();
+    prompt.info(commandMessage);
 
-    logger.info(`Full logs are available in ${picocolors.cyan(LOG_FILE_PATH)}`);
+    prompt.info(`Full logs are available in ${picocolors.cyan(LOG_FILE_PATH)}`);
 
     await rename(TEMP_LOG_FILE_PATH, join(process.cwd(), LOG_FILE_NAME));
   } else {
-    logger.info(`🥳 Your Storybook project looks good!`);
-    logger.info(commandMessage);
+    prompt.info(`🥳 Your Storybook project looks good!`);
+    prompt.info(commandMessage);
     await rm(TEMP_LOG_FILE_PATH, { recursive: true, force: true });
   }
-  logger.info();
   cleanup();
 };

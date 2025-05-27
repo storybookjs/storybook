@@ -142,7 +142,7 @@ export const automigrate = async ({
   // if an on-command migration is triggered, run it and bail
   const commandFix = commandFixes.find((f) => f.id === fixId);
   if (commandFix) {
-    logger.info(`🔎 Running migration ${picocolors.magenta(fixId)}..`);
+    prompt.info(`Running migration: ${picocolors.magenta(fixId)}`);
 
     await commandFix.run({
       mainConfigPath,
@@ -176,14 +176,12 @@ export const automigrate = async ({
   const fixes: Fix[] = fixId ? selectedFixes.filter((f) => f.id === fixId) : selectedFixes;
 
   if (fixId && fixes.length === 0) {
-    logger.info(`📭 No migrations found for ${picocolors.magenta(fixId)}.`);
+    prompt.info(`📭 No migrations found for ${picocolors.magenta(fixId)}.`);
     logAvailableMigrations();
     return null;
   }
 
   await augmentLogsToFile();
-
-  logger.info('🔎 checking possible migrations..');
 
   const { fixResults, fixSummary, preCheckFailure } = await runFixes({
     fixes,
@@ -289,7 +287,7 @@ export async function runFixes({
         });
       }
     } catch (error) {
-      logger.info(`⚠️  failed to check fix ${picocolors.bold(f.id)}`);
+      prompt.warn(`Failed to check fix: ${picocolors.bold(f.id)}`);
       if (error instanceof Error) {
         logger.error(`\n${error.stack}`);
         fixSummary.failed[f.id] = error.message;
@@ -300,9 +298,6 @@ export async function runFixes({
     if (result) {
       const promptType: Prompt =
         typeof f.promptType === 'function' ? await f.promptType(result) : (f.promptType ?? 'auto');
-
-      logger.info(`\n🔎 found a '${picocolors.cyan(f.id)}' migration:`);
-      const message = f.prompt(result);
 
       const getTitle = () => {
         switch (promptType) {
@@ -315,9 +310,11 @@ export async function runFixes({
         }
       };
 
-      prompt.logBox(message, {
-        title: getTitle(),
+      const currentTaskLogger = prompt.taskLog({
+        title: `${getTitle()}: ${picocolors.cyan(f.id)}`,
       });
+
+      currentTaskLogger.message(f.prompt(result));
 
       let runAnswer: { fix: boolean } | undefined;
 
@@ -401,23 +398,23 @@ export async function runFixes({
               mainConfig,
               skipInstall,
               storybookVersion,
+              logger: currentTaskLogger,
             });
-            logger.info(`✅ ran ${picocolors.cyan(f.id)} migration`);
 
             fixResults[f.id] = FixStatus.SUCCEEDED;
             fixSummary.succeeded.push(f.id);
+            currentTaskLogger.success(`Ran ${picocolors.cyan(f.id)} migration`);
           } catch (error) {
             fixResults[f.id] = FixStatus.FAILED;
             fixSummary.failed[f.id] =
               error instanceof Error ? error.message : 'Failed to run migration';
 
-            logger.info(`❌ error when running ${picocolors.cyan(f.id)} migration`);
-            logger.info(error);
-            logger.info();
+            currentTaskLogger.error(`Error when running ${picocolors.cyan(f.id)} migration`);
           }
         } else {
           fixResults[f.id] = FixStatus.SKIPPED;
           fixSummary.skipped.push(f.id);
+          currentTaskLogger.success(`Skipped ${picocolors.cyan(f.id)} migration`);
         }
       }
     } else {

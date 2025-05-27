@@ -1,13 +1,13 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
-import { type JsPackageManager, paddedLog } from 'storybook/internal/common';
+import { type JsPackageManager } from 'storybook/internal/common';
 import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
+import { prompt } from 'storybook/internal/node-logger';
 
 import commentJson from 'comment-json';
 import detectIndent from 'detect-indent';
 import { findUp } from 'find-up';
 import picocolors from 'picocolors';
-import prompts from 'prompts';
 import { dedent } from 'ts-dedent';
 
 import { babelParse, recast, types as t, traverse } from '../babel';
@@ -202,7 +202,6 @@ export async function configureEslintPlugin({
   isFlatConfig: boolean;
 }) {
   if (eslintConfigFile) {
-    paddedLog(`Configuring Storybook ESLint plugin at ${eslintConfigFile}`);
     if (eslintConfigFile.endsWith('json')) {
       const eslintFileContents = await readFile(eslintConfigFile, { encoding: 'utf8' });
       const eslintConfig = commentJson.parse(eslintFileContents) as {
@@ -223,6 +222,7 @@ export async function configureEslintPlugin({
       await writeFile(eslintConfigFile, commentJson.stringify(eslintConfig, null, spaces));
     } else {
       if (isFlatConfig) {
+        prompt.debug(`Detected flat config at ${eslintConfigFile}`);
         const code = await readFile(eslintConfigFile, { encoding: 'utf8' });
         const output = await configureFlatConfig(code);
         await writeFile(eslintConfigFile, output);
@@ -240,7 +240,7 @@ export async function configureEslintPlugin({
       }
     }
   } else {
-    paddedLog(`Configuring eslint-plugin-storybook in your package.json`);
+    prompt.debug(`Detected JSON config at ${eslintConfigFile}`);
     const { packageJson } = packageManager.primaryPackageJson;
     const existingExtends = normalizeExtends(packageJson.eslintConfig?.extends).filter(Boolean);
 
@@ -255,9 +255,7 @@ export async function configureEslintPlugin({
 }
 
 export const suggestESLintPlugin = async (): Promise<boolean> => {
-  const { shouldInstall } = await prompts({
-    type: 'confirm',
-    name: 'shouldInstall',
+  const shouldInstall = await prompt.confirm({
     message: dedent`
         We have detected that you're using ESLint. Storybook provides a plugin that gives the best experience with Storybook and helps follow best practices: ${picocolors.yellow(
           'https://storybook.js.org/docs/9/configure/integration/eslint-plugin'
@@ -265,7 +263,7 @@ export const suggestESLintPlugin = async (): Promise<boolean> => {
 
         Would you like to install it?
       `,
-    initial: true,
+    initialValue: true,
   });
 
   return shouldInstall;

@@ -1,4 +1,5 @@
 import { getAddonNames } from 'storybook/internal/common';
+import { prompt } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
@@ -34,15 +35,20 @@ export const removeAddonInteractions: Fix<{}> = {
 
   async run({ packageManager, dryRun, configDir }) {
     if (!dryRun) {
-      console.log('Removing @storybook/addon-interactions...');
-
-      await packageManager.runPackageCommand('storybook', [
-        'remove',
-        '@storybook/addon-interactions',
-        '--config-dir',
-        configDir,
-        '--skip-install',
-      ]);
+      await prompt.executeTaskWithSpinner(
+        packageManager.runPackageCommand('storybook', [
+          'remove',
+          '@storybook/addon-interactions',
+          '--config-dir',
+          configDir,
+          '--skip-install',
+        ]),
+        {
+          intro: 'Removing @storybook/addon-interactions...',
+          error: 'Failed to remove @storybook/addon-interactions',
+          success: 'Removed @storybook/addon-interactions',
+        }
+      );
     }
   },
 };

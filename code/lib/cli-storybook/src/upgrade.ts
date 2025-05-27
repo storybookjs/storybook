@@ -18,6 +18,7 @@ import { doctor } from './doctor';
 import {
   type CollectProjectsSuccessResult,
   getProjects,
+  shortenPath,
   upgradeStorybookDependencies,
 } from './util';
 
@@ -185,7 +186,7 @@ export const doUpgrade = async (
 export type UpgradeOptions = Omit<InternalUpgradeOptions, 'configDir'> & { configDir?: string[] };
 
 export async function upgrade(options: UpgradeOptions): Promise<void> {
-  const gitRoot = getProjectRoot();
+  prompt.intro('Storybook Upgrade');
   // TODO: telemetry for upgrade start
   const projects = await getProjects(options);
   if (projects === undefined || projects.length === 0) {
@@ -224,7 +225,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
 
   if (autoblockerMessages.length > 0) {
     const formatConfigDirs = (configDirs: string[]) => {
-      const relativeDirs = configDirs.map((dir) => dir.replace(gitRoot, '') || '.');
+      const relativeDirs = configDirs.map((dir) => shortenPath(dir) || '.');
       if (relativeDirs.length <= 3) {
         return relativeDirs.join(', ');
       }
@@ -258,12 +259,21 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     }
   });
 
+  if (projects.length === 1) {
+    await withTelemetry(
+      'upgrade',
+      { cliOptions: { ...options, configDir: projects[0].configDir } },
+      async () => doUpgrade({ ...options, configDir: projects[0].configDir }, projects[0])
+    );
+    return;
+  }
+
   const upgradeStatus: {
     projectName: string;
     status: 'incomplete' | 'complete' | 'failed';
     error?: any;
   }[] = projects.map((data) => {
-    const projectName = data.configDir.replace(gitRoot, '');
+    const projectName = shortenPath(data.configDir);
     return {
       projectName,
       status: 'incomplete',
@@ -274,7 +284,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
   // Migrate each selected project
   for (let i = 0; i < projects.length; i++) {
     const storybookProject = projects[i].configDir;
-    const projectName = storybookProject.replace(gitRoot, '');
+    const projectName = shortenPath(storybookProject);
 
     logger.plain(
       `\nUpgrading project ${i + 1}/${projects.length}:\n\t${picocolors.cyan(projectName)}`

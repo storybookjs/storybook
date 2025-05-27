@@ -291,14 +291,19 @@ export const getInstalledStorybookVersion = async (
  * @param currentCLIVersion - Current CLI version
  * @returns Promise resolving to project collection result
  */
-const processProject = async (
-  configDir: string,
-  options: UpgradeOptions,
-  currentCLIVersion: string
-): Promise<CollectProjectsResult> => {
-  logger.plain(`Scanning ${picocolors.cyan(configDir)}`);
-
+const processProject = async ({
+  configDir,
+  options,
+  currentCLIVersion,
+  onScanStart,
+}: {
+  configDir: string;
+  options: UpgradeOptions;
+  currentCLIVersion: string;
+  onScanStart: () => void;
+}): Promise<CollectProjectsResult> => {
   try {
+    onScanStart();
     const {
       configDir: resolvedConfigDir,
       mainConfig,
@@ -390,11 +395,22 @@ export const collectProjects = async (
 ): Promise<CollectProjectsResult[]> => {
   const currentCLIVersion = versions.storybook;
 
+  const task = prompt.spinner();
+  task.start(`Scanning projects`);
+
   const projectPromises = configDirs.map((configDir) =>
-    processProject(configDir, options, currentCLIVersion)
+    processProject({
+      configDir,
+      options,
+      currentCLIVersion,
+      onScanStart: () => task.message(`Scanning ${shortenPath(configDir)}`),
+    })
   );
 
-  return Promise.all(projectPromises);
+  const result = await Promise.all(projectPromises);
+
+  task.stop(`Found ${result.length} project(s)`);
+  return result;
 };
 
 /**
@@ -516,10 +532,14 @@ const addDependencies = async (
 export const upgradeStorybookDependencies = async (config: UpgradeConfig): Promise<void> => {
   const { packageManager } = config;
 
-  logger.info(`Updating dependencies in ${picocolors.cyan('package.json')}...`);
+  const task = prompt.taskLog({
+    title: 'Updating dependencies in package.json files',
+  });
 
+  let updatedCount = 0;
   for (const packageJsonPath of packageManager.packageJsonPaths) {
     try {
+      task.message(shortenPath(packageJsonPath));
       const packageJson = JsPackageManager.getPackageJson(packageJsonPath);
 
       const [upgradedDependencies, upgradedDevDependencies] = await Promise.all([
@@ -531,11 +551,14 @@ export const upgradeStorybookDependencies = async (config: UpgradeConfig): Promi
         addDependencies(packageManager, upgradedDependencies, false),
         addDependencies(packageManager, upgradedDevDependencies, true),
       ]);
+      updatedCount++;
     } catch (error) {
-      logger.error(`Failed to upgrade dependencies in ${packageJsonPath}`);
+      task.error(`Failed to upgrade dependencies in ${packageJsonPath}`);
       throw error;
     }
   }
+
+  task.success(`Updated dependencies in ${updatedCount} files`);
 };
 
 /**
@@ -543,13 +566,11 @@ export const upgradeStorybookDependencies = async (config: UpgradeConfig): Promi
  *
  * @param projectData - Array of project results
  * @param modifier - Symbol to prefix each directory
- * @param gitRoot - Git root path for relative path calculation
  * @returns Formatted string of project directories
  */
 const formatProjectDirectories = (
   projectData: readonly CollectProjectsResult[],
-  modifier: string,
-  gitRoot: string
+  modifier: string
 ): string => {
   if (projectData.length === 0) {
     return '';
@@ -557,8 +578,19 @@ const formatProjectDirectories = (
 
   return projectData
     .map((project) => project.configDir)
-    .map((dir) => `${modifier} ${picocolors.cyan(dir.replace(gitRoot, ''))}`)
+    .map((dir) => `${modifier} ${picocolors.cyan(shortenPath(dir))}`)
     .join('\n');
+};
+
+/**
+ * Shortens a path to the relative path from the project root
+ *
+ * @param path - The path to shorten
+ * @returns The shortened path
+ */
+export const shortenPath = (path: string) => {
+  const gitRoot = getProjectRoot();
+  return path.replace(gitRoot, '');
 };
 
 /**
@@ -574,8 +606,6 @@ const handleMultipleProjects = async (
   errorProjects: readonly CollectProjectsErrorResult[],
   detectedConfigDirs: readonly string[]
 ): Promise<CollectProjectsSuccessResult[] | undefined> => {
-  const gitRoot = getProjectRoot();
-
   // Check for overlapping Storybooks
   const allPackageJsonPaths = validProjects
     .flatMap((data) => data.packageManager.packageJsonPaths)
@@ -585,10 +615,10 @@ const handleMultipleProjects = async (
   const hasOverlappingStorybooks = uniquePackageJsonPaths.size !== allPackageJsonPaths.length;
 
   if (hasOverlappingStorybooks) {
-    const validProjectsMessage = formatProjectDirectories(validProjects, '✔', gitRoot);
+    const validProjectsMessage = formatProjectDirectories(validProjects, '✔');
     const invalidProjectsMessage =
       errorProjects.length > 0
-        ? `\nThere were some errors while collecting data for the following projects:\n${formatProjectDirectories(errorProjects, '✕', gitRoot)}`
+        ? `\nThere were some errors while collecting data for the following projects:\n${formatProjectDirectories(errorProjects, '✕')}`
         : '';
 
     logger.plain(
@@ -611,7 +641,7 @@ const handleMultipleProjects = async (
     const selectedConfigDirs = await prompt.multiselect({
       message: 'Select which projects to upgrade',
       options: detectedConfigDirs.map((configDir) => ({
-        label: configDir.replace(gitRoot, ''),
+        label: shortenPath(configDir),
         value: configDir,
       })),
     });
@@ -641,8 +671,6 @@ export const getProjects = async (
   options: UpgradeOptions
 ): Promise<CollectProjectsSuccessResult[] | undefined> => {
   try {
-    const gitRoot = getProjectRoot();
-
     // Determine configuration directories
     let detectedConfigDirs: string[] = options.configDir ?? [];
     if (!options.configDir || options.configDir.length === 0) {
@@ -667,7 +695,7 @@ export const getProjects = async (
     if (validProjects.length === 0 && errorProjects.length > 0) {
       const errorMessage = errorProjects
         .map((project) => {
-          const relativePath = project.configDir.replace(gitRoot, '');
+          const relativePath = shortenPath(project.configDir);
           return `${picocolors.cyan(relativePath)}:\n${project.error.message}`;
         })
         .join('\n');

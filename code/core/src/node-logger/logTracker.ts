@@ -6,7 +6,7 @@ import { cleanLog } from '../../../lib/cli-storybook/src/automigrate/helpers/cle
 type Metadata = Record<string, any>;
 export interface LogEntry {
   timestamp: Date;
-  level: 'info' | 'warn' | 'error' | 'task' | 'prompt';
+  level: 'info' | 'warn' | 'error' | 'debug' | 'task' | 'prompt';
   message: string;
   metadata?: Metadata;
 }

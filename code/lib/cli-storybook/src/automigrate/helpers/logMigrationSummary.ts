@@ -1,4 +1,5 @@
-import { type InstallationMetadata, prompt } from 'storybook/internal/common';
+import { type InstallationMetadata } from 'storybook/internal/common';
+import { prompt } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';

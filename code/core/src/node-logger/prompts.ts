@@ -115,6 +115,7 @@ type BoxenOptions = {
 
 const logBox = (message: string, style?: BoxenOptions) => {
   logTracker.addLog('info', message);
+  clack.log.info('');
   console.log(
     boxen(message, {
       borderStyle: 'round',
@@ -133,6 +134,11 @@ const log = (message: string) => {
   clack.log.message(message);
 };
 
+const info = (message: string) => {
+  logTracker.addLog('info', message);
+  clack.log.info(message);
+};
+
 const warn = (message: string) => {
   logTracker.addLog('warn', message);
   clack.log.warn(message);
@@ -143,6 +149,13 @@ const error = (message: string) => {
   clack.log.error(message);
 };
 
+const debug = (message: string) => {
+  logTracker.addLog('debug', message);
+  if (process.env.DEBUG) {
+    clack.log.message(message);
+  }
+};
+
 const spinner = clack.spinner;
 
 /**
@@ -150,7 +163,7 @@ const spinner = clack.spinner;
  * display the output in a task log.
  */
 const executeTask = async (
-  fn: () => ExecaChildProcess,
+  childProcess: ExecaChildProcess,
   { intro, error, success }: { intro: string; error: string; success: string }
 ) => {
   logTracker.addLog('task', intro);
@@ -160,7 +173,6 @@ const executeTask = async (
     limit: 10,
   });
   try {
-    const childProcess = fn();
     childProcess.stdout?.on('data', (data: Buffer) => {
       const message = data.toString().trim();
       logTracker.addLog('task', message);
@@ -179,14 +191,13 @@ const executeTask = async (
 
 // TODO: Discuss whether we want this given that we already have "executeTask" above
 const executeTaskWithSpinner = async (
-  fn: () => ExecaChildProcess,
+  childProcess: ExecaChildProcess,
   { intro, error, success }: { intro: string; error: string; success: string }
 ) => {
   logTracker.addLog('task', intro);
   const task = spinner();
   task.start(intro);
   try {
-    const childProcess = fn();
     childProcess.stdout?.on('data', (data: Buffer) => {
       const message = data.toString().trim().slice(0, 25);
       logTracker.addLog('task', `${intro}: ${data.toString()}`);
@@ -214,16 +225,30 @@ export const clearTrackedLogs = (): void => {
   logTracker.clear();
 };
 
+// TODO: de-clack the type
+export const taskLog = (options: clack.TaskLogOptions) => {
+  return clack.taskLog(options);
+};
+
+export const intro = (message: string) => {
+  logTracker.addLog('info', message);
+  clack.intro(message);
+};
+
 export const prompt = {
   spinner,
   confirm,
+  intro,
   text,
   select,
   multiselect,
   logBox,
   log,
   warn,
+  info,
   error,
+  debug,
+  taskLog,
   executeTask,
   executeTaskWithSpinner,
   writeLogsToFile,

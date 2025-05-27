@@ -38,7 +38,7 @@ const consolidatedAddons = {
  * - If user had docs disabled: Skip addon-docs installation
  */
 export const removeEssentials: Fix<AddonDocsOptions> = {
-  id: 'remove-essentials',
+  id: 'remove-essentials-addons',
   versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
 
   async check({ mainConfigPath, mainConfig, packageManager }) {

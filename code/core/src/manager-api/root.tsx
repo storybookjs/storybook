@@ -13,6 +13,7 @@ import React, {
 import type { Listener } from 'storybook/internal/channels';
 import { deprecate } from 'storybook/internal/client-logger';
 import {
+  DOCS_PREPARED,
   SET_STORIES,
   SHARED_STATE_CHANGED,
   SHARED_STATE_SET,
@@ -341,16 +342,19 @@ export function useParameter<S>(parameterKey: string, defaultValue?: S) {
   const api = useStorybookApi();
   const [parameter, setParameter] = useState(api.getCurrentParameter<S>(parameterKey));
 
+  const handleParameterChange = useCallback(() => {
+    const newParameter = api.getCurrentParameter<S>(parameterKey);
+    if (newParameter !== parameter) {
+      setParameter(newParameter);
+    }
+  }, [api, parameter, parameterKey]);
+
   useChannel(
     {
-      [STORY_PREPARED]: () => {
-        const newParameter = api.getCurrentParameter<S>(parameterKey);
-        if (newParameter !== parameter) {
-          setParameter(newParameter);
-        }
-      },
+      [STORY_PREPARED]: handleParameterChange,
+      [DOCS_PREPARED]: handleParameterChange,
     },
-    []
+    [handleParameterChange]
   );
 
   return orDefault<S>(parameter, defaultValue!);

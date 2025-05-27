@@ -7,6 +7,7 @@ import React, {
   useEffect,
   useMemo,
   useRef,
+  useState,
 } from 'react';
 
 import type { Listener } from 'storybook/internal/channels';
@@ -16,6 +17,7 @@ import {
   SHARED_STATE_CHANGED,
   SHARED_STATE_SET,
   STORY_CHANGED,
+  STORY_PREPARED,
 } from 'storybook/internal/core-events';
 import type { RouterData } from 'storybook/internal/router';
 import type {
@@ -337,9 +339,21 @@ export function useStoryPrepared(storyId?: StoryId) {
 
 export function useParameter<S>(parameterKey: string, defaultValue?: S) {
   const api = useStorybookApi();
+  const [parameter, setParameter] = useState(api.getCurrentParameter<S>(parameterKey));
 
-  const result = api.getCurrentParameter<S>(parameterKey);
-  return orDefault<S>(result, defaultValue!);
+  useChannel(
+    {
+      [STORY_PREPARED]: () => {
+        const newParameter = api.getCurrentParameter<S>(parameterKey);
+        if (newParameter !== parameter) {
+          setParameter(api.getCurrentParameter<S>(parameterKey));
+        }
+      },
+    },
+    []
+  );
+
+  return orDefault<S>(parameter, defaultValue!);
 }
 
 // cache for taking care of HMR

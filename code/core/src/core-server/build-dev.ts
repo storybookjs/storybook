@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { join, relative, resolve } from 'node:path';
 
 import {
+  JsPackageManagerFactory,
   getConfigInfo,
   getProjectRoot,
   loadAllPresets,
@@ -106,8 +107,12 @@ export async function buildDevStandalone(
 
   frameworkName = frameworkName || 'custom';
 
+  const packageManager = JsPackageManagerFactory.getPackageManager({
+    configDir: options.configDir,
+  });
+
   try {
-    await warnOnIncompatibleAddons(storybookVersion);
+    await warnOnIncompatibleAddons(storybookVersion, packageManager);
   } catch (e) {
     console.warn('Storybook failed to check addon compatibility', e);
   }

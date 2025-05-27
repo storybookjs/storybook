@@ -223,8 +223,6 @@ export const doUpgrade = async (
     });
   }
 
-  await packageManager.installDependencies();
-
   await doctor(allOptions);
 };
 
@@ -284,6 +282,8 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       upgradeStatus[i].error = error;
     }
   }
+
+  await upgradeData[0]?.packageManager.installDependencies();
 
   const failedProjects = upgradeStatus.filter((status) => status.status === 'failed');
 

@@ -99,20 +99,14 @@ export const checkPackageCompatibility = async (
 };
 
 export const getIncompatibleStorybookPackages = async (
-  context: Omit<Context, 'packageManager'> & Partial<Pick<Context, 'packageManager'>>
+  context: Context
 ): Promise<AnalysedPackage[]> => {
-  const packageManager = context.packageManager ?? JsPackageManagerFactory.getPackageManager();
-
-  const allDeps = packageManager.getAllDependencies();
+  const allDeps = context.packageManager.getAllDependencies();
   const storybookLikeDeps = Object.keys(allDeps).filter((dep) => dep.includes('storybook'));
-
   if (storybookLikeDeps.length === 0 && !context.skipErrors) {
     throw new Error('No Storybook dependencies found in the package.json');
   }
-
-  return Promise.all(
-    storybookLikeDeps.map((dep) => checkPackageCompatibility(dep, { ...context, packageManager }))
-  );
+  return Promise.all(storybookLikeDeps.map((dep) => checkPackageCompatibility(dep, context)));
 };
 
 export const getIncompatiblePackagesSummary = (

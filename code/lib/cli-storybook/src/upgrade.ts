@@ -1,16 +1,5 @@
-import { readFileSync } from 'node:fs';
-
-import { hasStorybookDependencies } from 'storybook/internal/cli';
-import type { PackageJsonWithDepsAndDevDeps, PackageManagerName } from 'storybook/internal/common';
-import { JsPackageManager } from 'storybook/internal/common';
-import {
-  JsPackageManagerFactory,
-  getProjectRoot,
-  isCorePackage,
-  isSatelliteAddon,
-  prompt,
-  versions,
-} from 'storybook/internal/common';
+import type { PackageManagerName } from 'storybook/internal/common';
+import { getProjectRoot, isCorePackage, prompt } from 'storybook/internal/common';
 import { withTelemetry } from 'storybook/internal/core-server';
 import { logger } from 'storybook/internal/node-logger';
 import {
@@ -23,24 +12,14 @@ import { telemetry } from 'storybook/internal/telemetry';
 
 import { sync as spawnSync } from 'cross-spawn';
 import picocolors from 'picocolors';
-import prompts from 'prompts';
-import semver, { clean, eq, lt, prerelease } from 'semver';
+import semver, { clean } from 'semver';
 import { dedent } from 'ts-dedent';
 
 import { autoblock } from './autoblock/index';
 import { getStorybookData } from './automigrate/helpers/mainConfigFile';
 import { automigrate } from './automigrate/index';
 import { doctor } from './doctor';
-import {
-  type CollectProjectsResult,
-  type CollectProjectsSuccessResult,
-  collectProjects,
-  findStorybookProjects,
-  getProjects,
-  isErrorResult,
-  isSuccessResult,
-  upgradeStorybookDependencies,
-} from './util';
+import { getProjects, upgradeStorybookDependencies } from './util';
 
 type Package = {
   package: string;
@@ -202,7 +181,6 @@ export const doUpgrade = async (
   if (!dryRun && !results) {
     await upgradeStorybookDependencies({
       packageManager,
-      packageJson,
       isCanary,
       isCLIOutdated,
       isCLIPrerelease,

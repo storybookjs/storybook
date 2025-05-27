@@ -49,6 +49,7 @@ export function checkUpgrade(currentVersion: string, targetVersion: string): Upg
 
 export const blocker = createBlocker<MajorVersionData>({
   id: 'major-version-gap',
+  link: 'https://storybook.js.org/docs/9/migration-guide',
   async check(options) {
     const { packageManager } = options;
 
@@ -74,19 +75,15 @@ export const blocker = createBlocker<MajorVersionData>({
       return false;
     }
   },
-  log(options, data) {
+  log(data) {
     const coercedVersion = coerce(data.currentVersion);
 
     if (data.reason === 'downgrade') {
       return dedent`
         ${picocolors.red('Downgrade Not Supported')}
         Your Storybook version (v${data.currentVersion}) is newer than the target release (v${versions.storybook}).
-        Downgrading is not supported.
-
-        For more information about upgrading and version compatibility, visit:
-        ${picocolors.cyan('https://storybook.js.org/docs/configure/upgrading')}`;
+        Downgrading is not supported.`;
     }
-
     const message = dedent`
       ${picocolors.red('Major Version Gap Detected')}
       Your Storybook version (v${data.currentVersion}) is more than one major version behind the target release (v${versions.storybook}).
@@ -96,20 +93,12 @@ export const blocker = createBlocker<MajorVersionData>({
       const currentMajor = major(coercedVersion);
       const nextMajor = currentMajor + 1;
       const cmd = `npx storybook@${nextMajor} upgrade`;
-      return dedent`
+      return `
         ${message}
 
         You can upgrade to version ${nextMajor} by running:
-        ${picocolors.cyan(cmd)}
-
-        For more information about upgrading, visit:
-        ${picocolors.cyan('https://storybook.js.org/docs/configure/upgrading')}`;
+        ${picocolors.cyan(cmd)}`;
     }
-
-    return dedent`
-      ${message}
-
-      For more information about upgrading, visit:
-      ${picocolors.cyan('https://storybook.js.org/docs/configure/upgrading')}`;
+    return message;
   },
 });

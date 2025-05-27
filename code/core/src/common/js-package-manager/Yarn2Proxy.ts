@@ -138,9 +138,13 @@ export class Yarn2Proxy extends JsPackageManager {
       try {
         const pnpApi = require(pnpapiPath);
 
-        const resolvedPath = pnpApi.resolveToUnqualified(packageName, this.cwd, {
-          considerBuiltins: false,
-        });
+        const resolvedPath = pnpApi.resolveToUnqualified(
+          packageName,
+          this.primaryPackageJson.operationDir,
+          {
+            considerBuiltins: false,
+          }
+        );
 
         const pkgLocator = pnpApi.findPackageLocator(resolvedPath);
         const pkg = pnpApi.getPackageInformation(pkgLocator);
@@ -168,7 +172,7 @@ export class Yarn2Proxy extends JsPackageManager {
         const possiblePath = join(dir, 'node_modules', packageName, 'package.json');
         return existsSync(possiblePath) ? possiblePath : undefined;
       },
-      { cwd: this.cwd, stopAt: getProjectRoot() }
+      { cwd: this.primaryPackageJson.operationDir, stopAt: getProjectRoot() }
     );
 
     if (!packageJsonPath) {

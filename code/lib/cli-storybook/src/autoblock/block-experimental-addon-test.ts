@@ -6,6 +6,7 @@ import { createBlocker } from './types';
 
 export const blocker = createBlocker({
   id: 'experimentalAddonTestVitest',
+  link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vitest-addon-former-storybookexperimental-addon-test-vitest-20-support-is-dropped',
   async check({ packageJson, packageManager }) {
     const dependencies = {
       ...packageJson.dependencies,

@@ -84,7 +84,7 @@ export class NPMProxy extends JsPackageManager {
         const possiblePath = join(dir, 'node_modules', packageName, 'package.json');
         return existsSync(possiblePath) ? possiblePath : undefined;
       },
-      { cwd: this.cwd, stopAt: getProjectRoot() }
+      { cwd: this.primaryPackageJson.operationDir, stopAt: getProjectRoot() }
     );
 
     if (!packageJsonPath) {

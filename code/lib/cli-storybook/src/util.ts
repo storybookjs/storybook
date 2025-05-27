@@ -14,7 +14,8 @@ import { globby } from 'globby';
 import picocolors from 'picocolors';
 import { lt, prerelease } from 'semver';
 
-import { autoblock } from './autoblock/index';
+import { autoblock } from './autoblock';
+import type { AutoblockerResult } from './autoblock/types';
 import { getStorybookData } from './automigrate/helpers/mainConfigFile';
 import { type UpgradeOptions } from './upgrade';
 
@@ -42,8 +43,7 @@ export interface CollectProjectsSuccessResult extends UpgradeConfig {
   readonly beforeVersion: string;
   readonly currentCLIVersion: string;
   readonly latestCLIVersionOnNPM: string;
-  // TODO: figure out this type
-  readonly blockers: unknown;
+  readonly autoblockerCheckResults: AutoblockerResult<unknown>[] | null;
 }
 
 /** Result when project collection fails */
@@ -329,13 +329,14 @@ const processProject = async (
     const isUpgrade = lt(beforeVersion, currentCLIVersion);
 
     // Check for blockers
-    let blockers: unknown;
+    let autoblockerCheckResults: AutoblockerResult<unknown>[] | null = null;
+
     if (
       typeof mainConfig !== 'boolean' &&
       typeof mainConfigPath !== 'undefined' &&
       !options.force
     ) {
-      blockers = await autoblock({
+      autoblockerCheckResults = await autoblock({
         packageManager,
         configDir: resolvedConfigDir,
         packageJson: packageManager.primaryPackageJson.packageJson,
@@ -358,7 +359,7 @@ const processProject = async (
       currentCLIVersion,
       latestCLIVersionOnNPM,
       isCLIExactPrerelease,
-      blockers,
+      autoblockerCheckResults,
       previewConfigPath,
     } satisfies CollectProjectsSuccessResult;
   } catch (error) {

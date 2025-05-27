@@ -152,7 +152,7 @@ describe('blocker', () => {
 
   describe('log', () => {
     it('includes upgrade command for gap-too-large', () => {
-      const message = blocker.log({ packageManager: mockPackageManager } as any, {
+      const message = blocker.log({
         currentVersion: '6.0.0',
         reason: 'gap-too-large',
       });
@@ -162,7 +162,7 @@ describe('blocker', () => {
     });
 
     it('shows downgrade message for downgrade attempts', () => {
-      const message = blocker.log({ packageManager: mockPackageManager } as any, {
+      const message = blocker.log({
         currentVersion: '8.0.0',
         reason: 'downgrade',
       });
@@ -172,13 +172,12 @@ describe('blocker', () => {
     });
 
     it('omits upgrade command for invalid versions', () => {
-      const message = blocker.log({ packageManager: mockPackageManager } as any, {
+      const message = blocker.log({
         currentVersion: 'invalid',
         reason: 'gap-too-large',
       });
       expect(message).not.toContain('You can upgrade to version');
       expect(message).toContain('Major Version Gap Detected');
-      expect(message).toContain('For more information about upgrading');
     });
   });
 });

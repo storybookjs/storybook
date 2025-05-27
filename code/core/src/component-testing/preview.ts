@@ -1,7 +1,7 @@
 import { instrument } from 'storybook/internal/instrumenter';
 import type { PlayFunction, StepLabel, StoryContext } from 'storybook/internal/types';
 
-import { definePreview } from 'storybook/preview-api';
+import { definePreview } from '../preview-api/modules/addons/definePreview';
 
 const { step } = instrument(
   {

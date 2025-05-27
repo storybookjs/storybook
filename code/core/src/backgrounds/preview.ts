@@ -1,5 +1,4 @@
-import { definePreview } from 'storybook/preview-api';
-
+import { definePreview } from '../preview-api/modules/addons/definePreview';
 import { PARAM_KEY } from './constants';
 import { withBackgroundAndGrid } from './decorator';
 import type { BackgroundsParameters, GlobalState } from './types';

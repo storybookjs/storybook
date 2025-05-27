@@ -1,7 +1,6 @@
 import type { LoaderFunction } from 'storybook/internal/csf';
 import { instrument } from 'storybook/internal/instrumenter';
 
-import { definePreview } from 'storybook/preview-api';
 import {
   clearAllMocks,
   fn,
@@ -11,6 +10,8 @@ import {
   uninstrumentedUserEvent,
   within,
 } from 'storybook/test';
+
+import { definePreview } from '../preview-api/modules/addons/definePreview';
 
 const resetAllMocksLoader: LoaderFunction = ({ parameters }) => {
   if (parameters?.test?.mockReset === true) {

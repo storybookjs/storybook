@@ -1,4 +1,4 @@
-import { definePreview } from 'storybook/preview-api';
+import { definePreview } from '../preview-api/modules/addons/definePreview';
 
 export default definePreview({
   // Controls addon doesn't need any preview-side configuration

@@ -130,10 +130,25 @@ const logBox = (message: string, style?: BoxenOptions) => {
   );
 };
 
+const log = (message: string) => {
+  console.log(message);
+};
+
+const warn = (message: string) => {
+  console.warn(message);
+};
+
+const error = (message: string) => {
+  console.error(message);
+};
+
 export const prompt = {
   confirm,
   text,
   select,
   multiselect,
   logBox,
+  log,
+  warn,
+  error,
 };

@@ -3,8 +3,8 @@ import { readdir, rm } from 'node:fs/promises';
 import { isAbsolute, join } from 'node:path';
 
 import type { PackageManagerName } from 'storybook/internal/common';
-import { JsPackageManagerFactory, prompt } from 'storybook/internal/common';
-import { versions } from 'storybook/internal/common';
+import { JsPackageManagerFactory, versions } from 'storybook/internal/common';
+import { prompt } from 'storybook/internal/node-logger';
 
 import { downloadTemplate } from 'giget';
 import picocolors from 'picocolors';

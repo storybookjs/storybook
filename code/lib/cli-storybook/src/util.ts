@@ -1,7 +1,7 @@
 import type { PackageJsonWithDepsAndDevDeps } from 'storybook/internal/common';
 import { JsPackageManager } from 'storybook/internal/common';
-import { getProjectRoot, isSatelliteAddon, prompt, versions } from 'storybook/internal/common';
-import { logger } from 'storybook/internal/node-logger';
+import { getProjectRoot, isSatelliteAddon, versions } from 'storybook/internal/common';
+import { logger, prompt } from 'storybook/internal/node-logger';
 import {
   UpgradeStorybookToLowerVersionError,
   UpgradeStorybookUnknownCurrentVersionError,

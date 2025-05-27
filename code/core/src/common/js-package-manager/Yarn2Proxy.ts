@@ -102,7 +102,7 @@ export class Yarn2Proxy extends JsPackageManager {
     return this.executeCommandSync({ command: 'yarn', args: [command, ...args], cwd, stdio });
   }
 
-  async runPackageCommand(command: string, args: string[], cwd?: string) {
+  runPackageCommand(command: string, args: string[], cwd?: string) {
     return this.executeCommand({ command: 'yarn', args: ['exec', command, ...args], cwd });
   }
 
@@ -114,13 +114,15 @@ export class Yarn2Proxy extends JsPackageManager {
     }
 
     try {
-      const commandResult = await this.executeCommand({
+      const process = this.executeCommand({
         command: 'yarn',
         args: yarnArgs.concat(pattern),
         env: {
           FORCE_COLOR: 'false',
         },
       });
+      const result = await process;
+      const commandResult = result.stdout ?? '';
 
       return this.mapDependencies(commandResult, pattern);
     } catch (e) {
@@ -192,70 +194,38 @@ export class Yarn2Proxy extends JsPackageManager {
     };
   }
 
-  protected async runInstall() {
-    await this.executeCommand({
+  protected runInstall() {
+    return this.executeCommand({
       command: 'yarn',
       args: ['install', ...this.getInstallArgs()],
-      stdio: 'inherit',
       cwd: this.cwd,
+      ignoreError: true,
     });
   }
 
-  protected async runAddDeps(
-    dependencies: string[],
-    installAsDevDependencies: boolean,
-    writeOutputToFile = true
-  ) {
+  protected runAddDeps(dependencies: string[], installAsDevDependencies: boolean) {
     let args = [...dependencies];
 
     if (installAsDevDependencies) {
       args = ['-D', ...args];
     }
 
-    const { logStream, readLogFile, moveLogFile, removeLogFile } = await createLogStream();
-
-    try {
-      await this.executeCommand({
-        command: 'yarn',
-        args: ['add', ...this.getInstallArgs(), ...args],
-        stdio: process.env.CI || !writeOutputToFile ? 'inherit' : ['ignore', logStream, logStream],
-        cwd: this.primaryPackageJson.operationDir,
-      });
-    } catch (err) {
-      if (!writeOutputToFile) {
-        throw err;
-      }
-      const stdout = await readLogFile();
-      const errorMessage = this.parseErrorFromLogs(stdout);
-      await moveLogFile();
-      throw new Error(
-        dedent`${errorMessage}
-        
-        Please check the logfile generated at ./storybook.log for troubleshooting and try again.`
-      );
-    }
-
-    await removeLogFile();
+    return this.executeCommand({
+      command: 'yarn',
+      args: ['add', ...this.getInstallArgs(), ...args],
+      stdio: 'pipe',
+      cwd: this.primaryPackageJson.operationDir,
+    });
   }
 
   public async getRegistryURL() {
-    const res = await this.executeCommand({
+    const process = this.executeCommand({
       command: 'yarn',
       args: ['config', 'get', 'npmRegistryServer'],
     });
-    const url = res.trim();
+    const result = await process;
+    const url = (result.stdout ?? '').trim();
     return url === 'undefined' ? undefined : url;
-  }
-
-  protected async runRemoveDeps(dependencies: string[], cwd = this.cwd) {
-    const args = [...dependencies];
-
-    await this.executeCommand({
-      command: 'yarn',
-      args: ['remove', ...this.getInstallArgs(), ...args],
-      stdio: 'inherit',
-      cwd,
-    });
   }
 
   protected async runGetVersions<T extends boolean>(
@@ -265,10 +235,12 @@ export class Yarn2Proxy extends JsPackageManager {
     const field = fetchAllVersions ? 'versions' : 'version';
     const args = ['--fields', field, '--json'];
     try {
-      const commandResult = await this.executeCommand({
+      const process = this.executeCommand({
         command: 'yarn',
         args: ['npm', 'info', packageName, ...args],
       });
+      const result = await process;
+      const commandResult = result.stdout ?? '';
 
       const parsedOutput = JSON.parse(commandResult);
       return parsedOutput[field];

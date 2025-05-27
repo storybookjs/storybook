@@ -1,7 +1,7 @@
 import type { PackageManagerName } from 'storybook/internal/common';
-import { getProjectRoot, isCorePackage, prompt } from 'storybook/internal/common';
+import { getProjectRoot, isCorePackage } from 'storybook/internal/common';
 import { withTelemetry } from 'storybook/internal/core-server';
-import { logger } from 'storybook/internal/node-logger';
+import { logger, prompt } from 'storybook/internal/node-logger';
 import {
   UpgradeStorybookToLowerVersionError,
   UpgradeStorybookUnknownCurrentVersionError,

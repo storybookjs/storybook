@@ -5,9 +5,9 @@ import {
   frameworkPackages,
   frameworkToRenderer,
   getProjectRoot,
-  prompt,
   rendererPackages,
 } from 'storybook/internal/common';
+import { prompt } from 'storybook/internal/node-logger';
 import type { PackageJson } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';

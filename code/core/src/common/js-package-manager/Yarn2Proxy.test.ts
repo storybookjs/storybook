@@ -17,7 +17,9 @@ describe('Yarn 2 Proxy', () => {
 
   describe('installDependencies', () => {
     it('should run `yarn`', async () => {
-      const executeCommandSpy = vi.spyOn(yarn2Proxy, 'executeCommand').mockResolvedValueOnce('');
+      const executeCommandSpy = vi.spyOn(yarn2Proxy, 'executeCommand').mockResolvedValueOnce({
+        stdout: '',
+      } as any);
 
       await yarn2Proxy.installDependencies();
 
@@ -29,9 +31,9 @@ describe('Yarn 2 Proxy', () => {
 
   describe('runScript', () => {
     it('should execute script `yarn compodoc -- -e json -d .`', async () => {
-      const executeCommandSpy = vi
-        .spyOn(yarn2Proxy, 'executeCommand')
-        .mockResolvedValueOnce('7.1.0');
+      const executeCommandSpy = vi.spyOn(yarn2Proxy, 'executeCommand').mockResolvedValueOnce({
+        stdout: '7.1.0',
+      } as any);
 
       await yarn2Proxy.runPackageCommand('compodoc', ['-e', 'json', '-d', '.']);
 
@@ -46,7 +48,9 @@ describe('Yarn 2 Proxy', () => {
 
   describe('addDependencies', () => {
     it('with devDep it should run `yarn install -D storybook`', async () => {
-      const executeCommandSpy = vi.spyOn(yarn2Proxy, 'executeCommand').mockResolvedValueOnce('');
+      const executeCommandSpy = vi.spyOn(yarn2Proxy, 'executeCommand').mockResolvedValueOnce({
+        stdout: '',
+      } as any);
 
       await yarn2Proxy.addDependencies({ installAsDevDependencies: true }, ['storybook']);
 
@@ -61,9 +65,9 @@ describe('Yarn 2 Proxy', () => {
 
   describe('removeDependencies', () => {
     it('skipInstall should only change package.json without running install', async () => {
-      const executeCommandSpy = vi
-        .spyOn(yarn2Proxy, 'executeCommand')
-        .mockResolvedValueOnce('7.0.0');
+      const executeCommandSpy = vi.spyOn(yarn2Proxy, 'executeCommand').mockResolvedValueOnce({
+        stdout: '7.0.0',
+      } as any);
       const writePackageSpy = vi.spyOn(yarn2Proxy, 'writePackageJson').mockImplementation(vi.fn());
 
       vi.spyOn(JsPackageManager, 'getPackageJson').mockImplementation(() => {
@@ -93,9 +97,9 @@ describe('Yarn 2 Proxy', () => {
 
   describe('latestVersion', () => {
     it('without constraint it returns the latest version', async () => {
-      const executeCommandSpy = vi
-        .spyOn(yarn2Proxy, 'executeCommand')
-        .mockResolvedValueOnce('{"name":"storybook","version":"5.3.19"}');
+      const executeCommandSpy = vi.spyOn(yarn2Proxy, 'executeCommand').mockResolvedValueOnce({
+        stdout: '{"name":"storybook","version":"5.3.19"}',
+      } as any);
 
       const version = await yarn2Proxy.latestVersion('storybook');
 
@@ -109,11 +113,9 @@ describe('Yarn 2 Proxy', () => {
     });
 
     it('with constraint it returns the latest version satisfying the constraint', async () => {
-      const executeCommandSpy = vi
-        .spyOn(yarn2Proxy, 'executeCommand')
-        .mockResolvedValueOnce(
-          '{"name":"storybook","versions":["4.25.3","5.3.19","6.0.0-beta.23"]}'
-        );
+      const executeCommandSpy = vi.spyOn(yarn2Proxy, 'executeCommand').mockResolvedValueOnce({
+        stdout: '{"name":"storybook","versions":["4.25.3","5.3.19","6.0.0-beta.23"]}',
+      } as any);
 
       const version = await yarn2Proxy.latestVersion('storybook', '5.X');
 
@@ -127,7 +129,9 @@ describe('Yarn 2 Proxy', () => {
     });
 
     it('throws an error if command output is not a valid JSON', async () => {
-      vi.spyOn(yarn2Proxy, 'executeCommand').mockResolvedValueOnce('NOT A JSON');
+      vi.spyOn(yarn2Proxy, 'executeCommand').mockResolvedValueOnce({
+        stdout: 'NOT A JSON',
+      } as any);
 
       await expect(yarn2Proxy.latestVersion('storybook')).rejects.toThrow();
     });
@@ -168,16 +172,18 @@ describe('Yarn 2 Proxy', () => {
   describe('mapDependencies', () => {
     it('should display duplicated dependencies based on yarn2 output', async () => {
       // yarn info --name-only --recursive "@storybook/*" "storybook"
-      vi.spyOn(yarn2Proxy, 'executeCommand').mockResolvedValueOnce(`
-      "unrelated-and-should-be-filtered@npm:1.0.0"
-      "@storybook/global@npm:5.0.0"
-      "@storybook/package@npm:7.0.0-beta.12"
-      "@storybook/package@npm:7.0.0-beta.19"
-      "@storybook/jest@npm:0.0.11-next.0"
-      "@storybook/manager-api@npm:7.0.0-beta.19"
-      "@storybook/manager@npm:7.0.0-beta.19"
-      "@storybook/mdx2-csf@npm:0.1.0-next.5"
-      `);
+      vi.spyOn(yarn2Proxy, 'executeCommand').mockResolvedValueOnce({
+        stdout: `
+          "unrelated-and-should-be-filtered@npm:1.0.0"
+          "@storybook/global@npm:5.0.0"
+          "@storybook/package@npm:7.0.0-beta.12"
+          "@storybook/package@npm:7.0.0-beta.19"
+          "@storybook/jest@npm:0.0.11-next.0"
+          "@storybook/manager-api@npm:7.0.0-beta.19"
+          "@storybook/manager@npm:7.0.0-beta.19"
+          "@storybook/mdx2-csf@npm:0.1.0-next.5"
+        `,
+      } as any);
 
       const installations = await yarn2Proxy.findInstallations(['@storybook/*']);
 

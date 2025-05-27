@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 
 // eslint-disable-next-line depend/ban-dependencies
-import { type CommonOptions, execaCommand, execaCommandSync } from 'execa';
+import { type CommonOptions, type ExecaChildProcess, execa, execaCommandSync } from 'execa';
 import { findUpMultipleSync, findUpSync } from 'find-up';
 import picocolors from 'picocolors';
 import { gt, satisfies } from 'semver';
@@ -129,16 +129,11 @@ export abstract class JsPackageManager {
     return false;
   }
 
-  async installDependencies() {
+  installDependencies() {
     logger.log('Installing dependencies...');
     logger.log();
 
-    try {
-      await this.runInstall();
-    } catch (e) {
-      logger.error('An error occurred while installing dependencies.');
-      throw new HandledError(e);
-    }
+    return this.runInstall();
   }
 
   /** Read the `package.json` file available in the provided directory */
@@ -203,7 +198,7 @@ export abstract class JsPackageManager {
       writeOutputToFile?: boolean;
     },
     dependencies: string[]
-  ) {
+  ): Promise<void | ExecaChildProcess> {
     const { skipInstall, writeOutputToFile = true } = options;
 
     const { operationDir, packageJson } = this.primaryPackageJson;
@@ -225,7 +220,7 @@ export abstract class JsPackageManager {
       this.writePackageJson(packageJson, operationDir);
     } else {
       try {
-        await this.runAddDeps(
+        return this.runAddDeps(
           dependencies,
           Boolean(options.installAsDevDependencies),
           writeOutputToFile
@@ -427,15 +422,13 @@ export abstract class JsPackageManager {
     const resolutions = this.getResolutions(packageJson, versions);
     this.writePackageJson({ ...packageJson, ...resolutions }, operationDir);
   }
-  protected abstract runInstall(): Promise<void>;
+  protected abstract runInstall(): ExecaChildProcess;
 
   protected abstract runAddDeps(
     dependencies: string[],
     installAsDevDependencies: boolean,
     writeOutputToFile?: boolean
-  ): Promise<void>;
-
-  protected abstract runRemoveDeps(dependencies: string[], cwd?: string): Promise<void>;
+  ): ExecaChildProcess;
 
   protected abstract getResolutions(
     packageJson: PackageJson,
@@ -461,7 +454,7 @@ export abstract class JsPackageManager {
     args: string[],
     cwd?: string,
     stdio?: string
-  ): Promise<string>;
+  ): ExecaChildProcess;
   public abstract runPackageCommandSync(
     command: string,
     args: string[],
@@ -511,17 +504,15 @@ export abstract class JsPackageManager {
     }
   }
 
-  /** Returns the installed (within node_modules or pnp zip) version of a specified package */
-  public async getInstalledVersion(packageName: string): Promise<string | null> {
-    const installations = await this.findInstallations([packageName]);
-    if (!installations) {
-      return null;
-    }
-
-    return Object.entries(installations.dependencies)[0]?.[1]?.[0].version || null;
-  }
-
-  public async executeCommand({
+  /**
+   * Execute a command asynchronously and return the execa process. This allows you to hook into
+   * stdout/stderr streams and monitor the process.
+   *
+   * @example Const process = packageManager.executeCommand({ command: 'npm', args: ['install'] });
+   * process.stdout?.on('data', (data) => console.log(data.toString())); const result = await
+   * process;
+   */
+  public executeCommand({
     command,
     args = [],
     stdio,
@@ -534,28 +525,38 @@ export abstract class JsPackageManager {
     args: string[];
     cwd?: string;
     ignoreError?: boolean;
-  }): Promise<string> {
-    try {
-      const commandResult = await execaCommand([command, ...args].join(' '), {
-        cwd: cwd ?? this.cwd,
-        stdio: stdio ?? 'pipe',
-        encoding: 'utf8',
-        shell: true,
-        cleanup: true,
-        env: {
-          ...COMMON_ENV_VARS,
-          ...env,
-        },
-        ...execaOptions,
-      });
+  }): ExecaChildProcess {
+    const execaProcess = execa([command, ...args].join(' '), {
+      cwd: cwd ?? this.cwd,
+      stdio: stdio ?? 'pipe',
+      encoding: 'utf8',
+      shell: true,
+      cleanup: true,
+      env: {
+        ...COMMON_ENV_VARS,
+        ...env,
+      },
+      ...execaOptions,
+    });
 
-      return commandResult.stdout ?? '';
-    } catch (err) {
-      if (ignoreError !== true) {
-        throw err;
-      }
-      return '';
+    // If ignoreError is true, catch and suppress errors
+    if (ignoreError) {
+      execaProcess.catch((err) => {
+        // Silently ignore errors when ignoreError is true
+      });
     }
+
+    return execaProcess;
+  }
+
+  /** Returns the installed (within node_modules or pnp zip) version of a specified package */
+  public async getInstalledVersion(packageName: string): Promise<string | null> {
+    const installations = await this.findInstallations([packageName]);
+    if (!installations) {
+      return null;
+    }
+
+    return Object.entries(installations.dependencies)[0]?.[1]?.[0].version || null;
   }
 
   /**

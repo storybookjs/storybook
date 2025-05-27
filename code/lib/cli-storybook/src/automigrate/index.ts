@@ -3,12 +3,8 @@ import { rename, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import type { PackageJson } from 'storybook/internal/common';
-import {
-  type JsPackageManager,
-  JsPackageManagerFactory,
-  prompt,
-  temporaryFile,
-} from 'storybook/internal/common';
+import { type JsPackageManager, temporaryFile } from 'storybook/internal/common';
+import { prompt } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';

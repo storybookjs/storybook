@@ -2012,6 +2012,27 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@clack/core@npm:1.0.0-alpha.0":
+  version: 1.0.0-alpha.0
+  resolution: "@clack/core@npm:1.0.0-alpha.0"
+  dependencies:
+    picocolors: "npm:^1.0.0"
+    sisteransi: "npm:^1.0.5"
+  checksum: 10c0/971f7f0aae6ac5ef19e867be7d17b2a2c282a3118df6e8096a06444e227e5c7ec7933dca8db7f5d9362ba45e77f7f57ec8b21316e7ca241a9147809a38763e56
+  languageName: node
+  linkType: hard
+
+"@clack/prompts@npm:^1.0.0-alpha.0":
+  version: 1.0.0-alpha.0
+  resolution: "@clack/prompts@npm:1.0.0-alpha.0"
+  dependencies:
+    "@clack/core": "npm:1.0.0-alpha.0"
+    picocolors: "npm:^1.0.0"
+    sisteransi: "npm:^1.0.5"
+  checksum: 10c0/cbacf6c56eecdd8684c7ecdf09500e342ab8bda4ea8a43f12d1459677252c3293632fb2936ea6379967590a163d3db9f57093878db126ef1d28df6c00e78145e
+  languageName: node
+  linkType: hard
+
 "@colors/colors@npm:1.5.0":
   version: 1.5.0
   resolution: "@colors/colors@npm:1.5.0"
@@ -24486,6 +24507,7 @@ __metadata:
     "@babel/parser": "npm:^7.26.9"
     "@babel/traverse": "npm:^7.26.9"
     "@babel/types": "npm:^7.26.8"
+    "@clack/prompts": "npm:^1.0.0-alpha.0"
     "@devtools-ds/object-inspector": "npm:^1.1.2"
     "@discoveryjs/json-ext": "npm:^0.5.3"
     "@emotion/cache": "npm:^11.14.0"

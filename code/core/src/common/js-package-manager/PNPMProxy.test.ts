@@ -19,7 +19,7 @@ describe('PNPM Proxy', () => {
     it('should run `pnpm install`', async () => {
       const executeCommandSpy = vi
         .spyOn(pnpmProxy, 'executeCommand')
-        .mockResolvedValueOnce('7.1.0');
+        .mockResolvedValue({ stdout: '7.1.0' } as any);
 
       await pnpmProxy.installDependencies();
 
@@ -30,12 +30,12 @@ describe('PNPM Proxy', () => {
   });
 
   describe('runScript', () => {
-    it('should execute script `pnpm exec compodoc -- -e json -d .`', async () => {
+    it('should execute script `pnpm exec compodoc -- -e json -d .`', () => {
       const executeCommandSpy = vi
         .spyOn(pnpmProxy, 'executeCommand')
-        .mockResolvedValueOnce('7.1.0');
+        .mockResolvedValue({ stdout: '7.1.0' } as any);
 
-      await pnpmProxy.runPackageCommand('compodoc', ['-e', 'json', '-d', '.']);
+      pnpmProxy.runPackageCommand('compodoc', ['-e', 'json', '-d', '.']);
 
       expect(executeCommandSpy).toHaveBeenLastCalledWith(
         expect.objectContaining({
@@ -50,7 +50,7 @@ describe('PNPM Proxy', () => {
     it('with devDep it should run `pnpm add -D storybook`', async () => {
       const executeCommandSpy = vi
         .spyOn(pnpmProxy, 'executeCommand')
-        .mockResolvedValueOnce('6.0.0');
+        .mockResolvedValue({ stdout: '6.0.0' } as any);
 
       await pnpmProxy.addDependencies({ installAsDevDependencies: true }, ['storybook']);
 
@@ -67,7 +67,7 @@ describe('PNPM Proxy', () => {
     it('should only change package.json without running install', async () => {
       const executeCommandSpy = vi
         .spyOn(pnpmProxy, 'executeCommand')
-        .mockResolvedValueOnce('7.0.0');
+        .mockResolvedValue({ stdout: '7.0.0' } as any);
       const writePackageSpy = vi.spyOn(pnpmProxy, 'writePackageJson').mockImplementation(vi.fn());
 
       vi.spyOn(JsPackageManager, 'getPackageJson').mockImplementation((args) => {
@@ -99,7 +99,7 @@ describe('PNPM Proxy', () => {
     it('without constraint it returns the latest version', async () => {
       const executeCommandSpy = vi
         .spyOn(pnpmProxy, 'executeCommand')
-        .mockResolvedValueOnce('5.3.19');
+        .mockResolvedValue({ stdout: '5.3.19' } as any);
 
       const version = await pnpmProxy.latestVersion('storybook');
 
@@ -115,7 +115,7 @@ describe('PNPM Proxy', () => {
     it('with constraint it returns the latest version satisfying the constraint', async () => {
       const executeCommandSpy = vi
         .spyOn(pnpmProxy, 'executeCommand')
-        .mockResolvedValueOnce('["4.25.3","5.3.19","6.0.0-beta.23"]');
+        .mockResolvedValue({ stdout: '["4.25.3","5.3.19","6.0.0-beta.23"]' } as any);
 
       const version = await pnpmProxy.latestVersion('storybook', '5.X');
 
@@ -129,7 +129,7 @@ describe('PNPM Proxy', () => {
     });
 
     it('with constraint it throws an error if command output is not a valid JSON', async () => {
-      vi.spyOn(pnpmProxy, 'executeCommand').mockResolvedValueOnce('NOT A JSON');
+      vi.spyOn(pnpmProxy, 'executeCommand').mockResolvedValue({ stdout: 'NOT A JSON' } as any);
 
       await expect(pnpmProxy.latestVersion('storybook', '5.X')).rejects.toThrow();
     });
@@ -140,7 +140,7 @@ describe('PNPM Proxy', () => {
       const storybookAngularVersion = (await import('../versions')).default['@storybook/angular'];
       const executeCommandSpy = vi
         .spyOn(pnpmProxy, 'executeCommand')
-        .mockResolvedValueOnce('5.3.19');
+        .mockResolvedValue({ stdout: '5.3.19' } as any);
 
       const version = await pnpmProxy.getVersion('@storybook/angular');
 
@@ -157,7 +157,7 @@ describe('PNPM Proxy', () => {
       const packageVersion = '5.3.19';
       const executeCommandSpy = vi
         .spyOn(pnpmProxy, 'executeCommand')
-        .mockResolvedValueOnce(`${packageVersion}`);
+        .mockResolvedValue({ stdout: `${packageVersion}` } as any);
 
       const version = await pnpmProxy.getVersion('@storybook/react-native');
 
@@ -209,7 +209,8 @@ describe('PNPM Proxy', () => {
   describe('mapDependencies', () => {
     it('should display duplicated dependencies based on pnpm output', async () => {
       // pnpm list "@storybook/*" "storybook" --depth 10 --json
-      vi.spyOn(pnpmProxy, 'executeCommand').mockResolvedValueOnce(`
+      vi.spyOn(pnpmProxy, 'executeCommand').mockResolvedValue({
+        stdout: `
         [
           {
             "peerDependencies": {
@@ -280,7 +281,8 @@ describe('PNPM Proxy', () => {
             }
           }
         ]      
-      `);
+      `,
+      } as any);
 
       const installations = await pnpmProxy.findInstallations(['@storybook/*']);
 

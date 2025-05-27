@@ -2,8 +2,9 @@ import { createWriteStream } from 'node:fs';
 import { rename, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { prompt, temporaryFile } from 'storybook/internal/common';
+import { temporaryFile } from 'storybook/internal/common';
 import type { JsPackageManager, PackageManagerName } from 'storybook/internal/common';
+import { prompt } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';

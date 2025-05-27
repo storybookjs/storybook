@@ -15,7 +15,7 @@ import {
   output,
 } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { BrowserDynamicTestingModule } from '@angular/platform-browser-dynamic/testing';
+import { BrowserTestingModule } from '@angular/platform-browser/testing';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -374,7 +374,7 @@ function sortByPropName(
 function resolveComponentFactory<T extends Type<any>>(component: T) {
   TestBed.configureTestingModule({
     declarations: [component],
-  }).overrideModule(BrowserDynamicTestingModule, {});
+  }).overrideModule(BrowserTestingModule, {});
   const componentFactoryResolver = TestBed.inject(ComponentFactoryResolver);
 
   return componentFactoryResolver.resolveComponentFactory(component);

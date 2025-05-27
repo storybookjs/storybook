@@ -2,14 +2,14 @@
 
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { Component, ɵresetJitOptions } from '@angular/core';
-import { platformBrowserDynamicTesting } from '@angular/platform-browser-dynamic/testing';
-import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
+import { platformBrowserTesting } from '@angular/platform-browser/testing';
+import { platformBrowser } from '@angular/platform-browser';
 
 import { CanvasRenderer } from './CanvasRenderer';
 import { RendererFactory } from './RendererFactory';
 import { DocsRenderer } from './DocsRenderer';
 
-vi.mock('@angular/platform-browser-dynamic');
+vi.mock('@angular/platform-browser');
 
 declare const document: Document;
 describe('RendererFactory', () => {
@@ -24,7 +24,7 @@ describe('RendererFactory', () => {
       '<div id="storybook-docs"></div>';
     rootTargetDOMNode = global.document.getElementById('storybook-root');
     rootDocstargetDOMNode = global.document.getElementById('root-docs');
-    (platformBrowserDynamic as any).mockImplementation(platformBrowserDynamicTesting);
+    (platformBrowser as any).mockImplementation(platformBrowserTesting);
     vi.spyOn(console, 'log').mockImplementation(() => {});
     // @ts-expect-error Ignore
     globalThis.STORYBOOK_ANGULAR_OPTIONS = { experimentalZoneless: false };

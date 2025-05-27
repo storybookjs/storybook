@@ -36,8 +36,10 @@ import {
   type CollectProjectsSuccessResult,
   collectProjects,
   findStorybookProjects,
+  getProjects,
   isErrorResult,
   isSuccessResult,
+  upgradeStorybookDependencies,
 } from './util';
 
 type Package = {
@@ -118,90 +120,6 @@ export const checkVersionConsistency = () => {
   });
 };
 
-function getVersionModifier(versionSpecifier: string) {
-  if (!versionSpecifier || typeof versionSpecifier !== 'string') {
-    return '';
-  }
-
-  // Split in case of complex version strings like "9.0.0 || >= 0.0.0-pr.0"
-  const firstPart = versionSpecifier.split(/\s*\|\|\s*/)[0].trim();
-
-  // Match common modifiers
-  const match = firstPart.match(/^([~^><=]+)/);
-
-  return match ? match[1] : '';
-}
-
-/** Based on a list of dependencies, return a which need upgrades and to which versions */
-export const toUpgradedDependencies = async (
-  deps: Record<string, string> = {},
-  packageManager: JsPackageManager,
-  {
-    isCanary = false,
-    isCLIOutdated = false,
-    isCLIPrerelease = false,
-    isCLIExactPrerelease = false,
-    isCLIExactLatest = false,
-  } = {}
-): Promise<string[]> => {
-  const monorepoDependencies = Object.keys(deps || {}).filter((dependency) => {
-    // only upgrade packages that are in the monorepo
-    return dependency in versions;
-  }) as Array<keyof typeof versions>;
-
-  const storybookCoreUpgrades = monorepoDependencies.map((dependency) => {
-    /**
-     * Respect the modifier that the user set to the dependency, but make it fixed when the CLI is
-     * outdated (e.g. user is downgrading) or when upgrading to a canary version.
-     *
-     * Example outputs:
-     *
-     * - @storybook/react@9.0.0
-     * - @storybook/react@^9.0.0
-     * - @storybook/react@~9.0.0
-     */
-    let char = getVersionModifier(deps[dependency]);
-
-    if (isCLIOutdated) {
-      char = '';
-    }
-    if (isCanary) {
-      char = '';
-    }
-
-    return `${dependency}@${char}${versions[dependency]}`;
-  });
-
-  let storybookSatelliteUpgrades: string[] = [];
-  if (isCLIExactPrerelease || isCLIExactLatest) {
-    const satelliteDependencies = Object.keys(deps).filter(isSatelliteAddon);
-
-    if (satelliteDependencies.length > 0) {
-      try {
-        storybookSatelliteUpgrades = (
-          await Promise.all(
-            satelliteDependencies.map(async (dependency) => {
-              try {
-                const mostRecentVersion = await packageManager.latestVersion(
-                  isCLIPrerelease ? `${dependency}@next` : dependency
-                );
-                const modifier = getVersionModifier(deps[dependency]);
-                return `${dependency}@${modifier}${mostRecentVersion}`;
-              } catch (err) {
-                return null;
-              }
-            })
-          )
-        ).filter(Boolean) as string[];
-      } catch (error) {
-        // If there is an error fetching satellite dependencies, we don't want to block the upgrade
-      }
-    }
-  }
-
-  return [...storybookCoreUpgrades, ...storybookSatelliteUpgrades];
-};
-
 interface InternalUpgradeOptions {
   skipCheck: boolean;
   packageManager?: PackageManagerName;
@@ -278,13 +196,10 @@ export const doUpgrade = async (
 
   let results;
 
-  const { packageJson } = packageManager.primaryPackageJson;
-
   // INSTALL UPDATED DEPENDENCIES
   if (!dryRun && !results) {
     await upgradeStorybookDependencies({
       packageManager,
-      packageJson,
       isCanary,
       isCLIOutdated,
       isCLIPrerelease,
@@ -333,145 +248,6 @@ export const doUpgrade = async (
 };
 
 export type UpgradeOptions = Omit<InternalUpgradeOptions, 'configDir'> & { configDir?: string[] };
-async function upgradeStorybookDependencies({
-  packageManager,
-  isCanary,
-  isCLIOutdated,
-  isCLIPrerelease,
-  isCLIExactPrerelease,
-  isCLIExactLatest,
-}: {
-  packageJson: PackageJsonWithDepsAndDevDeps;
-  packageManager: JsPackageManager;
-  isCanary: boolean;
-  isCLIOutdated: boolean;
-  isCLIPrerelease: boolean;
-  isCLIExactPrerelease: boolean;
-  isCLIExactLatest: boolean;
-}) {
-  const packageJson = packageManager.primaryPackageJson.packageJson;
-  const upgradedDependencies = await toUpgradedDependencies(
-    packageJson.dependencies as Record<string, string>,
-    packageManager,
-    {
-      isCanary,
-      isCLIOutdated,
-      isCLIPrerelease,
-      isCLIExactPrerelease,
-      isCLIExactLatest,
-    }
-  );
-
-  const upgradedDevDependencies = await toUpgradedDependencies(
-    packageJson.devDependencies as Record<string, string>,
-    packageManager,
-    {
-      isCanary,
-      isCLIOutdated,
-      isCLIPrerelease,
-      isCLIExactPrerelease,
-      isCLIExactLatest,
-    }
-  );
-
-  // Update all dependencies
-  logger.info(`Updating dependencies in ${picocolors.cyan('package.json')}..`);
-  const addDeps = async (deps: string[], isDev: boolean) => {
-    if (deps.length > 0) {
-      await packageManager.addDependencies(
-        { installAsDevDependencies: isDev, skipInstall: true },
-        deps
-      );
-    }
-  };
-
-  await addDeps(upgradedDependencies, false);
-  await addDeps(upgradedDevDependencies, true);
-  await packageManager.installDependencies();
-}
-
-export async function getProjects(
-  options: UpgradeOptions
-): Promise<CollectProjectsSuccessResult[] | undefined> {
-  const gitRoot = getProjectRoot();
-
-  let detectedConfigDirs: string[] = options.configDir ?? [];
-  if (options.configDir === undefined || options.configDir.length === 0) {
-    detectedConfigDirs = await findStorybookProjects();
-  }
-
-  const projects = await collectProjects(options, detectedConfigDirs.slice(0, 4));
-
-  const validProjects = projects.filter(isSuccessResult);
-  const errorProjects = projects.filter(isErrorResult);
-
-  if (validProjects.length === 1) {
-    return validProjects;
-  }
-
-  if (validProjects.length === 0 && errorProjects.length > 0) {
-    logger.plain(
-      `❌ Storybook found errors while collecting data for the following projects:\n${errorProjects
-        .map((p) => {
-          const error = p.error;
-          return `${picocolors.cyan(p.configDir.replace(gitRoot, ''))}:\n${error.message}`;
-        })
-        .join('\n')}`
-    );
-    logger.plain('Please fix the errors and run the upgrade command again.');
-    return [];
-  }
-
-  const allPackageJsonPathsWithStorybookDependencies = validProjects
-    .flatMap((data) => data.packageManager.packageJsonPaths)
-    .filter(JsPackageManager.hasAnyStorybookDependency);
-  const uniquePackageJsonPathsWithStorybookDependencies = new Set(
-    allPackageJsonPathsWithStorybookDependencies
-  );
-
-  const hasOverlappingStorybooks =
-    uniquePackageJsonPathsWithStorybookDependencies.size !==
-    allPackageJsonPathsWithStorybookDependencies.length;
-
-  if (hasOverlappingStorybooks) {
-    const getConfigDirsMessage = (projectData: CollectProjectsResult[], modifier: string = '✔') =>
-      projectData.length > 0
-        ? `${projectData
-            .map((p) => p.configDir)
-            .map((dir) => `${modifier} ` + picocolors.cyan(dir.replace(gitRoot, '')))
-            .join('\n')}`
-        : '';
-
-    const invalidProjectsMessage =
-      errorProjects.length > 0
-        ? `\nThere were some errors while collecting data for the following projects:\n${getConfigDirsMessage(errorProjects, '✕')}`
-        : '';
-
-    logger.plain(
-      `Multiple Storybook projects found. Storybook can only upgrade all projects at once:\n${getConfigDirsMessage(validProjects)}${invalidProjectsMessage}`
-    );
-    const continueUpgrade = await prompt.confirm({
-      message: `Continue with the upgrade?`,
-      initialValue: true,
-    });
-
-    if (!continueUpgrade) {
-      process.exit(0);
-    }
-
-    return validProjects;
-  } else if (detectedConfigDirs.length > 1) {
-    const selectedConfigDirs = await prompt.multiselect({
-      message: 'Select which projects to upgrade',
-      options: detectedConfigDirs.map((configDir) => ({
-        label: configDir.replace(gitRoot, ''),
-        value: configDir,
-      })),
-    });
-
-    return validProjects.filter((data) => selectedConfigDirs.includes(data.configDir));
-  }
-}
 
 export async function upgrade(options: UpgradeOptions): Promise<void> {
   const gitRoot = getProjectRoot();

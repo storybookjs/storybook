@@ -196,10 +196,13 @@ export const doUpgrade = async (
 
   let results;
 
+  const { packageJson } = packageManager.primaryPackageJson;
+
   // INSTALL UPDATED DEPENDENCIES
   if (!dryRun && !results) {
     await upgradeStorybookDependencies({
       packageManager,
+      packageJson,
       isCanary,
       isCLIOutdated,
       isCLIPrerelease,

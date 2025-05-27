@@ -270,6 +270,7 @@ export async function upgradeStorybookDependencies({
   isCLIExactPrerelease,
   isCLIExactLatest,
 }: {
+  packageJson: PackageJsonWithDepsAndDevDeps;
   packageManager: JsPackageManager;
   isCanary: boolean;
   isCLIOutdated: boolean;

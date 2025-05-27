@@ -3,20 +3,16 @@ import { getProjectRoot, isCorePackage, prompt } from 'storybook/internal/common
 import { withTelemetry } from 'storybook/internal/core-server';
 import { logger } from 'storybook/internal/node-logger';
 import {
-  UpgradeStorybookInWrongWorkingDirectory,
   UpgradeStorybookToLowerVersionError,
-  UpgradeStorybookToSameVersionError,
   UpgradeStorybookUnknownCurrentVersionError,
 } from 'storybook/internal/server-errors';
 import { telemetry } from 'storybook/internal/telemetry';
 
 import { sync as spawnSync } from 'cross-spawn';
 import picocolors from 'picocolors';
-import semver, { clean } from 'semver';
+import semver, { clean, lt } from 'semver';
 import { dedent } from 'ts-dedent';
 
-import type { BlockerCheckResult } from './autoblock/types';
-import { getStorybookData } from './automigrate/helpers/mainConfigFile';
 import { automigrate } from './automigrate/index';
 import { doctor } from './doctor';
 import {
@@ -191,8 +187,8 @@ export type UpgradeOptions = Omit<InternalUpgradeOptions, 'configDir'> & { confi
 export async function upgrade(options: UpgradeOptions): Promise<void> {
   const gitRoot = getProjectRoot();
   // TODO: telemetry for upgrade start
-  const upgradeData = await getProjects(options);
-  if (upgradeData === undefined || upgradeData.length === 0) {
+  const projects = await getProjects(options);
+  if (projects === undefined || projects.length === 0) {
     // nothing to upgrade
     return;
   }
@@ -203,7 +199,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     { message: string; link?: string; configDirs: string[] }
   >();
 
-  upgradeData.forEach((result) => {
+  projects.forEach((result) => {
     result.autoblockerCheckResults?.forEach((blocker) => {
       if (blocker.result === null || blocker.result === false) {
         return;
@@ -248,21 +244,25 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     process.exit(1);
   }
 
-  // Single project upgrade scenario
-  if (upgradeData.length === 1) {
-    const cliOptions = { ...options, configDir: upgradeData[0].configDir };
-    await withTelemetry('upgrade', { cliOptions }, async () =>
-      doUpgrade(cliOptions, upgradeData[0])
-    );
-    return;
-  }
+  // Checks whether we can upgrade
+  projects.some((project) => {
+    if (!project.isCanary && lt(project.currentCLIVersion, project.beforeVersion)) {
+      throw new UpgradeStorybookToLowerVersionError({
+        beforeVersion: project.beforeVersion,
+        currentVersion: project.currentCLIVersion,
+      });
+    }
 
-  // Multi upgrade scenario
+    if (!project.beforeVersion) {
+      throw new UpgradeStorybookUnknownCurrentVersionError();
+    }
+  });
+
   const upgradeStatus: {
     projectName: string;
     status: 'incomplete' | 'complete' | 'failed';
     error?: any;
-  }[] = upgradeData.map((data) => {
+  }[] = projects.map((data) => {
     const projectName = data.configDir.replace(gitRoot, '');
     return {
       projectName,
@@ -272,19 +272,19 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
   });
 
   // Migrate each selected project
-  for (let i = 0; i < upgradeData.length; i++) {
-    const storybookProject = upgradeData[i].configDir;
+  for (let i = 0; i < projects.length; i++) {
+    const storybookProject = projects[i].configDir;
     const projectName = storybookProject.replace(gitRoot, '');
 
     logger.plain(
-      `\nUpgrading project ${i + 1}/${upgradeData.length}:\n\t${picocolors.cyan(projectName)}`
+      `\nUpgrading project ${i + 1}/${projects.length}:\n\t${picocolors.cyan(projectName)}`
     );
 
     try {
       await withTelemetry(
         'upgrade',
         { cliOptions: { ...options, configDir: storybookProject } },
-        async () => doUpgrade({ ...options, configDir: storybookProject }, upgradeData[i])
+        async () => doUpgrade({ ...options, configDir: storybookProject }, projects[i])
       );
       upgradeStatus[i].status = 'complete';
     } catch (error) {
@@ -294,7 +294,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     }
   }
 
-  await upgradeData[0]?.packageManager.installDependencies();
+  await projects[0]?.packageManager.installDependencies();
 
   const failedProjects = upgradeStatus.filter((status) => status.status === 'failed');
 

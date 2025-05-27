@@ -404,7 +404,7 @@ export const collectProjects = async (
  * @param config - Upgrade configuration
  * @returns Promise resolving to array of upgrade specifications
  */
-const generateUpgradeSpecs = async (
+export const generateUpgradeSpecs = async (
   dependencies: PackageJsonWithDepsAndDevDeps['dependencies'] = {},
   config: UpgradeConfig
 ): Promise<string[]> => {

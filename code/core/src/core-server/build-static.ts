@@ -105,6 +105,16 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     presets.apply('docs'),
   ]);
 
+  if (!core?.disableTelemetry) {
+    // NOTE: we don't await this event to avoid slowing things down.
+    // This could result in telemetry events being lost.
+    telemetry(
+      'test-run',
+      { runner: process.env.STORYBOOK_INVOKED_BY, watch: false },
+      { configDir: options.configDir }
+    );
+  }
+
   const fullOptions: Options = {
     ...options,
     presets,
@@ -205,7 +215,8 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   ]);
 
   // Now the code has successfully built, we can count this as a 'dev' event.
-  if (!core?.disableTelemetry) {
+  // NOTE: we don't send the 'build' event for test runs as we want to be as fast as possible
+  if (!core?.disableTelemetry || !options.test) {
     effects.push(
       initializedStoryIndexGenerator.then(async (generator) => {
         const storyIndex = await generator?.getIndex();
@@ -218,18 +229,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
           });
         }
 
-        const telemetryJobs = [telemetry('build', payload, { configDir: options.configDir })];
-
-        if (process.env.STORYBOOK_INVOKED_BY) {
-          telemetryJobs.push(
-            telemetry(
-              'test-run',
-              { runner: process.env.STORYBOOK_INVOKED_BY, watch: false },
-              { configDir: options.configDir }
-            )
-          );
-        }
-        await Promise.all(telemetryJobs);
+        await telemetry('build', payload, { configDir: options.configDir });
       })
     );
   }

@@ -346,7 +346,7 @@ export function useParameter<S>(parameterKey: string, defaultValue?: S) {
       [STORY_PREPARED]: () => {
         const newParameter = api.getCurrentParameter<S>(parameterKey);
         if (newParameter !== parameter) {
-          setParameter(api.getCurrentParameter<S>(parameterKey));
+          setParameter(newParameter);
         }
       },
     },

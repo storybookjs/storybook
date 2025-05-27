@@ -4,6 +4,8 @@ import { dirname, isAbsolute, join } from 'node:path';
 
 import type { Channel } from 'storybook/internal/channels';
 import {
+  JsPackageManagerFactory,
+  type RemoveAddonOptions,
   getDirectoryFromWorkingDir,
   getPreviewBodyTemplate,
   getPreviewHeadTemplate,
@@ -185,12 +187,16 @@ const optionalEnvToBoolean = (input: string | undefined): boolean | undefined =>
   return undefined;
 };
 
+/** This API is used by third-parties to access certain APIs in a Node environment */
 export const experimental_serverAPI = (extension: Record<string, Function>, options: Options) => {
   let removeAddon = removeAddonBase;
+  const packageManager = JsPackageManagerFactory.getPackageManager({
+    configDir: options.configDir,
+  });
   if (!options.disableTelemetry) {
-    removeAddon = async (id: string, opts: any) => {
+    removeAddon = async (id: string, opts: RemoveAddonOptions) => {
       await telemetry('remove', { addon: id, source: 'api' });
-      return removeAddonBase(id, opts);
+      return removeAddonBase(id, { ...opts, packageManager });
     };
   }
   return { ...extension, removeAddon };

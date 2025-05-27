@@ -6,6 +6,7 @@ import {
   UpgradeStorybookToLowerVersionError,
   UpgradeStorybookUnknownCurrentVersionError,
 } from 'storybook/internal/server-errors';
+import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import boxen, { type Options } from 'boxen';
 // eslint-disable-next-line depend/ban-dependencies
@@ -34,13 +35,14 @@ interface UpgradeConfig {
 /** Result of successfully collecting project data */
 export interface CollectProjectsSuccessResult extends UpgradeConfig {
   readonly configDir: string;
-  readonly mainConfig: unknown;
+  readonly mainConfig: StorybookConfigRaw;
   readonly mainConfigPath: string | undefined;
+  readonly previewConfigPath: string | undefined;
   readonly isUpgrade: boolean;
   readonly beforeVersion: string;
   readonly currentCLIVersion: string;
   readonly latestCLIVersionOnNPM: string;
-  readonly isCLIExactPrerelease: boolean;
+  // TODO: figure out this type
   readonly blockers: unknown;
 }
 
@@ -302,6 +304,7 @@ const processProject = async (
       mainConfig,
       mainConfigPath,
       packageManager,
+      previewConfigPath,
     } = await getStorybookData({ configDir });
 
     const beforeVersion =
@@ -356,6 +359,7 @@ const processProject = async (
       latestCLIVersionOnNPM,
       isCLIExactPrerelease,
       blockers,
+      previewConfigPath,
     } satisfies CollectProjectsSuccessResult;
   } catch (error) {
     return {
@@ -645,6 +649,7 @@ export const getProjects = async (
     }
 
     // Limit the number of projects processed simultaneously
+    // TODO: Remove once done with testing
     const configDirsToProcess = detectedConfigDirs.slice(0, MAX_PROJECTS_TO_PROCESS);
     const projects = await collectProjects(options, configDirsToProcess);
 

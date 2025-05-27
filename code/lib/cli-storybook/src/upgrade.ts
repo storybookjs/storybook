@@ -19,7 +19,11 @@ import { autoblock } from './autoblock/index';
 import { getStorybookData } from './automigrate/helpers/mainConfigFile';
 import { automigrate } from './automigrate/index';
 import { doctor } from './doctor';
-import { getProjects, upgradeStorybookDependencies } from './util';
+import {
+  type CollectProjectsSuccessResult,
+  getProjects,
+  upgradeStorybookDependencies,
+} from './util';
 
 type Package = {
   package: string;
@@ -110,7 +114,7 @@ interface InternalUpgradeOptions {
 }
 
 export const doUpgrade = async (
-  allOptions: InternalUpgradeOptions,
+  cliOptions: InternalUpgradeOptions,
   {
     isCLIOutdated,
     isCLIPrerelease,
@@ -118,60 +122,16 @@ export const doUpgrade = async (
     isUpgrade,
     beforeVersion,
     currentCLIVersion,
-    latestCLIVersionOnNPM,
     isCanary,
     isCLIExactPrerelease,
-  }: {
-    isCLIOutdated: boolean;
-    isCLIPrerelease: boolean;
-    isCLIExactLatest: boolean;
-    isUpgrade: boolean;
-    beforeVersion: string;
-    currentCLIVersion: string;
-    latestCLIVersionOnNPM: string;
-    isCanary: boolean;
-    isCLIExactPrerelease: boolean;
-  }
+    configDir,
+    mainConfig,
+    mainConfigPath,
+    previewConfigPath,
+    packageManager,
+  }: CollectProjectsSuccessResult
 ) => {
-  const {
-    skipCheck,
-    packageManager: packageManagerName,
-    dryRun,
-    configDir: userSpecifiedConfigDir,
-    yes,
-    ...options
-  } = allOptions;
-  const { configDir, mainConfig, mainConfigPath, previewConfigPath, packageManager } =
-    await getStorybookData({
-      configDir: userSpecifiedConfigDir,
-      packageManagerName,
-    });
-
-  const borderColor = isCLIOutdated ? '#FC521F' : '#F1618C';
-
-  const messages = {
-    welcome: `Upgrading Storybook from version ${picocolors.bold(
-      beforeVersion
-    )} to version ${picocolors.bold(currentCLIVersion)}..`,
-    notLatest: picocolors.red(dedent`
-      This version is behind the latest release, which is: ${picocolors.bold(
-        latestCLIVersionOnNPM
-      )}!
-      You likely ran the upgrade command through a remote command like npx, which can use a locally cached version. To upgrade to the latest version please run:
-      ${picocolors.bold(`${packageManager.getRemoteRunCommand('storybook', ['upgrade'], 'latest')}`)}
-      
-      You may want to CTRL+C to stop, and run with the latest version instead.
-    `),
-    prerelease: picocolors.yellow('This is a pre-release version.'),
-  };
-
-  prompt.logBox(
-    [messages.welcome]
-      .concat(isCLIOutdated && !isCLIPrerelease ? [messages.notLatest] : [])
-      .concat(isCLIPrerelease ? [messages.prerelease] : [])
-      .join('\n'),
-    { borderStyle: 'round', padding: 1, borderColor }
-  );
+  const { skipCheck, dryRun, yes } = cliOptions;
 
   let results;
 
@@ -209,7 +169,7 @@ export const doUpgrade = async (
   }
 
   // TELEMETRY
-  if (!options.disableTelemetry) {
+  if (!cliOptions.disableTelemetry) {
     const { preCheckFailure, fixResults } = results || {};
     const automigrationTelemetry = {
       automigrationResults: preCheckFailure ? null : fixResults,
@@ -223,7 +183,7 @@ export const doUpgrade = async (
     });
   }
 
-  await doctor(allOptions);
+  await doctor(cliOptions);
 };
 
 export type UpgradeOptions = Omit<InternalUpgradeOptions, 'configDir'> & { configDir?: string[] };

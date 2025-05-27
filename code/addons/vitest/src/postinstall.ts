@@ -331,7 +331,9 @@ export default async function postInstall(options: PostinstallOptions) {
     `
   );
 
-  const vitestWorkspaceFile = await findFile('vitest.workspace', ['.ts', '.js', '.json']);
+  const vitestWorkspaceFile =
+    (await findFile('vitest.workspace', ['.ts', '.js', '.json'])) ||
+    (await findFile('vitest.projects', ['.ts', '.js', '.json']));
   const viteConfigFile = await findFile('vite.config');
   const vitestConfigFile = await findFile('vitest.config');
   const vitestShimFile = await findFile('vitest.shims.d');

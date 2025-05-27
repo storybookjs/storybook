@@ -22,7 +22,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-// More on component testing: https://storybook.js.org/docs/writing-tests/component-testing
+// More on component testing: https://storybook.js.org/docs/writing-tests/interaction-testing
 export const LoggedIn: Story = {
   play: async ({ canvasElement }: any) => {
     const canvas = within(canvasElement);

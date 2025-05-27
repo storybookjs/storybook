@@ -37,8 +37,6 @@ export class JsPackageManagerFactory {
     }
 
     const root = getProjectRoot();
-    console.log('root', root);
-    console.log('cwd', cwd);
 
     const lockFiles = [
       findUpSync(YARN_LOCKFILE, { cwd, stopAt: root }),
@@ -65,12 +63,8 @@ export class JsPackageManagerFactory {
         return 1;
       });
 
-    console.log('lockFiless', lockFiles);
-
     // Option 2: We try to infer the package manager from the closest lockfile
     const closestLockfilePath = lockFiles[0];
-
-    console.log('closestLockfilePath', closestLockfilePath);
 
     const closestLockfile = closestLockfilePath && basename(closestLockfilePath);
 
@@ -79,7 +73,6 @@ export class JsPackageManagerFactory {
     const hasBunCommand = hasBun(cwd);
     const yarnVersion = getYarnVersion(cwd);
 
-    console.log('closestLockfile', closestLockfile);
     if (yarnVersion && (closestLockfile === YARN_LOCKFILE || (!hasNPMCommand && !hasPNPMCommand))) {
       return yarnVersion === 1
         ? new Yarn1Proxy({ cwd, configDir })

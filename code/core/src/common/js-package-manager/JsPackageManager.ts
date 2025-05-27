@@ -621,12 +621,10 @@ export abstract class JsPackageManager {
 
   /** List all package.json files starting from the given directory and stopping at the project root. */
   static listAllPackageJsonPaths(instanceDir: string): string[] {
-    const huha = findUpMultipleSync('package.json', {
+    return findUpMultipleSync('package.json', {
       cwd: instanceDir,
       stopAt: getProjectRoot(),
     });
-
-    return huha;
   }
 
   /**

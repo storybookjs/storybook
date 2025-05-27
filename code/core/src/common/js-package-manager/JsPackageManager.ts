@@ -33,11 +33,10 @@ const getResolvedConfigDir = ({
   configDir?: string;
   cwd?: string;
 }) => {
-  const instanceDir = configDir ? dirname(configDir) : undefined;
-  return instanceDir
-    ? isAbsolute(instanceDir)
-      ? instanceDir
-      : dirname(join(cwd, instanceDir))
+  return configDir
+    ? isAbsolute(configDir)
+      ? dirname(configDir)
+      : dirname(join(cwd, configDir))
     : cwd;
 };
 
@@ -622,10 +621,12 @@ export abstract class JsPackageManager {
 
   /** List all package.json files starting from the given directory and stopping at the project root. */
   static listAllPackageJsonPaths(instanceDir: string): string[] {
-    return findUpMultipleSync('package.json', {
+    const huha = findUpMultipleSync('package.json', {
       cwd: instanceDir,
       stopAt: getProjectRoot(),
     });
+
+    return huha;
   }
 
   /**

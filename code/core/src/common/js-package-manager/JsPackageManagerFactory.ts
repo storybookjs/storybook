@@ -86,17 +86,14 @@ export class JsPackageManagerFactory {
         : new Yarn2Proxy({ cwd, configDir });
     }
 
-    console.log('hasPNPMCommand', hasPNPMCommand);
     if (hasPNPMCommand && closestLockfile === PNPM_LOCKFILE) {
       return new PNPMProxy({ cwd, configDir });
     }
 
-    console.log('hasNPMCommand', hasNPMCommand);
     if (hasNPMCommand && closestLockfile === NPM_LOCKFILE) {
       return new NPMProxy({ cwd, configDir });
     }
 
-    console.log('hasBunCommand', hasBunCommand);
     if (
       hasBunCommand &&
       (closestLockfile === BUN_LOCKFILE || closestLockfile === BUN_LOCKFILE_BINARY)
@@ -104,18 +101,15 @@ export class JsPackageManagerFactory {
       return new BUNProxy({ cwd, configDir });
     }
 
-    console.log('inferredPackageManager 2');
     // Option 3: If the user is running a command via npx/pnpx/yarn create/etc, we infer the package manager from the command
     const inferredPackageManager = this.inferPackageManagerFromUserAgent();
     if (inferredPackageManager && inferredPackageManager in this.PROXY_MAP) {
       return new this.PROXY_MAP[inferredPackageManager]({ cwd });
     }
 
-    console.log('inferredPackageManager 3', inferredPackageManager);
     // Default fallback, whenever users try to use something different than NPM, PNPM, Yarn,
     // but still have NPM installed
     if (hasNPMCommand) {
-      console.log('hasNPMCommand 4');
       return new NPMProxy({ cwd, configDir });
     }
 

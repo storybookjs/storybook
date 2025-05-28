@@ -1,6 +1,7 @@
-import { styled } from '@storybook/theming';
 import type { ComponentPropsWithoutRef } from 'react';
 import React from 'react';
+
+import { styled } from 'storybook/theming';
 
 const Container = styled.div(({ theme }) => ({
   position: 'relative',

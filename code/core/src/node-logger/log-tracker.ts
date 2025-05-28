@@ -1,7 +1,7 @@
 import { promises as fs } from 'node:fs';
 
 import { cleanLog } from '../../../lib/cli-storybook/src/automigrate/helpers/cleanLog';
-import type { LogLevel } from './prompts';
+import type { LogLevel } from './logger';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Metadata = Record<string, any>;
@@ -47,3 +47,16 @@ class LogTracker {
 }
 
 export const logTracker = new LogTracker();
+
+// Convenience exports
+export const writeLogsToFile = async (filePath: string): Promise<void> => {
+  await logTracker.writeToFile(filePath);
+};
+
+export const getTrackedLogs = (): LogEntry[] => {
+  return logTracker.getLogs();
+};
+
+export const clearTrackedLogs = (): void => {
+  logTracker.clear();
+};

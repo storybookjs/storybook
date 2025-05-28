@@ -175,7 +175,7 @@ export const automigrate = async ({
   const fixes: Fix[] = fixId ? selectedFixes.filter((f) => f.id === fixId) : selectedFixes;
 
   if (fixId && fixes.length === 0) {
-    prompt.info(`📭 No migrations found for ${picocolors.magenta(fixId)}.`);
+    prompt.log(`📭 No migrations found for ${picocolors.magenta(fixId)}.`);
     logAvailableMigrations();
     return null;
   }

@@ -147,14 +147,14 @@ export const doctor = async ({
   )}`;
 
   if (foundIssues) {
-    prompt.info(commandMessage);
+    prompt.log(commandMessage);
 
-    prompt.info(`Full logs are available in ${picocolors.cyan(LOG_FILE_PATH)}`);
+    prompt.log(`Full logs are available in ${picocolors.cyan(LOG_FILE_PATH)}`);
 
     await rename(TEMP_LOG_FILE_PATH, join(process.cwd(), LOG_FILE_NAME));
   } else {
-    prompt.info(`🥳 Your Storybook project looks good!`);
-    prompt.info(commandMessage);
+    prompt.log(`🥳 Your Storybook project looks good!`);
+    prompt.log(commandMessage);
     await rm(TEMP_LOG_FILE_PATH, { recursive: true, force: true });
   }
   cleanup();

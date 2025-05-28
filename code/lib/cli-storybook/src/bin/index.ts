@@ -1,12 +1,11 @@
 import { globalSettings } from 'storybook/internal/cli';
 import {
   JsPackageManagerFactory,
-  prompt,
   removeAddon as remove,
   versions,
 } from 'storybook/internal/common';
 import { withTelemetry } from 'storybook/internal/core-server';
-import { logger } from 'storybook/internal/node-logger';
+import { logger, prompt } from 'storybook/internal/node-logger';
 import { addToGlobalContext, telemetry } from 'storybook/internal/telemetry';
 
 import { program } from 'commander';

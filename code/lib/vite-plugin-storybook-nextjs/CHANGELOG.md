@@ -1,3 +1,15 @@
+# v2.0.1 (Wed May 28 2025)
+
+#### 🐛 Bug Fix
+
+- Upgrade to Storybook 9 [#40](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/40) ([@ghengeveld](https://github.com/ghengeveld))
+
+#### Authors: 1
+
+- Gert Hengeveld ([@ghengeveld](https://github.com/ghengeveld))
+
+---
+
 # v2.0.0 (Wed Apr 16 2025)
 
 #### 💥 Breaking Change

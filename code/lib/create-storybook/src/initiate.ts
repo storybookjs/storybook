@@ -12,13 +12,18 @@ import * as babel from '../../../core/src/babel';
 import type { NpmOptions } from '../../../core/src/cli/NpmOptions';
 import {
   detect,
+  detectBuilder,
   detectLanguage,
   detectPnp,
   isStorybookInstantiated,
 } from '../../../core/src/cli/detect';
 import { type Settings, globalSettings } from '../../../core/src/cli/globalSettings';
 import type { Builder } from '../../../core/src/cli/project_types';
-import { ProjectType, installableProjectTypes } from '../../../core/src/cli/project_types';
+import {
+  CoreBuilder,
+  ProjectType,
+  installableProjectTypes,
+} from '../../../core/src/cli/project_types';
 import type { JsPackageManager } from '../../../core/src/common/js-package-manager/JsPackageManager';
 import { JsPackageManagerFactory } from '../../../core/src/common/js-package-manager/JsPackageManagerFactory';
 import { HandledError } from '../../../core/src/common/utils/HandledError';
@@ -509,6 +514,8 @@ export async function doInitiate(options: CommandOptions): Promise<
 
   const storybookInstantiated = isStorybookInstantiated();
 
+  options.builder = options.builder ?? (await detectBuilder(packageManager as any, projectType));
+
   if (options.force === false && storybookInstantiated && projectType !== ProjectType.ANGULAR) {
     logger.log();
     const { force } = await prompts([
@@ -528,7 +535,25 @@ export async function doInitiate(options: CommandOptions): Promise<
     }
   }
 
-  if (selectedFeatures.has('test')) {
+  const isTestFeatureEnabled = () => {
+    const supportedFrameworks: ProjectType[] = [
+      ProjectType.REACT,
+      ProjectType.VUE3,
+      ProjectType.NEXTJS,
+      ProjectType.NUXT,
+      ProjectType.PREACT,
+      ProjectType.SVELTE,
+      ProjectType.SVELTEKIT,
+      ProjectType.WEB_COMPONENTS,
+      ProjectType.REACT_NATIVE_WEB,
+    ];
+    const supportsTestAddon =
+      projectType === ProjectType.NEXTJS ||
+      (options.builder !== 'webpack5' && supportedFrameworks.includes(projectType));
+    return selectedFeatures.has('test') && supportsTestAddon;
+  };
+
+  if (isTestFeatureEnabled()) {
     const packageVersionsData = await packageVersions.condition({ packageManager }, {} as any);
     if (packageVersionsData.type === 'incompatible') {
       const { ignorePackageVersions } = isInteractive
@@ -551,7 +576,7 @@ export async function doInitiate(options: CommandOptions): Promise<
     }
   }
 
-  if (selectedFeatures.has('test')) {
+  if (isTestFeatureEnabled()) {
     const vitestConfigFilesData = await vitestConfigFiles.condition(
       { babel, findUp, fs } as any,
       { directory: process.cwd() } as any
@@ -585,9 +610,6 @@ export async function doInitiate(options: CommandOptions): Promise<
   options.features = Array.from(selectedFeatures);
 
   const installResult = await installStorybook(projectType as ProjectType, packageManager, options);
-
-  // Sync features back because they may have been mutated by the generator (e.g. in case of undetected project type)
-  selectedFeatures = new Set(options.features);
 
   if (!options.skipInstall) {
     await packageManager.installDependencies();
@@ -647,7 +669,7 @@ export async function doInitiate(options: CommandOptions): Promise<
       ? `ng run ${installResult.projectName}:storybook`
       : packageManager.getRunStorybookCommand();
 
-  if (selectedFeatures.has('test')) {
+  if (isTestFeatureEnabled()) {
     logger.log(
       `> npx storybook@${versions.storybook} add --yes @storybook/addon-a11y@${versions['@storybook/addon-a11y']}`
     );

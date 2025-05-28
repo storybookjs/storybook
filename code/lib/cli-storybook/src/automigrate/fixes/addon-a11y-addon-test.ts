@@ -1,4 +1,4 @@
-import { formatFileContent, getAddonNames, rendererPackages } from 'storybook/internal/common';
+import { formatFileContent, getAddonNames } from 'storybook/internal/common';
 import { formatConfig, loadConfig } from 'storybook/internal/csf-tools';
 
 import { existsSync, readFileSync, writeFileSync } from 'fs';
@@ -42,6 +42,7 @@ interface AddonA11yAddonTestOptions {
 export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
   id: 'addonA11yAddonTest',
   versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
+  link: 'https://storybook.js.org/docs/writing-tests/accessibility-testing#test-addon-integration',
 
   promptType(result) {
     if (result.setupFile === null && result.previewFile === null) {
@@ -193,13 +194,6 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
           `
         );
       }
-    }
-
-    if (transformedPreviewCode === null || transformedSetupCode === null) {
-      prompt.push(dedent`
-        For more information, please refer to the accessibility addon documentation: 
-        ${picocolors.cyan('https://storybook.js.org/docs/writing-tests/accessibility-testing#test-addon-integration')}
-      `);
     }
 
     return prompt.join('\n\n');

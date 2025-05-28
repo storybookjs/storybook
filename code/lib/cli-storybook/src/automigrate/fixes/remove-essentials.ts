@@ -1,11 +1,5 @@
-import {
-  getAddonNames,
-  removeAddon,
-  scanAndTransformFiles,
-  transformImportFiles,
-} from 'storybook/internal/common';
+import { getAddonNames, removeAddon, transformImportFiles } from 'storybook/internal/common';
 
-import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 import { add } from '../../add';
@@ -40,6 +34,7 @@ const consolidatedAddons = {
 export const removeEssentials: Fix<AddonDocsOptions> = {
   id: 'remove-essentials',
   versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
+  link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#essentials-addon-viewport-controls-interactions-and-actions-moved-to-core',
 
   async check({ mainConfigPath, mainConfig, packageManager }) {
     if (!mainConfigPath) {
@@ -112,48 +107,24 @@ export const removeEssentials: Fix<AddonDocsOptions> = {
     }
   },
 
-  prompt({ hasDocsDisabled, additionalAddonsToRemove, hasEssentials }) {
-    let message = '';
-
-    if (hasEssentials) {
-      message = dedent`
-        We've detected that you have ${picocolors.yellow('@storybook/addon-essentials')} installed.
-        
-        In Storybook 9.0, all features from ${picocolors.yellow('@storybook/addon-essentials')} (except docs) 
-        have been moved into Storybook's core. You no longer need to install or configure them separately.
-        
-        We'll remove ${picocolors.yellow('@storybook/addon-essentials')} from your configuration and dependencies.
-      `;
-    }
-
-    const additionalAddonsMessage =
-      additionalAddonsToRemove.length > 0
-        ? dedent`
-        ${hasEssentials ? '' : "In Storybook 9.0, several features have been moved into Storybook's core."}\n\nWe've detected the following addons that are now part of Storybook core:
-        ${additionalAddonsToRemove.map((addon) => `\n- ${picocolors.yellow(addon)}`).join('')}
-        
-        These will be removed as they are no longer needed.
-        
-        We'll also need to update your code to use the new core addons.`
-        : '';
-
-    if (hasDocsDisabled) {
-      return `${message}${additionalAddonsMessage}`;
-    }
-
-    if (!hasEssentials) {
-      return additionalAddonsMessage;
-    }
-
+  prompt() {
     return dedent`
-      ${message}${additionalAddonsMessage}
+      In Storybook 9.0, several addons have been moved into Storybook's core and are no longer needed as separate packages.
       
-      Since you were using the docs feature, we'll install ${picocolors.yellow('@storybook/addon-docs')} 
-      separately and add it to your configuration if it's not already present.
+      We'll remove the unnecessary addons from your configuration and dependencies, and update your code to use the new core features.
     `;
   },
 
-  async run({ result, dryRun, packageManager, configDir, packageJson }) {
+  async run({
+    result,
+    dryRun,
+    packageManager,
+    configDir,
+    storybookVersion,
+    storiesPaths,
+    mainConfigPath,
+    previewConfigPath,
+  }) {
     const { hasEssentials, hasDocsDisabled, hasDocsAddon, additionalAddonsToRemove } = result;
 
     if (!hasEssentials && additionalAddonsToRemove.length === 0) {
@@ -163,8 +134,6 @@ export const removeEssentials: Fix<AddonDocsOptions> = {
     if (!dryRun) {
       // Remove addon-essentials package if present
       if (hasEssentials) {
-        console.log('Removing @storybook/addon-essentials...');
-
         await removeAddon('@storybook/addon-essentials', {
           configDir,
           packageManager,
@@ -181,11 +150,11 @@ export const removeEssentials: Fix<AddonDocsOptions> = {
         });
       }
 
-      const errors = await scanAndTransformFiles({
-        dryRun: !!dryRun,
-        transformFn: transformImportFiles,
-        transformOptions: consolidatedAddons,
-      });
+      const errors = await transformImportFiles(
+        [...storiesPaths, mainConfigPath, previewConfigPath].filter(Boolean) as string[],
+        consolidatedAddons,
+        dryRun
+      );
 
       if (errors.length > 0) {
         // eslint-disable-next-line local-rules/no-uncategorized-errors
@@ -199,7 +168,6 @@ export const removeEssentials: Fix<AddonDocsOptions> = {
       // If docs was enabled (not disabled) and not already installed, add it
       if (!hasDocsDisabled && hasEssentials) {
         if (!hasDocsAddon) {
-          console.log('Adding @storybook/addon-docs...');
           await add('@storybook/addon-docs', {
             configDir,
             packageManager: packageManager.type,
@@ -207,15 +175,11 @@ export const removeEssentials: Fix<AddonDocsOptions> = {
             skipPostinstall: true,
           });
         } else {
-          const allDeps = result.allDeps;
-          const isDocsInstalled = allDeps['@storybook/addon-docs'] !== undefined;
+          const isDocsInstalled = await packageManager.getInstalledVersion('@storybook/addon-docs');
 
           if (!isDocsInstalled) {
-            const storybookVersion = allDeps.storybook;
-            const isStorybookDevDependency = packageJson.devDependencies?.storybook !== undefined;
-
             await packageManager.addDependencies(
-              { installAsDevDependencies: isStorybookDevDependency, skipInstall: true },
+              { installAsDevDependencies: true, skipInstall: true },
               ['@storybook/addon-docs@' + storybookVersion]
             );
           }

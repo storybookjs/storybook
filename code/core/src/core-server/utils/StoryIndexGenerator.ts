@@ -121,45 +121,63 @@ export class StoryIndexGenerator {
     this.specifierToCache = new Map();
   }
 
-  async initialize() {
-    // Find all matching paths for each specifier
-    const specifiersAndCaches = await Promise.all(
-      this.specifiers.map(async (specifier) => {
-        const pathToSubIndex = {} as SpecifierStoriesCache;
+  static async findMatchingFiles(
+    specifier: NormalizedStoriesSpecifier,
+    workingDir: Path
+  ): Promise<SpecifierStoriesCache> {
+    const pathToSubIndex = {} as SpecifierStoriesCache;
 
-        const fullGlob = slash(join(specifier.directory, specifier.files));
+    const fullGlob = slash(join(specifier.directory, specifier.files));
 
-        // Dynamically import globby because it is a pure ESM module
-        // eslint-disable-next-line depend/ban-dependencies
-        const { globby } = await import('globby');
+    // Dynamically import globby because it is a pure ESM module
+    // eslint-disable-next-line depend/ban-dependencies
+    const { globby } = await import('globby');
 
-        const files = await globby(fullGlob, {
-          absolute: true,
-          cwd: this.options.workingDir,
-          ...commonGlobOptions(fullGlob),
-        });
+    const files = await globby(fullGlob, {
+      absolute: true,
+      cwd: workingDir,
+      ...commonGlobOptions(fullGlob),
+    });
 
-        if (files.length === 0) {
-          once.warn(
-            `No story files found for the specified pattern: ${picocolors.blue(
-              join(specifier.directory, specifier.files)
-            )}`
-          );
-        }
+    if (files.length === 0) {
+      once.warn(
+        `No story files found for the specified pattern: ${picocolors.blue(
+          join(specifier.directory, specifier.files)
+        )}`
+      );
+    }
 
-        files.sort().forEach((absolutePath: Path) => {
-          const ext = extname(absolutePath);
-          if (ext === '.storyshot') {
-            const relativePath = relative(this.options.workingDir, absolutePath);
-            logger.info(`Skipping ${ext} file ${relativePath}`);
-            return;
-          }
+    files.sort().forEach((absolutePath: Path) => {
+      const ext = extname(absolutePath);
+      if (ext === '.storyshot') {
+        const relativePath = relative(workingDir, absolutePath);
+        logger.info(`Skipping ${ext} file ${relativePath}`);
+        return;
+      }
 
-          pathToSubIndex[absolutePath] = false;
-        });
+      pathToSubIndex[absolutePath] = false;
+    });
 
+    return pathToSubIndex;
+  }
+
+  static async findMatchingFilesForSpecifiers(
+    specifiers: NormalizedStoriesSpecifier[],
+    workingDir: Path
+  ): Promise<Array<readonly [NormalizedStoriesSpecifier, SpecifierStoriesCache]>> {
+    return Promise.all(
+      specifiers.map(async (specifier) => {
+        const pathToSubIndex = await StoryIndexGenerator.findMatchingFiles(specifier, workingDir);
         return [specifier, pathToSubIndex] as const;
       })
+    );
+  }
+
+  async initialize() {
+    // Find all matching paths for each specifier
+    const specifiersAndCaches = await StoryIndexGenerator.findMatchingFilesForSpecifiers(
+      this.specifiers,
+      this.options.workingDir
     );
 
     // We do this in a second step to avoid timing issues with the Promise.all above -- to ensure
@@ -622,7 +640,7 @@ export class StoryIndexGenerator {
 
   async sortStories(entries: StoryIndex['entries'], storySortParameter: any) {
     const sortableStories = Object.values(entries);
-    const fileNameOrder = this.storyFileNames();
+    const fileNameOrder = StoryIndexGenerator.storyFileNames(this.specifierToCache);
     sortStoriesV7(sortableStories, storySortParameter, fileNameOrder);
 
     return sortableStories.reduce(
@@ -791,7 +809,7 @@ export class StoryIndexGenerator {
   }
 
   // Get the story file names in "imported order"
-  storyFileNames() {
-    return Array.from(this.specifierToCache.values()).flatMap((r) => Object.keys(r));
+  static storyFileNames(specifierToCache: Map<NormalizedStoriesSpecifier, SpecifierStoriesCache>) {
+    return Array.from(specifierToCache.values()).flatMap((r) => Object.keys(r));
   }
 }

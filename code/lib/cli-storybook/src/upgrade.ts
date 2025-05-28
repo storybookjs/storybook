@@ -1,5 +1,10 @@
 import type { PackageManagerName } from 'storybook/internal/common';
-import { getProjectRoot, isCorePackage, prompt } from 'storybook/internal/common';
+import {
+  JsPackageManagerFactory,
+  getProjectRoot,
+  isCorePackage,
+  prompt,
+} from 'storybook/internal/common';
 import { withTelemetry } from 'storybook/internal/core-server';
 import { logger } from 'storybook/internal/node-logger';
 import {
@@ -125,13 +130,12 @@ export const doUpgrade = async (
     mainConfigPath,
     previewConfigPath,
     packageManager,
+    storiesPaths,
   }: CollectProjectsSuccessResult
 ) => {
   const { skipCheck, dryRun, yes } = cliOptions;
 
   let results;
-
-  const { packageJson } = packageManager.primaryPackageJson;
 
   // INSTALL UPDATED DEPENDENCIES
   if (!dryRun && !results) {
@@ -152,7 +156,6 @@ export const doUpgrade = async (
       dryRun,
       yes,
       packageManager,
-      packageJson,
       mainConfig,
       configDir,
       previewConfigPath,
@@ -161,6 +164,7 @@ export const doUpgrade = async (
       storybookVersion: currentCLIVersion,
       isUpgrade,
       isLatest: isCLIExactLatest,
+      storiesPaths,
     });
   }
 
@@ -294,7 +298,17 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     }
   }
 
-  await projects[0]?.packageManager.installDependencies();
+  const rootPackageManager =
+    projects.length > 1
+      ? JsPackageManagerFactory.getPackageManager({
+          force: options.packageManager,
+        })
+      : projects[0].packageManager;
+
+  await rootPackageManager.installDependencies();
+  await rootPackageManager
+    .executeCommand({ command: 'dedupe', args: [], stdio: 'ignore' })
+    .catch(() => {});
 
   const failedProjects = upgradeStatus.filter((status) => status.status === 'failed');
 

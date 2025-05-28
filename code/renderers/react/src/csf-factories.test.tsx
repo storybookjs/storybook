@@ -3,7 +3,7 @@
 import { describe, it } from 'vitest';
 import { expect, test } from 'vitest';
 
-import type { KeyboardEventHandler, ReactElement, ReactNode } from 'react';
+import type { ComponentType, KeyboardEventHandler, ReactElement, ReactNode } from 'react';
 import React from 'react';
 
 import type { Canvas } from 'storybook/internal/csf';
@@ -16,7 +16,7 @@ import type { Mock } from 'storybook/test';
 import { __definePreview } from './preview';
 import type { Decorator } from './public-types';
 
-type ButtonProps = { label: string; disabled: boolean };
+type ButtonProps = { label: string; disabled: boolean; onKeyDown?: () => void };
 const Button: (props: ButtonProps) => ReactElement = () => <></>;
 
 const preview = __definePreview({
@@ -215,6 +215,36 @@ describe('Story args can be inferred', () => {
     const Basic = meta.story({
       args: { decoratorArg: 0, decoratorArg2: '', label: 'good' },
     });
+  });
+
+  it('Component type can be overridden', () => {
+    const meta = preview.meta({
+      component: Button as ComponentType<Omit<ButtonProps, 'onKeyDown'> & { onKeyDown?: boolean }>,
+      render: ({ onKeyDown, ...args }) => {
+        return <Button {...args} onKeyDown={onKeyDown ? () => {} : undefined} />;
+      },
+      args: { label: 'hello', onKeyDown: false },
+    });
+
+    const Basic = meta.story({
+      args: {
+        disabled: false,
+      },
+    });
+    const WithKeyDown = meta.story({ args: { disabled: false, onKeyDown: true } });
+  });
+
+  it('Correct args are inferred when type is added in renderer', () => {
+    const meta = preview.meta({
+      component: Button,
+      args: { label: 'hello', onKeyDownToggle: false },
+      render: ({ onKeyDownToggle, ...args }: ButtonProps & { onKeyDownToggle?: boolean }) => {
+        return <Button {...args} onKeyDown={onKeyDownToggle ? () => {} : undefined} />;
+      },
+    });
+
+    const Basic = meta.story({ args: { disabled: false } });
+    const WithKeyDown = meta.story({ args: { disabled: false, onKeyDownToggle: true } });
   });
 });
 

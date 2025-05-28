@@ -1,6 +1,7 @@
 import { globalSettings } from 'storybook/internal/cli';
 import {
   JsPackageManagerFactory,
+  prompt,
   removeAddon as remove,
   versions,
 } from 'storybook/internal/common';
@@ -37,8 +38,18 @@ const command = (name: string) =>
     )
     .option('--debug', 'Get more logs in debug mode', false)
     .option('--enable-crash-reports', 'Enable sending crash reports to telemetry data')
-    .hook('preAction', async () => {
+    .option(
+      '--log-level <trace | debug | info | warn | error | silent>',
+      'Define log level',
+      'info'
+    )
+    .hook('preAction', async (self) => {
       try {
+        const options = self.opts();
+        if (options.logLevel) {
+          prompt.setLogLevel(options.logLevel);
+        }
+
         await globalSettings();
       } catch (e) {
         consoleLogger.info('Error loading global settings', e);
@@ -76,6 +87,7 @@ command('add <addon>')
   .option('--skip-install', 'Skip installing deps')
   .option('-s --skip-postinstall', 'Skip package specific postinstall config modifications')
   .option('-y --yes', 'Skip prompting the user')
+  .option('--skip-doctor', 'Skip doctor check')
   .action((addonName: string, options: any) => add(addonName, options));
 
 command('remove <addon>')
@@ -204,6 +216,7 @@ command('automigrate [fixId]')
     '--renderer <renderer-pkg-name>',
     'The renderer package for the framework Storybook is using.'
   )
+  .option('--skip-doctor', 'Skip doctor check')
   .action(async (fixId, options) => {
     await doAutomigrate({ fixId, ...options }).catch((e) => {
       logger.error(e);

@@ -1,4 +1,9 @@
-import type { JsPackageManager, PackageJson, PackageManagerName } from 'storybook/internal/common';
+import type {
+  JsPackageManager,
+  LogLevel,
+  PackageJson,
+  PackageManagerName,
+} from 'storybook/internal/common';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 export interface CheckOptions {
@@ -99,6 +104,7 @@ export interface AutofixOptionsFromCLI {
   renderer?: string;
   skipInstall?: boolean;
   hideMigrationSummary?: boolean;
+  skipDoctor?: boolean;
 }
 
 export enum FixStatus {

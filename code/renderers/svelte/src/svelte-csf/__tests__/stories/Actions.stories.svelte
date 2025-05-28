@@ -1,7 +1,6 @@
 <script module>
-  import { fn } from '@storybook/test';
+  import { fn, expect, userEvent, within } from 'storybook/test';
   import { defineMeta } from '@storybook/addon-svelte-csf';
-  import { expect, userEvent, within } from '@storybook/test';
 
   const { Story } = defineMeta({
     title: 'Addons/Actions',

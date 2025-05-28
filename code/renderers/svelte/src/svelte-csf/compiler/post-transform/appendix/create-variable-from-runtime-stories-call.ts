@@ -1,4 +1,4 @@
-import { STORYBOOK_META_IDENTIFIER } from '$lib/constants.js';
+import { RUNTIME_STORIES_IDENTIFIER, STORYBOOK_META_IDENTIFIER } from '$lib/constants.js';
 import { createASTIdentifier, type ESTreeAST } from '$lib/parser/ast.js';
 
 interface Params {
@@ -17,24 +17,15 @@ export function createVariableFromRuntimeStoriesCall(
     declarations: [
       {
         type: 'VariableDeclarator',
-        id: {
-          type: 'Identifier',
-          name: '__stories',
-        },
+        id: createASTIdentifier(RUNTIME_STORIES_IDENTIFIER),
         init: {
           type: 'CallExpression',
           optional: false,
-          callee: {
-            type: 'Identifier',
-            // WARN: Tempting to use `createRuntimeStories.name` here.
-            // It will break, because this function imports `*.svelte` files.
-            name: 'createRuntimeStories',
-          },
+          // WARN: Tempting to use `createRuntimeStories.name` here.
+          // It will break, because this function imports `*.svelte` files.
+          callee: createASTIdentifier('createRuntimeStories'),
           arguments: [
-            {
-              type: 'Identifier',
-              name: storiesFunctionDeclaration.id.name,
-            },
+            createASTIdentifier(storiesFunctionDeclaration.id.name),
             createASTIdentifier(STORYBOOK_META_IDENTIFIER),
           ],
         },

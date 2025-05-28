@@ -1,6 +1,6 @@
 <script module lang="ts">
   import { defineMeta } from '@storybook/addon-svelte-csf';
-  import { expect, within } from '@storybook/test';
+  import { expect, within } from 'storybook/test';
 
   /**
    * Demonstration on the **different ways of setting a template** for `<Story />` components within one stories file.

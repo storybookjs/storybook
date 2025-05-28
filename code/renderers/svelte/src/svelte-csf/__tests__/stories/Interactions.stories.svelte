@@ -1,6 +1,6 @@
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
-  import { expect, userEvent, within } from '@storybook/test';
+  import { expect, userEvent, within } from 'storybook/test';
   import { tick } from 'svelte';
 
   import Interactions from './Interactions.svelte';

@@ -15,7 +15,6 @@
    */
   export const meta = {
     title: 'LegacyTemplate',
-    // @ts-expect-error FIXME: Needs invesigation on `@storybook/svelte` types
     component: LegacyTemplate,
     tags: ['autodocs'],
   } satisfies Meta<typeof LegacyTemplate>;

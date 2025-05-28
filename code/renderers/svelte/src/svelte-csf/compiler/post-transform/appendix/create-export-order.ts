@@ -1,42 +1,38 @@
 import type { getStoriesIdentifiers } from '$lib/parser/analyse/story/attributes/identifiers.js';
-import type { ESTreeAST } from '$lib/parser/ast.js';
+import {
+  type ESTreeAST,
+  createASTArrayExpression,
+  createASTExportSpecifier,
+} from '$lib/parser/ast.js';
 
-interface Params {
-  storyIdentifiers: ReturnType<typeof getStoriesIdentifiers>;
+interface ExportOrderVariableDeclarationParams {
+  storiesIdentifiers: ReturnType<typeof getStoriesIdentifiers>;
   filename?: string;
 }
 
-export function createExportOrderVariable(params: Params): ESTreeAST.ExportNamedDeclaration {
-  const { storyIdentifiers } = params;
+export function createExportOrderVariableDeclaration(
+  params: ExportOrderVariableDeclarationParams
+): ESTreeAST.ExportNamedDeclaration {
+  const { storiesIdentifiers: storyIdentifiers } = params;
 
-  const exported = {
-    type: 'Identifier',
-    name: '__namedExportsOrder',
-  } as const;
+  const specifier = createASTExportSpecifier({ local: '__namedExportsOrder' });
 
   return {
     type: 'ExportNamedDeclaration',
-    specifiers: [
-      {
-        type: 'ExportSpecifier',
-        local: exported,
-        exported,
-      },
-    ],
+    specifiers: [specifier],
     declaration: {
       type: 'VariableDeclaration',
       kind: 'const',
       declarations: [
         {
           type: 'VariableDeclarator',
-          id: exported,
-          init: {
-            type: 'ArrayExpression',
-            elements: storyIdentifiers.map(({ exportName }) => ({
+          id: specifier.local as ESTreeAST.Identifier,
+          init: createASTArrayExpression(
+            storyIdentifiers.map(({ exportName }) => ({
               type: 'Literal',
               value: exportName,
-            })),
-          },
+            }))
+          ),
         },
       ],
     },

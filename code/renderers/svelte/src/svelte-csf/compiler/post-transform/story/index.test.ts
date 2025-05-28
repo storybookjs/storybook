@@ -126,9 +126,9 @@ describe(transformStory.name, () => {
       			children: $.wrap_snippet(Example_stories, ($$anchor, $$slotProps) => {
       				$.next();
 
-      				var text_3 = $.text('Label');
+      				var text_2 = $.text('Label');
 
-      				$.append($$anchor, text_3);
+      				$.append($$anchor, text_2);
       			}),
       			$$slots: { default: true }
       		});
@@ -147,9 +147,9 @@ describe(transformStory.name, () => {
       	children: $.wrap_snippet(Example_stories, ($$anchor, $$slotProps) => {
       		$.next();
 
-      		var text_4 = $.text('Forwarded label');
+      		var text_3 = $.text('Forwarded label');
 
-      		$.append($$anchor, text_4);
+      		$.append($$anchor, text_3);
       	}),
       	$$slots: { default: true },
       	parameters: {

@@ -1,5 +1,4 @@
-import { describe, expect, it } from 'vitest';
-import { fn } from '@storybook/test';
+import { describe, expect, it, vi } from 'vitest';
 import dedent from 'dedent';
 
 import { generateCodeToEmit } from './emit-code.js';
@@ -129,8 +128,8 @@ describe('Emit Code', () => {
           someArray: ['first', 'second'],
           someUnnamedFn: () => {},
           someNamedFn: function namedFunc() {},
-          someUnnamedMockFn: fn(),
-          someNamedMockFn: fn().mockName('namedMockFn'),
+          someUnnamedMockFn: vi.fn(),
+          someNamedMockFn: vi.fn().mockName('namedMockFn'),
           yes: 'yup',
           no: 'nope',
           text: 'some text',

@@ -1,3 +1,16 @@
+# v5.0.2 (Wed May 28 2025)
+
+#### 🐛 Bug Fix
+
+- fix: Prevent exported runtime stories from colliding with story names [#310](https://github.com/storybookjs/addon-svelte-csf/pull/310) ([@xeho91](https://github.com/xeho91) [@JReinhold](https://github.com/JReinhold))
+
+#### Authors: 2
+
+- Jeppe Reinhold ([@JReinhold](https://github.com/JReinhold))
+- Mateusz Kadlubowski ([@xeho91](https://github.com/xeho91))
+
+---
+
 # v5.0.1 (Sun May 18 2025)
 
 #### 🐛 Bug Fix

@@ -153,7 +153,7 @@ export const removeEssentials: Fix<AddonDocsOptions> = {
     `;
   },
 
-  async run({ result, dryRun, packageManager, configDir, packageJson }) {
+  async run({ result, dryRun, packageManager, configDir, packageJson, storybookVersion }) {
     const { hasEssentials, hasDocsDisabled, hasDocsAddon, additionalAddonsToRemove } = result;
 
     if (!hasEssentials && additionalAddonsToRemove.length === 0) {
@@ -200,7 +200,7 @@ export const removeEssentials: Fix<AddonDocsOptions> = {
       if (!hasDocsDisabled && hasEssentials) {
         if (!hasDocsAddon) {
           console.log('Adding @storybook/addon-docs...');
-          await add('@storybook/addon-docs', {
+          await add(`@storybook/addon-docs@${storybookVersion}`, {
             configDir,
             packageManager: packageManager.type,
             skipInstall: true,

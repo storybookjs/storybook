@@ -1,7 +1,7 @@
 <script context="module" lang="ts">
   import { Story, Template, type StoryProps } from '@storybook/addon-svelte-csf';
   import { expect, within } from 'storybook/test';
-  import type { Meta } from '@storybook/svelte';
+  import type { Meta } from '@storybook/svelte-vite';
 
   import LegacyStory from './LegacyStory.svelte';
 

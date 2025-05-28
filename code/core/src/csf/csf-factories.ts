@@ -23,7 +23,7 @@ export interface Preview<TRenderer extends Renderer = Renderer> {
 }
 
 export type InferTypes<T extends PreviewAddon<never>[]> = T extends PreviewAddon<infer C>[]
-  ? C
+  ? C & { csf4: true }
   : never;
 
 export function definePreview<TRenderer extends Renderer, Addons extends PreviewAddon<never>[]>(

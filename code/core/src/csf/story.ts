@@ -176,6 +176,8 @@ export interface Types {
 }
 
 export interface Renderer extends CoreTypes {
+  csf4: boolean;
+
   /** What is the type of the `component` annotation in this renderer? */
   component: any;
 
@@ -333,7 +335,7 @@ export interface BaseAnnotations<TRenderer extends Renderer = Renderer, TArgs = 
    *
    * @see [Parameters](https://storybook.js.org/docs/writing-stories/parameters)
    */
-  parameters?: Parameters & TRenderer['parameters'];
+  parameters?: Parameters & (TRenderer['csf4'] extends true ? TRenderer['parameters'] : unknown);
 
   /**
    * Dynamic data that are provided (and possibly updated by) Storybook and its addons.

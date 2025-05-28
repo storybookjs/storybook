@@ -65,6 +65,10 @@ async function run() {
       assert.equal(mainEvent.context.storybookVersion, storybookVersion);
     });
 
+    test(`main event should have storybookVersion in metadata`, () => {
+      assert.equal(mainEvent.metadata.storybookVersion, storybookVersion);
+    });
+
     test(`Should log a boot event with a payload of type ${eventType}`, () => {
       assert.equal(bootEvent.eventType, 'boot');
       assert.equal(bootEvent.payload?.eventType, eventType);

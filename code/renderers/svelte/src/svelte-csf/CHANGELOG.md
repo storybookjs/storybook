@@ -1,3 +1,15 @@
+# v5.0.3 (Wed May 28 2025)
+
+#### 🐛 Bug Fix
+
+- Drop support for 9.0.0 prereleases, add support for 9.1.0 prereleases [#312](https://github.com/storybookjs/addon-svelte-csf/pull/312) ([@JReinhold](https://github.com/JReinhold))
+
+#### Authors: 1
+
+- Jeppe Reinhold ([@JReinhold](https://github.com/JReinhold))
+
+---
+
 # v5.0.2 (Wed May 28 2025)
 
 #### 🐛 Bug Fix

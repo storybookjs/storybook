@@ -1,1 +1,1 @@
-{"version":"8.6.0","info":{"plain":""}}
+{"version":"9.0.0","info":{"plain":"- Core: Make sure to only mutate writable arrays - [#31578](https://github.com/storybookjs/storybook/pull/31578), thanks @kasperpeulen!\n- Manager: Add reactivity to useParameter - [#31579](https://github.com/storybookjs/storybook/pull/31579), thanks @valentinpalkovic!\n- Telemetry: Use version from our package.json for `storybookVersion` - [#31577](https://github.com/storybookjs/storybook/pull/31577), thanks @tmeasday!"}}

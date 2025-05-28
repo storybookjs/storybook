@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-backgrounds",
-  "version": "9.0.0",
+  "version": "9.1.0-alpha.0",
   "description": "Empty package - please don't use it anymore",
   "keywords": [],
   "homepage": "https://github.com/storybookjs/storybook",

@@ -216,7 +216,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
 
   // Now the code has successfully built, we can count this as a 'dev' event.
   // NOTE: we don't send the 'build' event for test runs as we want to be as fast as possible
-  if (!core?.disableTelemetry || !options.test) {
+  if (!core?.disableTelemetry && !options.test) {
     effects.push(
       initializedStoryIndexGenerator.then(async (generator) => {
         const storyIndex = await generator?.getIndex();

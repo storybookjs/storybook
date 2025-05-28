@@ -250,9 +250,10 @@ describe('addon-storysource-remove', () => {
         packageManager: mockPackageManager as JsPackageManager,
         previewConfigPath: '.storybook/preview.js',
         configDir: '.storybook',
+        storybookVersion: '9.0.0',
       } as RunOptions<StorysourceOptions>);
 
-      expect(vi.mocked(add)).toHaveBeenCalledWith('@storybook/addon-docs', {
+      expect(vi.mocked(add)).toHaveBeenCalledWith('@storybook/addon-docs@9.0.0', {
         configDir: '.storybook',
         skipInstall: true,
         skipPostinstall: true,

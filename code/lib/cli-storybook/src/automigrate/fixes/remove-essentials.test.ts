@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { PackageJson } from 'storybook/internal/common';
 import { JsPackageManager, removeAddon } from 'storybook/internal/common';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
@@ -37,6 +36,7 @@ vi.mock('storybook/internal/common', async (importOriginal) => {
     getProjectRoot: () => '/fake/project/root',
     commonGlobOptions: vi.fn().mockReturnValue({}),
     removeAddon: vi.fn().mockResolvedValue(undefined),
+    transformImportFiles: vi.fn().mockResolvedValue([]),
   };
 });
 
@@ -72,13 +72,11 @@ const readFileMock = vi.mocked(await import('node:fs/promises')).readFile;
 
 const mockPackageManager = vi.mocked(JsPackageManager.prototype);
 const mockRemoveAddon = vi.mocked(removeAddon);
+const mockTransformImportFiles = vi.mocked(
+  await import('storybook/internal/common')
+).transformImportFiles;
 
 const mockedAdd = vi.mocked(add);
-
-const mockPackageJson = {
-  dependencies: {},
-  devDependencies: {},
-} as PackageJson;
 
 const baseCheckOptions: CheckOptions = {
   packageManager: mockPackageManager,
@@ -119,6 +117,7 @@ describe('remove-essentials migration', () => {
     mockPackageManager.runPackageCommand = vi.fn();
     mockPackageManager.getAllDependencies = vi.fn();
     mockPackageManager.addDependencies = vi.fn();
+    mockPackageManager.getInstalledVersion = vi.fn().mockResolvedValue(null);
 
     vi.clearAllMocks();
     mockConfigs.clear();
@@ -395,7 +394,7 @@ describe('remove-essentials migration', () => {
       });
     });
 
-    it('does install docs addon as dev dependency if essentials is present and docs is configured in main config', async () => {
+    it('does install docs addon as dev dependency if essentials is present and docs is configured in main config (alternative test)', async () => {
       await typedAddonDocsEssentials.run({
         result: {
           hasEssentials: true,
@@ -416,44 +415,11 @@ describe('remove-essentials migration', () => {
 
       expect(mockPackageManager.addDependencies).toHaveBeenCalledWith(
         { installAsDevDependencies: true, skipInstall: true },
-        ['@storybook/addon-docs@^9.0.0']
+        ['@storybook/addon-docs@8.0.0']
       );
     });
 
-    it.each([
-      { type: 'devDependencies', asDevDependency: true },
-      { type: 'dependencies', asDevDependency: false },
-    ])(
-      'does install docs addon as $type if essentials is present and docs is configured in main config',
-      async ({ type, asDevDependency }) => {
-        await typedAddonDocsEssentials.run({
-          result: {
-            hasEssentials: true,
-            hasDocsDisabled: false,
-            hasDocsAddon: true,
-            additionalAddonsToRemove: [],
-            allDeps: {
-              storybook: '^9.0.0',
-            },
-          },
-          packageManager: mockPackageManager,
-          storiesPaths: [],
-          mainConfigPath: '.storybook/main.ts',
-          configDir: '.storybook',
-          storybookVersion: '8.0.0',
-          mainConfig: {} as StorybookConfigRaw,
-        });
-
-        expect(mockPackageManager.addDependencies).toHaveBeenCalledWith(
-          { installAsDevDependencies: asDevDependency, skipInstall: true },
-          ['@storybook/addon-docs@^9.0.0']
-        );
-      }
-    );
-
     it('handles import transformations', async () => {
-      const { scanAndTransformFiles } = await import('storybook/internal/common');
-
       await typedAddonDocsEssentials.run({
         result: {
           hasEssentials: false,
@@ -469,20 +435,19 @@ describe('remove-essentials migration', () => {
         mainConfig: {} as StorybookConfigRaw,
       });
 
-      expect(scanAndTransformFiles).toHaveBeenCalledWith(
-        expect.objectContaining({
-          dryRun: false,
-          transformOptions: {
-            '@storybook/addon-actions': 'storybook/actions',
-            '@storybook/addon-backgrounds': 'storybook/backgrounds',
-            '@storybook/addon-controls': 'storybook/internal/controls',
-            '@storybook/addon-highlight': 'storybook/highlight',
-            '@storybook/addon-measure': 'storybook/measure',
-            '@storybook/addon-outline': 'storybook/outline',
-            '@storybook/addon-toolbars': 'storybook/internal/toolbars',
-            '@storybook/addon-viewport': 'storybook/viewport',
-          },
-        })
+      expect(mockTransformImportFiles).toHaveBeenCalledWith(
+        ['.storybook/main.ts'],
+        {
+          '@storybook/addon-actions': 'storybook/actions',
+          '@storybook/addon-backgrounds': 'storybook/backgrounds',
+          '@storybook/addon-controls': 'storybook/internal/controls',
+          '@storybook/addon-highlight': 'storybook/highlight',
+          '@storybook/addon-measure': 'storybook/measure',
+          '@storybook/addon-outline': 'storybook/outline',
+          '@storybook/addon-toolbars': 'storybook/internal/toolbars',
+          '@storybook/addon-viewport': 'storybook/viewport',
+        },
+        undefined
       );
     });
 

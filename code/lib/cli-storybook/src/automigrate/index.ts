@@ -182,8 +182,6 @@ export const automigrate = async ({
 
   await augmentLogsToFile();
 
-  logger.info('🔎 checking possible migrations..');
-
   const { fixResults, fixSummary, preCheckFailure } = await runFixes({
     fixes,
     packageManager,
@@ -303,7 +301,6 @@ export async function runFixes({
       const promptType: Prompt =
         typeof f.promptType === 'function' ? await f.promptType(result) : (f.promptType ?? 'auto');
 
-      logger.info(`\n🔎 found a '${picocolors.cyan(f.id)}' migration:`);
       const message = f.prompt(result);
 
       const getTitle = () => {

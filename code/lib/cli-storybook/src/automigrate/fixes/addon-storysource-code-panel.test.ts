@@ -11,6 +11,14 @@ import { type StorysourceOptions, addonStorysourceCodePanel } from './addon-stor
 
 vi.mock('../../add');
 
+vi.mock('storybook/internal/common', async (importOriginal) => {
+  const actual = (await importOriginal()) as any;
+  return {
+    ...actual,
+    removeAddon: vi.fn(),
+  };
+});
+
 // Mock modules before any other imports or declarations
 vi.mock('node:fs/promises', async (importOriginal) => {
   const mod = (await importOriginal()) as any;
@@ -62,11 +70,13 @@ const baseCheckOptions: CheckOptions = {
   } as StorybookConfigRaw,
   storybookVersion: '8.0.0',
   configDir: '.storybook',
+  storiesPaths: [],
 };
 
 describe('addon-storysource-remove', () => {
   beforeEach(() => {
     mockPackageManager.runPackageCommand = vi.fn();
+    mockPackageManager.removeDependencies = vi.fn();
     vi.clearAllMocks();
   });
 
@@ -137,18 +147,9 @@ describe('addon-storysource-remove', () => {
         hasDocs: true,
       });
 
-      expect(promptMessage).toMatchInlineSnapshot(dedent`
-        "We've detected that you're using @storybook/addon-storysource.
-
-        The @storybook/addon-storysource addon is being removed in Storybook 9.0. 
-        Instead, Storybook now provides a Code Panel via @storybook/addon-docs 
-        that offers similar functionality with improved integration and performance.
-
-        We'll remove @storybook/addon-storysource from your project and 
-        enable the Code Panel in your preview configuration. 
-
-        More info: https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storysource-addon-removed"
-      `);
+      expect(promptMessage).toMatchInlineSnapshot(
+        `"We'll remove @storybook/addon-storysource and enable the Code Panel instead."`
+      );
     });
 
     it('returns the correct prompt message when docs addon is not present', () => {
@@ -157,18 +158,9 @@ describe('addon-storysource-remove', () => {
         hasDocs: false,
       });
 
-      expect(promptMessage).toMatchInlineSnapshot(dedent`
-        "We've detected that you're using @storybook/addon-storysource.
-
-        The @storybook/addon-storysource addon is being removed in Storybook 9.0. 
-        Instead, Storybook now provides a Code Panel via @storybook/addon-docs 
-        that offers similar functionality with improved integration and performance.
-
-        We'll remove @storybook/addon-storysource from your project and 
-        enable the Code Panel in your preview configuration. Additionally, we will install @storybook/addon-docs for you.
-
-        More info: https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storysource-addon-removed"
-      `);
+      expect(promptMessage).toMatchInlineSnapshot(
+        `"We'll remove @storybook/addon-storysource and enable the Code Panel instead."`
+      );
     });
   });
 
@@ -187,6 +179,8 @@ describe('addon-storysource-remove', () => {
     });
 
     it('removes storysource addon and updates preview config', async () => {
+      const { removeAddon } = await import('storybook/internal/common');
+
       await addonStorysourceCodePanel.run?.({
         result: {
           hasStorysource: true,
@@ -197,21 +191,14 @@ describe('addon-storysource-remove', () => {
         configDir: '.storybook',
       } as RunOptions<StorysourceOptions>);
 
-      // Verify package manager was called with correct arguments
-      expect(mockPackageManager.runPackageCommand).toHaveBeenCalledWith('storybook', [
-        'remove',
-        '@storybook/addon-storysource',
-        '--config-dir',
-        '.storybook',
-        '--skip-install',
-      ]);
+      // Verify removeAddon was called with correct arguments
+      expect(removeAddon).toHaveBeenCalledWith('@storybook/addon-storysource', {
+        configDir: '.storybook',
+        skipInstall: true,
+        packageManager: mockPackageManager,
+      });
 
-      expect(mockPackageManager.runPackageCommand).not.toHaveBeenCalledWith('storybook', [
-        'add',
-        '@storybook/addon-docs',
-        '--config-dir',
-        '.storybook',
-      ]);
+      expect(vi.mocked(add)).not.toHaveBeenCalled();
 
       const writeFile = vi.mocked((await import('node:fs/promises')).writeFile);
 

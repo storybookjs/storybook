@@ -38,6 +38,7 @@ describe('addon-a11y-parameters', () => {
       const result = await addonA11yParameters.check({
         mainConfig: { addons: [] },
         previewConfigPath: mockPreviewFile,
+        storiesPaths: [],
       } as any);
 
       expect(result).toBeNull();
@@ -52,6 +53,7 @@ describe('addon-a11y-parameters', () => {
       const result = await addonA11yParameters.check({
         mainConfig: { addons: ['@storybook/addon-a11y'] },
         previewConfigPath: mockPreviewFile,
+        storiesPaths: mockStoryFiles,
       } as any);
 
       expect(result).toBeNull();
@@ -69,6 +71,7 @@ describe('addon-a11y-parameters', () => {
       const result = await addonA11yParameters.check({
         mainConfig: { addons: ['@storybook/addon-a11y'] },
         previewConfigPath: mockPreviewFile,
+        storiesPaths: mockStoryFiles,
       } as any);
 
       expect(result).toEqual({

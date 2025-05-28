@@ -19,6 +19,7 @@ const checkEslint = async ({ packageJson }: { packageJson: PackageJson }) => {
     packageManager: makePackageManager(packageJson),
     mainConfig: {} as any,
     storybookVersion: '7.0.0',
+    storiesPaths: [],
   });
 };
 

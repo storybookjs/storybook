@@ -28,6 +28,14 @@ vi.mock('storybook/internal/cli', () => ({
   getStorybookVersionSpecifier: vi.fn(),
 }));
 
+vi.mock('storybook/internal/common', async (importOriginal) => {
+  const actual = (await importOriginal()) as any;
+  return {
+    ...actual,
+    removeAddon: vi.fn(),
+  };
+});
+
 // Mock ConfigFile type
 interface MockConfigFile {
   getFieldValue: (path: string[]) => any;
@@ -56,6 +64,7 @@ const baseCheckOptions: CheckOptions = {
   } as StorybookConfigRaw,
   storybookVersion: '7.0.0',
   configDir: '.storybook',
+  storiesPaths: [],
 };
 
 interface AddonMdxGfmOptions {
@@ -74,6 +83,12 @@ describe('addon-mdx-gfm-remove migration', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockPackageManager.runPackageCommand = vi.fn();
+    Object.defineProperty(mockPackageManager, 'packageJsonPaths', {
+      value: [],
+      writable: true,
+      configurable: true,
+    });
+    mockPackageManager.removeDependencies = vi.fn();
     mockConfigs.clear();
   });
 
@@ -160,6 +175,8 @@ describe('addon-mdx-gfm-remove migration', () => {
 
   describe('run phase', () => {
     it('removes mdx-gfm addon using storybook remove command', async () => {
+      const { removeAddon } = await import('storybook/internal/common');
+
       await typedAddonMdxGfmRemove.run({
         result: {
           hasMdxGfm: true,
@@ -168,13 +185,11 @@ describe('addon-mdx-gfm-remove migration', () => {
         configDir: '.storybook',
       } as RunOptions<AddonMdxGfmOptions>);
 
-      expect(mockPackageManager.runPackageCommand).toHaveBeenCalledWith('storybook', [
-        'remove',
-        '@storybook/addon-mdx-gfm',
-        '--config-dir',
-        '.storybook',
-        '--skip-install',
-      ]);
+      expect(removeAddon).toHaveBeenCalledWith('@storybook/addon-mdx-gfm', {
+        configDir: '.storybook',
+        skipInstall: true,
+        packageManager: mockPackageManager,
+      });
     });
   });
 });

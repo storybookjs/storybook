@@ -219,7 +219,9 @@ describe('Story args can be inferred', () => {
 
   it('Component type can be overridden', () => {
     const meta = preview.meta({
-      component: Button as ComponentType<Omit<ButtonProps, 'onKeyDown'> & { onKeyDown?: boolean }>,
+      component: Button as unknown as ComponentType<
+        Omit<ButtonProps, 'onKeyDown'> & { onKeyDown?: boolean }
+      >,
       render: ({ onKeyDown, ...args }) => {
         return <Button {...args} onKeyDown={onKeyDown ? () => {} : undefined} />;
       },

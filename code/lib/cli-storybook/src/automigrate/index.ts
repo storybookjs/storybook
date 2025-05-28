@@ -2,7 +2,7 @@ import { createWriteStream } from 'node:fs';
 import { rename, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { type JsPackageManager, prompt, temporaryFile } from 'storybook/internal/common';
+import { type JsPackageManager, prompt, temporaryFile, versions } from 'storybook/internal/common';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
@@ -23,6 +23,7 @@ import type {
 } from './fixes';
 import { FixStatus, allFixes, commandFixes } from './fixes';
 import { upgradeStorybookRelatedDependencies } from './fixes/upgrade-storybook-related-dependencies';
+import { shouldRunFix } from './helpers/checkVersionRange';
 import { cleanLog } from './helpers/cleanLog';
 import { logMigrationSummary } from './helpers/logMigrationSummary';
 import { getStorybookData } from './helpers/mainConfigFile';
@@ -271,12 +272,7 @@ export async function runFixes({
     let result;
 
     try {
-      if (
-        (isUpgrade &&
-          semver.satisfies(beforeVersion, f.versionRange[0], { includePrerelease: true }) &&
-          semver.satisfies(storybookVersion, f.versionRange[1], { includePrerelease: true })) ||
-        !isUpgrade
-      ) {
+      if (shouldRunFix(f, beforeVersion, storybookVersion, !!isUpgrade)) {
         result = await f.check({
           packageManager,
           configDir,

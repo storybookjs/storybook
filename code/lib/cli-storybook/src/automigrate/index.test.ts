@@ -41,6 +41,12 @@ const coreCommonMock = vi.hoisted(() => {
 vi.mock('storybook/internal/common', async (importOriginal) => ({
   ...(await importOriginal<typeof import('storybook/internal/common')>()),
   loadMainConfig: coreCommonMock.loadMainConfig,
+  prompt: {
+    log: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    logBox: vi.fn(),
+  },
 }));
 
 const promptMocks = vi.hoisted(() => {

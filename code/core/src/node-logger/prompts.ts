@@ -48,6 +48,119 @@ interface PromptOptions {
   onCancel?: () => void;
 }
 
+function getMinimalTrace() {
+  // eslint-disable-next-line local-rules/no-uncategorized-errors
+  const stack = new Error().stack;
+
+  if (!stack) {
+    return;
+  }
+
+  // remove the first line ("Error")
+  const lines = stack.split('\n').slice(1);
+
+  // Clean up stack: remove this own file utilities from the stack
+  const userStackLines = lines.filter(
+    (line) => !['getMinimalTrace', 'createLogger', 'logFunction'].some((fn) => line.includes(fn))
+  );
+
+  if (userStackLines.length === 0) {
+    return;
+  }
+
+  const callStack = '\n' + userStackLines.slice(0, 2).join('\n');
+
+  return callStack;
+}
+
+// Log level types and state
+export type LogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'silent';
+
+const LOG_LEVELS: Record<LogLevel, number> = {
+  trace: 0,
+  debug: 1,
+  info: 2,
+  warn: 3,
+  error: 4,
+  silent: 5,
+};
+
+let currentLogLevel: LogLevel = 'info';
+
+const setLogLevel = (level: LogLevel): void => {
+  currentLogLevel = level;
+};
+
+const getLogLevel = (): LogLevel => {
+  return currentLogLevel;
+};
+
+const shouldLog = (level: LogLevel): boolean => {
+  return LOG_LEVELS[level] >= LOG_LEVELS[currentLogLevel];
+};
+
+// Higher-level abstraction for creating logging functions
+function createLogger(
+  level: LogLevel | 'prompt',
+  logFn: (message: string) => void,
+  prefix?: string
+) {
+  return function logFunction(message: string) {
+    logTracker.addLog(level, message);
+
+    if (level === 'prompt') {
+      level = 'info';
+    }
+    if (shouldLog(level)) {
+      const formattedMessage = prefix ? `${prefix} ${message}` : message;
+      logFn(formattedMessage);
+    }
+  };
+}
+
+// Create all logging functions using the factory
+const debug = createLogger(
+  'debug',
+  function logFunction(message) {
+    if (shouldLog('trace')) {
+      message += getMinimalTrace();
+    }
+    clack.log.message(message);
+  },
+  '[DEBUG]'
+);
+const log = createLogger('info', clack.log.message);
+const warn = createLogger('warn', clack.log.warn);
+const error = createLogger('error', clack.log.error);
+
+type BoxenOptions = {
+  borderStyle?: 'round' | 'none';
+  padding?: number;
+  title?: string;
+  titleAlignment?: 'left' | 'center' | 'right';
+  borderColor?: string;
+  backgroundColor?: string;
+};
+
+const logBox = (message: string, style?: BoxenOptions) => {
+  if (shouldLog('info')) {
+    logTracker.addLog('info', message);
+    console.log(
+      boxen(message, {
+        borderStyle: 'round',
+        padding: 1,
+        // borderColor: '#F1618C',
+        borderColor: '#5c5c63',
+        ...style,
+      })
+        .replace(/╭/, '├')
+        .replace(/╰/, '├')
+    );
+  }
+};
+
+// prompts
+
 const handleCancel = (result: unknown | symbol, promptOptions?: PromptOptions) => {
   if (clack.isCancel(result)) {
     if (promptOptions?.onCancel) {
@@ -104,58 +217,6 @@ const multiselect = async <T>(
   return result as T[];
 };
 
-type BoxenOptions = {
-  borderStyle?: 'round' | 'none';
-  padding?: number;
-  title?: string;
-  titleAlignment?: 'left' | 'center' | 'right';
-  borderColor?: string;
-  backgroundColor?: string;
-};
-
-const logBox = (message: string, style?: BoxenOptions) => {
-  logTracker.addLog('info', message);
-  clack.log.info('');
-  console.log(
-    boxen(message, {
-      borderStyle: 'round',
-      padding: 1,
-      // borderColor: '#F1618C',
-      borderColor: '#5c5c63',
-      ...style,
-    })
-      .replace(/╭/, '├')
-      .replace(/╰/, '├')
-  );
-};
-
-const log = (message: string) => {
-  logTracker.addLog('info', message);
-  clack.log.message(message);
-};
-
-const info = (message: string) => {
-  logTracker.addLog('info', message);
-  clack.log.info(message);
-};
-
-const warn = (message: string) => {
-  logTracker.addLog('warn', message);
-  clack.log.warn(message);
-};
-
-const error = (message: string) => {
-  logTracker.addLog('error', message);
-  clack.log.error(message);
-};
-
-const debug = (message: string) => {
-  logTracker.addLog('debug', message);
-  if (process.env.DEBUG) {
-    clack.log.message(message);
-  }
-};
-
 const spinner = clack.spinner;
 
 /**
@@ -166,7 +227,7 @@ const executeTask = async (
   childProcess: ExecaChildProcess,
   { intro, error, success }: { intro: string; error: string; success: string }
 ) => {
-  logTracker.addLog('task', intro);
+  logTracker.addLog('info', intro);
   const task = clack.taskLog({
     title: intro,
     retainLog: false,
@@ -175,15 +236,15 @@ const executeTask = async (
   try {
     childProcess.stdout?.on('data', (data: Buffer) => {
       const message = data.toString().trim();
-      logTracker.addLog('task', message);
+      logTracker.addLog('info', message);
       task.message(message);
     });
     await childProcess;
-    logTracker.addLog('task', success);
+    logTracker.addLog('info', success);
     task.success(success);
   } catch (err) {
     const errorMessage = err instanceof Error ? (err.stack ?? err.message) : String(err);
-    logTracker.addLog('task', error, { error: errorMessage });
+    logTracker.addLog('error', error, { error: errorMessage });
     task.error(error);
     throw err;
   }
@@ -194,20 +255,20 @@ const executeTaskWithSpinner = async (
   childProcess: ExecaChildProcess,
   { intro, error, success }: { intro: string; error: string; success: string }
 ) => {
-  logTracker.addLog('task', intro);
+  logTracker.addLog('info', intro);
   const task = spinner();
   task.start(intro);
   try {
     childProcess.stdout?.on('data', (data: Buffer) => {
       const message = data.toString().trim().slice(0, 25);
-      logTracker.addLog('task', `${intro}: ${data.toString()}`);
+      logTracker.addLog('info', `${intro}: ${data.toString()}`);
       task.message(`${intro}: ${message}`);
     });
     await childProcess;
-    logTracker.addLog('task', success);
+    logTracker.addLog('info', success);
     task.stop(success);
   } catch (err) {
-    logTracker.addLog('task', error, { error: err });
+    logTracker.addLog('error', error, { error: err });
     task.stop(error);
     throw err;
   }
@@ -245,7 +306,6 @@ export const prompt = {
   logBox,
   log,
   warn,
-  info,
   error,
   debug,
   taskLog,
@@ -254,4 +314,6 @@ export const prompt = {
   writeLogsToFile,
   getTrackedLogs,
   clearTrackedLogs,
+  setLogLevel,
+  getLogLevel,
 };

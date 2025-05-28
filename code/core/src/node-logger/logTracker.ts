@@ -1,12 +1,13 @@
 import { promises as fs } from 'node:fs';
 
 import { cleanLog } from '../../../lib/cli-storybook/src/automigrate/helpers/cleanLog';
+import type { LogLevel } from './prompts';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Metadata = Record<string, any>;
 export interface LogEntry {
   timestamp: Date;
-  level: 'info' | 'warn' | 'error' | 'debug' | 'task' | 'prompt';
+  level: LogLevel | 'prompt';
   message: string;
   metadata?: Metadata;
 }

@@ -344,10 +344,8 @@ export function useParameter<S>(parameterKey: string, defaultValue?: S) {
 
   const handleParameterChange = useCallback(() => {
     const newParameter = api.getCurrentParameter<S>(parameterKey);
-    if (newParameter !== parameter) {
-      setParameter(newParameter);
-    }
-  }, [api, parameter, parameterKey]);
+    setParameter(newParameter);
+  }, [api, parameterKey]);
 
   useChannel(
     {

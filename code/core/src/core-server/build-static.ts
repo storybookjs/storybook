@@ -105,14 +105,11 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     presets.apply('docs'),
   ]);
 
-  if (!core?.disableTelemetry) {
+  const invokedBy = process.env.STORYBOOK_INVOKED_BY;
+  if (!core?.disableTelemetry && invokedBy) {
     // NOTE: we don't await this event to avoid slowing things down.
     // This could result in telemetry events being lost.
-    telemetry(
-      'test-run',
-      { runner: process.env.STORYBOOK_INVOKED_BY, watch: false },
-      { configDir: options.configDir }
-    );
+    telemetry('test-run', { runner: invokedBy, watch: false }, { configDir: options.configDir });
   }
 
   const fullOptions: Options = {

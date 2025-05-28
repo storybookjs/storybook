@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-outline",
-  "version": "9.0.0-rc.5",
+  "version": "9.0.0",
   "description": "Empty package - please don't use it anymore",
   "keywords": [],
   "homepage": "https://github.com/storybookjs/storybook",

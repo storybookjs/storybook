@@ -205,7 +205,7 @@ export const experimental_serverAPI = (extension: Record<string, Function>, opti
  */
 export const core = async (existing: CoreConfig, options: Options): Promise<CoreConfig> => ({
   ...existing,
-  disableTelemetry: options.disableTelemetry === true || options.test === true,
+  disableTelemetry: options.disableTelemetry === true,
   enableCrashReports:
     options.enableCrashReports || optionalEnvToBoolean(process.env.STORYBOOK_ENABLE_CRASH_REPORTS),
 });

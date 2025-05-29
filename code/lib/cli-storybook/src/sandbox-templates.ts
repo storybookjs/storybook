@@ -784,7 +784,8 @@ export const normal: TemplateKey[] = [
   // TODO: Add this back once we resolve the React 19 issues
   // 'cra/default-ts',
   'react-vite/default-ts',
-  'angular-cli/default-ts',
+  // TODO: Fix Angular 20
+  // 'angular-cli/default-ts',
   'vue3-vite/default-ts',
   'nuxt-vite/default-ts',
   'lit-vite/default-ts',
@@ -810,7 +811,8 @@ export const merged: TemplateKey[] = [
 
 export const daily: TemplateKey[] = [
   ...merged,
-  'angular-cli/prerelease',
+  // TODO: Fix Angular 20
+  // 'angular-cli/prerelease',
   // TODO: Add this back once we resolve the React 19 issues
   // 'cra/default-js',
   'react-vite/default-js',

@@ -9,104 +9,34 @@ sidebar:
 
 ## Writing stories with the play function
 
-Storybook's `play` functions are small code snippets that run once the story finishes rendering. Aided by the [interactions panel](../essentials/interactions.mdx), it allows you to build component interactions and test scenarios that were impossible without user intervention. For example, if you were working on a registration form and wanted to validate it, you could write the following story with the `play` function:
+Storybook's `play` functions are small code snippets that run once the story finishes rendering. Aided by the [interactions panel](../writing-tests/interaction-testing.mdx#debugging-interaction-tests), it allows you to build component interactions and test scenarios that were impossible without user intervention. For example, if you were working on a registration form and wanted to validate it, you could write the following story with the `play` function:
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="register-component-with-play-function.md" />
+<CodeSnippets path="play-function.md" />
 
 {/* prettier-ignore-end */}
 
 <Callout variant="info" icon="💡">
-  See the [component testing documentation](../writing-tests/component-testing.mdx#api-for-user-events) for an overview of the available API events.
+  See the [interaction testing documentation](../writing-tests/interaction-testing.mdx#writing-interaction-tests) for an overview of the available API events.
 </Callout>
 
 When Storybook finishes rendering the story, it executes the steps defined within the `play` function, interacting with the component and filling the form's information. All of this without the need for user intervention. If you check your `Interactions` panel, you'll see the step-by-step flow.
+
+## Working with the canvas
+
+Part of the context passed to the `play` function is a `canvas` object. This object allows you to query the DOM of the rendered story. It provides a scoped version of the Testing Library queries, so you can use them as you would in a regular test.
+
+<CodeSnippets path="play-function-with-canvas.md" />
+
+If you need to query outside of the canvas (for example, to test a dialog that appears outside of the story root), you can use the `screen` object available from `storybook/test`.
+
+<CodeSnippets path="play-function-with-screen.md" />
 
 ## Composing stories
 
 Thanks to the [Component Story Format](../api/csf.mdx), an ES6 module based file format, you can also combine your `play` functions, similar to other existing Storybook features (e.g., [args](./args.mdx)). For example, if you wanted to verify a specific workflow for your component, you could write the following stories:
 
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="my-component-play-function-composition.md" />
-
-{/* prettier-ignore-end */}
+<CodeSnippets path="play-function-composition.md" />
 
 By combining the stories, you're recreating the entire component workflow and can spot potential issues while reducing the boilerplate code you need to write.
-
-## Working with events
-
-Most modern UIs are built focusing on interaction (e.g., clicking a button, selecting options, ticking checkboxes), providing rich experiences to the end-user. With the `play` function, you can incorporate the same level of interaction into your stories.
-
-A common type of component interaction is a button click. If you need to reproduce it in your story, you can define your story's `play` function as the following:
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="my-component-play-function-with-clickevent.md" />
-
-{/* prettier-ignore-end */}
-
-When Storybook loads the story and the function executes, it interacts with the component and triggers the button click, similar to what a user would do.
-
-Asides from click events, you can also script additional events with the `play` function. For example, if your component includes a select with various options, you can write the following story and test each scenario:
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="my-component-play-function-with-selectevent.md" />
-
-{/* prettier-ignore-end */}
-
-In addition to events, you can also create interactions with the `play` function based on other types of asynchronous methods. For instance, let's assume that you're working with a component with validation logic implemented (e.g., email validation, password strength). In that case, you can introduce delays within your `play` function to emulate user interaction and assert if the values provided are valid or not:
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="my-component-play-function-with-delay.md" />
-
-{/* prettier-ignore-end */}
-
-When Storybook loads the story, it interacts with the component, filling in its inputs and triggering any validation logic defined.
-
-You can also use the `play` function to verify the existence of an element based on a specific interaction. For instance, if you're working on a component and want to check what happens if a user introduces the wrong information. In that case, you could write the following story:
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="my-component-play-function-waitfor.md" />
-
-{/* prettier-ignore-end */}
-
-## Querying elements
-
-If you need, you can also adjust your `play` function to find elements based on queries (e.g., role, text content). For example:
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="my-component-play-function-alt-queries.md" />
-
-{/* prettier-ignore-end */}
-
-<Callout variant="info" icon="💡">
-  You can read more about the querying elements in the [Testing Library documentation](https://testing-library.com/docs/queries/about/).
-</Callout>
-
-When Storybook loads the story, the `play` function starts its execution and queries the DOM tree expecting the element to be available when the story renders. In case there's a failure in your test, you'll be able to verify its root cause quickly.
-
-Otherwise, if the component is not immediately available, for instance, due to a previous step defined inside your `play` function or some asynchronous behavior, you can adjust your story and wait for the change to the DOM tree to happen before querying the element. For example:
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="my-component-play-function-query-findby.md" />
-
-{/* prettier-ignore-end */}
-
-## Working with the Canvas
-
-By default, each interaction you write inside your `play` function will be executed starting from the top-level element of the Canvas. This is acceptable for smaller components (e.g., buttons, checkboxes, text inputs), but can be inefficient for complex components (e.g., forms, pages), or for multiple stories. To accommodate this, you can adjust your interactions to start execution from the component's root. For example:
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="my-component-play-function-with-canvas.md" />
-
-{/* prettier-ignore-end */}
-
-Applying these changes to your stories can provide a performance boost and improved error handling with the interactions panel.

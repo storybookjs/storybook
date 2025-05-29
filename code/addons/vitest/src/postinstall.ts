@@ -88,9 +88,10 @@ export default async function postInstall(options: PostinstallOptions) {
           });
 
     if (out.migrateToNextjsVite) {
-      await packageManager.addDependencies({ installAsDevDependencies: true }, [
-        `@storybook/nextjs-vite@${versions['@storybook/nextjs-vite']}`,
-      ]);
+      await packageManager.addDependencies(
+        { installAsDevDependencies: true, skipInstall: options.skipInstall },
+        [`@storybook/nextjs-vite@${versions['@storybook/nextjs-vite']}`]
+      );
 
       await packageManager.removeDependencies({}, ['@storybook/nextjs']);
 
@@ -266,17 +267,25 @@ export default async function postInstall(options: PostinstallOptions) {
     logger.plain(`${step} Installing dependencies:`);
     logger.plain(colors.gray('  ' + versionedDependencies.join(', ')));
 
-    await packageManager.addDependencies({ installAsDevDependencies: true }, versionedDependencies);
+    await packageManager.addDependencies(
+      { installAsDevDependencies: true, skipInstall: options.skipInstall },
+      versionedDependencies
+    );
   }
 
   logger.line(1);
   logger.plain(`${step} Configuring Playwright with Chromium (this might take some time):`);
   logger.plain(colors.gray('  npx playwright install chromium --with-deps'));
 
-  await packageManager.executeCommand({
-    command: 'npx',
-    args: ['playwright', 'install', 'chromium', '--with-deps'],
-  });
+  if (options.skipInstall) {
+    logger.plain('Skipping Playwright installation, please run this command manually:');
+    logger.plain(colors.gray('  npx playwright install chromium --with-deps'));
+  } else {
+    await packageManager.executeCommand({
+      command: 'npx',
+      args: ['playwright', 'install', 'chromium', '--with-deps'],
+    });
+  }
 
   const fileExtension =
     allDeps.typescript || (await findFile('tsconfig', [...EXTENSIONS, '.json'])) ? 'ts' : 'js';
@@ -480,6 +489,10 @@ export default async function postInstall(options: PostinstallOptions) {
 
       if (options.packageManager) {
         command.push('--package-manager', options.packageManager);
+      }
+
+      if (options.skipInstall) {
+        command.push('--skip-install');
       }
 
       if (options.configDir !== '.storybook') {

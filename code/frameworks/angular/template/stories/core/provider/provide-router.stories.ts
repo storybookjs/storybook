@@ -16,11 +16,12 @@ const meta: Meta<ProvideRouterComponent> = {
       imports: [RouterModule],
     }),
     applicationConfig({
-      providers: [
-        importProvidersFrom(
-          RouterModule.forRoot([{ path: '**', component: EmptyComponent }], { useHash: true })
-        ),
-      ],
+      routing: {
+        routes: [{ path: '**', component: EmptyComponent }],
+        options: {
+          useHash: true,
+        },
+      },
     }),
   ],
   parameters: {

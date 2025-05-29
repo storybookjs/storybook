@@ -3,8 +3,8 @@ import {
   StoryContext as DefaultStoryContext,
   WebRenderer,
 } from 'storybook/internal/types';
-
-import { Provider, importProvidersFrom } from '@angular/core';
+import { Routes } from '@angular/router';
+import { Provider } from '@angular/core';
 import { ApplicationConfig } from '@angular/platform-browser';
 
 export interface NgModuleMetadata {
@@ -46,6 +46,7 @@ export interface AngularRenderer extends WebRenderer {
 export type Parameters = DefaultParameters & {
   bootstrapModuleOptions?: unknown;
   useTestBedRenderer?: boolean;
+  routes?: Routes[];
 };
 
 export type StoryContext = DefaultStoryContext<AngularRenderer> & { parameters: Parameters };

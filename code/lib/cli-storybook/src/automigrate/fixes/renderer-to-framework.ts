@@ -1,17 +1,11 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
 import {
-  commonGlobOptions,
   frameworkPackages,
   frameworkToRenderer,
-  getProjectRoot,
-  prompt,
   rendererPackages,
 } from 'storybook/internal/common';
 import type { PackageJson } from 'storybook/internal/types';
-
-import picocolors from 'picocolors';
-import { dedent } from 'ts-dedent';
 
 import type { Fix, RunOptions } from '../types';
 
@@ -126,22 +120,12 @@ export const rendererToFramework: Fix<MigrationResult> = {
   id: 'renderer-to-framework',
   versionRange: ['<9.0.0', '^9.0.0-0'],
   promptType: 'auto',
+  link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#moving-from-renderer-based-to-framework-based-configuration',
 
-  async check(): Promise<MigrationResult | null> {
-    // eslint-disable-next-line depend/ban-dependencies
-    const { globby } = await import('globby');
-
-    const packageJsonFiles = await globby(['**/package.json'], {
-      ...commonGlobOptions(''),
-      ignore: ['**/node_modules/**'],
-      cwd: getProjectRoot(),
-      gitignore: true,
-      absolute: true,
-    });
-
+  async check({ packageManager }): Promise<MigrationResult | null> {
     // Check each package.json for migration needs
     const results = await Promise.all(
-      packageJsonFiles.map(async (file) => {
+      packageManager.packageJsonPaths.map(async (file) => {
         try {
           return await checkPackageJson(file);
         } catch (error) {
@@ -161,35 +145,16 @@ export const rendererToFramework: Fix<MigrationResult> = {
     return {
       frameworks: [...new Set(validResults.flatMap((r) => r.frameworks))],
       renderers: [...new Set(validResults.flatMap((r) => r.renderers))],
-      packageJsonFiles: packageJsonFiles.filter((_, i) => validResults[i] !== null),
+      packageJsonFiles: packageManager.packageJsonPaths.filter((_, i) => validResults[i] !== null),
     };
   },
 
   prompt(): string {
-    return dedent`
-      As part of Storybook's evolution, we're moving from renderer-based to framework-based configuration.
-      
-      This migration will:
-      1. Update your source files to use framework-specific imports
-      2. Remove the renderer packages from your package.json
-      3. Install the necessary framework dependencies
-      Would you like to proceed with these changes?
-
-      More info: ${picocolors.yellow('https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#moving-from-renderer-based-to-framework-based-configuration')}
-    `;
+    return `We're moving from renderer-based to framework-based configuration and update your imports and dependencies accordingly.`;
   },
 
   async run(options: RunOptions<MigrationResult>) {
-    const { result, dryRun = false } = options;
-    const defaultGlob = '**/*.{mjs,cjs,js,jsx,ts,tsx}';
-    const glob = await prompt.text({
-      message:
-        'Enter a custom glob pattern to scan for story files (or press enter to use default):',
-      initialValue: defaultGlob,
-    });
-
-    // eslint-disable-next-line depend/ban-dependencies
-    const globby = (await import('globby')).globby;
+    const { result, dryRun = false, storiesPaths, previewConfigPath, mainConfigPath } = options;
 
     for (const selectedFramework of result.frameworks) {
       const frameworkName = frameworkPackages[selectedFramework];
@@ -212,17 +177,12 @@ export const rendererToFramework: Fix<MigrationResult> = {
 
       console.log(`\nMigrating ${rendererPackage} to ${selectedFramework}`);
 
-      const sourceFiles = await globby([glob], {
-        ...commonGlobOptions(''),
-        ignore: ['**/node_modules/**'],
-        dot: true,
-        cwd: getProjectRoot(),
-        absolute: true,
-      });
-
-      console.log(`Scanning ${sourceFiles.length} files...`);
-
-      await transformSourceFiles(sourceFiles, rendererPackage, selectedFramework, dryRun);
+      await transformSourceFiles(
+        [...storiesPaths, previewConfigPath, mainConfigPath].filter(Boolean) as string[],
+        rendererPackage,
+        selectedFramework,
+        dryRun
+      );
 
       console.log('Updating package.json files...');
 

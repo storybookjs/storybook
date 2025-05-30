@@ -7,16 +7,12 @@ import { createBlocker } from './types';
 export const blocker = createBlocker({
   id: 'experimentalAddonTestVitest',
   link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vitest-addon-former-storybookexperimental-addon-test-vitest-20-support-is-dropped',
-  async check({ packageJson, packageManager }) {
-    const dependencies = {
-      ...packageJson.dependencies,
-      ...packageJson.devDependencies,
-    };
+  async check({ packageManager }) {
+    const experimentalAddonTestVersion = await packageManager.getInstalledVersion(
+      '@storybook/experimental-addon-test'
+    );
 
-    // Check if @storybook/experimental-addon-test is installed
-    const hasExperimentalAddon = '@storybook/experimental-addon-test' in dependencies;
-
-    if (!hasExperimentalAddon) {
+    if (!experimentalAddonTestVersion) {
       return false;
     }
 

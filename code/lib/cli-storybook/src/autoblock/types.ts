@@ -1,9 +1,8 @@
-import type { JsPackageManager, PackageJson } from 'storybook/internal/common';
+import type { JsPackageManager } from 'storybook/internal/common';
 import type { StorybookConfig } from 'storybook/internal/types';
 
 export interface AutoblockOptions {
   packageManager: JsPackageManager;
-  packageJson: PackageJson;
   mainConfig: StorybookConfig;
   mainConfigPath: string;
   configDir: string;

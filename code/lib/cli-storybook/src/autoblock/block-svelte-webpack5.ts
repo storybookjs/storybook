@@ -6,14 +6,12 @@ import { createBlocker } from './types';
 export const blocker = createBlocker({
   id: 'svelteWebpack5Removal',
   link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#svelte-dropped-support-for-storybooksvelte-webpack5',
-  async check({ packageJson }) {
-    const dependencies = {
-      ...packageJson.dependencies,
-      ...packageJson.devDependencies,
-    };
-
+  async check({ packageManager }) {
+    const svelteWebpack5Version = await packageManager.getInstalledVersion(
+      '@storybook/svelte-webpack5'
+    );
     // Check if @storybook/svelte-webpack5 is a dependency
-    return '@storybook/svelte-webpack5' in dependencies;
+    return svelteWebpack5Version !== null;
   },
   log() {
     return dedent`

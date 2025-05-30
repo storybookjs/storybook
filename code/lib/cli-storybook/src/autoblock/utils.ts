@@ -2,6 +2,8 @@ import type { JsPackageManager } from 'storybook/internal/common';
 
 import { lt } from 'semver';
 
+import type { AutoblockerResult } from './types';
+
 type Result<M extends Record<string, string>> = {
   installedVersion: string | undefined;
   packageName: keyof M;
@@ -47,4 +49,68 @@ export async function findOutdatedPackage<M extends Record<string, string>>(
     },
     false
   );
+}
+
+/**
+ * Processes autoblocker results and formats them for display. Returns true if there are blocking
+ * issues that should prevent the upgrade.
+ *
+ * @param projects - Array of project results with autoblocker check results
+ * @param gitRoot - The git root directory for creating relative paths
+ * @param onError - Callback function to handle error display
+ * @returns True if there are blockers that should prevent upgrade, false otherwise
+ */
+export function processAutoblockerResults<
+  T extends { configDir: string; autoblockerCheckResults?: AutoblockerResult<unknown>[] | null },
+>(projects: T[], gitRoot: string, onError: (message: string) => void): boolean {
+  const autoblockerMessagesMap = new Map<
+    string,
+    { message: string; link?: string; configDirs: string[] }
+  >();
+
+  projects.forEach((result) => {
+    result.autoblockerCheckResults?.forEach((blocker) => {
+      if (blocker.result === null || blocker.result === false) {
+        return;
+      }
+      const blockerMessage = blocker.blocker.log(blocker.result);
+      const message = Array.isArray(blockerMessage) ? blockerMessage.join('\n') : blockerMessage;
+      const link = blocker.blocker.link;
+
+      if (autoblockerMessagesMap.has(message)) {
+        autoblockerMessagesMap.get(message)!.configDirs.push(result.configDir);
+      } else {
+        autoblockerMessagesMap.set(message, {
+          message,
+          link,
+          configDirs: [result.configDir],
+        });
+      }
+    });
+  });
+
+  const autoblockerMessages = Array.from(autoblockerMessagesMap.values());
+
+  if (autoblockerMessages.length > 0) {
+    const formatConfigDirs = (configDirs: string[]) => {
+      const relativeDirs = configDirs.map((dir) => dir.replace(gitRoot, '') || '.');
+      if (relativeDirs.length <= 3) {
+        return relativeDirs.join(', ');
+      }
+      const remaining = relativeDirs.length - 3;
+      return `${relativeDirs.slice(0, 3).join(', ')}${remaining > 0 ? ` and ${remaining} more...` : ''}`;
+    };
+
+    const formattedMessages = autoblockerMessages.map((item) => {
+      const configDirInfo = `(${formatConfigDirs(item.configDirs)})`;
+      return `${item.message} ${configDirInfo}`;
+    });
+
+    onError(`Storybook has found potential blockers that need to be resolved before upgrading:
+${formattedMessages.join('\n')}`);
+
+    return true;
+  }
+
+  return false;
 }

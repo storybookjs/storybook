@@ -30,6 +30,13 @@ describe('experimentalAddonTestVitest blocker', () => {
   });
 
   test('should return false if experimental addon is not installed', async () => {
+    mockPackageManager.getInstalledVersion.mockImplementation(async (pkg: string) => {
+      if (pkg === '@storybook/experimental-addon-test') {
+        return null;
+      }
+      return '3.0.0';
+    });
+
     const result = await blocker.check({
       packageJson: {
         dependencies: {},
@@ -39,11 +46,18 @@ describe('experimentalAddonTestVitest blocker', () => {
     } as any);
 
     expect(result).toBe(false);
-    expect(mockPackageManager.getInstalledVersion).not.toHaveBeenCalled();
   });
 
   test('should return false if vitest is not installed', async () => {
-    mockPackageManager.getInstalledVersion.mockResolvedValue(null);
+    mockPackageManager.getInstalledVersion.mockImplementation(async (pkg: string) => {
+      if (pkg === '@storybook/experimental-addon-test') {
+        return '1.0.0';
+      }
+      if (pkg === 'vitest') {
+        return null;
+      }
+      return '3.0.0';
+    });
 
     const result = await blocker.check({
       packageJson: {
@@ -60,7 +74,15 @@ describe('experimentalAddonTestVitest blocker', () => {
   });
 
   test('should return true if vitest version is less than 3.0.0', async () => {
-    mockPackageManager.getInstalledVersion.mockResolvedValue('2.9.0');
+    mockPackageManager.getInstalledVersion.mockImplementation(async (pkg: string) => {
+      if (pkg === '@storybook/experimental-addon-test') {
+        return '1.0.0';
+      }
+      if (pkg === 'vitest') {
+        return '2.9.0';
+      }
+      return '3.0.0';
+    });
     vi.mocked(semver.lt).mockReturnValue(true);
 
     const result = await blocker.check({
@@ -79,7 +101,15 @@ describe('experimentalAddonTestVitest blocker', () => {
   });
 
   test('should return false if vitest version is 3.0.0 or greater', async () => {
-    mockPackageManager.getInstalledVersion.mockResolvedValue('3.0.0');
+    mockPackageManager.getInstalledVersion.mockImplementation(async (pkg: string) => {
+      if (pkg === '@storybook/experimental-addon-test') {
+        return '1.0.0';
+      }
+      if (pkg === 'vitest') {
+        return '3.0.0';
+      }
+      return '3.0.0';
+    });
     vi.mocked(semver.lt).mockReturnValue(false);
 
     const result = await blocker.check({
@@ -98,7 +128,17 @@ describe('experimentalAddonTestVitest blocker', () => {
   });
 
   test('should check both dependencies and devDependencies for experimental addon', async () => {
-    const result = await blocker.check({
+    mockPackageManager.getInstalledVersion.mockImplementation(async (pkg: string) => {
+      if (pkg === '@storybook/experimental-addon-test') {
+        return '1.0.0';
+      }
+      if (pkg === 'vitest') {
+        return '3.0.0';
+      }
+      return '3.0.0';
+    });
+
+    await blocker.check({
       packageJson: {
         dependencies: {},
         devDependencies: {

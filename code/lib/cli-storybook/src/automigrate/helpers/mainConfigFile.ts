@@ -18,6 +18,8 @@ import type { StorybookConfigRaw } from 'storybook/internal/types';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
+import { getStoriesPathsFromConfig } from '../../util';
+
 const logger = console;
 
 /**
@@ -157,6 +159,12 @@ export const getStorybookData = async ({
     );
   }
 
+  const storiesPaths = await getStoriesPathsFromConfig({
+    stories: mainConfig.stories,
+    configDir,
+    workingDir: packageManager.instanceDir,
+  });
+
   return {
     configDir,
     mainConfig,
@@ -165,6 +173,7 @@ export const getStorybookData = async ({
     mainConfigPath,
     previewConfigPath,
     packageManager,
+    storiesPaths,
   };
 };
 export type GetStorybookData = typeof getStorybookData;

@@ -27,6 +27,7 @@ export const wrapRequire: Fix<WrapRequireRunOptions> = {
   id: 'wrap-require',
 
   versionRange: ['*', '*'],
+  link: 'https://storybook.js.org/docs/faq#how-do-i-fix-module-resolution-in-special-environments',
 
   async check({ packageManager, storybookVersion, mainConfigPath }) {
     const isStorybookInMonorepo = await packageManager.isStorybookInMonorepo();
@@ -51,15 +52,8 @@ export const wrapRequire: Fix<WrapRequireRunOptions> = {
     return { storybookVersion, isStorybookInMonorepo, isPnp, isConfigTypescript };
   },
 
-  prompt({ storybookVersion, isStorybookInMonorepo }) {
-    const sbFormatted = picocolors.cyan(`Storybook ${storybookVersion}`);
-
-    return dedent`We have detected that you're using ${sbFormatted} in a ${
-      isStorybookInMonorepo ? 'monorepo' : 'PnP'
-    } project. 
-    For Storybook to work correctly, some fields in your main config must be updated. We can do this for you automatically.
-    
-    More info: https://storybook.js.org/docs/faq#how-do-i-fix-module-resolution-in-special-environments`;
+  prompt() {
+    return dedent`We have detected that you're using Storybook in a monorepo or PnP project. Some fields in your main config must be updated.`;
   },
 
   async run({ dryRun, mainConfigPath, result }) {

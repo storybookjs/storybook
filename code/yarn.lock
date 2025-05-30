@@ -6253,6 +6253,7 @@ __metadata:
     cross-spawn: "npm:^7.0.6"
     envinfo: "npm:^7.7.3"
     execa: "npm:^9.5.2"
+    find-up: "npm:^7.0.0"
     giget: "npm:^1.0.0"
     globby: "npm:^14.0.1"
     jscodeshift: "npm:^0.15.1"

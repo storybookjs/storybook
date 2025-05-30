@@ -9,6 +9,7 @@ vi.mock('storybook/internal/common', async (importOriginal) => {
   return {
     ...mod,
     getAddonNames: vi.fn(),
+    removeAddon: vi.fn(),
   };
 });
 
@@ -44,30 +45,25 @@ describe('removeAddonInteractions', () => {
   describe('prompt', () => {
     it('should return the correct message', () => {
       const message = removeAddonInteractions.prompt({});
-      expect(message).toContain(
-        '@storybook/addon-interactions has been consolidated into Storybook core'
-      );
+      expect(message).toContain('@storybook/addon-interactions has been moved to Storybook core');
     });
   });
 
   describe('run', () => {
     it('should run storybook remove command', async () => {
-      const mockPackageManager = {
-        runPackageCommand: vi.fn(),
-      };
+      const { removeAddon } = await import('storybook/internal/common');
 
       await removeAddonInteractions?.run?.({
-        packageManager: mockPackageManager,
+        packageManager: {} as any,
         configDir: './storybook',
+        dryRun: false,
       } as any);
 
-      expect(mockPackageManager.runPackageCommand).toHaveBeenCalledWith('storybook', [
-        'remove',
-        '@storybook/addon-interactions',
-        '--config-dir',
-        './storybook',
-        '--skip-install',
-      ]);
+      expect(removeAddon).toHaveBeenCalledWith('@storybook/addon-interactions', {
+        configDir: './storybook',
+        skipInstall: true,
+        packageManager: {},
+      });
     });
   });
 });

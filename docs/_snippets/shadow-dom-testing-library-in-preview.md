@@ -1,5 +1,5 @@
 ```ts filename=".storybook/preview.ts" renderer="web-components" language="ts"
-import type { Preview } from '@storybook/web-components';
+import type { Preview } from '@storybook/web-components-vite';
 import { within as withinShadow } from 'shadow-dom-testing-library';
 
 const preview: Preview = {

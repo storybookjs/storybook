@@ -6,9 +6,7 @@ import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 import { PosixFS, VirtualFS, ZipOpenFS } from '@yarnpkg/fslib';
 import { getLibzipSync } from '@yarnpkg/libzip';
 import { findUpSync } from 'find-up';
-import { dedent } from 'ts-dedent';
 
-import { createLogStream } from '../utils/cli';
 import { getProjectRoot } from '../utils/paths';
 import { JsPackageManager } from './JsPackageManager';
 import type { PackageJson } from './PackageJson';
@@ -97,13 +95,32 @@ export class Yarn2Proxy extends JsPackageManager {
     command: string,
     args: string[],
     cwd?: string,
-    stdio?: 'pipe' | 'inherit'
+    stdio: 'pipe' | 'inherit' = 'pipe'
   ) {
-    return this.executeCommandSync({ command: 'yarn', args: [command, ...args], cwd, stdio });
+    return this.executeCommandSync({
+      command: 'yarn',
+      args: ['exec', command, ...args],
+      cwd,
+      stdio,
+    });
   }
 
-  runPackageCommand(command: string, args: string[], cwd?: string) {
-    return this.executeCommand({ command: 'yarn', args: ['exec', command, ...args], cwd });
+  public runPackageCommand(
+    command: string,
+    args: string[],
+    cwd?: string,
+    stdio?: 'pipe' | 'inherit'
+  ) {
+    return this.executeCommand({ command: 'yarn', args: ['exec', command, ...args], cwd, stdio });
+  }
+
+  public runInternalCommand(
+    command: string,
+    args: string[],
+    cwd?: string,
+    stdio?: 'inherit' | 'pipe' | 'ignore'
+  ) {
+    return this.executeCommand({ command: 'yarn', args: [command, ...args], cwd, stdio });
   }
 
   public async findInstallations(pattern: string[], { depth = 99 }: { depth?: number } = {}) {

@@ -84,6 +84,34 @@ export class PNPMProxy extends JsPackageManager {
     });
   }
 
+  public runPackageCommand(
+    command: string,
+    args: string[],
+    cwd?: string,
+    stdio?: 'pipe' | 'inherit'
+  ) {
+    return this.executeCommand({
+      command: 'pnpm',
+      args: ['exec', command, ...args],
+      cwd,
+      stdio,
+    });
+  }
+
+  public runInternalCommand(
+    command: string,
+    args: string[],
+    cwd?: string,
+    stdio?: 'inherit' | 'pipe' | 'ignore'
+  ) {
+    return this.executeCommand({
+      command: 'pnpm',
+      args: [command, ...args],
+      cwd,
+      stdio,
+    });
+  }
+
   public async getRegistryURL() {
     const process = this.executeCommand({
       command: 'pnpm',
@@ -92,14 +120,6 @@ export class PNPMProxy extends JsPackageManager {
     const result = await process;
     const url = (result.stdout ?? '').trim();
     return url === 'undefined' ? undefined : url;
-  }
-
-  runPackageCommand(command: string, args: string[], cwd?: string) {
-    return this.executeCommand({
-      command: 'pnpm',
-      args: ['exec', command, ...args],
-      cwd,
-    });
   }
 
   public async findInstallations(pattern: string[], { depth = 99 }: { depth?: number } = {}) {
@@ -196,7 +216,7 @@ export class PNPMProxy extends JsPackageManager {
     return this.executeCommand({
       command: 'pnpm',
       args: commandArgs,
-      stdio: 'inherit',
+      stdio: 'pipe',
       cwd: this.primaryPackageJson.operationDir,
     });
   }

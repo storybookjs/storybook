@@ -54,11 +54,30 @@ export class Yarn1Proxy extends JsPackageManager {
     cwd?: string,
     stdio?: 'pipe' | 'inherit'
   ): string {
-    return this.executeCommandSync({ command: `yarn`, args: [command, ...args], cwd, stdio });
+    return this.executeCommandSync({
+      command: `yarn`,
+      args: ['exec', command, ...args],
+      cwd,
+      stdio,
+    });
   }
 
-  runPackageCommand(command: string, args: string[], cwd?: string) {
-    return this.executeCommand({ command: `yarn`, args: ['exec', command, ...args], cwd });
+  public runPackageCommand(
+    command: string,
+    args: string[],
+    cwd?: string,
+    stdio?: 'pipe' | 'inherit'
+  ) {
+    return this.executeCommand({ command: `yarn`, args: ['exec', command, ...args], cwd, stdio });
+  }
+
+  public runInternalCommand(
+    command: string,
+    args: string[],
+    cwd?: string,
+    stdio?: 'inherit' | 'pipe' | 'ignore'
+  ) {
+    return this.executeCommand({ command: `yarn`, args: [command, ...args], cwd, stdio });
   }
 
   public getModulePackageJSON(packageName: string): PackageJson | null {

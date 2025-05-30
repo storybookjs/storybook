@@ -120,13 +120,29 @@ export abstract class JsPackageManager {
   }
 
   async installDependencies() {
+    const installTask = prompt.taskLog({ title: 'Installing dependencies...', limit: 5 });
     try {
-      prompt.debug('Installing dependencies...');
-      await this.runInstall();
-      prompt.debug('Deduping dependencies...');
-      await this.executeCommand({ command: 'dedupe', args: [], stdio: 'ignore' }).catch(() => {});
+      const installProcess = this.runInstall();
+      installProcess.stdout?.on('data', (data) => {
+        installTask.message(data.toString());
+      });
+      installProcess.stderr?.on('data', (data) => {
+        installTask.message(data.toString());
+      });
+      await installProcess;
+
+      installTask.message('Deduping dependencies...');
+      const dedupeProcess = this.runInternalCommand('dedupe', [], this.cwd);
+      dedupeProcess.stdout?.on('data', (data) => {
+        installTask.message(data.toString());
+      });
+      dedupeProcess.stderr?.on('data', (data) => {
+        installTask.message(data.toString());
+      });
+      await dedupeProcess;
+      installTask.success('Dependencies installed');
     } catch (e) {
-      prompt.error('An error occurred while installing dependencies.');
+      installTask.error('An error occurred while installing dependencies.');
       throw new HandledError(e);
     }
   }
@@ -446,17 +462,23 @@ export abstract class JsPackageManager {
 
   public abstract getRegistryURL(): Promise<string | undefined>;
 
+  public abstract runInternalCommand(
+    command: string,
+    args: string[],
+    cwd?: string,
+    stdio?: 'inherit' | 'pipe' | 'ignore'
+  ): ExecaChildProcess;
   public abstract runPackageCommand(
     command: string,
     args: string[],
     cwd?: string,
-    stdio?: string
+    stdio?: 'inherit' | 'pipe' | 'ignore'
   ): ExecaChildProcess;
   public abstract runPackageCommandSync(
     command: string,
     args: string[],
     cwd?: string,
-    stdio?: 'inherit' | 'pipe'
+    stdio?: 'inherit' | 'pipe' | 'ignore'
   ): string;
   public abstract findInstallations(pattern?: string[]): Promise<InstallationMetadata | undefined>;
   public abstract findInstallations(

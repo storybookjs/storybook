@@ -122,12 +122,27 @@ export class BUNProxy extends JsPackageManager {
     });
   }
 
-  public runPackageCommand(command: string, args: string[], cwd?: string) {
+  public runPackageCommand(
+    command: string,
+    args: string[],
+    cwd?: string,
+    stdio?: 'pipe' | 'inherit'
+  ) {
     return this.executeCommand({
       command: 'bun',
       args: ['run', command, ...args],
       cwd,
+      stdio,
     });
+  }
+
+  public runInternalCommand(
+    command: string,
+    args: string[],
+    cwd?: string,
+    stdio?: 'inherit' | 'pipe' | 'ignore'
+  ) {
+    return this.executeCommand({ command: 'bun', args: [command, ...args], cwd, stdio });
   }
 
   public async findInstallations(pattern: string[], { depth = 99 }: { depth?: number } = {}) {

@@ -114,11 +114,31 @@ export class NPMProxy extends JsPackageManager {
     });
   }
 
-  public async runPackageCommand(command: string, args: string[], cwd?: string): Promise<string> {
+  public runPackageCommand(
+    command: string,
+    args: string[],
+    cwd?: string,
+    stdio?: 'pipe' | 'inherit'
+  ) {
     return this.executeCommand({
       command: 'npm',
       args: ['exec', '--', command, ...args],
       cwd,
+      stdio,
+    });
+  }
+
+  public runInternalCommand(
+    command: string,
+    args: string[],
+    cwd?: string,
+    stdio?: 'inherit' | 'pipe' | 'ignore'
+  ) {
+    return this.executeCommand({
+      command: 'npm',
+      args: [command, ...args],
+      cwd,
+      stdio,
     });
   }
 

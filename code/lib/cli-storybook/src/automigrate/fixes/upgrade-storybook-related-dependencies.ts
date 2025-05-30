@@ -35,6 +35,26 @@ async function getLatestVersions(
   );
 }
 
+/** Filter out dependencies that are not valid e.g. yarn patches, git urls and other protocols */
+function isValidVersionType(packageName: string, specifier: string) {
+  if (
+    specifier.startsWith('patch:') ||
+    specifier.startsWith('file:') ||
+    specifier.startsWith('link:') ||
+    specifier.startsWith('portal:') ||
+    specifier.startsWith('git:') ||
+    specifier.startsWith('git+') ||
+    specifier.startsWith('http:') ||
+    specifier.startsWith('https:') ||
+    specifier.startsWith('workspace:')
+  ) {
+    prompt.debug(`Skipping ${packageName} as it does not have a valid version type: ${specifier}`);
+    return false;
+  }
+
+  return true;
+}
+
 /**
  * Is the user upgrading to the `latest` version of Storybook? Let's try to pull along some of the
  * storybook related dependencies to `latest` as well!
@@ -60,11 +80,10 @@ export const upgradeStorybookRelatedDependencies = {
 
     const allDependencies = packageManager.getAllDependencies();
 
-    // TODO: filter out dependencies that are not valid e.g. yarn patches like
-    // "patch:storybook-addon-test-codegen@npm%3A1.2.0#~/.yarn/patches/storybook-addon-test-codegen-npm-1.2.0-9550d5ad4c.patch",
     const storybookDependencies = Object.keys(allDependencies)
       .filter((dep) => dep.includes('storybook'))
-      .filter((dep) => !isCorePackage(dep) && !isSatelliteAddon(dep));
+      .filter((dep) => !isCorePackage(dep) && !isSatelliteAddon(dep))
+      .filter((dep) => isValidVersionType(dep, allDependencies[dep]));
 
     const incompatibleDependencies = analyzedPackages
       .filter((pkg) => pkg.hasIncompatibleDependencies)

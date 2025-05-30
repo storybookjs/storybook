@@ -17,6 +17,7 @@ import picocolors from 'picocolors';
 import semver, { clean, lt } from 'semver';
 import { dedent } from 'ts-dedent';
 
+import { processAutoblockerResults } from './autoblock/utils';
 import { allFixes } from './automigrate/fixes';
 import {
   type ProjectAutomigrationData,
@@ -127,53 +128,11 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
   }
 
   // Handle autoblockers
-  const autoblockerMessagesMap = new Map<
-    string,
-    { message: string; link?: string; configDirs: string[] }
-  >();
-
-  projects.forEach((result) => {
-    result.autoblockerCheckResults?.forEach((blocker) => {
-      if (blocker.result === null || blocker.result === false) {
-        return;
-      }
-      const blockerMessage = blocker.blocker.log(blocker.result);
-      const message = Array.isArray(blockerMessage) ? blockerMessage.join('\n') : blockerMessage;
-      const link = blocker.blocker.link;
-
-      if (autoblockerMessagesMap.has(message)) {
-        autoblockerMessagesMap.get(message)!.configDirs.push(result.configDir);
-      } else {
-        autoblockerMessagesMap.set(message, {
-          message,
-          link,
-          configDirs: [result.configDir],
-        });
-      }
-    });
+  const hasBlockers = processAutoblockerResults(projects, gitRoot, (message) => {
+    prompt.error(dedent`${message}`);
   });
 
-  const autoblockerMessages = Array.from(autoblockerMessagesMap.values());
-
-  if (autoblockerMessages.length > 0) {
-    const formatConfigDirs = (configDirs: string[]) => {
-      const relativeDirs = configDirs.map((dir) => dir.replace(gitRoot, '') || '.');
-      if (relativeDirs.length <= 3) {
-        return relativeDirs.join(', ');
-      }
-      const remaining = relativeDirs.length - 3;
-      return `${relativeDirs.slice(0, 3).join(', ')}${remaining > 0 ? ` and ${remaining} more...` : ''}`;
-    };
-
-    const formattedMessages = autoblockerMessages.map((item) => {
-      const configDirInfo = `(${formatConfigDirs(item.configDirs)})`;
-      return `${item.message} ${configDirInfo}`;
-    });
-
-    prompt.error(dedent`
-      Storybook has found potential blockers that need to be resolved before upgrading:
-      ${formattedMessages.join('\n')}
-    `);
+  if (hasBlockers) {
     process.exit(1);
   }
 

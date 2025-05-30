@@ -178,7 +178,10 @@ export async function runAutomigrationsForProjects(
   }
 
   // Run automigrations for each project
+  let projectIndex = 0;
   for (const [configDir, automigrations] of projectAutomigrations) {
+    const countPrefix =
+      projectAutomigrations.size > 1 ? `(${++projectIndex}/${projectAutomigrations.size}) ` : '';
     const project = automigrations[0].projects.find((p) => p.configDir === configDir);
 
     if (!project) {
@@ -187,7 +190,7 @@ export async function runAutomigrationsForProjects(
 
     const projectName = picocolors.cyan(shortenPath(project.configDir));
     const taskLog = prompt.taskLog({
-      title: `Running automigrations for ${projectName}:`,
+      title: `${countPrefix}Running automigrations for ${projectName}:`,
     });
     const fixResults: Record<FixId, FixStatus> = {};
 
@@ -236,7 +239,7 @@ export async function runAutomigrationsForProjects(
       }
     }
 
-    taskLog.success(`Completed automigrations for ${projectName}`);
+    taskLog.success(`${countPrefix}Completed automigrations for ${projectName}`);
 
     projectResults[configDir] = fixResults;
   }
@@ -260,7 +263,11 @@ export async function runAutomigrations(
     storiesPaths: project.storiesPaths,
   }));
 
-  prompt.log(`Detecting automigrations for ${projectAutomigrationData.length} projects...`);
+  if (projectAutomigrationData.length > 1) {
+    prompt.log(`Detecting automigrations for ${projectAutomigrationData.length} projects...`);
+  } else {
+    prompt.log(`Detecting automigrations...`);
+  }
 
   // Collect all applicable automigrations across all projects
   const detectedAutomigrations = await collectAutomigrationsAcrossProjects({

@@ -403,24 +403,22 @@ const processProject = async ({
  */
 export const collectProjects = async (
   options: UpgradeOptions,
-  configDirs: readonly string[]
+  configDirs: readonly string[],
+  onProjectScanStart: (projectName: string) => void
 ): Promise<CollectProjectsResult[]> => {
   const currentCLIVersion = versions.storybook;
-
-  const task = prompt.taskLog({ title: 'Scanning projects' });
 
   const projectPromises = configDirs.map((configDir) =>
     processProject({
       configDir,
       options,
       currentCLIVersion,
-      onScanStart: () => task.message(shortenPath(configDir)),
+      onScanStart: () => onProjectScanStart(shortenPath(configDir)),
     })
   );
 
   const result = await Promise.all(projectPromises);
 
-  task.success(`Found ${result.length} project(s)`);
   return result;
 };
 
@@ -668,14 +666,18 @@ export const getProjects = async (
   options: UpgradeOptions
 ): Promise<CollectProjectsSuccessResult[] | undefined> => {
   try {
-    prompt.log(`Detecting projects to upgrade...`);
+    const task = prompt.taskLog({ title: 'Detecting projects to upgrade...' });
+
     // Determine configuration directories
     let detectedConfigDirs: string[] = options.configDir ?? [];
     if (!options.configDir || options.configDir.length === 0) {
       detectedConfigDirs = await findStorybookProjects();
     }
 
-    const projects = await collectProjects(options, detectedConfigDirs);
+    const projects = await collectProjects(options, detectedConfigDirs, (projectName) =>
+      task.message(projectName)
+    );
+    task.success(`Found ${projects.length} project(s)`);
 
     // Separate valid and error projects
     const validProjects = projects.filter(isSuccessResult);

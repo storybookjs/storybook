@@ -196,14 +196,20 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
   // Update dependencies in package.jsons for all projects
   if (!options.dryRun) {
     const task = prompt.taskLog({
-      title: 'Updating dependencies in package.json files',
+      title: `Fetching versions to update package.json files..`,
     });
     try {
+      const loggedPaths: string[] = [];
       for (const project of projects) {
         prompt.debug(
           `Updating dependencies in ${picocolors.cyan(shortenPath(project.configDir))}...`
         );
-        task.message(project.packageManager.packageJsonPaths.map(shortenPath).join('\n'));
+        const packageJsonPaths = project.packageManager.packageJsonPaths.map(shortenPath);
+        const newPaths = packageJsonPaths.filter((path) => !loggedPaths.includes(path));
+        if (newPaths.length > 0) {
+          task.message(newPaths.join('\n'));
+          loggedPaths.push(...newPaths);
+        }
         await upgradeStorybookDependencies({
           packageManager: project.packageManager,
           isCanary: project.isCanary,
@@ -213,7 +219,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
           isCLIExactPrerelease: project.isCLIExactPrerelease,
         });
       }
-      task.success(`Updated dependencies in package.json files`);
+      task.success(`Updated package versions in package.json files`);
     } catch (err) {
       task.error(`Failed to upgrade dependencies: ${String(err)}`);
     }

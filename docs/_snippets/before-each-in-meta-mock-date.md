@@ -24,7 +24,7 @@ export default meta;
 type Story = StoryObj<Page>;
 
 export const Default: Story = {
-  async play({ canvasElement }) {
+  async play({ canvas }) {
     // ... This will run with the mocked Date
   },
 };
@@ -55,7 +55,7 @@ export const Default: Story = {
   });
 </script>
 
-<Story name="Default" play={async ({ canvasElement }) => {
+<Story name="Default" play={async ({ canvas }) => {
   // ... This will run with the mocked Date
   }}
 />
@@ -82,7 +82,7 @@ export default {
 };
 
 export const Default = {
-  async play({ canvasElement }) {
+  async play({ canvas }) {
     // ... This will run with the mocked Date
   },
 };
@@ -108,7 +108,7 @@ export default {
 };
 
 export const Default = {
-  async play({ canvasElement }) {
+  async play({ canvas }) {
     // ... This will run with the mocked Date
   },
 };
@@ -139,7 +139,7 @@ export const Default = {
   });
 </script>
 
-<Story name="Default" play={async ({ canvasElement }) => {
+<Story name="Default" play={async ({ canvas }) => {
   // ... This will run with the mocked Date
   }}
 />
@@ -172,14 +172,14 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
-  async play({ canvasElement }) {
+  async play({ canvas }) {
     // ... This will run with the mocked Date
   },
 };
 ```
 
 ```ts filename="Page.stories.ts" renderer="common" language="ts"
-// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import MockDate from 'mockdate';
@@ -205,7 +205,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
-  async play({ canvasElement }) {
+  async play({ canvas }) {
     // ... This will run with the mocked Date
   },
 };
@@ -230,7 +230,7 @@ export default {
 };
 
 export const Default = {
-  async play({ canvasElement }) {
+  async play({ canvas }) {
     // ... This will run with the mocked Date
   },
 };
@@ -261,7 +261,7 @@ export default meta;
 type Story = StoryObj;
 
 export const Default: Story = {
-  async play({ canvasElement }) {
+  async play({ canvas }) {
     // ... This will run with the mocked Date
   },
 };

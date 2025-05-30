@@ -8,7 +8,7 @@ const preview: Preview = {
       (story) => `<div [class]="myTheme">${story}</div>`,
       ({ globals }) => {
         return { myTheme: globals['theme'] };
-      },
+      }
     ),
   ],
 };
@@ -34,7 +34,7 @@ export default preview;
 ```
 
 ```ts filename=".storybook/preview.ts" renderer="common" language="ts"
-// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Preview } from '@storybook/your-framework';
 
 import { MyThemes } from '../my-theme-folder/my-theme-file';
@@ -75,7 +75,8 @@ export default preview;
 ```
 
 ```tsx filename=".storybook/preview.ts|tsx" renderer="react" language="ts"
-import type { Preview } from '@storybook/react-vite';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { Preview } from '@storybook/your-framework';
 
 import { ThemeProvider } from 'styled-components';
 

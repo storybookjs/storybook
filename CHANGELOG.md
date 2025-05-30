@@ -1,3 +1,10 @@
+## 9.0.1
+
+- Angular: Include 20.x in version range - [#31602](https://github.com/storybookjs/storybook/pull/31602), thanks @shilman!
+- CLI: Update React Native init generator for v9 - [#31600](https://github.com/storybookjs/storybook/pull/31600), thanks @dannyhw!
+- React Native Web: Include expo in babel transforms - [#31607](https://github.com/storybookjs/storybook/pull/31607), thanks @dannyhw!
+- Telemetry: Fix storybook version and add test run events - [#31473](https://github.com/storybookjs/storybook/pull/31473), thanks @tmeasday!
+
 ## 9.0.0
 
 #### Storybook 9.0 is here

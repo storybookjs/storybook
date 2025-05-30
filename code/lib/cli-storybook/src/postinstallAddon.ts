@@ -8,6 +8,7 @@ export const postinstallAddon = async (addonName: string, options: PostinstallOp
 
     try {
       console.log(`Running postinstall script for ${addonName}`);
+      console.log(JSON.stringify(options, null, 2));
       await postinstall(options);
     } catch (e) {
       console.error(`Error running postinstall script for ${addonName}`);

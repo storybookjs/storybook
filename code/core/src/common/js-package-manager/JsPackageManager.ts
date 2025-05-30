@@ -8,6 +8,7 @@ import picocolors from 'picocolors';
 import { gt, satisfies } from 'semver';
 import invariant from 'tiny-invariant';
 
+import { prompt } from '../prompts';
 import { HandledError } from '../utils/HandledError';
 import { getProjectRoot } from '../utils/paths';
 import storybookPackagesVersions from '../versions';
@@ -120,13 +121,13 @@ export abstract class JsPackageManager {
   }
 
   async installDependencies() {
-    logger.log('Installing dependencies...');
-    logger.log();
-
     try {
+      prompt.debug('Installing dependencies...');
       await this.runInstall();
+      prompt.debug('Deduping dependencies...');
+      await this.executeCommand({ command: 'dedupe', args: [], stdio: 'ignore' }).catch(() => {});
     } catch (e) {
-      logger.error('An error occurred while installing dependencies.');
+      prompt.error('An error occurred while installing dependencies.');
       throw new HandledError(e);
     }
   }
@@ -160,14 +161,16 @@ export abstract class JsPackageManager {
   }
 
   getAllDependencies() {
-    const { packageJson } = this.primaryPackageJson;
-    const { dependencies, devDependencies, peerDependencies } = packageJson;
+    const allDependencies: Record<string, string> = {};
 
-    return {
-      ...dependencies,
-      ...devDependencies,
-      ...peerDependencies,
-    } as Record<string, string>;
+    for (const packageJsonPath of this.packageJsonPaths) {
+      const packageJson = JsPackageManager.getPackageJson(packageJsonPath);
+      const { dependencies, devDependencies, peerDependencies } = packageJson;
+
+      Object.assign(allDependencies, dependencies, devDependencies, peerDependencies);
+    }
+
+    return allDependencies;
   }
 
   /**

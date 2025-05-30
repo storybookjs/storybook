@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 
-import type { JsPackageManager, PackageJson } from 'storybook/internal/common';
+import type { PackageJson } from 'storybook/internal/common';
+import type { JsPackageManager } from 'storybook/internal/common';
 import { isCorePackage, isSatelliteAddon } from 'storybook/internal/common';
 
 import { gt } from 'semver';
@@ -55,17 +56,7 @@ export const upgradeStorybookRelatedDependencies = {
       skipErrors: true,
     });
 
-    const packageJsons = packageManager.packageJsonPaths.map(
-      (path) => JSON.parse(readFileSync(path, 'utf-8')) as PackageJson
-    );
-    const allDependencies = packageJsons.reduce(
-      (acc, json) => ({
-        ...acc,
-        ...json.dependencies,
-        ...json.devDependencies,
-      }),
-      {}
-    );
+    const allDependencies = packageManager.getAllDependencies();
 
     const storybookDependencies = Object.keys(allDependencies)
       .filter((dep) => dep.includes('storybook'))

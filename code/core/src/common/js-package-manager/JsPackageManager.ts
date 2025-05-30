@@ -1,6 +1,8 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 
+import { prompt } from 'storybook/internal/node-logger';
+
 // eslint-disable-next-line depend/ban-dependencies
 import { type CommonOptions, type ExecaChildProcess, execa, execaCommandSync } from 'execa';
 import { findUpMultipleSync, findUpSync } from 'find-up';
@@ -119,11 +121,16 @@ export abstract class JsPackageManager {
     return false;
   }
 
-  installDependencies() {
-    logger.log('Installing dependencies...');
-    logger.log();
-
-    return this.runInstall();
+  async installDependencies() {
+    try {
+      prompt.debug('Installing dependencies...');
+      await this.runInstall();
+      prompt.debug('Deduping dependencies...');
+      await this.executeCommand({ command: 'dedupe', args: [], stdio: 'ignore' }).catch(() => {});
+    } catch (e) {
+      prompt.error('An error occurred while installing dependencies.');
+      throw new HandledError(e);
+    }
   }
 
   /** Read the `package.json` file available in the provided directory */
@@ -155,14 +162,16 @@ export abstract class JsPackageManager {
   }
 
   getAllDependencies() {
-    const { packageJson } = this.primaryPackageJson;
-    const { dependencies, devDependencies, peerDependencies } = packageJson;
+    const allDependencies: Record<string, string> = {};
 
-    return {
-      ...dependencies,
-      ...devDependencies,
-      ...peerDependencies,
-    } as Record<string, string>;
+    for (const packageJsonPath of this.packageJsonPaths) {
+      const packageJson = JsPackageManager.getPackageJson(packageJsonPath);
+      const { dependencies, devDependencies, peerDependencies } = packageJson;
+
+      Object.assign(allDependencies, dependencies, devDependencies, peerDependencies);
+    }
+
+    return allDependencies;
   }
 
   /**

@@ -13,14 +13,9 @@ import semver, { clean, lt } from 'semver';
 import { dedent } from 'ts-dedent';
 
 import { processAutoblockerResults } from './autoblock/utils';
-import { allFixes } from './automigrate/fixes';
-import {
-  type ProjectAutomigrationData,
-  collectAutomigrationsAcrossProjects,
-  promptForAutomigrations,
-  runAutomigrationsForProjects,
-} from './automigrate/multi-project';
-import { doctor } from './doctor';
+import { runAutomigrations } from './automigrate/multi-project';
+import { runMultiProjectDoctor } from './doctor';
+import type { ProjectDoctorData } from './doctor/types';
 import { getProjects, shortenPath, upgradeStorybookDependencies } from './util';
 
 type Package = {
@@ -174,64 +169,31 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
 
   // AUTOMIGRATIONS - New multi-project flow
 
-  // Prepare project data for automigrations
-  const projectAutomigrationData: ProjectAutomigrationData[] = projects.map((project) => ({
-    configDir: project.configDir,
-    packageManager: project.packageManager,
-    mainConfig: project.mainConfig,
-    mainConfigPath: project.mainConfigPath!,
-    previewConfigPath: project.previewConfigPath,
-    storybookVersion: project.currentCLIVersion,
-    beforeVersion: project.beforeVersion,
-    storiesPaths: project.storiesPaths,
-  }));
+  // Run automigrations for all projects
+  const projectResults = await runAutomigrations(projects, gitRoot, options);
 
-  prompt.debug('Collecting automigrations...');
-  // Collect all applicable automigrations across all projects
-  const detectedAutomigrations = await collectAutomigrationsAcrossProjects({
-    fixes: allFixes,
-    projects: projectAutomigrationData,
-    dryRun: options.dryRun,
-    yes: options.yes,
-    skipInstall: options.skipInstall,
-  });
-
-  prompt.debug('Prompting for automigrations...');
-  // Prompt user to select which automigrations to run
-  const selectedAutomigrations = await promptForAutomigrations(detectedAutomigrations, {
-    dryRun: options.dryRun,
-    yes: options.yes,
-  });
-
-  prompt.debug('Running automigrations...');
-  // Run selected automigrations for each project
-  const projectResults = await runAutomigrationsForProjects(selectedAutomigrations, {
-    fixes: allFixes,
-    projects: projectAutomigrationData,
-    dryRun: options.dryRun,
-    yes: options.yes,
-    skipInstall: options.skipInstall,
-  });
-
+  // Install dependencies
   const rootPackageManager =
     projects.length > 1
-      ? JsPackageManagerFactory.getPackageManager({
-          force: options.packageManager,
-        })
+      ? JsPackageManagerFactory.getPackageManager({ force: options.packageManager })
       : projects[0].packageManager;
 
   prompt.debug('Installing dependencies...');
   await rootPackageManager.installDependencies();
-  prompt.debug('Deduping dependencies...');
-  await rootPackageManager
-    .executeCommand({ command: 'dedupe', args: [], stdio: 'ignore' })
-    .catch(() => {});
 
   // Run doctor for each project
   prompt.debug('Running doctor...');
-  for (const project of projects) {
-    await doctor({ ...options, configDir: project.configDir });
-  }
+
+  const doctorProjects: ProjectDoctorData[] = projects.map((project) => ({
+    configDir: project.configDir,
+    packageManager: project.packageManager,
+    storybookVersion: project.currentCLIVersion,
+    mainConfig: project.mainConfig,
+  }));
+
+  // are we installing stuff before this
+  console.log({ doctorProjects });
+  await runMultiProjectDoctor(doctorProjects, gitRoot);
 
   prompt.debug('Sending telemetry...');
   // TELEMETRY
@@ -245,11 +207,6 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         automigrationPreCheckFailure: null,
       });
     }
-  }
-
-  if (!options.skipCheck) {
-    prompt.debug('Checking version consistency...');
-    checkVersionConsistency();
   }
 
   logger.plain(`\n${picocolors.green('Your project(s) have been upgraded successfully! 🎉')}`);

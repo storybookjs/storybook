@@ -5,7 +5,11 @@ import type { StorybookConfigRaw } from 'storybook/internal/types';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
+import type { UpgradeOptions } from '../upgrade';
 import { shortenPath } from '../util';
+import type { CollectProjectsSuccessResult } from '../util';
+import { allFixes } from './fixes';
+import { rnstorybookConfig } from './fixes/rnstorybook-config';
 import { shouldRunFix } from './helpers/checkVersionRange';
 import type { CheckOptions, Fix, FixId, RunOptions } from './types';
 import { FixStatus } from './types';
@@ -227,6 +231,61 @@ export async function runAutomigrationsForProjects(
 
     projectResults[configDir] = fixResults;
   }
+
+  return projectResults;
+}
+
+export async function runAutomigrations(
+  projects: CollectProjectsSuccessResult[],
+  gitRoot: string,
+  options: UpgradeOptions
+) {
+  // Prepare project data for automigrations
+  const projectAutomigrationData: ProjectAutomigrationData[] = projects.map((project) => ({
+    configDir: project.configDir,
+    packageManager: project.packageManager,
+    mainConfig: project.mainConfig,
+    mainConfigPath: project.mainConfigPath!,
+    previewConfigPath: project.previewConfigPath,
+    storybookVersion: project.currentCLIVersion,
+    beforeVersion: project.beforeVersion,
+    storiesPaths: project.storiesPaths,
+  }));
+
+  // Collect all applicable automigrations across all projects
+  const detectedAutomigrations = await collectAutomigrationsAcrossProjects({
+    fixes: allFixes,
+    projects: projectAutomigrationData,
+    dryRun: options.dryRun,
+    yes: options.yes,
+    skipInstall: options.skipInstall,
+  });
+
+  // Prompt user to select which automigrations to run
+  const selectedAutomigrations = await promptForAutomigrations(detectedAutomigrations, gitRoot, {
+    dryRun: options.dryRun,
+    yes: options.yes,
+  });
+
+  prompt.debug('Running automigrations...');
+  // Run selected automigrations for each project
+  const projectResults = await runAutomigrationsForProjects(selectedAutomigrations, {
+    fixes: allFixes,
+    projects: projectAutomigrationData,
+    dryRun: options.dryRun,
+    yes: options.yes,
+    skipInstall: options.skipInstall,
+  });
+
+  // Special case handling for rnstorybook-config which renames the config dir
+  Object.entries(projectResults).forEach(([configDir, fixResults]) => {
+    if (fixResults[rnstorybookConfig.id] === FixStatus.SUCCEEDED) {
+      const project = projects.find((p) => p.configDir === configDir);
+      if (project) {
+        project.configDir = project.configDir.replace('.storybook', '.rnstorybook');
+      }
+    }
+  });
 
   return projectResults;
 }

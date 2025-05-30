@@ -37,7 +37,7 @@ interface UpgradeConfig {
 
 /** Result of successfully collecting project data */
 export interface CollectProjectsSuccessResult extends UpgradeConfig {
-  readonly configDir: string;
+  configDir: string;
   readonly mainConfig: StorybookConfigRaw;
   readonly mainConfigPath: string | undefined;
   readonly previewConfigPath: string | undefined;

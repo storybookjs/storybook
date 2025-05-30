@@ -10,7 +10,6 @@ export interface NgModuleMetadata {
   /** List of components, directives, and pipes that belong to your component. */
   declarations?: any[];
   entryComponents?: any[];
-  routing?: RoutingConfig;
   /**
    * List of modules that should be available to the root Storybook Component and all its children.
    * If you want to register application providers or if you want to use the forRoot() pattern,

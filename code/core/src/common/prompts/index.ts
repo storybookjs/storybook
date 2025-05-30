@@ -1,6 +1,20 @@
 import boxen from 'boxen';
 import prompts from 'prompts';
 
+// Log level types and state
+export type LogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'silent';
+
+const LOG_LEVELS: Record<LogLevel, number> = {
+  trace: 0,
+  debug: 1,
+  info: 2,
+  warn: 3,
+  error: 4,
+  silent: 5,
+};
+
+let currentLogLevel: LogLevel = 'info';
+
 type Option = {
   value: any;
   label: string;
@@ -36,8 +50,78 @@ interface PromptOptions {
   onCancel?: () => void;
 }
 
+function getMinimalTrace() {
+  // eslint-disable-next-line local-rules/no-uncategorized-errors
+  const stack = new Error().stack;
+
+  if (!stack) {
+    return;
+  }
+
+  // remove the first line ("Error")
+  const lines = stack.split('\n').slice(1);
+
+  // Clean up stack: remove this own file utilities from the stack
+  const userStackLines = lines.filter(
+    (line) => !['getMinimalTrace', 'createLogger', 'logFunction'].some((fn) => line.includes(fn))
+  );
+
+  if (userStackLines.length === 0) {
+    return;
+  }
+
+  const callStack = '\n' + userStackLines.slice(0, 2).join('\n');
+
+  return callStack;
+}
+
 const baseOptions: PromptOptions = {
   onCancel: () => process.exit(0),
+};
+
+const setLogLevel = (level: LogLevel): void => {
+  currentLogLevel = level;
+};
+
+const getLogLevel = (): LogLevel => {
+  return currentLogLevel;
+};
+
+const shouldLog = (level: LogLevel): boolean => {
+  return LOG_LEVELS[level] >= LOG_LEVELS[currentLogLevel];
+};
+
+// Higher-level abstraction for creating logging functions
+function createLogger(level: LogLevel, logFn: (message: string) => void, prefix?: string) {
+  return function logFunction(message: string) {
+    if (shouldLog(level)) {
+      const formattedMessage = prefix ? `${prefix} ${message}` : message;
+      logFn(formattedMessage);
+    }
+  };
+}
+
+// Create all logging functions using the factory
+const trace = createLogger('trace', console.trace, '[TRACE]');
+const debug = createLogger(
+  'debug',
+  function logFunction(message) {
+    const trace = getMinimalTrace();
+    console.log(message, trace);
+  },
+  '[DEBUG]'
+);
+const log = createLogger('info', console.log);
+const warn = createLogger('warn', console.warn);
+const error = createLogger('error', console.error);
+
+// Special case for logBox since it has different parameters
+const logBox = (message: string, style?: BoxenOptions) => {
+  if (shouldLog('info')) {
+    console.log(
+      boxen(message, { borderStyle: 'round', padding: 1, borderColor: '#F1618C', ...style })
+    );
+  }
 };
 
 const text = async (options: TextPromptOptions, promptOptions?: PromptOptions): Promise<string> => {
@@ -124,24 +208,6 @@ type BoxenOptions = {
   backgroundColor?: string;
 };
 
-const logBox = (message: string, style?: BoxenOptions) => {
-  console.log(
-    boxen(message, { borderStyle: 'round', padding: 1, borderColor: '#F1618C', ...style })
-  );
-};
-
-const log = (message: string) => {
-  console.log(message);
-};
-
-const warn = (message: string) => {
-  console.warn(message);
-};
-
-const error = (message: string) => {
-  console.error(message);
-};
-
 export const prompt = {
   confirm,
   text,
@@ -151,4 +217,8 @@ export const prompt = {
   log,
   warn,
   error,
+  trace,
+  debug,
+  setLogLevel,
+  getLogLevel,
 };

@@ -45,7 +45,14 @@ export const addonStorysourceCodePanel: Fix<StorysourceOptions> = {
   },
 
   run: async (options: RunOptions<StorysourceOptions>) => {
-    const { result, dryRun = false, packageManager, configDir, previewConfigPath } = options;
+    const {
+      result,
+      dryRun = false,
+      packageManager,
+      configDir,
+      previewConfigPath,
+      storybookVersion,
+    } = options;
     const { hasStorysource, hasDocs } = result;
     const errors: Array<{ file: string; error: Error }> = [];
 
@@ -66,7 +73,7 @@ export const addonStorysourceCodePanel: Fix<StorysourceOptions> = {
       if (!hasDocs) {
         logger.log('Installing @storybook/addon-docs...');
 
-        await add('@storybook/addon-docs', {
+        await add(`@storybook/addon-docs@${storybookVersion}`, {
           configDir,
           packageManager: packageManager.type,
           skipInstall: true,

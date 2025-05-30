@@ -72,9 +72,6 @@ interface VersionModifier {
 // CONSTANTS
 // ============================================================================
 
-/** Maximum number of projects to process simultaneously */
-const MAX_PROJECTS_TO_PROCESS = 4;
-
 /** Default boxen styling for messages */
 const DEFAULT_BOXEN_STYLE: Options = {
   borderStyle: 'round',
@@ -657,10 +654,7 @@ export const getProjects = async (
       detectedConfigDirs = await findStorybookProjects();
     }
 
-    // Limit the number of projects processed simultaneously
-    // TODO: Remove once done with testing
-    const configDirsToProcess = detectedConfigDirs.slice(0, MAX_PROJECTS_TO_PROCESS);
-    const projects = await collectProjects(options, configDirsToProcess);
+    const projects = await collectProjects(options, detectedConfigDirs);
 
     // Separate valid and error projects
     const validProjects = projects.filter(isSuccessResult);

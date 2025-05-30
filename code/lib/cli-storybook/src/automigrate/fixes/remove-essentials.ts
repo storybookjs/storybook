@@ -168,7 +168,7 @@ export const removeEssentials: Fix<AddonDocsOptions> = {
       // If docs was enabled (not disabled) and not already installed, add it
       if (!hasDocsDisabled && hasEssentials) {
         if (!hasDocsAddon) {
-          await add('@storybook/addon-docs', {
+          await add(`@storybook/addon-docs@${storybookVersion}`, {
             configDir,
             packageManager: packageManager.type,
             skipInstall: true,

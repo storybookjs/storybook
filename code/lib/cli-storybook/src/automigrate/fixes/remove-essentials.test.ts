@@ -386,7 +386,7 @@ describe('remove-essentials migration', () => {
         mainConfig: {} as StorybookConfigRaw,
       });
 
-      expect(mockedAdd).toHaveBeenCalledWith('@storybook/addon-docs', {
+      expect(mockedAdd).toHaveBeenCalledWith('@storybook/addon-docs@8.0.0', {
         configDir: '.storybook',
         packageManager: mockPackageManager.type,
         skipInstall: true,

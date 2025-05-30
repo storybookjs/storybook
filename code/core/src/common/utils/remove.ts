@@ -47,12 +47,17 @@ export async function removeAddon(addon: string, options: RemoveAddonOptions) {
     await packageManager.installDependencies();
   }
 
-  // add to main.js
-  prompt.debug(`Removing '${addon}' from main.js addons field.`);
-  try {
-    main.removeEntryFromArray(['addons'], addon);
-    await writeConfig(main);
-  } catch (err) {
-    prompt.warn(`Failed to remove '${addon}' from main.js addons field.`);
+  const currentAddons = main.getNamesFromPath(['addons']) ?? [];
+
+  // Fault tolerant as the addon might have been removed already
+  if (currentAddons.includes(addon)) {
+    // add to main.js
+    prompt.debug(`Removing '${addon}' from main.js addons field.`);
+    try {
+      main.removeEntryFromArray(['addons'], addon);
+      await writeConfig(main);
+    } catch (err) {
+      prompt.warn(`Failed to remove '${addon}' from main.js addons field. ${String(err)}`);
+    }
   }
 }

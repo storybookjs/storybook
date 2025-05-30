@@ -39,6 +39,7 @@ export const rnstorybookConfig: Fix<Options> = {
   id: 'rnstorybook-config',
 
   versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
+  link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#react-native-config-dir-renamed',
 
   async check({ packageManager, mainConfigPath }) {
     const allDependencies = packageManager.getAllDependencies();
@@ -64,27 +65,8 @@ export const rnstorybookConfig: Fix<Options> = {
     return null;
   },
 
-  prompt({ dotStorybookReferences }) {
-    const references =
-      dotStorybookReferences.length > 0
-        ? dedent`
-          We will update the following files to reference ${picocolors.yellow('.rnstorybook')}:
-          ${dotStorybookReferences.map((ref: string) => picocolors.cyan('- ' + ref)).join('\n')}
-        `.trim()
-        : dedent`
-          Oddly, we did not find any source files that reference the ${picocolors.yellow('.storybook')} directory.
-          If they exist, please update them by hand to reference ${picocolors.yellow('.rnstorybook')} instead.
-        `.trim();
-
-    return dedent`
-      In Storybook 9, React Native projects use the ${picocolors.yellow('.rnstorybook')} directory for
-      configuration instead of ${picocolors.yellow('.storybook')}.
-
-      ${references}
-
-      More info: ${picocolors.cyan('https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#react-native-config-dir-renamed')}
-
-      Would you like to automatically move your config files to the new location?`;
+  prompt() {
+    return dedent`We'll rename your ${picocolors.yellow('.storybook')} directory to ${picocolors.yellow('.rnstorybook')} and update all references to it.`;
   },
 
   async run({ result: { storybookDir, rnStorybookDir, dotStorybookReferences }, dryRun }) {

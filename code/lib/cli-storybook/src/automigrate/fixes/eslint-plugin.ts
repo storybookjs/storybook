@@ -5,7 +5,6 @@ import {
 } from 'storybook/internal/cli';
 import { prompt } from 'storybook/internal/node-logger';
 
-import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 import type { Fix } from '../types';
@@ -29,6 +28,7 @@ export const eslintPlugin: Fix<EslintPluginRunOptions> = {
   id: 'eslintPlugin',
 
   versionRange: ['*', '*'],
+  link: 'https://storybook.js.org/docs/9/configure/integration/eslint-plugin',
 
   async check({ packageManager }) {
     const {
@@ -51,17 +51,7 @@ export const eslintPlugin: Fix<EslintPluginRunOptions> = {
   },
 
   prompt() {
-    return dedent`
-      We've detected you are not using the Storybook ESLint plugin.
-
-      In order to have the best experience with Storybook and follow best practices, we advise you to install eslint-plugin-storybook.
-
-      We can set it up automatically for you.
-
-      More info: ${picocolors.yellow(
-        'https://storybook.js.org/docs/9/configure/integration/eslint-plugin'
-      )}
-    `;
+    return `We'll install and configure the Storybook ESLint plugin for you.`;
   },
 
   async run({

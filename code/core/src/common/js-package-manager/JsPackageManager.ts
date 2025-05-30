@@ -26,20 +26,6 @@ export const COMMON_ENV_VARS = {
   NO_UPDATE_NOTIFIER: 'true',
 };
 
-const getResolvedConfigDir = ({
-  configDir,
-  cwd = process.cwd(),
-}: {
-  configDir?: string;
-  cwd?: string;
-}) => {
-  return configDir
-    ? isAbsolute(configDir)
-      ? dirname(configDir)
-      : dirname(join(cwd, configDir))
-    : cwd;
-};
-
 /**
  * Extract package name and version from input
  *
@@ -80,15 +66,19 @@ export abstract class JsPackageManager {
    * The path to the Storybook instance directory. This is used to find the primary package.json
    * file in a repository.
    */
-  readonly #instanceDir: string;
+  readonly instanceDir: string;
 
   /** The current working directory. */
   protected readonly cwd: string;
 
   constructor(options?: JsPackageManagerOptions) {
     this.cwd = options?.cwd || process.cwd();
-    this.#instanceDir = getResolvedConfigDir({ configDir: options?.configDir, cwd: this.cwd });
-    this.packageJsonPaths = JsPackageManager.listAllPackageJsonPaths(this.#instanceDir);
+    this.instanceDir = options?.configDir
+      ? isAbsolute(options?.configDir)
+        ? dirname(options?.configDir)
+        : dirname(join(this.cwd, options?.configDir))
+      : this.cwd;
+    this.packageJsonPaths = JsPackageManager.listAllPackageJsonPaths(this.instanceDir);
     this.primaryPackageJson = this.#getPrimaryPackageJson();
   }
 

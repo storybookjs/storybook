@@ -1,7 +1,8 @@
 import type { PackageJsonWithDepsAndDevDeps } from 'storybook/internal/common';
-import { JsPackageManager } from 'storybook/internal/common';
+import { JsPackageManager, normalizeStories } from 'storybook/internal/common';
 import { getProjectRoot, isSatelliteAddon, versions } from 'storybook/internal/common';
-import { logger, prompt } from 'storybook/internal/node-logger';
+import { StoryIndexGenerator, experimental_loadStorybook } from 'storybook/internal/core-server';
+import { prompt } from 'storybook/internal/node-logger';
 import {
   UpgradeStorybookToLowerVersionError,
   UpgradeStorybookUnknownCurrentVersionError,
@@ -9,8 +10,9 @@ import {
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import boxen, { type Options } from 'boxen';
+import { findUpMultipleSync } from 'find-up';
 // eslint-disable-next-line depend/ban-dependencies
-import { globby } from 'globby';
+import { globby, globbySync } from 'globby';
 import picocolors from 'picocolors';
 import { lt, prerelease } from 'semver';
 
@@ -44,6 +46,7 @@ export interface CollectProjectsSuccessResult extends UpgradeConfig {
   readonly currentCLIVersion: string;
   readonly latestCLIVersionOnNPM: string;
   readonly autoblockerCheckResults: AutoblockerResult<unknown>[] | null;
+  readonly storiesPaths: string[];
 }
 
 /** Result when project collection fails */
@@ -237,7 +240,7 @@ export const findStorybookProjects = async (cwd: string = process.cwd()): Promis
 
     return storybookDirs;
   } catch (error) {
-    logger.error('Failed to find Storybook projects');
+    prompt.error('Failed to find Storybook projects');
     throw error;
   }
 };
@@ -275,7 +278,7 @@ export const getInstalledStorybookVersion = async (
     const firstDependency = Object.entries(installations.dependencies)[0];
     return firstDependency?.[1]?.[0]?.version;
   } catch (error) {
-    logger.warn('Failed to get installed Storybook version');
+    prompt.warn('Failed to get installed Storybook version');
     return undefined;
   }
 };
@@ -301,22 +304,29 @@ const processProject = async ({
 }): Promise<CollectProjectsResult> => {
   try {
     onScanStart();
+    prompt.debug(`Getting Storybook data...`);
     const {
       configDir: resolvedConfigDir,
       mainConfig,
       mainConfigPath,
       packageManager,
       previewConfigPath,
+      storiesPaths,
     } = await getStorybookData({ configDir });
 
+    const name = configDir.replace(getProjectRoot(), '');
+    prompt.debug(`${name} - Getting installed Storybook version...`);
     const beforeVersion =
       (await getInstalledStorybookVersion(packageManager)) ?? DEFAULT_FALLBACK_VERSION;
 
     // Validate version and upgrade compatibility
+    prompt.debug(`${name} - Validating before version...`);
     validateVersion(beforeVersion);
     const isCanary = isCanaryVersion(currentCLIVersion) || isCanaryVersion(beforeVersion);
+    prompt.debug(`${name} - Validating upgrade compatibility...`);
     validateUpgradeCompatibility(currentCLIVersion, beforeVersion, isCanary);
 
+    prompt.debug(`${name} - Getting CLI versions from NPM...`);
     // Get version information from NPM
     const [latestCLIVersionOnNPM, latestPrereleaseCLIVersionOnNPM] = await Promise.all([
       packageManager.latestVersion('storybook'),
@@ -338,10 +348,10 @@ const processProject = async ({
       typeof mainConfigPath !== 'undefined' &&
       !options.force
     ) {
+      prompt.debug(`${name} - Evaluating blockers...`);
       autoblockerCheckResults = await autoblock({
         packageManager,
         configDir: resolvedConfigDir,
-        packageJson: packageManager.primaryPackageJson.packageJson,
         mainConfig,
         mainConfigPath,
       });
@@ -363,8 +373,10 @@ const processProject = async ({
       isCLIExactPrerelease,
       autoblockerCheckResults,
       previewConfigPath,
+      storiesPaths,
     } satisfies CollectProjectsSuccessResult;
   } catch (error) {
+    prompt.error(String(error));
     return {
       configDir,
       error: error as Error,
@@ -473,7 +485,7 @@ export const generateUpgradeSpecs = async (
         const results = await Promise.all(upgradePromises);
         storybookSatelliteUpgrades = results.filter((result): result is string => result !== null);
       } catch (error) {
-        logger.warn('Failed to fetch satellite dependencies');
+        prompt.warn('Failed to fetch satellite dependencies');
         // Continue without satellite upgrades
       }
     }
@@ -503,7 +515,7 @@ const addDependencies = async (
       ...dependencies,
     ]);
   } catch (error) {
-    logger.error(`Failed to add ${isDev ? 'dev ' : ''}dependencies`);
+    prompt.error(`Failed to add ${isDev ? 'dev ' : ''}dependencies`);
     throw error;
   }
 };
@@ -618,7 +630,7 @@ const handleMultipleProjects = async (
         ? `\nThere were some errors while collecting data for the following projects:\n${formatProjectDirectories(errorProjects, '✕')}`
         : '';
 
-    logger.plain(
+    prompt.log(
       `Multiple Storybook projects found. Storybook can only upgrade all projects at once:\n${validProjectsMessage}${invalidProjectsMessage}`
     );
 
@@ -690,21 +702,116 @@ export const getProjects = async (
       const errorMessage = errorProjects
         .map((project) => {
           const relativePath = shortenPath(project.configDir);
-          return `${picocolors.cyan(relativePath)}:\n${project.error.message}`;
+          return `${picocolors.cyan(relativePath)}:\n${project.error.stack || project.error.message}`;
         })
         .join('\n');
 
-      logger.plain(
+      prompt.log(
         `❌ Storybook found errors while collecting data for the following projects:\n${errorMessage}`
       );
-      logger.plain('Please fix the errors and run the upgrade command again.');
+      prompt.log('Please fix the errors and run the upgrade command again.');
       return [];
     }
 
     // Handle multiple projects
     return handleMultipleProjects(validProjects, errorProjects, detectedConfigDirs);
   } catch (error) {
-    logger.error('Failed to get projects');
+    prompt.error('Failed to get projects');
     throw error;
   }
+};
+
+/** Finds files in the directory tree up to the project root */
+export const findFilesUp = (matchers: string[], cwd: string) => {
+  const matchingFiles: string[] = [];
+  findUpMultipleSync(
+    (directory) => {
+      matchingFiles.push(
+        ...globbySync(matchers, {
+          gitignore: true,
+          cwd: directory,
+        })
+      );
+      return undefined;
+    },
+    {
+      cwd,
+      stopAt: getProjectRoot(),
+    }
+  );
+
+  return matchingFiles;
+};
+
+/**
+ * Gets story file paths from a Storybook configuration directory
+ *
+ * @example
+ *
+ * ```typescript
+ * const storiesPaths = await getStoriesPathsFromConfig(
+ *   '/path/to/.storybook',
+ *   '/path/to/project'
+ * );
+ * ```
+ *
+ * @param configDir - Path to the Storybook configuration directory
+ * @param workingDir - Working directory for resolving relative paths
+ * @returns Promise resolving to array of story file paths
+ */
+export const getEvaluatedStoryPaths = async (
+  configDir: string,
+  workingDir: string
+): Promise<string[]> => {
+  const { presets } = await experimental_loadStorybook({
+    configDir,
+    packageJson: {},
+  });
+
+  const stories = await presets.apply('stories', []);
+
+  return getStoriesPathsFromConfig({
+    stories,
+    configDir,
+    workingDir,
+  });
+};
+
+/**
+ * Gets story file paths from a Storybook configuration directory
+ *
+ * @example
+ *
+ * ```typescript
+ * const storiesPaths = await getStoriesPathsFromConfigWithoutEvaluating({
+ *   stories: ['src\/**\/*.stories.tsx'],
+ *   configDir: '/path/to/.storybook',
+ *   workingDir: '/path/to/project',
+ * });
+ * ```
+ */
+export const getStoriesPathsFromConfig = async ({
+  stories,
+  configDir,
+  workingDir,
+}: {
+  stories: StorybookConfigRaw['stories'];
+  configDir: string;
+  workingDir: string;
+}) => {
+  const normalizedStories = normalizeStories(stories, {
+    configDir,
+    workingDir,
+  });
+
+  const matchingStoryFiles = await StoryIndexGenerator.findMatchingFilesForSpecifiers(
+    normalizedStories,
+    workingDir
+  );
+
+  const storiesPaths = matchingStoryFiles.flatMap(([specifier, cache]) => {
+    return StoryIndexGenerator.storyFileNames(new Map([[specifier, cache]]));
+  });
+
+  return storiesPaths;
 };

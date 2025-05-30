@@ -42,6 +42,7 @@ describe('react-native-config fix', () => {
           mainConfigPath: '.storybook/main.js',
           mainConfig: mockMainConfig,
           storybookVersion: '8.0.0',
+          storiesPaths: [],
         })
       ).resolves.toBeNull();
     });
@@ -61,6 +62,7 @@ describe('react-native-config fix', () => {
           mainConfigPath: '.storybook/main.js',
           mainConfig: mockMainConfig,
           storybookVersion: '8.0.0',
+          storiesPaths: [],
         })
       ).resolves.toBeNull();
     });
@@ -79,6 +81,7 @@ describe('react-native-config fix', () => {
           mainConfigPath: '.storybook/main.js',
           mainConfig: mockMainConfig,
           storybookVersion: '8.0.0',
+          storiesPaths: [],
         })
       ).resolves.toBeNull();
     });
@@ -98,6 +101,7 @@ describe('react-native-config fix', () => {
         mainConfigPath: '.storybook/main.js',
         mainConfig: mockMainConfig,
         storybookVersion: '8.0.0',
+        storiesPaths: [],
       });
 
       expect(result).toBeNull();
@@ -120,6 +124,7 @@ describe('react-native-config fix', () => {
         mainConfigPath: '.storybook/main.js',
         mainConfig: mockMainConfig,
         storybookVersion: '8.0.0',
+        storiesPaths: [],
       });
 
       expect(result).toEqual({
@@ -146,6 +151,7 @@ describe('react-native-config fix', () => {
         mainConfigPath: '.storybook/main.js',
         mainConfig: mockMainConfig,
         storybookVersion: '8.0.0',
+        storiesPaths: [],
       });
 
       expect(result).toEqual({

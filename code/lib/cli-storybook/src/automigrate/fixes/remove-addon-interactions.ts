@@ -1,5 +1,4 @@
-import { getAddonNames } from 'storybook/internal/common';
-import { prompt } from 'storybook/internal/node-logger';
+import { getAddonNames, removeAddon } from 'storybook/internal/common';
 
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
@@ -10,6 +9,7 @@ import type { Fix } from '../types';
 export const removeAddonInteractions: Fix<{}> = {
   id: 'removeAddonInteractions',
   versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
+  link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#essentials-addon-viewport-controls-interactions-and-actions-moved-to-core',
 
   async check({ mainConfig }) {
     const addons = getAddonNames(mainConfig);
@@ -26,29 +26,17 @@ export const removeAddonInteractions: Fix<{}> = {
 
   prompt() {
     return dedent`
-      ${picocolors.magenta('@storybook/addon-interactions')} has been consolidated into Storybook core.
-      
-      We'll remove it from your dependencies and unregister it from your Storybook configuration.
-      The functionality will continue to work as before, but now it's built into Storybook core.
+      ${picocolors.magenta('@storybook/addon-interactions')} has been moved to Storybook core and will be removed from your configuration.
     `;
   },
 
   async run({ packageManager, dryRun, configDir }) {
     if (!dryRun) {
-      await prompt.executeTaskWithSpinner(
-        packageManager.runPackageCommand('storybook', [
-          'remove',
-          '@storybook/addon-interactions',
-          '--config-dir',
-          configDir,
-          '--skip-install',
-        ]),
-        {
-          intro: 'Removing @storybook/addon-interactions...',
-          error: 'Failed to remove @storybook/addon-interactions',
-          success: 'Removed @storybook/addon-interactions',
-        }
-      );
+      removeAddon('@storybook/addon-interactions', {
+        configDir,
+        skipInstall: true,
+        packageManager,
+      });
     }
   },
 };

@@ -14,11 +14,11 @@ export interface CheckOptions {
   storybookVersion: string;
   previewConfigPath?: string;
   mainConfigPath?: string;
+  storiesPaths: string[];
 }
 
 export interface RunOptions<ResultType> {
   packageManager: JsPackageManager;
-  packageJson: PackageJson;
   result: ResultType;
   dryRun?: boolean;
   mainConfigPath: string;
@@ -27,6 +27,7 @@ export interface RunOptions<ResultType> {
   configDir: string;
   skipInstall?: boolean;
   storybookVersion: string;
+  storiesPaths: string[];
 }
 
 /**
@@ -51,6 +52,7 @@ type BaseFix<ResultType = any> = {
   check: (options: CheckOptions) => Promise<ResultType | null>;
   prompt: (result: ResultType) => string;
   promptDefaultValue?: boolean;
+  link?: string;
 };
 
 type PromptType<ResultType = any, T = Prompt> =
@@ -82,7 +84,6 @@ export enum PreCheckFailure {
 
 export interface AutofixOptions extends Omit<AutofixOptionsFromCLI, 'packageManager'> {
   packageManager: JsPackageManager;
-  packageJson: PackageJson;
   mainConfigPath: string;
   previewConfigPath?: string;
   mainConfig: StorybookConfigRaw;
@@ -92,6 +93,7 @@ export interface AutofixOptions extends Omit<AutofixOptionsFromCLI, 'packageMana
   /** Whether the migration is part of an upgrade. */
   isUpgrade: boolean;
   isLatest: boolean;
+  storiesPaths: string[];
 }
 export interface AutofixOptionsFromCLI {
   fixId?: FixId;

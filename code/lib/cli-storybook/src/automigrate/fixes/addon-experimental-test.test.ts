@@ -1,11 +1,9 @@
-/* eslint-disable depend/ban-dependencies */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { JsPackageManager } from 'storybook/internal/common';
 import type { PackageJson, StorybookConfig } from 'storybook/internal/types';
 
 import { readFileSync, writeFileSync } from 'fs';
-import dedent from 'ts-dedent';
 
 import { addonExperimentalTest } from './addon-experimental-test';
 
@@ -31,6 +29,10 @@ vi.mock('picocolors', () => {
 // Mock the dynamic import of globby
 vi.mock('globby', () => ({
   globbySync: vi.fn(),
+}));
+
+vi.mock('../../util', () => ({
+  findFilesUp: vi.fn(),
 }));
 
 const mockFiles: Record<string, string> = {
@@ -79,14 +81,15 @@ const checkAddonExperimentalTest = async ({
   storybookVersion?: string;
   files?: string[];
 }) => {
-  // Mock the globbySync function from the globby module
-  const globbyModule = await import('globby');
-  (globbyModule.globbySync as any).mockReturnValue(files);
+  // Mock the findFilesUp function
+  const { findFilesUp } = await import('../../util');
+  (findFilesUp as any).mockReturnValue(files);
 
   return addonExperimentalTest.check({
     packageManager: packageManager as any,
     storybookVersion,
     mainConfig: mainConfig as any,
+    storiesPaths: [],
   });
 };
 
@@ -94,6 +97,7 @@ const packageManager = vi.mocked(JsPackageManager.prototype);
 
 describe('addon-experimental-test fix', () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     packageManager.getModulePackageJSON = vi.fn();
     // @ts-expect-error Ignore readonly property
     packageManager.primaryPackageJson = {
@@ -106,7 +110,6 @@ describe('addon-experimental-test fix', () => {
     packageManager.addDependencies = vi.fn();
     packageManager.removeDependencies = vi.fn();
 
-    vi.clearAllMocks();
     // @ts-expect-error Ignore
     vi.mocked(readFileSync).mockImplementation((file: string) => {
       if (mockFiles[file]) {
@@ -124,6 +127,7 @@ describe('addon-experimental-test fix', () => {
     it('should return null if @storybook/experimental-addon-test is not installed', async () => {
       const packageManager = {
         getModulePackageJSON: () => null,
+        getInstalledVersion: async () => null,
       };
       await expect(checkAddonExperimentalTest({ packageManager })).resolves.toBeNull();
     });
@@ -140,6 +144,15 @@ describe('addon-experimental-test fix', () => {
             return {
               version: '9.0.0',
             };
+          }
+          return null;
+        },
+        getInstalledVersion: async (packageName: string) => {
+          if (packageName === '@storybook/experimental-addon-test') {
+            return '8.6.0';
+          }
+          if (packageName === 'storybook') {
+            return '9.0.0';
           }
           return null;
         },
@@ -162,15 +175,9 @@ describe('addon-experimental-test fix', () => {
       const matchingFiles = ['.storybook/test-setup.ts', '.storybook/main.ts'];
 
       const promptResult = addonExperimentalTest.prompt({ matchingFiles });
-      expect(promptResult).toMatchInlineSnapshot(dedent`
-        "We've detected you're using @storybook/experimental-addon-test, which is now available as a stable addon.
-
-        We can automatically migrate your project to use @storybook/addon-vitest instead.
-
-        This will update 2 file(s) and your package.json:
-          - .storybook/test-setup.ts
-          - .storybook/main.ts"
-      `);
+      expect(promptResult).toMatchInlineSnapshot(
+        `"We'll migrate @storybook/experimental-addon-test to @storybook/addon-vitest"`
+      );
     });
 
     it('should render properly with many files', () => {
@@ -185,19 +192,9 @@ describe('addon-experimental-test fix', () => {
       ];
 
       const promptResult = addonExperimentalTest.prompt({ matchingFiles });
-      expect(promptResult).toMatchInlineSnapshot(dedent`
-        "We've detected you're using @storybook/experimental-addon-test, which is now available as a stable addon.
-
-        We can automatically migrate your project to use @storybook/addon-vitest instead.
-
-        This will update 7 file(s) and your package.json:
-          - .storybook/test-setup.ts
-          - .storybook/main.ts
-          - vitest.setup.ts
-          - vite.config.ts
-          - .storybook/preview.ts
-          ... and 2 more files"
-      `);
+      expect(promptResult).toMatchInlineSnapshot(
+        `"We'll migrate @storybook/experimental-addon-test to @storybook/addon-vitest"`
+      );
     });
   });
 
@@ -238,6 +235,7 @@ describe('addon-experimental-test fix', () => {
         },
         packageManager: packageManager as JsPackageManager,
         dryRun: false,
+        storybookVersion: '9.0.0',
       } as any);
 
       // Check that each file was read and written with the replacement
@@ -314,10 +312,11 @@ describe('addon-experimental-test fix', () => {
         },
         packageManager: packageManager as any,
         dryRun: false,
+        storybookVersion: '9.0.0',
       } as any);
 
       expect(packageManager.addDependencies).toHaveBeenCalledWith(
-        { installAsDevDependencies: false, skipInstall: true },
+        { installAsDevDependencies: true, skipInstall: true },
         ['@storybook/addon-vitest@9.0.0']
       );
     });
@@ -341,6 +340,7 @@ describe('addon-experimental-test fix', () => {
         },
         packageManager: packageManager as any,
         dryRun: true,
+        storybookVersion: '9.0.0',
       } as any);
 
       // Files should be read but not written in dry run mode

@@ -101,7 +101,14 @@ export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
     storiesPaths,
   });
 
-  packageManager.installDependencies();
+  // only install dependencies if the outcome contains any fixes that were not failed or skipped
+  const hasAppliedFixes = Object.values(outcome?.fixResults ?? {}).some(
+    (r) => r === FixStatus.SUCCEEDED || r === FixStatus.MANUAL_SUCCEEDED
+  );
+
+  if (hasAppliedFixes) {
+    packageManager.installDependencies();
+  }
 
   if (outcome && !options.skipDoctor) {
     await doctor({ configDir, packageManager: options.packageManager });

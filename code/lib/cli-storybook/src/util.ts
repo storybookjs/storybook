@@ -541,33 +541,19 @@ const addDependencies = async (
 export const upgradeStorybookDependencies = async (config: UpgradeConfig): Promise<void> => {
   const { packageManager } = config;
 
-  const task = prompt.taskLog({
-    title: 'Updating dependencies in package.json files',
-  });
-
-  let updatedCount = 0;
   for (const packageJsonPath of packageManager.packageJsonPaths) {
-    try {
-      task.message(shortenPath(packageJsonPath));
-      const packageJson = JsPackageManager.getPackageJson(packageJsonPath);
+    const packageJson = JsPackageManager.getPackageJson(packageJsonPath);
 
-      const [upgradedDependencies, upgradedDevDependencies] = await Promise.all([
-        generateUpgradeSpecs(packageJson.dependencies, config),
-        generateUpgradeSpecs(packageJson.devDependencies, config),
-      ]);
+    const [upgradedDependencies, upgradedDevDependencies] = await Promise.all([
+      generateUpgradeSpecs(packageJson.dependencies, config),
+      generateUpgradeSpecs(packageJson.devDependencies, config),
+    ]);
 
-      await Promise.all([
-        addDependencies(packageManager, upgradedDependencies, false),
-        addDependencies(packageManager, upgradedDevDependencies, true),
-      ]);
-      updatedCount++;
-    } catch (error) {
-      task.error(`Failed to upgrade dependencies in ${packageJsonPath}`);
-      throw error;
-    }
+    await Promise.all([
+      addDependencies(packageManager, upgradedDependencies, false),
+      addDependencies(packageManager, upgradedDevDependencies, true),
+    ]);
   }
-
-  task.success(`Updated dependencies in ${updatedCount} files`);
 };
 
 /**
@@ -686,11 +672,15 @@ export const getProjects = async (
       detectedConfigDirs = await findStorybookProjects();
     }
 
+    prompt.debug(`Collecting projects to upgrade...`);
     const projects = await collectProjects(options, detectedConfigDirs);
 
     // Separate valid and error projects
     const validProjects = projects.filter(isSuccessResult);
     const errorProjects = projects.filter(isErrorResult);
+    prompt.debug(
+      `Found ${validProjects.length} valid projects and ${errorProjects.length} error projects`
+    );
 
     // Handle single project case
     if (validProjects.length === 1) {
@@ -806,7 +796,8 @@ export const getStoriesPathsFromConfig = async ({
 
   const matchingStoryFiles = await StoryIndexGenerator.findMatchingFilesForSpecifiers(
     normalizedStories,
-    workingDir
+    workingDir,
+    true
   );
 
   const storiesPaths = matchingStoryFiles.flatMap(([specifier, cache]) => {

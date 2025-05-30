@@ -148,18 +148,27 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
 
   // Update dependencies in package.jsons for all projects
   if (!options.dryRun) {
-    for (const project of projects) {
-      prompt.debug(
-        `Updating dependencies in ${picocolors.cyan(shortenPath(project.configDir))}...`
-      );
-      await upgradeStorybookDependencies({
-        packageManager: project.packageManager,
-        isCanary: project.isCanary,
-        isCLIOutdated: project.isCLIOutdated,
-        isCLIPrerelease: project.isCLIPrerelease,
-        isCLIExactLatest: project.isCLIExactLatest,
-        isCLIExactPrerelease: project.isCLIExactPrerelease,
-      });
+    const task = prompt.taskLog({
+      title: 'Updating dependencies in package.json files',
+    });
+    try {
+      for (const project of projects) {
+        prompt.debug(
+          `Updating dependencies in ${picocolors.cyan(shortenPath(project.configDir))}...`
+        );
+        task.message(project.packageManager.packageJsonPaths.map(shortenPath).join('\n'));
+        await upgradeStorybookDependencies({
+          packageManager: project.packageManager,
+          isCanary: project.isCanary,
+          isCLIOutdated: project.isCLIOutdated,
+          isCLIPrerelease: project.isCLIPrerelease,
+          isCLIExactLatest: project.isCLIExactLatest,
+          isCLIExactPrerelease: project.isCLIExactPrerelease,
+        });
+      }
+      task.success(`Updated dependencies in package.json files`);
+    } catch (err) {
+      task.error(`Failed to upgrade dependencies: ${String(err)}`);
     }
   }
 
@@ -177,6 +186,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     storiesPaths: project.storiesPaths,
   }));
 
+  prompt.debug('Collecting automigrations...');
   // Collect all applicable automigrations across all projects
   const detectedAutomigrations = await collectAutomigrationsAcrossProjects({
     fixes: allFixes,
@@ -186,6 +196,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     skipInstall: options.skipInstall,
   });
 
+  prompt.debug('Prompting for automigrations...');
   // Prompt user to select which automigrations to run
   const selectedAutomigrations = await promptForAutomigrations(detectedAutomigrations, {
     dryRun: options.dryRun,

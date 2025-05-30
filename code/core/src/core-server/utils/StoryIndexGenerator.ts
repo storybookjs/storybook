@@ -123,7 +123,8 @@ export class StoryIndexGenerator {
 
   static async findMatchingFiles(
     specifier: NormalizedStoriesSpecifier,
-    workingDir: Path
+    workingDir: Path,
+    ignoreWarnings = false
   ): Promise<SpecifierStoriesCache> {
     const pathToSubIndex = {} as SpecifierStoriesCache;
 
@@ -139,7 +140,7 @@ export class StoryIndexGenerator {
       ...commonGlobOptions(fullGlob),
     });
 
-    if (files.length === 0) {
+    if (files.length === 0 && !ignoreWarnings) {
       once.warn(
         `No story files found for the specified pattern: ${picocolors.blue(
           join(specifier.directory, specifier.files)
@@ -163,11 +164,16 @@ export class StoryIndexGenerator {
 
   static async findMatchingFilesForSpecifiers(
     specifiers: NormalizedStoriesSpecifier[],
-    workingDir: Path
+    workingDir: Path,
+    ignoreWarnings = false
   ): Promise<Array<readonly [NormalizedStoriesSpecifier, SpecifierStoriesCache]>> {
     return Promise.all(
       specifiers.map(async (specifier) => {
-        const pathToSubIndex = await StoryIndexGenerator.findMatchingFiles(specifier, workingDir);
+        const pathToSubIndex = await StoryIndexGenerator.findMatchingFiles(
+          specifier,
+          workingDir,
+          ignoreWarnings
+        );
         return [specifier, pathToSubIndex] as const;
       })
     );

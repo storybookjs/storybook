@@ -1,5 +1,5 @@
 import type { JsPackageManager } from 'storybook/internal/common';
-import { prompt } from 'storybook/internal/common';
+import { prompt } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
@@ -83,7 +83,9 @@ export async function collectAutomigrationsAcrossProjects(
           }
         }
       } catch (error) {
-        console.error(`Failed to check fix ${fix.id} for project ${project.configDir}:`, error);
+        prompt.error(
+          `Failed to check fix ${fix.id} for project ${project.configDir}:\n` + String(error)
+        );
       }
     }
   }
@@ -140,6 +142,7 @@ export async function promptForAutomigrations(
   const selectedIds = await prompt.multiselect({
     message: 'Select automigrations to run',
     options: choices,
+    initialValues: choices.map((c) => c.value),
   });
 
   return automigrations.filter((am) => selectedIds.includes(am.fix.id));

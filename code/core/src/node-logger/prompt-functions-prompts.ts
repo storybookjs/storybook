@@ -34,10 +34,12 @@ interface ConfirmPromptOptions extends BasePromptOptions {
 
 interface SelectPromptOptions<T> extends BasePromptOptions {
   options: Option<T>[];
+  initialValue?: T;
 }
 
 interface MultiSelectPromptOptions<T> extends BasePromptOptions {
   options: Option<T>[];
+  initialValues?: T[];
   required?: boolean;
 }
 
@@ -118,6 +120,7 @@ export const select = async <T>(
         title: opt.label || String(opt.value),
         value: opt.value,
         description: opt.hint,
+        selected: opt.value === options.initialValue,
       })),
     },
     { ...baseOptions, ...promptOptions }
@@ -140,6 +143,7 @@ export const multiselect = async <T>(
         title: opt.label || String(opt.value),
         value: opt.value,
         description: opt.hint,
+        selected: options.initialValues?.includes(opt.value),
       })),
       min: options.required ? 1 : 0,
     },

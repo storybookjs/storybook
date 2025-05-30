@@ -3,7 +3,7 @@ import boxen from 'boxen';
 
 import { logTracker } from './log-tracker';
 
-const USE_CLACK = false;
+const USE_CLACK = true;
 
 const LOG_FUNCTIONS = {
   log: USE_CLACK ? clack.log.message : console.log,

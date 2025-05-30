@@ -34,10 +34,12 @@ interface ConfirmPromptOptions extends BasePromptOptions {
 
 interface SelectPromptOptions<T> extends BasePromptOptions {
   options: Option<T>[];
+  initialValue?: T;
 }
 
 interface MultiSelectPromptOptions<T> extends BasePromptOptions {
   options: Option<T>[];
+  initialValues?: T[];
   required?: boolean;
 }
 

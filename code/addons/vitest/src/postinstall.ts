@@ -274,13 +274,13 @@ export default async function postInstall(options: PostinstallOptions) {
   }
 
   logger.line(1);
-  logger.plain(`${step} Configuring Playwright with Chromium (this might take some time):`);
-  logger.plain(colors.gray('  npx playwright install chromium --with-deps'));
 
   if (options.skipInstall) {
     logger.plain('Skipping Playwright installation, please run this command manually:');
     logger.plain(colors.gray('  npx playwright install chromium --with-deps'));
   } else {
+    logger.plain(`${step} Configuring Playwright with Chromium (this might take some time):`);
+    logger.plain(colors.gray('  npx playwright install chromium --with-deps'));
     await packageManager.executeCommand({
       command: 'npx',
       args: ['playwright', 'install', 'chromium', '--with-deps'],

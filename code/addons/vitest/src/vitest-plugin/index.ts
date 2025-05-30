@@ -18,6 +18,7 @@ import type {
 } from 'storybook/internal/core-server';
 import { readConfig, vitestTransform } from 'storybook/internal/csf-tools';
 import { MainFileMissingError } from 'storybook/internal/server-errors';
+import { telemetry } from 'storybook/internal/telemetry';
 import { oneWayHash } from 'storybook/internal/telemetry';
 import type { Presets } from 'storybook/internal/types';
 
@@ -144,6 +145,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     viteConfigFromStorybook,
     staticDirs,
     previewLevelTags,
+    core,
   ] = await Promise.all([
     getStoryGlobsAndFiles(presets, directories),
     presets.apply('framework', undefined),
@@ -151,6 +153,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     presets.apply<{ plugins?: Plugin[] }>('viteFinal', {}),
     presets.apply('staticDirs', []),
     extractTagsFromPreview(finalOptions.configDir),
+    presets.apply('core'),
   ]);
 
   const pluginsToIgnore = [
@@ -361,6 +364,23 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     },
     configureVitest(context) {
       context.vitest.config.coverage.exclude.push('storybook-static');
+
+      const disableTelemetryVar =
+        process.env.STORYBOOK_DISABLE_TELEMETRY &&
+        process.env.STORYBOOK_DISABLE_TELEMETRY !== 'false';
+      if (!core?.disableTelemetry && !disableTelemetryVar) {
+        // NOTE: we start telemetry immediately but do not wait on it. Typically it should complete
+        // before the tests do. If not we may miss the event, we are OK with that.
+        telemetry(
+          'test-run',
+          {
+            runner: 'vitest',
+            watch: context.vitest.config.watch,
+            coverage: !!context.vitest.config.coverage?.enabled,
+          },
+          { configDir: finalOptions.configDir }
+        );
+      }
     },
     async configureServer(server) {
       if (staticDirs) {

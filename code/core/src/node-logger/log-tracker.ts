@@ -48,7 +48,6 @@ class LogTracker {
 
 export const logTracker = new LogTracker();
 
-// Convenience exports
 export const writeLogsToFile = async (filePath: string): Promise<void> => {
   await logTracker.writeToFile(filePath);
 };

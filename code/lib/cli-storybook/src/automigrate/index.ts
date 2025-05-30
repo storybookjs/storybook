@@ -317,7 +317,8 @@ export async function runFixes({
         title: `${getTitle()}: ${picocolors.cyan(f.id)}`,
       });
 
-      currentTaskLogger.message(f.prompt(result));
+      prompt.logBox(f.prompt(result));
+      // currentTaskLogger.message(f.prompt(result));
 
       let runAnswer: { fix: boolean } | undefined;
 

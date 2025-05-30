@@ -3,6 +3,15 @@ import boxen from 'boxen';
 
 import { logTracker } from './log-tracker';
 
+const USE_CLACK = false;
+
+const LOG_FUNCTIONS = {
+  log: USE_CLACK ? clack.log.message : console.log,
+  warn: USE_CLACK ? clack.log.warn : console.warn,
+  error: USE_CLACK ? clack.log.error : console.error,
+  intro: USE_CLACK ? clack.intro : console.log,
+};
+
 // Log level types and state
 export type LogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'silent';
 
@@ -80,14 +89,14 @@ export const debug = createLogger(
     if (shouldLog('trace')) {
       message += getMinimalTrace();
     }
-    clack.log.message(message);
+    LOG_FUNCTIONS.log(message);
   },
   '[DEBUG]'
 );
 
-export const log = createLogger('info', clack.log.message);
-export const warn = createLogger('warn', clack.log.warn);
-export const error = createLogger('error', clack.log.error);
+export const log = createLogger('info', LOG_FUNCTIONS.log);
+export const warn = createLogger('warn', LOG_FUNCTIONS.warn);
+export const error = createLogger('error', LOG_FUNCTIONS.error);
 
 type BoxenOptions = {
   borderStyle?: 'round' | 'none';
@@ -101,21 +110,31 @@ type BoxenOptions = {
 export const logBox = (message: string, style?: BoxenOptions) => {
   if (shouldLog('info')) {
     logTracker.addLog('info', message);
-    console.log(
-      boxen(message, {
-        borderStyle: 'round',
-        padding: 1,
-        // borderColor: '#F1618C',
-        borderColor: '#5c5c63',
-        ...style,
-      })
-        .replace(/╭/, '├')
-        .replace(/╰/, '├')
-    );
+    if (USE_CLACK) {
+      console.log(
+        boxen(message, {
+          borderStyle: 'round',
+          padding: 1,
+          borderColor: '#5c5c63', // gray
+          ...style,
+        })
+          .replace(/╭/, '├')
+          .replace(/╰/, '├')
+      );
+    } else {
+      console.log(
+        boxen(message, {
+          borderStyle: 'round',
+          padding: 1,
+          borderColor: '#F1618C', // pink
+          ...style,
+        })
+      );
+    }
   }
 };
 
 export const intro = (message: string) => {
   logTracker.addLog('info', message);
-  clack.intro(message);
+  LOG_FUNCTIONS.intro(message);
 };

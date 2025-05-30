@@ -1,6 +1,6 @@
-import { expect, test, vi } from 'vitest';
+import { beforeEach, expect, test, vi } from 'vitest';
 
-import { JsPackageManagerFactory, prompt as promptRaw } from 'storybook/internal/common';
+import { prompt as promptRaw } from 'storybook/internal/common';
 
 import { autoblock } from './index';
 import { type BlockerModule, createBlocker } from './types';
@@ -23,8 +23,6 @@ vi.mock('storybook/internal/node-logger', () => ({
   },
 }));
 
-const prompt = vi.mocked(promptRaw);
-
 const blockers = {
   alwaysPass: createBlocker({
     id: 'alwaysPass',
@@ -43,18 +41,24 @@ const blockers = {
   }),
 } as const;
 
+const mockPackageManager = {
+  getInstalledVersion: vi.fn(),
+} as any;
+
 const baseOptions: Parameters<typeof autoblock>[0] = {
   configDir: '.storybook',
   mainConfig: {
     stories: [],
   },
   mainConfigPath: '.storybook/main.ts',
-  packageJson: {
-    dependencies: {},
-    devDependencies: {},
-  },
-  packageManager: JsPackageManagerFactory.getPackageManager({ force: 'npm' }),
+  packageManager: mockPackageManager,
 };
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  // Default mock behavior: package not installed
+  mockPackageManager.getInstalledVersion.mockResolvedValue(null);
+});
 
 test('with empty list', async () => {
   const result = await autoblock({ ...baseOptions }, []);
@@ -82,36 +86,32 @@ test('1 fail', async () => {
 
 test('detects svelte-webpack5 usage', async () => {
   // This test checks if the blocker correctly identifies the @storybook/svelte-webpack5 package
-  const result = await autoblock(
-    {
-      ...baseOptions,
-      packageJson: {
-        dependencies: {
-          '@storybook/svelte-webpack5': '^8.0.0',
-        },
-        devDependencies: {},
-      },
-    },
-    [import('./block-svelte-webpack5')] as BlockerModule<any>[]
-  );
+  mockPackageManager.getInstalledVersion.mockImplementation((packageName: string) => {
+    if (packageName === '@storybook/svelte-webpack5') {
+      return Promise.resolve('^8.0.0');
+    }
+    return Promise.resolve(null);
+  });
+
+  const result = await autoblock(baseOptions, [
+    import('./block-svelte-webpack5'),
+  ] as BlockerModule<any>[]);
 
   expect(result?.[0].result).toEqual(true);
 });
 
 test('allows non-svelte-webpack5 projects', async () => {
   // This test verifies the blocker doesn't trigger for projects not using @storybook/svelte-webpack5
-  const result = await autoblock(
-    {
-      ...baseOptions,
-      packageJson: {
-        dependencies: {
-          '@storybook/svelte-vite': '^8.0.0',
-        },
-        devDependencies: {},
-      },
-    },
-    [import('./block-svelte-webpack5')] as BlockerModule<any>[]
-  );
+  mockPackageManager.getInstalledVersion.mockImplementation((packageName: string) => {
+    if (packageName === '@storybook/svelte-vite') {
+      return Promise.resolve('^8.0.0');
+    }
+    return Promise.resolve(null);
+  });
+
+  const result = await autoblock(baseOptions, [
+    import('./block-svelte-webpack5'),
+  ] as BlockerModule<any>[]);
 
   expect(result?.[0].result).toEqual(false);
 });

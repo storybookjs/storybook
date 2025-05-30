@@ -89,7 +89,6 @@ const runFixWrapper = async ({
     fixes,
     dryRun,
     yes,
-    packageJson: {},
     mainConfig: { stories: [] },
     rendererPackage,
     skipInstall,
@@ -99,6 +98,7 @@ const runFixWrapper = async ({
     storybookVersion,
     beforeVersion,
     isUpgrade,
+    storiesPaths: [],
   });
 };
 

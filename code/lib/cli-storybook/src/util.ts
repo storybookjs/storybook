@@ -521,8 +521,6 @@ const addDependencies = async (
 export const upgradeStorybookDependencies = async (config: UpgradeConfig): Promise<void> => {
   const { packageManager } = config;
 
-  logger.info(`Updating dependencies in ${picocolors.cyan('package.json')}...`);
-
   for (const packageJsonPath of packageManager.packageJsonPaths) {
     try {
       const packageJson = JsPackageManager.getPackageJson(packageJsonPath);

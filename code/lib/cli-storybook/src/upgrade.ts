@@ -5,7 +5,6 @@ import {
   isCorePackage,
   prompt,
 } from 'storybook/internal/common';
-import { withTelemetry } from 'storybook/internal/core-server';
 import { logger } from 'storybook/internal/node-logger';
 import {
   UpgradeStorybookToLowerVersionError,
@@ -18,13 +17,15 @@ import picocolors from 'picocolors';
 import semver, { clean, lt } from 'semver';
 import { dedent } from 'ts-dedent';
 
-import { automigrate } from './automigrate/index';
-import { doctor } from './doctor';
+import { allFixes } from './automigrate/fixes';
 import {
-  type CollectProjectsSuccessResult,
-  getProjects,
-  upgradeStorybookDependencies,
-} from './util';
+  type ProjectAutomigrationData,
+  collectAutomigrationsAcrossProjects,
+  promptForAutomigrations,
+  runAutomigrationsForProjects,
+} from './automigrate/multi-project';
+import { doctor } from './doctor';
+import { getProjects, upgradeStorybookDependencies } from './util';
 
 type Package = {
   package: string;
@@ -104,89 +105,17 @@ export const checkVersionConsistency = () => {
   });
 };
 
-interface InternalUpgradeOptions {
+export type UpgradeOptions = {
   skipCheck: boolean;
   packageManager?: PackageManagerName;
   dryRun: boolean;
   yes: boolean;
   force: boolean;
   disableTelemetry: boolean;
-  configDir?: string;
-}
-
-export const doUpgrade = async (
-  cliOptions: InternalUpgradeOptions,
-  {
-    isCLIOutdated,
-    isCLIPrerelease,
-    isCLIExactLatest,
-    isUpgrade,
-    beforeVersion,
-    currentCLIVersion,
-    isCanary,
-    isCLIExactPrerelease,
-    configDir,
-    mainConfig,
-    mainConfigPath,
-    previewConfigPath,
-    packageManager,
-    storiesPaths,
-  }: CollectProjectsSuccessResult
-) => {
-  const { skipCheck, dryRun, yes } = cliOptions;
-
-  let results;
-
-  // INSTALL UPDATED DEPENDENCIES
-  if (!dryRun && !results) {
-    await upgradeStorybookDependencies({
-      packageManager,
-      isCanary,
-      isCLIOutdated,
-      isCLIPrerelease,
-      isCLIExactLatest,
-      isCLIExactPrerelease,
-    });
-  }
-
-  // AUTOMIGRATIONS
-  if (!skipCheck && !results && mainConfigPath) {
-    checkVersionConsistency();
-    results = await automigrate({
-      dryRun,
-      yes,
-      packageManager,
-      mainConfig,
-      configDir,
-      previewConfigPath,
-      mainConfigPath,
-      beforeVersion,
-      storybookVersion: currentCLIVersion,
-      isUpgrade,
-      isLatest: isCLIExactLatest,
-      storiesPaths,
-    });
-  }
-
-  // TELEMETRY
-  if (!cliOptions.disableTelemetry) {
-    const { preCheckFailure, fixResults } = results || {};
-    const automigrationTelemetry = {
-      automigrationResults: preCheckFailure ? null : fixResults,
-      automigrationPreCheckFailure: preCheckFailure || null,
-    };
-
-    await telemetry('upgrade', {
-      beforeVersion,
-      afterVersion: currentCLIVersion,
-      ...automigrationTelemetry,
-    });
-  }
-
-  await doctor(cliOptions);
+  configDir?: string[];
+  fixId?: string;
+  skipInstall?: boolean;
 };
-
-export type UpgradeOptions = Omit<InternalUpgradeOptions, 'configDir'> & { configDir?: string[] };
 
 export async function upgrade(options: UpgradeOptions): Promise<void> {
   const gitRoot = getProjectRoot();
@@ -262,39 +191,76 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     }
   });
 
-  const upgradeStatus: {
-    projectName: string;
-    status: 'incomplete' | 'complete' | 'failed';
-    error?: any;
-  }[] = projects.map((data) => {
-    const projectName = data.configDir.replace(gitRoot, '');
-    return {
-      projectName,
-      status: 'incomplete',
-      error: null,
-    };
-  });
+  // Update dependencies for all projects
+  if (!options.dryRun) {
+    for (const project of projects) {
+      await upgradeStorybookDependencies({
+        packageManager: project.packageManager,
+        isCanary: project.isCanary,
+        isCLIOutdated: project.isCLIOutdated,
+        isCLIPrerelease: project.isCLIPrerelease,
+        isCLIExactLatest: project.isCLIExactLatest,
+        isCLIExactPrerelease: project.isCLIExactPrerelease,
+      });
+    }
+  }
 
-  // Migrate each selected project
-  for (let i = 0; i < projects.length; i++) {
-    const storybookProject = projects[i].configDir;
-    const projectName = storybookProject.replace(gitRoot, '');
+  // AUTOMIGRATIONS - New multi-project flow
+  if (!options.skipCheck) {
+    checkVersionConsistency();
 
-    logger.plain(
-      `\nUpgrading project ${i + 1}/${projects.length}:\n\t${picocolors.cyan(projectName)}`
-    );
+    // Prepare project data for automigrations
+    const projectAutomigrationData: ProjectAutomigrationData[] = projects.map((project) => ({
+      configDir: project.configDir,
+      packageManager: project.packageManager,
+      mainConfig: project.mainConfig,
+      mainConfigPath: project.mainConfigPath!,
+      previewConfigPath: project.previewConfigPath,
+      storybookVersion: project.currentCLIVersion,
+      beforeVersion: project.beforeVersion,
+      storiesPaths: project.storiesPaths,
+    }));
 
-    try {
-      await withTelemetry(
-        'upgrade',
-        { cliOptions: { ...options, configDir: storybookProject } },
-        async () => doUpgrade({ ...options, configDir: storybookProject }, projects[i])
-      );
-      upgradeStatus[i].status = 'complete';
-    } catch (error) {
-      logger.error(`Error upgrading project ${projectName}. Skipping...`);
-      upgradeStatus[i].status = 'failed';
-      upgradeStatus[i].error = error;
+    // Collect all applicable automigrations across all projects
+    const detectedAutomigrations = await collectAutomigrationsAcrossProjects({
+      fixes: allFixes,
+      projects: projectAutomigrationData,
+      dryRun: options.dryRun,
+      yes: options.yes,
+      skipInstall: options.skipInstall,
+    });
+
+    // Prompt user to select which automigrations to run
+    const selectedAutomigrations = await promptForAutomigrations(detectedAutomigrations, gitRoot, {
+      dryRun: options.dryRun,
+      yes: options.yes,
+    });
+
+    // Run selected automigrations for each project
+    const projectResults = await runAutomigrationsForProjects(selectedAutomigrations, {
+      fixes: allFixes,
+      projects: projectAutomigrationData,
+      dryRun: options.dryRun,
+      yes: options.yes,
+      skipInstall: options.skipInstall,
+    });
+
+    // Run doctor for each project
+    for (const project of projects) {
+      await doctor({ ...options, configDir: project.configDir });
+    }
+
+    // TELEMETRY
+    if (!options.disableTelemetry) {
+      for (const project of projects) {
+        const fixResults = projectResults[project.configDir] || {};
+        await telemetry('upgrade', {
+          beforeVersion: project.beforeVersion,
+          afterVersion: project.currentCLIVersion,
+          automigrationResults: fixResults,
+          automigrationPreCheckFailure: null,
+        });
+      }
     }
   }
 
@@ -310,32 +276,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     .executeCommand({ command: 'dedupe', args: [], stdio: 'ignore' })
     .catch(() => {});
 
-  const failedProjects = upgradeStatus.filter((status) => status.status === 'failed');
-
-  if (failedProjects.length > 0) {
-    logger.plain('\nUpgrade Summary:');
-    const successfulProjects = upgradeStatus.filter((status) => status.status === 'complete');
-    if (successfulProjects.length > 0) {
-      logger.plain('\nSuccessfully upgraded:');
-      successfulProjects.forEach((status) => {
-        logger.plain(`  ${picocolors.green('✓')} ${status.projectName}`);
-      });
-    }
-
-    logger.plain('\nFailed to upgrade:');
-    failedProjects.forEach((status) => {
-      logger.plain(`  ${picocolors.red('✕')} ${status.projectName}`);
-      if (status.error) {
-        logger.plain(`    ${picocolors.dim(status.error.message || String(status.error))}`);
-      }
-    });
-
-    logger.plain(
-      `\n${picocolors.red('Some projects failed to upgrade. See error details above.')}`
-    );
-  } else {
-    logger.plain(`\n${picocolors.green('Your project(s) have been upgraded successfully! 🎉')}`);
-  }
+  logger.plain(`\n${picocolors.green('Your project(s) have been upgraded successfully! 🎉')}`);
   // TODO: if multiple projects, multi-upgrade telemetry with e.g.
   // { success: X, fail: Y, incomplete: Z }
 }

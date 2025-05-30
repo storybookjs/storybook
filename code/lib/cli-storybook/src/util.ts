@@ -306,6 +306,7 @@ const processProject = async (
       mainConfigPath,
       packageManager,
       previewConfigPath,
+      storiesPaths,
     } = await getStorybookData({ configDir });
 
     const name = configDir.replace(getProjectRoot(), '');
@@ -350,12 +351,6 @@ const processProject = async (
         mainConfigPath,
       });
     }
-
-    prompt.debug(`${name} - Evaluating story paths...`);
-    const storiesPaths = await getStoriesPathsFromConfig(
-      resolvedConfigDir,
-      packageManager.instanceDir
-    );
 
     return {
       configDir: resolvedConfigDir,
@@ -734,7 +729,7 @@ export const findFilesUp = (matchers: string[], cwd: string) => {
  * @param workingDir - Working directory for resolving relative paths
  * @returns Promise resolving to array of story file paths
  */
-export const getStoriesPathsFromConfig = async (
+export const getEvaluatedStoryPaths = async (
   configDir: string,
   workingDir: string
 ): Promise<string[]> => {
@@ -745,6 +740,35 @@ export const getStoriesPathsFromConfig = async (
 
   const stories = await presets.apply('stories', []);
 
+  return getStoriesPathsFromConfig({
+    stories,
+    configDir,
+    workingDir,
+  });
+};
+
+/**
+ * Gets story file paths from a Storybook configuration directory
+ *
+ * @example
+ *
+ * ```typescript
+ * const storiesPaths = await getStoriesPathsFromConfigWithoutEvaluating({
+ *   stories: ['src\/**\/*.stories.tsx'],
+ *   configDir: '/path/to/.storybook',
+ *   workingDir: '/path/to/project',
+ * });
+ * ```
+ */
+export const getStoriesPathsFromConfig = async ({
+  stories,
+  configDir,
+  workingDir,
+}: {
+  stories: StorybookConfigRaw['stories'];
+  configDir: string;
+  workingDir: string;
+}) => {
   const normalizedStories = normalizeStories(stories, {
     configDir,
     workingDir,

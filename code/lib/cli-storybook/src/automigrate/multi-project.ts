@@ -111,17 +111,17 @@ export async function promptForAutomigrations(
   };
 
   if (options.dryRun) {
-    console.log('\n📋 Detected automigrations (dry run - no changes will be made):');
+    prompt.log('\n📋 Detected automigrations (dry run - no changes will be made):');
     automigrations.forEach((am) => {
-      console.log(`  - ${am.fix.id} (${formatProjectDirs(am.projects)})`);
+      prompt.log(`  - ${am.fix.id} (${formatProjectDirs(am.projects)})`);
     });
     return [];
   }
 
   if (options.yes) {
-    console.log('\n✅ Running all detected automigrations:');
+    prompt.log('\n✅ Running all detected automigrations:');
     automigrations.forEach((am) => {
-      console.log(`  - ${am.fix.id} (${formatProjectDirs(am.projects)})`);
+      prompt.log(`  - ${am.fix.id} (${formatProjectDirs(am.projects)})`);
     });
     return automigrations;
   }
@@ -133,7 +133,7 @@ export async function promptForAutomigrations(
     hint: am.fix.prompt(am.result),
   }));
 
-  console.log(dedent`
+  prompt.log(dedent`
     We have detected the following automigrations which are applicable for your Storybook project(s):
   `);
 
@@ -166,7 +166,7 @@ export async function runAutomigrationsForProjects(
 
   // Run automigrations for each project
   for (const [configDir, automigrations] of projectAutomigrations) {
-    console.log(`\n📦 Running automigrations for ${picocolors.cyan(configDir)}:`);
+    prompt.log(`\n📦 Running automigrations for ${picocolors.cyan(configDir)}:`);
 
     const project = automigrations[0].projects.find((p) => p.configDir === configDir);
 
@@ -186,17 +186,17 @@ export async function runAutomigrationsForProjects(
             ? await fix.promptType(result)
             : (fix.promptType ?? 'auto');
 
-        console.log(`  - ${picocolors.cyan(fix.id)}...`);
+        prompt.log(`  - ${picocolors.cyan(fix.id)}...`);
 
         if (promptType === 'manual') {
           // For manual migrations, show the prompt and mark as manual
-          console.log(`    ℹ️  Manual migration required:`);
-          console.log(`    ${fix.prompt(result).split('\n').join('\n    ')}`);
+          prompt.log(`    ℹ️  Manual migration required:`);
+          prompt.log(`    ${fix.prompt(result).split('\n').join('\n    ')}`);
           fixResults[fix.id] = FixStatus.MANUAL_SUCCEEDED;
         } else if (promptType === 'notification') {
           // For notifications, just show the message
-          console.log(`    ℹ️  Notification:`);
-          console.log(`    ${fix.prompt(result).split('\n').join('\n    ')}`);
+          prompt.log(`    ℹ️  Notification:`);
+          prompt.log(`    ${fix.prompt(result).split('\n').join('\n    ')}`);
           fixResults[fix.id] = FixStatus.SUCCEEDED;
         } else if (typeof fix.run === 'function') {
           const runOptions: RunOptions<typeof result> = {
@@ -214,11 +214,11 @@ export async function runAutomigrationsForProjects(
 
           await fix.run(runOptions);
           fixResults[fix.id] = FixStatus.SUCCEEDED;
-          console.log(`    ✅ Completed`);
+          prompt.log(`    ✅ Completed`);
         }
       } catch (error) {
         fixResults[fix.id] = FixStatus.FAILED;
-        console.log(`    ❌ Failed: ${error instanceof Error ? error.message : String(error)}`);
+        prompt.log(`    ❌ Failed: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
 

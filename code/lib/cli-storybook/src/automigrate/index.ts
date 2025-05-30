@@ -2,16 +2,14 @@ import { createWriteStream } from 'node:fs';
 import { rename, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { type JsPackageManager, prompt, temporaryFile, versions } from 'storybook/internal/common';
+import { type JsPackageManager, prompt, temporaryFile } from 'storybook/internal/common';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
-import semver from 'semver';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 
 import { doctor } from '../doctor';
-import { getStoriesPathsFromConfig } from '../util';
 import type {
   AutofixOptions,
   AutofixOptionsFromCLI,
@@ -74,12 +72,11 @@ export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
     storybookVersion,
     configDir,
     packageManager,
+    storiesPaths,
   } = await getStorybookData({
     configDir: options.configDir,
     packageManagerName: options.packageManager,
   });
-
-  const storiesPaths = await getStoriesPathsFromConfig(configDir, packageManager.instanceDir);
 
   if (!storybookVersion) {
     throw new Error('Could not determine Storybook version');

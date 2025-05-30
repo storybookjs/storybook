@@ -39,12 +39,28 @@ export function filterPresetsConfig(presetsConfig: PresetConfig[]): PresetConfig
   });
 }
 
-function resolvePathToMjs(filePath: string): string {
-  const { dir, name } = parse(filePath);
+function resolvePathToESM(filePath: string): string {
+  const { dir, name, ext } = parse(filePath);
+  if (ext === '.mjs') {
+    return filePath;
+  }
   const mjsPath = join(dir, `${name}.mjs`);
   if (safeResolve(mjsPath)) {
     return mjsPath;
   }
+  if (ext === '.cjs') {
+    /*
+      If the file is a CJS file, try to resolve the ESM version instead.
+      We must assume that in the case that NO .mjs file exists, but a .cjs file does, the package is type="module"
+      This is the case for addon-kit, which distributes both preview.cjs and preview.js for Jest compatibility
+      and in that situation we want to prefer the .js version.
+    */
+    const jsPath = join(dir, `${name}.js`);
+    if (safeResolve(jsPath)) {
+      return jsPath;
+    }
+  }
+
   return filePath;
 }
 
@@ -92,7 +108,7 @@ export const resolveAddonName = (
         // we remove the extension
         // this is a bit of a hack to try to find .mjs files
         // node can only ever resolve .js files; it does not look at the exports field in package.json
-        managerEntries: [resolvePathToMjs(join(fdir, fname))],
+        managerEntries: [resolvePathToESM(join(fdir, fname))],
       };
     }
     if (name.match(/\/(preset)(\.(js|mjs|ts|tsx|jsx))?$/)) {
@@ -117,11 +133,11 @@ export const resolveAddonName = (
    * broken in such cases, because it does not process absolute paths, and it will try to import
    * from the bare import, breaking in pnp/pnpm.
    */
-  const absolutizeExport = (exportName: string, preferMJS: boolean) => {
+  const absolutizeExport = (exportName: string, preferESM: boolean) => {
     const found = resolve(`${name}${exportName}`);
 
     if (found) {
-      return preferMJS ? resolvePathToMjs(found) : found;
+      return preferESM ? resolvePathToESM(found) : found;
     }
     return undefined;
   };

@@ -1,8 +1,6 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 
-import { prompt } from 'storybook/internal/node-logger';
-
 // eslint-disable-next-line depend/ban-dependencies
 import { type CommonOptions, type ExecaChildProcess, execa, execaCommandSync } from 'execa';
 import { findUpMultipleSync, findUpSync } from 'find-up';
@@ -10,6 +8,7 @@ import picocolors from 'picocolors';
 import { gt, satisfies } from 'semver';
 import invariant from 'tiny-invariant';
 
+import { prompt } from '../../node-logger';
 import { HandledError } from '../utils/HandledError';
 import { getProjectRoot } from '../utils/paths';
 import storybookPackagesVersions from '../versions';

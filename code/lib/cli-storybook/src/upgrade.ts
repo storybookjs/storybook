@@ -213,6 +213,20 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     skipInstall: options.skipInstall,
   });
 
+  const rootPackageManager =
+    projects.length > 1
+      ? JsPackageManagerFactory.getPackageManager({
+          force: options.packageManager,
+        })
+      : projects[0].packageManager;
+
+  prompt.debug('Installing dependencies...');
+  await rootPackageManager.installDependencies();
+  prompt.debug('Deduping dependencies...');
+  await rootPackageManager
+    .executeCommand({ command: 'dedupe', args: [], stdio: 'ignore' })
+    .catch(() => {});
+
   // Run doctor for each project
   prompt.debug('Running doctor...');
   for (const project of projects) {
@@ -232,20 +246,6 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       });
     }
   }
-
-  const rootPackageManager =
-    projects.length > 1
-      ? JsPackageManagerFactory.getPackageManager({
-          force: options.packageManager,
-        })
-      : projects[0].packageManager;
-
-  prompt.debug('Installing dependencies...');
-  await rootPackageManager.installDependencies();
-  prompt.debug('Deduping dependencies...');
-  await rootPackageManager
-    .executeCommand({ command: 'dedupe', args: [], stdio: 'ignore' })
-    .catch(() => {});
 
   if (!options.skipCheck) {
     prompt.debug('Checking version consistency...');

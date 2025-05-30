@@ -299,6 +299,7 @@ const processProject = async (
   logger.plain(`Scanning ${picocolors.cyan(configDir)}`);
 
   try {
+    prompt.debug(`Getting Storybook data...`);
     const {
       configDir: resolvedConfigDir,
       mainConfig,
@@ -307,14 +308,19 @@ const processProject = async (
       previewConfigPath,
     } = await getStorybookData({ configDir });
 
+    const name = configDir.replace(getProjectRoot(), '');
+    prompt.debug(`${name} - Getting installed Storybook version...`);
     const beforeVersion =
       (await getInstalledStorybookVersion(packageManager)) ?? DEFAULT_FALLBACK_VERSION;
 
     // Validate version and upgrade compatibility
+    prompt.debug(`${name} - Validating before version...`);
     validateVersion(beforeVersion);
     const isCanary = isCanaryVersion(currentCLIVersion) || isCanaryVersion(beforeVersion);
+    prompt.debug(`${name} - Validating upgrade compatibility...`);
     validateUpgradeCompatibility(currentCLIVersion, beforeVersion, isCanary);
 
+    prompt.debug(`${name} - Getting CLI versions from NPM...`);
     // Get version information from NPM
     const [latestCLIVersionOnNPM, latestPrereleaseCLIVersionOnNPM] = await Promise.all([
       packageManager.latestVersion('storybook'),
@@ -336,6 +342,7 @@ const processProject = async (
       typeof mainConfigPath !== 'undefined' &&
       !options.force
     ) {
+      prompt.debug(`${name} - Evaluating blockers...`);
       autoblockerCheckResults = await autoblock({
         packageManager,
         configDir: resolvedConfigDir,
@@ -344,6 +351,7 @@ const processProject = async (
       });
     }
 
+    prompt.debug(`${name} - Evaluating story paths...`);
     const storiesPaths = await getStoriesPathsFromConfig(
       resolvedConfigDir,
       packageManager.instanceDir
@@ -368,6 +376,7 @@ const processProject = async (
       storiesPaths,
     } satisfies CollectProjectsSuccessResult;
   } catch (error) {
+    prompt.error(String(error));
     return {
       configDir,
       error: error as Error,

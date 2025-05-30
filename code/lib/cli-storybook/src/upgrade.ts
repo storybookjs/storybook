@@ -104,6 +104,7 @@ export const checkVersionConsistency = () => {
       }
     }
   });
+  prompt.debug('End of version consistency check');
 };
 
 export type UpgradeOptions = {
@@ -150,9 +151,10 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     }
   });
 
-  // Update dependencies for all projects
+  // Update dependencies in package.jsons for all projects
   if (!options.dryRun) {
     for (const project of projects) {
+      prompt.debug(`Updating dependencies in ${picocolors.cyan(project.configDir)}...`);
       await upgradeStorybookDependencies({
         packageManager: project.packageManager,
         isCanary: project.isCanary,
@@ -165,61 +167,61 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
   }
 
   // AUTOMIGRATIONS - New multi-project flow
-  if (!options.skipCheck) {
-    checkVersionConsistency();
 
-    // Prepare project data for automigrations
-    const projectAutomigrationData: ProjectAutomigrationData[] = projects.map((project) => ({
-      configDir: project.configDir,
-      packageManager: project.packageManager,
-      mainConfig: project.mainConfig,
-      mainConfigPath: project.mainConfigPath!,
-      previewConfigPath: project.previewConfigPath,
-      storybookVersion: project.currentCLIVersion,
-      beforeVersion: project.beforeVersion,
-      storiesPaths: project.storiesPaths,
-    }));
+  // Prepare project data for automigrations
+  const projectAutomigrationData: ProjectAutomigrationData[] = projects.map((project) => ({
+    configDir: project.configDir,
+    packageManager: project.packageManager,
+    mainConfig: project.mainConfig,
+    mainConfigPath: project.mainConfigPath!,
+    previewConfigPath: project.previewConfigPath,
+    storybookVersion: project.currentCLIVersion,
+    beforeVersion: project.beforeVersion,
+    storiesPaths: project.storiesPaths,
+  }));
 
-    // Collect all applicable automigrations across all projects
-    const detectedAutomigrations = await collectAutomigrationsAcrossProjects({
-      fixes: allFixes,
-      projects: projectAutomigrationData,
-      dryRun: options.dryRun,
-      yes: options.yes,
-      skipInstall: options.skipInstall,
-    });
+  // Collect all applicable automigrations across all projects
+  const detectedAutomigrations = await collectAutomigrationsAcrossProjects({
+    fixes: allFixes,
+    projects: projectAutomigrationData,
+    dryRun: options.dryRun,
+    yes: options.yes,
+    skipInstall: options.skipInstall,
+  });
 
-    // Prompt user to select which automigrations to run
-    const selectedAutomigrations = await promptForAutomigrations(detectedAutomigrations, gitRoot, {
-      dryRun: options.dryRun,
-      yes: options.yes,
-    });
+  // Prompt user to select which automigrations to run
+  const selectedAutomigrations = await promptForAutomigrations(detectedAutomigrations, gitRoot, {
+    dryRun: options.dryRun,
+    yes: options.yes,
+  });
 
-    // Run selected automigrations for each project
-    const projectResults = await runAutomigrationsForProjects(selectedAutomigrations, {
-      fixes: allFixes,
-      projects: projectAutomigrationData,
-      dryRun: options.dryRun,
-      yes: options.yes,
-      skipInstall: options.skipInstall,
-    });
+  prompt.debug('Running automigrations...');
+  // Run selected automigrations for each project
+  const projectResults = await runAutomigrationsForProjects(selectedAutomigrations, {
+    fixes: allFixes,
+    projects: projectAutomigrationData,
+    dryRun: options.dryRun,
+    yes: options.yes,
+    skipInstall: options.skipInstall,
+  });
 
-    // Run doctor for each project
+  // Run doctor for each project
+  prompt.debug('Running doctor...');
+  for (const project of projects) {
+    await doctor({ ...options, configDir: project.configDir });
+  }
+
+  prompt.debug('Sending telemetry...');
+  // TELEMETRY
+  if (!options.disableTelemetry) {
     for (const project of projects) {
-      await doctor({ ...options, configDir: project.configDir });
-    }
-
-    // TELEMETRY
-    if (!options.disableTelemetry) {
-      for (const project of projects) {
-        const fixResults = projectResults[project.configDir] || {};
-        await telemetry('upgrade', {
-          beforeVersion: project.beforeVersion,
-          afterVersion: project.currentCLIVersion,
-          automigrationResults: fixResults,
-          automigrationPreCheckFailure: null,
-        });
-      }
+      const fixResults = projectResults[project.configDir] || {};
+      await telemetry('upgrade', {
+        beforeVersion: project.beforeVersion,
+        afterVersion: project.currentCLIVersion,
+        automigrationResults: fixResults,
+        automigrationPreCheckFailure: null,
+      });
     }
   }
 
@@ -230,10 +232,17 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         })
       : projects[0].packageManager;
 
+  prompt.debug('Installing dependencies...');
   await rootPackageManager.installDependencies();
+  prompt.debug('Deduping dependencies...');
   await rootPackageManager
     .executeCommand({ command: 'dedupe', args: [], stdio: 'ignore' })
     .catch(() => {});
+
+  if (!options.skipCheck) {
+    prompt.debug('Checking version consistency...');
+    checkVersionConsistency();
+  }
 
   logger.plain(`\n${picocolors.green('Your project(s) have been upgraded successfully! 🎉')}`);
   // TODO: if multiple projects, multi-upgrade telemetry with e.g.

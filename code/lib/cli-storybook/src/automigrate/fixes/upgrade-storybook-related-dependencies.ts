@@ -82,15 +82,18 @@ export const upgradeStorybookRelatedDependencies = {
 
     const storybookDependencies = Object.keys(allDependencies)
       .filter((dep) => dep.includes('storybook'))
-      .filter((dep) => !isCorePackage(dep) && !isSatelliteAddon(dep))
-      .filter((dep) => isValidVersionType(dep, allDependencies[dep]));
+      .filter((dep) => !isCorePackage(dep) && !isSatelliteAddon(dep));
 
     const incompatibleDependencies = analyzedPackages
       .filter((pkg) => pkg.hasIncompatibleDependencies)
       .map((pkg) => pkg.packageName);
 
     const uniquePackages = Array.from(
-      new Set([...storybookDependencies, ...incompatibleDependencies])
+      new Set(
+        [...storybookDependencies, ...incompatibleDependencies].filter((dep) =>
+          isValidVersionType(dep, allDependencies[dep])
+        )
+      )
     ).map((packageName) => [packageName, allDependencies[packageName]]) as [string, string][];
 
     const packageVersions = await getLatestVersions(packageManager, uniquePackages);
@@ -112,8 +115,8 @@ export const upgradeStorybookRelatedDependencies = {
 
   async run({ result: { upgradable }, packageManager, dryRun }) {
     if (dryRun) {
-      console.log(dedent`
-        We would have upgrade the following:
+      prompt.log(dedent`
+        The following would have been upgraded:
         ${upgradable
           .map(
             ({ packageName, afterVersion, beforeVersion }) =>

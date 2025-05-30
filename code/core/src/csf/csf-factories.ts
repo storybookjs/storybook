@@ -97,7 +97,7 @@ function defineMeta<TRenderer extends Renderer>(
 export interface Story<TRenderer extends Renderer, TArgs extends Args = Args> {
   readonly _tag: 'Story';
   input: StoryAnnotations<TRenderer, TArgs>;
-  composed: NormalizedStoryAnnotations<TRenderer>;
+  composed: NormalizedStoryAnnotations<TRenderer> & { args: TArgs };
   meta: Meta<TRenderer, TArgs>;
 }
 

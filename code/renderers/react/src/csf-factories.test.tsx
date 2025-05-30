@@ -248,6 +248,15 @@ describe('Story args can be inferred', () => {
     const Basic = meta.story({ args: { disabled: false } });
     const WithKeyDown = meta.story({ args: { disabled: false, onKeyDownToggle: true } });
   });
+
+  it('args can be reused', () => {
+    const meta = preview.meta({
+      component: Button,
+    });
+
+    const Enabled = meta.story({ args: { label: 'hello', disabled: false } });
+    const Disabled = meta.story({ args: { ...Enabled.composed.args, disabled: true } });
+  });
 });
 
 it('Components without Props can be used, issue #21768', () => {

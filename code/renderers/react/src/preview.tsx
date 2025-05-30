@@ -90,4 +90,5 @@ interface ReactMeta<
   ): ReactStory<T>;
 }
 
-export interface ReactStory<T extends Types> extends Story<ReactRenderer & T> {}
+export interface ReactStory<T extends Types & { args: Args }>
+  extends Story<ReactRenderer, T['args']> {}

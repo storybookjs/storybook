@@ -3,6 +3,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { JsPackageManager } from './JsPackageManager';
 import { Yarn2Proxy } from './Yarn2Proxy';
 
+vi.mock('storybook/internal/node-logger', () => ({
+  prompt: {
+    taskLog: vi.fn(() => ({
+      message: vi.fn(),
+      success: vi.fn(),
+      error: vi.fn(),
+    })),
+  },
+}));
+
 describe('Yarn 2 Proxy', () => {
   let yarn2Proxy: Yarn2Proxy;
 

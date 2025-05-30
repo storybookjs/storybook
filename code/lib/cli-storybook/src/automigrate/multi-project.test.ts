@@ -1,14 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { prompt as promptRaw } from 'storybook/internal/node-logger';
+
 import {
   type ProjectAutomigrationData,
   collectAutomigrationsAcrossProjects,
 } from './multi-project';
 import type { Fix } from './types';
 
-vi.mock('storybook/internal/common', () => ({
+vi.mock('storybook/internal/node-logger', () => ({
   prompt: {
     multiselect: vi.fn(),
+    error: vi.fn(),
   },
 }));
 
@@ -111,10 +114,10 @@ describe('multi-project automigrations', () => {
 
       expect(results).toHaveLength(1);
       expect(results[0].fix.id).toBe('fix2');
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Failed to check fix fix1 for project /project1/.storybook:',
-        expect.any(Error)
-      );
+      expect(vi.mocked(promptRaw.error).mock.calls[0][0]).toMatchInlineSnapshot(`
+        "Failed to check fix fix1 for project /project1/.storybook:
+        Error: Check failed"
+      `);
     });
   });
 });

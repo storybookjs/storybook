@@ -1,12 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { type InstallationMetadata, prompt as promptRaw } from 'storybook/internal/common';
+import { type InstallationMetadata } from 'storybook/internal/common';
+import { prompt as promptRaw } from 'storybook/internal/node-logger';
 
 import { FixStatus } from '../types';
 import { logMigrationSummary } from './logMigrationSummary';
 
 vi.mock('picocolors');
-vi.mock('storybook/internal/common', () => ({
+vi.mock('storybook/internal/node-logger', () => ({
   prompt: {
     logBox: vi.fn(),
   },

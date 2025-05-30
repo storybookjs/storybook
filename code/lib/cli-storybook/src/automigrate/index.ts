@@ -58,7 +58,6 @@ const logAvailableMigrations = () => {
     .map((x) => `- ${x}`)
     .join('\n');
 
-  console.log();
   prompt.log(dedent`
     The following migrations are available:
     ${availableFixes}

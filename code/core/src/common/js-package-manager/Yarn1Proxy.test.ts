@@ -5,6 +5,16 @@ import { dedent } from 'ts-dedent';
 import { JsPackageManager } from './JsPackageManager';
 import { Yarn1Proxy } from './Yarn1Proxy';
 
+vi.mock('storybook/internal/node-logger', () => ({
+  prompt: {
+    taskLog: vi.fn(() => ({
+      message: vi.fn(),
+      success: vi.fn(),
+      error: vi.fn(),
+    })),
+  },
+}));
+
 describe('Yarn 1 Proxy', () => {
   let yarn1Proxy: Yarn1Proxy;
 
@@ -178,7 +188,8 @@ describe('Yarn 1 Proxy', () => {
   describe('mapDependencies', () => {
     it('should display duplicated dependencies based on yarn output', async () => {
       // yarn list --pattern "@storybook/*" "@storybook/react" --recursive --json
-      vi.spyOn(yarn1Proxy, 'executeCommand').mockResolvedValueOnce(`
+      vi.spyOn(yarn1Proxy, 'executeCommand').mockResolvedValueOnce({
+        stdout: `
         {
           "type": "tree",
           "data": {
@@ -209,11 +220,47 @@ describe('Yarn 1 Proxy', () => {
             ]
           }
         }
-      `);
+      `,
+      } as any);
 
       const installations = await yarn1Proxy.findInstallations(['@storybook/*']);
 
-      expect(installations).toMatchInlineSnapshot(`undefined`);
+      expect(installations).toMatchInlineSnapshot(`
+        {
+          "dedupeCommand": "yarn dedupe",
+          "dependencies": {
+            "@storybook/addon-example": [
+              {
+                "location": "",
+                "version": "7.0.0-beta.19",
+              },
+            ],
+            "@storybook/package": [
+              {
+                "location": "",
+                "version": "7.0.0-beta.12",
+              },
+              {
+                "location": "",
+                "version": "7.0.0-beta.19",
+              },
+            ],
+            "@storybook/types": [
+              {
+                "location": "",
+                "version": "7.0.0-beta.12",
+              },
+            ],
+          },
+          "duplicatedDependencies": {
+            "@storybook/package": [
+              "7.0.0-beta.12",
+              "7.0.0-beta.19",
+            ],
+          },
+          "infoCommand": "yarn why",
+        }
+      `);
     });
   });
 

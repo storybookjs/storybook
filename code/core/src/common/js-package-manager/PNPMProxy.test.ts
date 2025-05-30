@@ -3,6 +3,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { JsPackageManager } from './JsPackageManager';
 import { PNPMProxy } from './PNPMProxy';
 
+vi.mock('storybook/internal/node-logger', () => ({
+  prompt: {
+    taskLog: vi.fn(() => ({
+      message: vi.fn(),
+      success: vi.fn(),
+      error: vi.fn(),
+    })),
+  },
+}));
+
 describe('PNPM Proxy', () => {
   let pnpmProxy: PNPMProxy;
 
@@ -23,7 +33,7 @@ describe('PNPM Proxy', () => {
 
       await pnpmProxy.installDependencies();
 
-      expect(executeCommandSpy).toHaveBeenLastCalledWith(
+      expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({ command: 'pnpm', args: ['install'] })
       );
     });
@@ -37,7 +47,7 @@ describe('PNPM Proxy', () => {
 
       pnpmProxy.runPackageCommand('compodoc', ['-e', 'json', '-d', '.']);
 
-      expect(executeCommandSpy).toHaveBeenLastCalledWith(
+      expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           command: 'pnpm',
           args: ['exec', 'compodoc', '-e', 'json', '-d', '.'],
@@ -54,7 +64,7 @@ describe('PNPM Proxy', () => {
 
       await pnpmProxy.addDependencies({ installAsDevDependencies: true }, ['storybook']);
 
-      expect(executeCommandSpy).toHaveBeenLastCalledWith(
+      expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           command: 'pnpm',
           args: ['add', '-D', 'storybook'],

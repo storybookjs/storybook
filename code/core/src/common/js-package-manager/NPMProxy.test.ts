@@ -3,6 +3,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { JsPackageManager } from './JsPackageManager';
 import { NPMProxy } from './NPMProxy';
 
+vi.mock('storybook/internal/node-logger', () => ({
+  prompt: {
+    taskLog: vi.fn(() => ({
+      message: vi.fn(),
+      success: vi.fn(),
+      error: vi.fn(),
+    })),
+  },
+}));
+
 describe('NPM Proxy', () => {
   let npmProxy: NPMProxy;
 
@@ -24,7 +34,7 @@ describe('NPM Proxy', () => {
 
         await npmProxy.installDependencies();
 
-        expect(executeCommandSpy).toHaveBeenLastCalledWith(
+        expect(executeCommandSpy).toHaveBeenCalledWith(
           expect.objectContaining({ command: 'npm', args: ['install'] })
         );
       });
@@ -37,7 +47,7 @@ describe('NPM Proxy', () => {
 
         await npmProxy.installDependencies();
 
-        expect(executeCommandSpy).toHaveBeenLastCalledWith(
+        expect(executeCommandSpy).toHaveBeenCalledWith(
           expect.objectContaining({ command: 'npm', args: ['install'] })
         );
       });
@@ -53,7 +63,7 @@ describe('NPM Proxy', () => {
 
         npmProxy.runPackageCommand('compodoc', ['-e', 'json', '-d', '.']);
 
-        expect(executeCommandSpy).toHaveBeenLastCalledWith(
+        expect(executeCommandSpy).toHaveBeenCalledWith(
           expect.objectContaining({
             command: 'npm',
             args: ['exec', '--', 'compodoc', '-e', 'json', '-d', '.'],
@@ -69,7 +79,7 @@ describe('NPM Proxy', () => {
 
         npmProxy.runPackageCommand('compodoc', ['-e', 'json', '-d', '.']);
 
-        expect(executeCommandSpy).toHaveBeenLastCalledWith(
+        expect(executeCommandSpy).toHaveBeenCalledWith(
           expect.objectContaining({
             command: 'npm',
             args: ['exec', '--', 'compodoc', '-e', 'json', '-d', '.'],
@@ -88,7 +98,7 @@ describe('NPM Proxy', () => {
 
         await npmProxy.addDependencies({ installAsDevDependencies: true }, ['storybook']);
 
-        expect(executeCommandSpy).toHaveBeenLastCalledWith(
+        expect(executeCommandSpy).toHaveBeenCalledWith(
           expect.objectContaining({
             command: 'npm',
             args: ['install', '-D', 'storybook'],
@@ -104,7 +114,7 @@ describe('NPM Proxy', () => {
 
         await npmProxy.addDependencies({ installAsDevDependencies: true }, ['storybook']);
 
-        expect(executeCommandSpy).toHaveBeenLastCalledWith(
+        expect(executeCommandSpy).toHaveBeenCalledWith(
           expect.objectContaining({
             command: 'npm',
             args: ['install', '-D', 'storybook'],

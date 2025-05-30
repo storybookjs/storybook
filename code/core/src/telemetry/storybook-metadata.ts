@@ -100,6 +100,7 @@ export const computeStorybookMetadata = async ({
     'msw',
     'miragejs',
     'sinon',
+    'chromatic',
   ];
   const testPackageDeps = Object.keys(allDependencies).filter((dep) =>
     testPackages.find((pkg) => dep.includes(pkg))

@@ -4,6 +4,7 @@ import { dirname } from 'node:path';
 import type { PackageJson } from 'storybook/internal/common';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { isCorePackage, isSatelliteAddon } from 'storybook/internal/common';
+import { prompt } from 'storybook/internal/node-logger';
 
 import { gt } from 'semver';
 import { dedent } from 'ts-dedent';
@@ -50,6 +51,7 @@ export const upgradeStorybookRelatedDependencies = {
   promptDefaultValue: false,
 
   async check({ packageManager, storybookVersion }) {
+    prompt.debug('Checking for incompatible storybook packages...');
     const analyzedPackages = await getIncompatibleStorybookPackages({
       currentStorybookVersion: storybookVersion,
       packageManager,
@@ -58,6 +60,8 @@ export const upgradeStorybookRelatedDependencies = {
 
     const allDependencies = packageManager.getAllDependencies();
 
+    // TODO: filter out dependencies that are not valid e.g. yarn patches like
+    // "patch:storybook-addon-test-codegen@npm%3A1.2.0#~/.yarn/patches/storybook-addon-test-codegen-npm-1.2.0-9550d5ad4c.patch",
     const storybookDependencies = Object.keys(allDependencies)
       .filter((dep) => dep.includes('storybook'))
       .filter((dep) => !isCorePackage(dep) && !isSatelliteAddon(dep));

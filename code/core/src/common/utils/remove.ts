@@ -1,11 +1,10 @@
 import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
+import { prompt } from 'storybook/internal/node-logger';
 
 import { dedent } from 'ts-dedent';
 
 import type { JsPackageManager } from '../js-package-manager';
 import { getConfigInfo } from './get-storybook-info';
-
-const logger = console;
 
 export type RemoveAddonOptions = {
   packageManager: JsPackageManager;
@@ -28,19 +27,20 @@ export async function removeAddon(addon: string, options: RemoveAddonOptions) {
   const { mainConfigPath, configDir } = getConfigInfo(options.configDir);
 
   if (typeof configDir === 'undefined') {
+    // eslint-disable-next-line local-rules/no-uncategorized-errors
     throw new Error(dedent`
       Unable to find storybook config directory
     `);
   }
 
   if (!mainConfigPath) {
-    logger.error('Unable to find storybook main.js config');
+    prompt.error('Unable to find storybook main.js config');
     return;
   }
   const main = await readConfig(mainConfigPath);
 
   // remove from package.json
-  logger.log(`Uninstalling ${addon}`);
+  prompt.debug(`Uninstalling ${addon}`);
   await packageManager.removeDependencies([addon]);
 
   if (!skipInstall) {
@@ -48,11 +48,11 @@ export async function removeAddon(addon: string, options: RemoveAddonOptions) {
   }
 
   // add to main.js
-  logger.log(`Removing '${addon}' from main.js addons field.`);
+  prompt.debug(`Removing '${addon}' from main.js addons field.`);
   try {
     main.removeEntryFromArray(['addons'], addon);
     await writeConfig(main);
   } catch (err) {
-    logger.warn(`Failed to remove '${addon}' from main.js addons field.`);
+    prompt.warn(`Failed to remove '${addon}' from main.js addons field.`);
   }
 }

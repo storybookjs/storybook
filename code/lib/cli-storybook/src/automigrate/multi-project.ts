@@ -133,15 +133,21 @@ export async function promptForAutomigrations(
   }
 
   // Create choices for multiselect prompt
-  const choices = automigrations.map((am) => ({
-    value: am.fix.id,
-    label: `${am.fix.id} (${formatProjectDirs(am.projects)})`,
-    hint: am.fix.prompt(am.result),
-  }));
+  const choices = automigrations.map((am) => {
+    const hint = [];
 
-  prompt.log(dedent`
-    We have detected the following automigrations which are applicable for your Storybook project(s):
-  `);
+    hint.push(`${am.fix.prompt(am.result)}`);
+
+    if (am.fix.link) {
+      hint.push(`More info: ${picocolors.blue(am.fix.link)}`);
+    }
+
+    return {
+      value: am.fix.id,
+      label: `${am.fix.id} (${formatProjectDirs(am.projects)})`,
+      hint: hint.join('\n'),
+    };
+  });
 
   const selectedIds = await prompt.multiselect({
     message: 'Select automigrations to run',
@@ -173,14 +179,16 @@ export async function runAutomigrationsForProjects(
 
   // Run automigrations for each project
   for (const [configDir, automigrations] of projectAutomigrations) {
-    prompt.log(`\n📦 Running automigrations for ${picocolors.cyan(configDir)}:`);
-
     const project = automigrations[0].projects.find((p) => p.configDir === configDir);
 
     if (!project) {
       continue;
     }
 
+    const projectName = picocolors.cyan(shortenPath(project.configDir));
+    const taskLog = prompt.taskLog({
+      title: `Running automigrations for ${projectName}:`,
+    });
     const fixResults: Record<FixId, FixStatus> = {};
 
     for (const automigration of automigrations) {
@@ -193,7 +201,7 @@ export async function runAutomigrationsForProjects(
             ? await fix.promptType(result)
             : (fix.promptType ?? 'auto');
 
-        prompt.log(`  - ${picocolors.cyan(fix.id)}...`);
+        taskLog.message(`  - ${picocolors.cyan(fix.id)}...`);
 
         if (promptType === 'manual') {
           // For manual migrations, show the prompt and mark as manual
@@ -221,13 +229,14 @@ export async function runAutomigrationsForProjects(
 
           await fix.run(runOptions);
           fixResults[fix.id] = FixStatus.SUCCEEDED;
-          prompt.log(`    ✅ Completed`);
         }
       } catch (error) {
         fixResults[fix.id] = FixStatus.FAILED;
-        prompt.log(`    ❌ Failed: ${error instanceof Error ? error.message : String(error)}`);
+        taskLog.error(`    ❌ Failed: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
+
+    taskLog.success(`Completed automigrations for ${projectName}`);
 
     projectResults[configDir] = fixResults;
   }
@@ -237,7 +246,6 @@ export async function runAutomigrationsForProjects(
 
 export async function runAutomigrations(
   projects: CollectProjectsSuccessResult[],
-  gitRoot: string,
   options: UpgradeOptions
 ) {
   // Prepare project data for automigrations
@@ -252,6 +260,8 @@ export async function runAutomigrations(
     storiesPaths: project.storiesPaths,
   }));
 
+  prompt.log(`Detecting automigrations for ${projectAutomigrationData.length} projects...`);
+
   // Collect all applicable automigrations across all projects
   const detectedAutomigrations = await collectAutomigrationsAcrossProjects({
     fixes: allFixes,
@@ -262,7 +272,7 @@ export async function runAutomigrations(
   });
 
   // Prompt user to select which automigrations to run
-  const selectedAutomigrations = await promptForAutomigrations(detectedAutomigrations, gitRoot, {
+  const selectedAutomigrations = await promptForAutomigrations(detectedAutomigrations, {
     dryRun: options.dryRun,
     yes: options.yes,
   });

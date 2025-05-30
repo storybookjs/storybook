@@ -272,6 +272,7 @@ export async function runFixes({
 
     try {
       if (shouldRunFix(f, beforeVersion, storybookVersion, !!isUpgrade)) {
+        prompt.debug(`Running ${picocolors.cyan(f.id)} migration checks`);
         result = await f.check({
           packageManager,
           configDir,
@@ -282,6 +283,7 @@ export async function runFixes({
           mainConfigPath,
           storiesPaths,
         });
+        prompt.debug(`End of ${picocolors.cyan(f.id)} migration checks`);
       }
     } catch (error) {
       prompt.warn(`⚠️  failed to check fix ${picocolors.bold(f.id)}`);

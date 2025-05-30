@@ -1,3 +1,5 @@
+import { join } from 'node:path';
+
 import { globalSettings } from 'storybook/internal/cli';
 import {
   JsPackageManagerFactory,
@@ -37,6 +39,7 @@ const command = (name: string) =>
     )
     .option('--debug', 'Get more logs in debug mode', false)
     .option('--enable-crash-reports', 'Enable sending crash reports to telemetry data')
+    .option('--write-logs', 'Write all debug logs to a file at the end of the run')
     .option(
       '--log-level <trace | debug | info | warn | error | silent>',
       'Define log level',
@@ -52,6 +55,14 @@ const command = (name: string) =>
         await globalSettings();
       } catch (e) {
         consoleLogger.info('Error loading global settings', e);
+      }
+    })
+    .hook('postAction', async (self) => {
+      const options = self.opts();
+      if (options.writeLogs) {
+        const logFile = join(process.cwd(), 'storybook-debug.log');
+        await prompt.writeLogsToFile(logFile);
+        prompt.outro(`Storybook debug logs can be found at: ${logFile}`);
       }
     });
 
@@ -128,7 +139,7 @@ command('upgrade')
     '-c, --config-dir <dir-name...>',
     'Directory(ies) where to load Storybook configurations from'
   )
-  .action(async (options: UpgradeOptions) => upgrade(options).catch(() => process.exit(1)));
+  .action(async (options: UpgradeOptions) => upgrade(options));
 
 command('info')
   .description('Prints debugging information about the local environment')

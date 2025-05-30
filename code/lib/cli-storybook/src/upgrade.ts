@@ -1,6 +1,6 @@
 import type { PackageManagerName } from 'storybook/internal/common';
 import { JsPackageManagerFactory, isCorePackage } from 'storybook/internal/common';
-import { logger, prompt } from 'storybook/internal/node-logger';
+import { prompt } from 'storybook/internal/node-logger';
 import {
   UpgradeStorybookToLowerVersionError,
   UpgradeStorybookUnknownCurrentVersionError,
@@ -14,6 +14,8 @@ import { dedent } from 'ts-dedent';
 
 import { processAutoblockerResults } from './autoblock/utils';
 import { runAutomigrations } from './automigrate/multi-project';
+import type { FixId } from './automigrate/types';
+import { FixStatus } from './automigrate/types';
 import { runMultiProjectDoctor } from './doctor';
 import type { ProjectDoctorData } from './doctor/types';
 import { getProjects, shortenPath, upgradeStorybookDependencies } from './util';
@@ -55,8 +57,7 @@ const deprecatedPackages = [
 
 const formatPackage = (pkg: Package) => `${pkg.package}@${pkg.version}`;
 
-const warnPackages = (pkgs: Package[]) =>
-  pkgs.forEach((pkg) => logger.warn(`- ${formatPackage(pkg)}`));
+const warnPackages = (pkgs: Package[]) => pkgs.map((pkg) => `- ${formatPackage(pkg)}`).join('\n');
 
 export const checkVersionConsistency = () => {
   const lines = spawnSync('npm', ['ls'], { stdio: 'pipe', shell: true })
@@ -67,30 +68,33 @@ export const checkVersionConsistency = () => {
     .filter((item): item is NonNullable<typeof item> => !!item)
     .filter((pkg) => isCorePackage(pkg.package));
   if (!storybookPackages.length) {
-    logger.warn('No storybook core packages found.');
-    logger.warn(`'npm ls | grep storybook' can show if multiple versions are installed.`);
+    prompt.warn('No storybook core packages found.');
+    prompt.warn(`'npm ls | grep storybook' can show if multiple versions are installed.`);
     return;
   }
   storybookPackages.sort((a, b) => semver.rcompare(a.version, b.version));
   const latestVersion = storybookPackages[0].version;
   const outdated = storybookPackages.filter((pkg) => pkg.version !== latestVersion);
   if (outdated.length > 0) {
-    logger.warn(
-      `Found ${outdated.length} outdated packages (relative to '${formatPackage(
+    prompt.warn(
+      dedent`Found ${outdated.length} outdated packages (relative to '${formatPackage(
         storybookPackages[0]
-      )}')`
+      )}')
+      Please make sure your packages are updated to ensure a consistent experience:
+
+      ${warnPackages(outdated)}`
     );
-    logger.warn('Please make sure your packages are updated to ensure a consistent experience.');
-    warnPackages(outdated);
   }
 
   deprecatedPackages.forEach(({ minVersion, url, deprecations }) => {
     if (semver.gte(latestVersion, minVersion)) {
       const deprecated = storybookPackages.filter((pkg) => deprecations.includes(pkg.package));
       if (deprecated.length > 0) {
-        logger.warn(`Found ${deprecated.length} deprecated packages since ${minVersion}`);
-        logger.warn(`See ${url}`);
-        warnPackages(deprecated);
+        prompt.warn(
+          dedent`Found ${deprecated.length} deprecated packages since ${minVersion}
+          See ${url}
+          ${warnPackages(deprecated)}`
+        );
       }
     }
   });
@@ -108,6 +112,54 @@ export type UpgradeOptions = {
   fixId?: string;
   skipInstall?: boolean;
 };
+
+/** Logs the results of the upgrade process, including project categorization and diagnostic messages */
+function logUpgradeResults(projectResults: Record<string, Record<FixId, FixStatus>>) {
+  // Display upgrade results summary
+  const successfulProjects: string[] = [];
+  const failedProjects: string[] = [];
+  const projectsWithNoFixes: string[] = [];
+
+  Object.entries(projectResults).forEach(([configDir, fixResults]) => {
+    const hasFailures = Object.values(fixResults).some(
+      (status) => status === FixStatus.FAILED || status === FixStatus.CHECK_FAILED
+    );
+    const hasSuccessfulFixes = Object.values(fixResults).some(
+      (status) => status === FixStatus.SUCCEEDED || status === FixStatus.MANUAL_SUCCEEDED
+    );
+
+    if (hasFailures) {
+      failedProjects.push(configDir);
+    } else if (hasSuccessfulFixes) {
+      successfulProjects.push(configDir);
+    } else if (Object.keys(fixResults).length === 0) {
+      projectsWithNoFixes.push(configDir);
+    }
+  });
+
+  // If there are any failures, show detailed summary
+  if (failedProjects.length > 0) {
+    // Display appropriate messages based on results
+    if (successfulProjects.length > 0) {
+      const projectList = successfulProjects
+        .map((dir) => picocolors.cyan(shortenPath(dir)))
+        .join(', ');
+      prompt.log(`\n${picocolors.green('✅ Successfully upgraded:')} ${projectList}`);
+    }
+
+    const projectList = failedProjects.map((dir) => picocolors.cyan(shortenPath(dir))).join(', ');
+    prompt.log(`\n${picocolors.red('❌ Failed to upgrade:')} ${projectList}`);
+
+    if (projectsWithNoFixes.length > 0) {
+      const projectList = projectsWithNoFixes
+        .map((dir) => picocolors.cyan(shortenPath(dir)))
+        .join(', ');
+      prompt.log(`\n${picocolors.yellow('ℹ️  No changes needed:')} ${projectList}`);
+    }
+  } else {
+    prompt.log(`\n${picocolors.green('Your project(s) have been upgraded successfully! 🎉')}`);
+  }
+}
 
 export async function upgrade(options: UpgradeOptions): Promise<void> {
   prompt.intro('Storybook Upgrade');
@@ -170,7 +222,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
   // AUTOMIGRATIONS - New multi-project flow
 
   // Run automigrations for all projects
-  const projectResults = await runAutomigrations(projects, gitRoot, options);
+  const projectResults = await runAutomigrations(projects, options);
 
   // Install dependencies
   const rootPackageManager =
@@ -178,12 +230,9 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       ? JsPackageManagerFactory.getPackageManager({ force: options.packageManager })
       : projects[0].packageManager;
 
-  prompt.debug('Installing dependencies...');
   await rootPackageManager.installDependencies();
 
   // Run doctor for each project
-  prompt.debug('Running doctor...');
-
   const doctorProjects: ProjectDoctorData[] = projects.map((project) => ({
     configDir: project.configDir,
     packageManager: project.packageManager,
@@ -191,11 +240,9 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     mainConfig: project.mainConfig,
   }));
 
-  // are we installing stuff before this
-  console.log({ doctorProjects });
-  await runMultiProjectDoctor(doctorProjects, gitRoot);
+  prompt.log('🩺 Checking the health of your project(s)..');
+  await runMultiProjectDoctor(doctorProjects);
 
-  prompt.debug('Sending telemetry...');
   // TELEMETRY
   if (!options.disableTelemetry) {
     for (const project of projects) {
@@ -209,7 +256,9 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     }
   }
 
-  logger.plain(`\n${picocolors.green('Your project(s) have been upgraded successfully! 🎉')}`);
+  // Display upgrade results summary
+  logUpgradeResults(projectResults);
+
   // TODO: if multiple projects, multi-upgrade telemetry with e.g.
   // { success: X, fail: Y, incomplete: Z }
 }

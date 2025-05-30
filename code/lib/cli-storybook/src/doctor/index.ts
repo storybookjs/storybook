@@ -3,7 +3,7 @@ import { rename, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { temporaryFile } from 'storybook/internal/common';
-import type { JsPackageManager, PackageManagerName } from 'storybook/internal/common';
+import { JsPackageManager } from 'storybook/internal/common';
 import { prompt } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
@@ -12,17 +12,23 @@ import { dedent } from 'ts-dedent';
 
 import { cleanLog } from '../automigrate/helpers/cleanLog';
 import { getStorybookData } from '../automigrate/helpers/mainConfigFile';
+import { shortenPath } from '../util';
 import { getDuplicatedDepsWarnings } from './getDuplicatedDepsWarnings';
 import {
   getIncompatiblePackagesSummary,
   getIncompatibleStorybookPackages,
 } from './getIncompatibleStorybookPackages';
 import { getMismatchingVersionsWarnings } from './getMismatchingVersionsWarning';
-import type { DiagnosticDoctorData, DoctorCheckResult, DoctorOptions } from './types';
 import { DiagnosticType as DiagType } from './types';
-import type { DiagnosticResult, DiagnosticType, ProjectDoctorData } from './types';
+import type {
+  DiagnosticDoctorData,
+  DiagnosticResult,
+  DiagnosticType,
+  DoctorCheckResult,
+  DoctorOptions,
+  ProjectDoctorData,
+} from './types';
 
-const logger = console;
 const LOG_FILE_NAME = 'doctor-storybook.log';
 const LOG_FILE_PATH = join(process.cwd(), LOG_FILE_NAME);
 let TEMP_LOG_FILE_PATH = '';
@@ -82,19 +88,16 @@ export async function collectDoctorResultsAcrossProjects(
 }
 
 /** Displays consolidated doctor results across all projects */
-export function displayDoctorResults(
-  diagnosticResults: DiagnosticResult[],
-  gitRoot: string = process.cwd()
-): boolean {
+export function displayDoctorResults(diagnosticResults: DiagnosticResult[]): boolean {
   if (diagnosticResults.length === 0) {
-    logger.info(`🥳 Your Storybook project looks good!`);
+    prompt.log(`🥳 Your Storybook project looks good!`);
     return false;
   }
 
   // Format project directories relative to git root
   const formatProjectDirs = (projects: DiagnosticDoctorData[]) => {
     const relativeDirs = projects.map((p) => {
-      const relativeDir = p.configDir.replace(gitRoot, '') || '.';
+      const relativeDir = shortenPath(p.configDir) || '.';
       return relativeDir.startsWith('/') ? relativeDir.slice(1) : relativeDir;
     });
 
@@ -104,8 +107,6 @@ export function displayDoctorResults(
     const remaining = relativeDirs.length - 3;
     return `${relativeDirs.slice(0, 3).join(', ')}${remaining > 0 ? ` and ${remaining} more...` : ''}`;
   };
-
-  logger.info('🩺 Doctor results:\n');
 
   diagnosticResults.forEach((diagnostic) => {
     const projectsText = formatProjectDirs(diagnostic.projects);
@@ -118,17 +119,13 @@ export function displayDoctorResults(
     'npx storybook doctor'
   )}`;
 
-  logger.info();
-  logger.info(commandMessage);
+  prompt.log(commandMessage);
 
   return true;
 }
 
 /** Runs doctor checks across multiple projects */
-export async function runMultiProjectDoctor(
-  projects: ProjectDoctorData[],
-  gitRoot: string
-): Promise<boolean> {
+export async function runMultiProjectDoctor(projects: ProjectDoctorData[]): Promise<boolean> {
   if (projects.length === 0) {
     return false;
   }
@@ -141,7 +138,7 @@ export async function runMultiProjectDoctor(
   }));
 
   const diagnosticResults = await collectDoctorResultsAcrossProjects(projectOptions);
-  return displayDoctorResults(diagnosticResults, gitRoot);
+  return displayDoctorResults(diagnosticResults);
 }
 
 /** Doctor function that can handle both single and multiple projects */
@@ -151,7 +148,7 @@ export const doctor = async ({
 }: DoctorOptions) => {
   await augmentLogsToFile();
 
-  logger.info('🩺 The doctor is checking the health of your Storybook..');
+  prompt.log('🩺 Checking the health of your Storybook..');
 
   try {
     const diagnosticResults: DiagnosticResult[] = [];
@@ -203,16 +200,13 @@ export const doctor = async ({
 
     // if diagnosis found issues, display a log file in the users cwd
     if (foundIssues) {
-      logger.info();
-      logger.info(`Full logs are available in ${picocolors.cyan(LOG_FILE_PATH)}`);
+      prompt.log(`Full logs are available in ${picocolors.cyan(LOG_FILE_PATH)}`);
       await rename(TEMP_LOG_FILE_PATH, join(process.cwd(), LOG_FILE_NAME));
     } else {
       await rm(TEMP_LOG_FILE_PATH, { recursive: true, force: true });
     }
-
-    logger.info();
   } catch (error) {
-    logger.error('Doctor failed:', error);
+    prompt.error('Doctor failed:' + String(error));
     await rename(TEMP_LOG_FILE_PATH, join(process.cwd(), LOG_FILE_NAME));
   }
 
@@ -257,7 +251,7 @@ export async function getDoctorDiagnostics({
   }
 
   // Check for missing storybook dependency
-  const hasStorybookDependency = !packageManager.packageJsonPaths.some(
+  const hasStorybookDependency = packageManager.packageJsonPaths.some(
     JsPackageManager.hasStorybookDependency
   );
 

@@ -16,8 +16,6 @@ import storybookPackagesVersions from '../versions';
 import type { PackageJson, PackageJsonWithDepsAndDevDeps } from './PackageJson';
 import type { InstallationMetadata } from './types';
 
-const logger = console;
-
 export type PackageManagerName = 'npm' | 'yarn1' | 'yarn2' | 'pnpm' | 'bun';
 
 type StorybookPackage = keyof typeof storybookPackagesVersions;
@@ -225,8 +223,8 @@ export abstract class JsPackageManager {
           writeOutputToFile
         );
       } catch (e: any) {
-        logger.error('\nAn error occurred while installing dependencies:');
-        logger.log(e.message);
+        prompt.error('\nAn error occurred while installing dependencies:');
+        prompt.log(e.message);
         throw new HandledError(e);
       }
     }
@@ -268,7 +266,7 @@ export abstract class JsPackageManager {
           break;
         }
       } catch (e) {
-        logger.warn(`Could not process ${pjPath} for dependency removal: ${String(e)}`);
+        prompt.warn(`Could not process ${pjPath} for dependency removal: ${String(e)}`);
       }
     }
   }
@@ -347,11 +345,11 @@ export abstract class JsPackageManager {
       latest = await this.latestVersion(packageName, constraint);
     } catch (e) {
       if (current) {
-        logger.warn(`\n     ${picocolors.yellow(String(e))}`);
+        prompt.warn(`\n     ${picocolors.yellow(String(e))}`);
         return current;
       }
 
-      logger.error(`\n     ${picocolors.red(String(e))}`);
+      prompt.error(`\n     ${picocolors.red(String(e))}`);
       throw new HandledError(e);
     }
 

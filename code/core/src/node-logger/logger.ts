@@ -3,13 +3,14 @@ import boxen from 'boxen';
 
 import { logTracker } from './log-tracker';
 
-const USE_CLACK = true;
+const USE_CLACK = process.env.USE_CLACK === 'false' ? false : true;
 
 const LOG_FUNCTIONS = {
   log: USE_CLACK ? clack.log.message : console.log,
   warn: USE_CLACK ? clack.log.warn : console.warn,
   error: USE_CLACK ? clack.log.error : console.error,
   intro: USE_CLACK ? clack.intro : console.log,
+  outro: USE_CLACK ? clack.outro : console.log,
 };
 
 // Log level types and state
@@ -111,6 +112,7 @@ export const logBox = (message: string, style?: BoxenOptions) => {
   if (shouldLog('info')) {
     logTracker.addLog('info', message);
     if (USE_CLACK) {
+      log('');
       console.log(
         boxen(message, {
           borderStyle: 'round',
@@ -137,4 +139,9 @@ export const logBox = (message: string, style?: BoxenOptions) => {
 export const intro = (message: string) => {
   logTracker.addLog('info', message);
   LOG_FUNCTIONS.intro(message);
+};
+
+export const outro = (message: string) => {
+  logTracker.addLog('info', message);
+  LOG_FUNCTIONS.outro(message);
 };

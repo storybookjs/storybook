@@ -221,6 +221,7 @@ const validateUpgradeCompatibility = (
  */
 export const findStorybookProjects = async (cwd: string = process.cwd()): Promise<string[]> => {
   try {
+    prompt.debug(`Finding Storybook projects...`);
     // Find all .storybook directories, accounting for custom config dirs later
     const storybookDirs = await globby(STORYBOOK_DIR_PATTERN, {
       cwd,
@@ -229,6 +230,8 @@ export const findStorybookProjects = async (cwd: string = process.cwd()): Promis
       absolute: true,
       onlyDirectories: true,
     });
+
+    prompt.debug(`Found ${storybookDirs.length} Storybook projects`);
 
     if (storybookDirs.length === 0) {
       const answer = await prompt.text({
@@ -404,21 +407,20 @@ export const collectProjects = async (
 ): Promise<CollectProjectsResult[]> => {
   const currentCLIVersion = versions.storybook;
 
-  const task = prompt.spinner();
-  task.start(`Scanning projects`);
+  const task = prompt.taskLog({ title: 'Scanning projects' });
 
   const projectPromises = configDirs.map((configDir) =>
     processProject({
       configDir,
       options,
       currentCLIVersion,
-      onScanStart: () => task.message(`Scanning ${shortenPath(configDir)}`),
+      onScanStart: () => task.message(shortenPath(configDir)),
     })
   );
 
   const result = await Promise.all(projectPromises);
 
-  task.stop(`Found ${result.length} project(s)`);
+  task.success(`Found ${result.length} project(s)`);
   return result;
 };
 
@@ -666,13 +668,13 @@ export const getProjects = async (
   options: UpgradeOptions
 ): Promise<CollectProjectsSuccessResult[] | undefined> => {
   try {
+    prompt.log(`Detecting projects to upgrade...`);
     // Determine configuration directories
     let detectedConfigDirs: string[] = options.configDir ?? [];
     if (!options.configDir || options.configDir.length === 0) {
       detectedConfigDirs = await findStorybookProjects();
     }
 
-    prompt.debug(`Collecting projects to upgrade...`);
     const projects = await collectProjects(options, detectedConfigDirs);
 
     // Separate valid and error projects

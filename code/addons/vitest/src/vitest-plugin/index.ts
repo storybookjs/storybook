@@ -432,10 +432,12 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       name: 'storybook:workspace-name-override',
       config: {
         order: 'pre',
-        handler: (config) => {
-          config.test ??= {};
-          config.test.name = projectName;
-          return config;
+        handler: () => {
+          return {
+            test: {
+              name: projectName,
+            },
+          };
         },
       },
     });

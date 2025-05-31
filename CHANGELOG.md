@@ -1,3 +1,7 @@
+## 9.0.2
+
+- CLI: Respect --skip-install in postinstall scripts - [#31605](https://github.com/storybookjs/storybook/pull/31605), thanks @yannbf!
+
 ## 9.0.1
 
 - Angular: Include 20.x in version range - [#31602](https://github.com/storybookjs/storybook/pull/31602), thanks @shilman!

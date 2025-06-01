@@ -653,18 +653,27 @@ const handleMultipleProjects = async (
  * @example
  *
  * ```typescript
- * const projects = await getProjects({ configDir: ['/path/to/.storybook'] });
- * if (projects) {
- *   console.log(`Found ${projects.length} projects to upgrade`);
+ * const result = await getProjects({ configDir: ['/path/to/.storybook'] });
+ * if (result) {
+ *   console.log(
+ *     `Found ${result.selectedProjects.length} of ${result.allProjects.length} projects to upgrade`
+ *   );
  * }
  * ```
  *
  * @param options - Upgrade options
- * @returns Promise resolving to array of valid projects or undefined
+ * @returns Promise resolving to object with all detected projects and selected projects, or
+ *   undefined
  */
 export const getProjects = async (
   options: UpgradeOptions
-): Promise<CollectProjectsSuccessResult[] | undefined> => {
+): Promise<
+  | {
+      allProjects: CollectProjectsSuccessResult[];
+      selectedProjects: CollectProjectsSuccessResult[];
+    }
+  | undefined
+> => {
   try {
     const task = prompt.taskLog({ title: 'Detecting projects to upgrade...' });
 
@@ -688,7 +697,7 @@ export const getProjects = async (
 
     // Handle single project case
     if (validProjects.length === 1) {
-      return validProjects;
+      return { allProjects: validProjects, selectedProjects: validProjects };
     }
 
     // Handle case with only errors
@@ -707,7 +716,13 @@ export const getProjects = async (
     }
 
     // Handle multiple projects
-    return handleMultipleProjects(validProjects, errorProjects, detectedConfigDirs);
+    const selectedProjects = await handleMultipleProjects(
+      validProjects,
+      errorProjects,
+      detectedConfigDirs
+    );
+
+    return selectedProjects ? { allProjects: validProjects, selectedProjects } : undefined;
   } catch (error) {
     prompt.error('Failed to get projects');
     throw error;

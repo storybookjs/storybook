@@ -18,7 +18,12 @@ import type { FixId } from './automigrate/types';
 import { FixStatus } from './automigrate/types';
 import { displayDoctorResults, runMultiProjectDoctor } from './doctor';
 import type { ProjectDoctorData, ProjectDoctorResults } from './doctor/types';
-import { getProjects, shortenPath, upgradeStorybookDependencies } from './util';
+import {
+  type CollectProjectsSuccessResult,
+  getProjects,
+  shortenPath,
+  upgradeStorybookDependencies,
+} from './util';
 
 type Package = {
   package: string;
@@ -113,32 +118,83 @@ export type UpgradeOptions = {
   skipInstall?: boolean;
 };
 
+function getUpgradeResults(
+  projectResults: Record<string, Record<FixId, FixStatus>>,
+  doctorResults: Record<string, ProjectDoctorResults>
+) {
+  const successfulProjects: string[] = [];
+  const failedProjects: string[] = [];
+  const projectsWithNoFixes: string[] = [];
+
+  const allProjects = Object.entries(projectResults).map(([configDir, fixResults]) => {
+    const automigrationResults = Object.entries(fixResults).map(([fixId, status]) => {
+      const succeeded = status === FixStatus.SUCCEEDED || status === FixStatus.MANUAL_SUCCEEDED;
+      return {
+        fixId,
+        status,
+        succeeded,
+      };
+    });
+
+    const hasFailures = automigrationResults.some(
+      (fix) => fix.status === FixStatus.FAILED || fix.status === FixStatus.CHECK_FAILED
+    );
+    const hasSuccessfulFixes = automigrationResults.some(
+      (fix) => fix.status === FixStatus.SUCCEEDED || fix.status === FixStatus.MANUAL_SUCCEEDED
+    );
+    const noFixesNeeded = Object.keys(fixResults).length === 0;
+
+    // Determine if migration was successful (has successful fixes and no failures)
+    const migratedSuccessfully = hasSuccessfulFixes && !hasFailures;
+
+    // Check if doctor report exists
+    const hasDoctorReport = !!doctorResults[configDir];
+
+    // Categorize this project
+    if (hasFailures) {
+      failedProjects.push(configDir);
+    } else if (migratedSuccessfully) {
+      successfulProjects.push(configDir);
+    } else if (noFixesNeeded) {
+      projectsWithNoFixes.push(configDir);
+    }
+
+    return {
+      configDir,
+      migratedSuccessfully,
+      hasDoctorReport,
+      automigrations: {
+        fixes: automigrationResults,
+        noFixesNeeded,
+        hasFailures,
+        hasSuccessfulFixes,
+      },
+      doctor: doctorResults[configDir]
+        ? {
+            status: doctorResults[configDir].status,
+            isHealthy: doctorResults[configDir].status === 'healthy',
+          }
+        : null,
+    };
+  });
+
+  return {
+    allProjects,
+    successfulProjects,
+    failedProjects,
+    projectsWithNoFixes,
+  };
+}
+
 /** Logs the results of the upgrade process, including project categorization and diagnostic messages */
 function logUpgradeResults(
   projectResults: Record<string, Record<FixId, FixStatus>>,
   doctorResults: Record<string, ProjectDoctorResults>
 ) {
-  // Display upgrade results summary
-  const successfulProjects: string[] = [];
-  const failedProjects: string[] = [];
-  const projectsWithNoFixes: string[] = [];
-
-  Object.entries(projectResults).forEach(([configDir, fixResults]) => {
-    const hasFailures = Object.values(fixResults).some(
-      (status) => status === FixStatus.FAILED || status === FixStatus.CHECK_FAILED
-    );
-    const hasSuccessfulFixes = Object.values(fixResults).some(
-      (status) => status === FixStatus.SUCCEEDED || status === FixStatus.MANUAL_SUCCEEDED
-    );
-
-    if (hasFailures) {
-      failedProjects.push(configDir);
-    } else if (hasSuccessfulFixes) {
-      successfulProjects.push(configDir);
-    } else if (Object.keys(fixResults).length === 0) {
-      projectsWithNoFixes.push(configDir);
-    }
-  });
+  const { successfulProjects, failedProjects, projectsWithNoFixes } = getUpgradeResults(
+    projectResults,
+    doctorResults
+  );
 
   // If there are any failures, show detailed summary
   if (failedProjects.length > 0) {
@@ -170,117 +226,196 @@ function logUpgradeResults(
   }
 }
 
+interface MultiUpgradeTelemetryOptions {
+  allProjects: CollectProjectsSuccessResult[];
+  selectedProjects: CollectProjectsSuccessResult[];
+  projectResults: Record<string, Record<FixId, FixStatus>>;
+  doctorResults: Record<string, ProjectDoctorResults>;
+  hasUserInterrupted?: boolean;
+}
+
+async function sendMultiUpgradeTelemetry(options: MultiUpgradeTelemetryOptions) {
+  const {
+    allProjects,
+    selectedProjects,
+    projectResults,
+    doctorResults,
+    hasUserInterrupted = false,
+  } = options;
+
+  const { successfulProjects, failedProjects, projectsWithNoFixes } = getUpgradeResults(
+    projectResults,
+    doctorResults
+  );
+
+  // Calculate incomplete projects (projects that were supposed to be processed but have no results)
+  const processedProjects = new Set([
+    ...Object.keys(projectResults),
+    ...Object.keys(doctorResults),
+  ]);
+  const incompleteProjects = selectedProjects
+    .map((p) => p.configDir)
+    .filter((configDir) => !processedProjects.has(configDir));
+
+  try {
+    await telemetry('multi-upgrade', {
+      totalDetectedProjects: allProjects.length,
+      totalSelectedProjects: selectedProjects.length,
+      successfulProjects: successfulProjects.length,
+      failedProjects: failedProjects.length,
+      projectsWithNoFixes: projectsWithNoFixes.length,
+      incompleteProjects: incompleteProjects.length,
+      hasMultipleProjects: allProjects.length > 1,
+      hasUserInterrupted,
+    });
+  } catch (error) {
+    // Silently handle telemetry errors to avoid disrupting the upgrade process
+    prompt.debug(`Failed to send multi-upgrade telemetry: ${String(error)}`);
+  }
+}
+
 export async function upgrade(options: UpgradeOptions): Promise<void> {
   prompt.intro('Storybook Upgrade');
   // TODO: telemetry for upgrade start
-  const projects = await getProjects(options);
-  if (projects === undefined || projects.length === 0) {
+  const projectsResult = await getProjects(options);
+  if (projectsResult === undefined || projectsResult.selectedProjects.length === 0) {
     // nothing to upgrade
     return;
   }
 
-  // Handle autoblockers
-  const hasBlockers = processAutoblockerResults(projects, (message) => {
-    prompt.error(dedent`${message}`);
-  });
+  const { allProjects, selectedProjects: storybookProjects } = projectsResult;
 
-  if (hasBlockers) {
-    process.exit(1);
-  }
+  let automigrationResults: Record<string, Record<FixId, FixStatus>> = {};
+  let doctorResults: Record<string, ProjectDoctorResults> = {};
 
-  // Checks whether we can upgrade
-  projects.some((project) => {
-    if (!project.isCanary && lt(project.currentCLIVersion, project.beforeVersion)) {
-      throw new UpgradeStorybookToLowerVersionError({
-        beforeVersion: project.beforeVersion,
-        currentVersion: project.currentCLIVersion,
-      });
-    }
-
-    if (!project.beforeVersion) {
-      throw new UpgradeStorybookUnknownCurrentVersionError();
-    }
-  });
-
-  // Update dependencies in package.jsons for all projects
-  if (!options.dryRun) {
-    const task = prompt.taskLog({
-      title: `Fetching versions to update package.json files..`,
+  // Set up signal handling for interruptions
+  const handleInterruption = async () => {
+    prompt.log('\n\nUpgrade interrupted by user.');
+    await sendMultiUpgradeTelemetry({
+      allProjects,
+      selectedProjects: storybookProjects,
+      projectResults: automigrationResults,
+      doctorResults,
+      hasUserInterrupted: true,
     });
-    try {
-      const loggedPaths: string[] = [];
-      for (const project of projects) {
-        prompt.debug(
-          `Updating dependencies in ${picocolors.cyan(shortenPath(project.configDir))}...`
-        );
-        const packageJsonPaths = project.packageManager.packageJsonPaths.map(shortenPath);
-        const newPaths = packageJsonPaths.filter((path) => !loggedPaths.includes(path));
-        if (newPaths.length > 0) {
-          task.message(newPaths.join('\n'));
-          loggedPaths.push(...newPaths);
-        }
-        await upgradeStorybookDependencies({
-          packageManager: project.packageManager,
-          isCanary: project.isCanary,
-          isCLIOutdated: project.isCLIOutdated,
-          isCLIPrerelease: project.isCLIPrerelease,
-          isCLIExactLatest: project.isCLIExactLatest,
-          isCLIExactPrerelease: project.isCLIExactPrerelease,
+    process.exit(1);
+  };
+
+  process.on('SIGINT', handleInterruption);
+  process.on('SIGTERM', handleInterruption);
+
+  try {
+    // Handle autoblockers
+    const hasBlockers = processAutoblockerResults(storybookProjects, (message) => {
+      prompt.error(dedent`${message}`);
+    });
+
+    if (hasBlockers) {
+      process.exit(1);
+    }
+
+    // Checks whether we can upgrade
+    storybookProjects.some((project) => {
+      if (!project.isCanary && lt(project.currentCLIVersion, project.beforeVersion)) {
+        throw new UpgradeStorybookToLowerVersionError({
+          beforeVersion: project.beforeVersion,
+          currentVersion: project.currentCLIVersion,
         });
       }
-      task.success(`Updated package versions in package.json files`);
-    } catch (err) {
-      task.error(`Failed to upgrade dependencies: ${String(err)}`);
+
+      if (!project.beforeVersion) {
+        throw new UpgradeStorybookUnknownCurrentVersionError();
+      }
+    });
+
+    // Update dependencies in package.jsons for all projects
+    if (!options.dryRun) {
+      const task = prompt.taskLog({
+        title: `Fetching versions to update package.json files..`,
+      });
+      try {
+        const loggedPaths: string[] = [];
+        for (const project of storybookProjects) {
+          prompt.debug(
+            `Updating dependencies in ${picocolors.cyan(shortenPath(project.configDir))}...`
+          );
+          const packageJsonPaths = project.packageManager.packageJsonPaths.map(shortenPath);
+          const newPaths = packageJsonPaths.filter((path) => !loggedPaths.includes(path));
+          if (newPaths.length > 0) {
+            task.message(newPaths.join('\n'));
+            loggedPaths.push(...newPaths);
+          }
+          await upgradeStorybookDependencies({
+            packageManager: project.packageManager,
+            isCanary: project.isCanary,
+            isCLIOutdated: project.isCLIOutdated,
+            isCLIPrerelease: project.isCLIPrerelease,
+            isCLIExactLatest: project.isCLIExactLatest,
+            isCLIExactPrerelease: project.isCLIExactPrerelease,
+          });
+        }
+        task.success(`Updated package versions in package.json files`);
+      } catch (err) {
+        task.error(`Failed to upgrade dependencies: ${String(err)}`);
+      }
     }
-  }
 
-  // AUTOMIGRATIONS - New multi-project flow
+    // AUTOMIGRATIONS - New multi-project flow
 
-  // Run automigrations for all projects
-  const projectResults = await runAutomigrations(projects, options);
+    // Run automigrations for all projects
+    automigrationResults = await runAutomigrations(storybookProjects, options);
 
-  // Install dependencies
-  const rootPackageManager =
-    projects.length > 1
-      ? JsPackageManagerFactory.getPackageManager({ force: options.packageManager })
-      : projects[0].packageManager;
+    // Install dependencies
+    const rootPackageManager =
+      storybookProjects.length > 1
+        ? JsPackageManagerFactory.getPackageManager({ force: options.packageManager })
+        : storybookProjects[0].packageManager;
 
-  await rootPackageManager.installDependencies();
+    await rootPackageManager.installDependencies();
 
-  // Run doctor for each project
-  const doctorProjects: ProjectDoctorData[] = projects.map((project) => ({
-    configDir: project.configDir,
-    packageManager: project.packageManager,
-    storybookVersion: project.currentCLIVersion,
-    mainConfig: project.mainConfig,
-  }));
+    // Run doctor for each project
+    const doctorProjects: ProjectDoctorData[] = storybookProjects.map((project) => ({
+      configDir: project.configDir,
+      packageManager: project.packageManager,
+      storybookVersion: project.currentCLIVersion,
+      mainConfig: project.mainConfig,
+    }));
 
-  prompt.step('🩺 Checking the health of your project(s)..');
-  // TODO: Pass doctorResults to multi-upgrade telemetry
-  const doctorResults = await runMultiProjectDoctor(doctorProjects);
-  const hasIssues = displayDoctorResults(doctorResults);
-  if (hasIssues) {
-    logTracker.enableLogWriting();
-  }
+    prompt.step('🩺 Checking the health of your project(s)..');
+    // TODO: Pass doctorResults to multi-upgrade telemetry
+    doctorResults = await runMultiProjectDoctor(doctorProjects);
+    const hasIssues = displayDoctorResults(doctorResults);
+    if (hasIssues) {
+      logTracker.enableLogWriting();
+    }
 
-  // TELEMETRY
-  if (!options.disableTelemetry) {
-    for (const project of projects) {
-      const fixResults = projectResults[project.configDir] || {};
-      await telemetry('upgrade', {
-        beforeVersion: project.beforeVersion,
-        afterVersion: project.currentCLIVersion,
-        automigrationResults: fixResults,
-        automigrationPreCheckFailure: null,
-        // TODO: Discuss with Valentin
-        doctorResults: doctorResults[project.configDir]?.diagnostics || {},
+    // Display upgrade results summary
+    logUpgradeResults(automigrationResults, doctorResults);
+
+    // TELEMETRY
+    if (!options.disableTelemetry) {
+      for (const project of storybookProjects) {
+        const fixResults = automigrationResults[project.configDir] || {};
+        await telemetry('upgrade', {
+          beforeVersion: project.beforeVersion,
+          afterVersion: project.currentCLIVersion,
+          automigrationResults: fixResults,
+          automigrationPreCheckFailure: null,
+          // TODO: Discuss with Valentin
+          doctorResults: doctorResults[project.configDir]?.diagnostics || {},
+        });
+      }
+
+      await sendMultiUpgradeTelemetry({
+        allProjects,
+        selectedProjects: storybookProjects,
+        projectResults: automigrationResults,
+        doctorResults,
       });
     }
+  } finally {
+    // Clean up signal handlers
+    process.removeListener('SIGINT', handleInterruption);
+    process.removeListener('SIGTERM', handleInterruption);
   }
-
-  // Display upgrade results summary
-  logUpgradeResults(projectResults, doctorResults);
-
-  // TODO: if multiple projects, multi-upgrade telemetry with e.g.
-  // { success: X, fail: Y, incomplete: Z }
 }

@@ -1,3 +1,8 @@
+## 9.0.4
+
+- Addon Vitest: Fix path comparison on Windows - [#31630](https://github.com/storybookjs/storybook/pull/31630), thanks @valentinpalkovic!
+- Addon Vitest: Fix path comparison on Windows - [#31634](https://github.com/storybookjs/storybook/pull/31634), thanks @valentinpalkovic!
+
 ## 9.0.3
 
 - Addon-Vitest: Properly merge configs - [#31629](https://github.com/storybookjs/storybook/pull/31629), thanks @valentinpalkovic!

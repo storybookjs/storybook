@@ -1,9 +1,4 @@
-import { rm } from 'node:fs/promises';
-import { join } from 'node:path';
-
 import { describe, expect, it, vi } from 'vitest';
-
-import { readFile } from 'fs/promises';
 
 import { createLogStream, isCorePackage } from './cli';
 

@@ -142,9 +142,12 @@ export async function promptForAutomigrations(
       hint.push(`More info: ${picocolors.blue(am.fix.link)}`);
     }
 
+    const label =
+      am.projects.length > 1 ? `${am.fix.id} (${formatProjectDirs(am.projects)})` : am.fix.id;
+
     return {
       value: am.fix.id,
-      label: `${am.fix.id} (${formatProjectDirs(am.projects)})`,
+      label,
       hint: hint.join('\n'),
     };
   });

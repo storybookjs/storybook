@@ -700,11 +700,10 @@ export const getProjects = async (
         })
         .join('\n');
 
-      prompt.log(
-        `❌ Storybook found errors while collecting data for the following projects:\n${errorMessage}`
+      // eslint-disable-next-line local-rules/no-uncategorized-errors
+      throw new Error(
+        `❌ Storybook found errors while collecting data for the following projects:\n${errorMessage}\nPlease fix the errors and run the upgrade command again.`
       );
-      prompt.log('Please fix the errors and run the upgrade command again.');
-      return [];
     }
 
     // Handle multiple projects

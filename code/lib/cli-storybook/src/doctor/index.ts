@@ -1,16 +1,10 @@
-import { createWriteStream } from 'node:fs';
-import { rename, rm } from 'node:fs/promises';
-import { join } from 'node:path';
-
-import { temporaryFile } from 'storybook/internal/common';
 import { JsPackageManager } from 'storybook/internal/common';
-import { prompt } from 'storybook/internal/node-logger';
+import { logTracker, prompt } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
-import { cleanLog } from '../automigrate/helpers/cleanLog';
 import { getStorybookData } from '../automigrate/helpers/mainConfigFile';
 import { shortenPath } from '../util';
 import { getDuplicatedDepsWarnings } from './getDuplicatedDepsWarnings';
@@ -19,103 +13,68 @@ import {
   getIncompatibleStorybookPackages,
 } from './getIncompatibleStorybookPackages';
 import { getMismatchingVersionsWarnings } from './getMismatchingVersionsWarning';
-import { DiagnosticType as DiagType } from './types';
+import { DiagnosticType as DiagType, DiagnosticStatus } from './types';
 import type {
-  DiagnosticDoctorData,
   DiagnosticResult,
   DiagnosticType,
   DoctorCheckResult,
   DoctorOptions,
   ProjectDoctorData,
+  ProjectDoctorResults,
 } from './types';
 
-const LOG_FILE_NAME = 'doctor-storybook.log';
-const LOG_FILE_PATH = join(process.cwd(), LOG_FILE_NAME);
-let TEMP_LOG_FILE_PATH = '';
+/** Displays project-based doctor results (similar to automigration pattern) */
+export function displayDoctorResults(
+  projectResults: Record<string, ProjectDoctorResults>
+): boolean {
+  const projectCount = Object.keys(projectResults).length;
 
-const originalStdOutWrite = process.stdout.write.bind(process.stdout);
-const originalStdErrWrite = process.stderr.write.bind(process.stdout);
-
-const augmentLogsToFile = async () => {
-  TEMP_LOG_FILE_PATH = await temporaryFile({ name: LOG_FILE_NAME });
-  const logStream = createWriteStream(TEMP_LOG_FILE_PATH);
-
-  process.stdout.write = (d: string) => {
-    originalStdOutWrite(d);
-    return logStream.write(cleanLog(d));
-  };
-  process.stderr.write = (d: string) => {
-    return logStream.write(cleanLog(d));
-  };
-};
-
-const cleanup = () => {
-  process.stdout.write = originalStdOutWrite;
-  process.stderr.write = originalStdErrWrite;
-};
-
-/** Collects all diagnostic results across multiple projects */
-export async function collectDoctorResultsAcrossProjects(
-  projectOptions: ProjectDoctorData[]
-): Promise<DiagnosticResult[]> {
-  const diagnosticMap = new Map<DiagnosticType, DiagnosticResult>();
-
-  for (const options of projectOptions) {
-    try {
-      const checkResults = await getDoctorDiagnostics(options);
-
-      for (const checkResult of checkResults) {
-        const existing = diagnosticMap.get(checkResult.type);
-        if (existing) {
-          // Add project to existing diagnostic
-          existing.projects.push(checkResult.project);
-        } else {
-          // Create new diagnostic entry
-          diagnosticMap.set(checkResult.type, {
-            type: checkResult.type,
-            title: checkResult.title,
-            message: checkResult.message,
-            projects: [checkResult.project],
-          });
-        }
-      }
-    } catch (error) {
-      console.error(`Failed to run doctor checks for project ${options.configDir}:`, error);
-    }
-  }
-
-  return Array.from(diagnosticMap.values());
-}
-
-/** Displays consolidated doctor results across all projects */
-export function displayDoctorResults(diagnosticResults: DiagnosticResult[]): boolean {
-  if (diagnosticResults.length === 0) {
-    prompt.log(`🥳 Your Storybook project looks good!`);
+  if (projectCount === 0) {
     return false;
   }
 
-  // Format project directories relative to git root
-  const formatProjectDirs = (projects: DiagnosticDoctorData[]) => {
-    const relativeDirs = projects.map((p) => {
-      const relativeDir = shortenPath(p.configDir) || '.';
-      return relativeDir.startsWith('/') ? relativeDir.slice(1) : relativeDir;
-    });
+  const hasAnyIssues = Object.values(projectResults).some((result) => result.status !== 'healthy');
 
-    if (relativeDirs.length <= 3) {
-      return relativeDirs.join(', ');
+  if (!hasAnyIssues) {
+    if (projectCount === 1) {
+      prompt.log(`🥳 Your Storybook project looks good!`);
+    } else {
+      prompt.log(`🥳 All ${projectCount} Storybook projects look good!`);
     }
-    const remaining = relativeDirs.length - 3;
-    return `${relativeDirs.slice(0, 3).join(', ')}${remaining > 0 ? ` and ${remaining} more...` : ''}`;
-  };
+    return false;
+  }
 
-  diagnosticResults.forEach((diagnostic) => {
-    const projectsText = formatProjectDirs(diagnostic.projects);
-    const title = `${diagnostic.title} (${picocolors.cyan(projectsText)})`;
+  // Display results for each project
+  Object.entries(projectResults).forEach(([configDir, result]) => {
+    const projectName = picocolors.cyan(shortenPath(configDir) || '.');
 
-    prompt.logBox(diagnostic.message, { title });
+    if (result.status === 'healthy') {
+      prompt.log(`✅ ${projectName}: No issues found`);
+    } else {
+      const issueCount = Object.values(result.diagnostics).filter(
+        (status) => status !== DiagnosticStatus.PASSED
+      ).length;
+      if (result.status == 'error') {
+        prompt.error(`${projectName}: ${issueCount} problem(s) found`);
+      } else {
+        prompt.warn(`${projectName}: ${issueCount} issue(s) found`);
+      }
+
+      // Display each diagnostic issue
+      Object.entries(result.diagnostics).forEach(([type, status]) => {
+        if (status !== DiagnosticStatus.PASSED) {
+          const message = result.messages[type as DiagnosticType];
+          if (message) {
+            prompt.logBox(message, {
+              title: type.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
+            });
+          }
+        }
+      });
+    }
   });
 
-  const commandMessage = `You can always recheck the health of your project by running:\n${picocolors.cyan(
+  const commandMessage = `You can always recheck the health of your project(s) by running:\n${picocolors.cyan(
     'npx storybook doctor'
   )}`;
 
@@ -125,9 +84,11 @@ export function displayDoctorResults(diagnosticResults: DiagnosticResult[]): boo
 }
 
 /** Runs doctor checks across multiple projects */
-export async function runMultiProjectDoctor(projects: ProjectDoctorData[]): Promise<boolean> {
+export async function runMultiProjectDoctor(
+  projects: ProjectDoctorData[]
+): Promise<Record<string, ProjectDoctorResults>> {
   if (projects.length === 0) {
-    return false;
+    return {};
   }
 
   const projectOptions: ProjectDoctorData[] = projects.map((project) => ({
@@ -137,8 +98,8 @@ export async function runMultiProjectDoctor(projects: ProjectDoctorData[]): Prom
     mainConfig: project.mainConfig,
   }));
 
-  const diagnosticResults = await collectDoctorResultsAcrossProjects(projectOptions);
-  return displayDoctorResults(diagnosticResults);
+  // Always return the project-based results structure
+  return await collectDoctorResultsByProject(projectOptions);
 }
 
 /** Doctor function that can handle both single and multiple projects */
@@ -146,71 +107,56 @@ export const doctor = async ({
   configDir: userSpecifiedConfigDir,
   packageManager: packageManagerName,
 }: DoctorOptions) => {
-  await augmentLogsToFile();
+  prompt.step('🩺 Checking the health of your Storybook..');
 
-  prompt.log('🩺 Checking the health of your Storybook..');
+  const diagnosticResults: DiagnosticResult[] = [];
+
+  let packageManager!: JsPackageManager;
+  let configDir!: string;
+  let storybookVersion!: string;
+  let mainConfig!: StorybookConfigRaw;
 
   try {
-    const diagnosticResults: DiagnosticResult[] = [];
+    ({ packageManager, configDir, storybookVersion, mainConfig } = await getStorybookData({
+      configDir: userSpecifiedConfigDir,
+      packageManagerName,
+    }));
+  } catch (err: any) {
+    const title = 'Configuration Error';
+    let message: string;
 
-    let packageManager!: JsPackageManager;
-    let configDir!: string;
-    let storybookVersion!: string;
-    let mainConfig!: StorybookConfigRaw;
-
-    try {
-      ({ packageManager, configDir, storybookVersion, mainConfig } = await getStorybookData({
-        configDir: userSpecifiedConfigDir,
-        packageManagerName,
-      }));
-    } catch (err: any) {
-      const title = 'Configuration Error';
-      let message: string;
-
-      if (err.message.includes('No configuration files have been found')) {
-        message = dedent`
+    if (err.message.includes('No configuration files have been found')) {
+      message = dedent`
           Could not find or evaluate your Storybook main.js config directory at ${picocolors.blue(
             configDir || '.storybook'
           )} so the doctor command cannot proceed. You might be running this command in a monorepo or a non-standard project structure. If that is the case, please rerun this command by specifying the path to your Storybook config directory via the --config-dir option.
         `;
-      } else {
-        message = `❌ ${err.message}`;
-      }
-
-      diagnosticResults.push({
-        type: DiagType.CONFIGURATION_ERROR,
-        title,
-        message,
-        projects: [{ configDir }],
-      });
-    }
-
-    const doctorResults = await collectDoctorResultsAcrossProjects([
-      {
-        configDir,
-        packageManager,
-        storybookVersion,
-        mainConfig,
-      },
-    ]);
-
-    diagnosticResults.push(...doctorResults);
-
-    const foundIssues = displayDoctorResults(diagnosticResults);
-
-    // if diagnosis found issues, display a log file in the users cwd
-    if (foundIssues) {
-      prompt.log(`Full logs are available in ${picocolors.cyan(LOG_FILE_PATH)}`);
-      await rename(TEMP_LOG_FILE_PATH, join(process.cwd(), LOG_FILE_NAME));
     } else {
-      await rm(TEMP_LOG_FILE_PATH, { recursive: true, force: true });
+      message = `❌ ${err.message}`;
     }
-  } catch (error) {
-    prompt.error('Doctor failed:' + String(error));
-    await rename(TEMP_LOG_FILE_PATH, join(process.cwd(), LOG_FILE_NAME));
+
+    diagnosticResults.push({
+      type: DiagType.CONFIGURATION_ERROR,
+      title,
+      message,
+      projects: [{ configDir }],
+    });
   }
 
-  cleanup();
+  const doctorResults = await collectDoctorResultsByProject([
+    {
+      configDir,
+      packageManager,
+      storybookVersion,
+      mainConfig,
+    },
+  ]);
+
+  const foundIssues = displayDoctorResults(doctorResults);
+
+  if (foundIssues) {
+    logTracker.enableLogWriting();
+  }
 };
 
 /** Gets doctor diagnostic results for a single project */
@@ -324,4 +270,79 @@ export async function getDoctorDiagnostics({
   }
 
   return results;
+}
+
+export async function collectDoctorResultsByProject(
+  projectOptions: ProjectDoctorData[]
+): Promise<Record<string, ProjectDoctorResults>> {
+  const projectResults: Record<string, ProjectDoctorResults> = {};
+
+  for (const options of projectOptions) {
+    const { configDir } = options;
+
+    try {
+      const checkResults = await getDoctorDiagnostics(options);
+
+      const diagnostics: Record<DiagnosticType, DiagnosticStatus> = {} as Record<
+        DiagnosticType,
+        DiagnosticStatus
+      >;
+      const messages: Record<DiagnosticType, string> = {} as Record<DiagnosticType, string>;
+
+      // Initialize all diagnostic types as passed
+      Object.values(DiagType).forEach((type) => {
+        diagnostics[type] = DiagnosticStatus.PASSED;
+      });
+
+      let hasIssues = false;
+      let hasErrors = false;
+
+      // Process each check result
+      for (const checkResult of checkResults) {
+        if (checkResult.type === DiagType.CONFIGURATION_ERROR) {
+          diagnostics[checkResult.type] = DiagnosticStatus.ERROR;
+          hasErrors = true;
+        } else {
+          diagnostics[checkResult.type] = DiagnosticStatus.FAILED;
+          hasIssues = true;
+        }
+        messages[checkResult.type] = checkResult.message;
+      }
+
+      const status = hasErrors ? 'error' : hasIssues ? 'issues' : 'healthy';
+
+      projectResults[configDir] = {
+        configDir,
+        status,
+        diagnostics,
+        messages,
+      };
+    } catch (error) {
+      console.error(`Failed to run doctor checks for project ${configDir}:`, error);
+
+      // Mark as error state
+      const diagnostics: Record<DiagnosticType, DiagnosticStatus> = {} as Record<
+        DiagnosticType,
+        DiagnosticStatus
+      >;
+      const messages: Record<DiagnosticType, string> = {} as Record<DiagnosticType, string>;
+
+      Object.values(DiagType).forEach((type) => {
+        diagnostics[type] = DiagnosticStatus.PASSED;
+      });
+
+      diagnostics[DiagType.CONFIGURATION_ERROR] = DiagnosticStatus.ERROR;
+      messages[DiagType.CONFIGURATION_ERROR] =
+        `Failed to run doctor checks: ${error instanceof Error ? error.message : String(error)}`;
+
+      projectResults[configDir] = {
+        configDir,
+        status: 'error',
+        diagnostics,
+        messages,
+      };
+    }
+  }
+
+  return projectResults;
 }

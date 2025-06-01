@@ -1,6 +1,15 @@
-// Import everything to create the unified prompt object
-import { clearTrackedLogs, getTrackedLogs, writeLogsToFile } from './log-tracker';
-import { debug, error, getLogLevel, intro, log, logBox, outro, setLogLevel, warn } from './logger';
+import {
+  debug,
+  error,
+  getLogLevel,
+  intro,
+  log,
+  logBox,
+  outro,
+  setLogLevel,
+  step,
+  warn,
+} from './logger';
 import * as clackFunctions from './prompt-functions';
 import * as promptFunctions from './prompt-functions-prompts';
 import { executeTask, executeTaskWithSpinner } from './tasks';
@@ -16,12 +25,10 @@ export const prompt = {
   log,
   warn,
   error,
+  step,
   debug,
   executeTask,
   executeTaskWithSpinner,
-  writeLogsToFile,
-  getTrackedLogs,
-  clearTrackedLogs,
   setLogLevel,
   getLogLevel,
 };

@@ -1,6 +1,6 @@
 import type { PackageManagerName } from 'storybook/internal/common';
 import { JsPackageManagerFactory, isCorePackage } from 'storybook/internal/common';
-import { prompt } from 'storybook/internal/node-logger';
+import { logTracker, prompt } from 'storybook/internal/node-logger';
 import {
   UpgradeStorybookToLowerVersionError,
   UpgradeStorybookUnknownCurrentVersionError,
@@ -16,8 +16,8 @@ import { processAutoblockerResults } from './autoblock/utils';
 import { runAutomigrations } from './automigrate/multi-project';
 import type { FixId } from './automigrate/types';
 import { FixStatus } from './automigrate/types';
-import { runMultiProjectDoctor } from './doctor';
-import type { ProjectDoctorData } from './doctor/types';
+import { displayDoctorResults, runMultiProjectDoctor } from './doctor';
+import type { ProjectDoctorData, ProjectDoctorResults } from './doctor/types';
 import { getProjects, shortenPath, upgradeStorybookDependencies } from './util';
 
 type Package = {
@@ -114,7 +114,10 @@ export type UpgradeOptions = {
 };
 
 /** Logs the results of the upgrade process, including project categorization and diagnostic messages */
-function logUpgradeResults(projectResults: Record<string, Record<FixId, FixStatus>>) {
+function logUpgradeResults(
+  projectResults: Record<string, Record<FixId, FixStatus>>,
+  doctorResults: Record<string, ProjectDoctorResults>
+) {
   // Display upgrade results summary
   const successfulProjects: string[] = [];
   const failedProjects: string[] = [];
@@ -157,7 +160,13 @@ function logUpgradeResults(projectResults: Record<string, Record<FixId, FixStatu
       prompt.log(`\n${picocolors.yellow('ℹ️  No changes needed:')} ${projectList}`);
     }
   } else {
-    prompt.log(`\n${picocolors.green('Your project(s) have been upgraded successfully! 🎉')}`);
+    if (Object.values(doctorResults).every((result) => result.status === 'healthy')) {
+      prompt.log(`\n${picocolors.green('Your project(s) have been upgraded successfully! 🎉')}`);
+    } else {
+      prompt.log(
+        `\n${picocolors.yellow('Your project(s) have been upgraded successfully, but some issues were found which need your attention, please check Storybook doctor logs above.')}`
+      );
+    }
   }
 }
 
@@ -246,8 +255,13 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     mainConfig: project.mainConfig,
   }));
 
-  prompt.log('🩺 Checking the health of your project(s)..');
-  await runMultiProjectDoctor(doctorProjects);
+  prompt.step('🩺 Checking the health of your project(s)..');
+  // TODO: Pass doctorResults to multi-upgrade telemetry
+  const doctorResults = await runMultiProjectDoctor(doctorProjects);
+  const hasIssues = displayDoctorResults(doctorResults);
+  if (hasIssues) {
+    logTracker.enableLogWriting();
+  }
 
   // TELEMETRY
   if (!options.disableTelemetry) {
@@ -258,12 +272,14 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         afterVersion: project.currentCLIVersion,
         automigrationResults: fixResults,
         automigrationPreCheckFailure: null,
+        // TODO: Discuss with Valentin
+        doctorResults: doctorResults[project.configDir]?.diagnostics || {},
       });
     }
   }
 
   // Display upgrade results summary
-  logUpgradeResults(projectResults);
+  logUpgradeResults(projectResults, doctorResults);
 
   // TODO: if multiple projects, multi-upgrade telemetry with e.g.
   // { success: X, fail: Y, incomplete: Z }

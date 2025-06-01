@@ -11,6 +11,7 @@ const LOG_FUNCTIONS = {
   error: USE_CLACK ? clack.log.error : console.error,
   intro: USE_CLACK ? clack.intro : console.log,
   outro: USE_CLACK ? clack.outro : console.log,
+  step: USE_CLACK ? clack.log.step : console.log,
 };
 
 // Log level types and state
@@ -144,4 +145,9 @@ export const intro = (message: string) => {
 export const outro = (message: string) => {
   logTracker.addLog('info', message);
   LOG_FUNCTIONS.outro(message);
+};
+
+export const step = (message: string) => {
+  logTracker.addLog('info', message);
+  LOG_FUNCTIONS.step(message);
 };

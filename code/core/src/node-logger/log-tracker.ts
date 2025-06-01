@@ -1,4 +1,5 @@
 import { promises as fs } from 'node:fs';
+import { join } from 'node:path';
 
 import { cleanLog } from '../../../lib/cli-storybook/src/automigrate/helpers/cleanLog';
 import type { LogLevel } from './logger';
@@ -13,10 +14,32 @@ export interface LogEntry {
 }
 
 class LogTracker {
-  private logs: LogEntry[] = [];
+  #logs: LogEntry[] = [];
+  #logFilePath = '';
+  #shouldWriteLogsToFile = false;
+
+  constructor() {
+    this.#logFilePath = join(process.cwd(), 'debug-storybook.log');
+  }
+
+  enableLogWriting(): void {
+    this.#shouldWriteLogsToFile = true;
+  }
+
+  get shouldWriteLogsToFile(): boolean {
+    return this.#shouldWriteLogsToFile;
+  }
+
+  get logFilePath(): string {
+    return this.#logFilePath;
+  }
+
+  get logs(): LogEntry[] {
+    return [...this.#logs];
+  }
 
   addLog(level: LogEntry['level'], message: string, metadata?: Metadata) {
-    this.logs.push({
+    this.#logs.push({
       timestamp: new Date(),
       level,
       message: cleanLog(message),
@@ -24,38 +47,24 @@ class LogTracker {
     });
   }
 
-  getLogs(): LogEntry[] {
-    return [...this.logs];
+  clear(): void {
+    this.#logs = [];
   }
 
-  async writeToFile(filePath: string): Promise<void> {
-    const logContent = this.logs
+  async writeToFile(filePath: string = this.#logFilePath): Promise<string> {
+    const logContent = this.#logs
       .map((log) => {
-        const timestamp = log.timestamp.toISOString();
+        const timestamp = log.timestamp.toISOString().split('T')[1].slice(0, -1);
         const metadata = log.metadata ? ` ${JSON.stringify(log.metadata)}` : '';
         return `[${timestamp}] [${log.level.toUpperCase()}] ${log.message}${metadata}`;
       })
       .join('\n');
 
     await fs.writeFile(filePath, logContent, 'utf-8');
-    this.logs = [];
-  }
+    this.#logs = [];
 
-  clear(): void {
-    this.logs = [];
+    return filePath;
   }
 }
 
 export const logTracker = new LogTracker();
-
-export const writeLogsToFile = async (filePath: string): Promise<void> => {
-  await logTracker.writeToFile(filePath);
-};
-
-export const getTrackedLogs = (): LogEntry[] => {
-  return logTracker.getLogs();
-};
-
-export const clearTrackedLogs = (): void => {
-  logTracker.clear();
-};

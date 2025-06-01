@@ -55,6 +55,7 @@ describe('UTILS', () => {
       const content = await readLogFile();
       expect(content).toBe('exdev test content');
       await removeLogFile();
+      vi.clearAllMocks();
     });
   });
 });

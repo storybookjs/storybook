@@ -4,7 +4,7 @@ import { logTracker } from './log-tracker';
 
 type Primitive = Readonly<string | boolean | number>;
 
-type Option<T> = T extends Primitive
+export type Option<T> = T extends Primitive
   ? {
       value: T;
       label?: string;
@@ -16,34 +16,34 @@ type Option<T> = T extends Primitive
       hint?: string;
     };
 
-interface BasePromptOptions {
+export interface BasePromptOptions {
   message: string;
 }
 
-interface TextPromptOptions extends BasePromptOptions {
+export interface TextPromptOptions extends BasePromptOptions {
   placeholder?: string;
   initialValue?: string;
   validate?: (value: string) => string | Error | undefined;
 }
 
-interface ConfirmPromptOptions extends BasePromptOptions {
+export interface ConfirmPromptOptions extends BasePromptOptions {
   initialValue?: boolean;
   active?: string;
   inactive?: string;
 }
 
-interface SelectPromptOptions<T> extends BasePromptOptions {
+export interface SelectPromptOptions<T> extends BasePromptOptions {
   options: Option<T>[];
   initialValue?: T;
 }
 
-interface MultiSelectPromptOptions<T> extends BasePromptOptions {
+export interface MultiSelectPromptOptions<T> extends BasePromptOptions {
   options: Option<T>[];
   initialValues?: T[];
   required?: boolean;
 }
 
-interface PromptOptions {
+export interface PromptOptions {
   onCancel?: () => void;
 }
 

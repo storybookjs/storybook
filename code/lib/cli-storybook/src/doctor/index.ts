@@ -1,5 +1,5 @@
 import { createWriteStream } from 'node:fs';
-import { rename, rm } from 'node:fs/promises';
+import { copyFile, rename, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { JsPackageManagerFactory, temporaryFile } from 'storybook/internal/common';
@@ -162,7 +162,14 @@ export const doctor = async ({
 
     logger.info(`Full logs are available in ${picocolors.cyan(LOG_FILE_PATH)}`);
 
-    await rename(TEMP_LOG_FILE_PATH, join(process.cwd(), LOG_FILE_NAME));
+    try {
+      await rename(TEMP_LOG_FILE_PATH, join(process.cwd(), LOG_FILE_NAME));
+    } catch (error: any) {
+      if (error.code === 'EXDEV') {
+        await copyFile(TEMP_LOG_FILE_PATH, join(process.cwd(), LOG_FILE_NAME));
+        await rm(TEMP_LOG_FILE_PATH, { recursive: true, force: true });
+      }
+    }
   } else {
     logger.info(`🥳 Your Storybook project looks good!`);
     logger.info(commandMessage);

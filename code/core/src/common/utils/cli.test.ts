@@ -1,6 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { rm } from 'node:fs/promises';
+import { join } from 'node:path';
 
-import { isCorePackage } from './cli';
+import { describe, expect, it, vi } from 'vitest';
+
+import { readFile } from 'fs/promises';
+
+import { createLogStream, isCorePackage } from './cli';
 
 describe('UTILS', () => {
   describe.each([
@@ -17,6 +22,39 @@ describe('UTILS', () => {
   ])('isCorePackage', (input, output) => {
     it(`It should return "${output}" when given "${input}"`, () => {
       expect(isCorePackage(input)).toEqual(output);
+    });
+  });
+  describe('createLogStream', () => {
+    it('should create a log stream and move file successfully', async () => {
+      const { logStream, moveLogFile, readLogFile, removeLogFile } =
+        await createLogStream('test.log');
+      logStream.write('test log content');
+      logStream.end();
+      await new Promise((resolve) => logStream.once('finish', () => resolve(null)));
+      await moveLogFile();
+      const content = await readLogFile();
+      expect(content).toBe('test log content');
+      await removeLogFile();
+    });
+    it('should handle EXDEV error while moving and fallback to copy + delete', async () => {
+      const { logStream, moveLogFile, readLogFile, removeLogFile } =
+        await createLogStream('test-exdev.log');
+      logStream.write('exdev test content');
+      logStream.end();
+      await new Promise((resolve) => logStream.once('finish', () => resolve(null)));
+      const mockRename = vi.fn().mockRejectedValue({ code: 'EXDEV' });
+      vi.doMock('node:fs/promises', async () => {
+        const actual = await vi.importActual('node:fs/promises');
+        return {
+          ...actual,
+          rename: mockRename,
+        };
+      });
+      vi.waitFor(() => expect(mockRename).toHaveBeenCalledTimes(1));
+      await moveLogFile();
+      const content = await readLogFile();
+      expect(content).toBe('exdev test content');
+      await removeLogFile();
     });
   });
 });

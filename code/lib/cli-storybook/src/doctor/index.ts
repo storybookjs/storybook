@@ -168,6 +168,8 @@ export const doctor = async ({
       if (error.code === 'EXDEV') {
         await copyFile(TEMP_LOG_FILE_PATH, join(process.cwd(), LOG_FILE_NAME));
         await rm(TEMP_LOG_FILE_PATH, { recursive: true, force: true });
+      } else {
+        throw error;
       }
     }
   } else {

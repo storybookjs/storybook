@@ -13,6 +13,7 @@ import type { PackageJson, StorybookConfig } from 'storybook/internal/types';
 import { findPackage, findPackagePath } from 'fd-package-json';
 import { detect } from 'package-manager-detector';
 
+import { version } from '../../package.json';
 import { globalSettings } from '../cli/globalSettings';
 import { getApplicationFileCount } from './get-application-file-count';
 import { getChromaticVersionSpecifier } from './get-chromatic-version';
@@ -99,6 +100,7 @@ export const computeStorybookMetadata = async ({
     'msw',
     'miragejs',
     'sinon',
+    'chromatic',
   ];
   const testPackageDeps = Object.keys(allDependencies).filter((dep) =>
     testPackages.find((pkg) => dep.includes(pkg))
@@ -227,7 +229,6 @@ export const computeStorybookMetadata = async ({
     // gracefully handle error, as it's not critical information and AST parsing can cause trouble
   }
 
-  const storybookVersion = storybookPackages[storybookInfo.frameworkPackage]?.version;
   const portableStoriesFileCount = await getPortableStoriesFileCount();
   const applicationFileCount = await getApplicationFileCount(dirname(packageJsonPath));
 
@@ -236,7 +237,7 @@ export const computeStorybookMetadata = async ({
     ...frameworkInfo,
     portableStoriesFileCount,
     applicationFileCount,
-    storybookVersion,
+    storybookVersion: version,
     storybookVersionSpecifier: storybookInfo.version,
     language,
     storybookPackages,

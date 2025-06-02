@@ -287,9 +287,8 @@ export async function baseGenerator(
 
   const compiler = webpackCompiler ? webpackCompiler({ builder }) : undefined;
 
-  // TODO: change the semver range to '^4' when VTA 4 and SB 9 is released
   if (features.includes('test')) {
-    extraAddons.push('@chromatic-com/storybook@^4.0.0-0');
+    extraAddons.push('@chromatic-com/storybook@^4');
   }
 
   // Add @storybook/addon-docs when docs feature is selected

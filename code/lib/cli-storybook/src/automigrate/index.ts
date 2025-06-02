@@ -219,6 +219,8 @@ export const automigrate = async ({
       if (error['code'] === 'EXDEV') {
         await copyFile(TEMP_LOG_FILE_PATH, LOG_FILE_PATH);
         await rm(TEMP_LOG_FILE_PATH, { recursive: true, force: true });
+      } else {
+        throw error;
       }
     }
   } else {

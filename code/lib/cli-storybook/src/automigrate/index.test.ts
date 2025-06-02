@@ -43,22 +43,6 @@ vi.mock('storybook/internal/common', async (importOriginal) => ({
   loadMainConfig: coreCommonMock.loadMainConfig,
 }));
 
-vi.mock('storybook/internal/node-logger', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('storybook/internal/node-logger')>()),
-  prompt: {
-    log: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    debug: vi.fn(),
-    logBox: vi.fn(),
-    taskLog: vi.fn(() => ({
-      message: vi.fn(),
-      success: vi.fn(),
-      error: vi.fn(),
-    })),
-  },
-}));
-
 const promptMocks = vi.hoisted(() => {
   return {
     default: vi.fn(),

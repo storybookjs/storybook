@@ -3,7 +3,7 @@ import npmLog from 'npmlog';
 import prettyTime from 'pretty-hrtime';
 
 export { prompt } from './prompts';
-export { logTracker } from './log-tracker';
+export { logTracker } from './prompts/log-tracker';
 
 // The default is stderr, which can cause some tools (like rush.js) to think
 // there are issues with the build: https://github.com/storybookjs/storybook/issues/14621

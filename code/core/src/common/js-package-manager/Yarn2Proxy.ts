@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { prompt } from 'storybook/internal/node-logger';
 import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 
 import { PosixFS, VirtualFS, ZipOpenFS } from '@yarnpkg/fslib';
@@ -95,7 +96,7 @@ export class Yarn2Proxy extends JsPackageManager {
     command: string,
     args: string[],
     cwd?: string,
-    stdio: 'pipe' | 'inherit' = 'pipe'
+    stdio?: 'pipe' | 'inherit'
   ) {
     return this.executeCommandSync({
       command: 'yarn',
@@ -230,7 +231,7 @@ export class Yarn2Proxy extends JsPackageManager {
     return this.executeCommand({
       command: 'yarn',
       args: ['add', ...this.getInstallArgs(), ...args],
-      stdio: 'pipe',
+      stdio: prompt.getPreferredStdio(),
       cwd: this.primaryPackageJson.operationDir,
     });
   }

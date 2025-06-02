@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { prompt } from 'storybook/internal/node-logger';
 import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 
 import { findUpSync } from 'find-up';
@@ -199,7 +200,7 @@ export class PNPMProxy extends JsPackageManager {
     return this.executeCommand({
       command: 'pnpm',
       args: ['install', ...this.getInstallArgs()],
-      stdio: 'pipe',
+      stdio: prompt.getPreferredStdio(),
       cwd: this.cwd,
     });
   }
@@ -216,7 +217,7 @@ export class PNPMProxy extends JsPackageManager {
     return this.executeCommand({
       command: 'pnpm',
       args: commandArgs,
-      stdio: 'pipe',
+      stdio: prompt.getPreferredStdio(),
       cwd: this.primaryPackageJson.operationDir,
     });
   }

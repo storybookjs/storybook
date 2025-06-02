@@ -120,31 +120,14 @@ export abstract class JsPackageManager {
   }
 
   async installDependencies() {
-    const installTask = prompt.taskLog({ title: 'Installing dependencies...', limit: 5 });
-    try {
-      const installProcess = this.runInstall();
-      installProcess.stdout?.on('data', (data) => {
-        installTask.message(data.toString());
-      });
-      installProcess.stderr?.on('data', (data) => {
-        installTask.message(data.toString());
-      });
-      await installProcess;
-
-      installTask.message('Deduping dependencies...');
-      const dedupeProcess = this.runInternalCommand('dedupe', [], this.cwd);
-      dedupeProcess.stdout?.on('data', (data) => {
-        installTask.message(data.toString());
-      });
-      dedupeProcess.stderr?.on('data', (data) => {
-        installTask.message(data.toString());
-      });
-      await dedupeProcess;
-      installTask.success('Dependencies installed');
-    } catch (e) {
-      installTask.error('An error occurred while installing dependencies.');
-      throw new HandledError(e);
-    }
+    await prompt.executeTask(
+      [() => this.runInstall(), () => this.runInternalCommand('dedupe', [], this.cwd)],
+      {
+        intro: 'Installing dependencies...',
+        error: 'An error occurred while installing dependencies.',
+        success: 'Dependencies installed',
+      }
+    );
   }
 
   /** Read the `package.json` file available in the provided directory */

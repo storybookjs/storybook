@@ -1,19 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { prompt } from 'storybook/internal/node-logger';
+
 import { dedent } from 'ts-dedent';
 
 import { JsPackageManager } from './JsPackageManager';
 import { Yarn1Proxy } from './Yarn1Proxy';
-
-vi.mock('storybook/internal/node-logger', () => ({
-  prompt: {
-    taskLog: vi.fn(() => ({
-      message: vi.fn(),
-      success: vi.fn(),
-      error: vi.fn(),
-    })),
-  },
-}));
 
 describe('Yarn 1 Proxy', () => {
   let yarn1Proxy: Yarn1Proxy;
@@ -29,6 +21,10 @@ describe('Yarn 1 Proxy', () => {
 
   describe('installDependencies', () => {
     it('should run `yarn`', async () => {
+      // sort of un-mock part of the function so executeCommand (also mocked) is called
+      vi.mocked(prompt.executeTask).mockImplementationOnce(async (fns: any) => {
+        await Promise.all(fns.map((fn: () => void) => fn()));
+      });
       const executeCommandSpy = vi
         .spyOn(yarn1Proxy, 'executeCommand')
         .mockReturnValue(Promise.resolve({ stdout: '' }) as any);

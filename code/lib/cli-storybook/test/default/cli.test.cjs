@@ -4,13 +4,13 @@ const { run, cleanLog } = require('../helpers.cjs');
 
 describe('Default behavior', () => {
   it('suggests the closest match to an unknown command', () => {
-    const { status, stdout } = run(['upgraed']);
+    const { status, stderr } = run(['upgraed']);
 
     // Assertions
     expect(status).toBe(1);
-    const stdoutString = cleanLog(stdout.toString());
-    expect(stdoutString).toContain('Invalid command: upgraed.');
-    expect(stdoutString).toContain('Did you mean upgrade?');
+    const stderrString = cleanLog(stderr.toString());
+    expect(stderrString).toContain('Invalid command: upgraed.');
+    expect(stderrString).toContain('Did you mean upgrade?');
   });
 });
 

@@ -1,4 +1,5 @@
 import componentTestingAnnotations from 'storybook/internal/component-testing/preview';
+import type { StorybookTypes } from 'storybook/internal/types';
 
 import actionAnnotations, { type ActionsTypes } from 'storybook/actions/preview';
 import backgroundsAnnotations, { type BackgroundTypes } from 'storybook/backgrounds/preview';
@@ -8,7 +9,8 @@ import outlineAnnotations, { type OutlineTypes } from 'storybook/outline/preview
 import testAnnotations, { type TestTypes } from 'storybook/test/preview';
 import viewportAnnotations, { type ViewportTypes } from 'storybook/viewport/preview';
 
-export type CoreTypes = ActionsTypes &
+export type CoreTypes = StorybookTypes &
+  ActionsTypes &
   BackgroundTypes &
   HighLightTypes &
   MeasureTypes &

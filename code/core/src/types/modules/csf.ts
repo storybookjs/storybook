@@ -86,6 +86,10 @@ export interface StorybookParameters {
   layout?: Layout;
 }
 
+export interface StorybookTypes {
+  parameters: StorybookParameters;
+}
+
 export interface StorybookInternalParameters extends StorybookParameters {
   fileName?: string;
   docsOnly?: true;

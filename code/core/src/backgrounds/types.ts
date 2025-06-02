@@ -15,7 +15,7 @@ export interface GridConfig {
   offsetY?: number;
 }
 
-export type GlobalState = { value: string | undefined; grid: boolean };
+export type GlobalState = { value: string | undefined; grid?: boolean };
 export type GlobalStateUpdate = Partial<GlobalState>;
 
 export interface BackgroundsParameters {

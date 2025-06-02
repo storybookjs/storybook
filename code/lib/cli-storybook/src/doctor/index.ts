@@ -300,10 +300,10 @@ export async function collectDoctorResultsByProject(
       // Process each check result
       for (const checkResult of checkResults) {
         if (checkResult.type === DiagType.CONFIGURATION_ERROR) {
-          diagnostics[checkResult.type] = DiagnosticStatus.ERROR;
+          diagnostics[checkResult.type] = DiagnosticStatus.CHECK_ERROR;
           hasErrors = true;
         } else {
-          diagnostics[checkResult.type] = DiagnosticStatus.FAILED;
+          diagnostics[checkResult.type] = DiagnosticStatus.HAS_ISSUES;
           hasIssues = true;
         }
         messages[checkResult.type] = checkResult.message;
@@ -331,7 +331,7 @@ export async function collectDoctorResultsByProject(
         diagnostics[type] = DiagnosticStatus.PASSED;
       });
 
-      diagnostics[DiagType.CONFIGURATION_ERROR] = DiagnosticStatus.ERROR;
+      diagnostics[DiagType.CONFIGURATION_ERROR] = DiagnosticStatus.CHECK_ERROR;
       messages[DiagType.CONFIGURATION_ERROR] =
         `Failed to run doctor checks: ${error instanceof Error ? error.message : String(error)}`;
 

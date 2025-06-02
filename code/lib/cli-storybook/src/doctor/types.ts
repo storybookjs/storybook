@@ -23,8 +23,8 @@ export enum DiagnosticType {
 
 export enum DiagnosticStatus {
   PASSED = 'passed',
-  FAILED = 'failed',
-  ERROR = 'error',
+  HAS_ISSUES = 'has_issues',
+  CHECK_ERROR = 'check_error',
 }
 
 export type DiagnosticDoctorData = {
@@ -47,7 +47,7 @@ export interface DoctorCheckResult {
 
 export interface ProjectDoctorResults {
   configDir: string;
-  status: 'healthy' | 'issues' | 'error';
+  status: 'healthy' | 'has_issues' | 'check_error';
   diagnostics: Record<DiagnosticType, DiagnosticStatus>;
   messages: Record<DiagnosticType, string>;
 }

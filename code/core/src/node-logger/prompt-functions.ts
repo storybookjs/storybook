@@ -1,6 +1,7 @@
 import * as clack from '@clack/prompts';
 
 import { logTracker } from './log-tracker';
+import { wrapTextForClack, wrapTextForClackHint } from './wrap-utils';
 
 type Primitive = Readonly<string | boolean | number>;
 
@@ -98,7 +99,15 @@ export const multiselect = async <T>(
   options: MultiSelectPromptOptions<T>,
   promptOptions?: PromptOptions
 ): Promise<T[]> => {
-  const result = await clack.multiselect<T>(options);
+  const result = await clack.multiselect<T>({
+    ...options,
+    options: options.options.map((opt) => ({
+      ...opt,
+      hint: opt.hint
+        ? wrapTextForClackHint(opt.hint, undefined, opt.label || String(opt.value))
+        : undefined,
+    })),
+  });
 
   handleCancel(result, promptOptions);
 
@@ -110,5 +119,11 @@ export const spinner = clack.spinner;
 
 // TODO: de-clack the type
 export const taskLog = (options: clack.TaskLogOptions) => {
-  return clack.taskLog(options);
+  const task = clack.taskLog(options);
+  return {
+    ...task,
+    message: (message: string) => {
+      task.message(wrapTextForClack(message));
+    },
+  };
 };

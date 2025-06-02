@@ -2,16 +2,19 @@ import * as clack from '@clack/prompts';
 import boxen from 'boxen';
 
 import { logTracker } from './log-tracker';
+import { wrapTextForClack } from './wrap-utils';
 
 const USE_CLACK = process.env.USE_CLACK === 'false' ? false : true;
 
 const LOG_FUNCTIONS = {
-  log: USE_CLACK ? clack.log.message : console.log,
-  warn: USE_CLACK ? clack.log.warn : console.warn,
-  error: USE_CLACK ? clack.log.error : console.error,
-  intro: USE_CLACK ? clack.intro : console.log,
-  outro: USE_CLACK ? clack.outro : console.log,
-  step: USE_CLACK ? clack.log.step : console.log,
+  log: USE_CLACK ? (message: string) => clack.log.message(wrapTextForClack(message)) : console.log,
+  warn: USE_CLACK ? (message: string) => clack.log.warn(wrapTextForClack(message)) : console.warn,
+  error: USE_CLACK
+    ? (message: string) => clack.log.error(wrapTextForClack(message))
+    : console.error,
+  intro: USE_CLACK ? (message: string) => clack.intro(wrapTextForClack(message)) : console.log,
+  outro: USE_CLACK ? (message: string) => clack.outro(wrapTextForClack(message)) : console.log,
+  step: USE_CLACK ? (message: string) => clack.log.step(wrapTextForClack(message)) : console.log,
 };
 
 // Log level types and state
@@ -151,3 +154,6 @@ export const step = (message: string) => {
   logTracker.addLog('info', message);
   LOG_FUNCTIONS.step(message);
 };
+
+// Export the text wrapping utility for external use
+export { wrapTextForClack };

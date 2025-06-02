@@ -238,14 +238,13 @@ command('doctor')
   });
 
 program.on('command:*', ([invalidCmd]) => {
-  prompt.error(
-    ` Invalid command: ${picocolors.bold(invalidCmd)}.\n See --help for a list of available commands.`
-  );
+  let errorMessage = ` Invalid command: ${picocolors.bold(invalidCmd)}.\n See --help for a list of available commands.`;
   const availableCommands = program.commands.map((cmd) => cmd.name());
   const suggestion = availableCommands.find((cmd) => leven(cmd, invalidCmd) < 3);
   if (suggestion) {
-    prompt.log(`\n Did you mean ${picocolors.yellow(suggestion)}?`);
+    errorMessage += `\n Did you mean ${picocolors.yellow(suggestion)}?`;
   }
+  prompt.error(errorMessage);
   process.exit(1);
 });
 

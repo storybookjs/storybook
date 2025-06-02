@@ -67,7 +67,7 @@ export type StorybookBuilderOptions = JsonObject & {
     | 'previewUrl'
   >;
 
-export type StorybookBuilderOutput = JsonObject & BuilderOutput & object;
+export type StorybookBuilderOutput = JsonObject & BuilderOutput;
 
 const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (options, context) => {
   const builder = from(setup(options, context)).pipe(

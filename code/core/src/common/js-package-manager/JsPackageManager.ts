@@ -71,6 +71,9 @@ export abstract class JsPackageManager {
   /** The current working directory. */
   protected readonly cwd: string;
 
+  /** Cache for latest version results to avoid repeated network calls. */
+  private readonly latestVersionCache = new Map<string, string>();
+
   constructor(options?: JsPackageManagerOptions) {
     this.cwd = options?.cwd || process.cwd();
     this.instanceDir = options?.configDir
@@ -131,15 +134,17 @@ export abstract class JsPackageManager {
       });
       await installProcess;
 
-      installTask.message('Deduping dependencies...');
-      const dedupeProcess = this.runInternalCommand('dedupe', [], this.cwd);
-      dedupeProcess.stdout?.on('data', (data) => {
-        installTask.message(data.toString());
-      });
-      dedupeProcess.stderr?.on('data', (data) => {
-        installTask.message(data.toString());
-      });
-      await dedupeProcess;
+      if (this.type === 'npm') {
+        installTask.message('Deduping dependencies...');
+        const dedupeProcess = this.runInternalCommand('dedupe', [], this.cwd);
+        dedupeProcess.stdout?.on('data', (data) => {
+          installTask.message(data.toString());
+        });
+        dedupeProcess.stderr?.on('data', (data) => {
+          installTask.message(data.toString());
+        });
+        await dedupeProcess;
+      }
       installTask.success('Dependencies installed');
     } catch (e) {
       installTask.error('An error occurred while installing dependencies.');
@@ -186,6 +191,10 @@ export abstract class JsPackageManager {
     }
 
     return allDependencies;
+  }
+
+  isDependencyInstalled(dependency: string) {
+    return Object.keys(this.getAllDependencies()).includes(dependency);
   }
 
   /**
@@ -384,21 +393,56 @@ export abstract class JsPackageManager {
    * @param constraint Version range to use to constraint the returned version
    */
   public async latestVersion(packageName: string, constraint?: string): Promise<string> {
-    if (!constraint) {
-      return this.runGetVersions(packageName, false);
+    // Create cache key that includes both package name and constraint
+    const cacheKey = constraint ? `${packageName}@${constraint}` : packageName;
+
+    // Check cache first
+    const cachedVersion = this.latestVersionCache.get(cacheKey);
+    if (cachedVersion) {
+      return cachedVersion;
     }
 
-    const versions = await this.runGetVersions(packageName, true);
+    let result: string;
 
-    const latestVersionSatisfyingTheConstraint = versions
-      .reverse()
-      .find((version) => satisfies(version, constraint));
+    if (!constraint) {
+      result = await this.runGetVersions(packageName, false);
+    } else {
+      const versions = await this.runGetVersions(packageName, true);
 
-    invariant(
-      latestVersionSatisfyingTheConstraint != null,
-      `No version satisfying the constraint: ${packageName}${constraint}`
-    );
-    return latestVersionSatisfyingTheConstraint;
+      const latestVersionSatisfyingTheConstraint = versions
+        .reverse()
+        .find((version) => satisfies(version, constraint));
+
+      invariant(
+        latestVersionSatisfyingTheConstraint != null,
+        `No version satisfying the constraint: ${packageName}${constraint}`
+      );
+      result = latestVersionSatisfyingTheConstraint;
+    }
+
+    // Cache the result before returning
+    this.latestVersionCache.set(cacheKey, result);
+    return result;
+  }
+
+  /**
+   * Clear the latest version cache. Useful for testing or when you want to refresh version
+   * information.
+   *
+   * @param packageName Optional package name to clear only specific entries. If not provided,
+   *   clears all cache.
+   */
+  public clearLatestVersionCache(packageName?: string): void {
+    if (packageName) {
+      // Clear all cache entries for this package (both with and without constraints)
+      const keysToDelete = Array.from(this.latestVersionCache.keys()).filter(
+        (key) => key === packageName || key.startsWith(`${packageName}@`)
+      );
+      keysToDelete.forEach((key) => this.latestVersionCache.delete(key));
+    } else {
+      // Clear all cache
+      this.latestVersionCache.clear();
+    }
   }
 
   public addStorybookCommandInScripts(options?: { port: number; preCommand?: string }) {

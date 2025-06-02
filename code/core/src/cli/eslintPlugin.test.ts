@@ -47,14 +47,14 @@ describe('extractEslintInfo', () => {
       return String(fileName) === '.eslintrc.js' ? String(fileName) : undefined;
     });
 
-    const result = await findEslintFile();
+    const result = await findEslintFile(process.cwd());
     expect(result).toBe('.eslintrc.js');
   });
 
   it('should return undefined if no ESLint config file is found', async () => {
     vi.mocked(findUp).mockImplementation(async () => undefined);
 
-    const result = await findEslintFile();
+    const result = await findEslintFile(process.cwd());
     expect(result).toBeUndefined();
   });
 
@@ -63,7 +63,7 @@ describe('extractEslintInfo', () => {
       return '.eslintrc.yaml';
     });
 
-    await expect(findEslintFile()).rejects.toThrowError(
+    await expect(findEslintFile(process.cwd())).rejects.toThrowError(
       'Unsupported ESLint config extension: .yaml'
     );
   });

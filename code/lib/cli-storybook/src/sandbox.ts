@@ -150,6 +150,7 @@ export const sandbox = async ({
     selectedConfig = templateId ? TEMPLATES[templateId] : undefined;
 
     if (!selectedConfig) {
+      // eslint-disable-next-line local-rules/no-uncategorized-errors
       throw new Error('🚨 Sandbox: please specify a valid template type');
     }
   }
@@ -166,10 +167,10 @@ export const sandbox = async ({
       {
         message: 'Enter the output directory',
         initialValue: outputDirectoryName ?? undefined,
-        validate: async (directoryName) =>
+        validate: (directoryName) =>
           existsSync(directoryName)
             ? `${directoryName} already exists. Please choose another name.`
-            : true,
+            : undefined,
       },
       {
         onCancel: () => {
@@ -260,7 +261,8 @@ export const sandbox = async ({
 };
 
 async function promptSelectedTemplate(choices: Choice[]): Promise<Choice | null> {
-  const selected = await prompt.select({
+  // using any here as the types are too strict
+  const selected = await prompt.select<any>({
     message: 'Select a template',
     options: choices.map(toChoices),
   });

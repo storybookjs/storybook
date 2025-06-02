@@ -173,6 +173,7 @@ export interface StrictGlobalTypes {
 
 export interface AddonTypes {
   parameters: Record<string, any>;
+  globals: Record<string, any>;
 }
 
 export interface Renderer extends AddonTypes {
@@ -415,7 +416,8 @@ export interface ProjectAnnotations<TRenderer extends Renderer = Renderer, TArgs
    */
   beforeAll?: BeforeAll;
 
-  initialGlobals?: Globals;
+  initialGlobals?: Globals &
+    (TRenderer['csf4'] extends true ? CoreTypes['globals'] & TRenderer['globals'] : unknown);
   globalTypes?: GlobalTypes;
   applyDecorators?: DecoratorApplicator<TRenderer, Args>;
   runStep?: StepRunner<TRenderer, TArgs>;
@@ -507,7 +509,8 @@ export interface ComponentAnnotations<TRenderer extends Renderer = Renderer, TAr
   play?: PlayFunction<TRenderer, TArgs>;
 
   /** Override the globals values for all stories in this component */
-  globals?: Globals;
+  globals?: Globals &
+    (TRenderer['csf4'] extends true ? CoreTypes['globals'] & TRenderer['globals'] : unknown);
 }
 
 export type StoryAnnotations<
@@ -525,7 +528,8 @@ export type StoryAnnotations<
   play?: PlayFunction<TRenderer, TArgs>;
 
   /** Override the globals values for this story */
-  globals?: Globals;
+  globals?: Globals &
+    (TRenderer['csf4'] extends true ? CoreTypes['globals'] & TRenderer['globals'] : unknown);
 
   /** @deprecated */
   story?: Omit<StoryAnnotations<TRenderer, TArgs>, 'story'>;

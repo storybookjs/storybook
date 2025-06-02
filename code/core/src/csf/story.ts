@@ -172,8 +172,8 @@ export interface StrictGlobalTypes {
 }
 
 export interface AddonTypes {
-  parameters: Record<string, any>;
-  globals: Record<string, any>;
+  parameters?: Record<string, any>;
+  globals?: Record<string, any>;
 }
 
 export interface Renderer extends AddonTypes {

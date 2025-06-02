@@ -56,7 +56,7 @@ export const run = async (input: A11yParameters = DEFAULT_PARAMETERS, storyId: s
 
   const context: ContextSpec = {
     include: document?.body,
-    exclude: ['.sb-wrapper', '#storybook-docs'], // Internal Storybook elements that are always in the document
+    exclude: ['.sb-wrapper', '#storybook-docs', '#storybook-highlights-root'], // Internal Storybook elements that are always in the document
   };
 
   if (input.context) {
@@ -93,6 +93,11 @@ export const run = async (input: A11yParameters = DEFAULT_PARAMETERS, storyId: s
   axe.configure(configWithDefault);
 
   return new Promise<AxeResults>((resolve, reject) => {
+    const highlightsRoot = document?.getElementById('storybook-highlights-root');
+    if (highlightsRoot) {
+      highlightsRoot.style.display = 'none';
+    }
+
     const task = async () => {
       try {
         const result = await axe.run(context, options);
@@ -107,6 +112,10 @@ export const run = async (input: A11yParameters = DEFAULT_PARAMETERS, storyId: s
 
     if (!isRunning) {
       runNext();
+    }
+
+    if (highlightsRoot) {
+      highlightsRoot.style.display = '';
     }
   });
 };

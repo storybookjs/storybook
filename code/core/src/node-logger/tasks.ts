@@ -1,8 +1,8 @@
-import * as clack from '@clack/prompts';
 // eslint-disable-next-line depend/ban-dependencies
 import type { ExecaChildProcess } from 'execa';
 
-import { logTracker } from './log-tracker';
+import { logTracker } from './prompts/log-tracker';
+import { spinner, taskLog } from './prompts/prompt-functions';
 
 /**
  * Given a callback that returns a child process, this function will execute the function and
@@ -13,7 +13,7 @@ export const executeTask = async (
   { intro, error, success }: { intro: string; error: string; success: string }
 ) => {
   logTracker.addLog('info', intro);
-  const task = clack.taskLog({
+  const task = taskLog({
     title: intro,
     retainLog: false,
     limit: 10,
@@ -41,7 +41,7 @@ export const executeTaskWithSpinner = async (
   { intro, error, success }: { intro: string; error: string; success: string }
 ) => {
   logTracker.addLog('info', intro);
-  const task = clack.spinner();
+  const task = spinner();
   task.start(intro);
   try {
     childProcess.stdout?.on('data', (data: Buffer) => {

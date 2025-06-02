@@ -145,7 +145,10 @@ command('upgrade')
     '-c, --config-dir <dir-name...>',
     'Directory(ies) where to load Storybook configurations from'
   )
-  .action(async (options: UpgradeOptions) => upgrade(options).catch(handleCommandFailure));
+  .action(async (options: UpgradeOptions) => {
+    prompt.setPromptLibrary('clack');
+    await upgrade(options).catch(handleCommandFailure);
+  });
 
 command('info')
   .description('Prints debugging information about the local environment')

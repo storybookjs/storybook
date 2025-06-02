@@ -2,16 +2,15 @@ import * as clack from '@clack/prompts';
 import boxen from 'boxen';
 
 import { logTracker } from './log-tracker';
-
-const USE_CLACK = process.env.USE_CLACK === 'false' ? false : true;
+import { isClackEnabled } from './prompt-config';
 
 const LOG_FUNCTIONS = {
-  log: USE_CLACK ? clack.log.message : console.log,
-  warn: USE_CLACK ? clack.log.warn : console.warn,
-  error: USE_CLACK ? clack.log.error : console.error,
-  intro: USE_CLACK ? clack.intro : console.log,
-  outro: USE_CLACK ? clack.outro : console.log,
-  step: USE_CLACK ? clack.log.step : console.log,
+  log: () => (isClackEnabled() ? clack.log.message : console.log),
+  warn: () => (isClackEnabled() ? clack.log.warn : console.warn),
+  error: () => (isClackEnabled() ? clack.log.error : console.error),
+  intro: () => (isClackEnabled() ? clack.intro : console.log),
+  outro: () => (isClackEnabled() ? clack.outro : console.log),
+  step: () => (isClackEnabled() ? clack.log.step : console.log),
 };
 
 // Log level types and state
@@ -91,14 +90,14 @@ export const debug = createLogger(
     if (shouldLog('trace')) {
       message += getMinimalTrace();
     }
-    LOG_FUNCTIONS.log(message);
+    LOG_FUNCTIONS.log()(message);
   },
   '[DEBUG]'
 );
 
-export const log = createLogger('info', LOG_FUNCTIONS.log);
-export const warn = createLogger('warn', LOG_FUNCTIONS.warn);
-export const error = createLogger('error', LOG_FUNCTIONS.error);
+export const log = createLogger('info', LOG_FUNCTIONS.log());
+export const warn = createLogger('warn', LOG_FUNCTIONS.warn());
+export const error = createLogger('error', LOG_FUNCTIONS.error());
 
 type BoxenOptions = {
   borderStyle?: 'round' | 'none';
@@ -112,7 +111,7 @@ type BoxenOptions = {
 export const logBox = (message: string, style?: BoxenOptions) => {
   if (shouldLog('info')) {
     logTracker.addLog('info', message);
-    if (USE_CLACK) {
+    if (isClackEnabled()) {
       log('');
       console.log(
         boxen(message, {
@@ -139,15 +138,15 @@ export const logBox = (message: string, style?: BoxenOptions) => {
 
 export const intro = (message: string) => {
   logTracker.addLog('info', message);
-  LOG_FUNCTIONS.intro(message);
+  LOG_FUNCTIONS.intro()(message);
 };
 
 export const outro = (message: string) => {
   logTracker.addLog('info', message);
-  LOG_FUNCTIONS.outro(message);
+  LOG_FUNCTIONS.outro()(message);
 };
 
 export const step = (message: string) => {
   logTracker.addLog('info', message);
-  LOG_FUNCTIONS.step(message);
+  LOG_FUNCTIONS.step()(message);
 };

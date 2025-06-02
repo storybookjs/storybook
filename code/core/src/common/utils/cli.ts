@@ -148,11 +148,12 @@ export const createLogStream = async (
   return new Promise((resolve, reject) => {
     logStream.once('open', () => {
       const moveLogFile = async () => {
-        rename(temporaryLogPath, finalLogPath).catch((error) => {
+        rename(temporaryLogPath, finalLogPath).catch(async (error) => {
           if (error.code === 'EXDEV') {
-            copyFile(temporaryLogPath, finalLogPath).then(() =>
-              rm(temporaryLogPath, { recursive: true, force: true })
-            );
+            await copyFile(temporaryLogPath, finalLogPath);
+            await rm(temporaryLogPath, { recursive: true, force: true });
+          } else {
+            throw error;
           }
         });
       };

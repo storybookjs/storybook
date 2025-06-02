@@ -22,7 +22,7 @@ export type GlobalState = {
    * When true the viewport applied will be rotated 90°, e.g. it will rotate from portrait to
    * landscape orientation.
    */
-  isRotated: boolean;
+  isRotated?: boolean;
 };
 
 export type GlobalStateUpdate = Partial<GlobalState>;

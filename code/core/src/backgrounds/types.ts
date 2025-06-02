@@ -45,7 +45,7 @@ export interface BackgroundsGlobals {
    *
    * @see https://storybook.js.org/docs/essentials/backgrounds#globals
    */
-  [PARAM_KEY]: GlobalState | GlobalState['value'];
+  [PARAM_KEY]?: GlobalState | GlobalState['value'];
 }
 
 export interface BackgroundTypes {

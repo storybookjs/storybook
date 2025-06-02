@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { dirname, extname, join, normalize, relative, resolve, sep } from 'node:path';
 
-import { commonGlobOptions, normalizeStoryPath } from 'storybook/internal/common';
+import { commonGlobOptions, getProjectRoot, normalizeStoryPath } from 'storybook/internal/common';
 import { combineTags, storyNameFromExport, toId } from 'storybook/internal/csf';
 import { getStorySortParameter, loadConfig } from 'storybook/internal/csf-tools';
 import { logger, once } from 'storybook/internal/node-logger';
@@ -383,7 +383,10 @@ export class StoryIndexGenerator {
     invariant(indexer, `No matching indexer found for ${absolutePath}`);
 
     const indexInputs = await indexer.createIndex(absolutePath, { makeTitle: defaultMakeTitle });
-    const tsconfigPath = await findUp('tsconfig.json', { cwd: this.options.workingDir });
+    const tsconfigPath = await findUp('tsconfig.json', {
+      cwd: this.options.workingDir,
+      stopAt: getProjectRoot(),
+    });
     const tsconfig = TsconfigPaths.loadConfig(tsconfigPath);
     let matchPath: TsconfigPaths.MatchPath | undefined;
     if (tsconfig.resultType === 'success') {

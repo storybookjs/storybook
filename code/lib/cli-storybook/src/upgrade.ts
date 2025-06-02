@@ -203,24 +203,24 @@ function logUpgradeResults(
       const projectList = successfulProjects
         .map((dir) => picocolors.cyan(shortenPath(dir)))
         .join(', ');
-      prompt.log(`\n${picocolors.green('✅ Successfully upgraded:')} ${projectList}`);
+      prompt.log(`${picocolors.green('✅ Successfully upgraded:')} ${projectList}`);
     }
 
     const projectList = failedProjects.map((dir) => picocolors.cyan(shortenPath(dir))).join(', ');
-    prompt.log(`\n${picocolors.red('❌ Failed to upgrade:')} ${projectList}`);
+    prompt.log(`${picocolors.red('❌ Failed to upgrade:')} ${projectList}`);
 
     if (projectsWithNoFixes.length > 0) {
       const projectList = projectsWithNoFixes
         .map((dir) => picocolors.cyan(shortenPath(dir)))
         .join(', ');
-      prompt.log(`\n${picocolors.yellow('ℹ️  No changes needed:')} ${projectList}`);
+      prompt.log(`${picocolors.yellow('ℹ️  No changes needed:')} ${projectList}`);
     }
   } else {
     if (Object.values(doctorResults).every((result) => result.status === 'healthy')) {
-      prompt.log(`\n${picocolors.green('Your project(s) have been upgraded successfully! 🎉')}`);
+      prompt.log(`${picocolors.green('Your project(s) have been upgraded successfully! 🎉')}`);
     } else {
       prompt.log(
-        `\n${picocolors.yellow('Your project(s) have been upgraded successfully, but some issues were found which need your attention, please check Storybook doctor logs above.')}`
+        `${picocolors.yellow('Your project(s) have been upgraded successfully, but some issues were found which need your attention, please check Storybook doctor logs above.')}`
       );
     }
   }
@@ -331,20 +331,20 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     // Update dependencies in package.jsons for all projects
     if (!options.dryRun) {
       const task = prompt.taskLog({
-        title: `Fetching versions to update package.json files..`,
+        title: `Updating package.json files..`,
       });
       try {
         const loggedPaths: string[] = [];
         for (const project of storybookProjects) {
-          prompt.debug(
-            `Updating dependencies in ${picocolors.cyan(shortenPath(project.configDir))}...`
-          );
           const packageJsonPaths = project.packageManager.packageJsonPaths.map(shortenPath);
           const newPaths = packageJsonPaths.filter((path) => !loggedPaths.includes(path));
           if (newPaths.length > 0) {
             task.message(newPaths.join('\n'));
             loggedPaths.push(...newPaths);
           }
+          prompt.debug(
+            `Updating dependencies in ${picocolors.cyan(shortenPath(project.configDir))}...`
+          );
           await upgradeStorybookDependencies({
             packageManager: project.packageManager,
             isCanary: project.isCanary,
@@ -381,7 +381,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       mainConfig: project.mainConfig,
     }));
 
-    prompt.step('🩺 Checking the health of your project(s)..');
+    prompt.step('Checking the health of your project(s)..');
     // TODO: Pass doctorResults to multi-upgrade telemetry
     doctorResults = await runMultiProjectDoctor(doctorProjects);
     const hasIssues = displayDoctorResults(doctorResults);
@@ -413,6 +413,8 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         doctorResults,
       });
     }
+
+    prompt.step('The upgrade is complete!');
   } finally {
     // Clean up signal handlers
     process.removeListener('SIGINT', handleInterruption);

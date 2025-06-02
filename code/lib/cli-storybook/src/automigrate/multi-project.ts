@@ -266,11 +266,13 @@ export async function runAutomigrations(
     storiesPaths: project.storiesPaths,
   }));
 
-  if (projectAutomigrationData.length > 1) {
-    prompt.log(`Detecting automigrations for ${projectAutomigrationData.length} projects...`);
-  } else {
-    prompt.log(`Detecting automigrations...`);
-  }
+  const detectingAutomigrationSpinner = prompt.spinner();
+
+  detectingAutomigrationSpinner.start(
+    projectAutomigrationData.length > 1
+      ? `Detecting automigrations for ${projectAutomigrationData.length} projects...`
+      : `Detecting automigrations...`
+  );
 
   // Collect all applicable automigrations across all projects
   const detectedAutomigrations = await collectAutomigrationsAcrossProjects({
@@ -280,6 +282,10 @@ export async function runAutomigrations(
     yes: options.yes,
     skipInstall: options.skipInstall,
   });
+
+  detectingAutomigrationSpinner.stop(
+    `${detectedAutomigrations.length === 0 ? 'No automigrations detected' : `${detectedAutomigrations.length} automigrations detected`}`
+  );
 
   // Prompt user to select which automigrations to run
   const selectedAutomigrations = await promptForAutomigrations(detectedAutomigrations, {

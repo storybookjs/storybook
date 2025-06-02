@@ -379,7 +379,7 @@ const processProject = async ({
       storiesPaths,
     } satisfies CollectProjectsSuccessResult;
   } catch (error) {
-    prompt.error(String(error));
+    prompt.debug(String(error));
     return {
       configDir,
       error: error as Error,
@@ -807,6 +807,10 @@ export const getStoriesPathsFromConfig = async ({
   configDir: string;
   workingDir: string;
 }) => {
+  if (stories.length === 0) {
+    return [];
+  }
+
   const normalizedStories = normalizeStories(stories, {
     configDir,
     workingDir,

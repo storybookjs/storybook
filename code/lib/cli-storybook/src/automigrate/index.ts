@@ -267,7 +267,7 @@ export async function runFixes({
       const promptType: Prompt =
         typeof f.promptType === 'function' ? await f.promptType(result) : (f.promptType ?? 'auto');
 
-      prompt.log(`\n🔎 found a '${picocolors.cyan(f.id)}' migration:`);
+      prompt.log(`🔎 found a '${picocolors.cyan(f.id)}' migration:`);
 
       const getTitle = () => {
         switch (promptType) {

@@ -28,7 +28,8 @@ addToGlobalContext('cliVersion', versions.storybook);
 const handleCommandFailure = async (error: unknown): Promise<never> => {
   prompt.error(String(error));
   const logFile = await logTracker.writeToFile();
-  prompt.outro(`Storybook debug logs can be found at: ${logFile}`);
+  prompt.log(`Storybook debug logs can be found at: ${logFile}`);
+  prompt.outro('');
   process.exit(1);
 };
 
@@ -68,7 +69,8 @@ const command = (name: string) =>
     .hook('postAction', async () => {
       if (logTracker.shouldWriteLogsToFile) {
         const logFile = await logTracker.writeToFile();
-        prompt.outro(`Storybook debug logs can be found at: ${logFile}`);
+        prompt.log(`Storybook debug logs can be found at: ${logFile}`);
+        prompt.outro('');
       }
     });
 
@@ -241,7 +243,7 @@ program.on('command:*', ([invalidCmd]) => {
   const availableCommands = program.commands.map((cmd) => cmd.name());
   const suggestion = availableCommands.find((cmd) => leven(cmd, invalidCmd) < 3);
   if (suggestion) {
-    prompt.log(`\n Did you mean ${picocolors.yellow(suggestion)}?`);
+    prompt.log(`Did you mean ${picocolors.yellow(suggestion)}?`);
   }
   process.exit(1);
 });

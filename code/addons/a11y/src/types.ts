@@ -19,7 +19,7 @@ export interface A11yGlobals {
    *
    * @see https://storybook.js.org/docs/writing-tests/accessibility-testing
    */
-  a11y: {
+  a11y?: {
     /**
      * Prevent the addon from executing automated accessibility checks upon visiting a story. You
      * can still trigger the checks from the addon panel.

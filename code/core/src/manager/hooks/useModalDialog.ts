@@ -15,10 +15,6 @@ export function useModalDialog({ isOpen, onClose }: UseModalDialogOptions) {
         if (!dialogNode.hasAttribute('open')) {
           dialogNode.showModal();
         }
-      } else {
-        if (dialogNode.hasAttribute('open')) {
-          dialogNode.close();
-        }
       }
     }
   }, [isOpen]);
@@ -26,14 +22,26 @@ export function useModalDialog({ isOpen, onClose }: UseModalDialogOptions) {
   useEffect(() => {
     const dialogNode = dialogRef.current;
     if (dialogNode) {
-      const handleDialogCloseEvent = () => {
+      const handleDialogCloseEvent = (event: Event) => {
         if (isOpen) {
+          event.preventDefault();
           onClose();
         }
       };
+
+      const handleEscapeKey = (event: KeyboardEvent) => {
+        if (event.key === 'Escape' && isOpen) {
+          event.preventDefault();
+          onClose();
+        }
+      };
+
       dialogNode.addEventListener('close', handleDialogCloseEvent);
+      dialogNode.addEventListener('keydown', handleEscapeKey);
+
       return () => {
         dialogNode.removeEventListener('close', handleDialogCloseEvent);
+        dialogNode.removeEventListener('keydown', handleEscapeKey);
       };
     }
     return undefined;

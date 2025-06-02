@@ -30,6 +30,12 @@ export const MobileMenuDrawer: FC<MobileMenuDrawerProps> = ({ children, id }) =>
     onClose: handleClose,
   });
 
+  const forceCloseDialog = useCallback(() => {
+    if (dialogRef.current && dialogRef.current.hasAttribute('open')) {
+      dialogRef.current.close();
+    }
+  }, []);
+
   return (
     <>
       <Transition
@@ -40,9 +46,7 @@ export const MobileMenuDrawer: FC<MobileMenuDrawerProps> = ({ children, id }) =>
         unmountOnExit
         onExited={() => {
           setMobileAboutOpen(false);
-          if (dialogRef.current && dialogRef.current.hasAttribute('open')) {
-            dialogRef.current.close();
-          }
+          forceCloseDialog();
         }}
       >
         {(state) => (
@@ -53,7 +57,7 @@ export const MobileMenuDrawer: FC<MobileMenuDrawerProps> = ({ children, id }) =>
               timeout={MOBILE_TRANSITION_DURATION}
             >
               {(sidebarState) => (
-                <SidebarContainer ref={sidebarRef} state={sidebarState} role="navigation">
+                <SidebarContainer ref={sidebarRef} state={sidebarState}>
                   {children}
                 </SidebarContainer>
               )}

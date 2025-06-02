@@ -5,16 +5,6 @@ import { dedent } from 'ts-dedent';
 import { JsPackageManager } from './JsPackageManager';
 import { Yarn1Proxy } from './Yarn1Proxy';
 
-vi.mock('storybook/internal/node-logger', () => ({
-  prompt: {
-    taskLog: vi.fn(() => ({
-      message: vi.fn(),
-      success: vi.fn(),
-      error: vi.fn(),
-    })),
-  },
-}));
-
 describe('Yarn 1 Proxy', () => {
   let yarn1Proxy: Yarn1Proxy;
 

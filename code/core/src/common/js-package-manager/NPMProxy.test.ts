@@ -3,16 +3,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { JsPackageManager } from './JsPackageManager';
 import { NPMProxy } from './NPMProxy';
 
-vi.mock('storybook/internal/node-logger', () => ({
-  prompt: {
-    taskLog: vi.fn(() => ({
-      message: vi.fn(),
-      success: vi.fn(),
-      error: vi.fn(),
-    })),
-  },
-}));
-
 describe('NPM Proxy', () => {
   let npmProxy: NPMProxy;
 

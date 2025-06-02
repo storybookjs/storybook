@@ -1,13 +1,14 @@
 import type { ComponentType } from 'react';
 
 import { definePreview as definePreviewBase } from 'storybook/internal/csf';
-import type { InferTypes, Meta, Preview, Story, Types } from 'storybook/internal/csf';
+import type { AddonTypes, InferTypes, Meta, Preview, Story } from 'storybook/internal/csf';
 import type { PreviewAddon } from 'storybook/internal/csf';
 import type {
   Args,
   ArgsStoryFn,
   ComponentAnnotations,
   DecoratorFunction,
+  NormalizedStoryAnnotations,
   ProjectAnnotations,
   Renderer,
   StoryAnnotations,
@@ -35,8 +36,7 @@ export function __definePreview<Addons extends PreviewAddon<never>[]>(
   }) as unknown as ReactPreview<InferTypes<Addons>>;
 }
 
-// @ts-expect-error hard
-export interface ReactPreview<T extends Types> extends Preview<ReactRenderer & T> {
+export interface ReactPreview<T extends AddonTypes> extends Preview<ReactRenderer & T> {
   meta<
     TArgs extends Args,
     Decorators extends DecoratorFunction<ReactRenderer & T, any>,
@@ -50,11 +50,12 @@ export interface ReactPreview<T extends Types> extends Preview<ReactRenderer & T
       args?: TMetaArgs;
     } & Omit<ComponentAnnotations<ReactRenderer & T, TArgs>, 'decorators'>
   ): ReactMeta<
-    {
-      args: Simplify<
-        TArgs & Simplify<RemoveIndexSignature<DecoratorsArgs<ReactRenderer & T, Decorators>>>
-      >;
-    } & T,
+    ReactRenderer &
+      T & {
+        args: Simplify<
+          TArgs & Simplify<RemoveIndexSignature<DecoratorsArgs<ReactRenderer & T, Decorators>>>
+        >;
+      },
     { args: Partial<TArgs> extends TMetaArgs ? {} : TMetaArgs }
   >;
 }
@@ -63,23 +64,20 @@ type DecoratorsArgs<TRenderer extends Renderer, Decorators> = UnionToIntersectio
   Decorators extends DecoratorFunction<TRenderer, infer TArgs> ? TArgs : unknown
 >;
 
-// @ts-expect-error hard
-interface ReactMeta<
-  T extends Types & { args: Args },
-  MetaInput extends ComponentAnnotations<ReactRenderer>,
-> extends Meta<ReactRenderer, T['args']> {
+interface ReactMeta<T extends ReactRenderer, MetaInput extends ComponentAnnotations<T>>
+  extends Meta<T> {
   story<
-    TInput extends StoryAnnotations<ReactRenderer & T, T['args']> & {
+    TInput extends StoryAnnotations<T, T['args']> & {
       render: () => ReactRenderer['storyResult'];
     },
   >(
     story: TInput
-  ): ReactStory<T>;
+  ): ReactStory<T, TInput>;
 
   story<
     TInput extends Simplify<
       StoryAnnotations<
-        ReactRenderer & T,
+        T,
         // TODO: infer mocks from story itself as well
         AddMocks<T['args'], MetaInput['args']>,
         SetOptional<T['args'], keyof T['args'] & keyof MetaInput['args']>
@@ -87,8 +85,9 @@ interface ReactMeta<
     >,
   >(
     story: TInput
-  ): ReactStory<T>;
+    // @ts-expect-error fix
+  ): ReactStory<T, TInput>;
 }
 
-export interface ReactStory<T extends Types & { args: Args }>
-  extends Story<ReactRenderer, T['args']> {}
+export interface ReactStory<T extends ReactRenderer, TInput extends StoryAnnotations<T, T['args']>>
+  extends Story<T, TInput> {}

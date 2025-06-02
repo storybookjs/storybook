@@ -255,7 +255,7 @@ describe('Story args can be inferred', () => {
     });
 
     const Enabled = meta.story({ args: { label: 'hello', disabled: false } });
-    const Disabled = meta.story({ args: { ...Enabled.composed.args, disabled: true } });
+    const Disabled = meta.story({ args: { ...Enabled.input.args, disabled: true } });
   });
 });
 

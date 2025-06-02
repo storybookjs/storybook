@@ -1,5 +1,4 @@
-import type { Types } from 'storybook/internal/csf';
-import type { InferTypes, PreviewAddon } from 'storybook/internal/csf';
+import type { AddonTypes, InferTypes, PreviewAddon } from 'storybook/internal/csf';
 import type { ProjectAnnotations } from 'storybook/internal/types';
 
 import type { ReactPreview } from '@storybook/react';
@@ -26,4 +25,4 @@ export function definePreview<Addons extends PreviewAddon<never>[]>(
   }) as unknown as NextPreview<InferTypes<Addons>>;
 }
 
-interface NextPreview<T extends Types> extends ReactPreview<NextJsTypes & T> {}
+interface NextPreview<T extends AddonTypes> extends ReactPreview<NextJsTypes & T> {}

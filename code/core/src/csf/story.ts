@@ -171,13 +171,11 @@ export interface StrictGlobalTypes {
   [name: string]: StrictInputType;
 }
 
-export interface Types {
-  parameters?: {};
+export interface AddonTypes {
+  parameters: Record<string, any>;
 }
 
-export interface Renderer extends CoreTypes {
-  csf4: boolean;
-
+export interface Renderer extends AddonTypes {
   /** What is the type of the `component` annotation in this renderer? */
   component: any;
 
@@ -194,6 +192,10 @@ export interface Renderer extends CoreTypes {
   // This generic type will eventually be filled in with TArgs
   // Credits to Michael Arnaldi.
   T?: unknown;
+
+  args: unknown;
+
+  csf4: boolean;
 }
 
 /** @deprecated - Use `Renderer` */
@@ -335,7 +337,8 @@ export interface BaseAnnotations<TRenderer extends Renderer = Renderer, TArgs = 
    *
    * @see [Parameters](https://storybook.js.org/docs/writing-stories/parameters)
    */
-  parameters?: Parameters & (TRenderer['csf4'] extends true ? TRenderer['parameters'] : unknown);
+  parameters?: Parameters &
+    (TRenderer['csf4'] extends true ? CoreTypes['parameters'] & TRenderer['parameters'] : unknown);
 
   /**
    * Dynamic data that are provided (and possibly updated by) Storybook and its addons.

@@ -1,8 +1,8 @@
 import type { PackageJsonWithDepsAndDevDeps } from 'storybook/internal/common';
 import { JsPackageManager, normalizeStories } from 'storybook/internal/common';
-import { getProjectRoot, isSatelliteAddon, prompt, versions } from 'storybook/internal/common';
+import { getProjectRoot, isSatelliteAddon, versions } from 'storybook/internal/common';
 import { StoryIndexGenerator, experimental_loadStorybook } from 'storybook/internal/core-server';
-import { logger } from 'storybook/internal/node-logger';
+import { prompt } from 'storybook/internal/node-logger';
 import {
   UpgradeStorybookToLowerVersionError,
   UpgradeStorybookUnknownCurrentVersionError,
@@ -10,7 +10,7 @@ import {
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import boxen, { type Options } from 'boxen';
-import { findUpMultiple, findUpMultipleSync } from 'find-up';
+import { findUpMultipleSync } from 'find-up';
 // eslint-disable-next-line depend/ban-dependencies
 import { globby, globbySync } from 'globby';
 import picocolors from 'picocolors';
@@ -221,6 +221,7 @@ const validateUpgradeCompatibility = (
  */
 export const findStorybookProjects = async (cwd: string = process.cwd()): Promise<string[]> => {
   try {
+    prompt.debug(`Finding Storybook projects...`);
     // Find all .storybook directories, accounting for custom config dirs later
     const storybookDirs = await globby(STORYBOOK_DIR_PATTERN, {
       cwd,
@@ -229,6 +230,8 @@ export const findStorybookProjects = async (cwd: string = process.cwd()): Promis
       absolute: true,
       onlyDirectories: true,
     });
+
+    prompt.debug(`Found ${storybookDirs.length} Storybook projects`);
 
     if (storybookDirs.length === 0) {
       const answer = await prompt.text({
@@ -240,7 +243,7 @@ export const findStorybookProjects = async (cwd: string = process.cwd()): Promis
 
     return storybookDirs;
   } catch (error) {
-    logger.error('Failed to find Storybook projects');
+    prompt.error('Failed to find Storybook projects');
     throw error;
   }
 };
@@ -278,7 +281,7 @@ export const getInstalledStorybookVersion = async (
     const firstDependency = Object.entries(installations.dependencies)[0];
     return firstDependency?.[1]?.[0]?.version;
   } catch (error) {
-    logger.warn('Failed to get installed Storybook version');
+    prompt.warn('Failed to get installed Storybook version');
     return undefined;
   }
 };
@@ -291,14 +294,19 @@ export const getInstalledStorybookVersion = async (
  * @param currentCLIVersion - Current CLI version
  * @returns Promise resolving to project collection result
  */
-const processProject = async (
-  configDir: string,
-  options: UpgradeOptions,
-  currentCLIVersion: string
-): Promise<CollectProjectsResult> => {
-  logger.plain(`Scanning ${picocolors.cyan(configDir)}`);
-
+const processProject = async ({
+  configDir,
+  options,
+  currentCLIVersion,
+  onScanStart,
+}: {
+  configDir: string;
+  options: UpgradeOptions;
+  currentCLIVersion: string;
+  onScanStart: () => void;
+}): Promise<CollectProjectsResult> => {
   try {
+    onScanStart();
     prompt.debug(`Getting Storybook data...`);
     const {
       configDir: resolvedConfigDir,
@@ -395,15 +403,23 @@ const processProject = async (
  */
 export const collectProjects = async (
   options: UpgradeOptions,
-  configDirs: readonly string[]
+  configDirs: readonly string[],
+  onProjectScanStart: (projectName: string) => void
 ): Promise<CollectProjectsResult[]> => {
   const currentCLIVersion = versions.storybook;
 
   const projectPromises = configDirs.map((configDir) =>
-    processProject(configDir, options, currentCLIVersion)
+    processProject({
+      configDir,
+      options,
+      currentCLIVersion,
+      onScanStart: () => onProjectScanStart(shortenPath(configDir)),
+    })
   );
 
-  return Promise.all(projectPromises);
+  const result = await Promise.all(projectPromises);
+
+  return result;
 };
 
 /**
@@ -469,7 +485,7 @@ export const generateUpgradeSpecs = async (
         const results = await Promise.all(upgradePromises);
         storybookSatelliteUpgrades = results.filter((result): result is string => result !== null);
       } catch (error) {
-        logger.warn('Failed to fetch satellite dependencies');
+        prompt.warn('Failed to fetch satellite dependencies');
         // Continue without satellite upgrades
       }
     }
@@ -499,7 +515,7 @@ const addDependencies = async (
       ...dependencies,
     ]);
   } catch (error) {
-    logger.error(`Failed to add ${isDev ? 'dev ' : ''}dependencies`);
+    prompt.error(`Failed to add ${isDev ? 'dev ' : ''}dependencies`);
     throw error;
   }
 };
@@ -526,22 +542,17 @@ export const upgradeStorybookDependencies = async (config: UpgradeConfig): Promi
   const { packageManager } = config;
 
   for (const packageJsonPath of packageManager.packageJsonPaths) {
-    try {
-      const packageJson = JsPackageManager.getPackageJson(packageJsonPath);
+    const packageJson = JsPackageManager.getPackageJson(packageJsonPath);
 
-      const [upgradedDependencies, upgradedDevDependencies] = await Promise.all([
-        generateUpgradeSpecs(packageJson.dependencies, config),
-        generateUpgradeSpecs(packageJson.devDependencies, config),
-      ]);
+    const [upgradedDependencies, upgradedDevDependencies] = await Promise.all([
+      generateUpgradeSpecs(packageJson.dependencies, config),
+      generateUpgradeSpecs(packageJson.devDependencies, config),
+    ]);
 
-      await Promise.all([
-        addDependencies(packageManager, upgradedDependencies, false),
-        addDependencies(packageManager, upgradedDevDependencies, true),
-      ]);
-    } catch (error) {
-      logger.error(`Failed to upgrade dependencies in ${packageJsonPath}`);
-      throw error;
-    }
+    await Promise.all([
+      addDependencies(packageManager, upgradedDependencies, false),
+      addDependencies(packageManager, upgradedDevDependencies, true),
+    ]);
   }
 };
 
@@ -550,13 +561,11 @@ export const upgradeStorybookDependencies = async (config: UpgradeConfig): Promi
  *
  * @param projectData - Array of project results
  * @param modifier - Symbol to prefix each directory
- * @param gitRoot - Git root path for relative path calculation
  * @returns Formatted string of project directories
  */
 const formatProjectDirectories = (
   projectData: readonly CollectProjectsResult[],
-  modifier: string,
-  gitRoot: string
+  modifier: string
 ): string => {
   if (projectData.length === 0) {
     return '';
@@ -564,8 +573,19 @@ const formatProjectDirectories = (
 
   return projectData
     .map((project) => project.configDir)
-    .map((dir) => `${modifier} ${picocolors.cyan(dir.replace(gitRoot, ''))}`)
+    .map((dir) => `${modifier} ${picocolors.cyan(shortenPath(dir))}`)
     .join('\n');
+};
+
+/**
+ * Shortens a path to the relative path from the project root
+ *
+ * @param path - The path to shorten
+ * @returns The shortened path
+ */
+export const shortenPath = (path: string) => {
+  const gitRoot = getProjectRoot();
+  return path.replace(gitRoot, '');
 };
 
 /**
@@ -581,8 +601,6 @@ const handleMultipleProjects = async (
   errorProjects: readonly CollectProjectsErrorResult[],
   detectedConfigDirs: readonly string[]
 ): Promise<CollectProjectsSuccessResult[] | undefined> => {
-  const gitRoot = getProjectRoot();
-
   // Check for overlapping Storybooks
   const allPackageJsonPaths = validProjects
     .flatMap((data) => data.packageManager.packageJsonPaths)
@@ -592,13 +610,13 @@ const handleMultipleProjects = async (
   const hasOverlappingStorybooks = uniquePackageJsonPaths.size !== allPackageJsonPaths.length;
 
   if (hasOverlappingStorybooks) {
-    const validProjectsMessage = formatProjectDirectories(validProjects, '✔', gitRoot);
+    const validProjectsMessage = formatProjectDirectories(validProjects, '✔');
     const invalidProjectsMessage =
       errorProjects.length > 0
-        ? `\nThere were some errors while collecting data for the following projects:\n${formatProjectDirectories(errorProjects, '✕', gitRoot)}`
+        ? `\nThere were some errors while collecting data for the following projects:\n${formatProjectDirectories(errorProjects, '✕')}`
         : '';
 
-    logger.plain(
+    prompt.log(
       `Multiple Storybook projects found. Storybook can only upgrade all projects at once:\n${validProjectsMessage}${invalidProjectsMessage}`
     );
 
@@ -618,7 +636,7 @@ const handleMultipleProjects = async (
     const selectedConfigDirs = await prompt.multiselect({
       message: 'Select which projects to upgrade',
       options: detectedConfigDirs.map((configDir) => ({
-        label: configDir.replace(gitRoot, ''),
+        label: shortenPath(configDir),
         value: configDir,
       })),
     });
@@ -635,20 +653,29 @@ const handleMultipleProjects = async (
  * @example
  *
  * ```typescript
- * const projects = await getProjects({ configDir: ['/path/to/.storybook'] });
- * if (projects) {
- *   console.log(`Found ${projects.length} projects to upgrade`);
+ * const result = await getProjects({ configDir: ['/path/to/.storybook'] });
+ * if (result) {
+ *   console.log(
+ *     `Found ${result.selectedProjects.length} of ${result.allProjects.length} projects to upgrade`
+ *   );
  * }
  * ```
  *
  * @param options - Upgrade options
- * @returns Promise resolving to array of valid projects or undefined
+ * @returns Promise resolving to object with all detected projects and selected projects, or
+ *   undefined
  */
 export const getProjects = async (
   options: UpgradeOptions
-): Promise<CollectProjectsSuccessResult[] | undefined> => {
+): Promise<
+  | {
+      allProjects: CollectProjectsSuccessResult[];
+      selectedProjects: CollectProjectsSuccessResult[];
+    }
+  | undefined
+> => {
   try {
-    const gitRoot = getProjectRoot();
+    const task = prompt.taskLog({ title: 'Detecting projects to upgrade...' });
 
     // Determine configuration directories
     let detectedConfigDirs: string[] = options.configDir ?? [];
@@ -656,37 +683,48 @@ export const getProjects = async (
       detectedConfigDirs = await findStorybookProjects();
     }
 
-    const projects = await collectProjects(options, detectedConfigDirs);
+    const projects = await collectProjects(options, detectedConfigDirs, (projectName) =>
+      task.message(projectName)
+    );
+    task.success(`Found ${projects.length} project(s)`);
 
     // Separate valid and error projects
     const validProjects = projects.filter(isSuccessResult);
     const errorProjects = projects.filter(isErrorResult);
+    prompt.debug(
+      `Found ${validProjects.length} valid projects and ${errorProjects.length} error projects`
+    );
 
     // Handle single project case
     if (validProjects.length === 1) {
-      return validProjects;
+      return { allProjects: validProjects, selectedProjects: validProjects };
     }
 
     // Handle case with only errors
     if (validProjects.length === 0 && errorProjects.length > 0) {
       const errorMessage = errorProjects
         .map((project) => {
-          const relativePath = project.configDir.replace(gitRoot, '');
+          const relativePath = shortenPath(project.configDir);
           return `${picocolors.cyan(relativePath)}:\n${project.error.stack || project.error.message}`;
         })
         .join('\n');
 
-      logger.plain(
-        `❌ Storybook found errors while collecting data for the following projects:\n${errorMessage}`
+      // eslint-disable-next-line local-rules/no-uncategorized-errors
+      throw new Error(
+        `❌ Storybook found errors while collecting data for the following projects:\n${errorMessage}\nPlease fix the errors and run the upgrade command again.`
       );
-      logger.plain('Please fix the errors and run the upgrade command again.');
-      return [];
     }
 
     // Handle multiple projects
-    return handleMultipleProjects(validProjects, errorProjects, detectedConfigDirs);
+    const selectedProjects = await handleMultipleProjects(
+      validProjects,
+      errorProjects,
+      detectedConfigDirs
+    );
+
+    return selectedProjects ? { allProjects: validProjects, selectedProjects } : undefined;
   } catch (error) {
-    logger.error('Failed to get projects');
+    prompt.error('Failed to get projects');
     throw error;
   }
 };
@@ -776,7 +814,8 @@ export const getStoriesPathsFromConfig = async ({
 
   const matchingStoryFiles = await StoryIndexGenerator.findMatchingFilesForSpecifiers(
     normalizedStories,
-    workingDir
+    workingDir,
+    true
   );
 
   const storiesPaths = matchingStoryFiles.flatMap(([specifier, cache]) => {

@@ -1,9 +1,7 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
 import type { JsPackageManager } from 'storybook/internal/common';
-import {
-  JsPackageManagerFactory,
-  versions as storybookCorePackages,
-} from 'storybook/internal/common';
+import { versions as storybookCorePackages } from 'storybook/internal/common';
+import { prompt } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
 import semver from 'semver';
@@ -92,7 +90,9 @@ export const checkPackageCompatibility = async (
     };
   } catch (err) {
     if (!skipErrors) {
-      console.log(`Error checking compatibility for ${dependency}, please report an issue:\n`, err);
+      prompt.log(
+        `Error checking compatibility for ${dependency}, please report an issue:\n` + String(err)
+      );
     }
     return { packageName: dependency };
   }
@@ -165,6 +165,7 @@ export const getIncompatiblePackagesSummary = (
               `- ${picocolors.blue(`${packageName}@${packageVersion}`)}`
           )
           .join('\n')}`,
+        '\n',
         `Upgrade Storybook with:`,
         picocolors.blue('npx storybook@latest upgrade')
       );

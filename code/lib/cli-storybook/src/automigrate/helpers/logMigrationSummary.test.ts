@@ -1,12 +1,21 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { type InstallationMetadata, prompt as promptRaw } from 'storybook/internal/common';
+import { prompt as promptRaw } from 'storybook/internal/node-logger';
 
 import { FixStatus } from '../types';
 import { logMigrationSummary } from './logMigrationSummary';
 
-vi.mock('picocolors');
-vi.mock('storybook/internal/common', () => ({
+vi.mock('picocolors', () => ({
+  default: {
+    yellow: (str: string) => str,
+    cyan: (str: string) => str,
+    bold: (str: string) => str,
+    green: (str: string) => str,
+    red: (str: string) => str,
+  },
+}));
+
+vi.mock('storybook/internal/node-logger', () => ({
   prompt: {
     logBox: vi.fn(),
   },
@@ -33,17 +42,6 @@ describe('logMigrationSummary', () => {
     skipped: ['quux-package'],
   };
 
-  const installationMetadata: InstallationMetadata = {
-    duplicatedDependencies: {
-      '@storybook/addon-essentials': ['7.0.0', '7.1.0'],
-    },
-    dependencies: {},
-    infoCommand: 'yarn why',
-    dedupeCommand: 'yarn dedupe',
-  };
-
-  const logFile = '/path/to/log/file';
-
   it('renders a summary with a "no migrations" message if all migrations were unnecessary', () => {
     logMigrationSummary({
       fixResults: { 'foo-package': FixStatus.UNNECESSARY },
@@ -53,8 +51,6 @@ describe('logMigrationSummary', () => {
         manual: [],
         skipped: [],
       },
-      installationMetadata,
-      logFile,
     });
 
     expect(prompt.logBox.mock.calls[0][1]).toEqual(
@@ -77,8 +73,6 @@ describe('logMigrationSummary', () => {
         manual: ['bar-package'],
         skipped: [],
       },
-      installationMetadata,
-      logFile,
     });
 
     expect(prompt.logBox.mock.calls[0][1]).toEqual(
@@ -92,8 +86,6 @@ describe('logMigrationSummary', () => {
     logMigrationSummary({
       fixResults,
       fixSummary,
-      installationMetadata: null,
-      logFile,
     });
 
     expect(prompt.logBox.mock.calls[0][1]).toEqual(
@@ -102,27 +94,31 @@ describe('logMigrationSummary', () => {
       })
     );
     expect(normalizeLineBreaks(prompt.logBox.mock.calls[0][0])).toMatchInlineSnapshot(`
-      "undefined:
+      "Successful migrations:
+
+      foo-package
+
+      Failed migrations:
+
+      baz-package:
       Some error message
 
-      You can find the full logs in undefined
+      Manual migrations:
 
+      bar-package
 
+      Skipped migrations:
 
-
-
-
-
-
+      quux-package
 
       ─────────────────────────────────────────────────
 
-      If you'd like to run the migrations again, you can do so by running 'undefined'
+      If you'd like to run the migrations again, you can do so by running 'npx storybook automigrate'
 
       The automigrations try to migrate common patterns in your project, but might not contain everything needed to migrate to the latest version of Storybook.
 
-      Please check the changelog and migration guide for manual migrations and more information: undefined
-      And reach out on Discord if you need help: undefined"
+      Please check the changelog and migration guide for manual migrations and more information: https://storybook.js.org/docs/migration-guide
+      And reach out on Discord if you need help: https://discord.gg/storybook"
     `);
   });
 
@@ -130,8 +126,6 @@ describe('logMigrationSummary', () => {
     logMigrationSummary({
       fixResults: {},
       fixSummary: { succeeded: [], failed: {}, manual: [], skipped: [] },
-      installationMetadata,
-      logFile,
     });
 
     expect(prompt.logBox.mock.calls[0][1]).toEqual(
@@ -140,12 +134,12 @@ describe('logMigrationSummary', () => {
       })
     );
     expect(normalizeLineBreaks(prompt.logBox.mock.calls[0][0])).toMatchInlineSnapshot(`
-      "If you'd like to run the migrations again, you can do so by running 'undefined'
+      "If you'd like to run the migrations again, you can do so by running 'npx storybook automigrate'
 
       The automigrations try to migrate common patterns in your project, but might not contain everything needed to migrate to the latest version of Storybook.
 
-      Please check the changelog and migration guide for manual migrations and more information: undefined
-      And reach out on Discord if you need help: undefined"
+      Please check the changelog and migration guide for manual migrations and more information: https://storybook.js.org/docs/migration-guide
+      And reach out on Discord if you need help: https://discord.gg/storybook"
     `);
   });
 
@@ -153,8 +147,6 @@ describe('logMigrationSummary', () => {
     logMigrationSummary({
       fixResults: {},
       fixSummary: { succeeded: [], failed: {}, manual: [], skipped: [] },
-      installationMetadata: undefined,
-      logFile,
     });
 
     expect(prompt.logBox.mock.calls[0][1]).toEqual(
@@ -163,12 +155,12 @@ describe('logMigrationSummary', () => {
       })
     );
     expect(normalizeLineBreaks(prompt.logBox.mock.calls[0][0])).toMatchInlineSnapshot(`
-      "If you'd like to run the migrations again, you can do so by running 'undefined'
+      "If you'd like to run the migrations again, you can do so by running 'npx storybook automigrate'
 
       The automigrations try to migrate common patterns in your project, but might not contain everything needed to migrate to the latest version of Storybook.
 
-      Please check the changelog and migration guide for manual migrations and more information: undefined
-      And reach out on Discord if you need help: undefined"
+      Please check the changelog and migration guide for manual migrations and more information: https://storybook.js.org/docs/migration-guide
+      And reach out on Discord if you need help: https://discord.gg/storybook"
     `);
   });
 });

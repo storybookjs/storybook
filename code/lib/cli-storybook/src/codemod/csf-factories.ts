@@ -1,4 +1,5 @@
-import { type JsPackageManager, prompt, syncStorybookAddons } from 'storybook/internal/common';
+import { type JsPackageManager, syncStorybookAddons } from 'storybook/internal/common';
+import { prompt } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';

@@ -21,6 +21,12 @@ export enum DiagnosticType {
   CONFIGURATION_ERROR = 'configuration_error',
 }
 
+export enum DiagnosticStatus {
+  PASSED = 'passed',
+  FAILED = 'failed',
+  ERROR = 'error',
+}
+
 export type DiagnosticDoctorData = {
   configDir: string;
 };
@@ -37,4 +43,11 @@ export interface DoctorCheckResult {
   title: string;
   message: string;
   project: DiagnosticDoctorData;
+}
+
+export interface ProjectDoctorResults {
+  configDir: string;
+  status: 'healthy' | 'issues' | 'error';
+  diagnostics: Record<DiagnosticType, DiagnosticStatus>;
+  messages: Record<DiagnosticType, string>;
 }

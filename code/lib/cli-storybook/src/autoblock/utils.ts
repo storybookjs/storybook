@@ -2,6 +2,7 @@ import type { JsPackageManager } from 'storybook/internal/common';
 
 import { lt } from 'semver';
 
+import { shortenPath } from '../util';
 import type { AutoblockerResult } from './types';
 
 type Result<M extends Record<string, string>> = {
@@ -56,13 +57,12 @@ export async function findOutdatedPackage<M extends Record<string, string>>(
  * issues that should prevent the upgrade.
  *
  * @param projects - Array of project results with autoblocker check results
- * @param gitRoot - The git root directory for creating relative paths
  * @param onError - Callback function to handle error display
  * @returns True if there are blockers that should prevent upgrade, false otherwise
  */
 export function processAutoblockerResults<
   T extends { configDir: string; autoblockerCheckResults?: AutoblockerResult<unknown>[] | null },
->(projects: T[], gitRoot: string, onError: (message: string) => void): boolean {
+>(projects: T[], onError: (message: string) => void): boolean {
   const autoblockerMessagesMap = new Map<
     string,
     { message: string; link?: string; configDirs: string[] }
@@ -93,7 +93,7 @@ export function processAutoblockerResults<
 
   if (autoblockerMessages.length > 0) {
     const formatConfigDirs = (configDirs: string[]) => {
-      const relativeDirs = configDirs.map((dir) => dir.replace(gitRoot, '') || '.');
+      const relativeDirs = configDirs.map((dir) => shortenPath(dir) || '.');
       if (relativeDirs.length <= 3) {
         return relativeDirs.join(', ');
       }

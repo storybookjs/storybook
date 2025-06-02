@@ -1,5 +1,4 @@
-import { prompt } from 'storybook/internal/common';
-import { colors, logger } from 'storybook/internal/node-logger';
+import { colors, logger, prompt } from 'storybook/internal/node-logger';
 
 const fancy =
   process.platform !== 'win32' || process.env.CI || process.env.TERM === 'xterm-256color';

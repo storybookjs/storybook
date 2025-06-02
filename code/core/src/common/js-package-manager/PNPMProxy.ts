@@ -4,9 +4,7 @@ import { join } from 'node:path';
 import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 
 import { findUpSync } from 'find-up';
-import { dedent } from 'ts-dedent';
 
-import { createLogStream } from '../utils/cli';
 import { getProjectRoot } from '../utils/paths';
 import { JsPackageManager } from './JsPackageManager';
 import type { PackageJson } from './PackageJson';
@@ -54,10 +52,11 @@ export class PNPMProxy extends JsPackageManager {
   }
 
   async getPnpmVersion(): Promise<string> {
-    return this.executeCommand({
+    const result = await this.executeCommand({
       command: 'pnpm',
       args: ['--version'],
     });
+    return result.stdout ?? null;
   }
 
   getInstallArgs(): string[] {
@@ -85,32 +84,55 @@ export class PNPMProxy extends JsPackageManager {
     });
   }
 
-  public async getRegistryURL() {
-    const res = await this.executeCommand({
-      command: 'pnpm',
-      args: ['config', 'get', 'registry'],
-    });
-    const url = res.trim();
-    return url === 'undefined' ? undefined : url;
-  }
-
-  async runPackageCommand(command: string, args: string[], cwd?: string): Promise<string> {
+  public runPackageCommand(
+    command: string,
+    args: string[],
+    cwd?: string,
+    stdio?: 'pipe' | 'inherit'
+  ) {
     return this.executeCommand({
       command: 'pnpm',
       args: ['exec', command, ...args],
       cwd,
+      stdio,
     });
+  }
+
+  public runInternalCommand(
+    command: string,
+    args: string[],
+    cwd?: string,
+    stdio?: 'inherit' | 'pipe' | 'ignore'
+  ) {
+    return this.executeCommand({
+      command: 'pnpm',
+      args: [command, ...args],
+      cwd,
+      stdio,
+    });
+  }
+
+  public async getRegistryURL() {
+    const process = this.executeCommand({
+      command: 'pnpm',
+      args: ['config', 'get', 'registry'],
+    });
+    const result = await process;
+    const url = (result.stdout ?? '').trim();
+    return url === 'undefined' ? undefined : url;
   }
 
   public async findInstallations(pattern: string[], { depth = 99 }: { depth?: number } = {}) {
     try {
-      const commandResult = await this.executeCommand({
+      const process = this.executeCommand({
         command: 'pnpm',
         args: ['list', pattern.map((p) => `"${p}"`).join(' '), '--json', `--depth=${depth}`],
         env: {
           FORCE_COLOR: 'false',
         },
       });
+      const result = await process;
+      const commandResult = result.stdout ?? '';
 
       const parsedOutput = JSON.parse(commandResult);
       return this.mapDependencies(parsedOutput, pattern);
@@ -173,20 +195,16 @@ export class PNPMProxy extends JsPackageManager {
     };
   }
 
-  protected async runInstall() {
-    await this.executeCommand({
+  protected runInstall() {
+    return this.executeCommand({
       command: 'pnpm',
       args: ['install', ...this.getInstallArgs()],
-      stdio: 'inherit',
+      stdio: 'pipe',
       cwd: this.cwd,
     });
   }
 
-  protected async runAddDeps(
-    dependencies: string[],
-    installAsDevDependencies: boolean,
-    writeOutputToFile = true
-  ) {
+  protected runAddDeps(dependencies: string[], installAsDevDependencies: boolean) {
     let args = [...dependencies];
 
     if (installAsDevDependencies) {
@@ -195,38 +213,11 @@ export class PNPMProxy extends JsPackageManager {
 
     const commandArgs = ['add', ...args, ...this.getInstallArgs()];
 
-    const { logStream, readLogFile, moveLogFile, removeLogFile } = await createLogStream();
-
-    try {
-      await this.executeCommand({
-        command: 'pnpm',
-        args: commandArgs,
-        stdio: process.env.CI || !writeOutputToFile ? 'inherit' : ['ignore', logStream, logStream],
-        cwd: this.primaryPackageJson.operationDir,
-      });
-    } catch (err) {
-      if (!writeOutputToFile) {
-        throw err;
-      }
-      const stdout = await readLogFile();
-      const errorMessage = this.parseErrorFromLogs(stdout);
-      await moveLogFile();
-      throw new Error(
-        dedent`${errorMessage}
-        
-        Please check the logfile generated at ./storybook.log for troubleshooting and try again.`
-      );
-    }
-
-    await removeLogFile();
-  }
-
-  protected async runRemoveDeps(dependencies: string[], cwd = this.cwd) {
-    await this.executeCommand({
+    return this.executeCommand({
       command: 'pnpm',
-      args: ['remove', ...dependencies, ...this.getInstallArgs()],
-      stdio: 'inherit',
-      cwd,
+      args: commandArgs,
+      stdio: 'pipe',
+      cwd: this.primaryPackageJson.operationDir,
     });
   }
 
@@ -237,10 +228,12 @@ export class PNPMProxy extends JsPackageManager {
     const args = fetchAllVersions ? ['versions', '--json'] : ['version'];
 
     try {
-      const commandResult = await this.executeCommand({
+      const process = this.executeCommand({
         command: 'pnpm',
         args: ['info', packageName, ...args],
       });
+      const result = await process;
+      const commandResult = result.stdout ?? '';
 
       const parsedOutput = fetchAllVersions ? JSON.parse(commandResult) : commandResult.trim();
 

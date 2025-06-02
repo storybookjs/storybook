@@ -4,7 +4,6 @@ import versions from './versions';
 
 export * from './presets';
 
-export * from './prompts';
 export * from './utils/cache';
 export * from './utils/cli';
 export * from './utils/check-addon-order';

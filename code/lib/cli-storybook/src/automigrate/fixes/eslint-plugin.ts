@@ -3,6 +3,7 @@ import {
   configureEslintPlugin,
   extractEslintInfo,
 } from 'storybook/internal/cli';
+import { prompt } from 'storybook/internal/node-logger';
 
 import { dedent } from 'ts-dedent';
 
@@ -57,19 +58,21 @@ export const eslintPlugin: Fix<EslintPluginRunOptions> = {
     result: { eslintConfigFile, unsupportedExtension, isFlatConfig },
     packageManager,
     dryRun,
-    skipInstall,
     storybookVersion,
   }) {
     const deps = [`eslint-plugin-storybook@${storybookVersion}`];
 
-    logger.info(`✅ Adding dependencies: ${deps}`);
+    prompt.debug(`Adding dependencies: ${deps}`);
     if (!dryRun) {
-      await packageManager.addDependencies({ installAsDevDependencies: true, skipInstall }, deps);
+      await packageManager.addDependencies(
+        { installAsDevDependencies: true, skipInstall: true },
+        deps
+      );
     }
 
     if (!dryRun && unsupportedExtension) {
-      logger.info(dedent`
-          ⚠️ The plugin was successfully installed but failed to be configured.
+      prompt.warn(dedent`
+          The plugin was successfully installed but failed to be configured.
           
           Found an eslint config file with an unsupported automigration format: .eslintrc.${unsupportedExtension}.
           The supported formats for this automigration are: ${SUPPORTED_ESLINT_EXTENSIONS.join(

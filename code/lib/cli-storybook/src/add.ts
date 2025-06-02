@@ -2,12 +2,12 @@ import { isAbsolute, join } from 'node:path';
 
 import {
   type PackageManagerName,
-  prompt,
   serverRequire,
   syncStorybookAddons,
   versions,
 } from 'storybook/internal/common';
 import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
+import { prompt } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import SemVer from 'semver';

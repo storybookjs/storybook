@@ -4,6 +4,7 @@ import { dirname } from 'node:path';
 import type { PackageJson } from 'storybook/internal/common';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { isCorePackage, isSatelliteAddon } from 'storybook/internal/common';
+import { prompt } from 'storybook/internal/node-logger';
 
 import { gt } from 'semver';
 import { dedent } from 'ts-dedent';
@@ -34,6 +35,26 @@ async function getLatestVersions(
   );
 }
 
+/** Filter out dependencies that are not valid e.g. yarn patches, git urls and other protocols */
+function isValidVersionType(packageName: string, specifier: string) {
+  if (
+    specifier.startsWith('patch:') ||
+    specifier.startsWith('file:') ||
+    specifier.startsWith('link:') ||
+    specifier.startsWith('portal:') ||
+    specifier.startsWith('git:') ||
+    specifier.startsWith('git+') ||
+    specifier.startsWith('http:') ||
+    specifier.startsWith('https:') ||
+    specifier.startsWith('workspace:')
+  ) {
+    prompt.debug(`Skipping ${packageName} as it does not have a valid version type: ${specifier}`);
+    return false;
+  }
+
+  return true;
+}
+
 /**
  * Is the user upgrading to the `latest` version of Storybook? Let's try to pull along some of the
  * storybook related dependencies to `latest` as well!
@@ -50,6 +71,7 @@ export const upgradeStorybookRelatedDependencies = {
   promptDefaultValue: false,
 
   async check({ packageManager, storybookVersion }) {
+    prompt.debug('Checking for incompatible storybook packages...');
     const analyzedPackages = await getIncompatibleStorybookPackages({
       currentStorybookVersion: storybookVersion,
       packageManager,
@@ -67,7 +89,11 @@ export const upgradeStorybookRelatedDependencies = {
       .map((pkg) => pkg.packageName);
 
     const uniquePackages = Array.from(
-      new Set([...storybookDependencies, ...incompatibleDependencies])
+      new Set(
+        [...storybookDependencies, ...incompatibleDependencies].filter((dep) =>
+          isValidVersionType(dep, allDependencies[dep])
+        )
+      )
     ).map((packageName) => [packageName, allDependencies[packageName]]) as [string, string][];
 
     const packageVersions = await getLatestVersions(packageManager, uniquePackages);
@@ -89,8 +115,8 @@ export const upgradeStorybookRelatedDependencies = {
 
   async run({ result: { upgradable }, packageManager, dryRun }) {
     if (dryRun) {
-      console.log(dedent`
-        We would have upgrade the following:
+      prompt.log(dedent`
+        The following would have been upgraded:
         ${upgradable
           .map(
             ({ packageName, afterVersion, beforeVersion }) =>

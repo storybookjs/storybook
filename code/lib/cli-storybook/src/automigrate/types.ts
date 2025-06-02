@@ -1,9 +1,4 @@
-import type {
-  JsPackageManager,
-  LogLevel,
-  PackageJson,
-  PackageManagerName,
-} from 'storybook/internal/common';
+import type { JsPackageManager, PackageManagerName } from 'storybook/internal/common';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 export interface CheckOptions {

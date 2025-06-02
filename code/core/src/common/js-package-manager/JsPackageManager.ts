@@ -1,21 +1,20 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 
+import { prompt } from 'storybook/internal/node-logger';
+
 // eslint-disable-next-line depend/ban-dependencies
-import { type CommonOptions, execaCommand, execaCommandSync } from 'execa';
+import { type CommonOptions, type ExecaChildProcess, execa, execaCommandSync } from 'execa';
 import { findUpMultipleSync, findUpSync } from 'find-up';
 import picocolors from 'picocolors';
 import { gt, satisfies } from 'semver';
 import invariant from 'tiny-invariant';
 
-import { prompt } from '../prompts';
 import { HandledError } from '../utils/HandledError';
 import { getProjectRoot } from '../utils/paths';
 import storybookPackagesVersions from '../versions';
 import type { PackageJson, PackageJsonWithDepsAndDevDeps } from './PackageJson';
 import type { InstallationMetadata } from './types';
-
-const logger = console;
 
 export type PackageManagerName = 'npm' | 'yarn1' | 'yarn2' | 'pnpm' | 'bun';
 
@@ -121,13 +120,29 @@ export abstract class JsPackageManager {
   }
 
   async installDependencies() {
+    const installTask = prompt.taskLog({ title: 'Installing dependencies...', limit: 5 });
     try {
-      prompt.debug('Installing dependencies...');
-      await this.runInstall();
-      prompt.debug('Deduping dependencies...');
-      await this.executeCommand({ command: 'dedupe', args: [], stdio: 'ignore' }).catch(() => {});
+      const installProcess = this.runInstall();
+      installProcess.stdout?.on('data', (data) => {
+        installTask.message(data.toString());
+      });
+      installProcess.stderr?.on('data', (data) => {
+        installTask.message(data.toString());
+      });
+      await installProcess;
+
+      installTask.message('Deduping dependencies...');
+      const dedupeProcess = this.runInternalCommand('dedupe', [], this.cwd);
+      dedupeProcess.stdout?.on('data', (data) => {
+        installTask.message(data.toString());
+      });
+      dedupeProcess.stderr?.on('data', (data) => {
+        installTask.message(data.toString());
+      });
+      await dedupeProcess;
+      installTask.success('Dependencies installed');
     } catch (e) {
-      prompt.error('An error occurred while installing dependencies.');
+      installTask.error('An error occurred while installing dependencies.');
       throw new HandledError(e);
     }
   }
@@ -196,7 +211,7 @@ export abstract class JsPackageManager {
       writeOutputToFile?: boolean;
     },
     dependencies: string[]
-  ) {
+  ): Promise<void | ExecaChildProcess> {
     const { skipInstall, writeOutputToFile = true } = options;
 
     const { operationDir, packageJson } = this.primaryPackageJson;
@@ -218,14 +233,14 @@ export abstract class JsPackageManager {
       this.writePackageJson(packageJson, operationDir);
     } else {
       try {
-        await this.runAddDeps(
+        return this.runAddDeps(
           dependencies,
           Boolean(options.installAsDevDependencies),
           writeOutputToFile
         );
       } catch (e: any) {
-        logger.error('\nAn error occurred while installing dependencies:');
-        logger.log(e.message);
+        prompt.error('\nAn error occurred while installing dependencies:');
+        prompt.log(e.message);
         throw new HandledError(e);
       }
     }
@@ -267,7 +282,7 @@ export abstract class JsPackageManager {
           break;
         }
       } catch (e) {
-        logger.warn(`Could not process ${pjPath} for dependency removal: ${String(e)}`);
+        prompt.warn(`Could not process ${pjPath} for dependency removal: ${String(e)}`);
       }
     }
   }
@@ -346,11 +361,11 @@ export abstract class JsPackageManager {
       latest = await this.latestVersion(packageName, constraint);
     } catch (e) {
       if (current) {
-        logger.warn(`\n     ${picocolors.yellow(String(e))}`);
+        prompt.warn(`\n     ${picocolors.yellow(String(e))}`);
         return current;
       }
 
-      logger.error(`\n     ${picocolors.red(String(e))}`);
+      prompt.error(`\n     ${picocolors.red(String(e))}`);
       throw new HandledError(e);
     }
 
@@ -420,15 +435,13 @@ export abstract class JsPackageManager {
     const resolutions = this.getResolutions(packageJson, versions);
     this.writePackageJson({ ...packageJson, ...resolutions }, operationDir);
   }
-  protected abstract runInstall(): Promise<void>;
+  protected abstract runInstall(): ExecaChildProcess;
 
   protected abstract runAddDeps(
     dependencies: string[],
     installAsDevDependencies: boolean,
     writeOutputToFile?: boolean
-  ): Promise<void>;
-
-  protected abstract runRemoveDeps(dependencies: string[], cwd?: string): Promise<void>;
+  ): ExecaChildProcess;
 
   protected abstract getResolutions(
     packageJson: PackageJson,
@@ -449,17 +462,23 @@ export abstract class JsPackageManager {
 
   public abstract getRegistryURL(): Promise<string | undefined>;
 
+  public abstract runInternalCommand(
+    command: string,
+    args: string[],
+    cwd?: string,
+    stdio?: 'inherit' | 'pipe' | 'ignore'
+  ): ExecaChildProcess;
   public abstract runPackageCommand(
     command: string,
     args: string[],
     cwd?: string,
-    stdio?: string
-  ): Promise<string>;
+    stdio?: 'inherit' | 'pipe' | 'ignore'
+  ): ExecaChildProcess;
   public abstract runPackageCommandSync(
     command: string,
     args: string[],
     cwd?: string,
-    stdio?: 'inherit' | 'pipe'
+    stdio?: 'inherit' | 'pipe' | 'ignore'
   ): string;
   public abstract findInstallations(pattern?: string[]): Promise<InstallationMetadata | undefined>;
   public abstract findInstallations(
@@ -504,17 +523,15 @@ export abstract class JsPackageManager {
     }
   }
 
-  /** Returns the installed (within node_modules or pnp zip) version of a specified package */
-  public async getInstalledVersion(packageName: string): Promise<string | null> {
-    const installations = await this.findInstallations([packageName]);
-    if (!installations) {
-      return null;
-    }
-
-    return Object.entries(installations.dependencies)[0]?.[1]?.[0].version || null;
-  }
-
-  public async executeCommand({
+  /**
+   * Execute a command asynchronously and return the execa process. This allows you to hook into
+   * stdout/stderr streams and monitor the process.
+   *
+   * @example Const process = packageManager.executeCommand({ command: 'npm', args: ['install'] });
+   * process.stdout?.on('data', (data) => console.log(data.toString())); const result = await
+   * process;
+   */
+  public executeCommand({
     command,
     args = [],
     stdio,
@@ -527,28 +544,38 @@ export abstract class JsPackageManager {
     args: string[];
     cwd?: string;
     ignoreError?: boolean;
-  }): Promise<string> {
-    try {
-      const commandResult = await execaCommand([command, ...args].join(' '), {
-        cwd: cwd ?? this.cwd,
-        stdio: stdio ?? 'pipe',
-        encoding: 'utf8',
-        shell: true,
-        cleanup: true,
-        env: {
-          ...COMMON_ENV_VARS,
-          ...env,
-        },
-        ...execaOptions,
-      });
+  }): ExecaChildProcess {
+    const execaProcess = execa([command, ...args].join(' '), {
+      cwd: cwd ?? this.cwd,
+      stdio: stdio ?? 'pipe',
+      encoding: 'utf8',
+      shell: true,
+      cleanup: true,
+      env: {
+        ...COMMON_ENV_VARS,
+        ...env,
+      },
+      ...execaOptions,
+    });
 
-      return commandResult.stdout ?? '';
-    } catch (err) {
-      if (ignoreError !== true) {
-        throw err;
-      }
-      return '';
+    // If ignoreError is true, catch and suppress errors
+    if (ignoreError) {
+      execaProcess.catch((err) => {
+        // Silently ignore errors when ignoreError is true
+      });
     }
+
+    return execaProcess;
+  }
+
+  /** Returns the installed (within node_modules or pnp zip) version of a specified package */
+  public async getInstalledVersion(packageName: string): Promise<string | null> {
+    const installations = await this.findInstallations([packageName]);
+    if (!installations) {
+      return null;
+    }
+
+    return Object.entries(installations.dependencies)[0]?.[1]?.[0].version || null;
   }
 
   /**

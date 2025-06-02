@@ -1,7 +1,5 @@
 import { beforeEach, expect, test, vi } from 'vitest';
 
-import { prompt as promptRaw } from 'storybook/internal/common';
-
 import { autoblock } from './index';
 import { type BlockerModule, createBlocker } from './types';
 
@@ -9,17 +7,14 @@ vi.mock('node:fs/promises', async (importOriginal) => ({
   ...(await importOriginal<any>()),
   writeFile: vi.fn(),
 }));
-vi.mock('storybook/internal/common', async (importOriginal) => ({
-  ...(await importOriginal<any>()),
-  prompt: {
-    logBox: vi.fn((x) => x),
-  },
-}));
 vi.mock('storybook/internal/node-logger', () => ({
   logger: {
     info: vi.fn(),
     line: vi.fn(),
     plain: vi.fn(),
+  },
+  prompt: {
+    logBox: vi.fn((x) => x),
   },
 }));
 

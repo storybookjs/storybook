@@ -65,7 +65,7 @@ function isValidVersionType(packageName: string, specifier: string) {
  * See: https://github.com/storybookjs/storybook/issues/25731#issuecomment-1977346398
  */
 export const upgradeStorybookRelatedDependencies = {
-  id: 'upgradeStorybookRelatedDependencies',
+  id: 'upgrade-storybook-related-dependencies',
   versionRange: ['*.*.*', '*.*.*'],
   promptType: 'auto',
   promptDefaultValue: false,

@@ -73,7 +73,7 @@ interface AddonMdxGfmOptions {
 
 // Add type for migration object
 interface Migration {
-  check: (options: CheckOptions) => Promise<AddonMdxGfmOptions | null>;
+  check: (options: CheckOptions) => Promise<true | null>;
   run: (options: RunOptions<any>) => Promise<void>;
 }
 
@@ -140,9 +140,7 @@ describe('addon-mdx-gfm-remove migration', () => {
           addons: ['@storybook/addon-mdx-gfm'],
         } as StorybookConfigRaw,
       });
-      expect(result).toEqual({
-        hasMdxGfm: true,
-      });
+      expect(result).toEqual(true);
     });
 
     it('detects mdx-gfm addon when present as object', async () => {
@@ -167,9 +165,7 @@ describe('addon-mdx-gfm-remove migration', () => {
           addons: [{ name: '@storybook/addon-mdx-gfm' }],
         } as StorybookConfigRaw,
       });
-      expect(result).toEqual({
-        hasMdxGfm: true,
-      });
+      expect(result).toEqual(true);
     });
   });
 
@@ -178,12 +174,10 @@ describe('addon-mdx-gfm-remove migration', () => {
       const { removeAddon } = await import('storybook/internal/common');
 
       await typedAddonMdxGfmRemove.run({
-        result: {
-          hasMdxGfm: true,
-        },
+        result: true,
         packageManager: mockPackageManager as JsPackageManager,
         configDir: '.storybook',
-      } as RunOptions<AddonMdxGfmOptions>);
+      } as RunOptions<true>);
 
       expect(removeAddon).toHaveBeenCalledWith('@storybook/addon-mdx-gfm', {
         configDir: '.storybook',

@@ -4,9 +4,7 @@ import picocolors from 'picocolors';
 
 import type { Fix } from '../types';
 
-interface AddonMdxGfmOptions {
-  hasMdxGfm: true;
-}
+type AddonMdxGfmOptions = true;
 
 /**
  * Migration to handle @storybook/addon-mdx-gfm being removed
@@ -18,22 +16,22 @@ export const addonMdxGfmRemove: Fix<AddonMdxGfmOptions> = {
   versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
   link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#mdx-gfm-addon-removed',
 
-  async check({ mainConfigPath, mainConfig }) {
+  async check({ mainConfigPath, mainConfig, packageManager }) {
     if (!mainConfigPath) {
       return null;
     }
 
     try {
+      const addonName = '@storybook/addon-mdx-gfm';
       const addonNames = getAddonNames(mainConfig);
-      const hasMdxGfm = addonNames.includes('@storybook/addon-mdx-gfm');
+      const hasMdxGfm = addonNames.includes(addonName);
+      const hasMdxGfmInDeps = packageManager.isDependencyInstalled(addonName);
 
-      if (!hasMdxGfm) {
+      if (!hasMdxGfm && !hasMdxGfmInDeps) {
         return null;
       }
 
-      return {
-        hasMdxGfm,
-      };
+      return true;
     } catch (err) {
       return null;
     }

@@ -6,22 +6,23 @@ import { dedent } from 'ts-dedent';
 import type { Fix } from '../types';
 
 /** Remove @storybook/addon-interactions since it's now part of Storybook core. */
-export const removeAddonInteractions: Fix<{}> = {
-  id: 'removeAddonInteractions',
+export const removeAddonInteractions: Fix<true> = {
+  id: 'remove-addon-interactions',
   versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
   link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#essentials-addon-viewport-controls-interactions-and-actions-moved-to-core',
 
-  async check({ mainConfig }) {
+  async check({ mainConfig, packageManager }) {
     const addons = getAddonNames(mainConfig);
-    const hasInteractionsAddon = addons.some((addon) =>
-      addon.includes('@storybook/addon-interactions')
-    );
+    const interactionsAddon = '@storybook/addon-interactions';
 
-    if (!hasInteractionsAddon) {
+    const hasInteractionsAddon = addons.some((addon) => addon.includes(interactionsAddon));
+    const hasInteractionsAddonInDeps = packageManager.isDependencyInstalled(interactionsAddon);
+
+    if (!hasInteractionsAddon && !hasInteractionsAddonInDeps) {
       return null;
     }
 
-    return {};
+    return true;
   },
 
   prompt() {
@@ -32,7 +33,7 @@ export const removeAddonInteractions: Fix<{}> = {
 
   async run({ packageManager, dryRun, configDir }) {
     if (!dryRun) {
-      removeAddon('@storybook/addon-interactions', {
+      await removeAddon('@storybook/addon-interactions', {
         configDir,
         skipInstall: true,
         packageManager,

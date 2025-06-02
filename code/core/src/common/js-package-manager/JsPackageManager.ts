@@ -120,7 +120,7 @@ export abstract class JsPackageManager {
   }
 
   async installDependencies() {
-    await prompt.executeTaskWithSpinner(
+    await prompt.executeTask(
       [() => this.runInstall(), () => this.runInternalCommand('dedupe', [], this.cwd)],
       {
         intro: 'Installing dependencies...',

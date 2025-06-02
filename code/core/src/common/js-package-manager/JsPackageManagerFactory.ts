@@ -68,27 +68,24 @@ export class JsPackageManagerFactory {
 
     const closestLockfile = closestLockfilePath && basename(closestLockfilePath);
 
-    const hasNPMCommand = hasNPM(cwd);
-    const hasPNPMCommand = hasPNPM(cwd);
-    const hasBunCommand = hasBun(cwd);
     const yarnVersion = getYarnVersion(cwd);
 
-    if (yarnVersion && (closestLockfile === YARN_LOCKFILE || (!hasNPMCommand && !hasPNPMCommand))) {
+    if (yarnVersion && closestLockfile === YARN_LOCKFILE) {
       return yarnVersion === 1
         ? new Yarn1Proxy({ cwd, configDir })
         : new Yarn2Proxy({ cwd, configDir });
     }
 
-    if (hasPNPMCommand && closestLockfile === PNPM_LOCKFILE) {
+    if (hasPNPM(cwd) && closestLockfile === PNPM_LOCKFILE) {
       return new PNPMProxy({ cwd, configDir });
     }
 
-    if (hasNPMCommand && closestLockfile === NPM_LOCKFILE) {
+    if (hasNPM(cwd) && closestLockfile === NPM_LOCKFILE) {
       return new NPMProxy({ cwd, configDir });
     }
 
     if (
-      hasBunCommand &&
+      hasBun(cwd) &&
       (closestLockfile === BUN_LOCKFILE || closestLockfile === BUN_LOCKFILE_BINARY)
     ) {
       return new BUNProxy({ cwd, configDir });
@@ -102,7 +99,7 @@ export class JsPackageManagerFactory {
 
     // Default fallback, whenever users try to use something different than NPM, PNPM, Yarn,
     // but still have NPM installed
-    if (hasNPMCommand) {
+    if (hasNPM(cwd)) {
       return new NPMProxy({ cwd, configDir });
     }
 

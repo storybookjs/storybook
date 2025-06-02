@@ -52,6 +52,7 @@
     "prep": "rimraf dist && jiti ../../../scripts/prepare/tsc.ts"
   },
   "dependencies": {
+    "@nx/devkit": "^21.1.2",
     "@storybook/builder-webpack5": "workspace:*",
     "@storybook/core-webpack": "workspace:*",
     "@storybook/global": "^5.0.0",

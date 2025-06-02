@@ -14,6 +14,7 @@ import type { RemoveIndexSignature, SetOptional, Simplify, UnionToIntersection }
 
 import { __definePreview as definePreviewBase } from '../../../core/src/shared/preview/csf4';
 import * as reactAnnotations from './entry-preview';
+import * as reactArgTypesAnnotations from './entry-preview-argtypes';
 import * as reactDocsAnnotations from './entry-preview-docs';
 import type { AddMocks } from './public-types';
 import type { ReactRenderer } from './types';
@@ -22,7 +23,12 @@ import type { ReactRenderer } from './types';
 export function __definePreview(preview: ReactPreview['input']) {
   return definePreviewBase({
     ...preview,
-    addons: [reactAnnotations, reactDocsAnnotations, ...(preview.addons ?? [])],
+    addons: [
+      reactAnnotations,
+      reactArgTypesAnnotations,
+      reactDocsAnnotations,
+      ...(preview.addons ?? []),
+    ],
   }) as ReactPreview;
 }
 

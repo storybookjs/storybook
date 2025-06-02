@@ -9,7 +9,7 @@ import {
   type StoryFinishedPayload,
 } from 'storybook/internal/core-events';
 
-import type { ClickEventDetails } from 'storybook/highlight';
+import type { ClickEventDetails, HighlightMenuItem } from 'storybook/highlight';
 import { HIGHLIGHT, REMOVE_HIGHLIGHT, SCROLL_INTO_VIEW } from 'storybook/highlight';
 import {
   experimental_getStatusStore,
@@ -215,16 +215,18 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
   const handleSelect = useCallback(
     (itemId: string, details: ClickEventDetails) => {
       const [type, id] = itemId.split('.');
-      const index =
-        results?.[type as RuleType]
-          ?.find((r) => r.id === id)
-          ?.nodes.findIndex((n) => details.selectors.some((s) => s === String(n.target))) ?? -1;
-      if (index !== -1) {
-        const key = `${type}.${id}.${index + 1}`;
-        setSelectedItems(new Map([[`${type}.${id}`, key]]));
-        setTimeout(() => {
-          document.getElementById(key)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }, 100);
+      const { helpUrl, nodes } = results?.[type as RuleType]?.find((r) => r.id === id) || {};
+      const openedWindow = helpUrl && window.open(helpUrl, '_blank', 'noopener,noreferrer');
+      if (nodes && !openedWindow) {
+        const index =
+          nodes.findIndex((n) => details.selectors.some((s) => s === String(n.target))) ?? -1;
+        if (index !== -1) {
+          const key = `${type}.${id}.${index + 1}`;
+          setSelectedItems(new Map([[`${type}.${id}`, key]]));
+          setTimeout(() => {
+            document.getElementById(key)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }, 100);
+        }
       }
     },
     [results]
@@ -324,16 +326,28 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
       focusStyles: {
         backgroundColor: 'transparent',
       },
-      menu: results?.[tab as RuleType].map((result) => ({
-        id: `${tab}.${result.id}`,
-        title: getTitleForAxeResult(result),
-        description: getFriendlySummaryForAxeResult(result),
-        clickEvent: EVENTS.SELECT,
-        selectors: result.nodes
+      menu: results?.[tab as RuleType].map<HighlightMenuItem[]>((result) => {
+        const selectors = result.nodes
           .flatMap((n) => n.target)
           .map(String)
-          .filter((e) => selected.includes(e)),
-      })),
+          .filter((e) => selected.includes(e));
+        return [
+          {
+            id: `${tab}.${result.id}:info`,
+            title: getTitleForAxeResult(result),
+            description: getFriendlySummaryForAxeResult(result),
+            selectors,
+          },
+          {
+            id: `${tab}.${result.id}`,
+            iconLeft: 'info',
+            iconRight: 'shareAlt',
+            title: 'Learn how to resolve this violation',
+            clickEvent: EVENTS.SELECT,
+            selectors,
+          },
+        ];
+      }),
     });
 
     const others = results?.[tab as RuleType]
@@ -352,16 +366,28 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
       focusStyles: {
         backgroundColor: 'transparent',
       },
-      menu: results?.[tab as RuleType].map((result) => ({
-        id: `${tab}.${result.id}`,
-        title: getTitleForAxeResult(result),
-        description: getFriendlySummaryForAxeResult(result),
-        clickEvent: EVENTS.SELECT,
-        selectors: result.nodes
+      menu: results?.[tab as RuleType].map<HighlightMenuItem[]>((result) => {
+        const selectors = result.nodes
           .flatMap((n) => n.target)
           .map(String)
-          .filter((e) => !selected.includes(e)),
-      })),
+          .filter((e) => !selected.includes(e));
+        return [
+          {
+            id: `${tab}.${result.id}:info`,
+            title: getTitleForAxeResult(result),
+            description: getFriendlySummaryForAxeResult(result),
+            selectors,
+          },
+          {
+            id: `${tab}.${result.id}`,
+            iconLeft: 'info',
+            iconRight: 'shareAlt',
+            title: 'Learn how to resolve this violation',
+            clickEvent: EVENTS.SELECT,
+            selectors,
+          },
+        ];
+      }),
     });
   }, [emit, highlighted, results, tab, selectedItems]);
 

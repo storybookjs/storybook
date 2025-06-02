@@ -14,12 +14,6 @@ module.exports = {
     '@storybook/addon-links'
   ],
   webpackFinal: async (config) => {
-    config.module.rules.push({
-      test: [/\.stories\.js$/, /index\.js$/],
-      use: require.resolve('@storybook/source-loader'),
-      include: [path.resolve(__dirname, '../')],
-      enforce: 'pre',
-    });
     // eslint-disable-next-line no-param-reassign
     config.resolve.fallback = {
       fs: false,

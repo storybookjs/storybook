@@ -199,7 +199,6 @@ export class PNPMProxy extends JsPackageManager {
     return this.executeCommand({
       command: 'pnpm',
       args: ['install', ...this.getInstallArgs()],
-      stdio: 'pipe',
       cwd: this.cwd,
     });
   }

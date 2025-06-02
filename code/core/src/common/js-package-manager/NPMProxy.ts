@@ -192,7 +192,6 @@ export class NPMProxy extends JsPackageManager {
       command: 'npm',
       args: ['install', ...this.getInstallArgs()],
       cwd: this.cwd,
-      ignoreError: true,
     });
   }
 

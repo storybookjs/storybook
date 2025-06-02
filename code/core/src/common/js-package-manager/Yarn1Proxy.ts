@@ -144,7 +144,6 @@ export class Yarn1Proxy extends JsPackageManager {
     return this.executeCommand({
       command: 'yarn',
       args: ['install', ...this.getInstallArgs()],
-      stdio: 'inherit',
       cwd: this.cwd,
     });
   }

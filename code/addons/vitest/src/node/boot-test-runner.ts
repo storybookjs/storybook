@@ -9,7 +9,7 @@ import type { EventInfo, Options } from 'storybook/internal/types';
 
 // eslint-disable-next-line depend/ban-dependencies
 import { execaNode } from 'execa';
-import { join } from 'pathe';
+import { join, normalize } from 'pathe';
 
 import {
   STATUS_STORE_CHANNEL_EVENT_NAME,
@@ -81,7 +81,7 @@ const bootTestRunner = async ({
           TEST: 'true',
           VITEST_CHILD_PROCESS: 'true',
           NODE_ENV: process.env.NODE_ENV ?? 'test',
-          STORYBOOK_CONFIG_DIR: options.configDir,
+          STORYBOOK_CONFIG_DIR: normalize(options.configDir),
         },
         extendEnv: true,
       });

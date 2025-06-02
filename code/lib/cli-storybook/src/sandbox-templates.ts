@@ -206,7 +206,7 @@ export const baseTemplates = {
     skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },
   'nextjs-vite/14-ts': {
-    name: 'Next.js Latest (Vite | TypeScript)',
+    name: 'Next.js v14 (Vite | TypeScript)',
     script:
       'npx create-next-app@^14 {{beforeDir}} --eslint --tailwind --app --import-alias="@/*" --src-dir',
     expected: {

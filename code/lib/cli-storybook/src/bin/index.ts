@@ -102,6 +102,7 @@ command('add <addon>')
   .option('-c, --config-dir <dir-name>', 'Directory where to load Storybook configurations from')
   .option('--skip-install', 'Skip installing deps')
   .option('-s --skip-postinstall', 'Skip package specific postinstall config modifications')
+  .option('--skip-install', 'Skip installing deps')
   .option('-y --yes', 'Skip prompting the user')
   .option('--skip-doctor', 'Skip doctor check')
   .action((addonName: string, options: any) => add(addonName, options));

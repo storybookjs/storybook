@@ -1,3 +1,11 @@
+## 9.1.0-alpha.2
+
+- Addon-Vitest: Properly merge configs - [#31629](https://github.com/storybookjs/storybook/pull/31629), thanks @valentinpalkovic!
+- Angular: Support v20 - [#31611](https://github.com/storybookjs/storybook/pull/31611), thanks @valentinpalkovic!
+- CLI: Respect --skip-install in postinstall scripts - [#31605](https://github.com/storybookjs/storybook/pull/31605), thanks @yannbf!
+- CLI: Update VTA version range for storybook init - [#31612](https://github.com/storybookjs/storybook/pull/31612), thanks @ghengeveld!
+- React Native Web: Include expo in babel transforms - [#31607](https://github.com/storybookjs/storybook/pull/31607), thanks @dannyhw!
+
 ## 9.1.0-alpha.1
 
 - Angular: Include 20.x in version range - [#31602](https://github.com/storybookjs/storybook/pull/31602), thanks @shilman!

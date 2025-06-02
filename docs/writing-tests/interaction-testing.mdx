@@ -72,6 +72,23 @@ canvas.getByText('An example heading');
 canvas.getAllByRole('listitem');
 ```
 
+<If renderer="web-components">
+
+#### Querying within shadow DOM
+
+If your components use the shadow DOM, you can query elements within a shadow root with the help of [`shadow-dom-testing-library`](https://github.com/konnorrogers/shadow-dom-testing-library), which provides versions of the queries above that can pierce the shadow boundary. For example, `findByRole` → `findByShadowRole`, `getByText` → `getByShadowText`, and so on.
+
+With a bit of configuration, you can use these queries in your play function. Add the following code to your `.storybook/preview.js|ts` file:
+
+<CodeSnippets path="shadow-dom-testing-library-in-preview.md" />
+
+Now, those queries are available on the `canvas` object in your `play` function:
+
+<CodeSnippets path="shadow-dom-testing-library-in-story.md" />
+
+{/* END only web-components */}
+</If>
+
 ### Simulating behavior with `userEvent`
 
 After querying for elements, you will likely need to interact with them to test your component’s behavior. For this we use the `userEvent` utility, which is provided as a parameter of your play function. This utility simulates user interactions with the component, such as clicking buttons, typing in inputs, and selecting options.
@@ -270,7 +287,7 @@ Because Storybook is a webapp, anyone with the URL can reproduce the failure wit
 
 Streamline interaction testing further by automatically [publishing Storybook](../sharing/publish-storybook.mdx) in pull requests. That gives teams a universal reference point to test and debug stories.
 
-## Automate
+## Automate with CI
 
 When you run your tests with the Vitest addon, automating those tests is as simple as running your tests in your CI environment. Please see the [testing in CI guide](./in-ci.mdx) for more information.
 

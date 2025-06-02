@@ -70,7 +70,7 @@ export interface Meta<TRenderer extends Renderer> {
   preview: Preview<TRenderer>;
 
   story<TInput extends StoryAnnotations<TRenderer, TRenderer['args']>>(
-    input: TInput
+    input?: TInput
   ): Story<TRenderer, TInput>;
 }
 
@@ -86,7 +86,7 @@ function defineMeta(input: any, preview: any): any {
     get composed(): never {
       throw new Error('Not implemented');
     },
-    story(story: any) {
+    story(story: any = {}) {
       return defineStory(story, this);
     },
   };

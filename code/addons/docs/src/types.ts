@@ -200,7 +200,7 @@ export interface DocsParameters {
      *
      * @see https://storybook.js.org/docs/api/doc-blocks/doc-block-story
      */
-    story?: StoryBlockParameters;
+    story?: Partial<StoryBlockParameters>;
 
     /**
      * The subtitle displayed when shown in docs page

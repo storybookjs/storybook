@@ -66,12 +66,13 @@ type DecoratorsArgs<TRenderer extends Renderer, Decorators> = UnionToIntersectio
 
 interface ReactMeta<T extends ReactRenderer, MetaInput extends ComponentAnnotations<T>>
   extends Meta<T> {
+  // Required args don't need to be provided when the user uses an empty render
   story<
     TInput extends StoryAnnotations<T, T['args']> & {
       render: () => ReactRenderer['storyResult'];
     },
   >(
-    story: TInput
+    story?: TInput
   ): ReactStory<T, TInput>;
 
   story<
@@ -84,7 +85,7 @@ interface ReactMeta<T extends ReactRenderer, MetaInput extends ComponentAnnotati
       >
     >,
   >(
-    story: TInput
+    story?: TInput
     // @ts-expect-error fix
   ): ReactStory<T, TInput>;
 }

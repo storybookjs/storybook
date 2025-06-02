@@ -499,9 +499,11 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
               testNamePattern: /^(?!.*(UseState)).*$/,
               browser: {
                 enabled: true,
-                name: "chromium",
                 provider: "playwright",
                 headless: true,
+                instances: [{
+                  browser: 'chromium'
+                }]
               },
               setupFiles: ["./.storybook/vitest.setup.ts"],
               environment: "happy-dom",
@@ -570,10 +572,12 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
             // @ts-expect-error this type does not exist but the property does!
             testNamePattern: /^(?!.*(UseState)).*$/,
             browser: {
-              enabled: true,
-              name: "chromium",
+              enabled: true,  
               provider: "playwright",
               headless: true,
+              instances: [{
+                browser: 'chromium'
+              }]
             },
             setupFiles: ["./.storybook/vitest.setup.ts"],
             environment: "happy-dom",
@@ -595,7 +599,8 @@ export async function addExtraDependencies({
   debug: boolean;
   extraDeps?: string[];
 }) {
-  const extraDevDeps = ['@storybook/test-runner@next'];
+  // FIXME: revert back to `next` once https://github.com/storybookjs/test-runner/pull/560 is merged
+  const extraDevDeps = ['@storybook/test-runner@0.22.1--canary.d4862d0.0'];
 
   if (debug) {
     logger.log('\uD83C\uDF81 Adding extra dev deps', extraDevDeps);

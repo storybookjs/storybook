@@ -18,11 +18,12 @@ import type {
 } from 'storybook/internal/core-server';
 import { readConfig, vitestTransform } from 'storybook/internal/csf-tools';
 import { MainFileMissingError } from 'storybook/internal/server-errors';
+import { telemetry } from 'storybook/internal/telemetry';
 import { oneWayHash } from 'storybook/internal/telemetry';
 import type { Presets } from 'storybook/internal/types';
 
 import { match } from 'micromatch';
-import { dirname, join, relative, resolve } from 'pathe';
+import { dirname, join, normalize, relative, resolve, sep } from 'pathe';
 import picocolors from 'picocolors';
 import sirv from 'sirv';
 import { dedent } from 'ts-dedent';
@@ -144,6 +145,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     viteConfigFromStorybook,
     staticDirs,
     previewLevelTags,
+    core,
   ] = await Promise.all([
     getStoryGlobsAndFiles(presets, directories),
     presets.apply('framework', undefined),
@@ -151,6 +153,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     presets.apply<{ plugins?: Plugin[] }>('viteFinal', {}),
     presets.apply('staticDirs', []),
     extractTagsFromPreview(finalOptions.configDir),
+    presets.apply('core'),
   ]);
 
   const pluginsToIgnore = [
@@ -223,9 +226,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
           return join(finalOptions.configDir, storyPath);
         })
         .map((story) => {
-          const root =
-            testConfig?.dir || testConfig?.root || nonMutableInputConfig.root || process.cwd();
-          return relative(root, story);
+          return relative(finalOptions.vitestRoot, story);
         });
 
       finalOptions.includeStories = includeStories;
@@ -259,7 +260,10 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
           },
 
           include: includeStories,
-          exclude: [...(nonMutableInputConfig.test?.exclude ?? []), '**/*.mdx'],
+          exclude: [
+            ...(nonMutableInputConfig.test?.exclude ?? []),
+            join(relative(finalOptions.vitestRoot, process.cwd()), '**/*.mdx').replaceAll(sep, '/'),
+          ],
 
           // if the existing deps.inline is true, we keep it as-is, because it will inline everything
           ...(nonMutableInputConfig.test?.server?.deps?.inline !== true
@@ -360,6 +364,23 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     },
     configureVitest(context) {
       context.vitest.config.coverage.exclude.push('storybook-static');
+
+      const disableTelemetryVar =
+        process.env.STORYBOOK_DISABLE_TELEMETRY &&
+        process.env.STORYBOOK_DISABLE_TELEMETRY !== 'false';
+      if (!core?.disableTelemetry && !disableTelemetryVar) {
+        // NOTE: we start telemetry immediately but do not wait on it. Typically it should complete
+        // before the tests do. If not we may miss the event, we are OK with that.
+        telemetry(
+          'test-run',
+          {
+            runner: 'vitest',
+            watch: context.vitest.config.watch,
+            coverage: !!context.vitest.config.coverage?.enabled,
+          },
+          { configDir: finalOptions.configDir }
+        );
+      }
     },
     async configureServer(server) {
       if (staticDirs) {
@@ -401,6 +422,26 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
   };
 
   plugins.push(storybookTestPlugin);
+
+  // When running tests via the Storybook UI, we need
+  // to find the right project to run, thus we override
+  // with a unique identifier using the path to the config dir
+  if (process.env.VITEST_STORYBOOK) {
+    const projectName = `storybook:${normalize(finalOptions.configDir)}`;
+    plugins.push({
+      name: 'storybook:workspace-name-override',
+      config: {
+        order: 'pre',
+        handler: () => {
+          return {
+            test: {
+              name: projectName,
+            },
+          };
+        },
+      },
+    });
+  }
   return plugins;
 };
 

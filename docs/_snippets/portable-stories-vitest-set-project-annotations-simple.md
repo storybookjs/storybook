@@ -1,8 +1,7 @@
 ```tsx filename=".storybook/vitest.setup.ts" renderer="react" language="ts"
 import { beforeAll } from 'vitest';
-// 👇 If you're using Next.js, import from @storybook/nextjs
-//   If you're using Next.js with Vite, import from @storybook/experimental-nextjs-vite
-import { setProjectAnnotations } from '@storybook/react';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import { setProjectAnnotations } from '@storybook/your-framework';
 import * as previewAnnotations from './preview';
 
 const annotations = setProjectAnnotations([previewAnnotations]);
@@ -13,8 +12,8 @@ beforeAll(annotations.beforeAll);
 
 ```tsx filename=".storybook/vitest.setup.ts" renderer="svelte" language="ts"
 import { beforeAll } from 'vitest';
-// 👇 If you're using Sveltekit, import from @storybook/sveltekit
-import { setProjectAnnotations } from '@storybook/svelte';
+// Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+import { setProjectAnnotations } from '@storybook/your-framework';
 import * as previewAnnotations from './preview';
 
 const annotations = setProjectAnnotations([previewAnnotations]);
@@ -25,7 +24,7 @@ beforeAll(annotations.beforeAll);
 
 ```tsx filename=".storybook/vitest.setup.ts" renderer="vue" language="ts"
 import { beforeAll } from 'vitest';
-import { setProjectAnnotations } from '@storybook/vue3';
+import { setProjectAnnotations } from '@storybook/vue3-vite';
 import * as previewAnnotations from './preview';
 
 const annotations = setProjectAnnotations([previewAnnotations]);

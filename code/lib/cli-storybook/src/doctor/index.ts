@@ -89,7 +89,7 @@ export function displayDoctorResults(
       const issueCount = Object.values(result.diagnostics).filter(
         (status) => status !== DiagnosticStatus.PASSED
       ).length;
-      if (result.status === 'error') {
+      if (result.status === 'check_error') {
         prompt.error(
           `${projectName}: ${issueCount} ${issueCount === 1 ? 'problem' : 'problems'} found`
         );
@@ -115,7 +115,7 @@ export function displayDoctorResults(
 
     const totalIssues = deduplicatedDiagnostics.length;
     const errorCount = Object.values(projectResults).filter(
-      (result) => result.status === 'error'
+      (result) => result.status === 'check_error'
     ).length;
 
     if (errorCount > 0) {
@@ -383,7 +383,7 @@ export async function collectDoctorResultsByProject(
         messages[checkResult.type] = checkResult.message;
       }
 
-      const status = hasErrors ? 'error' : hasIssues ? 'issues' : 'healthy';
+      const status = hasErrors ? 'check_error' : hasIssues ? 'has_issues' : 'healthy';
 
       projectResults[configDir] = {
         configDir,
@@ -411,7 +411,7 @@ export async function collectDoctorResultsByProject(
 
       projectResults[configDir] = {
         configDir,
-        status: 'error',
+        status: 'check_error',
         diagnostics,
         messages,
       };

@@ -404,17 +404,22 @@ const processProject = async ({
 export const collectProjects = async (
   options: UpgradeOptions,
   configDirs: readonly string[],
-  onProjectScanStart: (projectName: string) => void
+  onProjectScanStart: () => void
 ): Promise<CollectProjectsResult[]> => {
+  const { default: pLimit } = await import('p-limit');
+
   const currentCLIVersion = versions.storybook;
+  const limit = pLimit(5); // Process 5 projects concurrently
 
   const projectPromises = configDirs.map((configDir) =>
-    processProject({
-      configDir,
-      options,
-      currentCLIVersion,
-      onScanStart: () => onProjectScanStart(shortenPath(configDir)),
-    })
+    limit(() =>
+      processProject({
+        configDir,
+        options,
+        currentCLIVersion,
+        onScanStart: () => onProjectScanStart(),
+      })
+    )
   );
 
   const result = await Promise.all(projectPromises);
@@ -675,7 +680,8 @@ export const getProjects = async (
   | undefined
 > => {
   try {
-    const task = prompt.taskLog({ title: 'Detecting projects to upgrade...' });
+    const task = prompt.spinner();
+    task.start('Detecting projects...');
 
     // Determine configuration directories
     let detectedConfigDirs: string[] = options.configDir ?? [];
@@ -683,10 +689,11 @@ export const getProjects = async (
       detectedConfigDirs = await findStorybookProjects();
     }
 
-    const projects = await collectProjects(options, detectedConfigDirs, (projectName) =>
-      task.message(projectName)
+    let count = 0;
+    const projects = await collectProjects(options, detectedConfigDirs, () =>
+      task.message(`${++count} Projects found so far`)
     );
-    task.success(`Found ${projects.length} project(s)`);
+    task.stop(`Found ${projects.length} project(s)`);
 
     // Separate valid and error projects
     const validProjects = projects.filter(isSuccessResult);

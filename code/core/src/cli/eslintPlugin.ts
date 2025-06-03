@@ -203,6 +203,7 @@ export async function configureEslintPlugin({
 }) {
   if (eslintConfigFile) {
     if (eslintConfigFile.endsWith('json')) {
+      logger.debug(`Detected JSON config at ${eslintConfigFile}`);
       const eslintFileContents = await readFile(eslintConfigFile, { encoding: 'utf8' });
       const eslintConfig = commentJson.parse(eslintFileContents) as {
         extends?: string[];
@@ -240,7 +241,7 @@ export async function configureEslintPlugin({
       }
     }
   } else {
-    logger.debug(`Detected JSON config at ${eslintConfigFile}`);
+    logger.debug('No ESLint config file found, configuring in package.json instead');
     const { packageJson } = packageManager.primaryPackageJson;
     const existingExtends = normalizeExtends(packageJson.eslintConfig?.extends).filter(Boolean);
 

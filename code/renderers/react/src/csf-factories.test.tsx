@@ -257,6 +257,15 @@ describe('Story args can be inferred', () => {
     const Enabled = meta.story({ args: { label: 'hello', disabled: false } });
     const Disabled = meta.story({ args: { ...Enabled.input.args, disabled: true } });
   });
+
+  it('stories can be extended', () => {
+    const meta = preview.meta({
+      component: Button,
+    });
+
+    const Enabled = meta.story({ args: { label: 'hello', disabled: false } });
+    const Disabled = Enabled.extends({ args: { disabled: true } });
+  });
 });
 
 it('Components without Props can be used, issue #21768', () => {

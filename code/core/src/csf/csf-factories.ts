@@ -1,4 +1,5 @@
 import type { AddonTypes, PlayFunction, StoryContext } from 'storybook/internal/csf';
+import { combineTags } from 'storybook/internal/csf';
 import type {
   ComponentAnnotations,
   ComposedStoryFn,
@@ -10,7 +11,12 @@ import type {
   StoryAnnotations,
 } from 'storybook/internal/types';
 
-import { composeConfigs, composeStory, normalizeProjectAnnotations } from 'storybook/preview-api';
+import {
+  combineParameters,
+  composeConfigs,
+  composeStory,
+  normalizeProjectAnnotations,
+} from 'storybook/preview-api';
 
 import { getCoreAnnotations } from './core-annotations';
 
@@ -107,6 +113,10 @@ export interface Story<
   __compose: () => ComposedStoryFn<TRenderer>;
   play: PlayFunction<TRenderer, TRenderer['args']>;
   run: (context?: Partial<StoryContext<TRenderer, Partial<TRenderer['args']>>>) => Promise<void>;
+
+  extends<TInput extends StoryAnnotations<TRenderer, TRenderer['args']>>(
+    input: TInput
+  ): Story<TRenderer, TInput>;
 }
 
 export function isStory<TRenderer extends Renderer>(input: unknown): input is Story<TRenderer> {
@@ -143,6 +153,24 @@ function defineStory<
     },
     get run() {
       return compose().run ?? (async () => {});
+    },
+    extends<TInput extends StoryAnnotations<TRenderer, TRenderer['args']>>(input: TInput) {
+      return defineStory(
+        {
+          ...this.input,
+          ...input,
+          args: { ...this.input.args, ...input.args },
+          argTypes: combineParameters(this.input.argTypes, input.argTypes),
+          afterEach: [...(this.input?.afterEach ?? []), ...(input.afterEach ?? [])],
+          beforeEach: [...(this.input?.beforeEach ?? []), ...(input.beforeEach ?? [])],
+          decorators: [...(this.input?.decorators ?? []), ...(input.decorators ?? [])],
+          globals: { ...this.input.globals, ...input.globals },
+          loaders: [...(this.input?.loaders ?? []), ...(input.loaders ?? [])],
+          parameters: combineParameters(this.input.parameters, input.parameters),
+          tags: combineTags(this.input.parameters, input.parameters),
+        },
+        this.meta
+      );
     },
   } as Story<TRenderer, TInput>;
 }

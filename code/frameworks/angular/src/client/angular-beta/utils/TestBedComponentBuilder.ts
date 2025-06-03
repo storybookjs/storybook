@@ -3,6 +3,8 @@ import {
   BrowserDynamicTestingModule,
   platformBrowserDynamicTesting,
 } from '@angular/platform-browser-dynamic/testing';
+import { RouterTestingModule } from '@angular/router/testing';
+import { Router } from '@angular/router';
 import { ApplicationRef, ComponentFactoryResolver, Type } from '@angular/core';
 import { PropertyExtractor } from './PropertyExtractor';
 import { ICollection, StoryFnAngularReturnType } from '../../types';
@@ -28,6 +30,8 @@ export class TestBedComponentBuilder {
   private componentProviders: any[] = [];
 
   private environmentProviders: any[] = [];
+
+  private routes: { routes?: any[]; options?: any };
 
   private selector: string;
 
@@ -64,6 +68,7 @@ export class TestBedComponentBuilder {
   setStoryFn(storyFn: StoryFnAngularReturnType) {
     this.styles = storyFn.styles;
     this.schemas = storyFn.moduleMetadata?.schemas;
+    this.routes = storyFn.applicationConfig?.routing;
     this.props = storyFn.props;
     return this;
   }
@@ -91,7 +96,9 @@ export class TestBedComponentBuilder {
     this.throwOnMissingComponent();
     const wrapperModule = getWrapperModule();
     this.testBedInstance
-      .configureTestingModule({})
+      .configureTestingModule({
+        imports: [this.getRouteModuleImport()],
+      })
       .overrideComponent(
         this.component,
         GenerateComponentMetaData(
@@ -107,6 +114,12 @@ export class TestBedComponentBuilder {
         GenerateModuleMetaData(this.environmentProviders, this.declarations, this.imports)
       );
 
+    return this;
+  }
+
+  initRouter() {
+    const router = this.testBedInstance.inject(Router);
+    router.initialNavigation();
     return this;
   }
 
@@ -149,6 +162,12 @@ export class TestBedComponentBuilder {
     }
     this.fixture.detectChanges();
     return this;
+  }
+
+  private getRouteModuleImport(): any[] {
+    if (this.routes === null || this.routes === undefined) return [];
+
+    return [RouterTestingModule.withRoutes(this.routes.routes, this.routes.options)];
   }
 
   private throwOnMissingComponent() {

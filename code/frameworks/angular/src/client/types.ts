@@ -3,9 +3,8 @@ import {
   StoryContext as DefaultStoryContext,
   WebRenderer,
 } from 'storybook/internal/types';
-
-import { Provider, importProvidersFrom } from '@angular/core';
-import { ApplicationConfig } from '@angular/platform-browser';
+import { ExtraOptions, Routes } from '@angular/router';
+import { EnvironmentProviders, Provider } from '@angular/core';
 
 export interface NgModuleMetadata {
   /** List of components, directives, and pipes that belong to your component. */
@@ -27,6 +26,16 @@ export interface NgModuleMetadata {
 }
 export interface ICollection {
   [p: string]: any;
+}
+
+export interface ApplicationConfig {
+  providers?: Array<Provider | EnvironmentProviders>;
+  routing?: RoutingConfig;
+}
+
+export interface RoutingConfig {
+  routes?: Routes;
+  options?: ExtraOptions;
 }
 
 export interface StoryFnAngularReturnType {

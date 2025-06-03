@@ -147,6 +147,7 @@ export abstract class AbstractRenderer {
       .setTargetNode(targetDOMNode)
       .setEnvironmentProviders(environmentProviders)
       .configure()
+      .initRouter()
       .compileComponents();
 
     componentBuilder.copyComponentIntoTargetNode();

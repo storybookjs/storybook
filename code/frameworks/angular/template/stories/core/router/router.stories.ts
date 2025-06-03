@@ -1,10 +1,13 @@
 import { Meta, StoryObj, applicationConfig, moduleMetadata } from '@storybook/angular';
 import { RouterModule } from '@angular/router';
-import { Component, importProvidersFrom } from '@angular/core';
+import { Component } from '@angular/core';
 import ProvideRouterComponent from './router-component/router-component';
 
 @Component({
-  template: '',
+  template: ` <div>
+  <span>Empty Component works!</span>
+  <a routerLink="/home">Home</a>
+</div>`,
 })
 class EmptyComponent {}
 
@@ -16,15 +19,28 @@ const meta: Meta<ProvideRouterComponent> = {
       imports: [RouterModule],
     }),
     applicationConfig({
-      providers: [
-        importProvidersFrom(
-          RouterModule.forRoot([{ path: '**', component: EmptyComponent }], { useHash: true })
-        ),
-      ],
+      routing: {
+        routes: [
+          { path: '', redirectTo: '/home', pathMatch: 'full' },
+          { path: 'home', component: ProvideRouterComponent },
+          { path: '**', component: EmptyComponent },
+        ],
+        options: {
+          useHash: true,
+        },
+      },
     }),
   ],
   parameters: {
     useTestBedRenderer: true,
+  },
+  render: (args) => {
+    return {
+      template: `
+        <div>
+          <router-outlet></router-outlet>
+        </div>`,
+    };
   },
 };
 

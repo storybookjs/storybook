@@ -98,13 +98,19 @@ export const upgradeStorybookRelatedDependencies = {
 
     const packageVersions = await getLatestVersions(packageManager, uniquePackages);
 
-    const upgradablePackages = packageVersions.filter(({ afterVersion, beforeVersion }) => {
-      if (beforeVersion === null || afterVersion === null) {
-        return false;
-      }
+    const upgradablePackages = packageVersions.filter(
+      ({ afterVersion, beforeVersion, packageName }) => {
+        if (
+          beforeVersion === null ||
+          afterVersion === null ||
+          allDependencies[packageName] === null
+        ) {
+          return false;
+        }
 
-      return gt(afterVersion, beforeVersion);
-    });
+        return gt(afterVersion, beforeVersion);
+      }
+    );
 
     return upgradablePackages.length > 0 ? { upgradable: upgradablePackages } : null;
   },

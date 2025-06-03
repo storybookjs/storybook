@@ -483,7 +483,7 @@ export default async function postInstall(options: PostinstallOptions) {
   if (a11yAddon) {
     try {
       logger.plain(`${step} Setting up ${addonA11yName} for @storybook/addon-vitest:`);
-      const command = ['automigrate', 'addonA11yAddonTest'];
+      const command = ['automigrate', 'addon-a11y-addon-test'];
 
       command.push('--log-level', 'silent');
       command.push('--yes', '--skip-doctor');

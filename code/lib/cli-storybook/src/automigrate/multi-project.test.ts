@@ -15,6 +15,12 @@ vi.mock('storybook/internal/node-logger', () => ({
   },
 }));
 
+const taskLogMock = {
+  message: vi.fn(),
+  success: vi.fn(),
+  error: vi.fn(),
+};
+
 describe('multi-project automigrations', () => {
   let consoleErrorSpy: any;
 
@@ -57,6 +63,7 @@ describe('multi-project automigrations', () => {
       const results = await collectAutomigrationsAcrossProjects({
         fixes: [fix1, fix2, fix3],
         projects: [project1, project2],
+        taskLog: taskLogMock,
       });
 
       expect(results).toHaveLength(2);
@@ -76,6 +83,7 @@ describe('multi-project automigrations', () => {
       const results = await collectAutomigrationsAcrossProjects({
         fixes: [fix1],
         projects: [project1, project2, project3],
+        taskLog: taskLogMock,
       });
 
       expect(results).toHaveLength(1);
@@ -94,6 +102,7 @@ describe('multi-project automigrations', () => {
       const results = await collectAutomigrationsAcrossProjects({
         fixes: [fix1],
         projects: [project1],
+        taskLog: taskLogMock,
       });
 
       expect(results).toHaveLength(0);
@@ -110,6 +119,7 @@ describe('multi-project automigrations', () => {
       const results = await collectAutomigrationsAcrossProjects({
         fixes: [fix1, fix2],
         projects: [project1],
+        taskLog: taskLogMock,
       });
 
       expect(results).toHaveLength(1);

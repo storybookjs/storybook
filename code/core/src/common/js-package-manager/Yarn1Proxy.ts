@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { prompt } from 'storybook/internal/node-logger';
 import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 
 import { findUpSync } from 'find-up';
@@ -144,6 +145,7 @@ export class Yarn1Proxy extends JsPackageManager {
     return this.executeCommand({
       command: 'yarn',
       args: ['install', ...this.getInstallArgs()],
+      stdio: prompt.getPreferredStdio(),
       cwd: this.cwd,
     });
   }
@@ -158,7 +160,7 @@ export class Yarn1Proxy extends JsPackageManager {
     return this.executeCommand({
       command: 'yarn',
       args: ['add', ...this.getInstallArgs(), ...args],
-      stdio: 'pipe',
+      stdio: prompt.getPreferredStdio(),
       cwd: this.primaryPackageJson.operationDir,
     });
   }

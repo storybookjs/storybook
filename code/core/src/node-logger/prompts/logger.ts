@@ -1,20 +1,21 @@
 import * as clack from '@clack/prompts';
 import boxen from 'boxen';
 
+import { wrapTextForClack } from '../wrap-utils';
 import { logTracker } from './log-tracker';
-import { wrapTextForClack } from './wrap-utils';
+import { isClackEnabled } from './prompt-config';
 
-const USE_CLACK = process.env.USE_CLACK === 'false' ? false : true;
+const createLogFunction =
+  (clackFn: (message: string) => void, consoleFn: (...args: any[]) => void) => () =>
+    isClackEnabled() ? (message: string) => clackFn(wrapTextForClack(message)) : consoleFn;
 
 const LOG_FUNCTIONS = {
-  log: USE_CLACK ? (message: string) => clack.log.message(wrapTextForClack(message)) : console.log,
-  warn: USE_CLACK ? (message: string) => clack.log.warn(wrapTextForClack(message)) : console.warn,
-  error: USE_CLACK
-    ? (message: string) => clack.log.error(wrapTextForClack(message))
-    : console.error,
-  intro: USE_CLACK ? (message: string) => clack.intro(wrapTextForClack(message)) : console.log,
-  outro: USE_CLACK ? (message: string) => clack.outro(wrapTextForClack(message)) : console.log,
-  step: USE_CLACK ? (message: string) => clack.log.step(wrapTextForClack(message)) : console.log,
+  log: createLogFunction(clack.log.message, console.log),
+  warn: createLogFunction(clack.log.warn, console.warn),
+  error: createLogFunction(clack.log.error, console.error),
+  intro: createLogFunction(clack.intro, console.log),
+  outro: createLogFunction(clack.outro, console.log),
+  step: createLogFunction(clack.log.step, console.log),
 };
 
 // Log level types and state
@@ -94,14 +95,14 @@ export const debug = createLogger(
     if (shouldLog('trace')) {
       message += getMinimalTrace();
     }
-    LOG_FUNCTIONS.log(message);
+    LOG_FUNCTIONS.log()(message);
   },
   '[DEBUG]'
 );
 
-export const log = createLogger('info', LOG_FUNCTIONS.log);
-export const warn = createLogger('warn', LOG_FUNCTIONS.warn);
-export const error = createLogger('error', LOG_FUNCTIONS.error);
+export const log = createLogger('info', LOG_FUNCTIONS.log());
+export const warn = createLogger('warn', LOG_FUNCTIONS.warn());
+export const error = createLogger('error', LOG_FUNCTIONS.error());
 
 type BoxenOptions = {
   borderStyle?: 'round' | 'none';
@@ -115,7 +116,7 @@ type BoxenOptions = {
 export const logBox = (message: string, style?: BoxenOptions) => {
   if (shouldLog('info')) {
     logTracker.addLog('info', message);
-    if (USE_CLACK) {
+    if (isClackEnabled()) {
       log('');
       console.log(
         boxen(message, {
@@ -142,17 +143,17 @@ export const logBox = (message: string, style?: BoxenOptions) => {
 
 export const intro = (message: string) => {
   logTracker.addLog('info', message);
-  LOG_FUNCTIONS.intro(message);
+  LOG_FUNCTIONS.intro()(message);
 };
 
 export const outro = (message: string) => {
   logTracker.addLog('info', message);
-  LOG_FUNCTIONS.outro(message);
+  LOG_FUNCTIONS.outro()(message);
 };
 
 export const step = (message: string) => {
   logTracker.addLog('info', message);
-  LOG_FUNCTIONS.step(message);
+  LOG_FUNCTIONS.step()(message);
 };
 
 // Export the text wrapping utility for external use

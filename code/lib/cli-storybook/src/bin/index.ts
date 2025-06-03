@@ -147,7 +147,10 @@ command('upgrade')
     '-c, --config-dir <dir-name...>',
     'Directory(ies) where to load Storybook configurations from'
   )
-  .action(async (options: UpgradeOptions) => upgrade(options).catch(handleCommandFailure));
+  .action(async (options: UpgradeOptions) => {
+    prompt.setPromptLibrary('clack');
+    await upgrade(options).catch(handleCommandFailure);
+  });
 
 command('info')
   .description('Prints debugging information about the local environment')
@@ -237,14 +240,13 @@ command('doctor')
   });
 
 program.on('command:*', ([invalidCmd]) => {
-  prompt.error(
-    ` Invalid command: ${picocolors.bold(invalidCmd)}.\n See --help for a list of available commands.`
-  );
+  let errorMessage = ` Invalid command: ${picocolors.bold(invalidCmd)}.\n See --help for a list of available commands.`;
   const availableCommands = program.commands.map((cmd) => cmd.name());
   const suggestion = availableCommands.find((cmd) => leven(cmd, invalidCmd) < 3);
   if (suggestion) {
-    prompt.log(`Did you mean ${picocolors.yellow(suggestion)}?`);
+    errorMessage += `\n Did you mean ${picocolors.yellow(suggestion)}?`;
   }
+  prompt.error(errorMessage);
   process.exit(1);
 });
 

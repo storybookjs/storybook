@@ -1,17 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { prompt } from 'storybook/internal/node-logger';
+
 import { JsPackageManager } from './JsPackageManager';
 import { PNPMProxy } from './PNPMProxy';
-
-vi.mock('storybook/internal/node-logger', () => ({
-  prompt: {
-    taskLog: vi.fn(() => ({
-      message: vi.fn(),
-      success: vi.fn(),
-      error: vi.fn(),
-    })),
-  },
-}));
 
 describe('PNPM Proxy', () => {
   let pnpmProxy: PNPMProxy;
@@ -27,6 +19,10 @@ describe('PNPM Proxy', () => {
 
   describe('installDependencies', () => {
     it('should run `pnpm install`', async () => {
+      // sort of un-mock part of the function so executeCommand (also mocked) is called
+      vi.mocked(prompt.executeTask).mockImplementationOnce(async (fns: any) => {
+        await Promise.all(fns.map((fn: () => void) => fn()));
+      });
       const executeCommandSpy = vi
         .spyOn(pnpmProxy, 'executeCommand')
         .mockResolvedValue({ stdout: '7.1.0' } as any);

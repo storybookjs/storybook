@@ -308,7 +308,6 @@ export async function getDoctorDiagnostics({
     });
   }
 
-  const allDependencies = packageManager.getAllDependencies() as Record<string, string>;
   const installationMetadata = await packageManager.findInstallations([
     '@storybook/*',
     'storybook',
@@ -317,10 +316,7 @@ export async function getDoctorDiagnostics({
   // If we found incompatible packages, we let the users fix that first
   // If they run doctor again and there are still issues, we show the other warnings
   if (!incompatiblePackagesMessage) {
-    const mismatchingVersionMessage = getMismatchingVersionsWarnings(
-      installationMetadata,
-      allDependencies
-    );
+    const mismatchingVersionMessage = getMismatchingVersionsWarnings(installationMetadata);
 
     if (mismatchingVersionMessage) {
       results.push({

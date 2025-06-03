@@ -161,8 +161,6 @@ describe('experimentalAddonTestVitest blocker', () => {
       You have two options to proceed:
       1. Remove @storybook/experimental-addon-test if you don't need it
       2. Upgrade to Vitest 3 to continue using the addon
-
-      After addressing this, you can try running the upgrade command again."
     `);
   });
 });

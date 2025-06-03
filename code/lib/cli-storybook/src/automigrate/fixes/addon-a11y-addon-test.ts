@@ -137,11 +137,8 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
     skipPreviewTransformation,
     skipVitestSetupTransformation,
   }) {
-    const introduction = dedent`
-      We have detected that you have ${picocolors.magenta(`@storybook/addon-a11y`)} and ${picocolors.magenta(`@storybook/addon-vitest`)} installed.
-
-      ${picocolors.magenta(`@storybook/addon-a11y`)} now integrates with ${picocolors.magenta(`@storybook/addon-vitest`)} to provide automatic accessibility checks for your stories, powered by Axe and Vitest.
-    `;
+    const introduction =
+      'We have detected that you have @storybook/addon-a11y and @storybook/addon-vitest installed. @storybook/addon-a11y now integrates with @storybook/addon-vitest to provide automatic accessibility checks for your stories, powered by Axe and Vitest.';
 
     const prompt = [introduction];
 

@@ -316,10 +316,11 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       try {
         // Handle autoblockers
         const hasBlockers = processAutoblockerResults(storybookProjects, (message) => {
-          prompt.error(dedent`${message}`);
+          prompt.error(dedent`Blockers detected\n\n${message}`);
         });
 
         if (hasBlockers) {
+          prompt.outro('Upgrade aborted');
           process.exit(1);
         }
 

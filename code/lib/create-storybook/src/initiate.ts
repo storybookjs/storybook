@@ -53,6 +53,17 @@ import { currentDirectoryIsEmpty, scaffoldNewProject } from './scaffold-new-proj
 
 const logger = console;
 
+const ONBOARDING_PROJECT_TYPES = [
+  ProjectType.REACT,
+  ProjectType.REACT_SCRIPTS,
+  ProjectType.REACT_NATIVE_WEB,
+  ProjectType.REACT_PROJECT,
+  ProjectType.WEBPACK_REACT,
+  ProjectType.NEXTJS,
+  ProjectType.VUE3,
+  ProjectType.ANGULAR,
+];
+
 const installStorybook = async <Project extends ProjectType>(
   projectType: Project,
   packageManager: JsPackageManager,
@@ -440,12 +451,16 @@ export async function doInitiate(options: CommandOptions): Promise<
     if (isInteractive) {
       selectedFeatures.add('test');
     }
+    if (newUser) {
+      selectedFeatures.add('onboarding');
+    }
   }
 
   const telemetryFeatures = {
     dev: true,
     docs: selectedFeatures.has('docs'),
     test: selectedFeatures.has('test'),
+    onboarding: selectedFeatures.has('onboarding'),
   };
 
   // Check if the current directory is empty.
@@ -575,6 +590,10 @@ export async function doInitiate(options: CommandOptions): Promise<
         process.exit(0);
       }
     }
+  }
+
+  if (selectedFeatures.has('onboarding') && !ONBOARDING_PROJECT_TYPES.includes(projectType)) {
+    selectedFeatures.delete('onboarding');
   }
 
   if (!options.skipInstall) {

@@ -6,6 +6,7 @@ import { prompt } from 'storybook/internal/node-logger';
 // eslint-disable-next-line depend/ban-dependencies
 import { type CommonOptions, type ExecaChildProcess, execa, execaCommandSync } from 'execa';
 import { findUpMultipleSync, findUpSync } from 'find-up';
+import { globbySync } from 'globby';
 import picocolors from 'picocolors';
 import { gt, satisfies } from 'semver';
 import invariant from 'tiny-invariant';
@@ -47,20 +48,24 @@ export function getPackageDetails(pkg: string): [string, string?] {
 interface JsPackageManagerOptions {
   cwd?: string;
   configDir?: string;
+  // The storiesPaths can be provided to properly calculate the location of all relevant package.json files
+  storiesPaths?: string[];
 }
+
+export type PackageJsonInfo = {
+  packageJsonPath: string;
+  operationDir: string;
+  packageJson: PackageJsonWithDepsAndDevDeps;
+};
 
 export abstract class JsPackageManager {
   abstract readonly type: PackageManagerName;
 
   /** The path to the primary package.json file (contains the `storybook` dependency). */
-  readonly primaryPackageJson: {
-    packageJsonPath: string;
-    operationDir: string;
-    packageJson: PackageJsonWithDepsAndDevDeps;
-  };
+  readonly primaryPackageJson: PackageJsonInfo;
 
   /** The paths to all package.json files in the project root. */
-  readonly packageJsonPaths: string[];
+  packageJsonPaths: string[];
 
   /**
    * The path to the Storybook instance directory. This is used to find the primary package.json
@@ -81,7 +86,10 @@ export abstract class JsPackageManager {
         ? dirname(options?.configDir)
         : dirname(join(this.cwd, options?.configDir))
       : this.cwd;
-    this.packageJsonPaths = JsPackageManager.listAllPackageJsonPaths(this.instanceDir);
+    this.packageJsonPaths = JsPackageManager.listAllPackageJsonPaths(
+      this.instanceDir,
+      options?.storiesPaths
+    );
     this.primaryPackageJson = this.#getPrimaryPackageJson();
   }
 
@@ -202,14 +210,18 @@ export abstract class JsPackageManager {
       skipInstall?: boolean;
       installAsDevDependencies?: boolean;
       writeOutputToFile?: boolean;
+      packageJsonInfo?: PackageJsonInfo;
     },
     dependencies: string[]
   ): Promise<void | ExecaChildProcess> {
-    const { skipInstall, writeOutputToFile = true } = options;
-
-    const { operationDir, packageJson } = this.primaryPackageJson;
+    const {
+      skipInstall,
+      writeOutputToFile = true,
+      packageJsonInfo = this.primaryPackageJson,
+    } = options;
 
     if (skipInstall) {
+      const { operationDir, packageJson } = packageJsonInfo;
       const dependenciesMap: Record<string, string> = {};
 
       for (const dep of dependencies) {
@@ -668,11 +680,32 @@ export abstract class JsPackageManager {
   }
 
   /** List all package.json files starting from the given directory and stopping at the project root. */
-  static listAllPackageJsonPaths(instanceDir: string): string[] {
-    return findUpMultipleSync('package.json', {
+  static listAllPackageJsonPaths(instanceDir: string, storiesPaths?: string[]): string[] {
+    const packageJsonPaths = findUpMultipleSync('package.json', {
       cwd: instanceDir,
       stopAt: getProjectRoot(),
     });
+
+    if (!storiesPaths) {
+      return packageJsonPaths;
+    }
+
+    // 1. Find all package.json files starting from the project root
+    const projectRoot = getProjectRoot();
+    const allPackageJsonFiles = globbySync('**/package.json', {
+      cwd: projectRoot,
+      absolute: true,
+      gitignore: true,
+    });
+
+    // 2. Only keep the ones that are parents of at least one of the storiesPaths
+    const relevantPackageJsons = allPackageJsonFiles.filter((packageJsonPath) => {
+      const packageDir = dirname(packageJsonPath);
+      return storiesPaths.some((storyPath) => storyPath.startsWith(packageDir));
+    });
+
+    // 3. Return the list of package.json paths
+    return Array.from(new Set([...packageJsonPaths, ...relevantPackageJsons]));
   }
 
   /**
@@ -687,13 +720,15 @@ export abstract class JsPackageManager {
   } {
     const finalTargetPackageJsonPath = this.#findPrimaryPackageJsonPath();
 
-    const operationDir = dirname(finalTargetPackageJsonPath);
+    return JsPackageManager.getPackageJsonInfo(finalTargetPackageJsonPath);
+  }
+
+  static getPackageJsonInfo(packageJsonPath: string): PackageJsonInfo {
+    const operationDir = dirname(packageJsonPath);
     return {
-      packageJsonPath: finalTargetPackageJsonPath,
+      packageJsonPath,
       operationDir,
-      get packageJson() {
-        return JsPackageManager.getPackageJson(finalTargetPackageJsonPath);
-      },
+      packageJson: JsPackageManager.getPackageJson(packageJsonPath),
     };
   }
 }

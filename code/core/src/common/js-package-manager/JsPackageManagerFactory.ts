@@ -34,9 +34,10 @@ export class JsPackageManagerFactory {
   private static getCacheKey(
     force?: PackageManagerName,
     configDir = '.storybook',
-    cwd = process.cwd()
+    cwd = process.cwd(),
+    storiesPaths?: string[]
   ): string {
-    return JSON.stringify({ force: force || null, configDir, cwd });
+    return JSON.stringify({ force: force || null, configDir, cwd, storiesPaths });
   }
 
   /** Clear the package manager cache */
@@ -45,11 +46,15 @@ export class JsPackageManagerFactory {
   }
 
   public static getPackageManager(
-    { force, configDir = '.storybook' }: { force?: PackageManagerName; configDir?: string } = {},
+    {
+      force,
+      configDir = '.storybook',
+      storiesPaths,
+    }: { force?: PackageManagerName; configDir?: string; storiesPaths?: string[] } = {},
     cwd = process.cwd()
   ): JsPackageManager {
     // Check cache first
-    const cacheKey = this.getCacheKey(force, configDir, cwd);
+    const cacheKey = this.getCacheKey(force, configDir, cwd, storiesPaths);
     const cached = this.cache.get(cacheKey);
     if (cached) {
       return cached;
@@ -57,7 +62,7 @@ export class JsPackageManagerFactory {
 
     // Option 1: If the user has provided a forcing flag, we use it
     if (force && force in this.PROXY_MAP) {
-      const packageManager = new this.PROXY_MAP[force]({ cwd, configDir });
+      const packageManager = new this.PROXY_MAP[force]({ cwd, configDir, storiesPaths });
       this.cache.set(cacheKey, packageManager);
       return packageManager;
     }
@@ -98,19 +103,21 @@ export class JsPackageManagerFactory {
 
     if (yarnVersion && closestLockfile === YARN_LOCKFILE) {
       const packageManager =
-        yarnVersion === 1 ? new Yarn1Proxy({ cwd, configDir }) : new Yarn2Proxy({ cwd, configDir });
+        yarnVersion === 1
+          ? new Yarn1Proxy({ cwd, configDir, storiesPaths })
+          : new Yarn2Proxy({ cwd, configDir, storiesPaths });
       this.cache.set(cacheKey, packageManager);
       return packageManager;
     }
 
     if (hasPNPM(cwd) && closestLockfile === PNPM_LOCKFILE) {
-      const packageManager = new PNPMProxy({ cwd, configDir });
+      const packageManager = new PNPMProxy({ cwd, configDir, storiesPaths });
       this.cache.set(cacheKey, packageManager);
       return packageManager;
     }
 
     if (hasNPM(cwd) && closestLockfile === NPM_LOCKFILE) {
-      const packageManager = new NPMProxy({ cwd, configDir });
+      const packageManager = new NPMProxy({ cwd, configDir, storiesPaths });
       this.cache.set(cacheKey, packageManager);
       return packageManager;
     }
@@ -119,7 +126,7 @@ export class JsPackageManagerFactory {
       hasBun(cwd) &&
       (closestLockfile === BUN_LOCKFILE || closestLockfile === BUN_LOCKFILE_BINARY)
     ) {
-      const packageManager = new BUNProxy({ cwd, configDir });
+      const packageManager = new BUNProxy({ cwd, configDir, storiesPaths });
       this.cache.set(cacheKey, packageManager);
       return packageManager;
     }
@@ -127,7 +134,11 @@ export class JsPackageManagerFactory {
     // Option 3: If the user is running a command via npx/pnpx/yarn create/etc, we infer the package manager from the command
     const inferredPackageManager = this.inferPackageManagerFromUserAgent();
     if (inferredPackageManager && inferredPackageManager in this.PROXY_MAP) {
-      const packageManager = new this.PROXY_MAP[inferredPackageManager]({ cwd });
+      const packageManager = new this.PROXY_MAP[inferredPackageManager]({
+        cwd,
+        storiesPaths,
+        configDir,
+      });
       this.cache.set(cacheKey, packageManager);
       return packageManager;
     }
@@ -135,7 +146,7 @@ export class JsPackageManagerFactory {
     // Default fallback, whenever users try to use something different than NPM, PNPM, Yarn,
     // but still have NPM installed
     if (hasNPM(cwd)) {
-      const packageManager = new NPMProxy({ cwd, configDir });
+      const packageManager = new NPMProxy({ cwd, configDir, storiesPaths });
       this.cache.set(cacheKey, packageManager);
       return packageManager;
     }

@@ -103,6 +103,9 @@ export class StoryIndexGenerator {
   // Later, we'll combine each of these subsets together to form the full index
   private specifierToCache: Map<NormalizedStoriesSpecifier, SpecifierStoriesCache>;
 
+  /** Cache for findMatchingFiles results */
+  private static findMatchingFilesCache = new Map<string, SpecifierStoriesCache>();
+
   // Cache the last value of `getStoryIndex`. We invalidate (by unsetting) when:
   //  - any file changes, including deletions
   //  - the preview changes [not yet implemented]
@@ -121,11 +124,37 @@ export class StoryIndexGenerator {
     this.specifierToCache = new Map();
   }
 
+  /** Generate a cache key for findMatchingFiles */
+  private static getFindMatchingFilesCacheKey(
+    specifier: NormalizedStoriesSpecifier,
+    workingDir: Path,
+    ignoreWarnings: boolean
+  ): string {
+    return JSON.stringify({
+      directory: specifier.directory,
+      files: specifier.files,
+      workingDir,
+      ignoreWarnings,
+    });
+  }
+
+  /** Clear the findMatchingFiles cache */
+  public static clearFindMatchingFilesCache(): void {
+    this.findMatchingFilesCache.clear();
+  }
+
   static async findMatchingFiles(
     specifier: NormalizedStoriesSpecifier,
     workingDir: Path,
     ignoreWarnings = false
   ): Promise<SpecifierStoriesCache> {
+    // Check cache first
+    const cacheKey = this.getFindMatchingFilesCacheKey(specifier, workingDir, ignoreWarnings);
+    const cached = this.findMatchingFilesCache.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     const pathToSubIndex = {} as SpecifierStoriesCache;
 
     const fullGlob = slash(join(specifier.directory, specifier.files));
@@ -159,6 +188,8 @@ export class StoryIndexGenerator {
       pathToSubIndex[absolutePath] = false;
     });
 
+    // Store in cache before returning
+    this.findMatchingFilesCache.set(cacheKey, pathToSubIndex);
     return pathToSubIndex;
   }
 

@@ -500,32 +500,6 @@ export const generateUpgradeSpecs = async (
 };
 
 /**
- * Adds dependencies to package.json
- *
- * @param packageManager - Package manager instance
- * @param dependencies - Array of dependency specifications
- * @param isDev - Whether these are dev dependencies
- */
-const addDependencies = async (
-  packageManager: JsPackageManager,
-  dependencies: readonly string[],
-  isDev: boolean
-): Promise<void> => {
-  if (dependencies.length === 0) {
-    return;
-  }
-
-  try {
-    await packageManager.addDependencies({ installAsDevDependencies: isDev, skipInstall: true }, [
-      ...dependencies,
-    ]);
-  } catch (error) {
-    prompt.error(`Failed to add ${isDev ? 'dev ' : ''}dependencies`);
-    throw error;
-  }
-};
-
-/**
  * Upgrades Storybook dependencies across all package.json files
  *
  * @example
@@ -555,8 +529,23 @@ export const upgradeStorybookDependencies = async (config: UpgradeConfig): Promi
     ]);
 
     await Promise.all([
-      addDependencies(packageManager, upgradedDependencies, false),
-      addDependencies(packageManager, upgradedDevDependencies, true),
+      packageManager.addDependencies(
+        {
+          installAsDevDependencies: false,
+          skipInstall: true,
+          packageJsonInfo: JsPackageManager.getPackageJsonInfo(packageJsonPath),
+        },
+        upgradedDependencies
+      ),
+      packageManager.addDependencies(
+        {
+          installAsDevDependencies: true,
+          skipInstall: true,
+          packageJsonInfo: JsPackageManager.getPackageJsonInfo(packageJsonPath),
+        },
+        upgradedDevDependencies
+      ),
+      ,
     ]);
   }
 };

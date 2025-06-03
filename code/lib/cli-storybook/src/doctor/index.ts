@@ -309,7 +309,7 @@ export async function collectDoctorResultsByProject(
         messages[checkResult.type] = checkResult.message;
       }
 
-      const status = hasErrors ? 'error' : hasIssues ? 'issues' : 'healthy';
+      const status = hasErrors ? 'check_error' : hasIssues ? 'has_issues' : 'healthy';
 
       projectResults[configDir] = {
         configDir,
@@ -337,7 +337,7 @@ export async function collectDoctorResultsByProject(
 
       projectResults[configDir] = {
         configDir,
-        status: 'error',
+        status: 'check_error',
         diagnostics,
         messages,
       };

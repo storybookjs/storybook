@@ -1,4 +1,5 @@
-import { logger } from 'node-logger';
+import { logger } from 'storybook/internal/node-logger';
+
 import prompts from 'prompts';
 
 import { logTracker } from '../logger/log-tracker';
@@ -165,7 +166,7 @@ export class PromptsPromptProvider extends PromptProvider {
         logTracker.addLog('info', `task-success: ${message}`);
       },
       error: (message: string) => {
-        console.error(message);
+        logger.error(message);
         logTracker.addLog('error', `task-error: ${message}`);
       },
     };

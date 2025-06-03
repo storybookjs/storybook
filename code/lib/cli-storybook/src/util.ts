@@ -599,7 +599,8 @@ export const shortenPath = (path: string) => {
 const handleMultipleProjects = async (
   validProjects: readonly CollectProjectsSuccessResult[],
   errorProjects: readonly CollectProjectsErrorResult[],
-  detectedConfigDirs: readonly string[]
+  detectedConfigDirs: readonly string[],
+  yes: boolean
 ): Promise<CollectProjectsSuccessResult[] | undefined> => {
   // Check for overlapping Storybooks
   const allPackageJsonPaths = validProjects
@@ -620,10 +621,12 @@ const handleMultipleProjects = async (
       `Multiple Storybook projects found. Storybook can only upgrade all projects at once:\n${validProjectsMessage}${invalidProjectsMessage}`
     );
 
-    const continueUpgrade = await prompt.confirm({
-      message: 'Continue with the upgrade?',
-      initialValue: true,
-    });
+    const continueUpgrade =
+      yes ||
+      (await prompt.confirm({
+        message: 'Continue with the upgrade?',
+        initialValue: true,
+      }));
 
     if (!continueUpgrade) {
       process.exit(0);
@@ -709,7 +712,6 @@ export const getProjects = async (
         })
         .join('\n');
 
-      // eslint-disable-next-line local-rules/no-uncategorized-errors
       throw new Error(
         `❌ Storybook found errors while collecting data for the following projects:\n${errorMessage}\nPlease fix the errors and run the upgrade command again.`
       );
@@ -719,7 +721,8 @@ export const getProjects = async (
     const selectedProjects = await handleMultipleProjects(
       validProjects,
       errorProjects,
-      detectedConfigDirs
+      detectedConfigDirs,
+      options.yes
     );
 
     return selectedProjects ? { allProjects: validProjects, selectedProjects } : undefined;

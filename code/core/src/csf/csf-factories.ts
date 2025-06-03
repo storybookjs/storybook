@@ -114,7 +114,7 @@ export interface Story<
   play: PlayFunction<TRenderer, TRenderer['args']>;
   run: (context?: Partial<StoryContext<TRenderer, Partial<TRenderer['args']>>>) => Promise<void>;
 
-  extends<TInput extends StoryAnnotations<TRenderer, TRenderer['args']>>(
+  extend<TInput extends StoryAnnotations<TRenderer, TRenderer['args']>>(
     input: TInput
   ): Story<TRenderer, TInput>;
 }
@@ -154,7 +154,7 @@ function defineStory<
     get run() {
       return compose().run ?? (async () => {});
     },
-    extends<TInput extends StoryAnnotations<TRenderer, TRenderer['args']>>(input: TInput) {
+    extend<TInput extends StoryAnnotations<TRenderer, TRenderer['args']>>(input: TInput) {
       return defineStory(
         {
           ...this.input,

@@ -23,17 +23,30 @@ import type { AddMocks } from './public-types';
 import type { ReactRenderer } from './types';
 
 export function __definePreview<Addons extends PreviewAddon<never>[]>(
-  preview: ProjectAnnotations<ReactRenderer> & { addons: Addons }
+  input: ProjectAnnotations<ReactRenderer> & { addons: Addons }
 ): ReactPreview<InferTypes<Addons>> {
-  return definePreviewBase({
-    ...preview,
+  const preview = definePreviewBase({
+    ...input,
     addons: [
       reactAnnotations,
       reactArgTypesAnnotations,
       reactDocsAnnotations,
-      ...(preview.addons ?? []),
+      ...(input.addons ?? []),
     ],
   }) as unknown as ReactPreview<InferTypes<Addons>>;
+
+  const defineMeta = preview.meta.bind(preview);
+  preview.meta = (_input) => {
+    const meta = defineMeta(_input);
+    const defineStory = meta.story.bind(meta);
+    meta.story = (__input: any) => {
+      const story = defineStory(__input);
+      story.Component = story.__compose();
+      return story;
+    };
+    return meta;
+  };
+  return preview;
 }
 
 export interface ReactPreview<T extends AddonTypes> extends Preview<ReactRenderer & T> {
@@ -91,4 +104,6 @@ interface ReactMeta<T extends ReactRenderer, MetaInput extends ComponentAnnotati
 }
 
 export interface ReactStory<T extends ReactRenderer, TInput extends StoryAnnotations<T, T['args']>>
-  extends Story<T, TInput> {}
+  extends Story<T, TInput> {
+  Component: ComponentType<Partial<T['args']>>;
+}

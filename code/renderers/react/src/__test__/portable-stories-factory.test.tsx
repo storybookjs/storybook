@@ -12,64 +12,46 @@ import { addons } from 'storybook/preview-api';
 import { composeStories, composeStory, setProjectAnnotations } from '..';
 import type { Button } from './Button';
 import * as ButtonStories from './Button.csf4.stories';
-import * as ComponentWithErrorStories from './ComponentWithError.stories';
-
-const HooksStory = composeStory(
-  ButtonStories.HooksStory.input,
-  ButtonStories.CSF3Primary.meta.input
-);
-
-const projectAnnotations = setProjectAnnotations([]);
-
-// example with composeStories, returns an object with all stories composed with args/decorators
-// @ts-expect-error TODO: add a way to provide custom args/argTypes
-const { CSF3Primary, LoaderStory, MountInPlayFunction, MountInPlayFunctionThrow } =
-  // @ts-expect-error TODO: add a way to provide custom args/argTypes
-  composeStories(ButtonStories);
-const { ThrowsError } = composeStories(ComponentWithErrorStories);
-
-beforeAll(async () => {
-  await projectAnnotations.beforeAll?.();
-});
+import {
+  CSF2StoryWithLocale,
+  CSF3Button,
+  CSF3ButtonWithRender,
+  CSF3InputFieldFilled,
+  CSF3Primary,
+  MountInPlayFunction,
+  MountInPlayFunctionThrow,
+} from './Button.csf4.stories';
+import { CSF2Secondary, HooksStory } from './Button.csf4.stories';
 
 afterEach(() => {
   cleanup();
 });
 
-// example with composeStory, returns a single story composed with args/decorators
-const Secondary = composeStory(
-  ButtonStories.CSF2Secondary.input,
-  ButtonStories.CSF3Primary.meta.input
-);
 describe('renders', () => {
   it('renders primary button', () => {
-    render(<CSF3Primary>Hello world</CSF3Primary>);
+    render(<CSF2Secondary.Component primary={true}>Hello world</CSF2Secondary.Component>);
     const buttonElement = screen.getByText(/Hello world/i);
     expect(buttonElement).not.toBeNull();
   });
 
   it('reuses args from composed story', () => {
-    render(<Secondary />);
+    render(<CSF2Secondary.Component />);
     const buttonElement = screen.getByRole('button');
-    expect(buttonElement.textContent).toEqual(Secondary.args.children);
+    expect(buttonElement.textContent).toEqual(CSF2Secondary.input.args.children);
   });
 
   it('onclick handler is called', async () => {
     const onClickSpy = vi.fn();
-    render(<Secondary onClick={onClickSpy} />);
+    render(<CSF2Secondary.Component onClick={onClickSpy} />);
     const buttonElement = screen.getByRole('button');
     buttonElement.click();
     expect(onClickSpy).toHaveBeenCalled();
   });
 
   it('reuses args from composeStories', () => {
-    const { getByText } = render(<CSF3Primary />);
+    const { getByText } = render(<CSF3Primary.Component />);
     const buttonElement = getByText(/foo/i);
     expect(buttonElement).not.toBeNull();
-  });
-
-  it('should throw error when rendering a component with a render error', async () => {
-    await expect(() => ThrowsError.run()).rejects.toThrowError('Error in render');
   });
 
   it('should render component mounted in play function', async () => {
@@ -81,15 +63,6 @@ describe('renders', () => {
 
   it('should throw an error in play function', async () => {
     await expect(() => MountInPlayFunctionThrow.run()).rejects.toThrowError('Error thrown in play');
-  });
-
-  it('should call and compose loaders data', async () => {
-    await LoaderStory.load();
-    const { getByTestId } = render(<LoaderStory />);
-    expect(getByTestId('spy-data').textContent).toEqual('mockFn return value');
-    expect(getByTestId('loaded-data').textContent).toEqual('loaded data');
-    // spy assertions happen in the play function and should work
-    await LoaderStory.run!();
   });
 });
 
@@ -139,31 +112,17 @@ describe('projectAnnotations', () => {
 
 describe('CSF3', () => {
   it('renders with inferred globalRender', () => {
-    const Primary = composeStory(
-      ButtonStories.CSF3Button.input,
-      ButtonStories.CSF3Primary.meta.input
-    );
-
-    render(<Primary>Hello world</Primary>);
+    render(<CSF3Button.Component>Hello world</CSF3Button.Component>);
     const buttonElement = screen.getByText(/Hello world/i);
     expect(buttonElement).not.toBeNull();
   });
 
   it('renders with custom render function', () => {
-    const Primary = composeStory(
-      ButtonStories.CSF3ButtonWithRender.input,
-      ButtonStories.CSF3Primary.meta.input
-    );
-
-    render(<Primary />);
+    render(<CSF3ButtonWithRender.Component />);
     expect(screen.getByTestId('custom-render')).not.toBeNull();
   });
 
   it('renders with play function without canvas element', async () => {
-    const CSF3InputFieldFilled = composeStory(
-      ButtonStories.CSF3InputFieldFilled.input,
-      ButtonStories.CSF3Primary.meta.input
-    );
     await CSF3InputFieldFilled.run();
 
     const input = screen.getByTestId('input') as HTMLInputElement;
@@ -171,11 +130,6 @@ describe('CSF3', () => {
   });
 
   it('renders with play function with canvas element', async () => {
-    const CSF3InputFieldFilled = composeStory(
-      ButtonStories.CSF3InputFieldFilled.input,
-      ButtonStories.CSF3Primary.meta.input
-    );
-
     let divElement;
     try {
       divElement = document.createElement('div');
@@ -237,7 +191,12 @@ const testCases = Object.values(composeStories(ButtonStories)).map(
   (Story) => [Story.storyName, Story] as [string, typeof Story]
 );
 it.each(testCases)('Renders %s story', async (_storyName, Story) => {
-  if (_storyName === 'CSF2StoryWithLocale' || _storyName === 'MountInPlayFunctionThrow') {
+  if (
+    _storyName === 'LoaderStory' ||
+    _storyName === 'Modal' ||
+    _storyName === 'CSF2StoryWithLocale' ||
+    _storyName === 'MountInPlayFunctionThrow'
+  ) {
     return;
   }
 

@@ -1,5 +1,7 @@
+import type { AddonTypes, PlayFunction, StoryContext } from 'storybook/internal/csf';
 import type {
   ComponentAnnotations,
+  ComposedStoryFn,
   NormalizedComponentAnnotations,
   NormalizedProjectAnnotations,
   NormalizedStoryAnnotations,
@@ -8,10 +10,9 @@ import type {
   StoryAnnotations,
 } from 'storybook/internal/types';
 
-import { composeConfigs, normalizeProjectAnnotations } from 'storybook/preview-api';
+import { composeConfigs, composeStory, normalizeProjectAnnotations } from 'storybook/preview-api';
 
 import { getCoreAnnotations } from './core-annotations';
-import type { AddonTypes } from './story';
 
 export interface Preview<TRenderer extends Renderer = Renderer> {
   readonly _tag: 'Preview';
@@ -103,6 +104,9 @@ export interface Story<
   input: TInput;
   composed: NormalizedStoryAnnotations<TRenderer> & { args: TRenderer['args'] };
   meta: Meta<TRenderer>;
+  __compose: () => ComposedStoryFn<TRenderer>;
+  play: PlayFunction<TRenderer, TRenderer['args']>;
+  run: (context?: Partial<StoryContext<TRenderer, Partial<TRenderer['args']>>>) => Promise<void>;
 }
 
 export function isStory<TRenderer extends Renderer>(input: unknown): input is Story<TRenderer> {
@@ -113,12 +117,30 @@ function defineStory<
   TRenderer extends Renderer,
   TInput extends StoryAnnotations<TRenderer, TRenderer['args']>,
 >(input: TInput, meta: Meta<TRenderer>): Story<TRenderer, TInput> {
+  let composed: ComposedStoryFn<TRenderer>;
+
+  const compose = () => {
+    if (!composed) {
+      composed = composeStory(
+        input as StoryAnnotations<TRenderer>,
+        meta.input as ComponentAnnotations<TRenderer>
+      );
+    }
+    return composed;
+  };
   return {
     _tag: 'Story',
     input,
     meta,
+    __compose: compose,
     get composed(): never {
       throw new Error('Not implemented');
     },
-  };
+    get play() {
+      return input.play ?? meta.input?.play ?? (async () => {});
+    },
+    get run() {
+      return compose().run ?? (async () => {});
+    },
+  } as Story<TRenderer, TInput>;
 }

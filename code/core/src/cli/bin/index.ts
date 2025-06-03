@@ -33,7 +33,7 @@ const command = (name: string) =>
       try {
         await globalSettings();
       } catch (e) {
-        logger.error('Error loading global settings', e);
+        logger.error('Error loading global settings:\n' + String(e));
       }
     });
 

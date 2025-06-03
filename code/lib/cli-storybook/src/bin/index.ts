@@ -58,7 +58,7 @@ const command = (name: string) =>
 
         await globalSettings();
       } catch (e) {
-        logger.log('Error loading global settings:\n' + String(e));
+        logger.error('Error loading global settings:\n' + String(e));
       }
     })
     .hook('postAction', async () => {

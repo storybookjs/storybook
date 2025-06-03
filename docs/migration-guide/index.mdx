@@ -74,6 +74,17 @@ This will:
    * Explain the necessary changes with links to more information
    * Ask for approval, then perform the task automatically on your behalf
 
+<Callout variant="info">
+
+Migrating a monorepo project? Be sure to run the command in the current working directory (`cwd`) that contains the `storybook` package.
+
+Some helpful commands for monorepos:
+
+- For NX projects, you can use the `nx migrate` command
+- The [`--config-dir` CLI flag](../api/cli-options.mdx#upgrade) can be used to specify a different config directory than the default `./.storybook` directory
+
+</Callout>
+
 ## New projects
 
 To add Storybook to a project that isn’t currently using Storybook:
@@ -152,7 +163,7 @@ In addition to the automigrations and manual migrations above, there are also op
 
 ### `test-runner` to `addon-vitest`
 
-`addon-vitest` and the rest of the [Storybook Test experience](https://storybook.js.org/blog/storybook-test-sneak-peek/) is designed to supercede the `test-runner`. It's faster and provides a better experience for writing and running tests. If your project uses React, Vue, or Svelte and is built with Vite, you should consider migrating to `addon-vitest`, by following the [installation instructions](../writing-tests/vitest-addon.mdx#automatic-setup).
+`addon-vitest` and the rest of the [Storybook Test experience](https://storybook.js.org/blog/storybook-test-sneak-peek/) is designed to supercede the `test-runner`. It's faster and provides a better experience for writing and running tests. If your project uses React, Vue, or Svelte and is built with Vite, you should consider migrating to `addon-vitest`, by following the [installation instructions](../writing-tests/integrations/vitest-addon.mdx#automatic-setup).
 
 ### CSF 2 to CSF 3
 

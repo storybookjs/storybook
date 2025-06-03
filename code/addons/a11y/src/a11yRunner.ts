@@ -3,7 +3,7 @@ import { ElementA11yParameterError } from 'storybook/internal/preview-errors';
 import { global } from '@storybook/global';
 
 import type { AxeResults, ContextProp, ContextSpec } from 'axe-core';
-import { addons } from 'storybook/preview-api';
+import { addons, waitForAnimations } from 'storybook/preview-api';
 
 import { withLinkPaths } from './a11yRunnerUtils';
 import { EVENTS } from './constants';
@@ -56,7 +56,7 @@ export const run = async (input: A11yParameters = DEFAULT_PARAMETERS, storyId: s
 
   const context: ContextSpec = {
     include: document?.body,
-    exclude: ['.sb-wrapper', '#storybook-docs'], // Internal Storybook elements that are always in the document
+    exclude: ['.sb-wrapper', '#storybook-docs', '#storybook-highlights-root'], // Internal Storybook elements that are always in the document
   };
 
   if (input.context) {
@@ -93,6 +93,11 @@ export const run = async (input: A11yParameters = DEFAULT_PARAMETERS, storyId: s
   axe.configure(configWithDefault);
 
   return new Promise<AxeResults>((resolve, reject) => {
+    const highlightsRoot = document?.getElementById('storybook-highlights-root');
+    if (highlightsRoot) {
+      highlightsRoot.style.display = 'none';
+    }
+
     const task = async () => {
       try {
         const result = await axe.run(context, options);
@@ -108,11 +113,16 @@ export const run = async (input: A11yParameters = DEFAULT_PARAMETERS, storyId: s
     if (!isRunning) {
       runNext();
     }
+
+    if (highlightsRoot) {
+      highlightsRoot.style.display = '';
+    }
   });
 };
 
 channel.on(EVENTS.MANUAL, async (storyId: string, input: A11yParameters = DEFAULT_PARAMETERS) => {
   try {
+    await waitForAnimations();
     const result = await run(input, storyId);
     // Axe result contains class instances, which telejson deserializes in a
     // way that violates:

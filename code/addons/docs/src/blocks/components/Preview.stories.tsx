@@ -28,31 +28,31 @@ const getPreparedStory = (docsContext: DocsContextProps, moduleExport: ModuleExp
 export const Loading = () => <PreviewSkeleton />;
 
 export const CodeCollapsed = () => (
-  <Preview isExpanded={false} withSource={sourceStories.JSX.args}>
+  <Preview inline isExpanded={false} withSource={sourceStories.JSX.args}>
     <Button variant="outline">Button 1</Button>
   </Preview>
 );
 
 export const CodeExpanded = () => (
-  <Preview isExpanded withSource={sourceStories.JSX.args}>
+  <Preview inline isExpanded withSource={sourceStories.JSX.args}>
     <Button variant="outline">Button 1</Button>
   </Preview>
 );
 
 export const CodeError = () => (
-  <Preview isExpanded withSource={sourceStories.SourceUnavailable.args}>
+  <Preview inline isExpanded withSource={sourceStories.SourceUnavailable.args}>
     <Button variant="outline">Button 1</Button>
   </Preview>
 );
 
 export const Single = () => (
-  <Preview>
+  <Preview inline>
     <Button variant="outline">Button 1</Button>
   </Preview>
 );
 
 export const Row = () => (
-  <Preview>
+  <Preview inline>
     <Button variant="outline">Button 1</Button>
     <Button variant="outline">Button 2</Button>
     <Button variant="outline">Button 3</Button>
@@ -64,7 +64,7 @@ export const Row = () => (
 );
 
 export const Column = () => (
-  <Preview isColumn>
+  <Preview inline isColumn>
     <Button variant="outline">Button 1</Button>
     <Button variant="outline">Button 2</Button>
     <Button variant="outline">Button 3</Button>
@@ -72,7 +72,7 @@ export const Column = () => (
 );
 
 export const GridWith3Columns = () => (
-  <Preview columns={3}>
+  <Preview inline columns={3}>
     <Button variant="outline">Button 1</Button>
     <Button variant="outline">Button 2</Button>
     <Button variant="outline">Button 3</Button>
@@ -100,7 +100,7 @@ export const WithToolbar = (
   args: any,
   { loaded: { docsContext } }: { loaded: { docsContext: DocsContextProps } }
 ) => (
-  <Preview withToolbar>
+  <Preview inline withToolbar>
     <Story
       inline
       story={getPreparedStory(docsContext, ButtonStories.Primary)}
@@ -108,7 +108,7 @@ export const WithToolbar = (
       autoplay={false}
       forceInitialArgs={false}
       primary={false}
-      height="100px"
+      height="36px"
     />
   </Preview>
 );
@@ -119,7 +119,7 @@ const Horizontal = styled((props: ComponentProps<typeof Spaced>) => <Spaced col=
 });
 
 export const Wide = () => (
-  <Preview withToolbar>
+  <Preview inline withToolbar>
     <Horizontal>
       <div>START</div>
       <div>middle</div>
@@ -132,7 +132,7 @@ export const WithToolbarMulti = (
   args: any,
   { loaded: { docsContext } }: { loaded: { docsContext: DocsContextProps } }
 ) => (
-  <Preview withToolbar>
+  <Preview inline withToolbar>
     <Story
       inline
       story={getPreparedStory(docsContext, ButtonStories.Primary)}
@@ -140,7 +140,7 @@ export const WithToolbarMulti = (
       autoplay={false}
       forceInitialArgs={false}
       primary={false}
-      height="100px"
+      height="36px"
     />
     <Story
       inline
@@ -149,7 +149,7 @@ export const WithToolbarMulti = (
       autoplay={false}
       forceInitialArgs={false}
       primary={false}
-      height="100px"
+      height="36px"
     />
   </Preview>
 );
@@ -158,7 +158,7 @@ export const WithFullscreenSingle = (
   args: any,
   { loaded: { docsContext } }: { loaded: { docsContext: DocsContextProps } }
 ) => (
-  <Preview withToolbar layout="fullscreen">
+  <Preview inline withToolbar layout="fullscreen">
     <Story
       inline
       story={getPreparedStory(docsContext, ButtonStories.Primary)}
@@ -166,7 +166,7 @@ export const WithFullscreenSingle = (
       autoplay={false}
       forceInitialArgs={false}
       primary={false}
-      height="100px"
+      height="36px"
     />
   </Preview>
 );
@@ -175,7 +175,7 @@ export const WithFullscreenMulti = (
   args: any,
   { loaded: { docsContext } }: { loaded: { docsContext: DocsContextProps } }
 ) => (
-  <Preview withToolbar layout="fullscreen">
+  <Preview inline withToolbar layout="fullscreen">
     <Story
       inline
       story={getPreparedStory(docsContext, ButtonStories.Primary)}
@@ -183,7 +183,7 @@ export const WithFullscreenMulti = (
       autoplay={false}
       forceInitialArgs={false}
       primary={false}
-      height="100px"
+      height="36px"
     />
     <Story
       inline
@@ -192,7 +192,7 @@ export const WithFullscreenMulti = (
       autoplay={false}
       forceInitialArgs={false}
       primary={false}
-      height="100px"
+      height="36px"
     />
   </Preview>
 );
@@ -201,13 +201,27 @@ export const WithCenteredSingle = (
   args: any,
   { loaded: { docsContext } }: { loaded: { docsContext: DocsContextProps } }
 ) => (
-  <Preview withToolbar layout="centered">
+  <Preview inline withToolbar layout="centered">
     <Story
       inline
-      story={getPreparedStory(docsContext, ButtonStories.Primary)}
+      story={getPreparedStory(docsContext, ButtonStories.Centered)}
       renderStoryToElement={renderStoryToElement}
       autoplay={false}
       forceInitialArgs={false}
+      primary={false}
+      height="36px"
+    />
+  </Preview>
+);
+
+export const WithCenteredIframe = (
+  args: any,
+  { loaded: { docsContext } }: { loaded: { docsContext: DocsContextProps } }
+) => (
+  <Preview inline={false} withToolbar layout="centered">
+    <Story
+      inline={false}
+      story={getPreparedStory(docsContext, ButtonStories.Centered)}
       primary={false}
       height="100px"
     />
@@ -218,30 +232,31 @@ export const WithCenteredMulti = (
   args: any,
   { loaded: { docsContext } }: { loaded: { docsContext: DocsContextProps } }
 ) => (
-  <Preview withToolbar layout="centered">
+  <Preview inline withToolbar layout="centered">
     <Story
       inline
-      story={getPreparedStory(docsContext, ButtonStories.Primary)}
+      story={getPreparedStory(docsContext, ButtonStories.Centered)}
       renderStoryToElement={renderStoryToElement}
       autoplay={false}
       forceInitialArgs={false}
       primary={false}
-      height="100px"
+      height="36px"
     />
     <Story
       inline
-      story={getPreparedStory(docsContext, ButtonStories.Primary)}
+      story={getPreparedStory(docsContext, ButtonStories.Centered)}
       renderStoryToElement={renderStoryToElement}
       autoplay={false}
       forceInitialArgs={false}
       primary={false}
-      height="100px"
+      height="36px"
     />
   </Preview>
 );
 
 export const WithAdditionalActions = () => (
   <Preview
+    inline
     additionalActions={[
       {
         title: 'Open on GitHub',

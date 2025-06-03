@@ -87,10 +87,14 @@ export const addonExperimentalTest: Fix<AddonExperimentalTestOptions> = {
     // Update all files that contain @storybook/experimental-addon-test
     for (const file of matchingFiles) {
       const content = readFileSync(file, 'utf-8');
-      const updatedContent = content.replace(
+      let updatedContent = content.replace(
         /@storybook\/experimental-addon-test/g,
         '@storybook/addon-vitest'
       );
+
+      if (file.includes('vitest.setup')) {
+        updatedContent = updatedContent.replace(/^\s*beforeAll.*\n?/gm, '');
+      }
 
       if (!dryRun) {
         writeFileSync(file, updatedContent, 'utf-8');

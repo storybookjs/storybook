@@ -5,7 +5,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { expect } from 'storybook/test';
 
 const meta = {
-  component: globalThis.Components.Button,
+  component: globalThis.__TEMPLATE_COMPONENTS__.Button,
 } satisfies Meta;
 
 export default meta;

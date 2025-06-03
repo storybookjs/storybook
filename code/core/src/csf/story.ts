@@ -370,7 +370,7 @@ export interface BaseAnnotations<TRenderer extends Renderer = Renderer, TArgs = 
    * `afterEach` can be added to preview, the default export and to a specific story. They are run
    * (and awaited) reverse order: preview, default export, story
    */
-  experimental_afterEach?: AfterEach<TRenderer, TArgs>[] | AfterEach<TRenderer, TArgs>;
+  afterEach?: AfterEach<TRenderer, TArgs>[] | AfterEach<TRenderer, TArgs>;
 
   /**
    * Define a custom render function for the story(ies). If not passed, a default render function by

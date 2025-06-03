@@ -1,7 +1,7 @@
 import { render, screen, cleanup } from '@testing-library/react';
 import { addons } from 'storybook/preview-api';
 
-import { setProjectAnnotations, composeStories, composeStory } from '@storybook/react';
+import { setProjectAnnotations, composeStories, composeStory } from '@storybook/react-vite';
 import * as stories from './Button.stories';
 
 afterEach(() => {

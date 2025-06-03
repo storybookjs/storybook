@@ -123,7 +123,9 @@ function defineStory<
     if (!composed) {
       composed = composeStory(
         input as StoryAnnotations<TRenderer>,
-        meta.input as ComponentAnnotations<TRenderer>
+        meta.input as ComponentAnnotations<TRenderer>,
+        undefined,
+        meta.preview.composed
       );
     }
     return composed;

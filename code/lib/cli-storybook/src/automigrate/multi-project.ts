@@ -108,12 +108,13 @@ export async function promptForAutomigrations(
 
   // Format project directories relative to git root
   const formatProjectDirs = (projects: ProjectAutomigrationData[]) => {
+    const amountOfProjectsShown = 1;
     const relativeDirs = projects.map((p) => shortenPath(p.configDir) || '.');
-    if (relativeDirs.length <= 3) {
+    if (relativeDirs.length <= amountOfProjectsShown) {
       return relativeDirs.join(', ');
     }
-    const remaining = relativeDirs.length - 3;
-    return `${relativeDirs.slice(0, 3).join(', ')}${remaining > 0 ? ` and ${remaining} more...` : ''}`;
+    const remaining = relativeDirs.length - amountOfProjectsShown;
+    return `${relativeDirs.slice(0, amountOfProjectsShown).join(', ')}${remaining > 0 ? ` and ${remaining} more...` : ''}`;
   };
 
   if (options.dryRun) {

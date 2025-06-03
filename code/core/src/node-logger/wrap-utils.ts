@@ -1,5 +1,6 @@
 import { S_BAR } from '@clack/prompts';
 import { cyan, dim, reset } from 'picocolors';
+import wrapAnsi from 'wrap-ansi';
 
 // Text wrapping utility for Clack output
 function getTerminalWidth(): number {
@@ -17,6 +18,9 @@ function getTerminalWidth(): number {
 // ANSI regex pattern to match ANSI escape codes
 const ANSI_REGEX = /\u001b\[[0-9;]*m/g;
 
+// URL regex pattern to match URLs
+const URL_REGEX = /(https?:\/\/[^\s]+)/g;
+
 function stripAnsi(str: string): string {
   return str.replace(ANSI_REGEX, '');
 }
@@ -25,242 +29,59 @@ function getVisibleLength(str: string): number {
   return stripAnsi(str).length;
 }
 
-// Enhanced ANSI parsing that preserves color state
-interface AnsiSegment {
-  text: string;
-  codes: string[];
+/** Creates a hyperlink that can be visually truncated but opens the full URL when clicked */
+function createTruncatedHyperlink(url: string, maxLength: number): string {
+  if (url.length <= maxLength) {
+    return url;
+  }
+
+  // Create a visually truncated version
+  const truncatedText = url.length > maxLength ? url.substring(0, maxLength - 3) + '...' : url;
+
+  // Use OSC 8 escape sequence to create a clickable link
+  // Format: \e]8;;URL\aVISIBLE_TEXT\e]8;;\a
+  return `\u001b]8;;${url}\u0007${truncatedText}\u001b]8;;\u0007`;
 }
 
-function parseAnsiText(str: string): AnsiSegment[] {
-  const segments: AnsiSegment[] = [];
-  let currentCodes: string[] = [];
+/** Detects URLs in text and prevents them from being broken across lines */
+function protectUrls(text: string, maxUrlLength?: number): string {
+  return text.replace(URL_REGEX, (url) => {
+    if (maxUrlLength && url.length > maxUrlLength) {
+      // Create a truncated hyperlink that still opens the full URL
+      return createTruncatedHyperlink(url, maxUrlLength);
+    }
+    return url;
+  });
+}
+
+/** Enhanced word splitting that treats URLs as single units */
+function splitTextPreservingUrls(text: string): string[] {
+  const parts: string[] = [];
   let lastIndex = 0;
   let match;
 
-  // Reset the regex index
-  ANSI_REGEX.lastIndex = 0;
+  // Reset regex
+  URL_REGEX.lastIndex = 0;
 
-  while ((match = ANSI_REGEX.exec(str)) !== null) {
-    // Add text before this ANSI code
+  while ((match = URL_REGEX.exec(text)) !== null) {
+    // Add text before the URL
     if (match.index > lastIndex) {
-      const text = str.slice(lastIndex, match.index);
-      if (text.length > 0) {
-        // Split on newlines but preserve the newline structure
-        const lines = text.split('\n');
-        for (let i = 0; i < lines.length; i++) {
-          if (lines[i].length > 0 || (i === 0 && lines.length === 1)) {
-            segments.push({ text: lines[i], codes: [...currentCodes] });
-          }
-          // Add newline as separate segment (except for the last line)
-          if (i < lines.length - 1) {
-            segments.push({ text: '\n', codes: [] });
-          }
-        }
-      }
+      const beforeUrl = text.slice(lastIndex, match.index);
+      parts.push(...beforeUrl.split(' ').filter((part) => part.length > 0));
     }
 
-    // Update current codes
-    const ansiCode = match[0];
-    if (ansiCode.includes('0m') || ansiCode.includes('39m') || ansiCode.includes('49m')) {
-      // Reset code
-      currentCodes = [];
-    } else {
-      // Add/update color code
-      currentCodes.push(ansiCode);
-    }
-
+    // Add the URL as a single unit
+    parts.push(match[0]);
     lastIndex = match.index + match[0].length;
   }
 
-  // Add remaining text
-  if (lastIndex < str.length) {
-    const text = str.slice(lastIndex);
-    if (text.length > 0) {
-      // Split on newlines but preserve the newline structure
-      const lines = text.split('\n');
-      for (let i = 0; i < lines.length; i++) {
-        if (lines[i].length > 0 || (i === 0 && lines.length === 1)) {
-          segments.push({ text: lines[i], codes: [...currentCodes] });
-        }
-        // Add newline as separate segment (except for the last line)
-        if (i < lines.length - 1) {
-          segments.push({ text: '\n', codes: [] });
-        }
-      }
-    }
+  // Add remaining text after the last URL
+  if (lastIndex < text.length) {
+    const remaining = text.slice(lastIndex);
+    parts.push(...remaining.split(' ').filter((part) => part.length > 0));
   }
 
-  return segments;
-}
-
-function reconstructAnsiText(segments: AnsiSegment[]): string {
-  return segments
-    .map((segment) => {
-      if (segment.codes.length > 0) {
-        return segment.codes.join('') + segment.text + '\u001b[0m';
-      }
-      return segment.text;
-    })
-    .join('');
-}
-
-// Characters that should not be left hanging alone at the end of a line
-const NO_BREAK_AFTER = /[✔✓✗✘•▪▫◦‣⁃\-–—]\s*$/;
-
-// Check if a text segment ends with a symbol that shouldn't be left hanging
-function shouldStayWithNext(text: string): boolean {
-  return NO_BREAK_AFTER.test(text.trim());
-}
-
-function manualWrapWithAnsi(text: string, width: number): string {
-  const visibleLength = getVisibleLength(text);
-  if (visibleLength <= width) {
-    return text;
-  }
-
-  const segments = parseAnsiText(text);
-  const lines: string[] = [];
-  let currentLineSegments: AnsiSegment[] = [];
-  let currentLineLength = 0;
-
-  for (let segmentIndex = 0; segmentIndex < segments.length; segmentIndex++) {
-    const segment = segments[segmentIndex];
-    const nextSegment = segments[segmentIndex + 1];
-
-    // Handle explicit newlines
-    if (segment.text === '\n') {
-      if (currentLineSegments.length > 0) {
-        lines.push(reconstructAnsiText(currentLineSegments));
-        currentLineSegments = [];
-        currentLineLength = 0;
-      }
-      continue;
-    }
-
-    // Skip empty or whitespace-only segments unless they contain meaningful whitespace
-    if (!segment.text.trim() && segment.text !== ' ') {
-      continue;
-    }
-
-    const segmentVisibleLength = getVisibleLength(segment.text);
-
-    // Check if this segment should stay with the next one (e.g., checkmark + path)
-    const shouldStayTogether = nextSegment && shouldStayWithNext(segment.text);
-
-    if (shouldStayTogether) {
-      // Calculate combined length of this segment and next segment
-      const nextSegmentLength = getVisibleLength(nextSegment.text);
-      const combinedLength = segmentVisibleLength + nextSegmentLength;
-
-      if (currentLineLength + combinedLength <= width) {
-        // Both segments fit on current line
-        currentLineSegments.push(segment);
-        currentLineLength += segmentVisibleLength;
-        continue; // Let the next iteration handle the next segment normally
-      } else if (combinedLength <= width) {
-        // Both segments fit on a new line
-        if (currentLineSegments.length > 0) {
-          lines.push(reconstructAnsiText(currentLineSegments));
-          currentLineSegments = [];
-          currentLineLength = 0;
-        }
-        currentLineSegments.push(segment);
-        currentLineLength += segmentVisibleLength;
-        continue; // Let the next iteration handle the next segment normally
-      }
-      // If combined length is too long, fall through to normal processing
-    }
-
-    // Try to fit the entire segment on the current line first
-    if (currentLineLength + segmentVisibleLength <= width) {
-      // Entire segment fits on current line
-      currentLineSegments.push(segment);
-      currentLineLength += segmentVisibleLength;
-    } else if (segmentVisibleLength <= width) {
-      // Segment fits on a new line by itself
-      if (currentLineSegments.length > 0) {
-        lines.push(reconstructAnsiText(currentLineSegments));
-        currentLineSegments = [];
-        currentLineLength = 0;
-      }
-      currentLineSegments.push(segment);
-      currentLineLength = segmentVisibleLength;
-    } else {
-      // Segment is too long, need to break it by words
-      if (currentLineSegments.length > 0) {
-        lines.push(reconstructAnsiText(currentLineSegments));
-        currentLineSegments = [];
-        currentLineLength = 0;
-      }
-
-      const words = segment.text.split(' ');
-      let currentSegmentText = '';
-
-      for (let i = 0; i < words.length; i++) {
-        const word = words[i];
-        const isLastWord = i === words.length - 1;
-        const testText = currentSegmentText + (currentSegmentText ? ' ' : '') + word;
-        const testLength = testText.length;
-
-        if (testLength <= width) {
-          // Word fits in current segment
-          currentSegmentText = testText;
-
-          if (isLastWord) {
-            // This is the last word, add the segment
-            currentLineSegments.push({
-              text: currentSegmentText,
-              codes: segment.codes,
-            });
-            currentLineLength = testLength;
-          }
-        } else {
-          // Word doesn't fit
-          if (currentSegmentText) {
-            // Add current segment and start new line
-            currentLineSegments.push({
-              text: currentSegmentText,
-              codes: segment.codes,
-            });
-            if (currentLineSegments.length > 0) {
-              lines.push(reconstructAnsiText(currentLineSegments));
-              currentLineSegments = [];
-              currentLineLength = 0;
-            }
-            currentSegmentText = word;
-          } else {
-            // Single word is too long, break it
-            if (word.length > width) {
-              let remainingWord = word;
-              while (remainingWord.length > 0) {
-                const partLength = Math.min(remainingWord.length, width);
-                const part = remainingWord.slice(0, partLength);
-                lines.push(reconstructAnsiText([{ text: part, codes: segment.codes }]));
-                remainingWord = remainingWord.slice(partLength);
-              }
-              currentSegmentText = '';
-            } else {
-              currentSegmentText = word;
-            }
-          }
-
-          if (isLastWord && currentSegmentText) {
-            currentLineSegments.push({
-              text: currentSegmentText,
-              codes: segment.codes,
-            });
-            currentLineLength = currentSegmentText.length;
-          }
-        }
-      }
-    }
-  }
-
-  if (currentLineSegments.length > 0) {
-    lines.push(reconstructAnsiText(currentLineSegments));
-  }
-
-  return lines.join('\n');
+  return parts;
 }
 
 export function wrapTextForClack(text: string, width?: number): string {
@@ -269,18 +90,11 @@ export function wrapTextForClack(text: string, width?: number): string {
   // Clack typically uses about 4-8 characters for its formatting
   const contentWidth = Math.max(terminalWidth - 8, 40);
 
-  // Import wrap-ansi dynamically to handle text wrapping with ANSI codes
-  try {
-    const wrapAnsi = require('wrap-ansi');
-    return wrapAnsi(text, contentWidth, {
-      hard: true,
-      trim: false,
-      wordWrap: true,
-    });
-  } catch {
-    // Fallback to manual line breaking if wrap-ansi is not available
-    return manualWrapWithAnsi(text, contentWidth);
-  }
+  return wrapAnsi(text, contentWidth, {
+    hard: true,
+    trim: false,
+    wordWrap: true,
+  });
 }
 
 // Export additional utilities that might be useful
@@ -299,35 +113,92 @@ export function wrapTextForClackHint(text: string, width?: number, label?: strin
   // Reserve space for Clack's visual formatting (prefix, borders, etc.)
   // Additional space for the stroke character, padding, checkbox, and label
   // Format: "│  ◼ labelText (hint text..."
-  const reservedSpace = 8 + labelWidth; // 8 chars for "│  ◼ " + "(" + some padding
-  const contentWidth = Math.max(terminalWidth - reservedSpace, 30);
+  const reservedSpaceFirstLine = 8 + labelWidth; // 8 chars for "│  ◼ " + "(" + some padding
+  const firstLineWidth = Math.max(terminalWidth - reservedSpaceFirstLine, 30);
 
-  let wrappedText: string;
+  // For continuation lines, we only need to account for the indentation
+  // Format: "│    continuation text..."
+  const indentSpaces = 3 + 1; // Total chars before hint text starts: "│  " + "◼ "
+  const continuationLineWidth = Math.max(terminalWidth - indentSpaces, 30);
 
-  // Import wrap-ansi dynamically to handle text wrapping with ANSI codes
-  try {
-    const wrapAnsi = require('wrap-ansi');
-    wrappedText = wrapAnsi(text, contentWidth, {
-      hard: true,
-      trim: false,
-      wordWrap: true,
-    });
-  } catch {
-    // Fallback to manual line breaking if wrap-ansi is not available
-    wrappedText = manualWrapWithAnsi(text, contentWidth);
+  // First, try wrapping with the continuation line width for optimal wrapping
+  // Apply URL protection to prevent URLs from being broken across lines
+  const protectedText = protectUrls(text, Math.floor(continuationLineWidth * 0.8));
+  const initialWrap = wrapAnsi(protectedText, continuationLineWidth, {
+    hard: true,
+    trim: false,
+    wordWrap: true,
+  });
+
+  const lines = initialWrap.split('\n');
+
+  // Check if the first line exceeds the first line width
+  if (lines.length > 0 && getVisibleLength(lines[0]) > firstLineWidth) {
+    // Need to manually break the text at the first line boundary
+    // Find the best break point for the first line, treating URLs as single units
+    const words = splitTextPreservingUrls(text);
+    let firstLinePart = '';
+    let remainingPart = '';
+
+    for (let i = 0; i < words.length; i++) {
+      const testLine = i === 0 ? words[i] : firstLinePart + ' ' + words[i];
+
+      if (getVisibleLength(testLine) <= firstLineWidth) {
+        firstLinePart = testLine;
+      } else {
+        // This word would make the line too long, so break here
+        remainingPart = words.slice(i).join(' ');
+        break;
+      }
+    }
+
+    // If we couldn't fit any words, just use the first word
+    if (!firstLinePart && words.length > 0) {
+      firstLinePart = words[0];
+      remainingPart = words.slice(1).join(' ');
+    }
+
+    let finalLines = [firstLinePart];
+
+    // Wrap the remaining text with the wider continuation width
+    // Apply URL protection to prevent URLs from being broken
+    if (remainingPart.trim()) {
+      const protectedRemainder = protectUrls(
+        remainingPart.trim(),
+        Math.floor(continuationLineWidth * 0.8)
+      );
+      const wrappedRemainder = wrapAnsi(protectedRemainder, continuationLineWidth, {
+        hard: true,
+        trim: false,
+        wordWrap: true,
+      });
+      finalLines = finalLines.concat(wrappedRemainder.split('\n'));
+    }
+
+    if (finalLines.length <= 1) {
+      return finalLines[0] || '';
+    }
+
+    // Use reset + cyan to counteract clack's dimming effect on the vertical line
+    const indentation = reset(cyan(S_BAR)) + ' '.repeat(indentSpaces);
+
+    // Add proper indentation to all lines except the first one
+    return finalLines
+      .map((line, index) => {
+        if (index === 0) {
+          return line;
+        }
+        // Add stroke character with proper indentation for continuation lines
+        return `${indentation}${dim(line)}`;
+      })
+      .join('\n');
   }
 
-  // Split into lines and add stroke character to continuation lines
-  const lines = wrappedText.split('\n');
-
+  // First line fits, so use the optimal wrapping
   if (lines.length <= 1) {
-    return wrappedText;
+    return initialWrap;
   }
 
-  // Calculate indentation to align with the start of the hint text
-  // Format: "│  ◼ labelText (hint text..."
-  // Indentation: "│  " + "◼ "
-  const indentSpaces = 3 + 1; // Total chars before hint text starts
   // Use reset + cyan to counteract clack's dimming effect on the vertical line
   const indentation = reset(cyan(S_BAR)) + ' '.repeat(indentSpaces);
 

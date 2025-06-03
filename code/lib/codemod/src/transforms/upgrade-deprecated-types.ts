@@ -1,10 +1,9 @@
 import { type BabelFile, type NodePath, core as babel, types as t } from 'storybook/internal/babel';
 import { loadCsf, printCsf } from 'storybook/internal/csf-tools';
+import { logger } from 'storybook/internal/node-logger';
 
 import type { API, FileInfo } from 'jscodeshift';
 import prettier from 'prettier';
-
-const logger = console;
 
 const deprecatedTypes = [
   'ComponentStory',

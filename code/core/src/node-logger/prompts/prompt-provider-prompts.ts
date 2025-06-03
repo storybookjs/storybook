@@ -1,6 +1,6 @@
 import prompts from 'prompts';
 
-import { logTracker } from './log-tracker';
+import { logTracker } from '../logger/log-tracker';
 import type {
   ConfirmPromptOptions,
   MultiSelectPromptOptions,

@@ -4,7 +4,7 @@ import { isAbsolute, join } from 'node:path';
 
 import type { PackageManagerName } from 'storybook/internal/common';
 import { JsPackageManagerFactory, versions } from 'storybook/internal/common';
-import { prompt } from 'storybook/internal/node-logger';
+import { logger, prompt } from 'storybook/internal/node-logger';
 
 import { downloadTemplate } from 'giget';
 import picocolors from 'picocolors';
@@ -14,8 +14,6 @@ import { dedent } from 'ts-dedent';
 
 import type { Template, TemplateKey } from './sandbox-templates';
 import { allTemplates as TEMPLATES } from './sandbox-templates';
-
-const logger = console;
 
 interface SandboxOptions {
   filterValue?: string;
@@ -68,7 +66,7 @@ export const sandbox = async ({
     prerelease: picocolors.yellow('This is a pre-release version.'),
   };
 
-  prompt.logBox(
+  logger.logBox(
     [messages.welcome]
       .concat(isOutdated && !isPrerelease ? [messages.notLatest] : [])
       .concat(init && (isOutdated || isPrerelease) ? [messages.longInitTime] : [])
@@ -105,7 +103,7 @@ export const sandbox = async ({
     }, []);
 
     if (choices.length === 0) {
-      prompt.logBox(
+      logger.logBox(
         dedent`
             🔎 You filtered out all templates. 🔍
 
@@ -124,7 +122,7 @@ export const sandbox = async ({
     if (choices.length === 1) {
       [templateId] = choices;
     } else {
-      prompt.logBox(
+      logger.logBox(
         dedent`
             🤗 Welcome to ${picocolors.yellow('sb sandbox')}! 🤗
 
@@ -158,7 +156,7 @@ export const sandbox = async ({
   let selectedDirectory = outputDirectory;
   const outputDirectoryName = outputDirectory || templateId;
   if (selectedDirectory && existsSync(`${selectedDirectory}`)) {
-    logger.info(`⚠️  ${selectedDirectory} already exists! Overwriting...`);
+    logger.log(`⚠️  ${selectedDirectory} already exists! Overwriting...`);
     await rm(selectedDirectory, { recursive: true, force: true });
   }
 
@@ -188,7 +186,7 @@ export const sandbox = async ({
       ? selectedDirectory
       : join(process.cwd(), selectedDirectory);
 
-    logger.info(`🏃 Adding ${selectedConfig.name} into ${templateDestination}`);
+    logger.log(`🏃 Adding ${selectedConfig.name} into ${templateDestination}`);
 
     logger.log(`📦 Downloading sandbox template (${picocolors.bold(downloadType)})...`);
     try {
@@ -237,7 +235,7 @@ export const sandbox = async ({
         `)
       : `Recreate your setup, then ${picocolors.yellow(`npx storybook@latest init`)}`;
 
-    prompt.logBox(
+    logger.logBox(
       dedent`
         🎉 Your Storybook reproduction project is ready to use! 🎉
 

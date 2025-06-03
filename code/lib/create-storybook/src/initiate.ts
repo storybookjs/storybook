@@ -1,6 +1,8 @@
 import { execSync } from 'node:child_process';
 import fs from 'node:fs/promises';
 
+import { logger } from 'storybook/internal/node-logger';
+
 import boxen from 'boxen';
 import { findUp } from 'find-up';
 import picocolors from 'picocolors';
@@ -50,8 +52,6 @@ import type { CommandOptions, GeneratorFeature, GeneratorOptions } from './gener
 import { packageVersions } from './ink/steps/checks/packageVersions';
 import { vitestConfigFiles } from './ink/steps/checks/vitestConfigFiles';
 import { currentDirectoryIsEmpty, scaffoldNewProject } from './scaffold-new-project';
-
-const logger = console;
 
 const installStorybook = async <Project extends ProjectType>(
   projectType: Project,
@@ -185,7 +185,7 @@ const installStorybook = async <Project extends ProjectType>(
         );
 
         // Add a new line for the clear visibility.
-        logger.log();
+        logger.log('');
 
         return Promise.resolve();
 
@@ -196,7 +196,7 @@ const installStorybook = async <Project extends ProjectType>(
         );
 
         // Add a new line for the clear visibility.
-        logger.log();
+        logger.log('');
 
         return projectTypeInquirer(options, packageManager);
     }
@@ -245,7 +245,7 @@ const projectTypeInquirer = async (
     }
   }
 
-  logger.log();
+  logger.log('');
   logger.log('For more information about installing Storybook: https://storybook.js.org/docs');
   process.exit(0);
 };
@@ -438,7 +438,7 @@ export async function doInitiate(options: CommandOptions): Promise<
   }
 
   if (typeof newUser === 'undefined') {
-    logger.info('canceling');
+    logger.log('canceling');
     process.exit(0);
   }
 
@@ -446,7 +446,7 @@ export async function doInitiate(options: CommandOptions): Promise<
   if (!newUser) {
     const install = await promptInstallType(promptOptions);
     if (typeof install === 'undefined') {
-      logger.info('canceling');
+      logger.log('canceling');
       process.exit(0);
     }
     installType = install;
@@ -480,7 +480,7 @@ export async function doInitiate(options: CommandOptions): Promise<
       done(`The provided project type was not recognized by Storybook: ${projectTypeProvided}`);
       logger.log(`\nThe project types currently supported by Storybook are:\n`);
       installableProjectTypes.sort().forEach((framework) => paddedLog(`- ${framework}`));
-      logger.log();
+      logger.log('');
       throw new HandledError(`Unknown project type supplied: ${projectTypeProvided}`);
     }
   } else {
@@ -516,7 +516,7 @@ export async function doInitiate(options: CommandOptions): Promise<
   const storybookInstantiated = isStorybookInstantiated();
 
   if (options.force === false && storybookInstantiated && projectType !== ProjectType.ANGULAR) {
-    logger.log();
+    logger.log('');
     const { force } = await prompts([
       {
         type: 'confirm',
@@ -525,7 +525,7 @@ export async function doInitiate(options: CommandOptions): Promise<
           'We found a .storybook config directory in your project. Therefore we assume that Storybook is already instantiated for your project. Do you still want to continue and force the initialization?',
       },
     ]);
-    logger.log();
+    logger.log('');
 
     if (force) {
       options.force = true;

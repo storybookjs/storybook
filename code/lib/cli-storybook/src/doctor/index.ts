@@ -1,5 +1,5 @@
 import { JsPackageManager } from 'storybook/internal/common';
-import { logTracker, prompt } from 'storybook/internal/node-logger';
+import { logTracker, logger } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
@@ -37,9 +37,9 @@ export function displayDoctorResults(
 
   if (!hasAnyIssues) {
     if (projectCount === 1) {
-      prompt.log(`🥳 Your Storybook project looks good!`);
+      logger.log(`🥳 Your Storybook project looks good!`);
     } else {
-      prompt.log(`🥳 All ${projectCount} Storybook projects look good!`);
+      logger.log(`🥳 All ${projectCount} Storybook projects look good!`);
     }
     return false;
   }
@@ -49,15 +49,15 @@ export function displayDoctorResults(
     const projectName = picocolors.cyan(shortenPath(configDir) || '.');
 
     if (result.status === 'healthy') {
-      prompt.log(`✅ ${projectName}: No issues found`);
+      logger.log(`✅ ${projectName}: No issues found`);
     } else {
       const issueCount = Object.values(result.diagnostics).filter(
         (status) => status !== DiagnosticStatus.PASSED
       ).length;
-      if (result.status == 'error') {
-        prompt.error(`${projectName}: ${issueCount} problem(s) found`);
+      if (result.status == 'check_error') {
+        logger.error(`${projectName}: ${issueCount} problem(s) found`);
       } else {
-        prompt.warn(`${projectName}: ${issueCount} issue(s) found`);
+        logger.warn(`${projectName}: ${issueCount} issue(s) found`);
       }
 
       // Display each diagnostic issue
@@ -65,7 +65,7 @@ export function displayDoctorResults(
         if (status !== DiagnosticStatus.PASSED) {
           const message = result.messages[type as DiagnosticType];
           if (message) {
-            prompt.logBox(message, {
+            logger.logBox(message, {
               title: type.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
             });
           }
@@ -78,7 +78,7 @@ export function displayDoctorResults(
     'npx storybook doctor'
   )}`;
 
-  prompt.log(commandMessage);
+  logger.log(commandMessage);
 
   return true;
 }
@@ -107,7 +107,7 @@ export const doctor = async ({
   configDir: userSpecifiedConfigDir,
   packageManager: packageManagerName,
 }: DoctorOptions) => {
-  prompt.step('🩺 Checking the health of your Storybook..');
+  logger.step('🩺 Checking the health of your Storybook..');
 
   const diagnosticResults: DiagnosticResult[] = [];
 

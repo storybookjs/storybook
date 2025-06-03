@@ -5,7 +5,7 @@ import {
   frameworkToRenderer,
   rendererPackages,
 } from 'storybook/internal/common';
-import { prompt } from 'storybook/internal/node-logger';
+import { logger } from 'storybook/internal/node-logger';
 import type { PackageJson } from 'storybook/internal/types';
 
 import type { Fix, RunOptions } from '../types';
@@ -160,7 +160,7 @@ export const rendererToFramework: Fix<MigrationResult> = {
     for (const selectedFramework of result.frameworks) {
       const frameworkName = frameworkPackages[selectedFramework];
       if (!frameworkName) {
-        prompt.warn(`Framework name not found for ${selectedFramework}, skipping.`);
+        logger.warn(`Framework name not found for ${selectedFramework}, skipping.`);
         continue;
       }
       const rendererName = frameworkToRenderer[frameworkPackages[selectedFramework]];
@@ -168,7 +168,7 @@ export const rendererToFramework: Fix<MigrationResult> = {
         Object.entries(rendererPackages).find(([, renderer]) => renderer === rendererName) ?? [];
 
       if (!rendererPackage) {
-        prompt.warn(`Renderer package not found for ${selectedFramework}, skipping.`);
+        logger.warn(`Renderer package not found for ${selectedFramework}, skipping.`);
         continue;
       }
 
@@ -176,7 +176,7 @@ export const rendererToFramework: Fix<MigrationResult> = {
         continue;
       }
 
-      prompt.debug(`\nMigrating ${rendererPackage} to ${selectedFramework}`);
+      logger.debug(`\nMigrating ${rendererPackage} to ${selectedFramework}`);
 
       await transformSourceFiles(
         [...storiesPaths, previewConfigPath, mainConfigPath].filter(Boolean) as string[],
@@ -185,7 +185,7 @@ export const rendererToFramework: Fix<MigrationResult> = {
         dryRun
       );
 
-      prompt.debug('Updating package.json files...');
+      logger.debug('Updating package.json files...');
 
       // Update all package.json files to remove renderers
       await Promise.all(

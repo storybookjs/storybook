@@ -450,9 +450,9 @@ export async function doInitiate(options: CommandOptions): Promise<
     selectedFeatures.add('docs');
     if (isInteractive) {
       selectedFeatures.add('test');
-      if (newUser) {
-        selectedFeatures.add('onboarding');
-      }
+    }
+    if (newUser) {
+      selectedFeatures.add('onboarding');
     }
   }
 

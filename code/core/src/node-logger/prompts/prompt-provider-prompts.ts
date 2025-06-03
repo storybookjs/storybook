@@ -1,3 +1,4 @@
+import { logger } from 'node-logger';
 import prompts from 'prompts';
 
 import { logTracker } from '../logger/log-tracker';
@@ -20,7 +21,7 @@ export class PromptsPromptProvider extends PromptProvider {
         if (promptOptions?.onCancel) {
           promptOptions.onCancel();
         } else {
-          console.log('Operation canceled.');
+          logger.info('Operation canceled.');
           process.exit(0);
         }
       },
@@ -125,6 +126,7 @@ export class PromptsPromptProvider extends PromptProvider {
 
     return {
       start: (message?: string) => {
+        logTracker.addLog('info', `spinner-start: ${message}`);
         process.stdout.write('\x1b[?25l'); // Hide cursor
         interval = setInterval(() => {
           process.stdout.write(`\r${chars[i]} ${message || 'Loading...'}`);
@@ -132,6 +134,7 @@ export class PromptsPromptProvider extends PromptProvider {
         }, 100);
       },
       stop: (message?: string) => {
+        logTracker.addLog('info', `spinner-stop: ${message}`);
         clearInterval(interval);
         process.stdout.write('\x1b[?25h'); // Show cursor
         if (message) {
@@ -141,6 +144,7 @@ export class PromptsPromptProvider extends PromptProvider {
         }
       },
       message: (text: string) => {
+        logTracker.addLog('info', `spinner: ${text}`);
         process.stdout.write(`\r${text}`);
       },
     };
@@ -148,17 +152,21 @@ export class PromptsPromptProvider extends PromptProvider {
 
   taskLog(options: TaskLogOptions): TaskLogInstance {
     // Simple logs because prompts doesn't allow for clearing lines
-    console.log(`${options.title}\n`);
+    logger.info(`${options.title}\n`);
+    logTracker.addLog('info', `task-start: ${options.title}`);
 
     return {
       message: (text: string) => {
-        console.log(text);
+        logger.info(text);
+        logTracker.addLog('info', `task: ${text}`);
       },
       success: (message: string) => {
-        console.log(message);
+        logger.info(message);
+        logTracker.addLog('info', `task-success: ${message}`);
       },
       error: (message: string) => {
         console.error(message);
+        logTracker.addLog('error', `task-error: ${message}`);
       },
     };
   }

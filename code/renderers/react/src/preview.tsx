@@ -81,16 +81,14 @@ interface ReactMeta<T extends ReactRenderer, MetaInput extends ComponentAnnotati
   extends Meta<T> {
   // Required args don't need to be provided when the user uses an empty render
   story<
-    TInput extends StoryAnnotations<T, T['args']> & {
-      render: () => ReactRenderer['storyResult'];
-    },
+    TInput extends
+      | (() => ReactRenderer['storyResult'])
+      | (StoryAnnotations<T, T['args']> & {
+          render: () => ReactRenderer['storyResult'];
+        }),
   >(
     story?: TInput
-  ): ReactStory<T, TInput>;
-
-  story<TInput extends () => ReactRenderer['storyResult']>(
-    story?: TInput
-  ): ReactStory<T, { render: TInput }>;
+  ): ReactStory<T, TInput extends () => ReactRenderer['storyResult'] ? { render: TInput } : TInput>;
 
   story<
     TInput extends Simplify<

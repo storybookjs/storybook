@@ -1,8 +1,5 @@
 import { getAddonNames, removeAddon } from 'storybook/internal/common';
 
-import picocolors from 'picocolors';
-import { dedent } from 'ts-dedent';
-
 import type { Fix } from '../types';
 
 /** Remove @storybook/addon-interactions since it's now part of Storybook core. */
@@ -26,9 +23,7 @@ export const removeAddonInteractions: Fix<true> = {
   },
 
   prompt() {
-    return dedent`
-      ${picocolors.magenta('@storybook/addon-interactions')} has been moved to Storybook core and will be removed from your configuration.
-    `;
+    return '@storybook/addon-interactions has been moved to Storybook core and will be removed from your configuration.';
   },
 
   async run({ packageManager, dryRun, configDir }) {

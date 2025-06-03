@@ -1,5 +1,5 @@
 import { S_BAR } from '@clack/prompts';
-import { cyan, dim, reset } from 'picocolors';
+import { cyan, dim, reset, yellow } from 'picocolors';
 import wrapAnsi from 'wrap-ansi';
 
 // Text wrapping utility for Clack output
@@ -15,8 +15,8 @@ function getTerminalWidth(): number {
   }
 }
 
-// ANSI regex pattern to match ANSI escape codes
-const ANSI_REGEX = /\u001b\[[0-9;]*m/g;
+// ANSI regex pattern to match ANSI escape codes and OSC 8 hyperlink sequences
+const ANSI_REGEX = /\u001b\[[0-9;]*m|\u001b\]8;;[^\u0007]*\u0007|\u001b\]8;;\u0007/g;
 
 // URL regex pattern to match URLs
 const URL_REGEX = /(https?:\/\/[^\s]+)/g;
@@ -29,28 +29,36 @@ function getVisibleLength(str: string): number {
   return stripAnsi(str).length;
 }
 
-/** Creates a hyperlink that can be visually truncated but opens the full URL when clicked */
-function createTruncatedHyperlink(url: string, maxLength: number): string {
-  if (url.length <= maxLength) {
-    return url;
-  }
-
-  // Create a visually truncated version
-  const truncatedText = url.length > maxLength ? url.substring(0, maxLength - 3) + '...' : url;
-
-  // Use OSC 8 escape sequence to create a clickable link
-  // Format: \e]8;;URL\aVISIBLE_TEXT\e]8;;\a
-  return `\u001b]8;;${url}\u0007${truncatedText}\u001b]8;;\u0007`;
-}
-
 /** Detects URLs in text and prevents them from being broken across lines */
-function protectUrls(text: string, maxUrlLength?: number): string {
+export function protectUrls(
+  text: string,
+  options?: { maxUrlLength?: number; enableHyperlinks?: boolean }
+): string {
+  // Use a sensible default based on terminal width if not provided
+  const maxUrlLength = options?.maxUrlLength ?? Math.floor(getTerminalWidth() * 0.8);
+  const enableHyperlinks = options?.enableHyperlinks ?? true;
+
   return text.replace(URL_REGEX, (url) => {
     if (maxUrlLength && url.length > maxUrlLength) {
-      // Create a truncated hyperlink that still opens the full URL
-      return createTruncatedHyperlink(url, maxUrlLength);
+      // Create a truncated version
+      const truncatedText = url.substring(0, maxUrlLength - 3) + '...';
+
+      if (enableHyperlinks) {
+        // Create a truncated hyperlink that still opens the full URL
+        return `\u001b]8;;${url}\u0007${yellow(truncatedText)}\u001b]8;;\u0007`;
+      } else {
+        // Just apply yellow coloring without hyperlink functionality
+        return yellow(truncatedText);
+      }
     }
-    return url;
+
+    if (enableHyperlinks) {
+      // Apply yellow coloring with hyperlink functionality
+      return `\u001b]8;;${url}\u0007${yellow(url)}\u001b]8;;\u0007`;
+    } else {
+      // Just apply yellow coloring without hyperlink functionality
+      return yellow(url);
+    }
   });
 }
 
@@ -123,7 +131,7 @@ export function wrapTextForClackHint(text: string, width?: number, label?: strin
 
   // First, try wrapping with the continuation line width for optimal wrapping
   // Apply URL protection to prevent URLs from being broken across lines
-  const protectedText = protectUrls(text, Math.floor(continuationLineWidth * 0.8));
+  const protectedText = protectUrls(text);
   const initialWrap = wrapAnsi(protectedText, continuationLineWidth, {
     hard: true,
     trim: false,
@@ -163,10 +171,7 @@ export function wrapTextForClackHint(text: string, width?: number, label?: strin
     // Wrap the remaining text with the wider continuation width
     // Apply URL protection to prevent URLs from being broken
     if (remainingPart.trim()) {
-      const protectedRemainder = protectUrls(
-        remainingPart.trim(),
-        Math.floor(continuationLineWidth * 0.8)
-      );
+      const protectedRemainder = protectUrls(remainingPart.trim());
       const wrappedRemainder = wrapAnsi(protectedRemainder, continuationLineWidth, {
         hard: true,
         trim: false,

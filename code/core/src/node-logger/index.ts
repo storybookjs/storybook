@@ -4,6 +4,8 @@ import prettyTime from 'pretty-hrtime';
 
 export { prompt } from './prompts';
 export { logTracker } from './prompts/log-tracker';
+export type { SpinnerInstance, TaskLogInstance } from './prompts/prompt-provider-base';
+export { protectUrls } from './wrap-utils';
 
 // The default is stderr, which can cause some tools (like rush.js) to think
 // there are issues with the build: https://github.com/storybookjs/storybook/issues/14621

@@ -100,9 +100,15 @@ export const debug = createLogger(
   '[DEBUG]'
 );
 
-export const log = createLogger('info', LOG_FUNCTIONS.log());
-export const warn = createLogger('warn', LOG_FUNCTIONS.warn());
-export const error = createLogger('error', LOG_FUNCTIONS.error());
+export const log = createLogger('info', (...args) => {
+  return LOG_FUNCTIONS.log()(...args);
+});
+export const warn = createLogger('warn', (...args) => {
+  return LOG_FUNCTIONS.warn()(...args);
+});
+export const error = createLogger('error', (...args) => {
+  return LOG_FUNCTIONS.error()(...args);
+});
 
 type BoxenOptions = {
   borderStyle?: 'round' | 'none';
@@ -143,12 +149,14 @@ export const logBox = (message: string, style?: BoxenOptions) => {
 
 export const intro = (message: string) => {
   logTracker.addLog('info', message);
+  console.log('\n');
   LOG_FUNCTIONS.intro()(message);
 };
 
 export const outro = (message: string) => {
   logTracker.addLog('info', message);
   LOG_FUNCTIONS.outro()(message);
+  console.log('\n');
 };
 
 export const step = (message: string) => {

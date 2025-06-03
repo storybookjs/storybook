@@ -1,9 +1,8 @@
 import type { JsPackageManager } from 'storybook/internal/common';
-import { prompt } from 'storybook/internal/node-logger';
+import { type TaskLogInstance, prompt } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
-import { dedent } from 'ts-dedent';
 
 import type { UpgradeOptions } from '../upgrade';
 import { shortenPath } from '../util';
@@ -37,17 +36,19 @@ export interface MultiProjectAutomigrationOptions {
   dryRun?: boolean;
   yes?: boolean;
   skipInstall?: boolean;
+  taskLog: TaskLogInstance;
 }
 
 /** Collects all applicable automigrations across multiple projects */
 export async function collectAutomigrationsAcrossProjects(
   options: MultiProjectAutomigrationOptions
 ): Promise<AutomigrationCheckResult[]> {
-  const { fixes, projects } = options;
+  const { fixes, projects, taskLog } = options;
   const automigrationMap = new Map<FixId, AutomigrationCheckResult>();
 
   // Run check for each fix on each project
   for (const project of projects) {
+    taskLog.message(`Checking automigrations for ${shortenPath(project.configDir)}...`);
     for (const fix of fixes) {
       try {
         // Check version range if this is an upgrade
@@ -140,7 +141,7 @@ export async function promptForAutomigrations(
     hint.push(`${am.fix.prompt(am.result)}`);
 
     if (am.fix.link) {
-      hint.push(`More info: ${picocolors.blue(am.fix.link)}`);
+      hint.push(`More info: ${am.fix.link}`);
     }
 
     const label =
@@ -267,14 +268,12 @@ export async function runAutomigrations(
     storiesPaths: project.storiesPaths,
   }));
 
-  const detectingAutomigrationSpinner = prompt.spinner();
-
-  detectingAutomigrationSpinner.start(
-    projectAutomigrationData.length > 1
-      ? `Detecting automigrations for ${projectAutomigrationData.length} projects...`
-      : `Detecting automigrations...`
-  );
-
+  const detectingAutomigrationTask = prompt.taskLog({
+    title:
+      projectAutomigrationData.length > 1
+        ? `Detecting automigrations for ${projectAutomigrationData.length} projects...`
+        : `Detecting automigrations...`,
+  });
   // Collect all applicable automigrations across all projects
   const detectedAutomigrations = await collectAutomigrationsAcrossProjects({
     fixes: allFixes,
@@ -282,9 +281,10 @@ export async function runAutomigrations(
     dryRun: options.dryRun,
     yes: options.yes,
     skipInstall: options.skipInstall,
+    taskLog: detectingAutomigrationTask,
   });
 
-  detectingAutomigrationSpinner.stop(
+  detectingAutomigrationTask.success(
     `${detectedAutomigrations.length === 0 ? 'No automigrations detected' : `${detectedAutomigrations.length} automigrations detected`}`
   );
 

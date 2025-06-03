@@ -123,14 +123,17 @@ export abstract class JsPackageManager {
   }
 
   async installDependencies() {
-    await prompt.executeTask(
-      [() => this.runInstall(), () => this.runInternalCommand('dedupe', [], this.cwd)],
-      {
-        intro: 'Installing dependencies...',
-        error: 'An error occurred while installing dependencies.',
-        success: 'Dependencies installed',
-      }
-    );
+    const tasks = [() => this.runInstall()];
+
+    if (this.type === 'npm') {
+      tasks.push(() => this.runInternalCommand('dedupe', [], this.cwd));
+    }
+
+    await prompt.executeTask(tasks, {
+      intro: 'Installing dependencies...',
+      error: 'An error occurred while installing dependencies.',
+      success: 'Dependencies installed',
+    });
   }
 
   /** Read the `package.json` file available in the provided directory */

@@ -4,6 +4,7 @@ import prettyTime from 'pretty-hrtime';
 
 import * as newLogger from './logger/logger';
 
+export { prompt } from './prompts';
 export { logTracker } from './logger/log-tracker';
 
 // The default is stderr, which can cause some tools (like rush.js) to think

@@ -947,7 +947,7 @@ describe('transformer', () => {
     });
   });
 
-  describe.only('error handling', () => {
+  describe('error handling', () => {
     const warnSpy = vi.spyOn(logger, 'warn');
     beforeEach(() => {
       vi.mocked(getStoryTitle).mockRestore();

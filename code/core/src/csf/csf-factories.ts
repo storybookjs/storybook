@@ -18,7 +18,6 @@ import {
   normalizeArrays,
   normalizeProjectAnnotations,
 } from '../preview-api/index';
-
 import { getCoreAnnotations } from './core-annotations';
 
 export interface Preview<TRenderer extends Renderer = Renderer> {
@@ -95,7 +94,7 @@ function defineMeta(input: any, preview: any): any {
       throw new Error('Not implemented');
     },
     story(story: any = {}) {
-      return defineStory(story, this);
+      return defineStory(typeof story === 'function' ? { render: story } : story, this);
     },
   };
 }

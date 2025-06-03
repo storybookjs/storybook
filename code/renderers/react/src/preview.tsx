@@ -88,6 +88,10 @@ interface ReactMeta<T extends ReactRenderer, MetaInput extends ComponentAnnotati
     story?: TInput
   ): ReactStory<T, TInput>;
 
+  story<TInput extends () => ReactRenderer['storyResult']>(
+    story?: TInput
+  ): ReactStory<T, { render: TInput }>;
+
   story<
     TInput extends Simplify<
       StoryAnnotations<

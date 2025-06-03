@@ -11,7 +11,7 @@ const $ = execa({
 });
 
 export default async function postinstall(options: PostinstallOptions) {
-  const command = ['storybook', 'automigrate', 'addonA11yAddonTest'];
+  const command = ['storybook', 'automigrate', 'addon-a11y-addon-test'];
 
   command.push('--log-level', 'silent');
   command.push('--skip-doctor');

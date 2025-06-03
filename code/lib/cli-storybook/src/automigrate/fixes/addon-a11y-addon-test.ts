@@ -40,7 +40,7 @@ interface AddonA11yAddonTestOptions {
  * - If we can't transform the files automatically, we'll prompt the user to do it manually.
  */
 export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
-  id: 'addonA11yAddonTest',
+  id: 'addon-a11y-addon-test',
   versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
   link: 'https://storybook.js.org/docs/writing-tests/accessibility-testing#test-addon-integration',
 

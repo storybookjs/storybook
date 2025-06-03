@@ -57,6 +57,7 @@ export {
   defaultDecorateStory,
   prepareStory,
   prepareMeta,
+  normalizeArrays,
   normalizeStory,
   filterArgTypes,
   sanitizeStoryContextUpdate,

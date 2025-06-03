@@ -15,8 +15,9 @@ import {
   combineParameters,
   composeConfigs,
   composeStory,
+  normalizeArrays,
   normalizeProjectAnnotations,
-} from 'storybook/preview-api';
+} from '../preview-api/index';
 
 import { getCoreAnnotations } from './core-annotations';
 
@@ -161,13 +162,25 @@ function defineStory<
           ...input,
           args: { ...this.input.args, ...input.args },
           argTypes: combineParameters(this.input.argTypes, input.argTypes),
-          afterEach: [...(this.input?.afterEach ?? []), ...(input.afterEach ?? [])],
-          beforeEach: [...(this.input?.beforeEach ?? []), ...(input.beforeEach ?? [])],
-          decorators: [...(this.input?.decorators ?? []), ...(input.decorators ?? [])],
+          afterEach: [
+            ...normalizeArrays(this.input?.afterEach ?? []),
+            ...normalizeArrays(input.afterEach ?? []),
+          ],
+          beforeEach: [
+            ...normalizeArrays(this.input?.beforeEach ?? []),
+            ...normalizeArrays(input.beforeEach ?? []),
+          ],
+          decorators: [
+            ...normalizeArrays(this.input?.decorators ?? []),
+            ...normalizeArrays(input.decorators ?? []),
+          ],
           globals: { ...this.input.globals, ...input.globals },
-          loaders: [...(this.input?.loaders ?? []), ...(input.loaders ?? [])],
+          loaders: [
+            ...normalizeArrays(this.input?.loaders ?? []),
+            ...normalizeArrays(input.loaders ?? []),
+          ],
           parameters: combineParameters(this.input.parameters, input.parameters),
-          tags: combineTags(this.input.parameters, input.parameters),
+          tags: combineTags(...(this.input.tags ?? []), ...(input.tags ?? [])),
         },
         this.meta
       );

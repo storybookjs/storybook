@@ -266,24 +266,24 @@ export abstract class JsPackageManager {
   async removeDependencies(dependencies: string[]): Promise<void> {
     for (const pjPath of this.packageJsonPaths) {
       try {
-        const currentPackageJson = JsPackageManager.getPackageJson(pjPath);
+        const packageJson = JsPackageManager.getPackageJson(pjPath);
         let modified = false;
         dependencies.forEach((dep) => {
-          if (currentPackageJson.dependencies && currentPackageJson.dependencies[dep]) {
-            delete currentPackageJson.dependencies[dep];
+          if (packageJson.dependencies && packageJson.dependencies[dep]) {
+            delete packageJson.dependencies[dep];
             modified = true;
           }
-          if (currentPackageJson.devDependencies && currentPackageJson.devDependencies[dep]) {
-            delete currentPackageJson.devDependencies[dep];
+          if (packageJson.devDependencies && packageJson.devDependencies[dep]) {
+            delete packageJson.devDependencies[dep];
             modified = true;
           }
-          if (currentPackageJson.peerDependencies && currentPackageJson.peerDependencies[dep]) {
-            delete currentPackageJson.peerDependencies[dep];
+          if (packageJson.peerDependencies && packageJson.peerDependencies[dep]) {
+            delete packageJson.peerDependencies[dep];
             modified = true;
           }
         });
         if (modified) {
-          this.writePackageJson(currentPackageJson, dirname(pjPath));
+          this.writePackageJson(packageJson, dirname(pjPath));
           break;
         }
       } catch (e) {
@@ -728,7 +728,9 @@ export abstract class JsPackageManager {
     return {
       packageJsonPath,
       operationDir,
-      packageJson: JsPackageManager.getPackageJson(packageJsonPath),
+      get packageJson() {
+        return JsPackageManager.getPackageJson(packageJsonPath);
+      },
     };
   }
 }

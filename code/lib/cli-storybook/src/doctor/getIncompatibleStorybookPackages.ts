@@ -1,6 +1,6 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
 import type { JsPackageManager } from 'storybook/internal/common';
-import { versions as storybookCorePackages } from 'storybook/internal/common';
+import { versions as storybookCorePackages, versions } from 'storybook/internal/common';
 import { prompt } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
@@ -102,7 +102,9 @@ export const getIncompatibleStorybookPackages = async (
   context: Context
 ): Promise<AnalysedPackage[]> => {
   const allDeps = context.packageManager.getAllDependencies();
-  const storybookLikeDeps = Object.keys(allDeps).filter((dep) => dep.includes('storybook'));
+  const storybookLikeDeps = Object.keys(allDeps).filter(
+    (dep) => dep.includes('storybook') && !versions[dep as keyof typeof versions]
+  );
   if (storybookLikeDeps.length === 0 && !context.skipErrors) {
     throw new Error('No Storybook dependencies found in the package.json');
   }

@@ -54,7 +54,7 @@ export function displayDoctorResults(
       const issueCount = Object.values(result.diagnostics).filter(
         (status) => status !== DiagnosticStatus.PASSED
       ).length;
-      if (result.status == 'check_error') {
+      if (result.status === 'check_error') {
         logger.error(`${projectName}: ${issueCount} problem(s) found`);
       } else {
         logger.warn(`${projectName}: ${issueCount} issue(s) found`);

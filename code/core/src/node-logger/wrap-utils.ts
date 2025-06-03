@@ -32,33 +32,40 @@ function getVisibleLength(str: string): number {
 /** Detects URLs in text and prevents them from being broken across lines */
 export function protectUrls(
   text: string,
-  options?: { maxUrlLength?: number; enableHyperlinks?: boolean }
+  options?: { maxUrlLength?: number; maxLineWidth?: number }
 ): string {
   // Use a sensible default based on terminal width if not provided
-  const maxUrlLength = options?.maxUrlLength ?? Math.floor(getTerminalWidth() * 0.8);
-  const enableHyperlinks = options?.enableHyperlinks ?? true;
+  const defaultMaxUrlLength = Math.floor(getTerminalWidth() * 0.8);
+  const maxLineWidth = options?.maxLineWidth ?? getTerminalWidth();
 
-  return text.replace(URL_REGEX, (url) => {
-    if (maxUrlLength && url.length > maxUrlLength) {
+  return text.replace(URL_REGEX, (url: string, offset: number) => {
+    // Calculate how much space is available for this URL on its current line
+    const textBeforeUrl = text.substring(0, offset);
+    const lastNewlineIndex = textBeforeUrl.lastIndexOf('\n');
+    const currentLinePrefix =
+      lastNewlineIndex === -1 ? textBeforeUrl : textBeforeUrl.substring(lastNewlineIndex + 1);
+
+    // Calculate available space on this line for the URL
+    const prefixLength = getVisibleLength(currentLinePrefix);
+    const availableSpace = Math.max(maxLineWidth - prefixLength, 20); // minimum 20 chars for URL
+
+    // Use the smaller of: configured maxUrlLength, default maxUrlLength, or available space
+    const effectiveMaxLength = Math.min(
+      options?.maxUrlLength ?? defaultMaxUrlLength,
+      defaultMaxUrlLength,
+      availableSpace
+    );
+
+    if (url.length > effectiveMaxLength) {
       // Create a truncated version
-      const truncatedText = url.substring(0, maxUrlLength - 3) + '...';
+      const truncatedText = url.substring(0, effectiveMaxLength - 3) + '...';
 
-      if (enableHyperlinks) {
-        // Create a truncated hyperlink that still opens the full URL
-        return `\u001b]8;;${url}\u0007${yellow(truncatedText)}\u001b]8;;\u0007`;
-      } else {
-        // Just apply yellow coloring without hyperlink functionality
-        return yellow(truncatedText);
-      }
+      // Create a truncated hyperlink that still opens the full URL
+      return `\u001b]8;;${url}\u0007${yellow(truncatedText)}\u001b]8;;\u0007`;
     }
 
-    if (enableHyperlinks) {
-      // Apply yellow coloring with hyperlink functionality
-      return `\u001b]8;;${url}\u0007${yellow(url)}\u001b]8;;\u0007`;
-    } else {
-      // Just apply yellow coloring without hyperlink functionality
-      return yellow(url);
-    }
+    // Apply yellow coloring with hyperlink functionality
+    return `\u001b]8;;${url}\u0007${yellow(url)}\u001b]8;;\u0007`;
   });
 }
 
@@ -98,7 +105,8 @@ export function wrapTextForClack(text: string, width?: number): string {
   // Clack typically uses about 4-8 characters for its formatting
   const contentWidth = Math.max(terminalWidth - 8, 40);
 
-  return wrapAnsi(text, contentWidth, {
+  const protectedText = protectUrls(text, { maxLineWidth: contentWidth });
+  return wrapAnsi(protectedText, contentWidth, {
     hard: true,
     trim: false,
     wordWrap: true,
@@ -131,7 +139,7 @@ export function wrapTextForClackHint(text: string, width?: number, label?: strin
 
   // First, try wrapping with the continuation line width for optimal wrapping
   // Apply URL protection to prevent URLs from being broken across lines
-  const protectedText = protectUrls(text);
+  const protectedText = protectUrls(text, { maxLineWidth: continuationLineWidth });
   const initialWrap = wrapAnsi(protectedText, continuationLineWidth, {
     hard: true,
     trim: false,
@@ -171,7 +179,9 @@ export function wrapTextForClackHint(text: string, width?: number, label?: strin
     // Wrap the remaining text with the wider continuation width
     // Apply URL protection to prevent URLs from being broken
     if (remainingPart.trim()) {
-      const protectedRemainder = protectUrls(remainingPart.trim());
+      const protectedRemainder = protectUrls(remainingPart.trim(), {
+        maxLineWidth: continuationLineWidth,
+      });
       const wrappedRemainder = wrapAnsi(protectedRemainder, continuationLineWidth, {
         hard: true,
         trim: false,

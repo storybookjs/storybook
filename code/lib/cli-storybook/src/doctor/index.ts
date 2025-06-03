@@ -148,6 +148,8 @@ export function displayDoctorResults(
     });
   }
 
+  prompt.step('Storybook doctor is complete!');
+
   const commandMessage = `You can always recheck the health of your project(s) by running:\n${picocolors.cyan(
     'npx storybook doctor'
   )}`;

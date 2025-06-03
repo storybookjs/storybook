@@ -217,6 +217,7 @@ function logUpgradeResults(
       prompt.log(`${picocolors.yellow('ℹ️  No changes needed:')} ${projectList}`);
     }
   } else {
+    prompt.step('The upgrade is complete!');
     if (Object.values(doctorResults).every((result) => result.status === 'healthy')) {
       prompt.log(`${picocolors.green('Your project(s) have been upgraded successfully! 🎉')}`);
     } else {
@@ -434,8 +435,6 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
             projectResults: automigrationResults,
             doctorResults,
           });
-
-          prompt.step('The upgrade is complete!');
         }
       } finally {
         // Clean up signal handlers

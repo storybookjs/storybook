@@ -165,14 +165,14 @@ describe('getIncompatiblePackagesSummary', () => {
     ];
     const summary = getIncompatiblePackagesSummary(analysedPackages, '9.0.0');
     expect(summary).toMatchInlineSnapshot(`
-      "You are currently using Storybook 9.0.0 but you have packages which are incompatible with it:
-      - storybook-react@1.0.0
-      - @storybook/addon-docs@8.0.0 (9.0.0 available!)
+          "You are currently using Storybook 9.0.0 but you have packages which are incompatible with it:
 
+          - storybook-react@1.0.0
+          - @storybook/addon-docs@8.0.0 (9.0.0 available!)
+          Please consider updating your packages or contacting the maintainers for compatibility details.
 
-      Please consider updating your packages or contacting the maintainers for compatibility details.
-      For more on Storybook 9 compatibility, see the linked GitHub issue:
-      https://github.com/storybookjs/storybook/issues/30944"
-    `);
+          For more on Storybook 9 compatibility, see the linked GitHub issue:
+          https://github.com/storybookjs/storybook/issues/30944"
+        `);
   });
 });

@@ -1,5 +1,6 @@
 import * as clack from '@clack/prompts';
 import boxen from 'boxen';
+import picocolors from 'picocolors';
 
 import { wrapTextForClack } from '../wrap-utils';
 import { logTracker } from './log-tracker';
@@ -123,17 +124,10 @@ export const logBox = (message: string, style?: BoxenOptions) => {
   if (shouldLog('info')) {
     logTracker.addLog('info', message);
     if (isClackEnabled()) {
-      log('');
-      console.log(
-        boxen(message, {
-          borderStyle: 'round',
-          padding: 1,
-          borderColor: '#5c5c63', // gray
-          ...style,
-        })
-          .replace(/╭/, '├')
-          .replace(/╰/, '├')
-      );
+      if (style?.title) {
+        log(picocolors.underline(style.title));
+      }
+      log(message);
     } else {
       console.log(
         boxen(message, {

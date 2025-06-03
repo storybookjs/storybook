@@ -27,13 +27,39 @@ type PackageManagerProxy =
   | typeof BUNProxy;
 
 export class JsPackageManagerFactory {
+  /** Cache for package manager instances */
+  private static cache = new Map<string, JsPackageManager>();
+
+  /** Generate a cache key based on the parameters */
+  private static getCacheKey(
+    force?: PackageManagerName,
+    configDir = '.storybook',
+    cwd = process.cwd()
+  ): string {
+    return JSON.stringify({ force: force || null, configDir, cwd });
+  }
+
+  /** Clear the package manager cache */
+  public static clearCache(): void {
+    this.cache.clear();
+  }
+
   public static getPackageManager(
     { force, configDir = '.storybook' }: { force?: PackageManagerName; configDir?: string } = {},
     cwd = process.cwd()
   ): JsPackageManager {
+    // Check cache first
+    const cacheKey = this.getCacheKey(force, configDir, cwd);
+    const cached = this.cache.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     // Option 1: If the user has provided a forcing flag, we use it
     if (force && force in this.PROXY_MAP) {
-      return new this.PROXY_MAP[force]({ cwd, configDir });
+      const packageManager = new this.PROXY_MAP[force]({ cwd, configDir });
+      this.cache.set(cacheKey, packageManager);
+      return packageManager;
     }
 
     const root = getProjectRoot();
@@ -71,36 +97,47 @@ export class JsPackageManagerFactory {
     const yarnVersion = getYarnVersion(cwd);
 
     if (yarnVersion && closestLockfile === YARN_LOCKFILE) {
-      return yarnVersion === 1
-        ? new Yarn1Proxy({ cwd, configDir })
-        : new Yarn2Proxy({ cwd, configDir });
+      const packageManager =
+        yarnVersion === 1 ? new Yarn1Proxy({ cwd, configDir }) : new Yarn2Proxy({ cwd, configDir });
+      this.cache.set(cacheKey, packageManager);
+      return packageManager;
     }
 
     if (hasPNPM(cwd) && closestLockfile === PNPM_LOCKFILE) {
-      return new PNPMProxy({ cwd, configDir });
+      const packageManager = new PNPMProxy({ cwd, configDir });
+      this.cache.set(cacheKey, packageManager);
+      return packageManager;
     }
 
     if (hasNPM(cwd) && closestLockfile === NPM_LOCKFILE) {
-      return new NPMProxy({ cwd, configDir });
+      const packageManager = new NPMProxy({ cwd, configDir });
+      this.cache.set(cacheKey, packageManager);
+      return packageManager;
     }
 
     if (
       hasBun(cwd) &&
       (closestLockfile === BUN_LOCKFILE || closestLockfile === BUN_LOCKFILE_BINARY)
     ) {
-      return new BUNProxy({ cwd, configDir });
+      const packageManager = new BUNProxy({ cwd, configDir });
+      this.cache.set(cacheKey, packageManager);
+      return packageManager;
     }
 
     // Option 3: If the user is running a command via npx/pnpx/yarn create/etc, we infer the package manager from the command
     const inferredPackageManager = this.inferPackageManagerFromUserAgent();
     if (inferredPackageManager && inferredPackageManager in this.PROXY_MAP) {
-      return new this.PROXY_MAP[inferredPackageManager]({ cwd });
+      const packageManager = new this.PROXY_MAP[inferredPackageManager]({ cwd });
+      this.cache.set(cacheKey, packageManager);
+      return packageManager;
     }
 
     // Default fallback, whenever users try to use something different than NPM, PNPM, Yarn,
     // but still have NPM installed
     if (hasNPM(cwd)) {
-      return new NPMProxy({ cwd, configDir });
+      const packageManager = new NPMProxy({ cwd, configDir });
+      this.cache.set(cacheKey, packageManager);
+      return packageManager;
     }
 
     throw new Error('Unable to find a usable package manager within NPM, PNPM, Yarn and Yarn 2');

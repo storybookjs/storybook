@@ -25,6 +25,7 @@ import { CSF2Secondary, HooksStory } from './Button.csf4.stories';
 
 afterEach(() => {
   cleanup();
+  document.body.replaceChildren();
 });
 
 describe('renders', () => {

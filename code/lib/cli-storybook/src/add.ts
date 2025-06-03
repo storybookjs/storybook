@@ -70,7 +70,6 @@ type CLIOptions = {
   skipInstall?: boolean;
   skipPostinstall: boolean;
   yes?: boolean;
-  skipInstall?: boolean;
 };
 
 /**

@@ -294,7 +294,12 @@ export async function runAutomigrations(
     yes: options.yes,
   });
 
-  prompt.debug('Running automigrations...');
+  const runningAutomigrationsTask = prompt.taskLog({
+    title:
+      projectAutomigrationData.length > 1
+        ? `Running automigrations for ${projectAutomigrationData.length} projects...`
+        : `Running automigrations...`,
+  });
   // Run selected automigrations for each project
   const projectResults = await runAutomigrationsForProjects(selectedAutomigrations, {
     fixes: allFixes,
@@ -302,6 +307,7 @@ export async function runAutomigrations(
     dryRun: options.dryRun,
     yes: options.yes,
     skipInstall: options.skipInstall,
+    taskLog: runningAutomigrationsTask,
   });
 
   // Special case handling for rnstorybook-config which renames the config dir

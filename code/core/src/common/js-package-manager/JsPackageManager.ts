@@ -6,6 +6,7 @@ import { prompt } from 'storybook/internal/node-logger';
 // eslint-disable-next-line depend/ban-dependencies
 import { type CommonOptions, type ExecaChildProcess, execa, execaCommandSync } from 'execa';
 import { findUpMultipleSync, findUpSync } from 'find-up';
+// eslint-disable-next-line depend/ban-dependencies
 import { globbySync } from 'globby';
 import picocolors from 'picocolors';
 import { gt, satisfies } from 'semver';

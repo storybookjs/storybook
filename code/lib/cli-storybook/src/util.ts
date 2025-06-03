@@ -708,7 +708,6 @@ export const getProjects = async (
         })
         .join('\n');
 
-       
       throw new Error(
         `❌ Storybook found errors while collecting data for the following projects:\n${errorMessage}\nPlease fix the errors and run the upgrade command again.`
       );

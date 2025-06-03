@@ -1,9 +1,9 @@
-import type { FC, MouseEvent as ReactMouseEvent, SyntheticEvent } from 'react';
+import type { FC, SyntheticEvent } from 'react';
 import React from 'react';
 
-import { FlexBar, IconButton } from 'storybook/internal/components';
+import { FlexBar, IconButton, getStoryHref } from 'storybook/internal/components';
 
-import { ZoomIcon, ZoomOutIcon, ZoomResetIcon } from '@storybook/icons';
+import { ShareAltIcon, ZoomIcon, ZoomOutIcon, ZoomResetIcon } from '@storybook/icons';
 
 import { styled } from 'storybook/theming';
 
@@ -96,6 +96,18 @@ export const Toolbar: FC<ToolbarProps> = ({
           </IconButton>
         </>
       )}
+    </Wrapper>
+    <Wrapper key="right">
+      <IconButton key="opener" asChild>
+        <a
+          href={getStoryHref(baseUrl, storyId)}
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Open canvas in new tab"
+        >
+          <ShareAltIcon />
+        </a>
+      </IconButton>
     </Wrapper>
   </Bar>
 );

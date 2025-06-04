@@ -8,10 +8,13 @@ import {
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
+import { updateMainConfig } from '../helpers/mainConfigFile';
 import type { Fix } from '../types';
+import { moveEssentialOptions } from './remove-essentials.utils';
 
 interface AddonDocsOptions {
   hasEssentials: boolean;
+  essentialsOptions?: Record<string, any>;
   hasDocsDisabled: boolean;
   hasDocsAddon: boolean;
   additionalAddonsToRemove: string[];
@@ -50,6 +53,7 @@ export const removeEssentials: Fix<AddonDocsOptions> = {
       let hasEssentialsAddon = false;
       let hasDocsAddon = false;
       let hasDocsDisabled = false;
+      let essentialsOptions: Record<string, any> | undefined = undefined;
       const additionalAddonsToRemove: string[] = [];
 
       const CORE_ADDONS = [
@@ -98,6 +102,14 @@ export const removeEssentials: Fix<AddonDocsOptions> = {
         if (typeof essentialsEntry === 'object') {
           const options = essentialsEntry.options || {};
           hasDocsDisabled = options.docs === false;
+
+          const optionsExceptDocs = Object.fromEntries(
+            Object.entries(options).filter(([key]) => key !== 'docs')
+          );
+
+          if (Object.keys(optionsExceptDocs).length > 0) {
+            essentialsOptions = optionsExceptDocs;
+          }
         }
       }
 
@@ -105,7 +117,7 @@ export const removeEssentials: Fix<AddonDocsOptions> = {
         return null;
       }
 
-      return {
+      const result: AddonDocsOptions = {
         hasEssentials: hasEssentialsAddon,
         hasDocsDisabled,
         hasDocsAddon,
@@ -113,6 +125,12 @@ export const removeEssentials: Fix<AddonDocsOptions> = {
         allDeps,
         packageJson,
       };
+
+      if (essentialsOptions) {
+        result.essentialsOptions = essentialsOptions;
+      }
+
+      return result;
     } catch (err) {
       return null;
     }
@@ -159,8 +177,14 @@ export const removeEssentials: Fix<AddonDocsOptions> = {
     `;
   },
 
-  async run({ result, dryRun, packageManager, configDir, packageJson }) {
-    const { hasEssentials, hasDocsDisabled, hasDocsAddon, additionalAddonsToRemove } = result;
+  async run({ result, dryRun, packageManager, configDir, packageJson, mainConfigPath }) {
+    const {
+      hasEssentials,
+      hasDocsDisabled,
+      hasDocsAddon,
+      additionalAddonsToRemove,
+      essentialsOptions,
+    } = result;
 
     if (!hasEssentials && additionalAddonsToRemove.length === 0) {
       return;
@@ -201,6 +225,13 @@ export const removeEssentials: Fix<AddonDocsOptions> = {
           `Failed to process ${errors.length} files:\n${errors
             .map(({ file, error }) => `- ${file}: ${error.message}`)
             .join('\n')}`
+        );
+      }
+
+      if (essentialsOptions) {
+        updateMainConfig(
+          { mainConfigPath, dryRun: !!dryRun },
+          moveEssentialOptions(dryRun, essentialsOptions)
         );
       }
 

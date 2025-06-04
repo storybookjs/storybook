@@ -1,10 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager, PackageJson } from 'storybook/internal/common';
+import { formatConfig, readConfig } from 'storybook/internal/csf-tools';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
+
+import { dedent } from 'ts-dedent';
 
 import type { CheckOptions, RunOptions } from '../types';
 import { removeEssentials } from './remove-essentials';
+import { moveEssentialOptions } from './remove-essentials.utils';
 
 // Mock modules before any other imports or declarations
 vi.mock('node:fs/promises', async () => {
@@ -526,5 +530,33 @@ describe('remove-essentials migration', () => {
 
       expect(mockPackageManager.runPackageCommand).not.toHaveBeenCalled();
     });
+  });
+});
+
+describe('moveEssentialOptions', () => {
+  it('should move essential options to features', async () => {
+    const main = await readConfig('main.ts');
+    await moveEssentialOptions(false, {
+      docs: false,
+      backgrounds: false,
+      measure: false,
+      outline: false,
+      grid: false,
+    })(main);
+
+    expect(dedent(formatConfig(main))).toMatchInlineSnapshot(`
+      "export default {
+        stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],
+        addons: ['@storybook/addon-links'],
+
+        features: {
+          docs: false,
+          backgrounds: false,
+          measure: false,
+          outline: false,
+          grid: false
+        }
+      };"
+    `);
   });
 });

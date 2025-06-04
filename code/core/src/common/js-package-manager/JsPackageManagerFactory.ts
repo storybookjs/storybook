@@ -27,13 +27,44 @@ type PackageManagerProxy =
   | typeof BUNProxy;
 
 export class JsPackageManagerFactory {
+  /** Cache for package manager instances */
+  private static cache = new Map<string, JsPackageManager>();
+
+  /** Generate a cache key based on the parameters */
+  private static getCacheKey(
+    force?: PackageManagerName,
+    configDir = '.storybook',
+    cwd = process.cwd(),
+    storiesPaths?: string[]
+  ): string {
+    return JSON.stringify({ force: force || null, configDir, cwd, storiesPaths });
+  }
+
+  /** Clear the package manager cache */
+  public static clearCache(): void {
+    this.cache.clear();
+  }
+
   public static getPackageManager(
-    { force, configDir = '.storybook' }: { force?: PackageManagerName; configDir?: string } = {},
+    {
+      force,
+      configDir = '.storybook',
+      storiesPaths,
+    }: { force?: PackageManagerName; configDir?: string; storiesPaths?: string[] } = {},
     cwd = process.cwd()
   ): JsPackageManager {
+    // Check cache first
+    const cacheKey = this.getCacheKey(force, configDir, cwd, storiesPaths);
+    const cached = this.cache.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     // Option 1: If the user has provided a forcing flag, we use it
     if (force && force in this.PROXY_MAP) {
-      return new this.PROXY_MAP[force]({ cwd, configDir });
+      const packageManager = new this.PROXY_MAP[force]({ cwd, configDir, storiesPaths });
+      this.cache.set(cacheKey, packageManager);
+      return packageManager;
     }
 
     const root = getProjectRoot();
@@ -68,42 +99,56 @@ export class JsPackageManagerFactory {
 
     const closestLockfile = closestLockfilePath && basename(closestLockfilePath);
 
-    const hasNPMCommand = hasNPM(cwd);
-    const hasPNPMCommand = hasPNPM(cwd);
-    const hasBunCommand = hasBun(cwd);
     const yarnVersion = getYarnVersion(cwd);
 
-    if (yarnVersion && (closestLockfile === YARN_LOCKFILE || (!hasNPMCommand && !hasPNPMCommand))) {
-      return yarnVersion === 1
-        ? new Yarn1Proxy({ cwd, configDir })
-        : new Yarn2Proxy({ cwd, configDir });
+    if (yarnVersion && closestLockfile === YARN_LOCKFILE) {
+      const packageManager =
+        yarnVersion === 1
+          ? new Yarn1Proxy({ cwd, configDir, storiesPaths })
+          : new Yarn2Proxy({ cwd, configDir, storiesPaths });
+      this.cache.set(cacheKey, packageManager);
+      return packageManager;
     }
 
-    if (hasPNPMCommand && closestLockfile === PNPM_LOCKFILE) {
-      return new PNPMProxy({ cwd, configDir });
+    if (hasPNPM(cwd) && closestLockfile === PNPM_LOCKFILE) {
+      const packageManager = new PNPMProxy({ cwd, configDir, storiesPaths });
+      this.cache.set(cacheKey, packageManager);
+      return packageManager;
     }
 
-    if (hasNPMCommand && closestLockfile === NPM_LOCKFILE) {
-      return new NPMProxy({ cwd, configDir });
+    if (hasNPM(cwd) && closestLockfile === NPM_LOCKFILE) {
+      const packageManager = new NPMProxy({ cwd, configDir, storiesPaths });
+      this.cache.set(cacheKey, packageManager);
+      return packageManager;
     }
 
     if (
-      hasBunCommand &&
+      hasBun(cwd) &&
       (closestLockfile === BUN_LOCKFILE || closestLockfile === BUN_LOCKFILE_BINARY)
     ) {
-      return new BUNProxy({ cwd, configDir });
+      const packageManager = new BUNProxy({ cwd, configDir, storiesPaths });
+      this.cache.set(cacheKey, packageManager);
+      return packageManager;
     }
 
     // Option 3: If the user is running a command via npx/pnpx/yarn create/etc, we infer the package manager from the command
     const inferredPackageManager = this.inferPackageManagerFromUserAgent();
     if (inferredPackageManager && inferredPackageManager in this.PROXY_MAP) {
-      return new this.PROXY_MAP[inferredPackageManager]({ cwd });
+      const packageManager = new this.PROXY_MAP[inferredPackageManager]({
+        cwd,
+        storiesPaths,
+        configDir,
+      });
+      this.cache.set(cacheKey, packageManager);
+      return packageManager;
     }
 
     // Default fallback, whenever users try to use something different than NPM, PNPM, Yarn,
     // but still have NPM installed
-    if (hasNPMCommand) {
-      return new NPMProxy({ cwd, configDir });
+    if (hasNPM(cwd)) {
+      const packageManager = new NPMProxy({ cwd, configDir, storiesPaths });
+      this.cache.set(cacheKey, packageManager);
+      return packageManager;
     }
 
     throw new Error('Unable to find a usable package manager within NPM, PNPM, Yarn and Yarn 2');

@@ -217,7 +217,6 @@ export class Yarn2Proxy extends JsPackageManager {
       command: 'yarn',
       args: ['install', ...this.getInstallArgs()],
       cwd: this.cwd,
-      ignoreError: true,
     });
   }
 

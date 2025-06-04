@@ -204,24 +204,25 @@ function logUpgradeResults(
       const projectList = successfulProjects
         .map((dir) => picocolors.cyan(shortenPath(dir)))
         .join(', ');
-      logger.log(`\n${picocolors.green('✅ Successfully upgraded:')} ${projectList}`);
+      logger.log(`${picocolors.green('✅ Successfully upgraded:')} ${projectList}`);
     }
 
     const projectList = failedProjects.map((dir) => picocolors.cyan(shortenPath(dir))).join(', ');
-    logger.log(`\n${picocolors.red('❌ Failed to upgrade:')} ${projectList}`);
+    logger.log(`${picocolors.red('❌ Failed to upgrade:')} ${projectList}`);
 
     if (projectsWithNoFixes.length > 0) {
       const projectList = projectsWithNoFixes
         .map((dir) => picocolors.cyan(shortenPath(dir)))
         .join(', ');
-      logger.log(`\n${picocolors.yellow('ℹ️  No changes needed:')} ${projectList}`);
+      logger.log(`${picocolors.yellow('ℹ️  No changes needed:')} ${projectList}`);
     }
   } else {
+    logger.step('The upgrade is complete!');
     if (Object.values(doctorResults).every((result) => result.status === 'healthy')) {
-      logger.log(`\n${picocolors.green('Your project(s) have been upgraded successfully! 🎉')}`);
+      logger.log(`${picocolors.green('Your project(s) have been upgraded successfully! 🎉')}`);
     } else {
       logger.log(
-        `\n${picocolors.yellow('Your project(s) have been upgraded successfully, but some issues were found which need your attention, please check Storybook doctor logs above.')}`
+        `${picocolors.yellow('Your project(s) have been upgraded successfully, but some issues were found which need your attention, please check Storybook doctor logs above.')}`
       );
     }
   }
@@ -315,10 +316,11 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       try {
         // Handle autoblockers
         const hasBlockers = processAutoblockerResults(storybookProjects, (message) => {
-          logger.error(dedent`${message}`);
+          logger.error(dedent`Blockers detected\n\n${message}`);
         });
 
         if (hasBlockers) {
+          logger.outro('Upgrade aborted');
           process.exit(1);
         }
 
@@ -387,7 +389,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
           mainConfig: project.mainConfig,
         }));
 
-        logger.step('🩺 Checking the health of your project(s)..');
+        logger.step('Checking the health of your project(s)..');
         doctorResults = await runMultiProjectDoctor(doctorProjects);
         const hasIssues = displayDoctorResults(doctorResults);
         if (hasIssues) {

@@ -28,7 +28,8 @@ addToGlobalContext('cliVersion', versions.storybook);
 const handleCommandFailure = async (error: unknown): Promise<never> => {
   logger.error(String(error));
   const logFile = await logTracker.writeToFile();
-  logger.outro(`Storybook debug logs can be found at: ${logFile}`);
+  logger.log(`Storybook debug logs can be found at: ${logFile}`);
+  logger.outro('');
   process.exit(1);
 };
 
@@ -64,7 +65,8 @@ const command = (name: string) =>
     .hook('postAction', async () => {
       if (logTracker.shouldWriteLogsToFile) {
         const logFile = await logTracker.writeToFile();
-        logger.outro(`Storybook debug logs can be found at: ${logFile}`);
+        logger.log(`Storybook debug logs can be found at: ${logFile}`);
+        logger.outro('');
       }
     });
 

@@ -112,7 +112,6 @@ describe('remove-essentials migration', () => {
       packageJsonPath: 'some/path',
       operationDir: 'some/path',
     };
-    // @ts-expect-error readonly
     mockPackageManager.packageJsonPaths = ['some/path'];
     mockPackageManager.runPackageCommand = vi.fn();
     mockPackageManager.getAllDependencies = vi.fn();

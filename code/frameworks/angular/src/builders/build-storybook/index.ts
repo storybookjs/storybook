@@ -167,7 +167,7 @@ async function setup(options: StorybookBuilderOptions, context: BuilderContext) 
   return {
     tsConfig:
       options.tsConfig ??
-      findUpSync('tsconfig.json', { cwd: options.configDir }) ??
+      findUpSync('tsconfig.json', { cwd: options.configDir, stopAt: getProjectRoot() }) ??
       browserOptions.tsConfig,
   };
 }

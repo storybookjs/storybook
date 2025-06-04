@@ -1,4 +1,4 @@
-import { normalize } from 'node:path';
+import { dirname, isAbsolute, join, normalize } from 'node:path';
 
 import {
   JsPackageManagerFactory,
@@ -142,13 +142,6 @@ export const getStorybookData = async ({
 
   const configDir = userDefinedConfigDir || configDirFromScript || '.storybook';
 
-  const packageManager = JsPackageManagerFactory.getPackageManager({
-    force: packageManagerName,
-    configDir,
-  });
-
-  const storybookVersion = await getCoercedStorybookVersion(packageManager);
-
   let mainConfig: StorybookConfigRaw;
   try {
     mainConfig = (await loadMainConfig({ configDir, noCache: true, cwd })) as StorybookConfigRaw;
@@ -158,11 +151,23 @@ export const getStorybookData = async ({
     );
   }
 
+  const workingDir = isAbsolute(configDir)
+    ? dirname(configDir)
+    : dirname(join(cwd ?? process.cwd(), configDir));
+
   const storiesPaths = await getStoriesPathsFromConfig({
     stories: mainConfig.stories,
     configDir,
-    workingDir: packageManager.instanceDir,
+    workingDir,
   });
+
+  const packageManager = JsPackageManagerFactory.getPackageManager({
+    force: packageManagerName,
+    configDir,
+    storiesPaths,
+  });
+
+  const storybookVersion = await getCoercedStorybookVersion(packageManager);
 
   return {
     configDir,

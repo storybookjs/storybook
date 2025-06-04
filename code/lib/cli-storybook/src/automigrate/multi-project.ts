@@ -1,5 +1,5 @@
 import type { JsPackageManager } from 'storybook/internal/common';
-import { logger, prompt } from 'storybook/internal/node-logger';
+import { type TaskLogInstance, logger, prompt } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
@@ -36,17 +36,19 @@ export interface MultiProjectAutomigrationOptions {
   dryRun?: boolean;
   yes?: boolean;
   skipInstall?: boolean;
+  taskLog: TaskLogInstance;
 }
 
 /** Collects all applicable automigrations across multiple projects */
 export async function collectAutomigrationsAcrossProjects(
   options: MultiProjectAutomigrationOptions
 ): Promise<AutomigrationCheckResult[]> {
-  const { fixes, projects } = options;
+  const { fixes, projects, taskLog } = options;
   const automigrationMap = new Map<FixId, AutomigrationCheckResult>();
 
   // Run check for each fix on each project
   for (const project of projects) {
+    taskLog.message(`Checking automigrations for ${shortenPath(project.configDir)}...`);
     for (const fix of fixes) {
       try {
         // Check version range if this is an upgrade
@@ -107,12 +109,13 @@ export async function promptForAutomigrations(
 
   // Format project directories relative to git root
   const formatProjectDirs = (projects: ProjectAutomigrationData[]) => {
+    const amountOfProjectsShown = 1;
     const relativeDirs = projects.map((p) => shortenPath(p.configDir) || '.');
-    if (relativeDirs.length <= 3) {
+    if (relativeDirs.length <= amountOfProjectsShown) {
       return relativeDirs.join(', ');
     }
-    const remaining = relativeDirs.length - 3;
-    return `${relativeDirs.slice(0, 3).join(', ')}${remaining > 0 ? ` and ${remaining} more...` : ''}`;
+    const remaining = relativeDirs.length - amountOfProjectsShown;
+    return `${relativeDirs.slice(0, amountOfProjectsShown).join(', ')}${remaining > 0 ? ` and ${remaining} more...` : ''}`;
   };
 
   if (options.dryRun) {
@@ -138,7 +141,7 @@ export async function promptForAutomigrations(
     hint.push(`${am.fix.prompt(am.result)}`);
 
     if (am.fix.link) {
-      hint.push(`More info: ${picocolors.blue(am.fix.link)}`);
+      hint.push(`More info: ${am.fix.link}`);
     }
 
     const label =
@@ -265,12 +268,12 @@ export async function runAutomigrations(
     storiesPaths: project.storiesPaths,
   }));
 
-  if (projectAutomigrationData.length > 1) {
-    logger.log(`Detecting automigrations for ${projectAutomigrationData.length} projects...`);
-  } else {
-    logger.log(`Detecting automigrations...`);
-  }
-
+  const detectingAutomigrationTask = prompt.taskLog({
+    title:
+      projectAutomigrationData.length > 1
+        ? `Detecting automigrations for ${projectAutomigrationData.length} projects...`
+        : `Detecting automigrations...`,
+  });
   // Collect all applicable automigrations across all projects
   const detectedAutomigrations = await collectAutomigrationsAcrossProjects({
     fixes: allFixes,
@@ -278,7 +281,12 @@ export async function runAutomigrations(
     dryRun: options.dryRun,
     yes: options.yes,
     skipInstall: options.skipInstall,
+    taskLog: detectingAutomigrationTask,
   });
+
+  detectingAutomigrationTask.success(
+    `${detectedAutomigrations.length === 0 ? 'No automigrations detected' : `${detectedAutomigrations.length} automigrations detected`}`
+  );
 
   // Prompt user to select which automigrations to run
   const selectedAutomigrations = await promptForAutomigrations(detectedAutomigrations, {
@@ -286,7 +294,12 @@ export async function runAutomigrations(
     yes: options.yes,
   });
 
-  logger.debug('Running automigrations...');
+  const runningAutomigrationsTask = prompt.taskLog({
+    title:
+      projectAutomigrationData.length > 1
+        ? `Running automigrations for ${projectAutomigrationData.length} projects...`
+        : `Running automigrations...`,
+  });
   // Run selected automigrations for each project
   const projectResults = await runAutomigrationsForProjects(selectedAutomigrations, {
     fixes: allFixes,
@@ -294,6 +307,7 @@ export async function runAutomigrations(
     dryRun: options.dryRun,
     yes: options.yes,
     skipInstall: options.skipInstall,
+    taskLog: runningAutomigrationsTask,
   });
 
   // Special case handling for rnstorybook-config which renames the config dir

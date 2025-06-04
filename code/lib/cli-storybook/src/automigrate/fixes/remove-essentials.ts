@@ -1,7 +1,5 @@
 import { getAddonNames, removeAddon, transformImportFiles } from 'storybook/internal/common';
 
-import { dedent } from 'ts-dedent';
-
 import { add } from '../../add';
 import type { Fix } from '../types';
 
@@ -108,11 +106,7 @@ export const removeEssentials: Fix<AddonDocsOptions> = {
   },
 
   prompt() {
-    return dedent`
-      In Storybook 9.0, several addons have been moved into Storybook's core and are no longer needed as separate packages.
-      
-      We'll remove the unnecessary addons from your configuration and dependencies, and update your code to use the new core features.
-    `;
+    return "In Storybook 9.0, several addons have been moved into Storybook's core and are no longer needed as separate packages. We'll remove the unnecessary addons from your configuration and dependencies, and update your code to use the new core features.";
   },
 
   async run({

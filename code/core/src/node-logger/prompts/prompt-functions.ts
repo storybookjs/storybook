@@ -1,3 +1,4 @@
+import { wrapTextForClack, wrapTextForClackHint } from '../wrap-utils';
 import { getPromptProvider } from './prompt-config';
 import type {
   BasePromptOptions,
@@ -51,7 +52,18 @@ export const multiselect = async <T>(
   options: MultiSelectPromptOptions<T>,
   promptOptions?: PromptOptions
 ): Promise<T[]> => {
-  return getPromptProvider().multiselect(options, promptOptions);
+  return getPromptProvider().multiselect(
+    {
+      ...options,
+      options: options.options.map((opt) => ({
+        ...opt,
+        hint: opt.hint
+          ? wrapTextForClackHint(opt.hint, undefined, opt.label || String(opt.value))
+          : undefined,
+      })),
+    },
+    promptOptions
+  );
 };
 
 export const spinner = (): SpinnerInstance => {
@@ -59,5 +71,11 @@ export const spinner = (): SpinnerInstance => {
 };
 
 export const taskLog = (options: TaskLogOptions): TaskLogInstance => {
-  return getPromptProvider().taskLog(options);
+  const task = getPromptProvider().taskLog(options);
+  return {
+    ...task,
+    message: (message: string) => {
+      task.message(wrapTextForClack(message));
+    },
+  };
 };

@@ -193,7 +193,6 @@ export class NPMProxy extends JsPackageManager {
       args: ['install', ...this.getInstallArgs()],
       cwd: this.cwd,
       stdio: prompt.getPreferredStdio(),
-      ignoreError: true,
     });
   }
 

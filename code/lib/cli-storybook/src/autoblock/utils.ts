@@ -1,5 +1,6 @@
 import type { JsPackageManager } from 'storybook/internal/common';
 
+import picocolors from 'picocolors';
 import { lt } from 'semver';
 
 import { shortenPath } from '../util';
@@ -12,6 +13,8 @@ type Result<M extends Record<string, string>> = {
 };
 
 const typedKeys = <TKey extends string>(obj: Record<TKey, any>) => Object.keys(obj) as TKey[];
+
+const delimiter = '----------';
 
 /**
  * Finds the outdated package in the list of packages.
@@ -93,21 +96,22 @@ export function processAutoblockerResults<
 
   if (autoblockerMessages.length > 0) {
     const formatConfigDirs = (configDirs: string[]) => {
+      const baseMessage = 'Affected projects:';
       const relativeDirs = configDirs.map((dir) => shortenPath(dir) || '.');
       if (relativeDirs.length <= 3) {
-        return relativeDirs.join(', ');
+        return `${baseMessage} ${picocolors.yellow(relativeDirs.join(', '))}`;
       }
       const remaining = relativeDirs.length - 3;
-      return `${relativeDirs.slice(0, 3).join(', ')}${remaining > 0 ? ` and ${remaining} more...` : ''}`;
+      return `${baseMessage} ${picocolors.yellow(relativeDirs.slice(0, 3).join(', '))}${remaining > 0 ? ` and ${remaining} more...` : ''}`;
     };
 
     const formattedMessages = autoblockerMessages.map((item) => {
-      const configDirInfo = `(${formatConfigDirs(item.configDirs)})`;
-      return `${item.message} ${configDirInfo}`;
+      return `${item.message}\n\n${formatConfigDirs(item.configDirs)}`;
     });
 
-    onError(`Storybook has found potential blockers that need to be resolved before upgrading:
-${formattedMessages.join('\n')}`);
+    onError(
+      `Storybook has found potential blockers that need to be resolved before upgrading:\n\n${delimiter}\n\n${[...formattedMessages].join(`\n\n${delimiter}\n\n`)}\n\n${delimiter}\n\nAfter addressing this, you can try running the upgrade command again. You can also rerun the upgrade command with the ${picocolors.blue('--force')} flag to skip the blocker check and to proceed with the upgrade.`
+    );
 
     return true;
   }

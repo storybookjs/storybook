@@ -40,7 +40,7 @@ interface AddonA11yAddonTestOptions {
  * - If we can't transform the files automatically, we'll prompt the user to do it manually.
  */
 export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
-  id: 'addonA11yAddonTest',
+  id: 'addon-a11y-addon-test',
   versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
   link: 'https://storybook.js.org/docs/writing-tests/accessibility-testing#test-addon-integration',
 
@@ -137,11 +137,8 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
     skipPreviewTransformation,
     skipVitestSetupTransformation,
   }) {
-    const introduction = dedent`
-      We have detected that you have ${picocolors.magenta(`@storybook/addon-a11y`)} and ${picocolors.magenta(`@storybook/addon-vitest`)} installed.
-
-      ${picocolors.magenta(`@storybook/addon-a11y`)} now integrates with ${picocolors.magenta(`@storybook/addon-vitest`)} to provide automatic accessibility checks for your stories, powered by Axe and Vitest.
-    `;
+    const introduction =
+      'We have detected that you have @storybook/addon-a11y and @storybook/addon-vitest installed. @storybook/addon-a11y now integrates with @storybook/addon-vitest to provide automatic accessibility checks for your stories, powered by Axe and Vitest.';
 
     const prompt = [introduction];
 

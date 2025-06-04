@@ -1,6 +1,6 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
 import type { JsPackageManager } from 'storybook/internal/common';
-import { versions as storybookCorePackages } from 'storybook/internal/common';
+import { versions as storybookCorePackages, versions } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
@@ -102,7 +102,9 @@ export const getIncompatibleStorybookPackages = async (
   context: Context
 ): Promise<AnalysedPackage[]> => {
   const allDeps = context.packageManager.getAllDependencies();
-  const storybookLikeDeps = Object.keys(allDeps).filter((dep) => dep.includes('storybook'));
+  const storybookLikeDeps = Object.keys(allDeps).filter(
+    (dep) => dep.includes('storybook') && !versions[dep as keyof typeof versions]
+  );
   if (storybookLikeDeps.length === 0 && !context.skipErrors) {
     throw new Error('No Storybook dependencies found in the package.json');
   }
@@ -123,7 +125,7 @@ export const getIncompatiblePackagesSummary = (
     summaryMessage.push(
       `You are currently using Storybook ${picocolors.bold(
         currentStorybookVersion
-      )} but you have packages which are incompatible with it:`
+      )} but you have packages which are incompatible with it:\n`
     );
     incompatiblePackages.forEach(
       ({
@@ -139,7 +141,7 @@ export const getIncompatiblePackagesSummary = (
           packageStorybookVersion != null
             ? ` which depends on ${picocolors.red(packageStorybookVersion)}`
             : '';
-        const packageRepo = homepage ? `\n Repo: ${picocolors.yellow(homepage)}` : '';
+        const packageRepo = homepage ? `\n Repo: ${homepage}` : '';
 
         summaryMessage.push(
           `- ${packageDescription}${updateMessage}${dependsOnStorybook}${packageRepo}`
@@ -148,10 +150,9 @@ export const getIncompatiblePackagesSummary = (
     );
 
     summaryMessage.push(
-      '\n',
       'Please consider updating your packages or contacting the maintainers for compatibility details.',
-      'For more on Storybook 9 compatibility, see the linked GitHub issue:',
-      picocolors.yellow('https://github.com/storybookjs/storybook/issues/30944')
+      '\nFor more on Storybook 9 compatibility, see the linked GitHub issue:',
+      'https://github.com/storybookjs/storybook/issues/30944'
     );
 
     if (incompatiblePackages.some((dep) => dep.availableCoreUpdate)) {

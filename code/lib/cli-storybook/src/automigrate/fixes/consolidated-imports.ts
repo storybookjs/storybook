@@ -2,8 +2,6 @@ import { readFile, writeFile } from 'node:fs/promises';
 
 import { transformImportFiles, versions } from 'storybook/internal/common';
 
-import { dedent } from 'ts-dedent';
-
 import { consolidatedPackages } from '../helpers/consolidated-packages';
 import type { Fix } from '../types';
 
@@ -133,11 +131,7 @@ export const consolidatedImports: Fix<ConsolidatedOptions> = {
     };
   },
   prompt: () => {
-    return dedent`
-      We've detected Storybook packages that have been renamed or consolidated.
-
-      We'll update these packages by scanning your codebase and updating any imports from these packages.
-    `;
+    return "We've detected Storybook packages that have been renamed or consolidated. We'll update these packages by scanning your codebase and updating any imports from these packages.";
   },
   run: async ({
     dryRun = false,

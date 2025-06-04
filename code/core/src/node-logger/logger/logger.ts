@@ -1,16 +1,22 @@
 import * as clack from '@clack/prompts';
 import boxen from 'boxen';
+import picocolors from 'picocolors';
 
 import { isClackEnabled } from '../prompts/prompt-config';
+import { wrapTextForClack } from '../wrap-utils';
 import { logTracker } from './log-tracker';
 
+const createLogFunction =
+  (clackFn: (message: string) => void, consoleFn: (...args: any[]) => void) => () =>
+    isClackEnabled() ? (message: string) => clackFn(wrapTextForClack(message)) : consoleFn;
+
 const LOG_FUNCTIONS = {
-  log: () => (isClackEnabled() ? clack.log.message : console.log),
-  warn: () => (isClackEnabled() ? clack.log.warn : console.warn),
-  error: () => (isClackEnabled() ? clack.log.error : console.error),
-  intro: () => (isClackEnabled() ? clack.intro : console.log),
-  outro: () => (isClackEnabled() ? clack.outro : console.log),
-  step: () => (isClackEnabled() ? clack.log.step : console.log),
+  log: createLogFunction(clack.log.message, console.log),
+  warn: createLogFunction(clack.log.warn, console.warn),
+  error: createLogFunction(clack.log.error, console.error),
+  intro: createLogFunction(clack.intro, console.log),
+  outro: createLogFunction(clack.outro, console.log),
+  step: createLogFunction(clack.log.step, console.log),
 };
 
 // Log level types and state
@@ -95,9 +101,15 @@ export const debug = createLogger(
   '[DEBUG]'
 );
 
-export const log = createLogger('info', LOG_FUNCTIONS.log());
-export const warn = createLogger('warn', LOG_FUNCTIONS.warn());
-export const error = createLogger('error', LOG_FUNCTIONS.error());
+export const log = createLogger('info', (...args) => {
+  return LOG_FUNCTIONS.log()(...args);
+});
+export const warn = createLogger('warn', (...args) => {
+  return LOG_FUNCTIONS.warn()(...args);
+});
+export const error = createLogger('error', (...args) => {
+  return LOG_FUNCTIONS.error()(...args);
+});
 
 type BoxenOptions = {
   borderStyle?: 'round' | 'none';
@@ -112,17 +124,10 @@ export const logBox = (message: string, style?: BoxenOptions) => {
   if (shouldLog('info')) {
     logTracker.addLog('info', message);
     if (isClackEnabled()) {
-      log('');
-      console.log(
-        boxen(message, {
-          borderStyle: 'round',
-          padding: 1,
-          borderColor: '#5c5c63', // gray
-          ...style,
-        })
-          .replace(/╭/, '├')
-          .replace(/╰/, '├')
-      );
+      if (style?.title) {
+        log(picocolors.underline(style.title));
+      }
+      log(message);
     } else {
       console.log(
         boxen(message, {
@@ -138,12 +143,14 @@ export const logBox = (message: string, style?: BoxenOptions) => {
 
 export const intro = (message: string) => {
   logTracker.addLog('info', message);
+  console.log('\n');
   LOG_FUNCTIONS.intro()(message);
 };
 
 export const outro = (message: string) => {
   logTracker.addLog('info', message);
   LOG_FUNCTIONS.outro()(message);
+  console.log('\n');
 };
 
 export const step = (message: string) => {
@@ -155,3 +162,6 @@ export const info = (message: string) => {
   logTracker.addLog('info', message);
   LOG_FUNCTIONS.log()(message);
 };
+
+// Export the text wrapping utility for external use
+export { wrapTextForClack };

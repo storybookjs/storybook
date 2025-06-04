@@ -121,9 +121,7 @@ describe('prompt', () => {
     });
 
     expect(result).toMatchInlineSnapshot(`
-      "We've detected Storybook packages that have been renamed or consolidated.
-
-      We'll update these packages by scanning your codebase and updating any imports from these packages."
+      "We've detected Storybook packages that have been renamed or consolidated. We'll update these packages by scanning your codebase and updating any imports from these packages."
     `);
   });
 });

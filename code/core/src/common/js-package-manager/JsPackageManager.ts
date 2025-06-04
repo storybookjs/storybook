@@ -6,6 +6,8 @@ import { logger, prompt } from 'storybook/internal/node-logger';
 // eslint-disable-next-line depend/ban-dependencies
 import { type CommonOptions, type ExecaChildProcess, execa, execaCommandSync } from 'execa';
 import { findUpMultipleSync, findUpSync } from 'find-up';
+// eslint-disable-next-line depend/ban-dependencies
+import { globSync } from 'glob';
 import picocolors from 'picocolors';
 import { gt, satisfies } from 'semver';
 import invariant from 'tiny-invariant';
@@ -47,20 +49,24 @@ export function getPackageDetails(pkg: string): [string, string?] {
 interface JsPackageManagerOptions {
   cwd?: string;
   configDir?: string;
+  // The storiesPaths can be provided to properly calculate the location of all relevant package.json files
+  storiesPaths?: string[];
 }
+
+export type PackageJsonInfo = {
+  packageJsonPath: string;
+  operationDir: string;
+  packageJson: PackageJsonWithDepsAndDevDeps;
+};
 
 export abstract class JsPackageManager {
   abstract readonly type: PackageManagerName;
 
   /** The path to the primary package.json file (contains the `storybook` dependency). */
-  readonly primaryPackageJson: {
-    packageJsonPath: string;
-    operationDir: string;
-    packageJson: PackageJsonWithDepsAndDevDeps;
-  };
+  readonly primaryPackageJson: PackageJsonInfo;
 
   /** The paths to all package.json files in the project root. */
-  readonly packageJsonPaths: string[];
+  packageJsonPaths: string[];
 
   /**
    * The path to the Storybook instance directory. This is used to find the primary package.json
@@ -71,6 +77,9 @@ export abstract class JsPackageManager {
   /** The current working directory. */
   protected readonly cwd: string;
 
+  /** Cache for latest version results to avoid repeated network calls. */
+  private readonly latestVersionCache = new Map<string, string>();
+
   constructor(options?: JsPackageManagerOptions) {
     this.cwd = options?.cwd || process.cwd();
     this.instanceDir = options?.configDir
@@ -78,7 +87,10 @@ export abstract class JsPackageManager {
         ? dirname(options?.configDir)
         : dirname(join(this.cwd, options?.configDir))
       : this.cwd;
-    this.packageJsonPaths = JsPackageManager.listAllPackageJsonPaths(this.instanceDir);
+    this.packageJsonPaths = JsPackageManager.listAllPackageJsonPaths(
+      this.instanceDir,
+      options?.storiesPaths
+    );
     this.primaryPackageJson = this.#getPrimaryPackageJson();
   }
 
@@ -120,14 +132,17 @@ export abstract class JsPackageManager {
   }
 
   async installDependencies() {
-    await prompt.executeTask(
-      [() => this.runInstall(), () => this.runInternalCommand('dedupe', [], this.cwd)],
-      {
-        intro: 'Installing dependencies...',
-        error: 'An error occurred while installing dependencies.',
-        success: 'Dependencies installed',
-      }
-    );
+    const tasks = [() => this.runInstall()];
+
+    if (this.type === 'npm') {
+      tasks.push(() => this.runInternalCommand('dedupe', [], this.cwd));
+    }
+
+    await prompt.executeTask(tasks, {
+      intro: 'Installing dependencies...',
+      error: 'An error occurred while installing dependencies.',
+      success: 'Dependencies installed',
+    });
   }
 
   /** Read the `package.json` file available in the provided directory */
@@ -171,6 +186,10 @@ export abstract class JsPackageManager {
     return allDependencies;
   }
 
+  isDependencyInstalled(dependency: string) {
+    return Object.keys(this.getAllDependencies()).includes(dependency);
+  }
+
   /**
    * Add dependencies to a project using `yarn add` or `npm install`.
    *
@@ -192,14 +211,18 @@ export abstract class JsPackageManager {
       skipInstall?: boolean;
       installAsDevDependencies?: boolean;
       writeOutputToFile?: boolean;
+      packageJsonInfo?: PackageJsonInfo;
     },
     dependencies: string[]
   ): Promise<void | ExecaChildProcess> {
-    const { skipInstall, writeOutputToFile = true } = options;
-
-    const { operationDir, packageJson } = this.primaryPackageJson;
+    const {
+      skipInstall,
+      writeOutputToFile = true,
+      packageJsonInfo = this.primaryPackageJson,
+    } = options;
 
     if (skipInstall) {
+      const { operationDir, packageJson } = packageJsonInfo;
       const dependenciesMap: Record<string, string> = {};
 
       for (const dep of dependencies) {
@@ -244,24 +267,24 @@ export abstract class JsPackageManager {
   async removeDependencies(dependencies: string[]): Promise<void> {
     for (const pjPath of this.packageJsonPaths) {
       try {
-        const currentPackageJson = JsPackageManager.getPackageJson(pjPath);
+        const packageJson = JsPackageManager.getPackageJson(pjPath);
         let modified = false;
         dependencies.forEach((dep) => {
-          if (currentPackageJson.dependencies && currentPackageJson.dependencies[dep]) {
-            delete currentPackageJson.dependencies[dep];
+          if (packageJson.dependencies && packageJson.dependencies[dep]) {
+            delete packageJson.dependencies[dep];
             modified = true;
           }
-          if (currentPackageJson.devDependencies && currentPackageJson.devDependencies[dep]) {
-            delete currentPackageJson.devDependencies[dep];
+          if (packageJson.devDependencies && packageJson.devDependencies[dep]) {
+            delete packageJson.devDependencies[dep];
             modified = true;
           }
-          if (currentPackageJson.peerDependencies && currentPackageJson.peerDependencies[dep]) {
-            delete currentPackageJson.peerDependencies[dep];
+          if (packageJson.peerDependencies && packageJson.peerDependencies[dep]) {
+            delete packageJson.peerDependencies[dep];
             modified = true;
           }
         });
         if (modified) {
-          this.writePackageJson(currentPackageJson, dirname(pjPath));
+          this.writePackageJson(packageJson, dirname(pjPath));
           break;
         }
       } catch (e) {
@@ -367,21 +390,56 @@ export abstract class JsPackageManager {
    * @param constraint Version range to use to constraint the returned version
    */
   public async latestVersion(packageName: string, constraint?: string): Promise<string> {
-    if (!constraint) {
-      return this.runGetVersions(packageName, false);
+    // Create cache key that includes both package name and constraint
+    const cacheKey = constraint ? `${packageName}@${constraint}` : packageName;
+
+    // Check cache first
+    const cachedVersion = this.latestVersionCache.get(cacheKey);
+    if (cachedVersion) {
+      return cachedVersion;
     }
 
-    const versions = await this.runGetVersions(packageName, true);
+    let result: string;
 
-    const latestVersionSatisfyingTheConstraint = versions
-      .reverse()
-      .find((version) => satisfies(version, constraint));
+    if (!constraint) {
+      result = await this.runGetVersions(packageName, false);
+    } else {
+      const versions = await this.runGetVersions(packageName, true);
 
-    invariant(
-      latestVersionSatisfyingTheConstraint != null,
-      `No version satisfying the constraint: ${packageName}${constraint}`
-    );
-    return latestVersionSatisfyingTheConstraint;
+      const latestVersionSatisfyingTheConstraint = versions
+        .reverse()
+        .find((version) => satisfies(version, constraint));
+
+      invariant(
+        latestVersionSatisfyingTheConstraint != null,
+        `No version satisfying the constraint: ${packageName}${constraint}`
+      );
+      result = latestVersionSatisfyingTheConstraint;
+    }
+
+    // Cache the result before returning
+    this.latestVersionCache.set(cacheKey, result);
+    return result;
+  }
+
+  /**
+   * Clear the latest version cache. Useful for testing or when you want to refresh version
+   * information.
+   *
+   * @param packageName Optional package name to clear only specific entries. If not provided,
+   *   clears all cache.
+   */
+  public clearLatestVersionCache(packageName?: string): void {
+    if (packageName) {
+      // Clear all cache entries for this package (both with and without constraints)
+      const keysToDelete = Array.from(this.latestVersionCache.keys()).filter(
+        (key) => key === packageName || key.startsWith(`${packageName}@`)
+      );
+      keysToDelete.forEach((key) => this.latestVersionCache.delete(key));
+    } else {
+      // Clear all cache
+      this.latestVersionCache.clear();
+    }
   }
 
   public addStorybookCommandInScripts(options?: { port: number; preCommand?: string }) {
@@ -623,11 +681,32 @@ export abstract class JsPackageManager {
   }
 
   /** List all package.json files starting from the given directory and stopping at the project root. */
-  static listAllPackageJsonPaths(instanceDir: string): string[] {
-    return findUpMultipleSync('package.json', {
+  static listAllPackageJsonPaths(instanceDir: string, storiesPaths?: string[]): string[] {
+    const packageJsonPaths = findUpMultipleSync('package.json', {
       cwd: instanceDir,
       stopAt: getProjectRoot(),
     });
+
+    if (!storiesPaths) {
+      return packageJsonPaths;
+    }
+
+    // 1. Find all package.json files starting from the project root
+    const projectRoot = getProjectRoot();
+    const allPackageJsonFiles = globSync('**/package.json', {
+      cwd: projectRoot,
+      absolute: true,
+      ignore: ['**/node_modules/**', '**/dist/**'],
+    });
+
+    // 2. Only keep the ones that are parents of at least one of the storiesPaths
+    const relevantPackageJsons = allPackageJsonFiles.filter((packageJsonPath) => {
+      const packageDir = dirname(packageJsonPath);
+      return storiesPaths.some((storyPath) => storyPath.startsWith(packageDir));
+    });
+
+    // 3. Return the list of package.json paths
+    return Array.from(new Set([...packageJsonPaths, ...relevantPackageJsons]));
   }
 
   /**
@@ -642,12 +721,16 @@ export abstract class JsPackageManager {
   } {
     const finalTargetPackageJsonPath = this.#findPrimaryPackageJsonPath();
 
-    const operationDir = dirname(finalTargetPackageJsonPath);
+    return JsPackageManager.getPackageJsonInfo(finalTargetPackageJsonPath);
+  }
+
+  static getPackageJsonInfo(packageJsonPath: string): PackageJsonInfo {
+    const operationDir = dirname(packageJsonPath);
     return {
-      packageJsonPath: finalTargetPackageJsonPath,
+      packageJsonPath,
       operationDir,
       get packageJson() {
-        return JsPackageManager.getPackageJson(finalTargetPackageJsonPath);
+        return JsPackageManager.getPackageJson(packageJsonPath);
       },
     };
   }

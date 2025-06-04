@@ -10,6 +10,7 @@ import { dedent } from 'ts-dedent';
 
 import { updateMainConfig } from '../helpers/mainConfigFile';
 import type { Fix } from '../types';
+import { moveEssentialOptions } from './remove-essentials.utils';
 
 interface AddonDocsOptions {
   hasEssentials: boolean;
@@ -228,16 +229,10 @@ export const removeEssentials: Fix<AddonDocsOptions> = {
       }
 
       if (essentialsOptions) {
-        updateMainConfig({ mainConfigPath, dryRun: !!dryRun }, async (main) => {
-          const features = main.getFieldValue(['features']) || {};
-
-          if (!dryRun) {
-            main.setFieldValue(['features'], {
-              ...features,
-              ...essentialsOptions,
-            });
-          }
-        });
+        updateMainConfig(
+          { mainConfigPath, dryRun: !!dryRun },
+          moveEssentialOptions(dryRun, essentialsOptions)
+        );
       }
 
       // If docs was enabled (not disabled) and not already installed, add it

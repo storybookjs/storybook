@@ -27,7 +27,7 @@ export const wrapRequire: Fix<WrapRequireRunOptions> = {
   link: 'https://storybook.js.org/docs/faq#how-do-i-fix-module-resolution-in-special-environments',
 
   async check({ packageManager, storybookVersion, mainConfigPath }) {
-    const isStorybookInMonorepo = await packageManager.isStorybookInMonorepo();
+    const isStorybookInMonorepo = packageManager.isStorybookInMonorepo();
     const isPnp = await detectPnp();
 
     if (!mainConfigPath) {

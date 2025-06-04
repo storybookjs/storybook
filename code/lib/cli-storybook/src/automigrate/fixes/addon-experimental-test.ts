@@ -56,7 +56,7 @@ export const addonExperimentalTest: Fix<AddonExperimentalTestOptions> = {
   },
 
   prompt() {
-    return `We'll migrate ${picocolors.cyan('@storybook/experimental-addon-test')} to ${picocolors.cyan('@storybook/addon-vitest')}`;
+    return "We'll migrate @storybook/experimental-addon-test to @storybook/addon-vitest";
   },
 
   async run({ result: { matchingFiles }, packageManager, dryRun, storybookVersion }) {

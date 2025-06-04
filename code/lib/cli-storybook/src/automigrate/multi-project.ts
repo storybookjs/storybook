@@ -182,7 +182,7 @@ export async function runAutomigrationsForProjects(
       continue;
     }
 
-    const projectName = picocolors.cyan(shortenPath(project.configDir));
+    const projectName = shortenPath(project.configDir);
     const taskLog = prompt.taskLog({
       title: `${countPrefix}Running automigrations for ${projectName}:`,
     });
@@ -198,7 +198,7 @@ export async function runAutomigrationsForProjects(
             ? await fix.promptType(result)
             : (fix.promptType ?? 'auto');
 
-        taskLog.message(`  - ${picocolors.cyan(fix.id)}...`);
+        taskLog.message(`  - ${fix.id}...`);
 
         if (promptType === 'manual') {
           // For manual migrations, show the prompt and mark as manual

@@ -161,7 +161,7 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
         const fileExtensionSetupFile = path.extname(setupFile!);
 
         prompt.push(
-          dedent`${counter++}) We have to update your ${picocolors.cyan(`.storybook/vitest.setup${fileExtensionSetupFile}`)} file to set up project annotations from ${picocolors.magenta(`@storybook/addon-a11y`)}.`
+          dedent`${counter++}) We have to update your .storybook/vitest.setup${fileExtensionSetupFile} file to set up project annotations from @storybook/addon-a11y.`
         );
       }
     }
@@ -169,8 +169,7 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
     if (!skipPreviewTransformation) {
       if (transformedPreviewCode === null) {
         prompt.push(dedent`
-          ${counter++}) We couldn't find or automatically update your ${picocolors.cyan(`.storybook/preview.<ts|js>`)} in your project to smoothly set up ${picocolors.yellow(`parameters.a11y.test`)} from ${picocolors.magenta(`@storybook/addon-a11y`)}. 
-          Please manually update your ${picocolors.cyan(`.storybook/preview.<ts|js>`)} file to include the following:
+          ${counter++}) We couldn't find or automatically update your .storybook/preview.<ts|js> in your project to smoothly set up ${picocolors.cyan('parameters.a11y.test')} from @storybook/addon-a11y. Please manually update your .storybook/preview.<ts|js> file to include the following:
 
           ${picocolors.gray('export default {')}
           ${picocolors.gray('  ...')}
@@ -186,7 +185,7 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
 
         prompt.push(
           dedent`
-            ${counter++}) We have to update your ${picocolors.cyan(`.storybook/preview${fileExtensionPreviewFile}`)} file to set up ${picocolors.yellow('parameters.a11y.test')} from ${picocolors.magenta(`@storybook/addon-a11y`)}.
+            ${counter++}) We have to update your .storybook/preview${fileExtensionPreviewFile} file to set up parameters.a11y.test from @storybook/addon-a11y.
           `
         );
       }

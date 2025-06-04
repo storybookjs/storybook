@@ -83,7 +83,7 @@ export function protectUrls(
 
   return text.replace(URL_REGEX, (url: string, offset: number) => {
     if (!useHyperlinks) {
-      return yellow(url);
+      return url;
     }
 
     // Calculate how much space is available for this URL on its current line
@@ -108,11 +108,11 @@ export function protectUrls(
       const truncatedText = url.substring(0, effectiveMaxLength - 3) + '...';
 
       // Create a truncated hyperlink that still opens the full URL
-      return `\u001b]8;;${url}\u0007${yellow(truncatedText)}\u001b]8;;\u0007`;
+      return `\u001b]8;;${url}\u0007${truncatedText}\u001b]8;;\u0007`;
     }
 
     // Apply yellow coloring with hyperlink functionality
-    return `\u001b]8;;${url}\u0007${yellow(url)}\u001b]8;;\u0007`;
+    return `\u001b]8;;${url}\u0007${url}\u001b]8;;\u0007`;
   });
 }
 

@@ -81,7 +81,7 @@ export function displayDoctorResults(
   // For single project, display per-project results
   if (projectCount === 1) {
     const [configDir, result] = Object.entries(projectResults)[0];
-    const projectName = picocolors.cyan(shortenPath(configDir) || '.');
+    const projectName = shortenPath(configDir) || '.';
 
     if (result.status === 'healthy') {
       logger.log(`✅ ${projectName}: No issues found`);
@@ -148,7 +148,7 @@ export function displayDoctorResults(
     });
   }
 
-  logger.step('Storybook doctor is complete!');
+  logger.step(picocolors.bold('Storybook doctor is complete!'));
 
   const commandMessage = `You can always recheck the health of your project(s) by running:\n${picocolors.cyan(
     'npx storybook doctor'

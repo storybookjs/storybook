@@ -135,12 +135,10 @@ export const getIncompatiblePackagesSummary = (
         availableUpdate,
         packageStorybookVersion,
       }) => {
-        const packageDescription = `${picocolors.cyan(addonName)}@${picocolors.cyan(addonVersion)}`;
+        const packageDescription = `${addonName}@${addonVersion}`;
         const updateMessage = availableUpdate ? ` (${availableUpdate} available!)` : '';
         const dependsOnStorybook =
-          packageStorybookVersion != null
-            ? ` which depends on ${picocolors.red(packageStorybookVersion)}`
-            : '';
+          packageStorybookVersion != null ? ` which depends on ${packageStorybookVersion}` : '';
         const packageRepo = homepage ? `\n Repo: ${homepage}` : '';
 
         summaryMessage.push(

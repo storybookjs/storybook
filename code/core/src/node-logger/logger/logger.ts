@@ -23,12 +23,12 @@ const LOG_FUNCTIONS = {
 export type LogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'silent';
 
 const LOG_LEVELS: Record<LogLevel, number> = {
-  trace: 0,
-  debug: 1,
-  info: 2,
-  warn: 3,
-  error: 4,
-  silent: 5,
+  trace: 1,
+  debug: 2,
+  info: 3,
+  warn: 4,
+  error: 5,
+  silent: 10,
 };
 
 let currentLogLevel: LogLevel = 'info';
@@ -42,7 +42,7 @@ export const getLogLevel = (): LogLevel => {
 };
 
 export const shouldLog = (level: LogLevel): boolean => {
-  return LOG_LEVELS[level] >= LOG_LEVELS[currentLogLevel];
+  return LOG_LEVELS[currentLogLevel] <= LOG_LEVELS[level];
 };
 
 function getMinimalTrace() {

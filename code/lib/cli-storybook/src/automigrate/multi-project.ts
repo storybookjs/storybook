@@ -57,6 +57,9 @@ export async function collectAutomigrationsAcrossProjects(
 
           // Skip if version doesn't match the range
           if (!shouldRunFix(fix, beforeVersion, storybookVersion, true)) {
+            logger.debug(
+              `Skipping ${fix.id} migration because it doesn't match the version range of ${beforeVersion} -> ${storybookVersion}`
+            );
             continue;
           }
         }

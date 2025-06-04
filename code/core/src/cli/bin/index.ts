@@ -32,8 +32,8 @@ const command = (name: string) =>
     .hook('preAction', async (self) => {
       try {
         const options = self.opts();
-        if (options.logLevel) {
-          logger.setLogLevel(options.logLevel);
+        if (options.loglevel) {
+          logger.setLogLevel(options.loglevel);
         }
 
         if (options.writeLogs) {

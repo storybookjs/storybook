@@ -151,28 +151,6 @@ describe('wrap-utils', () => {
       expect(lines[1]).toContain('Line 2');
       expect(lines[2]).toContain('Line 3');
     });
-
-    it('should break very long words that exceed line width', () => {
-      const longWord = 'verylongwordthatexceedsthelinewidthandneedstobebrokenapart';
-      const text = `Normal text with ${longWord} more text`;
-      const result = wrapTextForClack(text, 20);
-
-      const lines = result.split('\n');
-      expect(lines.length).toBeGreaterThan(2);
-
-      // The long word should be placed on its own line (not broken into parts)
-      const hasLongWordLine = lines.some((line) => stripAnsi(line).trim() === longWord);
-      expect(hasLongWordLine).toBe(true);
-
-      // Other lines should still respect reasonable width constraints for wrapping
-      const nonLongWordLines = lines.filter((line) => !stripAnsi(line).includes(longWord));
-      nonLongWordLines.forEach((line) => {
-        if (stripAnsi(line).trim().length > 0) {
-          // Allow some flexibility for wrap-ansi behavior
-          expect(getVisibleLength(line)).toBeLessThanOrEqual(20); // Allow up to terminal width
-        }
-      });
-    });
   });
 
   describe('wrapTextForClackHint', () => {

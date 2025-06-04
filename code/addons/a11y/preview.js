@@ -1,1 +1,1 @@
-import'./dist/preview';
+import './dist/preview';

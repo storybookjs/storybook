@@ -119,13 +119,9 @@ export async function storyToCsfFactory(
         );
       } else if (t.isArrowFunctionExpression(init)) {
         // Transform CSF1 to meta.story({ render: <originalFn> })
-        const renderProperty = t.objectProperty(t.identifier('render'), init);
-
-        const objectExpression = t.objectExpression([renderProperty]);
-
         declarator.init = t.callExpression(
           t.memberExpression(t.identifier(metaVariableName), t.identifier('story')),
-          [objectExpression]
+          [init]
         );
       }
     }

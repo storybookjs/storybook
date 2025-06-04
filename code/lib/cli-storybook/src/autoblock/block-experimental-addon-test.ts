@@ -32,7 +32,7 @@ export const blocker = createBlocker({
       
       You have two options to proceed:
       1. Remove ${picocolors.magenta('@storybook/experimental-addon-test')} if you don't need it
-      2. Upgrade to ${picocolors.bold('Vitest 3')} to continue using the addon      
+      2. Upgrade to ${picocolors.bold('Vitest 3')} to continue using the addon
     `;
   },
 });

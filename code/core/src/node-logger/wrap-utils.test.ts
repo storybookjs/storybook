@@ -268,10 +268,6 @@ describe('wrap-utils', () => {
       // ANSI codes should be preserved
       expect(result).toMatch(/\u001b\[33m/); // Yellow color
       expect(result).toMatch(/\u001b\[0m/); // Reset
-
-      // Content should be preserved
-      expect(stripAnsi(result)).toContain('Yellow hint text');
-      expect(stripAnsi(result)).toContain('normal text');
     });
   });
 

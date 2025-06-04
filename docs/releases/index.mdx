@@ -1,0 +1,65 @@
+---
+title: 'How we release Storybook'
+sidebar:
+  order: 13
+  title: Releases
+---
+
+Storybook follows [Semantic Versioning](https://semver.org/). 
+
+## Release Channels
+
+We publish releases on two channels. You can install a specific channel via npm tags:
+
+- **Stable channel** (`latest`): Installs the latest stable release.
+
+```bash
+npm create storybook@latest
+```
+
+- **Prerelease channel** (`next`): Installs the latest prerelease.
+
+```bash
+npm create storybook@next
+```
+
+## Supported Versions
+
+- We only support the **latest major** version of Storybook.
+- The **current minor version** receives critical security and bug-fix patches as needed.
+- We backport only critical security fixes to prior minor versions. Most non-critical bug fixes are released in the next minor version without backporting.
+
+For compatibility with other libraries and tools in the JavaScript ecosystem, please refer to the [compatibility tracker](https://github.com/storybookjs/storybook/issues/23279).
+
+## Release Cycle
+
+#### Major Release
+
+**Cadence: Roughly once per year**
+
+Major releases introduce breaking changes and significant new features. We use major releases to keep up with ecosystem changes, evolve Storybook’s architecture and APIs, and make the tool faster, leaner, and easier to use. 
+
+Once we start working on a major release, we pause minor releases but continue to ship patch releases as needed. Major releases go through a sequence of prereleases —— `alpha`, `beta`, and `rc` (release candidate) —— before landing in the stable channel. We aim to include automated migrations and provide [a comprehensive migration guide](../migration-guide/index.mdx) when manual changes are necessary.
+
+<Callout variant="info">
+  Storybook versions prior to 7 had a very different architecture, and as a result, upgrading from v6 to newer versions can be more challenging. Starting in v7, we’ve focused heavily on smoother migrations. Upgrades from v7 to v8, and v8 to v9 (and beyond), should feel significantly easier thanks to automigrations and better tooling.
+</Callout>
+
+
+#### Minor Release
+
+**Cadence: Roughly every 8 weeks**
+
+Minor releases deliver new features, enhancements, and non-breaking improvements. Each minor release may be preceded by an alpha prerelease (e.g. x.y.0-alpha) published to the `next` channel.
+
+#### Patch Release
+
+**Cadence: as needed (only for the current minor)**
+
+Patch releases include critical bug fixes and security updates. These are issued only for the current minor version and are not prereleased.
+
+#### Pre-release
+
+**Cadence: regularly from the `next` branch**
+
+Prereleases are created to gather early feedback and ensure stability before an official release. Minor version prereleases use the `alpha` tag only (e.g. `x.y.0-alpha`), with no patch prereleases. Major version prereleases go through a fuller cycle of `alpha`, `beta`, and `rc` stages before the final release.

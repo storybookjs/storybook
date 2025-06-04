@@ -89,7 +89,6 @@ export const transformPackageJsonFiles = async (files: string[], dryRun: boolean
 
 export const consolidatedImports: Fix<ConsolidatedOptions> = {
   id: 'consolidated-imports',
-  versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
   link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#dropped-support-for-legacy-packages',
   check: async ({ packageManager }) => {
     const consolidatedDeps = new Set<keyof typeof consolidatedPackages>();

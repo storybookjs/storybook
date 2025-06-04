@@ -119,7 +119,6 @@ const checkPackageJson = async (
 
 export const rendererToFramework: Fix<MigrationResult> = {
   id: 'renderer-to-framework',
-  versionRange: ['<9.0.0', '^9.0.0-0'],
   promptType: 'auto',
   link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#moving-from-renderer-based-to-framework-based-configuration',
 

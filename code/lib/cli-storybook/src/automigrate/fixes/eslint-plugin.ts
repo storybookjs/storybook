@@ -24,8 +24,6 @@ interface EslintPluginRunOptions {
  */
 export const eslintPlugin: Fix<EslintPluginRunOptions> = {
   id: 'eslintPlugin',
-
-  versionRange: ['*', '*'],
   link: 'https://storybook.js.org/docs/9/configure/integration/eslint-plugin',
 
   async check({ packageManager }) {

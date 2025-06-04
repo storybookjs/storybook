@@ -16,8 +16,6 @@ const fixes: Fix<any>[] = [
   {
     id: 'fix-1',
 
-    versionRange: ['<7', '>=7'],
-
     async check(config) {
       return check1(config);
     },
@@ -108,16 +106,6 @@ describe('runFixes', () => {
 
   afterEach(() => {
     vi.clearAllMocks();
-  });
-
-  it('should be unnecessary to run fix-1 from SB 6.5.15 to 6.5.16', async () => {
-    const { fixResults } = await runFixWrapper({ beforeVersion, storybookVersion: '6.5.16' });
-
-    // Assertions
-    expect(fixResults).toEqual({
-      'fix-1': 'unnecessary',
-    });
-    expect(run1).not.toHaveBeenCalled();
   });
 
   it('should be necessary to run fix-1 from SB 6.5.15 to 7.0.0', async () => {

@@ -17,7 +17,6 @@ interface Options {
 /** Rename preview.js globals to initialGlobals */
 export const initialGlobals: Fix<Options> = {
   id: 'initial-globals',
-  versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
   link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#previewjs-globals-renamed-to-initialglobals',
 
   async check({ previewConfigPath }) {

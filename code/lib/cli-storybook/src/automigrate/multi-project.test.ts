@@ -38,7 +38,6 @@ describe('multi-project automigrations', () => {
 
   const createMockFix = (id: string, checkResult: any = {}): Fix => ({
     id,
-    versionRange: ['7.0.0', '8.0.0'],
     check: vi.fn().mockResolvedValue(checkResult),
     prompt: vi.fn().mockReturnValue(`Prompt for ${id}`),
     promptType: 'auto',
@@ -93,24 +92,6 @@ describe('multi-project automigrations', () => {
       expect(results).toHaveLength(1);
       expect(results[0].fix.id).toBe('fix1');
       expect(results[0].projects).toHaveLength(3);
-    });
-
-    it('should respect version ranges when isUpgrade is true', async () => {
-      const fix1 = createMockFix('fix1', { needsFix: true });
-      fix1.versionRange = ['6.0.0', '7.0.0'];
-
-      const project1 = createMockProject('/project1/.storybook');
-      project1.beforeVersion = '5.0.0'; // Outside range
-      project1.storybookVersion = '7.0.0';
-
-      const results = await collectAutomigrationsAcrossProjects({
-        fixes: [fix1],
-        projects: [project1],
-        taskLog: taskLogMock,
-      });
-
-      expect(results).toHaveLength(0);
-      expect(fix1.check).not.toHaveBeenCalled();
     });
 
     it('should handle check errors gracefully', async () => {

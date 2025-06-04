@@ -37,8 +37,6 @@ const getDotStorybookReferences = async () => {
 
 export const rnstorybookConfig: Fix<Options> = {
   id: 'rnstorybook-config',
-
-  versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
   link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#react-native-config-dir-renamed',
 
   async check({ packageManager, mainConfigPath }) {

@@ -41,7 +41,6 @@ interface AddonA11yAddonTestOptions {
  */
 export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
   id: 'addon-a11y-addon-test',
-  versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
   link: 'https://storybook.js.org/docs/writing-tests/accessibility-testing#test-addon-integration',
 
   promptType(result) {

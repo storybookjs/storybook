@@ -24,8 +24,6 @@ export interface WrapRequireRunOptions {
 
 export const wrapRequire: Fix<WrapRequireRunOptions> = {
   id: 'wrap-require',
-
-  versionRange: ['*', '*'],
   link: 'https://storybook.js.org/docs/faq#how-do-i-fix-module-resolution-in-special-environments',
 
   async check({ packageManager, storybookVersion, mainConfigPath }) {

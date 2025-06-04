@@ -24,7 +24,6 @@ interface RemoveDocsAutodocsOptions {
  */
 export const removeDocsAutodocs: Fix<RemoveDocsAutodocsOptions> = {
   id: 'remove-docs-autodocs',
-  versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
   link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#mainjs-docsautodocs-is-deprecated',
 
   async check({ mainConfigPath }) {

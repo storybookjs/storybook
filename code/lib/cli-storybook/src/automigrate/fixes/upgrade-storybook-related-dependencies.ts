@@ -66,7 +66,6 @@ function isValidVersionType(packageName: string, specifier: string) {
  */
 export const upgradeStorybookRelatedDependencies = {
   id: 'upgrade-storybook-related-dependencies',
-  versionRange: ['*.*.*', '*.*.*'],
   promptType: 'auto',
   promptDefaultValue: false,
 

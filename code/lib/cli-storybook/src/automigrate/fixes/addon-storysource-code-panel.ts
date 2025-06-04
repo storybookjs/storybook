@@ -15,7 +15,6 @@ export interface StorysourceOptions {
 
 export const addonStorysourceCodePanel: Fix<StorysourceOptions> = {
   id: 'addon-storysource-code-panel',
-  versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
   link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storysource-addon-removed',
 
   async check({ mainConfigPath, mainConfig }) {

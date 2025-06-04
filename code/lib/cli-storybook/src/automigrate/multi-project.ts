@@ -9,7 +9,6 @@ import { shortenPath } from '../util';
 import type { CollectProjectsSuccessResult } from '../util';
 import { allFixes } from './fixes';
 import { rnstorybookConfig } from './fixes/rnstorybook-config';
-import { shouldRunFix } from './helpers/checkVersionRange';
 import type { CheckOptions, Fix, FixId, RunOptions } from './types';
 import { FixStatus } from './types';
 
@@ -51,19 +50,6 @@ export async function collectAutomigrationsAcrossProjects(
     taskLog.message(`Checking automigrations for ${shortenPath(project.configDir)}...`);
     for (const fix of fixes) {
       try {
-        // Check version range if this is an upgrade
-        if (fix.versionRange) {
-          const { beforeVersion, storybookVersion } = project;
-
-          // Skip if version doesn't match the range
-          if (!shouldRunFix(fix, beforeVersion, storybookVersion, true)) {
-            logger.debug(
-              `Skipping ${fix.id} migration because it doesn't match the version range of ${beforeVersion} -> ${storybookVersion}`
-            );
-            continue;
-          }
-        }
-
         const checkOptions: CheckOptions = {
           packageManager: project.packageManager,
           configDir: project.configDir,

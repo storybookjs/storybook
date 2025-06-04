@@ -18,7 +18,6 @@ import type {
 } from './fixes';
 import { FixStatus, allFixes, commandFixes } from './fixes';
 import { upgradeStorybookRelatedDependencies } from './fixes/upgrade-storybook-related-dependencies';
-import { shouldRunFix } from './helpers/checkVersionRange';
 import { logMigrationSummary } from './helpers/logMigrationSummary';
 import { getStorybookData } from './helpers/mainConfigFile';
 
@@ -240,20 +239,18 @@ export async function runFixes({
     let result;
 
     try {
-      if (shouldRunFix(f, beforeVersion, storybookVersion, !!isUpgrade)) {
-        logger.debug(`Running ${picocolors.cyan(f.id)} migration checks`);
-        result = await f.check({
-          packageManager,
-          configDir,
-          rendererPackage,
-          mainConfig,
-          storybookVersion,
-          previewConfigPath,
-          mainConfigPath,
-          storiesPaths,
-        });
-        logger.debug(`End of ${picocolors.cyan(f.id)} migration checks`);
-      }
+      logger.debug(`Running ${picocolors.cyan(f.id)} migration checks`);
+      result = await f.check({
+        packageManager,
+        configDir,
+        rendererPackage,
+        mainConfig,
+        storybookVersion,
+        previewConfigPath,
+        mainConfigPath,
+        storiesPaths,
+      });
+      logger.debug(`End of ${picocolors.cyan(f.id)} migration checks`);
     } catch (error) {
       logger.warn(`⚠️  failed to check fix ${picocolors.bold(f.id)}`);
       if (error instanceof Error) {

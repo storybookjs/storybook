@@ -19,9 +19,6 @@ interface AddonExperimentalTestOptions {
  */
 export const addonExperimentalTest: Fix<AddonExperimentalTestOptions> = {
   id: 'addon-experimental-test',
-
-  versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
-
   link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#experimental-test-addon-stabilized-and-renamed',
 
   promptType: 'auto',

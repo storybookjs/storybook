@@ -5,7 +5,6 @@ import type { Fix } from '../types';
 /** Remove @storybook/addon-interactions since it's now part of Storybook core. */
 export const removeAddonInteractions: Fix<true> = {
   id: 'remove-addon-interactions',
-  versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
   link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#essentials-addon-viewport-controls-interactions-and-actions-moved-to-core',
 
   async check({ mainConfig, packageManager }) {

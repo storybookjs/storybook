@@ -37,13 +37,6 @@ export type Prompt = 'auto' | 'manual' | 'notification' | 'command';
 
 type BaseFix<ResultType = any> = {
   id: string;
-  /**
-   * The from/to version range of Storybook that this fix applies to. The strings are semver ranges.
-   * The versionRange will only be checked if the automigration is part of an upgrade. If the
-   * automigration is not part of an upgrade but rather called via `automigrate` CLI, the check
-   * function should handle the version check.
-   */
-  versionRange: [from: string, to: string];
   check: (options: CheckOptions) => Promise<ResultType | null>;
   prompt: (result: ResultType) => string;
   promptDefaultValue?: boolean;

@@ -34,7 +34,6 @@ const consolidatedAddons = {
  */
 export const removeEssentials: Fix<AddonDocsOptions> = {
   id: 'remove-essential-addons',
-  versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
   link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#essentials-addon-viewport-controls-interactions-and-actions-moved-to-core',
 
   async check({ mainConfigPath, mainConfig, packageManager }) {

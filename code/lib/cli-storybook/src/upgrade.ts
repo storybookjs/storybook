@@ -1,5 +1,5 @@
 import type { PackageManagerName } from 'storybook/internal/common';
-import { JsPackageManagerFactory, isCorePackage } from 'storybook/internal/common';
+import { HandledError, JsPackageManagerFactory, isCorePackage } from 'storybook/internal/common';
 import { withTelemetry } from 'storybook/internal/core-server';
 import { logTracker, logger, prompt } from 'storybook/internal/node-logger';
 import {
@@ -287,6 +287,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       logger.intro('Storybook Upgrade');
       // TODO: telemetry for upgrade start
       const projectsResult = await getProjects(options);
+
       if (projectsResult === undefined || projectsResult.selectedProjects.length === 0) {
         // nothing to upgrade
         return;
@@ -300,14 +301,16 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       // Set up signal handling for interruptions
       const handleInterruption = async () => {
         logger.log('\n\nUpgrade interrupted by user.');
-        await sendMultiUpgradeTelemetry({
-          allProjects,
-          selectedProjects: storybookProjects,
-          projectResults: automigrationResults,
-          doctorResults,
-          hasUserInterrupted: true,
-        });
-        process.exit(1);
+        if (allProjects.length > 1) {
+          await sendMultiUpgradeTelemetry({
+            allProjects,
+            selectedProjects: storybookProjects,
+            projectResults: automigrationResults,
+            doctorResults,
+            hasUserInterrupted: true,
+          });
+        }
+        throw new HandledError('Upgrade cancelled by user');
       };
 
       process.on('SIGINT', handleInterruption);

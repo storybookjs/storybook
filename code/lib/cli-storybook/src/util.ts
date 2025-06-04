@@ -1,8 +1,8 @@
 import type { PackageJsonWithDepsAndDevDeps } from 'storybook/internal/common';
-import { JsPackageManager, normalizeStories } from 'storybook/internal/common';
+import { HandledError, JsPackageManager, normalizeStories } from 'storybook/internal/common';
 import { getProjectRoot, isSatelliteAddon, versions } from 'storybook/internal/common';
 import { StoryIndexGenerator, experimental_loadStorybook } from 'storybook/internal/core-server';
-import { logger, prompt } from 'storybook/internal/node-logger';
+import { logTracker, logger, prompt } from 'storybook/internal/node-logger';
 import {
   UpgradeStorybookToLowerVersionError,
   UpgradeStorybookUnknownCurrentVersionError,
@@ -605,15 +605,21 @@ const handleMultipleProjects = async (
   const hasOverlappingStorybooks = uniquePackageJsonPaths.size !== allPackageJsonPaths.length;
 
   if (hasOverlappingStorybooks) {
-    const validProjectsMessage = formatProjectDirectories(validProjects, '✔');
-    const invalidProjectsMessage =
-      errorProjects.length > 0
-        ? `\nThere were some errors while collecting data for the following projects:\n${formatProjectDirectories(errorProjects, '✕')}`
-        : '';
-
-    logger.log(
-      `Multiple Storybook projects found. Storybook can only upgrade all projects at once:\n${validProjectsMessage}${invalidProjectsMessage}`
-    );
+    const projectsFoundMessage = [
+      'Multiple Storybook projects found. Storybook can only upgrade all projects at once:',
+    ];
+    if (validProjects.length > 0) {
+      projectsFoundMessage.push(formatProjectDirectories(validProjects, '✔'));
+    }
+    if (errorProjects.length > 0) {
+      logTracker.enableLogWriting();
+      projectsFoundMessage.push(
+        `There were some errors while collecting data for the following projects:\n${formatProjectDirectories(errorProjects, '✕')}`,
+        '',
+        'Full logs will be available in the Storybook debug logs at the end of the run.'
+      );
+    }
+    logger.log(projectsFoundMessage.join('\n'));
 
     const continueUpgrade =
       yes ||
@@ -623,7 +629,7 @@ const handleMultipleProjects = async (
       }));
 
     if (!continueUpgrade) {
-      process.exit(0);
+      throw new HandledError('Upgrade cancelled by user');
     }
 
     return [...validProjects];
@@ -723,7 +729,10 @@ export const getProjects = async (
 
     return selectedProjects ? { allProjects: validProjects, selectedProjects } : undefined;
   } catch (error) {
-    logger.error('Failed to get projects');
+    if (!(error instanceof HandledError)) {
+      logger.error('Failed to get projects');
+    }
+
     throw error;
   }
 };

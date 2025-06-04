@@ -1,5 +1,6 @@
 import { globalSettings } from 'storybook/internal/cli';
 import {
+  HandledError,
   JsPackageManagerFactory,
   removeAddon as remove,
   versions,
@@ -26,7 +27,10 @@ addToGlobalContext('cliVersion', versions.storybook);
 
 // Return a failed exit code but write the logs to a file first
 const handleCommandFailure = async (error: unknown): Promise<never> => {
-  logger.error(String(error));
+  if (!(error instanceof HandledError)) {
+    logger.error(String(error));
+  }
+
   const logFile = await logTracker.writeToFile();
   logger.log(`Storybook debug logs can be found at: ${logFile}`);
   logger.outro('');

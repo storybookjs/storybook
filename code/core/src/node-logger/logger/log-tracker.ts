@@ -1,5 +1,5 @@
 import { promises as fs } from 'node:fs';
-import { join } from 'node:path';
+import path, { join } from 'node:path';
 
 import { cleanLog } from '../../../../lib/cli-storybook/src/automigrate/helpers/cleanLog';
 import type { LogLevel } from './logger';
@@ -95,7 +95,7 @@ class LogTracker {
     await fs.writeFile(filePath, logContent, 'utf-8');
     this.#logs = [];
 
-    return filePath;
+    return process.env.CI ? filePath : path.relative(process.cwd(), filePath);
   }
 }
 

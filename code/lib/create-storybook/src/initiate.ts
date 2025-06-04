@@ -53,6 +53,17 @@ import { packageVersions } from './ink/steps/checks/packageVersions';
 import { vitestConfigFiles } from './ink/steps/checks/vitestConfigFiles';
 import { currentDirectoryIsEmpty, scaffoldNewProject } from './scaffold-new-project';
 
+const ONBOARDING_PROJECT_TYPES = [
+  ProjectType.REACT,
+  ProjectType.REACT_SCRIPTS,
+  ProjectType.REACT_NATIVE_WEB,
+  ProjectType.REACT_PROJECT,
+  ProjectType.WEBPACK_REACT,
+  ProjectType.NEXTJS,
+  ProjectType.VUE3,
+  ProjectType.ANGULAR,
+];
+
 const installStorybook = async <Project extends ProjectType>(
   projectType: Project,
   packageManager: JsPackageManager,
@@ -458,12 +469,16 @@ export async function doInitiate(options: CommandOptions): Promise<
     if (isInteractive) {
       selectedFeatures.add('test');
     }
+    if (newUser) {
+      selectedFeatures.add('onboarding');
+    }
   }
 
   const telemetryFeatures = {
     dev: true,
     docs: selectedFeatures.has('docs'),
     test: selectedFeatures.has('test'),
+    onboarding: selectedFeatures.has('onboarding'),
   };
 
   let projectType: ProjectType;
@@ -580,6 +595,11 @@ export async function doInitiate(options: CommandOptions): Promise<
       }
     }
   }
+
+  if (selectedFeatures.has('onboarding') && !ONBOARDING_PROJECT_TYPES.includes(projectType)) {
+    selectedFeatures.delete('onboarding');
+  }
+
   // Update the options object with the selected features before passing it down to the generator
   options.features = Array.from(selectedFeatures);
 

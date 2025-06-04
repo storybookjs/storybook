@@ -80,7 +80,7 @@ const DEFAULT_BOXEN_STYLE: Options = {
 } as const;
 
 /** Glob pattern for finding Storybook directories */
-const STORYBOOK_DIR_PATTERN = '**/.storybook';
+const STORYBOOK_DIR_PATTERN = ['**/.storybook', '**/.rnstorybook'];
 
 /** Default fallback version when none is found */
 const DEFAULT_FALLBACK_VERSION = '0.0.0';

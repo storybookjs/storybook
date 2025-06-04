@@ -7,7 +7,7 @@ import { prompt } from 'storybook/internal/node-logger';
 import { type CommonOptions, type ExecaChildProcess, execa, execaCommandSync } from 'execa';
 import { findUpMultipleSync, findUpSync } from 'find-up';
 // eslint-disable-next-line depend/ban-dependencies
-import { globbySync } from 'globby';
+import { globSync } from 'glob';
 import picocolors from 'picocolors';
 import { gt, satisfies } from 'semver';
 import invariant from 'tiny-invariant';
@@ -693,10 +693,10 @@ export abstract class JsPackageManager {
 
     // 1. Find all package.json files starting from the project root
     const projectRoot = getProjectRoot();
-    const allPackageJsonFiles = globbySync('**/package.json', {
+    const allPackageJsonFiles = globSync('**/package.json', {
       cwd: projectRoot,
       absolute: true,
-      gitignore: true,
+      ignore: ['**/node_modules/**', '**/dist/**'],
     });
 
     // 2. Only keep the ones that are parents of at least one of the storiesPaths

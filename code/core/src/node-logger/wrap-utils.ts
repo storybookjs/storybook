@@ -106,11 +106,7 @@ export function wrapTextForClack(text: string, width?: number): string {
   const contentWidth = Math.max(terminalWidth - 8, 40);
 
   const protectedText = protectUrls(text, { maxLineWidth: contentWidth });
-  return wrapAnsi(protectedText, contentWidth, {
-    hard: true,
-    trim: false,
-    wordWrap: true,
-  });
+  return wrapAnsi(protectedText, contentWidth);
 }
 
 // Export additional utilities that might be useful
@@ -140,11 +136,7 @@ export function wrapTextForClackHint(text: string, width?: number, label?: strin
   // First, try wrapping with the continuation line width for optimal wrapping
   // Apply URL protection to prevent URLs from being broken across lines
   const protectedText = protectUrls(text, { maxLineWidth: continuationLineWidth });
-  const initialWrap = wrapAnsi(protectedText, continuationLineWidth, {
-    hard: true,
-    trim: false,
-    wordWrap: true,
-  });
+  const initialWrap = wrapAnsi(protectedText, continuationLineWidth);
 
   const lines = initialWrap.split('\n');
 
@@ -182,11 +174,7 @@ export function wrapTextForClackHint(text: string, width?: number, label?: strin
       const protectedRemainder = protectUrls(remainingPart.trim(), {
         maxLineWidth: continuationLineWidth,
       });
-      const wrappedRemainder = wrapAnsi(protectedRemainder, continuationLineWidth, {
-        hard: true,
-        trim: false,
-        wordWrap: true,
-      });
+      const wrappedRemainder = wrapAnsi(protectedRemainder, continuationLineWidth);
       finalLines = finalLines.concat(wrappedRemainder.split('\n'));
     }
 

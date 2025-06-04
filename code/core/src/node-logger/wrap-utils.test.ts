@@ -119,23 +119,6 @@ describe('wrap-utils', () => {
       expect(result.split('\n').length).toBeGreaterThan(1);
     });
 
-    it('should use calculated terminal width when width parameter is omitted', () => {
-      const text = 'Test text for default width calculation';
-      const result = wrapTextForClack(text);
-
-      // For short text, should remain unchanged
-      expect(result).toBe(text);
-
-      // For long text, should wrap based on terminal width (80 - 8 = 72)
-      const longText = 'A'.repeat(100);
-      const longResult = wrapTextForClack(longText);
-      const lines = longResult.split('\n');
-
-      lines.forEach((line) => {
-        expect(getVisibleLength(line)).toBeLessThanOrEqual(72);
-      });
-    });
-
     it('should handle empty text gracefully', () => {
       const result = wrapTextForClack('');
       expect(result).toBe('');

@@ -94,7 +94,7 @@ const enhanceContext: LoaderFunction = async (context) => {
   // which will throw an error in react native for example.
   if (globalThis.window?.navigator?.clipboard) {
     context.userEvent = instrument(
-      { userEvent: uninstrumentedUserEvent.setup() },
+      { userEvent: uninstrumentedUserEvent.setup({ writeToClipboard: true }) },
       { intercept: true }
     ).userEvent;
 

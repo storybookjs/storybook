@@ -20,7 +20,7 @@ function ThemedLink(props: LinkProps & AnchorHTMLAttributes<HTMLAnchorElement>) 
 }
 
 async function click(target: Element, button: string, modifier?: string) {
-  const user = userEvent.setup();
+  const user = userEvent.setup({ writeToClipboard: true });
   if (modifier) {
     // Trailing > means to leave it pressed
     await user.keyboard(`{${modifier}>}`);

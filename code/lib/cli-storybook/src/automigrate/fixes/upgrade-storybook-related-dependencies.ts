@@ -31,6 +31,8 @@ async function getLatestVersions(
   );
 }
 
+const RELATED_PACKAGES_TO_UPGRADE = ['@chromatic-com/playwright', '@chromatic-com/cypress'];
+
 /**
  * Is the user upgrading to the `latest` version of Storybook? Let's try to pull along some of the
  * storybook related dependencies to `latest` as well!
@@ -55,7 +57,7 @@ export const upgradeStorybookRelatedDependencies = {
 
     const allDependencies = (await packageManager.getAllDependencies()) as Record<string, string>;
     const storybookDependencies = Object.keys(allDependencies)
-      .filter((dep) => dep.includes('storybook'))
+      .filter((dep) => dep.includes('storybook') || RELATED_PACKAGES_TO_UPGRADE.includes(dep))
       .filter((dep) => !isCorePackage(dep) && !isSatelliteAddon(dep));
     const incompatibleDependencies = analyzedPackages
       .filter((pkg) => pkg.hasIncompatibleDependencies)

@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 
 import { writeConfig, writeCsf } from 'storybook/internal/csf-tools';
+import { logger } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
@@ -15,8 +16,6 @@ interface A11yOptions {
   storyFilesToUpdate: string[];
   previewFileToUpdate: string | undefined;
 }
-
-const logger = console;
 
 export const addonA11yParameters: Fix<A11yOptions> = {
   id: 'addon-a11y-parameters',
@@ -88,7 +87,7 @@ export const addonA11yParameters: Fix<A11yOptions> = {
             errors.push({ file: previewFileToUpdate, error: error as Error });
           }
         } else {
-          logger.log('Would have updated', code.fileName);
+          logger.log(`Would have updated ${code.fileName}`);
         }
       }
     }
@@ -107,7 +106,7 @@ export const addonA11yParameters: Fix<A11yOptions> = {
               if (!dryRun) {
                 await writeCsf(code, file);
               } else {
-                logger.log('Would have updated', file);
+                logger.log(`Would have updated ${file}`);
               }
             }
           } catch (error) {

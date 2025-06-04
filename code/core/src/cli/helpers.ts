@@ -10,6 +10,7 @@ import {
   getProjectRoot,
 } from 'storybook/internal/common';
 import { versions as storybookMonorepoPackages } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 import type { SupportedFrameworks, SupportedRenderers } from 'storybook/internal/types';
 
 import { findUpSync } from 'find-up';
@@ -20,8 +21,6 @@ import invariant from 'tiny-invariant';
 
 import { getRendererDir } from './dirs';
 import { CommunityBuilder, CoreBuilder, SupportedLanguage } from './project_types';
-
-const logger = console;
 
 export function readFileAsJson(jsonPath: string, allowComments?: boolean) {
   const filePath = resolve(jsonPath);

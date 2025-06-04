@@ -2,7 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 
 import { type JsPackageManager } from 'storybook/internal/common';
 import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
-import { prompt } from 'storybook/internal/node-logger';
+import { logger, prompt } from 'storybook/internal/node-logger';
 
 import commentJson from 'comment-json';
 import detectIndent from 'detect-indent';
@@ -203,6 +203,7 @@ export async function configureEslintPlugin({
 }) {
   if (eslintConfigFile) {
     if (eslintConfigFile.endsWith('json')) {
+      logger.debug(`Detected JSON config at ${eslintConfigFile}`);
       const eslintFileContents = await readFile(eslintConfigFile, { encoding: 'utf8' });
       const eslintConfig = commentJson.parse(eslintFileContents) as {
         extends?: string[];
@@ -222,7 +223,7 @@ export async function configureEslintPlugin({
       await writeFile(eslintConfigFile, commentJson.stringify(eslintConfig, null, spaces));
     } else {
       if (isFlatConfig) {
-        prompt.debug(`Detected flat config at ${eslintConfigFile}`);
+        logger.debug(`Detected flat config at ${eslintConfigFile}`);
         const code = await readFile(eslintConfigFile, { encoding: 'utf8' });
         const output = await configureFlatConfig(code);
         await writeFile(eslintConfigFile, output);
@@ -240,7 +241,7 @@ export async function configureEslintPlugin({
       }
     }
   } else {
-    prompt.debug(`Detected JSON config at ${eslintConfigFile}`);
+    logger.debug('No ESLint config file found, configuring in package.json instead');
     const { packageJson } = packageManager.primaryPackageJson;
     const existingExtends = normalizeExtends(packageJson.eslintConfig?.extends).filter(Boolean);
 

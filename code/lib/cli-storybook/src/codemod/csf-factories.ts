@@ -1,5 +1,5 @@
 import { type JsPackageManager, syncStorybookAddons } from 'storybook/internal/common';
-import { prompt } from 'storybook/internal/node-logger';
+import { logger, prompt } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
@@ -9,8 +9,6 @@ import { getFrameworkPackageName } from '../automigrate/helpers/mainConfigFile';
 import type { CommandFix } from '../automigrate/types';
 import { configToCsfFactory } from './helpers/config-to-csf-factory';
 import { storyToCsfFactory } from './helpers/story-to-csf-factory';
-
-export const logger = console;
 
 async function runStoriesCodemod(options: {
   dryRun: boolean | undefined;
@@ -63,7 +61,7 @@ export const csfFactories: CommandFix = {
     let useSubPathImports = true;
     if (!process.env.IN_STORYBOOK_SANDBOX) {
       // prompt whether the user wants to use imports map
-      prompt.logBox(dedent`
+      logger.logBox(dedent`
         The CSF factories format benefits from subpath imports (the imports property in your \`package.json\`), which is a node standard for module resolution. This makes it more convenient to import the preview config in your story files.
       
         However, please note that this might not work if you have an outdated tsconfig, use custom paths, or have type alias plugins configured in your project. You can always rerun this codemod and select another option to update your code later.
@@ -120,7 +118,7 @@ export const csfFactories: CommandFix = {
 
     await syncStorybookAddons(mainConfig, previewConfigPath!);
 
-    prompt.logBox(
+    logger.logBox(
       dedent`
           You can now run Storybook with the new CSF factories format.
           

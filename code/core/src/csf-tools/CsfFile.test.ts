@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import { logger } from 'storybook/internal/node-logger';
+
 import yaml from 'js-yaml';
 import { dedent } from 'ts-dedent';
 
@@ -1306,7 +1308,7 @@ describe('CsfFile', () => {
     });
 
     it('Object export with storyName', () => {
-      const consoleWarnMock = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const consoleWarnMock = vi.spyOn(logger, 'warn').mockImplementation(() => {});
 
       parse(
         dedent`

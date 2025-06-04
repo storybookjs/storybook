@@ -1,8 +1,8 @@
 import * as clack from '@clack/prompts';
 import boxen from 'boxen';
 
+import { isClackEnabled } from '../prompts/prompt-config';
 import { logTracker } from './log-tracker';
-import { isClackEnabled } from './prompt-config';
 
 const LOG_FUNCTIONS = {
   log: () => (isClackEnabled() ? clack.log.message : console.log),
@@ -149,4 +149,9 @@ export const outro = (message: string) => {
 export const step = (message: string) => {
   logTracker.addLog('info', message);
   LOG_FUNCTIONS.step()(message);
+};
+
+export const info = (message: string) => {
+  logTracker.addLog('info', message);
+  LOG_FUNCTIONS.log()(message);
 };

@@ -2,8 +2,10 @@
 import npmLog from 'npmlog';
 import prettyTime from 'pretty-hrtime';
 
+import * as newLogger from './logger/logger';
+
 export { prompt } from './prompts';
-export { logTracker } from './prompts/log-tracker';
+export { logTracker } from './logger/log-tracker';
 
 // The default is stderr, which can cause some tools (like rush.js) to think
 // there are issues with the build: https://github.com/storybookjs/storybook/issues/14621
@@ -40,32 +42,29 @@ export const colors = {
 };
 
 export const logger = {
-  verbose: (message: string): void => npmLog.verbose('', message),
+  ...newLogger,
+  verbose: (message: string): void => newLogger.debug(message),
   info: (message: string): void => npmLog.info('', message),
-  plain: (message: string): void => console.log(message),
-  line: (count = 1): void => console.log(`${Array(count - 1).fill('\n')}`),
-  warn: (message: string): void => npmLog.warn('', message),
+  plain: (message: string): void => newLogger.log(message),
+  line: (count = 1): void => newLogger.log(`${Array(count - 1).fill('\n')}`),
+  warn: (message: string): void => newLogger.warn(message),
   trace: ({ message, time }: { message: string; time: [number, number] }): void =>
-    npmLog.info('', `${message} (${colors.purple(prettyTime(time))})`),
-  setLevel: (level = 'info'): void => {
+    newLogger.debug(`${message} (${colors.purple(prettyTime(time))})`),
+  setLevel: (level: newLogger.LogLevel = 'info'): void => {
     npmLog.level = level;
+    newLogger.setLogLevel(level);
   },
   error: (message: Error | string): void => {
-    if (npmLog.levels[npmLog.level] < npmLog.levels.error) {
-      let msg: string;
-
-      if (message instanceof Error && message.stack) {
-        msg = message.stack.toString();
-      } else {
-        msg = message.toString();
-      }
-
-      console.log(
-        msg
-          .replace(message.toString(), colors.red(message.toString()))
-          .replaceAll(process.cwd(), '.')
-      );
+    let msg: string;
+    if (message instanceof Error && message.stack) {
+      msg = message.stack.toString();
+    } else {
+      msg = message.toString();
     }
+
+    newLogger.error(
+      msg.replace(message.toString(), colors.red(message.toString())).replaceAll(process.cwd(), '.')
+    );
   },
 };
 

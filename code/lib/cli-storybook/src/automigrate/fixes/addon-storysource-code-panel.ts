@@ -1,4 +1,5 @@
 import { getAddonNames, removeAddon } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
@@ -11,8 +12,6 @@ export interface StorysourceOptions {
   hasStorysource: boolean;
   hasDocs: boolean;
 }
-
-const logger = console;
 
 export const addonStorysourceCodePanel: Fix<StorysourceOptions> = {
   id: 'addon-storysource-code-panel',

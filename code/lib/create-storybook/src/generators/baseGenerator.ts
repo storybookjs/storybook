@@ -1,6 +1,8 @@
 import { mkdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
+import { logger } from 'storybook/internal/node-logger';
+
 // eslint-disable-next-line depend/ban-dependencies
 import ora from 'ora';
 import invariant from 'tiny-invariant';
@@ -26,8 +28,6 @@ import type { SupportedFrameworks } from '../../../../core/src/types/modules/fra
 import type { SupportedRenderers } from '../../../../core/src/types/modules/renderers';
 import { configureMain, configurePreview } from './configure';
 import type { FrameworkOptions, GeneratorOptions } from './types';
-
-const logger = console;
 
 const defaultOptions: FrameworkOptions = {
   extraPackages: [],
@@ -343,7 +343,7 @@ export async function baseGenerator(
       !installedDependencies.has(getPackageDetails(packageToInstall as string)[0])
   );
 
-  logger.log();
+  logger.log('');
 
   const versionedPackagesSpinner = ora({
     indent: 2,

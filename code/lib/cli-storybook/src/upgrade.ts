@@ -1,7 +1,7 @@
 import type { PackageManagerName } from 'storybook/internal/common';
 import { JsPackageManagerFactory, isCorePackage } from 'storybook/internal/common';
 import { withTelemetry } from 'storybook/internal/core-server';
-import { logTracker, prompt } from 'storybook/internal/node-logger';
+import { logTracker, logger, prompt } from 'storybook/internal/node-logger';
 import {
   UpgradeStorybookToLowerVersionError,
   UpgradeStorybookUnknownCurrentVersionError,
@@ -74,15 +74,15 @@ export const checkVersionConsistency = () => {
     .filter((item): item is NonNullable<typeof item> => !!item)
     .filter((pkg) => isCorePackage(pkg.package));
   if (!storybookPackages.length) {
-    prompt.warn('No storybook core packages found.');
-    prompt.warn(`'npm ls | grep storybook' can show if multiple versions are installed.`);
+    logger.warn('No storybook core packages found.');
+    logger.warn(`'npm ls | grep storybook' can show if multiple versions are installed.`);
     return;
   }
   storybookPackages.sort((a, b) => semver.rcompare(a.version, b.version));
   const latestVersion = storybookPackages[0].version;
   const outdated = storybookPackages.filter((pkg) => pkg.version !== latestVersion);
   if (outdated.length > 0) {
-    prompt.warn(
+    logger.warn(
       dedent`Found ${outdated.length} outdated packages (relative to '${formatPackage(
         storybookPackages[0]
       )}')
@@ -96,7 +96,7 @@ export const checkVersionConsistency = () => {
     if (semver.gte(latestVersion, minVersion)) {
       const deprecated = storybookPackages.filter((pkg) => deprecations.includes(pkg.package));
       if (deprecated.length > 0) {
-        prompt.warn(
+        logger.warn(
           dedent`Found ${deprecated.length} deprecated packages since ${minVersion}
           See ${url}
           ${warnPackages(deprecated)}`
@@ -104,7 +104,7 @@ export const checkVersionConsistency = () => {
       }
     }
   });
-  prompt.debug('End of version consistency check');
+  logger.debug('End of version consistency check');
 };
 
 export type UpgradeOptions = {
@@ -204,23 +204,23 @@ function logUpgradeResults(
       const projectList = successfulProjects
         .map((dir) => picocolors.cyan(shortenPath(dir)))
         .join(', ');
-      prompt.log(`\n${picocolors.green('✅ Successfully upgraded:')} ${projectList}`);
+      logger.log(`\n${picocolors.green('✅ Successfully upgraded:')} ${projectList}`);
     }
 
     const projectList = failedProjects.map((dir) => picocolors.cyan(shortenPath(dir))).join(', ');
-    prompt.log(`\n${picocolors.red('❌ Failed to upgrade:')} ${projectList}`);
+    logger.log(`\n${picocolors.red('❌ Failed to upgrade:')} ${projectList}`);
 
     if (projectsWithNoFixes.length > 0) {
       const projectList = projectsWithNoFixes
         .map((dir) => picocolors.cyan(shortenPath(dir)))
         .join(', ');
-      prompt.log(`\n${picocolors.yellow('ℹ️  No changes needed:')} ${projectList}`);
+      logger.log(`\n${picocolors.yellow('ℹ️  No changes needed:')} ${projectList}`);
     }
   } else {
     if (Object.values(doctorResults).every((result) => result.status === 'healthy')) {
-      prompt.log(`\n${picocolors.green('Your project(s) have been upgraded successfully! 🎉')}`);
+      logger.log(`\n${picocolors.green('Your project(s) have been upgraded successfully! 🎉')}`);
     } else {
-      prompt.log(
+      logger.log(
         `\n${picocolors.yellow('Your project(s) have been upgraded successfully, but some issues were found which need your attention, please check Storybook doctor logs above.')}`
       );
     }
@@ -274,7 +274,7 @@ async function sendMultiUpgradeTelemetry(options: MultiUpgradeTelemetryOptions) 
     });
   } catch (error) {
     // Silently handle telemetry errors to avoid disrupting the upgrade process
-    prompt.debug(`Failed to send multi-upgrade telemetry: ${String(error)}`);
+    logger.debug(`Failed to send multi-upgrade telemetry: ${String(error)}`);
   }
 }
 
@@ -283,7 +283,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     'upgrade',
     { cliOptions: { ...options, configDir: options.configDir?.[0] } },
     async () => {
-      prompt.intro('Storybook Upgrade');
+      logger.intro('Storybook Upgrade');
       // TODO: telemetry for upgrade start
       const projectsResult = await getProjects(options);
       if (projectsResult === undefined || projectsResult.selectedProjects.length === 0) {
@@ -298,7 +298,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
 
       // Set up signal handling for interruptions
       const handleInterruption = async () => {
-        prompt.log('\n\nUpgrade interrupted by user.');
+        logger.log('\n\nUpgrade interrupted by user.');
         await sendMultiUpgradeTelemetry({
           allProjects,
           selectedProjects: storybookProjects,
@@ -315,7 +315,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       try {
         // Handle autoblockers
         const hasBlockers = processAutoblockerResults(storybookProjects, (message) => {
-          prompt.error(dedent`${message}`);
+          logger.error(dedent`${message}`);
         });
 
         if (hasBlockers) {
@@ -344,7 +344,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
           try {
             const loggedPaths: string[] = [];
             for (const project of storybookProjects) {
-              prompt.debug(
+              logger.debug(
                 `Updating dependencies in ${picocolors.cyan(shortenPath(project.configDir))}...`
               );
               const packageJsonPaths = project.packageManager.packageJsonPaths.map(shortenPath);
@@ -387,7 +387,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
           mainConfig: project.mainConfig,
         }));
 
-        prompt.step('🩺 Checking the health of your project(s)..');
+        logger.step('🩺 Checking the health of your project(s)..');
         doctorResults = await runMultiProjectDoctor(doctorProjects);
         const hasIssues = displayDoctorResults(doctorResults);
         if (hasIssues) {

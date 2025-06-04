@@ -21,9 +21,13 @@ export const getActualPackageVersion = async (packageName: string) => {
 };
 
 export const getActualPackageJson = async (packageName: string) => {
-  const resolvedPackageJson = require.resolve(join(packageName, 'package.json'), {
-    paths: [process.cwd()],
-  });
-  const packageJson = JSON.parse(await readFile(resolvedPackageJson, { encoding: 'utf8' }));
-  return packageJson;
+  try {
+    const resolvedPackageJson = require.resolve(join(packageName, 'package.json'), {
+      paths: [process.cwd()],
+    });
+    const packageJson = JSON.parse(await readFile(resolvedPackageJson, { encoding: 'utf8' }));
+    return packageJson;
+  } catch (err) {
+    return null;
+  }
 };

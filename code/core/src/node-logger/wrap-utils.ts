@@ -1,4 +1,6 @@
 import { S_BAR } from '@clack/prompts';
+// eslint-disable-next-line depend/ban-dependencies
+import { execaSync } from 'execa';
 import { cyan, dim, reset, yellow } from 'picocolors';
 import wrapAnsi from 'wrap-ansi';
 
@@ -29,6 +31,44 @@ function getVisibleLength(str: string): number {
   return stripAnsi(str).length;
 }
 
+function getEnvFromTerminal(key: string): string {
+  return execaSync('echo', [`$${key}`], { shell: true }).stdout.trim();
+}
+
+/**
+ * Detects if the current terminal supports OSC 8 hyperlinks Based on terminal identification and
+ * known capabilities
+ */
+function supportsHyperlinks(): boolean {
+  try {
+    // Check terminal program
+    const termProgram = getEnvFromTerminal('TERM_PROGRAM');
+    const termProgramVersion = getEnvFromTerminal('TERM_PROGRAM_VERSION');
+
+    switch (termProgram) {
+      case 'iTerm.app':
+        // iTerm2 supports hyperlinks in version 3.1.0+
+        if (termProgramVersion.trim()) {
+          const version = termProgramVersion.trim().split('.').map(Number);
+          return version[0] > 3 || (version[0] === 3 && version[1] >= 1);
+        }
+        return true; // Assume recent version
+
+      case 'Apple_Terminal':
+        // macOS Terminal.app doesn't support hyperlinks
+        return false;
+
+      default:
+        // Most other modern terminals support hyperlinks
+        return true;
+    }
+  } catch (error) {
+    console.error(error);
+    // If we can't execute shell commands, fall back to conservative default
+    return false;
+  }
+}
+
 /** Detects URLs in text and prevents them from being broken across lines */
 export function protectUrls(
   text: string,
@@ -38,7 +78,14 @@ export function protectUrls(
   const defaultMaxUrlLength = Math.floor(getTerminalWidth() * 0.8);
   const maxLineWidth = options?.maxLineWidth ?? getTerminalWidth();
 
+  // Determine if we should use hyperlinks
+  const useHyperlinks = supportsHyperlinks();
+
   return text.replace(URL_REGEX, (url: string, offset: number) => {
+    if (!useHyperlinks) {
+      return yellow(url);
+    }
+
     // Calculate how much space is available for this URL on its current line
     const textBeforeUrl = text.substring(0, offset);
     const lastNewlineIndex = textBeforeUrl.lastIndexOf('\n');
@@ -99,18 +146,25 @@ function splitTextPreservingUrls(text: string): string[] {
   return parts;
 }
 
+const MAX_OPTIMAL_WIDTH = 80;
+
+function getOptimalWidth(width: number): number {
+  return Math.min(width, MAX_OPTIMAL_WIDTH);
+}
+
 export function wrapTextForClack(text: string, width?: number): string {
   const terminalWidth = width || getTerminalWidth();
   // Reserve space for Clack's visual formatting (prefix, borders, etc.)
-  // Clack typically uses about 4-8 characters for its formatting
-  const contentWidth = Math.max(terminalWidth - 8, 40);
+  // Clack typically uses about 4-10 characters for its formatting
+  const contentWidth = Math.max(terminalWidth - 10, 40);
+  const maxOptimalWidth = getOptimalWidth(contentWidth);
 
-  const protectedText = protectUrls(text, { maxLineWidth: contentWidth });
-  return wrapAnsi(protectedText, contentWidth);
+  const protectedText = protectUrls(text, { maxLineWidth: maxOptimalWidth });
+  return wrapAnsi(protectedText, maxOptimalWidth);
 }
 
 // Export additional utilities that might be useful
-export { getTerminalWidth };
+export { getTerminalWidth, supportsHyperlinks };
 
 /**
  * Specialized wrapper for hint text that adds stroke characters (│) to continuation lines to
@@ -126,12 +180,15 @@ export function wrapTextForClackHint(text: string, width?: number, label?: strin
   // Additional space for the stroke character, padding, checkbox, and label
   // Format: "│  ◼ labelText (hint text..."
   const reservedSpaceFirstLine = 8 + labelWidth; // 8 chars for "│  ◼ " + "(" + some padding
-  const firstLineWidth = Math.max(terminalWidth - reservedSpaceFirstLine, 30);
+  const firstLineWidth = Math.min(
+    MAX_OPTIMAL_WIDTH - reservedSpaceFirstLine,
+    Math.max(terminalWidth - reservedSpaceFirstLine, 30)
+  );
 
   // For continuation lines, we only need to account for the indentation
   // Format: "│    continuation text..."
   const indentSpaces = 3 + 1; // Total chars before hint text starts: "│  " + "◼ "
-  const continuationLineWidth = Math.max(terminalWidth - indentSpaces, 30);
+  const continuationLineWidth = getOptimalWidth(Math.max(terminalWidth - indentSpaces, 30));
 
   // First, try wrapping with the continuation line width for optimal wrapping
   // Apply URL protection to prevent URLs from being broken across lines

@@ -132,13 +132,7 @@ export const consolidatedImports: Fix<ConsolidatedOptions> = {
   prompt: () => {
     return "We've detected Storybook packages that have been renamed or consolidated. We'll update these packages by scanning your codebase and updating any imports from these packages.";
   },
-  run: async ({
-    dryRun = false,
-    packageManager,
-    storiesPaths,
-    mainConfigPath,
-    previewConfigPath,
-  }) => {
+  run: async ({ dryRun = false, packageManager, storiesPaths, configDir }) => {
     const errors: Array<{ file: string; error: Error }> = [];
 
     const packageJsonErrors = await transformPackageJsonFiles(
@@ -147,8 +141,12 @@ export const consolidatedImports: Fix<ConsolidatedOptions> = {
     );
     errors.push(...packageJsonErrors);
 
+    // eslint-disable-next-line depend/ban-dependencies
+    const { globby } = await import('globby');
+    const configFiles = await globby([`${configDir}/**/*`]);
+
     const importErrors = await transformImportFiles(
-      [...storiesPaths, mainConfigPath, previewConfigPath].filter(Boolean) as string[],
+      [...storiesPaths, ...configFiles].filter(Boolean) as string[],
       consolidatedPackages,
       !!dryRun
     );

@@ -154,7 +154,7 @@ export const rendererToFramework: Fix<MigrationResult> = {
   },
 
   async run(options: RunOptions<MigrationResult>) {
-    const { result, dryRun = false, storiesPaths, previewConfigPath, mainConfigPath } = options;
+    const { result, dryRun = false, storiesPaths, configDir } = options;
 
     for (const selectedFramework of result.frameworks) {
       const frameworkName = frameworkPackages[selectedFramework];
@@ -177,8 +177,12 @@ export const rendererToFramework: Fix<MigrationResult> = {
 
       logger.debug(`\nMigrating ${rendererPackage} to ${selectedFramework}`);
 
+      // eslint-disable-next-line depend/ban-dependencies
+      const { globby } = await import('globby');
+      const configFiles = await globby([`${configDir}/**/*`]);
+
       await transformSourceFiles(
-        [...storiesPaths, previewConfigPath, mainConfigPath].filter(Boolean) as string[],
+        [...storiesPaths, ...configFiles].filter(Boolean) as string[],
         rendererPackage,
         selectedFramework,
         dryRun

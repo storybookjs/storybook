@@ -1,7 +1,7 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
 import type { JsPackageManager } from 'storybook/internal/common';
 import { versions as storybookCorePackages, versions } from 'storybook/internal/common';
-import { prompt } from 'storybook/internal/node-logger';
+import { logger } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
 import semver from 'semver';
@@ -90,7 +90,7 @@ export const checkPackageCompatibility = async (
     };
   } catch (err) {
     if (!skipErrors) {
-      prompt.log(
+      logger.log(
         `Error checking compatibility for ${dependency}, please report an issue:\n` + String(err)
       );
     }

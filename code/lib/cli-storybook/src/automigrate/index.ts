@@ -1,5 +1,5 @@
 import { type JsPackageManager } from 'storybook/internal/common';
-import { logTracker, prompt } from 'storybook/internal/node-logger';
+import { logTracker, logger, prompt } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
@@ -28,14 +28,14 @@ const logAvailableMigrations = () => {
     .map((x) => `- ${x}`)
     .join('\n');
 
-  prompt.log(dedent`
+  logger.log(dedent`
     The following migrations are available:
     ${availableFixes}
   `);
 };
 
 export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
-  prompt.debug('Extracting storybook data...');
+  logger.debug('Extracting storybook data...');
   const {
     mainConfig,
     mainConfigPath,
@@ -116,7 +116,7 @@ export const automigrate = async ({
   // if an on-command migration is triggered, run it and bail
   const commandFix = commandFixes.find((f) => f.id === fixId);
   if (commandFix) {
-    prompt.log(`🔎 Running migration ${picocolors.magenta(fixId)}..`);
+    logger.log(`🔎 Running migration ${picocolors.magenta(fixId)}..`);
 
     await commandFix.run({
       mainConfigPath,
@@ -150,12 +150,12 @@ export const automigrate = async ({
   const fixes: Fix[] = fixId ? selectedFixes.filter((f) => f.id === fixId) : selectedFixes;
 
   if (fixId && fixes.length === 0) {
-    prompt.log(`📭 No migrations found for ${picocolors.magenta(fixId)}.`);
+    logger.log(`📭 No migrations found for ${picocolors.magenta(fixId)}.`);
     logAvailableMigrations();
     return null;
   }
 
-  prompt.log('🔎 checking possible migrations..');
+  logger.log('🔎 checking possible migrations..');
 
   const { fixResults, fixSummary, preCheckFailure } = await runFixes({
     fixes,
@@ -184,12 +184,12 @@ export const automigrate = async ({
   }
 
   if (!hideMigrationSummary) {
-    prompt.log('');
+    logger.log('');
     logMigrationSummary({
       fixResults,
       fixSummary,
     });
-    prompt.log('');
+    logger.log('');
   }
 
   return { fixResults, preCheckFailure };
@@ -241,7 +241,7 @@ export async function runFixes({
 
     try {
       if (shouldRunFix(f, beforeVersion, storybookVersion, !!isUpgrade)) {
-        prompt.debug(`Running ${picocolors.cyan(f.id)} migration checks`);
+        logger.debug(`Running ${picocolors.cyan(f.id)} migration checks`);
         result = await f.check({
           packageManager,
           configDir,
@@ -252,12 +252,12 @@ export async function runFixes({
           mainConfigPath,
           storiesPaths,
         });
-        prompt.debug(`End of ${picocolors.cyan(f.id)} migration checks`);
+        logger.debug(`End of ${picocolors.cyan(f.id)} migration checks`);
       }
     } catch (error) {
-      prompt.warn(`⚠️  failed to check fix ${picocolors.bold(f.id)}`);
+      logger.warn(`⚠️  failed to check fix ${picocolors.bold(f.id)}`);
       if (error instanceof Error) {
-        prompt.error(`\n${error.stack}`);
+        logger.error(`\n${error.stack}`);
         fixSummary.failed[f.id] = error.message;
       }
       fixResults[f.id] = FixStatus.CHECK_FAILED;
@@ -267,7 +267,7 @@ export async function runFixes({
       const promptType: Prompt =
         typeof f.promptType === 'function' ? await f.promptType(result) : (f.promptType ?? 'auto');
 
-      prompt.log(`🔎 found a '${picocolors.cyan(f.id)}' migration:`);
+      logger.log(`🔎 found a '${picocolors.cyan(f.id)}' migration:`);
 
       const getTitle = () => {
         switch (promptType) {
@@ -284,7 +284,7 @@ export async function runFixes({
         title: `${getTitle()}: ${picocolors.cyan(f.id)}`,
       });
 
-      prompt.logBox(f.prompt(result));
+      logger.logBox(f.prompt(result));
       // currentTaskLogger.message(f.prompt(result));
 
       let runAnswer: { fix: boolean } | undefined;
@@ -302,7 +302,7 @@ export async function runFixes({
           fixResults[f.id] = FixStatus.MANUAL_SUCCEEDED;
           fixSummary.manual.push(f.id);
 
-          prompt.log('');
+          logger.log('');
           const shouldContinue = await prompt.confirm(
             {
               message:
@@ -370,7 +370,7 @@ export async function runFixes({
               storybookVersion,
               storiesPaths,
             });
-            prompt.log(`✅ ran ${picocolors.cyan(f.id)} migration`);
+            logger.log(`✅ ran ${picocolors.cyan(f.id)} migration`);
 
             fixResults[f.id] = FixStatus.SUCCEEDED;
             fixSummary.succeeded.push(f.id);

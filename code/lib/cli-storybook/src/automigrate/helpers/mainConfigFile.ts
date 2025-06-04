@@ -13,14 +13,13 @@ import type { PackageManagerName } from 'storybook/internal/common';
 import { frameworkToRenderer, getCoercedStorybookVersion } from 'storybook/internal/common';
 import type { ConfigFile } from 'storybook/internal/csf-tools';
 import { readConfig, writeConfig as writeConfigFile } from 'storybook/internal/csf-tools';
+import { logger } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 import { getStoriesPathsFromConfig } from '../../util';
-
-const logger = console;
 
 /**
  * Given a Storybook configuration object, retrieves the package name or file path of the framework.
@@ -210,13 +209,13 @@ export const updateMainConfig = async (
       await writeConfigFile(main);
     }
   } catch (e) {
-    logger.info(
+    logger.log(
       `❌ The migration failed to update your ${picocolors.blue(
         mainConfigPath
       )} on your behalf because of the following error:
         ${e}\n`
     );
-    logger.info(
+    logger.log(
       `⚠️ Storybook automigrations are based on AST parsing and it's possible that your ${picocolors.blue(
         mainConfigPath
       )} file contains a non-standard format (e.g. your export is not an object) or that there was an error when parsing dynamic values (e.g. "require" calls, or usage of environment variables). When your main config is non-standard, automigrations are unfortunately not possible. Please follow the instructions given previously and follow the documentation to make the updates manually.`

@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 
-import { prompt } from 'storybook/internal/node-logger';
+import { logger, prompt } from 'storybook/internal/node-logger';
 
 // eslint-disable-next-line depend/ban-dependencies
 import { type CommonOptions, type ExecaChildProcess, execa, execaCommandSync } from 'execa';
@@ -245,8 +245,8 @@ export abstract class JsPackageManager {
           writeOutputToFile
         );
       } catch (e: any) {
-        prompt.error('\nAn error occurred while installing dependencies:');
-        prompt.log(e.message);
+        logger.error('\nAn error occurred while installing dependencies:');
+        logger.log(e.message);
         throw new HandledError(e);
       }
     }
@@ -288,7 +288,7 @@ export abstract class JsPackageManager {
           break;
         }
       } catch (e) {
-        prompt.warn(`Could not process ${pjPath} for dependency removal: ${String(e)}`);
+        logger.warn(`Could not process ${pjPath} for dependency removal: ${String(e)}`);
       }
     }
   }
@@ -367,11 +367,11 @@ export abstract class JsPackageManager {
       latest = await this.latestVersion(packageName, constraint);
     } catch (e) {
       if (current) {
-        prompt.warn(`\n     ${picocolors.yellow(String(e))}`);
+        logger.warn(`\n     ${picocolors.yellow(String(e))}`);
         return current;
       }
 
-      prompt.error(`\n     ${picocolors.red(String(e))}`);
+      logger.error(`\n     ${picocolors.red(String(e))}`);
       throw new HandledError(e);
     }
 

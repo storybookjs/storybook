@@ -1,4 +1,4 @@
-import { prompt } from 'storybook/internal/node-logger';
+import { logger } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
@@ -79,7 +79,7 @@ export function logMigrationSummary({
       ? 'Migration check ran with failures'
       : 'Migration check ran successfully';
 
-  return prompt.logBox(messages.filter(Boolean).join(segmentDivider), {
+  return logger.logBox(messages.filter(Boolean).join(segmentDivider), {
     title,
     borderColor: hasFailures ? 'red' : 'green',
   });

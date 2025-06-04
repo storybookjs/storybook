@@ -1,5 +1,5 @@
 import { JsPackageManager } from 'storybook/internal/common';
-import { logTracker, prompt } from 'storybook/internal/node-logger';
+import { logTracker, logger } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
@@ -71,9 +71,9 @@ export function displayDoctorResults(
 
   if (!hasAnyIssues) {
     if (projectCount === 1) {
-      prompt.log(`🥳 Your Storybook project looks good!`);
+      logger.log(`🥳 Your Storybook project looks good!`);
     } else {
-      prompt.log(`🥳 All ${projectCount} Storybook projects look good!`);
+      logger.log(`🥳 All ${projectCount} Storybook projects look good!`);
     }
     return false;
   }
@@ -84,17 +84,17 @@ export function displayDoctorResults(
     const projectName = picocolors.cyan(shortenPath(configDir) || '.');
 
     if (result.status === 'healthy') {
-      prompt.log(`✅ ${projectName}: No issues found`);
+      logger.log(`✅ ${projectName}: No issues found`);
     } else {
       const issueCount = Object.values(result.diagnostics).filter(
         (status) => status !== DiagnosticStatus.PASSED
       ).length;
       if (result.status === 'check_error') {
-        prompt.error(
+        logger.error(
           `${projectName}: ${issueCount} ${issueCount === 1 ? 'problem' : 'problems'} found`
         );
       } else {
-        prompt.warn(`${projectName}: ${issueCount} ${issueCount === 1 ? 'issue' : 'issues'} found`);
+        logger.warn(`${projectName}: ${issueCount} ${issueCount === 1 ? 'issue' : 'issues'} found`);
       }
 
       // Display each diagnostic issue
@@ -102,7 +102,7 @@ export function displayDoctorResults(
         if (status !== DiagnosticStatus.PASSED) {
           const message = result.messages[type as DiagnosticType];
           if (message) {
-            prompt.logBox(message, {
+            logger.logBox(message, {
               title: type.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
             });
           }
@@ -119,11 +119,11 @@ export function displayDoctorResults(
     ).length;
 
     if (errorCount > 0) {
-      prompt.error(
+      logger.error(
         `Found ${totalIssues} ${totalIssues === 1 ? 'issue' : 'issues'} across ${projectCount} projects`
       );
     } else {
-      prompt.warn(
+      logger.warn(
         `Found ${totalIssues} ${totalIssues === 1 ? 'issue' : 'issues'} across ${projectCount} projects`
       );
     }
@@ -142,19 +142,19 @@ export function displayDoctorResults(
         messageWithProjects += `\n\nAffected project: ${projectName}`;
       }
 
-      prompt.logBox(messageWithProjects, {
+      logger.logBox(messageWithProjects, {
         title: diagnostic.title,
       });
     });
   }
 
-  prompt.step('Storybook doctor is complete!');
+  logger.step('Storybook doctor is complete!');
 
   const commandMessage = `You can always recheck the health of your project(s) by running:\n${picocolors.cyan(
     'npx storybook doctor'
   )}`;
 
-  prompt.log(commandMessage);
+  logger.log(commandMessage);
 
   return true;
 }
@@ -183,7 +183,7 @@ export const doctor = async ({
   configDir: userSpecifiedConfigDir,
   packageManager: packageManagerName,
 }: DoctorOptions) => {
-  prompt.step('Checking the health of your Storybook..');
+  logger.step('Checking the health of your Storybook..');
 
   const diagnosticResults: DiagnosticResult[] = [];
 
@@ -390,7 +390,7 @@ export async function collectDoctorResultsByProject(
         messages,
       };
     } catch (error) {
-      prompt.error(`Failed to run doctor checks for project ${configDir}:\n${error}`);
+      logger.error(`Failed to run doctor checks for project ${configDir}:\n${error}`);
 
       // Mark as error state
       const diagnostics: Record<DiagnosticType, DiagnosticStatus> = {} as Record<

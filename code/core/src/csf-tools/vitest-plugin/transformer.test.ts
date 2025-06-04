@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getStoryTitle } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 
 import { type RawSourceMap, SourceMapConsumer } from 'source-map';
 
@@ -947,7 +948,7 @@ describe('transformer', () => {
   });
 
   describe('error handling', () => {
-    const warnSpy = vi.spyOn(console, 'warn');
+    const warnSpy = vi.spyOn(logger, 'warn');
     beforeEach(() => {
       vi.mocked(getStoryTitle).mockRestore();
       warnSpy.mockReset();

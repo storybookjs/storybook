@@ -2,7 +2,7 @@ import type { PackageJsonWithDepsAndDevDeps } from 'storybook/internal/common';
 import { JsPackageManager, normalizeStories } from 'storybook/internal/common';
 import { getProjectRoot, isSatelliteAddon, versions } from 'storybook/internal/common';
 import { StoryIndexGenerator, experimental_loadStorybook } from 'storybook/internal/core-server';
-import { prompt } from 'storybook/internal/node-logger';
+import { logger, prompt } from 'storybook/internal/node-logger';
 import {
   UpgradeStorybookToLowerVersionError,
   UpgradeStorybookUnknownCurrentVersionError,
@@ -221,7 +221,7 @@ const validateUpgradeCompatibility = (
  */
 export const findStorybookProjects = async (cwd: string = process.cwd()): Promise<string[]> => {
   try {
-    prompt.debug(`Finding Storybook projects...`);
+    logger.debug(`Finding Storybook projects...`);
     // Find all .storybook directories, accounting for custom config dirs later
     const storybookDirs = await globby(STORYBOOK_DIR_PATTERN, {
       cwd,
@@ -231,7 +231,7 @@ export const findStorybookProjects = async (cwd: string = process.cwd()): Promis
       onlyDirectories: true,
     });
 
-    prompt.debug(`Found ${storybookDirs.length} Storybook projects`);
+    logger.debug(`Found ${storybookDirs.length} Storybook projects`);
 
     if (storybookDirs.length === 0) {
       const answer = await prompt.text({
@@ -243,7 +243,7 @@ export const findStorybookProjects = async (cwd: string = process.cwd()): Promis
 
     return storybookDirs;
   } catch (error) {
-    prompt.error('Failed to find Storybook projects');
+    logger.error('Failed to find Storybook projects');
     throw error;
   }
 };
@@ -281,7 +281,7 @@ export const getInstalledStorybookVersion = async (
     const firstDependency = Object.entries(installations.dependencies)[0];
     return firstDependency?.[1]?.[0]?.version;
   } catch (error) {
-    prompt.warn('Failed to get installed Storybook version');
+    logger.warn('Failed to get installed Storybook version');
     return undefined;
   }
 };
@@ -307,7 +307,7 @@ const processProject = async ({
 }): Promise<CollectProjectsResult> => {
   try {
     onScanStart();
-    prompt.debug(`Getting Storybook data...`);
+    logger.debug(`Getting Storybook data...`);
     const {
       configDir: resolvedConfigDir,
       mainConfig,
@@ -318,18 +318,18 @@ const processProject = async ({
     } = await getStorybookData({ configDir });
 
     const name = configDir.replace(getProjectRoot(), '');
-    prompt.debug(`${name} - Getting installed Storybook version...`);
+    logger.debug(`${name} - Getting installed Storybook version...`);
     const beforeVersion =
       (await getInstalledStorybookVersion(packageManager)) ?? DEFAULT_FALLBACK_VERSION;
 
     // Validate version and upgrade compatibility
-    prompt.debug(`${name} - Validating before version...`);
+    logger.debug(`${name} - Validating before version...`);
     validateVersion(beforeVersion);
     const isCanary = isCanaryVersion(currentCLIVersion) || isCanaryVersion(beforeVersion);
-    prompt.debug(`${name} - Validating upgrade compatibility...`);
+    logger.debug(`${name} - Validating upgrade compatibility...`);
     validateUpgradeCompatibility(currentCLIVersion, beforeVersion, isCanary);
 
-    prompt.debug(`${name} - Getting CLI versions from NPM...`);
+    logger.debug(`${name} - Getting CLI versions from NPM...`);
     // Get version information from NPM
     const [latestCLIVersionOnNPM, latestPrereleaseCLIVersionOnNPM] = await Promise.all([
       packageManager.latestVersion('storybook'),
@@ -351,7 +351,7 @@ const processProject = async ({
       typeof mainConfigPath !== 'undefined' &&
       !options.force
     ) {
-      prompt.debug(`${name} - Evaluating blockers...`);
+      logger.debug(`${name} - Evaluating blockers...`);
       autoblockerCheckResults = await autoblock({
         packageManager,
         configDir: resolvedConfigDir,
@@ -379,7 +379,7 @@ const processProject = async ({
       storiesPaths,
     } satisfies CollectProjectsSuccessResult;
   } catch (error) {
-    prompt.debug(String(error));
+    logger.debug(String(error));
     return {
       configDir,
       error: error as Error,
@@ -490,7 +490,7 @@ export const generateUpgradeSpecs = async (
         const results = await Promise.all(upgradePromises);
         storybookSatelliteUpgrades = results.filter((result): result is string => result !== null);
       } catch (error) {
-        prompt.warn('Failed to fetch satellite dependencies');
+        logger.warn('Failed to fetch satellite dependencies');
         // Continue without satellite upgrades
       }
     }
@@ -611,7 +611,7 @@ const handleMultipleProjects = async (
         ? `\nThere were some errors while collecting data for the following projects:\n${formatProjectDirectories(errorProjects, '✕')}`
         : '';
 
-    prompt.log(
+    logger.log(
       `Multiple Storybook projects found. Storybook can only upgrade all projects at once:\n${validProjectsMessage}${invalidProjectsMessage}`
     );
 
@@ -690,7 +690,7 @@ export const getProjects = async (
     // Separate valid and error projects
     const validProjects = projects.filter(isSuccessResult);
     const errorProjects = projects.filter(isErrorResult);
-    prompt.debug(
+    logger.debug(
       `Found ${validProjects.length} valid projects and ${errorProjects.length} error projects`
     );
 
@@ -723,7 +723,7 @@ export const getProjects = async (
 
     return selectedProjects ? { allProjects: validProjects, selectedProjects } : undefined;
   } catch (error) {
-    prompt.error('Failed to get projects');
+    logger.error('Failed to get projects');
     throw error;
   }
 };

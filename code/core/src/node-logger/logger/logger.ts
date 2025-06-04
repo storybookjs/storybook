@@ -2,9 +2,9 @@ import * as clack from '@clack/prompts';
 import boxen from 'boxen';
 import picocolors from 'picocolors';
 
+import { isClackEnabled } from '../prompts/prompt-config';
 import { wrapTextForClack } from '../wrap-utils';
 import { logTracker } from './log-tracker';
-import { isClackEnabled } from './prompt-config';
 
 const createLogFunction =
   (clackFn: (message: string) => void, consoleFn: (...args: any[]) => void) => () =>
@@ -156,6 +156,11 @@ export const outro = (message: string) => {
 export const step = (message: string) => {
   logTracker.addLog('info', message);
   LOG_FUNCTIONS.step()(message);
+};
+
+export const info = (message: string) => {
+  logTracker.addLog('info', message);
+  LOG_FUNCTIONS.log()(message);
 };
 
 // Export the text wrapping utility for external use

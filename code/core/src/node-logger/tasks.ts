@@ -1,7 +1,7 @@
 // eslint-disable-next-line depend/ban-dependencies
 import type { ExecaChildProcess } from 'execa';
 
-import { logTracker } from './prompts/log-tracker';
+import { logTracker } from './logger/log-tracker';
 import { spinner, taskLog } from './prompts/prompt-functions';
 
 /**

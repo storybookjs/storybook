@@ -4,7 +4,7 @@ import { dirname } from 'node:path';
 import type { PackageJson } from 'storybook/internal/common';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { isCorePackage, isSatelliteAddon } from 'storybook/internal/common';
-import { prompt } from 'storybook/internal/node-logger';
+import { logger } from 'storybook/internal/node-logger';
 
 import { gt } from 'semver';
 import { dedent } from 'ts-dedent';
@@ -48,7 +48,7 @@ function isValidVersionType(packageName: string, specifier: string) {
     specifier.startsWith('https:') ||
     specifier.startsWith('workspace:')
   ) {
-    prompt.debug(`Skipping ${packageName} as it does not have a valid version type: ${specifier}`);
+    logger.debug(`Skipping ${packageName} as it does not have a valid version type: ${specifier}`);
     return false;
   }
 
@@ -71,7 +71,7 @@ export const upgradeStorybookRelatedDependencies = {
   promptDefaultValue: false,
 
   async check({ packageManager, storybookVersion }) {
-    prompt.debug('Checking for incompatible storybook packages...');
+    logger.debug('Checking for incompatible storybook packages...');
     const analyzedPackages = await getIncompatibleStorybookPackages({
       currentStorybookVersion: storybookVersion,
       packageManager,
@@ -121,7 +121,7 @@ export const upgradeStorybookRelatedDependencies = {
 
   async run({ result: { upgradable }, packageManager, dryRun }) {
     if (dryRun) {
-      prompt.log(dedent`
+      logger.log(dedent`
         The following would have been upgraded:
         ${upgradable
           .map(

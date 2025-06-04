@@ -5,7 +5,7 @@ import {
   versions,
 } from 'storybook/internal/common';
 import { withTelemetry } from 'storybook/internal/core-server';
-import { logTracker, prompt } from 'storybook/internal/node-logger';
+import { logTracker, logger, prompt } from 'storybook/internal/node-logger';
 import { addToGlobalContext, telemetry } from 'storybook/internal/telemetry';
 
 import { program } from 'commander';
@@ -26,10 +26,10 @@ addToGlobalContext('cliVersion', versions.storybook);
 
 // Return a failed exit code but write the logs to a file first
 const handleCommandFailure = async (error: unknown): Promise<never> => {
-  prompt.error(String(error));
+  logger.error(String(error));
   const logFile = await logTracker.writeToFile();
-  prompt.log(`Storybook debug logs can be found at: ${logFile}`);
-  prompt.outro('');
+  logger.log(`Storybook debug logs can be found at: ${logFile}`);
+  logger.outro('');
   process.exit(1);
 };
 
@@ -45,16 +45,12 @@ const command = (name: string) =>
     .option('--debug', 'Get more logs in debug mode', false)
     .option('--enable-crash-reports', 'Enable sending crash reports to telemetry data')
     .option('--write-logs', 'Write all debug logs to a file at the end of the run')
-    .option(
-      '--log-level <trace | debug | info | warn | error | silent>',
-      'Define log level',
-      'info'
-    )
+    .option('--loglevel <trace | debug | info | warn | error | silent>', 'Define log level', 'info')
     .hook('preAction', async (self) => {
       try {
         const options = self.opts();
         if (options.logLevel) {
-          prompt.setLogLevel(options.logLevel);
+          logger.setLogLevel(options.logLevel);
         }
 
         if (options.writeLogs) {
@@ -63,14 +59,14 @@ const command = (name: string) =>
 
         await globalSettings();
       } catch (e) {
-        prompt.log('Error loading global settings:\n' + String(e));
+        logger.error('Error loading global settings:\n' + String(e));
       }
     })
     .hook('postAction', async () => {
       if (logTracker.shouldWriteLogsToFile) {
         const logFile = await logTracker.writeToFile();
-        prompt.log(`Storybook debug logs can be found at: ${logFile}`);
-        prompt.outro('');
+        logger.log(`Storybook debug logs can be found at: ${logFile}`);
+        logger.outro('');
       }
     });
 
@@ -155,7 +151,7 @@ command('upgrade')
 command('info')
   .description('Prints debugging information about the local environment')
   .action(async () => {
-    prompt.log(picocolors.bold('\nStorybook Environment Info:'));
+    logger.log(picocolors.bold('\nStorybook Environment Info:'));
     const pkgManager = JsPackageManagerFactory.getPackageManager();
     const activePackageManager = pkgManager.type.replace(/\d/, ''); // 'yarn1' -> 'yarn'
     const output = await envinfo.run({
@@ -166,7 +162,7 @@ command('info')
       npmGlobalPackages: '{@storybook/*,*storybook*,sb,chromatic}',
     });
     const activePackageManagerLine = output.match(new RegExp(`${activePackageManager}:.*`, 'i'));
-    prompt.log(
+    logger.log(
       output.replace(
         activePackageManagerLine,
         picocolors.bold(`${activePackageManagerLine} <----- active`)
@@ -246,7 +242,7 @@ program.on('command:*', ([invalidCmd]) => {
   if (suggestion) {
     errorMessage += `\n Did you mean ${picocolors.yellow(suggestion)}?`;
   }
-  prompt.error(errorMessage);
+  logger.error(errorMessage);
   process.exit(1);
 });
 

@@ -1,5 +1,5 @@
 import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
-import { prompt } from 'storybook/internal/node-logger';
+import { logger } from 'storybook/internal/node-logger';
 
 import { dedent } from 'ts-dedent';
 
@@ -34,13 +34,13 @@ export async function removeAddon(addon: string, options: RemoveAddonOptions) {
   }
 
   if (!mainConfigPath) {
-    prompt.error('Unable to find storybook main.js config');
+    logger.error('Unable to find storybook main.js config');
     return;
   }
   const main = await readConfig(mainConfigPath);
 
   // remove from package.json
-  prompt.debug(`Uninstalling ${addon}`);
+  logger.debug(`Uninstalling ${addon}`);
   await packageManager.removeDependencies([addon]);
 
   if (!skipInstall) {
@@ -52,12 +52,12 @@ export async function removeAddon(addon: string, options: RemoveAddonOptions) {
   // Fault tolerant as the addon might have been removed already
   if (currentAddons.includes(addon)) {
     // add to main.js
-    prompt.debug(`Removing '${addon}' from main.js addons field.`);
+    logger.debug(`Removing '${addon}' from main.js addons field.`);
     try {
       main.removeEntryFromArray(['addons'], addon);
       await writeConfig(main);
     } catch (err) {
-      prompt.warn(`Failed to remove '${addon}' from main.js addons field. ${String(err)}`);
+      logger.warn(`Failed to remove '${addon}' from main.js addons field. ${String(err)}`);
     }
   }
 }

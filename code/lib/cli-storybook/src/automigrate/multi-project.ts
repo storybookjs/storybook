@@ -1,5 +1,5 @@
 import type { JsPackageManager } from 'storybook/internal/common';
-import { type TaskLogInstance, prompt } from 'storybook/internal/node-logger';
+import { type TaskLogInstance, logger, prompt } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
@@ -88,7 +88,7 @@ export async function collectAutomigrationsAcrossProjects(
           }
         }
       } catch (error) {
-        prompt.error(
+        logger.error(
           `Failed to check fix ${fix.id} for project ${project.configDir}:\n` + String(error)
         );
       }
@@ -119,17 +119,17 @@ export async function promptForAutomigrations(
   };
 
   if (options.dryRun) {
-    prompt.log('\n📋 Detected automigrations (dry run - no changes will be made):');
-    automigrations.forEach((am) => {
-      prompt.log(`  - ${am.fix.id} (${formatProjectDirs(am.projects)})`);
+    logger.log('\n📋 Detected automigrations (dry run - no changes will be made):');
+    automigrations.forEach(({ fix, projects }) => {
+      logger.log(`  - ${fix.id} (${formatProjectDirs(projects)})`);
     });
     return [];
   }
 
   if (options.yes) {
-    prompt.log('\n✅ Running all detected automigrations:');
-    automigrations.forEach((am) => {
-      prompt.log(`  - ${am.fix.id} (${formatProjectDirs(am.projects)})`);
+    logger.log('\n✅ Running all detected automigrations:');
+    automigrations.forEach(({ fix, projects }) => {
+      logger.log(`  - ${fix.id} (${formatProjectDirs(projects)})`);
     });
     return automigrations;
   }
@@ -213,13 +213,13 @@ export async function runAutomigrationsForProjects(
 
         if (promptType === 'manual') {
           // For manual migrations, show the prompt and mark as manual
-          prompt.log(`    ℹ️  Manual migration required:`);
-          prompt.log(`    ${fix.prompt(result).split('\n').join('\n    ')}`);
+          logger.log(`    ℹ️  Manual migration required:`);
+          logger.log(`    ${fix.prompt(result).split('\n').join('\n    ')}`);
           fixResults[fix.id] = FixStatus.MANUAL_SUCCEEDED;
         } else if (promptType === 'notification') {
           // For notifications, just show the message
-          prompt.log(`    ℹ️  Notification:`);
-          prompt.log(`    ${fix.prompt(result).split('\n').join('\n    ')}`);
+          logger.log(`    ℹ️  Notification:`);
+          logger.log(`    ${fix.prompt(result).split('\n').join('\n    ')}`);
           fixResults[fix.id] = FixStatus.SUCCEEDED;
         } else if (typeof fix.run === 'function') {
           const runOptions: RunOptions<typeof result> = {

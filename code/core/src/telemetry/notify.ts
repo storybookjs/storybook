@@ -1,10 +1,9 @@
 import { cache } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
 
 const TELEMETRY_KEY_NOTIFY_DATE = 'telemetry-notification-date';
-
-const logger = console;
 
 export const notify = async () => {
   const telemetryNotifyDate = await cache.get(TELEMETRY_KEY_NOTIFY_DATE, null);
@@ -18,7 +17,7 @@ export const notify = async () => {
 
   cache.set(TELEMETRY_KEY_NOTIFY_DATE, Date.now());
 
-  logger.log();
+  logger.log('');
   logger.log(
     `${picocolors.magenta(
       picocolors.bold('attention')
@@ -29,5 +28,5 @@ export const notify = async () => {
     `You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:`
   );
   logger.log(picocolors.cyan('https://storybook.js.org/telemetry'));
-  logger.log();
+  logger.log('');
 };

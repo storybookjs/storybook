@@ -1,6 +1,6 @@
 import * as clack from '@clack/prompts';
 
-import { logTracker } from './log-tracker';
+import { logTracker } from '../logger/log-tracker';
 import type {
   ConfirmPromptOptions,
   MultiSelectPromptOptions,
@@ -57,10 +57,41 @@ export class ClackPromptProvider extends PromptProvider {
   }
 
   spinner(): SpinnerInstance {
-    return clack.spinner();
+    const task = clack.spinner();
+
+    return {
+      start: (message) => {
+        logTracker.addLog('info', `spinner-start: ${message}`);
+        task.start(message);
+      },
+      message: (message) => {
+        logTracker.addLog('info', `spinner: ${message}`);
+        task.message(message);
+      },
+      stop: (message) => {
+        logTracker.addLog('info', `spinner-stop: ${message}`);
+        task.stop(message);
+      },
+    };
   }
 
   taskLog(options: TaskLogOptions): TaskLogInstance {
-    return clack.taskLog(options);
+    const task = clack.taskLog(options);
+    logTracker.addLog('info', `task-start: ${options.title}`);
+
+    return {
+      message: (message) => {
+        logTracker.addLog('info', `task: ${message}`);
+        task.message(message);
+      },
+      error: (message) => {
+        logTracker.addLog('error', `task-error: ${message}`);
+        task.error(message);
+      },
+      success: (message) => {
+        logTracker.addLog('info', `task-success: ${message}`);
+        task.success(message);
+      },
+    };
   }
 }

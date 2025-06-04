@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { platform } from 'node:os';
 import { join } from 'node:path';
 
-import { prompt } from 'storybook/internal/node-logger';
+import { logger, prompt } from 'storybook/internal/node-logger';
 import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 
 import { findUpSync } from 'find-up';
@@ -172,7 +172,7 @@ export class NPMProxy extends JsPackageManager {
 
         return this.mapDependencies(parsedOutput, pattern);
       } catch (err) {
-        prompt.warn(`An issue occurred while trying to find dependencies metadata using npm.`);
+        logger.warn(`An issue occurred while trying to find dependencies metadata using npm.`);
         return undefined;
       }
     }

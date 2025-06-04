@@ -528,25 +528,23 @@ export const upgradeStorybookDependencies = async (config: UpgradeConfig): Promi
       generateUpgradeSpecs(packageJson.devDependencies, config),
     ]);
 
-    await Promise.all([
-      packageManager.addDependencies(
-        {
-          installAsDevDependencies: false,
-          skipInstall: true,
-          packageJsonInfo: JsPackageManager.getPackageJsonInfo(packageJsonPath),
-        },
-        upgradedDependencies
-      ),
-      packageManager.addDependencies(
-        {
-          installAsDevDependencies: true,
-          skipInstall: true,
-          packageJsonInfo: JsPackageManager.getPackageJsonInfo(packageJsonPath),
-        },
-        upgradedDevDependencies
-      ),
-      ,
-    ]);
+    await packageManager.addDependencies(
+      {
+        installAsDevDependencies: false,
+        skipInstall: true,
+        packageJsonInfo: JsPackageManager.getPackageJsonInfo(packageJsonPath),
+      },
+      upgradedDependencies
+    );
+
+    await packageManager.addDependencies(
+      {
+        installAsDevDependencies: true,
+        skipInstall: true,
+        packageJsonInfo: JsPackageManager.getPackageJsonInfo(packageJsonPath),
+      },
+      upgradedDevDependencies
+    );
   }
 };
 

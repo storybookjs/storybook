@@ -156,6 +156,9 @@ describe('getIncompatibleStorybookPackages', () => {
 });
 
 describe('getIncompatiblePackagesSummary', () => {
+  // necessary for windows and unix output to match in the assertions
+  const normalizeLineBreaks = (str: string) => str.replace(/\r\n|\r|\n/g, '\n').trim();
+
   it('generates a summary message for incompatible packages', () => {
     const analysedPackages: AnalysedPackage[] = [
       {
@@ -171,7 +174,8 @@ describe('getIncompatiblePackagesSummary', () => {
       },
     ];
     const summary = getIncompatiblePackagesSummary(analysedPackages, '9.0.0');
-    expect(summary).toMatchInlineSnapshot(`
+
+    expect(normalizeLineBreaks(summary)).toMatchInlineSnapshot(`
       "You are currently using Storybook 9.0.0 but you have packages which are incompatible with it:
 
       - storybook-react@1.0.0

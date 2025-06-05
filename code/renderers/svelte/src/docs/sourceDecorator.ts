@@ -22,6 +22,11 @@ const skipSourceRender = (context: StoryContext<SvelteRenderer>) => {
   const sourceParams = context?.parameters.docs?.source;
   const isArgsStory = context?.parameters.__isArgsStory;
 
+  if ((context?.tags ?? []).some((tag) => tag.startsWith('svelte-csf'))) {
+    // skip if Svelte CSF, as the addon does its own source code generation
+    return true;
+  }
+
   // always render if the user forces it
   if (sourceParams?.type === SourceType.DYNAMIC) {
     return false;

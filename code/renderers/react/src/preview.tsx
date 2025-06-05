@@ -8,7 +8,6 @@ import type {
   ArgsStoryFn,
   ComponentAnnotations,
   DecoratorFunction,
-  NormalizedStoryAnnotations,
   ProjectAnnotations,
   Renderer,
   StoryAnnotations,
@@ -102,7 +101,7 @@ interface ReactMeta<T extends ReactRenderer, MetaInput extends ComponentAnnotati
     >,
   >(
     story?: TInput
-    // @ts-expect-error fix
+    // @ts-expect-error hard
   ): ReactStory<T, TInput>;
 }
 

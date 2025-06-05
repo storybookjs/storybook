@@ -163,5 +163,10 @@ export const info = (message: string) => {
   LOG_FUNCTIONS.log()(message);
 };
 
+export const SYMBOLS = {
+  success: '✔',
+  error: '✕',
+};
+
 // Export the text wrapping utility for external use
 export { wrapTextForClack };

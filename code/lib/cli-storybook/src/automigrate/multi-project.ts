@@ -78,8 +78,10 @@ export async function collectAutomigrationsAcrossProjects(
         }
       } catch (error) {
         logger.error(
-          `Failed to check fix ${fix.id} for project ${project.configDir}:\n` + String(error)
+          `Failed to check fix ${fix.id} for project ${shortenPath(project.configDir)}.`
         );
+        logger.log('');
+        logger.debug(`${error instanceof Error ? error.stack : String(error)}`);
       }
     }
   }
@@ -229,7 +231,8 @@ export async function runAutomigrationsForProjects(
         }
       } catch (error) {
         fixResults[fix.id] = FixStatus.FAILED;
-        taskLog.error(`    ❌ Failed: ${error instanceof Error ? error.message : String(error)}`);
+        taskLog.error(`${logger.SYMBOLS.error} ${automigration.fix.id} failed`);
+        logger.debug(`${error instanceof Error ? error.stack : String(error)}`);
       }
     }
 

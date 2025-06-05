@@ -199,22 +199,28 @@ function logUpgradeResults(
 
   // If there are any failures, show detailed summary
   if (failedProjects.length > 0) {
+    logTracker.enableLogWriting();
+    logger.step(
+      'The upgrade is complete, but some projects failed to upgrade or migrate completely. Please see the debug logs for more details.'
+    );
     // Display appropriate messages based on results
     if (successfulProjects.length > 0) {
-      const projectList = successfulProjects
-        .map((dir) => picocolors.cyan(shortenPath(dir)))
-        .join(', ');
-      logger.log(`${picocolors.green('✅ Successfully upgraded:')} ${projectList}`);
+      const successfulProjectsList = successfulProjects
+        .map((dir) => `  • ${picocolors.cyan(shortenPath(dir))}`)
+        .join('\n');
+      logger.log(`${picocolors.green('✅ Successfully upgraded:')}\n${successfulProjectsList}`);
     }
 
-    const projectList = failedProjects.map((dir) => picocolors.cyan(shortenPath(dir))).join(', ');
-    logger.log(`${picocolors.red('❌ Failed to upgrade:')} ${projectList}`);
+    const failedProjectsList = failedProjects
+      .map((dir) => `  • ${picocolors.cyan(shortenPath(dir))}`)
+      .join('\n');
+    logger.log(`${picocolors.red('❌ Failed to upgrade:')}\n${failedProjectsList}`);
 
     if (projectsWithNoFixes.length > 0) {
       const projectList = projectsWithNoFixes
-        .map((dir) => picocolors.cyan(shortenPath(dir)))
-        .join(', ');
-      logger.log(`${picocolors.yellow('ℹ️  No changes needed:')} ${projectList}`);
+        .map((dir) => `  • ${picocolors.cyan(shortenPath(dir))}`)
+        .join('\n');
+      logger.log(`${picocolors.yellow('ℹ️  No applicable migrations:')}\n${projectList}`);
     }
   } else {
     logger.step('The upgrade is complete!');
@@ -420,13 +426,23 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
             const automigrationFailureCount = Object.values(fixResults).filter(
               (status) => status === 'failed'
             ).length;
+            const automigrationPreCheckFailure =
+              project.autoblockerCheckResults && project.autoblockerCheckResults.length > 0
+                ? project.autoblockerCheckResults
+                    ?.map((result) => {
+                      if (result.result !== null) {
+                        return result.blocker.id;
+                      }
+                      return null;
+                    })
+                    .filter(Boolean)
+                : null;
             await telemetry('upgrade', {
               beforeVersion: project.beforeVersion,
               afterVersion: project.currentCLIVersion,
               automigrationResults: fixResults,
               automigrationFailureCount,
-              /// TODO FIX THIS
-              automigrationPreCheckFailure: null,
+              automigrationPreCheckFailure,
               doctorResults: doctorResults[project.configDir]?.diagnostics || {},
               doctorFailureCount,
               doctorErrorCount,

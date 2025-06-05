@@ -607,12 +607,12 @@ const handleMultipleProjects = async (
       'Multiple Storybook projects found. Storybook can only upgrade all projects at once:',
     ];
     if (validProjects.length > 0) {
-      projectsFoundMessage.push(formatProjectDirectories(validProjects, '✔'));
+      projectsFoundMessage.push(formatProjectDirectories(validProjects, logger.SYMBOLS.success));
     }
     if (errorProjects.length > 0) {
       logTracker.enableLogWriting();
       projectsFoundMessage.push(
-        `There were some errors while collecting data for the following projects:\n${formatProjectDirectories(errorProjects, '✕')}`,
+        `There were some errors while collecting data for the following projects:\n${formatProjectDirectories(errorProjects, logger.SYMBOLS.error)}`,
         '',
         'Full logs will be available in the Storybook debug logs at the end of the run.'
       );

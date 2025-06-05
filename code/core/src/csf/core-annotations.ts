@@ -3,7 +3,7 @@ import type { StorybookTypes } from 'storybook/internal/types';
 
 import actionAnnotations, { type ActionsTypes } from 'storybook/actions/preview';
 import backgroundsAnnotations, { type BackgroundTypes } from 'storybook/backgrounds/preview';
-import highlightAnnotations, { type HighLightTypes } from 'storybook/highlight/preview';
+import highlightAnnotations, { type HighlightTypes } from 'storybook/highlight/preview';
 import measureAnnotations, { type MeasureTypes } from 'storybook/measure/preview';
 import outlineAnnotations, { type OutlineTypes } from 'storybook/outline/preview';
 import testAnnotations, { type TestTypes } from 'storybook/test/preview';
@@ -12,7 +12,7 @@ import viewportAnnotations, { type ViewportTypes } from 'storybook/viewport/prev
 export type CoreTypes = StorybookTypes &
   ActionsTypes &
   BackgroundTypes &
-  HighLightTypes &
+  HighlightTypes &
   MeasureTypes &
   OutlineTypes &
   TestTypes &

@@ -1,6 +1,6 @@
 import type { IconName } from './icons';
 
-export interface HighLightTypes {
+export interface HighlightTypes {
   parameters: HighlightParameters;
 }
 

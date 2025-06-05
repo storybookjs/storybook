@@ -7,11 +7,7 @@ export const blocker = createBlocker({
   id: 'svelteWebpack5Removal',
   link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#svelte-dropped-support-for-storybooksvelte-webpack5',
   async check({ packageManager }) {
-    const isSvelteWebpack5Installed = await packageManager.isPackageInstalled(
-      '@storybook/svelte-webpack5'
-    );
-    // Check if @storybook/svelte-webpack5 is a dependency
-    return isSvelteWebpack5Installed !== null;
+    return packageManager.isPackageInstalled('@storybook/svelte-webpack5');
   },
   log() {
     return dedent`

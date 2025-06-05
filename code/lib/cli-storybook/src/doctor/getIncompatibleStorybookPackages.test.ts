@@ -9,7 +9,15 @@ import {
   getIncompatibleStorybookPackages,
 } from './getIncompatibleStorybookPackages';
 
-vi.mock('picocolors', { spy: true });
+vi.mock('picocolors', () => {
+  return {
+    default: {
+      yellow: (str: string) => str,
+      cyan: (str: string) => str,
+      bold: (str: string) => str,
+    },
+  };
+});
 
 const packageManagerMock = {
   getAllDependencies: vi.fn(),

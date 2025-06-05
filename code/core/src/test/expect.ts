@@ -14,6 +14,7 @@ import {
   JestAsymmetricMatchers,
   JestChaiExpect,
   JestExtend,
+  customMatchers,
   getState,
   setState,
 } from '@vitest/expect';
@@ -77,6 +78,8 @@ export function createExpect() {
     });
     return assert;
   };
+
+  expect.extend(customMatchers);
 
   // @ts-ignore tsup borks here for some reason
   expect.unreachable = (message?: string): never => {

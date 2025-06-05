@@ -1,7 +1,8 @@
 ```js filename="Button.test.js|jsx" renderer="react" language="js"
 import { render, screen } from '@testing-library/react';
 
-import { composeStories } from '@storybook/react';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import { composeStories } from '@storybook/your-framework';
 
 import * as stories from './Button.stories';
 
@@ -19,7 +20,8 @@ test('reuses args from composed story', () => {
 ```ts filename="Button.test.ts|tsx" renderer="react" language="ts"
 import { render, screen } from '@testing-library/react';
 
-import { composeStories } from '@storybook/react';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import { composeStories } from '@storybook/your-framework';
 
 import * as stories from './Button.stories';
 
@@ -37,7 +39,7 @@ test('reuses args from composed story', () => {
 ```js filename="tests/Button.test.js" renderer="vue" language="js"
 import { render, screen } from '@testing-library/vue';
 
-import { composeStories } from '@storybook/vue3';
+import { composeStories } from '@storybook/vue3-vite';
 
 import * as stories from './Button.stories';
 
@@ -55,7 +57,7 @@ test('reuses args from composed story', () => {
 ```ts filename="tests/Button.test.ts" renderer="vue" language="ts"
 import { render, screen } from '@testing-library/vue';
 
-import { composeStories } from '@storybook/vue3';
+import { composeStories } from '@storybook/vue3-vite';
 
 import * as stories from './Button.stories';
 

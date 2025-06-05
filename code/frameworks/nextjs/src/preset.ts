@@ -190,7 +190,7 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (baseConfig, 
     await configureSWCLoader(baseConfig, options, nextConfig);
   } else {
     logger.info('=> Using Babel as compiler');
-    await configureBabelLoader(baseConfig, options);
+    await configureBabelLoader(baseConfig, options, nextConfig);
   }
 
   return baseConfig;

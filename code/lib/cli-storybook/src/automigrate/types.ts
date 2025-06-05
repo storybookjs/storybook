@@ -38,7 +38,7 @@ export type Prompt = 'auto' | 'manual' | 'notification' | 'command';
 type BaseFix<ResultType = any> = {
   id: string;
   check: (options: CheckOptions) => Promise<ResultType | null>;
-  prompt: (result: ResultType) => string;
+  prompt: () => string;
   promptDefaultValue?: boolean;
   link?: string;
 };

@@ -355,14 +355,8 @@ describe('addonA11yAddonTest', () => {
 
   describe('prompt', () => {
     it('should return manual prompt if transformedSetupCode is null and if transformedPreviewCode is null', () => {
-      const result = addonA11yAddonTest.prompt({
-        setupFile: null,
-        transformedSetupCode: null,
-        previewFile: null,
-        transformedPreviewCode: null,
-        skipPreviewTransformation: false,
-        skipVitestSetupTransformation: false,
-      });
+      const result = addonA11yAddonTest.prompt();
+      // TODO: Refactor this whole thing.
       expect(result).toMatchInlineSnapshot(`
         "We have detected that you have @storybook/addon-a11y and @storybook/addon-vitest installed.
 

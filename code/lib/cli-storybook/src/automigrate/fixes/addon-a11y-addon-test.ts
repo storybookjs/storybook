@@ -43,13 +43,7 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
   id: 'addon-a11y-addon-test',
   link: 'https://storybook.js.org/docs/writing-tests/accessibility-testing#test-addon-integration',
 
-  promptType(result) {
-    if (result.setupFile === null && result.previewFile === null) {
-      return 'manual';
-    }
-
-    return 'auto';
-  },
+  promptType: 'auto',
 
   async check({ mainConfig, configDir }) {
     const addons = getAddonNames(mainConfig);
@@ -128,24 +122,20 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
     };
   },
 
-  prompt({
-    setupFile,
-    previewFile,
-    transformedSetupCode,
-    transformedPreviewCode,
-    skipPreviewTransformation,
-    skipVitestSetupTransformation,
-  }) {
-    const introduction =
-      'We have detected that you have @storybook/addon-a11y and @storybook/addon-vitest installed. @storybook/addon-a11y now integrates with @storybook/addon-vitest to provide automatic accessibility checks for your stories, powered by Axe and Vitest.';
+  prompt() {
+    return 'We have detected that you have @storybook/addon-a11y and @storybook/addon-vitest installed. The automigration will configure both for the new testing experience in Storybook 9';
+  },
 
-    const prompt = [introduction];
-
+  async run({ result }) {
     let counter = 1;
 
+    const { transformedSetupCode, skipPreviewTransformation, skipVitestSetupTransformation } =
+      result;
+
+    const debugLog: string[] = [];
     if (!skipVitestSetupTransformation) {
       if (transformedSetupCode === null) {
-        prompt.push(dedent`
+        debugLog.push(dedent`
           ${counter++}) We couldn't find or automatically update ${picocolors.cyan(`.storybook/vitest.setup.<ts|js>`)} in your project to smoothly set up project annotations from ${picocolors.magenta(`@storybook/addon-a11y`)}. 
           Please manually update your ${picocolors.cyan(`vitest.setup.ts`)} file to include the following:
 
@@ -157,18 +147,12 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
           ${picocolors.green('+ a11yAddonAnnotations,')}
           ${picocolors.gray(']);')}
         `);
-      } else {
-        const fileExtensionSetupFile = path.extname(setupFile!);
-
-        prompt.push(
-          dedent`${counter++}) We have to update your .storybook/vitest.setup${fileExtensionSetupFile} file to set up project annotations from @storybook/addon-a11y.`
-        );
       }
     }
 
     if (!skipPreviewTransformation) {
-      if (transformedPreviewCode === null) {
-        prompt.push(dedent`
+      if (result.transformedPreviewCode === null) {
+        debugLog.push(dedent`
           ${counter++}) We couldn't find or automatically update your .storybook/preview.<ts|js> in your project to smoothly set up ${picocolors.cyan('parameters.a11y.test')} from @storybook/addon-a11y. Please manually update your .storybook/preview.<ts|js> file to include the following:
 
           ${picocolors.gray('export default {')}
@@ -180,29 +164,23 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
           ${picocolors.gray('  }')}
           ${picocolors.gray('}')}
         `);
-      } else {
-        const fileExtensionPreviewFile = path.extname(previewFile!);
+      }
 
-        prompt.push(
-          dedent`
-            ${counter++}) We have to update your .storybook/preview${fileExtensionPreviewFile} file to set up parameters.a11y.test from @storybook/addon-a11y.
-          `
+      if (debugLog.length > 0) {
+        // eslint-disable-next-line local-rules/no-uncategorized-errors
+        throw new Error(
+          `The ${this.id} automigration couldn't make the changes but here are instructions for doing them yourself:\n${debugLog.join('\n')}`
         );
       }
-    }
+      const { setupFile, transformedSetupCode, transformedPreviewCode, previewFile } = result;
 
-    return prompt.join('\n\n');
-  },
+      if (transformedSetupCode && setupFile) {
+        writeFileSync(setupFile, transformedSetupCode, 'utf8');
+      }
 
-  async run({ result }) {
-    const { setupFile, transformedSetupCode, transformedPreviewCode, previewFile } = result;
-
-    if (transformedSetupCode && setupFile) {
-      writeFileSync(setupFile, transformedSetupCode, 'utf8');
-    }
-
-    if (transformedPreviewCode && previewFile) {
-      writeFileSync(previewFile, transformedPreviewCode, 'utf8');
+      if (transformedPreviewCode && previewFile) {
+        writeFileSync(previewFile, transformedPreviewCode, 'utf8');
+      }
     }
   },
 };

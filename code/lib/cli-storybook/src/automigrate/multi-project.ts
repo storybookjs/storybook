@@ -23,8 +23,11 @@ export interface ProjectAutomigrationData {
 
 export interface AutomigrationCheckResult<T = any> {
   fix: Fix<T>;
-  result: T;
-  projects: ProjectAutomigrationData[];
+  reports: {
+    result: T;
+    status: 'success' | 'failed';
+    project: ProjectAutomigrationData;
+  }[];
 }
 
 export interface MultiProjectAutomigrationOptions {
@@ -50,6 +53,36 @@ export async function collectAutomigrationsAcrossProjects(
     `Starting automigration collection across ${projects.length} projects and ${fixes.length} fixes...`
   );
 
+  /** Utility to collect results and account for existing entries in the map. */
+  function collectResult(
+    fix: Fix,
+    project: ProjectAutomigrationData,
+    status: 'success' | 'failed',
+    result?: any
+  ) {
+    const existing = automigrationMap.get(fix.id);
+    if (existing) {
+      // Add project to existing automigration
+      existing.reports.push({
+        project,
+        result,
+        status,
+      });
+    } else {
+      // Create new automigration entry
+      automigrationMap.set(fix.id, {
+        fix,
+        reports: [
+          {
+            result,
+            status,
+            project,
+          },
+        ],
+      });
+    }
+  }
+
   // Run check for each fix on each project
   for (const project of projects) {
     const projectStartTime = performance.now();
@@ -73,7 +106,6 @@ export async function collectAutomigrationsAcrossProjects(
           mainConfigPath: project.mainConfigPath,
           storiesPaths: project.storiesPaths,
         };
-
         const result = await fix.check(checkOptions);
 
         const fixDuration = performance.now() - fixStartTime;
@@ -92,20 +124,10 @@ export async function collectAutomigrationsAcrossProjects(
         );
 
         if (result !== null) {
-          const existing = automigrationMap.get(fix.id);
-          if (existing) {
-            // Add project to existing automigration
-            existing.projects.push(project);
-          } else {
-            // Create new automigration entry
-            automigrationMap.set(fix.id, {
-              fix,
-              result,
-              projects: [project],
-            });
-          }
+          collectResult(fix, project, 'success', result);
         }
       } catch (error) {
+        collectResult(fix, project, 'failed');
         const fixDuration = performance.now() - fixStartTime;
         logger.debug(
           `Fix ${fix.id} failed in ${fixDuration.toFixed(2)}ms for project ${projectName}`
@@ -120,10 +142,9 @@ export async function collectAutomigrationsAcrossProjects(
           fixTimings.set(fix.id, { totalTime: fixDuration, checkCount: 1 });
         }
 
-        logger.error(
+        logger.debug(
           `Failed to check fix ${fix.id} for project ${shortenPath(project.configDir)}.`
         );
-        logger.log('');
         logger.debug(`${error instanceof Error ? error.stack : String(error)}`);
       }
     }
@@ -176,9 +197,9 @@ export async function promptForAutomigrations(
   }
 
   // Format project directories relative to git root
-  const formatProjectDirs = (projects: ProjectAutomigrationData[]) => {
+  const formatProjectDirs = (list: AutomigrationCheckResult['reports']) => {
     const amountOfProjectsShown = 1;
-    const relativeDirs = projects.map((p) => shortenPath(p.configDir) || '.');
+    const relativeDirs = list.map((p) => shortenPath(p.project.configDir) || '.');
     if (relativeDirs.length <= amountOfProjectsShown) {
       return relativeDirs.join(', ');
     }
@@ -188,16 +209,16 @@ export async function promptForAutomigrations(
 
   if (options.dryRun) {
     logger.log('\n📋 Detected automigrations (dry run - no changes will be made):');
-    automigrations.forEach(({ fix, projects }) => {
-      logger.log(`  - ${fix.id} (${formatProjectDirs(projects)})`);
+    automigrations.forEach(({ fix, reports: list }) => {
+      logger.log(`  - ${fix.id} (${formatProjectDirs(list)})`);
     });
     return [];
   }
 
   if (options.yes) {
     logger.log('\n✅ Running all detected automigrations:');
-    automigrations.forEach(({ fix, projects }) => {
-      logger.log(`  - ${fix.id} (${formatProjectDirs(projects)})`);
+    automigrations.forEach(({ fix, reports: list }) => {
+      logger.log(`  - ${fix.id} (${formatProjectDirs(list)})`);
     });
     return automigrations;
   }
@@ -206,14 +227,14 @@ export async function promptForAutomigrations(
   const choices = automigrations.map((am) => {
     const hint = [];
 
-    hint.push(`${am.fix.prompt(am.result)}`);
+    hint.push(`${am.fix.prompt()}`);
 
     if (am.fix.link) {
       hint.push(`More info: ${am.fix.link}`);
     }
 
     const label =
-      am.projects.length > 1 ? `${am.fix.id} (${formatProjectDirs(am.projects)})` : am.fix.id;
+      am.reports.length > 1 ? `${am.fix.id} (${formatProjectDirs(am.reports)})` : am.fix.id;
 
     return {
       value: am.fix.id,
@@ -240,13 +261,37 @@ export async function runAutomigrationsForProjects(
   const projectResults: Record<string, Record<FixId, FixStatus>> = {};
 
   // Group automigrations by project
-  const projectAutomigrations = new Map<string, AutomigrationCheckResult[]>();
+  type ConfigDir = string;
+  const projectAutomigrations = new Map<
+    ConfigDir,
+    {
+      fix: Fix;
+      project: ProjectAutomigrationData;
+      result: any;
+    }[]
+  >();
 
+  // selectedAutomigrations -> { fix, reports } -> reports (status passed or failed or skipped) -> project
   for (const automigration of selectedAutomigrations) {
-    for (const project of automigration.projects) {
+    for (const report of automigration.reports) {
+      const { project, result } = report;
       const existing = projectAutomigrations.get(project.configDir) || [];
-      existing.push(automigration);
-      projectAutomigrations.set(project.configDir, existing);
+
+      if (existing) {
+        existing.push({
+          fix: automigration.fix,
+          project,
+          result,
+        });
+      } else {
+        projectAutomigrations.set(project.configDir, [
+          {
+            fix: automigration.fix,
+            project,
+            result,
+          },
+        ]);
+      }
     }
   }
 
@@ -255,7 +300,7 @@ export async function runAutomigrationsForProjects(
   for (const [configDir, automigrations] of projectAutomigrations) {
     const countPrefix =
       projectAutomigrations.size > 1 ? `(${++projectIndex}/${projectAutomigrations.size}) ` : '';
-    const project = automigrations[0].projects.find((p) => p.configDir === configDir);
+    const { project, result } = automigrations[0];
 
     if (!project) {
       continue;
@@ -269,26 +314,10 @@ export async function runAutomigrationsForProjects(
     const fixResults: Record<FixId, FixStatus> = {};
 
     for (const automigration of automigrations) {
-      const { fix, result } = automigration;
+      const { fix } = automigration;
 
       try {
-        // Determine prompt type
-        const promptType =
-          typeof fix.promptType === 'function'
-            ? await fix.promptType(result)
-            : (fix.promptType ?? 'auto');
-
-        if (promptType === 'manual') {
-          // For manual migrations, show the prompt and mark as manual
-          logger.log(`    ℹ️  Manual migration required:`);
-          logger.log(`    ${fix.prompt(result).split('\n').join('\n    ')}`);
-          fixResults[fix.id] = FixStatus.MANUAL_SUCCEEDED;
-        } else if (promptType === 'notification') {
-          // For notifications, just show the message
-          logger.log(`    ℹ️  Notification:`);
-          logger.log(`    ${fix.prompt(result).split('\n').join('\n    ')}`);
-          fixResults[fix.id] = FixStatus.SUCCEEDED;
-        } else if (typeof fix.run === 'function') {
+        if (typeof fix.run === 'function') {
           const runOptions: RunOptions<typeof result> = {
             packageManager: project.packageManager,
             result,
@@ -304,11 +333,11 @@ export async function runAutomigrationsForProjects(
 
           await fix.run(runOptions);
           fixResults[fix.id] = FixStatus.SUCCEEDED;
-          taskLog.message(`${logger.SYMBOLS.success} ${CLI_COLORS.success(fix.id)}`);
+          taskLog.message(CLI_COLORS.success(`${logger.SYMBOLS.success} ${fix.id}`));
         }
       } catch (error) {
         fixResults[fix.id] = FixStatus.FAILED;
-        taskLog.message(`${logger.SYMBOLS.error} ${CLI_COLORS.error(`${automigration.fix.id}`)}`);
+        taskLog.message(CLI_COLORS.error(`${logger.SYMBOLS.error} ${automigration.fix.id}`));
         logger.debug(`${error instanceof Error ? error.stack : String(error)}`);
       }
     }
@@ -363,9 +392,37 @@ export async function runAutomigrations(
     taskLog: detectingAutomigrationTask,
   });
 
-  detectingAutomigrationTask.success(
-    `${detectedAutomigrations.length === 0 ? 'No automigrations detected' : `${detectedAutomigrations.length} automigrations detected`}`
-  );
+  const checkFailures = detectedAutomigrations.flatMap(({ fix, reports }) => {
+    const failedReports = reports.filter((report) => report.status === 'failed');
+
+    if (failedReports.length > 0) {
+      return [
+        {
+          fixId: fix.id,
+          failedReports,
+        },
+      ];
+    }
+    return [];
+  });
+
+  if (checkFailures.length > 0) {
+    // per fix id, we log which projects had it failed, the project is failedReports[].project.configDir
+    // create a string that lists all fix ids and with each, a parenthesis list of projects that had it failed
+    checkFailures.forEach(({ fixId, failedReports }) => {
+      detectingAutomigrationTask.message(
+        CLI_COLORS.error(
+          `${fixId} (${failedReports.map((report) => shortenPath(report.project.configDir)).join(', ')})`
+        )
+      );
+    });
+
+    detectingAutomigrationTask.error(`${checkFailures.length} automigration checks failed`);
+  } else {
+    detectingAutomigrationTask.success(
+      `${detectedAutomigrations.length === 0 ? 'No automigrations detected' : `${detectedAutomigrations.length} automigrations detected`}`
+    );
+  }
 
   // Prompt user to select which automigrations to run
   const selectedAutomigrations = await promptForAutomigrations(detectedAutomigrations, {

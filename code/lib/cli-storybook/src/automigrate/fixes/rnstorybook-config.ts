@@ -86,7 +86,7 @@ export const rnstorybookConfig: Fix<Options> = {
   },
 
   prompt() {
-    return dedent`We'll rename your ${picocolors.yellow('.storybook')} directory to ${picocolors.yellow('.rnstorybook')} and update all references to it.`;
+    return dedent`We'll rename your .storybook directory to .rnstorybook and update all references to it.`;
   },
 
   async run({ result: { storybookDir, rnStorybookDir }, dryRun, packageManager }) {

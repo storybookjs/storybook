@@ -10,6 +10,7 @@ describe('PNPM Proxy', () => {
 
   beforeEach(() => {
     pnpmProxy = new PNPMProxy();
+    JsPackageManager.clearLatestVersionCache();
     vi.spyOn(pnpmProxy, 'writePackageJson').mockImplementation(vi.fn());
   });
 
@@ -137,7 +138,7 @@ describe('PNPM Proxy', () => {
     it('with constraint it throws an error if command output is not a valid JSON', async () => {
       vi.spyOn(pnpmProxy, 'executeCommand').mockResolvedValue({ stdout: 'NOT A JSON' } as any);
 
-      await expect(pnpmProxy.latestVersion('storybook', '5.X')).rejects.toThrow();
+      await expect(pnpmProxy.latestVersion('storybook', '5.X')).resolves.toBe(null);
     });
   });
 

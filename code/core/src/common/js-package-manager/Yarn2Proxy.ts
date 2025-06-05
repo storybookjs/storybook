@@ -132,15 +132,15 @@ export class Yarn2Proxy extends JsPackageManager {
     }
 
     try {
-      const process = this.executeCommand({
+      const childProcess = await this.executeCommand({
         command: 'yarn',
         args: yarnArgs.concat(pattern),
         env: {
           FORCE_COLOR: 'false',
         },
+        cwd: this.instanceDir,
       });
-      const result = await process;
-      const commandResult = result.stdout ?? '';
+      const commandResult = childProcess.stdout ?? '';
 
       return this.mapDependencies(commandResult, pattern);
     } catch (e) {

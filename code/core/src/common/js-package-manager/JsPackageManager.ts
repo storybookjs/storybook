@@ -450,7 +450,7 @@ export abstract class JsPackageManager {
    * @param packageName Optional package name to clear only specific entries. If not provided,
    *   clears all cache.
    */
-  public clearLatestVersionCache(packageName?: string): void {
+  public static clearLatestVersionCache(packageName?: string): void {
     if (packageName) {
       // Clear all cache entries for this package (both with and without constraints)
       const keysToDelete = Array.from(JsPackageManager.latestVersionCache.keys()).filter(
@@ -485,7 +485,7 @@ export abstract class JsPackageManager {
    * any operation that modifies dependencies.
    */
   public clearAllVersionCaches(): void {
-    this.clearLatestVersionCache();
+    JsPackageManager.clearLatestVersionCache();
     this.clearInstalledVersionCache();
   }
 

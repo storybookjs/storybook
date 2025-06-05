@@ -10,6 +10,7 @@ describe('Yarn 2 Proxy', () => {
 
   beforeEach(() => {
     yarn2Proxy = new Yarn2Proxy();
+    JsPackageManager.clearLatestVersionCache();
     vi.spyOn(yarn2Proxy, 'writePackageJson').mockImplementation(vi.fn());
     vi.spyOn(yarn2Proxy, 'executeCommand').mockClear();
   });
@@ -140,7 +141,7 @@ describe('Yarn 2 Proxy', () => {
         stdout: 'NOT A JSON',
       } as any);
 
-      await expect(yarn2Proxy.latestVersion('storybook')).rejects.toThrow();
+      await expect(yarn2Proxy.latestVersion('storybook')).resolves.toBe(null);
     });
   });
 

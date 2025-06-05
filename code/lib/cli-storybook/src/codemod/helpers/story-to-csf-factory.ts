@@ -113,9 +113,10 @@ export async function storyToCsfFactory(
 
       if (t.isObjectExpression(init)) {
         // Wrap the object in `meta.story()`
+
         declarator.init = t.callExpression(
           t.memberExpression(t.identifier(metaVariableName), t.identifier('story')),
-          [init]
+          init.properties.length === 0 ? [] : [init]
         );
       } else if (t.isArrowFunctionExpression(init)) {
         // Transform CSF1 to meta.story({ render: <originalFn> })

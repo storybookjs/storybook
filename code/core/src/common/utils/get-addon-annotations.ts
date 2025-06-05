@@ -23,7 +23,7 @@ export function getAnnotationsName(addonName: string): string {
   return cleanedUpName;
 }
 
-export async function getAddonAnnotations(addon: string) {
+export async function getAddonAnnotations(addon: string, configDir?: string) {
   try {
     const data = {
       // core addons will have a function as default export in index entrypoint
@@ -32,14 +32,12 @@ export async function getAddonAnnotations(addon: string) {
       isCoreAddon: isCorePackage(addon),
     };
 
-    if (addon === '@storybook/addon-essentials') {
-      return data;
-    } else if (!data.isCoreAddon) {
+    if (!data.isCoreAddon) {
       // for backwards compatibility, if it's not a core addon we use /preview entrypoint
       data.importPath = `${addon}/preview`;
     }
 
-    require.resolve(path.join(addon, 'preview'));
+    require.resolve(path.join(addon, 'preview'), configDir ? { paths: [configDir] } : undefined);
 
     return data;
   } catch (err) {}

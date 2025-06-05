@@ -61,7 +61,10 @@ export interface ReactPreview<T extends AddonTypes> extends Preview<ReactRendere
       component?: ComponentType<TArgs>;
       decorators?: Decorators | Decorators[];
       args?: TMetaArgs;
-    } & Omit<ComponentAnnotations<ReactRenderer & T, TArgs>, 'decorators'>
+    } & Omit<
+      ComponentAnnotations<ReactRenderer & T, TArgs>,
+      'decorators' | 'component' | 'args' | 'render'
+    >
   ): ReactMeta<
     ReactRenderer &
       T & {

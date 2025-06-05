@@ -225,18 +225,14 @@ export const SyntaxHighlighter = ({
 
   const [copied, setCopied] = useState(false);
 
-  const onClick = useCallback(
-    (e: MouseEvent<HTMLButtonElement>) => {
-      e.preventDefault();
-      copyToClipboard(highlightableCode)
-        .then(() => {
-          setCopied(true);
-          globalWindow.setTimeout(() => setCopied(false), 1500);
-        })
-        .catch(logger.error);
-    },
-    [highlightableCode]
-  );
+  const onClick = useCallback(() => {
+    copyToClipboard(highlightableCode)
+      .then(() => {
+        setCopied(true);
+        globalWindow.setTimeout(() => setCopied(false), 1500);
+      })
+      .catch(logger.error);
+  }, [highlightableCode]);
   const renderer = wrapRenderer(rest.renderer, showLineNumbers);
 
   return (

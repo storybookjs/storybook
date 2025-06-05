@@ -13,6 +13,8 @@ const mapping = {
   '@storybook/nextjs/router.mock': '/dist/export-mocks/router/index',
   'next/cache': '/dist/export-mocks/cache/index',
   '@storybook/nextjs/cache.mock': '/dist/export-mocks/cache/index',
+  'next/link': '/dist/export-mocks/link/index',
+  '@storybook/nextjs/link.mock': '/dist/export-mocks/link/index',
   ...getCompatibilityAliases(),
 };
 

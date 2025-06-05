@@ -49,7 +49,7 @@ export function __definePreview<Addons extends PreviewAddon<never>[]>(
 }
 
 // @ts-expect-error We cannot implement the meta faithfully here, but that is okay.
-export interface ReactPreview<T extends AddonTypes> extends Preview<ReactRenderer & T> {
+export interface ReactPreview<T extends AddonTypes> extends Preview<ReactTypes & T> {
   meta<
     TArgs extends Args,
     Decorators extends DecoratorFunction<ReactTypes & T, any>,

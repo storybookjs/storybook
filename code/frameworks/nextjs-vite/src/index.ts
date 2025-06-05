@@ -3,7 +3,7 @@ import type { ProjectAnnotations } from 'storybook/internal/types';
 
 import type { ReactPreview } from '@storybook/react';
 import { __definePreview } from '@storybook/react';
-import type { ReactRenderer } from '@storybook/react';
+import type { ReactTypes } from '@storybook/react';
 
 import type vitePluginStorybookNextJs from 'vite-plugin-storybook-nextjs';
 
@@ -22,9 +22,7 @@ declare module '@storybook/nextjs-vite/vite-plugin' {
 }
 
 export function definePreview<Addons extends PreviewAddon<never>[]>(
-  preview: { addons?: Addons } & ProjectAnnotations<
-    ReactRenderer & NextJsTypes & InferTypes<Addons>
-  >
+  preview: { addons?: Addons } & ProjectAnnotations<ReactTypes & NextJsTypes & InferTypes<Addons>>
 ): NextPreview<InferTypes<Addons>> {
   // @ts-expect-error hard
   return __definePreview({

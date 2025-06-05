@@ -29,15 +29,19 @@ export const getActualPackageVersion = async (packageName: string) => {
 export const getActualPackageJson = async (
   packageName: string
 ): Promise<PackageJson | undefined> => {
-  let resolvedPackageJson = await findUp('package.json', { cwd: require.resolve(packageName) });
+  try {
+    let resolvedPackageJson = await findUp('package.json', { cwd: require.resolve(packageName) });
 
-  if (!resolvedPackageJson) {
-    // fallback to require.resolve
-    resolvedPackageJson = require.resolve(join(packageName, 'package.json'), {
-      paths: [process.cwd()],
-    });
+    if (!resolvedPackageJson) {
+      // fallback to require.resolve
+      resolvedPackageJson = require.resolve(join(packageName, 'package.json'), {
+        paths: [process.cwd()],
+      });
+    }
+
+    const packageJson = JSON.parse(await readFile(resolvedPackageJson, { encoding: 'utf8' }));
+    return packageJson;
+  } catch (err) {
+    return undefined;
   }
-
-  const packageJson = JSON.parse(await readFile(resolvedPackageJson, { encoding: 'utf8' }));
-  return packageJson;
 };

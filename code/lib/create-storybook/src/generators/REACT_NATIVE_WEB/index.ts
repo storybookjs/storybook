@@ -20,10 +20,7 @@ const generator: Generator = async (packageManager, npmOptions, options) => {
     npmOptions,
     options,
     'react',
-    {
-      extraPackages,
-      extraAddons: [`@storybook/addon-onboarding`],
-    },
+    { extraPackages },
     'react-native-web-vite'
   );
 

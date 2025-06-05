@@ -30,7 +30,7 @@ export function definePreview<Addons extends PreviewAddon<never>[]>(
   return __definePreview({
     ...preview,
     addons: [nextPreview, ...(preview.addons ?? [])],
-  }) as unknown as NextPreview<InferTypes<Addons>>;
+  });
 }
 
 interface NextPreview<T extends AddonTypes> extends ReactPreview<NextJsTypes & T> {}

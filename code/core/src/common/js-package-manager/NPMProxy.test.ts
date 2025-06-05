@@ -97,7 +97,7 @@ describe('NPM Proxy', () => {
           .spyOn(npmProxy, 'executeCommand')
           .mockResolvedValue({ stdout: '6.0.0' } as any);
 
-        await npmProxy.addDependencies({ installAsDevDependencies: true }, ['storybook']);
+        await npmProxy.addDependencies({ type: 'devDependencies' }, ['storybook']);
 
         expect(executeCommandSpy).toHaveBeenCalledWith(
           expect.objectContaining({
@@ -113,7 +113,7 @@ describe('NPM Proxy', () => {
           .spyOn(npmProxy, 'executeCommand')
           .mockResolvedValue({ stdout: '7.0.0' } as any);
 
-        await npmProxy.addDependencies({ installAsDevDependencies: true }, ['storybook']);
+        await npmProxy.addDependencies({ type: 'devDependencies' }, ['storybook']);
 
         expect(executeCommandSpy).toHaveBeenCalledWith(
           expect.objectContaining({

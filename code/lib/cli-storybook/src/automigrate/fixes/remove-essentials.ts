@@ -202,10 +202,9 @@ export const removeEssentials: Fix<AddonDocsOptions> = {
           const isDocsInstalled = await packageManager.isPackageInstalled('@storybook/addon-docs');
 
           if (!isDocsInstalled) {
-            await packageManager.addDependencies(
-              { installAsDevDependencies: true, skipInstall: true },
-              ['@storybook/addon-docs@' + storybookVersion]
-            );
+            await packageManager.addDependencies({ type: 'devDependencies', skipInstall: true }, [
+              '@storybook/addon-docs@' + storybookVersion,
+            ]);
           }
         }
       }

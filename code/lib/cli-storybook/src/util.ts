@@ -543,14 +543,16 @@ export const upgradeStorybookDependencies = async (config: UpgradeConfig): Promi
   for (const packageJsonPath of packageManager.packageJsonPaths) {
     const packageJson = JsPackageManager.getPackageJson(packageJsonPath);
 
-    const [upgradedDependencies, upgradedDevDependencies] = await Promise.all([
-      generateUpgradeSpecs(packageJson.dependencies, config),
-      generateUpgradeSpecs(packageJson.devDependencies, config),
-    ]);
+    const [upgradedDependencies, upgradedDevDependencies, upgradedPeerDependencies] =
+      await Promise.all([
+        generateUpgradeSpecs(packageJson.dependencies, config),
+        generateUpgradeSpecs(packageJson.devDependencies, config),
+        generateUpgradeSpecs(packageJson.peerDependencies, config),
+      ]);
 
     await packageManager.addDependencies(
       {
-        installAsDevDependencies: false,
+        type: 'dependencies',
         skipInstall: true,
         packageJsonInfo: JsPackageManager.getPackageJsonInfo(packageJsonPath),
       },
@@ -559,11 +561,20 @@ export const upgradeStorybookDependencies = async (config: UpgradeConfig): Promi
 
     await packageManager.addDependencies(
       {
-        installAsDevDependencies: true,
+        type: 'devDependencies',
         skipInstall: true,
         packageJsonInfo: JsPackageManager.getPackageJsonInfo(packageJsonPath),
       },
       upgradedDevDependencies
+    );
+
+    await packageManager.addDependencies(
+      {
+        type: 'peerDependencies',
+        skipInstall: true,
+        packageJsonInfo: JsPackageManager.getPackageJsonInfo(packageJsonPath),
+      },
+      upgradedPeerDependencies
     );
   }
 };

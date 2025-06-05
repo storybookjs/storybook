@@ -80,7 +80,7 @@ export const addonExperimentalTest: Fix<AddonExperimentalTestOptions> = {
     // Update package.json if needed
     if (!dryRun) {
       await packageManager.removeDependencies(['@storybook/experimental-addon-test']);
-      await packageManager.addDependencies({ installAsDevDependencies: true, skipInstall: true }, [
+      await packageManager.addDependencies({ type: 'devDependencies', skipInstall: true }, [
         `@storybook/addon-vitest@${storybookVersion}`,
       ]);
     }

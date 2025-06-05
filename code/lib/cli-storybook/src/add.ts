@@ -166,7 +166,7 @@ export async function add(
   logger.log(`Installing ${addonWithVersion}`);
 
   await packageManager.addDependencies(
-    { installAsDevDependencies: true, writeOutputToFile: false, skipInstall },
+    { type: 'devDependencies', writeOutputToFile: false, skipInstall },
     [addonWithVersion]
   );
 

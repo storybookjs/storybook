@@ -64,7 +64,7 @@ describe('Yarn 1 Proxy', () => {
         .spyOn(yarn1Proxy, 'executeCommand')
         .mockReturnValue(Promise.resolve({ stdout: '' }) as any);
 
-      await yarn1Proxy.addDependencies({ installAsDevDependencies: true }, ['storybook']);
+      await yarn1Proxy.addDependencies({ type: 'devDependencies' }, ['storybook']);
 
       expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({

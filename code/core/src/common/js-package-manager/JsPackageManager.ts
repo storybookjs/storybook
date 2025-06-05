@@ -213,12 +213,19 @@ export abstract class JsPackageManager {
    * @param {Array} dependencies Contains a list of packages to add.
    */
   public async addDependencies(
-    options: {
-      skipInstall?: boolean;
-      installAsDevDependencies?: boolean;
-      writeOutputToFile?: boolean;
-      packageJsonInfo?: PackageJsonInfo;
-    },
+    options:
+      | {
+          skipInstall: true;
+          type: 'dependencies' | 'devDependencies' | 'peerDependencies';
+          writeOutputToFile?: boolean;
+          packageJsonInfo?: PackageJsonInfo;
+        }
+      | {
+          skipInstall?: false;
+          type: 'dependencies' | 'devDependencies';
+          writeOutputToFile?: boolean;
+          packageJsonInfo?: PackageJsonInfo;
+        },
     dependencies: string[]
   ): Promise<void | ExecaChildProcess> {
     const {
@@ -237,9 +244,7 @@ export abstract class JsPackageManager {
         dependenciesMap[packageName] = packageVersion ?? latestVersion;
       }
 
-      const targetDeps = options.installAsDevDependencies
-        ? packageJson.devDependencies
-        : packageJson.dependencies;
+      const targetDeps = packageJson[options.type] as Record<string, string>;
 
       Object.assign(targetDeps, dependenciesMap);
       this.writePackageJson(packageJson, operationDir);
@@ -247,7 +252,7 @@ export abstract class JsPackageManager {
       try {
         const result = this.runAddDeps(
           dependencies,
-          Boolean(options.installAsDevDependencies),
+          Boolean(options.type === 'devDependencies'),
           writeOutputToFile
         );
 

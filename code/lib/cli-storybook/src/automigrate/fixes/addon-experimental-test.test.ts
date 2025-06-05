@@ -126,35 +126,15 @@ describe('addon-experimental-test fix', () => {
   describe('check function', () => {
     it('should return null if @storybook/experimental-addon-test is not installed', async () => {
       const packageManager = {
-        getModulePackageJSON: () => null,
-        getInstalledVersion: async () => null,
+        isPackageInstalled: async () => false,
       };
       await expect(checkAddonExperimentalTest({ packageManager })).resolves.toBeNull();
     });
 
     it('should find files containing @storybook/experimental-addon-test', async () => {
       const packageManager = {
-        getModulePackageJSON: (packageName: string) => {
-          if (packageName === '@storybook/experimental-addon-test') {
-            return {
-              version: '8.6.0',
-            };
-          }
-          if (packageName === 'storybook') {
-            return {
-              version: '9.0.0',
-            };
-          }
-          return null;
-        },
-        getInstalledVersion: async (packageName: string) => {
-          if (packageName === '@storybook/experimental-addon-test') {
-            return '8.6.0';
-          }
-          if (packageName === 'storybook') {
-            return '9.0.0';
-          }
-          return null;
+        isPackageInstalled: async (packageName: string) => {
+          return packageName === '@storybook/experimental-addon-test';
         },
       };
 
@@ -271,7 +251,7 @@ describe('addon-experimental-test fix', () => {
       ]);
 
       expect(packageManager.addDependencies).toHaveBeenCalledWith(
-        { installAsDevDependencies: true, skipInstall: true },
+        { type: 'devDependencies', skipInstall: true },
         ['@storybook/addon-vitest@9.0.0']
       );
     });
@@ -316,7 +296,7 @@ describe('addon-experimental-test fix', () => {
       } as any);
 
       expect(packageManager.addDependencies).toHaveBeenCalledWith(
-        { installAsDevDependencies: true, skipInstall: true },
+        { type: 'devDependencies', skipInstall: true },
         ['@storybook/addon-vitest@9.0.0']
       );
     });

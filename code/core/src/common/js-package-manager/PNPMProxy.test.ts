@@ -59,7 +59,7 @@ describe('PNPM Proxy', () => {
         .spyOn(pnpmProxy, 'executeCommand')
         .mockResolvedValue({ stdout: '6.0.0' } as any);
 
-      await pnpmProxy.addDependencies({ installAsDevDependencies: true }, ['storybook']);
+      await pnpmProxy.addDependencies({ type: 'devDependencies' }, ['storybook']);
 
       expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({

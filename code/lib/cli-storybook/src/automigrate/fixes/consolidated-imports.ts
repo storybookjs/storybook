@@ -17,7 +17,7 @@ function transformPackageJson(content: string): string | null {
   const packagesToAdd = new Set<string>();
 
   // Check both dependencies and devDependencies
-  const depTypes = ['dependencies', 'devDependencies'] as const;
+  const depTypes = ['dependencies', 'devDependencies', 'peerDependencies'] as const;
 
   // Determine where storybook is installed and get its version
   let storybookVersion: string | null = null;

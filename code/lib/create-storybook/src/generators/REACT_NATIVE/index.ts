@@ -45,7 +45,13 @@ const generator: Generator = async (packageManager, npmOptions, options) => {
     packages.push(`react-dom@${reactVersion}`);
   }
 
-  await packageManager.addDependencies({ ...npmOptions }, packages);
+  await packageManager.addDependencies(
+    {
+      type: npmOptions.installAsDevDependencies ? 'devDependencies' : 'dependencies',
+      ...npmOptions,
+    },
+    packages
+  );
 
   packageManager.addScripts({
     'storybook-generate': 'sb-rn-get-stories',

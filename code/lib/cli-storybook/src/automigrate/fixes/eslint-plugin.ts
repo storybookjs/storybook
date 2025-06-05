@@ -60,10 +60,7 @@ export const eslintPlugin: Fix<EslintPluginRunOptions> = {
 
     logger.debug(`Adding dependencies: ${deps}`);
     if (!dryRun) {
-      await packageManager.addDependencies(
-        { installAsDevDependencies: true, skipInstall: true },
-        deps
-      );
+      await packageManager.addDependencies({ type: 'devDependencies', skipInstall: true }, deps);
     }
 
     if (!dryRun && unsupportedExtension) {

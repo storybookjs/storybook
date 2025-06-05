@@ -60,7 +60,7 @@ describe('Yarn 2 Proxy', () => {
         stdout: '',
       } as any);
 
-      await yarn2Proxy.addDependencies({ installAsDevDependencies: true }, ['storybook']);
+      await yarn2Proxy.addDependencies({ type: 'devDependencies' }, ['storybook']);
 
       expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({

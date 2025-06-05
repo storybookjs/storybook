@@ -329,7 +329,6 @@ const processProject = async ({
     logger.debug(`${name} - Validating upgrade compatibility...`);
     validateUpgradeCompatibility(currentCLIVersion, beforeVersion, isCanary);
 
-    logger.debug(`${name} - Getting CLI versions from NPM...`);
     // Get version information from NPM
     const [latestCLIVersionOnNPM, latestPrereleaseCLIVersionOnNPM] = await Promise.all([
       packageManager.latestVersion('storybook'),

@@ -41,8 +41,8 @@ export const sandbox = async ({
   const packageManager = JsPackageManagerFactory.getPackageManager({
     force: pkgMgr,
   });
-  const latestVersion = await packageManager.latestVersion('storybook');
-  const nextVersion = await packageManager.latestVersion('storybook@next').catch((e) => '0.0.0');
+  const latestVersion = (await packageManager.latestVersion('storybook'))!;
+  const nextVersion = (await packageManager.latestVersion('storybook@next')) ?? '0.0.0';
   const currentVersion = versions.storybook;
   const isPrerelease = prerelease(currentVersion);
   const isOutdated = lt(currentVersion, isPrerelease ? nextVersion : latestVersion);

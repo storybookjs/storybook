@@ -37,7 +37,7 @@ export const addonMdxGfmRemove: Fix<AddonMdxGfmOptions> = {
   },
 
   prompt() {
-    return `We'll remove ${picocolors.yellow('@storybook/addon-mdx-gfm')} as it's no longer needed in Storybook 9.0.`;
+    return `We'll remove @storybook/addon-mdx-gfm as it's no longer needed in Storybook 9.0.`;
   },
 
   async run({ packageManager, configDir }) {

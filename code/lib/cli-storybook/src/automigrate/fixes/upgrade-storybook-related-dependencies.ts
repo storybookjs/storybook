@@ -29,8 +29,8 @@ async function getLatestVersions(
   return Promise.all(
     packages.map(async ([packageName]) => ({
       packageName,
-      beforeVersion: await packageManager.getInstalledVersion(packageName).catch(() => null),
-      afterVersion: await packageManager.latestVersion(packageName).catch(() => null),
+      beforeVersion: await packageManager.getInstalledVersion(packageName),
+      afterVersion: await packageManager.latestVersion(packageName),
     }))
   );
 }
@@ -96,7 +96,6 @@ export const upgradeStorybookRelatedDependencies = {
     ).map((packageName) => [packageName, allDependencies[packageName]]) as [string, string][];
 
     const packageVersions = await getLatestVersions(packageManager, uniquePackages);
-
     const upgradablePackages = packageVersions.filter(
       ({ afterVersion, beforeVersion, packageName }) => {
         if (

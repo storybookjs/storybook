@@ -78,7 +78,10 @@ export abstract class JsPackageManager {
   protected readonly cwd: string;
 
   /** Cache for latest version results to avoid repeated network calls. */
-  private readonly latestVersionCache = new Map<string, string>();
+  static readonly latestVersionCache = new Map<string, string | null>();
+
+  /** Cache for installed version results to avoid repeated file system calls. */
+  static readonly installedVersionCache = new Map<string, string | null>();
 
   constructor(options?: JsPackageManagerOptions) {
     this.cwd = options?.cwd || process.cwd();
@@ -143,6 +146,9 @@ export abstract class JsPackageManager {
       error: 'An error occurred while installing dependencies.',
       success: 'Dependencies installed',
     });
+
+    // Clear installed version cache after installation
+    this.clearInstalledVersionCache();
   }
 
   /** Read the `package.json` file available in the provided directory */
@@ -239,11 +245,16 @@ export abstract class JsPackageManager {
       this.writePackageJson(packageJson, operationDir);
     } else {
       try {
-        return this.runAddDeps(
+        const result = this.runAddDeps(
           dependencies,
           Boolean(options.installAsDevDependencies),
           writeOutputToFile
         );
+
+        // Clear installed version cache after adding dependencies
+        this.clearInstalledVersionCache();
+
+        return result;
       } catch (e: any) {
         logger.error('\nAn error occurred while installing dependencies:');
         logger.log(e.message);
@@ -365,6 +376,9 @@ export abstract class JsPackageManager {
     let latest;
     try {
       latest = await this.latestVersion(packageName, constraint);
+      if (!latest) {
+        throw new Error(`No version found for ${packageName}`);
+      }
     } catch (e) {
       if (current) {
         logger.warn(`\n     ${picocolors.yellow(String(e))}`);
@@ -389,37 +403,44 @@ export abstract class JsPackageManager {
    * @param packageName Name of the package
    * @param constraint Version range to use to constraint the returned version
    */
-  public async latestVersion(packageName: string, constraint?: string): Promise<string> {
+  public async latestVersion(packageName: string, constraint?: string): Promise<string | null> {
     // Create cache key that includes both package name and constraint
     const cacheKey = constraint ? `${packageName}@${constraint}` : packageName;
 
     // Check cache first
-    const cachedVersion = this.latestVersionCache.get(cacheKey);
+    const cachedVersion = JsPackageManager.latestVersionCache.get(cacheKey);
     if (cachedVersion) {
+      logger.debug(`Using cached version for ${packageName}...`);
       return cachedVersion;
     }
 
     let result: string;
 
-    if (!constraint) {
-      result = await this.runGetVersions(packageName, false);
-    } else {
-      const versions = await this.runGetVersions(packageName, true);
+    logger.debug(`Getting CLI versions from NPM for ${packageName}...`);
+    try {
+      if (!constraint) {
+        result = await this.runGetVersions(packageName, false);
+      } else {
+        const versions = await this.runGetVersions(packageName, true);
 
-      const latestVersionSatisfyingTheConstraint = versions
-        .reverse()
-        .find((version) => satisfies(version, constraint));
+        const latestVersionSatisfyingTheConstraint = versions
+          .reverse()
+          .find((version) => satisfies(version, constraint));
 
-      invariant(
-        latestVersionSatisfyingTheConstraint != null,
-        `No version satisfying the constraint: ${packageName}${constraint}`
-      );
-      result = latestVersionSatisfyingTheConstraint;
+        invariant(
+          latestVersionSatisfyingTheConstraint != null,
+          `No version satisfying the constraint: ${packageName}${constraint}`
+        );
+        result = latestVersionSatisfyingTheConstraint;
+      }
+
+      // Cache the result before returning
+      JsPackageManager.latestVersionCache.set(cacheKey, result);
+      return result;
+    } catch (e) {
+      JsPackageManager.latestVersionCache.set(cacheKey, '0.0.0');
+      return null;
     }
-
-    // Cache the result before returning
-    this.latestVersionCache.set(cacheKey, result);
-    return result;
   }
 
   /**
@@ -432,14 +453,40 @@ export abstract class JsPackageManager {
   public clearLatestVersionCache(packageName?: string): void {
     if (packageName) {
       // Clear all cache entries for this package (both with and without constraints)
-      const keysToDelete = Array.from(this.latestVersionCache.keys()).filter(
+      const keysToDelete = Array.from(JsPackageManager.latestVersionCache.keys()).filter(
         (key) => key === packageName || key.startsWith(`${packageName}@`)
       );
-      keysToDelete.forEach((key) => this.latestVersionCache.delete(key));
+      keysToDelete.forEach((key) => JsPackageManager.latestVersionCache.delete(key));
     } else {
       // Clear all cache
-      this.latestVersionCache.clear();
+      JsPackageManager.latestVersionCache.clear();
     }
+  }
+
+  /**
+   * Clear the installed version cache for a specific package or all packages.
+   *
+   * @param packageName Optional package name to clear from cache. If not provided, clears all.
+   */
+  public clearInstalledVersionCache(packageName?: string): void {
+    if (packageName) {
+      // Clear all cache entries for this package across all working directories
+      const keysToDelete = Array.from(JsPackageManager.installedVersionCache.keys()).filter((key) =>
+        key.endsWith(`::${packageName}`)
+      );
+      keysToDelete.forEach((key) => JsPackageManager.installedVersionCache.delete(key));
+    } else {
+      JsPackageManager.installedVersionCache.clear();
+    }
+  }
+
+  /**
+   * Clear both the latest version cache and installed version cache. This should be called after
+   * any operation that modifies dependencies.
+   */
+  public clearAllVersionCaches(): void {
+    this.clearLatestVersionCache();
+    this.clearInstalledVersionCache();
   }
 
   public addStorybookCommandInScripts(options?: { port: number; preCommand?: string }) {
@@ -611,12 +658,41 @@ export abstract class JsPackageManager {
 
   /** Returns the installed (within node_modules or pnp zip) version of a specified package */
   public async getInstalledVersion(packageName: string): Promise<string | null> {
-    const installations = await this.findInstallations([packageName]);
-    if (!installations) {
+    const cacheKey = packageName;
+
+    try {
+      // Create cache key that includes both working directory and package name for isolation
+
+      // Check cache first
+      const cachedVersion = JsPackageManager.installedVersionCache.get(cacheKey);
+      if (cachedVersion !== undefined) {
+        logger.debug(`Using cached installed version for ${packageName}...`);
+        return cachedVersion;
+      }
+
+      logger.debug(`Getting installed version for ${packageName}...`);
+      const installations = await this.findInstallations([packageName]);
+      if (!installations) {
+        // Cache the null result
+        JsPackageManager.installedVersionCache.set(cacheKey, null);
+        return null;
+      }
+
+      const version = Object.entries(installations.dependencies)[0]?.[1]?.[0].version || null;
+
+      // Cache the result
+      JsPackageManager.installedVersionCache.set(cacheKey, version);
+
+      return version;
+    } catch (e) {
+      JsPackageManager.installedVersionCache.set(cacheKey, null);
       return null;
     }
+  }
 
-    return Object.entries(installations.dependencies)[0]?.[1]?.[0].version || null;
+  public async isPackageInstalled(packageName: string): Promise<boolean> {
+    const version = await this.getInstalledVersion(packageName);
+    return version !== null;
   }
 
   /**

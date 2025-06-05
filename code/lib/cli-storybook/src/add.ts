@@ -145,7 +145,11 @@ export async function add(
     version = storybookVersion;
   }
   if (!version) {
-    version = await packageManager.latestVersion(addonName);
+    const latestVersion = await packageManager.latestVersion(addonName);
+    if (!latestVersion) {
+      throw new Error(`No version found for ${addonName}`);
+    }
+    version = latestVersion;
   }
 
   if (isCoreAddon(addonName) && version !== storybookVersion) {

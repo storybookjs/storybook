@@ -24,11 +24,11 @@ export const addonExperimentalTest: Fix<AddonExperimentalTestOptions> = {
   promptType: 'auto',
 
   async check({ packageManager }) {
-    const experimentalAddonTestVersion = await packageManager.getInstalledVersion(
+    const isExperimentalAddonTestInstalled = await packageManager.isPackageInstalled(
       '@storybook/experimental-addon-test'
     );
 
-    if (!experimentalAddonTestVersion) {
+    if (!isExperimentalAddonTestInstalled) {
       return null;
     }
 

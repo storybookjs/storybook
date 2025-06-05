@@ -45,11 +45,27 @@ export async function collectAutomigrationsAcrossProjects(
   const { fixes, projects, taskLog } = options;
   const automigrationMap = new Map<FixId, AutomigrationCheckResult>();
 
+  const totalStartTime = performance.now();
+  const fixTimings = new Map<FixId, { totalTime: number; checkCount: number }>();
+
+  logger.debug(
+    `Starting automigration collection across ${projects.length} projects and ${fixes.length} fixes...`
+  );
+
   // Run check for each fix on each project
   for (const project of projects) {
-    taskLog.message(`Checking automigrations for ${shortenPath(project.configDir)}...`);
+    const projectStartTime = performance.now();
+    const projectName = shortenPath(project.configDir);
+
+    taskLog.message(`Checking automigrations for ${projectName}...`);
+    logger.debug(`Processing project: ${projectName}`);
+
     for (const fix of fixes) {
+      const fixStartTime = performance.now();
+
       try {
+        logger.debug(`Checking fix ${fix.id} for project ${projectName}...`);
+
         const checkOptions: CheckOptions = {
           packageManager: project.packageManager,
           configDir: project.configDir,
@@ -61,6 +77,21 @@ export async function collectAutomigrationsAcrossProjects(
         };
 
         const result = await fix.check(checkOptions);
+
+        const fixDuration = performance.now() - fixStartTime;
+
+        // Track fix timing
+        const existingTiming = fixTimings.get(fix.id);
+        if (existingTiming) {
+          existingTiming.totalTime += fixDuration;
+          existingTiming.checkCount += 1;
+        } else {
+          fixTimings.set(fix.id, { totalTime: fixDuration, checkCount: 1 });
+        }
+
+        logger.debug(
+          `Fix ${fix.id} completed in ${fixDuration.toFixed(2)}ms for project ${projectName}`
+        );
 
         if (result !== null) {
           const existing = automigrationMap.get(fix.id);
@@ -77,6 +108,20 @@ export async function collectAutomigrationsAcrossProjects(
           }
         }
       } catch (error) {
+        const fixDuration = performance.now() - fixStartTime;
+        logger.debug(
+          `Fix ${fix.id} failed in ${fixDuration.toFixed(2)}ms for project ${projectName}`
+        );
+
+        // Still track timing for failed checks
+        const existingTiming = fixTimings.get(fix.id);
+        if (existingTiming) {
+          existingTiming.totalTime += fixDuration;
+          existingTiming.checkCount += 1;
+        } else {
+          fixTimings.set(fix.id, { totalTime: fixDuration, checkCount: 1 });
+        }
+
         logger.error(
           `Failed to check fix ${fix.id} for project ${shortenPath(project.configDir)}.`
         );
@@ -84,6 +129,40 @@ export async function collectAutomigrationsAcrossProjects(
         logger.debug(`${error instanceof Error ? error.stack : String(error)}`);
       }
     }
+
+    const projectDuration = performance.now() - projectStartTime;
+    logger.debug(`Completed processing project ${projectName} in ${projectDuration.toFixed(2)}ms`);
+  }
+
+  const totalDuration = performance.now() - totalStartTime;
+
+  // Log summary of fix performance
+  logger.debug(`\n=== Automigration Performance Summary ===`);
+  logger.debug(`Total collection time: ${totalDuration.toFixed(2)}ms`);
+  logger.debug(`Processed ${projects.length} projects with ${fixes.length} fixes each`);
+
+  // Sort fixes by average execution time
+  const sortedFixTimings = Array.from(fixTimings.entries())
+    .map(([fixId, timing]) => ({
+      fixId,
+      totalTime: timing.totalTime,
+      averageTime: timing.totalTime / timing.checkCount,
+      checkCount: timing.checkCount,
+    }))
+    .sort((a, b) => b.averageTime - a.averageTime);
+
+  logger.debug(`\nFix performance (sorted by average time):`);
+  for (const { fixId, totalTime, averageTime, checkCount } of sortedFixTimings) {
+    logger.debug(
+      `  ${fixId}: avg ${averageTime.toFixed(2)}ms, total ${totalTime.toFixed(2)}ms (${checkCount} checks)`
+    );
+  }
+
+  if (sortedFixTimings.length > 0) {
+    const slowestFix = sortedFixTimings[0];
+    const fastestFix = sortedFixTimings[sortedFixTimings.length - 1];
+    logger.debug(`\nSlowest fix: ${slowestFix.fixId} (${slowestFix.averageTime.toFixed(2)}ms avg)`);
+    logger.debug(`Fastest fix: ${fastestFix.fixId} (${fastestFix.averageTime.toFixed(2)}ms avg)`);
   }
 
   return Array.from(automigrationMap.values());

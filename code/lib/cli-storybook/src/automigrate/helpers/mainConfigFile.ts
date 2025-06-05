@@ -128,46 +128,73 @@ export const getStorybookData = async ({
   configDir: userDefinedConfigDir,
   cwd,
   packageManagerName,
+  cache = false,
 }: {
   configDir?: string;
   cwd?: string;
   packageManagerName?: PackageManagerName;
+  cache?: boolean;
 }) => {
+  const totalStartTime = performance.now();
+
+  logger.debug('Getting Storybook info...');
+  const storybookInfoStartTime = performance.now();
   const {
     mainConfigPath: mainConfigPath,
     version: storybookVersionSpecifier,
     configDir: configDirFromScript,
     previewConfigPath,
   } = getStorybookInfo(userDefinedConfigDir);
+  const storybookInfoDuration = performance.now() - storybookInfoStartTime;
+  logger.debug(`Got Storybook info in ${storybookInfoDuration.toFixed(2)}ms`);
 
   const configDir = userDefinedConfigDir || configDirFromScript || '.storybook';
 
+  logger.debug('Loading main config...');
+  const mainConfigStartTime = performance.now();
   let mainConfig: StorybookConfigRaw;
   try {
-    mainConfig = (await loadMainConfig({ configDir, noCache: true, cwd })) as StorybookConfigRaw;
+    mainConfig = (await loadMainConfig({ configDir, noCache: !cache, cwd })) as StorybookConfigRaw;
   } catch (err) {
     throw new Error(
       dedent`Unable to find or evaluate ${picocolors.blue(mainConfigPath)}: ${String(err)}`
     );
   }
+  const mainConfigDuration = performance.now() - mainConfigStartTime;
+  logger.debug(`Loaded main config in ${mainConfigDuration.toFixed(2)}ms`);
 
   const workingDir = isAbsolute(configDir)
     ? dirname(configDir)
     : dirname(join(cwd ?? process.cwd(), configDir));
 
+  logger.debug('Getting stories paths...');
+  const storiesPathsStartTime = performance.now();
   const storiesPaths = await getStoriesPathsFromConfig({
     stories: mainConfig.stories,
     configDir,
     workingDir,
   });
+  const storiesPathsDuration = performance.now() - storiesPathsStartTime;
+  logger.debug(`Got stories paths in ${storiesPathsDuration.toFixed(2)}ms`);
 
+  logger.debug('Getting package manager...');
+  const packageManagerStartTime = performance.now();
   const packageManager = JsPackageManagerFactory.getPackageManager({
     force: packageManagerName,
     configDir,
     storiesPaths,
   });
+  const packageManagerDuration = performance.now() - packageManagerStartTime;
+  logger.debug(`Got package manager in ${packageManagerDuration.toFixed(2)}ms`);
 
+  logger.debug('Getting Storybook version...');
+  const storybookVersionStartTime = performance.now();
   const storybookVersion = await getCoercedStorybookVersion(packageManager);
+  const storybookVersionDuration = performance.now() - storybookVersionStartTime;
+  logger.debug(`Got Storybook version in ${storybookVersionDuration.toFixed(2)}ms`);
+
+  const totalDuration = performance.now() - totalStartTime;
+  logger.debug(`getStorybookData completed in ${totalDuration.toFixed(2)}ms`);
 
   return {
     configDir,

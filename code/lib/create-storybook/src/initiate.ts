@@ -403,7 +403,7 @@ export async function doInitiate(options: CommandOptions): Promise<
     await packageManager.installDependencies();
   }
 
-  const latestVersion = await packageManager.latestVersion('storybook');
+  const latestVersion = (await packageManager.latestVersion('storybook'))!;
   const currentVersion = versions.storybook;
   const isPrerelease = prerelease(currentVersion);
   const isOutdated = lt(currentVersion, latestVersion);

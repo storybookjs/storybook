@@ -1,10 +1,17 @@
 import type { ComponentType, JSX } from 'react';
+import type { RootOptions } from 'react-dom/client';
 
 import type { Canvas, WebRenderer } from 'storybook/internal/types';
 
 export type { RenderContext, StoryContext } from 'storybook/internal/types';
 
 export interface ReactRenderer extends WebRenderer {
+  parameters: {
+    react?: {
+      rsc?: boolean;
+      rootOptions?: RootOptions;
+    };
+  };
   component: ComponentType<this['T']>;
   storyResult: StoryFnReactReturnType;
   mount: (ui?: JSX.Element) => Promise<Canvas>;

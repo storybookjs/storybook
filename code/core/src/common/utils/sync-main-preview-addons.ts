@@ -17,7 +17,7 @@ const logger = console;
 export async function syncStorybookAddons(
   mainConfig: StorybookConfig,
   previewConfigPath: string,
-  configDir?: string
+  configDir: string
 ) {
   const previewConfig = await readConfig(previewConfigPath!);
   const modifiedConfig = await getSyncedStorybookAddons(mainConfig, previewConfig, configDir);
@@ -28,7 +28,7 @@ export async function syncStorybookAddons(
 export async function getSyncedStorybookAddons(
   mainConfig: StorybookConfig,
   previewConfig: ConfigFile,
-  configDir?: string
+  configDir: string
 ): Promise<ConfigFile> {
   const isCsfFactory = isCsfFactoryPreview(previewConfig);
 

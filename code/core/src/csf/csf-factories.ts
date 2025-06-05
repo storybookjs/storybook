@@ -1,6 +1,7 @@
 import type { AddonTypes, PlayFunction, StoryContext } from 'storybook/internal/csf';
 import { combineTags } from 'storybook/internal/csf';
 import type {
+  Args,
   ComponentAnnotations,
   ComposedStoryFn,
   NormalizedComponentAnnotations,
@@ -25,7 +26,9 @@ export interface Preview<TRenderer extends Renderer = Renderer> {
   input: ProjectAnnotations<TRenderer> & { addons?: PreviewAddon<never>[] };
   composed: NormalizedProjectAnnotations<TRenderer>;
 
-  meta(input: any): any;
+  meta<TArgs extends Args, TInput extends ComponentAnnotations<TRenderer & { args: TArgs }, TArgs>>(
+    input: TInput
+  ): Meta<TRenderer & { args: TArgs }, TInput>;
 }
 
 export type InferTypes<T extends PreviewAddon<never>[]> = T extends PreviewAddon<infer C>[]
@@ -49,7 +52,8 @@ export function definePreview<TRenderer extends Renderer, Addons extends Preview
       );
       return composed;
     },
-    meta(meta: ComponentAnnotations<TRenderer & InferTypes<Addons>>) {
+    meta(meta) {
+      // @ts-expect-error hard
       return defineMeta(meta, this);
     },
   } as Preview<TRenderer & InferTypes<Addons>>;
@@ -70,11 +74,22 @@ export function isPreview(input: unknown): input is Preview<Renderer> {
   return input != null && typeof input === 'object' && '_tag' in input && input?._tag === 'Preview';
 }
 
-export interface Meta<TRenderer extends Renderer> {
+export interface Meta<
+  TRenderer extends Renderer,
+  TInput extends ComponentAnnotations<TRenderer, TRenderer['args']> = ComponentAnnotations<
+    TRenderer,
+    TRenderer['args']
+  >,
+> {
   readonly _tag: 'Meta';
-  input: ComponentAnnotations<TRenderer>;
+  input: TInput;
+  /** @deprecated Not yet implemented */
   composed: NormalizedComponentAnnotations<TRenderer>;
   preview: Preview<TRenderer>;
+
+  story(
+    input?: () => TRenderer['storyResult']
+  ): Story<TRenderer, { render: () => TRenderer['storyResult'] }>;
 
   story<TInput extends StoryAnnotations<TRenderer, TRenderer['args']>>(
     input?: TInput
@@ -85,7 +100,13 @@ export function isMeta(input: unknown): input is Meta<Renderer> {
   return input != null && typeof input === 'object' && '_tag' in input && input?._tag === 'Meta';
 }
 
-function defineMeta(input: any, preview: any): any {
+function defineMeta<
+  TRenderer extends Renderer,
+  TInput extends ComponentAnnotations<TRenderer, TRenderer['args']> = ComponentAnnotations<
+    TRenderer,
+    TRenderer['args']
+  >,
+>(input: TInput, preview: Preview<TRenderer>): Meta<TRenderer, TInput> {
   return {
     _tag: 'Meta',
     input,
@@ -93,7 +114,10 @@ function defineMeta(input: any, preview: any): any {
     get composed(): never {
       throw new Error('Not implemented');
     },
-    story(story: any = {}) {
+    // @ts-expect-error hard
+    story(
+      story: StoryAnnotations<TRenderer, TRenderer['args']> | (() => TRenderer['storyResult']) = {}
+    ) {
       return defineStory(typeof story === 'function' ? { render: story } : story, this);
     },
   };
@@ -108,6 +132,7 @@ export interface Story<
 > {
   readonly _tag: 'Story';
   input: TInput;
+  /** @deprecated Not yet implemented */
   composed: NormalizedStoryAnnotations<TRenderer> & { args: TRenderer['args'] };
   meta: Meta<TRenderer>;
   __compose: () => ComposedStoryFn<TRenderer>;
@@ -184,5 +209,5 @@ function defineStory<
         this.meta
       );
     },
-  } as Story<TRenderer, TInput>;
+  };
 }

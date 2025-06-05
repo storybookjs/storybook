@@ -100,7 +100,7 @@ export const INTERNAL_DEFAULT_PROJECT_ANNOTATIONS: ProjectAnnotations<ReactRende
  */
 export function composeStory<TArgs extends Args = Args>(
   story: StoryAnnotationsOrFn<any, TArgs>,
-  componentAnnotations: ComponentAnnotations<any, Args>,
+  componentAnnotations: ComponentAnnotations<any, any>,
   projectAnnotations?: ProjectAnnotations<ReactRenderer>,
   exportsName?: string
 ): ComposedStoryFn<ReactRenderer, Partial<TArgs>> {

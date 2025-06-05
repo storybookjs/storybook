@@ -696,7 +696,7 @@ export const getProjects = async (
   | undefined
 > => {
   try {
-    const task = prompt.spinner();
+    const task = prompt.spinner({ id: 'detect-projects' });
     task.start('Detecting projects...');
 
     // Determine configuration directories
@@ -845,7 +845,6 @@ export const getStoriesPathsFromConfig = async ({
   const matchingStoryFiles = await StoryIndexGenerator.findMatchingFilesForSpecifiers(
     normalizedStories,
     workingDir,
-    true,
     true
   );
 

@@ -265,6 +265,7 @@ export async function runAutomigrationsForProjects(
 
     const projectName = shortenPath(project.configDir);
     const taskLog = prompt.taskLog({
+      id: `automigrate-${projectName}`,
       title: `${countPrefix}Running automigrations for ${projectName}:`,
     });
     const fixResults: Record<FixId, FixStatus> = {};
@@ -340,6 +341,7 @@ export async function runAutomigrations(
   }));
 
   const detectingAutomigrationTask = prompt.taskLog({
+    id: 'detect-automigrations',
     title:
       projectAutomigrationData.length > 1
         ? `Detecting automigrations for ${projectAutomigrationData.length} projects...`
@@ -366,6 +368,7 @@ export async function runAutomigrations(
   });
 
   const runningAutomigrationsTask = prompt.taskLog({
+    id: 'run-automigrations',
     title:
       projectAutomigrationData.length > 1
         ? `Running automigrations for ${projectAutomigrationData.length} projects...`

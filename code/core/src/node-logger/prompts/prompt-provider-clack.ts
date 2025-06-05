@@ -7,6 +7,7 @@ import type {
   PromptOptions,
   SelectPromptOptions,
   SpinnerInstance,
+  SpinnerOptions,
   TaskLogInstance,
   TaskLogOptions,
   TextPromptOptions,
@@ -56,20 +57,21 @@ export class ClackPromptProvider extends PromptProvider {
     return result as T[];
   }
 
-  spinner(): SpinnerInstance {
+  spinner(options: SpinnerOptions): SpinnerInstance {
     const task = clack.spinner();
+    const spinnerId = `${options.id}-spinner`;
 
     return {
       start: (message) => {
-        logTracker.addLog('info', `spinner-start: ${message}`);
+        logTracker.addLog('info', `${spinnerId}-start: ${message}`);
         task.start(message);
       },
       message: (message) => {
-        logTracker.addLog('info', `spinner: ${message}`);
+        logTracker.addLog('info', `${spinnerId}: ${message}`);
         task.message(message);
       },
       stop: (message) => {
-        logTracker.addLog('info', `spinner-stop: ${message}`);
+        logTracker.addLog('info', `${spinnerId}-stop: ${message}`);
         task.stop(message);
       },
     };
@@ -77,19 +79,20 @@ export class ClackPromptProvider extends PromptProvider {
 
   taskLog(options: TaskLogOptions): TaskLogInstance {
     const task = clack.taskLog(options);
-    logTracker.addLog('info', `task-start: ${options.title}`);
+    const taskId = `${options.id}-task`;
+    logTracker.addLog('info', `${taskId}-start: ${options.title}`);
 
     return {
       message: (message) => {
-        logTracker.addLog('info', `task: ${message}`);
+        logTracker.addLog('info', `${taskId}: ${message}`);
         task.message(message);
       },
       error: (message) => {
-        logTracker.addLog('error', `task-error: ${message}`);
+        logTracker.addLog('error', `${taskId}-error: ${message}`);
         task.error(message);
       },
       success: (message) => {
-        logTracker.addLog('info', `task-success: ${message}`);
+        logTracker.addLog('info', `${taskId}-success: ${message}`);
         task.success(message);
       },
     };

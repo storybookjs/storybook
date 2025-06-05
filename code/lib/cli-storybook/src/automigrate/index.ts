@@ -278,6 +278,7 @@ export async function runFixes({
       };
 
       const currentTaskLogger = prompt.taskLog({
+        id: `automigrate-task-${f.id}`,
         title: `${getTitle()}: ${picocolors.cyan(f.id)}`,
       });
 

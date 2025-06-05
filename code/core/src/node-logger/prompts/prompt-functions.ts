@@ -8,10 +8,12 @@ import type {
   PromptOptions,
   SelectPromptOptions,
   SpinnerInstance,
+  SpinnerOptions,
   TaskLogInstance,
   TaskLogOptions,
   TextPromptOptions,
 } from './prompt-provider-base';
+import { asyncLocalStorage } from './storage';
 
 // Re-export types for convenience
 export type {
@@ -98,8 +100,8 @@ export const multiselect = async <T>(
   );
 };
 
-export const spinner = (): SpinnerInstance => {
-  const spinnerInstance = getPromptProvider().spinner();
+export const spinner = (options: SpinnerOptions): SpinnerInstance => {
+  const spinnerInstance = getPromptProvider().spinner(options);
 
   // Wrap the spinner methods to handle console.log patching
   const wrappedSpinner: SpinnerInstance = {

@@ -350,6 +350,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         // Update dependencies in package.jsons for all projects
         if (!options.dryRun) {
           const task = prompt.taskLog({
+            id: 'upgrade-dependencies',
             title: `Fetching versions to update package.json files..`,
           });
           try {

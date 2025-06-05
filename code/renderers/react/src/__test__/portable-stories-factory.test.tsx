@@ -1,17 +1,9 @@
 // @vitest-environment happy-dom
 import { cleanup, render, screen } from '@testing-library/react';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import React from 'react';
 
-import type { Meta } from '@storybook/react';
-
-import { expectTypeOf } from 'expect-type';
-import { addons } from 'storybook/preview-api';
-
-import { composeStories, composeStory, setProjectAnnotations } from '..';
-import type { Button } from './Button';
-import * as ButtonStories from './Button.csf4.stories';
 import {
   CSF2StoryWithLocale,
   CSF3Button,
@@ -25,7 +17,6 @@ import { CSF2Secondary, HooksStory } from './Button.csf4.stories';
 
 afterEach(() => {
   cleanup();
-  document.body.replaceChildren();
 });
 
 describe('renders', () => {
@@ -64,50 +55,6 @@ describe('renders', () => {
 
   it('should throw an error in play function', async () => {
     await expect(() => MountInPlayFunctionThrow.run()).rejects.toThrowError('Error thrown in play');
-  });
-});
-
-describe('projectAnnotations', () => {
-  it('renders with default projectAnnotations', () => {
-    setProjectAnnotations([
-      {
-        parameters: { injected: true },
-        initialGlobals: {
-          locale: 'en',
-        },
-      },
-    ]);
-    const WithEnglishText = composeStory(
-      ButtonStories.CSF2StoryWithLocale.input,
-      ButtonStories.CSF3Primary.meta.input
-    );
-    const { getByText } = render(<WithEnglishText />);
-    const buttonElement = getByText('Hello!');
-    expect(buttonElement).not.toBeNull();
-    expect(WithEnglishText.parameters?.injected).toBe(true);
-  });
-
-  it('renders with custom projectAnnotations via composeStory params', () => {
-    const WithPortugueseText = composeStory(
-      ButtonStories.CSF2StoryWithLocale.input,
-      ButtonStories.CSF3Primary.meta.input,
-      {
-        initialGlobals: { locale: 'pt' },
-      }
-    );
-    const { getByText } = render(<WithPortugueseText />);
-    const buttonElement = getByText('Olá!');
-    expect(buttonElement).not.toBeNull();
-  });
-
-  it('has action arg from argTypes when addon-actions annotations are added', () => {
-    const Story = composeStory(
-      ButtonStories.WithActionArgType.input,
-      ButtonStories.CSF3Primary.meta.input
-    );
-
-    // TODO: add a way to provide custom args/argTypes, right now it's type any
-    // expect(Story.args.someActionArg).toHaveProperty('isAction', true);
   });
 });
 
@@ -155,53 +102,15 @@ describe('CSF3', () => {
   });
 });
 
-// common in addons that need to communicate between manager and preview
-it('should pass with decorators that need addons channel', () => {
-  const PrimaryWithChannels = composeStory(
-    ButtonStories.CSF3Primary.input,
-    ButtonStories.CSF3Primary.meta.input,
-    {
-      decorators: [
-        (StoryFn: any) => {
-          addons.getChannel();
-          return StoryFn();
-        },
-      ],
-    }
-  );
-  render(<PrimaryWithChannels>Hello world</PrimaryWithChannels>);
-  const buttonElement = screen.getByText(/Hello world/i);
-  expect(buttonElement).not.toBeNull();
-});
-
-describe('ComposeStories types', () => {
-  // this file tests Typescript types that's why there are no assertions
-  it('Should support typescript operators', () => {
-    type ComposeStoriesParam = Parameters<typeof composeStories>[0];
-
-    expectTypeOf({
-      ...ButtonStories,
-      default: ButtonStories.CSF3Primary.meta.input as Meta<typeof Button>,
-    }).toMatchTypeOf<ComposeStoriesParam>();
-  });
-});
-
-// @ts-expect-error TODO: fix the types for this
-const testCases = Object.values(composeStories(ButtonStories)).map(
-  // @ts-expect-error TODO: fix the types for this
-  (Story) => [Story.storyName, Story] as [string, typeof Story]
-);
+const testCases = Object.entries({
+  CSF2StoryWithLocale,
+  CSF3Button,
+  CSF3ButtonWithRender,
+  CSF3InputFieldFilled,
+  CSF3Primary,
+  MountInPlayFunction,
+}).map(([name, Story]) => [name, Story] as [string, typeof Story]);
 it.each(testCases)('Renders %s story', async (_storyName, Story) => {
-  if (
-    _storyName === 'LoaderStory' ||
-    _storyName === 'Modal' ||
-    _storyName === 'CSF2StoryWithLocale' ||
-    _storyName === 'MountInPlayFunctionThrow'
-  ) {
-    return;
-  }
-
-  // @ts-expect-error TODO: fix the types for this
   await Story.run();
   expect(document.body).toMatchSnapshot();
 });

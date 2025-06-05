@@ -6,12 +6,6 @@ import type { Canvas, WebRenderer } from 'storybook/internal/types';
 export type { RenderContext, StoryContext } from 'storybook/internal/types';
 
 export interface ReactRenderer extends WebRenderer {
-  parameters: {
-    react?: {
-      rsc?: boolean;
-      rootOptions?: RootOptions;
-    };
-  };
   component: ComponentType<this['T']>;
   storyResult: StoryFnReactReturnType;
   mount: (ui?: JSX.Element) => Promise<Canvas>;
@@ -32,11 +26,12 @@ export interface ReactParameters {
      */
     rsc?: boolean;
     /** Options passed to React root creation */
-    rootOptions?: {
-      /** Custom error handler for caught errors */
-      onCaughtError?: (error: unknown) => void;
-    };
+    rootOptions?: RootOptions;
   };
+}
+
+export interface ReactTypes extends ReactRenderer {
+  parameters: ReactParameters;
 }
 
 export type StoryFnReactReturnType = JSX.Element;

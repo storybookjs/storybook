@@ -19,11 +19,11 @@ import * as reactAnnotations from './entry-preview';
 import * as reactArgTypesAnnotations from './entry-preview-argtypes';
 import * as reactDocsAnnotations from './entry-preview-docs';
 import type { AddMocks } from './public-types';
-import type { ReactRenderer } from './types';
+import type { ReactTypes } from './types';
 
 export function __definePreview<Addons extends PreviewAddon<never>[]>(
-  input: ProjectAnnotations<ReactRenderer> & { addons: Addons }
-): ReactPreview<InferTypes<Addons>> {
+  input: ProjectAnnotations<ReactTypes> & { addons: Addons }
+): ReactPreview<ReactTypes & InferTypes<Addons>> {
   const preview = definePreviewBase({
     ...input,
     addons: [
@@ -32,7 +32,7 @@ export function __definePreview<Addons extends PreviewAddon<never>[]>(
       reactDocsAnnotations,
       ...(input.addons ?? []),
     ],
-  }) as unknown as ReactPreview<InferTypes<Addons>>;
+  }) as unknown as ReactPreview<ReactTypes & InferTypes<Addons>>;
 
   const defineMeta = preview.meta.bind(preview);
   preview.meta = (_input) => {
@@ -52,24 +52,24 @@ export function __definePreview<Addons extends PreviewAddon<never>[]>(
 export interface ReactPreview<T extends AddonTypes> extends Preview<ReactRenderer & T> {
   meta<
     TArgs extends Args,
-    Decorators extends DecoratorFunction<ReactRenderer & T, any>,
+    Decorators extends DecoratorFunction<ReactTypes & T, any>,
     // Try to make Exact<Partial<TArgs>, TMetaArgs> work
     TMetaArgs extends Partial<TArgs>,
   >(
     meta: {
-      render?: ArgsStoryFn<ReactRenderer & T, TArgs>;
+      render?: ArgsStoryFn<ReactTypes & T, TArgs>;
       component?: ComponentType<TArgs>;
       decorators?: Decorators | Decorators[];
       args?: TMetaArgs;
     } & Omit<
-      ComponentAnnotations<ReactRenderer & T, TArgs>,
+      ComponentAnnotations<ReactTypes & T, TArgs>,
       'decorators' | 'component' | 'args' | 'render'
     >
   ): ReactMeta<
-    ReactRenderer &
+    ReactTypes &
       T & {
         args: Simplify<
-          TArgs & Simplify<RemoveIndexSignature<DecoratorsArgs<ReactRenderer & T, Decorators>>>
+          TArgs & Simplify<RemoveIndexSignature<DecoratorsArgs<ReactTypes & T, Decorators>>>
         >;
       },
     { args: Partial<TArgs> extends TMetaArgs ? {} : TMetaArgs }
@@ -80,18 +80,18 @@ type DecoratorsArgs<TRenderer extends Renderer, Decorators> = UnionToIntersectio
   Decorators extends DecoratorFunction<TRenderer, infer TArgs> ? TArgs : unknown
 >;
 
-interface ReactMeta<T extends ReactRenderer, MetaInput extends ComponentAnnotations<T>>
+interface ReactMeta<T extends ReactTypes, MetaInput extends ComponentAnnotations<T>>
   extends Meta<T> {
   // Required args don't need to be provided when the user uses an empty render
   story<
     TInput extends
-      | (() => ReactRenderer['storyResult'])
+      | (() => ReactTypes['storyResult'])
       | (StoryAnnotations<T, T['args']> & {
-          render: () => ReactRenderer['storyResult'];
+          render: () => ReactTypes['storyResult'];
         }),
   >(
     story?: TInput
-  ): ReactStory<T, TInput extends () => ReactRenderer['storyResult'] ? { render: TInput } : TInput>;
+  ): ReactStory<T, TInput extends () => ReactTypes['storyResult'] ? { render: TInput } : TInput>;
 
   story<
     TInput extends Simplify<
@@ -108,7 +108,7 @@ interface ReactMeta<T extends ReactRenderer, MetaInput extends ComponentAnnotati
   ): ReactStory<T, TInput>;
 }
 
-export interface ReactStory<T extends ReactRenderer, TInput extends StoryAnnotations<T, T['args']>>
+export interface ReactStory<T extends ReactTypes, TInput extends StoryAnnotations<T, T['args']>>
   extends Story<T, TInput> {
   Component: ComponentType<Partial<T['args']>>;
 }

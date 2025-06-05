@@ -4,6 +4,7 @@ import picocolors from 'picocolors';
 
 import { isClackEnabled } from '../prompts/prompt-config';
 import { wrapTextForClack } from '../wrap-utils';
+import { CLI_COLORS } from './colors';
 import { logTracker } from './log-tracker';
 
 const createLogFunction =
@@ -120,12 +121,12 @@ type BoxenOptions = {
   backgroundColor?: string;
 };
 
-export const logBox = (message: string, style?: BoxenOptions) => {
+export const logBox = (message: string, options?: BoxenOptions) => {
   if (shouldLog('info')) {
     logTracker.addLog('info', message);
     if (isClackEnabled()) {
-      if (style?.title) {
-        log(picocolors.underline(style.title));
+      if (options?.title) {
+        log(options.title);
       }
       log(message);
     } else {
@@ -134,7 +135,7 @@ export const logBox = (message: string, style?: BoxenOptions) => {
           borderStyle: 'round',
           padding: 1,
           borderColor: '#F1618C', // pink
-          ...style,
+          ...options,
         })
       );
     }
@@ -164,8 +165,8 @@ export const info = (message: string) => {
 };
 
 export const SYMBOLS = {
-  success: '✔',
-  error: '✕',
+  success: CLI_COLORS.success('✔'),
+  error: CLI_COLORS.error('✕'),
 };
 
 // Export the text wrapping utility for external use

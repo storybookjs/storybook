@@ -70,7 +70,7 @@ const command = (name: string) =>
       if (logTracker.shouldWriteLogsToFile) {
         const logFile = await logTracker.writeToFile();
         logger.log(`Storybook debug logs can be found at: ${logFile}`);
-        logger.outro('');
+        logger.outro('Done!');
       }
     });
 

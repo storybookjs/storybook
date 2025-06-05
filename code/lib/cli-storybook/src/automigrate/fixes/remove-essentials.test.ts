@@ -418,7 +418,7 @@ describe('remove-essentials migration', () => {
       });
 
       expect(mockPackageManager.addDependencies).toHaveBeenCalledWith(
-        { installAsDevDependencies: true, skipInstall: true },
+        { type: 'devDependencies', skipInstall: true },
         ['@storybook/addon-docs@8.0.0']
       );
     });

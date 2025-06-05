@@ -1,7 +1,7 @@
 import type { PackageManagerName } from 'storybook/internal/common';
 import { HandledError, JsPackageManagerFactory, isCorePackage } from 'storybook/internal/common';
 import { withTelemetry } from 'storybook/internal/core-server';
-import { logTracker, logger, prompt } from 'storybook/internal/node-logger';
+import { CLI_COLORS, logTracker, logger, prompt } from 'storybook/internal/node-logger';
 import {
   UpgradeStorybookToLowerVersionError,
   UpgradeStorybookUnknownCurrentVersionError,
@@ -208,30 +208,32 @@ function logUpgradeResults(
       const successfulProjectsList = successfulProjects
         .map((dir) => `  • ${picocolors.cyan(shortenPath(dir))}`)
         .join('\n');
-      logger.log(`${picocolors.green('✅ Successfully upgraded:')}\n${successfulProjectsList}`);
+      logger.log(`${CLI_COLORS.success('Successfully upgraded:')}\n${successfulProjectsList}`);
     }
 
-    const failedProjectsList = failedProjects
-      .map((dir) => `  • ${picocolors.cyan(shortenPath(dir))}`)
-      .join('\n');
-    logger.log(`${picocolors.red('❌ Failed to upgrade:')}\n${failedProjectsList}`);
+    const failedProjectsList = failedProjects.map((dir) => `  • ${shortenPath(dir)}`).join('\n');
+    logger.log(`${CLI_COLORS.error('Failed to upgrade:')}\n${failedProjectsList}`);
 
     if (projectsWithNoFixes.length > 0) {
       const projectList = projectsWithNoFixes
         .map((dir) => `  • ${picocolors.cyan(shortenPath(dir))}`)
         .join('\n');
-      logger.log(`${picocolors.yellow('ℹ️  No applicable migrations:')}\n${projectList}`);
+      logger.log(`${CLI_COLORS.info('No applicable migrations:')}\n${projectList}`);
     }
   } else {
     logger.step('The upgrade is complete!');
     if (Object.values(doctorResults).every((result) => result.status === 'healthy')) {
-      logger.log(`${picocolors.green('Your project(s) have been upgraded successfully! 🎉')}`);
+      logger.log(`${CLI_COLORS.success('Your project(s) have been upgraded successfully! 🎉')}`);
     } else {
       logger.log(
         `${picocolors.yellow('Your project(s) have been upgraded successfully, but some issues were found which need your attention, please check Storybook doctor logs above.')}`
       );
     }
   }
+
+  logger.log(
+    `For a full list of changes, please check our migration guide: ${CLI_COLORS.link('https://storybook.js.org/docs/migration-guide')}`
+  );
 }
 
 interface MultiUpgradeTelemetryOptions {

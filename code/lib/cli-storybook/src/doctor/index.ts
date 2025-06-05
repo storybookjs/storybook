@@ -1,5 +1,5 @@
 import { JsPackageManager } from 'storybook/internal/common';
-import { logTracker, logger } from 'storybook/internal/node-logger';
+import { CLI_COLORS, logTracker, logger } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
@@ -102,8 +102,12 @@ export function displayDoctorResults(
         if (status !== DiagnosticStatus.PASSED) {
           const message = result.messages[type as DiagnosticType];
           if (message) {
+            const title = type.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
             logger.logBox(message, {
-              title: type.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
+              title:
+                status === DiagnosticStatus.CHECK_ERROR
+                  ? CLI_COLORS.error(title)
+                  : CLI_COLORS.warning(title),
             });
           }
         }
@@ -143,12 +147,12 @@ export function displayDoctorResults(
       }
 
       logger.logBox(messageWithProjects, {
-        title: diagnostic.title,
+        title: CLI_COLORS.warning(diagnostic.title),
       });
     });
   }
 
-  logger.step(picocolors.bold('Storybook doctor is complete!'));
+  logger.step('Storybook doctor is complete!');
 
   const commandMessage = `You can always recheck the health of your project(s) by running:\n${picocolors.cyan(
     'npx storybook doctor'

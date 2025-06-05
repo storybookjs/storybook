@@ -89,11 +89,11 @@ export class ClackPromptProvider extends PromptProvider {
       },
       error: (message) => {
         logTracker.addLog('error', `${taskId}-error: ${message}`);
-        task.error(message);
+        task.error(message, { showLog: true });
       },
-      success: (message) => {
+      success: (message, options) => {
         logTracker.addLog('info', `${taskId}-success: ${message}`);
-        task.success(message);
+        task.success(message, options);
       },
     };
   }

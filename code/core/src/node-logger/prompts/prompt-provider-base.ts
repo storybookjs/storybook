@@ -51,7 +51,7 @@ export interface SpinnerInstance {
 
 export interface TaskLogInstance {
   message: (text: string) => void;
-  success: (message: string) => void;
+  success: (message: string, options?: { showLog?: boolean }) => void;
   error: (message: string) => void;
 }
 

@@ -1,8 +1,6 @@
 import type { JsPackageManager } from 'storybook/internal/common';
-import { type TaskLogInstance, logger, prompt } from 'storybook/internal/node-logger';
+import { CLI_COLORS, type TaskLogInstance, logger, prompt } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
-
-import picocolors from 'picocolors';
 
 import type { UpgradeOptions } from '../upgrade';
 import { shortenPath } from '../util';
@@ -236,7 +234,7 @@ export async function promptForAutomigrations(
 /** Runs selected automigrations for each project */
 export async function runAutomigrationsForProjects(
   selectedAutomigrations: AutomigrationCheckResult[],
-  options: MultiProjectAutomigrationOptions
+  options: Omit<MultiProjectAutomigrationOptions, 'taskLog'>
 ): Promise<Record<string, Record<FixId, FixStatus>>> {
   const { dryRun, skipInstall } = options;
   const projectResults: Record<string, Record<FixId, FixStatus>> = {};
@@ -280,8 +278,6 @@ export async function runAutomigrationsForProjects(
             ? await fix.promptType(result)
             : (fix.promptType ?? 'auto');
 
-        taskLog.message(`  - ${fix.id}...`);
-
         if (promptType === 'manual') {
           // For manual migrations, show the prompt and mark as manual
           logger.log(`    ℹ️  Manual migration required:`);
@@ -308,15 +304,25 @@ export async function runAutomigrationsForProjects(
 
           await fix.run(runOptions);
           fixResults[fix.id] = FixStatus.SUCCEEDED;
+          taskLog.message(`${logger.SYMBOLS.success} ${CLI_COLORS.success(fix.id)}`);
         }
       } catch (error) {
         fixResults[fix.id] = FixStatus.FAILED;
-        taskLog.error(`${logger.SYMBOLS.error} ${automigration.fix.id} failed`);
+        taskLog.message(`${logger.SYMBOLS.error} ${CLI_COLORS.error(`${automigration.fix.id}`)}`);
         logger.debug(`${error instanceof Error ? error.stack : String(error)}`);
       }
     }
 
-    taskLog.success(`${countPrefix}Completed automigrations for ${projectName}`);
+    const automigrationsWithErrors = Object.values(fixResults).filter(
+      (status) => status === FixStatus.FAILED
+    );
+
+    if (automigrationsWithErrors.length > 0) {
+      const count = automigrationsWithErrors.length;
+      taskLog.error(`${countPrefix}${count} automigrations failed for ${projectName}`);
+    } else {
+      taskLog.success(`${countPrefix}Completed automigrations for ${projectName}`);
+    }
 
     projectResults[configDir] = fixResults;
   }
@@ -367,13 +373,6 @@ export async function runAutomigrations(
     yes: options.yes,
   });
 
-  const runningAutomigrationsTask = prompt.taskLog({
-    id: 'run-automigrations',
-    title:
-      projectAutomigrationData.length > 1
-        ? `Running automigrations for ${projectAutomigrationData.length} projects...`
-        : `Running automigrations...`,
-  });
   // Run selected automigrations for each project
   const projectResults = await runAutomigrationsForProjects(selectedAutomigrations, {
     fixes: allFixes,
@@ -381,7 +380,6 @@ export async function runAutomigrations(
     dryRun: options.dryRun,
     yes: options.yes,
     skipInstall: options.skipInstall,
-    taskLog: runningAutomigrationsTask,
   });
 
   // Special case handling for rnstorybook-config which renames the config dir

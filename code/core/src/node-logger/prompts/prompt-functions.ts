@@ -131,10 +131,10 @@ export const taskLog = (options: TaskLogOptions): TaskLogInstance => {
     message: (message: string) => {
       task.message(wrapTextForClack(message));
     },
-    success: (message: string) => {
+    success: (message: string, options?: { showLog?: boolean }) => {
       activeTaskLog = null;
       restoreConsoleLog();
-      task.success(message);
+      task.success(message, options);
     },
     error: (message: string) => {
       activeTaskLog = null;

@@ -223,8 +223,6 @@ export async function runFixes({
   mainConfigPath,
   previewConfigPath,
   storybookVersion,
-  beforeVersion,
-  isUpgrade,
   storiesPaths,
 }: RunFixesOptions): Promise<{
   preCheckFailure?: PreCheckFailure;

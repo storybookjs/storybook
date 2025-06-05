@@ -38,7 +38,7 @@ export const addonStorysourceCodePanel: Fix<StorysourceOptions> = {
 
   prompt: () => {
     return dedent`
-      We'll remove ${picocolors.yellow('@storybook/addon-storysource')} and enable the Code Panel instead.
+      We'll remove @storybook/addon-storysource and enable the Code Panel instead.
     `;
   },
 

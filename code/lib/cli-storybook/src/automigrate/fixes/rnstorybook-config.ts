@@ -2,7 +2,6 @@ import { existsSync } from 'node:fs';
 import { readFile, rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 import type { Fix } from '../types';

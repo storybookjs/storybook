@@ -129,13 +129,19 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
   async run({ result }) {
     let counter = 1;
 
-    const { transformedSetupCode, skipPreviewTransformation, skipVitestSetupTransformation } =
-      result;
+    const {
+      transformedSetupCode,
+      skipPreviewTransformation,
+      skipVitestSetupTransformation,
+      setupFile,
+      previewFile,
+      transformedPreviewCode,
+    } = result;
 
-    const debugLog: string[] = [];
+    const errorMessage: string[] = [];
     if (!skipVitestSetupTransformation) {
       if (transformedSetupCode === null) {
-        debugLog.push(dedent`
+        errorMessage.push(dedent`
           ${counter++}) We couldn't find or automatically update ${picocolors.cyan(`.storybook/vitest.setup.<ts|js>`)} in your project to smoothly set up project annotations from ${picocolors.magenta(`@storybook/addon-a11y`)}. 
           Please manually update your ${picocolors.cyan(`vitest.setup.ts`)} file to include the following:
 
@@ -151,8 +157,8 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
     }
 
     if (!skipPreviewTransformation) {
-      if (result.transformedPreviewCode === null) {
-        debugLog.push(dedent`
+      if (transformedPreviewCode === null) {
+        errorMessage.push(dedent`
           ${counter++}) We couldn't find or automatically update your .storybook/preview.<ts|js> in your project to smoothly set up ${picocolors.cyan('parameters.a11y.test')} from @storybook/addon-a11y. Please manually update your .storybook/preview.<ts|js> file to include the following:
 
           ${picocolors.gray('export default {')}
@@ -165,22 +171,21 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
           ${picocolors.gray('}')}
         `);
       }
+    }
 
-      if (debugLog.length > 0) {
-        // eslint-disable-next-line local-rules/no-uncategorized-errors
-        throw new Error(
-          `The ${this.id} automigration couldn't make the changes but here are instructions for doing them yourself:\n${debugLog.join('\n')}`
-        );
-      }
-      const { setupFile, transformedSetupCode, transformedPreviewCode, previewFile } = result;
+    if (errorMessage.length > 0) {
+      // eslint-disable-next-line local-rules/no-uncategorized-errors
+      throw new Error(
+        dedent`The ${this.id} automigration couldn't make the changes but here are instructions for doing them yourself:\n${errorMessage.join('\n')}`
+      );
+    }
 
-      if (transformedSetupCode && setupFile) {
-        writeFileSync(setupFile, transformedSetupCode, 'utf8');
-      }
+    if (transformedSetupCode && setupFile) {
+      writeFileSync(setupFile, transformedSetupCode, 'utf8');
+    }
 
-      if (transformedPreviewCode && previewFile) {
-        writeFileSync(previewFile, transformedPreviewCode, 'utf8');
-      }
+    if (transformedPreviewCode && previewFile) {
+      writeFileSync(previewFile, transformedPreviewCode, 'utf8');
     }
   },
 };

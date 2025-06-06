@@ -11,14 +11,16 @@ import { spinner, taskLog } from './prompts/prompt-functions';
 export const executeTask = async (
   childProcessFactories: (() => ExecaChildProcess) | (() => ExecaChildProcess)[],
   {
+    id,
     intro,
     error,
     success,
     limitLines = 4,
-  }: { intro: string; error: string; success: string; limitLines?: number }
+  }: { id: string; intro: string; error: string; success: string; limitLines?: number }
 ) => {
   logTracker.addLog('info', intro);
   const task = taskLog({
+    id,
     title: intro,
     retainLog: false,
     limit: limitLines,
@@ -50,10 +52,10 @@ export const executeTask = async (
 
 export const executeTaskWithSpinner = async (
   childProcessFactories: (() => ExecaChildProcess) | (() => ExecaChildProcess)[],
-  { intro, error, success }: { intro: string; error: string; success: string }
+  { id, intro, error, success }: { id: string; intro: string; error: string; success: string }
 ) => {
   logTracker.addLog('info', intro);
-  const task = spinner();
+  const task = spinner({ id });
   task.start(intro);
 
   const factories = Array.isArray(childProcessFactories)

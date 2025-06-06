@@ -142,6 +142,7 @@ export abstract class JsPackageManager {
     }
 
     await prompt.executeTask(tasks, {
+      id: 'install-dependencies',
       intro: 'Installing dependencies...',
       error: 'An error occurred while installing dependencies.',
       success: 'Dependencies installed',

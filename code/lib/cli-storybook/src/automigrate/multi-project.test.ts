@@ -8,16 +8,24 @@ import {
 } from './multi-project';
 import type { Fix } from './types';
 
-vi.mock('storybook/internal/node-logger', () => ({
-  prompt: {
-    multiselect: vi.fn(),
-    error: vi.fn(),
-  },
-  logger: {
-    log: vi.fn(),
-    error: vi.fn(),
-  },
-}));
+vi.mock('storybook/internal/node-logger', async (importOriginal) => {
+  return {
+    ...(await importOriginal<typeof import('storybook/internal/node-logger')>()),
+    prompt: {
+      multiselect: vi.fn(),
+      error: vi.fn(),
+    },
+    logger: {
+      log: vi.fn(),
+      error: vi.fn(),
+      debug: vi.fn(),
+      SYMBOLS: {
+        success: '✔',
+        error: '✕',
+      },
+    },
+  };
+});
 
 const taskLogMock = {
   message: vi.fn(),
@@ -71,9 +79,9 @@ describe('multi-project automigrations', () => {
 
       expect(results).toHaveLength(2);
       expect(results[0].fix.id).toBe('fix1');
-      expect(results[0].projects).toHaveLength(2);
+      expect(results[0].reports).toHaveLength(2);
       expect(results[1].fix.id).toBe('fix2');
-      expect(results[1].projects).toHaveLength(2);
+      expect(results[1].reports).toHaveLength(2);
     });
 
     it('should deduplicate automigrations across projects', async () => {
@@ -91,7 +99,7 @@ describe('multi-project automigrations', () => {
 
       expect(results).toHaveLength(1);
       expect(results[0].fix.id).toBe('fix1');
-      expect(results[0].projects).toHaveLength(3);
+      expect(results[0].reports).toHaveLength(3);
     });
 
     it('should handle check errors gracefully', async () => {
@@ -109,10 +117,9 @@ describe('multi-project automigrations', () => {
 
       expect(results).toHaveLength(1);
       expect(results[0].fix.id).toBe('fix2');
-      expect(vi.mocked(logger.error).mock.calls[0][0]).toMatchInlineSnapshot(`
-        "Failed to check fix fix1 for project /project1/.storybook:
-        Error: Check failed"
-      `);
+      expect(vi.mocked(logger.debug).mock.calls[4][0]).toMatchInlineSnapshot(
+        `"Failed to check fix fix1 for project /project1/.storybook."`
+      );
     });
   });
 });

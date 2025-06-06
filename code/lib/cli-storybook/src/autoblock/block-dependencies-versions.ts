@@ -1,4 +1,3 @@
-import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 import { createBlocker } from './types';
@@ -25,15 +24,13 @@ export const blocker = createBlocker({
         return dedent`
           Support for Angular < 18 has been removed.
           Please see the migration guide for more information:
-          ${picocolors.yellow('https://angular.dev/update-guide')}
+          https://angular.dev/update-guide
         `;
       case 'next':
         return dedent`
           Support for Next.js < 14.1 has been removed.
           Please see the migration guide for more information:
-          ${picocolors.yellow(
-            'https://nextjs.org/docs/pages/building-your-application/upgrading/version-13'
-          )}
+          https://nextjs.org/docs/pages/building-your-application/upgrading/version-13
         `;
       default:
         return dedent`

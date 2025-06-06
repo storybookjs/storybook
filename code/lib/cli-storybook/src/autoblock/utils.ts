@@ -1,4 +1,5 @@
 import type { JsPackageManager } from 'storybook/internal/common';
+import { CLI_COLORS } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
 import { lt } from 'semver';
@@ -99,14 +100,20 @@ export function processAutoblockerResults<
       const baseMessage = 'Affected projects:';
       const relativeDirs = configDirs.map((dir) => shortenPath(dir) || '.');
       if (relativeDirs.length <= 3) {
-        return `${baseMessage} ${picocolors.yellow(relativeDirs.join(', '))}`;
+        return `${baseMessage} ${relativeDirs.join(', ')}`;
       }
       const remaining = relativeDirs.length - 3;
-      return `${baseMessage} ${picocolors.yellow(relativeDirs.slice(0, 3).join(', '))}${remaining > 0 ? ` and ${remaining} more...` : ''}`;
+      return `${baseMessage} ${relativeDirs.slice(0, 3).join(', ')}${remaining > 0 ? ` and ${remaining} more...` : ''}`;
     };
 
     const formattedMessages = autoblockerMessages.map((item) => {
-      return `${item.message}\n\n${formatConfigDirs(item.configDirs)}`;
+      let message = `${CLI_COLORS.warning(item.message)}\n\n${formatConfigDirs(item.configDirs)}`;
+
+      if (item.link) {
+        message += `\n\nMore information: ${item.link}`;
+      }
+
+      return message;
     });
 
     onError(

@@ -1,5 +1,3 @@
-import { lt } from 'semver';
-
 import { createBlocker } from './types';
 import { findOutdatedPackage } from './utils';
 

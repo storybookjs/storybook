@@ -220,6 +220,7 @@ describe('addon-storysource-remove', () => {
         configDir: '.storybook',
         skipInstall: true,
         skipPostinstall: true,
+        yes: true,
       });
     });
 

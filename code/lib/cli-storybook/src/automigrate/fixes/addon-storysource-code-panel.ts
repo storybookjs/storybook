@@ -60,7 +60,7 @@ export const addonStorysourceCodePanel: Fix<StorysourceOptions> = {
 
     // Remove the addon
     if (!dryRun) {
-      logger.log('Removing @storybook/addon-storysource...');
+      logger.debug('Removing @storybook/addon-storysource...');
 
       await removeAddon('@storybook/addon-storysource', {
         configDir,
@@ -76,6 +76,7 @@ export const addonStorysourceCodePanel: Fix<StorysourceOptions> = {
           packageManager: packageManager.type,
           skipInstall: true,
           skipPostinstall: true,
+          yes: true,
         });
       }
 

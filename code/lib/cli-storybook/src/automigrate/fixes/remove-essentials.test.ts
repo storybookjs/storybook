@@ -395,6 +395,7 @@ describe('remove-essentials migration', () => {
         packageManager: mockPackageManager.type,
         skipInstall: true,
         skipPostinstall: true,
+        yes: true,
       });
     });
 

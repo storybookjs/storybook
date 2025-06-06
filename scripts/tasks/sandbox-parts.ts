@@ -612,7 +612,7 @@ export async function addExtraDependencies({
   const packageManager = JsPackageManagerFactory.getPackageManager({}, cwd);
 
   await packageManager.addDependencies(
-    { installAsDevDependencies: true, skipInstall: true },
+    { type: 'devDependencies', skipInstall: true },
     extraDevDeps
   );
 
@@ -622,7 +622,7 @@ export async function addExtraDependencies({
       logger.log('\uD83C\uDF81 Adding extra deps', versionedExtraDeps);
     }
     await packageManager.addDependencies(
-      { installAsDevDependencies: true, skipInstall: true },
+      { type: 'devDependencies', skipInstall: true },
       versionedExtraDeps
     );
   }

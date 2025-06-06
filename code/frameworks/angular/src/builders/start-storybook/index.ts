@@ -22,7 +22,8 @@ import { JsonObject } from '@angular-devkit/core';
 import { findPackageSync } from 'fd-package-json';
 import { sync as findUpSync } from 'find-up';
 import { Observable, from, of } from 'rxjs';
-import { map, mapTo, switchMap } from 'rxjs/operators';
+import { map, switchMap } from 'rxjs/operators';
+import { joinPathFragments } from '@nx/devkit';
 
 import { errorSummary, printErrorDetails } from '../utils/error-handler';
 import { runCompodoc } from '../utils/run-compodoc';
@@ -66,12 +67,13 @@ export type StorybookBuilderOptions = JsonObject & {
     | 'previewUrl'
   >;
 
-export type StorybookBuilderOutput = JsonObject & BuilderOutput & {};
+export type StorybookBuilderOutput = JsonObject & BuilderOutput;
 
 const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (options, context) => {
   const builder = from(setup(options, context)).pipe(
     switchMap(({ tsConfig }) => {
-      const docTSConfig = findUpSync('tsconfig.doc.json', { cwd: options.configDir });
+      const pathToConfigDir = joinPathFragments(context.workspaceRoot, options.configDir);
+      const docTSConfig = findUpSync('tsconfig.doc.json', { cwd: pathToConfigDir });
 
       const runCompodoc$ = options.compodoc
         ? runCompodoc(
@@ -80,10 +82,10 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (options, cont
               tsconfig: docTSConfig ?? tsConfig,
             },
             context
-          ).pipe(mapTo({ tsConfig }))
+          ).pipe(map(() => ({ tsConfig })))
         : of({});
 
-      return runCompodoc$.pipe(mapTo({ tsConfig }));
+      return runCompodoc$.pipe(map(() => ({ tsConfig })));
     }),
     map(({ tsConfig }) => {
       getEnvConfig(options, {
@@ -126,10 +128,12 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (options, cont
         experimentalZoneless = false,
       } = options;
 
+      const pathToConfigDir = joinPathFragments(context.workspaceRoot, configDir);
+
       const standaloneOptions: StandaloneOptions = {
         packageJson: findPackageSync(__dirname),
         ci,
-        configDir,
+        configDir: pathToConfigDir,
         ...(docs ? { docs } : {}),
         host,
         https,
@@ -186,10 +190,11 @@ async function setup(options: StorybookBuilderOptions, context: BuilderContext) 
     );
   }
 
+  const pathToConfigDir = joinPathFragments(context.workspaceRoot, options.configDir);
   return {
     tsConfig:
       options.tsConfig ??
-      findUpSync('tsconfig.json', { cwd: options.configDir }) ??
+      findUpSync('tsconfig.json', { cwd: pathToConfigDir }) ??
       browserOptions.tsConfig,
   };
 }

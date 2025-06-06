@@ -16,16 +16,18 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
   entries = [],
   options
 ) => {
-  const annotations = [...entries, require.resolve('./client/config.mjs')];
+  const config = join(getAbsolutePath('@storybook/angular'), 'dist/client/config.mjs');
+  const annotations = [...entries, config];
 
   if ((options as any as StandaloneOptions).enableProdMode) {
-    annotations.unshift(require.resolve('./client/preview-prod.mjs'));
+    annotations.unshift(require.resolve('./dist/client/preview-prod.mjs'));
   }
 
   const docsConfig = await options.presets.apply('docs', {}, options);
   const docsEnabled = Object.keys(docsConfig).length > 0;
   if (docsEnabled) {
-    annotations.push(require.resolve('./client/docs/config.mjs'));
+    const docsConfig = join(getAbsolutePath('@storybook/angular'), 'dist/client/docs/config.mjs');
+    annotations.push(docsConfig);
   }
   return annotations;
 };

@@ -175,7 +175,7 @@ export class BUNProxy extends JsPackageManager {
 
         return this.mapDependencies(parsedOutput, pattern);
       } catch (err) {
-        logger.warn(`An issue occurred while trying to find dependencies metadata using npm.`);
+        logger.debug(`An issue occurred while trying to find dependencies metadata using npm.`);
         return undefined;
       }
     }

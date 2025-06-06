@@ -1,4 +1,5 @@
-import { Meta, StoryObj, argsToTemplate } from '@storybook/angular';
+import type { Meta, StoryObj } from '@storybook/angular';
+import { argsToTemplate } from '@storybook/angular';
 
 import { DocButtonComponent } from './doc-button.component';
 

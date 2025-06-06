@@ -1,4 +1,5 @@
-import { ComponentFactoryResolver, ElementRef, Component } from '@angular/core';
+import type { ComponentFactoryResolver, ElementRef } from '@angular/core';
+import { Component } from '@angular/core';
 
 @Component({
   standalone: false,

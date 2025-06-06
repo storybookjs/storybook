@@ -1,8 +1,8 @@
-import { PresetProperty } from 'storybook/internal/types';
+import type { PresetProperty } from 'storybook/internal/types';
 
 import { dirname, join } from 'node:path';
 
-import { StandaloneOptions } from './builders/utils/standalone-options';
+import type { StandaloneOptions } from './builders/utils/standalone-options';
 
 const getAbsolutePath = <I extends string>(input: I): I =>
   dirname(require.resolve(join(input, 'package.json'))) as any;

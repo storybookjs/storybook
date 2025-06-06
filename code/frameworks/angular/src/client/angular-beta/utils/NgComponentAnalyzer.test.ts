@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
+import type { Type } from '@angular/core';
 import {
-  Type,
   Component,
   ComponentFactoryResolver,
   Directive,

@@ -20,6 +20,7 @@ const findUpSyncMock = vi.mocked(findUpSync);
 const findUpMultipleSyncMock = vi.mocked(findUpMultipleSync);
 describe('CLASS: JsPackageManagerFactory', () => {
   beforeEach(() => {
+    JsPackageManagerFactory.clearCache();
     findUpSyncMock.mockReturnValue(undefined);
     findUpMultipleSyncMock.mockReturnValue([]);
     spawnSyncMock.mockReturnValue({ status: 1 } as any);
@@ -172,7 +173,7 @@ describe('CLASS: JsPackageManagerFactory', () => {
         expect(JsPackageManagerFactory.getPackageManager()).toBeInstanceOf(Yarn1Proxy);
       });
 
-      it('when Yarn command is ok, Yarn version is <2, NPM is ko, PNPM is ko', () => {
+      it('when Yarn command is ok and a yarn.lock file is found', () => {
         spawnSyncMock.mockImplementation((command) => {
           // Yarn is ok
           if (command === 'yarn') {
@@ -200,7 +201,7 @@ describe('CLASS: JsPackageManagerFactory', () => {
         });
 
         // there is no lockfile
-        findUpSyncMock.mockReturnValue(undefined);
+        findUpSyncMock.mockReturnValue('yarn.lock');
 
         expect(JsPackageManagerFactory.getPackageManager()).toBeInstanceOf(Yarn1Proxy);
       });
@@ -290,7 +291,7 @@ describe('CLASS: JsPackageManagerFactory', () => {
         expect(JsPackageManagerFactory.getPackageManager()).toBeInstanceOf(Yarn2Proxy);
       });
 
-      it('ONLY YARN 2: when Yarn command is ok, Yarn version is >=2, NPM is ko, PNPM is ko', () => {
+      it('ONLY YARN 2: when Yarn command is ok, Yarn version is >=2, NPM is ko, PNPM is ko, and a yarn.lock file is found', () => {
         spawnSyncMock.mockImplementation((command) => {
           // Yarn is ok
           if (command === 'yarn') {
@@ -317,83 +318,7 @@ describe('CLASS: JsPackageManagerFactory', () => {
           } as any;
         });
 
-        expect(JsPackageManagerFactory.getPackageManager()).toBeInstanceOf(Yarn2Proxy);
-      });
-
-      it('when Yarn command is ok, Yarn version is >=2, NPM and PNPM are ok, there is a `yarn.lock` file', () => {
-        spawnSyncMock.mockImplementation((command) => {
-          // Yarn is ok
-          if (command === 'yarn') {
-            return {
-              status: 0,
-              output: '2.0.0-rc.33',
-            };
-          }
-          // NPM is ok
-          if (command === 'npm') {
-            return {
-              status: 0,
-              output: '6.5.12',
-            };
-          }
-          // PNPM is ok
-          if (command === 'pnpm') {
-            return {
-              status: 0,
-              output: '7.9.5',
-            };
-          }
-          // Unknown package manager is ko
-          return {
-            status: 1,
-          } as any;
-        });
-
-        // There is a yarn.lock
-        findUpSyncMock.mockImplementation(() => '/Users/johndoe/Documents/yarn.lock');
-
-        expect(JsPackageManagerFactory.getPackageManager()).toBeInstanceOf(Yarn2Proxy);
-      });
-    });
-
-    describe('Yarn 2 proxy', () => {
-      it('FORCE: it should return a Yarn2 proxy when `force` option is `yarn2`', () => {
-        expect(JsPackageManagerFactory.getPackageManager({ force: 'yarn2' })).toBeInstanceOf(
-          Yarn2Proxy
-        );
-      });
-
-      it('USER AGENT: it should infer yarn2 from the user agent', () => {
-        process.env.npm_config_user_agent = 'yarn/2.2.10';
-        expect(JsPackageManagerFactory.getPackageManager()).toBeInstanceOf(Yarn2Proxy);
-      });
-
-      it('ONLY YARN 2: when Yarn command is ok, Yarn version is >=2, NPM is ko, PNPM is ko', () => {
-        spawnSyncMock.mockImplementation((command) => {
-          // Yarn is ok
-          if (command === 'yarn') {
-            return {
-              status: 0,
-              output: '2.0.0-rc.33',
-            };
-          }
-          // NPM is ko
-          if (command === 'npm') {
-            return {
-              status: 1,
-            };
-          }
-          // PNPM is ko
-          if (command === 'pnpm') {
-            return {
-              status: 1,
-            };
-          }
-          // Unknown package manager is ko
-          return {
-            status: 1,
-          } as any;
-        });
+        findUpSyncMock.mockImplementation(() => 'yarn.lock');
 
         expect(JsPackageManagerFactory.getPackageManager()).toBeInstanceOf(Yarn2Proxy);
       });

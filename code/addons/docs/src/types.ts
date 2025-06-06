@@ -1,3 +1,5 @@
+import type { JSX } from 'react';
+
 import type { ModuleExport, ModuleExports } from 'storybook/internal/types';
 
 type StoryBlockParameters = {
@@ -65,7 +67,7 @@ type CanvasBlockParameters = {
     className?: string;
     disabled?: boolean;
     onClick: () => void;
-    title: string | JSX.Element;
+    title: string | React.JSX.Element;
   }[];
   /** Provide HTML class(es) to the preview element, for custom styling. */
   className?: string;

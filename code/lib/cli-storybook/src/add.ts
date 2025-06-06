@@ -25,6 +25,7 @@ export interface PostinstallOptions {
   packageManager: PackageManagerName;
   configDir: string;
   yes?: boolean;
+  skipInstall?: boolean;
 }
 
 /**
@@ -69,6 +70,7 @@ type CLIOptions = {
   configDir?: string;
   skipPostinstall: boolean;
   yes?: boolean;
+  skipInstall?: boolean;
 };
 
 /**
@@ -86,7 +88,13 @@ type CLIOptions = {
  */
 export async function add(
   addon: string,
-  { packageManager: pkgMgr, skipPostinstall, configDir: userSpecifiedConfigDir, yes }: CLIOptions,
+  {
+    packageManager: pkgMgr,
+    skipPostinstall,
+    configDir: userSpecifiedConfigDir,
+    yes,
+    skipInstall,
+  }: CLIOptions,
   logger = console
 ) {
   const [addonName, inputVersion] = getVersionSpecifier(addon);
@@ -178,7 +186,12 @@ export async function add(
   }
 
   if (!skipPostinstall && isCoreAddon(addonName)) {
-    await postinstallAddon(addonName, { packageManager: packageManager.type, configDir, yes });
+    await postinstallAddon(addonName, {
+      packageManager: packageManager.type,
+      configDir,
+      yes,
+      skipInstall,
+    });
   }
 }
 function isValidVersion(version: string) {

@@ -291,9 +291,12 @@ export async function baseGenerator(
     extraAddons.push('@chromatic-com/storybook@^4');
   }
 
-  // Add @storybook/addon-docs when docs feature is selected
   if (features.includes('docs')) {
     extraAddons.push('@storybook/addon-docs');
+  }
+
+  if (features.includes('onboarding')) {
+    extraAddons.push('@storybook/addon-onboarding');
   }
 
   // added to main.js

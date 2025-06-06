@@ -400,6 +400,20 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@angular/router@npm:^19.1.1":
+  version: 19.2.14
+  resolution: "@angular/router@npm:19.2.14"
+  dependencies:
+    tslib: "npm:^2.3.0"
+  peerDependencies:
+    "@angular/common": 19.2.14
+    "@angular/core": 19.2.14
+    "@angular/platform-browser": 19.2.14
+    rxjs: ^6.5.3 || ^7.4.0
+  checksum: 10c0/e70855ba7a88f6f3a69b6540bfaf34673db7d298ddf573e454c57b6a5e5802555dcc3a44a6d93fa75ca4deb71d2e93e832b82df49b6aed32ab84338a8e1b3526
+  languageName: node
+  linkType: hard
+
 "@aw-web-design/x-default-browser@npm:1.4.126":
   version: 1.4.126
   resolution: "@aw-web-design/x-default-browser@npm:1.4.126"
@@ -6115,6 +6129,7 @@ __metadata:
     "@angular/forms": "npm:^19.1.1"
     "@angular/platform-browser": "npm:^19.1.1"
     "@angular/platform-browser-dynamic": "npm:^19.1.1"
+    "@angular/router": "npm:^19.1.1"
     "@storybook/builder-webpack5": "workspace:*"
     "@storybook/core-webpack": "workspace:*"
     "@storybook/global": "npm:^5.0.0"
@@ -6142,6 +6157,7 @@ __metadata:
     "@angular/forms": ">=18.0.0 < 21.0.0"
     "@angular/platform-browser": ">=18.0.0 < 21.0.0"
     "@angular/platform-browser-dynamic": ">=18.0.0 < 21.0.0"
+    "@angular/router": ">=18.0.0 < 21.0.0"
     rxjs: ^6.5.3 || ^7.4.0
     storybook: "workspace:^"
     typescript: ^4.9.0 || ^5.0.0

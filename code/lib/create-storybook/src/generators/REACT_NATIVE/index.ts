@@ -47,7 +47,6 @@ const generator: Generator = async (packageManager, npmOptions, options) => {
 
   await packageManager.addDependencies(
     {
-      type: npmOptions.installAsDevDependencies ? 'devDependencies' : 'dependencies',
       ...npmOptions,
     },
     packages

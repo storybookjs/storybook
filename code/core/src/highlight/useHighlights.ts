@@ -560,19 +560,19 @@ export const useHighlights = (channel: Channel) => {
   };
 
   let removeTimeout: NodeJS.Timeout;
-  const scrollIntoView = (target: string | string[], options?: ScrollIntoViewOptions) => {
+  const scrollIntoView = (targets: string | string[], options?: ScrollIntoViewOptions) => {
     const id = 'scrollIntoView-highlight';
     clearTimeout(removeTimeout);
     removeHighlight(id);
 
-    const selectors = Array.isArray(target) ? target : [target];
+    const selectors = Array.isArray(targets) ? targets : [targets];
     const elements = selectors.flatMap((target) => Array.from(document.querySelectorAll(target)));
     if (elements.length === 0) {
-      console.warn(`No elements found for (${target})`);
+      console.warn(`No elements found for (${targets})`);
       return;
     }
     if (elements.length > 1) {
-      console.info(`Multiple elements found for (${target}), scrolling to the first element`);
+      console.info(`Multiple elements found for (${targets}), scrolling to the first element`);
     }
     elements[0].scrollIntoView({ behavior: 'smooth', block: 'center', ...options });
 

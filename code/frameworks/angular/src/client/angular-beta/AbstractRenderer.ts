@@ -3,11 +3,12 @@ import { BehaviorSubject, Subject } from 'rxjs';
 import { stringify } from 'telejson';
 import { ICollection, StoryFnAngularReturnType } from '../types';
 import { PropertyExtractor } from './utils/PropertyExtractor';
-import { TestBedComponentBuilder } from './utils/TestBedComponentBuilder';
-import { getApplication, storyPropsProvider } from '../../renderer';
+import { TestBedComponentBuilder } from './utils/TestBedComponentBuilder';;
 import { queueBootstrapping } from './utils/BootstrapQueue';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { getWrapperComponent } from './TestBedWrapperComponent';
+import { storyPropsProvider } from './StorybookProvider';
+import { getApplication } from './StorybookModule';
 
 type StoryRenderInfo = {
   storyFnAngular: StoryFnAngularReturnType;

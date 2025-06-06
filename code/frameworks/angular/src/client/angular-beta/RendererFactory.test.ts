@@ -224,7 +224,7 @@ describe('RendererFactory', () => {
         expect(global.document.querySelectorAll('#story-1 > story-1')[0].innerHTML).toBe(
           '<foo>🦊</foo><!--container-->'
         );
-        expect(global.document.querySelectorAll('#story-1 > story-1')[1].innerHTML).toBe(
+        expect(global.document.querySelectorAll('#story-1 > story-1')[0].innerHTML).toBe(
           '<foo>🦊</foo><!--container-->'
         );
       });

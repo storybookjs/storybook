@@ -3,7 +3,7 @@
 // See: https://angular.io/api/core/ElementRef
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import { Injector, ElementRef } from '@angular/core';
-import { Component, Input, InjectionToken } from '@angular/core';
+import { Component, Input, InjectionToken, Inject } from '@angular/core';
 import { stringify } from 'telejson';
 
 export const TEST_TOKEN = new InjectionToken<string>('test');

@@ -1,7 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { logger } from 'storybook/internal/node-logger';
-
 import {
   type ProjectAutomigrationData,
   collectAutomigrationsAcrossProjects,
@@ -77,11 +75,13 @@ describe('multi-project automigrations', () => {
         taskLog: taskLogMock,
       });
 
-      expect(results).toHaveLength(2);
+      expect(results).toHaveLength(3);
       expect(results[0].fix.id).toBe('fix1');
-      expect(results[0].reports).toHaveLength(2);
+      expect(results[0].reports.every((report) => report.status === 'check_succeeded')).toBe(true);
       expect(results[1].fix.id).toBe('fix2');
-      expect(results[1].reports).toHaveLength(2);
+      expect(results[1].reports.every((report) => report.status === 'check_succeeded')).toBe(true);
+      expect(results[2].fix.id).toBe('fix3');
+      expect(results[2].reports.every((report) => report.status === 'not_applicable')).toBe(true);
     });
 
     it('should deduplicate automigrations across projects', async () => {
@@ -115,11 +115,9 @@ describe('multi-project automigrations', () => {
         taskLog: taskLogMock,
       });
 
-      expect(results).toHaveLength(1);
-      expect(results[0].fix.id).toBe('fix2');
-      expect(vi.mocked(logger.debug).mock.calls[4][0]).toMatchInlineSnapshot(
-        `"Failed to check fix fix1 for project /project1/.storybook."`
-      );
+      expect(results).toHaveLength(2);
+      expect(results[0].fix.id).toBe('fix1');
+      expect(results[0].reports.every((report) => report.status === 'check_failed')).toBe(true);
     });
   });
 });

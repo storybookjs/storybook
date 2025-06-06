@@ -23,7 +23,7 @@ export interface ProjectAutomigrationData {
 
 export interface AutomigrationCheckResultReport {
   result: any;
-  status: 'check_succeeded' | 'check_failed' | 'non_applicable';
+  status: 'check_succeeded' | 'check_failed' | 'not_applicable';
   project: ProjectAutomigrationData;
 }
 
@@ -63,7 +63,7 @@ export async function collectAutomigrationsAcrossProjects(
   function collectResult(
     fix: Fix,
     project: ProjectAutomigrationData,
-    status: 'check_succeeded' | 'check_failed' | 'non_applicable',
+    status: 'check_succeeded' | 'check_failed' | 'not_applicable',
     result?: any
   ) {
     const existing = automigrationMap.get(fix.id);
@@ -114,7 +114,7 @@ export async function collectAutomigrationsAcrossProjects(
         if (result !== null) {
           collectResult(fix, project, 'check_succeeded', result);
         } else {
-          collectResult(fix, project, 'non_applicable');
+          collectResult(fix, project, 'not_applicable');
         }
       } catch (error) {
         collectResult(fix, project, 'check_failed');
@@ -310,7 +310,7 @@ export async function runAutomigrationsForProjects(
     for (const automigration of projectAutomigration) {
       const { fix, result, project, status } = automigration;
 
-      if (status === 'non_applicable') {
+      if (status === 'not_applicable') {
         fixResults[fix.id] = FixStatus.UNNECESSARY;
         continue;
       }

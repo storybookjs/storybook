@@ -20,7 +20,8 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
   const annotations = [...entries, config];
 
   if ((options as any as StandaloneOptions).enableProdMode) {
-    annotations.unshift(require.resolve('./dist/client/preview-prod.mjs'));
+    const previewProd = join(getAbsolutePath('@storybook/angular'), 'dist/client/preview-prod.mjs');
+    annotations.unshift(previewProd);
   }
 
   const docsConfig = await options.presets.apply('docs', {}, options);

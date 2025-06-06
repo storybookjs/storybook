@@ -440,7 +440,7 @@ export abstract class JsPackageManager {
       JsPackageManager.latestVersionCache.set(cacheKey, result);
       return result;
     } catch (e) {
-      JsPackageManager.latestVersionCache.set(cacheKey, '0.0.0');
+      JsPackageManager.latestVersionCache.set(cacheKey, null);
       return null;
     }
   }

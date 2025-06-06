@@ -500,6 +500,9 @@ export const generateUpgradeSpecs = async (
           try {
             const packageName = isCLIPrerelease ? `${dependency}@next` : dependency;
             const mostRecentVersion = (await packageManager.latestVersion(packageName))!;
+            if (!mostRecentVersion) {
+              return null;
+            }
             const { modifier } = getVersionModifier(dependencies[dependency] ?? '');
             return `${dependency}@${modifier}${mostRecentVersion}`;
           } catch {

@@ -92,12 +92,12 @@ const getRetainedState = (state: State, isDebugging = false) => {
 
 const getSelectors = (result: unknown): string[] | undefined => {
   if (result instanceof Element) {
-    const selectors = [finder(result)].filter(Boolean);
+    const selectors = [finder(result, { timeoutMs: 1 })].filter(Boolean);
     return selectors.length ? selectors : undefined;
   }
   if (Array.isArray(result)) {
     const elements = result.filter((item) => item instanceof Element);
-    const selectors = elements.map((item) => finder(item)).filter(Boolean);
+    const selectors = elements.map((item) => finder(item, { timeoutMs: 1 })).filter(Boolean);
     return selectors.length ? selectors : undefined;
   }
   return undefined;

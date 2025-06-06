@@ -100,7 +100,6 @@ const RowActions = styled.div({
 });
 
 export const StyledIconButton = styled(IconButton as any)(({ theme }) => ({
-  color: theme.textMutedColor,
   margin: '0 3px',
 }));
 
@@ -185,8 +184,9 @@ export const Interaction = ({
   isHidden,
   isCollapsed,
   toggleCollapsed,
-  locateElements,
   pausedAt,
+  highlightedElements,
+  onHighlightElements,
 }: {
   call: Call;
   callsById: Map<Call['id'], Call>;
@@ -196,8 +196,9 @@ export const Interaction = ({
   isHidden: boolean;
   isCollapsed: boolean;
   toggleCollapsed: () => void;
-  locateElements: (selectors: string[]) => void;
   pausedAt?: Call['id'];
+  highlightedElements: string[];
+  onHighlightElements: (selectors: string[], highlight?: boolean) => void;
 }) => {
   const [isHovered, setIsHovered] = React.useState(false);
   const isInteractive = !controlStates.goto || !call.interceptable || !!call.ancestors?.length;
@@ -209,6 +210,8 @@ export const Interaction = ({
   if (call.id === INTERNAL_RENDER_CALL_ID) {
     return null;
   }
+
+  const isHighlighted = call.selectors?.every((selector) => highlightedElements.includes(selector));
 
   return (
     <RowContainer call={call} pausedAt={pausedAt}>
@@ -232,10 +235,15 @@ export const Interaction = ({
               hasChrome={false}
               trigger="hover"
               tooltip={
-                <Note note={call.selectors.length === 1 ? 'Locate element' : 'Locate elements'} />
+                <Note
+                  note={call.selectors.length === 1 ? 'Highlight element' : 'Highlight elements'}
+                />
               }
             >
-              <StyledIconButton onClick={() => locateElements(call.selectors!)}>
+              <StyledIconButton
+                active={isHighlighted}
+                onClick={() => onHighlightElements(call.selectors!, !isHighlighted)}
+              >
                 <LocationIcon />
               </StyledIconButton>
             </WithTooltip>

@@ -23,7 +23,7 @@ import {
   STATUS_TYPE_ID_COMPONENT_TEST,
   STORYBOOK_ADDON_TEST_CHANNEL,
 } from '../../../../addons/vitest/src/constants';
-import { SCROLL_INTO_VIEW } from '../../highlight';
+import { HIGHLIGHT, REMOVE_HIGHLIGHT, SCROLL_INTO_VIEW } from '../../highlight';
 import { EVENTS } from '../../instrumenter/EVENTS';
 import { type Call, CallStates, type LogItem } from '../../instrumenter/types';
 import { ADDON_ID, INTERNAL_RENDER_CALL_ID } from '../constants';
@@ -310,10 +310,34 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
     [scrollTarget]
   );
 
-  const locateElements = useCallback(
-    (selectors: string[]) => emit(SCROLL_INTO_VIEW, selectors),
-    [emit]
+  const [highlightedElements, setHighlightedElements] = useState<string[]>([]);
+  const onHighlightElements = useCallback(
+    (selectors: string[], highlight = true) => {
+      setHighlightedElements(highlight ? selectors : []);
+    },
+    [setHighlightedElements]
   );
+
+  useEffect(() => {
+    const keyframeName = `kf-${Math.random().toString(36).substring(2, 15)}`;
+    emit(SCROLL_INTO_VIEW, highlightedElements, { highlight: false });
+    emit(HIGHLIGHT, {
+      id: `${ADDON_ID}/highlight`,
+      selectors: highlightedElements,
+      styles: {
+        outline: '2px solid #1EA7FD',
+        outlineOffset: '-1px',
+        animation: `${keyframeName} 1s linear forwards`,
+      },
+      keyframes: `@keyframes ${keyframeName} {
+        0% { outline: 2px solid #1EA7FD00; }
+        33% { outline: 2px solid #1EA7FD; }
+        66% { outline: 2px solid #1EA7FD00; }
+        100% { outline: 2px solid #1EA7FD; }
+      }`,
+    });
+    return () => emit(REMOVE_HIGHLIGHT, `${ADDON_ID}/highlight`);
+  }, [emit, highlightedElements]);
 
   const hasException =
     !!caughtException ||
@@ -379,7 +403,8 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
         // @ts-expect-error TODO
         endRef={endRef}
         onScrollToEnd={scrollTarget && scrollToTarget}
-        onLocateElements={locateElements}
+        highlightedElements={highlightedElements}
+        onHighlightElements={onHighlightElements}
       />
     </Fragment>
   );

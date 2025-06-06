@@ -89,7 +89,6 @@
   },
   "dependencies": {
     "@storybook/builder-webpack5": "workspace:*",
-    "@storybook/core-webpack": "workspace:*",
     "@storybook/global": "^5.0.0",
     "fd-package-json": "^1.2.0",
     "find-up": "^5.0.0",
@@ -111,6 +110,7 @@
     "@angular/forms": "^19.1.1",
     "@angular/platform-browser": "^19.1.1",
     "@angular/platform-browser-dynamic": "^19.1.1",
+    "@storybook/core-webpack": "workspace:*",
     "@types/node": "^22.0.0",
     "rimraf": "^6.0.1",
     "typescript": "^5.8.3",

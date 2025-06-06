@@ -85,6 +85,7 @@ export type IndexEntry = StoryIndexEntry | DocsIndexEntry;
 export interface IndexInputStats {
   loaders?: boolean;
   play?: boolean;
+  tests?: boolean;
   render?: boolean;
   storyFn?: boolean;
   mount?: boolean;

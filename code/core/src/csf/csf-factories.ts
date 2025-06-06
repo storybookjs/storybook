@@ -4,9 +4,11 @@ import type {
   NormalizedComponentAnnotations,
   NormalizedProjectAnnotations,
   NormalizedStoryAnnotations,
+  PlayFunction,
   ProjectAnnotations,
   Renderer,
   StoryAnnotations,
+  StoryContext,
 } from 'storybook/internal/types';
 
 export interface Preview<TRenderer extends Renderer = Renderer> {
@@ -39,6 +41,10 @@ export interface Story<TRenderer extends Renderer, TArgs extends Args = Args> {
   input: StoryAnnotations<TRenderer, TArgs>;
   composed: NormalizedStoryAnnotations<TRenderer>;
   meta: Meta<TRenderer, TArgs>;
+  play: PlayFunction<TRenderer, TArgs>;
+  run: (context?: Partial<StoryContext<TRenderer, Partial<TArgs>>>) => Promise<void>;
+  // TODO: perhaps it should have a different type than PlayFunction
+  test: (name: string, fn: PlayFunction<TRenderer, TArgs>, options?: any) => void;
 }
 
 export function isStory<TRenderer extends Renderer>(input: unknown): input is Story<TRenderer> {

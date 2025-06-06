@@ -64,7 +64,7 @@ export function composeConfigs<TRenderer extends Renderer>(
     loaders: getArrayField(moduleExportList, 'loaders'),
     beforeAll: composeBeforeAllHooks(beforeAllHooks),
     beforeEach: getArrayField(moduleExportList, 'beforeEach'),
-    experimental_afterEach: getArrayField(moduleExportList, 'experimental_afterEach'),
+    afterEach: getArrayField(moduleExportList, 'afterEach'),
     render: getSingletonField(moduleExportList, 'render'),
     renderToCanvas: getSingletonField(moduleExportList, 'renderToCanvas'),
     applyDecorators: getSingletonField(moduleExportList, 'applyDecorators'),

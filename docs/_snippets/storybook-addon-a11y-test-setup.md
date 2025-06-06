@@ -1,7 +1,6 @@
 ```ts filename=".storybook/vitest.setup.ts" renderer="react" language="ts"
-import { beforeAll } from 'vitest';
-
-import { setProjectAnnotations } from '@storybook/react';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import { setProjectAnnotations } from '@storybook/your-framework';
 
 // Import the a11y addon annotations
 import * as a11yAddonAnnotations from '@storybook/addon-a11y/preview';
@@ -9,19 +8,16 @@ import * as a11yAddonAnnotations from '@storybook/addon-a11y/preview';
 // Optionally import your own annotations
 import * as projectAnnotations from './preview';
 
-const project = setProjectAnnotations([
+setProjectAnnotations([
   // Add the a11y addon annotations
   a11yAddonAnnotations,
   projectAnnotations,
 ]);
-
-beforeAll(project.beforeAll);
 ```
 
 ```js filename=".storybook/vitest.setup.js" renderer="react" language="js"
-import { beforeAll } from 'vitest';
-
-import { setProjectAnnotations } from '@storybook/react';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import { setProjectAnnotations } from '@storybook/your-framework';
 
 // Import the a11y addon annotations
 import * as a11yAddonAnnotations from '@storybook/addon-a11y/preview';
@@ -29,20 +25,16 @@ import * as a11yAddonAnnotations from '@storybook/addon-a11y/preview';
 // Optionally import your own annotations
 import * as projectAnnotations from './preview';
 
-const project = setProjectAnnotations([
+setProjectAnnotations([
   // Add the a11y addon annotations
   a11yAddonAnnotations,
   projectAnnotations,
 ]);
-
-beforeAll(project.beforeAll);
 ```
 
 ```ts filename=".storybook/vitest.setup.ts" renderer="svelte" language="ts"
-import { beforeAll } from 'vitest';
-
-// Replace @storybook/svelte with @storybook/sveltekit if you are using SvelteKit
-import { setProjectAnnotations } from '@storybook/svelte';
+// Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+import { setProjectAnnotations } from '@storybook/your-framework';
 
 // Import the a11y addon annotations
 import * as a11yAddonAnnotations from '@storybook/addon-a11y/preview';
@@ -50,20 +42,16 @@ import * as a11yAddonAnnotations from '@storybook/addon-a11y/preview';
 // Optionally import your own annotations
 import * as projectAnnotations from './preview';
 
-const project = setProjectAnnotations([
+setProjectAnnotations([
   // Add the a11y addon annotations
   a11yAddonAnnotations,
   projectAnnotations,
 ]);
-
-beforeAll(project.beforeAll);
 ```
 
 ```js filename=".storybook/vitest.setup.js" renderer="svelte" language="js"
-import { beforeAll } from 'vitest';
-
-// Replace @storybook/svelte with @storybook/sveltekit if you are using SvelteKit
-import { setProjectAnnotations } from '@storybook/svelte';
+// Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+import { setProjectAnnotations } from '@storybook/your-framework';
 
 // Import the a11y addon annotations
 import * as a11yAddonAnnotations from '@storybook/addon-a11y/preview';
@@ -71,19 +59,15 @@ import * as a11yAddonAnnotations from '@storybook/addon-a11y/preview';
 // Optionally import your own annotations
 import * as projectAnnotations from './preview';
 
-const project = setProjectAnnotations([
+setProjectAnnotations([
   // Add the a11y addon annotations
   a11yAddonAnnotations,
   projectAnnotations,
 ]);
-
-beforeAll(project.beforeAll);
 ```
 
 ```ts filename=".storybook/vitest.setup.ts" renderer="vue" language="ts"
-import { beforeAll } from 'vitest';
-
-import { setProjectAnnotations } from '@storybook/vue3';
+import { setProjectAnnotations } from '@storybook/vue3-vite';
 
 // Import the a11y addon annotations
 import * as a11yAddonAnnotations from '@storybook/addon-a11y/preview';
@@ -91,19 +75,15 @@ import * as a11yAddonAnnotations from '@storybook/addon-a11y/preview';
 // Optionally import your own annotations
 import * as projectAnnotations from './preview';
 
-const project = setProjectAnnotations([
+setProjectAnnotations([
   // Add the a11y addon annotations
   a11yAddonAnnotations,
   projectAnnotations,
 ]);
-
-beforeAll(project.beforeAll);
 ```
 
 ```js filename=".storybook/vitest.setup.js" renderer="vue" language="js"
-import { beforeAll } from 'vitest';
-
-import { setProjectAnnotations } from '@storybook/vue3';
+import { setProjectAnnotations } from '@storybook/vue3-vite';
 
 // Import the a11y addon annotations
 import * as a11yAddonAnnotations from '@storybook/addon-a11y/preview';
@@ -111,11 +91,9 @@ import * as a11yAddonAnnotations from '@storybook/addon-a11y/preview';
 // Optionally import your own annotations
 import * as projectAnnotations from './preview';
 
-const project = setProjectAnnotations([
+setProjectAnnotations([
   // Add the a11y addon annotations
   a11yAddonAnnotations,
   projectAnnotations,
 ]);
-
-beforeAll(project.beforeAll);
 ```

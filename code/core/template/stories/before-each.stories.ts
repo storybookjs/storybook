@@ -2,7 +2,7 @@
 import { expect } from 'storybook/test';
 
 const meta = {
-  component: globalThis.Components.Button,
+  component: globalThis.__TEMPLATE_COMPONENTS__.Button,
   args: { label: 'Button' },
 };
 

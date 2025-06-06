@@ -82,13 +82,6 @@ export function setProjectAnnotations<TRenderer extends Renderer = Renderer>(
     composeConfigs(annotations.map(extractAnnotation)),
   ]);
 
-  /*
-    We must return the composition of default and global annotations here
-    To ensure that the user has the full project annotations, eg. when running
-
-    const projectAnnotations = setProjectAnnotations(...);
-    beforeAll(projectAnnotations.beforeAll)
-  */
   return globalThis.globalProjectAnnotations ?? {};
 }
 

@@ -8,11 +8,7 @@ export function isTestEnvironment() {
       // @ts-expect-error this property exists in certain environments
       !!globalThis.__vitest_browser__ ||
       // @ts-expect-error this property exists in certain environments
-      !!globalThis.__playwright__binding__ ||
-      // @ts-expect-error this property exists in certain environments
-      !!import.meta.vitest ||
-      // @ts-expect-error this property exists in certain environments
-      import.meta.env.MODE === 'test'
+      !!globalThis.__playwright__binding__
     );
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (e) {
@@ -57,7 +53,7 @@ export function pauseAnimations(atEnd = true): CleanupCallback {
 }
 
 // Use the Web Animations API to wait for any animations and transitions to finish
-export async function waitForAnimations(signal: AbortSignal) {
+export async function waitForAnimations(signal?: AbortSignal) {
   if (
     !(
       'document' in globalThis &&
@@ -77,7 +73,7 @@ export async function waitForAnimations(signal: AbortSignal) {
       setTimeout(() => {
         const animationRoots = [globalThis.document, ...getShadowRoots(globalThis.document)];
         const checkAnimationsFinished = async () => {
-          if (timedOut || signal.aborted) {
+          if (timedOut || signal?.aborted) {
             return;
           }
           const runningAnimations = animationRoots
@@ -89,7 +85,7 @@ export async function waitForAnimations(signal: AbortSignal) {
           }
         };
         checkAnimationsFinished().then(resolve);
-      }, 50);
+      }, 100);
     }),
 
     // If animations don't finish within the timeout, continue without waiting

@@ -3,12 +3,7 @@ import { type RunnerTask, type TaskMeta, type TestContext } from 'vitest';
 import type { ComponentAnnotations, ComposedStoryFn } from 'storybook/internal/types';
 
 import { server } from '@vitest/browser/context';
-import {
-  type Report,
-  composeConfigs,
-  composeStory,
-  getCsfFactoryAnnotations,
-} from 'storybook/preview-api';
+import { type Report, composeStory, getCsfFactoryAnnotations } from 'storybook/preview-api';
 
 import { setViewport } from './viewports';
 
@@ -19,6 +14,21 @@ declare module '@vitest/browser/context' {
 }
 
 const { getInitialGlobals } = server.commands;
+
+/**
+ * Converts a file URL to a file path, handling URL encoding
+ *
+ * @param url The file URL to convert (e.g. file:///path/to/file.js)
+ * @returns The decoded file path
+ */
+export const convertToFilePath = (url: string): string => {
+  // Remove the file:// protocol
+  const path = url.replace(/^file:\/\//, '');
+  // Handle Windows paths
+  const normalizedPath = path.replace(/^\/+([a-zA-Z]:)/, '$1');
+  // Convert %20 to spaces
+  return normalizedPath.replace(/%20/g, ' ');
+};
 
 export const testStory = (
   exportName: string,

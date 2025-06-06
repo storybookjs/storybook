@@ -100,6 +100,7 @@ export async function executeCLIStep<TOptions extends OptionSpecifier>(
     cwd: string;
     dryRun?: boolean;
     debug: boolean;
+    env?: Record<string, string>;
   }
 ) {
   if (cliStep.hasArgument && !options.argument) {
@@ -125,6 +126,7 @@ export async function executeCLIStep<TOptions extends OptionSpecifier>(
       cwd: options.cwd,
       env: {
         STORYBOOK_DISABLE_TELEMETRY: 'true',
+        ...options.env,
       },
     },
     {

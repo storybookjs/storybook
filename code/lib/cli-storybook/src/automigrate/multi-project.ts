@@ -252,7 +252,7 @@ export async function runAutomigrationsForProjects(
   options: MultiProjectRunAutomigrationOptions
 ): Promise<Record<string, Record<FixId, FixStatus>>> {
   const { dryRun, skipInstall, automigrations } = options;
-  const projectResults: Record<string, Record<FixId, FixStatus>> = {};
+  const projectResults: Record<ConfigDir, Record<FixId, FixStatus>> = {};
 
   const applicableAutomigrations = selectedAutomigrations.filter((am) =>
     am.reports.every((rep) => rep.status !== 'not_applicable')

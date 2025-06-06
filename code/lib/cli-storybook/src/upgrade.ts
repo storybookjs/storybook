@@ -330,7 +330,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         });
 
         if (hasBlockers) {
-          logger.outro('Upgrade aborted');
+          logger.outro(CLI_COLORS.error('Upgrade aborted'));
           process.exit(1);
         }
 

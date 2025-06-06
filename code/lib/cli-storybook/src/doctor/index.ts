@@ -138,11 +138,11 @@ export function displayDoctorResults(
 
       if (diagnostic.projects.length > 1) {
         const projectNames = diagnostic.projects
-          .map((p) => picocolors.cyan(shortenPath(p.configDir) || '.'))
+          .map((p) => shortenPath(p.configDir) || '.')
           .join(', ');
         messageWithProjects += `\n\nAffected projects: ${projectNames}`;
       } else {
-        const projectName = picocolors.cyan(shortenPath(diagnostic.projects[0].configDir) || '.');
+        const projectName = shortenPath(diagnostic.projects[0].configDir) || '.';
         messageWithProjects += `\n\nAffected project: ${projectName}`;
       }
 

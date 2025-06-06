@@ -56,7 +56,7 @@ const isInstrumentable = (o: unknown) => {
 const construct = (obj: any) => {
   try {
     return new obj.constructor();
-  } catch (e) {
+  } catch {
     return {};
   }
 };
@@ -89,6 +89,23 @@ const getRetainedState = (state: State, isDebugging = false) => {
   return { cursor: calls.length, calls, callRefsByResult };
 };
 
+const getParentWindowState = () => {
+  try {
+    return global.window?.parent?.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__ || {};
+  } catch {
+    // This happens when window.parent is not on the same origin (e.g. for a composed storybook)
+    return {};
+  }
+};
+
+const setParentWindowState = (state: Record<StoryId, State>) => {
+  try {
+    global.window.parent.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__ = state;
+  } catch {
+    // This happens when window.parent is not on the same origin (e.g. for a composed storybook)
+  }
+};
+
 /** This class is not supposed to be used directly. Use the `instrument` function below instead. */
 export class Instrumenter {
   channel: Channel | undefined;
@@ -100,8 +117,7 @@ export class Instrumenter {
 
   constructor() {
     // Restore state from the parent window in case the iframe was reloaded.
-    // @ts-expect-error (TS doesn't know about this global variable)
-    this.state = global.window?.parent?.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__ || {};
+    this.state = getParentWindowState();
 
     // When called from `start`, isDebugging will be true.
     const resetState = ({
@@ -272,10 +288,7 @@ export class Instrumenter {
     const patch = typeof update === 'function' ? update(state) : update;
     this.state = { ...this.state, [storyId]: { ...state, ...patch } };
     // Track state on the parent window so we can reload the iframe without losing state.
-    if (global.window?.parent) {
-      // @ts-expect-error fix this later in d.ts file
-      global.window.parent.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__ = this.state;
-    }
+    setParentWindowState(this.state);
   }
 
   cleanup() {
@@ -294,10 +307,7 @@ export class Instrumenter {
     );
     const payload: SyncPayload = { controlStates: controlsDisabled, logItems: [] };
     this.channel?.emit(EVENTS.SYNC, payload);
-    if (global.window?.parent) {
-      // @ts-expect-error fix this later in d.ts file
-      global.window.parent.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__ = this.state;
-    }
+    setParentWindowState(this.state);
   }
 
   getLog(storyId: string): LogItem[] {

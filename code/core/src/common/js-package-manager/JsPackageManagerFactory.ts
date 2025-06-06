@@ -116,7 +116,9 @@ export class JsPackageManagerFactory {
       return packageManager;
     }
 
-    if (hasNPM(cwd) && closestLockfile === NPM_LOCKFILE) {
+    const isNPMCommandOk = hasNPM(cwd);
+
+    if (isNPMCommandOk && closestLockfile === NPM_LOCKFILE) {
       const packageManager = new NPMProxy({ cwd, configDir, storiesPaths });
       this.cache.set(cacheKey, packageManager);
       return packageManager;
@@ -145,7 +147,7 @@ export class JsPackageManagerFactory {
 
     // Default fallback, whenever users try to use something different than NPM, PNPM, Yarn,
     // but still have NPM installed
-    if (hasNPM(cwd)) {
+    if (isNPMCommandOk) {
       const packageManager = new NPMProxy({ cwd, configDir, storiesPaths });
       this.cache.set(cacheKey, packageManager);
       return packageManager;

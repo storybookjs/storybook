@@ -68,8 +68,8 @@
   "devDependencies": {
     "@analogjs/vite-plugin-angular": "^1.12.1",
     "@angular-devkit/architect": "^0.2000.1",
-    "@angular-devkit/build-angular": "^0.2000.1",
-    "@angular-devkit/core": "^0.2000.1",
+    "@angular-devkit/build-angular": "^20.0.0",
+    "@angular-devkit/core": "^20.0.0",
     "@angular/animations": "^20.0.0",
     "@angular/common": "^20.0.0",
     "@angular/compiler": "^20.0.0",

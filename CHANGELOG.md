@@ -1,3 +1,11 @@
+## 9.0.5
+
+- Addon A11y: Briefly disable highlights while Axe is running - [#31621](https://github.com/storybookjs/storybook/pull/31621), thanks @ghengeveld!
+- CLI: Consider Storybook React Native packages in upgrade command - [#31645](https://github.com/storybookjs/storybook/pull/31645), thanks @yannbf!
+- Next.js: Fix module transpilation - [#31501](https://github.com/storybookjs/storybook/pull/31501), thanks @valentinpalkovic!
+- Svelte: Fix source view always using `<wrapper ...>` - [#31639](https://github.com/storybookjs/storybook/pull/31639), thanks @JReinhold!
+- Testing: Fix `toSatisfy`-matcher implementation - [#31664](https://github.com/storybookjs/storybook/pull/31664), thanks @ndelangen!
+
 ## 9.0.4
 
 - Addon Vitest: Fix path comparison on Windows - [#31630](https://github.com/storybookjs/storybook/pull/31630), thanks @valentinpalkovic!

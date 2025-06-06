@@ -21,13 +21,15 @@ export interface ProjectAutomigrationData {
   storiesPaths: string[];
 }
 
+export interface AutomigrationCheckResultReport {
+  result: any;
+  status: 'success' | 'failed';
+  project: ProjectAutomigrationData;
+}
+
 export interface AutomigrationCheckResult<T = any> {
   fix: Fix<T>;
-  reports: {
-    result: T;
-    status: 'success' | 'failed';
-    project: ProjectAutomigrationData;
-  }[];
+  reports: AutomigrationCheckResultReport[];
 }
 
 export interface MultiProjectAutomigrationOptions {
@@ -184,7 +186,56 @@ export async function collectAutomigrationsAcrossProjects(
     logger.debug(`Fastest fix: ${fastestFix.fixId} (${fastestFix.averageTime.toFixed(2)}ms avg)`);
   }
 
-  return Array.from(automigrationMap.values());
+  const detectedAutomigrations = Array.from(automigrationMap.values());
+
+  // Single pass through detectedAutomigrations to build both arrays
+  const { successAutomigrations, failedAutomigrations } = detectedAutomigrations.reduce(
+    (acc, { fix, reports }) => {
+      const successReports = reports.filter((report) => report.status === 'success');
+      const failedReports = reports.filter((report) => report.status === 'failed');
+
+      if (successReports.length > 0) {
+        acc.successAutomigrations.push(fix.id);
+      }
+
+      if (failedReports.length > 0) {
+        acc.failedAutomigrations.push(fix.id);
+      }
+
+      return acc;
+    },
+    { successAutomigrations: [], failedAutomigrations: [] } as {
+      successAutomigrations: Array<string>;
+      failedAutomigrations: Array<string>;
+    }
+  );
+
+  taskLog.message('\nAutomigrations detected:');
+
+  successAutomigrations.forEach((fixId) => {
+    taskLog.message(`${CLI_COLORS.success(`${logger.SYMBOLS.success} ${fixId}`)}`);
+  });
+
+  failedAutomigrations.forEach((fixId) => {
+    taskLog.message(`${CLI_COLORS.error(`${logger.SYMBOLS.error} ${fixId}`)}`);
+  });
+
+  if (failedAutomigrations.length > 0) {
+    taskLog.error(
+      `${failedAutomigrations.length} automigration ${
+        failedAutomigrations.length > 1 ? 'checks' : 'check'
+      } failed`
+    );
+  } else {
+    taskLog.success(
+      `${detectedAutomigrations.length === 0 ? 'No automigrations detected' : `${detectedAutomigrations.length} automigrations detected`}`
+    );
+  }
+
+  // only return automigrations that have not failed for all projects
+  return detectedAutomigrations.filter((automigration) => {
+    return automigration.reports.some((report) => report.status === 'success');
+  });
 }
 
 /** Prompts user to select which automigrations to run */
@@ -277,7 +328,7 @@ export async function runAutomigrationsForProjects(
       const { project, result } = report;
       const existing = projectAutomigrations.get(project.configDir) || [];
 
-      if (existing) {
+      if (existing.length > 0) {
         existing.push({
           fix: automigration.fix,
           project,
@@ -300,7 +351,7 @@ export async function runAutomigrationsForProjects(
   for (const [configDir, automigrations] of projectAutomigrations) {
     const countPrefix =
       projectAutomigrations.size > 1 ? `(${++projectIndex}/${projectAutomigrations.size}) ` : '';
-    const { project, result } = automigrations[0];
+    const { project } = automigrations[0];
 
     if (!project) {
       continue;
@@ -315,6 +366,7 @@ export async function runAutomigrationsForProjects(
 
     for (const automigration of automigrations) {
       const { fix } = automigration;
+      const { result } = automigration;
 
       try {
         if (typeof fix.run === 'function') {
@@ -391,38 +443,6 @@ export async function runAutomigrations(
     skipInstall: options.skipInstall,
     taskLog: detectingAutomigrationTask,
   });
-
-  const checkFailures = detectedAutomigrations.flatMap(({ fix, reports }) => {
-    const failedReports = reports.filter((report) => report.status === 'failed');
-
-    if (failedReports.length > 0) {
-      return [
-        {
-          fixId: fix.id,
-          failedReports,
-        },
-      ];
-    }
-    return [];
-  });
-
-  if (checkFailures.length > 0) {
-    // per fix id, we log which projects had it failed, the project is failedReports[].project.configDir
-    // create a string that lists all fix ids and with each, a parenthesis list of projects that had it failed
-    checkFailures.forEach(({ fixId, failedReports }) => {
-      detectingAutomigrationTask.message(
-        CLI_COLORS.error(
-          `${fixId} (${failedReports.map((report) => shortenPath(report.project.configDir)).join(', ')})`
-        )
-      );
-    });
-
-    detectingAutomigrationTask.error(`${checkFailures.length} automigration checks failed`);
-  } else {
-    detectingAutomigrationTask.success(
-      `${detectedAutomigrations.length === 0 ? 'No automigrations detected' : `${detectedAutomigrations.length} automigrations detected`}`
-    );
-  }
 
   // Prompt user to select which automigrations to run
   const selectedAutomigrations = await promptForAutomigrations(detectedAutomigrations, {

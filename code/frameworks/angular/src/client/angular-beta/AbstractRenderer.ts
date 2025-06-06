@@ -3,7 +3,7 @@ import { BehaviorSubject, Subject } from 'rxjs';
 import { stringify } from 'telejson';
 import { ICollection, StoryFnAngularReturnType } from '../types';
 import { PropertyExtractor } from './utils/PropertyExtractor';
-import { TestBedComponentBuilder } from './utils/TestBedComponentBuilder';;
+import { TestBedComponentBuilder } from './utils/TestBedComponentBuilder';
 import { queueBootstrapping } from './utils/BootstrapQueue';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { getWrapperComponent } from './TestBedWrapperComponent';
@@ -188,14 +188,14 @@ export abstract class AbstractRenderer {
       ...(storyFnAngular.applicationConfig?.providers ?? []),
     ];
 
-    if (STORYBOOK_ANGULAR_OPTIONS?.experimentalZoneless) {
-      const { provideExperimentalZonelessChangeDetection } = await import('@angular/core');
-      if (!provideExperimentalZonelessChangeDetection) {
-        throw new Error('Experimental zoneless change detection requires Angular 18 or higher');
-      } else {
-        environmentProviders.unshift(provideExperimentalZonelessChangeDetection());
-      }
-    }
+    // if (STORYBOOK_ANGULAR_OPTIONS?.experimentalZoneless) {
+    //   const { provideExperimentalZonelessChangeDetection } = await import('@angular/core');
+    //   if (!provideExperimentalZonelessChangeDetection) {
+    //     throw new Error('Experimental zoneless change detection requires Angular 18 or higher');
+    //   } else {
+    //     environmentProviders.unshift(provideExperimentalZonelessChangeDetection());
+    //   }
+    // }
 
     return {
       environmentProviders,

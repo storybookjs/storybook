@@ -1,5 +1,9 @@
-import type { Injector, ElementRef } from '@angular/core';
-import { Component, Input, InjectionToken, Inject } from '@angular/core';
+// ElementRef must be a regular import, not a type-only import, because it's used in dependency injection.
+// Type-only imports are stripped during compilation, causing runtime errors like "ElementRef is not defined".
+// See: https://angular.io/api/core/ElementRef
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+import { Injector, ElementRef } from '@angular/core';
+import { Component, Input, InjectionToken } from '@angular/core';
 import { stringify } from 'telejson';
 
 export const TEST_TOKEN = new InjectionToken<string>('test');

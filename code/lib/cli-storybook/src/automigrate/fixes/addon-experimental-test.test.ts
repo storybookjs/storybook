@@ -150,34 +150,6 @@ describe('addon-experimental-test fix', () => {
     });
   });
 
-  describe('prompt function', () => {
-    it('should render properly with few files', () => {
-      const matchingFiles = ['.storybook/test-setup.ts', '.storybook/main.ts'];
-
-      const promptResult = addonExperimentalTest.prompt({ matchingFiles });
-      expect(promptResult).toMatchInlineSnapshot(
-        `"We'll migrate @storybook/experimental-addon-test to @storybook/addon-vitest"`
-      );
-    });
-
-    it('should render properly with many files', () => {
-      const matchingFiles = [
-        '.storybook/test-setup.ts',
-        '.storybook/main.ts',
-        'vitest.setup.ts',
-        'vite.config.ts',
-        '.storybook/preview.ts',
-        '.storybook/preview.js',
-        '.storybook/main.js',
-      ];
-
-      const promptResult = addonExperimentalTest.prompt({ matchingFiles });
-      expect(promptResult).toMatchInlineSnapshot(
-        `"We'll migrate @storybook/experimental-addon-test to @storybook/addon-vitest"`
-      );
-    });
-  });
-
   describe('run function', () => {
     it('should replace @storybook/experimental-addon-test in files', async () => {
       packageManager.getModulePackageJSON.mockImplementation((packageName: string) => {

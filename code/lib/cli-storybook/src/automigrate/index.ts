@@ -281,7 +281,6 @@ export async function runFixes({
       });
 
       logger.logBox(f.prompt());
-      // currentTaskLogger.message(f.prompt(result));
 
       let runAnswer: { fix: boolean } | undefined;
 

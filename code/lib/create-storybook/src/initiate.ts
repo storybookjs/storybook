@@ -70,7 +70,7 @@ const installStorybook = async <Project extends ProjectType>(
   options: CommandOptions
 ): Promise<any> => {
   const npmOptions: NpmOptions = {
-    installAsDevDependencies: true,
+    type: 'devDependencies',
     skipInstall: options.skipInstall,
   };
 

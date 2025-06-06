@@ -53,13 +53,6 @@ describe('removeAddonInteractions', () => {
     });
   });
 
-  describe('prompt', () => {
-    it('should return the correct message', () => {
-      const message = removeAddonInteractions.prompt(true);
-      expect(message).toContain('@storybook/addon-interactions has been moved to Storybook core');
-    });
-  });
-
   describe('run', () => {
     it('should run storybook remove command', async () => {
       const { removeAddon } = await import('storybook/internal/common');

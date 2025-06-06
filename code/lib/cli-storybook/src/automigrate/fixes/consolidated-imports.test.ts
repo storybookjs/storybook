@@ -114,18 +114,6 @@ describe('check', () => {
   });
 });
 
-describe('prompt', () => {
-  it('should return a prompt', () => {
-    const result = consolidatedImports.prompt({
-      consolidatedDeps: new Set(['@storybook/core-common', '@storybook/experimental-nextjs-vite']),
-    });
-
-    expect(result).toMatchInlineSnapshot(`
-      "We've detected Storybook packages that have been renamed or consolidated. We'll update these packages by scanning your codebase and updating any imports from these packages."
-    `);
-  });
-});
-
 describe('transformPackageJsonFiles', () => {
   it('should transform package.json files', async () => {
     const contents = JSON.stringify(mockPackageJson);

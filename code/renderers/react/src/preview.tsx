@@ -22,7 +22,7 @@ import type { AddMocks } from './public-types';
 import type { ReactTypes } from './types';
 
 export function __definePreview<Addons extends PreviewAddon<never>[]>(
-  input: ProjectAnnotations<ReactTypes> & { addons: Addons }
+  input: { addons: Addons } & ProjectAnnotations<ReactTypes & InferTypes<Addons>>
 ): ReactPreview<ReactTypes & InferTypes<Addons>> {
   const preview = definePreviewBase({
     ...input,

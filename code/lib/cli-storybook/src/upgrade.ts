@@ -293,7 +293,6 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     { cliOptions: { ...options, configDir: options.configDir?.[0] } },
     async () => {
       logger.intro('Storybook Upgrade');
-      // TODO: telemetry for upgrade start
       const projectsResult = await getProjects(options);
 
       if (projectsResult === undefined || projectsResult.selectedProjects.length === 0) {

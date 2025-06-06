@@ -280,7 +280,7 @@ export async function runFixes({
         title: `${getTitle()}: ${picocolors.cyan(f.id)}`,
       });
 
-      logger.logBox(f.prompt(result));
+      logger.logBox(f.prompt());
       // currentTaskLogger.message(f.prompt(result));
 
       let runAnswer: { fix: boolean } | undefined;

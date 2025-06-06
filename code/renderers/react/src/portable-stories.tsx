@@ -2,7 +2,6 @@ import * as React from 'react';
 
 import type {
   Args,
-  ComponentAnnotations,
   ComposedStoryFn,
   NamedOrDefaultProjectAnnotations,
   NormalizedProjectAnnotations,
@@ -106,7 +105,7 @@ export function composeStory<TArgs extends Args = Args>(
 ): ComposedStoryFn<ReactRenderer, Partial<TArgs>> {
   return originalComposeStory<ReactRenderer, TArgs>(
     story as StoryAnnotationsOrFn<ReactRenderer, Args>,
-    componentAnnotations as ComponentAnnotations<ReactRenderer, TArgs>,
+    componentAnnotations,
     projectAnnotations,
     globalThis.globalProjectAnnotations ?? INTERNAL_DEFAULT_PROJECT_ANNOTATIONS,
     exportsName

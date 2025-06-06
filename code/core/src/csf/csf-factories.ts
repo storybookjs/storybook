@@ -4,9 +4,7 @@ import type {
   Args,
   ComponentAnnotations,
   ComposedStoryFn,
-  NormalizedComponentAnnotations,
   NormalizedProjectAnnotations,
-  NormalizedStoryAnnotations,
   ProjectAnnotations,
   Renderer,
   StoryAnnotations,
@@ -83,8 +81,7 @@ export interface Meta<
 > {
   readonly _tag: 'Meta';
   input: TInput;
-  /** @deprecated Not yet implemented */
-  composed: NormalizedComponentAnnotations<TRenderer>;
+  // composed: NormalizedComponentAnnotations<TRenderer>;
   preview: Preview<TRenderer>;
 
   story(
@@ -132,8 +129,13 @@ export interface Story<
 > {
   readonly _tag: 'Story';
   input: TInput;
-  /** @deprecated Not yet implemented */
-  composed: NormalizedStoryAnnotations<TRenderer> & { args: TRenderer['args'] };
+  composed: Pick<
+    ComposedStoryFn<TRenderer>,
+    'argTypes' | 'parameters' | 'id' | 'tags' | 'globals'
+  > & {
+    args: TRenderer['args'];
+    name: string;
+  };
   meta: Meta<TRenderer>;
   __compose: () => ComposedStoryFn<TRenderer>;
   play: PlayFunction<TRenderer, TRenderer['args']>;
@@ -170,8 +172,10 @@ function defineStory<
     input,
     meta,
     __compose: compose,
-    get composed(): never {
-      throw new Error('Not implemented');
+    get composed() {
+      const composed = compose();
+      const { args, argTypes, parameters, id, tags, globals, storyName: name } = composed;
+      return { args, argTypes, parameters, id, tags, name, globals };
     },
     get play() {
       return input.play ?? meta.input?.play ?? (async () => {});

@@ -7217,8 +7217,8 @@ __metadata:
     zone.js: "npm:^0.15.0"
   peerDependencies:
     "@angular-devkit/architect": ">=0.1800.0 < 0.2100.0"
-    "@angular-devkit/build-angular": ">=0.1800.0 < 0.2100.0"
-    "@angular-devkit/core": ">=0.1800.0 < 0.2100.0"
+    "@angular-devkit/build-angular": ">=18.0.0 < 21.0.0"
+    "@angular-devkit/core": ">=18.0.0 < 21.0.0"
     "@angular/animations": ">=18.0.0 < 21.0.0"
     "@angular/cli": ">=18.0.0 < 21.0.0"
     "@angular/common": ">=18.0.0 < 21.0.0"

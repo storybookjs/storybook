@@ -1,4 +1,8 @@
-import type { ElementRef, AfterViewInit } from '@angular/core';
+// ElementRef must be a regular import, not a type-only import, because it's used in dependency injection.
+// Type-only imports are stripped during compilation, causing runtime errors like "ElementRef is not defined".
+// See: https://angular.io/api/core/ElementRef
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+import { ElementRef, AfterViewInit } from '@angular/core';
 import { Directive, Input } from '@angular/core';
 
 /** This is an Angular Directive example that has a Prop Table. */

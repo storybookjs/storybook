@@ -91,7 +91,6 @@
     "@storybook/builder-webpack5": "workspace:*",
     "@storybook/core-webpack": "workspace:*",
     "@storybook/global": "^5.0.0",
-    "@types/webpack-env": "^1.18.0",
     "fd-package-json": "^1.2.0",
     "find-up": "^5.0.0",
     "telejson": "8.0.0",

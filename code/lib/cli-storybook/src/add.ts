@@ -125,7 +125,7 @@ export async function add(
   if (checkInstalled(addonName, mainConfig)) {
     shouldAddToMain = false;
     if (!yes) {
-      logger.debug(`The Storybook addon "${addonName}" is already present in ${mainConfigPath}.`);
+      logger.log(`The Storybook addon "${addonName}" is already present in ${mainConfigPath}.`);
       const shouldForceInstall = await prompt.confirm({
         message: `Do you wish to install it again?`,
       });

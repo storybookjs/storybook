@@ -254,6 +254,10 @@ export async function runAutomigrationsForProjects(
   const { dryRun, skipInstall, automigrations } = options;
   const projectResults: Record<string, Record<FixId, FixStatus>> = {};
 
+  const applicableAutomigrations = selectedAutomigrations.filter((am) =>
+    am.reports.every((rep) => rep.status !== 'not_applicable')
+  );
+
   // Group automigrations by project
   type ConfigDir = string;
   const projectAutomigrationResults = new Map<
@@ -303,10 +307,25 @@ export async function runAutomigrationsForProjects(
     const { project } = projectAutomigration[0];
 
     const projectName = shortenPath(project.configDir);
-    const taskLog = prompt.taskLog({
-      id: `automigrate-${projectName}`,
-      title: `${countPrefix}Running automigrations for ${projectName}:`,
-    });
+
+    // If there isn't any applicable automigrations, we don't need to use the task log
+    const taskLog =
+      applicableAutomigrations.length > 0
+        ? prompt.taskLog({
+            id: `automigrate-${projectName}`,
+            title: `${countPrefix}Running automigrations for ${projectName}`,
+          })
+        : {
+            message: (message: string) => {
+              logger.debug(`${message}`);
+            },
+            error: (message: string) => {
+              logger.debug(`${message}`);
+            },
+            success: (message: string) => {
+              logger.debug(`${message}`);
+            },
+          };
     const fixResults: Record<FixId, FixStatus> = {};
 
     for (const automigration of projectAutomigration) {

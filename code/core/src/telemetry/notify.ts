@@ -1,5 +1,5 @@
 import { cache } from 'storybook/internal/common';
-import { logger } from 'storybook/internal/node-logger';
+import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
 
@@ -17,13 +17,9 @@ export const notify = async () => {
 
   cache.set(TELEMETRY_KEY_NOTIFY_DATE, Date.now());
 
-  logger.log('');
   logger.log(
-    `${picocolors.magenta(
-      picocolors.bold('attention')
-    )} => Storybook now collects completely anonymous telemetry regarding usage.`
+    `${CLI_COLORS.info('Attention:')} Storybook now collects completely anonymous telemetry regarding usage. This information is used to shape Storybook's roadmap and prioritize features.`
   );
-  logger.log(`This information is used to shape Storybook's roadmap and prioritize features.`);
   logger.log(
     `You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:`
   );

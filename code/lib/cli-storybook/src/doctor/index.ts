@@ -71,9 +71,9 @@ export function displayDoctorResults(
 
   if (!hasAnyIssues) {
     if (projectCount === 1) {
-      logger.log(`🥳 Your Storybook project looks good!`);
+      logger.log(`Your Storybook project looks good!`);
     } else {
-      logger.log(`🥳 All ${projectCount} Storybook projects look good!`);
+      logger.log(`All ${projectCount} Storybook projects look good!`);
     }
     return false;
   }

@@ -6,5 +6,5 @@ export const CLI_COLORS = {
   warning: picocolors.yellow,
   info: picocolors.blue,
   debug: picocolors.gray,
-  link: picocolors.yellowBright,
+  link: picocolors.yellow,
 };

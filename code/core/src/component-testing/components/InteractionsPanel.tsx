@@ -39,6 +39,7 @@ interface InteractionsPanelProps {
   calls: Map<string, any>;
   endRef?: React.Ref<HTMLDivElement>;
   onScrollToEnd?: () => void;
+  onLocateElements: (selectors: string[]) => void;
   hasResultMismatch?: boolean;
   browserTestStatus?: CallStates;
 }
@@ -96,6 +97,7 @@ export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
     unhandledErrors,
     isPlaying,
     pausedAt,
+    onLocateElements,
     onScrollToEnd,
     endRef,
     hasResultMismatch,
@@ -127,6 +129,7 @@ export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
               isHidden={call.isHidden}
               isCollapsed={call.isCollapsed}
               toggleCollapsed={call.toggleCollapsed}
+              locateElements={onLocateElements}
               pausedAt={pausedAt}
             />
           ))}

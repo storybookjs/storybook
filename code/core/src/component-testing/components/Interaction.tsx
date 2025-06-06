@@ -2,7 +2,7 @@ import * as React from 'react';
 
 import { IconButton, TooltipNote, WithTooltip } from 'storybook/internal/components';
 
-import { ListUnorderedIcon } from '@storybook/icons';
+import { ListUnorderedIcon, LocationIcon } from '@storybook/icons';
 
 import { transparentize } from 'polished';
 import { styled, typography } from 'storybook/theming';
@@ -185,6 +185,7 @@ export const Interaction = ({
   isHidden,
   isCollapsed,
   toggleCollapsed,
+  locateElements,
   pausedAt,
 }: {
   call: Call;
@@ -195,6 +196,7 @@ export const Interaction = ({
   isHidden: boolean;
   isCollapsed: boolean;
   toggleCollapsed: () => void;
+  locateElements: (selectors: string[]) => void;
   pausedAt?: Call['id'];
 }) => {
   const [isHovered, setIsHovered] = React.useState(false);
@@ -225,9 +227,23 @@ export const Interaction = ({
           </MethodCallWrapper>
         </RowLabel>
         <RowActions>
+          {call.selectors?.length && (
+            <WithTooltip
+              hasChrome={false}
+              trigger="hover"
+              tooltip={
+                <Note note={call.selectors.length === 1 ? 'Locate element' : 'Locate elements'} />
+              }
+            >
+              <StyledIconButton onClick={() => locateElements(call.selectors!)}>
+                <LocationIcon />
+              </StyledIconButton>
+            </WithTooltip>
+          )}
           {(childCallIds?.length ?? 0) > 0 && (
             <WithTooltip
               hasChrome={false}
+              trigger="hover"
               tooltip={<Note note={`${isCollapsed ? 'Show' : 'Hide'} interactions`} />}
             >
               <StyledIconButton onClick={toggleCollapsed}>

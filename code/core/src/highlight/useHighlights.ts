@@ -560,25 +560,29 @@ export const useHighlights = (channel: Channel) => {
   };
 
   let removeTimeout: NodeJS.Timeout;
-  const scrollIntoView = (target: string, options?: ScrollIntoViewOptions) => {
+  const scrollIntoView = (target: string | string[], options?: ScrollIntoViewOptions) => {
     const id = 'scrollIntoView-highlight';
     clearTimeout(removeTimeout);
     removeHighlight(id);
 
-    const element = document.querySelector(target);
-    if (!element) {
-      console.warn(`Cannot scroll into view: ${target} not found`);
+    const selectors = Array.isArray(target) ? target : [target];
+    const elements = selectors.flatMap((target) => Array.from(document.querySelectorAll(target)));
+    if (elements.length === 0) {
+      console.warn(`No elements found for (${target})`);
       return;
     }
+    if (elements.length > 1) {
+      console.info(`Multiple elements found for (${target}), scrolling to the first element`);
+    }
+    elements[0].scrollIntoView({ behavior: 'smooth', block: 'center', ...options });
 
-    element.scrollIntoView({ behavior: 'smooth', block: 'center', ...options });
     const keyframeName = `kf-${Math.random().toString(36).substring(2, 15)}`;
     highlights.set((value) => [
       ...value,
       {
         id,
         priority: 1000,
-        selectors: [target],
+        selectors,
         styles: {
           outline: '2px solid #1EA7FD',
           outlineOffset: '-1px',

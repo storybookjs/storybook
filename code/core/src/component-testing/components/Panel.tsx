@@ -1,5 +1,5 @@
 import type { Dispatch, SetStateAction } from 'react';
-import React, { Fragment, memo, useEffect, useMemo, useRef, useState } from 'react';
+import React, { Fragment, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   FORCE_REMOUNT,
@@ -23,6 +23,7 @@ import {
   STATUS_TYPE_ID_COMPONENT_TEST,
   STORYBOOK_ADDON_TEST_CHANNEL,
 } from '../../../../addons/vitest/src/constants';
+import { SCROLL_INTO_VIEW } from '../../highlight';
 import { EVENTS } from '../../instrumenter/EVENTS';
 import { type Call, CallStates, type LogItem } from '../../instrumenter/types';
 import { ADDON_ID, INTERNAL_RENDER_CALL_ID } from '../constants';
@@ -304,7 +305,15 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
 
   const storyFilePath = useParameter('fileName', '');
   const [fileName] = storyFilePath.toString().split('/').slice(-1);
-  const scrollToTarget = () => scrollTarget?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  const scrollToTarget = useCallback(
+    () => scrollTarget?.scrollIntoView({ behavior: 'smooth', block: 'end' }),
+    [scrollTarget]
+  );
+
+  const locateElements = useCallback(
+    (selectors: string[]) => emit(SCROLL_INTO_VIEW, selectors),
+    [emit]
+  );
 
   const hasException =
     !!caughtException ||
@@ -370,6 +379,7 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
         // @ts-expect-error TODO
         endRef={endRef}
         onScrollToEnd={scrollTarget && scrollToTarget}
+        onLocateElements={locateElements}
       />
     </Fragment>
   );

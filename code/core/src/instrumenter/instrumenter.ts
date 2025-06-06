@@ -21,14 +21,6 @@ type PatchedObj<TObj extends Record<string, unknown>> = {
   [Property in keyof TObj]: TObj[Property] & { __originalFn__: TObj[Property] };
 };
 
-const controlsDisabled: ControlStates = {
-  start: false,
-  back: false,
-  goto: false,
-  next: false,
-  end: false,
-};
-
 const alreadyCompletedException = new Error(
   `This function ran after the play function completed. Did you forget to \`await\` it?`
 );
@@ -89,35 +81,19 @@ const getRetainedState = (state: State, isDebugging = false) => {
   return { cursor: calls.length, calls, callRefsByResult };
 };
 
-const getParentWindowState = () => {
-  try {
-    return global.window?.parent?.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__ || {};
-  } catch {
-    // This happens when window.parent is not on the same origin (e.g. for a composed storybook)
-    return {};
-  }
-};
-
-const setParentWindowState = (state: Record<StoryId, State>) => {
-  try {
-    global.window.parent.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__ = state;
-  } catch {
-    // This happens when window.parent is not on the same origin (e.g. for a composed storybook)
-  }
-};
-
 /** This class is not supposed to be used directly. Use the `instrument` function below instead. */
 export class Instrumenter {
   channel: Channel | undefined;
 
+  detached = false;
   initialized = false;
 
   // State is tracked per story to deal with multiple stories on the same canvas (i.e. docs mode)
-  state: Record<StoryId, State>;
+  state: Record<StoryId, State> = {};
 
   constructor() {
     // Restore state from the parent window in case the iframe was reloaded.
-    this.state = getParentWindowState();
+    this.loadParentWindowState();
 
     // When called from `start`, isDebugging will be true.
     const resetState = ({
@@ -279,6 +255,24 @@ export class Instrumenter {
     }
   }
 
+  loadParentWindowState = () => {
+    try {
+      this.state = global.window?.parent?.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__ || {};
+    } catch {
+      // This happens when window.parent is not on the same origin (e.g. for a composed storybook)
+      this.detached = true;
+    }
+  };
+
+  updateParentWindowState = () => {
+    try {
+      global.window.parent.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__ = this.state;
+    } catch {
+      // This happens when window.parent is not on the same origin (e.g. for a composed storybook)
+      this.detached = true;
+    }
+  };
+
   getState(storyId: StoryId) {
     return this.state[storyId] || getInitialState();
   }
@@ -288,7 +282,7 @@ export class Instrumenter {
     const patch = typeof update === 'function' ? update(state) : update;
     this.state = { ...this.state, [storyId]: { ...state, ...patch } };
     // Track state on the parent window so we can reload the iframe without losing state.
-    setParentWindowState(this.state);
+    this.updateParentWindowState();
   }
 
   cleanup() {
@@ -305,9 +299,17 @@ export class Instrumenter {
       },
       {} as Record<StoryId, State>
     );
-    const payload: SyncPayload = { controlStates: controlsDisabled, logItems: [] };
+    const controlStates: ControlStates = {
+      detached: this.detached,
+      start: false,
+      back: false,
+      goto: false,
+      next: false,
+      end: false,
+    };
+    const payload: SyncPayload = { controlStates, logItems: [] };
     this.channel?.emit(EVENTS.SYNC, payload);
-    setParentWindowState(this.state);
+    this.updateParentWindowState();
   }
 
   getLog(storyId: string): LogItem[] {
@@ -669,8 +671,16 @@ export class Instrumenter {
         .find((item) => item.status === CallStates.WAITING)?.callId;
 
       const hasActive = logItems.some((item) => item.status === CallStates.ACTIVE);
-      if (isLocked || hasActive || logItems.length === 0) {
-        const payload: SyncPayload = { controlStates: controlsDisabled, logItems };
+      if (this.detached || isLocked || hasActive || logItems.length === 0) {
+        const controlStates: ControlStates = {
+          detached: this.detached,
+          start: false,
+          back: false,
+          goto: false,
+          next: false,
+          end: false,
+        };
+        const payload: SyncPayload = { controlStates, logItems };
         this.channel?.emit(EVENTS.SYNC, payload);
         return;
       }
@@ -679,6 +689,7 @@ export class Instrumenter {
         (item) => item.status === CallStates.DONE || item.status === CallStates.ERROR
       );
       const controlStates: ControlStates = {
+        detached: this.detached,
         start: hasPrevious,
         back: hasPrevious,
         goto: true,

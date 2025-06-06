@@ -14,6 +14,8 @@ import type {
 } from './prompt-provider-base';
 import { PromptProvider } from './prompt-provider-base';
 
+export let currentTaskLog: ReturnType<typeof clack.taskLog> | null = null;
+
 export class ClackPromptProvider extends PromptProvider {
   private handleCancel(result: unknown | symbol, promptOptions?: PromptOptions) {
     if (clack.isCancel(result)) {
@@ -82,6 +84,8 @@ export class ClackPromptProvider extends PromptProvider {
     const taskId = `${options.id}-task`;
     logTracker.addLog('info', `${taskId}-start: ${options.title}`);
 
+    currentTaskLog = task;
+
     return {
       message: (message) => {
         logTracker.addLog('info', `${taskId}: ${message}`);
@@ -90,10 +94,12 @@ export class ClackPromptProvider extends PromptProvider {
       error: (message) => {
         logTracker.addLog('error', `${taskId}-error: ${message}`);
         task.error(message, { showLog: true });
+        currentTaskLog = null;
       },
       success: (message, options) => {
         logTracker.addLog('info', `${taskId}-success: ${message}`);
         task.success(message, options);
+        currentTaskLog = null;
       },
     };
   }

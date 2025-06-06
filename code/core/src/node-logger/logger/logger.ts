@@ -1,15 +1,23 @@
 import * as clack from '@clack/prompts';
 import boxen from 'boxen';
-import picocolors from 'picocolors';
 
 import { isClackEnabled } from '../prompts/prompt-config';
+import { currentTaskLog } from '../prompts/prompt-provider-clack';
 import { wrapTextForClack } from '../wrap-utils';
 import { CLI_COLORS } from './colors';
 import { logTracker } from './log-tracker';
 
 const createLogFunction =
   (clackFn: (message: string) => void, consoleFn: (...args: any[]) => void) => () =>
-    isClackEnabled() ? (message: string) => clackFn(wrapTextForClack(message)) : consoleFn;
+    isClackEnabled()
+      ? (message: string) => {
+          if (currentTaskLog) {
+            currentTaskLog.message(message);
+          } else {
+            clackFn(wrapTextForClack(message));
+          }
+        }
+      : consoleFn;
 
 const LOG_FUNCTIONS = {
   log: createLogFunction(clack.log.message, console.log),

@@ -127,10 +127,13 @@ export async function collectAutomigrationsAcrossProjects(
     }
   }
 
-  const detectedAutomigrations = Array.from(automigrationMap.values());
+  const allAutomigrations = Array.from(automigrationMap.values());
 
+  const applicableAutomigrations = allAutomigrations.filter((am) =>
+    am.reports.every((rep) => rep.status !== 'not_applicable')
+  );
   // Single pass through detectedAutomigrations to build both arrays
-  const { successAutomigrations, failedAutomigrations } = detectedAutomigrations.reduce(
+  const { successAutomigrations, failedAutomigrations } = applicableAutomigrations.reduce(
     (acc, { fix, reports }) => {
       const successReports = reports.filter((report) => report.status === 'check_succeeded');
       const failedReports = reports.filter((report) => report.status === 'check_failed');
@@ -169,12 +172,11 @@ export async function collectAutomigrationsAcrossProjects(
     );
   } else {
     taskLog.success(
-      `${detectedAutomigrations.length === 0 ? 'No automigrations detected' : `${detectedAutomigrations.length} automigrations detected`}`
+      `${applicableAutomigrations.length === 0 ? 'No automigrations detected' : `${applicableAutomigrations.length} automigration(s) detected`}`
     );
   }
 
-  // only return automigrations that have not failed for all projects
-  return detectedAutomigrations;
+  return allAutomigrations;
 }
 
 // Format project directories relative to git root

@@ -137,10 +137,6 @@ export abstract class JsPackageManager {
   async installDependencies() {
     const tasks = [() => this.runInstall()];
 
-    if (this.type === 'npm') {
-      tasks.push(() => this.runInternalCommand('dedupe', [], this.cwd));
-    }
-
     await prompt.executeTask(tasks, {
       id: 'install-dependencies',
       intro: 'Installing dependencies...',

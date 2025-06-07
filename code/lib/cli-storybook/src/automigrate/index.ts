@@ -1,5 +1,5 @@
 import { createWriteStream } from 'node:fs';
-import { rename, rm } from 'node:fs/promises';
+import { copyFile, rename, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import type { PackageJson } from 'storybook/internal/common';
@@ -213,7 +213,16 @@ export const automigrate = async ({
 
   // if migration failed, display a log file in the users cwd
   if (hasFailures) {
-    await rename(TEMP_LOG_FILE_PATH, join(process.cwd(), LOG_FILE_NAME));
+    try {
+      await rename(TEMP_LOG_FILE_PATH, join(process.cwd(), LOG_FILE_NAME));
+    } catch (error: any) {
+      if (error['code'] === 'EXDEV') {
+        await copyFile(TEMP_LOG_FILE_PATH, LOG_FILE_PATH);
+        await rm(TEMP_LOG_FILE_PATH, { recursive: true, force: true });
+      } else {
+        throw error;
+      }
+    }
   } else {
     await rm(TEMP_LOG_FILE_PATH, { recursive: true, force: true });
   }

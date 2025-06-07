@@ -1,6 +1,6 @@
 import type { WriteStream } from 'node:fs';
 import { createWriteStream, mkdirSync } from 'node:fs';
-import { readFile, realpath, rename, rm, writeFile } from 'node:fs/promises';
+import { copyFile, readFile, realpath, rename, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import { join } from 'node:path';
 
@@ -147,7 +147,18 @@ export const createLogStream = async (
 
   return new Promise((resolve, reject) => {
     logStream.once('open', () => {
-      const moveLogFile = async () => rename(temporaryLogPath, finalLogPath);
+      const moveLogFile = async () => {
+        try {
+          await rename(temporaryLogPath, finalLogPath);
+        } catch (error: any) {
+          if (error.code === 'EXDEV') {
+            await copyFile(temporaryLogPath, finalLogPath);
+            await rm(temporaryLogPath, { recursive: true, force: true });
+          } else {
+            throw error;
+          }
+        }
+      };
       const clearLogFile = async () => writeFile(temporaryLogPath, '');
       const removeLogFile = async () => rm(temporaryLogPath, { recursive: true, force: true });
       const readLogFile = async () => readFile(temporaryLogPath, { encoding: 'utf8' });

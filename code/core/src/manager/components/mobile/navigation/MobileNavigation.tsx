@@ -93,19 +93,23 @@ export const MobileNavigation: FC<MobileNavigationProps & ComponentProps<typeof 
 
       {!isMobilePanelOpen && (
         <Nav className="sb-bar" role="toolbar" aria-label="Mobile navigation controls">
-          <Button
+          <IconButton
             onClick={() => setMobileMenuOpen(!isMobileMenuOpen)}
-            aria-label="Open navigation menu"
+            label="Open navigation menu"
             aria-expanded={isMobileMenuOpen}
             aria-controls="storybook-mobile-menu"
           >
             <MenuIcon />
             <Text>{fullStoryName}</Text>
-          </Button>
+          </IconButton>
+          {/* TODO: test this with AssistivLabs */}
+          <span className="sb-sr-only" aria-current="page">
+            {fullStoryName}
+          </span>
           {showPanel && (
             <IconButton
               onClick={() => setMobilePanelOpen(true)}
-              aria-label="Open addon panel"
+              label="Open addon panel"
               aria-expanded={isMobilePanelOpen}
               aria-controls="storybook-mobile-addon-panel"
             >
@@ -136,28 +140,29 @@ const Nav = styled.div({
   padding: '0 6px',
 });
 
-const Button = styled.button(({ theme }) => ({
-  all: 'unset',
-  display: 'flex',
-  alignItems: 'center',
-  gap: 10,
-  color: theme.barTextColor,
-  fontSize: `${theme.typography.size.s2 - 1}px`,
-  padding: '0 7px',
-  fontWeight: theme.typography.weight.bold,
-  WebkitLineClamp: 1,
+// FIXME: remove this unused code if no visual impact, else circle back to Michael
+// const Button = styled.button(({ theme }) => ({
+//   all: 'unset',
+//   display: 'flex',
+//   alignItems: 'center',
+//   gap: 10,
+//   color: theme.barTextColor,
+//   fontSize: `${theme.typography.size.s2 - 1}px`,
+//   padding: '0 7px',
+//   fontWeight: theme.typography.weight.bold,
+//   WebkitLineClamp: 1,
 
-  '> svg': {
-    width: 14,
-    height: 14,
-    flexShrink: 0,
-  },
+//   '> svg': {
+//     width: 14,
+//     height: 14,
+//     flexShrink: 0,
+//   },
 
-  '&:focus-visible': {
-    outline: `2px solid ${theme.color.secondary}`,
-    outlineOffset: 2,
-  },
-}));
+//   '&:focus-visible': {
+//     outline: `2px solid ${theme.color.secondary}`,
+//     outlineOffset: 2,
+//   },
+// }));
 
 const Text = styled.p({
   display: '-webkit-box',

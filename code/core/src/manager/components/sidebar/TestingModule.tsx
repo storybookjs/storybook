@@ -346,9 +346,11 @@ export const TestingModule = ({
             {errorCount > 0 && (
               <WithTooltip
                 hasChrome={false}
+                // TODO once this is an IconButton with switch role, remove the tooltip
                 tooltip={<TooltipNote note="Toggle errors" />}
                 trigger="hover"
               >
+                {/* TODO: make this a switch with an aria-checked */}
                 <StatusButton
                   id="errors-found-filter"
                   size="medium"
@@ -361,6 +363,7 @@ export const TestingModule = ({
                     setErrorsActive(!errorsActive);
                   }}
                   aria-label="Toggle errors"
+                  // TODO improve the aria-label and add a description
                 >
                   {errorCount < 1000 ? errorCount : '999+'}
                 </StatusButton>
@@ -369,6 +372,7 @@ export const TestingModule = ({
             {warningCount > 0 && (
               <WithTooltip
                 hasChrome={false}
+                // TODO same for the warning component
                 tooltip={<TooltipNote note="Toggle warnings" />}
                 trigger="hover"
               >
@@ -411,10 +415,10 @@ export const TestingModule = ({
                     clearStatuses();
                   }}
                   disabled={isRunning}
-                  aria-label={
-                    isRunning
-                      ? "Can't clear statuses while tests are running"
-                      : 'Clear all statuses'
+                  aria-busy={isRunning}
+                  label={'Clear all statuses'}
+                  description={
+                    isRunning ? "Can't clear statuses while tests are running" : undefined
                   }
                 >
                   <SweepIcon />

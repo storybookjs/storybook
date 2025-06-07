@@ -56,6 +56,12 @@ describe('upgrade-storybook-related-dependencies fix', () => {
         availableUpgrade: '8.0.0',
         hasIncompatibleDependencies: true,
       },
+      {
+        packageName: '@chromatic-com/playwright',
+        packageVersion: '0.1.0',
+        availableUpgrade: '1.0.0',
+        hasIncompatibleDependencies: false,
+      },
     ];
     vi.mocked(docsUtils.getIncompatibleStorybookPackages).mockResolvedValue(analyzedPackages);
     await expect(
@@ -82,6 +88,11 @@ describe('upgrade-storybook-related-dependencies fix', () => {
             "afterVersion": "1.0.0",
             "beforeVersion": "0.2.3",
             "packageName": "@storybook/jest",
+          },
+          {
+            "afterVersion": "1.0.0",
+            "beforeVersion": "0.1.0",
+            "packageName": "@chromatic-com/playwright",
           },
           {
             "afterVersion": "8.0.0",

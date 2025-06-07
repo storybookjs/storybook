@@ -2,13 +2,15 @@ import { logger } from 'storybook/internal/node-logger';
 import { AngularLegacyBuildOptionsError } from 'storybook/internal/server-errors';
 import { WebpackDefinePlugin, WebpackIgnorePlugin } from '@storybook/builder-webpack5';
 
-import { BuilderContext, targetFromTargetString } from '@angular-devkit/architect';
-import { JsonObject, logging } from '@angular-devkit/core';
+import type { BuilderContext } from '@angular-devkit/architect';
+import { targetFromTargetString } from '@angular-devkit/architect';
+import type { JsonObject } from '@angular-devkit/core';
+import { logging } from '@angular-devkit/core';
 import { sync as findUpSync } from 'find-up';
-import webpack from 'webpack';
+import type webpack from 'webpack';
 
 import { getWebpackConfig as getCustomWebpackConfig } from './angular-cli-webpack';
-import { PresetOptions } from './preset-options';
+import type { PresetOptions } from './preset-options';
 import { moduleIsAvailable } from './utils/module-is-available';
 
 export async function webpackFinal(baseConfig: webpack.Configuration, options: PresetOptions) {

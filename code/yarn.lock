@@ -6119,7 +6119,6 @@ __metadata:
     "@storybook/core-webpack": "workspace:*"
     "@storybook/global": "npm:^5.0.0"
     "@types/node": "npm:^22.0.0"
-    "@types/webpack-env": "npm:^1.18.0"
     fd-package-json: "npm:^1.2.0"
     find-up: "npm:^5.0.0"
     rimraf: "npm:^6.0.1"
@@ -8062,13 +8061,6 @@ __metadata:
   version: 2.0.11
   resolution: "@types/unist@npm:2.0.11"
   checksum: 10c0/24dcdf25a168f453bb70298145eb043cfdbb82472db0bc0b56d6d51cd2e484b9ed8271d4ac93000a80da568f2402e9339723db262d0869e2bf13bc58e081768d
-  languageName: node
-  linkType: hard
-
-"@types/webpack-env@npm:^1.18.0":
-  version: 1.18.8
-  resolution: "@types/webpack-env@npm:1.18.8"
-  checksum: 10c0/527a5d1eb75c5243e4f3665d956c7c340f899955dd25d16c9fd9750406f32e95a3a17d207640295038e8235c0c2a2daf084f420e088e58b965d82fc74f6012d7
   languageName: node
   linkType: hard
 

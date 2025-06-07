@@ -1,9 +1,9 @@
 import { logger } from 'storybook/internal/client-logger';
-import { ArgTypes, InputType, SBType } from 'storybook/internal/types';
+import type { ArgTypes, InputType, SBType } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
-import {
+import type {
   Argument,
   Class,
   CompodocJson,

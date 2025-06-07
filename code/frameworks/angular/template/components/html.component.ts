@@ -1,5 +1,5 @@
 import { Component, Input } from '@angular/core';
-import { DomSanitizer } from '@angular/platform-browser';
+import type { DomSanitizer } from '@angular/platform-browser';
 
 @Component({
   standalone: false,

@@ -109,6 +109,7 @@ export const Paused: Story = {
     isPlaying: true,
     interactions: getInteractions(CallStates.WAITING),
     controlStates: {
+      detached: false,
       start: false,
       back: false,
       goto: true,
@@ -148,6 +149,21 @@ export const DiscrepancyResult: Story = {
   args: {
     ...Failed.args,
     hasResultMismatch: true,
+  },
+};
+
+export const DetachedDebugger = {
+  args: {
+    browserTestStatus: CallStates.DONE,
+    interactions: getInteractions(CallStates.DONE),
+    controlStates: {
+      detached: true,
+      start: false,
+      back: false,
+      goto: false,
+      next: false,
+      end: false,
+    },
   },
 };
 

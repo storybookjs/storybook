@@ -44,7 +44,6 @@ export type RenderToCanvas<TRenderer extends Renderer> = (
 
 export interface ProjectAnnotations<TRenderer extends Renderer>
   extends BaseProjectAnnotations<TRenderer> {
-  addons?: ProjectAnnotations<TRenderer>[];
   testingLibraryRender?: (...args: never[]) => { unmount: () => void };
   renderToCanvas?: RenderToCanvas<TRenderer>;
 }

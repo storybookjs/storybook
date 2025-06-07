@@ -48,8 +48,8 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "jiti ../../../scripts/prepare/check.ts",
-    "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
+    "prep": "jiti ../../../scripts/prepare/addon-bundle.ts",
+    "typecheck": "jiti ../../../scripts/prepare/check.ts"
   },
   "dependencies": {
     "tiny-invariant": "^1.3.1",

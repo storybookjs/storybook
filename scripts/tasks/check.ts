@@ -12,12 +12,13 @@ const nolinkCommand = `npx nx run-many -t check -c production ${parallel}`;
 
 export const check: Task = {
   description: 'Typecheck the source code of the monorepo',
+  dependsOn: ['compile'],
   async ready() {
     return false;
   },
-  async run({ codeDir }, { dryRun, debug, link }) {
+  async run({ codeDir }, { dryRun, debug, link, prod }) {
     return exec(
-      link ? linkCommand : nolinkCommand,
+      link && !prod ? linkCommand : nolinkCommand,
       { cwd: codeDir },
       {
         startMessage: '🥾 Checking for TS errors',

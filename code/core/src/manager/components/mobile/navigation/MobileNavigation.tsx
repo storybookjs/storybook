@@ -82,12 +82,19 @@ export const MobileNavigation: FC<MobileNavigationProps & ComponentProps<typeof 
         <MobileAddonsDrawer>{panel}</MobileAddonsDrawer>
       ) : (
         <Nav className="sb-bar">
-          <Button onClick={() => setMobileMenuOpen(!isMobileMenuOpen)} title="Open navigation menu">
+          <IconButton
+            onClick={() => setMobileMenuOpen(!isMobileMenuOpen)}
+            label="Open navigation menu"
+          >
             <MenuIcon />
             <Text>{fullStoryName}</Text>
-          </Button>
+          </IconButton>
+          {/* TODO: test this with AssistivLabs */}
+          <span className="sb-sr-only" aria-current="page">
+            {fullStoryName}
+          </span>
           {showPanel && (
-            <IconButton onClick={() => setMobilePanelOpen(true)} title="Open addon panel">
+            <IconButton onClick={() => setMobilePanelOpen(true)} label="Open addon panel">
               <BottomBarToggleIcon />
             </IconButton>
           )}
@@ -114,24 +121,6 @@ const Nav = styled.div({
   height: 40,
   padding: '0 6px',
 });
-
-const Button = styled.button(({ theme }) => ({
-  all: 'unset',
-  display: 'flex',
-  alignItems: 'center',
-  gap: 10,
-  color: theme.barTextColor,
-  fontSize: `${theme.typography.size.s2 - 1}px`,
-  padding: '0 7px',
-  fontWeight: theme.typography.weight.bold,
-  WebkitLineClamp: 1,
-
-  '> svg': {
-    width: 14,
-    height: 14,
-    flexShrink: 0,
-  },
-}));
 
 const Text = styled.p({
   display: '-webkit-box',

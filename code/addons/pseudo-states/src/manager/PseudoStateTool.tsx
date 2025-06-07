@@ -62,7 +62,7 @@ export const PseudoStateTool = () => {
       closeOnOutsideClick
       tooltip={<TooltipLinkList links={[[reset], links]} />}
     >
-      <IconButton key="pseudo-states" title="Select CSS pseudo states" active={hasActive}>
+      <IconButton key="pseudo-states" label="Select CSS pseudo states" active={hasActive}>
         <ButtonIcon />
       </IconButton>
     </WithTooltip>

@@ -23,7 +23,7 @@
   "type": "module",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
+      "types": "./dist/index.d.cts",
       "import": "./dist/index.js"
     },
     "./bin/index.cjs": "./bin/index.cjs",

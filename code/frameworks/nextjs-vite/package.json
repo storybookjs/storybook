@@ -23,43 +23,43 @@
   "license": "MIT",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
+      "types": "./dist/index.d.mts",
       "node": "./dist/index.js",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
     },
     "./preset": {
-      "types": "./dist/preset.d.ts",
+      "types": "./dist/preset.d.mts",
       "require": "./dist/preset.js"
     },
     "./dist/preview.mjs": "./dist/preview.mjs",
     "./cache.mock": {
-      "types": "./dist/export-mocks/cache/index.d.ts",
+      "types": "./dist/export-mocks/cache/index.d.mts",
       "import": "./dist/export-mocks/cache/index.mjs",
       "require": "./dist/export-mocks/cache/index.js"
     },
     "./headers.mock": {
-      "types": "./dist/export-mocks/headers/index.d.ts",
+      "types": "./dist/export-mocks/headers/index.d.mts",
       "import": "./dist/export-mocks/headers/index.mjs",
       "require": "./dist/export-mocks/headers/index.js"
     },
     "./navigation.mock": {
-      "types": "./dist/export-mocks/navigation/index.d.ts",
+      "types": "./dist/export-mocks/navigation/index.d.mts",
       "import": "./dist/export-mocks/navigation/index.mjs",
       "require": "./dist/export-mocks/navigation/index.js"
     },
     "./router.mock": {
-      "types": "./dist/export-mocks/router/index.d.ts",
+      "types": "./dist/export-mocks/router/index.d.mts",
       "import": "./dist/export-mocks/router/index.mjs",
       "require": "./dist/export-mocks/router/index.js"
     },
     "./vite-plugin": {
-      "types": "./dist/vite-plugin/index.d.ts",
+      "types": "./dist/vite-plugin/index.d.mts",
       "import": "./dist/vite-plugin/index.mjs",
       "require": "./dist/vite-plugin/index.js"
     },
     "./node": {
-      "types": "./dist/node/index.d.ts",
+      "types": "./dist/node/index.d.mts",
       "node": "./dist/node/index.js",
       "import": "./dist/node/index.mjs",
       "require": "./dist/node/index.js"
@@ -68,26 +68,26 @@
   },
   "main": "dist/index.js",
   "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
+  "types": "dist/index.d.mts",
   "typesVersions": {
     "*": {
       "*": [
-        "dist/index.d.ts"
+        "dist/index.d.mts"
       ],
       "cache.mock": [
-        "dist/export-mocks/cache/index.d.ts"
+        "dist/export-mocks/cache/index.d.mts"
       ],
       "headers.mock": [
-        "dist/export-mocks/headers/index.d.ts"
+        "dist/export-mocks/headers/index.d.mts"
       ],
       "router.mock": [
-        "dist/export-mocks/router/index.d.ts"
+        "dist/export-mocks/router/index.d.mts"
       ],
       "navigation.mock": [
-        "dist/export-mocks/navigation/index.d.ts"
+        "dist/export-mocks/navigation/index.d.mts"
       ],
       "node": [
-        "dist/node/index.d.ts"
+        "dist/node/index.d.mts"
       ]
     }
   },
@@ -96,7 +96,7 @@
     "template/cli/**/*",
     "README.md",
     "*.js",
-    "*.d.ts",
+    "*.d.mts",
     "!src/**/*"
   ],
   "scripts": {

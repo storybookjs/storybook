@@ -36,10 +36,13 @@ type PackageJsonWithBundlerConfig = PackageJson & {
   bundler: BundlerConfig;
 };
 type DtsConfigSection = Pick<Options, 'dts' | 'tsconfig'>;
+type ExperimentalDtsConfigSection = Pick<Options, 'experimentalDts' | 'tsconfig'>;
 
 /* MAIN */
 
 const OUT_DIR = join(process.cwd(), 'dist');
+
+const codeDir = join(__dirname, '..', '..', 'code');
 
 const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
   const {
@@ -62,19 +65,13 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
     await exec(`jiti ${pre}`, { cwd });
   }
 
-  const metafilesDir = join(
-    __dirname,
-    '..',
-    '..',
-    'code',
-    'bench',
-    'esbuild-metafiles',
-    name.replace('@storybook', '')
-  );
+  const metafilesDir = join(codeDir, 'bench', 'esbuild-metafiles', name.replace('@storybook', ''));
 
   const reset = hasFlag(flags, 'reset');
   const watch = hasFlag(flags, 'watch');
   const optimized = hasFlag(flags, 'optimized');
+  const experimentalDts = hasFlag(flags, 'experimental-dts');
+
   if (reset) {
     await fs.emptyDir(OUT_DIR);
     await fs.emptyDir(metafilesDir);
@@ -96,6 +93,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
     entries,
     optimized,
     types,
+    experimentalDts,
   });
 
   /* preset files are always CJS only.
@@ -247,24 +245,36 @@ async function getDTSConfigs({
   entries,
   optimized,
   types,
+  experimentalDts,
 }: {
   formats: Formats[];
   entries: string[];
   optimized: boolean;
   types: boolean;
+  experimentalDts: boolean;
 }) {
-  const tsConfigPath = join(cwd, 'tsconfig.json');
+  const tsConfigPath = join(cwd, experimentalDts ? 'tsconfig.dts.json' : 'tsconfig.json');
   const tsConfigExists = await fs.pathExists(tsConfigPath);
 
   const dtsBuild = types && optimized && formats[0] && tsConfigExists ? formats[0] : undefined;
 
-  const dtsConfig: DtsConfigSection = {
-    tsconfig: tsConfigPath,
-    dts: {
-      entry: entries,
-      resolve: true,
-    },
-  };
+  const dtsConfig: DtsConfigSection | ExperimentalDtsConfigSection = experimentalDts
+    ? {
+        tsconfig: tsConfigPath,
+        experimentalDts: {
+          entry: entries,
+          compilerOptions: {
+            rootDir: codeDir,
+          },
+        },
+      }
+    : {
+        tsconfig: tsConfigPath,
+        dts: {
+          entry: entries,
+          resolve: true,
+        },
+      };
 
   return { dtsBuild, dtsConfig, tsConfigExists };
 }

@@ -21,23 +21,23 @@
   "license": "MIT",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
+      "types": "./dist/index.d.mts",
       "node": "./dist/index.js",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
     },
     "./presets/custom-webpack-preset": {
-      "types": "./dist/presets/custom-webpack-preset.d.ts",
+      "types": "./dist/presets/custom-webpack-preset.d.mts",
       "node": "./dist/presets/custom-webpack-preset.js",
       "require": "./dist/presets/custom-webpack-preset.js"
     },
     "./presets/preview-preset": {
-      "types": "./dist/presets/preview-preset.d.ts",
+      "types": "./dist/presets/preview-preset.d.mts",
       "node": "./dist/presets/preview-preset.js",
       "require": "./dist/presets/preview-preset.js"
     },
     "./loaders/export-order-loader": {
-      "types": "./dist/loaders/export-order-loader.d.ts",
+      "types": "./dist/loaders/export-order-loader.d.mts",
       "node": "./dist/loaders/export-order-loader.js",
       "require": "./dist/loaders/export-order-loader.js"
     },
@@ -49,13 +49,13 @@
   },
   "main": "dist/index.js",
   "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
+  "types": "dist/index.d.mts",
   "files": [
     "dist/**/*",
     "templates/**/*",
     "README.md",
     "*.js",
-    "*.d.ts",
+    "*.d.mts",
     "!src/**/*"
   ],
   "scripts": {

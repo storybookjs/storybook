@@ -21,16 +21,19 @@
   "license": "MIT",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
+      "types": "./dist/index.d.mts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
     },
     "./experimental-playwright": {
-      "types": "./dist/playwright.d.ts",
+      "types": "./dist/playwright.d.mts",
       "import": "./dist/playwright.mjs",
       "require": "./dist/playwright.js"
     },
-    "./preset": "./preset.js",
+    "./preset": {
+      "types": "./dist/preset.d.mts",
+      "require": "./preset.js"
+    },
     "./dist/entry-preview.mjs": "./dist/entry-preview.mjs",
     "./dist/entry-preview-docs.mjs": "./dist/entry-preview-docs.mjs",
     "./package.json": "./package.json",
@@ -41,13 +44,13 @@
   },
   "main": "dist/index.js",
   "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
+  "types": "dist/index.d.mts",
   "files": [
     "dist/**/*",
     "template/cli/**/*",
     "README.md",
     "*.js",
-    "*.d.ts",
+    "*.d.mts",
     "!src/**/*"
   ],
   "scripts": {

@@ -2,7 +2,7 @@ import { enhanceArgTypes, extractComponentDescription } from 'storybook/internal
 import type { ArgTypesEnhancer } from 'storybook/internal/types';
 
 import { extractArgTypes } from './extractArgTypes';
-import type { ReactRenderer } from './public-types';
+import type { ReactRenderer } from './types';
 
 export const parameters = {
   docs: {

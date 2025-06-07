@@ -73,11 +73,12 @@ export const ThemeSwitcher = React.memo(function ThemeSwitcher() {
     const currentTheme = selected || themeDefault;
     const alternateTheme = themesList.find((theme) => theme !== currentTheme);
     return (
+      // TODO migrate to normal Button?
       <IconButton
         disabled={isLocked}
         key={THEME_SWITCHER_ID}
         active={!themeOverride}
-        title="Theme"
+        label="Theme"
         onClick={() => {
           updateGlobals({ theme: alternateTheme });
         }}
@@ -110,10 +111,11 @@ export const ThemeSwitcher = React.memo(function ThemeSwitcher() {
           );
         }}
       >
+        {/* TODO: migrate to IconSelect */}
         <IconButton
           key={THEME_SWITCHER_ID}
           active={!themeOverride}
-          title="Theme"
+          label="Theme"
           disabled={isLocked}
         >
           <PaintBrushIcon />

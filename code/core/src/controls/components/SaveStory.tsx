@@ -154,6 +154,7 @@ export const SaveStory = ({ saveStory, createStory, resetArgs }: SaveStoryProps)
             trigger="hover"
             tooltip={<TooltipNote note="Save changes to story" />}
           >
+            {/* TODO: replace this IconButton with an actual Button. Add an aria-describedby for longer-form explanations. */}
             <IconButton aria-label="Save changes to story" disabled={saving} onClick={onSaveStory}>
               <CheckIcon />
               <Label data-short-label="Save">Update story</Label>
@@ -166,6 +167,7 @@ export const SaveStory = ({ saveStory, createStory, resetArgs }: SaveStoryProps)
             trigger="hover"
             tooltip={<TooltipNote note="Create new story with these settings" />}
           >
+            {/* TODO: replace this IconButton with an actual Button. Add an aria-describedby for longer-form explanations. */}
             <IconButton aria-label="Create new story with these settings" onClick={onShowForm}>
               <AddIcon />
               <Label data-short-label="New">Create new story</Label>
@@ -178,6 +180,7 @@ export const SaveStory = ({ saveStory, createStory, resetArgs }: SaveStoryProps)
             trigger="hover"
             tooltip={<TooltipNote note="Reset changes" />}
           >
+            {/* TODO: replace this IconButton with an actual Button. Add an aria-describedby for longer-form explanations. */}
             <IconButton aria-label="Reset changes" onClick={() => resetArgs()}>
               <UndoIcon />
               <span>Reset</span>

@@ -26,7 +26,7 @@ export const menuTool: Addon_BaseType = {
         !singleStory &&
         !isVisible && (
           <>
-            <IconButton aria-label="Show sidebar" key="menu" onClick={toggle} title="Show sidebar">
+            <IconButton label="Show sidebar" key="menu" onClick={toggle}>
               <MenuIcon />
             </IconButton>
             <Separator />

@@ -25,6 +25,8 @@ import { wrapManagerEntries } from './utils/managerEntries';
 import { safeResolve } from './utils/safeResolve';
 import { getTemplatePath, renderHTML } from './utils/template';
 
+export { BROWSER_TARGETS, NODE_TARGET } from '../shared/constants/environments-support';
+
 const isRootPath = /^\/($|\?)/;
 let compilation: Compilation;
 let asyncIterator: ReturnType<StarterFunction> | ReturnType<BuilderFunction>;

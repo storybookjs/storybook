@@ -23,7 +23,7 @@ import { oneWayHash } from 'storybook/internal/telemetry';
 import type { Presets } from 'storybook/internal/types';
 
 import { match } from 'micromatch';
-import { dirname, join, relative, resolve, sep } from 'pathe';
+import { dirname, join, normalize, relative, resolve, sep } from 'pathe';
 import picocolors from 'picocolors';
 import sirv from 'sirv';
 import { dedent } from 'ts-dedent';
@@ -427,7 +427,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
   // to find the right project to run, thus we override
   // with a unique identifier using the path to the config dir
   if (process.env.VITEST_STORYBOOK) {
-    const projectName = join('storybook:', finalOptions.configDir);
+    const projectName = `storybook:${normalize(finalOptions.configDir)}`;
     plugins.push({
       name: 'storybook:workspace-name-override',
       config: {

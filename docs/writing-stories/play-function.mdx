@@ -72,6 +72,10 @@ import { screen } from '@storybook/testing-library';
 
 export const OpenAndClose = {
   play: async () => {
+    // Note: We use screen here instead of canvasElement because this is a global modal
+    // that renders outside the canvas element. For components within the canvas,
+    // use within(canvasElement) instead.
+    
     // Open the modal
     await userEvent.click(screen.getByRole('button', { name: /open modal/i }));
     

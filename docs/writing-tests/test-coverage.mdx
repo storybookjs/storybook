@@ -42,8 +42,11 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
       exclude: [
+        // Exclude node_modules as they are third-party dependencies
         'node_modules/',
+        // Exclude Storybook configuration as it's not part of the application code
         '.storybook/',
+        // Exclude story files as they are documentation, not application code
         '**/*.stories.tsx',
       ],
     },
@@ -253,6 +256,7 @@ export default defineConfig({
 - [Istanbul Coverage Documentation](https://istanbul.js.org/)
 - [Code Coverage Best Practices](https://martinfowler.com/bliki/TestCoverage.html)
 - [Storybook Testing Guide](https://storybook.js.org/docs/writing-tests/introduction)
+- [Storybook Test Runner Documentation](https://storybook.js.org/docs/writing-tests/test-runner)
 
 <Callout variant="info">
 Remember: High test coverage doesn't guarantee quality—it's just one metric. Focus on writing meaningful tests that verify your components' behavior.

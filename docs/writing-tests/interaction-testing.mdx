@@ -27,6 +27,8 @@ Here's a simple example of testing a button click:
 // Button.stories.tsx
 import type { Meta, StoryObj } from '@storybook/react';
 import { Button } from './Button';
+import { within, userEvent } from '@storybook/testing-library';
+import { expect } from '@storybook/test';
 
 const meta: Meta<typeof Button> = {
   title: 'Components/Button',
@@ -233,17 +235,15 @@ export const Validation: Story = {
 
 ### 1. Common Issues
 
+<CodeSnippets path="before-all-in-preview.md" />
 - **Timing Issues**: Use `findBy` queries and appropriate delays
 - **Missing Elements**: Verify element roles and accessibility
 - **State Management**: Reset state between tests
 - **Async Operations**: Handle loading states and animations
 
-### 2. Debugging Tips
+### 2. Test Runner vs Vitest Addon
 
-- Use the Interactions panel in Storybook
-- Add `console.log` statements in play functions
-- Use the `step` function to isolate issues
-- Check browser console for errors
+Note that the test runner has been superseded by the Vitest addon, which offers the same functionality for running interaction tests in CI/CD pipelines. We recommend using the Vitest addon for new projects and migrating existing projects when possible.
 
 ## Additional Resources
 

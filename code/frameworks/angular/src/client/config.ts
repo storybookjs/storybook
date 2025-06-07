@@ -8,6 +8,7 @@ import { enhanceArgTypes } from 'storybook/internal/docs-tools';
 import { ArgTypesEnhancer, Parameters } from 'storybook/internal/types';
 
 import { extractArgTypes, extractComponentDescription } from './compodoc';
+import { destroyPlatform, getPlatform } from '@angular/core';
 
 export const parameters: Parameters = {
   renderer: 'angular',
@@ -22,6 +23,7 @@ export const argTypesEnhancers: ArgTypesEnhancer[] = [enhanceArgTypes];
 
 export const beforeEach = () => {
   return () => {
+    if (getPlatform()) destroyPlatform();
     TestBed.resetTestingModule().resetTestEnvironment();
   };
 };

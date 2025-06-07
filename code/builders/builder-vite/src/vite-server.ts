@@ -29,14 +29,17 @@ export async function createViteServer(options: Options, devServer: Server) {
     optimizeDeps: await getOptimizeDeps(commonCfg, options),
   };
 
-  const ipRegex = /^(?:\d{1,3}\.){3}\d{1,3}$|^(?:[a-fA-F0-9]{1,4}:){7}[a-fA-F0-9]{1,4}$/;
+  if (options.host && !config.server.allowedHosts) {
+    // Regex to match IPv4 and IPv6 addresses, simplified is good enough
+    const ipRegex = /^(?:\d{1,3}\.){3}\d{1,3}$|^\[?([a-fA-F0-9:]+)\]?$/;
 
-  if (
-    !(config.server.allowedHosts as string[])?.length &&
-    options.host &&
-    !ipRegex.test(options.host)
-  ) {
-    config.server.allowedHosts = [options.host.toLowerCase()];
+    if (ipRegex.test(options.host)) {
+      // If options.host is set to an IP address then allow all hosts
+      config.server.allowedHosts = true;
+    } else {
+      // Otherwise, allow only the specified or default host
+      config.server.allowedHosts = [options.host.toLowerCase()];
+    }
   }
 
   const finalConfig = await presets.apply('viteFinal', config, options);

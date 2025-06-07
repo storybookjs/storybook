@@ -121,6 +121,7 @@ export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
           storyFileName={fileName}
           onScrollToEnd={onScrollToEnd}
         />
+        {/* FIXME: div should not be aria-labelled; make this a group or section if you want a discoverable region or make the label a sr-hidden heading */}
         <div aria-label="Interactions list">
           {interactions.map((call) => (
             <Interaction

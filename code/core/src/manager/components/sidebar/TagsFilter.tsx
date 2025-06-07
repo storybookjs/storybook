@@ -124,7 +124,13 @@ export const TagsFilter = ({
       closeOnOutsideClick
     >
       <Wrapper>
-        <IconButton key="tags" title="Tag filters" active={tagsActive} onClick={handleToggleExpand}>
+        <IconButton
+          key="tags"
+          label="Tag filters"
+          description="Filter the items shown in a sidebar based on the tags applied to them."
+          active={tagsActive}
+          onClick={handleToggleExpand}
+        >
           <FilterIcon />
         </IconButton>
         {selectedTags.length > 0 && <TagSelected />}

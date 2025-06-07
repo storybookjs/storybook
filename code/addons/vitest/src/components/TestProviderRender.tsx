@@ -182,79 +182,61 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
 
         <Actions>
           {!entry && (
-            <WithTooltip
-              hasChrome={false}
-              trigger="hover"
-              tooltip={<TooltipNote note={`${watching ? 'Disable' : 'Enable'} watch mode`} />}
+            <IconButton
+              label={`${watching ? 'Disable' : 'Enable'} watch mode`}
+              size="medium"
+              active={watching}
+              onClick={() =>
+                store.send({
+                  type: 'TOGGLE_WATCHING',
+                  payload: {
+                    to: !watching,
+                  },
+                })
+              }
+              disabled={isRunning}
             >
-              <IconButton
-                aria-label={`${watching ? 'Disable' : 'Enable'} watch mode`}
-                size="medium"
-                active={watching}
-                onClick={() =>
-                  store.send({
-                    type: 'TOGGLE_WATCHING',
-                    payload: {
-                      to: !watching,
-                    },
-                  })
-                }
-                disabled={isRunning}
-              >
-                <EyeIcon />
-              </IconButton>
-            </WithTooltip>
+              <EyeIcon />
+            </IconButton>
           )}
           {isRunning ? (
-            <WithTooltip
-              hasChrome={false}
-              trigger="hover"
-              tooltip={<TooltipNote note={cancelling ? 'Stopping...' : 'Stop test run'} />}
+            <IconButton
+              label={cancelling ? 'Stopping...' : 'Stop test run'}
+              padding="none"
+              size="medium"
+              onClick={() =>
+                store.send({
+                  type: 'CANCEL_RUN',
+                })
+              }
+              disabled={cancelling || isStarting}
             >
-              <IconButton
-                aria-label={cancelling ? 'Stopping...' : 'Stop test run'}
-                padding="none"
-                size="medium"
-                onClick={() =>
-                  store.send({
-                    type: 'CANCEL_RUN',
-                  })
+              <Progress
+                percentage={
+                  finishedTestCount && storeState.currentRun.totalTestCount
+                    ? (finishedTestCount / storeState.currentRun.totalTestCount) * 100
+                    : undefined
                 }
-                disabled={cancelling || isStarting}
               >
-                <Progress
-                  percentage={
-                    finishedTestCount && storeState.currentRun.totalTestCount
-                      ? (finishedTestCount / storeState.currentRun.totalTestCount) * 100
-                      : undefined
-                  }
-                >
-                  <StopIcon />
-                </Progress>
-              </IconButton>
-            </WithTooltip>
+                <StopIcon />
+              </Progress>
+            </IconButton>
           ) : (
-            <WithTooltip
-              hasChrome={false}
-              trigger="hover"
-              tooltip={<TooltipNote note="Start test run" />}
+            <IconButton
+              label="Start test run"
+              size="medium"
+              onClick={() =>
+                store.send({
+                  type: 'TRIGGER_RUN',
+                  payload: {
+                    storyIds: entry ? api.findAllLeafStoryIds(entry.id) : undefined,
+                    triggeredBy: entry ? entry.type : 'global',
+                  },
+                })
+              }
             >
-              <IconButton
-                aria-label="Start test run"
-                size="medium"
-                onClick={() =>
-                  store.send({
-                    type: 'TRIGGER_RUN',
-                    payload: {
-                      storyIds: entry ? api.findAllLeafStoryIds(entry.id) : undefined,
-                      triggeredBy: entry ? entry.type : 'global',
-                    },
-                  })
-                }
-              >
-                <PlayHollowIcon />
-              </IconButton>
-            </WithTooltip>
+              <PlayHollowIcon />
+            </IconButton>
           )}
         </Actions>
       </Heading>
@@ -266,39 +248,40 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
             title="Interactions"
             icon={entry ? null : <Form.Checkbox checked disabled />}
           />
-          <WithTooltip
-            hasChrome={false}
-            trigger="hover"
-            tooltip={<TooltipNote note={componentTestStatusLabel} />}
+          <IconButton
+            label={`${componentTestStatusLabel}${
+              componentTestStatusValueToStoryIds['status-value:error'].length +
+                componentTestStatusValueToStoryIds['status-value:warning'].length >
+              0
+                ? ` (${
+                    componentTestStatusValueToStoryIds['status-value:error'].length +
+                    componentTestStatusValueToStoryIds['status-value:warning'].length
+                  } errors or warnings so far)`
+                : ''
+            }`}
+            tooltip={componentTestStatusLabel}
+            size="medium"
+            disabled={
+              componentTestStatusValueToStoryIds['status-value:error'].length === 0 &&
+              componentTestStatusValueToStoryIds['status-value:warning'].length === 0 &&
+              componentTestStatusValueToStoryIds['status-value:success'].length === 0
+            }
+            onClick={() => {
+              openPanel({
+                api,
+                panelId: COMPONENT_TESTING_PANEL_ID,
+                entryId:
+                  componentTestStatusValueToStoryIds['status-value:error'][0] ??
+                  componentTestStatusValueToStoryIds['status-value:warning'][0] ??
+                  componentTestStatusValueToStoryIds['status-value:success'][0] ??
+                  entry?.id,
+              });
+            }}
           >
-            <IconButton
-              size="medium"
-              disabled={
-                componentTestStatusValueToStoryIds['status-value:error'].length === 0 &&
-                componentTestStatusValueToStoryIds['status-value:warning'].length === 0 &&
-                componentTestStatusValueToStoryIds['status-value:success'].length === 0
-              }
-              onClick={() => {
-                openPanel({
-                  api,
-                  panelId: COMPONENT_TESTING_PANEL_ID,
-                  entryId:
-                    componentTestStatusValueToStoryIds['status-value:error'][0] ??
-                    componentTestStatusValueToStoryIds['status-value:warning'][0] ??
-                    componentTestStatusValueToStoryIds['status-value:success'][0] ??
-                    entry?.id,
-                });
-              }}
-            >
-              <TestStatusIcon
-                status={componentTestStatusIcon}
-                aria-label={componentTestStatusLabel}
-                isRunning={isRunning}
-              />
-              {componentTestStatusValueToStoryIds['status-value:error'].length +
-                componentTestStatusValueToStoryIds['status-value:warning'].length || null}
-            </IconButton>
-          </WithTooltip>
+            <TestStatusIcon status={componentTestStatusIcon} isRunning={isRunning} />
+            {componentTestStatusValueToStoryIds['status-value:error'].length +
+              componentTestStatusValueToStoryIds['status-value:warning'].length || null}
+          </IconButton>
         </Row>
 
         {!entry && (
@@ -343,35 +326,37 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
             >
               {watching ||
               (currentRun.triggeredBy && !FULL_RUN_TRIGGERS.includes(currentRun.triggeredBy)) ? (
-                <IconButton size="medium" disabled>
-                  <InfoIcon
-                    aria-label={
-                      watching
-                        ? `Coverage is unavailable in watch mode`
-                        : `Coverage is unavailable when running focused tests`
-                    }
-                  />
+                <IconButton
+                  size="medium"
+                  disabled
+                  label={
+                    watching
+                      ? `Coverage is unavailable in watch mode`
+                      : `Coverage is unavailable when running focused tests`
+                  }
+                >
+                  <InfoIcon />
                 </IconButton>
               ) : currentRun.coverageSummary ? (
-                <IconButton asChild size="medium">
-                  <a href="/coverage/index.html" target="_blank" aria-label="Open coverage report">
+                <IconButton
+                  asChild
+                  size="medium"
+                  label={`Open coverage report (${currentRun.coverageSummary.percentage}% coverage)`}
+                >
+                  <a href="/coverage/index.html" target="_blank">
                     <TestStatusIcon
                       isRunning={isRunning}
                       percentage={currentRun.coverageSummary.percentage}
                       status={currentRun.coverageSummary.status}
-                      aria-label={`Coverage status: ${currentRun.coverageSummary.status}`}
                     />
-                    <span aria-label={`${currentRun.coverageSummary.percentage} percent coverage`}>
-                      {currentRun.coverageSummary.percentage}%
-                    </span>
+                    {currentRun.coverageSummary.percentage}%
                   </a>
                 </IconButton>
               ) : (
-                <IconButton size="medium" disabled>
+                <IconButton size="medium" disabled label="Coverage status: unknown">
                   <TestStatusIcon
                     isRunning={isRunning}
                     status={fatalError ? 'critical' : 'unknown'}
-                    aria-label="Coverage status: unknown"
                   />
                 </IconButton>
               )}
@@ -399,39 +384,30 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                 )
               }
             />
-            <WithTooltip
-              hasChrome={false}
-              trigger="hover"
-              tooltip={<TooltipNote note={a11yStatusLabel} />}
+            <IconButton
+              label={a11yStatusLabel}
+              size="medium"
+              disabled={
+                a11yStatusValueToStoryIds['status-value:error'].length === 0 &&
+                a11yStatusValueToStoryIds['status-value:warning'].length === 0 &&
+                a11yStatusValueToStoryIds['status-value:success'].length === 0
+              }
+              onClick={() => {
+                openPanel({
+                  api,
+                  entryId:
+                    a11yStatusValueToStoryIds['status-value:error'][0] ??
+                    a11yStatusValueToStoryIds['status-value:warning'][0] ??
+                    a11yStatusValueToStoryIds['status-value:success'][0] ??
+                    entry?.id,
+                  panelId: A11Y_PANEL_ID,
+                });
+              }}
             >
-              <IconButton
-                size="medium"
-                disabled={
-                  a11yStatusValueToStoryIds['status-value:error'].length === 0 &&
-                  a11yStatusValueToStoryIds['status-value:warning'].length === 0 &&
-                  a11yStatusValueToStoryIds['status-value:success'].length === 0
-                }
-                onClick={() => {
-                  openPanel({
-                    api,
-                    entryId:
-                      a11yStatusValueToStoryIds['status-value:error'][0] ??
-                      a11yStatusValueToStoryIds['status-value:warning'][0] ??
-                      a11yStatusValueToStoryIds['status-value:success'][0] ??
-                      entry?.id,
-                    panelId: A11Y_PANEL_ID,
-                  });
-                }}
-              >
-                <TestStatusIcon
-                  status={a11yStatusIcon}
-                  aria-label={a11yStatusLabel}
-                  isRunning={isRunning}
-                />
-                {a11yStatusValueToStoryIds['status-value:error'].length +
-                  a11yStatusValueToStoryIds['status-value:warning'].length || null}
-              </IconButton>
-            </WithTooltip>
+              <TestStatusIcon status={a11yStatusIcon} isRunning={isRunning} />
+              {a11yStatusValueToStoryIds['status-value:error'].length +
+                a11yStatusValueToStoryIds['status-value:warning'].length || null}
+            </IconButton>
           </Row>
         )}
       </Extras>

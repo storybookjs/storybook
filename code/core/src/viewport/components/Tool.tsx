@@ -5,7 +5,7 @@ import { IconButton, TooltipLinkList, WithTooltip } from 'storybook/internal/com
 import { GrowIcon, RefreshIcon, TransferIcon } from '@storybook/icons';
 
 import { type API, useGlobals, useParameter } from 'storybook/manager-api';
-import { Global } from 'storybook/theming';
+import { Global, styled } from 'storybook/theming';
 
 import { PARAM_KEY } from '../constants';
 import { MINIMAL_VIEWPORTS } from '../defaults';
@@ -91,6 +91,19 @@ export const ViewportTool: FC<{ api: API }> = ({ api }) => {
   );
 };
 
+// These ensure that we both present a logical DOM order based on whether
+// or not viewport dimensions are locked, and display them with the '/' or
+// rotate button in the middle.
+const FirstDimension = styled(ActiveViewportLabel)({
+  order: 1,
+});
+const DimensionSeparator = styled.div({
+  order: 2,
+});
+const LastDimension = styled(ActiveViewportLabel)({
+  order: 3,
+});
+
 const Pure = React.memo(function PureTool(props: PureProps) {
   const {
     item,
@@ -146,10 +159,13 @@ const Pure = React.memo(function PureTool(props: PureProps) {
         closeOnOutsideClick
         onVisibleChange={setIsTooltipVisible}
       >
+        {/* TODO migrate to an IconSelect where the current
+        value is announced as part of the AN but not in the tooltip */}
         <IconButtonWithLabel
           disabled={isLocked}
           key="viewport"
-          title="Change the size of the preview"
+          label="Change the size of the preview"
+          description="Select a viewport size among predefined options or reset to the default size."
           active={isActive}
           onDoubleClick={() => {
             update({ value: undefined, isRotated: false });
@@ -172,25 +188,28 @@ const Pure = React.memo(function PureTool(props: PureProps) {
 
       {item !== responsiveViewport ? (
         <ActiveViewportSize>
-          <ActiveViewportLabel title="Viewport width">
+          <FirstDimension title="Viewport width">
+            <span className="sb-sr-only">Viewport width: </span>
             {width.replace('px', '')}
-          </ActiveViewportLabel>
-          {!isLocked ? (
-            <IconButton
-              key="viewport-rotate"
-              title="Rotate viewport"
-              onClick={() => {
-                update({ value: viewportName, isRotated: !isRotated });
-              }}
-            >
-              <TransferIcon />
-            </IconButton>
-          ) : (
-            '/'
-          )}
-          <ActiveViewportLabel title="Viewport height">
+          </FirstDimension>
+          {isLocked && <DimensionSeparator>'/'</DimensionSeparator>}
+          <LastDimension title="Viewport height">
+            <span className="sb-sr-only">Viewport height: </span>
             {height.replace('px', '')}
-          </ActiveViewportLabel>
+          </LastDimension>
+          {!isLocked && (
+            <DimensionSeparator>
+              <IconButton
+                key="viewport-rotate"
+                label="Rotate viewport"
+                onClick={() => {
+                  update({ value: viewportName, isRotated: !isRotated });
+                }}
+              >
+                <TransferIcon />
+              </IconButton>
+            </DimensionSeparator>
+          )}
         </ActiveViewportSize>
       ) : null}
     </Fragment>

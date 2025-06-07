@@ -44,7 +44,7 @@ export const copyTool: Addon_BaseType = {
             key="copy"
             // @ts-expect-error (non strict)
             onClick={() => copy(getStoryHref(baseUrl, storyId, queryParams))}
-            title="Copy canvas link"
+            label="Copy canvas link"
           >
             <LinkIcon />
           </IconButton>

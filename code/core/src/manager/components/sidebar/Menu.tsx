@@ -81,8 +81,7 @@ export const SidebarMenu: FC<SidebarMenuProps> = ({ menu, isHighlighted, onClick
     return (
       <MenuButtonGroup>
         <SidebarIconButton
-          title="About Storybook"
-          aria-label="About Storybook"
+          label="About Storybook"
           highlighted={!!isHighlighted}
           active={false}
           // @ts-expect-error (non strict)
@@ -92,8 +91,7 @@ export const SidebarMenu: FC<SidebarMenuProps> = ({ menu, isHighlighted, onClick
           <CogIcon />
         </SidebarIconButton>
         <SidebarIconButton
-          title="Close menu"
-          aria-label="Close menu"
+          label="Close menu"
           highlighted={false}
           active={false}
           onClick={() => setMobileMenuOpen(false)}
@@ -113,8 +111,7 @@ export const SidebarMenu: FC<SidebarMenuProps> = ({ menu, isHighlighted, onClick
       onVisibleChange={setIsTooltipVisible}
     >
       <SidebarIconButton
-        title="Shortcuts"
-        aria-label="Shortcuts"
+        label="Shortcuts"
         highlighted={!!isHighlighted}
         active={isTooltipVisible}
         size="medium"

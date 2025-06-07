@@ -177,6 +177,10 @@ const ButtonPositionWrapper = styled.div({
   top: 6,
 });
 
+const StyledIconButton = styled(IconButton)({
+  margin: '-4px -12px -4px 0',
+});
+
 export enum ArgsTableError {
   NO_COMPONENT = 'No component found.',
   ARGS_UNSUPPORTED = 'Args unsupported. See Args documentation for your framework.',
@@ -384,13 +388,9 @@ export const ArgsTable: FC<ArgsTableProps> = (props) => {
       <TablePositionWrapper>
         {updateArgs && !isLoading && resetArgs && (
           <ButtonPositionWrapper>
-            <IconButton
-              onClick={() => resetArgs()}
-              aria-label="Reset controls"
-              title="Reset controls"
-            >
-              <UndoIcon />
-            </IconButton>
+            <StyledIconButton onClick={() => resetArgs()} label="Reset controls">
+              <UndoIcon aria-hidden />
+            </StyledIconButton>
           </ButtonPositionWrapper>
         )}
 

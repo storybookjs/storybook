@@ -105,6 +105,12 @@ export const eventMatchesShortcut = (
   return shortcutMatchesShortcut(eventToShortcut(e)!, shortcut);
 };
 
+/**
+ * Returns a human-readable symbol for a keyboard key.
+ *
+ * @param key The key to convert to a symbol.
+ * @returns A string that a human could understand as that keyboard key.
+ */
 export const keyToSymbol = (key: string): string => {
   if (key === 'alt') {
     return optionOrAltSymbol();
@@ -145,4 +151,9 @@ export const keyToSymbol = (key: string): string => {
 // Display the shortcut as a human readable string
 export const shortcutToHumanString = (shortcut: API_KeyCollection): string => {
   return shortcut.map(keyToSymbol).join(' ');
+};
+
+// Display the shortcut for use in an aria-keyshortcuts attribute
+export const shortcutToAriaKeyshortcuts = (shortcut: API_KeyCollection): string => {
+  return shortcut.map((shortcut) => shortcut[0].toUpperCase() + shortcut.slice(1)).join('+');
 };

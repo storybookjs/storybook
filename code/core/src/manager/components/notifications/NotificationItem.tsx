@@ -155,7 +155,7 @@ const DismissNotificationItem: FC<{
   onDismiss: () => void;
 }> = ({ onDismiss }) => (
   <DismissButtonWrapper
-    title="Dismiss notification"
+    label="Dismiss notification"
     onClick={(e: SyntheticEvent) => {
       e.preventDefault();
       e.stopPropagation();

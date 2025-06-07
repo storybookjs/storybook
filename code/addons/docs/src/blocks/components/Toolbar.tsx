@@ -1,4 +1,4 @@
-import type { FC, MouseEvent as ReactMouseEvent, SyntheticEvent } from 'react';
+import type { FC, SyntheticEvent } from 'react';
 import React from 'react';
 
 import { FlexBar, IconButton } from 'storybook/internal/components';
@@ -50,14 +50,7 @@ const IconPlaceholder = styled.div(({ theme }) => ({
   animation: `${theme.animation.glow} 1.5s ease-in-out infinite`,
 }));
 
-export const Toolbar: FC<ToolbarProps> = ({
-  isLoading,
-  storyId,
-  baseUrl,
-  zoom,
-  resetZoom,
-  ...rest
-}) => (
+export const Toolbar: FC<ToolbarProps> = ({ isLoading, zoom, resetZoom, ...rest }) => (
   <Bar {...rest}>
     <Wrapper key="left">
       {isLoading ? (
@@ -70,7 +63,7 @@ export const Toolbar: FC<ToolbarProps> = ({
               e.preventDefault();
               zoom(0.8);
             }}
-            title="Zoom in"
+            label="Zoom in"
           >
             <ZoomIcon />
           </IconButton>
@@ -80,7 +73,7 @@ export const Toolbar: FC<ToolbarProps> = ({
               e.preventDefault();
               zoom(1.25);
             }}
-            title="Zoom out"
+            label="Zoom out"
           >
             <ZoomOutIcon />
           </IconButton>
@@ -90,7 +83,7 @@ export const Toolbar: FC<ToolbarProps> = ({
               e.preventDefault();
               resetZoom();
             }}
-            title="Reset zoom"
+            label="Reset zoom"
           >
             <ZoomResetIcon />
           </IconButton>

@@ -1,4 +1,4 @@
-import type { MouseEventHandler, PropsWithChildren, SyntheticEvent } from 'react';
+import type { EventHandler, PropsWithChildren, SyntheticEvent } from 'react';
 import React, { Component, createContext, memo, useCallback } from 'react';
 
 import { IconButton, Separator } from 'storybook/internal/components';
@@ -37,22 +37,19 @@ class ZoomProvider extends Component<
 const { Consumer: ZoomConsumer } = Context;
 
 const Zoom = memo<{
-  zoomIn: MouseEventHandler;
-  zoomOut: MouseEventHandler;
-  reset: MouseEventHandler;
+  zoomIn: EventHandler<SyntheticEvent>;
+  zoomOut: EventHandler<SyntheticEvent>;
+  reset: EventHandler<SyntheticEvent>;
 }>(function Zoom({ zoomIn, zoomOut, reset }) {
   return (
     <>
-      {/* @ts-expect-error (non strict) */}
-      <IconButton key="zoomin" onClick={zoomIn} title="Zoom in">
+      <IconButton key="zoomin" onClick={zoomIn} label="Zoom in">
         <ZoomIcon />
       </IconButton>
-      {/* @ts-expect-error (non strict) */}
-      <IconButton key="zoomout" onClick={zoomOut} title="Zoom out">
+      <IconButton key="zoomout" onClick={zoomOut} label="Zoom out">
         <ZoomOutIcon />
       </IconButton>
-      {/* @ts-expect-error (non strict) */}
-      <IconButton key="zoomreset" onClick={reset} title="Reset zoom">
+      <IconButton key="zoomreset" onClick={reset} label="Reset zoom">
         <ZoomResetIcon />
       </IconButton>
     </>

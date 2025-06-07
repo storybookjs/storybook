@@ -56,7 +56,7 @@ export const remountTool: Addon_BaseType = {
         return (
           <StyledAnimatedIconButton
             key="remount"
-            title="Remount component"
+            label="Remount component"
             onClick={remountComponent}
             onAnimationEnd={() => setIsAnimating(false)}
             animating={isAnimating}

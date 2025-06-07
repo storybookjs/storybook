@@ -35,7 +35,7 @@ export const Tool = () => {
     <IconButton
       key={TOOL_ID}
       active={measureEnabled}
-      title="Enable measure"
+      label="Enable measure"
       onClick={toggleMeasure}
     >
       <RulerIcon />

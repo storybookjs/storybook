@@ -251,6 +251,7 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
   return (
     <Wrapper aria-readonly={readonly}>
       {isObjectOrArray && (
+        // TODO: migrate to Button, this is not an IconButton
         <RawButton
           role="switch"
           aria-checked={showRaw}
@@ -259,6 +260,7 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
             e.preventDefault();
             setShowRaw((isRaw) => !isRaw);
           }}
+          label={showRaw ? 'Switch to object editor' : 'Switch to raw JSON editor'}
         >
           {showRaw ? <EyeCloseIcon /> : <EyeIcon />}
           <span>RAW</span>

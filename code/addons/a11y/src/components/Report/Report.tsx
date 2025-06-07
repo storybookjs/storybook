@@ -121,9 +121,10 @@ export const Report: FC<ReportProps> = ({
                 </Badge>
               )}
               <Count>{item.nodes.length}</Count>
+              {/* TODO: try to use a details/summary with asChild */}
               <IconButton
                 onClick={(event) => toggleOpen(event, type, item)}
-                aria-label={`${selection ? 'Collapse' : 'Expand'} details for ${title}`}
+                label={`${selection ? 'Collapse' : 'Expand'} details for: ${title}`}
                 aria-expanded={!!selection}
                 aria-controls={detailsId}
               >

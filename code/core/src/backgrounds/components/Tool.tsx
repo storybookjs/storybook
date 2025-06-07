@@ -87,7 +87,7 @@ const Pure = memo(function PureTool(props: PureProps) {
         key="grid"
         active={isGrid}
         disabled={isLocked}
-        title="Apply a grid to the preview"
+        label="Apply a grid to the preview"
         onClick={() => update({ value: backgroundName, grid: !isGrid })}
       >
         <GridIcon />
@@ -134,7 +134,7 @@ const Pure = memo(function PureTool(props: PureProps) {
           <IconButton
             disabled={isLocked}
             key="background"
-            title="Change the background of the preview"
+            label="Change the background of the preview"
             active={!!item || isTooltipVisible}
           >
             <PhotoIcon />

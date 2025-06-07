@@ -1,6 +1,12 @@
 import * as React from 'react';
 
-import { IconButton, ScrollArea, TooltipNote, WithTooltip } from 'storybook/internal/components';
+import {
+  Button,
+  IconButton,
+  ScrollArea,
+  TooltipNote,
+  WithTooltip,
+} from 'storybook/internal/components';
 
 import { CollapseIcon, ExpandAltIcon, EyeCloseIcon, EyeIcon, SyncIcon } from '@storybook/icons';
 
@@ -73,7 +79,7 @@ const ActionsWrapper = styled.div({
   gap: 6,
 });
 
-const ToggleButton = styled(IconButton)({
+const ButtonWithCollapsibleText = styled(Button)({
   // 193px is the total width of the action buttons when the label is visible
   '@container (max-width: 193px)': {
     span: {
@@ -115,6 +121,12 @@ export const Tabs: React.FC<TabsProps> = ({ tabs }) => {
     [setTab]
   );
 
+  const highlightDescriptionId = React.useId();
+  const highlightDescription = highlighted
+    ? 'Hide accessibility highlights'
+    : 'Highlight accessibility results in preview';
+  const highlightLabel = highlighted ? 'Hide highlights' : 'Show highlights';
+
   return (
     <Container ref={ref}>
       <Subnav>
@@ -138,39 +150,31 @@ export const Tabs: React.FC<TabsProps> = ({ tabs }) => {
             as="div"
             hasChrome={false}
             placement="top"
-            tooltip={<TooltipNote note="Highlight elements with accessibility violations" />}
+            tooltip={<TooltipNote note={highlightDescription} />}
             trigger="hover"
           >
-            <ToggleButton onClick={toggleHighlight} active={highlighted}>
-              {highlighted ? <EyeCloseIcon /> : <EyeIcon />}
-              <span>{highlighted ? 'Hide highlights' : 'Show highlights'}</span>
-            </ToggleButton>
-          </WithTooltip>
-          <WithTooltip
-            as="div"
-            hasChrome={false}
-            placement="top"
-            tooltip={<TooltipNote note={allExpanded ? 'Collapse all' : 'Expand all'} />}
-            trigger="hover"
-          >
-            <IconButton
-              onClick={allExpanded ? handleCollapseAll : handleExpandAll}
-              aria-label={allExpanded ? 'Collapse all' : 'Expand all'}
+            <ButtonWithCollapsibleText
+              aria-label={highlightLabel}
+              aria-describedby={highlightDescriptionId}
+              onClick={toggleHighlight}
+              active={highlighted}
             >
-              {allExpanded ? <CollapseIcon /> : <ExpandAltIcon />}
-            </IconButton>
+              {highlighted ? <EyeCloseIcon /> : <EyeIcon />}
+              <span>{highlightLabel}</span>
+            </ButtonWithCollapsibleText>
+            <span className="sb-sr-only" id={highlightDescriptionId}>
+              {highlightDescription}
+            </span>
           </WithTooltip>
-          <WithTooltip
-            as="div"
-            hasChrome={false}
-            placement="top"
-            tooltip={<TooltipNote note="Rerun the accessibility scan" />}
-            trigger="hover"
+          <IconButton
+            onClick={allExpanded ? handleCollapseAll : handleExpandAll}
+            label={allExpanded ? 'Collapse all results' : 'Expand all results'}
           >
-            <IconButton onClick={handleManual} aria-label="Rerun accessibility scan">
-              <SyncIcon />
-            </IconButton>
-          </WithTooltip>
+            {allExpanded ? <CollapseIcon /> : <ExpandAltIcon />}
+          </IconButton>
+          <IconButton onClick={handleManual} label="Rerun accessibility scan">
+            <SyncIcon />
+          </IconButton>
         </ActionsWrapper>
       </Subnav>
       <ScrollArea vertical horizontal>

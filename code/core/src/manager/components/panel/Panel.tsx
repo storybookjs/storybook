@@ -6,7 +6,6 @@ import type { Addon_BaseType } from 'storybook/internal/types';
 import { BottomBarIcon, CloseIcon, DocumentIcon, SidebarAltIcon } from '@storybook/icons';
 
 import type { State } from 'storybook/manager-api';
-import { shortcutToHumanString } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import { useLayout } from '../layout/LayoutProvider';
@@ -88,22 +87,22 @@ export const AddonPanel = React.memo<{
                 <IconButton
                   key="position"
                   onClick={actions.togglePosition}
-                  title={`Change addon orientation [${shortcutToHumanString(
-                    shortcuts.panelPosition
-                  )}]`}
+                  label="Change addon orientation"
+                  shortcut={shortcuts.panelPosition}
                 >
                   {panelPosition === 'bottom' ? <SidebarAltIcon /> : <BottomBarIcon />}
                 </IconButton>
                 <IconButton
                   key="visibility"
                   onClick={actions.toggleVisibility}
-                  title={`Hide addons [${shortcutToHumanString(shortcuts.togglePanel)}]`}
+                  label="Hide addons"
+                  shortcut={shortcuts.togglePanel}
                 >
                   <CloseIcon />
                 </IconButton>
               </>
             ) : (
-              <IconButton onClick={() => setMobilePanelOpen(false)} aria-label="Close addon panel">
+              <IconButton onClick={() => setMobilePanelOpen(false)} label="Close addon panel">
                 <CloseIcon />
               </IconButton>
             )}

@@ -129,7 +129,13 @@ export const Tooltip: FC<TooltipProps> = ({
       <Wrapper>
         <TooltipHeader>
           {step.title && <TooltipTitle>{step.title}</TooltipTitle>}
-          <IconButton {...closeProps} onClick={closeProps.onClick as any} variant="solid">
+          {/* TODO: could someone please show me how/where to test this? */}
+          <IconButton
+            {...closeProps}
+            onClick={closeProps.onClick as any}
+            variant="solid"
+            label="Close"
+          >
             <CloseAltIcon />
           </IconButton>
         </TooltipHeader>

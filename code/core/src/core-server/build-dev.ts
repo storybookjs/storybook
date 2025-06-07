@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { join, relative, resolve } from 'node:path';
 
 import {
+  JsPackageManagerFactory,
   getConfigInfo,
   getProjectRoot,
   loadAllPresets,
@@ -12,7 +13,7 @@ import {
   validateFrameworkName,
   versions,
 } from 'storybook/internal/common';
-import { deprecate } from 'storybook/internal/node-logger';
+import { deprecate, logger } from 'storybook/internal/node-logger';
 import { MissingBuilderError, NoStatsForViteDevError } from 'storybook/internal/server-errors';
 import { oneWayHash, telemetry } from 'storybook/internal/telemetry';
 import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
@@ -50,7 +51,7 @@ export async function buildDevStandalone(
       `Expected package.json#version to be defined in the "${packageJson.name}" package}`
     );
     storybookVersion = packageJson.version;
-    previewConfigPath = getConfigInfo(packageJson, configDir).previewConfig ?? undefined;
+    previewConfigPath = getConfigInfo(configDir).previewConfigPath ?? undefined;
   } else {
     if (!storybookVersion) {
       storybookVersion = versions.storybook;
@@ -76,8 +77,7 @@ export async function buildDevStandalone(
     }
   }
 
-  const rootDir = getProjectRoot();
-  const cacheKey = oneWayHash(relative(rootDir, configDir));
+  const cacheKey = oneWayHash(relative(getProjectRoot(), configDir));
 
   const cacheOutputDir = resolvePathInStorybookCache('public', cacheKey);
   let outputDir = resolve(options.outputDir || cacheOutputDir);
@@ -107,10 +107,15 @@ export async function buildDevStandalone(
 
   frameworkName = frameworkName || 'custom';
 
+  const packageManager = JsPackageManagerFactory.getPackageManager({
+    configDir: options.configDir,
+  });
+
   try {
-    await warnOnIncompatibleAddons(storybookVersion);
+    await warnOnIncompatibleAddons(storybookVersion, packageManager);
   } catch (e) {
-    console.warn('Storybook failed to check addon compatibility', e);
+    logger.warn('Storybook failed to check addon compatibility');
+    logger.debug(`${e instanceof Error ? e.stack : String(e)}`);
   }
 
   // TODO: Bring back in 9.x when we officialy launch CSF4
@@ -235,7 +240,7 @@ export async function buildDevStandalone(
         (warning) => !warning.message.includes(`Conflicting values for 'process.env.NODE_ENV'`)
       );
 
-    console.log(problems.map((p) => p.stack));
+    logger.log(problems.map((p) => p.stack).join('\n'));
     process.exit(problems.length > 0 ? 1 : 0);
   } else {
     const name =

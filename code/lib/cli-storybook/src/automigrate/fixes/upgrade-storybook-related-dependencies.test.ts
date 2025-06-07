@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
@@ -7,6 +9,13 @@ import * as docsUtils from '../../doctor/getIncompatibleStorybookPackages';
 import { upgradeStorybookRelatedDependencies } from './upgrade-storybook-related-dependencies';
 
 vi.mock('../../doctor/getIncompatibleStorybookPackages');
+vi.mock('node:fs', async (importOriginal) => {
+  const actual = (await importOriginal()) as any;
+  return {
+    ...actual,
+    readFileSync: vi.fn(),
+  };
+});
 
 const check = async ({
   packageManager,
@@ -22,6 +31,7 @@ const check = async ({
     configDir: '',
     mainConfig: mainConfig as any,
     storybookVersion,
+    storiesPaths: [],
   });
 };
 
@@ -58,22 +68,40 @@ describe('upgrade-storybook-related-dependencies fix', () => {
       },
     ];
     vi.mocked(docsUtils.getIncompatibleStorybookPackages).mockResolvedValue(analyzedPackages);
+
+    // Mock the package.json content
+    const mockPackageJson = {
+      dependencies: {
+        '@storybook/jest': '0.2.3',
+        '@storybook/preset-create-react-app': '3.2.0',
+      },
+      devDependencies: {
+        '@chromatic-com/storybook': '1.2.9',
+        storybook: '8.0.0',
+      },
+    };
+
+    vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockPackageJson));
+
+    const mockPackageManager = {
+      getAllDependencies: () =>
+        analyzedPackages.reduce(
+          (acc, { packageName, packageVersion }) => {
+            acc[packageName] = packageVersion;
+            return acc;
+          },
+          {} as Record<string, string>
+        ),
+      latestVersion: async (pkgName: string) =>
+        analyzedPackages.find((pkg) => pkg.packageName === pkgName)?.availableUpgrade || '',
+      getInstalledVersion: async (pkgName: string) =>
+        analyzedPackages.find((pkg) => pkg.packageName === pkgName)?.packageVersion || null,
+      packageJsonPaths: ['package.json'],
+    };
+
     await expect(
       check({
-        packageManager: {
-          getAllDependencies: async () =>
-            analyzedPackages.reduce(
-              (acc, { packageName, packageVersion }) => {
-                acc[packageName] = packageVersion;
-                return acc;
-              },
-              {} as Record<string, string>
-            ),
-          latestVersion: async (pkgName) =>
-            analyzedPackages.find((pkg) => pkg.packageName === pkgName)?.availableUpgrade || '',
-          getInstalledVersion: async (pkgName) =>
-            analyzedPackages.find((pkg) => pkg.packageName === pkgName)?.packageVersion || null,
-        },
+        packageManager: mockPackageManager,
       })
     ).resolves.toMatchInlineSnapshot(`
       {

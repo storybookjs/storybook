@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getAddonNames } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import * as jscodeshift from 'jscodeshift';
@@ -46,7 +47,7 @@ vi.mock('picocolors', async (importOriginal) => {
   };
 });
 
-const j = jscodeshift.withParser('ts');
+const loggerMock = vi.mocked(logger);
 
 describe('addonA11yAddonTest', () => {
   const configDir = '/path/to/config';
@@ -353,157 +354,6 @@ describe('addonA11yAddonTest', () => {
     });
   });
 
-  describe('prompt', () => {
-    it('should return manual prompt if transformedSetupCode is null and if transformedPreviewCode is null', () => {
-      const result = addonA11yAddonTest.prompt({
-        setupFile: null,
-        transformedSetupCode: null,
-        previewFile: null,
-        transformedPreviewCode: null,
-        skipPreviewTransformation: false,
-        skipVitestSetupTransformation: false,
-      });
-      expect(result).toMatchInlineSnapshot(`
-        "We have detected that you have @storybook/addon-a11y and @storybook/addon-vitest installed.
-
-        @storybook/addon-a11y now integrates with @storybook/addon-vitest to provide automatic accessibility checks for your stories, powered by Axe and Vitest.
-
-        1) We couldn't find or automatically update .storybook/vitest.setup.<ts|js> in your project to smoothly set up project annotations from @storybook/addon-a11y. 
-        Please manually update your vitest.setup.ts file to include the following:
-
-        ...   
-        + import * as a11yAddonAnnotations from "@storybook/addon-a11y/preview";
-
-        setProjectAnnotations([
-          ...
-        + a11yAddonAnnotations,
-        ]);
-
-        2) We couldn't find or automatically update your .storybook/preview.<ts|js> in your project to smoothly set up parameters.a11y.test from @storybook/addon-a11y. 
-        Please manually update your .storybook/preview.<ts|js> file to include the following:
-
-        export default {
-          ...
-          parameters: {
-        +   a11y: {
-        +      test: "todo"
-        +   }
-          }
-        }
-
-        For more information, please refer to the accessibility addon documentation: 
-        https://storybook.js.org/docs/writing-tests/accessibility-testing#test-addon-integration"
-      `);
-    });
-
-    it('should return auto prompt if transformedSetupCode is null and if transformedPreviewCode is defined', () => {
-      const result = addonA11yAddonTest.prompt({
-        setupFile: null,
-        transformedSetupCode: null,
-        previewFile: 'preview.js',
-        transformedPreviewCode: 'transformed code',
-        skipPreviewTransformation: false,
-        skipVitestSetupTransformation: false,
-      });
-      expect(result).toMatchInlineSnapshot(`
-        "We have detected that you have @storybook/addon-a11y and @storybook/addon-vitest installed.
-
-        @storybook/addon-a11y now integrates with @storybook/addon-vitest to provide automatic accessibility checks for your stories, powered by Axe and Vitest.
-
-        1) We couldn't find or automatically update .storybook/vitest.setup.<ts|js> in your project to smoothly set up project annotations from @storybook/addon-a11y. 
-        Please manually update your vitest.setup.ts file to include the following:
-
-        ...   
-        + import * as a11yAddonAnnotations from "@storybook/addon-a11y/preview";
-
-        setProjectAnnotations([
-          ...
-        + a11yAddonAnnotations,
-        ]);
-
-        2) We have to update your .storybook/preview.js file to set up parameters.a11y.test from @storybook/addon-a11y.
-
-        For more information, please refer to the accessibility addon documentation: 
-        https://storybook.js.org/docs/writing-tests/accessibility-testing#test-addon-integration"
-      `);
-    });
-
-    it('should return auto prompt if transformedSetupCode is defined and if transformedPreviewCode is null', () => {
-      const result = addonA11yAddonTest.prompt({
-        setupFile: 'vitest.setup.ts',
-        transformedSetupCode: 'transformed code',
-        previewFile: null,
-        transformedPreviewCode: null,
-        skipPreviewTransformation: false,
-        skipVitestSetupTransformation: false,
-      });
-      expect(result).toMatchInlineSnapshot(`
-        "We have detected that you have @storybook/addon-a11y and @storybook/addon-vitest installed.
-
-        @storybook/addon-a11y now integrates with @storybook/addon-vitest to provide automatic accessibility checks for your stories, powered by Axe and Vitest.
-
-        1) We have to update your .storybook/vitest.setup.ts file to set up project annotations from @storybook/addon-a11y.
-
-        2) We couldn't find or automatically update your .storybook/preview.<ts|js> in your project to smoothly set up parameters.a11y.test from @storybook/addon-a11y. 
-        Please manually update your .storybook/preview.<ts|js> file to include the following:
-
-        export default {
-          ...
-          parameters: {
-        +   a11y: {
-        +      test: "todo"
-        +   }
-          }
-        }
-
-        For more information, please refer to the accessibility addon documentation: 
-        https://storybook.js.org/docs/writing-tests/accessibility-testing#test-addon-integration"
-      `);
-    });
-
-    it('should return auto prompt if transformedSetupCode is defined and if transformedPreviewCode is skipped', () => {
-      const result = addonA11yAddonTest.prompt({
-        setupFile: 'vitest.setup.ts',
-        transformedSetupCode: 'transformed code',
-        previewFile: null,
-        transformedPreviewCode: null,
-        skipPreviewTransformation: true,
-        skipVitestSetupTransformation: false,
-      });
-      expect(result).toMatchInlineSnapshot(`
-        "We have detected that you have @storybook/addon-a11y and @storybook/addon-vitest installed.
-
-        @storybook/addon-a11y now integrates with @storybook/addon-vitest to provide automatic accessibility checks for your stories, powered by Axe and Vitest.
-
-        1) We have to update your .storybook/vitest.setup.ts file to set up project annotations from @storybook/addon-a11y.
-
-        For more information, please refer to the accessibility addon documentation: 
-        https://storybook.js.org/docs/writing-tests/accessibility-testing#test-addon-integration"
-      `);
-    });
-
-    it('should return auto prompt if transformedPreviewCode is defined and if transformedSetupCode is skipped', () => {
-      const result = addonA11yAddonTest.prompt({
-        setupFile: null,
-        transformedSetupCode: null,
-        previewFile: 'preview.js',
-        transformedPreviewCode: 'transformed code',
-        skipPreviewTransformation: false,
-        skipVitestSetupTransformation: true,
-      });
-      expect(result).toMatchInlineSnapshot(`
-        "We have detected that you have @storybook/addon-a11y and @storybook/addon-vitest installed.
-
-        @storybook/addon-a11y now integrates with @storybook/addon-vitest to provide automatic accessibility checks for your stories, powered by Axe and Vitest.
-
-        1) We have to update your .storybook/preview.js file to set up parameters.a11y.test from @storybook/addon-a11y.
-
-        For more information, please refer to the accessibility addon documentation: 
-        https://storybook.js.org/docs/writing-tests/accessibility-testing#test-addon-integration"
-      `);
-    });
-  });
-
   describe('run', () => {
     it('should write transformed setup code to file', async () => {
       const setupFile = '/path/to/vitest.setup.ts';
@@ -515,6 +365,8 @@ describe('addonA11yAddonTest', () => {
           transformedSetupCode,
           previewFile: null,
           transformedPreviewCode: null,
+          skipVitestSetupTransformation: false,
+          skipPreviewTransformation: true,
         },
       } as any);
 
@@ -531,6 +383,8 @@ describe('addonA11yAddonTest', () => {
           transformedSetupCode: null,
           previewFile: previewFile,
           transformedPreviewCode: transformedPreviewCode,
+          skipVitestSetupTransformation: true,
+          skipPreviewTransformation: false,
         },
       } as any);
 
@@ -539,10 +393,106 @@ describe('addonA11yAddonTest', () => {
 
     it('should not write to file if setupFile or transformedSetupCode is null', async () => {
       await addonA11yAddonTest.run?.({
-        result: { setupFile: null, transformedSetupCode: null },
+        result: {
+          setupFile: null,
+          transformedSetupCode: null,
+          previewFile: null,
+          transformedPreviewCode: null,
+          skipVitestSetupTransformation: true,
+          skipPreviewTransformation: true,
+        },
       } as any);
 
       expect(writeFileSync).not.toHaveBeenCalled();
+    });
+
+    it('should throw with instructions when skipVitestSetupTransformation is false and transformedSetupCode is null', async () => {
+      await expect(
+        addonA11yAddonTest.run?.({
+          result: {
+            setupFile: 'vitest.setup.ts',
+            transformedSetupCode: null,
+            previewFile: null,
+            transformedPreviewCode: null,
+            skipPreviewTransformation: true,
+            skipVitestSetupTransformation: false,
+          },
+        } as any)
+      ).rejects.toMatchInlineSnapshot(
+        `[Error: The addon-a11y-addon-test automigration couldn't make the changes but here are instructions for doing them yourself:
+1) We couldn't find or automatically update .storybook/vitest.setup.<ts|js> in your project to smoothly set up project annotations from @storybook/addon-a11y. 
+Please manually update your vitest.setup.ts file to include the following:
+
+...   
++ import * as a11yAddonAnnotations from "@storybook/addon-a11y/preview";
+
+setProjectAnnotations([
+  ...
++ a11yAddonAnnotations,
+]);]`
+      );
+    });
+
+    it('should throw with instructions when skipPreviewTransformation is false and transformedPreviewCode is null', async () => {
+      await expect(
+        addonA11yAddonTest.run?.({
+          result: {
+            setupFile: null,
+            transformedSetupCode: null,
+            previewFile: 'preview.js',
+            transformedPreviewCode: null,
+            skipPreviewTransformation: false,
+            skipVitestSetupTransformation: true,
+          },
+        } as any)
+      ).rejects
+        .toMatchInlineSnapshot(`[Error: The addon-a11y-addon-test automigration couldn't make the changes but here are instructions for doing them yourself:
+1) We couldn't find or automatically update your .storybook/preview.<ts|js> in your project to smoothly set up parameters.a11y.test from @storybook/addon-a11y. Please manually update your .storybook/preview.<ts|js> file to include the following:
+
+export default {
+  ...
+  parameters: {
++   a11y: {
++      test: "todo"
++   }
+  }
+}]`);
+    });
+
+    it('should throw with full instructions when skipPreviewTransformation is false and both transformedSetupCode and transformedPreviewCode are null', async () => {
+      await expect(
+        addonA11yAddonTest.run?.({
+          result: {
+            setupFile: 'vitest.setup.ts',
+            transformedSetupCode: null,
+            previewFile: 'preview.js',
+            transformedPreviewCode: null,
+            skipPreviewTransformation: false,
+            skipVitestSetupTransformation: false,
+          },
+        } as any)
+      ).rejects
+        .toMatchInlineSnapshot(`[Error: The addon-a11y-addon-test automigration couldn't make the changes but here are instructions for doing them yourself:
+1) We couldn't find or automatically update .storybook/vitest.setup.<ts|js> in your project to smoothly set up project annotations from @storybook/addon-a11y. 
+Please manually update your vitest.setup.ts file to include the following:
+
+...   
++ import * as a11yAddonAnnotations from "@storybook/addon-a11y/preview";
+
+setProjectAnnotations([
+  ...
++ a11yAddonAnnotations,
+]);
+2) We couldn't find or automatically update your .storybook/preview.<ts|js> in your project to smoothly set up parameters.a11y.test from @storybook/addon-a11y. Please manually update your .storybook/preview.<ts|js> file to include the following:
+
+export default {
+  ...
+  parameters: {
++   a11y: {
++      test: "todo"
++   }
+  }
+}]`);
     });
   });
 

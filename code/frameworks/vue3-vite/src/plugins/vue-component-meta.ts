@@ -1,7 +1,8 @@
 import { readFile, stat } from 'node:fs/promises';
-import { dirname, join, parse, relative, resolve } from 'node:path';
+import { join, parse } from 'node:path';
 
-import findPackageJson from 'find-package-json';
+import { getProjectRoot } from 'storybook/internal/common';
+
 import MagicString from 'magic-string';
 import type { ModuleNode, Plugin } from 'vite';
 import {
@@ -174,6 +175,7 @@ async function createVueComponentMetaChecker(tsconfigPath = 'tsconfig.json') {
   };
 
   const projectRoot = getProjectRoot();
+
   const projectTsConfigPath = join(projectRoot, tsconfigPath);
 
   const defaultChecker = createCheckerByJson(projectRoot, { include: ['**/*'] }, checkerOptions);
@@ -192,16 +194,6 @@ async function createVueComponentMetaChecker(tsconfigPath = 'tsconfig.json') {
   }
 
   return defaultChecker;
-}
-
-/** Gets the absolute path to the project root. */
-function getProjectRoot() {
-  const projectRoot = findPackageJson().next().value?.path ?? '';
-
-  const currentFileDir = dirname(__filename);
-  const relativePathToProjectRoot = relative(currentFileDir, projectRoot);
-
-  return resolve(currentFileDir, relativePathToProjectRoot);
 }
 
 /** Gets the filename without file extension. */

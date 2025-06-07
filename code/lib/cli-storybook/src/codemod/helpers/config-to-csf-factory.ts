@@ -1,11 +1,11 @@
 import { types as t } from 'storybook/internal/babel';
 import { formatFileContent } from 'storybook/internal/common';
 import { loadConfig, printConfig } from 'storybook/internal/csf-tools';
+import { logger } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
 
 import type { FileInfo } from '../../automigrate/codemod';
-import { logger } from '../csf-factories';
 import {
   cleanupTypeImports,
   getConfigProperties,

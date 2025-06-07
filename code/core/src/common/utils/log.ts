@@ -1,6 +1,6 @@
-import picocolors from 'picocolors';
+import { logger } from 'storybook/internal/node-logger';
 
-const logger = console;
+import picocolors from 'picocolors';
 
 export const commandLog = (message: string) => {
   process.stdout.write(picocolors.cyan(' • ') + message);

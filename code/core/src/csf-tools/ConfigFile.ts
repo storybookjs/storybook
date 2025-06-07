@@ -8,12 +8,11 @@ import {
   types as t,
   traverse,
 } from 'storybook/internal/babel';
+import { logger } from 'storybook/internal/node-logger';
 
 import { dedent } from 'ts-dedent';
 
 import type { PrintResultType } from './PrintResultType';
-
-const logger = console;
 
 const getCsfParsingErrorMessage = ({
   expectedType,

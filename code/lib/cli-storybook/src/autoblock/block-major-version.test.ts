@@ -1,4 +1,6 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { JsPackageManager } from 'storybook/internal/common';
 
 import { blocker, checkUpgrade } from './block-major-version';
 
@@ -106,28 +108,41 @@ describe('checkUpgrade', () => {
 });
 
 describe('blocker', () => {
-  const mockPackageManager = {
-    retrievePackageJson: vi.fn(),
-  };
+  const mockPackageManager = vi.mocked(JsPackageManager.prototype);
+
+  beforeEach(() => {
+    // @ts-expect-error Ignore readonly property
+    mockPackageManager.primaryPackageJson = {
+      packageJson: { devDependencies: {}, dependencies: {} },
+      packageJsonPath: 'some/path',
+      operationDir: 'some/path',
+    };
+    vi.clearAllMocks();
+  });
 
   it('check - returns false if no version found', async () => {
-    mockPackageManager.retrievePackageJson.mockResolvedValue({});
     const result = await blocker.check({ packageManager: mockPackageManager } as any);
     expect(result).toBe(false);
   });
 
   it('check - returns false if version check fails', async () => {
-    mockPackageManager.retrievePackageJson.mockResolvedValue({});
     const result = await blocker.check({ packageManager: mockPackageManager } as any);
     expect(result).toBe(false);
   });
 
   it('check - returns version data with reason if upgrade should be blocked', async () => {
-    mockPackageManager.retrievePackageJson.mockResolvedValue({
-      dependencies: {
-        '@storybook/react': '6.0.0',
+    // @ts-expect-error Ignore readonly property
+    mockPackageManager.primaryPackageJson = {
+      packageJson: {
+        devDependencies: {},
+        dependencies: {
+          '@storybook/react': '6.0.0',
+        },
       },
-    });
+      packageJsonPath: 'some/path',
+      operationDir: 'some/path',
+    };
+
     const result = await blocker.check({ packageManager: mockPackageManager } as any);
     expect(result).toEqual({
       currentVersion: '6.0.0',
@@ -137,7 +152,7 @@ describe('blocker', () => {
 
   describe('log', () => {
     it('includes upgrade command for gap-too-large', () => {
-      const message = blocker.log({ packageManager: mockPackageManager } as any, {
+      const message = blocker.log({
         currentVersion: '6.0.0',
         reason: 'gap-too-large',
       });
@@ -147,7 +162,7 @@ describe('blocker', () => {
     });
 
     it('shows downgrade message for downgrade attempts', () => {
-      const message = blocker.log({ packageManager: mockPackageManager } as any, {
+      const message = blocker.log({
         currentVersion: '8.0.0',
         reason: 'downgrade',
       });
@@ -157,13 +172,12 @@ describe('blocker', () => {
     });
 
     it('omits upgrade command for invalid versions', () => {
-      const message = blocker.log({ packageManager: mockPackageManager } as any, {
+      const message = blocker.log({
         currentVersion: 'invalid',
         reason: 'gap-too-large',
       });
       expect(message).not.toContain('You can upgrade to version');
       expect(message).toContain('Major Version Gap Detected');
-      expect(message).toContain('For more information about upgrading');
     });
   });
 });

@@ -1,6 +1,7 @@
-import { normalize } from 'node:path';
+import { dirname, isAbsolute, join, normalize } from 'node:path';
 
 import {
+  JsPackageManagerFactory,
   builderPackages,
   extractProperFrameworkName,
   frameworkPackages,
@@ -8,16 +9,17 @@ import {
   loadMainConfig,
   rendererPackages,
 } from 'storybook/internal/common';
-import type { JsPackageManager } from 'storybook/internal/common';
+import type { PackageManagerName } from 'storybook/internal/common';
 import { frameworkToRenderer, getCoercedStorybookVersion } from 'storybook/internal/common';
 import type { ConfigFile } from 'storybook/internal/csf-tools';
 import { readConfig, writeConfig as writeConfigFile } from 'storybook/internal/csf-tools';
+import { logger } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
-const logger = console;
+import { getStoriesPathsFromConfig } from '../../util';
 
 /**
  * Given a Storybook configuration object, retrieves the package name or file path of the framework.
@@ -123,31 +125,76 @@ export const getRendererPackageNameFromFramework = (frameworkPackageName: string
 };
 
 export const getStorybookData = async ({
-  packageManager,
   configDir: userDefinedConfigDir,
+  cwd,
+  packageManagerName,
+  cache = false,
 }: {
-  packageManager: JsPackageManager;
   configDir?: string;
+  cwd?: string;
+  packageManagerName?: PackageManagerName;
+  cache?: boolean;
 }) => {
-  const packageJson = await packageManager.retrievePackageJson();
+  const totalStartTime = performance.now();
+
+  logger.debug('Getting Storybook info...');
+  const storybookInfoStartTime = performance.now();
   const {
-    mainConfig: mainConfigPath,
+    mainConfigPath: mainConfigPath,
     version: storybookVersionSpecifier,
     configDir: configDirFromScript,
-    previewConfig: previewConfigPath,
-  } = getStorybookInfo(packageJson, userDefinedConfigDir);
-  const storybookVersion = await getCoercedStorybookVersion(packageManager);
+    previewConfigPath,
+  } = getStorybookInfo(userDefinedConfigDir);
+  const storybookInfoDuration = performance.now() - storybookInfoStartTime;
+  logger.debug(`Got Storybook info in ${storybookInfoDuration.toFixed(2)}ms`);
 
   const configDir = userDefinedConfigDir || configDirFromScript || '.storybook';
 
+  logger.debug('Loading main config...');
+  const mainConfigStartTime = performance.now();
   let mainConfig: StorybookConfigRaw;
   try {
-    mainConfig = (await loadMainConfig({ configDir, noCache: true })) as StorybookConfigRaw;
+    mainConfig = (await loadMainConfig({ configDir, noCache: !cache, cwd })) as StorybookConfigRaw;
   } catch (err) {
     throw new Error(
       dedent`Unable to find or evaluate ${picocolors.blue(mainConfigPath)}: ${String(err)}`
     );
   }
+  const mainConfigDuration = performance.now() - mainConfigStartTime;
+  logger.debug(`Loaded main config in ${mainConfigDuration.toFixed(2)}ms`);
+
+  const workingDir = isAbsolute(configDir)
+    ? dirname(configDir)
+    : dirname(join(cwd ?? process.cwd(), configDir));
+
+  logger.debug('Getting stories paths...');
+  const storiesPathsStartTime = performance.now();
+  const storiesPaths = await getStoriesPathsFromConfig({
+    stories: mainConfig.stories,
+    configDir,
+    workingDir,
+  });
+  const storiesPathsDuration = performance.now() - storiesPathsStartTime;
+  logger.debug(`Got stories paths in ${storiesPathsDuration.toFixed(2)}ms`);
+
+  logger.debug('Getting package manager...');
+  const packageManagerStartTime = performance.now();
+  const packageManager = JsPackageManagerFactory.getPackageManager({
+    force: packageManagerName,
+    configDir,
+    storiesPaths,
+  });
+  const packageManagerDuration = performance.now() - packageManagerStartTime;
+  logger.debug(`Got package manager in ${packageManagerDuration.toFixed(2)}ms`);
+
+  logger.debug('Getting Storybook version...');
+  const storybookVersionStartTime = performance.now();
+  const storybookVersion = await getCoercedStorybookVersion(packageManager);
+  const storybookVersionDuration = performance.now() - storybookVersionStartTime;
+  logger.debug(`Got Storybook version in ${storybookVersionDuration.toFixed(2)}ms`);
+
+  const totalDuration = performance.now() - totalStartTime;
+  logger.debug(`getStorybookData completed in ${totalDuration.toFixed(2)}ms`);
 
   return {
     configDir,
@@ -156,7 +203,8 @@ export const getStorybookData = async ({
     storybookVersion,
     mainConfigPath,
     previewConfigPath,
-    packageJson,
+    packageManager,
+    storiesPaths,
   };
 };
 export type GetStorybookData = typeof getStorybookData;
@@ -188,13 +236,13 @@ export const updateMainConfig = async (
       await writeConfigFile(main);
     }
   } catch (e) {
-    logger.info(
+    logger.log(
       `❌ The migration failed to update your ${picocolors.blue(
         mainConfigPath
       )} on your behalf because of the following error:
         ${e}\n`
     );
-    logger.info(
+    logger.log(
       `⚠️ Storybook automigrations are based on AST parsing and it's possible that your ${picocolors.blue(
         mainConfigPath
       )} file contains a non-standard format (e.g. your export is not an object) or that there was an error when parsing dynamic values (e.g. "require" calls, or usage of environment variables). When your main config is non-standard, automigrations are unfortunately not possible. Please follow the instructions given previously and follow the documentation to make the updates manually.`

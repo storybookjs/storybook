@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "wallaby": {
+      "command": "node",
+      "args": [
+        "~/.wallaby/mcp/"
+      ]
+    }
+  }
+}

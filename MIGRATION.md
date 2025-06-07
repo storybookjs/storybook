@@ -17,6 +17,7 @@
     - [Vitest Addon (former @storybook/experimental-addon-test): Vitest 2.0 support is dropped](#vitest-addon-former-storybookexperimental-addon-test-vitest-20-support-is-dropped)
     - [Viewport/Backgrounds Addon synchronized configuration and `globals` usage](#viewportbackgrounds-addon-synchronized-configuration-and-globals-usage)
     - [Storysource Addon removed](#storysource-addon-removed)
+    - [Mdx-gfm Addon removed](#mdx-gfm-addon-removed)
   - [API and Component Changes](#api-and-component-changes)
     - [Button Component API Changes](#button-component-api-changes)
     - [Icon System Updates](#icon-system-updates)
@@ -725,6 +726,10 @@ See here for the ways you have to configure addon viewports & backgrounds:
 #### Storysource Addon removed
 
 The `@storybook/addon-storysource` addon and the `@storybook/source-loader` package are removed in Storybook 9.0. Instead, Storybook now provides a Code Panel via `@storybook/addon-docs` that offers similar functionality with improved integration and performance.
+
+#### Mdx-gfm Addon removed
+
+The `@storybook/addon-mdx-gfm` addon is removed in Storybook 9.0 since it is no longer needed.
 
 **Migration Steps:**
 

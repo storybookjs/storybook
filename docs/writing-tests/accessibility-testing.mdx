@@ -7,13 +7,7 @@ sidebar:
 
 # Accessibility Testing in Storybook
 
-Web accessibility (a11y) ensures that your applications are usable by everyone, regardless of their abilities or the technology they use. This includes support for:
-- Screen readers
-- Keyboard navigation
-- Color contrast
-- Focus management
-- ARIA attributes
-- Semantic HTML
+Web accessibility (a11y) ensures that your applications are usable by everyone, regardless of their abilities or the technology they use. Storybook's accessibility testing tools help you catch and fix accessibility issues early in the development process.
 
 ## Why Accessibility Matters
 
@@ -257,20 +251,19 @@ export const ComplexComponent: Story = {
 };
 ```
 
-### 2. Async Components
+### 2. Dynamic Content
 
 ```tsx
-// Handle async rendering
-export const AsyncComponent: Story = {
+// Handle dynamic content
+export const DynamicContent: Story = {
+  play: async ({ canvasElement }) => {
+    // Wait for content to load
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  },
   parameters: {
     a11y: {
-      // Wait for component to settle
-      options: {
-        runOnly: {
-          type: 'tag',
-          values: ['wcag2a', 'wcag2aa'],
-        },
-      },
+      // Wait for content to be ready
+      timeout: 2000,
     },
   },
 };
@@ -278,32 +271,33 @@ export const AsyncComponent: Story = {
 
 ## Best Practices
 
-1. **Start Early**
-   - Enable accessibility testing from the beginning
-   - Use the 'error' mode to catch issues early
+1. **Semantic HTML**
+   - Use appropriate HTML elements
+   - Implement proper heading hierarchy
+   - Include ARIA attributes when needed
 
-2. **Progressive Enhancement**
-   - Start with basic accessibility
-   - Gradually add more complex features
-   - Test with different assistive technologies
+2. **Keyboard Navigation**
+   - Ensure all interactive elements are focusable
+   - Implement proper focus management
+   - Test keyboard-only navigation
 
-3. **Documentation**
-   - Document accessibility features
-   - Include usage examples
-   - Note any known limitations
+3. **Screen Reader Support**
+   - Add descriptive labels
+   - Use ARIA live regions for dynamic content
+   - Test with screen readers
 
-4. **Testing Strategy**
-   - Combine automated and manual testing
-   - Test with real users when possible
-   - Regular audits of your components
+4. **Color and Contrast**
+   - Maintain sufficient color contrast
+   - Don't rely on color alone
+   - Test with color blindness simulators
 
 ## Additional Resources
 
 - [WCAG Guidelines](https://www.w3.org/WAI/standards-guidelines/wcag/)
 - [Axe Core Documentation](https://github.com/dequelabs/axe-core)
 - [ARIA Authoring Practices](https://www.w3.org/WAI/ARIA/apg/)
-- [WebAIM Checklist](https://webaim.org/standards/wcag/checklist)
+- [Storybook Accessibility Guide](https://storybook.js.org/docs/writing-tests/accessibility-testing)
 
 <Callout variant="info">
-Remember: Accessibility is not a feature—it's a fundamental requirement for creating inclusive web applications.
+Remember: Accessibility is not just about compliance—it's about creating an inclusive experience for all users. Test early and often to catch issues before they reach production.
 </Callout>

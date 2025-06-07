@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Badge } from 'storybook/internal/components';
+import { AddonPanel, Badge } from 'storybook/internal/components';
 
 import { addons, types, useAddonState, useStorybookApi } from 'storybook/manager-api';
 
@@ -44,8 +44,10 @@ addons.register(ADDON_ID, (api) => {
   addons.add(PANEL_ID, {
     title: Title,
     type: types.PANEL,
-    render: ({ active = true }) => (
-      <A11yContextProvider>{active ? <A11YPanel /> : null}</A11yContextProvider>
+    render: ({ active }) => (
+      <AddonPanel active={active} allowError={false}>
+        <A11yContextProvider>{active && <A11YPanel />}</A11yContextProvider>
+      </AddonPanel>
     ),
     paramKey: PARAM_KEY,
   });

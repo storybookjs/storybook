@@ -76,7 +76,6 @@ const generator: Generator<{ projectName: string }> = async (
     },
     'angular',
     {
-      extraAddons: [`@storybook/addon-onboarding`],
       extraPackages: [
         angularVersion
           ? `@angular-devkit/build-angular@${angularVersion}`

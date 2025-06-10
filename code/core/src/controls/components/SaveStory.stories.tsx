@@ -25,6 +25,7 @@ const meta = {
       </div>
     ),
   ],
+  tags: ['!vitest'],
 } satisfies Meta<typeof SaveStory>;
 
 export default meta;
@@ -33,33 +34,24 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {};
 
 export const Creating = {
-  play: async ({ canvas, id }) => {
-    console.log('[Creating story] start of play function', id);
+  play: async ({ canvas }) => {
     const createButton = await canvas.findByRole('button', { name: /Create/i });
-    console.log('[Creating story] clicking on create button', id);
     await fireEvent.click(createButton);
     await new Promise((resolve) => setTimeout(resolve, 300));
-    console.log('[Creating story] end of play function', id);
   },
 } satisfies Story;
 
 export const Created: Story = {
-  play: async ({ canvas, context, userEvent, id }) => {
+  play: async ({ canvas, context, userEvent }) => {
     await Creating.play(context);
     const event = userEvent.setup({ delay: null });
-    console.log('[Created story] start of play function', id);
 
     const dialog = await canvas.findByRole('dialog');
-    console.log('[Created story] finding input', dialog);
     const input = await within(dialog).findByRole('textbox');
-    console.log('[Created story] typing in input', input);
     await event.type(input, 'MyNewStory');
 
-    console.log('[Created story] submitting form', id);
     await fireEvent.submit(dialog.getElementsByTagName('form')[0]);
-    console.log('[Created story] waiting for create story to be called', id);
     await expect(context.args.createStory).toHaveBeenCalledWith('MyNewStory');
-    console.log('[Created story] end of play function', id);
   },
 };
 

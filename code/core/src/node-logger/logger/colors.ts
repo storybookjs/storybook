@@ -6,5 +6,6 @@ export const CLI_COLORS = {
   warning: picocolors.yellow,
   info: picocolors.blue,
   debug: picocolors.gray,
-  link: picocolors.yellow,
+  // Only color a link if it is the primary call to action, otherwise links shouldn't be colored
+  cta: picocolors.cyan,
 };

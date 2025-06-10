@@ -25,6 +25,7 @@ import {
   pluginWebpackStats,
   stripStoryHMRBoundary,
 } from './plugins';
+import { storybookTestFn } from './plugins/test-fn-plugin';
 import type { BuilderOptions } from './types';
 
 export type PluginConfigType = 'build' | 'development';
@@ -85,7 +86,6 @@ export async function commonConfig(
 }
 
 export async function pluginConfig(options: Options) {
-  const frameworkName = await getFrameworkName(options);
   const build = await options.presets.apply('build');
 
   const externals: Record<string, string> = globalsNameReferenceMap;
@@ -99,6 +99,7 @@ export async function pluginConfig(options: Options) {
     await csfPlugin(options),
     await injectExportOrderPlugin(),
     await stripStoryHMRBoundary(),
+    await storybookTestFn(),
     {
       name: 'storybook:allow-storybook-dir',
       enforce: 'post',

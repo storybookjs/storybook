@@ -340,8 +340,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         });
 
         if (hasBlockers) {
-          logger.outro(CLI_COLORS.error('Upgrade aborted'));
-          process.exit(1);
+          throw new HandledError('Blockers detected');
         }
 
         // Checks whether we can upgrade

@@ -105,7 +105,13 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
       ...s,
       fatalError: undefined,
     }));
-    runTestRunner(channel, store, STORE_CHANNEL_EVENT_NAME, [{ event, eventInfo }]);
+    runTestRunner({
+      channel,
+      store,
+      initEvent: STORE_CHANNEL_EVENT_NAME,
+      initArgs: [{ event, eventInfo }],
+      options,
+    });
   });
   store.subscribe('TOGGLE_WATCHING', (event, eventInfo) => {
     store.setState((s) => ({
@@ -120,7 +126,13 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
       },
     }));
     if (event.payload.to) {
-      runTestRunner(channel, store, STORE_CHANNEL_EVENT_NAME, [{ event, eventInfo }]);
+      runTestRunner({
+        channel,
+        store,
+        initEvent: STORE_CHANNEL_EVENT_NAME,
+        initArgs: [{ event, eventInfo }],
+        options,
+      });
     }
   });
   store.subscribe('FATAL_ERROR', (event) => {
@@ -168,11 +180,6 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
 
   if (!core.disableTelemetry) {
     const enableCrashReports = core.enableCrashReports || options.enableCrashReports;
-    const packageJsonPath = require.resolve('@storybook/addon-vitest/package.json');
-
-    const { version: addonVersion } = JSON.parse(
-      readFileSync(packageJsonPath, { encoding: 'utf-8' })
-    );
 
     channel.on(STORYBOOK_ADDON_TEST_CHANNEL, (event: Event) => {
       telemetry('addon-test', {
@@ -181,22 +188,19 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
           ...event.payload,
           storyId: oneWayHash(event.payload.storyId),
         },
-        addonVersion,
       });
     });
 
     store.subscribe('TOGGLE_WATCHING', async (event) => {
       await telemetry('addon-test', {
         watchMode: event.payload.to,
-        addonVersion,
       });
     });
     store.subscribe('TEST_RUN_COMPLETED', async (event) => {
-      const { unhandledErrors, startedAt, finishedAt, storyIds, ...currentRun } = event.payload;
+      const { unhandledErrors, startedAt, finishedAt, ...currentRun } = event.payload;
       await telemetry('addon-test', {
         ...currentRun,
         duration: (finishedAt ?? 0) - (startedAt ?? 0),
-        selectedStoryCount: storyIds?.length ?? 0,
         unhandledErrorCount: unhandledErrors.length,
         ...(enableCrashReports &&
           unhandledErrors.length > 0 && {
@@ -205,7 +209,6 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
               return sanitizeError(errorWithoutStacks);
             }),
           }),
-        addonVersion,
       });
     });
 
@@ -213,7 +216,6 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
       store.subscribe('FATAL_ERROR', async (event) => {
         await telemetry('addon-test', {
           fatalError: cleanPaths(event.payload.error.message),
-          addonVersion,
         });
       });
     }

@@ -305,23 +305,6 @@ function addStoriesEntry(mainConfig: ConfigFile, path: string, disableDocs: bool
   mainConfig.setFieldValue(['stories'], [...stories, entry]);
 }
 
-// Add refs to older versions of storybook to test out composition
-function addRefs(mainConfig: ConfigFile) {
-  const refs = mainConfig.getFieldValue(['refs']) as Record<string, string>;
-
-  mainConfig.setFieldValue(['refs'], {
-    ...refs,
-    'storybook@8.0.0': {
-      title: 'Storybook 8.0.0',
-      url: 'https://635781f3500dd2c49e189caf-gckybvsekn.chromatic.com/',
-    },
-    'storybook@7.6.18': {
-      title: 'Storybook 7.6.18',
-      url: 'https://635781f3500dd2c49e189caf-oljwjdrftz.chromatic.com/',
-    },
-  } as Record<string, any>);
-}
-
 function getStoriesFolderWithVariant(variant?: string, folder = 'stories') {
   return variant ? `${folder}_${variant}` : folder;
 }
@@ -408,7 +391,6 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
   // const isAngular = template.expected.framework === '@storybook/angular';
 
   const portableStoriesFrameworks = [
-    '@storybook/nextjs',
     '@storybook/nextjs-vite',
     '@storybook/sveltekit',
     // TODO: add angular once we enable their sandboxes
@@ -428,8 +410,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
       import projectAnnotations from './preview'
 
       // setProjectAnnotations still kept to support non-CSF4 story tests
-      const annotations = setProjectAnnotations(projectAnnotations.composed)
-      beforeAll(annotations.beforeAll)
+      setProjectAnnotations(projectAnnotations.composed)
       `
     );
   } else {
@@ -444,15 +425,13 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
       import * as projectAnnotations from './preview'
       ${isVue ? 'import * as vueAnnotations from "../src/stories/renderers/vue3/preview.js"' : ''}
   
-      const annotations = setProjectAnnotations([
+      setProjectAnnotations([
         ${isVue ? 'vueAnnotations,' : ''}
         rendererDocsAnnotations,
         templateAnnotations,
         addonA11yAnnotations,
         projectAnnotations,
-      ])
-  
-      beforeAll(annotations.beforeAll)`
+      ])`
     );
   }
 
@@ -520,9 +499,11 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
               testNamePattern: /^(?!.*(UseState)).*$/,
               browser: {
                 enabled: true,
-                name: "chromium",
                 provider: "playwright",
                 headless: true,
+                instances: [{
+                  browser: 'chromium'
+                }]
               },
               setupFiles: ["./.storybook/vitest.setup.ts"],
               environment: "happy-dom",
@@ -591,10 +572,12 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
             // @ts-expect-error this type does not exist but the property does!
             testNamePattern: /^(?!.*(UseState)).*$/,
             browser: {
-              enabled: true,
-              name: "chromium",
+              enabled: true,  
               provider: "playwright",
               headless: true,
+              instances: [{
+                browser: 'chromium'
+              }]
             },
             setupFiles: ["./.storybook/vitest.setup.ts"],
             environment: "happy-dom",
@@ -616,7 +599,8 @@ export async function addExtraDependencies({
   debug: boolean;
   extraDeps?: string[];
 }) {
-  const extraDevDeps = ['@storybook/test-runner@next'];
+  // FIXME: revert back to `next` once https://github.com/storybookjs/test-runner/pull/560 is merged
+  const extraDevDeps = ['@storybook/test-runner@0.22.1--canary.d4862d0.0'];
 
   if (debug) {
     logger.log('\uD83C\uDF81 Adding extra dev deps', extraDevDeps);
@@ -804,10 +788,6 @@ export const extendMain: Task['run'] = async ({ template, sandboxDir, key }, { d
   logger.log('📝 Extending main.js');
   const mainConfig = await readConfig({ fileName: 'main', cwd: sandboxDir });
 
-  if (key === 'react-vite/default-ts') {
-    addRefs(mainConfig);
-  }
-
   const templateConfig: any = isFunction(template.modifications?.mainConfig)
     ? template.modifications?.mainConfig(mainConfig)
     : template.modifications?.mainConfig || {};
@@ -908,6 +888,9 @@ export const runMigrations: Task['run'] = async ({ sandboxDir, template }, { dry
       argument: 'csf-factories',
       dryRun,
       debug,
+      env: {
+        STORYBOOK_PROJECT_ROOT: sandboxDir,
+      },
     });
   }
 };
@@ -975,7 +958,7 @@ async function prepareAngularSandbox(cwd: string, templateName: string) {
   tsConfigJson.include = [
     ...tsConfigJson.include,
     '../template-stories/**/*.stories.ts',
-    // This is necessary since template stories depend on globalThis.components, which Typescript can't look up automatically
+    // This is necessary since template stories depend on globalThis.__TEMPLATE_COMPONENTS__, which Typescript can't look up automatically
     '../src/stories/**/*',
   ];
 

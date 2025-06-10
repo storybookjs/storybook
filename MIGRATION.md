@@ -724,7 +724,7 @@ See here for the ways you have to configure addon viewports & backgrounds:
 
 #### Storysource Addon removed
 
-The `@storybook/addon-storysource` addon is being removed in Storybook 9.0. Instead, Storybook now provides a Code Panel via `@storybook/addon-docs` that offers similar functionality with improved integration and performance.
+The `@storybook/addon-storysource` addon and the `@storybook/source-loader` package are removed in Storybook 9.0. Instead, Storybook now provides a Code Panel via `@storybook/addon-docs` that offers similar functionality with improved integration and performance.
 
 **Migration Steps:**
 

@@ -59,7 +59,7 @@ test.describe('addon-a11y', () => {
 
     // test that clipboard contains the correct url
     const clipboard = await page.evaluate(() => navigator.clipboard.readText());
-    await expect(clipboard).toContain(
+    expect(clipboard).toContain(
       '?path=/story/addons-a11y-tests--violations&addonPanel=storybook/a11y/panel&a11ySelection=passes.aria-hidden-body.1'
     );
 

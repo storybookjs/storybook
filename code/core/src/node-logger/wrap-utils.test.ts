@@ -1,6 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getTerminalWidth, wrapTextForClack, wrapTextForClackHint } from './wrap-utils';
+// eslint-disable-next-line depend/ban-dependencies
+import { execaSync } from 'execa';
+
+import {
+  getTerminalWidth,
+  protectUrls,
+  wrapTextForClack,
+  wrapTextForClackHint,
+} from './wrap-utils';
 
 // Mock dependencies at the top with spy: true option
 vi.mock('@clack/prompts', () => ({
@@ -11,6 +19,10 @@ vi.mock('picocolors', () => ({
   cyan: vi.fn((text) => `cyan(${text})`),
   dim: vi.fn((text) => `dim(${text})`),
   reset: vi.fn((text) => `reset(${text})`),
+}));
+
+vi.mock('execa', () => ({
+  execaSync: vi.fn(),
 }));
 
 // Helper function to strip ANSI codes for length calculation
@@ -67,6 +79,24 @@ describe('wrap-utils', () => {
   });
 
   describe('wrapTextForClack', () => {
+    beforeEach(() => {
+      vi.mocked(execaSync).mockImplementation((cmd: string, args: any) => {
+        if (args && args[0] === '$TERM_PROGRAM') {
+          return {
+            stdout: 'iTerm.app',
+          } as any;
+        }
+        if (args && args[0] === '$TERM_PROGRAM_VERSION') {
+          return {
+            stdout: '3.4.0',
+          } as any;
+        }
+        return {
+          stdout: '',
+        };
+      });
+    });
+
     it('should wrap text to fit within content width and respect line length constraints', () => {
       const text =
         'This is a very long line of text that should be wrapped to fit within the specified width and not exceed the limit';
@@ -305,6 +335,225 @@ describe('wrap-utils', () => {
       const cleanResult = stripAnsi(result);
       expect(cleanResult.indexOf('Red')).toBeLessThan(cleanResult.indexOf('normal'));
       expect(cleanResult.indexOf('normal')).toBeLessThan(cleanResult.indexOf('Green'));
+    });
+  });
+
+  describe('protectUrls', () => {
+    beforeEach(() => {
+      // Mock execaSync for supportsHyperlinks detection
+      vi.mocked(execaSync).mockImplementation((cmd: string, args: any) => {
+        if (args && args[0] === '$TERM_PROGRAM') {
+          return {
+            stdout: 'iTerm.app',
+          } as any;
+        }
+        if (args && args[0] === '$TERM_PROGRAM_VERSION') {
+          return {
+            stdout: '3.4.0',
+          } as any;
+        }
+        return {
+          stdout: '',
+        };
+      });
+    });
+
+    it('should return text unchanged when no URLs are present', () => {
+      const text = 'This is just plain text without any URLs';
+      const result = protectUrls(text);
+      expect(result).toBe(text);
+    });
+
+    it('should create hyperlinks for URLs when terminal supports hyperlinks', () => {
+      const text = 'Visit https://example.com for more info';
+      const result = protectUrls(text);
+
+      expect(result).toMatchInlineSnapshot(
+        `"Visit ]8;;https://example.comhttps://example.com]8;; for more info"`
+      );
+    });
+
+    it('should handle multiple URLs in the same text', () => {
+      const text = 'Check https://example.com and https://test.org for details';
+      const result = protectUrls(text);
+
+      expect(result).toMatchInlineSnapshot(
+        `"Check ]8;;https://example.comhttps://example.com]8;; and ]8;;https://test.orghttps://test.org]8;; for details"`
+      );
+    });
+
+    it('should truncate long URLs when they exceed maxUrlLength', () => {
+      const longUrl =
+        'https://example.com/very/long/path/that/exceeds/the/maximum/allowed/length/for/urls';
+      const text = `Visit ${longUrl} for details`;
+      const result = protectUrls(text, { maxUrlLength: 30 });
+
+      expect(result).toMatchInlineSnapshot(
+        `"Visit ]8;;https://example.com/very/long/path/that/exceeds/the/maximum/allowed/length/for/urlshttps://example.com/very/lo...]8;; for details"`
+      );
+    });
+
+    it('should respect maxLineWidth when calculating effective max length', () => {
+      const url = 'https://example.com/path/that/might/be/too/long/for/line';
+      const text = `Prefix text before ${url}`;
+      const result = protectUrls(text, { maxLineWidth: 50 });
+
+      // Should still apply hyperlink formatting
+      expect(result).toMatchInlineSnapshot(
+        `"Prefix text before \u001b]8;;https://example.com/path/that/might/be/too/long/for/line\u0007https://example.com/path/tha...\u001b]8;;\u0007"`
+      );
+    });
+
+    it('should not modify URLs already inside hyperlink escape sequences', () => {
+      const url = 'https://example.com';
+      const existingHyperlink = `\u001b]8;;${url}\u0007click here\u001b]8;;\u0007`;
+      const text = `Check out ${existingHyperlink} for info`;
+      const result = protectUrls(text);
+
+      // The function may still process URLs inside existing hyperlinks
+      // This test documents the current behavior rather than enforcing strict isolation
+      expect(result).toMatchInlineSnapshot(
+        `"Check out ]8;;https://example.comclick here]8;; for info"`
+      );
+    });
+
+    it('should handle URLs with query parameters and fragments', () => {
+      const url = 'https://example.com/path?param=value&other=test#section';
+      const text = `Visit ${url} for details`;
+      const result = protectUrls(text);
+
+      expect(result).toMatchInlineSnapshot(
+        `"Visit ]8;;https://example.com/path?param=value&other=test#sectionhttps://example.com/path?param=value&other=test#section]8;; for details"`
+      );
+    });
+
+    it('should handle URLs at different positions in text', () => {
+      const url = 'https://example.com';
+
+      // URL at start
+      const startText = `${url} is a great site`;
+      const startResult = protectUrls(startText);
+      expect(startResult).toMatchInlineSnapshot(
+        `"]8;;https://example.comhttps://example.com]8;; is a great site"`
+      );
+
+      // URL at end
+      const endText = `Visit the site at ${url}`;
+      const endResult = protectUrls(endText);
+      expect(endResult).toMatchInlineSnapshot(
+        `"Visit the site at ]8;;https://example.comhttps://example.com]8;;"`
+      );
+
+      // URL in middle
+      const middleText = `Before ${url} after`;
+      const middleResult = protectUrls(middleText);
+      expect(middleResult).toMatchInlineSnapshot(
+        `"Before ]8;;https://example.comhttps://example.com]8;; after"`
+      );
+    });
+
+    it('should maintain minimum 20 character URL length when calculating available space', () => {
+      const url = 'https://example.com/short';
+      const longPrefix = 'A'.repeat(100); // Very long prefix
+      const text = `${longPrefix} ${url}`;
+      const result = protectUrls(text, { maxLineWidth: 50 });
+
+      // URL should still be hyperlinked even with long prefix
+      expect(result).toContain(`\u001b]8;;${url}\u0007${url}\u001b]8;;\u0007`);
+    });
+
+    it('should handle newlines correctly when calculating line position', () => {
+      const url = 'https://example.com';
+      const text = `First line\nSecond line with ${url} here`;
+      const result = protectUrls(text);
+
+      expect(result).toMatchInlineSnapshot(`
+  "First line
+  Second line with ]8;;https://example.comhttps://example.com]8;; here"
+`);
+    });
+
+    it('should use terminal width as default when no options provided', () => {
+      Object.defineProperty(process.stdout, 'columns', {
+        value: 100,
+        configurable: true,
+      });
+
+      const url = 'https://example.com';
+      const text = `Visit ${url}`;
+      const result = protectUrls(text);
+
+      expect(result).toContain(`\u001b]8;;${url}\u0007${url}\u001b]8;;\u0007`);
+    });
+
+    it('should handle HTTP URLs in addition to HTTPS', () => {
+      const httpUrl = 'http://example.com';
+      const httpsUrl = 'https://secure.com';
+      const text = `Visit ${httpUrl} and ${httpsUrl}`;
+      const result = protectUrls(text);
+
+      expect(result).toMatchInlineSnapshot(
+        `"Visit ]8;;http://example.comhttp://example.com]8;; and ]8;;https://secure.comhttps://secure.com]8;;"`
+      );
+    });
+
+    it('should not modify text when terminal does not support hyperlinks', () => {
+      // Mock execaSync to return unsupported terminal
+      vi.mocked(execaSync).mockImplementation((cmd, args: any) => {
+        if (args && args[0] === '$TERM_PROGRAM') {
+          return {
+            stdout: 'Apple_Terminal',
+          } as any;
+        }
+        return {
+          stdout: '',
+        };
+      });
+
+      const text = 'Visit https://example.com for info';
+      const result = protectUrls(text);
+
+      expect(result).toBe(text);
+      expect(result).not.toContain('\u001b]8;;');
+    });
+
+    it('should handle complex URLs with ports and authentication', () => {
+      const url = 'https://user:pass@example.com:8080/path';
+      const text = `Connect to ${url}`;
+      const result = protectUrls(text);
+
+      expect(result).toContain(`\u001b]8;;${url}\u0007${url}\u001b]8;;\u0007`);
+    });
+
+    it('should correctly calculate visible length excluding ANSI codes', () => {
+      const url = 'https://example.com';
+      const coloredPrefix = '\u001b[31mRed text\u001b[0m';
+      const text = `${coloredPrefix} ${url}`;
+      const result = protectUrls(text, { maxLineWidth: 50 });
+
+      expect(result).toMatchInlineSnapshot(
+        `"[31mRed text[0m ]8;;https://example.comhttps://example.com]8;;"`
+      );
+    });
+
+    it('should handle edge case with URL at exact line width limit', () => {
+      const url = 'https://example.com/test';
+      const prefix = 'A'.repeat(25); // Specific length to test edge case
+      const text = `${prefix} ${url}`;
+      const result = protectUrls(text, { maxLineWidth: 50 });
+
+      expect(result).toContain(`\u001b]8;;${url}\u0007`);
+    });
+
+    it('should truncate URLs correctly and preserve full URL in hyperlink target', () => {
+      const longUrl = 'https://example.com/very/very/very/long/path/that/needs/truncation';
+      const text = `Visit ${longUrl}`;
+      const result = protectUrls(text, { maxUrlLength: 30 });
+
+      // Should contain the full URL in the hyperlink target
+      expect(result).toMatchInlineSnapshot(
+        `"Visit ]8;;https://example.com/very/very/very/long/path/that/needs/truncationhttps://example.com/very/ve...]8;;"`
+      );
     });
   });
 });

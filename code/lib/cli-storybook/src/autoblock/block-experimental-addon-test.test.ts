@@ -152,8 +152,8 @@ describe('experimentalAddonTestVitest blocker', () => {
   });
 
   test('log should return correct message', () => {
-    const message = blocker.log(true);
-    expect(message).toMatchInlineSnapshot(dedent`
+    const result = blocker.log(true);
+    expect(result.message).toMatchInlineSnapshot(dedent`
       "@storybook/experimental-addon-test is being stabilized in Storybook 9.
 
       The addon will be renamed to @storybook/addon-vitest and as part of this stabilization, we have dropped support for Vitest 2.

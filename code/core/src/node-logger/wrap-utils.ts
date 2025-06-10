@@ -1,7 +1,7 @@
 import { S_BAR } from '@clack/prompts';
 // eslint-disable-next-line depend/ban-dependencies
 import { execaSync } from 'execa';
-import { cyan, dim, reset, yellow } from 'picocolors';
+import { cyan, dim, reset } from 'picocolors';
 import wrapAnsi from 'wrap-ansi';
 
 // Text wrapping utility for Clack output
@@ -21,7 +21,7 @@ function getTerminalWidth(): number {
 const ANSI_REGEX = /\u001b\[[0-9;]*m|\u001b\]8;;[^\u0007]*\u0007|\u001b\]8;;\u0007/g;
 
 // URL regex pattern to match URLs
-const URL_REGEX = /(https?:\/\/[^\s]+)/g;
+const URL_REGEX = /(https?:\/\/[^\s\u0000-\u001F\u007F]+)/g;
 
 function stripAnsi(str: string): string {
   return str.replace(ANSI_REGEX, '');
@@ -63,7 +63,6 @@ function supportsHyperlinks(): boolean {
         return true;
     }
   } catch (error) {
-    console.error(error);
     // If we can't execute shell commands, fall back to conservative default
     return false;
   }
@@ -81,9 +80,37 @@ export function protectUrls(
   // Determine if we should use hyperlinks
   const useHyperlinks = supportsHyperlinks();
 
-  return text.replace(URL_REGEX, (url: string, offset: number) => {
+  return text.replace(URL_REGEX, (match: string, capturedUrl: string, offset: number) => {
     if (!useHyperlinks) {
-      return url;
+      return match;
+    }
+
+    // Check if this URL is inside an existing OSC 8 hyperlink sequence
+    // OSC 8 format: \u001b]8;;target_url\u0007display_text\u001b]8;;\u0007
+    // We need to avoid processing URLs that are part of existing hyperlinks
+
+    let searchPos = 0;
+    while (true) {
+      const hyperlinkStart = text.indexOf('\u001b]8;;', searchPos);
+
+      if (hyperlinkStart === -1) {
+        break;
+      }
+
+      const hyperlinkEnd = text.indexOf('\u001b]8;;\u0007', hyperlinkStart);
+      if (hyperlinkEnd === -1) {
+        searchPos = hyperlinkStart + 1;
+        continue;
+      }
+
+      // Check if our URL falls anywhere within this hyperlink sequence
+      if (offset >= hyperlinkStart && offset < hyperlinkEnd + 7) {
+        // +7 for '\u001b]8;;\u0007'
+        // This URL is within an existing hyperlink sequence, don't modify it
+        return match;
+      }
+
+      searchPos = hyperlinkEnd + 1;
     }
 
     // Calculate how much space is available for this URL on its current line
@@ -94,25 +121,32 @@ export function protectUrls(
 
     // Calculate available space on this line for the URL
     const prefixLength = getVisibleLength(currentLinePrefix);
-    const availableSpace = Math.max(maxLineWidth - prefixLength, 20); // minimum 20 chars for URL
+    const availableSpace = maxLineWidth - prefixLength;
+    const minUrlLength = 20; // minimum URL length, don't truncate URLs shorter than this
 
     // Use the smaller of: configured maxUrlLength, default maxUrlLength, or available space
-    const effectiveMaxLength = Math.min(
-      options?.maxUrlLength ?? defaultMaxUrlLength,
-      defaultMaxUrlLength,
-      availableSpace
-    );
+    // But never go below the minimum URL length
+    const configuredMax = options?.maxUrlLength ?? defaultMaxUrlLength;
+    let effectiveMaxLength = Math.min(configuredMax, defaultMaxUrlLength, availableSpace);
 
-    if (url.length > effectiveMaxLength) {
-      // Create a truncated version
-      const truncatedText = url.substring(0, effectiveMaxLength - 3) + '...';
-
-      // Create a truncated hyperlink that still opens the full URL
-      return `\u001b]8;;${url}\u0007${truncatedText}\u001b]8;;\u0007`;
+    // If the URL is short enough (at or below minimum), don't truncate it
+    if (capturedUrl.length <= minUrlLength) {
+      effectiveMaxLength = capturedUrl.length;
+    } else if (effectiveMaxLength < minUrlLength) {
+      // If available space would result in very short truncation, don't truncate at all
+      effectiveMaxLength = capturedUrl.length;
     }
 
-    // Apply yellow coloring with hyperlink functionality
-    return `\u001b]8;;${url}\u0007${url}\u001b]8;;\u0007`;
+    if (capturedUrl.length > effectiveMaxLength) {
+      // Create a truncated version
+      const truncatedText = capturedUrl.substring(0, effectiveMaxLength - 3) + '...';
+
+      // Create a truncated hyperlink that still opens the full URL
+      return `\u001b]8;;${capturedUrl}\u0007${truncatedText}\u001b]8;;\u0007`;
+    }
+
+    // Apply hyperlink functionality
+    return `\u001b]8;;${capturedUrl}\u0007${capturedUrl}\u001b]8;;\u0007`;
   });
 }
 

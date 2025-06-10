@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "9.1.0-alpha.4",
+  "version": "9.1.0-alpha.5",
   "description": "Storybook framework-agnostic API",
   "keywords": [
     "storybook"
@@ -637,6 +637,7 @@
     "@babel/parser": "^7.26.9",
     "@babel/traverse": "^7.26.9",
     "@babel/types": "^7.26.8",
+    "@clack/prompts": "^1.0.0-alpha.0",
     "@devtools-ds/object-inspector": "^1.1.2",
     "@discoveryjs/json-ext": "^0.5.3",
     "@emotion/cache": "^11.14.0",

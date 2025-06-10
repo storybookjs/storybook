@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getProjectRoot } from './paths';
+import * as paths from './paths';
 import { scanAndTransformFiles } from './scan-and-transform-files';
 
 // Mock dependencies
@@ -16,10 +16,6 @@ vi.mock('prompts', () => {
     default: mocks.prompts,
   };
 });
-
-vi.mock('./paths', () => ({
-  getProjectRoot: vi.fn(),
-}));
 
 vi.mock('./common-glob-options', () => ({
   commonGlobOptions: mocks.commonGlobOptions,
@@ -37,11 +33,10 @@ describe('scanAndTransformFiles', () => {
     vi.resetAllMocks();
 
     // Import the mocked modules
-    const mockedGetProjectRoot = vi.mocked(getProjectRoot);
+    vi.spyOn(paths, 'getProjectRoot').mockReturnValue('/mock/project/root');
 
     // Setup mock implementations
     mocks.prompts.mockResolvedValue({ glob: '**/*.{js,ts}' });
-    mockedGetProjectRoot.mockReturnValue('/mock/project/root');
 
     // Setup globby mock
     vi.doMock('globby', async () => {

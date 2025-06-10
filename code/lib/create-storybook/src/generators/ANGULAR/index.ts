@@ -58,9 +58,7 @@ const generator: Generator<{ projectName: string }> = async (
   });
   angularJSON.write();
 
-  const packageJson = await packageManager.retrievePackageJson();
-  const angularVersion =
-    packageJson.dependencies['@angular/core'] ?? packageJson.devDependencies['@angular/core'];
+  const angularVersion = packageManager.getDependencyVersion('@angular/core');
 
   await baseGenerator(
     packageManager,

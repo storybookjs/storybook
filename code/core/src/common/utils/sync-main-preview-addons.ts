@@ -5,14 +5,13 @@ import {
   readConfig,
   writeConfig,
 } from 'storybook/internal/csf-tools';
+import { logger } from 'storybook/internal/node-logger';
 import type { StorybookConfig } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
 
 import { getAddonAnnotations } from './get-addon-annotations';
 import { getAddonNames } from './get-addon-names';
-
-const logger = console;
 
 export async function syncStorybookAddons(
   mainConfig: StorybookConfig,
@@ -84,7 +83,7 @@ export async function getSyncedStorybookAddons(
   }
 
   if (syncedAddons.length > 0) {
-    logger.info(
+    logger.log(
       `Synchronizing addons from main config in ${picocolors.cyan(previewConfig.fileName)}:\n${syncedAddons.map(picocolors.magenta).join(', ')}`
     );
   }

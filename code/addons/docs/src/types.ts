@@ -2,6 +2,9 @@ import type { JSX } from 'react';
 
 import type { ModuleExport, ModuleExports } from 'storybook/internal/types';
 
+import type { DocsContainerProps } from './blocks/blocks';
+import type { TocParameters } from './blocks/components';
+
 type StoryBlockParameters = {
   /** Whether a story's play function runs when shown in docs page */
   autoplay?: boolean;
@@ -173,6 +176,8 @@ export interface DocsParameters {
      */
     controls?: ControlsBlockParameters;
 
+    container?: (props: DocsContainerProps) => JSX.Element;
+
     /**
      * Component/story description when shown in docs page
      *
@@ -217,6 +222,13 @@ export interface DocsParameters {
      * @see https://storybook.js.org/docs/api/doc-blocks/doc-block-title
      */
     title?: string;
+
+    /**
+     * Configure the table of contents
+     *
+     * @see https://storybook.js.org/docs/writing-docs/autodocs#configure-the-table-of-contents
+     */
+    toc?: true | TocParameters;
   };
 }
 

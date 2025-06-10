@@ -1,3 +1,10 @@
+## 9.0.6
+
+- Addon Docs: Fix reference to global JSX namespace - [#31671](https://github.com/storybookjs/storybook/pull/31671), thanks @mrginglymus!
+- Angular: Improve Vite compatibility - [#31686](https://github.com/storybookjs/storybook/pull/31686), thanks @ndelangen!
+- Preview: Fix type issues - [#31537](https://github.com/storybookjs/storybook/pull/31537), thanks @mrginglymus!
+- Telemetry: Improve error handling - [#31656](https://github.com/storybookjs/storybook/pull/31656), thanks @ndelangen!
+
 ## 9.0.5
 
 - Addon A11y: Briefly disable highlights while Axe is running - [#31621](https://github.com/storybookjs/storybook/pull/31621), thanks @ghengeveld!

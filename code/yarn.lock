@@ -6034,6 +6034,8 @@ __metadata:
   resolution: "@storybook/addon-themes@workspace:addons/themes"
   dependencies:
     "@storybook/icons": "npm:^1.4.0"
+    react: "npm:^18.2.0"
+    react-dom: "npm:^18.2.0"
     ts-dedent: "npm:^2.0.0"
     typescript: "npm:^5.8.3"
   peerDependencies:

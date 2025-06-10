@@ -1,6 +1,6 @@
-import type { PresetProperty } from 'storybook/internal/types';
-
 import { dirname, join } from 'node:path';
+
+import type { PresetProperty } from 'storybook/internal/types';
 
 import type { StandaloneOptions } from './builders/utils/standalone-options';
 
@@ -20,15 +20,21 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
   const annotations = [...entries, config];
 
   if ((options as any as StandaloneOptions).enableProdMode) {
-    const previewProd = join(getAbsolutePath('@storybook/angular'), 'dist/client/preview-prod.mjs');
-    annotations.unshift(previewProd);
+    const previewProdPath = join(
+      getAbsolutePath('@storybook/angular'),
+      'dist/client/preview-prod.mjs'
+    );
+    annotations.unshift(previewProdPath);
   }
 
   const docsConfig = await options.presets.apply('docs', {}, options);
   const docsEnabled = Object.keys(docsConfig).length > 0;
   if (docsEnabled) {
-    const docsConfig = join(getAbsolutePath('@storybook/angular'), 'dist/client/docs/config.mjs');
-    annotations.push(docsConfig);
+    const docsConfigPath = join(
+      getAbsolutePath('@storybook/angular'),
+      'dist/client/docs/config.mjs'
+    );
+    annotations.push(docsConfigPath);
   }
   return annotations;
 };

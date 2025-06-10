@@ -14,7 +14,7 @@ import semver, { clean, lt } from 'semver';
 import { dedent } from 'ts-dedent';
 
 import { processAutoblockerResults } from './autoblock/utils';
-import { runAutomigrations } from './automigrate/multi-project';
+import { type AutomigrationCheckResult, runAutomigrations } from './automigrate/multi-project';
 import type { FixId } from './automigrate/types';
 import { FixStatus } from './automigrate/types';
 import { displayDoctorResults, runMultiProjectDoctor } from './doctor';
@@ -190,12 +190,22 @@ function getUpgradeResults(
 /** Logs the results of the upgrade process, including project categorization and diagnostic messages */
 function logUpgradeResults(
   projectResults: Record<string, Record<FixId, FixStatus>>,
+  detectedAutomigrations: AutomigrationCheckResult[],
   doctorResults: Record<string, ProjectDoctorResults>
 ) {
   const { successfulProjects, failedProjects, projectsWithNoFixes } = getUpgradeResults(
     projectResults,
     doctorResults
   );
+
+  const automigrationLinksMessage = [
+    'If you want to learn more about the automigrations that executed in your project(s), please check the following links:',
+    ...detectedAutomigrations
+      .filter((am) => am.fix.link)
+      .map((am) => `• ${am.fix.id}: ${am.fix.link}`),
+  ].join('\n');
+
+  logger.log(automigrationLinksMessage);
 
   // If there are any failures, show detailed summary
   if (failedProjects.length > 0) {
@@ -302,7 +312,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
 
       const { allProjects, selectedProjects: storybookProjects } = projectsResult;
 
-      let automigrationResults: Record<string, Record<FixId, FixStatus>> = {};
+      const automigrationResults: Record<string, Record<FixId, FixStatus>> = {};
       let doctorResults: Record<string, ProjectDoctorResults> = {};
 
       // Set up signal handling for interruptions
@@ -382,7 +392,10 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         }
 
         // Run automigrations for all projects
-        automigrationResults = await runAutomigrations(storybookProjects, options);
+        const { automigrationResults, detectedAutomigrations } = await runAutomigrations(
+          storybookProjects,
+          options
+        );
 
         // Install dependencies
         const rootPackageManager =
@@ -408,7 +421,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         }
 
         // Display upgrade results summary
-        logUpgradeResults(automigrationResults, doctorResults);
+        logUpgradeResults(automigrationResults, detectedAutomigrations, doctorResults);
 
         // TELEMETRY
         if (!options.disableTelemetry) {

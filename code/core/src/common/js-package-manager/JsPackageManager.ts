@@ -236,18 +236,24 @@ export abstract class JsPackageManager {
    */
   public async addDependencies(
     options: {
-      skipInstall?: boolean;
       installAsDevDependencies?: boolean;
-      packageJson?: PackageJson;
       writeOutputToFile?: boolean;
-    },
+    } & (
+      | {
+          skipInstall?: false;
+          packageJson?: PackageJson;
+        }
+      | {
+          skipInstall: true;
+          packageJson: PackageJson;
+        }
+    ),
     dependencies: string[]
   ) {
     const { skipInstall, writeOutputToFile = true } = options;
 
     if (skipInstall) {
       const { packageJson } = options;
-      invariant(packageJson, 'Missing packageJson.');
 
       const dependenciesMap = dependencies.reduce((acc, dep) => {
         const [packageName, packageVersion] = getPackageDetails(dep);

@@ -7,6 +7,9 @@
 - Automigration: Enhance removeEssentials to convert options - [#31658](https://github.com/storybookjs/storybook/pull/31658), thanks @ndelangen!
 - CLI: Don't install addon-onboarding during minimal installs - [#31616](https://github.com/storybookjs/storybook/pull/31616), thanks @ghengeveld!
 
+> [!NOTE]  
+> Version 9.0.7 was skipped because of a bad release of `eslint-plugin-storybook`.
+
 ## 9.0.6
 
 - Addon Docs: Fix reference to global JSX namespace - [#31671](https://github.com/storybookjs/storybook/pull/31671), thanks @mrginglymus!

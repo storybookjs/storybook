@@ -89,7 +89,11 @@ export default async function postInstall(options: PostinstallOptions) {
 
     if (out.migrateToNextjsVite) {
       await packageManager.addDependencies(
-        { installAsDevDependencies: true, skipInstall: options.skipInstall },
+        {
+          installAsDevDependencies: true,
+          skipInstall: options.skipInstall,
+          packageJson: await packageManager.readPackageJson(),
+        },
         [`@storybook/nextjs-vite@${versions['@storybook/nextjs-vite']}`]
       );
 

@@ -33,32 +33,32 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {};
 
 export const Creating = {
-  play: async ({ canvas }) => {
-    console.log('[Creating story] start of play function');
+  play: async ({ canvas, id }) => {
+    console.log('[Creating story] start of play function', id);
     const createButton = await canvas.findByRole('button', { name: /Create/i });
-    console.log('[Creating story] clicking on create button');
+    console.log('[Creating story] clicking on create button', id);
     await fireEvent.click(createButton);
     await new Promise((resolve) => setTimeout(resolve, 300));
-    console.log('[Creating story] end of play function');
+    console.log('[Creating story] end of play function', id);
   },
 } satisfies Story;
 
 export const Created: Story = {
-  play: async ({ canvas, context, userEvent }) => {
+  play: async ({ canvas, context, userEvent, id }) => {
     await Creating.play(context);
-    console.log('[Created story] start of play function');
+    console.log('[Created story] start of play function', id);
 
     const dialog = await canvas.findByRole('dialog');
-    console.log('[Created story] finding input');
+    console.log('[Created story] finding input', id);
     const input = await within(dialog).findByRole('textbox');
-    console.log('[Created story] typing in input');
+    console.log('[Created story] typing in input', id);
     await userEvent.type(input, 'MyNewStory');
 
-    console.log('[Created story] submitting form');
+    console.log('[Created story] submitting form', id);
     await fireEvent.submit(dialog.getElementsByTagName('form')[0]);
-    console.log('[Created story] waiting for create story to be called');
+    console.log('[Created story] waiting for create story to be called', id);
     await expect(context.args.createStory).toHaveBeenCalledWith('MyNewStory');
-    console.log('[Created story] end of play function');
+    console.log('[Created story] end of play function', id);
   },
 };
 

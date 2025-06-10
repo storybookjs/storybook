@@ -27,7 +27,10 @@ export async function configToCsfFactory(
 
   const methodName = configType === 'main' ? 'defineMain' : 'definePreview';
   const programNode = config._ast.program;
-  const hasNamedExports = Object.keys(config._exportDecls).length > 0;
+  const exportDecls = config._exportDecls;
+
+  const defineConfigProps = getConfigProperties(exportDecls, { configType });
+  const hasNamedExports = defineConfigProps.length > 0;
 
   /**
    * Scenario 1: Mixed exports
@@ -42,11 +45,7 @@ export async function configToCsfFactory(
    * Transform into: `export default defineMain({ tags: [], parameters: {} })`
    */
   if (config._exportsObject && hasNamedExports) {
-    const exportDecls = config._exportDecls;
-
-    const defineConfigProps = getConfigProperties(exportDecls);
     config._exportsObject.properties.push(...defineConfigProps);
-
     programNode.body = removeExportDeclarations(programNode, exportDecls);
   } else if (config._exportsObject) {
     /**
@@ -106,9 +105,6 @@ export async function configToCsfFactory(
      *
      * Transform into: export default defineMain({ foo: {}, bar: '' });
      */
-    const exportDecls = config._exportDecls;
-    const defineConfigProps = getConfigProperties(exportDecls);
-
     // Construct the `define` call
     const defineConfigCall = t.callExpression(t.identifier(methodName), [
       t.objectExpression(defineConfigProps),

@@ -13,16 +13,21 @@ import picocolors from 'picocolors';
 import { getAddonAnnotations } from './get-addon-annotations';
 import { getAddonNames } from './get-addon-names';
 
-export async function syncStorybookAddons(mainConfig: StorybookConfig, previewConfigPath: string) {
+export async function syncStorybookAddons(
+  mainConfig: StorybookConfig,
+  previewConfigPath: string,
+  configDir: string
+) {
   const previewConfig = await readConfig(previewConfigPath!);
-  const modifiedConfig = await getSyncedStorybookAddons(mainConfig, previewConfig);
+  const modifiedConfig = await getSyncedStorybookAddons(mainConfig, previewConfig, configDir);
 
   await writeConfig(modifiedConfig);
 }
 
 export async function getSyncedStorybookAddons(
   mainConfig: StorybookConfig,
-  previewConfig: ConfigFile
+  previewConfig: ConfigFile,
+  configDir: string
 ): Promise<ConfigFile> {
   const isCsfFactory = isCsfFactoryPreview(previewConfig);
 
@@ -42,7 +47,7 @@ export async function getSyncedStorybookAddons(
    * exports map called preview, if so add to the array
    */
   for (const addon of addons) {
-    const annotations = await getAddonAnnotations(addon);
+    const annotations = await getAddonAnnotations(addon, configDir);
     if (annotations) {
       const hasAlreadyImportedAddonAnnotations = previewConfig._ast.program.body.find(
         (node) => t.isImportDeclaration(node) && node.source.value === annotations.importPath

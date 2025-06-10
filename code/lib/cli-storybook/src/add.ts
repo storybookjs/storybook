@@ -189,7 +189,7 @@ export async function add(
 
   // TODO: remove try/catch once CSF factories is shipped, for now gracefully handle any error
   try {
-    await syncStorybookAddons(mainConfig, previewConfigPath!);
+    await syncStorybookAddons(mainConfig, previewConfigPath!, configDir);
   } catch (e) {
     //
   }

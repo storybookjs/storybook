@@ -506,7 +506,8 @@ export class CsfFile {
                   t.isCallExpression(storyNode) &&
                   t.isMemberExpression(storyNode.callee) &&
                   t.isIdentifier(storyNode.callee.property) &&
-                  storyNode.callee.property.name === 'story'
+                  (storyNode.callee.property.name === 'story' ||
+                    storyNode.callee.property.name === 'extend')
                 ) {
                   storyIsFactory = true;
                   storyNode = storyNode.arguments[0];

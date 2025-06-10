@@ -2353,6 +2353,51 @@ describe('CsfFile', () => {
         `);
       });
 
+      it('extend story', () => {
+        expect(
+          parse(
+            dedent`
+              import { config } from '#.storybook/preview'
+              const meta = config.meta({ component: 'foo' });
+              export default meta;
+              export const A = meta.story({})
+              export const B = A.extend({})
+            `
+          )
+        ).toMatchInlineSnapshot(`
+          meta:
+            component: '''foo'''
+            title: Default Title
+          stories:
+            - id: default-title--a
+              name: A
+              __stats:
+                factory: true
+                play: false
+                render: false
+                loaders: false
+                beforeEach: false
+                globals: false
+                tags: false
+                storyFn: false
+                mount: false
+                moduleMock: false
+            - id: default-title--b
+              name: B
+              __stats:
+                factory: true
+                play: false
+                render: false
+                loaders: false
+                beforeEach: false
+                globals: false
+                tags: false
+                storyFn: false
+                mount: false
+                moduleMock: false
+        `);
+      });
+
       it('story name', () => {
         expect(
           parse(

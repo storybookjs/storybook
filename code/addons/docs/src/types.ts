@@ -1,6 +1,8 @@
-import type { JSX } from 'react';
+import type { ComponentType } from 'react';
 
 import type { ModuleExport, ModuleExports } from 'storybook/internal/types';
+
+import type { StorybookTheme } from 'storybook/theming';
 
 import type { DocsContainerProps } from './blocks/blocks';
 import type { TocParameters } from './blocks/components';
@@ -176,7 +178,12 @@ export interface DocsParameters {
      */
     controls?: ControlsBlockParameters;
 
-    container?: (props: DocsContainerProps) => JSX.Element;
+    /**
+     * Customize the Docs Container
+     *
+     * @see https://storybook.js.org/docs/writing-docs/autodocs#customize-the-docs-container
+     */
+    container?: ComponentType<DocsContainerProps>;
 
     /**
      * Component/story description when shown in docs page
@@ -193,7 +200,7 @@ export interface DocsParameters {
      *
      * @see https://storybook.js.org/docs/writing-docs/autodocs#write-a-custom-template
      */
-    page?: unknown;
+    page?: ComponentType;
 
     /**
      * Source code configuration when shown in docs page
@@ -215,6 +222,13 @@ export interface DocsParameters {
      * @see https://storybook.js.org/docs/api/doc-blocks/doc-block-subtitle
      */
     subtitle?: string;
+
+    /**
+     * Override the default theme
+     *
+     * @see https://storybook.js.org/docs/writing-docs/autodocs#override-the-default-theme
+     */
+    theme?: StorybookTheme;
 
     /**
      * The title displayed when shown in docs page

@@ -306,12 +306,10 @@ const processProject = async ({
   onScanStart: () => void;
 }): Promise<CollectProjectsResult> => {
   try {
-    const projectStartTime = performance.now();
     onScanStart();
     const name = configDir.replace(getProjectRoot(), '');
 
     logger.debug(`Getting Storybook data...`);
-    const storybookDataStartTime = performance.now();
     const {
       configDir: resolvedConfigDir,
       mainConfig,
@@ -320,35 +318,24 @@ const processProject = async ({
       previewConfigPath,
       storiesPaths,
     } = await getStorybookData({ configDir, cache: true });
-    const storybookDataDuration = performance.now() - storybookDataStartTime;
-    logger.debug(`${name} - Got Storybook data in ${storybookDataDuration.toFixed(2)}ms`);
 
     logger.debug(`${name} - Getting installed Storybook version...`);
-    const versionCheckStartTime = performance.now();
     const beforeVersion =
       (await getInstalledStorybookVersion(packageManager)) ?? DEFAULT_FALLBACK_VERSION;
-    const versionCheckDuration = performance.now() - versionCheckStartTime;
-    logger.debug(`${name} - Got installed version in ${versionCheckDuration.toFixed(2)}ms`);
 
     // Validate version and upgrade compatibility
     logger.debug(`${name} - Validating before version...`);
-    const validationStartTime = performance.now();
     validateVersion(beforeVersion);
     const isCanary = isCanaryVersion(currentCLIVersion) || isCanaryVersion(beforeVersion);
     logger.debug(`${name} - Validating upgrade compatibility...`);
     validateUpgradeCompatibility(currentCLIVersion, beforeVersion, isCanary);
-    const validationDuration = performance.now() - validationStartTime;
-    logger.debug(`${name} - Completed validation in ${validationDuration.toFixed(2)}ms`);
 
     // Get version information from NPM
     logger.debug(`${name} - Fetching NPM version information...`);
-    const npmFetchStartTime = performance.now();
     const [latestCLIVersionOnNPM, latestPrereleaseCLIVersionOnNPM] = await Promise.all([
       packageManager.latestVersion('storybook'),
       packageManager.latestVersion('storybook@next'),
     ]);
-    const npmFetchDuration = performance.now() - npmFetchStartTime;
-    logger.debug(`${name} - Fetched NPM versions in ${npmFetchDuration.toFixed(2)}ms`);
 
     // Calculate version flags
     const isCLIOutdated = lt(currentCLIVersion, latestCLIVersionOnNPM!);
@@ -366,19 +353,13 @@ const processProject = async ({
       !options.force
     ) {
       logger.debug(`${name} - Evaluating blockers...`);
-      const autoblockStartTime = performance.now();
       autoblockerCheckResults = await autoblock({
         packageManager,
         configDir: resolvedConfigDir,
         mainConfig,
         mainConfigPath,
       });
-      const autoblockDuration = performance.now() - autoblockStartTime;
-      logger.debug(`${name} - Completed blocker evaluation in ${autoblockDuration.toFixed(2)}ms`);
     }
-
-    const totalDuration = performance.now() - projectStartTime;
-    logger.debug(`${name} - Total project processing completed in ${totalDuration.toFixed(2)}ms`);
 
     return {
       configDir: resolvedConfigDir,

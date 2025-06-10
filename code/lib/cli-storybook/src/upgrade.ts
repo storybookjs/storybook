@@ -204,21 +204,6 @@ function logUpgradeResults(
     doctorResults
   );
 
-  const automigrationLinksMessage = [
-    'If you want to learn more about the automigrations that executed in your project(s), please check the following links:',
-    ...detectedAutomigrations
-      .filter(
-        (am) =>
-          (am.fix.link && am.reports.some((report) => report.status === 'check_failed')) ||
-          // TODO: Valentin change true to automigration id that failed
-          true
-      )
-      .map((am) => `• ${createHyperlink(am.fix.id, am.fix.link!)}`),
-    // .map((am) => `• ${am.fix.id}: ${CLI_COLORS.link(am.fix.link)}`),
-  ].join('\n');
-
-  logger.log(automigrationLinksMessage);
-
   // If there are any failures, show detailed summary
   if (failedProjects.length > 0) {
     logTracker.enableLogWriting();
@@ -255,8 +240,28 @@ function logUpgradeResults(
     }
   }
 
+  const automigrationLinks = detectedAutomigrations
+    .filter((am) =>
+      Object.entries(projectResults).some(
+        ([_, fixResults]) =>
+          fixResults[am.fix.id] === FixStatus.FAILED ||
+          fixResults[am.fix.id] === FixStatus.SUCCEEDED ||
+          fixResults[am.fix.id] === FixStatus.CHECK_FAILED
+      )
+    )
+    .map((am) => `• ${createHyperlink(am.fix.id, am.fix.link!)}`);
+
+  if (automigrationLinks.length > 0) {
+    const automigrationLinksMessage = [
+      'If you want to learn more about the automigrations that executed in your project(s), please check the following links:\n',
+      ...automigrationLinks,
+    ].join('\n');
+
+    logger.log(automigrationLinksMessage);
+  }
+
   logger.log(
-    `For a full list of changes, please check our migration guide: ${CLI_COLORS.link('https://storybook.js.org/docs/migration-guide')}`
+    `For a full list of changes, please check our migration guide: ${CLI_COLORS.cta('https://storybook.js.org/docs/migration-guide')}`
   );
 }
 

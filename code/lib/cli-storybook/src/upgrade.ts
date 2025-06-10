@@ -213,7 +213,7 @@ function logUpgradeResults(
     // Display appropriate messages based on results
     if (successfulProjects.length > 0) {
       const successfulProjectsList = successfulProjects
-        .map((dir) => `  • ${picocolors.cyan(shortenPath(dir))}`)
+        .map((dir) => `  • ${shortenPath(dir)}`)
         .join('\n');
       logger.log(`${CLI_COLORS.success('Successfully upgraded:')}\n${successfulProjectsList}`);
     }
@@ -224,9 +224,7 @@ function logUpgradeResults(
     );
 
     if (projectsWithNoFixes.length > 0) {
-      const projectList = projectsWithNoFixes
-        .map((dir) => `  • ${picocolors.cyan(shortenPath(dir))}`)
-        .join('\n');
+      const projectList = projectsWithNoFixes.map((dir) => `  • ${shortenPath(dir)}`).join('\n');
       logger.log(`${CLI_COLORS.info('No applicable migrations:')}\n${projectList}`);
     }
   } else {
@@ -385,9 +383,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
           try {
             const loggedPaths: string[] = [];
             for (const project of storybookProjects) {
-              logger.debug(
-                `Updating dependencies in ${picocolors.cyan(shortenPath(project.configDir))}...`
-              );
+              logger.debug(`Updating dependencies in ${shortenPath(project.configDir)}...`);
               const packageJsonPaths = project.packageManager.packageJsonPaths.map(shortenPath);
               const newPaths = packageJsonPaths.filter((path) => !loggedPaths.includes(path));
               if (newPaths.length > 0) {

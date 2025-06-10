@@ -229,6 +229,7 @@ export const findStorybookProjects = async (cwd: string = process.cwd()): Promis
       gitignore: true,
       absolute: true,
       onlyDirectories: true,
+      followSymbolicLinks: false,
     });
 
     logger.debug(`Found ${storybookDirs.length} Storybook projects`);
@@ -472,6 +473,7 @@ export const generateUpgradeSpecs = async (
 
   // Generate satellite addon upgrades if applicable
   let storybookSatelliteUpgrades: string[] = [];
+  console.log({ isCLIExactPrerelease, isCLIExactLatest });
   if (isCLIExactPrerelease || isCLIExactLatest) {
     const satelliteDependencies = Object.keys(dependencies).filter(isSatelliteAddon);
 
@@ -533,6 +535,10 @@ export const upgradeStorybookDependencies = async (config: UpgradeConfig): Promi
         generateUpgradeSpecs(packageJson.devDependencies, config),
         generateUpgradeSpecs(packageJson.peerDependencies, config),
       ]);
+
+    logger.debug(JSON.stringify({ upgradedDependencies }, null, 2));
+    logger.debug(JSON.stringify({ upgradedDevDependencies }, null, 2));
+    logger.debug(JSON.stringify({ upgradedPeerDependencies }, null, 2));
 
     await packageManager.addDependencies(
       {
@@ -723,7 +729,7 @@ export const getProjects = async (
       const errorMessage = errorProjects
         .map((project) => {
           const relativePath = shortenPath(project.configDir);
-          return `${picocolors.cyan(relativePath)}:\n${project.error.stack || project.error.message}`;
+          return `${relativePath}:\n${project.error.stack || project.error.message}`;
         })
         .join('\n');
 

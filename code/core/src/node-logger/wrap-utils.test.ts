@@ -400,7 +400,7 @@ describe('wrap-utils', () => {
 
       // Should still apply hyperlink formatting
       expect(result).toMatchInlineSnapshot(
-        `"Prefix text before \u001b]8;;https://example.com/path/that/might/be/too/long/for/line\u0007https://example.com/path/tha...\u001b]8;;\u0007"`
+        `"Prefix text before ]8;;https://example.com/path/that/might/be/too/long/for/linehttps://example.com/path/tha...]8;;"`
       );
     });
 

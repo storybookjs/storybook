@@ -66,6 +66,7 @@ export const csfFactories: CommandFix = {
   promptType: 'command',
   async run({
     dryRun,
+    configDir,
     mainConfig,
     mainConfigPath,
     previewConfigPath,
@@ -137,7 +138,7 @@ export const csfFactories: CommandFix = {
       configToCsfFactory(fileInfo, { configType: 'preview', frameworkPackage }, { dryRun })
     );
 
-    await syncStorybookAddons(mainConfig, previewConfigPath!);
+    await syncStorybookAddons(mainConfig, previewConfigPath!, configDir);
 
     logger.log(
       printBoxedMessage(

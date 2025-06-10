@@ -1,12 +1,22 @@
 import componentTestingAnnotations from 'storybook/internal/component-testing/preview';
+import type { StorybookTypes } from 'storybook/internal/types';
 
-import actionAnnotations from 'storybook/actions/preview';
-import backgroundsAnnotations from 'storybook/backgrounds/preview';
-import highlightAnnotations from 'storybook/highlight/preview';
-import measureAnnotations from 'storybook/measure/preview';
-import outlineAnnotations from 'storybook/outline/preview';
-import testAnnotations from 'storybook/test/preview';
-import viewportAnnotations from 'storybook/viewport/preview';
+import actionAnnotations, { type ActionsTypes } from 'storybook/actions/preview';
+import backgroundsAnnotations, { type BackgroundTypes } from 'storybook/backgrounds/preview';
+import highlightAnnotations, { type HighlightTypes } from 'storybook/highlight/preview';
+import measureAnnotations, { type MeasureTypes } from 'storybook/measure/preview';
+import outlineAnnotations, { type OutlineTypes } from 'storybook/outline/preview';
+import testAnnotations, { type TestTypes } from 'storybook/test/preview';
+import viewportAnnotations, { type ViewportTypes } from 'storybook/viewport/preview';
+
+export type CoreTypes = StorybookTypes &
+  ActionsTypes &
+  BackgroundTypes &
+  HighlightTypes &
+  MeasureTypes &
+  OutlineTypes &
+  TestTypes &
+  ViewportTypes;
 
 export function getCoreAnnotations() {
   return [

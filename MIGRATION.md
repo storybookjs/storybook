@@ -909,20 +909,11 @@ All exports can now be found in the export `@storybook/addon-docs/blocks`.
 
 Previously, you were able to import all blocks from `@storybook/addon-docs`, this is no longer the case.
 
-This is no longer supported:
+This is the only correct import path:
 
-```mdx
-import { Meta } from "@storybook/addon-docs";
-
-;
-```
-
-And must be converted to the correct import:
-
-```mdx
-import { Meta } from "@storybook/addon-docs/blocks";
-
-;
+```diff
+- import { Meta } from "@storybook/addon-docs";
++ import { Meta } from "@storybook/addon-docs/blocks";
 ```
 
 ### Configuration and Type Changes

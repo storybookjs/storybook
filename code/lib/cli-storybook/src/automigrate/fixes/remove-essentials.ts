@@ -191,24 +191,13 @@ export const removeEssentials: Fix<AddonDocsOptions> = {
 
       // If docs was enabled (not disabled) and not already installed, add it
       if (!hasDocsDisabled && hasEssentials) {
-        if (!hasDocsAddon) {
-          await add(`@storybook/addon-docs@${storybookVersion}`, {
-            configDir,
-            packageManager: packageManager.type,
-            skipInstall: true,
-            skipPostinstall: true,
-            yes: true,
-          });
-        } else {
-          const isDocsInstalled =
-            packageManager.getAllDependencies()['@storybook/addon-docs'] !== undefined;
-
-          if (!isDocsInstalled) {
-            await packageManager.addDependencies({ type: 'devDependencies', skipInstall: true }, [
-              '@storybook/addon-docs@' + storybookVersion,
-            ]);
-          }
-        }
+        await add('@storybook/addon-docs', {
+          configDir,
+          packageManager: packageManager.type,
+          skipInstall: true,
+          skipPostinstall: true,
+          yes: true,
+        });
       }
     }
   },

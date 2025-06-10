@@ -20,6 +20,7 @@ const MockedPackageManager = vi.hoisted(() => {
       packageJsonPath: 'some/path',
       operationDir: 'some/path',
     })),
+    getDependencyVersion: vi.fn(() => '^8.0.0'),
     latestVersion: vi.fn(() => '1.0.0'),
     addDependencies: vi.fn(() => {}),
     type: 'npm',
@@ -50,6 +51,7 @@ const MockedMainConfigFileHelper = vi.hoisted(() => {
       configDir: '.storybook',
       previewConfigPath: '.storybook/preview.ts',
       storybookVersion: '8.0.0',
+      storybookVersionSpecifier: '^8.0.0',
       packageManager: MockedPackageManager,
     })),
   };
@@ -82,7 +84,8 @@ vi.mock('storybook/internal/common', () => {
     syncStorybookAddons: vi.fn(),
     getCoercedStorybookVersion: vi.fn(() => '8.0.0'),
     versions: {
-      '@storybook/addon-docs': '^8.0.0',
+      storybook: '8.0.0',
+      '@storybook/addon-docs': '8.0.0',
     },
     frameworkToRenderer: vi.fn(),
   };

@@ -98,17 +98,11 @@ export async function add(
 ) {
   const [addonName, inputVersion] = getVersionSpecifier(addon);
 
-  const {
-    mainConfig,
-    mainConfigPath,
-    configDir,
-    previewConfigPath,
-    storybookVersion,
-    packageManager,
-  } = await getStorybookData({
-    configDir: userSpecifiedConfigDir,
-    packageManagerName: pkgMgr,
-  });
+  const { mainConfig, mainConfigPath, configDir, previewConfigPath, packageManager } =
+    await getStorybookData({
+      configDir: userSpecifiedConfigDir,
+      packageManagerName: pkgMgr,
+    });
 
   if (typeof configDir === 'undefined') {
     throw new Error(dedent`
@@ -141,9 +135,10 @@ export async function add(
 
   let version = inputVersion;
 
-  if (!version && isCoreAddon(addonName) && storybookVersion) {
-    version = storybookVersion;
+  if (!version && isCoreAddon(addonName)) {
+    version = versions.storybook;
   }
+
   if (!version) {
     const latestVersion = await packageManager.latestVersion(addonName);
     if (!latestVersion) {
@@ -152,14 +147,21 @@ export async function add(
     version = latestVersion;
   }
 
-  if (isCoreAddon(addonName) && version !== storybookVersion) {
+  const storybookVersion = versions.storybook;
+  const versionIsStorybook = version === versions.storybook;
+
+  if (isCoreAddon(addonName) && !versionIsStorybook) {
     logger.warn(
       `The version of ${addonName} (${version}) you are installing is not the same as the version of Storybook you are using (${storybookVersion}). This may lead to unexpected behavior.`
     );
   }
 
-  const addonWithVersion =
-    isValidVersion(version) && !version.includes('-pr-')
+  const storybookVersionSpecifier = packageManager.getDependencyVersion('storybook');
+  const versionRange = storybookVersionSpecifier?.match(/^[~^]/)?.[0] ?? '';
+
+  const addonWithVersion = versionIsStorybook
+    ? `${addonName}@${versionRange}${storybookVersion}`
+    : isValidVersion(version) && !version.includes('-pr-')
       ? `${addonName}@^${version}`
       : `${addonName}@${version}`;
 

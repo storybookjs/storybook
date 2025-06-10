@@ -386,38 +386,13 @@ describe('remove-essentials migration', () => {
         mainConfig: {} as StorybookConfigRaw,
       });
 
-      expect(mockedAdd).toHaveBeenCalledWith('@storybook/addon-docs@8.0.0', {
+      expect(mockedAdd).toHaveBeenCalledWith('@storybook/addon-docs', {
         configDir: '.storybook',
         packageManager: mockPackageManager.type,
         skipInstall: true,
         skipPostinstall: true,
         yes: true,
       });
-    });
-
-    it('does install docs addon as dev dependency if essentials is present and docs is configured in main config (alternative test)', async () => {
-      await typedAddonDocsEssentials.run({
-        result: {
-          hasEssentials: true,
-          hasDocsDisabled: false,
-          hasDocsAddon: true,
-          additionalAddonsToRemove: [],
-          allDeps: {
-            storybook: '^9.0.0',
-          },
-        },
-        packageManager: mockPackageManager,
-        storiesPaths: [],
-        mainConfigPath: '.storybook/main.ts',
-        configDir: '.storybook',
-        storybookVersion: '8.0.0',
-        mainConfig: {} as StorybookConfigRaw,
-      });
-
-      expect(mockPackageManager.addDependencies).toHaveBeenCalledWith(
-        { type: 'devDependencies', skipInstall: true },
-        ['@storybook/addon-docs@8.0.0']
-      );
     });
 
     it('handles import transformations', async () => {

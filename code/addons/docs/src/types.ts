@@ -2,7 +2,7 @@ import type { ComponentType } from 'react';
 
 import type { ModuleExport, ModuleExports } from 'storybook/internal/types';
 
-import type { StorybookTheme } from 'storybook/theming';
+import type { ThemeVars } from 'storybook/theming';
 
 import type { DocsContainerProps } from './blocks/blocks';
 import type { TocParameters } from './blocks/components';
@@ -140,7 +140,7 @@ type SourceBlockParameters = {
    */
   of: ModuleExport;
   /** Source code transformations */
-  transform?: (code: string, storyContext: any) => string;
+  transform?: (code: string, storyContext: any) => string | Promise<string>;
   /**
    * Specifies how the source code is rendered.
    *
@@ -228,7 +228,7 @@ export interface DocsParameters {
      *
      * @see https://storybook.js.org/docs/writing-docs/autodocs#override-the-default-theme
      */
-    theme?: StorybookTheme;
+    theme?: ThemeVars;
 
     /**
      * The title displayed when shown in docs page

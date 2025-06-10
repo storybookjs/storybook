@@ -188,6 +188,7 @@ describe('getIncompatiblePackagesSummary', () => {
 
       - storybook-react@1.0.0
       - @storybook/addon-docs@8.0.0 (9.0.0 available!)
+      
       Please consider updating your packages or contacting the maintainers for compatibility details.
 
       For more on Storybook 9 compatibility, see the linked GitHub issue:

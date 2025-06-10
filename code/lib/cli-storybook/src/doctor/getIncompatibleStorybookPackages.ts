@@ -148,7 +148,7 @@ export const getIncompatiblePackagesSummary = (
     );
 
     summaryMessage.push(
-      'Please consider updating your packages or contacting the maintainers for compatibility details.',
+      '\nPlease consider updating your packages or contacting the maintainers for compatibility details.',
       '\nFor more on Storybook 9 compatibility, see the linked GitHub issue:',
       'https://github.com/storybookjs/storybook/issues/30944'
     );

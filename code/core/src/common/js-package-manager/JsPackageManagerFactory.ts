@@ -3,6 +3,7 @@ import { basename, parse, relative } from 'node:path';
 import { sync as spawnSync } from 'cross-spawn';
 import { findUpSync } from 'find-up';
 
+import { getProjectRoot } from '../utils/paths';
 import { BUNProxy } from './BUNProxy';
 import type { JsPackageManager, PackageManagerName } from './JsPackageManager';
 import { COMMON_ENV_VARS } from './JsPackageManager';
@@ -10,12 +11,13 @@ import { NPMProxy } from './NPMProxy';
 import { PNPMProxy } from './PNPMProxy';
 import { Yarn1Proxy } from './Yarn1Proxy';
 import { Yarn2Proxy } from './Yarn2Proxy';
-
-const NPM_LOCKFILE = 'package-lock.json';
-const PNPM_LOCKFILE = 'pnpm-lock.yaml';
-const YARN_LOCKFILE = 'yarn.lock';
-const BUN_LOCKFILE = 'bun.lock';
-const BUN_LOCKFILE_BINARY = 'bun.lockb';
+import {
+  BUN_LOCKFILE,
+  BUN_LOCKFILE_BINARY,
+  NPM_LOCKFILE,
+  PNPM_LOCKFILE,
+  YARN_LOCKFILE,
+} from './constants';
 
 type PackageManagerProxy =
   | typeof NPMProxy
@@ -25,21 +27,54 @@ type PackageManagerProxy =
   | typeof BUNProxy;
 
 export class JsPackageManagerFactory {
+  /** Cache for package manager instances */
+  private static cache = new Map<string, JsPackageManager>();
+
+  /** Generate a cache key based on the parameters */
+  private static getCacheKey(
+    force?: PackageManagerName,
+    configDir = '.storybook',
+    cwd = process.cwd(),
+    storiesPaths?: string[]
+  ): string {
+    return JSON.stringify({ force: force || null, configDir, cwd, storiesPaths });
+  }
+
+  /** Clear the package manager cache */
+  public static clearCache(): void {
+    this.cache.clear();
+  }
+
   public static getPackageManager(
-    { force }: { force?: PackageManagerName } = {},
-    cwd?: string
+    {
+      force,
+      configDir = '.storybook',
+      storiesPaths,
+    }: { force?: PackageManagerName; configDir?: string; storiesPaths?: string[] } = {},
+    cwd = process.cwd()
   ): JsPackageManager {
-    // Option 1: If the user has provided a forcing flag, we use it
-    if (force && force in this.PROXY_MAP) {
-      return new this.PROXY_MAP[force]({ cwd });
+    // Check cache first
+    const cacheKey = this.getCacheKey(force, configDir, cwd, storiesPaths);
+    const cached = this.cache.get(cacheKey);
+    if (cached) {
+      return cached;
     }
 
+    // Option 1: If the user has provided a forcing flag, we use it
+    if (force && force in this.PROXY_MAP) {
+      const packageManager = new this.PROXY_MAP[force]({ cwd, configDir, storiesPaths });
+      this.cache.set(cacheKey, packageManager);
+      return packageManager;
+    }
+
+    const root = getProjectRoot();
+
     const lockFiles = [
-      findUpSync(YARN_LOCKFILE, { cwd }),
-      findUpSync(PNPM_LOCKFILE, { cwd }),
-      findUpSync(NPM_LOCKFILE, { cwd }),
-      findUpSync(BUN_LOCKFILE, { cwd }),
-      findUpSync(BUN_LOCKFILE_BINARY, { cwd }),
+      findUpSync(YARN_LOCKFILE, { cwd, stopAt: root }),
+      findUpSync(PNPM_LOCKFILE, { cwd, stopAt: root }),
+      findUpSync(NPM_LOCKFILE, { cwd, stopAt: root }),
+      findUpSync(BUN_LOCKFILE, { cwd, stopAt: root }),
+      findUpSync(BUN_LOCKFILE_BINARY, { cwd, stopAt: root }),
     ]
       .filter(Boolean)
       .sort((a, b) => {
@@ -64,40 +99,58 @@ export class JsPackageManagerFactory {
 
     const closestLockfile = closestLockfilePath && basename(closestLockfilePath);
 
-    const hasNPMCommand = hasNPM(cwd);
-    const hasPNPMCommand = hasPNPM(cwd);
-    const hasBunCommand = hasBun(cwd);
     const yarnVersion = getYarnVersion(cwd);
 
-    if (yarnVersion && (closestLockfile === YARN_LOCKFILE || (!hasNPMCommand && !hasPNPMCommand))) {
-      return yarnVersion === 1 ? new Yarn1Proxy({ cwd }) : new Yarn2Proxy({ cwd });
+    if (yarnVersion && closestLockfile === YARN_LOCKFILE) {
+      const packageManager =
+        yarnVersion === 1
+          ? new Yarn1Proxy({ cwd, configDir, storiesPaths })
+          : new Yarn2Proxy({ cwd, configDir, storiesPaths });
+      this.cache.set(cacheKey, packageManager);
+      return packageManager;
     }
 
-    if (hasPNPMCommand && closestLockfile === PNPM_LOCKFILE) {
-      return new PNPMProxy({ cwd });
+    if (hasPNPM(cwd) && closestLockfile === PNPM_LOCKFILE) {
+      const packageManager = new PNPMProxy({ cwd, configDir, storiesPaths });
+      this.cache.set(cacheKey, packageManager);
+      return packageManager;
     }
 
-    if (hasNPMCommand && closestLockfile === NPM_LOCKFILE) {
-      return new NPMProxy({ cwd });
+    const isNPMCommandOk = hasNPM(cwd);
+
+    if (isNPMCommandOk && closestLockfile === NPM_LOCKFILE) {
+      const packageManager = new NPMProxy({ cwd, configDir, storiesPaths });
+      this.cache.set(cacheKey, packageManager);
+      return packageManager;
     }
 
     if (
-      hasBunCommand &&
+      hasBun(cwd) &&
       (closestLockfile === BUN_LOCKFILE || closestLockfile === BUN_LOCKFILE_BINARY)
     ) {
-      return new BUNProxy({ cwd });
+      const packageManager = new BUNProxy({ cwd, configDir, storiesPaths });
+      this.cache.set(cacheKey, packageManager);
+      return packageManager;
     }
 
     // Option 3: If the user is running a command via npx/pnpx/yarn create/etc, we infer the package manager from the command
     const inferredPackageManager = this.inferPackageManagerFromUserAgent();
     if (inferredPackageManager && inferredPackageManager in this.PROXY_MAP) {
-      return new this.PROXY_MAP[inferredPackageManager]({ cwd });
+      const packageManager = new this.PROXY_MAP[inferredPackageManager]({
+        cwd,
+        storiesPaths,
+        configDir,
+      });
+      this.cache.set(cacheKey, packageManager);
+      return packageManager;
     }
 
     // Default fallback, whenever users try to use something different than NPM, PNPM, Yarn,
     // but still have NPM installed
-    if (hasNPMCommand) {
-      return new NPMProxy({ cwd });
+    if (isNPMCommandOk) {
+      const packageManager = new NPMProxy({ cwd, configDir, storiesPaths });
+      this.cache.set(cacheKey, packageManager);
+      return packageManager;
     }
 
     throw new Error('Unable to find a usable package manager within NPM, PNPM, Yarn and Yarn 2');

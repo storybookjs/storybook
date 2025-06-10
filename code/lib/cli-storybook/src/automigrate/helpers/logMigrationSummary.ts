@@ -1,6 +1,5 @@
-import { type InstallationMetadata } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 
-import boxen from 'boxen';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
@@ -10,11 +9,7 @@ import { FixStatus } from '../types';
 export const messageDivider = '\n\n';
 const segmentDivider = '\n\n─────────────────────────────────────────────────\n\n';
 
-function getGlossaryMessages(
-  fixSummary: FixSummary,
-  fixResults: Record<string, FixStatus>,
-  logFile: string
-) {
+function getGlossaryMessages(fixSummary: FixSummary, fixResults: Record<string, FixStatus>) {
   const messages = [];
   if (fixSummary.succeeded.length > 0) {
     messages.push(picocolors.bold('Successful migrations:'));
@@ -30,7 +25,6 @@ function getGlossaryMessages(
         })
         .join('\n')
     );
-    messages.push(`You can find the full logs in ${picocolors.cyan(logFile)}`);
   }
 
   if (fixSummary.manual.length > 0) {
@@ -52,19 +46,15 @@ function getGlossaryMessages(
   return messages;
 }
 
-export function getMigrationSummary({
+export function logMigrationSummary({
   fixResults,
   fixSummary,
-  logFile,
-  installationMetadata,
 }: {
   fixResults: Record<string, FixStatus>;
   fixSummary: FixSummary;
-  installationMetadata?: InstallationMetadata | null;
-  logFile: string;
 }) {
   const messages = [];
-  messages.push(getGlossaryMessages(fixSummary, fixResults, logFile).join(messageDivider));
+  messages.push(getGlossaryMessages(fixSummary, fixResults).join(messageDivider));
 
   messages.push(dedent`If you'd like to run the migrations again, you can do so by running '${picocolors.cyan(
     'npx storybook automigrate'
@@ -89,9 +79,7 @@ export function getMigrationSummary({
       ? 'Migration check ran with failures'
       : 'Migration check ran successfully';
 
-  return boxen(messages.filter(Boolean).join(segmentDivider), {
-    borderStyle: 'round',
-    padding: 1,
+  return logger.logBox(messages.filter(Boolean).join(segmentDivider), {
     title,
     borderColor: hasFailures ? 'red' : 'green',
   });

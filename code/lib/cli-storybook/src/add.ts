@@ -1,16 +1,15 @@
 import { isAbsolute, join } from 'node:path';
 
 import {
-  JsPackageManagerFactory,
   type PackageManagerName,
   serverRequire,
   syncStorybookAddons,
   versions,
 } from 'storybook/internal/common';
 import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
+import { prompt } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
-import prompts from 'prompts';
 import SemVer from 'semver';
 import { dedent } from 'ts-dedent';
 
@@ -68,9 +67,9 @@ const isCoreAddon = (addonName: string) => Object.hasOwn(versions, addonName);
 type CLIOptions = {
   packageManager?: PackageManagerName;
   configDir?: string;
+  skipInstall?: boolean;
   skipPostinstall: boolean;
   yes?: boolean;
-  skipInstall?: boolean;
 };
 
 /**
@@ -99,11 +98,10 @@ export async function add(
 ) {
   const [addonName, inputVersion] = getVersionSpecifier(addon);
 
-  const packageManager = JsPackageManagerFactory.getPackageManager({ force: pkgMgr });
-  const { mainConfig, mainConfigPath, configDir, previewConfigPath, storybookVersion } =
+  const { mainConfig, mainConfigPath, configDir, previewConfigPath, packageManager } =
     await getStorybookData({
-      packageManager,
       configDir: userSpecifiedConfigDir,
+      packageManagerName: pkgMgr,
     });
 
   if (typeof configDir === 'undefined') {
@@ -122,9 +120,7 @@ export async function add(
     shouldAddToMain = false;
     if (!yes) {
       logger.log(`The Storybook addon "${addonName}" is already present in ${mainConfigPath}.`);
-      const { shouldForceInstall } = await prompts({
-        type: 'confirm',
-        name: 'shouldForceInstall',
+      const shouldForceInstall = await prompt.confirm({
         message: `Do you wish to install it again?`,
       });
 
@@ -139,27 +135,40 @@ export async function add(
 
   let version = inputVersion;
 
-  if (!version && isCoreAddon(addonName) && storybookVersion) {
-    version = storybookVersion;
-  }
-  if (!version) {
-    version = await packageManager.latestVersion(addonName);
+  if (!version && isCoreAddon(addonName)) {
+    version = versions.storybook;
   }
 
-  if (isCoreAddon(addonName) && version !== storybookVersion) {
+  if (!version) {
+    const latestVersion = await packageManager.latestVersion(addonName);
+    if (!latestVersion) {
+      throw new Error(`No version found for ${addonName}`);
+    }
+    version = latestVersion;
+  }
+
+  const storybookVersion = versions.storybook;
+  const versionIsStorybook = version === versions.storybook;
+
+  if (isCoreAddon(addonName) && !versionIsStorybook) {
     logger.warn(
       `The version of ${addonName} (${version}) you are installing is not the same as the version of Storybook you are using (${storybookVersion}). This may lead to unexpected behavior.`
     );
   }
 
-  const addonWithVersion =
-    isValidVersion(version) && !version.includes('-pr-')
+  const storybookVersionSpecifier = packageManager.getDependencyVersion('storybook');
+  const versionRange = storybookVersionSpecifier?.match(/^[~^]/)?.[0] ?? '';
+
+  const addonWithVersion = versionIsStorybook
+    ? `${addonName}@${versionRange}${storybookVersion}`
+    : isValidVersion(version) && !version.includes('-pr-')
       ? `${addonName}@^${version}`
       : `${addonName}@${version}`;
 
   logger.log(`Installing ${addonWithVersion}`);
+
   await packageManager.addDependencies(
-    { installAsDevDependencies: true, writeOutputToFile: false },
+    { type: 'devDependencies', writeOutputToFile: false, skipInstall },
     [addonWithVersion]
   );
 

@@ -268,7 +268,11 @@ export default async function postInstall(options: PostinstallOptions) {
     logger.plain(colors.gray('  ' + versionedDependencies.join(', ')));
 
     await packageManager.addDependencies(
-      { installAsDevDependencies: true, skipInstall: options.skipInstall },
+      {
+        installAsDevDependencies: true,
+        skipInstall: options.skipInstall,
+        packageJson: await packageManager.readPackageJson(),
+      },
       versionedDependencies
     );
   }

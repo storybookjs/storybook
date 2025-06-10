@@ -12,6 +12,7 @@ const meta = {
     saveStory: fn(),
     createStory: fn(),
     resetArgs: fn(),
+    portalSelector: '#portal-container',
   },
   parameters: {
     layout: 'fullscreen',
@@ -20,6 +21,7 @@ const meta = {
     (Story) => (
       <div style={{ minHeight: '100vh' }}>
         <Story />
+        <div id="portal-container" />
       </div>
     ),
   ],
@@ -31,18 +33,18 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {};
 
 export const Creating = {
-  play: async ({ canvasElement }) => {
-    const createButton = await within(canvasElement).findByRole('button', { name: /Create/i });
+  play: async ({ canvas }) => {
+    const createButton = await canvas.findByRole('button', { name: /Create/i });
     await fireEvent.click(createButton);
     await new Promise((resolve) => setTimeout(resolve, 300));
   },
 } satisfies Story;
 
 export const Created: Story = {
-  play: async ({ context, userEvent }) => {
+  play: async ({ canvas, context, userEvent }) => {
     await Creating.play(context);
 
-    const dialog = await within(document.body).findByRole('dialog');
+    const dialog = await canvas.findByRole('dialog');
     const input = await within(dialog).findByRole('textbox');
     await userEvent.type(input, 'MyNewStory');
 

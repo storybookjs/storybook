@@ -34,22 +34,31 @@ export const Default: Story = {};
 
 export const Creating = {
   play: async ({ canvas }) => {
+    console.log('[Creating story] start of play function');
     const createButton = await canvas.findByRole('button', { name: /Create/i });
+    console.log('[Creating story] clicking on create button');
     await fireEvent.click(createButton);
     await new Promise((resolve) => setTimeout(resolve, 300));
+    console.log('[Creating story] end of play function');
   },
 } satisfies Story;
 
 export const Created: Story = {
   play: async ({ canvas, context, userEvent }) => {
     await Creating.play(context);
+    console.log('[Created story] start of play function');
 
     const dialog = await canvas.findByRole('dialog');
+    console.log('[Created story] finding input');
     const input = await within(dialog).findByRole('textbox');
+    console.log('[Created story] typing in input');
     await userEvent.type(input, 'MyNewStory');
 
-    fireEvent.submit(dialog.getElementsByTagName('form')[0]);
+    console.log('[Created story] submitting form');
+    await fireEvent.submit(dialog.getElementsByTagName('form')[0]);
+    console.log('[Created story] waiting for create story to be called');
     await expect(context.args.createStory).toHaveBeenCalledWith('MyNewStory');
+    console.log('[Created story] end of play function');
   },
 };
 

@@ -400,7 +400,10 @@ export async function runAutomigrationsForProjects(
 export async function runAutomigrations(
   projects: CollectProjectsSuccessResult[],
   options: UpgradeOptions
-) {
+): Promise<{
+  detectedAutomigrations: AutomigrationCheckResult[];
+  automigrationResults: Record<string, Record<FixId, FixStatus>>;
+}> {
   // Prepare project data for automigrations
   const projectAutomigrationData: ProjectAutomigrationData[] = projects.map((project) => ({
     configDir: project.configDir,
@@ -441,7 +444,7 @@ export async function runAutomigrations(
     yes: options.yes,
   });
   // Run selected automigrations for each project
-  const projectResults = await runAutomigrationsForProjects(selectedAutomigrations, {
+  const automigrationResults = await runAutomigrationsForProjects(selectedAutomigrations, {
     automigrations: detectedAutomigrations,
     dryRun: options.dryRun,
     yes: options.yes,
@@ -450,17 +453,20 @@ export async function runAutomigrations(
 
   // Special case handling for rnstorybook-config which renames the config dir
   // TODO: Remove this as soon as the rn-storybook-config automigration is removed
-  Object.entries(projectResults).forEach(([configDir, fixResults]) => {
+  Object.entries(automigrationResults).forEach(([configDir, fixResults]) => {
     if (fixResults[rnstorybookConfig.id] === FixStatus.SUCCEEDED) {
       const project = projects.find((p) => p.configDir === configDir);
       if (project) {
         const oldConfigDir = project.configDir;
         project.configDir = project.configDir.replace('.storybook', '.rnstorybook');
-        projectResults[project.configDir] = fixResults;
-        delete projectResults[oldConfigDir];
+        automigrationResults[project.configDir] = fixResults;
+        delete automigrationResults[oldConfigDir];
       }
     }
   });
 
-  return projectResults;
+  return {
+    detectedAutomigrations,
+    automigrationResults,
+  };
 }

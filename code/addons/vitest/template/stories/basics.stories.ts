@@ -45,8 +45,9 @@ export const Step = {
 };
 
 export const TypeAndClear = {
-  play: async ({ canvasElement, userEvent }) => {
-    const canvas = within(canvasElement);
+  play: async ({ canvas, userEvent }) => {
+    await userEvent.clear(canvas.getByTestId('value'));
+
     await userEvent.type(canvas.getByTestId('value'), 'initial value');
     await userEvent.clear(canvas.getByTestId('value'));
     await userEvent.type(canvas.getByTestId('value'), 'final value');

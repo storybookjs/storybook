@@ -1,25 +1,25 @@
-interface Margin {
+export interface Margin {
   top: number;
   bottom: number;
   left: number;
   right: number;
 }
 
-interface Padding {
+export interface Padding {
   top: number;
   bottom: number;
   left: number;
   right: number;
 }
 
-interface Border {
+export interface Border {
   top: number;
   bottom: number;
   left: number;
   right: number;
 }
 
-interface Dimensions {
+export interface Dimensions {
   margin: Margin;
   padding: Padding;
   border: Border;
@@ -31,19 +31,19 @@ interface Dimensions {
   right: number;
 }
 
-interface Extremities {
+export interface Extremities {
   top: number;
   bottom: number;
   left: number;
   right: number;
 }
 
-interface FloatingAlignment {
+export interface FloatingAlignment {
   x: 'left' | 'right';
   y: 'top' | 'bottom';
 }
 
-interface ElementMeasurements extends Dimensions {
+export interface ElementMeasurements extends Dimensions {
   extremities: Extremities;
   floatingAlignment: FloatingAlignment;
 }

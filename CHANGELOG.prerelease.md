@@ -1,3 +1,25 @@
+## 9.1.0-alpha.4
+
+- CSF Factories: Add parameters/globals types, `extend` API, portable stories - [#30601](https://github.com/storybookjs/storybook/pull/30601), thanks @kasperpeulen!
+
+## 9.1.0-alpha.3
+
+- Addon A11y: Briefly disable highlights while Axe is running - [#31621](https://github.com/storybookjs/storybook/pull/31621), thanks @ghengeveld!
+- Addon Docs: Fix SyntaxHighlighter "Copy" button by avoiding potentially mocked clipboard - [#31682](https://github.com/storybookjs/storybook/pull/31682), thanks @ghengeveld!
+- Addon Docs: Fix reference to global JSX namespace - [#31671](https://github.com/storybookjs/storybook/pull/31671), thanks @mrginglymus!
+- Addon Vitest: Fix path comparison on Windows - [#31630](https://github.com/storybookjs/storybook/pull/31630), thanks @valentinpalkovic!
+- Addon Vitest: Fix path comparison on Windows - [#31634](https://github.com/storybookjs/storybook/pull/31634), thanks @valentinpalkovic!
+- Angular: Improve Vite compatibility - [#31686](https://github.com/storybookjs/storybook/pull/31686), thanks @ndelangen!
+- Automigration: Enhance removeEssentials to convert options - [#31658](https://github.com/storybookjs/storybook/pull/31658), thanks @ndelangen!
+- CLI: Consider Storybook React Native packages in upgrade command - [#31645](https://github.com/storybookjs/storybook/pull/31645), thanks @yannbf!
+- CLI: Don't install addon-onboarding during minimal installs - [#31616](https://github.com/storybookjs/storybook/pull/31616), thanks @ghengeveld!
+- Next.js: Fix module transpilation - [#31501](https://github.com/storybookjs/storybook/pull/31501), thanks @valentinpalkovic!
+- Preview: Fix type issues - [#31537](https://github.com/storybookjs/storybook/pull/31537), thanks @mrginglymus!
+- Svelte: Fix source view always using `<wrapper ...>` - [#31639](https://github.com/storybookjs/storybook/pull/31639), thanks @JReinhold!
+- Telemetry: Fix `project.json` for getAbsolutePath - [#31510](https://github.com/storybookjs/storybook/pull/31510), thanks @ndelangen!
+- Telemetry: Improve error handling - [#31656](https://github.com/storybookjs/storybook/pull/31656), thanks @ndelangen!
+- Testing: Fix `toSatisfy`-matcher implementation - [#31664](https://github.com/storybookjs/storybook/pull/31664), thanks @ndelangen!
+
 ## 9.1.0-alpha.2
 
 - Addon-Vitest: Properly merge configs - [#31629](https://github.com/storybookjs/storybook/pull/31629), thanks @valentinpalkovic!

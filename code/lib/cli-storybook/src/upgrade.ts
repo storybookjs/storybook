@@ -423,6 +423,27 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
 
         await rootPackageManager.installDependencies();
 
+        if (rootPackageManager.type !== 'yarn1' && rootPackageManager.isStorybookInMonorepo()) {
+          logger.warn(
+            `Since you are in a monorepo, we advise you to deduplicate your dependencies. We can do this for you but it might take some time.`
+          );
+
+          const dedupe =
+            options.yes ||
+            (await prompt.confirm({
+              message: `Execute ${rootPackageManager.getRunCommand('dedupe')}?`,
+              initialValue: true,
+            }));
+
+          if (dedupe) {
+            await rootPackageManager.dedupeDependencies();
+          } else {
+            logger.log(
+              `If you find any issues running Storybook, you can run ${rootPackageManager.getRunCommand('dedupe')} manually to deduplicate your dependencies and try again.`
+            );
+          }
+        }
+
         // Run doctor for each project
         const doctorProjects: ProjectDoctorData[] = storybookProjects.map((project) => ({
           configDir: project.configDir,

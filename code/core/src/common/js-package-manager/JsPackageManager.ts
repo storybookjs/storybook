@@ -135,13 +135,23 @@ export abstract class JsPackageManager {
   }
 
   async installDependencies() {
-    const tasks = [() => this.runInstall()];
-
-    await prompt.executeTask(tasks, {
+    await prompt.executeTask(() => this.runInstall(), {
       id: 'install-dependencies',
       intro: 'Installing dependencies...',
       error: 'An error occurred while installing dependencies.',
       success: 'Dependencies installed',
+    });
+
+    // Clear installed version cache after installation
+    this.clearInstalledVersionCache();
+  }
+
+  async dedupeDependencies() {
+    await prompt.executeTask(() => this.runInternalCommand('dedupe', [], this.cwd), {
+      id: 'dedupe-dependencies',
+      intro: 'Deduplicating dependencies...',
+      error: 'An error occurred while deduplicating dependencies.',
+      success: 'Dependencies deduplicated',
     });
 
     // Clear installed version cache after installation

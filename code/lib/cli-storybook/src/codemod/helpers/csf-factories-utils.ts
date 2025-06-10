@@ -1,5 +1,25 @@
 import { types as t, traverse } from 'storybook/internal/babel';
 
+const projectAnnotationNames = [
+  'decorators',
+  'parameters',
+  'args',
+  'argTypes',
+  'loaders',
+  'beforeEach',
+  'afterEach',
+  'render',
+  'tags',
+  'mount',
+  'argsEnhancers',
+  'argTypesEnhancers',
+  'beforeAll',
+  'initialGlobals',
+  'globalTypes',
+  'applyDecorators',
+  'runStep',
+];
+
 export function cleanupTypeImports(programNode: t.Program, disallowList: string[]) {
   const usedIdentifiers = new Set<string>();
 
@@ -83,28 +103,7 @@ export function getConfigProperties(
   // Collect properties from named exports
   for (const [name, decl] of Object.entries(exportDecls)) {
     // only include real preview exports to definePreview factory
-    if (
-      options.configType === 'preview' &&
-      ![
-        'decorators',
-        'parameters',
-        'args',
-        'argTypes',
-        'loaders',
-        'beforeEach',
-        'afterEach',
-        'render',
-        'tags',
-        'mount',
-        'argsEnhancers',
-        'argTypesEnhancers',
-        'beforeAll',
-        'initialGlobals',
-        'globalTypes',
-        'applyDecorators',
-        'runStep',
-      ].includes(name)
-    ) {
+    if (options.configType === 'preview' && !projectAnnotationNames.includes(name)) {
       continue;
     }
     if (t.isVariableDeclarator(decl) && decl.init) {

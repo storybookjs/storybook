@@ -5900,24 +5900,6 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/addon-actions@workspace:addons/actions":
-  version: 0.0.0-use.local
-  resolution: "@storybook/addon-actions@workspace:addons/actions"
-  languageName: unknown
-  linkType: soft
-
-"@storybook/addon-backgrounds@workspace:addons/backgrounds":
-  version: 0.0.0-use.local
-  resolution: "@storybook/addon-backgrounds@workspace:addons/backgrounds"
-  languageName: unknown
-  linkType: soft
-
-"@storybook/addon-controls@workspace:addons/controls":
-  version: 0.0.0-use.local
-  resolution: "@storybook/addon-controls@workspace:addons/controls"
-  languageName: unknown
-  linkType: soft
-
 "@storybook/addon-designs@npm:9.0.0-next.1":
   version: 9.0.0-next.1
   resolution: "@storybook/addon-designs@npm:9.0.0-next.1"
@@ -6002,12 +5984,6 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/addon-measure@workspace:addons/measure":
-  version: 0.0.0-use.local
-  resolution: "@storybook/addon-measure@workspace:addons/measure"
-  languageName: unknown
-  linkType: soft
-
 "@storybook/addon-onboarding@workspace:*, @storybook/addon-onboarding@workspace:addons/onboarding":
   version: 0.0.0-use.local
   resolution: "@storybook/addon-onboarding@workspace:addons/onboarding"
@@ -6023,12 +5999,6 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/addon-outline@workspace:addons/outline":
-  version: 0.0.0-use.local
-  resolution: "@storybook/addon-outline@workspace:addons/outline"
-  languageName: unknown
-  linkType: soft
-
 "@storybook/addon-themes@workspace:*, @storybook/addon-themes@workspace:addons/themes":
   version: 0.0.0-use.local
   resolution: "@storybook/addon-themes@workspace:addons/themes"
@@ -6038,18 +6008,6 @@ __metadata:
     typescript: "npm:^5.8.3"
   peerDependencies:
     storybook: "workspace:^"
-  languageName: unknown
-  linkType: soft
-
-"@storybook/addon-toolbars@workspace:addons/toolbars":
-  version: 0.0.0-use.local
-  resolution: "@storybook/addon-toolbars@workspace:addons/toolbars"
-  languageName: unknown
-  linkType: soft
-
-"@storybook/addon-viewport@workspace:addons/viewport":
-  version: 0.0.0-use.local
-  resolution: "@storybook/addon-viewport@workspace:addons/viewport"
   languageName: unknown
   linkType: soft
 

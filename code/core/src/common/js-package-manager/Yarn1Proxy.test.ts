@@ -23,8 +23,8 @@ describe('Yarn 1 Proxy', () => {
   describe('installDependencies', () => {
     it('should run `yarn`', async () => {
       // sort of un-mock part of the function so executeCommand (also mocked) is called
-      vi.mocked(prompt.executeTask).mockImplementationOnce(async (fns: any) => {
-        await Promise.all(fns.map((fn: () => void) => fn()));
+      vi.mocked(prompt.executeTask).mockImplementationOnce(async (fn: any) => {
+        await Promise.resolve(fn());
       });
       const executeCommandSpy = vi
         .spyOn(yarn1Proxy, 'executeCommand')

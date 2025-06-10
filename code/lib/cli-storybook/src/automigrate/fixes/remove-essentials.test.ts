@@ -114,7 +114,7 @@ describe('remove-essentials migration', () => {
     };
     mockPackageManager.packageJsonPaths = ['some/path'];
     mockPackageManager.runPackageCommand = vi.fn();
-    mockPackageManager.getAllDependencies = vi.fn();
+    mockPackageManager.getAllDependencies = vi.fn(() => ({}));
     mockPackageManager.addDependencies = vi.fn();
     mockPackageManager.getInstalledVersion = vi.fn().mockResolvedValue(null);
     mockPackageManager.isPackageInstalled = vi.fn().mockResolvedValue(false);

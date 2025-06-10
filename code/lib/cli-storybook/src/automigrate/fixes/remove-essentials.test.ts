@@ -29,10 +29,6 @@ vi.mock('../helpers/mainConfigFile', () => {
   return { updateMainConfig };
 });
 
-vi.mock('storybook/internal/cli', () => ({
-  getStorybookVersionSpecifier: vi.fn(),
-}));
-
 vi.mock('storybook/internal/common', async (importOriginal) => {
   return {
     ...(await importOriginal<typeof import('storybook/internal/common')>()),

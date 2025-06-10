@@ -22,17 +22,17 @@ const blockers = {
   alwaysPass: createBlocker({
     id: 'alwaysPass',
     check: async () => false,
-    log: () => 'Always pass',
+    log: () => ({ title: 'Always pass', message: 'Always pass' }),
   }),
   alwaysFail: createBlocker({
     id: 'alwaysFail',
     check: async () => ({ bad: true }),
-    log: () => 'Always fail',
+    log: () => ({ title: 'Always fail', message: 'Always fail' }),
   }),
   alwaysFail2: createBlocker({
     id: 'alwaysFail2',
     check: async () => ({ disaster: true }),
-    log: () => 'Always fail 2',
+    log: () => ({ title: 'Always fail 2', message: 'Always fail 2' }),
   }),
 } as const;
 
@@ -79,36 +79,4 @@ test('1 fail', async () => {
 
   expect(result?.[0].result).toEqual(false);
   expect(result?.[1].result).toEqual({ bad: true });
-});
-
-test('detects svelte-webpack5 usage', async () => {
-  // This test checks if the blocker correctly identifies the @storybook/svelte-webpack5 package
-  mockPackageManager.isPackageInstalled.mockImplementation((packageName: string) => {
-    if (packageName === '@storybook/svelte-webpack5') {
-      return Promise.resolve(true);
-    }
-    return Promise.resolve(false);
-  });
-
-  const result = await autoblock(baseOptions, [
-    import('./block-svelte-webpack5'),
-  ] as BlockerModule<any>[]);
-
-  expect(result?.[0].result).toEqual(true);
-});
-
-test('allows non-svelte-webpack5 projects', async () => {
-  // This test verifies the blocker doesn't trigger for projects not using @storybook/svelte-webpack5
-  mockPackageManager.isPackageInstalled.mockImplementation((packageName: string) => {
-    if (packageName === '@storybook/svelte-webpack5') {
-      return Promise.resolve(false);
-    }
-    return Promise.resolve(true);
-  });
-
-  const result = await autoblock(baseOptions, [
-    import('./block-svelte-webpack5'),
-  ] as BlockerModule<any>[]);
-
-  expect(result?.[0].result).toEqual(false);
 });

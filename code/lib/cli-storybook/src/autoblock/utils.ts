@@ -15,8 +15,6 @@ type Result<M extends Record<string, string>> = {
 
 const typedKeys = <TKey extends string>(obj: Record<TKey, any>) => Object.keys(obj) as TKey[];
 
-const delimiter = '----------';
-
 /**
  * Finds the outdated package in the list of packages.
  *
@@ -69,7 +67,7 @@ export function processAutoblockerResults<
 >(projects: T[], onError: (message: string) => void): boolean {
   const autoblockerMessagesMap = new Map<
     string,
-    { message: string; link?: string; configDirs: string[] }
+    { title: string; message: string; link?: string; configDirs: string[] }
   >();
 
   projects.forEach((result) => {
@@ -77,14 +75,15 @@ export function processAutoblockerResults<
       if (blocker.result === null || blocker.result === false) {
         return;
       }
-      const blockerMessage = blocker.blocker.log(blocker.result);
-      const message = Array.isArray(blockerMessage) ? blockerMessage.join('\n') : blockerMessage;
-      const link = blocker.blocker.link;
+      const blockerResult = blocker.blocker.log(blocker.result);
+      const message = blockerResult.message;
+      const link = blockerResult.link;
 
       if (autoblockerMessagesMap.has(message)) {
         autoblockerMessagesMap.get(message)!.configDirs.push(result.configDir);
       } else {
         autoblockerMessagesMap.set(message, {
+          title: blockerResult.title,
           message,
           link,
           configDirs: [result.configDir],
@@ -107,7 +106,7 @@ export function processAutoblockerResults<
     };
 
     const formattedMessages = autoblockerMessages.map((item) => {
-      let message = `${CLI_COLORS.warning(item.message)}\n\n${formatConfigDirs(item.configDirs)}`;
+      let message = `${CLI_COLORS.warning(item.title)}\n\n${item.message}\n\n${formatConfigDirs(item.configDirs)}`;
 
       if (item.link) {
         message += `\n\nMore information: ${item.link}`;
@@ -117,7 +116,7 @@ export function processAutoblockerResults<
     });
 
     onError(
-      `Storybook has found potential blockers that need to be resolved before upgrading:\n\n${delimiter}\n\n${[...formattedMessages].join(`\n\n${delimiter}\n\n`)}\n\n${delimiter}\n\nAfter addressing this, you can try running the upgrade command again. You can also rerun the upgrade command with the ${picocolors.blue('--force')} flag to skip the blocker check and to proceed with the upgrade.`
+      `Storybook has found potential blockers that need to be resolved before upgrading:\n\n${[...formattedMessages].join(`\n\n`)}\n\n---\n\nAfter addressing this, you can try running the upgrade command again. You can also rerun the upgrade command with the ${CLI_COLORS.info('--force')} flag to skip the blocker check and to proceed with the upgrade.`
     );
 
     return true;

@@ -10,7 +10,6 @@ const blockers: () => BlockerModule<any>[] = () => [
   // add/remove blockers here
   import('./block-dependencies-versions'),
   import('./block-node-version'),
-  import('./block-svelte-webpack5'),
   import('./block-webpack5-frameworks'),
   import('./block-major-version'),
   import('./block-experimental-addon-test'),

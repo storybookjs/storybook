@@ -216,7 +216,7 @@ describe('addon-storysource-remove', () => {
         storybookVersion: '9.0.0',
       } as RunOptions<StorysourceOptions>);
 
-      expect(vi.mocked(add)).toHaveBeenCalledWith('@storybook/addon-docs@9.0.0', {
+      expect(vi.mocked(add)).toHaveBeenCalledWith('@storybook/addon-docs', {
         configDir: '.storybook',
         skipInstall: true,
         skipPostinstall: true,

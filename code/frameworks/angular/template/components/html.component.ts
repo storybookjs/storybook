@@ -1,5 +1,6 @@
 import { Component, Input } from '@angular/core';
-import type { DomSanitizer } from '@angular/platform-browser';
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+import { DomSanitizer } from '@angular/platform-browser';
 
 @Component({
   standalone: false,

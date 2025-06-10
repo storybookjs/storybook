@@ -21,6 +21,7 @@ const createLogFunction =
 
 const LOG_FUNCTIONS = {
   log: createLogFunction(clack.log.message, console.log),
+  info: createLogFunction(clack.log.info, console.log),
   warn: createLogFunction(clack.log.warn, console.warn),
   error: createLogFunction(clack.log.error, console.error),
   intro: createLogFunction(clack.intro, console.log),
@@ -79,13 +80,29 @@ function getMinimalTrace() {
   return callStack;
 }
 
+const formatLogMessage = (args: any[]): string => {
+  return args
+    .map((arg) => {
+      if (typeof arg === 'string') {
+        return arg;
+      }
+
+      if (typeof arg === 'object') {
+        return JSON.stringify(arg, null, 2);
+      }
+      return String(arg);
+    })
+    .join(' ');
+};
+
 // Higher-level abstraction for creating logging functions
 function createLogger(
   level: LogLevel | 'prompt',
   logFn: (message: string) => void,
   prefix?: string
 ) {
-  return function logFunction(message: string) {
+  return function logFunction(...args: any[]) {
+    const message = formatLogMessage(args);
     logTracker.addLog(level, message);
 
     if (level === 'prompt') {
@@ -112,6 +129,9 @@ export const debug = createLogger(
 
 export const log = createLogger('info', (...args) => {
   return LOG_FUNCTIONS.log()(...args);
+});
+export const info = createLogger('info', (...args) => {
+  return LOG_FUNCTIONS.info()(...args);
 });
 export const warn = createLogger('warn', (...args) => {
   return LOG_FUNCTIONS.warn()(...args);
@@ -165,11 +185,6 @@ export const outro = (message: string) => {
 export const step = (message: string) => {
   logTracker.addLog('info', message);
   LOG_FUNCTIONS.step()(message);
-};
-
-export const info = (message: string) => {
-  logTracker.addLog('info', message);
-  LOG_FUNCTIONS.log()(message);
 };
 
 export const SYMBOLS = {

@@ -473,7 +473,6 @@ export const generateUpgradeSpecs = async (
 
   // Generate satellite addon upgrades if applicable
   let storybookSatelliteUpgrades: string[] = [];
-  console.log({ isCLIExactPrerelease, isCLIExactLatest });
   if (isCLIExactPrerelease || isCLIExactLatest) {
     const satelliteDependencies = Object.keys(dependencies).filter(isSatelliteAddon);
 

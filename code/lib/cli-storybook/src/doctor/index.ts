@@ -284,10 +284,10 @@ export async function getDoctorDiagnostics({
   if (!hasStorybookDependency) {
     results.push({
       type: DiagType.MISSING_STORYBOOK_DEPENDENCY,
-      title: `Package ${picocolors.cyan('storybook')} not found`,
+      title: `Package "storybook" not found`,
       message: dedent`
-        The ${picocolors.cyan('storybook')} package was not found in your package.json.
-        Installing ${picocolors.cyan('storybook')} as a direct dev dependency in your package.json is required.
+        The "storybook" package was not found in your package.json.
+        Installing "storybook" as a direct dev dependency in your package.json is required.
       `,
       project: { configDir },
     });

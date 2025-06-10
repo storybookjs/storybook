@@ -172,6 +172,13 @@ export interface DocsParameters {
     canvas?: Partial<CanvasBlockParameters>;
 
     /**
+     * Enable the Code panel.
+     *
+     * @see https://storybook.js.org/docs/writing-docs/code-panel
+     */
+    codePanel?: boolean;
+
+    /**
      * Controls block configuration
      *
      * @see https://storybook.js.org/docs/api/doc-blocks/doc-block-controls

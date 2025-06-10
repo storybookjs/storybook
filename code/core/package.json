@@ -191,6 +191,16 @@
       "types": "./dist/actions/decorator.d.ts",
       "import": "./dist/actions/decorator.js"
     },
+    "./internal/controls/preview": {
+      "types": "./dist/controls/preview.d.ts",
+      "import": "./dist/controls/preview.js",
+      "require": "./dist/controls/preview.cjs"
+    },
+    "./controls/preview": {
+      "types": "./dist/controls/preview.d.ts",
+      "import": "./dist/controls/preview.js",
+      "require": "./dist/controls/preview.cjs"
+    },
     "./internal/component-testing": {
       "types": "./dist/component-testing/index.d.ts",
       "import": "./dist/component-testing/index.js",
@@ -225,11 +235,6 @@
       "types": "./dist/controls/index.d.ts",
       "import": "./dist/controls/index.js",
       "require": "./dist/controls/index.cjs"
-    },
-    "./internal/controls/preview": {
-      "types": "./dist/controls/preview.d.ts",
-      "import": "./dist/controls/preview.js",
-      "require": "./dist/controls/preview.cjs"
     },
     "./internal/controls/decorator": {
       "types": "./dist/controls/decorator.d.ts",
@@ -487,6 +492,12 @@
       "actions/decorator": [
         "./dist/actions/decorator.d.ts"
       ],
+      "internal/controls/preview": [
+        "./dist/controls/preview.d.ts"
+      ],
+      "controls/preview": [
+        "./dist/controls/preview.d.ts"
+      ],
       "internal/component-testing": [
         "./dist/component-testing/index.d.ts"
       ],
@@ -507,9 +518,6 @@
       ],
       "internal/controls": [
         "./dist/controls/index.d.ts"
-      ],
-      "internal/controls/preview": [
-        "./dist/controls/preview.d.ts"
       ],
       "internal/controls/decorator": [
         "./dist/controls/decorator.d.ts"

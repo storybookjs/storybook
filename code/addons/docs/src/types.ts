@@ -164,7 +164,7 @@ export interface DocsParameters {
      *
      * @see https://storybook.js.org/docs/api/doc-blocks/doc-block-canvas
      */
-    canvas?: CanvasBlockParameters;
+    canvas?: Partial<CanvasBlockParameters>;
 
     /**
      * Controls block configuration
@@ -195,14 +195,14 @@ export interface DocsParameters {
      *
      * @see https://storybook.js.org/docs/api/doc-blocks/doc-block-source
      */
-    source?: SourceBlockParameters;
+    source?: Partial<SourceBlockParameters>;
 
     /**
      * Story configuration
      *
      * @see https://storybook.js.org/docs/api/doc-blocks/doc-block-story
      */
-    story?: StoryBlockParameters;
+    story?: Partial<StoryBlockParameters>;
 
     /**
      * The subtitle displayed when shown in docs page
@@ -218,4 +218,8 @@ export interface DocsParameters {
      */
     title?: string;
   };
+}
+
+export interface DocsTypes {
+  parameters: DocsParameters;
 }

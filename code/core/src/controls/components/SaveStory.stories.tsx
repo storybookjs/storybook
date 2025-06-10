@@ -46,13 +46,14 @@ export const Creating = {
 export const Created: Story = {
   play: async ({ canvas, context, userEvent, id }) => {
     await Creating.play(context);
+    const event = userEvent.setup({ delay: null });
     console.log('[Created story] start of play function', id);
 
     const dialog = await canvas.findByRole('dialog');
-    console.log('[Created story] finding input', id);
+    console.log('[Created story] finding input', dialog);
     const input = await within(dialog).findByRole('textbox');
-    console.log('[Created story] typing in input', id);
-    await userEvent.type(input, 'MyNewStory');
+    console.log('[Created story] typing in input', input);
+    await event.type(input, 'MyNewStory');
 
     console.log('[Created story] submitting form', id);
     await fireEvent.submit(dialog.getElementsByTagName('form')[0]);

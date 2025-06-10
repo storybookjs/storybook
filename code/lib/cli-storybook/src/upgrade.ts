@@ -234,7 +234,9 @@ function logUpgradeResults(
     }
 
     const failedProjectsList = failedProjects.map((dir) => `  • ${shortenPath(dir)}`).join('\n');
-    logger.log(`${CLI_COLORS.error('Failed to upgrade:')}\n${failedProjectsList}`);
+    logger.log(
+      `${CLI_COLORS.error('Failed to upgrade:')}\nSome automigrations failed, please check the logs in the log file for more details.\n${failedProjectsList}`
+    );
 
     if (projectsWithNoFixes.length > 0) {
       const projectList = projectsWithNoFixes

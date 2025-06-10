@@ -6,7 +6,7 @@ import {
   versions,
 } from 'storybook/internal/common';
 import { withTelemetry } from 'storybook/internal/core-server';
-import { logTracker, logger, prompt } from 'storybook/internal/node-logger';
+import { CLI_COLORS, logTracker, logger, prompt } from 'storybook/internal/node-logger';
 import { addToGlobalContext, telemetry } from 'storybook/internal/telemetry';
 
 import { program } from 'commander';
@@ -70,7 +70,7 @@ const command = (name: string) =>
       if (logTracker.shouldWriteLogsToFile) {
         const logFile = await logTracker.writeToFile();
         logger.log(`Storybook debug logs can be found at: ${logFile}`);
-        logger.outro('Done!');
+        logger.outro(CLI_COLORS.success('Done!'));
       }
     });
 

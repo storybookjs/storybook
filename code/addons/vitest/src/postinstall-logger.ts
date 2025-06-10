@@ -1,7 +1,5 @@
 import { colors, logger } from 'storybook/internal/node-logger';
 
-import boxen, { type Options } from 'boxen';
-
 const fancy =
   process.platform !== 'win32' || process.env.CI || process.env.TERM === 'xterm-256color';
 
@@ -11,6 +9,8 @@ export const success = colors.green(fancy ? '✔' : '√');
 export const warning = colors.orange(fancy ? '⚠' : '‼');
 export const error = colors.red(fancy ? '✖' : '×');
 
+type Options = Parameters<typeof logger.logBox>[1];
+
 const baseOptions: Options = {
   borderStyle: 'round',
   padding: 1,
@@ -18,7 +18,7 @@ const baseOptions: Options = {
 
 export const print = (message: string, options: Options) => {
   logger.line(1);
-  logger.plain(boxen(message, { ...baseOptions, ...options }));
+  logger.logBox(message, { ...baseOptions, ...options });
 };
 
 export const printInfo = (title: string, message: string, options?: Options) =>

@@ -2012,6 +2012,27 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@clack/core@npm:1.0.0-alpha.0":
+  version: 1.0.0-alpha.0
+  resolution: "@clack/core@npm:1.0.0-alpha.0"
+  dependencies:
+    picocolors: "npm:^1.0.0"
+    sisteransi: "npm:^1.0.5"
+  checksum: 10c0/971f7f0aae6ac5ef19e867be7d17b2a2c282a3118df6e8096a06444e227e5c7ec7933dca8db7f5d9362ba45e77f7f57ec8b21316e7ca241a9147809a38763e56
+  languageName: node
+  linkType: hard
+
+"@clack/prompts@npm:^1.0.0-alpha.0":
+  version: 1.0.0-alpha.0
+  resolution: "@clack/prompts@npm:1.0.0-alpha.0"
+  dependencies:
+    "@clack/core": "npm:1.0.0-alpha.0"
+    picocolors: "npm:^1.0.0"
+    sisteransi: "npm:^1.0.5"
+  checksum: 10c0/cbacf6c56eecdd8684c7ecdf09500e342ab8bda4ea8a43f12d1459677252c3293632fb2936ea6379967590a163d3db9f57093878db126ef1d28df6c00e78145e
+  languageName: node
+  linkType: hard
+
 "@colors/colors@npm:1.5.0":
   version: 1.5.0
   resolution: "@colors/colors@npm:1.5.0"
@@ -6123,7 +6144,7 @@ __metadata:
     "@types/node": "npm:^22.0.0"
     "@types/webpack-env": "npm:^1.18.0"
     fd-package-json: "npm:^1.2.0"
-    find-up: "npm:^5.0.0"
+    find-up: "npm:^7.0.0"
     rimraf: "npm:^6.0.1"
     telejson: "npm:8.0.0"
     ts-dedent: "npm:^2.0.0"
@@ -6255,6 +6276,7 @@ __metadata:
     cross-spawn: "npm:^7.0.6"
     envinfo: "npm:^7.7.3"
     execa: "npm:^9.5.2"
+    find-up: "npm:^7.0.0"
     giget: "npm:^1.0.0"
     globby: "npm:^14.0.1"
     jscodeshift: "npm:^0.15.1"
@@ -6336,7 +6358,7 @@ __metadata:
     "@storybook/global": "npm:^5.0.0"
     babel-loader: "npm:9.1.3"
     ember-source: "npm:~3.28.1"
-    find-up: "npm:^5.0.0"
+    find-up: "npm:^7.0.0"
     typescript: "npm:^5.8.3"
   peerDependencies:
     "@babel/core": "*"
@@ -6531,7 +6553,7 @@ __metadata:
     "@storybook/react-docgen-typescript-plugin": "npm:1.0.6--canary.9.0c3f3b7.0"
     "@types/node": "npm:^22.0.0"
     "@types/semver": "npm:^7.3.4"
-    find-up: "npm:^5.0.0"
+    find-up: "npm:^7.0.0"
     magic-string: "npm:^0.30.5"
     react-docgen: "npm:^7.1.1"
     resolve: "npm:^1.22.8"
@@ -6628,7 +6650,7 @@ __metadata:
     "@storybook/builder-vite": "workspace:*"
     "@storybook/react": "workspace:*"
     "@types/node": "npm:^22.0.0"
-    find-up: "npm:^5.0.0"
+    find-up: "npm:^7.0.0"
     magic-string: "npm:^0.30.0"
     react-docgen: "npm:^8.0.0"
     resolve: "npm:^1.22.8"
@@ -24488,6 +24510,7 @@ __metadata:
     "@babel/parser": "npm:^7.26.9"
     "@babel/traverse": "npm:^7.26.9"
     "@babel/types": "npm:^7.26.8"
+    "@clack/prompts": "npm:^1.0.0-alpha.0"
     "@devtools-ds/object-inspector": "npm:^1.1.2"
     "@discoveryjs/json-ext": "npm:^0.5.3"
     "@emotion/cache": "npm:^11.14.0"

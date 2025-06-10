@@ -331,7 +331,12 @@ it('Infer mock function given to args in meta.', () => {
 });
 
 describe('Composed getters', () => {
-  const TestButton = () => <></>;
+  type Props = {
+    label: string;
+    onClick: () => void;
+    onRender: () => JSX.Element;
+  };
+  const TestButton = (props: Props) => <></>;
 
   const meta = preview.meta({
     component: TestButton,
@@ -341,12 +346,12 @@ describe('Composed getters', () => {
   it('Composes the play function', async () => {
     const spy = fn();
     const Basic = meta.story({
-      play: async ({ args }) => {
+      play: async ({ args }: { args: Props }) => {
         spy(args);
       },
     });
 
-    await Basic.play(meta.input as any);
+    await Basic.play({ args: meta.input.args });
 
     expect(spy).toHaveBeenCalledWith({
       label: 'label',

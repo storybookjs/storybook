@@ -138,7 +138,7 @@ export interface Story<
   };
   meta: Meta<TRenderer>;
   __compose: () => ComposedStoryFn<TRenderer>;
-  play: PlayFunction<TRenderer, TRenderer['args']>;
+  play: TInput['play'];
   run: (context?: Partial<StoryContext<TRenderer, Partial<TRenderer['args']>>>) => Promise<void>;
 
   extend<TInput extends StoryAnnotations<TRenderer, TRenderer['args']>>(

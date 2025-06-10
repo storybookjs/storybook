@@ -81,7 +81,8 @@ type DecoratorsArgs<TRenderer extends Renderer, Decorators> = UnionToIntersectio
 >;
 
 interface ReactMeta<T extends ReactTypes, MetaInput extends ComponentAnnotations<T>>
-  extends Meta<T> {
+  // @ts-expect-error hard
+  extends Meta<T, MetaInput> {
   // Required args don't need to be provided when the user uses an empty render
   story<
     TInput extends

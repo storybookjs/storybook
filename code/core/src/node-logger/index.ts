@@ -7,7 +7,7 @@ import * as newLogger from './logger/logger';
 export { prompt } from './prompts';
 export { logTracker } from './logger/log-tracker';
 export type { SpinnerInstance, TaskLogInstance } from './prompts/prompt-provider-base';
-export { protectUrls } from './wrap-utils';
+export { protectUrls, createHyperlink } from './wrap-utils';
 export { CLI_COLORS } from './logger/colors';
 
 // The default is stderr, which can cause some tools (like rush.js) to think

@@ -116,6 +116,20 @@ export function protectUrls(
   });
 }
 
+/**
+ * Creates a hyperlink with custom title text if supported, otherwise falls back to "title: url"
+ * format
+ */
+export function createHyperlink(title: string, url: string): string {
+  if (supportsHyperlinks()) {
+    // Create hyperlink using OSC 8 escape sequence: title as display text, url as target
+    return `\u001b]8;;${url}\u0007${title}\u001b]8;;\u0007`;
+  }
+
+  // Fallback for terminals that don't support hyperlinks
+  return `${title}: ${url}`;
+}
+
 /** Enhanced word splitting that treats URLs as single units */
 function splitTextPreservingUrls(text: string): string[] {
   const parts: string[] = [];

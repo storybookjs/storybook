@@ -1,7 +1,13 @@
 import type { PackageManagerName } from 'storybook/internal/common';
 import { HandledError, JsPackageManagerFactory, isCorePackage } from 'storybook/internal/common';
 import { withTelemetry } from 'storybook/internal/core-server';
-import { CLI_COLORS, logTracker, logger, prompt } from 'storybook/internal/node-logger';
+import {
+  CLI_COLORS,
+  createHyperlink,
+  logTracker,
+  logger,
+  prompt,
+} from 'storybook/internal/node-logger';
 import {
   UpgradeStorybookToLowerVersionError,
   UpgradeStorybookUnknownCurrentVersionError,
@@ -201,8 +207,14 @@ function logUpgradeResults(
   const automigrationLinksMessage = [
     'If you want to learn more about the automigrations that executed in your project(s), please check the following links:',
     ...detectedAutomigrations
-      .filter((am) => am.fix.link)
-      .map((am) => `• ${am.fix.id}: ${am.fix.link}`),
+      .filter(
+        (am) =>
+          (am.fix.link && am.reports.some((report) => report.status === 'check_failed')) ||
+          // TODO: Valentin change true to automigration id that failed
+          true
+      )
+      .map((am) => `• ${createHyperlink(am.fix.id, am.fix.link!)}`),
+    // .map((am) => `• ${am.fix.id}: ${CLI_COLORS.link(am.fix.link)}`),
   ].join('\n');
 
   logger.log(automigrationLinksMessage);

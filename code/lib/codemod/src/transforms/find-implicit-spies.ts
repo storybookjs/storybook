@@ -1,5 +1,5 @@
-import type { BabelFile, core as babel } from 'storybook/internal/babel';
-import { types as t } from 'storybook/internal/babel';
+import type { BabelFile } from 'storybook/internal/babel';
+import { core as babel, types as t } from 'storybook/internal/babel';
 import { loadCsf } from 'storybook/internal/csf-tools';
 
 import type { FileInfo } from 'jscodeshift';
@@ -105,7 +105,7 @@ export default async function transform(info: FileInfo) {
     ...getObjectExpressionKeys(csf._metaAnnotations.argTypes),
   ];
 
-  Object.entries(csf.stories).forEach(([key, { name }]) => {
+  Object.values(csf.stories).forEach(({ name }) => {
     if (!name) {
       return;
     }

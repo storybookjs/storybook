@@ -143,7 +143,12 @@ export async function detectBuilder(packageManager: JsPackageManager, projectTyp
       return CoreBuilder.Webpack5;
     case ProjectType.NUXT:
       return CoreBuilder.Vite;
-    default:
+    default: {
+      const isInteractive = process.stdout.isTTY && !process.env.CI;
+      if (!isInteractive) {
+        // This is just a best guess, but in a non-interactive terminal, asking will stall the process forever.
+        return CoreBuilder.Vite;
+      }
       const { builder } = await prompts(
         {
           type: 'select',
@@ -163,6 +168,7 @@ export async function detectBuilder(packageManager: JsPackageManager, projectTyp
       );
 
       return builder;
+    }
   }
 }
 

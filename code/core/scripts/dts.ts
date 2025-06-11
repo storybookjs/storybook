@@ -42,6 +42,8 @@ async function run() {
     'storybook/actions/preview',
     'storybook/actions/decorator',
 
+    'storybook/controls/preview',
+
     'storybook/viewport',
     'storybook/viewport/preview',
 

@@ -1,3 +1,14 @@
+## 9.1.0-alpha.5
+
+- Addon Themes: Define missing React dependencies - [#31688](https://github.com/storybookjs/storybook/pull/31688), thanks @ghengeveld!
+- Addon-vitest: Fix adding with `--skip-install` failing missing packageJson invariant - [#31720](https://github.com/storybookjs/storybook/pull/31720), thanks @JReinhold!
+- AddonDocs: Remove export of blocks - [#31724](https://github.com/storybookjs/storybook/pull/31724), thanks @ndelangen!
+- CSF: Only add preview annotations to definePreview in csf-factories automigration - [#31727](https://github.com/storybookjs/storybook/pull/31727), thanks @kasperpeulen!
+
+## 9.1.0-alpha.4
+
+- CSF Factories: Add parameters/globals types, `extend` API, portable stories - [#30601](https://github.com/storybookjs/storybook/pull/30601), thanks @kasperpeulen!
+
 ## 9.1.0-alpha.3
 
 - Addon A11y: Briefly disable highlights while Axe is running - [#31621](https://github.com/storybookjs/storybook/pull/31621), thanks @ghengeveld!

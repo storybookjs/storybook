@@ -22,8 +22,7 @@ export async function loadStorybook(
 ): Promise<Options> {
   const configDir = resolve(options.configDir);
 
-  const rootDir = getProjectRoot();
-  const cacheKey = oneWayHash(relative(rootDir, configDir));
+  const cacheKey = oneWayHash(relative(getProjectRoot(), configDir));
 
   options.configType = 'DEVELOPMENT';
   options.configDir = configDir;

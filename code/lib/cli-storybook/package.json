@@ -1,6 +1,6 @@
 {
   "name": "@storybook/cli",
-  "version": "9.1.0-alpha.3",
+  "version": "9.1.0-alpha.5",
   "description": "Storybook CLI",
   "keywords": [
     "storybook"
@@ -65,6 +65,7 @@
     "@types/prompts": "^2.0.9",
     "boxen": "^7.1.1",
     "comment-json": "^4.2.5",
+    "find-up": "^7.0.0",
     "picocolors": "^1.1.0",
     "slash": "^5.0.0",
     "typescript": "^5.8.3"

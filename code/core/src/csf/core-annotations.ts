@@ -1,8 +1,8 @@
-import componentTestingAnnotations from 'storybook/internal/component-testing/preview';
 import type { StorybookTypes } from 'storybook/internal/types';
 
 import actionAnnotations, { type ActionsTypes } from '../actions/preview';
 import backgroundsAnnotations, { type BackgroundTypes } from '../backgrounds/preview';
+import componentTestingAnnotations from '../component-testing/preview';
 import { type ControlsTypes } from '../controls/preview';
 import highlightAnnotations, { type HighlightTypes } from '../highlight/preview';
 import measureAnnotations, { type MeasureTypes } from '../measure/preview';

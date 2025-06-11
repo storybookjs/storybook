@@ -182,4 +182,9 @@ If you'd like to downgrade to a stable version, manually edit the package versio
 
   If you're project can be detected but during the detection process you get an error, please watch out for the debug-storybook.log file in the root of your project. It will contain the full output of the detection process and will help you troubleshoot the issue.
   
+  ### Storybook doesn't automigrate non-Storybook files
+
+  Our automigrations usually only transform and migrate files inside of your `.storybook` directory and your story and mdx files, which are mentioned as part of the Storybook configuration.
+  If you have other files that contain Storybook-specific code, you might need to manually migrate them.
+
 </IfRenderer>

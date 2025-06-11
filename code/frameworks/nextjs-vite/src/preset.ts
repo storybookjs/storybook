@@ -1,5 +1,5 @@
 // https://storybook.js.org/docs/react/addons/writing-presets
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join } from 'node:path';
 
 import { getProjectRoot } from 'storybook/internal/common';
 import { IncompatiblePostCssConfigError } from 'storybook/internal/server-errors';
@@ -67,9 +67,9 @@ export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, option
       ...(reactConfig?.resolve ?? {}),
       alias: {
         ...(reactConfig?.resolve?.alias ?? {}),
-        'styled-jsx': dirname(resolve('styled-jsx/package.json')),
-        'styled-jsx/style': resolve('styled-jsx/style'),
-        'styled-jsx/style.js': resolve('styled-jsx/style'),
+        'styled-jsx': dirname(require.resolve('styled-jsx/package.json')),
+        'styled-jsx/style': require.resolve('styled-jsx/style'),
+        'styled-jsx/style.js': require.resolve('styled-jsx/style'),
       },
     },
     optimizeDeps: {

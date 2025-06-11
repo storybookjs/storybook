@@ -1,9 +1,10 @@
-import { ApplicationRef, NgModule } from '@angular/core';
+import type { ApplicationRef, NgModule } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
-import { BehaviorSubject, Subject } from 'rxjs';
+import type { Subject } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
 import { stringify } from 'telejson';
 
-import { ICollection, StoryFnAngularReturnType } from '../types';
+import type { ICollection, StoryFnAngularReturnType } from '../types';
 import { getApplication } from './StorybookModule';
 import { storyPropsProvider } from './StorybookProvider';
 import { queueBootstrapping } from './utils/BootstrapQueue';

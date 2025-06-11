@@ -10,16 +10,19 @@ export const rendererFactory = new RendererFactory();
 export const render: ArgsStoryFn<AngularRenderer> = (props) => ({ props });
 
 export async function renderToCanvas(
-  { storyFn, showMain, forceRemount, storyContext: { component } }: RenderContext<AngularRenderer>,
+  { storyFn, showMain, forceRemount, storyContext }: RenderContext<AngularRenderer>,
   element: HTMLElement
 ) {
   showMain();
 
-  const renderer = await rendererFactory.getRendererInstance(element);
+  const renderer = await rendererFactory.getRendererInstance(
+    element,
+    storyContext.parameters.useTestBedRenderer ?? false
+  );
 
   await renderer.render({
     storyFnAngular: storyFn(),
-    component,
+    component: storyContext.component,
     forced: !forceRemount,
     targetDOMNode: element,
   });

@@ -50,10 +50,12 @@ export const computeStorybookMetadata = async ({
   packageJsonPath,
   packageJson,
   mainConfig,
+  configDir,
 }: {
   packageJsonPath: string;
   packageJson: PackageJson;
   mainConfig?: StorybookConfig & Record<string, any>;
+  configDir: string;
 }): Promise<StorybookMetadata> => {
   const settings = await globalSettings();
   const metadata: Partial<StorybookMetadata> = {
@@ -78,7 +80,7 @@ export const computeStorybookMetadata = async ({
     metadata.metaFramework = {
       name: metaFrameworks[metaFramework],
       packageName: metaFramework,
-      version,
+      version: version || 'unknown',
     };
   }
 
@@ -192,7 +194,11 @@ export const computeStorybookMetadata = async ({
 
   const addonVersions = await getActualPackageVersions(addons);
   addonVersions.forEach(({ name, version }) => {
-    addons[name].version = version;
+    addons[name] = addons[name] || {
+      name,
+      version,
+    };
+    addons[name].version = version || undefined;
   });
 
   const addonNames = Object.keys(addons);
@@ -209,15 +215,20 @@ export const computeStorybookMetadata = async ({
 
   const storybookPackageVersions = await getActualPackageVersions(storybookPackages);
   storybookPackageVersions.forEach(({ name, version }) => {
-    storybookPackages[name].version = version;
+    storybookPackages[name] = storybookPackages[name] || {
+      name,
+      version,
+    };
+
+    storybookPackages[name].version = version || undefined;
   });
 
   const hasStorybookEslint = !!allDependencies['eslint-plugin-storybook'];
 
-  const storybookInfo = getStorybookInfo(packageJson);
+  const storybookInfo = getStorybookInfo(configDir);
 
   try {
-    const { previewConfig } = storybookInfo;
+    const { previewConfigPath: previewConfig } = storybookInfo;
     if (previewConfig) {
       const config = await readConfig(previewConfig);
       const usesGlobals = !!(
@@ -282,6 +293,11 @@ export const getStorybookMetadata = async (_configDir?: string) => {
       ) as string)) ??
     '.storybook';
   const mainConfig = await loadMainConfig({ configDir }).catch(() => undefined);
-  cachedMetadata = await computeStorybookMetadata({ mainConfig, packageJson, packageJsonPath });
+  cachedMetadata = await computeStorybookMetadata({
+    mainConfig,
+    packageJson,
+    packageJsonPath,
+    configDir,
+  });
   return cachedMetadata;
 };

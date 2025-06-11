@@ -2,14 +2,17 @@ import { logger } from 'storybook/internal/node-logger';
 import { AngularLegacyBuildOptionsError } from 'storybook/internal/server-errors';
 import { WebpackDefinePlugin, WebpackIgnorePlugin } from '@storybook/builder-webpack5';
 
-import { BuilderContext, targetFromTargetString } from '@angular-devkit/architect';
-import { JsonObject, logging } from '@angular-devkit/core';
-import { sync as findUpSync } from 'find-up';
-import webpack from 'webpack';
+import type { BuilderContext } from '@angular-devkit/architect';
+import { targetFromTargetString } from '@angular-devkit/architect';
+import type { JsonObject } from '@angular-devkit/core';
+import { logging } from '@angular-devkit/core';
+import { findUp } from 'find-up';
+import type webpack from 'webpack';
 
 import { getWebpackConfig as getCustomWebpackConfig } from './angular-cli-webpack';
-import { PresetOptions } from './preset-options';
+import type { PresetOptions } from './preset-options';
 import { moduleIsAvailable } from './utils/module-is-available';
+import { getProjectRoot } from 'storybook/internal/common';
 
 export async function webpackFinal(baseConfig: webpack.Configuration, options: PresetOptions) {
   if (!moduleIsAvailable('@angular-devkit/build-angular')) {
@@ -88,7 +91,7 @@ async function getBuilderOptions(options: PresetOptions, builderContext: Builder
     ...options.angularBuilderOptions,
     tsConfig:
       options.tsConfig ??
-      findUpSync('tsconfig.json', { cwd: options.configDir }) ??
+      (await findUp('tsconfig.json', { cwd: options.configDir, stopAt: getProjectRoot() })) ??
       browserTargetOptions.tsConfig,
   };
   logger.info(`=> Using angular project with "tsConfig:${builderOptions.tsConfig}"`);

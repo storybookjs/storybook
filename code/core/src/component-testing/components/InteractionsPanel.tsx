@@ -41,6 +41,8 @@ interface InteractionsPanelProps {
   onScrollToEnd?: () => void;
   hasResultMismatch?: boolean;
   browserTestStatus?: CallStates;
+  highlightedElements: string[];
+  onHighlightElements: (selectors: string[], highlight?: boolean) => void;
 }
 
 const Container = styled.div(({ theme }) => ({
@@ -100,6 +102,8 @@ export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
     endRef,
     hasResultMismatch,
     browserTestStatus,
+    highlightedElements,
+    onHighlightElements,
   }) {
     const filter = useAnsiToHtmlFilter();
 
@@ -128,6 +132,8 @@ export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
               isCollapsed={call.isCollapsed}
               toggleCollapsed={call.toggleCollapsed}
               pausedAt={pausedAt}
+              highlightedElements={highlightedElements}
+              onHighlightElements={onHighlightElements}
             />
           ))}
         </div>

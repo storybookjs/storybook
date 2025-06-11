@@ -79,7 +79,7 @@ Out of the box, Storybook automatically removes highlighted elements when transi
 
 ## Scroll element into view
 
-The Highlight feature allows you to scroll an element into view and highlight it. To enable it, emit the `SCROLL_INTO_VIEW` event from within a story or an addon. The event payload must contain a `selector` property to target the element you want to scroll into view. When the element is visible, it will be highlighted for a brief moment.
+The Highlight feature allows you to scroll an element into view and highlight it. To enable it, emit the `SCROLL_INTO_VIEW` event from within a story or an addon. The event payload must contain a `selector` property to target the element you want to scroll into view. When the element is visible, it will be highlighted for a brief moment. When given multiple selectors or a selector matching multiple elements, it will scroll to the first element whilst highlighting all elements.
 
 {/* prettier-ignore-start */}
 
@@ -233,7 +233,7 @@ import { SCROLL_INTO_VIEW } from 'storybook/highlight';
 
 channel.emit(
   SCROLL_INTO_VIEW,
-  selector // Element selector to scroll into view
+  selectors, // Element selector(s) to highlight, the first match will be scrolled into view
   options // An object inheriting from ScrollIntoViewOptions API to customize the scroll behavior
 );
 ```

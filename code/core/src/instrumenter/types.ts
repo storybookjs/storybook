@@ -10,6 +10,7 @@ export interface Call {
   args: any[];
   interceptable: boolean;
   retain: boolean;
+  selectors?: string[];
   status?: CallStates.DONE | CallStates.ERROR | CallStates.ACTIVE | CallStates.WAITING;
   exception?: {
     name: Error['name'];

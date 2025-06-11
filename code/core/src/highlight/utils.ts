@@ -155,7 +155,7 @@ export const mapElements = (highlights: HighlightOptions[]): Map<HTMLElement, Hi
         ...document.querySelectorAll(
           // Elements matching the selector, excluding storybook elements and their descendants.
           // Necessary to find portaled elements (e.g. children of `body`).
-          `:is(${selector}):not([id^="storybook-"], [id^="storybook-"] *, [class^="sb-"], [class^="sb-"] *)`
+          `:is(${selector}):not([id^="storybook-"], [id^="storybook-"] *, .sb-wrapper, .sb-wrapper *)`
         ),
         // Elements matching the selector inside the storybook root, as these were excluded above.
         ...(root?.querySelectorAll(selector) || []),

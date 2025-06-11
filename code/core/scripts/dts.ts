@@ -24,10 +24,7 @@ async function run() {
     'storybook/theming',
 
     'storybook/test',
-    'storybook/measure',
     'storybook/highlight',
-    'storybook/outline',
-    'storybook/backgrounds',
     'storybook/actions',
     'storybook/actions/decorator',
     'storybook/viewport',

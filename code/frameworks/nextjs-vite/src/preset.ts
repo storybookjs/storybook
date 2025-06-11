@@ -39,6 +39,8 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entry =
 export const optimizeViteDeps = [
   '@storybook/nextjs-vite/navigation.mock',
   '@storybook/nextjs-vite/router.mock',
+  '@storybook/nextjs-vite > styled-jsx',
+  '@storybook/nextjs-vite > styled-jsx/style',
 ];
 
 export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, options) => {
@@ -71,14 +73,6 @@ export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, option
         'styled-jsx/style': require.resolve('styled-jsx/style'),
         'styled-jsx/style.js': require.resolve('styled-jsx/style'),
       },
-    },
-    optimizeDeps: {
-      ...config.optimizeDeps,
-      include: [
-        ...(config.optimizeDeps?.include || []),
-        '@storybook/nextjs-vite > styled-jsx',
-        '@storybook/nextjs-vite > styled-jsx/style',
-      ],
     },
     plugins: [...(reactConfig?.plugins ?? []), vitePluginStorybookNextjs({ dir: nextDir })],
   };

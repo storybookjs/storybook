@@ -45,7 +45,7 @@ The `upgrade` command will use whichever version you specify. For example:
 The upgrade script provides enhanced support for mono-repositories:
 
 - **Automatic detection**: The script automatically detects all Storybook projects in your repository
-- **Selective upgrades**: If your Storybooks are truly encapsulated and don't share dependencies in shared `package.json` files, you can select which Storybook project to upgrade
+- **Selective upgrades**: If your Storybooks are truly encapsulated (meaning each Storybook project has its own independent Storybook dependencies in its own `package.json`), you can select which Storybook project to upgrade
 - **Bulk upgrades**: If your Storybooks share dependencies, all detected projects will be upgraded together to ensure consistency
 
 ### Limiting scope in large mono-repositories

@@ -381,23 +381,27 @@ export async function doInitiate(options: CommandOptions): Promise<
 > {
   const { packageManager: pkgMgr } = options;
 
-  let packageManager = JsPackageManagerFactory.getPackageManager({
-    force: pkgMgr,
-  });
+  const isEmptyDirProject = options.force !== true && currentDirectoryIsEmpty();
+  let packageManagerType = JsPackageManagerFactory.getPackageManagerType();
 
   // Check if the current directory is empty.
-  if (options.force !== true && currentDirectoryIsEmpty(packageManager.type)) {
+  if (isEmptyDirProject) {
     // Initializing Storybook in an empty directory with yarn1
-    // will very likely fail due to different kind of hoisting issues
+    // will very likely fail due to different kinds of hoisting issues
     // which doesn't get fixed anymore in yarn1.
     // We will fallback to npm in this case.
-    if (packageManager.type === 'yarn1') {
-      packageManager = JsPackageManagerFactory.getPackageManager({ force: 'npm' });
+    if (packageManagerType === 'yarn1') {
+      packageManagerType = 'npm';
     }
+
     // Prompt the user to create a new project from our list.
-    await scaffoldNewProject(packageManager.type, options);
+    await scaffoldNewProject(packageManagerType, options);
     invalidateProjectRootCache();
   }
+
+  const packageManager = JsPackageManagerFactory.getPackageManager({
+    force: pkgMgr,
+  });
 
   if (!options.skipInstall) {
     await packageManager.installDependencies();

@@ -35,6 +35,16 @@ export async function webpackFinal(baseConfig: webpack.Configuration, options: P
 
   webpackConfig.plugins = webpackConfig.plugins ?? [];
 
+  // Change the generated css filename to include the contenthash for cache busting
+  const miniCssPlugin = webpackConfig?.plugins?.find(
+    (plugin: any) => plugin?.constructor?.name === 'MiniCssExtractPlugin'
+  ) as any;
+
+  if (miniCssPlugin && 'options' in miniCssPlugin) {
+    miniCssPlugin.options.filename = '[name].[contenthash].css';
+    miniCssPlugin.options.chunkFilename = '[name].iframe.[contenthash].css';
+  }
+
   webpackConfig.plugins.push(
     new WebpackDefinePlugin({
       STORYBOOK_ANGULAR_OPTIONS: JSON.stringify({

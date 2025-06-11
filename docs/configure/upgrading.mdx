@@ -11,13 +11,17 @@ The frontend ecosystem is a fast-moving place. Regular dependency upgrades are a
 
 The most common upgrade is Storybook itself. [Storybook releases](https://storybook.js.org/releases) follow [Semantic Versioning](https://semver.org/). We publish patch releases with bug fixes continuously, minor versions of Storybook with new features every few months, and major versions of Storybook with breaking changes roughly once per year.
 
-To help ease the pain of keeping Storybook up-to-date, we provide a command-line script:
+To help ease the pain of keeping Storybook up-to-date, we provide a command-line script that automatically detects all Storybook projects in your repository:
 
 {/* prettier-ignore-start */}
 
 <CodeSnippets path="storybook-upgrade.md" />
 
 {/* prettier-ignore-end */}
+
+<Callout variant="info">
+  **Important:** Always run the upgrade command from your repository root. The script will automatically detect all Storybook projects in your repository, including in mono-repository setups.
+</Callout>
 
 The `upgrade` command will use whichever version you specify. For example:
 
@@ -36,24 +40,87 @@ The `upgrade` command will use whichever version you specify. For example:
   The only exception to this is when upgrading from 6 to 8, where you can run `storybook@8 upgrade` directly to upgrade from 6.x.x to 8.x.x.
 </Callout>
 
+### Mono-repository support
+
+The upgrade script now provides enhanced support for mono-repositories:
+
+- **Automatic detection**: The script automatically detects all Storybook projects in your repository
+- **Selective upgrades**: If your Storybooks are truly encapsulated and don't share dependencies in shared `package.json` files, you can select which Storybook project to upgrade
+- **Bulk upgrades**: If your Storybooks share dependencies, all detected projects will be upgraded together to ensure consistency
+
+### Limiting scope in large mono-repositories
+
+For large mono-repositories where you want to limit the upgrade to a specific directory, use the `STORYBOOK_PROJECT_ROOT` environment variable:
+
+```bash
+STORYBOOK_PROJECT_ROOT=./packages/frontend storybook@latest upgrade
+```
+
+This is especially helpful in huge mono-repositories with semi-encapsulated Storybooks.
+
+
+## Upgrade process
+
 After running the command, the script will:
 
-* Upgrade all Storybook packages in your project to the specified version
+* Detect all Storybook projects in your repository
+* Upgrade all Storybook packages to the specified version
 * Run the relevant [automigrations](../migration-guide/index.mdx#automatic-upgrade) factoring in the [breaking changes](../migration-guide/index.mdx#major-breaking-changes) between your current version and the specified version
+* Automatically run the [doctor command](#automatic-health-check) to verify the upgrade
 
 <Callout variant="info">
   In addition to running the command, we also recommend checking the [MIGRATION.md file](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md), for the detailed log of relevant changes and deprecations that might affect your upgrade.
 </Callout>
 
-### Verifying the upgrade
+### Automatic health check
 
-To help you verify that the upgrade was completed and that your project is still working as expected, the Storybook CLI provides the [`doctor`](../api/cli-options.mdx#doctor) command that allows you to do a health check on your project for common issues that might arise after an upgrade, such as duplicated dependencies, incompatible addons or mismatched versions. To perform the health check, run the following command with your package manager of choice:
+The upgrade script now automatically runs a health check on all detected Storybook projects after the upgrade. This verifies that the upgrade was completed successfully and checks for common issues that might arise after an upgrade, such as duplicated dependencies, incompatible addons, or mismatched versions.
 
-{/* prettier-ignore-start */}
+The health check runs automatically for all detected Storybooks—no need to run it separately.
 
-<CodeSnippets path="storybook-doctor.md" />
+### Error handling and debugging
 
-{/* prettier-ignore-end */}
+If you encounter issues during the upgrade:
+
+1. A `debug-storybook.log` file will be created containing all relevant logs
+2. For more detailed information, set the log level to `trace` using the `--loglevel trace` flag
+3. Create a GitHub issue with the logs if you need help resolving the problem
+
+## Command-line options
+
+The upgrade command supports several flags to customize the upgrade process:
+
+```bash
+storybook@latest upgrade [options]
+```
+
+### Available flags
+
+| Flag | Description |
+|------|-------------|
+| `--disable-telemetry` | Disable sending telemetry data |
+| `--debug` | Get more logs in debug mode (default: false) |
+| `--enable-crash-reports` | Enable sending crash reports to telemetry data |
+| `--write-logs` | Write all debug logs to a file at the end of the run |
+| `--loglevel <level>` | Define log level: `trace`, `debug`, `info`, `warn`, `error`, or `silent` (default: "info") |
+| `--package-manager <manager>` | Force package manager: `npm`, `pnpm`, `yarn1`, `yarn2`, or `bun` |
+| `-y, --yes` | Skip prompting the user |
+| `-f, --force` | Force the upgrade, skipping autoblockers |
+| `-s, --skip-check` | Skip postinstall version and automigration checks |
+| `-c, --config-dir <dir-name...>` | Directory(ies) where to load Storybook configurations from |
+
+### Example usage
+
+```bash
+# Upgrade with trace logging for debugging
+storybook@latest upgrade --loglevel trace --write-logs
+
+# Force upgrade without prompts
+storybook@latest upgrade --force --yes
+
+# Upgrade specific config directories only
+storybook@latest upgrade --config-dir .storybook-frontend .storybook-backend
+```
 
 ## Automigrate script
 

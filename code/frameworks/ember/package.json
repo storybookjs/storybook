@@ -23,7 +23,10 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
     },
-    "./preset": "./preset.js",
+    "./preset": {
+      "types": "./dist/preset.d.mts",
+      "require": "./preset.js"
+    },
     "./node": {
       "types": "./dist/node/index.d.ts",
       "node": "./dist/node/index.js",

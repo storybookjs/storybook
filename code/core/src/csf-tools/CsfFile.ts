@@ -12,6 +12,7 @@ import {
   traverse,
 } from 'storybook/internal/babel';
 import { isExportStory, storyNameFromExport, toId } from 'storybook/internal/csf';
+import { logger } from 'storybook/internal/node-logger';
 import type {
   ComponentAnnotations,
   IndexInput,
@@ -25,8 +26,6 @@ import { dedent } from 'ts-dedent';
 
 import type { PrintResultType } from './PrintResultType';
 import { findVarInitialization } from './findVarInitialization';
-
-const logger = console;
 
 // We add this BabelFile as a temporary workaround to deal with a BabelFileClass "ImportEquals should have a literal source" issue in no link mode with tsup
 interface BabelFile {
@@ -178,9 +177,9 @@ export interface CsfOptions {
 
 export class NoMetaError extends Error {
   constructor(message: string, ast: t.Node, fileName?: string) {
-    const msg = ``.trim();
+    const msg = message.trim();
     super(dedent`
-      CSF: ${message} ${formatLocation(ast, fileName)}
+      CSF: ${msg} ${formatLocation(ast, fileName)}
       
       More info: https://storybook.js.org/docs/writing-stories#default-export
     `);

@@ -1,10 +1,10 @@
 import { types as t, traverse } from 'storybook/internal/babel';
 import { isValidPreviewPath, loadCsf, printCsf } from 'storybook/internal/csf-tools';
+import { logger } from 'storybook/internal/node-logger';
 
 import path from 'path';
 
 import type { FileInfo } from '../../automigrate/codemod';
-import { logger } from '../csf-factories';
 import { cleanupTypeImports } from './csf-factories-utils';
 
 // Name of properties that should not be renamed to `Story.input.xyz`

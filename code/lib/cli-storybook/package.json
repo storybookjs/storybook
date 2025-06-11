@@ -45,7 +45,6 @@
     "@types/semver": "^7.3.4",
     "commander": "^12.1.0",
     "create-storybook": "workspace:*",
-    "giget": "^1.0.0",
     "jscodeshift": "^0.15.1",
     "storybook": "workspace:*",
     "ts-dedent": "^2.0.0"
@@ -59,6 +58,7 @@
     "envinfo": "^7.14.0",
     "execa": "^9.6.0",
     "find-up": "^7.0.0",
+    "giget": "^2.0.0",
     "globby": "^14.0.1",
     "leven": "^4.0.0",
     "p-limit": "^6.2.0",

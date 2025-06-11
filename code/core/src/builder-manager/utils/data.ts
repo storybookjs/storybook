@@ -8,7 +8,7 @@ import { readTemplate } from './template';
 
 export const getData = async (options: Options) => {
   const refs = getRefs(options);
-  const favicon = options.presets.apply<string>('favicon').then((p) => basename(p));
+  const favicon = options.presets.apply<string[]>('favicon').then((p) => basename(p[0]));
 
   const features = options.presets.apply<Record<string, string | boolean>>('features');
   const logLevel = options.presets.apply<string>('logLevel');

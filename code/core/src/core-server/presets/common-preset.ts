@@ -13,7 +13,6 @@ import {
   removeAddon as removeAddonBase,
 } from 'storybook/internal/common';
 import { readCsf } from 'storybook/internal/csf-tools';
-import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 import type {
   CoreConfig,
@@ -22,8 +21,6 @@ import type {
   PresetProperty,
   PresetPropertyFn,
 } from 'storybook/internal/types';
-
-import { dedent } from 'ts-dedent';
 
 import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel';
 import { initFileSearchChannel } from '../server-channel/file-search-channel';
@@ -35,9 +32,17 @@ import { type OptionsWithRequiredCache, initializeWhatsNew } from '../utils/what
 const interpolate = (string: string, data: Record<string, string> = {}) =>
   Object.entries(data).reduce((acc, [k, v]) => acc.replace(new RegExp(`%${k}%`, 'g'), v), string);
 
-const defaultFavicon = join(
-  dirname(require.resolve('storybook/internal/package.json')),
-  '/assets/browser/favicon.svg'
+const faviconNames = [
+  'favicon',
+  'favicon-active',
+  'favicon-critical',
+  'favicon-negative',
+  'favicon-positive',
+  'favicon-warning',
+] as const;
+
+const defaultFavicons = faviconNames.map((name) =>
+  join(dirname(require.resolve('storybook/internal/package.json')), `/assets/browser/${name}.svg`)
 );
 
 export const staticDirs: PresetPropertyFn<'staticDirs'> = async (values = []) => [
@@ -60,7 +65,7 @@ export const favicon = async (
 
   if (statics.length > 0) {
     const lists = statics.map((dir) => {
-      const results = [];
+      const results: string[] = [];
       const normalizedDir =
         staticDirsValue && !isAbsolute(dir)
           ? getDirectoryFromWorkingDir({
@@ -73,36 +78,25 @@ export const favicon = async (
       const { staticPath, targetEndpoint } = parseStaticDir(normalizedDir);
 
       if (targetEndpoint === '/') {
-        const url = 'favicon.svg';
-        const path = join(staticPath, url);
-        if (existsSync(path)) {
-          results.push(path);
-        }
-      }
-      if (targetEndpoint === '/') {
-        const url = 'favicon.ico';
-        const path = join(staticPath, url);
-        if (existsSync(path)) {
-          results.push(path);
-        }
+        faviconNames.forEach((name) => {
+          const svgPath = join(staticPath, `${name}.svg`);
+          const icoPath = join(staticPath, `${name}.ico`);
+          if (existsSync(svgPath)) {
+            results.push(svgPath);
+          }
+          if (existsSync(icoPath)) {
+            results.push(icoPath);
+          }
+        });
       }
 
       return results;
     });
     const flatlist = lists.reduce((l1, l2) => l1.concat(l2), []);
-
-    if (flatlist.length > 1) {
-      logger.warn(dedent`
-        Looks like multiple favicons were detected. Using the first one.
-
-        ${flatlist.join(', ')}
-        `);
-    }
-
-    return flatlist[0] || defaultFavicon;
+    return flatlist.length > 0 ? flatlist : defaultFavicons;
   }
 
-  return defaultFavicon;
+  return defaultFavicons;
 };
 
 export const babel = async (_: unknown, options: Options) => {

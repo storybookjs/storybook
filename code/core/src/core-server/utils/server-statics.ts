@@ -14,7 +14,7 @@ const cacheDir = resolvePathInStorybookCache('', 'ignored-sub').split('ignored-s
 
 export async function useStatics(app: Polka, options: Options): Promise<void> {
   const staticDirs = (await options.presets.apply('staticDirs')) ?? [];
-  const faviconPath = await options.presets.apply<string>('favicon');
+  const faviconPaths = await options.presets.apply<string[]>('favicon');
 
   staticDirs.map((dir) => {
     try {
@@ -60,17 +60,19 @@ export async function useStatics(app: Polka, options: Options): Promise<void> {
 
   // Fix for serving favicon in dev mode - use the directory containing the favicon
   // rather than trying to serve the file directly
-  const faviconDir = resolve(faviconPath, '..');
-  const faviconFile = basename(faviconPath);
-  app.use('/', (req, res, next) => {
-    if (req.url === `/${faviconFile}`) {
-      return sirvWorkaround(faviconDir, {
-        dev: true,
-        etag: true,
-        extensions: [],
-      })(req, res, next);
-    }
-    next();
+  faviconPaths.forEach((faviconPath) => {
+    const faviconDir = resolve(faviconPath, '..');
+    const faviconFile = basename(faviconPath);
+    app.use('/', (req, res, next) => {
+      if (req.url === `/${faviconFile}`) {
+        return sirvWorkaround(faviconDir, {
+          dev: true,
+          etag: true,
+          extensions: [],
+        })(req, res, next);
+      }
+      next();
+    });
   });
 }
 

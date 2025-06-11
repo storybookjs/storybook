@@ -42,7 +42,7 @@ The `upgrade` command will use whichever version you specify. For example:
 
 ### Mono-repository support
 
-The upgrade script now provides enhanced support for mono-repositories:
+The upgrade script provides enhanced support for mono-repositories:
 
 - **Automatic detection**: The script automatically detects all Storybook projects in your repository
 - **Selective upgrades**: If your Storybooks are truly encapsulated and don't share dependencies in shared `package.json` files, you can select which Storybook project to upgrade
@@ -74,7 +74,7 @@ After running the command, the script will:
 
 ### Automatic health check
 
-The upgrade script now automatically runs a health check on all detected Storybook projects after the upgrade. This verifies that the upgrade was completed successfully and checks for common issues that might arise after an upgrade, such as duplicated dependencies, incompatible addons, or mismatched versions.
+The upgrade script automatically runs a health check on all detected Storybook projects after the upgrade. This verifies that the upgrade was completed successfully and checks for common issues that might arise after an upgrade, such as duplicated dependencies, incompatible addons, or mismatched versions.
 
 The health check runs automatically for all detected Storybooks—no need to run it separately.
 

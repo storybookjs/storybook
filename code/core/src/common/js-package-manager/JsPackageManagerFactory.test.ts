@@ -22,7 +22,6 @@ describe('CLASS: JsPackageManagerFactory', () => {
   beforeEach(() => {
     JsPackageManagerFactory.clearCache();
     findMock.up.mockReturnValue(undefined);
-    findMock.any.mockReturnValue([]);
     spawnSyncMock.mockReturnValue({ status: 1 } as any);
     delete process.env.npm_config_user_agent;
   });
